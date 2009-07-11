@@ -1,0 +1,4 @@
+cd ./build/dist
+./demo 123123
+#./turing ../../turing/bin/core.tm
+cd ../../

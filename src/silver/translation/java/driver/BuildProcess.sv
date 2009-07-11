@@ -1,0 +1,294 @@
+grammar silver:translation:java:driver;
+import silver:translation:java:core;
+import silver:translation:java:command;
+
+import silver:driver;
+import silver:definition:env;
+import silver:definition:core hiding grammarName;
+
+import silver:util;
+import silver:util:command;
+
+import core;
+
+aspect production run
+top::RunUnit ::= iIn::IO args::String
+{
+  postOps <- if a.noJavaGeneration then [] else [genJava(a, grammars)]; 
+}
+
+abstract production genJava
+top::Unit ::= a::Command specs::[Decorated RootSpec]
+{
+  forwards to genJavaHelp(a, specs)
+	with {
+		ioIn = print("Generating Java Translation.\n", top.ioIn);
+	};
+}
+
+abstract production genJavaHelp
+top::Unit ::= a::Command specs::[Decorated RootSpec]
+{
+  local attribute i :: IO;
+  i = writeAll(top.ioIn, a, specs);
+ 
+  local attribute buildFile :: IO;
+  buildFile = writeBuildFile(i, a, specs).io;
+
+  top.io = buildFile;
+  top.code = 0;
+  top.order = 4;
+}
+
+function writeAll
+IO ::= i::IO a::Decorated Command l::[Decorated RootSpec]
+{
+  local attribute now :: IO;
+  now = writeSpec(i, head(l), a);
+
+  local attribute recurse :: IO;
+  recurse = writeAll(now, a, tail(l));
+
+  return if null(l) then i else recurse;
+}
+
+function writeSpec
+IO ::= i::IO r::Decorated RootSpec a::Decorated Command
+{
+  local attribute package :: String;
+  package = substitute("/", ":", r.declaredName) ++ "/";
+
+  local attribute envArg :: IOString;
+  envArg = envVar("SILVER_JAVA", i);
+
+  production attribute specLocation :: String;
+  specLocation = envArg.sValue ++ (if substring(length(envArg.sValue)-1, length(envArg.sValue), envArg.sValue) != "/" then "/src/" else "src/") ++ package; 
+
+  local attribute mkdir :: IO;
+  mkdir = system("mkdir -p " ++ specLocation, envArg.io).io;
+
+  local attribute mki :: IO;
+  mki = writeFile(specLocation ++ "Init.java", makeInit(r), mkdir);
+
+  local attribute mains :: [Decorated EnvItem];
+  mains = getFunctionDcl(r.declaredName ++ ":main", toEnv(r.defs));
+
+  local attribute mainIO :: IO;
+  mainIO = if null(mains) then mki else writeFile(specLocation ++ "Main.java", makeMain(r), mki);
+
+  return if !r.interface then writeClasses(mainIO, specLocation, r.javaClasses) else envArg.io;
+}
+
+function makeMain
+String ::= r::Decorated RootSpec{
+  local attribute package :: String;
+  package = makeName(r.declaredName);
+
+  return 
+"package " ++ package ++ ";\n\n" ++
+
+"public class Main {\n" ++
+"	public static void main(String[] args) {\n" ++
+"       	" ++ package ++ ".Init.init();\n" ++
+"      		new " ++ package ++ ".Pmain(fold(args), new Object()).doReturn();\n" ++
+"    	}\n" ++
+"	public static StringBuffer fold(String [] args){\n" ++ 
+"		String result = \"\";\n" ++ 
+"		for(String arg : args){\n" ++ 
+"			result = result + \" \" + arg;\n" ++ 
+"		}\n" ++ 
+"		return new StringBuffer(result.trim());\n" ++ 
+"	}\n" ++ 
+"}\n";
+}
+
+abstract production writeBuildFile
+top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec]{
+
+  production attribute extraTargets :: [String] with ++;
+  extraTargets := [];
+
+  production attribute extraTaskdefs :: [String] with ++;
+  extraTaskdefs := [];
+
+  production attribute extraPaths :: [String] with ++;
+  extraPaths := [];
+
+  local attribute mains :: [Decorated EnvItem];
+  mains = getFunctionDcl(a.grammarName ++ ":main", toEnv(head(getRootSpec(a.grammarName, specs)).defs));
+
+  top.io = writeFile(a.generatedPath ++ "/build.xml", buildXml, i);
+
+  local attribute buildXml :: String;
+  buildXml =    
+"<project name='" ++ a.grammarName ++ "' default='dist' basedir='.'>\n" ++
+"  <description>Build the grammar " ++ a.grammarName ++ " </description>\n" ++
+
+"  <!-- set global properties for this build -->\n" ++
+"  <property environment='env'/>\n\n" ++
+
+"  <property name='lib' location='${env.SILVER_JAVA}/lib'/>\n\n" ++ 
+
+"  <property name='build' location='build'/>\n" ++
+"  <property name='dist'  location='dist'/>\n\n" ++
+
+"  <path id='lib.classpath'>\n" ++
+"    <fileset dir='${env.SILVER_JAVA}/lib/' includes='**/*.jar' />\n" ++
+"  </path>\n\n" ++
+
+"  <path id='src.classpath'>\n" ++
+"    <pathelement location='${env.SILVER_JAVA}/src' />\n" ++
+"  </path>\n\n" ++
+
+"  <path id='compile.classpath'>\n" ++
+"    <path refid='src.classpath'/>\n" ++
+"    <path refid='lib.classpath'/>\n" ++
+"  </path>\n\n" ++
+
+folds("\n", extraTaskdefs) ++ "\n\n" ++
+
+"  <macrodef name='grammar'>\n" ++
+"    <attribute name='name'/>\n" ++
+"    <sequential>\n\n" ++
+
+"      <javac source='1.5' classpathref='compile.classpath' srcdir='${env.SILVER_JAVA}/src/@{name}' sourcepath='${env.SILVER_JAVA}/src' excludes='*/**/*.java' />\n\n" ++
+
+"      <copy toDir='${build}/@{name}'>\n" ++
+"        <fileset dir='${env.SILVER_JAVA}/src/@{name}'>\n" ++
+"	  <include name='*.class'/>\n" ++
+"	  <include name='*.java'/>\n" ++
+"	</fileset>\n" ++
+"      </copy>\n\n" ++
+
+"    </sequential>\n" ++
+"  </macrodef>\n\n" ++
+
+"  <target name='init'>\n\n" ++
+"    <!-- Create the time stamp -->\n" ++
+"    <tstamp>\n" ++
+"      <format property='TIME' pattern='MM/dd/yyyy hh:mm aa'/>\n" ++
+"    </tstamp>\n\n" ++
+
+"    <mkdir dir='${build}'/>\n" ++
+"    <mkdir dir='${dist}'/>\n" ++
+"  </target>\n\n" ++
+
+"  <target name='run' depends='dist'>\n" ++ 
+"    <java jar='${dist}/" ++ makeName(a.grammarName) ++ ".jar' fork='true'>\n" ++ 
+"      <arg value='${args}'/>\n" ++ 
+"    </java>\n" ++ 
+"  </target>\n\n" ++ 
+
+"  <target name='dist' depends='grammars'>\n\n" ++
+
+"    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath'>\n" ++
+"      <map from='${lib}' to='lib' />\n" ++
+"    </pathconvert>\n\n" ++
+
+"     <copy toDir='${dist}/lib/'>\n" ++ 
+"        <fileset dir='${env.SILVER_JAVA}/lib/'/>\n" ++ 
+"     </copy>\n\n" ++ 
+
+"    <jar destfile='${dist}/" ++ makeName(a.grammarName) ++ ".jar' basedir='${build}'>\n" ++
+"      <manifest>\n" ++
+(if !null(mains) then "        <attribute name='Main-Class' value='" ++ makeName(a.grammarName) ++ ".Main' />\n" else "") ++
+"       <attribute name='Class-Path' value='${man.classpath}' />\n" ++
+"       <attribute name='Built-By' value='${user.name}' />\n" ++
+"	<section name='version'>\n" ++
+"	  <attribute name='Specification-Version' value='' />\n" ++
+"	  <attribute name='Implementation-Version' value='${TIME}' />\n" ++
+"	</section>\n" ++
+"      </manifest>\n" ++
+"    </jar>\n\n" ++
+
+(if !null(mains) then 
+"    <echo file='${dist}/" ++ a.outName ++ "'>java -cp ./lib/:./" ++ makeName(a.grammarName) ++ ".jar " ++ makeName(a.grammarName) ++ ".Main $1</echo>\n" ++
+"    <chmod file='${dist}/" ++ a.outName ++ "' perm='+x'/>\n\n" 
+else "") ++
+
+"  </target>\n\n" ++
+
+"  <target name='grammars' depends='" ++ folds(", ", ["init"] ++ getDeclaredNames(specs)) ++ "'/>\n" ++
+
+buildAntParts(specs) ++ "\n" ++
+
+folds("\n", extraTargets) ++ "\n\n" ++
+
+"  <target name='clean' description='clean up' >\n" ++
+"    <delete dir='${build}'/>\n" ++
+"    <delete dir='${dist}'/>\n" ++
+"  </target>\n\n" ++
+
+"</project>\n";
+}
+
+function buildAntParts
+String ::= r::[Decorated RootSpec]{
+  return if null(r) then "" else buildAntPart(head(r)).sValue ++ buildAntParts(tail(r));
+}
+
+abstract production buildAntPart
+top::IOString ::= r::Decorated RootSpec{
+
+  production attribute depends :: [String] with ++;
+  depends := [];
+
+
+
+  top.sValue =  
+"  <target name='" ++ r.declaredName ++ "' depends='" ++ folds(", ", ["init"] ++ remove(r.declaredName, r.moduleNames) ++ depends)++ "'>\n" ++
+"    <grammar name='" ++ substitute("/", ":", r.declaredName) ++ "'/>\n" ++
+"  </target>\n";
+}
+
+
+
+function writeClasses
+IO ::= i::IO l::String s::[[String]]{
+  return if null(s) then i else writeFile(l ++ head(head(s)) ++ ".java", head(tail(head(s))), writeClasses(i, l, tail(s)));
+}
+
+function makeInit
+String ::= r::Decorated RootSpec{
+  local attribute className :: String;
+  className = makeName(r.declaredName) ++ ".Init";
+
+  return 
+"package " ++ makeName(r.declaredName) ++ ";\n\n" ++
+
+"public class Init{\n\n" ++
+
+"	private static boolean init = false;\n\n" ++
+
+"	public static void init(){\n" ++
+"		if(" ++ className ++ ".init) return;\n\n" ++
+
+"		" ++ className ++ ".setupInheritedAttributes();\n\n" ++	
+
+"		" ++ className ++ ".init = true;\n\n" ++
+
+makeOthers(r.moduleNames) ++ "\n" ++
+
+"		" ++ className ++ ".initAspectAttributeDefinitions();\n" ++
+"		" ++ className ++ ".initProductionAttributeDefinitions();\n" ++
+"	}\n\n" ++
+
+"	private static void setupInheritedAttributes(){\n" ++
+r.setupInh ++
+"	}\n\n" ++
+
+"	private static void initProductionAttributeDefinitions(){\n" ++
+r.initProd ++
+"	}\n\n" ++
+
+"	private static void initAspectAttributeDefinitions(){\n" ++
+r.initAspect ++
+"	}\n" ++
+"}\n";
+
+}
+
+function makeOthers
+String ::= others::[String]{
+  return if null(others) then "" else "		" ++ makeName(head(others)) ++ ".Init.init();\n" ++ makeOthers(tail(others));
+}

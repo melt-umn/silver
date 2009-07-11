@@ -1,0 +1,8 @@
+#!/bin/bash
+
+time ../bin/silver -g build/ -o demo $1 demo
+#time ../bin/silver -g build/ -o turing $1 turing:bin
+
+cd build/
+ant
+cd ..

@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# This function goes through each silver file found in the current
+# directory and all directories below it recursivly.  For
+# each silver file it will replace the IN regular expression
+# with the OUT regular expression.
+
+# USE WITH CAUTION!!!!  FILES ARE NOT BACKED UP!!!
+
+# The pattern to replace.
+# IN="silver:definition"
+IN="llsakdjlaksjdlaksjdlakjsdlk"
+
+# The pattern to replace the above pattern with.
+# OUT="silver:base"
+OUT="lkasjdlkajsdlkajsldkllkajslkjd"
+
+function rename {
+    for i in `ls -a ./`; do    
+	if [ -d $i ] && [ "." != $i ] && [ ".." != $i ]; then
+	    pushd $i > /dev/null
+	    rename $1 $2
+	    popd > /dev/null
+	else 
+	    if [ -f $i ] && [[ "$i" =~ '.*[\.]sv' ]]; then
+#		cp "$1" "$1.old"
+		sed "s/$IN/$OUT/" < $i > "temp.sv"
+		mv temp.sv $i
+	    fi
+	fi
+    done 
+}
+
+
+# This function goes through the current directory and all subdirectories
+# recursivly removing the emacs ~ files, identifing non silver files,
+# and Generated directories 'G' and '.Generated'.
+
+# It ONLY deletes the ~ files.  All other files are printed to the
+# screen for the user to delete if wanted.
+function cleanup {
+    clean 2> /dev/null
+
+    for i in `ls -a ./`; do    
+	if [ -d $i ] && [ "." != $i ] && [ ".." != $i ]; then
+	    # remove CVS part if you do not want to be warned of CVS directories.
+	    if [ "G" == $i ] || [ ".Generated" == $i ] ; then
+
+		echo "    `pwd`/$i"
+	    else
+		pushd $i > /dev/null
+		cleanup 
+		popd > /dev/null
+	    fi
+	else 
+	    if [ -f $i ] && ! [[ "$i" =~ '.*[\.]sv' ]]; then
+		echo "    `pwd`/$i"
+	    fi
+	fi
+    done 
+}
+
+if [ $1 == "cleanup" ]; then
+    echo
+    cleanup
+    echo
+else 
+    if [ $1 == "rename" ]; then
+	rename
+    else
+	echo "Must specify option 'cleanup' or 'rename'"
+    fi
+fi
+
+
+
