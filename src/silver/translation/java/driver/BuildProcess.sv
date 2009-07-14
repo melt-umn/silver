@@ -88,17 +88,17 @@ String ::= r::Decorated RootSpec{
 "package " ++ package ++ ";\n\n" ++
 
 "public class Main {\n" ++
-"	public static void main(String[] args) {\n" ++
-"       	" ++ package ++ ".Init.init();\n" ++
-"      		new " ++ package ++ ".Pmain(fold(args), new Object()).doReturn();\n" ++
-"    	}\n" ++
-"	public static StringBuffer fold(String [] args){\n" ++ 
-"		String result = \"\";\n" ++ 
-"		for(String arg : args){\n" ++ 
-"			result = result + \" \" + arg;\n" ++ 
-"		}\n" ++ 
-"		return new StringBuffer(result.trim());\n" ++ 
-"	}\n" ++ 
+"\tpublic static void main(String[] args) {\n" ++
+"\t\t" ++ package ++ ".Init.init();\n" ++
+"\t\t\tnew " ++ package ++ ".Pmain(fold(args), new Object()).doReturn();\n" ++
+"\t}\n" ++
+"\tpublic static StringBuffer fold(String [] args){\n" ++ 
+"\t\tString result = \"\";\n" ++ 
+"\t\tfor(String arg : args){\n" ++ 
+"\t\t\tresult = result + \" \" + arg;\n" ++ 
+"\t\t}\n" ++ 
+"\t\treturn new StringBuffer(result.trim());\n" ++ 
+"\t}\n" ++ 
 "}\n";
 }
 
@@ -155,9 +155,9 @@ folds("\n", extraTaskdefs) ++ "\n\n" ++
 
 "      <copy toDir='${build}/@{name}'>\n" ++
 "        <fileset dir='${env.SILVER_JAVA}/src/@{name}'>\n" ++
-"	  <include name='*.class'/>\n" ++
-"	  <include name='*.java'/>\n" ++
-"	</fileset>\n" ++
+"         <include name='*.class'/>\n" ++
+"         <include name='*.java'/>\n" ++
+"        </fileset>\n" ++
 "      </copy>\n\n" ++
 
 "    </sequential>\n" ++
@@ -194,10 +194,10 @@ folds("\n", extraTaskdefs) ++ "\n\n" ++
 (if !null(mains) then "        <attribute name='Main-Class' value='" ++ makeName(a.grammarName) ++ ".Main' />\n" else "") ++
 "       <attribute name='Class-Path' value='${man.classpath}' />\n" ++
 "       <attribute name='Built-By' value='${user.name}' />\n" ++
-"	<section name='version'>\n" ++
-"	  <attribute name='Specification-Version' value='' />\n" ++
-"	  <attribute name='Implementation-Version' value='${TIME}' />\n" ++
-"	</section>\n" ++
+"       <section name='version'>\n" ++
+"         <attribute name='Specification-Version' value='' />\n" ++
+"         <attribute name='Implementation-Version' value='${TIME}' />\n" ++
+"       </section>\n" ++
 "      </manifest>\n" ++
 "    </jar>\n\n" ++
 
@@ -258,37 +258,37 @@ String ::= r::Decorated RootSpec{
 
 "public class Init{\n\n" ++
 
-"	private static boolean init = false;\n\n" ++
+"\tprivate static boolean init = false;\n\n" ++
 
-"	public static void init(){\n" ++
-"		if(" ++ className ++ ".init) return;\n\n" ++
+"\tpublic static void init(){\n" ++
+"\t\tif(" ++ className ++ ".init) return;\n\n" ++
 
-"		" ++ className ++ ".setupInheritedAttributes();\n\n" ++	
+"\t\t" ++ className ++ ".setupInheritedAttributes();\n\n" ++	
 
-"		" ++ className ++ ".init = true;\n\n" ++
+"\t\t" ++ className ++ ".init = true;\n\n" ++
 
 makeOthers(r.moduleNames) ++ "\n" ++
 
-"		" ++ className ++ ".initAspectAttributeDefinitions();\n" ++
-"		" ++ className ++ ".initProductionAttributeDefinitions();\n" ++
-"	}\n\n" ++
+"\t\t" ++ className ++ ".initAspectAttributeDefinitions();\n" ++
+"\t\t" ++ className ++ ".initProductionAttributeDefinitions();\n" ++
+"\t}\n\n" ++
 
-"	private static void setupInheritedAttributes(){\n" ++
+"\tprivate static void setupInheritedAttributes(){\n" ++
 r.setupInh ++
-"	}\n\n" ++
+"\t}\n\n" ++
 
-"	private static void initProductionAttributeDefinitions(){\n" ++
+"\tprivate static void initProductionAttributeDefinitions(){\n" ++
 r.initProd ++
-"	}\n\n" ++
+"\t}\n\n" ++
 
-"	private static void initAspectAttributeDefinitions(){\n" ++
+"\tprivate static void initAspectAttributeDefinitions(){\n" ++
 r.initAspect ++
-"	}\n" ++
+"\t}\n" ++
 "}\n";
 
 }
 
 function makeOthers
 String ::= others::[String]{
-  return if null(others) then "" else "		" ++ makeName(head(others)) ++ ".Init.init();\n" ++ makeOthers(tail(others));
+  return if null(others) then "" else "\t" ++ makeName(head(others)) ++ ".Init.init();\n" ++ makeOthers(tail(others));
 }

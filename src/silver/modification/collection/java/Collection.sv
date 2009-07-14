@@ -48,17 +48,17 @@ top::ProductionAttributeDcl ::= 'production' 'attribute' a::Name '::' te::Type '
   o.inType = te.typerep;
 
   top.setupInh = 
-	"		" ++ className ++ ".localAttributes.put(\"" ++ fName ++ "\", new common.CollectionAttribute(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++ 
-	"				" ++ te.typerep.transType ++ " result = (" ++ te.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
-	"				for(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
-	"					result = " ++ o.frontTrans ++ "result" ++ o.midTrans ++ "(" ++ te.typerep.transType ++ ")this.getPieces().get(i).eval(context)" ++ o.endTrans ++ ";\n" ++ 
-	"				}\n" ++ 
-	"				return result;\n" ++ 
-	"			}\n" ++ 
-	"		});\n" ++ 
+	"\t\t" ++ className ++ ".localAttributes.put(\"" ++ fName ++ "\", new common.CollectionAttribute(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
+	"\t\t\t\t" ++ te.typerep.transType ++ " result = (" ++ te.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
+	"\t\t\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
+	"\t\t\t\t\tresult = " ++ o.frontTrans ++ "result" ++ o.midTrans ++ "(" ++ te.typerep.transType ++ ")this.getPieces().get(i).eval(context)" ++ o.endTrans ++ ";\n" ++ 
+	"\t\t\t\t}\n" ++ 
+	"\t\t\t\treturn result;\n" ++ 
+	"\t\t\t}\n" ++ 
+	"\t\t});\n" ++ 
         if !te.typerep.isNonTerminal then  "" else
-		 "		" ++ className ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ "new java.util.HashMap<String, common.Lazy>());\n";
+		 "\t\t" ++ className ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ "new java.util.HashMap<String, common.Lazy>());\n";
 
   top.translation = "";
 }
@@ -72,29 +72,29 @@ top::AttributeDef ::= lhs::LHSExpr '<-' e::Expr ';'
   top.setupInh = "";
 
   top.translation = if lhs.isLocalDcl then  
-	"		((common.CollectionAttribute)" ++ className ++ ".localAttributes.get(\"" ++ lhs.nodeName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++ 
- 	"		});\n"
+	"\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes.get(\"" ++ lhs.nodeName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++ 
+ 	"\t\t});\n"
         else if lhs.isLocal then 
-	"		((common.CollectionAttribute)" ++ className ++ ".inheritedAttributes.get(\"" ++ lhs.nodeName ++ "\").get(\"" ++ lhs.attrName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++ 
- 	"		});\n"
+	"\t\t((common.CollectionAttribute)" ++ className ++ ".inheritedAttributes.get(\"" ++ lhs.nodeName ++ "\").get(\"" ++ lhs.attrName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++ 
+ 	"\t\t});\n"
         else if lhs.isChild then 
-	"		((common.CollectionAttribute)" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ lhs.nodeName ++ ").get(\"" ++ lhs.attrName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++ 
- 	"		});\n"
+	"\t\t((common.CollectionAttribute)" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ lhs.nodeName ++ ").get(\"" ++ lhs.attrName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++ 
+ 	"\t\t});\n"
 	else
-	"		((common.CollectionAttribute)" ++ className ++ ".synthesizedAttributes.get(\"" ++ lhs.attrName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++ 
- 	"		});\n";
+	"\t\t((common.CollectionAttribute)" ++ className ++ ".synthesizedAttributes.get(\"" ++ lhs.attrName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++ 
+ 	"\t\t});\n";
 
 }
 
@@ -110,59 +110,59 @@ top::AttributeDef ::= lhs::LHSExpr ':=' e::Expr ';'
 
   top.setupInh = if lhs.isLocalDcl then  ""
                  else if lhs.isLocal then 
-	"		" ++ className ++ ".inheritedAttributes.get(\"" ++ lhs.nodeName ++ "\").put(\"" ++ lhs.attrName ++ "\",  new common.CollectionAttribute(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++ 
-	"				" ++ lhs.typerep.transType ++ " result = (" ++ lhs.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
-	"				for(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
-	"					result = " ++ o.frontTrans ++ "result" ++ o.midTrans ++ "(" ++ lhs.typerep.transType ++ ")this.getPieces().get(i).eval(context)" ++ o.endTrans ++ ";\n" ++ 
-	"				}\n" ++ 
-	"				return result;\n" ++ 
-	"			}\n" ++ 
-	"		});\n"
+	"\t\t" ++ className ++ ".inheritedAttributes.get(\"" ++ lhs.nodeName ++ "\").put(\"" ++ lhs.attrName ++ "\",  new common.CollectionAttribute(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
+	"\t\t\t\t" ++ lhs.typerep.transType ++ " result = (" ++ lhs.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
+	"\t\t\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
+	"\t\t\t\t\tresult = " ++ o.frontTrans ++ "result" ++ o.midTrans ++ "(" ++ lhs.typerep.transType ++ ")this.getPieces().get(i).eval(context)" ++ o.endTrans ++ ";\n" ++ 
+	"\t\t\t\t}\n" ++ 
+	"\t\t\t\treturn result;\n" ++ 
+	"\t\t\t}\n" ++ 
+	"\t\t});\n"
         	else if lhs.isChild then 
-	"		" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ lhs.nodeName ++ ").put(\"" ++ lhs.attrName ++ "\",  new common.CollectionAttribute(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++ 
-	"				" ++ lhs.typerep.transType ++ " result = (" ++ lhs.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
-	"				for(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
-	"					result = " ++ o.frontTrans ++ "result" ++ o.midTrans ++ "(" ++ lhs.typerep.transType ++ ")this.getPieces().get(i).eval(context)" ++ o.endTrans ++ ";\n" ++ 
-	"				}\n" ++ 
-	"				return result;\n" ++ 
-	"			}\n" ++ 
-	"		});\n"
+	"\t\t" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ lhs.nodeName ++ ").put(\"" ++ lhs.attrName ++ "\",  new common.CollectionAttribute(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
+	"\t\t\t\t" ++ lhs.typerep.transType ++ " result = (" ++ lhs.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
+	"\t\t\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
+	"\t\t\t\t\tresult = " ++ o.frontTrans ++ "result" ++ o.midTrans ++ "(" ++ lhs.typerep.transType ++ ")this.getPieces().get(i).eval(context)" ++ o.endTrans ++ ";\n" ++ 
+	"\t\t\t\t}\n" ++ 
+	"\t\t\t\treturn result;\n" ++ 
+	"\t\t\t}\n" ++ 
+	"\t\t});\n"
 	else
-	"		" ++ className ++ ".synthesizedAttributes.put(\"" ++ lhs.attrName ++ "\",  new common.CollectionAttribute(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++ 
-	"				" ++ lhs.typerep.transType ++ " result = (" ++ lhs.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
-	"				for(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
-	"					result = " ++ o.frontTrans ++ "result" ++ o.midTrans ++ "(" ++ lhs.typerep.transType ++ ")this.getPieces().get(i).eval(context)" ++ o.endTrans ++ ";\n" ++ 
-	"				}\n" ++ 
-	"				return result;\n" ++ 
-	"			}\n" ++ 
-	"		});\n";
+	"\t\t" ++ className ++ ".synthesizedAttributes.put(\"" ++ lhs.attrName ++ "\",  new common.CollectionAttribute(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
+	"\t\t\t\t" ++ lhs.typerep.transType ++ " result = (" ++ lhs.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
+	"\t\t\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
+	"\t\t\t\t\tresult = " ++ o.frontTrans ++ "result" ++ o.midTrans ++ "(" ++ lhs.typerep.transType ++ ")this.getPieces().get(i).eval(context)" ++ o.endTrans ++ ";\n" ++ 
+	"\t\t\t\t}\n" ++ 
+	"\t\t\t\treturn result;\n" ++ 
+	"\t\t\t}\n" ++ 
+	"\t\t});\n";
 
 
   top.translation = if lhs.isLocalDcl then  
-	"		" ++ "((common.CollectionAttribute)" ++ className ++ ".localAttributes.get(\"" ++ lhs.nodeName ++ "\")).setBase(new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++ 
- 	"		});\n"
+	"\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes.get(\"" ++ lhs.nodeName ++ "\")).setBase(new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++ 
+ 	"\t\t});\n"
 	else if lhs.isLocal then
-	"		" ++ "((common.CollectionAttribute)" ++ className ++ ".inheritedAttributes.get(\"" ++ lhs.nodeName ++ "\").get(\"" ++ lhs.attrName ++ "\")).setBase(new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++ 
- 	"		});\n"
+	"\t\t((common.CollectionAttribute)" ++ className ++ ".inheritedAttributes.get(\"" ++ lhs.nodeName ++ "\").get(\"" ++ lhs.attrName ++ "\")).setBase(new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++ 
+ 	"\t\t});\n"
 	else if lhs.isChild then
-	"		" ++ "((common.CollectionAttribute)" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ lhs.nodeName ++ ").get(\"" ++ lhs.attrName ++ "\")).setBase(new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++ 
- 	"		});\n"
+	"\t\t((common.CollectionAttribute)" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ lhs.nodeName ++ ").get(\"" ++ lhs.attrName ++ "\")).setBase(new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++ 
+ 	"\t\t});\n"
 	else 
-	"		" ++ "((common.CollectionAttribute)" ++ className ++ ".synthesizedAttributes.get(\"" ++ lhs.attrName ++ "\")).setBase(new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++ 
- 	"		});\n";
+	"\t\t((common.CollectionAttribute)" ++ className ++ ".synthesizedAttributes.get(\"" ++ lhs.attrName ++ "\")).setBase(new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++ 
+ 	"\t\t});\n";
 }

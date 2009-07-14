@@ -8,7 +8,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   top.javaClasses = [];
   top.setupInh = body.setupInh;  
   top.initProd = "";
-  top.initAspect = "		//ASPECT PRODUCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
+  top.initAspect = "\t\t//ASPECT PRODUCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
 }
 
 aspect production aspectFunctionDcl
@@ -17,5 +17,5 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   top.javaClasses = [];
   top.setupInh = body.setupInh;  
   top.initProd = "";
-  top.initAspect = "		//ASPECT FUNCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
+  top.initAspect = "\t\t//ASPECT FUNCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
 }
