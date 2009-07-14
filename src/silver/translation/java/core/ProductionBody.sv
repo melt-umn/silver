@@ -100,12 +100,12 @@ top::ForwardsToDcl ::= 'forwards' 'to' e::Expr ';'
 
   top.setupInh = "";
   top.translation = 
-	"		//" ++ top.pp ++ "\n" ++
-	"		" ++ className ++ ".forward = new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++
-	"		};\n";
+	"\t\t//" ++ top.pp ++ "\n" ++
+	"\t\t" ++ className ++ ".forward = new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++
+	"\t\t};\n";
 }
 
 aspect production forwardsToWith
@@ -116,12 +116,12 @@ top::ForwardsToDcl ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' '
 
   top.setupInh = "";
   top.translation =
-	"		//" ++ top.pp ++ "\n" ++
-	"		" ++ className ++ ".forward = new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++
-	"		};\n" ++
+	"\t\t//" ++ top.pp ++ "\n" ++
+	"\t\t" ++ className ++ ".forward = new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++
+	"\t\t};\n" ++
   	inh.translation;
 }
 
@@ -139,12 +139,12 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
   className = makeClassName(top.signature.fullName);
 
   top.translation = 
-	"		//" ++ top.pp ++ "\n" ++
-	"		" ++ className ++ ".forwardAttributes.put(\"" ++ lhs.attrName ++ "\", new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++
-	"		});\n";
+	"\t\t//" ++ top.pp ++ "\n" ++
+	"\t\t" ++ className ++ ".forwardAttributes.put(\"" ++ lhs.attrName ++ "\", new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++
+	"\t\t});\n";
 
 }
 
@@ -170,8 +170,8 @@ aspect production localAttributeDcl
 top::LocalAttributeDcl ::= 'local' 'attribute' a::Name '::' te::Type ';'
 {
   top.setupInh = if !te.typerep.isNonTerminal then  "" else
-        	 "		//" ++ top.pp ++ "\n" ++
-		 "		" ++ 
+        	 "\t\t//" ++ top.pp ++ "\n" ++
+		 "\t\t" ++ 
 		 makeClassName(top.signature.fullName) ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ 
 										    "new java.util.HashMap<String, common.Lazy>());\n";
   top.translation = "";
@@ -181,8 +181,8 @@ aspect production productionAttributeDcl
 top::ProductionAttributeDcl ::= 'production' 'attribute' a::Name '::' te::Type ';'
 {
   top.setupInh = if !te.typerep.isNonTerminal then  "" else
-	   	"		//" ++ top.pp ++ "\n" ++		 
-		"		" ++ 
+	   	"\t\t//" ++ top.pp ++ "\n" ++		 
+		"\t\t" ++ 
 		 makeClassName(top.signature.fullName) ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ 
 										    "new java.util.HashMap<String, common.Lazy>());\n";
   top.translation = "";
@@ -196,32 +196,32 @@ top::AttributeDef ::= lhs::LHSExpr '=' e::Expr ';'
 
   top.setupInh = "";
   top.translation =
-	"		//" ++ top.pp ++ "\n" ++
+	"\t\t//" ++ top.pp ++ "\n" ++
 	if lhs.isLocalDcl then  
-	"		" ++ className ++ ".localAttributes.put(\"" ++ lhs.nodeName ++ "\", new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++
-	"		});\n"
+	"\t\t" ++ className ++ ".localAttributes.put(\"" ++ lhs.nodeName ++ "\", new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++
+	"\t\t});\n"
 	else if lhs.isLocal then 
-	"		" ++ className ++ ".inheritedAttributes.get(\"" ++ lhs.nodeName ++ "\").put(\"" ++ lhs.attrName ++ "\", new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++
-	"		});\n"
+	"\t\t" ++ className ++ ".inheritedAttributes.get(\"" ++ lhs.nodeName ++ "\").put(\"" ++ lhs.attrName ++ "\", new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++
+	"\t\t});\n"
 	else if lhs.isChild then 
-	"		" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ lhs.nodeName ++ ").put(\"" ++ lhs.attrName ++ "\", new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++
-	"		});\n"
+	"\t\t" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ lhs.nodeName ++ ").put(\"" ++ lhs.attrName ++ "\", new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++
+	"\t\t});\n"
 
 	else
-	"		" ++ className ++ ".synthesizedAttributes.put(\"" ++ lhs.attrName ++ "\", new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++
-	"		});\n";
+	"\t\t" ++ className ++ ".synthesizedAttributes.put(\"" ++ lhs.attrName ++ "\", new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++
+	"\t\t});\n";
 }
 
 aspect production returnDef
@@ -232,12 +232,12 @@ top::ReturnDef ::= 'return' e::Expr ';'
 
   top.setupInh = "";
   top.translation =
-	"		//" ++ top.pp ++ "\n" ++
-	"		" ++ className ++ ".synthesizedAttributes.put(\"__return\", new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				return " ++ e.translation ++ ";\n" ++
-	"			}\n" ++
-	"		});\n";
+	"\t\t//" ++ top.pp ++ "\n" ++
+	"\t\t" ++ className ++ ".synthesizedAttributes.put(\"__return\", new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++
+	"\t\t});\n";
 }
 
 aspect production fakeLHSExpr

@@ -65,14 +65,14 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleStmtList '}' {
   parserName = makeParserName(top.fullName);
 
   top.initProd =
-	"		" ++ fullClassName ++ ".synthesizedAttributes.put(\"__return\", new common.Lazy(){\n" ++ 
-	"			public Object eval(common.DecoratedNode context) {\n" ++
-	"				try{\n" ++
-	"					return new " ++ packageName ++ "." ++ parserName ++ "().parse(new java.io.StringReader(((StringBuffer)context.child(" ++ fullClassName ++ ".i_c)).toString()), \"_NULL_\");\n" ++
-	"				}catch(java.lang.Exception e){System.out.println(\"Silver caught a copper parse error:\\n\\t\" + e.getMessage());System.exit(1);}\n" ++
-	"				return null;\n" ++
-	"			}\n" ++
-	"		});\n";
+	"\t\t" ++ fullClassName ++ ".synthesizedAttributes.put(\"__return\", new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\ttry{\n" ++
+	"\t\t\t\t\treturn new " ++ packageName ++ "." ++ parserName ++ "().parse(new java.io.StringReader(((StringBuffer)context.child(" ++ fullClassName ++ ".i_c)).toString()), \"_NULL_\");\n" ++
+	"\t\t\t\t}catch(java.lang.Exception e){System.out.println(\"Silver caught a copper parse error:\\n\\t\" + e.getMessage());System.exit(1);}\n" ++
+	"\t\t\t\treturn null;\n" ++
+	"\t\t\t}\n" ++
+	"\t\t});\n";
 
 
   top.javaClasses = [[className,
@@ -81,31 +81,31 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleStmtList '}' {
 "public class " ++ className ++ " extends common.FunctionNode{\n\n" ++	
 
 makeIndexDcls(0, sigNames) ++ "\n" ++
-"	public static common.Lazy forward;\n" ++
-"	public static java.util.Map<String, common.Lazy> forwardAttributes = new java.util.HashMap<String, common.Lazy>();\n\n" ++
+"\tpublic static common.Lazy forward;\n" ++
+"\tpublic static java.util.Map<String, common.Lazy> forwardAttributes = new java.util.HashMap<String, common.Lazy>();\n\n" ++
 
-"	public static java.util.Map<String, common.Lazy> localAttributes = new java.util.HashMap<String, common.Lazy>();\n" ++
-"	public static java.util.Map<String, common.Lazy> synthesizedAttributes = new java.util.HashMap<String, common.Lazy>();\n" ++
-"	public static java.util.Map<Object, java.util.Map<String, common.Lazy>> inheritedAttributes = new java.util.HashMap<Object, java.util.Map<String, common.Lazy>>();\n\n" ++	
+"\tpublic static java.util.Map<String, common.Lazy> localAttributes = new java.util.HashMap<String, common.Lazy>();\n" ++
+"\tpublic static java.util.Map<String, common.Lazy> synthesizedAttributes = new java.util.HashMap<String, common.Lazy>();\n" ++
+"\tpublic static java.util.Map<Object, java.util.Map<String, common.Lazy>> inheritedAttributes = new java.util.HashMap<Object, java.util.Map<String, common.Lazy>>();\n\n" ++	
 
 
-"	static{\n" ++
+"\tstatic{\n" ++
 makeStaticDcls(className, sigNames) ++
-"	}\n\n" ++ 
+"\t}\n\n" ++ 
 	
-"	public " ++ className ++ "(" ++ makeConstructor(sigNames) ++ "){\n" ++
-"		super(\"" ++ top.fullName ++ "\", 1, " ++
+"\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ "){\n" ++
+"\t\tsuper(\"" ++ top.fullName ++ "\", 1, " ++
                       className ++ ".inheritedAttributes, " ++ 
                       className ++ ".synthesizedAttributes, " ++ 
                       className ++ ".localAttributes);\n\n" ++
 makeChildAssign(sigNames) ++ "\n" ++
 
-"		this.forward(" ++ className ++ ".forward, " ++ className ++ ".forwardAttributes);\n" ++
-"	}\n\n" ++
+"\t\tthis.forward(" ++ className ++ ".forward, " ++ className ++ ".forwardAttributes);\n" ++
+"\t}\n\n" ++
 
-"	public " ++ t.typerep.transType ++ " doReturn(){\n" ++			
-"		return (" ++ t.typerep.transType ++ ")super.doReturn();\n" ++
-"	}\n" ++ 
+"\tpublic " ++ t.typerep.transType ++ " doReturn(){\n" ++			
+"\t\treturn (" ++ t.typerep.transType ++ ")super.doReturn();\n" ++
+"\t}\n" ++ 
 "}\n"
 ]];
 
