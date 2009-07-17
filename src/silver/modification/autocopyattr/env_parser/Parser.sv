@@ -3,7 +3,7 @@ import silver:modification:autocopyattr;
 import silver:definition:env;
 import silver:definition:env:parser;
 
-terminal AutoCopyTerm 'autocopy' lexer precedence = 1;
+terminal AutoCopyTerm 'autocopy' lexer classes {C_1}, precedence = 1;
 
 concrete production aTypeRepCollection
 top::aTypeRep ::= 'autocopy' '(' t::aTypeRep ')'{

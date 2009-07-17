@@ -24,7 +24,7 @@ String ::= s::String{
 }
 
 function makeClassNameHelp
-String ::= s::[String] prefix::String{
-  return if null(s) then "" else if null(tail(s)) then prefix ++ head(s) else (head(s) ++ "." ++ makeClassNameHelp(tail(s), prefix));
+String ::= s::[String] prfix::String{
+  return if null(s) then "" else if null(tail(s)) then prfix ++ head(s) else (head(s) ++ "." ++ makeClassNameHelp(tail(s), prfix));
 }
 

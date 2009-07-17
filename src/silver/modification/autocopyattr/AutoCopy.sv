@@ -1,11 +1,10 @@
 grammar silver:modification:autocopyattr;
-export silver:modification:autocopyattr;
 
 import silver:util;
 import silver:definition:core;
 import silver:definition:env;
 
-terminal AutoCopy_kwd 'autocopy' lexer precedence = 5;
+terminal AutoCopy_kwd 'autocopy' lexer classes {KEYWORD}, precedence = 5;
 
 concrete production autocopyDcl
 top::AGDcl ::= 'autocopy' 'attribute' a::Name '::' t::Type ';'

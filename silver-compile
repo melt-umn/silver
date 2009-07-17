@@ -1,1 +1,1 @@
-time ../trunk/bin/silver -I ./src -o ./bin/silver -g ./build silver:composed:default
+time ../../trunk/bin/silver -I ./src -o ./bin/silver -g ./build silver:composed:Default
