@@ -77,9 +77,10 @@ top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
 
 --from translation:core
   top.javaClasses = [];
-  top.setupInh = "";
-  top.initProd = "";
-  top.initAspect = "";
+  top.setupInh := "";
+  top.initProd := "";
+  top.initAspect := "";
+  top.postInit := "";
 
   top.typeErrors = [];
 }

@@ -12,9 +12,10 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody{
   local attribute sigNames :: [String];
   sigNames = getFullNamesSignature(namedSig.inputElements);
 
-  top.setupInh = body.setupInh;
-  top.initProd = "\t\t//FUNCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
-  top.initAspect = "";
+  top.setupInh := body.setupInh;
+  top.initProd := "\t\t//FUNCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
+  top.initAspect := "";
+  top.postInit := "";
 
   top.javaClasses = [[className,
 		

@@ -2,7 +2,7 @@ grammar silver:extension:polymorphism:functions;
 
 import core;
 import silver:base;
-import silver:extension:autocopy ;
+--import silver:extension:autocopy ; -- Why was this imported?
 import silver:extension:functions;
 import silver:extension:polymorphism;
 
