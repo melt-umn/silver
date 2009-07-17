@@ -31,7 +31,6 @@ parser rParse::Root {
 
   silver:extension:convenience;
   silver:extension:list;
-  silver:extension:autocopyattr;
   silver:extension:easyterminal;
   -- polymorphism?  polymorphism:functions?
 
@@ -39,6 +38,7 @@ parser rParse::Root {
   silver:modification:collection;
   silver:modification:patternmatching;
   silver:modification:patternmatching:copper;
+  silver:modification:autocopyattr;
   
   silver:translation:java:concrete_syntax:copper;
 }
@@ -53,6 +53,7 @@ parser iParse::aRootSpec {
   silver:definition:concrete_syntax:env_parser;
 
   silver:modification:collection:env_parser;
+  silver:modification:autocopyattr:env_parser;
   silver:extension:list:env_parser;
 
   silver:translation:java:concrete_syntax:copper:env_parser;

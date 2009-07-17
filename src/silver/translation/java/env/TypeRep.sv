@@ -39,6 +39,9 @@ top::TypeRep ::= n::String r::String
 aspect production i_ntTypeRep
 top::TypeRep ::= n::String
 {
+  -- todo: we might be able to tighten this up, now that we have a nonterminal class
+  -- that productions inherit from.  Is there any gain?  We might find translation
+  -- errors easier that way...
   top.transType = "common.Node";
 }
 

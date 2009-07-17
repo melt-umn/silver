@@ -90,6 +90,7 @@ String ::= r::Decorated RootSpec{
 "public class Main {\n" ++
 "\tpublic static void main(String[] args) {\n" ++
 "\t\t" ++ package ++ ".Init.init();\n" ++
+"\t\t" ++ package ++ ".Init.postInit();\n" ++
 "\t\t\tnew " ++ package ++ ".Pmain(fold(args), new Object()).doReturn();\n" ++
 "\t}\n" ++
 "\tpublic static StringBuffer fold(String [] args){\n" ++ 
@@ -233,8 +234,6 @@ top::IOString ::= r::Decorated RootSpec{
   production attribute depends :: [String] with ++;
   depends := [];
 
-
-
   top.sValue =  
 "  <target name='" ++ r.declaredName ++ "' depends='" ++ folds(", ", ["init"] ++ remove(r.declaredName, r.moduleNames) ++ depends)++ "'>\n" ++
 "    <grammar name='" ++ substitute("/", ":", r.declaredName) ++ "'/>\n" ++
@@ -258,7 +257,8 @@ String ::= r::Decorated RootSpec{
 
 "public class Init{\n\n" ++
 
-"\tprivate static boolean init = false;\n\n" ++
+"\tprivate static boolean init = false;\n" ++
+"\tprivate static boolean postInit = false;\n\n" ++
 
 "\tpublic static void init(){\n" ++
 "\t\tif(" ++ className ++ ".init) return;\n\n" ++
@@ -267,10 +267,17 @@ String ::= r::Decorated RootSpec{
 
 "\t\t" ++ className ++ ".init = true;\n\n" ++
 
-makeOthers(r.moduleNames) ++ "\n" ++
+makeOthers(r.moduleNames, "init") ++ "\n" ++
 
 "\t\t" ++ className ++ ".initAspectAttributeDefinitions();\n" ++
 "\t\t" ++ className ++ ".initProductionAttributeDefinitions();\n" ++
+"\t}\n\n" ++
+
+"\tpublic static void postInit(){\n" ++
+"\t\tif(" ++ className ++ ".postInit) return;\n\n" ++
+"\t\t" ++ className ++ ".postInit = true;\n\n" ++
+makeOthers(r.moduleNames, "postInit") ++ "\n\n" ++
+r.postInit ++
 "\t}\n\n" ++
 
 "\tprivate static void setupInheritedAttributes(){\n" ++
@@ -289,6 +296,6 @@ r.initAspect ++
 }
 
 function makeOthers
-String ::= others::[String]{
-  return if null(others) then "" else "\t" ++ makeName(head(others)) ++ ".Init.init();\n" ++ makeOthers(tail(others));
+String ::= others::[String] nme::String {
+  return if null(others) then "" else "\t\t" ++ makeName(head(others)) ++ ".Init."++nme++"();\n" ++ makeOthers(tail(others),nme);
 }

@@ -45,7 +45,7 @@ top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
   production attribute nfName :: String;
   nfName = if !null(nfNames) then head(nfNames).fullName else nt.name;
 
-  local attribute attrs :: [Decorated EnvItem];
+  production attribute attrs :: [Decorated EnvItem];
   attrs = getAttributeDcl(afName, top.env);
 
   local attribute types :: [Decorated EnvItem];

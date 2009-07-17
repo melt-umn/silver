@@ -13,9 +13,10 @@ aspect production parserDcl
 top::AGDcl ::= p::ParserDcl{
   top.disambiguationGroupDcls = [];
   top.javaClasses = p.javaClasses;
-  top.setupInh = "";
-  top.initProd = p.initProd;
-  top.initAspect = "";
+  top.setupInh := "";
+  top.initProd := p.initProd;
+  top.initAspect := "";
+  top.postInit := "";
 }
 
 aspect production parserStmt

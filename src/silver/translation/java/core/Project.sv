@@ -10,7 +10,12 @@ String ::= str::String
 
 function makeClassName
 String ::= s::String{
-  return makeClassNameHelp(split(":", s));
+  return makeClassNameHelp(split(":", s), "P");
+}
+
+function makeNTClassName
+String ::= s::String {
+  return makeClassNameHelp(split(":", s), "N");
 }
 
 function makeParserName
@@ -19,6 +24,7 @@ String ::= s::String{
 }
 
 function makeClassNameHelp
-String ::= s::[String]{
-  return if null(s) then "" else if null(tail(s)) then "P" ++ head(s) else (head(s) ++ "." ++ makeClassNameHelp(tail(s)));
+String ::= s::[String] prefix::String{
+  return if null(s) then "" else if null(tail(s)) then prefix ++ head(s) else (head(s) ++ "." ++ makeClassNameHelp(tail(s), prefix));
 }
+

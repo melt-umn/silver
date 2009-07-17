@@ -30,9 +30,10 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
 
 --from translation:core
   top.javaClasses = [];
-  top.setupInh = "";
-  top.initProd = "";
-  top.initAspect = "";
+  top.setupInh := "";
+  top.initProd := "";
+  top.initAspect := "";
+  top.postInit := "";
 
   acode.env = appendDefsEnv(addTerminalAttrDefs(appendDefs(acode.defs,terms.defs)),top.env);
 

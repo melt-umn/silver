@@ -7,8 +7,9 @@ aspect production terminalDclDefault
 top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifiers
 {
   top.javaClasses = [];
-  top.setupInh = "";
-  top.initProd = "";
-  top.initAspect = "";
+  top.setupInh := "";
+  top.initProd := "";
+  top.initAspect := "";
+  top.postInit := "";
 }
 
