@@ -243,6 +243,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 
 function eqTrans
 String ::= e1::Decorated Expr e2::Decorated Expr{
+  -- TODO: couldn't this JUST be .equals? (the last else)
   return if e1.typerep.isInteger && e2.typerep.isInteger
 	 then "(" ++ e1.translation ++ ".intValue() == " ++ e2.translation ++ ".intValue())"
 	 else if e1.typerep.isFloat && e2.typerep.isFloat
@@ -337,11 +338,18 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.translation = e.translation;
+  top.translation = wrapThunk(e.translation);
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  top.translation = e1.translation ++ ", " ++ e2.translation;
+  top.translation = wrapThunk(e1.translation) ++ ", " ++ e2.translation;
 }
+
+function wrapThunk
+String ::= original::String
+{
+  return "new common.Thunk(context, new common.Lazy() { public Object eval(common.DecoratedNode context) { return " ++ original ++ "; } })";
+}
+
