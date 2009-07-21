@@ -24,6 +24,8 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody{
 "public class " ++ className ++ " extends common.FunctionNode{\n\n" ++	
 
 makeIndexDcls(0, sigNames) ++ "\n" ++
+"\tpublic static Class childTypes[] = {" ++ makeChildTypesList(ns.inputElements, top.env) ++ "};\n\n" ++
+
 "\tpublic static common.Lazy forward;\n" ++
 "\tpublic static java.util.Map<String, common.Lazy> forwardAttributes = new java.util.HashMap<String, common.Lazy>();\n\n" ++
 
