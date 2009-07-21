@@ -68,7 +68,12 @@ top::Expr ::= '[' es::Exprs ']'
 
   top.typerep = if null(es.exprs) then emptyListTypeRep() else listTypeRep(t);
 
-  es.expectedInputTypes = makeListInputs(fakeListTypeRep(top.userFriendly), length(es.exprs));
+  local attribute expectedElementType :: Decorated TypeRep;
+  expectedElementType = case top.expected of
+                         expected_type(typ) -> typ.listComponent
+                        | _ -> topTypeRep() end;
+
+  es.expectedInputTypes = makeListInputs(fakeListTypeRep(top.userFriendly, expectedElementType), length(es.exprs));
 
   forwards to es.listtrans;
 }
@@ -328,9 +333,9 @@ Decorated TypeRep ::=
 }
 
 function fakeListTypeRep
-Decorated TypeRep ::= uf::Integer
+Decorated TypeRep ::= uf::Integer  tr::Decorated TypeRep
 {
-  return decorate i_listTypeRep(uf, true, topTypeRep()) with {};
+  return decorate i_listTypeRep(uf, true, tr) with {};
 }
 
 abstract production i_listTypeRep
