@@ -24,3 +24,12 @@ top::Expr ::= e::Expr t::Decorated TypeRep
   top.errors := e.errors;
   top.warnings := e.warnings;
 }
+
+abstract production cast_expected_t
+top::Expr ::= e::Expr t::Decorated TypeRep expect::Decorated TypeRep
+{
+  forwards to cast_t(e, t) with {
+    expected = expect;
+  };
+}
+
