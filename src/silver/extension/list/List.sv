@@ -73,7 +73,12 @@ top::Expr ::= '[' es::Exprs ']'
                          expected_type(typ) -> typ.listComponent
                         | _ -> topTypeRep() end;
 
-  es.expectedInputTypes = makeListInputs(fakeListTypeRep(top.userFriendly, expectedElementType), length(es.exprs));
+  -- This is useless as sent to the Exprs part in def/core, but we use it below for listtrans
+  es.expectedInputTypes = makeListInputs(expectedElementType, length(es.exprs));
+
+  -- Should these be here?
+  -- top.errors := es.errors ++ es.listtrans.errors;
+  -- top.warnings := es.warnings ++ es.listtrans.warnings;
 
   forwards to es.listtrans;
 }
@@ -103,14 +108,14 @@ top::Exprs ::= e::Expr
 {
   top.listtrans = 
    productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "cons_AnyTypeList" )))),
-		 '(', exprsCons(cast_t(e, anyTypeTypeRep()), ',', exprsSingle(emptyProductionApp(baseExpr(qNameId(nameId(terminal (Id_t, "nil_AnyTypeList")))),'(',')'))),')');
+		 '(', exprsCons(cast_expected_t(e, anyTypeTypeRep(), head(top.expectedInputTypes)), ',', exprsSingle(emptyProductionApp(baseExpr(qNameId(nameId(terminal (Id_t, "nil_AnyTypeList")))),'(',')'))),')');
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr c::Comma_t e2::Exprs
 {
   top.listtrans = 
-   productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "cons_AnyTypeList")))),'(', exprsCons(cast_t(e1, anyTypeTypeRep()), ',', exprsSingle(e2.listtrans)),')');
+   productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "cons_AnyTypeList")))),'(', exprsCons(cast_expected_t(e1, anyTypeTypeRep(),head(top.expectedInputTypes)), ',', exprsSingle(e2.listtrans)),')');
 }
 
 function makeNew
@@ -330,12 +335,6 @@ function emptyListTypeRep
 Decorated TypeRep ::= 
 {
   return decorate i_listTypeRep(0, true, topTypeRep()) with {};
-}
-
-function fakeListTypeRep
-Decorated TypeRep ::= uf::Integer  tr::Decorated TypeRep
-{
-  return decorate i_listTypeRep(uf, true, tr) with {};
 }
 
 abstract production i_listTypeRep
