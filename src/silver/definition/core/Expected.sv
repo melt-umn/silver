@@ -15,3 +15,12 @@ top::Expected ::= {}
 
 abstract production expected_default
 top::Expected ::= {}
+
+abstract production coerce_expected
+top::Expr ::= e::Expr expect::Decorated TypeRep
+{
+  forwards to e with {
+    expected = expected_type(expect);
+  };
+}
+
