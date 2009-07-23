@@ -177,7 +177,7 @@ function collectAccum
 [[Decorated EnvItem]] ::= current_group::[Decorated EnvItem] eis::[Decorated EnvItem]
 {
  return if null(current_group) && null(eis)
-        then [[]]
+        then [ ]
 
         else if null(current_group) && ! null(eis)  -- starting new group
         then collectAccum( [head(eis)], tail(eis) )
