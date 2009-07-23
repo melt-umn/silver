@@ -18,12 +18,12 @@ top::Expr ::= e::Decorated Expr
 aspect production indexOfFunction
 top::Expr ::= 'indexOf' '(' e1::Expr ',' e2::Expr ')'
 {
-  top.translation ="(" ++ e2.translation ++ ".toString().indexOf( " ++ e1.translation ++ ".toString()))";
+  top.translation ="(new Integer((" ++ e2.translation ++ ".toString().indexOf( " ++ e1.translation ++ ".toString()))))";
 }
 aspect production subStringFunction
 top::Expr ::= 'substring' '(' e1::Expr ',' e2::Expr ',' e3::Expr ')'
 {
-  top.translation = "(new StringBuffer(" ++ e3.translation  ++ "toString().substring(" ++ e1.translation  ++ ", " ++ e2.translation ++ ")))";
+  top.translation = "(new StringBuffer(" ++ e3.translation  ++ ".substring(" ++ e1.translation  ++ ", " ++ e2.translation ++ ")))";
 }
 aspect production errorFunction
 top::Expr ::= 'error' '(' e::Expr ')'

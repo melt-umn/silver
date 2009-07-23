@@ -285,30 +285,30 @@ top::Expr ::= f::Float_t
 aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
-  top.translation = "(" ++ e1.translation ++ " + " ++ e2.translation ++ ")";
+  top.translation = "(new Integer(" ++ e1.translation ++ " + " ++ e2.translation ++ "))";
 }
 aspect production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
-  top.translation = "(" ++ e1.translation ++ " - " ++ e2.translation ++ ")";
+  top.translation = "(new Integer(" ++ e1.translation ++ " - " ++ e2.translation ++ "))";
 }
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
-  top.translation = "(" ++ e1.translation ++ " * " ++ e2.translation ++ ")";
+  top.translation = "(new Integer(" ++ e1.translation ++ " * " ++ e2.translation ++ "))";
 }
 aspect production divide
 top::Expr ::= e1::Expr '/' e2::Expr
 {
-  top.translation = "(" ++ e1.translation ++ " / " ++ e2.translation ++ ")";
+  top.translation = "(new Float(" ++ e1.translation ++ " / " ++ e2.translation ++ "))";
 }
 aspect production neg
 top::Expr ::= '-' e::Expr
 {
   top.translation = if e.typerep.isInteger then
-		"( new Integer(-" ++ e.translation ++ ".intValue()))"
-		    else
-		"( new Float(-" ++ e.translation ++ ".floatValue()))";
+		 "(new Integer(-" ++ e.translation ++ ".intValue()))"
+                    else
+                 "(new Float(-" ++ e.translation ++ ".floatValue()))";
 }
 
 aspect production stringConst

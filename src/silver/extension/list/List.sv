@@ -108,14 +108,17 @@ top::Exprs ::= e::Expr
 {
   top.listtrans = 
    productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "cons_AnyTypeList" )))),
-		 '(', exprsCons(cast_expected_t(e, anyTypeTypeRep(), head(top.expectedInputTypes)), ',', exprsSingle(emptyProductionApp(baseExpr(qNameId(nameId(terminal (Id_t, "nil_AnyTypeList")))),'(',')'))),')');
+		 '(', exprsCons(cast_t(coerce_expected(e, head(top.expectedInputTypes)), anyTypeTypeRep()),
+		 ',', exprsSingle(emptyProductionApp(baseExpr(qNameId(nameId(terminal (Id_t, "nil_AnyTypeList")))),'(',')'))),')');
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr c::Comma_t e2::Exprs
 {
   top.listtrans = 
-   productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "cons_AnyTypeList")))),'(', exprsCons(cast_expected_t(e1, anyTypeTypeRep(),head(top.expectedInputTypes)), ',', exprsSingle(e2.listtrans)),')');
+   productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "cons_AnyTypeList")))),
+                 '(', exprsCons(cast_t(coerce_expected(e1, head(top.expectedInputTypes)), anyTypeTypeRep()),
+                 ',', exprsSingle(e2.listtrans)),')');
 }
 
 function makeNew
@@ -147,8 +150,15 @@ top::Expr ::= 'cons' '(' h::Expr ',' t::Expr ')'
 
   top.typeErrors = h.typeErrors ++ t.typeErrors ++ e1 ++ e2;
 
+  local attribute expectedType :: Decorated TypeRep;
+  expectedType = case top.expected of
+                  expected_type(typ) -> typ
+                 | _ -> topTypeRep() end;
+
   forwards to
-    productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "cons_AnyTypeList")))),'(', exprsCons(cast_t(h, anyTypeTypeRep()), ',', exprsSingle(t)),')');
+    productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "cons_AnyTypeList")))),
+                    '(', exprsCons(cast_t(coerce_expected(h, expectedType.listComponent), anyTypeTypeRep()),
+                    ',', exprsSingle(coerce_expected(t, expectedType))),')');
 }
 
 -- TODO: BUG: '::' is HasType_t.  We probably want to have a different
@@ -196,8 +206,16 @@ top::Expr ::= l::Expr r::Expr
 
   top.typeErrors = l.typeErrors ++ r.typeErrors ++ e1 ++ e2 ++ e3;
 
+  local attribute expectedType :: Decorated TypeRep;
+  expectedType = case top.expected of
+                  expected_type(typ) -> typ
+                 | _ -> topTypeRep() end;
+
   forwards to
-   productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "append_AnyTypeList")))), '(', exprsCons(l, ',', exprsSingle(r)), ')');
+   productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "append_AnyTypeList")))),
+                  '(', exprsCons(coerce_expected(l, expectedType), 
+                                 ',',
+                                 exprsSingle(coerce_expected(r, expectedType))), ')');
 }
 
 aspect production lengthFunction
