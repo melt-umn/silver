@@ -1,7 +1,8 @@
 grammar silver:composed:Default;
 
-import core hiding parse;
-import silver:driver hiding parse;
+--import core hiding parse;
+
+import silver:driver;
 
 import silver:definition:concrete_syntax;
 import silver:definition:core;
@@ -11,15 +12,36 @@ import silver:util:command;
 import silver:definition:env;
 import silver:definition:env:parser;
 
---The command line and interface parsers to use.
---import silver:composed:default:parser:command with parse as cParse;
---import silver:composed:default:parser:interface with parse as iParse;
+--BINDING CHECKING
+import silver:analysis:binding:driver;
 
-import silver:util:command;
-import silver:definition:core;
-import silver:definition:env:parser;
+--TYPE CHECKING
+import silver:analysis:typechecking:driver;
+import silver:analysis:typechecking:core;
+import silver:analysis:typechecking:concrete_syntax;
+import silver:analysis:typechecking:type:io;
+import silver:analysis:typechecking:type:anytype;
 
---CORE
+--JAVA TRANSLATION (still needs importing!)
+import silver:translation:java:driver;
+import silver:translation:java:core;
+import silver:translation:java:env;
+import silver:translation:java:concrete_syntax;
+import silver:translation:java:type:io;
+import silver:translation:java:type:anytype;
+
+--EXTENSIONS (that do not add to concrete syntax (those in parser above))
+
+-- not yet used
+--import silver:extension:doc;
+--import silver:extension:doc:driver;
+--import silver:extension:doc:copper;
+
+--MODIFICATIONS translations (syntax goes in parser above)
+import silver:modification:let_fix:java;
+import silver:modification:collection:java;
+
+--PARSERS
 parser rParse::Root {
   silver:definition:core;
   silver:definition:concrete_syntax;
@@ -58,46 +80,6 @@ parser iParse::aRootSpec {
 
   silver:translation:java:concrete_syntax:copper:env_parser;
 }
-
---BINDING CHECKING
---import silver:analysis:binding:driver;
-
---TYPE CHECKING
---import silver:analysis:typechecking:driver;
---import silver:analysis:typechecking:core;
---import silver:analysis:typechecking:concrete_syntax;
---import silver:analysis:typechecking:type:io;
---import silver:analysis:typechecking:type:anytype;
-
---JAVA TRANSLATION
---import silver:translation:java:driver;
---import silver:translation:java:core;
---import silver:translation:java:env;
---import silver:translation:java:concrete_syntax;
---import silver:translation:java:type:io;
---import silver:translation:java:type:anytype;
-
---JAVA PARSER GENERATOR
---syntax silver:translation:java:concrete_syntax:copper;
-
---EXTENSIONS
---syntax silver:extension:convenience;
---syntax silver:extension:list;
---syntax silver:extension:autocopy;
---import silver:extension:doc;
---import silver:extension:doc:driver;
---import silver:extension:doc:copper;
---syntax silver:extension:easyterminal;
-
---MODIFICATIONS
---syntax silver:modification:let_fix;
---import silver:modification:let_fix:java;
---
---syntax silver:modification:collection;
---import silver:modification:collection:java;
---
---syntax silver:modification:patternmatching;
---import silver:modification:patternmatching;
 
 function main 
 IO ::= args::String i::IO {
