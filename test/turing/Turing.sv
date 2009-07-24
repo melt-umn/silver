@@ -66,7 +66,8 @@ terminal IdTerminal /[0-9A-Za-z]+/ submits to {keyword}, lexer classes{info};
 terminal StringTerminal /[\"]([^\"]|([\\][\"]))*[\"]/ submits to {keyword}, lexer classes{info};
 
 ignore terminal WhiteSpace /[\n\t\ ]+/ submits to {info};
-ignore terminal Comments /( [\/] [\*] ([^\*] | [\r\n] | ([\*]+ ([^\*\/] | [\r\n])))*  [\*]+ [\/]) | ([\/] [\/] .*) / submits to {info};
+--ignore terminal Comments /( [\/] [\*] ([^\*] | [\r\n] | ([\*]+ ([^\*\/] | [\r\n])))*  [\*]+ [\/]) | ([\/] [\/] .*) / submits to {info};
+ignore terminal LineComment /\/\/[^\r\n]*/ submits to {info};
 
 
 concrete production dcl
