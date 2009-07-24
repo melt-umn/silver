@@ -22,5 +22,6 @@ top::Type ::= q::QName
   production attribute types :: [Decorated EnvItem];
   types = getTypeDcl(fName, top.env);
 
-  top.typerep = ntTypeRep(fName);
+  top.typerep = if null(types) then topTypeRep() else head(types).typerep;
+--  top.typerep = ntTypeRep(fName);
 }

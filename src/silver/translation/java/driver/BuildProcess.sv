@@ -152,7 +152,7 @@ folds("\n", extraTaskdefs) ++ "\n\n" ++
 "    <attribute name='name'/>\n" ++
 "    <sequential>\n\n" ++
 
-"      <javac source='1.5' classpathref='compile.classpath' srcdir='${env.SILVER_JAVA}/src/@{name}' sourcepath='${env.SILVER_JAVA}/src' excludes='*/**/*.java' />\n\n" ++
+"      <javac debug='on' source='1.5' classpathref='compile.classpath' srcdir='${env.SILVER_JAVA}/src/@{name}' sourcepath='${env.SILVER_JAVA}/src' excludes='*/**/*.java' />\n\n" ++
 
 "      <copy toDir='${build}/@{name}'>\n" ++
 "        <fileset dir='${env.SILVER_JAVA}/src/@{name}'>\n" ++
