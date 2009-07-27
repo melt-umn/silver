@@ -38,14 +38,50 @@ makeIndexDcls(0, sigNames) ++ "\n" ++
 makeStaticDcls(className, sigNames) ++
 "\t}\n\n" ++ 
 	
-"\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ "){\n" ++
-"\t\tsuper(\"" ++ fName ++ "\", " ++ toString(length(namedSig.inputElements)) ++ ", " ++
-                      className ++ ".inheritedAttributes, " ++ 
-                      className ++ ".synthesizedAttributes, " ++ 
-                      className ++ ".localAttributes);\n\n" ++
-makeChildAssign(sigNames) ++ "\n" ++
+"\tprotected Object[] children = new Object[" ++ toString(length(namedSig.inputElements)) ++ "];\n\n" ++
 
-"\t\tthis.forward(" ++ className ++ ".forward, " ++ className ++ ".forwardAttributes);\n" ++
+"\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ "){\n" ++
+makeChildAssign(sigNames) ++ "\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic common.Lazy getSynthesized(String name) {\n" ++
+"\t\treturn synthesizedAttributes.get(name);\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic Object getChild(int child) {\n" ++
+"\t\treturn children[child];\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic java.util.Map<String, common.Lazy> getDefinedInheritedAttributes(Object key) {\n" ++
+"\t\treturn inheritedAttributes.get(key);\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic common.Lazy getForward() {\n" ++
+"\t\treturn forward;\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic common.Lazy getForwardInh(String name) {\n" ++
+"\t\treturn forwardAttributes.get(name);\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic common.Lazy getLocal(String name) {\n" ++
+"\t\treturn localAttributes.get(name);\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic String getName() {\n" ++
+"\t\treturn \"" ++ fName ++ "\";\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic int getNumberOfChildren() {\n" ++
+"\t\treturn children.length;\n" ++
 "\t}\n\n" ++
 
 "\tpublic " ++ ns.outputElement.typerep.transType ++ " doReturn(){\n" ++			
