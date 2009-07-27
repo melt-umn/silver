@@ -33,6 +33,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
 makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tpublic static Class childTypes[] = {" ++ makeChildTypesList(ns.inputElements, top.env) ++ "};\n\n" ++
+
 "\tpublic static common.Lazy forward;\n" ++
 "\tpublic static java.util.Map<String, common.Lazy> forwardAttributes = new java.util.HashMap<String, common.Lazy>();\n\n" ++
 
@@ -44,16 +45,53 @@ makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tstatic{\n" ++
 makeStaticDcls(className, sigNames) ++
 "\t}\n\n" ++ 
+
+"\tprotected Object[] children = new Object[" ++ toString(length(namedSig.inputElements)) ++ "];\n\n" ++
 	
 "\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ "){\n" ++
-"\t\tsuper(\"" ++ fName ++ "\", " ++ toString(length(namedSig.inputElements)) ++ ", " ++
-                      className ++ ".inheritedAttributes, " ++ 
-                      className ++ ".synthesizedAttributes, " ++ 
-                      className ++ ".localAttributes);\n\n" ++
 makeChildAssign(sigNames) ++ "\n" ++
+"\t}\n\n" ++
 
-"\t\tthis.forward(" ++ className ++ ".forward, " ++ className ++ ".forwardAttributes);\n" ++
-"\t}\n" ++
+"\t@Override\n" ++
+"\tpublic common.Lazy getSynthesized(String name) {\n" ++
+"\t\treturn synthesizedAttributes.get(name);\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic Object getChild(int child) {\n" ++
+"\t\treturn children[child];\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic java.util.Map<String, common.Lazy> getDefinedInheritedAttributes(Object key) {\n" ++
+"\t\treturn inheritedAttributes.get(key);\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic common.Lazy getForward() {\n" ++
+"\t\treturn forward;\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic common.Lazy getForwardInh(String name) {\n" ++
+"\t\treturn forwardAttributes.get(name);\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic common.Lazy getLocal(String name) {\n" ++
+"\t\treturn localAttributes.get(name);\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic String getName() {\n" ++
+"\t\treturn \"" ++ fName ++ "\";\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic int getNumberOfChildren() {\n" ++
+"\t\treturn children.length;\n" ++
+"\t}\n\n" ++
+
 "}\n"
 		]];
 }
