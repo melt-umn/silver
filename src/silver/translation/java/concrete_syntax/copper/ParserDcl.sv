@@ -82,20 +82,20 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleStmtList '}' {
 "public class " ++ className ++ " extends common.FunctionNode{\n\n" ++	
 
 makeIndexDcls(0, sigNames) ++ "\n" ++
-"\tpublic static Class childTypes[] = {StringBuffer.class};\n\n" ++
+"\tpublic static final Class childTypes[] = {StringBuffer.class};\n\n" ++
 
 "\tpublic static common.Lazy forward;\n" ++
-"\tpublic static java.util.Map<String, common.Lazy> forwardAttributes = new java.util.HashMap<String, common.Lazy>();\n\n" ++
+"\tpublic static final java.util.Map<String, common.Lazy> forwardAttributes = new java.util.HashMap<String, common.Lazy>();\n\n" ++
 
-"\tpublic static java.util.Map<String, common.Lazy> localAttributes = new java.util.HashMap<String, common.Lazy>();\n" ++
-"\tpublic static java.util.Map<String, common.Lazy> synthesizedAttributes = new java.util.HashMap<String, common.Lazy>();\n" ++
-"\tpublic static java.util.Map<Object, java.util.Map<String, common.Lazy>> inheritedAttributes = new java.util.HashMap<Object, java.util.Map<String, common.Lazy>>();\n\n" ++	
+"\tpublic static final java.util.Map<String, common.Lazy> localAttributes = new java.util.HashMap<String, common.Lazy>();\n" ++
+"\tpublic static final java.util.Map<String, common.Lazy> synthesizedAttributes = new java.util.HashMap<String, common.Lazy>();\n" ++
+"\tpublic static final java.util.Map<Object, java.util.Map<String, common.Lazy>> inheritedAttributes = new java.util.HashMap<Object, java.util.Map<String, common.Lazy>>();\n\n" ++	
 
 "\tstatic{\n" ++
 makeStaticDcls(className, sigNames) ++
 "\t}\n\n" ++ 
 	
-"\tprotected Object[] children = new Object[1];\n\n" ++
+"\tprotected final Object[] children = new Object[1];\n\n" ++
 
 "\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ "){\n" ++
 makeChildAssign(sigNames) ++ "\n" ++

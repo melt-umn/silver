@@ -18,8 +18,8 @@ top::AGDcl ::= id::Name
 "import java.util.*;\n\n" ++
 
 "public abstract class " ++ className ++ " extends common.Node {\n\n" ++
-"\tpublic static HashSet<String> occurs = new HashSet<String>();\n" ++
-"\tpublic static LinkedList<common.Decorator> decorators = new LinkedList<common.Decorator>();\n\n" ++
+"\tpublic static final HashSet<String> occurs = new HashSet<String>();\n" ++
+"\tpublic static final LinkedList<common.Decorator> decorators = new LinkedList<common.Decorator>();\n\n" ++
 	
 "}\n"
 		]];
