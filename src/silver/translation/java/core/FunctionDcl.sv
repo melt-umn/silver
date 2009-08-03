@@ -24,7 +24,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody{
 "public class " ++ className ++ " extends common.FunctionNode{\n\n" ++	
 
 makeIndexDcls(0, sigNames) ++ "\n" ++
-"\tpublic static final Class childTypes[] = {" ++ makeChildTypesList(ns.inputElements, top.env) ++ "};\n\n" ++
+"\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(ns.inputElements, top.env) ++ "};\n\n" ++
 
 "\tpublic static common.Lazy forward;\n" ++
 "\tpublic static final java.util.Map<String, common.Lazy> forwardAttributes = new java.util.TreeMap<String, common.Lazy>();\n\n" ++
@@ -38,20 +38,14 @@ makeIndexDcls(0, sigNames) ++ "\n" ++
 makeStaticDcls(className, sigNames) ++
 "\t}\n\n" ++ 
 	
-"\tprotected final Object[] children = new Object[" ++ toString(length(namedSig.inputElements)) ++ "];\n\n" ++
-
 "\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ "){\n" ++
+"\t\tsuper(" ++ toString(length(namedSig.inputElements)) ++ ");\n" ++
 makeChildAssign(sigNames) ++ "\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
 "\tpublic common.Lazy getSynthesized(String name) {\n" ++
 "\t\treturn synthesizedAttributes.get(name);\n" ++
-"\t}\n\n" ++
-
-"\t@Override\n" ++
-"\tpublic Object getChild(int child) {\n" ++
-"\t\treturn children[child];\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
@@ -77,11 +71,6 @@ makeChildAssign(sigNames) ++ "\n" ++
 "\t@Override\n" ++
 "\tpublic String getName() {\n" ++
 "\t\treturn \"" ++ fName ++ "\";\n" ++
-"\t}\n\n" ++
-
-"\t@Override\n" ++
-"\tpublic int getNumberOfChildren() {\n" ++
-"\t\treturn children.length;\n" ++
 "\t}\n\n" ++
 
 "\tpublic " ++ ns.outputElement.typerep.transType ++ " doReturn(){\n" ++			
