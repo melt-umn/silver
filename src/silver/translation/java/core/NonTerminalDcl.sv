@@ -20,7 +20,10 @@ top::AGDcl ::= id::Name
 "public abstract class " ++ className ++ " extends common.Node {\n\n" ++
 "\tpublic static final HashSet<String> occurs = new HashSet<String>();\n" ++
 "\tpublic static final LinkedList<common.Decorator> decorators = new LinkedList<common.Decorator>();\n\n" ++
-	
+
+"\tprotected " ++ className ++ "(int children) {\n" ++
+"\t\tsuper(children);\n" ++
+"\t}\n" ++	
 "}\n"
 		]];
 
