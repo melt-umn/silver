@@ -1,6 +1,8 @@
 grammar silver:modification:collection:java;
 import silver:modification:collection;
 
+import silver:util;
+
 import silver:definition:core;
 import silver:definition:env;
 
@@ -63,6 +65,44 @@ top::ProductionAttributeDcl ::= 'production' 'attribute' a::Name '::' te::Type '
   top.translation = "";
 }
 
+aspect production collectionAttributeDclSyn
+top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
+{
+  local attribute className :: String;
+  className = "CA" ++ a.name;
+
+  local attribute o :: Operation;
+  o = q.operation;
+  o.inType = te.typerep;
+
+  top.javaClasses = [[className,
+		
+"package " ++ makeName(top.grammarName) ++ ";\n\n" ++
+
+"public class " ++ className ++ " extends common.CollectionAttribute {\n\n" ++
+
+"\tpublic " ++ className ++ "() {\n" ++
+"\t\tsuper(\"" ++ fName ++ "\");\n" ++
+"\t}\n\n" ++
+
+"\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
+"\t\t" ++ te.typerep.transType ++ " result = (" ++ te.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
+"\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
+"\t\t\tresult = " ++ o.frontTrans ++ "result" ++ o.midTrans ++ "(" ++ te.typerep.transType ++ ")this.getPieces().get(i).eval(context)" ++ o.endTrans ++ ";\n" ++ 
+"\t\t}\n" ++ 
+"\t\treturn result;\n" ++ 
+"\t}\n\n" ++ 
+
+
+"}\n"]];
+}
+
+-- I'm slightly uncertain about the meaning of the following code.
+-- lhs.isLocalDcl  implies we're talking about a production attribute that's a collection
+-- lhs.isLocal  implies we're talking about an inherited collection attribute on a local or production nonterminal?
+-- lhs.isChild  "                                                                " child.
+-- otherwise, synthesized.
+
 aspect production attrContains
 top::AttributeDef ::= lhs::LHSExpr '<-' e::Expr ';'
 {
@@ -90,6 +130,8 @@ top::AttributeDef ::= lhs::LHSExpr '<-' e::Expr ';'
 	"\t\t\t}\n" ++ 
  	"\t\t});\n"
 	else
+	"\t\tif((" ++ className ++ ".synthesizedAttributes.get(\"" ++ lhs.attrName ++ "\")) == null)\n" ++
+	"\t\t\t" ++ className ++ ".synthesizedAttributes.put(\"" ++ lhs.attrName ++ "\",  new " ++ makeCAClassName(lhs.attrName) ++"());\n" ++
 	"\t\t((common.CollectionAttribute)" ++ className ++ ".synthesizedAttributes.get(\"" ++ lhs.attrName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
@@ -129,16 +171,7 @@ top::AttributeDef ::= lhs::LHSExpr ':=' e::Expr ';'
 	"\t\t\t\treturn result;\n" ++ 
 	"\t\t\t}\n" ++ 
 	"\t\t});\n"
-	else
-	"\t\t" ++ className ++ ".synthesizedAttributes.put(\"" ++ lhs.attrName ++ "\",  new common.CollectionAttribute(){\n" ++ 
-	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
-	"\t\t\t\t" ++ lhs.typerep.transType ++ " result = (" ++ lhs.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
-	"\t\t\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
-	"\t\t\t\t\tresult = " ++ o.frontTrans ++ "result" ++ o.midTrans ++ "(" ++ lhs.typerep.transType ++ ")this.getPieces().get(i).eval(context)" ++ o.endTrans ++ ";\n" ++ 
-	"\t\t\t\t}\n" ++ 
-	"\t\t\t\treturn result;\n" ++ 
-	"\t\t\t}\n" ++ 
-	"\t\t});\n";
+	else "";
 
 
   top.translation = if lhs.isLocalDcl then  
@@ -160,9 +193,17 @@ top::AttributeDef ::= lhs::LHSExpr ':=' e::Expr ';'
 	"\t\t\t}\n" ++ 
  	"\t\t});\n"
 	else 
+	"\t\tif((" ++ className ++ ".synthesizedAttributes.get(\"" ++ lhs.attrName ++ "\")) == null)\n" ++
+	"\t\t\t" ++ className ++ ".synthesizedAttributes.put(\"" ++ lhs.attrName ++ "\",  new " ++ makeCAClassName(lhs.attrName) ++"());\n" ++
 	"\t\t((common.CollectionAttribute)" ++ className ++ ".synthesizedAttributes.get(\"" ++ lhs.attrName ++ "\")).setBase(new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++ 
  	"\t\t});\n";
 }
+
+function makeCAClassName
+String ::= s::String {
+  return makeClassNameHelp(split(":", s), "CA");
+}
+
