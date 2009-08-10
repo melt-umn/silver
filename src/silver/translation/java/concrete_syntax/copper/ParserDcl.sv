@@ -69,7 +69,7 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleStmtList '}' {
 	"\t\t" ++ fullClassName ++ ".synthesizedAttributes.put(\"__return\", new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\ttry{\n" ++
-	"\t\t\t\t\treturn new " ++ packageName ++ "." ++ parserName ++ "().parse(new java.io.StringReader(((StringBuffer)context.child(" ++ fullClassName ++ ".i_c)).toString()), \"_NULL_\");\n" ++
+	"\t\t\t\t\treturn new " ++ packageName ++ "." ++ parserName ++ "().parse(new java.io.StringReader(((common.StringCatter)context.child(" ++ fullClassName ++ ".i_c)).toString()), \"_NULL_\");\n" ++
 	"\t\t\t\t}catch(java.lang.Exception e){System.out.println(\"Silver caught a copper parse error:\\n\\t\" + e.getMessage());System.exit(1);}\n" ++
 	"\t\t\t\treturn null;\n" ++
 	"\t\t\t}\n" ++
@@ -82,7 +82,7 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleStmtList '}' {
 "public class " ++ className ++ " extends common.FunctionNode{\n\n" ++	
 
 makeIndexDcls(0, sigNames) ++ "\n" ++
-"\tpublic static final Class<?> childTypes[] = {StringBuffer.class};\n\n" ++
+"\tpublic static final Class<?> childTypes[] = {common.StringCatter.class};\n\n" ++
 
 "\tpublic static common.Lazy forward;\n" ++
 "\tpublic static final java.util.Map<String, common.Lazy> forwardAttributes = new java.util.TreeMap<String, common.Lazy>();\n\n" ++
