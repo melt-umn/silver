@@ -93,12 +93,12 @@ String ::= r::Decorated RootSpec{
 "\t\t" ++ package ++ ".Init.postInit();\n" ++
 "\t\t\tnew " ++ package ++ ".Pmain(fold(args), new Object()).doReturn();\n" ++
 "\t}\n" ++
-"\tpublic static StringBuffer fold(String [] args){\n" ++ 
-"\t\tString result = \"\";\n" ++ 
+"\tpublic static common.StringCatter fold(String [] args){\n" ++ 
+"\t\tStringBuffer result = new StringBuffer();\n" ++ 
 "\t\tfor(String arg : args){\n" ++ 
-"\t\t\tresult = result + \" \" + arg;\n" ++ 
+"\t\t\tresult.append(\" \").append(arg);\n" ++ 
 "\t\t}\n" ++ 
-"\t\treturn new StringBuffer(result.trim());\n" ++ 
+"\t\treturn new common.StringCatter(result.toString().trim());\n" ++ 
 "\t}\n" ++ 
 "}\n";
 }

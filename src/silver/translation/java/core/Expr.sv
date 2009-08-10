@@ -314,7 +314,7 @@ top::Expr ::= '-' e::Expr
 aspect production stringConst
 top::Expr ::= s::String_t
 {
-  top.translation = "(new StringBuffer(" ++ s.lexeme ++ "))";
+  top.translation = "(new common.StringCatter(" ++ s.lexeme ++ "))";
 }
 
 aspect production defaultPlusPlus
@@ -326,7 +326,9 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 aspect production stringPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
-  top.translation = "(new StringBuffer(" ++ e1.translation ++ ".toString()).append(" ++ e2.translation ++ "))";
+  -- cast, rather than toString. Otherwise we don't gain anything with StringCatter
+  -- literal here, rather than transType.  why not? Catch bugs, just in case.
+  top.translation = "(new common.StringCatter((common.StringCatter)" ++ e1.translation ++ ").append((common.StringCatter)" ++ e2.translation ++ "))";
 }
 
 aspect production exprsEmpty

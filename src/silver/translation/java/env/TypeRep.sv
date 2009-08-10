@@ -21,7 +21,7 @@ top::TypeRep ::=
 aspect production i_stringTypeRep
 top::TypeRep ::= 
 {
-  top.transType = "StringBuffer";
+  top.transType = "common.StringCatter";
 }
 
 aspect production i_booleanTypeRep
