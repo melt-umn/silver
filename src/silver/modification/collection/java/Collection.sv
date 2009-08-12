@@ -27,9 +27,9 @@ top::Operation ::= s::String{
 
 aspect production plusPlusOperation
 top::Operation ::= {
-  top.frontTrans = if top.inType.isString then "" else if top.inType.isList then "new core.Pappend_AnyTypeList(" else error("Not Implemented");
+  top.frontTrans = if top.inType.isString then "" else if top.inType.isList then "new common.AppendCell(" else error("Not Implemented");
   top.midTrans = if top.inType.isString then ".append(" else if top.inType.isList then ", " else error("Not Implemented");
-  top.endTrans = if top.inType.isString then ")" else if top.inType.isList then ").doReturn()" else error("Not Implemented");
+  top.endTrans = if top.inType.isString then ")" else if top.inType.isList then ")" else error("Not Implemented");
 }
 
 aspect production noOperation

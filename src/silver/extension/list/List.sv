@@ -35,6 +35,7 @@ top::Expr ::= '[' ']'
 
   top.typerep = tr;
   forwards to emptyProductionApp(baseExpr(qNameId(nameId(terminal (Id_t, "nil_AnyTypeList")))), '(',')');
+  -- TODO: just forward to the below? or vice versa?  or get rid of the below altogether?
 }
 
 
@@ -81,6 +82,8 @@ top::Expr ::= '[' es::Exprs ']'
   -- top.warnings := es.warnings ++ es.listtrans.warnings;
 
   forwards to es.listtrans;
+  -- TODO: We should build this with a function, rather than aspecting it.
+  -- further, we should probably forward to cons() rather than direct function application!
 }
 
 function makeListInputs
@@ -286,21 +289,6 @@ top::Expr ::= 'head' '(' l::Expr ')'
   forwards to fn;
 }
 
---abstract production headListNoCast
---top::Expr ::= l::Expr 
---{ 
---  top.pp = "head(" ++ l.pp ++ ")" ;
---
---  local attribute e1 :: [Decorated Message];
---  e1 = if l.typerep.isList then []
---       else [err(top.location, "Argument to head must be a List.")];
---
---  top.typeErrors = l.typeErrors ++ e1;
---
---  forwards to attributeAccess(l, '.', qNameId(nameId(terminal(Id_t, "head_AnyTypeList"))));	
---}
-
-
 -- Tail
 --------
 terminal Tail_t 'tail'  lexer classes {KEYWORD};
@@ -322,19 +310,9 @@ top::Expr ::= 'tail' '(' l::Expr ')'
   forwards to attributeAccess(l, '.', qNameId(nameId(terminal(Id_t, "tail_AnyTypeList"))));
 }
 
---function makeListName
---String ::= str::String
---{
---  local attribute i :: Integer;
---  i = indexof( ":", str);
---
---  return  if i == -1
---          then str
---          else substring(0, i, str) ++ "_" ++ 
---               makeListName(substring(i+1, length(str), str));
---}
---
---
+-- TypeRep
+-----------
+
 synthesized attribute listComponent :: Decorated TypeRep ;
 attribute listComponent occurs on TypeRep ;
 

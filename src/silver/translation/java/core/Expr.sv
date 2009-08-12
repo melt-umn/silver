@@ -340,18 +340,18 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.translation = wrapThunk(e.translation);
+  top.translation = wrapThunk(e);
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  top.translation = wrapThunk(e1.translation) ++ ", " ++ e2.translation;
+  top.translation = wrapThunk(e1) ++ ", " ++ e2.translation;
 }
 
 function wrapThunk
-String ::= original::String
+String ::= original::Decorated Expr
 {
-  return "new common.Thunk(context, new common.Lazy() { public Object eval(common.DecoratedNode context) { return " ++ original ++ "; } })";
+  return "new common.Thunk(context, new common.Lazy() { public Object eval(common.DecoratedNode context) { return " ++ original.translation ++ "; } })";
 }
 

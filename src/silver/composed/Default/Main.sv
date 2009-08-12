@@ -29,6 +29,7 @@ import silver:translation:java:env;
 import silver:translation:java:concrete_syntax;
 import silver:translation:java:type:io;
 import silver:translation:java:type:anytype;
+import silver:extension:list:java; -- optional!
 
 --EXTENSIONS (that do not add to concrete syntax (those in parser above))
 
