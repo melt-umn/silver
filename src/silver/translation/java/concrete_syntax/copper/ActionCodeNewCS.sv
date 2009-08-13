@@ -31,7 +31,6 @@ top::ProductionStmt ::= 'pluck' e::Expr c4::Semi_t
   top.typeErrors = [];
 
   e.expected = expected_default();
-  e.userFriendly = 0;
 }
 
 concrete production printStmt
@@ -56,7 +55,6 @@ top::ProductionStmt ::= 'print' c3::Expr c4::Semi_t
 		   else [err(top.location, "Parameter to 'print' must be of type String.")];
 
   c3.expected = expected_default();
-  c3.userFriendly = 0;
 }
 
 terminal ListContains_kwd 'contains' lexer classes {KEYWORD};

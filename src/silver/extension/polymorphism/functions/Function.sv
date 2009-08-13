@@ -167,7 +167,6 @@ d::AttributeDef ::= e1::Expr
   d.typeErrors = er1 ++ e1.typeErrors;
 
   e.expected = expected_type(rType);
-  e1.userFriendly = rType.userFriendlyLHS;
   e1.resolvedType = emptyListTypeRep();
 
   forwards to returnDef(terminal(Return_kwd, ""), 

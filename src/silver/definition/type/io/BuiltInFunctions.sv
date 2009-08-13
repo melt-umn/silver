@@ -15,9 +15,6 @@ top::Expr ::= 'fileTime' '(' e1::Expr ',' e2::Expr ')'
 
   e1.expected = expected_default();
   e2.expected = expected_default();
-
-  e1.userFriendly = 0;
-  e2.userFriendly = 0;
 }
 
 concrete production isFileFunction
@@ -33,9 +30,6 @@ top::Expr ::= 'isFile' '(' e1::Expr ',' e2::Expr ')'
 
   e1.expected = expected_default();
   e2.expected = expected_default();
-
-  e1.userFriendly = 0;
-  e2.userFriendly = 0;
 }
 
 concrete production isDirectoryFunction
@@ -51,9 +45,6 @@ top::Expr ::= 'isDirectory' '(' e1::Expr ',' e2::Expr ')'
 
   e1.expected = expected_default();
   e2.expected = expected_default();
-
-  e1.userFriendly = 0;
-  e2.userFriendly = 0;
 }
 
 concrete production readFunction
@@ -69,9 +60,6 @@ top::Expr ::= 'readFile' '(' e1::Expr ',' e2::Expr ')'
 
   e1.expected = expected_default();
   e2.expected = expected_default();
-
-  e1.userFriendly = 0;
-  e2.userFriendly = 0;
 }
 
 concrete production cwdFunction
@@ -86,8 +74,6 @@ top::Expr ::= 'cwd' '(' e::Expr ')'
   top.typerep = ntTypeRep("core:IOString");
 
   e.expected = expected_default();
-
-  e.userFriendly = 0;
 }
 
 concrete production envVarFunction
@@ -103,9 +89,6 @@ top::Expr ::= 'envVar' '(' e1::Expr ',' e2::Expr ')'
 
   e1.expected = expected_default();
   e2.expected = expected_default();
-
-  e1.userFriendly = 0;
-  e2.userFriendly = 0;
 }
 
 concrete production systemFunction
@@ -121,9 +104,6 @@ top::Expr ::= 'system' '(' e1::Expr ',' e2::Expr ')'
 
   e1.expected = expected_default();
   e2.expected = expected_default();
-
-  e1.userFriendly = 0;
-  e2.userFriendly = 0;
 }
 
 
@@ -141,10 +121,6 @@ top::Expr ::= 'writeFile' '(' e1::Expr ',' e2::Expr ',' e3::Expr ')'
   e1.expected = expected_default();
   e2.expected = expected_default();
   e3.expected = expected_default();
-
-  e1.userFriendly = 0;
-  e2.userFriendly = 0;
-  e3.userFriendly = 0;
 }
 
 concrete production appendFunction
@@ -161,10 +137,6 @@ top::Expr ::= 'appendFile' '(' e1::Expr ',' e2::Expr ',' e3::Expr ')'
   e1.expected = expected_default();
   e2.expected = expected_default();
   e3.expected = expected_default();
-
-  e1.userFriendly = 0;
-  e2.userFriendly = 0;
-  e3.userFriendly = 0;
 }
 
 concrete production printFunction
@@ -180,9 +152,6 @@ top::Expr ::= 'print' '(' e1::Expr ',' e2::Expr ')'
 
   e1.expected = expected_default();
   e2.expected = expected_default();
-
-  e1.userFriendly = 0;
-  e2.userFriendly = 0;
 }
 
 concrete production listContentsFunction
@@ -198,9 +167,6 @@ top::Expr ::= 'listContents' '(' e1::Expr ',' e2::Expr ')'
 
   e1.expected = expected_default();
   e2.expected = expected_default();
-
-  e1.userFriendly = 0;
-  e2.userFriendly = 0;
 }
 
 concrete production genIntFunction

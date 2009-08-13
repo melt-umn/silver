@@ -25,7 +25,7 @@ nonterminal AspectFunctionSignature with location, grammarName, file, inputEleme
 nonterminal AspectFunctionLHS with location, grammarName, file, warnings, errors, realSignature, outputElement, env, defs, pp;
 nonterminal AspectRHS with location, grammarName, file, warnings, errors, inputElements, realSignature, env, defs, pp;
 nonterminal AspectRHSElem with location, grammarName, file, warnings, errors, realSignature, inputElements, env, defs, pp;
-nonterminal Expr with location, grammarName, file, warnings, errors, signature, expected, userFriendly, typerep, signatureEnv, localsEnv, env, defs, pp;
+nonterminal Expr with location, grammarName, file, warnings, errors, signature, expected, typerep, signatureEnv, localsEnv, env, defs, pp;
 nonterminal Type with location, grammarName, file, warnings, errors, typerep, env, defs, pp;
 --nonterminal ExportStmt with location, grammarName, file, warnings, errors, env, defs, pp;
 nonterminal NameList with location, grammarName, file, names, warnings, errors, env, defs, pp;

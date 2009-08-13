@@ -63,5 +63,4 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
   top.errors := e.errors;
 
   e.expected = expected_type(t.typerep);
-  e.userFriendly = t.typerep.userFriendlyLHS;
 }
