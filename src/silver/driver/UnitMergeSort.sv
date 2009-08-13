@@ -9,7 +9,7 @@ function unitMergeSort
 function unitMergeSortHelp
 [Unit] ::= c1::[[Unit]]
 {
-  return if null(c1) then [::Unit]
+  return if null(c1) then []
          else if null(tail(c1)) then head(c1)
          else unitMergeSortHelp(unitMergePairs(c1));
 }
@@ -17,7 +17,7 @@ function unitMergeSortHelp
 function unitMergePairs
 [[Unit]] ::= c1::[[Unit]]
 {
-  return if null(c1) then [::[Unit]]
+  return if null(c1) then []
          else if null(tail(c1)) then c1
          else cons(mergeUnitsList(head(c1), head(tail(c1))), unitMergePairs(tail(tail(c1))));
 }
@@ -51,6 +51,6 @@ function mapUnitsList
 [[Unit]] ::= tds1::[Unit]
 {
   return if null(tds1)
-         then [::[Unit]]
+         then []
          else cons([head(tds1)], mapUnitsList(tail(tds1)));
 }

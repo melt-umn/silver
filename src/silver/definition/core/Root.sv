@@ -99,8 +99,8 @@ top::GrammarDcl ::= s::String{
   top.pp = "grammar " ++ s;
   top.location = loc(top.file, 1, 1);
   top.declaredName = s;
-  top.errors := if s == top.grammarName then [::Decorated Message] else [err(top.location, "Grammar declaration is incorrect: " ++ s)];
-  top.warnings := [::Decorated Message];
+  top.errors := if s == top.grammarName then [] else [err(top.location, "Grammar declaration is incorrect: " ++ s)];
+  top.warnings := [];
 }
 
 concrete production grammarDcl_c
@@ -117,9 +117,9 @@ top::AGDcl ::=
   top.location = loc(top.file, -1, -1);
 
   top.defs = emptyDefs();
-  top.errors := [::Decorated Message];
-  top.warnings := [::Decorated Message];
-  top.moduleNames = [::String];
+  top.errors := [];
+  top.warnings := [];
+  top.moduleNames = [];
 }
 
 concrete production agDclsOne

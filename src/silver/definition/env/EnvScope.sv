@@ -24,7 +24,7 @@ abstract production i_emptyEnvScope
 et::EnvScope ::= 
 {
   et.unparse = "";
-  et.envTrees = [::Decorated EnvTree];
+  et.envTrees = [];
 }
 
 function oneEnvScope
@@ -74,7 +74,7 @@ function getDclsScope
 function getDclsScopeHelp
 [Decorated EnvItem] ::= search::String e::[Decorated EnvTree]
 {
-  return if null(e) then [::Decorated EnvItem] else getDclsTree(search, head(e)) ++ getDclsScopeHelp(search, tail(e));
+  return if null(e) then [] else getDclsTree(search, head(e)) ++ getDclsScopeHelp(search, tail(e));
 }
 
 function getDclsScopeAll
@@ -86,7 +86,7 @@ function getDclsScopeAll
 function getDclsScopeAllHelp
 [Decorated EnvItem] ::= e::[Decorated EnvTree]
 {
-  return if null(e) then [::Decorated EnvItem] else getDclsTreeAll(head(e)) ++ getDclsScopeAllHelp(tail(e));
+  return if null(e) then [] else getDclsTreeAll(head(e)) ++ getDclsScopeAllHelp(tail(e));
 }
 
 function searchEnvScope
@@ -99,7 +99,7 @@ function searchEnvScopeHelp
 [Decorated EnvItem] ::= search::String s::EnvSearch e::[Decorated EnvTree]
 {
   return if null(e)
-         then [::Decorated EnvItem]    
+         then [ ]    
          else searchEnvTree(search, s, head(e)) ++ searchEnvScopeHelp(search, s, tail(e));
 }
 
@@ -113,7 +113,7 @@ function searchEnvScopeAllHelp
 [Decorated EnvItem] ::= s::EnvSearch e::[Decorated EnvTree]
 {
   return if null(e)
-         then [::Decorated EnvItem]    
+         then [ ]    
          else searchEnvTreeAll(s, head(e)) ++ searchEnvScopeAllHelp(s, tail(e));
 }
 

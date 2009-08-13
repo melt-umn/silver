@@ -51,7 +51,7 @@ top::ProductionBody ::= stmts::ProductionStmts
   top.productionAttributes = stmts.productionAttributes;
 
   top.errors := stmts.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 abstract production productionStmtsNone
@@ -63,8 +63,8 @@ top::ProductionStmts ::=
 
   top.productionAttributes = emptyDefs();
 
-  top.errors := [::Decorated Message];
-  top.warnings := [::Decorated Message];
+  top.errors := [];
+  top.warnings := [];
 }
 
 concrete production productionStmts
@@ -77,7 +77,7 @@ top::ProductionStmts ::= stmt::ProductionStmt
  
   top.defs = stmt.defs;
   top.errors := stmt.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production productionStmtsCons
@@ -89,7 +89,7 @@ top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
 
   top.defs = appendDefs(h.defs, t.defs);
   top.errors = h.errors ++ t.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 abstract production productionStmtsAppend
@@ -102,7 +102,7 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
   top.productionAttributes = appendDefs(h.productionAttributes, t.productionAttributes);
 
   top.errors := h.errors ++ t.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production productionStmtReturnDef
@@ -115,7 +115,7 @@ top::ProductionStmt ::= a::ReturnDef
 
   top.defs = a.defs;
   top.errors := a.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production productionStmtAttributeDef
@@ -128,7 +128,7 @@ top::ProductionStmt ::= a::AttributeDef
 
   top.defs = a.defs;
   top.errors := a.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production productionStmtLocalAttribute
@@ -141,7 +141,7 @@ top::ProductionStmt ::= a::LocalAttributeDcl
 
   top.defs = a.defs;
   top.errors := a.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production productionStmtProductionAttribute
@@ -154,7 +154,7 @@ top::ProductionStmt ::= a::ProductionAttributeDcl
 
   top.defs = a.defs;
   top.errors := a.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production productionStmtForwardsTo
@@ -167,7 +167,7 @@ top::ProductionStmt ::= a::ForwardsToDcl
 
   top.defs = a.defs;
   top.errors := a.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production productionStmtForwardingWith
@@ -180,7 +180,7 @@ top::ProductionStmt ::= a::ForwardingWithDcl
 
   top.defs = a.defs;
   top.errors := a.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production forwardsTo
@@ -191,7 +191,7 @@ top::ForwardsToDcl ::= 'forwards' 'to' e::Expr ';'
 
   top.defs = emptyDefs();
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   e.userFriendly = -1;
   e.expected = expected_undecorated();
@@ -206,7 +206,7 @@ top::ForwardsToDcl ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' '
   top.defs = emptyDefs();
 
   top.errors := e.errors ++ inh.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   e.userFriendly = -1;
   e.expected = expected_undecorated();
@@ -220,8 +220,8 @@ top::ForwardingWithDcl ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 
   top.defs = emptyDefs();
 
-  top.errors := [::Decorated Message];
-  top.warnings := [::Decorated Message];
+  top.errors := [];
+  top.warnings := [];
 }
 
 concrete production forwardInh
@@ -231,7 +231,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := lhs.errors ++ e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   e.userFriendly = lhs.typerep.userFriendlyLHS;
   e.expected = expected_type(lhs.typerep);
@@ -243,7 +243,7 @@ top::ForwardInhs ::= lhs::ForwardInh
   top.pp = lhs.pp;
   top.location = lhs.location;
   top.errors := lhs.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production forwardInhsCons
@@ -252,7 +252,7 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
   top.pp = lhs.pp ++ " " ++ rhs.pp;
   top.location = lhs.location;
   top.errors := lhs.errors ++ rhs.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production forwardLhsExpr
@@ -275,10 +275,10 @@ top::ForwardLHSExpr ::= q::QName
   local attribute er1 :: [Decorated Message];
   er1 = if null(attrs)
 	then [err(top.location, "Value '" ++ q.name ++ "' is not declared.")]
-	else [::Decorated Message];
+	else [];
 
   top.errors := er1;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = if !null(attrs) then head(attrs).typerep else topTypeRep();
 
 --  production attribute lhsE :: LHSExpr;
@@ -303,15 +303,15 @@ top::LocalAttributeDcl ::= 'local' 'attribute' a::Name '::' te::Type ';'
   local attribute er1 :: [Decorated Message];
   er1 = if length(getFullNameDclOne(a.name, top.env)) > 1
         then [err(top.location, "Name '" ++ a.name ++ "' is already bound.")]
-        else [::Decorated Message];
+        else [];
 
   local attribute er2 :: [Decorated Message];
   er2 = if length(getValueDclOne(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
-        else [::Decorated Message];
+        else [];
 
   top.errors := er1 ++ er2 ++ te.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production productionAttributeDcl
@@ -329,15 +329,15 @@ top::ProductionAttributeDcl ::= 'production' 'attribute' a::Name '::' te::Type '
   local attribute er1 :: [Decorated Message];
   er1 = if length(getFullNameDclOne(a.name, top.env)) > 1
         then [err(top.location, "Name '" ++ a.name ++ "' is already bound.")]
-        else [::Decorated Message];
+        else [];
 
   local attribute er2 :: [Decorated Message];
   er2 = if length(getValueDclOne(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
-        else [::Decorated Message];
+        else [];
 
   top.errors := er1 ++ er2 ++ te.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production returnDef
@@ -379,8 +379,8 @@ top::LHSExpr ::= c1::QName c2::Decorated TypeRep
   fName = if !null(fNames) then head(fNames).fullName else "_NULL_";
 
   top.typerep = c2;
-  top.errors = [::Decorated Message];
-  top.warnings := [::Decorated Message];
+  top.errors = [];
+  top.warnings := [];
 }
 
 concrete production lhsExprOne
@@ -403,15 +403,15 @@ top::LHSExpr ::= id::Name
   local attribute er1 :: [Decorated Message];
   er1 = if null(fNames)
 	then [err(top.location, "Name '" ++ id.name ++ "' is not declared.")] 
-	else [::Decorated Message];
+	else [];
 
   local attribute er2 :: [Decorated Message];
   er2 = if null(vals)
 	then [err(top.location, "Value '" ++ id.name ++ "' is not declared.")] 
-	else [::Decorated Message];
+	else [];
 
   top.errors := er1;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = if !null(vals) then head(vals).typerep else topTypeRep();
 }
 
@@ -434,12 +434,12 @@ top::LHSExpr ::= id::Name '.' q::QName
   local attribute er1 :: [Decorated Message];
   er1 = if null(fNames1)
 	then [err(top.location, "Child '" ++ id.name ++ "' is not declared.")] 
-  	else [::Decorated Message];
+  	else [];
 
   local attribute er2 :: [Decorated Message];
   er2 = if null(vals1)
 	then [err(top.location, "Value '" ++ id.name ++ "' is not declared.")] 
-  	else [::Decorated Message];
+  	else [];
 
   production attribute fNames2 :: [Decorated EnvItem];
   fNames2 = getFullNameDcl(q.name, top.env);
@@ -454,10 +454,10 @@ top::LHSExpr ::= id::Name '.' q::QName
   local attribute er3 :: [Decorated Message];
   er3 = if null(vals2)
 	then [err(top.location, "Attribute '" ++ q.name ++ "' is not declared.")] 
-        else [::Decorated Message];
+        else [];
 
   top.errors := er1 ++ er2 ++ er3;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = if !null(vals2) then head(vals2).typerep else topTypeRep();
 }
 

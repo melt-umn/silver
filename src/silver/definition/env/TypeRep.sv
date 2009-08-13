@@ -228,7 +228,7 @@ top::TypeRep ::=
   top.decoratedType = topTypeRep();
   top.typeEquals = genEquals;
 
-  top.inputTypes = [::Decorated TypeRep];
+  top.inputTypes = [];
   top.outputType = topTypeRep();
 }
 
@@ -249,7 +249,6 @@ top::TypeEquals ::= t1::Decorated TypeRep t2::Decorated TypeRep
 	     (t1.isFunction && t2.isFunction &&
 	      t1.outputType.typeEquals(t1.outputType, t2.outputType).bValue &&
 	      genListEquals(t1.inputTypes, t2.inputTypes))
-
 	));
 }
 

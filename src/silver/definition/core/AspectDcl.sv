@@ -7,7 +7,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   top.pp = "aspect production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.moduleNames = [::String];
+  top.moduleNames = [];
 
   top.defs = emptyDefs();
 
@@ -23,7 +23,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   local attribute er :: [Decorated Message];
   er = if null(prods)
        then [err(top.location, "Production for aspect '" ++ id.name ++ "' is not declared.")]
-       else [::Decorated Message];	
+       else [];	
 
   production attribute namedSig :: Decorated NamedSignature;
   namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
@@ -32,7 +32,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   realSig = head(prods).namedSignature;
 
   top.errors := er ++ ns.errors ++ body.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   local attribute prodAtts :: Decorated Defs;
   prodAtts = getProductionAttributes(fName, top.env);
@@ -48,7 +48,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   body.signature = namedSig;
 
   ns.env = appendDefsEnv(ns.defs, pushScope(top.env));  
-  ns.realSignature = if null(prods) then [::Decorated NamedSignatureElement] else [realSig.outputElement] ++ realSig.inputElements;
+  ns.realSignature = if null(prods) then [] else [realSig.outputElement] ++ realSig.inputElements;
 }
 
 concrete production aspectFunctionDcl
@@ -59,7 +59,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 
   top.defs = emptyDefs();
 
-  top.moduleNames = [::String];
+  top.moduleNames = [];
 
   production attribute fName :: String;
   fName = if !null(fNames) then head(fNames).fullName else id.name;
@@ -73,7 +73,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   local attribute er :: [Decorated Message];
   er = if null(funs)
        then [err(top.location, "Function for aspect '" ++ id.name ++ "' is not declared.")]
-       else [::Decorated Message];	
+       else [];	
 
   production attribute namedSig :: Decorated NamedSignature;
   namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
@@ -82,7 +82,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   realSig = head(funs).namedSignature;
 
   top.errors := er ++ ns.errors ++ body.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   local attribute prodAtts :: Decorated Defs;
   prodAtts = getProductionAttributes(fName, top.env);
@@ -98,7 +98,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   body.signature = namedSig;
 
   ns.env = appendDefsEnv(ns.defs, pushScope(top.env));  
-  ns.realSignature = if null(funs) then [::Decorated NamedSignatureElement] else [realSig.outputElement] ++ realSig.inputElements;
+  ns.realSignature = if null(funs) then [] else [realSig.outputElement] ++ realSig.inputElements;
 }
 
 concrete production aspectProductionSignatureEmptyRHS
@@ -109,12 +109,12 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::='
 
   top.defs = lhs.defs;
   top.errors := lhs.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
-  top.inputElements = [::Decorated NamedSignatureElement];
+  top.inputElements = [];
   top.outputElement = lhs.outputElement;
 
-  lhs.realSignature = if null(top.realSignature) then [::Decorated NamedSignatureElement] else [head(top.realSignature)];
+  lhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
 }
 
 concrete production aspectProductionSignature
@@ -125,13 +125,13 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 
   top.defs = appendDefs(lhs.defs, rhs.defs);
   top.errors := lhs.errors ++ rhs.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   top.inputElements = rhs.inputElements;
   top.outputElement = lhs.outputElement;
 
-  lhs.realSignature = if null(top.realSignature) then [::Decorated NamedSignatureElement] else [head(top.realSignature)];
-  rhs.realSignature = if null(top.realSignature) then [::Decorated NamedSignatureElement] else tail(top.realSignature);
+  lhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
+  rhs.realSignature = if null(top.realSignature) then [] else tail(top.realSignature);
 }
 
 concrete production aspectProductionLHSNone
@@ -183,15 +183,15 @@ top::AspectProductionLHS ::= id::Name t::Decorated TypeRep
   local attribute er1 :: [Decorated Message];
   er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
         then [err(top.location, "Name '" ++ id.name ++ "' is already bound.")]
-        else [::Decorated Message];	
+        else [];	
 
   local attribute er2 :: [Decorated Message];
   er2 = if length(getValueDclOne(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
-        else [::Decorated Message];
+        else [];
 
   top.errors := er1 ++ er2;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production aspectRHSElem
@@ -202,10 +202,10 @@ top::AspectRHS ::= rhs::AspectRHSElem
 
   top.defs = rhs.defs;
   top.errors := rhs.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.inputElements = rhs.inputElements;
 
-  rhs.realSignature = if null(top.realSignature) then [::Decorated NamedSignatureElement] else [head(top.realSignature)];
+  rhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
 }
 
 concrete production aspectRHSElemCons
@@ -216,12 +216,12 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 
   top.defs = appendDefs(h.defs, t.defs);
   top.errors := h.errors ++ t.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   top.inputElements = h.inputElements ++ t.inputElements;
 
-  h.realSignature = if null(top.realSignature) then [::Decorated NamedSignatureElement] else [head(top.realSignature)];
-  t.realSignature = if null(top.realSignature) then [::Decorated NamedSignatureElement] else tail(top.realSignature);
+  h.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
+  t.realSignature = if null(top.realSignature) then [] else tail(top.realSignature);
 }
 
 
@@ -276,15 +276,15 @@ top::AspectRHSElem ::= id::Name t::Decorated TypeRep
   local attribute er1 :: [Decorated Message];
   er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
         then [err(top.location, "Name '" ++ id.name ++ "' is already bound.")]
-        else [::Decorated Message];	
+        else [];	
 
   local attribute er2 :: [Decorated Message];
   er2 = if length(getValueDclOne(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
-        else [::Decorated Message];	
+        else [];	
 
   top.errors := er1 ++ er2;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production aspectFunctionSignatureEmptyRHS
@@ -295,12 +295,12 @@ top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::='
 
   top.defs = lhs.defs;
   top.errors := lhs.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
-  top.inputElements = [::Decorated NamedSignatureElement];
+  top.inputElements = [];
   top.outputElement = lhs.outputElement;
 
-  lhs.realSignature = if null(top.realSignature) then [::Decorated NamedSignatureElement] else [head(top.realSignature)];
+  lhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
 }
 
 concrete production aspectFunctionSignature
@@ -311,13 +311,13 @@ top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS
 
   top.defs = appendDefs(lhs.defs, rhs.defs);
   top.errors := lhs.errors ++ rhs.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   top.inputElements = rhs.inputElements;
   top.outputElement = lhs.outputElement;
 
-  lhs.realSignature = if null(top.realSignature) then [::Decorated NamedSignatureElement] else [head(top.realSignature)];
-  rhs.realSignature = if null(top.realSignature) then [::Decorated NamedSignatureElement] else tail(top.realSignature);
+  lhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
+  rhs.realSignature = if null(top.realSignature) then [] else tail(top.realSignature);
 }
 
 concrete production functionLHSType
@@ -337,6 +337,6 @@ top::AspectFunctionLHS ::= t::Type
   top.defs = addValueDcl(fName, t.typerep, 
 	     addFullNameDcl(rName, fName,  emptyDefs()));
 
-  top.errors := [::Decorated Message];
-  top.warnings := [::Decorated Message];
+  top.errors := [];
+  top.warnings := [];
 }

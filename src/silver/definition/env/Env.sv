@@ -141,7 +141,7 @@ function searchDclsOne
 function searchDcls
 [Decorated EnvItem] ::= search::String e::[Decorated EnvScope]
 {
-  return if null(e) then [::Decorated EnvItem] else getDclsScope(search, head(e)) ++ searchDcls(search, tail(e));
+  return if null(e) then [] else getDclsScope(search, head(e)) ++ searchDcls(search, tail(e));
 }
 
 function getDclsOne
@@ -153,7 +153,7 @@ function getDclsOne
 function getDcls
 [Decorated EnvItem] ::= e::[Decorated EnvScope]
 {
-  return if null(e) then [::Decorated EnvItem] else getDclsScopeAll(head(e)) ++ getDcls(tail(e));
+  return if null(e) then [] else getDclsScopeAll(head(e)) ++ getDcls(tail(e));
 }
 
 function getValueDclOne
@@ -420,7 +420,7 @@ function getAllOccuringOnHelp
 [Decorated EnvItem] ::= dn::String e::[Decorated EnvItem] fullEnv::Decorated Env
 {
   return if null(e)
-	 then [::Decorated EnvItem]
+	 then []
 	 else if (head(e).isOccursDeclaration) && (head(e).decoratesName == dn)
      	      then getAttributeDcl(head(e).itemName, fullEnv) ++ recurse
        	      else recurse;

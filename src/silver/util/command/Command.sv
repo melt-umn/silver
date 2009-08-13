@@ -36,10 +36,10 @@ concrete production cRootAll
 top::Command ::=  c1::PieceList
 {
   production attribute uses :: [String] with ++;
-  uses := [::String];
+  uses := [];
 
   production attribute flagLookups :: [Flag] with ++;
-  flagLookups := [::Flag];
+  flagLookups := [];
 
 
   top.flags = c1.flags;
@@ -69,7 +69,7 @@ top::PieceList ::=
   top.grammarName = "Not:Defined";
   top.lastChunk = true;
   top.hasChunk = false;
-  top.flags = [::Flag];
+  top.flags = [];
 }
 
 concrete production cFlag
@@ -132,7 +132,7 @@ top::Flag ::= f::String b::Boolean {
 
 function findFlag
 [Flag] ::= f::String l::[Flag]{
-  return if null(l) then [::Flag] else (if head(l).flag == f then [head(l)] else [::Flag]) ++ findFlag(f, tail(l));
+  return if null(l) then [] else (if head(l).flag == f then [head(l)] else []) ++ findFlag(f, tail(l));
 }
 
 function foldf

@@ -18,14 +18,14 @@ top::RootSpec ::=
 {
   top.unparse = unparseRootSpec(top).unparse;
   top.declaredName = "_NULL_";
-  top.moduleNames = [::String];
+  top.moduleNames = [];
   top.defs = emptyDefs();
   top.exportedDefs = emptyDefs();  
 }
 
 function getRootSpec
 [Decorated RootSpec] ::= n::String rs::[Decorated RootSpec]{
-  return if null(rs) then [::Decorated RootSpec] else if head(rs).declaredName == n then [head(rs)] else getRootSpec(n, tail(rs));
+  return if null(rs) then [] else if head(rs).declaredName == n then [head(rs)] else getRootSpec(n, tail(rs));
 }
 
 nonterminal RootSpecUnparse with unparse;
@@ -45,7 +45,7 @@ top::RootSpecUnparse ::= r::Decorated RootSpec{
 
 function quoteStrings
 [String] ::= s::[String]{
-  return if null(s) then [::String] else [quoteString(head(s))] ++ quoteStrings(tail(s));
+  return if null(s) then [] else [quoteString(head(s))] ++ quoteStrings(tail(s));
 }
 
 function quoteString
@@ -55,5 +55,5 @@ String ::= s::String{
 
 function getDeclaredNames
 [String] ::= r::[Decorated RootSpec]{
-  return if null(r) then [::String] else [head(r).declaredName] ++ getDeclaredNames(tail(r)); 
+  return if null(r) then [] else [head(r).declaredName] ++ getDeclaredNames(tail(r)); 
 }

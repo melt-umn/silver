@@ -7,29 +7,29 @@ top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
   top.pp = "attribute " ++ a.pp ++ " occurs on " ++ nt.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.moduleNames = [::String];
+  top.moduleNames = [];
 
   top.defs = addOccursDcl(afName, nfName, emptyDefs());
 
   local attribute er1 :: [Decorated Message];
   er1 = if null(attrs)
 	then [err(top.location, "Attribute '" ++ a.name ++ "' is not declared.")]
-	else [::Decorated Message];
+	else [];
 
   local attribute er2 :: [Decorated Message];
   er2 = if null(types)
 	then [err(top.location, "Nonterminal '" ++ nt.name ++ "' is not declared.")] 
-	else [::Decorated Message];
+	else [];
 
   local attribute er3 :: [Decorated Message];
   er3 = if length(nfNames) > 1
 	then [err(top.location, "Nonterminal '" ++ nt.name ++ "' has multiple delarations.")] 
-	else [::Decorated Message];
+	else [];
 
   local attribute er4 :: [Decorated Message];
   er4 = if length(afNames) > 1
 	then [err(top.location, "Attribute '" ++ a.name ++ "' has multiple delarations.")] 
-	else [::Decorated Message];
+	else [];
 
   top.errors := er1 ++ er2 ++ er3 ++ er4;
 
