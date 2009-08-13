@@ -234,7 +234,7 @@ top::IOString ::= r::Decorated RootSpec{
   production attribute depends :: [String] with ++;
   depends := [];
 
-  top.sValue =  
+  top.sValue = 
 "  <target name='" ++ r.declaredName ++ "' depends='" ++ folds(", ", ["init"] ++ remove(r.declaredName, r.moduleNames) ++ depends)++ "'>\n" ++
 "    <grammar name='" ++ substitute("/", ":", r.declaredName) ++ "'/>\n" ++
 "  </target>\n";

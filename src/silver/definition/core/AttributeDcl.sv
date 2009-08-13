@@ -5,7 +5,7 @@ concrete production attributeDclInh
 top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type ';'
 {
   top.pp = "inherited attribute " ++ a.pp ++ " :: " ++ te.pp ++ ";";
---  top.location = loc(top.file, $1.line, $1.column);
+  top.location = loc(top.file, $1.line, $1.column);
 
   top.moduleNames = [::String];
 
@@ -34,7 +34,7 @@ concrete production attributeDclSyn
 top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type ';'
 {
   top.pp = "synthesized attribute " ++ a.pp ++ " :: " ++ te.pp ++ ";";
---  top.location = loc(top.file, $1.line, $1.column);
+  top.location = loc(top.file, $1.line, $1.column);
 
   top.moduleNames = [::String];
 

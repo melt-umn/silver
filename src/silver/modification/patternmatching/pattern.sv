@@ -8,8 +8,8 @@ import silver:analysis:typechecking:core;
 import silver:modification:let_fix;
 import silver:extension:list;
 
-terminal Case_kwd 'case' lexer classes {KEYWORD}, precedence = 5 ;
-terminal Of_kwd 'of' lexer classes {KEYWORD}, precedence = 5 ;
+terminal Case_kwd 'case' lexer classes {KEYWORD};
+terminal Of_kwd 'of' lexer classes {KEYWORD};
 terminal arrow_kwd '->' precedence = 7 ;
 terminal vbar_kwd '|' precedence = 3 ;
 

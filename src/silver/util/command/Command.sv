@@ -16,8 +16,6 @@ synthesized attribute usage :: String;
 synthesized attribute flag_usage :: String;
 
 autocopy attribute lookups :: [Flag];
---autocopy PieceList.lookups on silver:util:command *;
-
 inherited attribute needChunk :: Boolean;
 synthesized attribute nextChunk :: String;
 synthesized attribute lastChunk :: Boolean;

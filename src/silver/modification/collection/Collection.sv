@@ -14,7 +14,7 @@ top::NameOrBOperator ::= q::QName
 {
   top.pp = q.pp;
   top.location = q.location;
-  top.operation = nameOperation(q.name); 
+  top.operation = nameOperation(fn); 
 
   local attribute fns :: [Decorated EnvItem];
   fns = getFullNameDcl(q.name, top.env);

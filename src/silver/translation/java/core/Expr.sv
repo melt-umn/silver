@@ -29,12 +29,12 @@ top::Expr ::= q::QName
   className = makeClassName(top.signature.fullName);
 
   top.translation = if in_sig && top.signature.outputElement.elementName == q.name 
-		    then "context"
-		    else if in_sig
-		    then "((" ++ top.typerep.transType ++ ")context.child(" ++ className ++ ".i_" ++ fName  ++ "))" 
-		    else if in_locals 
-			 then "((" ++ top.typerep.transType ++ ")context.local(\"" ++ fName ++ "\"))" 
-			 else "(error(\"BOOM\"))";
+                    then "context"
+                    else if in_sig
+                    then "((" ++ top.typerep.transType ++ ")context.child(" ++ className ++ ".i_" ++ fName  ++ "))" 
+                    else if in_locals 
+                         then "((" ++ top.typerep.transType ++ ")context.local(\"" ++ fName ++ "\"))" 
+                         else "(error(\"BOOM\"))";
 }
 
 aspect production dontDecorateExpr
@@ -50,20 +50,20 @@ top::Expr ::= q::QName
   tr = top.typerep;
 
   top.translation = if in_sig && top.signature.outputElement.elementName == q.name
- 		    then "(context.undecorate())" 
-		    else if in_sig && tr.isNonTerminal	
-		    then "(((common.DecoratedNode)context.child(" ++ className ++ ".i_" ++  fName ++ ")).undecorate())"
-		    else if in_sig && !tr.isNonTerminal
-		    then "((" ++ tr.transType ++ ")context.child(" ++ className ++ ".i_" ++  fName ++ "))" 
-		    else if in_locals && tr.isNonTerminal
-	    	    then "(((common.DecoratedNode)context.local(\"" ++ fName ++ "\")).undecorate())" 
-		    else if in_locals && !tr.isNonTerminal
-	    	    then "((" ++ tr.transType ++ ")context.local(\"" ++ fName ++ "\"))" 
---		    else if in_locals && (tr.isNonTerminal || tr.isDecorated)
---	    	    then "(((common.DecoratedNode)context.local(\"" ++ fName ++ "\")).undecorate())" 
---		    else if in_locals && !(tr.isNonTerminal || tr.isDecorated)
---	    	    then "((" ++ tr.transType ++ ")context.local(\"" ++ fName ++ "\"))" 
-		    else "(error(\"BOOM\"))";
+                     then "(context.undecorate())" 
+                    else if in_sig && tr.isNonTerminal        
+                    then "(((common.DecoratedNode)context.child(" ++ className ++ ".i_" ++  fName ++ ")).undecorate())"
+                    else if in_sig && !tr.isNonTerminal
+                    then "((" ++ tr.transType ++ ")context.child(" ++ className ++ ".i_" ++  fName ++ "))" 
+                    else if in_locals && tr.isNonTerminal
+                    then "(((common.DecoratedNode)context.local(\"" ++ fName ++ "\")).undecorate())" 
+                    else if in_locals && !tr.isNonTerminal
+                    then "((" ++ tr.transType ++ ")context.local(\"" ++ fName ++ "\"))" 
+--                    else if in_locals && (tr.isNonTerminal || tr.isDecorated)
+--                    then "(((common.DecoratedNode)context.local(\"" ++ fName ++ "\")).undecorate())" 
+--                    else if in_locals && !(tr.isNonTerminal || tr.isDecorated)
+--                    then "((" ++ tr.transType ++ ")context.local(\"" ++ fName ++ "\"))" 
+                    else "(error(\"BOOM\"))";
 }
 
 aspect production productionReference
@@ -91,8 +91,8 @@ top::Expr ::= e::Expr es::Exprs
   top.appReference = "";
 
   top.translation = if e.isAppReference 
-		    then "(new " ++ e.appReference ++ "(" ++ es.translation ++ "))"
-		    else "((" ++ top.typerep.transType ++ ")common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "}))";
+                    then "(new " ++ e.appReference ++ "(" ++ es.translation ++ "))"
+                    else "((" ++ top.typerep.transType ++ ")common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "}))";
 }
 
 aspect production functionApplicationDispatcher
@@ -102,8 +102,8 @@ top::Expr ::= e::Expr es::Exprs
   top.appReference = "";
 
   top.translation = if e.isAppReference 
-		    then "((" ++ e.typerep.outputType.transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ ").doReturn())"
-		    else "((" ++ e.typerep.outputType.transType ++ ")((common.FunctionNode)common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "})).doReturn())";
+                    then "((" ++ e.typerep.outputType.transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ ").doReturn())"
+                    else "((" ++ e.typerep.outputType.transType ++ ")((common.FunctionNode)common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "})).doReturn())";
 }
 
 aspect production atAccess
@@ -113,10 +113,10 @@ top::Expr ::= e::Expr '@' q::QName
   top.appReference = "";
 
   top.translation = "((" ++ top.typerep.transType ++ ")" ++ e.translation ++ 
-			(if isSynthesized(fName, top.env) 
-	   		 then ".synthesized(\"" ++ fName ++ "\"))"  
- 			 else ".inherited(\"" ++ fName ++ "\"))");
-			
+                        (if isSynthesized(fName, top.env) 
+                            then ".synthesized(\"" ++ fName ++ "\"))"  
+                          else ".inherited(\"" ++ fName ++ "\"))");
+                        
 }
 
 aspect production decorateExprWith
@@ -126,8 +126,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.appReference = "";
 
   top.translation = "(" ++ e.translation ++ ".decorate(context, " ++ 
-				"common.Util.populateMap(new String[]{" ++ folds(", ", inh.nameTrans) ++ "}, " ++ 
-						        "new common.Lazy[]{" ++ folds(", ", inh.valueTrans) ++ "})))"; 
+                                "common.Util.populateMap(new String[]{" ++ folds(", ", inh.nameTrans) ++ "}, " ++ 
+                                                        "new common.Lazy[]{" ++ folds(", ", inh.valueTrans) ++ "})))"; 
 
 }
 synthesized attribute nameTrans :: [String];
@@ -245,12 +245,12 @@ function eqTrans
 String ::= e1::Decorated Expr e2::Decorated Expr{
   -- TODO: couldn't this JUST be .equals? (the last else)
   return if e1.typerep.isInteger && e2.typerep.isInteger
-	 then "(" ++ e1.translation ++ ".intValue() == " ++ e2.translation ++ ".intValue())"
-	 else if e1.typerep.isFloat && e2.typerep.isFloat
-	 then "(" ++ e1.translation ++ ".floatValue() == " ++ e2.translation ++ ".floatValue())"
-	 else if e1.typerep.isString && e2.typerep.isString
-	 then "(" ++ e1.translation ++ ".toString().equals(" ++ e2.translation ++ ".toString()))"
-	 else "(" ++ e1.translation ++ ".equals(" ++ e2.translation ++ "))";
+         then "(" ++ e1.translation ++ ".intValue() == " ++ e2.translation ++ ".intValue())"
+         else if e1.typerep.isFloat && e2.typerep.isFloat
+         then "(" ++ e1.translation ++ ".floatValue() == " ++ e2.translation ++ ".floatValue())"
+         else if e1.typerep.isString && e2.typerep.isString
+         then "(" ++ e1.translation ++ ".toString().equals(" ++ e2.translation ++ ".toString()))"
+         else "(" ++ e1.translation ++ ".equals(" ++ e2.translation ++ "))";
 }
 aspect production eqeq
 top::Expr ::= e1::Expr '==' e2::Expr
@@ -306,7 +306,7 @@ aspect production neg
 top::Expr ::= '-' e::Expr
 {
   top.translation = if e.typerep.isInteger then
-		 "(new Integer(-" ++ e.translation ++ ".intValue()))"
+                 "(new Integer(-" ++ e.translation ++ ".intValue()))"
                     else
                  "(new Float(-" ++ e.translation ++ ".floatValue()))";
 }

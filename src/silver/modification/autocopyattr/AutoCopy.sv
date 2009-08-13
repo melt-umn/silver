@@ -4,7 +4,7 @@ import silver:util;
 import silver:definition:core;
 import silver:definition:env;
 
-terminal AutoCopy_kwd 'autocopy' lexer classes {KEYWORD}, precedence = 5;
+terminal AutoCopy_kwd 'autocopy' lexer classes {KEYWORD};
 
 concrete production autocopyDcl
 top::AGDcl ::= 'autocopy' 'attribute' a::Name '::' t::Type ';'
