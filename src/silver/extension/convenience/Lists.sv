@@ -11,14 +11,14 @@ concrete production qNames2Two
 top::QNames2 ::= id1::QName ',' id2::QName
 {
   top.pp = id1.name ++ ", " ++ id2.name ;
-  top.qnames = [id1'', id2''];
+  top.qnames = [id1, id2];
 }
 
 concrete production qNames2Cons
 top::QNames2 ::= id1::QName ',' id2::QNames2
 {
   top.pp = id1.name ++ ", " ++ id2.pp ;
-  top.qnames = [id1''] ++ id2.qnames;
+  top.qnames = [id1] ++ id2.qnames;
 }
 
 nonterminal QNames with pp, qnames;
@@ -26,14 +26,14 @@ concrete production qNamesSingle
 top::QNames ::= id::QName
 {
   top.pp = id.pp;
-  top.qnames = [id''];
+  top.qnames = [id];
 }
 
 concrete production qNamesCons
 top::QNames ::= id1::QName ',' id2::QNames
 {
   top.pp = id1.pp ++ ", " ++ id2.pp ;
-  top.qnames = [id1''] ++ id2.qnames;
+  top.qnames = [id1] ++ id2.qnames;
 }
 
 nonterminal Names2 with pp, ids;
@@ -41,14 +41,14 @@ concrete production id2Single
 top::Names2 ::= id::Name ',' id2::Name
 {
   top.pp = id.name ++ ", " ++ id2.name;
-  top.ids = [id'', id2''];
+  top.ids = [id, id2];
 }
 
 concrete production id2Cons
 top::Names2 ::= id1::Name ',' id2::Names2
 {
   top.pp = id1.name ++ ", " ++ id2.pp ;
-  top.ids = [id1''] ++ id2.ids;
+  top.ids = [id1] ++ id2.ids;
 }
 
 nonterminal Names with pp, ids;
@@ -56,14 +56,14 @@ concrete production idSingle
 top::Names ::= id::Name
 {
   top.pp = id.name;
-  top.ids = [id''];
+  top.ids = [id];
 }
 
 concrete production idCons
 top::Names ::= id1::Name ',' id2::Names
 {
   top.pp = id1.name ++ ", " ++ id2.pp ;
-  top.ids = [id1''] ++ id2.ids;
+  top.ids = [id1] ++ id2.ids;
 }
 
 function qualifyNames
