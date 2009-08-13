@@ -324,24 +324,23 @@ attribute isEmpty occurs on TypeRep ;
 function listTypeRep
 Decorated TypeRep ::= tr::Decorated TypeRep
 {
-  return decorate i_listTypeRep(tr.userFriendlyLHS, false, tr) with {};
+  return decorate i_listTypeRep(false, tr) with {};
 }
 
 function emptyListTypeRep
 Decorated TypeRep ::= 
 {
-  return decorate i_listTypeRep(0, true, topTypeRep()) with {};
+  return decorate i_listTypeRep(true, topTypeRep()) with {};
 }
 
 abstract production i_listTypeRep
-top::TypeRep ::= uf::Integer e::Boolean tr::Decorated TypeRep
+top::TypeRep ::= e::Boolean tr::Decorated TypeRep
 {
   top.isList = true;
   top.listComponent = tr;
   top.isEmpty = e;
   top.typeEquals = listTypeEquals;
-  top.decoratedType = decorate i_listTypeRep(uf,e,tr) with { }  ;
-  top.userFriendlyLHS = uf;
+  top.decoratedType = decorate i_listTypeRep(e,tr) with { }  ;
 
   top.unparse = "[" ++ tr.unparse ++ "]";
 

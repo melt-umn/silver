@@ -214,7 +214,6 @@ top::Expr ::= e::Expr '(' es::Exprs ')'
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   top.location = loc(top.file, $2.line, $2.column);
 
-  e.userFriendly = 0;
   e.expected = expected_default();
   forwards to e.typerep.applicationDispatcher(e, es);
 }
@@ -225,7 +224,6 @@ top::Expr ::= e::Expr '(' ')'
   top.pp = e.pp ++ "()";
   top.location = loc(top.file, $2.line, $2.column);
 
-  e.userFriendly = 0;
   e.expected = expected_default();
   forwards to e.typerep.applicationDispatcher(e, exprsEmpty());
 }
@@ -236,13 +234,14 @@ top::Expr ::= e::Expr '.' q::QName
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = loc(top.file, $2.line, $2.column);
 
-  e.userFriendly = 1;
   e.expected = expected_decorated();
 
   forwards to if e.typerep.isDecorated || e.typerep.isTerminal
        	      then atAccess(e, terminal(At_t, "@", $2.line, $2.column), q)
        	      else hashAccess(e, terminal(Hash_t, "#", $2.line, $2.column), q)
-	with {userFriendly = 1;};
+	with {
+		expected = expected_decorated();
+	};
 }
 
 concrete production hashAccess
@@ -271,7 +270,6 @@ top::Expr ::= e::Expr '@' q::QName
   top.errors := er ++ e.errors;
   top.warnings := [];
 
-  e.userFriendly = 1;
   e.expected = expected_decorated();
 
   production attribute fNames :: [Decorated EnvItem];
@@ -315,7 +313,6 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.warnings := [];
 
   e.expected = expected_undecorated();
-  e.userFriendly = -1;
 }
 
 concrete production exprInh
@@ -327,7 +324,6 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
   top.warnings := [];
 
   e.expected = expected_type(lhs.typerep);
-  e.userFriendly = lhs.typerep.userFriendlyLHS;
 }
 
 abstract production exprInhsEmpty
@@ -666,7 +662,6 @@ top::Exprs ::= e::Expr
   top.exprs = [e];
 
   e.expected = if null(top.expectedInputTypes) then expected_default() else expected_type(head(top.expectedInputTypes));
-  e.userFriendly = if null(top.expectedInputTypes) then 0 else head(top.expectedInputTypes).userFriendlyLHS;
 }
 
 concrete production exprsCons
@@ -679,7 +674,6 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.warnings := [];
   top.exprs = [e1] ++ e2.exprs;
 
-  e1.userFriendly = if null(top.expectedInputTypes) then 0 else head(top.expectedInputTypes).userFriendlyLHS;
   e1.expected = if null(top.expectedInputTypes) then expected_default() else expected_type(head(top.expectedInputTypes));
 
   e2.expectedInputTypes = if null(top.expectedInputTypes) then [] else tail(top.expectedInputTypes);

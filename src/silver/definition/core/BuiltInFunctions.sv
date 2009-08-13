@@ -170,7 +170,6 @@ top::Expr ::= 'new' '(' e::Expr ')'
   top.typerep = e.typerep.decoratedType ;
 
   e.expected = expected_decorated();
-  e.userFriendly = 1;
 }
 
 concrete production terminalFunction

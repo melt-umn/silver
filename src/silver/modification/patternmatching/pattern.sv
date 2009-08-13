@@ -71,7 +71,6 @@ top::Expr ::= 'case' e1::Expr 'of' ml::MRuleList 'end'
 		               terminal(RCurly_t, "}", $1.line, $1.column));
 
   e1.expected = expected_default();
-  e1.userFriendly = 0 ;
   forwards to ml.translation_tree ;
 }
 
@@ -159,7 +158,6 @@ mr::MatchRule ::= pt::Pattern '->' e::Expr
 
   -- type checking
   e.expected = expected_default();
-  e.userFriendly = 0 ; 
   mr.typerep = e.typerep ;
   pt.typerep_down = mr.typerep_down ;
 

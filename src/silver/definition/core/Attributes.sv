@@ -2,7 +2,6 @@ grammar silver:definition:core;
 import silver:definition:env;
 
 
-autocopy attribute userFriendly :: Integer;
 autocopy attribute expected :: Expected;
 synthesized attribute name :: String;
 autocopy attribute grammarName :: String;

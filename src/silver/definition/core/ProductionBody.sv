@@ -193,7 +193,6 @@ top::ForwardsToDcl ::= 'forwards' 'to' e::Expr ';'
   top.errors := e.errors;
   top.warnings := [];
 
-  e.userFriendly = -1;
   e.expected = expected_undecorated();
 }
 
@@ -208,7 +207,6 @@ top::ForwardsToDcl ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' '
   top.errors := e.errors ++ inh.errors;
   top.warnings := [];
 
-  e.userFriendly = -1;
   e.expected = expected_undecorated();
 }
 
@@ -233,7 +231,6 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
   top.errors := lhs.errors ++ e.errors;
   top.warnings := [];
 
-  e.userFriendly = lhs.typerep.userFriendlyLHS;
   e.expected = expected_type(lhs.typerep);
 }
 
@@ -349,7 +346,6 @@ top::ReturnDef ::= 'return' e::Expr ';'
   top.defs = emptyDefs();
   top.errors := e.errors;
 
-  e.userFriendly = top.signature.outputElement.typerep.userFriendlyLHS;
   e.expected = expected_type(top.signature.outputElement.typerep);
 }
 
@@ -362,7 +358,6 @@ top::AttributeDef ::= lhs::LHSExpr '=' e::Expr ';'
   top.defs = emptyDefs();
   top.errors := lhs.errors ++ e.errors;
 
-  e.userFriendly = lhs.typerep.userFriendlyLHS;
   e.expected = expected_type(lhs.typerep);
 }
 

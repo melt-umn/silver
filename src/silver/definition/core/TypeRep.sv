@@ -1,25 +1,21 @@
 grammar silver:definition:core;
 import silver:definition:env;
 
-synthesized attribute userFriendlyLHS :: Integer;
 synthesized attribute doDecorate :: Boolean;
 synthesized attribute applicationDispatcher :: Production (Expr ::= Expr Exprs);
 
 attribute doDecorate occurs on TypeRep;
 attribute applicationDispatcher occurs on TypeRep;
-attribute userFriendlyLHS occurs on TypeRep;
 
 aspect production i_ntTypeRep
 top::TypeRep ::= n::String
 {
   top.doDecorate = true;
-  top.userFriendlyLHS = -1;
 }
 
 aspect production i_refTypeRep
 top::TypeRep ::= t::Decorated TypeRep
 {
-  top.userFriendlyLHS = 1;
 }
 
 aspect production i_prodTypeRep
@@ -63,7 +59,6 @@ aspect production i_defaultTypeRep
 top::TypeRep ::= 
 {
   top.doDecorate = false;
-  top.userFriendlyLHS = 0;
   top.applicationDispatcher = genericApplicationDispatcher;
 }
 
