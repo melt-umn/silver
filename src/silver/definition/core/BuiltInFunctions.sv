@@ -8,7 +8,7 @@ top::Expr ::= 'length' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   production attribute handlers :: [Expr] with ++;
-  handlers := [::Expr];
+  handlers := [];
 
   forwards to if null(handlers) then unknownLength(e) else head(handlers);
 }
@@ -18,14 +18,14 @@ top::Expr ::= 'length' '(' e::Expr ')'
 {
   handlers <- if e.typerep.typeName == "String"
 	      then [stringLength(e)]
-	      else [::Expr];
+	      else [];
 }
 
 abstract production unknownLength
 top::Expr ::= e::Decorated Expr
 {
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = topTypeRep();
 }
 
@@ -33,7 +33,7 @@ abstract production stringLength
 top::Expr ::= e::Decorated Expr
 {
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = integerTypeRep();
 }
 
@@ -45,7 +45,7 @@ top::Expr ::= 'indexOf' '(' e1::Expr ',' e2::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = integerTypeRep();
 }
 
@@ -56,7 +56,7 @@ top::Expr ::= 'substring' '(' e1::Expr ',' e2::Expr ',' e3::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors ++ e3.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = stringTypeRep();
 }
 
@@ -67,7 +67,7 @@ top::Expr ::= 'error' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = topTypeRep();
 }
 
@@ -78,7 +78,7 @@ top::Expr ::= 'toInt' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = integerTypeRep();
 }
 
@@ -89,7 +89,7 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = floatTypeRep();
 }
 
@@ -100,7 +100,7 @@ top::Expr ::= 'toString' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = stringTypeRep();
 }
 
@@ -111,7 +111,7 @@ top::Expr ::= 'isDigit' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -122,7 +122,7 @@ top::Expr ::= 'isAlpha' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -133,7 +133,7 @@ top::Expr ::= 'isSpace' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -144,7 +144,7 @@ top::Expr ::= 'isLower' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -155,7 +155,7 @@ top::Expr ::= 'isUpper' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -166,7 +166,7 @@ top::Expr ::= 'new' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = e.typerep.decoratedType ;
 
   e.expected = expected_decorated();
@@ -180,7 +180,7 @@ top::Expr ::= 'terminal' '(' t::Type ',' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := t.errors ++ e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = t.typerep;
 }
 
@@ -191,6 +191,6 @@ top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := t.errors ++ e1.errors ++ e2.errors ++ e3.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = t.typerep;
 }

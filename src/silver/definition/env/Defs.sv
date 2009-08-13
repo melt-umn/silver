@@ -23,17 +23,17 @@ top::Defs ::=
 {
   top.unparse = "[]";
 
-  top.typeList =  [::Decorated EnvItem];
-  top.valueList = [::Decorated EnvItem];
-  top.nameList =  [::Decorated EnvItem];
-  top.attrList =  [::Decorated EnvItem];
-  top.productionList = [::Decorated EnvItem];
+  top.typeList =  [];
+  top.valueList = [];
+  top.nameList =  [];
+  top.attrList =  [];
+  top.productionList = [];
 
-  top.synthesizedList =  [::Decorated EnvItem];
-  top.inheritedList =  [::Decorated EnvItem];
-  top.occursList =  [::Decorated EnvItem];
+  top.synthesizedList =  [];
+  top.inheritedList =  [];
+  top.occursList =  [];
 
-  top.restList =  [::Decorated EnvItem];
+  top.restList =  [];
   top.size = 0;
 }
 

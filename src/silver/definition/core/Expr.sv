@@ -9,7 +9,7 @@ top::Expr ::= '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $1.column);
   top.typerep = e.typerep;
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production baseExpr
@@ -96,10 +96,10 @@ top::Expr ::= q::QName
   local attribute er1 :: [Decorated Message];
   er1 = if null(vals)
 	then [err(top.location, "Value '" ++ q.name ++ "' is not declared.")] 
-	else [::Decorated Message];
+	else [];
 
   top.errors := er1;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   top.typerep = if !null(fNames) && !null(vals) 
 		then refTypeRep(head(vals).typerep) 
@@ -141,10 +141,10 @@ top::Expr ::= q::QName
   local attribute er1 :: [Decorated Message];
   er1 = if null(vals)
 	then [err(top.location, "Value '" ++ q.name ++ "' is not declared.")]
-	else [::Decorated Message];
+	else [];
 
   top.errors := er1;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = if !null(fNames) && !null(vals) then head(vals).typerep else topTypeRep();
 }
 
@@ -170,10 +170,10 @@ top::Expr ::= q::QName
   local attribute er1 :: [Decorated Message];
   er1 = if null(vals)
 	then [err(top.location, "Value '" ++ q.name ++ "' is not declared.")] 
-	else [::Decorated Message];
+	else [];
 
   top.errors := er1;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   top.typerep = if !null(fNames) && !null(vals) then head(vals).typerep else topTypeRep();
 }
@@ -199,10 +199,10 @@ top::Expr ::= q::QName
   local attribute er1 :: [Decorated Message];
   er1 = if null(vals)
 	then [err(top.location, "Value '" ++ q.name ++ "' is not declared.")] 
-	else [::Decorated Message];
+	else [];
 
   top.errors := er1;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   top.typerep = if !null(fNames) && !null(vals) then head(vals).typerep else topTypeRep();
 }
@@ -269,7 +269,7 @@ top::Expr ::= e::Expr '@' q::QName
   top.pp = e.pp ++ "@" ++ q.pp;
   top.location = loc(top.file, $2.line, $2.column);
   top.errors := er ++ e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   e.userFriendly = 1;
   e.expected = expected_decorated();
@@ -289,7 +289,7 @@ top::Expr ::= e::Expr '@' q::QName
   local attribute er :: [Decorated Message];
   er = if null(vals)
        then [err(top.location, "Attribute '" ++ q.name ++ "' is not declared.")] 
-       else [::Decorated Message];
+       else [];
   
   top.typerep = if !null(vals) then head(vals).typerep else topTypeRep();
 --  top.typerep = if occursOn && !null(vals) then head(vals).typerep else topTypeRep();
@@ -312,7 +312,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 
   top.typerep = refTypeRep(e.typerep);
   top.errors := e.errors ++ inh.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   e.expected = expected_undecorated();
   e.userFriendly = -1;
@@ -324,7 +324,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
   top.pp = lhs.pp ++ " = " ++ e.pp ++ ";";
   top.location = loc(top.file, $2.line, $2.column);
   top.errors = lhs.errors ++ e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   e.expected = expected_type(lhs.typerep);
   e.userFriendly = lhs.typerep.userFriendlyLHS;
@@ -335,8 +335,8 @@ top::ExprInhs ::=
 {
   top.pp = "";
   top.location = loc(top.file, -1, -1);
-  top.errors := [::Decorated Message];
-  top.warnings := [::Decorated Message];
+  top.errors := [];
+  top.warnings := [];
 }
 
 concrete production exprInhsOne
@@ -345,7 +345,7 @@ top::ExprInhs ::= lhs::ExprInh
   top.pp = lhs.pp;
   top.location = lhs.location;
   top.errors := lhs.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production exprInhsCons
@@ -354,7 +354,7 @@ top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
   top.pp = lhs.pp ++ " " ++ inh.pp;
   top.location = lhs.location;
   top.errors := lhs.errors ++ inh.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production exprLhsExpr
@@ -377,10 +377,10 @@ top::ExprLHSExpr ::= q::QName
   local attribute er1 :: [Decorated Message];
   er1 = if null(vals)
 	then [err(top.location, "Value '" ++ q.name ++ "' is not declared.")] 
-	else [::Decorated Message];
+	else [];
 
   top.errors := er1;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = if !null(fNames) && !null(vals) then head(vals).typerep else topTypeRep();
 }
 
@@ -389,8 +389,8 @@ top::Expr ::= 'true'
 {
   top.pp = "true";
   top.location = loc(top.file, $1.line, $1.column);
-  top.errors := [::Decorated Message];
-  top.warnings := [::Decorated Message];
+  top.errors := [];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -399,8 +399,8 @@ top::Expr ::= 'false'
 {
   top.pp = "false";
   top.location = loc(top.file, $1.line, $1.column);
-  top.errors := [::Decorated Message];
-  top.warnings := [::Decorated Message];
+  top.errors := [];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -411,7 +411,7 @@ top::Expr ::= e1::Expr '&&' e2::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -422,7 +422,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -434,7 +434,7 @@ top::Expr ::= '!' e::Expr
 
   top.typerep = booleanTypeRep();
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production gt
@@ -444,7 +444,7 @@ top::Expr ::= e1::Expr '>' e2::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -455,7 +455,7 @@ top::Expr ::= e1::Expr '<' e2::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -466,7 +466,7 @@ top::Expr ::= e1::Expr '>=' e2::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -477,7 +477,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -488,7 +488,7 @@ top::Expr ::= e1::Expr '==' e2::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -499,7 +499,7 @@ top::Expr ::= e1::Expr '!=' e2::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = booleanTypeRep();
 }
 
@@ -520,8 +520,8 @@ top::Expr ::= i::Int_t
   top.pp = i.lexeme;
   top.location = loc(top.file, i.line, i.column);
 
-  top.errors = [::Decorated Message];
-  top.warnings := [::Decorated Message];
+  top.errors = [];
+  top.warnings := [];
   top.typerep = integerTypeRep();
 }
 
@@ -531,8 +531,8 @@ top::Expr ::= f::Float_t
   top.pp = f.lexeme;
   top.location = loc(top.file, f.line, f.column);
 
-  top.errors := [::Decorated Message];
-  top.warnings := [::Decorated Message];
+  top.errors := [];
+  top.warnings := [];
   top.typerep = floatTypeRep();
 } 
 
@@ -543,7 +543,7 @@ top::Expr ::= e1::Expr '+' e2::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = e1.typerep;
 }
 
@@ -554,7 +554,7 @@ top::Expr ::= e1::Expr '-' e2::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = e1.typerep;
 }
 
@@ -565,7 +565,7 @@ top::Expr ::= e1::Expr '*' e2::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = e1.typerep;
 }
 
@@ -576,7 +576,7 @@ top::Expr ::= e1::Expr '/' e2::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = e1.typerep;
 }
 
@@ -588,7 +588,7 @@ precedence = 13
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = e.typerep;
 }
 
@@ -598,8 +598,8 @@ top::Expr ::= s::String_t
   top.pp = s.lexeme;
   top.location = loc(top.file, s.line, s.column);
 
-  top.errors := [::Decorated Message];
-  top.warnings := [::Decorated Message];
+  top.errors := [];
+  top.warnings := [];
   top.typerep = stringTypeRep();
 }
 
@@ -610,7 +610,7 @@ top::Expr ::= e1::Expr '++' e2::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   production attribute handler :: [Expr] with ++;
-  handler := [::Expr];
+  handler := [];
 
   forwards to if null(handler) then defaultPlusPlus(e1, e2) else head(handler);
 }
@@ -620,7 +620,7 @@ top::Expr ::= e1::Expr p::PlusPlus_t e2::Expr
 {
   handler <- if e1.typerep.typeName == "String" && e2.typerep.typeName == "String"
 	     then [stringPlusPlus(e1, e2)]
-	     else [::Expr];
+	     else [];
 }
 
 abstract production stringPlusPlus
@@ -630,7 +630,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
   top.location = e1.location;
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = stringTypeRep();
 }
 
@@ -641,7 +641,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
   top.location = e1.location;
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.typerep = stringTypeRep();
 }
 
@@ -650,8 +650,8 @@ top::Exprs ::=
 {
   top.pp = "";
   top.location = loc("exprsEmpty", -1, -1);
-  top.errors := [::Decorated Message];
-  top.warnings := [::Decorated Message];
+  top.errors := [];
+  top.warnings := [];
   top.exprs = [];
 }
 
@@ -662,7 +662,7 @@ top::Exprs ::= e::Expr
   top.location = e.location;
 
   top.errors := e.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.exprs = [e];
 
   e.expected = if null(top.expectedInputTypes) then expected_default() else expected_type(head(top.expectedInputTypes));
@@ -676,18 +676,18 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e1.errors ++ e2.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
   top.exprs = [e1] ++ e2.exprs;
 
   e1.userFriendly = if null(top.expectedInputTypes) then 0 else head(top.expectedInputTypes).userFriendlyLHS;
   e1.expected = if null(top.expectedInputTypes) then expected_default() else expected_type(head(top.expectedInputTypes));
 
-  e2.expectedInputTypes = if null(top.expectedInputTypes) then [::Decorated TypeRep] else tail(top.expectedInputTypes);
+  e2.expectedInputTypes = if null(top.expectedInputTypes) then [] else tail(top.expectedInputTypes);
 }
 
 
 function getTypesExprs
 [Decorated TypeRep] ::= es::[Decorated Expr]{
-  return if null(es) then [::Decorated TypeRep] else [head(es).typerep] ++ getTypesExprs(tail(es));
+  return if null(es) then [] else [head(es).typerep] ++ getTypesExprs(tail(es));
 }
 

@@ -96,7 +96,7 @@ function searchEnvTree
   h = head(e.envItems);
 
   return if e.isEmpty
-         then [::Decorated EnvItem]
+         then [ ]
      
          else if search == h.itemName && 
 		(decorate s with {inEnvItems = e.envItems;}).found
@@ -108,7 +108,7 @@ function searchEnvTree
          else if search >  h.itemName
          then searchEnvTree (search, s, e.rightTree)
 
-         else [::Decorated EnvItem] ;
+         else [ ] ;
 }
  
 function searchEnvTreeAll
@@ -118,7 +118,7 @@ function searchEnvTreeAll
   h = head(e.envItems);
 
   return if e.isEmpty
-         then [::Decorated EnvItem]
+         then [ ]
          else if (decorate s with {inEnvItems = e.envItems;}).found
               then e.envItems ++ searchEnvTreeAll (s, e.leftTree) ++ searchEnvTreeAll (s, e.rightTree)
               else searchEnvTreeAll (s, e.leftTree) ++ searchEnvTreeAll (s, e.rightTree);
@@ -168,7 +168,7 @@ Decorated EnvTree ::= collected::[[Decorated EnvItem]]
 function collectEnvItems
 [[Decorated EnvItem]] ::= eis::[Decorated EnvItem]
 {
- return collectAccum([::Decorated EnvItem],eis);
+ return collectAccum([],eis);
 }
 
 -- current_group is an accumulating parameter that collects the equal-valued
@@ -228,7 +228,7 @@ function mergeEnvItems
 function takeEnvItems
 [Decorated EnvItem] ::= n::Integer l::[Decorated EnvItem]
 {
- return if n <= 0 then [::Decorated EnvItem]
+ return if n <= 0 then [ ]
         else cons(head(l),takeEnvItems(n-1,tail(l)));
 }
 
@@ -243,7 +243,7 @@ function dropEnvItems
 function takeEnvItemLists
 [[Decorated EnvItem]] ::= n::Integer l::[[Decorated EnvItem]]
 {
- return if n <= 0 then [::[Decorated EnvItem]]
+ return if n <= 0 then [ ]
         else cons(head(l),takeEnvItemLists(n-1,tail(l)));
 }
 

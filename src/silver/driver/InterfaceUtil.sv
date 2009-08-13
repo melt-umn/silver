@@ -42,7 +42,7 @@ function getValidInterfaces
 
 function keepInterfaces
 [Decorated Interface] ::= k::[String] d::[Decorated Interface]{ 
-  return if null(d) then [::Decorated Interface] else (if contains(head(d).rSpec.declaredName, k) then [head(d)] else [::Decorated Interface]) ++ keepInterfaces(k, tail(d));
+  return if null(d) then [] else (if contains(head(d).rSpec.declaredName, k) then [head(d)] else []) ++ keepInterfaces(k, tail(d));
 }
 
 function normalizeInterfaces
@@ -51,7 +51,7 @@ function normalizeInterfaces
   local attribute n :: String;
   n = head(ifs).rSpec.declaredName;
 
-  return if null(ifs) then [::[String]] else [[n] ++ remove(n, head(ifs).rSpec.moduleNames)] ++ normalizeInterfaces(tail(ifs));
+  return if null(ifs) then [] else [[n] ++ remove(n, head(ifs).rSpec.moduleNames)] ++ normalizeInterfaces(tail(ifs));
 }
 
 function findValidInterfaces
@@ -130,13 +130,13 @@ function removeInterfaceDependancies
 --[a], [[b, a], [c,a,b], [c]] -> [[b], [c,b], [c]]
 function removeInterfaceDependancy
 [[String]] ::= s::String is::[[String]]{
-  return if null(is) then [::[String]] else [[head(head(is))] ++ remove(s, tail(head(is)))] ++ removeInterfaceDependancy(s, tail(is));
+  return if null(is) then [] else [[head(head(is))] ++ remove(s, tail(head(is)))] ++ removeInterfaceDependancy(s, tail(is));
 }
 
 --[[a], [a,b]] -> [[a,b]]
 function removeValidInterfaces
 [[String]] ::= is::[[String]]{
-  return if null(is) then [::[String]] else ((if null(tail(head(is))) then [::[String]] else [head(is)]) ++ removeValidInterfaces(tail(is)));
+  return if null(is) then [] else ((if null(tail(head(is))) then [] else [head(is)]) ++ removeValidInterfaces(tail(is)));
 }
 
 function getHeads

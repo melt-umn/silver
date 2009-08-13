@@ -19,7 +19,7 @@ top::Command ::= c1::PieceList
 
 function makePaths
 [String] ::= l::[String]{
-  return if null(l) then [::String] else [makePath(head(l))] ++ makePaths(tail(l));
+  return if null(l) then [] else [makePath(head(l))] ++ makePaths(tail(l));
 }
 
 function makePath
@@ -29,7 +29,7 @@ String ::= s::String{
 
 function stripFlagChunks
 [String] ::= l::[Flag]{
-  return if null(l) then [::String] else [head(l).chunk] ++ stripFlagChunks(tail(l));
+  return if null(l) then [] else [head(l).chunk] ++ stripFlagChunks(tail(l));
 }
 
 

@@ -345,7 +345,7 @@ function mapEnvItems
   mapper.inEnvItem = head(e);
 
   return if null(e)
-	 then [::Decorated EnvItem]
+	 then []
 	 else cons(mapper.newEnvItem, mapEnvItems(mapper, tail(e)));
 }
 
@@ -358,7 +358,7 @@ function filterEnvItems
   recurse = filterEnvItems(fil, tail(e));
 
   return if null(e)
-	 then [::Decorated EnvItem]  
+	 then []  
 	 else if fil.keep
 	      then cons(head(e), recurse)
          else recurse;

@@ -7,7 +7,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   top.pp = "abstract production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp; 
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.moduleNames = [::String];
+  top.moduleNames = [];
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
@@ -25,15 +25,15 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local attribute er1 :: [Decorated Message];
   er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
         then [err(top.location, "Name '" ++ id.pp ++ "' is already bound.")]
-        else [::Decorated Message];	
+        else [];	
 
   local attribute er2 :: [Decorated Message];
   er2 = if length(getValueDclOne(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
-        else [::Decorated Message];
+        else [];
 
   top.errors := er1 ++ er2 ++ ns.errors ++ body.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   ns.env = appendDefsEnv(ns.defs, pushScope(top.env));
 
@@ -51,7 +51,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::='
   
   top.defs = lhs.defs;
   top.errors := lhs.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   top.inputElements = [];
   top.outputElement = lhs.outputElement;
@@ -65,7 +65,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
 
   top.defs = appendDefs(lhs.defs, rhs.defs);
   top.errors := lhs.errors ++ rhs.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   top.inputElements = rhs.inputElements;
   top.outputElement = lhs.outputElement;
@@ -88,15 +88,15 @@ top::ProductionLHS ::= id::Name '::' t::Type
   local attribute er1 :: [Decorated Message];
   er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
        then [err(top.location, "Name '" ++ id.name ++ "' is already bound.")]
-       else [::Decorated Message];	
+       else [];	
 
   local attribute er2 :: [Decorated Message];
   er2 = if length(getValueDclOne(fName, top.env)) > 1
        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
-       else [::Decorated Message];	
+       else [];	
 
   top.errors := er1 ++ er2 ++ t.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production productionRHSSingle
@@ -107,7 +107,7 @@ top::ProductionRHS ::= rhs::ProductionRHSElem
 
   top.defs = rhs.defs;
   top.errors := rhs.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   top.inputElements = rhs.inputElements;
 }
@@ -120,7 +120,7 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 
   top.defs = appendDefs(h.defs, t.defs);
   top.errors := h.errors ++ t.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 
   top.inputElements = h.inputElements ++ t.inputElements;
 }
@@ -142,15 +142,15 @@ top::ProductionRHSElem ::= id::Name '::' t::Type
   local attribute er1 :: [Decorated Message];
   er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
        then [err(top.location, "Name '" ++ id.name ++ "' is already bound.")]
-       else [::Decorated Message];	
+       else [];	
 
   local attribute er2 :: [Decorated Message];
   er2 = if length(getValueDclOne(fName, top.env)) > 1
        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
-       else [::Decorated Message];	
+       else [];	
 
   top.errors := er1 ++ er2 ++ t.errors;
-  top.warnings := [::Decorated Message];
+  top.warnings := [];
 }
 
 concrete production productionRHSElemType

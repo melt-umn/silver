@@ -10,27 +10,27 @@ synthesized attribute outputElement :: Decorated NamedSignatureElement;
 
 function getTypesSignature
 [Decorated TypeRep] ::= ns::[Decorated NamedSignatureElement]{
- return if null(ns) then [::Decorated TypeRep] else [head(ns).typerep] ++ getTypesSignature(tail(ns));  
+ return if null(ns) then [] else [head(ns).typerep] ++ getTypesSignature(tail(ns));  
 }
 
 function getNamesSignature
 [String] ::= ns::[Decorated NamedSignatureElement]{
- return if null(ns) then [::String] else [head(ns).elementName] ++ getNamesSignature(tail(ns));  
+ return if null(ns) then [] else [head(ns).elementName] ++ getNamesSignature(tail(ns));  
 }
 
 function getTypeNamesSignature
 [String] ::= ns::[Decorated NamedSignatureElement]{
- return if null(ns) then [::String] else [head(ns).typerep.typeName] ++ getTypeNamesSignature(tail(ns));  
+ return if null(ns) then [] else [head(ns).typerep.typeName] ++ getTypeNamesSignature(tail(ns));  
 }
 
 function getFullNamesSignature
 [String] ::= ns::[Decorated NamedSignatureElement]{
- return if null(ns) then [::String] else [head(ns).fullName] ++ getFullNamesSignature(tail(ns));  
+ return if null(ns) then [] else [head(ns).fullName] ++ getFullNamesSignature(tail(ns));  
 }
 
 function getRealNamesSignature
 [String] ::= ns::[Decorated NamedSignatureElement]{
- return if null(ns) then [::String] else [head(ns).fullName] ++ getFullNamesSignature(tail(ns));  
+ return if null(ns) then [] else [head(ns).fullName] ++ getFullNamesSignature(tail(ns));  
 }
 
 function unparseSignatureElements
@@ -59,7 +59,7 @@ abstract production namedSignatureDefault
 top::NamedSignature ::= {
   top.unparse = "signature";
   top.fullName = "_NULL_";
-  top.inputElements = [::Decorated NamedSignatureElement];
+  top.inputElements = [];
   top.outputElement = decorate namedSignatureElementDefault() with {};
 }
 

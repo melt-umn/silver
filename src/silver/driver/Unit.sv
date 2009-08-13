@@ -13,7 +13,7 @@ synthesized attribute order :: Integer;
 aspect production run
 top::RunUnit ::= iIn::IO args::String
 {
-  preOps <- if a.displayVersion then [printVersion()] else [::Unit];
+  preOps <- if a.displayVersion then [printVersion()] else [];
   postOps <- [doInterfaces(spath, unit.compiledList ++ reUnit.compiledList, needRecompileNames, a.doClean)];
 }
 

@@ -27,7 +27,7 @@ top::RunUnit ::= iIn::IO args::String
 
   -- operations to execute _before_ we parse and link the grammars.
   production attribute preOps :: [Unit] with ++;
-  preOps := [::Unit];
+  preOps := [];
 
   --the result of running the pre operations
   local attribute preIO :: IOInteger;
@@ -59,11 +59,11 @@ top::RunUnit ::= iIn::IO args::String
  
   -- a hook for extensions to add extra grammars - like list, pattern matching.
   production attribute extraGrammars :: [[String]] with ++;
-  extraGrammars := [::[String]];
+  extraGrammars := [];
 
   -- the extra grammars after they have been compiled.
   local attribute extraUnit :: CompilationUnit;
-  extraUnit = compileAllExtra(extraGrammars, [::String], [::String]);
+  extraUnit = compileAllExtra(extraGrammars, [], []);
   extraUnit.rParser = top.rParser;
   extraUnit.iParser = top.iParser;
   extraUnit.compiledGrammars = grammars;
@@ -114,7 +114,7 @@ top::RunUnit ::= iIn::IO args::String
 
   --the operations that will be executed _after_ parsing and linking of the grammars has been done
   production attribute postOps :: [Unit] with ++;
-  postOps := [::Unit];
+  postOps := [];
   
   top.io = if preIO.iValue != 0 --the preops tell us to quit.
            then preIO.io
@@ -203,14 +203,14 @@ top::CompilationUnit ::= grams::[[String]] need::[String] seen::[String]
   recurse.iParser = top.iParser;
   recurse.compiledGrammars = top.compiledGrammars;
  
-  top.compiledList = if null(grams) then [::Decorated RootSpec] else [rs] ++ recurse.compiledList;
+  top.compiledList = if null(grams) then [] else [rs] ++ recurse.compiledList;
 
   --This is kindof tricky.  We keeping passing down a growing list of need and seens (look at recurse)
   --then at the end we mod need by seen.  these are the grammars we have not seen in the extra grammars
   --and thus we need someone else to find for us.
   top.needGrammars = if null(grams) then rem(need, seen) else recurse.needGrammars;  
   top.seenGrammars = if null(grams) then seen else recurse.seenGrammars;
-  top.interfaces = if null(grams) then [::Decorated Interface] else [inf] ++ recurse.interfaces;
+  top.interfaces = if null(grams) then [] else [inf] ++ recurse.interfaces;
 }
 
 --this production compiles the given grammars and dynamically adds new grammars to compile to the list.
@@ -236,7 +236,7 @@ top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] c
   new_need = makeSet(rem(now.rSpec.moduleNames, new_seen) ++ tail(need));
 
   top.seenGrammars = if null(need) then seen else recurse.seenGrammars;
-  top.needGrammars = [::String];
+  top.needGrammars = [];
 
   --the recursion
   production attribute recurse :: CompilationUnit;
@@ -248,13 +248,13 @@ top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] c
   top.io = if null(need) then iIn else recurse.io;
 
   top.compiledList = if null(need)  
-		     then [::Decorated RootSpec] 
+		     then [] 
 		     else if !now.found || !null(now.interfaces)
 			  then recurse.compiledList
 			  else [now.rSpec] ++ recurse.compiledList;
 
   top.interfaces = if null(need)
-		   then [::Decorated Interface] 
+		   then [] 
 		   else if !now.found 
 			then recurse.interfaces
 			else now.interfaces ++ recurse.interfaces;
@@ -300,7 +300,7 @@ top::Grammar ::= iIn::IO gn::String sPath::[String] clean::Boolean
   inf.iParser = top.iParser;
 
   top.found = grammarLocation.found;
-  top.interfaces = if grammarLocation.found && !clean && hasInterface.bValue then inf.interfaces else [::Decorated Interface];
+  top.interfaces = if grammarLocation.found && !clean && hasInterface.bValue then inf.interfaces else [];
   top.io =  if grammarLocation.found then (if !clean && hasInterface.bValue then inf.io else cu.io) else grammarLocation.io;
   top.rSpec = if grammarLocation.found then (if !clean && hasInterface.bValue then head(inf.interfaces).rSpec else cu.rSpec) else emptyRootSpec();
 }
@@ -423,7 +423,7 @@ function getSearchPath
   local attribute h:: String;
   h = if i == -1 then path else substring(0, i, path);
 
-  return if path == "" then [::String] else cons(he, ta);
+  return if path == "" then [] else cons(he, ta);
 
 --  top.empty = (path == "");
 
@@ -432,7 +432,7 @@ function getSearchPath
 
   local attribute ta :: [String];
   ta = if i == -1 || i == (length(path)-1)
-       then [::String]
+       then []
        else getSearchPath(substring(i+1, length(path), path));
 }
 

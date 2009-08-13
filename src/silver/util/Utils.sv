@@ -47,7 +47,7 @@ function makeSet
 function rem
 [String] ::= n::[String] seen::[String] --result = n - seem;
 {
-  return if null(n) then [::String] 
+  return if null(n) then [] 
          else if contains(head(n), seen)
 	      then rem(tail(n), seen)
 	      else cons(head(n), rem(tail(n), seen));
@@ -57,7 +57,7 @@ function remove
 [String] ::= n::String s::[String]
 {
   return if null(s) 
-	 then [::String] 
+	 then [] 
 	 else if n == head(s) 
 	      then remove(n, tail(s)) 
 	      else [head(s)] ++ remove(n, tail(s));
@@ -67,7 +67,7 @@ function convert
 [String] ::= sl::StringList
 {
   return if sl.empty 
-	 then [::String]
+	 then []
 	 else cons(sl.sh, convert(sl.st));
 }
 

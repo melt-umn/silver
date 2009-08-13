@@ -10,8 +10,8 @@ import silver:util;
 abstract production module 
 top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[EnvMap] {
 
-  top.errors := if !null(mitem) then [::Decorated Message] else [err(g.location, "Grammar '" ++ g.name ++ "' cannot be found.")];
-  top.warnings = [::Decorated Message];
+  top.errors := if !null(mitem) then [] else [err(g.location, "Grammar '" ++ g.name ++ "' cannot be found.")];
+  top.warnings = [];
 
   production attribute mitem :: [Decorated RootSpec];
   mitem = getRootSpec(g.name, c);
@@ -52,7 +52,7 @@ function getFullNames
 
 function getNames
 [String] ::= e::[Decorated EnvItem] {
-  return if null(e) then [::String] else [head(e).fullName] ++ getNames(tail(e));
+  return if null(e) then [] else [head(e).fullName] ++ getNames(tail(e));
 }
 
 concrete production importStmt
@@ -72,10 +72,10 @@ top::ImportStmts ::=
   top.pp = "";
   top.location = loc(top.file, -1,-1);
 
-  top.errors := [::Decorated Message];
-  top.warnings := [::Decorated Message];
+  top.errors := [];
+  top.warnings := [];
 
-  top.moduleNames = [::String];
+  top.moduleNames = [];
   top.importedDefs = emptyDefs();
 }
 
@@ -125,12 +125,12 @@ top::ModuleStmts ::=
   top.pp = "";
   top.location = loc(top.file, -1,-1);
 
-  top.errors := [::Decorated Message];
-  top.warnings := [::Decorated Message];
+  top.errors := [];
+  top.warnings := [];
 
   top.exportSelf = false;
 
-  top.moduleNames = [::String];
+  top.moduleNames = [];
   top.importedDefs = emptyDefs();
   top.exportedDefs = emptyDefs();
 }
@@ -190,7 +190,7 @@ top::ModuleStmts ::= ex::ExportsStmt
 
   top.exportSelf = ex.exportSelf;
 
-  top.moduleNames = [::String];
+  top.moduleNames = [];
   top.importedDefs = emptyDefs();
   top.exportedDefs = ex.exportedDefs;
 }
