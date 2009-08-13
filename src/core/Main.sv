@@ -1,7 +1,5 @@
 grammar core;
 
-terminal test /abc/;
-
 inherited attribute ioIn :: IO;
 synthesized attribute ioOut :: IO;
 

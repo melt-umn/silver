@@ -1,4 +1,4 @@
---grammar silver:definition:concrete_syntax;
+grammar silver:definition:concrete_syntax;
 
 function precSpecMergeSort
 [Decorated ParserPrecSpec] ::= c1::[Decorated ParserPrecSpec]

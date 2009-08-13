@@ -1,4 +1,4 @@
---grammar silver:definition:concrete_syntax;
+grammar silver:definition:concrete_syntax;
 import silver:definition:core;
 
 synthesized attribute terminalDcls :: [Decorated TerminalSpec];

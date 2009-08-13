@@ -1,4 +1,4 @@
---grammar silver:definition:concrete_syntax;
+grammar silver:definition:concrete_syntax;
 import silver:definition:env;
 
 nonterminal TerminalSpec with terminalModifiers, terminalName, terminalRegExpr, terminalRegExprSpec, unparse, ignoreTerminal, parserPrecedence, parserAssociation;
@@ -40,7 +40,7 @@ Decorated RegExprSpec ::= s::String{
 abstract production i_regExprSpec
 top::RegExprSpec ::= s::String{
   top.unparse = s;
-  top.terminalRegExpr = s; 
+  top.terminalRegExpr = s;
 }
 
 function findIgnore

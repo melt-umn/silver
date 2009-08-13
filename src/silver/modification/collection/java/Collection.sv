@@ -8,7 +8,6 @@ import silver:definition:env;
 
 import silver:translation:java:core;
 import silver:translation:java:env;
-
 import silver:extension:list;
 
 synthesized attribute frontTrans :: String;
@@ -19,7 +18,7 @@ inherited attribute inType :: Decorated TypeRep;
 attribute frontTrans, midTrans, endTrans, inType occurs on Operation;
 
 aspect production nameOperation
-top::Operation ::= s::String{
+top::Operation ::= s::String {
   top.frontTrans = "new " ++ makeClassName(s) ++"(";
   top.midTrans = ", ";
   top.endTrans = ")";

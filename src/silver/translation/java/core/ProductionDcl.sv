@@ -29,7 +29,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 		
 "package " ++ makeName(top.grammarName) ++ ";\n\n" ++
 
-"public class " ++ className ++ " extends " ++ fn ++ " {\n\n" ++	
+"public class " ++ className ++ " extends " ++ fn ++ " {\n\n" ++
 
 makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(ns.inputElements, top.env) ++ "};\n\n" ++

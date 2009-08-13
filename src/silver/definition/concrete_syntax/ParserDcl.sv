@@ -1,3 +1,4 @@
+grammar silver:definition:concrete_syntax;
 import silver:definition:core;
 import silver:definition:env;
 
@@ -8,11 +9,11 @@ attribute ruleDcls, terminalDcls, nonTerminalDcls occurs on ModuleStmt, Module;
 
 terminal Parser_kwd /parser/ lexer classes {KEYWORD};
 
---concrete production nameIdParser
---top::Name ::= /parser/
---{
---  forwards to nameId(terminal(Id_t, "parser", $1.line, $1.column));
---}
+concrete production nameIdParser
+top::Name ::= /parser/
+{
+  forwards to nameId(terminal(Id_t, "parser", $1.line, $1.column));
+}
 
 concrete production parserDcl
 top::AGDcl ::= p::ParserDcl{

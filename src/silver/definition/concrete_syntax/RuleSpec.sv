@@ -1,4 +1,4 @@
---grammar silver:definition:concrete_syntax;
+grammar silver:definition:concrete_syntax;
 import silver:util;
 import silver:definition:env;
 import silver:definition:core;

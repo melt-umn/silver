@@ -95,10 +95,7 @@ String ::= s::String r::String str::String
 
 function startsWith
 Boolean ::= pre::String s::String{
---//return length(pre) == 0 || (length(s) > 0 && substring(0,1,pre) == substring(0,1,s) && startsWith(substring(1,length(pre), pre), substring(1,length(s), s)));
-  return length(pre) == 0;-- || (length(s) > 0 && substring(0,1,pre) == substring(0,1,s));
-
--- && startsWith(substring(1,length(pre), pre), substring(1,length(s), s)));
+  return length(pre) == 0 || (length(s) > 0 && substring(0,1,pre) == substring(0,1,s) && startsWith(substring(1,length(pre), pre), substring(1,length(s), s)));
 }
 
 

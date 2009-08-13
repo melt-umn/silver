@@ -56,11 +56,13 @@ top::TypeRep ::= it::[Decorated TypeRep] ot::Decorated TypeRep
 {
   top.transType = "java.lang.reflect.Constructor";
 }
+
 aspect production i_funTypeRep
 top::TypeRep ::= it::[Decorated TypeRep] ot::Decorated TypeRep
 {
   top.transType = "java.lang.reflect.Constructor";
 }
+
 aspect production i_defaultTypeRep
 top::TypeRep ::= 
 {

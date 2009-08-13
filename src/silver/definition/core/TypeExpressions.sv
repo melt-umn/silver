@@ -5,7 +5,7 @@ concrete production integerType
 top::Type ::= 'Integer'
 {
   top.pp = "Integer";
---  top.location = loc(top.file, $1.line, $1.column);
+  top.location = loc(top.file, $1.line, $1.column);
   top.typerep = integerTypeRep();
   top.errors := [::Decorated Message];
   top.warnings := [::Decorated Message];
@@ -16,7 +16,7 @@ top::Type ::= 'Float'
 {
   top.pp = "Float";
   top.typerep = floatTypeRep();
---  top.location = loc(top.file, $1.line, $1.column);
+  top.location = loc(top.file, $1.line, $1.column);
   top.errors := [::Decorated Message];
   top.warnings := [::Decorated Message];
 }
@@ -26,7 +26,7 @@ top::Type ::= 'String'
 {
   top.pp = "String";
   top.typerep = stringTypeRep();
---  top.location = loc(top.file, $1.line, $1.column);
+  top.location = loc(top.file, $1.line, $1.column);
   top.errors := [::Decorated Message];
   top.warnings := [::Decorated Message];
 }
@@ -36,7 +36,7 @@ top::Type ::= 'Boolean'
 {
   top.pp = "Boolean";
   top.typerep = booleanTypeRep();
---  top.location = loc(top.file, $1.line, $1.column);
+  top.location = loc(top.file, $1.line, $1.column);
   top.errors := [::Decorated Message];
   top.warnings := [::Decorated Message];
 }
