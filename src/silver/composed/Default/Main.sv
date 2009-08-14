@@ -41,6 +41,7 @@ import silver:extension:list:java; -- optional!
 --MODIFICATIONS translations (syntax goes in parser above)
 import silver:modification:let_fix:java;
 import silver:modification:collection:java;
+import silver:modification:autocopyattr:java;
 
 --PARSERS
 parser rParse::Root {
