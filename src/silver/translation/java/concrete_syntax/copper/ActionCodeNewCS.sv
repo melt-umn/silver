@@ -57,10 +57,10 @@ top::ProductionStmt ::= 'print' c3::Expr c4::Semi_t
   c3.expected = expected_default();
 }
 
-terminal ListContains_kwd 'contains' lexer classes {KEYWORD};
+terminal ListContains_kwd 'listContains' lexer classes {KEYWORD};
 
 concrete production listContainsExpr
-top::Expr ::= 'contains' '(' e1::Expr ',' e2::Expr ')'
+top::Expr ::= 'listContains' '(' e1::Expr ',' e2::Expr ')'
 {
   top.pp = "list( " ++ e1.pp ++ ","  ++ e2.pp ++ " )";
   top.location = loc(top.file, $1.line, $1.column);
