@@ -152,14 +152,7 @@ folds("\n", extraTaskdefs) ++ "\n\n" ++
 "    <attribute name='name'/>\n" ++
 "    <sequential>\n\n" ++
 
-"      <javac debug='on' source='1.5' classpathref='compile.classpath' srcdir='${env.SILVER_JAVA}/src/@{name}' sourcepath='${env.SILVER_JAVA}/src' excludes='*/**/*.java' />\n\n" ++
-
-"      <copy toDir='${build}/@{name}'>\n" ++
-"        <fileset dir='${env.SILVER_JAVA}/src/@{name}'>\n" ++
-"         <include name='*.class'/>\n" ++
-"         <include name='*.java'/>\n" ++
-"        </fileset>\n" ++
-"      </copy>\n\n" ++
+"      <javac debug='on' source='1.5' classpathref='compile.classpath' srcdir='${env.SILVER_JAVA}/src/@{name}' sourcepath='${env.SILVER_JAVA}/src' excludes='*/**/*.java' destdir='${build}' />\n\n" ++
 
 "    </sequential>\n" ++
 "  </macrodef>\n\n" ++
@@ -186,9 +179,11 @@ folds("\n", extraTaskdefs) ++ "\n\n" ++
 "      <map from='${lib}' to='lib' />\n" ++
 "    </pathconvert>\n\n" ++
 
+-- If we're building a single jar, omit copying any libraries
+(if a.buildSingleJar then "" else
 "     <copy toDir='${dist}/lib/'>\n" ++ 
 "        <fileset dir='${env.SILVER_JAVA}/lib/'/>\n" ++ 
-"     </copy>\n\n" ++ 
+"     </copy>\n\n" ) ++ 
 
 "    <jar destfile='${dist}/" ++ makeName(a.grammarName) ++ ".jar' basedir='${build}'>\n" ++
 "      <manifest>\n" ++
@@ -200,12 +195,21 @@ folds("\n", extraTaskdefs) ++ "\n\n" ++
 "         <attribute name='Implementation-Version' value='${TIME}' />\n" ++
 "       </section>\n" ++
 "      </manifest>\n" ++
-"    </jar>\n\n" ++
 
+-- If we're building a single jar, then include it, and don't write out a script.
+(if a.buildSingleJar then
+"      <zipfileset src='${env.SILVER_JAVA}/lib/copper/CopperRuntime.jar' excludes='META-INF/*' />" ++
+"      <zipfileset src='${env.SILVER_JAVA}/lib/silver/silver-common.jar' excludes='META-INF/*' />" ++
+"    </jar>\n\n"
+
+else
+"    </jar>\n\n" ++
 (if !null(mains) then 
 "    <echo file='${dist}/" ++ a.outName ++ "'>java -cp ./lib/:./" ++ makeName(a.grammarName) ++ ".jar " ++ makeName(a.grammarName) ++ ".Main $1</echo>\n" ++
 "    <chmod file='${dist}/" ++ a.outName ++ "' perm='+x'/>\n\n" 
-else "") ++
+else "") 
+
+) ++ -- end if we're building a single jar.
 
 "  </target>\n\n" ++
 
