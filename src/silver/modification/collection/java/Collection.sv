@@ -59,7 +59,7 @@ top::ProductionAttributeDcl ::= 'production' 'attribute' a::Name '::' te::Type '
 	"\t\t\t}\n" ++ 
 	"\t\t});\n" ++ 
         if !te.typerep.isNonTerminal then  "" else
-		 "\t\t" ++ className ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ "new java.util.HashMap<String, common.Lazy>());\n";
+		 "\t\t" ++ className ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ "new java.util.TreeMap<String, common.Lazy>());\n";
 
   top.translation = "";
 }

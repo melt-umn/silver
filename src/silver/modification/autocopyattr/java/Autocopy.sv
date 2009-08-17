@@ -23,6 +23,9 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name '::' t::Type ';'
 "import java.util.*;\n\n" ++
 
 "public class " ++ className ++ " extends common.Decorator {\n\n" ++
+
+"public static final " ++ className ++ " singleton = new " ++ className ++ "();\n\n" ++
+
 "\tpublic void decorate(Class production) {\n" ++
 "\t\tdecorateAutoCopy(production, \"" ++ fName ++ "\");\n" ++
 "\t}\n" ++
@@ -40,7 +43,7 @@ top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
 {
  
   top.initAspect <- if head(attrs).typerep.isAutoCopy
-                    then "\t\t" ++ makeNTClassName(nfName) ++ ".decorators.add(new " ++ makeDecoratorClassName(afName) ++ "());\n"
+                    then "\t\t" ++ makeNTClassName(nfName) ++ ".decorators.add(" ++ makeDecoratorClassName(afName) ++ ".singleton);\n"
                     else "";
 
 }
