@@ -46,9 +46,12 @@ makeIndexDcls(0, sigNames) ++ "\n" ++
 makeStaticDcls(className, sigNames) ++
 "\t}\n\n" ++ 
 
-"\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ "){\n" ++
-"\t\tsuper(" ++ toString(length(namedSig.inputElements)) ++ ");\n" ++
-makeChildAssign(sigNames) ++ "\n" ++
+"\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ ") {\n" ++
+"\t\tthis(new Object[]{" ++ makeChildArray(sigNames) ++ "});\n" ++
+"\t}\n\n" ++
+
+"\tpublic " ++ className ++ "(Object[] args) {\n" ++
+"\t\tsuper(args);\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
@@ -103,9 +106,9 @@ String ::= s::[String]{
   return if null(s) then "" else "Object c_" ++ head(s) ++ (if null(tail(s)) then "" else (", " ++ makeConstructor(tail(s))));
 }
 
-function makeChildAssign
+function makeChildArray
 String ::= s::[String]{
-  return if null(s) then "" else "\t\tthis.children[i_" ++ head(s) ++ "] = c_" ++ head(s) ++ ";\n"  ++ makeChildAssign(tail(s));
+  return if null(s) then "" else "c_" ++ head(s) ++ (if null(tail(s)) then "" else (", " ++ makeChildArray(tail(s))));
 }
 
 -- meant to turn  ::= Foo String Bar
