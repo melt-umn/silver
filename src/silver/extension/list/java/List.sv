@@ -73,6 +73,7 @@ top::Expr ::= 'tail' '(' l::Expr ')'
 aspect production i_listTypeRep
 top::TypeRep ::= e::Boolean tr::Decorated TypeRep
 {
+  top.isNonTerminal = false;
   top.transType = "common.ConsCell";
 }
 

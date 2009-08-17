@@ -173,7 +173,7 @@ top::LocalAttributeDcl ::= 'local' 'attribute' a::Name '::' te::Type ';'
         	 "\t\t//" ++ top.pp ++ "\n" ++
 		 "\t\t" ++ 
 		 makeClassName(top.signature.fullName) ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ 
-										    "new java.util.HashMap<String, common.Lazy>());\n";
+										    "new java.util.TreeMap<String, common.Lazy>());\n";
   top.translation = "";
 }
 
@@ -184,7 +184,7 @@ top::ProductionAttributeDcl ::= 'production' 'attribute' a::Name '::' te::Type '
 	   	"\t\t//" ++ top.pp ++ "\n" ++		 
 		"\t\t" ++ 
 		 makeClassName(top.signature.fullName) ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ 
-										    "new java.util.HashMap<String, common.Lazy>());\n";
+										    "new java.util.TreeMap<String, common.Lazy>());\n";
   top.translation = "";
 }
 

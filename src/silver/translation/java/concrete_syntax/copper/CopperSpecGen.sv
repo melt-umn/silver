@@ -156,7 +156,7 @@ String ::= univLayout::String lhs::String rhs::[Decorated RHSSpec]
               " } layout { " ++
               univLayout ++ " EmptyString" ++
               " } code @\n" ++
-"RESULT = new " ++ makeClassName(head(rhs).ruleName) ++ "(" ++ makeRHSCode(length(head(rhs).ruleRHS)) ++ ");\n" ++
+"RESULT = new " ++ makeClassName(head(rhs).ruleName) ++ "(_children);\n" ++
               "\n     " ++ head(rhs).actionCode ++
               "\n@ bnf " ++
               lhs ++
@@ -166,11 +166,6 @@ String ::= univLayout::String lhs::String rhs::[Decorated RHSSpec]
                   else makeProdRHS(head(rhs).ruleRHS)) ++
               "\n\n" ++
               makeProdSpecsNonterm(univLayout,lhs,tail(rhs));            
-}
-
-function makeRHSCode
-String ::= i::Integer{
-  return if i==0 then "" else makeRHSCode(i-1) ++ (if i-1 == 0 then "" else ", ") ++ "_children[" ++ toString(i-1) ++ "]";
 }
 
 function makeProdRHS

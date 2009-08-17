@@ -4,6 +4,8 @@ import silver:definition:env;
 
 import silver:translation:java:env;
 
+import silver:definition:type:anytype;
+
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody{
 
@@ -43,7 +45,7 @@ makeIndexDcls(0, sigNames) ++ "\n" ++
 
 
 "\tstatic{\n" ++
-makeStaticDcls(className, sigNames) ++
+makeStaticDcls(className, ns.inputElements) ++
 "\t}\n\n" ++ 
 
 "\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ ") {\n" ++
@@ -94,11 +96,14 @@ String ::= i::Integer s::[String]{
 }
 
 function makeStaticDcls
-String ::= className::String s::[String]{
+String ::= className::String s::[Decorated NamedSignatureElement]{
   return if null(s) 
 	 then "" 
-	 else "\t" ++ className ++ ".inheritedAttributes.put(i_" ++ head(s) ++ ", " ++ 
-							   "new java.util.TreeMap<String, common.Lazy>());\n"  ++ makeStaticDcls(className, tail(s));
+	       -- TODO: is this enough for this condition?
+	 else (if head(s).typerep.isNonTerminal || head(s).typerep.isAnyType then
+	      "\t" ++ className ++ ".inheritedAttributes.put(i_" ++ head(s).fullName ++ ", " ++ 
+                                                            "new java.util.TreeMap<String, common.Lazy>());\n"
+               else "") ++ makeStaticDcls(className, tail(s));
 }
 
 function makeConstructor
@@ -119,8 +124,8 @@ String ::= s::[String]{
 function makeChildTypesList
 String ::= ns::[Decorated NamedSignatureElement] e::Decorated Env {
 
-  -- I don't see a shorter way to get its fully qualified name?
-  -- note: uses laziness. won't be evaluated if ns is null
+  -- The difficulty here is that we need the full type name.
+  
   local attribute fns :: [Decorated EnvItem];
   fns = getFullNameDcl(head(ns).typerep.typeName, e);
   local attribute fn :: String;

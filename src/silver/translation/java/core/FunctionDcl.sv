@@ -32,7 +32,7 @@ makeIndexDcls(0, sigNames) ++ "\n" ++
 
 
 "\tstatic{\n" ++
-makeStaticDcls(className, sigNames) ++
+makeStaticDcls(className, ns.inputElements) ++
 "\t}\n\n" ++ 
 	
 "\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ ") {\n" ++
