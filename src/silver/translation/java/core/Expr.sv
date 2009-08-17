@@ -72,7 +72,7 @@ top::Expr ::= q::QName
   top.isAppReference = true;
   top.appReference = makeClassName(fName);
 
-  top.translation = "(" ++ makeClassName(fName) ++ ".class.getConstructors()[0])";
+  top.translation = "common.Util.getConstruct(" ++ makeClassName(fName) ++ ".class)";
 }
 
 aspect production functionReference
@@ -81,7 +81,7 @@ top::Expr ::= q::QName
   top.isAppReference = true;
   top.appReference = makeClassName(fName);
 
-  top.translation = "(" ++ makeClassName(fName) ++ ".class.getConstructors()[0])";
+  top.translation = "common.Util.getConstruct(" ++ makeClassName(fName) ++ ".class)";
 }
 
 aspect production productionApplicationDispatcher
@@ -125,9 +125,13 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.isAppReference = false;
   top.appReference = "";
 
-  top.translation = "(" ++ e.translation ++ ".decorate(context, " ++ 
-                                "common.Util.populateMap(new String[]{" ++ folds(", ", inh.nameTrans) ++ "}, " ++ 
-                                                        "new common.Lazy[]{" ++ folds(", ", inh.valueTrans) ++ "})))"; 
+  top.translation = "(" ++ e.translation ++ ".decorate(context" ++ 
+                             (case inh of
+                               exprInhsEmpty() -> ""
+                              | _ ->
+                                ", common.Util.populateMap(new String[]{" ++ folds(", ", inh.nameTrans) ++ "}, " ++ 
+                                                        "new common.Lazy[]{" ++ folds(", ", inh.valueTrans) ++ "})"
+                              end) ++ "))"; 
 
 }
 synthesized attribute nameTrans :: [String];

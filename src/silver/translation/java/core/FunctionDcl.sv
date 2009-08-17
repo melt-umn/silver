@@ -26,9 +26,6 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody{
 makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(ns.inputElements, top.env) ++ "};\n\n" ++
 
-"\tpublic static common.Lazy forward;\n" ++
-"\tpublic static final java.util.Map<String, common.Lazy> forwardAttributes = new java.util.TreeMap<String, common.Lazy>();\n\n" ++
-
 "\tpublic static final java.util.Map<String, common.Lazy> localAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
 "\tpublic static final java.util.Map<String, common.Lazy> synthesizedAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
 "\tpublic static final java.util.Map<Object, java.util.Map<String, common.Lazy>> inheritedAttributes = new java.util.HashMap<Object, java.util.Map<String, common.Lazy>>();\n\n" ++	
@@ -38,9 +35,12 @@ makeIndexDcls(0, sigNames) ++ "\n" ++
 makeStaticDcls(className, sigNames) ++
 "\t}\n\n" ++ 
 	
-"\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ "){\n" ++
-"\t\tsuper(" ++ toString(length(namedSig.inputElements)) ++ ");\n" ++
-makeChildAssign(sigNames) ++ "\n" ++
+"\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ ") {\n" ++
+"\t\tthis(new Object[]{" ++ makeChildArray(sigNames) ++ "});\n" ++
+"\t}\n\n" ++
+
+"\tpublic " ++ className ++ "(Object[] args) {\n" ++
+"\t\tsuper(args);\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
@@ -55,12 +55,12 @@ makeChildAssign(sigNames) ++ "\n" ++
 
 "\t@Override\n" ++
 "\tpublic common.Lazy getForward() {\n" ++
-"\t\treturn forward;\n" ++
+"\t\tthrow new RuntimeException(\"Functions do not forward!\");\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
 "\tpublic common.Lazy getForwardInh(String name) {\n" ++
-"\t\treturn forwardAttributes.get(name);\n" ++
+"\t\tthrow new RuntimeException(\"Functions do not forward!\");\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
@@ -73,6 +73,7 @@ makeChildAssign(sigNames) ++ "\n" ++
 "\t\treturn \"" ++ fName ++ "\";\n" ++
 "\t}\n\n" ++
 
+"\t@Override\n" ++
 "\tpublic " ++ ns.outputElement.typerep.transType ++ " doReturn(){\n" ++			
 "\t\treturn (" ++ ns.outputElement.typerep.transType ++ ")super.doReturn();\n" ++
 "\t}\n" ++ 

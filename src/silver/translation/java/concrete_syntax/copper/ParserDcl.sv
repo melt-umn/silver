@@ -84,20 +84,14 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleStmtList '}' {
 makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tpublic static final Class<?> childTypes[] = {common.StringCatter.class};\n\n" ++
 
-"\tpublic static common.Lazy forward;\n" ++
-"\tpublic static final java.util.Map<String, common.Lazy> forwardAttributes = new java.util.TreeMap<String, common.Lazy>();\n\n" ++
-
-"\tpublic static final java.util.Map<String, common.Lazy> localAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
 "\tpublic static final java.util.Map<String, common.Lazy> synthesizedAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
-"\tpublic static final java.util.Map<Object, java.util.Map<String, common.Lazy>> inheritedAttributes = new java.util.HashMap<Object, java.util.Map<String, common.Lazy>>();\n\n" ++	
 
-"\tstatic{\n" ++
-makeStaticDcls(className, sigNames) ++
-"\t}\n\n" ++ 
-	
-"\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ "){\n" ++
-"\t\tsuper(1);\n" ++
-makeChildAssign(sigNames) ++ "\n" ++
+"\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ ") {\n" ++
+"\t\tthis(new Object[]{" ++ makeChildArray(sigNames) ++ "});\n" ++
+"\t}\n\n" ++
+
+"\tpublic " ++ className ++ "(Object[] args) {\n" ++
+"\t\tsuper(args);\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
@@ -107,22 +101,22 @@ makeChildAssign(sigNames) ++ "\n" ++
 
 "\t@Override\n" ++
 "\tpublic java.util.Map<String, common.Lazy> getDefinedInheritedAttributes(Object key) {\n" ++
-"\t\treturn inheritedAttributes.get(key);\n" ++
+"\t\tthrow new RuntimeException(\"Parsers do not have children\");\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
 "\tpublic common.Lazy getForward() {\n" ++
-"\t\treturn forward;\n" ++
+"\t\tthrow new RuntimeException(\"Parsers do not forward\");\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
 "\tpublic common.Lazy getForwardInh(String name) {\n" ++
-"\t\treturn forwardAttributes.get(name);\n" ++
+"\t\tthrow new RuntimeException(\"Parsers do not forward\");\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
 "\tpublic common.Lazy getLocal(String name) {\n" ++
-"\t\treturn localAttributes.get(name);\n" ++
+"\t\tthrow new RuntimeException(\"Parsers do not have locals\");\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
@@ -130,6 +124,7 @@ makeChildAssign(sigNames) ++ "\n" ++
 "\t\treturn \"" ++ top.fullName ++ "\";\n" ++
 "\t}\n\n" ++
 
+"\t@Override\n" ++
 "\tpublic " ++ t.typerep.transType ++ " doReturn(){\n" ++			
 "\t\treturn (" ++ t.typerep.transType ++ ")super.doReturn();\n" ++
 "\t}\n" ++ 

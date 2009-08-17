@@ -21,7 +21,7 @@ top::AGDcl ::= id::Name
 "\tpublic static final HashSet<String> occurs = new HashSet<String>();\n" ++
 "\tpublic static final LinkedList<common.Decorator> decorators = new LinkedList<common.Decorator>();\n\n" ++
 
-"\tprotected " ++ className ++ "(int children) {\n" ++
+"\tprotected " ++ className ++ "(Object[] children) {\n" ++
 "\t\tsuper(children);\n" ++
 "\t}\n" ++	
 "}\n"
