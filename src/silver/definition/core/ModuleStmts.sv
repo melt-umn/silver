@@ -128,8 +128,6 @@ top::ModuleStmts ::=
   top.errors := [];
   top.warnings := [];
 
-  top.exportSelf = false;
-
   top.moduleNames = [];
   top.importedDefs = emptyDefs();
   top.exportedDefs = emptyDefs();
@@ -144,8 +142,6 @@ top::ModuleStmts ::= im::ImportsStmt
   top.errors := im.errors;
   top.warnings := im.warnings;
 
-  top.exportSelf = false;
-
   top.moduleNames = im.moduleNames;
   top.importedDefs = im.importedDefs;
   top.exportedDefs = emptyDefs();
@@ -159,8 +155,6 @@ top::ModuleStmts ::= h::ImportsStmt t::ModuleStmts
 
   top.errors := h.errors ++ t.errors;
   top.warnings := h.warnings ++ t.warnings;
-
-  top.exportSelf = t.exportSelf;
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
   top.importedDefs = appendDefs(h.importedDefs, t.importedDefs);
@@ -188,8 +182,6 @@ top::ModuleStmts ::= ex::ExportsStmt
   top.errors := ex.errors;
   top.warnings := ex.warnings;
 
-  top.exportSelf = ex.exportSelf;
-
   top.moduleNames = [];
   top.importedDefs = emptyDefs();
   top.exportedDefs = ex.exportedDefs;
@@ -204,8 +196,6 @@ top::ModuleStmts ::= h::ExportsStmt t::ModuleStmts
   top.errors := h.errors ++ t.errors;
   top.warnings := h.warnings ++ t.warnings;
 
-  top.exportSelf = h.exportSelf || t.exportSelf;
-
   top.moduleNames = t.moduleNames;
   top.importedDefs = t.importedDefs;
   top.exportedDefs = appendDefs(h.exportedDefs, t.exportedDefs);
@@ -218,8 +208,6 @@ top::ExportsStmt ::= 'exports' m::ModuleStmt ';'{
 
   top.errors := m.errors;
   top.warnings := m.warnings;
-
-  top.exportSelf = contains(top.grammarName, m.moduleNames);
 
   top.moduleNames = m.moduleNames;
   top.exportedDefs = m.defs;

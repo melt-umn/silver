@@ -79,14 +79,12 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.declaredName = gdcl.declaredName;
   top.impliedName = top.grammarName;
 
-  top.exportSelf = ms.exportSelf;
- 
   top.moduleNames = allImports.moduleNames ++ ms.moduleNames ++ ags.moduleNames;
 
   top.defs = ags.defs;
 
   top.importedDefs = ms.importedDefs;
-  top.exportedDefs = appendDefs(ms.exportedDefs, (if top.grammarExportSelf then emptyDefs() else top.defs));
+  top.exportedDefs = appendDefs(ms.exportedDefs, top.defs); -- emptyDefs()?
 
   top.errors := gdcl.errors ++ ms.errors ++ allImports.errors ++ ags.errors;
   top.warnings := gdcl.warnings ++ ms.warnings ++ allImports.warnings ++ ags.warnings;
