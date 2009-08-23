@@ -3,6 +3,8 @@ import silver:definition:concrete_syntax;
 import silver:definition:core;
 import silver:definition:env;
 
+import silver:analysis:typechecking:core;
+
 --terminal Parser_kwd 'parser' lexer precedence = 5;
 
 attribute actionCode occurs on RHSSpec;
@@ -58,6 +60,10 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
         else [];
 
   top.errors := er1 ++ er2 ++ er3 ++ te.errors;
+  top.typeErrors = []; -- Finalize
+  top.nonTerminalDcls = [];
+  top.terminalDcls = [];
+  top.ruleDcls = [];
 
   acode.actionCodeType = parserAttrActionType();
 
@@ -67,3 +73,31 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
                              addValueDcl(fName,te.typerep,
                               addThisDcl(fName,acode.defs))),top.env);
 }
+
+----------------------
+-- environment
+
+synthesized attribute isParserAttrDeclaration :: Boolean occurs on EnvItem;
+
+function addParserAttrDcl
+Decorated Defs ::= n::String e::Decorated Defs
+{
+  return consDefs(parserAttrEnvItem(n), e);
+}
+
+function parserAttrEnvItem
+Decorated EnvItem ::= n::String
+{
+  return decorate i_parserAttrEnvItem(n) with {};
+}
+
+abstract production i_parserAttrEnvItem
+top::EnvItem ::= n::String
+{
+  top.itemName = n;
+  top.unparse = "parserAttr('" ++ n ++ "')";
+  top.isParserAttrDeclaration = true;
+
+  forwards to i_defaultEnvItem();
+}
+
