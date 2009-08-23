@@ -1,18 +1,18 @@
 grammar silver:translation:java:core;
 import silver:definition:core;
 
-attribute javaClasses occurs on Root, AGDcls, AGDcl, ModuleStmts;
+attribute javaClasses occurs on Root, AGDcls, AGDcl;
 attribute setupInh occurs on Root, AGDcls, AGDcl;
-attribute initProd occurs on Root, AGDcls, AGDcl, ModuleStmts;
+attribute initProd occurs on Root, AGDcls, AGDcl;
 attribute initAspect occurs on Root, AGDcls, AGDcl;
 attribute postInit occurs on Root, AGDcls, AGDcl;
 
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 {
-  top.javaClasses = ags.javaClasses ++ ms.javaClasses;
+  top.javaClasses = ags.javaClasses;
   top.setupInh := ags.setupInh;
-  top.initProd := ags.initProd ++ ms.initProd;
+  top.initProd := ags.initProd;
   top.initAspect := ags.initAspect;
   top.postInit := ags.postInit;
 }
