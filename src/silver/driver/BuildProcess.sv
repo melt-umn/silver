@@ -179,7 +179,6 @@ top::CompilationUnit ::= grams::[[String]] need::[String] seen::[String]
   r.globalImports = r.importedDefs;  
   r.env = toEnv(appendDefs(r.defs, makeDefaultDefs()));
   r.file = gn;
-  r.grammarExportSelf = r.exportSelf;
 
   --the root spec
   local attribute rs :: Decorated RootSpec;
@@ -293,7 +292,6 @@ top::Grammar ::= iIn::IO gn::String sPath::[String] clean::Boolean
   cu.env = toEnv(appendDefs(cu.defs, makeDefaultDefs()));
   cu.globalImports = cu.importedDefs;
   cu.compiledGrammars = top.compiledGrammars;
-  cu.grammarExportSelf = cu.exportSelf;
 
   production attribute inf :: IOInterface;
   inf = compileInterface(pr, "Silver.svi", grammarLocation.sValue);
@@ -376,7 +374,7 @@ top::Interface ::= i::Integer f::String l::String r::Decorated RootSpec{
 
 
 --compiles a list of files (assumed to be a complete grammar) and generate a summary of that grammar
-nonterminal Roots with env, io, rSpec, rParser, defs, compiledGrammars, importedDefs, globalImports, exportSelf, grammarExportSelf;
+nonterminal Roots with env, io, rSpec, rParser, defs, compiledGrammars, importedDefs, globalImports;
 abstract production compileFiles
 top::Roots ::= iIn::IO gn::String files::[String] gpath::String
 {
@@ -392,7 +390,6 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   r.file = head(files);
   r.compiledGrammars = top.compiledGrammars;
   r.grammarName = gn;
-  r.grammarExportSelf = top.grammarExportSelf;
 
   --the rest of the files.
   production attribute recurse :: Roots ;
@@ -401,13 +398,11 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   recurse.env = top.env;
   recurse.compiledGrammars = top.compiledGrammars;
   recurse.globalImports = top.globalImports;
-  recurse.grammarExportSelf = top.grammarExportSelf;
 
   top.rSpec = if null(files) then emptyRootSpec() else consRootSpec(r, recurse.rSpec); 
   top.io = if null(files) then iIn else recurse.io;
   top.defs = if null(files) then emptyDefs() else appendDefs(r.defs, recurse.defs);
   top.importedDefs = if null(files) then emptyDefs() else appendDefs(r.importedDefs, recurse.importedDefs);
-  top.exportSelf = if null(files) then false else r.exportSelf || recurse.exportSelf;
 }
 
 --takes a asd;asdasd;adasd; string and returns a list.
