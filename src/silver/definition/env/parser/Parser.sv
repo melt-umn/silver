@@ -54,7 +54,7 @@ terminal SignatureElementTerm /element/ lexer classes {C_1};
 terminal DeclaredNameTerm /declaredName/ lexer classes {C_1};
 terminal ModuleNamesTerm /moduleNames/ lexer classes {C_1};
 terminal DefsTerm /defs/ lexer classes {C_1};
-terminal ExportedDefsTerm /exportedDefs/ lexer classes {C_1};
+terminal ExportedGrammarsTerm /exportedGrammars/ lexer classes {C_1};
 
 synthesized attribute spec :: Decorated RootSpec;
 synthesized attribute signature :: Decorated NamedSignature;
@@ -64,8 +64,8 @@ synthesized attribute typereps :: [Decorated TypeRep];
 synthesized attribute names :: [String];
 
 nonterminal aRootSpec with spec;
-nonterminal aRootSpecPart with defs, exportedDefs, declaredName, moduleNames;
-nonterminal aRootSpecParts with defs, exportedDefs, declaredName, moduleNames;
+nonterminal aRootSpecPart with defs, exportedGrammars, declaredName, moduleNames;
+nonterminal aRootSpecParts with defs, exportedGrammars, declaredName, moduleNames;
 nonterminal aDefs with defs;
 nonterminal aDefsInner with defs;
 nonterminal aEnvItem with defs;
@@ -93,7 +93,7 @@ top::RootSpec ::= p::aRootSpecParts{
   top.declaredName = p.declaredName; 
   top.moduleNames = p.moduleNames;
   top.defs = p.defs;
-  top.exportedDefs = p.exportedDefs;
+  top.exportedGrammars = p.exportedGrammars;
 
   forwards to i_emptyRootSpec();
 }
@@ -111,7 +111,7 @@ top::aRootSpecParts ::= r::aRootSpecPart{
   top.declaredName = r.declaredName; 
   top.defs = r.defs;
   top.moduleNames = [];
-  top.exportedDefs = r.exportedDefs;
+  top.exportedGrammars = r.exportedGrammars;
 }
 
 concrete production aRoot2
@@ -119,7 +119,7 @@ top::aRootSpecParts ::= r1::aRootSpecPart r2::aRootSpecParts{
   top.declaredName = if r1.declaredName == "" then r2.declaredName else r1.declaredName; 
   top.defs = appendDefs(r1.defs, r2.defs);
   top.moduleNames = r1.moduleNames ++ r2.moduleNames;
-  top.exportedDefs = appendDefs(r1.exportedDefs, r2.exportedDefs);
+  top.exportedGrammars = r1.exportedGrammars ++ r2.exportedGrammars;
 }
 
 --The pieces
@@ -128,7 +128,7 @@ top::aRootSpecPart ::= {
   top.declaredName = "";
   top.moduleNames = [];
   top.defs = emptyDefs();
-  top.exportedDefs = emptyDefs();
+  top.exportedGrammars = [];
 }
 
 concrete production aRootDeclaredName
@@ -149,9 +149,9 @@ top::aRootSpecPart ::= n::DefsTerm i::aDefs{
   forwards to aRootSpecDefault();
 }
 
-concrete production aRootExportedDefs
-top::aRootSpecPart ::= n::ExportedDefsTerm i::aDefs{
-  top.exportedDefs = i.defs;
+concrete production aRootExportedGrammars
+top::aRootSpecPart ::= n::ExportedGrammarsTerm i::aNames{
+  top.exportedGrammars = i.names;
   forwards to aRootSpecDefault();
 }
 

@@ -6,7 +6,7 @@ import silver:definition:core;
 import silver:definition:env;
 
 attribute javaClasses, initProd occurs on ParserDcl;
-attribute disambiguationGroupDcls occurs on ParserDcl, ModuleList, ModuleName, Module;
+attribute disambiguationGroupDcls occurs on ParserDcl, ModuleList, ModuleName, Module, ModuleExportedDefs;
 
 
 aspect production parserDcl
@@ -45,10 +45,15 @@ top::ModuleName ::= pkg::QName
 }
 
 aspect production module 
-top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[EnvMap] {
-  top.disambiguationGroupDcls = if null(mitem) 
-	     then []
-	     else head(mitem).disambiguationGroupDcls;		  
+top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[EnvMap]
+{
+  top.disambiguationGroupDcls = med.disambiguationGroupDcls;		  
+}
+
+aspect production moduleExportedDefs
+top::ModuleExportedDefs ::= compiled::[Decorated RootSpec] need::[String] seen::[String]
+{
+  top.disambiguationGroupDcls = if null(need) || null(rs) then [] else (head(rs).disambiguationGroupDcls ++ recurse.disambiguationGroupDcls);
 }
 
 aspect production parserStmt
