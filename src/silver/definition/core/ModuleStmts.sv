@@ -133,22 +133,22 @@ top::ModuleStmts ::=
   top.exportedDefs = emptyDefs();
 }
 
-concrete production importsStmtsOne 
-top::ModuleStmts ::= im::ImportsStmt
+concrete production moduleStmtsOne 
+top::ModuleStmts ::= m::ModuleStmt
 {
-  top.pp = im.pp;
-  top.location = im.location;
+  top.pp = m.pp;
+  top.location = m.location;
 
-  top.errors := im.errors;
-  top.warnings := im.warnings;
+  top.errors := m.errors;
+  top.warnings := m.warnings;
 
-  top.moduleNames = im.moduleNames;
-  top.importedDefs = im.importedDefs;
-  top.exportedDefs = emptyDefs();
+  top.moduleNames = m.moduleNames;
+  top.importedDefs = m.importedDefs;
+  top.exportedDefs = m.exportedDefs;
 }
 
-concrete production importsStmtsCons
-top::ModuleStmts ::= h::ImportsStmt t::ModuleStmts
+concrete production moduleStmtsCons
+top::ModuleStmts ::= h::ModuleStmt t::ModuleStmts
 {
   top.pp = h.pp ++ "\n" ++ t.pp;
   top.location = h.location;
@@ -158,12 +158,12 @@ top::ModuleStmts ::= h::ImportsStmt t::ModuleStmts
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
   top.importedDefs = appendDefs(h.importedDefs, t.importedDefs);
-  top.exportedDefs = t.exportedDefs;
+  top.exportedDefs = appendDefs(h.exportedDefs, t.exportedDefs);
 }
 
 concrete production importsStmt
-top::ImportsStmt ::= 'imports' m::ModuleExpr ';'{
-  top.pp = "import " ++ m.pp ++ ";";
+top::ModuleStmt ::= 'imports' m::ModuleExpr ';'{
+  top.pp = "imports " ++ m.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors := m.errors;
@@ -171,39 +171,12 @@ top::ImportsStmt ::= 'imports' m::ModuleExpr ';'{
 
   top.moduleNames = m.moduleNames;
   top.importedDefs = m.defs;
-}
-
-concrete production exportsStmtsOne 
-top::ModuleStmts ::= ex::ExportsStmt
-{
-  top.pp = ex.pp;
-  top.location = ex.location;
-
-  top.errors := ex.errors;
-  top.warnings := ex.warnings;
-
-  top.moduleNames = [];
-  top.importedDefs = emptyDefs();
-  top.exportedDefs = ex.exportedDefs;
-}
-
-concrete production exportsStmtsCons
-top::ModuleStmts ::= h::ExportsStmt t::ModuleStmts
-{
-  top.pp = h.pp ++ "\n" ++ t.pp;
-  top.location = h.location;
-
-  top.errors := h.errors ++ t.errors;
-  top.warnings := h.warnings ++ t.warnings;
-
-  top.moduleNames = t.moduleNames;
-  top.importedDefs = t.importedDefs;
-  top.exportedDefs = appendDefs(h.exportedDefs, t.exportedDefs);
+  top.exportedDefs = emptyDefs();
 }
 
 concrete production exportsStmt
-top::ExportsStmt ::= 'exports' m::ModuleExpr ';'{
-  top.pp = "import " ++ m.pp ++ ";";
+top::ModuleStmt ::= 'exports' m::ModuleExpr ';'{
+  top.pp = "exports " ++ m.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors := m.errors;
@@ -211,6 +184,7 @@ top::ExportsStmt ::= 'exports' m::ModuleExpr ';'{
 
   top.moduleNames = m.moduleNames;
   top.exportedDefs = m.defs;
+  top.importedDefs = emptyDefs();
 }
 
 
