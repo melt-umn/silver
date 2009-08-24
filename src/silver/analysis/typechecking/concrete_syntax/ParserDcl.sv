@@ -10,6 +10,6 @@ top::AGDcl ::= p::ParserDcl{
 }
 
 aspect production parserStmt
-top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleStmtList '}' {
+top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
   top.typeErrors = [];
 }

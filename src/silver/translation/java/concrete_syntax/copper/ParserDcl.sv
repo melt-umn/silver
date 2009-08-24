@@ -6,7 +6,7 @@ import silver:definition:core;
 import silver:definition:env;
 
 attribute javaClasses, initProd occurs on ParserDcl;
-attribute disambiguationGroupDcls occurs on ParserDcl, ModuleStmtList, ModuleStmt, Module;
+attribute disambiguationGroupDcls occurs on ParserDcl, ModuleList, ModuleExpr, Module;
 
 
 aspect production parserDcl
@@ -20,22 +20,22 @@ top::AGDcl ::= p::ParserDcl{
 }
 
 aspect production parserStmt
-top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleStmtList '}' {
+top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
   top.disambiguationGroupDcls = m.disambiguationGroupDcls;
 }
 
-aspect production moduleStmtListOne
-top::ModuleStmtList ::= c1::ModuleStmt ';'{
+aspect production moduleListOne
+top::ModuleList ::= c1::ModuleExpr ';'{
   top.disambiguationGroupDcls = c1.disambiguationGroupDcls;
 }
 
-aspect production moduleStmtListCons
-top::ModuleStmtList ::= c1::ModuleStmt ';' c2::ModuleStmtList {
+aspect production moduleListCons
+top::ModuleList ::= c1::ModuleExpr ';' c2::ModuleList {
   top.disambiguationGroupDcls = c1.disambiguationGroupDcls ++ c2.disambiguationGroupDcls;
 }
 
 aspect production moduleAll
-top::ModuleStmt ::= pkg::QName
+top::ModuleExpr ::= pkg::QName
 {
   top.disambiguationGroupDcls = m.disambiguationGroupDcls;
 }
@@ -48,7 +48,7 @@ top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String]
 }
 
 aspect production parserStmt
-top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleStmtList '}' {
+top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
 
   local attribute className :: String;
   className = "P" ++ n.name;
