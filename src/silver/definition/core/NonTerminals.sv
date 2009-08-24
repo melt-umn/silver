@@ -11,12 +11,10 @@ nonterminal NameTick with name, location, grammarName, file, warnings, errors, e
 nonterminal NameTickTick with name, location, grammarName, file, warnings, errors, env, defs, pp;
 nonterminal AGDcls with location, grammarName, file, warnings, errors, env, defs, pp, moduleNames, compiledGrammars;
 nonterminal AGDcl with location, grammarName, file, warnings, errors, env, defs, pp, moduleNames, compiledGrammars;
---nonterminal ProductionDcl with location, grammarName, file, name, fullName, inputElements, outputElement, warnings, errors, env, defs, pp;
 nonterminal ProductionSignature with location, grammarName, file, inputElements, outputElement, warnings, errors, env, defs, pp;
 nonterminal ProductionLHS with location, grammarName, file, outputElement, warnings, errors, env, defs, pp;
 nonterminal ProductionRHS with location, grammarName, file, inputElements, warnings, errors, env, defs, pp;
 nonterminal ProductionRHSElem with location, grammarName, file, inputElements, warnings, errors, env, defs, pp;
---nonterminal AspectDcl with location, grammarName, file, name, fullName, warnings, errors, env, defs, pp;
 nonterminal FunctionSignature with location, grammarName, file, inputElements, outputElement, warnings, errors, env, defs, pp;
 nonterminal FunctionLHS with location, grammarName, file, outputElement, warnings, errors, env, defs, pp;
 nonterminal AspectProductionSignature with location, grammarName, file, inputElements, outputElement, warnings, errors, realSignature, env, defs, pp;
@@ -27,7 +25,6 @@ nonterminal AspectRHS with location, grammarName, file, warnings, errors, inputE
 nonterminal AspectRHSElem with location, grammarName, file, warnings, errors, realSignature, inputElements, env, defs, pp;
 nonterminal Expr with location, grammarName, file, warnings, errors, signature, expected, typerep, signatureEnv, localsEnv, env, defs, pp;
 nonterminal Type with location, grammarName, file, warnings, errors, typerep, env, defs, pp;
---nonterminal ExportStmt with location, grammarName, file, warnings, errors, env, defs, pp;
 nonterminal NameList with location, grammarName, file, names, warnings, errors, env, defs, pp;
 nonterminal ExprInhs with location, grammarName, file, warnings, errors, signature, signatureEnv, localsEnv, env, defs, pp;
 nonterminal ExprInh with location, grammarName, file, warnings, errors, signature, signatureEnv, localsEnv, env, defs, pp;
@@ -36,6 +33,7 @@ nonterminal Exprs with location, grammarName, file, warnings, errors, signature,
 nonterminal Module with errors, warnings, grammarName, compiledGrammars, defs;
 nonterminal ImportStmt with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, importedDefs, defs, pp;
 nonterminal ImportStmts with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, importedDefs, defs, pp;
+nonterminal ModuleName with location, grammarName, file, moduleNames, importedDefs, exportedDefs, compiledGrammars, warnings, errors, pp, defs;
 nonterminal ModuleExpr with location, grammarName, file, moduleNames, importedDefs, exportedDefs, compiledGrammars, warnings, errors, pp, defs;
 nonterminal ModuleStmts with location, grammarName, file, moduleNames, importedDefs, exportedDefs, compiledGrammars, warnings, errors, pp;
 nonterminal ModuleStmt with location, grammarName, file, moduleNames, importedDefs, exportedDefs, compiledGrammars, warnings, errors, pp;
@@ -55,4 +53,4 @@ nonterminal ForwardInh with location, grammarName, file, warnings, errors, signa
 nonterminal ForwardLHSExpr with location, grammarName, file, warnings, errors, typerep, signatureEnv, localsEnv, env, defs, pp;
 nonterminal LHSExpr with location, grammarName, file, warnings, errors, typerep, signature, signatureEnv, localsEnv, env, defs, pp;
 nonterminal GrammarDcl with location, grammarName, declaredName, file, warnings, errors, env, defs, pp;
---nonterminal SyntaxStmt with location, grammarName, file, warnings, errors, env, defs, pp;
+

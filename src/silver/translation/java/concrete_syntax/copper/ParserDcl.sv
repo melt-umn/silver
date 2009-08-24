@@ -6,11 +6,12 @@ import silver:definition:core;
 import silver:definition:env;
 
 attribute javaClasses, initProd occurs on ParserDcl;
-attribute disambiguationGroupDcls occurs on ParserDcl, ModuleList, ModuleExpr, Module;
+attribute disambiguationGroupDcls occurs on ParserDcl, ModuleList, ModuleName, Module;
 
 
 aspect production parserDcl
-top::AGDcl ::= p::ParserDcl{
+top::AGDcl ::= p::ParserDcl
+{
   top.disambiguationGroupDcls = [];
   top.javaClasses = p.javaClasses;
   top.setupInh := "";
@@ -20,22 +21,25 @@ top::AGDcl ::= p::ParserDcl{
 }
 
 aspect production parserStmt
-top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
+top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
+{
   top.disambiguationGroupDcls = m.disambiguationGroupDcls;
 }
 
 aspect production moduleListOne
-top::ModuleList ::= c1::ModuleExpr ';'{
+top::ModuleList ::= c1::ModuleName ';'
+{
   top.disambiguationGroupDcls = c1.disambiguationGroupDcls;
 }
 
 aspect production moduleListCons
-top::ModuleList ::= c1::ModuleExpr ';' c2::ModuleList {
+top::ModuleList ::= c1::ModuleName ';' c2::ModuleList
+{
   top.disambiguationGroupDcls = c1.disambiguationGroupDcls ++ c2.disambiguationGroupDcls;
 }
 
-aspect production moduleAll
-top::ModuleExpr ::= pkg::QName
+aspect production moduleName
+top::ModuleName ::= pkg::QName
 {
   top.disambiguationGroupDcls = m.disambiguationGroupDcls;
 }

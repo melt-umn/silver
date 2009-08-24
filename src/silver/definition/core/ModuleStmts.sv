@@ -175,7 +175,7 @@ top::ModuleStmt ::= 'imports' m::ModuleExpr ';'{
 }
 
 concrete production exportsStmt
-top::ModuleStmt ::= 'exports' m::ModuleExpr ';'{
+top::ModuleStmt ::= 'exports' m::ModuleName ';'{
   top.pp = "exports " ++ m.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
@@ -187,6 +187,20 @@ top::ModuleStmt ::= 'exports' m::ModuleExpr ';'{
   top.importedDefs = emptyDefs();
 }
 
+concrete production moduleName
+top::ModuleName ::= pkg::QName
+{
+  top.pp = pkg.pp;
+  top.location = pkg.location;
+  top.moduleNames = [pkg.name];
+
+  production attribute m :: Decorated Module;
+  m = decorate module(top.compiledGrammars, pkg, "", [], [], []) with {grammarName = top.grammarName;};
+
+  top.warnings := m.warnings;
+  top.errors := m.errors;
+  top.defs = m.defs;
+}
 
 concrete production moduleAll
 top::ModuleExpr ::= pkg::QName
