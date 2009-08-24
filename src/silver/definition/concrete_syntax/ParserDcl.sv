@@ -3,9 +3,9 @@ import silver:definition:core;
 import silver:definition:env;
 
 nonterminal ParserDcl with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, defs, pp, parserDcls, fullName, typerep, nonTerminalDcls, terminalDcls, ruleDcls, env;
-nonterminal ModuleStmtList with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, pp, nonTerminalDcls, terminalDcls, ruleDcls;
+nonterminal ModuleList with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, pp, nonTerminalDcls, terminalDcls, ruleDcls;
 
-attribute ruleDcls, terminalDcls, nonTerminalDcls occurs on ModuleStmt, Module;
+attribute ruleDcls, terminalDcls, nonTerminalDcls occurs on ModuleExpr, Module;
 
 terminal Parser_kwd /parser/ lexer classes {KEYWORD};
 
@@ -32,7 +32,7 @@ top::AGDcl ::= p::ParserDcl{
 }
 
 concrete production parserStmt
-top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleStmtList '}' {
+top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
   top.pp = "parser " ++ m.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
@@ -54,8 +54,8 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleStmtList '}' {
   top.moduleNames = m.moduleNames;
 }
 
-concrete production moduleStmtListOne
-top::ModuleStmtList ::= c1::ModuleStmt ';' {
+concrete production moduleListOne
+top::ModuleList ::= c1::ModuleExpr ';' {
 
   top.pp = c1.pp;
   top.location = c1.location;
@@ -69,8 +69,8 @@ top::ModuleStmtList ::= c1::ModuleStmt ';' {
   top.errors := c1.errors;
 }
 
-concrete production moduleStmtListCons
-top::ModuleStmtList ::= c1::ModuleStmt ';' c2::ModuleStmtList {
+concrete production moduleListCons
+top::ModuleList ::= c1::ModuleExpr ';' c2::ModuleList {
 
   top.pp = c1.pp ++ ", " ++ c2.pp;
   top.location = c1.location;
@@ -85,7 +85,7 @@ top::ModuleStmtList ::= c1::ModuleStmt ';' c2::ModuleStmtList {
 }
 
 aspect production moduleAll
-top::ModuleStmt ::= pkg::QName
+top::ModuleExpr ::= pkg::QName
 {
   top.ruleDcls = m.ruleDcls;
   top.terminalDcls = m.terminalDcls;

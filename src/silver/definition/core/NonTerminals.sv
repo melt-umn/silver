@@ -36,7 +36,7 @@ nonterminal Exprs with location, grammarName, file, warnings, errors, signature,
 nonterminal Module with errors, warnings, grammarName, compiledGrammars, defs;
 nonterminal ImportStmt with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, importedDefs, defs, pp;
 nonterminal ImportStmts with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, importedDefs, defs, pp;
-nonterminal ModuleStmt with location, grammarName, file, moduleNames, importedDefs, exportedDefs, compiledGrammars, warnings, errors, pp, defs;
+nonterminal ModuleExpr with location, grammarName, file, moduleNames, importedDefs, exportedDefs, compiledGrammars, warnings, errors, pp, defs;
 nonterminal ModuleStmts with location, grammarName, file, moduleNames, importedDefs, exportedDefs, compiledGrammars, warnings, errors, pp;
 nonterminal ImportsStmt with location, grammarName, file, moduleNames, importedDefs, compiledGrammars, warnings, errors, pp;
 nonterminal ExportsStmt with location, grammarName, file, moduleNames, exportedDefs, compiledGrammars, warnings, errors, pp;
