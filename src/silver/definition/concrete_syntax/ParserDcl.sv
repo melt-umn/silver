@@ -5,7 +5,7 @@ import silver:definition:env;
 nonterminal ParserDcl with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, defs, pp, parserDcls, fullName, typerep, nonTerminalDcls, terminalDcls, ruleDcls, env;
 nonterminal ModuleList with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, pp, nonTerminalDcls, terminalDcls, ruleDcls;
 
-attribute ruleDcls, terminalDcls, nonTerminalDcls occurs on ModuleExpr, Module;
+attribute ruleDcls, terminalDcls, nonTerminalDcls occurs on ModuleName, Module;
 
 terminal Parser_kwd /parser/ lexer classes {KEYWORD};
 
@@ -55,7 +55,7 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
 }
 
 concrete production moduleListOne
-top::ModuleList ::= c1::ModuleExpr ';' {
+top::ModuleList ::= c1::ModuleName ';' {
 
   top.pp = c1.pp;
   top.location = c1.location;
@@ -70,7 +70,7 @@ top::ModuleList ::= c1::ModuleExpr ';' {
 }
 
 concrete production moduleListCons
-top::ModuleList ::= c1::ModuleExpr ';' c2::ModuleList {
+top::ModuleList ::= c1::ModuleName ';' c2::ModuleList {
 
   top.pp = c1.pp ++ ", " ++ c2.pp;
   top.location = c1.location;
@@ -84,8 +84,8 @@ top::ModuleList ::= c1::ModuleExpr ';' c2::ModuleList {
   top.errors := c1.errors ++ c2.errors;
 }
 
-aspect production moduleAll
-top::ModuleExpr ::= pkg::QName
+aspect production moduleName
+top::ModuleName ::= pkg::QName
 {
   top.ruleDcls = m.ruleDcls;
   top.terminalDcls = m.terminalDcls;
