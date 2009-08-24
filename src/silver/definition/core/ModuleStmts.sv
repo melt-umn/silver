@@ -8,16 +8,14 @@ import silver:util;
 --apply with
 --apply as
 abstract production module 
-top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[EnvMap] {
-
-  top.errors := if !null(mitem) then [] else [err(g.location, "Grammar '" ++ g.name ++ "' cannot be found.")];
-  top.warnings = [];
-
-  production attribute mitem :: [Decorated RootSpec];
-  mitem = getRootSpec(g.name, c);
-
+top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[EnvMap]
+{
+  production attribute med :: ModuleExportedDefs;
+  med = moduleExportedDefs(c, [g.name], []);
+  med.importLocation = g.location;
+  
   local attribute d :: Decorated Defs;
-  d = if g.name == top.grammarName then head(mitem).defs else head(mitem).exportedDefs;  
+  d = med.defs;  
 
   local attribute d1 :: Decorated Defs;
   d1 = if null(o) then d else filterDefs(keepFilter(o, getFullNames(o, d)), d);
@@ -31,9 +29,17 @@ top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String]
   local attribute d4 :: Decorated Defs;
   d4 = if a == "" then d3 else mapDefs(prependMap(a), d3);
 
-  top.defs = if null(mitem) 
-	     then emptyDefs() 
-	     else d4;		  
+  top.defs = d4;		  
+  top.errors := med.errors;
+  top.warnings = [];
+}
+
+function applyMappings
+Decorated Defs ::= maps::[EnvMap] old::Decorated Defs
+{
+  return if null(maps)
+	 then old
+	 else mapDefs(head(maps), applyMappings(tail(maps), old));
 }
 
 abstract production fullNameFilter
@@ -54,6 +60,40 @@ function getNames
 [String] ::= e::[Decorated EnvItem] {
   return if null(e) then [] else [head(e).fullName] ++ getNames(tail(e));
 }
+
+-- recurses through exportedGrammars, grabbing all definitions
+
+inherited attribute importLocation :: Decorated Location;
+nonterminal ModuleExportedDefs with defs, errors, importLocation;
+abstract production moduleExportedDefs
+top::ModuleExportedDefs ::= compiled::[Decorated RootSpec] need::[String] seen::[String]
+{
+  production attribute recurse :: ModuleExportedDefs;
+  recurse = moduleExportedDefs(compiled, new_need, new_seen);
+  recurse.importLocation = top.importLocation;
+  
+  local attribute gram :: String;
+  gram = head(need);
+  
+  local attribute new_seen :: [String];
+  new_seen = cons(gram, seen);
+  
+  production attribute rs :: [Decorated RootSpec];
+  rs = getRootSpec(gram, compiled);
+  
+  production attribute add_to_need :: [String] with ++;
+  add_to_need := head(rs).exportedGrammars;
+  
+  local attribute new_need :: [String];
+  new_need = rem(makeSet(tail(need) ++ add_to_need), new_seen);
+  
+  top.defs = if null(need) || null(rs) then emptyDefs() else appendDefs(head(rs).defs, recurse.defs);
+  top.errors := if null(need) then [] else 
+             if null(rs) then [err(top.importLocation, "Grammar '" ++ gram ++ "' cannot be found.")] else recurse.errors;
+}
+
+-----------------------
+-- ImportStmts
 
 concrete production importStmt
 top::ImportStmt ::= 'import' m::ModuleExpr ';'{
@@ -118,6 +158,8 @@ top::ImportStmts ::= h::ImportStmts t::ImportStmts
   top.importedDefs = appendDefs(h.importedDefs, t.importedDefs);
 }
 
+-----------------------
+-- ModuleStmts
 
 abstract production moduleStmtsNone 
 top::ModuleStmts ::=
@@ -130,7 +172,7 @@ top::ModuleStmts ::=
 
   top.moduleNames = [];
   top.importedDefs = emptyDefs();
-  top.exportedDefs = emptyDefs();
+  top.exportedGrammars = [];
 }
 
 concrete production moduleStmtsOne 
@@ -144,7 +186,7 @@ top::ModuleStmts ::= m::ModuleStmt
 
   top.moduleNames = m.moduleNames;
   top.importedDefs = m.importedDefs;
-  top.exportedDefs = m.exportedDefs;
+  top.exportedGrammars = m.exportedGrammars;
 }
 
 concrete production moduleStmtsCons
@@ -158,7 +200,7 @@ top::ModuleStmts ::= h::ModuleStmt t::ModuleStmts
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
   top.importedDefs = appendDefs(h.importedDefs, t.importedDefs);
-  top.exportedDefs = appendDefs(h.exportedDefs, t.exportedDefs);
+  top.exportedGrammars = h.exportedGrammars ++ t.exportedGrammars;
 }
 
 concrete production importsStmt
@@ -171,7 +213,7 @@ top::ModuleStmt ::= 'imports' m::ModuleExpr ';'{
 
   top.moduleNames = m.moduleNames;
   top.importedDefs = m.defs;
-  top.exportedDefs = emptyDefs();
+  top.exportedGrammars = [];
 }
 
 concrete production exportsStmt
@@ -183,9 +225,12 @@ top::ModuleStmt ::= 'exports' m::ModuleName ';'{
   top.warnings := m.warnings;
 
   top.moduleNames = m.moduleNames;
-  top.exportedDefs = m.defs;
+  top.exportedGrammars = m.moduleNames;
   top.importedDefs = emptyDefs();
 }
+
+-----------------------
+-- ModuleExpr
 
 concrete production moduleName
 top::ModuleName ::= pkg::QName
@@ -349,18 +394,3 @@ top::NameList ::= h::QName ',' t::NameList
   top.names = [h.name] ++ t.names;
 }
 
-function applyMappings
-Decorated Defs ::= maps::[EnvMap] old::Decorated Defs
-{
-  return if null(maps)
-	 then old
-	 else mapDefs(head(maps), applyMappings(tail(maps), old));
-}
-
-function applyFilters
-Decorated Defs ::= fils::[EnvFilter] old::Decorated Defs
-{
-  return if null(fils) 
-	 then old
-	 else filterDefs(head(fils), applyFilters(tail(fils), old));
-}

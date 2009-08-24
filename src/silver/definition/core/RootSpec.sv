@@ -43,7 +43,7 @@ top::RootSpec ::=  c1::Decorated Root
 
   top.importedDefs = c1.importedDefs;
   top.defs = c1.defs;
-  top.exportedDefs = c1.exportedDefs;
+  top.exportedGrammars = c1.exportedGrammars;
 
   top.errors := c1.errors;
   top.warnings := c1.warnings;
@@ -81,7 +81,7 @@ top::RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
 
   top.importedDefs = appendDefs(c1.importedDefs, c2.importedDefs);
   top.defs = appendDefs(c1.defs, c2.defs);
-  top.exportedDefs = appendDefs(c1.exportedDefs, c2.exportedDefs);
+  top.exportedGrammars = c1.exportedGrammars ++ c2.exportedGrammars;
 
   top.errors := c1.errors ++ c2.errors;
   top.warnings := c1.warnings ++ c2.warnings;

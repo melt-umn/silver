@@ -1,7 +1,7 @@
 grammar silver:definition:core;
 import silver:definition:env;
 
-nonterminal Root with location, grammarName, impliedName, file, declaredName, moduleNames, importedDefs, exportedDefs, warnings, errors, compiledGrammars, env, globalImports, defs, pp;
+nonterminal Root with location, grammarName, impliedName, file, declaredName, moduleNames, importedDefs, exportedGrammars, warnings, errors, compiledGrammars, env, globalImports, defs, pp;
 
 closed nonterminal Location with line, column, fileName, warnings, errors, env, defs, pp;
 
@@ -31,12 +31,12 @@ nonterminal ExprInh with location, grammarName, file, warnings, errors, signatur
 nonterminal ExprLHSExpr with location, grammarName, file, warnings, errors, typerep, signatureEnv, localsEnv, env, defs, pp;
 nonterminal Exprs with location, grammarName, file, warnings, errors, signature, expectedInputTypes, exprs, signatureEnv, localsEnv, env, defs, pp;
 nonterminal Module with errors, warnings, grammarName, compiledGrammars, defs;
-nonterminal ImportStmt with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, importedDefs, defs, pp;
-nonterminal ImportStmts with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, importedDefs, defs, pp;
-nonterminal ModuleName with location, grammarName, file, moduleNames, importedDefs, exportedDefs, compiledGrammars, warnings, errors, pp, defs;
-nonterminal ModuleExpr with location, grammarName, file, moduleNames, importedDefs, exportedDefs, compiledGrammars, warnings, errors, pp, defs;
-nonterminal ModuleStmts with location, grammarName, file, moduleNames, importedDefs, exportedDefs, compiledGrammars, warnings, errors, pp;
-nonterminal ModuleStmt with location, grammarName, file, moduleNames, importedDefs, exportedDefs, compiledGrammars, warnings, errors, pp;
+nonterminal ImportStmt with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, importedDefs, pp;
+nonterminal ImportStmts with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, importedDefs, pp;
+nonterminal ModuleName with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, pp, defs;
+nonterminal ModuleExpr with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, pp, defs;
+nonterminal ModuleStmts with location, grammarName, file, moduleNames, importedDefs, exportedGrammars, compiledGrammars, warnings, errors, pp;
+nonterminal ModuleStmt with location, grammarName, file, moduleNames, importedDefs, exportedGrammars, compiledGrammars, warnings, errors, pp;
 nonterminal WithElems with location, grammarName, file, envMaps, warnings, errors, env, defs, pp;
 nonterminal WithElem with location, grammarName, file, envMaps, warnings, errors, env, defs, pp;
 nonterminal ProductionBody with location, grammarName, file, productionAttributes, warnings, errors, signature, signatureEnv, localsEnv, env, defs, pp;

@@ -84,7 +84,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.defs = ags.defs;
 
   top.importedDefs = ms.importedDefs;
-  top.exportedDefs = appendDefs(ms.exportedDefs, top.defs); -- emptyDefs()?
+  top.exportedGrammars = ms.exportedGrammars;
 
   top.errors := gdcl.errors ++ ms.errors ++ allImports.errors ++ ags.errors;
   top.warnings := gdcl.warnings ++ ms.warnings ++ allImports.warnings ++ ags.warnings;

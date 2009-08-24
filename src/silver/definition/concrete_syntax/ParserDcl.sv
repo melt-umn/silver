@@ -5,7 +5,7 @@ import silver:definition:env;
 nonterminal ParserDcl with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, defs, pp, parserDcls, fullName, typerep, nonTerminalDcls, terminalDcls, ruleDcls, env;
 nonterminal ModuleList with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, pp, nonTerminalDcls, terminalDcls, ruleDcls;
 
-attribute ruleDcls, terminalDcls, nonTerminalDcls occurs on ModuleName, Module;
+attribute ruleDcls, terminalDcls, nonTerminalDcls occurs on ModuleName, Module, ModuleExportedDefs;
 
 terminal Parser_kwd /parser/ lexer classes {KEYWORD};
 
@@ -55,8 +55,8 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
 }
 
 concrete production moduleListOne
-top::ModuleList ::= c1::ModuleName ';' {
-
+top::ModuleList ::= c1::ModuleName ';'
+{
   top.pp = c1.pp;
   top.location = c1.location;
   top.moduleNames = c1.moduleNames;
@@ -70,8 +70,8 @@ top::ModuleList ::= c1::ModuleName ';' {
 }
 
 concrete production moduleListCons
-top::ModuleList ::= c1::ModuleName ';' c2::ModuleList {
-
+top::ModuleList ::= c1::ModuleName ';' c2::ModuleList
+{
   top.pp = c1.pp ++ ", " ++ c2.pp;
   top.location = c1.location;
   top.moduleNames = c1.moduleNames ++ c2.moduleNames;
@@ -93,19 +93,17 @@ top::ModuleName ::= pkg::QName
 }
 
 aspect production module 
-top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[EnvMap] {
+top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[EnvMap]
+{
+  top.ruleDcls = med.ruleDcls;		  
+  top.terminalDcls = med.terminalDcls;		  
+  top.nonTerminalDcls = med.nonTerminalDcls;		  
+}
 
-  top.ruleDcls = if null(mitem) 
-	     then []
-	     else head(mitem).ruleDcls;		  
-
-
-  top.terminalDcls = if null(mitem) 
-	     then []
-	     else head(mitem).terminalDcls;		  
-
-
-  top.nonTerminalDcls = if null(mitem) 
-	     then []
-	     else head(mitem).nonTerminalDcls;		  
+aspect production moduleExportedDefs
+top::ModuleExportedDefs ::= compiled::[Decorated RootSpec] need::[String] seen::[String]
+{
+  top.ruleDcls = if null(need) || null(rs) then [] else (head(rs).ruleDcls ++ recurse.ruleDcls);
+  top.terminalDcls = if null(need) || null(rs) then [] else (head(rs).terminalDcls ++ recurse.terminalDcls);
+  top.nonTerminalDcls = if null(need) || null(rs) then [] else (head(rs).nonTerminalDcls ++ recurse.nonTerminalDcls);
 }

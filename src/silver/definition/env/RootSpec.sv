@@ -3,9 +3,9 @@ import silver:util;
 
 synthesized attribute declaredName :: String;
 synthesized attribute defs :: Decorated Defs;
-synthesized attribute exportedDefs :: Decorated Defs;
+synthesized attribute exportedGrammars :: [String];
 synthesized attribute moduleNames :: [String];
-closed nonterminal RootSpec with defs, declaredName, exportedDefs, moduleNames, unparse;
+closed nonterminal RootSpec with defs, declaredName, exportedGrammars, moduleNames, unparse;
 
 function emptyRootSpec
 Decorated RootSpec ::= 
@@ -20,7 +20,7 @@ top::RootSpec ::=
   top.declaredName = "_NULL_";
   top.moduleNames = [];
   top.defs = emptyDefs();
-  top.exportedDefs = emptyDefs();  
+  top.exportedGrammars = [];  
 }
 
 function getRootSpec
@@ -37,7 +37,7 @@ top::RootSpecUnparse ::= r::Decorated RootSpec{
 		"declaredName " ++ quoteString(r.declaredName),
 		"moduleNames [" ++ folds(",", quoteStrings(r.moduleNames)) ++ "]",
 	       	"defs " ++ r.defs.unparse,
-	       	"exportedDefs " ++ r.exportedDefs.unparse	      	
+	       	"exportedGrammars [" ++ folds(",", quoteStrings(r.exportedGrammars)) ++ "]"
 	      ];
 
   top.unparse = folds("\n", unparses);
