@@ -1,2 +1,0 @@
-grammar silver:extension:list;
-
