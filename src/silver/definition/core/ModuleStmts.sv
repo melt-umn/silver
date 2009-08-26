@@ -173,6 +173,7 @@ top::ModuleStmts ::=
   top.moduleNames = [];
   top.importedDefs = emptyDefs();
   top.exportedGrammars = [];
+  top.condBuild = [];
 }
 
 concrete production moduleStmtsOne 
@@ -187,6 +188,7 @@ top::ModuleStmts ::= m::ModuleStmt
   top.moduleNames = m.moduleNames;
   top.importedDefs = m.importedDefs;
   top.exportedGrammars = m.exportedGrammars;
+  top.condBuild = m.condBuild;
 }
 
 concrete production moduleStmtsCons
@@ -201,6 +203,7 @@ top::ModuleStmts ::= h::ModuleStmt t::ModuleStmts
   top.moduleNames = h.moduleNames ++ t.moduleNames;
   top.importedDefs = appendDefs(h.importedDefs, t.importedDefs);
   top.exportedGrammars = h.exportedGrammars ++ t.exportedGrammars;
+  top.condBuild = h.condBuild ++ t.condBuild;
 }
 
 concrete production importsStmt
@@ -214,6 +217,7 @@ top::ModuleStmt ::= 'imports' m::ModuleExpr ';'{
   top.moduleNames = m.moduleNames;
   top.importedDefs = m.defs;
   top.exportedGrammars = [];
+  top.condBuild = [];
 }
 
 concrete production exportsStmt
@@ -225,9 +229,26 @@ top::ModuleStmt ::= 'exports' m::ModuleName ';'{
   top.warnings := m.warnings;
 
   top.moduleNames = m.moduleNames;
-  top.exportedGrammars = m.moduleNames;
   top.importedDefs = emptyDefs();
+  top.exportedGrammars = m.moduleNames;
+  top.condBuild = [];
 }
+
+concrete production buildsStmt
+top::ModuleStmt ::= 'build' m::QName 'with' c::QName ';'{
+  top.pp = "build " ++ m.pp ++ " with " ++ c.pp ++ ";";
+  top.location = loc(top.file, $1.line, $1.column);
+
+  -- TODO: should check to make sure these grammars are found, somehow?
+  top.errors := [];
+  top.warnings := [];
+
+  top.moduleNames = [];
+  top.importedDefs = emptyDefs();
+  top.exportedGrammars = [];
+  top.condBuild = [[c.name, m.name]]; -- c -> m
+}
+  
 
 -----------------------
 -- ModuleExpr

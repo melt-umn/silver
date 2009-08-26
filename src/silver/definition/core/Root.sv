@@ -85,6 +85,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 
   top.importedDefs = ms.importedDefs;
   top.exportedGrammars = ms.exportedGrammars;
+  top.condBuild = ms.condBuild;
 
   top.errors := gdcl.errors ++ ms.errors ++ allImports.errors ++ ags.errors;
   top.warnings := gdcl.warnings ++ ms.warnings ++ allImports.warnings ++ ags.warnings;

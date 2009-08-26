@@ -55,6 +55,7 @@ terminal DeclaredNameTerm /declaredName/ lexer classes {C_1};
 terminal ModuleNamesTerm /moduleNames/ lexer classes {C_1};
 terminal DefsTerm /defs/ lexer classes {C_1};
 terminal ExportedGrammarsTerm /exportedGrammars/ lexer classes {C_1};
+terminal CondBuildTerm 'condBuild' lexer classes {C_1};
 
 synthesized attribute spec :: Decorated RootSpec;
 synthesized attribute signature :: Decorated NamedSignature;
@@ -64,8 +65,8 @@ synthesized attribute typereps :: [Decorated TypeRep];
 synthesized attribute names :: [String];
 
 nonterminal aRootSpec with spec;
-nonterminal aRootSpecPart with defs, exportedGrammars, declaredName, moduleNames;
-nonterminal aRootSpecParts with defs, exportedGrammars, declaredName, moduleNames;
+nonterminal aRootSpecPart with defs, exportedGrammars, condBuild, declaredName, moduleNames;
+nonterminal aRootSpecParts with defs, exportedGrammars, condBuild, declaredName, moduleNames;
 nonterminal aDefs with defs;
 nonterminal aDefsInner with defs;
 nonterminal aEnvItem with defs;
@@ -94,6 +95,7 @@ top::RootSpec ::= p::aRootSpecParts{
   top.moduleNames = p.moduleNames;
   top.defs = p.defs;
   top.exportedGrammars = p.exportedGrammars;
+  top.condBuild = p.condBuild;
 
   forwards to i_emptyRootSpec();
 }
@@ -112,6 +114,7 @@ top::aRootSpecParts ::= r::aRootSpecPart{
   top.defs = r.defs;
   top.moduleNames = [];
   top.exportedGrammars = r.exportedGrammars;
+  top.condBuild = r.condBuild;  
 }
 
 concrete production aRoot2
@@ -120,6 +123,7 @@ top::aRootSpecParts ::= r1::aRootSpecPart r2::aRootSpecParts{
   top.defs = appendDefs(r1.defs, r2.defs);
   top.moduleNames = r1.moduleNames ++ r2.moduleNames;
   top.exportedGrammars = r1.exportedGrammars ++ r2.exportedGrammars;
+  top.condBuild = r1.condBuild ++ r2.condBuild;
 }
 
 --The pieces
@@ -129,6 +133,7 @@ top::aRootSpecPart ::= {
   top.moduleNames = [];
   top.defs = emptyDefs();
   top.exportedGrammars = [];
+  top.condBuild = [];
 }
 
 concrete production aRootDeclaredName
@@ -153,6 +158,18 @@ concrete production aRootExportedGrammars
 top::aRootSpecPart ::= n::ExportedGrammarsTerm i::aNames{
   top.exportedGrammars = i.names;
   forwards to aRootSpecDefault();
+}
+
+concrete production aRootCondBuilds
+top::aRootSpecPart ::= n::CondBuildTerm i::aNames{
+  top.condBuild = unfoldCB(i.names);
+  forwards to aRootSpecDefault();
+}
+
+function unfoldCB
+[[String]] ::= lst::[String]
+{
+  return if null(lst) then [] else cons( [head(lst), head(tail(lst))], unfoldCB(tail(tail(lst))));
 }
 
 --The lists

@@ -48,6 +48,7 @@ terminal False_kwd /false/ lexer classes {KEYWORD};
 terminal Import_kwd  /import/ lexer classes {KEYWORD} ;
 terminal Imports_kwd  /imports/ lexer classes {KEYWORD} ;
 terminal Exports_kwd  /exports/ lexer classes {KEYWORD} ;
+terminal Build_kwd    'build'   lexer classes {KEYWORD} ;
 terminal Only_kwd    /only/   lexer classes {KEYWORD} ;
 terminal Hiding_kwd  /hiding/ lexer classes {KEYWORD} ;
 terminal With_kwd    /with/   lexer classes {KEYWORD} ;

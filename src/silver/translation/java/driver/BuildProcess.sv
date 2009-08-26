@@ -14,23 +14,23 @@ import core;
 aspect production run
 top::RunUnit ::= iIn::IO args::String
 {
-  postOps <- if a.noJavaGeneration then [] else [genJava(a, grammars)]; 
+  postOps <- if a.noJavaGeneration then [] else [genJava(a, grammars, nonTreeGrammars)]; 
 }
 
 abstract production genJava
-top::Unit ::= a::Command specs::[Decorated RootSpec]
+top::Unit ::= a::Command specs::[Decorated RootSpec] extras::[String]
 {
-  forwards to genJavaHelp(a, specs)
+  forwards to genJavaHelp(a, specs, extras)
 	with {
 		ioIn = print("Generating Java Translation.\n", top.ioIn);
 	};
 }
 
 abstract production genJavaHelp
-top::Unit ::= a::Command specs::[Decorated RootSpec]
+top::Unit ::= a::Command specs::[Decorated RootSpec] extras::[String]
 {
   local attribute i :: IO;
-  i = writeAll(top.ioIn, a, specs);
+  i = writeAll(top.ioIn, a, specs, extras);
  
   local attribute buildFile :: IO;
   buildFile = writeBuildFile(i, a, specs).io;
@@ -41,19 +41,19 @@ top::Unit ::= a::Command specs::[Decorated RootSpec]
 }
 
 function writeAll
-IO ::= i::IO a::Decorated Command l::[Decorated RootSpec]
+IO ::= i::IO a::Decorated Command l::[Decorated RootSpec] extras::[String]
 {
   local attribute now :: IO;
-  now = writeSpec(i, head(l), a);
+  now = writeSpec(i, head(l), a, extras);
 
   local attribute recurse :: IO;
-  recurse = writeAll(now, a, tail(l));
+  recurse = writeAll(now, a, tail(l), extras);
 
   return if null(l) then i else recurse;
 }
 
 function writeSpec
-IO ::= i::IO r::Decorated RootSpec a::Decorated Command
+IO ::= i::IO r::Decorated RootSpec a::Decorated Command extras::[String]
 {
   local attribute package :: String;
   package = substitute("/", ":", r.declaredName) ++ "/";
@@ -68,7 +68,7 @@ IO ::= i::IO r::Decorated RootSpec a::Decorated Command
   mkdir = system("mkdir -p " ++ specLocation, envArg.io).io;
 
   local attribute mki :: IO;
-  mki = writeFile(specLocation ++ "Init.java", makeInit(r), mkdir);
+  mki = writeFile(specLocation ++ "Init.java", makeInit(r, if a.grammarName == r.impliedName then extras else []), mkdir);
 
   local attribute mains :: [Decorated EnvItem];
   mains = getFunctionDcl(r.declaredName ++ ":main", toEnv(r.defs));
@@ -254,7 +254,7 @@ IO ::= i::IO l::String s::[[String]]{
 }
 
 function makeInit
-String ::= r::Decorated RootSpec{
+String ::= r::Decorated RootSpec extras::[String]{
   local attribute className :: String;
   className = makeName(r.declaredName) ++ ".Init";
 
@@ -273,7 +273,7 @@ String ::= r::Decorated RootSpec{
 
 "\t\t" ++ className ++ ".init = true;\n\n" ++
 
-makeOthers(r.moduleNames, "init") ++ "\n" ++
+makeOthers(r.moduleNames ++ extras, "init") ++ "\n" ++
 
 "\t\t" ++ className ++ ".initAspectAttributeDefinitions();\n" ++
 "\t\t" ++ className ++ ".initProductionAttributeDefinitions();\n" ++
@@ -282,7 +282,7 @@ makeOthers(r.moduleNames, "init") ++ "\n" ++
 "\tpublic static void postInit(){\n" ++
 "\t\tif(" ++ className ++ ".postInit) return;\n\n" ++
 "\t\t" ++ className ++ ".postInit = true;\n\n" ++
-makeOthers(r.moduleNames, "postInit") ++ "\n\n" ++
+makeOthers(r.moduleNames ++ extras, "postInit") ++ "\n\n" ++
 r.postInit ++
 "\t}\n\n" ++
 
