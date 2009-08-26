@@ -14,7 +14,7 @@ aspect production run
 top::RunUnit ::= iIn::IO args::String
 {
   preOps <- if a.displayVersion then [printVersion()] else [];
-  postOps <- [doInterfaces(spath, unit.compiledList ++ reUnit.compiledList, needRecompileNames, a.doClean)];
+  postOps <- [doInterfaces(spath, unit.compiledList ++ reUnit.compiledList ++ condUnit.compiledList, needRecompileNames, a.doClean)];
 }
 
 abstract production printVersion
