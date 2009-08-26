@@ -50,7 +50,7 @@ top::Expr ::= 'system' '(' e1::Expr ',' e2::Expr ')'
 aspect production writeFunction
 top::Expr ::= 'writeFile' '(' e1::Expr ',' e2::Expr ',' e3::Expr ')'
 {  
-  top.translation = "(common.Util.io(" ++ e3.translation ++ ", common.Util.writeFile(" ++ e1.translation ++ ".toString(), " ++ e2.translation ++ ".toString())))";
+  top.translation = "(common.Util.io(" ++ e3.translation ++ ", common.Util.writeFile(" ++ e1.translation ++ ".toString(), " ++ e2.translation ++ ")))";
 }
 
 aspect production appendFunction

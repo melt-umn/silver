@@ -6,6 +6,11 @@ String ::= s::String c1::[String]
   return if null(c1) then "" else head(c1) ++ (if null(tail(c1)) then "" else s) ++ folds(s, tail(c1));
 }
 
+function foldss
+String ::= s1::String s2::String sl::[[String]]{
+  return if null(sl) then "" else folds(s2, head(sl)) ++ (if null(tail(sl)) then "" else s1) ++ foldss(s1, s2, tail(sl));
+}
+
 function contains
 Boolean ::= s::String sl::[String]
 {

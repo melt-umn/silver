@@ -90,10 +90,8 @@ top::RunUnit ::= iIn::IO args::String
   production attribute needRecompileNames :: [String];
   needRecompileNames = getHeads(normalizeInterfaces(needRecompile));
 
-  --TODO is this right?  do we ned the needRecompileNames?
   -- the names of the grammars that have been seen. 
   local attribute seenNames :: [String];
---  seenNames = rem(unit.seenGrammars ++ extraUnit.seenGrammars, needRecompileNames);
   seenNames = unit.seenGrammars ++ extraUnit.seenGrammars;
 
   -- the grammars that we have recompiled
@@ -107,10 +105,27 @@ top::RunUnit ::= iIn::IO args::String
   production attribute ifaces :: [Decorated Interface];
   ifaces = unit.interfaces ++ extraUnit.interfaces;
 
+  -- a list of the specs from all the grammars compiled EXCEPT the conditional build grammars!
+  local attribute grammarsWithoutCond :: [Decorated RootSpec];
+  grammarsWithoutCond = unit.compiledList ++ reUnit.compiledList ++ getSpecs(noNeedRecompile);
+
+  production attribute condUnit :: CompilationUnit;
+  condUnit = compileConditionals(reUnit.io, spath, seenNames ++ reUnit.seenGrammars, a.doClean, grammarsWithoutCond);
+  condUnit.rParser = top.rParser;
+  condUnit.iParser = top.iParser;
+  condUnit.compiledGrammars = grammars;
+  
+  -- grammars not in the tree formed by moduleNames on the root grammar
+  production attribute nonTreeRootSpecs :: [Decorated RootSpec];
+  nonTreeRootSpecs = condUnit.compiledList ++ getSpecs(condUnit.interfaces);
+  production attribute nonTreeGrammars :: [String];
+  nonTreeGrammars = collectGrammars(nonTreeRootSpecs);
+  -- TODO: Bug? extraGrammars above should probably be included here!!
+  -- otherwise, their inits are never called.
+
   -- a list of the specs from _all_ the grammars compiled.
   production attribute grammars :: [Decorated RootSpec];
-  grammars = unit.compiledList ++ reUnit.compiledList ++ getSpecs(noNeedRecompile);
-
+  grammars = unit.compiledList ++ reUnit.compiledList ++ getSpecs(noNeedRecompile) ++ nonTreeRootSpecs;
 
   --the operations that will be executed _after_ parsing and linking of the grammars has been done
   production attribute postOps :: [Unit] with ++;
@@ -119,17 +134,11 @@ top::RunUnit ::= iIn::IO args::String
   top.io = if preIO.iValue != 0 --the preops tell us to quit.
            then preIO.io
            else if a.okay && grammarLocation.found --the args were okay and the grammar was found.
-	        then runAll(reUnit.io, unitMergeSort(postOps)).io
+	        then runAll(condUnit.io, unitMergeSort(postOps)).io
 	        else if a.okay && !grammarLocation.found --the args were okay but the grammar was not found
 	             then print("\nGrammar '" ++ a.gName ++ "' could not be located, make sure that the grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io)
 		     else print(a.usage, iIn); -- the args were not okay.
 }
-
-function foldss
-String ::= s1::String s2::String sl::[[String]]{
-  return if null(sl) then "" else folds(s2, head(sl)) ++ (if null(tail(sl)) then "" else s1) ++ foldss(s1, s2, tail(sl));
-}
-
 
 --A function to run the units of work
 function runAll
@@ -144,6 +153,59 @@ IOInteger ::= i::IO l::[Unit]
 	  else if now.code != 0
 	       then ioInteger(now.io, now.code)
 	       else runAll(now.io, tail(l));
+}
+
+
+abstract production compileConditionals
+top::CompilationUnit ::= iIn::IO sPath::[String] seen::[String] clean::Boolean sofar::[Decorated RootSpec]
+{
+  local attribute foundGrammar :: [String]; -- really more of a Maybe String
+  foundGrammar = findTriggeredGrammar(seen, collectCondBuild(sofar));
+
+  -- the current grammar
+  production attribute now :: CompilationUnit;
+  now = compileGrammars(iIn, sPath, foundGrammar, seen, clean);
+  now.rParser = top.rParser;
+  now.iParser = top.iParser;
+  now.compiledGrammars = top.compiledGrammars;
+
+  top.seenGrammars = if null(foundGrammar) then seen else recurse.seenGrammars;
+  top.needGrammars = [];
+
+  --the recursion
+  production attribute recurse :: CompilationUnit;
+  recurse = compileConditionals(now.io, sPath, now.seenGrammars, clean, now.compiledList ++ getSpecs(now.interfaces) ++ sofar);
+  recurse.rParser = top.rParser;
+  recurse.iParser = top.iParser;
+  recurse.compiledGrammars = top.compiledGrammars;
+
+  top.io = if null(foundGrammar) then iIn else recurse.io;
+
+  top.compiledList = if null(foundGrammar)
+		     then []
+		     else now.compiledList ++ recurse.compiledList;
+
+  top.interfaces = if null(foundGrammar)
+		   then []
+		   else now.interfaces ++ recurse.interfaces;
+}
+function collectCondBuild
+[[String]] ::= lst::[Decorated RootSpec]
+{
+  return if null(lst) then [] else head(lst).condBuild ++ collectCondBuild(tail(lst));
+}
+function collectGrammars
+[String] ::= lst::[Decorated RootSpec]
+{
+  return if null(lst) then [] else cons(head(lst).impliedName, collectGrammars(tail(lst)));
+}
+function findTriggeredGrammar
+[String] ::= grams::[String] triggers::[[String]]
+{
+  return if null(triggers) then []
+         else if contains(head(head(triggers)), grams) && !contains(head(tail(head(triggers))), grams)
+              then [head(tail(head(triggers)))]
+              else findTriggeredGrammar(grams, tail(triggers));
 }
 
 synthesized attribute compiledList :: [Decorated RootSpec];
@@ -215,8 +277,8 @@ top::CompilationUnit ::= grams::[[String]] need::[String] seen::[String]
 --this production compiles the given grammars and dynamically adds new grammars to compile to the list.
 --grammars will on;y be compiled once.
 abstract production compileGrammars
-top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] clean::Boolean{
-
+top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] clean::Boolean
+{
   -- the current grammar
   production attribute now :: Grammar;
   now = compileGrammar(iIn, head(need), sPath, clean);

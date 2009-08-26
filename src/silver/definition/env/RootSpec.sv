@@ -4,8 +4,9 @@ import silver:util;
 synthesized attribute declaredName :: String;
 synthesized attribute defs :: Decorated Defs;
 synthesized attribute exportedGrammars :: [String];
+synthesized attribute condBuild :: [[String]];
 synthesized attribute moduleNames :: [String];
-closed nonterminal RootSpec with defs, declaredName, exportedGrammars, moduleNames, unparse;
+closed nonterminal RootSpec with defs, declaredName, exportedGrammars, condBuild, moduleNames, unparse;
 
 function emptyRootSpec
 Decorated RootSpec ::= 
@@ -20,7 +21,8 @@ top::RootSpec ::=
   top.declaredName = "_NULL_";
   top.moduleNames = [];
   top.defs = emptyDefs();
-  top.exportedGrammars = [];  
+  top.exportedGrammars = [];
+  top.condBuild = [];
 }
 
 function getRootSpec
@@ -37,10 +39,17 @@ top::RootSpecUnparse ::= r::Decorated RootSpec{
 		"declaredName " ++ quoteString(r.declaredName),
 		"moduleNames [" ++ folds(",", quoteStrings(r.moduleNames)) ++ "]",
 	       	"defs " ++ r.defs.unparse,
-	       	"exportedGrammars [" ++ folds(",", quoteStrings(r.exportedGrammars)) ++ "]"
+	       	"exportedGrammars [" ++ folds(",", quoteStrings(r.exportedGrammars)) ++ "]",
+	       	"condBuild [" ++ foldCB(r.condBuild) ++ "]"
 	      ];
 
   top.unparse = folds("\n", unparses);
+}
+
+function foldCB
+String ::= inp::[[String]]
+{
+  return if null(inp) then "" else folds(",", quoteStrings(head(inp))) ++ if null(tail(inp)) then "" else foldCB(tail(inp));
 }
 
 function quoteStrings
