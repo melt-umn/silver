@@ -1,6 +1,7 @@
 grammar silver:translation:java:concrete_syntax:copper;
 import silver:translation:java:core;
 import silver:translation:java:driver;
+import silver:translation:java:command;
 import silver:driver;
 
 import silver:definition:core hiding grammarName;
@@ -46,7 +47,7 @@ IO ::= i::IO a::Decorated Command l::[Decorated RootSpec]
   return if null(l) then i else recurse;
 }
 
-
+-- duplicated from translation:java:driver/buildprocess
 function writeCSSpecs
 IO ::= i::IO r::Decorated RootSpec a::Decorated Command
 {
@@ -55,9 +56,12 @@ IO ::= i::IO r::Decorated RootSpec a::Decorated Command
 
   local attribute envArg :: IOString;
   envArg = envVar("SILVER_JAVA", i);
+  
+  local attribute javaGenLoc :: String;
+  javaGenLoc = if length(a.javaGen) > 0 then a.javaGen else envArg.sValue;
 
   production attribute specLocation :: String;
-  specLocation = envArg.sValue ++ (if substring(length(envArg.sValue)-1, length(envArg.sValue), envArg.sValue) != "/" then "/src/" else "src/") ++ package; 
+  specLocation = javaGenLoc ++ (if substring(length(javaGenLoc)-1, length(javaGenLoc), javaGenLoc) != "/" then "/src/" else "src/") ++ package; 
 
   return writeCSSpec(envArg.io, specLocation, r.parserDcls);
 }
