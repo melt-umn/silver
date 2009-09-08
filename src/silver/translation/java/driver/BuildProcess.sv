@@ -14,7 +14,22 @@ import core;
 aspect production run
 top::RunUnit ::= iIn::IO args::String
 {
+  preOps <- if a.noJavaGeneration then [] else [checkJavaGen(a)];
   postOps <- if a.noJavaGeneration then [] else [genJava(a, grammars, nonTreeGrammars)]; 
+}
+
+abstract production checkJavaGen
+top::Unit ::= a::Command
+{
+  local attribute envArg :: IOString;
+  envArg = envVar("SILVER_JAVA", top.ioIn);
+
+  local attribute problem :: Boolean;
+  problem = !(length(envArg.sValue) > 0 || length(a.javaGen) > 0);
+
+  top.io = if problem then print("Missing a location to generate java files. Please set SILVER_JAVA or use -J <path>\n",envArg.io) else envArg.io;
+  top.code = if problem then 1 else 0;
+  top.order = 0;
 }
 
 abstract production genJava
@@ -52,6 +67,7 @@ IO ::= i::IO a::Decorated Command l::[Decorated RootSpec] extras::[String]
   return if null(l) then i else recurse;
 }
 
+-- note: duplication in copper's buildprocess.sv
 function writeSpec
 IO ::= i::IO r::Decorated RootSpec a::Decorated Command extras::[String]
 {
@@ -60,9 +76,12 @@ IO ::= i::IO r::Decorated RootSpec a::Decorated Command extras::[String]
 
   local attribute envArg :: IOString;
   envArg = envVar("SILVER_JAVA", i);
+  
+  local attribute javaGenLoc :: String;
+  javaGenLoc = if length(a.javaGen) > 0 then a.javaGen else envArg.sValue;
 
   production attribute specLocation :: String;
-  specLocation = envArg.sValue ++ (if substring(length(envArg.sValue)-1, length(envArg.sValue), envArg.sValue) != "/" then "/src/" else "src/") ++ package; 
+  specLocation = javaGenLoc ++ (if substring(length(javaGenLoc)-1, length(javaGenLoc), javaGenLoc) != "/" then "/src/" else "src/") ++ package; 
 
   local attribute mkdir :: IO;
   mkdir = system("mkdir -p " ++ specLocation, envArg.io).io;
