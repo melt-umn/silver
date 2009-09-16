@@ -5,6 +5,8 @@ import silver:translation:java:core hiding makeName;
 
 import silver:util;
 
+import silver:definition:regex with parse as parseRegex;
+
 function makeCopperName
 String ::= str::String
 {
@@ -24,32 +26,64 @@ String ::= grammar_name::String spec::Decorated ParserSpec
   local attribute s :: String;
   s = makeCopperName(spec.startName);
 
-----  local attribute filtered :: FilterResult;
-----  filtered = filterSyntax(spec.hiddenSyntax, spec.terminalDcls, spec.ruleDcls);
-
-  local attribute precsRules :: [Decorated ParserPrecSpec];
-----  precsRules = getParserPrecSpecRules(filtered.ruleDcls);
-  precsRules = getParserPrecSpecRules(spec.ruleDcls);
-
---  local attribute merged :: [Decorated RuleSpec];
-----  merged = mergeRules(filtered.ruleDcls);
---  merged = mergeRules(spec.ruleDcls);
+  local attribute emptyStr :: Decorated TerminalSpec;
+  emptyStr = terminalSpec("EmptyString", [ignoreTerminalModifierSpec()], regExprSpec("//"));
 
   local attribute univLayout :: String;
-  univLayout = generateUniversalLayout(grammar_name, spec.terminalDcls) ++ " EmptyString";
+  univLayout = generateUniversalLayout(grammar_name, cons(emptyStr, spec.terminalDcls));
 
   local attribute rv :: String;
   rv = 
+"<?xml version=\"1.0\"?>\n\n" ++
+
+"<copperspec id=\"" ++ grammar_name ++ "\" type=\"LALR1\" version=\"1.1\">\n" ++
+"  <preamble>\n" ++
+"     <code><![CDATA[\n" ++
+"import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;\n" ++
+"     ]]></code>\n" ++
+"  </preamble>\n\n" ++
+
              makeDisambiguateSpecString(spec.disambiguationGroupDcls) ++ "\n" ++
-----             makeTermTokenSpecString(filtered.terminalDcls, grammar_name) ++
-             makeTermTokenSpecString(spec.terminalDcls, grammar_name) ++
-             makeStartDclString(grammar_name, spec.startName, univLayout) ++ "\n" ++
-             makeNonTermDclString(spec.nonTerminalDcls, spec.startName) ++ "\n" ++
-----             makePrecSpecCopperSpec(filtered.terminalDcls) ++ "\n\n" ++
-             makePrecSpecCopperSpec(spec.terminalDcls) ++ "\n\n" ++
-----             makeProdDclString(spec, filtered.terminalDcls, filtered.ruleDcls, univLayout);
-             makeProdDclString(univLayout,spec.ruleDcls);
+             -- Parser Attributes?
+             makeTermTokenSpecString(cons(emptyStr, spec.terminalDcls), grammar_name) ++
+             makeNonTermList(spec.nonTerminalDcls) ++ "\n" ++
+             makeStartDclString(spec.startName, univLayout) ++ "\n" ++
+             makeProdDclString(univLayout,spec.ruleDcls) ++
+
+"\n</copperspec>\n";
+
   return rv;
+}
+
+-- UNUSED: PARSER ATTRIBUTES:
+--  <attribute id="starter" type="LinkedList&lt;String&gt;">
+--    <code>
+--      <![CDATA[
+--			 	starter = new LinkedList<String>(); 
+-- 			 ]]>
+--    </code>
+--  </attribute>
+
+function makeTermList
+String ::= members::[String]
+{
+  return if null(members)
+         then ""
+         else "    <term id=\"" ++ makeCopperName(head(members)) ++ "\" />\n" ++ makeTermList(tail(members));
+}
+function makeTermClassList
+String ::= members::[String]
+{
+  return if null(members)
+         then ""
+         else "      <termclass id=\"" ++ makeCopperName(head(members)) ++ "\" />\n" ++ makeTermClassList(tail(members));
+}
+function makeNonTermList
+String ::= members::[Decorated NonTerminalSpec]
+{
+  return if null(members)
+         then ""
+         else "  <nonterm id=\"" ++ makeCopperName(head(members).nonTerminalName) ++ "\" />\n" ++ makeNonTermList(tail(members));
 }
 
 function makeDisambiguateSpecString
@@ -57,10 +91,15 @@ String ::= specs::[Decorated DisambiguationGroupSpec]
 {
    return if null(specs)
           then ""
-          else "ambiguous term group " ++ makeCopperName(head(specs).groupName)
-               ++ " code @" ++ head(specs).actionCode ++ "\n@ members "
-               ++ makeCopperNames(" ", head(specs).groupMembers) ++ "\n" ++
-               makeDisambiguateSpecString(tail(specs));
+          else 
+
+"  <disambig_func id=\"" ++ makeCopperName(head(specs).groupName) ++ "\">\n" ++
+	makeTermList(head(specs).groupMembers) ++
+"    <code><![CDATA[\n" ++
+	head(specs).actionCode ++
+"    ]]></code>\n" ++
+"  </disambig_func>\n" ++
+	makeDisambiguateSpecString(tail(specs));
 }
                
 function makeTermTokenSpecString
@@ -68,68 +107,60 @@ String ::= specs::[Decorated TerminalSpec] grammar_name::String
 {
   return if null(specs)
 	 then ""
-	 else "term " ++ makeCopperName(head(specs).terminalName) ++ " :" ++
-              substring(1, length(head(specs).terminalRegExpr) -1, head(specs).terminalRegExpr) ++
-              "\n" ++
-              token_dcl ++
-              makeTermTokenSpecString(tail(specs),grammar_name);
+	 else 
 
-  local attribute token_dcl :: String ;
-  token_dcl = "token " ++ makeCopperName(head(specs).terminalName) ++ 
-                 " class { " ++ makeCopperNames(" ", head(specs).lexerClasses) ++ " } " ++
-                 " precedence submits to { " ++ makeCopperNames(" ", head(specs).submitsTo) ++ " } " ++
-                 " dominates { " ++ makeCopperNames(" ", head(specs).termDominates) ++ " } " ++
-                 " prefix { } code @" ++ 
-		head(specs).actionCode ++ 
-"\nRESULT = new common.Terminal(lexeme,virtualLocation.getLine(),virtualLocation.getColumn());\n" ++ 
-"@\n\n" ;  
+"  <term id=\"" ++ makeCopperName(head(specs).terminalName) ++ "\">\n" ++
+"    <code><![CDATA[\n" ++
+	head(specs).actionCode ++ 
+"RESULT = new common.Terminal(lexeme,virtualLocation.getLine(),virtualLocation.getColumn());\n" ++
+"    ]]></code>\n" ++
+"    <classes>\n" ++
+	makeTermClassList(head(specs).lexerClasses) ++
+"    </classes>\n" ++
+"    <regex>\n" ++
+	makeXMLFromRegex(substring(1,length(head(specs).terminalRegExpr)-1,head(specs).terminalRegExpr)) ++
 
+"    </regex>\n" ++
+"    <dominates>\n" ++
+	makeTermList(head(specs).termDominates) ++
+"    </dominates>\n" ++
+"    <submits>\n" ++
+	makeTermList(head(specs).submitsTo) ++
+"    </submits>\n" ++
+
+	(if head(specs).parserPrecedence != 0
+	 then 
+	"    <operator>\n" ++
+	"      <precedence>" ++ toString(head(specs).parserPrecedence) ++ "</precedence>\n" ++
+	"      <associativity>" ++ head(specs).parserAssociation ++ "</associativity>\n" ++
+	"      <opclass id=\"main\"/>\n" ++
+	"    </operator>\n"
+	 else "") ++
+
+-- TODO: prefix isn't currently used!
+--"    <prefix>
+--"      <term id="-"/>
+--"    </prefix>
+
+"  </term>\n" ++
+	makeTermTokenSpecString(tail(specs),grammar_name);
+}
+
+function makeXMLFromRegex
+String ::= rx::String
+{
+  return parseRegex(rx).regXML;
 }
 
 function makeStartDclString
-String ::= grammar_name::String sym::String univLayout::String
+String ::= sym::String univLayout::String
 {
-  return "nonterm " ++ makeCopperName(sym) ++ "\n" ++
-                "start " ++ makeCopperName(sym) ++ " layout { " ++ univLayout ++ " }\n" ++
-         "term EmptyString :\n" ++
-         "token EmptyString class { _ignore } precedence submits to { } dominates { }  prefix {} code @@\n\n";
+  return
+"  <start>\n" ++
+"    <nonterm id=\"" ++ makeCopperName(sym) ++ "\"/>\n" ++
+"    <layout>" ++ univLayout ++ "</layout>\n" ++
+"  </start>\n";
 }
-
-function makeNonTermDclString
-String ::= syms::[Decorated NonTerminalSpec] sName::String
-{
-    return if null(syms)
-           then ""
-           else (if !(sName == head(syms).nonTerminalName) 
-		then "nonterm " ++ makeCopperName(head(syms).nonTerminalName) ++ "\n" 
-		else "") ++ 
-		makeNonTermDclString(tail(syms), sName);
-
-}
-
-
-function makePrecSpecCopperSpec
-String ::= specs::[Decorated TerminalSpec]
-{
-  local attribute precedenceClass :: String;
-  precedenceClass = "main";
-
-  return if null(specs) 
-	 then ""
-	 else (if head(specs).parserPrecedence != 0
-               then ("operator " ++
-              makeCopperName(head(specs).terminalName) ++
-              " class " ++
-              precedenceClass ++
-              " precedence " ++
-              toString(head(specs).parserPrecedence) ++
-              " associativity " ++
-              head(specs).parserAssociation ++
-              "\n")
-               else "") ++
-              makePrecSpecCopperSpec(tail(specs));
-}
-
 
 function makeProdDclString
 String ::= univLayout::String rules::[Decorated RuleSpec]
@@ -145,27 +176,20 @@ String ::= univLayout::String lhs::String rhs::[Decorated RHSSpec]
 {
   return if null(rhs)
          then ""
-         else "# " ++ head(rhs).ruleGrammarName ++  " --- " ++ head(rhs).ruleGrammarName ++ "\n" ++
-              "prod " ++
-              "Production_" ++ makeCopperName(head(rhs).ruleName) ++
-              " class " ++
-              "main" ++
-              " precedence " ++
-              toString(head(rhs).parserPrecedence) ++ 
-              " operator { " ++
-              " } layout { " ++
-              univLayout ++ " EmptyString" ++
-              " } code @\n" ++
+         else 
+
+"  <prod id=\"Production_" ++ makeCopperName(head(rhs).ruleName) ++ "\" class=\"main\" precedence=\"" ++ toString(head(rhs).parserPrecedence) ++"\">\n" ++
+"    <code><![CDATA[\n" ++
 "RESULT = new " ++ makeClassName(head(rhs).ruleName) ++ "(_children);\n" ++
-              "\n     " ++ head(rhs).actionCode ++
-              "\n@ bnf " ++
-              lhs ++
-              " -> " ++
-              (if null(head(rhs).ruleRHS)
-                  then "eps"
-                  else makeProdRHS(head(rhs).ruleRHS)) ++
-              "\n\n" ++
-              makeProdSpecsNonterm(univLayout,lhs,tail(rhs));            
+	head(rhs).actionCode ++
+"    ]]></code>\n" ++
+"    <lhs><nonterm id=\"" ++ lhs ++ "\"/></lhs>\n" ++
+"    <rhs>\n" ++
+	makeProdRHS(head(rhs).ruleRHS) ++
+"    </rhs>\n" ++
+"    <layout>" ++ univLayout ++ "</layout>\n" ++
+"  </prod>\n" ++
+	makeProdSpecsNonterm(univLayout,lhs,tail(rhs));            
 }
 
 function makeProdRHS
@@ -173,7 +197,9 @@ String ::= syms::[String]
 {
   return if null(syms)
          then ""
-         else makeCopperName(head(syms)) ++ (if null(tail(syms)) then "" else " ") ++ makeProdRHS(tail(syms));
+         -- WARNING TODO BUG: always says 'nonterm' here, though it may be a terminal!
+         -- currently copper doesn't care it just wants the name, but potential bug nonetheless!
+         else "    <nonterm id=\"" ++ makeCopperName(head(syms)) ++ "\"/>\n" ++ makeProdRHS(tail(syms));
 }
 
 function generateUniversalLayout
@@ -188,7 +214,7 @@ function generateLayoutList
 String ::= layouts::[Decorated TerminalSpec]{
   return if null(layouts)
          then ""
-         else makeCopperName(head(layouts).terminalName) ++ " " ++
+         else "<term id=\"" ++ makeCopperName(head(layouts).terminalName) ++ "\"/>" ++
               generateLayoutList(tail(layouts));
 }
 
