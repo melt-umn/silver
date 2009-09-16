@@ -76,11 +76,9 @@ IO ::= i::IO l::String specs::[Decorated ParserSpec]
   copperFile = l ++ "/" ++ parserName ++ ".copper";
 
   local attribute copperBody :: String;
-  copperBody = "grammar name " ++ parserName ++ " spectype LALR1 1.1\n\n" ++ 
-          makeCopperGrammarSpec(parserName, head(specs));
+  copperBody = makeCopperGrammarSpec(parserName, head(specs));
  
   return if null(specs) then i else writeCSSpec(writeFile(copperFile, copperBody, i), l, tail(specs));
---  return if null(specs) then i else writeCSSpec(print(head(specs).startName ++ "\n", i), l, tail(specs));
 }
 
 
@@ -126,6 +124,6 @@ String ::= pn::String pl::String r::[Decorated ParserSpec]{
 
   return if null(r) then "" else( 
 "    <copper fullClassName='" ++ pn ++ "." ++ parserName ++ "' inputFile='${env.SILVER_JAVA}/src/" ++ pl ++ "/" ++ parserName ++ ".copper' " ++ 
-	"outputFile='${env.SILVER_JAVA}/src/" ++ pl ++ "/" ++ parserName ++ ".java'/>\n" ++
+	"outputFile='${env.SILVER_JAVA}/src/" ++ pl ++ "/" ++ parserName ++ ".java' skin='xml'/>\n" ++
  	 buildAntParserPart(pn, pl, tail(r)));
 }

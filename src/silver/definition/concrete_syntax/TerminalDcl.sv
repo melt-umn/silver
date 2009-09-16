@@ -191,3 +191,4 @@ top::RegExpr ::= r::RegExpr_t
   top.location = loc(top.file, r.line, r.column);
   top.terminalRegExprSpec = regExprSpec(r.lexeme);
 }
+
