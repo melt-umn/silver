@@ -219,7 +219,7 @@ top::Regex_CHAR ::= esc::EscapedChar_t
   top.regXML = if esc.lexeme == "\\<" then "&lt;"
                 else if esc.lexeme == "\\>" then "&gt;"
                 else if esc.lexeme == "\\&" then "&amp;"
-                else if esc.lexeme == "\\r" then "\r" -- todo: this passes the xml parser, unlike &#12;, but does it work work?
+                else if esc.lexeme == "\\r" then "&#13;"
                 else if esc.lexeme == "\\n" then "&#10;"
                 else if esc.lexeme == "\\t" then "&#9;"
                 else substring(1,2,esc.lexeme);
