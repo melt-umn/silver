@@ -43,6 +43,45 @@ synthesized attribute unwrappedXML :: String occurs on Regex_DR, Regex_RR;
 -- pass 2: remove the concat as it's not needed anymore
 --         also do this for choices [] that have only one option.
 
+abstract production literalRegex
+r::Regex_R ::= s::String
+{
+  r.regString = regexPurifyString(s);
+  r.regXML = "<string>" ++ regexPurifyXML(s) ++ "</string>";
+}
+
+function regexPurifyString
+String ::= s::String
+{
+  local attribute ch :: String;
+  ch = substring(0, 1, s);
+
+  local attribute rest :: String;
+  rest = substring(1, length(s), s);
+
+  return if length(s) == 0 
+	 then ""
+	 else if isAlpha(ch) || isDigit(ch)
+	      then ch ++ regexPurifyString(rest)
+	      else "[\\" ++ ch ++ "]" ++ regexPurifyString(rest);
+}
+function regexPurifyXML
+String ::= s::String
+{
+  local attribute ch :: String;
+  ch = substring(0, 1, s);
+
+  local attribute rest :: String;
+  rest = substring(1, length(s), s);
+
+  return if length(s) == 0 
+	 then ""
+	 else (if ch == ">" then "&gt;" else
+	       if ch == "<" then "&lt;" else
+	       if ch == "&" then "&amp;" else ch)
+	      ++ regexPurifyXML(rest);
+}
+
 concrete production Rtoeps
 r::Regex_R ::=
 {

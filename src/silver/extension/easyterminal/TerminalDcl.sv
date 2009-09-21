@@ -3,6 +3,7 @@ import silver:definition:core;
 import silver:definition:env;
 import silver:definition:type:higherorder;
 import silver:definition:concrete_syntax;
+import silver:definition:regex;
 
 terminal Terminal_t /[\']([^\']|([\\][\']))*[\']/ lexer classes {SIX};
 
@@ -19,7 +20,7 @@ top::RegExpr ::= t::Terminal_t
 {
   top.pp = t.lexeme;
   top.location = loc(top.file, t.line, t.column);
-  top.terminalRegExprSpec = regExprSpec("/" ++ makereg(substring(1, length(t.lexeme)-1, t.lexeme)) ++ "/");
+  top.terminalRegExprSpec = regExprSpec("/" ++ regexPurifyString(substring(1, length(t.lexeme)-1, t.lexeme)) ++ "/");
 }
 
 concrete production productionRhsElemEasyReg
@@ -96,21 +97,5 @@ String ::= s::String
 	 else if ch == "\\" || ch == "\""
 	      then "\\" ++ ch ++ makeEscapedName(rest)
  	      else ch ++ makeEscapedName(rest);
-}
-
-function makereg 
-String ::= s::String
-{
-  local attribute ch :: String;
-  ch = substring(0, 1, s);
-
-  local attribute rest :: String;
-  rest = substring(1, length(s), s);
-
-  return if length(s) == 0 
-	 then ""
-	 else if isAlpha(ch) || isDigit(ch)
-	      then ch ++ makereg(rest)
-	      else "[\\" ++ ch ++ "]" ++ makereg(rest);
 }
 
