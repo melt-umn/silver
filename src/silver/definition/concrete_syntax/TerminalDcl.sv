@@ -1,6 +1,7 @@
 grammar silver:definition:concrete_syntax;
 import silver:definition:core;
 import silver:definition:env;
+import silver:definition:regex;
 
 
 nonterminal RegExpr with location, grammarName, file, pp, terminalRegExprSpec;
@@ -14,9 +15,9 @@ terminal Association_kwd /association/ lexer classes {KEYWORD};
 terminal Right_kwd /right/ lexer classes {KEYWORD};
 terminal Precedence_kwd /precedence/ lexer classes {KEYWORD};
 
-abstract  production terminalDclDefault
-top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifiers {
-
+abstract production terminalDclDefault
+top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifiers
+{
   top.location = t.location;
 
   production attribute fName :: String;
@@ -24,7 +25,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
 
   top.moduleNames = [];
 
-  top.defs = addTypeDcl(fName, termTypeRep(fName, r.terminalRegExprSpec.terminalRegExpr), 
+  top.defs = addTypeDcl(fName, termTypeRep(fName, r.terminalRegExprSpec),
 	     addFullNameDcl(id.name, fName,
 	     addOccursDcl("lexeme", fName,
  	     addOccursDcl("line", fName,
@@ -185,10 +186,10 @@ top::TerminalModifier ::= 'precedence' '=' i::Int_t
 }
 
 concrete production regExpr
-top::RegExpr ::= r::RegExpr_t
+top::RegExpr ::= '/' r::Regex_R '/'
 {
-  top.pp = r.lexeme;
-  top.location = loc(top.file, r.line, r.column);
-  top.terminalRegExprSpec = regExprSpec(r.lexeme);
+  top.pp = "/" ++ r.regString ++ "/";
+  top.location = loc(top.file, $1.line, $1.column);
+  top.terminalRegExprSpec = r;
 }
 

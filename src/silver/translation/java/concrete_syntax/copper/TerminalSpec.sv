@@ -15,7 +15,7 @@ attribute actionCode  occurs on TerminalSpec, TerminalModifierSpec ;
 
 
 aspect production i_terminalSpec
-top::TerminalSpec ::= fn::String t::[Decorated TerminalModifierSpec] reg::Decorated RegExprSpec
+top::TerminalSpec ::= fn::String t::[Decorated TerminalModifierSpec] _
 {
   top.lexerClasses = findLexerClasses(t) ;
   top.submitsTo = findSubmitsTo(t) ;

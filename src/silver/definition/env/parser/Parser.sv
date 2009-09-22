@@ -3,14 +3,10 @@ grammar silver:definition:env:parser;
 import silver:definition:env;
 import silver:definition:type:anytype;
 import silver:definition:type:io;
+import silver:definition:regex;
 
 lexer class C_0;
 lexer class C_1 dominates C_0;
-
-parser parse::aRootSpec {
-  silver:definition:env:parser;
-}
-
 
 --langauge constants
 ignore terminal ws /[\ \n\t]+/ lexer classes {C_0};
@@ -23,7 +19,7 @@ terminal rp ')';
 terminal id /[\']([^\'\\]|[\\][\']|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\']/ lexer classes {C_0};
 terminal number /[0-9]+/ lexer classes {C_0};
 
-terminal RegExprTerm /([\/]([^\/\n]|([\\][\/]))*[\/]+)/ lexer classes {C_0};
+terminal RegExprDelim '/' lexer classes {C_0};
 
 terminal DefaultTerm /default/ lexer classes {C_1};
 terminal ProductionTerm /prod/ lexer classes {C_1};
@@ -342,8 +338,8 @@ top::aTypeRep ::= t::BooleanTerm{
 }
 
 concrete production aTypeRepTerminal
-top::aTypeRep ::= t::TerminalTerm '(' n::Name ',' r::RegExprTerm ')' {
-  top.typerep = termTypeRep(n.lexeme, r.lexeme);
+top::aTypeRep ::= t::TerminalTerm '(' n::Name ',' '/' r::Regex_R '/' ')' {
+  top.typerep = termTypeRep(n.lexeme, r);
 }
 
 concrete production aTypeRepNonterminal

@@ -1,46 +1,33 @@
 grammar silver:definition:concrete_syntax;
 import silver:definition:env;
+import silver:definition:regex;
 
-nonterminal TerminalSpec with terminalModifiers, terminalName, terminalRegExpr, terminalRegExprSpec, unparse, ignoreTerminal, parserPrecedence, parserAssociation;
+nonterminal TerminalSpec with terminalModifiers, terminalName, terminalRegExprSpec, unparse, ignoreTerminal, parserPrecedence, parserAssociation;
 
 synthesized attribute terminalModifiers :: [Decorated TerminalModifierSpec];
 synthesized attribute ignoreTerminal :: Boolean;
 synthesized attribute terminalName :: String;
 synthesized attribute parserAssociation :: String;
 synthesized attribute parserPrecedence :: Integer;
-synthesized attribute terminalRegExpr :: String;
-synthesized attribute terminalRegExprSpec :: Decorated RegExprSpec;
+synthesized attribute terminalRegExprSpec :: Decorated Regex_R;
 
 function terminalSpec
-Decorated TerminalSpec ::= fn::String t::[Decorated TerminalModifierSpec] reg::Decorated RegExprSpec{
+Decorated TerminalSpec ::= fn::String t::[Decorated TerminalModifierSpec] reg::Decorated Regex_R
+{
   return decorate i_terminalSpec(fn, t, reg) with {};
 }
 abstract production i_terminalSpec
-top::TerminalSpec ::= fn::String t::[Decorated TerminalModifierSpec] reg::Decorated RegExprSpec{
-
-  top.unparse = "('" ++ fn ++ "', [" ++ foldModifiers(t) ++ "], " ++ reg.unparse ++ ")";
+top::TerminalSpec ::= fn::String t::[Decorated TerminalModifierSpec] reg::Decorated Regex_R
+{
+  top.unparse = "('" ++ fn ++ "', [" ++ foldModifiers(t) ++ "], /" ++ reg.regString ++ "/)";
   top.terminalName = fn;
-  top.terminalRegExpr =  reg.terminalRegExpr;
-  top.terminalRegExprSpec =  reg;
+  top.terminalRegExprSpec = reg;
 
   top.ignoreTerminal = findIgnore(t);
   top.parserPrecedence = findPrecedence(t);
   top.parserAssociation = findAssociation(t);
 
   top.terminalModifiers = t;
-}
-
-nonterminal RegExprSpec with terminalRegExpr, unparse;
-
-function regExprSpec
-Decorated RegExprSpec ::= s::String{
-  return decorate i_regExprSpec(s) with {};
-}
-
-abstract production i_regExprSpec
-top::RegExprSpec ::= s::String{
-  top.unparse = s;
-  top.terminalRegExpr = s;
 }
 
 function findIgnore

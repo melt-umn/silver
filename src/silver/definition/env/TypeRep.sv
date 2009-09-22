@@ -1,4 +1,5 @@
 grammar silver:definition:env;
+import silver:definition:regex;
 
 closed nonterminal TypeRep with typeName, inputTypes, outputType,
                           isPrimative, isTerminal, isNonTerminal, isDecorated, isProduction, unparse, typeEquals, decoratedType,
@@ -8,7 +9,7 @@ synthesized attribute typeEquals :: Production (TypeEquals ::= Decorated TypeRep
 
 synthesized attribute unparse :: String;
 synthesized attribute typeName :: String;
-synthesized attribute regularExpression :: String;
+synthesized attribute regularExpression :: Decorated Regex_R;
 synthesized attribute decoratedType :: Decorated TypeRep;
 synthesized attribute inputTypes :: [Decorated TypeRep];
 synthesized attribute outputType :: Decorated TypeRep;
@@ -86,17 +87,17 @@ top::TypeRep ::=
 }
 
 function termTypeRep
-Decorated TypeRep ::= n::String r::String
+Decorated TypeRep ::= n::String r::Decorated Regex_R
 {
   return decorate i_termTypeRep(n, r) with {};
 }
 
 abstract production i_termTypeRep
-top::TypeRep ::= n::String r::String
+top::TypeRep ::= n::String r::Decorated Regex_R
 {
   top.typeName = n;
   top.regularExpression = r;
-  top.unparse = "term('" ++ n ++ "', " ++ r ++ ")";
+  top.unparse = "term('" ++ n ++ "', " ++ r.regString ++ ")";
   top.isTerminal = true;
   forwards to i_defaultTypeRep();
 }
@@ -189,7 +190,7 @@ top::TypeRep ::=
 {
   top.typeName = "TOP";
   top.unparse = "top";
-  top.regularExpression = "top";
+  top.regularExpression = decorate Rtoeps() with {};
   top.isPrimative = true;
   top.isInteger = true;
   top.isFloat = true;
@@ -214,7 +215,7 @@ top::TypeRep ::=
 {
   top.typeName = "DEFAULT";
   top.unparse = "default";
-  top.regularExpression = "default";
+  top.regularExpression = decorate Rtoeps() with {};
   top.isPrimative = false;
   top.isInteger = false;
   top.isFloat = false;

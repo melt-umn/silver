@@ -4,6 +4,7 @@ import silver:definition:env;
 import silver:definition:env:parser;
 
 import silver:definition:concrete_syntax;
+import silver:definition:regex;
 
 terminal TerminalsTerm 'terminals' lexer classes {C_1};
 terminal NonterminalsTerm 'nonterminals' lexer classes {C_1};
@@ -69,8 +70,8 @@ top::aTerminalSpecInner ::= s1::aTerminalSpec ',' s2::aTerminalSpecInner {
 }
 
 concrete production aTerminalSpecDef
-top::aTerminalSpec ::= '(' n::Name ','  m::aTerminalModifiers ',' r::RegExprTerm ')'{
-  top.terminalDcls = [terminalSpec(n.lexeme, m.terminalModifiers, regExprSpec(r.lexeme))];
+top::aTerminalSpec ::= '(' n::Name ','  m::aTerminalModifiers ',' '/' r::Regex_R '/' ')'{
+  top.terminalDcls = [terminalSpec(n.lexeme, m.terminalModifiers, r)];
 }
 
 nonterminal aTerminalModifiers with terminalModifiers;

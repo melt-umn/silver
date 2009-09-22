@@ -4,6 +4,7 @@ import silver:analysis:typechecking:concrete_syntax;
 import silver:definition:core;
 import silver:definition:env;
 import silver:definition:concrete_syntax;
+import silver:definition:regex;
 
 terminal Class_kwd 'class' lexer classes {KEYWORD};
 terminal Prefix_kwd 'prefix' lexer classes {KEYWORD};
@@ -84,7 +85,7 @@ top::TermPrecList ::= h::QName t::TermPrecList
                      then t.precTermList
                      else [fName] ++ t.precTermList ;
 
-  top.defs = addValueDcl(fName, termTypeRep(h.name, ""), 
+  top.defs = addValueDcl(fName, termTypeRep(h.name, decorate Rtoeps() with {}), 
 	     addFullNameDcl(h.name, fName,
              t.defs));
 
