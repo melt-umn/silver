@@ -5,7 +5,7 @@ import silver:translation:java:core hiding makeName;
 
 import silver:util;
 
-import silver:definition:regex with parse as parseRegex;
+import silver:definition:regex;
 
 function makeCopperName
 String ::= str::String
@@ -27,7 +27,7 @@ String ::= grammar_name::String spec::Decorated ParserSpec
   s = makeCopperName(spec.startName);
 
   local attribute emptyStr :: Decorated TerminalSpec;
-  emptyStr = terminalSpec("EmptyString", [ignoreTerminalModifierSpec()], regExprSpec("//"));
+  emptyStr = terminalSpec("EmptyString", [ignoreTerminalModifierSpec()], decorate Rtoeps() with {});
 
   local attribute univLayout :: String;
   univLayout = generateUniversalLayout(grammar_name, cons(emptyStr, spec.terminalDcls));
@@ -118,7 +118,7 @@ String ::= specs::[Decorated TerminalSpec] grammar_name::String
 	makeTermClassList(head(specs).lexerClasses) ++
 "    </classes>\n" ++
 "    <regex>\n" ++
-	makeXMLFromRegex(substring(1,length(head(specs).terminalRegExpr)-1,head(specs).terminalRegExpr)) ++
+	head(specs).terminalRegExprSpec.regXML ++
 
 "    </regex>\n" ++
 "    <dominates>\n" ++
@@ -144,12 +144,6 @@ String ::= specs::[Decorated TerminalSpec] grammar_name::String
 
 "  </term>\n" ++
 	makeTermTokenSpecString(tail(specs),grammar_name);
-}
-
-function makeXMLFromRegex
-String ::= rx::String
-{
-  return parseRegex(rx).regXML;
 }
 
 function makeStartDclString

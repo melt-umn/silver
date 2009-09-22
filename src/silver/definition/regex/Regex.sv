@@ -3,10 +3,6 @@ grammar silver:definition:regex;
 synthesized attribute regString :: String;
 synthesized attribute regXML :: String;
 
-parser parse::Regex_R {
-  silver:definition:regex;
-}
-
 lexer class REGEX_OPER;
 lexer class REGEX_ESC submits to REGEX_OPER;
 

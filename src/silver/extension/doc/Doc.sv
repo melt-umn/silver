@@ -6,6 +6,7 @@ import silver:util;
 import silver:definition:core;
 import silver:definition:concrete_syntax;
 import silver:definition:env;
+import silver:definition:regex;
 
 nonterminal Doc with docMessage, docOrder;
 synthesized attribute docMessage :: String;
@@ -337,7 +338,7 @@ aspect production terminalDclDefault
 top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifiers 
 {
   top.documentation = [doc(T(),
-"<div class='row'><a name='" ++ fName ++ "'></a>" ++ id.name ++ " " ++  head(top.terminalDcls).terminalRegExpr ++ "<br/>\n" ++
+"<div class='row'><a name='" ++ fName ++ "'></a>" ++ id.name ++ " " ++  head(top.terminalDcls).terminalRegExprSpec.regString ++ "<br/>\n" ++
 					(if head(top.terminalDcls).ignoreTerminal then "  <span class='info'>ignore</span><br/>\n" else "") ++
 					"  <span class='info'>parser precedence = " ++ toString(head(top.terminalDcls).parserPrecedence) ++ "</span><br/>\n"  ++
 					"  <span class='info'>parser association = " ++ head(top.terminalDcls).parserAssociation ++ "</span>\n</div>\n"

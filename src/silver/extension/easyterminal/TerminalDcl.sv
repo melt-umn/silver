@@ -12,7 +12,7 @@ top::EnvFilter ::= re::String
 {
   top.keep = top.inEnvItem.isTypeDeclaration
 	  && top.inEnvItem.typerep.isTerminal
-	  && top.inEnvItem.typerep.regularExpression == re;
+	  && top.inEnvItem.typerep.regularExpression.regString == re;
 }
 
 concrete production regExprEasyTerm
@@ -20,18 +20,16 @@ top::RegExpr ::= t::Terminal_t
 {
   top.pp = t.lexeme;
   top.location = loc(top.file, t.line, t.column);
-  top.terminalRegExprSpec = regExprSpec("/" ++ regexPurifyString(substring(1, length(t.lexeme)-1, t.lexeme)) ++ "/");
+  top.terminalRegExprSpec = decorate literalRegex(substring(1, length(t.lexeme)-1, t.lexeme)) with {};
 }
 
 concrete production productionRhsElemEasyReg
 top::ProductionRHSElem ::= reg::RegExpr
---top::ProductionRHSElem ::= reg::RegExpr_t
 {
---  top.location = loc(top.file, reg.line, reg.column);
   top.location = reg.location;
 
   local attribute regExpPat :: String;
-  regExpPat = reg.terminalRegExprSpec.terminalRegExpr;
+  regExpPat = reg.terminalRegExprSpec.regString;
 
   local attribute regName :: [Decorated EnvItem];
   regName = filterEnvItems(findRegularExpression(regExpPat), getAllTypeDcls(top.env));
@@ -47,7 +45,7 @@ concrete production aspectRHSElemEasyReg
 top::AspectRHSElem ::= reg::RegExpr
 {
   local attribute regExpPat :: String;
-  regExpPat = reg.terminalRegExprSpec.terminalRegExpr;
+  regExpPat = reg.terminalRegExprSpec.regString;
 
   local attribute regName :: [Decorated EnvItem];
   regName = filterEnvItems(findRegularExpression(regExpPat), getAllTypeDcls(top.env));
@@ -63,7 +61,7 @@ concrete production terminalExprReg
 top::Expr ::= t::RegExpr
 {
   local attribute regExpPat :: String;
-  regExpPat = t.terminalRegExprSpec.terminalRegExpr;
+  regExpPat = t.terminalRegExprSpec.regString;
 
   local attribute regName :: [Decorated EnvItem];
   regName = filterEnvItems(findRegularExpression(regExpPat), getAllTypeDcls(top.env));

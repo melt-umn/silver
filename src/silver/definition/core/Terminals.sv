@@ -111,6 +111,5 @@ terminal Float_t /[0-9]+[\.][0-9]+/ lexer classes {TWO};
 terminal IdTick_t /[A-Za-z][A-Za-z0-9\_]*[\']/ lexer classes {TWO};
 terminal IdTickTick_t /[A-Za-z][A-Za-z0-9\_]*[\'][\']/ lexer classes {TWO};
 terminal String_t /[\"]([^\"\\]|[\\][\"]|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\"]/ lexer classes {SIX};
-terminal RegExpr_t /([\/]([^\/\n]|([\\][\/]))*[\/]+)/ lexer classes {SIX};
 
 terminal Divide_t '/' lexer classes {KEYWORD}, precedence = 12, association = left;
