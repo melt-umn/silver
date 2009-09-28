@@ -81,16 +81,11 @@ IO ::= i::IO l::String specs::[Decorated ParserSpec]
   return if null(specs) then i else writeCSSpec(writeFile(copperFile, copperBody, i), l, tail(specs));
 }
 
-
-aspect production buildAntPart
-top::IOString ::= r::Decorated RootSpec{
-  depends <- if null(r.parserDcls) then [] else [r.declaredName ++ ":copper"];
-}
-
 aspect production writeBuildFile
 top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec]{
   extraTaskdefs <- ["  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='lib.classpath'/>\n" ];
-  extraTargets <- [buildAntGrammarParts(specs)];
+  extraTargets <- ["  <target name=':copper'>\n" ++ buildAntGrammarParts(specs) ++ "  </target>\n"];
+  extraDepends <- [":copper"];
 }
 
 function buildAntGrammarParts
@@ -110,10 +105,7 @@ String ::= r::Decorated RootSpec {
   local attribute pkgPath :: String;
   pkgPath = substitute("/", ":", fName);
 
-  return if null(r.parserDcls) then "" else
-"  <target name='" ++ fName ++ ":copper' depends=''>\n" ++
-buildAntParserPart(pkgName, pkgPath, r.parserDcls) ++ 
-"  </target>\n";
+  return if null(r.parserDcls) then "" else buildAntParserPart(pkgName, pkgPath, r.parserDcls);
 }
 
 function buildAntParserPart
@@ -123,7 +115,7 @@ String ::= pn::String pl::String r::[Decorated ParserSpec]{
   parserName = makeParserName(head(r).fullName);
 
   return if null(r) then "" else( 
-"    <copper fullClassName='" ++ pn ++ "." ++ parserName ++ "' inputFile='${env.SILVER_JAVA}/src/" ++ pl ++ "/" ++ parserName ++ ".copper' " ++ 
-	"outputFile='${env.SILVER_JAVA}/src/" ++ pl ++ "/" ++ parserName ++ ".java' skin='xml'/>\n" ++
+"    <copper fullClassName='" ++ pn ++ "." ++ parserName ++ "' inputFile='${src}/" ++ pl ++ "/" ++ parserName ++ ".copper' " ++ 
+	"outputFile='${src}/" ++ pl ++ "/" ++ parserName ++ ".java' skin='xml'/>\n" ++
  	 buildAntParserPart(pn, pl, tail(r)));
 }
