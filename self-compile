@@ -1,0 +1,10 @@
+#!/bin/bash
+#export SILVER_JAVA=/project/melt4/People/ted/svn/silver/branches/0.7/java_gen/
+#export GRAMMAR_PATH=/project/melt4/People/ted/svn/silver/branches/0.7/test/
+
+#find ../../test -name Silver.svi -delete
+
+#time java -Xmx2000M -cp ./lib/:./silver.composed.Default.jar silver.composed.Default.Main $@
+
+time java -Xss8M -Xmx3000M -cp ./build/lib:./build/silver.composed.Default.jar silver.composed.Default.Main -I ./src -o ./bin/silver -g ./build $@ silver:composed:Default
+
