@@ -97,7 +97,7 @@ top::TypeRep ::= n::String r::Decorated Regex_R
 {
   top.typeName = n;
   top.regularExpression = r;
-  top.unparse = "term('" ++ n ++ "', " ++ r.regString ++ ")";
+  top.unparse = "term('" ++ n ++ "', /" ++ r.regString ++ "/)";
   top.isTerminal = true;
   forwards to i_defaultTypeRep();
 }
