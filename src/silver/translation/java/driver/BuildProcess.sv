@@ -143,7 +143,7 @@ top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec]{
   local attribute javaGenLoc :: String;
   javaGenLoc = if length(a.javaGen) > 0 then a.javaGen else envArg.sValue;
 
-  top.io = writeFile(a.generatedPath ++ "/build.xml", buildXml, envArg.io);
+  top.io = writeFile("build.xml", buildXml, envArg.io);
 
   local attribute buildXml :: String;
   buildXml =    

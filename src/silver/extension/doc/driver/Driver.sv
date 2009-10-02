@@ -89,12 +89,12 @@ IO ::= i::IO a::Command r::[Decorated RootSpec] h::[Decorated DocSection]
 	"</html>\n";
 
   local attribute i1:: IO;
-  i1 = system("mkdir -p " ++ a.generatedPath ++ makeFileName(head(r).declaredName), i).io;
+  i1 = system("mkdir -p doc/" ++ makeFileName(head(r).declaredName), i).io;
 
    
   return if null(r) then i 
 	else if head(r).interface then writeDocFiles(i1, a, tail(r), h)
-	else writeFile(a.generatedPath ++ makeFileName(head(r).declaredName) ++ "/SilverDoc.html", body, writeDocFiles(i1, a, tail(r), h));
+	else writeFile("doc/" ++ ++ makeFileName(head(r).declaredName) ++ "/SilverDoc.html", body, writeDocFiles(i1, a, tail(r), h));
 }
 
 function makeBody

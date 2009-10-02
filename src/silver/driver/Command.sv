@@ -48,22 +48,6 @@ top::Command ::= c1::PieceList
   top.outName = if null(fs1) then "out" else head(fs1).chunk;
 }
 
-synthesized attribute generatedPath :: String;
-attribute generatedPath occurs on PieceList, Command;
-
-aspect production cRootAll
-top::Command ::= c1::PieceList
-{
-  flagLookups <- [flagLookup("-g", true)];
-  uses <- ["\t-g <directory> directory to create for temporary files\n"];
-
-  local attribute fs2 :: [Flag];
-  fs2 = findFlag("-g", top.flags);
-
-  top.generatedPath = if null(fs2) then "./.Generated/" else makePath(head(fs2).chunk);
-}
-
-
 synthesized attribute displayVersion :: Boolean;
 attribute displayVersion occurs on Command;
 
