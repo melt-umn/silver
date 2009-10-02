@@ -84,8 +84,8 @@ IO ::= i::IO l::String specs::[Decorated ParserSpec]
 aspect production writeBuildFile
 top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec]{
   extraTaskdefs <- ["  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='lib.classpath'/>\n" ];
-  extraTargets <- ["  <target name=':copper'>\n" ++ buildAntGrammarParts(specs) ++ "  </target>\n"];
-  extraDepends <- [":copper"];
+  extraTargets <- ["  <target name='copper'>\n" ++ buildAntGrammarParts(specs) ++ "  </target>\n"];
+  extraDepends <- ["copper"];
 }
 
 function buildAntGrammarParts

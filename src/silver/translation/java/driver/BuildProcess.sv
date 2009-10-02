@@ -137,7 +137,13 @@ top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec]{
   local attribute mains :: [Decorated EnvItem];
   mains = getFunctionDcl(a.grammarName ++ ":main", toEnv(head(getRootSpec(a.grammarName, specs)).defs));
 
-  top.io = writeFile(a.generatedPath ++ "/build.xml", buildXml, i);
+  local attribute envArg :: IOString;
+  envArg = envVar("SILVER_JAVA", i);
+  
+  local attribute javaGenLoc :: String;
+  javaGenLoc = if length(a.javaGen) > 0 then a.javaGen else envArg.sValue;
+
+  top.io = writeFile(a.generatedPath ++ "/build.xml", buildXml, envArg.io);
 
   local attribute buildXml :: String;
   buildXml =    
@@ -145,10 +151,11 @@ top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec]{
 "  <description>Build the grammar " ++ a.grammarName ++ " </description>\n\n" ++
 
 "  <property environment='env'/>\n" ++
-"  <property name='lib' location='${env.SILVER_JAVA}/lib'/>\n" ++ 
-"  <property name='bin' location='${env.SILVER_JAVA}/bin'/>\n" ++
+"  <property name='jg' location='" ++ javaGenLoc ++ "'/>\n" ++
+"  <property name='lib' location='${jg}/lib'/>\n" ++ 
+"  <property name='bin' location='${jg}/bin'/>\n" ++
 "  <property name='dist' location='.'/>\n" ++
-"  <property name='src' location='${env.SILVER_JAVA}/src'/>\n\n" ++
+"  <property name='src' location='${jg}/src'/>\n\n" ++
 
 "  <path id='lib.classpath'>\n" ++
 "    <fileset dir='${lib}' includes='**/*.jar' />\n" ++
@@ -176,15 +183,7 @@ folds("\n", extraTaskdefs) ++ "\n\n" ++
 
 "  <target name='dist' depends='grammars'>\n\n" ++
 
-"    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath'>\n" ++
-"      <map from='${lib}' to='lib' />\n" ++
-"    </pathconvert>\n\n" ++
-
--- If we're building a single jar, omit copying any libraries
-(if a.buildSingleJar then "" else
-"     <copy toDir='${dist}/lib/'>\n" ++ 
-"        <fileset dir='${env.SILVER_JAVA}/lib/'/>\n" ++ 
-"     </copy>\n\n" ) ++ 
+"    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath' />\n" ++
 
 "    <jar destfile='${dist}/" ++ makeName(a.grammarName) ++ ".jar' basedir='${bin}'>\n" ++
 
@@ -194,7 +193,10 @@ folds("\n", extraTaskdefs) ++ "\n\n" ++
 (if !null(mains) then
 "       <attribute name='Main-Class' value='" ++ makeName(a.grammarName) ++ ".Main' />\n"
  else "") ++
-"       <attribute name='Class-Path' value='${man.classpath}' />\n" ++
+
+(if !a.buildSingleJar then 
+"       <attribute name='Class-Path' value='${man.classpath}' />\n"
+ else "") ++
 "       <attribute name='Built-By' value='${user.name}' />\n" ++
 "       <section name='version'>\n" ++
 "         <attribute name='Specification-Version' value='' />\n" ++
@@ -204,24 +206,17 @@ folds("\n", extraTaskdefs) ++ "\n\n" ++
 
 -- If we're building a single jar, then include it, and don't write out a script.
 (if a.buildSingleJar then
-"      <zipfileset src='${env.SILVER_JAVA}/lib/copper/CopperRuntime.jar' excludes='META-INF/*' />\n" ++
-"      <zipfileset src='${env.SILVER_JAVA}/lib/silver/silver-common.jar' excludes='META-INF/*' />\n" ++
-"    </jar>\n\n"
-
-else
+"      <zipfileset src='${lib}/copper/CopperRuntime.jar' excludes='META-INF/*' />\n" ++
+"      <zipfileset src='${lib}/silver/silver-common.jar' excludes='META-INF/*' />\n"
+ else "") ++
+ 
 "    </jar>\n\n" ++
-(if !null(mains) then 
-"    <echo file='${dist}/" ++ a.outName ++ "'>java -cp ./lib/:./" ++ makeName(a.grammarName) ++ ".jar " ++ makeName(a.grammarName) ++ ".Main $1</echo>\n" ++
-"    <chmod file='${dist}/" ++ a.outName ++ "' perm='+x'/>\n\n" 
-else "") 
-
-) ++ -- end if we're building a single jar.
 
 "  </target>\n\n" ++
 
 "  <target name='grammars' depends='" ++ folds(", ", extraDepends) ++ "'>\n" ++
 
-"      <javac debug='on' source='1.5' classpathref='compile.classpath' srcdir='${env.SILVER_JAVA}/src' destdir='${bin}'>\n" ++
+"      <javac debug='on' source='1.5' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}'>\n" ++
     buildGrammarList(specs, "*.java") ++ 
 "      </javac>\n" ++
 "  </target>\n\n" ++
