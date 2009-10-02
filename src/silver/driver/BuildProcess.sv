@@ -53,10 +53,6 @@ top::RunUnit ::= iIn::IO args::String
   local attribute grammarLocation :: MaybeIOStr;
   grammarLocation = findGrammarLocation(envArg.io, gpath, spath);
 
-  -- the directory to store generated information.
-  local attribute i :: IO;
-  i = system("mkdir -p " ++ a.generatedPath, grammarLocation.io).io;
- 
   -- a hook for extensions to add extra grammars - like list, pattern matching.
   production attribute extraGrammars :: [[String]] with ++;
   extraGrammars := [];
@@ -73,7 +69,7 @@ top::RunUnit ::= iIn::IO args::String
   -- we give a starting point and it will find and compile
   -- the other grammars needed
   production attribute unit :: CompilationUnit;
-  unit = compileGrammars(i, spath, [a.gName] ++ extraUnit.needGrammars, extraUnit.seenGrammars, a.doClean);
+  unit = compileGrammars(grammarLocation.io, spath, [a.gName] ++ extraUnit.needGrammars, extraUnit.seenGrammars, a.doClean);
   unit.rParser = top.rParser;
   unit.iParser = top.iParser;
   unit.compiledGrammars = grammars;
