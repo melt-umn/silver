@@ -45,7 +45,7 @@ top::Command ::= c1::PieceList
   local attribute fs1 :: [Flag];
   fs1 = findFlag("-o", top.flags);
 
-  top.outName = if null(fs1) then "out" else head(fs1).chunk;
+  top.outName = if null(fs1) then "" else head(fs1).chunk;
 }
 
 synthesized attribute displayVersion :: Boolean;
