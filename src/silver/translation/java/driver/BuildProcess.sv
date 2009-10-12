@@ -142,6 +142,9 @@ top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec]{
   
   local attribute javaGenLoc :: String;
   javaGenLoc = if length(a.javaGen) > 0 then a.javaGen else envArg.sValue;
+  
+  local attribute outputFile :: String;
+  outputFile = if length(a.outName) > 0 then a.outName else (makeName(a.grammarName) ++ ".jar");
 
   top.io = writeFile("build.xml", buildXml, envArg.io);
 
@@ -154,7 +157,6 @@ top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec]{
 "  <property name='jg' location='" ++ javaGenLoc ++ "'/>\n" ++
 "  <property name='lib' location='${jg}/lib'/>\n" ++ 
 "  <property name='bin' location='${jg}/bin'/>\n" ++
-"  <property name='dist' location='.'/>\n" ++
 "  <property name='src' location='${jg}/src'/>\n\n" ++
 
 "  <path id='lib.classpath'>\n" ++
@@ -185,7 +187,7 @@ folds("\n", extraTaskdefs) ++ "\n\n" ++
 
 "    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath' />\n" ++
 
-"    <jar destfile='${dist}/" ++ makeName(a.grammarName) ++ ".jar' basedir='${bin}'>\n" ++
+"    <jar destfile='" ++ outputFile ++ "' basedir='${bin}'>\n" ++
 
     buildGrammarList(specs, "*.class") ++ 
 
