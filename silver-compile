@@ -1,2 +1,6 @@
 #!/bin/bash
-time ../../trunk/bin/silver -I ./src -o ./bin/silver -g ./build $@ silver:composed:Default
+
+mkdir build
+cd build
+
+time ../../../trunk/bin/silver -I ../src $@ silver:composed:Default
