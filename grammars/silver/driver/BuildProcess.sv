@@ -27,23 +27,35 @@ top::RunUnit ::= iIn::IO args::String
 
   -- operations to execute _before_ we parse and link the grammars.
   production attribute preOps :: [Unit] with ++;
-  preOps := [];
+  preOps := [checkSilverHome(silverhome), checkSilverGen(silvergen)];
 
   --the result of running the pre operations
   local attribute preIO :: IOInteger;
-  preIO = runAll(iIn, unitMergeSort(preOps));
+  preIO = runAll(envSH.io, unitMergeSort(preOps));
 
   --the env vairable to look for grammars
-  local attribute envArg :: IOString;
-  envArg = envVar("GRAMMAR_PATH", preIO.io);
+  local attribute envGP :: IOString;
+  envGP = envVar("GRAMMAR_PATH", iIn);
+  
+  local attribute envSG :: IOString;
+  envSG = envVar("SILVER_GEN", envGP.io);
+  
+  local attribute envSH :: IOString;
+  envSH = envVar("SILVER_HOME", envSG.io);
 
   --the command line path for searching
   local attribute sPath :: String;
-  sPath = a.searchPath ++ ":" ++ envArg.sValue;
+  sPath = a.searchPath ++ ":" ++ envGP.sValue;
 
   --a list of directories to search
   production attribute spath :: [String];
   spath = getSearchPath(sPath);
+  
+  production attribute silverhome :: String;
+  silverhome = envSH.sValue ++ "/"; -- TODO this works fine unconditionally... for now?
+  
+  production attribute silvergen :: String;
+  silvergen = (if a.genLocation == "" then envSG.sValue else a.genLocation) ++ "/"; -- TODO this (/) works fine unconditionally... for now?
 
   --the grammar path ':' replaced by '/'
   local attribute gpath :: String;
@@ -51,7 +63,7 @@ top::RunUnit ::= iIn::IO args::String
 
   --the directory which contains the grammar
   local attribute grammarLocation :: MaybeIOStr;
-  grammarLocation = findGrammarLocation(envArg.io, gpath, spath);
+  grammarLocation = findGrammarLocation(preIO.io, gpath, spath);
 
   -- a hook for extensions to add extra grammars - like list, pattern matching.
   production attribute extraGrammars :: [[String]] with ++;
@@ -151,6 +163,27 @@ IOInteger ::= i::IO l::[Unit]
 	       else runAll(now.io, tail(l));
 }
 
+abstract production checkSilverHome
+top::Unit ::= s::String
+{
+  local attribute problem :: Boolean;
+  problem = s == "/";
+
+  top.io = if problem then print("Missing SILVER_HOME. Installation problem?\n",top.ioIn) else top.ioIn;
+  top.code = if problem then 1 else 0;
+  top.order = 0;
+}
+
+abstract production checkSilverGen
+top::Unit ::= s::String
+{
+  local attribute problem :: Boolean;
+  problem = s == "/";
+
+  top.io = if problem then print("Missing SILVER_GEN or -G <path>. A location to store intermediate files is necessary.\n",top.ioIn) else top.ioIn;
+  top.code = if problem then 1 else 0;
+  top.order = 0;
+}
 
 abstract production compileConditionals
 top::CompilationUnit ::= iIn::IO sPath::[String] seen::[String] clean::Boolean sofar::[Decorated RootSpec]
