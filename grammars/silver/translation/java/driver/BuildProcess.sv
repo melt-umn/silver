@@ -14,41 +14,20 @@ import core;
 aspect production run
 top::RunUnit ::= iIn::IO args::String
 {
-  preOps <- if a.noJavaGeneration then [] else [checkJavaGen(a)];
-  postOps <- if a.noJavaGeneration then [] else [genJava(a, grammars, nonTreeGrammars)]; 
-}
-
-abstract production checkJavaGen
-top::Unit ::= a::Command
-{
-  local attribute envArg :: IOString;
-  envArg = envVar("SILVER_JAVA", top.ioIn);
-
-  local attribute problem :: Boolean;
-  problem = !(length(envArg.sValue) > 0 || length(a.javaGen) > 0);
-
-  top.io = if problem then print("Missing a location to generate java files. Please set SILVER_JAVA or use -J <path>\n",envArg.io) else envArg.io;
-  top.code = if problem then 1 else 0;
-  top.order = 0;
+  postOps <- if a.noJavaGeneration then [] else [genJava(a, grammars, nonTreeGrammars, silverhome, silvergen)]; 
 }
 
 abstract production genJava
-top::Unit ::= a::Command specs::[Decorated RootSpec] extras::[String]
+top::Unit ::= a::Command specs::[Decorated RootSpec] extras::[String] silverhome::String silvergen::String
 {
-  forwards to genJavaHelp(a, specs, extras)
-	with {
-		ioIn = print("Generating Java Translation.\n", top.ioIn);
-	};
-}
+  local attribute pr::IO;
+  pr = print("Generating Java Translation.\n", top.ioIn);
 
-abstract production genJavaHelp
-top::Unit ::= a::Command specs::[Decorated RootSpec] extras::[String]
-{
   local attribute i :: IO;
-  i = writeAll(top.ioIn, a, specs, extras);
+  i = writeAll(pr, a, specs, extras, silvergen);
  
   local attribute buildFile :: IO;
-  buildFile = writeBuildFile(i, a, specs).io;
+  buildFile = writeBuildFile(i, a, specs, silverhome, silvergen).io;
 
   top.io = buildFile;
   top.code = 0;
@@ -56,35 +35,29 @@ top::Unit ::= a::Command specs::[Decorated RootSpec] extras::[String]
 }
 
 function writeAll
-IO ::= i::IO a::Decorated Command l::[Decorated RootSpec] extras::[String]
+IO ::= i::IO a::Decorated Command l::[Decorated RootSpec] extras::[String] silvergen::String
 {
   local attribute now :: IO;
-  now = writeSpec(i, head(l), a, extras);
+  now = writeSpec(i, head(l), a, extras, silvergen);
 
   local attribute recurse :: IO;
-  recurse = writeAll(now, a, tail(l), extras);
+  recurse = writeAll(now, a, tail(l), extras, silvergen);
 
   return if null(l) then i else recurse;
 }
 
 -- note: duplication in copper's buildprocess.sv
 function writeSpec
-IO ::= i::IO r::Decorated RootSpec a::Decorated Command extras::[String]
+IO ::= i::IO r::Decorated RootSpec a::Decorated Command extras::[String] silvergen::String
 {
   local attribute package :: String;
   package = substitute("/", ":", r.declaredName) ++ "/";
 
-  local attribute envArg :: IOString;
-  envArg = envVar("SILVER_JAVA", i);
-  
-  local attribute javaGenLoc :: String;
-  javaGenLoc = if length(a.javaGen) > 0 then a.javaGen else envArg.sValue;
-
   production attribute specLocation :: String;
-  specLocation = javaGenLoc ++ (if substring(length(javaGenLoc)-1, length(javaGenLoc), javaGenLoc) != "/" then "/src/" else "src/") ++ package; 
+  specLocation = silvergen ++ "/src/" ++ package; 
 
   local attribute mkdir :: IO;
-  mkdir = system("mkdir -p " ++ specLocation, envArg.io).io;
+  mkdir = system("mkdir -p " ++ specLocation, i).io;
 
   local attribute mki :: IO;
   mki = writeFile(specLocation ++ "Init.java", makeInit(r, if a.grammarName == r.impliedName then extras else []), mkdir);
@@ -95,7 +68,7 @@ IO ::= i::IO r::Decorated RootSpec a::Decorated Command extras::[String]
   local attribute mainIO :: IO;
   mainIO = if null(mains) then mki else writeFile(specLocation ++ "Main.java", makeMain(r), mki);
 
-  return if !r.interface then writeClasses(mainIO, specLocation, r.javaClasses) else envArg.io;
+  return if !r.interface then writeClasses(mainIO, specLocation, r.javaClasses) else i;
 }
 
 function makeMain
@@ -123,8 +96,8 @@ String ::= r::Decorated RootSpec{
 }
 
 abstract production writeBuildFile
-top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec]{
-
+top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec] silverhome::String silvergen::String 
+{
   production attribute extraTargets :: [String] with ++;
   extraTargets := [];
 
@@ -137,16 +110,11 @@ top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec]{
   local attribute mains :: [Decorated EnvItem];
   mains = getFunctionDcl(a.grammarName ++ ":main", toEnv(head(getRootSpec(a.grammarName, specs)).defs));
 
-  local attribute envArg :: IOString;
-  envArg = envVar("SILVER_JAVA", i);
-  
-  local attribute javaGenLoc :: String;
-  javaGenLoc = if length(a.javaGen) > 0 then a.javaGen else envArg.sValue;
-  
   local attribute outputFile :: String;
   outputFile = if length(a.outName) > 0 then a.outName else (makeName(a.grammarName) ++ ".jar");
 
-  top.io = writeFile("build.xml", buildXml, envArg.io);
+  -- TODO: this is local directory!!
+  top.io = writeFile("build.xml", buildXml, i);
 
   local attribute buildXml :: String;
   buildXml =    
@@ -154,13 +122,13 @@ top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec]{
 "  <description>Build the grammar " ++ a.grammarName ++ " </description>\n\n" ++
 
 "  <property environment='env'/>\n" ++
-"  <property name='jg' location='" ++ javaGenLoc ++ "'/>\n" ++
-"  <property name='lib' location='${jg}/lib'/>\n" ++ 
+"  <property name='jg' location='" ++ silvergen ++ "'/>\n" ++
+"  <property name='sh' location='" ++ silverhome ++ "'/>\n" ++ 
 "  <property name='bin' location='${jg}/bin'/>\n" ++
 "  <property name='src' location='${jg}/src'/>\n\n" ++
 
 "  <path id='lib.classpath'>\n" ++
-"    <fileset dir='${lib}' includes='**/*.jar' />\n" ++
+"    <fileset dir='${sh}' includes='SilverRuntime.jar CopperRuntime.jar CopperAnt.jar CopperCompiler.jar' />\n" ++ -- TODO: this is a bit busted
 "  </path>\n\n" ++
 
 "  <path id='src.classpath'>\n" ++
@@ -208,8 +176,8 @@ folds("\n", extraTaskdefs) ++ "\n\n" ++
 
 -- If we're building a single jar, then include it, and don't write out a script.
 (if a.buildSingleJar then
-"      <zipfileset src='${lib}/copper/CopperRuntime.jar' excludes='META-INF/*' />\n" ++
-"      <zipfileset src='${lib}/silver/silver-common.jar' excludes='META-INF/*' />\n"
+"      <zipfileset src='${sh}/CopperRuntime.jar' excludes='META-INF/*' />\n" ++
+"      <zipfileset src='${sh}/SilverRuntime.jar' excludes='META-INF/*' />\n"
  else "") ++
  
 "    </jar>\n\n" ++

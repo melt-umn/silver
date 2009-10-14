@@ -3,7 +3,7 @@ import silver:util:command;
 import silver:util;
 
 synthesized attribute searchPath :: String;
-attribute searchPath occurs on PieceList, Command;
+attribute searchPath occurs on Command;
 
 aspect production cRootAll
 top::Command ::= c1::PieceList
@@ -34,7 +34,7 @@ function stripFlagChunks
 
 
 synthesized attribute outName :: String;
-attribute outName occurs on PieceList, Command;
+attribute outName occurs on Command;
 
 aspect production cRootAll
 top::Command ::= c1::PieceList
@@ -72,3 +72,19 @@ top::Command ::= c1::PieceList
 
   top.doClean = !null(findFlag("--clean", top.flags));
 }
+
+synthesized attribute genLocation :: String;
+attribute genLocation occurs on Command;
+
+aspect production cRootAll
+top::Command ::= c1::PieceList
+{
+  flagLookups <- [flagLookup("-G", true)];
+  uses <- ["\t-G <path> Location to store generate files (SILVER_GEN)\n"];
+
+  local attribute fs2 :: [Flag];
+  fs2 = findFlag("-G", top.flags);
+
+  top.genLocation = if null(fs2) then "" else head(fs2).chunk;
+}
+
