@@ -25,15 +25,6 @@ top::RunUnit ::= iIn::IO args::String
   production attribute a :: Command;
   a = top.cParser(args);
 
-  -- operations to execute _before_ we parse and link the grammars.
-  production attribute preOps :: [Unit] with ++;
-  preOps := [checkSilverHome(silverhome), checkSilverGen(silvergen)];
-
-  --the result of running the pre operations
-  local attribute preIO :: IOInteger;
-  preIO = runAll(envSH.io, unitMergeSort(preOps));
-
-  --the env vairable to look for grammars
   local attribute envGP :: IOString;
   envGP = envVar("GRAMMAR_PATH", iIn);
   
@@ -61,6 +52,14 @@ top::RunUnit ::= iIn::IO args::String
   local attribute gpath :: String;
   gpath = getGrammarPath(a.gName) ++ "/";
 
+  -- operations to execute _before_ we parse and link the grammars.
+  production attribute preOps :: [Unit] with ++;
+  preOps := [checkSilverHome(silverhome), checkSilverGen(silvergen)];
+
+  --the result of running the pre operations
+  local attribute preIO :: IOInteger;
+  preIO = runAll(envSH.io, unitMergeSort(preOps));
+
   --the directory which contains the grammar
   local attribute grammarLocation :: MaybeIOStr;
   grammarLocation = findGrammarLocation(preIO.io, gpath, spath);
@@ -76,7 +75,6 @@ top::RunUnit ::= iIn::IO args::String
   extraUnit.iParser = top.iParser;
   extraUnit.compiledGrammars = grammars;
 
-
   -- the grammars we need to compile - this is a dynamic process
   -- we give a starting point and it will find and compile
   -- the other grammars needed
@@ -86,6 +84,20 @@ top::RunUnit ::= iIn::IO args::String
   unit.iParser = top.iParser;
   unit.compiledGrammars = grammars;
  
+  -- a list of the specs from all the grammars compiled EXCEPT the conditional build grammars! (and before recompiles!)
+  local attribute grammarsBeforeCond :: [Decorated RootSpec];
+  grammarsBeforeCond = unit.compiledList ++ getSpecs(unit.interfaces) ++ extraUnit.compiledList;
+
+  production attribute condUnit :: CompilationUnit;
+  condUnit = compileConditionals(unit.io, spath, collectGrammars(grammarsBeforeCond), a.doClean, grammarsBeforeCond);
+  condUnit.rParser = top.rParser;
+  condUnit.iParser = top.iParser;
+  condUnit.compiledGrammars = grammars;
+  
+  --all of the interfaces that we parsed (or faked due to extra gramamrs)
+  production attribute ifaces :: [Decorated Interface];
+  ifaces = unit.interfaces ++ extraUnit.interfaces ++ condUnit.interfaces;
+
   -- a list of interfaces that need to be recompiled.
   production attribute needRecompile :: [Decorated Interface];
   needRecompile = getInvalidInterfaces(ifaces);
@@ -100,36 +112,21 @@ top::RunUnit ::= iIn::IO args::String
 
   -- the names of the grammars that have been seen. 
   local attribute seenNames :: [String];
-  seenNames = unit.seenGrammars ++ extraUnit.seenGrammars;
+  seenNames = unit.seenGrammars ++ extraUnit.seenGrammars ++ condUnit.seenGrammars;
 
   -- the grammars that we have recompiled
   production attribute reUnit :: CompilationUnit;
-  reUnit = compileGrammars(unit.io, spath, needRecompileNames, seenNames, true);
+  reUnit = compileGrammars(condUnit.io, spath, needRecompileNames, seenNames, true);
   reUnit.rParser = top.rParser;
   reUnit.iParser = top.iParser;
   reUnit.compiledGrammars = grammars;
 
-  --all of the interfaces that we parsed (or faked due to extra gramamrs)
-  production attribute ifaces :: [Decorated Interface];
-  ifaces = unit.interfaces ++ extraUnit.interfaces;
-
-  -- a list of the specs from all the grammars compiled EXCEPT the conditional build grammars!
-  local attribute grammarsWithoutCond :: [Decorated RootSpec];
-  grammarsWithoutCond = unit.compiledList ++ reUnit.compiledList ++ getSpecs(noNeedRecompile);
-
-  production attribute condUnit :: CompilationUnit;
-  condUnit = compileConditionals(reUnit.io, spath, seenNames ++ reUnit.seenGrammars, a.doClean, grammarsWithoutCond);
-  condUnit.rParser = top.rParser;
-  condUnit.iParser = top.iParser;
-  condUnit.compiledGrammars = grammars;
-  
-  -- grammars not in the tree formed by moduleNames on the root grammar
+  -- grammars not in the dependency tree formed by moduleNames on the root grammar
   production attribute nonTreeRootSpecs :: [Decorated RootSpec];
-  nonTreeRootSpecs = condUnit.compiledList ++ getSpecs(condUnit.interfaces);
+  nonTreeRootSpecs = condUnit.compiledList ++ getSpecs(condUnit.interfaces) ++ extraUnit.compiledList;
+  
   production attribute nonTreeGrammars :: [String];
   nonTreeGrammars = collectGrammars(nonTreeRootSpecs);
-  -- TODO: Bug? extraGrammars above should probably be included here!!
-  -- otherwise, their inits are never called.
 
   -- a list of the specs from _all_ the grammars compiled.
   production attribute grammars :: [Decorated RootSpec];
@@ -142,7 +139,7 @@ top::RunUnit ::= iIn::IO args::String
   top.io = if preIO.iValue != 0 --the preops tell us to quit.
            then preIO.io
            else if a.okay && grammarLocation.found --the args were okay and the grammar was found.
-	        then runAll(condUnit.io, unitMergeSort(postOps)).io
+	        then runAll(reUnit.io, unitMergeSort(postOps)).io
 	        else if a.okay && !grammarLocation.found --the args were okay but the grammar was not found
 	             then print("\nGrammar '" ++ a.gName ++ "' could not be located, make sure that the grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io)
 		     else print(a.usage, iIn); -- the args were not okay.
@@ -304,7 +301,7 @@ top::CompilationUnit ::= grams::[[String]] need::[String] seen::[String]
 }
 
 --this production compiles the given grammars and dynamically adds new grammars to compile to the list.
---grammars will on;y be compiled once.
+--grammars will only be compiled once.
 abstract production compileGrammars
 top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] clean::Boolean
 {
