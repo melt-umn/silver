@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#time java -Xss8M -Xmx3000M -jar ../jars/RunSilver.jar -I ../grammars $@ silver:composed:Default
+
+time java -Xss8M -Xmx3000M -jar ../../../../jars/RunSilver.jar tutorials:dc:bin
+
+
+# then "ant"
+
+# then "java -jar tutorials.dc.bin.jar 1 + 2"
+
+
+
+
