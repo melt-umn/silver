@@ -3,30 +3,11 @@ import silver:definition:concrete_syntax;
 import silver:definition:core;
 import silver:definition:env;
 
+import silver:translation:java:core;
+
 import silver:analysis:typechecking:core;
 
 --terminal Parser_kwd 'parser' lexer precedence = 5;
-
-attribute actionCode occurs on RHSSpec;
-
-function rhsSpecAction
-Decorated RHSSpec ::= gn::String fn::String ns::[String] pm::[Decorated ProductionModifierSpec] acode::String
-{
-  return decorate i_rhsSpecAction(gn, fn, ns, pm, acode) with {};
-}
-
-abstract production i_rhsSpecAction
-top::RHSSpec ::= gn::String fn::String ns::[String] pm::[Decorated ProductionModifierSpec] acode::String
-{
-   top.actionCode = acode;
-   forwards to i_rhsSpec(gn, fn,ns,pm);
-}
-
-aspect production i_rhsSpec
-top::RHSSpec ::= gn::String fn::String ns::[String] pm::[Decorated ProductionModifierSpec]
-{
-   top.actionCode = "";
-}
 
 concrete production attributeDclParser
 top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::ActionCode_c ';'
@@ -59,7 +40,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
         then [err(top.location, "Type '" ++ te.typerep.typeName ++ "' not valid for a parser attribute.")]
         else [];
 
-  top.errors := er1 ++ er2 ++ er3 ++ te.errors;
+  top.errors := er1 ++ er2 ++ er3 ++ te.errors; -- FIXME
   top.typeErrors = []; -- Finalize
   top.nonTerminalDcls = [];
   top.terminalDcls = [];
@@ -72,6 +53,12 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
   acode.env = appendDefsEnv(addFullNameDcl(a.name,fName,
                              addValueDcl(fName,te.typerep,
                               addThisDcl(fName,acode.defs))),top.env);
+
+  top.javaClasses = [];
+  top.setupInh := "";
+  top.initProd := "";
+  top.initAspect := "";
+  top.postInit := "";
 }
 
 ----------------------
@@ -101,3 +88,26 @@ top::EnvItem ::= n::String
   forwards to i_defaultEnvItem();
 }
 
+aspect production i_defaultEnvItem
+top::EnvItem ::= 
+{
+  top.isParserAttrDeclaration = false;
+}
+
+function isParserAttribute
+Boolean ::= search::String e::Decorated Env
+{
+  return isParserAttributeHelp(search, getDcls(e.restTree));
+}
+
+function isParserAttributeHelp
+Boolean ::= search::String e::[Decorated EnvItem]
+{
+  local attribute recurse :: Boolean;
+  recurse = isParserAttributeHelp(search, tail(e));
+
+  return if null(e) then false
+         else if (head(e).isParserAttrDeclaration && head(e).itemName == search)
+	      then true
+	      else recurse;
+}

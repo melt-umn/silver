@@ -47,6 +47,21 @@ top::Expr ::= 'isDirectory' '(' e1::Expr ',' e2::Expr ')'
   e2.expected = expected_default();
 }
 
+concrete production mkdirFunction
+top::Expr ::= 'mkdir' '(' e1::Expr ',' e2::Expr ')'
+{
+  top.pp = "mkdir(" ++ e1.pp ++ ", " ++ e2.pp ++ ")";
+  top.location = loc(top.file, $1.line, $1.column);
+
+  top.errors := e1.errors ++ e2.errors;
+  top.warnings := e1.warnings ++ e2.warnings;
+
+  top.typerep = ntTypeRep("core:IOBoolean");
+
+  e1.expected = expected_default();
+  e2.expected = expected_default();
+}
+
 concrete production readFunction
 top::Expr ::= 'readFile' '(' e1::Expr ',' e2::Expr ')'
 {

@@ -1,7 +1,9 @@
 grammar silver:translation:java:concrete_syntax:copper;
+import silver:definition:core;
 import silver:definition:concrete_syntax;
 import silver:definition:env;
 import silver:translation:java:core hiding makeName;
+import silver:translation:java:env;
 
 import silver:util;
 
@@ -44,7 +46,7 @@ String ::= grammar_name::String spec::Decorated ParserSpec
 "  </preamble>\n\n" ++
 
              makeDisambiguateSpecString(spec.disambiguationGroupDcls) ++ "\n" ++
-             -- Parser Attributes?
+             makeParserAttrString(spec.parserAttrDcls) ++ "\n" ++
              makeTermTokenSpecString(cons(emptyStr, spec.terminalDcls), grammar_name) ++
              makeNonTermList(spec.nonTerminalDcls) ++ "\n" ++
              makeStartDclString(spec.startName, univLayout) ++ "\n" ++
@@ -55,14 +57,19 @@ String ::= grammar_name::String spec::Decorated ParserSpec
   return rv;
 }
 
--- UNUSED: PARSER ATTRIBUTES:
---  <attribute id="starter" type="LinkedList&lt;String&gt;">
---    <code>
---      <![CDATA[
---			 	starter = new LinkedList<String>(); 
--- 			 ]]>
---    </code>
---  </attribute>
+
+function makeParserAttrString
+String ::= members::[Decorated ParserAttrSpec]
+{
+  return if null(members)
+         then ""
+         else -- TODO: BUG: escape the type here!
+"  <attribute id=\"" ++ head(members).name ++"\" type=\"" ++ head(members).typerep.transType ++ "\">\n" ++
+"    <code><![CDATA[" ++
+  head(members).actionCode ++
+"    ]]></code>\n" ++
+"  </attribute>\n" ++ makeParserAttrString(tail(members));
+}
 
 function makeTermList
 String ::= members::[String]
@@ -111,8 +118,8 @@ String ::= specs::[Decorated TerminalSpec] grammar_name::String
 
 "  <term id=\"" ++ makeCopperName(head(specs).terminalName) ++ "\">\n" ++
 "    <code><![CDATA[\n" ++
-	head(specs).actionCode ++ 
 "RESULT = new common.Terminal(lexeme,virtualLocation.getLine(),virtualLocation.getColumn());\n" ++
+	head(specs).actionCode ++ 
 "    ]]></code>\n" ++
 "    <classes>\n" ++
 	makeTermClassList(head(specs).lexerClasses) ++

@@ -38,7 +38,7 @@ top::ProductionRHSElem ::= reg::RegExpr
 	       then [err(top.location, "Could not find terminal declaration for " ++ reg.pp ++ "\n\n" ++ printEnvItems(getAllTypeDcls(top.env)))]
  	       else [];
 
-  forwards to productionRHSElemType(typerepType(head(regName).typerep));
+  forwards to productionRHSElemType(typerepType(if null(regName) then topTypeRep() else head(regName).typerep));
 }
 
 concrete production aspectRHSElemEasyReg
@@ -75,7 +75,7 @@ top::Expr ::= t::RegExpr
 
   forwards to terminalFunction(terminal(Terminal_kwd, "terminal", t.location.line, t.location.column),
 			       terminal(LParen_t, "("),
-			       typerepType(head(regName).typerep),
+			       typerepType(if null(regName) then topTypeRep() else head(regName).typerep),
 			       terminal(Comma_t, ","),
 			       stringConst(terminal(String_t, "\"" ++ escapedName ++ "\"")),
 			       terminal(RParen_t, ")"));

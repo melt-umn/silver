@@ -536,7 +536,7 @@ Boolean ::= f::String
   local attribute l :: Integer;
   l = length(f);
 
-  return substring(l-3, l, f) == ".sv";
+  return l >= 3 && substring(l-3, l, f) == ".sv";
 }
 
 --takes in a grammar name and returns a grammar path

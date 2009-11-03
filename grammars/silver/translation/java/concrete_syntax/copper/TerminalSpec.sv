@@ -98,7 +98,7 @@ Decorated TerminalModifierSpec ::= s::String{
 
 abstract production i_actionCodeTerminalModifierSpec
 top::TerminalModifierSpec ::= s::String{
-  top.unparse = "code_#" ++ s ++ "_#";
+  top.unparse = "action \"" ++ escapeString(s) ++ "\"";
   top.actionCode = s;
   forwards to defaultTerminalModifierSpec();
 }

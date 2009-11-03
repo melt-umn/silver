@@ -89,7 +89,7 @@ IO ::= i::IO a::Command r::[Decorated RootSpec] h::[Decorated DocSection]
 	"</html>\n";
 
   local attribute i1:: IO;
-  i1 = system("mkdir -p doc/" ++ makeFileName(head(r).declaredName), i).io;
+  i1 = mkdir("doc/" ++ makeFileName(head(r).declaredName), i).io;
 
    
   return if null(r) then i 

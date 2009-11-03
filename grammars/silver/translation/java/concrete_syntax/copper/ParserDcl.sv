@@ -7,12 +7,13 @@ import silver:definition:env;
 
 attribute javaClasses, initProd occurs on ParserDcl;
 attribute disambiguationGroupDcls occurs on ParserDcl, ModuleList, ModuleName, Module, ModuleExportedDefs;
-
+attribute parserAttrDcls occurs on ParserDcl, ModuleList, ModuleName, Module, ModuleExportedDefs;
 
 aspect production parserDcl
 top::AGDcl ::= p::ParserDcl
 {
   top.disambiguationGroupDcls = [];
+  top.parserAttrDcls = [];
   top.javaClasses = p.javaClasses;
   top.setupInh := "";
   top.initProd := p.initProd;
@@ -24,36 +25,42 @@ aspect production parserStmt
 top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
 {
   top.disambiguationGroupDcls = m.disambiguationGroupDcls;
+  top.parserAttrDcls = m.parserAttrDcls;
 }
 
 aspect production moduleListOne
 top::ModuleList ::= c1::ModuleName ';'
 {
   top.disambiguationGroupDcls = c1.disambiguationGroupDcls;
+  top.parserAttrDcls = c1.parserAttrDcls;
 }
 
 aspect production moduleListCons
 top::ModuleList ::= c1::ModuleName ';' c2::ModuleList
 {
   top.disambiguationGroupDcls = c1.disambiguationGroupDcls ++ c2.disambiguationGroupDcls;
+  top.parserAttrDcls = c1.parserAttrDcls ++ c2.parserAttrDcls;
 }
 
 aspect production moduleName
 top::ModuleName ::= pkg::QName
 {
   top.disambiguationGroupDcls = m.disambiguationGroupDcls;
+  top.parserAttrDcls = m.parserAttrDcls;
 }
 
 aspect production module 
 top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[EnvMap]
 {
   top.disambiguationGroupDcls = med.disambiguationGroupDcls;		  
+  top.parserAttrDcls = med.parserAttrDcls;		  
 }
 
 aspect production moduleExportedDefs
 top::ModuleExportedDefs ::= compiled::[Decorated RootSpec] need::[String] seen::[String]
 {
   top.disambiguationGroupDcls = if null(need) || null(rs) then [] else (head(rs).disambiguationGroupDcls ++ recurse.disambiguationGroupDcls);
+  top.parserAttrDcls = if null(need) || null(rs) then [] else (head(rs).parserAttrDcls ++ recurse.parserAttrDcls);
 }
 
 aspect production parserStmt
