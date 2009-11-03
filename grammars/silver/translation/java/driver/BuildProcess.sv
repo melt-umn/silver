@@ -56,11 +56,11 @@ IO ::= i::IO r::Decorated RootSpec a::Decorated Command extras::[String] silverg
   production attribute specLocation :: String;
   specLocation = silvergen ++ "/src/" ++ package; 
 
-  local attribute mkdir :: IO;
-  mkdir = system("mkdir -p " ++ specLocation, i).io;
+  local attribute mkd :: IO;
+  mkd = mkdir(specLocation, i).io;
 
   local attribute mki :: IO;
-  mki = writeFile(specLocation ++ "Init.java", makeInit(r, if a.grammarName == r.impliedName then extras else []), mkdir);
+  mki = writeFile(specLocation ++ "Init.java", makeInit(r, if a.grammarName == r.impliedName then extras else []), mkd);
 
   local attribute mains :: [Decorated EnvItem];
   mains = getFunctionDcl(r.declaredName ++ ":main", toEnv(r.defs));

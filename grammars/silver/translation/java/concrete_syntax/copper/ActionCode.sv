@@ -22,13 +22,46 @@ attribute actionTypeErrors occurs on ActionCode_c, ProductionStmts,ProductionStm
 
 terminal Action_kwd 'action' lexer classes {KEYWORD};
 
+
+attribute actionCode occurs on RHSSpec, ProductionModifierSpec;
+
+function actionProductionModifierSpec
+Decorated ProductionModifierSpec ::= s::String
+{
+  return decorate i_actionProductionModifierSpec(s) with {};
+}
+
+abstract production i_actionProductionModifierSpec
+top::ProductionModifierSpec ::= s::String
+{
+  top.unparse = "action \"" ++ escapeString(s) ++ "\"";
+  top.actionCode = s;
+  forwards to defaultProductionModifierSpec();
+}
+
+aspect production defaultProductionModifierSpec
+top::ProductionModifierSpec ::={
+  top.actionCode = "";
+}
+
+aspect production i_rhsSpec
+top::RHSSpec ::= gn::String fn::String ns::[String] pm::[Decorated ProductionModifierSpec]
+{
+   top.actionCode = findProductionAction(pm);
+}
+
+function findProductionAction
+String ::= l::[Decorated ProductionModifierSpec]{
+  return if null(l) then "" else if head(l).actionCode != "" then head(l).actionCode else findProductionAction(tail(l));
+}
+
 concrete production concreteProductionDclAction
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature body::ProductionBody 'action' acode::ActionCode_c
 {
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName, [rhsSpecAction(top.grammarName, fName, getTypeNamesSignature(ns.inputElements), [], acode.actionCode)])];
+  top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName, [rhsSpec(top.grammarName, fName, getTypeNamesSignature(ns.inputElements), [actionProductionModifierSpec(acode.actionCode)])])];
 
   top.pp = "concrete production " ++ id.name ++  "\n" ++ 
 	     ns.pp  ++ "  \n{\n" ++ body.pp ++ "\n}\naction\n  {@" ++
@@ -46,6 +79,8 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature body::Pr
   acode.localsEnv = toEnv(acode.defs);
 
 --TODO
+  top.errors <- acode.actionErrors;
+--  top.typeErrors <- acode.actionTypeErrors;
 --  top.errors := body.errors ++ acode.actionErrors;
 --  top.typeErrors = body.typeErrors ++ acode.actionTypeErrors;
 
@@ -58,7 +93,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName, [rhsSpecAction(top.grammarName, fName, getTypeNamesSignature(ns.inputElements), pm.productionModifiers, acode.actionCode)])];
+  top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName, [rhsSpec(top.grammarName, fName, getTypeNamesSignature(ns.inputElements), cons(actionProductionModifierSpec(acode.actionCode), pm.productionModifiers))])];
 
   top.pp = "concrete production " ++ id.name ++  "\n" ++ 
 	     ns.pp  ++ "  \n{\n" ++ body.pp ++ "\n}\naction\n  {@" ++

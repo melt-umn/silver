@@ -57,6 +57,23 @@ top::Expr ::= i::IsDirectory_kwd l::LParen_t e1::Expr c::Comma_t e2::Expr r::RPa
   top.typeErrors = e1_error ++ e2_error ++ e1.typeErrors ++ e2.typeErrors;
 }
 
+aspect production mkdirFunction
+top::Expr ::= 'mkdir' '(' e1::Expr ',' e2::Expr ')'
+{
+  local attribute e1_error :: [Decorated Message];
+  e1_error =   if (e1.typerep.isString) 
+	       then []
+	       else [err(top.location, "First parameter to mkdir must be of type String.")];
+
+
+  local attribute e2_error :: [Decorated Message];
+  e2_error =   if (e2.typerep.isIO) 
+	       then []
+	       else [err(top.location, "Second parameter to mkdir must be of type IO.")];
+
+  top.typeErrors = e1_error ++ e2_error ++ e1.typeErrors ++ e2.typeErrors;
+}
+
 aspect production readFunction
 top::Expr ::= r::ReadFile_kwd l::LParen_t e1::Expr c::Comma_t e2::Expr rp::RParen_t
 {

@@ -22,6 +22,12 @@ top::Expr ::= 'isDirectory' '(' e1::Expr ',' e2::Expr ')'
   top.translation = "(new core.PioBoolean(" ++ e2.translation ++ ", common.Util.isDirectory(" ++ e1.translation ++ ".toString())))";
 }
 
+aspect production mkdirFunction
+top::Expr ::= 'mkdir' '(' e1::Expr ',' e2::Expr ')'
+{
+  top.translation = "(new core.PioBoolean(" ++ e2.translation ++ ", common.Util.mkdir(" ++ e1.translation ++ ".toString())))";
+}
+
 aspect production readFunction
 top::Expr ::= 'readFile' '(' e1::Expr ',' e2::Expr ')'
 {
@@ -44,7 +50,7 @@ top::Expr ::= 'envVar' '(' e1::Expr ',' e2::Expr ')'
 aspect production systemFunction
 top::Expr ::= 'system' '(' e1::Expr ',' e2::Expr ')'
 {
-  top.translation = "(new core.PioString(" ++ e2.translation ++ ", common.Util.system(" ++ e1.translation ++ ".toString())))";
+  top.translation = "(new core.PioInteger(" ++ e2.translation ++ ", common.Util.system(" ++ e1.translation ++ ".toString())))";
 }
 
 aspect production writeFunction

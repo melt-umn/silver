@@ -42,8 +42,8 @@ top::Expr ::= q::QName
 		_ -> false end;
  	      	
 
-  --to define the type
-  forwards to if (in_sig || in_locals) && !null(vals) && head(vals).typerep.doDecorate && shouldDec
+  production attribute fwd :: Expr;
+  fwd = if (in_sig || in_locals) && !null(vals) && head(vals).typerep.doDecorate && shouldDec
 	      then decorateExpr(q)
 	      else if !in_sig && !in_locals && !null(vals) 
 		      && head(vals).typerep.typeName != "TOP"
@@ -54,6 +54,8 @@ top::Expr ::= q::QName
 		      && head(vals).typerep.isFunction
 	      then functionReference(q) 
 	      else dontDecorateExpr(q);
+
+  forwards to fwd;
 }
 
 concrete production concreteDecorateExpr

@@ -14,6 +14,7 @@ terminal System_kwd 		/system/ 	lexer classes {KEYWORD};
 terminal CWD_kwd 		/cwd/   	lexer classes {KEYWORD};
 terminal IsFile_kwd 		/isFile/ 	lexer classes {KEYWORD};
 terminal IsDirectory_kwd 	/isDirectory/ 	lexer classes {KEYWORD};
+terminal Mkdir_kwd		/mkdir/		lexer classes {KEYWORD};
 terminal Print_kwd 		/print/ 	lexer classes {KEYWORD};
 terminal ListContents_kwd	/listContents/	lexer classes {KEYWORD};
 terminal UnsafeIO_kwd 		/unsafeio/ 	lexer classes {KEYWORD};
