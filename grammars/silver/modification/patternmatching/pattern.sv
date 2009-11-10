@@ -591,9 +591,11 @@ aspect production productionRHSSingle
 top::ProductionRHS ::= rhs::ProductionRHSElem
 {
 
-  top.genRhsListExpr = fullList(terminal(LSqr_t, "["),
-			exprsSingle(rhs.genRhsListExpr), 
-			terminal(RSqr_t, "]"));
+  top.genRhsListExpr = consList(terminal(Cons_t, "cons"),
+                   terminal(LParen_t, "("),                   
+                   rhs.genRhsListExpr,  terminal(Comma_t,","), emptyList('[',']'),
+                   terminal(RParen_t, ")")
+                  ) ;
 
 
    top.rhsTypeAllowed = rhs.rhsTypeAllowed ;
