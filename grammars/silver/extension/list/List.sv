@@ -42,7 +42,7 @@ top::Expr ::= '[' ']'
 concrete production emptyListWType
 top::Expr ::= '[' '::' t::Type ']'
 {
-  top.pp = "[" ++ t.pp ++ "]";
+  top.pp = "[::" ++ t.pp ++ "]";
   top.location = loc(top.file, $1.line, $1.column);
 
   top.typerep = listTypeRep(t.typerep);
@@ -67,12 +67,12 @@ top::Expr ::= '[' es::Exprs ']'
   local attribute t :: Decorated TypeRep;
   t = head(es.exprs).typerep;
 
-  top.typerep = if null(es.exprs) then emptyListTypeRep() else listTypeRep(t);
-
   local attribute expectedElementType :: Decorated TypeRep;
   expectedElementType = case top.expected of
                          expected_type(typ) -> typ.listComponent
                         | _ -> topTypeRep() end;
+
+  top.typerep = if null(es.exprs) then listTypeRep(expectedElementType) else listTypeRep(t);
 
   -- This is useless as sent to the Exprs part in def/core, but we use it below for listtrans
   es.expectedInputTypes = makeListInputs(expectedElementType, length(es.exprs));
@@ -325,12 +325,6 @@ function listTypeRep
 Decorated TypeRep ::= tr::Decorated TypeRep
 {
   return decorate i_listTypeRep(false, tr) with {};
-}
-
-function emptyListTypeRep
-Decorated TypeRep ::= 
-{
-  return decorate i_listTypeRep(true, topTypeRep()) with {};
 }
 
 abstract production i_listTypeRep
