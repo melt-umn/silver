@@ -1,0 +1,7 @@
+
+SILVER  silver.copper
+GRAMMAR edu:umn:cs:melt:tutorial:expr:composed:expr_ctrans
+
+RUNONLY ale
+INPUT   expr_ctrans.ale
+OWNER   evw@cs.umn.edu

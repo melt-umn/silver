@@ -1,0 +1,6 @@
+#!/bin/bash
+
+silver.copper -o expr edu:umn:cs:melt:tutorial:expr:host:bin
+
+
+

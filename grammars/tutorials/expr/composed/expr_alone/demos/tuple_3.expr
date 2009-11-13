@@ -1,0 +1,7 @@
+let ta:(int,int) = (1,2+3)  in
+let tb:(int,int) = (fst(ta), 3) in
+
+   ta == tb ? 1 : 0
+
+end
+end

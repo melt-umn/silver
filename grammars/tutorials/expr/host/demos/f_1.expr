@@ -1,0 +1,15 @@
+let sum (a, b) return a + b 
+in
+    sum(1,2)
+end
+
++
+
+let sum (a:Int, b:Int):Int return a + b
+in  sum (1,2)
+end
+
+
++ 
+
+let x:Int = 4

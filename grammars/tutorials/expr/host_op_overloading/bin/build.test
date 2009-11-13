@@ -1,0 +1,10 @@
+SILVER  silver.copper 
+GRAMMAR edu:umn:cs:melt:tutorial:expr:host:bin 
+BUILDONLY 
+SAVEBUILD expr
+OWNER   evw@cs.umn.edu 
+
+
+
+
+

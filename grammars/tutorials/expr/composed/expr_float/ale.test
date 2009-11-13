@@ -1,0 +1,7 @@
+
+SILVER  silver.copper
+GRAMMAR edu:umn:cs:melt:tutorial:expr:composed:expr_float
+
+RUNONLY ale
+INPUT   expr_float.ale
+OWNER   evw@cs.umn.edu

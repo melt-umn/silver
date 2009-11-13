@@ -1,0 +1,10 @@
+SILVER  silver.copper
+GRAMMAR edu:umn:cs:melt:tutorial:expr:host:bin
+
+RUNONLY ../bin/expr
+INPUT   ../demos/f_1.expr
+
+RUN SHOULD FAIL
+OWNER evw@cs.umn.edu
+
+

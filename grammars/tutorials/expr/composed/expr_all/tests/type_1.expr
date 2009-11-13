@@ -1,0 +1,4 @@
+let x:int = 3
+in
+    x + 3
+end
