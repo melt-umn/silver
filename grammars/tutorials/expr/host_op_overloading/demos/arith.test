@@ -1,0 +1,9 @@
+SILVER  silver.copper
+GRAMMAR edu:umn:cs:melt:tutorial:expr:host_op_overloading:bin
+
+RUNONLY ../bin/expr
+INPUT   arith.expr
+
+OWNER evw@cs.umn.edu
+
+

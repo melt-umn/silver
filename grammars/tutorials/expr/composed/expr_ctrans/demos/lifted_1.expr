@@ -1,0 +1,6 @@
+let a:int = 3 in
+let b:int = let c:int = a + 1 in c + a end
+in
+    a + b
+end
+end

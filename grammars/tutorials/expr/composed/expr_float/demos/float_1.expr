@@ -1,0 +1,9 @@
+let pi:float = 3.1415 in
+let radius:float = 5.0 
+in
+    pi * radius * radius +
+
+    let nn:float = 42.3 in nn * 1.2 end
+
+end
+end

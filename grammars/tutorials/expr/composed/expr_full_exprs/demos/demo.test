@@ -1,0 +1,7 @@
+SILVER  silver.copper
+GRAMMAR edu:umn:cs:melt:tutorial:expr:composed:expr_full_exprs:demos
+
+RUNONLY ../bin/expr
+INPUT   demo.expr
+
+OWNER evw@cs.umn.edu
