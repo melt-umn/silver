@@ -104,6 +104,7 @@ terminal Multiply_t '*' lexer classes {KEYWORD}, precedence = 12, association = 
 terminal PlusPlus_t '++' lexer classes {SIX}, precedence = 11, association = left;
 
 ignore terminal comments /([\-][\-].*)/ ;
+ignore terminal blockComments /\{\-([^\-]|\-+[^\}\-])*\-+\}/ ; --careful, now...
 ignore terminal WhiteSpace /[\n\t\ ]+/ lexer classes {ZERO};
 
 terminal Int_t /[0-9]+/ lexer classes {TWO};
