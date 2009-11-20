@@ -42,12 +42,6 @@ nonterminal WithElem with location, grammarName, file, envMaps, warnings, errors
 nonterminal ProductionBody with location, grammarName, file, productionAttributes, warnings, errors, signature, signatureEnv, localsEnv, env, defs, pp;
 nonterminal ProductionStmts with location, grammarName, file, productionAttributes, warnings, errors, signature, signatureEnv, localsEnv, env, defs, pp;
 nonterminal ProductionStmt with location, grammarName, file, productionAttributes, warnings, errors, signature, signatureEnv, localsEnv, env, defs, pp;
-nonterminal ReturnDef with location, grammarName, file, warnings, errors, signature, signatureEnv, localsEnv, env, defs, pp;
-nonterminal AttributeDef with location, grammarName, file, warnings, errors, signature, signatureEnv, localsEnv, env, defs, pp;
-nonterminal ProductionAttributeDcl with location, grammarName, file, warnings, errors, signature, signatureEnv, localsEnv, env, defs, pp;
-nonterminal LocalAttributeDcl with location, grammarName, file, warnings, errors, signature, signatureEnv, localsEnv, env, defs, pp;
-nonterminal ForwardsToDcl with location, grammarName, file, warnings, errors, signature, signatureEnv, localsEnv, env, defs, pp;
-nonterminal ForwardingWithDcl with location, grammarName, file, warnings, errors, signature, signatureEnv, localsEnv, env, defs, pp;
 nonterminal ForwardInhs with location, grammarName, file, warnings, errors, signature, signatureEnv, localsEnv, env, defs, pp;
 nonterminal ForwardInh with location, grammarName, file, warnings, errors, signature, signatureEnv, localsEnv, env, defs, pp;
 nonterminal ForwardLHSExpr with location, grammarName, file, warnings, errors, typerep, signatureEnv, localsEnv, env, defs, pp;

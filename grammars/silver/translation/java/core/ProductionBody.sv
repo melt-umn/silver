@@ -13,7 +13,7 @@ synthesized attribute isParent :: Boolean;
 attribute nodeName, attrName, isLocal, isLocalDcl, isChild, isParent occurs on LHSExpr;
 attribute attrName occurs on ForwardLHSExpr;
 
-attribute setupInh, translation occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardsToDcl, ForwardingWithDcl, LocalAttributeDcl, ProductionAttributeDcl, AttributeDef, ForwardInhs, ForwardInh, ReturnDef;
+attribute setupInh, translation occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
 
 aspect production defaultProductionBody
 top::ProductionBody ::= stmts::ProductionStmts
@@ -50,50 +50,8 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
   top.translation = h.translation ++ t.translation;
 }
 
-aspect production productionStmtAttributeDef
-top::ProductionStmt ::= a::AttributeDef
-{
-  top.setupInh = a.setupInh;
-  top.translation = a.translation;
-}
-
-aspect production productionStmtReturnDef
-top::ProductionStmt ::= a::ReturnDef
-{
-  top.setupInh = a.setupInh;
-  top.translation = a.translation;
-}
-
-aspect production productionStmtLocalAttribute
-top::ProductionStmt ::= a::LocalAttributeDcl
-{
-  top.setupInh = a.setupInh;
-  top.translation = a.translation;
-}
-
-aspect production productionStmtProductionAttribute
-top::ProductionStmt ::= a::ProductionAttributeDcl
-{
-  top.setupInh = a.setupInh;
-  top.translation = a.translation;
-}
-
-aspect production productionStmtForwardsTo
-top::ProductionStmt ::= a::ForwardsToDcl
-{
-  top.setupInh = a.setupInh;
-  top.translation = a.translation;
-}
-
-aspect production productionStmtForwardingWith
-top::ProductionStmt ::= a::ForwardingWithDcl
-{
-  top.setupInh = a.setupInh;
-  top.translation = a.translation;
-}
-
 aspect production forwardsTo
-top::ForwardsToDcl ::= 'forwards' 'to' e::Expr ';'
+top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
@@ -109,7 +67,7 @@ top::ForwardsToDcl ::= 'forwards' 'to' e::Expr ';'
 }
 
 aspect production forwardsToWith
-top::ForwardsToDcl ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
+top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
@@ -126,7 +84,7 @@ top::ForwardsToDcl ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' '
 }
 
 aspect production forwardingWith
-top::ForwardingWithDcl ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
+top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {
   top.setupInh = "";
   top.translation = inh.translation;   
@@ -167,7 +125,7 @@ top::ForwardLHSExpr ::= q::QName
 }
 
 aspect production localAttributeDcl
-top::LocalAttributeDcl ::= 'local' 'attribute' a::Name '::' te::Type ';'
+top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 {
   top.setupInh = if !te.typerep.isNonTerminal then  "" else
         	 "\t\t//" ++ top.pp ++ "\n" ++
@@ -178,7 +136,7 @@ top::LocalAttributeDcl ::= 'local' 'attribute' a::Name '::' te::Type ';'
 }
 
 aspect production productionAttributeDcl
-top::ProductionAttributeDcl ::= 'production' 'attribute' a::Name '::' te::Type ';'
+top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
 {
   top.setupInh = if !te.typerep.isNonTerminal then  "" else
 	   	"\t\t//" ++ top.pp ++ "\n" ++		 
@@ -189,7 +147,7 @@ top::ProductionAttributeDcl ::= 'production' 'attribute' a::Name '::' te::Type '
 }
 
 aspect production attributeDef
-top::AttributeDef ::= lhs::LHSExpr '=' e::Expr ';'
+top::ProductionStmt ::= lhs::LHSExpr '=' e::Expr ';'
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
@@ -225,7 +183,7 @@ top::AttributeDef ::= lhs::LHSExpr '=' e::Expr ';'
 }
 
 aspect production returnDef
-top::ReturnDef ::= 'return' e::Expr ';'
+top::ProductionStmt ::= 'return' e::Expr ';'
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);

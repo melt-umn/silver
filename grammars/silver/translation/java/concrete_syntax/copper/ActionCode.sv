@@ -12,13 +12,13 @@ synthesized attribute hasActionCode :: Boolean;
 synthesized attribute actionCode :: String;
 
 nonterminal ActionCode_c with actionCode,env,defs,grammarName,localsEnv,signature,signatureEnv, file;
-attribute actionCode occurs on ProductionStmts,ProductionStmt,AttributeDef,LocalAttributeDcl, LHSExpr,Expr,Exprs;
+attribute actionCode occurs on ProductionStmts,ProductionStmt,LHSExpr,Expr,Exprs;
 
 synthesized attribute actionErrors :: [Decorated Message];
 synthesized attribute actionTypeErrors :: [Decorated Message];
 
-attribute actionErrors occurs on ActionCode_c, ProductionStmts,ProductionStmt,AttributeDef, LocalAttributeDcl, LHSExpr,Expr,Exprs;
-attribute actionTypeErrors occurs on ActionCode_c, ProductionStmts,ProductionStmt,AttributeDef, LocalAttributeDcl,LHSExpr,Expr,Exprs;
+attribute actionErrors occurs on ActionCode_c, ProductionStmts,ProductionStmt,LHSExpr,Expr,Exprs;
+attribute actionTypeErrors occurs on ActionCode_c, ProductionStmts,ProductionStmt,LHSExpr,Expr,Exprs;
 
 terminal Action_kwd 'action' lexer classes {KEYWORD};
 
@@ -184,8 +184,10 @@ top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
   top.actionErrors = h.actionErrors ++ t.actionErrors;
 }
 
-aspect production productionStmtForwardsTo
-top::ProductionStmt ::= a::ForwardsToDcl
+-- BUG forwardsToWith too!!
+
+aspect production forwardsTo
+top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
   top.actionCode = "";
   top.actionErrors = [err(top.location, "Construct 'forwardsDcl' not allowed in parser actions")];
@@ -193,24 +195,16 @@ top::ProductionStmt ::= a::ForwardsToDcl
 }
 
 
-aspect production productionStmtForwardingWith
-top::ProductionStmt ::= a::ForwardingWithDcl
+aspect production forwardingWith
+top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {
   top.actionCode = "";
   top.actionErrors = [err(top.location, "Construct 'forwardingDclWith' not allowed in parser actions")];
   top.actionTypeErrors = [];
 }
 
-aspect production productionStmtLocalAttribute
-top::ProductionStmt ::= a::LocalAttributeDcl
-{
-  top.actionCode = a.actionCode;
-  top.actionTypeErrors = a.actionTypeErrors;
-  top.actionErrors = a.actionErrors;
-}
-
 aspect production localAttributeDcl
-top::LocalAttributeDcl ::= 'local' 'attribute' a::Name '::' te::Type ';'
+top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 {
   top.actionCode = te.typerep.parserAttrType ++ " " ++ makeCopperName(fName) ++ ";\n";
 
@@ -220,16 +214,8 @@ top::LocalAttributeDcl ::= 'local' 'attribute' a::Name '::' te::Type ';'
 		    else[err(top.location, "Type " ++ te.typerep.typeName ++ " is not valid for a local attribute declaration in a parser action")];
 }
 
-aspect production productionStmtAttributeDef
-top::ProductionStmt ::= a::AttributeDef
-{
-  top.actionCode = a.actionCode;
-  top.actionTypeErrors = a.actionTypeErrors;
-  top.actionErrors = a.actionErrors;
-}
-
 aspect production attributeDef
-top::AttributeDef ::= lhs::LHSExpr '=' e::Expr ';'
+top::ProductionStmt ::= lhs::LHSExpr '=' e::Expr ';'
 {
   local attribute translatedTopName :: String;
   translatedTopName = translatePassiveTopName(lhs.actionCode);

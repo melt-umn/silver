@@ -105,89 +105,99 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
   top.warnings := [];
 }
 
-concrete production productionStmtReturnDef
-top::ProductionStmt ::= a::ReturnDef
+concrete production returnDef
+top::ProductionStmt ::= 'return' e::Expr ';'
 {
-  top.pp = "\t" ++ a.pp;
-  top.location = a.location;
+  top.pp = "\treturn " ++ e.pp ++ ";";
+  top.location = loc(top.file, $1.line, $1.column);
 
   top.productionAttributes = emptyDefs();
 
-  top.defs = a.defs;
-  top.errors := a.errors;
+  top.defs = emptyDefs();
+  top.errors := e.errors;
   top.warnings := [];
+
+  e.expected = expected_type(top.signature.outputElement.typerep);
 }
 
-concrete production productionStmtAttributeDef
-top::ProductionStmt ::= a::AttributeDef
+concrete production attributeDef
+top::ProductionStmt ::= lhs::LHSExpr '=' e::Expr ';'
 {
-  top.pp = "\t" ++ a.pp;
-  top.location = a.location;
+  top.pp = "\t" ++ lhs.pp ++ " = " ++ e.pp ++ ";";
+  top.location = lhs.location;
 
   top.productionAttributes = emptyDefs();
 
-  top.defs = a.defs;
-  top.errors := a.errors;
+  top.defs = emptyDefs();
+  top.errors := lhs.errors ++ e.errors;
   top.warnings := [];
+
+  e.expected = expected_type(lhs.typerep);
 }
 
-concrete production productionStmtLocalAttribute
-top::ProductionStmt ::= a::LocalAttributeDcl
+concrete production localAttributeDcl
+top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 {
-  top.pp = "\t" ++ a.pp;
-  top.location = a.location;
+  top.pp = "\tlocal attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";
+  top.location = loc(top.file, $1.line, $1.column);
 
   top.productionAttributes = emptyDefs();
 
-  top.defs = a.defs;
-  top.errors := a.errors;
+  production attribute fName :: String;
+  fName = toString(genInt()) ++ ":" ++ a.name;
+
+  top.defs = addValueDcl(fName, te.typerep, 
+	     addFullNameDcl(a.name, fName,  emptyDefs()));
+
+  local attribute er1 :: [Decorated Message];
+  er1 = if length(getFullNameDclOne(a.name, top.env)) > 1
+        then [err(top.location, "Name '" ++ a.name ++ "' is already bound.")]
+        else [];
+
+  local attribute er2 :: [Decorated Message];
+  er2 = if length(getValueDclOne(fName, top.env)) > 1
+        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
+        else [];
+
+  top.errors := er1 ++ er2 ++ te.errors;
   top.warnings := [];
 }
 
-concrete production productionStmtProductionAttribute
-top::ProductionStmt ::= a::ProductionAttributeDcl
+concrete production productionAttributeDcl
+top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
 {
-  top.pp = "\t" ++ a.pp;
-  top.location = a.location;
+  top.pp = "\tproduction attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";
+  top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionAttributes = a.defs;
+  top.productionAttributes = top.defs;
 
-  top.defs = a.defs;
-  top.errors := a.errors;
-  top.warnings := [];
-}
+  production attribute fName :: String;
+  fName = toString(genInt()) ++ ":" ++ a.name;
 
-concrete production productionStmtForwardsTo
-top::ProductionStmt ::= a::ForwardsToDcl
-{
-  top.pp = "\t" ++ a.pp;
-  top.location = a.location;
+  top.defs = addValueDcl(fName, te.typerep, 
+	     addFullNameDcl(a.name, fName,  emptyDefs()));
 
-  top.productionAttributes = emptyDefs();
+  local attribute er1 :: [Decorated Message];
+  er1 = if length(getFullNameDclOne(a.name, top.env)) > 1
+        then [err(top.location, "Name '" ++ a.name ++ "' is already bound.")]
+        else [];
 
-  top.defs = a.defs;
-  top.errors := a.errors;
-  top.warnings := [];
-}
+  local attribute er2 :: [Decorated Message];
+  er2 = if length(getValueDclOne(fName, top.env)) > 1
+        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
+        else [];
 
-concrete production productionStmtForwardingWith
-top::ProductionStmt ::= a::ForwardingWithDcl
-{
-  top.pp = "\t" ++ a.pp;
-  top.location = a.location;
-
-  top.productionAttributes = emptyDefs();
-
-  top.defs = a.defs;
-  top.errors := a.errors;
+  top.errors := er1 ++ er2 ++ te.errors;
   top.warnings := [];
 }
 
 concrete production forwardsTo
-top::ForwardsToDcl ::= 'forwards' 'to' e::Expr ';'
+top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
-  top.pp = "forwards to " ++ e.pp;
+  top.pp = "\tforwards to " ++ e.pp;
   top.location = loc(top.file, $1.line, $1.column);
+
+  top.productionAttributes = emptyDefs();
 
   top.defs = emptyDefs();
   top.errors := e.errors;
@@ -197,13 +207,14 @@ top::ForwardsToDcl ::= 'forwards' 'to' e::Expr ';'
 }
 
 concrete production forwardsToWith
-top::ForwardsToDcl ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
+top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
 {
-  top.pp = "forwards to " ++ e.pp ++ " with {" ++ inh.pp ++ "};";
+  top.pp = "\tforwards to " ++ e.pp ++ " with {" ++ inh.pp ++ "};";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.defs = emptyDefs();
+  top.productionAttributes = emptyDefs();
 
+  top.defs = emptyDefs();
   top.errors := e.errors ++ inh.errors;
   top.warnings := [];
 
@@ -211,13 +222,14 @@ top::ForwardsToDcl ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' '
 }
 
 concrete production forwardingWith
-top::ForwardingWithDcl ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
+top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {
-  top.pp = "forwarding with {" ++ inh.pp ++ "};";
+  top.pp = "\tforwarding with {" ++ inh.pp ++ "};";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.defs = emptyDefs();
+  top.productionAttributes = emptyDefs();
 
+  top.defs = emptyDefs();
   top.errors := [];
   top.warnings := [];
 }
@@ -285,81 +297,9 @@ top::ForwardLHSExpr ::= q::QName
   
 }
 
-concrete production localAttributeDcl
-top::LocalAttributeDcl ::= 'local' 'attribute' a::Name '::' te::Type ';'
-{
-  top.pp = "local attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
 
-  production attribute fName :: String;
-  fName = toString(genInt()) ++ ":" ++ a.name;
 
-  top.defs = addValueDcl(fName, te.typerep, 
-	     addFullNameDcl(a.name, fName,  emptyDefs()));
 
-  local attribute er1 :: [Decorated Message];
-  er1 = if length(getFullNameDclOne(a.name, top.env)) > 1
-        then [err(top.location, "Name '" ++ a.name ++ "' is already bound.")]
-        else [];
-
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclOne(fName, top.env)) > 1
-        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
-        else [];
-
-  top.errors := er1 ++ er2 ++ te.errors;
-  top.warnings := [];
-}
-
-concrete production productionAttributeDcl
-top::ProductionAttributeDcl ::= 'production' 'attribute' a::Name '::' te::Type ';'
-{
-  top.pp = "production attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
-
-  production attribute fName :: String;
-  fName = toString(genInt()) ++ ":" ++ a.name;
-
-  top.defs = addValueDcl(fName, te.typerep, 
-	     addFullNameDcl(a.name, fName,  emptyDefs()));
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if length(getFullNameDclOne(a.name, top.env)) > 1
-        then [err(top.location, "Name '" ++ a.name ++ "' is already bound.")]
-        else [];
-
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclOne(fName, top.env)) > 1
-        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
-        else [];
-
-  top.errors := er1 ++ er2 ++ te.errors;
-  top.warnings := [];
-}
-
-concrete production returnDef
-top::ReturnDef ::= 'return' e::Expr ';'
-{
-  top.pp = "return " ++ e.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
-
-  top.defs = emptyDefs();
-  top.errors := e.errors;
-
-  e.expected = expected_type(top.signature.outputElement.typerep);
-}
-
-concrete production attributeDef
-top::AttributeDef ::= lhs::LHSExpr '=' e::Expr ';'
-{
-  top.pp = lhs.pp ++ " = " ++ e.pp ++ ";";
-  top.location = lhs.location;
-
-  top.defs = emptyDefs();
-  top.errors := lhs.errors ++ e.errors;
-
-  e.expected = expected_type(lhs.typerep);
-}
 
 abstract production fakeLHSExpr
 top::LHSExpr ::= c1::QName c2::Decorated TypeRep

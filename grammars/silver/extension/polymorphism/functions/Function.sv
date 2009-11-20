@@ -125,8 +125,7 @@ concrete production plmFnDclParams
 ----------------------------------------------------------------- 
 
 autocopy attribute inPlmProd :: Boolean;
-attribute inPlmProd occurs on ProductionBody, ProductionStmts, ProductionStmt, 
-	AttributeDef;
+attribute inPlmProd occurs on ProductionBody, ProductionStmts, ProductionStmt;
 
 
 aspect production productionDcl
@@ -138,14 +137,14 @@ top::AGDcl ::=
 }
 
 concrete production plmReturnDef
-d::AttributeDef ::= r::Return_kwd e1::Expr s::Semi_t
+d::ProductionStmt ::= r::Return_kwd e1::Expr s::Semi_t
 {
   forwards to if d.inPlmProd then absPlmReturnDef(e1) else returnDef(r, e1, s); 
 }
 
 
 abstract production absPlmReturnDef
-d::AttributeDef ::= e1::Expr
+d::ProductionStmt ::= e1::Expr
 {
   local attribute n :: String;
   n = head(getThisDcl(d.env)).itemName;

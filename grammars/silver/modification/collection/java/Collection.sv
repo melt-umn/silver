@@ -39,7 +39,7 @@ top::Operation ::= {
 }
 
 aspect production collectionAttributeDclProd
-top::ProductionAttributeDcl ::= 'production' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
+top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
@@ -103,7 +103,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type 'with' q::NameOrB
 -- otherwise, synthesized.
 
 aspect production attrContains
-top::AttributeDef ::= lhs::LHSExpr '<-' e::Expr ';'
+top::ProductionStmt ::= lhs::LHSExpr '<-' e::Expr ';'
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
@@ -140,7 +140,7 @@ top::AttributeDef ::= lhs::LHSExpr '<-' e::Expr ';'
 }
 
 aspect production attrContainsBase
-top::AttributeDef ::= lhs::LHSExpr ':=' e::Expr ';'
+top::ProductionStmt ::= lhs::LHSExpr ':=' e::Expr ';'
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
