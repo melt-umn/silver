@@ -35,44 +35,8 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
   top.typeErrors = h.typeErrors ++ t.typeErrors;
 }
 
-aspect production productionStmtAttributeDef
-top::ProductionStmt ::= a::AttributeDef
-{
-  top.typeErrors = a.typeErrors;
-}
-
-aspect production productionStmtReturnDef
-top::ProductionStmt ::= a::ReturnDef
-{
-  top.typeErrors = a.typeErrors;
-}
-
-aspect production productionStmtLocalAttribute
-top::ProductionStmt ::= a::LocalAttributeDcl
-{
-  top.typeErrors = a.typeErrors;
-}
-
-aspect production productionStmtProductionAttribute
-top::ProductionStmt ::= a::ProductionAttributeDcl
-{
-  top.typeErrors = a.typeErrors;
-}
-
-aspect production productionStmtForwardsTo
-top::ProductionStmt ::= a::ForwardsToDcl
-{
-  top.typeErrors = a.typeErrors;
-}
-
-aspect production productionStmtForwardingWith
-top::ProductionStmt ::= a::ForwardingWithDcl
-{
-  top.typeErrors = a.typeErrors;
-}
-
 aspect production forwardsTo
-top::ForwardsToDcl ::= 'forwards' 'to' e::Expr ';'
+top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
   local attribute er1 :: [Decorated Message];
   er1 = if e.typerep.isNonTerminal then [] else [err(top.location, "You must forward to a NonTerminal.")];
@@ -89,7 +53,7 @@ top::ForwardsToDcl ::= 'forwards' 'to' e::Expr ';'
 }
 
 aspect production forwardsToWith
-top::ForwardsToDcl ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
+top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
 {
   local attribute er1 :: [Decorated Message];
   er1 = if e.typerep.isNonTerminal then [] else [err(top.location, "You must forward to a NonTerminal.")];
@@ -107,7 +71,7 @@ top::ForwardsToDcl ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' '
 }
 
 aspect production forwardingWith
-top::ForwardingWithDcl ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
+top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {
   top.typeErrors = inh.typeErrors;
 }
@@ -146,19 +110,19 @@ top::ForwardLHSExpr ::= q::QName
 }
 
 aspect production localAttributeDcl
-top::LocalAttributeDcl ::= 'local' 'attribute' a::Name '::' te::Type ';'
+top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 {
   top.typeErrors = [];
 }
 
 aspect production productionAttributeDcl
-top::ProductionAttributeDcl ::= 'production' 'attribute' a::Name '::' te::Type ';'
+top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
 {
   top.typeErrors = [];
 }
 
 aspect production attributeDef
-top::AttributeDef ::= lhs::LHSExpr '=' e::Expr ';'
+top::ProductionStmt ::= lhs::LHSExpr '=' e::Expr ';'
 {
   local attribute valid :: Boolean;
   valid = lhs.typerep.typeEquals(lhs.typerep, e.typerep).bValue;
@@ -173,7 +137,7 @@ top::AttributeDef ::= lhs::LHSExpr '=' e::Expr ';'
 }
 
 aspect production returnDef
-top::ReturnDef ::= 'return' e::Expr ';'
+top::ProductionStmt ::= 'return' e::Expr ';'
 {
   local attribute valid :: Boolean;
   valid = top.signature.outputElement.typerep.typeEquals(top.signature.outputElement.typerep, e.typerep).bValue;

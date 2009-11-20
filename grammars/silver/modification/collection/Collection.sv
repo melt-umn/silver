@@ -115,7 +115,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOp
 
 
 concrete production collectionAttributeDclProd
-top::ProductionAttributeDcl ::= 'production' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
+top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
 {
   top.pp = "production attribute " ++ a.name ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
   top.location = loc(top.file, $1.line, $1.column);
@@ -144,7 +144,7 @@ top::ProductionAttributeDcl ::= 'production' 'attribute' a::Name '::' te::Type '
 
 terminal Contains_t   '<-'   lexer classes {KEYWORD};
 concrete production attrContains
-top::AttributeDef ::= lhs::LHSExpr '<-' e::Expr ';'
+top::ProductionStmt ::= lhs::LHSExpr '<-' e::Expr ';'
 {
   e.expected = expected_type(lhs.typerep);
   forwards to attributeDef(lhs, '=', e, ';');
@@ -152,7 +152,7 @@ top::AttributeDef ::= lhs::LHSExpr '<-' e::Expr ';'
 
 terminal BaseContains_t   ':='   lexer classes {KEYWORD};
 concrete production attrContainsBase
-top::AttributeDef ::= lhs::LHSExpr ':=' e::Expr ';'
+top::ProductionStmt ::= lhs::LHSExpr ':=' e::Expr ';'
 {
   e.expected = expected_type(lhs.typerep);
   forwards to attributeDef(lhs, '=', e, ';');

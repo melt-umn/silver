@@ -632,15 +632,15 @@ aspect production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
    local attribute stmt1 :: ProductionStmt ;
-   stmt1 = productionStmtAttributeDef(attributeDef(
+   stmt1 = attributeDef(
 	lhsExprTwo(top.lhsName_down, terminal(Dot_t, "."), qNameId(nameId(terminal(Id_t, "patProdName")))), '=',
-        stringConst(terminal(String_t, "\"" ++ top.signature.fullName ++ "\"")), ';'));
+        stringConst(terminal(String_t, "\"" ++ top.signature.fullName ++ "\"")), ';');
 	
 
    local attribute stmt2 :: ProductionStmt ;
-   stmt2 = productionStmtAttributeDef(attributeDef(
+   stmt2 = attributeDef(
        	lhsExprTwo(top.lhsName_down, terminal(Dot_t, "."), qNameId(nameId(terminal(Id_t, "patChildList")))), '=',
-        top.rhsListExpr, ';'));
+        top.rhsListExpr, ';');
 
    local attribute addedStmts :: ProductionStmts ;
    addedStmts = if top.isAspect then productionStmtsNone() else

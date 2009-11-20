@@ -56,7 +56,7 @@ top::ActionTypeVector ::=
 
 autocopy attribute actionCodeType :: ActionTypeVector;
 
-attribute actionCodeType occurs on ActionCode_c,ProductionStmts,ProductionStmt,AttributeDef,LHSExpr,Expr,Exprs;
+attribute actionCodeType occurs on ActionCode_c,ProductionStmts,ProductionStmt,LHSExpr,Expr,Exprs;
 
 aspect production defaultProductionBody
 top::ProductionBody ::= stmts::ProductionStmts
