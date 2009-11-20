@@ -105,6 +105,6 @@ String ::= pn::String pl::String r::[Decorated ParserSpec]{
 
   return if null(r) then "" else( 
 "    <copper fullClassName='" ++ pn ++ "." ++ parserName ++ "' inputFile='${src}/" ++ pl ++ "/" ++ parserName ++ ".copper' " ++ 
-	"outputFile='${src}/" ++ pl ++ "/" ++ parserName ++ ".java' skin='xml'/>\n" ++
+	"outputFile='${src}/" ++ pl ++ "/" ++ parserName ++ ".java' skin='xml' warnUselessNTs='no'/>\n" ++
  	 buildAntParserPart(pn, pl, tail(r)));
 }
