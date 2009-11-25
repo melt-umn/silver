@@ -197,9 +197,14 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   top.pp = "\tforwards to " ++ e.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionAttributes = emptyDefs();
+  top.productionAttributes = top.defs;
 
-  top.defs = emptyDefs();
+  production attribute fName :: String;
+  fName = top.signature.fullName ++ ":forward";
+
+  top.defs = addValueDcl(fName, top.signature.outputElement.typerep, 
+	     addFullNameDcl("forward", fName,  emptyDefs()));
+
   top.errors := e.errors;
   top.warnings := [];
 
@@ -212,9 +217,14 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
   top.pp = "\tforwards to " ++ e.pp ++ " with {" ++ inh.pp ++ "};";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionAttributes = emptyDefs();
+  top.productionAttributes = top.defs;
 
-  top.defs = emptyDefs();
+  production attribute fName :: String;
+  fName = top.signature.fullName ++ ":forward";
+
+  top.defs = addValueDcl(fName, top.signature.outputElement.typerep, 
+	     addFullNameDcl("forward", fName,  emptyDefs()));
+
   top.errors := e.errors ++ inh.errors;
   top.warnings := [];
 
@@ -228,9 +238,14 @@ top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
   top.location = loc(top.file, $1.line, $1.column);
 
   top.productionAttributes = emptyDefs();
-
   top.defs = emptyDefs();
-  top.errors := [];
+  
+  production attribute fNames :: [Decorated EnvItem];
+  fNames = getFullNameDcl("forward", top.env);
+
+  top.errors := if null(fNames)
+                then [err(top.location, "'forwarding with' clause for a production that does not forward!")]
+                else [];
   top.warnings := [];
 }
 

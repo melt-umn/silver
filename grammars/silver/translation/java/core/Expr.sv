@@ -84,6 +84,15 @@ top::Expr ::= q::QName
   top.translation = "common.Util.getConstruct(" ++ makeClassName(fName) ++ ".class)";
 }
 
+aspect production forwardReference
+top::Expr ::= q::Forward_kwd
+{
+  isAppReference = false;
+  top.appReference = "";
+  
+  top.translation = "context.forward()";
+}
+
 aspect production productionApplicationDispatcher
 top::Expr ::= e::Expr es::Exprs
 {

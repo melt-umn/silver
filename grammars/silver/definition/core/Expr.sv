@@ -209,6 +209,11 @@ top::Expr ::= q::QName
   top.typerep = if !null(fNames) && !null(vals) then head(vals).typerep else topTypeRep();
 }
 
+concrete production forwardReference
+top::Expr ::= q::Forward_kwd
+{
+  forwards to baseExpr(qNameId(nameId(terminal(Id_t, "forward", q.line, q.column))));
+}
 
 concrete production productionApp
 top::Expr ::= e::Expr '(' es::Exprs ')'
