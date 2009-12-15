@@ -87,7 +87,6 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
 	"\t\t\t\ttry{\n" ++
 	"\t\t\t\t\treturn new " ++ packageName ++ "." ++ parserName ++ "().parse(new java.io.StringReader(((common.StringCatter)context.child(" ++ fullClassName ++ ".i_c)).toString()), \"_NULL_\");\n" ++
 	"\t\t\t\t}catch(java.lang.Exception e){throw new RuntimeException(\"An error occured while parsing.\", e);}\n" ++
-	"\t\t\t\treturn null;\n" ++
 	"\t\t\t}\n" ++
 	"\t\t});\n";
 
