@@ -1,5 +1,4 @@
 grammar silver:extension:doc:command;
-export silver:extension:doc:command;
 
 import silver:util:command;
 import silver:driver;

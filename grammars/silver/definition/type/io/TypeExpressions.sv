@@ -1,7 +1,6 @@
 grammar silver:definition:type:io;
 import silver:definition:core;
 import silver:definition:env;
-import core;
 
 terminal IO_kwd /IO/ lexer classes {KEYWORD};
 

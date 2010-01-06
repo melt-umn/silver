@@ -19,8 +19,8 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
 
   top.defs = emptyDefs();
 
-  top.errors := acode.actionErrors ++ terms.errors;
-  top.typeErrors = acode.actionTypeErrors ++ terms.typeErrors;
+  top.errors := acode.errors ++ terms.errors;
+  top.typeErrors = acode.typeErrors ++ terms.typeErrors;
 
 --from definition:concrete_syntax
   top.parserDcls = [];
@@ -35,8 +35,9 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
   top.initAspect := "";
   top.postInit := "";
 
-  acode.env = appendDefsEnv(addTerminalAttrDefs(appendDefs(acode.defs,terms.defs)),top.env);
+  acode.env = appendDefsEnv(appendDefs(acode.defs,terms.defs),top.env); -- terminal attrs?
 
+  acode.signature = decorate namedSignatureDefault() with {}; -- TODO HACK
   acode.signatureEnv = toEnv(terms.defs);
   acode.localsEnv = toEnv(acode.defs);
 

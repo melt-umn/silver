@@ -22,3 +22,6 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
    body.rhsListExpr = ns.genRhsListExpr ;
    body.isAspect = false ;
 }
+
+--TODO BUG HACK UGLY FIXME OHGOD
+attribute actionCodeType occurs on MRuleList, MatchRule, Pattern, PatternList;

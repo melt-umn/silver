@@ -6,6 +6,8 @@ import silver:translation:java;
 import silver:driver;
 import silver:util:command;
 
+import silver:extension:doc;
+
 parser rParse::Root {
   silver:host;
 

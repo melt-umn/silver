@@ -1,5 +1,4 @@
 grammar silver:extension:doc:driver;
-export silver:extension:doc:driver;
 
 import silver:util;
 
@@ -11,8 +10,6 @@ import silver:driver;
 import silver:definition:core;
 import silver:definition:env;
 import silver:definition:concrete_syntax;
-
-import core;
 
 aspect production run
 top::RunUnit ::= iIn::IO args::String
@@ -94,7 +91,7 @@ IO ::= i::IO a::Command r::[Decorated RootSpec] h::[Decorated DocSection]
    
   return if null(r) then i 
 	else if head(r).interface then writeDocFiles(i1, a, tail(r), h)
-	else writeFile("doc/" ++ ++ makeFileName(head(r).declaredName) ++ "/SilverDoc.html", body, writeDocFiles(i1, a, tail(r), h));
+	else writeFile("doc/" ++ makeFileName(head(r).declaredName) ++ "/SilverDoc.html", body, writeDocFiles(i1, a, tail(r), h));
 }
 
 function makeBody

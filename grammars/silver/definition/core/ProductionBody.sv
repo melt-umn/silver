@@ -128,11 +128,24 @@ top::ProductionStmt ::= lhs::LHSExpr '=' e::Expr ';'
 
   top.productionAttributes = emptyDefs();
 
+  -- TODO: this whole override thing needs massaging to look nice. It's ugly right now.
+
   top.defs = emptyDefs();
-  top.errors := lhs.errors ++ e.errors;
+  top.errors <- lhs.errors ++ e.errors ++ if length(fwd) > 1 then [err(top.location,"Ambiguous assignment.")] else []; -- TODO: better error messages
   top.warnings := [];
 
   e.expected = expected_type(lhs.typerep);
+  
+  production attribute fwd :: [ProductionStmt] with ++;
+  fwd := [];
+  
+  forwards to if null(fwd) then normalAttributeDef(lhs, e) else head(fwd);
+}
+
+abstract production normalAttributeDef
+top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
+{
+  top.errors := [];
 }
 
 concrete production localAttributeDcl
@@ -304,33 +317,6 @@ top::ForwardLHSExpr ::= q::QName
   top.errors := er1;
   top.warnings := [];
   top.typerep = if !null(attrs) then head(attrs).typerep else topTypeRep();
-
---  production attribute lhsE :: LHSExpr;
---  lhsE = fakeLHSExpr(q, top.typerep);
---  lhsE.env = top.env;
---  lhsE.grammarName = top.grammarName;
-  
-}
-
-
-
-
-
-abstract production fakeLHSExpr
-top::LHSExpr ::= c1::QName c2::Decorated TypeRep
-{
-  top.pp = c1.name;
-  top.location = c1.location ;
-
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(c1.name, top.env);
-
-  production attribute fName :: String;
-  fName = if !null(fNames) then head(fNames).fullName else "_NULL_";
-
-  top.typerep = c2;
-  top.errors = [];
-  top.warnings := [];
 }
 
 concrete production lhsExprOne

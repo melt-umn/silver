@@ -6,6 +6,8 @@ import silver:extension:list;
 import silver:translation:java:core;
 import silver:translation:java:env;
 
+import silver:translation:java:concrete_syntax:copper; -- todo : part of wrapThunk hack
+
 aspect production emptyList
 top::Expr ::= '[' ']'
 {
@@ -21,27 +23,27 @@ top::Expr ::= '[' '::' t::Type ']'
 aspect production fullList
 top::Expr ::= '[' es::Exprs ']'
 { 
-  top.translation = buildListLiteral(es.exprs);
+  top.translation = buildListLiteral(es.exprs, top.actionCodeType.isSemanticBlock);
 }
 
 function buildListLiteral
-String ::= exps::[Decorated Expr]
+String ::= exps::[Decorated Expr] doit::Boolean
 {
   return if null(exps)
          then "common.ConsCell.nil"
-         else "new common.ConsCell(" ++ wrapThunk(head(exps)) ++ ", " ++ buildListLiteral(tail(exps)) ++ ")";
+         else "new common.ConsCell(" ++ wrapThunk(head(exps), doit) ++ ", " ++ buildListLiteral(tail(exps), doit) ++ ")";
 }
 
 aspect production consList
 top::Expr ::= 'cons' '(' h::Expr ',' t::Expr ')'
 { 
-  top.translation = "(new common.ConsCell(" ++ wrapThunk(h) ++ ", " ++ wrapThunk(t) ++ "))";
+  top.translation = "(new common.ConsCell(" ++ wrapThunk(h, top.actionCodeType.isSemanticBlock) ++ ", " ++ wrapThunk(t, top.actionCodeType.isSemanticBlock) ++ "))";
 }
 
 aspect production appendList
 top::Expr ::= l::Expr r::Expr
 { 
-  top.translation = "(new common.AppendCell(" ++ wrapThunk(l) ++ ", " ++ wrapThunk(r) ++ "))";
+  top.translation = "(new common.AppendCell(" ++ wrapThunk(l, top.actionCodeType.isSemanticBlock) ++ ", " ++ wrapThunk(r, top.actionCodeType.isSemanticBlock) ++ "))";
 }
 
 aspect production listLength

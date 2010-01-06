@@ -1,7 +1,6 @@
 grammar silver:analysis:typechecking:core;
 import silver:definition:core;
 import silver:definition:env;
-import core;
 
 --Base Expressions
 aspect production nestedExpr
@@ -72,6 +71,12 @@ top::Expr ::= e::Expr es::Exprs
    	         else [err(top.location, e.pp ++ " does not have type Function.")];
 
   top.typeErrors = er1 ++ er2 ++ e.typeErrors ++ es.typeErrors;
+}
+
+aspect production genericApplicationDispatcher
+top::Expr ::= e::Expr es::Exprs
+{
+  top.typeErrors = []; -- TODO: this is an error production, but does it give errors properly?
 }
 
 function printTypes
@@ -222,7 +227,7 @@ top::Expr ::= e1::Expr '==' e2::Expr
 	   e2.typerep.isPrimative && 
 	   e1.typerep.typeEquals(e1.typerep, e2.typerep).bValue)
        then []
-       else [err(top.location, "Operands to == must be primative and of the same type.")];
+       else [err(top.location, "Operands to == must be primitive and of the same type.")];
 
   top.typeErrors = er ++ e1.typeErrors ++ e2.typeErrors;
 }
@@ -236,7 +241,7 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 	   e2.typerep.isPrimative && 
 	   e1.typerep.typeEquals(e1.typerep, e2.typerep).bValue)
        then []
-       else [err(top.location, "Operands to == must be primative and of the same type.")];
+       else [err(top.location, "Operands to == must be primitive and of the same type.")];
 
   top.typeErrors = er ++ e1.typeErrors ++ e2.typeErrors;
 }

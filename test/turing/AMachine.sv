@@ -74,11 +74,11 @@ Decorated ATape ::= theMachine::AMachine ms::[AMachine] t::Decorated ATape
 }
 
 function runComplexMachine
-Decorated ATape ::= st::String mfs::[AMachineFlow] ms::[AMachine] t::Decorated ATape
+Decorated ATape ::= str::String mfs::[AMachineFlow] ms::[AMachine] t::Decorated ATape
 {
   --get the part of the machine we are going to run
   local attribute theMachineFlow :: [AMachineFlow];
-  theMachineFlow = findAMachineFlow(st, mfs);
+  theMachineFlow = findAMachineFlow(str, mfs);
 
   --get the machine that needs to be run for this state
   local attribute theMachine :: [AMachine];
@@ -105,10 +105,10 @@ Decorated ATape ::= st::String mfs::[AMachineFlow] ms::[AMachine] t::Decorated A
 }
 
 function runSimpleMachine
-Decorated ATape ::= m::AMachine st::String t::Decorated ATape
+Decorated ATape ::= m::AMachine str::String t::Decorated ATape
 {
   local attribute theState :: [AState];
-  theState = findAState(st, m.states);
+  theState = findAState(str, m.states);
  
   local attribute theInstruction :: [AInstruction];
   theInstruction = if null(theState) 

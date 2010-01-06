@@ -146,15 +146,15 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
   top.translation = "";
 }
 
-aspect production attributeDef
-top::ProductionStmt ::= lhs::LHSExpr '=' e::Expr ';'
+aspect production normalAttributeDef
+top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
   top.setupInh = "";
   top.translation =
-	"\t\t//" ++ top.pp ++ "\n" ++
+	"\t\t// " ++ lhs.pp ++ " = " ++ e.pp ++ "\n" ++
 	if lhs.isLocalDcl then  
 	"\t\t" ++ className ++ ".localAttributes.put(\"" ++ lhs.nodeName ++ "\", new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
@@ -196,18 +196,6 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
 	"\t\t});\n";
-}
-
-aspect production fakeLHSExpr
-top::LHSExpr ::= c1::QName c2::Decorated TypeRep
-{
-  top.nodeName = "_NULL_";
-  top.attrName = c1.name;
-
-  top.isLocal = false;
-  top.isLocalDcl = false;
-  top.isChild = false;
-  top.isParent = false;
 }
 
 aspect production lhsExprOne

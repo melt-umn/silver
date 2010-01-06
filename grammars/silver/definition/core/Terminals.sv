@@ -86,11 +86,11 @@ terminal LParen_t '(' lexer classes {KEYWORD}, precedence = 24;
 terminal RParen_t ')' lexer classes {KEYWORD} ;
 terminal LCurly_t '{' lexer classes {KEYWORD} ;
 terminal RCurly_t '}' lexer classes {KEYWORD} ;
-terminal HasType_t '::' lexer classes {SIX}, precedence = 6 ;
+terminal HasType_t '::' lexer classes {SIX}, precedence = 14 ; -- TODO: I think this should be higher. 14? was 6.
 terminal UnderScore_t '_' lexer classes {KEYWORD};
 terminal Hash_t '#' lexer classes {KEYWORD}, precedence = 25, association = left;
 terminal At_t '@' lexer classes {KEYWORD}, precedence = 25, association = left;
-terminal And_t '&&' lexer classes {KEYWORD}, precedence = 5, association = left;
+terminal And_t '&&' lexer classes {KEYWORD}, precedence = 6, association = left;
 terminal Or_t '||' lexer classes {KEYWORD}, precedence = 5, association = left;
 terminal Not_t '!' lexer classes {KEYWORD}, precedence = 7;
 terminal GT_t '>' lexer classes {KEYWORD}, precedence = 9, association = left;
