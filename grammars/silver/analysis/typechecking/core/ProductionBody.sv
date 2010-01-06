@@ -3,8 +3,6 @@ import silver:definition:core;
 import silver:definition:env;
 import silver:util;
 
-import core;
-
 aspect production defaultProductionBody
 top::ProductionBody ::= stmts::ProductionStmts
 {
@@ -151,11 +149,6 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   top.typeErrors = er ++ e.typeErrors;
 }
 
-aspect production fakeLHSExpr
-top::LHSExpr ::= c1::QName c2::Decorated TypeRep
-{
-  top.typeErrors = [];
-}
 aspect production lhsExprOne
 top::LHSExpr ::= id::Name
 {

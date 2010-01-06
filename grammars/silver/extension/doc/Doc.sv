@@ -1,5 +1,4 @@
 grammar silver:extension:doc;
-export silver:extension:doc;
 
 import silver:util;
 
@@ -49,7 +48,7 @@ function GlobalDocSection
 }
 
 abstract production i_GlobalDocSection
-DocSectionList ::= {
+top::DocSectionList ::= {
 
   production attribute dSection :: [Decorated DocSection] with ++;
   dSection := [

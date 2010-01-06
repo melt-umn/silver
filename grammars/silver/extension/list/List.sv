@@ -6,8 +6,6 @@ import silver:definition:env;
 
 import silver:analysis:typechecking:core;
 
-import core;
-
 terminal LSqr_t '[' lexer classes {KEYWORD};
 terminal RSqr_t ']' lexer classes {KEYWORD};
 

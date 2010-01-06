@@ -1,5 +1,4 @@
 grammar silver:extension:doc;
-export silver:extension:doc;
 
 
 function docMergeSort

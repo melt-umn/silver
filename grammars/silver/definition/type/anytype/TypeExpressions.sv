@@ -1,7 +1,6 @@
 grammar silver:definition:type:anytype;
 import silver:definition:core;
 import silver:definition:env;
-import core;
 
 terminal AnyType_kwd /AnyType/ lexer classes {KEYWORD};
 

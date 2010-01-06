@@ -41,21 +41,48 @@ top::Expr ::= q::QName
 		expected_type(t) ->  t.isDecorated |
 		_ -> false end;
  	      	
+  production attribute fwdoverride :: [Boolean] with ++;
+  fwdoverride := []; -- This is an awful hack of terrible proportions. TODO? (used to override default rules)
 
-  production attribute fwd :: Expr;
-  fwd = if (in_sig || in_locals) && !null(vals) && head(vals).typerep.doDecorate && shouldDec
-	      then decorateExpr(q)
-	      else if !in_sig && !in_locals && !null(vals) 
-		      && head(vals).typerep.typeName != "TOP"
-		      && head(vals).typerep.isProduction 
-	      then productionReference(q)
-	      else if !in_sig && !in_locals && !null(vals) 
-		      && head(vals).typerep.typeName != "TOP"
-		      && head(vals).typerep.isFunction
-	      then functionReference(q) 
-	      else dontDecorateExpr(q);
+  production attribute fwd :: [Expr] with ++;
+  fwd := if !null(fwdoverride)
+         then []
+         else if null(vals) || head(vals).typerep.typeName == "TOP"
+         then [errorReference(q)]
+         else if (in_sig || in_locals)
+              then if head(vals).typerep.doDecorate && shouldDec
+                   then [decorateExpr(q)]
+                   else [dontDecorateExpr(q)]
+              else if head(vals).typerep.isProduction
+              then [productionReference(q)]
+              else if head(vals).typerep.isFunction
+              then [functionReference(q)]
+              else [];
+  
+  top.errors <- if length(fwd) > 1 
+                then [err(top.location, "Ambiguous reference: " ++ q.name)]
+                else if length(fwd) < 1
+                then [err(top.location, "Unknown type of reference: " ++ q.name)]
+                
+                else if length(fNames) > 1
+                then [err(top.location, q.name ++ " may refer to multiple possibilities: " ++ listFNamesHelp(fNames))]
+                else [];
 
-  forwards to fwd;
+  forwards to if null(fwd) then errorReference(q) else head(fwd);
+}
+
+function listFNamesHelp
+String ::= l::[Decorated EnvItem]
+{ return if null(l) then "" else head(l).fullName ++ " " ++ listFNamesHelp(tail(l)); }
+
+abstract production errorReference
+top::Expr ::= q::QName
+{
+  top.pp = q.pp;
+  top.location = q.location;
+  top.warnings := [];
+  top.errors := [err(top.location, "Value '" ++ q.name ++ "' is not declared. (reference error)")];
+  top.typerep = topTypeRep();
 }
 
 concrete production concreteDecorateExpr

@@ -301,8 +301,6 @@ Decorated EnvItem ::=
 {
   return decorate i_defaultEnvItem() with {};
 }
-
-
 abstract production i_defaultEnvItem
 top::EnvItem ::= 
 {

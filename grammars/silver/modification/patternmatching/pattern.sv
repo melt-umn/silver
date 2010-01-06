@@ -149,7 +149,7 @@ mr::MatchRule ::= pt::Pattern '->' e::Expr
 
   e.env = appendDefsEnv(pt.defs, mr.env) ;
 
-  e.localsEnv = mr.localsEnv ;
+  e.localsEnv = appendDefsEnv(pt.defs, mr.localsEnv) ;
   e.signatureEnv = mr.signatureEnv ;
 
   pt.env = mr.env ;

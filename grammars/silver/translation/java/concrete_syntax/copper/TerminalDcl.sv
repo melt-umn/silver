@@ -121,7 +121,7 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
   top.terminalModifiers = [actionCodeTerminalModifierSpec(acode.actionCode)];
 
   acode.actionCodeType = terminalActionType();
-  acode.env = appendDefsEnv(addTerminalAttrDefs(acode.defs),top.env);
+  acode.env = appendDefsEnv(addTerminalAttrDefs(acode.defs),top.env); -- TODO? just filename?
 
   acode.signatureEnv = emptyEnv();
   acode.localsEnv = toEnv(acode.defs);

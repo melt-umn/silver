@@ -9,8 +9,6 @@ import silver:definition:core hiding grammarName;
 import silver:util;
 import silver:util:command;
 
-import core;
-
 aspect production run
 top::RunUnit ::= iIn::IO args::String
 {

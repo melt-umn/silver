@@ -1,6 +1,5 @@
 grammar silver:extension:polymorphism;
 
-import core;
 import silver:base;
 
 synthesized attribute isPlmOccursDcl :: Boolean;

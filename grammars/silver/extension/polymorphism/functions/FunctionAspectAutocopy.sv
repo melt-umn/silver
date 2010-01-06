@@ -1,6 +1,5 @@
 grammar silver:extension:polymorphism:functions;
 
-import core;
 import silver:base;
 --import silver:extension:autocopy ; -- Why was this imported?
 import silver:extension:functions;

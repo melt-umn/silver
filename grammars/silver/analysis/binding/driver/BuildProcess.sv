@@ -4,7 +4,6 @@ import silver:driver;
 
 import silver:definition:core;
 import silver:definition:env;
-import core;
 
 aspect production run
 top::RunUnit ::= iIn::IO args::String

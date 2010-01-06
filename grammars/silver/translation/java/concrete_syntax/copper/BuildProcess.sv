@@ -8,7 +8,6 @@ import silver:definition:core hiding grammarName;
 import silver:definition:env;
 import silver:definition:concrete_syntax;
 
-import core;
 import silver:util;
 import silver:util:command;
 

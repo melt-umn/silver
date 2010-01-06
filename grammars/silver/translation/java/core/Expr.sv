@@ -5,6 +5,8 @@ import silver:definition:core;
 import silver:definition:env;
 import silver:util;
 
+import silver:translation:java:concrete_syntax:copper; -- todo : part of wrapThunk hack
+
 synthesized attribute isAppReference :: Boolean;
 synthesized attribute appReference :: String;
 
@@ -33,8 +35,8 @@ top::Expr ::= q::QName
                     else if in_sig
                     then "((" ++ top.typerep.transType ++ ")context.child(" ++ className ++ ".i_" ++ fName  ++ "))" 
                     else if in_locals 
-                         then "((" ++ top.typerep.transType ++ ")context.local(\"" ++ fName ++ "\"))" 
-                         else "(error(\"BOOM\"))";
+                    then "((" ++ top.typerep.transType ++ ")context.local(\"" ++ fName ++ "\"))" 
+                    else "(error(\"BOOM\"))";
 }
 
 aspect production dontDecorateExpr
@@ -59,10 +61,6 @@ top::Expr ::= q::QName
                     then "(((common.DecoratedNode)context.local(\"" ++ fName ++ "\")).undecorate())" 
                     else if in_locals && !tr.isNonTerminal
                     then "((" ++ tr.transType ++ ")context.local(\"" ++ fName ++ "\"))" 
---                    else if in_locals && (tr.isNonTerminal || tr.isDecorated)
---                    then "(((common.DecoratedNode)context.local(\"" ++ fName ++ "\")).undecorate())" 
---                    else if in_locals && !(tr.isNonTerminal || tr.isDecorated)
---                    then "((" ++ tr.transType ++ ")context.local(\"" ++ fName ++ "\"))" 
                     else "(error(\"BOOM\"))";
 }
 
@@ -353,18 +351,21 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.translation = wrapThunk(e);
+  top.translation = wrapThunk(e, top.actionCodeType.isSemanticBlock);
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  top.translation = wrapThunk(e1) ++ ", " ++ e2.translation;
+  top.translation = wrapThunk(e1, top.actionCodeType.isSemanticBlock) ++ ", " ++ e2.translation;
 }
 
+-- TODO: doit is a hack.  Right now every place that calls this is importing sil:trans:conc:copper to look at actionCodeType
 function wrapThunk
-String ::= original::Decorated Expr
+String ::= original::Decorated Expr doit::Boolean
 {
-  return "new common.Thunk(context, new common.Lazy() { public Object eval(common.DecoratedNode context) { return " ++ original.translation ++ "; } })";
+  return if doit
+         then "new common.Thunk(context, new common.Lazy() { public Object eval(common.DecoratedNode context) { return " ++ original.translation ++ "; } })"
+         else original.translation;
 }
 

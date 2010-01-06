@@ -1,6 +1,5 @@
 grammar silver:extension:polymorphism:functions;
 
-import core;
 import silver:base;
 import silver:extension:patternmatching;
 import silver:extension:functions;

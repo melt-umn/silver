@@ -4,7 +4,6 @@ import silver:analysis:typechecking:command;
 import silver:driver;
 import silver:definition:env;
 import silver:definition:core; --for foldMessages
-import core;
 
 aspect production run
 top::RunUnit ::= iIn::IO args::String
