@@ -64,9 +64,10 @@ top::Expr ::= q::QName
                 else if length(fwd) < 1
                 then [err(top.location, "Unknown type of reference: " ++ q.name)]
                 
-                else if length(fNames) > 1
-                then [err(top.location, q.name ++ " may refer to multiple possibilities: " ++ listFNamesHelp(fNames))]
                 else [];
+                --if length(fNames) > 1
+                --then [err(top.location, q.name ++ " may refer to multiple possibilities: " ++ listFNamesHelp(fNames))]
+                --else [];
 
   forwards to if null(fwd) then errorReference(q) else head(fwd);
 }
