@@ -330,19 +330,14 @@ top::LHSExpr ::= id::Name
   fNames = getFullNameDcl(id.name, top.env);
 
   production attribute fName :: String;
-  fName = if !null(fNames) then head(fNames).fullName else "_NULL_";
+  fName = if !null(fNames) then head(fNames).fullName else id.name;
 
   --whether it is bound to a value
   local attribute vals :: [Decorated EnvItem];
   vals = getValueDcl(fName, top.env);
 
   local attribute er1 :: [Decorated Message];
-  er1 = if null(fNames)
-	then [err(top.location, "Name '" ++ id.name ++ "' is not declared.")] 
-	else [];
-
-  local attribute er2 :: [Decorated Message];
-  er2 = if null(vals)
+  er1 = if null(vals)
 	then [err(top.location, "Value '" ++ id.name ++ "' is not declared.")] 
 	else [];
 
