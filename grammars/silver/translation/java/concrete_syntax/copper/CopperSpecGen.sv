@@ -189,6 +189,11 @@ String ::= univLayout::String lhs::String rhs::[Decorated RHSSpec]
 	makeProdRHS(head(rhs).ruleRHS) ++
 "    </rhs>\n" ++
 "    <layout>" ++ univLayout ++ "</layout>\n" ++
+
+(if head(rhs).productionOperatorPrecedence != "" then
+"    <operator><term id=\"" ++ makeCopperName(head(rhs).productionOperatorPrecedence) ++ "\" /></operator>"
+else "") ++
+
 "  </prod>\n" ++
 	makeProdSpecsNonterm(univLayout,lhs,tail(rhs));            
 }
