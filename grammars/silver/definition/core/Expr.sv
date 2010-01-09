@@ -113,7 +113,7 @@ top::Expr ::= q::QName
   vals = getValueDcl(fName, top.env);
 
   production attribute origTypeRep :: Decorated TypeRep;
-  origTypeRep = if !null(fNames) && !null(vals) 
+  origTypeRep = if !null(vals) 
 		then head(vals).typerep 
 		else topTypeRep();
 
@@ -131,7 +131,7 @@ top::Expr ::= q::QName
   top.errors := er1;
   top.warnings := [];
 
-  top.typerep = if !null(fNames) && !null(vals) 
+  top.typerep = if !null(vals) 
 		then refTypeRep(head(vals).typerep) 
 		else topTypeRep();
 }
@@ -175,7 +175,7 @@ top::Expr ::= q::QName
 
   top.errors := er1;
   top.warnings := [];
-  top.typerep = if !null(fNames) && !null(vals) then head(vals).typerep else topTypeRep();
+  top.typerep = if !null(vals) then head(vals).typerep else topTypeRep();
 }
 
 
@@ -205,7 +205,7 @@ top::Expr ::= q::QName
   top.errors := er1;
   top.warnings := [];
 
-  top.typerep = if !null(fNames) && !null(vals) then head(vals).typerep else topTypeRep();
+  top.typerep = if !null(vals) then head(vals).typerep else topTypeRep();
 }
 
 
@@ -234,7 +234,7 @@ top::Expr ::= q::QName
   top.errors := er1;
   top.warnings := [];
 
-  top.typerep = if !null(fNames) && !null(vals) then head(vals).typerep else topTypeRep();
+  top.typerep = if !null(vals) then head(vals).typerep else topTypeRep();
 }
 
 concrete production forwardReference
@@ -412,7 +412,7 @@ top::ExprLHSExpr ::= q::QName
 
   top.errors := er1;
   top.warnings := [];
-  top.typerep = if !null(fNames) && !null(vals) then head(vals).typerep else topTypeRep();
+  top.typerep = if !null(vals) then head(vals).typerep else topTypeRep();
 }
 
 concrete production trueConst

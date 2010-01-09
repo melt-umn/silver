@@ -70,7 +70,7 @@ top::TermPrecList ::= h::QName t::TermPrecList
   fNames = getFullNameDcl(h.name,top.env);
 
   production attribute fName :: String;
-  fName = if null(fNames) then "_NULL_" else head(fNames).fullName;
+  fName = if null(fNames) then h.name else head(fNames).fullName;
 
   production attribute typeItem :: [Decorated EnvItem];
   typeItem = getTypeDcl(fName, top.env);
@@ -89,9 +89,7 @@ top::TermPrecList ::= h::QName t::TermPrecList
 	     addFullNameDcl(h.name, fName,
              t.defs));
 
-  top.errors := if null(fNames)
-                then [err(h.location, "'" ++ h.name ++ "' is not declared.")] ++ t.errors
-                else t.errors;
+  top.errors := t.errors; -- TODO check on the errors here...
 
   top.typeErrors = if !isValidName
                     then [err(h.location, "'" ++ h.name ++ "' is not a terminal or a lexer class.")] ++ t.typeErrors
@@ -179,7 +177,7 @@ top::ClassList ::= n::QName t::ClassList
   fNames = getFullNameDcl(n.name, top.env);
 
   production attribute fName :: String;
-  fName = if null(fNames) then "_NULL_" else head(fNames).fullName;
+  fName = if null(fNames) then n.name else head(fNames).fullName;
 
   production attribute typeItem :: [Decorated EnvItem];
   typeItem = getLexerClassDcl(fName, top.env);

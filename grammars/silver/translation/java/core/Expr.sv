@@ -85,7 +85,7 @@ top::Expr ::= q::QName
 aspect production forwardReference
 top::Expr ::= q::Forward_kwd
 {
-  isAppReference = false;
+  top.isAppReference = false;
   top.appReference = "";
   
   top.translation = "context.forward()";
