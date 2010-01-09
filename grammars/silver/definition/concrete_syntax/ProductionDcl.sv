@@ -44,12 +44,14 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
   top.terminalDcls = [];
   top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName, [rhsSpec(top.grammarName, fName, getTypeNamesSignature(ns.inputElements), pm.productionModifiers)])];
+  
+  top.errors <- pm.errors;
 
   forwards to productionDcl(terminal(Abstract_kwd, "abstract", $2.line, $2.column), $2, id, ns, body);
 }
 
-nonterminal ProductionModifiers with location, file, pp, unparse, productionModifiers;
-nonterminal ProductionModifier with location, file, pp, unparse, productionModifiers;
+nonterminal ProductionModifiers with location, file, pp, unparse, productionModifiers, errors, env;
+nonterminal ProductionModifier with location, file, pp, unparse, productionModifiers, errors, env;
 
 abstract production productionModifiersNone
 top::ProductionModifiers ::=
@@ -58,6 +60,7 @@ top::ProductionModifiers ::=
   top.location = loc("", -1, -1);
 
   top.productionModifiers = [];
+  top.errors = [];
 }
 
 concrete production productionModifierSingle
@@ -67,6 +70,7 @@ top::ProductionModifiers ::= pm::ProductionModifier
   top.location = pm.location;
   
   top.productionModifiers = pm.productionModifiers;
+  top.errors = pm.errors;
 }
 
 concrete production productionModifiersCons
@@ -76,6 +80,7 @@ top::ProductionModifiers ::= h::ProductionModifier ',' t::ProductionModifiers
   top.location = loc(top.file, $2.line, $2.column);
 
   top.productionModifiers = h.productionModifiers ++ t.productionModifiers;
+  top.errors = h.errors ++ t.errors;
 }
 
 concrete production productionModifierPrecedence
@@ -85,5 +90,30 @@ top::ProductionModifier ::= 'precedence' '=' i::Int_t
   top.location = loc(top.file, $1.line, $1.column);
 
   top.productionModifiers = [precedenceProductionModifierSpec(toInt(i.lexeme))];
-
+  top.errors = [];
 }
+
+terminal Operator_kwd /operator/ lexer classes {KEYWORD};
+
+concrete production productionModifierOperator
+top::ProductionModifier ::= 'operator' '=' n::QName
+{
+  top.pp = "operator = " ++ n.pp;
+  top.location = loc(top.file, $1.line, $1.column);
+
+  top.productionModifiers = [operatorProductionModifierSpec(fName)];
+
+  production attribute fNames :: [Decorated EnvItem];
+  fNames = getFullNameDcl(n.name,top.env);
+
+  production attribute fName :: String;
+  fName = if null(fNames) then n.name else head(fNames).fullName;
+
+  production attribute typeItem :: [Decorated EnvItem];
+  typeItem = getTypeDcl(fName, top.env);
+
+  top.errors = if null(typeItem) then [err(top.location, "Unknown terminal " ++ n.pp)] else
+               if !head(typeItem).typerep.isTerminal then [err(top.location, n.pp ++ " is not a terminal.")] else
+               [];
+}
+

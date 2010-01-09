@@ -113,7 +113,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   acode.signature = namedSig;
 
 --TODO
-  top.errors <- acode.errors;
+  top.errors <- acode.errors ++ pm.errors;
 --  top.errors := body.errors ++ acode.actionErrors;
   top.typeErrors = forward.typeErrors ++ acode.typeErrors;
 --  top.typeErrors = body.typeErrors ++ acode.actionTypeErrors;

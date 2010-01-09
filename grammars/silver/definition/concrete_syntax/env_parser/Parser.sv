@@ -224,3 +224,9 @@ concrete production aProductionModifierSpecPrecedence
 top::aProductionModifierSpec ::= 'precedence' n::number {
   top.productionModifiers = [precedenceProductionModifierSpec(toInt(n.lexeme))];
 }
+
+terminal OperatorTerm 'operator' lexer classes {C_1};
+concrete production aProductionModifierSpecOperator
+top::aProductionModifierSpec ::= 'operator' n::Name {
+  top.productionModifiers = [operatorProductionModifierSpec(n.lexeme)];
+}
