@@ -175,6 +175,7 @@ top::ProductionStmt ::= lhs::LHSExpr '=' e::Expr ';'
          [];
 }
 
+-- Note: AttributeDef already <- in lhs.errors and e.errors.  So we don't need to include them in these.
 abstract production parserAttributeDef
 top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
 {
@@ -182,8 +183,7 @@ top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
   top.translation = makeCopperName(lhs.nodeName) ++ " = " ++ e.translation ++ ";\n";
   top.errors := (if top.actionCodeType.isSemanticBlock
                 then [err(lhs.location, "Assignment to parser attributes only permitted in parser action blocks")]
-                else [])
-                ++ lhs.errors ++ e.errors;
+                else []);
 }
 
 abstract production terminalAttributeDef
@@ -200,8 +200,7 @@ top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
                      ++ (if lhs.nodeName == "filename" then ".toString()" else "") ++ ");\n";
   top.errors := (if top.actionCodeType.isSemanticBlock
                 then [err(lhs.location, "Assignment to location attributes only permitted in parser action blocks")]
-                else [])
-                ++ lhs.errors ++ e.errors;
+                else []);
 }
 
 
