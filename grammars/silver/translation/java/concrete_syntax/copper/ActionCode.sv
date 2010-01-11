@@ -68,9 +68,8 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature body::Pr
   acode.actionCodeType = productionActionType();
   acode.env = appendDefsEnv(
                addThisDcl(fName,
-                addFullNameDcl("filename","filename",
-                 addValueDcl("filename",stringTypeRep(), 
-                  appendDefs(acode.defs, ns.defs)))), top.env);
+                addTerminalAttrDefs(
+                 appendDefs(acode.defs, ns.defs))), top.env);
 
   acode.signatureEnv = toEnv(ns.defs);
   acode.localsEnv = toEnv(acode.defs);
@@ -100,9 +99,8 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
   acode.env = appendDefsEnv(
                addThisDcl(fName,
-                addFullNameDcl("filename","filename",
-                 addValueDcl("filename",stringTypeRep(), 
-                  appendDefs(acode.defs, ns.defs)))), top.env);
+                addTerminalAttrDefs(
+                 appendDefs(acode.defs, ns.defs))), top.env);
 
   acode.signatureEnv = toEnv(ns.defs);
   acode.localsEnv = toEnv(acode.defs);

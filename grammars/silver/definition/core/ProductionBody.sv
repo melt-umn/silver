@@ -338,7 +338,7 @@ top::LHSExpr ::= id::Name
 
   local attribute er1 :: [Decorated Message];
   er1 = if null(vals)
-	then [err(top.location, "Value '" ++ id.name ++ "' is not declared.")] 
+	then [err(top.location, "Value '" ++ id.name ++ "' is not declared and therefore cannot be assigned to.")] 
 	else [];
 
   top.errors := er1;
