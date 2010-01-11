@@ -19,9 +19,10 @@ top::ProductionStmt ::= 'pluck' e::Expr c4::Semi_t
   top.defs = emptyDefs();
 
   top.warnings := [];
-  top.errors := if !top.actionCodeType.isDisambigGroupAction
+  top.errors := (if !top.actionCodeType.isDisambigGroupAction
                then [err(top.location, "'pluck' allowed only in disambiguation-group parser actions.")]
-               else [];
+               else [])
+               ++ e.errors;
 
   -- TODO: figure out wtf is going on with type here! (needs to be a terminal, plus one of the ones in the disgroup)
   top.typeErrors = [];
@@ -136,9 +137,10 @@ top::ProductionStmt ::= 'print' c3::Expr c4::Semi_t
   top.defs = emptyDefs();
 
   top.warnings := [];
-  top.errors := if top.actionCodeType.isSemanticBlock
+  top.errors := (if top.actionCodeType.isSemanticBlock
                then [err(top.location, "'print' statement allowed only in parser action blocks. You may be looking for print(String,IO) :: IO.")]
-               else [];
+               else [])
+               ++ c3.errors;
 
   top.typeErrors = if c3.typerep.typeName == "String"
 		   then []
@@ -178,9 +180,10 @@ top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
 {
   top.setupInh = "";
   top.translation = makeCopperName(lhs.nodeName) ++ " = " ++ e.translation ++ ";\n";
-  top.errors := if top.actionCodeType.isSemanticBlock
+  top.errors := (if top.actionCodeType.isSemanticBlock
                 then [err(lhs.location, "Assignment to parser attributes only permitted in parser action blocks")]
-                else [];
+                else [])
+                ++ lhs.errors ++ e.errors;
 }
 
 abstract production terminalAttributeDef
@@ -195,9 +198,10 @@ top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
   top.setupInh = "";
   top.translation = "virtualLocation." ++ memberfunc ++ "(" ++ e.translation
                      ++ (if lhs.nodeName == "filename" then ".toString()" else "") ++ ");\n";
-  top.errors := if top.actionCodeType.isSemanticBlock
+  top.errors := (if top.actionCodeType.isSemanticBlock
                 then [err(lhs.location, "Assignment to location attributes only permitted in parser action blocks")]
-                else [];
+                else [])
+                ++ lhs.errors ++ e.errors;
 }
 
 
