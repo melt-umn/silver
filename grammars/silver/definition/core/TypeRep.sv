@@ -67,7 +67,7 @@ top::Expr ::= e::Expr es::Exprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   top.location = e.location;
-  top.errors := [err(top.location, "silver is failing at figuring out what this function is (internal error)")] ++ e.errors ++ es.errors; 
+  top.errors := [err(top.location, e.pp ++ " cannot be invoked as a function.")] ++ e.errors ++ es.errors; 
 
   top.typerep = topTypeRep();
 
