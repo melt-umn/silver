@@ -3,6 +3,7 @@ grammar silver:translation:java:concrete_syntax:copper;
 import silver:definition:core;
 import silver:definition:env;
 import silver:translation:java:core;
+import silver:translation:java:env;
 
 import silver:analysis:typechecking:core;
 
@@ -40,6 +41,7 @@ top::Expr ::= q::QName
                                                  || q.name == "filename") then [actionTerminalReference(q)] else
          if isParserAttribute(fName, top.env) then [parserAttributeReference(q)] else
          if (in_locals && !top.actionCodeType.isSemanticBlock) then [localParserAttributeReference(q)] else
+         if (in_sig && !top.actionCodeType.isSemanticBlock) then [parserChildReference(q)] else
          [];
 }
 
@@ -121,6 +123,33 @@ abstract production localParserAttributeReference
 top::Expr ::= q::QName
 {
   forwards to parserAttributeReference(q);
+}
+
+abstract production parserChildReference
+top::Expr ::= q::QName
+{
+  top.pp = q.pp; 
+  top.location = q.location;
+
+  --the full name of the identifier
+  production attribute fNames :: [Decorated EnvItem];
+  fNames = getFullNameDcl(q.name, top.env);
+
+  production attribute fName ::String;
+  fName = if !null(fNames) then head(fNames).fullName else q.name;
+
+  production attribute vals :: [Decorated EnvItem];
+  vals = getValueDcl(fName, top.env);
+
+  top.errors := [];
+  top.warnings := [];
+
+  top.typerep = head(vals).typerep;
+  top.isAppReference = false;
+  top.appReference = "";
+  top.translation = "((" ++ head(vals).typerep.transType ++ ")((common.Node)RESULT).getChild(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ fName ++ "))";
+
+  top.typeErrors = [];
 }
 
 concrete production printStmt
