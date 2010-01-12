@@ -41,35 +41,31 @@ top::Expr ::= q::QName
 		expected_type(t) ->  t.isDecorated |
 		_ -> false end;
  	      	
-  production attribute fwdoverride :: [Boolean] with ++;
-  fwdoverride := []; -- This is an awful hack of terrible proportions. TODO? (used to override default rules)
-
   production attribute fwd :: [Expr] with ++;
-  fwd := if !null(fwdoverride)
-         then []
-         else if null(vals) || head(vals).typerep.typeName == "TOP"
-         then [errorReference(q)]
-         else if (in_sig || in_locals)
-              then if head(vals).typerep.doDecorate && shouldDec
-                   then [decorateExpr(q)]
-                   else [dontDecorateExpr(q)]
-              else if head(vals).typerep.isProduction
-              then [productionReference(q)]
-              else if head(vals).typerep.isFunction
-              then [functionReference(q)]
-              else [];
+  fwd := [];
   
-  top.errors <- if length(fwd) > 1 
+  top.errors <- if length(fwd) > 1
                 then [err(top.location, "Ambiguous reference: " ++ q.name)]
-                else if length(fwd) < 1
-                then [err(top.location, "Unknown type of reference: " ++ q.name)]
-                
                 else [];
                 --if length(fNames) > 1
                 --then [err(top.location, q.name ++ " may refer to multiple possibilities: " ++ listFNamesHelp(fNames))]
                 --else [];
 
-  forwards to if null(fwd) then errorReference(q) else head(fwd);
+  forwards to if !null(fwd) then head(fwd)
+  
+              else if null(vals) || head(vals).typerep.typeName == "TOP"
+              then errorReference(q)
+              
+              else if (in_sig || in_locals)
+              then if head(vals).typerep.doDecorate && shouldDec
+                   then decorateExpr(q)
+                   else dontDecorateExpr(q)
+              else if head(vals).typerep.isProduction
+              then productionReference(q)
+              else if head(vals).typerep.isFunction
+              then functionReference(q)
+              
+              else errorReference(q);
 }
 
 function listFNamesHelp
