@@ -45,7 +45,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
   acode.signature = decorate namedSignatureDefault() with {}; -- TODO HACK
   acode.signatureEnv = emptyEnv();
   acode.localsEnv = toEnv(acode.defs);
-  -- acode.env doesn't need any modifications
+  acode.env = appendDefsEnv(acode.defs, top.env);
 
   top.javaClasses = [];
   top.setupInh := "";

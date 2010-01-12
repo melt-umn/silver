@@ -157,7 +157,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
   top.productionAttributes = emptyDefs();
 
   production attribute fName :: String;
-  fName = toString(genInt()) ++ ":" ++ a.name;
+  fName = top.grammarName ++ ":" ++ toString(genInt()) ++ ":" ++ a.name;
 
   top.defs = addValueDcl(fName, te.typerep, 
 	     addFullNameDcl(a.name, fName,  emptyDefs()));
@@ -185,7 +185,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
   top.productionAttributes = top.defs;
 
   production attribute fName :: String;
-  fName = toString(genInt()) ++ ":" ++ a.name;
+  fName = top.grammarName ++ ":" ++ toString(genInt()) ++ ":" ++ a.name;
 
   top.defs = addValueDcl(fName, te.typerep, 
 	     addFullNameDcl(a.name, fName,  emptyDefs()));

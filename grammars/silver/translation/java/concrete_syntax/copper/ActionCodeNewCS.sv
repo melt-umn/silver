@@ -43,6 +43,7 @@ top::Expr ::= q::QName
                                                          || q.name == "filename"))
                  
                  || isPA
+                 || (in_locals && !top.actionCodeType.isSemanticBlock)
                  then [true] else [];
   
   fwd <- if top.actionCodeType.isDisambigGroupAction && in_sig then [pluckTermReference(q)] else 
@@ -51,6 +52,7 @@ top::Expr ::= q::QName
                                                  || q.name == "column"
                                                  || q.name == "filename") then [actionTerminalReference(q)] else
          if isPA then [parserAttributeReference(q)] else
+         if (in_locals && !top.actionCodeType.isSemanticBlock) then [localParserAttributeReference(q)] else
          [];
 }
 
@@ -126,6 +128,12 @@ top::Expr ::= q::QName
   top.typeErrors = [];
 }
 
+abstract production localParserAttributeReference
+top::Expr ::= q::QName
+{
+  forwards to parserAttributeReference(q);
+}
+
 concrete production printStmt
 top::ProductionStmt ::= 'print' c3::Expr c4::Semi_t
 {
@@ -151,17 +159,20 @@ top::ProductionStmt ::= 'print' c3::Expr c4::Semi_t
 
 
 synthesized attribute isParserLHS :: Boolean occurs on LHSExpr;
+synthesized attribute isLocalParserLHS :: Boolean occurs on LHSExpr;
 
 aspect production lhsExprOne
 top::LHSExpr ::= id::Name
 {
   top.isParserLHS = isParserAttribute(fName, top.env);
+  top.isLocalParserLHS = !top.isParserLHS && !top.actionCodeType.isSemanticBlock;
 }
 
 aspect production lhsExprTwo
 top::LHSExpr ::= id::Name '.' q::QName
 {
   top.isParserLHS = false;
+  top.isLocalParserLHS = false;
   top.errors <- if isParserAttribute(fName1, top.env) then [err(top.location, "Parser action block are imperative, not declarative. You cannot modify the attributes of " ++ id.name ++ ". If you are trying to set inherited attributes, use 'decorate " ++ id.name ++ " with { ... }' when you create it. (Note that then the type should be Decorated.)")] else [];
 }
 
@@ -172,6 +183,7 @@ top::ProductionStmt ::= lhs::LHSExpr '=' e::Expr ';'
          if (lhs.nodeName == "filename" ||
              lhs.nodeName == "line" ||
              lhs.nodeName == "column") then [terminalAttributeDef(lhs,e)] else
+         if lhs.isLocalParserLHS then [localParserAttributeDef(lhs,e)] else
          [];
 }
 
@@ -184,6 +196,13 @@ top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
   top.errors := (if top.actionCodeType.isSemanticBlock
                 then [err(lhs.location, "Assignment to parser attributes only permitted in parser action blocks")]
                 else []);
+}
+
+-- This is the same, but for modularity purposes is separate
+abstract production localParserAttributeDef
+top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
+{
+  forwards to parserAttributeDef(lhs,e);
 }
 
 abstract production terminalAttributeDef
@@ -201,6 +220,56 @@ top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
   top.errors := (if top.actionCodeType.isSemanticBlock
                 then [err(lhs.location, "Assignment to location attributes only permitted in parser action blocks")]
                 else []);
+}
+
+aspect production forwardingWith
+top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
+{
+  top.errors <- if !top.actionCodeType.isSemanticBlock
+                then [err(top.location, "Cannot forward in an action block.")]
+                else [];
+}
+
+aspect production forwardsToWith
+top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
+{
+  top.errors <- if !top.actionCodeType.isSemanticBlock
+                then [err(top.location, "Cannot forward in an action block.")]
+                else [];
+}
+
+aspect production forwardsTo
+top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
+{
+  top.errors <- if !top.actionCodeType.isSemanticBlock
+                then [err(top.location, "Cannot forward in an action block.")]
+                else [];
+}
+
+aspect production productionAttributeDcl
+top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
+{
+  top.errors <- if !top.actionCodeType.isSemanticBlock
+                then [err(top.location, "Cannot declare production attributes in an action block. Only locals.")]
+                else [];
+}
+
+aspect production localAttributeDcl
+top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
+{
+  -- TODO see ugly hack in ActionCode.sv
+}
+
+aspect production returnDef
+top::ProductionStmt ::= 'return' e::Expr ';'
+{
+  top.errors <- if !top.actionCodeType.isSemanticBlock
+                then if top.actionCodeType.isDisambigGroupAction
+                     then [err(top.location, "Cannot return in a disambiguation function. (Are you looking for 'pluck'?)")]
+                     else if top.actionCodeType.isParserAttrAction
+                     then [err(top.location, "Cannot return in an action block. (To initialize parser attributes, assign to them.)")]
+                     else [err(top.location, "Cannot return in an action block.")]
+                else [];
 }
 
 
