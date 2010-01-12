@@ -1,5 +1,6 @@
 grammar silver:translation:java:concrete_syntax:copper;
 
+import silver:translation:java:env;
 import silver:definition:core;
 import silver:definition:concrete_syntax;
 import silver:definition:type:anytype;
@@ -124,7 +125,7 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 {
   top.defs = stmts.defs;
 
-  top.actionCode = stmts.translation;
+  top.actionCode = localdeclarations(stmts.defs.valueList) ++ stmts.translation;
 
   top.errors := stmts.errors;
   top.typeErrors = stmts.typeErrors;
@@ -135,5 +136,12 @@ top::ActionCode_c ::= '{' '}'
 {
   top.actionCode = "";
   forwards to actionCode_c($1,productionStmtsNone(),$2);
+}
+
+-- TODO hacky hacky hacky.
+function localdeclarations
+String ::= l::[Decorated EnvItem]
+{
+  return if null(l) then "" else head(l).typerep.transType ++ " " ++ makeCopperName(head(l).itemName) ++ ";\n" ++ localdeclarations(tail(l));
 }
 
