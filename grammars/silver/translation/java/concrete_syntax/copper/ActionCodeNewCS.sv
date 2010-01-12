@@ -33,25 +33,12 @@ top::ProductionStmt ::= 'pluck' e::Expr c4::Semi_t
 aspect production baseExpr
 top::Expr ::= q::QName
 {
-  local attribute isPA :: Boolean;
-  isPA = isParserAttribute(fName, top.env);
-
-  fwdoverride <- if (top.actionCodeType.isDisambigGroupAction && in_sig)
-                 || (!top.actionCodeType.isSemanticBlock && (q.name == "lexeme"
-                                                         || q.name == "line"
-                                                         || q.name == "column"
-                                                         || q.name == "filename"))
-                 
-                 || isPA
-                 || (in_locals && !top.actionCodeType.isSemanticBlock)
-                 then [true] else [];
-  
   fwd <- if top.actionCodeType.isDisambigGroupAction && in_sig then [pluckTermReference(q)] else 
          if !top.actionCodeType.isSemanticBlock && (q.name == "lexeme"
                                                  || q.name == "line"
                                                  || q.name == "column"
                                                  || q.name == "filename") then [actionTerminalReference(q)] else
-         if isPA then [parserAttributeReference(q)] else
+         if isParserAttribute(fName, top.env) then [parserAttributeReference(q)] else
          if (in_locals && !top.actionCodeType.isSemanticBlock) then [localParserAttributeReference(q)] else
          [];
 }
@@ -117,7 +104,9 @@ top::Expr ::= q::QName
   production attribute vals :: [Decorated EnvItem];
   vals = getValueDcl(fName, top.env);
 
-  top.errors := [];
+  top.errors := if top.actionCodeType.isSemanticBlock
+                then [err(top.location, "References to parser attributes can only be made in action blocks")]
+                else [];
   top.warnings := [];
 
   top.typerep = head(vals).typerep;
