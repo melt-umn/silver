@@ -351,7 +351,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 {
   top.pp = lhs.pp ++ " = " ++ e.pp ++ ";";
   top.location = loc(top.file, $2.line, $2.column);
-  top.errors = lhs.errors ++ e.errors;
+  top.errors := lhs.errors ++ e.errors;
   top.warnings := [];
 
   e.expected = expected_type(lhs.typerep);
@@ -547,7 +547,7 @@ top::Expr ::= i::Int_t
   top.pp = i.lexeme;
   top.location = loc(top.file, i.line, i.column);
 
-  top.errors = [];
+  top.errors := [];
   top.warnings := [];
   top.typerep = integerTypeRep();
 }

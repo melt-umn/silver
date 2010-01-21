@@ -22,7 +22,7 @@ top::TerminalModifier ::= 'dominates' '{' terms::TermPrecList '}'
 
   top.terminalModifiers = [dominatesTerminalModifierSpec(terms.precTermList)];
 
-  top.errors = terms.errors;
+  top.errors := terms.errors;
   top.typeErrors = terms.typeErrors;
 
   forwards to terminalModifierDefault();
@@ -35,7 +35,7 @@ top::TerminalModifier ::= 'submits' 'to' '{' terms::TermPrecList  '}'
 
   top.terminalModifiers = [submitsToTerminalModifierSpec(terms.precTermList)];
 
-  top.errors = terms.errors;
+  top.errors := terms.errors;
   top.typeErrors = terms.typeErrors;
 
   forwards to terminalModifierDefault();
@@ -136,7 +136,7 @@ terms::TermPrecList ::=
    terms.defs = emptyDefs();
    terms.pp = "";
    terms.location = loc("termPrecListNull", -1, -1);
-   terms.errors = [];
+   terms.errors := [];
    terms.typeErrors = [];
 }
 

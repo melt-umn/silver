@@ -209,7 +209,7 @@ top::ProductionStmt ::= lhs::LHSExpr '=' e::Expr ';'
 abstract production parserAttributeDef
 top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
 {
-  top.setupInh = "";
+  top.setupInh := "";
   top.translation = makeCopperName(lhs.nodeName) ++ " = " ++ e.translation ++ ";\n";
   top.errors := (if top.actionCodeType.isSemanticBlock
                 then [err(lhs.location, "Assignment to parser attributes only permitted in parser action blocks")]
@@ -232,7 +232,7 @@ top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
                if lhs.nodeName == "column" then "setColumn" else
                error("unknown assignment to terminal attribute: " ++ lhs.nodeName);
 
-  top.setupInh = "";
+  top.setupInh := "";
   top.translation = "virtualLocation." ++ memberfunc ++ "(" ++ e.translation
                      ++ (if lhs.nodeName == "filename" then ".toString()" else "") ++ ");\n";
   top.errors := (if top.actionCodeType.isSemanticBlock

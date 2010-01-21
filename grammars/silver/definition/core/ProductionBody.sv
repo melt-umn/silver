@@ -88,7 +88,7 @@ top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
   top.productionAttributes = appendDefs(h.productionAttributes, t.productionAttributes);
 
   top.defs = appendDefs(h.defs, t.defs);
-  top.errors = h.errors ++ t.errors;
+  top.errors := h.errors ++ t.errors;
   top.warnings := [];
 }
 
