@@ -2,29 +2,13 @@ grammar silver:driver;
 import silver:util;
 import silver:definition:env;
 
---abstract production main
---top::Main ::= args::String{
---
---  local attribute strings :: [[String]];
---  strings = [["a","b"],["b","a"]];
-----  strings = [["patternmatching:lib","lists:anytype"],["lists:anytype","patternmatching:lib"]];
---
---  local attribute io1 :: IO;
---  io1 = print(folds(", ", findValidInterfaces(strings)) ++ "\n", top.ioIn);
---
---  local attribute io2 :: IO;
---  io2 = print(folds(", ", findInvalidInterfaces(strings)) ++ "\n", io1);
---
---  top.ioOut = io2;
---}
-
 function getInvalidInterfaces
 [Decorated Interface] ::= ifs::[Decorated Interface]{
   local attribute nifs::[[String]];
   nifs = normalizeInterfaces(ifs);
 
   local attribute inv::[String];
-  inv = findInvalidInterfaces(nifs);
+  inv = findInvalidInterfaces([], nifs);
 
   return keepInterfaces(inv, ifs);
 }
@@ -56,87 +40,90 @@ function normalizeInterfaces
 
 function findValidInterfaces
 [String] ::= s::[[String]]{
-  return rem(getHeads(s), findInvalidInterfaces(s));
+  return rem(getHeads(s), findInvalidInterfaces([],s));
 }
 
+{- Historical note:
+ - We previously did this co-inductively. i.e. assumed everything is invalid,
+ - and iteratively removing things we could tell were, in fact, valid. (zero dependencies)
+ - This fails horribly for circular dependencies, which we do allow. (it could never conclude they were valid)
+ - So, now we do it inductively.
+ 
+ - Assume everything is valid.  Remove everything we have an interface for from dependencies.
+ - If anything has something left in its dependencies, it must be INvalid (was compiled, rather than interface)
+ - However, we then have to go add back & add anything that depends on this invalid set.
+ - So we iterate to a fixed point again.
+ -}
 
+-- finds "valid" interfaces (those with no dependancies)
+-- removes the valid interfaces from the dependancies of the remaining interfaces
+-- iterate until fixpoint (i.e. no valid interfaces left)
+
+-- key idea: anything that has a dependancy outside the list of interfaces needs to be recompiled because that was compiled
+-- PROBLEM: circular dependancies.
 function findInvalidInterfaces
-[String] ::= is::[[String]]{
+[String] ::= invalid::[String] maybevalid::[[String]]{
 
-  local attribute valid::[String];
-  valid = findCurrentValidInterfaces(is);
+  -- Everything we have an interface for
+  local attribute haveifacefor::[String];
+  haveifacefor = getHeads(maybevalid);
 
-  local attribute invalid::[[String]];
-  invalid = removeValidInterfaces(is);
-
+  -- Remove dependencies on things we have a (maybevalid) interface for
   local attribute difference::[[String]]; 
-  difference = removeInterfaceDependancies(valid, invalid);
+  difference = removeInterfaceDependancies(haveifacefor, maybevalid);
 
-  return if null(valid) then getHeads(is) else findInvalidInterfaces(difference);
+  -- Find anything with dependencies left. These are invalid.
+  local attribute moreinvalid::[String];
+  moreinvalid = findCurrentInvalidInterfaces(difference);
+
+  -- Remove definitely invalid from maybevalid
+  local attribute newmaybevalid::[[String]];
+  newmaybevalid = removeInvalids(moreinvalid, maybevalid);
+
+  return if null(moreinvalid) then invalid else findInvalidInterfaces(invalid ++ moreinvalid, newmaybevalid);
 }
 
---function findRecursiveInterfaces
---[String] ::= is::[[String]]{
---  return findRecursiveInterfacesHelp(largestSet(is), is);
---}
---
---
---function findRecursiveInterfacesHelp
---[String] ::= s::Integer is::[[String]]{
---
---  local attribute current :: [[String]];
---  current = getSetsOfSize(s, is);
---
---  local attribute valid :: [String];
---  valid = findRecursiveInterfacesN(current, current);
---  
---  return if s == 0 then[] else  valid ++ findRecursiveInterfacesHelp(s-1, is);
---
---}
---
---function getSetsOfSize 
---[[String]] ::= s::Integer is::[[String]]{
---  return if null(is) then [] else (if length(head(is)) == s then [head(is)] else []) ++ getSetsOfSize(s, tail(is));
---}
---
---function findRecursiveInterfacesN
---[String] ::= is::[[String]] all::[[String]]{
---  return if null(is) then [] else (if containsSet(head(is), all) then [head(head(is))] else []) ++ findRecursiveInterfacesN(tail(is), all);
---}
---
---function largestSet
---Integer ::= is::[[String]]{
---  return largestSetHelp(0, is);
---}
---
---function largestSetHelp
---Integer ::= current::Integer is::[[String]]{
---  return if null(is) then current else if length(head(is)) > current then largestSetHelp(length(head(is)), tail(is)) else largestSetHelp(current, tail(is));
---}
-
-
---[[a, b], [a], [c]] -> [a,c]
-function findCurrentValidInterfaces
+function findCurrentInvalidInterfaces
 [String] ::= is::[[String]]{
-  return if null(is) then [] else ((if null(tail(head(is))) then [head(head(is))] else []) ++ findCurrentValidInterfaces(tail(is)));
+  return if null(is)
+         then []
+         else ((if null(tail(head(is))) -- "Do you have any dependancies listed?"
+                then []                 -- No? Well, you're (maybe) valid.
+                else [head(head(is))])  -- Yes? Well, you MUST be invalid!
+              ++ findCurrentInvalidInterfaces(tail(is)));
 }
 
---[a,b], [[d, b, a], [c,a,b], [c]] -> [[d], [c], [c]]
+-- Removes every interface listed in "s" from the dependencies of everything in "is"
 function removeInterfaceDependancies
 [[String]] ::= s::[String] is::[[String]]{
-  return if null(s) then is else removeInterfaceDependancy(head(s), removeInterfaceDependancies(tail(s), is));
+  return if null(s)
+         then is
+         else removeInterfaceDependancy(head(s), removeInterfaceDependancies(tail(s), is));
 }
 
---[a], [[b, a], [c,a,b], [c]] -> [[b], [c,b], [c]]
+-- Removes the interface "s" from the dependencies of everything in "is"
 function removeInterfaceDependancy
 [[String]] ::= s::String is::[[String]]{
   return if null(is) then [] else [[head(head(is))] ++ remove(s, tail(head(is)))] ++ removeInterfaceDependancy(s, tail(is));
 }
 
---[[a], [a,b]] -> [[a,b]]
-function removeValidInterfaces
-[[String]] ::= is::[[String]]{
-  return if null(is) then [] else ((if null(tail(head(is))) then [] else [head(is)]) ++ removeValidInterfaces(tail(is)));
+-- Removes the interfaces from the set
+function removeInvalid
+[[String]] ::= inv::String lst::[[String]]
+{
+  return if null(lst)
+         then []
+         else if head(head(lst)) == inv
+              then removeInvalid(inv, tail(lst))
+              else [head(lst)] ++ removeInvalid(inv, tail(lst));
+}
+
+function removeInvalids
+[[String]] ::= inv::[String] lst::[[String]]
+{
+  return if null(inv)
+         then lst
+         else removeInvalids(tail(inv), removeInvalid(head(inv), lst));
 }
 
 function getHeads
