@@ -196,6 +196,21 @@ top::Expr ::= 'genInt' '(' ')'
   top.typerep = integerTypeRep();
 }
 
+concrete production exitFunction
+top::Expr ::= 'exit' '(' e1::Expr ',' e2::Expr ')'
+{
+  top.pp = "exit(" ++ e1.pp ++ ", " ++ e2.pp ++ ")";
+  top.location = loc(top.file, $1.line, $1.column);
+
+  top.errors := e1.errors ++ e2.errors;
+  top.warnings := e1.warnings ++ e2.warnings;
+
+  top.typerep = ioTypeRep();
+
+  e1.expected = expected_default();
+  e2.expected = expected_default();
+}
+
 concrete production unsafeIOFunction
 top::Expr ::= 'unsafeio'
 {

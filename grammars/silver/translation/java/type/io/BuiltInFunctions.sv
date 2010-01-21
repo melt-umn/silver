@@ -71,6 +71,12 @@ top::Expr ::= 'print' '(' e1::Expr ',' e2::Expr ')'
   top.translation = "(common.Util.io(" ++ e2.translation ++ ", common.Util.print(" ++ e1.translation ++ ".toString())))";
 }
 
+aspect production exitFunction
+top::Expr ::= 'exit' '(' e1::Expr ',' e2::Expr ')'
+{
+  top.translation = "(common.Util.io(" ++ e2.translation ++ ", common.Util.exit(" ++ e1.translation ++ ".intValue())))";
+}
+
 --TODO : build the list here instead of in Util.listContents?
 aspect production listContentsFunction
 top::Expr ::= 'listContents' '(' e1::Expr ',' e2::Expr ')'

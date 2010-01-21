@@ -75,6 +75,7 @@ terminal Integer_kwd /Integer/ lexer classes {KEYWORD} ;
 terminal Float_kwd /Float/   lexer classes {KEYWORD} ;
 terminal String_kwd /String/  lexer classes {KEYWORD} ;
 terminal Boolean_kwd /Boolean/ lexer classes {KEYWORD} ;
+terminal Exit_kwd /exit/ lexer classes {KEYWORD} ;
 
 terminal CCEQ_t '::=' lexer classes {SEVEN};
 terminal Semi_t ';' lexer classes {KEYWORD} ;

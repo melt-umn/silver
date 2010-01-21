@@ -136,10 +136,13 @@ top::RunUnit ::= iIn::IO args::String
   production attribute postOps :: [Unit] with ++;
   postOps := [];
   
+  local attribute postIO :: IOInteger;
+  postIO = runAll(reUnit.io, unitMergeSort(postOps));
+  
   top.io = if preIO.iValue != 0 --the preops tell us to quit.
            then preIO.io
            else if a.okay && grammarLocation.found --the args were okay and the grammar was found.
-	        then runAll(reUnit.io, unitMergeSort(postOps)).io
+	        then exit(postIO.iValue, postIO.io)
 	        else if a.okay && !grammarLocation.found --the args were okay but the grammar was not found
 	             then print("\nGrammar '" ++ a.gName ++ "' could not be located, make sure that the grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io)
 		     else print(a.usage, iIn); -- the args were not okay.
