@@ -232,7 +232,24 @@ top::Expr ::= li::ListContents_kwd l::LParen_t e1::Expr c::Comma_t e2::Expr r::R
 
   local attribute error_sl :: [Decorated Message];
   error_sl = if !null(ref) then []
-	     else [err(top.location, "StringList not found in the environment.  You must import the grammar core.")];
+	     else [err(top.location, "StringList not found in the environment.  You must import the grammar core.")]; -- TODO, implicit?
+
+  top.typeErrors = e1_error ++ e2_error ++ e1.typeErrors ++ e2.typeErrors;
+}
+
+aspect production exitFunction
+top::Expr ::= 'exit' '(' e1::Expr ',' e2::Expr ')'
+{
+  local attribute e1_error :: [Decorated Message];
+  e1_error =   if (e1.typerep.isInteger) 
+	       then []
+	       else [err(top.location, "First parameter to exit must be of type Integer.")];
+
+
+  local attribute e2_error :: [Decorated Message];
+  e2_error =   if (e2.typerep.isIO) 
+	       then []
+	       else [err(top.location, "Second parameter to exit must be of type IO.")];
 
   top.typeErrors = e1_error ++ e2_error ++ e1.typeErrors ++ e2.typeErrors;
 }
