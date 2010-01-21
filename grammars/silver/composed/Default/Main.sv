@@ -42,5 +42,6 @@ parser iParse::aRootSpec {
 
 function main 
 IO ::= args::String i::IO {
+  -- please note that run in BuildProcess.sv will call exit(), so we may not "get back here"
   return (decorate run(i, args) with {rParser = rParse; cParser = cParse; iParser = iParse;}).io;
 }

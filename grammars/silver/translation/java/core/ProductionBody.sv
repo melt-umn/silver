@@ -18,35 +18,35 @@ attribute setupInh, translation occurs on ProductionBody, ProductionStmts, Produ
 aspect production defaultProductionBody
 top::ProductionBody ::= stmts::ProductionStmts
 {
-  top.setupInh = stmts.setupInh;
+  top.setupInh := stmts.setupInh;
   top.translation = stmts.translation;
 }
 
 aspect production productionStmtsNone
 top::ProductionStmts ::= 
 {
-  top.setupInh = "";
+  top.setupInh := "";
   top.translation = "";
 }
 
 aspect production productionStmts
 top::ProductionStmts ::= stmt::ProductionStmt
 {
-  top.setupInh = stmt.setupInh;
+  top.setupInh := stmt.setupInh;
   top.translation = stmt.translation;
 }
 
 aspect production productionStmtsCons
 top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
 {
-  top.setupInh = h.setupInh ++ t.setupInh;
+  top.setupInh := h.setupInh ++ t.setupInh;
   top.translation = h.translation ++ t.translation;
 }
 
 aspect production productionStmtsAppend
 top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
 {
-  top.setupInh = h.setupInh ++ t.setupInh;
+  top.setupInh := h.setupInh ++ t.setupInh;
   top.translation = h.translation ++ t.translation;
 }
 
@@ -56,7 +56,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
-  top.setupInh = "";
+  top.setupInh := "";
   top.translation = 
 	"\t\t//" ++ top.pp ++ "\n" ++
 	"\t\t" ++ className ++ ".forward = new common.Lazy(){\n" ++ 
@@ -72,7 +72,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
-  top.setupInh = "";
+  top.setupInh := "";
   top.translation =
 	"\t\t//" ++ top.pp ++ "\n" ++
 	"\t\t" ++ className ++ ".forward = new common.Lazy(){\n" ++ 
@@ -86,7 +86,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
 aspect production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {
-  top.setupInh = "";
+  top.setupInh := "";
   top.translation = inh.translation;   
 }
 
@@ -127,7 +127,7 @@ top::ForwardLHSExpr ::= q::QName
 aspect production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 {
-  top.setupInh = if !te.typerep.isNonTerminal then  "" else
+  top.setupInh := if !te.typerep.isNonTerminal then  "" else
         	 "\t\t//" ++ top.pp ++ "\n" ++
 		 "\t\t" ++ 
 		 makeClassName(top.signature.fullName) ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ 
@@ -138,7 +138,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 aspect production productionAttributeDcl
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
 {
-  top.setupInh = if !te.typerep.isNonTerminal then  "" else
+  top.setupInh := if !te.typerep.isNonTerminal then  "" else
 	   	"\t\t//" ++ top.pp ++ "\n" ++		 
 		"\t\t" ++ 
 		 makeClassName(top.signature.fullName) ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ 
@@ -152,7 +152,7 @@ top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
-  top.setupInh = "";
+  top.setupInh := "";
   top.translation =
 	"\t\t// " ++ lhs.pp ++ " = " ++ e.pp ++ "\n" ++
 	if lhs.isLocalDcl then  
@@ -188,7 +188,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
-  top.setupInh = "";
+  top.setupInh := "";
   top.translation =
 	"\t\t//" ++ top.pp ++ "\n" ++
 	"\t\t" ++ className ++ ".synthesizedAttributes.put(\"__return\", new common.Lazy(){\n" ++ 

@@ -19,7 +19,7 @@ top::Name ::= 'let'
 concrete production letp
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
-  top.errors = la.errors ++ e.errors ;
+  top.errors := la.errors ++ e.errors ;
    
   local attribute newEnv :: Decorated Env;
   newEnv = appendDefsEnv(la.defs, top.env);

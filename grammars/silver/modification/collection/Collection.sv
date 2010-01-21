@@ -148,7 +148,14 @@ concrete production attrContains
 top::ProductionStmt ::= lhs::LHSExpr '<-' e::Expr ';'
 {
   e.expected = expected_type(lhs.typerep);
-  forwards to attributeDef(lhs, '=', e, ';');
+  
+  top.errors <- if !lhs.typerep.isCollection
+                then [err(loc(top.file, $2.line, $2.column), "'<-' operator can only be performed on collections. " ++ lhs.pp ++ " has type " ++ lhs.typerep.unparse)]
+                else [];
+                
+  forwards to attributeDef(lhs, '=', e, ';') with {
+     inCollectionContext = true;
+  };
 }
 
 terminal BaseContains_t   ':='   lexer classes {KEYWORD};
@@ -156,8 +163,37 @@ concrete production attrContainsBase
 top::ProductionStmt ::= lhs::LHSExpr ':=' e::Expr ';'
 {
   e.expected = expected_type(lhs.typerep);
-  forwards to attributeDef(lhs, '=', e, ';');
+
+  top.errors <- if !lhs.typerep.isCollection
+                then [err(loc(top.file, $2.line, $2.column), "':=' operator can only be performed on collections. " ++ lhs.pp ++ " has type " ++ lhs.typerep.unparse)]
+                else [];
+
+  forwards to attributeDef(lhs, '=', e, ';') with {
+     inCollectionContext = true;
+  };
 }
+
+inherited attribute inCollectionContext :: Boolean occurs on ProductionStmt;
+aspect production productionStmts
+top::ProductionStmts ::= stmt::ProductionStmt
+{
+  stmt.inCollectionContext = false;
+}
+
+aspect production productionStmtsCons
+top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
+{
+  h.inCollectionContext = false;
+}
+
+aspect production attributeDef
+top::ProductionStmt ::= lhs::LHSExpr '=' e::Expr ';'
+{
+  top.errors <- if !top.inCollectionContext && lhs.typerep.isCollection
+                then [err(loc(top.file, $2.line, $2.column), "'=' operator cannot be performed on collections. Use '<-' or ':='. " ++ lhs.pp ++ " has type " ++ lhs.typerep.unparse)]
+                else [];
+}
+
 
 synthesized attribute isCollection :: Boolean;
 attribute isCollection occurs on TypeRep;

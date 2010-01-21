@@ -237,7 +237,7 @@ top::Expr ::= e::Expr
 
   top.typerep = integerTypeRep();
  
-  top.errors = e.errors;
+  top.errors := e.errors;
   top.typeErrors = e.typeErrors;
 
   forwards to attributeAccess(e, '.', qNameId(nameId(terminal(Id_t, "length_AnyTypeList"))));

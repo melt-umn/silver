@@ -19,8 +19,8 @@ concrete production parserDcl
 top::AGDcl ::= p::ParserDcl{
   top.location = p.location;
   top.pp = p.pp;
-  top.errors = p.errors;
-  top.warnings = p.warnings;
+  top.errors := p.errors;
+  top.warnings := p.warnings;
 
   top.defs = p.defs;
   top.parserDcls = p.parserDcls;

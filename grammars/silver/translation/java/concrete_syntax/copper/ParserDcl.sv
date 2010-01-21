@@ -81,7 +81,7 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
   local attribute parserName :: String;
   parserName = makeParserName(top.fullName);
 
-  top.initProd =
+  top.initProd :=
 	"\t\t" ++ fullClassName ++ ".synthesizedAttributes.put(\"__return\", new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\ttry{\n" ++

@@ -60,7 +60,7 @@ top::ProductionModifiers ::=
   top.location = loc("", -1, -1);
 
   top.productionModifiers = [];
-  top.errors = [];
+  top.errors := [];
 }
 
 concrete production productionModifierSingle
@@ -70,7 +70,7 @@ top::ProductionModifiers ::= pm::ProductionModifier
   top.location = pm.location;
   
   top.productionModifiers = pm.productionModifiers;
-  top.errors = pm.errors;
+  top.errors := pm.errors;
 }
 
 concrete production productionModifiersCons
@@ -80,7 +80,7 @@ top::ProductionModifiers ::= h::ProductionModifier ',' t::ProductionModifiers
   top.location = loc(top.file, $2.line, $2.column);
 
   top.productionModifiers = h.productionModifiers ++ t.productionModifiers;
-  top.errors = h.errors ++ t.errors;
+  top.errors := h.errors ++ t.errors;
 }
 
 concrete production productionModifierPrecedence
@@ -90,7 +90,7 @@ top::ProductionModifier ::= 'precedence' '=' i::Int_t
   top.location = loc(top.file, $1.line, $1.column);
 
   top.productionModifiers = [precedenceProductionModifierSpec(toInt(i.lexeme))];
-  top.errors = [];
+  top.errors := [];
 }
 
 terminal Operator_kwd /operator/ lexer classes {KEYWORD};
@@ -112,7 +112,7 @@ top::ProductionModifier ::= 'operator' '=' n::QName
   production attribute typeItem :: [Decorated EnvItem];
   typeItem = getTypeDcl(fName, top.env);
 
-  top.errors = if null(typeItem) then [err(top.location, "Unknown terminal " ++ n.pp)] else
+  top.errors := if null(typeItem) then [err(top.location, "Unknown terminal " ++ n.pp)] else
                if !head(typeItem).typerep.isTerminal then [err(top.location, n.pp ++ " is not a terminal.")] else
                [];
 }

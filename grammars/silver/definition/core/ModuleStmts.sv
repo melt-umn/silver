@@ -31,7 +31,7 @@ top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String]
 
   top.defs = d4;		  
   top.errors := med.errors;
-  top.warnings = [];
+  top.warnings := [];
 }
 
 function applyMappings

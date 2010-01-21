@@ -48,7 +48,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
   o = q.operation;
   o.inType = te.typerep;
 
-  top.setupInh = 
+  top.setupInh := 
 	"\t\t" ++ className ++ ".localAttributes.put(\"" ++ fName ++ "\", new common.CollectionAttribute(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
 	"\t\t\t\t" ++ te.typerep.transType ++ " result = (" ++ te.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
@@ -108,7 +108,7 @@ top::ProductionStmt ::= lhs::LHSExpr '<-' e::Expr ';'
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
-  top.setupInh = "";
+  top.setupInh := "";
 
   top.translation = if lhs.isLocalDcl then  
 	"\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes.get(\"" ++ lhs.nodeName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
@@ -149,7 +149,7 @@ top::ProductionStmt ::= lhs::LHSExpr ':=' e::Expr ';'
   o = lhs.typerep.operation;
   o.inType = lhs.typerep;
 
-  top.setupInh = if lhs.isLocalDcl then  ""
+  top.setupInh := if lhs.isLocalDcl then  ""
                  else if lhs.isLocal then 
 	"\t\t" ++ className ++ ".inheritedAttributes.get(\"" ++ lhs.nodeName ++ "\").put(\"" ++ lhs.attrName ++ "\",  new common.CollectionAttribute(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
