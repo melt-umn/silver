@@ -3,7 +3,7 @@
 # This script will use Silver to build an AG evaluator for the
 # tutorials grammar and run ant to compile the resulting Java code.
 
-time java -Xss8M -Xmx3000M -jar ../../../../jars/RunSilver.jar tutorials:dc:bin
+time java -jar ../../../../jars/RunSilver.jar tutorials:dc:bin
 
 # then run "ant"
 ant
