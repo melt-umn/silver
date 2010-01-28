@@ -13,20 +13,7 @@ top ::= _ _ _ _ _{
 concrete production concreteProductionDcl
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
-  top.pp = "concrete production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp; 
-  top.location = loc(top.file, $1.line, $1.column);
-
-  production attribute fName :: String;
-  fName = top.grammarName ++ ":" ++ id.name;
-
-  production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
-  ns.env = appendDefsEnv(ns.defs, pushScope(top.env));
-
-  top.terminalDcls = [];
-  top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName, [rhsSpec(top.grammarName, fName, getTypeNamesSignature(ns.inputElements), [])])];
-  
-  forwards to productionDcl(terminal(Abstract_kwd, "abstract", $2.line, $2.column), $2, id, ns, body);
+  forwards to concreteProductionDclModifiers($1, $2, id, ns, productionModifiersNone(), body);
 }
 
 concrete production concreteProductionDclModifiers
@@ -43,11 +30,12 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   ns.env = appendDefsEnv(ns.defs, pushScope(top.env));
 
   top.terminalDcls = [];
-  top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName, [rhsSpec(top.grammarName, fName, getTypeNamesSignature(ns.inputElements), pm.productionModifiers)])];
+  top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName, 
+                           [rhsSpec(top.grammarName, fName, getTypeNamesSignature(ns.inputElements), pm.productionModifiers)])];
   
   top.errors <- pm.errors;
 
-  forwards to productionDcl(terminal(Abstract_kwd, "abstract", $2.line, $2.column), $2, id, ns, body);
+  forwards to productionDcl(terminal(Abstract_kwd, "abstract", $1.line, $1.column), $2, id, ns, body);
 }
 
 nonterminal ProductionModifiers with location, file, pp, unparse, productionModifiers, errors, env;

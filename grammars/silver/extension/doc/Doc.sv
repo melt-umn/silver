@@ -216,22 +216,6 @@ top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
 )];
 }
 
-aspect production concreteProductionDcl
-top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature body::ProductionBody
-{
-  local attribute t :: String;
-  t = namedSig.outputElement.typerep.typeName;
-
-  top.documentation = [doc(CP(),
-"<div class='row'>\n" ++ 
-"  <a name='" ++ fName ++ "'></a><span class='value'>" ++ id.name ++ "</span> " ++ 
-		 "<a href='" ++ makeFileName(getGrammarName(t)) ++ "#" ++ t ++ "' class='type'>" ++ last(split(":", t)) ++ "</a> ::= " ++ 
-		 foldRHS(getTypeNamesSignature(namedSig.inputElements)) ++ "<br/>\n" ++
-"  <span class='info'>concrete</span></div>\n" ++
-"</div>"
-)];
-}
-
 aspect production concreteProductionDclModifiers
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody
 {

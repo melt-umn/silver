@@ -11,7 +11,7 @@ import silver:analysis:typechecking:core;
 
 synthesized attribute actionCode :: String;
 
-nonterminal ActionCode_c with actionCode,env,defs,grammarName,localsEnv,signature,signatureEnv,file,errors,typeErrors;
+nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,localsEnv,signature,signatureEnv,file,errors,typeErrors;
 
 terminal Action_kwd 'action' lexer classes {KEYWORD};
 
@@ -47,41 +47,10 @@ String ::= l::[Decorated ProductionModifierSpec]{
   return if null(l) then "" else if head(l).actionCode != "" then head(l).actionCode else findProductionAction(tail(l));
 }
 
--- TODO: We should make action codes production modifiers in syntax?  (need to add errors,etc to ProductionModifier/s)
-
 concrete production concreteProductionDclAction
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature body::ProductionBody 'action' acode::ActionCode_c
 {
-  production attribute fName :: String;
-  fName = top.grammarName ++ ":" ++ id.name;
-
-  top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName, [rhsSpec(top.grammarName, fName, getTypeNamesSignature(ns.inputElements), [actionProductionModifierSpec(acode.actionCode)])])];
-
-  top.pp = "concrete production " ++ id.name ++  "\n" ++ 
-	     ns.pp  ++ "  \n{\n" ++ body.pp ++ "\n}\naction\n  {@" ++
-             acode.actionCode ++ "\n@}";
-
-  production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
-
-  acode.signature = namedSig;
-
-  acode.actionCodeType = productionActionType();
-  acode.env = appendDefsEnv(
-               addThisDcl(fName,
-                addTerminalAttrDefs(
-                 appendDefs(acode.defs, ns.defs))), top.env);
-
-  acode.signatureEnv = toEnv(ns.defs);
-  acode.localsEnv = toEnv(acode.defs);
-
---TODO
-  top.errors <- acode.errors;
---  top.errors := body.errors ++ acode.actionErrors;
-  top.typeErrors = forward.typeErrors ++ acode.typeErrors;
---  top.typeErrors = body.typeErrors ++ acode.actionTypeErrors;
-
-  forwards to concreteProductionDcl($1, $2, id, ns, body);
+  forwards to concreteProductionDclModifiersAction($1, $2, id, ns, productionModifiersNone(), body, $6, acode);
 }
 
 concrete production concreteProductionDclModifiersAction
@@ -90,32 +59,28 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName, [rhsSpec(top.grammarName, fName, getTypeNamesSignature(ns.inputElements), cons(actionProductionModifierSpec(acode.actionCode), pm.productionModifiers))])];
+  top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName,
+                           [rhsSpec(top.grammarName, fName, getTypeNamesSignature(ns.inputElements),
+                                    cons(actionProductionModifierSpec(acode.actionCode), pm.productionModifiers))])];
 
-  top.pp = "concrete production " ++ id.name ++  "\n" ++ 
-	     ns.pp  ++ "  \n{\n" ++ body.pp ++ "\n}\naction\n  {@" ++
-             acode.actionCode ++ "\n@}";
+  top.pp = forward.pp ++ "action " ++ acode.pp;
 
   acode.actionCodeType = productionActionType();
 
+  acode.signatureEnv = toEnv(ns.defs);
+  acode.localsEnv = toEnv(acode.defs);
   acode.env = appendDefsEnv(
                addThisDcl(fName,
                 addTerminalAttrDefs(
                  appendDefs(acode.defs, ns.defs))), top.env);
-
-  acode.signatureEnv = toEnv(ns.defs);
-  acode.localsEnv = toEnv(acode.defs);
 
   production attribute namedSig :: Decorated NamedSignature;
   namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
 
   acode.signature = namedSig;
 
---TODO
-  top.errors <- acode.errors ++ pm.errors;
---  top.errors := body.errors ++ acode.actionErrors;
+  top.errors <- acode.errors;
   top.typeErrors = forward.typeErrors ++ acode.typeErrors;
---  top.typeErrors = body.typeErrors ++ acode.actionTypeErrors;
 
   forwards to concreteProductionDclModifiers($1, $2, id, ns, pm, body);
 }
@@ -123,6 +88,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 concrete production actionCode_c
 top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 {
+  top.pp = "{\n" ++ stmts.pp ++ "}\n";
   top.defs = stmts.defs;
 
   top.actionCode = localdeclarations(stmts.defs.valueList) ++ stmts.translation;
@@ -138,7 +104,7 @@ top::ActionCode_c ::= '{' '}'
   forwards to actionCode_c($1,productionStmtsNone(),$2);
 }
 
--- TODO hacky hacky hacky.
+-- TODO hacky. ideally we'd do this where local attributes are declared, not here.
 function localdeclarations
 String ::= l::[Decorated EnvItem]
 {

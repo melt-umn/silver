@@ -5,5 +5,5 @@ cd build
 
 time java -Xss8M -Xmx3000M -jar ../jars/RunSilver.jar -I ../grammars $@ silver:composed:Default && ant
 
-echo "\a"
+echo -e "\a"
 
