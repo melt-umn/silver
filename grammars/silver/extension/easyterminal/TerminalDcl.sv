@@ -5,7 +5,7 @@ import silver:definition:type:higherorder;
 import silver:definition:concrete_syntax;
 import silver:definition:regex;
 
-terminal Terminal_t /[\']([^\']|([\\][\']))*[\']/ lexer classes {SIX};
+terminal Terminal_t /[\']([^\']|([\\][\']))*[\']/;
 
 abstract production findRegularExpression
 top::EnvFilter ::= re::String

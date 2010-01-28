@@ -9,7 +9,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 
   top.moduleNames = [];
 
-  top.defs = emptyDefs();
+  top.defs = emptyDefs(); -- TODO let production attributes get defined in aspects
 
   production attribute fName :: String;
   fName = if !null(fNames) then head(fNames).fullName else id.name;
