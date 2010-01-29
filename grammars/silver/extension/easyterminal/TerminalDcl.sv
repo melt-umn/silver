@@ -24,18 +24,26 @@ top::RegExpr ::= t::Terminal_t
 }
 
 concrete production productionRhsElemEasyReg
+top::ProductionRHSElem ::= id::Name '::' reg::RegExpr
+{
+  local attribute regName :: [Decorated EnvItem];
+  regName = filterEnvItems(findRegularExpression(reg.terminalRegExprSpec.regString), getAllTypeDcls(top.env));
+
+  top.errors <- if null(regName) 
+	       then [err(reg.location, "Could not find terminal declaration for " ++ reg.pp )]
+ 	       else [];
+
+  forwards to productionRHSElem(id, $2, typerepType(if null(regName) then topTypeRep() else head(regName).typerep));
+}
+
+concrete production productionRhsElemTypeEasyReg
 top::ProductionRHSElem ::= reg::RegExpr
 {
-  top.location = reg.location;
-
-  local attribute regExpPat :: String;
-  regExpPat = reg.terminalRegExprSpec.regString;
-
   local attribute regName :: [Decorated EnvItem];
-  regName = filterEnvItems(findRegularExpression(regExpPat), getAllTypeDcls(top.env));
+  regName = filterEnvItems(findRegularExpression(reg.terminalRegExprSpec.regString), getAllTypeDcls(top.env));
 
-  top.errors := if null(regName) 
-	       then [err(top.location, "Could not find terminal declaration for " ++ reg.pp ++ "\n\n" ++ printEnvItems(getAllTypeDcls(top.env)))]
+  top.errors <- if null(regName) 
+	       then [err(reg.location, "Could not find terminal declaration for " ++ reg.pp )]
  	       else [];
 
   forwards to productionRHSElemType(typerepType(if null(regName) then topTypeRep() else head(regName).typerep));
@@ -44,17 +52,27 @@ top::ProductionRHSElem ::= reg::RegExpr
 concrete production aspectRHSElemEasyReg
 top::AspectRHSElem ::= reg::RegExpr
 {
-  local attribute regExpPat :: String;
-  regExpPat = reg.terminalRegExprSpec.regString;
-
   local attribute regName :: [Decorated EnvItem];
-  regName = filterEnvItems(findRegularExpression(regExpPat), getAllTypeDcls(top.env));
+  regName = filterEnvItems(findRegularExpression(reg.terminalRegExprSpec.regString), getAllTypeDcls(top.env));
 
   top.errors := if null(regName) 
 	       then [err(top.location, "Could not find terminal declaration for " ++ reg.pp )]
  	       else [];
 
   forwards to aspectRHSElemNone('_');
+}
+
+concrete production aspectRHSElemTypedEasyReg
+top::AspectRHSElem ::= id::Name '::' reg::RegExpr
+{
+  local attribute regName :: [Decorated EnvItem];
+  regName = filterEnvItems(findRegularExpression(reg.terminalRegExprSpec.regString), getAllTypeDcls(top.env));
+
+  top.errors := if null(regName) 
+	       then [err(top.location, "Could not find terminal declaration for " ++ reg.pp )]
+ 	       else [];
+
+  forwards to aspectRHSElemTyped(id, $2, typerepType(if null(regName) then topTypeRep() else head(regName).typerep));
 }
 
 concrete production terminalExprReg
