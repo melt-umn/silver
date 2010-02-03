@@ -1,0 +1,9 @@
+declaredName 'tutorials:wriju:terminals'
+moduleNames ['core']
+defs [type('tutorials:wriju:terminals:Id_t', term('tutorials:wriju:terminals:Id_t', /[a-zA-Z]+/)), type('tutorials:wriju:terminals:IntLit_t', term('tutorials:wriju:terminals:IntLit_t', /[0-9]+/)), type('tutorials:wriju:terminals:WhiteSpace_t', term('tutorials:wriju:terminals:WhiteSpace_t', /[\t\n\ ]+/)), type('tutorials:wriju:terminals:LineComment_P', term('tutorials:wriju:terminals:LineComment_P', /[\/][\/].*/)), name('Id_t', 'tutorials:wriju:terminals:Id_t'), name('IntLit_t', 'tutorials:wriju:terminals:IntLit_t'), name('WhiteSpace_t', 'tutorials:wriju:terminals:WhiteSpace_t'), name('LineComment_P', 'tutorials:wriju:terminals:LineComment_P'), @('lexeme', 'tutorials:wriju:terminals:Id_t'), @('line', 'tutorials:wriju:terminals:Id_t'), @('column', 'tutorials:wriju:terminals:Id_t'), @('lexeme', 'tutorials:wriju:terminals:IntLit_t'), @('line', 'tutorials:wriju:terminals:IntLit_t'), @('column', 'tutorials:wriju:terminals:IntLit_t'), @('lexeme', 'tutorials:wriju:terminals:WhiteSpace_t'), @('line', 'tutorials:wriju:terminals:WhiteSpace_t'), @('column', 'tutorials:wriju:terminals:WhiteSpace_t'), @('lexeme', 'tutorials:wriju:terminals:LineComment_P'), @('line', 'tutorials:wriju:terminals:LineComment_P'), @('column', 'tutorials:wriju:terminals:LineComment_P')]
+exportedGrammars []
+condBuild []
+impliedName 'tutorials:wriju:terminals'
+terminals [('tutorials:wriju:terminals:Id_t', [], /[a-zA-Z]+/), ('tutorials:wriju:terminals:IntLit_t', [], /[0-9]+/), ('tutorials:wriju:terminals:WhiteSpace_t', [ignore], /[\t\n\ ]+/), ('tutorials:wriju:terminals:LineComment_P', [ignore], /[\/][\/].*/)]
+nonterminals []
+rules []
