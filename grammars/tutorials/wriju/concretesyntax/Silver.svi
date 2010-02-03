@@ -1,0 +1,9 @@
+declaredName 'tutorials:wriju:concretesyntax'
+moduleNames ['core','tutorials:wriju:terminals']
+defs [type('tutorials:wriju:concretesyntax:Root_c', nt('tutorials:wriju:concretesyntax:Root_c')), value('tutorials:wriju:concretesyntax:root', prod([term('tutorials:wriju:terminals:IntLit_t', /[0-9]+/)], nt('tutorials:wriju:concretesyntax:Root_c'))), name('Root_c', 'tutorials:wriju:concretesyntax:Root_c'), name('pp', 'tutorials:wriju:concretesyntax:pp'), name('root', 'tutorials:wriju:concretesyntax:root'), attr('tutorials:wriju:concretesyntax:pp', string), prod(signature('tutorials:wriju:concretesyntax:root', [element('t', 't', 't', term('tutorials:wriju:terminals:IntLit_t', /[0-9]+/))], element('r', 'r', 'r', nt('tutorials:wriju:concretesyntax:Root_c')))), syn('tutorials:wriju:concretesyntax:pp'), @('core:patProdName', 'tutorials:wriju:concretesyntax:Root_c'), @('core:patChildList', 'tutorials:wriju:concretesyntax:Root_c'), @('tutorials:wriju:concretesyntax:pp', 'tutorials:wriju:concretesyntax:Root_c')]
+exportedGrammars []
+condBuild []
+impliedName 'tutorials:wriju:concretesyntax'
+terminals []
+nonterminals ['tutorials:wriju:concretesyntax:Root_c']
+rules [('tutorials:wriju:concretesyntax:Root_c', [('tutorials:wriju:concretesyntax','tutorials:wriju:concretesyntax:root',['tutorials:wriju:terminals:IntLit_t'],[])])]
