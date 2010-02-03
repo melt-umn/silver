@@ -9,5 +9,5 @@ synthesized attribute pp::String;
 concrete production root
 r::Root_c ::= t::IntLit_t
 {
-	r.pp = "Root: " ++ t.lexeme;
+	r.pp = "The Root: " ++ t.lexeme;
 }
