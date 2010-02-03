@@ -14,55 +14,41 @@ aspect production run
 top::RunUnit ::= iIn::IO args::String
 {
   preOps <- if a.displayVersion then [printVersion()] else [];
-  postOps <- [doInterfaces(spath, unit.compiledList ++ reUnit.compiledList ++ condUnit.compiledList, needRecompileNames, a.doClean)];
+  postOps <- [doInterfaces(unit.compiledList ++ reUnit.compiledList ++ condUnit.compiledList, silvergen)];
 }
 
 abstract production printVersion
 top::Unit ::= 
 {
   top.order = 0;
-  top.io = print("Silver Version 0.2\n", top.ioIn);
+  top.io = print("Silver Version 0.7 pre release\n", top.ioIn);
   top.code = -1;
 }
 
-
-
 abstract production doInterfaces
-top::Unit ::= sPath::[String] u::[Decorated RootSpec] rc::[String] clean::Boolean
+top::Unit ::= u::[Decorated RootSpec] genPath::String
 {
   top.order = 3;
-  top.io = writeInterfaces(top.ioIn, u, "Silver.svi", sPath, rc, clean);
+  top.io = writeInterfaces(top.ioIn, u, genPath);
   top.code = 0;
 }
 
 function writeInterfaces
-IO ::= iIn::IO r::[Decorated RootSpec] f::String sPath::[String] rc::[String] clean::Boolean{
-  return if null(r) then iIn else writeInterfaces(writeInterface(iIn, head(r), f, sPath, rc, clean), tail(r), f, sPath, rc, clean);
+IO ::= iIn::IO r::[Decorated RootSpec] genPath::String
+{
+  return if null(r) then iIn else writeInterfaces(writeInterface(iIn, head(r), genPath), tail(r), genPath);
 }
 
 function writeInterface
-IO ::= iIn::IO r::Decorated RootSpec f::String sPath::[String] rc::[String] clean::Boolean{ 
+IO ::= iIn::IO r::Decorated RootSpec genPath::String
+{
+  local attribute pathName :: String;
+  pathName = genPath ++ "src/" ++ substitute("/", ":", r.impliedName) ++ "/";
 
-  --the grammar path ':' replaced by '/'
-  local attribute gPath :: String;
-  gPath = getGrammarPath(r.impliedName) ++ "/";
+  local attribute mkio :: IO;
+  mkio = mkdir(pathName, iIn).io;
 
-  -- the location (if found) of the grammar
-  local attribute grammarLocation :: MaybeIOStr;
-  grammarLocation = findGrammarLocation(iIn, gPath, sPath);
-
-  -- the list of files from the grammar directory
-  local attribute temp_files :: IOStringList;
-  temp_files = listContents(grammarLocation.sValue, grammarLocation.io);
-
-  -- the list of silver files for the grammar
-  local attribute files :: [String];
-  files = filterFiles(convert(temp_files.stringList));
-
-  local attribute hasInterface :: IOBoolean;
-  hasInterface = isValidInterface(temp_files.io, "Silver.svi", grammarLocation.sValue, files);
-
-  return if clean || !hasInterface.bValue || contains(r.impliedName, rc)
-	 then writeFile(grammarLocation.sValue ++ f, r.unparse, print("Writing interface for grammar " ++ r.impliedName ++ "\n\t[" ++ grammarLocation.sValue ++ f ++ "]\n", hasInterface.io))
-	 else hasInterface.io;
+  return writeFile(pathName ++ "Silver.svi",
+                   r.unparse,
+                   print("Writing interface for grammar " ++ r.impliedName ++ "\n\t[" ++ pathName ++ "Silver.svi]\n", mkio));
 }
