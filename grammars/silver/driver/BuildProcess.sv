@@ -45,12 +45,13 @@ top::RunUnit ::= iIn::IO args::String
   production attribute silverhome :: String;
   silverhome = envSH.sValue ++ "/"; -- TODO this works fine unconditionally... for now?
   
-  production attribute silvergen :: String;
-  silvergen = (if a.genLocation == "" then envSG.sValue else a.genLocation) ++ "/"; -- TODO this (/) works fine unconditionally... for now?
+  -- This is a collection so that in the future translations can have their own sub-directories
+  production attribute silvergen :: String with ++;
+  silvergen := (if a.genLocation == "" then envSG.sValue else a.genLocation) ++ "/"; -- TODO this (/) works fine unconditionally... for now?
 
   --the grammar path ':' replaced by '/'
   local attribute gpath :: String;
-  gpath = getGrammarPath(a.gName) ++ "/";
+  gpath = substitute("/", ":", a.gName) ++ "/";
 
   -- operations to execute _before_ we parse and link the grammars.
   production attribute preOps :: [Unit] with ++;
@@ -79,7 +80,7 @@ top::RunUnit ::= iIn::IO args::String
   -- we give a starting point and it will find and compile
   -- the other grammars needed
   production attribute unit :: CompilationUnit;
-  unit = compileGrammars(grammarLocation.io, spath, [a.gName] ++ extraUnit.needGrammars, extraUnit.seenGrammars, a.doClean);
+  unit = compileGrammars(grammarLocation.io, spath, [a.gName] ++ extraUnit.needGrammars, extraUnit.seenGrammars, a.doClean, silvergen);
   unit.rParser = top.rParser;
   unit.iParser = top.iParser;
   unit.compiledGrammars = grammars;
@@ -89,7 +90,7 @@ top::RunUnit ::= iIn::IO args::String
   grammarsBeforeCond = unit.compiledList ++ getSpecs(unit.interfaces) ++ extraUnit.compiledList;
 
   production attribute condUnit :: CompilationUnit;
-  condUnit = compileConditionals(unit.io, spath, collectGrammars(grammarsBeforeCond), a.doClean, grammarsBeforeCond);
+  condUnit = compileConditionals(unit.io, spath, collectGrammars(grammarsBeforeCond), a.doClean, grammarsBeforeCond, silvergen);
   condUnit.rParser = top.rParser;
   condUnit.iParser = top.iParser;
   condUnit.compiledGrammars = grammars;
@@ -116,7 +117,7 @@ top::RunUnit ::= iIn::IO args::String
 
   -- the grammars that we have recompiled
   production attribute reUnit :: CompilationUnit;
-  reUnit = compileGrammars(condUnit.io, spath, needRecompileNames, seenNames, true);
+  reUnit = compileGrammars(condUnit.io, spath, needRecompileNames, seenNames, true, silvergen);
   reUnit.rParser = top.rParser;
   reUnit.iParser = top.iParser;
   reUnit.compiledGrammars = grammars;
@@ -186,14 +187,14 @@ top::Unit ::= s::String
 }
 
 abstract production compileConditionals
-top::CompilationUnit ::= iIn::IO sPath::[String] seen::[String] clean::Boolean sofar::[Decorated RootSpec]
+top::CompilationUnit ::= iIn::IO sPath::[String] seen::[String] clean::Boolean sofar::[Decorated RootSpec] genPath::String
 {
   local attribute foundGrammar :: [String]; -- really more of a Maybe String
   foundGrammar = findTriggeredGrammar(seen, collectCondBuild(sofar));
 
   -- the current grammar
   production attribute now :: CompilationUnit;
-  now = compileGrammars(iIn, sPath, foundGrammar, seen, clean);
+  now = compileGrammars(iIn, sPath, foundGrammar, seen, clean, genPath);
   now.rParser = top.rParser;
   now.iParser = top.iParser;
   now.compiledGrammars = top.compiledGrammars;
@@ -203,7 +204,7 @@ top::CompilationUnit ::= iIn::IO sPath::[String] seen::[String] clean::Boolean s
 
   --the recursion
   production attribute recurse :: CompilationUnit;
-  recurse = compileConditionals(now.io, sPath, now.seenGrammars, clean, now.compiledList ++ getSpecs(now.interfaces) ++ sofar);
+  recurse = compileConditionals(now.io, sPath, now.seenGrammars, clean, now.compiledList ++ getSpecs(now.interfaces) ++ sofar, genPath);
   recurse.rParser = top.rParser;
   recurse.iParser = top.iParser;
   recurse.compiledGrammars = top.compiledGrammars;
@@ -306,11 +307,11 @@ top::CompilationUnit ::= grams::[[String]] need::[String] seen::[String]
 --this production compiles the given grammars and dynamically adds new grammars to compile to the list.
 --grammars will only be compiled once.
 abstract production compileGrammars
-top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] clean::Boolean
+top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] clean::Boolean genPath::String
 {
   -- the current grammar
   production attribute now :: Grammar;
-  now = compileGrammar(iIn, head(need), sPath, clean);
+  now = compileGrammar(iIn, head(need), sPath, clean, genPath);
   now.rParser = top.rParser;
   now.iParser = top.iParser;
   now.compiledGrammars = top.compiledGrammars;
@@ -330,7 +331,7 @@ top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] c
 
   --the recursion
   production attribute recurse :: CompilationUnit;
-  recurse = compileGrammars(now.io, sPath, new_need, new_seen, clean);
+  recurse = compileGrammars(now.io, sPath, new_need, new_seen, clean, genPath);
   recurse.rParser = top.rParser;
   recurse.iParser = top.iParser;
   recurse.compiledGrammars = top.compiledGrammars;
@@ -352,15 +353,15 @@ top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] c
 
 nonterminal Grammar with io, rSpec, rParser, compiledGrammars, found, interfaces, iParser;
 abstract production compileGrammar
-top::Grammar ::= iIn::IO gn::String sPath::[String] clean::Boolean
+top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genPath::String
 {
   --the grammar path ':' replaced by '/'
-  local attribute gPath :: String;
-  gPath = getGrammarPath(gn) ++ "/";
+  local attribute gramPath :: String;
+  gramPath = substitute("/", ":", grammarName) ++ "/";
 
   -- the location (if found) of the grammar
   local attribute grammarLocation :: MaybeIOStr;
-  grammarLocation = findGrammarLocation(iIn, gPath, sPath);
+  grammarLocation = findGrammarLocation(iIn, gramPath, sPath);
 
   -- the list of files from the grammar directory
   local attribute temp_files :: IOStringList;
@@ -371,21 +372,21 @@ top::Grammar ::= iIn::IO gn::String sPath::[String] clean::Boolean
   files = filterFiles(convert(temp_files.stringList));
 
   local attribute hasInterface :: IOBoolean;
-  hasInterface = isValidInterface(temp_files.io, "Silver.svi", grammarLocation.sValue, files);
+  hasInterface = isValidInterface(temp_files.io, genPath ++ "src/" ++ gramPath ++ "Silver.svi", grammarLocation.sValue, files);
 
   local attribute pr :: IO;
-  pr = print("Compiling Grammar: " ++ gn ++ "\n", hasInterface.io); 
+  pr = print("Compiling Grammar: " ++ grammarName ++ "\n", hasInterface.io); 
 	
   --the result of compiling all of the files.
   production attribute cu :: Roots;
-  cu = compileFiles(pr, gn, files, grammarLocation.sValue);
+  cu = compileFiles(pr, grammarName, files, grammarLocation.sValue);
   cu.rParser = top.rParser;
   cu.env = toEnv(appendDefs(cu.defs, makeDefaultDefs()));
   cu.globalImports = cu.importedDefs;
   cu.compiledGrammars = top.compiledGrammars;
 
   production attribute inf :: IOInterface;
-  inf = compileInterface(pr, "Silver.svi", grammarLocation.sValue);
+  inf = compileInterface(pr, "Silver.svi", genPath ++ "src/" ++ gramPath);
   inf.iParser = top.iParser;
 
   top.found = grammarLocation.found;
@@ -396,16 +397,16 @@ top::Grammar ::= iIn::IO gn::String sPath::[String] clean::Boolean
 
 
 function isValidInterface
-IOBoolean ::= iIn::IO f::String gpath::String fs::[String]{
-
+IOBoolean ::= iIn::IO ifacefile::String grammarPath::String fs::[String]
+{
   local attribute hasInterface :: IOBoolean;
-  hasInterface = isFile(gpath ++ f, iIn);
+  hasInterface = isFile(ifacefile, iIn);
 
   local attribute modTime :: IOInteger;
-  modTime = fileTime(gpath ++ f, hasInterface.io);
+  modTime = fileTime(ifacefile, hasInterface.io);
 
   local attribute maxTime :: IOInteger;
-  maxTime = fileTimes(modTime.io, gpath, fs);
+  maxTime = fileTimes(modTime.io, grammarPath, fs);
 
   return if !hasInterface.bValue then ioBoolean(hasInterface.io, false) else ioBoolean(maxTime.io, modTime.iValue > maxTime.iValue);
 }
@@ -429,19 +430,19 @@ nonterminal Interface with rSpec, lastModified, interfaceFile, interfaceLocation
 nonterminal IOInterface with io, interfaces, iParser;
 
 abstract production compileInterface
-top::IOInterface ::= iIn::IO f::String gpath::String{
+top::IOInterface ::= iIn::IO f::String genPath::String{
 
   local attribute modTime :: IOInteger;
-  modTime = fileTime(gpath ++ f, iIn);
+  modTime = fileTime(genPath ++ f, iIn);
 
   local attribute i :: IO;
-  i = print("\t[" ++ gpath ++ f ++ "]\n", modTime.io);
+  i = print("\t[" ++ genPath ++ f ++ "]\n", modTime.io);
 
   local attribute text :: IOString;
-  text = readFile(gpath ++ f, i);
+  text = readFile(genPath ++ f, i);
  
   local attribute inf :: Interface; 
-  inf = fullInterface(modTime.iValue, f, gpath, top.iParser(text.sValue).spec);
+  inf = fullInterface(modTime.iValue, f, genPath, top.iParser(text.sValue).spec);
 
   top.interfaces = [inf];
   top.io = text.io;
@@ -541,18 +542,6 @@ Boolean ::= f::String
 
   return l >= 3 && substring(l-3, l, f) == ".sv" && substring(0,1,f) != ".";
 }
-
---takes in a grammar name and returns a grammar path
-function getGrammarPath
-String ::= n::String
-{
-  return if n == "" 
-	 then "" 
-	 else if substring(0, 1, n) == ":"
-	      then "/" ++ getGrammarPath(substring(1, length(n), n))
-	      else substring(0, 1, n) ++ getGrammarPath(substring(1, length(n), n));
-}
-
 
 --takes in a grammar path and a list of possible locations and returns the correct location if any.
 nonterminal MaybeIOStr with sValue, found, io;
