@@ -37,7 +37,7 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
 
   acode.env = appendDefsEnv(appendDefs(acode.defs,terms.defs),top.env); -- terminal attrs?
 
-  acode.signature = decorate namedSignatureDefault() with {}; -- TODO HACK
+  acode.signature = namedNamedSignature(top.grammarName ++ ":_disam" ++ toString($1.line));
   acode.signatureEnv = toEnv(terms.defs);
   acode.localsEnv = toEnv(acode.defs);
 

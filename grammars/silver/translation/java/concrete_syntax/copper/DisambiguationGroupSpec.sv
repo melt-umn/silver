@@ -17,9 +17,11 @@ Decorated DisambiguationGroupSpec ::= members::[String] acode::String {
 abstract production i_disambiguationGroupSpec
 top::DisambiguationGroupSpec ::= members::[String] acode::String
 {
-   top.groupName = "D" ++ toString(genInt());
-   top.groupMembers = members;
-   top.actionCode = acode;
+  -- this genInt is okay because it literally doesn't matter at all.
+  -- Copper demands a name, but it's basically unused.
+  top.groupName = "D" ++ toString(genInt());
+  top.groupMembers = members;
+  top.actionCode = acode;
 }
 
 synthesized attribute disambiguationGroupDcls :: [Decorated DisambiguationGroupSpec];

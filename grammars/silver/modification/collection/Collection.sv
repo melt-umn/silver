@@ -121,7 +121,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
   top.location = loc(top.file, $1.line, $1.column);
 
   production attribute fName :: String;
-  fName = toString(genInt()) ++ ":" ++ a.name;
+  fName = top.signature.fullName ++ ":l_" ++ a.name;
 
   top.productionAttributes = top.defs;
   top.defs = addValueDcl(fName, collectionTypeRep(q.operation, te.typerep), 

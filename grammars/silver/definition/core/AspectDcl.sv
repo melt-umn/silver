@@ -139,7 +139,7 @@ top::AspectProductionLHS ::= '_'
 {
   top.pp = "_";
   top.location = loc(top.file, $1.line, $1.column);
-  forwards to aspectProductionLHSId(nameId(terminal(Id_t, "_" ++ toString(genInt()))));
+  forwards to aspectProductionLHSId(nameId(terminal(Id_t, "p_top")));
 }
 
 concrete production aspectProductionLHSId
@@ -205,6 +205,7 @@ top::AspectRHS ::= rhs::AspectRHSElem
   top.warnings := [];
   top.inputElements = rhs.inputElements;
 
+  rhs.deterministicCount = 0;
   rhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
 }
 
@@ -220,10 +221,12 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 
   top.inputElements = h.inputElements ++ t.inputElements;
 
+  h.deterministicCount = length(t.inputElements);
   h.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
   t.realSignature = if null(top.realSignature) then [] else tail(top.realSignature);
 }
 
+attribute deterministicCount occurs on AspectRHSElem;
 
 concrete production aspectRHSElemNone
 top::AspectRHSElem ::= '_'
@@ -231,7 +234,7 @@ top::AspectRHSElem ::= '_'
   top.pp = "_";
   top.location = loc(top.file, $1.line, $1.column);
 
-  forwards to aspectRHSElemId(nameId(terminal(Id_t, "_" ++ toString(genInt()))));
+  forwards to aspectRHSElemId(nameId(terminal(Id_t, "p_" ++ toString(top.deterministicCount), $1.line, $1.column)));
 }
 
 concrete production aspectRHSElemId
