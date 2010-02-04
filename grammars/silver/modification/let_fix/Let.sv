@@ -6,8 +6,8 @@ terminal Let_kwd 'let' lexer classes {KEYWORD};
 terminal In_kwd 'in' lexer classes {KEYWORD};
 terminal End_kwd 'end' lexer classes {KEYWORD};
 
-nonterminal LetAssigns with pp, defs, env, signatureEnv, localsEnv, signature, errors;
-nonterminal AssignExpr with pp, defs, env, signatureEnv, localsEnv, signature, errors;
+nonterminal LetAssigns with pp, file, grammarName, defs, env, signatureEnv, localsEnv, signature, errors;
+nonterminal AssignExpr with pp, file, grammarName, defs, env, signatureEnv, localsEnv, signature, errors;
 
 concrete production nameLet
 top::Name ::= 'let'
@@ -56,11 +56,11 @@ concrete production assignExpr
 top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
 {
   production attribute fName :: String;
-  fName = "l:" ++ toString(genInt()) ++ ":" ++ id.name;
+  fName = top.signature.fullName ++ ":l_" ++ id.name;
 
   top.pp = id.name ++ " = " ++ e.pp;
   top.defs = addFullNameDcl(id.name, fName, addValueDcl(fName, t.typerep, emptyDefs()));
-  top.errors := e.errors;
+  top.errors := e.errors ++ t.errors;
 
   e.expected = expected_type(t.typerep);
 }

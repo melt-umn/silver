@@ -42,12 +42,12 @@ IO ::= iIn::IO r::[Decorated RootSpec] genPath::String
 function writeInterface
 IO ::= iIn::IO r::Decorated RootSpec genPath::String
 {
-  local attribute pathName :: String;
+  production attribute pathName :: String;
   pathName = genPath ++ "src/" ++ substitute("/", ":", r.impliedName) ++ "/";
 
-  local attribute mkio :: IO;
+  production attribute mkio :: IO;
   mkio = mkdir(pathName, iIn).io;
-
+  
   return writeFile(pathName ++ "Silver.svi",
                    r.unparse,
                    print("Writing interface for grammar " ++ r.impliedName ++ "\n\t[" ++ pathName ++ "Silver.svi]\n", mkio));

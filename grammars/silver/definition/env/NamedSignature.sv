@@ -43,10 +43,16 @@ String ::= s::[Decorated NamedSignatureElement]{
   return if null(s) then "" else head(s).unparse ++ (if null(tail(s)) then "" else (", " ++ unparseSignatureElementsHelp(tail(s))));
 }
 
+function namedNamedSignature
+Decorated NamedSignature ::= fn::String{
+  return decorate i_namedSignature(fn, [], decorate namedSignatureElementDefault() with {}) with {};
+}
+
 function namedSignatureDcl
 Decorated NamedSignature ::= fn::String ie::[Decorated NamedSignatureElement] oe::Decorated NamedSignatureElement{
   return decorate i_namedSignature(fn, ie, oe) with {};
 }
+
 abstract production i_namedSignature
 top::NamedSignature ::= fn::String ie::[Decorated NamedSignatureElement] oe::Decorated NamedSignatureElement {
   top.unparse = "signature('" ++ fn ++ "', " ++ unparseSignatureElements(ie) ++ ", " ++ oe.unparse ++ ")";

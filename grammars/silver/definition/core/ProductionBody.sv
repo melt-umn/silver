@@ -157,7 +157,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
   top.productionAttributes = emptyDefs();
 
   production attribute fName :: String;
-  fName = top.grammarName ++ ":" ++ toString(genInt()) ++ ":" ++ a.name;
+  fName = top.signature.fullName ++ ":l_" ++ a.name;
 
   top.defs = addValueDcl(fName, te.typerep, 
 	     addFullNameDcl(a.name, fName,  emptyDefs()));
@@ -185,7 +185,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
   top.productionAttributes = top.defs;
 
   production attribute fName :: String;
-  fName = top.grammarName ++ ":" ++ toString(genInt()) ++ ":" ++ a.name;
+  fName = top.signature.fullName ++ ":l_" ++ a.name;
 
   top.defs = addValueDcl(fName, te.typerep, 
 	     addFullNameDcl(a.name, fName,  emptyDefs()));
@@ -213,7 +213,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   top.productionAttributes = top.defs;
 
   production attribute fName :: String;
-  fName = top.signature.fullName ++ ":forward";
+  fName = top.signature.fullName ++ ":l_forward";
 
   top.defs = addValueDcl(fName, top.signature.outputElement.typerep, 
 	     addFullNameDcl("forward", fName,  emptyDefs()));
@@ -233,7 +233,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
   top.productionAttributes = top.defs;
 
   production attribute fName :: String;
-  fName = top.signature.fullName ++ ":forward";
+  fName = top.signature.fullName ++ ":l_forward";
 
   top.defs = addValueDcl(fName, top.signature.outputElement.typerep, 
 	     addFullNameDcl("forward", fName,  emptyDefs()));

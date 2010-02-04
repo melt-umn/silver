@@ -110,6 +110,7 @@ top::ProductionRHS ::= rhs::ProductionRHSElem
   top.warnings := [];
 
   top.inputElements = rhs.inputElements;
+  rhs.deterministicCount = 0;
 }
 
 concrete production productionRHSCons
@@ -123,7 +124,11 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
   top.warnings := [];
 
   top.inputElements = h.inputElements ++ t.inputElements;
+  h.deterministicCount = length(t.inputElements);
 }
+
+-- used to avoid using gen int when not given an explicit name
+inherited attribute deterministicCount :: Integer occurs on ProductionRHSElem;
 
 concrete production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::Type
@@ -159,5 +164,5 @@ top::ProductionRHSElem ::= t::Type
   top.pp = t.pp;
   top.location = t.location;
 
-  forwards to productionRHSElem(nameId(terminal(Id_t, "_G_" ++ toString(genInt()))), terminal(HasType_t, "::="), t);
+  forwards to productionRHSElem(nameId(terminal(Id_t, "_G_" ++ toString(top.deterministicCount))), terminal(HasType_t, "::="), t);
 }
