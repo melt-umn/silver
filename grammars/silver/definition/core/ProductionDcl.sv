@@ -31,8 +31,13 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   er2 = if length(getValueDclOne(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
+  
+  local attribute er3 :: [Decorated Message];
+  er3 = if length(getFullNameDcl(id.name, top.env)) > 1 && null(er1)
+        then [err(top.location, "Production " ++ id.pp ++ " shares a name with another production from an imported grammar. Either this production is meant to be an aspect, or you should use 'import ... with " ++ id.pp ++ " as ...' to change the other production's apparent name.")]
+        else [];
 
-  top.errors := er1 ++ er2 ++ ns.errors ++ body.errors;
+  top.errors := er1 ++ er2 ++ er3 ++ ns.errors ++ body.errors;
   top.warnings := [];
 
   ns.env = appendDefsEnv(ns.defs, pushScope(top.env));
