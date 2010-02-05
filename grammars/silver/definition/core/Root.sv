@@ -66,7 +66,7 @@ abstract production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 {
   production attribute allImports :: ImportStmts with importStmtsAppend;
-  allImports := if top.grammarName == "core" 
+  allImports := if top.grammarName == "core" || contains("core", ims.moduleNames)
 		then ims 
 		else importStmtsCons(importStmt('import', moduleAll(qNameId(nameId(terminal(Id_t, "core")))), ';'), ims);
 
