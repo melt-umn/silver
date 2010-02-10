@@ -23,12 +23,12 @@ top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
 
   local attribute er3 :: [Decorated Message];
   er3 = if length(nfNames) > 1
-	then [err(top.location, "Nonterminal '" ++ nt.name ++ "' has multiple delarations.")] 
+	then [err(top.location, "Nonterminal '" ++ nt.name ++ "' has multiple declarations.")] 
 	else [];
 
   local attribute er4 :: [Decorated Message];
   er4 = if length(afNames) > 1
-	then [err(top.location, "Attribute '" ++ a.name ++ "' has multiple delarations.")] 
+	then [err(top.location, "Attribute '" ++ a.name ++ "' has multiple declarations.")] 
 	else [];
 
   top.errors := er1 ++ er2 ++ er3 ++ er4;

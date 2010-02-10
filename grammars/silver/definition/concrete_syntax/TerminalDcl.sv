@@ -5,9 +5,9 @@ import silver:definition:regex;
 
 
 nonterminal RegExpr with location, grammarName, file, pp, terminalRegExprSpec;
-nonterminal TerminalModifiers with location, file, pp, terminalModifiers, errors, env;
-nonterminal TerminalModifier with location, file, pp, terminalModifiers, errors, env;
-nonterminal TerminalKeywordModifier with  location, file, pp, terminalModifiers, errors, env;
+nonterminal TerminalModifiers with location, file, pp, terminalModifiers, errors, env, grammarName;
+nonterminal TerminalModifier with location, file, pp, terminalModifiers, errors, env, grammarName;
+nonterminal TerminalKeywordModifier with  location, file, pp, terminalModifiers, errors, env, grammarName;
 
 terminal Ignore_kwd /ignore/ lexer classes {KEYWORD};
 terminal Left_kwd /left/ lexer classes {KEYWORD};

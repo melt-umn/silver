@@ -124,7 +124,9 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
   acode.signatureEnv = emptyEnv();
   acode.localsEnv = toEnv(acode.defs);
 
-  acode.signature = error("No signature for terminal action code.");
+  acode.signature = namedNamedSignature(top.grammarName ++ ":_ta" ++ toString(genInt())); -- TODO: don't use genInt
+  
+  top.errors := acode.errors ++ acode.typeErrors; -- TODO POTENTIAL BUG: we check type errors separately from errors for a reason, right?
 
   forwards to terminalModifierDefault();
 }

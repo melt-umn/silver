@@ -43,7 +43,10 @@ String ::= grammar_name::String spec::Decorated ParserSpec
 "     <code><![CDATA[\n" ++
 "import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;\n" ++
 "     ]]></code>\n" ++
-"  </preamble>\n\n" ++
+"  </preamble>\n" ++
+"  <attribute id=\"context\" type=\"common.DecoratedNode\">\n" ++
+"    <code>context = common.TopNode.singleton;</code>\n" ++
+"  </attribute>\n\n" ++ 
 
              makeDisambiguateSpecString(spec.disambiguationGroupDcls) ++ "\n" ++
              makeParserAttrString(spec.parserAttrDcls) ++ "\n" ++
@@ -188,7 +191,10 @@ String ::= univLayout::String lhs::String rhs::[Decorated RHSSpec]
 "    <rhs>\n" ++
 	makeProdRHS(head(rhs).ruleRHS) ++
 "    </rhs>\n" ++
-"    <layout>" ++ univLayout ++ "</layout>\n" ++
+"    <layout>" ++ (if head(rhs).hasCustomLayout
+                   then generateCustomLayoutList("EmptyString" :: head(rhs).customLayout)
+                   else univLayout) ++
+    "</layout>\n" ++
 
 (if head(rhs).productionOperatorPrecedence != "" then
 "    <operator><term id=\"" ++ makeCopperName(head(rhs).productionOperatorPrecedence) ++ "\" /></operator>"
@@ -222,6 +228,14 @@ String ::= layouts::[Decorated TerminalSpec]{
          then ""
          else "<term id=\"" ++ makeCopperName(head(layouts).terminalName) ++ "\"/>" ++
               generateLayoutList(tail(layouts));
+}
+
+function generateCustomLayoutList
+String ::= layouts::[String]{
+  return if null(layouts)
+         then ""
+         else "<term id=\"" ++ makeCopperName(head(layouts)) ++ "\"/>" ++
+              generateCustomLayoutList(tail(layouts));
 }
 
 function filterIgnores

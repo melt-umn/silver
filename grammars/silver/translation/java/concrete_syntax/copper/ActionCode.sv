@@ -3,7 +3,7 @@ grammar silver:translation:java:concrete_syntax:copper;
 import silver:translation:java:env;
 import silver:definition:core;
 import silver:definition:concrete_syntax;
-import silver:definition:type:anytype;
+--import silver:definition:type:anytype;
 import silver:definition:env;
 import silver:translation:java:core;
 import silver:translation:java:concrete_syntax;
@@ -39,7 +39,7 @@ top::ProductionModifierSpec ::={
 aspect production i_rhsSpec
 top::RHSSpec ::= gn::String fn::String ns::[String] pm::[Decorated ProductionModifierSpec]
 {
-   top.actionCode = findProductionAction(pm);
+  top.actionCode = findProductionAction(pm);
 }
 
 function findProductionAction
