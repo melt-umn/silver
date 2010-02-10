@@ -183,13 +183,24 @@ top::Expr ::= 'terminal' '(' t::Type ',' e::Expr ')'
   top.typerep = t.typerep;
 }
 
-concrete production terminalFunction2
+concrete production terminalFunctionLineCol
 top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
 {
   top.pp = "terminal(" ++ t.pp ++ ", " ++ e1.pp ++ ", " ++ e2.pp ++ ", " ++ e3.pp ++ ")";
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := t.errors ++ e1.errors ++ e2.errors ++ e3.errors;
+  top.warnings := [];
+  top.typerep = t.typerep;
+}
+
+concrete production terminalFunctionInherited
+top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ')'
+{
+  top.pp = "terminal(" ++ t.pp ++ ", " ++ e1.pp ++ "," ++ e2.pp ++ ")";
+  top.location = loc(top.file, $1.line, $2.column);
+
+  top.errors := t.errors ++ e1.errors ++ e2.errors;
   top.warnings := [];
   top.typerep = t.typerep;
 }
