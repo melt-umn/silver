@@ -95,7 +95,7 @@ String ::= s::String r::String str::String
 
   return if i == -1
          then str
-         else substring(0, i, str) ++ s ++ substitute(s, r, substring(i+1, length(str), str));
+         else substring(0, i, str) ++ s ++ substitute(s, r, substring(i+length(r), length(str), str));
 }
 
 function startsWith
