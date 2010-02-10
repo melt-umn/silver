@@ -12,7 +12,7 @@ aspect production unknownLength
 top::Expr ::= e::Decorated Expr
 {
   local attribute er :: [Decorated Message];
-  er = [err(top.location, "Opperand to 'length(..)' is not compatible.")];
+  er = [err(top.location, "operand to 'length(..)' is not compatible.")];
 
   top.typeErrors = er ++ e.typeErrors;      
 }
@@ -25,12 +25,12 @@ top::Expr ::= 'indexOf' '(' e1::Expr ',' e2::Expr ')'
   local attribute er1 :: [Decorated Message];
   er1 = if (e1.typerep.typeName == "String") 
 	then []
-	else [err(top.location, "First opperand to 'indexof(...)' must be of type String.")];
+	else [err(top.location, "First operand to 'indexof(...)' must be of type String.")];
 
   local attribute er2 :: [Decorated Message];
   er2 = if (e2.typerep.typeName == "String") 
 	then []
-	else [err(top.location, "Second opperand to 'indexof(...)' must be of type String.")];
+	else [err(top.location, "Second operand to 'indexof(...)' must be of type String.")];
 }
 aspect production subStringFunction
 top::Expr ::= 'substring' '(' e1::Expr ',' e2::Expr ',' e3::Expr ')'
@@ -40,17 +40,17 @@ top::Expr ::= 'substring' '(' e1::Expr ',' e2::Expr ',' e3::Expr ')'
   local attribute er1 :: [Decorated Message];
   er1 = if (e1.typerep.typeName == "Integer") 
 	then []
-	else [err(top.location, "First opperand to 'substring(...)' must be of type Integer.")];
+	else [err(top.location, "First operand to 'substring(...)' must be of type Integer.")];
 
   local attribute er2 :: [Decorated Message];
   er2 = if (e2.typerep.typeName == "Integer") 
 	then []
-	else [err(top.location, "Second opperand to 'substring(...)' must be of type Integer.")];
+	else [err(top.location, "Second operand to 'substring(...)' must be of type Integer.")];
 
   local attribute er3 :: [Decorated Message];
   er3 = if (e3.typerep.typeName == "String") 
 	then []
-	else [err(top.location, "Third opperand to 'substring(...)' must be of type String.")];
+	else [err(top.location, "Third operand to 'substring(...)' must be of type String.")];
 
 
 }
@@ -60,7 +60,7 @@ top::Expr ::= 'error' '(' e::Expr ')'
   local attribute er :: [Decorated Message];
   er = if (e.typerep.typeName == "String") 
        then []
-       else [err(top.location, "Opperand to 'error(..)' must be of type String.")];
+       else [err(top.location, "operand to 'error(..)' must be of type String.")];
 
   top.typeErrors = er ++ e.typeErrors;      
 }
@@ -70,7 +70,7 @@ top::Expr ::= 'toInt' '(' e::Expr ')'
   local attribute er :: [Decorated Message];
   er = if (e.typerep.typeName == "String") || (e.typerep.typeName == "Float") 
        then []
-       else [err(top.location, "Opperand to 'toInt(..)' must be of type String or Float.")];
+       else [err(top.location, "operand to 'toInt(..)' must be of type String or Float.")];
 
   top.typeErrors = er ++ e.typeErrors;      
 }
@@ -80,7 +80,7 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
   local attribute er :: [Decorated Message];
   er = if (e.typerep.typeName == "String") || (e.typerep.typeName == "Integer") 
        then []
-       else [err(top.location, "Opperand to 'toFloat(..)' must be of type String or Integer.")];
+       else [err(top.location, "operand to 'toFloat(..)' must be of type String or Integer.")];
 
   top.typeErrors = er ++ e.typeErrors;      
 }
@@ -92,7 +92,7 @@ top::Expr ::= 'toString' '(' e::Expr ')'
 	  (e.typerep.typeName == "Float")  ||
           (e.typerep.typeName == "Boolean") 
        then []
-       else [err(top.location, "Opperand to 'toString(..)' must be of type Integer, Float or Boolean.")];
+       else [err(top.location, "operand to 'toString(..)' must be of type Integer, Float or Boolean.")];
 
   top.typeErrors = er ++ e.typeErrors;      
 }
@@ -103,7 +103,7 @@ top::Expr ::= 'isDigit' '(' e::Expr ')'
   local attribute er :: [Decorated Message];
   er = if e.typerep.typeName == "String"
        then []
-       else [err(top.location, "Opperand to 'isDigit(..)' must be of type String.")];
+       else [err(top.location, "operand to 'isDigit(..)' must be of type String.")];
 
   top.typeErrors = er ++ e.typeErrors;      
 }
@@ -114,7 +114,7 @@ top::Expr ::= 'isAlpha' '(' e::Expr ')'
   local attribute er :: [Decorated Message];
   er = if e.typerep.typeName == "String"
        then []
-       else [err(top.location, "Opperand to 'isAlpha(..)' must be of type String.")];
+       else [err(top.location, "operand to 'isAlpha(..)' must be of type String.")];
 
   top.typeErrors = er ++ e.typeErrors;      
 }
@@ -125,7 +125,7 @@ top::Expr ::= 'isSpace' '(' e::Expr ')'
   local attribute er :: [Decorated Message];
   er = if e.typerep.typeName == "String"
        then []
-       else [err(top.location, "Opperand to 'isSpace(..)' must be of type String.")];
+       else [err(top.location, "operand to 'isSpace(..)' must be of type String.")];
 
   top.typeErrors = er ++ e.typeErrors;      
 }
@@ -136,7 +136,7 @@ top::Expr ::= 'isLower' '(' e::Expr ')'
   local attribute er :: [Decorated Message];
   er = if e.typerep.typeName == "String"
        then []
-       else [err(top.location, "Opperand to 'isLower(..)' must be of type String.")];
+       else [err(top.location, "operand to 'isLower(..)' must be of type String.")];
 
   top.typeErrors = er ++ e.typeErrors;      
 }
@@ -147,7 +147,7 @@ top::Expr ::= 'isUpper' '(' e::Expr ')'
   local attribute er :: [Decorated Message];
   er = if e.typerep.typeName == "String"
        then []
-       else [err(top.location, "Opperand to 'isUpper(..)' must be of type String.")];
+       else [err(top.location, "operand to 'isUpper(..)' must be of type String.")];
 
   top.typeErrors = er ++ e.typeErrors;      
 }
@@ -159,7 +159,7 @@ top::Expr ::= 'new' '(' e::Expr ')'
   local attribute er :: [Decorated Message];
   er = if (e.typerep.isDecorated) 
        then []
-       else [err(top.location, "Opperand to 'new(..)' must be a Decorated Nonterminal.")];
+       else [err(top.location, "operand to 'new(..)' must be a Decorated Nonterminal.")];
 
   top.typeErrors = er ++ e.typeErrors;      
 }
@@ -169,7 +169,7 @@ top::Expr ::= 'terminal' '(' t::Type ',' e::Expr ')'
   local attribute er :: [Decorated Message];
   er = if (e.typerep.typeName == "String") 
        then []
-       else [err(top.location, "Opperand to 'terminal(..)' must be of type String.")];
+       else [err(top.location, "operand to 'terminal(..)' must be of type String.")];
 
   top.typeErrors = er ++ e.typeErrors;      
 }
@@ -179,22 +179,22 @@ top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
   local attribute er1 :: [Decorated Message];
   er1 = if (t.typerep.isTerminal) 
         then []
-        else [err(top.location, "First Opperand to 'terminal(..)' must be a Terminal.")];
+        else [err(top.location, "First operand to 'terminal(..)' must be a Terminal.")];
 
   local attribute er2 :: [Decorated Message];
   er2 = if (e1.typerep.typeName == "String") 
         then []
-        else [err(top.location, "Second Opperand to 'terminal(..)' must be of type String.")];
+        else [err(top.location, "Second operand to 'terminal(..)' must be of type String.")];
 
   local attribute er3 :: [Decorated Message];
   er3 = if (e2.typerep.typeName == "Integer") 
         then []
-        else [err(top.location, "Third Opperand to 'terminal(..)' must be of type Integer.")];
+        else [err(top.location, "Third operand to 'terminal(..)' must be of type Integer.")];
 
   local attribute er4 :: [Decorated Message];
   er4 = if (e3.typerep.typeName == "Integer") 
         then []
-        else [err(top.location, "Fourth Opperand to 'terminal(..)' must be of type Integer.")];
+        else [err(top.location, "Fourth operand to 'terminal(..)' must be of type Integer.")];
 
   top.typeErrors = er1 ++ er2 ++ er3 ++ er4 ++ e1.typeErrors ++ e2.typeErrors ++ e3.typeErrors;      
 }

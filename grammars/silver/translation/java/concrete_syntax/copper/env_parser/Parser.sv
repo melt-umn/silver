@@ -87,6 +87,7 @@ top::aRootSpecPart ::= ParserAttrTerm '[' n::Name ',' t::aTypeRep ',' s::StringT
 }
 
 terminal ActionTerm 'action' lexer classes {C_1};
+terminal LayoutTerm 'layout' lexer classes {C_1};
 
 concrete production aTerminalModifierSpecAction
 top::aTerminalModifierSpec ::= 'action' s::StringTerm {
@@ -97,6 +98,11 @@ top::aTerminalModifierSpec ::= 'action' s::StringTerm {
 concrete production aProductionModifierSpecAction
 top::aProductionModifierSpec ::= 'action' s::StringTerm {
   top.productionModifiers = [actionProductionModifierSpec(decodeStringTerm(s.lexeme))];
+}
+
+concrete production aProductionModifierSpecLayout
+top::aProductionModifierSpec ::= 'layout' n::aNames {
+  top.productionModifiers = [layoutProductionModifierSpec(n.names)];
 }
 
 terminal ParserAttrTerm 'parserAttr' lexer classes {C_1};
