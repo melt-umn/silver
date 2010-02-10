@@ -88,13 +88,21 @@ top::Expr ::= 'new' '(' e::Expr ')'
 {
   top.translation = "((" ++ e.translation ++ ").undecorate())";
 }
+
 aspect production terminalFunction
 top::Expr ::= 'terminal' '(' t::Type ',' e::Expr ')'
 {
   top.translation = "(new common.Terminal(" ++ e.translation ++ ".toString(), -1, -1))";
 }
-aspect production terminalFunction2
+
+aspect production terminalFunctionLineCol
 top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
 {
   top.translation = "(new common.Terminal(" ++ e1.translation ++ ".toString(), " ++ e2.translation ++ ", " ++ e3.translation ++ "))";
+}
+
+aspect production terminalFunctionInherited
+top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ')'
+{
+  top.translation = "(new common.Terminal(" ++ e1.translation ++ ".toString(), " ++ e2.translation ++ "))";
 }

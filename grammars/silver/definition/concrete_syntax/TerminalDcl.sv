@@ -29,7 +29,9 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
 	     addFullNameDcl(id.name, fName,
 	     addOccursDcl("lexeme", fName,
  	     addOccursDcl("line", fName,
-	     addOccursDcl("column", fName, emptyDefs())))));
+	     addOccursDcl("column", fName,
+	     addOccursDcl("filename", fName,
+	     emptyDefs()))))));
 
   local attribute er1 :: [Decorated Message];
   er1 = if length(getFullNameDclOne(id.name, top.env)) > 1

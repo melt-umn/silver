@@ -28,6 +28,7 @@ String ::= grammar_name::String spec::Decorated ParserSpec
   local attribute s :: String;
   s = makeCopperName(spec.startName);
 
+  -- Copper does something odd with layouts, apparently.
   local attribute emptyStr :: Decorated TerminalSpec;
   emptyStr = terminalSpec("EmptyString", [ignoreTerminalModifierSpec()], decorate Rtoeps() with {});
 
@@ -121,7 +122,7 @@ String ::= specs::[Decorated TerminalSpec] grammar_name::String
 
 "  <term id=\"" ++ makeCopperName(head(specs).terminalName) ++ "\">\n" ++
 "    <code><![CDATA[\n" ++
-"RESULT = new common.Terminal(lexeme,virtualLocation.getLine(),virtualLocation.getColumn());\n" ++
+"RESULT = new common.Terminal(lexeme,virtualLocation.getLine(),virtualLocation.getColumn(),virtualLocation.getFileName());\n" ++
 	head(specs).actionCode ++ 
 "    ]]></code>\n" ++
 "    <classes>\n" ++
@@ -192,7 +193,7 @@ String ::= univLayout::String lhs::String rhs::[Decorated RHSSpec]
 	makeProdRHS(head(rhs).ruleRHS) ++
 "    </rhs>\n" ++
 "    <layout>" ++ (if head(rhs).hasCustomLayout
-                   then generateCustomLayoutList("EmptyString" :: head(rhs).customLayout)
+                   then generateCustomLayoutList(head(rhs).customLayout)
                    else univLayout) ++
     "</layout>\n" ++
 

@@ -256,7 +256,9 @@ Decorated Defs ::=
 	      addFullNameDcl("column", "column", 
 	      addSynthesizedDcl("column", 
 	      addAttributeDcl("column", integerTypeRep(),
-	      emptyDefs())))))))));
+	      addSynthesizedDcl("filename", 
+	      addAttributeDcl("filename", stringTypeRep(),
+	      emptyDefs())))))))))));
 }
 
 ----------------------------------------------------------------------------------------------------
