@@ -1,8 +1,8 @@
-grammar edu:umn:cs:melt:tutorial:expr:abstractsyntax ;
+grammar tutorials:expr:abstractsyntax ;
 
 -- This file defines arithmetic as was done in tutorial:dc.
 
-import edu:umn:cs:melt:tutorial:expr:terminals ;
+import tutorials:expr:terminals ;
 
 nonterminal Expr with pp, value, errors ;
 
@@ -34,7 +34,7 @@ abstract production div
 quo::Expr ::= l::Expr  op::Slash_t  r::Expr
 {
  quo.pp = "(" ++ l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")";
- quo.value = ftoi ( itof(l.value) / itof(r.value) ) ;
+ quo.value = 9999 ; -- ftoi ( itof(l.value) / itof(r.value) ) ;
  quo.errors := l.errors ++ r.errors ;
 }
 

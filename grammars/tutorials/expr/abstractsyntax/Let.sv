@@ -1,6 +1,6 @@
-grammar edu:umn:cs:melt:tutorial:expr:abstractsyntax ;
+grammar tutorials:expr:abstractsyntax ;
 
-import edu:umn:cs:melt:tutorial:expr:terminals ;
+import tutorials:expr:terminals ;
 
 autocopy attribute env :: [ Binding ] ;
 attribute env occurs on Expr ;

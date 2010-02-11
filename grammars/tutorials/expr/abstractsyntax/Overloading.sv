@@ -1,4 +1,4 @@
-grammar edu:umn:cs:melt:tutorial:expr:abstractsyntax ;
+grammar tutorials:expr:abstractsyntax ;
 
 -- Operator overloading is not supported in the original
 -- version of the tutorial:expr language. 

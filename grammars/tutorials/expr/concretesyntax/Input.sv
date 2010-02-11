@@ -1,7 +1,7 @@
-grammar edu:umn:cs:melt:tutorial:expr:concretesyntax ;
+grammar tutorials:expr:concretesyntax ;
 
-import edu:umn:cs:melt:tutorial:expr:terminals ;
-import edu:umn:cs:melt:tutorial:expr:abstractsyntax ;
+import tutorials:expr:terminals ;
+import tutorials:expr:abstractsyntax ;
 
 concrete production input_c
 r::Root_c ::= i::Input_t '('  id::Id_t ')'  body::Expr_c

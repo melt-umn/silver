@@ -1,7 +1,7 @@
-grammar edu:umn:cs:melt:tutorial:expr:concretesyntax ;
+grammar tutorials:expr:concretesyntax ;
 
-import edu:umn:cs:melt:tutorial:expr:terminals ;
-import edu:umn:cs:melt:tutorial:expr:abstractsyntax ;
+import tutorials:expr:terminals ;
+import tutorials:expr:abstractsyntax ;
 
 -- typed let --
 

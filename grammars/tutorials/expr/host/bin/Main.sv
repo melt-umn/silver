@@ -1,12 +1,19 @@
-grammar edu:umn:cs:melt:tutorial:expr:host:bin ;
- export edu:umn:cs:melt:tutorial:expr:host:bin ;
+grammar tutorials:expr:host:bin ;
 
-import edu:umn:cs:melt:tutorial:expr:host  ;
-syntax edu:umn:cs:melt:tutorial:expr:host ;
+import tutorials:expr:concretesyntax ;
+import tutorials:expr:driver ;
 
-import core ; 
+parser parse :: Root_c
+{
+  tutorials:expr:concretesyntax ;
+  tutorials:expr:terminals ;
+}
 
-abstract production main
-top::Main ::= args::String
-{ forwards to driver(args,parse,parse); }
+
+
+function main
+IO ::= args::String ioIn::IO
+{ 
+ return  driver(args,parse, ioIn); 
+}
 

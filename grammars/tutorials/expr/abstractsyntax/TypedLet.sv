@@ -1,6 +1,6 @@
-grammar edu:umn:cs:melt:tutorial:expr:abstractsyntax ;
+grammar tutorials:expr:abstractsyntax ;
 
-import edu:umn:cs:melt:tutorial:expr:terminals ;
+import tutorials:expr:terminals ;
 
 abstract production let_expr_typed
 l::Expr ::= id::Id_t t::TypeExpr v::Expr body::Expr
@@ -54,8 +54,8 @@ aspect production let_expr
 l::Expr ::= id::Id_t v::Expr body::Expr
 {
  l.errors <- case v.typerep of
-               intType() => [ ::Error ]
-             | _ => [ mk_error(id.line, id.column,
+               intType() -> [ ::String ]
+             | _ -> [ mk_error(id.line, id.column,
                                "Values in declarations of untyped lets must be of type integer.") ] 
              end ; 
 }
