@@ -1,9 +1,9 @@
-grammar edu:umn:cs:melt:tutorial:expr:abstractsyntax ;
+grammar tutorials:expr:abstractsyntax ;
 
 -- Compute the translation of expr to  Haskell
 
 
-import edu:umn:cs:melt:tutorial:expr:terminals ;
+import tutorials:expr:terminals ;
 
 synthesized attribute haskell :: String 
   occurs on Root, Expr ;

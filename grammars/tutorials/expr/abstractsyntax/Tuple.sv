@@ -1,6 +1,6 @@
-grammar edu:umn:cs:melt:tutorial:expr:abstractsyntax ;
+grammar tutorials:expr:abstractsyntax ;
 
-import edu:umn:cs:melt:tutorial:expr:terminals ;
+import tutorials:expr:terminals ;
 
 abstract production tupleType
 tr::TypeRep ::= l::TypeRep  r::TypeRep
@@ -8,8 +8,8 @@ tr::TypeRep ::= l::TypeRep  r::TypeRep
  tr.pp = "(" ++ l.pp ++ "," ++ r.pp ++ ")" ;
  tr.is_equal = case tr.check_for_equal of
                    tupleType(ltr,rtr)
-                   => equal_types(l,ltr) && equal_types(r,rtr)
-               | _ => false end ;
+                   -> equal_types(l,ltr) && equal_types(r,rtr)
+               | _ -> false end ;
 }
 
 abstract production tupleTypeExpr
@@ -33,12 +33,12 @@ e::Expr ::= f::Fst_t t::Expr
 {
  e.pp = "fst(" ++ t.pp ++ ")" ;
  e.typerep = case t.typerep of
-               tupleType(l,r) => l 
-             | _ => errorType()
+               tupleType(l,r) -> new( l )
+             | _ -> errorType()
              end ;
  e.errors := case t.typerep of
-               tupleType(_,_) => [ ::String ]
-             | _ => [ mk_error(f.line, f.column, 
+               tupleType(_,_) -> [ ::String ]
+             | _ -> [ mk_error(f.line, f.column, 
                                "requires a tuple-type argument") ]
              end 
              ++ t.errors ;
@@ -50,12 +50,12 @@ e::Expr ::= s::Snd_t t::Expr
 {
  e.pp = "snd(" ++ t.pp ++ ")" ;
  e.typerep = case t.typerep of
-               tupleType(l,r) => r
-             | _ => errorType()
+               tupleType(l,r) -> new(r)
+             | _ -> errorType()
              end ;
  e.errors := case t.typerep of
-               tupleType(_,_) => [ ::String ]
-             | _ => [ mk_error(s.line, s.column, 
+               tupleType(_,_) -> [ ::String ]
+             | _ -> [ mk_error(s.line, s.column, 
                                "requires a tuple-type argument") ]
              end 
              ++ t.errors ;

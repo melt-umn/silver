@@ -1,6 +1,10 @@
 #!/bin/bash
 
-silver.copper -o expr edu:umn:cs:melt:tutorial:expr:host:bin
+java -jar ../../../../../jars/RunSilver.jar \
+     --clean tutorials:expr:host:bin
+
+ant
+
 
 
 

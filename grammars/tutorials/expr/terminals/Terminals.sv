@@ -4,11 +4,11 @@ grammar tutorials:expr:terminals ;
 -- arithmetic
 terminal IntLit_t /[0-9]+/ ; 
 
-terminal Plus_t   '+'  operator precedence = 10, association = left ;
-terminal Star_t   '*'  operator precedence = 12, association = left ;
+terminal Plus_t   '+'   precedence = 10, association = left ;
+terminal Star_t   '*'   precedence = 12, association = left ;
 
-terminal Dash_t   '-'  operator precedence = 10, association = left ;
-terminal Slash_t  '/'  operator precedence = 12, association = left ;
+terminal Dash_t   '-'   precedence = 10, association = left ;
+terminal Slash_t  '/'   precedence = 12, association = left ;
 
 terminal LParen_t '(' ;
 terminal RParen_t ')' ;

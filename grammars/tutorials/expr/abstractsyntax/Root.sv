@@ -1,24 +1,23 @@
-grammar edu:umn:cs:melt:tutorial:expr:abstractsyntax ;
- export edu:umn:cs:melt:tutorial:expr:abstractsyntax ;
+grammar tutorials:expr:abstractsyntax ;
 
-import edu:umn:cs:melt:tutorial:expr:terminals ;
+import tutorials:expr:terminals ;
 
 nonterminal Root with pp, value, errors ;
 
-synthesized attribute pp :: String with ++ ;
+synthesized attribute pp :: String ; -- with ++ ;
 synthesized attribute value :: Integer ;
 synthesized attribute errors :: [String] with ++ ;
 
 abstract production root
 r::Root ::= e::Expr
 {
- r.pp := e.pp 
+ r.pp = e.pp 
          -- uncomment either of the following and an 
          --   "empty list" error occurs
          -- ++ head(strs) 
          -- ++ head(strsnt).new_pp 
          ;
- r.pp <- "MORE STUFF" ; -- this doesn't show up in output
+ -- r.pp <- "MORE STUFF" ; -- this doesn't show up in output
  r.value = e.value ;
  r.errors := e.errors ;
 

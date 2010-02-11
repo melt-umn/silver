@@ -1,6 +1,6 @@
-grammar edu:umn:cs:melt:tutorial:expr:abstractsyntax ;
+grammar tutorials:expr:abstractsyntax ;
 
-import edu:umn:cs:melt:tutorial:expr:terminals ;
+import tutorials:expr:terminals ;
 
 nonterminal TypeRep ;
 
@@ -19,8 +19,8 @@ tr::TypeRep ::=
 {
  tr.pp = "int" ;
  tr.is_equal = case tr.check_for_equal of
-                 intType() => true 
-               | _         => false end ;
+                 intType() -> true 
+               | _         -> false end ;
 }
 
 abstract production booleanType
@@ -28,8 +28,8 @@ tr::TypeRep ::=
 {
  tr.pp = "boolean" ;
  tr.is_equal = case tr.check_for_equal of
-                 booleanType() => true 
-               | _             => false end ;
+                 booleanType() -> true 
+               | _             -> false end ;
 }
 
 abstract production errorType
@@ -37,8 +37,8 @@ tr::TypeRep ::=
 {
  tr.pp = "error" ;
  tr.is_equal = case tr.check_for_equal of
-                 errorType() => true 
-               | _           => false end ;
+                 errorType() -> true 
+               | _           -> false end ;
 }
 
 

@@ -1,13 +1,11 @@
-grammar tutorial:expr:driver ;
+grammar tutorials:expr:driver ;
 
-import tutorial:expr:abstractsyntax ;
-import tutorial:expr:concretesyntax ;
-import tutorial:expr:terminals ;
-
-import core ;
+import tutorials:expr:abstractsyntax ;
+import tutorials:expr:concretesyntax ;
+import tutorials:expr:terminals ;
 
 function driver 
-IO ::= args::String parser::Function(Root_c ::= String) top::IO
+IO ::= args::String exprParser::Function(Root_c ::= String) top::IO
 {
 
  production attribute isF :: IOBoolean;
@@ -17,7 +15,7 @@ IO ::= args::String parser::Function(Root_c ::= String) top::IO
  text = readFile(args, isF.io);
 
  production attribute r_cst :: Root_c ;
- r_cst = ext_parser(text.sValue) ;
+ r_cst = exprParser(text.sValue) ;
 
  production attribute r_ast :: Root ;
  r_ast = r_cst.ast_Root ;
@@ -57,7 +55,7 @@ IO ::= args::String parser::Function(Root_c ::= String) top::IO
  tasks_io = fold_io_actions(tasks ++ more_tasks);
  tasks_io.ioIn = text.io ;
 
- return  // top.ioOut 
+ return  -- top.ioOut 
    if   ! isF.bValue 
      then error ("\n\nFile \"" ++ args ++ "\" not found.\n")
      else tasks_io.ioOut  ;

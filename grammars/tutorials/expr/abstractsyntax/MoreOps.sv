@@ -1,6 +1,6 @@
-grammar edu:umn:cs:melt:tutorial:expr:abstractsyntax ;
+grammar tutorials:expr:abstractsyntax ;
 
-import edu:umn:cs:melt:tutorial:expr:terminals ;
+import tutorials:expr:terminals ;
 
 abstract production lessthan
 e::Expr ::= l::Expr op::LT_t r::Expr
