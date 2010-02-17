@@ -86,7 +86,8 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\ttry{\n" ++
 	"\t\t\t\t\treturn new " ++ packageName ++ "." ++ parserName ++ "().parse(new java.io.StringReader(((common.StringCatter)context.child(" ++ fullClassName ++ ".i_c)).toString()), \"_NULL_\");\n" ++
-	"\t\t\t\t}catch(java.lang.Exception e){throw new RuntimeException(\"An error occured while parsing.\", e);}\n" ++
+	"\t\t\t\t}catch(edu.umn.cs.melt.copper.runtime.logging.CopperParserException e){ if(\"1\".equals(System.getenv(\"SILVERTRACE\"))) { throw new RuntimeException(\"An error occured while parsing.\", e); } System.err.println(\"Parse error encountered. (Set SILVERTRACE=1 to unsuppress stack trace.)\\n\" + e.getMessage()); System.exit(-1); return null; }\n" ++
+	"\t\t\t\tcatch(Exception e){throw new RuntimeException(\"An error occured while parsing.\", e);}\n" ++
 	"\t\t\t}\n" ++
 	"\t\t});\n";
 

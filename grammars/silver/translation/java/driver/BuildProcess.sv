@@ -78,7 +78,11 @@ String ::= r::Decorated RootSpec{
 "\tpublic static void main(String[] args) {\n" ++
 "\t\t" ++ package ++ ".Init.init();\n" ++
 "\t\t" ++ package ++ ".Init.postInit();\n" ++
+"\t\ttry {\n" ++
 "\t\t\tnew " ++ package ++ ".Pmain(fold(args), new Object()).doReturn();\n" ++
+"\t\t} catch(Throwable t) {\n" ++
+"\t\t\tcommon.Util.printStackCauses(t);\n" ++
+"\t\t}\n" ++
 "\t}\n" ++
 "\tpublic static common.StringCatter fold(String [] args){\n" ++ 
 "\t\tStringBuffer result = new StringBuffer();\n" ++ 
