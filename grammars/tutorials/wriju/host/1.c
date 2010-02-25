@@ -1,3 +1,2 @@
-27
-
-
+function f() {a = 1;}
+while
