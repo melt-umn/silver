@@ -8,7 +8,7 @@ synthesized attribute pp::String;
 
 inherited attribute tabs::String;
 
---inherited attribute cc::String; --C Code
+--synthesized attribute cc::String; --C Code
 
 --Integer Literal
 concrete production root_intlit
