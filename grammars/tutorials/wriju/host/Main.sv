@@ -4,7 +4,9 @@ import tutorials:wriju:terminals ;
 import tutorials:wriju:concretesyntax ;
 --import tutorials:wriju:abstractsyntax ;
 
-parser parse :: Root_c { tutorials:wriju:concretesyntax; tutorials:wriju:terminals;} 
+parser parse :: Root_c { tutorials:wriju:concretesyntax; 
+                         tutorials:wriju:terminals;
+                       } 
 
 function main
 IO ::= args::String io_in::IO
@@ -18,8 +20,8 @@ IO ::= args::String io_in::IO
  local attribute r_cst::Root_c ;
  r_cst = parse(text.sValue) ;
 
- --local attribute write_c_io :: IO ;
- --write_c_io = writeFile("output.c", r_cst.c_code, text.io ) ;
+ local attribute write_c_io :: IO ;
+ write_c_io = writeFile("output.c", r_cst.cc, text.io ) ;
 
  return
    if   ! isF.bValue 
@@ -28,5 +30,5 @@ IO ::= args::String io_in::IO
                 args ++ "\n\n" ++
                 "Pretty print (pp) on the concrete sysntax tree: \n" ++
                 r_cst.pp ++ "\n\n" ,
-                text.io ) ; 
+                write_c_io ) ; 
 }
