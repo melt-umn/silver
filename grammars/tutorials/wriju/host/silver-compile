@@ -4,9 +4,10 @@
 # tutorials grammar and run ant to compile the resulting Java code.
 
 rm -f tutorials.wriju.host.jar
-time java -jar ../../../../jars/RunSilver.jar tutorials:wriju:host
+time java -jar ../../../../jars/RunSilver.jar tutorials:wriju:host && ant
 
+# run ant, see above line, only if silver does not fail (thus &&)
 # then run "ant"
-ant
+# ant
 
 # then run "java -jar tutorials.simple.host.bin.jar <<filename>>"

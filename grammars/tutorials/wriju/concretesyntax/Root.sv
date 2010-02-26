@@ -2,8 +2,9 @@ grammar tutorials:wriju:concretesyntax;
 
 import tutorials:wriju:terminals;
 
-nonterminal Root_c with pp;
+nonterminal Root_c with pp, cc;
 
+synthesized attribute cc::String;
 synthesized attribute pp::String;
 
 inherited attribute tabs::String;
@@ -15,7 +16,16 @@ concrete production root_intlit
 r::Root_c ::= t::IntLit_t
 {
 	r.pp = "The Root: " ++ t.lexeme;
+	r.cc = "#include <stdio.h>\n\n" ++ t.lexeme ++ "\n\n" ;
 }
+
+{-
+
+Wriju, I commented out these productions because they reference code
+that you've written but not checked into Subversion - thus I don't
+have it.
+
+
 
 --Statement List
 concrete production root_assignment
@@ -23,6 +33,7 @@ r::Root_c ::= sl::StatementList_c
 {
 	sl.tabs = "";
 	r.pp = "The Statement List: \n" ++ sl.pp;
+
 }
 
 --Brace Block
@@ -48,3 +59,6 @@ r::Root_c ::= wl::WhileLoop_c
 	wl.tabs = "";
 	r.pp = wl.pp;
 }
+
+
+-}
