@@ -10,7 +10,7 @@ terminal ImpliedNameTerm 'impliedName' lexer classes {C_1};
 attribute impliedName occurs on aRootSpecPart, aRootSpecParts;
 
 aspect production parserRootSpec
-top::RootSpec ::= p::aRootSpecParts{
+top::RootSpec ::= p::aRootSpecParts _{
   top.interface= true;
   top.impliedName = p.impliedName;
 }

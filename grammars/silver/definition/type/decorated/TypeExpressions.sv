@@ -8,7 +8,7 @@ top::Type ::= 'Decorated' q::QName
   top.pp = "Decorated " ++ q.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.typerep = refTypeRep(head(types).typerep);
+  top.typerep = if null(types) then topTypeRep() else refTypeRep(head(types).typerep);
 
   top.warnings := [];
   top.errors := if null(types) 

@@ -30,6 +30,7 @@ top::Expr ::= q::QName
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
+  -- TODO: polymorphism
   top.translation = if in_sig && top.signature.outputElement.elementName == q.name 
                     then "context"
                     else if in_sig
@@ -51,6 +52,7 @@ top::Expr ::= q::QName
   local attribute tr :: Decorated TypeRep;
   tr = top.typerep;
 
+  -- TODO: polymorphism
   top.translation = if in_sig && top.signature.outputElement.elementName == q.name
                      then "(context.undecorate())" 
                     else if in_sig && tr.isNonTerminal        
@@ -113,6 +115,7 @@ top::Expr ::= e::Expr es::Exprs
                     else "((" ++ e.typerep.outputType.transType ++ ")((common.FunctionNode)common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "})).doReturn())";
 }
 
+-- TODO: this should probably be done polymorphically!
 aspect production atAccess
 top::Expr ::= e::Expr '@' q::QName
 {
@@ -213,6 +216,7 @@ top::Expr ::= '!' e::Expr
   top.translation = "(!" ++ e.translation ++ ")";
 }
 
+-- TODO: again, here we're dispatching on type. Should we do this polymorphically?
 aspect production gt
 top::Expr ::= e1::Expr '>' e2::Expr
 {
@@ -239,6 +243,7 @@ top.translation =
          else error(top.location.pp ++ "Invalid <");
 }
 
+--TODO BUG: This is completely inconsistent with the above! Also, type checking allows strings!
 aspect production gteq
 top::Expr ::= e1::Expr '>=' e2::Expr
 {
@@ -255,6 +260,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 function eqTrans
 String ::= e1::Decorated Expr e2::Decorated Expr{
   -- TODO: couldn't this JUST be .equals? (the last else)
+  -- TODO2: UGLY. We're dispatching on type here.  Should do this polymorphically, if at all.
   return if e1.typerep.isInteger && e2.typerep.isInteger
          then "(" ++ e1.translation ++ ".intValue() == " ++ e2.translation ++ ".intValue())"
          else if e1.typerep.isFloat && e2.typerep.isFloat

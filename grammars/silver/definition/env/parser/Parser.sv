@@ -5,6 +5,8 @@ import silver:definition:type:anytype;
 import silver:definition:type:io;
 import silver:definition:regex;
 
+import silver:definition:core only compiledGrammars;
+
 lexer class C_0;
 lexer class C_1 dominates C_0;
 
@@ -60,9 +62,9 @@ synthesized attribute element :: Decorated NamedSignatureElement;
 synthesized attribute typereps :: [Decorated TypeRep];
 synthesized attribute names :: [String];
 
-nonterminal aRootSpec with spec;
-nonterminal aRootSpecPart with defs, exportedGrammars, condBuild, declaredName, moduleNames;
-nonterminal aRootSpecParts with defs, exportedGrammars, condBuild, declaredName, moduleNames;
+nonterminal aRootSpec with spec, compiledGrammars;
+nonterminal aRootSpecPart with defs, exportedGrammars, condBuild, declaredName, moduleNames, compiledGrammars;
+nonterminal aRootSpecParts with defs, exportedGrammars, condBuild, declaredName, moduleNames, compiledGrammars;
 nonterminal aDefs with defs;
 nonterminal aDefsInner with defs;
 nonterminal aEnvItem with defs;
@@ -83,7 +85,8 @@ top::Name ::= i::id{
 }
 
 abstract production parserRootSpec
-top::RootSpec ::= p::aRootSpecParts{
+top::RootSpec ::= p::aRootSpecParts cg::[Decorated RootSpec]{
+  p.compiledGrammars = cg;
 
   top.unparse = unparseRootSpec(top).unparse;
 
@@ -101,7 +104,7 @@ top::RootSpec ::= p::aRootSpecParts{
 
 concrete production aRootFull
 top::aRootSpec ::= r::aRootSpecParts{
-  top.spec = decorate parserRootSpec(r) with {};
+  top.spec = decorate parserRootSpec(r, top.compiledGrammars) with { };
 }
 
 concrete production aRoot1

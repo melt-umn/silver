@@ -6,15 +6,19 @@ import silver:definition:env:parser;
 import silver:definition:concrete_syntax;
 import silver:definition:regex;
 
+import silver:definition:core only compiledGrammars;
+
+
 terminal TerminalsTerm 'terminals' lexer classes {C_1};
 terminal NonterminalsTerm 'nonterminals' lexer classes {C_1};
 terminal RulesTerm 'rules' lexer classes {C_1};
+terminal ParserTerm 'parser' lexer classes {C_1};
 
-attribute terminalDcls, nonTerminalDcls, ruleDcls occurs on aRootSpecParts, aRootSpecPart;
+attribute terminalDcls, nonTerminalDcls, ruleDcls, parserDcls occurs on aRootSpecParts, aRootSpecPart;
 
 aspect production parserRootSpec
-top::RootSpec ::= p::aRootSpecParts{
-  top.parserDcls = [];
+top::RootSpec ::= p::aRootSpecParts _{
+  top.parserDcls = p.parserDcls;
   top.terminalDcls = p.terminalDcls;
   top.nonTerminalDcls = p.nonTerminalDcls;
   top.ruleDcls = p.ruleDcls;
@@ -25,6 +29,7 @@ top::aRootSpecParts ::= r::aRootSpecPart{
   top.terminalDcls = r.terminalDcls;
   top.nonTerminalDcls = r.nonTerminalDcls;
   top.ruleDcls = r.ruleDcls;
+  top.parserDcls = r.parserDcls;
 }
 
 aspect production aRoot2
@@ -32,6 +37,7 @@ top::aRootSpecParts ::= r1::aRootSpecPart r2::aRootSpecParts{
   top.terminalDcls = r1.terminalDcls ++ r2.terminalDcls;
   top.nonTerminalDcls = r1.nonTerminalDcls ++ r2.nonTerminalDcls;
   top.ruleDcls = r1.ruleDcls ++ r2.ruleDcls;
+  top.parserDcls = r1.parserDcls ++ r2.parserDcls;
 }
 
 aspect production aRootSpecDefault
@@ -39,6 +45,7 @@ top::aRootSpecPart ::= {
   top.terminalDcls = [];
   top.nonTerminalDcls = [];
   top.ruleDcls = [];
+  top.parserDcls = [];
 }
 
 concrete production aRootTerminals
@@ -229,4 +236,11 @@ terminal OperatorTerm 'operator' lexer classes {C_1};
 concrete production aProductionModifierSpecOperator
 top::aProductionModifierSpec ::= 'operator' n::Name {
   top.productionModifiers = [operatorProductionModifierSpec(n.lexeme)];
+}
+
+
+concrete production aRootParsers
+top::aRootSpecPart ::= t::ParserTerm n::Name ',' s::Name ',' gs::aNames {
+  top.parserDcls = [parserSpecFromList(n.lexeme,s.lexeme,gs.names, top.compiledGrammars)];
+  forwards to aRootSpecDefault();
 }

@@ -35,7 +35,7 @@ top::aTerminalModifierSpec ::= l::DominatesTerm n::aNames {
 attribute disambiguationGroupDcls occurs on aRootSpecParts, aRootSpecPart;
 attribute parserAttrDcls occurs on aRootSpecParts, aRootSpecPart;
 aspect production parserRootSpec
-top::RootSpec ::= p::aRootSpecParts
+top::RootSpec ::= p::aRootSpecParts _
 {
   top.disambiguationGroupDcls = p.disambiguationGroupDcls;
   top.parserAttrDcls = p.parserAttrDcls;

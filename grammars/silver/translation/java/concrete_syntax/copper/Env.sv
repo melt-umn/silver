@@ -47,51 +47,8 @@ Decorated Defs ::= n::String s::[String] d::[String] e::Decorated Defs
   return consDefs(lexerClassEnvItem(n, s, d), e);
 }
 
-synthesized attribute isDisambiguationDeclaration :: Boolean;
-attribute isDisambiguationDeclaration occurs on EnvItem;
-
-
-function disambiguationEnvItem
-Decorated EnvItem ::= n::String
-{
-  return decorate i_disambiguationEnvItem(n) with {};
-}
-
-abstract production i_disambiguationEnvItem
-top::EnvItem ::= n::String
-{
-  top.unparse = "lexer_class('" ++ n ++ "')";
-
-  -- required to be defined.
-  top.itemName = n;
-
-  top.isDisambiguationDeclaration = true;
-
-  forwards to i_defaultEnvItem();
-}
-
-function getDisambiguationDclOne
-[Decorated EnvItem] ::= search::String e::Decorated Env
-{
-  return searchDclsOne(search, e.restTree);
-}
-
-function getDisambiguationDcl
-[Decorated EnvItem] ::= search::String e::Decorated Env
-{
-  return searchDcls(search, e.restTree);
-}
-
-function addDisambiguationDcl
-Decorated Defs ::= n::String e::Decorated Defs
-{
-  return consDefs(disambiguationEnvItem(n), e);
-}
-
-
 aspect production i_defaultEnvItem
 top::EnvItem ::= 
 {
   top.isLexerClassDeclaration = false;
-  top.isDisambiguationDeclaration = false;
 }

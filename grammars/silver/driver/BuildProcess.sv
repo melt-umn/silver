@@ -388,6 +388,7 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   production attribute inf :: IOInterface;
   inf = compileInterface(pr, "Silver.svi", genPath ++ "src/" ++ gramPath);
   inf.iParser = top.iParser;
+  inf.compiledGrammars = top.compiledGrammars;
 
   top.found = grammarLocation.found;
   top.interfaces = if grammarLocation.found && !clean && hasInterface.bValue then inf.interfaces else [];
@@ -427,7 +428,7 @@ synthesized attribute lastModified :: Integer;
 synthesized attribute interfaceFile :: String;
 synthesized attribute interfaceLocation :: String;
 nonterminal Interface with rSpec, lastModified, interfaceFile, interfaceLocation;
-nonterminal IOInterface with io, interfaces, iParser;
+nonterminal IOInterface with io, interfaces, iParser, compiledGrammars;
 
 abstract production compileInterface
 top::IOInterface ::= iIn::IO f::String genPath::String{
@@ -440,9 +441,13 @@ top::IOInterface ::= iIn::IO f::String genPath::String{
 
   local attribute text :: IOString;
   text = readFile(genPath ++ f, i);
- 
+
+  local attribute ir :: aRootSpec;
+  ir = top.iParser(text.sValue);
+  ir.compiledGrammars = top.compiledGrammars;
+
   local attribute inf :: Interface; 
-  inf = fullInterface(modTime.iValue, f, genPath, top.iParser(text.sValue).spec);
+  inf = fullInterface(modTime.iValue, f, genPath, ir.spec);
 
   top.interfaces = [inf];
   top.io = text.io;
