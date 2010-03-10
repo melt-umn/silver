@@ -12,7 +12,7 @@ terminal Parser_kwd /parser/ lexer classes {KEYWORD};
 concrete production nameIdParser
 top::Name ::= /parser/
 {
-  forwards to nameId(terminal(Id_t, "parser", $1.line, $1.column));
+  forwards to nameId(terminal(Id_t, "parser", $1));
 }
 
 concrete production parserDcl
@@ -95,9 +95,9 @@ top::ModuleName ::= pkg::QName
 aspect production module 
 top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[EnvMap]
 {
-  top.ruleDcls = med.ruleDcls;		  
-  top.terminalDcls = med.terminalDcls;		  
-  top.nonTerminalDcls = med.nonTerminalDcls;		  
+  top.ruleDcls = med.ruleDcls;
+  top.terminalDcls = med.terminalDcls;
+  top.nonTerminalDcls = med.nonTerminalDcls;
 }
 
 aspect production moduleExportedDefs

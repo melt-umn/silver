@@ -1,6 +1,7 @@
 grammar silver:definition:concrete_syntax;
 import silver:definition:core;
 import silver:definition:env;
+import silver:util;
 
 attribute parserDcls occurs on RootSpec;
 attribute nonTerminalDcls occurs on RootSpec;
@@ -12,6 +13,12 @@ top::RootSpecUnparse ::= r::Decorated RootSpec{
   unparses <- ["terminals [" ++ foldTerminals(r.terminalDcls) ++ "]"];
   unparses <- ["nonterminals [" ++ foldNonTerminals(r.nonTerminalDcls) ++ "]"];
   unparses <- ["rules [" ++ foldRules(r.ruleDcls) ++ "]"];
+  unparses <- [foldParsers(r.parserDcls)];
+}
+
+function foldParsers
+String::= l::[Decorated ParserSpec]{
+  return if null(l) then "" else ("parser '" ++ head(l).fullName ++ "', '" ++ head(l).startName ++ "', [" ++ folds(", ", quoteStrings(head(l).moduleNames)) ++ "]" ++ (if null(tail(l)) then "" else "\n" ++ foldParsers(tail(l))));
 }
 
 

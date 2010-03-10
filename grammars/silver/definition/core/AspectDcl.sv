@@ -160,7 +160,8 @@ top::AspectProductionLHS ::= id::Name '::' t::Type
   top.pp = id.pp;
   top.location = id.location;
 
-  --TODO capture errors from type
+  top.errors <- t.errors;
+  
   forwards to aspectProductionLHSFull(id, t.typerep);
 }
 

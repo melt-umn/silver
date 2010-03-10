@@ -5,17 +5,17 @@ grammar silver:definition:env;
  
 closed nonterminal Env with typeTree, valueTree, attrTree, nameTree, restTree, productionTree, synthesizedTree, inheritedTree, occursTree;
 
-synthesized attribute typeTree :: [Decorated EnvScope];
-synthesized attribute valueTree :: [Decorated EnvScope];
-synthesized attribute nameTree :: [Decorated EnvScope];
-synthesized attribute attrTree :: [Decorated EnvScope];
-synthesized attribute productionTree :: [Decorated EnvScope];
+synthesized attribute typeTree :: [Decorated EnvScope]; -- Associates typename with typerep (e.g. Expr)
+synthesized attribute valueTree :: [Decorated EnvScope]; -- Associates name with typerep
+synthesized attribute nameTree :: [Decorated EnvScope]; -- Associates short-name with full-qualified-name
+synthesized attribute attrTree :: [Decorated EnvScope]; -- Associates an attribute's name with its type
+synthesized attribute productionTree :: [Decorated EnvScope]; -- Production signatures
 
-synthesized attribute synthesizedTree :: [Decorated EnvScope];
-synthesized attribute inheritedTree :: [Decorated EnvScope];
-synthesized attribute occursTree :: [Decorated EnvScope];
+synthesized attribute synthesizedTree :: [Decorated EnvScope]; -- Declares an attribute to be synthesized
+synthesized attribute inheritedTree :: [Decorated EnvScope]; -- Declares an attribute to be inherited
+synthesized attribute occursTree :: [Decorated EnvScope]; -- Attribute fname occurs on nonterminal (fname?)
 
-synthesized attribute restTree :: [Decorated EnvScope];
+synthesized attribute restTree :: [Decorated EnvScope]; -- this (useless?), close (purpose?), prodAttributes (fix and make its own), lexer classes (move to typeTree?),
 
 
 ----------------------------------------------------------------------------------------------------
@@ -131,6 +131,10 @@ top::Env ::= e::Decorated Env {
 ----------------------------------------------------------------------------------------------------
 --Environment query functions-----------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
+
+-- Normally, finds all such occurances.
+-- -One variants only search the closest scope
+-- TODO: Search for all occurances up to the closest scope that contains an occurance (i.e. lexical scoping rules)
 
 function searchDclsOne
 [Decorated EnvItem] ::= search::String e::[Decorated EnvScope]
