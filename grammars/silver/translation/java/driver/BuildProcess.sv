@@ -12,11 +12,19 @@ import silver:util:command;
 aspect production run
 top::RunUnit ::= iIn::IO args::String
 {
-  postOps <- if a.noJavaGeneration then [] else [genJava(a, grammars, nonTreeGrammars, silverhome, silvergen)]; 
+  -- We need to re-translate the root grammar to properly handle conditional builds Init calls
+  depAnalysis.forceTaint <- [a.grammarName];
+
+  local attribute translate :: [Decorated RootSpec];
+  translate = if null(getRootSpec(a.grammarName, depAnalysis.compiledList))
+              then head(getRootSpec(a.grammarName, grammars)) :: depAnalysis.compiledList
+              else depAnalysis.compiledList;
+              
+  postOps <- if a.noJavaGeneration then [] else [genJava(a, translate, nonTreeGrammars, silvergen), genBuild(a, grammars, silverhome, silvergen, depAnalysis)]; 
 }
 
 abstract production genJava
-top::Unit ::= a::Command specs::[Decorated RootSpec] extras::[String] silverhome::String silvergen::String
+top::Unit ::= a::Decorated Command specs::[Decorated RootSpec] extras::[String] silvergen::String
 {
   local attribute pr::IO;
   pr = print("Generating Java Translation.\n", top.ioIn);
@@ -24,12 +32,20 @@ top::Unit ::= a::Command specs::[Decorated RootSpec] extras::[String] silverhome
   local attribute i :: IO;
   i = writeAll(pr, a, specs, extras, silvergen);
  
+  top.io = i;
+  top.code = 0;
+  top.order = 4;
+}
+
+abstract production genBuild
+top::Unit ::= a::Decorated Command allspecs::[Decorated RootSpec] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+{
   local attribute buildFile :: IO;
-  buildFile = writeBuildFile(i, a, specs, silverhome, silvergen).io;
+  buildFile = writeBuildFile(top.ioIn, a, allspecs, silverhome, silvergen, da).io;
 
   top.io = buildFile;
   top.code = 0;
-  top.order = 4;
+  top.order = 6;
 }
 
 function writeAll
@@ -44,10 +60,12 @@ IO ::= i::IO a::Decorated Command l::[Decorated RootSpec] extras::[String] silve
   return if null(l) then i else recurse;
 }
 
--- note: duplication in copper's buildprocess.sv
 function writeSpec
 IO ::= i::IO r::Decorated RootSpec a::Decorated Command extras::[String] silvergen::String
 {
+  local attribute printio :: IO;
+  printio = print("\t[" ++ r.declaredName ++ "]\n", i);
+
   local attribute package :: String;
   package = substitute("/", ":", r.declaredName) ++ "/";
 
@@ -55,7 +73,7 @@ IO ::= i::IO r::Decorated RootSpec a::Decorated Command extras::[String] silverg
   specLocation = silvergen ++ "/src/" ++ package; 
 
   local attribute mki :: IO;
-  mki = writeFile(specLocation ++ "Init.java", makeInit(r, if a.grammarName == r.impliedName then extras else []), i);
+  mki = writeFile(specLocation ++ "Init.java", makeInit(r, if a.grammarName == r.impliedName then extras else []), printio);
 
   local attribute mains :: [Decorated EnvItem];
   mains = getFunctionDcl(r.declaredName ++ ":main", toEnv(r.defs));
@@ -95,7 +113,7 @@ String ::= r::Decorated RootSpec{
 }
 
 abstract production writeBuildFile
-top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec] silverhome::String silvergen::String 
+top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
   production attribute extraTargets :: [String] with ++;
   extraTargets := [];

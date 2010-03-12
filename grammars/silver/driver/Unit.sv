@@ -14,7 +14,7 @@ aspect production run
 top::RunUnit ::= iIn::IO args::String
 {
   preOps <- if a.displayVersion then [printVersion()] else [];
-  postOps <- [doInterfaces(unit.compiledList ++ reUnit.compiledList ++ condUnit.compiledList, silvergen)];
+  postOps <- [doInterfaces(depAnalysis.compiledList, silvergen)];
 }
 
 abstract production printVersion
@@ -29,7 +29,7 @@ abstract production doInterfaces
 top::Unit ::= u::[Decorated RootSpec] genPath::String
 {
   top.order = 3;
-  top.io = writeInterfaces(top.ioIn, u, genPath);
+  top.io = writeInterfaces(print("Writing updated interface files\n", top.ioIn), u, genPath);
   top.code = 0;
 }
 
@@ -50,5 +50,5 @@ IO ::= iIn::IO r::Decorated RootSpec genPath::String
   
   return writeFile(pathName ++ "Silver.svi",
                    r.unparse,
-                   print("Writing interface for grammar " ++ r.impliedName ++ "\n\t[" ++ pathName ++ "Silver.svi]\n", mkio));
+                   print("\t[" ++ r.impliedName ++ "]\n", mkio));
 }

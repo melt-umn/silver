@@ -246,7 +246,7 @@ top::ModuleStmt ::= 'build' m::QName 'with' c::QName ';'{
   top.moduleNames = [];
   top.importedDefs = emptyDefs();
   top.exportedGrammars = [];
-  top.condBuild = [[c.name, m.name]]; -- c -> m
+  top.condBuild = [[m.name, c.name]]; -- c -> m
 }
   
 

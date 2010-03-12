@@ -29,10 +29,18 @@ Boolean ::= s1::[String] s2::[String]
   return length(s1) == length(s2) && containsAll(s1, s2);
 }
 
+-- all of s1 in s2?
 function containsAll
 Boolean ::= s1::[String] s2::[String]
 {
   return null(s1) || (contains(head(s1), s2) && containsAll(tail(s1), s2));
+}
+
+-- any of s1 in s2?
+function containsAny
+Boolean ::= s1::[String] s2::[String]
+{
+  return !null(s1) && (contains(head(s1), s2) || containsAny(tail(s1), s2));
 }
 
 --takes in a list of strings and returns a set of strings.
@@ -103,6 +111,10 @@ Boolean ::= pre::String s::String{
   return length(pre) == 0 || (length(s) > 0 && substring(0,1,pre) == substring(0,1,s) && startsWith(substring(1,length(pre), pre), substring(1,length(s), s)));
 }
 
+function startsWithAny
+Boolean ::= pre::[String] s::String{
+  return !null(pre) && (startsWith(head(pre), s) || startsWithAny(tail(pre), s));
+}
 
 function last
 String ::= s::[String]{
