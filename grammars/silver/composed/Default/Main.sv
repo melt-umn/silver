@@ -22,6 +22,7 @@ parser rParse::Root {
   silver:modification:patternmatching;
   silver:modification:patternmatching:copper;
   silver:modification:autocopyattr;
+  silver:modification:ffi;
   
   silver:translation:java:concrete_syntax:copper;
 }
