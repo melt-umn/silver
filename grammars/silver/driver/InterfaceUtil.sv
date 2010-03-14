@@ -40,7 +40,7 @@ top::DependencyAnalysis ::= ifaces::[Decorated Interface]
   -- tainted == rem(taintedaltered, altered)
   
   top.compiledList = top.compiledGrammars;
-  top.needGrammars = rem(taintedaltered, altered) ++ suspect;
+  top.needGrammars = rem(taintedaltered ++ suspect, altered);
   top.interfaces = keepInterfaces(safe, ifaces);
 }
 
