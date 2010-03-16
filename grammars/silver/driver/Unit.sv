@@ -9,6 +9,8 @@ import silver:util:command;
 nonterminal Unit with ioIn, io, code, order;
 synthesized attribute code :: Integer;
 synthesized attribute order :: Integer;
+inherited attribute ioIn :: IO;
+synthesized attribute ioOut :: IO;
 
 aspect production run
 top::RunUnit ::= iIn::IO args::String

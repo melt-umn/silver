@@ -15,7 +15,6 @@ exports silver:analysis:binding:driver;
 exports silver:analysis:typechecking:driver;
 exports silver:analysis:typechecking:core;
 exports silver:analysis:typechecking:concrete_syntax;
-exports silver:analysis:typechecking:type:io;
 exports silver:analysis:typechecking:type:anytype;
 
 --We wish regex to remain a generic grammar, so we resolve the conflict here!
