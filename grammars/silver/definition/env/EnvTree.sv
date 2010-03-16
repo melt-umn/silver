@@ -187,8 +187,8 @@ function collectAccum
         then [ current_group ]
 
         else if head(current_group).itemName == head(eis).itemName
-        then collectAccum ( current_group ++ [head(eis)], tail(eis) ) 
-        else [ current_group ] ++  collectAccum ( [head(eis)], tail(eis) )  ;
+        then collectAccum( head(eis) :: current_group , tail(eis) ) 
+        else current_group :: collectAccum( [head(eis)], tail(eis) );
 }
 
 -- Sort function
@@ -218,9 +218,9 @@ function mergeEnvItems
         then l1
 
         else if head(l1).itemName < head(l2).itemName
-        then [head(l1)] ++ mergeEnvItems(tail(l1),l2)
+        then head(l1) :: mergeEnvItems(tail(l1),l2)
 
-        else [head(l2)] ++ mergeEnvItems(l1,tail(l2)) ;
+        else head(l2) :: mergeEnvItems(l1,tail(l2)) ;
 }
 
 
