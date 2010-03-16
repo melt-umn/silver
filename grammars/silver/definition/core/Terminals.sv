@@ -47,14 +47,7 @@ terminal True_kwd		'true'		lexer classes {KEYWORD};
 terminal With_kwd		'with'		lexer classes {KEYWORD};
 
 terminal Error_kwd		'error'		lexer classes {BUILTIN};
-terminal IndexOf_kwd		'indexOf'	lexer classes {BUILTIN};
-terminal IsAlpha_kwd		'isAlpha'	lexer classes {BUILTIN};
-terminal IsDigit_kwd		'isDigit'	lexer classes {BUILTIN};
-terminal IsLower_kwd		'isLower'	lexer classes {BUILTIN};
-terminal IsSpace_kwd		'isSpace'	lexer classes {BUILTIN};
-terminal IsUpper_kwd		'isUpper'	lexer classes {BUILTIN};
 terminal Length_kwd		'length'	lexer classes {BUILTIN};
-terminal SubString_kwd		'substring'	lexer classes {BUILTIN};
 terminal ToFloat_kwd		'toFloat'	lexer classes {BUILTIN};
 terminal ToInt_kwd		'toInt'		lexer classes {BUILTIN};
 terminal ToString_kwd		'toString'	lexer classes {BUILTIN};

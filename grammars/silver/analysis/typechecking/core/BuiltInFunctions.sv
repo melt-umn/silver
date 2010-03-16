@@ -17,43 +17,6 @@ top::Expr ::= e::Decorated Expr
   top.typeErrors = er ++ e.typeErrors;      
 }
 
-aspect production indexOfFunction
-top::Expr ::= 'indexOf' '(' e1::Expr ',' e2::Expr ')'
-{
-  top.typeErrors = er1 ++ er2 ++ e1.typeErrors ++ e2.typeErrors;
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if (e1.typerep.typeName == "String") 
-	then []
-	else [err(top.location, "First operand to 'indexof(...)' must be of type String.")];
-
-  local attribute er2 :: [Decorated Message];
-  er2 = if (e2.typerep.typeName == "String") 
-	then []
-	else [err(top.location, "Second operand to 'indexof(...)' must be of type String.")];
-}
-aspect production subStringFunction
-top::Expr ::= 'substring' '(' e1::Expr ',' e2::Expr ',' e3::Expr ')'
-{
-  top.typeErrors = er1 ++ er2 ++ er3 ++ e1.typeErrors ++ e2.typeErrors ++ e3.typeErrors;
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if (e1.typerep.typeName == "Integer") 
-	then []
-	else [err(top.location, "First operand to 'substring(...)' must be of type Integer.")];
-
-  local attribute er2 :: [Decorated Message];
-  er2 = if (e2.typerep.typeName == "Integer") 
-	then []
-	else [err(top.location, "Second operand to 'substring(...)' must be of type Integer.")];
-
-  local attribute er3 :: [Decorated Message];
-  er3 = if (e3.typerep.typeName == "String") 
-	then []
-	else [err(top.location, "Third operand to 'substring(...)' must be of type String.")];
-
-
-}
 aspect production errorFunction
 top::Expr ::= 'error' '(' e::Expr ')'
 {
@@ -93,61 +56,6 @@ top::Expr ::= 'toString' '(' e::Expr ')'
           (e.typerep.typeName == "Boolean") 
        then []
        else [err(top.location, "operand to 'toString(..)' must be of type Integer, Float or Boolean.")];
-
-  top.typeErrors = er ++ e.typeErrors;      
-}
-
-aspect production isDigitFunction
-top::Expr ::= 'isDigit' '(' e::Expr ')'
-{
-  local attribute er :: [Decorated Message];
-  er = if e.typerep.typeName == "String"
-       then []
-       else [err(top.location, "operand to 'isDigit(..)' must be of type String.")];
-
-  top.typeErrors = er ++ e.typeErrors;      
-}
-
-aspect production isAlphaFunction
-top::Expr ::= 'isAlpha' '(' e::Expr ')'
-{
-  local attribute er :: [Decorated Message];
-  er = if e.typerep.typeName == "String"
-       then []
-       else [err(top.location, "operand to 'isAlpha(..)' must be of type String.")];
-
-  top.typeErrors = er ++ e.typeErrors;      
-}
-
-aspect production isSpaceFunction
-top::Expr ::= 'isSpace' '(' e::Expr ')'
-{
-  local attribute er :: [Decorated Message];
-  er = if e.typerep.typeName == "String"
-       then []
-       else [err(top.location, "operand to 'isSpace(..)' must be of type String.")];
-
-  top.typeErrors = er ++ e.typeErrors;      
-}
-
-aspect production isLowerFunction
-top::Expr ::= 'isLower' '(' e::Expr ')'
-{
-  local attribute er :: [Decorated Message];
-  er = if e.typerep.typeName == "String"
-       then []
-       else [err(top.location, "operand to 'isLower(..)' must be of type String.")];
-
-  top.typeErrors = er ++ e.typeErrors;      
-}
-
-aspect production isUpperFunction
-top::Expr ::= 'isUpper' '(' e::Expr ')'
-{
-  local attribute er :: [Decorated Message];
-  er = if e.typerep.typeName == "String"
-       then []
-       else [err(top.location, "operand to 'isUpper(..)' must be of type String.")];
 
   top.typeErrors = er ++ e.typeErrors;      
 }
