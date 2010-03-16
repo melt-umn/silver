@@ -3,12 +3,7 @@ import turing;
 
 parser parse::Dcls {
   turing;
-  turing:bin;
 }
-
---parser parse2::Dcls {
---  turing;
---}
 
 function main 
 IO ::= args::String i::IO {
@@ -40,6 +35,8 @@ IO ::= args::String i::IO {
 	      extras.ioOut)));
 }
 
+inherited attribute ioIn :: IO;
+synthesized attribute ioOut :: IO;
 nonterminal IOAMachineList with ioIn, ioOut, machines;
 
 function getImports
