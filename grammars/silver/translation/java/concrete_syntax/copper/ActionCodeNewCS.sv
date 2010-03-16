@@ -8,6 +8,15 @@ import silver:translation:java:env;
 import silver:analysis:typechecking:core;
 
 terminal Pluck_kwd 'pluck' lexer classes {KEYWORD};
+terminal Print_kwd 'print' lexer classes {KEYWORD};
+
+concrete production namePrint
+top::Name ::= 'print'
+{ forwards to nameId(terminal(Id_t, "print", $1)); }
+
+concrete production namePluck
+top::Name ::= 'pluck'
+{ forwards to nameId(terminal(Id_t, "pluck", $1)); }
 
 concrete production pluckDef
 top::ProductionStmt ::= 'pluck' e::Expr c4::Semi_t
