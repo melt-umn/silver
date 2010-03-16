@@ -15,16 +15,6 @@ top::Expr ::= e::Decorated Expr
   top.translation = "(new Integer(((common.StringCatter)" ++ e.translation ++ ").length()))";
 }
 
-aspect production indexOfFunction
-top::Expr ::= 'indexOf' '(' e1::Expr ',' e2::Expr ')'
-{
-  top.translation ="(new Integer((" ++ e2.translation ++ ".toString().indexOf( " ++ e1.translation ++ ".toString()))))";
-}
-aspect production subStringFunction
-top::Expr ::= 'substring' '(' e1::Expr ',' e2::Expr ',' e3::Expr ')'
-{
-  top.translation = "(new common.StringCatter(" ++ e3.translation  ++ ".toString().substring(" ++ e1.translation  ++ ", " ++ e2.translation ++ ")))";
-}
 aspect production errorFunction
 top::Expr ::= 'error' '(' e::Expr ')'
 {
@@ -50,37 +40,6 @@ aspect production toStringFunction
 top::Expr ::= 'toString' '(' e::Expr ')'
 {
   top.translation = "(new common.StringCatter(String.valueOf(" ++ e.translation ++ ")))";
-}
-
-aspect production isDigitFunction
-top::Expr ::= 'isDigit' '(' e::Expr ')'
-{
-  top.translation = "(common.Util.isDigit(" ++ e.translation ++ ".toString()))";
-}
-
---TODO Charactoer().is...  Make sure the length is one or greater for digit.
-aspect production isAlphaFunction
-top::Expr ::= 'isAlpha' '(' e::Expr ')'
-{
-  top.translation = "(common.Util.isAlpha(" ++ e.translation ++ ".toString()))";
-}
-
-aspect production isSpaceFunction
-top::Expr ::= 'isSpace' '(' e::Expr ')'
-{
-  top.translation = "(common.Util.isSpace(" ++ e.translation ++ ".toString()))";
-}
-
-aspect production isLowerFunction
-top::Expr ::= 'isLower' '(' e::Expr ')'
-{
-  top.translation = "(common.Util.isLower(" ++ e.translation ++ ".toString()))";
-}
-
-aspect production isUpperFunction
-top::Expr ::= 'isUpper' '(' e::Expr ')'
-{
-  top.translation = "(common.Util.isUpper(" ++ e.translation ++ ".toString()))";
 }
 
 aspect production newFunction

@@ -1,5 +1,7 @@
 grammar core;
 
+------ IO Actions:
+
 function print
 IO ::= s::String i::IO
 {
@@ -8,28 +10,12 @@ IO ::= s::String i::IO
   "java" : return "(common.Util.io(%i%, common.Util.print(%s%.toString())))";
 }
 
-function fileTime
-IOInteger ::= s::String i::IO
+function exit
+IO ::= val::Integer i::IO
 {
-  return error("Not Yet Implemented: fileTime");
+  return error("Not Yet Implemented: exit");
 } foreign {
-  "java" : return "(new core.PioInteger(%i%, common.Util.fileTime(%s%.toString())))";
-}
-
-function isFile
-IOBoolean ::= s::String i::IO
-{
-  return error("Not Yet Implemented: isFile");
-} foreign {
-  "java" : return "(new core.PioBoolean(%i%, common.Util.isFile(%s%.toString())))";
-}
-
-function isDirectory
-IOBoolean ::= s::String i::IO
-{
-  return error("Not Yet Implemented: isDirectory");
-} foreign {
-  "java" : return "(new core.PioBoolean(%i%, common.Util.isDirectory(%s%.toString())))";
+  "java" : return "(common.Util.io(%i%, common.Util.exit(%val%.intValue())))";
 }
 
 function mkdir
@@ -38,30 +24,6 @@ IOBoolean ::= s::String i::IO
   return error("Not Yet Implemented: mkdir");
 } foreign {
   "java" : return "(new core.PioBoolean(%i%, common.Util.mkdir(%s%.toString())))";
-}
-
-function readFile
-IOString ::= s::String i::IO
-{
-  return error("Not Yet Implemented: readFile");
-} foreign {
-  "java" : return "(new core.PioString(%i%, common.Util.readFile(%s%.toString())))";
-}
-
-function cwd
-IOString ::= i::IO
-{
-  return error("Not Yet Implemented: cwd");
-} foreign {
-  "java" : return "(new core.PioString(%i%, common.Util.cwd()))";
-}
-
-function envVar
-IOString ::= s::String i::IO
-{
-  return error("Not Yet Implemented: envVar");
-} foreign {
-  "java" : return "(new core.PioString(%i%, common.Util.env(%s%.toString())))";
 }
 
 function system
@@ -88,12 +50,54 @@ IO ::= file::String contents::String i::IO
   "java" : return "(common.Util.io(%i%, common.Util.appendFile(%file%.toString(), %contents%)))";
 }
 
-function exit
-IO ::= val::Integer i::IO
+------- IO Read Actions:
+
+function fileTime
+IOInteger ::= s::String i::IO
 {
-  return error("Not Yet Implemented: exit");
+  return error("Not Yet Implemented: fileTime");
 } foreign {
-  "java" : return "(common.Util.io(%i%, common.Util.exit(%val%.intValue())))";
+  "java" : return "(new core.PioInteger(%i%, common.Util.fileTime(%s%.toString())))";
+}
+
+function isFile
+IOBoolean ::= s::String i::IO
+{
+  return error("Not Yet Implemented: isFile");
+} foreign {
+  "java" : return "(new core.PioBoolean(%i%, common.Util.isFile(%s%.toString())))";
+}
+
+function isDirectory
+IOBoolean ::= s::String i::IO
+{
+  return error("Not Yet Implemented: isDirectory");
+} foreign {
+  "java" : return "(new core.PioBoolean(%i%, common.Util.isDirectory(%s%.toString())))";
+}
+
+function readFile
+IOString ::= s::String i::IO
+{
+  return error("Not Yet Implemented: readFile");
+} foreign {
+  "java" : return "(new core.PioString(%i%, common.Util.readFile(%s%.toString())))";
+}
+
+function cwd
+IOString ::= i::IO
+{
+  return error("Not Yet Implemented: cwd");
+} foreign {
+  "java" : return "(new core.PioString(%i%, common.Util.cwd()))";
+}
+
+function envVar
+IOString ::= s::String i::IO
+{
+  return error("Not Yet Implemented: envVar");
+} foreign {
+  "java" : return "(new core.PioString(%i%, common.Util.env(%s%.toString())))";
 }
 
 function listContents
@@ -103,6 +107,8 @@ IOStringList ::= s::String i::IO
 } foreign {
   "java" : return "(new core.PioStringList(%i%, common.Util.listContents(%s%.toString())))";
 }
+
+------ IO Misc.
 
 function unsafeio
 IO ::= 
