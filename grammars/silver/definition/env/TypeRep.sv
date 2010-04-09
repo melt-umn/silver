@@ -3,7 +3,7 @@ import silver:definition:regex;
 
 closed nonterminal TypeRep with typeName, inputTypes, outputType,
                           isPrimative, isTerminal, isNonTerminal, isDecorated, isProduction, unparse, typeEquals, decoratedType,
-			  isInteger, isFloat, isString, isBoolean, isFunction, regularExpression;
+			  isInteger, isFloat, isString, isBoolean, isFunction, regularExpression, isSynthesized, isInherited;
 
 synthesized attribute typeEquals :: Production (TypeEquals ::= Decorated TypeRep Decorated TypeRep);
 
@@ -24,6 +24,9 @@ synthesized attribute isNonTerminal :: Boolean;
 synthesized attribute isDecorated :: Boolean;
 synthesized attribute isProduction :: Boolean;
 synthesized attribute isFunction :: Boolean;
+
+synthesized attribute isSynthesized :: Boolean;
+synthesized attribute isInherited :: Boolean;
 
 function integerTypeRep
 Decorated TypeRep ::= 
@@ -170,6 +173,34 @@ top::TypeRep ::= it::[Decorated TypeRep] ot::Decorated TypeRep
   forwards to i_defaultTypeRep();
 }
 
+function synTypeRep
+Decorated TypeRep ::= t::Decorated TypeRep
+{
+  return decorate i_synTypeRep(t) with {};
+}
+abstract production i_synTypeRep
+top::TypeRep ::= t::Decorated TypeRep
+{
+  top.unparse = "syn(" ++ forward.unparse ++ ")";
+  top.isSynthesized = true;
+
+  forwards to new(t);
+}
+
+function inhTypeRep
+Decorated TypeRep ::= t::Decorated TypeRep
+{
+  return decorate i_inhTypeRep(t) with {};
+}
+abstract production i_inhTypeRep
+top::TypeRep ::= t::Decorated TypeRep
+{
+  top.unparse = "inh(" ++ forward.unparse ++ ")";
+  top.isInherited = true;
+
+  forwards to new(t);
+}
+
 function unparseTypes
 String ::= l::[Decorated TypeRep]{
   return "[" ++ unparseTypesHelp(l) ++ "]";
@@ -201,6 +232,8 @@ top::TypeRep ::=
   top.isDecorated = true;
   top.isProduction = true;
   top.isFunction = true;
+  top.isSynthesized = true;
+  top.isInherited = true;
   forwards to i_defaultTypeRep();
 }
 
@@ -226,6 +259,8 @@ top::TypeRep ::=
   top.isDecorated = false;
   top.isProduction = false;
   top.isFunction = false;
+  top.isSynthesized = false;
+  top.isInherited = false;
   top.decoratedType = topTypeRep();
   top.typeEquals = genEquals;
 

@@ -3,7 +3,7 @@ grammar silver:definition:env;
 --look at the things taht use getDclsAll
 --move EnvFilter EnvMap to Defs?
  
-closed nonterminal Env with typeTree, valueTree, attrTree, nameTree, restTree, productionTree, synthesizedTree, inheritedTree, occursTree;
+closed nonterminal Env with typeTree, valueTree, attrTree, nameTree, restTree, productionTree, occursTree;
 
 synthesized attribute typeTree :: [Decorated EnvScope]; -- Associates typename with typerep (e.g. Expr)
 synthesized attribute valueTree :: [Decorated EnvScope]; -- Associates name with typerep
@@ -11,8 +11,6 @@ synthesized attribute nameTree :: [Decorated EnvScope]; -- Associates short-name
 synthesized attribute attrTree :: [Decorated EnvScope]; -- Associates an attribute's name with its type
 synthesized attribute productionTree :: [Decorated EnvScope]; -- Production signatures
 
-synthesized attribute synthesizedTree :: [Decorated EnvScope]; -- Declares an attribute to be synthesized
-synthesized attribute inheritedTree :: [Decorated EnvScope]; -- Declares an attribute to be inherited
 synthesized attribute occursTree :: [Decorated EnvScope]; -- Attribute fname occurs on nonterminal (fname?)
 
 synthesized attribute restTree :: [Decorated EnvScope]; -- this (useless?), close (purpose?), prodAttributes (fix and make its own), lexer classes (move to typeTree?),
@@ -29,8 +27,6 @@ top::Env ::=
   top.nameTree =  [emptyEnvScope()];
   top.attrTree =  [emptyEnvScope()];
   top.productionTree = [emptyEnvScope()];  
-  top.synthesizedTree = [emptyEnvScope()];
-  top.inheritedTree = [emptyEnvScope()];
   top.occursTree = [emptyEnvScope()]; 
 
   top.restTree =  [emptyEnvScope()];
@@ -57,8 +53,6 @@ top::Env ::= d::Decorated Defs {
   top.attrTree =  [oneEnvScope(buildTree(d.attrList))];
   top.productionTree = [oneEnvScope(buildTree(d.productionList))];
 
-  top.synthesizedTree = [oneEnvScope(buildTree(d.synthesizedList))]; 
-  top.inheritedTree = [oneEnvScope(buildTree(d.inheritedList))]; 
   top.occursTree = [oneEnvScope(buildTree(d.occursList))]; 
 
   top.restTree = [oneEnvScope(buildTree(d.restList))];
@@ -80,8 +74,6 @@ top::Env ::= e1::Decorated Env  e2::Decorated Env {
   top.attrTree =  e1.attrTree ++ e2.attrTree;
   top.productionTree = e1.productionTree ++ e2.productionTree;
 
-  top.synthesizedTree = e1.synthesizedTree ++ e2.synthesizedTree; 
-  top.inheritedTree = e1.inheritedTree ++ e2.inheritedTree; 
   top.occursTree = e1.occursTree ++ e2.occursTree;
 
   top.restTree = e1.restTree ++ e2.restTree;
@@ -101,8 +93,6 @@ top::Env ::= d::Decorated Defs  e::Decorated Env {
   top.attrTree =  oneEnvScope(buildTree(d.attrList)) :: e.attrTree;
   top.productionTree = oneEnvScope(buildTree(d.productionList)) :: e.productionTree;
 
-  top.synthesizedTree = oneEnvScope(buildTree(d.synthesizedList)) :: e.synthesizedTree;
-  top.inheritedTree = oneEnvScope(buildTree(d.inheritedList)) :: e.inheritedTree;
   top.occursTree = oneEnvScope(buildTree(d.occursList)) :: e.occursTree;
 
   top.restTree = oneEnvScope(buildTree(d.restList)) :: e.restTree;
@@ -122,8 +112,6 @@ top::Env ::= d::Decorated Defs e::Decorated Env {
   top.attrTree =  [appendEnvScope(oneEnvScope(buildTree(d.attrList)), head(e.attrTree))] ++ tail(e.attrTree);
   top.productionTree = [appendEnvScope(oneEnvScope(buildTree(d.productionList)), head(e.productionTree))] ++ tail(e.productionTree);
 
-  top.synthesizedTree = [appendEnvScope(oneEnvScope(buildTree(d.synthesizedList)), head(e.synthesizedTree))] ++ tail(e.synthesizedTree);
-  top.inheritedTree = [appendEnvScope(oneEnvScope(buildTree(d.inheritedList)), head(e.inheritedTree))] ++ tail(e.inheritedTree);
   top.occursTree = [appendEnvScope(oneEnvScope(buildTree(d.occursList)), head(e.occursTree))] ++ tail(e.occursTree);
 
   top.restTree = [appendEnvScope(oneEnvScope(buildTree(d.restList)), head(e.restTree))] ++ tail(e.restTree);
@@ -142,8 +130,6 @@ top::Env ::= e::Decorated Env {
   top.attrTree =  [emptyEnvScope()] ++ e.attrTree;
   top.productionTree = [emptyEnvScope()] ++ e.productionTree;
 
-  top.synthesizedTree = [emptyEnvScope()] ++ e.synthesizedTree;
-  top.inheritedTree = [emptyEnvScope()] ++ e.inheritedTree;
   top.occursTree = [emptyEnvScope()] ++ e.occursTree;
 
   top.restTree = [emptyEnvScope()] ++ e.restTree;
@@ -267,33 +253,6 @@ Boolean ::= dn::String e::[Decorated EnvItem]
        || (!null(e) && doesOccurOnHelp(dn, tail(e)));
 }
 
-
-function isSynthesized
-Boolean ::= search::String e::Decorated Env
-{
-  return isSynthesizedHelp(searchDcls(search, e.synthesizedTree));
-}
-
-function isSynthesizedHelp
-Boolean ::= e::[Decorated EnvItem]
-{
-  return  (!null(e) && (head(e).isSynthesizedDeclaration))
-       || (!null(e) && isSynthesizedHelp(tail(e)));
-}
-
-function isInherited
-Boolean ::= search::String e::Decorated Env
-{
-  return isInheritedHelp(searchDcls(search, e.inheritedTree));
-}
-
-function isInheritedHelp
-Boolean ::= e::[Decorated EnvItem]
-{
-  return  (!null(e) && (head(e).isInheritedDeclaration))
-       || (!null(e) && isInheritedHelp(tail(e)));
-}
-
 function isClosed
 Boolean ::= search::String e::Decorated Env
 {
@@ -313,43 +272,6 @@ Boolean ::= e::[Decorated EnvItem]
   return  (!null(e) && (head(e).isCloseDeclaration))
        || (!null(e) && isClosedHelp(tail(e)));
 }
-
---function getThisDcl
---[Decorated EnvItem] ::= e::Decorated Env
---{
---  return getThisDclHelp(getDcls(e.restTree));
---}
---
---function getThisDclHelp
---[Decorated EnvItem] ::= e::[Decorated EnvItem]
---{
---  return if null(e)
---	 then []
---	 else if (head(e).isThisDeclaration) 
---	      then cons(head(e), recurse)
---              else recurse;
---
---  local attribute recurse :: [Decorated EnvItem];
---  recurse = getThisDclHelp(tail(e));
---}
-
---function getAspects
---[Decorated StmtRep] ::= search::String e::Decorated Env
---{
---  return getAspectsHelp(search, getDcls(e.restTree));
---}
---
---function getAspectsHelp
---[Decorated StmtRep] ::= search::String e::[Decorated EnvItem]
---{
---  local attribute recurse :: [Decorated StmtRep];
---  recurse = getAspectsHelp(search, tail(e));
---
---  return if null(e) then []
---         else if (head(e).isAspectDeclaration && head(e).itemName == search)
---	      then head(e).stmtRepList ++ recurse
---	      else recurse;
---}
 
 function getProductionAttributes
 Decorated Defs ::= search::String e::Decorated Env

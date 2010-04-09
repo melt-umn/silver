@@ -5,7 +5,7 @@ import silver:definition:env:parser;
 
 terminal AutoCopyTerm 'autocopy' lexer classes {C_1};
 
-concrete production aTypeRepCollection
+concrete production aTypeRepAutoCopy
 top::aTypeRep ::= 'autocopy' '(' t::aTypeRep ')'{
   top.typerep = copyTypeRep(t.typerep);
 }

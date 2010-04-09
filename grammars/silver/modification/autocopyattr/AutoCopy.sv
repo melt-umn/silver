@@ -16,8 +16,7 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name '::' t::Type ';'
   fName = top.grammarName ++ ":" ++ a.name;
 
   top.defs = addAttributeDcl(fName, copyTypeRep(t.typerep), 
-             addInheritedDcl(fName, 
-	     addFullNameDcl(a.name, fName,  emptyDefs())));
+	     addFullNameDcl(a.name, fName,  emptyDefs()));
 
   forwards to attributeDclInh(terminal(Inherited_kwd, "inherited", $1.line, $1.column), $2, a, $4, t, $6);
 }
@@ -35,15 +34,15 @@ Decorated TypeRep ::= tr::Decorated TypeRep
 }
 
 abstract production i_copyTypeRep
-top::TypeRep ::= tr::Decorated TypeRep
+top::TypeRep ::= t::Decorated TypeRep
 {
   top.isAutoCopy = true;
-  top.unparse = "autocopy(" ++ tr.unparse ++ ")";
-  forwards to new(tr);
+  top.unparse = "autocopy(" ++ t.unparse ++ ")";
+  forwards to i_inhTypeRep(t);
 }
 aspect production i_defaultTypeRep
 top::TypeRep ::= 
 {
   top.isAutoCopy = false;
 }
-
+-- what about topTypeRep?

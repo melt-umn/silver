@@ -288,21 +288,6 @@ top::aEnvItem ::= v::NameTerm '(' n1::Name ',' n2::Name ')'{
   top.defs = addFullNameDcl( n1.lexeme, n2.lexeme, emptyDefs());
 }
 
-concrete production aEnvItemInherited
-top::aEnvItem ::= v::InheritedTerm '(' n::Name ')'{
-  top.defs = addInheritedDcl( n.lexeme, emptyDefs());
-}
-
-concrete production aEnvItemSynthesized
-top::aEnvItem ::= v::SynthesizedTerm '(' n::Name ')'{
-  top.defs = addSynthesizedDcl( n.lexeme, emptyDefs());
-}
-
-concrete production aEnvItemThis
-top::aEnvItem ::= v::ThisTerm '(' n::Name ')'{
-  top.defs = addThisDcl( n.lexeme, emptyDefs());
-}
-
 concrete production aEnvItemClose
 top::aEnvItem ::= v::CloseTerm '(' n::Name ')'{
   top.defs = addCloseDcl( n.lexeme, emptyDefs());
@@ -363,6 +348,16 @@ top::aTypeRep ::= t::ProductionTerm '(' it::aTypeReps ','  ot::aTypeRep ')' {
 concrete production aTypeRepFunction
 top::aTypeRep ::= t::FunctionTerm '(' it::aTypeReps ','  ot::aTypeRep ')' {
   top.typerep = funTypeRep(it.typereps, ot.typerep);
+}
+
+concrete production aTypeRepSyn
+top::aTypeRep ::= 'syn' '(' t::aTypeRep ')'{
+  top.typerep = synTypeRep(t.typerep);
+}
+
+concrete production aTypeRepInh
+top::aTypeRep ::= 'inh' '(' t::aTypeRep ')'{
+  top.typerep = inhTypeRep(t.typerep);
 }
 
 concrete production aTypeRepAnyType

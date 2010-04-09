@@ -12,9 +12,8 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type ';'
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = addAttributeDcl(fName, te.typerep, 
-             addInheritedDcl(fName, 
-	     addFullNameDcl(a.name, fName,  emptyDefs())));
+  top.defs = addAttributeDcl(fName, inhTypeRep(te.typerep),
+	     addFullNameDcl(a.name, fName, emptyDefs()));
 
   local attribute er1 :: [Decorated Message];
   er1 = if length(getFullNameDclOne(a.name, top.env)) > 1
@@ -41,9 +40,8 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type ';'
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = addAttributeDcl(fName, te.typerep, 
-             addSynthesizedDcl(fName, 
-	     addFullNameDcl(a.name, fName,  emptyDefs())));
+  top.defs = addAttributeDcl(fName, synTypeRep(te.typerep),
+	     addFullNameDcl(a.name, fName, emptyDefs()));
 
   local attribute er1 :: [Decorated Message];
   er1 = if length(getFullNameDclOne(a.name, top.env)) > 1

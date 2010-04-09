@@ -123,7 +123,7 @@ top::Expr ::= e::Expr '@' q::QName
   top.appReference = "";
 
   top.translation = "((" ++ top.typerep.transType ++ ")" ++ e.translation ++ 
-                        (if isSynthesized(fName, top.env) 
+                        (if top.typerep.isSynthesized
                             then ".synthesized(\"" ++ fName ++ "\"))"  
                           else ".inherited(\"" ++ fName ++ "\"))");
                         

@@ -37,12 +37,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   local attribute prodAtts :: Decorated Defs;
   prodAtts = getProductionAttributes(fName, top.env);
 
-  body.env = newScopeEnv(
-	     	appendDefs(body.defs, 
-	     	appendDefs(ns.defs, 
-	     	addThisDcl(fName, emptyDefs()))), 
-	     	 newScopeEnv(prodAtts, top.env));
-		
+  body.env = newScopeEnv(appendDefs(body.defs, ns.defs), newScopeEnv(prodAtts, top.env));
 
   body.signatureEnv = toEnv(ns.defs);
   body.localsEnv = toEnv(appendDefs(prodAtts, body.defs));
@@ -88,12 +83,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   local attribute prodAtts :: Decorated Defs;
   prodAtts = getProductionAttributes(fName, top.env);
 
-  body.env = newScopeEnv(
-	     	appendDefs(body.defs, 
-	     	appendDefs(ns.defs, 
-	     	addThisDcl(fName, emptyDefs()))), 
-	     	 newScopeEnv(prodAtts, top.env));
-		
+  body.env = newScopeEnv(appendDefs(body.defs, ns.defs), newScopeEnv(prodAtts, top.env));
 
   body.signatureEnv = toEnv(ns.defs);
   body.localsEnv = toEnv(appendDefs(prodAtts, body.defs));
