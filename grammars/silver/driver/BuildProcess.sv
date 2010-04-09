@@ -273,7 +273,7 @@ top::CompilationUnit ::= grams::[[String]] need::[String] seen::[String]
   r = top.rParser(g);
   r.grammarName = gn;
   r.compiledGrammars = top.compiledGrammars;
-  r.globalImports = r.importedDefs;  
+  r.globalImports = toEnv(r.importedDefs);
   r.env = toEnv(appendDefs(r.defs, makeDefaultDefs()));
   r.file = gn;
 
@@ -387,7 +387,7 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   cu = compileFiles(pr, grammarName, files, grammarLocation.sValue);
   cu.rParser = top.rParser;
   cu.env = toEnv(appendDefs(cu.defs, makeDefaultDefs()));
-  cu.globalImports = cu.importedDefs;
+  cu.globalImports = toEnv(cu.importedDefs);
   cu.compiledGrammars = top.compiledGrammars;
 
   production attribute inf :: IOInterface;

@@ -69,7 +69,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
   acode.signatureEnv = toEnv(ns.defs);
   acode.localsEnv = toEnv(acode.defs);
-  acode.env = appendDefsEnv(
+  acode.env = newScopeEnv(
                addThisDcl(fName,
                 addTerminalAttrDefs(
                  appendDefs(acode.defs, ns.defs))), top.env);

@@ -15,7 +15,7 @@ synthesized attribute names :: [String];
 synthesized attribute envMaps :: [EnvMap];
 synthesized attribute importedDefs :: Decorated Defs;
 
-autocopy attribute globalImports :: Decorated Defs;
+autocopy attribute globalImports :: Decorated Env;
 
 autocopy attribute env :: Decorated Env;
 autocopy attribute signatureEnv :: Decorated Env; 

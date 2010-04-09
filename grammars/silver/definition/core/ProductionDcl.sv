@@ -40,9 +40,9 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   top.errors := er1 ++ er2 ++ er3 ++ ns.errors ++ body.errors;
   top.warnings := [];
 
-  ns.env = appendDefsEnv(ns.defs, pushScope(top.env));
+  ns.env = newScopeEnv(ns.defs, top.env);
 
-  body.env = appendDefsEnv(appendDefs(body.defs, appendDefs(ns.defs, addThisDcl(fName, emptyDefs()))), pushScope(top.env));
+  body.env = newScopeEnv(appendDefs(body.defs, appendDefs(ns.defs, addThisDcl(fName, emptyDefs()))), top.env);
   body.signature = namedSig;
   body.signatureEnv = toEnv(ns.defs);
   body.localsEnv = toEnv(body.defs);

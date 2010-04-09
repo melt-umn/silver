@@ -87,6 +87,27 @@ top::Env ::= e1::Decorated Env  e2::Decorated Env {
   top.restTree = e1.restTree ++ e2.restTree;
 }
 
+-- Better replacement for appendDefsEnv(x, pushScope(env)) pattern
+function newScopeEnv
+Decorated Env ::= e1::Decorated Defs  e2::Decorated Env {
+  return decorate i_newScopeEnv(e1, e2) with {};
+}
+
+abstract production i_newScopeEnv
+top::Env ::= d::Decorated Defs  e::Decorated Env {
+  top.typeTree = oneEnvScope(buildTree(d.typeList)) :: e.typeTree;
+  top.valueTree = oneEnvScope(buildTree(d.valueList)) :: e.valueTree;
+  top.nameTree =  oneEnvScope(buildTree(d.nameList)) :: e.nameTree;
+  top.attrTree =  oneEnvScope(buildTree(d.attrList)) :: e.attrTree;
+  top.productionTree = oneEnvScope(buildTree(d.productionList)) :: e.productionTree;
+
+  top.synthesizedTree = oneEnvScope(buildTree(d.synthesizedList)) :: e.synthesizedTree;
+  top.inheritedTree = oneEnvScope(buildTree(d.inheritedList)) :: e.inheritedTree;
+  top.occursTree = oneEnvScope(buildTree(d.occursList)) :: e.occursTree;
+
+  top.restTree = oneEnvScope(buildTree(d.restList)) :: e.restTree;
+}
+
 function appendDefsEnv
 Decorated Env ::= e1::Decorated Defs  e2::Decorated Env {
   return decorate i_appendDefsEnv(e1, e2) with {};

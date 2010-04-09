@@ -37,17 +37,18 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   local attribute prodAtts :: Decorated Defs;
   prodAtts = getProductionAttributes(fName, top.env);
 
-  body.env = appendDefsEnv(
+  body.env = newScopeEnv(
 	     	appendDefs(body.defs, 
 	     	appendDefs(ns.defs, 
-	     	addThisDcl(fName, emptyDefs()))), pushScope(appendDefsEnv(prodAtts, pushScope(top.env))));
+	     	addThisDcl(fName, emptyDefs()))), 
+	     	 newScopeEnv(prodAtts, top.env));
 		
 
   body.signatureEnv = toEnv(ns.defs);
   body.localsEnv = toEnv(appendDefs(prodAtts, body.defs));
   body.signature = namedSig;
 
-  ns.env = appendDefsEnv(ns.defs, pushScope(top.env));  
+  ns.env = newScopeEnv(ns.defs, top.env);  
   ns.realSignature = if null(prods) then [] else [realSig.outputElement] ++ realSig.inputElements;
 }
 
@@ -87,17 +88,18 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   local attribute prodAtts :: Decorated Defs;
   prodAtts = getProductionAttributes(fName, top.env);
 
-  body.env = appendDefsEnv(
+  body.env = newScopeEnv(
 	     	appendDefs(body.defs, 
 	     	appendDefs(ns.defs, 
-	     	addThisDcl(fName, emptyDefs()))), pushScope(appendDefsEnv(prodAtts, pushScope(top.env))));
+	     	addThisDcl(fName, emptyDefs()))), 
+	     	 newScopeEnv(prodAtts, top.env));
 		
 
   body.signatureEnv = toEnv(ns.defs);
   body.localsEnv = toEnv(appendDefs(prodAtts, body.defs));
   body.signature = namedSig;
 
-  ns.env = appendDefsEnv(ns.defs, pushScope(top.env));  
+  ns.env = newScopeEnv(ns.defs, top.env);  
   ns.realSignature = if null(funs) then [] else [realSig.outputElement] ++ realSig.inputElements;
 }
 

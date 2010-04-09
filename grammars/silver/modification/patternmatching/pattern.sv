@@ -70,7 +70,7 @@ top::Expr ::= 'case' e1::Expr 'of' ml::MRuleList 'end'
 	     	               terminal(LCurly_t, "{", $1.line, $1.column),
 		               terminal(RCurly_t, "}", $1.line, $1.column));
 
-  e1.expected = expected_default();
+  e1.expected = expected_default(); -- TODO: should be undecorated?
   forwards to ml.translation_tree ;
 }
 
@@ -80,12 +80,6 @@ ml::MRuleList ::= m::MatchRule
   ml.pp = m.pp ;
   ml.errors := m.errors ;
   ml.location = m.location ;
-
-  -- environments
-  m.grammarName = ml.grammarName ;
-  m.env = ml.env ;
-  m.localsEnv = ml.localsEnv ;
-  m.signatureEnv = ml.signatureEnv ;
 
   -- type checking
   ml.typerep = m.typerep;
@@ -107,8 +101,6 @@ ml::MRuleList ::= h::MatchRule '|' t::MRuleList
   ml.pp = h.pp ++ " | " ++ t.pp ;
   ml.errors := h.errors ++ t.errors ;
   ml.location = h.location ;  
-
-  -- environments
 
   -- type checking
   ml.typerep = h.typerep;
@@ -145,19 +137,15 @@ mr::MatchRule ::= pt::Pattern '->' e::Expr
   mr.location = e.location ;  
 
   -- environments
-  e.grammarName = mr.grammarName ;
+  local attribute newEnv::Decorated Env;
+  newEnv = newScopeEnv(pt.defs, mr.env); 
 
-  e.env = appendDefsEnv(pt.defs, mr.env) ;
-
-  e.localsEnv = appendDefsEnv(pt.defs, mr.localsEnv) ;
-  e.signatureEnv = mr.signatureEnv ;
-
-  pt.env = mr.env ;
-  pt.localsEnv = mr.localsEnv ;
-  pt.signatureEnv = mr.signatureEnv ;
+  e.env = newEnv;
+  e.localsEnv = newScopeEnv(pt.defs, mr.localsEnv);
+  pt.env = newEnv;
 
   -- type checking
-  e.expected = expected_default();
+  e.expected = expected_default(); -- TODO: why is this here?
   mr.typerep = e.typerep ;
   pt.typerep_down = mr.typerep_down ;
 
@@ -185,11 +173,6 @@ ps::PatternList ::= p::Pattern
   ps.errors := p.errors ;
   ps.defs = p.defs ;
   ps.location = p.location ;
-
-  -- environments
-  p.env = ps.env ;
-  p.localsEnv = ps.localsEnv ;
-  p.signatureEnv = ps.signatureEnv ;
 
   -- type checking
   p.typerep_down = if ! null(ps.typereps_down) 
@@ -226,18 +209,7 @@ ps::PatternList ::= p::Pattern ',' ps1::PatternList
   ps.pp = ps1.pp ++ ", " ++ p.pp ;
   ps.errors := ps1.errors ++ p.errors ;
   ps.defs = appendDefs(ps1.defs, p.defs) ;
-
   ps.location = p.location ;
-
-  -- environments
-  p.env = ps.env ;
-  p.localsEnv = ps.localsEnv ;
-  p.signatureEnv = ps.signatureEnv ;
-
-  ps1.env = appendDefsEnv(p.defs, ps.env);
-
-  ps1.localsEnv = ps.localsEnv ;
-  ps1.signatureEnv = ps.signatureEnv ;
 
   -- type checking
   p.typerep_down = if ! null(ps.typereps_down)
@@ -258,7 +230,6 @@ ps::PatternList ::= p::Pattern ',' ps1::PatternList
 
   ps.typeErrors = tr ++ p.typeErrors ++ ps1.typeErrors ;
 
-
   local attribute cType :: Decorated TypeRep;
   cType = if head(ps.typereps_down).isDecorated || !head(ps.typereps_down).isNonTerminal 
           then head(ps.typereps_down)
@@ -268,8 +239,6 @@ ps::PatternList ::= p::Pattern ',' ps1::PatternList
   orig_base_tree = cast_t(headList(terminal(Head_t, "head"), terminal(LParen_t, "("), ps.base_tree, terminal(RParen_t, ")")), cType);
 
   p.base_tree = orig_base_tree ;
-
-
 
   ps1.base_tree = tailList(terminal(Tail_t, "tail"), terminal(LParen_t, "("), ps.base_tree, terminal(RParen_t, ")"));
 
@@ -304,27 +273,27 @@ p::Pattern ::= prod::QName '(' ps::PatternList ')'
   p.errors := er1 ++ ps.errors ; 
   p.defs = ps.defs ;
 
-  ps.env = p.env ;
-  ps.localsEnv = p.env ;
-  ps.signatureEnv = p.signatureEnv ;
-
   -- type checking
-  local attribute n :: [Decorated EnvItem] ;
-  n = getFullNameDcl(prod.name, p.env);
+  local attribute fNames :: [Decorated EnvItem];
+  fNames = getFullNameDcl(prod.name, p.env);
+
+  local attribute fName ::String;
+  fName = if !null(fNames) then head(fNames).fullName else prod.name;
   
-  local attribute val :: [Decorated EnvItem] ;
-  val = getValueDcl(head(n).fullName, p.env) ;
+  local attribute vals :: [Decorated EnvItem] ;
+  vals = getValueDcl(fName, p.env) ;
 
   local attribute er1 :: [Decorated Message] ;
-  er1 = if null(n) || null(val)
+  er1 = if null(vals)
         then [err(prod.location, "'" ++ prod.name ++ "' is not declared.")] 
         else [];
-
+  
+  --
 
   local attribute pType :: Decorated TypeRep ;
-  pType = if length(n) > 0 && length(val) > 0 
-             then head(val).typerep
-             else topTypeRep() ; 
+  pType = if null(vals)
+          then topTypeRep()
+          else head(vals).typerep;
 
   local attribute er2 :: [Decorated Message] ;
   er2 = if pType.isProduction 
@@ -353,7 +322,7 @@ p::Pattern ::= prod::QName '(' ps::PatternList ')'
 				         terminal(Dot_t, "."), 
 				         qNameId(nameId(terminal(Id_t, "patProdName")))),
 		         terminal(EQEQ_t, "=="),
-      		         stringConst(terminal(String_t, "\"" ++ head(n).fullName ++ "\""))),
+      		         stringConst(terminal(String_t, "\"" ++ fName ++ "\""))),
 		    terminal(And_t, "&&"),
 		    ps.cond_tree) ;
 
@@ -463,17 +432,12 @@ p::Pattern ::= v::Name
  	                 then p.typerep_down
 	                 else refTypeRep(p.typerep_down) );
               
-  p.defs = addValueDcl(v.name, 
-                       var_type,
-                       addFullNameDcl(v.name, v.name, emptyDefs())) ;
-
-
-  local attribute val :: [Decorated EnvItem] ;
-  val = getValueDcl(v.name, p.env) ;
+  p.defs = addValueDcl(v.name, var_type,
+           addFullNameDcl(v.name, v.name, emptyDefs())) ;
 
   local attribute er :: [Decorated Message] ;
-  er = if length(val) != 0
-        then [err(p.location, "The name for pattern variable '" ++ v.name ++ "' is already used.")] 
+  er = if length(getValueDclOne(v.name, p.env)) > 1
+        then [err(p.location, "Pattern variable '" ++ v.name ++ "' is already bound in this scope.")] 
         else [];
 
 
