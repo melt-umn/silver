@@ -45,7 +45,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
   acode.signature = namedNamedSignature(top.grammarName ++ ":_pa:" ++ a.name);
   acode.signatureEnv = emptyEnv();
   acode.localsEnv = toEnv(acode.defs);
-  acode.env = appendDefsEnv(acode.defs, top.env);
+  acode.env = newScopeEnv(acode.defs, top.env);
 
   top.javaClasses = [];
   top.setupInh := "";

@@ -89,8 +89,9 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 
   top.errors := gdcl.errors ++ ms.errors ++ allImports.errors ++ ags.errors;
   top.warnings := gdcl.warnings ++ ms.warnings ++ allImports.warnings ++ ags.warnings;
-
-  ags.env = appendEnv(top.env, pushScope(appendDefsEnv(allImports.importedDefs, pushScope(toEnv(top.globalImports)))));
+  
+  -- Entire grammar is in one, local, scope. Then file imports. Then grammar-wide imports.
+  ags.env = appendEnv(top.env, newScopeEnv(allImports.importedDefs, top.globalImports));
 }
 
 abstract production grammarDcl

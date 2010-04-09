@@ -27,7 +27,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
   production attribute namedSig :: Decorated NamedSignature;
   namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
-  ns.env = appendDefsEnv(ns.defs, pushScope(top.env));
+  ns.env = newScopeEnv(ns.defs, top.env);
 
   top.terminalDcls = [];
   top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName, 

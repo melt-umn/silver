@@ -22,10 +22,10 @@ top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
   top.errors := la.errors ++ e.errors ;
    
   local attribute newEnv :: Decorated Env;
-  newEnv = appendDefsEnv(la.defs, top.env);
+  newEnv = newScopeEnv(la.defs, top.env);
 
   local attribute newLocalsEnv :: Decorated Env;
-  newLocalsEnv = appendDefsEnv(la.defs, top.localsEnv);
+  newLocalsEnv = newScopeEnv(la.defs, top.localsEnv);
 
   forwards to e'' with {
 	env = newEnv;
