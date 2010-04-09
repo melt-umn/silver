@@ -169,18 +169,18 @@ top::LHSExpr ::= id::Name '.' q::QName
        else [err(top.location, "Attribute '" ++ fName2 ++ "' does not decorate type '" ++ head(vals1).typerep.typeName ++ "'.")];
 
   local attribute e2 :: [Decorated Message];
-  e2 = if id.name == top.signature.outputElement.elementName && isInherited(fName2, top.env)
+  e2 = if id.name == top.signature.outputElement.elementName && head(vals2).typerep.isInherited
        then [err(top.location, "Cannot assign to the lhs's inherited attributes.")]
        else [];
 
   local attribute e3 :: [Decorated Message];
-  e3 = if contains(id.name, getNamesSignature(top.signature.inputElements)) && isSynthesized(fName2, top.env)
+  e3 = if contains(id.name, getNamesSignature(top.signature.inputElements)) && head(vals2).typerep.isSynthesized
        then [err(top.location, "Cannot assign to a child's synthesized attributes.")]
        else [];
 
   local attribute e4 :: [Decorated Message];
-  e4 = if !null(getValueDclOne(fName1, top.localsEnv)) && isSynthesized(fName2, top.env)
-       then [err(top.location, "Cannot assign to a locals synthesized attributes.")]
+  e4 = if !null(getValueDclOne(fName1, top.localsEnv)) && head(vals2).typerep.isSynthesized
+       then [err(top.location, "Cannot assign to a local's synthesized attributes.")]
        else [];
 
   top.typeErrors = e1 ++ e2 ++ e3 ++ e4;

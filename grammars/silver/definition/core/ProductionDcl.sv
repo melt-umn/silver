@@ -42,7 +42,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   ns.env = newScopeEnv(ns.defs, top.env);
 
-  body.env = newScopeEnv(appendDefs(body.defs, appendDefs(ns.defs, addThisDcl(fName, emptyDefs()))), top.env);
+  body.env = newScopeEnv(appendDefs(body.defs, ns.defs), top.env);
   body.signature = namedSig;
   body.signatureEnv = toEnv(ns.defs);
   body.localsEnv = toEnv(body.defs);

@@ -309,9 +309,6 @@ top::Expr ::= e::Expr '@' q::QName
   production attribute fName ::String;
   fName = if !null(fNames) then head(fNames).fullName else q.name;
 
---  production attribute occursOn :: Boolean;
---  occursOn = !null(fNames) && doesOccurOn(fName, e.typerep.typeName, top.env);
---
   production attribute vals :: [Decorated EnvItem];
   vals = getAttributeDcl(fName, top.env);
 
@@ -321,7 +318,6 @@ top::Expr ::= e::Expr '@' q::QName
        else [];
   
   top.typerep = if !null(vals) then head(vals).typerep else topTypeRep();
---  top.typerep = if occursOn && !null(vals) then head(vals).typerep else topTypeRep();
 }
 
 concrete production decorateExprWithEmpty

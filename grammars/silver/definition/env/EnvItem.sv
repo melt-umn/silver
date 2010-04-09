@@ -7,8 +7,8 @@ String ::= i::[Decorated EnvItem]{
 
 closed nonterminal EnvItem 
   with 	unparse, itemName, fullName, decoratesName, typerep, 
-	isValueDeclaration, isTypeDeclaration, isOccursDeclaration, isInheritedDeclaration,
-        isSynthesizedDeclaration, isThisDeclaration, isAttributeDeclaration,
+	isValueDeclaration, isTypeDeclaration, isOccursDeclaration,
+        isAttributeDeclaration,
         isFullNameDeclaration, isCloseDeclaration, isProductionAttributesDeclaration, attributes,
 	namedSignature, isProductionDeclaration, isFunctionDeclaration;
 
@@ -27,9 +27,6 @@ synthesized attribute isAttributeDeclaration :: Boolean;
 synthesized attribute isProductionDeclaration :: Boolean;
 synthesized attribute isFunctionDeclaration :: Boolean;
 synthesized attribute isOccursDeclaration :: Boolean;
-synthesized attribute isInheritedDeclaration :: Boolean;
-synthesized attribute isSynthesizedDeclaration :: Boolean;
-synthesized attribute isThisDeclaration :: Boolean;
 synthesized attribute isCloseDeclaration :: Boolean;
 synthesized attribute isProductionAttributesDeclaration ::Boolean;
 
@@ -168,59 +165,6 @@ top::EnvItem ::= n::String dn::String
   forwards to i_defaultEnvItem();
 }
 
-function inheritedEnvItem
-Decorated EnvItem ::= n::String
-{
-  return decorate i_inheritedEnvItem(n) with {};
-}
-abstract production i_inheritedEnvItem
-top::EnvItem ::= n::String
-{
-  top.unparse = "inh('" ++ n ++ "')"; 
-
-  -- required to be defined.
-  top.itemName = n;
-
-  top.isInheritedDeclaration = true;
-
-  forwards to i_defaultEnvItem();
-}
-
-function synthesizedEnvItem
-Decorated EnvItem ::= n::String
-{
-  return decorate i_synthesizedEnvItem(n) with {};
-}
-abstract production i_synthesizedEnvItem
-top::EnvItem ::= n::String
-{
-  top.unparse = "syn('" ++ n ++ "')";
-
-  -- required to be defined.
-  top.itemName = n;
-
-  top.isSynthesizedDeclaration = true;
-
-  forwards to i_defaultEnvItem();
-}
-function thisEnvItem
-Decorated EnvItem ::= n::String
-{
-  return decorate i_thisEnvItem(n) with {};
-}
-abstract production i_thisEnvItem
-top::EnvItem ::= n::String
-{
-  top.unparse = "this('" ++ n ++ "')";
-
-  -- required to be defined.
-  top.itemName = n;
-
-  top.isThisDeclaration = true;
-
-  forwards to i_defaultEnvItem();
-}
-
 function fullNameEnvItem
 Decorated EnvItem ::= n::String fname::String
 {
@@ -257,24 +201,6 @@ top::EnvItem ::= n::String
 
   forwards to i_defaultEnvItem();
 }
-
---function aspectEnvItem
---Decorated EnvItem ::= n::String stmts::[Decorated StmtRep]
---{
---  return decorate i_aspectEnvItem(n, stmts) with {};
---}
---
---abstract production i_aspectEnvItem
---top::EnvItem ::= n::String stmts::[Decorated StmtRep]
---{
---  top.itemName = n;
---
---  top.stmtRepList = stmts;
---
---  top.isAspectDeclaration = true;
---
---  forwards to i_defaultEnvItem();
---}
 
 function productionAttributesEnvItem
 Decorated EnvItem ::= n::String d::Decorated Defs
@@ -321,9 +247,6 @@ top::EnvItem ::=
   top.isFunctionDeclaration = false;
   top.isAttributeDeclaration = false;
   top.isOccursDeclaration = false;
-  top.isInheritedDeclaration = false;
-  top.isSynthesizedDeclaration = false;
-  top.isThisDeclaration = false;
   top.isFullNameDeclaration = false;
   top.isCloseDeclaration = false;
   top.isProductionAttributesDeclaration = false;

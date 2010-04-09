@@ -1,7 +1,7 @@
 grammar silver:definition:env;
 import silver:util;
 
-closed nonterminal Defs with typeList, valueList, attrList, nameList, restList, productionList, synthesizedList, occursList, inheritedList, size, unparse;
+closed nonterminal Defs with typeList, valueList, attrList, nameList, restList, productionList, occursList, size, unparse;
 
 synthesized attribute typeList :: [Decorated EnvItem];
 synthesized attribute valueList :: [Decorated EnvItem];
@@ -10,8 +10,6 @@ synthesized attribute attrList :: [Decorated EnvItem];
 synthesized attribute productionList :: [Decorated EnvItem];
 synthesized attribute restList :: [Decorated EnvItem];
 
-synthesized attribute synthesizedList :: [Decorated EnvItem];
-synthesized attribute inheritedList :: [Decorated EnvItem];
 synthesized attribute occursList :: [Decorated EnvItem];
 synthesized attribute size :: Integer;
 
@@ -29,8 +27,6 @@ top::Defs ::=
   top.attrList =  [];
   top.productionList = [];
 
-  top.synthesizedList =  [];
-  top.inheritedList =  [];
   top.occursList =  [];
 
   top.restList =  [];
@@ -48,10 +44,8 @@ top::Defs ::= i::Decorated EnvItem e::Decorated Defs
 	  else if i.isFullNameDeclaration then 2
 	  else if i.isAttributeDeclaration then 3
 	  else if i.isProductionDeclaration || i.isFunctionDeclaration then 4
-	  else if i.isSynthesizedDeclaration then 5
-	  else if i.isInheritedDeclaration then 6
-	  else if i.isOccursDeclaration then 7
-	  else 8;
+	  else if i.isOccursDeclaration then 5
+	  else 6;
 
   top.typeList =  if index == 0 then cons(i,e.typeList)  else e.typeList;
   top.valueList = if index == 1 then cons(i, e.valueList) else e.valueList;
@@ -59,19 +53,15 @@ top::Defs ::= i::Decorated EnvItem e::Decorated Defs
   top.attrList =  if index == 3 then cons(i, e.attrList)  else e.attrList;
   top.productionList =  if index == 4 then cons(i, e.productionList)  else e.productionList;
 
-  top.synthesizedList =  if index == 5 then cons(i, e.synthesizedList)  else e.synthesizedList;
-  top.inheritedList =  if index == 6 then cons(i, e.inheritedList)  else e.inheritedList;
-  top.occursList =  if index == 7 then cons(i, e.occursList)  else e.occursList;
+  top.occursList =  if index == 5 then cons(i, e.occursList)  else e.occursList;
 
-  top.restList =  if index == 8 then cons(i, e.restList)  else e.restList;
+  top.restList =  if index == 6 then cons(i, e.restList)  else e.restList;
 
   top.unparse = unparseItems(top.typeList ++ 
 				top.valueList ++ 
 				top.nameList ++ 
 				top.attrList ++ 
 				top.productionList ++ 
-				top.synthesizedList ++ 
-				top.inheritedList ++ 
 				top.occursList ++ 
 				top.restList);
 
@@ -88,8 +78,6 @@ top::Defs ::= e1::Decorated Defs e2::Decorated Defs
   top.attrList =  e1.attrList ++ e2.attrList;
   top.productionList =  e1.productionList ++ e2.productionList;
 
-  top.synthesizedList =  e1.synthesizedList ++ e2.synthesizedList;
-  top.inheritedList =  e1.inheritedList ++ e2.inheritedList;
   top.occursList =  e1.occursList ++ e2.occursList;
 
   top.restList =  e1.restList ++ e2.restList;
@@ -99,33 +87,10 @@ top::Defs ::= e1::Decorated Defs e2::Decorated Defs
 				top.nameList ++ 
 				top.attrList ++ 
 				top.productionList ++ 
-				top.synthesizedList ++ 
-				top.inheritedList ++ 
 				top.occursList ++ 
 				top.restList);
   forwards to i_emptyDefs();
 }
-
---function toDefs
---Decorated Defs ::= e::Decorated Env {
---  return decorate i_toDefs(e) with {};
---}
---
---abstract production i_toDefs
---Defs ::= e::Decorated Env {
---
---  top.typeList =  flattenScope(e.typeTree);
---  top.valueList = flattenScope(e.valueTree);
---  top.nameList =  flattenScope(e.nameTree);
---  top.attrList =  flattenScope(e.attrTree);
---  top.productionList = flattenScope(e.productionTree);
---
---  top.synthesizedList =  flattenScope(e.synthesizedTree);
---  top.inheritedList =  flattenScope(e.inheritedTree);
---  top.occursList =  flattenScope(e.occursTree);
---
---  top.restList =  flattenScope(e.restTree);
---}
 
 function emptyDefs
 Decorated Defs ::=
@@ -196,26 +161,6 @@ Decorated Defs ::= n::String dn::String e::Decorated Defs
   return consDefs(occursEnvItem(n, dn), e);
 }
 
--- This adds  inh n  entries
-function addInheritedDcl
-Decorated Defs ::= n::String e::Decorated Defs
-{
-  return consDefs(inheritedEnvItem(n), e);
-}
-
--- This adds  syn n  entries
-function addSynthesizedDcl
-Decorated Defs ::= n::String e::Decorated Defs
-{
-  return consDefs(synthesizedEnvItem(n), e);
-}
-
-function addThisDcl
-Decorated Defs ::= n::String e::Decorated Defs
-{
-  return consDefs(thisEnvItem(n), e);
-}
-
 function addFullNameDcl
 Decorated Defs ::= n::String fname::String e::Decorated Defs
 {
@@ -227,12 +172,6 @@ Decorated Defs ::= n::String e::Decorated Defs
 {
   return consDefs(closeEnvItem(n), e);
 }
-
---function addAspectDcl
---Decorated Defs ::= n::String stmts::[StmtRep] e::Decorated Defs
---{
---  return consDefs(aspectEnvItem(n, stmts''), e);
---}
 
 function addProductionAttributesDcl
 Decorated Defs ::= n::String d::Decorated Defs e::Decorated Defs
@@ -248,17 +187,14 @@ function makeDefaultDefs
 Decorated Defs ::= 
 {
   return      addFullNameDcl("lexeme", "lexeme", 
-  	      addSynthesizedDcl("lexeme", 
-	      addAttributeDcl("lexeme",stringTypeRep(),
+	      addAttributeDcl("lexeme", synTypeRep(stringTypeRep()),
 	      addFullNameDcl("line", "line", 
-	      addSynthesizedDcl("line", 
-	      addAttributeDcl("line", integerTypeRep(),
+	      addAttributeDcl("line", synTypeRep(integerTypeRep()),
 	      addFullNameDcl("column", "column", 
-	      addSynthesizedDcl("column", 
-	      addAttributeDcl("column", integerTypeRep(),
-	      addSynthesizedDcl("filename", 
-	      addAttributeDcl("filename", stringTypeRep(),
-	      emptyDefs())))))))))));
+	      addAttributeDcl("column", synTypeRep(integerTypeRep()),
+	      addFullNameDcl("filename", "filename", 
+	      addAttributeDcl("filename", synTypeRep(stringTypeRep()),
+	      emptyDefs()))))))));
 }
 
 ----------------------------------------------------------------------------------------------------
@@ -291,8 +227,6 @@ top::Defs ::= mapper::EnvMap e::Decorated Defs
   top.attrList =  mapEnvItems(mapper, e.attrList);
   top.productionList =  mapEnvItems(mapper, e.productionList);
 
-  top.synthesizedList =  mapEnvItems(mapper, e.synthesizedList);
-  top.inheritedList =  mapEnvItems(mapper, e.inheritedList);
   top.occursList =  mapEnvItems(mapper, e.occursList);
 
   top.restList =  mapEnvItems(mapper, e.restList);
@@ -302,8 +236,6 @@ top::Defs ::= mapper::EnvMap e::Decorated Defs
 				top.nameList ++ 
 				top.attrList ++ 
 				top.productionList ++ 
-				top.synthesizedList ++ 
-				top.inheritedList ++ 
 				top.occursList ++ 
 				top.restList);
 }
@@ -323,8 +255,6 @@ top::Defs ::= fil::EnvFilter e::Decorated Defs
   top.attrList =  filterEnvItems(fil, e.attrList);
   top.productionList =  filterEnvItems(fil, e.productionList);
 
-  top.synthesizedList =  filterEnvItems(fil, e.synthesizedList);
-  top.inheritedList =  filterEnvItems(fil, e.inheritedList);
   top.occursList =  filterEnvItems(fil, e.occursList);
 
   top.restList =  filterEnvItems(fil, e.restList);
@@ -334,8 +264,6 @@ top::Defs ::= fil::EnvFilter e::Decorated Defs
 				top.nameList ++ 
 				top.attrList ++ 
 				top.productionList ++ 
-				top.synthesizedList ++ 
-				top.inheritedList ++ 
 				top.occursList ++ 
 				top.restList);
 }
@@ -391,7 +319,7 @@ top::EnvMap ::= pref::String
 function toItems
 [Decorated EnvItem] ::= e::Decorated Defs
 {
-  return e.typeList ++ e.valueList ++ e.attrList ++ e.productionList ++ e.nameList ++ e.synthesizedList ++ e.occursList ++ e.restList ++ e.inheritedList;
+  return e.typeList ++ e.valueList ++ e.attrList ++ e.productionList ++ e.nameList ++ e.occursList ++ e.restList;
 }
 
 
