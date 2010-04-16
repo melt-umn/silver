@@ -3,7 +3,7 @@ import silver:definition:env;
 
 nonterminal Root with location, grammarName, impliedName, file, declaredName, moduleNames, importedDefs, exportedGrammars, condBuild, warnings, errors, compiledGrammars, env, globalImports, defs, pp;
 
-closed nonterminal Location with line, column, fileName, warnings, errors, env, defs, pp;
+nonterminal Location with line, column, fileName, warnings, errors, env, defs, pp;
 
 nonterminal QName with name, location, grammarName, file, warnings, errors, env, defs, pp;
 nonterminal Name with name, location, grammarName, file, warnings, errors, env, defs, pp;

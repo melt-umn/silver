@@ -54,12 +54,6 @@ top::AGDcl ::= id::Name
   top.disambiguationGroupDcls = [];			   
 }
 
-aspect production closeNonterminalDcl
-top::AGDcl ::= 'close' 'nonterminal' q::QName ';'
-{
-  top.disambiguationGroupDcls = [ ];			   
-}
-
 aspect production i_emptyRootSpec
 top::RootSpec ::= 
 {

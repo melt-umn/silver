@@ -1,7 +1,7 @@
 grammar silver:definition:env;
 import silver:definition:regex;
 
-closed nonterminal TypeRep with typeName, inputTypes, outputType,
+nonterminal TypeRep with typeName, inputTypes, outputType,
                           isPrimative, isTerminal, isNonTerminal, isDecorated, isProduction, unparse, typeEquals, decoratedType,
 			  isInteger, isFloat, isString, isBoolean, isFunction, regularExpression, isSynthesized, isInherited;
 

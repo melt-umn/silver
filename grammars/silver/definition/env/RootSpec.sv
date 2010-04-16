@@ -6,7 +6,7 @@ synthesized attribute defs :: Decorated Defs;
 synthesized attribute exportedGrammars :: [String];
 synthesized attribute condBuild :: [[String]];
 synthesized attribute moduleNames :: [String];
-closed nonterminal RootSpec with defs, declaredName, exportedGrammars, condBuild, moduleNames, unparse;
+nonterminal RootSpec with defs, declaredName, exportedGrammars, condBuild, moduleNames, unparse;
 
 function emptyRootSpec
 Decorated RootSpec ::= 

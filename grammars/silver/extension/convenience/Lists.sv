@@ -110,18 +110,6 @@ AGDcl ::= l::Integer c::Integer nts::[Name]
 		       makeNTDcls(l, c, tail(nts)));
 }
 
-function makeClosedNTDcls
-AGDcl ::= l::Integer c::Integer nts::[Name]
-{
-  return if null(nts) 
-	 then agDclNone()
-	 else agDclAppend(closedNonterminalDcl(terminal(Closed_kwd, "closed", l, c),
-					    terminal(NonTerminal_kwd, "nontermial", l, c),
-					    head(nts),
-					    terminal(Semi_t, ";", l, c)),
-		       makeNTDcls(l, c, tail(nts)));
-}
-
 function makeSynDcls
 AGDcl ::= l::Integer c::Integer t::Type atts::[Name]
 {

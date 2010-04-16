@@ -10,8 +10,6 @@ terminal Aspect_kwd		'aspect'	lexer classes {KEYWORD};
 terminal Attribute_kwd		'attribute'	lexer classes {KEYWORD};
 terminal Boolean_kwd		'Boolean'	lexer classes {KEYWORD};
 terminal Build_kwd		'build'		lexer classes {KEYWORD};
-terminal Closed_kwd		'closed'	lexer classes {KEYWORD};
-terminal Close_kwd		'close'		lexer classes {KEYWORD};
 terminal Concrete_kwd		'concrete'	lexer classes {KEYWORD};
 terminal Decorated_kwd		'Decorated'	lexer classes {KEYWORD};
 terminal Decorate_kwd		'decorate'	lexer classes {KEYWORD};

@@ -49,12 +49,6 @@ top::AGDcl ::= id::Name
   top.parserAttrDcls = [];			   
 }
 
-aspect production closeNonterminalDcl
-top::AGDcl ::= 'close' 'nonterminal' q::QName ';'
-{
-  top.parserAttrDcls = [];			   
-}
-
 aspect production i_emptyRootSpec
 top::RootSpec ::= 
 {

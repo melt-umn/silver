@@ -3,7 +3,7 @@ grammar silver:definition:env;
 --look at the things taht use getDclsAll
 --move EnvFilter EnvMap to Defs?
  
-closed nonterminal Env with typeTree, valueTree, attrTree, nameTree, restTree, productionTree, occursTree;
+nonterminal Env with typeTree, valueTree, attrTree, nameTree, restTree, productionTree, occursTree;
 
 synthesized attribute typeTree :: [Decorated EnvScope]; -- Associates typename with typerep (e.g. Expr)
 synthesized attribute valueTree :: [Decorated EnvScope]; -- Associates name with typerep
@@ -13,7 +13,7 @@ synthesized attribute productionTree :: [Decorated EnvScope]; -- Production sign
 
 synthesized attribute occursTree :: [Decorated EnvScope]; -- Attribute fname occurs on nonterminal (fname?)
 
-synthesized attribute restTree :: [Decorated EnvScope]; -- this (useless?), close (purpose?), prodAttributes (fix and make its own), lexer classes (move to typeTree?),
+synthesized attribute restTree :: [Decorated EnvScope]; -- prodAttributes (fix and make its own), lexer classes,
 
 
 ----------------------------------------------------------------------------------------------------
@@ -251,26 +251,6 @@ Boolean ::= dn::String e::[Decorated EnvItem]
 {
   return  (!null(e) && head(e).isOccursDeclaration && head(e).decoratesName == dn) 
        || (!null(e) && doesOccurOnHelp(dn, tail(e)));
-}
-
-function isClosed
-Boolean ::= search::String e::Decorated Env
-{
-  return isClosedHelp(searchDcls(search, e.restTree));
-}
-
---abstract production searchIsClosed
---top::EnvSearch ::=
---{
---  top.found = isClosedHelp(top.inEnvItems);
-----  top.continue = false;
---}
-
-function isClosedHelp
-Boolean ::= e::[Decorated EnvItem]
-{
-  return  (!null(e) && (head(e).isCloseDeclaration))
-       || (!null(e) && isClosedHelp(tail(e)));
 }
 
 function getProductionAttributes

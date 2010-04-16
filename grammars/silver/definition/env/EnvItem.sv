@@ -5,11 +5,11 @@ String ::= i::[Decorated EnvItem]{
   return if null(i) then "" else head(i).unparse ++ "\n" ++ printEnvItems(tail(i));
 }
 
-closed nonterminal EnvItem 
+nonterminal EnvItem 
   with 	unparse, itemName, fullName, decoratesName, typerep, 
 	isValueDeclaration, isTypeDeclaration, isOccursDeclaration,
         isAttributeDeclaration,
-        isFullNameDeclaration, isCloseDeclaration, isProductionAttributesDeclaration, attributes,
+        isFullNameDeclaration, isProductionAttributesDeclaration, attributes,
 	namedSignature, isProductionDeclaration, isFunctionDeclaration;
 
 
@@ -27,7 +27,6 @@ synthesized attribute isAttributeDeclaration :: Boolean;
 synthesized attribute isProductionDeclaration :: Boolean;
 synthesized attribute isFunctionDeclaration :: Boolean;
 synthesized attribute isOccursDeclaration :: Boolean;
-synthesized attribute isCloseDeclaration :: Boolean;
 synthesized attribute isProductionAttributesDeclaration ::Boolean;
 
 ----------------------------------------------------------------------------------------------------
@@ -183,25 +182,6 @@ top::EnvItem ::= n::String fname::String
   forwards to i_defaultEnvItem();
 }
 
-
-function closeEnvItem
-Decorated EnvItem ::= n::String
-{
-  return decorate i_closeEnvItem(n) with {};
-}
-abstract production i_closeEnvItem
-top::EnvItem ::= n::String
-{
-  top.unparse = "close('" ++ n ++ "')";
-
-  -- required to be defined.
-  top.itemName = n;
-
-  top.isCloseDeclaration = true;
-
-  forwards to i_defaultEnvItem();
-}
-
 function productionAttributesEnvItem
 Decorated EnvItem ::= n::String d::Decorated Defs
 {
@@ -248,7 +228,6 @@ top::EnvItem ::=
   top.isAttributeDeclaration = false;
   top.isOccursDeclaration = false;
   top.isFullNameDeclaration = false;
-  top.isCloseDeclaration = false;
   top.isProductionAttributesDeclaration = false;
 }
 

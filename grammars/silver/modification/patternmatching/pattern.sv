@@ -636,27 +636,3 @@ top::AGDcl ::= 'nonterminal' id::Name ';'
    extraDcls <- occurs2 ;
 } 
 
-aspect production closedNonterminalDcl
-top::AGDcl ::= 'closed' 'nonterminal' id::Name ';'
-{
-   local attribute occurs1 :: AGDcl ;
-   occurs1 = attributionDcl('attribute',
-			    qNameId(nameId(terminal(Id_t, "patProdName"))),
-			    terminal(Occurs_kwd, "occurs"),
-			    terminal(On_kwd, "on"),
-			    qNameId(id),
-			    terminal(Semi_t, ";")) ;
-
-   local attribute occurs2 :: AGDcl ;
-   occurs2 = attributionDcl(terminal(Attribute_kwd, "attribute"),
-			    qNameId(nameId(terminal(Id_t, "patChildList"))),
-			    terminal(Occurs_kwd, "occurs"),
-			    terminal(On_kwd, "on"),
-			    qNameId(id),
-			    terminal(Semi_t, ";")) ;
-			    
-   extraDcls <- occurs1;
-   extraDcls <- occurs2 ;
-}
-
-
