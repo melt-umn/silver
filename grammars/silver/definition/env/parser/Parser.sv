@@ -34,7 +34,6 @@ terminal InheritedTerm /inh/ lexer classes {C_1};
 terminal SynthesizedTerm /syn/ lexer classes {C_1};
 terminal ThisTerm /this/ lexer classes {C_1};
 terminal NameTerm /name/ lexer classes {C_1};
-terminal CloseTerm /close/ lexer classes {C_1};
 terminal ProductionAttributesTerm /pattrs/ lexer classes {C_1};
 terminal IntegerTerm /int/ lexer classes {C_1};
 terminal FloatTerm /float/ lexer classes {C_1};
@@ -286,11 +285,6 @@ top::aEnvItem ::= v::OccursTerm '(' n1::Name ',' n2::Name ')'{
 concrete production aEnvItemName
 top::aEnvItem ::= v::NameTerm '(' n1::Name ',' n2::Name ')'{
   top.defs = addFullNameDcl( n1.lexeme, n2.lexeme, emptyDefs());
-}
-
-concrete production aEnvItemClose
-top::aEnvItem ::= v::CloseTerm '(' n::Name ')'{
-  top.defs = addCloseDcl( n.lexeme, emptyDefs());
 }
 
 concrete production aEnvItemProductionAttributes

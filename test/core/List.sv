@@ -1,6 +1,6 @@
 grammar core;
 
-closed nonterminal AnyTypeList ;
+nonterminal AnyTypeList ;
 
 synthesized attribute empty_AnyTypeList :: Boolean ;
 synthesized attribute head_AnyTypeList :: AnyType ;

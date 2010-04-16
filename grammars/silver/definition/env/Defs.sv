@@ -1,7 +1,7 @@
 grammar silver:definition:env;
 import silver:util;
 
-closed nonterminal Defs with typeList, valueList, attrList, nameList, restList, productionList, occursList, size, unparse;
+nonterminal Defs with typeList, valueList, attrList, nameList, restList, productionList, occursList, size, unparse;
 
 synthesized attribute typeList :: [Decorated EnvItem];
 synthesized attribute valueList :: [Decorated EnvItem];
@@ -165,12 +165,6 @@ function addFullNameDcl
 Decorated Defs ::= n::String fname::String e::Decorated Defs
 {
   return consDefs(fullNameEnvItem(n, fname), e);
-}
-
-function addCloseDcl
-Decorated Defs ::= n::String e::Decorated Defs
-{
-  return consDefs(closeEnvItem(n), e);
 }
 
 function addProductionAttributesDcl

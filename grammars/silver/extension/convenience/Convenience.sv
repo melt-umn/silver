@@ -37,13 +37,6 @@ top::AGDcl ::= 'nonterminal' id::Names2 ';'
   forwards to makeNTDcls($1.line, $1.column, id.ids) ;
 }
 
-concrete production closedNonterminalWithDcl2
-top::AGDcl ::= 'closed' 'nonterminal' id::Names 'with' attrs::QNames ';'
-{
-  top.pp = "closed nonterminal " ++ id.pp ++ " with { " ++ attrs.pp ++ " };";
-  forwards to agDclAppend(makeClosedNTDcls($1.line, $1.column, id.ids), makeOccursDcls($1.line, $1.column, attrs.qnames, qualifyNames(id.ids)));
-}
-
 concrete production attributeDclInhMultiple1
 top::AGDcl ::= 'inherited' 'attribute' a::Names2 '::' te::Type 'occurs' 'on' qs::QNames ';'
 {

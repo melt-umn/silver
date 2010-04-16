@@ -11,11 +11,4 @@ top::AGDcl ::=  id::Name
   top.ruleDcls = [];
 }
 
-aspect production closeNonterminalDcl
-top::AGDcl ::= 'close' 'nonterminal' q::QName ';'
-{
-  top.parserDcls = [];
-  top.nonTerminalDcls = [nonTerminalSpec(fName)];  
-  top.terminalDcls = [];
-  top.ruleDcls = [];
-}
+
