@@ -106,11 +106,6 @@ String ::= s::String r::String str::String
          else substring(0, i, str) ++ s ++ substitute(s, r, substring(i+length(r), length(str), str));
 }
 
-function startsWith
-Boolean ::= pre::String s::String{
-  return length(pre) == 0 || (length(s) > 0 && substring(0,1,pre) == substring(0,1,s) && startsWith(substring(1,length(pre), pre), substring(1,length(s), s)));
-}
-
 function startsWithAny
 Boolean ::= pre::[String] s::String{
   return !null(pre) && (startsWith(head(pre), s) || startsWithAny(tail(pre), s));
