@@ -10,12 +10,36 @@ Integer ::= needle::String haystack::String
   "java" : return "(new Integer((%haystack%.toString().indexOf(%needle%.toString()))))";
 }
 
+function lastIndexOf
+Integer ::= needle::String haystack::String
+{
+  return error("Not Yet Implemented: lastIndexOf");
+} foreign {
+  "java" : return "(new Integer((%haystack%.toString().lastIndexOf(%needle%.toString()))))";
+}
+
 function substring
 String ::= start::Integer endl::Integer str::String
 {
   return error("Not Yet Implemented: substring");
 } foreign {
   "java" : return "(new common.StringCatter(%str%.toString().substring(%start%, %endl%)))";
+}
+
+function startsWith
+Boolean ::= pre::String s::String
+{
+  return error("Not Yet Implemented: startsWith");
+} foreign {
+  "java" : return "(new Boolean(%s%.toString().startsWith(%pre%.toString())))";
+}
+
+function endsWith
+Boolean ::= pre::String s::String
+{
+  return error("Not Yet Implemented: endsWith");
+} foreign {
+  "java" : return "(new Boolean(%s%.toString().endsWith(%pre%.toString())))";
 }
 
 function isDigit
