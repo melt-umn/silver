@@ -475,13 +475,13 @@ LetAssigns ::= ls1::[AssignExpr]
 inherited attribute prodName :: Name ;
 attribute prodName occurs on ProductionBody ;
 
-inherited attribute lhsName_down :: Name ;
+inherited attribute lhsName_down :: QName ;
 attribute lhsName_down occurs on ProductionBody ;
 
 inherited attribute rhsListExpr :: Expr ; 
 attribute rhsListExpr occurs on ProductionBody ;
 
-synthesized attribute lhsName_up :: Name ;
+synthesized attribute lhsName_up :: QName ;
 attribute lhsName_up occurs on ProductionSignature, ProductionLHS;
 
 synthesized attribute genRhsListExpr :: Expr ;
@@ -547,7 +547,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
 aspect production productionLHS
 top::ProductionLHS ::=  id::Name '::' t::Type
 {
-   top.lhsName_up = id ;
+   top.lhsName_up = qNameId(id) ;
 }
 
 
@@ -597,13 +597,13 @@ top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
    local attribute stmt1 :: ProductionStmt ;
    stmt1 = attributeDef(
-	lhsExprTwo(top.lhsName_down, terminal(Dot_t, "."), qNameId(nameId(terminal(Id_t, "patProdName")))), '=',
+	top.lhsName_down, terminal(Dot_t, "."), qNameId(nameId(terminal(Id_t, "patProdName"))), '=',
         stringConst(terminal(String_t, "\"" ++ top.signature.fullName ++ "\"")), ';');
 	
 
    local attribute stmt2 :: ProductionStmt ;
    stmt2 = attributeDef(
-       	lhsExprTwo(top.lhsName_down, terminal(Dot_t, "."), qNameId(nameId(terminal(Id_t, "patChildList")))), '=',
+       	top.lhsName_down, terminal(Dot_t, "."), qNameId(nameId(terminal(Id_t, "patChildList"))), '=',
         top.rhsListExpr, ';');
 
    local attribute addedStmts :: ProductionStmts ;

@@ -184,68 +184,63 @@ top::ProductionStmt ::= 'print' c3::Expr c4::Semi_t
   c3.expected = expected_default();
 }
 
-
-synthesized attribute isParserLHS :: Boolean occurs on LHSExpr;
-synthesized attribute isLocalParserLHS :: Boolean occurs on LHSExpr;
-
-aspect production lhsExprOne
-top::LHSExpr ::= id::Name
-{
-  top.isParserLHS = isParserAttribute(fName, top.env);
-  top.isLocalParserLHS = !top.isParserLHS && !top.actionCodeType.isSemanticBlock;
-}
-
-aspect production lhsExprTwo
-top::LHSExpr ::= id::Name '.' q::QName
-{
-  top.isParserLHS = false;
-  top.isLocalParserLHS = false;
-  top.errors <- if isParserAttribute(fName1, top.env) then [err(top.location, "Parser action block are imperative, not declarative. You cannot modify the attributes of " ++ id.name ++ ". If you are trying to set inherited attributes, use 'decorate " ++ id.name ++ " with { ... }' when you create it. (Note that then the type should be Decorated.)")] else [];
-}
-
 aspect production attributeDef
-top::ProductionStmt ::= lhs::LHSExpr '=' e::Expr ';'
+top::ProductionStmt ::= val::QName '.' attr::QName '=' e::Expr ';'
 {
-  fwd <- if lhs.isParserLHS then [parserAttributeDef(lhs,e)] else
-         if (lhs.nodeName == "filename" ||
-             lhs.nodeName == "line" ||
-             lhs.nodeName == "column") then [terminalAttributeDef(lhs,e)] else
-         if lhs.isLocalParserLHS then [localParserAttributeDef(lhs,e)] else
+  top.errors <- if isParserAttribute(fName1, top.env)
+                then [err(top.location, "Parser action block are imperative, not declarative. You cannot modify the attributes of " ++ val.name ++ ". If you are trying to set inherited attributes, use 'decorate " ++ val.name ++ " with { ... }' when you create it. (Note that then the type should be Decorated.)")]
+                else [];
+}
+
+aspect production valueDef
+top::ProductionStmt ::= val::QName '=' e::Expr ';'
+{
+  fwd <- if isParserAttribute(fName, top.env) then [parserAttributeDef(val, $2, e)] else
+         if (val.name == "filename" ||
+             val.name == "line" ||
+             val.name == "column") then [terminalAttributeDef(val, $2, e)] else
+         if !top.actionCodeType.isSemanticBlock then [localParserAttributeDef(val, $2, e)] else
          [];
 }
 
 -- Note: AttributeDef already <- in lhs.errors and e.errors.  So we don't need to include them in these.
 abstract production parserAttributeDef
-top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
+top::ProductionStmt ::= val::QName '=' e::Decorated Expr
 {
+  production attribute fNames :: [Decorated EnvItem];
+  fNames = getFullNameDcl(val.name, top.env);
+
+  production attribute fName :: String;
+  fName = if !null(fNames) then head(fNames).fullName else val.name;
+
   top.setupInh := "";
-  top.translation = makeCopperName(lhs.nodeName) ++ " = " ++ e.translation ++ ";\n";
+  top.translation = makeCopperName(fName) ++ " = " ++ e.translation ++ ";\n";
   top.errors := (if top.actionCodeType.isSemanticBlock
-                then [err(lhs.location, "Assignment to parser attributes only permitted in parser action blocks")]
+                then [err(val.location, "Assignment to parser attributes only permitted in parser action blocks")]
                 else []);
 }
 
 -- This is the same, but for modularity purposes is separate
 abstract production localParserAttributeDef
-top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
+top::ProductionStmt ::= val::QName '=' e::Decorated Expr
 {
-  forwards to parserAttributeDef(lhs,e);
+  forwards to parserAttributeDef(val,$2,e);
 }
 
 abstract production terminalAttributeDef
-top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
+top::ProductionStmt ::= val::QName '=' e::Decorated Expr
 {
   local attribute memberfunc :: String;
-  memberfunc = if lhs.nodeName == "filename" then "setFileName" else
-               if lhs.nodeName == "line" then "setLine" else
-               if lhs.nodeName == "column" then "setColumn" else
-               error("unknown assignment to terminal attribute: " ++ lhs.nodeName);
+  memberfunc = if val.name == "filename" then "setFileName" else
+               if val.name == "line" then "setLine" else
+               if val.name == "column" then "setColumn" else
+               error("unknown assignment to terminal attribute: " ++ val.name);
 
   top.setupInh := "";
   top.translation = "virtualLocation." ++ memberfunc ++ "(" ++ e.translation
-                     ++ (if lhs.nodeName == "filename" then ".toString()" else "") ++ ");\n";
+                     ++ (if val.name == "filename" then ".toString()" else "") ++ ");\n";
   top.errors := (if top.actionCodeType.isSemanticBlock
-                then [err(lhs.location, "Assignment to location attributes only permitted in parser action blocks")]
+                then [err(val.location, "Assignment to location attributes only permitted in parser action blocks")]
                 else []);
 }
 

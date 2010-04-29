@@ -141,56 +141,148 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
   forwards to productionAttributeDcl($1, $2, a, $4, te, $8);
 }
 
-terminal Contains_t   '<-'   lexer classes {KEYWORD};
-concrete production attrContains
-top::ProductionStmt ::= lhs::LHSExpr '<-' e::Expr ';'
+terminal Contains_t   '<-';
+terminal BaseContains_t   ':=';
+
+concrete production attrContainsAppend
+top::ProductionStmt ::= val::QName '.' attr::QName '<-' e::Expr ';'
 {
-  e.expected = expected_type(lhs.typerep);
+  production attribute fNames1 :: [Decorated EnvItem];
+  fNames1 = getFullNameDcl(val.name, top.env);
+
+  production attribute fName1 :: String;
+  fName1 = if !null(fNames1) then head(fNames1).fullName else val.name;
+
+  production attribute fNames2 :: [Decorated EnvItem];
+  fNames2 = getFullNameDcl(attr.name, top.env);
+
+  production attribute fName2 :: String;
+  fName2 = if !null(fNames2) then head(fNames2).fullName else attr.name;
+
+  production attribute attrs :: [Decorated EnvItem];
+  attrs = getAttributeDcl(fName2, top.env);
   
-  top.errors <- if !lhs.typerep.isCollection
-                then [err(loc(top.file, $2.line, $2.column), "'<-' operator can only be performed on collections. " ++ lhs.pp ++ " has type " ++ lhs.typerep.unparse)]
+  production attribute type :: Decorated TypeRep;
+  type = if !null(attrs) then head(attrs).typerep else topTypeRep();
+
+  e.expected = expected_type(type);
+
+  top.errors <- if !null(attrs) && !type.isCollection
+                then [err(attr.location, "'<-' operator can only be performed on collections. Attribute " ++ attr.pp ++ " has type " ++ type.unparse)]
                 else [];
                 
-  forwards to attributeDef(lhs, '=', e, ';') with {
-     inCollectionContext = true;
-  };
+  forwards to attributeDef(val, $2, attr, terminal(Equal_t, "<-", $4), e, $6);
 }
 
-terminal BaseContains_t   ':='   lexer classes {KEYWORD};
 concrete production attrContainsBase
-top::ProductionStmt ::= lhs::LHSExpr ':=' e::Expr ';'
+top::ProductionStmt ::= val::QName '.' attr::QName ':=' e::Expr ';'
 {
-  e.expected = expected_type(lhs.typerep);
+  production attribute fNames1 :: [Decorated EnvItem];
+  fNames1 = getFullNameDcl(val.name, top.env);
 
-  top.errors <- if !lhs.typerep.isCollection
-                then [err(loc(top.file, $2.line, $2.column), "':=' operator can only be performed on collections. " ++ lhs.pp ++ " has type " ++ lhs.typerep.unparse)]
+  production attribute fName1 :: String;
+  fName1 = if !null(fNames1) then head(fNames1).fullName else val.name;
+
+  production attribute fNames2 :: [Decorated EnvItem];
+  fNames2 = getFullNameDcl(attr.name, top.env);
+
+  production attribute fName2 :: String;
+  fName2 = if !null(fNames2) then head(fNames2).fullName else attr.name;
+
+  production attribute attrs :: [Decorated EnvItem];
+  attrs = getAttributeDcl(fName2, top.env);
+  
+  production attribute type :: Decorated TypeRep;
+  type = if !null(attrs) then head(attrs).typerep else topTypeRep();
+
+  e.expected = expected_type(type);
+
+  top.errors <- if !null(attrs) && !type.isCollection
+                then [err(attr.location, "':=' operator can only be performed on collections. Attribute " ++ attr.pp ++ " has type " ++ type.unparse)]
                 else [];
-
-  forwards to attributeDef(lhs, '=', e, ';') with {
-     inCollectionContext = true;
-  };
-}
-
-inherited attribute inCollectionContext :: Boolean occurs on ProductionStmt;
-aspect production productionStmts
-top::ProductionStmts ::= stmt::ProductionStmt
-{
-  stmt.inCollectionContext = false;
-}
-
-aspect production productionStmtsCons
-top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
-{
-  h.inCollectionContext = false;
+                
+  forwards to attributeDef(val, $2, attr, terminal(Equal_t, ":=", $4), e, $6);
 }
 
 aspect production attributeDef
-top::ProductionStmt ::= lhs::LHSExpr '=' e::Expr ';'
+top::ProductionStmt ::= val::QName '.' attr::QName '=' e::Expr ';'
 {
-  top.errors <- if !top.inCollectionContext && lhs.typerep.isCollection
-                then [err(loc(top.file, $2.line, $2.column), "'=' operator cannot be performed on collections. Use '<-' or ':='. " ++ lhs.pp ++ " has type " ++ lhs.typerep.unparse)]
+  top.errors <- if $4.lexeme == "=" && type.isCollection
+                then [err(attr.location, "'=' operator cannot be performed on collections. Use '<-' or ':='. " ++ attr.pp ++ " has type " ++ type.unparse)]
                 else [];
 }
+
+
+
+
+
+
+
+
+
+
+
+concrete production valContainsAppend
+top::ProductionStmt ::= val::QName '<-' e::Expr ';'
+{
+  production attribute fNames :: [Decorated EnvItem];
+  fNames = getFullNameDcl(val.name, top.env);
+
+  production attribute fName :: String;
+  fName = if !null(fNames) then head(fNames).fullName else val.name;
+
+  production attribute vals :: [Decorated EnvItem];
+  vals = getValueDcl(fName, top.env);
+
+  production attribute type :: Decorated TypeRep;
+  type = if !null(vals) then head(vals).typerep else topTypeRep();
+
+  e.expected = expected_type(type);
+  
+  top.errors <- if !null(vals) && !type.isCollection
+                then [err(val.location, "'<-' operator can only be performed on collections. Value " ++ val.pp ++ " has type " ++ type.unparse)]
+                else [];
+                
+  forwards to valueDef(val, terminal(Equal_t, "<-", $2), e, $4);
+}
+
+concrete production valContainsBase
+top::ProductionStmt ::= val::QName ':=' e::Expr ';'
+{
+  production attribute fNames :: [Decorated EnvItem];
+  fNames = getFullNameDcl(val.name, top.env);
+
+  production attribute fName :: String;
+  fName = if !null(fNames) then head(fNames).fullName else val.name;
+
+  production attribute vals :: [Decorated EnvItem];
+  vals = getValueDcl(fName, top.env);
+  
+  production attribute type :: Decorated TypeRep;
+  type = if !null(vals) then head(vals).typerep else topTypeRep();
+
+  e.expected = expected_type(type);
+  
+  top.errors <- if !null(vals) && !type.isCollection
+                then [err(val.location, "':=' operator can only be performed on collections. Value " ++ val.pp ++ " has type " ++ type.unparse)]
+                else [];
+                
+  forwards to valueDef(val, terminal(Equal_t, ":=", $2), e, $4);
+}
+
+
+aspect production valueDef
+top::ProductionStmt ::= val::QName '=' e::Expr ';'
+{
+  top.errors <- if $2.lexeme == "=" && type.isCollection
+                then [err(val.location, "'=' operator cannot be performed on collections. Use '<-' or ':='. " ++ val.pp ++ " has type " ++ type.unparse)]
+                else [];
+}
+
+
+
+
+
 
 
 synthesized attribute isCollection :: Boolean;

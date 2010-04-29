@@ -120,34 +120,6 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   e.expected = expected_type(top.signature.outputElement.typerep);
 }
 
-concrete production attributeDef
-top::ProductionStmt ::= lhs::LHSExpr '=' e::Expr ';'
-{
-  top.pp = "\t" ++ lhs.pp ++ " = " ++ e.pp ++ ";";
-  top.location = lhs.location;
-
-  top.productionAttributes = emptyDefs();
-
-  -- TODO: this whole override thing needs massaging to look nice. It's ugly right now.
-
-  top.defs = emptyDefs();
-  top.errors <- lhs.errors ++ e.errors ++ if length(fwd) > 1 then [err(top.location,"Ambiguous assignment.")] else []; -- TODO: better error messages
-  top.warnings := [];
-
-  e.expected = expected_type(lhs.typerep);
-  
-  production attribute fwd :: [ProductionStmt] with ++;
-  fwd := [];
-  
-  forwards to if null(fwd) then normalAttributeDef(lhs, e) else head(fwd);
-}
-
-abstract production normalAttributeDef
-top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
-{
-  top.errors := [];
-}
-
 concrete production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 {
@@ -319,76 +291,105 @@ top::ForwardLHSExpr ::= q::QName
   top.typerep = if !null(attrs) then head(attrs).typerep else topTypeRep();
 }
 
-concrete production lhsExprOne
-top::LHSExpr ::= id::Name
+concrete production attributeDef
+top::ProductionStmt ::= val::QName '.' attr::QName '=' e::Expr ';'
 {
-  top.pp = id.pp;
-  top.location = id.location;
+  top.pp = "\t" ++ val.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
+  top.location = loc(top.file, $4.line, $4.column);
 
- --the full name of the identifier
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(id.name, top.env);
-
-  production attribute fName :: String;
-  fName = if !null(fNames) then head(fNames).fullName else id.name;
-
-  --whether it is bound to a value
-  local attribute vals :: [Decorated EnvItem];
-  vals = getValueDcl(fName, top.env);
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if null(vals)
-	then [err(top.location, "Value '" ++ id.name ++ "' is not declared and therefore cannot be assigned to.")] 
-	else [];
-
-  top.errors := er1;
-  top.warnings := [];
-  top.typerep = if !null(vals) then head(vals).typerep else topTypeRep();
-}
-
-concrete production lhsExprTwo
-top::LHSExpr ::= id::Name '.' q::QName
-{
-  top.pp = id.pp ++ "." ++ q.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.productionAttributes = emptyDefs();
+  top.defs = emptyDefs();
 
   production attribute fNames1 :: [Decorated EnvItem];
-  fNames1 = getFullNameDcl(id.name, top.env);
+  fNames1 = getFullNameDcl(val.name, top.env);
 
   production attribute fName1 :: String;
-  fName1 = if !null(fNames1) then head(fNames1).fullName else id.name;
+  fName1 = if !null(fNames1) then head(fNames1).fullName else val.name;
 
-  --whether it is bound to a value
-  production attribute vals1 :: [Decorated EnvItem];
-  vals1 = getValueDcl(fName1, top.env);
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if null(fNames1)
-	then [err(top.location, "Child '" ++ id.name ++ "' is not declared.")] 
-  	else [];
+  production attribute vals :: [Decorated EnvItem];
+  vals = getValueDcl(fName1, top.env);
 
   local attribute er2 :: [Decorated Message];
-  er2 = if null(vals1)
-	then [err(top.location, "Value '" ++ id.name ++ "' is not declared.")] 
+  er2 = if null(vals)
+	then [err(val.location, "Value '" ++ val.name ++ "' is not declared.")] 
   	else [];
 
   production attribute fNames2 :: [Decorated EnvItem];
-  fNames2 = getFullNameDcl(q.name, top.env);
+  fNames2 = getFullNameDcl(attr.name, top.env);
 
   production attribute fName2 :: String;
-  fName2 = if !null(fNames2) then head(fNames2).fullName else q.name;
+  fName2 = if !null(fNames2) then head(fNames2).fullName else attr.name;
 
-  --whether it is bound to a value
-  production attribute vals2 :: [Decorated EnvItem];
-  vals2 = getAttributeDcl(fName2, top.env);
+  production attribute attrs :: [Decorated EnvItem];
+  attrs = getAttributeDcl(fName2, top.env);
 
   local attribute er3 :: [Decorated Message];
-  er3 = if null(vals2)
-	then [err(top.location, "Attribute '" ++ q.name ++ "' is not declared.")] 
+  er3 = if null(attrs)
+	then [err(attr.location, "Attribute '" ++ attr.name ++ "' is not declared.")] 
         else [];
 
-  top.errors := er1 ++ er2 ++ er3;
+  top.errors <- er2 ++ er3 ++ e.errors ++ if length(fwd) > 1 then [err(top.location,"Ambiguous assignment.")] else []; -- TODO: better error messages
   top.warnings := [];
-  top.typerep = if !null(vals2) then head(vals2).typerep else topTypeRep();
+
+  production attribute type :: Decorated TypeRep;
+  type = if !null(attrs) then head(attrs).typerep else topTypeRep();
+  
+  e.expected = expected_type(type);
+  
+  -- TODO: this whole override thing needs massaging to look nice. It's ugly right now.
+  production attribute fwd :: [ProductionStmt] with ++;
+  fwd := [];
+  
+  forwards to if null(fwd) then normalAttributeDef(val, $2, attr, $4, e) else head(fwd);
+}
+
+abstract production normalAttributeDef
+top::ProductionStmt ::= val::QName '.' attr::QName '=' e::Decorated Expr
+{
+  top.errors := [];
+}
+
+concrete production valueDef
+top::ProductionStmt ::= val::QName '=' e::Expr ';'
+{
+  top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
+  top.location = loc(top.file, $2.line, $2.column);
+
+  top.productionAttributes = emptyDefs();
+  top.defs = emptyDefs();
+
+  production attribute fNames :: [Decorated EnvItem];
+  fNames = getFullNameDcl(val.name, top.env);
+
+  production attribute fName :: String;
+  fName = if !null(fNames) then head(fNames).fullName else val.name;
+
+  production attribute vals :: [Decorated EnvItem];
+  vals = getValueDcl(fName, top.env);
+
+  local attribute er2 :: [Decorated Message];
+  er2 = if null(vals)
+	then [err(val.location, "Value '" ++ val.name ++ "' is not declared.")] 
+  	else [];
+
+  top.errors <- er2 ++ e.errors ++ if length(fwd) > 1 then [err(top.location,"Ambiguous assignment.")] else []; -- TODO: better error messages
+  top.warnings := [];
+
+  production attribute type :: Decorated TypeRep;
+  type = if !null(vals) then head(vals).typerep else topTypeRep();
+  
+  e.expected = expected_type(type);
+  
+  -- TODO: this whole override thing needs massaging to look nice. It's ugly right now.
+  production attribute fwd :: [ProductionStmt] with ++;
+  fwd := [];
+  
+  forwards to if null(fwd) then normalValueDef(val, $2, e) else head(fwd);
+}
+
+abstract production normalValueDef
+top::ProductionStmt ::= val::QName '=' e::Decorated Expr
+{
+  top.errors := [];
 }
 

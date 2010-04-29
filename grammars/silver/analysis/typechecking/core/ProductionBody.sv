@@ -119,21 +119,6 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
   top.typeErrors = [];
 }
 
-aspect production attributeDef
-top::ProductionStmt ::= lhs::LHSExpr '=' e::Expr ';'
-{
-  local attribute valid :: Boolean;
-  valid = lhs.typerep.typeEquals(lhs.typerep, e.typerep).bValue;
-
-  local attribute er :: [Decorated Message];
-  er = if valid 
-       then [] 
-       else [err(top.location, "The LHS and RHS of the assignment must be the same type.\n" ++
-                                  "\tInstead they are '" ++ lhs.typerep.unparse ++ "' and '" ++ e.typerep.unparse ++ "'")] ; 
-
-  top.typeErrors = er ++ lhs.typeErrors ++ e.typeErrors;
-}
-
 aspect production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
@@ -149,40 +134,45 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   top.typeErrors = er ++ e.typeErrors;
 }
 
-aspect production lhsExprOne
-top::LHSExpr ::= id::Name
+aspect production attributeDef
+top::ProductionStmt ::= val::QName '.' attr::QName '=' e::Expr ';'
 {
-  top.typeErrors = [];
-}
+  local attribute er :: [Decorated Message];
+  er = if type.typeEquals(type, e.typerep).bValue
+       then [] 
+       else [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ type.unparse ++ " but the expression being assigned to it has type " ++ e.typerep.unparse)] ; 
 
---TODO look at these errors again Do we need signature and signatureEnv?
-aspect production lhsExprTwo
-top::LHSExpr ::= id::Name '.' q::QName
-{
-
-  --binding checking verifies that everything is here.
-  local attribute occursOn :: Boolean;
-  occursOn = doesOccurOn(fName2, head(vals1).typerep.typeName, top.env);
-             
   local attribute e1 :: [Decorated Message];
-  e1 = if occursOn then []
-       else [err(top.location, "Attribute '" ++ fName2 ++ "' does not decorate type '" ++ head(vals1).typerep.typeName ++ "'.")];
+  e1 = if !doesOccurOn(fName2, head(vals).typerep.typeName, top.env)
+       then [err(top.location, "Attribute '" ++ fName2 ++ "' does not decorate type '" ++ head(vals).typerep.typeName ++ "'.")]
+       else [];
 
   local attribute e2 :: [Decorated Message];
-  e2 = if id.name == top.signature.outputElement.elementName && head(vals2).typerep.isInherited
+  e2 = if val.name == top.signature.outputElement.elementName && head(attrs).typerep.isInherited
        then [err(top.location, "Cannot assign to the lhs's inherited attributes.")]
        else [];
 
   local attribute e3 :: [Decorated Message];
-  e3 = if contains(id.name, getNamesSignature(top.signature.inputElements)) && head(vals2).typerep.isSynthesized
-       then [err(top.location, "Cannot assign to a child's synthesized attributes.")]
+  e3 = if head(attrs).typerep.isSynthesized && val.name != top.signature.outputElement.elementName
+       then [err(top.location, "Assignment to synthesized attributes only permitted for the lhs.")]
        else [];
 
-  local attribute e4 :: [Decorated Message];
-  e4 = if !null(getValueDclOne(fName1, top.localsEnv)) && head(vals2).typerep.isSynthesized
-       then [err(top.location, "Cannot assign to a local's synthesized attributes.")]
+  top.typeErrors = er ++ e1 ++ e2 ++ e3 ++ e.typeErrors;
+}
+
+aspect production valueDef
+top::ProductionStmt ::= val::QName '=' e::Expr ';'
+{
+  local attribute er :: [Decorated Message];
+  er = if type.typeEquals(type, e.typerep).bValue
+       then [] 
+       else [err(top.location, "Value " ++ val.name ++ " has type " ++ type.unparse ++ " but the expression being assigned to it has type " ++ e.typerep.unparse)] ; 
+
+  local attribute e2 :: [Decorated Message];
+  e2 = if val.name == top.signature.outputElement.elementName
+       then [err(top.location, "Cannot assign to the lhs.")]
        else [];
 
-  top.typeErrors = e1 ++ e2 ++ e3 ++ e4;
+  top.typeErrors = er ++ e2 ++ e.typeErrors;
 }
 
