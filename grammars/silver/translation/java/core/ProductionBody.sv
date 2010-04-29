@@ -10,7 +10,6 @@ synthesized attribute isLocalDcl :: Boolean;
 synthesized attribute isChild :: Boolean;
 synthesized attribute isParent :: Boolean;
 
-attribute nodeName, attrName, isLocal, isLocalDcl, isChild, isParent occurs on LHSExpr;
 attribute attrName occurs on ForwardLHSExpr;
 
 attribute setupInh, translation occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
@@ -147,35 +146,62 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
 }
 
 aspect production normalAttributeDef
-top::ProductionStmt ::= lhs::Decorated LHSExpr e::Decorated Expr
+top::ProductionStmt ::= val::QName '.' attr::QName '=' e::Decorated Expr
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
+  local attribute fNames1 :: [Decorated EnvItem];
+  fNames1 = getFullNameDcl(val.name, top.env);
+
+  local attribute fName1 :: String;
+  fName1 = if !null(fNames1) then head(fNames1).fullName else val.name;
+
+  local attribute fNames2 :: [Decorated EnvItem];
+  fNames2 = getFullNameDcl(attr.name, top.env);
+
+  local attribute fName2 :: String;
+  fName2 = if !null(fNames2) then head(fNames2).fullName else attr.name;
+
   top.setupInh := "";
   top.translation =
-	"\t\t// " ++ lhs.pp ++ " = " ++ e.pp ++ "\n" ++
-	if lhs.isLocalDcl then  
-	"\t\t" ++ className ++ ".localAttributes.put(\"" ++ lhs.nodeName ++ "\", new common.Lazy(){\n" ++ 
+	"\t\t// " ++ val.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
+	if !null(getValueDcl(fName1, top.localsEnv)) then 
+	"\t\t" ++ className ++ ".inheritedAttributes.get(\"" ++ fName1 ++ "\").put(\"" ++ fName2 ++ "\", new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
 	"\t\t});\n"
-	else if lhs.isLocal then 
-	"\t\t" ++ className ++ ".inheritedAttributes.get(\"" ++ lhs.nodeName ++ "\").put(\"" ++ lhs.attrName ++ "\", new common.Lazy(){\n" ++ 
+	else if contains(val.name, getNamesSignature(top.signature.inputElements)) then 
+	"\t\t" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ fName1 ++ ").put(\"" ++ fName2 ++ "\", new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
 	"\t\t});\n"
-	else if lhs.isChild then 
-	"\t\t" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ lhs.nodeName ++ ").put(\"" ++ lhs.attrName ++ "\", new common.Lazy(){\n" ++ 
+	else -- id.name == top.signature.outputElement.elementName
+	"\t\t" ++ className ++ ".synthesizedAttributes.put(\"" ++ fName2 ++ "\", new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
-	"\t\t});\n"
+	"\t\t});\n";
+}
 
-	else
-	"\t\t" ++ className ++ ".synthesizedAttributes.put(\"" ++ lhs.attrName ++ "\", new common.Lazy(){\n" ++ 
+aspect production normalValueDef
+top::ProductionStmt ::= val::QName '=' e::Decorated Expr
+{
+  local attribute className :: String;
+  className = makeClassName(top.signature.fullName);
+
+  local attribute fNames :: [Decorated EnvItem];
+  fNames = getFullNameDcl(val.name, top.env);
+
+  local attribute fName :: String;
+  fName = if !null(fNames) then head(fNames).fullName else val.name;
+
+  top.setupInh := "";
+  top.translation =
+	"\t\t// " ++ val.pp ++ " = " ++ e.pp ++ "\n" ++
+	"\t\t" ++ className ++ ".localAttributes.put(\"" ++ fName ++ "\", new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
@@ -196,29 +222,5 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
 	"\t\t});\n";
-}
-
-aspect production lhsExprOne
-top::LHSExpr ::= id::Name
-{
-  top.nodeName = fName;
-  top.attrName = "_NULL_";
-
-  top.isLocal = false;
-  top.isLocalDcl = true;
-  top.isChild = false;
-  top.isParent = false;
-}
-
-aspect production lhsExprTwo
-top::LHSExpr ::= id::Name '.' q::QName
-{
-  top.nodeName = fName1;
-  top.attrName = fName2;
-
-  top.isLocal = !null(getValueDcl(fName1, top.localsEnv));
-  top.isLocalDcl = false;
-  top.isChild = contains(id.name, getNamesSignature(top.signature.inputElements));
-  top.isParent = id.name == top.signature.outputElement.elementName;
 }
 
