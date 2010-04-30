@@ -120,7 +120,7 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 aspect production forwardLhsExpr
 top::ForwardLHSExpr ::= q::QName
 {
-  top.attrName = fName;  
+  top.attrName = q.lookupAttribute.fullName;  
 }
 
 aspect production localAttributeDcl
@@ -151,35 +151,23 @@ top::ProductionStmt ::= val::QName '.' attr::QName '=' e::Decorated Expr
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
-  local attribute fNames1 :: [Decorated EnvItem];
-  fNames1 = getFullNameDcl(val.name, top.env);
-
-  local attribute fName1 :: String;
-  fName1 = if !null(fNames1) then head(fNames1).fullName else val.name;
-
-  local attribute fNames2 :: [Decorated EnvItem];
-  fNames2 = getFullNameDcl(attr.name, top.env);
-
-  local attribute fName2 :: String;
-  fName2 = if !null(fNames2) then head(fNames2).fullName else attr.name;
-
   top.setupInh := "";
   top.translation =
 	"\t\t// " ++ val.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
-	if !null(getValueDcl(fName1, top.localsEnv)) then 
-	"\t\t" ++ className ++ ".inheritedAttributes.get(\"" ++ fName1 ++ "\").put(\"" ++ fName2 ++ "\", new common.Lazy(){\n" ++ 
+	if !null(getValueDcl(val.lookupValue.fullName, top.localsEnv)) then 
+	"\t\t" ++ className ++ ".inheritedAttributes.get(\"" ++ val.lookupValue.fullName ++ "\").put(\"" ++ attr.lookupAttribute.fullName ++ "\", new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
 	"\t\t});\n"
 	else if contains(val.name, getNamesSignature(top.signature.inputElements)) then 
-	"\t\t" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ fName1 ++ ").put(\"" ++ fName2 ++ "\", new common.Lazy(){\n" ++ 
+	"\t\t" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ val.lookupValue.fullName ++ ").put(\"" ++ attr.lookupAttribute.fullName ++ "\", new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
 	"\t\t});\n"
 	else -- id.name == top.signature.outputElement.elementName
-	"\t\t" ++ className ++ ".synthesizedAttributes.put(\"" ++ fName2 ++ "\", new common.Lazy(){\n" ++ 
+	"\t\t" ++ className ++ ".synthesizedAttributes.put(\"" ++ attr.lookupAttribute.fullName ++ "\", new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
@@ -192,16 +180,10 @@ top::ProductionStmt ::= val::QName '=' e::Decorated Expr
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
-  local attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(val.name, top.env);
-
-  local attribute fName :: String;
-  fName = if !null(fNames) then head(fNames).fullName else val.name;
-
   top.setupInh := "";
   top.translation =
 	"\t\t// " ++ val.pp ++ " = " ++ e.pp ++ "\n" ++
-	"\t\t" ++ className ++ ".localAttributes.put(\"" ++ fName ++ "\", new common.Lazy(){\n" ++ 
+	"\t\t" ++ className ++ ".localAttributes.put(\"" ++ val.lookupValue.fullName ++ "\", new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++

@@ -48,7 +48,7 @@ top::Expr ::= q::QName
                                                  || q.name == "line"
                                                  || q.name == "column"
                                                  || q.name == "filename") then [actionTerminalReference(q)] else
-         if isParserAttribute(fName, top.env) then [parserAttributeReference(q)] else
+         if isParserAttribute(q.lookupValue.fullName, top.env) then [parserAttributeReference(q)] else
          if (in_locals && !top.actionCodeType.isSemanticBlock) then [localParserAttributeReference(q)] else
          if (in_sig && !top.actionCodeType.isSemanticBlock) then [parserChildReference(q)] else
          [];
@@ -60,20 +60,13 @@ top::Expr ::= q::QName
   top.pp = q.pp; 
   top.location = q.location;
 
-  --the full name of the identifier
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(q.name, top.env);
-
-  production attribute fName ::String;
-  fName = if !null(fNames) then head(fNames).fullName else q.name;
-
   top.errors := [];
   top.warnings := [];
 
   top.typerep = topTypeRep(); -- TODO: BUG: Need a real type here (AnyTerminalType or something)
   top.isAppReference = false;
   top.appReference = "";
-  top.translation = makeCopperName(fName);
+  top.translation = makeCopperName(q.lookupValue.fullName); -- Value right here?
   -- top.typeErrors =
 }
 
@@ -105,25 +98,15 @@ top::Expr ::= q::QName
   top.pp = q.pp; 
   top.location = q.location;
 
-  --the full name of the identifier
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(q.name, top.env);
-
-  production attribute fName ::String;
-  fName = if !null(fNames) then head(fNames).fullName else q.name;
-
-  production attribute vals :: [Decorated EnvItem];
-  vals = getValueDcl(fName, top.env);
-
   top.errors := if top.actionCodeType.isSemanticBlock
                 then [err(top.location, "References to parser attributes can only be made in action blocks")]
                 else [];
   top.warnings := [];
 
-  top.typerep = head(vals).typerep;
+  top.typerep = q.lookupValue.typerep;
   top.isAppReference = false;
   top.appReference = "";
-  top.translation = makeCopperName(fName);
+  top.translation = makeCopperName(q.lookupValue.fullName);
 
   top.typeErrors = [];
 }
@@ -140,23 +123,13 @@ top::Expr ::= q::QName
   top.pp = q.pp; 
   top.location = q.location;
 
-  --the full name of the identifier
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(q.name, top.env);
-
-  production attribute fName ::String;
-  fName = if !null(fNames) then head(fNames).fullName else q.name;
-
-  production attribute vals :: [Decorated EnvItem];
-  vals = getValueDcl(fName, top.env);
-
   top.errors := [];
   top.warnings := [];
 
-  top.typerep = head(vals).typerep;
+  top.typerep = q.lookupValue.typerep;
   top.isAppReference = false;
   top.appReference = "";
-  top.translation = "((" ++ head(vals).typerep.transType ++ ")((common.Node)RESULT).getChild(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ fName ++ "))";
+  top.translation = "((" ++ q.lookupValue.typerep.transType ++ ")((common.Node)RESULT).getChild(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName ++ "))";
 
   top.typeErrors = [];
 }
@@ -187,7 +160,7 @@ top::ProductionStmt ::= 'print' c3::Expr c4::Semi_t
 aspect production attributeDef
 top::ProductionStmt ::= val::QName '.' attr::QName '=' e::Expr ';'
 {
-  top.errors <- if isParserAttribute(fName1, top.env)
+  top.errors <- if isParserAttribute(val.lookupValue.fullName, top.env)
                 then [err(top.location, "Parser action block are imperative, not declarative. You cannot modify the attributes of " ++ val.name ++ ". If you are trying to set inherited attributes, use 'decorate " ++ val.name ++ " with { ... }' when you create it. (Note that then the type should be Decorated.)")]
                 else [];
 }
@@ -195,7 +168,7 @@ top::ProductionStmt ::= val::QName '.' attr::QName '=' e::Expr ';'
 aspect production valueDef
 top::ProductionStmt ::= val::QName '=' e::Expr ';'
 {
-  fwd <- if isParserAttribute(fName, top.env) then [parserAttributeDef(val, $2, e)] else
+  fwd <- if isParserAttribute(val.lookupValue.fullName, top.env) then [parserAttributeDef(val, $2, e)] else
          if (val.name == "filename" ||
              val.name == "line" ||
              val.name == "column") then [terminalAttributeDef(val, $2, e)] else
@@ -207,14 +180,8 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
 abstract production parserAttributeDef
 top::ProductionStmt ::= val::QName '=' e::Decorated Expr
 {
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(val.name, top.env);
-
-  production attribute fName :: String;
-  fName = if !null(fNames) then head(fNames).fullName else val.name;
-
   top.setupInh := "";
-  top.translation = makeCopperName(fName) ++ " = " ++ e.translation ++ ";\n";
+  top.translation = makeCopperName(val.lookupValue.fullName) ++ " = " ++ e.translation ++ ";\n";
   top.errors := (if top.actionCodeType.isSemanticBlock
                 then [err(val.location, "Assignment to parser attributes only permitted in parser action blocks")]
                 else []);

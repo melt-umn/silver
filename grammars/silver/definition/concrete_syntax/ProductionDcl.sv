@@ -89,19 +89,11 @@ top::ProductionModifier ::= 'operator' '=' n::QName
   top.pp = "operator = " ++ n.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionModifiers = [operatorProductionModifierSpec(fName)];
+  top.productionModifiers = [operatorProductionModifierSpec(n.lookupType.fullName)];
 
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(n.name,top.env);
-
-  production attribute fName :: String;
-  fName = if null(fNames) then n.name else head(fNames).fullName;
-
-  production attribute typeItem :: [Decorated EnvItem];
-  typeItem = getTypeDcl(fName, top.env);
-
-  top.errors := if null(typeItem) then [err(top.location, "Unknown terminal " ++ n.pp)] else
-               if !head(typeItem).typerep.isTerminal then [err(top.location, n.pp ++ " is not a terminal.")] else
-               [];
+  top.errors := n.lookupType.errors ++
+                if !n.lookupType.typerep.isTerminal
+                then [err(n.location, n.pp ++ " is not a terminal.")]
+                else [];
 }
 

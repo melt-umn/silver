@@ -42,8 +42,8 @@ aspect production attributionDcl
 top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
 {
  
-  top.initAspect <- if head(attrs).typerep.isAutoCopy
-                    then "\t\t" ++ makeNTClassName(nfName) ++ ".decorators.add(" ++ makeDecoratorClassName(afName) ++ ".singleton);\n"
+  top.initAspect <- if a.lookupAttribute.typerep.isAutoCopy
+                    then "\t\t" ++ makeNTClassName(nt.lookupValue.fullName) ++ ".decorators.add(" ++ makeDecoratorClassName(a.lookupAttribute.fullName) ++ ".singleton);\n"
                     else "";
 
 }

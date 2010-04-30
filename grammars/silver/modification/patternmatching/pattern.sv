@@ -270,43 +270,22 @@ p::Pattern ::= prod::QName '(' ps::PatternList ')'
 {
   p.pp = prod.pp ++ "(" ++ ps.pp ++ ")" ;
   p.location = prod.location;
-  p.errors := er1 ++ ps.errors ; 
+
   p.defs = ps.defs ;
-
-  -- type checking
-  local attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(prod.name, p.env);
-
-  local attribute fName ::String;
-  fName = if !null(fNames) then head(fNames).fullName else prod.name;
-  
-  local attribute vals :: [Decorated EnvItem] ;
-  vals = getValueDcl(fName, p.env) ;
-
-  local attribute er1 :: [Decorated Message] ;
-  er1 = if null(vals)
-        then [err(prod.location, "'" ++ prod.name ++ "' is not declared.")] 
-        else [];
-  
-  --
-
-  local attribute pType :: Decorated TypeRep ;
-  pType = if null(vals)
-          then topTypeRep()
-          else head(vals).typerep;
+  p.errors := prod.lookupValue.errors ++ ps.errors ; 
 
   local attribute er2 :: [Decorated Message] ;
-  er2 = if pType.isProduction 
-        then (if pType.outputType.typeEquals(pType.outputType, p.typerep_down).bValue
+  er2 = if prod.lookupValue.typerep.isProduction 
+        then (if prod.lookupValue.typerep.outputType.typeEquals(prod.lookupValue.typerep.outputType, p.typerep_down).bValue
               then  []
               else [err(prod.location, "Production '" ++ prod.name ++ "' has incorrect output type.\n" ++ 
-		   "(pattern) " ++ pType.outputType.unparse ++ " <-> (expected) " ++ 
+		   "(pattern) " ++ prod.lookupValue.typerep.outputType.unparse ++ " <-> (expected) " ++ 
 		   p.typerep_down.unparse)])
         else [err(prod.location, "'" ++ prod.name ++ "' is not a production name.")] ;
 
 
-  ps.typereps_down  =  if pType.isProduction 
-		       then pType.inputTypes 
+  ps.typereps_down  =  if prod.lookupValue.typerep.isProduction 
+		       then prod.lookupValue.typerep.inputTypes 
 		       else [] ;
   
   ps.case_expr_type = p.case_expr_type ;
@@ -322,7 +301,7 @@ p::Pattern ::= prod::QName '(' ps::PatternList ')'
 				         terminal(Dot_t, "."), 
 				         qNameId(nameId(terminal(Id_t, "patProdName")))),
 		         terminal(EQEQ_t, "=="),
-      		         stringConst(terminal(String_t, "\"" ++ fName ++ "\""))),
+      		         stringConst(terminal(String_t, "\"" ++ prod.lookupValue.fullName ++ "\""))),
 		    terminal(And_t, "&&"),
 		    ps.cond_tree) ;
 

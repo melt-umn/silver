@@ -22,6 +22,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   local attribute fns :: [Decorated EnvItem];
   fns = getFullNameDcl(ns.outputElement.typerep.typeName, top.env);
+  
   local attribute fn :: String;
   fn = makeNTClassName(if null(fns)
                        then ns.outputElement.typerep.typeName

@@ -138,22 +138,22 @@ aspect production attributeDef
 top::ProductionStmt ::= val::QName '.' attr::QName '=' e::Expr ';'
 {
   local attribute er :: [Decorated Message];
-  er = if type.typeEquals(type, e.typerep).bValue
+  er = if attr.lookupAttribute.typerep.typeEquals(attr.lookupAttribute.typerep, e.typerep).bValue
        then [] 
-       else [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ type.unparse ++ " but the expression being assigned to it has type " ++ e.typerep.unparse)] ; 
+       else [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ attr.lookupAttribute.typerep.unparse ++ " but the expression being assigned to it has type " ++ e.typerep.unparse)] ; 
 
   local attribute e1 :: [Decorated Message];
-  e1 = if !doesOccurOn(fName2, head(vals).typerep.typeName, top.env)
-       then [err(top.location, "Attribute '" ++ fName2 ++ "' does not decorate type '" ++ head(vals).typerep.typeName ++ "'.")]
+  e1 = if !doesOccurOn(attr.lookupAttribute.fullName, val.lookupValue.typerep.typeName, top.env)
+       then [err(top.location, "Attribute '" ++ attr.lookupAttribute.fullName ++ "' does not decorate type '" ++ val.lookupValue.typerep.typeName ++ "'.")]
        else [];
 
   local attribute e2 :: [Decorated Message];
-  e2 = if val.name == top.signature.outputElement.elementName && head(attrs).typerep.isInherited
+  e2 = if val.name == top.signature.outputElement.elementName && attr.lookupAttribute.typerep.isInherited
        then [err(top.location, "Cannot assign to the lhs's inherited attributes.")]
        else [];
 
   local attribute e3 :: [Decorated Message];
-  e3 = if head(attrs).typerep.isSynthesized && val.name != top.signature.outputElement.elementName
+  e3 = if attr.lookupAttribute.typerep.isSynthesized && val.name != top.signature.outputElement.elementName
        then [err(top.location, "Assignment to synthesized attributes only permitted for the lhs.")]
        else [];
 
@@ -164,9 +164,9 @@ aspect production valueDef
 top::ProductionStmt ::= val::QName '=' e::Expr ';'
 {
   local attribute er :: [Decorated Message];
-  er = if type.typeEquals(type, e.typerep).bValue
+  er = if val.lookupValue.typerep.typeEquals(val.lookupValue.typerep, e.typerep).bValue
        then [] 
-       else [err(top.location, "Value " ++ val.name ++ " has type " ++ type.unparse ++ " but the expression being assigned to it has type " ++ e.typerep.unparse)] ; 
+       else [err(top.location, "Value " ++ val.name ++ " has type " ++ val.lookupValue.typerep.unparse ++ " but the expression being assigned to it has type " ++ e.typerep.unparse)] ; 
 
   local attribute e2 :: [Decorated Message];
   e2 = if val.name == top.signature.outputElement.elementName
