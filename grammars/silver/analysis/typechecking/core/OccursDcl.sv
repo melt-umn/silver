@@ -6,7 +6,7 @@ aspect production attributionDcl
 top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
 {
   local attribute num :: Integer;
-  num = length(filterEnvItems(keepOccurs(afName, nfName), getOccursDcls(top.env)));
+  num = length(filterEnvItems(keepOccurs(a.lookupAttribute.fullName, nt.lookupAttribute.fullName), getOccursDcls(top.env)));
 
   top.typeErrors = if num > 1
 	           then [err(top.location, "Attribute '" ++ a.name ++ "' already decorates '" ++ nt.name ++ "'")] 

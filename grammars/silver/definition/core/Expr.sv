@@ -18,21 +18,11 @@ top::Expr ::= q::QName
   top.pp = q.pp;
   top.location = q.location;
 
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(q.name, top.env);
-
-  production attribute fName ::String;
-  fName = if !null(fNames) then head(fNames).fullName else q.name;
-
-  --whether it is bound to a value
-  production attribute vals :: [Decorated EnvItem];
-  vals = getValueDcl(fName, top.env);
-
   production attribute in_sig ::Boolean;
-  in_sig = !null(getValueDcl(fName, top.signatureEnv));
+  in_sig = !null(getValueDcl(q.lookupValue.fullName, top.signatureEnv));
 
   production attribute in_locals ::Boolean;
-  in_locals = !null(getValueDcl(fName, top.localsEnv));
+  in_locals = !null(getValueDcl(q.lookupValue.fullName, top.localsEnv));
 
   local attribute shouldDec ::Boolean;
   shouldDec = case top.expected of
@@ -42,27 +32,25 @@ top::Expr ::= q::QName
 		_ -> false end;
  	      	
   production attribute fwd :: [Expr] with ++;
-  fwd := [];
+  fwd := []; -- TODO: remove this crap :(
   
-  top.errors <- if length(fwd) > 1
-                then [err(top.location, "Ambiguous reference: " ++ q.name)]
+  top.errors <- q.lookupValue.errors ++ 
+                if length(fwd) > 1
+                then [err(top.location, "Ambiguous dispatch on: " ++ q.name)]
                 else [];
-                --if length(fNames) > 1
-                --then [err(top.location, q.name ++ " may refer to multiple possibilities: " ++ listFNamesHelp(fNames))]
-                --else [];
 
   forwards to if !null(fwd) then head(fwd)
   
-              else if null(vals) || head(vals).typerep.typeName == "TOP"
+              else if q.lookupValue.typerep.typeName == "TOP"
               then errorReference(q)
               
               else if (in_sig || in_locals)
-              then if head(vals).typerep.doDecorate && shouldDec
+              then if q.lookupValue.typerep.doDecorate && shouldDec
                    then decorateExpr(q)
                    else dontDecorateExpr(q)
-              else if head(vals).typerep.isProduction
+              else if q.lookupValue.typerep.isProduction
               then productionReference(q)
-              else if head(vals).typerep.isFunction
+              else if q.lookupValue.typerep.isFunction
               then functionReference(q)
               
               else errorReference(q);
@@ -78,7 +66,7 @@ top::Expr ::= q::QName
   top.pp = q.pp;
   top.location = q.location;
   top.warnings := [];
-  top.errors := [err(top.location, "Value '" ++ q.name ++ "' is not declared. (reference error)")];
+  top.errors := [];
   top.typerep = topTypeRep();
 }
 
@@ -97,38 +85,17 @@ top::Expr ::= q::QName
   top.pp = q.pp ++ "'"; 
   top.location = q.location;
 
-  --the full name of the identifier
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(q.name, top.env);
-
-  production attribute fName ::String;
-  fName = if !null(fNames) then head(fNames).fullName else q.name;
-
-  --whether it is bound to a value
-  production attribute vals :: [Decorated EnvItem];
-  vals = getValueDcl(fName, top.env);
-
-  production attribute origTypeRep :: Decorated TypeRep;
-  origTypeRep = if !null(vals) 
-		then head(vals).typerep 
-		else topTypeRep();
-
   production attribute in_sig ::Boolean;
-  in_sig = !null(getValueDcl(fName, top.signatureEnv));
+  in_sig = !null(getValueDcl(q.lookupValue.fullName, top.signatureEnv));
 
   production attribute in_locals ::Boolean;
-  in_locals = !null(getValueDcl(fName, top.localsEnv));
+  in_locals = !null(getValueDcl(q.lookupValue.fullName, top.localsEnv));
 
-  local attribute er1 :: [Decorated Message];
-  er1 = if null(vals)
-	then [err(top.location, "Value '" ++ q.name ++ "' is not declared.")] 
-	else [];
-
-  top.errors := er1;
+  top.errors := q.lookupValue.errors;
   top.warnings := [];
 
-  top.typerep = if !null(vals) 
-		then refTypeRep(head(vals).typerep) 
+  top.typerep = if q.lookupValue.typerep.typeName != "TOP"
+		then refTypeRep(q.lookupValue.typerep) 
 		else topTypeRep();
 }
 
@@ -147,34 +114,16 @@ top::Expr ::= q::QName
   top.pp = q.pp; 
   top.location = q.location;
 
-  --the full name of the identifier
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(q.name, top.env);
-
-  production attribute fName ::String;
-  fName = if !null(fNames) then head(fNames).fullName else q.name;
-
-  --whether it is bound to a value
-  production attribute vals :: [Decorated EnvItem];
-  vals = getValueDcl(fName, top.env);
-
   production attribute in_sig ::Boolean;
-  in_sig = !null(getValueDcl(fName, top.signatureEnv));
+  in_sig = !null(getValueDcl(q.lookupValue.fullName, top.signatureEnv));
 
   production attribute in_locals ::Boolean;
-  in_locals = !null(getValueDcl(fName, top.localsEnv));
+  in_locals = !null(getValueDcl(q.lookupValue.fullName, top.localsEnv));
 
-  local attribute er1 :: [Decorated Message];
-  er1 = if null(vals)
-	then [err(top.location, "Value '" ++ q.name ++ "' is not declared.")]
-	else [];
-
-  top.errors := er1;
+  top.errors := q.lookupValue.errors;
   top.warnings := [];
-  top.typerep = if !null(vals) then head(vals).typerep else topTypeRep();
+  top.typerep = q.lookupValue.typerep;
 }
-
-
 
 abstract production productionReference
 top::Expr ::= q::QName
@@ -182,26 +131,10 @@ top::Expr ::= q::QName
   top.pp = q.pp; 
   top.location = q.location;
 
-  --the full name of the identifier
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(q.name, top.env);
-
-  production attribute fName ::String;
-  fName = if !null(fNames) then head(fNames).fullName else q.name;
-
-  --whether it is bound to a value
-  production attribute vals :: [Decorated EnvItem];
-  vals = getValueDcl(fName, top.env);
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if null(vals)
-	then [err(top.location, "Value '" ++ q.name ++ "' is not declared.")] 
-	else [];
-
-  top.errors := er1;
+  top.errors := q.lookupValue.errors;
   top.warnings := [];
 
-  top.typerep = if !null(vals) then head(vals).typerep else topTypeRep();
+  top.typerep = q.lookupValue.typerep;
 }
 
 
@@ -211,26 +144,10 @@ top::Expr ::= q::QName
   top.pp = q.pp; 
   top.location = q.location;
 
-  --the full name of the identifier
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(q.name, top.env);
-
-  production attribute fName ::String;
-  fName = if !null(fNames) then head(fNames).fullName else q.name;
-
-  --whether it is bound to a value
-  production attribute vals :: [Decorated EnvItem];
-  vals = getValueDcl(fName, top.env);
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if null(vals)
-	then [err(top.location, "Value '" ++ q.name ++ "' is not declared.")] 
-	else [];
-
-  top.errors := er1;
+  top.errors := q.lookupValue.errors;
   top.warnings := [];
 
-  top.typerep = if !null(vals) then head(vals).typerep else topTypeRep();
+  top.typerep = q.lookupValue.typerep;
 }
 
 concrete production forwardReference
@@ -268,8 +185,8 @@ top::Expr ::= e::Expr '.' q::QName
   e.expected = expected_decorated();
 
   forwards to if e.typerep.isDecorated || e.typerep.isTerminal
-       	      then atAccess(e, terminal(At_t, "@", $2.line, $2.column), q)
-       	      else hashAccess(e, terminal(Hash_t, "#", $2.line, $2.column), q)
+       	      then atAccess(e, terminal(At_t, "@", $2), q)
+       	      else hashAccess(e, terminal(Hash_t, "#", $2), q)
 	with {
 		expected = expected_decorated();
 	};
@@ -283,14 +200,14 @@ top::Expr ::= e::Expr '#' q::QName
 
 
   local attribute withPart :: Expr;
-  withPart = decorateExprWith(terminal(Decorate_kwd, "decorate", $2.line, $2.column),
+  withPart = decorateExprWith(terminal(Decorate_kwd, "decorate", $2),
 	     	      e, 
-	     	      terminal(With_kwd, "with", $2.line, $2.column),
-	     	      terminal(LCurly_t, "{", $2.line, $2.column),
+	     	      terminal(With_kwd, "with", $2),
+	     	      terminal(LCurly_t, "{", $2),
 	              exprInhsEmpty(),
-		      terminal(RCurly_t, "}", $2.line, $2.column));
+		      terminal(RCurly_t, "}", $2));
 
-  forwards to atAccess(withPart, terminal(At_t, "@", $2.line, $2.column), q);
+  forwards to atAccess(withPart, terminal(At_t, "@", $2), q);
 }
 
 concrete production atAccess
@@ -298,26 +215,13 @@ top::Expr ::= e::Expr '@' q::QName
 {
   top.pp = e.pp ++ "@" ++ q.pp;
   top.location = loc(top.file, $2.line, $2.column);
-  top.errors := er ++ e.errors;
-  top.warnings := [];
 
   e.expected = expected_decorated();
 
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(q.name, top.env);
+  top.errors := q.lookupAttribute.errors ++ e.errors;
+  top.warnings := [];
 
-  production attribute fName ::String;
-  fName = if !null(fNames) then head(fNames).fullName else q.name;
-
-  production attribute vals :: [Decorated EnvItem];
-  vals = getAttributeDcl(fName, top.env);
-
-  local attribute er :: [Decorated Message];
-  er = if null(vals)
-       then [err(top.location, "Attribute '" ++ q.name ++ "' is not declared.")] 
-       else [];
-  
-  top.typerep = if !null(vals) then head(vals).typerep else topTypeRep();
+  top.typerep = q.lookupAttribute.typerep;
 }
 
 concrete production decorateExprWithEmpty
@@ -386,25 +290,9 @@ top::ExprLHSExpr ::= q::QName
   top.pp = q.pp;
   top.location = q.location;
 
-  --the full name of the identifier
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(q.name, top.env);
-
-  production attribute fName ::String;
-  fName = if !null(fNames) then head(fNames).fullName else q.name;
-
-  --whether it is bound to a value
-  production attribute vals :: [Decorated EnvItem];
-  vals = getAttributeDcl(fName, top.env);
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if null(vals)
-	then [err(top.location, "Value '" ++ q.name ++ "' is not declared.")] 
-	else [];
-
-  top.errors := er1;
+  top.errors := q.lookupAttribute.errors;
   top.warnings := [];
-  top.typerep = if !null(vals) then head(vals).typerep else topTypeRep();
+  top.typerep = q.lookupAttribute.typerep;
 }
 
 concrete production trueConst

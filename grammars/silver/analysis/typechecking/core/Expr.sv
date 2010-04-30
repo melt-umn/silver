@@ -31,7 +31,7 @@ aspect production decorateExpr
 top::Expr ::= q::QName
 {
   local attribute er2 :: [Decorated Message];
-  er2 = if !null(vals) && !head(vals).typerep.isNonTerminal
+  er2 = if q.lookupValue.typerep.typeName != "TOP" && !q.lookupValue.typerep.isNonTerminal
 	then [err(top.location, "Ticked value '" ++ q.name ++ "' must be an undecorated nonterminal." )]
 	else [];
 
@@ -92,7 +92,7 @@ aspect production atAccess
 top::Expr ::= e::Expr '@' q::QName
 {
   local attribute occursOn :: Boolean;
-  occursOn = doesOccurOn(fName, e.typerep.typeName, top.env);
+  occursOn = doesOccurOn(q.lookupAttribute.fullName, e.typerep.typeName, top.env);
 
   local attribute er1 :: [Decorated Message];
   er1 = if occursOn then []
@@ -401,6 +401,8 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
        then [] 
        else [err(top.location, "The LHS and RHS of the assignment must be the same type.\n" ++
                                   "\tInstead they are '" ++ lhs.typerep.typeName ++ "' and '" ++ e.typerep.typeName ++ "'")]; 
+
+  -- TODO: uhhh, check occurs?
 
   top.typeErrors = er ++ e.typeErrors;
 }

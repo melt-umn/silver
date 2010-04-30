@@ -270,25 +270,9 @@ top::ForwardLHSExpr ::= q::QName
   top.pp = q.pp;
   top.location = q.location;
 
-  --the full name of the identifier
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(q.name, top.env);
-
-  production attribute fName :: String;
-  fName = if !null(fNames) then head(fNames).fullName else q.name;
-
-  --whether it is bound to a value
-  production attribute attrs :: [Decorated EnvItem];
-  attrs = getAttributeDcl(fName, top.env);
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if null(attrs)
-	then [err(top.location, "Value '" ++ q.name ++ "' is not declared.")]
-	else [];
-
-  top.errors := er1;
+  top.errors := q.lookupAttribute.errors;
   top.warnings := [];
-  top.typerep = if !null(attrs) then head(attrs).typerep else topTypeRep();
+  top.typerep = q.lookupAttribute.typerep;
 }
 
 concrete production attributeDef
@@ -300,41 +284,10 @@ top::ProductionStmt ::= val::QName '.' attr::QName '=' e::Expr ';'
   top.productionAttributes = emptyDefs();
   top.defs = emptyDefs();
 
-  production attribute fNames1 :: [Decorated EnvItem];
-  fNames1 = getFullNameDcl(val.name, top.env);
-
-  production attribute fName1 :: String;
-  fName1 = if !null(fNames1) then head(fNames1).fullName else val.name;
-
-  production attribute vals :: [Decorated EnvItem];
-  vals = getValueDcl(fName1, top.env);
-
-  local attribute er2 :: [Decorated Message];
-  er2 = if null(vals)
-	then [err(val.location, "Value '" ++ val.name ++ "' is not declared.")] 
-  	else [];
-
-  production attribute fNames2 :: [Decorated EnvItem];
-  fNames2 = getFullNameDcl(attr.name, top.env);
-
-  production attribute fName2 :: String;
-  fName2 = if !null(fNames2) then head(fNames2).fullName else attr.name;
-
-  production attribute attrs :: [Decorated EnvItem];
-  attrs = getAttributeDcl(fName2, top.env);
-
-  local attribute er3 :: [Decorated Message];
-  er3 = if null(attrs)
-	then [err(attr.location, "Attribute '" ++ attr.name ++ "' is not declared.")] 
-        else [];
-
-  top.errors <- er2 ++ er3 ++ e.errors ++ if length(fwd) > 1 then [err(top.location,"Ambiguous assignment.")] else []; -- TODO: better error messages
+  top.errors <- val.lookupValue.errors ++ attr.lookupAttribute.errors ++ e.errors ++ if length(fwd) > 1 then [err(top.location,"Ambiguous definition dispatch.")] else []; -- TODO: better error messages
   top.warnings := [];
 
-  production attribute type :: Decorated TypeRep;
-  type = if !null(attrs) then head(attrs).typerep else topTypeRep();
-  
-  e.expected = expected_type(type);
+  e.expected = expected_type(attr.lookupAttribute.typerep);
   
   -- TODO: this whole override thing needs massaging to look nice. It's ugly right now.
   production attribute fwd :: [ProductionStmt] with ++;
@@ -358,27 +311,10 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
   top.productionAttributes = emptyDefs();
   top.defs = emptyDefs();
 
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(val.name, top.env);
-
-  production attribute fName :: String;
-  fName = if !null(fNames) then head(fNames).fullName else val.name;
-
-  production attribute vals :: [Decorated EnvItem];
-  vals = getValueDcl(fName, top.env);
-
-  local attribute er2 :: [Decorated Message];
-  er2 = if null(vals)
-	then [err(val.location, "Value '" ++ val.name ++ "' is not declared.")] 
-  	else [];
-
-  top.errors <- er2 ++ e.errors ++ if length(fwd) > 1 then [err(top.location,"Ambiguous assignment.")] else []; -- TODO: better error messages
+  top.errors <- val.lookupValue.errors ++ e.errors ++ if length(fwd) > 1 then [err(top.location,"Ambiguous assignment.")] else []; -- TODO: better error messages
   top.warnings := [];
 
-  production attribute type :: Decorated TypeRep;
-  type = if !null(vals) then head(vals).typerep else topTypeRep();
-  
-  e.expected = expected_type(type);
+  e.expected = expected_type(val.lookupValue.typerep);
   
   -- TODO: this whole override thing needs massaging to look nice. It's ugly right now.
   production attribute fwd :: [ProductionStmt] with ++;

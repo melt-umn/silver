@@ -34,9 +34,9 @@ top::Expr ::= q::QName
   top.translation = if in_sig && top.signature.outputElement.elementName == q.name 
                     then "context"
                     else if in_sig
-                    then "((" ++ top.typerep.transType ++ ")context.child(" ++ className ++ ".i_" ++ fName  ++ "))" 
+                    then "((" ++ top.typerep.transType ++ ")context.child(" ++ className ++ ".i_" ++ q.lookupValue.fullName  ++ "))" 
                     else if in_locals 
-                    then "((" ++ top.typerep.transType ++ ")context.local(\"" ++ fName ++ "\"))" 
+                    then "((" ++ top.typerep.transType ++ ")context.local(\"" ++ q.lookupValue.fullName ++ "\"))" 
                     else "(error(\"BOOM\"))";
 }
 
@@ -56,13 +56,13 @@ top::Expr ::= q::QName
   top.translation = if in_sig && top.signature.outputElement.elementName == q.name
                      then "(context.undecorate())" 
                     else if in_sig && tr.isNonTerminal        
-                    then "(((common.DecoratedNode)context.child(" ++ className ++ ".i_" ++  fName ++ ")).undecorate())"
+                    then "(((common.DecoratedNode)context.child(" ++ className ++ ".i_" ++  q.lookupValue.fullName ++ ")).undecorate())"
                     else if in_sig && !tr.isNonTerminal
-                    then "((" ++ tr.transType ++ ")context.child(" ++ className ++ ".i_" ++  fName ++ "))" 
+                    then "((" ++ tr.transType ++ ")context.child(" ++ className ++ ".i_" ++  q.lookupValue.fullName ++ "))" 
                     else if in_locals && tr.isNonTerminal
-                    then "(((common.DecoratedNode)context.local(\"" ++ fName ++ "\")).undecorate())" 
+                    then "(((common.DecoratedNode)context.local(\"" ++ q.lookupValue.fullName ++ "\")).undecorate())" 
                     else if in_locals && !tr.isNonTerminal
-                    then "((" ++ tr.transType ++ ")context.local(\"" ++ fName ++ "\"))" 
+                    then "((" ++ tr.transType ++ ")context.local(\"" ++ q.lookupValue.fullName ++ "\"))" 
                     else "(error(\"BOOM\"))";
 }
 
@@ -70,18 +70,18 @@ aspect production productionReference
 top::Expr ::= q::QName
 {
   top.isAppReference = true;
-  top.appReference = makeClassName(fName);
+  top.appReference = makeClassName(q.lookupValue.fullName);
 
-  top.translation = "common.Util.getConstruct(" ++ makeClassName(fName) ++ ".class)";
+  top.translation = "common.Util.getConstruct(" ++ makeClassName(q.lookupValue.fullName) ++ ".class)";
 }
 
 aspect production functionReference
 top::Expr ::= q::QName
 {
   top.isAppReference = true;
-  top.appReference = makeClassName(fName);
+  top.appReference = makeClassName(q.lookupValue.fullName);
 
-  top.translation = "common.Util.getConstruct(" ++ makeClassName(fName) ++ ".class)";
+  top.translation = "common.Util.getConstruct(" ++ makeClassName(q.lookupValue.fullName) ++ ".class)";
 }
 
 aspect production forwardReference
@@ -124,8 +124,8 @@ top::Expr ::= e::Expr '@' q::QName
 
   top.translation = "((" ++ top.typerep.transType ++ ")" ++ e.translation ++ 
                         (if top.typerep.isSynthesized
-                            then ".synthesized(\"" ++ fName ++ "\"))"  
-                          else ".inherited(\"" ++ fName ++ "\"))");
+                            then ".synthesized(\"" ++ q.lookupValue.fullName ++ "\"))"  
+                          else ".inherited(\"" ++ q.lookupValue.fullName ++ "\"))");
                         
 }
 
@@ -182,7 +182,7 @@ top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
 aspect production exprLhsExpr
 top::ExprLHSExpr ::= q::QName
 {
-  top.nameTrans = ["\"" ++ fName ++ "\""];
+  top.nameTrans = ["\"" ++ q.lookupValue.fullName ++ "\""];
 }
 
 

@@ -12,6 +12,15 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type ';'
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
+{-
+
+  production attribute dcl :: DclInfo;
+  dcl = inhAttrDcl(top.grammarName, a.location, fName, te.typerep);
+  
+  top.defs = addAttributeDcl(dcl, emptyDefs());
+
+-}
+
   top.defs = addAttributeDcl(fName, inhTypeRep(te.typerep),
 	     addFullNameDcl(a.name, fName, emptyDefs()));
 

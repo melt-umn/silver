@@ -211,7 +211,7 @@ top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
 {
   top.documentation = [doc(O(), 
 "<div class='row'>\n" ++
-"  <a href='" ++ makeFileName(getGrammarName(afName)) ++ "/SilverDoc.html#" ++ afName ++ "'>" ++ a.name ++ "</a> @ <a href='" ++ makeFileName(getGrammarName(nfName)) ++ "#" ++ nfName++ "' class='type'>" ++ nt.name ++ "</a>\n" ++ 
+"  <a href='" ++ makeFileName(getGrammarName(a.lookupAttribute.fullName)) ++ "/SilverDoc.html#" ++ a.lookupAttribute.fullName ++ "'>" ++ a.name ++ "</a> @ <a href='" ++ makeFileName(getGrammarName(nt.lookupType.fullName)) ++ "#" ++ nt.lookupType.fullName++ "' class='type'>" ++ nt.name ++ "</a>\n" ++ 
 "</div>\n"
 )];
 }
