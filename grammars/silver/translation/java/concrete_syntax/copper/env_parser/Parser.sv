@@ -62,26 +62,26 @@ top::aRootSpecPart ::= {
 }
 
 terminal DisambiguationTerm /disambiguate/ lexer classes {C_1};
-terminal StringTerm /"([^\"\\]|\\.)*"/ lexer classes {C_1};
+terminal EscapedStringTerm /"([^\"\\]|\\.)*"/ lexer classes {C_1};
 
-function decodeStringTerm
+function decodeEscapedStringTerm
 String ::= s::String
 {
   return unescapeString(substring(1,length(s)-1,s));
 }
 
 concrete production aDisambiguationGroup
-top::aRootSpecPart ::= DisambiguationTerm '[' n::aNames ',' s::StringTerm ']'
+top::aRootSpecPart ::= DisambiguationTerm '[' n::aNames ',' s::EscapedStringTerm ']'
 {
-  top.disambiguationGroupDcls = [disambiguationGroupSpec(n.names, decodeStringTerm(s.lexeme))];
+  top.disambiguationGroupDcls = [disambiguationGroupSpec(n.names, decodeEscapedStringTerm(s.lexeme))];
   
   forwards to aRootSpecDefault();
 }
 
 concrete production aParserAttribute
-top::aRootSpecPart ::= ParserAttrTerm '[' n::Name ',' t::aTypeRep ',' s::StringTerm ']'
+top::aRootSpecPart ::= ParserAttrTerm '[' n::Name ',' t::aTypeRep ',' s::EscapedStringTerm ']'
 {
-  top.parserAttrDcls = [parserAttrSpec(n.lexeme, t.typerep, decodeStringTerm(s.lexeme))];
+  top.parserAttrDcls = [parserAttrSpec(n.lexeme, t.typerep, decodeEscapedStringTerm(s.lexeme))];
   
   forwards to aRootSpecDefault();
 }
@@ -90,14 +90,14 @@ terminal ActionTerm 'action' lexer classes {C_1};
 terminal LayoutTerm 'layout' lexer classes {C_1};
 
 concrete production aTerminalModifierSpecAction
-top::aTerminalModifierSpec ::= 'action' s::StringTerm {
-  top.terminalModifiers = [actionCodeTerminalModifierSpec(decodeStringTerm(s.lexeme))];
+top::aTerminalModifierSpec ::= 'action' s::EscapedStringTerm {
+  top.terminalModifiers = [actionCodeTerminalModifierSpec(decodeEscapedStringTerm(s.lexeme))];
 }
 
 
 concrete production aProductionModifierSpecAction
-top::aProductionModifierSpec ::= 'action' s::StringTerm {
-  top.productionModifiers = [actionProductionModifierSpec(decodeStringTerm(s.lexeme))];
+top::aProductionModifierSpec ::= 'action' s::EscapedStringTerm {
+  top.productionModifiers = [actionProductionModifierSpec(decodeEscapedStringTerm(s.lexeme))];
 }
 
 concrete production aProductionModifierSpecLayout

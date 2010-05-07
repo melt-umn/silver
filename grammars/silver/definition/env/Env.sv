@@ -155,6 +155,17 @@ function searchDcls
   return if null(e) then [] else getDclsScope(search, head(e)) ++ searchDcls(search, tail(e));
 }
 
+function searchDclsNearest
+[Decorated EnvItem] ::= search::String e::[Decorated EnvScope]
+{
+  local attribute found :: [Decorated EnvItem];
+  found = getDclsScope(search, head(e));
+  
+  return if null(e) then []
+         else if null(found) then searchDcls(search, tail(e))
+         else found;
+}
+
 function getDclsOne
 [Decorated EnvItem] ::= e::[Decorated EnvScope]
 {
@@ -237,6 +248,12 @@ function getFullNameDcl
 [Decorated EnvItem] ::= search::String e::Decorated Env
 {
   return searchDcls(search, e.nameTree);
+}
+
+function getFullNameDclNearest
+[Decorated EnvItem] ::= search::String e::Decorated Env
+{
+  return searchDclsNearest(search, e.nameTree);
 }
 
 function doesOccurOn

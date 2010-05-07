@@ -11,31 +11,17 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 
   top.defs = emptyDefs(); -- TODO let production attributes get defined in aspects
 
-  production attribute fName :: String;
-  fName = if !null(fNames) then head(fNames).fullName else id.name;
-
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(id.name, top.env);
-
-  production attribute prods :: [Decorated EnvItem];
-  prods = getProductionDcl(fName, top.env);
-
-  local attribute er :: [Decorated Message];
-  er = if null(prods)
-       then [err(top.location, "Production for aspect '" ++ id.name ++ "' is not declared.")]
-       else [];	
-
   production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
+  namedSig = namedSignatureDcl(id.lookupFunction.fullName, ns.inputElements, ns.outputElement);
 
   production attribute realSig :: Decorated NamedSignature;
-  realSig = head(prods).namedSignature;
+  realSig = head(id.lookupProduction.envItems).namedSignature;
 
-  top.errors := er ++ ns.errors ++ body.errors;
+  top.errors := id.lookupProduction.errors ++ ns.errors ++ body.errors;
   top.warnings := [];
 
   local attribute prodAtts :: Decorated Defs;
-  prodAtts = getProductionAttributes(fName, top.env);
+  prodAtts = getProductionAttributes(id.lookupProduction.fullName, top.env);
 
   body.env = newScopeEnv(appendDefs(body.defs, ns.defs), newScopeEnv(prodAtts, top.env));
 
@@ -44,7 +30,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   body.signature = namedSig;
 
   ns.env = newScopeEnv(ns.defs, top.env);  
-  ns.realSignature = if null(prods) then [] else [realSig.outputElement] ++ realSig.inputElements;
+  ns.realSignature = if null(id.lookupProduction.envItems) then [] else [realSig.outputElement] ++ realSig.inputElements;
 }
 
 concrete production aspectFunctionDcl
@@ -57,31 +43,17 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 
   top.moduleNames = [];
 
-  production attribute fName :: String;
-  fName = if !null(fNames) then head(fNames).fullName else id.name;
-
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(id.name, top.env);
-
-  production attribute funs :: [Decorated EnvItem];
-  funs = getFunctionDcl(fName, top.env);
-
-  local attribute er :: [Decorated Message];
-  er = if null(funs)
-       then [err(top.location, "Function for aspect '" ++ id.name ++ "' is not declared.")]
-       else [];	
-
   production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
+  namedSig = namedSignatureDcl(id.lookupFunction.fullName, ns.inputElements, ns.outputElement);
 
   production attribute realSig :: Decorated NamedSignature;
-  realSig = head(funs).namedSignature;
+  realSig = head(id.lookupFunction.envItems).namedSignature;
 
-  top.errors := er ++ ns.errors ++ body.errors;
+  top.errors := id.lookupFunction.errors ++ ns.errors ++ body.errors;
   top.warnings := [];
 
   local attribute prodAtts :: Decorated Defs;
-  prodAtts = getProductionAttributes(fName, top.env);
+  prodAtts = getProductionAttributes(id.lookupFunction.fullName, top.env);
 
   body.env = newScopeEnv(appendDefs(body.defs, ns.defs), newScopeEnv(prodAtts, top.env));
 
@@ -90,7 +62,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   body.signature = namedSig;
 
   ns.env = newScopeEnv(ns.defs, top.env);  
-  ns.realSignature = if null(funs) then [] else [realSig.outputElement] ++ realSig.inputElements;
+  ns.realSignature = if null(id.lookupFunction.envItems) then [] else [realSig.outputElement] ++ realSig.inputElements;
 }
 
 concrete production aspectProductionSignatureEmptyRHS
