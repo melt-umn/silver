@@ -134,16 +134,13 @@ top::AspectProductionLHS ::= id::Name t::Decorated TypeRep
 {
   top.pp = id.pp ++ "::" ++ t.unparse;
 
-  production attribute rName :: String;
-  rName = if null(top.realSignature) then id.name else head(top.realSignature).realName;
-
   production attribute fName :: String;
-  fName = if null(top.realSignature) then id.name else head(top.realSignature).fullName;
+  fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
 
-  top.outputElement = namedSignatureElement(id.name, rName, fName, t);
+  top.outputElement = namedSignatureElement(id.name, t);
   
-  top.defs = addValueDcl(fName, t, 
-	     addFullNameDcl(id.name, fName,  emptyDefs()));
+  top.defs = addValueDcl(fName, t,
+	     addFullNameDcl(id.name, fName, emptyDefs()));
 
   local attribute er1 :: [Decorated Message];
   er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
@@ -229,17 +226,13 @@ top::AspectRHSElem ::= id::Name t::Decorated TypeRep
   top.pp = id.pp ++ "::" ++ t.unparse;
   top.location = id.location;
 
-  production attribute rName :: String;
-  rName = if null(top.realSignature) then id.name else head(top.realSignature).realName;
-
   production attribute fName :: String;
-  fName = if null(top.realSignature) then id.name else head(top.realSignature).fullName;
+  fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
 
-  top.inputElements = [namedSignatureElement(id.name, rName, fName, t)];
+  top.inputElements = [namedSignatureElement(id.name, t)];
 
-
-  top.defs = addValueDcl(fName, t, 
-	     addFullNameDcl(id.name, fName,  emptyDefs()));
+  top.defs = addValueDcl(fName, t,
+	     addFullNameDcl(id.name, fName, emptyDefs()));
 
   local attribute er1 :: [Decorated Message];
   er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
@@ -294,16 +287,13 @@ top::AspectFunctionLHS ::= t::Type
   top.pp = t.pp;
   top.location = t.location;
 
-  production attribute rName :: String;
-  rName = if null(top.realSignature) then "_NULL_" else head(top.realSignature).realName;
-
   production attribute fName :: String;
-  fName = if null(top.realSignature) then rName else head(top.realSignature).fullName;
+  fName = if null(top.realSignature) then "_NULL_" else head(top.realSignature).elementName;
 
-  top.outputElement = namedSignatureElement(rName, rName, fName, t.typerep);
+  top.outputElement = namedSignatureElement(fName, t.typerep);
   
   top.defs = addValueDcl(fName, t.typerep, 
-	     addFullNameDcl(rName, fName,  emptyDefs()));
+	     addFullNameDcl(fName, fName,  emptyDefs()));
 
   top.errors := [];
   top.warnings := [];

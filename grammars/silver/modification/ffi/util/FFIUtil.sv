@@ -15,7 +15,7 @@ String ::= s::String names::[String] results::[String]
 function mapSignature
 [String] ::= f::Function(String ::= Decorated TypeRep String String) ns::[Decorated NamedSignatureElement] extra::String
 {
-  return if null(ns) then [] else f(head(ns).typerep, head(ns).fullName, extra) :: mapSignature(f, tail(ns), extra);
+  return if null(ns) then [] else f(head(ns).typerep, head(ns).elementName, extra) :: mapSignature(f, tail(ns), extra);
 }
 
 function cleanStringLexeme

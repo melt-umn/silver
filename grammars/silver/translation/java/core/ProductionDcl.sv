@@ -13,7 +13,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   className = "P" ++ id.name;
 
   local attribute sigNames :: [String];
-  sigNames = getFullNamesSignature(namedSig.inputElements);
+  sigNames = getNamesSignature(namedSig.inputElements);
 
   top.setupInh := body.setupInh;
   top.initProd := "\t\t//PRODUCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
@@ -102,7 +102,7 @@ String ::= className::String s::[Decorated NamedSignatureElement]{
 	 then "" 
 	       -- TODO: is this enough for this condition?
 	 else (if head(s).typerep.isNonTerminal || head(s).typerep.isAnyType then
-	      "\t" ++ className ++ ".inheritedAttributes.put(i_" ++ head(s).fullName ++ ", " ++ 
+	      "\t" ++ className ++ ".inheritedAttributes.put(i_" ++ head(s).elementName ++ ", " ++ 
                                                             "new java.util.TreeMap<String, common.Lazy>());\n"
                else "") ++ makeStaticDcls(className, tail(s));
 }

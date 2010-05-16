@@ -82,7 +82,7 @@ top::FunctionLHS ::= t::Type
   production attribute fName :: String;
   fName = "__return";
 
-  top.outputElement = namedSignatureElement(fName, fName, fName, t.typerep);
+  top.outputElement = namedSignatureElement(fName, t.typerep);
 
   top.defs = addValueDcl(fName, t.typerep, 
 	     addFullNameDcl(fName, fName,  emptyDefs()));

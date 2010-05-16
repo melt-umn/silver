@@ -387,8 +387,8 @@ top::aNamedSignature ::= s::SignatureTerm {
 }
 
 concrete production aNamedSignatureElementDcl
-top::aNamedSignatureElement ::= s::SignatureElementTerm '(' n::Name ',' rn::Name ',' fn::Name ',' t::aTypeRep ')' {
-  top.element = namedSignatureElement(n.lexeme, rn.lexeme, fn.lexeme, t.typerep);
+top::aNamedSignatureElement ::= s::SignatureElementTerm '(' n::Name ',' t::aTypeRep ')' {
+  top.element = namedSignatureElement(n.lexeme, t.typerep);
 }
 
 concrete production aNamedSignatureElementDclDefault
