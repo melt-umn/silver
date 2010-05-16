@@ -1,8 +1,7 @@
 grammar silver:definition:env;
 
 nonterminal NamedSignature with inputElements, outputElement, fullName, unparse;
-nonterminal NamedSignatureElement with typerep, elementName, realName, fullName, unparse;
-synthesized attribute realName :: String;
+nonterminal NamedSignatureElement with typerep, elementName, unparse;
 synthesized attribute elementName :: String;
 synthesized attribute inputElements :: [Decorated NamedSignatureElement];
 synthesized attribute outputElement :: Decorated NamedSignatureElement;
@@ -21,16 +20,6 @@ function getNamesSignature
 function getTypeNamesSignature
 [String] ::= ns::[Decorated NamedSignatureElement]{
  return if null(ns) then [] else [head(ns).typerep.typeName] ++ getTypeNamesSignature(tail(ns));  
-}
-
-function getFullNamesSignature
-[String] ::= ns::[Decorated NamedSignatureElement]{
- return if null(ns) then [] else [head(ns).fullName] ++ getFullNamesSignature(tail(ns));  
-}
-
-function getRealNamesSignature
-[String] ::= ns::[Decorated NamedSignatureElement]{
- return if null(ns) then [] else [head(ns).fullName] ++ getFullNamesSignature(tail(ns));  
 }
 
 function unparseSignatureElements
@@ -70,17 +59,15 @@ top::NamedSignature ::= {
 }
 
 function namedSignatureElement
-Decorated NamedSignatureElement ::= n::String rn::String fn::String tr::Decorated TypeRep{
-  return decorate i_namedSignatureElement(n, rn, fn, tr) with {};
+Decorated NamedSignatureElement ::= n::String tr::Decorated TypeRep{
+  return decorate i_namedSignatureElement(n, tr) with {};
 }
 
 abstract production i_namedSignatureElement
-top::NamedSignatureElement ::= n::String rn::String fn::String tr::Decorated TypeRep{
-  top.unparse = "element('" ++ n ++ "', '" ++ rn ++ "', '" ++ fn ++ "', " ++ tr.unparse ++ ")";
+top::NamedSignatureElement ::= n::String tr::Decorated TypeRep{
+  top.unparse = "element('" ++ n ++ "', " ++ tr.unparse ++ ")";
 
   top.elementName = n;
-  top.realName = rn;
-  top.fullName = fn;
   top.typerep = tr;
 }
 
@@ -88,7 +75,5 @@ abstract production namedSignatureElementDefault
 top::NamedSignatureElement ::= {
   top.unparse = "element";
   top.elementName = "_NULL_";
-  top.realName = "_NULL_";
-  top.fullName = "_NULL_";
   top.typerep = topTypeRep();
 }

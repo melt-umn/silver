@@ -85,7 +85,7 @@ top::ProductionLHS ::= id::Name '::' t::Type
   production attribute fName :: String;
   fName = id.name;
 
-  top.outputElement = namedSignatureElement(id.name, id.name, fName, t.typerep);
+  top.outputElement = namedSignatureElement(id.name, t.typerep);
 
   top.defs = addValueDcl(fName, t.typerep, 
 	     addFullNameDcl(id.name, fName,  emptyDefs()));
@@ -144,7 +144,7 @@ top::ProductionRHSElem ::= id::Name '::' t::Type
   production attribute fName :: String;
   fName = id.name;
 
-  top.inputElements = [namedSignatureElement(id.name, id.name, fName, t.typerep)];
+  top.inputElements = [namedSignatureElement(id.name, t.typerep)];
 
   top.defs = addValueDcl(fName, t.typerep, 
 	     addFullNameDcl(id.name, fName,  emptyDefs()));

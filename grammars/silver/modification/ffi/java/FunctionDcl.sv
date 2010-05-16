@@ -35,7 +35,7 @@ String ::= t::Decorated TypeRep fName::String className::String
 function computeSigTranslation
 String ::= str::String sig::Decorated NamedSignature
 {
-  return percentSubst(str, getFullNamesSignature(sig.inputElements), mapSignature(childAccessor, sig.inputElements, makeClassName(sig.fullName)));
+  return percentSubst(str, getNamesSignature(sig.inputElements), mapSignature(childAccessor, sig.inputElements, makeClassName(sig.fullName)));
 }
 
 
@@ -47,7 +47,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   className = "P" ++ id.name;
 
   local attribute sigNames :: [String];
-  sigNames = getFullNamesSignature(namedSig.inputElements);
+  sigNames = getNamesSignature(namedSig.inputElements);
 
   top.setupInh := forward.setupInh; -- hacky hacky!
   top.initProd := forward.initProd; -- hacky hacky!

@@ -10,7 +10,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody{
   className = "P" ++ id.name;
 
   local attribute sigNames :: [String];
-  sigNames = getFullNamesSignature(namedSig.inputElements);
+  sigNames = getNamesSignature(namedSig.inputElements);
 
   top.setupInh := body.setupInh;
   top.initProd := "\t\t//FUNCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
