@@ -216,6 +216,8 @@ top::AspectRHSElem ::= id::Name '::' t::Type
 {
   top.pp = id.pp ++ "::" ++ t.pp;
   top.location = loc(top.file, $2.line, $2.column);
+  
+  top.errors <- t.errors;
 
   forwards to aspectRHSElemFull(id, t.typerep);
 }
