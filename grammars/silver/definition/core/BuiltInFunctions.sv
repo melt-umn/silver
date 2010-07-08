@@ -8,22 +8,18 @@ top::Expr ::= 'length' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   production attribute handlers :: [Expr] with ++;
-  handlers := [];
-
-  forwards to if null(handlers) then unknownLength(e) else head(handlers);
-}
-
-aspect production lengthFunction
-top::Expr ::= 'length' '(' e::Expr ')'
-{
-  handlers <- if e.typerep.typeName == "String"
+  handlers := if e.typerep.typeName == "String"
 	      then [stringLength(e)]
 	      else [];
+
+  -- TODO: bug, the handler doesn't have the location available for error handling anymore!
+  forwards to if null(handlers) then unknownLength(e) else head(handlers);
 }
 
 abstract production unknownLength
 top::Expr ::= e::Decorated Expr
 {
+  top.location = e.location;
   top.errors := e.errors;
   top.warnings := [];
   top.typerep = topTypeRep();
