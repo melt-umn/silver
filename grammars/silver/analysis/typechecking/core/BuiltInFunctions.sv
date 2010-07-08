@@ -12,7 +12,7 @@ aspect production unknownLength
 top::Expr ::= e::Decorated Expr
 {
   local attribute er :: [Decorated Message];
-  er = [err(top.location, "operand to 'length(..)' is not compatible.")];
+  er = [err(e.location, "operand to 'length(..)' is not compatible.")];
 
   top.typeErrors = er ++ e.typeErrors;      
 }
