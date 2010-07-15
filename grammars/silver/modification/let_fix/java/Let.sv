@@ -3,16 +3,18 @@ import silver:modification:let_fix;
 import silver:translation:java:core;
 import silver:definition:core;
 import silver:util;
+import silver:definition:env;
+import silver:translation:java:env;
 
 import silver:translation:java:concrete_syntax:copper; -- TODO part of ugly hack
 
 aspect production letp
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
-  top.translation = "common.Util.let(context, new String[]{" ++ folds(", ", la.nameTrans) ++ "}, " ++ 
+  top.translation = "((" ++ top.typerep.transType ++ ")common.Util.let(context, new String[]{" ++ folds(", ", la.nameTrans) ++ "}, " ++ 
 					     "new common.Lazy[]{" ++ folds(", ", la.valueTrans) ++ "}, " ++ 
 					     "new common.Lazy(){public Object eval(common.DecoratedNode context) {return " ++ 
-							e.translation ++ ";}}" ++ ")"; 
+							e.translation ++ ";}}" ++ "))"; 
 }
 
 attribute nameTrans, valueTrans occurs on LetAssigns, AssignExpr;
