@@ -15,37 +15,30 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   production attribute namedSig :: Decorated NamedSignature;
   namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
 
-  local attribute pattrs :: Decorated Defs;
-  pattrs = if body.productionAttributes.size > 0 then addProductionAttributesDcl(fName, body.productionAttributes, emptyDefs()) else emptyDefs();
-
-  top.defs = addValueDcl(fName, prodTypeRep(getTypesSignature(namedSig.inputElements), namedSig.outputElement.typerep), 
-	     addProductionDcl(namedSig,
-	     addFullNameDcl(id.name, fName, pattrs)));
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
-        then [err(top.location, "Name '" ++ id.pp ++ "' is already bound.")]
-        else [];	
+  top.defs = addProdDcl(top.grammarName, id.location, namedSig,
+               body.productionAttributes);
 
   local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclOne(fName, top.env)) > 1
+  er2 = if length(getValueDclAll(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
   
+  -- TODO: Narrow this down to just a list of productions before deciding to error.
   local attribute er3 :: [Decorated Message];
-  er3 = if length(getFullNameDcl(id.name, top.env)) > 1 && null(er1)
+  er3 = if length(getValueDcl(id.name, top.env)) > 1 && null(er2)
         then [err(top.location, "Production " ++ id.pp ++ " shares a name with another production from an imported grammar. Either this production is meant to be an aspect, or you should use 'import ... with " ++ id.pp ++ " as ...' to change the other production's apparent name.")]
         else [];
 
-  top.errors := er1 ++ er2 ++ er3 ++ ns.errors ++ body.errors;
+  top.errors := er2 ++ er3 ++ ns.errors ++ body.errors;
   top.warnings := [];
 
   ns.env = newScopeEnv(ns.defs, top.env);
 
-  body.env = newScopeEnv(appendDefs(body.defs, ns.defs), top.env);
+  local attribute prodAtts :: Defs;
+  prodAtts = valueDefsFromDcls(getProdAttrs(fName, top.env));
+
+  body.env = newScopeEnv(appendDefs(body.defs, ns.defs), newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;
-  body.signatureEnv = toEnv(ns.defs);
-  body.localsEnv = toEnv(body.defs);
 }
 
 concrete production productionSignatureEmptyRHS
@@ -87,20 +80,15 @@ top::ProductionLHS ::= id::Name '::' t::Type
 
   top.outputElement = namedSignatureElement(id.name, t.typerep);
 
-  top.defs = addValueDcl(fName, t.typerep, 
-	     addFullNameDcl(id.name, fName,  emptyDefs()));
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
-       then [err(top.location, "Name '" ++ id.name ++ "' is already bound.")]
-       else [];	
+  -- TODO: think about this. lhs doesn't really have an fName.
+  top.defs = addLhsDcl(top.grammarName, t.location, fName, t.typerep, emptyDefs());
 
   local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclOne(fName, top.env)) > 1
+  er2 = if length(getValueDclAll(fName, top.env)) > 1
        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
        else [];	
 
-  top.errors := er1 ++ er2 ++ t.errors;
+  top.errors := er2 ++ t.errors;
   top.warnings := [];
 }
 
@@ -146,20 +134,15 @@ top::ProductionRHSElem ::= id::Name '::' t::Type
 
   top.inputElements = [namedSignatureElement(id.name, t.typerep)];
 
-  top.defs = addValueDcl(fName, t.typerep, 
-	     addFullNameDcl(id.name, fName,  emptyDefs()));
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
-       then [err(top.location, "Name '" ++ id.name ++ "' is already bound.")]
-       else [];	
+  -- TODO: think about this. child doesn't really have an fName.
+  top.defs = addChildDcl(top.grammarName, t.location, fName, t.typerep, emptyDefs());
 
   local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclOne(fName, top.env)) > 1
+  er2 = if length(getValueDclAll(fName, top.env)) > 1
        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
        else [];	
 
-  top.errors := er1 ++ er2 ++ t.errors;
+  top.errors := er2 ++ t.errors;
   top.warnings := [];
 }
 

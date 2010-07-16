@@ -21,53 +21,49 @@ top::Expr ::= '(' e::Expr ')'
   top.appReference = e.appReference;
 }
 
-aspect production decorateExpr
-top::Expr ::= q::QName
+-- TODO: these go through the process of decorating them, just to undecorate.
+--       we should maybe pass information to the runtime here to make it more
+--       efficient.  We could even kill the runtime check to see if it's
+--       a node, since we know.
+
+aspect production childReference
+top::Expr ::= q::Decorated QName
 {
   top.isAppReference = false;
   top.appReference = "";
 
-  local attribute className :: String;
-  className = makeClassName(top.signature.fullName);
-
-  -- TODO: polymorphism
-  top.translation = if in_sig && top.signature.outputElement.elementName == q.name 
-                    then "context"
-                    else if in_sig
-                    then "((" ++ top.typerep.transType ++ ")context.child(" ++ className ++ ".i_" ++ q.lookupValue.fullName  ++ "))" 
-                    else if in_locals 
-                    then "((" ++ top.typerep.transType ++ ")context.local(\"" ++ q.lookupValue.fullName ++ "\"))" 
-                    else "(error(\"BOOM\"))";
+  top.translation =
+    if shouldUnDec
+    then "(((common.DecoratedNode)context.child(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName ++ ")).undecorate())"
+    else "((" ++ top.typerep.transType ++ ")context.child(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName  ++ "))";
 }
 
-aspect production dontDecorateExpr
-top::Expr ::= q::QName
+aspect production lhsReference
+top::Expr ::= q::Decorated QName
 {
   top.isAppReference = false;
   top.appReference = "";
 
-  local attribute className :: String;
-  className = makeClassName(top.signature.fullName);
+  top.translation =
+    if shouldUnDec
+    then "context.undecorate()"
+    else "context";
+}
 
-  local attribute tr :: Decorated TypeRep;
-  tr = top.typerep;
+aspect production localReference
+top::Expr ::= q::Decorated QName
+{
+  top.isAppReference = false;
+  top.appReference = "";
 
-  -- TODO: polymorphism
-  top.translation = if in_sig && top.signature.outputElement.elementName == q.name
-                     then "(context.undecorate())" 
-                    else if in_sig && tr.isNonTerminal        
-                    then "(((common.DecoratedNode)context.child(" ++ className ++ ".i_" ++  q.lookupValue.fullName ++ ")).undecorate())"
-                    else if in_sig && !tr.isNonTerminal
-                    then "((" ++ tr.transType ++ ")context.child(" ++ className ++ ".i_" ++  q.lookupValue.fullName ++ "))" 
-                    else if in_locals && tr.isNonTerminal
-                    then "(((common.DecoratedNode)context.local(\"" ++ q.lookupValue.fullName ++ "\")).undecorate())" 
-                    else if in_locals && !tr.isNonTerminal
-                    then "((" ++ tr.transType ++ ")context.local(\"" ++ q.lookupValue.fullName ++ "\"))" 
-                    else "(error(\"BOOM\"))";
+  top.translation =
+    if shouldUnDec
+    then "(((common.DecoratedNode)context.local(\"" ++ q.lookupValue.fullName ++ "\")).undecorate())"
+    else "((" ++ top.typerep.transType ++ ")context.local(\"" ++ q.lookupValue.fullName ++ "\"))";
 }
 
 aspect production productionReference
-top::Expr ::= q::QName
+top::Expr ::= q::Decorated QName
 {
   top.isAppReference = true;
   top.appReference = makeClassName(q.lookupValue.fullName);
@@ -76,7 +72,7 @@ top::Expr ::= q::QName
 }
 
 aspect production functionReference
-top::Expr ::= q::QName
+top::Expr ::= q::Decorated QName
 {
   top.isAppReference = true;
   top.appReference = makeClassName(q.lookupValue.fullName);
@@ -85,16 +81,19 @@ top::Expr ::= q::QName
 }
 
 aspect production forwardReference
-top::Expr ::= q::Forward_kwd
+top::Expr ::= q::Decorated QName
 {
   top.isAppReference = false;
   top.appReference = "";
   
-  top.translation = "context.forward()";
+  top.translation =
+    if shouldUnDec
+    then "context.forward().undecorate()"
+    else "context.forward()";
 }
 
 aspect production productionApplicationDispatcher
-top::Expr ::= e::Expr es::Exprs
+top::Expr ::= e::Decorated Expr es::Exprs
 {
   top.isAppReference = false;
   top.appReference = "";
@@ -105,7 +104,7 @@ top::Expr ::= e::Expr es::Exprs
 }
 
 aspect production functionApplicationDispatcher
-top::Expr ::= e::Expr es::Exprs
+top::Expr ::= e::Decorated Expr es::Exprs
 {
   top.isAppReference = false;
   top.appReference = "";
@@ -115,18 +114,32 @@ top::Expr ::= e::Expr es::Exprs
                     else "((" ++ e.typerep.outputType.transType ++ ")((common.FunctionNode)common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "})).doReturn())";
 }
 
--- TODO: this should probably be done polymorphically!
-aspect production atAccess
-top::Expr ::= e::Expr '@' q::QName
+aspect production synDNTAccessDispatcher
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.isAppReference = false;
   top.appReference = "";
 
-  top.translation = "((" ++ top.typerep.transType ++ ")" ++ e.translation ++ 
-                        (if top.typerep.isSynthesized
-                            then ".synthesized(\"" ++ q.lookupValue.fullName ++ "\"))"  
-                          else ".inherited(\"" ++ q.lookupValue.fullName ++ "\"))");
-                        
+  top.translation = "((" ++ q.lookupAttribute.typerep.transType ++ ")" ++ e.translation ++ ".synthesized(\"" ++ q.lookupAttribute.fullName ++ "\"))";
+}
+
+aspect production inhDNTAccessDispatcher
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  top.isAppReference = false;
+  top.appReference = "";
+
+  top.translation = "((" ++ q.lookupAttribute.typerep.transType ++ ")" ++ e.translation ++ ".inherited(\"" ++ q.lookupAttribute.fullName ++ "\"))";
+}
+
+aspect production terminalAccessDispatcher
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  top.isAppReference = false;
+  top.appReference = "";
+
+  -- TODO: doing the wrong thing here for expediency!! BUG TODO FIX
+  top.translation = "((" ++ q.lookupAttribute.typerep.transType ++ ")" ++ e.translation ++ ".synthesized(\"" ++ q.name ++ "\"))";
 }
 
 aspect production decorateExprWith
@@ -182,7 +195,7 @@ top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
 aspect production exprLhsExpr
 top::ExprLHSExpr ::= q::QName
 {
-  top.nameTrans = ["\"" ++ q.lookupValue.fullName ++ "\""];
+  top.nameTrans = ["\"" ++ q.lookupAttribute.fullName ++ "\""];
 }
 
 
@@ -227,7 +240,7 @@ top.translation =
          then "(" ++ e1.translation ++ ".floatValue() > " ++ e2.translation ++ ".floatValue())"
          else if e1.typerep.isString && e2.typerep.isString
          then "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) > 0"
-         else error(top.location.pp ++ "Invalid >");
+         else error(top.location.unparse ++ "Invalid >"); -- TODO: bad use of unparse
 }
 
 aspect production lt
@@ -240,7 +253,7 @@ top.translation =
          then "(" ++ e1.translation ++ ".floatValue() < " ++ e2.translation ++ ".floatValue())"
          else if e1.typerep.isString && e2.typerep.isString
          then "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) < 0"
-         else error(top.location.pp ++ "Invalid <");
+         else error(top.location.unparse ++ "Invalid <"); -- TODO: bad use of unparse
 }
 
 --TODO BUG: This is completely inconsistent with the above! Also, type checking allows strings!
@@ -299,33 +312,34 @@ top::Expr ::= f::Float_t
   top.translation = "new Float(" ++ f.lexeme ++ ")";
 } 
 
+-- TODO: BUG: these aren't working for floats!
 aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
-  top.translation = "(new Integer(" ++ e1.translation ++ " + " ++ e2.translation ++ "))";
+  top.translation = "new Integer(" ++ e1.translation ++ " + " ++ e2.translation ++ ")";
 }
 aspect production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
-  top.translation = "(new Integer(" ++ e1.translation ++ " - " ++ e2.translation ++ "))";
+  top.translation = "new Integer(" ++ e1.translation ++ " - " ++ e2.translation ++ ")";
 }
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
-  top.translation = "(new Integer(" ++ e1.translation ++ " * " ++ e2.translation ++ "))";
+  top.translation = "new Integer(" ++ e1.translation ++ " * " ++ e2.translation ++ ")";
 }
 aspect production divide
 top::Expr ::= e1::Expr '/' e2::Expr
 {
-  top.translation = "(new Float(" ++ e1.translation ++ " / " ++ e2.translation ++ "))";
+  top.translation = "new Float(" ++ e1.translation ++ " / " ++ e2.translation ++ ")";
 }
 aspect production neg
 top::Expr ::= '-' e::Expr
 {
   top.translation = if e.typerep.isInteger then
-                 "(new Integer(-" ++ e.translation ++ ".intValue()))"
+                 "new Integer(-" ++ e.translation ++ ".intValue())"
                     else
-                 "(new Float(-" ++ e.translation ++ ".floatValue()))";
+                 "new Float(-" ++ e.translation ++ ".floatValue())";
 }
 
 aspect production stringConst
@@ -345,7 +359,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
   -- cast, rather than toString. Otherwise we don't gain anything with StringCatter
   -- literal here, rather than transType.  why not? Catch bugs, just in case.
-  top.translation = "(new common.StringCatter((common.StringCatter)" ++ e1.translation ++ ").append((common.StringCatter)" ++ e2.translation ++ "))";
+  top.translation = "new common.StringCatter((common.StringCatter)" ++ e1.translation ++ ").append((common.StringCatter)" ++ e2.translation ++ ")";
 }
 
 aspect production exprsEmpty

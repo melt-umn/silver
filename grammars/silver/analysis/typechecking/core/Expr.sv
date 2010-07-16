@@ -9,42 +9,44 @@ top::Expr ::= '(' e::Expr ')'
   top.typeErrors = e.typeErrors;
 }
 
+aspect production childReference
+top::Expr ::= q::Decorated QName
+{
+  top.typeErrors = [];
+}
+
+aspect production lhsReference
+top::Expr ::= q::Decorated QName
+{
+  top.typeErrors = [];
+}
+
+aspect production localReference
+top::Expr ::= q::Decorated QName
+{
+  top.typeErrors = [];
+}
+
 aspect production productionReference
-top::Expr ::= q::QName
+top::Expr ::= q::Decorated QName
 {
   top.typeErrors = [];
 }
 
 aspect production functionReference
-top::Expr ::= q::QName
+top::Expr ::= q::Decorated QName
 {
   top.typeErrors = [];
 }
 
-aspect production dontDecorateExpr
-top::Expr ::= q::QName
+aspect production forwardReference
+top::Expr ::= q::Decorated QName
 {
   top.typeErrors = [];
-}
-
-aspect production decorateExpr
-top::Expr ::= q::QName
-{
-  local attribute er2 :: [Decorated Message];
-  er2 = if q.lookupValue.typerep.typeName != "TOP" && !q.lookupValue.typerep.isNonTerminal
-	then [err(top.location, "Ticked value '" ++ q.name ++ "' must be an undecorated nonterminal." )]
-	else [];
-
-  local attribute er3 :: [Decorated Message];
-  er3 = if !in_sig && !in_locals
-	then [err(top.location, "Ticked name '" ++ q.name ++ "'must be in the signature or declared local.")]
-	else [];
-
-  top.typeErrors = er2 ++ er3;
 }
 
 aspect production productionApplicationDispatcher
-top::Expr ::= e::Expr es::Exprs
+top::Expr ::= e::Decorated Expr es::Exprs
 {
   local attribute er1 :: [Decorated Message];
   er1 = if  e.typerep.isProduction && genListEquals(e.typerep.inputTypes, getTypesExprs(es.exprs)) then []
@@ -59,7 +61,7 @@ top::Expr ::= e::Expr es::Exprs
 }
 
 aspect production functionApplicationDispatcher
-top::Expr ::= e::Expr es::Exprs
+top::Expr ::= e::Decorated Expr es::Exprs
 {
   local attribute er1 :: [Decorated Message];
   er1 = if  e.typerep.isFunction && genListEquals(e.typerep.inputTypes, getTypesExprs(es.exprs)) then []
@@ -73,10 +75,10 @@ top::Expr ::= e::Expr es::Exprs
   top.typeErrors = er1 ++ er2 ++ e.typeErrors ++ es.typeErrors;
 }
 
-aspect production genericApplicationDispatcher
-top::Expr ::= e::Expr es::Exprs
+aspect production errorApplicationDispatcher
+top::Expr ::= e::Decorated Expr es::Exprs
 {
-  top.typeErrors = []; -- TODO: this is an error production, but does it give errors properly?
+  top.typeErrors = e.typeErrors; -- errors already raised in errors. no additional type checking possible.
 }
 
 function printTypes
@@ -88,26 +90,57 @@ String ::= ts::[Decorated TypeRep]
 	  else ",\n   " ++ printTypes(tail(ts)));
 }
 
-aspect production atAccess
-top::Expr ::= e::Expr '@' q::QName
+aspect production errorAccessDispatcher
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  local attribute occursOn :: Boolean;
-  occursOn = doesOccurOn(q.lookupAttribute.fullName, e.typerep.typeName, top.env);
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if occursOn then []
-       else [err(top.location, "Attribute '" ++ q.name ++ "' does not decorate type '" ++ e.typerep.typeName ++ "'.")];
-
-  local attribute er2 :: [Decorated Message];
-  er2 = if e.typerep.isDecorated || e.typerep.isTerminal then []
-	else [err(top.location, "@ value must be a decorated nonterminal or a terminal.")] ;
-
-  top.typeErrors = er2 ++ er1 ++ e.typeErrors;
+  top.typeErrors = e.typeErrors;
 }
 
-aspect production hashAccess
-top::Expr ::= e::Expr '#' q::QName
-{}
+aspect production decoratedAccessDispatcher
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  local attribute occursDcls :: [Decorated DclInfo];
+  occursDcls = getOccursDcl(q.lookupAttribute.fullName, e.typerep.typeName, top.env);
+  
+  local attribute er1 :: [Decorated Message];
+  er1 = if null(occursDcls)
+        then [err(top.location, "Attribute '" ++ q.name ++ "' does not decorate type '" ++ e.typerep.typeName ++ "'.")]
+        else [];
+
+  -- TODO BUG: typeErrors needs to be changed to a collection, and this needs to be <-, so the below aren't compeltely ignored.
+  top.typeErrors = er1 ++ e.typeErrors;
+}
+
+aspect production synDNTAccessDispatcher
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  top.typeErrors = [];
+}
+aspect production inhDNTAccessDispatcher
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  top.typeErrors = [];
+}
+aspect production errorDNTAccessDispatcher
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  top.typeErrors = [];
+}
+
+
+aspect production terminalAccessDispatcher
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  -- TODO: this is a hacky way of dealing with terminals
+  local attribute er1 :: [Decorated Message];
+  er1 = if q.name == "lexeme" || q.name == "filename" || q.name == "line" || q.name == "column"
+        then []
+        else [err(q.location, q.name ++ " is not a terminal attribute")];
+
+  top.typeErrors = er1 ++ e.typeErrors;
+}
+
+
 aspect production trueConst
 top::Expr ::= 'true'
 {

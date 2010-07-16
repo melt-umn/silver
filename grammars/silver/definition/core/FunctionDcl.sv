@@ -15,34 +15,24 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   production attribute namedSig :: Decorated NamedSignature;
   namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
 
-  local attribute pattrs :: Decorated Defs;
-  pattrs = if body.productionAttributes.size > 0 
-	   then addProductionAttributesDcl(fName, body.productionAttributes, emptyDefs()) 
-	   else emptyDefs();
-
-  top.defs = addValueDcl(fName, funTypeRep(getTypesSignature(namedSig.inputElements), namedSig.outputElement.typerep),
-	     addFunctionDcl(namedSig,
-	     addFullNameDcl(id.name, fName, pattrs)));
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
-        then [err(top.location, "Name '" ++ id.pp ++ "' is already bound.")]
-        else [];	
+  top.defs = addFunDcl(top.grammarName, id.location, namedSig,
+               body.productionAttributes);
 
   local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclOne(fName, top.env)) > 1
+  er2 = if length(getValueDclAll(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
-  top.errors := er1 ++ er2 ++ ns.errors ++ body.errors;
+  top.errors := er2 ++ ns.errors ++ body.errors;
   top.warnings := [];
 
   ns.env = newScopeEnv(ns.defs, top.env);
 
-  body.env = newScopeEnv(appendDefs(body.defs, ns.defs), top.env);
+  local attribute prodAtts :: Defs;
+  prodAtts = valueDefsFromDcls(getProdAttrs(fName, top.env));
+
+  body.env = newScopeEnv(appendDefs(body.defs, ns.defs), newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;
-  body.signatureEnv = toEnv(ns.defs);
-  body.localsEnv = toEnv(body.defs);
 }
 
 concrete production functionSignatureEmptyRHS
@@ -84,8 +74,8 @@ top::FunctionLHS ::= t::Type
 
   top.outputElement = namedSignatureElement(fName, t.typerep);
 
-  top.defs = addValueDcl(fName, t.typerep, 
-	     addFullNameDcl(fName, fName,  emptyDefs()));
+  -- TODO: think about this. lhs doesn't really have an fName.
+  top.defs = addLhsDcl(top.grammarName, t.location, fName, t.typerep, emptyDefs());
 
   top.errors := t.errors;
   top.warnings := [];

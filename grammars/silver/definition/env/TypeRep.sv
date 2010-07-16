@@ -1,15 +1,14 @@
 grammar silver:definition:env;
-import silver:definition:regex;
+import silver:definition:regex; -- TODO : just for terminals.  fix?
 
 nonterminal TypeRep with typeName, inputTypes, outputType,
                           isPrimative, isTerminal, isNonTerminal, isDecorated, isProduction, unparse, typeEquals, decoratedType,
-			  isInteger, isFloat, isString, isBoolean, isFunction, regularExpression, isSynthesized, isInherited;
+			  isInteger, isFloat, isString, isBoolean, isFunction;
 
 synthesized attribute typeEquals :: Production (TypeEquals ::= Decorated TypeRep Decorated TypeRep);
 
-synthesized attribute unparse :: String;
+--synthesized attribute unparse :: String;
 synthesized attribute typeName :: String;
-synthesized attribute regularExpression :: Decorated Regex_R;
 synthesized attribute decoratedType :: Decorated TypeRep;
 synthesized attribute inputTypes :: [Decorated TypeRep];
 synthesized attribute outputType :: Decorated TypeRep;
@@ -24,9 +23,6 @@ synthesized attribute isNonTerminal :: Boolean;
 synthesized attribute isDecorated :: Boolean;
 synthesized attribute isProduction :: Boolean;
 synthesized attribute isFunction :: Boolean;
-
-synthesized attribute isSynthesized :: Boolean;
-synthesized attribute isInherited :: Boolean;
 
 function integerTypeRep
 Decorated TypeRep ::= 
@@ -90,17 +86,16 @@ top::TypeRep ::=
 }
 
 function termTypeRep
-Decorated TypeRep ::= n::String r::Decorated Regex_R
+Decorated TypeRep ::= n::String
 {
-  return decorate i_termTypeRep(n, r) with {};
+  return decorate i_termTypeRep(n) with {};
 }
 
 abstract production i_termTypeRep
-top::TypeRep ::= n::String r::Decorated Regex_R
+top::TypeRep ::= n::String
 {
   top.typeName = n;
-  top.regularExpression = r;
-  top.unparse = "term('" ++ n ++ "', /" ++ r.regString ++ "/)";
+  top.unparse = "term('" ++ n ++ "')";
   top.isTerminal = true;
   forwards to i_defaultTypeRep();
 }
@@ -120,6 +115,7 @@ top::TypeRep ::= n::String
 
   forwards to i_defaultTypeRep();
 }
+
 --TODO change this to decorated
 function refTypeRep
 Decorated TypeRep ::= t::Decorated TypeRep
@@ -173,34 +169,6 @@ top::TypeRep ::= it::[Decorated TypeRep] ot::Decorated TypeRep
   forwards to i_defaultTypeRep();
 }
 
-function synTypeRep
-Decorated TypeRep ::= t::Decorated TypeRep
-{
-  return decorate i_synTypeRep(t) with {};
-}
-abstract production i_synTypeRep
-top::TypeRep ::= t::Decorated TypeRep
-{
-  top.unparse = "syn(" ++ forward.unparse ++ ")";
-  top.isSynthesized = true;
-
-  forwards to new(t);
-}
-
-function inhTypeRep
-Decorated TypeRep ::= t::Decorated TypeRep
-{
-  return decorate i_inhTypeRep(t) with {};
-}
-abstract production i_inhTypeRep
-top::TypeRep ::= t::Decorated TypeRep
-{
-  top.unparse = "inh(" ++ forward.unparse ++ ")";
-  top.isInherited = true;
-
-  forwards to new(t);
-}
-
 function unparseTypes
 String ::= l::[Decorated TypeRep]{
   return "[" ++ unparseTypesHelp(l) ++ "]";
@@ -221,7 +189,6 @@ top::TypeRep ::=
 {
   top.typeName = "TOP";
   top.unparse = "top";
-  top.regularExpression = decorate Rtoeps() with {};
   top.isPrimative = true;
   top.isInteger = true;
   top.isFloat = true;
@@ -232,8 +199,6 @@ top::TypeRep ::=
   top.isDecorated = true;
   top.isProduction = true;
   top.isFunction = true;
-  top.isSynthesized = true;
-  top.isInherited = true;
   forwards to i_defaultTypeRep();
 }
 
@@ -248,7 +213,6 @@ top::TypeRep ::=
 {
   top.typeName = "DEFAULT";
   top.unparse = "default";
-  top.regularExpression = decorate Rtoeps() with {};
   top.isPrimative = false;
   top.isInteger = false;
   top.isFloat = false;
@@ -259,8 +223,6 @@ top::TypeRep ::=
   top.isDecorated = false;
   top.isProduction = false;
   top.isFunction = false;
-  top.isSynthesized = false;
-  top.isInherited = false;
   top.decoratedType = topTypeRep();
   top.typeEquals = genEquals;
 

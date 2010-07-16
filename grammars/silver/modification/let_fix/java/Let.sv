@@ -40,5 +40,5 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
   top.valueTrans = ["new common.Lazy(){public Object eval(common.DecoratedNode context) {return " ++ e.translation ++ ";}}"];
 }
 
---TODO BUG HACK UGLY FIXME OHGOD
+--TODO BUG HACK UGLY FIXME OHGOD remove this, nasty-ass dependency
 attribute actionCodeType occurs on LetAssigns, AssignExpr;

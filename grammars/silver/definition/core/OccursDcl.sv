@@ -9,7 +9,8 @@ top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
 
   top.moduleNames = [];
 
-  top.defs = addOccursDcl(a.lookupAttribute.fullName, nt.lookupType.fullName, emptyDefs());
+  -- TODO: we should decide which location to use (a or nt) better somehow
+  top.defs = addOccursDcl(top.grammarName, a.location, nt.lookupType.fullName, a.lookupAttribute.fullName, emptyDefs());
 
   top.errors := a.lookupAttribute.errors ++ nt.lookupType.errors;
 }

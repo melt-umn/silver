@@ -1,275 +1,164 @@
 grammar silver:definition:env;
 
-function printEnvItems
-String ::= i::[Decorated EnvItem]{
-  return if null(i) then "" else head(i).unparse ++ "\n" ++ printEnvItems(tail(i));
-}
+import silver:util;
 
-nonterminal EnvItem 
-  with 	unparse, itemName, fullName, decoratesName, typerep, 
-	isValueDeclaration, isTypeDeclaration, isOccursDeclaration,
-        isAttributeDeclaration,
-        isFullNameDeclaration, isProductionAttributesDeclaration, attributes,
-	namedSignature, isProductionDeclaration, isFunctionDeclaration;
+--fullNameToShort  String ::= s::String
+--defaultEnvItem   Decorate EnvItem ::= di::Decorated DclInfo
+--renamedEnvItem   Decorate EnvItem ::= newname::String di::Decorated DclInfo
+--mapGetDcls       [Decorated DclInfo] ::= i::[Decorated EnvItem]
+--mapDefaultWrapDcls [Decorated EnvItem] ::= i::[Decorated DclInfo]
+--mapFullnameDcls  [Decorated EnvItem] ::= i::[Decorated DclInfo]
+--sortEnvItems     [Decorated EnvItem] ::= eis::[Decorated EnvItem]
 
+
+nonterminal EnvItem with itemName, dcl;
 
 synthesized attribute itemName :: String;
-synthesized attribute fullName :: String;
-synthesized attribute decoratesName :: String;
-synthesized attribute typerep :: Decorated TypeRep;
-synthesized attribute namedSignature :: Decorated NamedSignature;
-synthesized attribute attributes :: Decorated Defs;
+synthesized attribute dcl :: Decorated DclInfo;
 
-synthesized attribute isValueDeclaration :: Boolean;
-synthesized attribute isFullNameDeclaration :: Boolean;
-synthesized attribute isTypeDeclaration :: Boolean;
-synthesized attribute isAttributeDeclaration :: Boolean;
-synthesized attribute isProductionDeclaration :: Boolean;
-synthesized attribute isFunctionDeclaration :: Boolean;
-synthesized attribute isOccursDeclaration :: Boolean;
-synthesized attribute isProductionAttributesDeclaration ::Boolean;
-
-----------------------------------------------------------------------------------------------------
---item creation functions---------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
-function valueEnvItem
-Decorated EnvItem ::= n::String value::Decorated TypeRep
+function fullNameToShort
+String ::= s::String
 {
-  return decorate i_valueEnvItem(n, value) with {};
-}
-abstract production i_valueEnvItem
-top::EnvItem ::= n::String v::Decorated TypeRep
-{
-  top.unparse = "value('" ++ n ++ "', " ++ v.unparse ++ ")";
-
-  -- required to be defined.
-  top.itemName = n;
-
-  -- will be defined based on what type of item it is.  
-  top.typerep = v;
-
-  -- required to be defined.
-  top.isValueDeclaration = true;
-
-  forwards to i_defaultEnvItem();
-}
-
-function typeEnvItem
-Decorated EnvItem ::= n::String type::Decorated TypeRep
-{
-  return decorate i_typeEnvItem(n, type) with {};
-}
-
-abstract production i_typeEnvItem
-top::EnvItem ::= n::String value::Decorated TypeRep
-{
-  top.unparse = "type('" ++ n ++ "', " ++ value.unparse ++ ")";
-
-  -- required to be defined.
-  top.itemName = n;
-
-  -- will be defined based on what type of item it is.  
-  top.typerep = value ;
-
-  top.isTypeDeclaration = true;
-
-  forwards to i_defaultEnvItem();
-}
-
-function productionEnvItem
-Decorated EnvItem ::= p::Decorated NamedSignature
-{
-  return decorate i_productionEnvItem(p) with {};
-}
-
-abstract production i_productionEnvItem
-top::EnvItem ::= p::Decorated NamedSignature
-{
-  top.unparse = "prod(" ++ p.unparse ++  ")";
-
-  -- required to be defined.
-  top.itemName = p.fullName;
-  top.namedSignature = p;
-  -- will be defined based on what type of item it is.  
-
-  -- required to be defined.
-  top.isProductionDeclaration = true;
-
-  forwards to i_defaultEnvItem();
-}
-
-function functionEnvItem
-Decorated EnvItem ::= f::Decorated NamedSignature
-{
-  return decorate i_functionEnvItem(f) with {};
-}
-
-abstract production i_functionEnvItem
-top::EnvItem ::= f::Decorated NamedSignature
-{
-  top.unparse = "fun(" ++ f.unparse ++  ")";
-
-  -- required to be defined.
-  top.itemName = f.fullName;
-  top.namedSignature = f;
-  -- will be defined based on what type of item it is.  
-
-  -- required to be defined.
-  top.isFunctionDeclaration = true;
-
-  forwards to i_defaultEnvItem();
-}
-
-function attributeEnvItem
-Decorated EnvItem ::= n::String value::Decorated TypeRep
-{
-  return decorate i_attributeEnvItem(n, value) with {};
-}
-
-abstract production i_attributeEnvItem
-top::EnvItem ::= n::String value::Decorated TypeRep
-{
-  top.unparse = "attr('" ++ n ++ "', " ++ value.unparse ++ ")";
-
-  -- required to be defined.
-  top.itemName = n;
-
-  -- will be defined based on what type of item it is.  
-  top.typerep = value;
-
-  top.isAttributeDeclaration = true;
-
-  forwards to i_defaultEnvItem();
-}
-
-
-function occursEnvItem
-Decorated EnvItem ::= n::String dn::String
-{
-  return decorate i_occursEnvItem(n, dn) with {};
-}
-
-abstract production i_occursEnvItem
-top::EnvItem ::= n::String dn::String
-{
-  top.unparse = "@('" ++ n ++ "', '" ++ dn ++ "')";
-
-  -- required to be defined.
-  top.itemName = n;
-  
-  top.decoratesName = dn;
-
-  top.isOccursDeclaration = true;
-
-  forwards to i_defaultEnvItem();
-}
-
-function fullNameEnvItem
-Decorated EnvItem ::= n::String fname::String
-{
-  return decorate i_fullNameEnvItem(n, fname) with {};
-}
-abstract production i_fullNameEnvItem
-top::EnvItem ::= n::String fname::String
-{
-  top.unparse = "name('" ++ n ++ "', '" ++ fname ++ "')";
-
-  -- required to be defined.
-  top.itemName = n;
-
-  top.fullName = fname;
-  top.isFullNameDeclaration = true;
-  forwards to i_defaultEnvItem();
-}
-
-function productionAttributesEnvItem
-Decorated EnvItem ::= n::String d::Decorated Defs
-{
-  return decorate i_productionAttributesEnvItem(n, d) with {};
-}
-
-abstract production i_productionAttributesEnvItem
-top::EnvItem ::= n::String d::Decorated Defs
-{
-  top.unparse = "pattrs('" ++ n ++ "', " ++ unparseItems(toItems(d)) ++ ")";
-
-  top.itemName = n;
-
-  top.attributes = d;
-
-  top.isProductionAttributesDeclaration = true;
-
-  forwards to i_defaultEnvItem();
+  -- Works just fine, even when lastIndexOf returns -1
+  return substring(lastIndexOf(":", s) + 1, length(s), s);
 }
 
 function defaultEnvItem
-Decorated EnvItem ::=
+Decorated EnvItem ::= di::Decorated DclInfo
 {
-  return decorate i_defaultEnvItem() with {};
+  return decorate i_envItem(fullNameToShort(di.fullName), di) with {};
 }
-abstract production i_defaultEnvItem
-top::EnvItem ::= 
+
+function renamedEnvItem
+Decorated EnvItem ::= newname::String di::Decorated DclInfo
 {
-  top.unparse = "default";
-
-  top.itemName = "_DEFAULT_ENV_ITEM";
-
-  top.typerep = defaultTypeRep();
-  top.namedSignature = decorate namedSignatureDefault() with {};
-  top.fullName = "_DEFAULT_ENV_ITEM";
-  top.decoratesName = "_DEFAULT_ENV_ITEM";
-  top.attributes = emptyDefs();
-
-  -- required to be defined.
-  top.isValueDeclaration = false;
-  top.isTypeDeclaration = false;
-  top.isProductionDeclaration = false;
-  top.isFunctionDeclaration = false;
-  top.isAttributeDeclaration = false;
-  top.isOccursDeclaration = false;
-  top.isFullNameDeclaration = false;
-  top.isProductionAttributesDeclaration = false;
+  return decorate i_envItem(newname, di) with {};
 }
 
-function containsItem
-Boolean ::= s::String e::[Decorated EnvItem]
+abstract production i_envItem
+top::EnvItem ::= short::String di::Decorated DclInfo
 {
-  return if null(e)
-	 then false
-	 else head(e).itemName == s || containsItem(s, tail(e));
+  top.itemName = short;
+  top.dcl = di;
 }
 
-function mapEnvItems
-[Decorated EnvItem] ::= mapper::EnvMap e::[Decorated EnvItem]
+function mapGetDcls
+[Decorated DclInfo] ::= i::[Decorated EnvItem]
 {
-  mapper.inEnvItem = head(e);
-
-  return if null(e)
-	 then []
-	 else cons(mapper.newEnvItem, mapEnvItems(mapper, tail(e)));
+  return if null(i) then []
+         else head(i).dcl :: mapGetDcls(tail(i));
 }
 
-function filterEnvItems
-[Decorated EnvItem] ::= fil::EnvFilter e::[Decorated EnvItem]
+function mapFullnameDcls
+[Decorated EnvItem] ::= i::[Decorated DclInfo]
 {
-  fil.inEnvItem = head(e);
-
-  local attribute recurse :: [Decorated EnvItem];
-  recurse = filterEnvItems(fil, tail(e));
-
-  return if null(e)
-	 then []  
-	 else if fil.keep
-	      then cons(head(e), recurse)
-         else recurse;
+  return if null(i) then []
+         else renamedEnvItem(head(i).fullName, head(i)) :: mapFullnameDcls(tail(i));
 }
 
-function unparseItems
-String ::= s::[Decorated EnvItem]{
-  return "[" ++ unparseItemsHelp(s) ++ "]";
+function mapDefaultWrapDcls
+[Decorated EnvItem] ::= i::[Decorated DclInfo]
+{
+  return if null(i) then []
+         else defaultEnvItem(head(i)) :: mapDefaultWrapDcls(tail(i));
 }
 
-function unparseItemsHelp
-String ::= s::[Decorated EnvItem]{
-  return if null(s) then "" else (head(s).unparse ++ if null(tail(s)) then "" else (", " ++ unparseItemsHelp(tail(s))));
+function mapWrappedNameDcls
+[Decorated EnvItem] ::= i::[Decorated DclInfo]
+{
+  -- Put EnvItem name as the production, then get rid of the prodAttr wrapper.
+  return if null(i) then []
+         else renamedEnvItem(head(i).fullName, head(i).attrDcl) :: mapWrappedNameDcls(tail(i));
 }
+
+function filterEnvItemsExclude
+[Decorated EnvItem] ::= items::[Decorated EnvItem] exclude::[String]
+{
+  return if null(items) then []
+         else if contains(head(items).itemName, exclude)
+              then filterEnvItemsExclude(tail(items), exclude)
+              else head(items) :: filterEnvItemsExclude(tail(items), exclude);
+}
+
+function filterEnvItemsInclude
+[Decorated EnvItem] ::= items::[Decorated EnvItem] include::[String]
+{
+  return if null(items) then []
+         else if contains(head(items).itemName, include)
+              then head(items) :: filterEnvItemsInclude(tail(items), include)
+              else filterEnvItemsInclude(tail(items), include);
+}
+
+function mapPrependEnvItems
+[Decorated EnvItem] ::= items::[Decorated EnvItem] prefi::String
+{
+  return if null(items) then []
+         else renamedEnvItem(prefi ++ head(items).itemName, head(items).dcl) :: mapPrependEnvItems(tail(items), prefi);
+}
+
+function mapRenameEnvItems
+[Decorated EnvItem] ::= items::[Decorated EnvItem] renames::[[String]]
+{
+  local attribute result :: [String];
+  result = lookupRename(head(items).itemName, renames);
+  
+  return if null(items) then []
+         else if null(result)
+              then head(items) :: mapRenameEnvItems(tail(items), renames)
+              else renamedEnvItem(head(result), head(items).dcl) :: mapRenameEnvItems(tail(items), renames);
+}
+
+function lookupRename
+[String] ::= v::String lst::[[String]]
+{
+  return if null(lst) then []
+         else if v == head(head(lst))
+              then [head(tail(head(lst)))]
+              else lookupRename(v, tail(lst));
+}
+
+-- Sort function
+function sortEnvItems
+[Decorated EnvItem] ::= eis::[Decorated EnvItem]
+{
+  return sortEnvItemsHelp(eis, length(eis));
+}
+
+function sortEnvItemsHelp
+[Decorated EnvItem] ::= eis::[Decorated EnvItem] upTo::Integer
+{
+  return if upTo == 0 then []
+         else if upTo == 1 then [head(eis)]
+         else mergeEnvItems(front_half,back_half);
+
+  local attribute front_half :: [Decorated EnvItem] ;
+  front_half = sortEnvItemsHelp(eis, middle) ;
+
+  local attribute back_half :: [Decorated EnvItem] ;
+  back_half = sortEnvItemsHelp(dropEnvItems(middle, eis), upTo - middle) ;
+
+  local attribute middle :: Integer ;
+  middle = toInt(toFloat(upTo) / 2.0) ;
+}
+
+function mergeEnvItems
+[Decorated EnvItem] ::= l1::[Decorated EnvItem] l2::[Decorated EnvItem]
+{
+  return if null(l1) 
+         then l2
+
+         else if null(l2) 
+         then l1
+
+         else if head(l1).itemName < head(l2).itemName
+         then head(l1) :: mergeEnvItems(tail(l1),l2)
+
+         else head(l2) :: mergeEnvItems(l1,tail(l2)) ;
+}
+
+function dropEnvItems
+[Decorated EnvItem] ::= n::Integer l::[Decorated EnvItem]
+{
+  return if n <= 0 then l else dropEnvItems(n-1, tail(l));
+}
+

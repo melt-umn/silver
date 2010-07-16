@@ -9,28 +9,25 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 
   top.moduleNames = [];
 
-  top.defs = emptyDefs(); -- TODO let production attributes get defined in aspects
+  top.defs = body.productionAttributes;
 
   production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(id.lookupFunction.fullName, ns.inputElements, ns.outputElement);
+  namedSig = namedSignatureDcl(id.lookupValue.fullName, ns.inputElements, ns.outputElement);
 
   production attribute realSig :: Decorated NamedSignature;
-  realSig = head(id.lookupProduction.envItems).namedSignature;
+  realSig = id.lookupValue.dcl.namedSignature;
 
-  top.errors := id.lookupProduction.errors ++ ns.errors ++ body.errors;
+  top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
   top.warnings := [];
 
-  local attribute prodAtts :: Decorated Defs;
-  prodAtts = getProductionAttributes(id.lookupProduction.fullName, top.env);
+  ns.env = newScopeEnv(ns.defs, top.env);  
+  ns.realSignature = if null(id.lookupValue.dcls) then [] else [realSig.outputElement] ++ realSig.inputElements;
+
+  local attribute prodAtts :: Defs;
+  prodAtts = valueDefsFromDcls(getProdAttrs(id.lookupValue.fullName, top.env));
 
   body.env = newScopeEnv(appendDefs(body.defs, ns.defs), newScopeEnv(prodAtts, top.env));
-
-  body.signatureEnv = toEnv(ns.defs);
-  body.localsEnv = toEnv(appendDefs(prodAtts, body.defs));
   body.signature = namedSig;
-
-  ns.env = newScopeEnv(ns.defs, top.env);  
-  ns.realSignature = if null(id.lookupProduction.envItems) then [] else [realSig.outputElement] ++ realSig.inputElements;
 }
 
 concrete production aspectFunctionDcl
@@ -39,30 +36,27 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   top.pp = "aspect function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.defs = emptyDefs();
+  top.defs = body.productionAttributes;
 
   top.moduleNames = [];
 
   production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(id.lookupFunction.fullName, ns.inputElements, ns.outputElement);
+  namedSig = namedSignatureDcl(id.lookupValue.fullName, ns.inputElements, ns.outputElement);
 
   production attribute realSig :: Decorated NamedSignature;
-  realSig = head(id.lookupFunction.envItems).namedSignature;
+  realSig = id.lookupValue.dcl.namedSignature;
 
-  top.errors := id.lookupFunction.errors ++ ns.errors ++ body.errors;
+  top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
   top.warnings := [];
 
-  local attribute prodAtts :: Decorated Defs;
-  prodAtts = getProductionAttributes(id.lookupFunction.fullName, top.env);
+  ns.env = newScopeEnv(ns.defs, top.env);  
+  ns.realSignature = if null(id.lookupValue.dcls) then [] else [realSig.outputElement] ++ realSig.inputElements;
+
+  local attribute prodAtts :: Defs;
+  prodAtts = valueDefsFromDcls(getProdAttrs(id.lookupValue.fullName, top.env));
 
   body.env = newScopeEnv(appendDefs(body.defs, ns.defs), newScopeEnv(prodAtts, top.env));
-
-  body.signatureEnv = toEnv(ns.defs);
-  body.localsEnv = toEnv(appendDefs(prodAtts, body.defs));
   body.signature = namedSig;
-
-  ns.env = newScopeEnv(ns.defs, top.env);  
-  ns.realSignature = if null(id.lookupFunction.envItems) then [] else [realSig.outputElement] ++ realSig.inputElements;
 }
 
 concrete production aspectProductionSignatureEmptyRHS
@@ -139,20 +133,11 @@ top::AspectProductionLHS ::= id::Name t::Decorated TypeRep
 
   top.outputElement = namedSignatureElement(id.name, t);
   
-  top.defs = addValueDcl(fName, t,
-	     addFullNameDcl(id.name, fName, emptyDefs()));
+  top.defs = addAliasedLhsDcl(top.grammarName, id.location, fName, t, id.name, emptyDefs());
 
-  local attribute er1 :: [Decorated Message];
-  er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
-        then [err(top.location, "Name '" ++ id.name ++ "' is already bound.")]
-        else [];	
-
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclOne(fName, top.env)) > 1
-        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
-        else [];
-
-  top.errors := er1 ++ er2;
+  top.errors := if length(getValueDclInScope(id.name, top.env)) > 1
+                then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
+                else [];
   top.warnings := [];
 }
 
@@ -233,20 +218,11 @@ top::AspectRHSElem ::= id::Name t::Decorated TypeRep
 
   top.inputElements = [namedSignatureElement(id.name, t)];
 
-  top.defs = addValueDcl(fName, t,
-	     addFullNameDcl(id.name, fName, emptyDefs()));
+  top.defs = addAliasedChildDcl(top.grammarName, id.location, fName, t, id.name, emptyDefs());
 
-  local attribute er1 :: [Decorated Message];
-  er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
-        then [err(top.location, "Name '" ++ id.name ++ "' is already bound.")]
-        else [];	
-
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclOne(fName, top.env)) > 1
-        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
-        else [];	
-
-  top.errors := er1 ++ er2;
+  top.errors := if length(getValueDclInScope(id.name, top.env)) > 1
+                then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
+                else [];
   top.warnings := [];
 }
 
@@ -294,8 +270,8 @@ top::AspectFunctionLHS ::= t::Type
 
   top.outputElement = namedSignatureElement(fName, t.typerep);
   
-  top.defs = addValueDcl(fName, t.typerep, 
-	     addFullNameDcl(fName, fName,  emptyDefs()));
+  -- TODO: this needs thinking. is it broken? maybe __return? or wait, it's doing that automatically isnt it...
+  top.defs = addAliasedLhsDcl(top.grammarName, t.location, fName, t.typerep, fName, emptyDefs());
 
   top.errors := [];
   top.warnings := [];

@@ -18,7 +18,15 @@ top::Expr ::= e::Decorated Expr
 aspect production errorFunction
 top::Expr ::= 'error' '(' e::Expr ')'
 {
-  top.translation = "(common.Util.error(" ++ e.translation ++ ".toString()))";
+  -- The fact that we don't put a transType here is MURDER. TODO BUG OHGOD UGLY
+  -- This is a hack to try to avoid bugs
+  
+  local attribute casttt :: String;
+  casttt = case top.expected of
+             expected_type(t) -> "(" ++ t.transType ++ ")"
+           | _                -> "" end; -- HOPE IT WORKS!
+	
+  top.translation = "(" ++ casttt ++ "common.Util.error(" ++ e.translation ++ ".toString()))";
 }
 aspect production toIntFunction
 top::Expr ::= 'toInt' '(' e::Expr ')'

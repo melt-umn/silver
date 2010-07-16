@@ -3,16 +3,17 @@ import silver:definition:core;
 import silver:definition:env;
 import silver:util;
 
-synthesized attribute nodeName :: String;
+--synthesized attribute nodeName :: String;
 synthesized attribute attrName :: String;
-synthesized attribute isLocal :: Boolean;
-synthesized attribute isLocalDcl :: Boolean;
-synthesized attribute isChild :: Boolean;
-synthesized attribute isParent :: Boolean;
+--synthesized attribute isLocal :: Boolean;
+--synthesized attribute isLocalDcl :: Boolean;
+--synthesized attribute isChild :: Boolean;
+--synthesized attribute isParent :: Boolean;
 
 attribute attrName occurs on ForwardLHSExpr;
 
-attribute setupInh, translation occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
+attribute setupInh, translation occurs on ProductionBody, ProductionStmts, ProductionStmt;
+attribute           translation occurs on DefLHS, ForwardInhs, ForwardInh;
 
 aspect production defaultProductionBody
 top::ProductionBody ::= stmts::ProductionStmts
@@ -145,37 +146,62 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
   top.translation = "";
 }
 
-aspect production normalAttributeDef
-top::ProductionStmt ::= val::QName '.' attr::QName '=' e::Decorated Expr
+aspect production childDefLHS
+top::DefLHS ::= q::Decorated QName
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
+  top.translation = className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ q.lookupValue.fullName ++ ")";
+}
+
+aspect production lhsDefLHS
+top::DefLHS ::= q::Decorated QName
+{
+  top.translation = makeClassName(top.signature.fullName) ++ ".synthesizedAttributes";
+}
+
+aspect production localDefLHS
+top::DefLHS ::= q::Decorated QName
+{
+  top.translation = makeClassName(top.signature.fullName) ++ ".inheritedAttributes.get(\"" ++ q.lookupValue.fullName ++ "\")";
+}
+
+aspect production forwardDefLHS
+top::DefLHS ::= q::Decorated QName
+{
+  top.translation = makeClassName(top.signature.fullName) ++ ".forwardAttributes";
+}
+
+aspect production synthesizedAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+{
   top.setupInh := "";
-  top.translation =
-	"\t\t// " ++ val.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
-	if !null(getValueDcl(val.lookupValue.fullName, top.localsEnv)) then 
-	"\t\t" ++ className ++ ".inheritedAttributes.get(\"" ++ val.lookupValue.fullName ++ "\").put(\"" ++ attr.lookupAttribute.fullName ++ "\", new common.Lazy(){\n" ++ 
-	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-	"\t\t\t}\n" ++
-	"\t\t});\n"
-	else if contains(val.name, getNamesSignature(top.signature.inputElements)) then 
-	"\t\t" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ val.lookupValue.fullName ++ ").put(\"" ++ attr.lookupAttribute.fullName ++ "\", new common.Lazy(){\n" ++ 
-	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-	"\t\t\t}\n" ++
-	"\t\t});\n"
-	else -- id.name == top.signature.outputElement.elementName
-	"\t\t" ++ className ++ ".synthesizedAttributes.put(\"" ++ attr.lookupAttribute.fullName ++ "\", new common.Lazy(){\n" ++ 
+  top.translation = 
+	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
+        "\t\t" ++ dl.translation ++ ".put(\"" ++ attr.lookupAttribute.fullName ++ "\", new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
 	"\t\t});\n";
 }
 
-aspect production normalValueDef
-top::ProductionStmt ::= val::QName '=' e::Decorated Expr
+aspect production inheritedAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+{
+  top.setupInh := "";
+  top.translation = 
+	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
+        "\t\t" ++ dl.translation ++ ".put(\"" ++ attr.lookupAttribute.fullName ++ "\", new common.Lazy(){\n" ++ 
+	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+	"\t\t\t}\n" ++
+	"\t\t});\n";
+}
+
+
+aspect production localValueDef
+top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);

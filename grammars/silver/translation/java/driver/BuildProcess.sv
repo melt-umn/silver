@@ -75,8 +75,8 @@ IO ::= i::IO r::Decorated RootSpec a::Decorated Command extras::[String] silverg
   local attribute mki :: IO;
   mki = writeFile(specLocation ++ "Init.java", makeInit(r, if a.grammarName == r.impliedName then extras else []), printio);
 
-  local attribute mains :: [Decorated EnvItem];
-  mains = getFunctionDcl(r.declaredName ++ ":main", toEnv(r.defs));
+  local attribute mains :: [Decorated DclInfo];
+  mains = getValueDcl(r.declaredName ++ ":main", toEnv(r.defs));
 
   local attribute mainIO :: IO;
   mainIO = if null(mains) then mki else writeFile(specLocation ++ "Main.java", makeMain(r), mki);
@@ -124,8 +124,8 @@ top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec] silverh
   production attribute extraDepends :: [String] with ++;
   extraDepends := ["init"];
 
-  local attribute mains :: [Decorated EnvItem];
-  mains = getFunctionDcl(a.grammarName ++ ":main", toEnv(head(getRootSpec(a.grammarName, specs)).defs));
+  local attribute mains :: [Decorated DclInfo];
+  mains = getValueDcl(a.grammarName ++ ":main", toEnv(head(getRootSpec(a.grammarName, specs)).defs));
 
   local attribute outputFile :: String;
   outputFile = if length(a.outName) > 0 then a.outName else (makeName(a.grammarName) ++ ".jar");

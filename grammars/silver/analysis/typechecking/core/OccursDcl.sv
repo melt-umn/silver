@@ -5,19 +5,12 @@ import silver:definition:env;
 aspect production attributionDcl
 top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
 {
-  local attribute num :: Integer;
-  num = length(filterEnvItems(keepOccurs(a.lookupAttribute.fullName, nt.lookupAttribute.fullName), getOccursDcls(top.env)));
-
-  top.typeErrors = if num > 1
-	           then [err(top.location, "Attribute '" ++ a.name ++ "' already decorates '" ++ nt.name ++ "'")] 
-		   else [];
+  local attribute occursCheck :: [Decorated DclInfo];
+  occursCheck = getOccursDcl(a.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
+  
+  top.typeErrors = if length(occursCheck) > 1
+                   then [err(a.location, "attribute '" ++ a.name ++ "' already occurs on '" ++ nt.name ++ "'.")]
+                   else [];
+  -- TODO: we should ensure either the attribute or the nonterminal is in this grammar.
 }
 
-
-abstract production keepOccurs
-top::EnvFilter ::= a::String nt::String
-{
-  top.keep = top.inEnvItem.isOccursDeclaration
-	  && top.inEnvItem.itemName == a
-	  && top.inEnvItem.decoratesName == nt;
-}

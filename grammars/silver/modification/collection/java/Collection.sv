@@ -49,12 +49,7 @@ top::Operation ::= {
   top.endTrans = if top.inType.isString then ")" else if top.inType.isList then ")" else error("Not Implemented");
 }
 
-aspect production noOperation
-top::Operation ::= {
-  top.frontTrans = "BOOM(";
-  top.midTrans = ", ";
-  top.endTrans = ")";
-}
+--- Declarations
 
 aspect production collectionAttributeDclProd
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
@@ -146,84 +141,26 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOp
 "}\n"]];
 }
 
+--- Use semantics translation
 
-aspect production attrContainsAppend
-top::ProductionStmt ::= val::QName '.' attr::QName '<-' e::Expr ';'
+aspect production baseCollectionValueDef
+top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
   top.setupInh := "";
 
-  top.translation = 
-        "\t\t// " ++ val.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ "\n" ++
-        if !null(getValueDcl(val.lookupValue.fullName, top.localsEnv)) then 
-        "\t\t((common.CollectionAttribute)" ++ className ++ ".inheritedAttributes.get(\"" ++ val.lookupValue.fullName ++ "\").get(\"" ++ attr.lookupAttribute.fullName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
-        "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-        "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-        "\t\t\t}\n" ++ 
-        "\t\t});\n"
-        else if contains(val.name, getNamesSignature(top.signature.inputElements)) then 
-        "\t\t((common.CollectionAttribute)" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ val.lookupValue.fullName ++ ").get(\"" ++ attr.lookupAttribute.fullName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
-        "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-        "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-        "\t\t\t}\n" ++ 
-        "\t\t});\n"
-        else -- id.name == top.signature.outputElement.elementName
-        "\t\tif((" ++ className ++ ".synthesizedAttributes.get(\"" ++ attr.lookupAttribute.fullName ++ "\")) == null)\n" ++
-        "\t\t\t" ++ className ++ ".synthesizedAttributes.put(\"" ++ attr.lookupAttribute.fullName ++ "\",  new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"());\n" ++
-        "\t\t((common.CollectionAttribute)" ++ className ++ ".synthesizedAttributes.get(\"" ++ attr.lookupAttribute.fullName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
-        "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-        "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-        "\t\t\t}\n" ++ 
-        "\t\t});\n";
-}
-
-aspect production attrContainsBase
-top::ProductionStmt ::= val::QName '.' attr::QName ':=' e::Expr ';'
-{
-  local attribute className :: String;
-  className = makeClassName(top.signature.fullName);
-
-  local attribute isLocal::Boolean;
-  local attribute isChild::Boolean;
-  isLocal = !null(getValueDcl(val.lookupValue.fullName, top.localsEnv));
-  isChild = contains(val.name, getNamesSignature(top.signature.inputElements));
-
-  top.setupInh := 
-        if isLocal then 
-        "\t\t" ++ className ++ ".inheritedAttributes.get(\"" ++ val.lookupValue.fullName ++ "\").put(\"" ++ attr.lookupAttribute.fullName ++ "\",  new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"());\n"
-        else if isChild then 
-        "\t\t" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ val.lookupValue.fullName ++ ").put(\"" ++ attr.lookupAttribute.fullName ++ "\",  new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"());\n"
-        else "";
-
-
   top.translation =
-        "\t\t// " ++ val.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ "\n" ++
-        if isLocal then
-        "\t\t((common.CollectionAttribute)" ++ className ++ ".inheritedAttributes.get(\"" ++ val.lookupValue.fullName ++ "\").get(\"" ++ attr.lookupAttribute.fullName ++ "\")).setBase(new common.Lazy(){\n" ++ 
-        "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-        "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-        "\t\t\t}\n" ++ 
-        "\t\t});\n"
-        else if isChild then
-        "\t\t((common.CollectionAttribute)" ++ className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ val.lookupValue.fullName ++ ").get(\"" ++ attr.lookupAttribute.fullName ++ "\")).setBase(new common.Lazy(){\n" ++ 
-        "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-        "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-        "\t\t\t}\n" ++ 
-        "\t\t});\n"
-        else 
-        "\t\tif((" ++ className ++ ".synthesizedAttributes.get(\"" ++ attr.lookupAttribute.fullName ++ "\")) == null)\n" ++
-        "\t\t\t" ++ className ++ ".synthesizedAttributes.put(\"" ++ attr.lookupAttribute.fullName ++ "\",  new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"());\n" ++
-        "\t\t((common.CollectionAttribute)" ++ className ++ ".synthesizedAttributes.get(\"" ++ attr.lookupAttribute.fullName ++ "\")).setBase(new common.Lazy(){\n" ++ 
+        "\t\t// " ++ val.pp ++ " := " ++ e.pp ++ "\n" ++
+        "\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes.get(\"" ++ val.lookupValue.fullName ++ "\")).setBase(new common.Lazy(){\n" ++ 
         "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
         "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
         "\t\t\t}\n" ++ 
         "\t\t});\n";
 }
-
-aspect production valContainsAppend
-top::ProductionStmt ::= val::QName '<-' e::Expr ';'
+aspect production appendCollectionValueDef
+top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
@@ -239,17 +176,59 @@ top::ProductionStmt ::= val::QName '<-' e::Expr ';'
         "\t\t});\n";
 }
 
-aspect production valContainsBase
-top::ProductionStmt ::= val::QName ':=' e::Expr ';'
+aspect production synBaseColAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- := -} e::Expr
 {
-  local attribute className :: String;
-  className = makeClassName(top.signature.fullName);
-
   top.setupInh := "";
 
   top.translation =
-        "\t\t// " ++ val.pp ++ " := " ++ e.pp ++ "\n" ++
-        "\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes.get(\"" ++ val.lookupValue.fullName ++ "\")).setBase(new common.Lazy(){\n" ++ 
+        "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ "\n" ++
+        "\t\tif((" ++ dl.translation ++ ".get(\"" ++ attr.lookupAttribute.fullName ++ "\")) == null)\n" ++
+        "\t\t\t" ++ dl.translation ++ ".put(\"" ++ attr.lookupAttribute.fullName ++ "\",  new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"());\n" ++
+        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ ".get(\"" ++ attr.lookupAttribute.fullName ++ "\")).setBase(new common.Lazy(){\n" ++ 
+        "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+        "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+        "\t\t\t}\n" ++ 
+        "\t\t});\n";
+}
+aspect production synAppendColAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- <- -} e::Expr
+{
+  top.setupInh := "";
+
+  top.translation = 
+	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ "\n" ++
+        "\t\tif(" ++ dl.translation ++ ".get(\"" ++ attr.lookupAttribute.fullName ++ "\") == null)\n" ++
+        "\t\t\t" ++ dl.translation ++ ".put(\"" ++ attr.lookupAttribute.fullName ++ "\",  new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"());\n" ++
+        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ ".get(\"" ++ attr.lookupAttribute.fullName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
+        "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+        "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+        "\t\t\t}\n" ++ 
+        "\t\t});\n";
+}
+aspect production inhBaseColAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- := -} e::Expr
+{
+  top.setupInh := 
+        "\t\t" ++ dl.translation ++ ".put(\"" ++ attr.lookupAttribute.fullName ++ "\",  new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"());\n";
+
+
+  top.translation =
+        "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ "\n" ++
+        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ ".get(\"" ++ attr.lookupAttribute.fullName ++ "\")).setBase(new common.Lazy(){\n" ++ 
+        "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
+        "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
+        "\t\t\t}\n" ++ 
+        "\t\t});\n";
+}
+aspect production inhAppendColAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- <- -} e::Expr
+{
+  top.setupInh := "";
+
+  top.translation = 
+	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ "\n" ++
+        "\t\t((common.CollectionAttribute)" ++ dl.translation ++".get(\"" ++ attr.lookupAttribute.fullName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
         "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
         "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
         "\t\t\t}\n" ++ 

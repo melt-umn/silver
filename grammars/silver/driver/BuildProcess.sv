@@ -10,6 +10,7 @@ import silver:util:command with grammarName as gName;
 
 
 synthesized attribute rSpec :: Decorated RootSpec;
+synthesized attribute found :: Boolean;
 
 inherited attribute rParser :: Function(Root ::= String);
 inherited attribute iParser :: Function(aRootSpec ::= String);
@@ -274,7 +275,7 @@ top::CompilationUnit ::= grams::[[String]] need::[String] seen::[String]
   r.grammarName = gn;
   r.compiledGrammars = top.compiledGrammars;
   r.globalImports = toEnv(r.importedDefs);
-  r.env = toEnv(appendDefs(r.defs, makeDefaultDefs()));
+  r.env = toEnv(r.defs);
   r.file = gn;
 
   --the root spec
@@ -386,7 +387,7 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   production attribute cu :: Roots;
   cu = compileFiles(pr, grammarName, files, grammarLocation.sValue);
   cu.rParser = top.rParser;
-  cu.env = toEnv(appendDefs(cu.defs, makeDefaultDefs()));
+  cu.env = toEnv(cu.defs);
   cu.globalImports = toEnv(cu.importedDefs);
   cu.compiledGrammars = top.compiledGrammars;
 

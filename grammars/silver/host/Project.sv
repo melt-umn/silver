@@ -21,4 +21,7 @@ exports silver:analysis:typechecking:type:anytype;
 import silver:definition:regex;
 import silver:definition:core;
 
-disambiguate RegexChar_t, Divide_t { pluck Divide_t; }
+disambiguate RegexChar_t, Divide_t
+{
+  pluck Divide_t;
+}

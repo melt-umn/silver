@@ -2,21 +2,10 @@ grammar silver:definition:core;
 import silver:definition:env;
 
 synthesized attribute doDecorate :: Boolean;
-synthesized attribute applicationDispatcher :: Production (Expr ::= Expr Exprs);
+synthesized attribute applicationDispatcher :: Production (Expr ::= Decorated Expr Exprs);
+synthesized attribute accessDispatcher :: Production (Expr ::= Decorated Expr Dot_t Decorated QName);
 
-attribute doDecorate occurs on TypeRep;
-attribute applicationDispatcher occurs on TypeRep;
-
-aspect production i_ntTypeRep
-top::TypeRep ::= n::String
-{
-  top.doDecorate = true;
-}
-
-aspect production i_refTypeRep
-top::TypeRep ::= t::Decorated TypeRep
-{
-}
+attribute doDecorate, applicationDispatcher, accessDispatcher occurs on TypeRep;
 
 aspect production i_prodTypeRep
 top::TypeRep ::= it::[Decorated TypeRep] ot::Decorated TypeRep
@@ -24,52 +13,36 @@ top::TypeRep ::= it::[Decorated TypeRep] ot::Decorated TypeRep
   top.applicationDispatcher = productionApplicationDispatcher;
 }
 
-abstract production productionApplicationDispatcher
-top::Expr ::= e::Expr es::Exprs
-{
-  top.pp = e.pp ++ "(" ++ es.pp ++ ")";
-  top.location = e.location;
-  top.errors := e.errors ++ es.errors; 
-
-  top.typerep = e.typerep.outputType;
-
-  es.expectedInputTypes = e.typerep.inputTypes;
-}
-
-
 aspect production i_funTypeRep
 top::TypeRep ::= it::[Decorated TypeRep] ot::Decorated TypeRep
 {
   top.applicationDispatcher = functionApplicationDispatcher;
 }
 
-abstract production functionApplicationDispatcher
-top::Expr ::= e::Expr es::Exprs
+aspect production i_ntTypeRep
+top::TypeRep ::= n::String
 {
-  top.pp = e.pp ++ "(" ++ es.pp ++ ")";
-  top.location = e.location;
-  top.errors := e.errors ++ es.errors; 
+  top.doDecorate = true;
+  top.accessDispatcher = undecoratedAccessDispatcher;
+}
 
-  top.typerep = e.typerep.outputType;
+aspect production i_termTypeRep
+top::TypeRep ::= n::String
+{
+  top.accessDispatcher = terminalAccessDispatcher;
+}
 
-  es.expectedInputTypes = e.typerep.inputTypes;
+aspect production i_refTypeRep
+top::TypeRep ::= t::Decorated TypeRep
+{
+  top.accessDispatcher = decoratedAccessDispatcher;
 }
 
 aspect production i_defaultTypeRep
 top::TypeRep ::= 
 {
   top.doDecorate = false;
-  top.applicationDispatcher = genericApplicationDispatcher;
+  top.applicationDispatcher = errorApplicationDispatcher;
+  top.accessDispatcher = errorAccessDispatcher;
 }
 
-abstract production genericApplicationDispatcher
-top::Expr ::= e::Expr es::Exprs
-{
-  top.pp = e.pp ++ "(" ++ es.pp ++ ")";
-  top.location = e.location;
-  top.errors := [err(top.location, e.pp ++ " cannot be invoked as a function.")] ++ e.errors ++ es.errors; 
-
-  top.typerep = topTypeRep();
-
-  es.expectedInputTypes = [];
-}

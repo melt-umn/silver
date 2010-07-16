@@ -21,19 +21,13 @@ top::AGDcl ::= id::Name
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs = addTypeDcl(fName, ntTypeRep(fName), 
-	     addFullNameDcl(id.name, fName,  emptyDefs()));
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if length(getFullNameDclOne(id.name, top.env)) > 1 
-        then [err(top.location, "Name '" ++ id.pp ++ "' is already bound.")]
-        else [];	
+  top.defs = addNtDcl(top.grammarName, id.location, fName, emptyDefs());
 
   local attribute er2 :: [Decorated Message];
-  er2 = if length(getTypeDclOne(fName, top.env)) > 1 
+  er2 = if length(getTypeDcl(fName, top.env)) > 1 
        then [err(top.location, "Type '" ++ fName ++ "' is already bound.")]
        else [];	
 
-  top.errors := er1 ++ er2;
+  top.errors := er2;
 }
 

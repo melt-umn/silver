@@ -13,4 +13,7 @@ exports silver:definition:env;
 import silver:definition:regex;
 import silver:definition:env:parser;
 
-disambiguate RegexChar_t, RegExprDelim { pluck RegExprDelim; }
+disambiguate RegexChar_t, RegExprDelim
+{
+  pluck RegExprDelim;
+}
