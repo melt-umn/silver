@@ -20,7 +20,7 @@ function mapDGs
 function mapPAs
 [String] ::= lst::[Decorated ParserAttrSpec]
 {
-  return if null(lst) then [] else ["parserAttr [" ++ quoteString(head(lst).name) ++ ", " ++ head(lst).typerep.unparse ++ ", \"" ++ escapeString(head(lst).actionCode) ++ "\"]"] ++ mapPAs(tail(lst));
+  return if null(lst) then [] else ["parse_attr [" ++ quoteString(head(lst).name) ++ ", " ++ head(lst).typerep.unparse ++ ", \"" ++ escapeString(head(lst).actionCode) ++ "\"]"] ++ mapPAs(tail(lst));
 }
 
 function escapeString

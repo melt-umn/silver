@@ -10,7 +10,7 @@ import silver:translation:java:env;
 import silver:util;
 
 
-aspect production autocopyDcl
+aspect production autocopyAttributeDcl
 top::AGDcl ::= 'autocopy' 'attribute' a::Name '::' t::Type ';'
 {
   local attribute className :: String;
@@ -41,11 +41,11 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name '::' t::Type ';'
 aspect production attributionDcl
 top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
 {
- 
-  top.initAspect <- if a.lookupAttribute.typerep.isAutoCopy
-                    then "\t\t" ++ makeNTClassName(nt.lookupValue.fullName) ++ ".decorators.add(" ++ makeDecoratorClassName(a.lookupAttribute.fullName) ++ ".singleton);\n"
-                    else "";
-
+  top.initAspect <- 
+    case a.lookupAttribute.dcl of
+      autocopyDcl(_,_,_,_) ->  "\t\t" ++ makeNTClassName(nt.lookupType.fullName) ++ ".decorators.add(" ++ makeDecoratorClassName(a.lookupAttribute.fullName) ++ ".singleton);\n"
+    | _ -> ""
+    end;
 }
 
 function makeDecoratorClassName

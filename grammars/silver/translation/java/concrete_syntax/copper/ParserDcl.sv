@@ -50,7 +50,7 @@ top::ModuleName ::= pkg::QName
 }
 
 aspect production module 
-top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[EnvMap]
+top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[[String]]
 {
   top.disambiguationGroupDcls = med.disambiguationGroupDcls;		  
   top.parserAttrDcls = med.parserAttrDcls;		  
@@ -81,6 +81,7 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
   local attribute parserName :: String;
   parserName = makeParserName(top.fullName);
 
+  -- TODO: instead of jamming this into __return, put it in the doReturn function below!
   top.initProd :=
 	"\t\t" ++ fullClassName ++ ".synthesizedAttributes.put(\"__return\", new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++

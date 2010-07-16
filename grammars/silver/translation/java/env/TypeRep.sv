@@ -31,7 +31,7 @@ top::TypeRep ::=
 }
 
 aspect production i_termTypeRep
-top::TypeRep ::= n::String _
+top::TypeRep ::= n::String
 {
   top.transType = "common.Terminal";
 }

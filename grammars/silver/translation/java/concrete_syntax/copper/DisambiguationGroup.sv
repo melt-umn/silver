@@ -37,9 +37,28 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
 
   acode.env = newScopeEnv(appendDefs(acode.defs,terms.defs), top.env); -- terminal attrs?
 
-  acode.signature = namedNamedSignature(top.grammarName ++ ":_disam" ++ toString($1.line));
-  acode.signatureEnv = toEnv(terms.defs);
-  acode.localsEnv = toEnv(acode.defs);
+  -- Give the group a name, deterministically, based on line number
+  acode.signature = namedNamedSignature(top.grammarName ++ ":__disam" ++ toString($1.line));
 
   acode.actionCodeType = disambigGroupActionType();
 }
+
+abstract production pluckTerminalReference
+top::Expr ::= q::Decorated QName
+{
+  top.pp = q.pp; 
+  top.location = q.location;
+
+  top.errors := []; -- Should only be referenceable from a context where its valid.
+  top.warnings := [];
+
+  top.typerep = topTypeRep(); -- TODO: BUG: Need a real type here (AnyTerminalType or something)
+  
+  top.isAppReference = false;
+  top.appReference = "";
+  
+  top.translation = makeCopperName(q.lookupValue.fullName); -- Value right here?
+  
+  -- top.typeErrors = -- TODO fffff BUG
+}
+

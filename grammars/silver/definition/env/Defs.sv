@@ -1,319 +1,216 @@
 grammar silver:definition:env;
 import silver:util;
+import silver:definition:regex; -- soley for Terms. TODO : fix?
 
-nonterminal Defs with typeList, valueList, attrList, nameList, restList, productionList, occursList, size, unparse;
+--TODO: unparse
+nonterminal Defs with typeList, valueList, attrList, prodOccursList, occursList;
 
 synthesized attribute typeList :: [Decorated EnvItem];
 synthesized attribute valueList :: [Decorated EnvItem];
-synthesized attribute nameList :: [Decorated EnvItem];
 synthesized attribute attrList :: [Decorated EnvItem];
-synthesized attribute productionList :: [Decorated EnvItem];
-synthesized attribute restList :: [Decorated EnvItem];
+synthesized attribute prodOccursList :: [Decorated DclInfo];
+synthesized attribute occursList :: [Decorated DclInfo];
 
-synthesized attribute occursList :: [Decorated EnvItem];
-synthesized attribute size :: Integer;
-
+-- I'm leaving "Defsironment" here just for the lols
 ----------------------------------------------------------------------------------------------------
 --Defsironment creation functions--------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
-abstract production i_emptyDefs 
+
+function unparseDefs
+String ::= d_un::Defs
+{
+  production attribute d :: Decorated Defs;
+  d = decorate d_un with {};
+  
+  production attribute dclinfos::[Decorated DclInfo] with ++;
+  dclinfos := mapGetDcls(d.typeList) ++
+              mapGetDcls(d.valueList) ++
+              mapGetDcls(d.attrList) ++
+              d.prodOccursList ++
+              d.occursList;
+  
+  return folds(",\n ", mapUnparseDcls(dclinfos));
+}
+
+function mapUnparseDcls
+[String] ::= d::[Decorated DclInfo]
+{
+  return if null(d) then [] else head(d).unparse :: mapUnparseDcls(tail(d));
+}
+
+abstract production emptyDefs 
 top::Defs ::= 
 {
-  top.unparse = "[]";
-
-  top.typeList =  [];
+  top.typeList = [];
   top.valueList = [];
-  top.nameList =  [];
-  top.attrList =  [];
-  top.productionList = [];
-
-  top.occursList =  [];
-
-  top.restList =  [];
-  top.size = 0;
+  top.attrList = [];
+  top.prodOccursList = [];
+  top.occursList = [];
 }
 
-abstract production i_consDefs 
-top::Defs ::= i::Decorated EnvItem e::Decorated Defs
+abstract production appendDefs 
+top::Defs ::= e1_un::Defs e2_un::Defs
 {
-  top.size = e.size + 1;
-
-  local attribute index :: Integer;
-  index = if      i.isTypeDeclaration then 0
-	  else if i.isValueDeclaration then 1
-	  else if i.isFullNameDeclaration then 2
-	  else if i.isAttributeDeclaration then 3
-	  else if i.isProductionDeclaration || i.isFunctionDeclaration then 4
-	  else if i.isOccursDeclaration then 5
-	  else 6;
-
-  top.typeList =  if index == 0 then cons(i,e.typeList)  else e.typeList;
-  top.valueList = if index == 1 then cons(i, e.valueList) else e.valueList;
-  top.nameList =  if index == 2 then cons(i, e.nameList)  else e.nameList;
-  top.attrList =  if index == 3 then cons(i, e.attrList)  else e.attrList;
-  top.productionList =  if index == 4 then cons(i, e.productionList)  else e.productionList;
-
-  top.occursList =  if index == 5 then cons(i, e.occursList)  else e.occursList;
-
-  top.restList =  if index == 6 then cons(i, e.restList)  else e.restList;
-
-  top.unparse = unparseItems(top.typeList ++ 
-				top.valueList ++ 
-				top.nameList ++ 
-				top.attrList ++ 
-				top.productionList ++ 
-				top.occursList ++ 
-				top.restList);
-
-  forwards to i_emptyDefs();
-}
-
-abstract production i_appendDefs 
-top::Defs ::= e1::Decorated Defs e2::Decorated Defs
-{
-  top.size = e1.size + e2.size;
-  top.typeList =  e1.typeList ++ e2.typeList;
+  production attribute e1 :: Decorated Defs;
+  e1 = decorate e1_un with {};
+  production attribute e2 :: Decorated Defs;
+  e2 = decorate e2_un with {};
+  
+  top.typeList = e1.typeList ++ e2.typeList;
   top.valueList = e1.valueList ++ e2.valueList;
-  top.nameList =  e1.nameList ++ e2.nameList;
-  top.attrList =  e1.attrList ++ e2.attrList;
-  top.productionList =  e1.productionList ++ e2.productionList;
-
-  top.occursList =  e1.occursList ++ e2.occursList;
-
-  top.restList =  e1.restList ++ e2.restList;
-
-  top.unparse = unparseItems(top.typeList ++ 
-				top.valueList ++ 
-				top.nameList ++ 
-				top.attrList ++ 
-				top.productionList ++ 
-				top.occursList ++ 
-				top.restList);
-  forwards to i_emptyDefs();
+  top.attrList = e1.attrList ++ e2.attrList;
+  top.prodOccursList = e1.prodOccursList ++ e2.prodOccursList;
+  top.occursList = e1.occursList ++ e2.occursList;
 }
 
-function emptyDefs
-Decorated Defs ::=
+abstract production consTypeDef
+top::Defs ::= d::Decorated EnvItem e2::Defs
 {
-  return decorate i_emptyDefs() with {};
+  top.typeList = d :: forward.typeList;
+  forwards to e2;
 }
-
-function newDefs 
-Decorated Defs ::= i::Decorated EnvItem
+abstract production consValueDef
+top::Defs ::= d::Decorated EnvItem e2::Defs
 {
-  return decorate i_consDefs(i, emptyDefs()) with {};
+  top.valueList = d :: forward.valueList;
+  forwards to e2;
 }
-
-function consDefs 
-Decorated Defs ::= i::Decorated EnvItem e::Decorated Defs
+abstract production consAttrDef
+top::Defs ::= d::Decorated EnvItem e2::Defs
 {
-  return decorate i_consDefs(i, e) with {};
+  top.attrList = d :: forward.attrList;
+  forwards to e2;
 }
-
-function appendDefs
-Decorated Defs ::= e1::Decorated Defs e2::Decorated Defs
+abstract production consProdOccursDef
+top::Defs ::= d::Decorated DclInfo e2::Defs
 {
-  return decorate i_appendDefs(e1, e2) with {};
+  top.prodOccursList = d :: forward.prodOccursList;
+  forwards to e2;
+}
+abstract production consOccursDef
+top::Defs ::= d::Decorated DclInfo e2::Defs
+{
+  top.occursList = d :: forward.occursList;
+  forwards to e2;
 }
 
+abstract production valueDefsFromDcls
+top::Defs ::= d::[Decorated DclInfo]
+{
+  top.valueList = mapDefaultWrapDcls(d);
+  forwards to emptyDefs();
+}
+
+abstract production filterDefsInclude
+top::Defs ::= d::Defs incl::[String]
+{
+  top.typeList = filterEnvItemsInclude(forward.typeList, incl);
+  top.attrList = filterEnvItemsInclude(forward.attrList, incl);
+  top.valueList = filterEnvItemsInclude(forward.valueList, incl);
+  
+  forwards to d;
+}
+abstract production filterDefsExclude
+top::Defs ::= d::Defs excl::[String]
+{
+  top.typeList = filterEnvItemsExclude(forward.typeList, excl);
+  top.attrList = filterEnvItemsExclude(forward.attrList, excl);
+  top.valueList = filterEnvItemsExclude(forward.valueList, excl);
+  
+  forwards to d;
+}
+abstract production mapPrependDefs
+top::Defs ::= d::Defs pfx::String
+{
+  top.typeList = mapPrependEnvItems(forward.typeList, pfx);
+  top.attrList = mapPrependEnvItems(forward.attrList, pfx);
+  top.valueList = mapPrependEnvItems(forward.valueList, pfx);
+  
+  forwards to d;
+}
+abstract production mapRenameDefs
+top::Defs ::= d::Defs rns::[[String]]
+{
+  top.typeList = mapRenameEnvItems(forward.typeList, rns);
+  top.attrList = mapRenameEnvItems(forward.attrList, rns);
+  top.valueList = mapRenameEnvItems(forward.valueList, rns);
+  
+  forwards to d;
+}
 
 ----------------------------------------------------------------------------------------------------
 --Defs Helper Functions------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
 
--- This adds  n :: T entries
-function addValueDcl
-Decorated Defs ::= n::String value::Decorated TypeRep e::Decorated Defs
+function addChildDcl
+Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
 {
-  return consDefs(valueEnvItem(n, value), e);
+  return consValueDef(defaultEnvItem(decorate childDcl(sg,sl,fn,ty) with {}), defs);
 }
-
--- This adds  n |-> T entries
-function addTypeDcl
-Decorated Defs ::= n::String type::Decorated TypeRep e::Decorated Defs
+function addLhsDcl
+Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
 {
-  return consDefs(typeEnvItem(n, type), e);
+  return consValueDef(defaultEnvItem(decorate lhsDcl(sg,sl,fn,ty) with {}), defs);
 }
-
-function addProductionDcl
-Decorated Defs ::= ns::Decorated NamedSignature e::Decorated Defs
+function addLocalDcl
+Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
 {
-  return consDefs(productionEnvItem(ns), e);
+  return consValueDef(defaultEnvItem(decorate localDcl(sg,sl,fn,ty) with {}), defs);
 }
-
-function addFunctionDcl
-Decorated Defs ::= ns::Decorated NamedSignature e::Decorated Defs
+function addProdDcl
+Defs ::= sg::String sl::Decorated Location ns::Decorated NamedSignature defs::Defs
 {
-  return consDefs(functionEnvItem(ns), e);
+  return consValueDef(defaultEnvItem(decorate prodDcl(sg,sl,ns) with {}), defs);
 }
-
--- This adds  attr n :: T entries
-function addAttributeDcl
-Decorated Defs ::= n::String type::Decorated TypeRep e::Decorated Defs
+function addFunDcl
+Defs ::= sg::String sl::Decorated Location ns::Decorated NamedSignature defs::Defs
 {
-  return consDefs(attributeEnvItem(n, type), e);
+  return consValueDef(defaultEnvItem(decorate funDcl(sg,sl,ns) with {}), defs);
 }
-
--- This adds  n @ T entries
+function addNtDcl
+Defs ::= sg::String sl::Decorated Location fn::String defs::Defs
+{
+  return consTypeDef(defaultEnvItem(decorate ntDcl(sg,sl,fn) with {}), defs);
+}
+function addTermDcl
+Defs ::= sg::String sl::Decorated Location fn::String regex::Decorated Regex_R defs::Defs
+{
+  return consTypeDef(defaultEnvItem(decorate termDcl(sg,sl,fn, regex) with {}), defs);
+}
+function addSynDcl
+Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
+{
+  return consAttrDef(defaultEnvItem(decorate synDcl(sg,sl,fn,ty) with {}), defs);
+}
+function addInhDcl
+Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
+{
+  return consAttrDef(defaultEnvItem(decorate inhDcl(sg,sl,fn,ty) with {}), defs);
+}
+function addPaDcl
+Defs ::= sg::String sl::Decorated Location fn::String dcl::DclInfo defs::Defs
+{ -- TODO: omit location?
+  return consProdOccursDef(decorate paDcl(sg,sl,fn,dcl) with {}, defs);
+}
+function addForwardDcl
+Defs ::= sg::String sl::Decorated Location ty::Decorated TypeRep defs::Defs
+{
+  return consValueDef(defaultEnvItem(decorate forwardDcl(sg,sl,ty) with {}), defs);
+}
 function addOccursDcl
-Decorated Defs ::= n::String dn::String e::Decorated Defs
+Defs ::= sg::String sl::Decorated Location fnnt::String fnat::String defs::Defs
 {
-  return consDefs(occursEnvItem(n, dn), e);
+  return consOccursDef(decorate occursDcl(sg,sl,fnnt,fnat) with {}, defs);
 }
-
-function addFullNameDcl
-Decorated Defs ::= n::String fname::String e::Decorated Defs
+-- These aliased functions are used for aspects.
+function addAliasedLhsDcl
+Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep alias::String defs::Defs
 {
-  return consDefs(fullNameEnvItem(n, fname), e);
+  return consValueDef(renamedEnvItem(alias, decorate lhsDcl(sg,sl,fn,ty) with {}), defs);
 }
-
-function addProductionAttributesDcl
-Decorated Defs ::= n::String d::Decorated Defs e::Decorated Defs
+function addAliasedChildDcl
+Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep alias::String defs::Defs
 {
-  return consDefs(productionAttributesEnvItem(n, d), e);
+  return consValueDef(renamedEnvItem(alias, decorate childDcl(sg,sl,fn,ty) with {}), defs);
 }
-
-----------------------------------------------------------------------------------------------------
---Building the default Defs--------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
-
-function makeDefaultDefs
-Decorated Defs ::= 
-{
-  return      addFullNameDcl("lexeme", "lexeme", 
-	      addAttributeDcl("lexeme", synTypeRep(stringTypeRep()),
-	      addFullNameDcl("line", "line", 
-	      addAttributeDcl("line", synTypeRep(integerTypeRep()),
-	      addFullNameDcl("column", "column", 
-	      addAttributeDcl("column", synTypeRep(integerTypeRep()),
-	      addFullNameDcl("filename", "filename", 
-	      addAttributeDcl("filename", synTypeRep(stringTypeRep()),
-	      emptyDefs()))))))));
-}
-
-----------------------------------------------------------------------------------------------------
---Generic environment query functions---------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
-
---function printDefs
---String ::= e::Decorated Defs
---{
---  return "TYPES\n" ++
---	 printEnvItems(e.typeList) ++ "\nVALUES\n" ++
---	 printEnvItems(e.valueList) ++ "\nNAMES\n" ++
---	 printEnvItems(e.nameList) ++ "\nATTRS\n" ++
---	 printEnvItems(e.attrList) ++ "\nREST\n" ++
---	 printEnvItems(e.restList) ++ "\n\n";
---}
-
-function mapDefs
-Decorated Defs ::= mapper::EnvMap e::Decorated Defs
-{
-  return decorate i_mapDefs(mapper'', e) with {};
-}
-
-abstract production i_mapDefs
-top::Defs ::= mapper::EnvMap e::Decorated Defs
-{
-  top.typeList =  mapEnvItems(mapper, e.typeList);
-  top.valueList = mapEnvItems(mapper, e.valueList);
-  top.nameList =  mapEnvItems(mapper, e.nameList);
-  top.attrList =  mapEnvItems(mapper, e.attrList);
-  top.productionList =  mapEnvItems(mapper, e.productionList);
-
-  top.occursList =  mapEnvItems(mapper, e.occursList);
-
-  top.restList =  mapEnvItems(mapper, e.restList);
-
-  top.unparse = unparseItems(top.typeList ++ 
-				top.valueList ++ 
-				top.nameList ++ 
-				top.attrList ++ 
-				top.productionList ++ 
-				top.occursList ++ 
-				top.restList);
-}
-
-function filterDefs
-Decorated Defs ::= fil::EnvFilter e::Decorated Defs
-{
-  return decorate i_filterDefs(fil'', e) with {};
-}
-
-abstract production i_filterDefs
-top::Defs ::= fil::EnvFilter e::Decorated Defs
-{
-  top.typeList =  filterEnvItems(fil, e.typeList);
-  top.valueList = filterEnvItems(fil, e.valueList);
-  top.nameList =  filterEnvItems(fil, e.nameList);
-  top.attrList =  filterEnvItems(fil, e.attrList);
-  top.productionList =  filterEnvItems(fil, e.productionList);
-
-  top.occursList =  filterEnvItems(fil, e.occursList);
-
-  top.restList =  filterEnvItems(fil, e.restList);
-
-  top.unparse = unparseItems(top.typeList ++ 
-				top.valueList ++ 
-				top.nameList ++ 
-				top.attrList ++ 
-				top.productionList ++ 
-				top.occursList ++ 
-				top.restList);
-}
-
-abstract production removeFilter
-top::EnvFilter ::= r::[String] fr::[String]
-{
-  local attribute item :: Decorated EnvItem;
-  item = top.inEnvItem;
-
-  top.keep =    (item.isFullNameDeclaration && !contains(item.itemName, r))
-	||	(!item.isFullNameDeclaration && !contains(item.itemName, fr));
-
-
-}
-
-abstract production keepFilter
-top::EnvFilter ::= k::[String] fk::[String]
-{
-  local attribute item :: Decorated EnvItem;
-  item = top.inEnvItem;
-
-  top.keep = 	(item.isFullNameDeclaration && contains(item.itemName, k))
-	||	(!item.isFullNameDeclaration && contains(item.itemName, fk));
-
-}
-
-abstract production renameMap
-top::EnvMap ::= old::String n::String
-{
-  local attribute item :: Decorated EnvItem;
-  item = top.inEnvItem;
-
-  top.newEnvItem = if item.isFullNameDeclaration && item.itemName == old
-		   then fullNameEnvItem(n, item.fullName)
-		   else item;
-}
-
-abstract production prependMap
-top::EnvMap ::= pref::String
-{
-  local attribute item :: Decorated EnvItem;
-  item = top.inEnvItem;
-
-  top.newEnvItem = if item.isFullNameDeclaration
-		   then fullNameEnvItem(pref ++ ":" ++ item.itemName, item.fullName)
-		   else item;
-}
-----------------------------------------------------------------------------------------------------
---General query functions---------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
-
-function toItems
-[Decorated EnvItem] ::= e::Decorated Defs
-{
-  return e.typeList ++ e.valueList ++ e.attrList ++ e.productionList ++ e.nameList ++ e.occursList ++ e.restList;
-}
-
 

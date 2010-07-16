@@ -2,8 +2,8 @@ grammar silver:modification:ffi;
 import silver:definition:core;
 import silver:definition:env;
 
-nonterminal FFIDefs with location, grammarName, file, warnings, errors, signature, signatureEnv, env, pp;
-nonterminal FFIDef with location, grammarName, file, warnings, errors, signature, signatureEnv, env, pp;
+nonterminal FFIDefs with location, grammarName, file, warnings, errors, signature, env, pp;
+nonterminal FFIDef with location, grammarName, file, warnings, errors, signature, env, pp;
 terminal FFI_kwd 'foreign' lexer classes {KEYWORD};
 
 -- This is an ugly pile of crap.  There should be a better way!

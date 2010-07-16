@@ -4,10 +4,11 @@ import silver:analysis:typechecking:concrete_syntax;
 import silver:definition:core;
 import silver:definition:env;
 import silver:definition:concrete_syntax;
-import silver:definition:regex;
+import silver:translation:java:core;
+--import silver:definition:regex; TODO nix this line?
 
 terminal Class_kwd 'class' lexer classes {KEYWORD};
-terminal Prefix_kwd 'prefix' lexer classes {KEYWORD};
+--terminal Prefix_kwd 'prefix' lexer classes {KEYWORD}; -- TODO: not currently used
 
 terminal Dominates_t 'dominates' lexer classes {KEYWORD};
 terminal Submits_t 'submits' lexer classes {KEYWORD};
@@ -42,7 +43,10 @@ top::TerminalModifier ::= 'submits' 'to' '{' terms::TermPrecList  '}'
 }
 
 synthesized attribute precTermList :: [String];
-nonterminal TermPrecList with pp, location, precTermList, defs, errors, typeErrors, env, file;
+nonterminal TermPrecList with grammarName, pp, location, precTermList, defs, errors, typeErrors, env, file;
+
+-- The reason these forward is that it's easier to avoid code duplication with cons and nil,
+-- while the grammar has to enforce at least one element.
 
 concrete production termPrecListOne
 terms::TermPrecList ::= t::QName
@@ -66,49 +70,48 @@ top::TermPrecList ::= h::QName t::TermPrecList
 
   top.location = h.location;
 
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(h.name,top.env);
-
   production attribute fName :: String;
-  fName = if null(fNames) then h.name else head(fNames).fullName;
+  fName = if null(h.lookupType.dcls) then h.lookupLexerClass.dcl.fullName else h.lookupType.dcl.fullName;
 
-  production attribute typeItem :: [Decorated EnvItem];
-  typeItem = getTypeDcl(fName, top.env);
+  top.precTermList = [fName] ++ t.precTermList ;
 
-  production attribute classItem :: [Decorated EnvItem];
-  classItem = getLexerClassDcl(fName, top.env);
+  -- This is just for disambiguation groups. TODO: remove and make it separate concrete syntax!
+  top.defs = addPluckTermDcl(top.grammarName, h.location, h.lookupType.dcl.fullName, t.defs);
 
-  production attribute isValidName :: Boolean;
-  isValidName = (!null(typeItem) && head(typeItem).typerep.isTerminal) || !null(classItem);
+  top.errors := t.errors;
+  
+  -- Since we're looking it up in two ways, do the errors ourselves
+  top.errors <- if null(h.lookupType.dcls) && null(h.lookupLexerClass.dcls)
+                then [err(h.location, "Undeclared terminal or lexer class '" ++ h.name ++ "'.")]
+                else if length(h.lookupType.dcls ++ h.lookupLexerClass.dcls) > 1
+                then [err(h.location, "Ambiguous reference to terminal or lexer class '" ++ h.name ++ "'. Possibilities are:\n" ++ printPossibilities(h.lookupType.dcls ++ h.lookupLexerClass.dcls))]
+                else [];
 
-  top.precTermList = if !isValidName
-                     then t.precTermList
-                     else [fName] ++ t.precTermList ;
-
-  top.defs = addValueDcl(fName, termTypeRep(h.name, decorate Rtoeps() with {}), 
-	     addFullNameDcl(h.name, fName,
-             t.defs));
-
-  top.errors := t.errors; -- TODO check on the errors here...
-
-  top.typeErrors = if !isValidName
-                    then [err(h.location, "'" ++ h.name ++ "' is not a terminal or a lexer class.")] ++ t.typeErrors
-                    else t.typeErrors;
+  top.typeErrors = t.typeErrors;
   
 }
 
-function addTerminalAttrDefs
-Decorated Defs ::= tailDefs::Decorated Defs
+abstract production termPrecListNull
+top::TermPrecList ::=
 {
-   return addFullNameDcl("lexeme","lexeme",
-           addValueDcl("lexeme",stringTypeRep(),
-            addFullNameDcl("filename","filename",
-             addValueDcl("filename",stringTypeRep(),
-              addFullNameDcl("line","line",
-               addValueDcl("line",integerTypeRep(),
-                addFullNameDcl("column","column",
-                 addValueDcl("column",integerTypeRep(),
-                  tailDefs))))))));
+  top.precTermList = [];
+  top.defs = emptyDefs();
+  top.pp = "";
+  top.location = loc("termPrecListNull", -1, -1);
+  top.errors := [];
+  top.typeErrors = [];
+}
+
+
+function addTerminalAttrDefs
+Defs ::= tailDefs::Defs
+{
+  -- TODO: no grammar or location? how to deal with this?
+  return addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "lexeme", stringTypeRep(),
+         addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "filename", stringTypeRep(),
+         addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "line", integerTypeRep(),
+         addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "column", integerTypeRep(),
+         tailDefs))));
 }
 
 concrete production terminalModifierActionCode
@@ -121,25 +124,12 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
   acode.actionCodeType = terminalActionType();
   acode.env = newScopeEnv(addTerminalAttrDefs(acode.defs), top.env);
 
-  acode.signatureEnv = emptyEnv();
-  acode.localsEnv = toEnv(acode.defs);
-
-  acode.signature = namedNamedSignature(top.grammarName ++ ":_ta" ++ toString(genInt())); -- TODO: don't use genInt
+  -- TODO: better name than this dummy one?
+  acode.signature = namedNamedSignature(top.grammarName ++ ":__ta" ++ toString($1.line));
   
   top.errors := acode.errors ++ acode.typeErrors; -- TODO POTENTIAL BUG: we check type errors separately from errors for a reason, right?
 
   forwards to terminalModifierDefault();
-}
-
-abstract production termPrecListNull
-terms::TermPrecList ::=
-{
-   terms.precTermList = [];
-   terms.defs = emptyDefs();
-   terms.pp = "";
-   terms.location = loc("termPrecListNull", -1, -1);
-   terms.errors := [];
-   terms.typeErrors = [];
 }
 
 concrete production terminalModifierClassSpec
@@ -175,27 +165,15 @@ top::ClassList ::= n::QName t::ClassList
           then n.pp
           else n.pp ++ ", " ++ t.pp;
 
-  production attribute fNames :: [Decorated EnvItem];
-  fNames = getFullNameDcl(n.name, top.env);
+  top.errors := n.lookupLexerClass.errors ++ t.errors;
 
-  production attribute fName :: String;
-  fName = if null(fNames) then n.name else head(fNames).fullName;
-
-  production attribute typeItem :: [Decorated EnvItem];
-  typeItem = getLexerClassDcl(fName, top.env);
-
-  top.lexerClasses = if null(typeItem)
-                     then t.lexerClasses
-                     else [fName] ++ t.lexerClasses;
-
-  local attribute e1 :: [Decorated Message];
-  e1 = if null(typeItem)
-       then [err(n.location, "Lexer class '" ++ n.name ++ "' is not defined.")]
-       else [];
-
-  top.errors := e1 ++ t.errors;
-  top.terminalModifiers = (if null(typeItem) then [] else [submitsToTerminalModifierSpec(head(typeItem).submitsTo), dominatesTerminalModifierSpec(head(typeItem).termDominates)]) ++ t.terminalModifiers;
-
+  -- Neither of these things should be demanded if there are errors, right?
+  top.lexerClasses = [n.lookupLexerClass.dcl.fullName] ++ t.lexerClasses;
+  
+  -- wtf? This seems buggy... How are lexer classes handled by copper? TODO
+  -- Is it just that lexer class declarations don't get to have dominates/submits in copper, so we translate it away here?
+  top.terminalModifiers = [submitsToTerminalModifierSpec(n.lookupLexerClass.dcl.submitsTo),
+                           dominatesTerminalModifierSpec(n.lookupLexerClass.dcl.termDominates)] ++ t.terminalModifiers;
 }
 
 abstract production lexerClassesNull
@@ -205,5 +183,52 @@ cl::ClassList ::=
   cl.pp = "";
   cl.errors := [];
   cl.lexerClasses = [];
+}
+
+
+abstract production termAttrValueReference
+top::Expr ::= q::Decorated QName
+{
+  top.pp = q.pp; 
+  top.location = q.location;
+
+  top.errors := []; -- Should only ever be in scope in action blocks
+  top.warnings := [];
+
+  top.typerep = q.lookupValue.typerep;
+
+  top.isAppReference = false;
+  top.appReference = "";
+
+  -- Yeah, it's a big if/then/else block, but these are all very similar and related.
+  top.translation = if q.name == "lexeme" then "new common.StringCatter(lexeme)" else
+                    if q.name == "line" then "virtualLocation.getLine()" else
+                    if q.name == "column" then "virtualLocation.getColumn()" else
+                    if q.name == "filename" then "new common.StringCatter(virtualLocation.getFileName())" else
+                    error("unknown actionTerminalReference " ++ q.name); -- should never be called, but here for safety
+
+  top.typeErrors = [];
+}
+
+abstract production termAttrValueValueDef
+top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+{
+  top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
+  top.location = loc(top.file, $2.line, $2.column);
+
+  top.errors := e.errors; -- should only be in scope when its valid to use them
+  top.warnings := [];
+
+  e.expected = expected_type(val.lookupValue.typerep);  
+
+  local attribute memberfunc :: String;
+  memberfunc = if val.name == "filename" then "setFileName" else
+               if val.name == "line" then "setLine" else
+               if val.name == "column" then "setColumn" else
+               error("unknown assignment to terminal attribute: " ++ val.name);
+
+  top.setupInh := "";
+  top.translation = "virtualLocation." ++ memberfunc ++ "(" ++ e.translation
+                     ++ (if val.name == "filename" then ".toString()" else "") ++ ");\n";
 }
 

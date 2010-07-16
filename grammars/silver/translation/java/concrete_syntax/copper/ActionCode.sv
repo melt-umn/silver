@@ -11,7 +11,7 @@ import silver:analysis:typechecking:core;
 
 synthesized attribute actionCode :: String;
 
-nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,localsEnv,signature,signatureEnv,file,errors,typeErrors;
+nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,signature,file,errors,typeErrors;
 
 terminal Action_kwd 'action' lexer classes {KEYWORD};
 
@@ -67,11 +67,9 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
   acode.actionCodeType = productionActionType();
 
-  acode.signatureEnv = toEnv(ns.defs);
-  acode.localsEnv = toEnv(acode.defs);
   acode.env = newScopeEnv(
                 addTerminalAttrDefs(
-                 appendDefs(acode.defs, ns.defs)), top.env);
+                 appendDefs(acode.defs, ns.actionDefs)), top.env);
 
   production attribute namedSig :: Decorated NamedSignature;
   namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
@@ -88,9 +86,9 @@ concrete production actionCode_c
 top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 {
   top.pp = "{\n" ++ stmts.pp ++ "}\n";
-  top.defs = stmts.defs;
+  top.defs = hackTransformLocals(stmts.defs.valueList);
 
-  top.actionCode = localdeclarations(stmts.defs.valueList) ++ stmts.translation;
+  top.actionCode = hacklocaldeclarations(stmts.defs.valueList) ++ stmts.translation;
 
   top.errors := stmts.errors;
   top.typeErrors = stmts.typeErrors;
@@ -104,9 +102,75 @@ top::ActionCode_c ::= '{' '}'
 }
 
 -- TODO hacky. ideally we'd do this where local attributes are declared, not here.
-function localdeclarations
+function hacklocaldeclarations
 String ::= l::[Decorated EnvItem]
 {
-  return if null(l) then "" else head(l).typerep.transType ++ " " ++ makeCopperName(head(l).itemName) ++ ";\n" ++ localdeclarations(tail(l));
+  return if null(l) then "" else head(l).dcl.typerep.transType ++ " " ++ makeCopperName(head(l).dcl.fullName) ++ ";\n" ++ hacklocaldeclarations(tail(l));
+}
+
+function hackTransformLocals
+Defs ::= l::[Decorated EnvItem]
+{
+  return if null(l) then emptyDefs()
+         else case head(l).dcl of
+                localDcl(sg,sl,fn,ty) -> addParserLocalDcl(sg,sl,fn,ty, hackTransformLocals(tail(l)))
+              | _ -> hackTransformLocals(tail(l)) -- TODO: possibly error??
+              end;
+}
+
+
+--------------------------------------------------------------------------------
+-- Making children available in production action blocks
+
+-- We don't care about the LHS.
+
+synthesized attribute actionDefs :: Defs occurs on ProductionSignature, ProductionRHS, ProductionRHSElem;
+
+aspect production productionSignatureEmptyRHS
+top::ProductionSignature ::= lhs::ProductionLHS '::='
+{
+  top.actionDefs = emptyDefs();
+}
+
+aspect production productionSignature
+top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
+{
+  top.actionDefs = rhs.actionDefs;
+}
+
+aspect production productionRHSSingle
+top::ProductionRHS ::= rhs::ProductionRHSElem
+{
+  top.actionDefs = rhs.actionDefs;
+}
+
+aspect production productionRHSCons
+top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
+{
+  top.actionDefs = appendDefs(h.actionDefs, t.actionDefs);
+}
+
+aspect production productionRHSElem
+top::ProductionRHSElem ::= id::Name '::' t::Type
+{
+  top.actionDefs = addActionChildDcl(top.grammarName, t.location, fName, t.typerep, emptyDefs());
+}
+
+abstract production actionChildReference
+top::Expr ::= q::Decorated QName
+{
+  top.pp = q.pp; 
+  top.location = q.location;
+
+  top.errors := []; -- Should only ever be in scope when valid
+  top.warnings := [];
+
+  top.typerep = q.lookupValue.typerep;
+
+  top.isAppReference = false;
+  top.appReference = "";
+  top.translation = "((" ++ q.lookupValue.typerep.transType ++ ")((common.Node)RESULT).getChild(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName ++ "))";
+
+  top.typeErrors = [];
 }
 

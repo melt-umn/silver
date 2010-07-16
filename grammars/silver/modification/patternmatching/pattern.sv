@@ -23,16 +23,16 @@ synthesized attribute cond_tree :: Expr ;
 synthesized attribute then_tree :: Expr ;
 synthesized attribute letAssigns_tree :: [ AssignExpr ] ;
 
-nonterminal MRuleList with pp, grammarName, env, localsEnv, signatureEnv, typerep, 
+nonterminal MRuleList with pp, grammarName, env, typerep, 
 			    errors, typerep_down, typeErrors, location,
 			    translation_tree, base_tree, file, case_expr_type ;
-nonterminal MatchRule with pp, grammarName, env, localsEnv, signatureEnv, typerep, 
+nonterminal MatchRule with pp, grammarName, env, typerep, 
                             errors, typerep_down, typeErrors, location,
 			    cond_tree, then_tree, base_tree, file, case_expr_type ;
-nonterminal Pattern with pp, env, localsEnv, signatureEnv, location, errors, defs,
+nonterminal Pattern with pp, grammarName, env, location, errors, defs,
 			    typerep_down, typeErrors, cond_tree,
                             letAssigns_tree, base_tree, file, case_expr_type ;
-nonterminal PatternList with pp, env, localsEnv, signatureEnv, errors, defs, 
+nonterminal PatternList with pp, grammarName, env, errors, defs, 
 			    typereps_down, typeErrors, location,
 			    cond_tree, letAssigns_tree, base_tree, file, case_expr_type ;
 
@@ -113,7 +113,7 @@ ml::MRuleList ::= h::MatchRule '|' t::MRuleList
   local attribute tr :: [Decorated Message] ;
   tr = if h.typerep.typeEquals(h.typerep, t.typerep).bValue
        then [] 
-       else [err(h.location, "Rules of CASE expression do not have the same type.")] ;  
+       else [err(h.location, "Rules of CASE expression do not have the same type.")] ;  -- TODO: print the types!
  
   ml.typeErrors = h.typeErrors ++ t.typeErrors ++ tr ;
 
@@ -141,7 +141,6 @@ mr::MatchRule ::= pt::Pattern '->' e::Expr
   newEnv = newScopeEnv(pt.defs, mr.env); 
 
   e.env = newEnv;
-  e.localsEnv = newScopeEnv(pt.defs, mr.localsEnv);
   pt.env = newEnv;
 
   -- type checking
@@ -411,11 +410,10 @@ p::Pattern ::= v::Name
  	                 then p.typerep_down
 	                 else refTypeRep(p.typerep_down) );
               
-  p.defs = addValueDcl(v.name, var_type,
-           addFullNameDcl(v.name, v.name, emptyDefs())) ;
+  p.defs = addLocalDcl(p.grammarName, v.location, v.name, var_type, emptyDefs());
 
   local attribute er :: [Decorated Message] ;
-  er = if length(getValueDclOne(v.name, p.env)) > 1
+  er = if length(getValueDclAll(v.name, p.env)) > 1
         then [err(p.location, "Pattern variable '" ++ v.name ++ "' is already bound in this scope.")] 
         else [];
 
@@ -576,13 +574,13 @@ top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
    local attribute stmt1 :: ProductionStmt ;
    stmt1 = attributeDef(
-	top.lhsName_down, terminal(Dot_t, "."), qNameId(nameId(terminal(Id_t, "patProdName"))), '=',
+	concreteDefLHS(top.lhsName_down), terminal(Dot_t, "."), qNameId(nameId(terminal(Id_t, "patProdName"))), '=',
         stringConst(terminal(String_t, "\"" ++ top.signature.fullName ++ "\"")), ';');
 	
 
    local attribute stmt2 :: ProductionStmt ;
    stmt2 = attributeDef(
-       	top.lhsName_down, terminal(Dot_t, "."), qNameId(nameId(terminal(Id_t, "patChildList"))), '=',
+       	concreteDefLHS(top.lhsName_down), terminal(Dot_t, "."), qNameId(nameId(terminal(Id_t, "patChildList"))), '=',
         top.rhsListExpr, ';');
 
    local attribute addedStmts :: ProductionStmts ;

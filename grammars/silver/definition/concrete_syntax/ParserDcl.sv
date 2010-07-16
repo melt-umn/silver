@@ -47,9 +47,12 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
 
   top.parserDcls = [parserSpec(top)];
 
-  top.defs = addFullNameDcl(n.name, top.fullName,
-	     addValueDcl(top.fullName, funTypeRep([stringTypeRep()], t.typerep),
-	     emptyDefs()));
+  -- TODO: dunno, should we keep this separate? For now, masquerade as a function.
+  -- Only bug is that you can aspect it, but it's pointless to do so, you can't affect anything.
+  top.defs = addFunDcl(top.grammarName, n.location, namedSig, emptyDefs());
+  
+  production attribute namedSig :: Decorated NamedSignature;
+  namedSig = namedSignatureDcl(top.fullName, [namedSignatureElement("__str", stringTypeRep())], namedSignatureElement("__pt", t.typerep));
 
   top.moduleNames = m.moduleNames;
 }
@@ -92,8 +95,8 @@ top::ModuleName ::= pkg::QName
   top.nonTerminalDcls = m.nonTerminalDcls;
 }
 
-aspect production module 
-top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[EnvMap]
+aspect production module
+top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[[String]]
 {
   top.ruleDcls = med.ruleDcls;
   top.terminalDcls = med.terminalDcls;

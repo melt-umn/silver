@@ -3,8 +3,8 @@ grammar silver:definition:concrete_syntax:env_parser;
 import silver:definition:env;
 import silver:definition:env:parser;
 
-import silver:definition:concrete_syntax;
-import silver:definition:regex;
+import silver:definition:concrete_syntax hiding Ignore_kwd, Precedence_kwd, Association_kwd, Left_kwd, Association_kwd, Right_kwd, Precedence_kwd, Operator_kwd;
+import silver:definition:regex hiding RegexRBrack_t, RegexLBrack_t, RegexLParen_t, RegexRParen_t; -- TODO: a bit of a hack?
 
 import silver:definition:core only compiledGrammars;
 
@@ -78,7 +78,7 @@ top::aTerminalSpecInner ::= s1::aTerminalSpec ',' s2::aTerminalSpecInner {
 
 concrete production aTerminalSpecDef
 top::aTerminalSpec ::= '(' n::Name ','  m::aTerminalModifiers ',' '/' r::Regex_R '/' ')'{
-  top.terminalDcls = [terminalSpec(n.lexeme, m.terminalModifiers, r)];
+  top.terminalDcls = [terminalSpec(n.aname, m.terminalModifiers, r)];
 }
 
 nonterminal aTerminalModifiers with terminalModifiers;
@@ -173,7 +173,7 @@ top::aRuleSpecInner ::= d1::aRuleSpec ',' d2::aRuleSpecInner {
 
 concrete production aRuleSpecDef
 top::aRuleSpec ::= '(' n::Name ',' rhs::aRHSSpecs ')' {
-  top.ruleDcls = [ruleSpec(n.lexeme, rhs.ruleRHSSpec)];
+  top.ruleDcls = [ruleSpec(n.aname, rhs.ruleRHSSpec)];
 }
 
 nonterminal aRHSSpecs, aRHSSpecInner, aRHSSpec with ruleRHSSpec;
@@ -200,7 +200,7 @@ top::aRHSSpecInner ::= d1::aRHSSpec ',' d2::aRHSSpecInner {
 
 concrete production aRHSSpecDef
 top::aRHSSpec ::= '(' gn::Name ',' fn::Name ',' ns::aNames ',' pm::aProductionModifiers ')' {
-  top.ruleRHSSpec = [rhsSpec(gn.lexeme, fn.lexeme, ns.names, pm.productionModifiers)];
+  top.ruleRHSSpec = [rhsSpec(gn.aname, fn.aname, ns.names, pm.productionModifiers)];
 }
 
 nonterminal aProductionModifiers with productionModifiers;
@@ -235,12 +235,12 @@ top::aProductionModifierSpec ::= 'precedence' n::number {
 terminal OperatorTerm 'operator' lexer classes {C_1};
 concrete production aProductionModifierSpecOperator
 top::aProductionModifierSpec ::= 'operator' n::Name {
-  top.productionModifiers = [operatorProductionModifierSpec(n.lexeme)];
+  top.productionModifiers = [operatorProductionModifierSpec(n.aname)];
 }
 
 
 concrete production aRootParsers
 top::aRootSpecPart ::= t::ParserTerm n::Name ',' s::Name ',' gs::aNames {
-  top.parserDcls = [parserSpecFromList(n.lexeme,s.lexeme,gs.names, top.compiledGrammars)];
+  top.parserDcls = [parserSpecFromList(n.aname,s.aname,gs.names, top.compiledGrammars)];
   forwards to aRootSpecDefault();
 }

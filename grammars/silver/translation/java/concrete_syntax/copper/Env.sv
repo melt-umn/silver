@@ -1,54 +1,126 @@
 grammar silver:translation:java:concrete_syntax:copper;
 
 import silver:definition:env;
+import silver:definition:core;
 import silver:util;
 
-synthesized attribute isLexerClassDeclaration :: Boolean;
-attribute isLexerClassDeclaration occurs on EnvItem;
-attribute submitsTo occurs on EnvItem;
-attribute termDominates occurs on EnvItem;
+--------------------------------------------------------------------------------
+-- Defs.sv
 
-function lexerClassEnvItem
-Decorated EnvItem ::= n::String s::[String] d::[String]
+synthesized attribute lexerClassList :: [Decorated EnvItem] occurs on Defs;
+
+aspect function unparseDefs
+String ::= d_un::Defs
 {
-  return decorate i_lexerClassEnvItem(n, s, d) with {};
+  dclinfos <- mapGetDcls(d.lexerClassList);
 }
 
-abstract production i_lexerClassEnvItem
-top::EnvItem ::= n::String s::[String] d::[String]
+aspect production emptyDefs 
+top::Defs ::= 
 {
-  top.unparse = "lexer_class('" ++ n ++ "', [" ++ (if null(s) then "" else "'" ++ folds("','", s) ++ "'") ++ "], [" ++ (if null(d) then "" else "'" ++ folds("','", d) ++ "'") ++ "])";
-
-  top.submitsTo = s;
-  top.termDominates = d;
-  -- required to be defined.
-  top.itemName = n;
-
-  top.isLexerClassDeclaration = true;
-
-  forwards to i_defaultEnvItem();
+  top.lexerClassList = [];
 }
 
-function getLexerClassDclOne
-[Decorated EnvItem] ::= search::String e::Decorated Env
+aspect production appendDefs 
+top::Defs ::= e1_un::Defs e2_un::Defs
 {
-  return searchDclsOne(search, e.restTree);
+  top.lexerClassList = e1.lexerClassList ++ e2.lexerClassList;
 }
 
-function getLexerClassDcl
-[Decorated EnvItem] ::= search::String e::Decorated Env
+abstract production consLexerClassDef
+top::Defs ::= d::Decorated EnvItem e2::Defs
 {
-  return searchDcls(search, e.restTree);
+  top.lexerClassList = d :: forward.lexerClassList;
+  forwards to e2;
+}
+
+-- TODO: we don't do any renaming of lexer classes BUG
+
+function addParserAttrDcl
+Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
+{
+  return consValueDef(defaultEnvItem(decorate parserAttrDcl(sg,sl,fn,ty) with {}), defs);
+}
+
+function addPluckTermDcl
+Defs ::= sg::String sl::Decorated Location fn::String defs::Defs
+{
+  return consValueDef(defaultEnvItem(decorate pluckTermDcl(sg,sl,fn) with {}), defs);
 }
 
 function addLexerClassDcl
-Decorated Defs ::= n::String s::[String] d::[String] e::Decorated Defs
+Defs ::= sg::String sl::Decorated Location fn::String tst::[String] td::[String] defs::Defs
 {
-  return consDefs(lexerClassEnvItem(n, s, d), e);
+  return consLexerClassDef(defaultEnvItem(decorate lexerClassDcl(sg,sl,fn, tst, td) with {}), defs);
 }
 
-aspect production i_defaultEnvItem
-top::EnvItem ::= 
+function addTermAttrValueDcl
+Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
 {
-  top.isLexerClassDeclaration = false;
+  return consValueDef(defaultEnvItem(decorate termAttrValueDcl(sg,sl,fn,ty) with {}), defs);
 }
+
+function addActionChildDcl
+Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
+{
+  return consValueDef(defaultEnvItem(decorate actionChildDcl(sg,sl,fn,ty) with {}), defs);
+}
+
+function addParserLocalDcl
+Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
+{
+  return consValueDef(defaultEnvItem(decorate parserLocalDcl(sg,sl,fn,ty) with {}), defs);
+}
+
+--------------------------------------------------------------------------------
+-- Env.sv
+
+synthesized attribute lexerClassTree :: Decorated EnvScope occurs on Env;
+
+aspect production i_emptyEnv 
+top::Env ::= 
+{
+  top.lexerClassTree = emptyEnvScope();
+}
+
+aspect production i_toEnv
+top::Env ::= d_un::Defs
+{
+  top.lexerClassTree = oneEnvScope(buildTree(d.lexerClassList));
+}
+
+aspect production i_appendEnv
+top::Env ::= e1::Decorated Env  e2::Decorated Env
+{
+  top.lexerClassTree = appendEnvScope(e1.lexerClassTree, e2.lexerClassTree);
+}
+
+aspect production i_newScopeEnv
+top::Env ::= d_un::Defs  e::Decorated Env
+{
+  top.lexerClassTree = consEnvScope(buildTree(d.lexerClassList), e.lexerClassTree);
+}
+
+function getLexerClassDcl
+[Decorated DclInfo] ::= search::String e::Decorated Env
+{
+  return searchEnvScope(search, e.lexerClassTree);
+}
+
+--------------------------------------------------------------------------------
+-- QName.sv
+
+aspect production qNameId
+top::QName ::= id::Name
+{
+  top.lookupLexerClass = decorate customLookup("lexer class", getLexerClassDcl, top) with { env = top.env; };
+}
+
+aspect production qNameCons
+top::QName ::= id::Name ':' qn::QName
+{
+  top.lookupLexerClass = decorate customLookup("lexer class", getLexerClassDcl, top) with { env = top.env; };
+}
+
+synthesized attribute lookupLexerClass :: Decorated QNameLookup occurs on QName;
+

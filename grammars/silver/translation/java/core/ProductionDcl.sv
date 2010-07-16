@@ -18,21 +18,16 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   top.setupInh := body.setupInh;
   top.initProd := "\t\t//PRODUCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
   top.initAspect := "";
-  top.postInit := "\t\tcommon.Decorator.applyDecorators(" ++ fn ++ ".decorators, " ++ className ++ ".class);\n";
+  top.postInit := "\t\tcommon.Decorator.applyDecorators(" ++ fnnt ++ ".decorators, " ++ className ++ ".class);\n";
 
-  local attribute fns :: [Decorated EnvItem];
-  fns = getFullNameDcl(ns.outputElement.typerep.typeName, top.env);
-  
-  local attribute fn :: String;
-  fn = makeNTClassName(if null(fns)
-                       then ns.outputElement.typerep.typeName
-                       else head(fns).fullName);
+  local attribute fnnt :: String;
+  fnnt = makeNTClassName(ns.outputElement.typerep.typeName);
 
   top.javaClasses = [[className,
 		
 "package " ++ makeName(top.grammarName) ++ ";\n\n" ++
 
-"public class " ++ className ++ " extends " ++ fn ++ " {\n\n" ++
+"public class " ++ className ++ " extends " ++ fnnt ++ " {\n\n" ++
 
 makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(ns.inputElements, top.env) ++ "};\n\n" ++
@@ -123,19 +118,12 @@ String ::= s::[String]{
 -- by broken I mean it won't reveal any useful type information (java.lang.Constructor.class)
 -- Also, it preserves no information about _what_ terminal!
 function makeChildTypesList
-String ::= ns::[Decorated NamedSignatureElement] e::Decorated Env {
-
-  -- The difficulty here is that we need the full type name.
-  
-  local attribute fns :: [Decorated EnvItem];
-  fns = getFullNameDcl(head(ns).typerep.typeName, e);
-  local attribute fn :: String;
-  fn = if null(fns) then head(ns).typerep.typeName else head(fns).fullName;
-  
+String ::= ns::[Decorated NamedSignatureElement] e::Decorated Env
+{
   return if null(ns)
          then ""
          else (if head(ns).typerep.isNonTerminal
-               then makeNTClassName(fn)
+               then makeNTClassName(head(ns).typerep.typeName)
                else head(ns).typerep.transType)
               ++ ".class"
               ++ if null(tail(ns))

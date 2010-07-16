@@ -2,7 +2,7 @@ grammar silver:definition:env;
 import silver:util;
 
 synthesized attribute declaredName :: String;
-synthesized attribute defs :: Decorated Defs;
+synthesized attribute defs :: Defs;
 synthesized attribute exportedGrammars :: [String];
 synthesized attribute condBuild :: [[String]];
 synthesized attribute moduleNames :: [String];
@@ -26,19 +26,21 @@ top::RootSpec ::=
 }
 
 function getRootSpec
-[Decorated RootSpec] ::= n::String rs::[Decorated RootSpec]{
+[Decorated RootSpec] ::= n::String rs::[Decorated RootSpec]
+{
   return if null(rs) then [] else if head(rs).declaredName == n then [head(rs)] else getRootSpec(n, tail(rs));
 }
 
+-- TODO: eliminate this NT and fold this code into RootSpec.  Why is it separate?
 nonterminal RootSpecUnparse with unparse;
 abstract production unparseRootSpec
-top::RootSpecUnparse ::= r::Decorated RootSpec{
-
+top::RootSpecUnparse ::= r::Decorated RootSpec
+{
   production attribute unparses :: [String] with ++;
   unparses := [
 		"declaredName " ++ quoteString(r.declaredName),
 		"moduleNames [" ++ folds(",", quoteStrings(r.moduleNames)) ++ "]",
-	       	"defs " ++ r.defs.unparse,
+	       	"defs [" ++ unparseDefs(r.defs) ++ "]",
 	       	"exportedGrammars [" ++ folds(",", quoteStrings(r.exportedGrammars)) ++ "]",
 	       	"condBuild [" ++ foldCB(r.condBuild) ++ "]"
 	      ];

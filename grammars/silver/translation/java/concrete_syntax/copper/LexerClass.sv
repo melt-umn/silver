@@ -10,7 +10,7 @@ import silver:analysis:typechecking:core;
 
 terminal Lexer_kwd 'lexer' lexer classes {KEYWORD};
 
-concrete production lexerClassDcl
+concrete production lexerClassDclConcrete
 top::AGDcl ::= 'lexer' 'class' id::Name ';'
 {
   forwards to lexerClassDclFull(id, termPrecListNull(), termPrecListNull());
@@ -51,23 +51,15 @@ top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  production attribute fName_dashes :: String ; 
-  fName_dashes = makeName(fName);
-
-  top.defs = addLexerClassDcl(fName, subs.precTermList, doms.precTermList,
-	     addFullNameDcl(id.name, fName, emptyDefs()));
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
-       then [err(top.location, "Name '" ++ id.name ++ "' is already bound.")]
-       else [];	
+  top.defs = addLexerClassDcl(top.grammarName, id.location, fName, subs.precTermList, doms.precTermList,
+             emptyDefs());
 
   local attribute er2 :: [Decorated Message];
-  er2 = if length(getLexerClassDclOne(fName, top.env)) > 1
+  er2 = if length(getLexerClassDcl(fName, top.env)) > 1
        then [err(top.location, "Lexer class '" ++ fName ++ "' is already bound.")]
        else [];	
 
-  top.errors := er1 ++ er2 ++ subs.errors ++ doms.errors;
+  top.errors := er2 ++ subs.errors ++ doms.errors;
 
 --from definition:concrete_syntax
   top.parserDcls = [];

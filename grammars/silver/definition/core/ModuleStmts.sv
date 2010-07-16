@@ -8,57 +8,30 @@ import silver:util;
 --apply with
 --apply as
 abstract production module 
-top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[EnvMap]
+top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[[String]]
 {
   production attribute med :: ModuleExportedDefs;
   med = moduleExportedDefs(c, [g.name], []);
   med.importLocation = g.location;
   
-  local attribute d :: Decorated Defs;
+  local attribute d :: Defs;
   d = med.defs;  
 
-  local attribute d1 :: Decorated Defs;
-  d1 = if null(o) then d else filterDefs(keepFilter(o, getFullNames(o, d)), d);
+  local attribute d1 :: Defs;
+  d1 = if null(o) then d else filterDefsInclude(d, o); -- only
 
-  local attribute d2 :: Decorated Defs;
-  d2 = if null(h) then d1 else filterDefs(removeFilter(h, getFullNames(h, d)), d1);
+  local attribute d2 :: Defs;
+  d2 = if null(h) then d1 else filterDefsExclude(d1, h); -- hiding
 
-  local attribute d3 :: Decorated Defs;
-  d3 = if null(w) then d2 else applyMappings(w, d2);
+  local attribute d3 :: Defs;
+  d3 = if null(w) then d2 else mapRenameDefs(d2, w); -- with
 
-  local attribute d4 :: Decorated Defs;
-  d4 = if a == "" then d3 else mapDefs(prependMap(a), d3);
+  local attribute d4 :: Defs;
+  d4 = if a == "" then d3 else mapPrependDefs(d3, a); -- as
 
   top.defs = d4;		  
   top.errors := med.errors;
   top.warnings := [];
-}
-
-function applyMappings
-Decorated Defs ::= maps::[EnvMap] old::Decorated Defs
-{
-  return if null(maps)
-	 then old
-	 else mapDefs(head(maps), applyMappings(tail(maps), old));
-}
-
-abstract production fullNameFilter
-top::EnvFilter ::= n::[String]
-{
-  local attribute item :: Decorated EnvItem;
-  item = top.inEnvItem;
-
-  top.keep = item.isFullNameDeclaration && contains(item.itemName, n);
-}
-
-function getFullNames
-[String] ::= s::[String] d::Decorated Defs {
-  return getNames(toItems(filterDefs(fullNameFilter(s), d)));
-}
-
-function getNames
-[String] ::= e::[Decorated EnvItem] {
-  return if null(e) then [] else [head(e).fullName] ++ getNames(tail(e));
 }
 
 -- recurses through exportedGrammars, grabbing all definitions
@@ -96,7 +69,8 @@ top::ModuleExportedDefs ::= compiled::[Decorated RootSpec] need::[String] seen::
 -- ImportStmts
 
 concrete production importStmt
-top::ImportStmt ::= 'import' m::ModuleExpr ';'{
+top::ImportStmt ::= 'import' m::ModuleExpr ';'
+{
   top.pp = "import " ++ m.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
@@ -373,6 +347,7 @@ top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
   top.defs = m.defs;
 }
 
+synthesized attribute envMaps :: [[String]] occurs on WithElems, WithElem;
 
 concrete production withElemsOne
 top::WithElems ::= we::WithElem
@@ -395,7 +370,7 @@ top::WithElem ::= n::QName 'as' newname::QName
 {
   top.pp = n.pp ++ " as " ++ newname.pp;
   top.location = loc(top.file, $2.line, $2.column);
-  top.envMaps = [renameMap(n.name, newname.name)];
+  top.envMaps = [[n.name, newname.name]];
 }
 
 

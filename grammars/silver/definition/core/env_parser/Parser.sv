@@ -33,6 +33,6 @@ top::aRootSpecPart ::= {
 
 concrete production aRootImpliedName
 top::aRootSpecPart ::= n::ImpliedNameTerm i::silver:definition:env:parser:Name{
-  top.impliedName = i.lexeme;
+  top.impliedName = i.aname;
   forwards to aRootSpecDefault();
 }

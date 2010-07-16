@@ -134,45 +134,68 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   top.typeErrors = er ++ e.typeErrors;
 }
 
-aspect production attributeDef
-top::ProductionStmt ::= val::QName '.' attr::QName '=' e::Expr ';'
+aspect production errorAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+{
+  top.typeErrors = [];
+}
+
+aspect production synthesizedAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   local attribute er :: [Decorated Message];
   er = if attr.lookupAttribute.typerep.typeEquals(attr.lookupAttribute.typerep, e.typerep).bValue
        then [] 
-       else [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ attr.lookupAttribute.typerep.unparse ++ " but the expression being assigned to it has type " ++ e.typerep.unparse)] ; 
+       else [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ attr.lookupAttribute.typerep.typeName ++ " but the expression being assigned to it has type " ++ e.typerep.typeName)] ; 
+
+  local attribute occursCheck :: [Decorated DclInfo];
+  occursCheck = getOccursDcl(attr.lookupAttribute.fullName, dl.typerep.typeName, top.env); -- TODO: abuse of typeName
+
+  -- TODO: nasty error check for multiple occurs dcls?
 
   local attribute e1 :: [Decorated Message];
-  e1 = if !doesOccurOn(attr.lookupAttribute.fullName, val.lookupValue.typerep.typeName, top.env)
-       then [err(top.location, "Attribute '" ++ attr.lookupAttribute.fullName ++ "' does not decorate type '" ++ val.lookupValue.typerep.typeName ++ "'.")]
+  e1 = if null(occursCheck)
+       then [err(top.location, "Attribute '" ++ attr.lookupAttribute.fullName ++ "' does not decorate type '" ++ dl.typerep.typeName ++ "'.")]
        else [];
 
-  local attribute e2 :: [Decorated Message];
-  e2 = if val.name == top.signature.outputElement.elementName && attr.lookupAttribute.typerep.isInherited
-       then [err(top.location, "Cannot assign to the lhs's inherited attributes.")]
-       else [];
-
-  local attribute e3 :: [Decorated Message];
-  e3 = if attr.lookupAttribute.typerep.isSynthesized && val.name != top.signature.outputElement.elementName
-       then [err(top.location, "Assignment to synthesized attributes only permitted for the lhs.")]
-       else [];
-
-  top.typeErrors = er ++ e1 ++ e2 ++ e3 ++ e.typeErrors;
+  top.typeErrors = er ++ e1 ++ e.typeErrors;
 }
 
-aspect production valueDef
-top::ProductionStmt ::= val::QName '=' e::Expr ';'
+aspect production inheritedAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+{
+  local attribute er :: [Decorated Message];
+  er = if attr.lookupAttribute.typerep.typeEquals(attr.lookupAttribute.typerep, e.typerep).bValue
+       then [] 
+       else [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ attr.lookupAttribute.typerep.typeName ++ " but the expression being assigned to it has type " ++ e.typerep.typeName)] ; 
+
+  local attribute occursCheck :: [Decorated DclInfo];
+  occursCheck = getOccursDcl(attr.lookupAttribute.fullName, dl.typerep.typeName, top.env); -- TODO: abuse of typeName
+
+  -- TODO: nasty error check for multiple occurs dcls?
+
+  local attribute e1 :: [Decorated Message];
+  e1 = if null(occursCheck)
+       then [err(top.location, "Attribute '" ++ attr.lookupAttribute.fullName ++ "' does not decorate type '" ++ dl.typerep.typeName ++ "'.")]
+       else [];
+
+  top.typeErrors = er ++ e1 ++ e.typeErrors;
+}
+
+aspect production localValueDef
+top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   local attribute er :: [Decorated Message];
   er = if val.lookupValue.typerep.typeEquals(val.lookupValue.typerep, e.typerep).bValue
        then [] 
        else [err(top.location, "Value " ++ val.name ++ " has type " ++ val.lookupValue.typerep.unparse ++ " but the expression being assigned to it has type " ++ e.typerep.unparse)] ; 
 
-  local attribute e2 :: [Decorated Message];
-  e2 = if val.name == top.signature.outputElement.elementName
-       then [err(top.location, "Cannot assign to the lhs.")]
-       else [];
+  top.typeErrors = er ++ e.typeErrors;
+}
 
-  top.typeErrors = er ++ e2 ++ e.typeErrors;
+aspect production errorValueDef
+top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+{
+  top.typeErrors = [];
 }
 

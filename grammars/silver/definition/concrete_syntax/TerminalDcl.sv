@@ -25,25 +25,14 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
 
   top.moduleNames = [];
 
-  top.defs = addTypeDcl(fName, termTypeRep(fName, r.terminalRegExprSpec),
-	     addFullNameDcl(id.name, fName,
-	     addOccursDcl("lexeme", fName,
- 	     addOccursDcl("line", fName,
-	     addOccursDcl("column", fName,
-	     addOccursDcl("filename", fName,
-	     emptyDefs()))))));
-
-  local attribute er1 :: [Decorated Message];
-  er1 = if length(getFullNameDclOne(id.name, top.env)) > 1
-        then [err(top.location, "Name '" ++ id.name ++ "' is already bound.")]
-        else [];	
-
+  top.defs = addTermDcl(top.grammarName, id.location, fName, r.terminalRegExprSpec, emptyDefs());
+  
   local attribute er2 :: [Decorated Message];
-  er2 = if length(getTypeDclOne(fName, top.env)) > 1
+  er2 = if length(getTypeDcl(fName, top.env)) > 1
         then [err(top.location, "Type '" ++ fName ++ "' is already bound.")]
         else [];	
 
-  top.errors := t.errors ++ er1 ++ er2 ++ tm.errors;
+  top.errors := t.errors ++ er2 ++ tm.errors;
 
   top.parserDcls = [];
   top.nonTerminalDcls = [];

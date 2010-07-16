@@ -1,36 +1,37 @@
 grammar silver:translation:java:concrete_syntax:copper:env_parser;
 
-import silver:translation:java:concrete_syntax:copper;
-import silver:definition:env;
-import silver:definition:concrete_syntax;
 import silver:definition:env:parser;
 import silver:definition:concrete_syntax:env_parser;
 
+import silver:translation:java:concrete_syntax:copper hiding Disambiguation_kwd, Submits_t, Dominates_t, Action_kwd, Layout_kwd; -- TODO: hiding here is a hack of sorts...
+
+import silver:definition:env;
+import silver:definition:concrete_syntax;
+
+import silver:definition:core only grammarName, location;
+
 import silver:util;
 
+--------------------------------------------------------------------------------
+-- DclInfos
+
 terminal LexerClassTerm 'lexer_class' lexer classes {C_1};
+terminal ParseAttrTerm 'parse_attr' lexer classes {C_1};
 
-concrete production aEnvItemLexerClass
-top::aEnvItem ::= v::LexerClassTerm '(' n::Name ',' s::aNames ',' d::aNames ')'{
-  top.defs = addLexerClassDcl(n.lexeme, s.names, d.names, emptyDefs());
+concrete production aDclInfoLexerClass
+top::aDclInfo ::= 'lexer_class' '(' l::aLocation ',' fn::Name ',' s::aNames ',' d::aNames ')'
+{
+  top.defs = addLexerClassDcl(top.grammarName, l.location, fn.aname, s.names, d.names, emptyDefs());
 }
 
-concrete production aTerminalModifierSpecLexerClasses
-top::aTerminalModifierSpec ::= l::LexerClassTerm n::aNames {
-  top.terminalModifiers = [lexerClassesTerminalModifierSpec(n.names)];
+concrete production aDclInfoParseAttr
+top::aDclInfo ::= 'parse_attr' '(' l::aLocation ',' fn::Name ',' t::aTypeRep ')'
+{
+  top.defs = addParserAttrDcl(top.grammarName, l.location, fn.aname, t.typerep, emptyDefs());
 }
 
-terminal SubmitsTerm 'submits' lexer classes {C_1};
-concrete production aTerminalModifierSpecSubmits
-top::aTerminalModifierSpec ::= l::SubmitsTerm n::aNames {
-  top.terminalModifiers = [submitsToTerminalModifierSpec(n.names)];
-}
-
-terminal DominatesTerm 'dominates' lexer classes {C_1};
-concrete production aTerminalModifierSpecDominates
-top::aTerminalModifierSpec ::= l::DominatesTerm n::aNames {
-  top.terminalModifiers = [dominatesTerminalModifierSpec(n.names)];
-}
+--------------------------------------------------------------------------------
+-- RootSpec 
 
 attribute disambiguationGroupDcls occurs on aRootSpecParts, aRootSpecPart;
 attribute parserAttrDcls occurs on aRootSpecParts, aRootSpecPart;
@@ -61,7 +62,10 @@ top::aRootSpecPart ::= {
   top.parserAttrDcls = [];
 }
 
-terminal DisambiguationTerm /disambiguate/ lexer classes {C_1};
+--------------------------------------------------------------------------------
+-- RootSpecParts - new stuff
+
+terminal DisambiguationTerm 'disambiguate' lexer classes {C_1};
 terminal EscapedStringTerm /"([^\"\\]|\\.)*"/ lexer classes {C_1};
 
 function decodeEscapedStringTerm
@@ -71,7 +75,7 @@ String ::= s::String
 }
 
 concrete production aDisambiguationGroup
-top::aRootSpecPart ::= DisambiguationTerm '[' n::aNames ',' s::EscapedStringTerm ']'
+top::aRootSpecPart ::= 'disambiguate' '[' n::aNames ',' s::EscapedStringTerm ']'
 {
   top.disambiguationGroupDcls = [disambiguationGroupSpec(n.names, decodeEscapedStringTerm(s.lexeme))];
   
@@ -79,21 +83,43 @@ top::aRootSpecPart ::= DisambiguationTerm '[' n::aNames ',' s::EscapedStringTerm
 }
 
 concrete production aParserAttribute
-top::aRootSpecPart ::= ParserAttrTerm '[' n::Name ',' t::aTypeRep ',' s::EscapedStringTerm ']'
+top::aRootSpecPart ::= 'parse_attr' '[' n::Name ',' t::aTypeRep ',' s::EscapedStringTerm ']'
 {
-  top.parserAttrDcls = [parserAttrSpec(n.lexeme, t.typerep, decodeEscapedStringTerm(s.lexeme))];
+  top.parserAttrDcls = [parserAttrSpec(n.aname, t.typerep, decodeEscapedStringTerm(s.lexeme))];
   
   forwards to aRootSpecDefault();
 }
 
+--------------------------------------------------------------------------------
+-- Terminal Modifiers
+
+terminal SubmitsTerm 'submits' lexer classes {C_1};
+terminal DominatesTerm 'dominates' lexer classes {C_1};
 terminal ActionTerm 'action' lexer classes {C_1};
 terminal LayoutTerm 'layout' lexer classes {C_1};
+
+concrete production aTerminalModifierSpecLexerClasses
+top::aTerminalModifierSpec ::= 'lexer_class' n::aNames {
+  top.terminalModifiers = [lexerClassesTerminalModifierSpec(n.names)];
+}
+
+concrete production aTerminalModifierSpecSubmits
+top::aTerminalModifierSpec ::= 'submits' n::aNames {
+  top.terminalModifiers = [submitsToTerminalModifierSpec(n.names)];
+}
+
+concrete production aTerminalModifierSpecDominates
+top::aTerminalModifierSpec ::= 'dominates' n::aNames {
+  top.terminalModifiers = [dominatesTerminalModifierSpec(n.names)];
+}
 
 concrete production aTerminalModifierSpecAction
 top::aTerminalModifierSpec ::= 'action' s::EscapedStringTerm {
   top.terminalModifiers = [actionCodeTerminalModifierSpec(decodeEscapedStringTerm(s.lexeme))];
 }
 
+--------------------------------------------------------------------------------
+-- ProductionModifier
 
 concrete production aProductionModifierSpecAction
 top::aProductionModifierSpec ::= 'action' s::EscapedStringTerm {
@@ -105,9 +131,4 @@ top::aProductionModifierSpec ::= 'layout' n::aNames {
   top.productionModifiers = [layoutProductionModifierSpec(n.names)];
 }
 
-terminal ParserAttrTerm 'parserAttr' lexer classes {C_1};
-concrete production aEnvItemParserAttr
-top::aEnvItem ::= 'parserAttr' '(' n::Name ')'{
-  top.defs = addParserAttrDcl( n.lexeme, emptyDefs());
-}
 
