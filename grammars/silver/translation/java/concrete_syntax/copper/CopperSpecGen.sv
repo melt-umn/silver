@@ -122,7 +122,7 @@ String ::= specs::[Decorated TerminalSpec] grammar_name::String
 
 "  <term id=\"" ++ makeCopperName(head(specs).terminalName) ++ "\">\n" ++
 "    <code><![CDATA[\n" ++
-"RESULT = new common.Terminal(lexeme,virtualLocation.getLine(),virtualLocation.getColumn(),virtualLocation.getFileName());\n" ++
+"RESULT = new common.TerminalRecord(lexeme,virtualLocation.getFileName(),virtualLocation.getLine(),virtualLocation.getColumn());\n" ++
 	head(specs).actionCode ++ 
 "    ]]></code>\n" ++
 "    <classes>\n" ++
