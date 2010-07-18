@@ -139,7 +139,8 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.appReference = "";
 
   -- TODO: doing the wrong thing here for expediency!! BUG TODO FIX
-  top.translation = "((" ++ q.lookupAttribute.typerep.transType ++ ")" ++ e.translation ++ ".synthesized(\"" ++ q.name ++ "\"))";
+  top.translation = "((" ++ top.typerep.transType ++ ")" ++ e.translation ++ "." ++ q.name ++ ")";
+  --"((" ++ q.lookupAttribute.typerep.transType ++ ")" ++ e.translation ++ ".synthesized(\"" ++ q.name ++ "\"))";
 }
 
 aspect production decorateExprWith
