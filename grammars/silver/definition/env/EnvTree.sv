@@ -31,15 +31,15 @@ et::EnvTree ::=
 
 -- assumption: eis is a list of EnvItems with all the same itemName.
 function envTree
-Decorated EnvTree ::= eis::[Decorated EnvItem] l::Decorated EnvTree r::Decorated EnvTree
+Decorated EnvTree ::= iname::String eis::[Decorated DclInfo] l::Decorated EnvTree r::Decorated EnvTree
 {
-  return decorate i_envTree(eis, l, r) with {};
+  return decorate i_envTree(iname, eis, l, r) with {};
 }
 abstract production i_envTree
-et::EnvTree ::= eis::[Decorated EnvItem] l::Decorated EnvTree r::Decorated EnvTree
+et::EnvTree ::= iname::String eis::[Decorated DclInfo] l::Decorated EnvTree r::Decorated EnvTree
 {
-  et.dcls = mapGetDcls(eis);
-  et.itemName = head(eis).itemName;
+  et.dcls = eis;
+  et.itemName = iname;
   et.isEmpty = false; -- TODO: should this be different?
   et.leftTree = l;
   et.rightTree = r;
@@ -88,24 +88,31 @@ function explodeEnvItems
 function buildTreeFromCollected
 Decorated EnvTree ::= collected::[[Decorated EnvItem]]
 {
-  return  if null(collected)
+  return buildTreeFromCollectedHelp(collected, length(collected));
+}
+
+function buildTreeFromCollectedHelp
+Decorated EnvTree ::= collected::[[Decorated EnvItem]] upTo::Integer
+{
+  return  if upTo == 0
           then emptyEnvTree()
-          else envTree(head(right_list), ltree, rtree);
+          else if upTo == 1
+          then envTree(head(head(collected)).itemName, mapGetDcls(head(collected)), emptyEnvTree(), emptyEnvTree())
+          else envTree(head(head(right_list)).itemName, mapGetDcls(head(right_list)), ltree, rtree);
 
   local attribute ltree :: Decorated EnvTree;
-  ltree = buildTreeFromCollected(takeEnvItemLists(middle,collected));
+  ltree = buildTreeFromCollectedHelp(collected, middle);
 
   local attribute rtree :: Decorated EnvTree;
-  rtree = buildTreeFromCollected(tail(right_list));
+  rtree = buildTreeFromCollectedHelp(tail(right_list), upTo - middle - 1);
 
   -- this in fact includes the current as well as the right side.
   local attribute right_list :: [[Decorated EnvItem]];
   right_list = dropEnvItemLists(middle,collected);
  
   local attribute middle :: Integer;
-  middle = toInt(toFloat(length(collected)) / 2.0);
+  middle = toInt(toFloat(upTo) / 2.0);
 }
-
 
 -- This function takes a sorted list and collects equal-valued
 -- elements into sub-lists.
@@ -130,13 +137,6 @@ function collectAccum
          then collectAccum( head(eis) :: current_group , tail(eis) ) 
         
          else current_group :: collectAccum( [head(eis)], tail(eis) );
-}
-
-function takeEnvItemLists
-[[Decorated EnvItem]] ::= n::Integer l::[[Decorated EnvItem]]
-{
- return if n <= 0 then [ ]
-        else cons(head(l),takeEnvItemLists(n-1,tail(l)));
 }
 
 function dropEnvItemLists
