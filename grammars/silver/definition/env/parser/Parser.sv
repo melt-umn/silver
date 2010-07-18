@@ -21,7 +21,7 @@ terminal rp    ')';
 terminal RegExprDelim '/' lexer classes {C_0};
 
 terminal id /[\']([^\'\\]|[\\][\']|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\']/ lexer classes {C_0};
-terminal number /[0-9]+/ lexer classes {C_0};
+terminal number /\-?[0-9]+/ lexer classes {C_0};
 
 terminal DefaultTerm  'default' lexer classes {C_1};
 
