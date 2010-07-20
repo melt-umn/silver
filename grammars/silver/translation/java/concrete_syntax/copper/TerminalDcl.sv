@@ -7,13 +7,11 @@ import silver:definition:concrete_syntax;
 import silver:translation:java:core;
 --import silver:definition:regex; TODO nix this line?
 
-terminal Class_kwd 'class' lexer classes {KEYWORD};
 --terminal Prefix_kwd 'prefix' lexer classes {KEYWORD}; -- TODO: not currently used
-
-terminal Dominates_t 'dominates' lexer classes {KEYWORD};
-terminal Submits_t 'submits' lexer classes {KEYWORD};
-
-terminal Classes_kwd 'classes' lexer classes {KEYWORD};
+terminal Class_kwd   'class'     ; --lexer classes {KEYWORD};
+terminal Dominates_t 'dominates' ; --lexer classes {KEYWORD};
+terminal Submits_t   'submits'   ; --lexer classes {KEYWORD};
+terminal Classes_kwd 'classes'   ; --lexer classes {KEYWORD};
 
 -- Concrete Syntax for new Copper --
 concrete production terminalModifierDominates
