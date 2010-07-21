@@ -43,6 +43,7 @@ terminal Then_kwd		'then'		lexer classes {KEYWORD};
 terminal To_kwd			'to'		lexer classes {KEYWORD};
 terminal True_kwd		'true'		lexer classes {KEYWORD};
 terminal With_kwd		'with'		lexer classes {KEYWORD};
+terminal Global_kwd		'global'	lexer classes {KEYWORD};
 
 terminal Error_kwd		'error'		lexer classes {BUILTIN};
 terminal Length_kwd		'length'	lexer classes {BUILTIN};

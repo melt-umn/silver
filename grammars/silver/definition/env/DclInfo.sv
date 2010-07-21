@@ -135,8 +135,18 @@ top::DclInfo ::= sg::String sl::Decorated Location ns::Decorated NamedSignature
   top.typerep = funTypeRep(getTypesSignature(ns.inputElements), ns.outputElement.typerep);
   forwards to defaultDcl();
 }
--- NEW global
--- parser attributes
+abstract production globalValueDcl
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+{
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = fn;
+  top.unparse = "glob(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
+
+  top.typerep = ty;
+  forwards to defaultDcl();
+
+}
 
 -- -- interface types
 abstract production ntDcl
@@ -209,10 +219,8 @@ top::DclInfo ::= sg::String sl::Decorated Location ty::Decorated TypeRep
   top.typerep = ty;
   forwards to defaultDcl();
 }
--- col prod  (ordinary values, but will only appear inside the wrapper)
 
 -- -- interface other
--- lexer class
 abstract production occursDcl
 top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String
 {

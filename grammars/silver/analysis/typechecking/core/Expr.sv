@@ -45,6 +45,12 @@ top::Expr ::= q::Decorated QName
   top.typeErrors = [];
 }
 
+aspect production globalValueReference
+top::Expr ::= q::Decorated QName
+{
+  top.typeErrors = [];
+}
+
 aspect production productionApplicationDispatcher
 top::Expr ::= e::Decorated Expr es::Exprs
 {

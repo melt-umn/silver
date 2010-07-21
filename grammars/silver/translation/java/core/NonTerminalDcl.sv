@@ -9,7 +9,7 @@ top::AGDcl ::= id::Name
   
   top.setupInh := "";
   top.initProd := "";
-  top.initAspect := "";
+  top.initValues := "";
   top.postInit := "";
   top.javaClasses = [[className,
 		

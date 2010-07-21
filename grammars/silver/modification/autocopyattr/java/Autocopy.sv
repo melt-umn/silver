@@ -34,14 +34,15 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name '::' t::Type ';'
 		
   top.setupInh := "";
   top.initProd := "";
-  top.initAspect := "";
+  top.initValues := "";
   top.postInit := "";
 }
 
 aspect production attributionDcl
 top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
 {
-  top.initAspect <- 
+  -- TODO: like the other occurs, maybe this should be moved to setupInh?
+  top.initProd <- 
     case a.lookupAttribute.dcl of
       autocopyDcl(_,_,_,_) ->  "\t\t" ++ makeNTClassName(nt.lookupType.fullName) ++ ".decorators.add(" ++ makeDecoratorClassName(a.lookupAttribute.fullName) ++ ".singleton);\n"
     | _ -> ""

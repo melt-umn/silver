@@ -109,6 +109,12 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.disambiguationGroupDcls = [];
 }
 
+aspect production globalValueDclConcrete
+top::AGDcl ::= 'global' id::Name '=' e::Expr ';'
+{
+  top.disambiguationGroupDcls = [];
+}
+
 aspect production aspectFunctionDcl
 top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody
 {

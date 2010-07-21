@@ -44,7 +44,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
   top.javaClasses = [];
   top.setupInh := "";
   top.initProd := "";
-  top.initAspect := "";
+  top.initValues := "";
   top.postInit := "";
 }
 

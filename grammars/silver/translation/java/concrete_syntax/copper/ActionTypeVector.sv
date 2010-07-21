@@ -63,3 +63,8 @@ top::ProductionBody ::= stmts::ProductionStmts
 {
   stmts.actionCodeType = semanticBlockType();
 }
+aspect production globalValueDclConcrete
+top::AGDcl ::= 'global' id::Name '=' e::Expr ';'
+{
+  e.actionCodeType = semanticBlockType();
+}

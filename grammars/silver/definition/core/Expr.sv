@@ -140,6 +140,18 @@ top::Expr ::= q::Decorated QName
   top.typerep = q.lookupValue.typerep;
 }
 
+abstract production globalValueReference
+top::Expr ::= q::Decorated QName
+{
+  top.pp = q.pp; 
+  top.location = q.location;
+
+  top.errors := [];
+  top.warnings := [];
+
+  top.typerep = q.lookupValue.typerep;
+}
+
 concrete production concreteDecorateExpr
 top::Expr ::= q::NameTick
 {

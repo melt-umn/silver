@@ -4,7 +4,7 @@ import silver:definition:core;
 attribute javaClasses occurs on Root, AGDcls, AGDcl;
 attribute setupInh occurs on Root, AGDcls, AGDcl;
 attribute initProd occurs on Root, AGDcls, AGDcl;
-attribute initAspect occurs on Root, AGDcls, AGDcl;
+attribute initValues occurs on Root, AGDcls, AGDcl;
 attribute postInit occurs on Root, AGDcls, AGDcl;
 
 aspect production root
@@ -13,7 +13,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.javaClasses = ags.javaClasses;
   top.setupInh := ags.setupInh;
   top.initProd := ags.initProd;
-  top.initAspect := ags.initAspect;
+  top.initValues := ags.initValues;
   top.postInit := ags.postInit;
 }
 
@@ -23,7 +23,7 @@ top::AGDcl ::=
   top.javaClasses = [];
   top.setupInh := "";
   top.initProd := "";
-  top.initAspect := "";
+  top.initValues := "";
   top.postInit := "";
 }
 
@@ -33,7 +33,7 @@ top::AGDcls ::= ag::AGDcl
   top.javaClasses = ag.javaClasses;
   top.setupInh := ag.setupInh; 
   top.initProd := ag.initProd;
-  top.initAspect := ag.initAspect;
+  top.initValues := ag.initValues;
   top.postInit := ag.postInit;
 }
 
@@ -43,7 +43,7 @@ top::AGDcls ::= h::AGDcl t::AGDcls
   top.javaClasses = h.javaClasses ++ t.javaClasses;
   top.setupInh := h.setupInh ++ t.setupInh;
   top.initProd := h.initProd ++ t.initProd;
-  top.initAspect := h.initAspect ++ t.initAspect;
+  top.initValues := h.initValues ++ t.initValues;
   top.postInit := h.postInit ++ t.postInit;
 }
 
@@ -53,7 +53,7 @@ top::AGDcls ::= h::AGDcls t::AGDcls
   top.javaClasses = h.javaClasses ++ t.javaClasses;
   top.setupInh := h.setupInh ++ t.setupInh;
   top.initProd := h.initProd ++ t.initProd;
-  top.initAspect := h.initAspect ++ t.initAspect;
+  top.initValues := h.initValues ++ t.initValues;
   top.postInit := h.postInit ++ t.postInit;
 }
 
@@ -63,6 +63,6 @@ top::AGDcl ::= h::AGDcl t::AGDcl
   top.javaClasses = h.javaClasses ++ t.javaClasses;
   top.setupInh := h.setupInh ++ t.setupInh;
   top.initProd := h.initProd ++ t.initProd;
-  top.initAspect := h.initAspect ++ t.initAspect;
+  top.initValues := h.initValues ++ t.initValues;
   top.postInit := h.postInit ++ t.postInit;
 }

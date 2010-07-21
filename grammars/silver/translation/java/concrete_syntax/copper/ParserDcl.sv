@@ -17,7 +17,7 @@ top::AGDcl ::= p::ParserDcl
   top.javaClasses = p.javaClasses;
   top.setupInh := "";
   top.initProd := p.initProd;
-  top.initAspect := "";
+  top.initValues := "";
   top.postInit := "";
 }
 

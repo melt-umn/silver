@@ -7,7 +7,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type ';'
   top.javaClasses = [];
   top.setupInh := "";
   top.initProd := "";
-  top.initAspect := "";
+  top.initValues := "";
   top.postInit := "";
 }
 
@@ -18,7 +18,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type ';'
   top.javaClasses = [];
   top.setupInh := "";
   top.initProd := "";
-  top.initAspect := "";
+  top.initValues := "";
   top.postInit := "";
 }
 

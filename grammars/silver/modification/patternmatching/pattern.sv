@@ -70,7 +70,7 @@ top::Expr ::= 'case' e1::Expr 'of' ml::MRuleList 'end'
 	     	               terminal(LCurly_t, "{", $1.line, $1.column),
 		               terminal(RCurly_t, "}", $1.line, $1.column));
 
-  e1.expected = expected_default(); -- TODO: should be undecorated?
+  e1.expected = expected_default(); -- TODO: should be undecorated? Err... Should be decorated?
   forwards to ml.translation_tree ;
 }
 

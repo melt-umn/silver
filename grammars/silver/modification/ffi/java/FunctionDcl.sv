@@ -51,7 +51,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
 
   top.setupInh := forward.setupInh; -- hacky hacky!
   top.initProd := forward.initProd; -- hacky hacky!
-  top.initAspect := "";
+  top.initValues := "";
   top.postInit := "";
 
   top.javaClasses = [[className,

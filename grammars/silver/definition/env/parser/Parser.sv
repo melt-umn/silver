@@ -36,6 +36,7 @@ terminal SynthesizedTerm 'syn'  lexer classes {C_1};
 terminal OccursTerm      '@'    lexer classes {C_1};
 terminal ProdAttrTerm    'p@'   lexer classes {C_1};
 terminal ForwardTerm     'fwd'  lexer classes {C_1};
+terminal GlobTerm     'glob' lexer classes {C_1};
 
 --terminal NameTerm 'name' lexer classes {C_1};
 
@@ -336,6 +337,12 @@ top::aDclInfo ::= 'fwd' '(' l::aLocation ',' t::aTypeRep ')'
 concrete production aDclInfoOccurs
 top::aDclInfo ::= '@' '(' l::aLocation ',' fnnt::Name ',' fnat::Name ')'{
   top.defs = addOccursDcl( top.grammarName, l.location, fnnt.aname, fnat.aname, emptyDefs());
+}
+
+concrete production aDclInfoGlobalValue
+top::aDclInfo ::= 'glob' '(' l::aLocation ',' fn::Name ',' t::aTypeRep ')'
+{
+  top.defs = addGlobalValueDcl(top.grammarName, l.location, fn.aname, t.typerep, emptyDefs());
 }
 
 --The TypeReps

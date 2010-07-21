@@ -32,7 +32,7 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
   top.javaClasses = [];
   top.setupInh := "";
   top.initProd := "";
-  top.initAspect := "";
+  top.initValues := "";
   top.postInit := "";
 
   acode.env = newScopeEnv(appendDefs(acode.defs,terms.defs), top.env); -- terminal attrs?

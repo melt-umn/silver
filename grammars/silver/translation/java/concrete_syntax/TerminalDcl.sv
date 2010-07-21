@@ -9,7 +9,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
   top.javaClasses = [];
   top.setupInh := "";
   top.initProd := "";
-  top.initAspect := "";
+  top.initValues := "";
   top.postInit := "";
 }
 
