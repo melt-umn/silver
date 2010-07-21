@@ -14,7 +14,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody{
 
   top.setupInh := body.setupInh;
   top.initProd := "\t\t//FUNCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
-  top.initAspect := "";
+  top.initValues := "";
   top.postInit := "";
 
   top.javaClasses = [[className,

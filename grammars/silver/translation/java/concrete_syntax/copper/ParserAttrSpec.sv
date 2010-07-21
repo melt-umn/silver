@@ -104,6 +104,12 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.parserAttrDcls = [];
 }
 
+aspect production globalValueDclConcrete
+top::AGDcl ::= 'global' id::Name '=' e::Expr ';'
+{
+  top.parserAttrDcls = [];
+}
+
 aspect production aspectFunctionDcl
 top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody
 {

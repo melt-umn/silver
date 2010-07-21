@@ -82,7 +82,13 @@ top::DclInfo ::= sg::String sl::Decorated Location ns::Decorated NamedSignature
   top.defDispatcher = errorValueDef;
   top.defLHSDispatcher = errorDefLHS;
 }
-
+aspect production globalValueDcl
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+{
+  top.refDispatcher = globalValueReference;
+  top.defDispatcher = errorValueDef;
+  top.defLHSDispatcher = errorDefLHS;
+}
 -- -- interface types
 aspect production ntDcl
 top::DclInfo ::= sg::String sl::Decorated Location fn::String

@@ -248,7 +248,6 @@ String ::= r::Decorated RootSpec extras::[String]{
 
 makeOthers(r.moduleNames ++ extras, "init") ++ "\n" ++
 
-"\t\t" ++ className ++ ".initAspectAttributeDefinitions();\n" ++
 "\t\t" ++ className ++ ".initProductionAttributeDefinitions();\n" ++
 "\t}\n\n" ++
 
@@ -267,9 +266,9 @@ r.setupInh ++
 r.initProd ++
 "\t}\n\n" ++
 
-"\tprivate static void initAspectAttributeDefinitions(){\n" ++
-r.initAspect ++
-"\t}\n" ++
+"\tpublic static final common.DecoratedNode context = common.TopNode.singleton;\n" ++
+r.initValues ++
+
 "}\n";
 
 }

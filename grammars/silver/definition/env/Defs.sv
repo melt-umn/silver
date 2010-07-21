@@ -167,6 +167,11 @@ Defs ::= sg::String sl::Decorated Location ns::Decorated NamedSignature defs::De
 {
   return consValueDef(defaultEnvItem(decorate funDcl(sg,sl,ns) with {}), defs);
 }
+function addGlobalValueDcl
+Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
+{
+  return consValueDef(defaultEnvItem(decorate globalValueDcl(sg,sl,fn,ty) with {}), defs);
+}
 function addNtDcl
 Defs ::= sg::String sl::Decorated Location fn::String defs::Defs
 {

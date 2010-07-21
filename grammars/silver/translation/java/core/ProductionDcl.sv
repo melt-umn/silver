@@ -17,7 +17,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   top.setupInh := body.setupInh;
   top.initProd := "\t\t//PRODUCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
-  top.initAspect := "";
+  top.initValues := "";
   top.postInit := "\t\tcommon.Decorator.applyDecorators(" ++ fnnt ++ ".decorators, " ++ className ++ ".class);\n";
 
   local attribute fnnt :: String;

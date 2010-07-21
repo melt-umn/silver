@@ -92,6 +92,15 @@ top::Expr ::= q::Decorated QName
     else "context.forward()";
 }
 
+aspect production globalValueReference
+top::Expr ::= q::Decorated QName
+{
+  top.isAppReference = false;
+  top.appReference = "";
+  
+  top.translation = makeName(q.lookupValue.dcl.sourceGrammar) ++ ".Init." ++ fullNameToShort(q.lookupValue.fullName);
+}
+
 aspect production productionApplicationDispatcher
 top::Expr ::= e::Decorated Expr es::Exprs
 {

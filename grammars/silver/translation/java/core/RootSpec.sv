@@ -6,14 +6,14 @@ import silver:definition:env;
 synthesized attribute javaClasses :: [[String]];
 synthesized attribute setupInh :: String with ++;
 synthesized attribute initProd :: String with ++;
-synthesized attribute initAspect :: String with ++;
+synthesized attribute initValues :: String with ++;
 synthesized attribute postInit :: String with ++;
 synthesized attribute translation :: String;
 
 attribute javaClasses occurs on RootSpec;
 attribute setupInh occurs on RootSpec;
 attribute initProd occurs on RootSpec;
-attribute initAspect occurs on RootSpec;
+attribute initValues occurs on RootSpec;
 attribute postInit occurs on RootSpec;
 
 aspect production i_emptyRootSpec
@@ -22,7 +22,7 @@ top::RootSpec ::=
   top.javaClasses = [];
   top.setupInh := "";
   top.initProd := "";
-  top.initAspect := "";
+  top.initValues := "";
   top.postInit := "";
 }
 
@@ -32,7 +32,7 @@ top::RootSpec ::= c1::Decorated Root
   top.javaClasses = c1.javaClasses;
   top.setupInh := c1.setupInh;
   top.initProd := c1.initProd;
-  top.initAspect := c1.initAspect;
+  top.initValues := c1.initValues;
   top.postInit := c1.postInit;
 }
 
@@ -42,6 +42,6 @@ top::RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
   top.javaClasses = c1.javaClasses ++ c2.javaClasses;
   top.setupInh := c1.setupInh ++ c2.setupInh;  
   top.initProd := c1.initProd ++ c2.initProd;  
-  top.initAspect := c1.initAspect ++ c2.initAspect;
+  top.initValues := c1.initValues ++ c2.initValues;
   top.postInit := c1.postInit ++ c2.postInit;
 }
