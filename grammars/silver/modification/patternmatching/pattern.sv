@@ -23,16 +23,16 @@ synthesized attribute cond_tree :: Expr ;
 synthesized attribute then_tree :: Expr ;
 synthesized attribute letAssigns_tree :: [ AssignExpr ] ;
 
-nonterminal MRuleList with pp, grammarName, env, typerep, 
+nonterminal MRuleList with pp, grammarName, env, typerep, expected,
 			    errors, typerep_down, typeErrors, location,
 			    translation_tree, base_tree, file, case_expr_type ;
-nonterminal MatchRule with pp, grammarName, env, typerep, 
+nonterminal MatchRule with pp, grammarName, env, typerep, expected,
                             errors, typerep_down, typeErrors, location,
 			    cond_tree, then_tree, base_tree, file, case_expr_type ;
 nonterminal Pattern with pp, grammarName, env, location, errors, defs,
 			    typerep_down, typeErrors, cond_tree,
                             letAssigns_tree, base_tree, file, case_expr_type ;
-nonterminal PatternList with pp, grammarName, env, errors, defs, 
+nonterminal PatternList with pp, grammarName, env, errors, defs,
 			    typereps_down, typeErrors, location,
 			    cond_tree, letAssigns_tree, base_tree, file, case_expr_type ;
 
@@ -70,7 +70,7 @@ top::Expr ::= 'case' e1::Expr 'of' ml::MRuleList 'end'
 	     	               terminal(LCurly_t, "{", $1.line, $1.column),
 		               terminal(RCurly_t, "}", $1.line, $1.column));
 
-  e1.expected = expected_default(); -- TODO: should be undecorated? Err... Should be decorated?
+  e1.expected = expected_decorated(); -- Since we'd just decorate it if it wasn't...
   forwards to ml.translation_tree ;
 }
 
@@ -144,7 +144,7 @@ mr::MatchRule ::= pt::Pattern '->' e::Expr
   pt.env = newEnv;
 
   -- type checking
-  e.expected = expected_default(); -- TODO: why is this here?
+  -- e.expected is inherited for the whole pattern matching syntax
   mr.typerep = e.typerep ;
   pt.typerep_down = mr.typerep_down ;
 
