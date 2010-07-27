@@ -655,7 +655,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
-  top.typerep = stringTypeRep();
+  top.typerep = topTypeRep();
 }
 
 abstract production exprsEmpty
