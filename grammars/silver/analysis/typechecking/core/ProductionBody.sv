@@ -155,7 +155,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 
   local attribute e1 :: [Decorated Message];
   e1 = if null(occursCheck)
-       then [err(top.location, "Attribute '" ++ attr.lookupAttribute.fullName ++ "' does not decorate type '" ++ dl.typerep.typeName ++ "'.")]
+       then [err(top.location, "Attribute '" ++ attr.name ++ "' does not decorate type '" ++ dl.typerep.typeName ++ "'.")]
        else [];
 
   top.typeErrors = er ++ e1 ++ e.typeErrors;
@@ -176,7 +176,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 
   local attribute e1 :: [Decorated Message];
   e1 = if null(occursCheck)
-       then [err(top.location, "Attribute '" ++ attr.lookupAttribute.fullName ++ "' does not decorate type '" ++ dl.typerep.typeName ++ "'.")]
+       then [err(top.location, "Attribute '" ++ attr.name ++ "' does not decorate type '" ++ dl.typerep.typeName ++ "'.")]
        else [];
 
   top.typeErrors = er ++ e1 ++ e.typeErrors;
