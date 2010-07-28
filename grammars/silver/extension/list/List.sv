@@ -34,6 +34,8 @@ top::Expr ::= '[' ']'
   top.typerep = tr;
   forwards to emptyProductionApp(baseExpr(qNameId(nameId(terminal (Id_t, "nil_AnyTypeList")))), '(',')');
   -- TODO: just forward to the below? or vice versa?  or get rid of the below altogether?
+
+  top.errors <- if tr.isList then [] else [err(top.location, "Unable to infer the type of [], as the expected type is " ++ tr.unparse)];
 }
 
 
