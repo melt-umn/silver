@@ -240,6 +240,8 @@ top::Expr ::= e::Expr '.' q::QName
   
   e.expected = expected_decorated();
   
+  top.errors <- e.errors;
+  
   forwards to e.typerep.accessDispatcher(e, $2, q);
 }
 
