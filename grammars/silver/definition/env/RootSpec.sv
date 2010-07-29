@@ -51,7 +51,7 @@ top::RootSpecUnparse ::= r::Decorated RootSpec
 function foldCB
 String ::= inp::[[String]]
 {
-  return if null(inp) then "" else folds(",", quoteStrings(head(inp))) ++ if null(tail(inp)) then "" else foldCB(tail(inp));
+  return if null(inp) then "" else folds(",", quoteStrings(head(inp))) ++ if null(tail(inp)) then "" else "," ++ foldCB(tail(inp));
 }
 
 function quoteStrings
