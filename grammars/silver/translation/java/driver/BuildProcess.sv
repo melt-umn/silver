@@ -145,7 +145,7 @@ top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec] silverh
 "  <property name='src' location='${jg}/src'/>\n\n" ++
 
 "  <path id='lib.classpath'>\n" ++
-"    <fileset dir='${sh}' includes='SilverRuntime.jar CopperRuntime.jar CopperAnt.jar CopperCompiler.jar' />\n" ++ -- TODO: this is a bit busted
+"    <fileset dir='${sh}' includes='SilverRuntime.jar CopperRuntime.jar CopperCompiler.jar' />\n" ++ -- TODO: this is a bit busted
 "  </path>\n\n" ++
 
 "  <path id='src.classpath'>\n" ++
