@@ -27,12 +27,12 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
 
   top.defs = addTermDcl(top.grammarName, id.location, fName, r.terminalRegExprSpec, emptyDefs());
   
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getTypeDcl(fName, top.env)) > 1
+  top.errors <-
+        if length(getTypeDcl(fName, top.env)) > 1
         then [err(top.location, "Type '" ++ fName ++ "' is already bound.")]
         else [];	
 
-  top.errors := t.errors ++ er2 ++ tm.errors;
+  top.errors := t.errors ++ tm.errors;
 
   top.parserDcls = [];
   top.nonTerminalDcls = [];

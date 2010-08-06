@@ -56,7 +56,7 @@ top::Expr ::= 'case' e1::Expr 'of' ml::MRuleList 'end'
 
   ml.case_expr_type = e1.typerep ;
 
-  top.typeErrors = if e1.typerep.isDecorated || e1.typerep.isNonTerminal
+  top.typeErrors := if e1.typerep.isDecorated || e1.typerep.isNonTerminal
 		 then e1.typeErrors ++ ml.typeErrors 
 		 else [err(top.location, "Only nonterminal typed expressions can be pattern matched.")]
 			++ e1.typeErrors ++ ml.typeErrors ;
@@ -87,7 +87,7 @@ ml::MRuleList ::= m::MatchRule
 
   m.case_expr_type = ml.case_expr_type ;
 
-  ml.typeErrors = m.typeErrors ;
+  ml.typeErrors := m.typeErrors ;
 
   -- translation
   m.base_tree = ml.base_tree ;
@@ -110,12 +110,12 @@ ml::MRuleList ::= h::MatchRule '|' t::MRuleList
   h.case_expr_type = ml.case_expr_type ;
   t.case_expr_type = ml.case_expr_type ;
 
-  local attribute tr :: [Decorated Message] ;
-  tr = if h.typerep.typeEquals(h.typerep, t.typerep).bValue
+  ml.typeErrors <-
+       if h.typerep.typeEquals(h.typerep, t.typerep).bValue
        then [] 
        else [err(h.location, "Rules of CASE expression do not have the same type.")] ;  -- TODO: print the types!
  
-  ml.typeErrors = h.typeErrors ++ t.typeErrors ++ tr ;
+  ml.typeErrors := h.typeErrors ++ t.typeErrors;
 
   -- translation
   h.base_tree = ml.base_tree ;
@@ -150,7 +150,7 @@ mr::MatchRule ::= pt::Pattern '->' e::Expr
 
   pt.case_expr_type = mr.case_expr_type ;
 
-  mr.typeErrors = pt.typeErrors ++ e.typeErrors ;
+  mr.typeErrors := pt.typeErrors ++ e.typeErrors ;
 
   -- translation
   mr.cond_tree = pt.cond_tree ;
@@ -181,14 +181,14 @@ ps::PatternList ::= p::Pattern
   p.case_expr_type = ps.case_expr_type ;
   
 
-  local attribute tr :: [Decorated Message] ;
-  tr = if null(ps.typereps_down)
+  p.typeErrors <-
+       if null(ps.typereps_down)
        then [err(ps.location, "Production call in pattern has too many arguments.")] 
        else if length(ps.typereps_down) > 1
 	    then [err(ps.location, "Production call in pattern has too few arguments.")]
 	    else [];
 
-  ps.typeErrors = tr ++ p.typeErrors ;
+  ps.typeErrors := p.typeErrors ;
 
   -- The type of the element in the child list is the decorated version of the rhs children.
   local attribute cType :: Decorated TypeRep;
@@ -222,12 +222,12 @@ ps::PatternList ::= p::Pattern ',' ps1::PatternList
   ps1.case_expr_type = ps.case_expr_type ;
 
 
-  local attribute tr :: [Decorated Message];
-  tr = if null(ps.typereps_down)
+  ps.typeErrors <-
+       if null(ps.typereps_down)
        then [err(ps.location, "production call in pattern has too many arguments.")]
        else [];
 
-  ps.typeErrors = tr ++ p.typeErrors ++ ps1.typeErrors ;
+  ps.typeErrors := p.typeErrors ++ ps1.typeErrors ;
 
   local attribute cType :: Decorated TypeRep;
   cType = if head(ps.typereps_down).isDecorated || !head(ps.typereps_down).isNonTerminal 
@@ -256,8 +256,8 @@ ps::PatternList ::=
   ps.location = loc("PatternList_nill", -1, -1) ;
 
   -- type checking
-  ps.typeErrors = if null(ps.typereps_down) then []
-                  else [err(ps.location, "Expecting more arguments for production call pattern.")] ;
+  ps.typeErrors := if null(ps.typereps_down) then []
+                   else [err(ps.location, "Expecting more arguments for production call pattern.")] ;
 
   -- translation
   ps.cond_tree = trueConst(terminal(True_kwd, "true")) ;
@@ -273,8 +273,8 @@ p::Pattern ::= prod::QName '(' ps::PatternList ')'
   p.defs = ps.defs ;
   p.errors := prod.lookupValue.errors ++ ps.errors ; 
 
-  local attribute er2 :: [Decorated Message] ;
-  er2 = if prod.lookupValue.typerep.isProduction 
+  p.typeErrors <-
+        if prod.lookupValue.typerep.isProduction 
         then (if prod.lookupValue.typerep.outputType.typeEquals(prod.lookupValue.typerep.outputType, p.typerep_down).bValue
               then  []
               else [err(prod.location, "Production '" ++ prod.name ++ "' has incorrect output type.\n" ++ 
@@ -289,7 +289,7 @@ p::Pattern ::= prod::QName '(' ps::PatternList ')'
   
   ps.case_expr_type = p.case_expr_type ;
 
-  p.typeErrors = ps.typeErrors ++ er2 ;
+  p.typeErrors := ps.typeErrors ;
 
   -- translation
   ps.base_tree = attributeAccess(p.base_tree, 
@@ -316,7 +316,7 @@ p::Pattern ::= num::Int_t
 
   p.defs = emptyDefs();
 
-  p.typeErrors = if p.typerep_down.typeEquals(p.typerep_down, integerTypeRep()).bValue
+  p.typeErrors := if p.typerep_down.typeEquals(p.typerep_down, integerTypeRep()).bValue
                  then []
                  else [err(p.location, "Expecting '" ++ p.typerep_down.typeName ++ "' type.")] ;
 
@@ -334,7 +334,7 @@ p::Pattern ::= str::String_t
 
   p.defs = emptyDefs();
 
-  p.typeErrors = if p.typerep_down.typeEquals(p.typerep_down, stringTypeRep()).bValue
+  p.typeErrors := if p.typerep_down.typeEquals(p.typerep_down, stringTypeRep()).bValue
                  then []
                  else [err(p.location, "Expecting '" ++ p.typerep_down.typeName ++ "' type.")] ;
 
@@ -352,7 +352,7 @@ p::Pattern ::= 'true'
 
   p.defs = emptyDefs() ;
 
-  p.typeErrors = if p.typerep_down.typeEquals(p.typerep_down, booleanTypeRep()).bValue
+  p.typeErrors := if p.typerep_down.typeEquals(p.typerep_down, booleanTypeRep()).bValue
                  then []
                  else [err(p.location, "Expecting '" ++ p.typerep_down.typeName ++ "' type.")] ;
 
@@ -370,7 +370,7 @@ p::Pattern ::= 'false'
 
   p.defs = emptyDefs();
 
-  p.typeErrors = if p.typerep_down.typeEquals(p.typerep_down, booleanTypeRep()).bValue
+  p.typeErrors := if p.typerep_down.typeEquals(p.typerep_down, booleanTypeRep()).bValue
                  then []
                  else [err(p.location, "Expecting '" ++ p.typerep_down.typeName ++ "' type.")] ;
 
@@ -388,7 +388,7 @@ p::Pattern ::= '_'
 
   p.defs = emptyDefs();
 
-  p.typeErrors = [];
+  p.typeErrors := [];
 
   -- translation
   p.cond_tree = trueConst(terminal(True_kwd, "true")) ;
@@ -400,7 +400,6 @@ p::Pattern ::= v::Name
 {
   p.pp = v.name ;
   p.location = v.location;
-  p.errors := er ;
 
   local attribute var_type :: Decorated TypeRep ;
   var_type =  if   p.case_expr_type.isNonTerminal
@@ -412,13 +411,13 @@ p::Pattern ::= v::Name
               
   p.defs = addLocalDcl(p.grammarName, v.location, v.name, var_type, emptyDefs());
 
-  local attribute er :: [Decorated Message] ;
-  er = if length(getValueDclAll(v.name, p.env)) > 1
+  p.errors :=
+        if length(getValueDclAll(v.name, p.env)) > 1
         then [err(p.location, "Pattern variable '" ++ v.name ++ "' is already bound in this scope.")] 
         else [];
 
 
-  p.typeErrors = [];
+  p.typeErrors := [];
 
   local attribute btree :: Expr ; 
   btree = if p.case_expr_type.isNonTerminal && p.typerep_down.isNonTerminal

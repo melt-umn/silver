@@ -59,7 +59,7 @@ top::Expr ::= '[' es::Exprs ']'
   top.pp = "[ " ++ es.pp ++ " ]" ;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.typeErrors = es.typeErrors ++
+  top.typeErrors := es.typeErrors ++
 	         if checkListErrors(head(es.exprs).typerep, getTypesExprs(es.exprs))
 	         then []
 		 else [err(top.location, "Elements of a list must all be the same type.")];
@@ -142,16 +142,15 @@ top::Expr ::= 'cons' '(' h::Expr ',' t::Expr ')'
  
   top.typerep = listTypeRep(h.typerep);
 
-  local attribute e1 :: [Decorated Message];
-  e1 = if t.typerep.isList then []
-       else [err(top.location, "Second argument to cons must be a List.")];
+  top.typeErrors <- if t.typerep.isList then []
+                    else [err(top.location, "Second argument to cons must be a List.")];
 
-  local attribute e2 :: [Decorated Message];
-  e2 = if t.typerep.isList && !t.typerep.isEmpty && !(h.typerep.typeEquals(h.typerep, t.typerep.listComponent).bValue)
+  top.typeErrors <-
+       if t.typerep.isList && !t.typerep.isEmpty && !(h.typerep.typeEquals(h.typerep, t.typerep.listComponent).bValue)
        then [err(top.location, "First argument to cons must be of type: " ++ t.typerep.listComponent.typeName ++ ".")]
        else [];
 
-  top.typeErrors = h.typeErrors ++ t.typeErrors ++ e1 ++ e2;
+  top.typeErrors := h.typeErrors ++ t.typeErrors;
 
   local attribute expectedType :: Decorated TypeRep;
   expectedType = case top.expected of
@@ -190,16 +189,16 @@ top::Expr ::= l::Expr r::Expr
 
   top.typerep = if l.typerep.isEmpty then r.typerep else l.typerep;
 
-  local attribute e1 :: [Decorated Message];
-  e1 = if l.typerep.isList then []
+  top.typeErrors <-
+       if l.typerep.isList then []
        else [err(top.location, "First argument to append must be a List.")];
 
-  local attribute e2 :: [Decorated Message];
-  e2 = if r.typerep.isList then []
+  top.typeErrors <-
+       if r.typerep.isList then []
        else [err(top.location, "Second argument to append must be a List.")];
 
-  local attribute e3 :: [Decorated Message];
-  e3 = if    l.typerep.isList 
+  top.typeErrors <-
+       if    l.typerep.isList 
 	  && !l.typerep.isEmpty 
 	  && r.typerep.isList 
 	  && !r.typerep.isEmpty 
@@ -207,7 +206,7 @@ top::Expr ::= l::Expr r::Expr
        then [err(top.location, "List types differ in application of append.")]
        else [];
 
-  top.typeErrors = l.typeErrors ++ r.typeErrors ++ e1 ++ e2 ++ e3;
+  top.typeErrors := l.typeErrors ++ r.typeErrors;
 
   local attribute expectedType :: Decorated TypeRep;
   expectedType = case top.expected of
@@ -240,7 +239,7 @@ top::Expr ::= e::Expr
   top.typerep = integerTypeRep();
  
   top.errors := e.errors;
-  top.typeErrors = e.typeErrors;
+  top.typeErrors := e.typeErrors;
 
   forwards to attributeAccess(e, '.', qNameId(nameId(terminal(Id_t, "length_AnyTypeList"))));
 }
@@ -256,11 +255,11 @@ top::Expr ::= 'null' '(' l::Expr ')'
 
   top.location = loc(top.file, $1.line, $1.column);
 
-  local attribute e1 :: [Decorated Message];
-  e1 = if l.typerep.isList then []
+  top.typeErrors <-
+       if l.typerep.isList then []
        else [err(top.location, "Argument to null must be a List.")];
 
-  top.typeErrors = l.typeErrors ++ e1;
+  top.typeErrors := l.typeErrors;
 
   forwards to attributeAccess (l, '.', qNameId(nameId(terminal(Id_t, "empty_AnyTypeList"))));
 }
@@ -277,11 +276,11 @@ top::Expr ::= 'head' '(' l::Expr ')'
 
   top.pp = "head(" ++ l.pp ++ ")" ;
 
-  local attribute e1 :: [Decorated Message];
-  e1 = if l.typerep.isList then []
+  top.typeErrors <-
+       if l.typerep.isList then []
        else [err(top.location, "Argument to head must be a List.")];
 
-  top.typeErrors = l.typeErrors ++ e1;
+  top.typeErrors := l.typeErrors;
 
   local attribute fn :: Expr;
   fn = cast_t(attributeAccess(l, '.', qNameId(nameId(terminal(Id_t, "head_AnyTypeList")))), l.typerep.listComponent);
@@ -301,11 +300,11 @@ top::Expr ::= 'tail' '(' l::Expr ')'
 
   top.location = loc(top.file, $1.line, $1.column);
 
-  local attribute e1 :: [Decorated Message];
-  e1 = if l.typerep.isList then []
+  top.typeErrors <-
+       if l.typerep.isList then []
        else [err(top.location, "Argument to tail must be a List.")];
 
-  top.typeErrors = l.typeErrors ++ e1;
+  top.typeErrors := l.typeErrors;
   
   forwards to attributeAccess(l, '.', qNameId(nameId(terminal(Id_t, "tail_AnyTypeList"))));
 }

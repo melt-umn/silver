@@ -36,7 +36,7 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
                ++ e.errors;
 
   -- TODO: figure out wtf is going on with type here! (needs to be a terminal, plus one of the ones in the disgroup)
-  top.typeErrors = [];
+  top.typeErrors := [];
 
   e.expected = expected_default();
 }
@@ -57,7 +57,7 @@ top::ProductionStmt ::= 'print' e::Expr ';'
                else [])
                ++ e.errors;
 
-  top.typeErrors = if e.typerep.typeName == "String"
+  top.typeErrors := if e.typerep.typeName == "String"
 		   then []
 		   else [err(top.location, "Parameter to 'print' must be of type String.")];
 

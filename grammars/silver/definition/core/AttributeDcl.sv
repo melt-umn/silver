@@ -14,12 +14,12 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type ';'
 
   top.defs = addInhDcl(top.grammarName, a.location, fName, te.typerep, emptyDefs());
   
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getAttrDcl(fName, top.env)) > 1
+  top.errors <-
+        if length(getAttrDcl(fName, top.env)) > 1
         then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
         else [];	
 
-  top.errors := er2 ++ te.errors;
+  top.errors := te.errors;
   top.warnings := [];
 }
 
@@ -36,12 +36,12 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type ';'
 
   top.defs = addSynDcl(top.grammarName, a.location, fName, te.typerep, emptyDefs());
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getAttrDcl(fName, top.env)) > 1
+  top.errors <-
+        if length(getAttrDcl(fName, top.env)) > 1
         then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
         else [];	
 
-  top.errors := er2 ++ te.errors;
+  top.errors := te.errors;
   top.warnings := [];
 }
 

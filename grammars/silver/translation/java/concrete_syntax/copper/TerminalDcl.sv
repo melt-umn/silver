@@ -22,7 +22,7 @@ top::TerminalModifier ::= 'dominates' '{' terms::TermPrecList '}'
   top.terminalModifiers = [dominatesTerminalModifierSpec(terms.precTermList)];
 
   top.errors := terms.errors;
-  top.typeErrors = terms.typeErrors;
+  top.typeErrors := terms.typeErrors;
 
   forwards to terminalModifierDefault();
 }
@@ -35,7 +35,7 @@ top::TerminalModifier ::= 'submits' 'to' '{' terms::TermPrecList  '}'
   top.terminalModifiers = [submitsToTerminalModifierSpec(terms.precTermList)];
 
   top.errors := terms.errors;
-  top.typeErrors = terms.typeErrors;
+  top.typeErrors := terms.typeErrors;
 
   forwards to terminalModifierDefault();
 }
@@ -85,7 +85,7 @@ top::TermPrecList ::= h::QName t::TermPrecList
                 then [err(h.location, "Ambiguous reference to terminal or lexer class '" ++ h.name ++ "'. Possibilities are:\n" ++ printPossibilities(h.lookupType.dcls ++ h.lookupLexerClass.dcls))]
                 else [];
 
-  top.typeErrors = t.typeErrors;
+  top.typeErrors := t.typeErrors;
   
 }
 
@@ -97,7 +97,7 @@ top::TermPrecList ::=
   top.pp = "";
   top.location = loc("termPrecListNull", -1, -1);
   top.errors := [];
-  top.typeErrors = [];
+  top.typeErrors := [];
 }
 
 
@@ -205,7 +205,7 @@ top::Expr ::= q::Decorated QName
                     if q.name == "filename" then "new common.StringCatter(virtualLocation.getFileName())" else
                     error("unknown actionTerminalReference " ++ q.name); -- should never be called, but here for safety
 
-  top.typeErrors = [];
+  top.typeErrors := [];
 }
 
 abstract production termAttrValueValueDef

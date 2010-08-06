@@ -133,12 +133,12 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 
   top.defs = addLocalDcl(top.grammarName, a.location, fName, te.typerep, emptyDefs());
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclAll(fName, top.env)) > 1
+  top.errors <-
+        if length(getValueDclAll(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
-  top.errors := er2 ++ te.errors;
+  top.errors := te.errors;
   top.warnings := [];
 }
 
@@ -157,12 +157,12 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
 
   top.defs = emptyDefs(); -- addLocalDcl(top.grammarName, a.location, fName, te.typerep, emptyDefs());
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclAll(fName, top.env)) > 1
+  top.errors <-
+        if length(getValueDclAll(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
-  top.errors := er2 ++ te.errors;
+  top.errors := te.errors;
   top.warnings := [];
 }
 

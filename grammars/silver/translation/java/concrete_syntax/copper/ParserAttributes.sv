@@ -22,13 +22,12 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
 
   top.defs = addParserAttrDcl(top.grammarName, a.location, fName, te.typerep, emptyDefs());
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclAll(fName, top.env)) > 1
-       then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
-       else [];
+  top.errors <- if length(getValueDclAll(fName, top.env)) > 1
+                then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
+                else [];
 
-  top.errors := er2 ++ te.errors ++ acode.errors;
-  top.typeErrors = acode.typeErrors;
+  top.errors := te.errors ++ acode.errors;
+  top.typeErrors := acode.typeErrors;
   
   top.parserDcls = [];
   top.nonTerminalDcls = [];
@@ -66,7 +65,7 @@ top::Expr ::= q::Decorated QName
   top.appReference = "";
   top.translation = makeCopperName(q.lookupValue.fullName);
 
-  top.typeErrors = [];
+  top.typeErrors := [];
 }
 
 abstract production parserAttributeValueDef

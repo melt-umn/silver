@@ -15,11 +15,11 @@ top::AGDcl ::= 'global' id::Name '=' e::Expr ';'
 
   top.defs = addGlobalValueDcl(top.grammarName, id.location, fName, e.typerep, emptyDefs());
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclAll(fName, top.env)) > 1
+  top.errors <-
+        if length(getValueDclAll(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
-  top.errors := er2 ++ e.errors;
+  top.errors := e.errors;
   top.warnings := [];
 }

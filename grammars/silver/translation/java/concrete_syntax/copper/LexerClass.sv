@@ -54,12 +54,11 @@ top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
   top.defs = addLexerClassDcl(top.grammarName, id.location, fName, subs.precTermList, doms.precTermList,
              emptyDefs());
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getLexerClassDcl(fName, top.env)) > 1
-       then [err(top.location, "Lexer class '" ++ fName ++ "' is already bound.")]
-       else [];	
+  top.errors <- if length(getLexerClassDcl(fName, top.env)) > 1
+                then [err(top.location, "Lexer class '" ++ fName ++ "' is already bound.")]
+                else [];	
 
-  top.errors := er2 ++ subs.errors ++ doms.errors;
+  top.errors := subs.errors ++ doms.errors;
 
 --from definition:concrete_syntax
   top.parserDcls = [];
@@ -74,7 +73,7 @@ top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
   top.initValues := "";
   top.postInit := "";
 
-  top.typeErrors = [];
+  top.typeErrors := [];
 }
 
 
