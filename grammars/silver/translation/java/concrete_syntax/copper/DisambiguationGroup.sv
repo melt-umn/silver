@@ -20,7 +20,7 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
   top.defs = emptyDefs();
 
   top.errors := acode.errors ++ terms.errors;
-  top.typeErrors = acode.typeErrors ++ terms.typeErrors;
+  top.typeErrors := acode.typeErrors ++ terms.typeErrors;
 
 --from definition:concrete_syntax
   top.parserDcls = [];
@@ -59,6 +59,6 @@ top::Expr ::= q::Decorated QName
   
   top.translation = makeCopperName(q.lookupValue.fullName); -- Value right here?
   
-  -- top.typeErrors = -- TODO fffff BUG
+  -- top.typeErrors := -- TODO fffff BUG
 }
 

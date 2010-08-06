@@ -18,12 +18,12 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.defs = addFunDcl(top.grammarName, id.location, namedSig,
                body.productionAttributes);
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclAll(fName, top.env)) > 1
+  top.errors <-
+        if length(getValueDclAll(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
-  top.errors := er2 ++ ns.errors ++ body.errors;
+  top.errors := ns.errors ++ body.errors;
   top.warnings := [];
 
   ns.env = newScopeEnv(ns.defs, top.env);

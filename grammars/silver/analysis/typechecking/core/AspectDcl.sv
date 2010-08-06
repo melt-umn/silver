@@ -9,12 +9,12 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   sigOkay = (genListEquals(getTypesSignature(realSig.inputElements), getTypesSignature(ns.inputElements)))
 	 && (realSig.outputElement.typerep.typeEquals(realSig.outputElement.typerep, ns.outputElement.typerep).bValue);
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if !sigOkay
+  top.typeErrors <-
+        if !sigOkay
         then [err(top.location, "Aspect for '" ++ id.name ++ "' does not have the right signature.")]
         else [];	
 
-  top.typeErrors = er2 ++ body.typeErrors;
+  top.typeErrors := body.typeErrors;
 }
 
 
@@ -25,10 +25,10 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   sigOkay = (genListEquals(getTypesSignature(realSig.inputElements), getTypesSignature(ns.inputElements)))
 	 && (realSig.outputElement.typerep.typeEquals(realSig.outputElement.typerep, ns.outputElement.typerep).bValue);
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if !sigOkay
+  top.typeErrors <-
+        if !sigOkay
         then [err(top.location, "Aspect for '" ++ id.name ++ "' does not have the right signature.")]
         else [];	
 
-  top.typeErrors = er2 ++ body.typeErrors;
+  top.typeErrors := body.typeErrors;
 }

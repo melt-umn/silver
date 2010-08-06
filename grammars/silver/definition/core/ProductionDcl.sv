@@ -21,15 +21,14 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local attribute er2 :: [Decorated Message];
   er2 = if length(getValueDclAll(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
-        else [];
-  
-  -- TODO: Narrow this down to just a list of productions before deciding to error.
-  local attribute er3 :: [Decorated Message];
-  er3 = if length(getValueDcl(id.name, top.env)) > 1 && null(er2)
+
+        -- TODO: Narrow this down to just a list of productions before deciding to error.
+        else if length(getValueDcl(id.name, top.env)) > 1 && null(er2)
         then [err(top.location, "Production " ++ id.pp ++ " shares a name with another production from an imported grammar. Either this production is meant to be an aspect, or you should use 'import ... with " ++ id.pp ++ " as ...' to change the other production's apparent name.")]
         else [];
+  
 
-  top.errors := er2 ++ er3 ++ ns.errors ++ body.errors;
+  top.errors := er2 ++ ns.errors ++ body.errors;
   top.warnings := [];
 
   ns.env = newScopeEnv(ns.defs, top.env);
@@ -83,12 +82,12 @@ top::ProductionLHS ::= id::Name '::' t::Type
   -- TODO: think about this. lhs doesn't really have an fName.
   top.defs = addLhsDcl(top.grammarName, t.location, fName, t.typerep, emptyDefs());
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclAll(fName, top.env)) > 1
+  top.errors <-
+       if length(getValueDclAll(fName, top.env)) > 1
        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
        else [];	
 
-  top.errors := er2 ++ t.errors;
+  top.errors := t.errors;
   top.warnings := [];
 }
 
@@ -137,12 +136,12 @@ top::ProductionRHSElem ::= id::Name '::' t::Type
   -- TODO: think about this. child doesn't really have an fName.
   top.defs = addChildDcl(top.grammarName, t.location, fName, t.typerep, emptyDefs());
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclAll(fName, top.env)) > 1
+  top.errors <-
+       if length(getValueDclAll(fName, top.env)) > 1
        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
        else [];	
 
-  top.errors := er2 ++ t.errors;
+  top.errors := t.errors;
   top.warnings := [];
 }
 

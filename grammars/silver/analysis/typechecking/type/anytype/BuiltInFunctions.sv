@@ -10,7 +10,7 @@ import silver:definition:type:io;
 aspect production cast_t
 top::Expr ::= e::Expr tr::Decorated TypeRep
 {
-  top.typeErrors = e.typeErrors ++
+  top.typeErrors := e.typeErrors ++
 	     if tr.isAnyType &&
                 (e.typerep.isProduction || e.typerep.isIO)
              then [err(top.location, "Cast Error: 1st argument cannot be a production or IO type.")]

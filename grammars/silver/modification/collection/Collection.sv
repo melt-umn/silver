@@ -53,12 +53,12 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type 'with' q::NameOrB
 
   top.defs = addSynColDcl(top.grammarName, a.location, fName, te.typerep, q.operation, emptyDefs());
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getAttrDcl(fName, top.env)) > 1
+  top.errors <-
+        if length(getAttrDcl(fName, top.env)) > 1
         then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
         else [];	
 
-  top.errors := er2 ++ te.errors ++ q.errors;
+  top.errors := te.errors ++ q.errors;
   top.warnings := [];
 
   forwards to attributeDclSyn($1, $2, a, $4, te, $8);
@@ -75,12 +75,12 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOp
 
   top.defs = addInhColDcl(top.grammarName, a.location, fName, te.typerep, q.operation, emptyDefs());
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getAttrDcl(fName, top.env)) > 1
+  top.errors <-
+        if length(getAttrDcl(fName, top.env)) > 1
         then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
         else [];	
 
-  top.errors := er2 ++ te.errors ++ q.errors;
+  top.errors := te.errors ++ q.errors;
   top.warnings := [];
 
   forwards to attributeDclInh($1, $2, a, $4, te, $8);
@@ -102,12 +102,12 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
 
   top.defs = emptyDefs(); -- addLocalColDcl(top.grammarName, a.location, fName, te.typerep, q.operation, emptyDefs());
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclAll(fName, top.env)) > 1
+  top.errors <-
+        if length(getValueDclAll(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
-  top.errors := er2 ++ te.errors ++ q.errors;
+  top.errors := te.errors ++ q.errors;
   top.warnings := [];
  
   forwards to productionAttributeDcl($1, $2, a, $4, te, $8);

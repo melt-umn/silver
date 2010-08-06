@@ -6,10 +6,10 @@ import silver:definition:concrete_syntax;
 attribute typeErrors occurs on ParserDcl;
 aspect production parserDcl
 top::AGDcl ::= p::ParserDcl{
-  top.typeErrors =  p.typeErrors;
+  top.typeErrors :=  p.typeErrors;
 }
 
 aspect production parserStmt
 top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
-  top.typeErrors = [];
+  top.typeErrors := [];
 }

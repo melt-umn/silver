@@ -7,35 +7,35 @@ attribute typeErrors occurs on TerminalModifiers, TerminalModifier, TerminalKeyw
 
 aspect  production terminalDclDefault
 top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifiers {
-  top.typeErrors = t.typeErrors ++ tm.typeErrors;
+  top.typeErrors := t.typeErrors ++ tm.typeErrors;
 }
 
 aspect production terminalKeywordModifierDefault
 top::TerminalKeywordModifier ::= {
-  top.typeErrors = [];
+  top.typeErrors := [];
 }
 
 
 aspect production terminalModifierDefault
 top::TerminalModifier ::=
 {
-  top.typeErrors = [];
+  top.typeErrors := [];
 }
 
 aspect production terminalModifiersNone
 top::TerminalModifiers ::= 
 {
-  top.typeErrors = tm.typeErrors;
+  top.typeErrors := tm.typeErrors;
 }
 
 aspect production terminalModifierSingle
 top::TerminalModifiers ::= tm::TerminalModifier
 {
-  top.typeErrors = tm.typeErrors;
+  top.typeErrors := tm.typeErrors;
 }
 
 aspect production terminalModifiersCons
 top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
 {
-  top.typeErrors = h.typeErrors ++ t.typeErrors;
+  top.typeErrors := h.typeErrors ++ t.typeErrors;
 }

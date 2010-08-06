@@ -5,131 +5,129 @@ import silver:definition:core;
 aspect production stringLength
 top::Expr ::= e::Decorated Expr
 {
-  top.typeErrors = e.typeErrors;      
+  top.typeErrors := e.typeErrors;      
 }
 
 aspect production unknownLength
 top::Expr ::= e::Decorated Expr
 {
-  local attribute er :: [Decorated Message];
-  er = [err(e.location, "operand to 'length(..)' is not compatible.")];
-
-  top.typeErrors = er ++ e.typeErrors;      
+  top.typeErrors <- [err(e.location, "operand to 'length(..)' is not compatible.")];
+  top.typeErrors := e.typeErrors;      
 }
 
 aspect production errorFunction
 top::Expr ::= 'error' '(' e::Expr ')'
 {
-  local attribute er :: [Decorated Message];
-  er = if (e.typerep.typeName == "String") 
+  top.typeErrors <-
+       if (e.typerep.typeName == "String") 
        then []
        else [err(top.location, "operand to 'error(..)' must be of type String.")];
 
-  top.typeErrors = er ++ e.typeErrors;      
+  top.typeErrors := e.typeErrors;      
 }
 aspect production toIntFunction
 top::Expr ::= 'toInt' '(' e::Expr ')'
 {
-  local attribute er :: [Decorated Message];
-  er = if (e.typerep.typeName == "String") || (e.typerep.typeName == "Float") 
+  top.typeErrors <-
+       if (e.typerep.typeName == "String") || (e.typerep.typeName == "Float") 
        then []
        else [err(top.location, "operand to 'toInt(..)' must be of type String or Float.")];
 
-  top.typeErrors = er ++ e.typeErrors;      
+  top.typeErrors := e.typeErrors;      
 }
 aspect production toFloatFunction
 top::Expr ::= 'toFloat' '(' e::Expr ')'
 {
-  local attribute er :: [Decorated Message];
-  er = if (e.typerep.typeName == "String") || (e.typerep.typeName == "Integer") 
+  top.typeErrors <-
+       if (e.typerep.typeName == "String") || (e.typerep.typeName == "Integer") 
        then []
        else [err(top.location, "operand to 'toFloat(..)' must be of type String or Integer.")];
 
-  top.typeErrors = er ++ e.typeErrors;      
+  top.typeErrors := e.typeErrors;      
 }
 aspect production toStringFunction
 top::Expr ::= 'toString' '(' e::Expr ')'
 {
-  local attribute er :: [Decorated Message];
-  er = if (e.typerep.typeName == "Integer") ||
+  top.typeErrors <-
+       if (e.typerep.typeName == "Integer") ||
 	  (e.typerep.typeName == "Float")  ||
           (e.typerep.typeName == "Boolean") 
        then []
        else [err(top.location, "operand to 'toString(..)' must be of type Integer, Float or Boolean.")];
 
-  top.typeErrors = er ++ e.typeErrors;      
+  top.typeErrors := e.typeErrors;      
 }
 
 aspect production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {
-  local attribute er :: [Decorated Message];
-  er = if (e.typerep.isDecorated) 
+  top.typeErrors <-
+       if (e.typerep.isDecorated) 
        then []
        else [err(top.location, "operand to 'new(..)' must be a Decorated Nonterminal.")];
 
-  top.typeErrors = er ++ e.typeErrors;      
+  top.typeErrors := e.typeErrors;      
 }
 
 aspect production terminalFunction
 top::Expr ::= 'terminal' '(' t::Type ',' e::Expr ')'
 {
-  local attribute er1 :: [Decorated Message];
-  er1 = if (t.typerep.isTerminal) 
+  top.typeErrors <-
+        if (t.typerep.isTerminal) 
         then []
         else [err(top.location, "First operand to 'terminal(type,lexeme)' must be a Terminal.")];
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if (e.typerep.typeName == "String") 
+  top.typeErrors <-
+       if (e.typerep.typeName == "String") 
        then []
        else [err(top.location, "Second operand to 'terminal(type,lexeme)' must be of type String.")];
 
-  top.typeErrors = er1 ++ er2 ++ e.typeErrors;      
+  top.typeErrors := e.typeErrors;      
 }
 
 aspect production terminalFunctionLineCol
 top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
 {
-  local attribute er1 :: [Decorated Message];
-  er1 = if (t.typerep.isTerminal) 
+  top.typeErrors <-
+        if (t.typerep.isTerminal) 
         then []
         else [err(top.location, "First operand to 'terminal(type,lexeme,line,column)' must be a Terminal.")];
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if (e1.typerep.typeName == "String") 
+  top.typeErrors <-
+        if (e1.typerep.typeName == "String") 
         then []
         else [err(top.location, "Second operand to 'terminal(type,lexeme,line,column)' must be of type String.")];
 
-  local attribute er3 :: [Decorated Message];
-  er3 = if (e2.typerep.typeName == "Integer") 
+  top.typeErrors <-
+        if (e2.typerep.typeName == "Integer") 
         then []
         else [err(top.location, "Third operand to 'terminal(type,lexeme,line,column)' must be of type Integer.")];
 
-  local attribute er4 :: [Decorated Message];
-  er4 = if (e3.typerep.typeName == "Integer") 
+  top.typeErrors <-
+        if (e3.typerep.typeName == "Integer") 
         then []
         else [err(top.location, "Fourth operand to 'terminal(type,lexeme,line,column)' must be of type Integer.")];
 
-  top.typeErrors = er1 ++ er2 ++ er3 ++ er4 ++ e1.typeErrors ++ e2.typeErrors ++ e3.typeErrors;      
+  top.typeErrors := e1.typeErrors ++ e2.typeErrors ++ e3.typeErrors;      
 }
 
 aspect production terminalFunctionInherited
 top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ')'
 {
-  local attribute er1 :: [Decorated Message];
-  er1 = if (t.typerep.isTerminal) 
+  top.typeErrors <-
+        if (t.typerep.isTerminal) 
         then []
         else [err(top.location, "First operand to 'terminal(type,lexeme,parent)' must be a Terminal.")];
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if (e1.typerep.typeName == "String") 
+  top.typeErrors <-
+        if (e1.typerep.typeName == "String") 
         then []
         else [err(top.location, "Second operand to 'terminal(type,lexeme,parent)' must be of type String.")];
   
-  local attribute er3 :: [Decorated Message];
-  er3 = if (e2.typerep.isTerminal) 
+  top.typeErrors <-
+        if (e2.typerep.isTerminal) 
         then []
         else [err(top.location, "Third operand to 'terminal(type,lexeme,parent)' must be a Terminal.")];
  
-  top.typeErrors = er1 ++ er2 ++ er3 ++ e1.typeErrors ++ e2.typeErrors;
+  top.typeErrors := e1.typeErrors ++ e2.typeErrors;
 }
