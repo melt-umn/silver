@@ -42,7 +42,9 @@ top::Expr ::= 'cons' '(' h::Expr ',' t::Expr ')'
 
 aspect production appendList
 top::Expr ::= l::Expr r::Expr
-{ 
+{
+  -- Technically, append is not a constructor, it's a function.  And it's strict in its first argument.
+  -- so we *could* avoid wrapping it up in a thunk here... but this paradoxically worsens memory usage. :(
   top.translation = "(new common.AppendCell(" ++ wrapThunk(l, top.actionCodeType.isSemanticBlock) ++ ", " ++ wrapThunk(r, top.actionCodeType.isSemanticBlock) ++ "))";
 }
 
