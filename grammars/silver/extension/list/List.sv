@@ -1,6 +1,5 @@
 grammar silver:extension:list;
 import silver:definition:core;
-import silver:definition:type:decorated;
 import silver:definition:type:anytype;
 import silver:definition:env;
 

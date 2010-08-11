@@ -1,7 +1,6 @@
 grammar silver:extension:easyterminal;
 import silver:definition:core;
 import silver:definition:env;
-import silver:definition:type:higherorder;
 import silver:definition:concrete_syntax;
 import silver:definition:regex;
 

@@ -4,9 +4,7 @@ grammar silver:host;
 exports silver:definition:core;
 exports silver:definition:concrete_syntax;
 exports silver:definition:type:io;
-exports silver:definition:type:higherorder;
 exports silver:definition:type:productiontype;
-exports silver:definition:type:decorated;
 exports silver:definition:type:anytype;
 exports silver:definition:regex;
 
