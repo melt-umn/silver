@@ -3,7 +3,7 @@ grammar silver:definition:core;
 import silver:definition:env;
 
 concrete production globalValueDclConcrete
-top::AGDcl ::= 'global' id::Name '=' e::Expr ';'
+top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
 {
   top.pp = "global " ++ id.pp ++ " = " ++ e.pp ++ "\n"; 
   top.location = loc(top.file, $1.line, $1.column);
@@ -13,7 +13,7 @@ top::AGDcl ::= 'global' id::Name '=' e::Expr ';'
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs = addGlobalValueDcl(top.grammarName, id.location, fName, e.typerep, emptyDefs());
+  top.defs = addGlobalValueDcl(top.grammarName, id.location, fName, t.typerep, emptyDefs());
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
