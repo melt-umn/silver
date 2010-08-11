@@ -110,7 +110,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 }
 
 aspect production globalValueDclConcrete
-top::AGDcl ::= 'global' id::Name '=' e::Expr ';'
+top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
 {
   top.disambiguationGroupDcls = [];
 }
