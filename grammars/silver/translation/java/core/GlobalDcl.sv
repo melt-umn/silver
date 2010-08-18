@@ -8,8 +8,7 @@ top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
 {
   top.setupInh := "";
   top.initProd := "";
-  -- TODO: something other than just name?
-  top.initValues := "\tpublic static final " ++ t.typerep.transType ++ " " ++ id.name ++ " = " ++ e.translation ++ ";\n";
+  top.initValues := "\tpublic static final common.RealThunk " ++ id.name ++ " = new common.RealThunk(common.TopNode.singleton, new common.Lazy(){public Object eval(common.DecoratedNode context) {return " ++ e.translation ++ ";}});\n";
   top.postInit := "";
 
   top.javaClasses = [];

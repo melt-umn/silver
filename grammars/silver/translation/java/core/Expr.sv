@@ -7,6 +7,7 @@ import silver:util;
 
 import silver:translation:java:concrete_syntax:copper; -- todo : part of wrapThunk hack
 
+-- These attributes help us generate slightly less awful code, by not going through reflection for direct function/production calls.
 synthesized attribute isAppReference :: Boolean;
 synthesized attribute appReference :: String;
 
@@ -98,7 +99,8 @@ top::Expr ::= q::Decorated QName
   top.isAppReference = false;
   top.appReference = "";
   
-  top.translation = makeName(q.lookupValue.dcl.sourceGrammar) ++ ".Init." ++ fullNameToShort(q.lookupValue.fullName);
+  top.translation = "((" ++ top.typerep.transType ++ ")" ++ 
+                      makeName(q.lookupValue.dcl.sourceGrammar) ++ ".Init." ++ fullNameToShort(q.lookupValue.fullName) ++ ".eval())";
 }
 
 aspect production productionApplicationDispatcher
@@ -147,9 +149,8 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.isAppReference = false;
   top.appReference = "";
 
-  -- TODO: doing the wrong thing here for expediency!! BUG TODO FIX
+  -- TODO: we should maybe map the name properly to the field we access?
   top.translation = "((" ++ top.typerep.transType ++ ")" ++ e.translation ++ "." ++ q.name ++ ")";
-  --"((" ++ q.lookupAttribute.typerep.transType ++ ")" ++ e.translation ++ ".synthesized(\"" ++ q.name ++ "\"))";
 }
 
 aspect production decorateExprWith
