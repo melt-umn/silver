@@ -49,18 +49,22 @@ top::TypeExp ::=
   top.typepp = "String";
 }
 
--- e.g. nonterminal (reference) and terminal types
-aspect production nominalTypeExp
+aspect production nonterminalTypeExp
 top::TypeExp ::= fn::String params::[TypeExp]
 {
   top.typepp = fn ++ if !null(params) then "<" ++ folds(" ", mapTypePP(params, top.boundVariables)) ++ ">" else "";
 }
 
--- e.g. decorated nonterminal types
-aspect production decoratedTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+aspect production terminalTypeExp
+top::TypeExp ::= fn::String
 {
-  top.typepp = "Decorated " ++ fn ++ if !null(params) then "<" ++ folds(" ", mapTypePP(params, top.boundVariables)) ++ ">" else "";
+  top.typepp = fn;
+}
+
+aspect production decoratedTypeExp
+top::TypeExp ::= te::TypeExp
+{
+  top.typepp = "Decorated " ++ te.typepp;
 }
 
 aspect production functionTypeExp

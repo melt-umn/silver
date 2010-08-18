@@ -41,7 +41,7 @@ top::QNameLookup ::= lookupName::String lookupFunc::Function([Decorated DclInfo]
   top.fullName = top.dcl.fullName;
   
   top.typerep = if null(top.dcls)
-                then topTypeRep()
+                then errorType()
                 else head(top.dcls).typerep;
   
   top.errors := (if null(top.dcls)

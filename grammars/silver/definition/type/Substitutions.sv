@@ -130,16 +130,22 @@ top::TypeExp ::=
   top.substituted = top;
 }
 
-aspect production nominalTypeExp
+aspect production nonterminalTypeExp
 top::TypeExp ::= fn::String params::[TypeExp]
 {
-  top.substituted = nominalTypeExp(fn, mapSubst(params, top.substitution));
+  top.substituted = nonterminalTypeExp(fn, mapSubst(params, top.substitution));
+}
+
+aspect production terminalTypeExp
+top::TypeExp ::= fn::String
+{
+  top.substituted = top;
 }
 
 aspect production decoratedTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+top::TypeExp ::= te::TypeExp
 {
-  top.substituted = decoratedTypeExp(fn, mapSubst(params, top.substitution));
+  top.substituted = decoratedTypeExp(te.substituted);
 }
 
 aspect production functionTypeExp

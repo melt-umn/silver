@@ -45,21 +45,21 @@ top::DclInfo ::=
 
 -- -- non-interface values
 aspect production childDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.refDispatcher = childReference;
   top.defDispatcher = errorValueDef; -- TODO: we should be smarted about error messages, and mention its a child
   top.defLHSDispatcher = childDefLHS;
 }
 aspect production lhsDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.refDispatcher = lhsReference;
   top.defDispatcher = errorValueDef; -- TODO: be smarter about the error message
   top.defLHSDispatcher = lhsDefLHS;
 }
 aspect production localDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.refDispatcher = localReference;
   top.defDispatcher = localValueDef;
@@ -83,7 +83,7 @@ top::DclInfo ::= sg::String sl::Decorated Location ns::Decorated NamedSignature
   top.defLHSDispatcher = errorDefLHS;
 }
 aspect production globalValueDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.refDispatcher = globalValueReference;
   top.defDispatcher = errorValueDef;
@@ -101,13 +101,13 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String regex::Decorated R
 
 -- -- interface Attributes
 aspect production synDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.attrAccessDispatcher = synDNTAccessDispatcher;
   top.attrDefDispatcher = synthesizedAttributeDef;
 }
 aspect production inhDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.attrAccessDispatcher = inhDNTAccessDispatcher;
   top.attrDefDispatcher = inheritedAttributeDef;
@@ -119,7 +119,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String dcl::DclInfo
 {
 }
 aspect production forwardDcl
-top::DclInfo ::= sg::String sl::Decorated Location ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location ty::TypeExp
 {
   top.refDispatcher = forwardReference;
   top.defDispatcher = errorValueDef; -- TODO: better error message

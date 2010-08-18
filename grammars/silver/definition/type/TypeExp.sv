@@ -28,50 +28,80 @@ Boolean ::= tv1::TyVar tv2::TyVar
   
   return ti1 == ti2;
 }
+
+function errorType
+TypeExp ::=
+{
+  return varTypeExp(freshTyVar());
+}
 --------------------------------------------------------------------------------
+abstract production defaultTypeExp
+top::TypeExp ::=
+{
+}
 
 abstract production varTypeExp
 top::TypeExp ::= tv::TyVar
 {
   top.freeVariables = [tv];
+  
+  forwards to defaultTypeExp();
 }
 
 abstract production intTypeExp
 top::TypeExp ::=
 {
   top.freeVariables = [];
+  
+  forwards to defaultTypeExp();
 }
 
 abstract production boolTypeExp
 top::TypeExp ::=
 {
   top.freeVariables = [];
+  
+  forwards to defaultTypeExp();
 }
 
 abstract production floatTypeExp
 top::TypeExp ::=
 {
   top.freeVariables = [];
+  
+  forwards to defaultTypeExp();
 }
 
 abstract production stringTypeExp
 top::TypeExp ::=
 {
   top.freeVariables = [];
+  
+  forwards to defaultTypeExp();
 }
 
--- e.g. nonterminal (reference) and terminal types
-abstract production nominalTypeExp
+abstract production nonterminalTypeExp
 top::TypeExp ::= fn::String params::[TypeExp]
 {
   top.freeVariables = setUnionTyVarsAll(mapFreeVariables(params));
+  
+  forwards to defaultTypeExp();
 }
 
--- e.g. decorated nonterminal types
+abstract production terminalTypeExp
+top::TypeExp ::= fn::String
+{
+  top.freeVariables = [];
+  
+  forwards to defaultTypeExp();
+}
+
 abstract production decoratedTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+top::TypeExp ::= te::TypeExp
 {
-  top.freeVariables = setUnionTyVarsAll(mapFreeVariables(params));
+  top.freeVariables = te.freeVariables;
+  
+  forwards to defaultTypeExp();
 }
 
 -- TODO: bug: we shouldn't have to use new() here :
@@ -80,12 +110,16 @@ abstract production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
   top.freeVariables = setUnionTyVarsAll(mapFreeVariables(new(out) :: params));
+  
+  forwards to defaultTypeExp();
 }
 
 abstract production productionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
   top.freeVariables = setUnionTyVarsAll(mapFreeVariables(new(out) :: params));
+  
+  forwards to defaultTypeExp();
 }
 
 -- TODO: IO type.  Anything else?  Lists?

@@ -1,5 +1,6 @@
 grammar silver:definition:env;
 import silver:definition:regex;  -- soley for Terms. TODO : fix?
+import silver:definition:type;
 
 synthesized attribute sourceGrammar :: String;
 synthesized attribute sourceLocation :: Decorated Location;
@@ -7,7 +8,7 @@ synthesized attribute fullName :: String;
 synthesized attribute unparse :: String;
 
 -- types
-synthesized attribute typerep :: Decorated TypeRep;
+synthesized attribute typerep :: TypeExp;
 
 
 synthesized attribute namedSignature :: Decorated NamedSignature;
@@ -72,19 +73,19 @@ top::DclInfo ::=
 
 -- -- non-interface values
 abstract production childDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
   top.unparse = --error("child values should never appear in interace files.");
-        "DEBUG child(" ++ sl.unparse ++ ", " ++ fn ++ ", " ++ ty.unparse ++ ")";
+        "DEBUG child(" ++ sl.unparse ++ ", " ++ fn ++ ", " ++ unparseType(ty) ++ ")";
   
   top.typerep = ty;
   forwards to defaultDcl();
 }
 abstract production lhsDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -95,13 +96,13 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated Type
   forwards to defaultDcl();
 }
 abstract production localDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
   -- locals will appear inside interface files inside production attribute declarations
-  top.unparse = "loc(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
+  top.unparse = "loc(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseType(ty) ++ ")";
   
   top.typerep = ty;
   forwards to defaultDcl();
@@ -120,7 +121,7 @@ top::DclInfo ::= sg::String sl::Decorated Location ns::Decorated NamedSignature
   top.unparse = "prod(" ++ sl.unparse ++ ", " ++ ns.unparse ++ ")";
 
   top.namedSignature = ns;  
-  top.typerep = prodTypeRep(getTypesSignature(ns.inputElements), ns.outputElement.typerep);
+  top.typerep = productionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements));
   forwards to defaultDcl();
 }
 abstract production funDcl
@@ -132,16 +133,16 @@ top::DclInfo ::= sg::String sl::Decorated Location ns::Decorated NamedSignature
   top.unparse = "fun(" ++ sl.unparse ++ ", " ++ ns.unparse ++ ")";
 
   top.namedSignature = ns;  
-  top.typerep = funTypeRep(getTypesSignature(ns.inputElements), ns.outputElement.typerep);
+  top.typerep = functionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements));
   forwards to defaultDcl();
 }
 abstract production globalValueDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "glob(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
+  top.unparse = "glob(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseType(ty) ++ ")";
 
   top.typerep = ty;
   forwards to defaultDcl();
@@ -157,7 +158,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String
   top.fullName = fn;
   top.unparse = "nt(" ++ sl.unparse ++ ", '" ++ fn ++ "')";
   
-  top.typerep = ntTypeRep(fn);
+  top.typerep = nonterminalTypeExp(fn,[]); -- TODO
   forwards to defaultDcl();
 }
 abstract production termDcl
@@ -168,29 +169,29 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String regex::Decorated R
   top.fullName = fn;
   top.unparse = "term(" ++ sl.unparse ++ ", '" ++ fn ++ "', /" ++ regex.regString ++ "/)";
   
-  top.typerep = termTypeRep(fn);
+  top.typerep = terminalTypeExp(fn);
   forwards to defaultDcl();
 }
 
 -- -- interface Attributes
 abstract production synDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "syn(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
+  top.unparse = "syn(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseType(ty) ++ ")";
   
   top.typerep = ty;
   forwards to defaultDcl();
 }
 abstract production inhDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "inh(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
+  top.unparse = "inh(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseType(ty) ++ ")";
   
   top.typerep = ty;
   forwards to defaultDcl();
@@ -209,12 +210,12 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String dcl::DclInfo
   forwards to defaultDcl();
 }
 abstract production forwardDcl
-top::DclInfo ::= sg::String sl::Decorated Location ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = "forward";
-  top.unparse = "fwd(" ++ sl.unparse ++ ", " ++ ty.unparse ++ ")";
+  top.unparse = "fwd(" ++ sl.unparse ++ ", " ++ unparseType(ty) ++ ")";
   
   top.typerep = ty;
   forwards to defaultDcl();

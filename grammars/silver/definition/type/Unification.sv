@@ -53,25 +53,34 @@ top::TypeExp ::=
               end;
 }
 
-aspect production nominalTypeExp
+aspect production nonterminalTypeExp
 top::TypeExp ::= fn::String params::[TypeExp]
 {
   top.unify = case top.unifyWith of
-               nominalTypeExp(ofn, op) -> if fn == ofn
-                                          then unifyAll( params, op )
-                                          else errorSubst("Tried to unify conflicting nominal types " ++ fn ++ " and " ++ ofn)
-             | _ -> errorSubst("Tried to unify nominal type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
+               nonterminalTypeExp(ofn, op) -> if fn == ofn
+                                            then unifyAll( params, op )
+                                            else errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
+             | _ -> errorSubst("Tried to unify nonterminal type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
+              end;
+}
+
+aspect production terminalTypeExp
+top::TypeExp ::= fn::String
+{
+  top.unify = case top.unifyWith of
+               terminalTypeExp(ofn) -> if fn == ofn
+                                     then emptySubst()
+                                     else errorSubst("Tried to unify conflicting terminal types " ++ fn ++ " and " ++ ofn)
+             | _ -> errorSubst("Tried to unify terminal type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
               end;
 }
 
 aspect production decoratedTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+top::TypeExp ::= te::TypeExp
 {
   top.unify = case top.unifyWith of
-               decoratedTypeExp(ofn, op) -> if fn == ofn
-                                          then unifyAll( params, op )
-                                          else errorSubst("Tried to unify conflicting decorated types " ++ fn ++ " and " ++ ofn)
-             | _ -> errorSubst("Tried to unify decorated type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
+               decoratedTypeExp(ote) -> unify(te, ote)
+             | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
               end;
 }
 

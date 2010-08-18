@@ -122,8 +122,8 @@ top::AspectProductionLHS ::= id::Name
   top.pp = id.pp;
   top.location = id.location;
 
-  production attribute rType :: Decorated TypeRep;
-  rType = if null(top.realSignature) then topTypeRep() else head(top.realSignature).typerep;
+  production attribute rType :: TypeExp;
+  rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
   forwards to aspectProductionLHSFull(id, rType);
 }
@@ -140,7 +140,7 @@ top::AspectProductionLHS ::= id::Name '::' t::Type
 }
 
 abstract production aspectProductionLHSFull
-top::AspectProductionLHS ::= id::Name t::Decorated TypeRep
+top::AspectProductionLHS ::= id::Name t::TypeExp
 {
   top.pp = id.pp ++ "::" ++ t.unparse;
 
@@ -206,8 +206,8 @@ top::AspectRHSElem ::= id::Name
   top.pp = id.pp;
   top.location = id.location;
 
-  production attribute rType :: Decorated TypeRep;
-  rType = if null(top.realSignature) then topTypeRep() else head(top.realSignature).typerep;
+  production attribute rType :: TypeExp;
+  rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
   forwards to aspectRHSElemFull(id, rType);
 }
@@ -224,7 +224,7 @@ top::AspectRHSElem ::= id::Name '::' t::Type
 }
 
 abstract production aspectRHSElemFull
-top::AspectRHSElem ::= id::Name t::Decorated TypeRep
+top::AspectRHSElem ::= id::Name t::TypeExp
 {
   top.pp = id.pp ++ "::" ++ t.unparse;
   top.location = id.location;
