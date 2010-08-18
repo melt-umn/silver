@@ -22,7 +22,7 @@ synthesized attribute warnings :: [Decorated Message] with ++;
 
 autocopy attribute compiledGrammars :: [Decorated RootSpec];
 
-autocopy attribute expectedInputTypes :: [Decorated TypeRep];
+autocopy attribute expectedInputTypes :: [TypeExp];
 synthesized attribute exprs :: [Decorated Expr];
 
 autocopy attribute realSignature :: [Decorated NamedSignatureElement];

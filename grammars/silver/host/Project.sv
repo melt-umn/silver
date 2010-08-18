@@ -4,8 +4,7 @@ grammar silver:host;
 exports silver:definition:core;
 exports silver:definition:concrete_syntax;
 exports silver:definition:type:io;
-exports silver:definition:type:productiontype;
-exports silver:definition:type:anytype;
+exports silver:definition:type:syntax;
 exports silver:definition:regex;
 
 -- symbols
@@ -13,7 +12,6 @@ exports silver:analysis:binding:driver;
 exports silver:analysis:typechecking:driver;
 exports silver:analysis:typechecking:core;
 exports silver:analysis:typechecking:concrete_syntax;
-exports silver:analysis:typechecking:type:anytype;
 
 --We wish regex to remain a generic grammar, so we resolve the conflict here!
 import silver:definition:regex;

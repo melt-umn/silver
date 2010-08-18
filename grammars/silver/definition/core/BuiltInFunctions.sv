@@ -8,7 +8,7 @@ top::Expr ::= 'length' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   production attribute handlers :: [Expr] with ++;
-  handlers := if e.typerep.typeName == "String"
+  handlers := if e.typerep.typeName == "String"  -- TODO BUG FIX THIS. put dispatch on typeexp again?
 	      then [stringLength(e)]
 	      else [];
 
@@ -22,7 +22,7 @@ top::Expr ::= e::Decorated Expr
   top.location = e.location;
   top.errors := e.errors;
   top.warnings := [];
-  top.typerep = topTypeRep();
+  top.typerep = errorType();
 }
 
 abstract production stringLength
@@ -30,7 +30,7 @@ top::Expr ::= e::Decorated Expr
 {
   top.errors := e.errors;
   top.warnings := [];
-  top.typerep = integerTypeRep();
+  top.typerep = intTypeExp();
 }
 
 concrete production errorFunction
@@ -41,7 +41,7 @@ top::Expr ::= 'error' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.warnings := [];
-  top.typerep = topTypeRep();
+  top.typerep = errorType(); -- TODO: or put it here legit?
 }
 
 concrete production toIntFunction
@@ -52,7 +52,7 @@ top::Expr ::= 'toInt' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.warnings := [];
-  top.typerep = integerTypeRep();
+  top.typerep = intTypeExp();
 }
 
 concrete production toFloatFunction
@@ -63,7 +63,7 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.warnings := [];
-  top.typerep = floatTypeRep();
+  top.typerep = floatTypeExp();
 }
 
 concrete production toStringFunction
@@ -74,7 +74,7 @@ top::Expr ::= 'toString' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.warnings := [];
-  top.typerep = stringTypeRep();
+  top.typerep = stringTypeExp();
 }
 
 concrete production newFunction
@@ -85,7 +85,10 @@ top::Expr ::= 'new' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.warnings := [];
-  top.typerep = e.typerep.decoratedType ;
+  top.typerep = case e.typerep of
+                  decoratedTypeExp(dt) -> dt
+                | _ -> errorType()
+                end;
 
   e.expected = expected_decorated();
 }

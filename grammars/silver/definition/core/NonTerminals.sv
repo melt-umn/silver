@@ -1,4 +1,9 @@
 grammar silver:definition:core;
+
+-- HACK TODO: fix this somehow.
+imports silver:definition:type:syntax;
+imports silver:definition:type;
+
 import silver:definition:env;
 
 nonterminal Root with location, grammarName, impliedName, file, declaredName, moduleNames, importedDefs, exportedGrammars, condBuild, warnings, errors, compiledGrammars, env, globalImports, defs, pp;
@@ -22,7 +27,6 @@ nonterminal AspectFunctionLHS with location, grammarName, file, warnings, errors
 nonterminal AspectRHS with location, grammarName, file, warnings, errors, inputElements, realSignature, env, defs, pp;
 nonterminal AspectRHSElem with location, grammarName, file, warnings, errors, realSignature, inputElements, env, defs, pp;
 nonterminal Expr with location, grammarName, file, warnings, errors, signature, expected, typerep, env, defs, pp;
-nonterminal Type with location, grammarName, file, warnings, errors, typerep, env, defs, pp;
 nonterminal NameList with location, grammarName, file, names, warnings, errors, env, defs, pp;
 nonterminal ExprInhs with location, grammarName, file, warnings, errors, signature, env, defs, pp;
 nonterminal ExprInh with location, grammarName, file, warnings, errors, signature, env, defs, pp;

@@ -1,7 +1,6 @@
 grammar silver:definition:core;
 import silver:definition:env;
 
---Definition Expressions
 concrete production nestedExpr
 top::Expr ::= '(' e::Expr ')'
 {
@@ -30,7 +29,7 @@ top::Expr ::= q::Decorated QName
   top.warnings := [];
   top.errors := []; -- The reason we don't error here: we only forward here
                     -- if the lookup failed, which already produced an error.
-  top.typerep = topTypeRep();
+  top.typerep = errorType();
 }
 
 abstract production childReference
@@ -41,7 +40,8 @@ top::Expr ::= q::Decorated QName
   shouldUnDec = q.lookupValue.typerep.doDecorate &&
                 case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !t.isDecorated
+                | expected_type(decoratedTypeExp(_)) -> false
+                | expected_type(_) -> true
                 | _                    -> false
                 end;
 
@@ -51,7 +51,7 @@ top::Expr ::= q::Decorated QName
   top.errors := [];
   top.typerep = if shouldUnDec || !q.lookupValue.typerep.doDecorate
                 then q.lookupValue.typerep
-                else refTypeRep(q.lookupValue.typerep);
+                else decoratedTypeExp(q.lookupValue.typerep);
 }
 
 abstract production lhsReference
@@ -62,7 +62,8 @@ top::Expr ::= q::Decorated QName
   shouldUnDec = q.lookupValue.typerep.doDecorate &&
                 case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !t.isDecorated
+                | expected_type(decoratedTypeExp(_)) -> false
+                | expected_type(_) -> true
                 | _                    -> false
                 end;
 
@@ -72,7 +73,7 @@ top::Expr ::= q::Decorated QName
   top.errors := [];
   top.typerep = if shouldUnDec || !q.lookupValue.typerep.doDecorate
                 then q.lookupValue.typerep
-                else refTypeRep(q.lookupValue.typerep);
+                else decoratedTypeExp(q.lookupValue.typerep);
 }
 
 abstract production localReference
@@ -82,7 +83,8 @@ top::Expr ::= q::Decorated QName
   shouldUnDec = q.lookupValue.typerep.doDecorate &&
                 case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !t.isDecorated
+                | expected_type(decoratedTypeExp(_)) -> false
+                | expected_type(_) -> true
                 | _                    -> false
                 end;
 
@@ -92,7 +94,7 @@ top::Expr ::= q::Decorated QName
   top.errors := [];
   top.typerep = if shouldUnDec || !q.lookupValue.typerep.doDecorate
                 then q.lookupValue.typerep
-                else refTypeRep(q.lookupValue.typerep);
+                else decoratedTypeExp(q.lookupValue.typerep);
 }
 
 abstract production forwardReference
@@ -103,7 +105,8 @@ top::Expr ::= q::Decorated QName
   shouldUnDec = q.lookupValue.typerep.doDecorate &&
                 case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !t.isDecorated
+                | expected_type(decoratedTypeExp(_)) -> false
+                | expected_type(_) -> true
                 | _                    -> false
                 end;
 
@@ -113,7 +116,7 @@ top::Expr ::= q::Decorated QName
   top.errors := [];
   top.typerep = if shouldUnDec || !q.lookupValue.typerep.doDecorate
                 then q.lookupValue.typerep
-                else refTypeRep(q.lookupValue.typerep);
+                else decoratedTypeExp(q.lookupValue.typerep);
 }
 
 abstract production productionReference
@@ -226,7 +229,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.location = e.location;
   top.errors := [err(top.location, e.pp ++ " has type " ++ e.typerep.typeName ++ " and cannot be invoked as a function.")] ++ e.errors ++ es.errors; 
 
-  top.typerep = topTypeRep();
+  top.typerep = errorType();
 
   es.expectedInputTypes = [];
 }
@@ -320,11 +323,11 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   
   -- TODO: this is a hacky way of dealing with terminal attributes
   top.typerep = if q.name == "lexeme" || q.name == "filename"
-                then stringTypeRep()
+                then stringTypeExp()
                 else if q.name == "line" || q.name == "column"
-                then integerTypeRep()
-                else topTypeRep();
-  top.errors := []; -- the occurs check is in analysis/typechecking for some reason
+                then intTypeExp()
+                else errorType();
+  top.errors := []; -- the "occurs check" is in analysis/typechecking for some reason
   -- and this is [] because there is no attribute to lookup for terminals.. currently
 }
 
@@ -343,7 +346,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.pp = "decorate " ++ e.pp ++ " with {" ++ inh.pp ++ "}";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.typerep = refTypeRep(e.typerep);
+  top.typerep = decoratedTypeExp(e.typerep);
   top.errors := e.errors ++ inh.errors;
   top.warnings := [];
 
@@ -406,7 +409,7 @@ top::Expr ::= 'true'
   top.location = loc(top.file, $1.line, $1.column);
   top.errors := [];
   top.warnings := [];
-  top.typerep = booleanTypeRep();
+  top.typerep = boolTypeExp();
 }
 
 concrete production falseConst
@@ -416,7 +419,7 @@ top::Expr ::= 'false'
   top.location = loc(top.file, $1.line, $1.column);
   top.errors := [];
   top.warnings := [];
-  top.typerep = booleanTypeRep();
+  top.typerep = boolTypeExp();
 }
 
 concrete production and
@@ -427,7 +430,7 @@ top::Expr ::= e1::Expr '&&' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
-  top.typerep = booleanTypeRep();
+  top.typerep = boolTypeExp();
 }
 
 concrete production or
@@ -438,7 +441,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
-  top.typerep = booleanTypeRep();
+  top.typerep = boolTypeExp();
 }
 
 concrete production not
@@ -447,7 +450,7 @@ top::Expr ::= '!' e::Expr
   top.pp = "! " ++ e.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.typerep = booleanTypeRep();
+  top.typerep = boolTypeExp();
   top.errors := e.errors;
   top.warnings := [];
 }
@@ -460,7 +463,7 @@ top::Expr ::= e1::Expr '>' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
-  top.typerep = booleanTypeRep();
+  top.typerep = boolTypeExp();
 }
 
 concrete production lt
@@ -471,7 +474,7 @@ top::Expr ::= e1::Expr '<' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
-  top.typerep = booleanTypeRep();
+  top.typerep = boolTypeExp();
 }
 
 concrete production gteq
@@ -482,7 +485,7 @@ top::Expr ::= e1::Expr '>=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
-  top.typerep = booleanTypeRep();
+  top.typerep = boolTypeExp();
 }
 
 concrete production lteq
@@ -493,7 +496,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
-  top.typerep = booleanTypeRep();
+  top.typerep = boolTypeExp();
 }
 
 concrete production eqeq
@@ -504,7 +507,7 @@ top::Expr ::= e1::Expr '==' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
-  top.typerep = booleanTypeRep();
+  top.typerep = boolTypeExp();
 }
 
 concrete production neq
@@ -515,7 +518,7 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
-  top.typerep = booleanTypeRep();
+  top.typerep = boolTypeExp();
 }
 
 concrete production ifThenElse
@@ -537,7 +540,7 @@ top::Expr ::= i::Int_t
 
   top.errors := [];
   top.warnings := [];
-  top.typerep = integerTypeRep();
+  top.typerep = intTypeExp();
 }
 
 concrete production floatConst
@@ -548,7 +551,7 @@ top::Expr ::= f::Float_t
 
   top.errors := [];
   top.warnings := [];
-  top.typerep = floatTypeRep();
+  top.typerep = floatTypeExp();
 } 
 
 concrete production plus
@@ -615,7 +618,7 @@ top::Expr ::= s::String_t
 
   top.errors := [];
   top.warnings := [];
-  top.typerep = stringTypeRep();
+  top.typerep = stringTypeExp();
 }
 
 concrete production plusPlus
@@ -626,16 +629,11 @@ top::Expr ::= e1::Expr '++' e2::Expr
 
   production attribute handler :: [Expr] with ++;
   handler := [];
-
-  forwards to if null(handler) then defaultPlusPlus(e1, e2) else head(handler);
-}
-
-aspect production plusPlus
-top::Expr ::= e1::Expr p::PlusPlus_t e2::Expr
-{
-  handler <- if e1.typerep.typeName == "String" && e2.typerep.typeName == "String"
+  handler <- if e1.typerep.typeName == "String" && e2.typerep.typeName == "String" -- OH GOZ TODO
              then [stringPlusPlus(e1, e2)]
              else [];
+
+  forwards to if null(handler) then errorPlusPlus(e1, e2) else head(handler);
 }
 
 abstract production stringPlusPlus
@@ -646,10 +644,10 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
-  top.typerep = stringTypeRep();
+  top.typerep = stringTypeExp();
 }
 
-abstract production defaultPlusPlus
+abstract production errorPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
   top.pp = e1.pp ++ " ++ " ++ e2.pp;
@@ -657,7 +655,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
-  top.typerep = topTypeRep();
+  top.typerep = errorType();
 }
 
 abstract production exprsEmpty
@@ -700,7 +698,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 
 
 function getTypesExprs
-[Decorated TypeRep] ::= es::[Decorated Expr]{
+[TypeExp] ::= es::[Decorated Expr]{
   return if null(es) then [] else [head(es).typerep] ++ getTypesExprs(tail(es));
 }
 
