@@ -266,7 +266,6 @@ r.setupInh ++
 r.initProd ++
 "\t}\n\n" ++
 
-"\tpublic static final common.DecoratedNode context = common.TopNode.singleton;\n" ++
 r.initValues ++
 
 "}\n";
