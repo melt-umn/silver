@@ -40,8 +40,7 @@ top::Expr ::= q::Decorated QName
   shouldUnDec = q.lookupValue.typerep.doDecorate &&
                 case top.expected of
                   expected_undecorated() -> true
-                | expected_type(decoratedTypeExp(_)) -> false
-                | expected_type(_) -> true
+                | expected_type(t)     -> !t.isDecorated
                 | _                    -> false
                 end;
 
@@ -62,8 +61,7 @@ top::Expr ::= q::Decorated QName
   shouldUnDec = q.lookupValue.typerep.doDecorate &&
                 case top.expected of
                   expected_undecorated() -> true
-                | expected_type(decoratedTypeExp(_)) -> false
-                | expected_type(_) -> true
+                | expected_type(t)     -> !t.isDecorated
                 | _                    -> false
                 end;
 
@@ -83,8 +81,7 @@ top::Expr ::= q::Decorated QName
   shouldUnDec = q.lookupValue.typerep.doDecorate &&
                 case top.expected of
                   expected_undecorated() -> true
-                | expected_type(decoratedTypeExp(_)) -> false
-                | expected_type(_) -> true
+                | expected_type(t)     -> !t.isDecorated
                 | _                    -> false
                 end;
 
@@ -105,8 +102,7 @@ top::Expr ::= q::Decorated QName
   shouldUnDec = q.lookupValue.typerep.doDecorate &&
                 case top.expected of
                   expected_undecorated() -> true
-                | expected_type(decoratedTypeExp(_)) -> false
-                | expected_type(_) -> true
+                | expected_type(t)     -> !t.isDecorated
                 | _                    -> false
                 end;
 

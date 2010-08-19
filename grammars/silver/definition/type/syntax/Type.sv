@@ -11,7 +11,7 @@ nonterminal TypeList  with location, grammarName, file, warnings, errors, env, p
 synthesized attribute types :: [TypeExp];
 
 abstract production typerepType
-top::Type ::= t::Decorated TypeExp
+top::Type ::= t::TypeExp
 {
   top.pp = t.unparse;
   top.location = loc("typerepType", -1, -1);
