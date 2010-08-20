@@ -13,7 +13,7 @@ synthesized attribute types :: [TypeExp];
 abstract production typerepType
 top::Type ::= t::TypeExp
 {
-  top.pp = t.unparse;
+  top.pp = prettyType(top.typerep);
   top.location = loc("typerepType", -1, -1);
   top.typerep = t;
   top.errors := [];
@@ -70,22 +70,53 @@ top::Type ::= q::QName
 
   top.warnings := [];
   top.errors := q.lookupType.errors;
+
+  top.errors <- case q.lookupType.typerep of
+                  nonterminalTypeExp(_,orig) ->
+                       if !null(orig)
+                       then [err(top.location, q.pp ++ " has " ++ toString(length(orig)) ++ " type variables, but there are 0 supplied here.")]
+                       else []
+                | _ -> []
+                end;
 }
 
-concrete production refType
-top::Type ::= 'Decorated' q::QName
+concrete production nominalTypeWithParams
+top::Type ::= q::QName '<' tl::TypeList '>'
 {
-  top.pp = "Decorated " ++ q.pp;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.pp = q.pp ++ "<" ++ tl.pp ++ ">";
+  top.location = q.location;
 
-  top.typerep = decoratedTypeExp(q.lookupType.typerep);
+  top.typerep = case q.lookupType.typerep of
+                  nonterminalTypeExp(ofn, op) -> nonterminalTypeExp(ofn, tl.types)
+                | _ -> errorType()
+                end;
 
   top.warnings := [];
   top.errors := q.lookupType.errors;
   
   top.errors <- case q.lookupType.typerep of
+                  nonterminalTypeExp(_,orig) ->
+                       if length(orig) != length(tl.types)
+                       then [err(top.location, q.pp ++ " has " ++ toString(length(orig)) ++ " type variables, but there are " ++ toString(length(tl.types)) ++ " supplied here.")]
+                       else []
+                | _ -> [err(top.location, q.pp ++ " is not a nonterminal, and cannot be parameterized by types")]
+                end;
+}
+
+concrete production refType
+top::Type ::= 'Decorated' t::Type
+{
+  top.pp = "Decorated " ++ t.pp;
+  top.location = loc(top.file, $1.line, $1.column);
+
+  top.typerep = decoratedTypeExp(t.typerep);
+
+  top.warnings := [];
+  top.errors := t.errors;
+  
+  top.errors <- case t.typerep of
                   nonterminalTypeExp(_,_) -> []
-                | _ -> [err(q.location, q.pp ++ " is not a nonterminal, and cannot be Decorated.")]
+                | _ -> [err(t.location, t.pp ++ " is not a nonterminal, and cannot be Decorated.")]
                 end;
 }
 
