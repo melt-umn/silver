@@ -17,6 +17,17 @@ top::TypeExp ::= tv::TyVar
               end;
 }
 
+aspect production skolemTypeExp
+top::TypeExp ::= tv::TyVar
+{
+  top.unify = case top.unifyWith of
+               skolemTypeExp(otv) -> if tyVarEqual(tv, otv)
+                                     then emptySubst()
+                                     else errorSubst("Tried to unify skolem constant with incompatible skolem constant")
+             | _ -> errorSubst("Tried to unify skolem constant with " ++ prettyType(top.unifyWith))
+              end;
+}
+
 aspect production intTypeExp
 top::TypeExp ::=
 {

@@ -27,6 +27,11 @@ top::TypeExp ::= tv::TyVar
 {
 }
 
+aspect production skolemTypeExp
+top::TypeExp ::= tv::TyVar
+{
+}
+
 aspect production intTypeExp
 top::TypeExp ::=
 {

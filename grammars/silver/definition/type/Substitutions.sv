@@ -106,6 +106,39 @@ top::TypeExp ::= tv::TyVar
                     else top;
 }
 
+aspect production skolemTypeExp
+top::TypeExp ::= tv::TyVar
+{
+  -- This may be counter intuitive! I don't know!
+  
+  -- I'm allowing Skolem constants to be subtituted for.
+  -- Now, the "real" behavior of Skolem constants is all in unification:
+  -- there, they behave as you would expect.  However, once we quantify over the
+  -- "Skolem constant type variables", they should sort of go back to behaving
+  -- like ordinary type variables. So to get this behavior, we allow them to be
+  -- substituted.
+  
+  -- The only way we can construct a substitution for one though is by non-unification
+  -- means.  (And there's only one way to do that: by quantifying over it.)
+  
+  -- (See the only non-unification place where subst(...) is called directly at the bottom of this file.)
+  
+  local attribute partialsubst :: TypeExp;
+  partialsubst = findSubst(tv, top.substitution);
+  
+  -- Find out if we successfully substituted, or if we stayed the same
+  local attribute successful :: Boolean;
+  successful = case partialsubst of
+                 varTypeExp(newtv) -> ! tyVarEqual(tv, new(newtv))
+               | _ -> true
+               end;
+  
+  -- recursively substitute only if we changed!
+  top.substituted = if successful
+                    then performSubstitution(partialsubst , top.substitution )
+                    else top;
+}
+
 aspect production intTypeExp
 top::TypeExp ::=
 {
