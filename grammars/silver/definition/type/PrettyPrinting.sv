@@ -25,6 +25,12 @@ top::TypeExp ::= tv::TyVar
   top.typepp = findAbbrevFor(tv, top.boundVariables);
 }
 
+aspect production skolemTypeExp
+top::TypeExp ::= tv::TyVar
+{
+  top.typepp = findAbbrevFor(tv, top.boundVariables);
+}
+
 aspect production intTypeExp
 top::TypeExp ::=
 {

@@ -34,6 +34,13 @@ TypeExp ::=
 {
   return varTypeExp(freshTyVar());
 }
+
+function newSkolemConstant
+TypeExp ::=
+{
+  return skolemTypeExp(freshTyVar());
+}
+
 --------------------------------------------------------------------------------
 abstract production defaultTypeExp
 top::TypeExp ::=
@@ -41,6 +48,14 @@ top::TypeExp ::=
 }
 
 abstract production varTypeExp
+top::TypeExp ::= tv::TyVar
+{
+  top.freeVariables = [tv];
+  
+  forwards to defaultTypeExp();
+}
+
+abstract production skolemTypeExp
 top::TypeExp ::= tv::TyVar
 {
   top.freeVariables = [tv];

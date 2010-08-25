@@ -3,21 +3,27 @@ grammar silver:definition:type:syntax;
 import silver:definition:core;
 import silver:definition:type;
 import silver:definition:env;
+import silver:util;
 
-nonterminal Type      with location, grammarName, file, warnings, errors, env, pp, defs, typerep;
-nonterminal Signature with location, grammarName, file, warnings, errors, env, pp,       types;
-nonterminal TypeList  with location, grammarName, file, warnings, errors, env, pp, defs, types;
+nonterminal Type      with location, grammarName, file, warnings, errors, env, pp, defs, typerep, lexicalTypeVariables;
+nonterminal Signature with location, grammarName, file, warnings, errors, env, pp,       types,   lexicalTypeVariables;
+nonterminal TypeList  with location, grammarName, file, warnings, errors, env, pp, defs, types,   lexicalTypeVariables;
 
 synthesized attribute types :: [TypeExp];
+synthesized attribute lexicalTypeVariables :: [String];
 
 abstract production typerepType
 top::Type ::= t::TypeExp
 {
   top.pp = prettyType(top.typerep);
   top.location = loc("typerepType", -1, -1);
+
   top.typerep = t;
+
   top.errors := [];
   top.warnings := [];
+
+  top.lexicalTypeVariables = [];
 }
 
 concrete production integerType
@@ -25,9 +31,13 @@ top::Type ::= 'Integer'
 {
   top.pp = "Integer";
   top.location = loc(top.file, $1.line, $1.column);
+
   top.typerep = intTypeExp();
+
   top.errors := [];
   top.warnings := [];
+
+  top.lexicalTypeVariables = [];
 }
 
 concrete production floatType
@@ -35,9 +45,13 @@ top::Type ::= 'Float'
 {
   top.pp = "Float";
   top.location = loc(top.file, $1.line, $1.column);
+
   top.typerep = floatTypeExp();
+
   top.errors := [];
   top.warnings := [];
+
+  top.lexicalTypeVariables = [];
 }
 
 concrete production stringType
@@ -45,9 +59,13 @@ top::Type ::= 'String'
 {
   top.pp = "String";
   top.location = loc(top.file, $1.line, $1.column);
+
   top.typerep = stringTypeExp();
+
   top.errors := [];
   top.warnings := [];
+
+  top.lexicalTypeVariables = [];
 }
 
 concrete production booleanType
@@ -55,9 +73,13 @@ top::Type ::= 'Boolean'
 {
   top.pp = "Boolean";
   top.location = loc(top.file, $1.line, $1.column);
+
   top.typerep = boolTypeExp();
+
   top.errors := [];
   top.warnings := [];
+
+  top.lexicalTypeVariables = [];
 }
 
 concrete production nominalType
@@ -78,6 +100,8 @@ top::Type ::= q::QName
                        else []
                 | _ -> []
                 end;
+
+  top.lexicalTypeVariables = [];
 }
 
 concrete production nominalTypeWithParams
@@ -101,6 +125,24 @@ top::Type ::= q::QName '<' tl::TypeList '>'
                        else []
                 | _ -> [err(top.location, q.pp ++ " is not a nonterminal, and cannot be parameterized by types")]
                 end;
+
+  top.lexicalTypeVariables = tl.lexicalTypeVariables;
+}
+
+concrete production typeVariableType
+top::Type ::= tv::TypeVariable_t
+{
+  top.pp = tv.lexeme;
+  top.location = loc(top.file, $1.line, $1.column);
+  
+  local attribute tvname :: String;
+  tvname = substring(1, length(tv.lexeme), tv.lexeme); -- ditch the tick
+  
+  top.typerep = errorType(); -- TODO
+  top.warnings := [];
+  top.errors := []; -- TODO
+
+  top.lexicalTypeVariables = [tv.lexeme];
 }
 
 concrete production refType
@@ -118,6 +160,8 @@ top::Type ::= 'Decorated' t::Type
                   nonterminalTypeExp(_,_) -> []
                 | _ -> [err(t.location, t.pp ++ " is not a nonterminal, and cannot be Decorated.")]
                 end;
+
+  top.lexicalTypeVariables = t.lexicalTypeVariables;
 }
 
 concrete production prodType
@@ -130,6 +174,8 @@ top::Type ::= 'Production' '(' sig::Signature ')'
   top.warnings := sig.warnings;
 
   top.typerep = productionTypeExp(head(sig.types), tail(sig.types));
+
+  top.lexicalTypeVariables = sig.lexicalTypeVariables;
 }
 
 concrete production funType
@@ -142,6 +188,8 @@ top::Type ::= 'Function' '(' sig::Signature ')'
   top.warnings := sig.warnings;
 
   top.typerep = functionTypeExp(head(sig.types), tail(sig.types));
+
+  top.lexicalTypeVariables = sig.lexicalTypeVariables;
 }
 
 concrete production signatureEmptyRhs
@@ -154,6 +202,8 @@ top::Signature ::= t::Type '::='
   top.warnings := [];
 
   top.types = [t.typerep];
+
+  top.lexicalTypeVariables = t.lexicalTypeVariables;
 }
 
 concrete production psignature
@@ -166,6 +216,8 @@ top::Signature ::= t::Type '::=' list::TypeList
   top.warnings := [];
 
   top.types = [t.typerep] ++ list.types;
+
+  top.lexicalTypeVariables = makeSet(t.lexicalTypeVariables ++ list.lexicalTypeVariables);
 }
 
 concrete production typeListSingle
@@ -178,6 +230,8 @@ top::TypeList ::= t::Type
   top.warnings := [];
 
   top.types = [t.typerep];
+
+  top.lexicalTypeVariables = t.lexicalTypeVariables;
 }
 
 concrete production typeListCons
@@ -190,4 +244,7 @@ top::TypeList ::= t::Type list::TypeList
   top.warnings := [];
 
   top.types = [t.typerep] ++ list.types;
+
+  top.lexicalTypeVariables = makeSet(t.lexicalTypeVariables ++ list.lexicalTypeVariables);
 }
+
