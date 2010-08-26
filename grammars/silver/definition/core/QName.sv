@@ -9,9 +9,9 @@ top::QName ::= id::Name
   top.pp = id.pp;
   top.location = id.location;
   
-  top.lookupValue = decorate customLookup("value", getValueDcl, top) with { env = top.env; };
-  top.lookupType = decorate customLookup("type", getTypeDcl, top) with { env = top.env; };
-  top.lookupAttribute = decorate customLookup("attribute", getAttrDcl, top) with { env = top.env; };
+  top.lookupValue = decorate customLookup("value", getValueDcl, top.name, top.location) with { env = top.env; };
+  top.lookupType = decorate customLookup("type", getTypeDcl, top.name, top.location) with { env = top.env; };
+  top.lookupAttribute = decorate customLookup("attribute", getAttrDcl, top.name, top.location) with { env = top.env; };
 }
 
 concrete production qNameCons
@@ -21,9 +21,9 @@ top::QName ::= id::Name ':' qn::QName
   top.pp = id.pp ++ ":" ++ qn.pp;
   top.location = loc(top.file, $2.line, $2.column);
   
-  top.lookupValue = decorate customLookup("value", getValueDcl, top) with { env = top.env; };
-  top.lookupType = decorate customLookup("type", getTypeDcl, top) with { env = top.env; };
-  top.lookupAttribute = decorate customLookup("attribute", getAttrDcl, top) with { env = top.env; };
+  top.lookupValue = decorate customLookup("value", getValueDcl, top.name, top.location) with { env = top.env; };
+  top.lookupType = decorate customLookup("type", getTypeDcl, top.name, top.location) with { env = top.env; };
+  top.lookupAttribute = decorate customLookup("attribute", getAttrDcl, top.name, top.location) with { env = top.env; };
 }
 
 synthesized attribute lookupValue :: Decorated QNameLookup occurs on QName;
@@ -33,9 +33,9 @@ synthesized attribute lookupAttribute :: Decorated QNameLookup occurs on QName;
 nonterminal QNameLookup with fullName, typerep, errors, env, dcls, dcl;
 
 abstract production customLookup
-top::QNameLookup ::= lookupName::String lookupFunc::Function([Decorated DclInfo] ::= String Decorated Env) q::Decorated QName 
+top::QNameLookup ::= kindOfLookup::String lookupFunc::Function([Decorated DclInfo] ::= String Decorated Env) name::String l::Decorated Location 
 {
-  top.dcls = lookupFunc(q.name, top.env);
+  top.dcls = lookupFunc(name, top.env);
   top.dcl = head(top.dcls);
   
   top.fullName = top.dcl.fullName;
@@ -45,10 +45,10 @@ top::QNameLookup ::= lookupName::String lookupFunc::Function([Decorated DclInfo]
                 else head(top.dcls).typerep;
   
   top.errors := (if null(top.dcls)
-                  then [err(q.location, "Undeclared " ++ lookupName ++ " '" ++ q.name ++ "'.")]
+                  then [err(l, "Undeclared " ++ kindOfLookup ++ " '" ++ name ++ "'.")]
                   else [])
              ++ (if length(top.dcls) > 1
-                  then [err(q.location, "Ambiguous reference to " ++ lookupName ++ " '" ++ q.name ++ "'. Possibilities are:\n" ++ printPossibilities(top.dcls))] 
+                  then [err(l, "Ambiguous reference to " ++ kindOfLookup ++ " '" ++ name ++ "'. Possibilities are:\n" ++ printPossibilities(top.dcls))] 
                   else []);
 }
 

@@ -91,7 +91,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 }
 -- -- interface types
 aspect production ntDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
 }
 aspect production termDcl

@@ -12,6 +12,14 @@ nonterminal TypeList  with location, grammarName, file, warnings, errors, env, p
 synthesized attribute types :: [TypeExp];
 synthesized attribute lexicalTypeVariables :: [String];
 
+function addNewLexicalTyVars
+Defs ::= gn::String sl::Decorated Location l::[String]
+{
+  return if null(l) then emptyDefs()
+         else addLexTyVarDcl(gn, sl, head(l), skolemTypeExp(freshTyVar()),
+                  addNewLexicalTyVars(gn, sl, tail(l)));
+}
+
 abstract production typerepType
 top::Type ::= t::TypeExp
 {
@@ -135,12 +143,13 @@ top::Type ::= tv::TypeVariable_t
   top.pp = tv.lexeme;
   top.location = loc(top.file, $1.line, $1.column);
   
-  local attribute tvname :: String;
-  tvname = substring(1, length(tv.lexeme), tv.lexeme); -- ditch the tick
+  local attribute hack::QNameLookup;
+  hack = customLookup("type", getTypeDcl, tv.lexeme, top.location);
+  hack.env = top.env;
   
-  top.typerep = errorType(); -- TODO
+  top.typerep = hack.typerep;
   top.warnings := [];
-  top.errors := []; -- TODO
+  top.errors := hack.errors;
 
   top.lexicalTypeVariables = [tv.lexeme];
 }
