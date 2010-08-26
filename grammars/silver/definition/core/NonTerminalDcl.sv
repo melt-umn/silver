@@ -21,7 +21,7 @@ top::AGDcl ::= id::Name
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs = addNtDcl(top.grammarName, id.location, fName, emptyDefs());
+  top.defs = addNtDcl(top.grammarName, id.location, fName, nonterminalTypeExp(fName, []), emptyDefs()); -- TODO []
 
   top.errors :=
        if length(getTypeDcl(fName, top.env)) > 1 

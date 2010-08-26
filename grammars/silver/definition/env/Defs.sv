@@ -174,14 +174,19 @@ Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
   return consValueDef(defaultEnvItem(decorate globalValueDcl(sg,sl,fn,ty) with {}), defs);
 }
 function addNtDcl
-Defs ::= sg::String sl::Decorated Location fn::String defs::Defs
+Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
 {
-  return consTypeDef(defaultEnvItem(decorate ntDcl(sg,sl,fn) with {}), defs);
+  return consTypeDef(defaultEnvItem(decorate ntDcl(sg,sl,fn,ty) with {}), defs);
 }
 function addTermDcl
 Defs ::= sg::String sl::Decorated Location fn::String regex::Decorated Regex_R defs::Defs
 {
-  return consTypeDef(defaultEnvItem(decorate termDcl(sg,sl,fn, regex) with {}), defs);
+  return consTypeDef(defaultEnvItem(decorate termDcl(sg,sl,fn,regex) with {}), defs);
+}
+function addLexTyVarDcl
+Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
+{
+  return consTypeDef(defaultEnvItem(decorate lexTyVarDcl(sg,sl,fn,ty) with {}), defs);
 }
 function addSynDcl
 Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs

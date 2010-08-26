@@ -151,14 +151,14 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 
 -- -- interface types
 abstract production ntDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "nt(" ++ sl.unparse ++ ", '" ++ fn ++ "')";
+  top.unparse = "nt(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
   
-  top.typerep = nonterminalTypeExp(fn,[]); -- TODO
+  top.typerep = ty;
   forwards to defaultDcl();
 }
 abstract production termDcl
@@ -170,6 +170,17 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String regex::Decorated R
   top.unparse = "term(" ++ sl.unparse ++ ", '" ++ fn ++ "', /" ++ regex.regString ++ "/)";
   
   top.typerep = terminalTypeExp(fn);
+  forwards to defaultDcl();
+}
+abstract production lexTyVarDcl
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+{
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = fn;
+  top.unparse = error("Lexical type variables should never appear in interface files. (This is the DclInfo complaining here.)");
+  
+  top.typerep = ty;
   forwards to defaultDcl();
 }
 
