@@ -26,12 +26,15 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.errors := ns.errors ++ body.errors;
   top.warnings := [];
 
-  ns.env = newScopeEnv(ns.defs, top.env);
+  production attribute sigDefs :: Defs with appendDefs;
+  sigDefs := ns.defs;
+
+  ns.env = newScopeEnv(sigDefs, top.env);
 
   local attribute prodAtts :: Defs;
   prodAtts = valueDefsFromDcls(getProdAttrs(fName, top.env));
 
-  body.env = newScopeEnv(appendDefs(body.defs, ns.defs), newScopeEnv(prodAtts, top.env));
+  body.env = newScopeEnv(appendDefs(body.defs, sigDefs), newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;
 }
 
