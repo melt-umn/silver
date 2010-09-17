@@ -273,3 +273,8 @@ TypeExp ::= occursDclInfo::Decorated DclInfo ntty::TypeExp
   return decorate new(occursDclInfo) with { givenNonterminalType = ntty; } . typerep;
 }
 
+function somehowUnparseTyVars
+String ::= b::[TyVar]
+{
+  return error("TODO NYI");
+}

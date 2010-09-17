@@ -37,15 +37,15 @@ top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QNa
                 else [];
   
   -- Make sure we get the number of tyvars correct for the NT
-  top.errors <- if length(nt.lookupType.dclBoundVars) != length(tlnt)
+  top.errors <- if length(nt.lookupType.dclBoundVars) != length(tlnt.types)
                 then [err(nt.location, nt.pp ++ " expects " ++ toString(length(nt.lookupType.dclBoundVars)) ++
-                                       " type variables, but " ++ toString(length(tlnt)) ++ " were provided.")]
+                                       " type variables, but " ++ toString(length(tlnt.types)) ++ " were provided.")]
                 else [];
 
   -- Make sure we get the number of tyvars correct for the ATTR
-  top.errors <- if length(a.lookupAttribute.dclBoundVars) != length(tlat)
+  top.errors <- if length(a.lookupAttribute.dclBoundVars) != length(tlat.types)
                 then [err(a.location, a.pp ++ " expects " ++ toString(length(a.lookupAttribute.dclBoundVars)) ++
-                                       " type variables, but " ++ toString(length(tlat)) ++ " were provided.")]
+                                       " type variables, but " ++ toString(length(tlat.types)) ++ " were provided.")]
                 else [];
 
   

@@ -91,7 +91,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 }
 -- -- interface types
 aspect production ntDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp
 {
 }
 aspect production termDcl
@@ -101,13 +101,13 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String regex::Decorated R
 
 -- -- interface Attributes
 aspect production synDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.attrAccessDispatcher = synDNTAccessDispatcher;
   top.attrDefDispatcher = synthesizedAttributeDef;
 }
 aspect production inhDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.attrAccessDispatcher = inhDNTAccessDispatcher;
   top.attrDefDispatcher = inheritedAttributeDef;
@@ -128,7 +128,7 @@ top::DclInfo ::= sg::String sl::Decorated Location ty::TypeExp
 
 -- -- interface other
 aspect production occursDcl
-top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String
+top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
 {
 }
 

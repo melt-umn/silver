@@ -30,7 +30,7 @@ synthesized attribute lookupValue :: Decorated QNameLookup occurs on QName;
 synthesized attribute lookupType :: Decorated QNameLookup occurs on QName;
 synthesized attribute lookupAttribute :: Decorated QNameLookup occurs on QName;
 
-nonterminal QNameLookup with fullName, typerep, errors, env, dcls, dcl;
+nonterminal QNameLookup with fullName, typerep, errors, env, dcls, dcl, dclBoundVars;
 
 abstract production customLookup
 top::QNameLookup ::= kindOfLookup::String lookupFunc::Function([Decorated DclInfo] ::= String Decorated Env) name::String l::Decorated Location 
@@ -40,9 +40,8 @@ top::QNameLookup ::= kindOfLookup::String lookupFunc::Function([Decorated DclInf
   
   top.fullName = top.dcl.fullName;
   
-  top.typerep = if null(top.dcls)
-                then errorType()
-                else head(top.dcls).typerep;
+  top.typerep = if null(top.dcls) then errorType()  else top.dcl.typerep;
+  top.dclBoundVars = if null(top.dcls) then []      else top.dcl.dclBoundVars;
   
   top.errors := (if null(top.dcls)
                   then [err(l, "Undeclared " ++ kindOfLookup ++ " '" ++ name ++ "'.")]
