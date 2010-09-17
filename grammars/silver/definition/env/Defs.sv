@@ -174,9 +174,9 @@ Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
   return consValueDef(defaultEnvItem(decorate globalValueDcl(sg,sl,fn,ty) with {}), defs);
 }
 function addNtDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
+Defs ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
 {
-  return consTypeDef(defaultEnvItem(decorate ntDcl(sg,sl,fn,ty) with {}), defs);
+  return consTypeDef(defaultEnvItem(decorate ntDcl(sg,sl,fn,bound,ty) with {}), defs);
 }
 function addTermDcl
 Defs ::= sg::String sl::Decorated Location fn::String regex::Decorated Regex_R defs::Defs
@@ -189,14 +189,14 @@ Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
   return consTypeDef(defaultEnvItem(decorate lexTyVarDcl(sg,sl,fn,ty) with {}), defs);
 }
 function addSynDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
+Defs ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
 {
-  return consAttrDef(defaultEnvItem(decorate synDcl(sg,sl,fn,ty) with {}), defs);
+  return consAttrDef(defaultEnvItem(decorate synDcl(sg,sl,fn,bound,ty) with {}), defs);
 }
 function addInhDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
+Defs ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
 {
-  return consAttrDef(defaultEnvItem(decorate inhDcl(sg,sl,fn,ty) with {}), defs);
+  return consAttrDef(defaultEnvItem(decorate inhDcl(sg,sl,fn,bound,ty) with {}), defs);
 }
 function addPaDcl
 Defs ::= sg::String sl::Decorated Location fn::String dcl::DclInfo defs::Defs
@@ -209,9 +209,9 @@ Defs ::= sg::String sl::Decorated Location ty::TypeExp defs::Defs
   return consValueDef(defaultEnvItem(decorate forwardDcl(sg,sl,ty) with {}), defs);
 }
 function addOccursDcl
-Defs ::= sg::String sl::Decorated Location fnnt::String fnat::String defs::Defs
+Defs ::= sg::String sl::Decorated Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp defs::Defs
 {
-  return consOccursDef(decorate occursDcl(sg,sl,fnnt,fnat) with {}, defs);
+  return consOccursDef(decorate occursDcl(sg,sl,fnnt,fnat,ntty,atty) with {}, defs);
 }
 -- These aliased functions are used for aspects.
 function addAliasedLhsDcl

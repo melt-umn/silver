@@ -9,7 +9,7 @@ aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 
 {
   production attribute allLexicalTyVars :: [String];
-  allLexicalTyVars = makeSet(ns.lexicalTypeVariables ++ body.lexicalTypeVariables);
+  allLexicalTyVars = makeSet(ns.lexicalTypeVariables);
   
   sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, allLexicalTyVars);
 }
@@ -17,7 +17,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 aspect production functionSignatureEmptyRHS
 top::FunctionSignature ::= lhs::FunctionLHS '::='
 {
-  top.lexicalTypeVariables = lhs.lexicalTypeVariables;
+  top.lexicalTypeVariables = makeSet(lhs.lexicalTypeVariables);
 }
 
 aspect production functionSignature
