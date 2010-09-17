@@ -137,6 +137,15 @@ Substitution ::= te1::TypeExp te2::TypeExp s::Substitution
   return composeSubst( s, unify( performSubstitution(te1, s), performSubstitution(te2, s)));
 }
 
+function unifyDirectional
+Substitution ::= fromte::TypeExp tote::TypeExp
+{
+  -- Currently, this is built on the assumption that the unification will not fail.
+  -- Therefore, for now we will FRAGILEY just call unify 
+  -- This is a possible source of bugs/unexpected behavior?
+  return unify(fromte, tote);
+}
+
 function unifyAll
 Substitution ::= te1::[TypeExp] te2::[TypeExp]
 {

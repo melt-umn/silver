@@ -5,7 +5,7 @@ import silver:util;
 concrete production attributeDclInhEmpty
 top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type ';'
 {
-  forwards to attributeDclInh($1,$2,a,'<',typeListNone(),'>', $4, te, $5);
+  forwards to attributeDclInh($1,$2,a,'<',typeListNone(),'>', $4, te, $6);
 }
 
 concrete production attributeDclInh
@@ -42,7 +42,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Typ
 concrete production attributeDclSynEmpty
 top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type ';'
 {
-  forwards to attributeDclSyn($1,$2,a,'<',typeListNone(),'>', $4, te, $5);
+  forwards to attributeDclSyn($1,$2,a,'<',typeListNone(),'>', $4, te, $6);
 }
 
 concrete production attributeDclSyn
