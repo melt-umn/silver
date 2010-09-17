@@ -1,6 +1,7 @@
 grammar silver:definition:core;
 import silver:definition:env;
-import silver:definition:type:syntax;
+--import silver:definition:type:syntax; -- apparently already being included
+import silver:util;
 
 concrete production nonterminalDclEmpty
 top::AGDcl ::= 'nonterminal' id::Name ';'
@@ -48,7 +49,7 @@ top::AGDcl ::= id::Name tl::TypeList
                 else [];
   
   -- Make sure only type variables show up in the tl
-  top.errors <- tl.errorsTyVar;
+  top.errors <- tl.errorsTyVars;
 
   -- Redefinition check of the name
   top.errors <- 

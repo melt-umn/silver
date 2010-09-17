@@ -2,6 +2,8 @@ grammar silver:definition:type:gatherfreevars;
 
 import silver:definition:core;
 import silver:definition:env;
+import silver:definition:type:syntax;
+import silver:util;
 
 attribute lexicalTypeVariables occurs on FunctionSignature, FunctionLHS;
 

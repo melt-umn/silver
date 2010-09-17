@@ -1,5 +1,6 @@
 grammar silver:definition:core;
 import silver:definition:env;
+import silver:util;
 
 concrete production attributeDclInhEmpty
 top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type ';'
@@ -26,7 +27,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Typ
   top.errors <- if containsDuplicates(tl.lexicalTypeVariables)
                 then [err(top.location, "Duplicate type variable names listed")]
                 else [];
-  top.errors <- tl.errorsTyVar;
+  top.errors <- tl.errorsTyVars;
 --------
   
   top.errors <-
@@ -45,7 +46,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type ';'
 }
 
 concrete production attributeDclSyn
-top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '> '::' te::Type ';'
+top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type ';'
 {
   top.pp = "synthesized attribute " ++ a.pp ++ " :: " ++ te.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
@@ -63,7 +64,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '> '::' te::Ty
   top.errors <- if containsDuplicates(tl.lexicalTypeVariables)
                 then [err(top.location, "Duplicate type variable names listed")]
                 else [];
-  top.errors <- tl.errorsTyVar;
+  top.errors <- tl.errorsTyVars;
 --------
   
   top.errors <-

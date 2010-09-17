@@ -1,5 +1,6 @@
 grammar silver:definition:core;
 import silver:definition:env;
+import silver:util;
 
 concrete production attributionDcl
 top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QName '<' tlnt::TypeList '>' ';'
@@ -36,37 +37,37 @@ top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QNa
                 else [];
   
   -- Make sure we get the number of tyvars correct for the NT
-  top.errors <- if length(nt.lookupType.dclBoundVars) != length(nttl)
+  top.errors <- if length(nt.lookupType.dclBoundVars) != length(tlnt)
                 then [err(nt.location, nt.pp ++ " expects " ++ toString(length(nt.lookupType.dclBoundVars)) ++
-                                       " type variables, but " ++ toString(length(nttl)) ++ " were provided.")]
+                                       " type variables, but " ++ toString(length(tlnt)) ++ " were provided.")]
                 else [];
 
   -- Make sure we get the number of tyvars correct for the ATTR
-  top.errors <- if length(at.lookupAttribute.dclBoundVars) != length(attl)
-                then [err(at.location, at.pp ++ " expects " ++ toString(length(at.lookupAttribute.dclBoundVars)) ++
-                                       " type variables, but " ++ toString(length(attl)) ++ " were provided.")]
+  top.errors <- if length(a.lookupAttribute.dclBoundVars) != length(tlat)
+                then [err(a.location, a.pp ++ " expects " ++ toString(length(a.lookupAttribute.dclBoundVars)) ++
+                                       " type variables, but " ++ toString(length(tlat)) ++ " were provided.")]
                 else [];
 
   
   production attribute rewriteAndFreshenSubst :: Substitution;
   rewriteAndFreshenSubst = composeSubst(composeSubst(
                      -- nt's types -> local skolem types
-                     zipVarsIntoSubstitution(nt.lookupType.dclBoundVars, nttl.freeVariables),
+                     zipVarsIntoSubstitution(nt.lookupType.dclBoundVars, tlnt.freeVariables),
                      -- at's type -> local skolem types
-                     zipVarsIntoSubstitution(at.lookupAttribute.dclBoundVars, attl.freeVariables)),
+                     zipVarsIntoSubstitution(a.lookupAttribute.dclBoundVars, tlat.freeVariables)),
                    -- local skolem types -> fresh ty vars (non-skolem)
-                   zipVarsIntoSubstitution(nttl.freeVariables, freshTyVars(length(nttl.freeVariables))));
+                   zipVarsIntoSubstitution(tlnt.freeVariables, freshTyVars(length(tlnt.freeVariables))));
                    
   production attribute protontty :: TypeExp;
   production attribute protoatty :: TypeExp;
-  protontty = performSubstitution(nt.lookupType.typrep, rewriteAndFreshenSubst);
-  protoatty = performSubstitution(at.lookupAttribute.typerep, rewriteAndFreshenSubst);
+  protontty = performSubstitution(nt.lookupType.typerep, rewriteAndFreshenSubst);
+  protoatty = performSubstitution(a.lookupAttribute.typerep, rewriteAndFreshenSubst);
   
   {-  Look up nt and nt.bound
       Zip (nt.bound -> tlnt.types)
       Look up at and at.bound
       Zip (at.bound -> tlat.types)
-      create a freshening substitution to get rid of skolems (Should only be those in nttl)
+      create a freshening substitution to get rid of skolems (Should only be those in tlnt)
       freshen both with this
       finally, put them in the environment.
       

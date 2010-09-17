@@ -26,7 +26,7 @@ Boolean ::= s::[String] sl::[[String]]
 function containsDuplicates
 Boolean ::= s::[String]
 {
-  return (!null(sl)) && (contains(head(s),tail(s)) || containsDuplicates(tail(s)));
+  return (!null(s)) && (contains(head(s),tail(s)) || containsDuplicates(tail(s)));
 }
 
 function equals
