@@ -1,5 +1,9 @@
 grammar silver:definition:type:gatherfreevars;
 
+-- THIS WHOLE FILE IS COMMENTED OUT. REMOVE
+
+{-
+
 import silver:definition:core;
 import silver:definition:env;
 
@@ -113,3 +117,4 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.lexicalTypeVariables = [];
 }
 
+-}

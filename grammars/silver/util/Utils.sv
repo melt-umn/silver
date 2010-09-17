@@ -23,6 +23,12 @@ Boolean ::= s::[String] sl::[[String]]
   return (!null(sl)) && (equals(s, head(sl)) || containsSet(s, tail(sl)));
 }
 
+function containsDuplicates
+Boolean ::= s::[String]
+{
+  return (!null(sl)) && (contains(head(s),tail(s)) || containsDuplicates(tail(s)));
+}
+
 function equals
 Boolean ::= s1::[String] s2::[String]
 {

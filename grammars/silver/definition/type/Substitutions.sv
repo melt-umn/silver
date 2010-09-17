@@ -221,7 +221,7 @@ function freshTyVars
 function zipVarsIntoSubstitution
 Substitution ::= original::[TyVar] sub::[TyVar]
 {
-  return if null(original) then emptySubst()
+  return if null(original) || null(sub) then emptySubst()
          else composeSubst( subst(head(original), varTypeExp(head(sub))), zipVarsIntoSubstitution(tail(original), tail(sub)));
 }
 

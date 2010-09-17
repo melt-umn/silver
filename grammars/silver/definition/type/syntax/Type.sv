@@ -6,13 +6,22 @@ import silver:definition:env;
 import silver:util;
 import silver:definition:type:gatherfreevars;
 
-nonterminal Type      with location, grammarName, file, warnings, errors, env, pp, defs, typerep, lexicalTypeVariables;
-nonterminal Signature with location, grammarName, file, warnings, errors, env, pp,       types,   lexicalTypeVariables;
-nonterminal TypeList  with location, grammarName, file, warnings, errors, env, pp, defs, types,   lexicalTypeVariables;
+nonterminal Type      with location, grammarName, file, warnings, errors, env, pp, typerep, lexicalTypeVariables;
+nonterminal Signature with location, grammarName, file, warnings, errors, env, pp, types,   lexicalTypeVariables;
+nonterminal TypeList  with location, grammarName, file, warnings, errors, env, pp, types,   lexicalTypeVariables, errorsTyVars, freeVariables;
 
 synthesized attribute types :: [TypeExp];
-synthesized attribute lexicalTypeVariables :: [String];
 
+-- Important: These should be IN-ORDER and include ALL type variables that appear, including duplicates!
+synthesized attribute lexicalTypeVariables :: [String];
+-- freeVariables also occurs on TypeList, and should be IN ORDER
+
+-- These attributes are used if we're using the TypeList as type variables-only.
+synthesized attribute errorsTyVars :: [Decorated Message] with ++;
+
+-- TODO: This function should go away because it doesn't do location correctly.
+-- But for now, we'll use it. It might be easier to get rid of once we know exactly
+-- how ty vars end up in the environment.
 function addNewLexicalTyVars
 Defs ::= gn::String sl::Decorated Location l::[String]
 {
@@ -227,8 +236,22 @@ top::Signature ::= t::Type '::=' list::TypeList
 
   top.types = [t.typerep] ++ list.types;
 
-  top.lexicalTypeVariables = makeSet(t.lexicalTypeVariables ++ list.lexicalTypeVariables);
+  top.lexicalTypeVariables = t.lexicalTypeVariables ++ list.lexicalTypeVariables;
 }
+
+-- TypeLists -------------------------------------------------------------------
+
+abstract production typeListNone
+top::TypeList ::=
+{
+  top.pp = "";
+  top.location = loc(top.file, -1, -1);
+  top.errors := [];
+  top.warning := [];
+  top.types = [];
+  top.lexicalTypeVariables = [];
+}
+
 
 concrete production typeListSingle
 top::TypeList ::= t::Type
@@ -255,6 +278,39 @@ top::TypeList ::= t::Type list::TypeList
 
   top.types = [t.typerep] ++ list.types;
 
-  top.lexicalTypeVariables = makeSet(t.lexicalTypeVariables ++ list.lexicalTypeVariables);
+  top.lexicalTypeVariables = t.lexicalTypeVariables ++ list.lexicalTypeVariables;
+}
+
+--------------------------------------------------------------------------------
+-- Aspecting the above three here, just to separate out these concerns:
+-- This has to do with type lists that are type variables only.
+-- We don't have a separate nonterminal for this, because we'd like to produce
+-- "semantic" errors, rather than parse errors for this.
+
+aspect production typeListNone
+top::TypeList ::=
+{
+  top.errorsTyVars := [];
+  top.freeVariables = [];
+}
+
+aspect production typeListSingle
+top::TypeList ::= t::Type
+{
+  top.errorsTyVars := case t of
+                        typeVariableType(_) -> []
+                      | _ -> [err(t.location, t.pp ++ " is not permitted here, only type variables are"]
+                      end;
+  top.freeVariables = t.typerep.freeVariables;
+}
+
+aspect production typeListCons
+top::TypeList ::= t::Type list::TypeList
+{
+  top.errorsTyVars := case t of
+                        typeVariableType(_) -> []
+                      | _ -> [err(t.location, t.pp ++ " is not permitted here, only type variables are"]
+                      end ++ list.errorsTyVars;
+  top.freeVariables = t.typerep.freeVariables ++ list.freeVariables;
 }
 
