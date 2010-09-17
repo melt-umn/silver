@@ -268,8 +268,8 @@ top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String ntt
 
 -- TODO: this should probably go elsewhere?
 function determineAttributeType
-TypeExp ::= occursDcl::Decorated DclInfo ntty::TypeExp
+TypeExp ::= occursDclInfo::Decorated DclInfo ntty::TypeExp
 {
-  return decorate new(occursDcl) with { givenNonterminalType = ntty; } . typerep;
+  return decorate new(occursDclInfo) with { givenNonterminalType = ntty; } . typerep;
 }
 

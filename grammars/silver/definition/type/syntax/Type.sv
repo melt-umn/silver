@@ -247,7 +247,7 @@ top::TypeList ::=
   top.pp = "";
   top.location = loc(top.file, -1, -1);
   top.errors := [];
-  top.warning := [];
+  top.warnings := [];
   top.types = [];
   top.lexicalTypeVariables = [];
 }
@@ -299,7 +299,7 @@ top::TypeList ::= t::Type
 {
   top.errorsTyVars := case t of
                         typeVariableType(_) -> []
-                      | _ -> [err(t.location, t.pp ++ " is not permitted here, only type variables are"]
+                      | _ -> [err(t.location, t.pp ++ " is not permitted here, only type variables are")]
                       end;
   top.freeVariables = t.typerep.freeVariables;
 }
@@ -309,7 +309,7 @@ top::TypeList ::= t::Type list::TypeList
 {
   top.errorsTyVars := case t of
                         typeVariableType(_) -> []
-                      | _ -> [err(t.location, t.pp ++ " is not permitted here, only type variables are"]
+                      | _ -> [err(t.location, t.pp ++ " is not permitted here, only type variables are")]
                       end ++ list.errorsTyVars;
   top.freeVariables = t.typerep.freeVariables ++ list.freeVariables;
 }
