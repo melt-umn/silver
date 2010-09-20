@@ -1,5 +1,9 @@
 grammar silver:analysis:typechecking:core;
 
+{- We are making a very explicit choice here to NOT have subst occur on these.
+   Each top-level declaration should have its OWN substitution context -}
+attribute typeErrors occurs on Root, AGDcls, AGDcl;
+
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 {
