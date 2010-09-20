@@ -5,6 +5,7 @@ import silver:definition:core;
 import silver:util;
 import silver:definition:env;
 import silver:translation:java:type;
+import silver:definition:type:syntax;
 
 import silver:translation:java:concrete_syntax:copper; -- TODO part of ugly hack
 
