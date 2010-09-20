@@ -1,6 +1,7 @@
 grammar silver:translation:java:type;
 
 import silver:definition:type;
+import silver:translation:java:core only makeNTClassName;
 
 -- The Java type corresponding to the Silver Type
 synthesized attribute transType :: String;

@@ -1,6 +1,5 @@
 grammar silver:definition:concrete_syntax;
-import silver:definition:core;
-import silver:definition:env;
+
 import silver:util;
 
 attribute parserDcls occurs on RootSpec;

@@ -1,5 +1,4 @@
 grammar silver:definition:concrete_syntax;
-import silver:definition:env;
 
 synthesized attribute nonTerminalName :: String;
 

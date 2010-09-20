@@ -1,5 +1,5 @@
 grammar silver:definition:concrete_syntax;
-import silver:definition:env;
+
 import silver:definition:regex;
 
 nonterminal TerminalSpec with terminalModifiers, terminalName, terminalRegExprSpec, unparse, ignoreTerminal, parserPrecedence, parserAssociation;
