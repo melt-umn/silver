@@ -1,5 +1,4 @@
 grammar silver:definition:core;
-import silver:definition:env;
 
 concrete production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody

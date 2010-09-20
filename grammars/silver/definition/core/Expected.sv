@@ -1,7 +1,5 @@
 grammar silver:definition:core;
 
-import silver:definition:env;
-
 nonterminal Expected;
 
 abstract production expected_type

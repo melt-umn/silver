@@ -1,11 +1,5 @@
 grammar silver:definition:core;
 
--- HACK TODO: fix this somehow.
-imports silver:definition:type:syntax;
-imports silver:definition:type;
-
-import silver:definition:env;
-
 nonterminal Root with location, grammarName, impliedName, file, declaredName, moduleNames, importedDefs, exportedGrammars, condBuild, warnings, errors, compiledGrammars, env, globalImports, defs, pp;
 
 nonterminal QName with name, location, grammarName, file, warnings, errors, env, defs, pp;

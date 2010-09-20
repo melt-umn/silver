@@ -1,7 +1,5 @@
 grammar silver:definition:core;
 
-import silver:definition:env only loc;
-
 concrete production nameId
 top::Name ::= id::Id_t
 {

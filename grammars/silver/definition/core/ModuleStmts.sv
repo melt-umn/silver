@@ -1,6 +1,4 @@
 grammar silver:definition:core;
-import silver:definition:env;
-import silver:util;
 
 --grammar g as a only o hiding h with w;
 --apply only

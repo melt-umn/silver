@@ -1,7 +1,5 @@
 grammar silver:definition:core;
 
-import silver:definition:env; -- Location
-
 synthesized attribute msg :: String;
 nonterminal Message with location, msg, pp;
 

@@ -1,5 +1,4 @@
 grammar silver:definition:core;
-import silver:definition:env;
 
 concrete production lengthFunction
 top::Expr ::= 'length' '(' e::Expr ')'

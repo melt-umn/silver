@@ -1,6 +1,4 @@
 grammar silver:definition:core;
-import silver:definition:env;
-import silver:util;
 
 synthesized attribute interface :: Boolean;
 synthesized attribute impliedName :: String;

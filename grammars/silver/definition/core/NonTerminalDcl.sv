@@ -1,7 +1,4 @@
 grammar silver:definition:core;
-import silver:definition:env;
---import silver:definition:type:syntax; -- apparently already being included
-import silver:util;
 
 concrete production nonterminalDclEmpty
 top::AGDcl ::= 'nonterminal' id::Name ';'
