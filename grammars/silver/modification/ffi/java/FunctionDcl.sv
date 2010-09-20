@@ -5,6 +5,7 @@ import silver:translation:java:core;
 import silver:translation:java:type;
 import silver:definition:core;
 import silver:definition:env;
+import silver:definition:type;
 
 synthesized attribute ffiTranslationString :: [String] occurs on FFIDef, FFIDefs;
 
@@ -27,7 +28,7 @@ top::FFIDef ::= name::String_t ':' 'return' code::String_t ';'
 }
 
 function childAccessor
-String ::= t::Decorated TypeRep fName::String className::String
+String ::= t::TypeExp fName::String className::String
 {
   return "((" ++ t.transType ++ ")context.child(" ++ className ++ ".i_" ++ fName  ++ "))";
 }

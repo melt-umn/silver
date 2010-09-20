@@ -2,6 +2,7 @@ grammar silver:modification:ffi:util;
 
 import silver:definition:core;
 import silver:definition:env;
+import silver:definition:type;
 import silver:modification:ffi;
 import silver:util;
 
@@ -13,7 +14,7 @@ String ::= s::String names::[String] results::[String]
 }
 
 function mapSignature
-[String] ::= f::Function(String ::= Decorated TypeRep String String) ns::[Decorated NamedSignatureElement] extra::String
+[String] ::= f::Function(String ::= TypeExp String String) ns::[Decorated NamedSignatureElement] extra::String
 {
   return if null(ns) then [] else f(head(ns).typerep, head(ns).elementName, extra) :: mapSignature(f, tail(ns), extra);
 }
