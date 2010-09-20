@@ -1,5 +1,4 @@
 grammar silver:definition:concrete_syntax;
-import silver:definition:core;
 
 synthesized attribute terminalDcls :: [Decorated TerminalSpec];
 synthesized attribute nonTerminalDcls :: [Decorated NonTerminalSpec];

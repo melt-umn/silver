@@ -1,6 +1,4 @@
 grammar silver:definition:concrete_syntax;
-import silver:definition:core;
-import silver:definition:env;
 
 nonterminal ParserDcl with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, defs, pp, parserDcls, fullName, typerep, nonTerminalDcls, terminalDcls, ruleDcls, env;
 nonterminal ModuleList with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, pp, nonTerminalDcls, terminalDcls, ruleDcls;
@@ -52,7 +50,7 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
   top.defs = addFunDcl(top.grammarName, n.location, namedSig, emptyDefs());
   
   production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(top.fullName, [namedSignatureElement("__str", stringTypeRep())], namedSignatureElement("__pt", t.typerep));
+  namedSig = namedSignatureDcl(top.fullName, [namedSignatureElement("__str", stringTypeExp())], namedSignatureElement("__pt", t.typerep));
 
   top.moduleNames = m.moduleNames;
 }

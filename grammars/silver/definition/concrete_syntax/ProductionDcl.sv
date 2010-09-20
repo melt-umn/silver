@@ -1,6 +1,4 @@
 grammar silver:definition:concrete_syntax;
-import silver:definition:core;
-import silver:definition:env;
 
 aspect production productionDcl
 top ::= _ _ _ _ _{

@@ -1,7 +1,6 @@
 grammar silver:definition:concrete_syntax;
+
 import silver:util;
-import silver:definition:env;
-import silver:definition:core;
 
 nonterminal RuleSpec with ruleLHS, ruleRHSSpec, unparse;
 nonterminal RHSSpec with ruleRHS, ruleName, parserPrecedence, ruleGrammarName, unparse, productionModifiers, productionOperatorPrecedence;

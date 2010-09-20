@@ -1,7 +1,4 @@
 grammar silver:definition:concrete_syntax;
-import silver:definition:env;
-
-import silver:definition:core;
 
 synthesized attribute startName :: String;
 
