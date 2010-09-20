@@ -1,14 +1,21 @@
 grammar silver:translation:java:type;
 
-import silver:definition:env;
+import silver:definition:type;
 
+-- The Java type corresponding to the Silver Type
 synthesized attribute transType :: String;
+
+-- Whether this type may be supplied with inherited attributes.
+-- Used only to determine if the maps should be created. (NOT TYPE CHECKING)
+synthesized attribute mayBeSuppliedInhAttrs :: Boolean;
+
 attribute transType occurs on TypeExp;
 
 aspect production defaultTypeExp
 top::TypeExp ::=
 {
   top.transType = error("INTERNAL ERROR: Some type forgot to define its Java transType.");
+  top.mayBeSuppliedInhAttrs = false;
 }
 
 aspect production varTypeExp
@@ -50,8 +57,9 @@ top::TypeExp ::=
 aspect production nonterminalTypeExp
 top::TypeExp ::= fn::String params::[TypeExp]
 {
-  -- TODO: tighten this up!
-  top.transType = "common.Node";
+  -- untightened version would be "common.Node"
+  top.transType = makeNTClassName(fn);
+  top.mayBeSuppliedInhAttrs = true;
 }
 
 aspect production terminalTypeExp
