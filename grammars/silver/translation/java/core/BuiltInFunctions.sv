@@ -1,7 +1,4 @@
 grammar silver:translation:java:core;
-import silver:translation:java:env;
-import silver:definition:core;
-import silver:definition:env;
 
 aspect production unknownLength
 top::Expr ::= e::Decorated Expr

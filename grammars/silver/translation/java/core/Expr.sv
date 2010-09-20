@@ -1,8 +1,5 @@
 grammar silver:translation:java:core;
-import silver:translation:java:env;
 
-import silver:definition:core;
-import silver:definition:env;
 import silver:util;
 
 import silver:translation:java:concrete_syntax:copper; -- todo : part of wrapThunk hack

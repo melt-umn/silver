@@ -1,7 +1,4 @@
 grammar silver:translation:java:core;
-import silver:translation:java:env;
-import silver:definition:core;
-import silver:definition:env;
 
 aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'

@@ -14,12 +14,16 @@ synthesized attribute isDecorated :: Boolean;
 synthesized attribute isProduction :: Boolean;
 synthesized attribute isFunction :: Boolean;
 
+-- Used by translation for locals, to determine if it could have inherited attributes.
+synthesized attribute isNonTerminal :: Boolean; 
+
 aspect production defaultTypeExp
 top::TypeExp ::=
 {
   top.isFunction = false;
   top.isProduction = false;
   top.isDecorated = false;
+  top.isNonterminal = false;
 }
 
 aspect production varTypeExp
@@ -55,6 +59,7 @@ top::TypeExp ::=
 aspect production nonterminalTypeExp
 top::TypeExp ::= fn::String params::[TypeExp]
 {
+  top.isNonTerminal = true;
 }
 
 aspect production terminalTypeExp

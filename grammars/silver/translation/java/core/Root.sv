@@ -1,5 +1,4 @@
 grammar silver:translation:java:core;
-import silver:definition:core;
 
 attribute javaClasses occurs on Root, AGDcls, AGDcl;
 attribute setupInh occurs on Root, AGDcls, AGDcl;

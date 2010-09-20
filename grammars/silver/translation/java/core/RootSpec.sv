@@ -1,6 +1,4 @@
 grammar silver:translation:java:core;
-import silver:definition:core;
-import silver:definition:env;
 
 -- Argh. Should have made javaClasses a collection, too, while I was at it..
 synthesized attribute javaClasses :: [[String]];

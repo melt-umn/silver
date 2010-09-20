@@ -1,5 +1,4 @@
 grammar silver:translation:java:core;
-import silver:definition:core;
 
 aspect production defaultNonterminalDcl
 top::AGDcl ::= id::Name

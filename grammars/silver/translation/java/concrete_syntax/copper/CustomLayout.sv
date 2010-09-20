@@ -5,7 +5,7 @@ import silver:definition:concrete_syntax;
 import silver:definition:env;
 import silver:translation:java:core;
 import silver:translation:java:concrete_syntax;
-import silver:translation:java:env;
+import silver:translation:java:type;
 import silver:analysis:typechecking:core;
 
 import silver:util;

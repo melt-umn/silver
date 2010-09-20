@@ -2,7 +2,7 @@ grammar silver:modification:ffi:java;
 import silver:modification:ffi;
 import silver:modification:ffi:util;
 import silver:translation:java:core;
-import silver:translation:java:env;
+import silver:translation:java:type;
 import silver:definition:core;
 import silver:definition:env;
 

@@ -7,7 +7,7 @@ import silver:definition:core;
 import silver:definition:env;
 
 import silver:translation:java:core;
-import silver:translation:java:env;
+import silver:translation:java:type;
 import silver:extension:list;
 
 
