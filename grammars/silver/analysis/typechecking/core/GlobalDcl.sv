@@ -5,8 +5,14 @@ top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
 {
   top.typeErrors := e.typeErrors;
   
-  top.typeErrors <- if e.typerep.typeEquals(e.typerep, t.typerep).bValue
-                    then []
-                    else [err(top.location, "Declaration of global " ++ id.name ++ " with type " ++ t.pp ++ " has initialization expression with type " ++ e.typerep.typeName)];
+  local attribute fusedTyVars :: [TyVar];
+  fusedTyVars = t.typerep.freeVariables ++ e.typerep.freeVariables;
+  
+  top.typeErrors <- if unify(e.typerep, t.typerep).failure
+                    then [err(top.location, "Declaration of global " ++ id.name ++ " with type " ++ prettyTypeWith(t.typerep, fusedTyVars) ++ " has initialization expression with type " ++ prettyTypeWith(e.typerep, fusedTyVars))]
+                    else [];
+
+  e.downSubst = emptySubst();
+  e.finalSubst = e.upSubst;
 }
 

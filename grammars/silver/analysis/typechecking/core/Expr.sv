@@ -1,6 +1,7 @@
 grammar silver:analysis:typechecking:core;
 
---Base Expressions
+attribute typeErrors, upSubst, downSubst, finalSubst occurs on Expr, ForwardInhs, ForwardInh, ForwardLHSExpr, ExprInhs, ExprInh, ExprLHSExpr, Exprs;
+
 aspect production nestedExpr
 top::Expr ::= '(' e::Expr ')'
 {
