@@ -1,6 +1,4 @@
 grammar silver:analysis:typechecking:core;
-import silver:definition:core;
-import silver:definition:env;
 
 --Base Expressions
 aspect production nestedExpr

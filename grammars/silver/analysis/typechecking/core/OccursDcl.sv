@@ -1,6 +1,4 @@
 grammar silver:analysis:typechecking:core;
-import silver:definition:core;
-import silver:definition:env;
 
 aspect production attributionDcl
 top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'

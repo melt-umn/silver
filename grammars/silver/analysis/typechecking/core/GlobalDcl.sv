@@ -1,6 +1,4 @@
 grammar silver:analysis:typechecking:core;
-import silver:definition:core;
-import silver:definition:env;
 
 aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'

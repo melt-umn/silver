@@ -1,6 +1,5 @@
 grammar silver:analysis:typechecking:core;
-import silver:definition:core;
-import silver:definition:env;
+
 import silver:util;
 
 aspect production defaultProductionBody
