@@ -1,7 +1,4 @@
 grammar silver:translation:java:core;
-import silver:translation:java:env;
-import silver:definition:core;
-import silver:definition:env;
 
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody{

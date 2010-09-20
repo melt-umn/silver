@@ -1,6 +1,6 @@
 grammar silver:translation:java:concrete_syntax:copper;
 import silver:translation:java:core;
-import silver:translation:java:env;
+import silver:translation:java:type;
 import silver:definition:concrete_syntax;
 import silver:definition:core;
 import silver:definition:env;

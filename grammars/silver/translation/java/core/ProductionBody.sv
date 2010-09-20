@@ -1,14 +1,8 @@
 grammar silver:translation:java:core;
-import silver:definition:core;
-import silver:definition:env;
+
 import silver:util;
 
---synthesized attribute nodeName :: String;
 synthesized attribute attrName :: String;
---synthesized attribute isLocal :: Boolean;
---synthesized attribute isLocalDcl :: Boolean;
---synthesized attribute isChild :: Boolean;
---synthesized attribute isParent :: Boolean;
 
 attribute attrName occurs on ForwardLHSExpr;
 
