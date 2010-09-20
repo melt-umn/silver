@@ -1,7 +1,5 @@
 grammar silver:translation:java:core;
 
-import silver:definition:type:anytype;
-
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody{
 
@@ -91,8 +89,7 @@ function makeStaticDcls
 String ::= className::String s::[Decorated NamedSignatureElement]{
   return if null(s) 
 	 then "" 
-	       -- TODO: is this enough for this condition?
-	 else (if head(s).typerep.isNonTerminal || head(s).typerep.isAnyType then
+	 else (if head(s).typerep.mayBeSuppliedInhAttrs then
 	      "\t" ++ className ++ ".inheritedAttributes.put(i_" ++ head(s).elementName ++ ", " ++ 
                                                             "new java.util.TreeMap<String, common.Lazy>());\n"
                else "") ++ makeStaticDcls(className, tail(s));
@@ -118,10 +115,7 @@ String ::= ns::[Decorated NamedSignatureElement] e::Decorated Env
 {
   return if null(ns)
          then ""
-         else (if head(ns).typerep.isNonTerminal
-               then makeNTClassName(head(ns).typerep.typeName)
-               else head(ns).typerep.transType)
-              ++ ".class"
+         else head(ns).typerep.transType ++ ".class"
               ++ if null(tail(ns))
                  then ""
                  else ", " ++ makeChildTypesList(tail(ns), e);

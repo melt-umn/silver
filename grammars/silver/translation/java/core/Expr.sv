@@ -356,12 +356,6 @@ top::Expr ::= s::String_t
   top.translation = "(new common.StringCatter(" ++ s.lexeme ++ "))";
 }
 
-aspect production defaultPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-  top.translation = "(" ++ e1.translation ++ " + " ++ e2.translation ++ ")";
-}
-
 aspect production stringPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
