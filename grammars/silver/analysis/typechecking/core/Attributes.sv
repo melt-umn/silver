@@ -1,5 +1,4 @@
 grammar silver:analysis:typechecking:core;
-import silver:definition:core;
 
 synthesized attribute typeErrors :: [Decorated Message] with ++;
 attribute typeErrors occurs on Root, AGDcls, AGDcl;

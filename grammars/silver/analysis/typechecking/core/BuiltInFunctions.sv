@@ -1,6 +1,4 @@
 grammar silver:analysis:typechecking:core;
-import silver:definition:env;
-import silver:definition:core;
 
 aspect production stringLength
 top::Expr ::= e::Decorated Expr

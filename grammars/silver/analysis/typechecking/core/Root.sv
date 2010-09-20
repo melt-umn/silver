@@ -1,5 +1,4 @@
 grammar silver:analysis:typechecking:core;
-import silver:definition:core;
 
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
