@@ -1,7 +1,5 @@
 grammar silver:definition:core;
 
-import silver:definition:env;
-
 import silver:definition:regex;  -- soley for Terms. TODO : fix?
 
 -- values

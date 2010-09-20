@@ -1,6 +1,4 @@
 grammar silver:definition:core;
-import silver:definition:env;
-
 
 autocopy attribute expected :: Expected;
 synthesized attribute name :: String;

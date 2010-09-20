@@ -1,5 +1,4 @@
 grammar silver:definition:core;
-import silver:definition:env;
 
 synthesized attribute doDecorate :: Boolean;
 synthesized attribute applicationDispatcher :: Production (Expr ::= Decorated Expr Exprs);

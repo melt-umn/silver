@@ -1,6 +1,4 @@
 grammar silver:definition:core;
-import silver:definition:env;
-import silver:util;
 
 concrete production root1
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls{

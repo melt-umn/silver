@@ -1,6 +1,4 @@
 grammar silver:definition:core;
-import silver:definition:env;
-import silver:util;
 
 concrete production attributeDclInhEmpty
 top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type ';'

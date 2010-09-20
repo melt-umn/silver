@@ -1,5 +1,4 @@
 grammar silver:definition:core;
-import silver:definition:env;
 
 concrete production nestedExpr
 top::Expr ::= '(' e::Expr ')'

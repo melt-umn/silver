@@ -1,7 +1,5 @@
 grammar silver:definition:core;
 
-import silver:definition:env;
-
 concrete production qNameId
 top::QName ::= id::Name
 {

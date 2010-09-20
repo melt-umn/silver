@@ -1,7 +1,5 @@
 grammar silver:definition:core;
 
-import silver:definition:env;
-
 concrete production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
 {

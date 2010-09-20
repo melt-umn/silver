@@ -1,6 +1,4 @@
 grammar silver:definition:core;
-import silver:definition:env;
-import silver:util;
 
 concrete production attributionDcl
 top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QName '<' tlnt::TypeList '>' ';'
