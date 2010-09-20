@@ -2,6 +2,7 @@ grammar silver:analysis:typechecking:concrete_syntax;
 import silver:analysis:typechecking:core;
 import silver:definition:core;
 import silver:definition:concrete_syntax;
+import silver:definition:type:syntax;
 
 attribute typeErrors occurs on ParserDcl;
 aspect production parserDcl

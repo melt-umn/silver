@@ -1,6 +1,7 @@
 grammar silver:modification:let_fix;
 import silver:definition:core;
 import silver:definition:env;
+import silver:definition:type:syntax;
 
 terminal Let_kwd 'let' lexer classes {KEYWORD};
 terminal In_kwd 'in' lexer classes {KEYWORD};

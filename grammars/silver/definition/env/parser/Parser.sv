@@ -1,7 +1,6 @@
 grammar silver:definition:env:parser;
 
 import silver:definition:env;
-import silver:definition:type:anytype;
 import silver:definition:type:io;
 import silver:definition:regex hiding RegexRBrack_t, RegexLBrack_t, RegexLParen_t, RegexRParen_t; -- TODO: a bit of a hack?
 
@@ -48,7 +47,6 @@ terminal BooleanTerm     'bool'      lexer classes {C_1};
 terminal TerminalTerm    'term'      lexer classes {C_1};
 terminal NonterminalTerm 'nt'        lexer classes {C_1};
 terminal DecoratedTerm   'decorated' lexer classes {C_1};
-terminal AnyTypeTerm     'anytype'   lexer classes {C_1};
 terminal IOTerm          'io'        lexer classes {C_1};
 terminal TopTerm         'top'       lexer classes {C_1};
 
@@ -389,11 +387,6 @@ top::aTypeRep ::= t::ProductionTerm '(' it::aTypeReps ','  ot::aTypeRep ')' {
 concrete production aTypeRepFunction
 top::aTypeRep ::= t::FunctionTerm '(' it::aTypeReps ','  ot::aTypeRep ')' {
   top.typerep = funTypeRep(it.typereps, ot.typerep);
-}
-
-concrete production aTypeRepAnyType
-top::aTypeRep ::= t::AnyTypeTerm {
-  top.typerep = anyTypeTypeRep();
 }
 
 concrete production aTypeRepIO
