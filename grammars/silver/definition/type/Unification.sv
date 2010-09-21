@@ -131,10 +131,10 @@ Substitution ::= te1::TypeExp te2::TypeExp
          else rightward; -- arbitrary choice of errors. Non-confluent!!
 }
 
-function unifyContext
+function unifyCheck
 Substitution ::= te1::TypeExp te2::TypeExp s::Substitution
 {
-  return composeSubst( s, unify( performSubstitution(te1, s), performSubstitution(te2, s)));
+  return composeSubst( ignoreFailure(s), unify( performSubstitution(te1, s), performSubstitution(te2, s)));
 }
 
 function unifyDirectional

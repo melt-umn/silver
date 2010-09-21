@@ -11,39 +11,40 @@ attribute unparse, typeName occurs on TypeExp;
 
 synthesized attribute typeName :: String;
 
+aspect production defaultTypeExp
+top::TypeExp ::=
+{
+  top.typeName = ""; -- We actually put a value here, since it's possible for us to request typeName of nonsensical things.
+}
+
 aspect production varTypeExp
 top::TypeExp ::= tv::TyVar
 {
   top.unparse = findAbbrevFor(tv, top.boundVariables);
-  top.typeName = error("Attempted to demand the type name of a type variable!");
 }
 
 aspect production intTypeExp
 top::TypeExp ::=
 {
   top.unparse = "int";
-  top.typeName = error("Attempted to demand the type name of an Integer!");
 }
 
 aspect production boolTypeExp
 top::TypeExp ::=
 {
   top.unparse = "bool" ;
-  top.typeName = error("Attempted to demand the type name of a Boolean!");
 }
 
 aspect production floatTypeExp
 top::TypeExp ::=
 {
   top.unparse = "float" ;
-  top.typeName = error("Attempted to demand the type name of a Float!");
 }
 
 aspect production stringTypeExp
 top::TypeExp ::=
 {
   top.unparse = "string" ;
-  top.typeName = error("Attempted to demand the type name of a String!");
 }
 
 aspect production nonterminalTypeExp
@@ -71,14 +72,12 @@ aspect production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
   top.unparse = "fun(" ++ unparseTypes(params, top.boundVariables) ++ ", " ++ out.unparse ++ ")"  ;
-  top.typeName = error("Attempted to demand the type name of a Function type!");
 }
 
 aspect production productionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
   top.unparse = "prod(" ++ unparseTypes(params, top.boundVariables) ++ ", " ++ out.unparse ++ ")"  ;
-  top.typeName = error("Attempted to demand the type name of a Production type!");
 }
 
 
