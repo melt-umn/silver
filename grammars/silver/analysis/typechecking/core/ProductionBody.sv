@@ -1,6 +1,5 @@
 grammar silver:analysis:typechecking:core;
 
-import silver:analysis:typechecking;
 import silver:util;
 
 attribute typeErrors, upSubst, downSubst, finalSubst occurs on ProductionBody, ProductionStmts, ProductionStmt;

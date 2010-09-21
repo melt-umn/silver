@@ -9,18 +9,13 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   local attribute aspectType :: TypeExp;
   aspectType = productionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements));
 
-  local attribute sigSubst :: Substitution;
-  sigSubst = unify(realType, aspectType);
-  
-  local attribute fusedTyVars :: [TyVar];
-  fusedTyVars = aspectType.freeVariables ++ realType.freeVariables;
-  -- TODO: this is imprecise. Should be AFTER sigSubst get freevariables.
-
+  local attribute errCheck1 :: TypeCheck; errCheck1.downSubst = emptySubst();
+  errCheck1 = check(realType, aspectType);
   top.typeErrors <-
-        if sigSubst.failure
+        if errCheck1.typeerror
         then [err(top.location, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "
-                                ++ prettyTypeWith( performSubstitution(realType, sigSubst), fusedTyVars) ++ "\nActual: "
-                                ++ prettyTypeWith( performSubstitution(aspectType, sigSubst), fusedTyVars))]
+                                ++ errCheck1.leftpp ++ "\nActual: "
+                                ++ errCheck1.rightpp)]
         else [];	
 
   top.typeErrors := body.typeErrors;
@@ -39,19 +34,14 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   local attribute aspectType :: TypeExp;
   aspectType = functionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements));
 
-  local attribute sigSubst :: Substitution;
-  sigSubst = unify(realType, aspectType);
-  
-  local attribute fusedTyVars :: [TyVar];
-  fusedTyVars = aspectType.freeVariables ++ realType.freeVariables;
-  -- TODO: this is imprecise. Should be AFTER sigSubst get freevariables.
-
+  local attribute errCheck1 :: TypeCheck; errCheck1.downSubst = emptySubst();
+  errCheck1 = check(realType, aspectType);
   top.typeErrors <-
-        if sigSubst.failure
+        if errCheck1.typeerror
         then [err(top.location, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "
-                                ++ prettyTypeWith( performSubstitution(realType, sigSubst), fusedTyVars) ++ "\nActual: "
-                                ++ prettyTypeWith( performSubstitution(aspectType, sigSubst), fusedTyVars))]
-        else [];
+                                ++ errCheck1.leftpp ++ "\nActual: "
+                                ++ errCheck1.rightpp)]
+        else [];	
 
   top.typeErrors := body.typeErrors;
   
