@@ -27,3 +27,5 @@ autocopy attribute realSignature :: [Decorated NamedSignatureElement];
 autocopy attribute signature :: Decorated NamedSignature;
 
 synthesized attribute productionAttributes :: Defs;
+
+autocopy attribute decoratingnt :: TypeExp;

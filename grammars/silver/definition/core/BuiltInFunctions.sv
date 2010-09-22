@@ -7,7 +7,7 @@ top::Expr ::= 'length' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   production attribute handlers :: [Expr] with ++;
-  handlers := if e.typerep.typeName == "String"  -- TODO BUG FIX THIS. put dispatch on typeexp again?
+  handlers := if !unify(e.typerep, stringTypeExp()).failure
 	      then [stringLength(e)]
 	      else [];
 

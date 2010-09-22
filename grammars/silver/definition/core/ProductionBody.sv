@@ -175,7 +175,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
                                 forwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep),
                                 emptyDefs());
 
-  top.defs = addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
+  top.defs = emptyDefs(); -- addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
 
   top.errors := e.errors;
   top.warnings := [];
@@ -193,7 +193,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
                                 forwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep),
                                 emptyDefs());
 
-  top.defs = addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
+  top.defs = emptyDefs(); -- addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
 
   top.errors := e.errors ++ inh.errors;
   top.warnings := [];
@@ -255,9 +255,12 @@ top::ForwardLHSExpr ::= q::QName
   top.pp = q.pp;
   top.location = q.location;
 
-  top.errors := q.lookupAttribute.errors;
+  production attribute occursCheck :: OccursCheck;
+  occursCheck = occursCheckQName(q, top.signature.outputElement.typerep);
+
+  top.errors := q.lookupAttribute.errors ++ occursCheck.errors;
   top.warnings := [];
-  top.typerep = q.lookupAttribute.typerep;
+  top.typerep = occursCheck.typerep;
 }
 
 concrete production attributeDef
@@ -296,10 +299,13 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
   top.location = loc(top.file, $4.line, $4.column);
 
-  e.expected = expected_type(attr.lookupAttribute.typerep);
+  production attribute occursCheck :: OccursCheck;
+  occursCheck = occursCheckQName(attr, dl.typerep);
+
+  e.expected = expected_type(occursCheck.typerep);
   dl.isSynthesizedDefinition = true;
   
-  top.errors := dl.errors ++ e.errors;
+  top.errors := dl.errors ++ e.errors ++ occursCheck.errors;
 }
 
 abstract production inheritedAttributeDef
@@ -308,10 +314,13 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
   top.location = loc(top.file, $4.line, $4.column);
 
-  e.expected = expected_type(attr.lookupAttribute.typerep);
+  production attribute occursCheck :: OccursCheck;
+  occursCheck = occursCheckQName(attr, dl.typerep);
+
+  e.expected = expected_type(occursCheck.typerep);
   dl.isSynthesizedDefinition = false;
   
-  top.errors := dl.errors ++ e.errors;
+  top.errors := dl.errors ++ e.errors ++ occursCheck.errors;
 }
 
 inherited attribute isSynthesizedDefinition :: Boolean occurs on DefLHS; -- true = syn, false = inh

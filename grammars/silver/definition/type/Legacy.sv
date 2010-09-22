@@ -8,11 +8,16 @@ synthesized attribute inputTypes :: [TypeExp];
 synthesized attribute outputType :: TypeExp;
 
 -- Used by Expr, could possibly be replaced by pattern matching for decoratedTypeExp
+-- Also used by 'new()'
 synthesized attribute isDecorated :: Boolean;
 
 -- Used by aspects, could possibly be replaced by pattern matching
 synthesized attribute isProduction :: Boolean;
 synthesized attribute isFunction :: Boolean;
+
+-- Used for type checking 'decorate' and 'terminal()'
+synthesized attribute isDecorable :: Boolean;
+synthesized attribute isTerminal :: Boolean;
 
 aspect production defaultTypeExp
 top::TypeExp ::=
@@ -20,6 +25,8 @@ top::TypeExp ::=
   top.isFunction = false;
   top.isProduction = false;
   top.isDecorated = false;
+  top.isDecorable = false;
+  top.isTerminal = false;
 }
 
 aspect production varTypeExp
@@ -55,11 +62,13 @@ top::TypeExp ::=
 aspect production nonterminalTypeExp
 top::TypeExp ::= fn::String params::[TypeExp]
 {
+  top.isDecorable = true;
 }
 
 aspect production terminalTypeExp
 top::TypeExp ::= fn::String
 {
+  top.isTerminal = true;
 }
 
 aspect production decoratedTypeExp

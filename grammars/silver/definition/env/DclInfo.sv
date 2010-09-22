@@ -60,7 +60,7 @@ top::DclInfo ::=
   -- All dcls must provide sourceGrammar, sourceLocation, fullName
   -- All dcls that appear in interface files must provide unparse
   
-  -- All values must provide typerep. (namedSignature is present if isProduction or isFunction is true on the typerep. TODO this is weird)
+  -- All values must provide typerep.
   -- All attributes must provide typerep, bound.
   -- All types must provide typerep, bound.
   
@@ -71,6 +71,8 @@ top::DclInfo ::=
   
   -- this exists because extensions/modifications MUST not add any more musts.
   -- And then you need defaulting.  See collection attributes for an example.
+  
+  top.namedSignature = decorate namedSignatureDefault() with {};
 }
 
 -- -- non-interface values
@@ -266,6 +268,12 @@ top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String ntt
   forwards to defaultDcl();
 }
 
+function somehowUnparseTyVars
+String ::= b::[TyVar]
+{
+  return error("TODO NYI");
+}
+
 -- TODO: this should probably go elsewhere?
 function determineAttributeType
 TypeExp ::= occursDclInfo::Decorated DclInfo ntty::TypeExp
@@ -273,8 +281,3 @@ TypeExp ::= occursDclInfo::Decorated DclInfo ntty::TypeExp
   return decorate new(occursDclInfo) with { givenNonterminalType = ntty; } . typerep;
 }
 
-function somehowUnparseTyVars
-String ::= b::[TyVar]
-{
-  return error("TODO NYI");
-}

@@ -4,7 +4,13 @@ synthesized attribute doDecorate :: Boolean;
 synthesized attribute applicationDispatcher :: Production (Expr ::= Decorated Expr Exprs);
 synthesized attribute accessDispatcher :: Production (Expr ::= Decorated Expr Dot_t Decorated QName);
 
-attribute doDecorate, applicationDispatcher, accessDispatcher occurs on TypeExp;
+-- Used for poor man's type classes
+synthesized attribute instanceEq :: Boolean;
+synthesized attribute instanceOrd :: Boolean;
+synthesized attribute instanceNum :: Boolean;
+synthesized attribute instanceConvertible :: Boolean;
+
+attribute doDecorate, applicationDispatcher, accessDispatcher, instanceEq, instanceOrd, instanceNum occurs on TypeExp;
 
 aspect production defaultTypeExp
 top::TypeExp ::=
@@ -12,6 +18,42 @@ top::TypeExp ::=
   top.doDecorate = false;
   top.applicationDispatcher = errorApplicationDispatcher;
   top.accessDispatcher = errorAccessDispatcher;
+  top.instanceEq = false;
+  top.instanceOrd = false;
+  top.instanceNum = false;
+  top.instanceConvertible = false;
+}
+
+aspect production intTypeExp
+top::TypeExp ::=
+{
+  top.instanceEq = true;
+  top.instanceOrd = true;
+  top.instanceNum = true;
+  top.instanceConvertible = true;
+}
+
+aspect production boolTypeExp
+top::TypeExp ::=
+{
+  top.instanceEq = true;
+}
+
+aspect production floatTypeExp
+top::TypeExp ::=
+{
+  top.instanceEq = true;
+  top.instanceOrd = true;
+  top.instanceNum = true;
+  top.instanceConvertible = true;
+}
+
+aspect production stringTypeExp
+top::TypeExp ::=
+{
+  top.instanceEq = true;
+  top.instanceOrd = true;
+  top.instanceConvertible = true;
 }
 
 aspect production nonterminalTypeExp

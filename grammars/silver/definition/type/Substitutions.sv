@@ -237,3 +237,10 @@ TypeExp ::= te::TypeExp tvs::[TyVar] ntvs::[TyVar]
   return performSubstitution(te, zipVarsIntoSubstitution(tvs, ntvs));
 }
 
+-- This function is an artifact of the fact that we ONLY do generalization at the top level, so we don't have (un)bound variables.
+function freshenCompletely
+TypeExp ::= te::TypeExp
+{
+  return freshenTypeExp(te, te.freeVariables);
+}
+
