@@ -22,9 +22,9 @@ nonterminal AspectRHS with location, grammarName, file, warnings, errors, inputE
 nonterminal AspectRHSElem with location, grammarName, file, warnings, errors, realSignature, inputElements, env, defs, pp;
 nonterminal Expr with location, grammarName, file, warnings, errors, signature, expected, typerep, env, defs, pp;
 nonterminal NameList with location, grammarName, file, names, warnings, errors, env, defs, pp;
-nonterminal ExprInhs with location, grammarName, file, warnings, errors, signature, env, defs, pp;
-nonterminal ExprInh with location, grammarName, file, warnings, errors, signature, env, defs, pp;
-nonterminal ExprLHSExpr with location, grammarName, file, warnings, errors, typerep, env, defs, pp;
+nonterminal ExprInhs with location, grammarName, file, warnings, errors, signature, env, defs, pp, decoratingnt;
+nonterminal ExprInh with location, grammarName, file, warnings, errors, signature, env, defs, pp, decoratingnt;
+nonterminal ExprLHSExpr with location, grammarName, file, warnings, errors, typerep, env, defs, pp, decoratingnt;
 nonterminal Exprs with location, grammarName, file, warnings, errors, signature, expectedInputTypes, exprs, env, defs, pp;
 nonterminal Module with errors, warnings, grammarName, compiledGrammars, defs;
 nonterminal ImportStmt with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, importedDefs, pp;

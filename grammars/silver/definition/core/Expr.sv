@@ -117,37 +117,38 @@ top::Expr ::= q::Decorated QName
 abstract production productionReference
 top::Expr ::= q::Decorated QName
 {
-  top.pp = q.pp; 
+  top.pp = q.pp;
   top.location = q.location;
 
   top.errors := [];
   top.warnings := [];
 
-  top.typerep = q.lookupValue.typerep;
+  -- TODO: the freshening should probably be the responsibility of the thing in the environment, not here?
+  top.typerep = freshenCompletely(q.lookupValue.typerep);
 }
 
 abstract production functionReference
 top::Expr ::= q::Decorated QName
 {
-  top.pp = q.pp; 
+  top.pp = q.pp;
   top.location = q.location;
 
   top.errors := [];
   top.warnings := [];
 
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = freshenCompletely(q.lookupValue.typerep); -- TODO see above
 }
 
 abstract production globalValueReference
 top::Expr ::= q::Decorated QName
 {
-  top.pp = q.pp; 
+  top.pp = q.pp;
   top.location = q.location;
 
   top.errors := [];
   top.warnings := [];
 
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = freshenCompletely(q.lookupValue.typerep); -- TODO see above
 }
 
 concrete production concreteDecorateExpr
@@ -284,9 +285,13 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = loc(top.file, $2.line, $2.column);
-  top.typerep = q.lookupAttribute.typerep;
   
-  top.errors := [];
+  production attribute occursCheck :: OccursCheck;
+  occursCheck = occursCheckQName(q, e.typerep);
+
+  top.typerep = occursCheck.typerep;
+  
+  top.errors := occursCheck.errors;
 }
 
 abstract production inhDNTAccessDispatcher
@@ -294,9 +299,13 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = loc(top.file, $2.line, $2.column);
-  top.typerep = q.lookupAttribute.typerep;
   
-  top.errors := [];
+  production attribute occursCheck :: OccursCheck;
+  occursCheck = occursCheckQName(q, e.typerep);
+
+  top.typerep = occursCheck.typerep;
+  
+  top.errors := occursCheck.errors;
 }
 
 abstract production errorDNTAccessDispatcher
@@ -304,7 +313,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = loc(top.file, $2.line, $2.column);
-  top.typerep = q.lookupAttribute.typerep;
+  top.typerep = errorType();
   
   top.errors := []; -- empty because we only ever get here if lookup failed. see above.
 }
@@ -344,6 +353,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.typerep = decoratedTypeExp(e.typerep);
   top.errors := e.errors ++ inh.errors;
   top.warnings := [];
+  
+  inh.decoratingnt = e.typerep;
 
   e.expected = expected_undecorated();
 }
@@ -392,9 +403,13 @@ top::ExprLHSExpr ::= q::QName
   top.pp = q.pp;
   top.location = q.location;
 
-  top.errors := q.lookupAttribute.errors;
+  production attribute occursCheck :: OccursCheck;
+  occursCheck = occursCheckQName(q, top.decoratingnt);
+
+  top.typerep = occursCheck.typerep;
+  
+  top.errors := occursCheck.errors;
   top.warnings := [];
-  top.typerep = q.lookupAttribute.typerep;
 }
 
 concrete production trueConst
@@ -624,7 +639,8 @@ top::Expr ::= e1::Expr '++' e2::Expr
 
   production attribute handler :: [Expr] with ++;
   handler := [];
-  handler <- if e1.typerep.typeName == "String" && e2.typerep.typeName == "String" -- OH GOZ TODO
+  -- TODO: THIS IS A COMPLETELY BUSTED WAY TO DO THIS, BUT WORKS FOR NOW. **FRAGILE**  probable BUGS
+  handler <- if !(unify(e1.typerep, stringTypeExp()).failure || unify(e2.typerep, stringTypeExp()).failure)
              then [stringPlusPlus(e1, e2)]
              else [];
 

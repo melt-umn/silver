@@ -188,26 +188,15 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.typeErrors := e.typeErrors;
 
-  local attribute occursCheck :: [Decorated DclInfo];
-  occursCheck = getOccursDcl(attr.lookupAttribute.fullName, dl.typerep.typeName, top.env);
-
-  top.typeErrors <-
-       if null(occursCheck)
-       then [err(top.location, "Attribute '" ++ attr.name ++ "' does not decorate type '" ++ dl.typerep.typeName ++ "'.")]
-       else [];
-
-  production attribute attrType :: TypeExp;
-  attrType = determineAttributeType(head(occursCheck), dl.typerep);
-
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   e.downSubst = top.downSubst;
   errCheck1.downSubst = e.upSubst;
-  top.upSubst = if null(occursCheck) then e.upSubst else errCheck1.upSubst;  -- BYPASS THE CHECK if it doesn't occur on
+  top.upSubst = errCheck1.upSubst; 
 
-  errCheck1 = check(attrType, e.typerep);
+  errCheck1 = check(occursCheck.typerep, e.typerep);
   top.typeErrors <-
-       if !null(occursCheck) && errCheck1.typeerror
+       if errCheck1.typeerror
        then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
        else [];
 }
@@ -217,26 +206,15 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.typeErrors := e.typeErrors;
 
-  local attribute occursCheck :: [Decorated DclInfo];
-  occursCheck = getOccursDcl(attr.lookupAttribute.fullName, dl.typerep.typeName, top.env);
-
-  top.typeErrors <-
-       if null(occursCheck)
-       then [err(top.location, "Attribute '" ++ attr.name ++ "' does not decorate type '" ++ dl.typerep.typeName ++ "'.")]
-       else [];
-
-  production attribute attrType :: TypeExp;
-  attrType = determineAttributeType(head(occursCheck), dl.typerep);
-
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   e.downSubst = top.downSubst;
   errCheck1.downSubst = e.upSubst;
-  top.upSubst = if null(occursCheck) then e.upSubst else errCheck1.upSubst;  -- BYPASS THE CHECK if it doesn't occur on
+  top.upSubst = errCheck1.upSubst; 
 
-  errCheck1 = check(attrType, e.typerep);
+  errCheck1 = check(occursCheck.typerep, e.typerep);
   top.typeErrors <-
-       if !null(occursCheck) && errCheck1.typeerror
+       if errCheck1.typeerror
        then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
        else [];
 }

@@ -7,7 +7,7 @@ top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QNa
   occursCheck = getOccursDcl(a.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
   
   top.typeErrors := if length(occursCheck) > 1
-                   then [err(a.location, "attribute '" ++ a.name ++ "' already occurs on '" ++ nt.name ++ "'.")]
+                   then [err(a.location, "Attribute '" ++ a.name ++ "' already occurs on '" ++ nt.name ++ "'.")]
                    else [];
   
   -- TODO: some thought needs to be done on when to check for mismatching lengths.  right now, we're doing that in errors, but maybe it should be here?

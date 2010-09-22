@@ -14,13 +14,11 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   namedSig = namedSignatureDcl(id.lookupValue.fullName, ns.inputElements, ns.outputElement);
 
   production attribute realSig :: Decorated NamedSignature;
-  realSig = if null(id.lookupValue.errors) && id.lookupValue.typerep.isProduction
+  realSig = if null(id.lookupValue.errors)
             then id.lookupValue.dcl.namedSignature
             else decorate namedSignatureDefault() with {};
 
-  top.errors <- if null(id.lookupValue.errors) && !id.lookupValue.typerep.isProduction
-                then [err(id.location, id.pp ++ " is not a production. Unable to aspect!")]
-                else [];
+  -- Making sure we're aspecting a production is taken care of by type checking.
 
   top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
   top.warnings := [];
@@ -51,18 +49,16 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   namedSig = namedSignatureDcl(id.lookupValue.fullName, ns.inputElements, ns.outputElement);
 
   production attribute realSig :: Decorated NamedSignature;
-  realSig = if null(id.lookupValue.errors) && id.lookupValue.typerep.isFunction
+  realSig = if null(id.lookupValue.errors)
             then id.lookupValue.dcl.namedSignature
             else decorate namedSignatureDefault() with {};
 
-  top.errors <- if null(id.lookupValue.errors) && !id.lookupValue.typerep.isFunction
-                then [err(id.location, id.pp ++ " is not a production. Unable to aspect!")]
-                else [];
+  -- Making sure we're aspecting a function is taken care of by type checking.
 
   top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
   top.warnings := [];
 
-  ns.env = newScopeEnv(ns.defs, top.env);  
+  ns.env = newScopeEnv(ns.defs, top.env);
   ns.realSignature = if null(id.lookupValue.dcls) then [] else [realSig.outputElement] ++ realSig.inputElements;
 
   local attribute prodAtts :: Defs;
