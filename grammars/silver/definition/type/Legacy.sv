@@ -22,6 +22,9 @@ synthesized attribute isTerminal :: Boolean;
 aspect production defaultTypeExp
 top::TypeExp ::=
 {
+  top.inputTypes = [];
+  top.outputType = errorType();
+  
   top.isFunction = false;
   top.isProduction = false;
   top.isDecorated = false;

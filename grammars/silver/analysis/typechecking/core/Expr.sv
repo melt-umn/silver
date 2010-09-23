@@ -82,25 +82,49 @@ top::Expr ::= e::Expr '(' ')'
 aspect production productionApplicationDispatcher
 top::Expr ::= e::Decorated Expr es::Exprs
 {
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
   top.typeErrors := e.typeErrors ++ es.typeErrors;
   
-  -- TODO!! ? It'd be nice to give expected / actual errors for the whole function
+  local attribute apparentTy :: TypeExp;
+  apparentTy = productionTypeExp(e.typerep.outputType, getTypesExprs(es));
   
   -- initial dispatcher already set e
   es.downSubst = e.upSubst;
-  top.upSubst = es.upSubst;
+  errCheck1.downSubst = es.upSubst;
+  top.upSubst = errCheck1.upSubst;
+  
+  errCheck1 = check(e.typerep, apparentTy);
+  top.typeErrors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Production signature mismatch."
+                         ++ "\nFunction type signature: " ++ errCheck1.leftpp
+                         ++ "\nParameters provided for: " ++ errCheck1.rightpp)]
+       else [];
 }
 
 aspect production functionApplicationDispatcher
 top::Expr ::= e::Decorated Expr es::Exprs
 {
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
   top.typeErrors := e.typeErrors ++ es.typeErrors;
   
-  -- TODO!! ?
-
+  local attribute apparentTy :: TypeExp;
+  apparentTy = functionTypeExp(e.typerep.outputType, getTypesExprs(es));
+  
   -- initial dispatcher already set e
   es.downSubst = e.upSubst;
-  top.upSubst = es.upSubst;
+  errCheck1.downSubst = es.upSubst;
+  top.upSubst = errCheck1.upSubst;
+  
+  errCheck1 = check(e.typerep, apparentTy);
+  top.typeErrors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Function signature mismatch."
+                         ++ "\nFunction type signature: " ++ errCheck1.leftpp
+                         ++ "\nParameters provided for: " ++ errCheck1.rightpp)]
+       else [];
 }
 
 aspect production errorApplicationDispatcher
