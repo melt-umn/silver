@@ -37,7 +37,7 @@ top::Substitution ::= e::String
 abstract production subst
 top::Substitution ::= tv::TyVar te::TypeExp
 {
-  top.debugOutput = toString(case tv of tyVar(i) -> i end) ++ " => " ++ prettyType(te);
+  top.debugOutput = toString(case tv of tyVar(i) -> i end) ++ " => " ++ prettyTypeWith(te,[]);
   top.substTyVars = [tv];
   top.substTyExps = [te];
   top.substErrors = [];

@@ -48,7 +48,7 @@ top::Expr ::= 'toInt' '(' e1::Expr ')'
   top.typeErrors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceConvertible
        then []
-       else [err(top.location, "Operand to toInt must be concrete types String Integer, or Float.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operand to toInt must be concrete types String, Integer, or Float.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 aspect production toFloatFunction
@@ -62,7 +62,7 @@ top::Expr ::= 'toFloat' '(' e1::Expr ')'
   top.typeErrors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceConvertible
        then []
-       else [err(top.location, "Operand to toFloat must be concrete types String Integer, or Float.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operand to toFloat must be concrete types String, Integer, or Float.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 aspect production toStringFunction
@@ -76,7 +76,7 @@ top::Expr ::= 'toString' '(' e1::Expr ')'
   top.typeErrors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceConvertible
        then []
-       else [err(top.location, "Operand to toString must be concrete types String Integer, or Float.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operand to toString must be concrete types String, Integer, or Float.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 aspect production newFunction

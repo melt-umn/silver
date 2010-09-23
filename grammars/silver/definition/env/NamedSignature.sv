@@ -80,7 +80,7 @@ Decorated NamedSignatureElement ::= n::String tr::TypeExp
 abstract production i_namedSignatureElement
 top::NamedSignatureElement ::= n::String ty::TypeExp
 {
-  top.unparse = "element('" ++ n ++ "', " ++ unparseType(ty) ++ ")";
+  top.unparse = "element('" ++ n ++ "', " ++ prettyType(ty) ++ ")"; -- TODO @#$#$%
 
   top.elementName = n;
   top.typerep = ty;

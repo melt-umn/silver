@@ -9,6 +9,8 @@ import silver:util:command;
 parser rParse::Root {
   silver:host;
 
+  silver:modification:ffi;
+
   silver:translation:java:concrete_syntax:copper;
 }
 

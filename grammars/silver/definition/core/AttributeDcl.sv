@@ -22,6 +22,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Typ
 --------
   tl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
                         top.env);
+  te.env = tl.env;
   top.errors <- if containsDuplicates(tl.lexicalTypeVariables)
                 then [err(top.location, "Duplicate type variable names listed")]
                 else [];
@@ -59,6 +60,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::T
 --------
   tl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
                         top.env);
+  te.env = tl.env;
   top.errors <- if containsDuplicates(tl.lexicalTypeVariables)
                 then [err(top.location, "Duplicate type variable names listed")]
                 else [];

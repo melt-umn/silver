@@ -260,7 +260,11 @@ top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String ntt
   
   -- Here we use givenNonterminalType to find the attribute type:
   local attribute subst :: Substitution;
-  subst = unifyDirectional(ntty, top.givenNonterminalType); -- must rewrite FROM ntty TO gNT
+  subst = unifyDirectional(ntty, case top.givenNonterminalType of
+                                   decoratedTypeExp(t) -> t
+                                 | _ -> top.givenNonterminalType
+                                 end
+                          ); -- must rewrite FROM ntty TO gNT
   
   top.typerep = performSubstitution(atty, subst);
   
@@ -271,7 +275,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String ntt
 function somehowUnparseTyVars
 String ::= b::[TyVar]
 {
-  return error("TODO NYI");
+  return ("TODO NYI");
 }
 
 -- TODO: this should probably go elsewhere?

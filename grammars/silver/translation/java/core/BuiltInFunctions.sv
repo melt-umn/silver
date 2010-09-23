@@ -15,7 +15,7 @@ top::Expr ::= e::Decorated Expr
 aspect production errorFunction
 top::Expr ::= 'error' '(' e::Expr ')'
 {
-  top.translation = "(" ++ finalType(top).transType ++ "common.Util.error(" ++ e.translation ++ ".toString()))";
+  top.translation = "((" ++ finalType(top).transType ++ ")common.Util.error(" ++ e.translation ++ ".toString()))";
 }
 aspect production toIntFunction
 top::Expr ::= 'toInt' '(' e::Expr ')'
