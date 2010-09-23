@@ -2,10 +2,13 @@ grammar silver:translation:java:concrete_syntax:copper;
 import silver:definition:concrete_syntax;
 import silver:definition:core;
 import silver:definition:env;
+import silver:definition:type;
+import silver:definition:type:syntax;
 
 import silver:translation:java:core;
 
 import silver:analysis:typechecking:core;
+import silver:analysis:typechecking;
 
 --terminal Parser_kwd 'parser' lexer precedence = 5;
 
@@ -66,6 +69,7 @@ top::Expr ::= q::Decorated QName
   top.translation = makeCopperName(q.lookupValue.fullName);
 
   top.typeErrors := [];
+  top.upSubst = top.downSubst;
 }
 
 abstract production parserAttributeValueDef
@@ -84,6 +88,20 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 
   top.setupInh := "";
   top.translation = makeCopperName(val.lookupValue.fullName) ++ " = " ++ e.translation ++ ";\n";
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  top.typeErrors := e.typeErrors;
+  
+  e.downSubst = top.downSubst;
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst;
+
+  errCheck1 = check(e.typerep, val.lookupValue.typerep);
+  top.typeErrors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
+       else [];
 }
 
 abstract production parserAttributeDefLHS

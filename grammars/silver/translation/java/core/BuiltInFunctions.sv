@@ -15,31 +15,27 @@ top::Expr ::= e::Decorated Expr
 aspect production errorFunction
 top::Expr ::= 'error' '(' e::Expr ')'
 {
-  -- The fact that we don't put a transType here is MURDER. TODO BUG OHGOD UGLY
-  -- This is a hack to try to avoid bugs
-  
-  local attribute casttt :: String;
-  casttt = case top.expected of
-             expected_type(t) -> "(" ++ t.transType ++ ")"
-           | _                -> "" end; -- HOPE IT WORKS!
-	
-  top.translation = "(" ++ casttt ++ "common.Util.error(" ++ e.translation ++ ".toString()))";
+  top.translation = "(" ++ finalType(top).transType ++ "common.Util.error(" ++ e.translation ++ ".toString()))";
 }
 aspect production toIntFunction
 top::Expr ::= 'toInt' '(' e::Expr ')'
 {
-  top.translation = if e.typerep.isInteger then e.translation
-		    else if e.typerep.isFloat then "(((" ++ e.typerep.transType ++ ")" ++ e.translation ++ ").intValue())"
-		    else if e.typerep.isString then "(Float.valueOf(" ++ e.translation ++ ".toString()).intValue())"
-		    else "(new Float(" ++ e.translation ++ ".toString()).intValue())";
+  top.translation = case finalType(e) of
+                      intTypeExp() -> e.translation
+                    | floatTypeExp() -> "((Float)" ++ e.translation ++ ").intValue()"
+                    | stringTypeExp() -> "Integer.valueOf(" ++ e.translation ++ ".toString())"
+                    | t -> error("INTERNAL ERROR: no toInt translation for type " ++ prettyType(t))
+                    end;
 }
 aspect production toFloatFunction
 top::Expr ::= 'toFloat' '(' e::Expr ')'
 {
-  top.translation = if e.typerep.isFloat then e.translation
-		    else if e.typerep.isInteger then "(((" ++ e.typerep.transType ++ ")" ++ e.translation ++ ").floatValue())"
-		    else if e.typerep.isString then "(Float.valueOf(" ++ e.translation ++ ".toString()))"
-		    else "(new Float(" ++ e.translation ++ ".toString()))";
+  top.translation = case finalType(e) of
+                      intTypeExp() -> "((Integer)" ++ e.translation ++ ").floatValue()"
+                    | floatTypeExp() -> e.translation
+                    | stringTypeExp() -> "Float.valueOf(" ++ e.translation ++ ".toString())"
+                    | t -> error("INTERNAL ERROR: no toFloat translation for type " ++ prettyType(t))
+                    end;
 }
 aspect production toStringFunction
 top::Expr ::= 'toString' '(' e::Expr ')'

@@ -1,10 +1,13 @@
 grammar silver:translation:java:concrete_syntax:copper;
+import silver:analysis:typechecking;
 import silver:analysis:typechecking:core;
 import silver:analysis:typechecking:concrete_syntax;
 import silver:definition:core;
 import silver:definition:env;
 import silver:definition:concrete_syntax;
 import silver:translation:java:core;
+import silver:definition:type;
+import silver:definition:type:syntax;
 --import silver:definition:regex; TODO nix this line?
 
 --terminal Prefix_kwd 'prefix' lexer classes {KEYWORD}; -- TODO: not currently used
@@ -105,10 +108,10 @@ function addTerminalAttrDefs
 Defs ::= tailDefs::Defs
 {
   -- TODO: no grammar or location? how to deal with this?
-  return addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "lexeme", stringTypeRep(),
-         addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "filename", stringTypeRep(),
-         addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "line", integerTypeRep(),
-         addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "column", integerTypeRep(),
+  return addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "lexeme", stringTypeExp(),
+         addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "filename", stringTypeExp(),
+         addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "line", intTypeExp(),
+         addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "column", intTypeExp(),
          tailDefs))));
 }
 
@@ -206,6 +209,7 @@ top::Expr ::= q::Decorated QName
                     error("unknown actionTerminalReference " ++ q.name); -- should never be called, but here for safety
 
   top.typeErrors := [];
+  top.upSubst = top.downSubst;
 }
 
 abstract production termAttrValueValueDef
@@ -228,5 +232,19 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.setupInh := "";
   top.translation = "virtualLocation." ++ memberfunc ++ "(" ++ e.translation
                      ++ (if val.name == "filename" then ".toString()" else "") ++ ");\n";
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  top.typeErrors := e.typeErrors;
+  
+  e.downSubst = top.downSubst;
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst;
+
+  errCheck1 = check(e.typerep, val.lookupValue.typerep);
+  top.typeErrors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
+       else [];
 }
 

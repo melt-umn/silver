@@ -4,6 +4,8 @@ import silver:translation:java:type;
 import silver:definition:concrete_syntax;
 import silver:definition:core;
 import silver:definition:env;
+import silver:definition:type;
+import silver:definition:type:syntax;
 
 attribute javaClasses, initProd occurs on ParserDcl;
 attribute disambiguationGroupDcls occurs on ParserDcl, ModuleList, ModuleName, Module, ModuleExportedDefs;
