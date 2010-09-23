@@ -23,7 +23,7 @@ top::TypeCheck ::= l::TypeExp r::TypeExp
   finright = performSubstitution(r, top.finalSubst);
   
   local attribute fv :: [TyVar];
-  fv = setUnionTyVars(finleft, finright);
+  fv = setUnionTyVars(finleft.freeVariables, finright.freeVariables);
   
   top.leftpp = prettyTypeWith(finleft, fv);
   top.rightpp = prettyTypeWith(finright, fv);

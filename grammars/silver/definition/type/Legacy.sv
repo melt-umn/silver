@@ -1,7 +1,7 @@
 grammar silver:definition:type;
 
 -- DEPRECATED STUFF
-attribute inputTypes, outputType, isDecorated, isProduction, isFunction occurs on TypeExp;
+attribute inputTypes, outputType, isDecorated, isProduction, isFunction, isDecorable, isTerminal occurs on TypeExp;
 
 -- exists because we want to access both these and pattern matching can only extract one thing at a time (so far)
 synthesized attribute inputTypes :: [TypeExp];

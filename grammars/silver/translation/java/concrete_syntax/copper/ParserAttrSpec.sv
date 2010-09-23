@@ -46,7 +46,7 @@ top::AGDcl ::= id::Name t1::TermPrecList t2::TermPrecList
 
 
 aspect production defaultNonterminalDcl
-top::AGDcl ::= id::Name
+top::AGDcl ::= id::Name tl::TypeList
 {
   top.parserAttrDcls = [];			   
 }
@@ -71,19 +71,19 @@ top::RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
 }
 
 aspect production attributeDclInh
-top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type ';'
+top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type ';'
 {
   top.parserAttrDcls = [];
 }
 
 aspect production attributeDclSyn
-top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type  ';'
+top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type ';'
 {
   top.parserAttrDcls = [];
 }
 
 aspect production attributionDcl
-top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
+top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QName '<' tlnt::TypeList '>' ';'
 {
   top.parserAttrDcls = [];
 }

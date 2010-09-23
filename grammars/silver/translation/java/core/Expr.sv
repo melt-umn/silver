@@ -126,8 +126,8 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.appReference = "";
 
   top.translation = if e.isAppReference 
-                    then "((" ++ finalType(e.typerep.outputType).transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ ").doReturn())"
-                    else "((" ++ finalType(e.typerep.outputType).transType ++ ")((common.FunctionNode)common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "})).doReturn())";
+                    then "((" ++ e.typerep.outputType.transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ ").doReturn())"
+                    else "((" ++ e.typerep.outputType.transType ++ ")((common.FunctionNode)common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "})).doReturn())";
 }
 
 aspect production synDNTAccessDispatcher

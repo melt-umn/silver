@@ -78,7 +78,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
   inh.downSubst = errCheck1.upSubst;
   top.upSubst = inh.upSubst;
 
-  errCheck1 = unifyCheck(e.typerep, top.signature.outputElement.typerep);
+  errCheck1 = check(e.typerep, top.signature.outputElement.typerep);
   top.typeErrors <- if errCheck1.typeerror
                     then [err(e.location, "Forward's expected type is " ++ errCheck1.rightpp ++ ", but the actual type supplied is " ++ errCheck1.leftpp)]
                     else [];
@@ -169,7 +169,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   
   errCheck1 = check(e.typerep, top.signature.outputElement.typerep);
   top.typeErrors <-
-       if errCheck1.failure
+       if errCheck1.typeerror
        then [err(top.location, "Expected return type is " ++ errCheck1.rightpp ++ ", but the expression has actual type " ++ errCheck1.leftpp)]
        else [];
 }

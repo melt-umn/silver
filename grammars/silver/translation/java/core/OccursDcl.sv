@@ -1,7 +1,7 @@
 grammar silver:translation:java:core;
 
 aspect production attributionDcl
-top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
+top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QName '<' tlnt::TypeList '>' ';'
 {
   top.javaClasses = [];
   top.setupInh := "";
