@@ -3,6 +3,7 @@ grammar silver:definition:env:parser;
 import silver:definition:env;
 import silver:definition:type:io;
 import silver:definition:regex hiding RegexRBrack_t, RegexLBrack_t, RegexLParen_t, RegexRParen_t; -- TODO: a bit of a hack?
+import silver:definition:type;
 
 -- TODO: why is compiledGrammars here?
 import silver:definition:core only compiledGrammars, grammarName, location;
@@ -66,7 +67,7 @@ synthesized attribute spec :: Decorated RootSpec;
 synthesized attribute signature :: Decorated NamedSignature;
 synthesized attribute elements :: [Decorated NamedSignatureElement];
 synthesized attribute element :: Decorated NamedSignatureElement;
-synthesized attribute typereps :: [Decorated TypeRep];
+synthesized attribute typereps :: [TypeExp];
 synthesized attribute names :: [String];
 synthesized attribute aname :: String;
 
@@ -346,64 +347,53 @@ top::aDclInfo ::= 'glob' '(' l::aLocation ',' fn::Name ',' t::aTypeRep ')'
 --The TypeReps
 concrete production aTypeRepInteger
 top::aTypeRep ::= t::IntegerTerm{
-  top.typerep = integerTypeRep();
+  top.typerep = intTypeExp();
 }
 
 concrete production aTypeRepFloat
 top::aTypeRep ::= t::FloatTerm{
-  top.typerep = floatTypeRep();
+  top.typerep = floatTypeExp();
 }
 
 concrete production aTypeRepString
 top::aTypeRep ::= t::StringTerm{
-  top.typerep = stringTypeRep();
+  top.typerep = stringTypeExp();
 }
 
 concrete production aTypeRepBoolean
 top::aTypeRep ::= t::BooleanTerm{
-  top.typerep = booleanTypeRep();
+  top.typerep = boolTypeExp();
 }
 
 concrete production aTypeRepTerminal
 top::aTypeRep ::= t::TerminalTerm '(' n::Name ')' {
-  top.typerep = termTypeRep(n.aname);
+  top.typerep = terminalTypeExp(n.aname);
 }
 
 concrete production aTypeRepNonterminal
 top::aTypeRep ::= t::NonterminalTerm '(' n::Name ')' {
-  top.typerep = ntTypeRep(n.aname);
+  top.typerep = nonterminalTypeExp(n.aname,[]); -- TODO BUG BROKEN
 }
 
 concrete production aTypeRepDecorated
 top::aTypeRep ::= d::DecoratedTerm '(' t::aTypeRep ')' {
-  top.typerep = refTypeRep(t.typerep);
+  top.typerep = decoratedTypeExp(t.typerep);
 }
 
 concrete production aTypeRepProduction
 top::aTypeRep ::= t::ProductionTerm '(' it::aTypeReps ','  ot::aTypeRep ')' {
-  top.typerep = prodTypeRep(it.typereps, ot.typerep);
+  top.typerep = productionTypeExp(ot.typerep, it.typereps);
 }
 
 concrete production aTypeRepFunction
 top::aTypeRep ::= t::FunctionTerm '(' it::aTypeReps ','  ot::aTypeRep ')' {
-  top.typerep = funTypeRep(it.typereps, ot.typerep);
+  top.typerep = functionTypeExp(ot.typerep, it.typereps);
 }
 
 concrete production aTypeRepIO
 top::aTypeRep ::= t::IOTerm {
-  top.typerep = ioTypeRep();
+  top.typerep = ioTypeExp();
 }
-
-concrete production aTypeRepTop 
-top::aTypeRep ::= t::TopTerm {
-  top.typerep = topTypeRep();
-}
-
-concrete production aTypeRepDefault
-top::aTypeRep ::= t::DefaultTerm {
-  top.typerep = defaultTypeRep();
-}
-
 
 --The NamedSignatures
 concrete production aNamedSignatureDcl
