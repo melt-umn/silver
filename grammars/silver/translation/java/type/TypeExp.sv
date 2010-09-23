@@ -10,7 +10,7 @@ synthesized attribute transType :: String;
 -- Used only to determine if the maps should be created. (NOT TYPE CHECKING)
 synthesized attribute mayBeSuppliedInhAttrs :: Boolean;
 
-attribute transType occurs on TypeExp;
+attribute transType, mayBeSuppliedInhAttrs occurs on TypeExp;
 
 aspect production defaultTypeExp
 top::TypeExp ::=

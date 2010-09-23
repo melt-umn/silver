@@ -1,7 +1,7 @@
 grammar silver:translation:java:core;
 
 aspect production attributeDclInh
-top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type ';'
+top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type ';'
 {
   top.javaClasses = [];
   top.setupInh := "";
@@ -12,7 +12,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type ';'
 
 
 aspect production attributeDclSyn
-top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type ';'
+top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type ';'
 {
   top.javaClasses = [];
   top.setupInh := "";

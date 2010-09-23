@@ -299,7 +299,7 @@ top::aDclInfo ::= 'fun' '(' l::aLocation ',' s::aNamedSignature ')'
 concrete production aDclInfoNonterminal
 top::aDclInfo ::= 'nt' '(' l::aLocation ',' s::Name ')'
 {
-  top.defs = addNtDcl(top.grammarName, l.location, s.aname, emptyDefs());
+  top.defs = addNtDcl(top.grammarName, l.location, s.aname, [], errorType(), emptyDefs()); -- TODO SFA#@$%$@
 }
 
 concrete production aDclInfoTerminal
@@ -311,13 +311,13 @@ top::aDclInfo ::= 'term' '(' l::aLocation ',' n::Name ',' '/' r::Regex_R '/' ')'
 concrete production aDclInfoSynthesized
 top::aDclInfo ::= 'syn' '(' l::aLocation ',' fn::Name ',' t::aTypeRep ')'
 {
-  top.defs = addSynDcl(top.grammarName, l.location, fn.aname, t.typerep, emptyDefs());
+  top.defs = addSynDcl(top.grammarName, l.location, fn.aname, [], t.typerep, emptyDefs()); -- TODO @#@$%#$#
 }
 
 concrete production aDclInfoInherited
 top::aDclInfo ::= 'inh' '(' l::aLocation ',' fn::Name ',' t::aTypeRep ')'
 {
-  top.defs = addInhDcl(top.grammarName, l.location, fn.aname, t.typerep, emptyDefs());
+  top.defs = addInhDcl(top.grammarName, l.location, fn.aname, [], t.typerep, emptyDefs()); -- TODO @$@#%#
 }
 
 concrete production aDclInfoProdAttr
@@ -335,7 +335,7 @@ top::aDclInfo ::= 'fwd' '(' l::aLocation ',' t::aTypeRep ')'
 
 concrete production aDclInfoOccurs
 top::aDclInfo ::= '@' '(' l::aLocation ',' fnnt::Name ',' fnat::Name ')'{
-  top.defs = addOccursDcl( top.grammarName, l.location, fnnt.aname, fnat.aname, emptyDefs());
+  top.defs = addOccursDcl( top.grammarName, l.location, fnnt.aname, fnat.aname, errorType(), errorType(), emptyDefs()); -- TODO @%#%@^$^@$&@
 }
 
 concrete production aDclInfoGlobalValue

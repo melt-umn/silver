@@ -87,7 +87,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.typeErrors := e.typeErrors ++ es.typeErrors;
   
   local attribute apparentTy :: TypeExp;
-  apparentTy = productionTypeExp(e.typerep.outputType, getTypesExprs(es));
+  apparentTy = productionTypeExp(e.typerep.outputType, getTypesExprs(es.exprs));
   
   -- initial dispatcher already set e
   es.downSubst = e.upSubst;
@@ -111,7 +111,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.typeErrors := e.typeErrors ++ es.typeErrors;
   
   local attribute apparentTy :: TypeExp;
-  apparentTy = functionTypeExp(e.typerep.outputType, getTypesExprs(es));
+  apparentTy = functionTypeExp(e.typerep.outputType, getTypesExprs(es.exprs));
   
   -- initial dispatcher already set e
   es.downSubst = e.upSubst;

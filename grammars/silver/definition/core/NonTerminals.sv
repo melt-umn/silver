@@ -41,6 +41,6 @@ nonterminal ProductionStmt with location, grammarName, file, productionAttribute
 nonterminal DefLHS with location, grammarName, file, warnings, errors, signature, env, pp, typerep;
 nonterminal ForwardInhs with location, grammarName, file, warnings, errors, signature, env, defs, pp;
 nonterminal ForwardInh with location, grammarName, file, warnings, errors, signature, env, defs, pp;
-nonterminal ForwardLHSExpr with location, grammarName, file, warnings, errors, typerep, env, defs, pp;
+nonterminal ForwardLHSExpr with location, grammarName, file, warnings, errors, signature, typerep, env, defs, pp;
 nonterminal GrammarDcl with location, grammarName, declaredName, file, warnings, errors, env, defs, pp;
 

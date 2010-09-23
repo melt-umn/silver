@@ -10,7 +10,7 @@ synthesized attribute instanceOrd :: Boolean;
 synthesized attribute instanceNum :: Boolean;
 synthesized attribute instanceConvertible :: Boolean;
 
-attribute doDecorate, applicationDispatcher, accessDispatcher, instanceEq, instanceOrd, instanceNum occurs on TypeExp;
+attribute doDecorate, applicationDispatcher, accessDispatcher, instanceEq, instanceOrd, instanceNum, instanceConvertible occurs on TypeExp;
 
 aspect production defaultTypeExp
 top::TypeExp ::=

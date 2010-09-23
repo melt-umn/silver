@@ -1,7 +1,7 @@
 grammar silver:translation:java:core;
 
 aspect production defaultNonterminalDcl
-top::AGDcl ::= id::Name
+top::AGDcl ::= id::Name tl::TypeList
 {
   local attribute className :: String;
   className = "N" ++ id.name;
