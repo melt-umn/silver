@@ -5,6 +5,8 @@ import silver:definition:concrete_syntax;
 import silver:definition:core;
 import silver:definition:env;
 import silver:analysis:typechecking:core;
+import silver:definition:type;
+import silver:definition:type:syntax;
 
 terminal Disambiguation_kwd 'disambiguate' lexer classes {KEYWORD};
 
@@ -52,13 +54,14 @@ top::Expr ::= q::Decorated QName
   top.errors := []; -- Should only be referenceable from a context where its valid.
   top.warnings := [];
 
-  top.typerep = topTypeRep(); -- TODO: BUG: Need a real type here (AnyTerminalType or something)
+  top.typerep = errorType(); -- TODO: BUG: Need a real type here (AnyTerminalType or something)
   
   top.isAppReference = false;
   top.appReference = "";
   
   top.translation = makeCopperName(q.lookupValue.fullName); -- Value right here?
   
-  -- top.typeErrors := -- TODO fffff BUG
+  top.typeErrors := []; -- ??? TODO?
+  top.upSubst = top.downSubst;
 }
 

@@ -7,6 +7,8 @@ import silver:driver;
 import silver:definition:core hiding grammarName;
 import silver:definition:env;
 import silver:definition:concrete_syntax;
+import silver:definition:type;
+import silver:definition:type:syntax;
 
 import silver:util;
 import silver:util:command;

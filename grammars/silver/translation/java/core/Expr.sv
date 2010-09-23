@@ -4,6 +4,14 @@ import silver:util;
 
 import silver:translation:java:concrete_syntax:copper; -- todo : part of wrapThunk hack
 
+import silver:analysis:typechecking:core only finalSubst;
+
+function finalType
+TypeExp ::= e::Decorated Expr
+{
+  return performSubstitution(e.typerep, e.finalSubst);
+}
+
 -- These attributes help us generate slightly less awful code, by not going through reflection for direct function/production calls.
 synthesized attribute isAppReference :: Boolean;
 synthesized attribute appReference :: String;
@@ -33,7 +41,7 @@ top::Expr ::= q::Decorated QName
   top.translation =
     if shouldUnDec
     then "(((common.DecoratedNode)context.child(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName ++ ")).undecorate())"
-    else "((" ++ top.typerep.transType ++ ")context.child(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName  ++ "))";
+    else "((" ++ finalType(top).transType ++ ")context.child(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName  ++ "))";
 }
 
 aspect production lhsReference
@@ -57,7 +65,7 @@ top::Expr ::= q::Decorated QName
   top.translation =
     if shouldUnDec
     then "(((common.DecoratedNode)context.local(\"" ++ q.lookupValue.fullName ++ "\")).undecorate())"
-    else "((" ++ top.typerep.transType ++ ")context.local(\"" ++ q.lookupValue.fullName ++ "\"))";
+    else "((" ++ finalType(top).transType ++ ")context.local(\"" ++ q.lookupValue.fullName ++ "\"))";
 }
 
 aspect production productionReference
@@ -96,7 +104,7 @@ top::Expr ::= q::Decorated QName
   top.isAppReference = false;
   top.appReference = "";
   
-  top.translation = "((" ++ top.typerep.transType ++ ")" ++ 
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ 
                       makeName(q.lookupValue.dcl.sourceGrammar) ++ ".Init." ++ fullNameToShort(q.lookupValue.fullName) ++ ".eval())";
 }
 
@@ -108,7 +116,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
 
   top.translation = if e.isAppReference 
                     then "(new " ++ e.appReference ++ "(" ++ es.translation ++ "))"
-                    else "((" ++ top.typerep.transType ++ ")common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "}))";
+                    else "((" ++ finalType(top).transType ++ ")common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "}))";
 }
 
 aspect production functionApplicationDispatcher
@@ -118,8 +126,8 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.appReference = "";
 
   top.translation = if e.isAppReference 
-                    then "((" ++ e.typerep.outputType.transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ ").doReturn())"
-                    else "((" ++ e.typerep.outputType.transType ++ ")((common.FunctionNode)common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "})).doReturn())";
+                    then "((" ++ finalType(e.typerep.outputType).transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ ").doReturn())"
+                    else "((" ++ finalType(e.typerep.outputType).transType ++ ")((common.FunctionNode)common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "})).doReturn())";
 }
 
 aspect production synDNTAccessDispatcher
@@ -128,7 +136,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.isAppReference = false;
   top.appReference = "";
 
-  top.translation = "((" ++ q.lookupAttribute.typerep.transType ++ ")" ++ e.translation ++ ".synthesized(\"" ++ q.lookupAttribute.fullName ++ "\"))";
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".synthesized(\"" ++ q.lookupAttribute.fullName ++ "\"))";
 }
 
 aspect production inhDNTAccessDispatcher
@@ -137,7 +145,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.isAppReference = false;
   top.appReference = "";
 
-  top.translation = "((" ++ q.lookupAttribute.typerep.transType ++ ")" ++ e.translation ++ ".inherited(\"" ++ q.lookupAttribute.fullName ++ "\"))";
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".inherited(\"" ++ q.lookupAttribute.fullName ++ "\"))";
 }
 
 aspect production terminalAccessDispatcher
@@ -147,7 +155,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.appReference = "";
 
   -- TODO: we should maybe map the name properly to the field we access?
-  top.translation = "((" ++ top.typerep.transType ++ ")" ++ e.translation ++ "." ++ q.name ++ ")";
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ "." ++ q.name ++ ")";
 }
 
 aspect production decorateExprWith
@@ -241,65 +249,57 @@ top::Expr ::= '!' e::Expr
 aspect production gt
 top::Expr ::= e1::Expr '>' e2::Expr
 {
-top.translation =
-  if e1.typerep.isInteger && e2.typerep.isInteger
-         then "(" ++ e1.translation ++ ".intValue() > " ++ e2.translation ++ ".intValue())"
-         else if e1.typerep.isFloat && e2.typerep.isFloat
-         then "(" ++ e1.translation ++ ".floatValue() > " ++ e2.translation ++ ".floatValue())"
-         else if e1.typerep.isString && e2.typerep.isString
-         then "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) > 0"
-         else error(top.location.unparse ++ "Invalid >"); -- TODO: bad use of unparse
+  top.translation = case finalType(e1) of
+                      intTypeExp() -> "(" ++ e1.translation ++ ".intValue() > " ++ e2.translation ++ ".intValue())"
+                    | floatTypeExp() -> "(" ++ e1.translation ++ ".floatValue() > " ++ e2.translation ++ ".floatValue())"
+                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) > 0"
+                    | t -> error("INTERNAL ERROR: no > trans for type " ++ prettyType(t))
+                    end;
 }
 
 aspect production lt
 top::Expr ::= e1::Expr '<' e2::Expr
 {
-top.translation =
-  if e1.typerep.isInteger && e2.typerep.isInteger
-         then "(" ++ e1.translation ++ ".intValue() < " ++ e2.translation ++ ".intValue())"
-         else if e1.typerep.isFloat && e2.typerep.isFloat
-         then "(" ++ e1.translation ++ ".floatValue() < " ++ e2.translation ++ ".floatValue())"
-         else if e1.typerep.isString && e2.typerep.isString
-         then "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) < 0"
-         else error(top.location.unparse ++ "Invalid <"); -- TODO: bad use of unparse
+  top.translation = case finalType(e1) of
+                      intTypeExp() -> "(" ++ e1.translation ++ ".intValue() < " ++ e2.translation ++ ".intValue())"
+                    | floatTypeExp() -> "(" ++ e1.translation ++ ".floatValue() < " ++ e2.translation ++ ".floatValue())"
+                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) < 0"
+                    | t -> error("INTERNAL ERROR: no < trans for type " ++ prettyType(t))
+                    end;
 }
 
---TODO BUG: This is completely inconsistent with the above! Also, type checking allows strings!
 aspect production gteq
 top::Expr ::= e1::Expr '>=' e2::Expr
 {
-  top.translation = "(" ++ e1.translation ++ " >= " ++ e2.translation ++ ")";
+  top.translation = case finalType(e1) of
+                      intTypeExp() -> "(" ++ e1.translation ++ ".intValue() >= " ++ e2.translation ++ ".intValue())"
+                    | floatTypeExp() -> "(" ++ e1.translation ++ ".floatValue() >= " ++ e2.translation ++ ".floatValue())"
+                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) >= 0"
+                    | t -> error("INTERNAL ERROR: no >= trans for type " ++ prettyType(t))
+                    end;
 }
 
 aspect production lteq
 top::Expr ::= e1::Expr '<=' e2::Expr
 {
-  top.translation = "(" ++ e1.translation ++ " <= " ++ e2.translation ++ ")";
+  top.translation = case finalType(e1) of
+                      intTypeExp() -> "(" ++ e1.translation ++ ".intValue() <= " ++ e2.translation ++ ".intValue())"
+                    | floatTypeExp() -> "(" ++ e1.translation ++ ".floatValue() <= " ++ e2.translation ++ ".floatValue())"
+                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) <= 0"
+                    | t -> error("INTERNAL ERROR: no <= trans for type " ++ prettyType(t))
+                    end;
 }
 
-
-function eqTrans
-String ::= e1::Decorated Expr e2::Decorated Expr{
-  -- TODO: couldn't this JUST be .equals? (the last else)
-  -- TODO2: UGLY. We're dispatching on type here.  Should do this polymorphically, if at all.
-  return if e1.typerep.isInteger && e2.typerep.isInteger
-         then "(" ++ e1.translation ++ ".intValue() == " ++ e2.translation ++ ".intValue())"
-         else if e1.typerep.isFloat && e2.typerep.isFloat
-         then "(" ++ e1.translation ++ ".floatValue() == " ++ e2.translation ++ ".floatValue())"
-         else if e1.typerep.isString && e2.typerep.isString
-         then "(" ++ e1.translation ++ ".toString().equals(" ++ e2.translation ++ ".toString()))"
-         else "(" ++ e1.translation ++ ".equals(" ++ e2.translation ++ "))";
-}
 aspect production eqeq
 top::Expr ::= e1::Expr '==' e2::Expr
 {
-  top.translation = eqTrans(e1, e2);
+  top.translation = e1.translation ++ ".equals(" ++ e2.translation ++ ")";
 }
 
 aspect production neq
 top::Expr ::= e1::Expr '!=' e2::Expr
 {
-  top.translation = "(!" ++ eqTrans(e1, e2) ++ ")";
+  top.translation = "!" ++ e1.translation ++ ".equals(" ++ e2.translation ++ ")";
 }
 
 aspect production ifThenElse
@@ -324,30 +324,47 @@ top::Expr ::= f::Float_t
 aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
-  top.translation = "new Integer(" ++ e1.translation ++ " + " ++ e2.translation ++ ")";
+  top.translation = case finalType(top) of
+                      intTypeExp() -> "new Integer(" ++ e1.translation ++ " + " ++ e2.translation ++ ")"
+                    | floatTypeExp() -> "new Float(" ++ e1.translation ++ " + " ++ e2.translation ++ ")"
+                    | t -> error("INTERNAL ERROR: no + trans for type " ++ prettyType(t))
+                    end;
 }
 aspect production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
-  top.translation = "new Integer(" ++ e1.translation ++ " - " ++ e2.translation ++ ")";
+  top.translation = case finalType(top) of
+                      intTypeExp() -> "new Integer(" ++ e1.translation ++ " - " ++ e2.translation ++ ")"
+                    | floatTypeExp() -> "new Float(" ++ e1.translation ++ " - " ++ e2.translation ++ ")"
+                    | t -> error("INTERNAL ERROR: no - trans for type " ++ prettyType(t))
+                    end;
 }
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
-  top.translation = "new Integer(" ++ e1.translation ++ " * " ++ e2.translation ++ ")";
+  top.translation = case finalType(top) of
+                      intTypeExp() -> "new Integer(" ++ e1.translation ++ " * " ++ e2.translation ++ ")"
+                    | floatTypeExp() -> "new Float(" ++ e1.translation ++ " * " ++ e2.translation ++ ")"
+                    | t -> error("INTERNAL ERROR: no * trans for type " ++ prettyType(t))
+                    end;
 }
 aspect production divide
 top::Expr ::= e1::Expr '/' e2::Expr
 {
-  top.translation = "new Float(" ++ e1.translation ++ " / " ++ e2.translation ++ ")";
+  top.translation = case finalType(top) of
+                      intTypeExp() -> "new Integer(" ++ e1.translation ++ " / " ++ e2.translation ++ ")"
+                    | floatTypeExp() -> "new Float(" ++ e1.translation ++ " / " ++ e2.translation ++ ")"
+                    | t -> error("INTERNAL ERROR: no / trans for type " ++ prettyType(t))
+                    end;
 }
 aspect production neg
 top::Expr ::= '-' e::Expr
 {
-  top.translation = if e.typerep.isInteger then
-                 "new Integer(-" ++ e.translation ++ ".intValue())"
-                    else
-                 "new Float(-" ++ e.translation ++ ".floatValue())";
+  top.translation = case finalType(top) of
+                      intTypeExp() -> "new Integer(-" ++ e.translation ++ ".intValue())"
+                    | floatTypeExp() -> "new Float(-" ++ e.translation ++ ".floatValue())"
+                    | t -> error("INTERNAL ERROR: no unary - trans for type " ++ prettyType(t))
+                    end;
 }
 
 aspect production stringConst

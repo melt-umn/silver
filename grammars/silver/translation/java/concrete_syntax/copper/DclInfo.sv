@@ -2,6 +2,8 @@ grammar silver:translation:java:concrete_syntax:copper;
 
 import silver:definition:env;
 import silver:definition:core;
+import silver:definition:type;
+import silver:definition:type:syntax;
 import silver:util;
 
 -- These do not need to go into defaultDcl, because they appear on lexer class only
@@ -16,7 +18,7 @@ top::DclInfo ::=
 }
 
 abstract production parserAttrDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -42,7 +44,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String
 
   top.unparse = error("Internal error: pluck-terms should never appear in interface files.");
   
-  top.typerep = topTypeRep(); -- TODO: need a real type for this
+  top.typerep = errorType(); -- TODO: need a real type for this
   
   top.refDispatcher = pluckTerminalReference;
   top.defDispatcher = errorValueDef;
@@ -67,7 +69,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String tst::[String] td::
 }
 
 abstract production termAttrValueDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -85,7 +87,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated Type
 }
 
 abstract production actionChildDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -103,7 +105,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated Type
 }
 
 abstract production parserLocalDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;

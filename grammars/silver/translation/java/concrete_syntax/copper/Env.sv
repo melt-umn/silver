@@ -3,6 +3,7 @@ grammar silver:translation:java:concrete_syntax:copper;
 import silver:definition:env;
 import silver:definition:core;
 import silver:util;
+import silver:definition:type;
 
 --------------------------------------------------------------------------------
 -- Defs.sv
@@ -37,7 +38,7 @@ top::Defs ::= d::Decorated EnvItem e2::Defs
 -- TODO: we don't do any renaming of lexer classes BUG
 
 function addParserAttrDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
+Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate parserAttrDcl(sg,sl,fn,ty) with {}), defs);
 }
@@ -55,19 +56,19 @@ Defs ::= sg::String sl::Decorated Location fn::String tst::[String] td::[String]
 }
 
 function addTermAttrValueDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
+Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate termAttrValueDcl(sg,sl,fn,ty) with {}), defs);
 }
 
 function addActionChildDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
+Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate actionChildDcl(sg,sl,fn,ty) with {}), defs);
 }
 
 function addParserLocalDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
+Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate parserLocalDcl(sg,sl,fn,ty) with {}), defs);
 }

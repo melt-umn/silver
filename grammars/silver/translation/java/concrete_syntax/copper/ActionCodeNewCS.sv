@@ -4,8 +4,10 @@ import silver:definition:core;
 import silver:definition:env;
 import silver:translation:java:core;
 import silver:translation:java:type;
-
+import silver:definition:type;
+import silver:definition:type:syntax;
 import silver:analysis:typechecking:core;
+import silver:analysis:typechecking;
 
 terminal Pluck_kwd 'pluck' lexer classes {KEYWORD};
 terminal Print_kwd 'print' lexer classes {KEYWORD};
@@ -36,9 +38,12 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
                ++ e.errors;
 
   -- TODO: figure out wtf is going on with type here! (needs to be a terminal, plus one of the ones in the disgroup)
-  top.typeErrors := [];
+  top.typeErrors := e.typeErrors;
 
   e.expected = expected_default();
+  
+  e.downSubst = top.downSubst;
+  top.upSubst = e.upSubst;
 }
 
 concrete production printStmt
@@ -57,11 +62,21 @@ top::ProductionStmt ::= 'print' e::Expr ';'
                else [])
                ++ e.errors;
 
-  top.typeErrors := if e.typerep.typeName == "String"
-		   then []
-		   else [err(top.location, "Parameter to 'print' must be of type String.")];
+  top.typeErrors := e.typeErrors;
 
   e.expected = expected_default();
+  
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  e.downSubst = top.downSubst;
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst;
+  
+  errCheck1 = check(e.typerep, stringTypeExp());
+  top.typeErrors <-
+       if errCheck1.typeerror
+       then [err(e.location, "print expects a string, instead it recieved a " ++ errCheck1.leftpp)]
+       else [];
 }
 
 aspect production forwardingWith

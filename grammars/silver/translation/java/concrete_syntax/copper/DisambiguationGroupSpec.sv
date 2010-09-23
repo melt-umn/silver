@@ -3,6 +3,8 @@ grammar silver:translation:java:concrete_syntax:copper;
 import silver:definition:core;
 import silver:definition:env;
 import silver:definition:concrete_syntax;
+import silver:definition:type;
+import silver:definition:type:syntax;
 
 synthesized attribute groupName :: String;
 synthesized attribute groupMembers :: [String];

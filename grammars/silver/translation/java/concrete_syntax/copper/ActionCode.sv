@@ -7,6 +7,8 @@ import silver:definition:env;
 import silver:translation:java:core;
 import silver:translation:java:concrete_syntax;
 import silver:analysis:typechecking:core;
+import silver:definition:type;
+import silver:definition:type:syntax;
 
 synthesized attribute actionCode :: String;
 
@@ -91,6 +93,8 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 
   top.errors := stmts.errors;
   top.typeErrors := stmts.typeErrors;
+  
+  stmts.downSubst = emptySubst();
 }
 
 concrete production actionCodeEmpty_c
@@ -171,5 +175,6 @@ top::Expr ::= q::Decorated QName
   top.translation = "((" ++ q.lookupValue.typerep.transType ++ ")((common.Node)RESULT).getChild(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName ++ "))";
 
   top.typeErrors := [];
+  top.upSubst = top.downSubst;
 }
 
