@@ -10,6 +10,7 @@ parser rParse::Root {
   silver:host;
 
   silver:modification:ffi;
+  silver:extension:easyterminal;
 
   silver:translation:java:concrete_syntax:copper;
 }
