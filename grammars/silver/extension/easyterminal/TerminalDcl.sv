@@ -1,6 +1,7 @@
 grammar silver:extension:easyterminal;
 import silver:definition:core;
 import silver:definition:env;
+import silver:definition:type;
 import silver:definition:type:syntax;
 import silver:definition:concrete_syntax;
 import silver:definition:regex;
@@ -66,7 +67,7 @@ top::ProductionRHSElem ::= id::Name '::' reg::RegExpr
                 then [err(reg.location, "Found ambiguous possibilities for " ++ reg.pp ++ "\n" ++ printPossibilities(regName))]
                 else [];
 
-  forwards to productionRHSElem(id, $2, typerepType(if null(regName) then topTypeRep() else head(regName).typerep));
+  forwards to productionRHSElem(id, $2, typerepType(if null(regName) then errorType() else head(regName).typerep));
 }
 
 concrete production productionRhsElemTypeEasyReg
@@ -83,7 +84,7 @@ top::ProductionRHSElem ::= reg::RegExpr
                 then [err(reg.location, "Found ambiguous possibilities for " ++ reg.pp ++ "\n" ++ printPossibilities(regName))]
                 else [];
 
-  forwards to productionRHSElemType(typerepType(if null(regName) then topTypeRep() else head(regName).typerep));
+  forwards to productionRHSElemType(typerepType(if null(regName) then errorType() else head(regName).typerep));
 }
 
 concrete production aspectRHSElemEasyReg
@@ -117,7 +118,7 @@ top::AspectRHSElem ::= id::Name '::' reg::RegExpr
                 then [err(reg.location, "Found ambiguous possibilities for " ++ reg.pp ++ "\n" ++ printPossibilities(regName))]
                 else [];
 
-  forwards to aspectRHSElemTyped(id, $2, typerepType(if null(regName) then topTypeRep() else head(regName).typerep));
+  forwards to aspectRHSElemTyped(id, $2, typerepType(if null(regName) then errorType() else head(regName).typerep));
 }
 
 concrete production terminalExprReg
@@ -142,7 +143,7 @@ top::Expr ::= t::RegExpr
 
   forwards to terminalFunction(terminal(Terminal_kwd, "terminal", t.location.line, t.location.column),
                                terminal(LParen_t, "("),
-                               typerepType(if null(regName) then topTypeRep() else head(regName).typerep),
+                               typerepType(if null(regName) then errorType() else head(regName).typerep),
                                terminal(Comma_t, ","),
                                stringConst(terminal(String_t, "\"" ++ escapedName ++ "\"")),
                                terminal(RParen_t, ")"));

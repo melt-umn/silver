@@ -83,3 +83,9 @@ top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
   forwards to attributionDcl($1, a, '<', typeListNone(), '>', $3, $4, nt, '<', typeListNone(), '>', $6);
 }
 
+concrete production attributionDclEmptyPartial
+top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName '<' tlnt::TypeList '>' ';'
+{
+  forwards to attributionDcl($1, a, '<', typeListNone(), '>', $3, $4, nt, $6, tlnt, $8, $9);
+}
+
