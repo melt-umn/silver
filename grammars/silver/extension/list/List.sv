@@ -2,6 +2,8 @@ grammar silver:extension:list;
 import silver:definition:core;
 import silver:definition:type:anytype;
 import silver:definition:env;
+import silver:definition:type;
+import silver:definition:type:syntax;
 
 import silver:analysis:typechecking:core;
 
@@ -13,10 +15,11 @@ terminal RSqr_t ']' lexer classes {KEYWORD};
 concrete production listType
 top::Type ::= '[' te::Type ']'
 {
-  top.typerep = listTypeRep(te.typerep);
-  top.errors := te.errors;
+  top.typerep = listTypeExp(te.typerep);
 
-  forwards to refType('Decorated', qNameId(nameId(terminal(Id_t, "AnyTypeList"))));
+  forwards to refType('Decorated', 
+                   nominalTypeWithParams(qNameId(nameId(terminal(Id_t, "core:List"))),
+                                    '<', typeListSingle(te), '>'));
 }
 
 concrete production emptyList
