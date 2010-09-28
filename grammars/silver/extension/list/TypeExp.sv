@@ -21,10 +21,10 @@ top::TypeExp ::= el::TypeExp
   top.isDecorable = false;
   top.isDecorated = false;
   top.doDecorate = false;
-  top.accessDispatcher = errorAccessDispatcher;
+  --top.accessDispatcher = errorAccessDispatcher; -- permit this, since we need it for default, non-specialized java version
   
   --top.unparse
-  --top.transType
+  --top.transType -- for translation.
   
   forwards to decoratedTypeExp(nonterminalTypeExp("core:List", [el]));
 }

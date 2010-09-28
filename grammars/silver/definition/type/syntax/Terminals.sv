@@ -16,5 +16,5 @@ terminal String_kwd		'String'	lexer classes {TYPE_KEYWORD};
 -- just to simplify the changes that need to be done.
 -- TODO: require types to be capitalized, so we can distinguish TVs from identifiers
 -- that way?
-terminal TypeVariable_t		/'[a-z]+/	lexer classes {IDENTIFIER};
+terminal TypeVariable_t		/`[a-z]+/	lexer classes {IDENTIFIER};
 
