@@ -50,8 +50,12 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   local attribute sigNames :: [String];
   sigNames = getNamesSignature(namedSig.inputElements);
 
-  top.setupInh := forward.setupInh; -- hacky hacky!
-  top.initProd := forward.initProd; -- hacky hacky!
+  top.setupInh := if null(ffidefs.ffiTranslationString)
+                  then forward.setupInh
+                  else ""; -- hacky hacky!  -- TODO should these be there, or empty?
+  top.initProd := if null(ffidefs.ffiTranslationString)
+                  then forward.initProd
+                  else ""; -- hacky hacky!  -- TODO should these be there, or empty?
   top.initValues := "";
   top.postInit := "";
 

@@ -1,5 +1,5 @@
 grammar core;
-
+{-
 nonterminal HackyParse;
 synthesized attribute parseSuccess :: Boolean occurs on HackyParse;
 synthesized attribute parseTree :: AnyType occurs on HackyParse;
@@ -21,4 +21,4 @@ HackyParse ::= pfunc::AnyType dat::String
 } foreign {
   "java" : return "(common.Util.hackyhackyParse(%pfunc%, %dat%))";
 }
-
+-}
