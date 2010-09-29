@@ -134,7 +134,7 @@ top::Type ::= q::QName '<' tl::TypeList '>'
                 end;
 
   top.warnings := [];
-  top.errors := q.lookupType.errors;
+  top.errors := q.lookupType.errors ++ tl.errors;
   
   top.errors <- case q.lookupType.typerep of
                   nonterminalTypeExp(_,orig) ->
