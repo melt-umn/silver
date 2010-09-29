@@ -94,3 +94,21 @@ function tail
   "java" : return "%l%.tail()";
 }
 
+--------------------------------------------------------------------------------
+
+function map
+[`b] ::= f::Function(`b ::= `a)  l::[`a]
+{
+  return if null(l)
+         then []
+         else f(head(l)) :: map(f, tail(l));
+}
+
+function foldr
+`b ::= f::Function(`b ::= `a `b)  i::`b  l::[`a]
+{
+  return if null(l)
+         then i
+         else foldr(f, f(head(l), i), tail(l));
+}
+
