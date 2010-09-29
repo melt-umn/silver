@@ -12,6 +12,7 @@ parser rParse::Root {
   silver:modification:ffi;
   silver:extension:list;
   silver:extension:easyterminal;
+  silver:extension:convenience;
 
   silver:translation:java:concrete_syntax:copper;
 }

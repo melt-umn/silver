@@ -223,7 +223,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   top.location = e.location;
-  top.errors := [err(top.location, e.pp ++ " has type " ++ e.typerep.typeName ++ " and cannot be invoked as a function.")] ++ e.errors ++ es.errors; 
+  top.errors := [err(top.location, e.pp ++ " has type " ++ prettyType(e.typerep) ++ " and cannot be invoked as a function.")] ++ e.errors ++ es.errors; 
 
   top.typerep = errorType();
 
@@ -251,7 +251,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.location = loc(top.file, $2.line, $2.column);
   
   top.typerep = q.lookupAttribute.typerep;
-  top.errors := [err(top.location, "LHS of '.' is type " ++ e.typerep.typeName ++ " and cannot have attributes.")] ++ q.lookupAttribute.errors;
+  top.errors := [err(top.location, "LHS of '.' is type " ++ prettyType(e.typerep) ++ " and cannot have attributes.")] ++ q.lookupAttribute.errors;
 }
 
 abstract production undecoratedAccessDispatcher

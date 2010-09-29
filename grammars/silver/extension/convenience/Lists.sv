@@ -1,40 +1,99 @@
 grammar silver:extension:convenience;
 import silver:definition:core;
+import silver:definition:type:syntax;
 
-
-synthesized attribute qnames :: [QName];
-synthesized attribute ids :: [Name];
-
-
+{- QNames2 is needed because we would otherwise have a syntactic ambiguity with
+   the ordinary declarations. QNames2 requires 2 or more QNames, so that if they
+   list just one, then it goes to the ordinary, non-convenience extension form.
+ -}
+ 
 nonterminal QNames2 with pp, qnames;
-concrete production qNames2Two
-top::QNames2 ::= id1::QName ',' id2::QName
+nonterminal QNames with pp, qnames;
+
+synthesized attribute qnames :: [QNameWithTL];
+
+nonterminal QNameWithTL with pp, qname, tl;
+synthesized attribute qname :: QName;
+synthesized attribute tl :: TypeList;
+
+concrete production qnameWithoutTL
+top::QNameWithTL ::= q::QName
 {
-  top.pp = id1.name ++ ", " ++ id2.name ;
+  top.pp = q.pp;
+  top.qname = q;
+  top.tl = typeListNone();
+}
+concrete production qnameWithTL
+top::QNameWithTL ::= q::QName '<' tl::TypeList '>'
+{
+  top.pp = q.pp;
+  top.qname = q;
+  top.tl = tl;
+}
+
+concrete production qNames2Two
+top::QNames2 ::= id1::QNameWithTL ',' id2::QNameWithTL
+{
+  top.pp = id1.pp ++ ", " ++ id2.pp ;
   top.qnames = [id1, id2];
 }
 
 concrete production qNames2Cons
-top::QNames2 ::= id1::QName ',' id2::QNames2
+top::QNames2 ::= id1::QNameWithTL ',' id2::QNames2
 {
-  top.pp = id1.name ++ ", " ++ id2.pp ;
+  top.pp = id1.pp ++ ", " ++ id2.pp ;
   top.qnames = [id1] ++ id2.qnames;
 }
 
-nonterminal QNames with pp, qnames;
+
 concrete production qNamesSingle
-top::QNames ::= id::QName
+top::QNames ::= id::QNameWithTL
 {
   top.pp = id.pp;
   top.qnames = [id];
 }
 
 concrete production qNamesCons
-top::QNames ::= id1::QName ',' id2::QNames
+top::QNames ::= id1::QNameWithTL ',' id2::QNames
 {
   top.pp = id1.pp ++ ", " ++ id2.pp ;
   top.qnames = [id1] ++ id2.qnames;
 }
+
+--------------------------------------------------------------------------------
+
+function makeOccursDcls
+AGDcl ::= l::Integer c::Integer ats::[QNameWithTL] nts::[QNameWithTL]
+{
+  return if null(ats) 
+	 then agDclNone()
+	 else agDclAppend(makeOccursDclsHelp(l, c, head(ats), nts), makeOccursDcls(l, c, tail(ats), nts));
+}
+
+function makeOccursDclsHelp
+AGDcl ::= l::Integer c::Integer at::QNameWithTL nts::[QNameWithTL]
+{
+  return if null(nts) 
+	 then agDclNone()
+	 else agDclAppend(
+	        attributionDcl(attr_kwd, at.qname, '<', at.tl, '>', occurs_kwd, on_kwd, head(nts).qname, '<', head(nts).tl, '>', ';'),
+		makeOccursDclsHelp(l, c, at, tail(nts)));
+
+  local attribute attr_kwd :: Attribute_kwd ;
+  attr_kwd = terminal ( Attribute_kwd, "attribute", l, c);
+
+  local attribute occurs_kwd :: Occurs_kwd ;
+  occurs_kwd = terminal ( Occurs_kwd, "occurs", l, c);
+ 
+  local attribute on_kwd :: On_kwd ;
+  on_kwd = terminal ( On_kwd, "on", l, c);
+}
+
+
+
+{- TEMPORARILY DISABLE NAMES and NAMES2
+
+synthesized attribute ids :: [Name];
 
 nonterminal Names2 with pp, ids;
 concrete production id2Single
@@ -72,68 +131,5 @@ function qualifyNames
   return if null(i) then [] else [qNameId(head(i))] ++ qualifyNames(tail(i));
 }
 
-function makeOccursDcls
-AGDcl ::= l::Integer c::Integer ats::[QName] nts::[QName]
-{
-  return if null(ats) 
-	 then agDclNone()
-	 else agDclAppend(makeOccursDclsHelp(l, c, head(ats), nts), makeOccursDcls(l, c, tail(ats), nts));
-}
+-}
 
-function makeOccursDclsHelp
-AGDcl ::= l::Integer c::Integer at::QName nts::[QName]
-{
-  return if null(nts) 
-	 then agDclNone()
-	 else agDclAppend(attributionDcl(attr_kwd, at, occurs_kwd, on_kwd, head(nts), semi_t),
-		       makeOccursDclsHelp(l, c, at, tail(nts)));
-
-  local attribute attr_kwd :: Attribute_kwd ;
-  attr_kwd = terminal ( Attribute_kwd, "attribute", l, c);
-
-  local attribute occurs_kwd :: Occurs_kwd ;
-  occurs_kwd = terminal ( Occurs_kwd, "occurs", l, c);
- 
-  local attribute on_kwd :: On_kwd ;
-  on_kwd = terminal ( On_kwd, "on", l, c);
-
-  local attribute semi_t :: Semi_t ;
-  semi_t = terminal ( Semi_t, ";", l, c);
-}
-
-function makeNTDcls
-AGDcl ::= l::Integer c::Integer nts::[Name]
-{
-  return if null(nts) 
-	 then agDclNone()
-	 else agDclAppend(nonterminalDcl(terminal(NonTerminal_kwd, "nontermial", l, c), head(nts), terminal(Semi_t, ";", l, c)),
-		       makeNTDcls(l, c, tail(nts)));
-}
-
-function makeSynDcls
-AGDcl ::= l::Integer c::Integer t::Type atts::[Name]
-{
-  return if null(atts)
-	 then agDclNone()
-	 else agDclAppend(attributeDclSyn(terminal(Synthesized_kwd, "synthesized", l, c),
-				       terminal(Attribute_kwd, "attribute", l, c),
-			      	       head(atts),
-			      	       terminal(HasType_t, "::", l, c),
-			               t,
-			               terminal(Semi_t, ";", l, c)),
-		       makeSynDcls(l, c, t, tail(atts)));
-}
-
-function makeInhDcls
-AGDcl ::= l::Integer c::Integer t::Type atts::[Name]
-{
-  return if null(atts)
-	 then agDclNone()
-	 else agDclAppend(attributeDclInh(terminal(Inherited_kwd, "inherited", l, c),
-				       terminal(Attribute_kwd, "attribute", l, c),
-			      	       head(atts),
-			      	       terminal(HasType_t, "::", l, c),
-			               t,
-			               terminal(Semi_t, ";", l, c)),
-		       makeInhDcls(l, c, t, tail(atts)));
-}
