@@ -83,7 +83,7 @@ Decorated ATape ::= str::String mfs::[AMachineFlow] ms::[AMachine] t::Decorated 
   --get the machine that needs to be run for this state
   local attribute theMachine :: [AMachine];
   theMachine = if null(theMachineFlow)
-	       then [::AMachine] 
+	       then [] 
 	       else findAMachine(head(theMachineFlow).machineName, ms);
 
   --if there was no machine to run then return the current tape
@@ -95,7 +95,7 @@ Decorated ATape ::= str::String mfs::[AMachineFlow] ms::[AMachine] t::Decorated 
   --get the next state for our machine flow
   local attribute theOption :: [AOption];
   theOption = if null(theMachineFlow)
-	      then [::AOption]
+	      then []
 	      else findAOption(theTape.tapeHead, head(theMachineFlow).options);
 
   -- if the next state option does not exists just return the current tape, otherwise run on the new state.
@@ -112,7 +112,7 @@ Decorated ATape ::= m::AMachine str::String t::Decorated ATape
  
   local attribute theInstruction :: [AInstruction];
   theInstruction = if null(theState) 
-		   then [::AInstruction]
+		   then []
 		   else findAInstruction(t.tapeHead, head(theState).instructions);
 
   local attribute theTheAction :: AAction;
@@ -129,7 +129,7 @@ Decorated ATape ::= m::AMachine str::String t::Decorated ATape
 function findAInstruction
 [AInstruction] ::= str::String s::[AInstruction]
 {
-  return if null(s) then [::AInstruction]
+  return if null(s) then []
 	 else if head(s).tapeHead == str 
 	      then [head(s)]
 	      else findAInstruction(str, tail(s));
@@ -138,7 +138,7 @@ function findAInstruction
 function findAMachineFlow
 [AMachineFlow] ::= str::String s::[AMachineFlow]
 {
-  return if null(s) then [::AMachineFlow]
+  return if null(s) then []
 	 else if head(s).stateName == str 
 	      then [head(s)]
 	      else findAMachineFlow(str, tail(s));
@@ -147,7 +147,7 @@ function findAMachineFlow
 function findAMachine
 [AMachine] ::= str::String s::[AMachine]
 {
-  return if null(s) then [::AMachine]
+  return if null(s) then []
 	 else if head(s).machineName == str 
 	      then [head(s)] 
 	      else findAMachine(str, tail(s));
@@ -156,7 +156,7 @@ function findAMachine
 function findAOption
 [AOption] ::= str::String s::[AOption]
 {
-  return if null(s) then [::AOption] 
+  return if null(s) then [] 
 	 else if head(s).tapeHead == str 
 	      then [head(s)]
 	      else findAOption(str, tail(s));
@@ -165,7 +165,7 @@ function findAOption
 function findAState
 [AState] ::= str::String s::[AState]
 {
-  return if null(s) then [::AState]
+  return if null(s) then []
 	 else if head(s).stateName == str 
 	      then [head(s)]
 	      else findAState(str, tail(s));

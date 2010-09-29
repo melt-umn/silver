@@ -7,9 +7,9 @@ synthesized attribute tapeRight :: [String];
 abstract production emptyATape
 top::ATape ::=
 {
-  top.tapeLeft = [::String];
+  top.tapeLeft = [];
   top.tapeHead = "";
-  top.tapeRight = [::String];
+  top.tapeRight = [];
 
   top.pp = "[";
 }
@@ -18,9 +18,9 @@ top::ATape ::=
 abstract production newATape
 top::ATape ::= c::String
 {
-  top.tapeLeft = [::String];
+  top.tapeLeft = [];
   top.tapeHead = c;
-  top.tapeRight = [::String];
+  top.tapeRight = [];
 
   top.pp = "[" ++ c ++ "]";
 }
@@ -45,7 +45,7 @@ top::ATape ::= l::[String] c::String r::[String]
 function slreverse
 [String] ::= sl::[String]
 {
-  return if null(sl) then [::String] else slreverse(tail(sl)) ++ [head(sl)];
+  return if null(sl) then [] else slreverse(tail(sl)) ++ [head(sl)];
 }
 
 function slfold

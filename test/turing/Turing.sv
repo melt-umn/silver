@@ -95,7 +95,7 @@ top::Dcl ::= c1::MachineTerminal c2::IdTerminal c3::LeftCurl c4::States c5::Righ
 {
   top.pp = c1.lexeme ++ " " ++ c2.lexeme ++ "{\n" ++ c4.pp ++ "\n}\n";
   top.machines = [newSimpleAMachine(c2.lexeme, c4.startState, c4.states)];
-  top.theImports = [::String];
+  top.theImports = [];
   top.tape = decorate emptyATape() with {};
   top.startMachine = "";
 
@@ -133,7 +133,7 @@ top::State ::= c1::StateOrStart c2::IdTerminal c3::LeftCurl c4::RightCurl
   top.pp = c1.pp ++ " " ++ c2.lexeme ++ " { }\n";
   top.startState = if c1.isStart then c2.lexeme else "";
 
-  top.states = [newAState(c2.lexeme, [::AInstruction])];
+  top.states = [newAState(c2.lexeme, [])];
 }
 
 concrete production stateStart
@@ -226,8 +226,8 @@ concrete production tapeDcl
 top::Dcl ::= c1::TapeDcl
 {
   top.pp = c1.pp;
-  top.machines = [::AMachine];
-  top.theImports = [::String];
+  top.machines = [];
+  top.theImports = [];
   top.tape = c1.tape;
   top.startMachine = "";
 
@@ -245,14 +245,14 @@ concrete production tapeDcl2
 top::TapeDcl ::= c1::TapeTerminal c3::LeftSquare c4::IdTerminal c5::RightSquare c6::Comma c7::RightTapeList c8::SemiColon
 {
   top.pp = "tape [" ++ c4.lexeme ++ "]" ++ c7.pp ++ ";";
-  top.tape = decorate newATapeFull([::String], c4.lexeme, c7.tapeList) with {};
+  top.tape = decorate newATapeFull([], c4.lexeme, c7.tapeList) with {};
 }
 
 concrete production tapeDcl3
 top::TapeDcl ::= c1::TapeTerminal c2::LeftTapeList c3::Comma c4::LeftSquare c5::IdTerminal c6::RightSquare c7::SemiColon
 {
   top.pp = "tape " ++ c2.pp ++ "[" ++ c5.lexeme ++ "];";
-  top.tape = decorate newATapeFull(c2.tapeList, c5.lexeme, [::String]) with {};
+  top.tape = decorate newATapeFull(c2.tapeList, c5.lexeme, []) with {};
 }
 
 concrete production tapeDcl4
@@ -294,8 +294,8 @@ concrete production runDcl
 top::Dcl ::= c1::RunTerminal c2::MachineTerminal c3::IdTerminal c4::SemiColon
 {
   top.pp = "run machine " ++ c3.lexeme ++ "\n";
-  top.machines = [::AMachine];
-  top.theImports = [::String];
+  top.machines = [];
+  top.theImports = [];
   top.tape = decorate emptyATape() with {};
   top.startMachine = c3.lexeme;
 
@@ -307,7 +307,7 @@ top::Dcl ::= c1::MachineTerminal c2::IdTerminal c3::LeftCurl c4::FlowDcls c5::Ri
 {
   top.pp = c1.lexeme ++ " " ++ c2.lexeme ++ "{\n" ++ c4.pp ++ "\n}\n";
   top.machines = [newComplexAMachine(c2.lexeme, c4.startState, c4.machineFlow)];
-  top.theImports = [::String];
+  top.theImports = [];
   top.tape = decorate emptyATape() with {};
   top.startMachine = "";
 
@@ -343,7 +343,7 @@ concrete production flowDclNone
 top::FlowDcl ::= c1::StateOrStart c2::IdTerminal c3::Colon c4::IdTerminal c5::LeftCurl c6::RightCurl
 {
   top.pp = c1.pp ++ " " ++ c2.lexeme ++ " : " ++ c4.lexeme ++ " { }\n";
-  top.machineFlow = [newAMachineFlow(c2.lexeme, c4.lexeme, [::AOption])];
+  top.machineFlow = [newAMachineFlow(c2.lexeme, c4.lexeme, [])];
   top.startState = if c1.isStart then c2.lexeme else "";
 }
 --imports
@@ -372,7 +372,7 @@ concrete production machineLoad
 top::Dcl ::= c1::LoadTerminal c2::StringTerminal c3::SemiColon
 {
   top.pp = "load " ++ c2.lexeme ++ " ;";
-  top.machines = [::AMachine];
+  top.machines = [];
 
 
   top.theImports = [substring(1, length(c2.lexeme)-1, c2.lexeme)];

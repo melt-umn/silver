@@ -42,7 +42,7 @@ nonterminal IOAMachineList with ioIn, ioOut, machines;
 function getImports
 IOAMachineList ::= need::[String]
 {
-  return getImportsHelp([::String], need);
+  return getImportsHelp([], need);
 }
 
 abstract production getImportsHelp
@@ -66,7 +66,7 @@ top::IOAMachineList ::= seen::[String] need::[String]
 
   top.ioOut = if null(need) then top.ioIn else recurse.ioOut;
   top.machines = if null(need)
-	         then [::AMachine]
+	         then []
 		 else result.machines ++ recurse.machines;
 }
 
@@ -92,7 +92,7 @@ Boolean ::=  str::String sl::[String]
 function rem
 [String] ::= n::[String] seen::[String]
 {
-  return if null(n) then [::String]
+  return if null(n) then []
          else if containsString(head(n), seen)
 	      then rem(tail(n), seen)
 	      else cons(head(n), rem(tail(n), seen));

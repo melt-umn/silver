@@ -12,7 +12,7 @@ top::AAction ::=
   e = null(top.oldTape.tapeLeft);
   
   local attribute tl :: [String];
-  tl = if e then [::String] else tail(top.oldTape.tapeLeft);
+  tl = if e then [] else tail(top.oldTape.tapeLeft);
 
   local attribute th :: String;
   th = if e then "0" else head(top.oldTape.tapeLeft);
@@ -36,7 +36,7 @@ top::AAction ::=
   th = if e then "0" else head(top.oldTape.tapeRight);
 
   local attribute tr :: [String];
-  tr = if e then [::String] else tail(top.oldTape.tapeRight);
+  tr = if e then [] else tail(top.oldTape.tapeRight);
 }
 
 abstract production printToTape
