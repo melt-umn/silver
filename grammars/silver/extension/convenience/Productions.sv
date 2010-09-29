@@ -2,6 +2,8 @@ grammar silver:extension:convenience;
 import silver:definition:core;
 import silver:definition:concrete_syntax;
 
+{-  TEMPORARILY(?) DISABLED wasn't used, wasn't hard pressed to fix it yet!
+
 synthesized attribute trans :: [Trans];
 nonterminal ProductionDclStmts with trans;
 nonterminal ProductionDclStmt with trans;
@@ -64,3 +66,6 @@ top::Trans ::= i::Name s::ProductionSignature b::ProductionBody {
   top.transSig = s;
   top.transBody = b;
 }
+
+
+-}
