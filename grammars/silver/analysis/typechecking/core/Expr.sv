@@ -73,12 +73,6 @@ top::Expr ::= e::Expr '(' es::Exprs ')'
   e.downSubst = top.downSubst;
 }
 
-aspect production emptyProductionApp
-top::Expr ::= e::Expr '(' ')'
-{
-  e.downSubst = top.downSubst;
-}
-
 aspect production productionApplicationDispatcher
 top::Expr ::= e::Decorated Expr es::Exprs
 {
