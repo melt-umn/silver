@@ -190,8 +190,7 @@ top::Expr ::= e::Expr '(' es::Exprs ')'
 concrete production emptyProductionApp
 top::Expr ::= e::Expr '(' ')'
 {
-  e.expected = expected_default();
-  forwards to e.typerep.applicationDispatcher(e, exprsEmpty());
+  forwards to productionApp(e, $2, exprsEmpty(), $3);
 }
 
 abstract production productionApplicationDispatcher
