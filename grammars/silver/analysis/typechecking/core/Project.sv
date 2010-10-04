@@ -9,8 +9,6 @@ imports silver:definition:env;
 imports silver:definition:type;
 
 
-synthesized attribute typeErrors :: [Decorated Message] with ++;
-
 
 {- The resulting substitution context -}
 synthesized attribute upSubst   :: Substitution;

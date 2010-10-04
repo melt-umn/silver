@@ -30,7 +30,6 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
                 else [];
 
   top.errors := te.errors ++ acode.errors;
-  top.typeErrors := acode.typeErrors;
   
   top.parserDcls = [];
   top.nonTerminalDcls = [];
@@ -68,7 +67,6 @@ top::Expr ::= q::Decorated QName
   top.appReference = "";
   top.translation = makeCopperName(q.lookupValue.fullName);
 
-  top.typeErrors := [];
   top.upSubst = top.downSubst;
 }
 
@@ -91,14 +89,12 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  top.typeErrors := e.typeErrors;
-  
   e.downSubst = top.downSubst;
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
 
   errCheck1 = check(e.typerep, val.lookupValue.typerep);
-  top.typeErrors <-
+  top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
        else [];

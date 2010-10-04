@@ -75,6 +75,14 @@ top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QNa
       This code needs review from someone to make sure it all makes sense. Maybe just me, later, when I'm not sick and stuffy.
    -}
 
+  -- Now, finally, make sure we're not "redefining" the occurs.
+  local attribute occursCheck :: [Decorated DclInfo];
+  occursCheck = getOccursDcl(a.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
+  
+  top.errors <- if length(occursCheck) > 1
+                then [err(a.location, "Attribute '" ++ a.name ++ "' already occurs on '" ++ nt.name ++ "'.")]
+                else [];
+
 }
 
 concrete production attributionDclEmpty

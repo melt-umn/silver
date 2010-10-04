@@ -1,7 +1,6 @@
 grammar silver:translation:java:concrete_syntax:copper;
 import silver:analysis:typechecking;
 import silver:analysis:typechecking:core;
-import silver:analysis:typechecking:concrete_syntax;
 import silver:definition:core;
 import silver:definition:env;
 import silver:definition:concrete_syntax;
@@ -25,7 +24,6 @@ top::TerminalModifier ::= 'dominates' '{' terms::TermPrecList '}'
   top.terminalModifiers = [dominatesTerminalModifierSpec(terms.precTermList)];
 
   top.errors := terms.errors;
-  top.typeErrors := terms.typeErrors;
 
   forwards to terminalModifierDefault();
 }
@@ -38,13 +36,12 @@ top::TerminalModifier ::= 'submits' 'to' '{' terms::TermPrecList  '}'
   top.terminalModifiers = [submitsToTerminalModifierSpec(terms.precTermList)];
 
   top.errors := terms.errors;
-  top.typeErrors := terms.typeErrors;
 
   forwards to terminalModifierDefault();
 }
 
 synthesized attribute precTermList :: [String];
-nonterminal TermPrecList with grammarName, pp, location, precTermList, defs, errors, typeErrors, env, file;
+nonterminal TermPrecList with grammarName, pp, location, precTermList, defs, errors, env, file;
 
 -- The reason these forward is that it's easier to avoid code duplication with cons and nil,
 -- while the grammar has to enforce at least one element.
@@ -87,9 +84,6 @@ top::TermPrecList ::= h::QName t::TermPrecList
                 else if length(h.lookupType.dcls ++ h.lookupLexerClass.dcls) > 1
                 then [err(h.location, "Ambiguous reference to terminal or lexer class '" ++ h.name ++ "'. Possibilities are:\n" ++ printPossibilities(h.lookupType.dcls ++ h.lookupLexerClass.dcls))]
                 else [];
-
-  top.typeErrors := t.typeErrors;
-  
 }
 
 abstract production termPrecListNull
@@ -100,7 +94,6 @@ top::TermPrecList ::=
   top.pp = "";
   top.location = loc("termPrecListNull", -1, -1);
   top.errors := [];
-  top.typeErrors := [];
 }
 
 
@@ -128,7 +121,7 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
   -- TODO: better name than this dummy one?
   acode.signature = namedNamedSignature(top.grammarName ++ ":__ta" ++ toString($1.line));
   
-  top.errors := acode.errors ++ acode.typeErrors; -- TODO POTENTIAL BUG: we check type errors separately from errors for a reason, right?
+  top.errors := acode.errors;
 
   forwards to terminalModifierDefault();
 }
@@ -208,7 +201,6 @@ top::Expr ::= q::Decorated QName
                     if q.name == "filename" then "new common.StringCatter(virtualLocation.getFileName())" else
                     error("unknown actionTerminalReference " ++ q.name); -- should never be called, but here for safety
 
-  top.typeErrors := [];
   top.upSubst = top.downSubst;
 }
 
@@ -235,14 +227,12 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  top.typeErrors := e.typeErrors;
-  
   e.downSubst = top.downSubst;
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
 
   errCheck1 = check(e.typerep, val.lookupValue.typerep);
-  top.typeErrors <-
+  top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
        else [];

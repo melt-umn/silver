@@ -38,7 +38,6 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
                ++ e.errors;
 
   -- TODO: figure out wtf is going on with type here! (needs to be a terminal, plus one of the ones in the disgroup)
-  top.typeErrors := e.typeErrors;
 
   e.expected = expected_default();
   
@@ -62,8 +61,6 @@ top::ProductionStmt ::= 'print' e::Expr ';'
                else [])
                ++ e.errors;
 
-  top.typeErrors := e.typeErrors;
-
   e.expected = expected_default();
   
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
@@ -73,7 +70,7 @@ top::ProductionStmt ::= 'print' e::Expr ';'
   top.upSubst = errCheck1.upSubst;
   
   errCheck1 = check(e.typerep, stringTypeExp());
-  top.typeErrors <-
+  top.errors <-
        if errCheck1.typeerror
        then [err(e.location, "print expects a string, instead it recieved a " ++ errCheck1.leftpp)]
        else [];

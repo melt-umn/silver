@@ -1,5 +1,7 @@
 grammar silver:definition:core;
 
+import silver:analysis:typechecking:core;
+
 concrete production nestedExpr
 top::Expr ::= '(' e::Expr ')'
 {
@@ -184,7 +186,7 @@ concrete production productionApp
 top::Expr ::= e::Expr '(' es::Exprs ')'
 {
   e.expected = expected_default();
-  forwards to e.typerep.applicationDispatcher(e, es);
+  forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es);
 }
 
 concrete production emptyProductionApp
@@ -200,9 +202,9 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.location = e.location;
   top.errors := e.errors ++ es.errors; 
 
-  top.typerep = e.typerep.outputType;
+  top.typerep = performSubstitution(e.typerep, e.upSubst).outputType;
 
-  es.expectedInputTypes = e.typerep.inputTypes;
+  es.expectedInputTypes = performSubstitution(e.typerep, e.upSubst).inputTypes;
 }
 
 abstract production functionApplicationDispatcher
@@ -212,9 +214,9 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.location = e.location;
   top.errors := e.errors ++ es.errors; 
 
-  top.typerep = e.typerep.outputType;
+  top.typerep = performSubstitution(e.typerep, e.upSubst).outputType;
 
-  es.expectedInputTypes = e.typerep.inputTypes;
+  es.expectedInputTypes = performSubstitution(e.typerep, e.upSubst).inputTypes;
 }
 
 abstract production errorApplicationDispatcher
@@ -222,7 +224,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   top.location = e.location;
-  top.errors := [err(top.location, e.pp ++ " has type " ++ prettyType(e.typerep) ++ " and cannot be invoked as a function.")] ++ e.errors ++ es.errors; 
+  top.errors := [err(top.location, e.pp ++ " has type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ " and cannot be invoked as a function.")] ++ e.errors ++ es.errors; -- TODO fix this
 
   top.typerep = errorType();
 
@@ -240,7 +242,7 @@ top::Expr ::= e::Expr '.' q::QName
   
   top.errors <- e.errors;
   
-  forwards to e.typerep.accessDispatcher(e, $2, q);
+  forwards to performSubstitution(e.typerep, e.upSubst).accessDispatcher(e, $2, q);
 }
 
 abstract production errorAccessDispatcher
@@ -250,7 +252,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.location = loc(top.file, $2.line, $2.column);
   
   top.typerep = q.lookupAttribute.typerep;
-  top.errors := [err(top.location, "LHS of '.' is type " ++ prettyType(e.typerep) ++ " and cannot have attributes.")] ++ q.lookupAttribute.errors;
+  top.errors := [err(top.location, "LHS of '.' is type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ " and cannot have attributes.")] ++ q.lookupAttribute.errors; -- TODO fix this
 }
 
 abstract production undecoratedAccessDispatcher
@@ -286,7 +288,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.location = loc(top.file, $2.line, $2.column);
   
   production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(q, e.typerep);
+  occursCheck = occursCheckQName(q, performSubstitution(e.typerep, e.upSubst));
 
   top.typerep = occursCheck.typerep;
   
@@ -300,7 +302,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.location = loc(top.file, $2.line, $2.column);
   
   production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(q, e.typerep);
+  occursCheck = occursCheckQName(q, performSubstitution(e.typerep, e.upSubst));
 
   top.typerep = occursCheck.typerep;
   
@@ -330,8 +332,10 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
                 else if q.name == "line" || q.name == "column"
                 then intTypeExp()
                 else errorType();
-  top.errors := []; -- the "occurs check" is in analysis/typechecking for some reason
-  -- and this is [] because there is no attribute to lookup for terminals.. currently
+  top.errors :=
+        if q.name == "lexeme" || q.name == "filename" || q.name == "line" || q.name == "column"
+        then []
+        else [err(q.location, q.name ++ " is not a terminal attribute")];
 }
 
 concrete production decorateExprWithEmpty
@@ -349,11 +353,11 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.pp = "decorate " ++ e.pp ++ " with {" ++ inh.pp ++ "}";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.typerep = decoratedTypeExp(e.typerep);
+  top.typerep = decoratedTypeExp(performSubstitution(e.typerep, e.upSubst));
   top.errors := e.errors ++ inh.errors;
   top.warnings := [];
   
-  inh.decoratingnt = e.typerep;
+  inh.decoratingnt = performSubstitution(e.typerep, e.upSubst);
 
   e.expected = expected_undecorated();
 }
