@@ -256,7 +256,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 abstract production undecoratedAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  -- TODO BUG: It's expecting something decorated here. We want to give all inherited attributes of 'e' to 'decorate...'
+  -- TODO BUG: It's expecting something decorated here. We want to give all inherited attributes of 'e' to 'decorateExprWithEmpty...'
 
   -- and this is a positively UGLY way of getting around this... *evil grin*
   
@@ -271,7 +271,7 @@ top::Expr ::= e::Expr '.' q::Decorated QName
 abstract production decoratedAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.errors <- q.lookupAttribute.errors; -- the occurs check is in analysis/typechecking for some reason
+  top.errors <- q.lookupAttribute.errors;
   
   -- We dispatch again, based on the kind of attribute
   forwards to if null(q.lookupAttribute.dcls)
