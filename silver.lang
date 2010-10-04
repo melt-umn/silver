@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language id="silver" _name="Silver" version="2.0" _section="Sources">
+  <metadata>
+    <property name="mimetypes">text/x-melt-silver</property>
+    <property name="globs">*.sv</property>
+    <property name="line-comment-start">--</property>
+    <property name="block-comment-start">{-</property>
+    <property name="block-comment-end">-}</property>
+  </metadata>
+
+  <styles>
+    <style id="comment" _name="Comment" map-to="def:comment"/>
+    <style id="error" _name="Error" map-to="def:error"/>
+    <style id="escaped-character" _name="Escaped Character" map-to="def:special-char"/>
+    <style id="string" _name="String" map-to="def:string"/>
+    <style id="char" _name="Character" map-to="def:character"/>
+    <style id="external" _name="External" map-to="def:preprocessor"/>
+    <style id="declaration" _name="Declaration" map-to="def:type"/>
+    <style id="storage-class" _name="Storage Class" map-to="def:type"/>
+    <style id="scope-declaration" _name="Scope Declaration" map-to="def:type"/>
+    <style id="keyword" _name="Keyword" map-to="def:keyword"/>
+    <style id="null-value" _name="Null Value" map-to="def:special-constant"/>
+    <style id="boolean" _name="Boolean value" map-to="def:boolean"/>
+    <style id="number" _name="Number" map-to="def:decimal"/>
+    <style id="reserved" _name="Future Reserved Keywords" map-to="def:error"/>
+    <style id="type" _name="Data Type" map-to="def:type"/>
+  </styles>
+
+  <definitions>
+
+    <define-regex id="escaped-character" extended="true">
+      \\(               # leading backslash
+      [\\\"\'nrbtf] |   # escaped character
+      [0-9]{1,3}    |   # latin encoded char
+      u[0-9]{1,4}       # unicode char
+      )
+    </define-regex>
+
+    <context id="string" style-ref="string" end-at-line-end="true">
+      <start>"</start>
+      <end>"</end>
+      <include>
+        <context id="escaped-character-str" style-ref="escaped-character">
+          <match>\%{escaped-character}</match>
+        </context>
+      </include>
+    </context>
+
+   <context id="char" style-ref="char">
+      <start>'</start>
+      <end>'</end>
+      <include>
+        <context id="escaped-character-char" style-ref="escaped-character">
+          <match>\%{escaped-character}</match>
+        </context>
+      </include>
+   </context>
+   
+   <context id="dollar-ref" style-ref="char">
+     <match>\$[0-9]*</match>
+   </context>
+
+    <context id="line-comment" style-ref="comment" end-at-line-end="true">
+      <start>--</start>
+      <include>
+        <context ref="def:in-line-comment"/>
+      </include>
+    </context>
+
+    <context id="block-comment" style-ref="comment">
+      <start>\{-</start>
+      <end>-\}</end>
+      <include>
+        <context ref="def:in-comment"/>
+      </include>
+    </context>
+
+    <context id="close-comment-outside-comment" style-ref="error">
+      <match>-\}</match>
+    </context>
+
+    <context id="externals" style-ref="external">
+<keyword>grammar</keyword>
+<keyword>import</keyword>
+<keyword>imports</keyword>
+<keyword>exports</keyword>
+<keyword>build</keyword>
+<keyword>hiding</keyword>
+<keyword>as</keyword>
+<keyword>only</keyword>
+    </context>
+
+    <context id="declarations" style-ref="declaration">
+<keyword>parser</keyword>
+<keyword>parse</keyword>
+<keyword>attribute</keyword>
+<keyword>function</keyword>
+<keyword>local</keyword>
+<keyword>nonterminal</keyword>
+<keyword>occurs</keyword>
+<keyword>on</keyword>
+<keyword>production</keyword>
+<keyword>terminal</keyword>
+<keyword>foreign</keyword>
+<keyword>layout</keyword>
+<keyword>disambiguate</keyword>
+<keyword>action</keyword>
+<keyword>global</keyword>
+<keyword>productions</keyword>
+<keyword>lexer</keyword>
+<keyword>class</keyword>
+    </context>
+
+    <context id="primitive-types" style-ref="type">
+<keyword>IO</keyword>
+<keyword>Boolean</keyword>
+<keyword>Decorated</keyword>
+<keyword>Float</keyword>
+<keyword>Function</keyword>
+<keyword>Integer</keyword>
+<keyword>Production</keyword>
+<keyword>String</keyword>
+    </context>
+
+    <context id="storage-class" style-ref="storage-class">
+<keyword>abstract</keyword>
+<keyword>aspect</keyword>
+<keyword>concrete</keyword>
+<keyword>inherited</keyword>
+<keyword>synthesized</keyword>
+<keyword>autocopy</keyword>
+<keyword>ignore</keyword>
+    </context>
+
+    <context id="scope-declarations" style-ref="scope-declaration">
+<keyword>left</keyword>
+<keyword>association</keyword>
+<keyword>right</keyword>
+<keyword>precedence</keyword>
+<keyword>operator</keyword>
+<keyword>dominates</keyword>
+<keyword>submits</keyword>
+<keyword>classes</keyword>
+    </context>
+
+
+    <context id="flow-other" style-ref="keyword">
+<keyword>forwarding</keyword>
+<keyword>forwards</keyword>
+<keyword>to</keyword>
+<keyword>return</keyword>
+<keyword>pluck</keyword>
+<keyword>print</keyword>
+    </context>
+
+    <context id="flow" style-ref="keyword">
+<keyword>case</keyword>
+<keyword>of</keyword>
+<keyword>let</keyword>
+<keyword>in</keyword>
+<keyword>end</keyword>
+<keyword>decorate</keyword>
+<keyword>with</keyword><!-- I'm ignoring when it's in an import line... -->
+<keyword>else</keyword>
+<keyword>forward</keyword>
+<keyword>if</keyword>
+<keyword>new</keyword>
+<keyword>then</keyword>
+    </context>
+
+    <context id="future-reserved-words" style-ref="reserved">
+<keyword>prefix</keyword>
+    </context>
+
+    <context id="boolean" style-ref="boolean">
+<keyword>false</keyword>
+<keyword>true</keyword>
+    </context>
+
+    <context id="numeric" style-ref="number">
+      <match extended="true">
+        (\b([0-9]+|0[xX][0-9a-fA-F]+)[Ll]?\b|
+         \b(([0-9]+[Ee][-]?[0-9]+|
+            ([0-9]*\.[0-9]+|[0-9]+\.)([Ee][-]?[0-9]+)?)[fFdD]?|
+            [0-9]+[FfDd]))
+      </match>
+    </context>
+
+    <context id="silver">
+      <include>
+        <context ref="string"/>
+        <context ref="char"/>
+        <context ref="dollar-ref"/>
+        <context ref="line-comment"/>
+        <context ref="block-comment"/>
+        <context ref="close-comment-outside-comment"/>
+        <context ref="externals"/>
+        <context ref="declarations"/>
+        <context ref="primitive-types"/>
+        <context ref="storage-class"/>
+        <context ref="scope-declarations"/>
+        <context ref="flow"/>
+        <context ref="flow-other"/>
+        <context ref="future-reserved-words"/>
+        <context ref="boolean"/>
+        <context ref="numeric"/>
+      </include>
+    </context>
+
+  </definitions>
+</language>
