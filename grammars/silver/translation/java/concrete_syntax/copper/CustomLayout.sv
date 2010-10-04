@@ -58,6 +58,5 @@ top::ProductionModifier ::= 'layout' '{' terms::TermPrecList '}'
   top.location = loc(top.file, $1.line, $1.column);
 
   top.productionModifiers = [layoutProductionModifierSpec(terms.precTermList)];
-  top.errors := terms.errors ++ terms.typeErrors;
-  -- TODO this is a hack! typeErrors
+  top.errors := terms.errors;
 }

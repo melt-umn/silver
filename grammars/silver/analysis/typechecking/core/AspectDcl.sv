@@ -11,15 +11,13 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 
   local attribute errCheck1 :: TypeCheck; errCheck1.downSubst = emptySubst();
   errCheck1 = check(realType, aspectType);
-  top.typeErrors <-
+  top.errors <-
         if errCheck1.typeerror
         then [err(top.location, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "
                                 ++ errCheck1.leftpp ++ "\nActual: "
                                 ++ errCheck1.rightpp)]
         else [];	
 
-  top.typeErrors := body.typeErrors;
-  
   body.downSubst = emptySubst();
   body.finalSubst = body.upSubst;
 }
@@ -36,15 +34,13 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 
   local attribute errCheck1 :: TypeCheck; errCheck1.downSubst = emptySubst();
   errCheck1 = check(realType, aspectType);
-  top.typeErrors <-
+  top.errors <-
         if errCheck1.typeerror
         then [err(top.location, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "
                                 ++ errCheck1.leftpp ++ "\nActual: "
                                 ++ errCheck1.rightpp)]
         else [];	
 
-  top.typeErrors := body.typeErrors;
-  
   body.downSubst = emptySubst();
   body.finalSubst = body.upSubst;
 }

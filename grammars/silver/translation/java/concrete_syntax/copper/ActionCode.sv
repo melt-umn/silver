@@ -12,7 +12,7 @@ import silver:definition:type:syntax;
 
 synthesized attribute actionCode :: String;
 
-nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,signature,file,errors,typeErrors;
+nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,signature,file,errors;
 
 terminal Action_kwd 'action' lexer classes {KEYWORD};
 
@@ -78,7 +78,6 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   acode.signature = namedSig;
 
   top.errors <- acode.errors;
-  top.typeErrors := forward.typeErrors ++ acode.typeErrors;
 
   forwards to concreteProductionDclModifiers($1, $2, id, ns, pm, body);
 }
@@ -92,7 +91,6 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
   top.actionCode = hacklocaldeclarations(stmts.defs.valueList) ++ stmts.translation;
 
   top.errors := stmts.errors;
-  top.typeErrors := stmts.typeErrors;
   
   stmts.downSubst = emptySubst();
 }
@@ -174,7 +172,6 @@ top::Expr ::= q::Decorated QName
   top.appReference = "";
   top.translation = "((" ++ q.lookupValue.typerep.transType ++ ")((common.Node)RESULT).getChild(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName ++ "))";
 
-  top.typeErrors := [];
   top.upSubst = top.downSubst;
 }
 

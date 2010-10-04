@@ -115,7 +115,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.appReference = "";
 
   top.translation = if e.isAppReference 
-                    then "(new " ++ e.appReference ++ "(" ++ es.translation ++ "))"
+                    then "((" ++ finalType(top).transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ "))"
                     else "((" ++ finalType(top).transType ++ ")common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "}))";
 }
 
@@ -126,8 +126,8 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.appReference = "";
 
   top.translation = if e.isAppReference 
-                    then "((" ++ e.typerep.outputType.transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ ").doReturn())"
-                    else "((" ++ e.typerep.outputType.transType ++ ")((common.FunctionNode)common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "})).doReturn())";
+                    then "((" ++ finalType(top).transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ ").doReturn())"
+                    else "((" ++ finalType(top).transType ++ ")((common.FunctionNode)common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "})).doReturn())";
 }
 
 aspect production synDNTAccessDispatcher

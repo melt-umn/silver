@@ -2,13 +2,11 @@ grammar silver:analysis:typechecking:core;
 
 import silver:util;
 
-attribute typeErrors, upSubst, downSubst, finalSubst occurs on ProductionBody, ProductionStmts, ProductionStmt;
+attribute upSubst, downSubst, finalSubst occurs on ProductionBody, ProductionStmts, ProductionStmt;
 
 aspect production defaultProductionBody
 top::ProductionBody ::= stmts::ProductionStmts
 {
-  top.typeErrors := stmts.typeErrors;
-  
   stmts.downSubst = top.downSubst;
   top.upSubst = stmts.upSubst;
 }
@@ -16,15 +14,12 @@ top::ProductionBody ::= stmts::ProductionStmts
 aspect production productionStmtsNone
 top::ProductionStmts ::= 
 {
-  top.typeErrors := [];
   top.upSubst = top.downSubst;
 }
 
 aspect production productionStmts
 top::ProductionStmts ::= stmt::ProductionStmt
 {
-  top.typeErrors := stmt.typeErrors;
-  
   stmt.downSubst = top.downSubst;
   top.upSubst = stmt.upSubst;
 }
@@ -32,8 +27,6 @@ top::ProductionStmts ::= stmt::ProductionStmt
 aspect production productionStmtsCons
 top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
 {
-  top.typeErrors := h.typeErrors ++ t.typeErrors;
-  
   h.downSubst = top.downSubst;
   t.downSubst = h.upSubst;
   top.upSubst = t.upSubst;
@@ -42,8 +35,6 @@ top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
 aspect production productionStmtsAppend
 top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
 {
-  top.typeErrors := h.typeErrors ++ t.typeErrors;
-  
   h.downSubst = top.downSubst;
   t.downSubst = h.upSubst;
   top.upSubst = t.upSubst;
@@ -54,16 +45,14 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   
-  top.typeErrors := e.typeErrors;
-  
   e.downSubst = top.downSubst;
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
 
   errCheck1 = check(e.typerep, top.signature.outputElement.typerep);
-  top.typeErrors <- if errCheck1.typeerror
-                    then [err(e.location, "Forward's expected type is " ++ errCheck1.rightpp ++ ", but the actual type supplied is " ++ errCheck1.leftpp)]
-                    else [];
+  top.errors <- if errCheck1.typeerror
+                then [err(e.location, "Forward's expected type is " ++ errCheck1.rightpp ++ ", but the actual type supplied is " ++ errCheck1.leftpp)]
+                else [];
 }
 
 aspect production forwardsToWith
@@ -71,24 +60,20 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   
-  top.typeErrors := e.typeErrors;
-  
   e.downSubst = top.downSubst;
   errCheck1.downSubst = e.upSubst;
   inh.downSubst = errCheck1.upSubst;
   top.upSubst = inh.upSubst;
 
   errCheck1 = check(e.typerep, top.signature.outputElement.typerep);
-  top.typeErrors <- if errCheck1.typeerror
-                    then [err(e.location, "Forward's expected type is " ++ errCheck1.rightpp ++ ", but the actual type supplied is " ++ errCheck1.leftpp)]
-                    else [];
+  top.errors <- if errCheck1.typeerror
+                then [err(e.location, "Forward's expected type is " ++ errCheck1.rightpp ++ ", but the actual type supplied is " ++ errCheck1.leftpp)]
+                else [];
 }
 
 aspect production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {
-  top.typeErrors := inh.typeErrors;
-  
   inh.downSubst = top.downSubst;
   top.upSubst = inh.upSubst;
 }
@@ -96,8 +81,6 @@ top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 aspect production forwardInhsOne
 top::ForwardInhs ::= lhs::ForwardInh
 {
-  top.typeErrors := lhs.typeErrors;
-  
   lhs.downSubst = top.downSubst;
   top.upSubst = lhs.upSubst;
 }
@@ -105,8 +88,6 @@ top::ForwardInhs ::= lhs::ForwardInh
 aspect production forwardInhsCons
 top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 {
-  top.typeErrors := lhs.typeErrors ++ rhs.typeErrors;
-  
   lhs.downSubst = top.downSubst;
   rhs.downSubst = lhs.upSubst;
   top.upSubst = rhs.upSubst;
@@ -117,15 +98,13 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  top.typeErrors := e.typeErrors ++ lhs.typeErrors; 
-  
   lhs.downSubst = top.downSubst;
   e.downSubst = lhs.upSubst;
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
   
   errCheck1 = check(lhs.typerep, e.typerep);
-  top.typeErrors <- 
+  top.errors <- 
        if errCheck1.typeerror
        then [err(e.location, lhs.pp ++ " has expected type " ++ errCheck1.leftpp
                               ++ ", but the expression has type " ++ errCheck1.rightpp)]
@@ -135,24 +114,18 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 aspect production forwardLhsExpr
 top::ForwardLHSExpr ::= q::QName
 {
-  top.typeErrors := [];
-  
   top.upSubst = top.downSubst;
 }
 
 aspect production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 {
-  top.typeErrors := [];
-  
   top.upSubst = top.downSubst;
 }
 
 aspect production productionAttributeDcl
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
 {
-  top.typeErrors := [];
-  
   top.upSubst = top.downSubst;
 }
 
@@ -161,14 +134,12 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  top.typeErrors := e.typeErrors;
-  
   e.downSubst = top.downSubst;
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
   
   errCheck1 = check(e.typerep, top.signature.outputElement.typerep);
-  top.typeErrors <-
+  top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Expected return type is " ++ errCheck1.rightpp ++ ", but the expression has actual type " ++ errCheck1.leftpp)]
        else [];
@@ -177,8 +148,6 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 aspect production errorAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  top.typeErrors := [];
-  
   e.downSubst = top.downSubst;
   top.upSubst = e.upSubst;
 }
@@ -186,8 +155,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  top.typeErrors := e.typeErrors;
-
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   e.downSubst = top.downSubst;
@@ -195,7 +162,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   top.upSubst = errCheck1.upSubst; 
 
   errCheck1 = check(occursCheck.typerep, e.typerep);
-  top.typeErrors <-
+  top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
        else [];
@@ -204,8 +171,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  top.typeErrors := e.typeErrors;
-
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   e.downSubst = top.downSubst;
@@ -213,7 +178,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   top.upSubst = errCheck1.upSubst; 
 
   errCheck1 = check(occursCheck.typerep, e.typerep);
-  top.typeErrors <-
+  top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
        else [];
@@ -224,14 +189,12 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  top.typeErrors := e.typeErrors;
-  
   e.downSubst = top.downSubst;
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
 
   errCheck1 = check(e.typerep, val.lookupValue.typerep);
-  top.typeErrors <-
+  top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
        else [];
@@ -240,8 +203,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 aspect production errorValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
-  top.typeErrors := [];
-  
   e.downSubst = top.downSubst;
   top.upSubst = e.upSubst;
 }

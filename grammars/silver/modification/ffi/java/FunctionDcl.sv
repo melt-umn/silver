@@ -29,8 +29,8 @@ top::FFIDef ::= name::String_t ':' 'return' code::String_t ';'
 
 function childAccessor
 String ::= t::TypeExp fName::String className::String
-{
-  return "((" ++ t.transType ++ ")context.child(" ++ className ++ ".i_" ++ fName  ++ "))";
+{ -- using .undecorate().getChild rather than .child to avoid accidental decoration!  FIX THIS IN THE RUNTIME!
+  return "((" ++ t.transType ++ ")context.undecorate().getChild(" ++ className ++ ".i_" ++ fName  ++ "))";
 }
 
 function computeSigTranslation

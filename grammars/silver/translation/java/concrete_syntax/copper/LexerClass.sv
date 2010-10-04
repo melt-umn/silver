@@ -6,7 +6,7 @@ import silver:definition:core;
 import silver:definition:env;
 import silver:definition:concrete_syntax;
 
-import silver:analysis:typechecking:core;
+--import silver:analysis:typechecking:core;
 
 terminal Lexer_kwd 'lexer' lexer classes {KEYWORD};
 
@@ -72,8 +72,6 @@ top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
   top.initProd := "";
   top.initValues := "";
   top.postInit := "";
-
-  top.typeErrors := [];
 }
 
 
