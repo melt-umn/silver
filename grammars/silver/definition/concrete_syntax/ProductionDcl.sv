@@ -32,6 +32,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
                            [rhsSpec(top.grammarName, fName, getTypeNamesSignature(ns.inputElements), pm.productionModifiers)])];
   
   top.errors <- pm.errors;
+  top.errors <- ns.concreteSyntaxTypeErrors;
 
   forwards to productionDcl(terminal(Abstract_kwd, "abstract", $1.line, $1.column), $2, id, ns, body);
 }
@@ -93,5 +94,65 @@ top::ProductionModifier ::= 'operator' '=' n::QName
                 if !n.lookupType.typerep.isTerminal
                 then [err(n.location, n.pp ++ " is not a terminal.")]
                 else [];
+}
+
+--------------------------------------------------------------------------------
+-- Type sanity checking on concrete productions
+
+synthesized attribute concreteSyntaxTypeErrors :: [Decorated Message] with ++;
+attribute concreteSyntaxTypeErrors occurs on ProductionSignature, ProductionRHS, ProductionRHSElem;
+
+aspect production productionSignatureEmptyRHS
+top::ProductionSignature ::= lhs::ProductionLHS '::='
+{
+  top.concreteSyntaxTypeErrors := [];
+}
+
+aspect production productionSignature
+top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
+{
+  -- lhs is safe
+  top.concreteSyntaxTypeErrors := rhs.concreteSyntaxTypeErrors;
+}
+
+aspect production productionRHSSingle
+top::ProductionRHS ::= rhs::ProductionRHSElem
+{
+  top.concreteSyntaxTypeErrors := rhs.concreteSyntaxTypeErrors;
+}
+
+aspect production productionRHSCons
+top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
+{
+  top.concreteSyntaxTypeErrors := h.concreteSyntaxTypeErrors ++ t.concreteSyntaxTypeErrors;
+}
+
+aspect production productionRHSElem
+top::ProductionRHSElem ::= id::Name '::' t::Type
+{
+  top.concreteSyntaxTypeErrors :=
+       if t.typerep.permittedInConcreteSyntax
+       then []
+       else [err(t.location, t.pp ++ " is not permitted on concrete productions.  Only terminals and nonterminals (without type variables) can appear here")];
+}
+
+synthesized attribute permittedInConcreteSyntax :: Boolean occurs on TypeExp;
+
+aspect production defaultTypeExp
+top::TypeExp ::=
+{
+  top.permittedInConcreteSyntax = false;
+}
+
+aspect production nonterminalTypeExp
+top::TypeExp ::= fn::String params::[TypeExp]
+{
+  top.permittedInConcreteSyntax = null(params);
+}
+
+aspect production terminalTypeExp
+top::TypeExp ::= fn::String
+{
+  top.permittedInConcreteSyntax = true;
 }
 

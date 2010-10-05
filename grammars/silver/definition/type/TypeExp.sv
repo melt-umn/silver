@@ -137,8 +137,6 @@ top::TypeExp ::= out::TypeExp params::[TypeExp]
   forwards to defaultTypeExp();
 }
 
--- TODO: IO type.  Anything else?  Lists?
-
 --------------------------------------------------------------------------------
 
 -- TODO: this is dumb
