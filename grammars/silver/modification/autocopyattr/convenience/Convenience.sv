@@ -4,31 +4,21 @@ import silver:modification:autocopyattr;
 import silver:extension:convenience;
 import silver:definition:core;
 import silver:definition:concrete_syntax;
+import silver:definition:type:syntax;
+import silver:definition:type;
 
-concrete production attributeDclAutoMultiple1
-top::AGDcl ::= 'autocopy' 'attribute' a::Names2 '::' te::Type 'occurs' 'on' qs::QNames ';'
-{
-  top.pp = "autocopy attribute " ++ a.pp ++ " :: " ++ te.pp ++ " occurs on " ++ qs.pp ++ ";" ;
-  forwards to agDclAppend(makeAutoDcls($1.line, $1.column, te, a.ids), makeOccursDcls($1.line, $1.column, qualifyNames(a.ids), qs.qnames));
-}
-
-concrete production attributeDclAutoMultiple2
+concrete production attributeDclAutoMultipleNoTL
 top::AGDcl ::= 'autocopy' 'attribute' a::Name '::' te::Type 'occurs' 'on' qs::QNames ';'
 {
   top.pp = "autocopy attribute " ++ a.name ++ " :: " ++ te.pp ++ " occurs on " ++ qs.pp ++ ";" ;
-  forwards to agDclAppend(makeAutoDcls($1.line, $1.column, te, [a]), makeOccursDcls($1.line, $1.column, qualifyNames([a]), qs.qnames));
+  forwards to agDclAppend(attributeDclAutoEmpty($1, $2, a, $4, te, $9),
+                          makeOccursDclsHelp($1.line, $1.column, qnameWithoutTL(qNameId(a)), qs.qnames));
+}
+concrete production attributeDclAutoMultipleWithTL
+top::AGDcl ::= 'autocopy' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type 'occurs' 'on' qs::QNames ';'
+{
+  top.pp = "autocopy attribute " ++ a.name ++ " :: " ++ te.pp ++ " occurs on " ++ qs.pp ++ ";" ;
+  forwards to agDclAppend(attributeDclAuto($1, $2, a, $4, tl, $6, $7, te, $12),
+                          makeOccursDclsHelp($1.line, $1.column, qnameWithTL(qNameId(a), $4, tl, $6), qs.qnames));
 }
 
-function makeAutoDcls
-AGDcl ::= l::Integer c::Integer t::Type atts::[Name]
-{
-  return if null(atts)
-	 then agDclNone()
-	 else agDclAppend(autocopyAttributeDcl(terminal(AutoCopy_kwd, "autocopy", l, c),
-				       terminal(Attribute_kwd, "attribute", l, c),
-			      	       head(atts),
-			      	       terminal(HasType_t, "::", l, c),
-			               t,
-			               terminal(Semi_t, ";", l, c)),
-		       makeAutoDcls(l, c, t, tail(atts)));
-}

@@ -2,16 +2,18 @@ grammar silver:modification:autocopyattr;
 
 import silver:definition:env;
 import silver:definition:core;
+import silver:definition:type;
 
 abstract production autocopyDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep
+top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "autocopy(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
+  top.unparse = "autocopy(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ somehowUnparseTyVars(bound) ++ ", " ++ prettyTypeWith(ty, bound) ++ ")";
   
   top.typerep = ty;
+  top.dclBoundVars = bound;
 
   -- the core dispatchers
   top.attrAccessDispatcher = inhDNTAccessDispatcher;
@@ -22,7 +24,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated Type
 -- Defs:
 
 function addAutocopyDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep defs::Defs
+Defs ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
 {
-  return consAttrDef(defaultEnvItem(decorate autocopyDcl(sg,sl,fn,ty) with {}), defs);
+  return consAttrDef(defaultEnvItem(decorate autocopyDcl(sg,sl,fn,bound,ty) with {}), defs);
 }

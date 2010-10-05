@@ -3,6 +3,8 @@ import silver:modification:autocopyattr;
 
 import silver:definition:core;
 import silver:definition:env;
+import silver:definition:type:syntax;
+import silver:definition:type;
 
 import silver:translation:java:core;
 import silver:translation:java:type;
@@ -10,8 +12,8 @@ import silver:translation:java:type;
 import silver:util;
 
 
-aspect production autocopyAttributeDcl
-top::AGDcl ::= 'autocopy' 'attribute' a::Name '::' t::Type ';'
+aspect production attributeDclAuto
+top::AGDcl ::= 'autocopy' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type ';'
 {
   local attribute className :: String;
   className = "D" ++ a.name;
@@ -39,7 +41,7 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name '::' t::Type ';'
 }
 
 aspect production attributionDcl
-top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nt::QName ';'
+top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QName '<' tlnt::TypeList '>' ';'
 {
   -- TODO: like the other occurs, maybe this should be moved to setupInh?
   top.initProd <- 
