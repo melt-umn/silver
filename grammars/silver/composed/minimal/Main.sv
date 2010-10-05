@@ -10,6 +10,8 @@ parser rParse::Root {
   silver:host;
 
   silver:modification:ffi;
+  silver:modification:autocopyattr;
+  silver:modification:autocopyattr:convenience;
   silver:extension:list;
   silver:extension:easyterminal;
   silver:extension:convenience;
