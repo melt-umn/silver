@@ -1,6 +1,0 @@
-#!/bin/bash
-
-mkdir build
-cd build
-
-time ../../../trunk/bin/silver -I ../src $@ silver:composed:Default
