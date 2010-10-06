@@ -15,6 +15,7 @@ parser rParse::Root {
   silver:extension:list;
   silver:extension:easyterminal;
   silver:extension:convenience;
+  silver:modification:collection;
 
   silver:translation:java:concrete_syntax:copper;
 }

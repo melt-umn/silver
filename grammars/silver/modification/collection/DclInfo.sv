@@ -2,6 +2,7 @@ grammar silver:modification:collection;
 
 import silver:definition:env;
 import silver:definition:core;
+import silver:definition:type;
 
 attribute operation occurs on DclInfo;
 
@@ -24,14 +25,16 @@ top::DclInfo ::=
 }
 
 abstract production synCollectionDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep o::Operation
+top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp o::Operation
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "syncol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ", " ++ o.unparse ++ ")";
+  top.unparse = "syncol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ somehowUnparseTyVars(bound) ++ ", " ++ prettyTypeWith(ty, bound) ++ ", " ++ o.unparse ++ ")";
   
   top.typerep = ty;
+  top.dclBoundVars = bound;
+
   top.operation = o;
   
   top.attrAccessDispatcher = synDNTAccessDispatcher;
@@ -43,14 +46,16 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated Type
   forwards to defaultDcl();
 }
 abstract production inhCollectionDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep o::Operation
+top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp o::Operation
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "inhcol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ", " ++ o.unparse ++ ")";
+  top.unparse = "inhcol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ somehowUnparseTyVars(bound) ++ ", " ++ prettyTypeWith(ty, bound) ++ ", " ++ o.unparse ++ ")";
   
   top.typerep = ty;
+  top.dclBoundVars = bound;
+
   top.operation = o;
   
   top.attrAccessDispatcher = inhDNTAccessDispatcher;
@@ -63,15 +68,16 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated Type
 }
 
 abstract production localCollectionDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep o::Operation
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp o::Operation
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = "loccol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ", " ++ o.unparse ++ ")";
+  top.unparse = "loccol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseType(ty) ++ ", " ++ o.unparse ++ ")";
   
   top.typerep = ty;
+  
   top.operation = o;
   
   top.refDispatcher = localReference;
@@ -87,17 +93,17 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::Decorated Type
 
 -- Defs
 function addSynColDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep o::Operation defs::Defs
+Defs ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp o::Operation defs::Defs
 {
-  return consAttrDef(defaultEnvItem(decorate synCollectionDcl(sg,sl,fn,ty,o) with {}), defs);
+  return consAttrDef(defaultEnvItem(decorate synCollectionDcl(sg,sl,fn,bound,ty,o) with {}), defs);
 }
 function addInhColDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep o::Operation defs::Defs
+Defs ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp o::Operation defs::Defs
 {
-  return consAttrDef(defaultEnvItem(decorate inhCollectionDcl(sg,sl,fn,ty,o) with {}), defs);
+  return consAttrDef(defaultEnvItem(decorate inhCollectionDcl(sg,sl,fn,bound,ty,o) with {}), defs);
 }
 function addLocalColDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::Decorated TypeRep o::Operation defs::Defs
+Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp o::Operation defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate localCollectionDcl(sg,sl,fn,ty,o) with {}), defs);
 }

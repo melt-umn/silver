@@ -1,21 +1,46 @@
 grammar silver:modification:collection;
 import silver:definition:core;
 import silver:definition:env;
+import silver:definition:type;
+import silver:definition:type:syntax;
+import silver:extension:list;
+import silver:util;
 
-nonterminal NameOrBOperator with location, grammarName, file, warnings, errors, env, pp, operation;
-nonterminal Operation with unparse; -- TODO: we should put a typerep on here, and use it to double check shit works.
+nonterminal NameOrBOperator with location, grammarName, file, warnings, errors, env, pp, operation, operatorForType;
+nonterminal Operation with unparse;
 
 synthesized attribute operation :: Operation;
+inherited attribute operatorForType :: TypeExp;
 
 concrete production nameOperator
 top::NameOrBOperator ::= q::QName
 {
   top.pp = q.pp;
   top.location = q.location;
-  top.operation = nameOperation(q.lookupValue.fullName); 
+  top.operation = case q.lookupValue.typerep of
+                    functionTypeExp(_,_) -> functionOperation(q.lookupValue.fullName)
+                  | productionTypeExp(_,_) -> productionOperation(q.lookupValue.fullName)
+                  | _ -> error("INTERNAL ERROR: operation attribute demanded for non-function or production.")
+                  end;
 
   top.errors := q.lookupValue.errors;
   top.warnings := [];
+  
+  -- TODO: this is a complete mess.  refactor it someday, please!
+  top.errors <- 
+     case q.lookupValue.typerep of
+       functionTypeExp(_,_) -> 
+          if unify(q.lookupValue.typerep, functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])).failure
+          then [err(top.location, q.pp ++ " must be of type " ++ prettyType(functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])) ++ " instead it is of type " ++ prettyType(q.lookupValue.typerep))]
+          else []
+                               
+     | productionTypeExp(_,_) ->
+          if unify(q.lookupValue.typerep, productionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])).failure
+          then [err(top.location, q.pp ++ " must be of type " ++ prettyType(productionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])) ++ " instead it is of type " ++ prettyType(q.lookupValue.typerep))]
+          else []
+                               
+     | _ -> [err(top.location, q.pp ++ " is of type " ++ prettyType(q.lookupValue.typerep) ++ " and is not a valid operator for collections.")]
+     end;
 }
 
 concrete production plusplusOperator
@@ -23,27 +48,48 @@ top::NameOrBOperator ::= '++'
 {
   top.pp = "++";
   top.location = loc(top.file, $1.line, $1.column);
-  top.operation = plusPlusOperation();
-  top.errors := []; -- check string/list somehow?
+  top.operation = case top.operatorForType of
+                    stringTypeExp() -> plusPlusOperationString()
+                  | listTypeExp(_) -> plusPlusOperationList()
+                  | _ -> error("INTERNAL ERROR: operation attribute demanded for ++ that isn't string or list.")
+                  end;
+  top.errors := case top.operatorForType of
+                  stringTypeExp() -> []
+                | listTypeExp(_) -> []
+                | _ -> [err(top.location, "++ operator will only work for collections of type list or String")]
+                end;
   top.warnings := [];
 }
 
-abstract production nameOperation
+abstract production functionOperation
 top::Operation ::= s::String
 {
-  top.unparse = "'" ++ s ++ "'";
+  top.unparse = "func('" ++ s ++ "')";
 }
-
-abstract production plusPlusOperation
+abstract production productionOperation
+top::Operation ::= s::String
+{
+  top.unparse = "prod('" ++ s ++ "')";
+}
+abstract production plusPlusOperationString
 top::Operation ::= 
 {
-  top.unparse = "++";
+  top.unparse = "++string";
+}
+abstract production plusPlusOperationList
+top::Operation ::= 
+{
+  top.unparse = "++list";
 }
 
---- Declarations
-
-concrete production collectionAttributeDclSyn
+--- Declarations ---------------------------------------------------------------
+concrete production collectionAttributeDclSynEmpty
 top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
+{
+  forwards to collectionAttributeDclSyn($1,$2,a,'<',typeListNone(),'>',$4, te, $6, q, $8);
+}
+concrete production collectionAttributeDclSyn
+top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type 'with' q::NameOrBOperator ';'
 {
   top.pp = "synthesized attribute " ++ a.name ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
   top.location = loc(top.file, $1.line, $1.column);
@@ -51,21 +97,37 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type 'with' q::NameOrB
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = addSynColDcl(top.grammarName, a.location, fName, te.typerep, q.operation, emptyDefs());
+  top.defs = addSynColDcl(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation, emptyDefs());
+
+--------
+  tl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
+                        top.env);
+  te.env = tl.env;
+  top.errors <- if containsDuplicates(tl.lexicalTypeVariables)
+                then [err(top.location, "Duplicate type variable names listed")]
+                else [];
+  top.errors <- tl.errorsTyVars;
+--------
 
   top.errors <-
         if length(getAttrDcl(fName, top.env)) > 1
         then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
         else [];	
 
+  q.operatorForType = te.typerep;
   top.errors := te.errors ++ q.errors;
   top.warnings := [];
 
-  forwards to attributeDclSyn($1, $2, a, $4, te, $8);
+  forwards to attributeDclSyn($1, $2, a, $4, tl, $6, $7, te, $11);
 }
 
-concrete production collectionAttributeDclInh
+concrete production collectionAttributeDclInhEmpty
 top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
+{
+  forwards to collectionAttributeDclInh($1,$2,a,'<',typeListNone(),'>',$4, te, $6, q, $8);
+}
+concrete production collectionAttributeDclInh
+top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type 'with' q::NameOrBOperator ';'
 {
   top.pp = "inherited attribute " ++ a.name ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
   top.location = loc(top.file, $1.line, $1.column);
@@ -73,17 +135,28 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOp
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = addInhColDcl(top.grammarName, a.location, fName, te.typerep, q.operation, emptyDefs());
+  top.defs = addInhColDcl(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation, emptyDefs());
+
+--------
+  tl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
+                        top.env);
+  te.env = tl.env;
+  top.errors <- if containsDuplicates(tl.lexicalTypeVariables)
+                then [err(top.location, "Duplicate type variable names listed")]
+                else [];
+  top.errors <- tl.errorsTyVars;
+--------
 
   top.errors <-
         if length(getAttrDcl(fName, top.env)) > 1
         then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
         else [];	
 
+  q.operatorForType = te.typerep;
   top.errors := te.errors ++ q.errors;
   top.warnings := [];
 
-  forwards to attributeDclInh($1, $2, a, $4, te, $8);
+  forwards to attributeDclInh($1, $2, a, $4, tl, $6, $7, te, $11);
 }
 
 
@@ -93,12 +166,12 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
   top.pp = "production attribute " ++ a.name ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
   top.location = loc(top.file, $1.line, $1.column);
 
-  production attribute fName :: String;
-  fName = top.signature.fullName ++ ":local:" ++ a.name;
-
   top.productionAttributes = addPaDcl(top.grammarName, a.location, top.signature.fullName,
                                 localCollectionDcl(top.grammarName, a.location, fName, te.typerep, q.operation),
                                 emptyDefs());
+
+  production attribute fName :: String;
+  fName = top.signature.fullName ++ ":local:" ++ a.name;
 
   top.defs = emptyDefs(); -- addLocalColDcl(top.grammarName, a.location, fName, te.typerep, q.operation, emptyDefs());
 
@@ -107,13 +180,14 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
+  q.operatorForType = te.typerep;
   top.errors := te.errors ++ q.errors;
   top.warnings := [];
  
   forwards to productionAttributeDcl($1, $2, a, $4, te, $8);
 }
 
---- The use semantics
+--- The use semantics ----------------------------------------------------------
 
 abstract production errorCollectionDefDispatcher
 top::ProductionStmt ::= dl::DefLHS '.' q::Decorated QName '=' e::Expr
@@ -148,19 +222,11 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   forwards to errorValueDef(val, $2, e);
 }
 
--- TODO: these next six are copy & pastes from what they forward to... ugly!
+
 abstract production baseCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ val.pp ++ " := " ++ e.pp ++ ";";
-  top.location = loc(top.file, $2.line, $2.column);
-
-  -- TODO: we need a redefinition check here!
-  
-  top.errors := e.errors;
-  top.warnings := [];
-
-  e.expected = expected_type(val.lookupValue.typerep);  
 
   forwards to localValueDef(val, $2, e);
 }
@@ -168,14 +234,6 @@ abstract production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ val.pp ++ " <- " ++ e.pp ++ ";";
-  top.location = loc(top.file, $2.line, $2.column);
-
-  -- TODO: we need a redefinition check here!
-  
-  top.errors := e.errors;
-  top.warnings := [];
-
-  e.expected = expected_type(val.lookupValue.typerep);  
 
   forwards to localValueDef(val, $2, e);
 }
@@ -183,12 +241,6 @@ abstract production synBaseColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
-  top.location = loc(top.file, $4.line, $4.column);
-
-  e.expected = expected_type(attr.lookupAttribute.typerep);
-  dl.isSynthesizedDefinition = true;
-  
-  top.errors := dl.errors ++ e.errors;
 
   forwards to synthesizedAttributeDef(dl, $2, attr, $4, e);
 }
@@ -196,12 +248,6 @@ abstract production synAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
-  top.location = loc(top.file, $4.line, $4.column);
-
-  e.expected = expected_type(attr.lookupAttribute.typerep);
-  dl.isSynthesizedDefinition = true;
-  
-  top.errors := dl.errors ++ e.errors;
 
   forwards to synthesizedAttributeDef(dl, $2, attr, $4, e);
 }
@@ -209,12 +255,6 @@ abstract production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
-  top.location = loc(top.file, $4.line, $4.column);
-
-  e.expected = expected_type(attr.lookupAttribute.typerep);
-  dl.isSynthesizedDefinition = false;
-  
-  top.errors := dl.errors ++ e.errors;
 
   forwards to inheritedAttributeDef(dl, $2, attr, $4, e);
 }
@@ -222,17 +262,11 @@ abstract production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
-  top.location = loc(top.file, $4.line, $4.column);
-
-  e.expected = expected_type(attr.lookupAttribute.typerep);
-  dl.isSynthesizedDefinition = false;
-  
-  top.errors := dl.errors ++ e.errors;
 
   forwards to inheritedAttributeDef(dl, $2, attr, $4, e);
 }
 
--- The use syntax
+-- The use syntax --------------------------------------------------------------
 
 terminal Contains_t   '<-';
 terminal BaseContains_t   ':=';

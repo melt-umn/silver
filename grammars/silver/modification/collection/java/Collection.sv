@@ -8,7 +8,8 @@ import silver:definition:env;
 
 import silver:translation:java:core;
 import silver:translation:java:type;
-import silver:extension:list;
+import silver:definition:type;
+import silver:definition:type:syntax;
 
 
 {-
@@ -31,25 +32,39 @@ import silver:extension:list;
 synthesized attribute frontTrans :: String;
 synthesized attribute midTrans :: String;
 synthesized attribute endTrans :: String;
-inherited attribute inType :: Decorated TypeRep;
 
-attribute frontTrans, midTrans, endTrans, inType occurs on Operation;
+attribute frontTrans, midTrans, endTrans occurs on Operation;
 
-aspect production nameOperation
-top::Operation ::= s::String {
+aspect production functionOperation
+top::Operation ::= s::String
+{
+  top.frontTrans = "new " ++ makeClassName(s) ++"(";
+  top.midTrans = ", ";
+  top.endTrans = ").doReturn()";
+}
+aspect production productionOperation
+top::Operation ::= s::String
+{
   top.frontTrans = "new " ++ makeClassName(s) ++"(";
   top.midTrans = ", ";
   top.endTrans = ")";
 }
-
-aspect production plusPlusOperation
-top::Operation ::= {
-  top.frontTrans = if top.inType.isString then "" else if top.inType.isList then "new common.AppendCell(" else error("Not Implemented");
-  top.midTrans = if top.inType.isString then ".append(" else if top.inType.isList then ", " else error("Not Implemented");
-  top.endTrans = if top.inType.isString then ")" else if top.inType.isList then ")" else error("Not Implemented");
+aspect production plusPlusOperationString
+top::Operation ::= 
+{
+  top.frontTrans = "";
+  top.midTrans = ".append(";
+  top.endTrans = ")";
+}
+aspect production plusPlusOperationList
+top::Operation ::= 
+{
+  top.frontTrans = "new common.AppendCell(";
+  top.midTrans = ", ";
+  top.endTrans = ")";
 }
 
---- Declarations
+--- Declarations ---------------------------------------------------------------
 
 aspect production collectionAttributeDclProd
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
@@ -59,7 +74,6 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
 
   local attribute o :: Operation;
   o = q.operation;
-  o.inType = te.typerep;
 
   top.setupInh := 
         "\t\t" ++ className ++ ".localAttributes.put(\"" ++ fName ++ "\", new common.CollectionAttribute(){\n" ++ 
@@ -71,21 +85,20 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
         "\t\t\t\treturn result;\n" ++ 
         "\t\t\t}\n" ++ 
         "\t\t});\n" ++ 
-        if !te.typerep.isNonTerminal then  "" else
+        if !te.typerep.mayBeSuppliedInhAttrs then  "" else
                  "\t\t" ++ className ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ "new java.util.TreeMap<String, common.Lazy>());\n";
 
   top.translation = "";
 }
 
 aspect production collectionAttributeDclSyn
-top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
+top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type 'with' q::NameOrBOperator ';'
 {
   local attribute className :: String;
   className = "CA" ++ a.name;
 
   local attribute o :: Operation;
   o = q.operation;
-  o.inType = te.typerep;
 
   top.javaClasses = [[className,
                 
@@ -110,14 +123,13 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type 'with' q::NameOrB
 }
 
 aspect production collectionAttributeDclInh
-top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
+top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type 'with' q::NameOrBOperator ';'
 {
   local attribute className :: String;
   className = "CA" ++ a.name;
 
   local attribute o :: Operation;
   o = q.operation;
-  o.inType = te.typerep;
 
   top.javaClasses = [[className,
                 
@@ -141,7 +153,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOp
 "}\n"]];
 }
 
---- Use semantics translation
+--- Use semantics translation --------------------------------------------------
 
 aspect production baseCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
