@@ -58,6 +58,7 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
   top.defs = addLocalDcl(top.grammarName, id.location, fName, t.typerep, emptyDefs());
   top.errors := e.errors ++ t.errors;
   
+  -- TODO: UHHH CHECK FOR TYPES?
   -- TODO: Check for redefinition of variable names!
   top.errors <- if length(getValueDclAll(fName, top.env)) > 1
                 then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]

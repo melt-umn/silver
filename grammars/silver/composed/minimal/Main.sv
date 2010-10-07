@@ -9,14 +9,20 @@ import silver:util:command;
 parser rParse::Root {
   silver:host;
 
-  silver:modification:ffi;
-  silver:modification:autocopyattr;
-  silver:modification:autocopyattr:convenience;
+  silver:extension:convenience;
   silver:extension:list;
   silver:extension:easyterminal;
-  silver:extension:convenience;
-  silver:modification:collection;
+  -- polymorphism?  polymorphism:functions?
+  -- doc?
 
+  silver:modification:let_fix;
+  silver:modification:collection;
+  silver:modification:patternmatching;
+  silver:modification:patternmatching:copper;
+  silver:modification:autocopyattr;
+  silver:modification:autocopyattr:convenience; -- TODO: we need a condition export, perhaps? Why didn't we include this?
+  silver:modification:ffi;
+  
   silver:translation:java:concrete_syntax:copper;
 }
 
