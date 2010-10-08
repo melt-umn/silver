@@ -415,7 +415,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.errors := [err(val.location, val.pp ++ " cannot be assigned to.")] ++ e.errors;
   top.warnings := [];
 
-  e.expected = expected_type(val.lookupValue.typerep);  
+  e.expected = expected_type(val.lookupValue.typerep);
 }
 
 abstract production localValueDef
@@ -429,6 +429,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.errors := e.errors;
   top.warnings := [];
 
-  e.expected = expected_type(val.lookupValue.typerep);  
+  e.expected = expected_type(val.lookupValue.typerep);
 }
 

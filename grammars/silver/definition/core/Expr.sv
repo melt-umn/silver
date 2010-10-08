@@ -15,6 +15,7 @@ top::Expr ::= '(' e::Expr ')'
 concrete production baseExpr
 top::Expr ::= q::QName
 {
+  top.pp = q.pp;
   top.errors <- q.lookupValue.errors;
 
   forwards to if null(q.lookupValue.dcls)
@@ -41,7 +42,7 @@ top::Expr ::= q::Decorated QName
   shouldUnDec = q.lookupValue.typerep.doDecorate &&
                 case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !t.isDecorated
+                | expected_type(t)     -> !performSubstitution(t, top.upSubst).isDecorated
                 | _                    -> false
                 end;
 
@@ -62,7 +63,7 @@ top::Expr ::= q::Decorated QName
   shouldUnDec = q.lookupValue.typerep.doDecorate &&
                 case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !t.isDecorated
+                | expected_type(t)     -> !performSubstitution(t, top.upSubst).isDecorated
                 | _                    -> false
                 end;
 
@@ -82,7 +83,7 @@ top::Expr ::= q::Decorated QName
   shouldUnDec = q.lookupValue.typerep.doDecorate &&
                 case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !t.isDecorated
+                | expected_type(t)     -> !performSubstitution(t, top.upSubst).isDecorated
                 | _                    -> false
                 end;
 
@@ -103,7 +104,7 @@ top::Expr ::= q::Decorated QName
   shouldUnDec = q.lookupValue.typerep.doDecorate &&
                 case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !t.isDecorated
+                | expected_type(t)     -> !performSubstitution(t, top.upSubst).isDecorated
                 | _                    -> false
                 end;
 
@@ -185,6 +186,7 @@ top::Expr ::= q::Forward_kwd
 concrete production productionApp
 top::Expr ::= e::Expr '(' es::Exprs ')'
 {
+  top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   e.expected = expected_default();
   forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es);
 }
@@ -234,6 +236,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
 concrete production attributeAccess
 top::Expr ::= e::Expr '.' q::QName
 {
+  top.pp = e.pp ++ "." ++ q.pp;
   -- expected here mean "if it exists in a decorated form, use that"
   -- this way we get the decorated children, but a direct call to
   -- a constructor will still be undecorated.
@@ -341,9 +344,6 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 concrete production decorateExprWithEmpty
 top::Expr ::= 'decorate' e::Expr 'with' '{' '}'
 {
-  top.pp = "decorate " ++ e.pp ++ " with {}";
-  top.location = loc(top.file, $1.line, $1.column);
-
   forwards to decorateExprWith($1, e, $3, $4, exprInhsEmpty(), $5);
 }
 
@@ -444,6 +444,9 @@ top::Expr ::= e1::Expr '&&' e2::Expr
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
   top.typerep = boolTypeExp();
+  
+  e1.expected = expected_type(boolTypeExp());
+  e2.expected = expected_type(boolTypeExp());
 }
 
 concrete production or
@@ -455,6 +458,9 @@ top::Expr ::= e1::Expr '||' e2::Expr
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
   top.typerep = boolTypeExp();
+  
+  e1.expected = expected_type(boolTypeExp());
+  e2.expected = expected_type(boolTypeExp());
 }
 
 concrete production not
@@ -466,6 +472,8 @@ top::Expr ::= '!' e::Expr
   top.typerep = boolTypeExp();
   top.errors := e.errors;
   top.warnings := [];
+  
+  e.expected = expected_type(boolTypeExp());
 }
 
 concrete production gt
@@ -477,6 +485,9 @@ top::Expr ::= e1::Expr '>' e2::Expr
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
   top.typerep = boolTypeExp();
+  
+  e1.expected = expected_default();
+  e2.expected = expected_default();
 }
 
 concrete production lt
@@ -488,6 +499,9 @@ top::Expr ::= e1::Expr '<' e2::Expr
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
   top.typerep = boolTypeExp();
+  
+  e1.expected = expected_default();
+  e2.expected = expected_default();
 }
 
 concrete production gteq
@@ -499,6 +513,9 @@ top::Expr ::= e1::Expr '>=' e2::Expr
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
   top.typerep = boolTypeExp();
+  
+  e1.expected = expected_default();
+  e2.expected = expected_default();
 }
 
 concrete production lteq
@@ -510,6 +527,9 @@ top::Expr ::= e1::Expr '<=' e2::Expr
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
   top.typerep = boolTypeExp();
+  
+  e1.expected = expected_default();
+  e2.expected = expected_default();
 }
 
 concrete production eqeq
@@ -521,6 +541,9 @@ top::Expr ::= e1::Expr '==' e2::Expr
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
   top.typerep = boolTypeExp();
+  
+  e1.expected = expected_default();
+  e2.expected = expected_default();
 }
 
 concrete production neq
@@ -532,6 +555,9 @@ top::Expr ::= e1::Expr '!=' e2::Expr
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
   top.typerep = boolTypeExp();
+  
+  e1.expected = expected_default();
+  e2.expected = expected_default();
 }
 
 concrete production ifThenElse
@@ -543,6 +569,8 @@ precedence = 0
 
   top.errors := e1.errors ++ e2.errors ++ e3.errors;
   top.typerep = e2.typerep;
+  
+  e1.expected = expected_type(boolTypeExp());
 }
 
 concrete production intConst
@@ -576,6 +604,9 @@ top::Expr ::= e1::Expr '+' e2::Expr
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
   top.typerep = e1.typerep;
+  
+  e1.expected = expected_default();
+  e2.expected = expected_default();
 }
 
 concrete production minus
@@ -587,6 +618,9 @@ top::Expr ::= e1::Expr '-' e2::Expr
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
   top.typerep = e1.typerep;
+  
+  e1.expected = expected_default();
+  e2.expected = expected_default();
 }
 
 concrete production multiply
@@ -598,6 +632,9 @@ top::Expr ::= e1::Expr '*' e2::Expr
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
   top.typerep = e1.typerep;
+  
+  e1.expected = expected_default();
+  e2.expected = expected_default();
 }
 
 concrete production divide
@@ -609,6 +646,9 @@ top::Expr ::= e1::Expr '/' e2::Expr
   top.errors := e1.errors ++ e2.errors;
   top.warnings := [];
   top.typerep = e1.typerep;
+  
+  e1.expected = expected_default();
+  e2.expected = expected_default();
 }
 
 concrete production neg
@@ -621,6 +661,8 @@ precedence = 13
   top.errors := e.errors;
   top.warnings := [];
   top.typerep = e.typerep;
+  
+  e.expected = expected_default();
 }
 
 concrete production stringConst

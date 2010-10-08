@@ -9,6 +9,12 @@ top::Expr ::= '(' e::Expr ')'
   top.upSubst = e.upSubst;
 }
 
+aspect production errorReference
+top::Expr ::= q::Decorated QName
+{
+  top.upSubst = top.downSubst;
+}
+
 aspect production childReference
 top::Expr ::= q::Decorated QName
 {
@@ -66,7 +72,13 @@ top::Expr ::= e::Decorated Expr es::Exprs
   apparentTy = productionTypeExp(e.typerep.outputType, getTypesExprs(es.exprs));
   
   -- initial dispatcher already set e
-  es.downSubst = e.upSubst;
+  -- Nasty problem: We need expected types to propagate properly! So we're going
+  -- to insert a quick unify of the expected_type and the result type, so that
+  -- name references can decide if they should be decorated or not properly.
+  es.downSubst = case top.expected of
+                   expected_type(foo) -> unifyCheck(foo, e.typerep.outputType, e.upSubst)
+                 | _ -> e.upSubst
+                 end;
   errCheck1.downSubst = es.upSubst;
   top.upSubst = errCheck1.upSubst;
   
@@ -88,7 +100,13 @@ top::Expr ::= e::Decorated Expr es::Exprs
   apparentTy = functionTypeExp(e.typerep.outputType, getTypesExprs(es.exprs));
   
   -- initial dispatcher already set e
-  es.downSubst = e.upSubst;
+  -- Nasty problem: We need expected types to propagate properly! So we're going
+  -- to insert a quick unify of the expected_type and the result type, so that
+  -- name references can decide if they should be decorated or not properly.
+  es.downSubst = case top.expected of
+                   expected_type(foo) -> unifyCheck(foo, e.typerep.outputType, e.upSubst)
+                 | _ -> e.upSubst
+                 end;
   errCheck1.downSubst = es.upSubst;
   top.upSubst = errCheck1.upSubst;
   
@@ -121,6 +139,11 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.upSubst = e.upSubst;
 }
 
+aspect production undecoratedAccessDispatcher -- TODO OH MY NO, THIS POLLUTION IS SPREADING!
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  forwarding with { downSubst = e.upSubst; }; -- TODO OH MY NO, THIS POLLUTION IS SPREADING!
+}
 aspect production CHEAT_HACK_DISPATCHER -- TODO OH MY NO, THIS POLLUTION IS SPREADING!
 top::Expr ::= e::Expr '.' q::Decorated QName
 {
@@ -515,7 +538,7 @@ top::Expr ::= e1::Expr '++' e2::Expr
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
   errCheck1.downSubst = e2.upSubst;
-  top.upSubst = errCheck1.upSubst;
+--  top.upSubst = errCheck1.upSubst; -- pass to forward instead
   
   errCheck1 = check(e1.typerep, e2.typerep);
   top.errors <-
@@ -527,17 +550,22 @@ top::Expr ::= e1::Expr '++' e2::Expr
        if null(handler) && !errCheck1.typeerror -- TODO This is a busted way to do this.
        then [err(top.location, "Operands to ++ must be concatenable.  Got instead types " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
        else [];
-       
+
+  forwarding with {
+    downSubst = errCheck1.upSubst;
+  };
 }
 
 aspect production errorPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
+  top.upSubst = top.downSubst;
 }
 
 aspect production stringPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
+  top.upSubst = top.downSubst;
 }
 
 

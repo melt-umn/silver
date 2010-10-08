@@ -34,7 +34,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Typ
         then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
         else [];	
 
-  top.errors := te.errors;
+  top.errors := te.errors ++ tl.errors;
   top.warnings := [];
 }
 
@@ -72,7 +72,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::T
         then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
         else [];	
 
-  top.errors := te.errors;
+  top.errors := te.errors ++ tl.errors;
   top.warnings := [];
 }
 

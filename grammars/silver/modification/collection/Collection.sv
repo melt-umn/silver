@@ -6,6 +6,8 @@ import silver:definition:type:syntax;
 import silver:extension:list;
 import silver:util;
 
+import silver:analysis:typechecking:core;
+
 nonterminal NameOrBOperator with location, grammarName, file, warnings, errors, env, pp, operation, operatorForType;
 nonterminal Operation with unparse;
 
@@ -115,7 +117,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::T
         else [];	
 
   q.operatorForType = te.typerep;
-  top.errors := te.errors ++ q.errors;
+  top.errors := te.errors ++ q.errors ++ tl.errors;
   top.warnings := [];
 
   forwards to attributeDclSyn($1, $2, a, $4, tl, $6, $7, te, $11);
@@ -153,7 +155,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Typ
         else [];	
 
   q.operatorForType = te.typerep;
-  top.errors := te.errors ++ q.errors;
+  top.errors := te.errors ++ q.errors ++ tl.errors;
   top.warnings := [];
 
   forwards to attributeDclInh($1, $2, a, $4, tl, $6, $7, te, $11);
@@ -228,42 +230,94 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ val.pp ++ " := " ++ e.pp ++ ";";
 
-  forwards to localValueDef(val, $2, e);
+  e.expected = expected_type(val.lookupValue.typerep);
+  e.downSubst = top.downSubst; -- the real type checking is done by the forward, but we need to give it this to work with...
+  
+  forwards to localValueDef(val, $2, e)
+  with {
+    downSubst = e.upSubst;
+  };
 }
 abstract production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ val.pp ++ " <- " ++ e.pp ++ ";";
 
-  forwards to localValueDef(val, $2, e);
+  e.expected = expected_type(val.lookupValue.typerep);
+  e.downSubst = top.downSubst; -- the real type checking is done by the forward, but we need to give it this to work with...
+  
+  forwards to localValueDef(val, $2, e)
+  with {
+    downSubst = e.upSubst;
+  };
 }
 abstract production synBaseColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
 
-  forwards to synthesizedAttributeDef(dl, $2, attr, $4, e);
+  production attribute occursCheck :: OccursCheck;
+  occursCheck = occursCheckQName(attr, dl.typerep);
+
+  e.expected = expected_type(occursCheck.typerep);
+  e.downSubst = top.downSubst; -- the real type checking is done by the forward, but we need to give it this to work with...
+  dl.isSynthesizedDefinition = false;
+  
+  forwards to synthesizedAttributeDef(dl, $2, attr, $4, e)
+  with {
+    downSubst = e.upSubst;
+  };
 }
 abstract production synAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
 
-  forwards to synthesizedAttributeDef(dl, $2, attr, $4, e);
+  production attribute occursCheck :: OccursCheck;
+  occursCheck = occursCheckQName(attr, dl.typerep);
+
+  e.expected = expected_type(occursCheck.typerep);
+  e.downSubst = top.downSubst; -- the real type checking is done by the forward, but we need to give it this to work with...
+  dl.isSynthesizedDefinition = false;
+  
+  forwards to synthesizedAttributeDef(dl, $2, attr, $4, e)
+  with {
+    downSubst = e.upSubst;
+  };
 }
 abstract production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
 
-  forwards to inheritedAttributeDef(dl, $2, attr, $4, e);
+  production attribute occursCheck :: OccursCheck;
+  occursCheck = occursCheckQName(attr, dl.typerep);
+
+  e.expected = expected_type(occursCheck.typerep);
+  e.downSubst = top.downSubst; -- the real type checking is done by the forward, but we need to give it this to work with...
+  dl.isSynthesizedDefinition = false;
+  
+  forwards to inheritedAttributeDef(dl, $2, attr, $4, e)
+  with {
+    downSubst = e.upSubst;
+  };
 }
 abstract production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
 
-  forwards to inheritedAttributeDef(dl, $2, attr, $4, e);
+  production attribute occursCheck :: OccursCheck;
+  occursCheck = occursCheckQName(attr, dl.typerep);
+
+  e.expected = expected_type(occursCheck.typerep);
+  e.downSubst = top.downSubst; -- the real type checking is done by the forward, but we need to give it this to work with...
+  dl.isSynthesizedDefinition = false;
+  
+  forwards to inheritedAttributeDef(dl, $2, attr, $4, e)
+  with {
+    downSubst = e.upSubst;
+  };
 }
 
 -- The use syntax --------------------------------------------------------------
