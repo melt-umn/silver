@@ -54,7 +54,9 @@ top::aRootSpecPart ::= t::TerminalsTerm s::aTerminalSpecs {
   forwards to aRootSpecDefault();
 }
 
-nonterminal aTerminalSpecs, aTerminalSpec, aTerminalSpecInner with terminalDcls;
+nonterminal aTerminalSpecs with terminalDcls;
+nonterminal aTerminalSpec with terminalDcls;
+nonterminal aTerminalSpecInner with terminalDcls;
 
 concrete production aTerminalSpecNone
 top::aTerminalSpecs ::= '[' ']' {
@@ -149,7 +151,9 @@ top::aRootSpecPart ::= n::RulesTerm r::aRuleSpecs{
   forwards to aRootSpecDefault();
 }
 
-nonterminal aRuleSpecs, aRuleSpecInner, aRuleSpec with ruleDcls;
+nonterminal aRuleSpecs with ruleDcls;
+nonterminal aRuleSpecInner with ruleDcls;
+nonterminal aRuleSpec with ruleDcls;
 
 concrete production aRuleSpecNone
 top::aRuleSpecs ::= '[' ']' {
@@ -176,7 +180,9 @@ top::aRuleSpec ::= '(' n::Name ',' rhs::aRHSSpecs ')' {
   top.ruleDcls = [ruleSpec(n.aname, rhs.ruleRHSSpec)];
 }
 
-nonterminal aRHSSpecs, aRHSSpecInner, aRHSSpec with ruleRHSSpec;
+nonterminal aRHSSpecs with ruleRHSSpec;
+nonterminal aRHSSpecInner with ruleRHSSpec;
+nonterminal aRHSSpec with ruleRHSSpec;
 
 concrete production aRHSSpecNone
 top::aRHSSpecs ::= '[' ']' {

@@ -60,8 +60,8 @@ top::Expr ::= 'case' e1::Expr 'of' ml::MRuleList 'end'
                     | _ -> e1.typerep
                     end;
 
-  -- NOTE THAT WE'RE HIDING ERRORS HERE!
-  top.errors := e1.errors ++ ml.errors;
+  -- NOTE THAT WE'RE HIDING ERRORS HERE! TODO FIXME NOW WE'RE NOT I GUESS?
+  top.errors <- e1.errors ++ ml.errors;
   
   -- TODO: check to make sure it's a nonterminal we're pattern matching on?
 
@@ -321,13 +321,20 @@ p::Pattern ::= v::Name
   local attribute proto_type :: TypeExp; -- no pun intended
   proto_type = performSubstitution(p.typerep_down, p.downSubst);
   
-  local attribute var_type :: TypeExp ;
+{-  local attribute var_type :: TypeExp ;
   var_type = if !proto_type.doDecorate -- if it's an ordinary type, then
              then proto_type
              else -- otherwise, if it's a nonterminal, then calling child will give us a decorated version
                   decoratedTypeExp(proto_type);
+  
+  TODO POTENTIAL BUG: EXPLOITATIVE BEHAVIOUR FIXME: using proto_type instead of var_type below.
+  
+  Why? Because, since the accessor for it automatically decorates, the Silver translation expects to get a
+  "decorated foo" when it asks for a local of type "foo".  So we're deliberately doing a type error here, and it's okay!!
+  
+  -}
               
-  p.defs = addLocalDcl(p.grammarName, v.location, v.name, var_type, emptyDefs());
+  p.defs = addLocalDcl(p.grammarName, v.location, v.name, proto_type, emptyDefs());
 
   p.errors :=
         if length(getValueDclAll(v.name, p.env)) > 1
@@ -336,7 +343,7 @@ p::Pattern ::= v::Name
 
   p.cond_tree = trueConst('true') ;
 
-  p.letAssigns_tree = [ assignExpr(v, '::', typerepType(var_type), '=', p.base_tree) ] ;
+  p.letAssigns_tree = [ assignExpr(v, '::', typerepType(proto_type), '=', p.base_tree) ] ;
 
   p.upSubst = p.downSubst;
 }
@@ -374,7 +381,7 @@ concrete production patternList_more
 ps::PatternList ::= p::Pattern ',' ps1::PatternList
 {
   ps.pp = ps1.pp ++ ", " ++ p.pp ;
-  ps.errors := ps1.errors ++ p.errors ;
+  ps.errors := p.errors ++ ps1.errors ;
   ps.defs = appendDefs(ps1.defs, p.defs) ;
   ps.location = p.location ;
 
@@ -446,7 +453,8 @@ top::Expr ::= e::Expr t::String
   top.warnings := e.warnings;
   top.typerep = boolTypeExp();
 
-  top.upSubst = top.downSubst;
+  e.downSubst = top.downSubst;
+  top.upSubst = e.upSubst;
   e.expected = expected_decorated();
   --translation, isAppReference, appReference
 }
@@ -461,7 +469,8 @@ top::Expr ::= e::Expr c::Integer t::TypeExp
   top.warnings := e.warnings;
   top.typerep = if t.doDecorate then decoratedTypeExp(t) else t;
 
-  top.upSubst = top.downSubst;
+  e.downSubst = top.downSubst;
+  top.upSubst = e.upSubst;
   
   e.expected = expected_decorated();
   --translation, isAppReference, appReference

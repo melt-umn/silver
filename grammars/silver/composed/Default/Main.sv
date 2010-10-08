@@ -6,7 +6,7 @@ import silver:translation:java;
 import silver:driver;
 import silver:util:command;
 
-import silver:extension:doc;
+--import silver:extension:doc;
 
 parser rParse::Root {
   silver:host;
@@ -35,9 +35,9 @@ parser cParse::Command {
 parser iParse::aRootSpec {
   silver:host:env;
 
-  silver:modification:collection:env_parser;
-  silver:modification:autocopyattr:env_parser;
-  silver:extension:list:env_parser;
+--  silver:modification:collection:env_parser;
+--  silver:modification:autocopyattr:env_parser;
+--  silver:extension:list:env_parser;
 
   silver:translation:java:concrete_syntax:copper:env_parser;
 }

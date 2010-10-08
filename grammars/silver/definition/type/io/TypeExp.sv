@@ -1,7 +1,7 @@
 grammar silver:definition:type:io;
 
 import silver:definition:type;
-
+import silver:definition:env;
 
 abstract production ioTypeExp
 top::TypeExp ::=
@@ -15,7 +15,7 @@ top::TypeExp ::=
              | _ -> errorSubst("Tried to unify IO with " ++ prettyType(top.unifyWith))
               end;
   
-  -- top.unparse
+  top.unparse = "";
   
   forwards to defaultTypeExp();
 }

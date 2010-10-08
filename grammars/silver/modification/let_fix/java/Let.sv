@@ -15,7 +15,7 @@ top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
   top.translation = "((" ++ top.typerep.transType ++ ")common.Util.let(context, new String[]{" ++ folds(", ", la.nameTrans) ++ "}, " ++ 
 					     "new common.Lazy[]{" ++ folds(", ", la.valueTrans) ++ "}, " ++ 
 					     "new common.Lazy(){public Object eval(common.DecoratedNode context) {return " ++ 
-							e.translation ++ ";}}" ++ "))"; 
+							forward.translation ++ ";}}" ++ "))"; 
 }
 
 attribute nameTrans, valueTrans occurs on LetAssigns, AssignExpr;

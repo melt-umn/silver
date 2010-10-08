@@ -32,6 +32,14 @@ top::Expr ::= '(' e::Expr ')'
 --       efficient.  We could even kill the runtime check to see if it's
 --       a node, since we know.
 
+aspect production errorReference
+top::Expr ::= q::Decorated QName
+{
+  top.translation = error("Demanded translation for " ++ q.pp ++ " at " ++ q.location.unparse);
+  top.isAppReference = error("Demanded iar for " ++ q.pp ++ " at " ++ q.location.unparse);
+  top.appReference = error("Demanded ar for " ++ q.pp ++ " at " ++ q.location.unparse);
+}
+
 aspect production childReference
 top::Expr ::= q::Decorated QName
 {
