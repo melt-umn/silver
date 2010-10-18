@@ -1,7 +1,7 @@
 grammar silver:definition:type;
 
 -- DEPRECATED STUFF
-attribute inputTypes, outputType, isDecorated, isProduction, isFunction, isDecorable, isTerminal occurs on TypeExp;
+attribute inputTypes, outputType, isDecorated, isProduction, isFunction, isDecorable, isTerminal, decoratedType occurs on TypeExp;
 
 -- exists because we want to access both these and pattern matching can only extract one thing at a time (so far)
 synthesized attribute inputTypes :: [TypeExp];
@@ -19,6 +19,9 @@ synthesized attribute isFunction :: Boolean;
 synthesized attribute isDecorable :: Boolean;
 synthesized attribute isTerminal :: Boolean;
 
+-- Used by 'new' and type-determination for attributes (NOT on regular nonterminals)
+synthesized attribute decoratedType :: TypeExp;
+
 aspect production defaultTypeExp
 top::TypeExp ::=
 {
@@ -30,6 +33,8 @@ top::TypeExp ::=
   top.isDecorated = false;
   top.isDecorable = false;
   top.isTerminal = false;
+  
+  top.decoratedType = errorType();
 }
 
 aspect production varTypeExp
@@ -78,6 +83,7 @@ aspect production decoratedTypeExp
 top::TypeExp ::= te::TypeExp
 {
   top.isDecorated = true;
+  top.decoratedType = te;
 }
 
 aspect production functionTypeExp

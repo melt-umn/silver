@@ -30,7 +30,11 @@ synthesized attribute attrOccurring :: String;
 inherited attribute givenNonterminalType :: TypeExp;
 
 -- production attribute
-synthesized attribute attrDcl :: Decorated DclInfo;
+inherited attribute givenSignatureForDefs :: Decorated NamedSignature;
+synthesized attribute prodDefs :: Defs;
+-- production attribute substitutions
+synthesized attribute substitutedDclInfo :: DclInfo;
+inherited attribute givenSubstitution :: Substitution;
 
 
 -- on TYPEREP:
@@ -51,7 +55,7 @@ synthesized attribute attrDcl :: Decorated DclInfo;
   
 -}
 
-nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, unparse, typerep, namedSignature, attrOccurring, attrDcl, givenNonterminalType, dclBoundVars;
+nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, unparse, typerep, namedSignature, attrOccurring, prodDefs, givenNonterminalType, dclBoundVars, substitutedDclInfo, givenSubstitution;
 
 abstract production defaultDcl
 top::DclInfo ::=
@@ -65,6 +69,7 @@ top::DclInfo ::=
   -- All types must provide typerep, bound.
   
   -- All production attributes must provide attrDcl.
+  -- All values that may be production attributes must provide substitutedDclInfo
   -- All occurs must provide attrOccurring. (And now, typerep, which depends on givenNonterminalType)
   
   -- See silver:definition:core for more "musts"
@@ -110,6 +115,8 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
   
   top.typerep = ty;
   forwards to defaultDcl();
+  
+  top.substitutedDclInfo = localDcl(sg,sl, fn, performSubstitution(ty, top.givenSubstitution));
 }
 -- let ( possibly replacement? problem: caching result )
 -- NEW shadowed syn attributes? or inh?
@@ -219,14 +226,15 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
 
 -- -- interface Production attr (values)
 abstract production paDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String dcl::DclInfo
+top::DclInfo ::= sg::String sl::Decorated Location fn::String outty::TypeExp intys::[TypeExp] dcls::Defs
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "p@(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ top.attrDcl.unparse ++ ")";
+  top.unparse = "p@(" ++ sl.unparse ++ ", '" ++ fn ++ "', [" ++ unparseDefs(dcls) ++ "])";
   
-  top.attrDcl = decorate dcl with {};
+  top.prodDefs = dcls;
+  top.typerep = productionTypeExp(outty, intys); -- Using 'production' here, despite also working on 'function's
   forwards to defaultDcl();
 }
 abstract production forwardDcl
@@ -239,6 +247,8 @@ top::DclInfo ::= sg::String sl::Decorated Location ty::TypeExp
   
   top.typerep = ty;
   forwards to defaultDcl();
+  
+  top.substitutedDclInfo = forwardDcl(sg,sl, performSubstitution(ty, top.givenSubstitution));
 }
 
 -- -- interface other
@@ -260,13 +270,11 @@ top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String ntt
   
   -- Here we use givenNonterminalType to find the attribute type:
   local attribute subst :: Substitution;
-  subst = unifyDirectional(ntty, case top.givenNonterminalType of
-                                   decoratedTypeExp(t) -> t
-                                 | _ -> top.givenNonterminalType
-                                 end
-                          ); -- must rewrite FROM ntty TO gNT
+  subst = unifyDirectional(ntty, top.givenNonterminalType.decoratedType); -- must rewrite FROM ntty TO gNT
   
-  top.typerep = performSubstitution(atty, subst);
+  top.typerep = if subst.failure
+                then error("INTERNAL ERROR: Failed to unify what should be perfectly unifiable in determining attribute type: " ++ subst.debugOutput ++ "\n Given: " ++ prettyType(top.givenNonterminalType) ++ "\n for " ++ fnat ++ " on " ++ fnnt)
+                else performSubstitution(atty, subst);
   
   top.attrOccurring = fnat;
   forwards to defaultDcl();
@@ -285,3 +293,27 @@ TypeExp ::= occursDclInfo::Decorated DclInfo ntty::TypeExp
   return decorate new(occursDclInfo) with { givenNonterminalType = ntty; } . typerep;
 }
 
+-- Dealing with substitutions for production attributes
+function performSubstitutionDclInfo
+Decorated DclInfo ::= d::Decorated DclInfo s::Substitution
+{
+  local attribute dcl :: DclInfo;
+  dcl = new(d);
+  dcl.givenSubstitution = s;
+  
+  return decorate dcl.substitutedDclInfo with {};
+}
+
+function defsFromPADcls
+Defs ::= d::[Decorated DclInfo] s::Decorated NamedSignature
+{
+  -- We want to rewrite FROM the sig these PAs were declared with, TO the given sig
+  local attribute subst :: Substitution;
+  subst = unifyDirectional( head(d).typerep,  productionTypeExp(s.outputElement.typerep, getTypesSignature(s.inputElements)));
+  
+  
+  return if null(d) then emptyDefs()
+         else if subst.failure
+              then defsFromPADcls(tail(d), s) -- this can happen if the aspect sig is wrong. Error already reported. error("INTERNAL ERROR: PA subst unify error")
+              else appendDefs( substitutedDefs( head(d).prodDefs, subst ), defsFromPADcls(tail(d), s));
+}

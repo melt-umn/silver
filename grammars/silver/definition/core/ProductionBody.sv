@@ -147,14 +147,12 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
   top.pp = "\tproduction attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionAttributes = addPaDcl(top.grammarName, a.location, top.signature.fullName,
-                                localDcl(top.grammarName, a.location, fName, te.typerep),
-                                emptyDefs());
+  top.productionAttributes = addLocalDcl(top.grammarName, a.location, fName, te.typerep, emptyDefs());
 
   production attribute fName :: String;
   fName = top.signature.fullName ++ ":local:" ++ a.name;
 
-  top.defs = emptyDefs(); -- addLocalDcl(top.grammarName, a.location, fName, te.typerep, emptyDefs());
+  top.defs = emptyDefs();
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
@@ -171,11 +169,9 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   top.pp = "\tforwards to " ++ e.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionAttributes = addPaDcl(top.grammarName, top.location, top.signature.fullName,
-                                forwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep),
-                                emptyDefs());
+  top.productionAttributes = addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
 
-  top.defs = emptyDefs(); -- addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
+  top.defs = emptyDefs();
 
   top.errors := e.errors;
   top.warnings := [];
@@ -189,11 +185,9 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
   top.pp = "\tforwards to " ++ e.pp ++ " with {" ++ inh.pp ++ "};";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionAttributes = addPaDcl(top.grammarName, top.location, top.signature.fullName,
-                                forwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep),
-                                emptyDefs());
+  top.productionAttributes = addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
 
-  top.defs = emptyDefs(); -- addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
+  top.defs = emptyDefs();
 
   top.errors := e.errors ++ inh.errors;
   top.warnings := [];
@@ -266,6 +260,9 @@ top::ForwardLHSExpr ::= q::QName
 concrete production attributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::QName '=' e::Expr ';'
 {
+  top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
+  top.location = loc(top.file, $4.line, $4.column);
+
   top.errors <- attr.lookupAttribute.errors;
   top.warnings := [];
 
@@ -328,6 +325,8 @@ inherited attribute isSynthesizedDefinition :: Boolean occurs on DefLHS; -- true
 concrete production concreteDefLHS
 top::DefLHS ::= q::QName
 {
+  top.pp = q.pp;
+  top.location = q.location;
   top.errors := q.lookupValue.errors;
   
   forwards to if null(q.lookupValue.dcls)
@@ -396,6 +395,9 @@ top::DefLHS ::= q::Decorated QName
 concrete production valueDef
 top::ProductionStmt ::= val::QName '=' e::Expr ';'
 {
+  top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
+  top.location = loc(top.file, $2.line, $2.column);
+
   top.errors <- val.lookupValue.errors;
 
   top.productionAttributes = emptyDefs();

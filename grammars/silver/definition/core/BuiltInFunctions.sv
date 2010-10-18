@@ -84,10 +84,7 @@ top::Expr ::= 'new' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.warnings := [];
-  top.typerep = case e.typerep of
-                  decoratedTypeExp(dt) -> dt
-                | _ -> errorType()
-                end;
+  top.typerep = e.typerep.decoratedType;
 
   e.expected = expected_decorated();
 }

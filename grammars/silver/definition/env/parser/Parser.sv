@@ -20,7 +20,7 @@ terminal lp    '(';
 terminal rp    ')';
 terminal RegExprDelim '/' lexer classes {C_0};
 
-terminal id /[\']([^\'\\]|[\\][\']|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\']/ lexer classes {C_0};
+terminal id /[\']([^\'\\]|[\\][\']|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\']/ lexer classes {C_0}; --'
 terminal number /\-?[0-9]+/ lexer classes {C_0};
 
 terminal DefaultTerm  'default' lexer classes {C_1};
@@ -324,7 +324,7 @@ concrete production aDclInfoProdAttr
 top::aDclInfo ::= 'p@' '(' l::aLocation ',' fn::Name ',' t::aDclInfo ')'
 {
   -- TODO: this reaches into the defs structure a bit.  kinda ugly?
-  top.defs = addPaDcl(top.grammarName, l.location, fn.aname, new(head(t.defs.valueList).dcl), emptyDefs());
+  top.defs = addPaDcl(top.grammarName, l.location, fn.aname, errorType(), [], emptyDefs(), emptyDefs());
 }
 
 concrete production aDclInfoForward

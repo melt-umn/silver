@@ -56,7 +56,7 @@ top::Env ::= d_un::Defs
   top.valueTree = [oneEnvScope(buildTree(d.valueList))];
   top.attrTree = oneEnvScope(buildTree(d.attrList));
 
-  top.prodOccursTree = oneEnvScope(buildTree(mapWrappedNameDcls(d.prodOccursList)));
+  top.prodOccursTree = oneEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)));
   top.occursTree = oneEnvScope(buildTree(mapFullnameDcls(d.occursList)));
 }
 
@@ -93,7 +93,7 @@ top::Env ::= d_un::Defs  e::Decorated Env
   top.valueTree = oneEnvScope(buildTree(d.valueList)) :: e.valueTree; -- new scope of values
   top.attrTree = consEnvScope(buildTree(d.attrList), e.attrTree);
 
-  top.prodOccursTree = consEnvScope(buildTree(mapWrappedNameDcls(d.prodOccursList)), e.prodOccursTree);
+  top.prodOccursTree = consEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)), e.prodOccursTree);
   top.occursTree = consEnvScope(buildTree(mapFullnameDcls(d.occursList)), e.occursTree);
 }
 
