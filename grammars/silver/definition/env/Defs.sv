@@ -39,6 +39,8 @@ function mapUnparseDcls
   return if null(d) then [] else head(d).unparse :: mapUnparseDcls(tail(d));
 }
 
+--------------------------------------------------------------------------------
+
 abstract production emptyDefs 
 top::Defs ::= 
 {
@@ -63,6 +65,17 @@ top::Defs ::= e1_un::Defs e2_un::Defs
   top.prodOccursList = e1.prodOccursList ++ e2.prodOccursList;
   top.occursList = e1.occursList ++ e2.occursList;
 }
+
+abstract production substitutedDefs
+top::Defs ::= e1::Defs s::Substitution
+{
+  -- Only exists for production attributes at this time, so I was lazy!
+  top.valueList = performSubstitutionEnvItem(e1.valueList, s);
+  
+  forwards to emptyDefs();
+}
+
+--------------------------------------------------------------------------------
 
 abstract production consTypeDef
 top::Defs ::= d::Decorated EnvItem e2::Defs
@@ -95,12 +108,6 @@ top::Defs ::= d::Decorated DclInfo e2::Defs
   forwards to e2;
 }
 
-abstract production valueDefsFromDcls
-top::Defs ::= d::[Decorated DclInfo]
-{
-  top.valueList = mapDefaultWrapDcls(d);
-  forwards to emptyDefs();
-}
 
 abstract production filterDefsInclude
 top::Defs ::= d::Defs incl::[String]
@@ -199,9 +206,9 @@ Defs ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp
   return consAttrDef(defaultEnvItem(decorate inhDcl(sg,sl,fn,bound,ty) with {}), defs);
 }
 function addPaDcl
-Defs ::= sg::String sl::Decorated Location fn::String dcl::DclInfo defs::Defs
-{ -- TODO: omit location?
-  return consProdOccursDef(decorate paDcl(sg,sl,fn,dcl) with {}, defs);
+Defs ::= sg::String sl::Decorated Location fn::String outty::TypeExp intys::[TypeExp] dcls::Defs defs::Defs
+{
+  return consProdOccursDef(decorate paDcl(sg,sl,fn,outty,intys,dcls) with {}, defs);
 }
 function addForwardDcl
 Defs ::= sg::String sl::Decorated Location ty::TypeExp defs::Defs

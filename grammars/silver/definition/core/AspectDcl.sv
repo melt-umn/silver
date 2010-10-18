@@ -8,7 +8,10 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 
   top.moduleNames = [];
 
-  top.defs = body.productionAttributes;
+  top.defs = addPaDcl(top.grammarName, id.location, id.lookupValue.fullName,
+                       namedSig.outputElement.typerep, getTypesSignature(namedSig.inputElements),
+                       body.productionAttributes,
+               emptyDefs());
 
   production attribute namedSig :: Decorated NamedSignature;
   namedSig = namedSignatureDcl(id.lookupValue.fullName, ns.inputElements, ns.outputElement);
@@ -23,15 +26,18 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
   top.warnings := [];
 
-  ns.env = newScopeEnv(ns.defs, top.env);  
+  production attribute sigDefs :: Defs with appendDefs;
+  sigDefs := ns.defs;
+
+  ns.env = newScopeEnv(sigDefs, top.env);  
   ns.realSignature = if null(id.lookupValue.dcls) then [] else [realSig.outputElement] ++ realSig.inputElements;
 
   local attribute prodAtts :: Defs;
   prodAtts = if null(id.lookupValue.errors)
-             then valueDefsFromDcls(getProdAttrs(id.lookupValue.fullName, top.env))
+             then defsFromPADcls(getProdAttrs(id.lookupValue.fullName, top.env), namedSig)
              else emptyDefs();
 
-  body.env = newScopeEnv(appendDefs(body.defs, ns.defs), newScopeEnv(prodAtts, top.env));
+  body.env = newScopeEnv(appendDefs(body.defs, sigDefs), newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;
 }
 
@@ -41,7 +47,10 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   top.pp = "aspect function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.defs = body.productionAttributes;
+  top.defs = addPaDcl(top.grammarName, id.location, id.lookupValue.fullName,
+                       namedSig.outputElement.typerep, getTypesSignature(namedSig.inputElements),
+                       body.productionAttributes,
+               emptyDefs());
 
   top.moduleNames = [];
 
@@ -58,15 +67,18 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
   top.warnings := [];
 
-  ns.env = newScopeEnv(ns.defs, top.env);
+  production attribute sigDefs :: Defs with appendDefs;
+  sigDefs := ns.defs;
+
+  ns.env = newScopeEnv(sigDefs, top.env);
   ns.realSignature = if null(id.lookupValue.dcls) then [] else [realSig.outputElement] ++ realSig.inputElements;
 
   local attribute prodAtts :: Defs;
   prodAtts = if null(id.lookupValue.errors)
-             then valueDefsFromDcls(getProdAttrs(id.lookupValue.fullName, top.env))
+             then defsFromPADcls(getProdAttrs(id.lookupValue.fullName, top.env), namedSig)
              else emptyDefs();
 
-  body.env = newScopeEnv(appendDefs(body.defs, ns.defs), newScopeEnv(prodAtts, top.env));
+  body.env = newScopeEnv(appendDefs(body.defs, sigDefs), newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;
 }
 
@@ -141,6 +153,8 @@ top::AspectProductionLHS ::= id::Name t::TypeExp
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
+  production attribute rType :: TypeExp;
+  rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
   top.outputElement = namedSignatureElement(id.name, t);
   
@@ -226,6 +240,8 @@ top::AspectRHSElem ::= id::Name t::TypeExp
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
+  production attribute rType :: TypeExp;
+  rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
   top.inputElements = [namedSignatureElement(id.name, t)];
 
@@ -278,6 +294,8 @@ top::AspectFunctionLHS ::= t::Type
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then "_NULL_" else head(top.realSignature).elementName;
+  production attribute rType :: TypeExp;
+  rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
   top.outputElement = namedSignatureElement(fName, t.typerep);
   

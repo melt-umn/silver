@@ -60,14 +60,14 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.listtrans = productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "core:cons")))),
+  top.listtrans = productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "core:cons", e.location.line, e.location.column)))),
                     '(', exprsCons(e, ',', exprsSingle(emptyList('[',']'))), ')');
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr c::Comma_t e2::Exprs
 {
-  top.listtrans = productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "core:cons")))),
+  top.listtrans = productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "core:cons", e1.location.line, e1.location.column)))),
                     '(', exprsCons(e1, ',', exprsSingle(e2.listtrans)), ')');
 }
 

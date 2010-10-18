@@ -15,7 +15,10 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
 
   top.defs = addFunDcl(top.grammarName, id.location, namedSig,
-               body.productionAttributes);
+              addPaDcl(top.grammarName, id.location, fName,
+                       namedSig.outputElement.typerep, getTypesSignature(namedSig.inputElements),
+                       body.productionAttributes,
+               emptyDefs()));
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
@@ -31,7 +34,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   ns.env = newScopeEnv(sigDefs, top.env);
 
   local attribute prodAtts :: Defs;
-  prodAtts = valueDefsFromDcls(getProdAttrs(fName, top.env));
+  prodAtts = defsFromPADcls(getProdAttrs(fName, top.env), namedSig);
 
   body.env = newScopeEnv(appendDefs(body.defs, sigDefs), newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;

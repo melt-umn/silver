@@ -85,7 +85,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
   errCheck1 = check(e.typerep, apparentTy);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Production signature mismatch."
+       then [err(top.location, "Production signature mismatch for " ++ e.pp
                          ++ "\nFunction type signature: " ++ errCheck1.leftpp
                          ++ "\nParameters provided for: " ++ errCheck1.rightpp)]
        else [];
@@ -113,7 +113,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
   errCheck1 = check(e.typerep, apparentTy);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Function signature mismatch."
+       then [err(top.location, "Function signature mismatch for " ++ e.pp
                          ++ "\nFunction type signature: " ++ errCheck1.leftpp
                          ++ "\nParameters provided for: " ++ errCheck1.rightpp)]
        else [];

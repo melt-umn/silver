@@ -15,18 +15,21 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
 
   top.defs = addProdDcl(top.grammarName, id.location, namedSig,
-               body.productionAttributes);
+              addPaDcl(top.grammarName, id.location, fName,
+                       namedSig.outputElement.typerep, getTypesSignature(namedSig.inputElements),
+                       body.productionAttributes,
+               emptyDefs()));
 
-  local attribute er2 :: [Decorated Message];
-  er2 = if length(getValueDclAll(fName, top.env)) > 1
+  top.errors <-
+        if length(getValueDclAll(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
 
         -- TODO: Narrow this down to just a list of productions before deciding to error.
-        else if length(getValueDcl(id.name, top.env)) > 1 && null(er2)
+        else if length(getValueDcl(id.name, top.env)) > 1
         then [err(top.location, "Production " ++ id.pp ++ " shares a name with another production from an imported grammar. Either this production is meant to be an aspect, or you should use 'import ... with " ++ id.pp ++ " as ...' to change the other production's apparent name.")]
         else [];
   
-  top.errors := er2 ++ ns.errors ++ body.errors;
+  top.errors := ns.errors ++ body.errors;
   top.warnings := [];
 
   production attribute sigDefs :: Defs with appendDefs;
@@ -35,7 +38,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   ns.env = newScopeEnv(sigDefs, top.env);
 
   local attribute prodAtts :: Defs;
-  prodAtts = valueDefsFromDcls(getProdAttrs(fName, top.env));
+  prodAtts = defsFromPADcls(getProdAttrs(fName, top.env), namedSig);
 
   body.env = newScopeEnv(appendDefs(body.defs, sigDefs), newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;

@@ -1,5 +1,7 @@
 grammar silver:definition:env;
 
+import silver:definition:type;
+
 import silver:util;
 
 --fullNameToShort  String ::= s::String
@@ -35,6 +37,12 @@ Decorated EnvItem ::= newname::String di::Decorated DclInfo
   return decorate i_envItem(newname, di) with {};
 }
 
+function fullNameEnvItem
+Decorated EnvItem ::= di::Decorated DclInfo
+{
+  return decorate i_envItem(di.fullName, di) with {};
+}
+
 abstract production i_envItem
 top::EnvItem ::= short::String di::Decorated DclInfo
 {
@@ -53,7 +61,7 @@ function mapFullnameDcls
 [Decorated EnvItem] ::= i::[Decorated DclInfo]
 {
   return if null(i) then []
-         else renamedEnvItem(head(i).fullName, head(i)) :: mapFullnameDcls(tail(i));
+         else fullNameEnvItem(head(i)) :: mapFullnameDcls(tail(i));
 }
 
 function mapDefaultWrapDcls
@@ -63,13 +71,6 @@ function mapDefaultWrapDcls
          else defaultEnvItem(head(i)) :: mapDefaultWrapDcls(tail(i));
 }
 
-function mapWrappedNameDcls
-[Decorated EnvItem] ::= i::[Decorated DclInfo]
-{
-  -- Put EnvItem name as the production, then get rid of the prodAttr wrapper.
-  return if null(i) then []
-         else renamedEnvItem(head(i).fullName, head(i).attrDcl) :: mapWrappedNameDcls(tail(i));
-}
 
 function filterEnvItemsExclude
 [Decorated EnvItem] ::= items::[Decorated EnvItem] exclude::[String]
@@ -161,4 +162,15 @@ function dropEnvItems
 {
   return if n <= 0 then l else dropEnvItems(n-1, tail(l));
 }
+
+-- Substitutions
+
+function performSubstitutionEnvItem
+[Decorated EnvItem] ::= e::[Decorated EnvItem] s::Substitution
+{
+  return if null(e) then []
+         else decorate i_envItem(head(e).itemName, performSubstitutionDclInfo(head(e).dcl, s)) with {}
+              :: performSubstitutionEnvItem(tail(e), s);
+}
+
 

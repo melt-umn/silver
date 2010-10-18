@@ -16,6 +16,7 @@ concrete production baseExpr
 top::Expr ::= q::QName
 {
   top.pp = q.pp;
+  top.location = q.location;
   top.errors <- q.lookupValue.errors;
 
   forwards to if null(q.lookupValue.dcls)
@@ -187,6 +188,8 @@ concrete production productionApp
 top::Expr ::= e::Expr '(' es::Exprs ')'
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
+  top.location = e.location;
+  
   e.expected = expected_default();
   forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es);
 }
@@ -237,6 +240,7 @@ concrete production attributeAccess
 top::Expr ::= e::Expr '.' q::QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
+  top.location = loc(top.file, $2.line, $2.column);
   -- expected here mean "if it exists in a decorated form, use that"
   -- this way we get the decorated children, but a direct call to
   -- a constructor will still be undecorated.
@@ -276,6 +280,9 @@ top::Expr ::= e::Expr '.' q::Decorated QName
 abstract production decoratedAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
+  top.pp = e.pp ++ "." ++ q.pp;
+  top.location = loc(top.file, $2.line, $2.column);
+
   top.errors <- q.lookupAttribute.errors;
   
   -- We dispatch again, based on the kind of attribute

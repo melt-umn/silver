@@ -88,6 +88,8 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp o::Ope
   top.appendDefDispatcher = appendCollectionValueDef;
 
   forwards to defaultDcl();
+  
+  top.substitutedDclInfo = localCollectionDcl(sg,sl,fn, performSubstitution(ty, top.givenSubstitution), o);
 }
 
 

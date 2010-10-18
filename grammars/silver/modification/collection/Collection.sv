@@ -168,14 +168,12 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
   top.pp = "production attribute " ++ a.name ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionAttributes = addPaDcl(top.grammarName, a.location, top.signature.fullName,
-                                localCollectionDcl(top.grammarName, a.location, fName, te.typerep, q.operation),
-                                emptyDefs());
+  top.productionAttributes = addLocalColDcl(top.grammarName, a.location, fName, te.typerep, q.operation, emptyDefs());
 
   production attribute fName :: String;
   fName = top.signature.fullName ++ ":local:" ++ a.name;
 
-  top.defs = emptyDefs(); -- addLocalColDcl(top.grammarName, a.location, fName, te.typerep, q.operation, emptyDefs());
+  top.defs = emptyDefs();
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
