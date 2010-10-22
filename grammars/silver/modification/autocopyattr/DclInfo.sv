@@ -10,7 +10,9 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "autocopy(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ somehowUnparseTyVars(bound) ++ ", " ++ prettyTypeWith(ty, bound) ++ ")";
+
+  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
+  top.unparse = "autocopy(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ")";
   
   top.typerep = ty;
   top.dclBoundVars = bound;

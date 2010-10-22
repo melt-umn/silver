@@ -55,7 +55,15 @@ inherited attribute givenSubstitution :: Substitution;
   
 -}
 
-nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, unparse, typerep, namedSignature, attrOccurring, prodDefs, givenNonterminalType, dclBoundVars, substitutedDclInfo, givenSubstitution;
+nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
+                         unparse, boundVariables, -- unparsing to interface files
+                         typerep, givenNonterminalType, -- types (gNT for occurs)
+                         namedSignature, -- values that are fun/prod
+                         attrOccurring, -- occurs
+                         prodDefs, -- production attributes
+                         dclBoundVars, -- Global values (where we have type schemes)
+                         substitutedDclInfo, givenSubstitution -- type substitutions on dcls
+                         ;
 
 abstract production defaultDcl
 top::DclInfo ::=
@@ -109,9 +117,9 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  -- locals will appear inside interface files inside production attribute declarations
-  -- TODO: figure out how to deal with these
-  top.unparse = "loc(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseType(ty) ++ ")";
+  
+  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't
+  top.unparse = "loc(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
   
   top.typerep = ty;
   forwards to defaultDcl();
@@ -129,7 +137,15 @@ top::DclInfo ::= sg::String sl::Decorated Location ns::Decorated NamedSignature
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = ns.fullName;
-  top.unparse = "prod(" ++ sl.unparse ++ ", " ++ ns.unparse ++ ")";
+
+  local attribute boundvars :: [TyVar];
+  boundvars = top.typerep.freeVariables;
+  
+  local attribute upns :: NamedSignature;
+  upns = new(ns);
+  upns.boundVariables = top.boundVariables ++ boundvars;
+  
+  top.unparse = "prod(" ++ sl.unparse ++ ", " ++ unparseTyVars(boundvars, upns.boundVariables) ++ ", " ++ upns.unparse ++ ")";
 
   top.namedSignature = ns;  
   top.typerep = productionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements));
@@ -141,7 +157,15 @@ top::DclInfo ::= sg::String sl::Decorated Location ns::Decorated NamedSignature
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = ns.fullName;
-  top.unparse = "fun(" ++ sl.unparse ++ ", " ++ ns.unparse ++ ")";
+  
+  local attribute boundvars :: [TyVar];
+  boundvars = top.typerep.freeVariables;
+  
+  local attribute upns :: NamedSignature;
+  upns = new(ns);
+  upns.boundVariables = top.boundVariables ++ boundvars;
+  
+  top.unparse = "fun(" ++ sl.unparse ++ ", " ++ unparseTyVars(boundvars, upns.boundVariables) ++ ", " ++ upns.unparse ++ ")";
 
   top.namedSignature = ns;  
   top.typerep = functionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements));
@@ -153,7 +177,9 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "glob(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ prettyType(ty) ++ ")";
+
+  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't
+  top.unparse = "glob(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
 
   top.typerep = ty;
   forwards to defaultDcl();
@@ -167,7 +193,9 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "nt(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ somehowUnparseTyVars(bound) ++ ", " ++ prettyTypeWith(ty, bound) ++ ")";
+
+  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
+  top.unparse = "nt(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ")";
   
   top.typerep = ty;
   top.dclBoundVars = bound;
@@ -179,6 +207,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String regex::Decorated R
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
+
   top.unparse = "term(" ++ sl.unparse ++ ", '" ++ fn ++ "', /" ++ regex.regString ++ "/)";
   
   top.typerep = terminalTypeExp(fn);
@@ -191,6 +220,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
+
   top.unparse = error("Lexical type variables dcls should never appear in interface files. (This is the DclInfo complaining here.)");
   
   top.typerep = ty;
@@ -205,7 +235,9 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "syn(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ somehowUnparseTyVars(bound) ++ ", " ++ prettyTypeWith(ty, bound) ++ ")";
+
+  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
+  top.unparse = "syn(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ")";
   
   top.typerep = ty;
   top.dclBoundVars = bound;
@@ -217,7 +249,9 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "inh(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ somehowUnparseTyVars(bound) ++ ", " ++ prettyTypeWith(ty, bound) ++ ")";
+
+  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
+  top.unparse = "inh(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ")";
   
   top.typerep = ty;
   top.dclBoundVars = bound;
@@ -231,7 +265,14 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String outty::TypeExp int
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "p@(" ++ sl.unparse ++ ", '" ++ fn ++ "', [" ++ unparseDefs(dcls) ++ "])";
+  
+  local attribute newboundvars :: [TyVar];
+  newboundvars = productionTypeExp(outty, intys).freeVariables;
+  local attribute boundvars :: [TyVar];
+  boundvars = top.boundVariables ++ newboundvars;
+  
+  outty.boundVariables = boundvars;
+  top.unparse = "p@(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(newboundvars, boundvars) ++ ", " ++ outty.unparse ++ " ::= " ++ unparseTypes(intys, boundvars) ++ ", [" ++ unparseDefs(dcls, boundvars) ++ "])";
   
   top.prodDefs = dcls;
   top.typerep = productionTypeExp(outty, intys); -- Using 'production' here, despite also working on 'function's
@@ -243,7 +284,9 @@ top::DclInfo ::= sg::String sl::Decorated Location ty::TypeExp
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = "forward";
-  top.unparse = "fwd(" ++ sl.unparse ++ ", " ++ prettyType(ty) ++ ")"; -- TODO: like production attributes, this might need a BV context
+  
+  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't  
+  top.unparse = "fwd(" ++ sl.unparse ++ ", " ++ ty.unparse ++ ")";
   
   top.typerep = ty;
   forwards to defaultDcl();
@@ -259,9 +302,12 @@ top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String ntt
   top.sourceLocation = sl;
   top.fullName = fnnt;
   
+  ntty.boundVariables = top.boundVariables ++ ntty.freeVariables;
+  atty.boundVariables = ntty.boundVariables;
   top.unparse = "@(" ++ sl.unparse ++ ", '" ++ fnnt ++ "', '" ++ fnat ++ "', " ++ 
-                       prettyTypeWith(ntty, ntty.freeVariables) ++ ", " ++ 
-                       prettyTypeWith(atty, ntty.freeVariables) ++ ")";
+                       unparseTyVars(ntty.freeVariables, ntty.boundVariables) ++ ", " ++
+                       ntty.unparse ++ ", " ++ 
+                       atty.unparse ++ ")";
 
   -- There should be no type variables in atty that aren't in ntty. (Important constraint!)
   -- that's why we only use ntty.FV above.
@@ -278,12 +324,6 @@ top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String ntt
   
   top.attrOccurring = fnat;
   forwards to defaultDcl();
-}
-
-function somehowUnparseTyVars
-String ::= b::[TyVar]
-{
-  return ("TODO NYI");
 }
 
 -- TODO: this should probably go elsewhere?

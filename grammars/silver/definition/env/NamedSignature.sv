@@ -2,8 +2,8 @@ grammar silver:definition:env;
 
 import silver:definition:type;
 
-nonterminal NamedSignature with inputElements, outputElement, fullName, unparse;
-nonterminal NamedSignatureElement with typerep, elementName, unparse;
+nonterminal NamedSignature with inputElements, outputElement, fullName, unparse, boundVariables;
+nonterminal NamedSignatureElement with typerep, elementName, unparse, boundVariables;
 
 synthesized attribute elementName :: String;
 synthesized attribute inputElements :: [Decorated NamedSignatureElement];
@@ -30,15 +30,19 @@ function getTypeNamesSignature
 }
 
 function unparseSignatureElements
-String ::= s::[Decorated NamedSignatureElement]
+String ::= s::[Decorated NamedSignatureElement] bv::[TyVar]
 {
-  return "[" ++ unparseSignatureElementsHelp(s) ++ "]";
+  return "[" ++ unparseSignatureElementsHelp(s, bv) ++ "]";
 }
 
 function unparseSignatureElementsHelp
-String ::= s::[Decorated NamedSignatureElement]
+String ::= s::[Decorated NamedSignatureElement] bv::[TyVar]
 {
-  return if null(s) then "" else head(s).unparse ++ (if null(tail(s)) then "" else (", " ++ unparseSignatureElementsHelp(tail(s))));
+  local attribute h :: NamedSignatureElement;
+  h = new(head(s));
+  h.boundVariables = bv;
+
+  return if null(s) then "" else h.unparse ++ (if null(tail(s)) then "" else (", " ++ unparseSignatureElementsHelp(tail(s), bv)));
 }
 
 function namedNamedSignature
@@ -56,7 +60,7 @@ Decorated NamedSignature ::= fn::String ie::[Decorated NamedSignatureElement] oe
 abstract production i_namedSignature
 top::NamedSignature ::= fn::String ie::[Decorated NamedSignatureElement] oe::Decorated NamedSignatureElement
 {
-  top.unparse = "signature('" ++ fn ++ "', " ++ unparseSignatureElements(ie) ++ ", " ++ oe.unparse ++ ")";
+  top.unparse = "signature('" ++ fn ++ "', " ++ unparseSignatureElements(ie, top.boundVariables) ++ ", " ++ decorate new(oe) with {boundVariables = top.boundVariables;}.unparse ++ ")";
   top.fullName = fn;
   top.inputElements = ie;
   top.outputElement = oe;
@@ -80,7 +84,8 @@ Decorated NamedSignatureElement ::= n::String tr::TypeExp
 abstract production i_namedSignatureElement
 top::NamedSignatureElement ::= n::String ty::TypeExp
 {
-  top.unparse = "element('" ++ n ++ "', " ++ prettyType(ty) ++ ")"; -- TODO @#$#$%
+  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't  
+  top.unparse = "element('" ++ n ++ "', " ++ ty.unparse ++ ")"; -- TODO @#$#$%
 
   top.elementName = n;
   top.typerep = ty;
