@@ -40,7 +40,7 @@ top::RootSpecUnparse ::= r::Decorated RootSpec
   unparses := [
 		"declaredName " ++ quoteString(r.declaredName),
 		"moduleNames [" ++ folds(",", quoteStrings(r.moduleNames)) ++ "]",
-	       	"defs [" ++ unparseDefs(r.defs) ++ "]",
+	       	"defs [" ++ unparseDefs(r.defs, []) ++ "]",
 	       	"exportedGrammars [" ++ folds(",", quoteStrings(r.exportedGrammars)) ++ "]",
 	       	"condBuild [" ++ foldCB(r.condBuild) ++ "]"
 	      ];

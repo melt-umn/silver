@@ -15,7 +15,7 @@ top::TypeExp ::=
              | _ -> errorSubst("Tried to unify IO with " ++ prettyType(top.unifyWith))
               end;
   
-  top.unparse = "";
+  top.unparse = "io";
   
   forwards to defaultTypeExp();
 }

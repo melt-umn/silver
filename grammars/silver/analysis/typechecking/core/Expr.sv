@@ -599,7 +599,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.upSubst = inh.upSubst;
 
   top.errors <-
-       if (e.typerep.isDecorable)
+       if performSubstitution(e.typerep, top.finalSubst).isDecorable
        then []
        else [err(top.location, "Operand to 'decorate/with' must have a non-terminal type. Instead it is " ++ prettyType(e.typerep))] ;
 }

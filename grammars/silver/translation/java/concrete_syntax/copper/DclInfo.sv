@@ -24,6 +24,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
   top.sourceLocation = sl;
   top.fullName = fn;
 
+  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't
   top.unparse = "parse_attr(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
   
   top.typerep = ty;

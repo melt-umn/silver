@@ -23,7 +23,7 @@ top::TypeExp ::= el::TypeExp
   top.doDecorate = false;
   --top.accessDispatcher = errorAccessDispatcher; -- permit this, since we need it for default, non-specialized java version
   
-  top.unparse = "";
+  top.unparse = "[" ++ el.unparse ++ "]";
   --top.transType -- for translation.
   
   forwards to decoratedTypeExp(nonterminalTypeExp("core:List", [el]));

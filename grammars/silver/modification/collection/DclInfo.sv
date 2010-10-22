@@ -30,7 +30,9 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "syncol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ somehowUnparseTyVars(bound) ++ ", " ++ prettyTypeWith(ty, bound) ++ ", " ++ o.unparse ++ ")";
+
+  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
+  top.unparse = "syncol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ", " ++ o.unparse ++ ")";
   
   top.typerep = ty;
   top.dclBoundVars = bound;
@@ -51,7 +53,9 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = "inhcol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ somehowUnparseTyVars(bound) ++ ", " ++ prettyTypeWith(ty, bound) ++ ", " ++ o.unparse ++ ")";
+
+  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
+  top.unparse = "inhcol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ", " ++ o.unparse ++ ")";
   
   top.typerep = ty;
   top.dclBoundVars = bound;
@@ -74,7 +78,8 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp o::Ope
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = "loccol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseType(ty) ++ ", " ++ o.unparse ++ ")";
+  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't
+  top.unparse = "loccol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ", " ++ o.unparse ++ ")";
   
   top.typerep = ty;
   

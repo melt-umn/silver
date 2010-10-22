@@ -23,6 +23,12 @@ top::TypeExp ::= tv::TyVar
   top.unparse = findAbbrevFor(tv, top.boundVariables);
 }
 
+aspect production skolemTypeExp
+top::TypeExp ::= tv::TyVar
+{
+  top.unparse = findAbbrevFor(tv, top.boundVariables);
+}
+
 aspect production intTypeExp
 top::TypeExp ::=
 {
@@ -80,14 +86,6 @@ top::TypeExp ::= out::TypeExp params::[TypeExp]
   top.unparse = "prod(" ++ unparseTypes(params, top.boundVariables) ++ ", " ++ out.unparse ++ ")"  ;
 }
 
-
-
-function unparseType
-String ::= te::TypeExp
-{
-  te.boundVariables = te.freeVariables;
-  return te.unparse;
-}
 function unparseTypes
 String ::= tes::[TypeExp] bv::[TyVar]
 {
@@ -103,3 +101,17 @@ function mapUnparseTypes
   return if null(tes) then []
          else fst.unparse :: mapUnparseTypes(tail(tes), bv);
 }
+
+
+function unparseTyVars
+String ::= utvs::[TyVar]  bv::[TyVar]
+{
+  return "[" ++ folds(", ", mapUnparseTyVars(utvs, bv)) ++ "]";
+}
+function mapUnparseTyVars
+[String] ::= tes::[TyVar]  bv::[TyVar]
+{
+  return if null(tes) then []
+         else findAbbrevFor(head(tes), bv) :: mapUnparseTyVars(tail(tes), bv);
+}
+

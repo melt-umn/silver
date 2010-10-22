@@ -18,7 +18,7 @@ synthesized attribute occursList :: [Decorated DclInfo];
 ----------------------------------------------------------------------------------------------------
 
 function unparseDefs
-String ::= d_un::Defs
+String ::= d_un::Defs bv::[TyVar]
 {
   production attribute d :: Decorated Defs;
   d = decorate d_un with {};
@@ -30,13 +30,17 @@ String ::= d_un::Defs
               d.prodOccursList ++
               d.occursList;
   
-  return folds(",\n ", mapUnparseDcls(dclinfos));
+  return folds(",\n ", mapUnparseDcls(dclinfos, bv));
 }
 
 function mapUnparseDcls
-[String] ::= d::[Decorated DclInfo]
+[String] ::= d::[Decorated DclInfo] bv::[TyVar]
 {
-  return if null(d) then [] else head(d).unparse :: mapUnparseDcls(tail(d));
+  local attribute h :: DclInfo;
+  h = new(head(d));
+  h.boundVariables = bv;
+
+  return if null(d) then [] else h.unparse :: mapUnparseDcls(tail(d), bv);
 }
 
 --------------------------------------------------------------------------------

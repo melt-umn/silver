@@ -11,7 +11,7 @@ import silver:definition:type;
 synthesized attribute lexerClassList :: [Decorated EnvItem] occurs on Defs;
 
 aspect function unparseDefs
-String ::= d_un::Defs
+String ::= d_un::Defs bv::[TyVar]
 {
   dclinfos <- mapGetDcls(d.lexerClassList);
 }
