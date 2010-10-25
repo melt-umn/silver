@@ -34,9 +34,11 @@ abstract production customLookup
 top::QNameLookup ::= kindOfLookup::String lookupFunc::Function([Decorated DclInfo] ::= String Decorated Env) name::String l::Decorated Location 
 {
   top.dcls = lookupFunc(name, top.env);
-  top.dcl = head(top.dcls);
+  top.dcl = if null(top.dcls) then error("INTERNAL ERROR: Accessing dcl of " ++ kindOfLookup ++ " " ++ name ++ " at " ++ l.unparse)
+            else head(top.dcls);
   
-  top.fullName = top.dcl.fullName;
+  top.fullName = if null(top.dcls) then "undeclared:value:" ++ name
+                 else top.dcl.fullName;
   
   top.typerep = if null(top.dcls) then errorType()  else top.dcl.typerep;
   top.dclBoundVars = if null(top.dcls) then []      else top.dcl.dclBoundVars;
