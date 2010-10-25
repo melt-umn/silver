@@ -66,7 +66,7 @@ top::NameOrBOperator ::= '++'
 abstract production functionOperation
 top::Operation ::= s::String
 {
-  top.unparse = "func('" ++ s ++ "')";
+  top.unparse = "fun('" ++ s ++ "')";
 }
 abstract production productionOperation
 top::Operation ::= s::String

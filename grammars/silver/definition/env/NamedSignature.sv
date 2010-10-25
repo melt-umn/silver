@@ -69,7 +69,7 @@ top::NamedSignature ::= fn::String ie::[Decorated NamedSignatureElement] oe::Dec
 abstract production namedSignatureDefault
 top::NamedSignature ::= 
 {
-  top.unparse = "signature";
+  top.unparse = "signature"; -- TODO: is this ever legal? can we do an internal error instead?
   top.fullName = "_NULL_";
   top.inputElements = [];
   top.outputElement = decorate namedSignatureElementDefault() with {};
@@ -94,7 +94,7 @@ top::NamedSignatureElement ::= n::String ty::TypeExp
 abstract production namedSignatureElementDefault
 top::NamedSignatureElement ::=
 {
-  top.unparse = "element";
+  top.unparse = "element"; -- TODO: can we do an internal error instead?
   top.elementName = "_NULL_";
   top.typerep = errorType();
 }

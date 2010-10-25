@@ -3,13 +3,15 @@ import silver:modification:autocopyattr hiding AutoCopy_kwd; -- TODO: hiding is 
 import silver:definition:env;
 import silver:definition:env:parser;
 
-import silver:definition:core only grammarName, location;
+import silver:definition:core only grammarName, location, env;
 
 terminal AutoCopyTerm 'autocopy' lexer classes {C_1};
 
 concrete production aDclInfoAutoCopy
-top::aDclInfo ::= 'autocopy' '(' l::aLocation ',' fn::Name ',' t::aTypeRep ')'
+top::aDclInfo ::= 'autocopy' '(' l::aLocation ',' fn::Name ',' td::aTyVarDcls ',' t::aTypeRep ')'
 {
-  top.defs = addAutocopyDcl(top.grammarName, l.location, fn.aname, t.typerep, emptyDefs());
+  t.env = newScopeEnv(td.defs, top.env);
+  
+  top.defs = addAutocopyDcl(top.grammarName, l.location, fn.aname, td.tyvars, t.typerep, emptyDefs());
 }
 

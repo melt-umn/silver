@@ -5,6 +5,8 @@ import silver:definition:env:parser;
 
 import silver:definition:core;
 
+-- TODO: this whole file. Why is it here? Do we really need this?
+
 terminal ImpliedNameTerm 'impliedName' lexer classes {C_1};
 
 attribute impliedName occurs on aRootSpecPart, aRootSpecParts;

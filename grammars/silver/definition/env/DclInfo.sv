@@ -1,6 +1,7 @@
 grammar silver:definition:env;
 import silver:definition:regex;  -- soley for Terms. TODO : fix?
 import silver:definition:type;
+import silver:util;
 
 synthesized attribute sourceGrammar :: String;
 synthesized attribute sourceLocation :: Decorated Location;
@@ -319,7 +320,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String ntt
   subst = unifyDirectional(ntty, top.givenNonterminalType.decoratedType); -- must rewrite FROM ntty TO gNT
   
   top.typerep = if subst.failure
-                then error("INTERNAL ERROR: Failed to unify what should be perfectly unifiable in determining attribute type: " ++ subst.debugOutput ++ "\n Given: " ++ prettyType(top.givenNonterminalType) ++ "\n for " ++ fnat ++ " on " ++ fnnt)
+                then error("INTERNAL ERROR: Failed to unify what should be perfectly unifiable in determining attribute type: " ++ subst.debugOutput ++ "\n Given: " ++ prettyType(top.givenNonterminalType) ++ "\n for " ++ fnat ++ " on " ++ fnnt ++ " with unify errors " ++ folds(", ", subst.substErrors))
                 else performSubstitution(atty, subst);
   
   top.attrOccurring = fnat;
