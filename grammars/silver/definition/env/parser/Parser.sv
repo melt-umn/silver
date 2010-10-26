@@ -338,7 +338,7 @@ top::aTyVarDclsInner ::= t1::tyvar ',' t2::aTyVarDclsInner
   tv = freshTyVar();
   
   top.defs = addLexTyVarDcl("IFACE", loc("IFACE",-1,-1), t1.lexeme, skolemTypeExp(tv), t2.defs);
-  top.tyvars = tv :: t2.tyvars;
+  top.tyvars = [tv] ++ t2.tyvars;
 }
 
 --The DclInfos
