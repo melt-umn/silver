@@ -30,7 +30,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
         else [];
   
   top.errors := ns.errors ++ body.errors;
-  top.warnings := [];
+  top.warnings := body.warnings;
 
   production attribute sigDefs :: Defs with appendDefs;
   sigDefs := ns.defs;
@@ -52,7 +52,6 @@ top::ProductionSignature ::= lhs::ProductionLHS '::='
   
   top.defs = lhs.defs;
   top.errors := lhs.errors;
-  top.warnings := [];
 
   top.inputElements = [];
   top.outputElement = lhs.outputElement;
@@ -66,7 +65,6 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
 
   top.defs = appendDefs(lhs.defs, rhs.defs);
   top.errors := lhs.errors ++ rhs.errors;
-  top.warnings := [];
 
   top.inputElements = rhs.inputElements;
   top.outputElement = lhs.outputElement;
@@ -92,7 +90,6 @@ top::ProductionLHS ::= id::Name '::' t::Type
        else [];	
 
   top.errors := t.errors;
-  top.warnings := [];
 }
 
 concrete production productionRHSSingle
@@ -103,7 +100,6 @@ top::ProductionRHS ::= rhs::ProductionRHSElem
 
   top.defs = rhs.defs;
   top.errors := rhs.errors;
-  top.warnings := [];
 
   top.inputElements = rhs.inputElements;
   rhs.deterministicCount = 0;
@@ -117,7 +113,6 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 
   top.defs = appendDefs(h.defs, t.defs);
   top.errors := h.errors ++ t.errors;
-  top.warnings := [];
 
   top.inputElements = h.inputElements ++ t.inputElements;
   h.deterministicCount = length(t.inputElements);
@@ -146,7 +141,6 @@ top::ProductionRHSElem ::= id::Name '::' t::Type
        else [];	
 
   top.errors := t.errors;
-  top.warnings := [];
 }
 
 concrete production productionRHSElemType

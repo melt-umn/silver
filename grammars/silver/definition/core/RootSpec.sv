@@ -7,7 +7,8 @@ synthesized attribute impliedName :: String;
 attribute location, importedDefs, warnings, errors, interface, impliedName occurs on RootSpec;
 
 aspect production unparseRootSpec
-top::RootSpecUnparse ::= r::Decorated RootSpec{
+top::RootSpecUnparse ::= r::Decorated RootSpec
+{
   unparses <- ["impliedName " ++ quoteString(r.impliedName)];
 }
 

@@ -26,7 +26,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
         else [];
 
   top.errors := ns.errors ++ body.errors;
-  top.warnings := [];
+  top.warnings := body.warnings;
 
   production attribute sigDefs :: Defs with appendDefs;
   sigDefs := ns.defs;
@@ -48,7 +48,6 @@ top::FunctionSignature ::= lhs::FunctionLHS '::='
   
   top.defs = lhs.defs;
   top.errors := lhs.errors;
-  top.warnings := [];
 
   top.inputElements = [];
   top.outputElement = lhs.outputElement;
@@ -62,7 +61,6 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
 
   top.defs = appendDefs(lhs.defs, rhs.defs);
   top.errors := lhs.errors ++ rhs.errors;
-  top.warnings := [];
 
   top.inputElements = rhs.inputElements;
   top.outputElement = lhs.outputElement;
@@ -83,5 +81,4 @@ top::FunctionLHS ::= t::Type
   top.defs = addLhsDcl(top.grammarName, t.location, fName, t.typerep, emptyDefs());
 
   top.errors := t.errors;
-  top.warnings := [];
 }

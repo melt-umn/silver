@@ -19,6 +19,7 @@ top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QNa
 
   -- binding errors in looking up these names.
   top.errors := a.lookupAttribute.errors ++ nt.lookupType.errors;
+  top.warnings := [];
   
   -- Ensure that we're ONLY pairing up type variables, for now.
   -- This will error if any types (instead of type variables) appear in these lists.

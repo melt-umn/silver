@@ -24,7 +24,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   -- Making sure we're aspecting a production is taken care of by type checking.
 
   top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
-  top.warnings := [];
+  top.warnings := body.warnings;
 
   production attribute sigDefs :: Defs with appendDefs;
   sigDefs := ns.defs;
@@ -65,7 +65,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   -- Making sure we're aspecting a function is taken care of by type checking.
 
   top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
-  top.warnings := [];
+  top.warnings := body.warnings;
 
   production attribute sigDefs :: Defs with appendDefs;
   sigDefs := ns.defs;
@@ -90,7 +90,6 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::='
 
   top.defs = lhs.defs;
   top.errors := lhs.errors;
-  top.warnings := [];
 
   top.inputElements = [];
   top.outputElement = lhs.outputElement;
@@ -106,7 +105,6 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 
   top.defs = appendDefs(lhs.defs, rhs.defs);
   top.errors := lhs.errors ++ rhs.errors;
-  top.warnings := [];
 
   top.inputElements = rhs.inputElements;
   top.outputElement = lhs.outputElement;
@@ -163,7 +161,6 @@ top::AspectProductionLHS ::= id::Name t::TypeExp
   top.errors := if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
                 else [];
-  top.warnings := [];
 }
 
 concrete production aspectRHSElem
@@ -174,7 +171,6 @@ top::AspectRHS ::= rhs::AspectRHSElem
 
   top.defs = rhs.defs;
   top.errors := rhs.errors;
-  top.warnings := [];
   top.inputElements = rhs.inputElements;
 
   rhs.deterministicCount = 0;
@@ -189,7 +185,6 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 
   top.defs = appendDefs(h.defs, t.defs);
   top.errors := h.errors ++ t.errors;
-  top.warnings := [];
 
   top.inputElements = h.inputElements ++ t.inputElements;
 
@@ -250,7 +245,6 @@ top::AspectRHSElem ::= id::Name t::TypeExp
   top.errors := if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
                 else [];
-  top.warnings := [];
 }
 
 concrete production aspectFunctionSignatureEmptyRHS
@@ -261,7 +255,6 @@ top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::='
 
   top.defs = lhs.defs;
   top.errors := lhs.errors;
-  top.warnings := [];
 
   top.inputElements = [];
   top.outputElement = lhs.outputElement;
@@ -277,7 +270,6 @@ top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS
 
   top.defs = appendDefs(lhs.defs, rhs.defs);
   top.errors := lhs.errors ++ rhs.errors;
-  top.warnings := [];
 
   top.inputElements = rhs.inputElements;
   top.outputElement = lhs.outputElement;
@@ -303,5 +295,4 @@ top::AspectFunctionLHS ::= t::Type
   top.defs = addAliasedLhsDcl(top.grammarName, t.location, fName, t.typerep, fName, emptyDefs());
 
   top.errors := [];
-  top.warnings := [];
 }

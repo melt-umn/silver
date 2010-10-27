@@ -450,7 +450,6 @@ top::Expr ::= e::Expr t::String
   top.location = e.location;
 
   top.errors := e.errors;
-  top.warnings := e.warnings;
   top.typerep = boolTypeExp();
 
   e.downSubst = top.downSubst;
@@ -466,7 +465,6 @@ top::Expr ::= e::Expr c::Integer t::TypeExp
   top.location = e.location;
 
   top.errors := e.errors;
-  top.warnings := e.warnings;
   top.typerep = if t.doDecorate then decoratedTypeExp(t) else t;
 
   e.downSubst = top.downSubst;

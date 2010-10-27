@@ -16,7 +16,7 @@ top::Unit ::= specs::[Decorated RootSpec]
 {
   forwards to printAllBindingErrorsHelp(specs)
 	with {
-		ioIn = print("Checking Binding Errors.\n", top.ioIn);
+		ioIn = print("Checking For Errors.\n", top.ioIn);
 	};
 }
 
@@ -27,7 +27,9 @@ top::Unit ::= specs::[Decorated RootSpec]
   es = head(specs).errors;
 
   local attribute i :: IO;
-  i = if null(es) then top.ioIn else print("Binding Errors for : " ++ head(specs).impliedName ++ "\n" ++ foldMessages(es) ++ "\n\n", top.ioIn);
+  i = if null(es) && null(head(specs).warnings)
+      then top.ioIn
+      else print("Errors for : " ++ head(specs).impliedName ++ "\n" ++ foldMessages(es ++ head(specs).warnings) ++ "\n\n", top.ioIn);
 
   local attribute recurse :: Unit;
   recurse = printAllBindingErrorsHelp(tail(specs));
@@ -41,3 +43,4 @@ top::Unit ::= specs::[Decorated RootSpec]
 
   top.order = 0;
 }
+

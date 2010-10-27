@@ -37,6 +37,7 @@ top::AGDcl ::= id::Name tl::TypeList
 
   -- Include normal binding errors.
   top.errors := tl.errors;
+  top.warnings := [];
   
   -- Put the variables listed on the rhs in the environment FOR TL ONLY, so they're all "declared"
   tl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),

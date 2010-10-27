@@ -187,7 +187,6 @@ top::Expr ::= q::Decorated QName
   top.location = q.location;
 
   top.errors := []; -- Should only ever be in scope in action blocks
-  top.warnings := [];
 
   top.typerep = q.lookupValue.typerep;
 
@@ -211,7 +210,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e.errors; -- should only be in scope when its valid to use them
-  top.warnings := [];
 
   e.expected = expected_type(val.lookupValue.typerep);  
 

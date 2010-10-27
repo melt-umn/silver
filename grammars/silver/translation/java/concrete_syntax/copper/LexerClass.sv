@@ -59,6 +59,7 @@ top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
                 else [];	
 
   top.errors := subs.errors ++ doms.errors;
+  top.warnings := [];
 
 --from definition:concrete_syntax
   top.parserDcls = [];
