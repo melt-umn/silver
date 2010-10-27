@@ -1,5 +1,18 @@
 grammar core;
 
+--synthesized attribute io :: IO;
+synthesized attribute ioval<`a> :: `a;
+
+nonterminal IOVal<`a> with io, ioval<`a>;
+
+abstract production ioval
+top::IOVal<`a> ::= i::IO v::`a
+{
+  top.io = i;
+  top.ioval = v;
+}
+
+
 ------ IO Actions:
 
 function print
@@ -110,10 +123,10 @@ IOStringList ::= s::String i::IO
 
 ------ IO Misc.
 
-function unsafeio
+function unsafeIO
 IO ::= 
 {
-  return error("Not Yet Implemented: unsafeio");
+  return error("Not Yet Implemented: unsafeIO");
 } foreign {
   "java" : return "null";
 }
@@ -124,5 +137,13 @@ Integer ::=
   return error("Not Yet Implemented: genInt");
 } foreign {
   "java" : return "(common.Util.genInt())";
+}
+
+function unsafeTrace
+`a ::= val::`a act::IO
+{
+  return error("Not Yet Implemented: unsafeTrace");
+} foreign {
+  "java" : return "(%act%==null?%val%:null)"; -- This isn't the best way to do this...
 }
 
