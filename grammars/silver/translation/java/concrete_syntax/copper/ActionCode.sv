@@ -164,7 +164,6 @@ top::Expr ::= q::Decorated QName
   top.location = q.location;
 
   top.errors := []; -- Should only ever be in scope when valid
-  top.warnings := [];
 
   top.typerep = q.lookupValue.typerep;
 

@@ -1,8 +1,8 @@
 grammar silver:definition:concrete_syntax;
 
 aspect production productionDcl
-top ::= _ _ _ _ _{
-
+top ::= _ _ _ _ _
+{
   top.parserDcls = [];
   top.nonTerminalDcls = [];
   top.ruleDcls = [];

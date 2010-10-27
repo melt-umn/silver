@@ -21,12 +21,13 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
 
   top.defs = emptyDefs();
 
+  top.warnings := [];
   top.errors := acode.errors ++ terms.errors;
 
 --from definition:concrete_syntax
   top.parserDcls = [];
   top.nonTerminalDcls = [];
-  top.terminalDcls = [];			   
+  top.terminalDcls = [];
   top.ruleDcls = [];
 
 --from translation:core
@@ -51,7 +52,6 @@ top::Expr ::= q::Decorated QName
   top.location = q.location;
 
   top.errors := []; -- Should only be referenceable from a context where its valid.
-  top.warnings := [];
 
   top.typerep = errorType(); -- TODO: BUG: Need a real type here (AnyTerminalType or something)
   

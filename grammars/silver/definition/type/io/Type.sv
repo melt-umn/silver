@@ -15,7 +15,6 @@ top::Type ::= 'IO'
   top.typerep = ioTypeExp();
 
   top.errors := [];
-  top.warnings := [];
   
   top.lexicalTypeVariables = [];
 }

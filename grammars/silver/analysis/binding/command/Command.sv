@@ -8,7 +8,7 @@ aspect production cRootAll
 top::Command ::= c1::PieceList
 {
   flagLookups <- [flagLookup("--xb", false)];
-  uses <- ["\t--xb: exclude binding error checking\n"];
+  uses <- ["\t--xb: exclude error checking\n"];
 
   top.noBindingChecking = !null(findFlag("--xb", top.flags));
 }

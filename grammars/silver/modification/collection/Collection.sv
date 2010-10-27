@@ -8,7 +8,7 @@ import silver:util;
 
 import silver:analysis:typechecking:core;
 
-nonterminal NameOrBOperator with location, grammarName, file, warnings, errors, env, pp, operation, operatorForType;
+nonterminal NameOrBOperator with location, grammarName, file, errors, env, pp, operation, operatorForType;
 nonterminal Operation with unparse;
 
 synthesized attribute operation :: Operation;
@@ -26,7 +26,6 @@ top::NameOrBOperator ::= q::QName
                   end;
 
   top.errors := q.lookupValue.errors;
-  top.warnings := [];
   
   -- TODO: this is a complete mess.  refactor it someday, please!
   top.errors <- 
@@ -60,7 +59,6 @@ top::NameOrBOperator ::= '++'
                 | listTypeExp(_) -> []
                 | _ -> [err(top.location, "++ operator will only work for collections of type list or String")]
                 end;
-  top.warnings := [];
 }
 
 abstract production functionOperation
@@ -327,7 +325,6 @@ concrete production attrContainsAppend
 top::ProductionStmt ::= dl::DefLHS '.' attr::QName '<-' e::Expr ';'
 {
   top.errors <- attr.lookupAttribute.errors;
-  top.warnings := [];
 
   top.productionAttributes = emptyDefs();
   top.defs = emptyDefs();
@@ -341,7 +338,6 @@ concrete production attrContainsBase
 top::ProductionStmt ::= dl::DefLHS '.' attr::QName ':=' e::Expr ';'
 {
   top.errors <- attr.lookupAttribute.errors;
-  top.warnings := [];
 
   top.productionAttributes = emptyDefs();
   top.defs = emptyDefs();

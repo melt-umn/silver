@@ -32,6 +32,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
         else [];	
 
   top.errors := t.errors ++ tm.errors;
+  top.warnings := [];
 
   top.parserDcls = [];
   top.nonTerminalDcls = [];

@@ -6,9 +6,9 @@ import silver:definition:env;
 import silver:util;
 import silver:definition:type:gatherfreevars;
 
-nonterminal Type      with location, grammarName, file, warnings, errors, env, pp, typerep, lexicalTypeVariables;
-nonterminal Signature with location, grammarName, file, warnings, errors, env, pp, types,   lexicalTypeVariables;
-nonterminal TypeList  with location, grammarName, file, warnings, errors, env, pp, types,   lexicalTypeVariables, errorsTyVars, freeVariables;
+nonterminal Type      with location, grammarName, file, errors, env, pp, typerep, lexicalTypeVariables;
+nonterminal Signature with location, grammarName, file, errors, env, pp, types,   lexicalTypeVariables;
+nonterminal TypeList  with location, grammarName, file, errors, env, pp, types,   lexicalTypeVariables, errorsTyVars, freeVariables;
 
 synthesized attribute types :: [TypeExp];
 
@@ -39,7 +39,6 @@ top::Type ::= t::TypeExp
   top.typerep = t;
 
   top.errors := [];
-  top.warnings := [];
 
   top.lexicalTypeVariables = [];
 }
@@ -53,7 +52,6 @@ top::Type ::= 'Integer'
   top.typerep = intTypeExp();
 
   top.errors := [];
-  top.warnings := [];
 
   top.lexicalTypeVariables = [];
 }
@@ -67,7 +65,6 @@ top::Type ::= 'Float'
   top.typerep = floatTypeExp();
 
   top.errors := [];
-  top.warnings := [];
 
   top.lexicalTypeVariables = [];
 }
@@ -81,7 +78,6 @@ top::Type ::= 'String'
   top.typerep = stringTypeExp();
 
   top.errors := [];
-  top.warnings := [];
 
   top.lexicalTypeVariables = [];
 }
@@ -95,7 +91,6 @@ top::Type ::= 'Boolean'
   top.typerep = boolTypeExp();
 
   top.errors := [];
-  top.warnings := [];
 
   top.lexicalTypeVariables = [];
 }
@@ -108,7 +103,6 @@ top::Type ::= q::QName
 
   top.typerep = q.lookupType.typerep;
 
-  top.warnings := [];
   top.errors := q.lookupType.errors;
 
   top.errors <- case q.lookupType.typerep of
@@ -133,7 +127,6 @@ top::Type ::= q::QName '<' tl::TypeList '>'
                 | _ -> errorType()
                 end;
 
-  top.warnings := [];
   top.errors := q.lookupType.errors ++ tl.errors;
   
   top.errors <- case q.lookupType.typerep of
@@ -158,7 +151,6 @@ top::Type ::= tv::TypeVariable_t
   hack.env = top.env;
   
   top.typerep = hack.typerep;
-  top.warnings := [];
   top.errors := hack.errors;
 
   top.lexicalTypeVariables = [tv.lexeme];
@@ -172,7 +164,6 @@ top::Type ::= 'Decorated' t::Type
 
   top.typerep = decoratedTypeExp(t.typerep);
 
-  top.warnings := [];
   top.errors := t.errors;
   
   top.errors <- case t.typerep of
@@ -190,7 +181,6 @@ top::Type ::= 'Production' '(' sig::Signature ')'
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors := sig.errors;
-  top.warnings := sig.warnings;
 
   top.typerep = productionTypeExp(head(sig.types), tail(sig.types));
 
@@ -204,7 +194,6 @@ top::Type ::= 'Function' '(' sig::Signature ')'
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors := sig.errors;
-  top.warnings := sig.warnings;
 
   top.typerep = functionTypeExp(head(sig.types), tail(sig.types));
 
@@ -218,7 +207,6 @@ top::Signature ::= t::Type '::='
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := t.errors;
-  top.warnings := [];
 
   top.types = [t.typerep];
 
@@ -232,7 +220,6 @@ top::Signature ::= t::Type '::=' list::TypeList
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := t.errors ++ list.errors;
-  top.warnings := [];
 
   top.types = [t.typerep] ++ list.types;
 
@@ -247,7 +234,6 @@ top::TypeList ::=
   top.pp = "";
   top.location = loc(top.file, -1, -1);
   top.errors := [];
-  top.warnings := [];
   top.types = [];
   top.lexicalTypeVariables = [];
 }
@@ -260,7 +246,6 @@ top::TypeList ::= t::Type
   top.location = t.location;
 
   top.errors := t.errors;
-  top.warnings := [];
 
   top.types = [t.typerep];
 
@@ -274,7 +259,6 @@ top::TypeList ::= t::Type list::TypeList
   top.location = t.location;
 
   top.errors := t.errors ++ list.errors;
-  top.warnings := [];
 
   top.types = [t.typerep] ++ list.types;
 

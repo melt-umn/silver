@@ -59,7 +59,6 @@ top::Expr ::= q::Decorated QName
   top.errors := if top.actionCodeType.isSemanticBlock
                 then [err(top.location, "References to parser attributes can only be made in action blocks")]
                 else [];
-  top.warnings := [];
 
   top.typerep = q.lookupValue.typerep;
 
@@ -80,7 +79,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
                (if top.actionCodeType.isSemanticBlock
                 then [err(val.location, "Assignment to parser attributes only permitted in parser action blocks")]
                 else []);
-  top.warnings := [];
 
   e.expected = expected_type(val.lookupValue.typerep);  
 

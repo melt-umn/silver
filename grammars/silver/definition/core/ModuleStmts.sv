@@ -29,7 +29,6 @@ top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String]
 
   top.defs = d4;		  
   top.errors := med.errors;
-  top.warnings := [];
 }
 
 -- recurses through exportedGrammars, grabbing all definitions
@@ -73,7 +72,6 @@ top::ImportStmt ::= 'import' m::ModuleExpr ';'
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors := m.errors;
-  top.warnings := m.warnings;
   top.moduleNames = m.moduleNames;
   top.importedDefs = m.defs;
 }
@@ -85,7 +83,6 @@ top::ImportStmts ::=
   top.location = loc(top.file, -1,-1);
 
   top.errors := [];
-  top.warnings := [];
 
   top.moduleNames = [];
   top.importedDefs = emptyDefs();
@@ -98,7 +95,6 @@ top::ImportStmts ::= im::ImportStmt
   top.location = im.location;
 
   top.errors := im.errors;
-  top.warnings := im.warnings;
 
   top.moduleNames = im.moduleNames;
   top.importedDefs = im.importedDefs;
@@ -111,7 +107,6 @@ top::ImportStmts ::= h::ImportStmt t::ImportStmts
   top.location = h.location;
 
   top.errors := h.errors ++ t.errors;
-  top.warnings := t.warnings ++ t.warnings;
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
   top.importedDefs = appendDefs(h.importedDefs, t.importedDefs);
@@ -124,7 +119,6 @@ top::ImportStmts ::= h::ImportStmts t::ImportStmts
   top.location = h.location;
 
   top.errors := h.errors ++ t.errors;
-  top.warnings := t.warnings ++ t.warnings;
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
   top.importedDefs = appendDefs(h.importedDefs, t.importedDefs);
@@ -140,7 +134,6 @@ top::ModuleStmts ::=
   top.location = loc(top.file, -1,-1);
 
   top.errors := [];
-  top.warnings := [];
 
   top.moduleNames = [];
   top.importedDefs = emptyDefs();
@@ -155,7 +148,6 @@ top::ModuleStmts ::= m::ModuleStmt
   top.location = m.location;
 
   top.errors := m.errors;
-  top.warnings := m.warnings;
 
   top.moduleNames = m.moduleNames;
   top.importedDefs = m.importedDefs;
@@ -170,7 +162,6 @@ top::ModuleStmts ::= h::ModuleStmt t::ModuleStmts
   top.location = h.location;
 
   top.errors := h.errors ++ t.errors;
-  top.warnings := h.warnings ++ t.warnings;
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
   top.importedDefs = appendDefs(h.importedDefs, t.importedDefs);
@@ -184,7 +175,6 @@ top::ModuleStmt ::= 'imports' m::ModuleExpr ';'{
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors := m.errors;
-  top.warnings := m.warnings;
 
   top.moduleNames = m.moduleNames;
   top.importedDefs = m.defs;
@@ -198,7 +188,6 @@ top::ModuleStmt ::= 'exports' m::ModuleName ';'{
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors := m.errors;
-  top.warnings := m.warnings;
 
   top.moduleNames = m.moduleNames;
   top.importedDefs = emptyDefs();
@@ -213,7 +202,6 @@ top::ModuleStmt ::= 'build' m::QName 'with' c::QName ';'{
 
   -- TODO: should check to make sure these grammars are found, somehow?
   top.errors := [];
-  top.warnings := [];
 
   top.moduleNames = [];
   top.importedDefs = emptyDefs();
@@ -235,7 +223,6 @@ top::ModuleName ::= pkg::QName
   production attribute m :: Decorated Module;
   m = decorate module(top.compiledGrammars, pkg, "", [], [], []) with {grammarName = top.grammarName;};
 
-  top.warnings := m.warnings;
   top.errors := m.errors;
   top.defs = m.defs;
 }
@@ -250,7 +237,6 @@ top::ModuleExpr ::= pkg::QName
   production attribute m :: Decorated Module;
   m = decorate module(top.compiledGrammars, pkg, "", [], [], []) with {grammarName = top.grammarName;};
 
-  top.warnings := m.warnings;
   top.errors := m.errors;
   top.defs = m.defs;
 }
@@ -265,7 +251,6 @@ top::ModuleExpr ::= pkg::QName 'with' wc::WithElems
   production attribute m :: Decorated Module;
   m = decorate module(top.compiledGrammars, pkg, "", [], [], wc.envMaps) with {grammarName = top.grammarName;};
 
-  top.warnings := m.warnings;
   top.errors := m.errors;
   top.defs = m.defs;
 }
@@ -280,7 +265,6 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList
   production attribute m :: Decorated Module;
   m = decorate module(top.compiledGrammars, pkg, "", ns.names, [], []) with {grammarName = top.grammarName;};
 
-  top.warnings := m.warnings;
   top.errors := m.errors;
   top.defs = m.defs;
 }
@@ -295,7 +279,6 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList 'with' wc::WithElems
   production attribute m :: Decorated Module;
   m = decorate module(top.compiledGrammars, pkg, "", ns.names, [], wc.envMaps) with {grammarName = top.grammarName;};
 
-  top.warnings := m.warnings;
   top.errors := m.errors;
   top.defs = m.defs;
 }
@@ -310,7 +293,6 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList
   production attribute m :: Decorated Module;
   m = decorate module(top.compiledGrammars, pkg, "", [], ns.names, []) with {grammarName = top.grammarName;};
 
-  top.warnings := m.warnings;
   top.errors := m.errors;
   top.defs = m.defs;
 }
@@ -325,7 +307,6 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList 'with' wc::WithElems
   production attribute m :: Decorated Module;
   m = decorate module(top.compiledGrammars, pkg, "", [], ns.names, wc.envMaps) with {grammarName = top.grammarName;};
 
-  top.warnings := m.warnings;
   top.errors := m.errors;
   top.defs = m.defs;
 }
@@ -340,7 +321,6 @@ top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
   production attribute m :: Decorated Module;
   m = decorate module(top.compiledGrammars, pkg1, pkg2.name, [], [], []) with {grammarName = top.grammarName;};
 
-  top.warnings := m.warnings;
   top.errors := m.errors;
   top.defs = m.defs;
 }

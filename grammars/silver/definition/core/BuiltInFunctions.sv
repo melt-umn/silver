@@ -20,7 +20,6 @@ top::Expr ::= e::Decorated Expr
 {
   top.location = e.location;
   top.errors := e.errors;
-  top.warnings := [];
   top.typerep = errorType();
 }
 
@@ -28,7 +27,6 @@ abstract production stringLength
 top::Expr ::= e::Decorated Expr
 {
   top.errors := e.errors;
-  top.warnings := [];
   top.typerep = intTypeExp();
 }
 
@@ -39,7 +37,6 @@ top::Expr ::= 'error' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [];
   top.typerep = errorType(); -- TODO: or put it here legit?
 }
 
@@ -50,7 +47,6 @@ top::Expr ::= 'toInt' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [];
   top.typerep = intTypeExp();
 }
 
@@ -61,7 +57,6 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [];
   top.typerep = floatTypeExp();
 }
 
@@ -72,7 +67,6 @@ top::Expr ::= 'toString' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [];
   top.typerep = stringTypeExp();
 }
 
@@ -83,7 +77,6 @@ top::Expr ::= 'new' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.warnings := [];
   top.typerep = e.typerep.decoratedType;
 
   e.expected = expected_decorated();
@@ -96,7 +89,6 @@ top::Expr ::= 'terminal' '(' t::Type ',' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := t.errors ++ e.errors;
-  top.warnings := [];
   top.typerep = t.typerep;
 }
 
@@ -107,7 +99,6 @@ top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := t.errors ++ e1.errors ++ e2.errors ++ e3.errors;
-  top.warnings := [];
   top.typerep = t.typerep;
 }
 
@@ -118,6 +109,5 @@ top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := t.errors ++ e1.errors ++ e2.errors;
-  top.warnings := [];
   top.typerep = t.typerep;
 }

@@ -50,7 +50,7 @@ top::ProductionBody ::= stmts::ProductionStmts
   top.productionAttributes = stmts.productionAttributes;
 
   top.errors := stmts.errors;
-  top.warnings := [];
+  top.warnings := stmts.warnings;
 }
 
 abstract production productionStmtsNone
@@ -76,7 +76,7 @@ top::ProductionStmts ::= stmt::ProductionStmt
  
   top.defs = stmt.defs;
   top.errors := stmt.errors;
-  top.warnings := [];
+  top.warnings := stmt.warnings;
 }
 
 concrete production productionStmtsCons
@@ -88,7 +88,7 @@ top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
 
   top.defs = appendDefs(h.defs, t.defs);
   top.errors := h.errors ++ t.errors;
-  top.warnings := [];
+  top.warnings := h.warnings ++ t.warnings;
 }
 
 abstract production productionStmtsAppend
@@ -101,7 +101,7 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
   top.productionAttributes = appendDefs(h.productionAttributes, t.productionAttributes);
 
   top.errors := h.errors ++ t.errors;
-  top.warnings := [];
+  top.warnings := h.warnings ++ t.warnings;
 }
 
 concrete production returnDef
@@ -220,7 +220,6 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := lhs.errors ++ e.errors;
-  top.warnings := [];
 
   e.expected = expected_type(lhs.typerep);
 }
@@ -231,7 +230,6 @@ top::ForwardInhs ::= lhs::ForwardInh
   top.pp = lhs.pp;
   top.location = lhs.location;
   top.errors := lhs.errors;
-  top.warnings := [];
 }
 
 concrete production forwardInhsCons
@@ -240,7 +238,6 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
   top.pp = lhs.pp ++ " " ++ rhs.pp;
   top.location = lhs.location;
   top.errors := lhs.errors ++ rhs.errors;
-  top.warnings := [];
 }
 
 concrete production forwardLhsExpr
@@ -253,7 +250,6 @@ top::ForwardLHSExpr ::= q::QName
   occursCheck = occursCheckQName(q, top.signature.outputElement.typerep);
 
   top.errors := q.lookupAttribute.errors ++ occursCheck.errors;
-  top.warnings := [];
   top.typerep = occursCheck.typerep;
 }
 
@@ -264,7 +260,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QName '=' e::Expr ';'
   top.location = loc(top.file, $4.line, $4.column);
 
   top.errors <- attr.lookupAttribute.errors;
-  top.warnings := [];
 
   top.productionAttributes = emptyDefs();
   top.defs = emptyDefs();
@@ -282,6 +277,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 
   e.expected = expected_type(attr.lookupAttribute.typerep);
   
+  top.warnings := [];
   top.errors := e.errors;
   -- no special error message, as the only way to get here is via bad lookup
   -- also, don't go into dl, since we don't have an inh/syn to give it.
@@ -302,6 +298,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   e.expected = expected_type(occursCheck.typerep);
   dl.isSynthesizedDefinition = true;
   
+  top.warnings := [];
   top.errors := dl.errors ++ e.errors ++ occursCheck.errors;
 }
 
@@ -317,6 +314,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   e.expected = expected_type(occursCheck.typerep);
   dl.isSynthesizedDefinition = false;
   
+  top.warnings := [];
   top.errors := dl.errors ++ e.errors ++ occursCheck.errors;
 }
 

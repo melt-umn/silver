@@ -86,19 +86,19 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.condBuild = ms.condBuild;
 
   top.errors := gdcl.errors ++ ms.errors ++ allImports.errors ++ ags.errors;
-  top.warnings := gdcl.warnings ++ ms.warnings ++ allImports.warnings ++ ags.warnings;
+  top.warnings := ags.warnings;
   
   -- Entire grammar is in one, local, scope. Then file imports. Then grammar-wide imports.
   ags.env = appendEnv(top.env, newScopeEnv(allImports.importedDefs, top.globalImports));
 }
 
 abstract production grammarDcl
-top::GrammarDcl ::= s::String{
+top::GrammarDcl ::= s::String
+{
   top.pp = "grammar " ++ s;
   top.location = loc(top.file, 1, 1);
   top.declaredName = s;
   top.errors := if s == top.grammarName then [] else [err(top.location, "Grammar declaration is incorrect: " ++ s)];
-  top.warnings := [];
 }
 
 concrete production grammarDcl_c

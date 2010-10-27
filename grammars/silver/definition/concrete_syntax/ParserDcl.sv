@@ -1,7 +1,7 @@
 grammar silver:definition:concrete_syntax;
 
-nonterminal ParserDcl with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, defs, pp, parserDcls, fullName, typerep, nonTerminalDcls, terminalDcls, ruleDcls, env;
-nonterminal ModuleList with location, grammarName, file, moduleNames, compiledGrammars, warnings, errors, pp, nonTerminalDcls, terminalDcls, ruleDcls;
+nonterminal ParserDcl with location, grammarName, file, moduleNames, compiledGrammars, errors, defs, pp, parserDcls, fullName, typerep, nonTerminalDcls, terminalDcls, ruleDcls, env;
+nonterminal ModuleList with location, grammarName, file, moduleNames, compiledGrammars, errors, pp, nonTerminalDcls, terminalDcls, ruleDcls;
 
 attribute ruleDcls, terminalDcls, nonTerminalDcls occurs on ModuleName, Module, ModuleExportedDefs;
 
@@ -14,11 +14,12 @@ top::Name ::= /parser/
 }
 
 concrete production parserDcl
-top::AGDcl ::= p::ParserDcl{
+top::AGDcl ::= p::ParserDcl
+{
   top.location = p.location;
   top.pp = p.pp;
   top.errors := p.errors;
-  top.warnings := p.warnings;
+  top.warnings := [];
 
   top.defs = p.defs;
   top.parserDcls = p.parserDcls;
@@ -30,12 +31,12 @@ top::AGDcl ::= p::ParserDcl{
 }
 
 concrete production parserStmt
-top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
+top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
+{
   top.pp = "parser " ++ m.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors := t.errors ++ m.errors;
-  top.warnings := t.warnings ++ m.warnings;
 
   top.fullName = top.grammarName ++ ":" ++ n.name;
   top.typerep = t.typerep;
@@ -66,7 +67,6 @@ top::ModuleList ::= c1::ModuleName ';'
   top.terminalDcls = c1.terminalDcls;
   top.nonTerminalDcls = c1.nonTerminalDcls;
 
-  top.warnings := c1.warnings;
   top.errors := c1.errors;
 }
 
@@ -81,7 +81,6 @@ top::ModuleList ::= c1::ModuleName ';' c2::ModuleList
   top.terminalDcls = c1.terminalDcls ++ c2.terminalDcls;
   top.nonTerminalDcls = c1.nonTerminalDcls ++ c2.nonTerminalDcls;
 
-  top.warnings := c1.warnings ++ c2.warnings;
   top.errors := c1.errors ++ c2.errors;
 }
 
