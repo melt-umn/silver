@@ -1,12 +1,12 @@
 grammar core;
 
 --synthesized attribute io :: IO;
-synthesized attribute ioval<`a> :: `a;
+synthesized attribute ioval<a> :: a;
 
-nonterminal IOVal<`a> with io, ioval<`a>;
+nonterminal IOVal<a> with io, ioval<a>;
 
 abstract production ioval
-top::IOVal<`a> ::= i::IO v::`a
+top::IOVal<a> ::= i::IO v::a
 {
   top.io = i;
   top.ioval = v;
@@ -140,7 +140,7 @@ Integer ::=
 }
 
 function unsafeTrace
-`a ::= val::`a act::IO
+a ::= val::a act::IO
 {
   return error("Not Yet Implemented: unsafeTrace");
 } foreign {

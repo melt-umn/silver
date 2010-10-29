@@ -3,6 +3,7 @@ grammar silver:definition:core;
 nonterminal Root with location, grammarName, impliedName, file, declaredName, moduleNames, importedDefs, exportedGrammars, condBuild, warnings, errors, compiledGrammars, env, globalImports, defs, pp;
 
 nonterminal QName with name, location, grammarName, file, errors, env, defs, pp;
+nonterminal QNameUpper with name, location, grammarName, file, errors, env, defs, pp;
 nonterminal Name with name, location, grammarName, file, errors, env, defs, pp;
 nonterminal NameTick with name, location, grammarName, file, errors, env, defs, pp;
 nonterminal NameTickTick with name, location, grammarName, file, errors, env, defs, pp;

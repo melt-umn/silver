@@ -46,11 +46,21 @@
       </include>
     </context>
 
-   <context id="char" style-ref="char">
+   <context id="char" style-ref="char" end-at-line-end="true">
       <start>'</start>
       <end>'</end>
       <include>
         <context id="escaped-character-char" style-ref="escaped-character">
+          <match>\%{escaped-character}</match>
+        </context>
+      </include>
+   </context>
+
+   <context id="regex" style-ref="char" end-at-line-end="true">
+      <start>/</start>
+      <end>/</end>
+      <include>
+        <context id="escaped-character-regex" style-ref="escaped-character">
           <match>\%{escaped-character}</match>
         </context>
       </include>
@@ -160,7 +170,7 @@
 <keyword>in</keyword>
 <keyword>end</keyword>
 <keyword>decorate</keyword>
-<keyword>with</keyword><!-- I'm ignoring when it's in an import line... -->
+<keyword>with</keyword><!-- BUG: with can be here (expr), in a grammar decl or a nonterminal decl, too... -->
 <keyword>else</keyword>
 <keyword>forward</keyword>
 <keyword>if</keyword>
@@ -190,6 +200,7 @@
       <include>
         <context ref="string"/>
         <context ref="char"/>
+        <context ref="regex"/>
         <context ref="dollar-ref"/>
         <context ref="line-comment"/>
         <context ref="block-comment"/>

@@ -19,13 +19,13 @@ terminal LexerClassTerm 'lexer_class' lexer classes {C_1};
 terminal ParseAttrTerm 'parse_attr' lexer classes {C_1};
 
 concrete production aDclInfoLexerClass
-top::aDclInfo ::= 'lexer_class' '(' l::aLocation ',' fn::Name ',' s::aNames ',' d::aNames ')'
+top::IDclInfo ::= 'lexer_class' '(' l::ILocation ',' fn::Name ',' s::INames ',' d::INames ')'
 {
   top.defs = addLexerClassDcl(top.grammarName, l.location, fn.aname, s.names, d.names, emptyDefs());
 }
 
 concrete production aDclInfoParseAttr
-top::aDclInfo ::= 'parse_attr' '(' l::aLocation ',' fn::Name ',' t::aTypeRep ')'
+top::IDclInfo ::= 'parse_attr' '(' l::ILocation ',' fn::Name ',' t::ITypeRep ')'
 {
   top.defs = addParserAttrDcl(top.grammarName, l.location, fn.aname, t.typerep, emptyDefs());
 }
@@ -33,31 +33,32 @@ top::aDclInfo ::= 'parse_attr' '(' l::aLocation ',' fn::Name ',' t::aTypeRep ')'
 --------------------------------------------------------------------------------
 -- RootSpec 
 
-attribute disambiguationGroupDcls occurs on aRootSpecParts, aRootSpecPart;
-attribute parserAttrDcls occurs on aRootSpecParts, aRootSpecPart;
+attribute disambiguationGroupDcls occurs on IRootSpecParts, IRootSpecPart;
+attribute parserAttrDcls occurs on IRootSpecParts, IRootSpecPart;
+
 aspect production parserRootSpec
-top::RootSpec ::= p::aRootSpecParts _
+top::RootSpec ::= p::IRootSpecParts _
 {
   top.disambiguationGroupDcls = p.disambiguationGroupDcls;
   top.parserAttrDcls = p.parserAttrDcls;
 }
 
 aspect production aRoot1
-top::aRootSpecParts ::= r::aRootSpecPart
+top::IRootSpecParts ::= r::IRootSpecPart
 {
   top.disambiguationGroupDcls = r.disambiguationGroupDcls;
   top.parserAttrDcls = r.parserAttrDcls;
 }
 
 aspect production aRoot2
-top::aRootSpecParts ::= r1::aRootSpecPart r2::aRootSpecParts
+top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
 {
   top.disambiguationGroupDcls = r1.disambiguationGroupDcls ++ r2.disambiguationGroupDcls;
   top.parserAttrDcls = r1.parserAttrDcls ++ r2.parserAttrDcls;
 }
 
 aspect production aRootSpecDefault
-top::aRootSpecPart ::= {
+top::IRootSpecPart ::= {
   top.disambiguationGroupDcls = [];
   top.parserAttrDcls = [];
 }
@@ -75,7 +76,7 @@ String ::= s::String
 }
 
 concrete production aDisambiguationGroup
-top::aRootSpecPart ::= 'disambiguate' '[' n::aNames ',' s::EscapedStringTerm ']'
+top::IRootSpecPart ::= 'disambiguate' '[' n::INames ',' s::EscapedStringTerm ']'
 {
   top.disambiguationGroupDcls = [disambiguationGroupSpec(n.names, decodeEscapedStringTerm(s.lexeme))];
   
@@ -83,7 +84,7 @@ top::aRootSpecPart ::= 'disambiguate' '[' n::aNames ',' s::EscapedStringTerm ']'
 }
 
 concrete production aParserAttribute
-top::aRootSpecPart ::= 'parse_attr' '[' n::Name ',' t::aTypeRep ',' s::EscapedStringTerm ']'
+top::IRootSpecPart ::= 'parse_attr' '[' n::Name ',' t::ITypeRep ',' s::EscapedStringTerm ']'
 {
   top.parserAttrDcls = [parserAttrSpec(n.aname, t.typerep, decodeEscapedStringTerm(s.lexeme))];
   
@@ -99,22 +100,22 @@ terminal ActionTerm 'action' lexer classes {C_1};
 terminal LayoutTerm 'layout' lexer classes {C_1};
 
 concrete production aTerminalModifierSpecLexerClasses
-top::aTerminalModifierSpec ::= 'lexer_class' n::aNames {
+top::ITerminalModifierSpec ::= 'lexer_class' n::INames {
   top.terminalModifiers = [lexerClassesTerminalModifierSpec(n.names)];
 }
 
 concrete production aTerminalModifierSpecSubmits
-top::aTerminalModifierSpec ::= 'submits' n::aNames {
+top::ITerminalModifierSpec ::= 'submits' n::INames {
   top.terminalModifiers = [submitsToTerminalModifierSpec(n.names)];
 }
 
 concrete production aTerminalModifierSpecDominates
-top::aTerminalModifierSpec ::= 'dominates' n::aNames {
+top::ITerminalModifierSpec ::= 'dominates' n::INames {
   top.terminalModifiers = [dominatesTerminalModifierSpec(n.names)];
 }
 
 concrete production aTerminalModifierSpecAction
-top::aTerminalModifierSpec ::= 'action' s::EscapedStringTerm {
+top::ITerminalModifierSpec ::= 'action' s::EscapedStringTerm {
   top.terminalModifiers = [actionCodeTerminalModifierSpec(decodeEscapedStringTerm(s.lexeme))];
 }
 
@@ -122,12 +123,12 @@ top::aTerminalModifierSpec ::= 'action' s::EscapedStringTerm {
 -- ProductionModifier
 
 concrete production aProductionModifierSpecAction
-top::aProductionModifierSpec ::= 'action' s::EscapedStringTerm {
+top::IProductionModifierSpec ::= 'action' s::EscapedStringTerm {
   top.productionModifiers = [actionProductionModifierSpec(decodeEscapedStringTerm(s.lexeme))];
 }
 
 concrete production aProductionModifierSpecLayout
-top::aProductionModifierSpec ::= 'layout' n::aNames {
+top::IProductionModifierSpec ::= 'layout' n::INames {
   top.productionModifiers = [layoutProductionModifierSpec(n.names)];
 }
 

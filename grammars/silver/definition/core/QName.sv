@@ -63,3 +63,27 @@ String ::= lst::[Decorated DclInfo]
               ++ printPossibilities(tail(lst));
 }
 
+
+---- Right now, this is only used for types:
+attribute lookupType occurs on QNameUpper;
+
+concrete production qNameUpperId
+top::QNameUpper ::= id::IdUpper_t
+{
+  top.name = id.lexeme;
+  top.pp = id.lexeme;
+  top.location = loc(top.file, id.line, id.column);
+  
+  top.lookupType = decorate customLookup("type", getTypeDcl, top.name, top.location) with { env = top.env; };
+}
+
+concrete production qNameUpperCons
+top::QNameUpper ::= id::Name ':' qn::QNameUpper
+{
+  top.name = id.name ++ ":" ++ qn.name;
+  top.pp = id.pp ++ ":" ++ qn.pp;
+  top.location = loc(top.file, $2.line, $2.column);
+  
+  top.lookupType = decorate customLookup("type", getTypeDcl, top.name, top.location) with { env = top.env; };
+}
+

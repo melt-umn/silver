@@ -90,7 +90,7 @@ function findAbbrevFor
 String ::= tv::TyVar  bv::[TyVar]
 {
   -- TODO: temporary while our type variables are ticked
-  return "'" ++ findAbbrevHelp(tv, bv, ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"]);
+  return findAbbrevHelp(tv, bv, ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"]);
 }
 
 function findAbbrevHelp

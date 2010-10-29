@@ -152,7 +152,7 @@ top::Expr ::= q::NameTick
   top.pp = q.pp;
   top.location = q.location;
 
-  forwards to baseExpr(qNameId(nameId(terminal(Id_t, q.name, q.location.line, q.location.column)))) with {
+  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, q.name, q.location.line, q.location.column)))) with {
     expected = expected_decorated();
   };
 }
@@ -163,7 +163,7 @@ top::Expr ::= q::NameTickTick
   top.pp = q.pp;
   top.location = q.location;
 
-  forwards to baseExpr(qNameId(nameId(terminal(Id_t, q.name, q.location.line, q.location.column)))) with {
+  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, q.name, q.location.line, q.location.column)))) with {
     expected = expected_undecorated();
   };
 }
@@ -171,7 +171,7 @@ top::Expr ::= q::NameTickTick
 concrete production concreteForwardExpr
 top::Expr ::= q::Forward_kwd
 {
-  forwards to baseExpr(qNameId(nameId(terminal(Id_t, "forward", q))));
+  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "forward", q))));
 }
 
 

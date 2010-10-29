@@ -54,5 +54,10 @@ top::AGDcl ::= id::Name tl::TypeList
        if length(getTypeDcl(fName, top.env)) > 1 
        then [err(top.location, "Type '" ++ fName ++ "' is already bound.")]
        else [];
+
+  top.errors <-
+       if isLower(substring(0,1,id.name))
+       then [err(id.location, "Types must be capitalized. Invalid nonterminal name " ++ id.name)]
+       else [];
 }
 

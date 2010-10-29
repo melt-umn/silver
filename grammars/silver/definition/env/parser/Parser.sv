@@ -11,19 +11,19 @@ import silver:definition:core only compiledGrammars, grammarName, location, env;
 lexer class C_0;
 lexer class C_1 dominates C_0;
 
-ignore terminal ws /[\ \n\t]+/ lexer classes {C_0};
+ignore terminal WS /[\ \n\t]+/ lexer classes {C_0};
 
-terminal lb    '[';
-terminal rb    ']';
-terminal comma ',';
-terminal lp    '(';
-terminal rp    ')';
+terminal LB_t    '[';
+terminal RB_t    ']';
+terminal Comma_t ',';
+terminal LParent_t    '(';
+terminal RParent_t    ')';
 terminal RegExprDelim '/' lexer classes {C_0};
 
-terminal sigturnstile '::=' ;
+terminal Sigturnstile '::=' ;
 
-terminal id /[\']([^\'\\]|[\\][\']|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\']/ lexer classes {C_0}; --'
-terminal number /\-?[0-9]+/ lexer classes {C_0};
+terminal Id_t /[\']([^\'\\]|[\\][\']|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\']/ lexer classes {C_0};
+terminal Num_t /\-?[0-9]+/ lexer classes {C_0};
 
 terminal DefaultTerm  'default' lexer classes {C_1};
 
@@ -49,7 +49,7 @@ terminal StringTerm      'string'    lexer classes {C_1};
 terminal BooleanTerm     'bool'      lexer classes {C_1};
 terminal DecoratedTerm   'decorated' lexer classes {C_1};
 terminal IOTerm          'io'        lexer classes {C_1};
-terminal tyvar /\'[A-Za-z]+/ lexer classes {C_1}; -- '
+terminal ITyVar /[A-Za-z]+/ lexer classes {C_0}; 
 
 -- signatures
 terminal SignatureTerm      'signature' lexer classes {C_1};
@@ -74,47 +74,47 @@ synthesized attribute tyvars :: [TyVar];
 
 {- The "uninteresting" plumbing of interface files: -}
 
-nonterminal aRootSpec with spec, compiledGrammars;
-nonterminal aRootSpecParts with defs, exportedGrammars, condBuild, declaredName, moduleNames, compiledGrammars, grammarName;
-nonterminal aDefs with defs, env, grammarName; -- including square brackets
-nonterminal aDefsInner with defs, env, grammarName; -- inside square brackets
-nonterminal aTypeReps with env, typereps, grammarName; -- including square brackets
-nonterminal aTypeRepsInner with env, typereps, grammarName; -- inside square brackets
+nonterminal IRootSpec with spec, compiledGrammars;
+nonterminal IRootSpecParts with defs, exportedGrammars, condBuild, declaredName, moduleNames, compiledGrammars, grammarName;
+nonterminal IDefs with defs, env, grammarName; -- including square brackets
+nonterminal IDefsInner with defs, env, grammarName; -- inside square brackets
+nonterminal ITypeReps with env, typereps, grammarName; -- including square brackets
+nonterminal ITypeRepsInner with env, typereps, grammarName; -- inside square brackets
 
 {- Extension points! -}
 
 {- Top-level elements of the interface file -}
-nonterminal aRootSpecPart with defs, exportedGrammars, condBuild, declaredName, moduleNames, compiledGrammars, grammarName;
+nonterminal IRootSpecPart with defs, exportedGrammars, condBuild, declaredName, moduleNames, compiledGrammars, grammarName;
 {- A DclInfo record -}
-nonterminal aDclInfo with defs, env, grammarName;
+nonterminal IDclInfo with defs, env, grammarName;
 {- A TypeExp record -}
-nonterminal aTypeRep with env, typerep, grammarName;
+nonterminal ITypeRep with env, typerep, grammarName;
 
 {- Utilities -}
-nonterminal aTyVarDcls with defs, tyvars;
- nonterminal aTyVarDclsInner with defs, tyvars;
-nonterminal aNamedSignature with signature, env, grammarName;
- nonterminal aNamedSignatureElement with element, env, grammarName;
- nonterminal aNamedSignatureElements with elements, env, grammarName;
- nonterminal aNamedSignatureElementsInner with elements, env, grammarName;
+nonterminal ITyVarDcls with defs, tyvars;
+ nonterminal ITyVarDclsInner with defs, tyvars;
+nonterminal INamedSignature with signature, env, grammarName;
+ nonterminal INamedSignatureElement with element, env, grammarName;
+ nonterminal INamedSignatureElements with elements, env, grammarName;
+ nonterminal INamedSignatureElementsInner with elements, env, grammarName;
 {- List of (single-quoted) names, inside brackets [] -}
-nonterminal aNames with names;
-nonterminal aNamesInner with names;
+nonterminal INames with names;
+nonterminal INamesInner with names;
 {- A (single-quoted) name -}
 nonterminal Name with aname;
 {- Location info (Used by dclinfos, usually) -}
-nonterminal aLocation with location;
+nonterminal ILocation with location;
 
 -- a few simple utilities
 
 concrete production quoted_name
-top::Name ::= i::id
+top::Name ::= i::Id_t
 {
   top.aname = substring(1, length(i.lexeme)-1, i.lexeme);
 }
 
 concrete production aLocationInfo
-top::aLocation ::= filename::Name ',' line::number ',' column::number
+top::ILocation ::= filename::Name ',' line::Num_t ',' column::Num_t
 {
   top.location = loc(filename.aname, toInt(line.lexeme), toInt(column.lexeme));
 }
@@ -122,7 +122,7 @@ top::aLocation ::= filename::Name ',' line::number ',' column::number
 -- Exposing the interface to the outside world
 
 abstract production parserRootSpec
-top::RootSpec ::= p::aRootSpecParts cg::[Decorated RootSpec]
+top::RootSpec ::= p::IRootSpecParts cg::[Decorated RootSpec]
 {
   p.compiledGrammars = cg;
   p.grammarName = p.declaredName;
@@ -142,12 +142,12 @@ top::RootSpec ::= p::aRootSpecParts cg::[Decorated RootSpec]
 --The Grammar 
 
 concrete production aRootFull
-top::aRootSpec ::= r::aRootSpecParts{
+top::IRootSpec ::= r::IRootSpecParts{
   top.spec = decorate parserRootSpec(r, top.compiledGrammars) with { };
 }
 
 concrete production aRoot1
-top::aRootSpecParts ::= r::aRootSpecPart{
+top::IRootSpecParts ::= r::IRootSpecPart{
   top.declaredName = r.declaredName; 
   top.defs = r.defs;
   top.moduleNames = [];
@@ -156,7 +156,7 @@ top::aRootSpecParts ::= r::aRootSpecPart{
 }
 
 concrete production aRoot2
-top::aRootSpecParts ::= r1::aRootSpecPart r2::aRootSpecParts{
+top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts{
   top.declaredName = if r1.declaredName == "" then r2.declaredName else r1.declaredName; 
   top.defs = appendDefs(r1.defs, r2.defs);
   top.moduleNames = r1.moduleNames ++ r2.moduleNames;
@@ -166,7 +166,7 @@ top::aRootSpecParts ::= r1::aRootSpecPart r2::aRootSpecParts{
 
 --The pieces
 abstract production aRootSpecDefault
-top::aRootSpecPart ::= {
+top::IRootSpecPart ::= {
   top.declaredName = "";
   top.moduleNames = [];
   top.defs = emptyDefs();
@@ -175,32 +175,32 @@ top::aRootSpecPart ::= {
 }
 
 concrete production aRootDeclaredName
-top::aRootSpecPart ::= 'declaredName' i::Name{
+top::IRootSpecPart ::= 'declaredName' i::Name{
   top.declaredName = i.aname;
   forwards to aRootSpecDefault();
 }
 
 concrete production aRootModuleNames
-top::aRootSpecPart ::= 'moduleNames' i::aNames{
+top::IRootSpecPart ::= 'moduleNames' i::INames{
   top.moduleNames = i.names;
   forwards to aRootSpecDefault();
 }
 
 concrete production aRootDefs
-top::aRootSpecPart ::= 'defs' i::aDefs{
+top::IRootSpecPart ::= 'defs' i::IDefs{
   top.defs = i.defs;
   i.env = emptyEnv();
   forwards to aRootSpecDefault();
 }
 
 concrete production aRootExportedGrammars
-top::aRootSpecPart ::= 'exportedGrammars' i::aNames{
+top::IRootSpecPart ::= 'exportedGrammars' i::INames{
   top.exportedGrammars = i.names;
   forwards to aRootSpecDefault();
 }
 
 concrete production aRootCondBuilds
-top::aRootSpecPart ::= 'condBuild' i::aNames{
+top::IRootSpecPart ::= 'condBuild' i::INames{
   top.condBuild = unfoldCB(i.names);
   forwards to aRootSpecDefault();
 }
@@ -213,116 +213,116 @@ function unfoldCB
 
 --The lists
 concrete production aDefsNone
-top::aDefs ::= '[' ']'
+top::IDefs ::= '[' ']'
 {
   top.defs = emptyDefs();
 }
 
 concrete production aDefsOne
-top::aDefs ::= '[' d::aDefsInner ']'
+top::IDefs ::= '[' d::IDefsInner ']'
 {
   top.defs = d.defs;
 }
 
 concrete production aDefsInnerOne
-top::aDefsInner ::= d::aDclInfo
+top::IDefsInner ::= d::IDclInfo
 {
   top.defs = d.defs;
 }
 
 concrete production aDefsInnerCons
-top::aDefsInner ::= d1::aDclInfo ',' d2::aDefsInner
+top::IDefsInner ::= d1::IDclInfo ',' d2::IDefsInner
 {
   top.defs = appendDefs(d1.defs, d2.defs);
 }
 
 concrete production aNamesNone
-top::aNames ::= '[' ']'
+top::INames ::= '[' ']'
 {
   top.names = [];
 }
 
 concrete production aNamesOne
-top::aNames ::= '[' d::aNamesInner ']'
+top::INames ::= '[' d::INamesInner ']'
 {
   top.names = d.names;
 }
 
 concrete production aNamesInnerOne
-top::aNamesInner ::= d::Name
+top::INamesInner ::= d::Name
 {
   top.names = [d.aname];
 }
 
 concrete production aNamesInnerCons
-top::aNamesInner ::= d1::Name ',' d2::aNamesInner
+top::INamesInner ::= d1::Name ',' d2::INamesInner
 {
   top.names = [d1.aname] ++ d2.names;
 }
 
 concrete production aTypeRepsNone
-top::aTypeReps ::= '[' ']'
+top::ITypeReps ::= '[' ']'
 {
   top.typereps = [];
 }
 
 concrete production aTypeRepsOne
-top::aTypeReps ::= '[' t::aTypeRepsInner ']'
+top::ITypeReps ::= '[' t::ITypeRepsInner ']'
 {
   top.typereps = t.typereps;
 }
 
 concrete production aTypeRepsInnerOne
-top::aTypeRepsInner ::= t::aTypeRep
+top::ITypeRepsInner ::= t::ITypeRep
 {
   top.typereps = [t.typerep];
 }
 
 concrete production aTypeRepsInnerCons
-top::aTypeRepsInner ::= t1::aTypeRep ',' t2::aTypeRepsInner
+top::ITypeRepsInner ::= t1::ITypeRep ',' t2::ITypeRepsInner
 {
   top.typereps = [t1.typerep] ++ t2.typereps;
 }
 
 concrete production aNamedSignatureElementsNone
-top::aNamedSignatureElements ::= '['']'
+top::INamedSignatureElements ::= '['']'
 {
   top.elements = [];
 }
 
 concrete production aNamedSignatureElementsOne
-top::aNamedSignatureElements ::= '[' t::aNamedSignatureElementsInner ']'
+top::INamedSignatureElements ::= '[' t::INamedSignatureElementsInner ']'
 {
   top.elements = t.elements;
 }
 
 concrete production aNamedSignatureElementsInnerOne
-top::aNamedSignatureElementsInner ::= t::aNamedSignatureElement
+top::INamedSignatureElementsInner ::= t::INamedSignatureElement
 {
   top.elements = [t.element];
 }
 
 concrete production aNamedSignatureElementsInnerCons
-top::aNamedSignatureElementsInner ::= t1::aNamedSignatureElement ',' t2::aNamedSignatureElementsInner
+top::INamedSignatureElementsInner ::= t1::INamedSignatureElement ',' t2::INamedSignatureElementsInner
 {
   top.elements = [t1.element] ++ t2.elements;
 }
 
 concrete production aTyVarDclsOne
-top::aTyVarDcls ::= '[' t::aTyVarDclsInner ']'
+top::ITyVarDcls ::= '[' t::ITyVarDclsInner ']'
 {
   top.defs = t.defs;
   top.tyvars = t.tyvars;
 }
 concrete production aTyVarDclsNone
-top::aTyVarDcls ::= '[' ']'
+top::ITyVarDcls ::= '[' ']'
 {
   top.defs = emptyDefs();
   top.tyvars = [];
 }
 
 concrete production aTyVarDclsInnerOne
-top::aTyVarDclsInner ::= t1::tyvar
+top::ITyVarDclsInner ::= t1::ITyVar
 {
   local attribute tv :: TyVar;
   tv = freshTyVar();
@@ -332,7 +332,7 @@ top::aTyVarDclsInner ::= t1::tyvar
 }
 
 concrete production aTyVarDclsInnerCons
-top::aTyVarDclsInner ::= t1::tyvar ',' t2::aTyVarDclsInner
+top::ITyVarDclsInner ::= t1::ITyVar ',' t2::ITyVarDclsInner
 {
   local attribute tv :: TyVar;
   tv = freshTyVar();
@@ -344,13 +344,13 @@ top::aTyVarDclsInner ::= t1::tyvar ',' t2::aTyVarDclsInner
 --The DclInfos
 
 concrete production aDclInfoLocal
-top::aDclInfo ::= 'loc' '(' l::aLocation ',' fn::Name ',' t::aTypeRep ')'
+top::IDclInfo ::= 'loc' '(' l::ILocation ',' fn::Name ',' t::ITypeRep ')'
 {
   top.defs = addLocalDcl(top.grammarName, l.location, fn.aname, t.typerep, emptyDefs());
 }
 
 concrete production aDclInfoProduction
-top::aDclInfo ::= 'prod' '(' l::aLocation ',' td::aTyVarDcls ',' s::aNamedSignature ')'
+top::IDclInfo ::= 'prod' '(' l::ILocation ',' td::ITyVarDcls ',' s::INamedSignature ')'
 {
   s.env = newScopeEnv(td.defs, top.env);
   
@@ -358,7 +358,7 @@ top::aDclInfo ::= 'prod' '(' l::aLocation ',' td::aTyVarDcls ',' s::aNamedSignat
 }
 
 concrete production aDclInfoFunction
-top::aDclInfo ::= 'fun' '(' l::aLocation ',' td::aTyVarDcls ',' s::aNamedSignature ')'
+top::IDclInfo ::= 'fun' '(' l::ILocation ',' td::ITyVarDcls ',' s::INamedSignature ')'
 {
   s.env = newScopeEnv(td.defs, top.env);
   
@@ -366,13 +366,13 @@ top::aDclInfo ::= 'fun' '(' l::aLocation ',' td::aTyVarDcls ',' s::aNamedSignatu
 }
 
 concrete production aDclInfoGlobalValue
-top::aDclInfo ::= 'glob' '(' l::aLocation ',' fn::Name ',' t::aTypeRep ')'
+top::IDclInfo ::= 'glob' '(' l::ILocation ',' fn::Name ',' t::ITypeRep ')'
 {
   top.defs = addGlobalValueDcl(top.grammarName, l.location, fn.aname, t.typerep, emptyDefs());
 }
 
 concrete production aDclInfoNonterminal
-top::aDclInfo ::= 'nt' '(' l::aLocation ',' s::Name ',' td::aTyVarDcls ',' t::aTypeRep ')'
+top::IDclInfo ::= 'nt' '(' l::ILocation ',' s::Name ',' td::ITyVarDcls ',' t::ITypeRep ')'
 {
   t.env = newScopeEnv(td.defs, top.env);
   
@@ -380,13 +380,13 @@ top::aDclInfo ::= 'nt' '(' l::aLocation ',' s::Name ',' td::aTyVarDcls ',' t::aT
 }
 
 concrete production aDclInfoTerminal
-top::aDclInfo ::= 'term' '(' l::aLocation ',' n::Name ',' '/' r::Regex_R '/' ')'
+top::IDclInfo ::= 'term' '(' l::ILocation ',' n::Name ',' '/' r::Regex_R '/' ')'
 {
   top.defs = addTermDcl(top.grammarName, l.location, n.aname, r, emptyDefs());
 }
 
 concrete production aDclInfoSynthesized
-top::aDclInfo ::= 'syn' '(' l::aLocation ',' fn::Name ',' td::aTyVarDcls ',' t::aTypeRep ')'
+top::IDclInfo ::= 'syn' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' t::ITypeRep ')'
 {
   t.env = newScopeEnv(td.defs, top.env);
   
@@ -394,7 +394,7 @@ top::aDclInfo ::= 'syn' '(' l::aLocation ',' fn::Name ',' td::aTyVarDcls ',' t::
 }
 
 concrete production aDclInfoInherited
-top::aDclInfo ::= 'inh' '(' l::aLocation ',' fn::Name ',' td::aTyVarDcls ',' t::aTypeRep ')'
+top::IDclInfo ::= 'inh' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' t::ITypeRep ')'
 {
   t.env = newScopeEnv(td.defs, top.env);
   
@@ -402,7 +402,7 @@ top::aDclInfo ::= 'inh' '(' l::aLocation ',' fn::Name ',' td::aTyVarDcls ',' t::
 }
 
 concrete production aDclInfoProdAttr
-top::aDclInfo ::= 'p@' '(' l::aLocation ',' fn::Name ',' td::aTyVarDcls ',' ot::aTypeRep '::=' its::aTypeReps ',' t::aDefs ')'
+top::IDclInfo ::= 'p@' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' ot::ITypeRep '::=' its::ITypeReps ',' t::IDefs ')'
 {
   ot.env = newScopeEnv(td.defs, top.env);
   its.env = ot.env;
@@ -412,13 +412,13 @@ top::aDclInfo ::= 'p@' '(' l::aLocation ',' fn::Name ',' td::aTyVarDcls ',' ot::
 }
 
 concrete production aDclInfoForward
-top::aDclInfo ::= 'fwd' '(' l::aLocation ',' t::aTypeRep ')'
+top::IDclInfo ::= 'fwd' '(' l::ILocation ',' t::ITypeRep ')'
 {
   top.defs = addForwardDcl(top.grammarName, l.location, t.typerep, emptyDefs());
 }
 
 concrete production aDclInfoOccurs
-top::aDclInfo ::= '@' '(' l::aLocation ',' fnnt::Name ',' fnat::Name ',' td::aTyVarDcls ',' ntt::aTypeRep ',' att::aTypeRep ')'
+top::IDclInfo ::= '@' '(' l::ILocation ',' fnnt::Name ',' fnat::Name ',' td::ITyVarDcls ',' ntt::ITypeRep ',' att::ITypeRep ')'
 {
   ntt.env = newScopeEnv(td.defs, top.env);
   att.env = ntt.env;
@@ -428,67 +428,67 @@ top::aDclInfo ::= '@' '(' l::aLocation ',' fnnt::Name ',' fnat::Name ',' td::aTy
 
 --The TypeReps
 concrete production aTypeRepInteger
-top::aTypeRep ::= 'int'
+top::ITypeRep ::= 'int'
 {
   top.typerep = intTypeExp();
 }
 
 concrete production aTypeRepFloat
-top::aTypeRep ::= 'float'
+top::ITypeRep ::= 'float'
 {
   top.typerep = floatTypeExp();
 }
 
 concrete production aTypeRepString
-top::aTypeRep ::= 'string'
+top::ITypeRep ::= 'string'
 {
   top.typerep = stringTypeExp();
 }
 
 concrete production aTypeRepBoolean
-top::aTypeRep ::= 'bool'
+top::ITypeRep ::= 'bool'
 {
   top.typerep = boolTypeExp();
 }
 
 concrete production aTypeRepTerminal
-top::aTypeRep ::= 'term' '(' n::Name ')'
+top::ITypeRep ::= 'term' '(' n::Name ')'
 {
   top.typerep = terminalTypeExp(n.aname);
 }
 
 concrete production aTypeRepNonterminal
-top::aTypeRep ::= 'nt' '(' n::Name ',' ty::aTypeReps ')'
+top::ITypeRep ::= 'nt' '(' n::Name ',' ty::ITypeReps ')'
 {
   top.typerep = nonterminalTypeExp(n.aname, ty.typereps);
 }
 
 concrete production aTypeRepDecorated
-top::aTypeRep ::= 'decorated' '(' t::aTypeRep ')'
+top::ITypeRep ::= 'decorated' '(' t::ITypeRep ')'
 {
   top.typerep = decoratedTypeExp(t.typerep);
 }
 
 concrete production aTypeRepProduction
-top::aTypeRep ::= 'prod' '(' it::aTypeReps ','  ot::aTypeRep ')'
+top::ITypeRep ::= 'prod' '(' it::ITypeReps ','  ot::ITypeRep ')'
 {
   top.typerep = productionTypeExp(ot.typerep, it.typereps);
 }
 
 concrete production aTypeRepFunction
-top::aTypeRep ::= 'fun' '(' it::aTypeReps ','  ot::aTypeRep ')'
+top::ITypeRep ::= 'fun' '(' it::ITypeReps ','  ot::ITypeRep ')'
 {
   top.typerep = functionTypeExp(ot.typerep, it.typereps);
 }
 
 concrete production aTypeRepIO
-top::aTypeRep ::= 'io'
+top::ITypeRep ::= 'io'
 {
   top.typerep = ioTypeExp();
 }
 
 concrete production aTypeRepVar
-top::aTypeRep ::= t::tyvar
+top::ITypeRep ::= t::ITyVar
 {
   local attribute res :: [Decorated DclInfo];
   res = getTypeDcl(t.lexeme, top.env);
@@ -503,25 +503,25 @@ top::aTypeRep ::= t::tyvar
 
 --The NamedSignatures
 concrete production aNamedSignatureDcl
-top::aNamedSignature ::= 'signature' '(' fn::Name ',' i::aNamedSignatureElements ',' o::aNamedSignatureElement ')'
+top::INamedSignature ::= 'signature' '(' fn::Name ',' i::INamedSignatureElements ',' o::INamedSignatureElement ')'
 {
   top.signature = namedSignatureDcl(fn.aname, i.elements, o.element);
 }
 
 concrete production aNamedSignatureDefault
-top::aNamedSignature ::= 'signature'
+top::INamedSignature ::= 'signature'
 { -- TODO: maybe remove this?
   top.signature = decorate namedSignatureDefault() with {};
 }
 
 concrete production aNamedSignatureElementDcl
-top::aNamedSignatureElement ::= 'element' '(' n::Name ',' t::aTypeRep ')'
+top::INamedSignatureElement ::= 'element' '(' n::Name ',' t::ITypeRep ')'
 {
   top.element = namedSignatureElement(n.aname, t.typerep);
 }
 
 concrete production aNamedSignatureElementDclDefault
-top::aNamedSignatureElement ::= 'element'
+top::INamedSignatureElement ::= 'element'
 { -- TODO: remove this?
   top.element = decorate namedSignatureElementDefault() with {};
 }

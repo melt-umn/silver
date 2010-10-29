@@ -137,10 +137,10 @@ abstract production occursCheckQName
 top::OccursCheck ::= at::Decorated QName  ntty::TypeExp
 {
   local attribute occursCheck :: [Decorated DclInfo];
-  occursCheck = getOccursDcl(at.lookupAttribute.fullName, ntty.typeName, at.env); -- hehe cheating to get env! :) Must be decorated!
+  occursCheck = getOccursDcl(at.lookupAttribute.fullName, ntty.typeName, at.env); -- cheating to get env! :) Must be decorated!
 
   top.errors := if null(at.lookupAttribute.errors) && null(occursCheck)
-                then [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ ntty.typeName ++ "'")]
+                then [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(ntty) ++ "'")]
                 else [];
   top.typerep = if null(at.lookupAttribute.errors) && null(top.errors)
                 then determineAttributeType(head(occursCheck), ntty)

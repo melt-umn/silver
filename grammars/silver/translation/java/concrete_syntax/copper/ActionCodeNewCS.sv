@@ -14,11 +14,11 @@ terminal Print_kwd 'print' lexer classes {KEYWORD};
 
 concrete production namePrint
 top::Name ::= 'print'
-{ forwards to nameId(terminal(Id_t, "print", $1)); }
+{ forwards to nameIdLower(terminal(IdLower_t, "print", $1)); }
 
 concrete production namePluck
 top::Name ::= 'pluck'
-{ forwards to nameId(terminal(Id_t, "pluck", $1)); }
+{ forwards to nameIdLower(terminal(IdLower_t, "pluck", $1)); }
 
 
 concrete production pluckDef

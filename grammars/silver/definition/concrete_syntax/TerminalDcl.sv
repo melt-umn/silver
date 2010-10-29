@@ -28,8 +28,13 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
   
   top.errors <-
         if length(getTypeDcl(fName, top.env)) > 1
-        then [err(top.location, "Type '" ++ fName ++ "' is already bound.")]
-        else [];	
+        then [err(id.location, "Type '" ++ fName ++ "' is already bound.")]
+        else [];
+  
+  top.errors <-
+        if isLower(substring(0,1,id.name))
+        then [err(id.location, "Types must be capitalized. Invalid terminal name " ++ id.name)]
+        else [];
 
   top.errors := t.errors ++ tm.errors;
   top.warnings := [];

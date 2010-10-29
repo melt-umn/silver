@@ -11,32 +11,32 @@ terminal LocColTerm 'loccol' lexer classes {C_1};
 terminal PlusPlusStr '++string' lexer classes {C_1};
 terminal PlusPlusLst '++list' lexer classes {C_1};
 
-nonterminal aOperation with operation;
+nonterminal IOperation with operation;
 
 concrete production operationNameFun
-top::aOperation ::= 'fun' '(' n::Name ')'
+top::IOperation ::= 'fun' '(' n::Name ')'
 {
   top.operation = functionOperation(n.aname);
 }
 concrete production operationNameProd
-top::aOperation ::= 'prod' '(' n::Name ')'
+top::IOperation ::= 'prod' '(' n::Name ')'
 {
   top.operation = productionOperation(n.aname);
 }
 concrete production operationPlusPlusStr
-top::aOperation ::= '++string'
+top::IOperation ::= '++string'
 {
   top.operation = plusPlusOperationString();
 }
 concrete production operationPlusPlusLst
-top::aOperation ::= '++list'
+top::IOperation ::= '++list'
 {
   top.operation = plusPlusOperationList();
 }
 
 
 concrete production aDclInfoSynthesizedCol
-top::aDclInfo ::= 'syncol' '(' l::aLocation ',' fn::Name ',' td::aTyVarDcls ',' t::aTypeRep ',' o::aOperation ')'
+top::IDclInfo ::= 'syncol' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' t::ITypeRep ',' o::IOperation ')'
 {
   t.env = newScopeEnv(td.defs, top.env);
   
@@ -44,7 +44,7 @@ top::aDclInfo ::= 'syncol' '(' l::aLocation ',' fn::Name ',' td::aTyVarDcls ',' 
 }
 
 concrete production aDclInfoInheritedCol
-top::aDclInfo ::= 'inhcol' '(' l::aLocation ',' fn::Name ',' td::aTyVarDcls ',' t::aTypeRep ',' o::aOperation ')'
+top::IDclInfo ::= 'inhcol' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' t::ITypeRep ',' o::IOperation ')'
 {
   t.env = newScopeEnv(td.defs, top.env);
   
@@ -52,7 +52,7 @@ top::aDclInfo ::= 'inhcol' '(' l::aLocation ',' fn::Name ',' td::aTyVarDcls ',' 
 }
 
 concrete production aDclInfoLocalCol
-top::aDclInfo ::= 'loccol' '(' l::aLocation ',' fn::Name ',' t::aTypeRep ',' o::aOperation ')'
+top::IDclInfo ::= 'loccol' '(' l::ILocation ',' fn::Name ',' t::ITypeRep ',' o::IOperation ')'
 {
   top.defs = addLocalColDcl(top.grammarName, l.location, fn.aname, t.typerep, o.operation, emptyDefs());
 }

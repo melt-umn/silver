@@ -96,7 +96,7 @@ top::Type ::= 'Boolean'
 }
 
 concrete production nominalType
-top::Type ::= q::QName
+top::Type ::= q::QNameUpper
 {
   top.pp = q.pp;
   top.location = q.location;
@@ -141,7 +141,7 @@ top::Type ::= q::QName '<' tl::TypeList '>'
 }
 
 concrete production typeVariableType
-top::Type ::= tv::TypeVariable_t
+top::Type ::= tv::IdLower_t
 {
   top.pp = tv.lexeme;
   top.location = loc(top.file, $1.line, $1.column);
