@@ -75,11 +75,13 @@ terminal Colon_t	':'  ;
 terminal Equal_t	'='  ;
 terminal UnderScore_t	'_'  ;
 
-ignore terminal comments /([\-][\-].*)/;
-ignore terminal blockComments /\{\-([^\-]|\-+[^\}\-])*\-+\}/; --this is a very careful regex. beware.
+ignore terminal Comments /([\-][\-].*)/;
+ignore terminal BlockComments /\{\-([^\-]|\-+[^\}\-])*\-+\}/; --this is a very careful regex. beware.
 ignore terminal WhiteSpace /[\n\t\ ]+/;
 
-terminal Id_t /[A-Za-z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
+terminal IdLower_t /[a-z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
+terminal IdUpper_t /[A-Z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
+
 terminal IdTick_t /[A-Za-z][A-Za-z0-9\_]*[\']/ lexer classes {IDENTIFIER};
 terminal IdTickTick_t /[A-Za-z][A-Za-z0-9\_]*[\'][\']/ lexer classes {IDENTIFIER};
 

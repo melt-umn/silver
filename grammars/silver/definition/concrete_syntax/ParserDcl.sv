@@ -10,7 +10,7 @@ terminal Parser_kwd /parser/ lexer classes {KEYWORD};
 concrete production nameIdParser
 top::Name ::= /parser/
 {
-  forwards to nameId(terminal(Id_t, "parser", $1));
+  forwards to nameIdLower(terminal(IdLower_t, "parser", $1));
 }
 
 concrete production parserDcl

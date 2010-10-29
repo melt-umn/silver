@@ -32,7 +32,7 @@ parser cParse::Command {
   silver:util:command;
 }
 
-parser iParse::aRootSpec {
+parser iParse::IRootSpec {
   silver:host:env;
 
   silver:modification:collection:env_parser;

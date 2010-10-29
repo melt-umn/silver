@@ -6,7 +6,7 @@ import silver:definition:env:parser;
 
 
 concrete production aTypeRepList
-top::aTypeRep ::= l::lb tr::aTypeRep r::rb {
+top::ITypeRep ::= '[' tr::ITypeRep ']' {
   top.typerep = listTypeExp(tr.typerep);
 }
 

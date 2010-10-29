@@ -14,10 +14,10 @@ terminal NonterminalsTerm 'nonterminals' lexer classes {C_1};
 terminal RulesTerm 'rules' lexer classes {C_1};
 terminal ParserTerm 'parser' lexer classes {C_1};
 
-attribute terminalDcls, nonTerminalDcls, ruleDcls, parserDcls occurs on aRootSpecParts, aRootSpecPart;
+attribute terminalDcls, nonTerminalDcls, ruleDcls, parserDcls occurs on IRootSpecParts, IRootSpecPart;
 
 aspect production parserRootSpec
-top::RootSpec ::= p::aRootSpecParts _{
+top::RootSpec ::= p::IRootSpecParts _{
   top.parserDcls = p.parserDcls;
   top.terminalDcls = p.terminalDcls;
   top.nonTerminalDcls = p.nonTerminalDcls;
@@ -25,7 +25,7 @@ top::RootSpec ::= p::aRootSpecParts _{
 }
 
 aspect production aRoot1
-top::aRootSpecParts ::= r::aRootSpecPart{
+top::IRootSpecParts ::= r::IRootSpecPart{
   top.terminalDcls = r.terminalDcls;
   top.nonTerminalDcls = r.nonTerminalDcls;
   top.ruleDcls = r.ruleDcls;
@@ -33,7 +33,7 @@ top::aRootSpecParts ::= r::aRootSpecPart{
 }
 
 aspect production aRoot2
-top::aRootSpecParts ::= r1::aRootSpecPart r2::aRootSpecParts{
+top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts{
   top.terminalDcls = r1.terminalDcls ++ r2.terminalDcls;
   top.nonTerminalDcls = r1.nonTerminalDcls ++ r2.nonTerminalDcls;
   top.ruleDcls = r1.ruleDcls ++ r2.ruleDcls;
@@ -41,7 +41,7 @@ top::aRootSpecParts ::= r1::aRootSpecPart r2::aRootSpecParts{
 }
 
 aspect production aRootSpecDefault
-top::aRootSpecPart ::= {
+top::IRootSpecPart ::= {
   top.terminalDcls = [];
   top.nonTerminalDcls = [];
   top.ruleDcls = [];
@@ -49,74 +49,74 @@ top::aRootSpecPart ::= {
 }
 
 concrete production aRootTerminals
-top::aRootSpecPart ::= t::TerminalsTerm s::aTerminalSpecs {
+top::IRootSpecPart ::= t::TerminalsTerm s::ITerminalSpecs {
   top.terminalDcls = s.terminalDcls;
   forwards to aRootSpecDefault();
 }
 
-nonterminal aTerminalSpecs with terminalDcls;
-nonterminal aTerminalSpec with terminalDcls;
-nonterminal aTerminalSpecInner with terminalDcls;
+nonterminal ITerminalSpecs with terminalDcls;
+nonterminal ITerminalSpec with terminalDcls;
+nonterminal ITerminalSpecInner with terminalDcls;
 
 concrete production aTerminalSpecNone
-top::aTerminalSpecs ::= '[' ']' {
+top::ITerminalSpecs ::= '[' ']' {
   top.terminalDcls = [];
 }
 
 concrete production aTerminalSpecOne
-top::aTerminalSpecs ::= '[' s::aTerminalSpecInner ']' {
+top::ITerminalSpecs ::= '[' s::ITerminalSpecInner ']' {
   top.terminalDcls = s.terminalDcls;
 }
 
 concrete production aTerminalSpecInnerOne
-top::aTerminalSpecInner ::= s::aTerminalSpec {
+top::ITerminalSpecInner ::= s::ITerminalSpec {
   top.terminalDcls = s.terminalDcls;
 }
 
 concrete production aTerminalSpecInnerCons
-top::aTerminalSpecInner ::= s1::aTerminalSpec ',' s2::aTerminalSpecInner {
+top::ITerminalSpecInner ::= s1::ITerminalSpec ',' s2::ITerminalSpecInner {
   top.terminalDcls = s1.terminalDcls ++ s2.terminalDcls;
 }
 
 concrete production aTerminalSpecDef
-top::aTerminalSpec ::= '(' n::Name ','  m::aTerminalModifiers ',' '/' r::Regex_R '/' ')'{
+top::ITerminalSpec ::= '(' n::Name ','  m::ITerminalModifiers ',' '/' r::Regex_R '/' ')'{
   top.terminalDcls = [terminalSpec(n.aname, m.terminalModifiers, r)];
 }
 
-nonterminal aTerminalModifiers with terminalModifiers;
-nonterminal aTerminalModifiersInner with terminalModifiers;
-nonterminal aTerminalModifierSpec with terminalModifiers;
+nonterminal ITerminalModifiers with terminalModifiers;
+nonterminal ITerminalModifiersInner with terminalModifiers;
+nonterminal ITerminalModifierSpec with terminalModifiers;
 
 concrete production aTerminalModifiersNone
-top::aTerminalModifiers ::= '[' ']' {
+top::ITerminalModifiers ::= '[' ']' {
   top.terminalModifiers = [];
 }
 
 concrete production aTerminalModifiersOne
-top::aTerminalModifiers ::= '[' d::aTerminalModifiersInner ']' {
+top::ITerminalModifiers ::= '[' d::ITerminalModifiersInner ']' {
   top.terminalModifiers = d.terminalModifiers;
 }
 
 concrete production aTerminalModifiersInnerOne
-top::aTerminalModifiersInner ::= d::aTerminalModifierSpec {
+top::ITerminalModifiersInner ::= d::ITerminalModifierSpec {
   top.terminalModifiers = d.terminalModifiers;
 }
 
 concrete production aTerminalModifierInnersCons
-top::aTerminalModifiersInner ::= d1::aTerminalModifierSpec ',' d2::aTerminalModifiersInner {
+top::ITerminalModifiersInner ::= d1::ITerminalModifierSpec ',' d2::ITerminalModifiersInner {
   top.terminalModifiers = d1.terminalModifiers ++ d2.terminalModifiers;
 }
 
 terminal IgnoreTerm 'ignore' lexer classes {C_1};
 concrete production aTerminalModifierSpecIgnore
-top::aTerminalModifierSpec ::= 'ignore' {
+top::ITerminalModifierSpec ::= 'ignore' {
   top.terminalModifiers = [ignoreTerminalModifierSpec()];
 }
 
 
 terminal PrecedenceTerm 'precedence' lexer classes {C_1};
 concrete production aTerminalModifierSpecPrecedence
-top::aTerminalModifierSpec ::= 'precedence' n::number {
+top::ITerminalModifierSpec ::= 'precedence' n::Num_t {
   top.terminalModifiers = [precedenceTerminalModifierSpec(toInt(n.lexeme))];
 }
 
@@ -125,17 +125,17 @@ terminal LeftTerm 'left' lexer classes {C_1};
 terminal RightTerm 'right' lexer classes {C_1};
 
 concrete production aTerminalModifierSpecAssocationLeft
-top::aTerminalModifierSpec ::= 'association' 'left' {
+top::ITerminalModifierSpec ::= 'association' 'left' {
   top.terminalModifiers = [associationTerminalModifierSpec("left")];
 }
 
 concrete production aTerminalModifierSpecAssocationRight
-top::aTerminalModifierSpec ::= 'association' 'right' {
+top::ITerminalModifierSpec ::= 'association' 'right' {
   top.terminalModifiers = [associationTerminalModifierSpec("right")];
 }
 
 concrete production aRootNonterminals
-top::aRootSpecPart ::= n::NonterminalsTerm ns::aNames{
+top::IRootSpecPart ::= n::NonterminalsTerm ns::INames{
   top.nonTerminalDcls = makeNonTerminals(ns.names);
   forwards to aRootSpecDefault();
 }
@@ -146,107 +146,107 @@ function makeNonTerminals
 }
 
 concrete production aRootRules
-top::aRootSpecPart ::= n::RulesTerm r::aRuleSpecs{
+top::IRootSpecPart ::= n::RulesTerm r::IRuleSpecs{
   top.ruleDcls = r.ruleDcls; 
   forwards to aRootSpecDefault();
 }
 
-nonterminal aRuleSpecs with ruleDcls;
-nonterminal aRuleSpecInner with ruleDcls;
-nonterminal aRuleSpec with ruleDcls;
+nonterminal IRuleSpecs with ruleDcls;
+nonterminal IRuleSpecInner with ruleDcls;
+nonterminal IRuleSpec with ruleDcls;
 
 concrete production aRuleSpecNone
-top::aRuleSpecs ::= '[' ']' {
+top::IRuleSpecs ::= '[' ']' {
   top.ruleDcls = [];
 }
 
 concrete production aRuleSpecOne
-top::aRuleSpecs ::= '[' s::aRuleSpecInner ']' {
+top::IRuleSpecs ::= '[' s::IRuleSpecInner ']' {
   top.ruleDcls = s.ruleDcls;
 }
 
 concrete production aRuleSpecInnerOne
-top::aRuleSpecInner ::= d::aRuleSpec {
+top::IRuleSpecInner ::= d::IRuleSpec {
   top.ruleDcls = d.ruleDcls;
 }
 
 concrete production aRuleSpecInnersCons
-top::aRuleSpecInner ::= d1::aRuleSpec ',' d2::aRuleSpecInner {
+top::IRuleSpecInner ::= d1::IRuleSpec ',' d2::IRuleSpecInner {
   top.ruleDcls = d1.ruleDcls ++ d2.ruleDcls;
 }
 
 concrete production aRuleSpecDef
-top::aRuleSpec ::= '(' n::Name ',' rhs::aRHSSpecs ')' {
+top::IRuleSpec ::= '(' n::Name ',' rhs::IRHSSpecs ')' {
   top.ruleDcls = [ruleSpec(n.aname, rhs.ruleRHSSpec)];
 }
 
-nonterminal aRHSSpecs with ruleRHSSpec;
-nonterminal aRHSSpecInner with ruleRHSSpec;
-nonterminal aRHSSpec with ruleRHSSpec;
+nonterminal IRHSSpecs with ruleRHSSpec;
+nonterminal IRHSSpecInner with ruleRHSSpec;
+nonterminal IRHSSpec with ruleRHSSpec;
 
 concrete production aRHSSpecNone
-top::aRHSSpecs ::= '[' ']' {
+top::IRHSSpecs ::= '[' ']' {
   top.ruleRHSSpec = [];
 }
 
 concrete production aRHSSpecOne
-top::aRHSSpecs ::= '[' s::aRHSSpecInner ']' {
+top::IRHSSpecs ::= '[' s::IRHSSpecInner ']' {
   top.ruleRHSSpec = s.ruleRHSSpec;
 }
 
 concrete production aRHSSpecInnerOne
-top::aRHSSpecInner ::= d::aRHSSpec {
+top::IRHSSpecInner ::= d::IRHSSpec {
   top.ruleRHSSpec = d.ruleRHSSpec;
 }
 
 concrete production aRHSSpecInnersCons
-top::aRHSSpecInner ::= d1::aRHSSpec ',' d2::aRHSSpecInner {
+top::IRHSSpecInner ::= d1::IRHSSpec ',' d2::IRHSSpecInner {
   top.ruleRHSSpec = d1.ruleRHSSpec ++ d2.ruleRHSSpec;
 }
 
 concrete production aRHSSpecDef
-top::aRHSSpec ::= '(' gn::Name ',' fn::Name ',' ns::aNames ',' pm::aProductionModifiers ')' {
+top::IRHSSpec ::= '(' gn::Name ',' fn::Name ',' ns::INames ',' pm::IProductionModifiers ')' {
   top.ruleRHSSpec = [rhsSpec(gn.aname, fn.aname, ns.names, pm.productionModifiers)];
 }
 
-nonterminal aProductionModifiers with productionModifiers;
-nonterminal aProductionModifiersInner with productionModifiers;
-nonterminal aProductionModifierSpec with productionModifiers;
+nonterminal IProductionModifiers with productionModifiers;
+nonterminal IProductionModifiersInner with productionModifiers;
+nonterminal IProductionModifierSpec with productionModifiers;
 
 concrete production aProductionModifiersNone
-top::aProductionModifiers ::= '[' ']' {
+top::IProductionModifiers ::= '[' ']' {
   top.productionModifiers = [];
 }
 
 concrete production aProductionModifiersOne
-top::aProductionModifiers ::= '[' d::aProductionModifiersInner ']' {
+top::IProductionModifiers ::= '[' d::IProductionModifiersInner ']' {
   top.productionModifiers = d.productionModifiers;
 }
 
 concrete production aProductionModifiersInnerOne
-top::aProductionModifiersInner ::= d::aProductionModifierSpec {
+top::IProductionModifiersInner ::= d::IProductionModifierSpec {
   top.productionModifiers = d.productionModifiers;
 }
 
 concrete production aProductionModifierInnersCons
-top::aProductionModifiersInner ::= d1::aProductionModifierSpec ',' d2::aProductionModifiersInner {
+top::IProductionModifiersInner ::= d1::IProductionModifierSpec ',' d2::IProductionModifiersInner {
   top.productionModifiers = d1.productionModifiers ++ d2.productionModifiers;
 }
 
 concrete production aProductionModifierSpecPrecedence
-top::aProductionModifierSpec ::= 'precedence' n::number {
+top::IProductionModifierSpec ::= 'precedence' n::Num_t {
   top.productionModifiers = [precedenceProductionModifierSpec(toInt(n.lexeme))];
 }
 
 terminal OperatorTerm 'operator' lexer classes {C_1};
 concrete production aProductionModifierSpecOperator
-top::aProductionModifierSpec ::= 'operator' n::Name {
+top::IProductionModifierSpec ::= 'operator' n::Name {
   top.productionModifiers = [operatorProductionModifierSpec(n.aname)];
 }
 
 
 concrete production aRootParsers
-top::aRootSpecPart ::= t::ParserTerm n::Name ',' s::Name ',' gs::aNames {
+top::IRootSpecPart ::= t::ParserTerm n::Name ',' s::Name ',' gs::INames {
   top.parserDcls = [parserSpecFromList(n.aname,s.aname,gs.names, top.compiledGrammars)];
   forwards to aRootSpecDefault();
 }

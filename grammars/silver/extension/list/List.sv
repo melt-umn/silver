@@ -16,7 +16,7 @@ top::Type ::= '[' te::Type ']'
   top.typerep = listTypeExp(te.typerep);
 
   forwards to refType('Decorated', 
-                   nominalTypeWithParams(qNameId(nameId(terminal(Id_t, "core:List"))),
+                   nominalTypeWithParams(qNameId(nameIdLower(terminal(IdLower_t, "core:List"))),
                                     '<', typeListSingle(te), '>'));
 }
 
@@ -27,7 +27,7 @@ top::Expr ::= '[' ']'
 {
   top.pp = "[]";
 
-  forwards to emptyProductionApp(baseExpr(qNameId(nameId(terminal (Id_t, "core:nil")))), '(',')');
+  forwards to emptyProductionApp(baseExpr(qNameId(nameIdLower(terminal (IdLower_t, "core:nil")))), '(',')');
 }
 
 -- TODO: BUG: '::' is HasType_t.  We probably want to have a different
@@ -37,7 +37,7 @@ top::Expr ::= h::Expr '::' t::Expr
 {
   top.pp = "(" ++ h.pp ++ " :: " ++ t.pp ++ ")" ;
   
-  forwards to productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "core:cons")))),
+  forwards to productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:cons")))),
                     '(', exprsCons(h, ',', exprsSingle(t)), ')');
 }
 
@@ -60,14 +60,14 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.listtrans = productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "core:cons", e.location.line, e.location.column)))),
+  top.listtrans = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:cons", e.location.line, e.location.column)))),
                     '(', exprsCons(e, ',', exprsSingle(emptyList('[',']'))), ')');
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr c::Comma_t e2::Exprs
 {
-  top.listtrans = productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "core:cons", e1.location.line, e1.location.column)))),
+  top.listtrans = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:cons", e1.location.line, e1.location.column)))),
                     '(', exprsCons(e1, ',', exprsSingle(e2.listtrans)), ')');
 }
 
@@ -78,7 +78,7 @@ top::Expr ::= e1::Expr '++' e2::Expr
 {
   -- TODO: THIS IS A COMPLETELY BUSTED WAY TO DO THIS, BUT WORKS FOR NOW. **FRAGILE**  probable BUGS
   handler <- if !(unify(e1.typerep, listTypeExp(errorType())).failure || unify(e2.typerep, listTypeExp(errorType())).failure)
-             then [productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "core:append")))),
+             then [productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:append")))),
                     '(', exprsCons(e1, ',', exprsSingle(e2)), ')')]
              else [];
 }
@@ -87,7 +87,7 @@ aspect production lengthFunction
 top::Expr ::= 'length' '(' e::Expr ')'
 {
   handlers <- if !unify(e.typerep, listTypeExp(errorType())).failure
-	      then [productionApp(baseExpr(qNameId(nameId(terminal(Id_t, "core:listLength")))),
+	      then [productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:listLength")))),
                     '(', exprsSingle(e), ')')]
 	      else [];
 }

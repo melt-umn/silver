@@ -11,8 +11,8 @@ import silver:extension:list;
 
 terminal Case_kwd 'case' lexer classes {KEYWORD};
 terminal Of_kwd 'of' lexer classes {KEYWORD};
-terminal arrow_kwd '->' precedence = 7 ;
-terminal vbar_kwd '|' precedence = 3 ;
+terminal Arrow_kwd '->' precedence = 7 ;
+terminal Vbar_kwd '|' precedence = 3 ;
 
 -- The type of the things that should appear in the patterns of matchrules
 autocopy attribute typerep_down :: TypeExp ;

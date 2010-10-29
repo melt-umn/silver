@@ -118,7 +118,7 @@ top::AspectProductionLHS ::= '_'
 {
   top.pp = "_";
   top.location = loc(top.file, $1.line, $1.column);
-  forwards to aspectProductionLHSId(nameId(terminal(Id_t, "p_top")));
+  forwards to aspectProductionLHSId(nameIdLower(terminal(IdLower_t, "p_top")));
 }
 
 concrete production aspectProductionLHSId
@@ -201,7 +201,7 @@ top::AspectRHSElem ::= '_'
   top.pp = "_";
   top.location = loc(top.file, $1.line, $1.column);
 
-  forwards to aspectRHSElemId(nameId(terminal(Id_t, "p_" ++ toString(top.deterministicCount), $1.line, $1.column)));
+  forwards to aspectRHSElemId(nameIdLower(terminal(IdLower_t, "p_" ++ toString(top.deterministicCount), $1.line, $1.column)));
 }
 
 concrete production aspectRHSElemId

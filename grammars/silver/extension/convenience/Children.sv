@@ -7,7 +7,7 @@ terminal Children_kwd '$';
 
 concrete production childrenRef
 top::Expr ::= '$' e::Int_t {
-  forwards to baseExpr(qNameId(nameId(terminal(Id_t, findChild(toInt(e.lexeme), [top.signature.outputElement.elementName] ++ getNamesSignature(top.signature.inputElements))))));
+  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, findChild(toInt(e.lexeme), [top.signature.outputElement.elementName] ++ getNamesSignature(top.signature.inputElements))))));
 
 }
 

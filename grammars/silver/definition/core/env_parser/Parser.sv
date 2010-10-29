@@ -9,32 +9,37 @@ import silver:definition:core;
 
 terminal ImpliedNameTerm 'impliedName' lexer classes {C_1};
 
-attribute impliedName occurs on aRootSpecPart, aRootSpecParts;
+attribute impliedName occurs on IRootSpecPart, IRootSpecParts;
 
 aspect production parserRootSpec
-top::RootSpec ::= p::aRootSpecParts _{
+top::RootSpec ::= p::IRootSpecParts _
+{
   top.interface= true;
   top.impliedName = p.impliedName;
 }
 
 aspect production aRoot1
-top::aRootSpecParts ::= r::aRootSpecPart{
+top::IRootSpecParts ::= r::IRootSpecPart
+{
   top.impliedName = r.impliedName; 
 }
 
 aspect production aRoot2
-top::aRootSpecParts ::= r1::aRootSpecPart r2::aRootSpecParts{
+top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
+{
   top.impliedName = if r1.impliedName == "" then r2.impliedName else r1.impliedName; 
 }
 
 aspect production aRootSpecDefault
-top::aRootSpecPart ::= {
+top::IRootSpecPart ::= 
+{
   top.impliedName = "";
 
 }
 
 concrete production aRootImpliedName
-top::aRootSpecPart ::= n::ImpliedNameTerm i::silver:definition:env:parser:Name{
+top::IRootSpecPart ::= n::ImpliedNameTerm i::silver:definition:env:parser:Name
+{
   top.impliedName = i.aname;
   forwards to aRootSpecDefault();
 }

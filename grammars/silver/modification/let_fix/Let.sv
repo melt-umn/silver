@@ -14,7 +14,7 @@ nonterminal AssignExpr with pp, file, grammarName, defs, env, signature, errors,
 concrete production nameLet
 top::Name ::= 'let'
 {
-  forwards to nameId(terminal(Id_t, "let", $1.line, $1.column));
+  forwards to nameIdLower(terminal(IdLower_t, "let", $1.line, $1.column));
 }
 
 --TODO remove end keyword

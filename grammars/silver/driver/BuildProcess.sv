@@ -13,7 +13,7 @@ synthesized attribute rSpec :: Decorated RootSpec;
 synthesized attribute found :: Boolean;
 
 inherited attribute rParser :: Function(Root ::= String);
-inherited attribute iParser :: Function(aRootSpec ::= String);
+inherited attribute iParser :: Function(IRootSpec ::= String);
 inherited attribute cParser :: Function(Command ::= String);
 
 nonterminal RunUnit with io, rParser, iParser, cParser;
@@ -448,7 +448,7 @@ top::IOInterface ::= iIn::IO f::String genPath::String{
   local attribute text :: IOString;
   text = readFile(genPath ++ f, i);
 
-  local attribute ir :: aRootSpec;
+  local attribute ir :: IRootSpec;
   ir = top.iParser(text.sValue);
   ir.compiledGrammars = top.compiledGrammars;
 

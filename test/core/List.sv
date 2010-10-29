@@ -4,19 +4,19 @@ grammar core;
 
    It can get confusing if you believe that ['a] is List<'a>. (NOT TRUE)
  -}
-nonterminal List<`a>;
+nonterminal List<a>;
 
-synthesized attribute i_headList<`a> :: `a;
-attribute i_headList<`a> occurs on List<`a>;
-synthesized attribute i_tailList<`a> :: Decorated List<`a>;
-attribute i_tailList<`a> occurs on List<`a>;
+synthesized attribute i_headList<a> :: a;
+attribute i_headList<a> occurs on List<a>;
+synthesized attribute i_tailList<a> :: Decorated List<a>;
+attribute i_tailList<a> occurs on List<a>;
 synthesized attribute i_emptyList :: Boolean;
-attribute i_emptyList occurs on List<`a>;
+attribute i_emptyList occurs on List<a>;
 synthesized attribute i_lengthList :: Integer;
-attribute i_lengthList occurs on List<`a>;
+attribute i_lengthList occurs on List<a>;
 
 abstract production i_nilList
-l::List<`a> ::=
+l::List<a> ::=
 {
   l.i_emptyList = true;
   l.i_lengthList = 0;
@@ -25,7 +25,7 @@ l::List<`a> ::=
 }
 
 abstract production i_consList
-l::List<`a> ::= h::`a  t::Decorated List<`a>
+l::List<a> ::= h::a  t::Decorated List<a>
 {
   l.i_emptyList = false;
   l.i_lengthList = t.i_lengthList + 1;
@@ -36,7 +36,7 @@ l::List<`a> ::= h::`a  t::Decorated List<`a>
 --------------------------------------------------------------------------------
 
 function nil
-[`a] ::=
+[a] ::=
 {
   return decorate i_nilList() with {};
 } foreign {
@@ -44,7 +44,7 @@ function nil
 }
 
 function cons
-[`a] ::= h::`a  t::[`a]
+[a] ::= h::a  t::[a]
 {
   return decorate i_consList(h, t) with {};
 } foreign {
@@ -52,7 +52,7 @@ function cons
 }
 
 function append
-[`a] ::= l1::[`a] l2::[`a]
+[a] ::= l1::[a] l2::[a]
 {
   return if l1.i_emptyList
          then l2
@@ -63,15 +63,15 @@ function append
 
 
 function null
-Boolean ::= l::[`a]
+Boolean ::= l::[a]
 {
   return l.i_emptyList;
 } foreign {
   "java" : return "%l%.nil()";
 }
 
-function listLength  -- not called 'length' since this is a builtin language feature, but that`s how you should call it.
-Integer ::= l::[`a]
+function listLength  -- not called 'length' since this is a builtin language feature, but thats how you should call it.
+Integer ::= l::[a]
 {
   return l.i_lengthList;
 } foreign {
@@ -79,7 +79,7 @@ Integer ::= l::[`a]
 }
 
 function head
-`a ::= l::[`a]
+a ::= l::[a]
 {
   return l.i_headList;
 } foreign {
@@ -87,7 +87,7 @@ function head
 }
 
 function tail
-[`a] ::= l::[`a]
+[a] ::= l::[a]
 {
   return l.i_tailList;
 } foreign {
@@ -97,7 +97,7 @@ function tail
 --------------------------------------------------------------------------------
 
 function map
-[`b] ::= f::Function(`b ::= `a)  l::[`a]
+[b] ::= f::Function(b ::= a)  l::[a]
 {
   return if null(l)
          then []
@@ -105,7 +105,7 @@ function map
 }
 
 function foldr
-`b ::= f::Function(`b ::= `a `b)  i::`b  l::[`a]
+b ::= f::Function(b ::= a b)  i::b  l::[a]
 {
   return if null(l)
          then i
