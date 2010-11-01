@@ -1,0 +1,1 @@
+Silver generates a lot of intermediate files.  These are placed here.  You can delete everything here safely, but removing the directory entirely may be problematic!

@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# To use this script, set SILVER_HOME below to where Silver is installed,
+# and place this file (with executable bit set) somewhere in your PATH.
+
+# Set this to wherever the jar files for silver are:
+SILVER_HOME=../jars/
+
+# This is the only thing that NEEDS to be done to use this script.
+
+
+
+
+# This is set automatically by RunSilver.jar.  You can also overwrite this with the -G flag
+#SILVER_GEN=$SILVER_HOME/../generated
+
+# Bug note: RunSilver.jar wants this to be writable, and passing -G doesn't satisfy this requirement.
+
+# Also set automatically by RunSilver.jar.  You can also add to this with the -I flag
+# Changing this will override the automatic setting shown.
+#GRAMMAR_PATH=$SILVER_HOME/../grammars/:.
+
+java -jar $SILVER_HOME/RunSilver.jar $@ && ant
+
