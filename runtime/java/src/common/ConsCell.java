@@ -10,47 +10,72 @@ package common;
  * @see AppendCell
  */
 public class ConsCell {
-	// Everyone shares one Nil
+	/**
+	 * A shared, singleton nil object.
+	 */
 	public static final ConsCell nil = new NilConsCell();
 	
-//	public static int count = 0;
-	
+	/**
+	 * Though named head and tail, should probably be considered fst and snd. Or car and cdr.
+	 */
 	protected Object head, tail;
 	
-	// Some of the types here are nasty, as we accept
-	// either a Thunk or a ConsCell as "tail"
-	// So we have to take Object, and just hope for the best. :(
+	/**
+	 * Creates a cons cell
+	 * 
+	 * @param h The head element, or a thunk that evaluates to the head element.
+	 * @param t The tail element, or a thunk that evaluates to the tail element.
+	 */
 	public ConsCell(Object h, Object t) {
 		head = h; tail = t;
-		
-//		count++;
 	}
 	
+	/**
+	 * Obtain the head of the cons cell, possibly evaluating that thunk to get it.
+	 * 
+	 * <p> NOTE: This isn't as lazy as it could be, but we prefer the invariant that we never
+	 * get thunks out as a result to make things simple to reason about.
+	 * 
+	 * @return The head element.
+	 */
 	public Object head() {
 		if(head instanceof Thunk) {
 			head = ((Thunk)head).eval();
 		}
 		return head;
 	}
+	/**
+	 * Obtain the tail of the cons cell, possibly evaluating that thunk to get it.
+	 * 
+	 * @return The tail element.
+	 */
 	public ConsCell tail() {
 		if(tail instanceof Thunk) {
 			tail = ((Thunk)tail).eval();
 		}
 		return (ConsCell)tail;
 	}
+	/**
+	 * Determines if the list is empty.
+	 * 
+	 * <p>May involve evaluation of thunks for append cells.
+	 * 
+	 * @return Whether the list is nil.
+	 * @see AppendCell#nil()
+	 */
 	public boolean nil() {
 		return false;
 	}
+	/**
+	 * Determine the length of the list.  Will involve evaluating the spine of the entire list.
+	 * 
+	 * @return The length of the list.
+	 */
 	public int length() {
 		return 1 + tail().length();
 	}
 	
-//	public String debug() {
-//		return "CC(" + head + ", " + ((ConsCell)tail).debug() + ")";
-//	}
-	
-	
-	private static class NilConsCell extends ConsCell {
+	protected static class NilConsCell extends ConsCell {
 		public NilConsCell() {
 			super(null,null);
 		}
@@ -71,10 +96,6 @@ public class ConsCell {
 		public int length() {
 			return 0;
 		}
-		
-//		public String debug() {
-//			return "nil";
-//		}
 	}
 	
 }
