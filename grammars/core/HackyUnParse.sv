@@ -1,7 +1,7 @@
 grammar core;
 
 function hackUnparse
-String ::= nt::AnyType
+String ::= nt::a
 {
   return error("Not impl");
 } foreign {
