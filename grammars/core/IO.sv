@@ -3,8 +3,8 @@ grammar core;
 synthesized attribute io :: IO;
 synthesized attribute iovalue<a> :: a;
 
-nonterminal IOVal<a> with iovalue<a>;
-attribute io occurs on IOVal<a>;
+nonterminal IOVal<a> with io, iovalue<a>;
+--attribute io occurs on IOVal<a>;
 
 abstract production ioval
 top::IOVal<a> ::= i::IO v::a
