@@ -14,10 +14,10 @@ top::ParseResult<a> ::= e::String
   top.parseTree = error("Demanded parse tree when parsing failed!");
 }
 
-abstract production parseResult
+abstract production parseSucceeded
 top::ParseResult<a> ::= t::a
 {
-  top.parseSuccess = false;
+  top.parseSuccess = true;
   top.parseErrors = error("Demanded parse errors, but parsing succeeded!");
   top.parseTree = t;
 }
