@@ -1,6 +1,6 @@
 grammar core;
 
---synthesized attribute io :: IO;
+synthesized attribute io :: IO;
 synthesized attribute ioval<a> :: a;
 
 nonterminal IOVal<a> with io, ioval<a>;
@@ -32,7 +32,7 @@ IO ::= val::Integer i::IO
 }
 
 function mkdir
-IOBoolean ::= s::String i::IO
+IOVal<Boolean> ::= s::String i::IO
 {
   return error("Not Yet Implemented: mkdir");
 } foreign {
@@ -40,7 +40,7 @@ IOBoolean ::= s::String i::IO
 }
 
 function system
-IOInteger ::= s::String i::IO
+IOVal<Integer> ::= s::String i::IO
 {
   return error("Not Yet Implemented: system");
 } foreign {
@@ -66,7 +66,7 @@ IO ::= file::String contents::String i::IO
 ------- IO Read Actions:
 
 function fileTime
-IOInteger ::= s::String i::IO
+IOVal<Integer> ::= s::String i::IO
 {
   return error("Not Yet Implemented: fileTime");
 } foreign {
@@ -74,7 +74,7 @@ IOInteger ::= s::String i::IO
 }
 
 function isFile
-IOBoolean ::= s::String i::IO
+IOVal<Boolean> ::= s::String i::IO
 {
   return error("Not Yet Implemented: isFile");
 } foreign {
@@ -82,7 +82,7 @@ IOBoolean ::= s::String i::IO
 }
 
 function isDirectory
-IOBoolean ::= s::String i::IO
+IOVal<Boolean> ::= s::String i::IO
 {
   return error("Not Yet Implemented: isDirectory");
 } foreign {
@@ -90,7 +90,7 @@ IOBoolean ::= s::String i::IO
 }
 
 function readFile
-IOString ::= s::String i::IO
+IOVal<String> ::= s::String i::IO
 {
   return error("Not Yet Implemented: readFile");
 } foreign {
@@ -98,7 +98,7 @@ IOString ::= s::String i::IO
 }
 
 function cwd
-IOString ::= i::IO
+IOVal<String> ::= i::IO
 {
   return error("Not Yet Implemented: cwd");
 } foreign {
@@ -106,7 +106,7 @@ IOString ::= i::IO
 }
 
 function envVar
-IOString ::= s::String i::IO
+IOVal<String> ::= s::String i::IO
 {
   return error("Not Yet Implemented: envVar");
 } foreign {
@@ -114,7 +114,7 @@ IOString ::= s::String i::IO
 }
 
 function listContents
-IOStringList ::= s::String i::IO
+IOVal<[String]> ::= s::String i::IO
 {
   return error("Not Yet Implemented: listContents");
 } foreign {
