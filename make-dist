@@ -1,0 +1,3 @@
+#!/bin/bash
+
+tar zcvf silver-dist.tar.gz --no-recursion generated/whatisthis.txt jars/*.jar grammars/core/*.sv grammars/tutorials/dc/* grammars/tutorials/dc/bin/* bin/*
