@@ -4,8 +4,6 @@ import java.io.*;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
-import core.PconsString;
-import core.PemptyString;
 
 /**
  * Many places in Silver's translation are bits of code that need factoring out, somehow.
@@ -267,17 +265,17 @@ public class Util {
 	 * Lists the contents of a directory.
 	 * 
 	 * @param sb The directory to list the contents of.
-	 * @return A StringList object. Bleugk!
+	 * @return A list of Strings
 	 */
-	public static Node listContents(String sb) {
+	public static ConsCell listContents(String sb) {
 		// TODO: oh god, get rid of this insanity with Pempty and such!
 		try {
 			File f = new File(sb);
 			String[] files = f.list();
 
-			Node result = new PemptyString();
+			ConsCell result = ConsCell.nil;
 			for (String file : files) {
-				result = new PconsString(new StringCatter(file), result);
+				result = new ConsCell(new StringCatter(file), result);
 			}
 			return result;
 		} catch (Exception e) {
@@ -339,78 +337,8 @@ public class Util {
 		}
 	}
 	
-	public static Node hackyhackyParse(AnyType ac, StringCatter s) {
-		// Shield your eyes. This is terrifying. No joke.
-		
-		Constructor<?> c = (Constructor<?>) ac.getData();
-		
-		// Get the name of the parser class from the constructor of the associated
-		// silver function class.
-		
-		// e.g. sv.comp.Def.PrParse -> sv.comp.Def.Parser_sv_comp_def_rParse
-		
-		Class<?> cl = c.getDeclaringClass();
-		String cn = cl.getName();
-		
-		int i = cn.lastIndexOf(".");
-		
-		String pkg = cn.substring(0, i);
-		String cls = cn.substring(i+1, cn.length());
-		String fn = cls.substring(1, cls.length());
-		
-		// it's a regex.
-		String renamed = pkg.replaceAll("\\.", "_");
-		
-		String parser_class = pkg + ".Parser_" + renamed + "_" + fn;
-		
-		// Okay, so that's done with. Phew.
-		
-		// Now, let's call out to the parser.
-		try {
-			Class<?> parserCls = Class.forName(parser_class);
-			Object o = parserCls.newInstance();
-			java.lang.reflect.Method m = parserCls.getMethod("parse", java.io.Reader.class, String.class);
-			
-			Node n = (Node)m.invoke(o, new java.io.StringReader(s.toString()),"_NULL_");
-			
-			// Call out to core:hackyParser (the constructor for a HackyParse object)
-			Constructor<?> wrapper = Class.forName("core.PhackyParser").getConstructor(Object[].class);
-			Node result = (Node)wrapper.newInstance(new Object[] { new Object[] { true, new AnyType(n), new StringCatter("") } });
-			// parameters there: success (boolean), tree (anytype(tree)), errors (strcatter)
-			
-			return result;
-			
-		} catch (Throwable e) {
-			// If we have an error, check to see if its cause is a copperParserException.
-			// if it is, we want to ignore it and return normally but with an error string.
-			
-			// if it isn't, then shit hit the fan, die with a trace.
-			
-			if(e.getCause().getClass().getName().contains("CopperParserException")) {
-				try {
-					Constructor<?> wrapper = Class.forName("core.PhackyParser").getConstructor(Object[].class);
-					Node result = (Node)wrapper.newInstance(new Object[] { new Object[] { false, new AnyType(null), new StringCatter(e.getCause().getMessage()) } });
-				
-					return result;
-				
-				} catch(Throwable e2) {
-					e2.printStackTrace();
-					System.exit(-2);
-				}
-			}
-			
-			e.printStackTrace();
-			System.exit(-1);
-		}
-		
-		return null;
-	}
-	
 	// These are written un-ideally so that they're all confined in one place.
 	public static StringCatter hackyhackyUnparse(Object o) {
-		if(o instanceof AnyType) {
-			o = ((AnyType)o).getData();
-		}
 		if(o instanceof DecoratedNode) {
 			o = ((DecoratedNode)o).undecorate();
 		}

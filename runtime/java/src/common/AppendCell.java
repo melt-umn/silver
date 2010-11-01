@@ -26,17 +26,35 @@ public class AppendCell extends ConsCell {
 	//             (((a ++ b) ++ c) ++ d)
 	// n vs n^2.
 	
-	// if evaluated is true, then we've mutated into a glorified ConsCell, and nothing more.
-	// i.e.  false -> head :: ConsCell
-	//       true  -> head :: Object (whatever this is a list of)
+	/**
+	 * If evaluated is true, then we've mutated into a glorified ConsCell, and nothing more.
+	 * 
+	 * <p>That is, if evaluated is false, then head and tail are both ConsCells
+	 * 
+	 * If evaluated is true, then head is a head object, and tail is a ConsCell.
+	 */
 	boolean evaluated = false;
 	
+	/**
+	 * Construct an append cell, and optimized way of doing list appends.
+	 * 
+	 * @param l ConsCell (or thunk that evaluates to one) to put on the left.
+	 * @param r ConsCell (or thunk that evaluates to one) to put on the right.
+	 */
 	public AppendCell(Object l, Object r) {
 		super(l, r);
 	}
 	
+	/**
+	 * This method eliminates attempts to try to append nil to the left of a list,
+	 * by mutating into whatever is on our right.  e.g. [] ++ [a] becomes [a].
+	 */
 	private void becomeRight() {
 		ConsCell right = super.tail();
+
+		// BUG: TODO: If right is [], then we end up getting NullPointerExceptions instead
+		// of "requested head of nil" errors! NEEDS FIX!
+
 		head = right.head;
 		tail = right.tail;
 		if(right instanceof AppendCell) {
@@ -110,9 +128,4 @@ public class AppendCell extends ConsCell {
 			return super.length();
 		return ((ConsCell)super.head()).length() + super.tail().length();
 	}
-
-//	public String debug() {
-//		if(evaluated) return "EC(" + head + ", " + ((ConsCell)tail).debug() + ")";
-//		return "AC(" + ((ConsCell)head).debug() + ", " + ((ConsCell)tail).debug() + ")";
-//	}
 }
