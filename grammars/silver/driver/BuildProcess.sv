@@ -26,29 +26,29 @@ top::RunUnit ::= iIn::IO args::String
   production attribute a :: Command;
   a = top.cParser(args);
 
-  local attribute envGP :: IOString;
+  local attribute envGP :: IOVal<String>;
   envGP = envVar("GRAMMAR_PATH", iIn);
   
-  local attribute envSG :: IOString;
+  local attribute envSG :: IOVal<String>;
   envSG = envVar("SILVER_GEN", envGP.io);
   
-  local attribute envSH :: IOString;
+  local attribute envSH :: IOVal<String>;
   envSH = envVar("SILVER_HOME", envSG.io);
 
   --the command line path for searching
   local attribute sPath :: String;
-  sPath = a.searchPath ++ ":" ++ envGP.sValue;
+  sPath = a.searchPath ++ ":" ++ envGP.iovalue;
 
   --a list of directories to search
   production attribute spath :: [String];
   spath = getSearchPath(sPath);
   
   production attribute silverhome :: String;
-  silverhome = envSH.sValue ++ "/"; -- TODO this works fine unconditionally... for now?
+  silverhome = envSH.iovalue ++ "/"; -- TODO this works fine unconditionally... for now?
   
   -- This is a collection so that in the future translations can have their own sub-directories
   production attribute silvergen :: String with ++;
-  silvergen := (if a.genLocation == "" then envSG.sValue else a.genLocation) ++ "/"; -- TODO this (/) works fine unconditionally... for now?
+  silvergen := (if a.genLocation == "" then envSG.iovalue else a.genLocation) ++ "/"; -- TODO this (/) works fine unconditionally... for now?
 
   --the grammar path ':' replaced by '/'
   local attribute gpath :: String;
@@ -63,7 +63,7 @@ top::RunUnit ::= iIn::IO args::String
   preOps := [checkSilverHome(silverhome), checkSilverGen(silvergen)];
 
   --the result of running the pre operations
-  local attribute preIO :: IOInteger;
+  local attribute preIO :: IOVal<Integer>;
   preIO = runAll(envSH.io, unitMergeSort(preOps));
 
   --the directory which contains the grammar
@@ -161,13 +161,13 @@ top::RunUnit ::= iIn::IO args::String
   production attribute postOps :: [Unit] with ++;
   postOps := [];
   
-  local attribute postIO :: IOInteger;
+  local attribute postIO :: IOVal<Integer>;
   postIO = runAll(reUnit.io, unitMergeSort(postOps));
   
-  top.io = if preIO.iValue != 0 --the preops tell us to quit.
-           then exit(preIO.iValue, preIO.io)
+  top.io = if preIO.iovalue != 0 --the preops tell us to quit.
+           then exit(preIO.iovalue, preIO.io)
            else if a.okay && grammarLocation.found --the args were okay and the grammar was found.
-           then exit(postIO.iValue, postIO.io)
+           then exit(postIO.iovalue, postIO.io)
            else if a.okay && !grammarLocation.found --the args were okay but the grammar was not found
            then exit(-1, print("\nGrammar '" ++ a.gName ++ "' could not be located, make sure that the grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
            else exit(-1, print(a.usage, iIn)); -- the args were not okay.
@@ -175,16 +175,16 @@ top::RunUnit ::= iIn::IO args::String
 
 --A function to run the units of work
 function runAll
-IOInteger ::= i::IO l::[Unit]
+IOVal<Integer> ::= i::IO l::[Unit]
 {
   local attribute now :: Unit;
   now = head(l);
   now.ioIn = i;
 
   return  if null(l) 
-	  then ioInteger(i, 0)
+	  then ioval(i, 0)
 	  else if now.code != 0
-	       then ioInteger(now.io, now.code)
+	       then ioval(now.io, now.code)
 	       else runAll(now.io, tail(l));
 }
 
@@ -370,14 +370,14 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   grammarLocation = findGrammarLocation(iIn, gramPath, sPath);
 
   -- the list of files from the grammar directory
-  local attribute temp_files :: IOStringList;
+  local attribute temp_files :: IOVal<[String]>;
   temp_files = listContents(grammarLocation.sValue, grammarLocation.io);
 
   -- the list of silver files for the grammar
   local attribute files :: [String];
-  files = filterFiles(convert(temp_files.stringList));
+  files = filterFiles(temp_files.iovalue);
 
-  local attribute hasInterface :: IOBoolean;
+  local attribute hasInterface :: IOVal<Boolean>;
   hasInterface = isValidInterface(temp_files.io, genPath ++ "src/" ++ gramPath ++ "Silver.svi", grammarLocation.sValue, files);
 
   local attribute pr :: IO;
@@ -397,37 +397,37 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   inf.compiledGrammars = top.compiledGrammars;
 
   top.found = grammarLocation.found;
-  top.interfaces = if grammarLocation.found && !clean && hasInterface.bValue then inf.interfaces else [];
-  top.io =  if grammarLocation.found then (if !clean && hasInterface.bValue then inf.io else cu.io) else grammarLocation.io;
-  top.rSpec = if grammarLocation.found then (if !clean && hasInterface.bValue then head(inf.interfaces).rSpec else cu.rSpec) else emptyRootSpec();
+  top.interfaces = if grammarLocation.found && !clean && hasInterface.iovalue then inf.interfaces else [];
+  top.io =  if grammarLocation.found then (if !clean && hasInterface.iovalue then inf.io else cu.io) else grammarLocation.io;
+  top.rSpec = if grammarLocation.found then (if !clean && hasInterface.iovalue then head(inf.interfaces).rSpec else cu.rSpec) else emptyRootSpec();
 }
 
 
 function isValidInterface
-IOBoolean ::= iIn::IO ifacefile::String grammarPath::String fs::[String]
+IOVal<Boolean> ::= iIn::IO ifacefile::String grammarPath::String fs::[String]
 {
-  local attribute hasInterface :: IOBoolean;
+  local attribute hasInterface :: IOVal<Boolean>;
   hasInterface = isFile(ifacefile, iIn);
 
-  local attribute modTime :: IOInteger;
+  local attribute modTime :: IOVal<Integer>;
   modTime = fileTime(ifacefile, hasInterface.io);
 
-  local attribute maxTime :: IOInteger;
+  local attribute maxTime :: IOVal<Integer>;
   maxTime = fileTimes(modTime.io, grammarPath, fs);
 
-  return if !hasInterface.bValue then ioBoolean(hasInterface.io, false) else ioBoolean(maxTime.io, modTime.iValue > maxTime.iValue);
+  return if !hasInterface.iovalue then ioval(hasInterface.io, false) else ioval(maxTime.io, modTime.iovalue > maxTime.iovalue);
 }
 
 
 function fileTimes
-IOInteger ::= i::IO dir::String is::[String]{
-  local attribute ft :: IOInteger;
+IOVal<Integer> ::= i::IO dir::String is::[String]{
+  local attribute ft :: IOVal<Integer>;
   ft = fileTime(dir ++ head(is), i);
 
-  local attribute rest :: IOInteger;
+  local attribute rest :: IOVal<Integer>;
   rest = fileTimes(ft.io, dir, tail(is));
 
-  return if null(is) then ioInteger(i, -1) else if ft.iValue > rest.iValue then ioInteger(rest.io, ft.iValue) else rest;
+  return if null(is) then ioval(i, -1) else if ft.iovalue > rest.iovalue then ioval(rest.io, ft.iovalue) else rest;
 }
 
 synthesized attribute lastModified :: Integer;
@@ -439,21 +439,21 @@ nonterminal IOInterface with io, interfaces, iParser, compiledGrammars;
 abstract production compileInterface
 top::IOInterface ::= iIn::IO f::String genPath::String{
 
-  local attribute modTime :: IOInteger;
+  local attribute modTime :: IOVal<Integer>;
   modTime = fileTime(genPath ++ f, iIn);
 
   local attribute i :: IO;
   i = print("\t[" ++ genPath ++ f ++ "]\n", modTime.io);
 
-  local attribute text :: IOString;
+  local attribute text :: IOVal<String>;
   text = readFile(genPath ++ f, i);
 
   local attribute ir :: IRootSpec;
-  ir = top.iParser(text.sValue);
+  ir = top.iParser(text.iovalue);
   ir.compiledGrammars = top.compiledGrammars;
 
   local attribute inf :: Interface; 
-  inf = fullInterface(modTime.iValue, f, genPath, ir.spec);
+  inf = fullInterface(modTime.iovalue, f, genPath, ir.spec);
 
   top.interfaces = [inf];
   top.io = text.io;
@@ -482,12 +482,12 @@ abstract production compileFiles
 top::Roots ::= iIn::IO gn::String files::[String] gpath::String
 {
   --the text of the file.
-  local attribute text :: IOString;
+  local attribute text :: IOVal<String>;
   text = readFile(gpath ++ head(files), print("\t[" ++ gpath ++ head(files) ++ "]\n", iIn));
 
   --the parsed file.
   production attribute r :: Root;
-  r = top.rParser(text.sValue);
+  r = top.rParser(text.iovalue);
   r.env = top.env;
   r.globalImports = top.globalImports;
   r.file = head(files);
@@ -555,18 +555,19 @@ Boolean ::= f::String
 }
 
 --takes in a grammar path and a list of possible locations and returns the correct location if any.
+synthesized attribute sValue :: String;
 nonterminal MaybeIOStr with sValue, found, io;
 abstract production findGrammarLocation
 top::MaybeIOStr ::= iIn::IO path::String paths::[String]
 {
-  local attribute exists :: IOBoolean;
+  local attribute exists :: IOVal<Boolean>;
   exists = isDirectory(head(paths) ++ path, iIn);
 
   top.found = if null(paths) then false
-	      else exists.bValue || recurse.found;
+	      else exists.iovalue || recurse.found;
 
   top.sValue = if null(paths) then ""
-	       else if exists.bValue then head(paths) ++ path else recurse.sValue;
+	       else if exists.iovalue then head(paths) ++ path else recurse.sValue;
 
   top.io = if null(paths) then iIn else recurse.io;
 

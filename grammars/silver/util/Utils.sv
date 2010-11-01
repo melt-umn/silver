@@ -82,14 +82,6 @@ function remove
 	      else [head(s)] ++ remove(n, tail(s));
 }
 
-function convert
-[String] ::= sl::StringList
-{
-  return if sl.empty 
-	 then []
-	 else cons(sl.sh, convert(sl.st));
-}
-
 function split
 [String] ::= s::String str::String
 {
