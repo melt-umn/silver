@@ -1,47 +1,110 @@
 grammar core;
 
-nonterminal AnyTypeList ;
+{- Remember that the type equivalence of ['a] is Decorated List<'a>.
 
-synthesized attribute empty_AnyTypeList :: Boolean ;
-synthesized attribute head_AnyTypeList :: AnyType ;
-synthesized attribute tail_AnyTypeList :: Decorated AnyTypeList ;
-synthesized attribute length_AnyTypeList :: Integer ;
+   It can get confusing if you believe that ['a] is List<'a>. (NOT TRUE)
+ -}
+nonterminal List<a> with i_headList<a>, i_tailList<a>, i_emptyList, i_lengthList;
 
-attribute empty_AnyTypeList occurs on AnyTypeList ;
-attribute head_AnyTypeList occurs on AnyTypeList ;
-attribute tail_AnyTypeList occurs on AnyTypeList ;
-attribute length_AnyTypeList occurs on AnyTypeList ;
+synthesized attribute i_headList<a> :: a;
+synthesized attribute i_tailList<a> :: Decorated List<a>;
+synthesized attribute i_emptyList :: Boolean;
+synthesized attribute i_lengthList :: Integer;
 
-function nil_AnyTypeList
-Decorated AnyTypeList ::= {
-  return decorate internal_nil_AnyTypeList() with {};
-}
-
-abstract production internal_nil_AnyTypeList
-l::AnyTypeList ::= {
-  l.empty_AnyTypeList = true ;
-  l.length_AnyTypeList = 0 ;
-  l.head_AnyTypeList = error ("Accessing head on value of type [ ] not allowed.\n" );
-  l.tail_AnyTypeList = error ("Accessing tail on value of type [ ] not allowed.\n" );
-}
-
-function cons_AnyTypeList
-Decorated AnyTypeList ::= h::AnyType t::Decorated AnyTypeList {
-  return decorate internal_cons_AnyTypeList(h, t) with{}; 
-}
-abstract production internal_cons_AnyTypeList
-l::AnyTypeList ::= h::AnyType t::Decorated AnyTypeList
+abstract production i_nilList
+l::List<a> ::=
 {
-  l.empty_AnyTypeList = false ;
-  l.length_AnyTypeList = 1 + t.length_AnyTypeList ;
-  l.head_AnyTypeList = h ;
-  l.tail_AnyTypeList = t ;
+  l.i_emptyList = true;
+  l.i_lengthList = 0;
+  l.i_headList = error("requested head of nil");
+  l.i_tailList = error("requested tail of nil");
 }
-function append_AnyTypeList
-Decorated AnyTypeList ::= l1::Decorated AnyTypeList l2::Decorated AnyTypeList
+
+abstract production i_consList
+l::List<a> ::= h::a  t::Decorated List<a>
 {
-  return if l1.empty_AnyTypeList
-           then l2 
-           else cons_AnyTypeList ( l1.head_AnyTypeList ,
-                                   append_AnyTypeList ( l1.tail_AnyTypeList , l2 ) ) ;
+  l.i_emptyList = false;
+  l.i_lengthList = t.i_lengthList + 1;
+  l.i_headList = h;
+  l.i_tailList = t;
 }
+
+--------------------------------------------------------------------------------
+
+function nil
+[a] ::=
+{
+  return decorate i_nilList() with {};
+} foreign {
+  "java" : return "common.ConsCell.nil";
+}
+
+function cons
+[a] ::= h::a  t::[a]
+{
+  return decorate i_consList(h, t) with {};
+} foreign {
+  "java" : return "new common.ConsCell(%h%, %t%)";
+}
+
+function append
+[a] ::= l1::[a] l2::[a]
+{
+  return if l1.i_emptyList
+         then l2
+         else cons(head(l1), append(tail(l1), l2));
+} foreign {
+  "java" : return "new common.AppendCell(%l1%, %l2%)";
+}
+
+
+function null
+Boolean ::= l::[a]
+{
+  return l.i_emptyList;
+} foreign {
+  "java" : return "%l%.nil()";
+}
+
+function listLength  -- not called 'length' since this is a builtin language feature, but thats how you should call it.
+Integer ::= l::[a]
+{
+  return l.i_lengthList;
+} foreign {
+  "java" : return "new Integer(%l%.length())";
+}
+
+function head
+a ::= l::[a]
+{
+  return l.i_headList;
+} foreign {
+  "java" : return "%l%.head()";
+}
+
+function tail
+[a] ::= l::[a]
+{
+  return l.i_tailList;
+} foreign {
+  "java" : return "%l%.tail()";
+}
+
+--------------------------------------------------------------------------------
+
+function map
+[b] ::= f::Function(b ::= a)  l::[a]
+{
+  return if null(l)
+         then []
+         else f(head(l)) :: map(f, tail(l));
+}
+
+function foldr
+b ::= f::Function(b ::= a b)  i::b  l::[a]
+{
+  return if null(l)
+         then i
+         else foldr(f, f(head(l), i), tail(l));
+}
+
