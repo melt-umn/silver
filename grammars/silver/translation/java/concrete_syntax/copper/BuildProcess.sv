@@ -93,7 +93,7 @@ IO ::= i::IO silvergen::String specs::[Decorated ParserSpec]
 }
 
 aspect production writeBuildFile
-top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+top::IOVal<String> ::= i::IO a::Decorated Command specs::[Decorated RootSpec] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
   extraTaskdefs <- ["  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='lib.classpath'/>\n" ];
   extraTargets <- ["  <target name='copper'>\n" ++ buildAntParserPart(

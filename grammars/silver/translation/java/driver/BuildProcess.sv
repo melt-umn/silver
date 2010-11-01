@@ -112,8 +112,9 @@ String ::= r::Decorated RootSpec{
 "}\n";
 }
 
+-- WTF why is this an IOVal, it doesn't return anything?  TODO
 abstract production writeBuildFile
-top::IOString ::= i::IO a::Decorated Command specs::[Decorated RootSpec] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+top::IOVal<String> ::= i::IO a::Decorated Command specs::[Decorated RootSpec] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
   production attribute extraTargets :: [String] with ++;
   extraTargets := [];
