@@ -38,10 +38,9 @@ top::Expr ::= q::Decorated QName
 {
   -- Undecorate iff it's a ("undecced") NT and we're explicitly expecting undecorated
   production attribute shouldUnDec ::Boolean;
-  shouldUnDec = q.lookupValue.typerep.doDecorate &&
-                case top.expected of
+  shouldUnDec = case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !performSubstitution(t, top.upSubst).isDecorated
+                | expected_type(t)     -> !performSubstitution(new(t), top.upSubst).isDecorated
                 | _                    -> false
                 end;
 
@@ -58,17 +57,16 @@ top::Expr ::= q::Decorated QName
 {
   -- should always be a NT
   production attribute shouldUnDec ::Boolean;
-  shouldUnDec = q.lookupValue.typerep.doDecorate &&
-                case top.expected of
+  shouldUnDec = case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !performSubstitution(t, top.upSubst).isDecorated
+                | expected_type(t)     -> !performSubstitution(new(t), top.upSubst).isDecorated
                 | _                    -> false
                 end;
 
   top.pp = q.pp;
   top.location = q.location;
   top.errors := [];
-  top.typerep = if shouldUnDec || !q.lookupValue.typerep.doDecorate
+  top.typerep = if shouldUnDec || !q.lookupValue.typerep.doDecorate -- TODO: isn't this always known?
                 then q.lookupValue.typerep
                 else decoratedTypeExp(q.lookupValue.typerep);
 }
@@ -77,10 +75,9 @@ abstract production localReference
 top::Expr ::= q::Decorated QName
 {
   production attribute shouldUnDec ::Boolean;
-  shouldUnDec = q.lookupValue.typerep.doDecorate &&
-                case top.expected of
+  shouldUnDec = case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !performSubstitution(t, top.upSubst).isDecorated
+                | expected_type(t)     -> !performSubstitution(new(t), top.upSubst).isDecorated
                 | _                    -> false
                 end;
 
@@ -97,17 +94,16 @@ top::Expr ::= q::Decorated QName
 {
   -- should always be a NT
   production attribute shouldUnDec ::Boolean;
-  shouldUnDec = q.lookupValue.typerep.doDecorate &&
-                case top.expected of
+  shouldUnDec = case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !performSubstitution(t, top.upSubst).isDecorated
+                | expected_type(t)     -> !performSubstitution(new(t), top.upSubst).isDecorated
                 | _                    -> false
                 end;
 
   top.pp = q.pp;
   top.location = q.location;
   top.errors := [];
-  top.typerep = if shouldUnDec || !q.lookupValue.typerep.doDecorate
+  top.typerep = if shouldUnDec || !q.lookupValue.typerep.doDecorate -- TODO: isn't this always known?
                 then q.lookupValue.typerep
                 else decoratedTypeExp(q.lookupValue.typerep);
 }

@@ -8,11 +8,16 @@ parser parse::Dcls {
 function main 
 IO ::= args::String i::IO {
 
-  local attribute file :: IOString;
+  local attribute file :: IOVal<String>;
   file = readFile(args, i);
 
+  local attribute presult :: ParseResult<Dcls>;
+  presult = parse(file.iovalue, args);
+
   local attribute result :: Dcls;
-  result = parse(file.sValue);
+  result = if presult.parseSuccess
+           then presult.parseTree
+           else error(presult.parseErrors);
 
   local attribute extras :: IOAMachineList;
   extras = getImports(result.theImports);
@@ -48,11 +53,16 @@ IOAMachineList ::= need::[String]
 abstract production getImportsHelp
 top::IOAMachineList ::= seen::[String] need::[String]
 {
-  local attribute text :: IOString;
+  local attribute text :: IOVal<String>;
   text = readFile(head(need), top.ioIn);
 
+  local attribute presult :: ParseResult<Dcls>;
+  presult = parse(text.iovalue, head(need));
+
   local attribute result :: Dcls;
-  result = parse(text.sValue);
+  result = if presult.parseSuccess
+           then presult.parseTree
+           else error(presult.parseErrors);
 
   local attribute new_seen :: [String];
   new_seen = cons(head(need), seen);

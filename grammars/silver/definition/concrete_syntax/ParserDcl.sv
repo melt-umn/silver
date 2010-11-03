@@ -51,7 +51,10 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
   top.defs = addFunDcl(top.grammarName, n.location, namedSig, emptyDefs());
   
   production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(top.fullName, [namedSignatureElement("__str", stringTypeExp())], namedSignatureElement("__pt", t.typerep));
+  namedSig = namedSignatureDcl(top.fullName,
+                               [namedSignatureElement("stringToParse", stringTypeExp()),
+                                namedSignatureElement("filenameToReport", stringTypeExp())],
+                               namedSignatureElement("__func__lhs", nonterminalTypeExp("core:ParseResult", [t.typerep])));
 
   top.moduleNames = m.moduleNames;
 }

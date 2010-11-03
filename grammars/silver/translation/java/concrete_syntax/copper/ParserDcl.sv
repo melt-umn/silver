@@ -7,18 +7,20 @@ import silver:definition:env;
 import silver:definition:type;
 import silver:definition:type:syntax;
 
-attribute javaClasses, initProd occurs on ParserDcl;
+attribute javaClasses occurs on ParserDcl;
 attribute disambiguationGroupDcls occurs on ParserDcl, ModuleList, ModuleName, Module, ModuleExportedDefs;
 attribute parserAttrDcls occurs on ParserDcl, ModuleList, ModuleName, Module, ModuleExportedDefs;
 
 aspect production parserDcl
 top::AGDcl ::= p::ParserDcl
 {
+  -- TODO: confused. should these be []?  
   top.disambiguationGroupDcls = [];
   top.parserAttrDcls = [];
+  
   top.javaClasses = p.javaClasses;
   top.setupInh := "";
-  top.initProd := p.initProd;
+  top.initProd := "";
   top.initValues := "";
   top.postInit := "";
 }
@@ -77,77 +79,21 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
   local attribute fullClassName :: String;
   fullClassName = packageName ++ "." ++ className;
 
-  local attribute sigNames :: [String];
-  sigNames = ["c"];
-
   local attribute parserName :: String;
   parserName = makeParserName(top.fullName);
 
-  -- TODO: instead of jamming this into __return, put it in the doReturn function below!
-  top.initProd :=
-	"\t\t" ++ fullClassName ++ ".synthesizedAttributes.put(\"__return\", new common.Lazy(){\n" ++ 
-	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-	"\t\t\t\ttry{\n" ++
-	"\t\t\t\t\treturn new " ++ packageName ++ "." ++ parserName ++ "().parse(new java.io.StringReader(((common.StringCatter)context.child(" ++ fullClassName ++ ".i_c)).toString()), \"_NULL_\");\n" ++
-	"\t\t\t\t}catch(edu.umn.cs.melt.copper.runtime.logging.CopperParserException e){ if(\"1\".equals(System.getenv(\"SILVERTRACE\"))) { throw new RuntimeException(\"An error occured while parsing.\", e); } System.err.println(\"Parse error encountered. (Set SILVERTRACE=1 to unsuppress stack trace.)\\n\" + e.getMessage()); System.exit(-1); return null; }\n" ++
-	"\t\t\t\tcatch(Exception e){throw new RuntimeException(\"An error occured while parsing.\", e);}\n" ++
-	"\t\t\t}\n" ++
-	"\t\t});\n";
-
-
   top.javaClasses = [[className,
-"package " ++ packageName ++ ";\n\n" ++
-
-"public class " ++ className ++ " extends common.FunctionNode{\n\n" ++	
-
-makeIndexDcls(0, sigNames) ++ "\n" ++
-"\tpublic static final Class<?> childTypes[] = {common.StringCatter.class};\n\n" ++
-
-"\tpublic static final java.util.Map<String, common.Lazy> synthesizedAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
-
-"\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ ") {\n" ++
-"\t\tthis(new Object[]{" ++ makeChildArray(sigNames) ++ "});\n" ++
-"\t}\n\n" ++
-
-"\tpublic " ++ className ++ "(Object[] args) {\n" ++
-"\t\tsuper(args);\n" ++
-"\t}\n\n" ++
-
-"\t@Override\n" ++
-"\tpublic common.Lazy getSynthesized(String name) {\n" ++
-"\t\treturn synthesizedAttributes.get(name);\n" ++
-"\t}\n\n" ++
-
-"\t@Override\n" ++
-"\tpublic java.util.Map<String, common.Lazy> getDefinedInheritedAttributes(Object key) {\n" ++
-"\t\tthrow new RuntimeException(\"Parsers do not have children\");\n" ++
-"\t}\n\n" ++
-
-"\t@Override\n" ++
-"\tpublic common.Lazy getForward() {\n" ++
-"\t\tthrow new RuntimeException(\"Parsers do not forward\");\n" ++
-"\t}\n\n" ++
-
-"\t@Override\n" ++
-"\tpublic common.Lazy getForwardInh(String name) {\n" ++
-"\t\tthrow new RuntimeException(\"Parsers do not forward\");\n" ++
-"\t}\n\n" ++
-
-"\t@Override\n" ++
-"\tpublic common.Lazy getLocal(String name) {\n" ++
-"\t\tthrow new RuntimeException(\"Parsers do not have locals\");\n" ++
-"\t}\n\n" ++
-
-"\t@Override\n" ++
-"\tpublic String getName() {\n" ++
-"\t\treturn \"" ++ top.fullName ++ "\";\n" ++
-"\t}\n\n" ++
-
-"\t@Override\n" ++
-"\tpublic " ++ t.typerep.transType ++ " doReturn(){\n" ++			
-"\t\treturn (" ++ t.typerep.transType ++ ")super.doReturn();\n" ++
-"\t}\n" ++ 
-"}\n"
-]];
+                      generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult)
+                    ]];
+  
+  local attribute parseResult :: String;
+  parseResult = 
+   "try {\n" ++
+"\t\t\treturn new core.PparseSucceeded( new " ++ packageName ++ "." ++ parserName ++ "().parse(new java.io.StringReader(((common.StringCatter)getChild(0)).toString()), ((common.StringCatter)getChild(1)).toString()) );\n" ++
+"\t\t} catch(edu.umn.cs.melt.copper.runtime.logging.CopperParserException e) {\n" ++
+"\t\t\treturn new core.PparseFailed( new common.StringCatter(e.getMessage()) );\n" ++
+"\t\t} catch(Throwable t) {\n" ++
+"\t\t\tthrow new RuntimeException(\"An error occurs while parsing\", t);\n" ++
+"\t\t}\n";
 
 }

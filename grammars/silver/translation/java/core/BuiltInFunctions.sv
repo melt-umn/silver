@@ -24,7 +24,7 @@ top::Expr ::= 'toInt' '(' e::Expr ')'
                       intTypeExp() -> e.translation
                     | floatTypeExp() -> "((Float)" ++ e.translation ++ ").intValue()"
                     | stringTypeExp() -> "Integer.valueOf(" ++ e.translation ++ ".toString())"
-                    | t -> error("INTERNAL ERROR: no toInt translation for type " ++ prettyType(t))
+                    | t -> error("INTERNAL ERROR: no toInt translation for type " ++ prettyType(new(t)))
                     end;
 }
 aspect production toFloatFunction
@@ -34,7 +34,7 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
                       intTypeExp() -> "((Integer)" ++ e.translation ++ ").floatValue()"
                     | floatTypeExp() -> e.translation
                     | stringTypeExp() -> "Float.valueOf(" ++ e.translation ++ ".toString())"
-                    | t -> error("INTERNAL ERROR: no toFloat translation for type " ++ prettyType(t))
+                    | t -> error("INTERNAL ERROR: no toFloat translation for type " ++ prettyType(new(t)))
                     end;
 }
 aspect production toStringFunction

@@ -73,7 +73,7 @@ top::FunctionLHS ::= t::Type
   top.location = t.location;
 
   production attribute fName :: String;
-  fName = "__return";
+  fName = "__func__lhs";
 
   top.outputElement = namedSignatureElement(fName, t.typerep);
 

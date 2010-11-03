@@ -422,8 +422,16 @@ top::IDclInfo ::= '@' '(' l::ILocation ',' fnnt::Name ',' fnat::Name ',' td::ITy
 {
   ntt.env = newScopeEnv(td.defs, top.env);
   att.env = ntt.env;
+  
+  local attribute fresh :: [TyVar];
+  fresh = freshTyVars(length(td.tyvars));
 
-  top.defs = addOccursDcl( top.grammarName, l.location, fnnt.aname, fnat.aname, ntt.typerep, att.typerep, emptyDefs());
+  -- Recall that constraint on occurs DclInfos: the types need to be tyvars, not skolem constants.
+  
+  top.defs = addOccursDcl( top.grammarName, l.location, fnnt.aname, fnat.aname, 
+                           freshenTypeExpWith(ntt.typerep, td.tyvars, fresh),
+                           freshenTypeExpWith(att.typerep, td.tyvars, fresh),
+                           emptyDefs());
 }
 
 --The TypeReps

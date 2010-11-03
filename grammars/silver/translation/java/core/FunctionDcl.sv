@@ -1,27 +1,34 @@
 grammar silver:translation:java:core;
 
 aspect production functionDcl
-top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody{
-
-  local attribute className :: String;
-  className = "P" ++ id.name;
-
-  local attribute sigNames :: [String];
-  sigNames = getNamesSignature(namedSig.inputElements);
-
+top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
+{
   top.setupInh := body.setupInh;
   top.initProd := "\t\t//FUNCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
   top.initValues := "";
   top.postInit := "";
 
-  top.javaClasses = [[className,
-		
-"package " ++ makeName(top.grammarName) ++ ";\n\n" ++
+  top.javaClasses = [["P" ++ id.name, 
+                      generateFunctionClassString(top.grammarName, id.name, namedSig, "return (" ++ ns.outputElement.typerep.transType ++ ")super.doReturn();\n")
+                    ]];
+}
+
+function generateFunctionClassString
+String ::= whatGrammar::String whatName::String whatSig::Decorated NamedSignature whatResult::String
+{
+  local attribute className :: String;
+  className = "P" ++ whatName;
+
+  local attribute sigNames :: [String];
+  sigNames = getNamesSignature(whatSig.inputElements);
+
+  return 
+"package " ++ makeName(whatGrammar) ++ ";\n\n" ++
 
 "public class " ++ className ++ " extends common.FunctionNode{\n\n" ++	
 
 makeIndexDcls(0, sigNames) ++ "\n" ++
-"\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(ns.inputElements, top.env) ++ "};\n\n" ++
+"\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(whatSig.inputElements) ++ "};\n\n" ++
 
 "\tpublic static final java.util.Map<String, common.Lazy> localAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
 "\tpublic static final java.util.Map<String, common.Lazy> synthesizedAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
@@ -29,7 +36,7 @@ makeIndexDcls(0, sigNames) ++ "\n" ++
 
 
 "\tstatic{\n" ++
-makeStaticDcls(className, ns.inputElements) ++
+makeStaticDcls(className, whatSig.inputElements) ++
 "\t}\n\n" ++ 
 	
 "\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ ") {\n" ++
@@ -67,13 +74,13 @@ makeStaticDcls(className, ns.inputElements) ++
 
 "\t@Override\n" ++
 "\tpublic String getName() {\n" ++
-"\t\treturn \"" ++ fName ++ "\";\n" ++
+"\t\treturn \"" ++ whatSig.fullName ++ "\";\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic " ++ ns.outputElement.typerep.transType ++ " doReturn(){\n" ++			
-"\t\treturn (" ++ ns.outputElement.typerep.transType ++ ")super.doReturn();\n" ++
+"\tpublic " ++ whatSig.outputElement.typerep.transType ++ " doReturn(){\n" ++			
+"\t\t" ++ whatResult ++
 "\t}\n" ++ 
-"}\n"
-		]];
+
+"}\n";
 }
