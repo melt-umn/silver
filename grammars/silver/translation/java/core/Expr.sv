@@ -46,10 +46,17 @@ top::Expr ::= q::Decorated QName
   top.isAppReference = false;
   top.appReference = "";
 
+  local attribute childIDref :: String;
+  childIDref = makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName;
+
   top.translation =
-    if shouldUnDec
-    then "(((common.DecoratedNode)context.child(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName ++ ")).undecorate())"
-    else "((" ++ finalType(top).transType ++ ")context.child(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName  ++ "))";
+    if q.lookupValue.typerep.doDecorate
+    then if shouldUnDec
+         then {- type Node -} "context.childDecorated(" ++ childIDref ++ ").undecorate()"
+         else {- type DecoratedNode -} "context.childDecorated(" ++ childIDref ++ ")"
+    else "((" ++ finalType(top).transType ++ ")context.childAsIs(" ++ childIDref ++ "))";
+
+  -- reminder: the reason we do .childDecorated().undecorate() is that it's not safe to mix asis/decorated accesses.
 }
 
 aspect production lhsReference
@@ -57,6 +64,8 @@ top::Expr ::= q::Decorated QName
 {
   top.isAppReference = false;
   top.appReference = "";
+
+  -- always a node/decoratednode, so there's no asis case to consider.
 
   top.translation =
     if shouldUnDec
@@ -71,9 +80,13 @@ top::Expr ::= q::Decorated QName
   top.appReference = "";
 
   top.translation =
-    if shouldUnDec
-    then "(((common.DecoratedNode)context.local(\"" ++ q.lookupValue.fullName ++ "\")).undecorate())"
-    else "((" ++ finalType(top).transType ++ ")context.local(\"" ++ q.lookupValue.fullName ++ "\"))";
+    if q.lookupValue.typerep.doDecorate
+    then if shouldUnDec
+         then {- type Node -} "context.localDecorated(\"" ++ q.lookupValue.fullName ++ "\").undecorate()"
+         else {- type DecoratedNode -} "context.localDecorated(\"" ++ q.lookupValue.fullName ++ "\")"
+    else "((" ++ finalType(top).transType ++ ")context.localAsIs(\"" ++ q.lookupValue.fullName ++ "\"))";
+
+  -- reminder: the reason we do .localDecorated().undecorate() is that it's not safe to mix asis/decorated accesses.
 }
 
 aspect production productionReference
@@ -100,6 +113,8 @@ top::Expr ::= q::Decorated QName
   top.isAppReference = false;
   top.appReference = "";
   
+  -- always a node/decoratednode, so there's no asis case to consider.
+
   top.translation =
     if shouldUnDec
     then "context.forward().undecorate()"
@@ -261,7 +276,7 @@ top::Expr ::= e1::Expr '>' e2::Expr
                       intTypeExp() -> "(" ++ e1.translation ++ ".intValue() > " ++ e2.translation ++ ".intValue())"
                     | floatTypeExp() -> "(" ++ e1.translation ++ ".floatValue() > " ++ e2.translation ++ ".floatValue())"
                     | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) > 0"
-                    | t -> error("INTERNAL ERROR: no > trans for type " ++ prettyType(t))
+                    | t -> error("INTERNAL ERROR: no > trans for type " ++ prettyType(new(t)))
                     end;
 }
 
@@ -272,7 +287,7 @@ top::Expr ::= e1::Expr '<' e2::Expr
                       intTypeExp() -> "(" ++ e1.translation ++ ".intValue() < " ++ e2.translation ++ ".intValue())"
                     | floatTypeExp() -> "(" ++ e1.translation ++ ".floatValue() < " ++ e2.translation ++ ".floatValue())"
                     | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) < 0"
-                    | t -> error("INTERNAL ERROR: no < trans for type " ++ prettyType(t))
+                    | t -> error("INTERNAL ERROR: no < trans for type " ++ prettyType(new(t)))
                     end;
 }
 
@@ -283,7 +298,7 @@ top::Expr ::= e1::Expr '>=' e2::Expr
                       intTypeExp() -> "(" ++ e1.translation ++ ".intValue() >= " ++ e2.translation ++ ".intValue())"
                     | floatTypeExp() -> "(" ++ e1.translation ++ ".floatValue() >= " ++ e2.translation ++ ".floatValue())"
                     | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) >= 0"
-                    | t -> error("INTERNAL ERROR: no >= trans for type " ++ prettyType(t))
+                    | t -> error("INTERNAL ERROR: no >= trans for type " ++ prettyType(new(t)))
                     end;
 }
 
@@ -294,7 +309,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
                       intTypeExp() -> "(" ++ e1.translation ++ ".intValue() <= " ++ e2.translation ++ ".intValue())"
                     | floatTypeExp() -> "(" ++ e1.translation ++ ".floatValue() <= " ++ e2.translation ++ ".floatValue())"
                     | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) <= 0"
-                    | t -> error("INTERNAL ERROR: no <= trans for type " ++ prettyType(t))
+                    | t -> error("INTERNAL ERROR: no <= trans for type " ++ prettyType(new(t)))
                     end;
 }
 
@@ -335,7 +350,7 @@ top::Expr ::= e1::Expr '+' e2::Expr
   top.translation = case finalType(top) of
                       intTypeExp() -> "new Integer(" ++ e1.translation ++ " + " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "new Float(" ++ e1.translation ++ " + " ++ e2.translation ++ ")"
-                    | t -> error("INTERNAL ERROR: no + trans for type " ++ prettyType(t))
+                    | t -> error("INTERNAL ERROR: no + trans for type " ++ prettyType(new(t)))
                     end;
 }
 aspect production minus
@@ -344,7 +359,7 @@ top::Expr ::= e1::Expr '-' e2::Expr
   top.translation = case finalType(top) of
                       intTypeExp() -> "new Integer(" ++ e1.translation ++ " - " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "new Float(" ++ e1.translation ++ " - " ++ e2.translation ++ ")"
-                    | t -> error("INTERNAL ERROR: no - trans for type " ++ prettyType(t))
+                    | t -> error("INTERNAL ERROR: no - trans for type " ++ prettyType(new(t)))
                     end;
 }
 aspect production multiply
@@ -353,7 +368,7 @@ top::Expr ::= e1::Expr '*' e2::Expr
   top.translation = case finalType(top) of
                       intTypeExp() -> "new Integer(" ++ e1.translation ++ " * " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "new Float(" ++ e1.translation ++ " * " ++ e2.translation ++ ")"
-                    | t -> error("INTERNAL ERROR: no * trans for type " ++ prettyType(t))
+                    | t -> error("INTERNAL ERROR: no * trans for type " ++ prettyType(new(t)))
                     end;
 }
 aspect production divide
@@ -362,7 +377,7 @@ top::Expr ::= e1::Expr '/' e2::Expr
   top.translation = case finalType(top) of
                       intTypeExp() -> "new Integer(" ++ e1.translation ++ " / " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "new Float(" ++ e1.translation ++ " / " ++ e2.translation ++ ")"
-                    | t -> error("INTERNAL ERROR: no / trans for type " ++ prettyType(t))
+                    | t -> error("INTERNAL ERROR: no / trans for type " ++ prettyType(new(t)))
                     end;
 }
 aspect production neg
@@ -371,7 +386,7 @@ top::Expr ::= '-' e::Expr
   top.translation = case finalType(top) of
                       intTypeExp() -> "new Integer(-" ++ e.translation ++ ".intValue())"
                     | floatTypeExp() -> "new Float(-" ++ e.translation ++ ".floatValue())"
-                    | t -> error("INTERNAL ERROR: no unary - trans for type " ++ prettyType(t))
+                    | t -> error("INTERNAL ERROR: no unary - trans for type " ++ prettyType(new(t)))
                     end;
 }
 

@@ -76,7 +76,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
   -- to insert a quick unify of the expected_type and the result type, so that
   -- name references can decide if they should be decorated or not properly.
   es.downSubst = case top.expected of
-                   expected_type(foo) -> unifyCheck(foo, e.typerep.outputType, e.upSubst)
+                   expected_type(foo) -> unifyCheck(new(foo), e.typerep.outputType, e.upSubst)
                  | _ -> e.upSubst
                  end;
   errCheck1.downSubst = es.upSubst;
@@ -104,7 +104,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
   -- to insert a quick unify of the expected_type and the result type, so that
   -- name references can decide if they should be decorated or not properly.
   es.downSubst = case top.expected of
-                   expected_type(foo) -> unifyCheck(foo, e.typerep.outputType, e.upSubst)
+                   expected_type(foo) -> unifyCheck(new(foo), e.typerep.outputType, e.upSubst)
                  | _ -> e.upSubst
                  end;
   errCheck1.downSubst = es.upSubst;

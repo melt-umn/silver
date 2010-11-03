@@ -151,16 +151,55 @@ public class DecoratedNode {
 	}
 
 	/**
-	 * Get the value of a child. If this is a Node, supply it with the attributes we have for it. Caches values for re-use.
+	 * Get the value of a child. If it is a Node, supply it with the attributes we have for it.
+	 * Caches values for re-use.
 	 * 
-	 * <p>Note: to avoid auto-decoration, call <code>.undecorate().getChild(child)</code> instead.
+	 * <p>Warning: unsafe now in the presence of type variables. (Might unexpectedly decorate!)
 	 * 
 	 * @param child The number of the child to obtain.
 	 * @return The value of the child.
+	 * @deprecated
+	 * @see #childAsIs(int)
+	 * @see #childDecorated(int)
 	 */
 	public Object child(int child){
-		//System.err.println("TRACE: " + name + " demanding child: " + child);
-		
+		Object o = this.childrenValues[child]; 
+		if(o == null) {
+			o = self.getChild(child); // Thunk evaluation is handled in Node
+			
+			if (o instanceof Node) {
+				o = ((Node)o).decorate(this, self.getDefinedInheritedAttributes(child));
+			}
+			
+			this.childrenValues[child] = o;
+		}
+		return o;
+	}
+
+	/**
+	 * Returns the child of this DecoratedNode, without potentially decorating it.
+	 * 
+	 * <p>Warning: While it is technically safe to mix calls to {@link #childAsIs} and {@link #childDecorated}
+	 * this behavior should not be relied upon, as it may change later.
+	 * 
+	 * @param child The number of the child to obtain.
+	 * @return The unmodified value of the child.
+	 */
+	public Object childAsIs(int child){
+		return self.getChild(child);
+	}
+	
+	/**
+	 * Returns the child of this DecoratedNode, decorating it with whatever inherited attributes
+	 * this production has for it.
+	 * 
+	 * <p>Warning: While it is technically safe to mix calls to {@link #childAsIs} and {@link #childDecorated}
+	 * this behavior should not be relied upon, as it may change later.
+	 * 
+	 * @param child The number of the child to obtain.
+	 * @return The decorated value of the child.
+	 */
+	public DecoratedNode childDecorated(int child){
 		Object o = this.childrenValues[child]; 
 		if(o == null) {
 			o = self.getChild(child);
@@ -169,46 +208,28 @@ public class DecoratedNode {
 				o = ((Node)o).decorate(this, self.getDefinedInheritedAttributes(child));
 			}
 			
-			/*// "run time type checking" lots of false positives.
-			if(o!= null)
-			try {
-				// This should never throw, since all Node children should have a static childTypes
-				Class<?> cts[] = (Class<?>[])self.getClass().getField("childTypes").get(null);
-				if(!cts[child].isInstance(o instanceof DecoratedNode ? ((DecoratedNode)o).self : o)) {
-					
-					// Functions take DecoratedNodes...
-					if(cts[child] != common.DecoratedNode.class && cts[child] != common.Terminal.class) {
-						System.out.println("RTTC: Node " + name + " getting child " + child +
-										" failed.  Expected type: " + cts[child].getName() + 
-										". Got type: " + o.getClass().getName());
-						if(o instanceof DecoratedNode) {
-							System.out.println("\t\t DC is of type: " + ((DecoratedNode)o).name);
-						}
-					}
-				}
-			} catch (Throwable t) {
-				System.out.println("RTTC: Got exception? " + t);
-			}*/
-			
 			// CACHE : probably should not comment out child caching?
 			this.childrenValues[child] = o;
 		}
-		return o;
+		return (DecoratedNode)o;
 	}
-
+	
 	/**
-	 * Get the value of a local. If this is a Node, supply it with the attributes we have for it. Caches values for re-use.
+	 * Get the value of a local. If this is a Node, supply it with the attributes we have for it.
+	 * Caches values for re-use.
 	 * 
-	 * <p>First, we look for "real" locals, and if that fails, we try the hacky {@link extraLocalAttributes} field.
+	 * First, we look for "real" locals, and if that fails, we try the hacky {@link extraLocalAttributes}
+	 * field.
 	 * 
 	 * <p>Note: it's not currently possibly to avoid auto-decoration with this. But you can undo it afterward.
 	 * 
 	 * @param attribute The full name of the local to obtain.
 	 * @return The value of the local.
+	 * @deprecated
+	 * @see #localAsIs
+	 * @see #localDecorated
 	 */
 	public Object local(String attribute) {
-		//System.err.println("TRACE: " + name + " demanding local: " + attribute);
-		
 		Object o = this.synthesizedValues.get(attribute);
 		if(o == null) {
 			Lazy l = self.getLocal(attribute);
@@ -232,6 +253,75 @@ public class DecoratedNode {
 			this.synthesizedValues.put(attribute, o);
 		}
 		return o;
+	}
+
+	/**
+	 * Get the value of a local, caching it for re-use.
+	 * 
+	 * First, we look for "real" locals, and if that fails, we try the hacky {@link extraLocalAttributes}
+	 * field.
+	 * 
+	 * <p>Warning: do not mix {@link #localAsIs} and {@link #localDecorated} on the same local attribute!
+	 * 
+	 * @param attribute The full name of the local to obtain.
+	 * @return The value of the local.
+	 */
+	public Object localAsIs(String attribute) {
+		Object o = this.synthesizedValues.get(attribute);
+		if(o == null) {
+			Lazy l = self.getLocal(attribute);
+			if(l == null && this.extraLocalAttributes != null) {
+				l = this.extraLocalAttributes.get(attribute);
+			}
+			if(l == null) {
+				throw new RuntimeException("Local attribute '" + attribute + "' is not defined in production '" + self.getName() + "'");
+			}
+			try {
+				o = l.eval(this);
+			} catch(Throwable t){
+				throw new RuntimeException("Error evaluating local attribute '" + attribute + "' in production '" + self.getName() + "'", t);
+			}
+			
+			// CACHE : comment out to disable caching for local attributes
+			// not recommended due to IO objects (IOString, etc)
+			this.synthesizedValues.put(attribute, o);
+		}
+		return o;
+	}
+
+	/**
+	 * Get the value of a local, caching it for re-use.
+	 * 
+	 * First, we look for "real" locals, and if that fails, we try the hacky {@link extraLocalAttributes}
+	 * field.
+	 * 
+	 * <p>Warning: do not mix {@link #localAsIs} and {@link #localDecorated} on the same local attribute!
+	 * 
+	 * @param attribute The full name of the local to obtain.
+	 * @return The value of the local.
+	 */
+	public DecoratedNode localDecorated(String attribute) {
+		Object o = this.synthesizedValues.get(attribute);
+		if(o == null) {
+			Lazy l = self.getLocal(attribute);
+			if(l == null && this.extraLocalAttributes != null) {
+				l = this.extraLocalAttributes.get(attribute);
+			}
+			if(l == null) {
+				throw new RuntimeException("Local attribute '" + attribute + "' is not defined in production '" + self.getName() + "'");
+			}
+			try {
+				o = l.eval(this);
+				o = ((Node)o).decorate(this, self.getDefinedInheritedAttributes(attribute));
+			} catch(Throwable t){
+				throw new RuntimeException("Error evaluating local attribute '" + attribute + "' in production '" + self.getName() + "'", t);
+			}
+			
+			// CACHE : comment out to disable caching for local attributes
+			// not recommended due to IO objects (IOString, etc)
+			this.synthesizedValues.put(attribute, o);
+		}
+		return (DecoratedNode)o;
 	}
 
 	/**
@@ -271,7 +361,8 @@ public class DecoratedNode {
 	}
 	
 	/**
-	 * Get the forwarded-to DecoratedNode.  Cached.
+	 * Get the forwarded-to DecoratedNode.  Cached.  There is no need for an "AsIs" vs "Decorated"
+	 * variant of this function, since we always know it's a Node.
 	 * 
 	 * @return The DecoratedNode this one forwards to.
 	 */
@@ -335,7 +426,7 @@ public class DecoratedNode {
 	
 	/**
 	 * Only called by {@link #inherited(String)}, when it doesn't have an inherited attribute,
-	 * and it wants to request that value from us (its {@link #forwardParent}).
+	 * and it wants to request that value from this DecorateNode (its {@link #forwardParent}).
 	 * 
 	 * @param attribute The full name of the attribute.
 	 * @return The value of the attribute.

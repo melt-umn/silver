@@ -56,7 +56,7 @@ top::Expr ::= 'case' e1::Expr 'of' ml::MRuleList 'end'
   top.typerep = ml.typerep ; 
 
   ml.typerep_down = case performSubstitution(e1.typerep, e1.upSubst) of
-                      decoratedTypeExp(te1) -> te1
+                      decoratedTypeExp(te1) -> new(te1)
                     | _ -> e1.typerep
                     end;
 
@@ -316,25 +316,27 @@ p::Pattern ::= v::Name
 
 -- TODO: need to autocopy down a boolean that says "should I be decorated or undecorated?"
 -- Since if we're pattern matching on something that's undecorated, we probably shouldn't produce decorated results here
--- This is a huge corner case though
+-- This is a huge corner case though, so meh.
 
   local attribute proto_type :: TypeExp; -- no pun intended
   proto_type = performSubstitution(p.typerep_down, p.downSubst);
   
-{-  local attribute var_type :: TypeExp ;
-  var_type = if !proto_type.doDecorate -- if it's an ordinary type, then
-             then proto_type
-             else -- otherwise, if it's a nonterminal, then calling child will give us a decorated version
-                  decoratedTypeExp(proto_type);
+  local attribute var_type :: TypeExp ;
+  var_type = if proto_type.doDecorate
+             then decoratedTypeExp(proto_type)
+             else proto_type;
   
-  TODO POTENTIAL BUG: EXPLOITATIVE BEHAVIOUR FIXME: using proto_type instead of var_type below.
+  -- Notice that var_type is Decorated. This means that
+  -- foo(v)  produces a binding like
+  -- let v :: Decorated Bar = ....
   
-  Why? Because, since the accessor for it automatically decorates, the Silver translation expects to get a
-  "decorated foo" when it asks for a local of type "foo".  So we're deliberately doing a type error here, and it's okay!!
+  -- This is the source of the bug that requires us to use 'new' occasionally on pattern variables. :(
   
-  -}
-              
-  p.defs = addLocalDcl(p.grammarName, v.location, v.name, proto_type, emptyDefs());
+  -- TODO: introduce a new DclInfo for PatternVar, and use that in the environment instead of Local.
+  -- Problem: We're translating to 'let's, so we can't.  Maybe we shouldn't be using lets?
+  -- Or maybe we should introduce a 'letpatternvar'?
+  
+  p.defs = addLocalDcl(p.grammarName, v.location, v.name, var_type, emptyDefs());
 
   p.errors :=
         if length(getValueDclAll(v.name, p.env)) > 1
@@ -343,7 +345,7 @@ p::Pattern ::= v::Name
 
   p.cond_tree = trueConst('true') ;
 
-  p.letAssigns_tree = [ assignExpr(v, '::', typerepType(proto_type), '=', p.base_tree) ] ;
+  p.letAssigns_tree = [ assignExpr(v, '::', typerepType(var_type), '=', p.base_tree) ] ;
 
   p.upSubst = p.downSubst;
 }
@@ -465,7 +467,10 @@ top::Expr ::= e::Expr c::Integer t::TypeExp
   top.location = e.location;
 
   top.errors := e.errors;
-  top.typerep = if t.doDecorate then decoratedTypeExp(t) else t;
+  top.typerep =
+       if t.doDecorate
+       then decoratedTypeExp(t)
+       else t;
 
   e.downSubst = top.downSubst;
   top.upSubst = e.upSubst;

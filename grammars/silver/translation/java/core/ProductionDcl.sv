@@ -24,7 +24,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 "public class " ++ className ++ " extends " ++ fnnt ++ " {\n\n" ++
 
 makeIndexDcls(0, sigNames) ++ "\n" ++
-"\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(ns.inputElements, top.env) ++ "};\n\n" ++
+"\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(ns.inputElements) ++ "};\n\n" ++
 
 "\tpublic static common.Lazy forward;\n" ++
 "\tpublic static final java.util.Map<String, common.Lazy> forwardAttributes = new java.util.TreeMap<String, common.Lazy>();\n\n" ++
@@ -111,13 +111,13 @@ String ::= s::[String]{
 -- by broken I mean it won't reveal any useful type information (java.lang.Constructor.class)
 -- Also, it preserves no information about _what_ terminal!
 function makeChildTypesList
-String ::= ns::[Decorated NamedSignatureElement] e::Decorated Env
+String ::= ns::[Decorated NamedSignatureElement]
 {
   return if null(ns)
          then ""
          else head(ns).typerep.transType ++ ".class"
               ++ if null(tail(ns))
                  then ""
-                 else ", " ++ makeChildTypesList(tail(ns), e);
+                 else ", " ++ makeChildTypesList(tail(ns));
 }
 
