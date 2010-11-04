@@ -11,7 +11,7 @@ top::ParseResult<a> ::= e::String
 {
   top.parseSuccess = false;
   top.parseErrors = e;
-  top.parseTree = error("Demanded parse tree when parsing failed!");
+  top.parseTree = error("Demanded parse tree when parsing failed! With errors: " ++ e);
 }
 
 abstract production parseSucceeded

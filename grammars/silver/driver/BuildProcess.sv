@@ -12,9 +12,9 @@ import silver:util:command with grammarName as gName;
 synthesized attribute rSpec :: Decorated RootSpec;
 synthesized attribute found :: Boolean;
 
-inherited attribute rParser :: Function(Root ::= String);
-inherited attribute iParser :: Function(IRootSpec ::= String);
-inherited attribute cParser :: Function(Command ::= String);
+inherited attribute rParser :: Function(ParseResult<Root> ::= String String);
+inherited attribute iParser :: Function(ParseResult<IRootSpec> ::= String String);
+inherited attribute cParser :: Function(ParseResult<Command> ::= String String);
 
 nonterminal RunUnit with io, rParser, iParser, cParser;
 
@@ -23,8 +23,13 @@ abstract production run
 top::RunUnit ::= iIn::IO args::String
 {
   --parse the command line
+  production attribute parsea :: ParseResult<Command>;
+  parsea = top.cParser(args, "<cmd line arguments>");
+
   production attribute a :: Command;
-  a = top.cParser(args);
+  a = if parsea.parseSuccess
+      then parsea.parseTree
+      else error("Failed to parse command line arguments: \n" ++ parsea.parseErrors);
 
   local attribute envGP :: IOVal<String>;
   envGP = envVar("GRAMMAR_PATH", iIn);
@@ -271,7 +276,7 @@ top::CompilationUnit ::= grams::[[String]] need::[String] seen::[String]
 
   -- the root of the grammar we are compiling
   local attribute r :: Root;
-  r = top.rParser(g);
+  r = top.rParser(g, "internal " ++ gn).parseTree; -- Since this is an "internal grammar" I'll assume it never parse errors.
   r.grammarName = gn;
   r.compiledGrammars = top.compiledGrammars;
   r.globalImports = toEnv(r.importedDefs);
@@ -449,7 +454,7 @@ top::IOInterface ::= iIn::IO f::String genPath::String{
   text = readFile(genPath ++ f, i);
 
   local attribute ir :: IRootSpec;
-  ir = top.iParser(text.iovalue);
+  ir = top.iParser(text.iovalue, f).parseTree; -- I'm assuming that interface files never parse error, so we aren't making this pretty.
   ir.compiledGrammars = top.compiledGrammars;
 
   local attribute inf :: Interface; 
@@ -486,8 +491,11 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   text = readFile(gpath ++ head(files), print("\t[" ++ gpath ++ head(files) ++ "]\n", iIn));
 
   --the parsed file.
+  local attribute pr :: ParseResult<Root>;
+  pr = top.rParser(text.iovalue, head(files));
+  
   production attribute r :: Root;
-  r = top.rParser(text.iovalue);
+  r = pr.parseTree;
   r.env = top.env;
   r.globalImports = top.globalImports;
   r.file = head(files);
@@ -503,7 +511,12 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   recurse.globalImports = top.globalImports;
 
   top.rSpec = if null(files) then emptyRootSpec() else consRootSpec(r, recurse.rSpec); 
-  top.io = if null(files) then iIn else recurse.io;
+  top.io = if null(files)
+           then iIn
+           else if pr.parseSuccess
+                then recurse.io
+                else exit(-1, print(pr.parseErrors, text.io));
+  
   top.defs = if null(files) then emptyDefs() else appendDefs(r.defs, recurse.defs);
   top.importedDefs = if null(files) then emptyDefs() else appendDefs(r.importedDefs, recurse.importedDefs);
 }
