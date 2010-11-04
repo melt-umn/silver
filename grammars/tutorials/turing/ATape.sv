@@ -1,3 +1,5 @@
+grammar tutorials:turing;
+
 nonterminal ATape with tapeLeft, tapeHead, tapeRight, pp;
 
 synthesized attribute tapeLeft :: [String];

@@ -1,3 +1,4 @@
+grammar tutorials:turing;
 
 nonterminal AMachineFlow with stateName, machineName, options;
 nonterminal AMachine with states, machineName, startState, isSimpleMachine, machineFlow;
