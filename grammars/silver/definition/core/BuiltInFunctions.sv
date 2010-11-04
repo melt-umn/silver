@@ -11,6 +11,8 @@ top::Expr ::= 'length' '(' e::Expr ')'
 	      then [stringLength(e)]
 	      else [];
 
+  e.expected = expected_default();
+
   -- TODO: bug, the handler doesn't have the location available for error handling anymore!
   forwards to if null(handlers) then unknownLength(e) else head(handlers);
 }
@@ -38,6 +40,8 @@ top::Expr ::= 'error' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.typerep = errorType(); -- TODO: or put it here legit?
+  
+  e.expected = expected_type(stringTypeExp());
 }
 
 concrete production toIntFunction
@@ -48,6 +52,8 @@ top::Expr ::= 'toInt' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.typerep = intTypeExp();
+
+  e.expected = expected_default();
 }
 
 concrete production toFloatFunction
@@ -58,6 +64,8 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.typerep = floatTypeExp();
+
+  e.expected = expected_default();
 }
 
 concrete production toStringFunction
@@ -68,6 +76,8 @@ top::Expr ::= 'toString' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.typerep = stringTypeExp();
+
+  e.expected = expected_default();
 }
 
 concrete production newFunction
@@ -90,6 +100,8 @@ top::Expr ::= 'terminal' '(' t::Type ',' e::Expr ')'
 
   top.errors := t.errors ++ e.errors;
   top.typerep = t.typerep;
+
+  e.expected = expected_type(stringTypeExp());
 }
 
 concrete production terminalFunctionLineCol
@@ -100,6 +112,10 @@ top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
 
   top.errors := t.errors ++ e1.errors ++ e2.errors ++ e3.errors;
   top.typerep = t.typerep;
+
+  e1.expected = expected_type(stringTypeExp());
+  e2.expected = expected_type(intTypeExp());
+  e3.expected = expected_type(intTypeExp());
 }
 
 concrete production terminalFunctionInherited
@@ -110,4 +126,7 @@ top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ')'
 
   top.errors := t.errors ++ e1.errors ++ e2.errors;
   top.typerep = t.typerep;
+
+  e1.expected = expected_type(stringTypeExp());
+  e2.expected = expected_default();
 }
