@@ -1,3 +1,5 @@
+grammar tutorials:turing;
+
 nonterminal Dcls with pp, machines, tape, startMachine, theImports;
 nonterminal Dcl with pp, machines, tape, isTapeDcl, startMachine, theImports;
 
@@ -36,38 +38,36 @@ synthesized attribute machineFlow :: [AMachineFlow];
 synthesized attribute startState :: String;
 synthesized attribute startMachine :: String;
 
-lexer class keyword;
+lexer class KEYWORD;
+lexer class IDENTIFIER submits to KEYWORD;
 
-terminal RunTerminal /run/ lexer classes {keyword};
-terminal MachineTerminal /machine/ lexer classes {keyword};
-terminal MoveTerminal /move/ lexer classes {keyword};
-terminal EndTerminal /end/ lexer classes {keyword};
-terminal LeftTerminal /left/ lexer classes {keyword};
-terminal RightTerminal /right/ lexer classes {keyword};
-terminal PrintTerminal /print/ lexer classes {keyword};
-terminal NothingTerminal /nothing/ lexer classes {keyword};
-terminal TapeTerminal /tape/ lexer classes {keyword};
-terminal StateTerminal /state/ lexer classes {keyword};
-terminal StartTerminal /start/ lexer classes {keyword};
+terminal RunTerminal     /run/     lexer classes {KEYWORD};
+terminal MachineTerminal /machine/ lexer classes {KEYWORD};
+terminal MoveTerminal    /move/    lexer classes {KEYWORD};
+terminal EndTerminal     /end/     lexer classes {KEYWORD};
+terminal LeftTerminal    /left/    lexer classes {KEYWORD};
+terminal RightTerminal   /right/   lexer classes {KEYWORD};
+terminal PrintTerminal   /print/   lexer classes {KEYWORD};
+terminal NothingTerminal /nothing/ lexer classes {KEYWORD};
+terminal TapeTerminal    /tape/    lexer classes {KEYWORD};
+terminal StateTerminal   /state/   lexer classes {KEYWORD};
+terminal StartTerminal   /start/   lexer classes {KEYWORD};
+terminal LoadTerminal    /load/    lexer classes {KEYWORD};
 
-terminal LeftCurl /[\{]/ lexer classes {keyword};
-terminal RightCurl /[\}]/ lexer classes {keyword};
-terminal Arrow /[\-][\ \t\n]*[\>]/ lexer classes {keyword};
-terminal Colon /[\:]/ lexer classes {keyword};
-terminal SemiColon /[\;]/ lexer classes {keyword};
-terminal LeftSquare /[\[]/lexer classes {keyword};
-terminal RightSquare /[\]]/lexer classes {keyword};
-terminal Comma /[\,]/lexer classes {keyword};
-terminal LoadTerminal /load/ lexer classes {keyword};
+terminal LeftCurl    /[\{]/;
+terminal RightCurl   /[\}]/;
+terminal Arrow       /[\-][\ \t\n]*[\>]/;
+terminal Colon       /[\:]/;
+terminal SemiColon   /[\;]/;
+terminal LeftSquare  /[\[]/;
+terminal RightSquare /[\]]/;
+terminal Comma       /[\,]/;
 
+terminal IdTerminal /[0-9A-Za-z]+/ lexer classes{IDENTIFIER};
+terminal StringTerminal /[\"]([^\"]|([\\][\"]))*[\"]/;
 
-lexer class info;
-terminal IdTerminal /[0-9A-Za-z]+/ submits to {keyword}, lexer classes{info};
-terminal StringTerminal /[\"]([^\"]|([\\][\"]))*[\"]/ submits to {keyword}, lexer classes{info};
-
-ignore terminal WhiteSpace /[\n\t\ ]+/ submits to {info};
---ignore terminal Comments /( [\/] [\*] ([^\*] | [\r\n] | ([\*]+ ([^\*\/] | [\r\n])))*  [\*]+ [\/]) | ([\/] [\/] .*) / submits to {info};
-ignore terminal LineComment /\/\/[^\r\n]*/ submits to {info};
+ignore terminal WhiteSpace /[\n\t\ ]+/;
+ignore terminal LineComment /\/\/[^\r\n]*/;
 
 
 concrete production dcl
@@ -346,6 +346,7 @@ top::FlowDcl ::= c1::StateOrStart c2::IdTerminal c3::Colon c4::IdTerminal c5::Le
   top.machineFlow = [newAMachineFlow(c2.lexeme, c4.lexeme, [])];
   top.startState = if c1.isStart then c2.lexeme else "";
 }
+
 --imports
 concrete production option
 top::Options ::= c1::Option

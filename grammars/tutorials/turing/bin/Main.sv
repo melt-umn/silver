@@ -1,8 +1,9 @@
-import turing;
+grammar tutorials:turing:bin;
 
+import tutorials:turing;
 
 parser parse::Dcls {
-  turing;
+  tutorials:turing;
 }
 
 function main 
@@ -11,13 +12,8 @@ IO ::= args::String i::IO {
   local attribute file :: IOVal<String>;
   file = readFile(args, i);
 
-  local attribute presult :: ParseResult<Dcls>;
-  presult = parse(file.iovalue, args);
-
   local attribute result :: Dcls;
-  result = if presult.parseSuccess
-           then presult.parseTree
-           else error(presult.parseErrors);
+  result = parse(file.iovalue, args).parseTree; -- If we run into a parse error, it won't be pretty!
 
   local attribute extras :: IOAMachineList;
   extras = getImports(result.theImports);
@@ -56,13 +52,8 @@ top::IOAMachineList ::= seen::[String] need::[String]
   local attribute text :: IOVal<String>;
   text = readFile(head(need), top.ioIn);
 
-  local attribute presult :: ParseResult<Dcls>;
-  presult = parse(text.iovalue, head(need));
-
   local attribute result :: Dcls;
-  result = if presult.parseSuccess
-           then presult.parseTree
-           else error(presult.parseErrors);
+  result = parse(text.iovalue, head(need)).parseTree;
 
   local attribute new_seen :: [String];
   new_seen = cons(head(need), seen);
@@ -91,7 +82,6 @@ function makeSet
 	      then recurse
 	      else cons(head(list), recurse);
 }
-
 
 function containsString
 Boolean ::=  str::String sl::[String]
