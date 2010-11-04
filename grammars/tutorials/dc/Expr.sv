@@ -3,14 +3,14 @@ grammar tutorials:dc ;
 -- Concrete Syntax --
 ---------------------
 
-nonterminal Expr_c ;
-nonterminal Term_c ;
-nonterminal Factor_c ;
-
 synthesized attribute ast_Expr :: Expr ;
-attribute ast_Expr occurs on Expr_c, Term_c, Factor_c ;
 
-attribute pp occurs on Expr_c, Term_c, Factor_c ;
+nonterminal Expr_c with pp, ast_Expr;
+nonterminal Term_c with pp, ast_Expr;
+nonterminal Factor_c with pp, ast_Expr;
+
+-- Note about this concrete syntax: We're choosing to use the Expr/Term/Factor decomposition here
+-- Silver does support 'association' and 'precedence', too. See comments in Terminals.sv
 
 concrete production add_c
 sum::Expr_c ::= e::Expr_c '+' t::Term_c
@@ -72,10 +72,7 @@ ic::Factor_c ::= i::IntLit_t
 -- Abstract Syntax --
 ---------------------
 
-nonterminal Expr ;
-
-attribute pp occurs on Expr ;
-attribute value occurs on Expr ;
+nonterminal Expr with pp, value;
 
 abstract production add
 sum::Expr ::= l::Expr r::Expr
