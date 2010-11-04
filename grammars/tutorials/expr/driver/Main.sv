@@ -75,6 +75,8 @@ abstract production write_String
 t::IO_Action ::= filename::String str::String
 { t.ioOut = writeFile(filename, str, t.ioIn);    }
 
+synthesized attribute ioOut :: IO ;
+inherited attribute ioIn :: IO ;
 
 nonterminal IO_Action with ioIn, ioOut ;
 
