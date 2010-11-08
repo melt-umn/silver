@@ -96,7 +96,9 @@ ml::MRuleList ::= m::MatchRule
 
   ml.translation_tree = ifThenElse('if', m.cond_tree,
                                    'then', m.then_tree,
-                                   'else', errorFunction('error', '(', stringConst(terminal(String_t, "\"Error: pattern match failed.\\n\"")), ')')) ;
+                                   'else', productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t,"core:error")))), '(', exprsSingle(stringConst(terminal(String_t, "\"Error: pattern match failed.\\n\""))), ')')) ;
+                                   
+                                   
 
   m.downSubst = ml.downSubst;
   ml.upSubst = m.upSubst;

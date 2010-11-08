@@ -40,7 +40,6 @@ terminal True_kwd		'true'		lexer classes {KEYWORD};
 terminal With_kwd		'with'		lexer classes {KEYWORD};
 terminal Global_kwd		'global'	lexer classes {KEYWORD};
 
-terminal Error_kwd		'error'		lexer classes {BUILTIN};
 terminal Length_kwd		'length'	lexer classes {BUILTIN};
 terminal ToFloat_kwd		'toFloat'	lexer classes {BUILTIN};
 terminal ToInt_kwd		'toInt'		lexer classes {BUILTIN};
