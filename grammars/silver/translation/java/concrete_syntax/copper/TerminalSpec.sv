@@ -43,7 +43,7 @@ Decorated TerminalModifierSpec ::= s::[String]{
 
 abstract production i_lexerClassesTerminalModifierSpec
 top::TerminalModifierSpec ::= s::[String]{
-  top.unparse = "lexer_class[" ++ (if null(s) then "" else "'" ++ folds("','", s) ++ "'") ++ "]";
+  top.unparse = "lexer_class[" ++ (if null(s) then "" else "'" ++ implode("','", s) ++ "'") ++ "]";
   top.lexerClasses = s;
   forwards to defaultTerminalModifierSpec();
 }
@@ -61,7 +61,7 @@ Decorated TerminalModifierSpec ::= s::[String]{
 
 abstract production i_submitsToTerminalModifierSpec
 top::TerminalModifierSpec ::= s::[String]{
-  top.unparse = "submits[" ++ (if null(s) then "" else "'" ++ folds("','", s) ++ "'") ++ "]";
+  top.unparse = "submits[" ++ (if null(s) then "" else "'" ++ implode("','", s) ++ "'") ++ "]";
   top.submitsTo = s;
   forwards to defaultTerminalModifierSpec();
 }
@@ -79,7 +79,7 @@ Decorated TerminalModifierSpec ::= s::[String]{
 
 abstract production i_dominatesTerminalModifierSpec
 top::TerminalModifierSpec ::= s::[String]{
-  top.unparse = "dominates[" ++ (if null(s) then "" else "'" ++ folds("','", s) ++ "'") ++ "]";
+  top.unparse = "dominates[" ++ (if null(s) then "" else "'" ++ implode("','", s) ++ "'") ++ "]";
   top.termDominates = s;
   forwards to defaultTerminalModifierSpec();
 }

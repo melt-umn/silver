@@ -39,24 +39,25 @@ top::RootSpecUnparse ::= r::Decorated RootSpec
   production attribute unparses :: [String] with ++;
   unparses := [
 		"declaredName " ++ quoteString(r.declaredName),
-		"moduleNames [" ++ folds(",", quoteStrings(r.moduleNames)) ++ "]",
+		"moduleNames [" ++ implode(", ", quoteStrings(r.moduleNames)) ++ "]",
 	       	"defs [" ++ unparseDefs(r.defs, []) ++ "]",
-	       	"exportedGrammars [" ++ folds(",", quoteStrings(r.exportedGrammars)) ++ "]",
+	       	"exportedGrammars [" ++ implode(", ", quoteStrings(r.exportedGrammars)) ++ "]",
 	       	"condBuild [" ++ foldCB(r.condBuild) ++ "]"
 	      ];
 
-  top.unparse = folds("\n", unparses);
+  top.unparse = implode("\n", unparses);
 }
 
 function foldCB
 String ::= inp::[[String]]
-{
-  return if null(inp) then "" else folds(",", quoteStrings(head(inp))) ++ if null(tail(inp)) then "" else "," ++ foldCB(tail(inp));
+{ -- TODO: make this a real fold?
+  return if null(inp) then "" else implode(", ", quoteStrings(head(inp))) ++ if null(tail(inp)) then "" else ", " ++ foldCB(tail(inp));
 }
 
 function quoteStrings
-[String] ::= s::[String]{
-  return if null(s) then [] else [quoteString(head(s))] ++ quoteStrings(tail(s));
+[String] ::= s::[String]
+{
+  return map(quoteString, s);
 }
 
 function quoteString

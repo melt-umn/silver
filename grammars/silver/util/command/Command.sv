@@ -44,8 +44,8 @@ top::Command ::=  c1::PieceList
 
   top.flags = c1.flags;
   top.grammarName = c1.grammarName;
-  top.usage = "\nsilver [Options] GrammarName\n" ++ folds("", uses) ++ "\n\n";
-  top.flag_usage = folds("", uses) ++ "\n\n";
+  top.usage = "\nsilver [Options] GrammarName\n" ++ implode("", uses) ++ "\n\n";
+  top.flag_usage = implode("", uses) ++ "\n\n";
 
   top.okay = isOkay(flagLookups, c1.flags);
 
@@ -139,4 +139,10 @@ function foldf
 String ::= s::String c1::[Flag]
 {
   return if null(c1) then "" else head(c1).chunk ++ (if null(tail(c1)) then "" else s) ++ foldf(s, tail(c1));
-} 
+}
+
+function getFlagChunk
+String ::= f::Flag
+{
+  return f.chunk;
+}

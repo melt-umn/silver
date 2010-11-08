@@ -53,5 +53,5 @@ top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QNa
 
 function makeDecoratorClassName
 String ::= s::String {
-  return makeClassNameHelp(split(":", s), "D");
+  return makeClassNameHelp(explode(":", s), "D");
 }

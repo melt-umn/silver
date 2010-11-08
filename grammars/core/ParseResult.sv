@@ -22,3 +22,14 @@ top::ParseResult<a> ::= t::a
   top.parseTree = t;
 }
 
+
+-- This function is not to be considered part of the standard library. It may disappear in the future.
+-- It exists because parsers used to behave this way, so it's a compatibility with older versions of Silver.
+
+-- Just extract the tree, or die immediately, printing the parse errors. (without a stack trace, unlike error())
+function parseTreeOrDieWithoutStackTrace
+a ::= pr::ParseResult<a>
+{
+  return unsafeTrace(pr.parseTree, if pr.parseSuccess then unsafeIO() else exit(-1, print(pr.parseErrors, unsafeIO())));
+}
+

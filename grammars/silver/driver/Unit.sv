@@ -4,6 +4,7 @@ import silver:definition:env;
 import silver:util;
 import silver:util:command;
 
+-- TODO: this file is kind of random.  Merge into BuildProcess and refactor, please.
 
 --units of work.
 nonterminal Unit with ioIn, io, code, order;

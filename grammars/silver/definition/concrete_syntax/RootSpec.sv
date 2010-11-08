@@ -17,7 +17,7 @@ top::RootSpecUnparse ::= r::Decorated RootSpec{
 
 function foldParsers
 String::= l::[Decorated ParserSpec]{
-  return if null(l) then "" else ("parser '" ++ head(l).fullName ++ "', '" ++ head(l).startName ++ "', [" ++ folds(", ", quoteStrings(head(l).moduleNames)) ++ "]" ++ (if null(tail(l)) then "" else "\n" ++ foldParsers(tail(l))));
+  return if null(l) then "" else ("parser '" ++ head(l).fullName ++ "', '" ++ head(l).startName ++ "', [" ++ implode(", ", quoteStrings(head(l).moduleNames)) ++ "]" ++ (if null(tail(l)) then "" else "\n" ++ foldParsers(tail(l))));
 }
 
 

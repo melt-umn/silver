@@ -103,7 +103,7 @@ String ::= str::String
 
 function getGrammarName
 String ::= s::String {
-  return getGrammarNameHelp(split(":", s));
+  return getGrammarNameHelp(explode(":", s));
 }
 
 function getGrammarNameHelp
@@ -174,7 +174,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type ';'
   top.documentation = [doc(IA(), 
 "<div class='row'>\n" ++ 
 "  <a name='" ++ fName ++ "'></a>\n" ++ 
-"  <span class='value'>" ++ a.name ++ "</span> :: <a href='" ++ makeFileName(getGrammarName(t)) ++ "#" ++ t ++ "' class='type'>" ++ last(split(":", t)) ++ "</a><br/>\n" ++ 
+"  <span class='value'>" ++ a.name ++ "</span> :: <a href='" ++ makeFileName(getGrammarName(t)) ++ "#" ++ t ++ "' class='type'>" ++ last(explode(":", t)) ++ "</a><br/>\n" ++ 
 "  <span class='info'>inherited</span>\n" ++ 
 "</div>\n"
 )];
@@ -189,7 +189,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type ';'
   top.documentation = [doc(SA(),
 "<div class='row'>\n" ++ 
 "  <a name='" ++ fName ++ "'></a>\n" ++ 
-"  <span class='value'>" ++ a.name ++ "</span> :: <a href='" ++ makeFileName(getGrammarName(t)) ++ "#" ++ t ++ "' class='type'>" ++ last(split(":", t)) ++ "</a><br/>\n" ++ 
+"  <span class='value'>" ++ a.name ++ "</span> :: <a href='" ++ makeFileName(getGrammarName(t)) ++ "#" ++ t ++ "' class='type'>" ++ last(explode(":", t)) ++ "</a><br/>\n" ++ 
 "  <span class='info'>synthesized</span>\n" ++ 
 "</div>\n"
 )];
@@ -225,7 +225,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   top.documentation = [doc(CP(),
 "<div class='row'>\n" ++ 
 "  <a name='" ++ fName ++ "'></a><span class='value'>" ++ id.name ++ "</span> " ++ 
-		 "<a href='" ++ makeFileName(getGrammarName(t)) ++ "#" ++ t ++ "' class='type'>" ++ last(split(":", t)) ++ "</a> ::= " ++ 
+		 "<a href='" ++ makeFileName(getGrammarName(t)) ++ "#" ++ t ++ "' class='type'>" ++ last(explode(":", t)) ++ "</a> ::= " ++ 
 		 foldRHS(getTypeNamesSignature(namedSig.inputElements)) ++ "<br/>\n" ++
 "  <span class='info'>concrete</span></div>\n" ++
 "</div>"
@@ -241,7 +241,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   top.documentation = [doc(AP(),
 "<div class='row'>\n" ++ 
 "  <a name='" ++ fName ++ "'></a><span class='value'>" ++ id.name ++ "</span> " ++ 
-		 "<a href='" ++ makeFileName(getGrammarName(t)) ++ "#" ++ t ++ "' class='type'>" ++ last(split(":", t)) ++ "</a> ::= " ++ 
+		 "<a href='" ++ makeFileName(getGrammarName(t)) ++ "#" ++ t ++ "' class='type'>" ++ last(explode(":", t)) ++ "</a> ::= " ++ 
 		 foldRHS(getTypeNamesSignature(namedSig.inputElements)) ++ "\n" ++
 "</div>"
 )];
@@ -256,7 +256,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.documentation = [doc(F(),
 "<div class='row'>\n" ++ 
 "  <a name='" ++ fName ++ "'></a><span class='value'>" ++ id.name ++ "</span> " ++ 
-		 "<a href='" ++ makeFileName(getGrammarName(t)) ++ "#" ++ t ++ "' class='type'>" ++ last(split(":", t)) ++ "</a> ::= " ++ 
+		 "<a href='" ++ makeFileName(getGrammarName(t)) ++ "#" ++ t ++ "' class='type'>" ++ last(explode(":", t)) ++ "</a> ::= " ++ 
 		 foldRHS(getTypeNamesSignature(namedSig.inputElements)) ++ "\n" ++
 "</div>"
 )];
@@ -285,12 +285,12 @@ String ::= s::[String]{
 
 function makeTypeLink
 String ::= s::String{
-  return "<a href='" ++ makeFileName(getGrammarName(s)) ++ "/SilverDoc.html#" ++ s ++ "' class='type'>" ++ last(split(":", s)) ++ "</a>";
+  return "<a href='" ++ makeFileName(getGrammarName(s)) ++ "/SilverDoc.html#" ++ s ++ "' class='type'>" ++ last(explode(":", s)) ++ "</a>";
 }
 
 function makeConcreteTypeLink
 String ::= s::String{
-  return "<a href='#C" ++ s ++ "' class='type'>" ++ last(split(":", s)) ++ "</a>";
+  return "<a href='#C" ++ s ++ "' class='type'>" ++ last(explode(":", s)) ++ "</a>";
 }
 
 function makeRules

@@ -158,7 +158,7 @@ top::IOVal<String> ::= i::IO a::Decorated Command specs::[Decorated RootSpec] si
 "    <path refid='lib.classpath'/>\n" ++
 "  </path>\n\n" ++
 
-folds("\n", extraTaskdefs) ++ "\n\n" ++
+implode("\n", extraTaskdefs) ++ "\n\n" ++
 
 "  <target name='init'>\n\n" ++
 "    <!-- Create the time stamp -->\n" ++
@@ -202,14 +202,14 @@ folds("\n", extraTaskdefs) ++ "\n\n" ++
 
 "  </target>\n\n" ++
 
-"  <target name='grammars' depends='" ++ folds(", ", extraDepends) ++ "'>\n" ++
+"  <target name='grammars' depends='" ++ implode(", ", extraDepends) ++ "'>\n" ++
 
 "      <javac debug='on' source='1.5' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}'>\n" ++
     buildGrammarList(specs, "*.java") ++ 
 "      </javac>\n" ++
 "  </target>\n\n" ++
 
-folds("\n", extraTargets) ++ "\n\n" ++
+implode("\n", extraTargets) ++ "\n\n" ++
 
 "</project>\n";
 }

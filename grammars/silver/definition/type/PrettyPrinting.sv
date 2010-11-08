@@ -58,7 +58,7 @@ top::TypeExp ::=
 aspect production nonterminalTypeExp
 top::TypeExp ::= fn::String params::[TypeExp]
 {
-  top.typepp = fn ++ if !null(params) then "<" ++ folds(" ", mapTypePP(params, top.boundVariables)) ++ ">" else "";
+  top.typepp = fn ++ if !null(params) then "<" ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ">" else "";
 }
 
 aspect production terminalTypeExp
@@ -76,13 +76,13 @@ top::TypeExp ::= te::TypeExp
 aspect production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
-  top.typepp =   "Function(" ++ out.typepp ++ " ::= " ++ folds(" ", mapTypePP(params, top.boundVariables)) ++ ")" ;
+  top.typepp =   "Function(" ++ out.typepp ++ " ::= " ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ")" ;
 }
 
 aspect production productionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
-  top.typepp = "Production(" ++ out.typepp ++ " ::= " ++ folds(" ", mapTypePP(params, top.boundVariables)) ++ ")" ;
+  top.typepp = "Production(" ++ out.typepp ++ " ::= " ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ")" ;
 }
 
 --------------------------------------------------------------------------------

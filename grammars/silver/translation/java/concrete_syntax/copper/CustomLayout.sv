@@ -24,7 +24,7 @@ Decorated ProductionModifierSpec ::= s::[String]
 abstract production i_layoutProductionModifierSpec
 top::ProductionModifierSpec ::= s::[String]
 {
-  top.unparse = "layout [" ++ folds(", ",quoteStrings(s)) ++ "]";
+  top.unparse = "layout [" ++ implode(", ",quoteStrings(s)) ++ "]";
   top.customLayout = s;
   top.hasCustomLayout = true;
   forwards to defaultProductionModifierSpec();

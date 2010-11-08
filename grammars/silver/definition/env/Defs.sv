@@ -30,7 +30,7 @@ String ::= d_un::Defs bv::[TyVar]
               d.prodOccursList ++
               d.occursList;
   
-  return folds(",\n ", mapUnparseDcls(dclinfos, bv));
+  return implode(",\n ", mapUnparseDcls(dclinfos, bv));
 }
 
 function mapUnparseDcls
