@@ -89,7 +89,7 @@ top::TypeExp ::= out::TypeExp params::[TypeExp]
 function unparseTypes
 String ::= tes::[TypeExp] bv::[TyVar]
 {
-  return "[" ++ folds(", ", mapUnparseTypes(tes, bv)) ++ "]";
+  return "[" ++ implode(", ", mapUnparseTypes(tes, bv)) ++ "]";
 }
 function mapUnparseTypes
 [String] ::= tes::[TypeExp] bv::[TyVar]
@@ -106,7 +106,7 @@ function mapUnparseTypes
 function unparseTyVars
 String ::= utvs::[TyVar]  bv::[TyVar]
 {
-  return "[" ++ folds(", ", mapUnparseTyVars(utvs, bv)) ++ "]";
+  return "[" ++ implode(", ", mapUnparseTyVars(utvs, bv)) ++ "]";
 }
 function mapUnparseTyVars
 [String] ::= tes::[TyVar]  bv::[TyVar]

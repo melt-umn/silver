@@ -61,7 +61,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String tst::[String] td::
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = "lexer_class(" ++ sl.unparse ++ ", '" ++ fn ++ "', [" ++ folds(",", quoteStrings(tst)) ++ "], [" ++ folds(",", quoteStrings(td)) ++ "])";
+  top.unparse = "lexer_class(" ++ sl.unparse ++ ", '" ++ fn ++ "', [" ++ implode(", ", quoteStrings(tst)) ++ "], [" ++ implode(", ", quoteStrings(td)) ++ "])";
   
   top.submitsTo = tst;
   top.termDominates = td;

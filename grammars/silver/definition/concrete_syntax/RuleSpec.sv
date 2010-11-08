@@ -43,7 +43,7 @@ Decorated RHSSpec ::= gn::String fn::String ns::[String]  pm::[Decorated Product
 abstract production i_rhsSpec
 top::RHSSpec ::= gn::String fn::String ns::[String] pm::[Decorated ProductionModifierSpec]
 {
-  top.unparse = "('" ++ gn ++ "','" ++ fn ++ "',["  ++(if null(ns) then "" else "'" ++ folds("','", ns) ++ "'") ++ "],[" ++ foldProductionModifiers(pm) ++  "])";
+  top.unparse = "('" ++ gn ++ "','" ++ fn ++ "',["  ++(if null(ns) then "" else "'" ++ implode("','", ns) ++ "'") ++ "],[" ++ foldProductionModifiers(pm) ++  "])";
   top.ruleGrammarName = gn;
   top.ruleName = fn;
   top.ruleRHS = ns;

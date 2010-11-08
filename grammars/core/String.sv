@@ -1,5 +1,37 @@
 grammar core;
 
+
+function implode
+String ::= sep::String lst::[String]
+{
+  return if null(lst)
+         then ""
+         else head(lst) ++ if null(tail(lst))
+                           then ""
+                           else sep ++ implode(sep, tail(lst));
+}
+function explode
+[String] ::= sep::String str::String
+{
+  local attribute i :: Integer;
+  i = indexOf(sep, str);
+
+  return if i == -1
+         then [str]
+         else [substring(0, i, str)] ++ explode(sep, substring(i+length(sep), length(str), str));
+}
+
+function stringEq -- useful since we don't have sections in Silver. 
+Boolean ::= s1::String s2::String
+{
+  return s1 == s2;
+}
+function stringLte -- useful since we don't have sections in Silver. 
+Boolean ::= s1::String s2::String
+{
+  return s1 <= s2;
+}
+
 ------ String manipulation functions
 
 function indexOf
@@ -35,11 +67,11 @@ Boolean ::= pre::String s::String
 }
 
 function endsWith
-Boolean ::= pre::String s::String
+Boolean ::= post::String s::String
 {
   return error("Not Yet Implemented: endsWith");
 } foreign {
-  "java" : return "(new Boolean(%s%.toString().endsWith(%pre%.toString())))";
+  "java" : return "(new Boolean(%s%.toString().endsWith(%post%.toString())))";
 }
 
 function isDigit

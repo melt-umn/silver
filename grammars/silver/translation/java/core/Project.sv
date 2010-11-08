@@ -19,12 +19,12 @@ String ::= str::String
 
 function makeClassName
 String ::= s::String{
-  return makeClassNameHelp(split(":", s), "P");
+  return makeClassNameHelp(explode(":", s), "P");
 }
 
 function makeNTClassName
 String ::= s::String {
-  return makeClassNameHelp(split(":", s), "N");
+  return makeClassNameHelp(explode(":", s), "N");
 }
 
 function makeParserName
@@ -32,7 +32,7 @@ String ::= s::String{
   return"Parser_" ++ substitute("_", ":", s);
 }
 
-function makeClassNameHelp
+function makeClassNameHelp -- TODO: get a native replace and do this more intelligently...
 String ::= s::[String] prfix::String{
   return if null(s) then "" else if null(tail(s)) then prfix ++ head(s) else (head(s) ++ "." ++ makeClassNameHelp(tail(s), prfix));
 }

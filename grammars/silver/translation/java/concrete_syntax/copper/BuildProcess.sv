@@ -129,6 +129,6 @@ String ::= r::[Decorated ParserSpec] a::Decorated Command
 function hackilyFindGrammarName
 String ::= svName::String
 {
-  return substring(0, length(svName) - length(last(split(":", svName))) - 1, svName);
+  return substring(0, length(svName) - length(last(explode(":", svName))) - 1, svName);
 
 }

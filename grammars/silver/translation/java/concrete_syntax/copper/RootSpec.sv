@@ -14,7 +14,7 @@ top::RootSpecUnparse ::= r::Decorated RootSpec{
 function mapDGs
 [String] ::= lst::[Decorated DisambiguationGroupSpec]
 {
-  return if null(lst) then [] else ["disambiguate [[" ++ folds(", ",quoteStrings(head(lst).groupMembers)) ++ "], \"" ++ escapeString(head(lst).actionCode) ++ "\"]"] ++ mapDGs(tail(lst));
+  return if null(lst) then [] else ["disambiguate [[" ++ implode(", ",quoteStrings(head(lst).groupMembers)) ++ "], \"" ++ escapeString(head(lst).actionCode) ++ "\"]"] ++ mapDGs(tail(lst));
 }
 
 function mapPAs

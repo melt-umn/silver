@@ -46,14 +46,14 @@ top::RunUnit ::= iIn::IO args::String
 
   --a list of directories to search
   production attribute spath :: [String];
-  spath = getSearchPath(sPath);
+  spath = map(endWithSlash,  explode(":", sPath));
   
   production attribute silverhome :: String;
-  silverhome = envSH.iovalue ++ "/"; -- TODO this works fine unconditionally... for now?
+  silverhome = endWithSlash(envSH.iovalue);
   
   -- This is a collection so that in the future translations can have their own sub-directories
   production attribute silvergen :: String with ++;
-  silvergen := (if a.genLocation == "" then envSG.iovalue else a.genLocation) ++ "/"; -- TODO this (/) works fine unconditionally... for now?
+  silvergen := endWithSlash(if a.genLocation == "" then envSG.iovalue else a.genLocation);
 
   --the grammar path ':' replaced by '/'
   local attribute gpath :: String;
@@ -72,8 +72,8 @@ top::RunUnit ::= iIn::IO args::String
   preIO = runAll(envSH.io, unitMergeSort(preOps));
 
   --the directory which contains the grammar
-  local attribute grammarLocation :: MaybeIOStr;
-  grammarLocation = findGrammarLocation(preIO.io, gpath, spath);
+  local attribute grammarLocation :: IOVal<Maybe<String>>;
+  grammarLocation = findGrammarLocation(gpath, spath, preIO.io);
 
 --------
 -------- Phase 2: Begin actually compiling things
@@ -171,9 +171,9 @@ top::RunUnit ::= iIn::IO args::String
   
   top.io = if preIO.iovalue != 0 --the preops tell us to quit.
            then exit(preIO.iovalue, preIO.io)
-           else if a.okay && grammarLocation.found --the args were okay and the grammar was found.
+           else if a.okay && grammarLocation.iovalue.isJust --the args were okay and the grammar was found.
            then exit(postIO.iovalue, postIO.io)
-           else if a.okay && !grammarLocation.found --the args were okay but the grammar was not found
+           else if a.okay && !grammarLocation.iovalue.isJust --the args were okay but the grammar was not found
            then exit(-1, print("\nGrammar '" ++ a.gName ++ "' could not be located, make sure that the grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
            else exit(-1, print(a.usage, iIn)); -- the args were not okay.
 }
@@ -371,26 +371,26 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   gramPath = substitute("/", ":", grammarName) ++ "/";
 
   -- the location (if found) of the grammar
-  local attribute grammarLocation :: MaybeIOStr;
-  grammarLocation = findGrammarLocation(iIn, gramPath, sPath);
+  local attribute grammarLocation :: IOVal<Maybe<String>>;
+  grammarLocation = findGrammarLocation(gramPath, sPath, iIn);
 
   -- the list of files from the grammar directory
   local attribute temp_files :: IOVal<[String]>;
-  temp_files = listContents(grammarLocation.sValue, grammarLocation.io);
+  temp_files = listContents(grammarLocation.iovalue.fromJust, grammarLocation.io);
 
   -- the list of silver files for the grammar
   local attribute files :: [String];
-  files = filterFiles(temp_files.iovalue);
+  files = filter(isValidSilverFile, temp_files.iovalue);
 
   local attribute hasInterface :: IOVal<Boolean>;
-  hasInterface = isValidInterface(temp_files.io, genPath ++ "src/" ++ gramPath ++ "Silver.svi", grammarLocation.sValue, files);
+  hasInterface = isValidInterface(temp_files.io, genPath ++ "src/" ++ gramPath ++ "Silver.svi", grammarLocation.iovalue.fromJust, files);
 
   local attribute pr :: IO;
   pr = print("Compiling Grammar: " ++ grammarName ++ "\n", hasInterface.io); 
 	
   --the result of compiling all of the files.
   production attribute cu :: Roots;
-  cu = compileFiles(pr, grammarName, files, grammarLocation.sValue);
+  cu = compileFiles(pr, grammarName, files, grammarLocation.iovalue.fromJust);
   cu.rParser = top.rParser;
   cu.env = toEnv(cu.defs);
   cu.globalImports = toEnv(cu.importedDefs);
@@ -401,10 +401,10 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   inf.iParser = top.iParser;
   inf.compiledGrammars = top.compiledGrammars;
 
-  top.found = grammarLocation.found;
-  top.interfaces = if grammarLocation.found && !clean && hasInterface.iovalue then inf.interfaces else [];
-  top.io =  if grammarLocation.found then (if !clean && hasInterface.iovalue then inf.io else cu.io) else grammarLocation.io;
-  top.rSpec = if grammarLocation.found then (if !clean && hasInterface.iovalue then head(inf.interfaces).rSpec else cu.rSpec) else emptyRootSpec();
+  top.found = grammarLocation.iovalue.isJust;
+  top.interfaces = if grammarLocation.iovalue.isJust && !clean && hasInterface.iovalue then inf.interfaces else [];
+  top.io =  if grammarLocation.iovalue.isJust then (if !clean && hasInterface.iovalue then inf.io else cu.io) else grammarLocation.io;
+  top.rSpec = if grammarLocation.iovalue.isJust then (if !clean && hasInterface.iovalue then head(inf.interfaces).rSpec else cu.rSpec) else emptyRootSpec();
 }
 
 
@@ -432,7 +432,11 @@ IOVal<Integer> ::= i::IO dir::String is::[String]{
   local attribute rest :: IOVal<Integer>;
   rest = fileTimes(ft.io, dir, tail(is));
 
-  return if null(is) then ioval(i, -1) else if ft.iovalue > rest.iovalue then ioval(rest.io, ft.iovalue) else rest;
+  return if null(is)
+         then fileTime(dir, i) -- check the directory itself. Catches deleted files.
+         else if ft.iovalue > rest.iovalue
+              then ioval(rest.io, ft.iovalue)
+              else rest;
 }
 
 synthesized attribute lastModified :: Integer;
@@ -490,12 +494,8 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   local attribute text :: IOVal<String>;
   text = readFile(gpath ++ head(files), print("\t[" ++ gpath ++ head(files) ++ "]\n", iIn));
 
-  --the parsed file.
-  local attribute pr :: ParseResult<Root>;
-  pr = top.rParser(text.iovalue, head(files));
-  
   production attribute r :: Root;
-  r = pr.parseTree;
+  r = parseTreeOrDieWithoutStackTrace(top.rParser(text.iovalue, head(files)));
   r.env = top.env;
   r.globalImports = top.globalImports;
   r.file = head(files);
@@ -513,79 +513,36 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   top.rSpec = if null(files) then emptyRootSpec() else consRootSpec(r, recurse.rSpec); 
   top.io = if null(files)
            then iIn
-           else if pr.parseSuccess
-                then recurse.io
-                else exit(-1, print(pr.parseErrors, text.io));
-  
+           else recurse.io;
   top.defs = if null(files) then emptyDefs() else appendDefs(r.defs, recurse.defs);
   top.importedDefs = if null(files) then emptyDefs() else appendDefs(r.importedDefs, recurse.importedDefs);
 }
 
---takes a asd;asdasd;adasd; string and returns a list.
-function getSearchPath
-[String] ::= sp::String
+
+function endWithSlash
+String ::= s::String
 {
-  local attribute path :: String;
-  path = if indexOf(":", sp) == 0 then substring(1, length(sp), sp) else sp;
-
-  local attribute i :: Integer;
-  i = indexOf(":", path);
-
-  local attribute h:: String;
-  h = if i == -1 then path else substring(0, i, path);
-
-  return if path == "" then [] else cons(he, ta);
-
---  top.empty = (path == "");
-
-  local attribute he :: String;
-  he = if (substring(length(h)-1, length(h), h) == "/") then h else h ++ "/";
-
-  local attribute ta :: [String];
-  ta = if i == -1 || i == (length(path)-1)
-       then []
-       else getSearchPath(substring(i+1, length(path), path));
+  return if endsWith("/", s) then s else s ++ "/";
 }
 
--- returns only valid silver files.
-function filterFiles
-[String] ::= files::[String]
-{
-  return if null(files) then files
-         else if isValidSilverFile(head(files))
-	      then cons(head(files), filterFiles(tail(files)))
-	      else filterFiles(tail(files));
-}
-
--- a file is valid if it has a .sv extension
 function isValidSilverFile
 Boolean ::= f::String
 {
-  local attribute l :: Integer;
-  l = length(f);
-
-  return l >= 3 && substring(l-3, l, f) == ".sv" && substring(0,1,f) != ".";
+  return endsWith(".sv", f) && !startsWith(".", f);
 }
 
 --takes in a grammar path and a list of possible locations and returns the correct location if any.
-synthesized attribute sValue :: String;
-nonterminal MaybeIOStr with sValue, found, io;
-abstract production findGrammarLocation
-top::MaybeIOStr ::= iIn::IO path::String paths::[String]
+function findGrammarLocation
+IOVal<Maybe<String>> ::= path::String searchPaths::[String] iIn::IO
 {
   local attribute exists :: IOVal<Boolean>;
-  exists = isDirectory(head(paths) ++ path, iIn);
+  exists = isDirectory(head(searchPaths) ++ path, iIn);
 
-  top.found = if null(paths) then false
-	      else exists.iovalue || recurse.found;
-
-  top.sValue = if null(paths) then ""
-	       else if exists.iovalue then head(paths) ++ path else recurse.sValue;
-
-  top.io = if null(paths) then iIn else recurse.io;
-
-  local attribute recurse :: MaybeIOStr;
-  recurse = findGrammarLocation(exists.io, path, tail(paths));
+  return if null(searchPaths)
+         then ioval(iIn, nothing())
+         else if exists.iovalue
+              then ioval(exists.io, just(head(searchPaths) ++ path))
+              else findGrammarLocation(path, tail(searchPaths), exists.io);
 }
 
 

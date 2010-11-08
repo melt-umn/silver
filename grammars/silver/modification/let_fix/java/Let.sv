@@ -12,8 +12,8 @@ import silver:translation:java:concrete_syntax:copper; -- TODO part of ugly hack
 aspect production letp
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
-  top.translation = "((" ++ top.typerep.transType ++ ")common.Util.let(context, new String[]{" ++ folds(", ", la.nameTrans) ++ "}, " ++ 
-					     "new common.Lazy[]{" ++ folds(", ", la.valueTrans) ++ "}, " ++ 
+  top.translation = "((" ++ top.typerep.transType ++ ")common.Util.let(context, new String[]{" ++ implode(", ", la.nameTrans) ++ "}, " ++ 
+					     "new common.Lazy[]{" ++ implode(", ", la.valueTrans) ++ "}, " ++ 
 					     "new common.Lazy(){public Object eval(common.DecoratedNode context) {return " ++ 
 							forward.translation ++ ";}}" ++ "))"; 
 }

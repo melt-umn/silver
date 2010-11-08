@@ -250,6 +250,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- <- -} e::Exp
 
 function makeCAClassName
 String ::= s::String {
-  return makeClassNameHelp(split(":", s), "CA");
+  return makeClassNameHelp(explode(":", s), "CA");
 }
 

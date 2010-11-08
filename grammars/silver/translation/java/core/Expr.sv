@@ -191,8 +191,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
                              (case inh of
                                exprInhsEmpty() -> ""
                               | _ ->
-                                ", common.Util.populateMap(new String[]{" ++ folds(", ", inh.nameTrans) ++ "}, " ++ 
-                                                        "new common.Lazy[]{" ++ folds(", ", inh.valueTrans) ++ "})"
+                                ", common.Util.populateMap(new String[]{" ++ implode(", ", inh.nameTrans) ++ "}, " ++ 
+                                                        "new common.Lazy[]{" ++ implode(", ", inh.valueTrans) ++ "})"
                               end) ++ "))"; 
 
 }

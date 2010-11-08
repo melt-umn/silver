@@ -1,16 +1,5 @@
 grammar silver:util;
 
-function folds
-String ::= s::String c1::[String]
-{
-  return if null(c1) then "" else head(c1) ++ (if null(tail(c1)) then "" else s) ++ folds(s, tail(c1));
-}
-
-function foldss
-String ::= s1::String s2::String sl::[[String]]{
-  return if null(sl) then "" else folds(s2, head(sl)) ++ (if null(tail(sl)) then "" else s1) ++ foldss(s1, s2, tail(sl));
-}
-
 function contains
 Boolean ::= s::String sl::[String]
 {
@@ -82,17 +71,6 @@ function remove
 	      else [head(s)] ++ remove(n, tail(s));
 }
 
-function split
-[String] ::= s::String str::String
-{
-  local attribute i :: Integer;
-  i = indexOf(s, str);
-
-  return if i == -1
-         then [str]
-         else [substring(0, i, str)] ++ split(s, substring(i+1, length(str), str));
-}
-
 function substitute
 String ::= s::String r::String str::String
 {
@@ -107,10 +85,5 @@ String ::= s::String r::String str::String
 function startsWithAny
 Boolean ::= pre::[String] s::String{
   return !null(pre) && (startsWith(head(pre), s) || startsWithAny(tail(pre), s));
-}
-
-function last
-String ::= s::[String]{
-  return if null(s) then "" else if null(tail(s)) then head(s) else last(tail(s));
 }
 
