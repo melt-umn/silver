@@ -17,22 +17,6 @@ top::Expr ::= e::Decorated Expr
   top.errors <- [err(e.location, "operand to 'length(..)' is not compatible.")];
 }
 
-aspect production errorFunction
-top::Expr ::= 'error' '(' e::Expr ')'
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e.typerep, stringTypeExp());
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(e.location, "Parameter to error must be a String. Instead it is " ++ errCheck1.leftpp)]
-       else [];
-}
-
 aspect production toIntFunction
 top::Expr ::= 'toInt' '(' e1::Expr ')'
 {

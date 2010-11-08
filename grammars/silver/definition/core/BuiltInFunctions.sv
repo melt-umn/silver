@@ -32,18 +32,6 @@ top::Expr ::= e::Decorated Expr
   top.typerep = intTypeExp();
 }
 
-concrete production errorFunction
-top::Expr ::= 'error' '(' e::Expr ')'
-{
-  top.pp = "error(" ++ e.pp ++ ")";
-  top.location = loc(top.file, $1.line, $2.column);
-
-  top.errors := e.errors;
-  top.typerep = errorType(); -- TODO: or put it here legit?
-  
-  e.expected = expected_type(stringTypeExp());
-}
-
 concrete production toIntFunction
 top::Expr ::= 'toInt' '(' e::Expr ')'
 {

@@ -12,11 +12,6 @@ top::Expr ::= e::Decorated Expr
   top.translation = "(new Integer(((common.StringCatter)" ++ e.translation ++ ").length()))";
 }
 
-aspect production errorFunction
-top::Expr ::= 'error' '(' e::Expr ')'
-{
-  top.translation = "((" ++ finalType(top).transType ++ ")common.Util.error(" ++ e.translation ++ ".toString()))";
-}
 aspect production toIntFunction
 top::Expr ::= 'toInt' '(' e::Expr ')'
 {
