@@ -171,10 +171,12 @@ top::RunUnit ::= iIn::IO args::String
   
   top.io = if preIO.iovalue != 0 --the preops tell us to quit.
            then exit(preIO.iovalue, preIO.io)
-           else if a.okay && grammarLocation.iovalue.isJust --the args were okay and the grammar was found.
+           else if a.okay && grammarLocation.iovalue.isJust && !null(unit.compiledList) --the args were okay and the grammar was found.
            then exit(postIO.iovalue, postIO.io)
-           else if a.okay && !grammarLocation.iovalue.isJust --the args were okay but the grammar was not found
-           then exit(-1, print("\nGrammar '" ++ a.gName ++ "' could not be located, make sure that the grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
+           else if a.okay --the args were okay but the grammar was not found
+           then if grammarLocation.iovalue.isJust && null(unit.compiledList)
+                then exit(-1, print("\nGrammar '" ++ a.gName ++ "' was found at '" ++ grammarLocation.iovalue.fromJust ++ "' but contained no silver files.\n\n", grammarLocation.io))
+                else exit(-1, print("\nGrammar '" ++ a.gName ++ "' could not be located, make sure that the grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
            else exit(-1, print(a.usage, iIn)); -- the args were not okay.
 }
 
@@ -401,10 +403,10 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   inf.iParser = top.iParser;
   inf.compiledGrammars = top.compiledGrammars;
 
-  top.found = grammarLocation.iovalue.isJust;
-  top.interfaces = if grammarLocation.iovalue.isJust && !clean && hasInterface.iovalue then inf.interfaces else [];
-  top.io =  if grammarLocation.iovalue.isJust then (if !clean && hasInterface.iovalue then inf.io else cu.io) else grammarLocation.io;
-  top.rSpec = if grammarLocation.iovalue.isJust then (if !clean && hasInterface.iovalue then head(inf.interfaces).rSpec else cu.rSpec) else emptyRootSpec();
+  top.found = grammarLocation.iovalue.isJust && !null(files);
+  top.interfaces = if top.found && !clean && hasInterface.iovalue then inf.interfaces else [];
+  top.io =  if top.found then (if !clean && hasInterface.iovalue then inf.io else cu.io) else grammarLocation.io;
+  top.rSpec = if top.found then (if !clean && hasInterface.iovalue then head(inf.interfaces).rSpec else cu.rSpec) else emptyRootSpec();
 }
 
 
