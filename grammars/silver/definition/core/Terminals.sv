@@ -61,19 +61,20 @@ terminal Plus_t		'+'  precedence = 11, association = left;
 terminal Minus_t	'-'  precedence = 11, association = left;
 terminal Multiply_t	'*'  precedence = 12, association = left;
 terminal Divide_t	'/'  precedence = 12, association = left;
-terminal HasType_t	'::' precedence = 14; -- TODO: careful, this is also cons
+terminal ColonColon_t	'::' precedence = 14, association = right; -- HasType AND Cons
 terminal LParen_t	'('  precedence = 24;
 terminal RParen_t	')'  ;
 terminal LCurly_t	'{'  ;
 terminal RCurly_t	'}'  ;
 terminal Dot_t		'.'  precedence = 25, association = left;
-terminal Hash_t		'#'  precedence = 25, association = left;
-terminal At_t		'@'  precedence = 25, association = left;
 terminal CCEQ_t		'::=';
 terminal Semi_t		';'  ;
 terminal Colon_t	':'  ;
 terminal Equal_t	'='  ;
 terminal UnderScore_t	'_'  ;
+
+-- Unused infix operators: ~ ` @ # % ^ & | \
+-- $ is used by convenience.
 
 ignore terminal Comments /([\-][\-].*)/;
 ignore terminal BlockComments /\{\-([^\-]|\-+[^\}\-])*\-+\}/; --this is a very careful regex. beware.

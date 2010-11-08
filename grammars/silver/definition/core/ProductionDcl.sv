@@ -149,5 +149,5 @@ top::ProductionRHSElem ::= t::Type
   top.pp = t.pp;
   top.location = t.location;
 
-  forwards to productionRHSElem(nameIdLower(terminal(IdLower_t, "_G_" ++ toString(top.deterministicCount))), terminal(HasType_t, "::="), t);
+  forwards to productionRHSElem(nameIdLower(terminal(IdLower_t, "_G_" ++ toString(top.deterministicCount))), terminal(ColonColon_t, "::="), t);
 }

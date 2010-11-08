@@ -32,6 +32,7 @@ top::Expr ::= '[' ']'
 
 -- TODO: BUG: '::' is HasType_t.  We probably want to have a different
 -- terminal here, with different precedence!
+
 concrete production consListOp
 top::Expr ::= h::Expr '::' t::Expr
 {
