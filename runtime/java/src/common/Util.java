@@ -316,12 +316,16 @@ public class Util {
 			while(t != null) {
 				StackTraceElement st[] = t.getStackTrace();
 				
+				String msg = t.getLocalizedMessage();
+				if(msg == null)
+					msg = t.toString();
+				
 				if(st[0].getClassName().startsWith("common."))
 					// This will give error messages like (DN.146) corresponding to DecoratedNode.java:146
-					System.err.println("(" + st[0].getFileName().replaceAll("[a-z]", "") + st[0].getLineNumber() + "): " + t.getLocalizedMessage());
+					System.err.println("(" + st[0].getFileName().replaceAll("[a-z]", "") + st[0].getLineNumber() + "): " + msg);
 				else
 					// Be more explicit about where when it's not one of ours
-					System.err.println("(" + st[0].getClassName() + " in " + st[0].getFileName() + ":" + st[0].getLineNumber() + "): " + t.getLocalizedMessage());
+					System.err.println("(" + st[0].getClassName() + " in " + st[0].getFileName() + ":" + st[0].getLineNumber() + "): " + msg);
 				
 				String lastCause = t.getLocalizedMessage();
 				int repeats = 0;
