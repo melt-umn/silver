@@ -1,8 +1,4 @@
 grammar core;
-{- Note to self: Remember that the type equivalence of ['a] is Decorated List<'a>.
-   It can get confusing if you believe that ['a] is List<'a>. (NOT TRUE)
- -}
-
 
 function map
 [b] ::= f::Function(b ::= a)  l::[a]
@@ -167,6 +163,11 @@ function tail
 }
 
 --------------------------------------------------------------------------------
+
+{- Note to self: Remember that the type equivalence of ['a] is Decorated List<'a>.
+   It can get confusing if you believe that ['a] is List<'a>. (NOT TRUE)
+ -}
+
 
 synthesized attribute i_headList<a> :: a;
 synthesized attribute i_tailList<a> :: Decorated List<a>;
