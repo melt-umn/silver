@@ -268,16 +268,21 @@ public class Util {
 	 * @return A list of Strings
 	 */
 	public static ConsCell listContents(String sb) {
-		// TODO: oh god, get rid of this insanity with Pempty and such!
 		try {
 			File f = new File(sb);
 			String[] files = f.list();
 
 			ConsCell result = ConsCell.nil;
+			
+			if(files == null)
+				return result;
+			
 			for (String file : files) {
 				result = new ConsCell(new StringCatter(file), result);
 			}
+			
 			return result;
+			
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
