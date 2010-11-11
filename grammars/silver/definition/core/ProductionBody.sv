@@ -331,6 +331,11 @@ top::DefLHS ::= q::QName
               then errorDefLHS(q)
               else q.lookupValue.dcl.defLHSDispatcher(q);
 }
+concrete production concreteDefLHSfwd
+top::DefLHS ::= q::'forward'
+{
+  forwards to concreteDefLHS(qNameId(nameIdLower(terminal(IdLower_t, "forward", q))));
+}
 
 abstract production childDefLHS
 top::DefLHS ::= q::Decorated QName

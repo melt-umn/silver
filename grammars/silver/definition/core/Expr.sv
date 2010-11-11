@@ -165,7 +165,7 @@ top::Expr ::= q::NameTickTick
 }
 
 concrete production concreteForwardExpr
-top::Expr ::= q::Forward_kwd
+top::Expr ::= q::'forward'
 {
   forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "forward", q))));
 }
