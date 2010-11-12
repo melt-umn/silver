@@ -45,13 +45,51 @@ IO ::= iIn::IO r::[Decorated RootSpec] genPath::String
 function writeInterface
 IO ::= iIn::IO r::Decorated RootSpec genPath::String
 {
-  production attribute pathName :: String;
+  local attribute pathName :: String;
   pathName = genPath ++ "src/" ++ substitute("/", ":", r.impliedName) ++ "/";
 
-  production attribute mkio :: IO;
+  local attribute mkio :: IO;
   mkio = mkdir(pathName, iIn).io;
   
-  return writeFile(pathName ++ "Silver.svi",
-                   r.unparse,
-                   print("\t[" ++ r.impliedName ++ "]\n", mkio));
+  local attribute pr :: IO;
+  pr = print("\t[" ++ r.impliedName ++ "]\n", mkio);
+  
+  local attribute rm :: IO;
+  rm = deleteStaleData(pr, genPath, r.impliedName);
+  
+  local attribute wr :: IO;
+  wr = writeFile(pathName ++ "Silver.svi", r.unparse, rm);
+  
+  return wr;
 }
+
+function deleteStaleData
+IO ::= iIn::IO genPath::String gram::String
+{
+  local attribute srcPath :: String;
+  srcPath = genPath ++ "src/" ++ substitute("/", ":", gram) ++ "/";
+
+  local attribute binPath :: String;
+  binPath = genPath ++ "bin/" ++ substitute("/", ":", gram) ++ "/";
+  
+  local attribute srcFiles :: IOVal<[String]>;
+  srcFiles = listContents(srcPath, iIn);
+  
+  local attribute binFiles :: IOVal<[String]>;
+  binFiles = listContents(binPath, srcFiles.io);
+  
+  return deleteStaleDataFiles( deleteStaleDataFiles( binFiles.io, binPath, binFiles.iovalue), srcPath, srcFiles.iovalue);
+         
+}
+function deleteStaleDataFiles
+IO ::= iIn::IO path::String files::[String]
+{
+  local attribute isf :: IOVal<Boolean>;
+  isf = isFile(path ++ head(files), iIn);
+  
+  return if null(files) then iIn
+         else if !isf.iovalue then deleteStaleDataFiles(isf.io, path, tail(files))
+         else deleteStaleDataFiles( deleteFile(path ++ head(files), isf.io).io, path, tail(files));
+}
+
+
