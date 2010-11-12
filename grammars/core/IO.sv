@@ -239,6 +239,21 @@ IOVal<[String]> ::= s::String i::IO
   "java" : return "new core.Pioval(%i%, common.Util.listContents(%s%.toString()))";
 }
 
+{--
+ - Delete a file, or an empty directory.
+ -
+ - @param s  The path to file to delete.
+ - @param i  The "before" world-state token.
+ - @return  true if the file is deleted successfully.  false otherwise.
+ -}
+function deleteFile
+IOVal<Boolean> ::= s::String i::IO
+{
+  return error("Not Yet Implemented: deleteFile");
+} foreign {
+  "java" : return "new core.Pioval(%i%, common.Util.deleteFile(%s%.toString()))";
+}
+
 ------ IO Misc.
 
 {--
