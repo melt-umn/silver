@@ -161,6 +161,16 @@ public class Util {
 		return new File(sb).mkdirs();
 	}
 
+	public static boolean deleteFile(String sb) {
+		return new File(sb).delete();
+	}
+	
+	/**
+	 * Slurps the contents of a file into a string.  May cause IO exceptions.
+	 * 
+	 * @param sb  The filename
+	 * @return  The file contents.
+	 */
 	public static StringCatter readFile(String sb) {
 		try {
 			FileInputStream file = new FileInputStream(sb);
