@@ -204,7 +204,7 @@ implode("\n", extraTaskdefs) ++ "\n\n" ++
 
 "  <target name='grammars' depends='" ++ implode(", ", extraDepends) ++ "'>\n" ++
 
-"      <javac debug='on' source='1.5' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}'>\n" ++
+"      <javac debug='on' source='1.5' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false'>\n" ++
     buildGrammarList(specs, "*.java") ++ 
 "      </javac>\n" ++
 "  </target>\n\n" ++
