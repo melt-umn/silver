@@ -13,10 +13,10 @@ import silver:util;
 --sortEnvItems     [Decorated EnvItem] ::= eis::[Decorated EnvItem]
 
 
-nonterminal EnvItem with itemName, dcl;
-
 synthesized attribute itemName :: String;
 synthesized attribute dcl :: Decorated DclInfo;
+
+nonterminal EnvItem with itemName, dcl;
 
 function fullNameToShort
 String ::= s::String
@@ -122,45 +122,13 @@ function lookupRename
 function sortEnvItems
 [Decorated EnvItem] ::= eis::[Decorated EnvItem]
 {
-  return sortEnvItemsHelp(eis, length(eis));
+  return sortBy(envItemLTE, eis);
 }
 
-function sortEnvItemsHelp
-[Decorated EnvItem] ::= eis::[Decorated EnvItem] upTo::Integer
+function envItemLTE
+Boolean ::= e1::Decorated EnvItem e2::Decorated EnvItem
 {
-  return if upTo == 0 then []
-         else if upTo == 1 then [head(eis)]
-         else mergeEnvItems(front_half,back_half);
-
-  local attribute front_half :: [Decorated EnvItem] ;
-  front_half = sortEnvItemsHelp(eis, middle) ;
-
-  local attribute back_half :: [Decorated EnvItem] ;
-  back_half = sortEnvItemsHelp(dropEnvItems(middle, eis), upTo - middle) ;
-
-  local attribute middle :: Integer ;
-  middle = toInt(toFloat(upTo) / 2.0) ;
-}
-
-function mergeEnvItems
-[Decorated EnvItem] ::= l1::[Decorated EnvItem] l2::[Decorated EnvItem]
-{
-  return if null(l1) 
-         then l2
-
-         else if null(l2) 
-         then l1
-
-         else if head(l1).itemName < head(l2).itemName
-         then head(l1) :: mergeEnvItems(tail(l1),l2)
-
-         else head(l2) :: mergeEnvItems(l1,tail(l2)) ;
-}
-
-function dropEnvItems
-[Decorated EnvItem] ::= n::Integer l::[Decorated EnvItem]
-{
-  return if n <= 0 then l else dropEnvItems(n-1, tail(l));
+  return e1.itemName <= e2.itemName;
 }
 
 -- Substitutions

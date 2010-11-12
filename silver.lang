@@ -56,7 +56,7 @@
       </include>
    </context>
 
-   <context id="regex" style-ref="char" end-at-line-end="true">
+   <context id="regex" style-ref="char" end-at-line-end="true"><!-- BUG: TODO: this is catching division -->
       <start>/</start>
       <end>/</end>
       <include>
@@ -157,7 +157,7 @@
     <context id="flow-other" style-ref="keyword">
 <keyword>forwarding</keyword>
 <keyword>forwards</keyword>
-<keyword>to</keyword>
+<keyword>to</keyword><!-- BUG: TODO: this is forwards.  submits. -->
 <keyword>return</keyword>
 <keyword>pluck</keyword>
 <keyword>print</keyword>
@@ -170,7 +170,7 @@
 <keyword>in</keyword>
 <keyword>end</keyword>
 <keyword>decorate</keyword>
-<keyword>with</keyword><!-- BUG: with can be here (expr), in a grammar decl or a nonterminal decl, too... -->
+<keyword>with</keyword><!-- BUG: TODO: this is decorate. forwards/ing. build/import.  nonterminal/attribute(col).  -->
 <keyword>else</keyword>
 <keyword>forward</keyword>
 <keyword>if</keyword>
