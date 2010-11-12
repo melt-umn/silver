@@ -131,7 +131,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String ntt
 }
 
 -- TODO THIS SHOULD GO ELSEWHERE
-nonterminal OccursCheck with errors, typerep;
+nonterminal OccursCheck with errors, typerep, dcl;
 
 abstract production occursCheckQName
 top::OccursCheck ::= at::Decorated QName  ntty::TypeExp
@@ -145,6 +145,7 @@ top::OccursCheck ::= at::Decorated QName  ntty::TypeExp
   top.typerep = if null(at.lookupAttribute.errors) && null(top.errors)
                 then determineAttributeType(head(occursCheck), ntty)
                 else errorType();
+  top.dcl = head(occursCheck);
 }
 
 

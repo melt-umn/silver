@@ -1,7 +1,7 @@
 grammar silver:util:command;
 import silver:util;
 
-terminal Flag_t /[\-]([\-]?)[a-zA-Z0-9]+/ dominates {WhiteSpace_t};
+terminal Flag_t /[\-]([\-]?)[a-zA-Z0-9\-]+/ dominates {WhiteSpace_t};
 terminal Chunk_t /[^\-\ ][^\ ]*/ dominates {WhiteSpace_t};
 ignore terminal WhiteSpace_t /[\ \t]+/;
 
