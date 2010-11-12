@@ -39,6 +39,8 @@ IO ::= args::String ioin::IO
            "\n\n" ++ 
            "AST pretty print: " ++ r_ast.pp ++
            "\n\n" ++
+           "AST better pretty print: " ++ r_ast.bpp ++
+           "\n\n" ++
            "Value: " ++ toString(r_ast.value) ++
            "\n\n" 
            , ioin );
