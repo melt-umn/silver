@@ -7,11 +7,8 @@ synthesized attribute outName :: String;
 synthesized attribute displayVersion :: Boolean;
 synthesized attribute doClean :: Boolean;
 synthesized attribute genLocation :: String;
-attribute genLocation occurs on Command;
-attribute doClean occurs on Command;
-attribute displayVersion occurs on Command;
-attribute searchPath occurs on Command;
-attribute outName occurs on Command;
+
+attribute genLocation, doClean, displayVersion, searchPath, outName occurs on Command;
 
 aspect production cRootAll
 top::Command ::= c1::PieceList

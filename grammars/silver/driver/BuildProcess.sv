@@ -65,7 +65,7 @@ top::RunUnit ::= iIn::IO args::String
 
   -- operations to execute _before_ we parse and link the grammars.
   production attribute preOps :: [Unit] with ++;
-  preOps := [checkSilverHome(silverhome), checkSilverGen(silvergen)];
+  preOps := [];
 
   --the result of running the pre operations
   local attribute preIO :: IOVal<Integer>;
@@ -130,7 +130,7 @@ top::RunUnit ::= iIn::IO args::String
   local attribute seenNames :: [String];
   seenNames = unit.seenGrammars ++ extraUnit.seenGrammars ++ condUnit.seenGrammars;
 
-  -- the grammars that we have recompiled
+  -- Note that we already have the latest translation of all the grammars. This just does semantic analysis to make sure they're still okay.
   production attribute reUnit :: CompilationUnit;
   reUnit = compileGrammars(condUnit.io, spath, depAnalysis.needGrammars, seenNames, true, silvergen);
   reUnit.rParser = top.rParser;
@@ -175,48 +175,25 @@ top::RunUnit ::= iIn::IO args::String
            then exit(postIO.iovalue, postIO.io)
            else if a.okay --the args were okay but the grammar was not found
            then if grammarLocation.iovalue.isJust && null(unit.compiledList)
-                then exit(-1, print("\nGrammar '" ++ a.gName ++ "' was found at '" ++ grammarLocation.iovalue.fromJust ++ "' but contained no silver files.\n\n", grammarLocation.io))
+                then exit(-1, print("\nGrammar '" ++ a.gName ++ "' was found at '" ++ grammarLocation.iovalue.fromJust ++ "' but there was nothing to do. (Either that path contained no silver files, or everything is already up to date.)\n\n", grammarLocation.io))
                 else exit(-1, print("\nGrammar '" ++ a.gName ++ "' could not be located, make sure that the grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
            else exit(-1, print(a.usage, iIn)); -- the args were not okay.
 }
 
---A function to run the units of work
-function runAll
-IOVal<Integer> ::= i::IO l::[Unit]
-{
-  local attribute now :: Unit;
-  now = head(l);
-  now.ioIn = i;
 
-  return  if null(l) 
-	  then ioval(i, 0)
-	  else if now.code != 0
-	       then ioval(now.io, now.code)
-	       else runAll(now.io, tail(l));
-}
+synthesized attribute compiledList :: [Decorated RootSpec];
+synthesized attribute needGrammars :: [String];
+synthesized attribute seenGrammars :: [String];
+synthesized attribute interfaces :: [Decorated Interface];
 
-abstract production checkSilverHome
-top::Unit ::= s::String
-{
-  local attribute problem :: Boolean;
-  problem = s == "/";
+nonterminal CompilationUnit with io, compiledGrammars, rParser, iParser, compiledList, needGrammars, seenGrammars, interfaces;
 
-  top.io = if problem then print("Missing SILVER_HOME. Installation problem?\n",top.ioIn) else top.ioIn;
-  top.code = if problem then 1 else 0;
-  top.order = 0;
-}
 
-abstract production checkSilverGen
-top::Unit ::= s::String
-{
-  local attribute problem :: Boolean;
-  problem = s == "/";
 
-  top.io = if problem then print("Missing SILVER_GEN or -G <path>. A location to store intermediate files is necessary.\n",top.ioIn) else top.ioIn;
-  top.code = if problem then 1 else 0;
-  top.order = 0;
-}
-
+{--
+ - After an initial compile session, this triggers any conditional compile requests, and
+ - finishes them all off.
+ -}
 abstract production compileConditionals
 top::CompilationUnit ::= iIn::IO sPath::[String] seen::[String] clean::Boolean sofar::[Decorated RootSpec] genPath::String
 {
@@ -251,15 +228,6 @@ top::CompilationUnit ::= iIn::IO sPath::[String] seen::[String] clean::Boolean s
 		   else now.interfaces ++ recurse.interfaces;
 }
 
-synthesized attribute compiledList :: [Decorated RootSpec];
-
-synthesized attribute needGrammars :: [String];
-synthesized attribute seenGrammars :: [String];
-synthesized attribute interfaces :: [Decorated Interface];
-
-attribute needGrammars occurs on CompilationUnit;
-attribute seenGrammars occurs on CompilationUnit;
-nonterminal CompilationUnit with io, compiledList, rParser, compiledGrammars, interfaces, iParser;
 
 --This production compiles a list of grammars (each String in the list
 --represents an entire grammar).  It does not track down new grammars, 

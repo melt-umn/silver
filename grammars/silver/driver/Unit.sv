@@ -4,20 +4,55 @@ import silver:definition:env;
 import silver:util;
 import silver:util:command;
 
--- TODO: this file is kind of random.  Merge into BuildProcess and refactor, please.
-
---units of work.
-nonterminal Unit with ioIn, io, code, order;
 synthesized attribute code :: Integer;
 synthesized attribute order :: Integer;
 inherited attribute ioIn :: IO;
 synthesized attribute ioOut :: IO;
 
+nonterminal Unit with ioIn, io, code, order;
+
 aspect production run
 top::RunUnit ::= iIn::IO args::String
 {
+  preOps <- [checkSilverHome(silverhome), checkSilverGen(silvergen)];
   preOps <- if a.displayVersion then [printVersion()] else [];
   postOps <- [doInterfaces(depAnalysis.compiledList, silvergen)];
+}
+
+function runAll
+IOVal<Integer> ::= i::IO l::[Unit]
+{
+  local attribute now :: Unit;
+  now = head(l);
+  now.ioIn = i;
+
+  return  if null(l) 
+	  then ioval(i, 0)
+	  else if now.code != 0
+	       then ioval(now.io, now.code)
+	       else runAll(now.io, tail(l));
+}
+
+abstract production checkSilverHome
+top::Unit ::= s::String
+{
+  local attribute problem :: Boolean;
+  problem = s == "/";
+
+  top.io = if problem then print("Missing SILVER_HOME. Installation problem?\n",top.ioIn) else top.ioIn;
+  top.code = if problem then 1 else 0;
+  top.order = 0;
+}
+
+abstract production checkSilverGen
+top::Unit ::= s::String
+{
+  local attribute problem :: Boolean;
+  problem = s == "/";
+
+  top.io = if problem then print("Missing SILVER_GEN or -G <path>. A location to store intermediate files is necessary.\n",top.ioIn) else top.ioIn;
+  top.code = if problem then 1 else 0;
+  top.order = 0;
 }
 
 abstract production printVersion
