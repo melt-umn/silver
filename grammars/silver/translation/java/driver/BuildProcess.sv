@@ -107,6 +107,7 @@ String ::= r::Decorated RootSpec{
 "\t\tfor(String arg : args){\n" ++ 
 "\t\t\tresult.append(\" \").append(arg);\n" ++ 
 "\t\t}\n" ++ 
+"\t\tcommon.Util.environment.put(\"SILVER_ARGS\", result.toString().trim());\n" ++ -- TODO: this is an awful hack.
 "\t\treturn new common.StringCatter(result.toString().trim());\n" ++ 
 "\t}\n" ++ 
 "}\n";
