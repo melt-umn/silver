@@ -8,9 +8,12 @@ synthesized attribute ast_Expr :: Expr ;
 nonterminal Expr_c with pp, ast_Expr;
 nonterminal Term_c with pp, ast_Expr;
 nonterminal Factor_c with pp, ast_Expr;
+nonterminal Base_c with pp, ast_Expr;
 
--- Note about this concrete syntax: We're choosing to use the Expr/Term/Factor decomposition here
--- Silver does support 'association' and 'precedence', too. See comments in Terminals.sv
+{- Note about this concrete syntax: We're choosing to use the
+   Expr/Term/Factor/Base decomposition here.  Silver also supports the
+   commonly used 'association' and 'precedence' specifications. See
+   comments in Terminals.sv for more details.  -}
 
 concrete production add_c
 sum::Expr_c ::= e::Expr_c '+' t::Term_c
@@ -54,15 +57,29 @@ t::Term_c ::= f::Factor_c
  t.ast_Expr = f.ast_Expr ;
 }
 
+concrete production power_c
+pwr::Factor_c ::= b::Base_c '^' f::Factor_c
+{
+ pwr.pp = b.pp ++ " ^ " ++ f.pp ;
+ pwr.ast_Expr = power(b.ast_Expr, f.ast_Expr );
+}
+
+concrete production factorBase_c
+f::Factor_c ::= b::Base_c
+{
+ f.pp = b.pp ;
+ f.ast_Expr = b.ast_Expr ;
+}
+
 concrete production nested_c
-e::Factor_c ::= '(' inner::Expr_c ')'
+e::Base_c ::= '(' inner::Expr_c ')'
 {
  e.pp = "(" ++ inner.pp ++ ")" ;
  e.ast_Expr = inner.ast_Expr ;
 }
 
 concrete production integerConstant_c
-ic::Factor_c ::= i::IntLit_t
+ic::Base_c ::= i::IntLit_t
 {
  ic.pp = i.lexeme ;
  ic.ast_Expr = integerConstant(i);
@@ -73,6 +90,21 @@ ic::Factor_c ::= i::IntLit_t
 ---------------------
 
 nonterminal Expr with pp, value;
+
+abstract production power
+pwr::Expr ::= l::Expr r::Expr
+{
+ pwr.pp = "(" ++ l.pp ++ " ^ " ++ r.pp ++ ")";
+ pwr.value = computePower(l.value,r.value) ;
+}
+
+function computePower
+Integer ::= x::Integer n::Integer
+{
+ return if n == 0
+        then 1
+        else x * computePower(x, n-1) ;
+}
 
 abstract production add
 sum::Expr ::= l::Expr r::Expr

@@ -9,10 +9,11 @@ terminal IntLit_t /[0-9]+/ ;
 -- Note that we're not specifying associativity or precedence in this example,
 -- but if we were, an example of that syntax is commented out:
 
-terminal Plus_t   '+' ; -- precedence = 5, association = left;
-terminal Dash_t   '-' ; -- precedence = 5, association = left;
-terminal Star_t   '*' ; -- precedence = 10, association = left;
-terminal Slash_t  '/' ; -- precedence = 10, association = left;
+terminal Plus_t   '+' ; -- precedence = 1, association = left;
+terminal Dash_t   '-' ; -- precedence = 1, association = left;
+terminal Star_t   '*' ; -- precedence = 2, association = left;
+terminal Slash_t  '/' ; -- precedence = 2, association = left;
+terminal Hat_t    '^' ; -- precedence = 3, association = right;
 terminal LParen_t '(' ;
 terminal RParen_t ')' ;
 
