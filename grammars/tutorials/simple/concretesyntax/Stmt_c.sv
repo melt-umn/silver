@@ -8,10 +8,10 @@ nonterminal StmtUnMatched_c with pp, ast_Stmt ;
 {- The use of "matched" and "unmatched" statement nonterminals is to
    remove the dangling-else ambiguity from the perhaps expected
    grammar.  When adding constructs such as while lools that end with
-   a statement two versions are needed - one for matched statements
-   and one for unmatched statements.  Explanation of this can be found
-   in Aho & Ullman’s Principles of Compiler Design, beginning on page
-   174 in the 1977 edition.
+   a statement two versions are needed, one for matched statements and
+   one for unmatched statements.  Explanation of this can be found in
+   Aho & Ullmans Principles of Compiler Design, beginning on page 174
+   in the 1977 edition.  
 -}
 
 synthesized attribute ast_Stmt :: Stmt ;
