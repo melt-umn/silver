@@ -33,7 +33,12 @@ IO ::= args::String io_in::IO
            "CST pretty print: \n" ++ r_cst.pp ++
            "\n\n" ++ 
            "AST pretty print: \n" ++ r_ast.pp ++
-           "\n\n" 
+           "\n\n" ++
+           "Errors: " ++
+           (if null(r_ast.errors)  then " No semantic errors!\n" 
+            else "\n" ++
+                 foldr (stringConcat, "", r_ast.errors) 
+           )
            , text.io );
 
   local attribute print_failure :: IO;
@@ -48,20 +53,3 @@ IO ::= args::String io_in::IO
          else print_failure;
 }
 
-{-
-
- local attribute r_cst::Root_c ;
- r_cst = parse(text.sValue) ;
-
--- local attribute write_c_io :: IO ;
--- write_c_io = writeFile("output.c", r_cst.c_code, text.io ) ;
-
- return
-   if   ! isF.bValue 
-   then error ("\n\nFile \"" ++ args ++ "\" not found.\n")
-   else print ( "Command line arguments (should be a file name): " ++
-                args ++ "\n\n" ++
-                "Pretty print (pp) on the concrete sysntax tree: \n" ++
-                r_cst.pp ++ "\n\n" ,
-                text.io ) ; 
--}

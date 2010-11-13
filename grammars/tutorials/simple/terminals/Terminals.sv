@@ -6,8 +6,8 @@ ignore terminal LineComment_P  /[\/][\/].*/  ;  -- line comments
 -- expressions
 terminal Id_t  /[a-zA-Z][a-zA-Z0-9_]*/  submits to { keywords } ;
 
-terminal IntegerLit_t /[0-9]+/ ; 
-terminal FloatLit_t   /[0-9]+\.[0-9]+/ ; 
+terminal IntegerLiteral_t /[0-9]+/ ; 
+terminal FloatLiteral_t   /[0-9]+\.[0-9]+/ ; 
 
 -- Operator precedence and associativity can be specified directly.
 -- Higher precedence values indicate higher precedence operators.
