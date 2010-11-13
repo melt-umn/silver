@@ -1,4 +1,7 @@
 
-Integer main () {
+main () {
+  Integer x ;
+  Integer y ;
+  y = 1 ;
   x = y ; 
 }

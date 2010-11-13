@@ -108,3 +108,10 @@ e::Expr_c ::= id::Id_t
 { e.pp = id.lexeme ;
   e.ast_Expr = varRef(id) ;
 }
+
+-- Integer literals
+concrete production intLit_c
+e::Expr_c ::= n::IntegerLiteral_t
+{ e.pp = n.lexeme ;
+  e.ast_Expr = intLit(n) ;
+}

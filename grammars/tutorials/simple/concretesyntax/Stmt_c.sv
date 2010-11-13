@@ -29,7 +29,7 @@ s::Stmt_c ::= m::StmtMatched_c
 concrete production block_c 
 s::StmtMatched_c ::= '{' ss::Stmts_c '}' 
 { s.pp = "{\n" ++ ss.pp ++ "}\n" ;
-  s.ast_Stmt = ss.ast_Stmt ; }
+  s.ast_Stmt = block(ss.ast_Stmt) ; }
 
 concrete production assignment_c 
 s::StmtMatched_c ::= id::Id_t '='  value::Expr_c ';' 
