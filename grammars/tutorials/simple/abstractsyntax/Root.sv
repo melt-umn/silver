@@ -10,8 +10,9 @@ inherited   attribute env  :: Env<Decorated TypeExpr>;
 synthesized attribute defs :: Env<Decorated TypeExpr> ;
 
 synthesized attribute errors :: [String] with ++;
+synthesized attribute type :: Type ;
 
-concrete production rootStmt
+abstract production rootStmt
 r::Root ::= s::Stmt
 { r.pp = "main {\n" ++ s.pp ++ "\n}\n\n" ;
   s.env = emptyEnv() ;

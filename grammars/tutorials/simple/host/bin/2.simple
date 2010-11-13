@@ -1,0 +1,15 @@
+
+main () {
+  Integer x ;
+  Integer y ;
+  y = 1 ;
+  x = y ; 
+
+  z = 4 ;
+
+  Boolean b ;
+  b = True ;
+  x = b + 3 ;
+
+  b = x > y || y;
+}

@@ -1,5 +1,14 @@
 grammar tutorials:simple:abstractsyntax ;
 
+{- This file defines a parametric environment that may be used to
+   store bindings of names to some form of type representation for use
+   in name analysis and type checking.  The nonterminal Env<a>
+   maintains a set of bindings from strings to values of type a.  
+
+   The type Env<a> and various functions for creating and examining
+   environments are provided.
+-}
+
 nonterminal Env<a> ;
 
 function addBinding
@@ -32,8 +41,9 @@ function allMatches
 { return allMatches_helper (name, e.bindings) ;
 }
 
-
--- Env implementation productions.  Do not use.
+------------------------------------------------------------
+-- Env implementation productions and functions.  Do not use.
+------------------------------------------------------------
 synthesized attribute bindings<a> :: [ Pair<String a> ] ;
 attribute bindings<a> occurs on Env<a> ;
 

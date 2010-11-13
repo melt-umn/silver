@@ -23,3 +23,9 @@ t::TypeExpr_c ::=  'Float'
 { t.pp = "Float" ;
   t.ast_TypeExpr = typeExprFloat() ; 
 }
+
+concrete production typeExprBoolean_c
+t::TypeExpr_c ::=  'Boolean' 
+{ t.pp = "Boolean" ;
+  t.ast_TypeExpr = typeExprBoolean() ; 
+}

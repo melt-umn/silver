@@ -10,5 +10,6 @@ main () {
     x = x + i ;
   }
 
-  // for (Integer i = 1 to 5) ...
+  Boolean b ;
+  b = x > 1 => y > 3 ;
 }
