@@ -6,9 +6,13 @@ main () {
   x = y ; 
 
   Integer i ;
-  for (i = 1 to 5) {
-    x = x + i ;
-  }
 
-  // for (Integer i = 1 to 5) ...
+  repeat 
+    x = x + i ;
+    y = x * y ;
+  until x > 100 ;
+
+  Boolean b ;
+  b = x > 1 => y > 3 ;
+
 }

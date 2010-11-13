@@ -15,6 +15,7 @@ synthesized attribute ast_Expr :: Expr occurs on Expr_c ;
    introducing additional nonterminasl.
 -}
 
+
 -- Logical Operations
 ---------------------
 {- In the specification for the logical operations we use just the
@@ -34,6 +35,7 @@ concrete production not_c  e::Expr_c ::= '!' ne::Expr_c
 { e.pp = "( !" ++  ne.pp ++ ")" ;
   e.ast_Expr = not(ne.ast_Expr) ;
 }
+
 
 -- Relational Operations
 ------------------------
@@ -103,15 +105,18 @@ concrete production div_c  e::Expr_c ::= l::Expr_c op::'/' r::Expr_c
 
 
 -- Variable reference
-concrete production varRef_c
-e::Expr_c ::= id::Id_t
-{ e.pp = id.lexeme ;
-  e.ast_Expr = varRef(id) ;
-}
+concrete production varRef_c    e::Expr_c ::= id::Id_t
+{ e.pp = id.lexeme ;  e.ast_Expr = varRef(id) ;    }
+
 
 -- Integer literals
-concrete production intLit_c
-e::Expr_c ::= n::IntegerLiteral_t
-{ e.pp = n.lexeme ;
-  e.ast_Expr = intLit(n) ;
-}
+concrete production intLit_c    e::Expr_c ::= n::IntegerLiteral_t
+{ e.pp = n.lexeme ;   e.ast_Expr = intLit(n) ;    }
+
+-- Float literals
+concrete production floatLit_c  e::Expr_c ::= x::FloatLiteral_t
+{ e.pp = x.lexeme ;   e.ast_Expr = floatLit(x) ;  }
+
+-- Boolean literals
+concrete production boolLit_c   e::Expr_c ::= b::BooleanLiteral_t
+{ e.pp = b.lexeme ;   e.ast_Expr = boolLit(b) ;   }
