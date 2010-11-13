@@ -1,0 +1,4 @@
+
+Integer main () {
+  x = y ; 
+}
