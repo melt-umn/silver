@@ -59,6 +59,6 @@ top::ParseResult<a> ::= t::a
 function parseTreeOrDieWithoutStackTrace
 a ::= pr::ParseResult<a>
 {
-  return unsafeTrace(pr.parseTree, if pr.parseSuccess then unsafeIO() else exit(-1, print(pr.parseErrors, unsafeIO())));
+  return unsafeTrace(pr.parseTree, if pr.parseSuccess then unsafeIO() else exit(-1, print(pr.parseErrors ++ "\n\n", unsafeIO())));
 }
 
