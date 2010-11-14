@@ -120,3 +120,7 @@ concrete production floatLit_c  e::Expr_c ::= x::FloatLiteral_t
 -- Boolean literals
 concrete production boolLit_c   e::Expr_c ::= b::BooleanLiteral_t
 { e.pp = b.lexeme ;   e.ast_Expr = boolLit(b) ;   }
+
+-- String literals
+concrete production stringLit_c e::Expr_c ::= s::StringLiteral_t
+{ e.pp = s.lexeme ;   e.ast_Expr = stringLit(s) ;   }

@@ -17,6 +17,11 @@ abstract production boolLit   e::Expr ::= b::BooleanLiteral_t
   e.errors := [ ] ;
 }
 
+abstract production stringLit e::Expr ::= s::StringLiteral_t
+{ e.pp = s.lexeme ;
+  e.errors := [ ] ;
+}
+
 -- Variable Reference
 ---------------------
 {- Variable references need to be looked up in the environment.  Doing

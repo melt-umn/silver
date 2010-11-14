@@ -16,10 +16,10 @@ s::Stmt ::= body::Stmt cond::Expr
 { -- s.pp = "repeat \n" ++ body.pp ++ "\n" ++ "until " ++ cond.pp ++ " ; \n" ;
   forwards to 
     {-  body
-        while (! cond) body
+        while (! cond) { body }
      -}
     seq ( body ,
-          while ( not(cond), body) 
+          while ( not(cond), block(body))
         ) ;
 }
 

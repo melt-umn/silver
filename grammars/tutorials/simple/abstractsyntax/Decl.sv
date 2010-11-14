@@ -16,13 +16,17 @@ abstract production typeExprInteger t::TypeExpr ::=
 { t.pp = "Integer" ;  
   t.type = integerType() ;
 }
-abstract production typeExprFloat t::TypeExpr ::=  
+abstract production typeExprFloat   t::TypeExpr ::=  
 { t.pp = "Float" ; 
   t.type = floatType() ;
 }
 abstract production typeExprBoolean t::TypeExpr ::=  
 { t.pp = "Boolean" ; 
   t.type = booleanType() ;
+}
+abstract production typeExprString  t::TypeExpr ::=  
+{ t.pp = "String" ; 
+  t.type = stringType() ;
 }
 
 
@@ -43,13 +47,7 @@ abstract production floatType    t::Type ::=
 { t.pp = "Float" ; }
 abstract production booleanType  t::Type ::=   
 { t.pp = "Boolean" ; }
+abstract production stringType   t::Type ::=   
+{ t.pp = "String" ; }
 abstract production errorType    t::Type ::=   
 { t.pp = "Erroneous Type" ; }
-
-
-
---abstract production typeExprChar t::TypeExpr ::=  { }
---abstract production typeExprString t::TypeExpr ::=  { }
-
---abstract production typeExprPointer t::TypeExpr ::= pt::TypeExpr { }
---abstract production typeExprArray t::TypeExpr ::= et::TypeExpr { }

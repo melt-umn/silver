@@ -11,12 +11,14 @@ s::Stmt ::= i::Id_t lower::Expr upper::Expr body::Stmt
      -}
      seq ( assignment(i, lower) ,
            while ( lte(varRef(i), upper) ,
-                   seq(body, 
-                       assignment(i, add(varRef(i),
-                                     intLit(terminal(IntegerLiteral_t, "1"))
-                                 )
-                       )
-                      )
+             block(
+                seq(body, 
+                    assignment(i, add(varRef(i),
+                                  intLit(terminal(IntegerLiteral_t, "1"))
+                              )
+                   )
+                  )
+                  )
                  )
          ) ;
 }

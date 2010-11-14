@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # This script will use Silver to build an AG evaluator for the
-# tutorials grammar and run ant to compile the resulting Java code.
-# If Silver is successful it will then run ant to compile the generated
-# Java code ("&& ant").
+# tutorials grammar tutorials:dc:bin.  If Silver is successful it will
+# then run ant to compile the generated Java code ("&& ant") that
+# implements the AG evaluator.
 
 # invoke as               ./silver-compile
 # or add arguments, like  ./silver-compile --clean
