@@ -1,14 +1,16 @@
-
 main () {
   Integer x ;
   Integer y ;
-  y = 1 ;
-  x = y ; 
+  y = 2 ;
+  x = y * 3 - 5 ;
 
   Integer i ;
   for (i = 1 to 5) {
     x = x + i ;
   }
 
-  // for (Integer i = 1 to 5) ...
+  if (x < 4)
+    print ("x is less than 4") ;
+  else
+    print ("x is not less than 4") ;
 }

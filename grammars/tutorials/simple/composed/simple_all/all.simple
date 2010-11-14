@@ -5,14 +5,30 @@ main () {
   y = 1 ;
   x = y ; 
 
-  Integer i ;
+  print (x) ;
+  print (y) ;
 
+  Integer i ;
+  i = 1 ;
+  while (i < 10 ) {
+    print(i) ;
+    i = i + 1 ;
+    x = x + x ;
+    print(x) ;
+  }
+
+  x = 1 ;
+  i = 1 ;
   repeat 
+    print (i) ;
     x = x + i ;
     y = x * y ;
-  until x > 100 ;
+  until x == 10 ;
 
   Boolean b ;
   b = x > 1 => y > 3 ;
 
+  print ("x is");
+  print (x) ;
+  print (y) ;
 }

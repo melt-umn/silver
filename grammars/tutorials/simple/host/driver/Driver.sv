@@ -41,6 +41,10 @@ IO ::= args::String io_in::IO
            )
            , text.io );
 
+  local attribute write_success :: IO ;
+  write_success =
+    writeFile ( "output.c", r_ast.c_code, print_success ) ;
+
   local attribute print_failure :: IO;
   print_failure =
     print("Encountered a parse error:\n" ++ result.parseErrors ++ "\n", text.io);
@@ -49,7 +53,7 @@ IO ::= args::String io_in::IO
          then error ("\n\nFile \"" ++ args ++ "\" not found.\n")
          else
          if   result.parseSuccess 
-         then print_success 
+         then write_success 
          else print_failure;
 }
 

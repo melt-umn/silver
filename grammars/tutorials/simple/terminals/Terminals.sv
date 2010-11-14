@@ -63,5 +63,8 @@ terminal FloatLiteral_t   /[0-9]+\.[0-9]+/ ;
 
 terminal BooleanLiteral_t /(True)|(False)/ lexer classes { keywords } ;
 
+terminal StringLiteral_t 
+         /[\"]([^\"\\]|[\\][\"]|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\"]/;
+
 
 

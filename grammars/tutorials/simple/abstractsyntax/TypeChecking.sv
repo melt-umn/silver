@@ -14,14 +14,17 @@ attribute type occurs on Expr ;
 {- These constructs do not create any errors and define their type
    attribute directly.  
 -}
-aspect production intLit   e::Expr ::= n::IntegerLiteral_t
+aspect production intLit    e::Expr ::= n::IntegerLiteral_t
 { e.type = integerType() ; }
 
-aspect production floatLit e::Expr ::= x::FloatLiteral_t
+aspect production floatLit  e::Expr ::= x::FloatLiteral_t
 { e.type = floatType() ; }
 
-aspect production boolLit  e::Expr ::= b::BooleanLiteral_t
+aspect production boolLit   e::Expr ::= b::BooleanLiteral_t
 { e.type = booleanType() ; }
+
+aspect production stringLit e::Expr ::= s::StringLiteral_t
+{ e.type = stringType() ; }
 
 
 -- Variable Reference
@@ -160,6 +163,22 @@ aspect production not e::Expr ::= ne::Expr
 function isBoolean  Boolean ::= t::Type
 { return case t of booleanType() -> true  | _ -> false  end ;  }
 
+
+
+-- Statements
+-------------
+
+aspect production ifthen s::Stmt ::= c::Expr t::Stmt 
+{ s.errors <- if isBoolean(c.type) then [ ]
+              else [ "Expression \"" ++ c.pp ++ 
+                     "\" must be of type Boolean.\n" ] ;
+}
+
+aspect production ifelse s::Stmt ::= c::Expr t::Stmt e::Stmt 
+{ s.errors <- if isBoolean(c.type) then [ ]
+              else [ "Expression \"" ++ c.pp ++ 
+                     "\" must be of type Boolean.\n" ] ;
+}
 
 
 

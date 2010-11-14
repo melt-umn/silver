@@ -1,0 +1,105 @@
+grammar tutorials:simple:abstractsyntax ;
+
+synthesized attribute c_code :: String
+  occurs on Root, Stmt, Decl, Expr, TypeExpr ;
+
+---------------------------------------------------------------------------
+-- Root, aspect over the production in Root.sv
+aspect production rootStmt
+r::Root ::= s::Stmt
+{ r.c_code = "#include <stdio.h>\n\n" ++
+             "int main() {\n " ++
+             s.c_code ++
+             "}\n\n" ;
+}
+
+---------------------------------------------------------------------------
+-- Statements, aspects over productions in Stmt.sv
+aspect production declStmt s::Stmt ::= d::Decl 
+{ s.c_code = d.c_code ;  }
+
+aspect production block s::Stmt ::= body::Stmt 
+{ s.c_code = "{\n" ++ body.c_code ++ "}\n" ;  }
+
+aspect production seq s::Stmt ::= s1::Stmt s2::Stmt 
+{ s.c_code = s1.c_code ++ s2.c_code ;  }
+
+aspect production printStmt s::Stmt ::= e::Expr 
+{ s.c_code = "printf (\"" ++ 
+             case e.type of
+               integerType() -> "%d"
+             | floatType()   -> "%f"
+             | booleanType() -> "%d"
+             | stringType()  -> "%s"
+             end ++
+             "\\n\", " ++ e.c_code ++ ") ; \n" ;
+}
+
+aspect production skip s::Stmt ::= 
+{ s.c_code = "" ;  }
+
+aspect production while s::Stmt ::= c::Expr b::Stmt 
+{ s.c_code = "while ( " ++ c.c_code ++ " )\n" ++ b.c_code ;  }
+
+aspect production ifthen s::Stmt ::= c::Expr t::Stmt 
+{ s.c_code = "if ( " ++ c.c_code ++ " )\n" ++ t.c_code ;  }
+
+aspect production ifelse s::Stmt ::= c::Expr t::Stmt e::Stmt 
+{ s.c_code = "if ( " ++ c.c_code ++ " )\n" ++ t.c_code ++ 
+             "else \n" ++ e.c_code ;  }
+
+aspect production assignment  s::Stmt ::= id::Id_t e::Expr 
+{ s.c_code = id.lexeme ++ " = " ++ e.c_code ++ "; \n" ;  }
+
+---------------------------------------------------------------------------
+-- Declarations and Type Expressions, aspects over productions in Decl.sv
+aspect production decl d::Decl ::= t::TypeExpr id::Id_t 
+{ d.c_code = t.c_code ++ " " ++ id.lexeme ++ " ; \n" ;  }
+
+aspect production typeExprInteger t::TypeExpr ::=  
+{ t.c_code = "int" ;  }
+aspect production typeExprFloat t::TypeExpr ::=  
+{ t.c_code = "float" ;  }
+aspect production typeExprBoolean t::TypeExpr ::=  
+{ t.c_code = "int" ;  }
+aspect production typeExprString  t::TypeExpr ::=  
+{ t.c_code = "char *" ;  }
+
+---------------------------------------------------------------------------
+{- Expressions, aspects over productions in Expr.sv
+
+Note that we do not define the c_code attribute for those relational
+and logical operations that 
+-}
+aspect production intLit   e::Expr ::= n::IntegerLiteral_t
+{ e.c_code = n.lexeme ;  }
+aspect production floatLit e::Expr ::= x::FloatLiteral_t
+{ e.c_code = x.lexeme ;  }
+aspect production boolLit   e::Expr ::= b::BooleanLiteral_t
+{ e.c_code = b.lexeme ;  }
+aspect production stringLit e::Expr ::= s::StringLiteral_t
+{ e.c_code = s.lexeme ;  }
+
+aspect production varRef  e::Expr ::= id::Id_t
+{ e.c_code = id.lexeme ;  }
+
+aspect production add e::Expr ::= l::Expr r::Expr 
+{ e.c_code = "(" ++  l.c_code ++ " + " ++ r.c_code ++ ")" ;  }
+aspect production sub e::Expr ::= l::Expr r::Expr 
+{ e.c_code = "(" ++  l.c_code ++ " - " ++ r.c_code ++ ")" ;  }
+aspect production mul e::Expr ::= l::Expr r::Expr 
+{ e.c_code = "(" ++  l.c_code ++ " * " ++ r.c_code ++ ")" ;  }
+aspect production div e::Expr ::= l::Expr r::Expr 
+{ e.c_code = "(" ++  l.c_code ++ " / " ++ r.c_code ++ ")" ;  }
+
+aspect production eq e::Expr ::= l::Expr r::Expr 
+{ e.c_code = "(" ++  l.c_code ++ " == " ++ r.c_code ++ ")" ;  }
+aspect production lt e::Expr ::= l::Expr r::Expr 
+{ e.c_code = "(" ++  l.c_code ++ " < " ++ r.c_code ++ ")" ;  }
+
+aspect production and e::Expr ::= l::Expr r::Expr 
+{ e.c_code = "(" ++  l.c_code ++ " && " ++ r.c_code ++ ")" ;  }
+aspect production not e::Expr ::= ne::Expr 
+{ e.c_code = "( !" ++  ne.c_code ++ ")" ;  }
+
+---------------------------------------------------------------------------
