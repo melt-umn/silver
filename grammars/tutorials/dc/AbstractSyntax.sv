@@ -6,7 +6,7 @@ grammar tutorials:dc ;
    syntax is complicated by parsing requireents, it is useful to do
    so.  -}
 
-nonterminal Root with pp ;
+nonterminal Root with pp;
 
 -- Attribute declarations and occurs on declrations can be combined.
 -- This attribute will compute the value of the expresssion.
