@@ -12,7 +12,6 @@ synthesized attribute bpp::String occurs on Root, Expr ;
      Ops            Precedence     Associativity
      +, -           1              left
      *, /           2              left
-     ^              3              right
 
      Note that operators of the same precedence have the same
      associativity.
@@ -44,20 +43,6 @@ r::Root ::= e::Expr
   e.enclosingOpPrecedence = 0 ; -- lower than anything else
   e.leftOrRight = "none" ; {- does not matter since higher precedence prevents
                               wrapping without considering associativity -}
-}
-
-aspect production power
-pwr::Expr ::= l::Expr r::Expr
-{
- pwr.bpp = if wrapInParens ( pwr.enclosingOpPrecedence, 3,
-                             pwr.leftOrRight, "right" )
-           then "(" ++ l.bpp ++ " ^ " ++ r.bpp ++ ")" 
-           else l.bpp ++ " ^ " ++ r.bpp ;
-
- l.enclosingOpPrecedence = 3 ;
- r.enclosingOpPrecedence = 3 ;
- l.leftOrRight = "left" ;
- r.leftOrRight = "right" ;
 }
 
 aspect production add
