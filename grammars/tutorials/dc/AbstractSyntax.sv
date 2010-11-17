@@ -3,16 +3,22 @@ grammar tutorials:dc ;
 {- The abstract syntax is defined here.  Defining abstract syntax is
    not required in Silver since attributes can decorate the concrete
    syntax as well.  But in many cases, especially when the concrete
-   syntax is complicated by parsing requireents, it is useful to do
+   syntax is complicated by parsing requirements, it is useful to do
    so.  -}
 
-nonterminal Root with pp;
+nonterminal Root;
+
+{- The "pretty print" of a tree. Should parse to the "same" tree. -}
+synthesized attribute pp :: String;
+
+attribute pp occurs on Root;
+
 
 -- Attribute declarations and occurs on declrations can be combined.
 -- This attribute will compute the value of the expresssion.
 synthesized attribute value :: Integer occurs on Root;
 
--- Productions with the 'abstract' modifief are not used by the parser
+-- Productions with the 'abstract' modifier are not used by the parser
 -- generator.
 abstract production root
 r::Root ::= e::Expr
@@ -48,7 +54,7 @@ abstract production div
 quo::Expr ::= l::Expr r::Expr
 {
  quo.pp = "(" ++ l.pp ++ " / " ++ r.pp ++ ")";
- quo.value = toInt ( toFloat(l.value) / toFloat(r.value) ) ;
+ quo.value = l.value / r.value ;
 }
 
 abstract production integerConstant
@@ -57,3 +63,4 @@ e::Expr ::= i::IntLit_t
  e.pp = i.lexeme ;
  e.value = toInt(i.lexeme);
 }
+

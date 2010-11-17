@@ -6,13 +6,10 @@ grammar tutorials:dc ;
    to generate a string, and attributes, ast_Root and ast_Expr, which
    are used to generate the abstract syntax tree.  -}
 
-nonterminal Root_c ;   -- simple nonterminal declaration
+nonterminal Root_c with pp, ast_Root;
 
-synthesized attribute pp :: String ;    -- simple attribute declaration
 synthesized attribute ast_Root :: Root;
 
--- These attributed decorate the Root_c nonterminal.
-attribute pp, ast_Root occurs on Root_c ;
 
 concrete production root_c
 r::Root_c ::= e::Expr_c 

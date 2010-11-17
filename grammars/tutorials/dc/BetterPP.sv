@@ -90,13 +90,19 @@ prd::Expr ::= l::Expr r::Expr
 aspect production div
 quo::Expr ::= l::Expr r::Expr
 {
- quo.bpp = if wrapInParens ( quo.enclosingOpPrecedence, 2,
-                             quo.leftOrRight, "left" )
+ local attribute ourPrecedence :: Integer;
+ ourPrecedence = 2;
+ 
+ local attribute ourAssociation :: String;
+ ourAssociation = "left";
+
+ quo.bpp = if wrapInParens ( quo.enclosingOpPrecedence, ourPrecedence,
+                             quo.leftOrRight, ourAssociation )
            then "(" ++ l.bpp ++ " / " ++ r.bpp ++ ")" 
            else l.bpp ++ " / " ++ r.bpp ;
 
- l.enclosingOpPrecedence = 2 ;
- r.enclosingOpPrecedence = 2 ;
+ l.enclosingOpPrecedence = ourPrecedence ;
+ r.enclosingOpPrecedence = ourPrecedence ;
  l.leftOrRight = "left" ;
  r.leftOrRight = "right" ;
 }
