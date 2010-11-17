@@ -37,7 +37,7 @@ IO ::= args::String io_in::IO
            "Errors: " ++
            (if null(r_ast.errors)  then " No semantic errors!\n" 
             else "\n" ++
-                 foldr (stringConcat, "", r_ast.errors) 
+                 implode("", r_ast.errors) 
            )
            , text.io );
 

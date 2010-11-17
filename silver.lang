@@ -56,7 +56,8 @@
       </include>
    </context>
 
-   <context id="regex" style-ref="char" end-at-line-end="true"><!-- BUG: TODO: this is catching division -->
+   <!-- BUG: TODO: this is catching division
+   <context id="regex" style-ref="char" end-at-line-end="true">
       <start>/</start>
       <end>/</end>
       <include>
@@ -64,7 +65,7 @@
           <match>\%{escaped-character}</match>
         </context>
       </include>
-   </context>
+   </context> -->
    
    <context id="dollar-ref" style-ref="char">
      <match>\$[0-9]*</match>
@@ -200,7 +201,7 @@
       <include>
         <context ref="string"/>
         <context ref="char"/>
-        <context ref="regex"/>
+        <!--<context ref="regex"/>TODO-->
         <context ref="dollar-ref"/>
         <context ref="line-comment"/>
         <context ref="block-comment"/>
