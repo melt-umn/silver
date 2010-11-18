@@ -23,16 +23,22 @@ synthesized attribute ast_Expr :: Expr occurs on Expr_c ;
    of its terminal (which would also be allowed).  This often makes
    for rules that are easier to read.  
 -}
-concrete production and_c  e::Expr_c ::= l::Expr_c '&&' r::Expr_c
-{ e.pp = "(" ++  l.pp ++ " && " ++ r.pp ++ ")" ;
+concrete production and_c
+e::Expr_c ::= l::Expr_c '&&' r::Expr_c
+{
+  e.pp = "(" ++  l.pp ++ " && " ++ r.pp ++ ")" ;
   e.ast_Expr = and(l.ast_Expr, r.ast_Expr) ;
 }
-concrete production or_c e::Expr_c ::= l::Expr_c '||' r::Expr_c 
-{ e.pp = "(" ++  l.pp ++ " || " ++ r.pp ++ ")" ;
+concrete production or_c
+e::Expr_c ::= l::Expr_c '||' r::Expr_c 
+{
+  e.pp = "(" ++  l.pp ++ " || " ++ r.pp ++ ")" ;
   e.ast_Expr = or(l.ast_Expr, r.ast_Expr) ;
 }
-concrete production not_c  e::Expr_c ::= '!' ne::Expr_c
-{ e.pp = "( !" ++  ne.pp ++ ")" ;
+concrete production not_c
+e::Expr_c ::= '!' ne::Expr_c
+{
+  e.pp = "( !" ++  ne.pp ++ ")" ;
   e.ast_Expr = not(ne.ast_Expr) ;
 }
 
@@ -43,28 +49,40 @@ concrete production not_c  e::Expr_c ::= '!' ne::Expr_c
    symbol with the constant regex.  We can then use this name to request
    its lexeme and thus make all assignments to pp be the same.  
 -}
-concrete production eq_c  e::Expr_c ::= l::Expr_c op::'==' r::Expr_c
-{ e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
+concrete production eq_c
+e::Expr_c ::= l::Expr_c op::'==' r::Expr_c
+{
+  e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
   e.ast_Expr = eq(l.ast_Expr, r.ast_Expr) ;
 }
-concrete production neq_c e::Expr_c ::= l::Expr_c op::'!=' r::Expr_c 
-{ e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
+concrete production neq_c
+e::Expr_c ::= l::Expr_c op::'!=' r::Expr_c 
+{
+  e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
   e.ast_Expr = neq(l.ast_Expr, r.ast_Expr) ;
 }
-concrete production lt_c  e::Expr_c ::= l::Expr_c op::'<'  r::Expr_c 
-{ e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
+concrete production lt_c
+e::Expr_c ::= l::Expr_c op::'<'  r::Expr_c 
+{
+  e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
   e.ast_Expr = lt(l.ast_Expr, r.ast_Expr) ;
 }
-concrete production lte_c e::Expr_c ::= l::Expr_c op::'<=' r::Expr_c 
-{ e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
+concrete production lte_c
+e::Expr_c ::= l::Expr_c op::'<=' r::Expr_c 
+{
+  e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
   e.ast_Expr = lte(l.ast_Expr, r.ast_Expr) ;
 }
-concrete production gt_c  e::Expr_c ::= l::Expr_c op::'>'  r::Expr_c 
-{ e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
+concrete production gt_c
+e::Expr_c ::= l::Expr_c op::'>'  r::Expr_c 
+{
+  e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
   e.ast_Expr = gt(l.ast_Expr, r.ast_Expr) ;
 }
-concrete production gte_c e::Expr_c ::= l::Expr_c op::'>=' r::Expr_c 
-{ e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
+concrete production gte_c
+e::Expr_c ::= l::Expr_c op::'>=' r::Expr_c 
+{
+  e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
   e.ast_Expr = gte(l.ast_Expr, r.ast_Expr) ;
 }
 
@@ -86,41 +104,64 @@ concrete production gte_c e::Expr_c ::= l::Expr_c op::'>=' r::Expr_c
    Silver callded "forwarding" will all use to just this type of
    re-use of attribute definitions.
 -}
-concrete production add_c  e::Expr_c ::= l::Expr_c op::'+' r::Expr_c
-{ e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
+concrete production add_c
+e::Expr_c ::= l::Expr_c op::'+' r::Expr_c
+{
+  e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
   e.ast_Expr = add(l.ast_Expr, r.ast_Expr) ;
 }
-concrete production sub_c  e::Expr_c ::= l::Expr_c op::'-' r::Expr_c
-{ e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
+concrete production sub_c
+e::Expr_c ::= l::Expr_c op::'-' r::Expr_c
+{
+  e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
   e.ast_Expr = sub(l.ast_Expr, r.ast_Expr) ;
 }
-concrete production mul_c  e::Expr_c ::= l::Expr_c op::'*' r::Expr_c
-{ e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
+concrete production mul_c
+e::Expr_c ::= l::Expr_c op::'*' r::Expr_c
+{
+  e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
   e.ast_Expr = mul(l.ast_Expr, r.ast_Expr) ;
 }
-concrete production div_c  e::Expr_c ::= l::Expr_c op::'/' r::Expr_c
-{ e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
+concrete production div_c
+e::Expr_c ::= l::Expr_c op::'/' r::Expr_c
+{
+  e.pp = "(" ++  l.pp ++ " " ++ op.lexeme ++ " " ++ r.pp ++ ")" ;
   e.ast_Expr = div(l.ast_Expr, r.ast_Expr) ;
 }
 
 
 -- Variable reference
-concrete production varRef_c    e::Expr_c ::= id::Id_t
-{ e.pp = id.lexeme ;  e.ast_Expr = varRef(id) ;    }
+concrete production varRef_c
+e::Expr_c ::= id::Id_t
+{
+  e.pp = id.lexeme ;  e.ast_Expr = varRef(id) ;
+}
 
 
--- Integer literals
-concrete production intLit_c    e::Expr_c ::= n::IntegerLiteral_t
-{ e.pp = n.lexeme ;   e.ast_Expr = intLit(n) ;    }
+-- Literals
+concrete production intLit_c
+e::Expr_c ::= n::IntegerLiteral_t
+{
+  e.pp = n.lexeme ;   e.ast_Expr = intLit(n) ;
+}
 
 -- Float literals
-concrete production floatLit_c  e::Expr_c ::= x::FloatLiteral_t
-{ e.pp = x.lexeme ;   e.ast_Expr = floatLit(x) ;  }
+concrete production floatLit_c
+e::Expr_c ::= x::FloatLiteral_t
+{
+  e.pp = x.lexeme ;   e.ast_Expr = floatLit(x) ;
+}
 
 -- Boolean literals
-concrete production boolLit_c   e::Expr_c ::= b::BooleanLiteral_t
-{ e.pp = b.lexeme ;   e.ast_Expr = boolLit(b) ;   }
+concrete production boolLit_c
+e::Expr_c ::= b::BooleanLiteral_t
+{
+  e.pp = b.lexeme ;   e.ast_Expr = boolLit(b) ;
+}
 
 -- String literals
-concrete production stringLit_c e::Expr_c ::= s::StringLiteral_t
-{ e.pp = s.lexeme ;   e.ast_Expr = stringLit(s) ;   }
+concrete production stringLit_c
+e::Expr_c ::= s::StringLiteral_t
+{
+  e.pp = s.lexeme ;   e.ast_Expr = stringLit(s) ;
+}

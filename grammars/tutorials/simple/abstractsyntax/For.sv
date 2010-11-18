@@ -2,7 +2,8 @@ grammar tutorials:simple:abstractsyntax ;
 
 abstract production for
 s::Stmt ::= i::Id_t lower::Expr upper::Expr body::Stmt
-{ forwards to
+{
+  forwards to
     {- i = lower ;
            while (i <= upper) {
               body ;

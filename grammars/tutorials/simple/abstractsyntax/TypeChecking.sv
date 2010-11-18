@@ -14,17 +14,29 @@ attribute type occurs on Expr ;
 {- These constructs do not create any errors and define their type
    attribute directly.  
 -}
-aspect production intLit    e::Expr ::= n::IntegerLiteral_t
-{ e.type = integerType() ; }
+aspect production intLit
+e::Expr ::= n::IntegerLiteral_t
+{
+  e.type = integerType() ;
+}
 
-aspect production floatLit  e::Expr ::= x::FloatLiteral_t
-{ e.type = floatType() ; }
+aspect production floatLit
+e::Expr ::= x::FloatLiteral_t
+{
+  e.type = floatType() ;
+}
 
-aspect production boolLit   e::Expr ::= b::BooleanLiteral_t
-{ e.type = booleanType() ; }
+aspect production boolLit
+e::Expr ::= b::BooleanLiteral_t
+{
+  e.type = booleanType() ;
+}
 
-aspect production stringLit e::Expr ::= s::StringLiteral_t
-{ e.type = stringType() ; }
+aspect production stringLit
+e::Expr ::= s::StringLiteral_t
+{
+  e.type = stringType() ;
+}
 
 
 -- Variable Reference
@@ -42,8 +54,10 @@ aspect production stringLit e::Expr ::= s::StringLiteral_t
    generated in the production that defines declTypeExpr.  
 -}
 
-aspect production varRef  e::Expr ::= id::Id_t
-{ e.type = case declTypeExpr of
+aspect production varRef
+e::Expr ::= id::Id_t
+{
+  e.type = case declTypeExpr of
              just(dte) -> dte.type 
            | nothing() -> errorType() 
            end ;
@@ -56,8 +70,10 @@ aspect production varRef  e::Expr ::= id::Id_t
    a generic numeric binary operation.  But we have not done that on
    this simple language.
 -}
-aspect production add e::Expr ::= l::Expr r::Expr 
-{ e.type = resolveNumericTypes (l.type, r.type) ;
+aspect production add
+e::Expr ::= l::Expr r::Expr 
+{
+  e.type = resolveNumericTypes (l.type, r.type) ;
   e.errors <- (if isNumeric(l.type) then [ ]
                else [ "Expression \"" ++ l.pp ++ 
                       "\" must be of type Integer or Float.\n" ]) ++
@@ -65,8 +81,10 @@ aspect production add e::Expr ::= l::Expr r::Expr
                else [ "Expression \"" ++ r.pp ++ 
                       "\" must be of type Integer or Float.\n" ]);
 }
-aspect production sub e::Expr ::= l::Expr r::Expr 
-{ e.type = resolveNumericTypes (l.type, r.type) ;
+aspect production sub
+e::Expr ::= l::Expr r::Expr 
+{
+  e.type = resolveNumericTypes (l.type, r.type) ;
   e.errors <- (if isNumeric(l.type) then [ ]
                else [ "Expression \"" ++ l.pp ++ 
                       "\" must be of type Integer or Float.\n" ]) ++
@@ -74,8 +92,10 @@ aspect production sub e::Expr ::= l::Expr r::Expr
                else [ "Expression \"" ++ r.pp ++ 
                       "\" must be of type Integer or Float.\n" ]);
 }
-aspect production mul e::Expr ::= l::Expr r::Expr 
-{ e.type = resolveNumericTypes (l.type, r.type) ;
+aspect production mul
+e::Expr ::= l::Expr r::Expr 
+{
+  e.type = resolveNumericTypes (l.type, r.type) ;
   e.errors <- (if isNumeric(l.type) then [ ]
                else [ "Expression \"" ++ l.pp ++ 
                       "\" must be of type Integer or Float.\n" ]) ++
@@ -83,8 +103,10 @@ aspect production mul e::Expr ::= l::Expr r::Expr
                else [ "Expression \"" ++ r.pp ++ 
                       "\" must be of type Integer or Float.\n" ]);
 }
-aspect production div e::Expr ::= l::Expr r::Expr 
-{ e.type = resolveNumericTypes (l.type, r.type) ;
+aspect production div
+e::Expr ::= l::Expr r::Expr 
+{
+  e.type = resolveNumericTypes (l.type, r.type) ;
   e.errors <- (if isNumeric(l.type) then [ ]
                else [ "Expression \"" ++ l.pp ++ 
                       "\" must be of type Integer or Float.\n" ]) ++
@@ -93,8 +115,10 @@ aspect production div e::Expr ::= l::Expr r::Expr
                       "\" must be of type Integer or Float.\n" ]);
 }
 
-function resolveNumericTypes  Type ::= lType::Type rType::Type
-{ return
+function resolveNumericTypes
+Type ::= lType::Type rType::Type
+{
+  return
     case lType of
       integerType() -> case rType of
                          integerType() -> integerType()
@@ -110,8 +134,10 @@ function resolveNumericTypes  Type ::= lType::Type rType::Type
     end ;
 }
 
-function isNumeric  Boolean ::= t::Type
-{ return case t of
+function isNumeric
+Boolean ::= t::Type
+{
+  return case t of
            integerType() -> true
          | floatType() -> true
          | _ -> false
@@ -124,8 +150,10 @@ function isNumeric  Boolean ::= t::Type
 {- Because of forwarding in Expr.sv, we do not need to write aspect
    productions for "or", "neq", "lte", "gt", or "gte", only these below.
 -}
-aspect production eq e::Expr ::= l::Expr r::Expr 
-{ e.type = booleanType() ;
+aspect production eq
+e::Expr ::= l::Expr r::Expr 
+{
+  e.type = booleanType() ;
   e.errors <- (if isNumeric(l.type) then [ ]
                else [ "Expression \"" ++ l.pp ++ 
                       "\" must be of type Integer or Float.\n" ]) ++
@@ -133,8 +161,10 @@ aspect production eq e::Expr ::= l::Expr r::Expr
                else [ "Expression \"" ++ r.pp ++ 
                       "\" must be of type Integer or Float.\n" ]);
 }
-aspect production lt e::Expr ::= l::Expr r::Expr 
-{ e.type = booleanType() ;
+aspect production lt
+e::Expr ::= l::Expr r::Expr 
+{
+  e.type = booleanType() ;
   e.errors <- (if isNumeric(l.type) then [ ]
                else [ "Expression \"" ++ l.pp ++ 
                       "\" must be of type Integer or Float.\n" ]) ++
@@ -143,8 +173,10 @@ aspect production lt e::Expr ::= l::Expr r::Expr
                       "\" must be of type Integer or Float.\n" ]);
 }
 
-aspect production and e::Expr ::= l::Expr r::Expr 
-{ e.type = booleanType() ;
+aspect production and
+e::Expr ::= l::Expr r::Expr 
+{
+  e.type = booleanType() ;
   e.errors <- (if isBoolean(l.type) then [ ]
                else [ "Expression \"" ++ l.pp ++ 
                       "\" must be of type Boolean.\n" ]) ++
@@ -153,29 +185,38 @@ aspect production and e::Expr ::= l::Expr r::Expr
                       "\" must be of type Boolean.\n" ]);
 }
 
-aspect production not e::Expr ::= ne::Expr 
-{ e.type = booleanType() ;
+aspect production not
+e::Expr ::= ne::Expr 
+{
+  e.type = booleanType() ;
   e.errors <- if isBoolean(ne.type) then [ ]
               else [ "Expression \"" ++ ne.pp ++ 
                      "\" must be of type Boolean.\n" ] ;
 }
 
-function isBoolean  Boolean ::= t::Type
-{ return case t of booleanType() -> true  | _ -> false  end ;  }
+function isBoolean
+Boolean ::= t::Type
+{
+  return case t of booleanType() -> true  | _ -> false  end ;
+}
 
 
 
 -- Statements
 -------------
 
-aspect production ifthen s::Stmt ::= c::Expr t::Stmt 
-{ s.errors <- if isBoolean(c.type) then [ ]
+aspect production ifthen
+s::Stmt ::= c::Expr t::Stmt 
+{
+  s.errors <- if isBoolean(c.type) then [ ]
               else [ "Expression \"" ++ c.pp ++ 
                      "\" must be of type Boolean.\n" ] ;
 }
 
-aspect production ifelse s::Stmt ::= c::Expr t::Stmt e::Stmt 
-{ s.errors <- if isBoolean(c.type) then [ ]
+aspect production ifelse
+s::Stmt ::= c::Expr t::Stmt e::Stmt 
+{
+  s.errors <- if isBoolean(c.type) then [ ]
               else [ "Expression \"" ++ c.pp ++ 
                      "\" must be of type Boolean.\n" ] ;
 }
