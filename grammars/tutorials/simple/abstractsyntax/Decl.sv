@@ -5,27 +5,37 @@ nonterminal TypeExpr with pp, type ;
 nonterminal Type with pp ;
 
 -- Declarations
-abstract production decl d::Decl ::= t::TypeExpr id::Id_t 
-{ d.pp = t.pp ++ " " ++ id.lexeme ++ " ; \n" ; 
+abstract production decl
+d::Decl ::= t::TypeExpr id::Id_t 
+{
+  d.pp = t.pp ++ " " ++ id.lexeme ++ " ; \n" ; 
   d.defs = addBinding(id.lexeme, t, emptyEnv());
   d.errors := [ ] ;
 }
 
 -- Type Expressions
-abstract production typeExprInteger t::TypeExpr ::=  
-{ t.pp = "Integer" ;  
+abstract production typeExprInteger
+t::TypeExpr ::=  
+{
+  t.pp = "Integer" ;  
   t.type = integerType() ;
 }
-abstract production typeExprFloat   t::TypeExpr ::=  
-{ t.pp = "Float" ; 
+abstract production typeExprFloat
+t::TypeExpr ::=  
+{
+  t.pp = "Float" ; 
   t.type = floatType() ;
 }
-abstract production typeExprBoolean t::TypeExpr ::=  
-{ t.pp = "Boolean" ; 
+abstract production typeExprBoolean
+t::TypeExpr ::=  
+{
+  t.pp = "Boolean" ; 
   t.type = booleanType() ;
 }
-abstract production typeExprString  t::TypeExpr ::=  
-{ t.pp = "String" ; 
+abstract production typeExprString
+t::TypeExpr ::=  
+{
+  t.pp = "String" ; 
   t.type = stringType() ;
 }
 
@@ -41,13 +51,29 @@ abstract production typeExprString  t::TypeExpr ::=
    expression is then decorated by the Type that is represented by the
    type expressions.
 -}
-abstract production integerType  t::Type ::=   
-{ t.pp = "Integer" ; }
-abstract production floatType    t::Type ::=   
-{ t.pp = "Float" ; }
-abstract production booleanType  t::Type ::=   
-{ t.pp = "Boolean" ; }
-abstract production stringType   t::Type ::=   
-{ t.pp = "String" ; }
-abstract production errorType    t::Type ::=   
-{ t.pp = "Erroneous Type" ; }
+abstract production integerType
+t::Type ::=   
+{
+  t.pp = "Integer" ;
+}
+abstract production floatType
+t::Type ::=   
+{
+  t.pp = "Float" ;
+}
+abstract production booleanType
+t::Type ::=   
+{
+  t.pp = "Boolean" ;
+}
+abstract production stringType
+t::Type ::=   
+{
+  t.pp = "String" ;
+}
+abstract production errorType
+t::Type ::=   
+{
+  t.pp = "Erroneous Type" ;
+}
+
