@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Install this by placing it in ~/.local/share/gtksourceview-2.0/language-specs/ -->
+
 <language id="silver" _name="Silver" version="2.0" _section="Sources">
   <metadata>
     <property name="mimetypes">text/x-melt-silver</property>
