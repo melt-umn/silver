@@ -44,6 +44,13 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
   top.translation = h.translation ++ t.translation;
 }
 
+aspect production productionStmtAppend
+top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
+{
+  top.setupInh := h.setupInh ++ t.setupInh;
+  top.translation = h.translation ++ t.translation;
+}
+
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {

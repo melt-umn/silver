@@ -104,6 +104,19 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
   top.warnings := h.warnings ++ t.warnings;
 }
 
+abstract production productionStmtAppend
+top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
+{
+  top.pp = h.pp ++ "\n" ++ t.pp;
+  top.location = h.location;
+  top.defs = appendDefs(h.defs, t.defs);
+
+  top.productionAttributes = appendDefs(h.productionAttributes, t.productionAttributes);
+
+  top.errors := h.errors ++ t.errors;
+  top.warnings := h.warnings ++ t.warnings;
+}
+
 concrete production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {

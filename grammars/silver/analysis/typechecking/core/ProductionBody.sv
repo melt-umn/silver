@@ -40,6 +40,14 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
   top.upSubst = t.upSubst;
 }
 
+aspect production productionStmtAppend
+top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
+{
+  h.downSubst = top.downSubst;
+  t.downSubst = h.upSubst;
+  top.upSubst = t.upSubst;
+}
+
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
