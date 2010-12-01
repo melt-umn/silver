@@ -206,3 +206,6 @@ Boolean ::= str::String
   "java" : return "(common.Util.isUpper(%str%.toString()))";
 }
 
+function stringConcat
+String ::= s1::String s2::String
+{ return s1 ++ s2 ; }
