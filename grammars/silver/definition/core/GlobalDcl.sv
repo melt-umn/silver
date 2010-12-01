@@ -20,4 +20,5 @@ top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
 
   top.errors := e.errors;
   top.warnings := [];
+  e.blockContext = defaultContext();
 }

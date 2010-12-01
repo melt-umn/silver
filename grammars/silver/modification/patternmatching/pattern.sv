@@ -34,17 +34,17 @@ synthesized attribute letAssigns_tree :: [ AssignExpr ] ;
 
 -- MR | ...
 nonterminal MRuleList with pp, grammarName, env, file, location, typerep, expected, errors, signature, upSubst, downSubst, finalSubst,
-                           typerep_down, translation_tree, base_tree ;
+                           typerep_down, translation_tree, base_tree, blockContext ;
 -- P -> E
 nonterminal MatchRule with pp, grammarName, env, file, location, typerep, expected, errors, signature, upSubst, downSubst, finalSubst,
-                           typerep_down, cond_tree, then_tree, base_tree ;
+                           typerep_down, cond_tree, then_tree, base_tree, blockContext ;
 
 -- prod(PL) | int | string | bool | ...
 nonterminal Pattern with pp, grammarName, env, file, location, defs, errors, signature, upSubst, downSubst, finalSubst,
-                         typerep_down, cond_tree, letAssigns_tree, base_tree ;
+                         typerep_down, cond_tree, letAssigns_tree, base_tree, blockContext ;
 -- P , ...
 nonterminal PatternList with pp, grammarName, env, file, location, defs, errors, signature, upSubst, downSubst, finalSubst,
-                             typereps_down, cond_tree, letAssigns_tree, base_tree, child_number ;
+                             typereps_down, cond_tree, letAssigns_tree, base_tree, child_number, blockContext ;
 
 concrete production caseExpr_c
 top::Expr ::= 'case' e1::Expr 'of' ml::MRuleList 'end'

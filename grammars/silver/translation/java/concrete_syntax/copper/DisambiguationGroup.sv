@@ -42,7 +42,7 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
   -- Give the group a name, deterministically, based on line number
   acode.signature = namedNamedSignature(top.grammarName ++ ":__disam" ++ toString($1.line));
 
-  acode.actionCodeType = disambigGroupActionType();
+  acode.blockContext = disambiguationContext();
 }
 
 abstract production pluckTerminalReference

@@ -12,7 +12,7 @@ import silver:definition:type:syntax;
 
 synthesized attribute actionCode :: String;
 
-nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,signature,file,errors;
+nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,signature,file,errors,blockContext;
 
 terminal Action_kwd 'action' lexer classes {KEYWORD};
 
@@ -66,7 +66,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
   top.pp = forward.pp ++ "action " ++ acode.pp;
 
-  acode.actionCodeType = productionActionType();
+  acode.blockContext = actionContext();
 
   acode.env = newScopeEnv(
                 addTerminalAttrDefs(

@@ -8,8 +8,8 @@ terminal Let_kwd 'let' lexer classes {KEYWORD};
 terminal In_kwd 'in' lexer classes {KEYWORD};
 terminal End_kwd 'end' lexer classes {KEYWORD};
 
-nonterminal LetAssigns with pp, file, grammarName, defs, env, signature, errors, downSubst, upSubst, finalSubst;
-nonterminal AssignExpr with pp, file, grammarName, defs, env, signature, errors, downSubst, upSubst, finalSubst;
+nonterminal LetAssigns with pp, file, grammarName, defs, env, signature, errors, downSubst, upSubst, finalSubst, blockContext;
+nonterminal AssignExpr with pp, file, grammarName, defs, env, signature, errors, downSubst, upSubst, finalSubst, blockContext;
 
 concrete production nameLet
 top::Name ::= 'let'

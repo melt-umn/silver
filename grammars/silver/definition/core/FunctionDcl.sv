@@ -38,6 +38,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 
   body.env = newScopeEnv(appendDefs(body.defs, sigDefs), newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;
+  body.blockContext = functionContext();
 }
 
 concrete production functionSignatureEmptyRHS

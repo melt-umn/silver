@@ -7,8 +7,6 @@ import silver:definition:env;
 import silver:translation:java:type;
 import silver:definition:type:syntax;
 
-import silver:translation:java:concrete_syntax:copper; -- TODO part of ugly hack
-
 aspect production letp
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
@@ -41,5 +39,4 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
   top.valueTrans = ["new common.Lazy(){public Object eval(common.DecoratedNode context) {return " ++ e.translation ++ ";}}"];
 }
 
---TODO BUG HACK UGLY FIXME OHGOD remove this, nasty-ass dependency
-attribute actionCodeType occurs on LetAssigns, AssignExpr;
+
