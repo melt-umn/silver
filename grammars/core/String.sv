@@ -18,7 +18,8 @@ String ::= sep::String lst::[String]
 }
 
 {--
- - Split a string into a list of strings by a separator.
+ - Split a string into a list of strings by a separator.  If the separtor
+ - is the empty string then the string is split into single character strings.
  -
  - @param sep  The separator between each of the resulting strings.
  - @param str  The original string.
@@ -28,11 +29,14 @@ function explode
 [String] ::= sep::String str::String
 {
   local attribute i :: Integer;
-  i = indexOf(sep, str);
+  i = if   sep == ""
+      then 1
+      else indexOf(sep, str);
 
   return if i == -1
          then [str]
-         else [substring(0, i, str)] ++ explode(sep, substring(i+length(sep), length(str), str));
+         else [substring(0, i, str)] ++ 
+              explode(sep, substring(i+length(sep), length(str), str)) ;
 }
 
 {--
