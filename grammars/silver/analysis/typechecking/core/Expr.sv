@@ -590,6 +590,13 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.upSubst = e2.upSubst;
 }
 
+aspect production exprsDecorated
+top::Exprs ::= es::[Decorated Expr]
+{
+  -- TODO: this is slightly hacky.  We SHOULD unify the expected types and such here, but we should perhaps report an error as well! ? if it fails...
+  -- It's only okay for now since we don't rely on erroring if expected type differs from actual type.
+  top.upSubst = composeSubst( top.downSubst, unifyAll(getTypesExprs(es), top.expectedInputTypes) );
+}
 
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'

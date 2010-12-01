@@ -72,6 +72,12 @@ top::Exprs ::= e1::Expr c::Comma_t e2::Exprs
                     '(', exprsCons(e1, ',', exprsSingle(e2.listtrans)), ')');
 }
 
+aspect production exprsDecorated
+top::Exprs ::= es::[Decorated Expr]
+{
+  top.listtrans = error("list translation for exprsDecorated is not yet implemented!");
+}
+
 -- Overloaded operators --------------------------------------------------------
 
 aspect production plusPlus
@@ -80,7 +86,7 @@ top::Expr ::= e1::Expr '++' e2::Expr
   -- TODO: THIS IS A COMPLETELY BUSTED WAY TO DO THIS, BUT WORKS FOR NOW. **FRAGILE**  probable BUGS
   handler <- if !(unify(e1.typerep, listTypeExp(errorType())).failure || unify(e2.typerep, listTypeExp(errorType())).failure)
              then [productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:append")))),
-                    '(', exprsCons(e1, ',', exprsSingle(e2)), ')')]
+                    '(', exprsDecorated([e1,e2]), ')')]
              else [];
 }
 
@@ -89,7 +95,7 @@ top::Expr ::= 'length' '(' e::Expr ')'
 {
   handlers <- if !unify(e.typerep, listTypeExp(errorType())).failure
 	      then [productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:listLength")))),
-                    '(', exprsSingle(e), ')')]
+                    '(', exprsDecorated([e]), ')')]
 	      else [];
 }
 
