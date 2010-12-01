@@ -86,8 +86,8 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Production signature mismatch for " ++ e.pp
-                         ++ "\nFunction type signature: " ++ errCheck1.leftpp
-                         ++ "\nParameters provided for: " ++ errCheck1.rightpp)]
+                         ++ "\n  Function type signature: " ++ errCheck1.leftpp
+                         ++ "\n  Parameters provided for: " ++ errCheck1.rightpp)]
        else [];
 }
 
@@ -114,8 +114,8 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Function signature mismatch for " ++ e.pp
-                         ++ "\nFunction type signature: " ++ errCheck1.leftpp
-                         ++ "\nParameters provided for: " ++ errCheck1.rightpp)]
+                         ++ "\n  Function type signature: " ++ errCheck1.leftpp
+                         ++ "\n  Parameters provided for: " ++ errCheck1.rightpp)]
        else [];
 }
 
