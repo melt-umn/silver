@@ -413,32 +413,30 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.translation = wrapThunk(e, top.actionCodeType.isSemanticBlock);
+  top.translation = wrapThunk(e, top.blockContext.lazyApplication);
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  top.translation = wrapThunk(e1, top.actionCodeType.isSemanticBlock) ++ ", " ++ e2.translation;
+  top.translation = wrapThunk(e1, top.blockContext.lazyApplication) ++ ", " ++ e2.translation;
 }
 
 aspect production exprsDecorated
 top::Exprs ::= es::[Decorated Expr]
 {
-  top.translation = implode(", ", wrapThunks(es, top.actionCodeType.isSemanticBlock));
+  top.translation = implode(", ", wrapThunks(es, top.blockContext.lazyApplication));
 }
 
 function wrapThunks
-[String] ::= es::[Decorated Expr] doit::Boolean
+[String] ::= es::[Decorated Expr] beLazy::Boolean
 {
-  return if null(es) then [] else wrapThunk(head(es), doit) :: wrapThunks(tail(es), doit);
+  return if null(es) then [] else wrapThunk(head(es), beLazy) :: wrapThunks(tail(es), beLazy);
 }
-
--- TODO: doit is a hack.  Right now every place that calls this is importing sil:trans:conc:copper to look at actionCodeType
 function wrapThunk
-String ::= original::Decorated Expr doit::Boolean
+String ::= original::Decorated Expr beLazy::Boolean
 {
-  return if doit
+  return if beLazy
          then "new common.Thunk(context, new common.Lazy() { public Object eval(common.DecoratedNode context) { return " ++ original.translation ++ "; } })"
          else original.translation;
 }

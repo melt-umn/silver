@@ -10,8 +10,6 @@ import silver:translation:java:core;
 import silver:analysis:typechecking:core;
 import silver:analysis:typechecking;
 
---terminal Parser_kwd 'parser' lexer precedence = 5;
-
 concrete production attributeDclParser
 top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::ActionCode_c ';'
 {
@@ -38,7 +36,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
   -- see ParserAttrSpec.sv for the parser spec
 
   acode.signature = namedNamedSignature(top.grammarName ++ ":" ++ a.name);
-  acode.actionCodeType = parserAttrActionType();
+  acode.blockContext = actionContext();
   acode.env = newScopeEnv(acode.defs, top.env);
 
   -- No effect on ordinary semantic translation stuff
@@ -56,7 +54,7 @@ top::Expr ::= q::Decorated QName
   top.pp = q.pp; 
   top.location = q.location;
 
-  top.errors := if top.actionCodeType.isSemanticBlock
+  top.errors := if !top.blockContext.permitActions
                 then [err(top.location, "References to parser attributes can only be made in action blocks")]
                 else [];
 
@@ -76,7 +74,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e.errors ++
-               (if top.actionCodeType.isSemanticBlock
+               (if !top.blockContext.permitActions
                 then [err(val.location, "Assignment to parser attributes only permitted in parser action blocks")]
                 else []);
 
@@ -104,7 +102,7 @@ top::DefLHS ::= q::Decorated QName
   top.pp = q.pp;
   top.location = q.location;
   
-  top.errors := if top.actionCodeType.isSemanticBlock
+  top.errors := if !top.blockContext.permitActions
                 then [err(q.location, "Parser attributes can only be used in action blocks")]
                 else [err(q.location, "Parser action blocks are imperative, not declarative. You cannot modify the attributes of " ++ q.name ++ ". If you are trying to set inherited attributes, you should use 'decorate ... with { ... }' when you create it.")];
   top.typerep = q.lookupValue.typerep;

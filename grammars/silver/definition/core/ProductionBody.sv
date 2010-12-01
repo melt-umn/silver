@@ -128,6 +128,10 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   top.defs = emptyDefs();
   top.errors := e.errors;
   top.warnings := [];
+  
+  top.errors <- if !top.blockContext.permitReturn
+                then [err(top.location, "Return is not valid in this context. (They are only permitted in function declarations.)")]
+                else [];
 
   e.expected = expected_type(top.signature.outputElement.typerep);
 }
@@ -172,6 +176,10 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
+  top.errors <- if !top.blockContext.permitProductionAttributes
+                then [err(top.location, "Production attributes are not valid in this context.")]
+                else [];
+
   top.errors := te.errors;
   top.warnings := [];
 }
@@ -185,6 +193,10 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   top.productionAttributes = addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
 
   top.defs = emptyDefs();
+
+  top.errors <- if !top.blockContext.permitForward
+                then [err(top.location, "Forwarding is not permitted in this context.")]
+                else [];
 
   top.errors := e.errors;
   top.warnings := [];
@@ -201,6 +213,10 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
   top.productionAttributes = addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
 
   top.defs = emptyDefs();
+
+  top.errors <- if !top.blockContext.permitForward
+                then [err(top.location, "Forwarding is not permitted in this context.")]
+                else [];
 
   top.errors := e.errors ++ inh.errors;
   top.warnings := [];

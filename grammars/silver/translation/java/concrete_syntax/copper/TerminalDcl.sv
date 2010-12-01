@@ -7,9 +7,7 @@ import silver:definition:concrete_syntax;
 import silver:translation:java:core;
 import silver:definition:type;
 import silver:definition:type:syntax;
---import silver:definition:regex; TODO nix this line?
 
---terminal Prefix_kwd 'prefix' lexer classes {KEYWORD}; -- TODO: not currently used
 terminal Class_kwd   'class'     ; --lexer classes {KEYWORD};
 terminal Dominates_t 'dominates' ; --lexer classes {KEYWORD};
 terminal Submits_t   'submits'   ; --lexer classes {KEYWORD};
@@ -115,7 +113,7 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
 
   top.terminalModifiers = [actionCodeTerminalModifierSpec(acode.actionCode)];
 
-  acode.actionCodeType = terminalActionType();
+  acode.blockContext = actionContext();
   acode.env = newScopeEnv(addTerminalAttrDefs(acode.defs), top.env);
 
   -- TODO: better name than this dummy one?
