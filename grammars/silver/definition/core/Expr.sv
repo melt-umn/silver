@@ -216,7 +216,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   top.location = e.location;
-  top.errors := [err(top.location, e.pp ++ " has type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ " and cannot be invoked as a function.")] ++ e.errors ++ es.errors; -- TODO fix this
+  top.errors := e.errors ++ [err(top.location, e.pp ++ " has type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ " and cannot be invoked as a function.")] ++ es.errors; -- TODO fix this.  Uhhh how? What's broken? My comments SUCK! Perhaps I didn't like doing the performsubst here
 
   top.typerep = errorType();
 
@@ -234,7 +234,7 @@ top::Expr ::= e::Expr '.' q::QName
   
   e.expected = expected_decorated();
   
-  top.errors <- e.errors;
+  top.errors := e.errors ++ forward.errors; -- So that e.errors appears first!
   
   forwards to performSubstitution(e.typerep, e.upSubst).accessDispatcher(e, $2, q);
 }
@@ -246,7 +246,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.location = loc(top.file, $2.line, $2.column);
   
   top.typerep = q.lookupAttribute.typerep;
-  top.errors := [err(top.location, "LHS of '.' is type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ " and cannot have attributes.")] ++ q.lookupAttribute.errors; -- TODO fix this
+  top.errors := [err(top.location, "LHS of '.' is type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ " and cannot have attributes.")] ++ q.lookupAttribute.errors; -- TODO fix this. How? Why? What's wrong? Perhaps I didn't like doing the performsubst here
 }
 
 abstract production undecoratedAccessDispatcher
@@ -270,7 +270,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = loc(top.file, $2.line, $2.column);
 
-  top.errors <- q.lookupAttribute.errors;
+  top.errors := q.lookupAttribute.errors ++ forward.errors; -- so that these errors appear first.
   
   -- We dispatch again, based on the kind of attribute
   forwards to if null(q.lookupAttribute.dcls)
@@ -677,7 +677,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
   top.pp = e1.pp ++ " ++ " ++ e2.pp;
   top.location = e1.location;
 
-  top.errors := e1.errors ++ e2.errors;
+  top.errors := e1.errors ++ e2.errors; -- the error is spotted by plusPlus in typechecking.
   top.typerep = errorType();
 }
 

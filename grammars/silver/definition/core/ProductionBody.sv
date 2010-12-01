@@ -312,7 +312,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   dl.isSynthesizedDefinition = true;
   
   top.warnings := [];
-  top.errors := dl.errors ++ e.errors ++ occursCheck.errors;
+  top.errors := dl.errors ++ occursCheck.errors ++ e.errors;
 }
 
 abstract production inheritedAttributeDef
@@ -328,7 +328,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   dl.isSynthesizedDefinition = false;
   
   top.warnings := [];
-  top.errors := dl.errors ++ e.errors ++ occursCheck.errors;
+  top.errors := dl.errors ++ occursCheck.errors ++ e.errors;
 }
 
 inherited attribute isSynthesizedDefinition :: Boolean occurs on DefLHS; -- true = syn, false = inh

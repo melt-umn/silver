@@ -20,5 +20,7 @@ SILVER_HOME=../jars/
 # Changing this will override the automatic setting shown.
 #GRAMMAR_PATH=$SILVER_HOME/../grammars/:.
 
-java -jar $SILVER_HOME/RunSilver.jar $@ && ant
+java -Xmx2000M -Xss4M -jar $SILVER_HOME/RunSilver.jar $@ && ant
+
+# Adjust -Xmx (heap space) and -Xss (stack space) if you have issues with these running out.
 
