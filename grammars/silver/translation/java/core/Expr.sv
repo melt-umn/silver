@@ -422,6 +422,18 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.translation = wrapThunk(e1, top.actionCodeType.isSemanticBlock) ++ ", " ++ e2.translation;
 }
 
+aspect production exprsDecorated
+top::Exprs ::= es::[Decorated Expr]
+{
+  top.translation = implode(", ", wrapThunks(es, top.actionCodeType.isSemanticBlock));
+}
+
+function wrapThunks
+[String] ::= es::[Decorated Expr] doit::Boolean
+{
+  return if null(es) then [] else wrapThunk(head(es), doit) :: wrapThunks(tail(es), doit);
+}
+
 -- TODO: doit is a hack.  Right now every place that calls this is importing sil:trans:conc:copper to look at actionCodeType
 function wrapThunk
 String ::= original::Decorated Expr doit::Boolean

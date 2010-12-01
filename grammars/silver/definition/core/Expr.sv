@@ -681,6 +681,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
   top.typerep = errorType();
 }
 
+
 abstract production exprsEmpty
 top::Exprs ::=
 {
@@ -716,9 +717,27 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   e2.expectedInputTypes = if null(top.expectedInputTypes) then [] else tail(top.expectedInputTypes);
 }
 
+abstract production exprsDecorated
+top::Exprs ::= es::[Decorated Expr]
+{
+  top.pp = implode(", ", getPPsExprs(es));
+  top.location = if null(es) then loc("nowhere",-1,-1) else head(es).location;
+  
+  top.errors := foldr(append, [], getErrorsExprs(es));
+  top.exprs = es;
+}
+
 
 function getTypesExprs
 [TypeExp] ::= es::[Decorated Expr]{
   return if null(es) then [] else [head(es).typerep] ++ getTypesExprs(tail(es));
+}
+function getPPsExprs
+[String] ::= es::[Decorated Expr]{
+  return if null(es) then [] else [head(es).pp] ++ getPPsExprs(tail(es));
+}
+function getErrorsExprs
+[[Decorated Message]] ::= es::[Decorated Expr]{
+  return if null(es) then [] else [head(es).errors] ++ getErrorsExprs(tail(es));
 }
 
