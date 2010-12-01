@@ -55,6 +55,21 @@ function take
          then []
          else head(lst) :: take(number-1, tail(lst));
 }
+function dropWhile
+[a] ::= f::Function(Boolean::=a) lst::[a]
+{
+  return if ! f(head(lst)) 
+         then lst
+         else dropWhile(f,tail(lst)) ;
+}
+function takeWhile
+[a] ::= f::Function(Boolean::=a) lst::[a]
+{
+  return if ! f(head(lst)) 
+         then []
+         else head(lst) :: takeWhile(f,tail(lst)) ;
+}
+
 function reverse
 [a] ::= lst::[a]
 {
