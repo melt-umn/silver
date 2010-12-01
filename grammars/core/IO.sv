@@ -316,3 +316,28 @@ a ::= val::a act::IO
   "java" : return "(%act%==null?%val%:null)"; -- This isn't the best way to do this...
 }
 
+
+
+-- Function for manipulating strings representing file and directory names.
+
+function dirNameInFilePath
+String ::= filePath::String
+{
+ return if   indexOfLastSlash == -1 -- slash not found
+        then filePath
+        else substring(0, indexOfLastSlash, filePath) ;
+
+ local attribute indexOfLastSlash :: Integer ;
+ indexOfLastSlash = lastIndexOf("/", filePath) ;
+}
+
+function fileNameInFilePath
+String ::= filePath::String
+{
+ return if   indexOfLastSlash == -1 -- slash not found
+        then filePath
+        else substring(indexOfLastSlash+1, length(filePath), filePath) ;
+
+ local attribute indexOfLastSlash :: Integer ;
+ indexOfLastSlash = lastIndexOf("/", filePath) ;
+}
