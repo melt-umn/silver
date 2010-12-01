@@ -13,7 +13,6 @@ synthesized attribute pp :: String;
 
 attribute pp occurs on Root;
 
-
 -- Attribute declarations and occurs on declrations can be combined.
 -- This attribute will compute the value of the expresssion.
 synthesized attribute value :: Integer occurs on Root;
