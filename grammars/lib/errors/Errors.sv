@@ -12,7 +12,7 @@ synthesized attribute errors :: [ Error ] with ++ ;
 
 function mkNoError
 [Error] ::=
-{ return [ ::Error ] ;   }
+{ return [ ] ;   }
 
 function mkError
 [Error] ::= msg::String
@@ -20,7 +20,7 @@ function mkError
 
 function mkErrorLoc
 [Error] ::= l::Location msg::String 
-{ return [ msgErrorLoc(l'',msg) ] ;  }
+{ return [ msgErrorLoc(l,msg) ] ;  }
 
 function mkErrorLinCol
 [Error] ::= l::Integer c::Integer msg::String 
