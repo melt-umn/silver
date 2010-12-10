@@ -1,0 +1,39 @@
+Behavior root{
+	Initial Behavior h{
+		Initial Behavior f{
+			Under Condition true
+				Apply Behavior a(c::g)
+		}
+	
+		Behavior g(float x){
+			Entry{
+				SetRSpeed{x}
+				SetLSpeed{x}
+			}		
+			Under Condition true
+				Apply Behavior g(x::13.0)	
+		}
+		
+
+		Behavior a(pBehavior c(float z)){
+			Behavior b(pBehavior c(float z)){
+				Behavior d(pBehavior c(float z)){
+					Behavior e(pBehavior c(float z)){
+						float i;
+						Entry{
+							 i := 5.0;
+						}
+						Under Condition true
+							Apply Behavior c(z::i)
+					}
+					Under Condition true
+						Apply Behavior e(c::c)
+				}
+				Under Condition true
+					Apply Behavior d(c::c)
+			}
+			Under Condition true
+				Apply Behavior b(c::c)
+		}		
+	}		
+}

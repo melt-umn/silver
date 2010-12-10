@@ -1,0 +1,21 @@
+Behavior root{
+	Initial Behavior temp{
+		boolean b;
+		boolean bb;
+		int x;
+		int y;
+		Entry{
+			if(b) then {	
+				x:=1;
+				y:=1;	
+			}else if (bb) then{
+				x:=2;
+				y:=2;
+			}else{ x:=3;
+				y:=3;	
+			}	
+		}
+		Under Condition true 
+			Apply Behavior temp()
+	}
+}
