@@ -1,0 +1,156 @@
+	Behavior root{
+	Initial Behavior spiral(float aClock){
+			float speed;
+			float lSpeed;
+			float rSpeed;
+			float direction;
+			float radius;
+			float theta;
+			float x;
+			float goalDist;
+
+		Entry{
+			speed :=sqrt(200.0^2 +(75.0+clock)^2);
+			lSpeed := 200.0;
+			rSpeed := 75.0 + clock;
+			clock := aClock;
+			SetLSpeed{200.0}
+			SetRSpeed{75.0 + clock} 
+		}
+	
+		Under Condition RightBump  
+			Apply Behavior wallOnSide(rb::true, 
+												goalDist::goalDist, 
+												distTravelled::0,
+												oldClock::aClock)
+		Under Condition LeftBump
+			Apply Behavior wallOnSide(rb::true, 
+												goalDist::goalDist, 
+												distTravelled::0,
+												oldClock::aClock)
+		Under Condition true
+			Apply Behavior spiral(aClock::aClock) 
+		
+	
+		Exit{
+			direction := 2.0*(lSpeed - rSpeed);
+			radius := speed / direction ;
+			theta := pre(theta) 
+				+ speed;//*(aClock.current - aClock.previous);
+			
+			
+			 //if(theta < PI/2) then {
+				if(theta < 3.14/2.0) then {
+				x :=radius*sin(theta);
+			  }
+			  //else if (theta < PI) then {
+				else if (theta < 3.14) then {	
+				x :=radius*(sin(3.14 - theta));
+			  }
+			  //else if (theta <3*/2)then {
+				else if (theta <3.0*3.14/2.0)then {
+				x :=radius*2.0*cos(3.0*3.14/2.0 - theta);
+			  }
+			  else{
+				x := radius*2.0*((-1.0)*sin(2.0*3.14 - theta));
+			  }
+			 goalDist := 2.0*x;
+		}
+	}
+
+
+  Behavior wallOnSide(boolean rb, float goalDist,
+												 int distTravelled, float oldClock){
+       Initial Behavior backup(boolean rb, float goalDist,
+												 int distTravelled, float oldClock){
+		//this is a scoping question.
+		//do the sub behaviors inherit the
+		//parameters of the super behaviors 
+            Entry{     
+                clock := 0.0;
+       	    	SetRSpeed{-140.0}
+                SetLSpeed{-140.0}
+            }
+            
+               Under Condition  clock > 2.0 
+                    Apply Behavior outOfWall(rb::rb, 
+															goalDist::goalDist, 
+															distTravelled::distTravelled,
+															oldClock::oldClock)
+            
+         }
+         
+         Behavior outOfWall(boolean rb, float goalDist,
+												 int distTravelled, float oldClock){
+	     Entry{
+                if (rb) then {      
+                   SetRSpeed{75.0}
+                   SetLSpeed{250.0}
+                } else {
+                   SetRSpeed{250.0}
+                   SetLSpeed{75.0}
+                } 
+            }
+
+                Under Condition clock > 4.2 
+                     Apply Behavior intoWall(rb::rb, 
+															goalDist::goalDist, 
+															distTravelled::distTravelled,
+															oldClock::oldClock)
+         }
+          
+          
+          Behavior intoWall(boolean rb, float goalDist,
+												 int distTravelled, float oldClock){
+             Entry{
+                 if (rb) then {
+                 	SetRSpeed{200.0}
+                  	SetLSpeed{75.0}
+                 } else {
+                	SetRSpeed{75.0}
+                  	SetLSpeed{200.0}    
+                 }
+             }
+             
+                 Under Condition clock > 4.2 && (LeftBump || RightBump) 
+                   Apply Behavior wallOnSide(rb::rb, 
+															goalDist::goalDist, 
+															distTravelled::distTravelled,
+															oldClock::oldClock)
+                 Under Condition clock > 4.20      
+                   Apply Behavior root.followCorner(rb::rb, 
+															goalDist::goalDist, 
+															distTravelled::distTravelled,
+															oldClock::oldClock)
+				   
+          }
+
+  }
+
+  Behavior followCorner(boolean rb, float goalDist,
+												 int distTravelled, float oldClock){
+    Entry{
+	clock := 0.0;
+        if (rb) then {
+    	   SetRSpeed{200.0}
+    	   SetLSpeed{25.0}
+        } else {
+           SetRSpeed{25.0}
+    	   SetLSpeed{200.0}         
+       } 
+    }   
+    
+       Under Condition clock > 2.0 && RightBump
+          Apply Behavior wallOnSide(rb::true, 
+												goalDist::goalDist, 
+												distTravelled::distTravelled,
+												oldClock::oldClock)
+       Under Condition clock > 2.0 && LeftBump
+          Apply Behavior wallOnSide(rb::false, 
+												goalDist::goalDist, 
+												distTravelled::distTravelled,
+												oldClock::oldClock)
+   //    Under Condition clock >2.0 
+     //     Apply Behavior random()
+  }
+}

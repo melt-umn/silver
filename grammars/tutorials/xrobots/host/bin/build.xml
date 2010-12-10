@@ -1,0 +1,75 @@
+<project name='tutorials:xrobots:host:bin' default='dist' basedir='.'>
+  <description>Build the grammar tutorials:xrobots:host:bin </description>
+
+  <property environment='env'/>
+  <property name='jg' location='/project/melt3/People/sst/steve/silver/trunk/generated/'/>
+  <property name='sh' location='/project/melt3/People/sst/steve/silver/trunk/jars/'/>
+  <property name='bin' location='${jg}/bin'/>
+  <property name='src' location='${jg}/src'/>
+
+  <path id='lib.classpath'>
+    <fileset dir='${sh}' includes='SilverRuntime.jar CopperRuntime.jar CopperCompiler.jar' />
+  </path>
+
+  <path id='src.classpath'>
+    <pathelement location='${src}' />
+  </path>
+
+  <path id='compile.classpath'>
+    <path refid='src.classpath'/>
+    <path refid='lib.classpath'/>
+  </path>
+
+  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='lib.classpath'/>
+
+
+  <target name='init'>
+
+    <!-- Create the time stamp -->
+    <tstamp>
+      <format property='TIME' pattern='MM/dd/yyyy hh:mm aa'/>
+    </tstamp>
+
+    <mkdir dir='${bin}'/>
+  </target>
+
+  <target name='dist' depends='grammars'>
+
+    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath' />
+    <jar destfile='tutorials.xrobots.host.bin.jar' basedir='${bin}'>
+       <include name='tutorials/xrobots/host/bin/*.class' />
+       <include name='tutorials/xrobots/host/*.class' />
+       <include name='tutorials/xrobots/host/driver/*.class' />
+       <include name='tutorials/xrobots/concretesyntax/*.class' />
+       <include name='tutorials/xrobots/terminals/*.class' />
+       <include name='core/*.class' />
+      <manifest>
+       <attribute name='Main-Class' value='tutorials.xrobots.host.bin.Main' />
+       <attribute name='Class-Path' value='${man.classpath}' />
+       <attribute name='Built-By' value='${user.name}' />
+       <section name='version'>
+         <attribute name='Specification-Version' value='' />
+         <attribute name='Implementation-Version' value='${TIME}' />
+       </section>
+      </manifest>
+    </jar>
+
+  </target>
+
+  <target name='grammars' depends='init, copper'>
+      <javac debug='on' source='1.5' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false'>
+       <include name='tutorials/xrobots/host/bin/*.java' />
+       <include name='tutorials/xrobots/host/*.java' />
+       <include name='tutorials/xrobots/host/driver/*.java' />
+       <include name='tutorials/xrobots/concretesyntax/*.java' />
+       <include name='tutorials/xrobots/terminals/*.java' />
+       <include name='core/*.java' />
+      </javac>
+  </target>
+
+  <target name='copper'>
+    <copper fullClassName='tutorials.xrobots.host.bin.Parser_tutorials_xrobots_host_bin_parse' inputFile='${src}/tutorials/xrobots/host/bin/Parser_tutorials_xrobots_host_bin_parse.copper' outputFile='${src}/tutorials/xrobots/host/bin/Parser_tutorials_xrobots_host_bin_parse.java' skin='xml' warnUselessNTs='no' dump='true' dumpType='html' dumpOnlyOnError='true' dumpFile='Parser_tutorials_xrobots_host_bin_parse.copperdump.html'/>
+  </target>
+
+
+</project>
