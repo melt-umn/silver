@@ -1,5 +1,56 @@
 #!/bin/bash
 
+# Set SILVER_HOME to the directory containing RunSilver.jar
+
+#SILVER_HOME=
+
+
+
+# No futher changes need to be made here.
+
+if [ -z "$SILVER_HOME" ]; then
+
+  echo -e "\nWarning: SILVER_HOME environment variables was not set. (See installation instructions.) Attempting to determine automatically...\n"
+
+  CANDIDATES=$( find ~ -name RunSilver.jar 2> /dev/null )
+  COUNT=$( echo "$CANDIDATES" | wc -l )
+  
+  if [ $COUNT -gt 1 ]; then
+    echo "Found multiple candidates! SILVER_HOME must be set"
+    echo "$CANDIDATES"
+    exit 1
+  fi
+  
+  if [ -z "$CANDIDATES" ]; then
+    echo "Couldn't find RunSilver.jar!"
+    exit 1
+  fi
+
+  echo "Found: $CANDIDATES"
+
+  # This will find RunSilver.jar, if you don't set it above, or already have it in the environment
+  export SILVER_HOME=$( dirname $CANDIDATES )
+  
+  echo -e "\nPlease set SILVER_HOME=$SILVER_HOME\n"
+
+fi
+
+# If you have heap or stack space exhaustion errors, edit this:
+
+java -Xmx2000M -Xss4M -jar $SILVER_HOME/RunSilver.jar $@ && ant
+
+
+
+
+
+
+# I don't think any real documentation should appear here, we should put it in
+# the reference manual if necessary.
+
+
+############################################
+############################################# Remove this....
+
 # To use this script,
 # 1. set the SILVER_HOME environment variable to the directory in
 #    which Silver is installed.  This is the directory that contains 
@@ -18,7 +69,7 @@
 #### java -Xmx2000M -Xss4M -jar $SILVER_HOME/jars/RunSilver.jar $@ && ant
 
 #### currently is
-java -Xmx2000M -Xss4M -jar $SILVER_HOME/RunSilver.jar $@ && ant
+#java -Xmx2000M -Xss4M -jar $SILVER_HOME/RunSilver.jar $@ && ant
 
 # If your are compiling large grammars you may need to adjust the Java
 # heap size by changing the -Xmx argument or adjust the Java stack space
