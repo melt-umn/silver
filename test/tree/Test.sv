@@ -34,9 +34,12 @@ parser parse :: Item {
   tree;
 }
 
-function main
-IO ::= args::String ioin::IO
+function main 
+IOVal<Integer> ::= largs::[String] ioin::IO
 {
-  return print( hackUnparse( cast(parse(args), AnyType) ) ++ "\n",
-                ioin);
+  local attribute args :: String;
+  args = implode(" ", largs);
+
+  return ioval(print( hackUnparse( cast(parse(args), AnyType) ) ++ "\n",
+                ioin), 0);
 }

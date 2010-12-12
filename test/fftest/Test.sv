@@ -18,11 +18,14 @@ String ::= regex::String replacement::String original::String
   "java": return "new common.StringCatter(%original%.toString().replaceAll(%regex%.toString(), %replacement%.toString()))";
 }
 
-function main
-IO ::= args::String i::IO
+function main 
+IOVal<Integer> ::= largs::[String] i::IO
 {
+  local attribute args :: String;
+  args = implode(" ", largs);
+
   local attribute ref :: Function( IO ::= String IO);
   ref = customPrint;
 
-  return ref( replaceAllRegex("[a-z]*", "", "Hi This String Should JUST Be CAPITALS!\n"), i);
+  return ioval(ref( replaceAllRegex("[a-z]*", "", "Hi This String Should JUST Be CAPITALS!\n"), i), 0);
 }

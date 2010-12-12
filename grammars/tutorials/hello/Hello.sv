@@ -1,9 +1,9 @@
 grammar tutorials:hello;
 
-
-function main
-IO ::= args::String ioin::IO
+function main 
+IOVal<Integer> ::= largs::[String] ioin::IO
 {
-  return print(" World!\n",
-           print("Hello", ioin));
+  return ioval(print(" World!\n",
+                 print("Hello", ioin)),
+               0);
 }

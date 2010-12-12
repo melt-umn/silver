@@ -37,7 +37,12 @@ parser iParse::aRootSpec {
 }
 
 function main 
-IO ::= args::String i::IO {
+IOVal<Integer> ::= largs::[String] i::IO
+{
+  local attribute args :: String;
+  args = implode(" ", largs);
+
   -- please note that run in BuildProcess.sv will call exit(), so we may not "get back here"
-  return (decorate run(i, args) with {rParser = rParse; cParser = cParse; iParser = iParse;}).io;
+  return ioval((decorate run(i, args) with {rParser = rParse; cParser = cParse; iParser = iParse;}).io,
+               0);
 }
