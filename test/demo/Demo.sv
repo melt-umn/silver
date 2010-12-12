@@ -39,18 +39,20 @@ attribute pp occurs on Bar;
 
 
 
-function main
-IO ::= args::String io::IO{
+function main 
+IOVal<Integer> ::= largs::[String] io::IO
+{
+  local attribute args :: String;
+  args = implode(" ", largs);
 
   local attribute root :: Root;
   root = pfoo1(args);
  
-  return case root of	
+  return ioval(case root of	
 	  root1() -> print("root1\n" ++ root.pp ++ "\n", io)
 	| root2(a,b) -> print("root2\n" ++ decorate root with {auto = "auto";}.pp ++ "\n", io)
 	| root3(a,b) -> print("root3\n" ++ decorate root with {auto = "auto";}.pp ++ "\n", io)
-  	
-  end;
+  	end, 0);
 }
 
 concrete production root1

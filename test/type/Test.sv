@@ -17,21 +17,24 @@ TypeExp ::=
   return varTypeExp(freshTyVar());
 }
 
-function main
-IO ::= args::String fooIO::IO
+function main 
+IOVal<Integer> ::= largs::[String] i::IO
 {
- local attribute testResults :: TestSuite ;
- testResults = testsAsNT ( [ test_1(), test_2(), test_3(), test_4(), test_5()
-                ] ) ;
- testResults.ioIn = fooIO;
+  local attribute args :: String;
+  args = implode(" ", largs);
 
- return print (
+  local attribute testResults :: TestSuite ;
+  testResults = testsAsNT ( [ test_1(), test_2(), test_3(), test_4(), test_5()
+                ] ) ;
+  testResults.ioIn = i;
+
+  return ioval(print (
                     "Test results: \n" ++
                     testResults.msg ++ "\n\n" ++ 
                     "Passed " ++ toString (testResults.numPassed) ++
                     " tests out of " ++ 
                     toString (testResults.numTests) ++ "\n\n"
-                   , testResults.ioOut );
+                   , testResults.ioOut ), 0);
 }
 
 --------------------------------------------------------------------------------

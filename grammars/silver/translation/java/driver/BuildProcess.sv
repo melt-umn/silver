@@ -97,18 +97,19 @@ String ::= r::Decorated RootSpec{
 "\t\t" ++ package ++ ".Init.init();\n" ++
 "\t\t" ++ package ++ ".Init.postInit();\n" ++
 "\t\ttry {\n" ++
-"\t\t\tnew " ++ package ++ ".Pmain(fold(args), new Object()).doReturn();\n" ++
+"\t\t\tcommon.Node rv = (common.Node) new " ++ package ++ ".Pmain(cvargs(args), new Object()).doReturn();\n" ++
+"\t\t\trv.getChild(core.Pioval.i_i); // demand the io token\n" ++
+"\t\t\tSystem.exit( (Integer)rv.getChild(core.Pioval.i_v) );\n" ++
 "\t\t} catch(Throwable t) {\n" ++
 "\t\t\tcommon.Util.printStackCauses(t);\n" ++
 "\t\t}\n" ++
 "\t}\n" ++
-"\tpublic static common.StringCatter fold(String [] args){\n" ++ 
-"\t\tStringBuffer result = new StringBuffer();\n" ++ 
-"\t\tfor(String arg : args){\n" ++ 
-"\t\t\tresult.append(\" \").append(arg);\n" ++ 
+"\tpublic static common.ConsCell cvargs(String [] args){\n" ++ 
+"\t\tcommon.ConsCell result = common.ConsCell.nil;\n" ++ 
+"\t\tfor(int i = args.length - 1; i >= 0; i --) {\n" ++ 
+"\t\t\tresult = new common.ConsCell(new common.StringCatter(args[i]), result);\n" ++ 
 "\t\t}\n" ++ 
-"\t\tcommon.Util.environment.put(\"SILVER_ARGS\", result.toString().trim());\n" ++ -- TODO: this is an awful hack.
-"\t\treturn new common.StringCatter(result.toString().trim());\n" ++ 
+"\t\treturn result;\n" ++ 
 "\t}\n" ++ 
 "}\n";
 }
@@ -132,7 +133,7 @@ top::IOVal<String> ::= i::IO a::Decorated Command specs::[Decorated RootSpec] si
   local attribute outputFile :: String;
   outputFile = if length(a.outName) > 0 then a.outName else (makeName(a.grammarName) ++ ".jar");
 
-  -- TODO: this is local directory!!
+  -- TODO: this is local directory! move build.xml to generated space
   top.io = writeFile("build.xml", buildXml, i);
 
   local attribute buildXml :: String;
@@ -147,7 +148,7 @@ top::IOVal<String> ::= i::IO a::Decorated Command specs::[Decorated RootSpec] si
 "  <property name='src' location='${jg}/src'/>\n\n" ++
 
 "  <path id='lib.classpath'>\n" ++
-"    <fileset dir='${sh}' includes='SilverRuntime.jar CopperRuntime.jar CopperCompiler.jar' />\n" ++ -- TODO: this is a bit busted
+"    <fileset dir='${sh}' includes='SilverRuntime.jar CopperRuntime.jar CopperCompiler.jar' />\n" ++ -- TODO: separate this information out. (runtime/compiler cps)
 "  </path>\n\n" ++
 
 "  <path id='src.classpath'>\n" ++

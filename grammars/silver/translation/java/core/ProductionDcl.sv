@@ -78,6 +78,12 @@ makeStaticDcls(className, ns.inputElements) ++
 
 "}\n"
 		]];
+
+  -- main function signature check TODO: this should probably be elsewhere!
+  top.errors <-
+        if id.name == "main"
+        then [err(top.location, "main should be a function!")]
+        else [];
 }
 
 function makeIndexDcls

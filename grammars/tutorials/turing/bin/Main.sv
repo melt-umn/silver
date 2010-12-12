@@ -7,7 +7,10 @@ parser parse::Dcls {
 }
 
 function main 
-IO ::= args::String i::IO {
+IOVal<Integer> ::= largs::[String] i::IO
+{
+  local attribute args :: String;
+  args = implode(" ", largs);
 
   local attribute file :: IOVal<String>;
   file = readFile(args, i);
@@ -29,11 +32,15 @@ IO ::= args::String i::IO {
   t = runMachine(head(theMachine), 
 		 allMachines,
 		 result.tape);
-  return
+		 
+  local attribute doneio::IO;
+  doneio =
 	      print(t.pp ++ "\n-------------------------------------------------------------\n", 
 	      print(result.tape.pp ++ "\n-------------------------------------------------------------\n", 
 	      print("Results for " ++ args ++ ":\n-------------------------------------------------------------\n",
 	      extras.ioOut)));
+
+  return ioval(doneio, 0);
 }
 
 inherited attribute ioIn :: IO;

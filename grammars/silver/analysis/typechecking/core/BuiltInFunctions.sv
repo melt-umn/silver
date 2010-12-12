@@ -14,7 +14,7 @@ top::Expr ::= e::Decorated Expr
 aspect production unknownLength
 top::Expr ::= e::Decorated Expr
 {
-  top.errors <- [err(e.location, "operand to 'length(..)' is not compatible.")];
+  top.errors <- [err(e.location, "Operand to length is not compatible. It is of type " ++ prettyType(performSubstitution(e.typerep, top.finalSubst)))];
 }
 
 aspect production toIntFunction

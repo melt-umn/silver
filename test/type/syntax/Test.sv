@@ -19,9 +19,12 @@ global tya :: TypeExp = varTypeExp(tyva);
 global tyb :: TypeExp = varTypeExp(tyvb);
 
 
-function main
-IO ::= args::String ioin::IO
+function main 
+IOVal<Integer> ::= largs::[String] ioin::IO
 {
+  local attribute args :: String;
+  args = implode(" ", largs);
+
   local attribute tree :: Type;
   tree = typarse(args);
   tree.file = "STDIN";
@@ -34,8 +37,8 @@ IO ::= args::String ioin::IO
                     addNtDcl("",error("f"),"Pair", [tyva,tyvb], nonterminalTypeExp("Pair", [tya,tyb]),
                     emptyDefs()) ) );
 
-  return print( args ++ "\n" ++ 
+  return ioval(print( args ++ "\n" ++ 
                 tree.pp ++ "\n" ++ 
                 prettyType(tree.typerep) ++ "\n" ++
-                foldMessages(tree.errors) ++ "\n", ioin);
+                foldMessages(tree.errors) ++ "\n", ioin), 0);
 }

@@ -17,9 +17,12 @@ parser pars::T {
   hackparse;
 }
 
-function main
-IO ::= args::String i::IO
+function main 
+IOVal<Integer> ::= largs::[String] i::IO
 {
+  local attribute args :: String;
+  args = implode(" ", largs);
+
   -- Declare a hackparse local variable
   local attribute hp :: HackyParse;
  
@@ -30,9 +33,11 @@ IO ::= args::String i::IO
   tree = cast(hp.parseTree, T);
   
   -- query HackyParse
-  return if hp.parseSuccess
+  return ioval(
+         if hp.parseSuccess
          -- access the tree
          then print(tree.pp ++ "\n\n", i)
          -- access the error string
-         else print(hp.parseErrors ++ "\n\n", i);
+         else print(hp.parseErrors ++ "\n\n", i),
+         0);
 }

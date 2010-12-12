@@ -19,9 +19,12 @@ parser parse :: Root_c
  - Note that 'IO' is something that should be considered 'the state of the 
  - world' and each value used only once.
  -}
-function main
-IO ::= args::String ioin::IO
+function main 
+IOVal<Integer> ::= largs::[String] ioin::IO
 {
+  local attribute args :: String;
+  args = implode(" ", largs);
+
   local attribute result :: ParseResult<Root_c>;
   result = parse(args, "<<args>>");
 
@@ -49,7 +52,8 @@ IO ::= args::String ioin::IO
   print_failure =
     print("Encountered a parse error:\n" ++ result.parseErrors ++ "\n", ioin);
 
-  return if result.parseSuccess then print_success else print_failure;
+  return ioval(if result.parseSuccess then print_success else print_failure,
+               0);
 }
 
 

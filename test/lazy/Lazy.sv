@@ -12,11 +12,14 @@ top::Q ::= bot::Q
   top.str = "blah\n";
 }
 
-function main
-IO ::= args::String i::IO
+function main 
+IOVal<Integer> ::= largs::[String] i::IO
 {
+  local attribute args :: String;
+  args = implode(" ", largs);
+
   local attribute q :: Q;
   q = q1(q);
   
-  return print(q.a_q.str, i);
+  return ioval(print(q.a_q.str, i), 0);
 }

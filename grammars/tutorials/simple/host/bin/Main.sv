@@ -8,8 +8,11 @@ parser parse :: Root_c {
   tutorials:simple:terminals;
 } 
 
-function main
-IO ::= args::String io_in::IO
+function main 
+IOVal<Integer> ::= largs::[String] io_in::IO
 {
- return driver(args, io_in, parse) ; 
+  local attribute args :: String;
+  args = implode(" ", largs);
+
+  return ioval(driver(args, io_in, parse), 0);
 }
