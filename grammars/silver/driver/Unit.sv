@@ -59,7 +59,7 @@ abstract production printVersion
 top::Unit ::= 
 {
   top.order = 0;
-  top.io = print("Silver Version 0.8 pre-release\n", top.ioIn);
+  top.io = print("Silver Version 0.3.1\n", top.ioIn);
   top.code = -1;
 }
 
