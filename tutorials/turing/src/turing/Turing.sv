@@ -1,4 +1,8 @@
-grammar tutorials:turing;
+grammar turing;
+
+{-
+ - The concrete syntax of Turing machine definition files.
+ -}
 
 nonterminal Dcls with pp, machines, tape, startMachine, theImports;
 nonterminal Dcl with pp, machines, tape, isTapeDcl, startMachine, theImports;
