@@ -1,4 +1,4 @@
-grammar tutorials:dc ;
+grammar dc ;
 
 {- Regular expressions associated with a terminal are written after
    the terminal name between forward slashes. -}

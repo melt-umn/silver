@@ -1,4 +1,4 @@
-grammar tutorials:dc ;
+grammar dc ;
 
 {- The abstract syntax is defined here.  Defining abstract syntax is
    not required in Silver since attributes can decorate the concrete

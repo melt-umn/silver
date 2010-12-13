@@ -1,4 +1,4 @@
-grammar tutorials:dc ;
+grammar dc ;
 
 {--
  - Declare a parser, called 'parse', using the concrete syntax in the
@@ -10,7 +10,7 @@ grammar tutorials:dc ;
  -}
 parser parse :: Root_c
 {
-  tutorials:dc;
+  dc;
 }
 
 {--
