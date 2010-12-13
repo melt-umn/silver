@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# This script will use Silver to build an AG evaluator for the
+# tutorials grammar tutorials:simple:host:bin.  If Silver is
+# successful it will then run ant to compile the generated Java code
+# ("&& ant") that implements the AG evaluator.
+
+# invoke as               ./silver-compile
+# or add arguments, like  ./silver-compile --clean
+
+java -jar ../../jars/RunSilver.jar -I src $@ simple:host:bin && ant
+
+# To run simple, run the generated jar with a file name containing a
+# Simple program on the command line.  For example, type:
+#  java -jar tutorials.dc.bin.jar 1.simple
