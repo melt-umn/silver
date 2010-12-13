@@ -1,3 +1,21 @@
 #!/bin/bash
 
-ln -s . silver && tar zcvf silver-dist.tar.gz "--exclude=.svn" "--exclude=*~" silver/generated/whatisthis.txt silver/jars/*.jar silver/bin/ silver/support/ silver/grammars/core/ silver/grammars/tutorials/dc/ silver/grammars/tutorials/turing/ silver/grammars/tutorials/simple/ && rm silver
+if [ -z "$1" ]; then
+  echo "invoke make-dist with a version argument."
+  echo "For example:  ./make-dist 0.3.1-rc1"
+  exit 1
+fi
+
+SV=silver-$1
+
+if [[ -a $SV || -a $SV.tar.gz ]]; then
+  echo "error: $SV already exists?"
+  exit 1
+fi
+
+
+ln -s . $SV
+
+tar zcvf $SV.tar.gz "--exclude=.svn" "--exclude=*~" "--exclude=*.test" $SV/generated/whatisthis.txt $SV/jars/*.jar $SV/support/ $SV/grammars/core/ $SV/tutorials/
+
+rm $SV
