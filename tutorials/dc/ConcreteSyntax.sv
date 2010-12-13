@@ -1,4 +1,4 @@
-grammar tutorials:dc ;
+grammar dc ;
 
 {- This file defines the concrete syntax of the arithmetic expression
    language "dc".  The concrete productions are used to define the

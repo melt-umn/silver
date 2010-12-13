@@ -8,7 +8,7 @@
 # invoke as               ./silver-compile
 # or add arguments, like  ./silver-compile --clean
 
-java -jar ../../../jars/RunSilver.jar $@ tutorials:dc && ant
+java -jar ../../jars/RunSilver.jar -I .. $@ dc && ant
 
 # To run dc, run the generated jar with a arithmetic expression provided
 # on the command line.  For example, type:

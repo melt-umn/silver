@@ -1,4 +1,4 @@
-grammar tutorials:dc ;
+grammar dc ;
 
 {- bpp is a "better" pretty print attribute that avoids unneccessary
    use of parenthesis by passing down contextual information to child
