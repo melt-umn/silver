@@ -1,4 +1,4 @@
-grammar tutorials:hello;
+grammar hello;
 
 function main 
 IOVal<Integer> ::= largs::[String] ioin::IO
