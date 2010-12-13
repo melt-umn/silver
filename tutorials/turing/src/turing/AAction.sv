@@ -1,5 +1,8 @@
-grammar tutorials:turing;
+grammar turing;
 
+{--
+ - AAction simple transforms a input tape to an output tape, depending on the type of action.
+ -}
 nonterminal AAction with oldTape, newTape;
 inherited attribute oldTape :: Decorated ATape;
 synthesized attribute newTape :: Decorated ATape;

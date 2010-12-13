@@ -1,5 +1,8 @@
-grammar tutorials:turing;
+grammar turing;
 
+{--
+ - ATape is a datastructure for storing the current state of the tape.
+ -}
 nonterminal ATape with tapeLeft, tapeHead, tapeRight, pp;
 
 synthesized attribute tapeLeft :: [String];

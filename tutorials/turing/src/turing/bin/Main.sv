@@ -1,9 +1,9 @@
-grammar tutorials:turing:bin;
+grammar turing:bin;
 
-import tutorials:turing;
+import turing;
 
 parser parse::Dcls {
-  tutorials:turing;
+  turing;
 }
 
 function main 

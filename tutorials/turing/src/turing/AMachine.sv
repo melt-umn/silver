@@ -1,4 +1,8 @@
-grammar tutorials:turing;
+grammar turing;
+
+{- Data structures for storing machine definitions
+ -
+ -}
 
 nonterminal AMachineFlow with stateName, machineName, options;
 nonterminal AMachine with states, machineName, startState, isSimpleMachine, machineFlow;
