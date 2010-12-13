@@ -1,6 +1,6 @@
 #!/bin/bash
 
-java -jar ../../jars/RunSilver.jar tutorials:turing:bin && ant
+java -jar ../../jars/RunSilver.jar $@ tutorials:turing:bin && ant
 
 # Or, once Silver is set up
 # silver tutorials:turing:bin
