@@ -1,6 +1,11 @@
 #!/bin/bash
 
-java -jar ../../jars/RunSilver.jar -I src/ $@ turing:bin && ant
+WHERE_IS_SILVER=../../jars
+WHERE_IS_THE_SOURCE=src
+WHAT_GRAMMAR_TO_BUILD=turing:bin
 
-# Or, once Silver is set up
-# silver tutorials:turing:bin
+java -jar $WHERE_IS_SILVER/RunSilver.jar \
+  -I $WHERE_IS_THE_SOURCE $@ $WHAT_GRAMMAR_TO_BUILD && ant
+
+# The $@ helpfully passes along any arguments this script got to silver.
+
