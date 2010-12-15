@@ -16,6 +16,9 @@ fi
 
 ln -s . $SV
 
-tar zcvf $SV.tar.gz "--exclude=.svn" "--exclude=*~" "--exclude=*.test" $SV/generated/whatisthis.txt $SV/jars/*.jar $SV/support/ $SV/grammars/core/ $SV/tutorials/
+tar zcvf $SV.tar.gz \
+ "--exclude=.svn" "--exclude=*~" "--exclude=*.test" \
+ $SV/generated/whatisthis.txt $SV/jars/*.jar \
+ $SV/support/ $SV/grammars/core/ $SV/tutorials/
 
 rm $SV
