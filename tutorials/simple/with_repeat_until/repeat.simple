@@ -6,12 +6,11 @@ main () {
   x = y ; 
 
   Integer i ;
+  i = 1 ;
 
   repeat 
     x = x + i ;
     y = x * y ;
   until x > 100 ;
 
-
-  // for (Integer i = 1 to 5) ...
 }
