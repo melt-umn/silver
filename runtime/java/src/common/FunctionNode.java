@@ -12,13 +12,14 @@ public abstract class FunctionNode extends Node {
 		super(children);
 	}
 
-	// TODO: make this abstract.
+	// TODO: we should make doReturn an interface, perhaps?
 	public Object doReturn() {
+		
+		if(getSynthesized("__return") == null) {
+			throw new RuntimeException("Function " + getName() + " has no return value!");
+		}
+		
 		DecoratedNode dn = this.decorate();
-
-		// TODO: Return values are cached.  They don't need to be.
-		// We can maybe tell it to forget return values when we demand
-		// this?
 		return dn.synthesized("__return");
 	}
 }
