@@ -10,7 +10,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   sigNames = getNamesSignature(namedSig.inputElements);
 
   top.setupInh := body.setupInh;
-  top.initProd := "\t\t//PRODUCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
+  top.initProd := "\t\t" ++ makeName(top.grammarName) ++ "." ++ className ++ ".initProductionAttributeDefinitions();\n";
   top.initValues := "";
   top.postInit := "\t\tcommon.Decorator.applyDecorators(" ++ fnnt ++ ".decorators, " ++ className ++ ".class);\n";
 
@@ -21,6 +21,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 		
 "package " ++ makeName(top.grammarName) ++ ";\n\n" ++
 
+"// " ++ ns.pp ++ "\n" ++
 "public class " ++ className ++ " extends " ++ fnnt ++ " {\n\n" ++
 
 makeIndexDcls(0, sigNames) ++ "\n" ++
@@ -74,6 +75,10 @@ makeStaticDcls(className, ns.inputElements) ++
 "\t@Override\n" ++
 "\tpublic String getName() {\n" ++
 "\t\treturn \"" ++ fName ++ "\";\n" ++
+"\t}\n\n" ++
+
+"\tstatic void initProductionAttributeDefinitions() {\n" ++
+  body.translation ++
 "\t}\n\n" ++
 
 "}\n"
