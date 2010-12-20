@@ -1,9 +1,0 @@
-SILVER  silver.copper
-GRAMMAR edu:umn:cs:melt:tutorial:expr:composed:expr_all:demos
-
-RUNONLY ../bin/expr
-INPUT   moreops.expr
-
-OWNER evw@cs.umn.edu
-
-

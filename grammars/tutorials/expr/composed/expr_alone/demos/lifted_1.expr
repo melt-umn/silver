@@ -1,6 +1,0 @@
-let a = 3 in
-let b:int = let c = a + 1 in c + a end
-in
-    a + b
-end
-end

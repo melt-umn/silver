@@ -1,9 +1,0 @@
-SILVER  silver.copper
-GRAMMAR edu:umn:cs:melt:tutorial:expr:composed:expr_alone:demos
-
-RUNONLY ../bin/expr
-INPUT   type_ok_untyped_let.expr
-
-OWNER evw@cs.umn.edu
-
-

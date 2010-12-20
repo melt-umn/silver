@@ -1,7 +1,0 @@
-
-SILVER  silver.copper
-GRAMMAR edu:umn:cs:melt:tutorial:expr:composed:expr_extended_let
-
-RUNONLY ale
-INPUT   expr_extended_let.ale
-OWNER   evw@cs.umn.edu

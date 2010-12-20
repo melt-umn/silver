@@ -1,3 +1,0 @@
-#!/bin/bash
-
-time java -Xss8M -Xmx500M -jar ../../../../../../jars/RunSilver.jar tutorials:expr/composed/expr_alone:bin
