@@ -1,7 +1,0 @@
-let x:int = 3
-in
-let b:boolean = true
-in
-  x < 3 ? x < 4 : b && x < 1
-end
-end

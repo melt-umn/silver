@@ -1,6 +1,0 @@
-#!/bin/bash
-
-silver.copper -o expr edu:umn:cs:melt:tutorial:expr:host_op_overloading:bin
-
-
-

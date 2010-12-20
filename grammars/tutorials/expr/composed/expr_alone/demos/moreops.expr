@@ -1,6 +1,0 @@
-let x = 1 in
-let y = 2 in
- x < y ? x * 2 : y * 3
-end
-end
-

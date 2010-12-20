@@ -1,5 +1,0 @@
-let x = 1 in
-let y = a + 3 in
-  x + y + b
-end
-end
