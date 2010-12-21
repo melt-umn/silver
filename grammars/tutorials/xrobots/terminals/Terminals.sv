@@ -1,4 +1,4 @@
-grammar tutorials:xrobots:terminals ;
+grammar xrobots:terminals ;
 terminal IntLit_t /[0-9]+/ ; 
 terminal Dot_t '.' ;
 terminal Plus_t   '+' precedence = 10, association = left ;

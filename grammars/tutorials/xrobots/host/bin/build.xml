@@ -1,5 +1,5 @@
-<project name='tutorials:xrobots:host:bin' default='dist' basedir='.'>
-  <description>Build the grammar tutorials:xrobots:host:bin </description>
+<project name='xrobots:host:bin' default='dist' basedir='.'>
+  <description>Build the grammar xrobots:host:bin </description>
 
   <property environment='env'/>
   <property name='jg' location='/project/melt3/People/sst/steve/silver/trunk/generated/'/>
@@ -36,15 +36,15 @@
   <target name='dist' depends='grammars'>
 
     <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath' />
-    <jar destfile='tutorials.xrobots.host.bin.jar' basedir='${bin}'>
-       <include name='tutorials/xrobots/host/bin/*.class' />
-       <include name='tutorials/xrobots/host/*.class' />
-       <include name='tutorials/xrobots/host/driver/*.class' />
-       <include name='tutorials/xrobots/concretesyntax/*.class' />
-       <include name='tutorials/xrobots/terminals/*.class' />
+    <jar destfile='xrobots.host.bin.jar' basedir='${bin}'>
+       <include name='xrobots/host/bin/*.class' />
+       <include name='xrobots/host/*.class' />
+       <include name='xrobots/host/driver/*.class' />
+       <include name='xrobots/concretesyntax/*.class' />
+       <include name='xrobots/terminals/*.class' />
        <include name='core/*.class' />
       <manifest>
-       <attribute name='Main-Class' value='tutorials.xrobots.host.bin.Main' />
+       <attribute name='Main-Class' value='xrobots.host.bin.Main' />
        <attribute name='Class-Path' value='${man.classpath}' />
        <attribute name='Built-By' value='${user.name}' />
        <section name='version'>
@@ -58,17 +58,17 @@
 
   <target name='grammars' depends='init, copper'>
       <javac debug='on' source='1.5' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false'>
-       <include name='tutorials/xrobots/host/bin/*.java' />
-       <include name='tutorials/xrobots/host/*.java' />
-       <include name='tutorials/xrobots/host/driver/*.java' />
-       <include name='tutorials/xrobots/concretesyntax/*.java' />
-       <include name='tutorials/xrobots/terminals/*.java' />
+       <include name='xrobots/host/bin/*.java' />
+       <include name='xrobots/host/*.java' />
+       <include name='xrobots/host/driver/*.java' />
+       <include name='xrobots/concretesyntax/*.java' />
+       <include name='xrobots/terminals/*.java' />
        <include name='core/*.java' />
       </javac>
   </target>
 
   <target name='copper'>
-    <copper fullClassName='tutorials.xrobots.host.bin.Parser_tutorials_xrobots_host_bin_parse' inputFile='${src}/tutorials/xrobots/host/bin/Parser_tutorials_xrobots_host_bin_parse.copper' outputFile='${src}/tutorials/xrobots/host/bin/Parser_tutorials_xrobots_host_bin_parse.java' skin='xml' warnUselessNTs='no' dump='true' dumpType='html' dumpOnlyOnError='true' dumpFile='Parser_tutorials_xrobots_host_bin_parse.copperdump.html'/>
+    <copper fullClassName='xrobots.host.bin.Parser_xrobots_host_bin_parse' inputFile='${src}/xrobots/host/bin/Parser_xrobots_host_bin_parse.copper' outputFile='${src}/xrobots/host/bin/Parser_xrobots_host_bin_parse.java' skin='xml' warnUselessNTs='no' dump='true' dumpType='html' dumpOnlyOnError='true' dumpFile='Parser_xrobots_host_bin_parse.copperdump.html'/>
   </target>
 
 

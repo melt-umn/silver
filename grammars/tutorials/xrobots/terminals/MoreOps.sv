@@ -1,4 +1,4 @@
-grammar tutorials:xrobots:terminals ;
+grammar			xrobots:terminals ;
 
 terminal LT_t     '<'   precedence = 8 ;
 terminal GT_t     '>'   precedence = 8 ;

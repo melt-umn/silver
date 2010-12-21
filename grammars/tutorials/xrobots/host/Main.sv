@@ -1,8 +1,8 @@
-grammar tutorials:xrobots:host ;
+grammar xrobots:host ;
 
 --exports tutorials:xrobots:terminals ;
 --exports tutorials:xrobots:concretesyntax ;
 --exports tutorials:xrobots:abstractsyntax ;
 
-import tutorials:xrobots:concretesyntax only Root_c ;
+import xrobots:concretesyntax only Root_c ;
 

@@ -1,6 +1,6 @@
-grammar tutorials:xrobots:concretesyntax ;
+grammar xrobots:concretesyntax ;
 
-import tutorials:xrobots:terminals ;
+import xrobots:terminals ;
 --import tutorials:steve_demos:xrobots:abstractsyntax ;
 
 -- We want different concrete syntax for parameters to a behavior and

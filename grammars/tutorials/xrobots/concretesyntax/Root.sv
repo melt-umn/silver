@@ -1,8 +1,8 @@
-grammar tutorials:xrobots:concretesyntax ;
+grammar xrobots:concretesyntax ;
 
 --export edu:umn:cs:melt:sandbox:steve_demos:xrobots:concretesyntax ;
 
- import tutorials:xrobots:terminals ;
+ import xrobots:terminals ;
  --import tutorials:xrobots:abstractsyntax ;
 
 

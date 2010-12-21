@@ -1,4 +1,4 @@
-grammar tutorials:xrobots:terminals ;
+grammar xrobots:terminals ;
 
 -- type keywords
 
