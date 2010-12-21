@@ -1,7 +1,7 @@
-grammar tutorials:xrobots:concretesyntax ;
+grammar xrobots:concretesyntax ;
 
 -- import tutorials:xrobots:abstractsyntax ;
- import tutorials:xrobots:terminals;
+ import xrobots:terminals;
 
 nonterminal StmtList_c with pp;
 --synthesized attribute ast_StmtList :: StmtList occurs on StmtList_c ;

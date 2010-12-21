@@ -1,8 +1,8 @@
 
-grammar tutorials:xrobots:concretesyntax ;
+grammar xrobots:concretesyntax ;
 
 -- import tutorials:xrobots:abstractsyntax ;
- import tutorials:xrobots:terminals;
+ import xrobots:terminals;
 
 
 --concrete production block_c

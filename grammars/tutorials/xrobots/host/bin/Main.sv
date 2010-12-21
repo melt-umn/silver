@@ -1,12 +1,12 @@
-grammar tutorials:xrobots:host:bin ;
+grammar xrobots:host:bin ;
 
-import tutorials:xrobots:host ;
-import tutorials:xrobots:host:driver ;
-import tutorials:xrobots:concretesyntax;
+import xrobots:host ;
+import xrobots:host:driver ;
+import xrobots:concretesyntax;
 
 parser parse :: Root_c {
-  tutorials:xrobots:concretesyntax;
-  tutorials:xrobots:terminals;
+  xrobots:concretesyntax;
+  xrobots:terminals;
 } 
 
 function main

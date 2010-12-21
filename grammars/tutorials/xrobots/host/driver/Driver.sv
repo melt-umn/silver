@@ -1,7 +1,7 @@
-grammar tutorials:xrobots:host:driver ;
+grammar xrobots:host:driver ;
 
-import tutorials:xrobots:terminals ;
-import tutorials:xrobots:concretesyntax ;
+import xrobots:terminals ;
+import xrobots:concretesyntax ;
 --import tutorials:xrobots:abstractsyntax ;
 
 function driver

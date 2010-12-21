@@ -1,7 +1,7 @@
-grammar tutorials:xrobots:concretesyntax ;
+grammar xrobots:concretesyntax ;
 
 
- import tutorials:xrobots:terminals ;
+ import xrobots:terminals ;
 -- import tutorials:robots:abstractsyntax ;
 
 nonterminal UCABBlock_c with pp;
