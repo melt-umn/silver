@@ -16,6 +16,14 @@ b ::= f::Function(b ::= a b)  i::b  l::[a]
          else foldr(f, f(head(l), i), tail(l));
 }
 
+function foldr_p
+b ::= f::Production(b ::= a b)  i::b  l::[a]
+{
+  return if null(l)
+         then i
+         else foldr_p(f, f(head(l), i), tail(l));
+}
+
 function filter
 [a] ::= f::Function(Boolean ::= a) lst::[a]
 {
@@ -32,6 +40,20 @@ Boolean ::= eq::Function(Boolean ::= a a)  elem::a  lst::[a]
   return (!null(lst)) && (eq(elem, head(lst)) || containsBy(eq, elem, tail(lst)));
 }
 
+function nubBy
+[a] ::= eq::Function(Boolean ::= a a)  xs::[a]
+{
+ return if null(xs) then [] 
+        else head(xs) :: nubBy(eq, removeBy(eq, head(xs), tail(xs))) ;
+}
+
+function removeBy
+[a] ::= eq::Function(Boolean ::= a a)  x::a  xs::[a]
+{
+ return if null(xs) then [ ] 
+        else (if eq(x,head(xs)) then [ ] else [head(xs)]) ++
+             removeBy (eq, x, tail(xs)) ;
+}
 
 function last
 a ::= lst::[a]
