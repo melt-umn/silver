@@ -15,6 +15,8 @@ parser rParse::Root {
   silver:extension:convenience;
   silver:extension:list;
   silver:extension:easyterminal;
+
+  silver:extension:testing;
   -- polymorphism?  polymorphism:functions?
   -- doc?
 
