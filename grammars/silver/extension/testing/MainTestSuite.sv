@@ -117,9 +117,9 @@ ag::AGDcl ::= kwd::'mainTestSuite'  name::IdLower_t ';'
                    attrAcc("testResults","msg"),
                    strCnst ("\\n\\n"), 
                    strCnst ("Passed "), 
-                   prodFuncCall("toStringInteger", [ attrAcc("testResults","numPassed") ]),
+                   prodFuncCall("toStringFromInteger", [ attrAcc("testResults","numPassed") ]),
                    strCnst (" tests out of "), 
-                   prodFuncCall("toStringInteger", [ attrAcc("testResults","numTests") ]),
+                   prodFuncCall("toStringFromInteger", [ attrAcc("testResults","numTests") ]),
                    strCnst ("\\n"), 
                    strCnst ("============================================================\\n") 
                  ] ) ,

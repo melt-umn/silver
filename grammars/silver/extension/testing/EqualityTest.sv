@@ -164,17 +164,17 @@ ag::AGDcl ::= kwd::'equalityTest'
 function mkToStringExpr
 Maybe<Expr> ::= valueType::Type expr::Expr
 { return
-   case functionForBaseTypes(valueType, "toString") of
+   case functionForBaseTypes(valueType, "toStringFrom") of
      just(btt) -> just( -- "bbt (expr)"
                         productionApp( new(btt) , '(', exprsSingle(expr), ')' 
                        ) )
    | nothing() -> 
        case valueType of
          listType(_,elemType,_) 
-           -> case functionForBaseTypes(new(elemType),"toString") of
+           -> case functionForBaseTypes(new(elemType),"toStringFrom") of
                 just(btt) -> -- "toStringList(btt, value, expected)"
                              just( productionApp( 
-                                     mkProductionExpr("toString", "List"), '(',
+                                     mkProductionExpr("toStringFrom", "List"), '(',
                                      exprsCons ( new(btt), ',', 
                                       exprsSingle ( expr ) ) ,
                                      ')' ) )
