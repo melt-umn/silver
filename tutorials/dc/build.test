@@ -1,1 +1,1 @@
-run "./silver-compile --clean"
+run: ./silver-compile --clean
