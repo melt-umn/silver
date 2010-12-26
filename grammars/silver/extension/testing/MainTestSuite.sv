@@ -123,7 +123,7 @@ ag::AGDcl ::= kwd::'mainTestSuite'  name::IdLower_t ';'
                    strCnst ("\\n"), 
                    strCnst ("============================================================\\n") 
                  ] ) ,
-                Attracc("testResults", "ioOut" )     
+                attrAcc("testResults", "ioOut" )     
               ] )
            ] ),
            intConst ( terminal(Int_t, "0") ) 
