@@ -1,1 +1,1 @@
-run "java -jar tutorials.dc.jar '1 + 2 * 3'"
+run: java -jar dc.jar '1 + 2 * 3'
