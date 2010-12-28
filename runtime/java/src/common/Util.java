@@ -15,41 +15,6 @@ import java.util.*;
  */
 public class Util {
 	/**
-	 * Used for function/production references.  e.g. things of type "Function(Bool ::= Integer)"
-	 * 
-	 * <p>This is a function here due to our wrapping of the exception in a RuntimeException object.
-	 * 
-	 * @param c a child of {@link Node}, with a constructor of type Object[]
-	 * @return the constructor obtained through reflection
-	 * @see #construct
-	 */
-	public static Constructor<?> getConstruct(Class<?> c) {
-		try {
-			return c.getConstructor(Object[].class);
-		} catch (Throwable t) {
-			throw new RuntimeException(t);
-		}
-	}
-	
-	/**
-	 * For using function/production references. e.g. things of type "Function(Bool ::= Integer)"
-	 * 
-	 * <p>This is a function here due to our wrapping of the exception in a RuntimeException object.
-	 * 
-	 * @param c obtained using {@link #getConstruct}
-	 * @param o the children list
-	 * @return the constructed Node object
-	 * @see #getConstruct
-	 */
-	public static Object construct(Constructor<?> c, Object[] o) {
-		try {
-			return c.newInstance(new Object[] {o});
-		} catch (Throwable e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
 	 * Turns a list of names and values into a map.
 	 * 
 	 * <p>Used by the 'decorate ... with { THIS PART }' syntax.
