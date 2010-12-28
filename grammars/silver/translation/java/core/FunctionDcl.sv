@@ -94,5 +94,15 @@ makeStaticDcls(className, whatSig.inputElements) ++
 "\t\t" ++ whatResult ++
 "\t}\n" ++ 
 
+"\tpublic static final common.NodeFactory<" ++ className ++ "> factory = new Factory();\n\n" ++
+
+"\tpublic static final class Factory implements common.NodeFactory<" ++ className ++ "> {\n\n" ++
+
+"\t\t@Override\n" ++
+"\t\tpublic " ++ className ++ " construct(final Object[] children) {\n" ++
+"\t\t\treturn new " ++ className ++ "(children);\n" ++
+"\t\t}\n\n" ++
+"\t};\n" ++
+
 "}\n";
 }
