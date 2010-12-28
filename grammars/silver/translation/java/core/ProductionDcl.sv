@@ -81,8 +81,18 @@ makeStaticDcls(className, ns.inputElements) ++
   body.translation ++
 "\t}\n\n" ++
 
+"\tpublic static final common.NodeFactory<" ++ className ++ "> factory = new Factory();\n\n" ++
+
+"\tpublic static final class Factory implements common.NodeFactory<" ++ className ++ "> {\n\n" ++
+
+"\t\t@Override\n" ++
+"\t\tpublic " ++ className ++ " construct(final Object[] children) {\n" ++
+"\t\t\treturn new " ++ className ++ "(children);\n" ++
+"\t\t}\n\n" ++
+"\t};\n" ++
+
 "}\n"
-		]];
+  ]];
 
   -- main function signature check TODO: this should probably be elsewhere!
   top.errors <-
@@ -118,15 +128,12 @@ String ::= s::[String]{
 
 -- meant to turn  ::= Foo String Bar
 -- into {grammar.NFoo.class, String.class, other.NBar.class}
--- TODO: this might be broken for decorated types? also function/production types.
--- by broken I mean it won't reveal any useful type information (java.lang.Constructor.class)
--- Also, it preserves no information about _what_ terminal!
 function makeChildTypesList
 String ::= ns::[Decorated NamedSignatureElement]
 {
   return if null(ns)
          then ""
-         else head(ns).typerep.transType ++ ".class"
+         else head(ns).typerep.transClassType ++ ".class"
               ++ if null(tail(ns))
                  then ""
                  else ", " ++ makeChildTypesList(tail(ns));

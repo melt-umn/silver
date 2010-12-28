@@ -8,4 +8,5 @@ top::TypeExp ::=
 {
   -- TODO: We might want to make a separate type for this someday, just to catch any translation errors?
   top.transType = "Object";
+  top.transClassType = "Object";
 }

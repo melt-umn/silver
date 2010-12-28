@@ -95,7 +95,7 @@ top::Expr ::= q::Decorated QName
   top.isAppReference = true;
   top.appReference = makeClassName(q.lookupValue.fullName);
 
-  top.translation = "common.Util.getConstruct(" ++ makeClassName(q.lookupValue.fullName) ++ ".class)";
+  top.translation = makeClassName(q.lookupValue.fullName) ++ ".factory";
 }
 
 aspect production functionReference
@@ -104,7 +104,7 @@ top::Expr ::= q::Decorated QName
   top.isAppReference = true;
   top.appReference = makeClassName(q.lookupValue.fullName);
 
-  top.translation = "common.Util.getConstruct(" ++ makeClassName(q.lookupValue.fullName) ++ ".class)";
+  top.translation = makeClassName(q.lookupValue.fullName) ++ ".factory";
 }
 
 aspect production forwardReference
@@ -139,7 +139,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
 
   top.translation = if e.isAppReference 
                     then "((" ++ finalType(top).transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ "))"
-                    else "((" ++ finalType(top).transType ++ ")common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "}))";
+                    else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".construct(new Object[]{" ++ es.translation ++ "}))";
 }
 
 aspect production functionApplicationDispatcher
@@ -150,7 +150,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
 
   top.translation = if e.isAppReference 
                     then "((" ++ finalType(top).transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ ").doReturn())"
-                    else "((" ++ finalType(top).transType ++ ")((common.FunctionNode)common.Util.construct(" ++ e.translation ++ ", new Object[]{" ++ es.translation ++ "})).doReturn())";
+                    else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".construct(new Object[]{" ++ es.translation ++ "}).doReturn())";
 }
 
 aspect production synDNTAccessDispatcher
