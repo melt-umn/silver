@@ -1,10 +1,5 @@
 grammar silver:translation:java:concrete_syntax:copper;
 
-import silver:definition:concrete_syntax;
-import silver:definition:core;
-import silver:definition:env;
-import silver:util;
-
 aspect production unparseRootSpec
 top::RootSpecUnparse ::= r::Decorated RootSpec{
   unparses <- mapDGs(r.disambiguationGroupDcls);
@@ -34,3 +29,70 @@ String ::= s::String
 {
   return substitute("\"", "\\\"", s);
 }
+
+
+aspect production i_emptyRootSpec
+top::RootSpec ::= 
+{
+  top.disambiguationGroupDcls = [];
+  top.parserAttrDcls = [];
+}
+
+aspect production i_rootSpecRoot
+top::RootSpec ::= c1::Decorated Root
+{
+  top.disambiguationGroupDcls = c1.disambiguationGroupDcls; 
+  top.parserAttrDcls = c1.parserAttrDcls;
+}
+
+aspect production i_appendRootSpec
+top::RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
+{
+  top.disambiguationGroupDcls = c1.disambiguationGroupDcls ++ c2.disambiguationGroupDcls;
+  top.parserAttrDcls = c1.parserAttrDcls ++ c2.parserAttrDcls;
+}
+
+aspect production root
+top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
+{
+  top.disambiguationGroupDcls = ags.disambiguationGroupDcls;
+  top.parserAttrDcls = ags.parserAttrDcls;
+}
+
+aspect production agDclsOne
+top::AGDcls ::= ag::AGDcl
+{
+  top.disambiguationGroupDcls = ag.disambiguationGroupDcls ;
+  top.parserAttrDcls = ag.parserAttrDcls ;
+}
+
+aspect production agDclsCons
+top::AGDcls ::= h::AGDcl t::AGDcls
+{
+  top.disambiguationGroupDcls = h.disambiguationGroupDcls ++ t.disambiguationGroupDcls;
+  top.parserAttrDcls = h.parserAttrDcls ++ t.parserAttrDcls;
+}
+
+aspect production agDclsAppend
+top::AGDcls ::= ag1::AGDcls ag2::AGDcls
+{
+  top.disambiguationGroupDcls = ag1.disambiguationGroupDcls ++ ag2.disambiguationGroupDcls;
+  top.parserAttrDcls = ag1.parserAttrDcls ++ ag2.parserAttrDcls;
+}
+
+aspect production agDclDefault
+top::AGDcl ::=
+{
+  top.disambiguationGroupDcls = [];
+  top.parserAttrDcls = [];
+}
+
+aspect production agDclAppend
+top::AGDcl ::= ag1::AGDcl ag2::AGDcl
+{
+  top.disambiguationGroupDcls = ag1.disambiguationGroupDcls ++ ag2.disambiguationGroupDcls;
+  top.parserAttrDcls = ag1.parserAttrDcls ++ ag2.parserAttrDcls;
+}
+
+
+

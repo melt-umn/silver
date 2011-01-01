@@ -1,7 +1,5 @@
 grammar silver:translation:java:concrete_syntax:copper;
 
-import silver:definition:core;
-
 attribute permitActions, permitPluck occurs on BlockContext;
 
 {--

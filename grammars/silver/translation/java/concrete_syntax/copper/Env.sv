@@ -1,10 +1,5 @@
 grammar silver:translation:java:concrete_syntax:copper;
 
-import silver:definition:env;
-import silver:definition:core;
-import silver:util;
-import silver:definition:type;
-
 --------------------------------------------------------------------------------
 -- Defs.sv
 

@@ -1,12 +1,4 @@
 grammar silver:translation:java:concrete_syntax:copper;
-import silver:analysis:typechecking;
-import silver:analysis:typechecking:core;
-import silver:definition:core;
-import silver:definition:env;
-import silver:definition:concrete_syntax;
-import silver:translation:java:core;
-import silver:definition:type;
-import silver:definition:type:syntax;
 
 terminal Class_kwd   'class'     ; --lexer classes {KEYWORD};
 terminal Dominates_t 'dominates' ; --lexer classes {KEYWORD};
@@ -38,8 +30,39 @@ top::TerminalModifier ::= 'submits' 'to' '{' terms::TermPrecList  '}'
   forwards to terminalModifierDefault();
 }
 
-synthesized attribute precTermList :: [String];
+concrete production terminalModifierActionCode
+top::TerminalModifier ::= 'action' acode::ActionCode_c
+{
+  top.pp = "action " ++ acode.actionCode;
+
+  top.terminalModifiers = [actionCodeTerminalModifierSpec(acode.actionCode)];
+
+  acode.blockContext = actionContext();
+  acode.env = newScopeEnv(addTerminalAttrDefs(acode.defs), top.env);
+
+  -- TODO: better name than this dummy one?
+  acode.signature = namedNamedSignature(top.grammarName ++ ":__ta" ++ toString($1.line));
+  
+  top.errors := acode.errors;
+  -- TODO: warnings?
+
+  forwards to terminalModifierDefault();
+}
+
+concrete production terminalModifierClassSpec
+top::TerminalModifier ::= 'lexer' 'classes' '{' cl::ClassList '}'
+{
+  top.pp = "lexer classes { " ++ cl.pp ++ " } " ;
+
+  top.terminalModifiers = [lexerClassesTerminalModifierSpec(cl.lexerClasses)] ++ cl.terminalModifiers;
+  top.errors := cl.errors;
+
+  forwards to terminalModifierDefault();
+}
+
+
 nonterminal TermPrecList with grammarName, pp, location, precTermList, defs, errors, env, file;
+synthesized attribute precTermList :: [String];
 
 -- The reason these forward is that it's easier to avoid code duplication with cons and nil,
 -- while the grammar has to enforce at least one element.
@@ -106,35 +129,6 @@ Defs ::= tailDefs::Defs
          tailDefs))));
 }
 
-concrete production terminalModifierActionCode
-top::TerminalModifier ::= 'action' acode::ActionCode_c
-{
-  top.pp = "action " ++ acode.actionCode;
-
-  top.terminalModifiers = [actionCodeTerminalModifierSpec(acode.actionCode)];
-
-  acode.blockContext = actionContext();
-  acode.env = newScopeEnv(addTerminalAttrDefs(acode.defs), top.env);
-
-  -- TODO: better name than this dummy one?
-  acode.signature = namedNamedSignature(top.grammarName ++ ":__ta" ++ toString($1.line));
-  
-  top.errors := acode.errors;
-  -- TODO: warnings?
-
-  forwards to terminalModifierDefault();
-}
-
-concrete production terminalModifierClassSpec
-top::TerminalModifier ::= 'lexer' 'classes' '{' cl::ClassList '}'
-{
-  top.pp = "lexer classes { " ++ cl.pp ++ " } " ;
-
-  top.terminalModifiers = [lexerClassesTerminalModifierSpec(cl.lexerClasses)] ++ cl.terminalModifiers;
-  top.errors := cl.errors;
-
-  forwards to terminalModifierDefault();
-}
 
 nonterminal ClassList with pp, lexerClasses, errors, env, file, terminalModifiers;
 
@@ -176,63 +170,5 @@ cl::ClassList ::=
   cl.pp = "";
   cl.errors := [];
   cl.lexerClasses = [];
-}
-
-
-abstract production termAttrValueReference
-top::Expr ::= q::Decorated QName
-{
-  top.pp = q.pp; 
-  top.location = q.location;
-
-  top.errors := []; -- Should only ever be in scope in action blocks
-
-  top.typerep = q.lookupValue.typerep;
-
-  top.isAppReference = false;
-  top.appReference = "";
-
-  -- Yeah, it's a big if/then/else block, but these are all very similar and related.
-  top.translation = if q.name == "lexeme" then "new common.StringCatter(lexeme)" else
-                    if q.name == "line" then "virtualLocation.getLine()" else
-                    if q.name == "column" then "virtualLocation.getColumn()" else
-                    if q.name == "filename" then "new common.StringCatter(virtualLocation.getFileName())" else
-                    error("unknown actionTerminalReference " ++ q.name); -- should never be called, but here for safety
-
-  top.upSubst = top.downSubst;
-}
-
-abstract production termAttrValueValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
-{
-  top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
-  top.location = loc(top.file, $2.line, $2.column);
-
-  top.errors := e.errors; -- should only be in scope when its valid to use them
-  top.warnings := [];
-
-  e.expected = expected_type(val.lookupValue.typerep);  
-
-  local attribute memberfunc :: String;
-  memberfunc = if val.name == "filename" then "setFileName" else
-               if val.name == "line" then "setLine" else
-               if val.name == "column" then "setColumn" else
-               error("unknown assignment to terminal attribute: " ++ val.name);
-
-  top.setupInh := "";
-  top.translation = "virtualLocation." ++ memberfunc ++ "(" ++ e.translation
-                     ++ (if val.name == "filename" then ".toString()" else "") ++ ");\n";
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
-
-  errCheck1 = check(e.typerep, val.lookupValue.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
-       else [];
 }
 
