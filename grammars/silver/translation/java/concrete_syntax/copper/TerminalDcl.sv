@@ -120,6 +120,7 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
   acode.signature = namedNamedSignature(top.grammarName ++ ":__ta" ++ toString($1.line));
   
   top.errors := acode.errors;
+  -- TODO: warnings?
 
   forwards to terminalModifierDefault();
 }
@@ -208,6 +209,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := e.errors; -- should only be in scope when its valid to use them
+  top.warnings := [];
 
   e.expected = expected_type(val.lookupValue.typerep);  
 
