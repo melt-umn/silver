@@ -46,8 +46,6 @@ top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
   top.pp = "lexer class " ++ id.name ++ ";";
   top.location = id.location;
 
-  top.moduleNames = [];
-
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
@@ -59,20 +57,8 @@ top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
                 else [];	
 
   top.errors := subs.errors ++ doms.errors;
-  top.warnings := [];
 
---from definition:concrete_syntax
-  top.parserDcls = [];
-  top.nonTerminalDcls = [];
-  top.terminalDcls = [];			   
-  top.ruleDcls = [];
-
---from translation:core
-  top.javaClasses = [];
-  top.setupInh := "";
-  top.initProd := "";
-  top.initValues := "";
-  top.postInit := "";
+  forwards to agDclDefault();
 }
 
 

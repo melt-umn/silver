@@ -6,8 +6,6 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   top.pp = "aspect production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.moduleNames = [];
-
   top.defs = addPaDcl(top.grammarName, id.location, id.lookupValue.fullName,
                        namedSig.outputElement.typerep, getTypesSignature(namedSig.inputElements),
                        body.productionAttributes,
@@ -40,6 +38,8 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   body.env = newScopeEnv(appendDefs(body.defs, sigDefs), newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;
   body.blockContext = defaultContext();
+  
+  forwards to agDclDefault();
 }
 
 concrete production aspectFunctionDcl
@@ -52,8 +52,6 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
                        namedSig.outputElement.typerep, getTypesSignature(namedSig.inputElements),
                        body.productionAttributes,
                emptyDefs());
-
-  top.moduleNames = [];
 
   production attribute namedSig :: Decorated NamedSignature;
   namedSig = namedSignatureDcl(id.lookupValue.fullName, ns.inputElements, ns.outputElement);
@@ -82,6 +80,8 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   body.env = newScopeEnv(appendDefs(body.defs, sigDefs), newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;
   body.blockContext = defaultContext();
+
+  forwards to agDclDefault();
 }
 
 concrete production aspectProductionSignatureEmptyRHS

@@ -1,10 +1,28 @@
 grammar silver:translation:java:core;
 
--- Argh. Should have made javaClasses a collection, too, while I was at it..
+-- TODO: Should have made javaClasses a collection, too, while I was at it.
+-- TODO: also, make it a pair now that we can!
+
+{--
+ - Java classes to generate. (filename, contents)
+ -}
 synthesized attribute javaClasses :: [[String]];
+{--
+ - Early initializers:
+ -}
 synthesized attribute setupInh :: String with ++;
+{--
+ - Initialize the attributes maps for each production.
+ - note to be confused with "production attribute" dcls.
+ -}
 synthesized attribute initProd :: String with ++;
+{--
+ - Global values.
+ -}
 synthesized attribute initValues :: String with ++;
+{--
+ - Late initializers. Decorators, so far.
+ -}
 synthesized attribute postInit :: String with ++;
 synthesized attribute translation :: String;
 

@@ -19,15 +19,6 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.parserDcls = ags.parserDcls;
 }
 
-aspect production agDclNone
-top::AGDcl ::=
-{
-  top.parserDcls = [];
-  top.nonTerminalDcls = [];
-  top.terminalDcls = [];
-  top.ruleDcls = [];
-}
-
 aspect production agDclsOne
 top::AGDcls ::= ag::AGDcl
 {
@@ -55,6 +46,15 @@ top::AGDcls ::= ag1::AGDcls ag2::AGDcls
   top.ruleDcls = ag1.ruleDcls ++ ag2.ruleDcls;
 }
 
+aspect production agDclDefault
+top::AGDcl ::=
+{
+  top.parserDcls = [];
+  top.nonTerminalDcls = [];
+  top.terminalDcls = [];
+  top.ruleDcls = [];
+}
+
 aspect production agDclAppend
 top::AGDcl ::= ag1::AGDcl ag2::AGDcl
 {
@@ -63,3 +63,4 @@ top::AGDcl ::= ag1::AGDcl ag2::AGDcl
   top.terminalDcls = ag1.terminalDcls ++ ag2.terminalDcls;
   top.ruleDcls = ag1.ruleDcls ++ ag2.ruleDcls;
 }
+

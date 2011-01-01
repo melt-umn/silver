@@ -14,22 +14,9 @@ attribute parserAttrDcls occurs on ParserDcl, ModuleList, ModuleName, Module, Mo
 aspect production parserDcl
 top::AGDcl ::= p::ParserDcl
 {
-  -- TODO: confused. should these be []?  
-  top.disambiguationGroupDcls = [];
-  top.parserAttrDcls = [];
-  
   top.javaClasses = p.javaClasses;
-  top.setupInh := "";
-  top.initProd := "";
-  top.initValues := "";
-  top.postInit := "";
-}
-
-aspect production parserStmt
-top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
-{
-  top.disambiguationGroupDcls = m.disambiguationGroupDcls;
-  top.parserAttrDcls = m.parserAttrDcls;
+  -- note that ParserDcl has things like disambig, parsattrs, rules, etc. These do not appear here
+  -- putting them here would be tanamount to "export all concrete syntax that appear in a parser dcl"
 }
 
 aspect production moduleListOne
@@ -67,8 +54,10 @@ top::ModuleExportedDefs ::= compiled::[Decorated RootSpec] need::[String] seen::
   top.parserAttrDcls = if null(need) || null(rs) then [] else (head(rs).parserAttrDcls ++ recurse.parserAttrDcls);
 }
 
+-- TODO: ParserDcl should be turned into a spec like all the rest. It's inconsistent.
 aspect production parserStmt
-top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
+top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
+{
 
   local attribute className :: String;
   className = "P" ++ n.name;
@@ -96,4 +85,6 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}' {
 "\t\t\tthrow new RuntimeException(\"An error occurs while parsing\", t);\n" ++
 "\t\t}\n";
 
+  top.disambiguationGroupDcls = m.disambiguationGroupDcls;
+  top.parserAttrDcls = m.parserAttrDcls;
 }

@@ -40,7 +40,8 @@ String ::= str::String sig::Decorated NamedSignature
 }
 
 
-
+-- TODO: this needs clean up.
+-- We should forward either to normal function declaration or special one, rather than IFing EVERYTHING in here!
 aspect production functionDclFFI
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'foreign' '{' ffidefs::FFIDefs '}'
 {

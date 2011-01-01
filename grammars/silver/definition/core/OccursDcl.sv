@@ -6,8 +6,6 @@ top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QNa
   top.pp = "attribute " ++ a.pp ++ "<" ++ tlat.pp ++ "> occurs on " ++ nt.pp ++ "<" ++ tlnt.pp ++ ">;";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.moduleNames = [];
-
   -- TODO SOMEDAY: relax the requirement that tlat be all type variables. (over-specified occurances e.g. 'ast Expr occurs on Expr_c')
   -- TODO SOMEDAY: relax the requirement that tlnt by all type variables. (partial occurences e.g. 'sum occurs on List Int')
 
@@ -19,7 +17,6 @@ top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QNa
 
   -- binding errors in looking up these names.
   top.errors := a.lookupAttribute.errors ++ nt.lookupType.errors;
-  top.warnings := [];
   
   -- Ensure that we're ONLY pairing up type variables, for now.
   -- This will error if any types (instead of type variables) appear in these lists.
@@ -84,6 +81,7 @@ top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QNa
                 then [err(a.location, "Attribute '" ++ a.name ++ "' already occurs on '" ++ nt.name ++ "'.")]
                 else [];
 
+  forwards to agDclDefault();
 }
 
 concrete production attributionDclEmpty

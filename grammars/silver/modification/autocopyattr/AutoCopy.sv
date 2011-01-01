@@ -20,8 +20,6 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type
   top.pp = "autocopy attribute " ++ a.pp ++ " :: " ++ te.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.moduleNames = [];
-
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
@@ -50,7 +48,6 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type
         else [];
 
   top.errors := te.errors;
-  top.warnings := [];
   
   forwards to attributeDclInh(terminal(Inherited_kwd, "inherited", $1), $2, a, $4, tl, $6, $7, te, $9);
 }

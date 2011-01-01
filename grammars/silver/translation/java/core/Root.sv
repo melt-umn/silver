@@ -16,16 +16,6 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.postInit := ags.postInit;
 }
 
-aspect production agDclNone
-top::AGDcl ::=
-{
-  top.javaClasses = [];
-  top.setupInh := "";
-  top.initProd := "";
-  top.initValues := "";
-  top.postInit := "";
-}
-
 aspect production agDclsOne
 top::AGDcls ::= ag::AGDcl
 {
@@ -54,6 +44,16 @@ top::AGDcls ::= h::AGDcls t::AGDcls
   top.initProd := h.initProd ++ t.initProd;
   top.initValues := h.initValues ++ t.initValues;
   top.postInit := h.postInit ++ t.postInit;
+}
+
+aspect production agDclDefault
+top::AGDcl ::=
+{
+  top.javaClasses = [];
+  top.setupInh := "";
+  top.initProd := "";
+  top.initValues := "";
+  top.postInit := "";
 }
 
 aspect production agDclAppend

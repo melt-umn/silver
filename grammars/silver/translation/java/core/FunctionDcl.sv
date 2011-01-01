@@ -7,8 +7,6 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
   top.setupInh := body.setupInh;
   top.initProd := "\t\t//FUNCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
-  top.initValues := "";
-  top.postInit := "";
 
   top.javaClasses = [["P" ++ id.name, 
                       generateFunctionClassString(top.grammarName, id.name, namedSig, "return (" ++ ns.outputElement.typerep.transType ++ ")super.doReturn();\n")
