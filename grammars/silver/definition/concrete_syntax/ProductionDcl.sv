@@ -1,13 +1,5 @@
 grammar silver:definition:concrete_syntax;
 
-aspect production productionDcl
-top ::= _ _ _ _ _
-{
-  top.parserDcls = [];
-  top.nonTerminalDcls = [];
-  top.ruleDcls = [];
-  top.terminalDcls = [];
-}
 concrete production concreteProductionDcl
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
@@ -27,7 +19,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
   ns.env = newScopeEnv(ns.defs, top.env);
 
-  top.terminalDcls = [];
+  -- TODO: we should get the ruleSpec off ns as an attribute, rather than computing it with getTypeNames etc
   top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName, 
                            [rhsSpec(top.grammarName, fName, getTypeNamesSignature(ns.inputElements), pm.productionModifiers)])];
   

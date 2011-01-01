@@ -17,25 +17,8 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
   top.pp = "disambiguate " ++ terms.pp ++ " " ++ acode.actionCode;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.moduleNames = [];
-
-  top.defs = emptyDefs();
-
   top.warnings := acode.warnings;
   top.errors := acode.errors ++ terms.errors;
-
---from definition:concrete_syntax
-  top.parserDcls = [];
-  top.nonTerminalDcls = [];
-  top.terminalDcls = [];
-  top.ruleDcls = [];
-
---from translation:core
-  top.javaClasses = [];
-  top.setupInh := "";
-  top.initProd := "";
-  top.initValues := "";
-  top.postInit := "";
 
   acode.env = newScopeEnv(appendDefs(acode.defs,terms.defs), top.env); -- terminal attrs?
 
@@ -43,6 +26,8 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
   acode.signature = namedNamedSignature(top.grammarName ++ ":__disam" ++ toString($1.line));
 
   acode.blockContext = disambiguationContext();
+  
+  forwards to agDclDefault();
 }
 
 abstract production pluckTerminalReference

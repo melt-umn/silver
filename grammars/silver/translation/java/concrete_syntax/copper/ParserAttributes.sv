@@ -16,8 +16,6 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
   top.location = loc(top.file, $1.line, $1.column);
   top.pp = "parser attribute " ++ a.name ++ " :: " ++ te.pp ++ " ;" ;
 
-  top.moduleNames = [];
-
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
@@ -30,22 +28,11 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
   top.errors := te.errors ++ acode.errors;
   top.warnings := acode.warnings;
   
-  top.parserDcls = [];
-  top.nonTerminalDcls = [];
-  top.terminalDcls = [];
-  top.ruleDcls = [];
-  -- see ParserAttrSpec.sv for the parser spec
-
   acode.signature = namedNamedSignature(top.grammarName ++ ":" ++ a.name);
   acode.blockContext = actionContext();
   acode.env = newScopeEnv(acode.defs, top.env);
-
-  -- No effect on ordinary semantic translation stuff
-  top.javaClasses = [];
-  top.setupInh := "";
-  top.initProd := "";
-  top.initValues := "";
-  top.postInit := "";
+  
+  forwards to agDclDefault();
 }
 
 

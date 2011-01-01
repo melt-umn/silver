@@ -33,11 +33,6 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type
 "\t}\n" ++
 "}\n"
 		]];
-		
-  top.setupInh := "";
-  top.initProd := "";
-  top.initValues := "";
-  top.postInit := "";
 }
 
 aspect production attributionDcl

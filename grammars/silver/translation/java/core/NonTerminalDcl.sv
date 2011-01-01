@@ -6,10 +6,6 @@ top::AGDcl ::= id::Name tl::TypeList
   local attribute className :: String;
   className = "N" ++ id.name;
   
-  top.setupInh := "";
-  top.initProd := "";
-  top.initValues := "";
-  top.postInit := "";
   top.javaClasses = [[className,
 		
 "package " ++ makeName(top.grammarName) ++ ";\n\n" ++

@@ -9,7 +9,8 @@ import silver:definition:type:syntax;
 nonterminal ParserAttrSpec with name, typerep, actionCode;
 
 function parserAttrSpec
-Decorated ParserAttrSpec ::= n::String t::TypeExp a::String {
+Decorated ParserAttrSpec ::= n::String t::TypeExp a::String
+{
   return decorate i_parserAttrSpec(n, t, a) with {};
 }
 
@@ -24,31 +25,10 @@ top::ParserAttrSpec ::= n::String t::TypeExp a::String
 synthesized attribute parserAttrDcls :: [Decorated ParserAttrSpec];
 attribute parserAttrDcls occurs on Root, RootSpec, AGDcls, AGDcl;
 
-aspect production disambiguationGroupDcl
-top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
-{
-  top.parserAttrDcls = [];
-}
-
-
 aspect production attributeDclParser
 top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::ActionCode_c ';'
 {
   top.parserAttrDcls = [parserAttrSpec(makeCopperName(fName), te.typerep, acode.actionCode)];
-}
-
-
-aspect production lexerClassDclFull
-top::AGDcl ::= id::Name t1::TermPrecList t2::TermPrecList
-{
-  top.parserAttrDcls = [];
-}
-
-
-aspect production defaultNonterminalDcl
-top::AGDcl ::= id::Name tl::TypeList
-{
-  top.parserAttrDcls = [];			   
 }
 
 aspect production i_emptyRootSpec
@@ -70,64 +50,10 @@ top::RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
   top.parserAttrDcls = c1.parserAttrDcls ++ c2.parserAttrDcls;
 }
 
-aspect production attributeDclInh
-top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type ';'
-{
-  top.parserAttrDcls = [];
-}
-
-aspect production attributeDclSyn
-top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type ';'
-{
-  top.parserAttrDcls = [];
-}
-
-aspect production attributionDcl
-top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QName '<' tlnt::TypeList '>' ';'
-{
-  top.parserAttrDcls = [];
-}
-
-aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
-{
-  top.parserAttrDcls = [];
-}
-
-aspect production aspectProductionDcl
-top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
-{
-  top.parserAttrDcls = [];
-}
-
-aspect production functionDcl
-top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
-{
-  top.parserAttrDcls = [];
-}
-
-aspect production globalValueDclConcrete
-top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
-{
-  top.parserAttrDcls = [];
-}
-
-aspect production aspectFunctionDcl
-top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody
-{
-  top.parserAttrDcls = [];
-}
-
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 {
   top.parserAttrDcls = ags.parserAttrDcls;
-}
-
-aspect production agDclNone
-top::AGDcl ::=
-{
-  top.parserAttrDcls = [];
 }
 
 aspect production agDclsOne
@@ -148,14 +74,15 @@ top::AGDcls ::= ag1::AGDcls ag2::AGDcls
   top.parserAttrDcls = ag1.parserAttrDcls ++ ag2.parserAttrDcls;
 }
 
+aspect production agDclDefault
+top::AGDcl ::=
+{
+  top.parserAttrDcls = [];
+}
+
 aspect production agDclAppend
 top::AGDcl ::= ag1::AGDcl ag2::AGDcl
 {
   top.parserAttrDcls = ag1.parserAttrDcls ++ ag2.parserAttrDcls;
 }
 
-aspect production terminalDclDefault
-top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifiers
-{
-  top.parserAttrDcls = [];
-}

@@ -22,8 +22,6 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.moduleNames = [];
-
   top.defs = addTermDcl(top.grammarName, id.location, fName, r.terminalRegExprSpec, emptyDefs());
   
   top.errors <-
@@ -37,13 +35,10 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
         else [];
 
   top.errors := t.errors ++ tm.errors;
-  top.warnings := [];
 
-  top.parserDcls = [];
-  top.nonTerminalDcls = [];
   top.terminalDcls = [terminalSpec(fName, t.terminalModifiers ++ tm.terminalModifiers, r.terminalRegExprSpec)];			   
-  top.ruleDcls = [];
 
+  forwards to agDclDefault();
 }
 
 
@@ -96,7 +91,8 @@ top::TerminalKeywordModifier ::= 'ignore'
 }
 
 abstract production terminalKeywordModifierDefault
-top::TerminalKeywordModifier ::= {
+top::TerminalKeywordModifier ::= 
+{
   top.pp = "";
   top.location = loc(top.file, -1, -1);
 

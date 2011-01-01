@@ -21,8 +21,6 @@ top::AGDcl ::= id::Name tl::TypeList
   top.pp = "nonterminal " ++ id.pp ++ "<" ++ tl.pp ++ ">;";
   top.location = id.location;
 
-  top.moduleNames = [];
-
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
@@ -37,7 +35,6 @@ top::AGDcl ::= id::Name tl::TypeList
 
   -- Include normal binding errors.
   top.errors := tl.errors;
-  top.warnings := [];
   
   -- Put the variables listed on the rhs in the environment FOR TL ONLY, so they're all "declared"
   tl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
@@ -59,5 +56,7 @@ top::AGDcl ::= id::Name tl::TypeList
        if isLower(substring(0,1,id.name))
        then [err(id.location, "Types must be capitalized. Invalid nonterminal name " ++ id.name)]
        else [];
+
+  forwards to agDclDefault();
 }
 

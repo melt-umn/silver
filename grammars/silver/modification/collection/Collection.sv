@@ -116,7 +116,6 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::T
 
   q.operatorForType = te.typerep;
   top.errors := te.errors ++ q.errors ++ tl.errors;
-  top.warnings := [];
 
   forwards to attributeDclSyn($1, $2, a, $4, tl, $6, $7, te, $11);
 }
@@ -154,7 +153,6 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Typ
 
   q.operatorForType = te.typerep;
   top.errors := te.errors ++ q.errors ++ tl.errors;
-  top.warnings := [];
 
   forwards to attributeDclInh($1, $2, a, $4, tl, $6, $7, te, $11);
 }

@@ -18,16 +18,15 @@ top::AGDcl ::= p::ParserDcl
 {
   top.location = p.location;
   top.pp = p.pp;
-  top.errors := p.errors;
-  top.warnings := [];
-
-  top.defs = p.defs;
-  top.parserDcls = p.parserDcls;
+  
   top.moduleNames = p.moduleNames;
 
-  top.nonTerminalDcls = [];
-  top.terminalDcls = [];
-  top.ruleDcls = [];
+  top.errors := p.errors;
+  top.defs = p.defs;
+
+  top.parserDcls = p.parserDcls;
+
+  forwards to agDclDefault();
 }
 
 concrete production parserStmt
@@ -36,10 +35,13 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
   top.pp = "parser " ++ m.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
+  top.moduleNames = m.moduleNames;
+
   top.errors := t.errors ++ m.errors;
 
   top.fullName = top.grammarName ++ ":" ++ n.name;
   top.typerep = t.typerep;
+
   top.nonTerminalDcls = m.nonTerminalDcls;
   top.terminalDcls = m.terminalDcls;
   top.ruleDcls = m.ruleDcls;
@@ -55,8 +57,6 @@ top::ParserDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
                                [namedSignatureElement("stringToParse", stringTypeExp()),
                                 namedSignatureElement("filenameToReport", stringTypeExp())],
                                namedSignatureElement("__func__lhs", nonterminalTypeExp("core:ParseResult", [t.typerep])));
-
-  top.moduleNames = m.moduleNames;
 }
 
 concrete production moduleListOne

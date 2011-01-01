@@ -108,18 +108,6 @@ top::GrammarDcl ::= 'grammar' qn::QName ';'
 }
 
 
-abstract production agDclNone
-top::AGDcl ::=
-{
-  top.pp = "";
-  top.location = loc(top.file, -1, -1);
-
-  top.defs = emptyDefs();
-  top.errors := [];
-  top.warnings := [];
-  top.moduleNames = [];
-}
-
 concrete production agDclsOne
 top::AGDcls ::= ag::AGDcl
 {
@@ -156,6 +144,17 @@ top::AGDcls ::= h::AGDcls t::AGDcls
   top.moduleNames = h.moduleNames ++ t.moduleNames;
 }
 
+abstract production agDclNone
+top::AGDcl ::=
+{
+  top.pp = "";
+  top.location = loc(top.file, -1, -1);
+
+  top.errors := [];
+
+  forwards to agDclDefault(); 
+}
+
 abstract production agDclAppend
 top::AGDcl ::= h::AGDcl t::AGDcl
 {
@@ -166,4 +165,15 @@ top::AGDcl ::= h::AGDcl t::AGDcl
   top.errors := h.errors ++ t.errors;
   top.warnings := h.warnings ++ t.warnings;
   top.moduleNames = h.moduleNames ++ t.moduleNames;
+}
+
+abstract production agDclDefault
+top::AGDcl ::=
+{
+  -- can't provide pp or location!
+  top.moduleNames = [];
+  top.defs = emptyDefs();
+  --top.errors := []; -- should never be omitted, really.
+  top.warnings := [];
+  
 }

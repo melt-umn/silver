@@ -12,8 +12,6 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Typ
   top.pp = "inherited attribute " ++ a.pp ++ " :: " ++ te.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.moduleNames = [];
-
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
@@ -35,7 +33,8 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Typ
         else [];	
 
   top.errors := te.errors ++ tl.errors;
-  top.warnings := [];
+
+  forwards to agDclDefault();
 }
 
 concrete production attributeDclSynEmpty
@@ -49,8 +48,6 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::T
 {
   top.pp = "synthesized attribute " ++ a.pp ++ " :: " ++ te.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
-
-  top.moduleNames = [];
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -74,8 +71,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::T
 
   top.errors := te.errors ++ tl.errors;
   top.warnings := [];
+
+  forwards to agDclDefault();
 }
-
-
-
 
