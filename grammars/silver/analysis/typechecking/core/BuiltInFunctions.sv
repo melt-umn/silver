@@ -94,7 +94,9 @@ top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
   local attribute errCheck3 :: TypeCheck; errCheck3.finalSubst = top.finalSubst;
 
   e1.downSubst = top.downSubst;
-  errCheck1.downSubst = e1.upSubst;
+  e2.downSubst = e1.upSubst;
+  e3.downSubst = e2.upSubst;
+  errCheck1.downSubst = e3.upSubst;
   errCheck2.downSubst = errCheck1.upSubst;
   errCheck3.downSubst = errCheck2.upSubst;
   top.upSubst = errCheck3.upSubst;

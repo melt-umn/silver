@@ -12,7 +12,7 @@ import silver:definition:type:syntax;
 
 synthesized attribute actionCode :: String;
 
-nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,signature,file,errors,blockContext;
+nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,signature,file,errors,blockContext,warnings;
 
 terminal Action_kwd 'action' lexer classes {KEYWORD};
 
@@ -78,6 +78,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   acode.signature = namedSig;
 
   top.errors <- acode.errors;
+  top.warnings <- acode.warnings;
 
   forwards to concreteProductionDclModifiers($1, $2, id, ns, pm, body);
 }
@@ -91,6 +92,7 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
   top.actionCode = hacklocaldeclarations(stmts.defs.valueList) ++ stmts.translation;
 
   top.errors := stmts.errors;
+  top.warnings := stmts.warnings;
   
   stmts.downSubst = emptySubst();
 }

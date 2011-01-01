@@ -21,7 +21,7 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
 
   top.defs = emptyDefs();
 
-  top.warnings := [];
+  top.warnings := acode.warnings;
   top.errors := acode.errors ++ terms.errors;
 
 --from definition:concrete_syntax

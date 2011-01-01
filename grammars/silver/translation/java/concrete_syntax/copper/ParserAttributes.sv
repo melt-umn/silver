@@ -28,6 +28,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
                 else [];
 
   top.errors := te.errors ++ acode.errors;
+  top.warnings := acode.warnings;
   
   top.parserDcls = [];
   top.nonTerminalDcls = [];
@@ -73,6 +74,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
   top.location = loc(top.file, $2.line, $2.column);
 
+  top.warnings := [];
   top.errors := e.errors ++
                (if !top.blockContext.permitActions
                 then [err(val.location, "Assignment to parser attributes only permitted in parser action blocks")]
