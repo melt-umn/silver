@@ -1,16 +1,9 @@
 grammar silver:translation:java:concrete_syntax:copper;
 
-import silver:definition:env;
-import silver:definition:core;
-import silver:definition:type;
-import silver:definition:type:syntax;
-import silver:util;
-
 -- These do not need to go into defaultDcl, because they appear on lexer class only
 -- which have their own namespace.  We're essentially defining these to be the required
 -- attributes of anything that appears in this namespace.
-attribute submitsTo occurs on DclInfo;
-attribute termDominates occurs on DclInfo;
+attribute submitsTo,termDominates occurs on DclInfo;
 
 aspect production defaultDcl
 top::DclInfo ::=

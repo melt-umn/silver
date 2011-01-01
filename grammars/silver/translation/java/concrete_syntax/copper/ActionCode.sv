@@ -1,57 +1,10 @@
 grammar silver:translation:java:concrete_syntax:copper;
 
-import silver:translation:java:type;
-import silver:definition:core;
-import silver:definition:concrete_syntax;
-import silver:definition:env;
-import silver:translation:java:core;
-import silver:analysis:typechecking:core;
-import silver:definition:type;
-import silver:definition:type:syntax;
+nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,signature,file,errors,blockContext,warnings;
 
 synthesized attribute actionCode :: String;
 
-nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,signature,file,errors,blockContext,warnings;
-
 terminal Action_kwd 'action' lexer classes {KEYWORD};
-
-attribute actionCode occurs on RHSSpec, ProductionModifierSpec;
-
-function actionProductionModifierSpec
-Decorated ProductionModifierSpec ::= s::String
-{
-  return decorate i_actionProductionModifierSpec(s) with {};
-}
-
-abstract production i_actionProductionModifierSpec
-top::ProductionModifierSpec ::= s::String
-{
-  top.unparse = "action \"" ++ escapeString(s) ++ "\"";
-  top.actionCode = s;
-  forwards to defaultProductionModifierSpec();
-}
-
-aspect production defaultProductionModifierSpec
-top::ProductionModifierSpec ::={
-  top.actionCode = "";
-}
-
-aspect production i_rhsSpec
-top::RHSSpec ::= gn::String fn::String ns::[String] pm::[Decorated ProductionModifierSpec]
-{
-  top.actionCode = findProductionAction(pm);
-}
-
-function findProductionAction
-String ::= l::[Decorated ProductionModifierSpec]{
-  return if null(l) then "" else if head(l).actionCode != "" then head(l).actionCode else findProductionAction(tail(l));
-}
-
-concrete production concreteProductionDclAction
-top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature body::ProductionBody 'action' acode::ActionCode_c
-{
-  forwards to concreteProductionDclModifiersAction($1, $2, id, ns, productionModifiersNone(), body, $6, acode);
-}
 
 concrete production concreteProductionDclModifiersAction
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody 'action' acode::ActionCode_c
@@ -80,6 +33,12 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   top.warnings <- acode.warnings;
 
   forwards to concreteProductionDclModifiers($1, $2, id, ns, pm, body);
+}
+
+concrete production concreteProductionDclAction
+top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature body::ProductionBody 'action' acode::ActionCode_c
+{
+  forwards to concreteProductionDclModifiersAction($1, $2, id, ns, productionModifiersNone(), body, $6, acode);
 }
 
 concrete production actionCode_c
@@ -121,6 +80,38 @@ Defs ::= l::[Decorated EnvItem]
 }
 
 
+attribute actionCode occurs on RHSSpec, ProductionModifierSpec;
+
+function actionProductionModifierSpec
+Decorated ProductionModifierSpec ::= s::String
+{
+  return decorate i_actionProductionModifierSpec(s) with {};
+}
+
+abstract production i_actionProductionModifierSpec
+top::ProductionModifierSpec ::= s::String
+{
+  top.unparse = "action \"" ++ escapeString(s) ++ "\"";
+  top.actionCode = s;
+  forwards to defaultProductionModifierSpec();
+}
+
+aspect production defaultProductionModifierSpec
+top::ProductionModifierSpec ::={
+  top.actionCode = "";
+}
+
+aspect production i_rhsSpec
+top::RHSSpec ::= gn::String fn::String ns::[String] pm::[Decorated ProductionModifierSpec]
+{
+  top.actionCode = findProductionAction(pm);
+}
+
+function findProductionAction
+String ::= l::[Decorated ProductionModifierSpec]{
+  return if null(l) then "" else if head(l).actionCode != "" then head(l).actionCode else findProductionAction(tail(l));
+}
+
 --------------------------------------------------------------------------------
 -- Making children available in production action blocks
 
@@ -156,22 +147,5 @@ aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::Type
 {
   top.actionDefs = addActionChildDcl(top.grammarName, t.location, fName, t.typerep, emptyDefs());
-}
-
-abstract production actionChildReference
-top::Expr ::= q::Decorated QName
-{
-  top.pp = q.pp; 
-  top.location = q.location;
-
-  top.errors := []; -- Should only ever be in scope when valid
-
-  top.typerep = q.lookupValue.typerep;
-
-  top.isAppReference = false;
-  top.appReference = "";
-  top.translation = "((" ++ q.lookupValue.typerep.transType ++ ")((common.Node)RESULT).getChild(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName ++ "))";
-
-  top.upSubst = top.downSubst;
 }
 

@@ -1,14 +1,9 @@
 grammar silver:translation:java:concrete_syntax:copper;
-import silver:translation:java:core;
-
-import silver:definition:concrete_syntax;
-import silver:definition:core;
-import silver:definition:env;
-import silver:analysis:typechecking:core;
-import silver:definition:type;
-import silver:definition:type:syntax;
 
 terminal Disambiguation_kwd 'disambiguate' lexer classes {KEYWORD};
+
+synthesized attribute disambiguationGroupDcls :: [Decorated DisambiguationGroupSpec];
+attribute disambiguationGroupDcls occurs on Root, RootSpec, AGDcls, AGDcl;
 
 -- Separate 'TermPrecList' syntax if proper type-checking is made possible.
 concrete production disambiguationGroupDcl
@@ -26,25 +21,10 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
   acode.signature = namedNamedSignature(top.grammarName ++ ":__disam" ++ toString($1.line));
 
   acode.blockContext = disambiguationContext();
+
+  top.disambiguationGroupDcls = [disambiguationGroupSpec(terms.precTermList,acode.actionCode)];
   
   forwards to agDclDefault();
 }
 
-abstract production pluckTerminalReference
-top::Expr ::= q::Decorated QName
-{
-  top.pp = q.pp; 
-  top.location = q.location;
-
-  top.errors := []; -- Should only be referenceable from a context where its valid.
-
-  top.typerep = errorType(); -- TODO: BUG: Need a real type here (AnyTerminalType or something)
-  
-  top.isAppReference = false;
-  top.appReference = "";
-  
-  top.translation = makeCopperName(q.lookupValue.fullName); -- Value right here?
-  
-  top.upSubst = top.downSubst;
-}
 

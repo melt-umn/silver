@@ -1,15 +1,17 @@
 grammar silver:translation:java:concrete_syntax:copper;
 
-import silver:definition:core;
-import silver:definition:concrete_syntax;
-import silver:definition:env;
-import silver:translation:java:core;
-import silver:translation:java:type;
-import silver:analysis:typechecking:core;
-
-import silver:util;
-
 terminal Layout_kwd 'layout' lexer classes {KEYWORD};
+
+concrete production productionModifierLayout
+top::ProductionModifier ::= 'layout' '{' terms::TermPrecList '}'
+{
+  top.pp = "layout {" ++ terms.pp ++ "}";
+  top.location = loc(top.file, $1.line, $1.column);
+
+  top.productionModifiers = [layoutProductionModifierSpec(terms.precTermList)];
+  top.errors := terms.errors;
+}
+
 
 synthesized attribute customLayout::[String] occurs on RHSSpec, ProductionModifierSpec;
 synthesized attribute hasCustomLayout::Boolean occurs on RHSSpec, ProductionModifierSpec;
@@ -50,12 +52,3 @@ function findCustomLayout
   return if null(l) then [] else if head(l).hasCustomLayout then [head(l).customLayout] else findCustomLayout(tail(l));
 }
 
-concrete production productionModifierLayout
-top::ProductionModifier ::= 'layout' '{' terms::TermPrecList '}'
-{
-  top.pp = "layout {" ++ terms.pp ++ "}";
-  top.location = loc(top.file, $1.line, $1.column);
-
-  top.productionModifiers = [layoutProductionModifierSpec(terms.precTermList)];
-  top.errors := terms.errors;
-}

@@ -1,16 +1,8 @@
 grammar silver:translation:java:concrete_syntax:copper;
-import silver:translation:java:core;
-import silver:translation:java:driver;
-import silver:translation:java:command;
+
 import silver:driver;
+import silver:translation:java:driver;
 
-import silver:definition:core hiding grammarName;
-import silver:definition:env;
-import silver:definition:concrete_syntax;
-import silver:definition:type;
-import silver:definition:type:syntax;
-
-import silver:util;
 import silver:util:command;
 
 synthesized attribute forceCopperDump :: Boolean occurs on Command;

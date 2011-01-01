@@ -1,11 +1,4 @@
 grammar silver:translation:java:concrete_syntax:copper;
-import silver:definition:core;
-import silver:definition:concrete_syntax;
-import silver:definition:env;
-import silver:translation:java:core hiding makeName;
-import silver:translation:java:type;
-
-import silver:util;
 
 import silver:definition:regex;
 
