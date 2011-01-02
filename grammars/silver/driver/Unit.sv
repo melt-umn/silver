@@ -83,11 +83,18 @@ IO ::= iIn::IO r::Decorated RootSpec genPath::String
   local attribute pathName :: String;
   pathName = genPath ++ "src/" ++ substitute("/", ":", r.impliedName) ++ "/";
 
-  local attribute mkio :: IO;
-  mkio = mkdir(pathName, iIn).io;
+  local attribute mkiotest :: IOVal<Boolean>;
+  mkiotest = isDirectory(pathName, iIn);
+  
+  local attribute mkio :: IOVal<Boolean>;
+  mkio = if mkiotest.iovalue
+         then mkiotest
+         else mkdir(pathName, mkiotest.io);
   
   local attribute pr :: IO;
-  pr = print("\t[" ++ r.impliedName ++ "]\n", mkio);
+  pr = if mkio.iovalue
+       then print("\t[" ++ r.impliedName ++ "]\n", mkio.io)
+       else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ pathName ++ "\nWarning: if some interface file write were successful, but others not, Silver's temporaries are in an inconsistent state. Use the --clean flag next run.\n\n", mkio.io));
   
   local attribute rm :: IO;
   rm = deleteStaleData(pr, genPath, r.impliedName);
