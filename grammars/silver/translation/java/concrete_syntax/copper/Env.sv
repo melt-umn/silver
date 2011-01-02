@@ -44,6 +44,12 @@ Defs ::= sg::String sl::Decorated Location fn::String defs::Defs
   return consValueDef(defaultEnvItem(decorate pluckTermDcl(sg,sl,fn) with {}), defs);
 }
 
+function addDisambigLexemeDcl
+Defs ::= sg::String sl::Decorated Location defs::Defs
+{
+  return consValueDef(defaultEnvItem(decorate disambigLexemeDcl(sg,sl) with {}), defs);
+}
+
 function addLexerClassDcl
 Defs ::= sg::String sl::Decorated Location fn::String tst::[String] td::[String] defs::Defs
 {

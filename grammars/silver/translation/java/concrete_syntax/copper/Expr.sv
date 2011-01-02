@@ -35,6 +35,24 @@ top::Expr ::= q::Decorated QName
   top.upSubst = top.downSubst;
 }
 
+abstract production disambigLexemeReference
+top::Expr ::= q::Decorated QName
+{
+  top.pp = q.pp; 
+  top.location = q.location;
+
+  top.errors := []; -- Should only ever be in scope when valid
+
+  top.typerep = stringTypeExp();
+  
+  top.isAppReference = false;
+  top.appReference = "";
+  
+  top.translation = "new common.StringCatter(lexeme)";
+  
+  top.upSubst = top.downSubst;
+}
+
 abstract production parserAttributeReference
 top::Expr ::= q::Decorated QName
 {
