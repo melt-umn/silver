@@ -75,7 +75,6 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.pp = gdcl.pp ++ "\n\n" ++ ms.pp ++ "\n\n" ++ ims.pp ++ "\n\n" ++ ags.pp;
   top.location = gdcl.location;
   top.declaredName = gdcl.declaredName;
-  top.impliedName = top.grammarName;
 
   top.moduleNames = allImports.moduleNames ++ ms.moduleNames ++ ags.moduleNames;
 

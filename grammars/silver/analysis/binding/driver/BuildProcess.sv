@@ -29,7 +29,7 @@ top::Unit ::= specs::[Decorated RootSpec]
   local attribute i :: IO;
   i = if null(es) && null(head(specs).warnings)
       then top.ioIn
-      else print("Errors for : " ++ head(specs).impliedName ++ "\n" ++ foldMessages(es ++ head(specs).warnings) ++ "\n\n", top.ioIn);
+      else print("Errors for : " ++ head(specs).declaredName ++ "\n" ++ foldMessages(es ++ head(specs).warnings) ++ "\n\n", top.ioIn);
 
   local attribute recurse :: Unit;
   recurse = printAllBindingErrorsHelp(tail(specs));

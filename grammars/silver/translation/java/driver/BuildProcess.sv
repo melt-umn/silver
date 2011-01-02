@@ -73,7 +73,7 @@ IO ::= i::IO r::Decorated RootSpec a::Decorated Command extras::[String] silverg
   specLocation = silvergen ++ "/src/" ++ package; 
 
   local attribute mki :: IO;
-  mki = writeFile(specLocation ++ "Init.java", makeInit(r, if a.grammarName == r.impliedName then extras else []), printio);
+  mki = writeFile(specLocation ++ "Init.java", makeInit(r, if a.grammarName == r.declaredName then extras else []), printio);
 
   local attribute mains :: [Decorated DclInfo];
   mains = getValueDcl(r.declaredName ++ ":main", toEnv(r.defs));

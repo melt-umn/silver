@@ -1,23 +1,13 @@
 grammar silver:definition:core;
 
 synthesized attribute interface :: Boolean;
-synthesized attribute impliedName :: String;
 
---TODO location?
-attribute location, importedDefs, warnings, errors, interface, impliedName occurs on RootSpec;
-
-aspect production unparseRootSpec
-top::RootSpecUnparse ::= r::Decorated RootSpec
-{
-  unparses <- ["impliedName " ++ quoteString(r.impliedName)];
-}
+attribute importedDefs, warnings, errors, interface occurs on RootSpec;
 
 aspect production i_emptyRootSpec
 top::RootSpec ::= 
 {
   top.interface =  false;
-  top.impliedName = "";
-  top.location = loc("", -1, -1);
 
   top.importedDefs = emptyDefs();
   top.errors := [];
@@ -35,9 +25,7 @@ top::RootSpec ::=  c1::Decorated Root
   top.interface = false;
 
   top.unparse = unparseRootSpec(top).unparse;
-  top.location = c1.location;
   top.declaredName = c1.declaredName;
-  top.impliedName = c1.impliedName;
   top.moduleNames = makeSet(c1.moduleNames);
 
   top.importedDefs = c1.importedDefs;
@@ -74,9 +62,7 @@ top::RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
   top.interface = c1.interface || c2.interface;
 
   top.unparse = unparseRootSpec(top).unparse;
-  top.location = c1.location;
   top.declaredName = c1.declaredName;
-  top.impliedName = c1.impliedName;
   top.moduleNames = makeSet(c1.moduleNames ++ c2.moduleNames);
 
   top.importedDefs = appendDefs(c1.importedDefs, c2.importedDefs);
@@ -89,3 +75,4 @@ top::RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
 
   forwards to i_emptyRootSpec();
 }
+
