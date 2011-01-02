@@ -9,6 +9,8 @@ package common;
  * @see Thunk
  */
 public final class RealThunk {
+	// TODO: Maybe we should anon subclass thunk, rather than using thunk with a anon Lazy
+	// TODO: genericize it?
 	private DecoratedNode context;
 	private Object data;
 	
