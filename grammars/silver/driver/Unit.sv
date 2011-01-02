@@ -94,7 +94,7 @@ IO ::= iIn::IO r::Decorated RootSpec genPath::String
   local attribute pr :: IO;
   pr = if mkio.iovalue
        then print("\t[" ++ r.impliedName ++ "]\n", mkio.io)
-       else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ pathName ++ "\nWarning: if some interface file write were successful, but others not, Silver's temporaries are in an inconsistent state. Use the --clean flag next run.\n\n", mkio.io));
+       else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ pathName ++ "\nWarning: if some interface file writes were successful, but others not, Silver's temporaries are in an inconsistent state. Use the --clean flag next run.\n\n", mkio.io));
   
   local attribute rm :: IO;
   rm = deleteStaleData(pr, genPath, r.impliedName);
