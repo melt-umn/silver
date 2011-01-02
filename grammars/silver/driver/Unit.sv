@@ -81,7 +81,7 @@ function writeInterface
 IO ::= iIn::IO r::Decorated RootSpec genPath::String
 {
   local attribute pathName :: String;
-  pathName = genPath ++ "src/" ++ substitute("/", ":", r.impliedName) ++ "/";
+  pathName = genPath ++ "src/" ++ substitute("/", ":", r.declaredName) ++ "/";
 
   local attribute mkiotest :: IOVal<Boolean>;
   mkiotest = isDirectory(pathName, iIn);
@@ -93,11 +93,11 @@ IO ::= iIn::IO r::Decorated RootSpec genPath::String
   
   local attribute pr :: IO;
   pr = if mkio.iovalue
-       then print("\t[" ++ r.impliedName ++ "]\n", mkio.io)
+       then print("\t[" ++ r.declaredName ++ "]\n", mkio.io)
        else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ pathName ++ "\nWarning: if some interface file writes were successful, but others not, Silver's temporaries are in an inconsistent state. Use the --clean flag next run.\n\n", mkio.io));
   
   local attribute rm :: IO;
-  rm = deleteStaleData(pr, genPath, r.impliedName);
+  rm = deleteStaleData(pr, genPath, r.declaredName);
   
   local attribute wr :: IO;
   wr = writeFile(pathName ++ "Silver.svi", r.unparse, rm);
