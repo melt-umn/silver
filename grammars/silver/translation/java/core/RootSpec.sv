@@ -8,7 +8,7 @@ grammar silver:translation:java:core;
  -}
 synthesized attribute javaClasses :: [[String]];
 {--
- - Early initializers:
+ - Early initializers: occurs.add, local's inh attr map creation, decorators.add, collection object creation
  -}
 synthesized attribute setupInh :: String with ++;
 {--
@@ -21,7 +21,7 @@ synthesized attribute initProd :: String with ++;
  -}
 synthesized attribute initValues :: String with ++;
 {--
- - Late initializers. Decorators, so far.
+ - Late initializers. Decorator application
  -}
 synthesized attribute postInit :: String with ++;
 synthesized attribute translation :: String;
