@@ -247,6 +247,6 @@ top::IProductionModifierSpec ::= 'operator' n::Name {
 
 concrete production aRootParsers
 top::IRootSpecPart ::= t::ParserTerm n::Name ',' s::Name ',' gs::INames {
-  top.parserDcls = [parserSpecFromList(n.aname,s.aname,gs.names, top.compiledGrammars)];
+  top.parserDcls = [parserSpecFromList(loc(t.filename,t.line,t.column), n.aname, s.aname, gs.names, top.compiledGrammars)];
   forwards to aRootSpecDefault();
 }
