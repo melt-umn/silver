@@ -15,7 +15,9 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
   top.warnings := acode.warnings;
   top.errors := acode.errors ++ terms.errors;
 
-  acode.env = newScopeEnv(appendDefs(acode.defs,terms.defs), top.env); -- terminal attrs?
+  acode.env = newScopeEnv(addDisambigLexemeDcl(top.grammarName, top.location,
+                                               appendDefs(acode.defs,terms.defs)),
+                          top.env);
 
   -- Give the group a name, deterministically, based on line number
   acode.signature = namedNamedSignature(top.grammarName ++ ":__disam" ++ toString($1.line));

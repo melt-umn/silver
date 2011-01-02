@@ -47,6 +47,24 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String
   forwards to defaultDcl();
 }
 
+abstract production disambigLexemeDcl
+top::DclInfo ::= sg::String sl::Decorated Location
+{
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = "lexeme";
+
+  top.unparse = error("Internal error: disambig-lexeme should never appear in interface files.");
+  
+  top.typerep = stringTypeExp();
+  
+  top.refDispatcher = disambigLexemeReference;
+  top.defDispatcher = errorValueDef;
+  top.defLHSDispatcher = errorDefLHS;
+
+  forwards to defaultDcl();
+}
+
 abstract production lexerClassDcl
 top::DclInfo ::= sg::String sl::Decorated Location fn::String tst::[String] td::[String]
 {
