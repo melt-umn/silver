@@ -1,7 +1,6 @@
 package common;
 
 import java.io.*;
-import java.lang.reflect.Constructor;
 import java.util.*;
 
 
@@ -284,7 +283,7 @@ public class Util {
 	}
 	
 	public static void printStackCauses(Throwable e) {
-		System.err.println("An error occured.  Silver stack trace follows. (To see full traces including java elements, SILVERTRACE=1)\n");
+		System.err.println("\nAn error occured.  Silver stack trace follows. (To see full traces including java elements, SILVERTRACE=1)\n");
 		
 		if(! "1".equals(System.getenv("SILVERTRACE"))) {
 			Throwable t = e;
@@ -292,10 +291,12 @@ public class Util {
 				StackTraceElement st[] = t.getStackTrace();
 				
 				String msg = t.getLocalizedMessage();
-				if(msg == null)
+				if(msg == null) // Some exceptions have no message... apparently.
 					msg = t.toString();
 				
-				if(st[0].getClassName().startsWith("common."))
+				if(st.length == 0) // Some exceptions don't seem to occur anywhere... somehow.
+					System.err.println("(??): " + msg);
+				else if(st[0].getClassName().startsWith("common."))
 					// This will give error messages like (DN.146) corresponding to DecoratedNode.java:146
 					System.err.println("(" + st[0].getFileName().replaceAll("[a-z]", "") + st[0].getLineNumber() + "): " + msg);
 				else

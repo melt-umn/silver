@@ -30,7 +30,7 @@ public class StringCatter {
 	}
 	
 	public StringCatter append(StringCatter sc) {
-		str = new StrAppend(str,sc.str);
+		str = new StrAppend(str,sc.str); // TODO: Bizzre mutation! WTH
 		return this;
 	}
 	@Override
