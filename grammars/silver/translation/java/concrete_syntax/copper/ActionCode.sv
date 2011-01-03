@@ -32,6 +32,9 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   top.errors <- acode.errors;
   top.warnings <- acode.warnings;
 
+  -- note that we're not merging the typing contexts between action blocks and productions
+  -- this seems reasonable since inference should never have effects across this border...
+
   forwards to concreteProductionDclModifiers($1, $2, id, ns, pm, body);
 }
 
@@ -53,6 +56,7 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
   top.warnings := stmts.warnings;
   
   stmts.downSubst = emptySubst();
+  stmts.finalSubst = stmts.upSubst;
 }
 
 concrete production actionCodeEmpty_c
