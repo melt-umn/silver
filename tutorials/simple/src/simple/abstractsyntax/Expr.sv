@@ -60,8 +60,9 @@ e::Expr ::= id::Id_t
               end ;
 
   local attribute errorMsg :: String ;
-  errorMsg = "Line " ++ toString(id.line) ++ ", column " ++ toString(id.column)
-             ++ ": variable \"" ++ id.lexeme ++ "\" was not declared.\n" ;
+  errorMsg = "Line " ++ toString(id.line) ++ ", column " ++ 
+             toString(id.column) ++ ": variable \"" ++ id.lexeme ++ 
+             "\" was not declared.\n" ;
 }
 
 
