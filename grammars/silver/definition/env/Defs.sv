@@ -18,11 +18,8 @@ synthesized attribute occursList :: [Decorated DclInfo];
 ----------------------------------------------------------------------------------------------------
 
 function unparseDefs
-String ::= d_un::Defs bv::[TyVar]
+String ::= d::Defs bv::[TyVar]
 {
-  production attribute d :: Decorated Defs;
-  d = decorate d_un with {};
-  
   production attribute dclinfos::[Decorated DclInfo] with ++;
   dclinfos := mapGetDcls(d.typeList) ++
               mapGetDcls(d.valueList) ++
@@ -56,13 +53,8 @@ top::Defs ::=
 }
 
 abstract production appendDefs 
-top::Defs ::= e1_un::Defs e2_un::Defs
+top::Defs ::= e1::Defs e2::Defs
 {
-  production attribute e1 :: Decorated Defs;
-  e1 = decorate e1_un with {};
-  production attribute e2 :: Decorated Defs;
-  e2 = decorate e2_un with {};
-  
   top.typeList = e1.typeList ++ e2.typeList;
   top.valueList = e1.valueList ++ e2.valueList;
   top.attrList = e1.attrList ++ e2.attrList;

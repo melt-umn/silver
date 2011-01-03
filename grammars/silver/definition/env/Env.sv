@@ -47,11 +47,8 @@ Decorated Env ::= d::Defs
   return decorate i_toEnv(d) with {};
 }
 abstract production i_toEnv
-top::Env ::= d_un::Defs
+top::Env ::= d::Defs
 {
-  production attribute d :: Decorated Defs;
-  d = decorate d_un with {};
-  
   top.typeTree = oneEnvScope(buildTree(d.typeList));
   top.valueTree = [oneEnvScope(buildTree(d.valueList))];
   top.attrTree = oneEnvScope(buildTree(d.attrList));
@@ -84,11 +81,8 @@ Decorated Env ::= e1::Defs  e2::Decorated Env
   return decorate i_newScopeEnv(e1, e2) with {};
 }
 abstract production i_newScopeEnv
-top::Env ::= d_un::Defs  e::Decorated Env
+top::Env ::= d::Defs  e::Decorated Env
 {
-  production attribute d :: Decorated Defs;
-  d = decorate d_un with {};
-  
   top.typeTree = consEnvScope(buildTree(d.typeList), e.typeTree);
   top.valueTree = oneEnvScope(buildTree(d.valueList)) :: e.valueTree; -- new scope of values
   top.attrTree = consEnvScope(buildTree(d.attrList), e.attrTree);
