@@ -220,8 +220,9 @@ top::ModuleName ::= pkg::QName
   top.location = pkg.location;
   top.moduleNames = [pkg.name];
 
-  production attribute m :: Decorated Module;
-  m = decorate module(top.compiledGrammars, pkg, "", [], [], []) with {grammarName = top.grammarName;};
+  production attribute m :: Module;
+  m = module(top.compiledGrammars, pkg, "", [], [], []);
+  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -234,8 +235,9 @@ top::ModuleExpr ::= pkg::QName
   top.location = pkg.location;
   top.moduleNames = [pkg.name];
 
-  production attribute m :: Decorated Module;
-  m = decorate module(top.compiledGrammars, pkg, "", [], [], []) with {grammarName = top.grammarName;};
+  production attribute m :: Module;
+  m = module(top.compiledGrammars, pkg, "", [], [], []);
+  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -248,8 +250,9 @@ top::ModuleExpr ::= pkg::QName 'with' wc::WithElems
   top.location = pkg.location;
   top.moduleNames = [pkg.name];
 
-  production attribute m :: Decorated Module;
-  m = decorate module(top.compiledGrammars, pkg, "", [], [], wc.envMaps) with {grammarName = top.grammarName;};
+  production attribute m :: Module;
+  m = module(top.compiledGrammars, pkg, "", [], [], wc.envMaps);
+  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -262,8 +265,9 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList
   top.location = pkg.location;
   top.moduleNames = [pkg.name];
 
-  production attribute m :: Decorated Module;
-  m = decorate module(top.compiledGrammars, pkg, "", ns.names, [], []) with {grammarName = top.grammarName;};
+  production attribute m :: Module;
+  m = module(top.compiledGrammars, pkg, "", ns.names, [], []);
+  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -276,8 +280,9 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList 'with' wc::WithElems
   top.location = pkg.location;
   top.moduleNames = [pkg.name];
 
-  production attribute m :: Decorated Module;
-  m = decorate module(top.compiledGrammars, pkg, "", ns.names, [], wc.envMaps) with {grammarName = top.grammarName;};
+  production attribute m :: Module;
+  m = module(top.compiledGrammars, pkg, "", ns.names, [], wc.envMaps);
+  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -290,8 +295,9 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList
   top.location = pkg.location;
   top.moduleNames = [pkg.name];
 
-  production attribute m :: Decorated Module;
-  m = decorate module(top.compiledGrammars, pkg, "", [], ns.names, []) with {grammarName = top.grammarName;};
+  production attribute m :: Module;
+  m = module(top.compiledGrammars, pkg, "", [], ns.names, []);
+  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -304,8 +310,9 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList 'with' wc::WithElems
   top.location = pkg.location;
   top.moduleNames = [pkg.name];
 
-  production attribute m :: Decorated Module;
-  m = decorate module(top.compiledGrammars, pkg, "", [], ns.names, wc.envMaps) with {grammarName = top.grammarName;};
+  production attribute m :: Module;
+  m = module(top.compiledGrammars, pkg, "", [], ns.names, wc.envMaps);
+  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -318,8 +325,9 @@ top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
   top.location = pkg1.location;
   top.moduleNames = [pkg1.name];
 
-  production attribute m :: Decorated Module;
-  m = decorate module(top.compiledGrammars, pkg1, pkg2.name, [], [], []) with {grammarName = top.grammarName;};
+  production attribute m :: Module;
+  m = module(top.compiledGrammars, pkg1, pkg2.name, [], [], []);
+  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
