@@ -1,0 +1,76 @@
+The new Silver testing harness
+------------------------------
+A new test harness for running tests on Silver grammars is being
+developed to replace the previous testing system which was fragile and
+limited in the kinds of tests that could be easily speicified for it.
+
+The new harness is written in Silver and currenlty has very limited
+functionality.  As before, the test harness searches directories for
+files with the ".test" suffix and performs the tests specified in
+them.
+
+Currenty two forms of tests are supported: a command-line test and an
+interface to the simple tests specified as "TestSuite".
+
+-- Command-line tests
+---------------------
+This form of test runs a command-line command and uses the return code
+to determine if the test succeeded or failed.  This kind if test is
+specified in a .test file as follows:
+   run:  ... command to run ...
+The standard output and error streams are piped into a file whose name
+is the name of the test file with the suffix ".output".  Another form
+that requires the command to be in double quotes is also supported,
+but may soon be removed: 
+   run  "... command to run ..."
+
+For example, the file build.test in the tutorials:dc grammar packaged
+with Silver has the contents
+   run: ./silver-compile
+When the test harness processes this file it runs the specified
+command, from the directory that contains the .test file.  The
+standard output and error streams are piped into build.test.output.
+
+-- TestSuite interface tests
+----------------------------
+These tests have the form
+  test suite <name of Java jar implementing tests>
+and use the TestSuite productions defined in edu:umn:cs:melt:testing.
+A Java jar file must be specified and does littel more than run the
+jar with no command-line parameters. The jar should be such that its
+return code the number of tess that failed in the test suite.  An
+example of this can be found in 
+ edu:umn:cs:melt:miniHaskell:host:tests.
+Ideally the Main.sv and resulting .jar files should be generated
+automatically.  More to come on this type of test.
+
+-- Running the testing harness
+------------------------------
+The grammar sandbox:testharness is in the grammars repository, for
+now, and a silver-compile file is there that will build the
+appropriate .jar file.  Run this jar with the command line arguments
+being the directories that one wants to tests.  A sample script,
+runTests, is in the directory as an example.  A few sample tests are
+shown in the sampleTests directory.
+
+-- Legacy tests files
+---------------------
+There still exist .test files for the old test harness in a number of
+grammars.  The new test system will attempt to process them, fail to
+parse them and report it as a failed test.  To prevent this, one can
+put a file with the name "tests.skip" in any directory that the test
+harness should skip.  Note that any subdirectories of a directory that
+contains a "tests.skip" file will also be skipped.
+
+
+
+-- Specifying tests in Silver
+-----------------------------
+
+In Silver, we can specify tests in a nice convenient way
+ equality_test ( 1+2, 2+1, Integer, test_suite ) ;
+
+There are certainly nicer ways to do this and more types of tests that
+we'd like to specify.
+
+One can run silver to build a compiler to to generate
