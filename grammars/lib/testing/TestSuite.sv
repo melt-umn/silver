@@ -1,4 +1,4 @@
-grammar edu:umn:cs:melt:testing ;
+grammar lib:testing ;
 
 nonterminal Test with ioIn, ioOut ;
 nonterminal TestSuite with ioIn, ioOut ;

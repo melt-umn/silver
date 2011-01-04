@@ -1,4 +1,4 @@
-grammar edu:umn:cs:melt:testing ;
+grammar lib:testing ;
 
 function main
 IOVal<Integer> ::= args::[String] ioIn::IO

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-java -jar edu.umn.cs.melt.testing.jar \
+java -jar lib.testing.jar \
  tests/core \
  /project/melt3/People/evw/Melt_SVN_http/silver/trunk/tutorials
 

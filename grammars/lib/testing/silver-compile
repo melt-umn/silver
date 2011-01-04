@@ -6,12 +6,12 @@
 # invoke as               ./silver-compile
 # or add arguments, like  ./silver-compile --clean
 
-export GRAMMAR_PATH="../../../../../../grammars"
-export  SILVER_HOME="../../../../../../silver/trunk/jars"
+##export GRAMMAR_PATH="../../../../../../grammars"
+export  SILVER_HOME="../../../jars"
 
 java -Xss8M -Xmx1000M -jar $SILVER_HOME/RunSilver.jar \
      $@ \
-     edu:umn:cs:melt:testing \
+     lib:testing \
      && ant
 
 #export SILVER_HOME=../../../../../../../Melt_SVN_http/silver/trunk/jars

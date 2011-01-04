@@ -1,6 +1,6 @@
-grammar edu:umn:cs:melt:testing:tests:core ;
+grammar lib:testing:tests:core ;
 
-import edu:umn:cs:melt:testing ;
+import lib:testing ;
 
 mainTestSuite core_tests ;
 
