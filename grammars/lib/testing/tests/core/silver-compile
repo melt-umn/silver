@@ -5,10 +5,9 @@
 # (other than ensuring that the testing extension has been
 #  compiled into Silver).
 
-export SILVER_HOME=../../../../../../../../../Melt_SVN_http/silver/trunk/jars/
+export SILVER_HOME=../../../../../jars/
 
-
-time java -jar $SILVER_HOME/RunSilver.jar $1  -o tests.core.jar \
-     edu:umn:cs:melt:testing:tests:core \
+java -jar $SILVER_HOME/RunSilver.jar $1  -o tests.core.jar \
+     lib:testing:tests:core \
      && ant
 

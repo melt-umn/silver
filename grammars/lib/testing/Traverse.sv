@@ -1,4 +1,4 @@
-grammar edu:umn:cs:melt:testing ;
+grammar lib:testing ;
 
 function traverseDirectoriesAndPerform
 IOVal<a> ::= startDir::String paths::[String] 

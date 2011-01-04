@@ -1,4 +1,4 @@
-grammar edu:umn:cs:melt:testing ;
+grammar lib:testing ;
 
 {-
  run "java -jar ../....."
@@ -25,7 +25,7 @@ inherited attribute testFileDir :: String ;
 
 nonterminal Run with testFileName, testFileDir, ioInput, ioResult ;
 
-parser parse::Run { edu:umn:cs:melt:testing ; }
+parser parse::Run { lib:testing ; }
 
 concrete production run_alternate
 r::Run ::= run_kwd::'run' ':' rest::CommandAlt_t

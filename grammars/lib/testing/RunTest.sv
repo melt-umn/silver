@@ -1,4 +1,4 @@
-grammar edu:umn:cs:melt:testing ;
+grammar lib:testing ;
 
 nonterminal TestingResults with msg, numTests, numPassed, numFailed ;
 
