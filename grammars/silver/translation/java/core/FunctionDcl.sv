@@ -68,16 +68,6 @@ makeStaticDcls(className, whatSig.inputElements) ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic common.Lazy getForward() {\n" ++
-"\t\tthrow new RuntimeException(\"Functions do not forward!\");\n" ++
-"\t}\n\n" ++
-
-"\t@Override\n" ++
-"\tpublic common.Lazy getForwardInh(String name) {\n" ++
-"\t\tthrow new RuntimeException(\"Functions do not forward!\");\n" ++
-"\t}\n\n" ++
-
-"\t@Override\n" ++
 "\tpublic common.Lazy getLocal(String name) {\n" ++
 "\t\treturn localAttributes.get(name);\n" ++
 "\t}\n\n" ++

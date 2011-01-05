@@ -74,7 +74,7 @@ top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QNa
    -}
 
   -- Now, finally, make sure we're not "redefining" the occurs.
-  local attribute occursCheck :: [Decorated DclInfo];
+  production attribute occursCheck :: [Decorated DclInfo];
   occursCheck = getOccursDcl(a.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
   
   top.errors <- if length(occursCheck) > 1

@@ -45,7 +45,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
   top.attrBaseDefDispatcher = synBaseColAttributeDef;
   top.attrAppendDefDispatcher = synAppendColAttributeDef;
 
-  forwards to defaultDcl();
+  forwards to synDcl(sg,sl,fn,bound,ty);
 }
 abstract production inhCollectionDcl
 top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp o::Operation
@@ -68,7 +68,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
   top.attrBaseDefDispatcher = inhBaseColAttributeDef;
   top.attrAppendDefDispatcher = inhAppendColAttributeDef;
 
-  forwards to defaultDcl();
+  forwards to inhDcl(sg,sl,fn,bound,ty);
 }
 
 abstract production localCollectionDcl
@@ -92,7 +92,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp o::Ope
   top.baseDefDispatcher = baseCollectionValueDef;
   top.appendDefDispatcher = appendCollectionValueDef;
 
-  forwards to defaultDcl();
+  forwards to localDcl(sg,sl,fn,ty);
   
   top.substitutedDclInfo = localCollectionDcl(sg,sl,fn, performSubstitution(ty, top.givenSubstitution), o);
 }
