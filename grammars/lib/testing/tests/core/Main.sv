@@ -1,6 +1,7 @@
 grammar lib:testing:tests:core ;
 
 import lib:testing ;
+import lib:extcore ;
 
 mainTestSuite core_tests ;
 
