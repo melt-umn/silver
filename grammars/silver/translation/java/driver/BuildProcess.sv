@@ -94,6 +94,7 @@ String ::= r::Decorated RootSpec{
 
 "public class Main {\n" ++
 "\tpublic static void main(String[] args) {\n" ++
+"\t\t" ++ package ++ ".Init.initAllStatics();\n" ++
 "\t\t" ++ package ++ ".Init.init();\n" ++
 "\t\t" ++ package ++ ".Init.postInit();\n" ++
 "\t\ttry {\n" ++
@@ -239,8 +240,18 @@ String ::= r::Decorated RootSpec extras::[String]{
 
 "public class Init{\n\n" ++
 
+"\tprivate static boolean preInit = false;\n" ++
 "\tprivate static boolean init = false;\n" ++
 "\tprivate static boolean postInit = false;\n\n" ++
+
+"\tpublic static void initAllStatics(){\n" ++
+"\t\tif(" ++ className ++ ".preInit) return;\n\n" ++
+
+"\t\t" ++ className ++ ".preInit = true;\n\n" ++
+
+makeOthers(r.moduleNames ++ extras, "initAllStatics") ++ "\n" ++
+"\t}\n\n" ++
+
 
 "\tpublic static void init(){\n" ++
 "\t\tif(" ++ className ++ ".init) return;\n\n" ++
