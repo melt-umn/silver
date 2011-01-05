@@ -269,6 +269,9 @@ r.setupInh ++
 r.initProd ++
 "\t}\n\n" ++
 
+r.initWeaving ++ 
+r.valueWeaving ++
+
 r.initValues ++
 
 "}\n";

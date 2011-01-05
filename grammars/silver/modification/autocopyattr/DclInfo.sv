@@ -20,7 +20,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
   -- the core dispatchers
   top.attrAccessDispatcher = inhDNTAccessDispatcher;
   top.attrDefDispatcher = inheritedAttributeDef;
-  forwards to defaultDcl();
+  forwards to inhDcl(sg,sl,fn,bound,ty);
 }
 
 -- Defs:
