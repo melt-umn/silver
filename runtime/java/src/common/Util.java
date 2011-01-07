@@ -12,16 +12,16 @@ import java.util.*;
  * 
  * @author tedinski, bodin
  */
-public class Util {
+public final class Util {
 	/**
 	 * Turns a list of names and values into a map.
 	 * 
 	 * <p>Used by the 'decorate ... with { THIS PART }' syntax.
 	 */
-	public static <K, V> Map<K, V> populateMap(K[] names, V[] values) {
-		Map<K, V> result = new TreeMap<K, V>();
-		for (int i = 0; i < names.length; i++) {
-			result.put(names[i], values[i]);
+	public static Lazy[] populateInh(final int size, final int[] idx, final Lazy[] val) {
+		final Lazy[] result = new Lazy[size];
+		for(int i = 0; i < idx.length; i++) {
+			result[idx[i]] = val[i];
 		}
 		return result;
 	}

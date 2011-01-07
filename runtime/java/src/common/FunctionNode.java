@@ -15,11 +15,31 @@ public abstract class FunctionNode extends Node {
 	// TODO: we should make doReturn an interface, perhaps?
 	public Object doReturn() {
 		
-		if(getSynthesized("__return") == null) {
+		if(getSynthesized(0) == null) {
 			throw new RuntimeException("Function " + getName() + " has no return value!");
 		}
 		
-		DecoratedNode dn = this.decorate();
-		return dn.synthesized("__return");
+		return this.decorate().synthesized(0);
 	}
+
+	@Override
+	public final Lazy getForward() {
+		throw new RuntimeException("Functions do not forward!");
+	}
+
+	@Override
+	public final Lazy getForwardInh(final int index) {
+		throw new RuntimeException("Functions do not forward!");
+	}
+
+	@Override
+	public final int getNumberOfInhAttrs() {
+		return 0;
+	}
+
+	@Override
+	public final int getNumberOfSynAttrs() {
+		return 1;
+	}
+	
 }
