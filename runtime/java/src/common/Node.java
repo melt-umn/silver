@@ -1,7 +1,5 @@
 package common;
 
-import java.util.*;
-
 /**
  * Node represents undecorated nodes.  That is, we have children, but no inherited attributes, yet.
  * 
@@ -16,7 +14,7 @@ public abstract class Node {
 	
 	protected final Object[] children;
 	
-	protected Node(Object[] children) {
+	protected Node(final Object[] children) {
 		this.children = children;
 
 		// STATS: Uncomment to enable statistics
@@ -45,8 +43,8 @@ public abstract class Node {
 	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
 	 * @return A "decorated" form of this Node
 	 */
-	public DecoratedNode decorate(DecoratedNode parent) {
-		return decorate(parent, (Map<String, Lazy>)null);
+	public DecoratedNode decorate(final DecoratedNode parent) {
+		return decorate(parent, (Lazy[])null);
 	}
 
 	/**
@@ -56,9 +54,8 @@ public abstract class Node {
 	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @return A "decorated" form of this Node
 	 */
-	public DecoratedNode decorate(DecoratedNode parent, Map<String, Lazy> inhs) {
-		DecoratedNode d = new DecoratedNode(this, parent, inhs);
-		return d;
+	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
+		return new DecoratedNode(this, parent, inhs);
 	}
 
 	/**
@@ -68,9 +65,8 @@ public abstract class Node {
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
 	 * @return A "decorated" form of this Node 
 	 */
-	public DecoratedNode decorate(DecoratedNode parent, DecoratedNode fwdParent) {
-		DecoratedNode d = new DecoratedNode(this, parent, fwdParent);
-		return d;
+	public DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
+		return new DecoratedNode(this, parent, fwdParent);
 	}
 
 	/**
@@ -106,6 +102,15 @@ public abstract class Node {
 			return 0;
 		return children.length;
 	}
+	
+	/**
+	 * @return The number of inherited attributes that occur on this nonterminal type.
+	 */
+	public abstract int getNumberOfInhAttrs();
+	/**
+	 * @return The number of synthesized attributes that occur on this nonterminal type.
+	 */
+	public abstract int getNumberOfSynAttrs();
 
 	/**
 	 * @return The full name of this Node. (e.g. "silver:definition:core:baseExpr")
@@ -123,19 +128,19 @@ public abstract class Node {
 	 * @param name The inherited attribute requested by a forwarded-to Node. 
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of this attribute provided to the forward.
 	 */
-	public abstract Lazy getForwardInh(String name);
+	public abstract Lazy getForwardInh(final int index);
 
 	/**
 	 * @param name Any synthesized attribute on this Node
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of the attribute
 	 */
-	public abstract Lazy getSynthesized(String name);
+	public abstract Lazy getSynthesized(final int index);
 
 	/**
 	 * @param key The "key" object for something this Node has inherited attribute for. (For children, this is Integer, for locals, this is String.)
 	 * @return A Map defining the inherited attributes supplied to whatever the key is for. 
 	 */
-	public abstract Map<String, Lazy> getDefinedInheritedAttributes(Object key);
+	public abstract Lazy[] getDefinedInheritedAttributes(final Object key);
 
 	/**
 	 * @param name Any local attribute on this Node

@@ -27,9 +27,9 @@ public abstract class CollectionAttribute implements Lazy {
 	public CollectionAttribute() {
 		this.pieces = new ArrayList<Lazy>();
 	}
-	public CollectionAttribute(String name) {
+	public CollectionAttribute(final int index) {
 		this();
-		this.base = new BaseDefault(name);
+		this.base = new BaseDefault(index);
 	}
 
 	public ArrayList<Lazy> getPieces() {
@@ -43,21 +43,21 @@ public abstract class CollectionAttribute implements Lazy {
 	public abstract Object eval(DecoratedNode context);
 	
 	private static class BaseDefault implements Lazy {
-		private String name;
-		BaseDefault(String name) {
-			this.name=name;
+		private final int index;
+		BaseDefault(final int index) {
+			this.index=index;
 		}
 		@Override
 		public Object eval(DecoratedNode context) {
 			DecoratedNode n = context.forward();
 			if(n != null)
 				try {
-					return n.synthesized(name);
+					return n.synthesized(index);
 				} catch(Throwable t) {
-					throw new RuntimeException("Error evaluating base of collection attribute " + name + " via forward node",t);
+					throw new RuntimeException("Error evaluating base of collection attribute " + index + " via forward node",t);
 				}
 				
-			throw new RuntimeException("No base defined for collection attribute " + name);
+			throw new RuntimeException("No base defined for collection attribute " + index);
 		}
 		
 	}

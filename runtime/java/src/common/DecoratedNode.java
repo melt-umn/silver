@@ -52,14 +52,14 @@ public class DecoratedNode {
 	 * @see #inherited(String)
 	 * @see #inheritedAttributes
 	 */
-	protected final Map<String, Object> inheritedValues;
+	protected final Object[] inheritedValues;
 	/**
-	 * The cache of the synthesized and local attributes on this node.
+	 * The cache of the synthesized attributes on this node.
 	 * 
 	 * @see #synthesized(String)
 	 * @see #local(String)
 	 */
-	protected final Map<String, Object> synthesizedValues;
+	protected final Object[] synthesizedValues;
 
 	/**
 	 * The inherited attributes supplied to this DecoratedNode, to be evaluated with context 'parent'.
@@ -67,7 +67,7 @@ public class DecoratedNode {
 	 * @see #inherited(String)
 	 * @see #inheritedValues
 	 */
-	protected final Map<String, Lazy> inheritedAttributes;
+	protected final Lazy[] inheritedAttributes;
 
 	/**
 	 * An Ugly, horrifying hack for dealing with 'let's in Silver (needed due to pattern matching)
@@ -76,6 +76,11 @@ public class DecoratedNode {
 	 * @see #local(String)
 	 */
 	protected Map<String, Lazy> extraLocalAttributes;
+	
+	/**
+	 * A cache of the values of local attributes on this node. (incl. locals, lets and prod)
+	 */
+	protected final Map<String, Object> localValues;
 
 	
 	/**
@@ -90,8 +95,8 @@ public class DecoratedNode {
 	 * @param inhs The inherited attributes to decorate this node with.
 	 * @param forwardParent The node to request inherited attributes from instead of using 'inhs'.
 	 */
-	protected DecoratedNode(Node self, DecoratedNode parent,
-			Map<String, Lazy> inhs, DecoratedNode forwardParent) {
+	protected DecoratedNode(final Node self, final DecoratedNode parent,
+			final Lazy[] inhs, final DecoratedNode forwardParent) {
 		this.self = self;
 		this.parent = parent;
 		this.inheritedAttributes = inhs;
@@ -102,12 +107,15 @@ public class DecoratedNode {
 			this.childrenValues = new Object[self.getNumberOfChildren()];
 		else
 			this.childrenValues = null;
-		if(self instanceof FunctionNode)
-			this.inheritedValues = null;
+		if(self != null && self.getNumberOfInhAttrs() > 0)
+			this.inheritedValues = new Object[self.getNumberOfInhAttrs()];
 		else
-			this.inheritedValues = new TreeMap<String, Object>();
-		this.synthesizedValues = new TreeMap<String, Object>();
-		
+			this.inheritedValues = null;
+		if(self != null)
+			this.synthesizedValues = new Object[self.getNumberOfSynAttrs()];
+		else
+			this.synthesizedValues = null;
+		this.localValues = new TreeMap<String, Object>();
 		
 		// STATS: Uncomment to enable statistics
 		//Statistics.dnSpawn(self!=null?self.getClass():TopNode.class);
@@ -126,7 +134,7 @@ public class DecoratedNode {
 	 * @param parent The Node supplying the inherited attributes. (Not null)
 	 * @param inhs The inherited attributes being supplied to this node. (may be null)
 	 */
-	public DecoratedNode(Node self, DecoratedNode parent, Map<String, Lazy> inhs) {
+	public DecoratedNode(final Node self, final DecoratedNode parent, final Lazy[] inhs) {
 		this(self,parent,inhs,null);
 	}
 
@@ -139,7 +147,7 @@ public class DecoratedNode {
 	 * 
 	 * @see #inheritedForwarded(String)
 	 */
-	public DecoratedNode(Node self, DecoratedNode parent, DecoratedNode forwardParent) {
+	public DecoratedNode(final Node self, final DecoratedNode parent, final DecoratedNode forwardParent) {
 		this(self,parent,null,forwardParent);
 	}
 
@@ -151,32 +159,6 @@ public class DecoratedNode {
 	}
 
 	/**
-	 * Get the value of a child. If it is a Node, supply it with the attributes we have for it.
-	 * Caches values for re-use.
-	 * 
-	 * <p>Warning: unsafe now in the presence of type variables. (Might unexpectedly decorate!)
-	 * 
-	 * @param child The number of the child to obtain.
-	 * @return The value of the child.
-	 * @deprecated
-	 * @see #childAsIs(int)
-	 * @see #childDecorated(int)
-	 */
-	public Object child(int child){
-		Object o = this.childrenValues[child]; 
-		if(o == null) {
-			o = self.getChild(child); // Thunk evaluation is handled in Node
-			
-			if (o instanceof Node) {
-				o = ((Node)o).decorate(this, self.getDefinedInheritedAttributes(child));
-			}
-			
-			this.childrenValues[child] = o;
-		}
-		return o;
-	}
-
-	/**
 	 * Returns the child of this DecoratedNode, without potentially decorating it.
 	 * 
 	 * <p>Warning: While it is technically safe to mix calls to {@link #childAsIs} and {@link #childDecorated}
@@ -185,7 +167,7 @@ public class DecoratedNode {
 	 * @param child The number of the child to obtain.
 	 * @return The unmodified value of the child.
 	 */
-	public Object childAsIs(int child){
+	public Object childAsIs(final int child){
 		return self.getChild(child);
 	}
 	
@@ -199,7 +181,7 @@ public class DecoratedNode {
 	 * @param child The number of the child to obtain.
 	 * @return The decorated value of the child.
 	 */
-	public DecoratedNode childDecorated(int child){
+	public DecoratedNode childDecorated(final int child){
 		Object o = this.childrenValues[child]; 
 		if(o == null) {
 			o = self.getChild(child);
@@ -215,47 +197,6 @@ public class DecoratedNode {
 	}
 	
 	/**
-	 * Get the value of a local. If this is a Node, supply it with the attributes we have for it.
-	 * Caches values for re-use.
-	 * 
-	 * First, we look for "real" locals, and if that fails, we try the hacky {@link extraLocalAttributes}
-	 * field.
-	 * 
-	 * <p>Note: it's not currently possibly to avoid auto-decoration with this. But you can undo it afterward.
-	 * 
-	 * @param attribute The full name of the local to obtain.
-	 * @return The value of the local.
-	 * @deprecated
-	 * @see #localAsIs
-	 * @see #localDecorated
-	 */
-	public Object local(String attribute) {
-		Object o = this.synthesizedValues.get(attribute);
-		if(o == null) {
-			Lazy l = self.getLocal(attribute);
-			if(l == null && this.extraLocalAttributes != null) {
-				l = this.extraLocalAttributes.get(attribute);
-			}
-			if(l == null) {
-				throw new RuntimeException("Local attribute '" + attribute + "' is not defined in production '" + self.getName() + "'");
-			}
-			try {
-				o = l.eval(this);
-				if (o instanceof Node) {
-					o = ((Node)o).decorate(this, self.getDefinedInheritedAttributes(attribute));
-				}
-			} catch(Throwable t){
-				throw new RuntimeException("Error evaluating local attribute '" + attribute + "' in production '" + self.getName() + "'", t);
-			}
-			
-			// CACHE : comment out to disable caching for local attributes
-			// not recommended due to IO objects (IOString, etc)
-			this.synthesizedValues.put(attribute, o);
-		}
-		return o;
-	}
-
-	/**
 	 * Get the value of a local, caching it for re-use.
 	 * 
 	 * First, we look for "real" locals, and if that fails, we try the hacky {@link extraLocalAttributes}
@@ -266,8 +207,8 @@ public class DecoratedNode {
 	 * @param attribute The full name of the local to obtain.
 	 * @return The value of the local.
 	 */
-	public Object localAsIs(String attribute) {
-		Object o = this.synthesizedValues.get(attribute);
+	public Object localAsIs(final String attribute) {
+		Object o = this.localValues.get(attribute);
 		if(o == null) {
 			Lazy l = self.getLocal(attribute);
 			if(l == null && this.extraLocalAttributes != null) {
@@ -284,7 +225,7 @@ public class DecoratedNode {
 			
 			// CACHE : comment out to disable caching for local attributes
 			// not recommended due to IO objects (IOString, etc)
-			this.synthesizedValues.put(attribute, o);
+			this.localValues.put(attribute, o);
 		}
 		return o;
 	}
@@ -301,7 +242,7 @@ public class DecoratedNode {
 	 * @return The value of the local.
 	 */
 	public DecoratedNode localDecorated(String attribute) {
-		Object o = this.synthesizedValues.get(attribute);
+		Object o = this.localValues.get(attribute);
 		if(o == null) {
 			Lazy l = self.getLocal(attribute);
 			if(l == null && this.extraLocalAttributes != null) {
@@ -319,7 +260,7 @@ public class DecoratedNode {
 			
 			// CACHE : comment out to disable caching for local attributes
 			// not recommended due to IO objects (IOString, etc)
-			this.synthesizedValues.put(attribute, o);
+			this.localValues.put(attribute, o);
 		}
 		return (DecoratedNode)o;
 	}
@@ -331,10 +272,10 @@ public class DecoratedNode {
 	 * @param attribute The full name of the attribute.
 	 * @return The value of the attribute.
 	 */
-	public Object synthesized(String attribute) {
+	public Object synthesized(final int attribute) {
 		//System.err.println("TRACE: " + name + " demanding syn attribute: " + attribute);
 		
-		Object o = this.synthesizedValues.get(attribute);
+		Object o = this.synthesizedValues[attribute];
 		if(o == null) {
 			Lazy l = self.getSynthesized(attribute);
 			if(l != null) {
@@ -355,7 +296,7 @@ public class DecoratedNode {
 			}
 			
 			// CACHE : comment out to disable caching for synthesized attributes
-			this.synthesizedValues.put(attribute, o);
+			this.synthesizedValues[attribute] = o;
 		}
 		return o;
 	}
@@ -390,14 +331,14 @@ public class DecoratedNode {
 	 * 
 	 * @see #inheritedForwarded(String)
 	 */
-	public Object inherited(String attribute) {
+	public Object inherited(final int attribute) {
 		//System.err.println("TRACE: " + name + " demanding inh attribute: " + attribute);
 		
-		Object o = this.inheritedValues.get(attribute);
+		Object o = this.inheritedValues[attribute];
 		if(o == null) {
 			Lazy l;
 			// Note: inheritedAttributes is validly null here!  (forward nodes have no inherited attributes)
-			if(this.inheritedAttributes == null || (l = this.inheritedAttributes.get(attribute)) == null) {
+			if(this.inheritedAttributes == null || (l = this.inheritedAttributes[attribute]) == null) {
 				if(forwardParent != null) {
 					try {
 						o = forwardParent.inheritedForwarded(attribute);
@@ -419,7 +360,7 @@ public class DecoratedNode {
 			// not recommended because it leads to a combinatoric explosion for environments
 			// due to thunks keeping around references to previously computed environments that
 			// we're recomputing
-			this.inheritedValues.put(attribute, o);
+			this.inheritedValues[attribute] = o;
 		}
 		return o;
 	}
@@ -431,7 +372,7 @@ public class DecoratedNode {
 	 * @param attribute The full name of the attribute.
 	 * @return The value of the attribute.
 	 */
-	protected Object inheritedForwarded(String attribute) {
+	protected Object inheritedForwarded(final int attribute) {
 		//System.err.println("TRACE: " + name + " demanding FORWARDED inh attribute: " + attribute);
 		
 		Lazy l = self.getForwardInh(attribute);
