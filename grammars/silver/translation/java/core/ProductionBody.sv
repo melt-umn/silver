@@ -99,11 +99,11 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 
   top.translation = 
 	"\t\t//" ++ top.pp ++ "\n" ++
-	"\t\t" ++ className ++ ".forwardAttributes.put(\"" ++ lhs.attrName ++ "\", new common.Lazy(){\n" ++ 
+	"\t\t" ++ className ++ ".forwardAttributes[" ++ lhs.attrName ++ "] = new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
-	"\t\t});\n";
+	"\t\t};\n";
 
 }
 
@@ -122,7 +122,7 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 aspect production forwardLhsExpr
 top::ForwardLHSExpr ::= q::QName
 {
-  top.attrName = q.lookupAttribute.fullName;  
+  top.attrName = occursCheck.dcl.attrOccursIndex;
 }
 
 aspect production localAttributeDcl
@@ -132,7 +132,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
         	 "\t\t//" ++ top.pp ++ "\n" ++
 		 "\t\t" ++ 
 		 makeClassName(top.signature.fullName) ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ 
-										    "new java.util.TreeMap<String, common.Lazy>());\n";
+										    "new common.Lazy[" ++ makeNTClassName(te.typerep.typeName) ++ ".num_inh_attrs]);\n";
   top.translation = "";
 }
 
@@ -143,7 +143,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
 	   	"\t\t//" ++ top.pp ++ "\n" ++		 
 		"\t\t" ++ 
 		 makeClassName(top.signature.fullName) ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ 
-										    "new java.util.TreeMap<String, common.Lazy>());\n";
+										    "new common.Lazy[" ++ makeNTClassName(te.typerep.typeName) ++ ".num_inh_attrs]);\n";
   top.translation = "";
 }
 
@@ -180,11 +180,11 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   top.setupInh := "";
   top.translation = 
 	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
-        "\t\t" ++ dl.translation ++ ".put(\"" ++ attr.lookupAttribute.fullName ++ "\", new common.Lazy(){\n" ++ 
+        "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
-	"\t\t});\n";
+	"\t\t};\n";
 }
 
 aspect production inheritedAttributeDef
@@ -193,11 +193,11 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   top.setupInh := "";
   top.translation = 
 	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
-        "\t\t" ++ dl.translation ++ ".put(\"" ++ attr.lookupAttribute.fullName ++ "\", new common.Lazy(){\n" ++ 
+        "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
-	"\t\t});\n";
+	"\t\t};\n";
 }
 
 
@@ -226,10 +226,10 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   top.setupInh := "";
   top.translation =
 	"\t\t//" ++ top.pp ++ "\n" ++
-	"\t\t" ++ className ++ ".synthesizedAttributes.put(\"__return\", new common.Lazy(){\n" ++ 
+	"\t\t" ++ className ++ ".synthesizedAttributes[0] = new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
-	"\t\t});\n";
+	"\t\t};\n";
 }
 

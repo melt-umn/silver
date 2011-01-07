@@ -22,8 +22,13 @@ import silver:definition:type:syntax;
 
   Why the above difference?  Something to do with initialization order that I forgot.
   The problem was for synthesized only.  Something about trying to add to the CA object before it was created.
+  
+  	This justification might be wrong. Perhaps I just didn't understand the ordering problem at the time I "fixed" it.
+  	Thought required. This whole thing needs refactoring, anyhow.
 
   Synthesized and inherited get a CA class file.
+  	Syn will auto look to forward
+  	Inh will not!
   Production are anonymous as they are never repeated.
   
 
@@ -86,7 +91,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
         "\t\t\t}\n" ++ 
         "\t\t});\n" ++ 
         if !te.typerep.mayBeSuppliedInhAttrs then  "" else
-                 "\t\t" ++ className ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ "new java.util.TreeMap<String, common.Lazy>());\n";
+                 "\t\t" ++ className ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ "new common.Lazy[" ++ makeNTClassName(te.typerep.typeName) ++ ".num_inh_attrs]);\n";
 
   top.translation = "";
 }
@@ -106,8 +111,8 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::T
 
 "public class " ++ className ++ " extends common.CollectionAttribute {\n\n" ++
 
-"\tpublic " ++ className ++ "() {\n" ++
-"\t\tsuper(\"" ++ fName ++ "\");\n" ++
+"\tpublic " ++ className ++ "(final int index) {\n" ++
+"\t\tsuper(index);\n" ++
 "\t}\n\n" ++
 
 "\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
@@ -138,7 +143,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Typ
 "public class " ++ className ++ " extends common.CollectionAttribute {\n\n" ++
 
 "\tpublic " ++ className ++ "() {\n" ++
-"\t\tsuper(\"" ++ fName ++ "\");\n" ++
+"\t\tsuper();\n" ++
 "\t}\n\n" ++
 
 "\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
@@ -195,9 +200,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- := -} e::Exp
 
   top.translation =
         "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ "\n" ++
-        "\t\tif((" ++ dl.translation ++ ".get(\"" ++ attr.lookupAttribute.fullName ++ "\")) == null)\n" ++
-        "\t\t\t" ++ dl.translation ++ ".put(\"" ++ attr.lookupAttribute.fullName ++ "\",  new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"());\n" ++
-        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ ".get(\"" ++ attr.lookupAttribute.fullName ++ "\")).setBase(new common.Lazy(){\n" ++ 
+        "\t\tif(" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] == null)\n" ++
+        "\t\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"(" ++ occursCheck.dcl.attrOccursIndex ++ ");\n" ++
+        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "]).setBase(new common.Lazy(){\n" ++ 
         "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
         "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
         "\t\t\t}\n" ++ 
@@ -210,9 +215,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- <- -} e::Exp
 
   top.translation = 
 	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ "\n" ++
-        "\t\tif(" ++ dl.translation ++ ".get(\"" ++ attr.lookupAttribute.fullName ++ "\") == null)\n" ++
-        "\t\t\t" ++ dl.translation ++ ".put(\"" ++ attr.lookupAttribute.fullName ++ "\",  new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"());\n" ++
-        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ ".get(\"" ++ attr.lookupAttribute.fullName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
+        "\t\tif(" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] == null)\n" ++
+        "\t\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"(" ++ occursCheck.dcl.attrOccursIndex ++ ");\n" ++
+        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "]).addPiece(new common.Lazy(){\n" ++ 
         "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
         "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
         "\t\t\t}\n" ++ 
@@ -222,12 +227,12 @@ aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- := -} e::Expr
 {
   top.setupInh := 
-        "\t\t" ++ dl.translation ++ ".put(\"" ++ attr.lookupAttribute.fullName ++ "\",  new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"());\n";
+        "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"();\n";
 
 
   top.translation =
         "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ "\n" ++
-        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ ".get(\"" ++ attr.lookupAttribute.fullName ++ "\")).setBase(new common.Lazy(){\n" ++ 
+        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "]).setBase(new common.Lazy(){\n" ++ 
         "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
         "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
         "\t\t\t}\n" ++ 
@@ -240,7 +245,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- <- -} e::Exp
 
   top.translation = 
 	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ "\n" ++
-        "\t\t((common.CollectionAttribute)" ++ dl.translation ++".get(\"" ++ attr.lookupAttribute.fullName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
+        "\t\t((common.CollectionAttribute)" ++ dl.translation ++"[" ++ occursCheck.dcl.attrOccursIndex ++ "]).addPiece(new common.Lazy(){\n" ++ 
         "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
         "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
         "\t\t\t}\n" ++ 

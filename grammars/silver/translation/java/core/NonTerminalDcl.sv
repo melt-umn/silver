@@ -25,12 +25,22 @@ top::AGDcl ::= id::Name tl::TypeList
 "\tpublic static final int num_inh_attrs = Init." ++ inhVar ++ ";\n" ++
 "\tpublic static final int num_syn_attrs = Init." ++ synVar ++ ";\n\n" ++
 
-"\tpublic static final HashSet<String> occurs = new HashSet<String>();\n" ++
+"\tpublic static final String[] occurs_inh = new String[num_inh_attrs];\n" ++
+"\tpublic static final String[] occurs_syn = new String[num_syn_attrs];\n" ++
 "\tpublic static final LinkedList<common.Decorator> decorators = new LinkedList<common.Decorator>();\n\n" ++
 
 "\tprotected " ++ className ++ "(Object[] children) {\n" ++
 "\t\tsuper(children);\n" ++
-"\t}\n" ++	
+"\t}\n\n" ++
+
+"\tpublic final int getNumberOfInhAttrs() {\n" ++
+"\t\treturn num_inh_attrs;\n" ++
+"\t}\n\n" ++
+
+"\tpublic final int getNumberOfSynAttrs() {\n" ++
+"\t\treturn num_syn_attrs;\n" ++
+"\t}\n\n" ++
+
 "}\n"
 		]];
 

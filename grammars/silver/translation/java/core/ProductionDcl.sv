@@ -21,17 +21,17 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 "package " ++ makeName(top.grammarName) ++ ";\n\n" ++
 
 "// " ++ ns.pp ++ "\n" ++
-"public class " ++ className ++ " extends " ++ fnnt ++ " {\n\n" ++
+"public final class " ++ className ++ " extends " ++ fnnt ++ " {\n\n" ++
 
 makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(ns.inputElements) ++ "};\n\n" ++
 
 "\tpublic static common.Lazy forward;\n" ++
-"\tpublic static final java.util.Map<String, common.Lazy> forwardAttributes = new java.util.TreeMap<String, common.Lazy>();\n\n" ++
+"\tpublic static final common.Lazy[] forwardAttributes = new common.Lazy[" ++ fnnt ++ ".num_inh_attrs];\n\n" ++
 
 "\tpublic static final java.util.Map<String, common.Lazy> localAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
-"\tpublic static final java.util.Map<String, common.Lazy> synthesizedAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
-"\tpublic static final java.util.Map<Object, java.util.Map<String, common.Lazy>> inheritedAttributes = new java.util.HashMap<Object, java.util.Map<String, common.Lazy>>();\n\n" ++	
+"\tpublic static final common.Lazy[] synthesizedAttributes = new common.Lazy[" ++ fnnt ++ ".num_syn_attrs];\n" ++
+"\tpublic static final java.util.Map<Object, common.Lazy[]> inheritedAttributes = new java.util.HashMap<Object, common.Lazy[]>();\n\n" ++	
 
 
 "\tstatic{\n" ++
@@ -47,12 +47,12 @@ makeStaticDcls(className, ns.inputElements) ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic common.Lazy getSynthesized(String name) {\n" ++
-"\t\treturn synthesizedAttributes.get(name);\n" ++
+"\tpublic common.Lazy getSynthesized(final int index) {\n" ++
+"\t\treturn synthesizedAttributes[index];\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic java.util.Map<String, common.Lazy> getDefinedInheritedAttributes(Object key) {\n" ++
+"\tpublic common.Lazy[] getDefinedInheritedAttributes(final Object key) {\n" ++
 "\t\treturn inheritedAttributes.get(key);\n" ++
 "\t}\n\n" ++
 
@@ -62,12 +62,12 @@ makeStaticDcls(className, ns.inputElements) ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic common.Lazy getForwardInh(String name) {\n" ++
-"\t\treturn forwardAttributes.get(name);\n" ++
+"\tpublic common.Lazy getForwardInh(final int index) {\n" ++
+"\t\treturn forwardAttributes[index];\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic common.Lazy getLocal(String name) {\n" ++
+"\tpublic common.Lazy getLocal(final String name) {\n" ++
 "\t\treturn localAttributes.get(name);\n" ++
 "\t}\n\n" ++
 
@@ -111,7 +111,7 @@ String ::= className::String s::[Decorated NamedSignatureElement]{
 	 then "" 
 	 else (if head(s).typerep.mayBeSuppliedInhAttrs then
 	      "\t" ++ className ++ ".inheritedAttributes.put(i_" ++ head(s).elementName ++ ", " ++ 
-                                                            "new java.util.TreeMap<String, common.Lazy>());\n"
+                                                            "new common.Lazy[" ++ makeNTClassName(head(s).typerep.typeName) ++ ".num_inh_attrs]);\n"
                else "") ++ makeStaticDcls(className, tail(s));
 }
 

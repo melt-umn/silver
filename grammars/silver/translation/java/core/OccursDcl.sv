@@ -3,7 +3,7 @@ grammar silver:translation:java:core;
 aspect production attributionDcl
 top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QName '<' tlnt::TypeList '>' ';'
 {
-  top.setupInh := "\t\t" ++ makeNTClassName(nt.lookupType.fullName) ++ ".occurs.add(\"" ++ a.lookupAttribute.fullName ++ "\");\n";
+  top.setupInh := "\t\t" ++ makeNTClassName(nt.lookupType.fullName) ++ ".occurs_" ++ a.lookupAttribute.dcl.attrOccursType ++ "[" ++ head(occursCheck).attrOccursIndex ++ "] = \"" ++ a.lookupAttribute.fullName ++ "\";\n";
   
   local attribute ntgrammar :: String;
   ntgrammar = substring(0, lastIndexOf(":", nt.lookupType.fullName), nt.lookupType.fullName);
