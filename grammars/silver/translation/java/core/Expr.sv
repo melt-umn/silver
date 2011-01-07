@@ -159,7 +159,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.isAppReference = false;
   top.appReference = "";
 
-  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".synthesized(\"" ++ q.lookupAttribute.fullName ++ "\"))";
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".synthesized(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
 }
 
 aspect production inhDNTAccessDispatcher
@@ -168,7 +168,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.isAppReference = false;
   top.appReference = "";
 
-  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".inherited(\"" ++ q.lookupAttribute.fullName ++ "\"))";
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".inherited(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
 }
 
 aspect production terminalAccessDispatcher
@@ -191,7 +191,9 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
                              (case inh of
                                exprInhsEmpty() -> ""
                               | _ ->
-                                ", common.Util.populateMap(new String[]{" ++ implode(", ", inh.nameTrans) ++ "}, " ++ 
+                                ", common.Util.populateInh(" ++
+                                                        makeNTClassName(e.typerep.typeName) ++ ".num_inh_attrs, " ++
+                                                        "new int[]{" ++ implode(", ", inh.nameTrans) ++ "}, " ++ 
                                                         "new common.Lazy[]{" ++ implode(", ", inh.valueTrans) ++ "})"
                               end) ++ "))"; 
 
@@ -234,7 +236,7 @@ top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
 aspect production exprLhsExpr
 top::ExprLHSExpr ::= q::QName
 {
-  top.nameTrans = ["\"" ++ q.lookupAttribute.fullName ++ "\""];
+  top.nameTrans = [occursCheck.dcl.attrOccursIndex];
 }
 
 

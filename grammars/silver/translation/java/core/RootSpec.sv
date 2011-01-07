@@ -24,7 +24,7 @@ synthesized attribute initProd :: String with ++;
  -}
 synthesized attribute initValues :: String with ++;
 {--
- - Late initializers. Decorator application
+ - Late initializers. Decorator application (late because we want all attribute equations to be posted first!!)
  -}
 synthesized attribute postInit :: String with ++;
 
