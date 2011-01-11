@@ -157,7 +157,7 @@ public class DecoratedNode {
 	/**
 	 * @return The {@link Node} this decorates.
 	 */
-	public Node undecorate(){
+	public final Node undecorate(){
 		return self;
 	}
 

@@ -14,7 +14,7 @@ public final class RealThunk {
 	private DecoratedNode context;
 	private Object data;
 	
-	public RealThunk(DecoratedNode c, Lazy l) {
+	public RealThunk(final DecoratedNode c, final Lazy l) {
 		context = c;
 		data = l;
 	}

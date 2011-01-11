@@ -33,7 +33,7 @@ public abstract class CollectionAttribute implements Lazy {
 		return base;
 	}
 
-	public final void setBase(Lazy base) {
+	public final void setBase(final Lazy base) {
 		this.base = base;
 	}
 
@@ -41,11 +41,11 @@ public abstract class CollectionAttribute implements Lazy {
 		return pieces;
 	}
 
-	public final void addPiece(Lazy attribute) {
+	public final void addPiece(final Lazy attribute) {
 		pieces.add(attribute);
 	}
 
-	public abstract Object eval(DecoratedNode context);
+	public abstract Object eval(final DecoratedNode context);
 	
 	private static class BaseDefault implements Lazy {
 		private final int index;
@@ -53,7 +53,7 @@ public abstract class CollectionAttribute implements Lazy {
 			this.index=index;
 		}
 		@Override
-		public Object eval(DecoratedNode context) {
+		public Object eval(final DecoratedNode context) {
 			final DecoratedNode n = context.forward();
 			if(n != null) {
 				try {

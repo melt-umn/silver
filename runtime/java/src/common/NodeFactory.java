@@ -6,5 +6,5 @@ package common;
  * @author tedinski
  */
 public interface NodeFactory<T extends Node> {
-	public T construct(Object[] children);
+	public T construct(final Object[] children);
 }
