@@ -57,4 +57,10 @@ public class TopNode extends DecoratedNode{
 	public Node undecorate() {
 		throw new RuntimeException("Cannot undecorate TopNode.");
 	}
+
+	@Override
+	public DecoratedNode forward() {
+		throw new RuntimeException("TopNode does not forward.");
+	}
+	
 }

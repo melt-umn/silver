@@ -13,23 +13,25 @@ import java.util.ArrayList;
  * @author tedinski, bodin
  */
 public abstract class CollectionAttribute implements Lazy {
+	
 	private ArrayList<Lazy> pieces;
 	private Lazy base;
 
+	public CollectionAttribute() {
+		this.pieces = new ArrayList<Lazy>();
+	}
+	
+	public CollectionAttribute(final int index) {
+		this();
+		this.base = new BaseDefault(index);
+	}
+	
 	public Lazy getBase() {
 		return base;
 	}
 
 	public void setBase(Lazy base) {
 		this.base = base;
-	}
-
-	public CollectionAttribute() {
-		this.pieces = new ArrayList<Lazy>();
-	}
-	public CollectionAttribute(final int index) {
-		this();
-		this.base = new BaseDefault(index);
 	}
 
 	public ArrayList<Lazy> getPieces() {
@@ -49,15 +51,18 @@ public abstract class CollectionAttribute implements Lazy {
 		}
 		@Override
 		public Object eval(DecoratedNode context) {
-			DecoratedNode n = context.forward();
-			if(n != null)
+			final DecoratedNode n = context.forward();
+			if(n != null) {
 				try {
 					return n.synthesized(index);
 				} catch(Throwable t) {
-					throw new RuntimeException("Error evaluating base of collection attribute " + index + " via forward node",t);
+					final Node un = context.undecorate();
+					throw new RuntimeException("Error evaluating base of collection attribute " + un.getNameOfSynAttr(index) + " via forward of " + un.getName(),t);
 				}
-				
-			throw new RuntimeException("No base defined for collection attribute " + index);
+			}	
+
+			final Node un = context.undecorate();
+			throw new RuntimeException("No base defined for collection attribute " + un.getNameOfSynAttr(index) + " in " + un.getName());
 		}
 		
 	}

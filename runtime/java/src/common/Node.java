@@ -12,7 +12,7 @@ package common;
  */
 public abstract class Node {
 	
-	protected final Object[] children;
+	protected final Object[] children; // TODO: private?
 	
 	protected Node(final Object[] children) {
 		this.children = children;
@@ -33,7 +33,7 @@ public abstract class Node {
 	 * 
 	 * @return A "decorated" form of this Node 
 	 */
-	public DecoratedNode decorate() {
+	public final DecoratedNode decorate() {
 		return decorate(TopNode.singleton);
 	}
 
@@ -43,7 +43,7 @@ public abstract class Node {
 	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
 	 * @return A "decorated" form of this Node
 	 */
-	public DecoratedNode decorate(final DecoratedNode parent) {
+	public final DecoratedNode decorate(final DecoratedNode parent) {
 		return decorate(parent, (Lazy[])null);
 	}
 
@@ -54,7 +54,7 @@ public abstract class Node {
 	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @return A "decorated" form of this Node
 	 */
-	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
+	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
 		return new DecoratedNode(this, parent, inhs);
 	}
 
@@ -65,7 +65,7 @@ public abstract class Node {
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
 	 * @return A "decorated" form of this Node 
 	 */
-	public DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
+	public final DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
 		return new DecoratedNode(this, parent, fwdParent);
 	}
 
@@ -76,7 +76,7 @@ public abstract class Node {
 	 * @return The child object. (Thunk already evaluated)
 	 * @see Node#getNumberOfChildren()
 	 */
-	public Object getChild(int child) {
+	public final Object getChild(final int child) {
 		Object o = children[child];
 		if(o instanceof Thunk) {
 			// We're doing thunk evaluation on the Node level, rather
@@ -97,25 +97,44 @@ public abstract class Node {
 	 * 
 	 * @return The number of children this Node has.
 	 */
-	public int getNumberOfChildren() {
+	public final int getNumberOfChildren() {
 		if(children == null)
 			return 0;
 		return children.length;
 	}
 	
 	/**
+	 * Used to create arrays of appropriate size in DecoratedNode.
+	 * 
 	 * @return The number of inherited attributes that occur on this nonterminal type.
 	 */
 	public abstract int getNumberOfInhAttrs();
 	/**
+	 * Used to create arrays of appropriate size in DecoratedNode.
+	 * 
 	 * @return The number of synthesized attributes that occur on this nonterminal type.
 	 */
 	public abstract int getNumberOfSynAttrs();
-
 	/**
+	 * Used for debugging, and pattern matching.
+	 * 
 	 * @return The full name of this Node. (e.g. "silver:definition:core:baseExpr")
 	 */
 	public abstract String getName();
+	/**
+	 * Used for debugging, stack traces especially.
+	 * 
+	 * @param index The index of the inherited attribute to return the name of
+	 * @return The name of the inherited attribute at this index
+	 */
+	public abstract String getNameOfInhAttr(final int index);
+	/**
+	 * Used for debugging, stack traces especially.
+	 * 
+	 * @param index The index of the synthesized attribute to return the name of
+	 * @return The name of the synthesized attribute at this index
+	 */
+	public abstract String getNameOfSynAttr(final int index);
 
 	/**
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get a Node that this one forwards to.
@@ -125,13 +144,13 @@ public abstract class Node {
 	/**
 	 * Get any overridden attributes for this node's forward.  (e.g. forwarding with { inh = foo; })
 	 * 
-	 * @param name The inherited attribute requested by a forwarded-to Node. 
+	 * @param index The inherited attribute requested by a forwarded-to Node. 
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of this attribute provided to the forward.
 	 */
 	public abstract Lazy getForwardInh(final int index);
 
 	/**
-	 * @param name Any synthesized attribute on this Node
+	 * @param index Any synthesized attribute on this Node
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of the attribute
 	 */
 	public abstract Lazy getSynthesized(final int index);
@@ -141,10 +160,11 @@ public abstract class Node {
 	 * @return A Map defining the inherited attributes supplied to whatever the key is for. 
 	 */
 	public abstract Lazy[] getDefinedInheritedAttributes(final Object key);
+	// TODO: split this into child/locals.
 
 	/**
 	 * @param name Any local attribute on this Node
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of the attribute
 	 */
-	public abstract Lazy getLocal(String name);
+	public abstract Lazy getLocal(final String name);
 }
