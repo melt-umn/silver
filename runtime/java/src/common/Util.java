@@ -3,6 +3,8 @@ package common;
 import java.io.*;
 import java.util.*;
 
+import common.exceptions.SilverError;
+
 
 /**
  * Many places in Silver's translation are bits of code that need factoring out, somehow.
@@ -66,7 +68,7 @@ public final class Util {
 	 */
 	public static Object error(Object o) {
 		System.err.print(o);
-		throw new RuntimeException(o.toString());
+		throw new SilverError(o.toString());
 	}
 
 	public static boolean isAlpha(String sb) {
@@ -318,7 +320,7 @@ public final class Util {
 			System.exit(-2);		
 		} else {
 			// Displaying it by rethrowing it.
-			throw new RuntimeException("SILVERTRACE=1, letting Java handle the exception...", e);
+			throw new RuntimeException(e);
 		}
 	}
 	

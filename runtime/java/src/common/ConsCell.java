@@ -1,5 +1,7 @@
 package common;
 
+import common.exceptions.SilverError;
+
 /**
  * Special Java translation for Silver lists.  The main purpose is to reduce memory consumption
  * for this exceptionally common and prolific data structure.
@@ -82,7 +84,7 @@ public class ConsCell {
 
 		@Override
 		public Object head() {
-			throw new RuntimeException("Requested head of nil.");
+			throw new SilverError("Requested head of nil.");
 		}
 		@Override
 		public boolean nil() {
@@ -90,7 +92,7 @@ public class ConsCell {
 		}
 		@Override
 		public ConsCell tail() {
-			throw new RuntimeException("Requested tail of nil.");
+			throw new SilverError("Requested tail of nil.");
 		}
 		@Override
 		public int length() {
