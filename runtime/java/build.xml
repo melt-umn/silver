@@ -1,0 +1,43 @@
+<project name='SilverRuntime' default='dist' basedir='.'>
+  <description>Build the silver runtime.</description>
+
+  <property environment='env'/>
+  <property name='src' location='./src'/>
+  <property name='bin' location='./bin'/>
+  <property name='dist' location='.'/>
+
+  <target name='init'>
+    <tstamp>
+      <format property='TIME' pattern='MM/dd/yyyy hh:mm aa'/>
+    </tstamp>
+    <mkdir dir='${bin}'/>
+    <!-- Right now the runtime doesn't actually depend on core
+    <fail message='Copy the core grammar to ${src}/ before building but do not check this into SVN!'>
+      <condition>
+        <not><available file='${src}/core' type='dir' /></not>
+      </condition>
+    </fail>
+    -->
+  </target>
+
+  <target name='build' depends='init'>
+    <javac debug='on' source='1.5' srcdir='${src}' destdir='${bin}' includeantruntime='false'>
+      <include name='common/*.java' />
+      <include name='common/exceptions/*.java' />
+    </javac>
+  </target>
+  
+  <target name='dist' depends='build'>
+    <jar destfile='${dist}/SilverRuntime.jar' basedir='${bin}' compress='true' level='9'>
+      <include name='common/*.class' />
+      <include name='common/exceptions/*.class' />
+      <manifest>
+        <attribute name='Built-By' value='${user.name}' />
+        <section name='version'>
+          <attribute name='Build' value='${TIMESTAMP}' />
+        </section>
+      </manifest>
+    </jar>
+  </target>
+
+</project>
