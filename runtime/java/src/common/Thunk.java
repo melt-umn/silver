@@ -7,7 +7,7 @@ package common;
  * 
  * <p>The reason it's fake is that we want to eliminate this object from memory once it's evaluated
  * and there's already a place to store the result of evaluation: the place where the reference
- * to this thunk is stored!
+ * to this thunk is stored in Node!
  * 
  * @author tedinski
  * @see RealThunk
@@ -16,7 +16,7 @@ public final class Thunk {
 	private final DecoratedNode context;
 	private final Lazy closure;
 	
-	public Thunk(DecoratedNode con, Lazy clo) {
+	public Thunk(final DecoratedNode con, final Lazy clo) {
 		context = con;
 		closure = clo;
 		

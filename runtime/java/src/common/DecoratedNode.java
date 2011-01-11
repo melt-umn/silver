@@ -158,6 +158,11 @@ public class DecoratedNode {
 		return self;
 	}
 
+	
+	// TODO: The AsIs/Decorated distinction could go away and we could go for storing
+	// information in Node on whether it's decorable.
+	
+	
 	/**
 	 * Returns the child of this DecoratedNode, without potentially decorating it.
 	 * 
@@ -241,7 +246,7 @@ public class DecoratedNode {
 	 * @param attribute The full name of the local to obtain.
 	 * @return The value of the local.
 	 */
-	public DecoratedNode localDecorated(String attribute) {
+	public DecoratedNode localDecorated(final String attribute) {
 		Object o = this.localValues.get(attribute);
 		if(o == null) {
 			Lazy l = self.getLocal(attribute);
@@ -282,7 +287,7 @@ public class DecoratedNode {
 				try {
 					o = l.eval(this);
 				} catch(Throwable t) {
-					throw new RuntimeException("Error evaluating synthesized attribute '" + attribute + "' in production '" + self.getName() + "'", t);
+					throw new RuntimeException("Error evaluating synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' in production '" + self.getName() + "'", t);
 				}
 			} else if(self.getForward() != null) {
 				// TODO: tell forward not to cache the value since we will?
@@ -292,7 +297,7 @@ public class DecoratedNode {
 					throw new RuntimeException("Error attempting to fetch from forward in production " + self.getName() + ".", t);
 				}
 			} else {
-				throw new RuntimeException("Synthesized attribute '" + attribute + "' is not defined in production '" + self.getName() + "'");
+				throw new RuntimeException("Synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' is not defined in production '" + self.getName() + "'");
 			}
 			
 			// CACHE : comment out to disable caching for synthesized attributes
@@ -305,7 +310,7 @@ public class DecoratedNode {
 	 * Get the forwarded-to DecoratedNode.  Cached.  There is no need for an "AsIs" vs "Decorated"
 	 * variant of this function, since we always know it's a Node.
 	 * 
-	 * @return The DecoratedNode this one forwards to.
+	 * @return The DecoratedNode this one forwards to, or null if this node does not forward.
 	 */
 	public DecoratedNode forward() {
 		Lazy l = self.getForward();
@@ -343,16 +348,16 @@ public class DecoratedNode {
 					try {
 						o = forwardParent.inheritedForwarded(attribute);
 					} catch(Throwable t) {
-						throw new RuntimeException("Inherited attribute '" + attribute + "' demanded by forward-to production'" + self.getName() +"'.", t);
+						throw new RuntimeException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' demanded by forward-to production'" + self.getName() +"'.", t);
 					}
 				} else {
-					throw new RuntimeException("Inherited attribute '" + attribute + "' not provided to '" + self.getName() + "' by '" + parent.self.getName() + "'" + (forwardParent==null?"":" (forwardParent: '" + forwardParent.self.getName() + "')"));
+					throw new RuntimeException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to '" + self.getName() + "' by '" + parent.self.getName() + "'" + (forwardParent==null?"":" (forwardParent: '" + forwardParent.self.getName() + "')"));
 				}
 			} else {
 				try {
 					o = l.eval(this.parent);
 				} catch(Throwable t) {
-					throw new RuntimeException("Error evaluating inherited attribute '" + attribute + "' in production '" + self.getName() + "'", t);
+					throw new RuntimeException("Error evaluating inherited attribute '" + self.getNameOfInhAttr(attribute) + "' in production '" + self.getName() + "'", t);
 				}
 			}
 			
@@ -383,7 +388,7 @@ public class DecoratedNode {
 			// No need for caching here, it'll be cached by the inherited() that called us
 			return l.eval(this);
 		} catch(Throwable t) {
-			throw new RuntimeException("Error evaluating inherited attribute '" + attribute + "' for forward production in production '" + self.getName() + "'", t);
+			throw new RuntimeException("Error evaluating inherited attribute '" + self.getNameOfInhAttr(attribute) + "' for forward production in production '" + self.getName() + "'", t);
 		}
 	}
 
