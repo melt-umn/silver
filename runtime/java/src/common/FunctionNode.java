@@ -1,5 +1,9 @@
 package common;
 
+import common.exceptions.MissingDefinitionException;
+import common.exceptions.SilverInternalError;
+import common.exceptions.TraceException;
+
 /**
  * FunctionNode is a Node, but with a doReturn method.
  * 
@@ -20,24 +24,24 @@ public abstract class FunctionNode extends Node {
 	public Object doReturn() {
 		
 		if(getSynthesized(0) == null) {
-			throw new RuntimeException("Function " + getName() + " has no return value!");
+			throw new MissingDefinitionException("Function " + getName() + " has no return value!");
 		}
 		
 		try {
 			return getSynthesized(0).eval(this.decorate());
 		} catch(Throwable t) {
-			throw new RuntimeException("Error while evaluating function " + getName(), t);
+			throw new TraceException("Error while evaluating function " + getName(), t);
 		}
 	}
 
 	@Override
 	public final Lazy getForward() {
-		throw new RuntimeException("Functions do not forward!");
+		throw new SilverInternalError("Functions do not forward!");
 	}
 
 	@Override
 	public final Lazy getForwardInh(final int index) {
-		throw new RuntimeException("Functions do not forward!");
+		throw new SilverInternalError("Functions do not forward!");
 	}
 
 	@Override
@@ -52,7 +56,7 @@ public abstract class FunctionNode extends Node {
 
 	@Override
 	public final String getNameOfInhAttr(final int index) {
-		throw new RuntimeException("Functions do not possess inherited attributes! (Requested name of index " + index + ")");
+		throw new SilverInternalError("Functions do not possess inherited attributes! (Requested name of index " + index + ")");
 	}
 
 	@Override
@@ -61,7 +65,7 @@ public abstract class FunctionNode extends Node {
 		case 0:
 			return "__return_value__"; // Should this be something else, perhaps?
 		default:
-			throw new RuntimeException("Functions do not possess synthesized attributes beyond their return value. (Requested name of index " + index + ")");
+			throw new SilverInternalError("Functions do not possess synthesized attributes beyond their return value. (Requested name of index " + index + ")");
 		}
 	}
 	

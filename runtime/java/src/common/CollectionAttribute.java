@@ -2,6 +2,9 @@ package common;
 
 import java.util.ArrayList;
 
+import common.exceptions.MissingDefinitionException;
+import common.exceptions.TraceException;
+
 /**
  * This class is a specialized Lazy that allows additional elements to be inserted
  * during start-up initialization.  These elements are then used by the custom
@@ -26,19 +29,19 @@ public abstract class CollectionAttribute implements Lazy {
 		this.base = new BaseDefault(index);
 	}
 	
-	public Lazy getBase() {
+	public final Lazy getBase() {
 		return base;
 	}
 
-	public void setBase(Lazy base) {
+	public final void setBase(Lazy base) {
 		this.base = base;
 	}
 
-	public ArrayList<Lazy> getPieces() {
+	public final ArrayList<Lazy> getPieces() {
 		return pieces;
 	}
 
-	public void addPiece(Lazy attribute) {
+	public final void addPiece(Lazy attribute) {
 		pieces.add(attribute);
 	}
 
@@ -57,12 +60,12 @@ public abstract class CollectionAttribute implements Lazy {
 					return n.synthesized(index);
 				} catch(Throwable t) {
 					final Node un = context.undecorate();
-					throw new RuntimeException("Error evaluating base of collection attribute " + un.getNameOfSynAttr(index) + " via forward of " + un.getName(),t);
+					throw new TraceException("Error evaluating base of collection attribute " + un.getNameOfSynAttr(index) + " via forward of " + un.getName(),t);
 				}
 			}	
 
 			final Node un = context.undecorate();
-			throw new RuntimeException("No base defined for collection attribute " + un.getNameOfSynAttr(index) + " in " + un.getName());
+			throw new MissingDefinitionException("No base defined for collection attribute " + un.getNameOfSynAttr(index) + " in " + un.getName());
 		}
 		
 	}

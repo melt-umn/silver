@@ -2,6 +2,9 @@ package common;
 
 import java.util.*;
 
+import common.exceptions.MissingDefinitionException;
+import common.exceptions.TraceException;
+
 /**
  * This is the <strike>Stack</strike>Heap Frame and primary data structure of Silver.
  * 
@@ -220,12 +223,12 @@ public class DecoratedNode {
 				l = this.extraLocalAttributes.get(attribute);
 			}
 			if(l == null) {
-				throw new RuntimeException("Local attribute '" + attribute + "' is not defined in production '" + self.getName() + "'");
+				throw new MissingDefinitionException("Local attribute '" + attribute + "' is not defined in production '" + self.getName() + "'");
 			}
 			try {
 				o = l.eval(this);
 			} catch(Throwable t){
-				throw new RuntimeException("Error evaluating local attribute '" + attribute + "' in production '" + self.getName() + "'", t);
+				throw new TraceException("Error while evaluating local attribute '" + attribute + "' in production '" + self.getName() + "'", t);
 			}
 			
 			// CACHE : comment out to disable caching for local attributes
@@ -254,13 +257,13 @@ public class DecoratedNode {
 				l = this.extraLocalAttributes.get(attribute);
 			}
 			if(l == null) {
-				throw new RuntimeException("Local attribute '" + attribute + "' is not defined in production '" + self.getName() + "'");
+				throw new MissingDefinitionException("Local attribute '" + attribute + "' is not defined in production '" + self.getName() + "'");
 			}
 			try {
 				o = l.eval(this);
 				o = ((Node)o).decorate(this, self.getDefinedInheritedAttributes(attribute));
 			} catch(Throwable t){
-				throw new RuntimeException("Error evaluating local attribute '" + attribute + "' in production '" + self.getName() + "'", t);
+				throw new TraceException("Error while evaluating local attribute '" + attribute + "' in production '" + self.getName() + "'", t);
 			}
 			
 			// CACHE : comment out to disable caching for local attributes
@@ -287,17 +290,17 @@ public class DecoratedNode {
 				try {
 					o = l.eval(this);
 				} catch(Throwable t) {
-					throw new RuntimeException("Error evaluating synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' in production '" + self.getName() + "'", t);
+					throw new TraceException("Error while evaluating synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' in production '" + self.getName() + "'", t);
 				}
 			} else if(self.getForward() != null) {
 				// TODO: tell forward not to cache the value since we will?
 				try {
 					o = forward().synthesized(attribute);
 				} catch(Throwable t) {
-					throw new RuntimeException("Error attempting to fetch from forward in production " + self.getName() + ".", t);
+					throw new TraceException("Error attempting to fetch from forward in production " + self.getName() + ".", t);
 				}
 			} else {
-				throw new RuntimeException("Synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' is not defined in production '" + self.getName() + "'");
+				throw new MissingDefinitionException("Synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' is not defined in production '" + self.getName() + "'");
 			}
 			
 			// CACHE : comment out to disable caching for synthesized attributes
@@ -321,7 +324,7 @@ public class DecoratedNode {
 				// CACHE : should not comment out forward caching !
 				this.forwardValue = ((Node)l.eval(this)).decorate(parent, this);
 			} catch(Throwable t) {
-				throw new RuntimeException("Error evaluating forward node in production '" + self.getName() + "'", t);
+				throw new TraceException("Error evaluating forward node in production '" + self.getName() + "'", t);
 			}
 		}
 		return this.forwardValue;
@@ -348,16 +351,16 @@ public class DecoratedNode {
 					try {
 						o = forwardParent.inheritedForwarded(attribute);
 					} catch(Throwable t) {
-						throw new RuntimeException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' demanded by forward-to production'" + self.getName() +"'.", t);
+						throw new TraceException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' demanded by forward production'" + self.getName() +"'.", t);
 					}
 				} else {
-					throw new RuntimeException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to '" + self.getName() + "' by '" + parent.self.getName() + "'" + (forwardParent==null?"":" (forwardParent: '" + forwardParent.self.getName() + "')"));
+					throw new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to '" + self.getName() + "' by '" + parent.self.getName() + "'" + (forwardParent==null?"":" (forwardParent: '" + forwardParent.self.getName() + "')"));
 				}
 			} else {
 				try {
 					o = l.eval(this.parent);
 				} catch(Throwable t) {
-					throw new RuntimeException("Error evaluating inherited attribute '" + self.getNameOfInhAttr(attribute) + "' in production '" + self.getName() + "'", t);
+					throw new TraceException("Error evaluating inherited attribute '" + self.getNameOfInhAttr(attribute) + "' in production '" + self.getName() + "'", t);
 				}
 			}
 			
@@ -380,6 +383,9 @@ public class DecoratedNode {
 	protected Object inheritedForwarded(final int attribute) {
 		//System.err.println("TRACE: " + name + " demanding FORWARDED inh attribute: " + attribute);
 		
+		// No cache look up here. There is only one forward production. It will call this method
+		// a maximum of once for each attribute, since it will cache the result.
+		
 		Lazy l = self.getForwardInh(attribute);
 		if(l == null) {
 			return inherited(attribute);
@@ -388,7 +394,7 @@ public class DecoratedNode {
 			// No need for caching here, it'll be cached by the inherited() that called us
 			return l.eval(this);
 		} catch(Throwable t) {
-			throw new RuntimeException("Error evaluating inherited attribute '" + self.getNameOfInhAttr(attribute) + "' for forward production in production '" + self.getName() + "'", t);
+			throw new TraceException("Error evaluating inherited attribute '" + self.getNameOfInhAttr(attribute) + "' for forward production in production '" + self.getName() + "'", t);
 		}
 	}
 

@@ -1,5 +1,7 @@
 package common;
 
+import common.exceptions.SilverInternalError;
+
 /**
  * TopNode is a DecoratedNode that is empty. It is used largely to give better error
  * messages than "null pointer exception" if there is a compiler bug.
@@ -20,47 +22,47 @@ public class TopNode extends DecoratedNode{
 	
 	@Override
 	public Object inherited(final int attribute) {		
-		throw new RuntimeException("No inherited attributes given to TopNode.");
+		throw new SilverInternalError("No inherited attributes given to TopNode.");
 	}
 
 	@Override
 	protected Object inheritedForwarded(final int attribute) {
-		throw new RuntimeException("TopNode does not provided inherited attributes.");
+		throw new SilverInternalError("TopNode does not provided inherited attributes.");
 	}
 
 	@Override
 	public Lazy synthesized(final int attribute) {		
-		throw new RuntimeException("No synthesized attributes defined on TopNode.");
+		throw new SilverInternalError("No synthesized attributes defined on TopNode.");
 	}
 	
 	@Override
 	public Object childAsIs(final int s) {
-		throw new RuntimeException("No Children defined on TopNode.");
+		throw new SilverInternalError("No Children defined on TopNode.");
 	}
 
 	@Override
 	public DecoratedNode childDecorated(final int s) {
-		throw new RuntimeException("No Children defined on TopNode.");
+		throw new SilverInternalError("No Children defined on TopNode.");
 	}
 
 	@Override
 	public Object localAsIs(final String attribute) {
-		throw new RuntimeException("No local attributes defined on TopNode.");
+		throw new SilverInternalError("No local attributes defined on TopNode.");
 	}
 
 	@Override
 	public DecoratedNode localDecorated(final String attribute) {
-		throw new RuntimeException("No local attributes defined on TopNode.");
+		throw new SilverInternalError("No local attributes defined on TopNode.");
 	}
 
 	@Override
 	public Node undecorate() {
-		throw new RuntimeException("Cannot undecorate TopNode.");
+		throw new SilverInternalError("Cannot undecorate TopNode.");
 	}
 
 	@Override
 	public DecoratedNode forward() {
-		throw new RuntimeException("TopNode does not forward.");
+		throw new SilverInternalError("TopNode does not forward.");
 	}
 	
 }

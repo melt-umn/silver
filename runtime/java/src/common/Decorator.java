@@ -2,6 +2,8 @@ package common;
 
 import java.util.*;
 
+import common.exceptions.SilverInternalError;
+
 /**
  * Right now this is an ugly hack for getting autocopy to work properly.
  * 
@@ -35,9 +37,9 @@ abstract public class Decorator {
 			String[] oi = (String[])production.getField("occurs_inh").get(null);
 			attrindex = Arrays.asList(oi).indexOf(attribute);
 			if(attrindex == -1)
-				throw new RuntimeException("Attribute doesn't occur on NT it is supposed to?");
+				throw new SilverInternalError("Attribute doesn't occur on NT it is supposed to?");
 		} catch(Throwable t) {
-			throw new RuntimeException("Decorating non-NT??", t);
+			throw new SilverInternalError("Error while applying autocopy decorators.", t);
 		}
 		
 		// Create the lazy that we'll be putting on children.
@@ -50,7 +52,7 @@ abstract public class Decorator {
 			childTypes = (Class<?>[]) production.getField("childTypes").get(null);
 			inheritedAttributes = (Map<Object, Lazy[]>)production.getField("inheritedAttributes").get(null);
 		} catch (Throwable t) {
-			throw new RuntimeException("Attempting to decorate a nonproduction?",t);
+			throw new SilverInternalError("Attempting to decorate a nonproduction?",t);
 		}
 
 		for(int i = 0; i < childTypes.length; i++) {
@@ -61,7 +63,7 @@ abstract public class Decorator {
 				// This is a non-error. We expect there to be children that aren't NTs
 				continue;
 			} catch (Throwable t) {
-				throw new RuntimeException("Problem fetching class information through reflection.",t);
+				throw new SilverInternalError("Problem fetching class information through reflection.",t);
 			}
 			int loc = Arrays.asList(occurs).indexOf(attribute);
 			if(loc != -1) {
