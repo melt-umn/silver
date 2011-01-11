@@ -12,7 +12,7 @@ package common;
  */
 public abstract class Node {
 	
-	protected final Object[] children; // TODO: private?
+	private final Object[] children;
 	
 	protected Node(final Object[] children) {
 		this.children = children;

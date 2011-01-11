@@ -12,7 +12,7 @@ import common.exceptions.SilverInternalError;
  * @author tedinski, bodin
  * @see DecoratedNode
  */
-public class TopNode extends DecoratedNode{		
+public class TopNode extends DecoratedNode{ // TODO: this should become a Node!
 
 	public static final TopNode singleton = new TopNode();
 	
@@ -53,11 +53,6 @@ public class TopNode extends DecoratedNode{
 	@Override
 	public DecoratedNode localDecorated(final String attribute) {
 		throw new SilverInternalError("No local attributes defined on TopNode.");
-	}
-
-	@Override
-	public Node undecorate() {
-		throw new SilverInternalError("Cannot undecorate TopNode.");
 	}
 
 	@Override
