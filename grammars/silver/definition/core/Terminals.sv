@@ -55,12 +55,12 @@ terminal GTEQ_t		'>=' precedence = 9, association = left;
 terminal LTEQ_t		'<=' precedence = 9, association = left;
 terminal EQEQ_t		'==' precedence = 9, association = left;
 terminal NEQ_t		'!=' precedence = 9, association = left;
-terminal PlusPlus_t	'++' precedence = 11, association = left;
+terminal PlusPlus_t	'++' precedence = 10, association = right; -- right because that's generally more efficient.
 terminal Plus_t		'+'  precedence = 11, association = left;
 terminal Minus_t	'-'  precedence = 11, association = left;
 terminal Multiply_t	'*'  precedence = 12, association = left;
 terminal Divide_t	'/'  precedence = 12, association = left;
-terminal ColonColon_t	'::' precedence = 14, association = right; -- HasType AND Cons
+terminal ColonColon_t	'::' precedence = 14, association = right; -- HasType AND cons. right due to cons.
 terminal LParen_t	'('  precedence = 24;
 terminal RParen_t	')'  ;
 terminal LCurly_t	'{'  ;
