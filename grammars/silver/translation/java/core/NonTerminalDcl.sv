@@ -33,12 +33,24 @@ top::AGDcl ::= id::Name tl::TypeList
 "\t\tsuper(children);\n" ++
 "\t}\n\n" ++
 
+"\t@Override\n" ++
 "\tpublic final int getNumberOfInhAttrs() {\n" ++
 "\t\treturn num_inh_attrs;\n" ++
 "\t}\n\n" ++
 
+"\t@Override\n" ++
 "\tpublic final int getNumberOfSynAttrs() {\n" ++
 "\t\treturn num_syn_attrs;\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic final String getNameOfInhAttr(final int index) {\n" ++
+"\t\treturn occurs_inh[index];\n" ++
+"\t}\n\n" ++
+	
+"\t@Override\n" ++
+"\tpublic final String getNameOfSynAttr(final int index) {\n" ++
+"\t\treturn occurs_syn[index];\n" ++
 "\t}\n\n" ++
 
 "}\n"
