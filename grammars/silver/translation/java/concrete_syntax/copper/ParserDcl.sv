@@ -23,7 +23,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
 "\t\t} catch(edu.umn.cs.melt.copper.runtime.logging.CopperParserException e) {\n" ++
 "\t\t\treturn new core.PparseFailed( new common.StringCatter(e.getMessage()) );\n" ++
 "\t\t} catch(Throwable t) {\n" ++
-"\t\t\tthrow new RuntimeException(\"An error occurs while parsing\", t);\n" ++
+"\t\t\tthrow new common.exceptions.TraceException(\"An error occured while parsing\", t);\n" ++
 "\t\t}\n";
 }
 
