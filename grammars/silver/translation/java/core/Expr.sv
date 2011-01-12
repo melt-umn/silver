@@ -403,7 +403,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
   -- cast, rather than toString. Otherwise we don't gain anything with StringCatter
   -- literal here, rather than transType.  why not? Catch bugs, just in case.
-  top.translation = "new common.StringCatter((common.StringCatter)" ++ e1.translation ++ ").append((common.StringCatter)" ++ e2.translation ++ ")";
+  top.translation = "new common.StringCatter((common.StringCatter)" ++ e1.translation ++ ", (common.StringCatter)" ++ e2.translation ++ ")";
 }
 
 aspect production exprsEmpty
