@@ -1,5 +1,6 @@
 package common;
 
+import java.io.StringWriter;
 import java.io.Writer;
 import java.io.IOException;
 
@@ -11,102 +12,95 @@ import java.io.IOException;
  * <p>Further, if we're demanding it to write to a file, then we still don't even build the
  * String object.
  * 
+ * <p>NOTE: string appends are done strictly, not lazily. We don't support building
+ * infinite strings in Silver.
+ * 
  * @author tedinski
  * @see Util#writeFile
  * @see Util#appendFile
  */
-public class StringCatter {
-	// TODO: We could probably eliminate that interface, and just give this class
-	// two fields.  I'm not sure it's saving us anything.
-
-	private StrCattable str;
+public final class StringCatter {
 	
-	public StringCatter(String str) {
-		this.str = new StrLiteral(str);
-	}
-	public StringCatter(StringCatter s) {
-		this.str = s.str;
-		// Could probably eliminate this case but eh.
+	private Object fst; // Either String or StringCatter
+	private StringCatter snd; // If non-null, then we're an append!
+	
+	/**
+	 * Just wrap the string up as a StringCatter.
+	 * 
+	 * @param str The string to represent
+	 */
+	public StringCatter(final String str) {
+		fst = str;
+		snd = null;
 	}
 	
-	public StringCatter append(StringCatter sc) {
-		str = new StrAppend(str,sc.str); // TODO: Bizzre mutation! WTH
-		return this;
+	/**
+	 * Append two StringCatters together.
+	 * 
+	 * @param sc1 The LHS
+	 * @param sc2 The RHS
+	 */
+	public StringCatter(final StringCatter sc1, final StringCatter sc2) {
+		fst = sc1;
+		snd = sc2;
 	}
+	
 	@Override
 	public String toString() {
-		if(str instanceof StrLiteral) {
-			return ((StrLiteral)str).str;
+		if(snd == null) {
+			return (String)fst;
 		}
-		// Allocate enough space right off the bat
-		StringBuilder sb = new StringBuilder(str.length());
+		
+		// Allocate enough space right off the bat, by computing how much space is enough
+		StringWriter sr = new StringWriter(length() + 1);
+		// I don't know enough about Java internals to know if the +1 is necessary
+		// or not to prevent a doubling in the buffer size from ever happening.
+		
 		// Build it
-		str.build(sb);
-		String result = sb.toString();
-		// Cache the result and return
-		str = new StrLiteral(result);
-		return result;
+		try {
+			((StringCatter)fst).write(sr);
+			snd.write(sr);
+		} catch (IOException e) {
+			// This SHOULD be impossible.
+			throw new RuntimeException(e);
+		}
+		
+		// Mutate ourselves, referentially transparently
+		fst = sr.toString();
+		snd = null;
+		return (String)fst;
 	}
+	
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		return toString().equals(obj.toString());
 	}
 	
+	/**
+	 * Determine the length of the represented string, without collapsing the append trees.
+	 * 
+	 * @return The string length
+	 */
 	public int length() {
-		return str.length();
-	}
-	// Things like substring and indexOf are done via toString() first
-	// There doesn't seem to be a point to trying to do that here
-	// also, compareTo and equals are also via toString.
-	
-	// We can do file output without constructing the final, appended string :)
-	public void write(Writer fout) throws IOException {
-		str.write(fout);
+		if(snd == null) {
+			return ((String)fst).length();
+		}
+		return ((StringCatter)fst).length() + snd.length();
 	}
 	
-	private static interface StrCattable {
-		public int length();
-		public void build(StringBuilder sb);
-		public void write(Writer fout) throws IOException;
+	/**
+	 * Writes out the string, without collapsing the append trees.
+	 *  
+	 * @param fout Where to write the string
+	 * @throws IOException
+	 */
+	public void write(final Writer fout) throws IOException {
+		if(snd == null) {
+			fout.write((String)fst);
+			return;
+		}
+		((StringCatter)fst).write(fout);
+		snd.write(fout);
 	}
 	
-	private static class StrLiteral implements StrCattable {
-		private final String str;
-		StrLiteral(String s) {
-			str = s;
-		}
-		@Override
-		public void build(StringBuilder sb) {
-			sb.append(str);
-		}
-		@Override
-		public int length() {
-			return str.length();
-		}
-		@Override
-		public void write(Writer fout) throws IOException {
-			fout.write(str);
-		}
-	}
-	
-	private static class StrAppend implements StrCattable {
-		private StrCattable left, right;
-		StrAppend(StrCattable l, StrCattable r) {
-			left = l; right = r;
-		}
-		@Override
-		public void build(StringBuilder sb) {
-			left.build(sb);
-			right.build(sb);
-		}
-		@Override
-		public int length() {
-			return left.length() + right.length();
-		}
-		@Override
-		public void write(Writer fout) throws IOException {
-			left.write(fout);
-			right.write(fout);
-		}
-	}
 }
