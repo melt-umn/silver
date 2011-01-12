@@ -57,8 +57,8 @@ top::Operation ::= s::String
 aspect production plusPlusOperationString
 top::Operation ::= 
 {
-  top.frontTrans = "";
-  top.midTrans = ".append(";
+  top.frontTrans = "new common.StringCatter(";
+  top.midTrans = ", ";
   top.endTrans = ")";
 }
 aspect production plusPlusOperationList
