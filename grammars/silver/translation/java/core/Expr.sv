@@ -187,16 +187,14 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.isAppReference = false;
   top.appReference = "";
 
-  top.translation = "(" ++ e.translation ++ ".decorate(context" ++ 
-                             (case inh of
-                               exprInhsEmpty() -> ""
-                              | _ ->
-                                ", common.Util.populateInh(" ++
-                                                        makeNTClassName(e.typerep.typeName) ++ ".num_inh_attrs, " ++
-                                                        "new int[]{" ++ implode(", ", inh.nameTrans) ++ "}, " ++ 
-                                                        "new common.Lazy[]{" ++ implode(", ", inh.valueTrans) ++ "})"
-                              end) ++ "))"; 
-
+  top.translation = e.translation ++ 
+    case inh of
+      exprInhsEmpty() -> ".decorate()" -- EXPLICITLY NOT PASSING PARENT POINTER (context) HERE!
+    | _ -> ".decorate(context, common.Util.populateInh(" ++
+                                      makeNTClassName(e.typerep.typeName) ++ ".num_inh_attrs, " ++
+                                      "new int[]{" ++ implode(", ", inh.nameTrans) ++ "}, " ++ 
+                                      "new common.Lazy[]{" ++ implode(", ", inh.valueTrans) ++ "}))"
+    end;
 }
 synthesized attribute nameTrans :: [String];
 synthesized attribute valueTrans :: [String];
