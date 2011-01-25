@@ -40,6 +40,12 @@ function mapUnparseDcls
   return if null(d) then [] else h.unparse :: mapUnparseDcls(tail(d), bv);
 }
 
+function isEmptyOfValues
+Boolean ::= d::Defs
+{
+  return null(d.valueList);
+}
+
 --------------------------------------------------------------------------------
 
 abstract production emptyDefs 

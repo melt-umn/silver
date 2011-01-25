@@ -6,10 +6,12 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   top.pp = "aspect production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.defs = addPaDcl(top.grammarName, id.location, id.lookupValue.fullName,
+  top.defs = if isEmptyOfValues(body.productionAttributes)
+             then emptyDefs()
+             else addPaDcl(top.grammarName, id.location, id.lookupValue.fullName,
                        namedSig.outputElement.typerep, getTypesSignature(namedSig.inputElements),
                        body.productionAttributes,
-               emptyDefs());
+                        emptyDefs());
 
   production attribute namedSig :: Decorated NamedSignature;
   namedSig = namedSignatureDcl(id.lookupValue.fullName, ns.inputElements, ns.outputElement);

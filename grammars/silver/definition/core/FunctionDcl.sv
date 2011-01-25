@@ -13,10 +13,12 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
 
   top.defs = addFunDcl(top.grammarName, id.location, namedSig,
-              addPaDcl(top.grammarName, id.location, fName,
+              if isEmptyOfValues(body.productionAttributes)
+              then emptyDefs()
+              else addPaDcl(top.grammarName, id.location, fName,
                        namedSig.outputElement.typerep, getTypesSignature(namedSig.inputElements),
                        body.productionAttributes,
-               emptyDefs()));
+                        emptyDefs()) );
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
