@@ -9,7 +9,7 @@ top::Expr ::= e::Decorated Expr
 aspect production stringLength
 top::Expr ::= e::Decorated Expr
 {
-  top.translation = "(new Integer(((common.StringCatter)" ++ e.translation ++ ").length()))";
+  top.translation = "Integer.valueOf(((common.StringCatter)" ++ e.translation ++ ").length())";
 }
 
 aspect production toIntFunction
