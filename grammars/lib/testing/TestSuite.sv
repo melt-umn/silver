@@ -1,18 +1,19 @@
 grammar lib:testing ;
 
-nonterminal Test with ioIn, ioOut ;
-nonterminal TestSuite with ioIn, ioOut ;
+nonterminal Test 
+  with msg, pass, ioIn, ioOut ;
+
+nonterminal TestSuite 
+  with msg, numTests, numPassed, numFailed, ioIn, ioOut ;
+
+synthesized attribute pass :: Boolean ;
+synthesized attribute msg :: String ;
+synthesized attribute numTests :: Integer ;
+synthesized attribute numPassed :: Integer ;
+synthesized attribute numFailed :: Integer ;
 
 synthesized attribute ioOut :: IO ;
 inherited attribute ioIn :: IO ;
-
-synthesized attribute pass :: Boolean occurs on Test ;
-
-synthesized attribute msg :: String occurs on Test, TestSuite ;
-synthesized attribute numTests :: Integer occurs on TestSuite ;
-synthesized attribute numPassed :: Integer occurs on TestSuite ;
-synthesized attribute numFailed :: Integer occurs on TestSuite ;
-
 
 abstract production defTest
 t::Test ::=

@@ -29,9 +29,53 @@ equalityTest ( removeBy (equalsInteger, 9, [ ]), [ ],
                [Integer], core_tests ) ;
 
 
+equalityTest ( removeAllBy (equalsInteger, [], [1,2,3]), [1,2,3],
+               [Integer], core_tests ) ;
 
+equalityTest ( removeAllBy (equalsInteger, [1,3,5], [1,2,3,4,5,6]), [2,4,6],
+               [Integer], core_tests ) ;
 
+equalityTest ( removeAllBy (equalsInteger, [1,3,5], [1,1,3,4,5,3]), [4],
+               [Integer], core_tests ) ;
+equalityTest ( removeAllBy (equalsInteger, [1,3,5], [5,3,1,3,5]), [],
+               [Integer], core_tests ) ;
 
+function equals1  Boolean ::= x::Integer { return x==1;}
+function notEquals1  Boolean ::= x::Integer { return x!=1;}
+equalityTest ( takeWhile (equals1, [2,3,1,3,5]), [],
+               [Integer], core_tests ) ;
+equalityTest ( takeWhile (equals1, [1,1,1,2,3,1,3,5]), [1,1,1],
+               [Integer], core_tests ) ;
+equalityTest ( takeWhile (equals1, [1,1,1]), [1,1,1],
+               [Integer], core_tests ) ;
+
+equalityTest ( dropWhile (equals1, [2,3,1,3,5]), [2,3,1,3,5],
+               [Integer], core_tests ) ;
+equalityTest ( dropWhile (equals1, [1,1,1,2,3,1,3,5]), [2,3,1,3,5],
+               [Integer], core_tests ) ;
+equalityTest ( dropWhile (equals1, [1,1,1]), [],
+               [Integer], core_tests ) ;
+
+equalityTest ( takeUntil (equals1, [2,3,1,3,5]), [2,3],
+               [Integer], core_tests ) ;
+equalityTest ( takeUntil (equals1, [1,1,1,2,3,1,3,5]), [],
+               [Integer], core_tests ) ;
+equalityTest ( takeUntil (equals1, [2,3,4]), [2,3,4],
+               [Integer], core_tests ) ;
+equalityTest ( takeUntil (equals1, []), [],
+               [Integer], core_tests ) ;
+
+equalityTest ( positionOf ( equalsInteger, 1, []), -1, Integer, core_tests) ;
+equalityTest ( positionOf ( equalsInteger, 1, [1,2]), 0, Integer, core_tests) ;
+equalityTest ( positionOf ( equalsInteger, 3, [0,1,2,3]), 3, Integer, core_tests) ;
+
+equalityTest ( notEqualsList ( notEqualsInteger, [], []), false, Boolean, core_tests) ;
+equalityTest ( notEqualsList ( notEqualsInteger, [1], [1]), false, Boolean, core_tests) ;
+equalityTest ( notEqualsList ( notEqualsInteger, [1,2], [1,2]), false, Boolean, core_tests) ;
+
+equalityTest ( notEqualsList ( notEqualsInteger, [1], [2]), true, Boolean, core_tests) ;
+equalityTest ( notEqualsList ( notEqualsInteger, [1], [1,2]), true, Boolean, core_tests) ;
+equalityTest ( notEqualsList ( notEqualsInteger, [1,2], []), true, Boolean, core_tests) ;
 
 {-
 function main
