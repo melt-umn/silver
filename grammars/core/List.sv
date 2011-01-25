@@ -55,6 +55,13 @@ function removeBy
              removeBy (eq, x, tail(xs)) ;
 }
 
+function removeAllBy
+[a] ::= eq::Function(Boolean ::= a a)  ys::[a]  xs::[a]
+{
+ return if null(ys) then xs
+        else removeAllBy(eq, tail(ys), removeBy(eq, head(ys), xs)) ;
+}
+
 function last
 a ::= lst::[a]
 {
@@ -80,16 +87,39 @@ function take
 function dropWhile
 [a] ::= f::Function(Boolean::=a) lst::[a]
 {
-  return if ! f(head(lst)) 
+  return if   null(lst) || ! f(head(lst)) 
          then lst
          else dropWhile(f,tail(lst)) ;
 }
 function takeWhile
 [a] ::= f::Function(Boolean::=a) lst::[a]
-{
-  return if ! f(head(lst)) 
-         then []
+{ return if   null(lst) || ! f(head(lst)) 
+         then [ ]
          else head(lst) :: takeWhile(f,tail(lst)) ;
+}
+function takeUntil
+[a] ::= f::Function(Boolean::=a) lst::[a]
+{
+  return if   null(lst) || f(head(lst)) 
+         then []
+         else head(lst) :: takeUntil(f,tail(lst)) ;
+}
+
+function positionOf
+Integer ::= eq::Function(Boolean ::= a a) x::a xs::[a]
+{
+ return positionOfHelper(eq,x,xs,0) ;
+}
+
+function positionOfHelper
+Integer ::= eq::Function(Boolean ::= a a) x::a xs::[a] currentPos::Integer
+{
+ return if   null(xs)
+        then -1
+        else 
+        if   eq(x, head(xs))
+        then currentPos
+        else positionOfHelper(eq, x, tail(xs), currentPos+1) ;
 }
 
 function reverse
