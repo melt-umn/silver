@@ -204,7 +204,7 @@ aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 {
   top.nameTrans = lhs.nameTrans;
-  top.valueTrans = ["new common.Lazy(){public Object eval(common.DecoratedNode context) {return " ++ e.translation ++ ";}}"];
+  top.valueTrans = [wrapLazy(e)];
 }
 
 aspect production exprInhsEmpty
@@ -440,7 +440,11 @@ function wrapThunk
 String ::= original::Decorated Expr beLazy::Boolean
 {
   return if beLazy
-         then "new common.Thunk(context, new common.Lazy() { public Object eval(common.DecoratedNode context) { return " ++ original.translation ++ "; } })"
+         then "new common.Thunk(context, " ++ wrapLazy(original) ++ ")"
          else original.translation;
 }
-
+function wrapLazy
+String ::= e::Decorated Expr
+{
+  return "new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return " ++ e.translation ++ "; } }";
+}

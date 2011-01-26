@@ -170,11 +170,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 
   top.translation =
         "\t\t// " ++ val.pp ++ " := " ++ e.pp ++ "\n" ++
-        "\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes.get(\"" ++ val.lookupValue.fullName ++ "\")).setBase(new common.Lazy(){\n" ++ 
-        "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-        "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-        "\t\t\t}\n" ++ 
-        "\t\t});\n";
+        "\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes.get(\"" ++ val.lookupValue.fullName ++ "\")).setBase(" ++ wrapLazy(e) ++ ");\n";
 }
 aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
@@ -186,11 +182,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 
   top.translation = 
         "\t\t// " ++ val.pp ++ " <- " ++ e.pp ++ "\n" ++
-        "\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes.get(\"" ++ val.lookupValue.fullName ++ "\")).addPiece(new common.Lazy(){\n" ++ 
-        "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-        "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-        "\t\t\t}\n" ++ 
-        "\t\t});\n";
+        "\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes.get(\"" ++ val.lookupValue.fullName ++ "\")).addPiece(" ++ wrapLazy(e) ++ ");\n";
 }
 
 aspect production synBaseColAttributeDef
@@ -202,11 +194,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- := -} e::Exp
         "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ "\n" ++
         "\t\tif(" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] == null)\n" ++
         "\t\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"(" ++ occursCheck.dcl.attrOccursIndex ++ ");\n" ++
-        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "]).setBase(new common.Lazy(){\n" ++ 
-        "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-        "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-        "\t\t\t}\n" ++ 
-        "\t\t});\n";
+        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
 }
 aspect production synAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- <- -} e::Expr
@@ -217,11 +205,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- <- -} e::Exp
 	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ "\n" ++
         "\t\tif(" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] == null)\n" ++
         "\t\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.lookupAttribute.fullName) ++"(" ++ occursCheck.dcl.attrOccursIndex ++ ");\n" ++
-        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "]).addPiece(new common.Lazy(){\n" ++ 
-        "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-        "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-        "\t\t\t}\n" ++ 
-        "\t\t});\n";
+        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";
 }
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- := -} e::Expr
@@ -232,11 +216,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- := -} e::Exp
 
   top.translation =
         "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ "\n" ++
-        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "]).setBase(new common.Lazy(){\n" ++ 
-        "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-        "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-        "\t\t\t}\n" ++ 
-        "\t\t});\n";
+        "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
 }
 aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- <- -} e::Expr
@@ -245,11 +225,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- <- -} e::Exp
 
   top.translation = 
 	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ "\n" ++
-        "\t\t((common.CollectionAttribute)" ++ dl.translation ++"[" ++ occursCheck.dcl.attrOccursIndex ++ "]).addPiece(new common.Lazy(){\n" ++ 
-        "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-        "\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-        "\t\t\t}\n" ++ 
-        "\t\t});\n";
+        "\t\t((common.CollectionAttribute)" ++ dl.translation ++"[" ++ occursCheck.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";
 }
 
 
