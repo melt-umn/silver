@@ -60,11 +60,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   top.setupInh := "";
   top.translation = 
 	"\t\t//" ++ top.pp ++ "\n" ++
-	"\t\t" ++ className ++ ".forward = new common.Lazy(){\n" ++ 
-	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-	"\t\t\t}\n" ++
-	"\t\t};\n";
+	"\t\t" ++ className ++ ".forward = " ++ wrapLazy(e) ++ ";\n";
 }
 
 aspect production forwardsToWith
@@ -76,11 +72,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
   top.setupInh := "";
   top.translation =
 	"\t\t//" ++ top.pp ++ "\n" ++
-	"\t\t" ++ className ++ ".forward = new common.Lazy(){\n" ++ 
-	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-	"\t\t\t}\n" ++
-	"\t\t};\n" ++
+	"\t\t" ++ className ++ ".forward = " ++ wrapLazy(e) ++ ";\n" ++
   	inh.translation;
 }
 
@@ -99,11 +91,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 
   top.translation = 
 	"\t\t//" ++ top.pp ++ "\n" ++
-	"\t\t" ++ className ++ ".forwardInheritedAttributes[" ++ lhs.attrName ++ "] = new common.Lazy(){\n" ++ 
-	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-	"\t\t\t}\n" ++
-	"\t\t};\n";
+	"\t\t" ++ className ++ ".forwardInheritedAttributes[" ++ lhs.attrName ++ "] = " ++ wrapLazy(e) ++ ";\n";
 
 }
 
@@ -180,11 +168,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   top.setupInh := "";
   top.translation = 
 	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
-        "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = new common.Lazy(){\n" ++ 
-	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-	"\t\t\t}\n" ++
-	"\t\t};\n";
+        "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
 }
 
 aspect production inheritedAttributeDef
@@ -193,11 +177,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   top.setupInh := "";
   top.translation = 
 	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
-        "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = new common.Lazy(){\n" ++ 
-	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-	"\t\t\t}\n" ++
-	"\t\t};\n";
+        "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
 }
 
 
@@ -210,11 +190,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.setupInh := "";
   top.translation =
 	"\t\t// " ++ val.pp ++ " = " ++ e.pp ++ "\n" ++
-	"\t\t" ++ className ++ ".localAttributes.put(\"" ++ val.lookupValue.fullName ++ "\", new common.Lazy(){\n" ++ 
-	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-	"\t\t\t}\n" ++
-	"\t\t});\n";
+	"\t\t" ++ className ++ ".localAttributes.put(\"" ++ val.lookupValue.fullName ++ "\", " ++ wrapLazy(e) ++ ");\n";
 }
 
 aspect production returnDef
@@ -226,10 +202,6 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   top.setupInh := "";
   top.translation =
 	"\t\t//" ++ top.pp ++ "\n" ++
-	"\t\t" ++ className ++ ".synthesizedAttributes[0] = new common.Lazy(){\n" ++ 
-	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
-	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
-	"\t\t\t}\n" ++
-	"\t\t};\n";
+	"\t\t" ++ className ++ ".synthesizedAttributes[0] = " ++ wrapLazy(e) ++ ";\n";
 }
 
