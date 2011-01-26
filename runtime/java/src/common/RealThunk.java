@@ -6,7 +6,7 @@ package common;
  * This is currently only used for global values in Silver.
  * 
  * @author tedinski
- * @see Thunk
+ * @see Closure
  */
 public final class RealThunk {
 	// TODO: Maybe we should anon subclass thunk, rather than using thunk with a anon Lazy
