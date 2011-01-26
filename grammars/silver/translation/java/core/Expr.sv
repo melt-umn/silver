@@ -2,8 +2,6 @@ grammar silver:translation:java:core;
 
 import silver:util;
 
-import silver:translation:java:concrete_syntax:copper; -- todo : part of wrapThunk hack
-
 import silver:analysis:typechecking:core only finalSubst;
 
 function finalType
