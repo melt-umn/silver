@@ -99,7 +99,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 
   top.translation = 
 	"\t\t//" ++ top.pp ++ "\n" ++
-	"\t\t" ++ className ++ ".forwardAttributes[" ++ lhs.attrName ++ "] = new common.Lazy(){\n" ++ 
+	"\t\t" ++ className ++ ".forwardInheritedAttributes[" ++ lhs.attrName ++ "] = new common.Lazy(){\n" ++ 
 	"\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++
 	"\t\t\t\treturn " ++ e.translation ++ ";\n" ++
 	"\t\t\t}\n" ++
@@ -131,7 +131,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
   top.setupInh := if !te.typerep.mayBeSuppliedInhAttrs then  "" else
         	 "\t\t//" ++ top.pp ++ "\n" ++
 		 "\t\t" ++ 
-		 makeClassName(top.signature.fullName) ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ 
+		 makeClassName(top.signature.fullName) ++ ".localInheritedAttributes.put(\"" ++ fName ++ "\", " ++ 
 										    "new common.Lazy[" ++ makeNTClassName(te.typerep.typeName) ++ ".num_inh_attrs]);\n";
   top.translation = "";
 }
@@ -142,7 +142,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
   top.setupInh := if !te.typerep.mayBeSuppliedInhAttrs then  "" else
 	   	"\t\t//" ++ top.pp ++ "\n" ++		 
 		"\t\t" ++ 
-		 makeClassName(top.signature.fullName) ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ 
+		 makeClassName(top.signature.fullName) ++ ".localInheritedAttributes.put(\"" ++ fName ++ "\", " ++ 
 										    "new common.Lazy[" ++ makeNTClassName(te.typerep.typeName) ++ ".num_inh_attrs]);\n";
   top.translation = "";
 }
@@ -153,7 +153,7 @@ top::DefLHS ::= q::Decorated QName
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
-  top.translation = className ++ ".inheritedAttributes.get(" ++ className ++ ".i_" ++ q.lookupValue.fullName ++ ")";
+  top.translation = className ++ ".childInheritedAttributes[" ++ className ++ ".i_" ++ q.lookupValue.fullName ++ "]";
 }
 
 aspect production lhsDefLHS
@@ -165,13 +165,13 @@ top::DefLHS ::= q::Decorated QName
 aspect production localDefLHS
 top::DefLHS ::= q::Decorated QName
 {
-  top.translation = makeClassName(top.signature.fullName) ++ ".inheritedAttributes.get(\"" ++ q.lookupValue.fullName ++ "\")";
+  top.translation = makeClassName(top.signature.fullName) ++ ".localInheritedAttributes.get(\"" ++ q.lookupValue.fullName ++ "\")";
 }
 
 aspect production forwardDefLHS
 top::DefLHS ::= q::Decorated QName
 {
-  top.translation = makeClassName(top.signature.fullName) ++ ".forwardAttributes";
+  top.translation = makeClassName(top.signature.fullName) ++ ".forwardInheritedAttributes";
 }
 
 aspect production synthesizedAttributeDef

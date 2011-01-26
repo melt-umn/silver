@@ -91,7 +91,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
         "\t\t\t}\n" ++ 
         "\t\t});\n" ++ 
         if !te.typerep.mayBeSuppliedInhAttrs then  "" else
-                 "\t\t" ++ className ++ ".inheritedAttributes.put(\"" ++ fName ++ "\", " ++ "new common.Lazy[" ++ makeNTClassName(te.typerep.typeName) ++ ".num_inh_attrs]);\n";
+                 "\t\t" ++ className ++ ".localInheritedAttributes.put(\"" ++ fName ++ "\", " ++ "new common.Lazy[" ++ makeNTClassName(te.typerep.typeName) ++ ".num_inh_attrs]);\n";
 
   top.translation = "";
 }

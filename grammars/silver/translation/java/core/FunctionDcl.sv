@@ -40,9 +40,10 @@ String ::= whatGrammar::String whatName::String whatSig::Decorated NamedSignatur
 makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(whatSig.inputElements) ++ "};\n\n" ++
 
-"\tpublic static final java.util.Map<String, common.Lazy> localAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
+"\tpublic static final java.util.TreeMap<String, common.Lazy> localAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
 "\tpublic static final common.Lazy[] synthesizedAttributes = new common.Lazy[1];\n" ++
-"\tpublic static final java.util.Map<Object, common.Lazy[]> inheritedAttributes = new java.util.HashMap<Object, common.Lazy[]>();\n\n" ++	
+"\tpublic static final common.Lazy[][] childInheritedAttributes = new common.Lazy[" ++ toString(length(sigNames)) ++ "][];\n\n" ++	
+"\tpublic static final java.util.TreeMap<String, common.Lazy[]> localInheritedAttributes = new java.util.TreeMap<String, common.Lazy[]>();\n\n" ++	
 
 
 "\tstatic{\n" ++
@@ -53,7 +54,7 @@ makeStaticDcls(className, whatSig.inputElements) ++
 "\t\tthis(new Object[]{" ++ makeChildArray(sigNames) ++ "});\n" ++
 "\t}\n\n" ++
 
-"\tpublic " ++ className ++ "(Object[] args) {\n" ++
+"\tpublic " ++ className ++ "(final Object[] args) {\n" ++
 "\t\tsuper(args);\n" ++
 "\t}\n\n" ++
 
@@ -63,8 +64,13 @@ makeStaticDcls(className, whatSig.inputElements) ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic common.Lazy[] getDefinedInheritedAttributes(final Object key) {\n" ++
-"\t\treturn inheritedAttributes.get(key);\n" ++
+"\tpublic common.Lazy[] getLocalInheritedAttributes(final String key) {\n" ++
+"\t\treturn localInheritedAttributes.get(key);\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic common.Lazy[] getChildInheritedAttributes(final int key) {\n" ++
+"\t\treturn childInheritedAttributes[key];\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
