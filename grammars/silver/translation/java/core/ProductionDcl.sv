@@ -27,11 +27,12 @@ makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(ns.inputElements) ++ "};\n\n" ++
 
 "\tpublic static common.Lazy forward;\n" ++
-"\tpublic static final common.Lazy[] forwardAttributes = new common.Lazy[" ++ fnnt ++ ".num_inh_attrs];\n\n" ++
+"\tpublic static final common.Lazy[] forwardInheritedAttributes = new common.Lazy[" ++ fnnt ++ ".num_inh_attrs];\n\n" ++
 
-"\tpublic static final java.util.Map<String, common.Lazy> localAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
+"\tpublic static final java.util.TreeMap<String, common.Lazy> localAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
 "\tpublic static final common.Lazy[] synthesizedAttributes = new common.Lazy[" ++ fnnt ++ ".num_syn_attrs];\n" ++
-"\tpublic static final java.util.Map<Object, common.Lazy[]> inheritedAttributes = new java.util.HashMap<Object, common.Lazy[]>();\n\n" ++	
+"\tpublic static final common.Lazy[][] childInheritedAttributes = new common.Lazy[" ++ toString(length(sigNames)) ++ "][];\n\n" ++	
+"\tpublic static final java.util.TreeMap<String, common.Lazy[]> localInheritedAttributes = new java.util.TreeMap<String, common.Lazy[]>();\n\n" ++	
 
 
 "\tstatic{\n" ++
@@ -42,7 +43,7 @@ makeStaticDcls(className, ns.inputElements) ++
 "\t\tthis(new Object[]{" ++ makeChildArray(sigNames) ++ "});\n" ++
 "\t}\n\n" ++
 
-"\tpublic " ++ className ++ "(Object[] args) {\n" ++
+"\tpublic " ++ className ++ "(final Object[] args) {\n" ++
 "\t\tsuper(args);\n" ++
 "\t}\n\n" ++
 
@@ -52,8 +53,13 @@ makeStaticDcls(className, ns.inputElements) ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic common.Lazy[] getDefinedInheritedAttributes(final Object key) {\n" ++
-"\t\treturn inheritedAttributes.get(key);\n" ++
+"\tpublic common.Lazy[] getLocalInheritedAttributes(final String key) {\n" ++
+"\t\treturn localInheritedAttributes.get(key);\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic common.Lazy[] getChildInheritedAttributes(final int key) {\n" ++
+"\t\treturn childInheritedAttributes[key];\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
@@ -62,8 +68,8 @@ makeStaticDcls(className, ns.inputElements) ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic common.Lazy getForwardInh(final int index) {\n" ++
-"\t\treturn forwardAttributes[index];\n" ++
+"\tpublic common.Lazy getForwardInheritedAttributes(final int index) {\n" ++
+"\t\treturn forwardInheritedAttributes[index];\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
@@ -110,14 +116,14 @@ String ::= className::String s::[Decorated NamedSignatureElement]{
   return if null(s) 
 	 then "" 
 	 else (if head(s).typerep.mayBeSuppliedInhAttrs then
-	      "\t" ++ className ++ ".inheritedAttributes.put(i_" ++ head(s).elementName ++ ", " ++ 
-                                                            "new common.Lazy[" ++ makeNTClassName(head(s).typerep.typeName) ++ ".num_inh_attrs]);\n"
+	      "\tchildInheritedAttributes[i_" ++ head(s).elementName ++ "] = " ++ 
+                                                            "new common.Lazy[" ++ makeNTClassName(head(s).typerep.typeName) ++ ".num_inh_attrs];\n"
                else "") ++ makeStaticDcls(className, tail(s));
 }
 
 function makeConstructor
 String ::= s::[String]{
-  return if null(s) then "" else "Object c_" ++ head(s) ++ (if null(tail(s)) then "" else (", " ++ makeConstructor(tail(s))));
+  return if null(s) then "" else "final Object c_" ++ head(s) ++ (if null(tail(s)) then "" else (", " ++ makeConstructor(tail(s))));
 }
 
 function makeChildArray
