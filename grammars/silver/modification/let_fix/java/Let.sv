@@ -7,6 +7,9 @@ import silver:definition:env;
 import silver:translation:java:type;
 import silver:definition:type:syntax;
 
+-- TODO: this is an area where we're creating Lazys in a nested fashion.
+-- Ideally, we wouldn't be doing this...
+
 aspect production letp
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {

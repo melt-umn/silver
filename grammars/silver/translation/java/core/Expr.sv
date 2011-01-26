@@ -204,7 +204,7 @@ aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 {
   top.nameTrans = lhs.nameTrans;
-  top.valueTrans = [wrapLazy(e)];
+  top.valueTrans = [wrapLazy(e)]; -- TODO: this is another appearance of the nested lazy problem...
 }
 
 aspect production exprInhsEmpty
@@ -440,7 +440,7 @@ function wrapThunk
 String ::= original::Decorated Expr beLazy::Boolean
 {
   return if beLazy
-         then "new common.Thunk(context, " ++ wrapLazy(original) ++ ")"
+         then "new common.Closure(context) { public final Object eval() { return " ++ original.translation ++ "; } }"
          else original.translation;
 }
 function wrapLazy
