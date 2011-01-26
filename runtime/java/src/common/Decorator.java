@@ -28,7 +28,6 @@ abstract public class Decorator {
 	}
 	
 	// Default actions for autocopy
-	@SuppressWarnings("unchecked")
 	static protected void decorateAutoCopy(final Class<?> production, final String attribute) {
 		
 		// Find the index of the inh attribute on this production's NT
@@ -47,10 +46,10 @@ abstract public class Decorator {
 		
 		// Get information about the children
 		Class<?> childTypes[];
-		Map<Object, Lazy[]> inheritedAttributes;
+		Lazy[][] inheritedAttributes;
 		try {
 			childTypes = (Class<?>[]) production.getField("childTypes").get(null);
-			inheritedAttributes = (Map<Object, Lazy[]>)production.getField("inheritedAttributes").get(null);
+			inheritedAttributes = (Lazy[][])production.getField("childInheritedAttributes").get(null);
 		} catch (Throwable t) {
 			throw new SilverInternalError("Attempting to decorate a nonproduction?",t);
 		}
@@ -68,10 +67,10 @@ abstract public class Decorator {
 			int loc = Arrays.asList(occurs).indexOf(attribute);
 			if(loc != -1) {
 				// The nonterminal of this child contains the attribute in question
-				if(inheritedAttributes.get(i)[loc] == null) {
+				if(inheritedAttributes[i][loc] == null) {
 					// ... and this production does not define that attribute for this child!
 					//System.out.println("Applying decorator to child # " + i + " in production " + production.getName() + " which is of type" + childTypes[i].getName());
-					inheritedAttributes.get(i)[loc] = eq;
+					inheritedAttributes[i][loc] = eq;
 				}
 			}
 		}

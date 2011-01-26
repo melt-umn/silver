@@ -195,7 +195,7 @@ public class DecoratedNode {
 			o = self.getChild(child);
 			// Thunk evaluation is now handled in Node, rather than here.
 			if (o instanceof Node) {
-				o = ((Node)o).decorate(this, self.getDefinedInheritedAttributes(child));
+				o = ((Node)o).decorate(this, self.getChildInheritedAttributes(child));
 			}
 			
 			// CACHE : probably should not comment out child caching?
@@ -261,7 +261,7 @@ public class DecoratedNode {
 			}
 			try {
 				o = l.eval(this);
-				o = ((Node)o).decorate(this, self.getDefinedInheritedAttributes(attribute));
+				o = ((Node)o).decorate(this, self.getLocalInheritedAttributes(attribute));
 			} catch(Throwable t){
 				throw new TraceException("Error while evaluating local attribute '" + attribute + "' in production '" + self.getName() + "'", t);
 			}
@@ -386,7 +386,7 @@ public class DecoratedNode {
 		// No cache look up here. There is only one forward production. It will call this method
 		// a maximum of once for each attribute, since it will cache the result.
 		
-		Lazy l = self.getForwardInh(attribute);
+		Lazy l = self.getForwardInheritedAttributes(attribute);
 		if(l == null) {
 			return inherited(attribute);
 		}
