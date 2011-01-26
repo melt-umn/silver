@@ -40,7 +40,7 @@ public abstract class FunctionNode extends Node {
 	}
 
 	@Override
-	public final Lazy getForwardInh(final int index) {
+	public final Lazy getForwardInheritedAttributes(final int index) {
 		throw new SilverInternalError("Functions do not forward!");
 	}
 

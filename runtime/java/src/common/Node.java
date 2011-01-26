@@ -147,7 +147,7 @@ public abstract class Node {
 	 * @param index The inherited attribute requested by a forwarded-to Node. 
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of this attribute provided to the forward.
 	 */
-	public abstract Lazy getForwardInh(final int index);
+	public abstract Lazy getForwardInheritedAttributes(final int index);
 
 	/**
 	 * @param index Any synthesized attribute on this Node
@@ -156,12 +156,17 @@ public abstract class Node {
 	public abstract Lazy getSynthesized(final int index);
 
 	/**
-	 * @param key The "key" object for something this Node has inherited attribute for. (For children, this is Integer, for locals, this is String.)
-	 * @return A Map defining the inherited attributes supplied to whatever the key is for. 
+	 * @param key The name of the local to retrieve inherited attributes for.
+	 * @return An array containing the inherited attributes supplied to that local 
 	 */
-	public abstract Lazy[] getDefinedInheritedAttributes(final Object key);
-	// TODO: split this into child/locals.
-
+	public abstract Lazy[] getLocalInheritedAttributes(final String key);
+	
+	/**
+	 * @param key The child index to look up the inherited attributes.
+	 * @return An array containing the inherited attributes supplied to that child 
+	 */
+	public abstract Lazy[] getChildInheritedAttributes(final int key);
+	
 	/**
 	 * @param name Any local attribute on this Node
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of the attribute
