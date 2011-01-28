@@ -86,3 +86,30 @@ t ::= --rrs::[RewriteRule_v2<dt t>]
   first_rr.tree_v2 = nomatch ;
 }
 
+
+
+
+
+{- Version 3.
+
+   A fix to version 1.  Now pass in the tree to match against and the
+   tree to return if no match is made.  Both will presumably be
+   decorated.
+
+   Thus, we need to 'new' the results of the functions that apply
+   rewrite rules in this version.
+-}
+nonterminal RewriteRule_v3<a> ;
+
+synthesized attribute match_v3 :: Boolean occurs on RewriteRule_v3<a> ;
+synthesized attribute rewrite_v3<a> :: a occurs on RewriteRule_v3<a> ;
+
+inherited attribute tree_to_match_v3<a> :: a occurs on RewriteRule_v3<a> ;
+--inherited attribute tree_if_no_match_v3<a> :: a occurs on RewriteRule_v3<a> ;
+
+function applyRewriteRule_v3
+t ::= rr::RewriteRule_v3<t> tomatch::t nomatch::t
+{ return if rr.match_v3 then rr.rewrite_v3 else nomatch ;
+  rr.tree_to_match_v3 = tomatch ;
+}
+
