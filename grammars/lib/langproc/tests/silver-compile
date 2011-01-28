@@ -9,7 +9,7 @@
 export GRAMMAR_PATH="../../../../grammars"
 export  SILVER_HOME="../../../../../../silver/trunk/jars"
 
-time java -Xss8M -Xmx1000M -jar $SILVER_HOME/RunSilver.jar \
+java -Xss8M -Xmx1000M -jar $SILVER_HOME/RunSilver.jar \
      $1 -o langproc.tests.jar \
      lib:langproc:tests \
      && ant
