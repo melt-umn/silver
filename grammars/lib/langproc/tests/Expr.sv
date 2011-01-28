@@ -83,7 +83,7 @@ e::Expr ::= id::Id_t
 
 -- This one is OK, but why do I have to decorate e?  shouldn't its type be 
 -- Decorated Expr?
-   e.transform_Expr = applyRewriteRule_v2( e.rwrule_Expr, decorate e with {}, idRef(id)) ;
+--   e.transform_Expr = applyRewriteRule_v2( e.rwrule_Expr, decorate e with {}, idRef(id)) ;
 
   e.transforms_Expr = idRef(id) ;
 }

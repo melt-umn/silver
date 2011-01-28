@@ -31,9 +31,16 @@ equalityTest ( root(eabcd).pp, "(((a + b) + c) + d)", String, rw ) ;
 -- testing the add_suffix rewrite rule
 equalityTest ( rename_eabcd.pp, "(((a_XX + b) + c) + d)", String, rw ) ;
 
+{-
 equalityTest ( decorate root(eabcd) 
                  with { rwrule_Expr = addSuffix_v2("XX") ; }.transform_Root.pp , 
                "(((a_XX + b) + c) + d)", String, rw ) ;
+-}
+
+equalityTest ( decorate root(eabcd) 
+                 with { rwrule_v3_Expr = addSuffix_v3("XX") ; }.transform_Root.pp , 
+               "(((a_XX + b) + c) + d)", String, rw ) ;
+
 
 
 
