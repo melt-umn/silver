@@ -73,7 +73,7 @@ top::Expr ::= 'case' e1::Expr 'of' ml::MRuleList 'end'
                     | _ -> decorateExprWithEmpty('decorate', e1, 'with', '{', '}')
                     end;
 
-  e1.expected = expected_decorated(); -- Since we'd just decorate it if it wasn't...
+  e1.expected = expected_decorated(); -- Since we'd just decorate it if it wasn't... TODO: this is potentially problematic??
   forwards to ml.translation_tree with {
   downSubst = ml.upSubst;
   };
