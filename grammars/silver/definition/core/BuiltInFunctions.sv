@@ -77,7 +77,10 @@ top::Expr ::= 'new' '(' e::Expr ')'
   top.errors := e.errors;
   top.typerep = e.typerep.decoratedType;
 
-  e.expected = expected_decorated();
+  e.expected = case top.expected of
+                 expected_type(nonterminalTypeExp(f,p)) -> expected_type(decoratedTypeExp(nonterminalTypeExp(f,p)))
+               | _ -> expected_decorated()
+               end;
 }
 
 concrete production terminalFunction
