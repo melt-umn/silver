@@ -326,34 +326,51 @@ public final class Util {
 	
 	// These are written un-ideally so that they're all confined in one place.
 	public static StringCatter hackyhackyUnparse(Object o) {
-		if(o instanceof DecoratedNode) {
-			o = ((DecoratedNode)o).undecorate();
-		}
-		Node n = (Node) o;
-		
 		StringBuilder sb = new StringBuilder();
 		
-		hackyhackyUnparseNode(n, sb);
+		hackyhackyUnparseObject(o, sb);
 		
 		return new StringCatter(sb.toString());
 	}
 	
+	private static void hackyhackyUnparseObject(Object o, StringBuilder sb) {
+		if(o instanceof Node) {
+			hackyhackyUnparseNode((Node)o, sb);
+		} else if(o instanceof DecoratedNode) {
+			// For the time being, just undecorate it
+			hackyhackyUnparseNode(((DecoratedNode)o).undecorate(), sb);
+		} else if(o instanceof TerminalRecord) {
+			TerminalRecord t = (TerminalRecord) o;
+			sb.append("'" + t.lexeme + "'");
+		} else if(o instanceof StringCatter) {
+			sb.append("\"" + o.toString() + "\"");
+		} else if(o instanceof ConsCell) {
+			hackyhackyUnparseList((ConsCell)o, sb);
+		} else {
+			sb.append("<OBJ>");
+		}
+	}
 	private static void hackyhackyUnparseNode(Node n, StringBuilder sb) {
 		sb.append(n.getName() + "(");
 		for(int i = 0; i < n.getNumberOfChildren(); i++) {
 			if(i != 0) {
 				sb.append(", ");
 			}
-			Object c = n.getChild(i);
-			if(c instanceof Node) {
-				hackyhackyUnparseNode((Node)c, sb);
-			} else if(c instanceof TerminalRecord) {
-				TerminalRecord t = (TerminalRecord) c;
-				sb.append("'" + t.lexeme + "'");
-			} else {
-				sb.append("<OBJ>");
-			}
+			hackyhackyUnparseObject(n.getChild(i), sb);
+			//System.out.println(sb.toString());
 		}
 		sb.append(")");
+	}
+	private static void hackyhackyUnparseList(ConsCell c, StringBuilder sb) {
+		sb.append("[");
+		ConsCell i = c;
+		while(!i.nil()) {
+			if(i != c) {
+				sb.append(", ");
+			}
+			hackyhackyUnparseObject(i.head(), sb);
+			i = i.tail();
+		}
+		sb.append("]");
 	}
 }

@@ -28,7 +28,7 @@ public class ConsCell {
 	 * @param h The head element, or a thunk that evaluates to the head element.
 	 * @param t The tail element, or a thunk that evaluates to the tail element.
 	 */
-	public ConsCell(Object h, Object t) {
+	public ConsCell(final Object h, final Object t) {
 		head = h; tail = t;
 	}
 	
