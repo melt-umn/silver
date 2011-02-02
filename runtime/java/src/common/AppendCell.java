@@ -1,5 +1,36 @@
 package common;
 
+/*
+ * I want to document this behavior, as Silver pseudo-code.
+ * 
+ * nonterminal List<a> with head<a>, tail<a>;
+ * 
+ * prod cons
+ * List<a> ::= h::a t::List<a>
+ * { ... }
+ * prod nil
+ * List<a> ::=
+ * { ... }
+ * 
+ * prod append
+ * List<a> ::= l::List<a> r::List<a>
+ * {
+ *   forwards to case l of 
+ *                 nil() -> r
+ *               | append(l1,l2) -> append(l1, append(l2, r))
+ *               | cons(h,t) -> cons(h, append(t, r))
+ *               end;
+ * }
+ * 
+ * This would be the real implementation IF:
+ * 1. Silver nodes were as space efficient as Java objects. (important because there's usually a LOT)
+ * 2. If pattern matching paid attention to forwards.
+ * 
+ * Only problem with the above: it doesn't detect already-forwarded bits, and treat
+ * them like cons...
+ */
+
+
 /**
  * An "append node" for lists.  We end up actually storing the lists as trees,
  * until demanded, in essence.  Then share the result as much as possible.

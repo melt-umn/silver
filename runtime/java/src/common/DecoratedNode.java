@@ -293,7 +293,6 @@ public class DecoratedNode {
 					throw new TraceException("Error while evaluating synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' in production '" + self.getName() + "'", t);
 				}
 			} else if(self.getForward() != null) {
-				// TODO: tell forward not to cache the value since we will?
 				try {
 					o = forward().synthesized(attribute);
 				} catch(Throwable t) {
