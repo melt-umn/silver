@@ -1,44 +1,27 @@
 grammar lib:xml:ast;
 
--- Author: August Schwerdfeger for Adventium Enterprises LLC, 2011.
+-- Authors: August Schwerdfeger for Adventium Enterprises LLC, 2011.
+--          Ted Kaminski
 
-synthesized attribute xmlAttributeList :: [XMLAttribute];
-synthesized attribute xmlAttributeValue :: String;
-synthesized attribute xmlAttributes :: XMLAttributeList;
-synthesized attribute xmlDTD :: XMLDocumentType;
-synthesized attribute xmlName :: String;
-synthesized attribute xmlSubNodeList :: [XMLNode];
+nonterminal XMLDocument with xmlSubNodes, xmlDTD, xmlText, xmlUnparse;
+nonterminal XMLDocumentType with xmlText, xmlName, xmlSubNodes, xmlUnparse;
+nonterminal XMLNodeList with xmlSubNodeList, xmlText, xmlUnparse;
+nonterminal XMLNode with xmlName, xmlAttributes, xmlSubNodes, xmlText, xmlUnparse;
+nonterminal XMLAttribute with xmlName, xmlAttributeValue, xmlUnparse;
+
 synthesized attribute xmlSubNodes :: XMLNodeList;
+synthesized attribute xmlDTD :: XMLDocumentType;
+
+synthesized attribute xmlName :: String;
 synthesized attribute xmlText :: String;
+synthesized attribute xmlAttributes :: [XMLAttribute];
 
-nonterminal XMLDocument with xmlSubNodes, xmlDTD, xmlText;
-nonterminal XMLDocumentType with xmlText, xmlName, xmlSubNodes;
+synthesized attribute xmlAttributeValue :: String;
 
-nonterminal XMLNodeList with xmlSubNodeList, xmlText;
-nonterminal XMLNode with xmlName, xmlAttributes, xmlSubNodes, xmlText;
+synthesized attribute xmlSubNodeList :: [XMLNode];
 
-nonterminal XMLAttributeList with xmlAttributeList;
-nonterminal XMLAttribute with xmlName, xmlAttributeValue;
-
-nonterminal XMLElement with xmlName, xmlAttributes, xmlSubNodes, xmlText;
-nonterminal XMLText with xmlText;
-
--- XMLAttribute
-
-abstract production xmlAttribute
-top::XMLAttribute ::= name::String value::String
-{
-   top.xmlName = name;
-   top.xmlAttributeValue = value;
-}
-
--- XMLAttributeList
-
-abstract production xmlAttributeListBuilder
-top::XMLAttributeList ::= n::[XMLAttribute]
-{
-   top.xmlAttributeList = n;
-}
+-- WARNING: this does not do proper escaping! Probably shouldn't be relied upon to generate valid XML!
+synthesized attribute xmlUnparse :: String;
 
 -- XMLDocument
 
@@ -48,6 +31,7 @@ top::XMLDocument ::= xmlDTD::XMLDocumentType elements::XMLNodeList
    top.xmlDTD = xmlDTD;
    top.xmlSubNodes = elements;
    top.xmlText = xmlDTD.xmlText ++ elements.xmlText;
+   top.xmlUnparse = xmlDTD.xmlUnparse ++ elements.xmlUnparse;
 }
 
 -- XMLDocumentType
@@ -58,66 +42,70 @@ top::XMLDocumentType ::= xmlDTDName::String entities::XMLNodeList
    top.xmlName = xmlDTDName;
    top.xmlSubNodes = entities;
    top.xmlText = xmlDTDName ++ entities.xmlText;
+   top.xmlUnparse = "<!DOCTYPE " ++ xmlDTDName ++ ">\n"; -- Yeah, does entities ever exist here?
 }
 
 abstract production xmlNoDocumentType
 top::XMLDocumentType ::=
 {
    top.xmlName = "";
-   top.xmlSubNodes = xmlNodeListBuilder([]);
+   top.xmlSubNodes = xmlNodeListNil();
    top.xmlText = "";
+   top.xmlUnparse = "";
 }
 
---XMLElement
+-- XMLNodeList
 
-abstract production xmlElement
-top::XMLElement ::= name::String attributes::XMLAttributeList elements::XMLNodeList
+abstract production xmlNodeListCons
+top::XMLNodeList ::= h::XMLNode t::XMLNodeList
+{
+   top.xmlSubNodeList = h :: t.xmlSubNodeList;
+   top.xmlText = h.xmlText ++ t.xmlText;
+   top.xmlUnparse = h.xmlUnparse ++ t.xmlUnparse;
+}
+
+abstract production xmlNodeListNil
+top::XMLNodeList ::=
+{
+   top.xmlSubNodeList = [];
+   top.xmlText = "";
+   top.xmlUnparse = "";
+}
+
+-- XMLNode
+
+abstract production xmlNodeElement
+top::XMLNode ::= name::String attributes::[XMLAttribute] elements::XMLNodeList
 {
    top.xmlName = name;
    top.xmlAttributes = attributes;
    top.xmlSubNodes = elements;
    top.xmlText = elements.xmlText;
-}
-
--- XMLNode
-
-function getXMLNodeText
-String ::= n::XMLNode
-{
-   return n.xmlText;
-}
-
-abstract production xmlNodeElement
-top::XMLNode ::= e::XMLElement
-{
-   top.xmlName = e.xmlName;
-   top.xmlAttributes = e.xmlAttributes;
-   top.xmlSubNodes = e.xmlSubNodes;
-   top.xmlText = e.xmlText;
+   top.xmlUnparse = "<" ++ name ++ " " ++ implode(" ", map(xmlUnparseAttr, attributes)) ++ ">" ++ elements.xmlUnparse ++ "</" ++ name ++ ">";
 }
 
 abstract production xmlNodeText
-top::XMLNode ::= t::XMLText
+top::XMLNode ::= t::String
 {
-   top.xmlName = "__text__";
-   top.xmlAttributes = xmlAttributeListBuilder([]);
-   top.xmlSubNodes = xmlNodeListBuilder([]);
-   top.xmlText = t.xmlText;
-}
-
--- XMLNodeList
-
-abstract production xmlNodeListBuilder
-top::XMLNodeList ::= n::[XMLNode]
-{
-   top.xmlSubNodeList = n;
-   top.xmlText = implode("",map(getXMLNodeText,n));
-}
-
--- XMLText
-
-abstract production xmlTextBuilder
-top::XMLText ::= t::String
-{
+   top.xmlName = "#text"; -- Consistency with java (see org.w3c.dom.Node)
+   top.xmlAttributes = [];
+   top.xmlSubNodes = xmlNodeListNil();
    top.xmlText = t;
+   top.xmlUnparse = t;
+}
+
+-- XMLAttribute
+
+abstract production xmlAttribute
+top::XMLAttribute ::= name::String value::String
+{
+   top.xmlName = name;
+   top.xmlAttributeValue = value;
+   top.xmlUnparse = name ++ "=\"" ++ value ++ "\"";
+}
+
+function xmlUnparseAttr
+String ::= xa::XMLAttribute
+{
+   return xa.xmlUnparse;
 }
