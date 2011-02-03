@@ -1,0 +1,1 @@
+run: java -jar simple.composed.simple_implication.jar implies.simple
