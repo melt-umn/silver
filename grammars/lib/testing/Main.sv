@@ -25,7 +25,7 @@ IOVal<Integer> ::= args::[String] ioIn::IO
  local startDir :: IOVal<String> = cwd(ioIn) ;
 
  local attribute initDirs :: [ String ] ;
- initDirs = map(cleanDirName, args) ; -- explode(" ",args)) ;
+ initDirs = map(cleanDirName, args) ; -- was  explode(" ",args)) ;
 }
 
 function cleanDirName
