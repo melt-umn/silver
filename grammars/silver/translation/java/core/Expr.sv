@@ -189,7 +189,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
     case inh of
       exprInhsEmpty() -> ".decorate()" -- EXPLICITLY NOT PASSING PARENT POINTER (context) HERE!
     | _ -> ".decorate(context, common.Util.populateInh(" ++
-                                      makeNTClassName(e.typerep.typeName) ++ ".num_inh_attrs, " ++
+                                      makeNTClassName(finalType(e).typeName) ++ ".num_inh_attrs, " ++
                                       "new int[]{" ++ implode(", ", inh.nameTrans) ++ "}, " ++ 
                                       "new common.Lazy[]{" ++ implode(", ", inh.valueTrans) ++ "}))"
     end;
