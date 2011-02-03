@@ -2,7 +2,7 @@
 
 WHERE_IS_SILVER=../../../jars
 WHERE_IS_THE_SOURCE=../src
-WHAT_GRAMMAR_TO_BUILD=simple:host
+WHAT_GRAMMAR_TO_BUILD=simple:composed:simple_do_while
 
 java -jar $WHERE_IS_SILVER/RunSilver.jar \
   -I $WHERE_IS_THE_SOURCE $@ $WHAT_GRAMMAR_TO_BUILD && ant
