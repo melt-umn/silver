@@ -2,8 +2,9 @@
   <description>Build the silver runtime.</description>
 
   <property environment='env'/>
+  <property name='grammars' location='../../generated/src'/>
   <property name='src' location='./src'/>
-  <property name='bin' location='./bin'/>
+  <property name='bin' location='../../generated/bin'/>
   <property name='dist' location='.'/>
 
   <target name='init'>
@@ -11,19 +12,20 @@
       <format property='TIME' pattern='MM/dd/yyyy hh:mm aa'/>
     </tstamp>
     <mkdir dir='${bin}'/>
-    <!-- Right now the runtime doesn't actually depend on core
-    <fail message='Copy the core grammar to ${src}/ before building but do not check this into SVN!'>
+    <fail message='Generated java of grammars not found (for core, etc) at ${grammars}'>
       <condition>
-        <not><available file='${src}/core' type='dir' /></not>
+        <not><available file='${grammars}/core' type='dir' /></not>
       </condition>
     </fail>
-    -->
   </target>
 
   <target name='build' depends='init'>
-    <javac debug='on' source='1.5' srcdir='${src}' destdir='${bin}' includeantruntime='false'>
+    <javac debug='on' source='1.5' srcdir='${src}:${grammars}' destdir='${bin}' includeantruntime='false'>
       <include name='common/*.java' />
       <include name='common/exceptions/*.java' />
+      <include name='common/xml/*.java' />
+      <include name='core/*.java' />
+      <include name='lib/xml/ast/*.java' />
     </javac>
   </target>
   
@@ -31,6 +33,7 @@
     <jar destfile='${dist}/SilverRuntime.jar' basedir='${bin}' compress='true' level='9'>
       <include name='common/*.class' />
       <include name='common/exceptions/*.class' />
+      <include name='common/xml/*.class' />
       <manifest>
         <attribute name='Built-By' value='${user.name}' />
         <section name='version'>
