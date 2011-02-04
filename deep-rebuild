@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# just run this script, no parameters or options.
+
+mkdir -p build
+cd build
+
+# One full cycle
+java -Xss8M -Xmx3000M -jar ../jars/RunSilver.jar --clean silver:composed:Default || exit
+ant || exit
+mv silver.composed.Default.jar ../jars/
+
+# Before we start, let's get this thing built...
+java -Xss8M -Xmx3000M -jar ../jars/RunSilver.jar --clean lib:xml:ast || exit
+# Start..
+java -Xss8M -Xmx3000M -jar ../jars/RunSilver.jar --clean silver:composed:Default || exit
+# No ant yet! Let's go build the runtime!
+cd ../runtime/java
+ant || exit
+mv SilverRuntime.jar ../../jars/
+cd ../../build
+# Now finish
+ant || exit
+mv silver.composed.Default.jar ../jars/
+
+# One full cycle
+java -Xss8M -Xmx3000M -jar ../jars/RunSilver.jar --clean silver:composed:Default || exit
+ant || exit
+mv silver.composed.Default.jar ../jars/
+
+echo -e "\a"
