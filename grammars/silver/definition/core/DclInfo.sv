@@ -133,6 +133,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String ntt
 -- TODO THIS SHOULD GO ELSEWHERE
 nonterminal OccursCheck with errors, typerep, dcl;
 
+-- Doc note: be sure you've included at.errors, as well as this production's errors!
 abstract production occursCheckQName
 top::OccursCheck ::= at::Decorated QName  ntty::TypeExp
 {

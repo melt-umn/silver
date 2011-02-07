@@ -355,16 +355,6 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   e.expected = expected_undecorated();
 }
 
-concrete production exprInh
-top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
-{
-  top.pp = lhs.pp ++ " = " ++ e.pp ++ ";";
-  top.location = loc(top.file, $2.line, $2.column);
-  top.errors := lhs.errors ++ e.errors;
-
-  e.expected = expected_type(lhs.typerep);
-}
-
 abstract production exprInhsEmpty
 top::ExprInhs ::= 
 {
@@ -389,6 +379,16 @@ top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
   top.errors := lhs.errors ++ inh.errors;
 }
 
+concrete production exprInh
+top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
+{
+  top.pp = lhs.pp ++ " = " ++ e.pp ++ ";";
+  top.location = loc(top.file, $2.line, $2.column);
+  top.errors := lhs.errors ++ e.errors;
+
+  e.expected = expected_type(lhs.typerep);
+}
+
 concrete production exprLhsExpr
 top::ExprLHSExpr ::= q::QName
 {
@@ -400,7 +400,7 @@ top::ExprLHSExpr ::= q::QName
 
   top.typerep = occursCheck.typerep;
   
-  top.errors := occursCheck.errors;
+  top.errors := q.lookupAttribute.errors ++ occursCheck.errors;
 }
 
 concrete production trueConst
