@@ -411,7 +411,7 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
        else [];
   top.errors <-
        if errCheck2.typeerror
-       then [err(e1.location, "Condition must have the type Boolean. Instead it is " ++ errCheck1.leftpp)]
+       then [err(e1.location, "Condition must have the type Boolean. Instead it is " ++ errCheck2.leftpp)]
        else [];
 }
 
