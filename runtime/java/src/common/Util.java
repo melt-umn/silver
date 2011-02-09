@@ -194,9 +194,9 @@ public final class Util {
 	 */
 	public static Object writeFile(String file, Object content) {
 		try {
-			Writer fout = new FileWriter(file);
+			Writer fout = new FileWriter(file); // already buffered
 			if(content instanceof StringCatter)
-				((StringCatter)content).write(fout = new BufferedWriter(fout));
+				((StringCatter)content).write(fout);
 			else
 				fout.write(content.toString());
 			fout.flush();
@@ -216,11 +216,11 @@ public final class Util {
 	 * @param content Either a String or {@link StringCatter} object.
 	 * @return null, the IO object.
 	 */
-	public static Object appendFile(String file, Object content) {
+	public static Object appendFile(String file, Object content) { // TODO: merge with above!
 		try {
-			Writer fout = new FileWriter(file, true);
+			Writer fout = new FileWriter(file, true); // already buffered
 			if(content instanceof StringCatter)
-				((StringCatter)content).write(fout = new BufferedWriter(fout));
+				((StringCatter)content).write(fout);
 			else
 				fout.write(content.toString());
 			fout.flush();
