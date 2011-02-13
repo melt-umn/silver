@@ -77,7 +77,7 @@ function stripExtraWhiteSpaceHelper
                           -- replace hd with " "
                     )
               )
-         else hd :: striExtraWhiteSpaceHelper(tail(ss)) ;
+         else hd :: stripExtraWhiteSpaceHelper(tail(ss)) ;
 
   local attribute hd::String ;
   hd = head(ss) ;
