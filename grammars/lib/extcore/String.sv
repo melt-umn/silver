@@ -41,3 +41,20 @@ String ::= toStr::Function(String ::= a) xs::[a]
               then ""
               else ", " ++ toStringFromListHelper(toStr, tail(xs)) ;
 }
+
+function stripWhiteSpace
+String ::= s::String
+{ return implode ("", stripWhiteSpaceHelper(explode("",s))) ; }
+
+function stripWhiteSpaceHelper
+[String] ::= ss::[String]
+{ return if   null(ss) 
+         then [ ]
+         else 
+         if   hd==" " || hd=="\n" || hd=="\t"
+         then stripWhiteSpaceHelper(tail(ss)) 
+         else hd :: stripWhiteSpaceHelper(tail(ss)) ;
+
+  local attribute hd::String ;
+  hd = head(ss) ;
+}
