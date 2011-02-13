@@ -58,3 +58,31 @@ function stripWhiteSpaceHelper
   local attribute hd::String ;
   hd = head(ss) ;
 }
+
+function stripExtraWhiteSpace
+String ::= s::String
+{ return implode ("", stripExtraWhiteSpaceHelper(explode("",s))) ; }
+
+function stripExtraWhiteSpaceHelper
+[String] ::= ss::[String]
+{ return if   null(ss) 
+         then [ ]
+         else 
+         if   hd==" " || hd=="\n" || hd=="\t"
+         then (if null(tail(ss))
+               then [ ] 
+               else (if   nxt==" " || nxt=="\n" || nxt=="\t"
+                     then stripExtraWhiteSpaceHelper(tail(ss)) -- drop hd
+                     else " " :: stripExtraWhiteSpaceHelper(tail(ss))
+                          -- replace hd with " "
+                    )
+              )
+         else hd :: striExtraWhiteSpaceHelper(tail(ss)) ;
+
+  local attribute hd::String ;
+  hd = head(ss) ;
+
+  local attribute nxt::String ;
+  nxt = head(tail(ss)) ;
+}
+
