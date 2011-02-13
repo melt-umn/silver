@@ -77,6 +77,9 @@ equalityTest ( notEqualsList ( notEqualsInteger, [1], [2]), true, Boolean, core_
 equalityTest ( notEqualsList ( notEqualsInteger, [1], [1,2]), true, Boolean, core_tests) ;
 equalityTest ( notEqualsList ( notEqualsInteger, [1,2], []), true, Boolean, core_tests) ;
 
+equalityTest ( stripWhiteSpace ("asdf qwer \n asdf \t asdf\n"),
+               "asdfqwerasdfasdf", String, core_tests) ;
+
 {-
 function main
 IO ::= args::String mainIO::IO
