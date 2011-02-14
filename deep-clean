@@ -9,9 +9,10 @@ find ./grammars/ -name build.xml $1
 find ./ -name "*~" $1
 find ./test/ -name build.xml $1
 find ./runtime/ -name "SilverRuntime.jar" $1
+find ./runtime/ -name "RunSilver.jar" $1
 find ./test/ -name "*.jar" $1
 find ./grammars/ -name "*.jar" $1
 
-if [ $2 == "all" ]; then
+if [ "$2" == "all" ]; then
   rm -rf generated/src/* generated/bin/*
 fi
