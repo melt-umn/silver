@@ -166,8 +166,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
-  top.setupInh := "";
-
   top.translation =
         "\t\t// " ++ val.pp ++ " := " ++ e.pp ++ "\n" ++
         "\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes.get(\"" ++ val.lookupValue.fullName ++ "\")).setBase(" ++ wrapLazy(e) ++ ");\n";
@@ -178,8 +176,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
-  top.setupInh := "";
-
   top.translation = 
         "\t\t// " ++ val.pp ++ " <- " ++ e.pp ++ "\n" ++
         "\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes.get(\"" ++ val.lookupValue.fullName ++ "\")).addPiece(" ++ wrapLazy(e) ++ ");\n";
@@ -188,8 +184,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 aspect production synBaseColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- := -} e::Expr
 {
-  top.setupInh := "";
-
   top.translation =
         "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ "\n" ++
         "\t\tif(" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] == null)\n" ++
@@ -199,8 +193,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- := -} e::Exp
 aspect production synAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- <- -} e::Expr
 {
-  top.setupInh := "";
-
   top.translation = 
 	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ "\n" ++
         "\t\tif(" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] == null)\n" ++
@@ -221,8 +213,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- := -} e::Exp
 aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- <- -} e::Expr
 {
-  top.setupInh := "";
-
   top.translation = 
 	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ "\n" ++
         "\t\t((common.CollectionAttribute)" ++ dl.translation ++"[" ++ occursCheck.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";
