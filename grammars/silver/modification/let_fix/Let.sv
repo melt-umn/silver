@@ -1,8 +1,4 @@
 grammar silver:modification:let_fix;
-import silver:definition:core;
-import silver:definition:env;
-import silver:definition:type:syntax;
-import silver:analysis:typechecking:core;
 
 terminal Let_kwd 'let' lexer classes {KEYWORD};
 terminal In_kwd 'in' lexer classes {KEYWORD};
@@ -14,7 +10,7 @@ nonterminal AssignExpr with pp, file, grammarName, defs, env, signature, errors,
 concrete production nameLet
 top::Name ::= 'let'
 {
-  forwards to nameIdLower(terminal(IdLower_t, "let", $1.line, $1.column));
+  forwards to nameIdLower(terminal(IdLower_t, "let", $1));
 }
 
 --TODO remove end keyword
@@ -64,7 +60,7 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
   fName = top.signature.fullName ++ ":local:" ++ id.name;
 
   top.pp = id.name ++ " = " ++ e.pp;
-  top.defs = addLocalDcl(top.grammarName, id.location, fName, t.typerep, emptyDefs());
+  top.defs = addLexicalLocalDcl(top.grammarName, id.location, fName, t.typerep, emptyDefs());
   top.errors := e.errors ++ t.errors;
   
   -- TODO: UHHH CHECK FOR TYPES?
@@ -77,3 +73,31 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
   e.downSubst = top.downSubst;
   top.upSubst = e.upSubst;
 }
+
+abstract production lexicalLocalReference
+top::Expr ::= q::Decorated QName
+{
+  production attribute shouldUnDec ::Boolean;
+  shouldUnDec = case top.expected of
+                  expected_undecorated() -> true
+                | expected_type(t)     -> !performSubstitution(new(t), top.upSubst).isDecorated
+                | _                    -> false
+                end;
+  
+  top.pp = q.pp;
+  top.location = q.location;
+  top.errors := [];
+  
+  -- We're adding the "unusual" behavior that types like "Decorated Foo" in LETs
+  -- will auto-undecorate if you want a Foo.
+  
+  -- (The usual behavior is a declared Foo, but value is Decorated Foo, can
+  --  be used either way.)
+  
+  top.typerep = if q.lookupValue.typerep.isDecorated && shouldUnDec
+                then q.lookupValue.typerep.decoratedType
+                else q.lookupValue.typerep;
+
+  top.upSubst = top.downSubst;
+}
+

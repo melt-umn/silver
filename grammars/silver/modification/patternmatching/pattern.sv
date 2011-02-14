@@ -338,7 +338,7 @@ p::Pattern ::= v::Name
   -- Problem: We're translating to 'let's, so we can't.  Maybe we shouldn't be using lets?
   -- Or maybe we should introduce a 'letpatternvar'?
   
-  p.defs = addLocalDcl(p.grammarName, v.location, v.name, var_type, emptyDefs());
+  p.defs = addLexicalLocalDcl(p.grammarName, v.location, v.name, var_type, emptyDefs());
 
   p.errors :=
         if length(getValueDclAll(v.name, p.env)) > 1

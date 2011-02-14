@@ -5,9 +5,11 @@ import silver:definition:core;
 import silver:util;
 import silver:definition:env;
 import silver:translation:java:type;
+import silver:definition:type;
 import silver:definition:type:syntax;
 
 -- TODO: this is an area where we're creating Lazys in a nested fashion.
+-- (i.e. at execution, rather than initialization, continuously)
 -- Ideally, we wouldn't be doing this...
 
 aspect production letp
@@ -40,4 +42,13 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
   top.valueTrans = [wrapLazy(e)];
 }
 
+aspect production lexicalLocalReference
+top::Expr ::= q::Decorated QName
+{
+  top.isAppReference = false;
+  top.appReference = "";
+  top.translation = if q.lookupValue.typerep.isDecorated && shouldUnDec
+                    then "((" ++ finalType(top).transType ++ ")context.lexical(\"" ++ q.lookupValue.fullName ++ "\").undecorate())"
+                    else "((" ++ finalType(top).transType ++ ")context.lexical(\"" ++ q.lookupValue.fullName ++ "\"))";
+}
 
