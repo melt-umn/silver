@@ -14,6 +14,11 @@ import common.exceptions.TraceException;
  * @see Node
  */
 public class DecoratedNode {
+	// TODO list:
+	// - Delete parent / forwardParent. Or coalesce them (only NEED for debugging purposes, if inh become thunks!)
+	// - Delete forwardValue (make it a local/production attribute)
+	// - merge inheritedAttributes into inheritedValues
+	// - kill extraLocalAttributes WITH PREJUDICE
 
 	/**
 	 * The "undecorated" form of this DecoratedNode. (Never null)
@@ -78,7 +83,7 @@ public class DecoratedNode {
 	 * <p> TODO: Remove this stain!
 	 * @see #local(String)
 	 */
-	protected Map<String, Lazy> extraLocalAttributes;
+	protected Map<String, Object> extraLocalAttributes;
 	
 	/**
 	 * A cache of the values of local attributes on this node. (incl. locals, lets and prod)
@@ -207,9 +212,6 @@ public class DecoratedNode {
 	/**
 	 * Get the value of a local, caching it for re-use.
 	 * 
-	 * First, we look for "real" locals, and if that fails, we try the hacky {@link extraLocalAttributes}
-	 * field.
-	 * 
 	 * <p>Warning: do not mix {@link #localAsIs} and {@link #localDecorated} on the same local attribute!
 	 * 
 	 * @param attribute The full name of the local to obtain.
@@ -219,9 +221,6 @@ public class DecoratedNode {
 		Object o = this.localValues.get(attribute);
 		if(o == null) {
 			Lazy l = self.getLocal(attribute);
-			if(l == null && this.extraLocalAttributes != null) {
-				l = this.extraLocalAttributes.get(attribute);
-			}
 			if(l == null) {
 				throw new MissingDefinitionException("Local attribute '" + attribute + "' is not defined in production '" + self.getName() + "'");
 			}
@@ -241,9 +240,6 @@ public class DecoratedNode {
 	/**
 	 * Get the value of a local, caching it for re-use.
 	 * 
-	 * First, we look for "real" locals, and if that fails, we try the hacky {@link extraLocalAttributes}
-	 * field.
-	 * 
 	 * <p>Warning: do not mix {@link #localAsIs} and {@link #localDecorated} on the same local attribute!
 	 * 
 	 * @param attribute The full name of the local to obtain.
@@ -253,9 +249,6 @@ public class DecoratedNode {
 		Object o = this.localValues.get(attribute);
 		if(o == null) {
 			Lazy l = self.getLocal(attribute);
-			if(l == null && this.extraLocalAttributes != null) {
-				l = this.extraLocalAttributes.get(attribute);
-			}
 			if(l == null) {
 				throw new MissingDefinitionException("Local attribute '" + attribute + "' is not defined in production '" + self.getName() + "'");
 			}
@@ -271,6 +264,34 @@ public class DecoratedNode {
 			this.localValues.put(attribute, o);
 		}
 		return (DecoratedNode)o;
+	}
+
+	/**
+	 * Get the value of a lexical (let) local, caching it for re-use.
+	 * 
+	 * <p>the AsIs/Decorated distinction does not apply to lexicals: they don't
+	 * have set of inherited attributes to apply, so they're always as is.
+	 * But, for pattern matching, we like to allow a decorated types to be
+	 * auto-undecorated, so these may be USED like Decorated accessor is used.
+	 * (i.e. jam a .undecorate() after the access.)
+	 * 
+	 * @param attribute The full name of the lexical local to obtain.
+	 * @return The value of the lexical local.
+	 */
+	public Object lexical(final String attribute) {
+		Object o = this.extraLocalAttributes.get(attribute);
+		if(o == null) {
+			// This is possibly a SilverError, instead? Shouldn't even happen, due to the nature of lets.
+			throw new MissingDefinitionException("Lexical local '" + attribute + "' is not defined in production '" + self.getName() + "'");
+		}
+		if(o instanceof Lazy) {
+			try {
+				this.extraLocalAttributes.put(attribute, o = ((Lazy)o).eval(this));
+			} catch(Throwable t){
+				throw new TraceException("Error while evaluating lexical local attribute '" + attribute + "' in production '" + self.getName() + "'", t);
+			}
+		}
+		return o;
 	}
 
 	/**
