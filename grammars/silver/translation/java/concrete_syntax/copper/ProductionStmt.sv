@@ -20,9 +20,6 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
 
   top.translation = "return " ++ e.translation ++ ";\n";
 
-  top.defs = emptyDefs();
-
-  top.warnings := [];
   top.errors := (if !top.blockContext.permitPluck
                then [err(top.location, "'pluck' allowed only in disambiguation-group parser actions.")]
                else [])
@@ -30,10 +27,12 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
 
   -- TODO: figure out wtf is going on with type here! (needs to be a terminal, plus one of the ones in the disgroup)
 
-  e.expected = expected_default();
-  
+  e.expected = expected_default();  
   e.downSubst = top.downSubst;
+  
   top.upSubst = e.upSubst;
+  
+  forwards to defaultProductionStmt();
 }
 
 concrete production printStmt
@@ -44,9 +43,6 @@ top::ProductionStmt ::= 'print' e::Expr ';'
 
   top.translation = "System.err.println(" ++ e.translation ++ ");\n";
 
-  top.defs = emptyDefs();
-
-  top.warnings := [];
   top.errors := (if !top.blockContext.permitActions
                then [err(top.location, "'print' statement allowed only in parser action blocks. You may be looking for print(String,IO) :: IO.")]
                else [])
@@ -65,6 +61,8 @@ top::ProductionStmt ::= 'print' e::Expr ';'
        if errCheck1.typeerror
        then [err(e.location, "print expects a string, instead it recieved a " ++ errCheck1.leftpp)]
        else [];
+  
+  forwards to defaultProductionStmt();
 }
 
 aspect production localAttributeDcl
@@ -79,7 +77,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
   top.location = loc(top.file, $2.line, $2.column);
 
-  top.warnings := [];
   top.errors := e.errors ++
                (if !top.blockContext.permitActions
                 then [err(val.location, "Assignment to parser attributes only permitted in parser action blocks")]
@@ -87,7 +84,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 
   e.expected = expected_type(val.lookupValue.typerep);  
 
-  top.setupInh := "";
   top.translation = makeCopperName(val.lookupValue.fullName) ++ " = " ++ e.translation ++ ";\n";
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
@@ -101,6 +97,8 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
        if errCheck1.typeerror
        then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
        else [];
+  
+  forwards to defaultProductionStmt();
 }
 
 abstract production parserAttributeDefLHS
@@ -112,6 +110,7 @@ top::DefLHS ::= q::Decorated QName
   top.errors := if !top.blockContext.permitActions
                 then [err(q.location, "Parser attributes can only be used in action blocks")]
                 else [err(q.location, "Parser action blocks are imperative, not declarative. You cannot modify the attributes of " ++ q.name ++ ". If you are trying to set inherited attributes, you should use 'decorate ... with { ... }' when you create it.")];
+
   top.typerep = q.lookupValue.typerep;
 }
 
@@ -121,8 +120,8 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
   top.location = loc(top.file, $2.line, $2.column);
 
-  top.errors := e.errors; -- should only be in scope when its valid to use them
-  top.warnings := [];
+  -- these values should only ever be in scope when it's valid to use them
+  top.errors := e.errors;
 
   e.expected = expected_type(val.lookupValue.typerep);  
 
@@ -132,7 +131,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
                if val.name == "column" then "setColumn" else
                error("unknown assignment to terminal attribute: " ++ val.name);
 
-  top.setupInh := "";
   top.translation = "virtualLocation." ++ memberfunc ++ "(" ++ e.translation
                      ++ (if val.name == "filename" then ".toString()" else "") ++ ");\n";
 
@@ -147,5 +145,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
        if errCheck1.typeerror
        then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
        else [];
+  
+  forwards to defaultProductionStmt();
 }
 

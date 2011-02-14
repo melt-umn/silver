@@ -185,6 +185,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
 
 --- The use semantics ----------------------------------------------------------
 
+-- ERROR ON ATTRIBUTE DEFS:
 abstract production errorCollectionDefDispatcher
 top::ProductionStmt ::= dl::DefLHS '.' q::Decorated QName '=' e::Expr
 {
@@ -199,6 +200,7 @@ top::ProductionStmt ::= dl::DefLHS '.' q::Decorated QName '=' e::Expr
 
   forwards to errorAttributeDef(dl,$2,q,$4,e);
 }
+-- ERROR ON VALUE DEFS:
 abstract production errorCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
@@ -218,6 +220,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   forwards to errorValueDef(val, $2, e);
 }
 
+-- NON-ERRORS:
 
 abstract production baseCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr

@@ -51,13 +51,21 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   top.translation = h.translation ++ t.translation;
 }
 
+--------------------------------------------------------------------------------
+
+aspect production defaultProductionStmt
+top::ProductionStmt ::=
+{
+  top.setupInh := "";
+  -- require a translation.
+}
+
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
-  top.setupInh := "";
   top.translation = 
 	"\t\t//" ++ top.pp ++ "\n" ++
 	"\t\t" ++ className ++ ".forward = " ++ wrapLazy(e) ++ ";\n";
@@ -69,7 +77,6 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
-  top.setupInh := "";
   top.translation =
 	"\t\t//" ++ top.pp ++ "\n" ++
 	"\t\t" ++ className ++ ".forward = " ++ wrapLazy(e) ++ ";\n" ++
@@ -79,7 +86,6 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
 aspect production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {
-  top.setupInh := "";
   top.translation = inh.translation;   
 }
 
@@ -165,7 +171,6 @@ top::DefLHS ::= q::Decorated QName
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  top.setupInh := "";
   top.translation = 
 	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
         "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
@@ -174,7 +179,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  top.setupInh := "";
   top.translation = 
 	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
         "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
@@ -187,7 +191,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
-  top.setupInh := "";
   top.translation =
 	"\t\t// " ++ val.pp ++ " = " ++ e.pp ++ "\n" ++
 	"\t\t" ++ className ++ ".localAttributes.put(\"" ++ val.lookupValue.fullName ++ "\", " ++ wrapLazy(e) ++ ");\n";
@@ -199,7 +202,6 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
-  top.setupInh := "";
   top.translation =
 	"\t\t//" ++ top.pp ++ "\n" ++
 	"\t\t" ++ className ++ ".synthesizedAttributes[0] = " ++ wrapLazy(e) ++ ";\n";

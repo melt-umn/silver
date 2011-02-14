@@ -6,7 +6,7 @@ top::ProductionBody ::= ';'
   top.pp = ";";
   top.location = loc(top.file, $1.line, $1.column);
 
-  forwards to emptyProductionBody() ;
+  forwards to defaultProductionBody(productionStmtsNone());
 }
 
 concrete production emptyProductionBodyCurly
@@ -15,16 +15,7 @@ top::ProductionBody ::= '{' '}'
   top.pp = "{}";
   top.location = loc(top.file, $1.line, $1.column);
 
-  forwards to emptyProductionBody() ;
-}
-
-abstract production emptyProductionBody
-top::ProductionBody ::=
-{ 
-  top.pp = "";
-  top.location = loc(top.file, -1, -1);
-
-  forwards to productionBody('{', productionStmtsNone(), '}') ;
+  forwards to defaultProductionBody(productionStmtsNone());
 }
 
 concrete production productionBody
@@ -42,7 +33,6 @@ top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 abstract production defaultProductionBody
 top::ProductionBody ::= stmts::ProductionStmts
 {
-
   top.pp = stmts.pp;
   top.location = stmts.location;
   top.defs = stmts.defs;
@@ -117,23 +107,33 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   top.warnings := h.warnings ++ t.warnings;
 }
 
+--------------------------------------------------------------------------------
+
+abstract production defaultProductionStmt
+top::ProductionStmt ::=
+{
+  -- as is usual for defaults ("base classes")
+  -- can't provide pp or location, errors should NOT be defined!
+  top.productionAttributes = emptyDefs();
+  top.defs = emptyDefs();
+  top.warnings := [];
+}
+
 concrete production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
   top.pp = "\treturn " ++ e.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionAttributes = emptyDefs();
-
-  top.defs = emptyDefs();
   top.errors := e.errors;
-  top.warnings := [];
   
   top.errors <- if !top.blockContext.permitReturn
                 then [err(top.location, "Return is not valid in this context. (They are only permitted in function declarations.)")]
                 else [];
 
   e.expected = expected_type(top.signature.outputElement.typerep);
+  
+  forwards to defaultProductionStmt();
 }
 
 concrete production localAttributeDcl
@@ -142,20 +142,19 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
   top.pp = "\tlocal attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionAttributes = emptyDefs();
-
   production attribute fName :: String;
   fName = top.signature.fullName ++ ":local:" ++ a.name;
 
   top.defs = addLocalDcl(top.grammarName, a.location, fName, te.typerep, emptyDefs());
+
+  top.errors := te.errors;
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
-  top.errors := te.errors;
-  top.warnings := [];
+  forwards to defaultProductionStmt();
 }
 
 concrete production productionAttributeDcl
@@ -169,7 +168,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
   production attribute fName :: String;
   fName = top.signature.fullName ++ ":local:" ++ a.name;
 
-  top.defs = emptyDefs();
+  top.errors := te.errors;
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
@@ -180,8 +179,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
                 then [err(top.location, "Production attributes are not valid in this context.")]
                 else [];
 
-  top.errors := te.errors;
-  top.warnings := [];
+  forwards to defaultProductionStmt(); -- TODO forward to local def!
 }
 
 concrete production forwardsTo
@@ -192,16 +190,15 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 
   top.productionAttributes = addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
 
-  top.defs = emptyDefs();
+  top.errors := e.errors;
 
   top.errors <- if !top.blockContext.permitForward
                 then [err(top.location, "Forwarding is not permitted in this context.")]
                 else [];
 
-  top.errors := e.errors;
-  top.warnings := [];
-
   e.expected = expected_undecorated();
+
+  forwards to defaultProductionStmt();
 }
 
 concrete production forwardsToWith
@@ -212,16 +209,15 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
 
   top.productionAttributes = addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
 
-  top.defs = emptyDefs();
+  top.errors := e.errors ++ inh.errors;
 
   top.errors <- if !top.blockContext.permitForward
                 then [err(top.location, "Forwarding is not permitted in this context.")]
                 else [];
 
-  top.errors := e.errors ++ inh.errors;
-  top.warnings := [];
-
   e.expected = expected_undecorated();
+
+  forwards to defaultProductionStmt(); -- TODO forward to ordinary fwd + set of inh defs
 }
 
 concrete production forwardingWith
@@ -230,18 +226,19 @@ top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
   top.pp = "\tforwarding with {" ++ inh.pp ++ "};";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionAttributes = emptyDefs();
-  top.defs = emptyDefs();
-  
   production attribute fwdDcls :: [Decorated DclInfo];
   fwdDcls = getValueDcl("forward", top.env);
 
-  top.errors := if null(fwdDcls)
+  top.errors := inh.errors;
+  
+  top.errors <- if null(fwdDcls)
                 then [err(top.location, "'forwarding with' clause for a production that does not forward!")]
                 else [];
-  top.warnings := [];
+
+  forwards to defaultProductionStmt(); -- TODO forward to set of ordinary inh defs (see above)
 }
 
+-- TODO eliminate these (/ combine with the ones for decorate expression)
 concrete production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
@@ -290,12 +287,19 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QName '=' e::Expr ';'
 
   top.errors <- attr.lookupAttribute.errors;
 
+  -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = emptyDefs();
   top.defs = emptyDefs();
 
   forwards to if null(attr.lookupAttribute.dcls)
               then errorAttributeDef(dl, $2, attr, $4, e)
               else attr.lookupAttribute.dcl.attrDefDispatcher(dl, $2, attr, $4, e);
+
+  -- TODO: this design might be somewhat broken.
+  -- We'd like to automatically disambiguate attributes that don't occur on
+  -- the NT of interest. (e.g. two 'pp', but this NT only has one of them.)
+  -- Currently, we're uniquely choosing the attribute, before considering
+  -- the lhs. Perhaps that should be reversed!
 }
 
 abstract production errorAttributeDef
@@ -304,15 +308,14 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
   top.location = loc(top.file, $4.line, $4.column);
 
+  -- No error message. We only get here via attributeDef, which will error for us
+  top.errors := e.errors;
+
   e.expected = expected_type(attr.lookupAttribute.typerep);
   
-  top.warnings := [];
-  top.errors := e.errors;
-  -- no special error message, as the only way to get here is via bad lookup
-  -- also, don't go into dl, since we don't have an inh/syn to give it.
-  -- TODO: this design is a bit busted!
-  -- future improvements require us to dispatch on LHS first, attribute second.
-  -- fix that shit. ugh. I just designed it this way, too :( later...
+  -- ignore dl, we don't have the proper set of inh attrs to give it!
+  
+  forwards to defaultProductionStmt();
 }
 
 abstract production synthesizedAttributeDef
@@ -324,11 +327,15 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   production attribute occursCheck :: OccursCheck;
   occursCheck = occursCheckQName(attr, dl.typerep);
 
+  -- we already know attr is valid here.
+  top.errors := dl.errors ++ occursCheck.errors ++ e.errors;
+  
+  -- TODO: missing redefinition check
+
   e.expected = expected_type(occursCheck.typerep);
   dl.isSynthesizedDefinition = true;
   
-  top.warnings := [];
-  top.errors := dl.errors ++ occursCheck.errors ++ e.errors; -- attr.lookupAttribute.errors is null due to attributeDef
+  forwards to defaultProductionStmt();
 }
 
 abstract production inheritedAttributeDef
@@ -340,11 +347,15 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   production attribute occursCheck :: OccursCheck;
   occursCheck = occursCheckQName(attr, dl.typerep);
 
+  -- we already know attr is valid here.
+  top.errors := dl.errors ++ occursCheck.errors ++ e.errors;
+
+  -- TODO: missing redefinition check
+
   e.expected = expected_type(occursCheck.typerep);
   dl.isSynthesizedDefinition = false;
   
-  top.warnings := [];
-  top.errors := dl.errors ++ occursCheck.errors ++ e.errors; -- attr.lookupAttribute.errors is null due to attributeDef
+  forwards to defaultProductionStmt();
 }
 
 inherited attribute isSynthesizedDefinition :: Boolean occurs on DefLHS; -- true = syn, false = inh
@@ -354,6 +365,7 @@ top::DefLHS ::= q::QName
 {
   top.pp = q.pp;
   top.location = q.location;
+
   top.errors := q.lookupValue.errors;
   
   forwards to if null(q.lookupValue.dcls)
@@ -432,6 +444,7 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
 
   top.errors <- val.lookupValue.errors;
 
+  -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = emptyDefs();
   top.defs = emptyDefs();
   
@@ -446,10 +459,13 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
   top.location = loc(top.file, $2.line, $2.column);
 
+  -- We get here two ways: the defDispatcher is us, or the lookup failed.
+  -- TODO: this leads to duplicate error messages, when (a) the lookup fails and (b) we error here too
   top.errors := [err(val.location, val.pp ++ " cannot be assigned to.")] ++ e.errors;
-  top.warnings := [];
 
   e.expected = expected_type(val.lookupValue.typerep);
+
+  forwards to defaultProductionStmt();
 }
 
 abstract production localValueDef
@@ -458,11 +474,13 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
   top.location = loc(top.file, $2.line, $2.column);
 
-  -- TODO: we need a redefinition check here!
-  
+  -- val is already valid here
   top.errors := e.errors;
-  top.warnings := [];
+
+  -- TODO: missing redefinition check
 
   e.expected = expected_type(val.lookupValue.typerep);
+
+  forwards to defaultProductionStmt();
 }
 
