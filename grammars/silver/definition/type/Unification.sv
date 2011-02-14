@@ -8,7 +8,7 @@ aspect production varTypeExp
 top::TypeExp ::= tv::TyVar
 {
   top.unify = case top.unifyWith of
-               varTypeExp(j) -> if tyVarEqual(tv, new(j))
+               varTypeExp(j) -> if tyVarEqual(tv, j)
                                 then emptySubst()
                                 else subst( tv, top.unifyWith )
              | _ -> if containsTyVar(tv, top.unifyWith.freeVariables)
@@ -21,7 +21,7 @@ aspect production skolemTypeExp
 top::TypeExp ::= tv::TyVar
 {
   top.unify = case top.unifyWith of
-               skolemTypeExp(otv) -> if tyVarEqual(tv, new(otv))
+               skolemTypeExp(otv) -> if tyVarEqual(tv, otv)
                                      then emptySubst()
                                      else errorSubst("Tried to unify skolem constant with incompatible skolem constant")
              | _ -> errorSubst("Tried to unify skolem constant with " ++ prettyType(top.unifyWith))
@@ -90,7 +90,7 @@ aspect production decoratedTypeExp
 top::TypeExp ::= te::TypeExp
 {
   top.unify = case top.unifyWith of
-               decoratedTypeExp(ote) -> unify(te, new(ote))
+               decoratedTypeExp(ote) -> unify(te, ote)
              | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
               end;
 }
@@ -99,7 +99,7 @@ aspect production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
   top.unify = case top.unifyWith of
-               functionTypeExp(oo, op) -> unifyAll(new(out) :: params, new(oo) :: op)
+               functionTypeExp(oo, op) -> unifyAll(out :: params, oo :: op)
              | _ -> errorSubst("Tried to unify function type with " ++ prettyType(top.unifyWith))
               end;
 }
@@ -108,7 +108,7 @@ aspect production productionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
   top.unify = case top.unifyWith of
-               productionTypeExp(oo, op) -> unifyAll(new(out) :: params, new(oo) :: op)
+               productionTypeExp(oo, op) -> unifyAll(out :: params, oo :: op)
              | _ -> errorSubst("Tried to unify production type with " ++ prettyType(top.unifyWith))
               end;
 }

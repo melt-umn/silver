@@ -48,7 +48,7 @@ top::Expr ::= q::Decorated QName
   top.isAppReference = false;
   top.appReference = "";
   top.translation = if q.lookupValue.typerep.isDecorated && shouldUnDec
-                    then "((" ++ finalType(top).transType ++ ")context.lexical(\"" ++ q.lookupValue.fullName ++ "\").undecorate())"
+                    then "((" ++ finalType(top).transType ++ ")((common.DecoratedNode)context.lexical(\"" ++ q.lookupValue.fullName ++ "\")).undecorate())"
                     else "((" ++ finalType(top).transType ++ ")context.lexical(\"" ++ q.lookupValue.fullName ++ "\"))";
 }
 

@@ -119,12 +119,10 @@ top::TypeExp ::= te::TypeExp
   forwards to defaultTypeExp();
 }
 
--- TODO: bug: we shouldn't have to use new() here :
-
 abstract production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
-  top.freeVariables = setUnionTyVarsAll(mapFreeVariables(new(out) :: params));
+  top.freeVariables = setUnionTyVarsAll(mapFreeVariables(out :: params));
   
   forwards to defaultTypeExp();
 }
@@ -132,7 +130,7 @@ top::TypeExp ::= out::TypeExp params::[TypeExp]
 abstract production productionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
-  top.freeVariables = setUnionTyVarsAll(mapFreeVariables(new(out) :: params));
+  top.freeVariables = setUnionTyVarsAll(mapFreeVariables(out :: params));
   
   forwards to defaultTypeExp();
 }
