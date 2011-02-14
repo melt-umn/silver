@@ -36,7 +36,7 @@ public final class Util {
 	public static Object let(common.DecoratedNode context, String[] names, Lazy[] values, Lazy expr) {
 		
 		if(context.extraLocalAttributes == null)
-			context.extraLocalAttributes = new TreeMap<String, Lazy>();
+			context.extraLocalAttributes = new TreeMap<String, Object>();
 		
 		for (int i = 0; i < names.length; i++)
 			context.extraLocalAttributes.put(names[i], values[i]);
