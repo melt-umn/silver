@@ -365,7 +365,7 @@ ps::PatternList ::= p::Pattern
                    then head(ps.typereps_down) 
                    else errorType() ; 
 
-  p.errors <-
+  ps.errors <-
        if null(ps.typereps_down)
        then [err(ps.location, "Production call in pattern has too many arguments.")] 
        else if length(ps.typereps_down) > 1

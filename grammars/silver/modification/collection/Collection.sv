@@ -220,7 +220,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   forwards to errorValueDef(val, $2, e);
 }
 
--- NON-ERRORS:
+-- NON-ERRORS for PRODUCTIONS
 
 abstract production baseCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
@@ -248,6 +248,9 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
     downSubst = e.upSubst;
   };
 }
+
+-- NON-ERRORS for SYN ATTRS
+
 abstract production synBaseColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
@@ -282,6 +285,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
     downSubst = e.upSubst;
   };
 }
+
+-- NON-ERRORS for INHERITED ATTRS
+
 abstract production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {

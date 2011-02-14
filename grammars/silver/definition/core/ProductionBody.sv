@@ -366,7 +366,7 @@ top::DefLHS ::= q::QName
   top.pp = q.pp;
   top.location = q.location;
 
-  top.errors := q.lookupValue.errors;
+  top.errors <- q.lookupValue.errors;
   
   forwards to if null(q.lookupValue.dcls)
               then errorDefLHS(q)
@@ -396,7 +396,7 @@ top::DefLHS ::= q::Decorated QName
   top.pp = q.pp;
   top.location = q.location;
   
-  top.errors := if top.isSynthesizedDefinition
+  top.errors := if !top.isSynthesizedDefinition
                 then [err(q.location, "Cannot define inherited attribute on " ++ q.pp)]
                 else [];
   top.typerep = q.lookupValue.typerep;
@@ -432,6 +432,10 @@ top::DefLHS ::= q::Decorated QName
   top.pp = q.pp;
   top.location = q.location;
   
+  -- Warning: we get here two ways: one is q is lookup error. That errors at the
+  -- dispatcher
+  -- the other is q look up successfully and we need to error here
+  -- TODO we error twice in that case!!
   top.errors := [err(q.location, "Cannot define attributes on " ++ q.pp)];
   top.typerep = q.lookupValue.typerep;
 }
