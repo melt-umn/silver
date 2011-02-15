@@ -18,22 +18,30 @@ String ::= str::String
 }
 
 function makeClassName
-String ::= s::String{
-  return makeClassNameHelp(explode(":", s), "P");
+String ::= s::String
+{
+  return substituteLast(".P", ".", substitute(".", ":", s));
 }
 
 function makeNTClassName
-String ::= s::String {
-  return makeClassNameHelp(explode(":", s), "N");
+String ::= s::String
+{
+  return substituteLast(".N", ".", substitute(".", ":", s));
 }
 
 function makeParserName
-String ::= s::String{
-  return"Parser_" ++ substitute("_", ":", s);
+String ::= s::String
+{
+  return "Parser_" ++ substitute("_", ":", s);
 }
 
-function makeClassNameHelp -- TODO: get a native replace and do this more intelligently...
-String ::= s::[String] prfix::String{
-  return if null(s) then "" else if null(tail(s)) then prfix ++ head(s) else (head(s) ++ "." ++ makeClassNameHelp(tail(s), prfix));
+function substituteLast
+String ::= s::String r::String str::String
+{
+  local attribute i::Integer;
+  i = lastIndexOf(r, str);
+  
+  return if i == -1 then str
+         else substring(0,i,str) ++ s ++ substring(i+length(r), length(str), str);
 }
 
