@@ -12,6 +12,7 @@ grammar lib:langproc ;
    level then the rewrites done at a lower level are not included...
 
 -}
+{-
 nonterminal RewriteRule_v1<a> ;
 
 synthesized attribute match_v1 :: Boolean occurs on RewriteRule_v1<a> ;
@@ -24,7 +25,7 @@ a ::= rr::RewriteRule_v1<a> t::a
 { return if rr.match_v1 then rr.rewrite_v1 else t ;
   rr.tree_v1 = t ;
 }
-
+-}
 
 {- Version 2.
 
@@ -38,6 +39,7 @@ a ::= rr::RewriteRule_v1<a> t::a
    Instead we pass in as inh attrs the decorated and undecorated versions.
 
 -}
+{-
 nonterminal RewriteRule_v2<dt t> ;
 
 synthesized attribute match_v2 :: Boolean occurs on RewriteRule_v2<dt t> ;
@@ -85,7 +87,7 @@ t ::= --rrs::[RewriteRule_v2<dt t>]
   first_rr.dtree_v2 = tomatch ;
   first_rr.tree_v2 = nomatch ;
 }
-
+-}
 
 
 
@@ -99,6 +101,7 @@ t ::= --rrs::[RewriteRule_v2<dt t>]
    Thus, we need to 'new' the results of the functions that apply
    rewrite rules in this version.
 -}
+{-
 nonterminal RewriteRule_v3<a> ;
 
 synthesized attribute match_v3 :: Boolean occurs on RewriteRule_v3<a> ;
@@ -112,4 +115,4 @@ t ::= rr::RewriteRule_v3<t> tomatch::t nomatch::t
 { return if rr.match_v3 then rr.rewrite_v3 else nomatch ;
   rr.tree_to_match_v3 = tomatch ;
 }
-
+-}
