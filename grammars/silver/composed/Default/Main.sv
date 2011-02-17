@@ -17,6 +17,7 @@ parser rParse::Root {
   silver:extension:easyterminal;
 
   silver:extension:testing;
+--  silver:extension:concreteSyntaxForTrees ;
   -- polymorphism?  polymorphism:functions?
   -- doc?
 
