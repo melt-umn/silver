@@ -1,0 +1,50 @@
+#!/bin/bash
+
+if [ ! -f run-overnight-tests ]; then
+    echo "This script must  be run from the support/bin directory."
+    exit
+fi
+
+# Make the jars directory if it is not there
+cd ../../
+mkdir -p jars
+cd jars
+
+# set SILVER_HOME accordingly.
+export SILVER_HOME=`pwd`
+echo $SILVER_HOME
+
+cd "$SILVER_HOME/../../trunk/"
+echo `pwd`
+
+# Update the files ----- this needs fixiing probably.
+if [ `uname -n` = "espresso" ]; then
+    echo "on Linux..." 
+    svn up
+fi
+
+
+# remove previous testing output report file.
+rm -f silver-testing.output
+
+# With updated Silver, build the testing framework jar file.
+# It ends up in grammars/lib/testing as lib.testing.jar.
+# The silver-run-tests script just runs this jar file.
+cd "$SILVER_HOME/../../trunk/grammars/lib/testing"
+echo "In ...`pwd`"
+./silver-compile --clean
+
+
+# cd to silver/trunk and run all tests.
+cd "$SILVER_HOME/../../trunk/"
+support/bin/silver-run-tests . >& silver-testing.output
+
+cd ../../
+
+
+#rm -r grammars.output
+#cd grammars
+#$SILVER_HOME/../support/bin/silver-run-tests . >& ../grammars.output
+#cd ../../
+
+
