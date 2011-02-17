@@ -31,3 +31,5 @@ ant || exit
 mv silver.composed.Default.jar ../jars/ || exit
 
 echo -e "\a"
+
+echo "deep-rebuild success"

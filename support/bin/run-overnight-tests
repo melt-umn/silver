@@ -5,6 +5,8 @@ if [ ! -f run-overnight-tests ]; then
     exit
 fi
 
+RESDIR="test_results_`date +%F_%H:%M`"
+
 # Make the jars directory if it is not there
 cd ../../
 mkdir -p jars
@@ -17,38 +19,35 @@ echo $SILVER_HOME
 cd "$SILVER_HOME/../../trunk/"
 echo `pwd`
 
-# Update the files ----- this needs fixiing probably.
-if [ `uname -n` = "kona" ]; then
-    echo "on kona.cs ..." 
-    svn up
-    ./fetch-jars
-fi
+# Update the files
+#if [ `uname -n` = "kona" ]; then
+#    echo "on kona.cs ..." 
+#    svn up
+#    ./fetch-jars
+#fi
 
-# remove previous testing output report file.
-rm -f silver-testing.output
+mkdir -p $RESDIR
 
 # Rebuild Silver
-./deep-rebuild >& silver-rebuild.output
+./deep-rebuild >& $RESDIR/silver-rebuild.output
 
 # With updated Silver, build the testing framework jar file.
 # It ends up in grammars/lib/testing as lib.testing.jar.
 # The silver-run-tests script just runs this jar file.
 cd "$SILVER_HOME/../../trunk/grammars/lib/testing"
 echo "In ...`pwd`"
-./silver-compile --clean
-
+./silver-compile --clean  >& ../../../$RESDIR/testing-build.output
 
 # cd to silver/trunk and run all tests.
 cd "$SILVER_HOME/../../trunk/"
-support/bin/silver-run-tests . >& silver-testing.output
+support/bin/silver-run-tests . >& $RESDIR/silver-testing.output
 
 
+cd "$SILVER_HOME/../../../grammars/"
+echo `pwd`
 
-#cd ../../
+mkdir -p $RESDIR
+$SILVER_HOME/../support/bin/silver-run-tests . >& $RESDIR/grammars.output
 
-#rm -r grammars.output
-#cd grammars
-#$SILVER_HOME/../support/bin/silver-run-tests . >& ../grammars.output
-#cd ../../
 
 
