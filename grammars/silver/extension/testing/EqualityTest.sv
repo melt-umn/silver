@@ -7,35 +7,19 @@ import silver:definition:type;
 import silver:definition:type:syntax;
 import silver:modification:collection ;
 import silver:extension:list ;
+import silver:extension:concreteSyntaxForTrees ;
 
-{- Equality tests compare two expressions to see if they evalute to
-   equal values.
-
-   The tests specify these two expressions, their types, and the
-   TestSuite to which they should be added.  
- 
-   These tests have the form:
-     equalityTest ( value, expected, Type, testSuiteProduciton ) ;
-
-   Samples:
-     equalityTest ( 1+2, 3, Integer, core_tests ) ;
-     equalityTest ( removeBy (equalsInteger, 2, [1,2,3]), [1,3],
-                    [Integer], core_tests ) ;
- -}
+import lib:extcore ;
 
 terminal EqualityTest_t 'equalityTest' lexer classes {KEYWORD} ;
-
-
-concrete production equalityTest_p
+concrete production equalityTest2_p
 ag::AGDcl ::= kwd::'equalityTest' 
               '(' value::Expr ',' expected::Expr ',' 
                   valueType::Type ',' testSuite::Name ')' ';'
 {
  ag.pp = "equalityTest (" ++ value.pp ++ "," ++ expected.pp ++ ",\n" ++ 
          "              " ++ valueType.pp ++ ", " ++ testSuite.pp ++ ") ;\n" ;
-
  ag.location = loc(ag.file, kwd.line, kwd.column);
-
  ag.errors := case equalityTestExpr of
                 just(_) -> [ ]
               | nothing() -> [err(ag.location, "Type \"" ++ valueType.pp ++ 
@@ -44,28 +28,164 @@ ag::AGDcl ::= kwd::'equalityTest'
  ag.errors <- [ ] ; -- check that value and expected are of the same type 
  ag.errors <- forward.errors ;
 
+ forwards to agDclAppend ( absProdCS, aspProdCS ) ;
+ local absProdCS :: AGDcl = asAGDcl (
+   "abstract production " ++ testName ++ "\n" ++
+   "t::Test ::= \n" ++
+   "{ \n" ++
+   "  local attribute value :: %%%Type valueType ;  \n" ++
+   "  value =  %%%Expr value ; \n" ++
+   "  local attribute expected :: %%%Type valueType ;  \n" ++
+   "  expected = %%%Expr expected ; \n"  ++
 
- forwards to ft ; -- if null(ag.errors) then ft else agDclNone() ;
+--   "  local attribute valueAsString :: String ;  \n" ++
+--   "  valueAsString =  %%%Expr toStringValueExpr ; \n" ++
+--   "  local attribute expectedAsString :: String ;  \n" ++
+--   "  expectedAsString =  %%%Expr toStringExpectedExpr ; \n" ++
+
+   "  t.msg = \"Test at " ++ ag.location.unparse ++ " failed. \\n\" ++ \n" ++ 
+   "          \"Checking that expression \\n\" ++ \n" ++
+   "          \"   " ++ stringifyString(value.pp) ++ "\" ++ \n" ++
+   "          \"\\nshould be same as expression \\n\" ++ \n" ++
+   "          \"   " ++ stringifyString(expected.pp) ++ "\\n\" ++ \n" ++
+--   "          \"Equality Test Expr: \\n\" ++ \n" ++
+--   "          \"   " ++ stringifyString(eqTestExpr.pp) ++ "\\n\" ++ \n" ++
+   "          \"Actual value: \\n   \" ++ \n" ++
+   "          %%%Expr toStringValueExpr ++ \"\\n\" ++ \n" ++
+   "          \"Expected value: \\n   \" ++ \n" ++
+   "          %%%Expr toStringExpectedExpr ++ \"\\n\" ++ \n" ++
+--   "         \"valueAsString: \\n\" ++ \n" ++
+--   "         valueAsString ++ \"\\n\" ++ \n" ++
+--   "         \"exptectedAsString: \\n\" ++ \n" ++
+--   "         expectedAsString ++ \n" ++
+   "         \"\" ;\n" ++
+   "  t.pass = %%%Expr equalityTestCode ; \n" ++ 
+   "  forwards to defTest() ; \n" ++
+   "}" ,
+   cons_CS_env("value", wrapExpr(value), 
+   cons_CS_env("expected", wrapExpr(expected), 
+   cons_CS_env("valueType", wrapType(valueType), 
+   cons_CS_env("testSuite", wrapName(testSuite),
+   cons_CS_env("toStringValueExpr", 
+     wrapExpr( fromMaybe(error("TypeNotSupportedInternalError") ,toStringValueExpr)),
+   cons_CS_env("toStringExpectedExpr",
+     wrapExpr( fromMaybe(error("TypeNotSupportedInternalError") ,toStringExpectedExpr)),
+   cons_CS_env("equalityTestCode",
+     wrapExpr( fromMaybe(error("TypeNotSupportedInternalError") ,equalityTestExpr)) ,
+   empty_CS_env()))))))) , 3 ) ;
+
+ local attribute eqTestExpr :: Expr ;
+ eqTestExpr =  fromMaybe(error("TypeNotSupportedInternalError") ,equalityTestExpr ) ;
+
+ local aspProdCS :: AGDcl = asAGDcl (
+   "aspect production %%%Name testSuite \n" ++
+   "top ::=  \n" ++
+   "{ testsToPerform <- [ " ++ testName ++ "() ] ; } " ,
+   cons_CS_env("testSuite", wrapName(testSuite), empty_CS_env()) , 4 ) ;
 
  -- If valueType is a base type (Integer, Float, etc.) or a List whose
  -- element type is a base type, then we can check for equality.
  -- With curried functions we could handle nested lists, but not now.
  local equalityTestExpr :: Maybe<Expr> =
-   mkEqualityTestExpr(valueType, value, expected) ;
+   mkEqualityTestExprCS(valueType, value, expected) ;
 
  local toStringValueExpr :: Maybe<Expr> =
-   mkToStringExpr (valueType, value) ;
+   mkToStringExprCS (valueType, value, "value") ;
  local toStringExpectedExpr :: Maybe<Expr> =
-   mkToStringExpr (valueType, expected) ;
+   mkToStringExprCS (valueType, expected, "expected") ;
 
- local attribute ft :: AGDcl ;
- ft =
-  agDclAppend
-  (
+ local testName :: String = "generatedTest" ++ "_" ++ 
+                            replaceChars(".","_",kwd.filename) ++ "_" ++ 
+                            toString(kwd.line) ++ "_" ++ 
+                            toString(genInt()) ;
+}
+
+function functionNameForBaseTypesCS
+Maybe<String> ::= valueType::Type prefix::String
+{ return
+   case valueType of
+     integerType(_) -> just(prefix ++ "Integer")
+   | floatType(_)   -> just(prefix ++ "Float")
+   | stringType(_)  -> just(prefix ++ "String")
+   | booleanType(_) -> just(prefix ++ "Boolean")
+   | _ -> nothing()
+   end ;
+}
+
+function mkToStringExprCS
+Maybe<Expr> ::= valueType::Type expr::Expr exprName::String
+{ return
+   case functionNameForBaseTypesCS(valueType, "toStringFrom") of
+     just(btt) -> just ( asExpr( btt ++ "( " ++ exprName ++ ")",
+                                 empty_CS_env(),6))
+   | nothing() -> 
+       case valueType of
+         listType(_,elemType,_) 
+           -> case functionNameForBaseTypesCS(new(elemType),"toStringFrom") of
+                just(btt) ->
+                      just ( asExpr( "toStringFromList ( " ++ btt ++ ", " ++
+                                                          exprName ++ ")", 
+                                    empty_CS_env(),7))
+                                  
+              | _ -> nothing()
+              end
+       | _ -> nothing()
+       end 
+   end ;
+   -- ToDo: The "new"s above should not be required. There is something wrong with
+   --       pattern matching as of Dec 6.
+}
+
+function mkEqualityTestExprCS
+Maybe<Expr> ::= valueType::Type value::Expr expected::Expr
+{ return
+   case functionNameForBaseTypesCS(valueType, "equals") of
+     just(btt) -> just ( asExpr( btt ++ "(value, expected)", empty_CS_env(),7))
+
+   | nothing() -> 
+       case valueType of
+         listType(_,elemType,_) 
+           -> case functionNameForBaseTypesCS(new(elemType),"equals") of
+                just(btt) -> -- "equalsList(btt, value, expected)"
+                      just ( asExpr( "equalsList(" ++ btt ++ ", value, expected)", 
+                                    empty_CS_env(),7))
+              | _ -> nothing()
+              end
+       | _ -> nothing()
+       end 
+   end ;
+}
+
+-- create a production
+function mkProductionExpr
+Expr ::= prefix::String typeName::String
+{ return mkNameExpr(prefix ++ typeName) ;  }
+
+-- Think about resurecting this when the concrete syntax stuff doesn't require passing in the explicit CS_env mess.
+function functionForBaseTypesCS
+Maybe<Expr> ::= valueType::Type prefix::String
+{
+ return
+   case valueType of
+--     integerType(_) -> just( mkProductionExpr(prefix, "Integer"))
+     integerType(_) -> just( asExpr("Integer", empty_CS_env(), 5) )
+   | floatType(_) -> just( mkProductionExpr(prefix, "Float"))
+   | stringType(_) -> just( mkProductionExpr(prefix, "String"))
+   | booleanType(_) -> just( mkProductionExpr(prefix, "Boolean"))
+   | _ -> nothing()
+   end ;
+}
+
+
+{-
+--  agDclAppend
+--  (
+  local absProd::AGDcl =
    productionDcl
      ( 'abstract', 'production',
         nameIdLower ( terminal(IdLower_t, testName) ) ,
         productionSignatureEmptyRHS (
+          -- prodLHS ,
           productionLHS ( nameIdLower (terminal(IdLower_t, "t")), '::',
                           nominalType ( qNameUpperId (terminal(IdUpper_t,"Test")) )
                         ) ,
@@ -126,238 +246,51 @@ ag::AGDcl ::= kwd::'equalityTest'
           )))))) -- 1 close paren for each productionStmtCons
         )
      )
-  ,
-   aspectProductionDcl 
-     ( 'aspect', 'production', qNameId ( testSuite ) ,
-       aspectProductionSignatureEmptyRHS 
-         ( aspectProductionLHSId( nameIdLower ( terminal(IdLower_t, "top") ) ) ,
-           '::='  ) ,
+  ;
 
-       defaultProductionBody ( 
-         productionStmts ( 
-           valContainsAppend ( 
-             qNameId ( nameIdLower ( terminal(IdLower_t, "testsToPerform" ) ) ) ,
-             '<-',  
-             -- [ generatedTest() ]
-             fullList (
-               '[',
-               exprsSingle ( 
-                   emptyProductionApp (
-                     baseExpr (
-                       qNameId (
-                         nameIdLower (terminal(IdLower_t, testName ) ) ) ) , 
-                     '(', ')'  ) ) ,
-               ']' ) ,
-             ';' ) ) )
-     ) 
-  ) ;
+  local aspProd :: AGDcl =
+   asAGDcl ( "aspect production %%%Name testSuite \n" ++
+             "top ::=  \n" ++
+             "{ testsToPerform <- [ " ++ testName ++ "() ] ; }" ,
+             cons_CS_env("testSuite", wrapName(testSuite), empty_CS_env()) , 3
+           ) ;
 
- local expectedName :: Name = nameIdLower( terminal(IdLower_t, "expected" )) ;
  local valueName :: Name = nameIdLower( terminal(IdLower_t, "value" )) ;
  local tName :: Name = nameIdLower( terminal(IdLower_t, "t" )) ;
  local msgName :: Name = nameIdLower( terminal(IdLower_t, "msg" )) ;
  local passName :: Name = nameIdLower( terminal(IdLower_t, "pass" )) ;
- local testName :: String = "generatedTest" ++ "_" ++ toString(genInt()) ;
-}
-
-
-function mkToStringExpr
-Maybe<Expr> ::= valueType::Type expr::Expr
-{ return
-   case functionForBaseTypes(valueType, "toStringFrom") of
-     just(btt) -> just( -- "bbt (expr)"
-                        productionApp( new(btt) , '(', exprsSingle(expr), ')' 
-                       ) )
-   | nothing() -> 
-       case valueType of
-         listType(_,elemType,_) 
-           -> case functionForBaseTypes(new(elemType),"toStringFrom") of
-                just(btt) -> -- "toStringList(btt, value, expected)"
-                             just( productionApp( 
-                                     mkProductionExpr("toStringFrom", "List"), '(',
-                                     exprsCons ( new(btt), ',', 
-                                      exprsSingle ( expr ) ) ,
-                                     ')' ) )
-              | _ -> nothing()
-              end
-       | _ -> nothing()
-       end 
-   end ;
-   -- ToDo: The "new"s above should not be required. There is something wrong with
-   --       pattern matching as of Dec 6.
-}
-
-function mkEqualityTestExpr
-Maybe<Expr> ::= valueType::Type value::Expr expected::Expr
-{ return
-   case functionForBaseTypes(valueType, "equals") of
-     just(btt) -> just( 
-                    -- "bbt (value, expected)"
-                    productionApp(
-                      new(btt) , '(', exprsCons ( value, ',', exprsSingle ( expected ) ), ')' 
-                    ) )
-   | nothing() -> 
-       case valueType of
-         listType(_,elemType,_) 
-           -> case functionForBaseTypes(new(elemType),"equals") of
-                just(btt) -> -- "equalsList(btt, value, expected)"
-                             just( productionApp( 
-                                     mkProductionExpr("equals", "List"), '(',
-                                     exprsCons ( new(btt), ',', 
-                                      exprsCons ( value, ',' ,
-                                       exprsSingle ( expected ) ) ) ,
-                                     ')' ) )
-              | _ -> nothing()
-              end
-       | _ -> nothing()
-       end 
-   end ;
-   -- ToDo: The "new"s above should not be required. There is something wrong with
-   --       pattern matching as of Dec 6.
-}
-
-function functionForBaseTypes
-Maybe<Expr> ::= valueType::Type prefix::String
-{
- return
-   case valueType of
-     integerType(_) -> just( mkProductionExpr(prefix, "Integer"))
-   | floatType(_) -> just( mkProductionExpr(prefix, "Float"))
-   | stringType(_) -> just( mkProductionExpr(prefix, "String"))
-   | booleanType(_) -> just( mkProductionExpr(prefix, "Boolean"))
-   | _ -> nothing()
-   end ;
-}
-
-
-
--- create a production
-function mkProductionExpr
-Expr ::= prefix::String typeName::String
-{ return mkNameExpr(prefix ++ typeName) ;  }
-
-
-
-{-
-terminal EqualityTestEqShow_t 'equalityTestEqShow' lexer classes {KEYWORD} ;
-
-concrete production equalityTestEqShow_p
-ag::AGDcl ::= kwd::'equalityTestEqShow' 
-              '(' value::Expr ',' expected::Expr ',' 
-                  eqFunc::Expr ',' toStrFunc::Expr ')' ';'
-{
- ag.pp = "equalityTestEqSho (" ++ value.pp ++ "," ++ expected.pp ++ ",\n" ++ 
-         "                   " ++ eqFunc.pp ++ ", " ++ toStrFunc.pp ++ ") ;\n" ;
-
- forwards to ft ;
-
- -- If valueType is a base type (Integer, Float, etc.) or a List whose
- -- element type is a base type, then we can check for equality.
- -- With curried functions we could handle nested lists, but not now.
- local equalityTestExpr :: Maybe<Expr> =
-   mkEqualityTestExpr(valueType, value, expected) ;
-
- local toStringValueExpr :: Maybe<Expr> =
-   mkToStringExpr (valueType, value) ;
- local toStringExpectedExpr :: Maybe<Expr> =
-   mkToStringExpr (valueType, expected) ;
-
- local attribute ft :: AGDcl ;
- ft =
-  agDclAppend
-  (
-   productionDcl
-     ( 'abstract', 'production',
-        nameIdLower ( terminal(IdLower_t, testName) ) ,
-        productionSignatureEmptyRHS (
-          productionLHS ( nameIdLower (terminal(IdLower_t, "t")), '::',
-                          nominalType ( qNameUpperId (terminal(IdUpper_t,"Test")) )
-                        ) ,
-          '::=' )
-        ,
-
-        defaultProductionBody (
-
-          productionStmtsCons (
-            localAttributeDcl ('local', 'attribute', valueName, '::', valueType, ';' ) ,
-          productionStmtsCons (
-            valueDef ( qNameId(valueName), '=', value, ';' ) ,
-
-          productionStmtsCons (
-            localAttributeDcl ('local', 'attribute', expectedName, '::', valueType, ';' ) ,
-          productionStmtsCons (
-            valueDef ( qNameId(expectedName), '=', expected, ';' ) ,
-
-          -- t.msg = "FAIL" ;
-          productionStmtsCons (
-            attributeDef ( concreteDefLHS(qNameId(tName)), '.',
-                           qNameId(msgName), '=',
-
-                           foldStringExprs (
-                            [
-                             strCnst ("Test at ") ,
-                             strCnst (ag.location.unparse),
-                             strCnst (" failed. \\n") ,
-                             strCnst ("Checking that expression \\n   ") ,
-                             strCnst (value.pp) ,
-                             strCnst ("\\nshould be same as expression \\n   ") ,
-                             strCnst (expected.pp) ,
-                             strCnst ("\\n") ,
-                             strCnst ("Actual value: \\n   ") ,
-                             fromMaybe(error("TypeNotSupportedInternalError") ,toStringValueExpr) ,
-                             strCnst ("\\n"),
-                             strCnst ("Expected value: \\n   ") ,
-                             fromMaybe(error("TypeNotSupportedInternalError") ,toStringExpectedExpr) ,
-                             strCnst ("\\n")
-                            ] ) ,
-                           ';' ) ,
-
-          -- t.pass = equalsInteger (value, expected) ; 
-          productionStmtsCons (
-            attributeDef ( concreteDefLHS(qNameId(tName)), '.',
-                           qNameId(passName), '=',
-                           fromMaybe(error("TypeNotSupportedInternalError") ,equalityTestExpr), ';' ) ,
-
-          productionStmts( 
-             forwardsTo ('forwards', 'to', 
-                         emptyProductionApp ( baseExpr( qNameId( 
-                           nameIdLower( terminal(IdLower_t, "defTest")))), '(', ')' ) ,
-                         ';') )
-          )))))) -- 1 close paren for each productionStmtCons
-        )
-     )
-  ,
-   aspectProductionDcl 
-     ( 'aspect', 'production', qNameId ( testSuite ) ,
-       aspectProductionSignatureEmptyRHS 
-         ( aspectProductionLHSId( nameIdLower ( terminal(IdLower_t, "top") ) ) ,
-           '::='  ) ,
-
-       defaultProductionBody ( 
-         productionStmts ( 
-           valContainsAppend ( 
-             qNameId ( nameIdLower ( terminal(IdLower_t, "testsToPerform" ) ) ) ,
-             '<-',  
-             -- [ generatedTest() ]
-             fullList (
-               '[',
-               exprsSingle ( 
-                   emptyProductionApp (
-                     baseExpr (
-                       qNameId (
-                         nameIdLower (terminal(IdLower_t, testName ) ) ) ) , 
-                     '(', ')'  ) ) ,
-               ']' ) ,
-             ';' ) ) )
-     ) 
-  ) ;
-
  local expectedName :: Name = nameIdLower( terminal(IdLower_t, "expected" )) ;
- local valueName :: Name = nameIdLower( terminal(IdLower_t, "value" )) ;
- local tName :: Name = nameIdLower( terminal(IdLower_t, "t" )) ;
- local msgName :: Name = nameIdLower( terminal(IdLower_t, "msg" )) ;
- local passName :: Name = nameIdLower( terminal(IdLower_t, "pass" )) ;
- local testName :: String = "generatedTest" ++ "_" ++ toString(genInt()) ;
-}
+
 -}
+
+
+{-  NOT WORKING
+   Aspectproductiondcl 
+     ( 'aspect', 'production', qNameId ( testSuite ) ,
+       aspectProductionSignatureEmptyRHS 
+         ( aspectProductionLHSId( nameIdLower ( terminal(IdLower_t, "top") ) ) ,
+           '::='  ) ,
+
+       defaultProductionBody ( 
+         productionStmts ( 
+           valContainsAppend ( 
+             qNameId ( nameIdLower ( terminal(IdLower_t, "testsToPerform" ) ) ) ,
+             '<-',  
+             -- [ generatedTest() ]
+             fullList (
+               '[',
+               exprsSingle ( 
+                   emptyProductionApp (
+                     baseExpr (
+                       qNameId (
+                         nameIdLower (terminal(IdLower_t, testName ) ) ) ) , 
+                     '(', ')'  ) ) ,
+               ']' ) ,
+             ';' ) ) )
+     ) 
+-}
+
+--  ) ;
+
+
 

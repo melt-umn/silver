@@ -80,6 +80,15 @@ equalityTest ( notEqualsList ( notEqualsInteger, [1,2], []), true, Boolean, core
 equalityTest ( stripWhiteSpace ("asdf qwer \n asdf \t asdf\n"),
                "asdfqwerasdfasdf", String, core_tests) ;
 
+equalityTest ( stripExtraWhiteSpace (" asdf qwer \n asdf \t asdf\n aa"),
+               "asdf qwer asdf asdf aa", String, core_tests) ;
+
+equalityTest ( replaceChars ( ".", "_", "sdf..sd_"), "sdf__sd_", String, core_tests) ;
+
+equalityTest ( replaceChars ( ".", "_", ".1.2.3."), "_1_2_3_", String, core_tests) ;
+
+
+
 {-
 function main
 IO ::= args::String mainIO::IO

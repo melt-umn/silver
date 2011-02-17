@@ -59,9 +59,37 @@ function stripWhiteSpaceHelper
   hd = head(ss) ;
 }
 
-function stripExtraWhiteSpace
-String ::= s::String
-{ return implode ("", stripExtraWhiteSpaceHelper(explode("",s))) ; }
+function replaceChars
+String ::= toReplace::String replaceWith::String str::String
+{
+ return implode ("", replaceCharsHelper(toReplace, replaceWith, explode("",str)) ) ;
+}
+
+function replaceCharsHelper
+[String] ::= toReplace::String replaceWith::String chars::[String]
+{ return
+   if   null(chars)
+   then [ ]
+   else
+   if   head(chars) == toReplace
+   then replaceWith :: replaceCharsHelper (toReplace, replaceWith, tail(chars))
+   else head(chars) :: replaceCharsHelper (toReplace, replaceWith, tail(chars)) ;
+}
+
+--function stripExtraWhiteSpace
+--String ::= s::String
+--{ return implode ("", stripExtraWhiteSpaceHelper(explode("",s))) ; }
+
+function stripExtraWhiteSpace 
+String ::= str::String 
+{ return implode ("", stripExtraWhiteSpaceHelper(
+                           woLeadingOrEndingWhiteSpace)) ; 
+
+  local attribute woLeadingOrEndingWhiteSpace :: [String] ;
+  woLeadingOrEndingWhiteSpace 
+    = reverse((dropWhile(isSpace,
+        reverse(dropWhile(isSpace, explode("",str)))))) ;
+}
 
 function stripExtraWhiteSpaceHelper
 [String] ::= ss::[String]
@@ -86,3 +114,6 @@ function stripExtraWhiteSpaceHelper
   nxt = head(tail(ss)) ;
 }
 
+function isNotWhiteSpace
+Boolean ::= str::String
+{ return ! isSpace(str) ; }
