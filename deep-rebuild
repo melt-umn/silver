@@ -5,26 +5,27 @@
 mkdir -p build || exit
 cd build || exit
 
-# One full cycle
+echo "One full cycle ..."
 time java -Xss8M -Xmx3000M -jar ../jars/RunSilver.jar --clean silver:composed:Default || exit
 ant || exit
 mv silver.composed.Default.jar ../jars/ || exit
 
-# Before we start, let's get this thing built...
+echo "Before we start, let's get this thing built ..."
 java -Xss8M -Xmx3000M -jar ../jars/RunSilver.jar --clean lib:xml:ast || exit
-# Start..
+echo "Start ..."
 time java -Xss8M -Xmx3000M -jar ../jars/RunSilver.jar --clean silver:composed:Default || exit
-# No ant yet! Let's go build the runtime!
+
+echo "No ant yet! Let's go build the runtime! ..."
 cd ../runtime/java || exit
 ant || exit
 mv SilverRuntime.jar ../../jars/ || exit
 mv RunSilver.jar ../../jars/ || exit
 cd ../../build || exit
-# Now finish
+echo "Now finish ..."
 ant || exit
 mv silver.composed.Default.jar ../jars/ || exit
 
-# One full cycle
+echo "One more full cycle ..."
 time java -Xss8M -Xmx3000M -jar ../jars/RunSilver.jar --clean silver:composed:Default || exit
 ant || exit
 mv silver.composed.Default.jar ../jars/ || exit
