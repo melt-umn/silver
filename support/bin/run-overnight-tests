@@ -18,14 +18,17 @@ cd "$SILVER_HOME/../../trunk/"
 echo `pwd`
 
 # Update the files ----- this needs fixiing probably.
-if [ `uname -n` = "espresso" ]; then
-    echo "on Linux..." 
+if [ `uname -n` = "kona" ]; then
+    echo "on kona.cs ..." 
     svn up
+    ./fetch-jars
 fi
-
 
 # remove previous testing output report file.
 rm -f silver-testing.output
+
+# Rebuild Silver
+./deep-rebuild >& silver-rebuild.output
 
 # With updated Silver, build the testing framework jar file.
 # It ends up in grammars/lib/testing as lib.testing.jar.
@@ -39,8 +42,9 @@ echo "In ...`pwd`"
 cd "$SILVER_HOME/../../trunk/"
 support/bin/silver-run-tests . >& silver-testing.output
 
-cd ../../
 
+
+#cd ../../
 
 #rm -r grammars.output
 #cd grammars
