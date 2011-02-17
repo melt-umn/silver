@@ -7,7 +7,6 @@ import silver:definition:type;
 import silver:definition:type:syntax;
 import silver:modification:collection ;
 import silver:extension:list ;
-import silver:extension:concreteSyntaxForTrees ;
 
 import lib:extcore ;
 
