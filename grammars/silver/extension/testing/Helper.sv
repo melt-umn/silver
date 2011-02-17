@@ -79,6 +79,9 @@ function stringifyString_Helper
  stringifyHead = if head(ss) =="\""
                  then [ "\\", "\"" ]
                  else
+                 if head(ss) =="\\"
+                 then [ "\\", "\\" ]
+                 else
                  if head(ss) =="\n"
                  then [ "\\", "n" ]
                  else
