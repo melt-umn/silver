@@ -31,6 +31,9 @@ mkdir -p $RESDIR
 # Rebuild Silver
 ./deep-rebuild >& $RESDIR/silver-rebuild.output
 
+echo -e "\n\nTail of silver-rebuild.output"
+tail -n 5 $RESDIR/silver-rebuild.output
+
 # With updated Silver, build the testing framework jar file.
 # It ends up in grammars/lib/testing as lib.testing.jar.
 # The silver-run-tests script just runs this jar file.
@@ -38,9 +41,13 @@ cd "$SILVER_HOME/../../trunk/grammars/lib/testing"
 echo "In ...`pwd`"
 ./silver-compile --clean  >& ../../../$RESDIR/testing-build.output
 
+
 # cd to silver/trunk and run all tests.
 cd "$SILVER_HOME/../../trunk/"
 support/bin/silver-run-tests . >& $RESDIR/silver-testing.output
+
+echo -e "\n\nTail of silver-testing.output"
+tail -n 5 $RESDIR/silver-testing.output
 
 
 cd "$SILVER_HOME/../../../grammars/"
@@ -48,6 +55,9 @@ echo `pwd`
 
 mkdir -p $RESDIR
 $SILVER_HOME/../support/bin/silver-run-tests . >& $RESDIR/grammars.output
+
+echo -e "\n\nTail of grammars.output"
+tail -n 5 $RESDIR/grammars.output
 
 
 
