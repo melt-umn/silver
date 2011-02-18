@@ -8,9 +8,10 @@ main () {
   Integer i ;
   i = 1 ;
 
-  do
+  do {
     x = x + i ;
     y = x * y ;
-  while x <= 100 ;
+  } while (x <= 10) ;
 
+  print (y);
 }
