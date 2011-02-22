@@ -331,6 +331,8 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
+  top.isAppReference = false; -- Can't forget this! :)
+  top.appReference = "";
   top.translation = "(" ++ e1.translation ++ " ? " ++ e2.translation ++ " : " ++ e3.translation ++ ")";
 }
 
