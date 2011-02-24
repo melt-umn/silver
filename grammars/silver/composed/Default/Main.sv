@@ -41,6 +41,7 @@ parser iParse::IRootSpec {
 
   silver:modification:collection:env_parser;
   silver:modification:autocopyattr:env_parser;
+  silver:modification:ffi:env_parser;
   silver:extension:list:env_parser;
 
   silver:translation:java:concrete_syntax:copper:env_parser;
