@@ -1,10 +1,16 @@
 package common.xml;
 
 import java.io.File;
+import java.io.IOException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
@@ -26,8 +32,66 @@ public final class Util {
 	 * @param fn The filename of an XML file to convert to a Silver AST
 	 * @return The Silver AST of the XML file, wrapped in a ParseResult structure.
 	 */
-	public static final core.NParseResult parseXMLFile(final common.StringCatter fn) {
+	public static final core.NParseResult/*lib:xml:ast:XMLDocument*/ parseXMLFile(final common.StringCatter fn) {
 		
+		Document d;
+		try {
+			d = parseXMLFileToDocument(fn);
+		} catch (SAXException e) {
+			// Return the failure data structure, with the parse error.
+			return new core.PparseFailed(new common.StringCatter(e.toString()));
+		} 
+		
+		final DocumentType dt = d.getDoctype();
+		final NodeList nl = d.getChildNodes();
+		
+		lib.xml.ast.NXMLDocumentType sdt;
+		
+		if(dt != null) {
+			sdt = new lib.xml.ast.PxmlDocumentType(
+					new common.StringCatter(dt.getName()), 
+					parseXMLNodes(dt.getChildNodes())); 
+		} else {
+			sdt = new lib.xml.ast.PxmlNoDocumentType();
+		}
+		
+		return new core.PparseSucceeded(
+				new lib.xml.ast.PxmlDocument(
+						sdt, 
+						parseXMLNodes(nl)));
+		
+	}
+	
+	public static final core.NParseResult/*lib:xml:foreigntypes:XML_Document*/ parseXMLFileToForeignType(final common.StringCatter fn) {
+
+		Document d;
+		try {
+			d = parseXMLFileToDocument(fn);
+		} catch (SAXException e) {
+			// Return the failure data structure, with the parse error.
+			return new core.PparseFailed(new common.StringCatter(e.toString()));
+		}
+		
+		return new core.PparseSucceeded(d);	
+	}
+	
+	public static final lib.xml.ast.NXMLNodeList nodeSetXPathQuery(Document d, String q) {
+		try {
+			XPathFactory fac = XPathFactory.newInstance();
+			XPath xp = fac.newXPath();
+			XPathExpression xpe = xp.compile(q);
+			
+			return parseXMLNodes((NodeList)xpe.evaluate(d, XPathConstants.NODESET));
+			
+		} catch (XPathExpressionException e) {
+			throw new TraceException("While evaluating XPath expression", e);
+		}
+		
+	}
+	
+	private static final Document parseXMLFileToDocument(final common.StringCatter fn)
+	throws SAXException
+	{
 		// Create the parser, if we haven't already. Why do they create these things so complicated?
 		if(parser == null) {
 			try {
@@ -52,36 +116,11 @@ public final class Util {
 		
 		final String filename = fn.toString();
 
-		Document d;
 		try {
-			d = parser.parse(new File(filename));
-		} catch (SAXException e) {
-			
-			// Return the failure data structure, with the parse error.
-			return new core.PparseFailed(new common.StringCatter(e.toString()));
-			
-		} catch (Throwable e) {
-			throw new TraceException("While parsing XML file " + filename, e);
+			return parser.parse(new File(filename));
+		} catch (IOException e) {
+			throw new TraceException("IO error while parsing xml file " + filename, e);
 		}
-		
-		final DocumentType dt = d.getDoctype();
-		final NodeList nl = d.getChildNodes();
-		
-		lib.xml.ast.NXMLDocumentType sdt;
-		
-		if(dt != null) {
-			sdt = new lib.xml.ast.PxmlDocumentType(
-					new common.StringCatter(dt.getName()), 
-					parseXMLNodes(dt.getChildNodes())); 
-		} else {
-			sdt = new lib.xml.ast.PxmlNoDocumentType();
-		}
-		
-		return new core.PparseSucceeded(
-				new lib.xml.ast.PxmlDocument(
-						sdt, 
-						parseXMLNodes(nl)));
-		
 	}
 	
 	private static final lib.xml.ast.NXMLNodeList parseXMLNodes(final NodeList nl) {
