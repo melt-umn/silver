@@ -56,7 +56,7 @@ top::TypeExp ::=
 aspect production nonterminalTypeExp
 top::TypeExp ::= fn::String params::[TypeExp]
 {
-  top.unparse = "nt('" ++ fn ++ "', " ++ unparseTypes(params, top.boundVariables) ++ ")"; -- TODO 
+  top.unparse = "nt('" ++ fn ++ "', " ++ unparseTypes(params, top.boundVariables) ++ ")"; -- TODO todo WHAT?! why must my comments suck
   top.typeName = fn;
 }
 
