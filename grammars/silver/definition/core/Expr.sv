@@ -285,7 +285,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.location = loc(top.file, $2.line, $2.column);
   
   production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(q, performSubstitution(e.typerep, e.upSubst));
+  occursCheck = occursCheckQName(q, performSubstitution(e.typerep, e.upSubst).decoratedType);
 
   top.typerep = occursCheck.typerep;
   
@@ -299,7 +299,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.location = loc(top.file, $2.line, $2.column);
   
   production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(q, performSubstitution(e.typerep, e.upSubst));
+  occursCheck = occursCheckQName(q, performSubstitution(e.typerep, e.upSubst).decoratedType);
 
   top.typerep = occursCheck.typerep;
   
