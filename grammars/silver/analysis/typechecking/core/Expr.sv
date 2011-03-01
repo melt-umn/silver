@@ -586,7 +586,19 @@ aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
   e1.downSubst = top.downSubst;
-  e2.downSubst = e1.upSubst;
+  
+  -- TODO: this is slightly hacky.  In order to get expected types "more right"
+  -- we're going to do a left-to-right preferential unification of types with
+  -- expected types.
+
+  -- input e1.upSubst
+  local attribute beforeTheRest :: Substitution;
+  beforeTheRest = case e1.expected of
+                    expected_type(t) -> composeSubst( e1.upSubst, unify(t, e1.typerep) )
+                  | _ -> e1.upSubst
+                  end;
+  
+  e2.downSubst = beforeTheRest;
   top.upSubst = e2.upSubst;
 }
 
