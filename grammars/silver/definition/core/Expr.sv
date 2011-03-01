@@ -40,14 +40,14 @@ top::Expr ::= q::Decorated QName
   production attribute shouldUnDec ::Boolean;
   shouldUnDec = case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !performSubstitution(new(t), top.upSubst).isDecorated
+                | expected_type(t)     -> performSubstitution(new(t), top.upSubst).isDecorable
                 | _                    -> false
                 end;
 
   top.pp = q.pp;
   top.location = q.location;
   top.errors := [];
-  top.typerep = if shouldUnDec || !q.lookupValue.typerep.doDecorate
+  top.typerep = if shouldUnDec || !q.lookupValue.typerep.isDecorable
                 then q.lookupValue.typerep
                 else decoratedTypeExp(q.lookupValue.typerep);
 }
@@ -59,14 +59,14 @@ top::Expr ::= q::Decorated QName
   production attribute shouldUnDec ::Boolean;
   shouldUnDec = case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !performSubstitution(new(t), top.upSubst).isDecorated
+                | expected_type(t)     -> performSubstitution(new(t), top.upSubst).isDecorable
                 | _                    -> false
                 end;
 
   top.pp = q.pp;
   top.location = q.location;
   top.errors := [];
-  top.typerep = if shouldUnDec || !q.lookupValue.typerep.doDecorate -- TODO: isn't this always known?
+  top.typerep = if shouldUnDec || !q.lookupValue.typerep.isDecorable -- lhs is always isDecorable, but for consistency...
                 then q.lookupValue.typerep
                 else decoratedTypeExp(q.lookupValue.typerep);
 }
@@ -77,14 +77,14 @@ top::Expr ::= q::Decorated QName
   production attribute shouldUnDec ::Boolean;
   shouldUnDec = case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !performSubstitution(new(t), top.upSubst).isDecorated
+                | expected_type(t)     -> performSubstitution(new(t), top.upSubst).isDecorable
                 | _                    -> false
                 end;
 
   top.pp = q.pp;
   top.location = q.location;
   top.errors := [];
-  top.typerep = if shouldUnDec || !q.lookupValue.typerep.doDecorate
+  top.typerep = if shouldUnDec || !q.lookupValue.typerep.isDecorable
                 then q.lookupValue.typerep
                 else decoratedTypeExp(q.lookupValue.typerep);
 }
@@ -96,14 +96,14 @@ top::Expr ::= q::Decorated QName
   production attribute shouldUnDec ::Boolean;
   shouldUnDec = case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !performSubstitution(new(t), top.upSubst).isDecorated
+                | expected_type(t)     -> performSubstitution(new(t), top.upSubst).isDecorable
                 | _                    -> false
                 end;
 
   top.pp = q.pp;
   top.location = q.location;
   top.errors := [];
-  top.typerep = if shouldUnDec || !q.lookupValue.typerep.doDecorate -- TODO: isn't this always known?
+  top.typerep = if shouldUnDec || !q.lookupValue.typerep.isDecorable -- lhs is always isDecorable, but for consistency...
                 then q.lookupValue.typerep
                 else decoratedTypeExp(q.lookupValue.typerep);
 }

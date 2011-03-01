@@ -10,18 +10,13 @@ synthesized attribute transType :: String;
 -- the <> part of the type!! e.g. "Foo<Bar>.class" is illegal, should be "Foo.class"
 synthesized attribute transClassType :: String;
 
--- Whether this type may be supplied with inherited attributes.
--- Used only to determine if the maps should be created. (NOT TYPE CHECKING)
-synthesized attribute mayBeSuppliedInhAttrs :: Boolean;
-
-attribute transType, transClassType, mayBeSuppliedInhAttrs occurs on TypeExp;
+attribute transType, transClassType occurs on TypeExp;
 
 aspect production defaultTypeExp
 top::TypeExp ::=
 {
   top.transType = error("INTERNAL ERROR: Some type forgot to define its Java transType.");
   top.transClassType = error("INTERNAL ERROR: Some type forgot to define its Java transClassType.");
-  top.mayBeSuppliedInhAttrs = false;
 }
 
 aspect production varTypeExp
@@ -73,7 +68,6 @@ top::TypeExp ::= fn::String params::[TypeExp]
   -- class, e.g. silver.definition.core.NExpr
   top.transType = makeNTClassName(fn);
   top.transClassType = top.transType;
-  top.mayBeSuppliedInhAttrs = true;
 }
 
 aspect production terminalTypeExp

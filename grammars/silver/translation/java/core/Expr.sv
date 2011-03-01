@@ -48,7 +48,7 @@ top::Expr ::= q::Decorated QName
   childIDref = makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName;
 
   top.translation =
-    if q.lookupValue.typerep.doDecorate
+    if q.lookupValue.typerep.isDecorable
     then if shouldUnDec
          then {- type Node -} "context.childDecorated(" ++ childIDref ++ ").undecorate()"
          else {- type DecoratedNode -} "context.childDecorated(" ++ childIDref ++ ")"
@@ -78,7 +78,7 @@ top::Expr ::= q::Decorated QName
   top.appReference = "";
 
   top.translation =
-    if q.lookupValue.typerep.doDecorate
+    if q.lookupValue.typerep.isDecorable
     then if shouldUnDec
          then {- type Node -} "context.localDecorated(\"" ++ q.lookupValue.fullName ++ "\").undecorate()"
          else {- type DecoratedNode -} "context.localDecorated(\"" ++ q.lookupValue.fullName ++ "\")"

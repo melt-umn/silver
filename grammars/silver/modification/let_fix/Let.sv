@@ -80,7 +80,7 @@ top::Expr ::= q::Decorated QName
   production attribute shouldUnDec ::Boolean;
   shouldUnDec = case top.expected of
                   expected_undecorated() -> true
-                | expected_type(t)     -> !performSubstitution(new(t), top.upSubst).isDecorated
+                | expected_type(t)     -> performSubstitution(new(t), top.upSubst).isDecorable
                 | _                    -> false
                 end;
   

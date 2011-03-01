@@ -20,7 +20,6 @@ top::TypeExp ::= el::TypeExp
   -- Suppress its "nonterminal"ness
   top.isDecorable = false;
   top.isDecorated = false;
-  top.doDecorate = false;
   --top.accessDispatcher = errorAccessDispatcher; -- permit this, since we need it for default, non-specialized java version
   
   top.unparse = "[" ++ el.unparse ++ "]";

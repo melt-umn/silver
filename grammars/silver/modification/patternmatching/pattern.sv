@@ -324,7 +324,7 @@ p::Pattern ::= v::Name
   proto_type = performSubstitution(p.typerep_down, p.downSubst);
   
   local attribute var_type :: TypeExp ;
-  var_type = if proto_type.doDecorate
+  var_type = if proto_type.isDecorable
              then decoratedTypeExp(proto_type)
              else proto_type;
   
@@ -470,7 +470,7 @@ top::Expr ::= e::Expr c::Integer t::TypeExp
 
   top.errors := e.errors;
   top.typerep =
-       if t.doDecorate
+       if t.isDecorable
        then decoratedTypeExp(t)
        else t;
 
