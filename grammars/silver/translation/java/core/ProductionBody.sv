@@ -122,7 +122,7 @@ top::ForwardLHSExpr ::= q::QName
 aspect production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 {
-  top.setupInh := if !te.typerep.mayBeSuppliedInhAttrs then  "" else
+  top.setupInh := if !te.typerep.isDecorable then  "" else
         	 "\t\t//" ++ top.pp ++ "\n" ++
 		 "\t\t" ++ 
 		 makeClassName(top.signature.fullName) ++ ".localInheritedAttributes.put(\"" ++ fName ++ "\", " ++ 
@@ -133,7 +133,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 aspect production productionAttributeDcl
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
 {
-  top.setupInh := if !te.typerep.mayBeSuppliedInhAttrs then  "" else
+  top.setupInh := if !te.typerep.isDecorable then  "" else
 	   	"\t\t//" ++ top.pp ++ "\n" ++		 
 		"\t\t" ++ 
 		 makeClassName(top.signature.fullName) ++ ".localInheritedAttributes.put(\"" ++ fName ++ "\", " ++ 

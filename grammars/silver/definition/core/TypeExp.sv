@@ -1,6 +1,5 @@
 grammar silver:definition:core;
 
-synthesized attribute doDecorate :: Boolean;
 synthesized attribute applicationDispatcher :: Production (Expr ::= Decorated Expr Exprs);
 synthesized attribute accessDispatcher :: Production (Expr ::= Decorated Expr Dot_t Decorated QName);
 
@@ -10,12 +9,11 @@ synthesized attribute instanceOrd :: Boolean;
 synthesized attribute instanceNum :: Boolean;
 synthesized attribute instanceConvertible :: Boolean;
 
-attribute doDecorate, applicationDispatcher, accessDispatcher, instanceEq, instanceOrd, instanceNum, instanceConvertible occurs on TypeExp;
+attribute applicationDispatcher, accessDispatcher, instanceEq, instanceOrd, instanceNum, instanceConvertible occurs on TypeExp;
 
 aspect production defaultTypeExp
 top::TypeExp ::=
 {
-  top.doDecorate = false;
   top.applicationDispatcher = errorApplicationDispatcher;
   top.accessDispatcher = errorAccessDispatcher;
   top.instanceEq = false;
@@ -59,7 +57,6 @@ top::TypeExp ::=
 aspect production nonterminalTypeExp
 top::TypeExp ::= fn::String params::[TypeExp]
 {
-  top.doDecorate = true;
   top.accessDispatcher = undecoratedAccessDispatcher;
 }
 

@@ -115,7 +115,7 @@ function makeStaticDcls
 String ::= className::String s::[Decorated NamedSignatureElement]{
   return if null(s) 
 	 then "" 
-	 else (if head(s).typerep.mayBeSuppliedInhAttrs then
+	 else (if head(s).typerep.isDecorable then
 	      "\tchildInheritedAttributes[i_" ++ head(s).elementName ++ "] = " ++ 
                                                             "new common.Lazy[" ++ makeNTClassName(head(s).typerep.typeName) ++ ".num_inh_attrs];\n"
                else "") ++ makeStaticDcls(className, tail(s));
