@@ -8,11 +8,11 @@ import lib:xml:ast;
  - WARNING: this is buggy! we're parsing a file without demanding an IO token!!
  - WILL CHANGE IN THE FUTURE.
  -}
-function parseXMLFileAsAST
+function parseXMLFileN
 ParseResult<XMLDocument> ::= filename::String
 {
-  return error("parseXMLFileAsAST not yet implemented");
+  return error("parseXMLFileN not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.parseXMLFile(%filename%)";
+  "java" : return "common.xml.Util.parseXMLFileN(%filename%)";
 }
 
