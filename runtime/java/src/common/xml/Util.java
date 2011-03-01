@@ -2,23 +2,39 @@ package common.xml;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import lib.xml.ast.NXMLAttribute;
+import lib.xml.ast.NXMLDocumentType;
+import lib.xml.ast.NXMLNode;
+import lib.xml.ast.NXMLNodeList;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 
+import common.ConsCell;
+import common.StringCatter;
 import common.exceptions.SilverError;
 import common.exceptions.SilverInternalError;
 import common.exceptions.TraceException;
@@ -29,44 +45,64 @@ public final class Util {
 	private static DocumentBuilder parser;
 	
 	/**
-	 * @param fn The filename of an XML file to convert to a Silver AST
-	 * @return The Silver AST of the XML file, wrapped in a ParseResult structure.
+	 * Ensure we've properly instantiated a parser object.
 	 */
-	public static final core.NParseResult/*lib:xml:ast:XMLDocument*/ parseXMLFile(final common.StringCatter fn) {
+	private static final void ensureParserSetup() {
+		// Create the parser, if we haven't already. Why do they create these things so complicated?
+		if(parser == null) {
+			try {
+				dbFactory.setCoalescing(true); // Eliminate CDATA into text nodes...
+				dbFactory.setIgnoringComments(true); // Eliminate comment nodes...
+				//dbFactory.setIgnoringElementContentWhitespace(true); //REQUIRES VALIDATION MODE?
+				dbFactory.setValidating(false); // Make sure we're not validating...
+				
+				// BRAIN DAMAGE OF THE HIGHEST ORDER
+				dbFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+				
+				parser = dbFactory.newDocumentBuilder();
+			} catch(ParserConfigurationException pce) {
+				throw new SilverInternalError("Unexpected error initializing XML parser", pce);
+			}
+		}
+	}
+
+	/**
+	 * @param fn The filename of an XML file to convert to a Silver AST (Silver type String)
+	 * @return The Silver AST of the XML file, wrapped in a ParseResult structure.
+	 *   (Silver type core:ParseResult&lt;lib:xml:ast:XMLDocument&gt;)
+	 */
+	public static final core.NParseResult parseXMLFileN(final common.StringCatter fn) {
+		
+		ensureParserSetup();
 		
 		Document d;
 		try {
-			d = parseXMLFileToDocument(fn);
+			d = parser.parse(new File(fn.toString()));
+		} catch (IOException e) {
+			throw new TraceException("IO error while parsing xml file " + fn.toString(), e);
 		} catch (SAXException e) {
 			// Return the failure data structure, with the parse error.
 			return new core.PparseFailed(new common.StringCatter(e.toString()));
-		} 
-		
-		final DocumentType dt = d.getDoctype();
-		final NodeList nl = d.getChildNodes();
-		
-		lib.xml.ast.NXMLDocumentType sdt;
-		
-		if(dt != null) {
-			sdt = new lib.xml.ast.PxmlDocumentType(
-					new common.StringCatter(dt.getName()), 
-					parseXMLNodes(dt.getChildNodes())); 
-		} else {
-			sdt = new lib.xml.ast.PxmlNoDocumentType();
 		}
 		
-		return new core.PparseSucceeded(
-				new lib.xml.ast.PxmlDocument(
-						sdt, 
-						parseXMLNodes(nl)));
-		
+		return new core.PparseSucceeded(documentF2N(d));
+		//  fmap documentF2n . parseXMLFileF  -- OH WAIT
 	}
 	
-	public static final core.NParseResult/*lib:xml:foreigntypes:XML_Document*/ parseXMLFileToForeignType(final common.StringCatter fn) {
+	/**
+	 * @param fn The filename of an XML file (Silver type String)
+	 * @return A parse result containing a direct reference to a Document.
+	 *   (Silver type core:ParseResult&lt;lib:xml:foreigntypes:XML_Document&gt;)
+	 */
+	public static final core.NParseResult parseXMLFileF(final common.StringCatter fn) {
 
+		ensureParserSetup();
+		
 		Document d;
 		try {
-			d = parseXMLFileToDocument(fn);
+			d = parser.parse(new File(fn.toString()));
+		} catch (IOException e) {
+			throw new TraceException("IO error while parsing xml file " + fn.toString(), e);
 		} catch (SAXException e) {
 			// Return the failure data structure, with the parse error.
 			return new core.PparseFailed(new common.StringCatter(e.toString()));
@@ -75,55 +111,116 @@ public final class Util {
 		return new core.PparseSucceeded(d);	
 	}
 	
-	public static final lib.xml.ast.NXMLNodeList nodeSetXPathQuery(Document d, String q) {
+	/**
+	 * Convert a document of type Foreign DOM to Silver XML AST.
+	 * 
+	 * @param d A DOM Document (Silver type lib:xml:foreigntypes:XML_Document)
+	 * @return An equivalent Silver AST type. (Silver type lib:xml:ast:XMLDocument)
+	 */
+	public static final lib.xml.ast.NXMLDocument documentF2N(org.w3c.dom.Document d) {
+		final DocumentType dt = d.getDoctype();
+		final NodeList nl = d.getChildNodes();
+		
+		lib.xml.ast.NXMLDocumentType sdt;
+		
+		if(dt != null) {
+			sdt = new lib.xml.ast.PxmlDocumentType(
+					new common.StringCatter(dt.getName()), 
+					nodeListF2N(dt.getChildNodes())); 
+		} else {
+			sdt = new lib.xml.ast.PxmlNoDocumentType();
+		}
+		
+		return new lib.xml.ast.PxmlDocument(sdt, nodeListF2N(nl));
+	}
+	
+	/**
+	 * Convert a document of type Silver XML AST to a Foreign DOM type
+	 * 
+	 * @param docAst Silver AST Document (Silver type lib:xml:ast:XMLDocument)
+	 * @return An equivalent DOM document (Silver type lib:xml:foreigntypes:XML_Document)
+	 */
+	public static final Document documentN2F(lib.xml.ast.NXMLDocument docAst) {
+		ensureParserSetup();
+		
+		Document docContext = parser.newDocument();
+		
+		deconvertXmlAstDocument(docAst, docContext);
+		
+		return docContext;
+	}
+	
+	/**
+	 * Produces a text document from a DOM tree
+	 * 
+	 * @param document DOM tree to unparse (Silver type lib:xml:foreigntypes:XML_Document)
+	 * @return String output (Silver type String)
+	 */
+	public static final StringCatter documentF2String(Document document) {
+		TransformerFactory tFactory = TransformerFactory.newInstance();
+		Transformer transformer;
 		try {
-			XPathFactory fac = XPathFactory.newInstance();
-			XPath xp = fac.newXPath();
-			XPathExpression xpe = xp.compile(q);
+			transformer = tFactory.newTransformer();
+		} catch (TransformerConfigurationException e1) {
+			throw new RuntimeException(e1);
+		}
+
+		StringWriter sw = new StringWriter();
+		
+		DOMSource source = new DOMSource(document);
+		StreamResult result = new StreamResult(sw);
+		try {
+			transformer.transform(source, result);
+		} catch (TransformerException e) {
+			throw new RuntimeException(e);
+		}
+
+		return new StringCatter(sw.toString());
+	}
+
+	/**
+	 * @param document The Node or document to query
+	 * @param querystring The XPath query to execute on this document
+	 * @return The foreign DOM response (Silver type lib:xml:foreigntypes:XML_NodeList)
+	 */
+	public static final NodeList xpathQueryNodeSet(Object document, String querystring) {
+		try {
+			XPathFactory xpfactory = XPathFactory.newInstance();
+			XPath xp = xpfactory.newXPath();
+			XPathExpression xpe = xp.compile(querystring);
 			
-			return parseXMLNodes((NodeList)xpe.evaluate(d, XPathConstants.NODESET));
+			return (NodeList)xpe.evaluate(document, XPathConstants.NODESET);
 			
 		} catch (XPathExpressionException e) {
 			throw new TraceException("While evaluating XPath expression", e);
 		}
-		
 	}
 	
-	private static final Document parseXMLFileToDocument(final common.StringCatter fn)
-	throws SAXException
-	{
-		// Create the parser, if we haven't already. Why do they create these things so complicated?
-		if(parser == null) {
-			try {
-				dbFactory.setCoalescing(true); // Eliminate CDATA into text nodes...
-				dbFactory.setIgnoringComments(true); // Eliminate comment nodes...
-				//dbFactory.setIgnoringElementContentWhitespace(true); //REQUIRES VALIDATION MODE
-				dbFactory.setValidating(false); // Make sure we're not validating...
-				
-				// I.. what...
-				// Whoever is responsible for this being necessary SHOULD BE SHOT IN THE FACE
-				// Apparently the w3c gets GBPS eaten up by this buggy crap!
-				dbFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-				// No, no I don't want my language tools to stop, and go download a dtd
-				// from the damn internet you fools. Especially when I ALREADY TOLD YOU
-				// NOT TO VALIDATE!
-				
-				parser = dbFactory.newDocumentBuilder();
-			} catch(ParserConfigurationException pce) {
-				throw new SilverInternalError("Unexpected error initializing XML parser", pce);
-			}
-		}
-		
-		final String filename = fn.toString();
-
+	/**
+	 * @param document The Node or document to query
+	 * @param querystring The XPath query to execute on this document
+	 * @return A string response (Silver type String)
+	 */
+	public static final StringCatter xpathQueryString(Object document, String querystring) {
 		try {
-			return parser.parse(new File(filename));
-		} catch (IOException e) {
-			throw new TraceException("IO error while parsing xml file " + filename, e);
+			XPathFactory xpfactory = XPathFactory.newInstance();
+			XPath xp = xpfactory.newXPath();
+			XPathExpression xpe = xp.compile(querystring);
+			
+			return new StringCatter((String)xpe.evaluate(document, XPathConstants.STRING));
+			
+		} catch (XPathExpressionException e) {
+			throw new TraceException("While evaluating XPath expression", e);
 		}
 	}
 	
-	private static final lib.xml.ast.NXMLNodeList parseXMLNodes(final NodeList nl) {
+	/**
+	 * Convert a DOM NodeList to a silver one
+	 * 
+	 * @param nl a DOM NodeList (Silver type lib:xml:foreigntypes:XML_NodeList)
+	 * @return a silver ast NodeList (Silver type lib:xml:ast:XMLNodeList)
+	 */
+	public static final lib.xml.ast.NXMLNodeList nodeListF2N(final NodeList nl) {
 		
 		lib.xml.ast.NXMLNodeList l = new lib.xml.ast.PxmlNodeListNil();
 		
@@ -144,9 +241,9 @@ public final class Util {
 				// Convert the name
 				common.StringCatter name = new common.StringCatter(n.getNodeName());
 				// Convert the attributes
-				common.ConsCell/*lib.xml.ast.NXMLAttribute*/ attrs = parseElementAttributes(n.getAttributes());
+				common.ConsCell/*lib.xml.ast.NXMLAttribute*/ attrs = attributesF2N(n.getAttributes());
 				// Convert the children
-				lib.xml.ast.NXMLNodeList children = parseXMLNodes(n.getChildNodes());
+				lib.xml.ast.NXMLNodeList children = nodeListF2N(n.getChildNodes());
 				
 				// Create the Node
 				l = new lib.xml.ast.PxmlNodeListCons( new lib.xml.ast.PxmlNodeElement(name, attrs, children), l);
@@ -162,7 +259,30 @@ public final class Util {
 		return l;
 	}
 	
-	private static final common.ConsCell/*lib.xml.ast.NXMLAttribute*/ parseElementAttributes(final NamedNodeMap al) {
+	/**
+	 * Convert a DOM Node List to a silver list of DOM nodes!
+	 * 
+	 * @param nl a DOM Node list (Silver type lib:xml:foreigntypes:XML_NodeList)
+	 * @return a list of DOM Nodes (Silver type [lib:xml:foreigntypes:XML_Node])
+	 */
+	public static final common.ConsCell nodeListF2NPartial(final NodeList nl) {
+		
+		common.ConsCell l = common.ConsCell.nil;
+		
+		for(int i = nl.getLength() - 1; i >= 0; i -- ) {
+			l = new common.ConsCell(nl.item(i), l);
+		}
+		
+		return l;
+	}
+	
+	/**
+	 * Convert a DOM NamedNodeMap (attributes) to a list of silver attributes.
+	 * 
+	 * @param al DOM Attribute list
+	 * @return silver ast attribute list (Silver type [lib:xml:ast:XMLAttribute])
+	 */
+	private static final common.ConsCell attributesF2N(final NamedNodeMap al) {
 		
 		common.ConsCell/*lib.xml.ast.NXMLAttribute*/ l = common.ConsCell.nil;
 		
@@ -174,5 +294,58 @@ public final class Util {
 		}
 		
 		return l;
+	}
+	
+	private static final void deconvertXmlAstDocument(lib.xml.ast.NXMLDocument docAst, Document docContext) {
+		lib.xml.ast.NXMLDocumentType dt = (NXMLDocumentType) docAst.getChild(0);
+		lib.xml.ast.NXMLNodeList nl = (NXMLNodeList) docAst.getChild(1);
+		mutateDocumentType(dt, docContext);
+		mutateXmlAstNodeList(nl, docContext, docContext);
+	}
+	private static final void mutateDocumentType(lib.xml.ast.NXMLDocumentType docTypeAst, Document docContext) {
+		if(docTypeAst instanceof lib.xml.ast.PxmlNoDocumentType) {
+			// do nothing!
+		} else if(docTypeAst instanceof lib.xml.ast.PxmlDocumentType) {
+			// TODO: oh, bother. how?
+		} else {
+			throw new SilverInternalError("Unknown type in XML AST during unparse of doctype...");
+		}
+	}
+	private static final void mutateXmlAstNodeList(lib.xml.ast.NXMLNodeList docNLAst, Node nodeContext, Document docContext) {
+		NXMLNodeList current = docNLAst;
+		while(current instanceof lib.xml.ast.PxmlNodeListCons) {
+			Node n = deconvertXmlAstNode((NXMLNode)current.getChild(0), docContext);
+			nodeContext.appendChild(n);
+			current = (NXMLNodeList) current.getChild(1);
+		}
+	}
+	private static final Node deconvertXmlAstNode(lib.xml.ast.NXMLNode docNodeAst, Document docContext) {
+		if(docNodeAst instanceof lib.xml.ast.PxmlNodeElement) {
+			StringCatter sc = (StringCatter) docNodeAst.getChild(0);
+			common.ConsCell at = (ConsCell) docNodeAst.getChild(1);
+			NXMLNodeList nl = (NXMLNodeList) docNodeAst.getChild(2);
+			
+			Element n = docContext.createElement(sc.toString());
+			mutateAttributes(at, n, docContext);
+			mutateXmlAstNodeList(nl, n, docContext);
+			return n;
+		}
+		if(docNodeAst instanceof lib.xml.ast.PxmlNodeText) {
+			StringCatter sc = (StringCatter) docNodeAst.getChild(0);
+			
+			Text t = docContext.createTextNode(sc.toString());
+			return t;
+		}
+		throw new SilverInternalError("Unknown type in XML AST during unparse of node...");
+		
+	}
+	private static final void mutateAttributes(common.ConsCell/*lib.xml.ast.NXMLAttribute*/ docAttrsAst, Element elem, Document docContext) {
+		common.ConsCell current = docAttrsAst;
+		
+		while(!current.nil()) {
+			NXMLAttribute at = (NXMLAttribute) current.head();
+			elem.setAttribute(at.getChild(0).toString(), at.getChild(1).toString());
+			current = current.tail();
+		}
 	}
 }
