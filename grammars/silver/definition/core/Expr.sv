@@ -347,7 +347,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.pp = "decorate " ++ e.pp ++ " with {" ++ inh.pp ++ "}";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.typerep = decoratedTypeExp(performSubstitution(e.typerep, e.upSubst));
+  top.typerep = decoratedTypeExp(performSubstitution(e.typerep, e.upSubst)); -- .decoratedForm?
   top.errors := e.errors ++ inh.errors;
   
   inh.decoratingnt = performSubstitution(e.typerep, e.upSubst);

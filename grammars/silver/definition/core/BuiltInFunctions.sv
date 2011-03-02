@@ -1,5 +1,7 @@
 grammar silver:definition:core;
 
+import silver:analysis:typechecking:core;
+
 concrete production lengthFunction
 top::Expr ::= 'length' '(' e::Expr ')'
 {
@@ -75,7 +77,7 @@ top::Expr ::= 'new' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.errors := e.errors;
-  top.typerep = e.typerep.decoratedType;
+  top.typerep = performSubstitution(e.typerep, top.upSubst).decoratedType;
 
   e.expected = case top.expected of
                  expected_type(nonterminalTypeExp(f,p)) -> expected_type(decoratedTypeExp(nonterminalTypeExp(f,p)))

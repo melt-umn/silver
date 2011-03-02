@@ -15,7 +15,7 @@ import silver:definition:type:syntax;
 aspect production letp
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
-  top.translation = "((" ++ top.typerep.transType ++ ")common.Util.let(context, new String[]{" ++ implode(", ", la.nameTrans) ++ "}, " ++ 
+  top.translation = "((" ++ finalType(top).transType ++ ")common.Util.let(context, new String[]{" ++ implode(", ", la.nameTrans) ++ "}, " ++ 
 					     "new common.Lazy[]{" ++ implode(", ", la.valueTrans) ++ "}, " ++ wrapLazy(forward) ++ "))"; 
 }
 
