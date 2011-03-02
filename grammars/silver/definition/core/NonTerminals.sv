@@ -3,11 +3,9 @@ grammar silver:definition:core;
 nonterminal Root with location, grammarName, file, declaredName, moduleNames, importedDefs, exportedGrammars, condBuild, warnings, errors, compiledGrammars, env, globalImports, defs, pp;
 nonterminal GrammarDcl with location, grammarName, declaredName, file, errors, pp;
 
-nonterminal QName with name, location, grammarName, file, errors, env, defs, pp;
-nonterminal QNameUpper with name, location, grammarName, file, errors, env, defs, pp;
-nonterminal Name with name, location, grammarName, file, errors, env, defs, pp;
-nonterminal NameTick with name, location, grammarName, file, errors, env, defs, pp;
-nonterminal NameTickTick with name, location, grammarName, file, errors, env, defs, pp;
+nonterminal Name with name, location, grammarName, file, env, pp;
+nonterminal NameTick with name, location, grammarName, file, env, pp;
+nonterminal NameTickTick with name, location, grammarName, file, env, pp;
 
 nonterminal AGDcls with location, grammarName, file, warnings, errors, env, defs, pp, moduleNames, compiledGrammars;
 nonterminal AGDcl with location, grammarName, file, warnings, errors, env, defs, pp, moduleNames, compiledGrammars;

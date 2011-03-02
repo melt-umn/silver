@@ -36,11 +36,11 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type
 }
 
 aspect production attributionDcl
-top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QName '<' tlnt::TypeList '>' ';'
+top::AGDcl ::= 'attribute' at::QNameWithTL 'occurs' 'on' nt::QNameWithTL ';'
 {
   top.setupInh <- 
-    case a.lookupAttribute.dcl of
-      autocopyDcl(_,_,_,_,_) ->  "\t\t" ++ makeNTClassName(nt.lookupType.fullName) ++ ".decorators.add(" ++ makeDecoratorClassName(a.lookupAttribute.fullName) ++ ".singleton);\n"
+    case at.qname.lookupAttribute.dcl of
+      autocopyDcl(_,_,_,_,_) ->  "\t\t" ++ makeNTClassName(nt.qname.lookupType.fullName) ++ ".decorators.add(" ++ makeDecoratorClassName(at.qname.lookupAttribute.fullName) ++ ".singleton);\n"
     | _ -> ""
     end;
 }

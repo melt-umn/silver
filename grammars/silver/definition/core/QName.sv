@@ -1,5 +1,22 @@
 grammar silver:definition:core;
 
+{--
+ - Qualified names of the form 'a:b:c:d...'
+ -}
+nonterminal QName with name, location, grammarName, file, env, pp;
+{--
+ - Qualified names where the LAST name has an upper case first letter.
+ -}
+nonterminal QNameUpper with name, location, grammarName, file, env, pp;
+{--
+ - Qualified names with an optional type list following it.
+ -}
+nonterminal QNameWithTL with location, grammarName, file, env, pp, qname, typelist;
+
+synthesized attribute qname :: Decorated QName;
+synthesized attribute typelist :: Decorated TypeList;
+
+
 concrete production qNameId
 top::QName ::= id::Name
 {
@@ -24,11 +41,11 @@ top::QName ::= id::Name ':' qn::QName
   top.lookupAttribute = decorate customLookup("attribute", getAttrDcl, top.name, top.location) with { env = top.env; };
 }
 
+nonterminal QNameLookup with fullName, typerep, errors, env, dcls, dcl, dclBoundVars;
+
 synthesized attribute lookupValue :: Decorated QNameLookup occurs on QName;
 synthesized attribute lookupType :: Decorated QNameLookup occurs on QName;
 synthesized attribute lookupAttribute :: Decorated QNameLookup occurs on QName;
-
-nonterminal QNameLookup with fullName, typerep, errors, env, dcls, dcl, dclBoundVars;
 
 abstract production customLookup
 top::QNameLookup ::= kindOfLookup::String lookupFunc::Function([Decorated DclInfo] ::= String Decorated Env) name::String l::Decorated Location 
@@ -86,4 +103,22 @@ top::QNameUpper ::= id::Name ':' qn::QNameUpper
   
   top.lookupType = decorate customLookup("type", getTypeDcl, top.name, top.location) with { env = top.env; };
 }
+
+
+
+concrete production qNameWithoutTL
+top::QNameWithTL ::= q::QName
+{
+  top.pp = q.pp;
+  forwards to qNameWithTL(q, '<', typeListNone(), '>');
+}
+concrete production qNameWithTL
+top::QNameWithTL ::= q::QName '<' tl::TypeList '>'
+{
+  top.pp = q.pp ++ "<" ++ tl.pp ++ ">";
+  top.location = q.location;
+  top.qname = q;
+  top.typelist = tl;
+}
+
 
