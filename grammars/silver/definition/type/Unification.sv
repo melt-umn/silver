@@ -95,6 +95,38 @@ top::TypeExp ::= te::TypeExp
               end;
 }
 
+aspect production ntOrDecTypeExp
+top::TypeExp ::= nt::TypeExp  hidden::TypeExp
+{
+  top.unify =
+    case hidden of
+      -- We have not yet specialized, so examine ourselves what we're unifying with
+      varTypeExp(_) ->
+             case top.unifyWith of
+               decoratedTypeExp(ote) ->
+                      -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
+                      unifyAllShortCircuit([ote, top.unifyWith],
+                                           [nt,  hidden])
+             | nonterminalTypeExp(_, _) ->
+                      -- Ensure compatibility between nonterminal types, then specialize ourselves
+                      unifyAllShortCircuit([top.unifyWith, top.unifyWith],
+                                           [nt,            hidden])
+             | ntOrDecTypeExp(ont1, ohidden1) ->
+                      -- Ensure compatibility between nonterminal types, then merge our specializations
+                      -- TODO: Actually sort of curious if this case EVER happens...
+                      unifyAllShortCircuit([ont1, ohidden1],
+                                           [nt,   hidden])
+             | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
+              end
+
+      -- We have indeed specialized already.
+    | _             -> hidden.unify
+    end;
+  
+  -- Only used if we're already specialized (2nd branch of first case expression up there)
+  hidden.unifyWith = top.unifyWith;
+}
+
 aspect production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
@@ -160,4 +192,19 @@ Substitution ::= te1::[TypeExp] te2::[TypeExp]
                                             mapSubst(tail(te2), first) ));
 }
 
+function unifyAllShortCircuit
+Substitution ::= te1::[TypeExp] te2::[TypeExp]
+{
+  local attribute first :: Substitution;
+  first = unify(head(te1), head(te2));
+  
+  return if null(te1) && null(te2)
+         then emptySubst()
+         else if null(te1) || null(te2)
+         then errorSubst("Internal error: unifying mismatching numbers")
+         else if first.failure
+         then first -- terminate recursion!
+         else composeSubst(first, unifyAllShortCircuit( mapSubst(tail(te1), first),
+                                                        mapSubst(tail(te2), first) ));
+}
 

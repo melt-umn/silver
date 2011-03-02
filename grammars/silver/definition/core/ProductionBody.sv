@@ -131,8 +131,6 @@ top::ProductionStmt ::= 'return' e::Expr ';'
                 then [err(top.location, "Return is not valid in this context. (They are only permitted in function declarations.)")]
                 else [];
 
-  e.expected = expected_type(top.signature.outputElement.typerep);
-  
   forwards to defaultProductionStmt();
 }
 
@@ -196,8 +194,6 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
                 then [err(top.location, "Forwarding is not permitted in this context.")]
                 else [];
 
-  e.expected = expected_undecorated();
-
   forwards to defaultProductionStmt();
 }
 
@@ -214,8 +210,6 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
   top.errors <- if !top.blockContext.permitForward
                 then [err(top.location, "Forwarding is not permitted in this context.")]
                 else [];
-
-  e.expected = expected_undecorated();
 
   forwards to defaultProductionStmt(); -- TODO forward to ordinary fwd + set of inh defs
 }
@@ -246,8 +240,6 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
   top.location = loc(top.file, $2.line, $2.column);
 
   top.errors := lhs.errors ++ e.errors;
-
-  e.expected = expected_type(lhs.typerep);
 }
 
 concrete production forwardInhsOne
@@ -310,8 +302,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 
   -- No error message. We only get here via attributeDef, which will error for us
   top.errors := e.errors;
-
-  e.expected = expected_type(attr.lookupAttribute.typerep);
   
   -- ignore dl, we don't have the proper set of inh attrs to give it!
   
@@ -332,7 +322,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   
   -- TODO: missing redefinition check
 
-  e.expected = expected_type(occursCheck.typerep);
   dl.isSynthesizedDefinition = true;
   
   forwards to defaultProductionStmt();
@@ -352,7 +341,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 
   -- TODO: missing redefinition check
 
-  e.expected = expected_type(occursCheck.typerep);
   dl.isSynthesizedDefinition = false;
   
   forwards to defaultProductionStmt();
@@ -467,8 +455,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   -- TODO: this leads to duplicate error messages, when (a) the lookup fails and (b) we error here too
   top.errors := [err(val.location, val.pp ++ " cannot be assigned to.")] ++ e.errors;
 
-  e.expected = expected_type(val.lookupValue.typerep);
-
   forwards to defaultProductionStmt();
 }
 
@@ -482,8 +468,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.errors := e.errors;
 
   -- TODO: missing redefinition check
-
-  e.expected = expected_type(val.lookupValue.typerep);
 
   forwards to defaultProductionStmt();
 }

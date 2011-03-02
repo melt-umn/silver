@@ -61,29 +61,28 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
 
   top.pp = id.name ++ " = " ++ e.pp;
   top.defs = addLexicalLocalDcl(top.grammarName, id.location, fName, t.typerep, emptyDefs());
-  top.errors := e.errors ++ t.errors;
+  top.errors := t.errors ++ e.errors;
   
-  -- TODO: UHHH CHECK FOR TYPES?
-  -- TODO: Check for redefinition of variable names!
   top.errors <- if length(getValueDclAll(fName, top.env)) > 1
                 then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
                 else [];
 
-  e.expected = expected_type(t.typerep);
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
   e.downSubst = top.downSubst;
-  top.upSubst = e.upSubst;
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst;
+
+  errCheck1 = check(e.typerep, t.typerep);
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(id.location, "Value " ++ id.name ++ " declared with type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
+       else [];
 }
 
 abstract production lexicalLocalReference
 top::Expr ::= q::Decorated QName
 {
-  production attribute shouldUnDec ::Boolean;
-  shouldUnDec = case top.expected of
-                  expected_undecorated() -> true
-                | expected_type(t)     -> performSubstitution(new(t), top.upSubst).isDecorable
-                | _                    -> false
-                end;
-  
   top.pp = q.pp;
   top.location = q.location;
   top.errors := [];
@@ -94,8 +93,8 @@ top::Expr ::= q::Decorated QName
   -- (The usual behavior is a declared Foo, but value is Decorated Foo, can
   --  be used either way.)
   
-  top.typerep = if q.lookupValue.typerep.isDecorated && shouldUnDec
-                then q.lookupValue.typerep.decoratedType
+  top.typerep = if q.lookupValue.typerep.isDecorated
+                then ntOrDecTypeExp(q.lookupValue.typerep.decoratedType, errorType(){-fresh tyvar-})
                 else q.lookupValue.typerep;
 
   top.upSubst = top.downSubst;

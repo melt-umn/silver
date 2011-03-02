@@ -23,8 +23,8 @@ nonterminal AspectFunctionLHS with location, grammarName, file, errors, realSign
 nonterminal AspectRHS with location, grammarName, file, errors, inputElements, realSignature, env, defs, pp;
 nonterminal AspectRHSElem with location, grammarName, file, errors, realSignature, inputElements, env, defs, pp;
 
-nonterminal Expr with location, grammarName, file, errors, signature, expected, typerep, env, defs, pp;
-nonterminal Exprs with location, grammarName, file, errors, signature, expectedInputTypes, exprs, env, defs, pp;
+nonterminal Expr with location, grammarName, file, errors, signature, typerep, env, defs, pp;
+nonterminal Exprs with location, grammarName, file, errors, signature, exprs, env, defs, pp;
 
 nonterminal ExprInhs with location, grammarName, file, errors, signature, env, defs, pp, decoratingnt;
 nonterminal ExprInh with location, grammarName, file, errors, signature, env, defs, pp, decoratingnt;

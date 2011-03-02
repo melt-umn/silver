@@ -1,7 +1,7 @@
 grammar silver:definition:type;
 
 -- DEPRECATED STUFF
-attribute inputTypes, outputType, isDecorated, isDecorable, isTerminal, decoratedType occurs on TypeExp;
+attribute inputTypes, outputType, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on TypeExp;
 
 -- exists because we want to access both these and pattern matching can only extract one thing at a time (so far)
 synthesized attribute inputTypes :: [TypeExp];
@@ -22,6 +22,10 @@ synthesized attribute isTerminal :: Boolean;
 -- Used by 'new' and type-determination for attributes (NOT on regular nonterminals)
 synthesized attribute decoratedType :: TypeExp;
 
+-- Used instead of unify() when we want to just know its decorated or undecorated
+synthesized attribute unifyInstanceNonterminal :: Substitution;
+synthesized attribute unifyInstanceDecorated :: Substitution;
+
 aspect production defaultTypeExp
 top::TypeExp ::=
 {
@@ -33,6 +37,9 @@ top::TypeExp ::=
   top.isTerminal = false;
   
   top.decoratedType = errorType();
+  
+  top.unifyInstanceNonterminal = errorSubst("not nt");
+  top.unifyInstanceDecorated = errorSubst("not dec");
 }
 
 aspect production varTypeExp
@@ -69,6 +76,7 @@ aspect production nonterminalTypeExp
 top::TypeExp ::= fn::String params::[TypeExp]
 {
   top.isDecorable = true;
+  top.unifyInstanceNonterminal = emptySubst();
 }
 
 aspect production terminalTypeExp
@@ -82,6 +90,14 @@ top::TypeExp ::= te::TypeExp
 {
   top.isDecorated = true;
   top.decoratedType = te;
+  top.unifyInstanceDecorated = emptySubst();
+}
+
+aspect production ntOrDecTypeExp
+top::TypeExp ::= nt::TypeExp  hidden::TypeExp
+{
+  top.unifyInstanceNonterminal = unify(hidden, nt);
+  top.unifyInstanceDecorated = unify(hidden, decoratedTypeExp(nt));
 }
 
 aspect production functionTypeExp

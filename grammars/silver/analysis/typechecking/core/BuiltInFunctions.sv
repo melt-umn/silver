@@ -56,13 +56,17 @@ top::Expr ::= 'toString' '(' e1::Expr ')'
 aspect production newFunction
 top::Expr ::= 'new' '(' e1::Expr ')'
 {
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
   e1.downSubst = top.downSubst;
-  top.upSubst = e1.upSubst;
+  errCheck1.downSubst = e1.upSubst;
+  top.upSubst = errCheck1.upSubst;
   
+  errCheck1 = checkDecorated(e1.typerep);
   top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).isDecorated
-       then []
-       else [err(top.location, "Operand to new must be a decorated nonterminal.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       if errCheck1.typeerror
+       then [err(top.location, "Operand to new must be a decorated nonterminal.  Instead it is of type " ++ errCheck1.leftpp)]
+       else [];
 }
 
 aspect production terminalFunction
