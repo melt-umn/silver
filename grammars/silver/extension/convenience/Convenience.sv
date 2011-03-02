@@ -10,24 +10,12 @@ top::AGDcl ::= 'attribute' a::QNames2 'occurs' 'on' nts::QNames2 ';'
   top.pp = "attribute " ++ a.pp ++ " occurs on " ++ nts.pp ++ " ;" ;
   forwards to makeOccursDcls($1.line, $1.column, a.qnames, nts.qnames);
 }
-
-{- These two DO NOT use QNameWithTL
-   because this leads to a VERY hard to resolve shift-reduce conflict.
-   So we write them out explicitly instead.
- -}
-concrete production multipleAttributionDclsSingleManyNoTL
-top::AGDcl ::= 'attribute' a::QName 'occurs' 'on' nts::QNames2 ';' 
+concrete production multipleAttributionDclsSingleMany
+top::AGDcl ::= 'attribute' a::QNameWithTL 'occurs' 'on' nts::QNames2 ';' 
 {
   top.pp = "attribute " ++ a.pp ++ " occurs on " ++ nts.pp ++ " ;" ;
-  forwards to makeOccursDcls($1.line, $1.column, [qnameWithoutTL(a)], nts.qnames);
+  forwards to makeOccursDcls($1.line, $1.column, [a], nts.qnames);
 }
-concrete production multipleAttributionDclsSingleManyWithTL
-top::AGDcl ::= 'attribute' a::QName '<' tl::TypeList '>' 'occurs' 'on' nts::QNames2 ';' 
-{
-  top.pp = "attribute " ++ a.pp ++ " occurs on " ++ nts.pp ++ " ;" ;
-  forwards to makeOccursDcls($1.line, $1.column, [qnameWithTL(a, $3, tl, $5)], nts.qnames);
-}
-
 concrete production multipleAttributionDclsManySingle
 top::AGDcl ::= 'attribute' a::QNames2 'occurs' 'on' nts::QNameWithTL ';'
 {
@@ -41,14 +29,14 @@ top::AGDcl ::= 'nonterminal' id::Name 'with' attrs::QNames ';'
 {
   top.pp = "nonterminal " ++ id.pp ++ " with " ++ attrs.pp ++ " ;";
   forwards to agDclAppend(nonterminalDclEmpty($1, id, $5),
-                          makeOccursDcls($1.line, $1.column, attrs.qnames, [qnameWithoutTL(qNameId(id))]) );
+                          makeOccursDcls($1.line, $1.column, attrs.qnames, [qNameWithoutTL(qNameId(id))]) );
 }
 concrete production nonterminalWithDclWithTL
 top::AGDcl ::= 'nonterminal' id::Name '<' tl::TypeList '>' 'with' attrs::QNames ';'
 {
   top.pp = "nonterminal " ++ id.pp ++ "<" ++ tl.pp ++ "> with " ++ attrs.pp ++ " ;";
   forwards to agDclAppend(nonterminalDcl($1, id, $3, tl, $5, $8),
-                          makeOccursDcls($1.line, $1.column, attrs.qnames, [qnameWithTL(qNameId(id), $3, tl, $5)]) );
+                          makeOccursDcls($1.line, $1.column, attrs.qnames, [qNameWithTL(qNameId(id), $3, tl, $5)]) );
 }
 
 
@@ -58,14 +46,14 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type 'occurs' 'on' qs::Q
 {
   top.pp = "inherited attribute " ++ a.name ++ " :: " ++ te.pp ++ " occurs on " ++ qs.pp ++ ";" ;
   forwards to agDclAppend(attributeDclInhEmpty($1, $2, a, $4, te, $9),
-                          makeOccursDclsHelp($1.line, $1.column, qnameWithoutTL(qNameId(a)), qs.qnames));
+                          makeOccursDclsHelp($1.line, $1.column, qNameWithoutTL(qNameId(a)), qs.qnames));
 }
 concrete production attributeDclInhMultipleWithTL
 top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type 'occurs' 'on' qs::QNames ';'
 {
   top.pp = "inherited attribute " ++ a.name ++ " :: " ++ te.pp ++ " occurs on " ++ qs.pp ++ ";" ;
   forwards to agDclAppend(attributeDclInh($1, $2, a, $4, tl, $6, $7, te, $12),
-                          makeOccursDclsHelp($1.line, $1.column, qnameWithTL(qNameId(a), $4, tl, $6), qs.qnames));
+                          makeOccursDclsHelp($1.line, $1.column, qNameWithTL(qNameId(a), $4, tl, $6), qs.qnames));
 }
 
 concrete production attributeDclSynMultipleNoTL
@@ -73,14 +61,14 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type 'occurs' 'on' qs:
 {
   top.pp = "synthesized attribute " ++ a.name ++ " :: " ++ te.pp ++ " occurs on " ++ qs.pp ++ ";" ;
   forwards to agDclAppend(attributeDclSynEmpty($1, $2, a, $4, te, $9),
-                          makeOccursDclsHelp($1.line, $1.column, qnameWithoutTL(qNameId(a)), qs.qnames));
+                          makeOccursDclsHelp($1.line, $1.column, qNameWithoutTL(qNameId(a)), qs.qnames));
 }
 concrete production attributeDclSynMultipleWithTL
 top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type 'occurs' 'on' qs::QNames ';'
 {
   top.pp = "synthesized attribute " ++ a.name ++ " :: " ++ te.pp ++ " occurs on " ++ qs.pp ++ ";" ;
   forwards to agDclAppend(attributeDclSyn($1, $2, a, $4, tl, $6, $7, te, $12),
-                          makeOccursDclsHelp($1.line, $1.column, qnameWithTL(qNameId(a), $4, tl, $6), qs.qnames));
+                          makeOccursDclsHelp($1.line, $1.column, qNameWithTL(qNameId(a), $4, tl, $6), qs.qnames));
 }
 
 

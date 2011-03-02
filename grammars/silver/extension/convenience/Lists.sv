@@ -12,25 +12,6 @@ nonterminal QNames with pp, qnames;
 
 synthesized attribute qnames :: [QNameWithTL];
 
-nonterminal QNameWithTL with pp, qname, tl;
-synthesized attribute qname :: QName;
-synthesized attribute tl :: TypeList;
-
-concrete production qnameWithoutTL
-top::QNameWithTL ::= q::QName
-{
-  top.pp = q.pp;
-  top.qname = q;
-  top.tl = typeListNone();
-}
-concrete production qnameWithTL
-top::QNameWithTL ::= q::QName '<' tl::TypeList '>'
-{
-  top.pp = q.pp;
-  top.qname = q;
-  top.tl = tl;
-}
-
 concrete production qNames2Two
 top::QNames2 ::= id1::QNameWithTL ',' id2::QNameWithTL
 {
@@ -76,7 +57,7 @@ AGDcl ::= l::Integer c::Integer at::QNameWithTL nts::[QNameWithTL]
   return if null(nts) 
 	 then agDclNone()
 	 else agDclAppend(
-	        attributionDcl(attr_kwd, at.qname, '<', at.tl, '>', occurs_kwd, on_kwd, head(nts).qname, '<', head(nts).tl, '>', ';'),
+	        attributionDcl(attr_kwd, at, occurs_kwd, on_kwd, head(nts), ';'),
 		makeOccursDclsHelp(l, c, at, tail(nts)));
 
   local attribute attr_kwd :: Attribute_kwd ;
