@@ -16,8 +16,8 @@ top::AGDcl ::= 'attribute' at::QNameWithTL 'occurs' 'on' nt::QNameWithTL ';'
   top.errors := at.qname.lookupAttribute.errors ++ nt.qname.lookupType.errors;
   
   -- TODO SOMEDAY: relax the requirement that nt.typelist be all type variables. (partial occurences e.g. 'sum occurs on List Int')
-  top.errors <- nt.typelist.errorsTyVars;
-  -- We are not permitting "over-specified occurrences" so at.typelist.errorsTyVars is NOT included, deliberately.
+  top.errors <- at.typelist.errors{-nonTyVars-} ++ nt.typelist.errorsTyVars;
+  -- We are permitting "over-specified occurrences" hence nonTyVars
   
   -- Declare ONLY those type variables on the NT, (in TLAT and TLNT ONLY (that is, this does not belong in defs!))
   production attribute typingEnv :: Decorated Env;
