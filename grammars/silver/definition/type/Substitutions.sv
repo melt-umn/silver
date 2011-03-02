@@ -181,6 +181,18 @@ top::TypeExp ::= te::TypeExp
   top.substituted = decoratedTypeExp(te.substituted);
 }
 
+aspect production ntOrDecTypeExp
+top::TypeExp ::= nt::TypeExp  hidden::TypeExp
+{
+  top.substituted =
+    case hidden.substituted of
+      -- We have not yet specialized,
+      varTypeExp(_) -> ntOrDecTypeExp(nt.substituted, hidden.substituted)
+      -- We have indeed specialized already. (let's just kill ourselves off, why not!)
+    | _             -> hidden.substituted
+    end;
+}
+
 aspect production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {

@@ -227,26 +227,24 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ val.pp ++ " := " ++ e.pp ++ ";";
 
-  e.expected = expected_type(val.lookupValue.typerep);
-  e.downSubst = top.downSubst; -- the real type checking is done by the forward, but we need to give it this to work with...
+  e.downSubst = top.downSubst;
+  -- the real type checking is done by the forward, but we must ensure things are tied up nicely
+  -- otherwise we don't specialize ntOrDecs in OUR e
+  forward.downSubst = unifyCheck(val.lookupValue.typerep, e.typerep, e.upSubst);
   
-  forwards to localValueDef(val, $2, e)
-  with {
-    downSubst = e.upSubst;
-  };
+  forwards to localValueDef(val, $2, e);
 }
 abstract production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ val.pp ++ " <- " ++ e.pp ++ ";";
 
-  e.expected = expected_type(val.lookupValue.typerep);
-  e.downSubst = top.downSubst; -- the real type checking is done by the forward, but we need to give it this to work with...
+  e.downSubst = top.downSubst;
+  -- the real type checking is done by the forward, but we must ensure things are tied up nicely
+  -- otherwise we don't specialize ntOrDecs in OUR e
+  forward.downSubst = unifyCheck(val.lookupValue.typerep, e.typerep, e.upSubst);
   
-  forwards to localValueDef(val, $2, e)
-  with {
-    downSubst = e.upSubst;
-  };
+  forwards to localValueDef(val, $2, e);
 }
 
 -- NON-ERRORS for SYN ATTRS
@@ -259,14 +257,14 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   production attribute occursCheck :: OccursCheck;
   occursCheck = occursCheckQName(attr, dl.typerep);
 
-  e.expected = expected_type(occursCheck.typerep);
-  e.downSubst = top.downSubst; -- the real type checking is done by the forward, but we need to give it this to work with...
+  e.downSubst = top.downSubst;
+  -- the real type checking is done by the forward, but we must ensure things are tied up nicely
+  -- otherwise we don't specialize ntOrDecs in OUR e
+  forward.downSubst = unifyCheck(occursCheck.typerep, e.typerep, e.upSubst);
+
   dl.isSynthesizedDefinition = false;
   
-  forwards to synthesizedAttributeDef(dl, $2, attr, $4, e)
-  with {
-    downSubst = e.upSubst;
-  };
+  forwards to synthesizedAttributeDef(dl, $2, attr, $4, e);
 }
 abstract production synAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
@@ -276,14 +274,14 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   production attribute occursCheck :: OccursCheck;
   occursCheck = occursCheckQName(attr, dl.typerep);
 
-  e.expected = expected_type(occursCheck.typerep);
-  e.downSubst = top.downSubst; -- the real type checking is done by the forward, but we need to give it this to work with...
+  e.downSubst = top.downSubst;
+  -- the real type checking is done by the forward, but we must ensure things are tied up nicely
+  -- otherwise we don't specialize ntOrDecs in OUR e
+  forward.downSubst = unifyCheck(occursCheck.typerep, e.typerep, e.upSubst);
+
   dl.isSynthesizedDefinition = false;
   
-  forwards to synthesizedAttributeDef(dl, $2, attr, $4, e)
-  with {
-    downSubst = e.upSubst;
-  };
+  forwards to synthesizedAttributeDef(dl, $2, attr, $4, e);
 }
 
 -- NON-ERRORS for INHERITED ATTRS
@@ -296,14 +294,14 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   production attribute occursCheck :: OccursCheck;
   occursCheck = occursCheckQName(attr, dl.typerep);
 
-  e.expected = expected_type(occursCheck.typerep);
-  e.downSubst = top.downSubst; -- the real type checking is done by the forward, but we need to give it this to work with...
+  e.downSubst = top.downSubst;
+  -- the real type checking is done by the forward, but we must ensure things are tied up nicely
+  -- otherwise we don't specialize ntOrDecs in OUR e
+  forward.downSubst = unifyCheck(occursCheck.typerep, e.typerep, e.upSubst);
+
   dl.isSynthesizedDefinition = false;
   
-  forwards to inheritedAttributeDef(dl, $2, attr, $4, e)
-  with {
-    downSubst = e.upSubst;
-  };
+  forwards to inheritedAttributeDef(dl, $2, attr, $4, e);
 }
 abstract production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
@@ -313,14 +311,14 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   production attribute occursCheck :: OccursCheck;
   occursCheck = occursCheckQName(attr, dl.typerep);
 
-  e.expected = expected_type(occursCheck.typerep);
-  e.downSubst = top.downSubst; -- the real type checking is done by the forward, but we need to give it this to work with...
+  e.downSubst = top.downSubst;
+  -- the real type checking is done by the forward, but we must ensure things are tied up nicely
+  -- otherwise we don't specialize ntOrDecs in OUR e
+  forward.downSubst = unifyCheck(occursCheck.typerep, e.typerep, e.upSubst);
+
   dl.isSynthesizedDefinition = false;
   
-  forwards to inheritedAttributeDef(dl, $2, attr, $4, e)
-  with {
-    downSubst = e.upSubst;
-  };
+  forwards to inheritedAttributeDef(dl, $2, attr, $4, e);
 }
 
 -- The use syntax --------------------------------------------------------------

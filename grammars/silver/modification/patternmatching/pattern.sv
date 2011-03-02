@@ -33,10 +33,10 @@ synthesized attribute then_tree :: Expr ;
 synthesized attribute letAssigns_tree :: [ AssignExpr ] ;
 
 -- MR | ...
-nonterminal MRuleList with pp, grammarName, env, file, location, typerep, expected, errors, signature, upSubst, downSubst, finalSubst,
+nonterminal MRuleList with pp, grammarName, env, file, location, typerep, errors, signature, upSubst, downSubst, finalSubst,
                            typerep_down, translation_tree, base_tree, blockContext ;
 -- P -> E
-nonterminal MatchRule with pp, grammarName, env, file, location, typerep, expected, errors, signature, upSubst, downSubst, finalSubst,
+nonterminal MatchRule with pp, grammarName, env, file, location, typerep, errors, signature, upSubst, downSubst, finalSubst,
                            typerep_down, cond_tree, then_tree, base_tree, blockContext ;
 
 -- prod(PL) | int | string | bool | ...
@@ -53,35 +53,31 @@ top::Expr ::= 'case' e1::Expr 'of' ml::MRuleList 'end'
   top.location = loc(top.file, $1.line, $1.column);
 
   -- type checking
-  top.typerep = ml.typerep ; 
+  top.typerep = ml.typerep;
+  
+  local attribute caseExpressionType :: TypeExp;
+  caseExpressionType = performSubstitution(e1.typerep, e1.upSubst);
 
-  ml.typerep_down = case performSubstitution(e1.typerep, e1.upSubst) of
-                      decoratedTypeExp(te1) -> new(te1)
-                    | _ -> e1.typerep
-                    end;
+  ml.typerep_down = if caseExpressionType.isDecorated
+                    then caseExpressionType.decoratedType
+                    else caseExpressionType;
 
   -- NOTE THAT WE'RE HIDING ERRORS HERE! TODO FIXME NOW WE'RE NOT I GUESS?
   top.errors <- e1.errors ++ ml.errors;
   
-  -- TODO: check to make sure it's a nonterminal we're pattern matching on?
-
   -- TODO: we should 'let something = e1' and pass down 'something' as the base_tree, for efficiency reasons!!
 
-  -- translation
-  ml.base_tree = case performSubstitution(e1.typerep, e1.upSubst) of
-                      decoratedTypeExp(te1) -> e1
-                    | _ -> decorateExprWithEmpty('decorate', e1, 'with', '{', '}')
-                    end;
+  -- The object in question. If it's undecorated, go decorate it for consistency.
+  ml.base_tree = if caseExpressionType.isDecorable
+                 then decorateExprWithEmpty('decorate', e1, 'with', '{', '}')
+                 else e1;
 
-  e1.expected = expected_decorated(); -- Since we'd just decorate it if it wasn't... TODO: this is potentially problematic??
-  forwards to ml.translation_tree with {
-  downSubst = ml.upSubst;
-  };
+  forwards to ml.translation_tree;
   
   e1.downSubst = top.downSubst;
   ml.downSubst = e1.upSubst;
-  --forward.downSubst = ml.upSubst;
-  -- top.upSubst = forward.upSubst
+  forward.downSubst = ml.upSubst;
+  -- top.upSubst = forward.upSubst; -- implied by forwarding...
 }
 
 concrete production mRuleList_one
@@ -130,7 +126,7 @@ ml::MRuleList ::= h::MatchRule '|' t::MRuleList
   errCheck1 = check(h.typerep, t.typerep);
   ml.errors <-
        if errCheck1.typeerror
-       then [err(ml.location, "Pattern matching case type mismatch. Rule has type " ++ errCheck1.leftpp ++ " while remaining are type " ++ errCheck1.rightpp)]
+       then [err(ml.location, "Pattern matching case type mismatch. Rule has type " ++ errCheck1.leftpp ++ " while remaining rules are type " ++ errCheck1.rightpp)]
        else [];
 }
 
@@ -332,11 +328,7 @@ p::Pattern ::= v::Name
   -- foo(v)  produces a binding like
   -- let v :: Decorated Bar = ....
   
-  -- This is the source of the bug that requires us to use 'new' occasionally on pattern variables. :(
-  
-  -- TODO: introduce a new DclInfo for PatternVar, and use that in the environment instead of Local.
-  -- Problem: We're translating to 'let's, so we can't.  Maybe we shouldn't be using lets?
-  -- Or maybe we should introduce a 'letpatternvar'?
+  -- lets now have auto-undec behavior so that we don't need to pointlessly 'new' things
   
   p.defs = addLexicalLocalDcl(p.grammarName, v.location, v.name, var_type, emptyDefs());
 
@@ -456,10 +448,14 @@ top::Expr ::= e::Expr t::String
   top.errors := e.errors;
   top.typerep = boolTypeExp();
 
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
   e.downSubst = top.downSubst;
-  top.upSubst = e.upSubst;
-  e.expected = expected_decorated();
-  --translation, isAppReference, appReference
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst;
+  
+  errCheck1 = checkDecorated(e.typerep);
+  -- MAJOR ASSUMPTION: this error, if it happens, is already caught. Ignore it.
 }
 
 abstract production patternMatchRuntimeGetChild
@@ -474,10 +470,13 @@ top::Expr ::= e::Expr c::Integer t::TypeExp
        then decoratedTypeExp(t)
        else t;
 
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
   e.downSubst = top.downSubst;
-  top.upSubst = e.upSubst;
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst;
   
-  e.expected = expected_decorated();
-  --translation, isAppReference, appReference
+  errCheck1 = checkDecorated(e.typerep);
+  -- MAJOR ASSUMPTION: this error, if it happens, is already caught. Ignore it.
 }
 

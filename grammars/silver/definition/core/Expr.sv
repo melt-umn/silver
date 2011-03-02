@@ -36,76 +36,45 @@ top::Expr ::= q::Decorated QName
 abstract production childReference
 top::Expr ::= q::Decorated QName
 {
-  -- Undecorate iff it's a ("undecced") NT and we're explicitly expecting undecorated
-  production attribute shouldUnDec ::Boolean;
-  shouldUnDec = case top.expected of
-                  expected_undecorated() -> true
-                | expected_type(t)     -> performSubstitution(new(t), top.upSubst).isDecorable
-                | _                    -> false
-                end;
-
   top.pp = q.pp;
   top.location = q.location;
   top.errors := [];
-  top.typerep = if shouldUnDec || !q.lookupValue.typerep.isDecorable
-                then q.lookupValue.typerep
-                else decoratedTypeExp(q.lookupValue.typerep);
+  top.typerep = if q.lookupValue.typerep.isDecorable
+                then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                else q.lookupValue.typerep;
 }
 
 abstract production lhsReference
 top::Expr ::= q::Decorated QName
 {
-  -- should always be a NT
-  production attribute shouldUnDec ::Boolean;
-  shouldUnDec = case top.expected of
-                  expected_undecorated() -> true
-                | expected_type(t)     -> performSubstitution(new(t), top.upSubst).isDecorable
-                | _                    -> false
-                end;
-
   top.pp = q.pp;
   top.location = q.location;
   top.errors := [];
-  top.typerep = if shouldUnDec || !q.lookupValue.typerep.isDecorable -- lhs is always isDecorable, but for consistency...
-                then q.lookupValue.typerep
-                else decoratedTypeExp(q.lookupValue.typerep);
+  top.typerep = if q.lookupValue.typerep.isDecorable -- actually always decorable...
+                then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                else q.lookupValue.typerep;
 }
 
 abstract production localReference
 top::Expr ::= q::Decorated QName
 {
-  production attribute shouldUnDec ::Boolean;
-  shouldUnDec = case top.expected of
-                  expected_undecorated() -> true
-                | expected_type(t)     -> performSubstitution(new(t), top.upSubst).isDecorable
-                | _                    -> false
-                end;
-
   top.pp = q.pp;
   top.location = q.location;
   top.errors := [];
-  top.typerep = if shouldUnDec || !q.lookupValue.typerep.isDecorable
-                then q.lookupValue.typerep
-                else decoratedTypeExp(q.lookupValue.typerep);
+  top.typerep = if q.lookupValue.typerep.isDecorable
+                then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                else q.lookupValue.typerep;
 }
 
 abstract production forwardReference
 top::Expr ::= q::Decorated QName
 {
-  -- should always be a NT
-  production attribute shouldUnDec ::Boolean;
-  shouldUnDec = case top.expected of
-                  expected_undecorated() -> true
-                | expected_type(t)     -> performSubstitution(new(t), top.upSubst).isDecorable
-                | _                    -> false
-                end;
-
   top.pp = q.pp;
   top.location = q.location;
   top.errors := [];
-  top.typerep = if shouldUnDec || !q.lookupValue.typerep.isDecorable -- lhs is always isDecorable, but for consistency...
-                then q.lookupValue.typerep
-                else decoratedTypeExp(q.lookupValue.typerep);
+  top.typerep = if q.lookupValue.typerep.isDecorable -- actually always decorable...
+                then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                else q.lookupValue.typerep;
 }
 
 abstract production productionReference
@@ -148,9 +117,9 @@ top::Expr ::= q::NameTick
   top.pp = q.pp;
   top.location = q.location;
 
-  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, q.name, q.location.line, q.location.column)))) with {
-    expected = expected_decorated();
-  };
+  -- TODO: warn obsolete. no longer does ANYTHING
+
+  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, q.name, q.location.line, q.location.column))));
 }
 
 concrete production concreteDontDecorateExpr
@@ -159,9 +128,9 @@ top::Expr ::= q::NameTickTick
   top.pp = q.pp;
   top.location = q.location;
 
-  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, q.name, q.location.line, q.location.column)))) with {
-    expected = expected_undecorated();
-  };
+  -- TODO: warn obsolete. no longer does ANYTHING
+
+  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, q.name, q.location.line, q.location.column))));
 }
 
 concrete production concreteForwardExpr
@@ -177,7 +146,6 @@ top::Expr ::= e::Expr '(' es::Exprs ')'
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   top.location = e.location;
   
-  e.expected = expected_default();
   forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es);
 }
 
@@ -195,8 +163,6 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.errors := e.errors ++ es.errors; 
 
   top.typerep = performSubstitution(e.typerep, e.upSubst).outputType;
-
-  es.expectedInputTypes = performSubstitution(e.typerep, e.upSubst).inputTypes;
 }
 
 abstract production functionApplicationDispatcher
@@ -207,8 +173,6 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.errors := e.errors ++ es.errors; 
 
   top.typerep = performSubstitution(e.typerep, e.upSubst).outputType;
-
-  es.expectedInputTypes = performSubstitution(e.typerep, e.upSubst).inputTypes;
 }
 
 abstract production errorApplicationDispatcher
@@ -219,8 +183,6 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.errors := e.errors ++ [err(top.location, e.pp ++ " has type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ " and cannot be invoked as a function.")] ++ es.errors; -- TODO fix this.  Uhhh how? What's broken? My comments SUCK! Perhaps I didn't like doing the performsubst here
 
   top.typerep = errorType();
-
-  es.expectedInputTypes = [];
 }
 
 concrete production attributeAccess
@@ -228,11 +190,6 @@ top::Expr ::= e::Expr '.' q::QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = loc(top.file, $2.line, $2.column);
-  -- expected here mean "if it exists in a decorated form, use that"
-  -- this way we get the decorated children, but a direct call to
-  -- a constructor will still be undecorated.
-  
-  e.expected = expected_decorated();
   
   top.errors := e.errors ++ forward.errors; -- So that e.errors appears first!
   
@@ -351,8 +308,6 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.errors := e.errors ++ inh.errors;
   
   inh.decoratingnt = performSubstitution(e.typerep, e.upSubst);
-
-  e.expected = expected_undecorated();
 }
 
 abstract production exprInhsEmpty
@@ -385,8 +340,6 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
   top.pp = lhs.pp ++ " = " ++ e.pp ++ ";";
   top.location = loc(top.file, $2.line, $2.column);
   top.errors := lhs.errors ++ e.errors;
-
-  e.expected = expected_type(lhs.typerep);
 }
 
 concrete production exprLhsExpr
@@ -429,9 +382,6 @@ top::Expr ::= e1::Expr '&&' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
-  
-  e1.expected = expected_type(boolTypeExp());
-  e2.expected = expected_type(boolTypeExp());
 }
 
 concrete production or
@@ -442,9 +392,6 @@ top::Expr ::= e1::Expr '||' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
-  
-  e1.expected = expected_type(boolTypeExp());
-  e2.expected = expected_type(boolTypeExp());
 }
 
 concrete production not
@@ -455,8 +402,6 @@ top::Expr ::= '!' e::Expr
 
   top.typerep = boolTypeExp();
   top.errors := e.errors;
-  
-  e.expected = expected_type(boolTypeExp());
 }
 
 concrete production gt
@@ -467,9 +412,6 @@ top::Expr ::= e1::Expr '>' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
-  
-  e1.expected = expected_default();
-  e2.expected = expected_default();
 }
 
 concrete production lt
@@ -480,9 +422,6 @@ top::Expr ::= e1::Expr '<' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
-  
-  e1.expected = expected_default();
-  e2.expected = expected_default();
 }
 
 concrete production gteq
@@ -493,9 +432,6 @@ top::Expr ::= e1::Expr '>=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
-  
-  e1.expected = expected_default();
-  e2.expected = expected_default();
 }
 
 concrete production lteq
@@ -506,9 +442,6 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
-  
-  e1.expected = expected_default();
-  e2.expected = expected_default();
 }
 
 concrete production eqeq
@@ -519,9 +452,6 @@ top::Expr ::= e1::Expr '==' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
-  
-  e1.expected = expected_default();
-  e2.expected = expected_default();
 }
 
 concrete production neq
@@ -532,9 +462,6 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
-  
-  e1.expected = expected_default();
-  e2.expected = expected_default();
 }
 
 concrete production ifThenElse
@@ -546,8 +473,6 @@ precedence = 0
 
   top.errors := e1.errors ++ e2.errors ++ e3.errors;
   top.typerep = e2.typerep;
-  
-  e1.expected = expected_type(boolTypeExp());
 }
 
 concrete production intConst
@@ -578,9 +503,6 @@ top::Expr ::= e1::Expr '+' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
-  
-  e1.expected = expected_default();
-  e2.expected = expected_default();
 }
 
 concrete production minus
@@ -591,9 +513,6 @@ top::Expr ::= e1::Expr '-' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
-  
-  e1.expected = expected_default();
-  e2.expected = expected_default();
 }
 
 concrete production multiply
@@ -604,9 +523,6 @@ top::Expr ::= e1::Expr '*' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
-  
-  e1.expected = expected_default();
-  e2.expected = expected_default();
 }
 
 concrete production divide
@@ -617,9 +533,6 @@ top::Expr ::= e1::Expr '/' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
-  
-  e1.expected = expected_default();
-  e2.expected = expected_default();
 }
 
 concrete production neg
@@ -631,8 +544,6 @@ precedence = 13
 
   top.errors := e.errors;
   top.typerep = e.typerep;
-  
-  e.expected = expected_default();
 }
 
 concrete production stringConst
@@ -657,6 +568,9 @@ top::Expr ::= e1::Expr '++' e2::Expr
   handler <- if !(unify(e1.typerep, stringTypeExp()).failure || unify(e2.typerep, stringTypeExp()).failure)
              then [stringPlusPlus(e1, e2)]
              else [];
+
+  -- TODO: Why don't we add this as part of the Type, and dispatch on top.typerep?
+  -- I guess we'd have to define top.typerep here...
 
   forwards to if null(handler) then errorPlusPlus(e1, e2) else head(handler);
 }
@@ -699,8 +613,6 @@ top::Exprs ::= e::Expr
 
   top.errors := e.errors;
   top.exprs = [e];
-
-  e.expected = if null(top.expectedInputTypes) then expected_default() else expected_type(head(top.expectedInputTypes));
 }
 
 concrete production exprsCons
@@ -711,10 +623,6 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 
   top.errors := e1.errors ++ e2.errors;
   top.exprs = [e1] ++ e2.exprs;
-
-  e1.expected = if null(top.expectedInputTypes) then expected_default() else expected_type(head(top.expectedInputTypes));
-
-  e2.expectedInputTypes = if null(top.expectedInputTypes) then [] else tail(top.expectedInputTypes);
 }
 
 abstract production exprsDecorated

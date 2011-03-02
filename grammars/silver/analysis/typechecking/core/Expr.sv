@@ -71,14 +71,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
   local attribute apparentTy :: TypeExp;
   apparentTy = productionTypeExp(e.typerep.outputType, getTypesExprs(es.exprs));
   
-  -- initial dispatcher already set e
-  -- Nasty problem: We need expected types to propagate properly! So we're going
-  -- to insert a quick unify of the expected_type and the result type, so that
-  -- name references can decide if they should be decorated or not properly.
-  es.downSubst = case top.expected of
-                   expected_type(foo) -> unifyCheck(new(foo), e.typerep.outputType, e.upSubst)
-                 | _ -> e.upSubst
-                 end;
+  es.downSubst = e.upSubst;
   errCheck1.downSubst = es.upSubst;
   top.upSubst = errCheck1.upSubst;
   
@@ -99,14 +92,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
   local attribute apparentTy :: TypeExp;
   apparentTy = functionTypeExp(e.typerep.outputType, getTypesExprs(es.exprs));
   
-  -- initial dispatcher already set e
-  -- Nasty problem: We need expected types to propagate properly! So we're going
-  -- to insert a quick unify of the expected_type and the result type, so that
-  -- name references can decide if they should be decorated or not properly.
-  es.downSubst = case top.expected of
-                   expected_type(foo) -> unifyCheck(new(foo), e.typerep.outputType, e.upSubst)
-                 | _ -> e.upSubst
-                 end;
+  es.downSubst = e.upSubst;
   errCheck1.downSubst = es.upSubst;
   top.upSubst = errCheck1.upSubst;
   
@@ -153,6 +139,7 @@ top::Expr ::= e::Expr '.' q::Decorated QName
 aspect production decoratedAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
+  -- It's possible we should be unifying here? (checkDecorated(e) just in case) TODO
   top.upSubst = e.upSubst;
 }
 
@@ -586,41 +573,31 @@ aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
   e1.downSubst = top.downSubst;
-  
-  -- TODO: this is slightly hacky.  In order to get expected types "more right"
-  -- we're going to do a left-to-right preferential unification of types with
-  -- expected types.
-
-  -- input e1.upSubst
-  local attribute beforeTheRest :: Substitution;
-  beforeTheRest = case e1.expected of
-                    expected_type(t) -> composeSubst( e1.upSubst, unify(t, e1.typerep) )
-                  | _ -> e1.upSubst
-                  end;
-  
-  e2.downSubst = beforeTheRest;
+  e2.downSubst = e1.upSubst;
   top.upSubst = e2.upSubst;
 }
 
 aspect production exprsDecorated
 top::Exprs ::= es::[Decorated Expr]
 {
-  -- TODO: this is slightly hacky.  We SHOULD unify the expected types and such here, but we should perhaps report an error as well! ? if it fails...
-  -- It's only okay for now since we don't rely on erroring if expected type differs from actual type.
-  top.upSubst = composeSubst( top.downSubst, unifyAll(getTypesExprs(es), top.expectedInputTypes) );
+  top.upSubst = top.downSubst;
 }
 
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
   e.downSubst = top.downSubst;
-  inh.downSubst = e.upSubst;
+  errCheck1.downSubst = e.upSubst;
+  inh.downSubst = errCheck1.upSubst;
   top.upSubst = inh.upSubst;
 
+  errCheck1 = checkNonterminal(e.typerep);
   top.errors <-
-       if performSubstitution(e.typerep, top.finalSubst).isDecorable
-       then []
-       else [err(top.location, "Operand to 'decorate/with' must have a non-terminal type. Instead it is " ++ prettyType(e.typerep))] ;
+       if errCheck1.typeerror
+       then [err(top.location, "Operand to decorate must be a nonterminal.  Instead it is of type " ++ errCheck1.leftpp)]
+       else [];
 }
 
 aspect production exprInh

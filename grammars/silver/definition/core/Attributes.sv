@@ -35,11 +35,6 @@ autocopy attribute compiledGrammars :: [Decorated RootSpec];
 
 
 {--
- - The expected type of an expression.
- -}
-autocopy attribute expected :: Expected;
-
-{--
  - A list of (possibly qualified) identifiers
  -}
 synthesized attribute names :: [String];
@@ -63,10 +58,6 @@ synthesized attribute errors :: [Decorated Message] with ++;
  -}
 synthesized attribute warnings :: [Decorated Message] with ++;
 
-{--
- - The analog of expected for Exprs.
- -}
-autocopy attribute expectedInputTypes :: [TypeExp];
 {--
  - A list of decorated expressions from an Exprs.
  -}

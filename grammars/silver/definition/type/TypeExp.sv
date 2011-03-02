@@ -119,6 +119,19 @@ top::TypeExp ::= te::TypeExp
   forwards to defaultTypeExp();
 }
 
+-- This will ONLY appear in the types of expressions, nowhere else!
+abstract production ntOrDecTypeExp
+top::TypeExp ::= nt::TypeExp  hidden::TypeExp
+{
+  top.freeVariables = case hidden of
+                        varTypeExp(_) -> nt.freeVariables
+                      | _ -> hidden.freeVariables
+                      end;
+  
+  -- If we never specialize, we're decorated.
+  forwards to decoratedTypeExp(nt);
+}
+
 abstract production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {

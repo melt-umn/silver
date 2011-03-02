@@ -49,7 +49,7 @@ top::Expr ::= q::Decorated QName
 
   top.translation =
     if q.lookupValue.typerep.isDecorable
-    then if shouldUnDec
+    then if finalType(top).isDecorable
          then {- type Node -} "context.childDecorated(" ++ childIDref ++ ").undecorate()"
          else {- type DecoratedNode -} "context.childDecorated(" ++ childIDref ++ ")"
     else "((" ++ finalType(top).transType ++ ")context.childAsIs(" ++ childIDref ++ "))";
@@ -66,7 +66,7 @@ top::Expr ::= q::Decorated QName
   -- always a node/decoratednode, so there's no asis case to consider.
 
   top.translation =
-    if shouldUnDec
+    if finalType(top).isDecorable
     then "context.undecorate()"
     else "context";
 }
@@ -79,7 +79,7 @@ top::Expr ::= q::Decorated QName
 
   top.translation =
     if q.lookupValue.typerep.isDecorable
-    then if shouldUnDec
+    then if finalType(top).isDecorable
          then {- type Node -} "context.localDecorated(\"" ++ q.lookupValue.fullName ++ "\").undecorate()"
          else {- type DecoratedNode -} "context.localDecorated(\"" ++ q.lookupValue.fullName ++ "\")"
     else "((" ++ finalType(top).transType ++ ")context.localAsIs(\"" ++ q.lookupValue.fullName ++ "\"))";
@@ -114,7 +114,7 @@ top::Expr ::= q::Decorated QName
   -- always a node/decoratednode, so there's no asis case to consider.
 
   top.translation =
-    if shouldUnDec
+    if finalType(top).isDecorable
     then "context.forward().undecorate()"
     else "context.forward()";
 }

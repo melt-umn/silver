@@ -27,7 +27,6 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
 
   -- TODO: figure out wtf is going on with type here! (needs to be a terminal, plus one of the ones in the disgroup)
 
-  e.expected = expected_default();  
   e.downSubst = top.downSubst;
   
   top.upSubst = e.upSubst;
@@ -48,8 +47,6 @@ top::ProductionStmt ::= 'print' e::Expr ';'
                else [])
                ++ e.errors;
 
-  e.expected = expected_default();
-  
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   e.downSubst = top.downSubst;
@@ -81,8 +78,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
                (if !top.blockContext.permitActions
                 then [err(val.location, "Assignment to parser attributes only permitted in parser action blocks")]
                 else []);
-
-  e.expected = expected_type(val.lookupValue.typerep);  
 
   top.translation = makeCopperName(val.lookupValue.fullName) ++ " = " ++ e.translation ++ ";\n";
 
@@ -122,8 +117,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 
   -- these values should only ever be in scope when it's valid to use them
   top.errors := e.errors;
-
-  e.expected = expected_type(val.lookupValue.typerep);  
 
   local attribute memberfunc :: String;
   memberfunc = if val.name == "filename" then "setFileName" else
