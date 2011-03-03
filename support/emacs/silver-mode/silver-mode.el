@@ -19,7 +19,7 @@ For detail, see `comment-dwim'."
    '("\\<\\(import\\|imports\\|grammar\\|association\\|precedence\\|synthesized\\|inherited\\|with\\|as\\|include\\)\\>" . font-lock-keyword-face)
    '("\\<\\(only\\|hiding\\|using\\|forwards\\|to\\|use\\|syntax\\|forwarding\\|function\\|return\\)\\>" . font-lock-keyword-face)
    '("\\<\\(Integer*\\|Boolean\\|String\\|Float\\|Reference\\|Production\\|Decorated\\)\\>" . font-lock-type-face)
-   '("\\<\\(reference\\|length\\|substring\\|indexof\\|parse\\|error\\|cast\\|toInt\\|toReal\\|toString\\|new\\)\\>" . font-lock-builtin-face)
+   '("\\<\\(reference\\|length\\|substring\\|indexof\\|parser\\|error\\|cast\\|toInt\\|toReal\\|toString\\|new\\)\\>" . font-lock-builtin-face)
    '("\\<\\(cons\\|null\\|head\\|tail\\|let\\)\\>" . font-lock-builtin-face)
    '("\\<\\(true\\|false\\|left\\|right\\|none\\)\\>" . font-lock-constant-face)
    '("\\<\\(case\\|of\\)\\>" . font-lock-keyword-face)
