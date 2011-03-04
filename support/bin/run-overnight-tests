@@ -56,8 +56,9 @@ echo `pwd`
 mkdir -p $RESDIR
 $SILVER_HOME/../support/bin/silver-run-tests . >& $RESDIR/grammars.output
 
-echo -e "\n\nTail of grammars.output"
-tail -n 5 $RESDIR/grammars.output
+echo -e "\n\nContents of grammars.output"
+#tail -n 5 $RESDIR/grammars.output
+cat $RESDIR/grammars.output
 
 
 
