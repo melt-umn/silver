@@ -184,11 +184,11 @@ top::TypeExp ::= te::TypeExp
 aspect production ntOrDecTypeExp
 top::TypeExp ::= nt::TypeExp  hidden::TypeExp
 {
+  -- We rely very carefully on eliminating ourselves once we've specialized!
+  -- Note: we're matching on hidden.subsituted, not just hidden. Important!
   top.substituted =
     case hidden.substituted of
-      -- We have not yet specialized,
       varTypeExp(_) -> ntOrDecTypeExp(nt.substituted, hidden.substituted)
-      -- We have indeed specialized already. (let's just kill ourselves off, why not!)
     | _             -> hidden.substituted
     end;
 }

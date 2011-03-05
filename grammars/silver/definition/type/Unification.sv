@@ -98,10 +98,10 @@ top::TypeExp ::= te::TypeExp
 aspect production ntOrDecTypeExp
 top::TypeExp ::= nt::TypeExp  hidden::TypeExp
 {
+  -- If were being asked to unify, then we know hidden is still a type variable,
+  -- since we shouldn't be unifying with anything but fully-substituted types.
+  -- And we kill off this type once hidden is specialized.
   top.unify =
-    case hidden of
-      -- We have not yet specialized, so examine ourselves what we're unifying with
-      varTypeExp(_) ->
              case top.unifyWith of
                decoratedTypeExp(ote) ->
                       -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
@@ -113,18 +113,10 @@ top::TypeExp ::= nt::TypeExp  hidden::TypeExp
                                            [nt,            hidden])
              | ntOrDecTypeExp(ont1, ohidden1) ->
                       -- Ensure compatibility between nonterminal types, then merge our specializations
-                      -- TODO: Actually sort of curious if this case EVER happens...
                       unifyAllShortCircuit([ont1, ohidden1],
                                            [nt,   hidden])
              | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
-              end
-
-      -- We have indeed specialized already.
-    | _             -> hidden.unify
-    end;
-  
-  -- Only used if we're already specialized (2nd branch of first case expression up there)
-  hidden.unifyWith = top.unifyWith;
+              end;
 }
 
 aspect production functionTypeExp
