@@ -55,6 +55,7 @@ public final class Util {
 				dbFactory.setIgnoringComments(true); // Eliminate comment nodes...
 				//dbFactory.setIgnoringElementContentWhitespace(true); //REQUIRES VALIDATION MODE?
 				dbFactory.setValidating(false); // Make sure we're not validating...
+				dbFactory.setNamespaceAware(true); // But, apparently, we'd like to know about namespaces?
 				
 				// BRAIN DAMAGE OF THE HIGHEST ORDER
 				dbFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
@@ -181,12 +182,16 @@ public final class Util {
 	/**
 	 * @param document The Node or document to query
 	 * @param querystring The XPath query to execute on this document
+	 * @param namespace null, or a [(String, String)] namespace resolver info
 	 * @return The foreign DOM response (Silver type lib:xml:foreigntypes:XML_NodeList)
 	 */
-	public static final NodeList xpathQueryNodeSet(Object document, String querystring) {
+	public static final NodeList xpathQueryNodeSet(Object document, String querystring, common.ConsCell namespace) {
 		try {
 			XPathFactory xpfactory = XPathFactory.newInstance();
 			XPath xp = xpfactory.newXPath();
+			if(namespace != null && !namespace.nil()) {
+				xp.setNamespaceContext(new PairListNSContext(namespace));
+			}
 			XPathExpression xpe = xp.compile(querystring);
 			
 			return (NodeList)xpe.evaluate(document, XPathConstants.NODESET);
@@ -199,12 +204,16 @@ public final class Util {
 	/**
 	 * @param document The Node or document to query
 	 * @param querystring The XPath query to execute on this document
+	 * @param namespace null, or a [(String, String)] namespace resolver info
 	 * @return A string response (Silver type String)
 	 */
-	public static final StringCatter xpathQueryString(Object document, String querystring) {
+	public static final StringCatter xpathQueryString(Object document, String querystring, common.ConsCell namespace) {
 		try {
 			XPathFactory xpfactory = XPathFactory.newInstance();
 			XPath xp = xpfactory.newXPath();
+			if(namespace != null && !namespace.nil()) {
+				xp.setNamespaceContext(new PairListNSContext(namespace));
+			}
 			XPathExpression xpe = xp.compile(querystring);
 			
 			return new StringCatter((String)xpe.evaluate(document, XPathConstants.STRING));
