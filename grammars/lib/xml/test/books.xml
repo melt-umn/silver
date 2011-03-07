@@ -1,4 +1,4 @@
-<inventory>
+<inventory xmlns="http://www.asdfexample.com/books">
     <book year="2000">
         <title>Snow Crash</title>
         <author>Neal Stephenson</author>
