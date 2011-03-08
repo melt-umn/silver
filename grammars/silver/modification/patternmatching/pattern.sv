@@ -65,14 +65,20 @@ top::Expr ::= 'case' e1::Expr 'of' ml::MRuleList 'end'
   -- NOTE THAT WE'RE HIDING ERRORS HERE! TODO FIXME NOW WE'RE NOT I GUESS?
   top.errors <- e1.errors ++ ml.errors;
   
-  -- TODO: we should 'let something = e1' and pass down 'something' as the base_tree, for efficiency reasons!!
+  local attribute unique_id :: Name;
+  unique_id = nameIdLower(terminal(IdLower_t,"__ptmp" ++ toString(genInt())));
+
+  ml.base_tree = baseExpr(qNameId(unique_id));
+
+  forwards to letp('let', assignListSingle(
+                assignExpr(unique_id,'::',typerepType(decoratedTypeExp(ml.typerep_down)),'=',
 
   -- The object in question. If it's undecorated, go decorate it for consistency.
-  ml.base_tree = if caseExpressionType.isDecorable
+                 if caseExpressionType.isDecorable
                  then decorateExprWithEmpty('decorate', e1, 'with', '{', '}')
-                 else e1;
-
-  forwards to ml.translation_tree;
+                 else e1)),
+                
+                'in', ml.translation_tree, 'end');
   
   e1.downSubst = top.downSubst;
   ml.downSubst = e1.upSubst;
