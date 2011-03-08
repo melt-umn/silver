@@ -8,43 +8,6 @@ import silver:definition:regex;
 
 terminal Terminal_t /[\']([^\']|([\\][\']))*[\']/;
 
--- TODO: a bit hacky... since we're descending into the details of the env
-function findTerminalWithRegex
-[Decorated DclInfo] ::= re::String e::Decorated Env
-{
-  return findTerminalWithRegexScope(re, e.typeTree.envTrees);
-}
-
-function findTerminalWithRegexScope
-[Decorated DclInfo] ::= re::String e::[Decorated EnvTree]
-{
-  return if null(e) then []
-         else findTerminalWithRegexTree(re, head(e)) ++ findTerminalWithRegexScope(re, tail(e));
-}
-
-function findTerminalWithRegexTree
-[Decorated DclInfo] ::= re::String e::Decorated EnvTree
-{
-  return if e.isEmpty then []
-         else findTerminalWithRegexTree(re, e.leftTree) ++
-              findTerminalWithRegexHelp(re, e.itemName, e.dcls) ++
-              findTerminalWithRegexTree(re, e.rightTree);
-}
-
-function findTerminalWithRegexHelp
-[Decorated DclInfo] ::= re::String iName::String e::[Decorated DclInfo]
-{
-  local attribute hre :: Boolean;
-  hre = case head(e) of
-          termDcl(_, _, fn, regex) -> regex.regString == re && fn == iName -- right regex, and full name
-        | _                       -> false
-        end;
-        
-  return if null(e) then []
-         else (if hre then [head(e)] else [])
-              ++ findTerminalWithRegexHelp(re, iName, tail(e));
-}
-
 concrete production regExprEasyTerm
 top::RegExpr ::= t::Terminal_t
 {
@@ -57,7 +20,7 @@ concrete production productionRhsElemEasyReg
 top::ProductionRHSElem ::= id::Name '::' reg::RegExpr
 {
   local attribute regName :: [Decorated DclInfo];
-  regName = findTerminalWithRegex(reg.terminalRegExprSpec.regString, top.env);
+  regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
   top.errors <- if null(regName) 
                 then [err(reg.location, "Could not find terminal declaration for " ++ reg.pp )]
@@ -74,7 +37,7 @@ concrete production productionRhsElemTypeEasyReg
 top::ProductionRHSElem ::= reg::RegExpr
 {
   local attribute regName :: [Decorated DclInfo];
-  regName = findTerminalWithRegex(reg.terminalRegExprSpec.regString, top.env);
+  regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
   top.errors <- if null(regName) 
                 then [err(reg.location, "Could not find terminal declaration for " ++ reg.pp )]
@@ -91,7 +54,7 @@ concrete production aspectRHSElemEasyReg
 top::AspectRHSElem ::= reg::RegExpr
 {
   local attribute regName :: [Decorated DclInfo];
-  regName = findTerminalWithRegex(reg.terminalRegExprSpec.regString, top.env);
+  regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
   top.errors <- if null(regName) 
                 then [err(top.location, "Could not find terminal declaration for " ++ reg.pp )]
@@ -108,7 +71,7 @@ concrete production aspectRHSElemTypedEasyReg
 top::AspectRHSElem ::= id::Name '::' reg::RegExpr
 {
   local attribute regName :: [Decorated DclInfo];
-  regName = findTerminalWithRegex(reg.terminalRegExprSpec.regString, top.env);
+  regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
   top.errors <- if null(regName) 
                 then [err(top.location, "Could not find terminal declaration for " ++ reg.pp )]
@@ -128,7 +91,7 @@ top::Expr ::= t::RegExpr
   regExpPat = t.terminalRegExprSpec.regString;
 
   local attribute regName :: [Decorated DclInfo];
-  regName = findTerminalWithRegex(regExpPat, top.env);
+  regName = getTerminalRegexDclAll(regExpPat, top.env);
 
   local attribute escapedName :: String;
   escapedName = makeEscapedName(substring(1, length(regExpPat)-1, regExpPat));
