@@ -10,8 +10,7 @@ function map
 
 function foldr
 b ::= f::Function(b ::= a b)  i::b  l::[a]
-{
-  return if null(l)
+{ return if null(l)
          then i
          else foldr(f, f(head(l), i), tail(l));
 }
@@ -23,6 +22,7 @@ b ::= f::Production(b ::= a b)  i::b  l::[a]
          then i
          else foldr_p(f, f(head(l), i), tail(l));
 }
+
 
 function filter
 [a] ::= f::Function(Boolean ::= a) lst::[a]
