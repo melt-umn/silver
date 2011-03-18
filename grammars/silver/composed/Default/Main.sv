@@ -13,6 +13,7 @@ parser rParse::Root {
   silver:host;
 
   silver:extension:convenience;
+
   silver:extension:list;
   silver:extension:easyterminal;
 
@@ -30,6 +31,7 @@ parser rParse::Root {
   silver:modification:ffi;
   
   silver:translation:java:concrete_syntax:copper;
+
 }
 
 parser cParse::Command {

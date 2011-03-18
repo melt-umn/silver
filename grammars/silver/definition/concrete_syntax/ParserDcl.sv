@@ -4,7 +4,11 @@ nonterminal ModuleList with location, grammarName, file, moduleNames, compiledGr
 
 terminal Parser_kwd /parser/ lexer classes {KEYWORD};
 
-concrete production nameIdParser
+--concrete 
+-- This causes conflicts with the convient syntax for concrete productions
+-- in the Productions.sv file in the convenience extension.
+abstract
+production nameIdParser
 top::Name ::= /parser/
 {
   forwards to nameIdLower(terminal(IdLower_t, "parser", $1));
