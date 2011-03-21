@@ -29,3 +29,10 @@ a ::= otherwise::a ifJust::Maybe<a>
          else otherwise;
 }
 
+function orElse
+Maybe<a> ::= f::Maybe<a> s::Maybe<a>
+{
+  return if f.isJust
+         then f
+         else s;
+}
