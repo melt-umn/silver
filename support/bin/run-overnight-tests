@@ -53,7 +53,8 @@ tail -n 5 $RESDIR/silver-testing.output
 cd "$SILVER_HOME/../../../grammars/"
 echo `pwd`
 rm -Rf *
-/soft/subversion/1.6.3/ubuntuamd1/bin/svn up
+/soft/subversion/1.6.3/ubuntuamd1/bin/svn up > /dev/null
+echo "svn up - rc = $?"
 
 mkdir -p $RESDIR
 $SILVER_HOME/../support/bin/silver-run-tests . >& $RESDIR/grammars.output

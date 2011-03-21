@@ -10,7 +10,7 @@ nonterminal ProductionDclStmt with trans;
 
 terminal Productions_kwd 'productions' lexer classes {KEYWORD};
 
-synthesized attribute transName :: Name;
+synthesized attribute transName :: Maybe<Name>;
 synthesized attribute transSig :: ProductionSignature;
 synthesized attribute transBody :: ProductionBody;
 nonterminal Trans with transName, transSig, transBody;
@@ -46,7 +46,13 @@ top::ProductionDclStmts ::= s::ProductionDclStmt ss::ProductionDclStmts {
 
 concrete production productionDclStmtNoName
 top::ProductionDclStmt ::= ns::ProductionSignature b::ProductionBody {
-  top.trans = [makeTrans(ns, b)];
+  top.trans = [makeTrans( nothing(), ns, b)];
+}
+
+concrete production productionDclStmtWithName
+top::ProductionDclStmt ::= ns::ProductionSignature  '(' id::Name ')' b::ProductionBody           
+{
+  top.trans = [makeTrans(just(id), ns, b)];
 }
 
 function buildCTrans
@@ -56,12 +62,15 @@ AGDcl ::= t::[Trans] n::Integer l::Integer f::String
     then agDclNone()
     else agDclAppend(
            concreteProductionDcl('concrete', 'production', 
-             nameIdLower(terminal(IdLower_t, name)),
+             case head(t).transName of
+               just(tn) -> tn 
+             | nothing() -> nameIdLower(terminal(IdLower_t, name)) end ,
              head(t).transSig, 
              head(t).transBody ), 
            buildCTrans(tail(t), n+1, l, f) );
 
-  local name :: String = "anonymousProduction_" ++ toString(n) ++ "_in_block_on_line_" ++
+  local name :: String = "anonymousProduction_" ++ toString(n) ++ 
+                         "_in_block_on_line_" ++
                          toString(l) ++ "_in_file_" ++ 
                          implode("", takeWhile(isAlpha, explode("",f)) ) ;
 }
@@ -77,9 +86,9 @@ AGDcl ::= t::[Trans] {
 -}
 
 abstract production makeTrans
-top::Trans ::= -- i::Name
+top::Trans ::= i::Maybe<Name>
                s::ProductionSignature b::ProductionBody {
- --  top.transName = i;
+  top.transName = i;
   top.transSig = s;
   top.transBody = b;
 }
