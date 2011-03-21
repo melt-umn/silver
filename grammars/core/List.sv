@@ -12,7 +12,7 @@ function foldr
 b ::= f::Function(b ::= a b)  i::b  l::[a]
 { return if null(l)
          then i
-         else foldr(f, f(head(l), i), tail(l));
+         else f(head(l), foldr(f, i, tail(l)));
 }
 
 function foldr_p
@@ -20,7 +20,7 @@ b ::= f::Production(b ::= a b)  i::b  l::[a]
 {
   return if null(l)
          then i
-         else foldr_p(f, f(head(l), i), tail(l));
+         else f(head(l), foldr_p(f, i, tail(l)));
 }
 
 
