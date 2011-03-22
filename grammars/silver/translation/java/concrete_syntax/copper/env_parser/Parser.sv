@@ -1,6 +1,6 @@
 grammar silver:translation:java:concrete_syntax:copper:env_parser;
 
-import silver:definition:env:parser;
+import silver:definition:env:env_parser;
 import silver:definition:concrete_syntax:env_parser;
 
 import silver:translation:java:concrete_syntax:copper hiding Disambiguation_kwd, Submits_t, Dominates_t, Action_kwd, Layout_kwd; -- TODO: hiding here is a hack of sorts...

@@ -8,8 +8,11 @@ import silver:definition:type:syntax;
 import silver:modification:collection ;
 import silver:extension:list ;
 
+import silver:composed:Default only rParse with rParse as extCSParse;
+
 -- A truly hacky but still useful version of concrete syntax for trees...
 
+{- Importing instead!
 parser extCSParse::Root {
   silver:host;
 
@@ -27,8 +30,10 @@ parser extCSParse::Root {
   silver:modification:autocopyattr:convenience; 
 
   silver:modification:ffi;
-
 }
+-}
+
+
 --------------------------------------------------
 -- Generic constructs
 --------------------------------------------------

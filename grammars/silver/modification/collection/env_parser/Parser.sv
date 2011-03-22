@@ -1,7 +1,7 @@
 grammar silver:modification:collection:env_parser;
 import silver:modification:collection;
 import silver:definition:env;
-import silver:definition:env:parser;
+import silver:definition:env:env_parser;
 import silver:definition:core only grammarName, location, env;
 
 terminal SynColTerm 'syncol' lexer classes {C_1};

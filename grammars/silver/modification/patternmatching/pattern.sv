@@ -7,7 +7,7 @@ import silver:definition:type:syntax;
 import silver:analysis:typechecking:core;
 import silver:analysis:typechecking;
 import silver:modification:let_fix;
-import silver:extension:list;
+import silver:extension:list; -- Oh no, this is a hack! TODO
 
 terminal Case_kwd 'case' lexer classes {KEYWORD};
 terminal Of_kwd 'of' lexer classes {KEYWORD};
@@ -193,7 +193,7 @@ p::Pattern ::= prod::QName '(' ps::PatternList ')'
   ps.downSubst = errCheck1.upSubst;
   p.upSubst = ps.upSubst;
   
-  errCheck1 = check(prod_type.outputType, p.typerep_down);
+  errCheck1 = check(prod_type.outputType, if performSubstitution(p.typerep_down,p.downSubst).isDecorated then performSubstitution(p.typerep_down,p.downSubst).decoratedType else p.typerep_down); -- hacky, to deal with Dec params TODO
   p.errors <- if errCheck1.typeerror
               then [err(prod.location, prod.pp ++ " constructs type " ++ errCheck1.leftpp ++ " but the pattern matching is on type " ++ errCheck1.rightpp)]
               else [];
@@ -224,7 +224,7 @@ p::Pattern ::= num::Int_t
   
   errCheck1 = check(intTypeExp(), p.typerep_down);
   p.errors <- if errCheck1.typeerror
-              then [err(p.location, "Integer appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
+              then [err(p.location, "Integer value appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
               else [];
 }
 
@@ -247,7 +247,7 @@ p::Pattern ::= str::String_t
   
   errCheck1 = check(stringTypeExp(), p.typerep_down);
   p.errors <- if errCheck1.typeerror
-              then [err(p.location, "String appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
+              then [err(p.location, "String value appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
               else [];
 }
 
@@ -270,7 +270,7 @@ p::Pattern ::= 'true'
   
   errCheck1 = check(boolTypeExp(), p.typerep_down);
   p.errors <- if errCheck1.typeerror
-              then [err(p.location, "Boolean appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
+              then [err(p.location, "Boolean type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
               else [];
 }
 
@@ -293,7 +293,66 @@ p::Pattern ::= 'false'
   
   errCheck1 = check(boolTypeExp(), p.typerep_down);
   p.errors <- if errCheck1.typeerror
-              then [err(p.location, "Boolean appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
+              then [err(p.location, "Boolean type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
+              else [];
+}
+
+concrete production nilListPattern
+p::Pattern ::= '[' ']'
+{
+  p.pp = "[]";
+  p.location = loc(p.file, $1.line, $1.column);
+  p.errors := [] ;
+
+  p.defs = emptyDefs();
+
+  p.cond_tree = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:null")))),
+                    '(', exprsSingle(p.base_tree), ')');
+  p.letAssigns_tree = [] ;
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
+
+  errCheck1.downSubst = p.downSubst;
+  p.upSubst = errCheck1.upSubst;
+  
+  errCheck1 = check(listTypeExp(errorType()), p.typerep_down);
+  p.errors <- if errCheck1.typeerror
+              then [err(p.location, "List type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
+              else [];
+}
+
+concrete production consListPattern
+p::Pattern ::= hp::Pattern '::' tp::Pattern
+{
+  p.pp = hp.pp ++ "::" ++ tp.pp;
+  p.location = loc(p.file, $2.line, $2.column);
+  p.errors := hp.errors ++ tp.errors ;
+
+  p.defs = appendDefs(hp.defs, tp.defs) ;
+
+  p.cond_tree = not('!', productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:null")))),
+                    '(', exprsSingle(p.base_tree), ')'));
+  p.letAssigns_tree = [] ;
+
+  hp.typerep_down = freeVar; -- unified below...
+  tp.typerep_down = p.typerep_down;
+  
+  hp.base_tree = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:head")))),
+                    '(', exprsSingle(p.base_tree), ')');
+  tp.base_tree = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:tail")))),
+                    '(', exprsSingle(p.base_tree), ')');
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
+  local attribute freeVar :: TypeExp; freeVar = errorType();
+
+  errCheck1.downSubst = p.downSubst;
+  hp.downSubst = errCheck1.upSubst;
+  tp.downSubst = hp.upSubst;
+  p.upSubst = tp.upSubst;
+  
+  errCheck1 = check(listTypeExp(freeVar), p.typerep_down);
+  p.errors <- if errCheck1.typeerror
+              then [err(p.location, "List type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
               else [];
 }
 
@@ -411,7 +470,7 @@ ps::PatternList ::= p::Pattern ',' ps1::PatternList
   ps.upSubst = ps1.upSubst;
 }
 
-
+-- lol, dangling comma bug TODO
 concrete production PatternList_nil
 ps::PatternList ::= 
 {
