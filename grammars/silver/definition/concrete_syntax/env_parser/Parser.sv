@@ -1,7 +1,7 @@
 grammar silver:definition:concrete_syntax:env_parser;
 
 import silver:definition:env;
-import silver:definition:env:parser;
+import silver:definition:env:env_parser;
 
 import silver:definition:concrete_syntax hiding Ignore_kwd, Precedence_kwd, Association_kwd, Left_kwd, Association_kwd, Right_kwd, Precedence_kwd, Operator_kwd;
 import silver:definition:regex hiding RegexRBrack_t, RegexLBrack_t, RegexLParen_t, RegexRParen_t; -- TODO: a bit of a hack?

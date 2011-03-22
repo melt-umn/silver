@@ -1,4 +1,4 @@
-grammar silver:definition:env:parser;
+grammar silver:definition:env:env_parser;
 
 import silver:definition:env;
 import silver:definition:type:io;

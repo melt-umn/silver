@@ -1,7 +1,7 @@
 grammar silver:modification:autocopyattr:env_parser;
 import silver:modification:autocopyattr hiding AutoCopy_kwd; -- TODO: hiding is a bit of hack?
 import silver:definition:env;
-import silver:definition:env:parser;
+import silver:definition:env:env_parser;
 
 import silver:definition:core only grammarName, location, env;
 
