@@ -117,3 +117,24 @@ function stripExtraWhiteSpaceHelper
 function isNotWhiteSpace
 Boolean ::= str::String
 { return ! isSpace(str) ; }
+
+
+
+
+function addLineNumbers
+String ::= code::String
+{ return addLineNums(1, 2, lines) ;
+  local lines::[String] = explode("\n",code) ;
+}
+
+function addLineNums
+String ::= next::Integer width::Integer lines::[String]
+{ return if null(lines)
+         then ""
+         else pad ++ ln ++ ": " ++ head(lines) ++ "\n" ++
+              addLineNums(next+1, width, tail(lines)) ;
+  local ln::String = toString(next); 
+  local pad::String = implode("", repeat(" ", width - length(ln)) ) ;
+}
+
+

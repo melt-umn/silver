@@ -2,12 +2,19 @@ grammar core;
 
 function map
 [b] ::= f::Function(b ::= a)  l::[a]
-{
-  return if null(l)
+{ return if null(l)
          then []
          else f(head(l)) :: map(f, tail(l));
 }
 
+function map_p
+[b] ::= f::Production(b ::= a)  l::[a]
+{ return if null(l)
+         then []
+         else f(head(l)) :: map_p(f, tail(l));
+}
+
+-- folds - left/right, function/production, zero/one min num elements
 function foldr
 b ::= f::Function(b ::= a b)  i::b  l::[a]
 { return if null(l)
@@ -17,12 +24,58 @@ b ::= f::Function(b ::= a b)  i::b  l::[a]
 
 function foldr_p
 b ::= f::Production(b ::= a b)  i::b  l::[a]
-{
-  return if null(l)
+{ return if null(l)
          then i
          else f(head(l), foldr_p(f, i, tail(l)));
 }
 
+function foldl
+a ::= f::Function(a ::= a b)  i::a  l::[b]
+{ return if null(l)
+         then i
+         else foldl(f, f(i, head(l)), tail(l)) ;
+}
+
+function foldl_p
+a ::= f::Production(a ::= a b)  i::a  l::[b]
+{ return if null(l) 
+         then i
+         else foldl_p(f, f(i, head(l)), tail(l)) ;
+}
+
+function foldr1
+a ::= f::Function(a ::= a a) l::[a]
+{ return if null(l)
+         then error ("Applying foldr1 to empty list.")
+         else
+         if length(l) == 1
+         then head(l) 
+         else f(head(l), foldr1(f, tail(l))); 
+}
+
+function foldr1_p
+a ::= f::Production(a ::= a a) l::[a]
+{ return if null(l)
+         then error ("Applying foldr1_p to empty list.")
+         else
+         if length(l) == 1
+         then head(l) 
+         else f(head(l), foldr1_p(f, tail(l))); 
+}
+
+function foldl1
+a ::= f::Function(a ::= a a) l::[a]
+{ return if null(l)
+         then error ("Applying foldl1 to empty list.")
+         else foldl(f, head(l), tail(l)) ;
+}
+
+function foldl1_p
+a ::= f::Production(a ::= a a) l::[a]
+{ return if null(l)
+         then error ("Applying foldl1_p to empty list.")
+         else foldl_p(f, head(l), tail(l)) ;
+}
 
 function filter
 [a] ::= f::Function(Boolean ::= a) lst::[a]
@@ -122,6 +175,23 @@ Integer ::= eq::Function(Boolean ::= a a) x::a xs::[a] currentPos::Integer
         else positionOfHelper(eq, x, tail(xs), currentPos+1) ;
 }
 
+
+function repeat
+[a] ::= v::a times::Integer
+{ return if   times <= 0
+         then [ ]
+         else v :: repeat(v, times-1) ;
+}
+         
+
+function zipWith
+[c] ::= l1::[a]  l2::[b] f::Function(c::= a b)
+{ return
+   if   null(l1) || null(l2)
+   then [ ]
+   else f( head(l1), head(l2) ) :: zipWith (tail(l1), tail(l2), f) ;
+}
+
 function reverse
 [a] ::= lst::[a]
 {
@@ -167,7 +237,11 @@ function mergeBy -- do not use
               else head(l2) :: mergeBy(lte, l1, tail(l2)) ;
 }
 
-
+function intersperse 
+[a] ::= sep::a xs::[a]
+{ return if null(xs) then [ ]
+         else head(xs) :: sep :: intersperse(sep, tail(xs)) ;
+}
 --------------------------------------------------------------------------------
 
 function nil

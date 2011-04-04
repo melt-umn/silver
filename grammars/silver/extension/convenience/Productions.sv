@@ -50,10 +50,28 @@ top::ProductionDclStmt ::= ns::ProductionSignature b::ProductionBody {
 }
 
 concrete production productionDclStmtWithName
-top::ProductionDclStmt ::= ns::ProductionSignature  '(' id::Name ')' b::ProductionBody           
+top::ProductionDclStmt ::= ns::ProductionSignature  '(' id::Name ')' b::ProductionBody 
 {
   top.trans = [makeTrans(just(id), ns, b)];
 }
+{-
+concrete production productionDclStmtWithNameBefore
+top::ProductionDclStmt ::= id::Name ':' ns::ProductionSignature  b::ProductionBody 
+{
+  top.trans = [makeTrans(just(id), ns, b)];
+}
+-}
+{-
+nonterminal AlternateProductionBodies ;
+
+concrete production noAlternateProductionBodies
+pb::AlternateProductionBodies ::=
+{ }
+
+concrete production consAlternateProductionBodies
+pb::AlternateProductionBodies ::= '|' rest::AlternateProductionBodies
+{ }
+-}
 
 function buildCTrans
 AGDcl ::= t::[Trans] n::Integer l::Integer f::String
