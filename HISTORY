@@ -1,0 +1,32 @@
+
+--------------------------------------------------------------------------------
+Silver HEAD       ??
+
+--------------------------------------------------------------------------------
+Silver 0.3.2      Apr ??, 2011
+
+ - Improved translation, doubles performance of Silver code.
+ - GADT-like production permitted (Foo<NotATyVar> ::=)
+ - Over-specified occurences permitted (ast<Expr> on Expr_c)
+ - Clarified license: LGPL
+ - Bug fix: Silver should no longer misunderstand decoratedness of
+            children/locals/pattern variables
+ - Bug fix: Re-added missing 'lexeme' value in disambiguation groups
+ - Bug fix: Lists now work with pattern matching. (*facepalm*)
+ - Library improvements, lib:xml addition
+ - More minor bug fixes, internal improvements
+
+--------------------------------------------------------------------------------
+Silver 0.3.1      Dec 15, 2010
+
+ - New translation to Java, rather than Haskell
+ - Separate compilation of grammars
+ - Parametric Polymorphism
+ - Improved support for multiple parsers 
+ - MANY other changes
+
+--------------------------------------------------------------------------------
+Silver 0.2.1.2    Nov 28, 2007
+
+ - Last release of older, Haskell-translation Silver.
+
