@@ -238,6 +238,15 @@ Substitution ::= original::[TyVar] sub::[TyVar]
          else composeSubst( subst(head(original), varTypeExp(head(sub))), zipVarsIntoSubstitution(tail(original), tail(sub)));
 }
 
+function zipVarsIntoSkolemizedSubstitution
+Substitution ::= original::[TyVar] sub::[TyVar]
+{
+  -- once we have "productions are subtypes of functions" then make this just map 'varTypeExp' and call the other one below
+  return if null(original) || null(sub) then emptySubst()
+         else composeSubst( subst(head(original), skolemTypeExp(head(sub))), zipVarsIntoSubstitution(tail(original), tail(sub)));
+}
+
+
 function zipVarsAndTypesIntoSubstitution
 Substitution ::= original::[TyVar] sub::[TypeExp]
 {
