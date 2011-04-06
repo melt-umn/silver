@@ -110,10 +110,21 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
   
   top.errors := qn.lookupValue.errors ++ ns.errors ++ e.errors;
 
+  -- Existential types. Start by generating a substitution that would skolemize all free variables of the production's type.
+  local attribute skolemizeSubst :: Substitution;
+  skolemizeSubst = zipVarsIntoSkolemizedSubstitution(qn.lookupValue.typerep.freeVariables, freshTyVars(length(qn.lookupValue.typerep.freeVariables)));
+  
+  -- Now, freshen those variables in the OUTPUT type of the production
+  local attribute freshenedProdType :: TypeExp;
+  freshenedProdType = freshenTypeExp(qn.lookupValue.typerep, qn.lookupValue.typerep.outputType.freeVariables);
+  
+  -- Now, apply the skolemization substitution. This should only nab those type variables that AREN'T in the output type!
   local attribute prod_type :: TypeExp;
-  prod_type = freshenCompletely(qn.lookupValue.typerep); -- TODO: busted. existential types. freshen all vars in outputType, but skolemize all others.
+  prod_type = performSubstitution(freshenedProdType, skolemizeSubst);
 
+  -- Now, those name bindings get the skolem constants for any existential bits! yayy!
   ns.bindingTypes = prod_type.inputTypes;
+  ns.bindingIndex = 0;
   
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
@@ -150,6 +161,14 @@ top::VarBinders ::= v::VarBinder
   top.valueTrans = v.valueTrans;
   top.defs = v.defs;
   top.errors := v.errors;
+  v.bindingIndex = top.bindingIndex;
+  v.bindingType = if null(top.bindingTypes)
+                  then errorType()
+                  else head(top.bindingTypes);
+  
+  top.errors <- if null(top.bindingTypes)
+                then [err(top.location, "too many binding variables provided!")]
+                else [];
 }
 concrete production consVarBinder
 top::VarBinders ::= v::VarBinder ',' vs::VarBinders
@@ -160,6 +179,18 @@ top::VarBinders ::= v::VarBinder ',' vs::VarBinders
   top.valueTrans = v.valueTrans ++ vs.valueTrans;
   top.defs = appendDefs(v.defs, vs.defs);
   top.errors := v.errors ++ vs.errors;
+
+  v.bindingIndex = top.bindingIndex;
+  vs.bindingIndex = top.bindingIndex + 1;
+
+  v.bindingType = if null(top.bindingTypes)
+                  then errorType()
+                  else head(top.bindingTypes);
+  vs.bindingTypes = if null(top.bindingTypes)
+                  then []
+                  else tail(top.bindingTypes);
+
+  -- last one will raise error message, dont need to here!  
 }
 concrete production nilVarBinder
 top::VarBinders ::= -- technically a bug, but forget it for now
@@ -170,6 +201,10 @@ top::VarBinders ::= -- technically a bug, but forget it for now
   top.valueTrans = [];
   top.defs = emptyDefs();
   top.errors := [];
+  
+  top.errors <- if !null(top.bindingTypes)
+                then [err(top.location, "insufficient number of binding variables provided!")]
+                else [];
 }
 
 concrete production varVarBinder
