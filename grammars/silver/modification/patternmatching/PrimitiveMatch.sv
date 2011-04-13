@@ -110,24 +110,14 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
   
   top.errors := qn.lookupValue.errors ++ ns.errors ++ e.errors;
 
-  -- Existential types. Start by generating a substitution that would skolemize all free variables of the production's type.
-  local attribute skolemizeSubst :: Substitution;
-  skolemizeSubst = zipVarsIntoSkolemizedSubstitution(qn.lookupValue.typerep.freeVariables, freshTyVars(length(qn.lookupValue.typerep.freeVariables)));
-  
-  -- Now, freshen those variables in the OUTPUT type of the production
-  local attribute freshenedProdType :: TypeExp;
-  freshenedProdType = freshenTypeExp(qn.lookupValue.typerep, qn.lookupValue.typerep.outputType.freeVariables);
-  
-  -- Now, apply the skolemization substitution. This should only nab those type variables that AREN'T in the output type!
   local attribute prod_type :: TypeExp;
-  prod_type = performSubstitution(freshenedProdType, skolemizeSubst);
-
-  -- Now, those name bindings get the skolem constants for any existential bits! yayy!
+  prod_type = skolemizeTypeExp(qn.lookupValue.typerep);
+  
   ns.bindingTypes = prod_type.inputTypes;
   ns.bindingIndex = 0;
   
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst);
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst);
   
   errCheck1 = check(decoratedTypeExp(prod_type.outputType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
@@ -139,10 +129,15 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
   
-  errCheck1.downSubst = top.downSubst;
+  -- Pass us by!!
+  top.upSubst = top.downSubst;
+  e.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst);
+  
+  -- Use type information anyway... BUT with our GADT info
+  errCheck1.downSubst = composeSubst(top.downSubst, refine(top.scrutineeType, decoratedTypeExp(prod_type.outputType)));
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+  --top.upSubst = errCheck2.upSubst; -- NOPE, cut off! Don't escape with that info!
   
   e.env = newScopeEnv(ns.defs, top.env);
   
@@ -244,4 +239,160 @@ top::VarBinder ::= '_'
   top.errors := [];
 }
 
+
+
+
+-----
+
+function skolemizeTypeExp
+TypeExp ::= te::TypeExp
+{
+  return performSubstitution(te, zipVarsIntoSkolemizedSubstitution(te.freeVariables, freshTyVars(length(te.freeVariables))));
+}
+
+
+--- This is unification, EXCEPT that skolem constants behave like type variables!
+
+inherited attribute refineWith :: TypeExp occurs on TypeExp;
+synthesized attribute refine :: Substitution occurs on TypeExp;
+
+aspect production varTypeExp
+top::TypeExp ::= tv::TyVar
+{
+  top.refine = case top.refineWith of
+               varTypeExp(j) -> if tyVarEqual(tv, j)
+                                then emptySubst()
+                                else subst( tv, top.refineWith )
+             | _ -> if containsTyVar(tv, top.refineWith.freeVariables)
+                    then errorSubst("Infinite type! Tried to refine with " ++ prettyType(top.refineWith))
+                    else subst(tv, top.refineWith)
+              end;
+}
+
+aspect production skolemTypeExp
+top::TypeExp ::= tv::TyVar
+{
+  top.refine = case top.refineWith of
+               skolemTypeExp(j) -> if tyVarEqual(tv, j)
+                                then emptySubst()
+                                else subst( tv, top.refineWith )
+             | _ -> if containsTyVar(tv, top.refineWith.freeVariables)
+                    then errorSubst("Infinite type! Tried to refine with " ++ prettyType(top.refineWith))
+                    else subst(tv, top.refineWith)
+              end;
+}
+
+aspect production intTypeExp
+top::TypeExp ::=
+{
+  top.refine = case top.refineWith of
+               intTypeExp() -> emptySubst()
+             | _ -> errorSubst("Tried to refine Integer with " ++ prettyType(top.refineWith))
+              end;
+}
+
+aspect production boolTypeExp
+top::TypeExp ::=
+{
+  top.refine = case top.refineWith of
+               boolTypeExp() -> emptySubst()
+             | _ -> errorSubst("Tried to refine Boolean with " ++ prettyType(top.refineWith))
+              end;
+}
+
+aspect production floatTypeExp
+top::TypeExp ::=
+{
+  top.refine = case top.refineWith of
+               floatTypeExp() -> emptySubst()
+             | _ -> errorSubst("Tried to refine Float with " ++ prettyType(top.refineWith))
+              end;
+}
+
+aspect production stringTypeExp
+top::TypeExp ::=
+{
+  top.refine = case top.refineWith of
+               stringTypeExp() -> emptySubst()
+             | _ -> errorSubst("Tried to refine Boolean with " ++ prettyType(top.refineWith))
+              end;
+}
+
+aspect production nonterminalTypeExp
+top::TypeExp ::= fn::String params::[TypeExp]
+{
+  top.refine = case top.refineWith of
+               nonterminalTypeExp(ofn, op) -> if fn == ofn
+                                            then refineAll( params, op )
+                                            else errorSubst("Tried to refine conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
+             | _ -> errorSubst("Tried to refine nonterminal type " ++ fn ++ " with " ++ prettyType(top.refineWith))
+              end;
+}
+
+aspect production terminalTypeExp
+top::TypeExp ::= fn::String
+{
+  top.refine = case top.refineWith of
+               terminalTypeExp(ofn) -> if fn == ofn
+                                     then emptySubst()
+                                     else errorSubst("Tried to refine conflicting terminal types " ++ fn ++ " and " ++ ofn)
+             | _ -> errorSubst("Tried to refine terminal type " ++ fn ++ " with " ++ prettyType(top.refineWith))
+              end;
+}
+
+aspect production decoratedTypeExp
+top::TypeExp ::= te::TypeExp
+{
+  top.refine = case top.refineWith of
+               decoratedTypeExp(ote) -> refine(te, ote)
+             | _ -> errorSubst("Tried to refine decorated type with " ++ prettyType(top.refineWith))
+              end;
+}
+
+aspect production functionTypeExp
+top::TypeExp ::= out::TypeExp params::[TypeExp]
+{
+  top.refine = case top.refineWith of
+               functionTypeExp(oo, op) -> refineAll(out :: params, oo :: op)
+             | _ -> errorSubst("Tried to refine function type with " ++ prettyType(top.refineWith))
+              end;
+}
+
+aspect production productionTypeExp
+top::TypeExp ::= out::TypeExp params::[TypeExp]
+{
+  top.refine = case top.refineWith of
+               productionTypeExp(oo, op) -> refineAll(out :: params, oo :: op)
+             | _ -> errorSubst("Tried to refine production type with " ++ prettyType(top.refineWith))
+              end;
+}
+
+function refine
+Substitution ::= te1::TypeExp te2::TypeExp
+{
+  local attribute leftward :: Substitution;
+  leftward = te1.refine;
+  te1.refineWith = te2;
+  
+  local attribute rightward :: Substitution;
+  rightward = te2.refine;
+  te2.refineWith = te1;
+  
+  return if null(leftward.substErrors)
+         then leftward   -- arbitrary choice if both work, but if they are confluent, it's okay
+         else rightward; -- arbitrary choice of errors. Non-confluent!!
+}
+function refineAll
+Substitution ::= te1::[TypeExp] te2::[TypeExp]
+{
+  local attribute first :: Substitution;
+  first = refine(head(te1), head(te2));
+  
+  return if null(te1) && null(te2)
+         then emptySubst()
+         else if null(te1) || null(te2)
+         then errorSubst("Internal error: refineing mismatching numbers")
+         else composeSubst(first, refineAll( mapSubst(tail(te1), first),
+                                            mapSubst(tail(te2), first) ));
+}
 

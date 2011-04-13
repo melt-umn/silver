@@ -63,18 +63,17 @@ top::Substitution ::= s::Substitution
 
 --------------------------------------------------------------------------------
 
--- TODO: This should return Maybe TypeExp
 function findSubst
-TypeExp ::= tv::TyVar s::Substitution
+Maybe<TypeExp> ::= tv::TyVar s::Substitution
 {
   return findSubstHelp(tv, s.substTyVars, s.substTyExps);
 }
 function findSubstHelp
-TypeExp ::= tv::TyVar sv::[TyVar] se::[TypeExp]
+Maybe<TypeExp> ::= tv::TyVar sv::[TyVar] se::[TypeExp]
 {
-  return if null(sv) then varTypeExp(tv)
+  return if null(sv) then nothing()
          else if tyVarEqual(tv, head(sv))
-              then head(se)
+              then just(head(se))
               else findSubstHelp(tv, tail(sv), tail(se));
 }
 
@@ -90,19 +89,12 @@ top::TypeExp ::= tv::TyVar
   -- This also means the substitution list must not be circular!
 
   -- Perform one iteration of substitution
-  local attribute partialsubst :: TypeExp;
+  local attribute partialsubst :: Maybe<TypeExp>;
   partialsubst = findSubst(tv, top.substitution);
   
-  -- Find out if we successfully substituted, or if we stayed the same
-  local attribute successful :: Boolean;
-  successful = case partialsubst of
-                 varTypeExp(newtv) -> ! tyVarEqual(tv, new(newtv))
-               | _ -> true
-               end;
-  
   -- recursively substitute only if we changed!
-  top.substituted = if successful
-                    then performSubstitution(partialsubst , top.substitution )
+  top.substituted = if partialsubst.isJust
+                    then performSubstitution(partialsubst.fromJust , top.substitution )
                     else top;
 }
 
@@ -123,19 +115,12 @@ top::TypeExp ::= tv::TyVar
   
   -- (See the only non-unification place where subst(...) is called directly at the bottom of this file.)
   
-  local attribute partialsubst :: TypeExp;
+  local attribute partialsubst :: Maybe<TypeExp>;
   partialsubst = findSubst(tv, top.substitution);
   
-  -- Find out if we successfully substituted, or if we stayed the same
-  local attribute successful :: Boolean;
-  successful = case partialsubst of
-                 varTypeExp(newtv) -> ! tyVarEqual(tv, new(newtv))
-               | _ -> true
-               end;
-  
   -- recursively substitute only if we changed!
-  top.substituted = if successful
-                    then performSubstitution(partialsubst , top.substitution )
+  top.substituted = if partialsubst.isJust
+                    then performSubstitution(partialsubst.fromJust , top.substitution )
                     else top;
 }
 
