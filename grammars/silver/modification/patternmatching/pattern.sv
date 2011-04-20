@@ -71,7 +71,10 @@ top::Expr ::= 'case' e1::Expr 'of' ml::MRuleList 'end'
   ml.base_tree = baseExpr(qNameId(unique_id));
 
   forwards to letp('let', assignListSingle(
-                assignExpr(unique_id,'::',typerepType(decoratedTypeExp(ml.typerep_down)),'=',
+                assignExpr(unique_id,'::',typerepType(
+                 if caseExpressionType.isDecorable
+                 then decoratedTypeExp(caseExpressionType)
+                 else caseExpressionType),'=',
 
   -- The object in question. If it's undecorated, go decorate it for consistency.
                  if caseExpressionType.isDecorable
