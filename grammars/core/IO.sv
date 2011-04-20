@@ -341,3 +341,16 @@ String ::= filePath::String
  local attribute indexOfLastSlash :: Integer ;
  indexOfLastSlash = lastIndexOf("/", filePath) ;
 }
+
+
+function splitFileNameAndExtension
+Pair<String String> ::= filePath::String
+{
+ return if   indexOfLastDot == -1 -- dot not found
+        then pair( filePath, "" )
+        else pair( substring(0, indexOfLastDot, filePath) ,
+                   substring(indexOfLastDot+1, length(filePath), filePath) ) ;
+
+ local attribute indexOfLastDot :: Integer ;
+ indexOfLastDot = lastIndexOf(".", filePath) ;
+}
