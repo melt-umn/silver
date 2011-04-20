@@ -1,64 +1,69 @@
 grammar silver:definition:type;
 
-nonterminal Substitution with debugOutput, substTyVars, substTyExps, substErrors, failure;
+nonterminal Substitution with debugOutput, substList, substErrors, failure;
 
 synthesized attribute debugOutput :: String;
-
--- TODO: This should be a list of pairs
-synthesized attribute substTyVars :: [TyVar];
-synthesized attribute substTyExps :: [TypeExp];
-
+synthesized attribute substList :: [Pair<TyVar TypeExp>];
 synthesized attribute substErrors :: [String];
 synthesized attribute failure :: Boolean; -- this is a bad hack to work around unify being unable to return a pair
 
 --------------------------------------------------------------------------------
 
-abstract production emptySubst
-top::Substitution ::=
+abstract production goodSubst
+top::Substitution ::= sublst::[Pair<TyVar TypeExp>]
 {
-  top.debugOutput = "";
-  top.substTyVars = [];
-  top.substTyExps = [];
+  top.substList = sublst;
   top.substErrors = [];
   top.failure = false;
 }
 
-abstract production errorSubst
-top::Substitution ::= e::String
+abstract production badSubst
+top::Substitution ::= sublst::[Pair<TyVar TypeExp>] errs::[String]
 {
-  top.debugOutput = "";
-  top.substTyVars = [];
-  top.substTyExps = [];
-  top.substErrors = [e];
+  top.substList = sublst;
+  top.substErrors = errs;
   top.failure = true;
 }
 
-
-abstract production subst
-top::Substitution ::= tv::TyVar te::TypeExp
+function emptySubst
+Substitution ::=
 {
-  top.debugOutput = toString(case tv of tyVar(i) -> i end) ++ " => " ++ prettyTypeWith(te,[]);
-  top.substTyVars = [tv];
-  top.substTyExps = [te];
-  top.substErrors = [];
-  top.failure = false;
+  return goodSubst([]);
+}
+function errorSubst
+Substitution ::= e::String
+{
+  return badSubst([], [e]);
+}
+function subst
+Substitution ::= tv::TyVar te::TypeExp
+{
+  return goodSubst([pair(tv,te)]);
+}
+function composeSubst
+Substitution ::= s1::Substitution s2::Substitution
+{
+  -- TODO: once we have case-lists fix this notation.
+  return case s1 of
+           goodSubst(s1l) -> case s2 of
+                               goodSubst(s2l) -> goodSubst(s1l++s2l)
+                             | badSubst(s2l, s2e) -> badSubst(s1l++s2l, s2e)
+                             end
+         | badSubst(s1l, s1e) -> case s2 of
+                                   goodSubst(s2l) -> badSubst(s1l++s2l,s1e)
+                                 | badSubst(s2l, s2e) -> badSubst(s1l++s2l, s1e++s2e)
+                                 end
+         end;
+           
 }
 
-abstract production composeSubst
-top::Substitution ::= s1::Substitution s2::Substitution
+function ignoreFailure
+Substitution ::= s::Substitution
 {
-  top.debugOutput = s1.debugOutput ++ ", " ++ s2.debugOutput;
-  top.substTyVars = s1.substTyVars ++ s2.substTyVars;
-  top.substTyExps = s1.substTyExps ++ s2.substTyExps;
-  top.substErrors = s1.substErrors ++ s2.substErrors;
-  top.failure = s1.failure || s2.failure;
-}
-
-abstract production ignoreFailure
-top::Substitution ::= s::Substitution
-{
-  top.failure = false;
-  forwards to s;
+  return case s of
+           goodSubst(_) -> s
+         | badSubst(sl,_) -> goodSubst(sl)
+         end;
 }
 
 --------------------------------------------------------------------------------
@@ -66,15 +71,7 @@ top::Substitution ::= s::Substitution
 function findSubst
 Maybe<TypeExp> ::= tv::TyVar s::Substitution
 {
-  return findSubstHelp(tv, s.substTyVars, s.substTyExps);
-}
-function findSubstHelp
-Maybe<TypeExp> ::= tv::TyVar sv::[TyVar] se::[TypeExp]
-{
-  return if null(sv) then nothing()
-         else if tyVarEqual(tv, head(sv))
-              then just(head(se))
-              else findSubstHelp(tv, tail(sv), tail(se));
+  return lookupBy(tyVarEqual, tv, s.substList);
 }
 
 --------------------------------------------------------------------------------
