@@ -80,22 +80,16 @@ top::Exprs ::= es::[Decorated Expr]
 
 -- Overloaded operators --------------------------------------------------------
 
-aspect production plusPlus
-top::Expr ::= e1::Expr '++' e2::Expr
+abstract production listPlusPlus
+top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
-  -- TODO: THIS IS A COMPLETELY BUSTED WAY TO DO THIS, BUT WORKS FOR NOW. **FRAGILE**  probable BUGS
-  handler <- if !(unify(e1.typerep, listTypeExp(errorType())).failure || unify(e2.typerep, listTypeExp(errorType())).failure)
-             then [productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:append")))),
-                    '(', exprsDecorated([e1,e2]), ')')]
-             else [];
+  forwards to productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:append")))),
+                    '(', exprsDecorated([e1,e2]), ')');
 }
-
-aspect production lengthFunction
-top::Expr ::= 'length' '(' e::Expr ')'
+abstract production listLengthBouncer
+top::Expr ::= e::Decorated Expr
 {
-  handlers <- if !unify(e.typerep, listTypeExp(errorType())).failure
-	      then [productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:listLength")))),
-                    '(', exprsDecorated([e]), ')')]
-	      else [];
+  forwards to productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:listLength")))),
+                    '(', exprsDecorated([e]), ')');
 }
 

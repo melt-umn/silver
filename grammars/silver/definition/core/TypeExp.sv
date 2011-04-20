@@ -3,13 +3,17 @@ grammar silver:definition:core;
 synthesized attribute applicationDispatcher :: Production (Expr ::= Decorated Expr Exprs);
 synthesized attribute accessDispatcher :: Production (Expr ::= Decorated Expr Dot_t Decorated QName);
 
+synthesized attribute lengthDispatcher :: Production (Expr ::= Decorated Expr);
+synthesized attribute appendDispatcher :: Production (Expr ::= Decorated Expr Decorated Expr);
+
 -- Used for poor man's type classes
 synthesized attribute instanceEq :: Boolean;
 synthesized attribute instanceOrd :: Boolean;
 synthesized attribute instanceNum :: Boolean;
 synthesized attribute instanceConvertible :: Boolean;
 
-attribute applicationDispatcher, accessDispatcher, instanceEq, instanceOrd, instanceNum, instanceConvertible occurs on TypeExp;
+attribute applicationDispatcher, accessDispatcher, lengthDispatcher, appendDispatcher,
+          instanceEq, instanceOrd, instanceNum, instanceConvertible occurs on TypeExp;
 
 aspect production defaultTypeExp
 top::TypeExp ::=
@@ -20,6 +24,8 @@ top::TypeExp ::=
   top.instanceOrd = false;
   top.instanceNum = false;
   top.instanceConvertible = false;
+  top.lengthDispatcher = unknownLength;
+  top.appendDispatcher = errorPlusPlus;
 }
 
 aspect production intTypeExp
@@ -52,6 +58,8 @@ top::TypeExp ::=
   top.instanceEq = true;
   top.instanceOrd = true;
   top.instanceConvertible = true;
+  top.lengthDispatcher = stringLength;
+  top.appendDispatcher = stringPlusPlus;
 }
 
 aspect production nonterminalTypeExp

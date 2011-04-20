@@ -562,17 +562,9 @@ top::Expr ::= e1::Expr '++' e2::Expr
   top.pp = e1.pp ++ " ++ " ++ e2.pp;
   top.location = loc(top.file, $2.line, $2.column);
 
-  production attribute handler :: [Expr] with ++;
-  handler := [];
-  -- TODO: THIS IS A COMPLETELY BUSTED WAY TO DO THIS, BUT WORKS FOR NOW. **FRAGILE**  probable BUGS
-  handler <- if !(unify(e1.typerep, stringTypeExp()).failure || unify(e2.typerep, stringTypeExp()).failure)
-             then [stringPlusPlus(e1, e2)]
-             else [];
+  top.typerep = performSubstitution(e1.typerep, e1.upSubst); -- is it safe to report a typerep using substs? hope so!
 
-  -- TODO: Why don't we add this as part of the Type, and dispatch on top.typerep?
-  -- I guess we'd have to define top.typerep here...
-
-  forwards to if null(handler) then errorPlusPlus(e1, e2) else head(handler);
+  forwards to top.typerep.appendDispatcher(e1,e2);
 }
 
 abstract production stringPlusPlus
@@ -591,7 +583,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
   top.pp = e1.pp ++ " ++ " ++ e2.pp;
   top.location = e1.location;
 
-  top.errors := e1.errors ++ e2.errors; -- the error is spotted by plusPlus in typechecking.
+  top.errors := [err(e1.location, prettyType(performSubstitution(e1.typerep, e1.upSubst)) ++ " is not a concatenable type.")] ++ e1.errors ++ e2.errors;
   top.typerep = errorType();
 }
 
