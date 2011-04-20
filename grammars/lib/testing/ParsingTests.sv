@@ -7,7 +7,8 @@ t::Test ::= fn::String parseF::Function(ParseResult<a> ::= String String)
 {
  local exists::IOVal<Boolean> = isFile(fn, t.ioIn);
  local cppCommand :: String
-   = "cpp -P " ++ fn ++ " | tail -n +3 > " ++ fn ++ ".cpp" ;
+   = -- "cpp -P " ++ fn ++ " | tail -n +3 > " ++ fn ++ ".cpp" ;
+     "cpp " ++ fn ++ " > " ++ fn ++ ".cpp" ;
    -- even the -P option to cpp leaves 2 blanks lines, so we also
    -- use tail to remove these blank lines
  local mkCPPfile::IOVal<Integer> = system (cppCommand, exists.io ) ;
