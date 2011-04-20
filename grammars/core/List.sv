@@ -191,6 +191,13 @@ function zipWith
    then [ ]
    else f( head(l1), head(l2) ) :: zipWith (tail(l1), tail(l2), f) ;
 }
+function zipWith_p
+[c] ::= l1::[a]  l2::[b] f::Production(c::= a b)
+{ return
+   if   null(l1) || null(l2)
+   then [ ]
+   else f( head(l1), head(l2) ) :: zipWith_p (tail(l1), tail(l2), f) ;
+}
 
 function reverse
 [a] ::= lst::[a]
