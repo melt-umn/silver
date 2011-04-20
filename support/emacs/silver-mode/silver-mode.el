@@ -22,7 +22,7 @@ For detail, see `comment-dwim'."
    '("\\<\\(reference\\|length\\|substring\\|indexof\\|parser\\|error\\|cast\\|toInt\\|toReal\\|toString\\|new\\)\\>" . font-lock-builtin-face)
    '("\\<\\(cons\\|null\\|head\\|tail\\|let\\)\\>" . font-lock-builtin-face)
    '("\\<\\(true\\|false\\|left\\|right\\|none\\)\\>" . font-lock-constant-face)
-   '("\\<\\(case\\|of\\)\\>" . font-lock-keyword-face)
+   '("\\<\\(case\\|of\\|end\\)\\>" . font-lock-keyword-face)
    '("\\<grammar\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-function-name-face)
    '("\\<import\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-function-name-face)
    '("\\<export\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-function-name-face)
