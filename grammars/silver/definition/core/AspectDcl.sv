@@ -152,6 +152,7 @@ abstract production aspectProductionLHSFull
 top::AspectProductionLHS ::= id::Name t::TypeExp
 {
   top.pp = id.pp ++ "::" ++ t.unparse;
+  top.location = id.location;
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
