@@ -525,22 +525,14 @@ top::Expr ::= e1::Expr '++' e2::Expr
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
   errCheck1.downSubst = e2.upSubst;
---  top.upSubst = errCheck1.upSubst; -- pass to forward instead
+  forward.downSubst = errCheck1.upSubst;
+  -- upSubst defined via forward :D
   
   errCheck1 = check(e1.typerep, e2.typerep);
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Operands to ++ must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
        else [];
-  
-  top.errors <-
-       if null(handler) && !errCheck1.typeerror -- TODO This is a busted way to do this.
-       then [err(top.location, "Operands to ++ must be concatenable.  Got instead types " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  forwarding with {
-    downSubst = errCheck1.upSubst;
-  };
 }
 
 aspect production errorPlusPlus

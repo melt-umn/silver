@@ -8,28 +8,22 @@ top::Expr ::= 'length' '(' e::Expr ')'
   top.pp = "length(" ++ e.pp ++ ")";
   top.location = loc(top.file, $1.line, $2.column);
 
-  production attribute handlers :: [Expr] with ++;
-  handlers := if !unify(e.typerep, stringTypeExp()).failure
-	      then [stringLength(e)]
-	      else [];
+  top.typerep = intTypeExp();
 
-  -- TODO: bug, the handler doesn't have the location available for error handling anymore!
-  forwards to if null(handlers) then unknownLength(e) else head(handlers);
+  forwards to performSubstitution(e.typerep, e.upSubst).lengthDispatcher(e);
 }
 
 abstract production unknownLength
 top::Expr ::= e::Decorated Expr
 {
   top.location = e.location;
-  top.errors := e.errors;
-  top.typerep = errorType();
+  top.errors := [err(e.location, "Operand to length is not compatible. It is of type " ++ prettyType(performSubstitution(e.typerep, top.finalSubst)))] ++ e.errors;
 }
 
 abstract production stringLength
 top::Expr ::= e::Decorated Expr
 {
   top.errors := e.errors;
-  top.typerep = intTypeExp();
 }
 
 concrete production toIntFunction
