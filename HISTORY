@@ -1,9 +1,6 @@
 
 --------------------------------------------------------------------------------
-Silver HEAD       ??
-
---------------------------------------------------------------------------------
-Silver 0.3.2      Apr ??, 2011
+Silver 0.3.2      Apr 22, 2011
 
  - Improved translation, doubles performance of Silver code.
  - GADT-like production permitted (Foo<NotATyVar> ::=)
