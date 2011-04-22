@@ -24,8 +24,8 @@ tar zcvf $SV.tar.gz \
  $SV/tutorials/ \
  $SV/grammars/lib/stringmap/ \
  $SV/grammars/lib/xml/ \
- LICENSE \
- HISTORY \
+ $SV/LICENSE \
+ $SV/HISTORY \
  
  
 
