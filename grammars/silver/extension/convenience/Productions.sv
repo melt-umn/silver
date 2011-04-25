@@ -1,8 +1,8 @@
 grammar silver:extension:convenience;
+
 import silver:definition:core;
 import silver:definition:concrete_syntax;
-
---   TEMPORARILY(?) DISABLED wasn't used, wasn't hard pressed to fix it yet!
+import silver:translation:java:concrete_syntax:copper;
 
 synthesized attribute trans :: [Trans];
 nonterminal ProductionDclStmts with trans;
@@ -13,7 +13,9 @@ terminal Productions_kwd 'productions' lexer classes {KEYWORD};
 synthesized attribute transName :: Maybe<Name>;
 synthesized attribute transSig :: ProductionSignature;
 synthesized attribute transBody :: ProductionBody;
-nonterminal Trans with transName, transSig, transBody;
+synthesized attribute transMods :: ProductionModifiers ;
+synthesized attribute transAction :: Maybe<ActionCode_c> ;
+nonterminal Trans with transName, transSig, transBody, transMods, transAction ;
 
 concrete production productionDclC
 top::AGDcl ::= c::'concrete' 'productions' stmts::ProductionDclStmts 
@@ -44,23 +46,56 @@ top::ProductionDclStmts ::= s::ProductionDclStmt ss::ProductionDclStmts {
 --  top.trans = [makeTrans(id, ns, b)];
 --  }
 
-concrete production productionDclStmtNoName
-top::ProductionDclStmt ::= ns::ProductionSignature b::ProductionBody {
-  top.trans = [makeTrans( nothing(), ns, b)];
+
+concrete production productionDclStmt
+top::ProductionDclStmt ::= ns::ProductionSignature 
+                           optn::OptionalName optm::OptionalModifiers
+                           b::ProductionBody opta::OptionalAction {
+  top.trans = [makeTrans( optn.transName, ns, b, optm.transMods, opta.transAction )];
 }
 
-concrete production productionDclStmtWithName
-top::ProductionDclStmt ::= ns::ProductionSignature  '(' id::Name ')' b::ProductionBody 
-{
-  top.trans = [makeTrans(just(id), ns, b)];
+concrete production productionDclStmtPrecedingName
+top::ProductionDclStmt ::= pn::PrecedingName ns::ProductionSignature 
+                           optm::OptionalModifiers
+                           b::ProductionBody opta::OptionalAction {
+  top.trans = [makeTrans( pn.transName, ns, b, optm.transMods, opta.transAction )];
 }
-{-
-concrete production productionDclStmtWithNameBefore
-top::ProductionDclStmt ::= id::Name ':' ns::ProductionSignature  b::ProductionBody 
-{
-  top.trans = [makeTrans(just(id), ns, b)];
-}
--}
+
+nonterminal OptionalName with transName ;
+concrete production noOptionalName
+optn::OptionalName ::=
+{ optn.transName = nothing() ; }
+concrete production anOptionalName
+optn::OptionalName ::= '(' id::Name ')'
+{ optn.transName = just(id) ; }
+
+nonterminal PrecedingName with transName ;
+concrete production aPrecedingName
+pn::PrecedingName ::= id::Name ':'
+{ pn.transName = just(id) ; }
+
+
+nonterminal OptionalModifiers with transMods ;
+concrete production noOptionalModifiers
+optm::OptionalModifiers ::=
+{ optm.transMods = productionModifiersNone() ; }
+concrete production someOptionalModifiers
+optm::OptionalModifiers ::= m::ProductionModifiers
+{ optm.transMods = m ; }
+
+
+nonterminal OptionalAction with transAction ;
+concrete production noOptionalAction
+opta::OptionalAction ::=
+{ opta.transAction = nothing() ; }
+concrete production anOptionalAction
+opta::OptionalAction ::= 'action' acode::ActionCode_c
+{ opta.transAction = just(acode) ; }
+
+
+
+
+
 {-
 nonterminal AlternateProductionBodies ;
 
@@ -74,19 +109,35 @@ pb::AlternateProductionBodies ::= '|' rest::AlternateProductionBodies
 -}
 
 function buildCTrans
-AGDcl ::= t::[Trans] n::Integer l::Integer f::String
+AGDcl ::= ts::[Trans] n::Integer l::Integer f::String
 { return
-    if   null(t)
+    if   null(ts)
     then agDclNone()
     else agDclAppend(
-           concreteProductionDcl('concrete', 'production', 
-             case head(t).transName of
-               just(tn) -> tn 
-             | nothing() -> nameIdLower(terminal(IdLower_t, name)) end ,
-             head(t).transSig, 
-             head(t).transBody ), 
-           buildCTrans(tail(t), n+1, l, f) );
+           case t.transAction of
+              nothing() ->
+                concreteProductionDclModifiers('concrete', 'production', 
+                  case t.transName of
+                    just(tn) -> tn 
+                  | nothing() -> nameIdLower(terminal(IdLower_t, name)) end ,
+                  t.transSig, 
+                  t.transMods, 
+                  t.transBody 
+                 )
+            | just(a) ->
+                concreteProductionDclModifiersAction('concrete', 'production',
+                  case t.transName of
+                    just(tn) -> tn 
+                  | nothing() -> nameIdLower(terminal(IdLower_t, name)) end ,
+                  t.transSig, 
+                  t.transMods, 
+                  t.transBody,
+                  'action', a ) 
+           end ,
 
+           buildCTrans(tail(ts), n+1, l, f) );
+
+  local t::Trans = head(ts) ;
   local name :: String = "anonymousProduction_" ++ toString(n) ++ 
                          "_in_block_on_line_" ++
                          toString(l) ++ "_in_file_" ++ 
@@ -104,9 +155,11 @@ AGDcl ::= t::[Trans] {
 -}
 
 abstract production makeTrans
-top::Trans ::= i::Maybe<Name>
-               s::ProductionSignature b::ProductionBody {
-  top.transName = i;
-  top.transSig = s;
-  top.transBody = b;
+t::Trans ::= i::Maybe<Name>  s::ProductionSignature  b::ProductionBody 
+             m::ProductionModifiers  a::Maybe<ActionCode_c> {
+  t.transName = i;
+  t.transSig = s;
+  t.transBody = b;
+  t.transMods = m;
+  t.transAction = a ;
 }
