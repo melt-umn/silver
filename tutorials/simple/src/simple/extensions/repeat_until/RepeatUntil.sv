@@ -9,10 +9,10 @@ concrete production repeat_c
 s::StmtMatched_c ::= 'repeat' body::Stmts_c 'until' cond::Expr_c ';'
 {
   s.pp = "repeat \n" ++ body.pp ++ "\n" ++ "until " ++ cond.pp ++ " ; \n" ;
-  s.ast_Stmt = repeat (body.ast_Stmt, cond.ast_Expr ) ; 
+  s.ast_Stmt = repeatStmt (body.ast_Stmt, cond.ast_Expr ) ; 
 }
 
-abstract production repeat 
+abstract production repeatStmt
 s::Stmt ::= body::Stmt cond::Expr
 {
   -- s.pp = "repeat \n" ++ body.pp ++ "\n" ++ "until " ++ cond.pp ++ " ; \n" ;
