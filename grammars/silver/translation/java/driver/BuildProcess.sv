@@ -149,7 +149,7 @@ top::IOVal<String> ::= i::IO a::Decorated Command specs::[Decorated RootSpec] si
 "  <property name='src' location='${jg}/src'/>\n\n" ++
 
 "  <path id='lib.classpath'>\n" ++
-"    <fileset dir='${sh}' includes='SilverRuntime.jar CopperRuntime.jar CopperCompiler.jar' />\n" ++ -- TODO: separate this information out. (runtime/compiler cps)
+"    <fileset dir='${sh}/jars' includes='SilverRuntime.jar CopperRuntime.jar CopperCompiler.jar' />\n" ++ -- TODO: separate this information out. (runtime/compiler cps)
 "  </path>\n\n" ++
 
 "  <path id='src.classpath'>\n" ++
@@ -197,8 +197,8 @@ implode("\n", extraTaskdefs) ++ "\n\n" ++
 
 -- If we're building a single jar, then include it, and don't write out a script.
 (if a.buildSingleJar then
-"      <zipfileset src='${sh}/CopperRuntime.jar' excludes='META-INF/*' />\n" ++
-"      <zipfileset src='${sh}/SilverRuntime.jar' excludes='META-INF/*' />\n"
+"      <zipfileset src='${sh}/jars/CopperRuntime.jar' excludes='META-INF/*' />\n" ++
+"      <zipfileset src='${sh}/jars/SilverRuntime.jar' excludes='META-INF/*' />\n"
  else "") ++
  
 "    </jar>\n\n" ++

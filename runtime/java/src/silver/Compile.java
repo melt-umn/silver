@@ -33,9 +33,11 @@ public class Compile {
 				throw new RuntimeException("Failed to find install location.", t);
 			}
 			
+			// Jars are the directory where this jar is located.
 			jarsLocation = new File(jarLocation).getParentFile();
 		} else {
-			jarsLocation = new File(result);
+			// Jars are under './jars/' from where SILVER_HOME is pointing
+			jarsLocation = new File(new File(result), "jars");
 		}
 		
 		File testFile = new File(jarsLocation, SILVERJAR);
@@ -116,7 +118,7 @@ public class Compile {
 		
 		// Step 5.1: amend the environment. (we can't change the actual environment in java
 		// for some reason, so we depend on altering an environment map in the runtime library)
-		svutil.put("SILVER_HOME", jarsLocation.getPath());
+		svutil.put("SILVER_HOME", installRoot.getPath());
 		svutil.put("SILVER_GEN", java_gen);
 		if(grammar_path == null || grammar_path.equals("")) {
 			svutil.put("GRAMMAR_PATH", gpLocation.getPath() + ":./");

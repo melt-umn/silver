@@ -1,9 +1,10 @@
 #!/bin/bash
 
-# Set SILVER_HOME to the directory containing RunSilver.jar
+# Set SILVER_HOME to the directory where silver was unpacked.
+# (i.e. the directory where 'jars/RunSilver.jar' exists.
 
 #SILVER_HOME=
-
+JVM_FLAGS="-Xmx2000M -Xss4M "
 
 
 # No futher changes need to be made here.
@@ -29,89 +30,14 @@ if [ -z "$SILVER_HOME" ]; then
   echo "Found: $CANDIDATES"
 
   # This will find RunSilver.jar, if you don't set it above, or already have it in the environment
-  export SILVER_HOME=$( dirname $CANDIDATES )
+  export SILVER_HOME=$( dirname $( dirname $CANDIDATES ) )
   
   echo -e "\nPlease set SILVER_HOME=$SILVER_HOME\n"
 
 fi
 
-# If you have heap or stack space exhaustion errors, edit this:
-
-java -Xmx2000M -Xss4M -jar $SILVER_HOME/RunSilver.jar $@ && ant
 
 
+java $JVM_FLAGS -jar $SILVER_HOME/jars/RunSilver.jar $@ && ant
 
-
-
-
-# I don't think any real documentation should appear here, we should put it in
-# the reference manual if necessary.
-
-
-############################################
-############################################# Remove this....
-
-# To use this script,
-# 1. set the SILVER_HOME environment variable to the directory in
-#    which Silver is installed.  This is the directory that contains 
-#    the bin, jars, and generated directories.
-#
-#    This may be done in your appropriate login scripts, for example,
-#    .bashrc if you use the bash shell, or by unncommenting and
-#    completing the assignment statement below:
-#
-# SILVER_HOME=<where you have installed Silver>
-#
-# 2. set your PATH envrionment variable to include this directory,
-#    $SILVER_HOME/bin.
-
-#### should be
-#### java -Xmx2000M -Xss4M -jar $SILVER_HOME/jars/RunSilver.jar $@ && ant
-
-#### currently is
-#java -Xmx2000M -Xss4M -jar $SILVER_HOME/RunSilver.jar $@ && ant
-
-# If your are compiling large grammars you may need to adjust the Java
-# heap size by changing the -Xmx argument or adjust the Java stack space
-# by changing the -Xss argument.
-
-
-
-
-
-
-############## Besides the java command, which uses the current
-############## version of $SILVER_HOME the above is what this file
-############## should contain.  I do think $SILVER_HOME should point
-############## to the directory above jars however.  Why point to
-############## something inside that is of no interest to users.
-
-
-############## Old stuff below - Ted, please remove once you verify it is
-############## no longer needed.
-
-
-
-
-
-# Set this to wherever the jar files for silver are:
-##SILVER_HOME=../jars/
-
-# This is the only thing that NEEDS to be done to use this script.
-
-
-
-
-# This is set automatically by RunSilver.jar.  You can also overwrite this with the -G flag
-#SILVER_GEN=$SILVER_HOME/../generated
-
-# Bug note: RunSilver.jar wants this to be writable, and passing -G doesn't satisfy this requirement.
-
-# Also set automatically by RunSilver.jar.  You can also add to this with the -I flag
-# Changing this will override the automatic setting shown.
-#GRAMMAR_PATH=$SILVER_HOME/../grammars/:.
-
-# java -Xmx2000M -Xss4M -jar $SILVER_HOME/RunSilver.jar $@ && ant
-
-# Adjust -Xmx (heap space) and -Xss (stack space) if you have issues with these running out.
 
