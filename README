@@ -1,0 +1,57 @@
+** Silver **
+
+Silver is an extensible attribute grammar system that support many
+modern extensions to Knuth's original design.  These include
+higher-order attributes, reference attributes, forwarding, aspects,
+and collections attributes.  Its type system support parametric
+polymorphism.  Silver is distributed with Copper, a parser and
+context-aware scanner generator.
+
+Please note that Silver is a research project and while we do endeavor
+to create useful working software there may be bugs and missing
+functionality.  Consult with us if you wish to use Silver for
+"serious" work.  We make no guarantees about the features or
+performance of Silver.
+
+Ted Kaminski  (tedinski@cs.umn.edu)
+Eric Van Wyk  (evw@cs.umn.edu)
+
+Minnesota Extensible Language Tools (MELT) Group
+Department of Computer Science and Engineering
+University of Minnesota
+http://melt.cs.umn.edu
+
+
+** The Silver web site **
+
+Downloads, documentation, and related papers are available on the
+Silver web site: 
+
+http://melt.cs.umn.edu/silver
+
+Information about Copper and sample language frameworks developed with
+Silver can be found on the MELT Group web site:
+
+http://melt.cs.umn.edu
+
+
+** Acknowledgements **
+
+Silver is currently developed and maintained by
+ Ted Kaminski  (tedinski@cs.umn.edu)
+ Eric Van Wyk  (evw@cs.umn.edu)
+
+Past contributors include Derek Bodin, Lijesh Krishnan, and Jimin Gao.
+
+We are very grateful to the National Science Foundation, the McKnight
+Foundation, DARPA, the University of Minnesota, and IBM for funding
+different aspects of our research and the development of Silver and
+Copper. 
+
+
+** Licensing **
+
+Silver and Copper are distributed under the GNU Lesser General Public
+License.  See the files COPYING and COPYING.LESSER for details of
+these licenses.  More information can be found at
+http://www.gnu.org/licenses/.
