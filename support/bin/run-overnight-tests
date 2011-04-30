@@ -16,7 +16,7 @@ cd ..
 export SILVER_HOME=`pwd`
 echo $SILVER_HOME
 
-cd "$SILVER_HOME/../../trunk/"
+cd "$SILVER_HOME/../trunk/"
 echo `pwd`
 
 # Update the files
@@ -37,27 +37,27 @@ tail -n 5 $RESDIR/silver-rebuild.output
 # With updated Silver, build the testing framework jar file.
 # It ends up in grammars/lib/testing as lib.testing.jar.
 # The silver-run-tests script just runs this jar file.
-cd "$SILVER_HOME/../../trunk/grammars/lib/testing"
+cd "$SILVER_HOME/../trunk/grammars/lib/testing"
 echo "In ...`pwd`"
 ./silver-compile --clean  >& ../../../$RESDIR/testing-build.output
 
 
 # cd to silver/trunk and run all tests.
-cd "$SILVER_HOME/../../trunk/"
+cd "$SILVER_HOME/../trunk/"
 support/bin/silver-run-tests . >& $RESDIR/silver-testing.output
 
 echo -e "\n\nTail of silver-testing.output"
 tail -n 5 $RESDIR/silver-testing.output
 
 
-cd "$SILVER_HOME/../../../grammars/"
+cd "$SILVER_HOME/../../grammars/"
 echo `pwd`
 rm -Rf *
 /soft/subversion/1.6.3/ubuntuamd1/bin/svn up > /dev/null
 echo "svn up - rc = $?"
 
 mkdir -p $RESDIR
-$SILVER_HOME/../support/bin/silver-run-tests . >& $RESDIR/grammars.output
+$SILVER_HOME/support/bin/silver-run-tests . >& $RESDIR/grammars.output
 
 echo -e "\n\nContents of grammars.output"
 #tail -n 5 $RESDIR/grammars.output
