@@ -10,7 +10,7 @@ RESDIR="test_results_`date +%F_%H:%M`"
 # Make the jars directory if it is not there
 cd ../../
 mkdir -p jars
-cd jars
+cd ..
 
 # set SILVER_HOME accordingly.
 export SILVER_HOME=`pwd`
