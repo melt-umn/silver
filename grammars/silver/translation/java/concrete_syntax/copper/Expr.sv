@@ -10,11 +10,11 @@ top::Expr ::= q::Decorated QName
 
   top.typerep = q.lookupValue.typerep;
 
-  top.isAppReference = false;
-  top.appReference = "";
   top.translation = "((" ++ q.lookupValue.typerep.transType ++ ")((common.Node)RESULT).getChild(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName ++ "))";
 
   top.upSubst = top.downSubst;
+  
+  forwards to defaultExpr();
 }
 
 abstract production pluckTerminalReference
@@ -27,12 +27,11 @@ top::Expr ::= q::Decorated QName
 
   top.typerep = errorType(); -- TODO: BUG: Need a real type here (AnyTerminalType or something)
   
-  top.isAppReference = false;
-  top.appReference = "";
-  
   top.translation = makeCopperName(q.lookupValue.fullName); -- Value right here?
   
   top.upSubst = top.downSubst;
+  
+  forwards to defaultExpr();
 }
 
 abstract production disambigLexemeReference
@@ -45,12 +44,11 @@ top::Expr ::= q::Decorated QName
 
   top.typerep = stringTypeExp();
   
-  top.isAppReference = false;
-  top.appReference = "";
-  
   top.translation = "new common.StringCatter(lexeme)";
   
   top.upSubst = top.downSubst;
+  
+  forwards to defaultExpr();
 }
 
 abstract production parserAttributeReference
@@ -65,11 +63,11 @@ top::Expr ::= q::Decorated QName
 
   top.typerep = q.lookupValue.typerep;
 
-  top.isAppReference = false;
-  top.appReference = "";
   top.translation = makeCopperName(q.lookupValue.fullName);
 
   top.upSubst = top.downSubst;
+  
+  forwards to defaultExpr();
 }
 
 abstract production termAttrValueReference
@@ -82,9 +80,6 @@ top::Expr ::= q::Decorated QName
 
   top.typerep = q.lookupValue.typerep;
 
-  top.isAppReference = false;
-  top.appReference = "";
-
   -- Yeah, it's a big if/then/else block, but these are all very similar and related.
   top.translation = if q.name == "lexeme" then "new common.StringCatter(lexeme)" else
                     if q.name == "line" then "virtualLocation.getLine()" else
@@ -93,5 +88,7 @@ top::Expr ::= q::Decorated QName
                     error("unknown actionTerminalReference " ++ q.name); -- should never be called, but here for safety
 
   top.upSubst = top.downSubst;
+  
+  forwards to defaultExpr();
 }
 
