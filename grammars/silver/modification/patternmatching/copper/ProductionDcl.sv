@@ -14,8 +14,6 @@ aspect production patternMatchRuntimeIsProd
 top::Expr ::= e::Expr t::String
 {
   top.translation = "(" ++ e.translation ++ ".undecorate() instanceof " ++ makeClassName(t) ++ ")";
-  top.isAppReference = false;
-  top.appReference = error("pmrip demanded appreference");
 }
 
 aspect production patternMatchRuntimeGetChild
@@ -25,6 +23,4 @@ top::Expr ::= e::Expr c::Integer t::TypeExp
        if t.isDecorable
        then {- type DecoratedNode -} e.translation ++ ".childDecorated(" ++ toString(c) ++ ")"
        else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".childAsIs(" ++ toString(c) ++ "))";
-  top.isAppReference = false;
-  top.appReference = error("pmrgc demanded appreference");
 }

@@ -18,16 +18,13 @@ concrete production letp
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
   top.errors <- la.errors;
-  
-  local attribute newEnv :: Decorated Env;
-  newEnv = newScopeEnv(la.defs, top.env);
-
-  forwards to e with {
-	env = newEnv;
-	downSubst = la.upSubst;
-  };
-  
+    
   la.downSubst = top.downSubst;
+  forward.downSubst = la.upSubst;
+  
+  forward.env = newScopeEnv(la.defs, top.env);
+
+  forwards to e;
 }
 
 concrete production assigns
@@ -98,5 +95,7 @@ top::Expr ::= q::Decorated QName
                 else q.lookupValue.typerep;
 
   top.upSubst = top.downSubst;
+  
+  forwards to defaultExpr();
 }
 

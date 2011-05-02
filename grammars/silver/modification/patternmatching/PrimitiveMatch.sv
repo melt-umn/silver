@@ -65,9 +65,9 @@ top::Expr ::= 'match' e::Expr 'return' t::Type 'with' pr::PrimPatterns 'else' '-
   pr.scrutineeType = scrutineeType;
   pr.returnType = t.typerep;
   
-  top.isAppReference = false;
-  top.appReference = error("mP demanded appreference");
   top.translation = "(" ++ t.typerep.transType ++ ")common.PatternLazy.runPattern(context, " ++ e.translation ++ ", " ++ wrapPatternLazy(pr) ++ ", " ++ wrapLazy(f) ++ ")";
+  
+  forwards to defaultExpr();
 }
 
 function wrapPatternLazy

@@ -2,13 +2,18 @@ grammar silver:definition:core;
 
 import silver:analysis:typechecking:core;
 
+abstract production defaultExpr
+top::Expr ::=
+{
+}
+
 concrete production nestedExpr
 top::Expr ::= '(' e::Expr ')'
 {
-  top.pp = "(" ++ e.pp ++ ")";
+  top.pp = "(" ++ forward.pp ++ ")";
   top.location = loc(top.file, $1.line, $1.column);
-  top.typerep = e.typerep;
-  top.errors := e.errors;
+  
+  forwards to e;
 }
 
 concrete production baseExpr
@@ -31,6 +36,8 @@ top::Expr ::= q::Decorated QName
   top.errors := []; -- The reason we don't error here: we only forward here
                     -- if the lookup failed, which already produced an error.
   top.typerep = errorType();
+  
+  forwards to defaultExpr();
 }
 
 abstract production childReference
@@ -42,6 +49,8 @@ top::Expr ::= q::Decorated QName
   top.typerep = if q.lookupValue.typerep.isDecorable
                 then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
                 else q.lookupValue.typerep;
+  
+  forwards to defaultExpr();
 }
 
 abstract production lhsReference
@@ -53,6 +62,8 @@ top::Expr ::= q::Decorated QName
   top.typerep = if q.lookupValue.typerep.isDecorable -- actually always decorable...
                 then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
                 else q.lookupValue.typerep;
+  
+  forwards to defaultExpr();
 }
 
 abstract production localReference
@@ -64,6 +75,8 @@ top::Expr ::= q::Decorated QName
   top.typerep = if q.lookupValue.typerep.isDecorable
                 then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
                 else q.lookupValue.typerep;
+  
+  forwards to defaultExpr();
 }
 
 abstract production forwardReference
@@ -75,6 +88,8 @@ top::Expr ::= q::Decorated QName
   top.typerep = if q.lookupValue.typerep.isDecorable -- actually always decorable...
                 then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
                 else q.lookupValue.typerep;
+  
+  forwards to defaultExpr();
 }
 
 abstract production productionReference
@@ -87,6 +102,8 @@ top::Expr ::= q::Decorated QName
 
   -- TODO: the freshening should probably be the responsibility of the thing in the environment, not here?
   top.typerep = freshenCompletely(q.lookupValue.typerep);
+  
+  forwards to defaultExpr();
 }
 
 abstract production functionReference
@@ -98,6 +115,8 @@ top::Expr ::= q::Decorated QName
   top.errors := [];
 
   top.typerep = freshenCompletely(q.lookupValue.typerep); -- TODO see above
+  
+  forwards to defaultExpr();
 }
 
 abstract production globalValueReference
@@ -109,6 +128,8 @@ top::Expr ::= q::Decorated QName
   top.errors := [];
 
   top.typerep = freshenCompletely(q.lookupValue.typerep); -- TODO see above
+  
+  forwards to defaultExpr();
 }
 
 concrete production concreteDecorateExpr
@@ -163,6 +184,8 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.errors := e.errors ++ es.errors; 
 
   top.typerep = performSubstitution(e.typerep, e.upSubst).outputType;
+  
+  forwards to defaultExpr();
 }
 
 abstract production functionApplicationDispatcher
@@ -173,6 +196,8 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.errors := e.errors ++ es.errors; 
 
   top.typerep = performSubstitution(e.typerep, e.upSubst).outputType;
+  
+  forwards to defaultExpr();
 }
 
 abstract production errorApplicationDispatcher
@@ -183,6 +208,8 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.errors := e.errors ++ [err(top.location, e.pp ++ " has type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ " and cannot be invoked as a function.")] ++ es.errors; -- TODO fix this.  Uhhh how? What's broken? My comments SUCK! Perhaps I didn't like doing the performsubst here
 
   top.typerep = errorType();
+  
+  forwards to defaultExpr();
 }
 
 concrete production attributeAccess
@@ -204,6 +231,8 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   
   top.typerep = q.lookupAttribute.typerep;
   top.errors := [err(top.location, "LHS of '.' is type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ " and cannot have attributes.")] ++ q.lookupAttribute.errors; -- TODO fix this. How? Why? What's wrong? Perhaps I didn't like doing the performsubst here
+  
+  forwards to defaultExpr();
 }
 
 abstract production undecoratedAccessDispatcher
@@ -247,6 +276,8 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.typerep = occursCheck.typerep;
   
   top.errors := occursCheck.errors;
+  
+  forwards to defaultExpr();
 }
 
 abstract production inhDNTAccessDispatcher
@@ -261,6 +292,8 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.typerep = occursCheck.typerep;
   
   top.errors := occursCheck.errors;
+  
+  forwards to defaultExpr();
 }
 
 abstract production errorDNTAccessDispatcher
@@ -271,6 +304,8 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.typerep = errorType();
   
   top.errors := []; -- empty because we only ever get here if lookup failed. see above.
+  
+  forwards to defaultExpr();
 }
 
 
@@ -290,6 +325,8 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
         if q.name == "lexeme" || q.name == "filename" || q.name == "line" || q.name == "column"
         then []
         else [err(q.location, q.name ++ " is not a terminal attribute")];
+  
+  forwards to defaultExpr();
 }
 
 concrete production decorateExprWithEmpty
@@ -308,6 +345,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.errors := e.errors ++ inh.errors;
   
   inh.decoratingnt = performSubstitution(e.typerep, e.upSubst);
+  
+  forwards to defaultExpr();
 }
 
 abstract production exprInhsEmpty
@@ -363,6 +402,8 @@ top::Expr ::= 'true'
   top.location = loc(top.file, $1.line, $1.column);
   top.errors := [];
   top.typerep = boolTypeExp();
+  
+  forwards to defaultExpr();
 }
 
 concrete production falseConst
@@ -372,6 +413,8 @@ top::Expr ::= 'false'
   top.location = loc(top.file, $1.line, $1.column);
   top.errors := [];
   top.typerep = boolTypeExp();
+  
+  forwards to defaultExpr();
 }
 
 concrete production and
@@ -382,6 +425,8 @@ top::Expr ::= e1::Expr '&&' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
+  
+  forwards to defaultExpr();
 }
 
 concrete production or
@@ -392,6 +437,8 @@ top::Expr ::= e1::Expr '||' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
+  
+  forwards to defaultExpr();
 }
 
 concrete production not
@@ -402,6 +449,8 @@ top::Expr ::= '!' e::Expr
 
   top.typerep = boolTypeExp();
   top.errors := e.errors;
+  
+  forwards to defaultExpr();
 }
 
 concrete production gt
@@ -412,6 +461,8 @@ top::Expr ::= e1::Expr '>' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
+  
+  forwards to defaultExpr();
 }
 
 concrete production lt
@@ -422,6 +473,8 @@ top::Expr ::= e1::Expr '<' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
+  
+  forwards to defaultExpr();
 }
 
 concrete production gteq
@@ -432,6 +485,8 @@ top::Expr ::= e1::Expr '>=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
+  
+  forwards to defaultExpr();
 }
 
 concrete production lteq
@@ -442,6 +497,8 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
+  
+  forwards to defaultExpr();
 }
 
 concrete production eqeq
@@ -452,6 +509,8 @@ top::Expr ::= e1::Expr '==' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
+  
+  forwards to defaultExpr();
 }
 
 concrete production neq
@@ -462,6 +521,8 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
+  
+  forwards to defaultExpr();
 }
 
 concrete production ifThenElse
@@ -473,6 +534,8 @@ precedence = 0
 
   top.errors := e1.errors ++ e2.errors ++ e3.errors;
   top.typerep = e2.typerep;
+  
+  forwards to defaultExpr();
 }
 
 concrete production intConst
@@ -483,6 +546,8 @@ top::Expr ::= i::Int_t
 
   top.errors := [];
   top.typerep = intTypeExp();
+  
+  forwards to defaultExpr();
 }
 
 concrete production floatConst
@@ -493,6 +558,8 @@ top::Expr ::= f::Float_t
 
   top.errors := [];
   top.typerep = floatTypeExp();
+  
+  forwards to defaultExpr();
 } 
 
 concrete production plus
@@ -503,6 +570,8 @@ top::Expr ::= e1::Expr '+' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
+  
+  forwards to defaultExpr();
 }
 
 concrete production minus
@@ -513,6 +582,8 @@ top::Expr ::= e1::Expr '-' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
+  
+  forwards to defaultExpr();
 }
 
 concrete production multiply
@@ -523,6 +594,8 @@ top::Expr ::= e1::Expr '*' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
+  
+  forwards to defaultExpr();
 }
 
 concrete production divide
@@ -533,6 +606,8 @@ top::Expr ::= e1::Expr '/' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
+  
+  forwards to defaultExpr();
 }
 
 concrete production neg
@@ -544,6 +619,8 @@ precedence = 13
 
   top.errors := e.errors;
   top.typerep = e.typerep;
+  
+  forwards to defaultExpr();
 }
 
 concrete production stringConst
@@ -554,6 +631,8 @@ top::Expr ::= s::String_t
 
   top.errors := [];
   top.typerep = stringTypeExp();
+  
+  forwards to defaultExpr();
 }
 
 concrete production plusPlus
@@ -575,6 +654,8 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = stringTypeExp();
+  
+  forwards to defaultExpr();
 }
 
 abstract production errorPlusPlus
@@ -585,6 +666,8 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 
   top.errors := [err(e1.location, prettyType(performSubstitution(e1.typerep, e1.upSubst)) ++ " is not a concatenable type.")] ++ e1.errors ++ e2.errors;
   top.typerep = errorType();
+  
+  forwards to defaultExpr();
 }
 
 

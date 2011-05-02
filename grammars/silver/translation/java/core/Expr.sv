@@ -12,17 +12,24 @@ TypeExp ::= e::Decorated Expr
 
 -- These attributes help us generate slightly less awful code, by not going through reflection for direct function/production calls.
 synthesized attribute isAppReference :: Boolean;
+synthesized attribute isStaticValue :: Boolean;
 synthesized attribute appReference :: String;
 
-attribute translation, isAppReference, appReference occurs on Expr, Exprs;
+attribute translation, isAppReference, isStaticValue, appReference occurs on Expr, Exprs;
 
---Base Expressions
+aspect production defaultExpr
+top::Expr ::=
+{
+  top.isAppReference = false;
+  -- deliberately leave appReference undefined.
+  top.isStaticValue = false;
+}
+
 aspect production nestedExpr
 top::Expr ::= '(' e::Expr ')'
 {
-  top.translation = "(" ++ e.translation ++ ")";
-  top.isAppReference = e.isAppReference;
-  top.appReference = e.appReference;
+  -- TODO: do we need this?
+  top.translation = "(" ++ forward.translation ++ ")";
 }
 
 -- TODO: these go through the process of decorating them, just to undecorate.
@@ -34,16 +41,11 @@ aspect production errorReference
 top::Expr ::= q::Decorated QName
 {
   top.translation = error("Demanded translation for " ++ q.pp ++ " at " ++ q.location.unparse);
-  top.isAppReference = error("Demanded iar for " ++ q.pp ++ " at " ++ q.location.unparse);
-  top.appReference = error("Demanded ar for " ++ q.pp ++ " at " ++ q.location.unparse);
 }
 
 aspect production childReference
 top::Expr ::= q::Decorated QName
 {
-  top.isAppReference = false;
-  top.appReference = "";
-
   local attribute childIDref :: String;
   childIDref = makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName;
 
@@ -60,9 +62,6 @@ top::Expr ::= q::Decorated QName
 aspect production lhsReference
 top::Expr ::= q::Decorated QName
 {
-  top.isAppReference = false;
-  top.appReference = "";
-
   -- always a node/decoratednode, so there's no asis case to consider.
 
   top.translation =
@@ -74,9 +73,6 @@ top::Expr ::= q::Decorated QName
 aspect production localReference
 top::Expr ::= q::Decorated QName
 {
-  top.isAppReference = false;
-  top.appReference = "";
-
   top.translation =
     if q.lookupValue.typerep.isDecorable
     then if finalType(top).isDecorable
@@ -108,9 +104,6 @@ top::Expr ::= q::Decorated QName
 aspect production forwardReference
 top::Expr ::= q::Decorated QName
 {
-  top.isAppReference = false;
-  top.appReference = "";
-  
   -- always a node/decoratednode, so there's no asis case to consider.
 
   top.translation =
@@ -122,9 +115,6 @@ top::Expr ::= q::Decorated QName
 aspect production globalValueReference
 top::Expr ::= q::Decorated QName
 {
-  top.isAppReference = false;
-  top.appReference = "";
-  
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ 
                       makeName(q.lookupValue.dcl.sourceGrammar) ++ ".Init." ++ fullNameToShort(q.lookupValue.fullName) ++ ".eval())";
 }
@@ -132,9 +122,6 @@ top::Expr ::= q::Decorated QName
 aspect production productionApplicationDispatcher
 top::Expr ::= e::Decorated Expr es::Exprs
 {
-  top.isAppReference = false;
-  top.appReference = "";
-
   top.translation = if e.isAppReference 
                     then "((" ++ finalType(top).transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ "))"
                     else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".construct(new Object[]{" ++ es.translation ++ "}))";
@@ -143,9 +130,6 @@ top::Expr ::= e::Decorated Expr es::Exprs
 aspect production functionApplicationDispatcher
 top::Expr ::= e::Decorated Expr es::Exprs
 {
-  top.isAppReference = false;
-  top.appReference = "";
-
   top.translation = if e.isAppReference 
                     then "((" ++ finalType(top).transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ ").doReturn())"
                     else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".construct(new Object[]{" ++ es.translation ++ "}).doReturn())";
@@ -154,27 +138,18 @@ top::Expr ::= e::Decorated Expr es::Exprs
 aspect production synDNTAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.isAppReference = false;
-  top.appReference = "";
-
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".synthesized(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
 }
 
 aspect production inhDNTAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.isAppReference = false;
-  top.appReference = "";
-
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".inherited(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
 }
 
 aspect production terminalAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.isAppReference = false;
-  top.appReference = "";
-
   -- TODO: we should maybe map the name properly to the field we access?
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ "." ++ q.name ++ ")";
 }
@@ -182,9 +157,6 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
-  top.isAppReference = false;
-  top.appReference = "";
-
   top.translation = e.translation ++ 
     case inh of
       exprInhsEmpty() -> ".decorate()" -- EXPLICITLY NOT PASSING PARENT POINTER (context) HERE!
@@ -239,12 +211,14 @@ top::ExprLHSExpr ::= q::QName
 aspect production trueConst
 top::Expr ::='true'
 {
+  top.isStaticValue = true;
   top.translation = "true";
 }
 
 aspect production falseConst
 top::Expr ::= 'false'
 {
+  top.isStaticValue = true;
   top.translation = "false";
 }
 
@@ -331,24 +305,23 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
-  top.isAppReference = false; -- Can't forget this! :)
-  top.appReference = "";
   top.translation = "(" ++ e1.translation ++ " ? " ++ e2.translation ++ " : " ++ e3.translation ++ ")";
 }
 
 aspect production intConst
 top::Expr ::= i::Int_t
 {
+  top.isStaticValue = true;
   top.translation = "Integer.valueOf((int)" ++ i.lexeme ++ ")";
 }
 
 aspect production floatConst
 top::Expr ::= f::Float_t
 {
+  top.isStaticValue = true;
   top.translation = "Float.valueOf((float)" ++ f.lexeme ++ ")";
-} 
+}
 
--- TODO: BUG: these aren't working for floats!
 aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
@@ -398,6 +371,7 @@ top::Expr ::= '-' e::Expr
 aspect production stringConst
 top::Expr ::= s::String_t
 {
+  top.isStaticValue = true;
   top.translation = "(new common.StringCatter(" ++ s.lexeme ++ "))";
 }
 
@@ -441,7 +415,8 @@ function wrapThunks
 function wrapThunk
 String ::= original::Decorated Expr beLazy::Boolean
 {
-  return if beLazy
+  -- TODO: in the future, we could also ask "isStaticReference" and copy the thunk, instead of creating a new one that just evaluates the existing.
+  return if beLazy && !original.isStaticValue
          then "new common.Closure(context) { public final Object eval() { return " ++ original.translation ++ "; } }"
          else original.translation;
 }
