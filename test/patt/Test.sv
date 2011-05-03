@@ -1,7 +1,7 @@
 grammar patt;
 
-import lib:testing ;
-import lib:extcore ;
+imports lib:testing ;
+imports lib:extcore ;
 
 
 nonterminal T;

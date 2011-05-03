@@ -14,18 +14,25 @@ terminal Of_kwd 'of' lexer classes {KEYWORD};
 terminal Arrow_kwd '->' precedence = 7 ;
 terminal Vbar_kwd '|' precedence = 3 ;
 
--- The type of the things that should appear in the patterns of matchrules
-autocopy attribute typerep_down :: TypeExp ;
--- list of the above for pattern lists
-inherited attribute typereps_down :: [ TypeExp ] ;
+{--
+ - The type this pattern is matching on.
+ - Invariant: if it's a nonterminal type, then it's decorated. Always.
+ -}
+inherited attribute patternType :: TypeExp ;
+{--
+ - For pattern lists.
+ - @see patternType
+ -}
+autocopy attribute patternListTypes :: [ TypeExp ] ;
+
 -- How to access the thing we're testing in Pattern
-inherited attribute base_tree :: Expr ;
--- What child # are we (for PLs)
-inherited attribute child_number :: Integer;
+inherited attribute patternScrutinee :: Expr ;
+-- ditto, pattern lists
+autocopy attribute patternListScrutinees :: [Expr];
 
 -- Built up result of how to do the pattern match
 synthesized attribute translation_tree :: Expr ;
--- How to test if base_tree matches this pattern
+-- How to test if patternScrutinee matches this pattern
 synthesized attribute cond_tree :: Expr ;
 -- What to evaluate to if it does
 synthesized attribute then_tree :: Expr ;
@@ -34,137 +41,189 @@ synthesized attribute letAssigns_tree :: [ AssignExpr ] ;
 
 -- MR | ...
 nonterminal MRuleList with pp, grammarName, env, file, location, typerep, errors, signature, upSubst, downSubst, finalSubst,
-                           typerep_down, translation_tree, base_tree, blockContext ;
+                           patternListTypes, translation_tree, patternListScrutinees, blockContext ;
 -- P -> E
 nonterminal MatchRule with pp, grammarName, env, file, location, typerep, errors, signature, upSubst, downSubst, finalSubst,
-                           typerep_down, cond_tree, then_tree, base_tree, blockContext ;
+                           patternListTypes, cond_tree, then_tree, patternListScrutinees, blockContext ;
 
 -- prod(PL) | int | string | bool | ...
 nonterminal Pattern with pp, grammarName, env, file, location, defs, errors, signature, upSubst, downSubst, finalSubst,
-                         typerep_down, cond_tree, letAssigns_tree, base_tree, blockContext ;
+                         patternType, cond_tree, letAssigns_tree, patternScrutinee, blockContext ;
 -- P , ...
 nonterminal PatternList with pp, grammarName, env, file, location, defs, errors, signature, upSubst, downSubst, finalSubst,
-                             typereps_down, cond_tree, letAssigns_tree, base_tree, child_number, blockContext ;
+                             patternListTypes, cond_tree, letAssigns_tree, patternListScrutinees, blockContext ;
 
 concrete production caseExpr_c
-top::Expr ::= 'case' e1::Expr 'of' ml::MRuleList 'end'
+top::Expr ::= 'case' es::Exprs 'of' ml::MRuleList 'end'
 { 
-  top.pp = "case " ++ e1.pp ++ " of " ++ ml.pp ;  
+  top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";  
   top.location = loc(top.file, $1.line, $1.column);
 
-  -- type checking
   top.typerep = ml.typerep;
+
+  top.errors := if null(ml.errors)
+                then forward.errors
+                else es.errors ++ ml.errors;
+
+  ml.patternListTypes = map(ensureDecoratedType, getTypesExprs(es.exprs));
+  ml.patternListScrutinees = map(ensureDecoratedExpr, es.exprs);
   
-  local attribute caseExpressionType :: TypeExp;
-  caseExpressionType = performSubstitution(e1.typerep, e1.upSubst);
-
-  ml.typerep_down = if caseExpressionType.isDecorated
-                    then caseExpressionType.decoratedType
-                    else caseExpressionType;
-
-  -- NOTE THAT WE'RE HIDING ERRORS HERE! TODO FIXME NOW WE'RE NOT I GUESS?
-  top.errors <- e1.errors ++ ml.errors;
+  forwards to ml.translation_tree;
   
-  local attribute unique_id :: Name;
-  unique_id = nameIdLower(terminal(IdLower_t,"__ptmp" ++ toString(genInt())));
-
-  ml.base_tree = baseExpr(qNameId(unique_id));
-
-  forwards to letp('let', assignListSingle(
-                assignExpr(unique_id,'::',typerepType(
-                 if caseExpressionType.isDecorable
-                 then decoratedTypeExp(caseExpressionType)
-                 else caseExpressionType),'=',
-
-  -- The object in question. If it's undecorated, go decorate it for consistency.
-                 if caseExpressionType.isDecorable
-                 then decorateExprWithEmpty('decorate', e1, 'with', '{', '}')
-                 else e1)),
-                
-                'in', ml.translation_tree, 'end');
-  
-  e1.downSubst = top.downSubst;
-  ml.downSubst = e1.upSubst;
+  -- propagate typing information :
+  es.downSubst = top.downSubst;
+  ml.downSubst = es.upSubst;
   forward.downSubst = ml.upSubst;
   -- top.upSubst = forward.upSubst; -- implied by forwarding...
 }
 
 concrete production mRuleList_one
-ml::MRuleList ::= m::MatchRule
+top::MRuleList ::= m::MatchRule
 {
-  ml.pp = m.pp ;
-  ml.errors := m.errors ;
-  ml.location = m.location ;
-  ml.typerep = m.typerep;
+  top.pp = m.pp;
+  top.errors := m.errors;
+  top.location = m.location;
+  top.typerep = m.typerep;
 
-  m.base_tree = ml.base_tree ;
-
-  ml.translation_tree = ifThenElse('if', m.cond_tree,
+  top.translation_tree = ifThenElse('if', m.cond_tree,
                                    'then', m.then_tree,
                                    'else', productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t,"core:error")))), '(', exprsSingle(stringConst(terminal(String_t, "\"Error: pattern match failed.\\n\""))), ')')) ;
-                                   
-                                   
 
-  m.downSubst = ml.downSubst;
-  ml.upSubst = m.upSubst;
+  m.downSubst = top.downSubst;
+  top.upSubst = m.upSubst;
 }
 
 concrete production mRuleList_cons
-ml::MRuleList ::= h::MatchRule '|' t::MRuleList
+top::MRuleList ::= h::MatchRule '|' t::MRuleList
 {
-  ml.pp = h.pp ++ " | " ++ t.pp ;
-  ml.errors := h.errors ++ t.errors ;
-  ml.location = h.location ;  
-  ml.typerep = h.typerep;
+  top.pp = h.pp ++ " | " ++ t.pp;
+  top.errors := h.errors ++ t.errors;
+  top.location = h.location;
+  top.typerep = h.typerep;
 
-  -- The thing we're examining doesn't change
-  h.base_tree = ml.base_tree ;
-  t.base_tree = ml.base_tree ;
-  
-  ml.translation_tree = ifThenElse('if', h.cond_tree,
+  top.translation_tree = ifThenElse('if', h.cond_tree,
                                    'then', h.then_tree,
                                    'else', t.translation_tree) ;
 
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = ml.finalSubst;
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  h.downSubst = ml.downSubst;
+  h.downSubst = top.downSubst;
   t.downSubst = h.upSubst;
   errCheck1.downSubst = t.upSubst;
-  ml.upSubst = errCheck1.upSubst;
+  top.upSubst = errCheck1.upSubst;
   
   errCheck1 = check(h.typerep, t.typerep);
-  ml.errors <-
+  top.errors <-
        if errCheck1.typeerror
-       then [err(ml.location, "Pattern matching case type mismatch. Rule has type " ++ errCheck1.leftpp ++ " while remaining rules are type " ++ errCheck1.rightpp)]
+       then [err(top.location, "Pattern matching case type mismatch. Rule has type " ++ errCheck1.leftpp ++ " while remaining rules are type " ++ errCheck1.rightpp)]
        else [];
 }
 
 concrete production matchRule
-mr::MatchRule ::= pt::Pattern '->' e::Expr
+top::MatchRule ::= pt::PatternList '->' e::Expr
 {
-  mr.pp = pt.pp ++ " -> " ++ e.pp ;
-  mr.errors := pt.errors ++ e.errors ;
-  mr.location = e.location ;  
-  mr.typerep = e.typerep ;
+  top.pp = pt.pp ++ " -> " ++ e.pp;
+  top.errors := pt.errors ++ e.errors;
+  top.location = e.location;
+  top.typerep = e.typerep;
 
   local attribute newEnv::Decorated Env;
-  newEnv = newScopeEnv(pt.defs, mr.env); 
+  newEnv = newScopeEnv(pt.defs, top.env); 
 
   e.env = newEnv;
   pt.env = newEnv;
 
-  pt.base_tree = mr.base_tree;
+  top.cond_tree = pt.cond_tree ;
+  top.then_tree = if null(pt.letAssigns_tree)
+                  then e
+                  else letp('let', toAssigns(pt.letAssigns_tree),
+                            'in', e, 'end');
 
-  mr.cond_tree = pt.cond_tree ;
-  mr.then_tree = if null(pt.letAssigns_tree) then e
-                 else letp('let', toAssigns(pt.letAssigns_tree),
-                           'in', e, 'end');
-
-  pt.downSubst = mr.downSubst;
+  pt.downSubst = top.downSubst;
   e.downSubst = pt.upSubst;
-  mr.upSubst = e.upSubst;
+  top.upSubst = e.upSubst;
 }
 
+
+concrete production patternList_one
+top::PatternList ::= p::Pattern
+{
+  top.pp = p.pp;
+  top.errors := p.errors;
+  top.defs = p.defs;
+  top.location = p.location;
+
+  p.patternType = if !null(top.patternListTypes) 
+                  then head(top.patternListTypes) 
+                  else errorType();
+  p.patternScrutinee = if !null(top.patternListScrutinees)
+                       then head(top.patternListScrutinees)
+                       else baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "no_such_value")))); -- TODO: eh... maybe this is okay?
+
+  top.errors <-
+       if null(top.patternListTypes)
+       then [err(top.location, "More patterns than expected in pattern list")] 
+       else if length(top.patternListTypes) > 1
+       then [err(top.location, "Fewer patterns than expected in pattern list")]
+       else [];
+
+  top.cond_tree = p.cond_tree;
+  top.letAssigns_tree = p.letAssigns_tree;
+  
+  p.downSubst = top.downSubst;
+  top.upSubst = p.upSubst;
+}
+
+concrete production patternList_more
+top::PatternList ::= p::Pattern ',' ps1::PatternList
+{
+  top.pp = ps1.pp ++ ", " ++ p.pp;
+  top.errors := p.errors ++ ps1.errors;
+  top.defs = appendDefs(ps1.defs, p.defs);
+  top.location = p.location;
+
+  p.patternType = if !null(top.patternListTypes) 
+                  then head(top.patternListTypes) 
+                  else errorType();
+  p.patternScrutinee = if !null(top.patternListScrutinees)
+                       then head(top.patternListScrutinees)
+                       else baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "no_such_value")))); -- TODO: eh... maybe this is okay?
+
+  ps1.patternListTypes = if !null(top.patternListTypes)
+                         then tail(top.patternListTypes) 
+                         else [];
+  ps1.patternListScrutinees = if !null(top.patternListScrutinees)
+                              then tail(top.patternListScrutinees)
+                              else [];
+
+  top.cond_tree = and(p.cond_tree, terminal(And_t, "&&"), ps1.cond_tree) ;
+  top.letAssigns_tree = p.letAssigns_tree ++ ps1.letAssigns_tree ;
+
+  p.downSubst = top.downSubst;
+  ps1.downSubst = p.upSubst;
+  top.upSubst = ps1.upSubst;
+}
+
+-- lol, dangling comma bug TODO
+concrete production PatternList_nil
+top::PatternList ::= 
+{
+  top.pp = "";
+  top.errors := [];
+  top.defs = emptyDefs();
+  top.location = loc("PatternList_nill", -1, -1);
+
+  top.errors <- if null(top.patternListTypes)
+                then []
+                else [err(top.location, "Fewer patterns than expected in pattern list")];  -- TODO BUG: no location
+
+  top.cond_tree = trueConst(terminal(True_kwd, "true"));
+  top.letAssigns_tree = [];
+
+  top.upSubst = top.downSubst;
+}
+
+--------------------------------------------------------------------------------
 
 
 concrete production prodAppPattern
@@ -178,14 +237,16 @@ p::Pattern ::= prod::QName '(' ps::PatternList ')'
   local attribute prod_type :: TypeExp;
   prod_type = freshenCompletely(prod.lookupValue.typerep);
   
-  ps.typereps_down = prod_type.inputTypes;
-
-  ps.base_tree = p.base_tree;
-  ps.child_number = 0;
+  -- Perform subst after unifying result type, then perform decoration.
+  ps.patternListTypes = map(ensureDecoratedType, mapSubst(prod_type.inputTypes, errCheck1.upSubst));
+  -- See this function for more info, but summary: 3 cases:
+  --  case 2: sig nt.      here nt     = fetch-decorated
+  --  case 3: sig non-nt.  here non-nt = fetch-asis
+  --  case 4: sign non-nt. here nt     = fetch-asis AND THEN DECORATE
+  ps.patternListScrutinees = generatePLSFromValNType(p.patternScrutinee, 0, prod_type.inputTypes, errCheck1.upSubst);
  
-  p.cond_tree = and(patternMatchRuntimeIsProd(p.base_tree, prod.lookupValue.fullName),
-                    '&&',
-                    ps.cond_tree) ;
+  p.cond_tree = and(patternMatchRuntimeIsProd(p.patternScrutinee, prod.lookupValue.fullName),
+                    '&&', ps.cond_tree);
 
   p.letAssigns_tree = ps.letAssigns_tree ;
   
@@ -196,7 +257,7 @@ p::Pattern ::= prod::QName '(' ps::PatternList ')'
   ps.downSubst = errCheck1.upSubst;
   p.upSubst = ps.upSubst;
   
-  errCheck1 = check(prod_type.outputType, if performSubstitution(p.typerep_down,p.downSubst).isDecorated then performSubstitution(p.typerep_down,p.downSubst).decoratedType else p.typerep_down); -- hacky, to deal with Dec params TODO
+  errCheck1 = check(decoratedTypeExp(prod_type.outputType), p.patternType);
   p.errors <- if errCheck1.typeerror
               then [err(prod.location, prod.pp ++ " constructs type " ++ errCheck1.leftpp ++ " but the pattern matching is on type " ++ errCheck1.rightpp)]
               else [];
@@ -217,7 +278,7 @@ p::Pattern ::= num::Int_t
 
   p.defs = emptyDefs();
 
-  p.cond_tree = eqeq(p.base_tree, terminal(EQEQ_t, "=="), intConst(num)) ;
+  p.cond_tree = eqeq(p.patternScrutinee, terminal(EQEQ_t, "=="), intConst(num)) ;
   p.letAssigns_tree = [] ; 
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
@@ -225,7 +286,7 @@ p::Pattern ::= num::Int_t
   errCheck1.downSubst = p.downSubst;
   p.upSubst = errCheck1.upSubst;
   
-  errCheck1 = check(intTypeExp(), p.typerep_down);
+  errCheck1 = check(intTypeExp(), p.patternType);
   p.errors <- if errCheck1.typeerror
               then [err(p.location, "Integer value appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
               else [];
@@ -240,7 +301,7 @@ p::Pattern ::= str::String_t
 
   p.defs = emptyDefs();
 
-  p.cond_tree = eqeq(p.base_tree, terminal(EQEQ_t, "=="), stringConst(str)) ;
+  p.cond_tree = eqeq(p.patternScrutinee, terminal(EQEQ_t, "=="), stringConst(str)) ;
   p.letAssigns_tree = [] ;
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
@@ -248,7 +309,7 @@ p::Pattern ::= str::String_t
   errCheck1.downSubst = p.downSubst;
   p.upSubst = errCheck1.upSubst;
   
-  errCheck1 = check(stringTypeExp(), p.typerep_down);
+  errCheck1 = check(stringTypeExp(), p.patternType);
   p.errors <- if errCheck1.typeerror
               then [err(p.location, "String value appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
               else [];
@@ -263,7 +324,7 @@ p::Pattern ::= 'true'
 
   p.defs = emptyDefs() ;
 
-  p.cond_tree = eqeq(p.base_tree, terminal(EQEQ_t, "=="), trueConst(terminal(True_kwd, "true"))) ;
+  p.cond_tree = eqeq(p.patternScrutinee, terminal(EQEQ_t, "=="), trueConst(terminal(True_kwd, "true"))) ;
   p.letAssigns_tree = [] ; 
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
@@ -271,7 +332,7 @@ p::Pattern ::= 'true'
   errCheck1.downSubst = p.downSubst;
   p.upSubst = errCheck1.upSubst;
   
-  errCheck1 = check(boolTypeExp(), p.typerep_down);
+  errCheck1 = check(boolTypeExp(), p.patternType);
   p.errors <- if errCheck1.typeerror
               then [err(p.location, "Boolean type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
               else [];
@@ -286,7 +347,7 @@ p::Pattern ::= 'false'
 
   p.defs = emptyDefs();
 
-  p.cond_tree = eqeq(p.base_tree, terminal(EQEQ_t, "=="), falseConst(terminal(False_kwd, "false"))) ;
+  p.cond_tree = eqeq(p.patternScrutinee, terminal(EQEQ_t, "=="), falseConst(terminal(False_kwd, "false"))) ;
   p.letAssigns_tree = [] ;
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
@@ -294,7 +355,7 @@ p::Pattern ::= 'false'
   errCheck1.downSubst = p.downSubst;
   p.upSubst = errCheck1.upSubst;
   
-  errCheck1 = check(boolTypeExp(), p.typerep_down);
+  errCheck1 = check(boolTypeExp(), p.patternType);
   p.errors <- if errCheck1.typeerror
               then [err(p.location, "Boolean type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
               else [];
@@ -310,7 +371,7 @@ p::Pattern ::= '[' ']'
   p.defs = emptyDefs();
 
   p.cond_tree = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:null")))),
-                    '(', exprsSingle(p.base_tree), ')');
+                    '(', exprsSingle(p.patternScrutinee), ')');
   p.letAssigns_tree = [] ;
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
@@ -318,7 +379,7 @@ p::Pattern ::= '[' ']'
   errCheck1.downSubst = p.downSubst;
   p.upSubst = errCheck1.upSubst;
   
-  errCheck1 = check(listTypeExp(errorType()), p.typerep_down);
+  errCheck1 = check(listTypeExp(errorType()), p.patternType);
   p.errors <- if errCheck1.typeerror
               then [err(p.location, "List type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
               else [];
@@ -334,16 +395,16 @@ p::Pattern ::= hp::Pattern '::' tp::Pattern
   p.defs = appendDefs(hp.defs, tp.defs) ;
 
   p.cond_tree = not('!', productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:null")))),
-                    '(', exprsSingle(p.base_tree), ')'));
+                    '(', exprsSingle(p.patternScrutinee), ')'));
   p.letAssigns_tree = [] ;
 
-  hp.typerep_down = freeVar; -- unified below...
-  tp.typerep_down = p.typerep_down;
+  hp.patternType = freeVar; -- unified below...
+  tp.patternType = p.patternType;
   
-  hp.base_tree = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:head")))),
-                    '(', exprsSingle(p.base_tree), ')');
-  tp.base_tree = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:tail")))),
-                    '(', exprsSingle(p.base_tree), ')');
+  hp.patternScrutinee = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:head")))),
+                    '(', exprsSingle(p.patternScrutinee), ')');
+  tp.patternScrutinee = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:tail")))),
+                    '(', exprsSingle(p.patternScrutinee), ')');
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
   local attribute freeVar :: TypeExp; freeVar = errorType();
@@ -353,7 +414,7 @@ p::Pattern ::= hp::Pattern '::' tp::Pattern
   tp.downSubst = hp.upSubst;
   p.upSubst = tp.upSubst;
   
-  errCheck1 = check(listTypeExp(freeVar), p.typerep_down);
+  errCheck1 = check(listTypeExp(freeVar), p.patternType);
   p.errors <- if errCheck1.typeerror
               then [err(p.location, "List type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
               else [];
@@ -377,28 +438,10 @@ p::Pattern ::= '_'
 concrete production varPattern
 p::Pattern ::= v::Name
 {
-  p.pp = v.name ;
+  p.pp = v.name;
   p.location = v.location;
 
--- TODO: need to autocopy down a boolean that says "should I be decorated or undecorated?"
--- Since if we're pattern matching on something that's undecorated, we probably shouldn't produce decorated results here
--- This is a huge corner case though, so meh.
-
-  local attribute proto_type :: TypeExp; -- no pun intended
-  proto_type = performSubstitution(p.typerep_down, p.downSubst);
-  
-  local attribute var_type :: TypeExp ;
-  var_type = if proto_type.isDecorable
-             then decoratedTypeExp(proto_type)
-             else proto_type;
-  
-  -- Notice that var_type is Decorated. This means that
-  -- foo(v)  produces a binding like
-  -- let v :: Decorated Bar = ....
-  
-  -- lets now have auto-undec behavior so that we don't need to pointlessly 'new' things
-  
-  p.defs = addLexicalLocalDcl(p.grammarName, v.location, v.name, var_type, emptyDefs());
+  p.defs = addLexicalLocalDcl(p.grammarName, v.location, v.name, p.patternType, emptyDefs());
 
   p.errors :=
         if length(getValueDclAll(v.name, p.env)) > 1
@@ -407,89 +450,9 @@ p::Pattern ::= v::Name
 
   p.cond_tree = trueConst('true') ;
 
-  p.letAssigns_tree = [ assignExpr(v, '::', typerepType(var_type), '=', p.base_tree) ] ;
+  p.letAssigns_tree = [ assignExpr(v, '::', typerepType(p.patternType), '=', p.patternScrutinee) ] ;
 
   p.upSubst = p.downSubst;
-}
-
-
-concrete production patternList_one
-ps::PatternList ::= p::Pattern
-{
-  ps.pp = p.pp ;
-  ps.errors := p.errors ;
-  ps.defs = p.defs ;
-  ps.location = p.location ;
-
-  p.typerep_down = if ! null(ps.typereps_down) 
-                   then head(ps.typereps_down) 
-                   else errorType() ; 
-
-  ps.errors <-
-       if null(ps.typereps_down)
-       then [err(ps.location, "Production call in pattern has too many arguments.")] 
-       else if length(ps.typereps_down) > 1
-       then [err(ps.location, "Production call in pattern has too few arguments.")]
-       else [];
-
-  p.base_tree = patternMatchRuntimeGetChild(ps.base_tree, ps.child_number, performSubstitution(p.typerep_down, ps.upSubst));
-
-  ps.cond_tree = p.cond_tree ;
-  ps.letAssigns_tree = p.letAssigns_tree ;
-  
-  p.downSubst = ps.downSubst;
-  ps.upSubst = p.upSubst;
-}
-
-concrete production patternList_more
-ps::PatternList ::= p::Pattern ',' ps1::PatternList
-{
-  ps.pp = ps1.pp ++ ", " ++ p.pp ;
-  ps.errors := p.errors ++ ps1.errors ;
-  ps.defs = appendDefs(ps1.defs, p.defs) ;
-  ps.location = p.location ;
-
-  p.typerep_down = if ! null(ps.typereps_down)
-                   then head(ps.typereps_down) 
-                   else errorType();
-  ps1.typereps_down = if ! null(ps.typereps_down)
-                      then tail(ps.typereps_down) 
-                      else [] ;
-
-  ps.errors <-
-       if null(ps.typereps_down)
-       then [err(ps.location, "Production call in pattern has too many arguments.")]
-       else [];
-
-  p.base_tree = patternMatchRuntimeGetChild(ps.base_tree, ps.child_number, performSubstitution(p.typerep_down, ps.upSubst));
-  ps1.base_tree = ps.base_tree;
-  ps1.child_number = ps.child_number + 1;
-
-  ps.cond_tree = and(p.cond_tree, terminal(And_t, "&&"), ps1.cond_tree) ;
-  ps.letAssigns_tree = p.letAssigns_tree ++ ps1.letAssigns_tree ;
-
-  p.downSubst = ps.downSubst;
-  ps1.downSubst = p.upSubst;
-  ps.upSubst = ps1.upSubst;
-}
-
--- lol, dangling comma bug TODO
-concrete production PatternList_nil
-ps::PatternList ::= 
-{
-  ps.pp = "" ;
-  ps.errors := [] ;
-  ps.defs = emptyDefs() ; 
-  ps.location = loc("PatternList_nill", -1, -1) ;
-
-  ps.errors <- if null(ps.typereps_down)
-               then []
-               else [err(ps.location, "Expecting more arguments for production call pattern.")] ;
-
-  ps.cond_tree = trueConst(terminal(True_kwd, "true")) ;
-  ps.letAssigns_tree = [] ; 
-
-  ps.upSubst = ps.downSubst;
 }
 
 ----------------------------------------------------
@@ -503,6 +466,36 @@ LetAssigns ::= ls1::[AssignExpr]
          else assigns(head(ls1), terminal(Comma_t, ","), toAssigns(tail(ls1))) ;
 }
 
+function ensureDecoratedExpr
+Expr ::= e::Decorated Expr
+{
+  local attribute et :: TypeExp;
+  et = performSubstitution(e.typerep, e.upSubst);
+
+  return if et.isDecorable
+         then decorateExprWithEmpty('decorate', new(e), 'with', '{', '}')
+         else new(e);
+}
+function ensureDecoratedType
+TypeExp ::= t::TypeExp
+{
+  return if t.isDecorable
+         then decoratedTypeExp(t)
+         else t;
+}
+
+function generatePLSFromValNType
+[Expr] ::= e::Expr i::Integer t::[TypeExp] s::Substitution
+{
+  -- If the type is not an NT, but we learn it's an NT from type info,
+  -- THEN decorate the result, but fetch it with its original type
+  -- ELSE fetch normally.
+  return if !null(t)
+         then if !head(t).isDecorable && performSubstitution(head(t),s).isDecorable
+              then decorateExprWithEmpty('decorate', patternMatchRuntimeGetChild(e, i, head(t)), 'with', '{', '}') :: generatePLSFromValNType(e,i+1,tail(t),s)
+              else patternMatchRuntimeGetChild(e, i, head(t)) :: generatePLSFromValNType(e,i+1,tail(t),s)
+         else [];
+}
 --------------------------------------------------------------------------------
 
 -- The work horses
@@ -526,6 +519,12 @@ top::Expr ::= e::Expr t::String
   -- MAJOR ASSUMPTION: this error, if it happens, is already caught. Ignore it.
 }
 
+{--
+ - Fetch the child. Will decorate if it's an undecorated child.
+ - Will NOT decorate if it's a pattern variable. Must be decorated elsewhere for pattern matching
+ -
+ - @param t The type of the child *AS IT APPEARS IN THE PRODUCTION SIGNATURE*
+ -}
 abstract production patternMatchRuntimeGetChild
 top::Expr ::= e::Expr c::Integer t::TypeExp
 {
