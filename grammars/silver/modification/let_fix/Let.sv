@@ -17,6 +17,7 @@ top::Name ::= 'let'
 concrete production letp
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
+  top.pp = "let " ++ la.pp ++ " in " ++ forward.pp ++ " end";
   top.errors <- la.errors;
     
   la.downSubst = top.downSubst;
@@ -56,7 +57,7 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
   production attribute fName :: String;
   fName = top.signature.fullName ++ ":local:" ++ id.name;
 
-  top.pp = id.name ++ " = " ++ e.pp;
+  top.pp = id.name ++ " :: " ++ t.pp ++ " = " ++ e.pp;
   top.defs = addLexicalLocalDcl(top.grammarName, id.location, fName, t.typerep, emptyDefs());
   top.errors := t.errors ++ e.errors;
   

@@ -19,6 +19,8 @@ top::RegExpr ::= t::Terminal_t
 concrete production productionRhsElemEasyReg
 top::ProductionRHSElem ::= id::Name '::' reg::RegExpr
 {
+  top.pp = id.pp ++ "::" ++ reg.pp;
+  
   local attribute regName :: [Decorated DclInfo];
   regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
@@ -36,6 +38,8 @@ top::ProductionRHSElem ::= id::Name '::' reg::RegExpr
 concrete production productionRhsElemTypeEasyReg
 top::ProductionRHSElem ::= reg::RegExpr
 {
+  top.pp = reg.pp;
+  
   local attribute regName :: [Decorated DclInfo];
   regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
@@ -53,6 +57,8 @@ top::ProductionRHSElem ::= reg::RegExpr
 concrete production aspectRHSElemEasyReg
 top::AspectRHSElem ::= reg::RegExpr
 {
+  top.pp = reg.pp;
+  
   local attribute regName :: [Decorated DclInfo];
   regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
@@ -70,6 +76,8 @@ top::AspectRHSElem ::= reg::RegExpr
 concrete production aspectRHSElemTypedEasyReg
 top::AspectRHSElem ::= id::Name '::' reg::RegExpr
 {
+  top.pp = id.pp ++ " :: " ++ reg.pp;
+  
   local attribute regName :: [Decorated DclInfo];
   regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
@@ -87,6 +95,8 @@ top::AspectRHSElem ::= id::Name '::' reg::RegExpr
 concrete production terminalExprReg
 top::Expr ::= t::RegExpr
 {
+  top.pp = t.pp;
+  
   local attribute regExpPat :: String;
   regExpPat = t.terminalRegExprSpec.regString;
 
