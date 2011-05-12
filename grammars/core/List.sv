@@ -244,6 +244,25 @@ function mergeBy -- do not use
               else head(l2) :: mergeBy(lte, l1, tail(l2)) ;
 }
 
+function groupBy
+[[a]] ::= eq::Function(Boolean ::= a a) l::[a]
+{
+  local attribute helpercall :: Pair<[a] [a]>;
+  helpercall = groupByHelp(eq, head(l), l);
+  
+  return if null(l) then [] else helpercall.fst :: if null(helpercall.snd) then [] else groupBy(eq, helpercall.snd);
+}
+function groupByHelp
+Pair<[a] [a]> ::= eq::Function(Boolean ::= a a) f::a l::[a]
+{
+  local attribute recurse :: Pair<[a] [a]>;
+  recurse = groupByHelp(eq, f, tail(l));
+  
+  return if null(l) || !eq(f, head(l))
+         then pair([], l)
+         else pair(head(l) :: recurse.fst, recurse.snd);
+}
+
 function intersperse 
 [a] ::= sep::a xs::[a]
 { return if null(xs) then [ ]

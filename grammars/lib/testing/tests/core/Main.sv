@@ -102,9 +102,51 @@ equalityTest ( foldr1(sub,[10,4,2]), 8,
 equalityTest ( foldl1(sub,[10,4,2]), 4, 
                Integer, core_tests ) ;
 
-
 function sub  Integer ::= x::Integer y::Integer
 { return x - y ; }
+
+-- these look funny because we don't have a general equality test for any type...
+equalityTest ( equalsList(equalsString,
+                          sortBy(stringLte, ["cd", "ca", "b", "z", "a"]), 
+                          ["a", "b", "ca", "cd", "z"]), true,
+               Boolean, core_tests ) ;
+
+equalityTest ( equalsList(equalsInteger,
+                          map(head, groupBy(equalsInteger, [1, 1, 2, 1, 2, 2])), 
+                          [1,2,1,2]), true,
+               Boolean, core_tests ) ;
+
+equalityTest ( head(groupBy(equalsInteger, [1, 1, 2, 1, 2, 2])), 
+               [1,1],
+               [Integer], core_tests ) ;
+
+equalityTest ( head(tail(groupBy(equalsInteger, [1, 1, 2, 1, 2, 2]))), 
+               [2],
+               [Integer], core_tests ) ;
+
+equalityTest ( map(listLength, groupBy(equalsInteger, [1, 1, 2, 1, 2, 2])), 
+               [2,1,1,2],
+               [Integer], core_tests ) ;
+
+equalityTest ( equalsList(equalsInteger,
+                          map(head, groupBy(equalsInteger, [1, 1, 2, 1, 2, 2])), 
+                          [1,2]), false,
+               Boolean, core_tests ) ;
+
+equalityTest ( null(sortBy(stringLte, [])), true,
+               Boolean, core_tests ) ;
+equalityTest ( null(groupBy(equalsString, [])), true,
+               Boolean, core_tests ) ;
+
+equalityTest ( implode(", ", ["foo", "bar"]), "foo, bar",
+               String, core_tests ) ;
+equalityTest ( explode(", ", "foo, bar"), ["foo", "bar"],
+               [String], core_tests ) ;
+equalityTest ( explode("", "foo"), ["f","o","o"],
+               [String], core_tests ) ;
+equalityTest ( explode("", ""), [],
+               [String], core_tests ) ;
+
 
 {-
 function main
