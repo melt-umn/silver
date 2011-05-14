@@ -5,6 +5,7 @@ grammar lib:testing ;
 -}
 
 terminal Run_t 'run' ;
+terminal Fail_t 'fail' ;
 terminal Colon_t ':' ;
 terminal Test_t 'test' ;
 terminal Suite_t 'suite' ;
@@ -26,6 +27,17 @@ inherited attribute testFileDir :: String ;
 nonterminal Run with testFileName, testFileDir, ioInput, ioResult ;
 
 parser parse::Run { lib:testing ; }
+
+concrete production failRun
+r::Run ::= 'fail' failrun::Run
+{ 
+ failrun.testFileName = r.testFileName ;
+ failrun.testFileDir = r.testFileDir ;
+ failrun.ioInput = r.ioInput ;
+ r.ioResult = ioval ( failrun.ioResult.io, 
+                      if failrun.ioResult.iovalue == 0 then 1 else 0 ) ;
+}
+
 
 concrete production run_alternate
 r::Run ::= run_kwd::'run' ':' rest::CommandAlt_t
