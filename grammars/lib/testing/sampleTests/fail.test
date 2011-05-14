@@ -1,1 +1,1 @@
-run "no-command-with-this-name"
+fail run "no-command-with-this-name"
