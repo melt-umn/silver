@@ -6,6 +6,7 @@ grammar lib:testing ;
 
 terminal Run_t 'run' ;
 terminal Fail_t 'fail' ;
+terminal Skip_t 'skip' ;
 terminal Colon_t ':' ;
 terminal Test_t 'test' ;
 terminal Suite_t 'suite' ;
@@ -28,9 +29,15 @@ nonterminal Run with testFileName, testFileDir, ioInput, ioResult ;
 
 parser parse::Run { lib:testing ; }
 
+
+concrete production skipRun
+r::Run ::= 'skip' skiprun::Run
+{ 
+ r.ioResult = r.ioInput ;
+}
+
 nonterminal OptionalFail ;
 synthesized attribute fail::Boolean occurs on OptionalFail ;
-
 concrete production noFail
 f::OptionalFail ::= 
 { f.fail = false ; }
