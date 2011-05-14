@@ -28,25 +28,25 @@ nonterminal Run with testFileName, testFileDir, ioInput, ioResult ;
 
 parser parse::Run { lib:testing ; }
 
-concrete production failRun
-r::Run ::= 'fail' failrun::Run
-{ 
- failrun.testFileName = r.testFileName ;
- failrun.testFileDir = r.testFileDir ;
- failrun.ioInput = r.ioInput ;
- r.ioResult = ioval ( failrun.ioResult.io, 
-                      if failrun.ioResult.iovalue == 0 then 1 else 0 ) ;
-}
+nonterminal OptionalFail ;
+synthesized attribute fail::Boolean occurs on OptionalFail ;
 
+concrete production noFail
+f::OptionalFail ::= 
+{ f.fail = false ; }
+concrete production doFail
+f::OptionalFail ::= 'fail'
+{ f.fail = true ; }
 
 concrete production run_alternate
-r::Run ::= run_kwd::'run' ':' rest::CommandAlt_t
+r::Run ::= f::OptionalFail run_kwd::'run' ':' rest::CommandAlt_t
 {
- forwards to run(run_kwd, terminal(Command_t, "\"" ++ rest.lexeme ++ "\"") ) ;
+ forwards to 
+   run(f, run_kwd, terminal(Command_t, "\"" ++ rest.lexeme ++ "\"") ) ;
 }
 
 concrete production run
-r::Run ::= 'run' c::Command_t
+r::Run ::= f::OptionalFail 'run' c::Command_t
 {
  local msgBefore :: IO  =
   print ("............................................................\n" ++
@@ -62,7 +62,8 @@ r::Run ::= 'run' c::Command_t
              , msgBefore ) ;
 
  r.ioResult =
-   if   cmdResult.iovalue == 0
+   if   (cmdResult.iovalue == 0 && ! f.fail) ||
+        (cmdResult.iovalue != 0 && f.fail) 
    then ioval( print( "passed (rc = 0).\n", cmdResult.io), 0 )
    else ioval( print( "failed (rc = " ++ toString(cmdResult.iovalue) ++ ").\n",
                       cmdResult.io),
