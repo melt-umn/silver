@@ -33,7 +33,7 @@ parser parse::Run { lib:testing ; }
 concrete production skipRun
 r::Run ::= 'skip' skiprun::Run
 { 
- r.ioResult = r.ioInput ;
+ r.ioResult = ioval (r.ioInput.io, 0) ;
 }
 
 nonterminal OptionalFail ;
