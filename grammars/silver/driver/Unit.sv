@@ -9,6 +9,14 @@ synthesized attribute order :: Integer;
 inherited attribute ioIn :: IO;
 synthesized attribute ioOut :: IO;
 
+{-
+ - A short guide to error codes:
+ - Negative = configuration/installation error
+ - 1-19 = command line/start up error
+ - 20+ = Normal use error (errors in spec)
+ - 127 = Nothing to be done error code
+ - 0 = success of course
+ -}
 nonterminal Unit with ioIn, io, code, order;
 
 aspect production run
@@ -40,7 +48,7 @@ top::Unit ::= s::String
   problem = s == "/";
 
   top.io = if problem then print("Missing SILVER_HOME. Installation problem?\n",top.ioIn) else top.ioIn;
-  top.code = if problem then 1 else 0;
+  top.code = if problem then -1 else 0;
   top.order = 0;
 }
 
@@ -51,7 +59,7 @@ top::Unit ::= s::String
   problem = s == "/";
 
   top.io = if problem then print("Missing SILVER_GEN or -G <path>. A location to store intermediate files is necessary.\n",top.ioIn) else top.ioIn;
-  top.code = if problem then 1 else 0;
+  top.code = if problem then -2 else 0;
   top.order = 0;
 }
 
@@ -59,8 +67,8 @@ abstract production printVersion
 top::Unit ::= 
 {
   top.order = 0;
-  top.io = print("Silver Version 0.3.1\n", top.ioIn);
-  top.code = -1;
+  top.io = print("Silver Version 0.3.trunk\n", top.ioIn);
+  top.code = 127;
 }
 
 abstract production doInterfaces
