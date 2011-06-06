@@ -176,10 +176,10 @@ top::RunUnit ::= iIn::IO args::String
            else if a.okay --the args were okay but the grammar was not found
            then if grammarLocation.iovalue.isJust && null(unit.compiledList)
                 then if null(grammars)
-                     then exit(-1, print("\nGrammar '" ++ a.gName ++ "' was found at '" ++ grammarLocation.iovalue.fromJust ++ "' but there were no silver source files there!\n\n", grammarLocation.io))
-                     else exit(-1, print("\nGrammar '" ++ a.gName ++ "' is up to date. Use --clean to force a recompile.\n\n", grammarLocation.io))
-                else exit(-1, print("\nGrammar '" ++ a.gName ++ "' could not be located, make sure that the grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
-           else exit(-1, print(a.usage, iIn)); -- the args were not okay.
+                     then exit(3, print("\nGrammar '" ++ a.gName ++ "' was found at '" ++ grammarLocation.iovalue.fromJust ++ "' but there were no silver source files there!\n\n", grammarLocation.io))
+                     else exit(4, print("\nGrammar '" ++ a.gName ++ "' is up to date. Use --clean to force a recompile.\n\n", grammarLocation.io))
+                else exit(2, print("\nGrammar '" ++ a.gName ++ "' could not be located, make sure that the grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
+           else exit(1, print(a.usage, iIn)); -- the args were not okay.
 }
 
 

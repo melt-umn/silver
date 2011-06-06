@@ -39,7 +39,7 @@ top::Unit ::= specs::[Decorated RootSpec]
 
   top.code = if null(specs) || (null(es) && recurse.code == 0)
 	     then 0 
-	     else -1;
+	     else 20;
 
   top.order = 0;
 }
