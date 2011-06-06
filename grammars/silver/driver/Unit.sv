@@ -14,7 +14,7 @@ synthesized attribute ioOut :: IO;
  - Negative = configuration/installation error
  - 1-19 = command line/start up error
  - 20+ = Normal use error (errors in spec)
- - 127 = Nothing to be done error code
+ - 127 = "abnormal" success (e.g. printed version string, quit now)
  - 0 = success of course
  -}
 nonterminal Unit with ioIn, io, code, order;
