@@ -81,6 +81,10 @@ top::AGDcl ::= 'attribute' at::QNameWithTL 'occurs' 'on' nt::QNameWithTL ';'
                 then [err(at.location, "Attribute '" ++ at.qname.name ++ "' already occurs on '" ++ nt.qname.name ++ "'.")]
                 else [];
 
+  top.errors <- if !nt.qname.lookupType.typerep.isDecorable
+                then [err(nt.location, nt.qname.name ++ " is not a nonterminal. Attributes can only occurs on nonterminals.")]
+                else [];
+
   forwards to agDclDefault();
 }
 
