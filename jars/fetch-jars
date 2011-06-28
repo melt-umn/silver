@@ -1,3 +1,0 @@
-#!/bin/bash
-
-cp /project/melt4/People/ted/jars/*.jar .
