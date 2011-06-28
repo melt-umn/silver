@@ -15,9 +15,7 @@ terminal Arrow_kwd '->' precedence = 7 ;
 terminal Vbar_kwd '|' precedence = 3 ;
 
 -- TODO: all of these can be removed if transform var case doesn't want them anymore.
-inherited attribute patternType :: TypeExp ;
 autocopy attribute patternListTypes :: [ TypeExp ] ;
-inherited attribute patternScrutinee :: Expr ;
 autocopy attribute patternListScrutinees :: [Expr];
 
 -- Whether or not the head pattern is a variable or wildcard
@@ -43,21 +41,21 @@ synthesized attribute transformVarCase<a> :: a;
 
 
 -- MR | ...
-nonterminal MRuleList with pp, grammarName, env, file, location, errors, signature, upSubst, downSubst, finalSubst,
+nonterminal MRuleList with pp, grammarName, env, file, location, signature, downSubst, finalSubst,
                            patternListTypes, patternListScrutinees, blockContext, prodRules, varRules,
                            transformVarCase<MRuleList> ;
 -- P -> E
-nonterminal MatchRule with pp, grammarName, env, file, location, errors, signature, upSubst, downSubst, finalSubst,
+nonterminal MatchRule with pp, grammarName, env, file, location, signature, downSubst, finalSubst,
                            patternListTypes, patternListScrutinees, blockContext, headPattern, prodRules, varRules,
                            transformVarCase<MatchRule> ;
 
 -- prod(PL) | int | string | bool | ...
-nonterminal Pattern with pp, grammarName, env, file, location, errors, signature, upSubst, downSubst, finalSubst,
-                         patternType, patternScrutinee, blockContext, headPattern, patternIsVariable, patternProduction,
+nonterminal Pattern with pp, grammarName, env, file, location, signature,
+                         blockContext, headPattern, patternIsVariable, patternProduction,
                          patternVariableName, patternListVars, patternSubPatternList ;
 -- P , ...
-nonterminal PatternList with pp, grammarName, env, file, location, errors, signature, upSubst, downSubst, finalSubst,
-                             patternListTypes, patternListScrutinees, blockContext, headPattern,
+nonterminal PatternList with pp, grammarName, env, file, location, signature,
+                             blockContext, headPattern,
                              varTailPatternList, patternListVars, patternListEmpty ;
 
 concrete production caseExpr_c
@@ -111,11 +109,6 @@ top::Expr ::= locat::Decorated Location returnType::TypeExp es::Exprs ml::MRuleL
   -- TODO: this shouldn't be needed anymore
   ml.downSubst = top.downSubst;
   
-
---  top.errors := if null(ml.errors)
---                then forward.errors
---                else es.errors ++ ml.errors;
-
   ml.patternListTypes = map(ensureDecoratedType, getTypesExprsSubst(es.exprs)); -- subst somehow?
   ml.patternListScrutinees = map(ensureDecoratedExpr, es.exprs);
   
@@ -166,11 +159,8 @@ concrete production mRuleList_one
 top::MRuleList ::= m::MatchRule
 {
   top.pp = m.pp;
-  top.errors := m.errors;
   top.location = m.location;
-
   m.downSubst = top.downSubst;
-  top.upSubst = m.upSubst;
   
   top.varRules = m.varRules;
   top.prodRules = m.prodRules;
@@ -182,12 +172,10 @@ concrete production mRuleList_cons
 top::MRuleList ::= h::MatchRule '|' t::MRuleList
 {
   top.pp = h.pp ++ " | " ++ t.pp;
-  top.errors := h.errors ++ t.errors;
   top.location = h.location;
 
   h.downSubst = top.downSubst;
-  t.downSubst = h.upSubst;
-  top.upSubst = t.upSubst;
+  t.downSubst = top.downSubst;
   
   top.varRules = h.varRules ++ t.varRules;
   top.prodRules = h.prodRules ++ t.prodRules;
@@ -199,12 +187,9 @@ concrete production matchRule
 top::MatchRule ::= pt::PatternList '->' e::Expr
 {
   top.pp = pt.pp ++ " -> " ++ e.pp;
-  top.errors := pt.errors ++ e.errors;
   top.location = e.location;
 
-  pt.downSubst = top.downSubst;
-  e.downSubst = pt.upSubst;
-  top.upSubst = e.upSubst;
+  e.downSubst = top.downSubst;
   
   top.headPattern = pt.headPattern;
   top.varRules = if top.headPattern.patternIsVariable then [top] else [];
@@ -222,26 +207,8 @@ concrete production patternList_one
 top::PatternList ::= p::Pattern
 {
   top.pp = p.pp;
-  top.errors := p.errors;
   top.location = p.location;
 
-  p.patternType = if !null(top.patternListTypes) 
-                  then head(top.patternListTypes) 
-                  else errorType();
-  p.patternScrutinee = if !null(top.patternListScrutinees)
-                       then head(top.patternListScrutinees)
-                       else baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "no_such_value")))); -- TODO: eh... maybe this is okay?
-
-  top.errors <-
-       if null(top.patternListTypes)
-       then [err(top.location, "More patterns than expected in pattern list")] 
-       else if length(top.patternListTypes) > 1
-       then [err(top.location, "Fewer patterns than expected in pattern list")]
-       else [];
-
-  p.downSubst = top.downSubst;
-  top.upSubst = p.upSubst;
-  
   top.headPattern = p;
   top.patternListEmpty = false;
   top.varTailPatternList = patternList_nil();
@@ -255,27 +222,8 @@ concrete production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
   top.pp = ps1.pp ++ ", " ++ p.pp;
-  top.errors := p.errors ++ ps1.errors;
   top.location = p.location;
 
-  p.patternType = if !null(top.patternListTypes) 
-                  then head(top.patternListTypes) 
-                  else errorType();
-  p.patternScrutinee = if !null(top.patternListScrutinees)
-                       then head(top.patternListScrutinees)
-                       else baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "no_such_value")))); -- TODO: eh... maybe this is okay?
-
-  ps1.patternListTypes = if !null(top.patternListTypes)
-                         then tail(top.patternListTypes) 
-                         else [];
-  ps1.patternListScrutinees = if !null(top.patternListScrutinees)
-                              then tail(top.patternListScrutinees)
-                              else [];
-
-  p.downSubst = top.downSubst;
-  ps1.downSubst = p.upSubst;
-  top.upSubst = ps1.upSubst;
-  
   top.headPattern = p;
   top.patternListEmpty = false;
   top.varTailPatternList = ps1;
@@ -290,15 +238,8 @@ concrete production patternList_nil
 top::PatternList ::= 
 {
   top.pp = "";
-  top.errors := [];
   top.location = loc("patternList_nill", -1, -1);
 
-  top.errors <- if null(top.patternListTypes)
-                then []
-                else [err(top.location, "Fewer patterns than expected in pattern list")];  -- TODO BUG: no location
-
-  top.upSubst = top.downSubst;
-  
   top.headPattern = error("empty pattern list consulted regarding its first pattern");
   top.patternListEmpty = true;
   top.varTailPatternList = error("tailed (var) pattern list that is empty.");
@@ -313,36 +254,7 @@ p::Pattern ::= prod::QName '(' ps::PatternList ')'
 {
   p.pp = prod.pp ++ "(" ++ ps.pp ++ ")" ;
   p.location = prod.location;
-  p.errors := prod.lookupValue.errors ++ ps.errors ; 
 
-  local attribute prod_type :: TypeExp;
-  prod_type = freshenCompletely(prod.lookupValue.typerep);
-  
-  -- Perform subst after unifying result type, then perform decoration.
-  ps.patternListTypes = map(ensureDecoratedType, mapSubst(prod_type.inputTypes, errCheck1.upSubst));
-  -- See this function for more info, but summary: 3 cases:
-  --  case 2: sig nt.      here nt     = fetch-decorated
-  --  case 3: sig non-nt.  here non-nt = fetch-asis
-  --  case 4: sign non-nt. here nt     = fetch-asis AND THEN DECORATE
-  ps.patternListScrutinees = generatePLSFromValNType(p.patternScrutinee, 0, prod_type.inputTypes, errCheck1.upSubst);
- 
-  -- Output is right type.  and its a production
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
-
-  errCheck1.downSubst = p.downSubst;
-  ps.downSubst = errCheck1.upSubst;
-  p.upSubst = ps.upSubst;
-  
-  errCheck1 = check(decoratedTypeExp(prod_type.outputType), p.patternType);
-  p.errors <- if errCheck1.typeerror
-              then [err(prod.location, prod.pp ++ " constructs type " ++ errCheck1.leftpp ++ " but the pattern matching is on type " ++ errCheck1.rightpp)]
-              else [];
-
-  p.errors <- case prod.lookupValue.typerep of
-                productionTypeExp(_,_) -> []
-              | _ -> [err(prod.location, prod.pp ++ " is type " ++ prettyType(prod.lookupValue.typerep) ++ " and is not a production.")]
-              end;
-  
   p.patternIsVariable = false;
   p.patternProduction = just(prod.lookupValue.fullName);
   p.patternVariableName = nothing();
@@ -354,10 +266,7 @@ p::Pattern ::= '_'
 {
   p.pp = "_" ;
   p.location = loc(p.file, $1.line, $1.column);
-  p.errors := [] ;
 
-  p.upSubst = p.downSubst;
-  
   p.patternIsVariable = true;
   p.patternProduction = nothing();
   p.patternVariableName = nothing();
@@ -369,13 +278,6 @@ p::Pattern ::= v::Name
   p.pp = v.name;
   p.location = v.location;
 
-  p.errors :=
-        if length(getValueDclAll(v.name, p.env)) > 1
-        then [err(p.location, "Pattern variable '" ++ v.name ++ "' is already bound in this scope.")] 
-        else [];
-
-  p.upSubst = p.downSubst;
-  
   p.patternIsVariable = true;
   p.patternProduction = nothing();
   p.patternVariableName = just(v.name);
@@ -567,18 +469,6 @@ function getTypesExprsSubst
 {
   return if null(es) then [] else [performSubstitution(head(es).typerep, head(es).upSubst)] ++ getTypesExprs(tail(es));
 }
-function generatePLSFromValNType
-[Expr] ::= e::Expr i::Integer t::[TypeExp] s::Substitution
-{
-  -- If the type is not an NT, but we learn it's an NT from type info,
-  -- THEN decorate the result, but fetch it with its original type
-  -- ELSE fetch normally.
-  return if !null(t)
-         then if !head(t).isDecorable && performSubstitution(head(t),s).isDecorable
-              then decorateExprWithEmpty('decorate', patternMatchRuntimeGetChild(e, i, head(t)), 'with', '{', '}') :: generatePLSFromValNType(e,i+1,tail(t),s)
-              else patternMatchRuntimeGetChild(e, i, head(t)) :: generatePLSFromValNType(e,i+1,tail(t),s)
-         else [];
-}
 function myor
 Boolean ::= a::Boolean b::Boolean
 { return a || b; }
@@ -622,57 +512,6 @@ function groupMRules
 [[Decorated MatchRule]] ::= l::[Decorated MatchRule]
 {
   return groupBy(mruleEqForGrouping, sortBy(mruleLTEForSorting, l));
-}
-
---------------------------------------------------------------------------------
-
--- The work horses
-
-abstract production patternMatchRuntimeIsProd
-top::Expr ::= e::Expr t::String
-{
-  top.pp = "<INTERNAL-IS " ++ t ++ "> " ++ e.pp;
-  top.location = e.location;
-
-  top.errors := e.errors;
-  top.typerep = boolTypeExp();
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = checkDecorated(e.typerep);
-  -- MAJOR ASSUMPTION: this error, if it happens, is already caught. Ignore it.
-}
-
-{--
- - Fetch the child. Will decorate if it's an undecorated child.
- - Will NOT decorate if it's a pattern variable. Must be decorated elsewhere for pattern matching
- -
- - @param t The type of the child *AS IT APPEARS IN THE PRODUCTION SIGNATURE*
- -}
-abstract production patternMatchRuntimeGetChild
-top::Expr ::= e::Expr c::Integer t::TypeExp
-{
-  top.pp = "<INTERNAL-CHILD " ++ toString(c) ++ "::" ++ prettyType(t) ++ "> " ++ e.pp;
-  top.location = e.location;
-
-  top.errors := e.errors;
-  top.typerep =
-       if t.isDecorable
-       then decoratedTypeExp(t)
-       else t;
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = checkDecorated(e.typerep);
-  -- MAJOR ASSUMPTION: this error, if it happens, is already caught. Ignore it.
 }
 
 ----------- Type Stuff

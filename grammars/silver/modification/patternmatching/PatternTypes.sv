@@ -14,17 +14,6 @@ p::Pattern ::= num::Int_t
 {
   p.pp = num.lexeme ;
   p.location = loc(p.file, num.line, num.column);
-  p.errors := [] ;
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
-
-  errCheck1.downSubst = p.downSubst;
-  p.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(intTypeExp(), p.patternType);
-  p.errors <- if errCheck1.typeerror
-              then [err(p.location, "Integer value appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
-              else [];
   
   p.patternIsVariable = false;
   p.patternProduction = nothing();
@@ -37,17 +26,6 @@ p::Pattern ::= str::String_t
 {
   p.pp = str.lexeme ;
   p.location = loc(p.file, str.line, str.column);
-  p.errors := [] ;
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
-
-  errCheck1.downSubst = p.downSubst;
-  p.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(stringTypeExp(), p.patternType);
-  p.errors <- if errCheck1.typeerror
-              then [err(p.location, "String value appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
-              else [];
   
   p.patternIsVariable = false;
   p.patternProduction = nothing();
@@ -60,17 +38,6 @@ p::Pattern ::= 'true'
 {
   p.pp = "true";
   p.location = loc(p.file, $1.line, $1.column);
-  p.errors := [];
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
-
-  errCheck1.downSubst = p.downSubst;
-  p.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(boolTypeExp(), p.patternType);
-  p.errors <- if errCheck1.typeerror
-              then [err(p.location, "Boolean type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
-              else [];
   
   p.patternIsVariable = false;
   p.patternProduction = nothing();
@@ -83,17 +50,6 @@ p::Pattern ::= 'false'
 {
   p.pp = "false" ;
   p.location = loc(p.file, $1.line, $1.column);
-  p.errors := [] ;
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
-
-  errCheck1.downSubst = p.downSubst;
-  p.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(boolTypeExp(), p.patternType);
-  p.errors <- if errCheck1.typeerror
-              then [err(p.location, "Boolean type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
-              else [];
   
   p.patternIsVariable = false;
   p.patternProduction = nothing();
@@ -106,17 +62,6 @@ p::Pattern ::= '[' ']'
 {
   p.pp = "[]";
   p.location = loc(p.file, $1.line, $1.column);
-  p.errors := [] ;
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
-
-  errCheck1.downSubst = p.downSubst;
-  p.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(listTypeExp(errorType()), p.patternType);
-  p.errors <- if errCheck1.typeerror
-              then [err(p.location, "List type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
-              else [];
   
   p.patternIsVariable = false;
   p.patternProduction = nothing();
@@ -129,28 +74,6 @@ p::Pattern ::= hp::Pattern '::' tp::Pattern
 {
   p.pp = hp.pp ++ "::" ++ tp.pp;
   p.location = loc(p.file, $2.line, $2.column);
-  p.errors := hp.errors ++ tp.errors ;
-
-  hp.patternType = freeVar; -- unified below...
-  tp.patternType = p.patternType;
-  
-  hp.patternScrutinee = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:head")))),
-                    '(', exprsSingle(p.patternScrutinee), ')');
-  tp.patternScrutinee = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:tail")))),
-                    '(', exprsSingle(p.patternScrutinee), ')');
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
-  local attribute freeVar :: TypeExp; freeVar = errorType();
-
-  errCheck1.downSubst = p.downSubst;
-  hp.downSubst = errCheck1.upSubst;
-  tp.downSubst = hp.upSubst;
-  p.upSubst = tp.upSubst;
-  
-  errCheck1 = check(listTypeExp(freeVar), p.patternType);
-  p.errors <- if errCheck1.typeerror
-              then [err(p.location, "List type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
-              else [];
   
   p.patternIsVariable = false;
   p.patternProduction = nothing();
