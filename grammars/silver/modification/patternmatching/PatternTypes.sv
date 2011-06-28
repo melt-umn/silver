@@ -16,11 +16,6 @@ p::Pattern ::= num::Int_t
   p.location = loc(p.file, num.line, num.column);
   p.errors := [] ;
 
-  p.defs = emptyDefs();
-
-  p.cond_tree = eqeq(p.patternScrutinee, terminal(EQEQ_t, "=="), intConst(num)) ;
-  p.letAssigns_tree = [] ; 
-
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
 
   errCheck1.downSubst = p.downSubst;
@@ -43,11 +38,6 @@ p::Pattern ::= str::String_t
   p.pp = str.lexeme ;
   p.location = loc(p.file, str.line, str.column);
   p.errors := [] ;
-
-  p.defs = emptyDefs();
-
-  p.cond_tree = eqeq(p.patternScrutinee, terminal(EQEQ_t, "=="), stringConst(str)) ;
-  p.letAssigns_tree = [] ;
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
 
@@ -72,11 +62,6 @@ p::Pattern ::= 'true'
   p.location = loc(p.file, $1.line, $1.column);
   p.errors := [];
 
-  p.defs = emptyDefs() ;
-
-  p.cond_tree = eqeq(p.patternScrutinee, terminal(EQEQ_t, "=="), trueConst(terminal(True_kwd, "true"))) ;
-  p.letAssigns_tree = [] ; 
-
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
 
   errCheck1.downSubst = p.downSubst;
@@ -99,11 +84,6 @@ p::Pattern ::= 'false'
   p.pp = "false" ;
   p.location = loc(p.file, $1.line, $1.column);
   p.errors := [] ;
-
-  p.defs = emptyDefs();
-
-  p.cond_tree = eqeq(p.patternScrutinee, terminal(EQEQ_t, "=="), falseConst(terminal(False_kwd, "false"))) ;
-  p.letAssigns_tree = [] ;
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
 
@@ -128,12 +108,6 @@ p::Pattern ::= '[' ']'
   p.location = loc(p.file, $1.line, $1.column);
   p.errors := [] ;
 
-  p.defs = emptyDefs();
-
-  p.cond_tree = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:null")))),
-                    '(', exprsSingle(p.patternScrutinee), ')');
-  p.letAssigns_tree = [] ;
-
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
 
   errCheck1.downSubst = p.downSubst;
@@ -156,12 +130,6 @@ p::Pattern ::= hp::Pattern '::' tp::Pattern
   p.pp = hp.pp ++ "::" ++ tp.pp;
   p.location = loc(p.file, $2.line, $2.column);
   p.errors := hp.errors ++ tp.errors ;
-
-  p.defs = appendDefs(hp.defs, tp.defs) ;
-
-  p.cond_tree = not('!', productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:null")))),
-                    '(', exprsSingle(p.patternScrutinee), ')'));
-  p.letAssigns_tree = [] ;
 
   hp.patternType = freeVar; -- unified below...
   tp.patternType = p.patternType;
