@@ -25,7 +25,6 @@ parser rParse::Root {
   silver:modification:let_fix;
   silver:modification:collection;
   silver:modification:patternmatching;
-  silver:modification:patternmatching:copper;
   silver:modification:autocopyattr;
   silver:modification:autocopyattr:convenience; -- TODO: we need a condition export, perhaps? Why didn't we include this?
   silver:modification:ffi;
