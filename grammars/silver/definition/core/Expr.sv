@@ -1,6 +1,7 @@
 grammar silver:definition:core;
 
 import silver:analysis:typechecking:core;
+import silver:analysis:typechecking;
 
 abstract production defaultExpr
 top::Expr ::=
@@ -641,7 +642,7 @@ top::Expr ::= e1::Expr '++' e2::Expr
   top.pp = e1.pp ++ " ++ " ++ e2.pp;
   top.location = loc(top.file, $2.line, $2.column);
 
-  top.typerep = performSubstitution(e1.typerep, e1.upSubst); -- is it safe to report a typerep using substs? hope so!
+  top.typerep = performSubstitution(e1.typerep, errCheck1.upSubst); -- is it safe to report a typerep using substs? hope so!
 
   forwards to top.typerep.appendDispatcher(e1,e2);
 }

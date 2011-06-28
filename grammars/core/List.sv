@@ -250,11 +250,15 @@ function groupBy
   local attribute helpercall :: Pair<[a] [a]>;
   helpercall = groupByHelp(eq, head(l), l);
   
-  return if null(l) then [] else helpercall.fst :: if null(helpercall.snd) then [] else groupBy(eq, helpercall.snd);
+  return if null(l) then [] 
+         else helpercall.fst :: if null(helpercall.snd) then []
+                                else groupBy(eq, helpercall.snd);
 }
 function groupByHelp
 Pair<[a] [a]> ::= eq::Function(Boolean ::= a a) f::a l::[a]
 {
+  -- f is the representative element we're comparing with, but is not considered
+  -- included when we're called.
   local attribute recurse :: Pair<[a] [a]>;
   recurse = groupByHelp(eq, f, tail(l));
   

@@ -120,6 +120,10 @@ equalityTest ( head(groupBy(equalsInteger, [1, 1, 2, 1, 2, 2])),
                [1,1],
                [Integer], core_tests ) ;
 
+equalityTest ( map(head,groupBy(equalsInteger, [1, 2, 1, 3])), 
+               [1,2,1,3],
+               [Integer], core_tests ) ;
+
 equalityTest ( head(tail(groupBy(equalsInteger, [1, 1, 2, 1, 2, 2]))), 
                [2],
                [Integer], core_tests ) ;

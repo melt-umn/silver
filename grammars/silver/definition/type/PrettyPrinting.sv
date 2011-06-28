@@ -73,6 +73,13 @@ top::TypeExp ::= te::TypeExp
   top.typepp = "Decorated " ++ te.typepp;
 }
 
+aspect production ntOrDecTypeExp
+top::TypeExp ::= nt::TypeExp  hidden::TypeExp
+{
+-- Sometimes useful for debugging.
+--  top.typepp = "Undecorable " ++ nt.typepp ++ "{" ++ prettyTypeWith(hidden, []) ++ "}";
+}
+
 aspect production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
@@ -96,7 +103,10 @@ String ::= tv::TyVar  bv::[TyVar]
 function findAbbrevHelp
 String ::= tv::TyVar  bv::[TyVar]  vn::[String]
 {
-  return if null(vn) || null(bv) then "V_" ++ toString(case tv of tyVar(i) -> i end)
+  local attribute tvi :: Integer;
+  tvi = case tv of tyVar(i) -> i end;
+  
+  return if null(vn) || null(bv) then "V_" ++ toString(tvi)
          else if tyVarEqual(tv, head(bv))
               then head(vn)
               else findAbbrevHelp(tv, tail(bv), tail(vn));

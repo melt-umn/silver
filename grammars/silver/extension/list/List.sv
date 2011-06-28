@@ -38,6 +38,8 @@ top::Expr ::= h::Expr '::' t::Expr
 {
   top.pp = "(" ++ h.pp ++ " :: " ++ t.pp ++ ")" ;
   
+  h.downSubst = top.downSubst; t.downSubst = top.downSubst; -- TODO BUG: don't know what this is needed... pp apparently??
+  
   forwards to productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:cons")))),
                     '(', exprsCons(h, ',', exprsSingle(t)), ')');
 }
@@ -46,6 +48,8 @@ concrete production fullList
 top::Expr ::= '[' es::Exprs ']'
 { 
   top.pp = "[ " ++ es.pp ++ " ]";
+  
+  es.downSubst = top.downSubst; -- TODO again, pretty printing garbage.
 
   forwards to es.listtrans;
 }

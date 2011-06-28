@@ -80,4 +80,34 @@ equalityTest ( echotest("foo"), "foo", String, pat_tests ) ;
 equalityTest ( echotest(decorate just("hi") with {}).fromJust, "hi", String, pat_tests ) ;
 
 
+function lookattees
+[Boolean] ::= l::[T]
+{
+  return if null(l) then []
+         else (case head(l) of
+                a() -> true
+              | b() -> false
+              | c() -> true
+              | d() -> false
+              end) :: lookattees(tail(l));
+}
+
+function indivtee
+Boolean ::= l::T
+{
+  return case l of
+                a() -> true
+              | b() -> false
+              | c() -> true
+              | d() -> false
+              end;
+}
+
+equalityTest ( lookattees([a(),b(),c(),d()]), [true, false, true, false],
+               [Boolean], pat_tests );
+
+equalityTest ( map(indivtee, [a(),b(),c(),d()]), [true, false, true, false],
+               [Boolean], pat_tests );
+
+
 
