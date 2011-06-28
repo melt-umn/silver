@@ -14,6 +14,8 @@ import silver:translation:java:type;
 import silver:modification:let_fix;
 import silver:modification:let_fix:java;
 
+import silver:extension:list; -- Oh no, this is a hack! TODO
+
 terminal Match_kwd 'match' lexer classes {KEYWORD}; -- temporary!!!
 
 nonterminal PrimPatterns with location, pp, file, grammarName, env, signature, errors, downSubst, upSubst, finalSubst, blockContext
@@ -32,11 +34,24 @@ inherited attribute bindingTypes :: [TypeExp];
 inherited attribute bindingType :: TypeExp;
 inherited attribute bindingIndex :: Integer;
 
-concrete production matchPrimitive
+concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::Type 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
 {
+  forwards to matchPrimitive(loc(top.file, $1.line, $1.column), e, t, pr, f);
+}
+abstract production matchPrimitive
+top::Expr ::= ll::Decorated Location e::Expr t::Type pr::PrimPatterns f::Expr
+{
+  e.downSubst = top.downSubst;
+  forward.downSubst = e.upSubst;
+  
+  forwards to matchPrimitiveReal(ll, ensureDecoratedExpr(e), t, pr, f);
+}
+abstract production matchPrimitiveReal
+top::Expr ::= ll::Decorated Location e::Expr t::Type pr::PrimPatterns f::Expr
+{
   top.pp = "match " ++ e.pp ++ " return " ++ t. pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = ll;
   
   top.typerep = t.typerep;
   
@@ -45,9 +60,9 @@ top::Expr ::= 'match' e::Expr 'return' t::Type 'with' pr::PrimPatterns 'else' '-
   local attribute scrutineeType :: TypeExp;
   scrutineeType = performSubstitution(e.typerep, e.upSubst);
   
-  top.errors <- if !scrutineeType.isDecorated
-                then [err(top.location, "match scrutinee should be decorated, instead it's type " ++ prettyType(scrutineeType))]
-                else [];
+--  top.errors <- if !scrutineeType.isDecorated
+--                then [err(top.location, "match scrutinee should be decorated, instead it's type " ++ prettyType(scrutineeType))]
+--                else [];
   
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
@@ -65,15 +80,24 @@ top::Expr ::= 'match' e::Expr 'return' t::Type 'with' pr::PrimPatterns 'else' '-
   pr.scrutineeType = scrutineeType;
   pr.returnType = t.typerep;
   
-  top.translation = "(" ++ t.typerep.transType ++ ")common.PatternLazy.runPattern(context, " ++ e.translation ++ ", " ++ wrapPatternLazy(pr) ++ ", " ++ wrapLazy(f) ++ ")";
+  top.translation = "new common.PatternLazy<" ++ scrutineeType.transType ++ ", " ++ t.typerep.transType ++ ">() { " ++
+                      "public final " ++ t.typerep.transType ++ " eval(final common.DecoratedNode context, " ++ scrutineeType.transType ++ " scrutineeIter) {" ++
+                        (if scrutineeType.isDecorated
+                         then
+                          "while(scrutineeIter != null) {" ++
+                            "final " ++ scrutineeType.transType ++ " scrutinee = scrutineeIter; " ++ -- dumb, but to get final to work out for Lazys & shizzle...
+                            "final common.Node scrutineeNode = scrutinee.undecorate(); " ++
+                            pr.translation ++
+                            "scrutineeIter = scrutineeIter.forward();" ++
+                          "}"
+                         else
+                          "final " ++ scrutineeType.transType ++ " scrutinee = scrutineeIter; " ++ -- dumb, but to get final to work out for Lazys & shizzle...
+                          pr.translation) ++
+                        "return " ++ f.translation ++ ";" ++ 
+                    "}}.eval(context, (" ++ scrutineeType.transType ++")" ++ e.translation ++ ")";
+                          
   
   forwards to defaultExpr();
-}
-
-function wrapPatternLazy
-String ::= p::Decorated PrimPatterns
-{
-  return "new common.PatternLazy() { public final Object eval(final common.DecoratedNode context, final common.DecoratedNode scrutinee) { final common.Node scrutineeNode = scrutinee.undecorate();\n" ++ p.translation ++ "; throw new common.exceptions.PatternMatchFailure(\"Nonexhuastive match in " ++ p.location.fileName ++ " on line " ++ toString(p.location.line) ++ "\"); } }";
 }
 
 concrete production onePattern
@@ -129,24 +153,184 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
   
-  -- Pass us by!!
+  -- Pass us by!! We're cheating here for a bit!
   top.upSubst = top.downSubst;
-  e.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst);
-  
-  -- Use type information anyway... BUT with our GADT info
-  errCheck1.downSubst = composeSubst(top.downSubst, refine(top.scrutineeType, decoratedTypeExp(prod_type.outputType)));
+  -- Okay, now come back after checking everything else, let's check me... wheee
+  errCheck1.downSubst = composeSubst(top.finalSubst, refine(top.scrutineeType, decoratedTypeExp(prod_type.outputType)));
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
-  --top.upSubst = errCheck2.upSubst; -- NOPE, cut off! Don't escape with that info!
+  -- Okay, now update the finalSubst....
+  e.finalSubst = errCheck2.upSubst;
+  -- Hack over. Solved by pushing type information down... TODO
   
   e.env = newScopeEnv(ns.defs, top.env);
   
   top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
-    ") { return (common.Util.let(context, new String[]{"
+    ") { return (" ++ top.returnType.transType ++ ")common.Util.let(context, new String[]{"
         ++ implode(", ", ns.nameTrans) ++ "}, " ++ "new common.Lazy[]{"
-        ++ implode(", ", ns.valueTrans) ++ "}, " ++ wrapLazy(e) ++ "))" ++ "; }";
+        ++ implode(", ", ns.valueTrans) ++ "}, " ++ wrapLazy(e) ++ ")" ++ "; }";
 }
 
+abstract production integerPattern
+top::PrimPattern ::= i::Int_t '->' e::Expr
+{
+  top.pp = i.lexeme ++ " -> " ++ e.pp;
+  top.location = loc(top.file, $2.line, $2.column);
+  
+  top.errors := e.errors;
+  
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
+  
+  errCheck1 = check(intTypeExp(), top.scrutineeType);
+  top.errors <- if errCheck1.typeerror
+                then [err(top.location, i.lexeme ++ " is an " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                else [];
+  
+  errCheck2 = check(e.typerep, top.returnType);
+  top.errors <- if errCheck2.typeerror
+                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                else [];
+  
+  errCheck1.downSubst = top.downSubst;
+  e.downSubst = errCheck1.upSubst;
+  errCheck2.downSubst = e.upSubst;
+  top.upSubst = errCheck2.upSubst;
+
+  top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ top.returnType.transType ++ ")" ++
+                         e.translation ++ "; }";
+}
+abstract production stringPattern
+top::PrimPattern ::= i::String_t '->' e::Expr
+{
+  top.pp = i.lexeme ++ " -> " ++ e.pp;
+  top.location = loc(top.file, $2.line, $2.column);
+  
+  top.errors := e.errors;
+  
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
+  
+  errCheck1 = check(stringTypeExp(), top.scrutineeType);
+  top.errors <- if errCheck1.typeerror
+                then [err(top.location, i.lexeme ++ " is a " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                else [];
+  
+  errCheck2 = check(e.typerep, top.returnType);
+  top.errors <- if errCheck2.typeerror
+                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                else [];
+  
+  errCheck1.downSubst = top.downSubst;
+  e.downSubst = errCheck1.upSubst;
+  errCheck2.downSubst = e.upSubst;
+  top.upSubst = errCheck2.upSubst;
+
+  top.translation = "if(scrutinee.equals(" ++ i.lexeme ++ ")) { return (" ++ top.returnType.transType ++ ")" ++
+                         e.translation ++ "; }";
+}
+abstract production booleanPattern
+top::PrimPattern ::= i::String '->' e::Expr
+{
+  top.pp = i ++ " -> " ++ e.pp;
+  top.location = loc(top.file, $2.line, $2.column);
+  
+  top.errors := e.errors;
+  
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
+  
+  errCheck1 = check(boolTypeExp(), top.scrutineeType);
+  top.errors <- if errCheck1.typeerror
+                then [err(top.location, i ++ " is a " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                else [];
+  
+  errCheck2 = check(e.typerep, top.returnType);
+  top.errors <- if errCheck2.typeerror
+                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                else [];
+  
+  errCheck1.downSubst = top.downSubst;
+  e.downSubst = errCheck1.upSubst;
+  errCheck2.downSubst = e.upSubst;
+  top.upSubst = errCheck2.upSubst;
+
+  top.translation = "if(scrutinee == " ++ i ++ ") { return (" ++ top.returnType.transType ++ ")" ++
+                         e.translation ++ "; }";
+}
+abstract production nilPattern
+top::PrimPattern ::= e::Expr
+{
+  top.pp = "nil() -> " ++ e.pp;
+  top.location = e.location;
+  
+  top.errors := e.errors;
+  
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
+  
+  errCheck1 = check(listTypeExp(errorType()), top.scrutineeType);
+  top.errors <- if errCheck1.typeerror
+                then [err(top.location, "nil() construct type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                else [];
+  
+  errCheck2 = check(e.typerep, top.returnType);
+  top.errors <- if errCheck2.typeerror
+                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                else [];
+  
+  errCheck1.downSubst = top.downSubst;
+  e.downSubst = errCheck1.upSubst;
+  errCheck2.downSubst = e.upSubst;
+  top.upSubst = errCheck2.upSubst;
+
+  top.translation = "if(scrutinee.nil()) { return (" ++ top.returnType.transType ++ ")" ++
+                         e.translation ++ "; }";
+}
+abstract production conslstPattern
+top::PrimPattern ::= h::String t::String e::Expr
+{
+  top.pp = "cons(" ++ h ++ ", " ++ t ++ ") -> " ++ e.pp;
+  top.location = e.location;
+  
+  top.errors := e.errors;
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
+  local attribute elemType :: TypeExp;
+  elemType = errorType();
+  
+  errCheck1 = check(listTypeExp(elemType), top.scrutineeType);
+  top.errors <- if errCheck1.typeerror
+                then [err(top.location, "nil() construct type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                else [];
+  
+  errCheck2 = check(e.typerep, top.returnType);
+  top.errors <- if errCheck2.typeerror
+                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                else [];
+  
+  errCheck1.downSubst = top.downSubst;
+  e.downSubst = errCheck1.upSubst;
+  errCheck2.downSubst = e.upSubst;
+  top.upSubst = errCheck2.upSubst;
+  
+  local attribute hFName :: String; hFName = top.signature.fullName ++ ":local:" ++ h;
+  local attribute tFName :: String; tFName = top.signature.fullName ++ ":local:" ++ t;
+  local attribute consdefs :: Defs; -- TODO: eliminate :local: garbage later.
+  consdefs = addLexicalLocalDcl(top.grammarName, top.location, hFName, elemType, 
+             addLexicalLocalDcl(top.grammarName, top.location, tFName, top.scrutineeType, emptyDefs()));
+  
+  e.env = newScopeEnv(consdefs, top.env);
+  
+  -- TODO: oh my, please fix this.
+  top.translation = "if(!scrutineeIter.nil()) {" ++
+    " return (" ++ top.returnType.transType ++ ")common.Util.let(context, new String[]{"
+        ++ implode(", ", ["\"" ++ hFName ++ "\"","\"" ++ tFName ++ "\""]) ++ "}, " ++ "new common.Lazy[]{"
+        ++ implode(", ", ["new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return scrutinee.head(); } }",
+         "new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return scrutinee.tail(); } }"]) ++ "}, " ++ wrapLazy(e) ++ ")" ++ "; }";
+}
+--------------------------------------------------------------------------------
 concrete production oneVarBinder
 top::VarBinders ::= v::VarBinder
 {
@@ -162,7 +346,10 @@ top::VarBinders ::= v::VarBinder
                   else head(top.bindingTypes);
   
   top.errors <- if null(top.bindingTypes)
-                then [err(top.location, "too many binding variables provided!")]
+                then [err(top.location, "More patterns than expected in pattern list")]
+                else [];
+  top.errors <- if length(top.bindingTypes) > 1
+                then [err(top.location, "Fewer patterns than expected in pattern list")]
                 else [];
 }
 concrete production consVarBinder
@@ -184,8 +371,6 @@ top::VarBinders ::= v::VarBinder ',' vs::VarBinders
   vs.bindingTypes = if null(top.bindingTypes)
                   then []
                   else tail(top.bindingTypes);
-
-  -- last one will raise error message, dont need to here!  
 }
 concrete production nilVarBinder
 top::VarBinders ::= -- technically a bug, but forget it for now
@@ -198,7 +383,7 @@ top::VarBinders ::= -- technically a bug, but forget it for now
   top.errors := [];
   
   top.errors <- if !null(top.bindingTypes)
-                then [err(top.location, "insufficient number of binding variables provided!")]
+                then [err(top.location, "Fewer patterns than expected in pattern list")]
                 else [];
 }
 
@@ -209,7 +394,7 @@ top::VarBinder ::= n::Name
   top.location = n.location;
   
   production attribute fName :: String;
-  fName = top.signature.fullName ++ ":local:" ++ n.name;
+  fName = top.signature.fullName ++ ":local:" ++ n.name; -- TODO: eliminate this :local: garbage later
 
   local attribute ty :: TypeExp;
   ty = if top.bindingType.isDecorable
@@ -226,7 +411,7 @@ top::VarBinder ::= n::Name
      else "childAsIs(")
      ++ toString(top.bindingIndex) ++ "); } }"];
      
-  top.errors := [];
+  top.errors := []; -- TODO: check for rebinding? or not perhaps...
 }
 concrete production ignoreVarBinder
 top::VarBinder ::= '_'

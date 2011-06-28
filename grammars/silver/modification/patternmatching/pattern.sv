@@ -29,6 +29,8 @@ autocopy attribute patternListTypes :: [ TypeExp ] ;
 inherited attribute patternScrutinee :: Expr ;
 -- ditto, pattern lists
 autocopy attribute patternListScrutinees :: [Expr];
+-- What to do if pattern matching fails
+autocopy attribute patternFailureExpr :: Expr;
 
 -- Built up result of how to do the pattern match
 synthesized attribute translation_tree :: Expr ;
@@ -39,42 +41,148 @@ synthesized attribute then_tree :: Expr ;
 -- variables to bind to lets in a pattern list
 synthesized attribute letAssigns_tree :: [ AssignExpr ] ;
 
+
+-- Whether or not the head pattern is a variable or wildcard
+synthesized attribute patternIsVariable :: Boolean;
+-- The head pattern of a rule or pattern list.
+synthesized attribute headPattern :: Decorated Pattern;
+synthesized attribute patternListEmpty :: Boolean;
+-- The production a pattern matches on, if it's a prod pattern.
+synthesized attribute patternProduction :: Maybe<String>;
+synthesized attribute patternVariableName :: Maybe<String>;
+synthesized attribute patternSubPatternList :: Decorated PatternList;
+synthesized attribute varTailPatternList :: PatternList;
+
+synthesized attribute patternListVars :: [String];
+
+
+-- These could possibly be replaced with partition & stuff
+synthesized attribute prodRules :: [Decorated MatchRule];
+synthesized attribute varRules :: [Decorated MatchRule];
+
+synthesized attribute transformVarCase<a> :: a;
+
+
+
 -- MR | ...
 nonterminal MRuleList with pp, grammarName, env, file, location, typerep, errors, signature, upSubst, downSubst, finalSubst,
-                           patternListTypes, translation_tree, patternListScrutinees, blockContext ;
+                           patternListTypes, translation_tree, patternListScrutinees, blockContext, prodRules, varRules, patternFailureExpr,
+                           transformVarCase<MRuleList> ;
 -- P -> E
 nonterminal MatchRule with pp, grammarName, env, file, location, typerep, errors, signature, upSubst, downSubst, finalSubst,
-                           patternListTypes, cond_tree, then_tree, patternListScrutinees, blockContext ;
+                           patternListTypes, cond_tree, then_tree, patternListScrutinees, blockContext, headPattern, prodRules, varRules,
+                           transformVarCase<MatchRule> ;
 
 -- prod(PL) | int | string | bool | ...
 nonterminal Pattern with pp, grammarName, env, file, location, defs, errors, signature, upSubst, downSubst, finalSubst,
-                         patternType, cond_tree, letAssigns_tree, patternScrutinee, blockContext ;
+                         patternType, cond_tree, letAssigns_tree, patternScrutinee, blockContext, headPattern, patternIsVariable, patternProduction,
+                         patternVariableName, patternListVars, patternSubPatternList ;
 -- P , ...
 nonterminal PatternList with pp, grammarName, env, file, location, defs, errors, signature, upSubst, downSubst, finalSubst,
-                             patternListTypes, cond_tree, letAssigns_tree, patternListScrutinees, blockContext ;
+                             patternListTypes, cond_tree, letAssigns_tree, patternListScrutinees, blockContext, headPattern,
+                             varTailPatternList, patternListVars, patternListEmpty ;
 
 concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' ml::MRuleList 'end'
-{ 
-  top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";  
-  top.location = loc(top.file, $1.line, $1.column);
+{
+  -- We're going to do FUNNY THINGS with types here.
+  -- We want to know what type we should return, and we need to know this "directionally"
+  -- for GADTs and for just general decoratedness/etc to work out.
+  -- So, we're going to report a type variable here:
+  top.typerep = errorType(); -- TODO BUG: toString/AttrAccess on case ... end now broken!!
+  -- Then, we're going to thread typing contexts in a screwed up fashion:
+  es.downSubst = top.downSubst;
+  top.upSubst = es.upSubst; -- YEAH, we're sending it up already.
+  -- Now, after all the other checking is done, go bother with this:
+  forward.downSubst = top.finalSubst;
+  -- And finally, let's set their finalSubst(s)
+  forward.finalSubst = forward.upSubst;
+  -- Now, we can obtain our return type, usually:
+  local attribute returnType :: TypeExp;
+  returnType = performSubstitution(top.typerep, top.finalSubst);
+  -- Hack over. In the distant future, force type information DOWN the tree, instead of accumulating it up. TODO
 
-  top.typerep = ml.typerep;
 
-  top.errors := if null(ml.errors)
-                then forward.errors
-                else es.errors ++ ml.errors;
+  -- introduce the failure case here.
+  forwards to caseExpr(loc(top.file, $1.line, $1.column), returnType, exprsDecorated(es.exprs), ml, 
+                productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t,"core:error")))), '(', 
+                  exprsSingle(stringConst(terminal(String_t, "\"Error: pattern match failed.\\n\""))), ')'));
+}
 
-  ml.patternListTypes = map(ensureDecoratedType, getTypesExprs(es.exprs));
+abstract production caseExpr
+top::Expr ::= locat::Decorated Location returnType::TypeExp es::Exprs ml::MRuleList failExpr::Expr
+{
+  --top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";  
+  top.location = locat;
+
+  top.typerep = returnType;
+  
+  es.downSubst = top.downSubst;
+  forward.downSubst = es.upSubst;
+  errCheck1.downSubst = forward.upSubst;
+  top.upSubst = errCheck1.upSubst;
+  -- Necessary, in particular, to check if the expression has the right type when we're looking at
+  -- no patterns left, so we just forward to the expr.
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  errCheck1 = check(top.typerep, forward.typerep);
+
+  top.errors <- if errCheck1.typeerror
+                then [err(forward.location, "pattern expression should have type " ++ errCheck1.leftpp ++ " instead it has type " ++ errCheck1.rightpp)]
+                else [];
+  
+  -- TODO: this shouldn't be needed anymore
+  ml.downSubst = top.downSubst;
+  
+
+--  top.errors := if null(ml.errors)
+--                then forward.errors
+--                else es.errors ++ ml.errors;
+
+  ml.patternFailureExpr = failExpr;
+  ml.patternListTypes = map(ensureDecoratedType, getTypesExprsSubst(es.exprs)); -- subst somehow?
   ml.patternListScrutinees = map(ensureDecoratedExpr, es.exprs);
   
-  forwards to ml.translation_tree;
+  forwards to {- if type is not nt then ... else -}
+          case ml of
+            mRuleList_one(matchRule(p, _, e)) -> if p.patternListEmpty then new(e) else normalCase
+          | mRuleList_cons(matchRule(p, _, e),_,_) -> if p.patternListEmpty then new(e) else normalCase
+          end;
   
-  -- propagate typing information :
-  es.downSubst = top.downSubst;
-  ml.downSubst = es.upSubst;
-  forward.downSubst = ml.upSubst;
-  -- top.upSubst = forward.upSubst; -- implied by forwarding...
+  top.errors <-
+       case ml of
+          mRuleList_cons(matchRule(p, _, e),_,_) -> if p.patternListEmpty then 
+             [err(locat, "Pattern has overlapping cases!")] else []
+       | _ -> []
+       end;
+       
+--  top.errors <- unsafeTrace([], 
+--     print(top.pp ++ "\n\n", unsafeIO()));
+  
+  local attribute normalCase :: Expr;
+  normalCase = 
+              if null(ml.varRules)
+              then matchPrimitive(locat, new(head(es.exprs)),
+                                  typerepType(returnType),
+                                    head(ml.patternListTypes).primPatternGenerator(returnType, tail(es.exprs), failExpr, groupMRules(ml.prodRules)),
+                                  failExpr)
+              else if null(ml.prodRules)
+              then allVarCase
+              else mixedCase;
+  
+  local attribute headExpr :: Expr;
+  headExpr = new(head(es.exprs));
+  local attribute tailExprs :: Exprs;
+  tailExprs = exprsDecorated(tail(es.exprs));
+  local attribute allVarCase :: Expr;
+  allVarCase = caseExpr(locat, returnType, tailExprs, ml.transformVarCase, failExpr);
+  
+  local attribute freshFailName :: String;
+  freshFailName = "__fail_" ++ toString(genInt());
+  local attribute mixedCase :: Expr;
+  mixedCase = makeLet(freshFailName, returnType, 
+                             caseExpr(locat, returnType, es, regenerateMatchRuleList(ml.varRules), failExpr),
+                             caseExpr(locat, returnType, es, regenerateMatchRuleList(ml.prodRules),
+                              baseExpr(qNameId(nameIdLower(terminal(IdLower_t, freshFailName))))));
 }
 
 concrete production mRuleList_one
@@ -87,10 +195,15 @@ top::MRuleList ::= m::MatchRule
 
   top.translation_tree = ifThenElse('if', m.cond_tree,
                                    'then', m.then_tree,
-                                   'else', productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t,"core:error")))), '(', exprsSingle(stringConst(terminal(String_t, "\"Error: pattern match failed.\\n\""))), ')')) ;
+                                   'else', top.patternFailureExpr) ;
 
   m.downSubst = top.downSubst;
   top.upSubst = m.upSubst;
+  
+  top.varRules = m.varRules;
+  top.prodRules = m.prodRules;
+  
+  top.transformVarCase = mRuleList_one(m.transformVarCase);
 }
 
 concrete production mRuleList_cons
@@ -117,6 +230,11 @@ top::MRuleList ::= h::MatchRule '|' t::MRuleList
        if errCheck1.typeerror
        then [err(top.location, "Pattern matching case type mismatch. Rule has type " ++ errCheck1.leftpp ++ " while remaining rules are type " ++ errCheck1.rightpp)]
        else [];
+
+  top.varRules = h.varRules ++ t.varRules;
+  top.prodRules = h.prodRules ++ t.prodRules;
+  
+  top.transformVarCase = mRuleList_cons(h.transformVarCase, $2, t.transformVarCase);
 }
 
 concrete production matchRule
@@ -142,6 +260,16 @@ top::MatchRule ::= pt::PatternList '->' e::Expr
   pt.downSubst = top.downSubst;
   e.downSubst = pt.upSubst;
   top.upSubst = e.upSubst;
+  
+  top.headPattern = pt.headPattern;
+  top.varRules = if top.headPattern.patternIsVariable then [top] else [];
+  top.prodRules = if top.headPattern.patternIsVariable then [] else [top];
+  
+  top.transformVarCase = matchRule(pt.varTailPatternList, $2, 
+                             case pt.headPattern.patternVariableName of
+                               just(pvn) -> makeLet(pvn, head(top.patternListTypes), head(top.patternListScrutinees), e)
+                             | nothing() -> e
+                             end);
 }
 
 
@@ -172,6 +300,14 @@ top::PatternList ::= p::Pattern
   
   p.downSubst = top.downSubst;
   top.upSubst = p.upSubst;
+  
+  top.headPattern = p;
+  top.patternListEmpty = false;
+  top.varTailPatternList = patternList_nil();
+  top.patternListVars = [case p.patternVariableName of
+                           just(f) -> "__sv_sc_" ++ f
+                         | _ -> "__sv_tmp_pv_" ++ toString(genInt())
+                         end];
 }
 
 concrete production patternList_more
@@ -202,16 +338,24 @@ top::PatternList ::= p::Pattern ',' ps1::PatternList
   p.downSubst = top.downSubst;
   ps1.downSubst = p.upSubst;
   top.upSubst = ps1.upSubst;
+  
+  top.headPattern = p;
+  top.patternListEmpty = false;
+  top.varTailPatternList = ps1;
+  top.patternListVars = [case p.patternVariableName of
+                           just(f) -> "__sv_sc_" ++ f
+                         | _ -> "__sv_tmp_pv_" ++ toString(genInt())
+                         end] ++ ps1.patternListVars;
 }
 
 -- lol, dangling comma bug TODO
-concrete production PatternList_nil
+concrete production patternList_nil
 top::PatternList ::= 
 {
   top.pp = "";
   top.errors := [];
   top.defs = emptyDefs();
-  top.location = loc("PatternList_nill", -1, -1);
+  top.location = loc("patternList_nill", -1, -1);
 
   top.errors <- if null(top.patternListTypes)
                 then []
@@ -221,6 +365,11 @@ top::PatternList ::=
   top.letAssigns_tree = [];
 
   top.upSubst = top.downSubst;
+  
+  top.headPattern = error("empty pattern list consulted regarding its first pattern");
+  top.patternListEmpty = true;
+  top.varTailPatternList = error("tailed (var) pattern list that is empty.");
+  top.patternListVars = [];
 }
 
 --------------------------------------------------------------------------------
@@ -267,158 +416,11 @@ p::Pattern ::= prod::QName '(' ps::PatternList ')'
               | _ -> [err(prod.location, prod.pp ++ " is type " ++ prettyType(prod.lookupValue.typerep) ++ " and is not a production.")]
               end;
   
+  p.patternIsVariable = false;
+  p.patternProduction = just(prod.lookupValue.fullName);
+  p.patternVariableName = nothing();
+  p.patternSubPatternList = ps;
 } 
-
-concrete production intPattern
-p::Pattern ::= num::Int_t
-{
-  p.pp = num.lexeme ;
-  p.location = loc(p.file, num.line, num.column);
-  p.errors := [] ;
-
-  p.defs = emptyDefs();
-
-  p.cond_tree = eqeq(p.patternScrutinee, terminal(EQEQ_t, "=="), intConst(num)) ;
-  p.letAssigns_tree = [] ; 
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
-
-  errCheck1.downSubst = p.downSubst;
-  p.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(intTypeExp(), p.patternType);
-  p.errors <- if errCheck1.typeerror
-              then [err(p.location, "Integer value appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
-              else [];
-}
-
-concrete production strPattern
-p::Pattern ::= str::String_t
-{
-  p.pp = str.lexeme ;
-  p.location = loc(p.file, str.line, str.column);
-  p.errors := [] ;
-
-  p.defs = emptyDefs();
-
-  p.cond_tree = eqeq(p.patternScrutinee, terminal(EQEQ_t, "=="), stringConst(str)) ;
-  p.letAssigns_tree = [] ;
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
-
-  errCheck1.downSubst = p.downSubst;
-  p.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(stringTypeExp(), p.patternType);
-  p.errors <- if errCheck1.typeerror
-              then [err(p.location, "String value appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
-              else [];
-}
-
-concrete production truePattern
-p::Pattern ::= 'true'
-{
-  p.pp = "true";
-  p.location = loc(p.file, $1.line, $1.column);
-  p.errors := [];
-
-  p.defs = emptyDefs() ;
-
-  p.cond_tree = eqeq(p.patternScrutinee, terminal(EQEQ_t, "=="), trueConst(terminal(True_kwd, "true"))) ;
-  p.letAssigns_tree = [] ; 
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
-
-  errCheck1.downSubst = p.downSubst;
-  p.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(boolTypeExp(), p.patternType);
-  p.errors <- if errCheck1.typeerror
-              then [err(p.location, "Boolean type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
-              else [];
-}
-
-concrete production falsePattern
-p::Pattern ::= 'false'
-{
-  p.pp = "false" ;
-  p.location = loc(p.file, $1.line, $1.column);
-  p.errors := [] ;
-
-  p.defs = emptyDefs();
-
-  p.cond_tree = eqeq(p.patternScrutinee, terminal(EQEQ_t, "=="), falseConst(terminal(False_kwd, "false"))) ;
-  p.letAssigns_tree = [] ;
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
-
-  errCheck1.downSubst = p.downSubst;
-  p.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(boolTypeExp(), p.patternType);
-  p.errors <- if errCheck1.typeerror
-              then [err(p.location, "Boolean type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
-              else [];
-}
-
-concrete production nilListPattern
-p::Pattern ::= '[' ']'
-{
-  p.pp = "[]";
-  p.location = loc(p.file, $1.line, $1.column);
-  p.errors := [] ;
-
-  p.defs = emptyDefs();
-
-  p.cond_tree = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:null")))),
-                    '(', exprsSingle(p.patternScrutinee), ')');
-  p.letAssigns_tree = [] ;
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
-
-  errCheck1.downSubst = p.downSubst;
-  p.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(listTypeExp(errorType()), p.patternType);
-  p.errors <- if errCheck1.typeerror
-              then [err(p.location, "List type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
-              else [];
-}
-
-concrete production consListPattern
-p::Pattern ::= hp::Pattern '::' tp::Pattern
-{
-  p.pp = hp.pp ++ "::" ++ tp.pp;
-  p.location = loc(p.file, $2.line, $2.column);
-  p.errors := hp.errors ++ tp.errors ;
-
-  p.defs = appendDefs(hp.defs, tp.defs) ;
-
-  p.cond_tree = not('!', productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:null")))),
-                    '(', exprsSingle(p.patternScrutinee), ')'));
-  p.letAssigns_tree = [] ;
-
-  hp.patternType = freeVar; -- unified below...
-  tp.patternType = p.patternType;
-  
-  hp.patternScrutinee = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:head")))),
-                    '(', exprsSingle(p.patternScrutinee), ')');
-  tp.patternScrutinee = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:tail")))),
-                    '(', exprsSingle(p.patternScrutinee), ')');
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = p.finalSubst;
-  local attribute freeVar :: TypeExp; freeVar = errorType();
-
-  errCheck1.downSubst = p.downSubst;
-  hp.downSubst = errCheck1.upSubst;
-  tp.downSubst = hp.upSubst;
-  p.upSubst = tp.upSubst;
-  
-  errCheck1 = check(listTypeExp(freeVar), p.patternType);
-  p.errors <- if errCheck1.typeerror
-              then [err(p.location, "List type constructor appears, but the pattern matching is on type " ++ errCheck1.rightpp)]
-              else [];
-}
 
 concrete production wildcPattern
 p::Pattern ::= '_'
@@ -433,6 +435,10 @@ p::Pattern ::= '_'
   p.letAssigns_tree = [] ;
 
   p.upSubst = p.downSubst;
+  
+  p.patternIsVariable = true;
+  p.patternProduction = nothing();
+  p.patternVariableName = nothing();
 }
 
 concrete production varPattern
@@ -453,12 +459,169 @@ p::Pattern ::= v::Name
   p.letAssigns_tree = [ assignExpr(v, '::', typerepType(p.patternType), '=', p.patternScrutinee) ] ;
 
   p.upSubst = p.downSubst;
+  
+  p.patternIsVariable = true;
+  p.patternProduction = nothing();
+  p.patternVariableName = just(v.name);
 }
 
 ----------------------------------------------------
 -- Added Functions
 ----------------------------------------------------
 
+function patternListAppend
+PatternList ::= l::PatternList r::PatternList
+{
+  return case l of
+           patternList_one(p) -> patternList_more(p, ',', r)
+         | patternList_more(p,c,ps) -> patternList_more(p, c, patternListAppend(ps, r))
+         | patternList_nil() -> r
+         end;
+}
+function patternListTail
+PatternList ::= l::PatternList
+{
+  return case l of
+           patternList_one(p) -> patternList_nil()
+         | patternList_more(p,_,ps) -> ps
+         | patternList_nil() -> error("tail of nil pattern list")
+         end;
+}
+function convStringsToVarBinders
+VarBinders ::= s::[String]
+{
+  local attribute f::VarBinder;
+  f = varVarBinder(nameIdLower(terminal(IdLower_t, head(s))));
+  return if null(s) then nilVarBinder()
+         else if null(tail(s)) then oneVarBinder(f)
+         else consVarBinder(f, ',', convStringsToVarBinders(tail(s)));
+}
+function convStringsToExprs
+Exprs ::= s::[String] tl::[Decorated Expr]
+{
+  local attribute f::Expr;
+  f = baseExpr(qNameId(nameIdLower(terminal(IdLower_t, head(s)))));
+  return if null(s) then exprsDecorated(tl)
+         else exprsCons(f, ',', convStringsToExprs(tail(s), tl));
+}
+function allConCaseTransform -- a primPatternGenerator
+PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
+{
+  -- okay, so we're looking at mrs groups by production.
+  -- So what we want to do is, for each list in mrs,
+  -- generate a PrimPattern on the production that is that group.
+  -- Then, push ALL the match rules into a case underneath that.
+  
+  -- pick out the first mrule of the first list, and get the name (for the list)
+  local attribute prodname :: QName;
+  prodname = qNameId(nameIdLower(terminal(IdLower_t, head(head(mrs)).headPattern.patternProduction.fromJust)));
+  
+  -- pick names for
+  local attribute names :: [String];
+  names = head(head(mrs)).headPattern.patternSubPatternList.patternListVars;
+  
+  local attribute fstPat :: PrimPattern;
+  fstPat = prodPattern(prodname, '(', convStringsToVarBinders(names), ')', '->',
+                         caseExpr(head(head(mrs)).location, returnType,
+                                  convStringsToExprs(names, restExprs),
+                                  tailNestedPatternTransform(head(mrs)),
+                                  failCase));
+  
+  return if null(tail(mrs)) then onePattern(fstPat)
+         else consPattern(fstPat, '|', allConCaseTransform(returnType, restExprs, failCase, tail(mrs)));
+}
+function tailNestedPatternTransform
+MRuleList ::= mrl::[Decorated MatchRule]
+{
+  -- map tailRule mrl
+  -- Take off head pattern, jam sub patterns onto start, go!
+  -- allExprs and failCase are already set for us to use
+  local attribute f :: MatchRule;
+  f = case head(mrl) of
+        matchRule(p,t,e) -> matchRule(patternListAppend(new(p.headPattern.patternSubPatternList),
+                                                        patternListTail(p)), t, e)
+      end;
+  
+  return if null(tail(mrl)) then mRuleList_one(f)
+         else mRuleList_cons(f, '|', tailNestedPatternTransform(tail(mrl)));
+}
+function allIntCaseTransform -- a primPatternGenerator
+PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
+{
+  local attribute fstPat :: PrimPattern;
+  fstPat = integerPattern(case head(head(mrs)).headPattern of 
+                            intPattern(it) -> it
+                          end, '->', 
+                         caseExpr(head(head(mrs)).location, returnType,
+                                  convStringsToExprs([], restExprs),
+                                  tailNestedPatternTransform(head(mrs)),
+                                  failCase));
+  
+  return if null(tail(mrs)) then onePattern(fstPat)
+         else consPattern(fstPat, '|', allIntCaseTransform(returnType, restExprs, failCase, tail(mrs)));  
+}
+function allStrCaseTransform -- a primPatternGenerator
+PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
+{
+  local attribute fstPat :: PrimPattern;
+  fstPat = stringPattern(case head(head(mrs)).headPattern of 
+                            strPattern(it) -> it
+                          end, '->', 
+                         caseExpr(head(head(mrs)).location, returnType,
+                                  convStringsToExprs([], restExprs),
+                                  tailNestedPatternTransform(head(mrs)),
+                                  failCase));
+  
+  return if null(tail(mrs)) then onePattern(fstPat)
+         else consPattern(fstPat, '|', allStrCaseTransform(returnType, restExprs, failCase, tail(mrs)));  
+}
+function allBoolCaseTransform -- a primPatternGenerator
+PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
+{
+  local attribute fstPat :: PrimPattern;
+  fstPat = booleanPattern(case head(head(mrs)).headPattern of 
+                            truePattern(_) -> "true"
+                          | falsePattern(_) -> "false"
+                          end, '->', 
+                         caseExpr(head(head(mrs)).location, returnType,
+                                  convStringsToExprs([], restExprs),
+                                  tailNestedPatternTransform(head(mrs)),
+                                  failCase));
+  
+  return if null(tail(mrs)) then onePattern(fstPat)
+         else consPattern(fstPat, '|', allBoolCaseTransform(returnType, restExprs, failCase, tail(mrs)));  
+}
+function allListCaseTransform -- a primPatternGenerator
+PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
+{
+  local attribute names :: [String];
+  names = head(head(mrs)).headPattern.patternSubPatternList.patternListVars;
+
+  local attribute subcase :: Expr;
+  subcase =  caseExpr(head(head(mrs)).location, returnType,
+                      convStringsToExprs(names, restExprs),
+                      tailNestedPatternTransform(head(mrs)),
+                      failCase);
+  local attribute fstPat :: PrimPattern;
+  fstPat = case head(head(mrs)).headPattern of
+             nilListPattern(_,_) ->    nilPattern(subcase)
+           | consListPattern(h,_,t) -> conslstPattern(head(names), head(tail(names)), subcase)
+           end;
+  
+  return if null(tail(mrs)) then onePattern(fstPat)
+         else consPattern(fstPat, '|', allListCaseTransform(returnType, restExprs, failCase, tail(mrs)));
+}
+function regenerateMatchRuleList
+MRuleList ::= mr::[Decorated MatchRule]
+{
+  return if null(tail(mr)) then mRuleList_one(new(head(mr)))
+         else mRuleList_cons(new(head(mr)), '|', regenerateMatchRuleList(tail(mr)));
+}
+function makeLet
+Expr ::= s::String t::TypeExp e::Expr o::Expr
+{
+  return letp('let', assignListSingle(assignExpr(nameIdLower(terminal(IdLower_t, s)), '::', typerepType(t), '=', e)), 'in', o, 'end');
+}
 function toAssigns
 LetAssigns ::= ls1::[AssignExpr]
 {
@@ -483,7 +646,11 @@ TypeExp ::= t::TypeExp
          then decoratedTypeExp(t)
          else t;
 }
-
+function getTypesExprsSubst
+[TypeExp] ::= es::[Decorated Expr]
+{
+  return if null(es) then [] else [performSubstitution(head(es).typerep, head(es).upSubst)] ++ getTypesExprs(tail(es));
+}
 function generatePLSFromValNType
 [Expr] ::= e::Expr i::Integer t::[TypeExp] s::Substitution
 {
@@ -496,6 +663,51 @@ function generatePLSFromValNType
               else patternMatchRuntimeGetChild(e, i, head(t)) :: generatePLSFromValNType(e,i+1,tail(t),s)
          else [];
 }
+function myor
+Boolean ::= a::Boolean b::Boolean
+{ return a || b; }
+function mruleEqForGrouping
+Boolean ::= a::Decorated MatchRule b::Decorated MatchRule
+{
+  production attribute rv :: Boolean with myor;
+  rv := case a.headPattern, b.headPattern of
+          prodAppPattern(aqn,_,_,_), prodAppPattern(bqn,_,_,_) -> aqn.name == bqn.name
+        | intPattern(an), intPattern(bn) -> toInt(an.lexeme) == toInt(bn.lexeme)
+        | strPattern(astr), strPattern(bstr) -> astr.lexeme == bstr.lexeme
+        | falsePattern(_), falsePattern(_) -> true
+        | truePattern(_),  truePattern(_)  -> true
+        | nilListPattern(_,_),    nilListPattern(_,_)    -> true
+        | consListPattern(_,_,_), consListPattern(_,_,_) -> true
+        | _, _ -> false
+        end;
+  rv <- (a.headPattern.patternIsVariable && b.headPattern.patternIsVariable);
+  return rv;
+}
+function mruleLTEForSorting
+Boolean ::= a::Decorated MatchRule b::Decorated MatchRule
+{
+  production attribute rv :: Boolean with myor;
+  rv := case a.headPattern, b.headPattern of
+          prodAppPattern(aqn,_,_,_), prodAppPattern(bqn,_,_,_) -> aqn.name <= bqn.name
+        | intPattern(an), intPattern(bn) -> toInt(an.lexeme) <= toInt(bn.lexeme)
+        | strPattern(astr), strPattern(bstr) -> astr.lexeme <= bstr.lexeme
+        | falsePattern(_), falsePattern(_) -> true
+        | falsePattern(_), truePattern(_)  -> true
+        | truePattern(_),  truePattern(_)  -> true
+        | nilListPattern(_,_),    nilListPattern(_,_)    -> true
+        | nilListPattern(_,_),    consListPattern(_,_,_) -> true
+        | consListPattern(_,_,_), consListPattern(_,_,_) -> true
+        | _, _ -> false
+        end;
+  rv <- (a.headPattern.patternIsVariable && b.headPattern.patternIsVariable);
+  return rv;
+}
+function groupMRules
+[[Decorated MatchRule]] ::= l::[Decorated MatchRule]
+{
+  return groupBy(mruleEqForGrouping, sortBy(mruleLTEForSorting, l));
+}
+
 --------------------------------------------------------------------------------
 
 -- The work horses
@@ -546,4 +758,62 @@ top::Expr ::= e::Expr c::Integer t::TypeExp
   errCheck1 = checkDecorated(e.typerep);
   -- MAJOR ASSUMPTION: this error, if it happens, is already caught. Ignore it.
 }
+
+----------- Type Stuff
+
+synthesized attribute primPatternGenerator :: Function(PrimPatterns ::= TypeExp [Decorated Expr]  Expr  [[Decorated MatchRule]]);
+
+attribute primPatternGenerator occurs on TypeExp;
+
+function failPrimPatternGen
+PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
+{ return error("INTERNAL ERROR: tried to generate primitive pattern matches for an unsupported scrutinee type. " ++ head(head(mrs)).pp);
+}
+aspect production defaultTypeExp
+top::TypeExp ::=
+{
+  -- known includes: var/skolem/prod/fun/terminal
+  top.primPatternGenerator = failPrimPatternGen;
+}
+
+aspect production intTypeExp
+top::TypeExp ::=
+{
+  top.primPatternGenerator = allIntCaseTransform;
+}
+
+aspect production boolTypeExp
+top::TypeExp ::=
+{
+  top.primPatternGenerator = allBoolCaseTransform;
+}
+
+aspect production floatTypeExp
+top::TypeExp ::=
+{
+}
+
+aspect production stringTypeExp
+top::TypeExp ::=
+{
+  top.primPatternGenerator = allStrCaseTransform;
+}
+
+aspect production nonterminalTypeExp
+top::TypeExp ::= fn::String params::[TypeExp]
+{
+}
+
+aspect production decoratedTypeExp
+top::TypeExp ::= te::TypeExp
+{
+  top.primPatternGenerator = allConCaseTransform;
+}
+
+aspect production listTypeExp
+top::TypeExp ::= el::TypeExp
+{
+  top.primPatternGenerator = allListCaseTransform;
+}
+
 

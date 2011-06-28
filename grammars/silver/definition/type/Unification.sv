@@ -71,6 +71,7 @@ top::TypeExp ::= fn::String params::[TypeExp]
                nonterminalTypeExp(ofn, op) -> if fn == ofn
                                             then unifyAll( params, op )
                                             else errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
+             | ntOrDecTypeExp(_,_) -> errorSubst("nte-nodte: try again")
              | _ -> errorSubst("Tried to unify nonterminal type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
               end;
 }
@@ -91,6 +92,7 @@ top::TypeExp ::= te::TypeExp
 {
   top.unify = case top.unifyWith of
                decoratedTypeExp(ote) -> unify(te, ote)
+             | ntOrDecTypeExp(_,_) -> errorSubst("dte-nodte: try again")
              | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
               end;
 }

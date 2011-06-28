@@ -54,6 +54,8 @@ aspect production productionApp
 top::Expr ::= e::Expr '(' es::Exprs ')'
 {
   e.downSubst = top.downSubst;
+  
+  es.downSubst = top.downSubst; -- TODO REMOVE THIS (it's garbage related to bugs in pretty printing, afaict)
 }
 
 aspect production productionApplicationDispatcher
@@ -513,7 +515,7 @@ top::Expr ::= s::String_t
 aspect production plusPlus
 top::Expr ::= e1::Expr '++' e2::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  production attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
