@@ -342,7 +342,9 @@ public final class Util {
 		} else if(o instanceof TerminalRecord) {
 			TerminalRecord t = (TerminalRecord) o;
 			sb.append("'" + t.lexeme + "'");
-		} else if(o instanceof StringCatter) {
+		} else if(o instanceof StringCatter || 
+				  o instanceof Integer || 
+				  o instanceof Float) {
 			sb.append("\"" + o.toString() + "\"");
 		} else if(o instanceof ConsCell) {
 			hackyhackyUnparseList((ConsCell)o, sb);
