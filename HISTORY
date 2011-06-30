@@ -1,13 +1,13 @@
 
 --------------------------------------------------------------------------------
-Silver HEAD       ??
+Silver 0.3.3      Jun 30, 2011
 
- - Improved pattern matching support   (IN PROGRESS - PLANNED)
+ - Improved pattern matching support
    - Pattern compiler
    - Matching on multiple values
    - Support for GADT-like productions
-   - Integration with forwarding.
- - Performance improvements in translation  (IN PROGRESS - PLANNED)
+   - Integration with forwarding (SLE paper)
+ - Minor bug fixes, library additions.
 
 --------------------------------------------------------------------------------
 Silver 0.3.2      Apr 22, 2011
