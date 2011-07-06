@@ -6,7 +6,7 @@ import silver:definition:type:syntax;
 import silver:definition:concrete_syntax;
 import silver:definition:regex;
 
-terminal Terminal_t /[\']([^\']|([\\][\']))*[\']/;
+terminal Terminal_t /[\']([^\'\n]|([\\][\']))*[\']/;
 
 concrete production regExprEasyTerm
 top::RegExpr ::= t::Terminal_t

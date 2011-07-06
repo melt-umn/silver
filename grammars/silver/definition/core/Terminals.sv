@@ -87,5 +87,5 @@ terminal IdTickTick_t /[A-Za-z][A-Za-z0-9\_]*[\'][\']/ lexer classes {IDENTIFIER
 
 terminal Int_t /[0-9]+/;
 terminal Float_t /[0-9]+[\.][0-9]+/;
-terminal String_t /[\"]([^\"\\]|[\\][\"]|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\"]/;
+terminal String_t /[\"]([^\n\"\\]|[\\][\"]|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\"]/;
 
