@@ -1,6 +1,6 @@
 grammar patt;
 
-function basic1
+function basic1 -- Just maybe :)
 Integer ::= s::Maybe<Boolean>
 {
   return case s of
@@ -13,7 +13,7 @@ equalityTest ( basic1(just(true)), 1, Integer, pat_tests ) ;
 equalityTest ( basic1(nothing()), 2, Integer, pat_tests ) ;
 
 
-function basic2
+function basic2 -- nest translation
 Boolean ::= s::Pair<Maybe<Boolean> Maybe<Pair<Boolean String>>>
 {
   return case s of
@@ -32,7 +32,7 @@ equalityTest ( basic2(pair(nothing(), nothing())), false, Boolean, pat_tests ) ;
 equalityTest ( basic2(pair(nothing(), just(pair(true, "")))), false, Boolean, pat_tests ) ;
 
 
-function basic3
+function basic3 -- "nondeterministic" multiple matching
 String ::= s::Maybe<String>  t::Maybe<String>  u::Maybe<String>
 {
   return case s, t, u of
@@ -51,7 +51,7 @@ equalityTest ( basic3(nothing(), nothing(), just("w")), "w", String, pat_tests )
 -- TODO: Well, we do left-to-right preferred above all. Haskell preferrs top-to-bottom above all....
 equalityTest ( basic3(just("g"), just("w"), just("h")), "g", String, pat_tests ) ;
 
-function basic4
+function basic4 -- using integers
 Integer ::= p::Pair<Integer Maybe<Integer>>
 {
   return case p of
@@ -68,7 +68,7 @@ equalityTest ( basic4(pair(2, nothing())), 3, Integer, pat_tests ) ;
 equalityTest ( basic4(pair(2, just(1))), 4, Integer, pat_tests ) ;
 equalityTest ( basic4(pair(77, just(1))), 4, Integer, pat_tests ) ;
 
-function basic5
+function basic5 -- using strings
 Integer ::= p::Pair<String Maybe<Integer>>
 {
   return case p of
@@ -85,5 +85,21 @@ equalityTest ( basic5(pair("2", nothing())), 3, Integer, pat_tests ) ;
 equalityTest ( basic5(pair("2", just(1))), 4, Integer, pat_tests ) ;
 equalityTest ( basic5(pair("77", just(1))), 4, Integer, pat_tests ) ;
 
+function basic6 -- using _
+Integer ::= p::Pair<String String>
+{
+  return case p of
+           pair("1", _) -> 1
+         | pair("2", _) -> 2
+         | pair(_, "1") -> 3
+         | pair(_, _) -> 4
+         end;
+}
 
+equalityTest ( basic6(pair("1", "1")), 1, Integer, pat_tests ) ;
+equalityTest ( basic6(pair("1", "2")), 1, Integer, pat_tests ) ;
+equalityTest ( basic6(pair("2", "1")), 2, Integer, pat_tests ) ;
+equalityTest ( basic6(pair("2", "2")), 2, Integer, pat_tests ) ;
+equalityTest ( basic6(pair("77", "1")), 3, Integer, pat_tests ) ;
+equalityTest ( basic6(pair("77", "2")), 4, Integer, pat_tests ) ;
 

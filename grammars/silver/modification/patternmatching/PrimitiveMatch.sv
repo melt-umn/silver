@@ -24,9 +24,9 @@ nonterminal PrimPattern  with location, pp, file, grammarName, env, signature, e
                             , scrutineeType, returnType, translation;
 
 nonterminal VarBinders with location, pp, file, grammarName, env, signature, errors, downSubst, upSubst, finalSubst, blockContext
-                          , bindingTypes, bindingIndex, nameTrans, valueTrans, defs;
+                          , bindingTypes, bindingIndex, defs, let_translation;
 nonterminal VarBinder  with location, pp, file, grammarName, env, signature, errors, downSubst, upSubst, finalSubst, blockContext
-                          , bindingType, bindingIndex, nameTrans, valueTrans, defs;
+                          , bindingType, bindingIndex, defs, let_translation;
 
 autocopy attribute scrutineeType :: TypeExp;
 autocopy attribute returnType :: TypeExp;
@@ -166,9 +166,7 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
   e.env = newScopeEnv(ns.defs, top.env);
   
   top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
-    ") { return (" ++ top.returnType.transType ++ ")common.Util.let(context, new String[]{"
-        ++ implode(", ", ns.nameTrans) ++ "}, " ++ "new common.Lazy[]{"
-        ++ implode(", ", ns.valueTrans) ++ "}, " ++ wrapLazy(e) ++ ")" ++ "; }";
+    ") { " ++ ns.let_translation ++ " return (" ++ top.returnType.transType ++ ")" ++ e.translation ++ "; }";
 }
 
 abstract production integerPattern
@@ -324,11 +322,15 @@ top::PrimPattern ::= h::String t::String e::Expr
   e.env = newScopeEnv(consdefs, top.env);
   
   -- TODO: oh my, please fix this.
+--  top.translation = "if(!scrutineeIter.nil()) {" ++
+--    " return (" ++ top.returnType.transType ++ ")common.Util.let(context, new String[]{"
+--        ++ implode(", ", ["\"" ++ hFName ++ "\"","\"" ++ tFName ++ "\""]) ++ "}, " ++ "new common.Lazy[]{"
+--        ++ implode(", ", ["new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return scrutinee.head(); } }",
+--         "new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return scrutinee.tail(); } }"]) ++ "}, " ++ wrapLazy(e) ++ ")" ++ "; }";
   top.translation = "if(!scrutineeIter.nil()) {" ++
-    " return (" ++ top.returnType.transType ++ ")common.Util.let(context, new String[]{"
-        ++ implode(", ", ["\"" ++ hFName ++ "\"","\"" ++ tFName ++ "\""]) ++ "}, " ++ "new common.Lazy[]{"
-        ++ implode(", ", ["new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return scrutinee.head(); } }",
-         "new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return scrutinee.tail(); } }"]) ++ "}, " ++ wrapLazy(e) ++ ")" ++ "; }";
+  makeSpecialLocalBinding(hFName, "scrutinee.head()") ++
+  makeSpecialLocalBinding(tFName, "scrutinee.tail()") ++
+  "return " ++ e.translation ++ "; }";
 }
 --------------------------------------------------------------------------------
 concrete production oneVarBinder
@@ -336,10 +338,11 @@ top::VarBinders ::= v::VarBinder
 {
   top.pp = v.pp;
   top.location = v.location;
-  top.nameTrans = v.nameTrans;
-  top.valueTrans = v.valueTrans;
   top.defs = v.defs;
   top.errors := v.errors;
+
+  top.let_translation = v.let_translation;
+
   v.bindingIndex = top.bindingIndex;
   v.bindingType = if null(top.bindingTypes)
                   then errorType()
@@ -357,10 +360,10 @@ top::VarBinders ::= v::VarBinder ',' vs::VarBinders
 {
   top.pp = v.pp ++ ", " ++ vs.pp;
   top.location = v.location;
-  top.nameTrans = v.nameTrans ++ vs.nameTrans;
-  top.valueTrans = v.valueTrans ++ vs.valueTrans;
   top.defs = appendDefs(v.defs, vs.defs);
   top.errors := v.errors ++ vs.errors;
+
+  top.let_translation = v.let_translation ++ vs.let_translation;
 
   v.bindingIndex = top.bindingIndex;
   vs.bindingIndex = top.bindingIndex + 1;
@@ -377,11 +380,11 @@ top::VarBinders ::= -- technically a bug, but forget it for now
 {
   top.pp = "";
   top.location = loc("??", -1, -2);
-  top.nameTrans = [];
-  top.valueTrans = [];
   top.defs = emptyDefs();
   top.errors := [];
   
+  top.let_translation = "";
+
   top.errors <- if !null(top.bindingTypes)
                 then [err(top.location, "Fewer patterns than expected in pattern list")]
                 else [];
@@ -403,14 +406,13 @@ top::VarBinder ::= n::Name
 
   top.defs = addLexicalLocalDcl(top.grammarName, n.location, fName, ty, emptyDefs());
 
-  top.nameTrans = ["\"" ++ fName ++ "\""];
-  -- TODO: this demands Lazys, but values here would make more sense?
-  top.valueTrans = ["new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return (" ++ ty.transType ++ ")scrutinee." ++ 
-     (if top.bindingType.isDecorable
-     then "childDecorated("
-     else "childAsIs(")
-     ++ toString(top.bindingIndex) ++ "); } }"];
-     
+  top.let_translation = makeSpecialLocalBinding(fName, 
+             "(" ++ ty.transType ++ ")scrutinee." ++ 
+                (if top.bindingType.isDecorable
+                 then "childDecorated("
+                 else "childAsIs(")
+             ++ toString(top.bindingIndex) ++ ")");
+  
   top.errors := []; -- TODO: check for rebinding? or not perhaps...
 }
 concrete production ignoreVarBinder
@@ -419,13 +421,17 @@ top::VarBinder ::= '_'
   top.pp = "_";
   top.location = loc(top.file, $1.line, $1.column);
   top.defs = emptyDefs();
-  top.nameTrans = [];
-  top.valueTrans = [];
   top.errors := [];
+  top.let_translation = "";
 }
 
 
-
+function makeSpecialLocalBinding
+String ::= fn::String  et::String
+{
+  return "final common.RealThunk " ++ makeLocalValueName(fn) ++ " = " ++ 
+        "new common.RealThunk(context, new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return " ++ et ++ "; } });\n";
+}
 
 -----
 
