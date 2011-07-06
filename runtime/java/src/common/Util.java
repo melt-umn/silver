@@ -29,25 +29,6 @@ public final class Util {
 	}
 
 	/**
-	 * Used by the horrible hack that is let expressions in Silver.
-	 * 
-	 * @return the result of evaluating expr in context, with new local attributes jammed into it.
-	 */
-	public static Object let(common.DecoratedNode context, String[] names, Lazy[] values, Lazy expr) {
-		
-		if(context.extraLocalAttributes == null)
-			context.extraLocalAttributes = new TreeMap<String, Object>();
-		
-		for (int i = 0; i < names.length; i++)
-			context.extraLocalAttributes.put(names[i], values[i]);
-
-		// It's not possible to remove these after the eval! (Lazys may still be around
-		// with references to these let attributes!)
-		
-		return expr.eval(context);
-	}
-
-	/**
 	 * Exit, of course!
 	 * 
 	 * <p>This is here because it has to return Object to be used in expressions.

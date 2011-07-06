@@ -29,7 +29,7 @@ public abstract class Node {
 
 	/**
 	 * Decorates a Node, without a parent or inherited attributes.
-	 * Generally only used for function calls.
+	 * Generally only used for function calls. (and empty decorate exprs) (note: generated code for fun calls, too)
 	 * 
 	 * @return A "decorated" form of this Node 
 	 */
@@ -42,6 +42,7 @@ public abstract class Node {
 	 * 
 	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
 	 * @return A "decorated" form of this Node
+	 * @deprecated
 	 */
 	public final DecoratedNode decorate(final DecoratedNode parent) {
 		return decorate(parent, (Lazy[])null);
@@ -49,6 +50,7 @@ public abstract class Node {
 
 	/**
 	 * The normal way of decorating a node. 
+	 * (child and local)
 	 * 
 	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
 	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
@@ -60,6 +62,7 @@ public abstract class Node {
 
 	/**
 	 * The way of decorating a forward node.
+	 * (fwd only)
 	 * 
 	 * @param parent The "true parent" of this node (same as the fwdParent's parent) 
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
