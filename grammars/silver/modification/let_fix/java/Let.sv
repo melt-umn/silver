@@ -15,38 +15,44 @@ import silver:definition:type:syntax;
 aspect production letp
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
-  top.translation = "((" ++ finalType(top).transType ++ ")common.Util.let(context, new String[]{" ++ implode(", ", la.nameTrans) ++ "}, " ++ 
-					     "new common.Lazy[]{" ++ implode(", ", la.valueTrans) ++ "}, " ++ wrapLazy(forward) ++ "))"; 
+  top.translation = "((" ++ finalType(top).transType ++ ")(new common.Lazy() { public final Object eval(final common.DecoratedNode context) { " 
+    ++ la.let_translation
+    ++ "return " ++ forward.translation ++ "; } }).eval(context))";
 }
 
-attribute nameTrans, valueTrans occurs on LetAssigns, AssignExpr;
+synthesized attribute let_translation :: String occurs on LetAssigns, AssignExpr;
+
+function makeLocalValueName
+String ::= s::String
+{
+  return "__SV_LOCAL_" ++ substitute("_", ":", s);
+}
 
 aspect production assigns
 top::LetAssigns ::= ae::AssignExpr ',' list::LetAssigns
 {
-  top.nameTrans = ae.nameTrans ++ list.nameTrans;
-  top.valueTrans = ae.valueTrans ++ list.valueTrans;
+  top.let_translation = ae.let_translation ++ list.let_translation;
 }
 
 aspect production assignListSingle 
 top::LetAssigns ::= ae::AssignExpr
 {
-  top.nameTrans = ae.nameTrans;
-  top.valueTrans = ae.valueTrans;
+  top.let_translation = ae.let_translation;
 }
 
 aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
 {
-  top.nameTrans = ["\"" ++ fName ++ "\""];
-  top.valueTrans = [wrapLazy(e)];
+  -- " ++ t.typerep.transType ++ "
+  top.let_translation = "final common.RealThunk " ++ makeLocalValueName(fName) ++ " = " ++ 
+        "new common.RealThunk(context, " ++ wrapLazy(e) ++ ");\n";
 }
 
 aspect production lexicalLocalReference
 top::Expr ::= q::Decorated QName
 {
   top.translation = if q.lookupValue.typerep.isDecorated && !finalType(top).isDecorated
-                    then "((" ++ finalType(top).transType ++ ")((common.DecoratedNode)context.lexical(\"" ++ q.lookupValue.fullName ++ "\")).undecorate())"
-                    else "((" ++ finalType(top).transType ++ ")context.lexical(\"" ++ q.lookupValue.fullName ++ "\"))";
+                    then "((" ++ finalType(top).transType ++ ")((common.DecoratedNode)" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()).undecorate())"
+                    else "((" ++ finalType(top).transType ++ ")(" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()))";
 }
 
