@@ -1,0 +1,6 @@
+#!/bin/bash
+
+time silver --clean $1 && time java -jar $1.jar
+
+rm "$1.jar" "build.xml"
+
