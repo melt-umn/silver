@@ -34,3 +34,12 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
 {
   top.attrOccursType = "inh";
 }
+
+aspect production localDcl
+top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+{
+  local attribute li :: Integer;
+  li = lastIndexOf(":local:", fn);
+  top.attrOccursIndexName = substitute("_", ":", substring(li+7, length(fn), fn) ++ "__ON__" ++ substring(0,li,fn));
+  top.attrOccursIndex = makeName(sg) ++ ".Init." ++ top.attrOccursIndexName;
+}

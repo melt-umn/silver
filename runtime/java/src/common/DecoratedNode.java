@@ -1,7 +1,5 @@
 package common;
 
-import java.util.*;
-
 import common.exceptions.MissingDefinitionException;
 import common.exceptions.TraceException;
 
@@ -80,7 +78,7 @@ public class DecoratedNode {
 	/**
 	 * A cache of the values of local attributes on this node. (incl. locals and prod)
 	 */
-	protected final Map<String, Object> localValues;
+	protected final Object[] localValues;
 
 	
 	/**
@@ -107,15 +105,21 @@ public class DecoratedNode {
 			this.childrenValues = new Object[self.getNumberOfChildren()];
 		else
 			this.childrenValues = null;
+		
 		if(self != null && self.getNumberOfInhAttrs() > 0)
 			this.inheritedValues = new Object[self.getNumberOfInhAttrs()];
 		else
 			this.inheritedValues = null;
+		
 		if(self != null)
 			this.synthesizedValues = new Object[self.getNumberOfSynAttrs()];
 		else
 			this.synthesizedValues = null;
-		this.localValues = new TreeMap<String, Object>();
+		
+		if(self != null && self.getNumberOfLocalAttrs() > 0)
+			this.localValues = new Object[self.getNumberOfLocalAttrs()];
+		else
+			this.localValues = null;
 		
 		// STATS: Uncomment to enable statistics
 		//Statistics.dnSpawn(self!=null?self.getClass():TopNode.class);
@@ -209,22 +213,22 @@ public class DecoratedNode {
 	 * @param attribute The full name of the local to obtain.
 	 * @return The value of the local.
 	 */
-	public Object localAsIs(final String attribute) {
-		Object o = this.localValues.get(attribute);
+	public Object localAsIs(final int attribute) {
+		Object o = this.localValues[attribute];
 		if(o == null) {
 			Lazy l = self.getLocal(attribute);
 			if(l == null) {
-				throw new MissingDefinitionException("Local attribute '" + attribute + "' is not defined in production '" + self.getName() + "'");
+				throw new MissingDefinitionException("Local attribute '" + self.getNameOfLocalAttr(attribute) + "' is not defined in production '" + self.getName() + "'");
 			}
 			try {
 				o = l.eval(this);
 			} catch(Throwable t){
-				throw new TraceException("Error while evaluating local attribute '" + attribute + "' in production '" + self.getName() + "'", t);
+				throw new TraceException("Error while evaluating local attribute '" + self.getNameOfLocalAttr(attribute) + "' in production '" + self.getName() + "'", t);
 			}
 			
 			// CACHE : comment out to disable caching for local attributes
 			// not recommended due to IO objects (IOString, etc)
-			this.localValues.put(attribute, o);
+			this.localValues[attribute] = o;
 		}
 		return o;
 	}
@@ -237,23 +241,23 @@ public class DecoratedNode {
 	 * @param attribute The full name of the local to obtain.
 	 * @return The value of the local.
 	 */
-	public DecoratedNode localDecorated(final String attribute) {
-		Object o = this.localValues.get(attribute);
+	public DecoratedNode localDecorated(final int attribute) {
+		Object o = this.localValues[attribute];
 		if(o == null) {
 			Lazy l = self.getLocal(attribute);
 			if(l == null) {
-				throw new MissingDefinitionException("Local attribute '" + attribute + "' is not defined in production '" + self.getName() + "'");
+				throw new MissingDefinitionException("Local attribute '" + self.getNameOfLocalAttr(attribute) + "' is not defined in production '" + self.getName() + "'");
 			}
 			try {
 				o = l.eval(this);
 				o = ((Node)o).decorate(this, self.getLocalInheritedAttributes(attribute));
 			} catch(Throwable t){
-				throw new TraceException("Error while evaluating local attribute '" + attribute + "' in production '" + self.getName() + "'", t);
+				throw new TraceException("Error while evaluating local attribute '" + self.getNameOfLocalAttr(attribute) + "' in production '" + self.getName() + "'", t);
 			}
 			
 			// CACHE : comment out to disable caching for local attributes
 			// not recommended due to IO objects (IOString, etc)
-			this.localValues.put(attribute, o);
+			this.localValues[attribute] = o;
 		}
 		return (DecoratedNode)o;
 	}
