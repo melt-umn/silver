@@ -76,9 +76,9 @@ top::Expr ::= q::Decorated QName
   top.translation =
     if q.lookupValue.typerep.isDecorable
     then if finalType(top).isDecorable
-         then {- type Node -} "context.localDecorated(\"" ++ q.lookupValue.fullName ++ "\").undecorate()"
-         else {- type DecoratedNode -} "context.localDecorated(\"" ++ q.lookupValue.fullName ++ "\")"
-    else "((" ++ finalType(top).transType ++ ")context.localAsIs(\"" ++ q.lookupValue.fullName ++ "\"))";
+         then {- type Node -} "context.localDecorated(" ++ q.lookupValue.dcl.attrOccursIndex ++ ").undecorate()"
+         else {- type DecoratedNode -} "context.localDecorated(" ++ q.lookupValue.dcl.attrOccursIndex ++ ")"
+    else "((" ++ finalType(top).transType ++ ")context.localAsIs(" ++ q.lookupValue.dcl.attrOccursIndex ++ "))";
 
   -- reminder: the reason we do .localDecorated().undecorate() is that it's not safe to mix asis/decorated accesses.
 }

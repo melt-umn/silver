@@ -119,6 +119,12 @@ public abstract class Node {
 	 */
 	public abstract int getNumberOfSynAttrs();
 	/**
+	 * Used to create arrays of appropriate size in DecoratedNode.
+	 * 
+	 * @return The number of local and production attributes that occur on this <b>production</b>
+	 */
+	public abstract int getNumberOfLocalAttrs();
+	/**
 	 * Used for debugging, and pattern matching.
 	 * 
 	 * @return The full name of this Node. (e.g. "silver:definition:core:baseExpr")
@@ -138,6 +144,13 @@ public abstract class Node {
 	 * @return The name of the synthesized attribute at this index
 	 */
 	public abstract String getNameOfSynAttr(final int index);
+	/**
+	 * Used for debugging, stack traces especially.
+	 * 
+	 * @param index The index of the local attribute to return the name of
+	 * @return The name of the local attribute at this index
+	 */
+	public abstract String getNameOfLocalAttr(final int index);
 
 	/**
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get a Node that this one forwards to.
@@ -159,10 +172,10 @@ public abstract class Node {
 	public abstract Lazy getSynthesized(final int index);
 
 	/**
-	 * @param key The name of the local to retrieve inherited attributes for.
+	 * @param key The key for a local to retrieve inherited attributes for.
 	 * @return An array containing the inherited attributes supplied to that local 
 	 */
-	public abstract Lazy[] getLocalInheritedAttributes(final String key);
+	public abstract Lazy[] getLocalInheritedAttributes(final int key);
 	
 	/**
 	 * @param key The child index to look up the inherited attributes.
@@ -171,8 +184,8 @@ public abstract class Node {
 	public abstract Lazy[] getChildInheritedAttributes(final int key);
 	
 	/**
-	 * @param name Any local attribute on this Node
+	 * @param name Any local or production attribute on this Node
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of the attribute
 	 */
-	public abstract Lazy getLocal(final String name);
+	public abstract Lazy getLocal(final int name);
 }

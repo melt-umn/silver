@@ -46,12 +46,12 @@ public class TopNode extends DecoratedNode{ // TODO: this should become a Node!
 	}
 
 	@Override
-	public Object localAsIs(final String attribute) {
+	public Object localAsIs(final int attribute) {
 		throw new SilverInternalError("No local attributes defined on TopNode.");
 	}
 
 	@Override
-	public DecoratedNode localDecorated(final String attribute) {
+	public DecoratedNode localDecorated(final int attribute) {
 		throw new SilverInternalError("No local attributes defined on TopNode.");
 	}
 

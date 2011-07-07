@@ -1,5 +1,7 @@
 grammar silver:translation:java:core;
 
+import silver:util;
+
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
@@ -12,6 +14,12 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   top.setupInh := body.setupInh;
   top.initProd := "\t\t" ++ makeName(top.grammarName) ++ "." ++ className ++ ".initProductionAttributeDefinitions();\n";
   top.postInit := "\t\tcommon.Decorator.applyDecorators(" ++ fnnt ++ ".decorators, " ++ className ++ ".class);\n";
+
+  top.initWeaving := "\tpublic static int " ++ localVar ++ " = 0;\n";
+  top.valueWeaving := body.valueWeaving;
+
+  local attribute localVar :: String;
+  localVar = "count_local__ON__" ++ substitute("_", ":", fName);
 
   local attribute fnnt :: String;
   fnnt = makeNTClassName(ns.outputElement.typerep.typeName);
@@ -26,14 +34,17 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(ns.inputElements) ++ "};\n\n" ++
 
+"\tpublic static final int num_local_attrs = Init." ++ localVar ++ ";\n" ++
+"\tpublic static final String[] occurs_local = new String[num_local_attrs];\n\n" ++
+
 "\tpublic static common.Lazy forward;\n" ++
 "\tpublic static final common.Lazy[] forwardInheritedAttributes = new common.Lazy[" ++ fnnt ++ ".num_inh_attrs];\n\n" ++
 
-"\tpublic static final java.util.TreeMap<String, common.Lazy> localAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
 "\tpublic static final common.Lazy[] synthesizedAttributes = new common.Lazy[" ++ fnnt ++ ".num_syn_attrs];\n" ++
 "\tpublic static final common.Lazy[][] childInheritedAttributes = new common.Lazy[" ++ toString(length(sigNames)) ++ "][];\n\n" ++	
-"\tpublic static final java.util.TreeMap<String, common.Lazy[]> localInheritedAttributes = new java.util.TreeMap<String, common.Lazy[]>();\n\n" ++	
 
+"\tpublic static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];\n" ++
+"\tpublic static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];\n\n" ++
 
 "\tstatic{\n" ++
 makeStaticDcls(className, ns.inputElements) ++
@@ -53,8 +64,8 @@ makeStaticDcls(className, ns.inputElements) ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic common.Lazy[] getLocalInheritedAttributes(final String key) {\n" ++
-"\t\treturn localInheritedAttributes.get(key);\n" ++
+"\tpublic common.Lazy[] getLocalInheritedAttributes(final int key) {\n" ++
+"\t\treturn localInheritedAttributes[key];\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
@@ -73,8 +84,18 @@ makeStaticDcls(className, ns.inputElements) ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic common.Lazy getLocal(final String name) {\n" ++
-"\t\treturn localAttributes.get(name);\n" ++
+"\tpublic common.Lazy getLocal(final int key) {\n" ++
+"\t\treturn localAttributes[key];\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic final int getNumberOfLocalAttrs() {\n" ++
+"\t\treturn num_local_attrs;\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic final String getNameOfLocalAttr(final int index) {\n" ++
+"\t\treturn occurs_local[index];\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++

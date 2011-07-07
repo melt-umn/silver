@@ -12,6 +12,12 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
   local attribute parserName :: String;
   parserName = makeParserName(fName);
 
+  top.initWeaving := "\tpublic static int " ++ localVar ++ " = 0;\n";
+  top.valueWeaving := "";
+
+  local attribute localVar :: String;
+  localVar = "count_local__ON__" ++ substitute("_", ":", fName);
+
   top.javaClasses = [[className,
                       generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult)
                     ]];

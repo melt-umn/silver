@@ -1,12 +1,19 @@
 grammar silver:translation:java:core;
 
 import silver:definition:type:io; -- for main type check only
+import silver:util;
 
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
   top.setupInh := body.setupInh;
   top.initProd := "\t\t//FUNCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
+
+  top.initWeaving := "\tpublic static int " ++ localVar ++ " = 0;\n";
+  top.valueWeaving := body.valueWeaving;
+
+  local attribute localVar :: String;
+  localVar = "count_local__ON__" ++ substitute("_", ":", fName);
 
   top.javaClasses = [["P" ++ id.name, 
                       generateFunctionClassString(top.grammarName, id.name, namedSig, "return (" ++ ns.outputElement.typerep.transType ++ ")super.doReturn();\n")
@@ -29,6 +36,9 @@ String ::= whatGrammar::String whatName::String whatSig::Decorated NamedSignatur
   local attribute className :: String;
   className = "P" ++ whatName;
 
+  local attribute localVar :: String;
+  localVar = "count_local__ON__" ++ substitute("_", ":", whatGrammar) ++ "_" ++ whatName;
+
   local attribute sigNames :: [String];
   sigNames = getNamesSignature(whatSig.inputElements);
 
@@ -40,10 +50,14 @@ String ::= whatGrammar::String whatName::String whatSig::Decorated NamedSignatur
 makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(whatSig.inputElements) ++ "};\n\n" ++
 
-"\tpublic static final java.util.TreeMap<String, common.Lazy> localAttributes = new java.util.TreeMap<String, common.Lazy>();\n" ++
+"\tpublic static final int num_local_attrs = Init." ++ localVar ++ ";\n" ++
+"\tpublic static final String[] occurs_local = new String[num_local_attrs];\n\n" ++
+
 "\tpublic static final common.Lazy[] synthesizedAttributes = new common.Lazy[1];\n" ++
 "\tpublic static final common.Lazy[][] childInheritedAttributes = new common.Lazy[" ++ toString(length(sigNames)) ++ "][];\n\n" ++	
-"\tpublic static final java.util.TreeMap<String, common.Lazy[]> localInheritedAttributes = new java.util.TreeMap<String, common.Lazy[]>();\n\n" ++	
+
+"\tpublic static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];\n" ++
+"\tpublic static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];\n\n" ++	
 
 
 "\tstatic{\n" ++
@@ -64,8 +78,8 @@ makeStaticDcls(className, whatSig.inputElements) ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic common.Lazy[] getLocalInheritedAttributes(final String key) {\n" ++
-"\t\treturn localInheritedAttributes.get(key);\n" ++
+"\tpublic common.Lazy[] getLocalInheritedAttributes(final int key) {\n" ++
+"\t\treturn localInheritedAttributes[key];\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
@@ -74,8 +88,18 @@ makeStaticDcls(className, whatSig.inputElements) ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic common.Lazy getLocal(final String name) {\n" ++
-"\t\treturn localAttributes.get(name);\n" ++
+"\tpublic common.Lazy getLocal(final int key) {\n" ++
+"\t\treturn localAttributes[key];\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic final int getNumberOfLocalAttrs() {\n" ++
+"\t\treturn num_local_attrs;\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic final String getNameOfLocalAttr(final int index) {\n" ++
+"\t\treturn occurs_local[index];\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
