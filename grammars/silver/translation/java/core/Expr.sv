@@ -417,8 +417,13 @@ String ::= original::Decorated Expr beLazy::Boolean
 {
   -- TODO: in the future, we could also ask "isStaticReference" and copy the thunk, instead of creating a new one that just evaluates the existing.
   return if beLazy && !original.isStaticValue
-         then "new common.Closure(context) { public final Object eval() { return " ++ original.translation ++ "; } }"
+         then wrapThunkText("context", original.translation)
          else original.translation;
+}
+function wrapThunkText
+String ::= ct::String s::String
+{
+  return "new common.Closure(" ++ ct ++ ") { public final Object eval() { return " ++ s ++ "; } }";
 }
 function wrapLazy
 String ::= e::Decorated Expr

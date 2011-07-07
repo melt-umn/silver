@@ -429,8 +429,7 @@ top::VarBinder ::= '_'
 function makeSpecialLocalBinding
 String ::= fn::String  et::String
 {
-  return "final common.RealThunk " ++ makeLocalValueName(fn) ++ " = " ++ 
-        "new common.RealThunk(context, new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return " ++ et ++ "; } });\n";
+  return "final common.Thunk " ++ makeLocalValueName(fn) ++ " = " ++ "new common.Thunk(" ++ wrapThunkText("context", et) ++ ");\n";
 }
 
 -----
