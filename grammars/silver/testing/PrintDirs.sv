@@ -1,4 +1,4 @@
-grammar lib:testing;
+grammar silver:testing;
 
 function printDirs
 IO ::= paths::[String] ioIn::IO

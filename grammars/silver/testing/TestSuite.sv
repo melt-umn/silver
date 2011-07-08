@@ -1,4 +1,4 @@
-grammar lib:testing ;
+grammar silver:testing ;
 
 nonterminal Test 
   with msg, pass, ioIn, ioOut ;

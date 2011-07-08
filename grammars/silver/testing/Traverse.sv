@@ -1,4 +1,4 @@
-grammar lib:testing ;
+grammar silver:testing ;
 
 function traverseDirectoriesAndPerform
 IOVal<a> ::= startDir::String paths::[String] 
