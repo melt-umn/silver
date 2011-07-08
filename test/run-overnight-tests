@@ -1,14 +1,14 @@
 #!/bin/bash
 
 if [ ! -f run-overnight-tests ]; then
-    echo "This script must  be run from the support/bin directory."
+    echo "This script must  be run from the test/ directory."
     exit
 fi
 
 RESDIR="test_results_`date +%F_%H:%M`"
 
 # Make the jars directory if it is not there
-cd ../../
+cd ../
 echo "1: `pwd`"
 mkdir -p jars
 
@@ -38,7 +38,7 @@ tail -n 5 $RESDIR/silver-rebuild.output
 # With updated Silver, build the testing framework jar file.
 # It ends up in grammars/lib/testing as lib.testing.jar.
 # The silver-run-tests script just runs this jar file.
-cd "$SILVER_HOME/../trunk/grammars/lib/testing"
+cd "$SILVER_HOME/../trunk/grammars/silver/testing/bin"
 echo "In ...`pwd`"
 ./silver-compile --clean  >& ../../../$RESDIR/testing-build.output
 
