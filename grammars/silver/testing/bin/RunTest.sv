@@ -1,4 +1,6 @@
-grammar silver:testing ;
+grammar silver:testing:bin ;
+
+import silver:testing;
 
 nonterminal TestingResults with msg, numTests, numPassed, numFailed ;
 

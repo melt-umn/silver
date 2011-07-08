@@ -5,12 +5,13 @@
 # ./deep-clean -delete all  to blow everything away
 
 find ./build/ $1
-find ./grammars/ -name build.xml $1
+find ./grammars/ -name "build.xml" $1
 find ./ -name "*~" $1
-find ./test/ -name build.xml $1
+find ./test/ -name "build.xml" $1
+find ./test/ -name "*.jar" $1
+find ./test/ -name "*.test.output" $1
 find ./runtime/ -name "SilverRuntime.jar" $1
 find ./runtime/ -name "RunSilver.jar" $1
-find ./test/ -name "*.jar" $1
 find ./grammars/ -name "*.jar" $1
 find ./tutorials/ -name "*.test.output" $1
 find ./tutorials/ -name "*.jar" $1

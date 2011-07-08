@@ -7,11 +7,11 @@
 # or add arguments, like  ./silver-compile --clean
 
 ##export GRAMMAR_PATH="../../../../../../grammars"
-export  SILVER_HOME="../../.."
+export  SILVER_HOME="../../../.."
 
 java -Xss8M -Xmx1000M -jar $SILVER_HOME/jars/RunSilver.jar \
      $@ \
-     lib:testing \
+     silver:testing:bin \
      && ant
 
 #export SILVER_HOME=../../../../../../../Melt_SVN_http/silver/trunk/jars
