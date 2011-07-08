@@ -1,4 +1,4 @@
-grammar lib:testing ;
+grammar silver:testing ;
 
 nonterminal TestingResults with msg, numTests, numPassed, numFailed ;
 

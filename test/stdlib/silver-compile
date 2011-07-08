@@ -5,9 +5,9 @@
 # (other than ensuring that the testing extension has been
 #  compiled into Silver).
 
-export SILVER_HOME=../../../../../
+export SILVER_HOME=../..
 
-java -jar $SILVER_HOME/jars/RunSilver.jar $1  -o tests.core.jar \
-     lib:testing:tests:core \
+java -jar $SILVER_HOME/jars/RunSilver.jar $1  -o stdlib.jar \
+     -I .. stdlib \
      && ant
 

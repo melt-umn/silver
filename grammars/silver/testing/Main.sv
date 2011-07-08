@@ -1,4 +1,4 @@
-grammar lib:testing ;
+grammar silver:testing ;
 
 function main
 IOVal<Integer> ::= args::[String] ioIn::IO

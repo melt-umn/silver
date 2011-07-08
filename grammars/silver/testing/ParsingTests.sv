@@ -1,4 +1,4 @@
-grammar lib:testing ;
+grammar silver:testing ;
 
 ---- Move thest to the testing library ----
 
