@@ -131,12 +131,6 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
   top.upSubst = top.downSubst;
 }
 
-aspect production productionAttributeDcl
-top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
-{
-  top.upSubst = top.downSubst;
-}
-
 aspect production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
