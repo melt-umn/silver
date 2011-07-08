@@ -1,4 +1,6 @@
-grammar silver:testing ;
+grammar silver:testing:bin ;
+
+import silver:testing;
 
 ---- Move thest to the testing library ----
 

@@ -1,4 +1,4 @@
-grammar silver:testing ;
+grammar silver:testing:bin ;
 
 {-
  run "java -jar ../....."
@@ -27,7 +27,7 @@ inherited attribute testFileDir :: String ;
 
 nonterminal Run with testFileName, testFileDir, ioInput, ioResult ;
 
-parser parse::Run { silver:testing ; }
+parser parse::Run { silver:testing:bin ; }
 
 
 concrete production skipRun

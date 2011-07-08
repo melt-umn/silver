@@ -1,4 +1,6 @@
-grammar silver:testing ;
+grammar silver:testing:bin ;
+
+import silver:testing;
 
 function main
 IOVal<Integer> ::= args::[String] ioIn::IO
