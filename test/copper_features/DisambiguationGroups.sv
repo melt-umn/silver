@@ -1,6 +1,6 @@
 grammar copper_features;
 
-imports lib:testing ;
+imports silver:testing ;
 imports lib:extcore ;
 
 mainTestSuite copper_tests ;
