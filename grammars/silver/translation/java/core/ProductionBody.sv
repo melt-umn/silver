@@ -141,31 +141,9 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 
 
   top.setupInh := if !te.typerep.isDecorable then  "" else
-        	 "\t\t//" ++ top.pp ++ "\n" ++
-		 "\t\t" ++ 
-		 makeClassName(top.signature.fullName) ++ ".localInheritedAttributes[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = " ++ 
-                                           "new common.Lazy[" ++ makeNTClassName(te.typerep.typeName) ++ ".num_inh_attrs];\n";
-  top.translation = "";
-}
-
-aspect production productionAttributeDcl
-top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
-{
-  local attribute prod_orig_grammar :: String;
-  prod_orig_grammar = substring(0, lastIndexOf(":", top.signature.fullName), top.signature.fullName);
-  local attribute prod_orig_name :: String;
-  prod_orig_name = substring(lastIndexOf(":", top.signature.fullName)+1, length(top.signature.fullName), top.signature.fullName);
-  local attribute ugh_dcl_hack :: Decorated DclInfo;
-  ugh_dcl_hack = head(getValueDcl(fName, top.env)); -- TODO
-  
-  top.setupInh <- "\t\t" ++ substitute(".", ":", prod_orig_grammar) ++ ".P" ++ prod_orig_name ++ ".occurs_local[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = \"" ++ fName ++ "\";\n";
-  top.valueWeaving := "public static final int " ++ ugh_dcl_hack.attrOccursIndexName ++ " = " ++ makeName(prod_orig_grammar) ++ ".Init.count_local__ON__" ++ substitute("_", ":", top.signature.fullName) ++ "++;\n";
-
-
-  top.setupInh := if !te.typerep.isDecorable then  "" else
-	   	"\t\t//" ++ top.pp ++ "\n" ++		 
-		"\t\t" ++ 
-		 makeClassName(top.signature.fullName) ++ ".localInheritedAttributes[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = " ++ 
+                 "\t\t//" ++ top.pp ++ "\n" ++
+                 "\t\t" ++ 
+                 makeClassName(top.signature.fullName) ++ ".localInheritedAttributes[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = " ++ 
                                            "new common.Lazy[" ++ makeNTClassName(te.typerep.typeName) ++ ".num_inh_attrs];\n";
   top.translation = "";
 }

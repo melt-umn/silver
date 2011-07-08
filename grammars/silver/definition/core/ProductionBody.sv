@@ -158,26 +158,17 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 concrete production productionAttributeDcl
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
 {
-  top.pp = "\tproduction attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  -- TODO: we should pp the production keyword, not local here!!
+  --top.pp = "\tproduction attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";
 
-  top.productionAttributes = addLocalDcl(top.grammarName, a.location, fName, te.typerep, emptyDefs());
-
-  production attribute fName :: String;
-  fName = top.signature.fullName ++ ":local:" ++ a.name;
-
-  top.errors := te.errors;
-
-  top.errors <-
-        if length(getValueDclAll(fName, top.env)) > 1
-        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
-        else [];
+  top.productionAttributes = forward.defs;
+  top.defs = emptyDefs();
 
   top.errors <- if !top.blockContext.permitProductionAttributes
                 then [err(top.location, "Production attributes are not valid in this context.")]
                 else [];
 
-  forwards to defaultProductionStmt(); -- TODO forward to local def!
+  forwards to localAttributeDcl(terminal(Local_kwd, "local", $1), $2, a, $4, te, $6);
 }
 
 concrete production forwardsTo
