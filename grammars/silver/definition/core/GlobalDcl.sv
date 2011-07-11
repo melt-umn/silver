@@ -16,7 +16,7 @@ top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
-  top.errors := e.errors;
+  top.errors := t.errors ++ e.errors;
   e.blockContext = defaultContext();
 
   forwards to agDclDefault();
