@@ -1,9 +1,3 @@
-grammar copper_features;
-
-imports silver:testing ;
-imports lib:extcore ;
-
-mainTestSuite copper_tests ;
 
 -- Test disambiguation groups.
 -- Use lexeme in groups
