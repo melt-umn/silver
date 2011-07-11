@@ -28,23 +28,27 @@ String ::= sep::String lst::[String]
 function explode
 [String] ::= sep::String str::String
 {
+  return if sep=="" then explodeSingle(str)
+         else if str == "" then []
+         else explodeNormal(sep, str);
+}
+function explodeNormal
+[String] ::= sep::String str::String
+{
   local attribute i :: Integer;
   i = indexOf(sep, str);
 
-  return if   sep=="" 
-         then explodeSingle(str)
-         else
-         if i == -1
+  return if i == -1
          then [str]
-         else [substring(0, i, str)] ++ 
-              explode(sep, substring(i+length(sep), length(str), str)) ;
+         else substring(0, i, str) ::
+              explodeNormal(sep, substring(i+length(sep), length(str), str)) ;
 }
-
 function explodeSingle
 [String] ::= str::String
-{ return if length(str) == 0
-         then [ ]
-         else [ substring(0,1,str) ] ++
+{
+  return if length(str) == 0
+         then []
+         else substring(0,1,str) ::
               explodeSingle (substring(1,length(str),str)) ;
 }
 
