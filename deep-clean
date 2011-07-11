@@ -17,6 +17,8 @@ find ./tutorials/ -name "*.test.output" $1
 find ./tutorials/ -name "*.jar" $1
 find ./tutorials/ -name "build.xml" $1
 find ./tutorials/ -name "output.c" $1
+find "build.xml" $1
+find "silver.testing.bin.jar" $1
 
 if [ "$2" == "all" ]; then
   rm -rf generated/src/* generated/bin/*

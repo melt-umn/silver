@@ -95,7 +95,8 @@ top::TermPrecList ::= h::QName t::TermPrecList
   top.precTermList = [fName] ++ t.precTermList ;
 
   -- This is just for disambiguation groups. TODO: remove and make it separate concrete syntax!
-  top.defs = addPluckTermDcl(top.grammarName, h.location, h.lookupType.dcl.fullName, t.defs);
+  top.defs = if null(h.lookupType.dcls) then t.defs
+             else addPluckTermDcl(top.grammarName, h.location, h.lookupType.dcl.fullName, t.defs);
 
   top.errors := t.errors;
   

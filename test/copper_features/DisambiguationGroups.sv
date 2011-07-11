@@ -21,9 +21,9 @@ concrete production rt2
 r::DGRoot ::= Foo_t {r.dgFoo = true;}
 
 disambiguate Foo_t, Id {
-  print (if containsBy(stringEq, lexeme, ["foo", "bar"])
-         then "Fooiong"
-         else "IDing");
+--  print (if containsBy(stringEq, lexeme, ["foo", "bar"])
+--         then "Fooiong"
+--         else "IDing");
 
   pluck if containsBy(stringEq, lexeme, ["foo", "bar"])
         then Foo_t
