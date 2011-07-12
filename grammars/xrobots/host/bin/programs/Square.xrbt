@@ -1,0 +1,38 @@
+Behavior root{
+   Initial Behavior goStraight(float extraDist){
+
+	float distLeft;
+	float x ;
+	Entry{
+		SetLSpeed{200.0}
+		SetRSpeed{200.0}
+		x := 2.0 ;
+		clock := 0.0;
+	}
+	
+
+		Under Condition LeftBump || RightBump
+			Apply Behavior goStraight(extraDist::distLeft) 
+		Under Condition (200.0 * clock) > (0.5 + extraDist)    
+			Apply Behavior goStraight(extraDist::0.0)
+	
+
+	Exit{
+		distLeft := (0.500) - (200.0 * clock);
+	}
+   }
+
+
+   Behavior rotateLeft(float  extraDist){
+
+
+	Entry{
+		clock := 0.0;
+		SetLSpeed{200.0}
+		SetRSpeed{25.0}
+	}
+	
+		Under Condition clock > 1.2
+			Apply Behavior goStraight(extraDist::extraDist)
+   }
+}

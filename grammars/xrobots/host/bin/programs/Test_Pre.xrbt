@@ -1,0 +1,46 @@
+Behavior root{
+	Initial Behavior temp{
+		float x;	
+		int ar[4];
+		int twoar[4,4];
+		int arr[4];
+		Entry{
+			x:= pre(pre(x));	
+			ar[0] := ar[1];
+			twoar[3,2] := 99;
+			twoar[1,1] := twoar[3,2];
+			ar[3] := twoar[1,1];
+			arr := ar;	
+				
+		}	
+		
+		Under Condition pre(x) > 10.0	
+			Apply Behavior temp()
+		Under Condition pre(twoar[1,1])>10
+			Apply Behavior temptwo()
+		Exit{
+			x:= pre(x);	
+		}
+	}
+	Initial Behavior temptwo{
+		float x;	
+		int artwo[4];
+		int twoartwo[4,4];
+		int arrtwo[4];
+		Entry{
+			x:= pre(pre(x));	
+			artwo[0] := temp.ar[1];
+			twoartwo[3,2] := 99;
+			twoartwo[1,1] := temp.twoar[3,2];
+			artwo[3] := temp.twoar[1,1];
+			arrtwo := temp.arr;	
+			x:=0.0;
+		}	
+		
+		Under Condition pre(x) > 10.0	
+			Apply Behavior temp()
+		Exit{
+			x:= pre(x);	
+		}
+	}
+}

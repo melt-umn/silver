@@ -1,0 +1,93 @@
+Behavior root{  
+  Behavior wallOnSide(boolean rBump){
+         Initial Behavior backup(boolean rBump){
+		//this is a scoping question.
+		//do the sub behaviors inherit the
+		//parameters of the super behaviors 
+            Entry{     
+                clock := 0.0;
+       	    	SetRSpeed{-140.0}
+                SetLSpeed{-140.0}
+            }
+            
+               Under Condition  clock > 2.0 
+                    Apply Behavior outOfWall(rBump::rBump) 
+            
+         }
+         
+         Behavior outOfWall(boolean rBump){
+	     Entry{
+                if (rBump) then {      
+                   SetRSpeed{75.0}
+                   SetLSpeed{250.0}
+                } else {
+                   SetRSpeed{250.0}
+                   SetLSpeed{75.0}
+                } 
+            }
+
+                Under Condition clock > 4.2 
+                     Apply Behavior intoWall(rBump::rBump)
+
+         }
+          
+          
+          Behavior intoWall(boolean rBump){
+             Entry{
+                 if (rBump) then {
+                 	SetRSpeed{200.0}
+                  	SetLSpeed{75.0}
+                 } else {
+                	SetRSpeed{75.0}
+                  	SetLSpeed{200.0}    
+                 }
+             }
+             
+                 Under Condition clock > 4.2 && (LeftBump || RightBump) 
+                   Apply Behavior wallOnSide(rBump::rBump)
+                 Under Condition clock > 4.20      
+                   Apply Behavior root.followCorner(rBump::rBump)
+				   
+          }
+
+  }
+
+  Behavior followCorner(boolean rBump){
+    Entry{
+	clock := 0.0;
+        if (rBump) then {
+    	   SetRSpeed{200.0}
+    	   SetLSpeed{25.0}
+        } else {
+           SetRSpeed{25.0}
+    	   SetLSpeed{200.0}         
+       } 
+    }   
+    
+       Under Condition clock > 2.0 && RightBump
+          Apply Behavior wallOnSide(rBump::true)
+       Under Condition clock > 2.0 && LeftBump
+          Apply Behavior wallOnSide(rBump::false)   
+       Under Condition clock >2.0 
+          Apply Behavior random()
+  }
+	
+
+  Initial Behavior random{
+
+    
+    Entry{
+       clock := 0.0;
+     
+	SetRSpeed{ rand() }
+	SetLSpeed{ rand() }
+     }
+  	    Under Condition clock > 0.5 && RightBump 
+          Apply Behavior wallOnSide(rBump::true)
+        Under Condition clock > 0.5 && LeftBump  
+          Apply Behavior wallOnSide(rBump::false)
+	Under Condition clock > 1.5
+		Apply Behavior random()
+
+  }
+}
