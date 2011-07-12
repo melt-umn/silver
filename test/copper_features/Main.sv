@@ -9,4 +9,5 @@ mainTestSuite copper_tests ;
 layout tests
 precedence / associativity tests
 lexer classes & dominates submits tests
+production precedence / operator tests
 -}
