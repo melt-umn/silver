@@ -1,0 +1,126 @@
+Compiling Grammar: xrobots:host:bin
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/host/bin/Main.sv]
+Compiling Grammar: core
+	[/project/melt3/People/sst/steve/silver/trunk/grammars/core/IO.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/grammars/core/String.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/grammars/core/Maybe.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/grammars/core/HackyUnParse.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/grammars/core/Pair.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/grammars/core/List.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/grammars/core/ParseResult.sv]
+Compiling Grammar: xrobots:host
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/host/Main.sv]
+Compiling Grammar: xrobots:concretesyntax
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/StmtList.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/DecList.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/Stmt.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/IfThenElse.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/MoreOps.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/UnderCondApplyBehavior.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/Root.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/Expr.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/OnExit.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/UCABBlock.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/ArgList.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/Behavior.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/OnEntry.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/Dec.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/Block.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/concretesyntax/BehaveStmt.sv]
+Compiling Grammar: xrobots:abstractsyntax
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/abstractsyntax/Dec.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/abstractsyntax/Error.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/abstractsyntax/Root.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/abstractsyntax/Expr.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/abstractsyntax/Stack.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/abstractsyntax/Frame.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/abstractsyntax/Attributes.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/abstractsyntax/DecList.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/abstractsyntax/Bindings.sv]
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/abstractsyntax/TypeRep.sv]
+Compiling Grammar: xrobots:terminals
+	[/project/melt3/People/sst/steve/silver/trunk/xrobots/terminals/Terminals.sv]
+Checking For Errors.
+Writing updated interface files
+	[xrobots:host:bin]
+	[core]
+	[xrobots:host]
+	[xrobots:concretesyntax]
+	[xrobots:abstractsyntax]
+	[xrobots:terminals]
+Generating Java Translation.
+	[xrobots:host:bin]
+	[core]
+	[xrobots:host]
+	[xrobots:concretesyntax]
+	[xrobots:abstractsyntax]
+	[xrobots:terminals]
+Generating Parsers and Scanners.
+	[xrobots:host:bin:parse]
+Buildfile: build.xml
+
+init:
+
+copper:
+   [copper] Compiling: /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/host/bin/Parser_xrobots_host_bin_parse.copper
+   [copper] ===== FINAL REPORT =====
+   [copper] 59 terminals, 25 nonterminals,
+   [copper] 67 productions, and 0 disambiguation functions declared,
+   [copper] producing 165 unique parse states.
+   [copper] 0 useless nonterminals.
+   [copper] 110 parse table conflicts detected; 110 resolved.
+
+grammars:
+    [javac] Compiling 234 source files to /project/melt3/People/sst/steve/silver/trunk/generated/bin
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:73: ';' expected
+    [javac]                                                    is not a reference"), n.line, n.column)
+    [javac]                                                          ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:73: unclosed string literal
+    [javac]                                                    is not a reference"), n.line, n.column)
+    [javac]                                                                      ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:74: unclosed string literal
+    [javac] 		xrobots.abstractsyntax.PrefAccess.synthesizedAttributes[xrobots.abstractsyntax.Init.xrobots_abstractsyntax_errors__ON__xrobots_abstractsyntax_Expr] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)common.Util.let(context, new String[]{"xrobots:abstractsyntax:refAccess:local:__ptmp430"}, new common.Lazy[]{new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((xrobots.abstractsyntax.NTypeRep)new xrobots.abstractsyntax.PgetType(new common.Closure(context) { public final Object eval() { return ((xrobots.abstractsyntax.NStack)context.inherited(xrobots.abstractsyntax.Init.xrobots_abstractsyntax_stack__ON__xrobots_abstractsyntax_Expr)); } }, new common.Closure(context) { public final Object eval() { return ((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)); } }).doReturn()).decorate(); } }}, new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return (((((common.DecoratedNode)context.lexical("xrobots:abstractsyntax:refAccess:local:__ptmp430")).undecorate() instanceof xrobots.abstractsyntax.PrefType) && true) ? ((common.ConsCell)new core.Pnil().doReturn()) : (true ? ((common.ConsCell)new xrobots.abstractsyntax.Pmk_error(new common.Closure(context) { public final Object eval() { return (new common.StringCatter((common.StringCatter)((common.StringCatter)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).lexeme), (common.StringCatter)(new common.StringCatter("
+    [javac] 		                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:74: ')' expected
+    [javac] 		xrobots.abstractsyntax.PrefAccess.synthesizedAttributes[xrobots.abstractsyntax.Init.xrobots_abstractsyntax_errors__ON__xrobots_abstractsyntax_Expr] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)common.Util.let(context, new String[]{"xrobots:abstractsyntax:refAccess:local:__ptmp430"}, new common.Lazy[]{new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((xrobots.abstractsyntax.NTypeRep)new xrobots.abstractsyntax.PgetType(new common.Closure(context) { public final Object eval() { return ((xrobots.abstractsyntax.NStack)context.inherited(xrobots.abstractsyntax.Init.xrobots_abstractsyntax_stack__ON__xrobots_abstractsyntax_Expr)); } }, new common.Closure(context) { public final Object eval() { return ((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)); } }).doReturn()).decorate(); } }}, new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return (((((common.DecoratedNode)context.lexical("xrobots:abstractsyntax:refAccess:local:__ptmp430")).undecorate() instanceof xrobots.abstractsyntax.PrefType) && true) ? ((common.ConsCell)new core.Pnil().doReturn()) : (true ? ((common.ConsCell)new xrobots.abstractsyntax.Pmk_error(new common.Closure(context) { public final Object eval() { return (new common.StringCatter((common.StringCatter)((common.StringCatter)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).lexeme), (common.StringCatter)(new common.StringCatter("
+    [javac] 		                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:75: ')' expected
+    [javac]                                                    is not a reference")))); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).line); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).column); } }).doReturn()) : ((common.ConsCell)new core.Perror(new common.Closure(context) { public final Object eval() { return (new common.StringCatter("Error: pattern match failed.\n")); } }).doReturn()))); } })); } };
+    [javac]                                                      ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:75: ')' expected
+    [javac]                                                    is not a reference")))); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).line); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).column); } }).doReturn()) : ((common.ConsCell)new core.Perror(new common.Closure(context) { public final Object eval() { return (new common.StringCatter("Error: pattern match failed.\n")); } }).doReturn()))); } })); } };
+    [javac]                                                          ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:75: ';' expected
+    [javac]                                                    is not a reference")))); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).line); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).column); } }).doReturn()) : ((common.ConsCell)new core.Perror(new common.Closure(context) { public final Object eval() { return (new common.StringCatter("Error: pattern match failed.\n")); } }).doReturn()))); } })); } };
+    [javac]                                                            ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:75: not a statement
+    [javac]                                                    is not a reference")))); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).line); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).column); } }).doReturn()) : ((common.ConsCell)new core.Perror(new common.Closure(context) { public final Object eval() { return (new common.StringCatter("Error: pattern match failed.\n")); } }).doReturn()))); } })); } };
+    [javac]                                                                      ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:75: ';' expected
+    [javac]                                                    is not a reference")))); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).line); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).column); } }).doReturn()) : ((common.ConsCell)new core.Perror(new common.Closure(context) { public final Object eval() { return (new common.StringCatter("Error: pattern match failed.\n")); } }).doReturn()))); } })); } };
+    [javac]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:75: not a statement
+    [javac]                                                    is not a reference")))); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).line); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).column); } }).doReturn()) : ((common.ConsCell)new core.Perror(new common.Closure(context) { public final Object eval() { return (new common.StringCatter("Error: pattern match failed.\n")); } }).doReturn()))); } })); } };
+    [javac]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:75: ';' expected
+    [javac]                                                    is not a reference")))); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).line); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).column); } }).doReturn()) : ((common.ConsCell)new core.Perror(new common.Closure(context) { public final Object eval() { return (new common.StringCatter("Error: pattern match failed.\n")); } }).doReturn()))); } })); } };
+    [javac]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:75: ';' expected
+    [javac]                                                    is not a reference")))); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).line); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).column); } }).doReturn()) : ((common.ConsCell)new core.Perror(new common.Closure(context) { public final Object eval() { return (new common.StringCatter("Error: pattern match failed.\n")); } }).doReturn()))); } })); } };
+    [javac]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:75: illegal character: \92
+    [javac]                                                    is not a reference")))); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).line); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).column); } }).doReturn()) : ((common.ConsCell)new core.Perror(new common.Closure(context) { public final Object eval() { return (new common.StringCatter("Error: pattern match failed.\n")); } }).doReturn()))); } })); } };
+    [javac]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:75: unclosed string literal
+    [javac]                                                    is not a reference")))); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).line); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).column); } }).doReturn()) : ((common.ConsCell)new core.Perror(new common.Closure(context) { public final Object eval() { return (new common.StringCatter("Error: pattern match failed.\n")); } }).doReturn()))); } })); } };
+    [javac]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:75: not a statement
+    [javac]                                                    is not a reference")))); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).line); } }, new common.Closure(context) { public final Object eval() { return ((Integer)((common.TerminalRecord)context.childAsIs(xrobots.abstractsyntax.PrefAccess.i_n)).column); } }).doReturn()) : ((common.ConsCell)new core.Perror(new common.Closure(context) { public final Object eval() { return (new common.StringCatter("Error: pattern match failed.\n")); } }).doReturn()))); } })); } };
+    [javac]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:90: reached end of file while parsing
+    [javac] }
+    [javac]  ^
+    [javac] /project/melt3/People/sst/steve/silver/trunk/generated/src/xrobots/abstractsyntax/PrefAccess.java:91: reached end of file while parsing
+    [javac]          
+    [javac] ^
+    [javac] 17 errors

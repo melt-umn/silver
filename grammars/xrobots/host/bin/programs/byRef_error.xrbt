@@ -1,0 +1,35 @@
+Behavior root{
+Initial Behavior F{
+	Behavior G(float x){
+		Entry{
+			SetRSpeed{x}
+			SetLSpeed{x}
+		}
+	}
+		
+		Under Condition true
+			Apply Behavior A(G)
+	}
+}
+
+Behavior A(pBehavior C(int)){
+	Behavior B(){
+		Behavior D(){
+			Behavior E(){
+				int i
+				Entry{
+					 i = 5;
+				}
+				Under Condition true
+					Apply C(i)
+			}
+			Under Condition true
+				Apply Behavior E()
+		}
+		Under Condition true
+			Apply Behavior D()
+	}
+	Under Condition true
+		Apply Behavior B()
+}					
+}

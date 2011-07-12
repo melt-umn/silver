@@ -1,0 +1,62 @@
+Behavior a{
+	int ax;
+	int ay;
+
+	Behavior aa{
+		int aax;
+		int aay;
+
+		Behavior aaa{
+			int aaax;
+			int aaay;
+			Behavior aaaa{}
+
+			Entry{aax:=0; aay:=0;
+					aaax:=0; aaay:=0;}//both ax, ay out of scope
+			Under Condition aax>0
+				Apply Behavior a()
+			Under Condition aaax>0
+				Apply Behavior aa()
+			Exit{aax:=1; aay:=2;}
+		}
+
+		Entry{aax:=0; aay:=0;
+				ax:=0; ay:=0;}
+		Under Condition aax>0
+			Apply Behavior a()
+		Exit{aax:=1; aay:=2;}
+	}
+
+	Behavior aB{
+		int aBx;
+		int aBy;
+
+		Behavior aaa{
+			int aaax;
+			int aaay;
+
+			Entry{aBx:=0; aBy:=0;
+					aaax:=0; aaay:=0;}//both ax, ay out of scope
+			Under Condition aBx>0
+				Apply Behavior a()
+			Under Condition aaax>0
+				Apply Behavior aB()
+			Exit{aBx:=1; aBy:=2;}
+		}
+
+		Entry{aBx:=0; aBy:=0;
+				ax:=0; ay:=0;}
+		Under Condition aBx>0
+			Apply Behavior a()
+		Exit{aBx:=1; aBy:=2;}
+	}
+
+
+	Entry{ax:=0; ay:=0;}
+	Under Condition ax>0
+		Apply Behavior aa()
+  	Under Condition ax<0
+		Apply Behavior aB.aaa()
+
+	Exit{ax:=1; ay:=2;}
+}
