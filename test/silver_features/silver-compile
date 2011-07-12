@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# This silver-compile script is just like all the others.
+# There is not specific here to deal with testing
+# (other than ensuring that the testing extension has been
+#  compiled into Silver).
+
+export SILVER_HOME=../..
+
+java -jar $SILVER_HOME/jars/RunSilver.jar $1  -o test.jar \
+     -I .. silver_features \
+     && ant
+
