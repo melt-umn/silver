@@ -18,11 +18,13 @@ ln -s . $SV
 
 tar zcvf $SV.tar.gz \
  "--exclude=.svn" "--exclude=*~" "--exclude=*test" \
- $SV/generated/whatisthis.txt $SV/jars/*.jar \
+ $SV/generated/whatisthis.txt \
+ $SV/jars/*.jar \
  $SV/support/ \
- $SV/grammars/core/ \
  $SV/tutorials/ \
+ $SV/grammars/core/ \
  $SV/grammars/lib/stringmap/ \
+ $SV/grammars/lib/treemap/ \
  $SV/grammars/lib/xml/ \
  $SV/grammars/silver/testing/ \
  $SV/COPYING.LESSER \
