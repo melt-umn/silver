@@ -103,3 +103,21 @@ equalityTest ( basic6(pair("2", "2")), 2, Integer, pat_tests ) ;
 equalityTest ( basic6(pair("77", "1")), 3, Integer, pat_tests ) ;
 equalityTest ( basic6(pair("77", "2")), 4, Integer, pat_tests ) ;
 
+nonterminal MyTriple<a b c>;
+abstract production mytriple
+t::MyTriple<a b c> ::= a b c {}
+
+function basic7 -- using the same names of pattern variables
+Integer ::= p::MyTriple<Integer Maybe<Integer> Maybe<Integer>>
+{
+return case p of
+  mytriple(a, b, just(c)) -> a + c
+| mytriple(b, just(a), c) -> a + b
+end;
+}
+
+-- once, this test returned 40, just to clarify what we're testing here.
+equalityTest ( basic7(mytriple(1,just(20),just(300))), 21, Integer, pat_tests ) ;
+equalityTest ( basic7(mytriple(1,nothing(),just(300))), 301, Integer, pat_tests ) ;
+
+

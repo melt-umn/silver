@@ -213,7 +213,7 @@ top::PatternList ::= p::Pattern
   top.patternListEmpty = false;
   top.varTailPatternList = patternList_nil();
   top.patternListVars = [case p.patternVariableName of
-                           just(f) -> "__sv_sc_" ++ f
+                           just(f) -> "__sv_sc_" ++ toString(genInt()) ++ f
                          | _ -> "__sv_tmp_pv_" ++ toString(genInt())
                          end];
 }
@@ -228,7 +228,7 @@ top::PatternList ::= p::Pattern ',' ps1::PatternList
   top.patternListEmpty = false;
   top.varTailPatternList = ps1;
   top.patternListVars = [case p.patternVariableName of
-                           just(f) -> "__sv_sc_" ++ f
+                           just(f) -> "__sv_sc_" ++ toString(genInt()) ++ f
                          | _ -> "__sv_tmp_pv_" ++ toString(genInt())
                          end] ++ ps1.patternListVars;
 }
