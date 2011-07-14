@@ -269,7 +269,7 @@ top::PrimPattern ::= e::Expr
   
   errCheck1 = check(listTypeExp(errorType()), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, "nil() construct type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [err(top.location, "nil() constructs type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
@@ -300,7 +300,7 @@ top::PrimPattern ::= h::String t::String e::Expr
   
   errCheck1 = check(listTypeExp(elemType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, "nil() construct type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [err(top.location, "cons() constructs type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
@@ -376,10 +376,10 @@ top::VarBinders ::= v::VarBinder ',' vs::VarBinders
                   else tail(top.bindingTypes);
 }
 concrete production nilVarBinder
-top::VarBinders ::= -- technically a bug, but forget it for now
+top::VarBinders ::= Epsilon_For_Location  -- technically a bug, but forget it for now
 {
   top.pp = "";
-  top.location = loc("??", -1, -2);
+  top.location = loc(top.file, $1.line, $1.column);
   top.defs = emptyDefs();
   top.errors := [];
   
