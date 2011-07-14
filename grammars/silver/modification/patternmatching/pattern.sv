@@ -211,7 +211,7 @@ top::PatternList ::= p::Pattern
 
   top.headPattern = p;
   top.patternListEmpty = false;
-  top.varTailPatternList = patternList_nil();
+  top.varTailPatternList = patternList_nil(terminal(Epsilon_For_Location, "", top.location.line, top.location.column));
   top.patternListVars = [case p.patternVariableName of
                            just(f) -> "__sv_sc_" ++ toString(genInt()) ++ f
                          | _ -> "__sv_tmp_pv_" ++ toString(genInt())
@@ -233,12 +233,13 @@ top::PatternList ::= p::Pattern ',' ps1::PatternList
                          end] ++ ps1.patternListVars;
 }
 
+terminal Epsilon_For_Location //;
 -- lol, dangling comma bug TODO
 concrete production patternList_nil
-top::PatternList ::= 
+top::PatternList ::= Epsilon_For_Location
 {
   top.pp = "";
-  top.location = loc("patternList_nill", -1, -1);
+  top.location = loc(top.file, $1.line, $1.column);
 
   top.headPattern = error("empty pattern list consulted regarding its first pattern");
   top.patternListEmpty = true;
@@ -293,26 +294,26 @@ PatternList ::= l::PatternList r::PatternList
   return case l of
            patternList_one(p) -> patternList_more(p, ',', r)
          | patternList_more(p,c,ps) -> patternList_more(p, c, patternListAppend(ps, r))
-         | patternList_nil() -> r
+         | patternList_nil(_) -> r
          end;
 }
 function patternListTail
 PatternList ::= l::PatternList
 {
   return case l of
-           patternList_one(p) -> patternList_nil()
+           patternList_one(p) -> patternList_nil(terminal(Epsilon_For_Location, "", p.location.line, p.location.column))
          | patternList_more(p,_,ps) -> ps
-         | patternList_nil() -> error("tail of nil pattern list")
+         | patternList_nil(_) -> error("tail of nil pattern list")
          end;
 }
 function convStringsToVarBinders
-VarBinders ::= s::[String]
+VarBinders ::= s::[String] l::Decorated Location
 {
   local attribute f::VarBinder;
-  f = varVarBinder(nameIdLower(terminal(IdLower_t, head(s))));
-  return if null(s) then nilVarBinder()
+  f = varVarBinder(nameIdLower(terminal(IdLower_t, head(s), l.line, l.column)));
+  return if null(s) then nilVarBinder(terminal(Epsilon_For_Location, "", l.line, l.column))
          else if null(tail(s)) then oneVarBinder(f)
-         else consVarBinder(f, ',', convStringsToVarBinders(tail(s)));
+         else consVarBinder(f, ',', convStringsToVarBinders(tail(s), l));
 }
 function convStringsToExprs
 Exprs ::= s::[String] tl::[Decorated Expr]
@@ -339,7 +340,7 @@ PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Exp
   names = head(head(mrs)).headPattern.patternSubPatternList.patternListVars;
   
   local attribute fstPat :: PrimPattern;
-  fstPat = prodPattern(prodname, '(', convStringsToVarBinders(names), ')', '->',
+  fstPat = prodPattern(prodname, '(', convStringsToVarBinders(names, head(head(mrs)).location), ')', '->',
                          caseExpr(head(head(mrs)).location, returnType,
                                   convStringsToExprs(names, restExprs),
                                   tailNestedPatternTransform(head(mrs)),

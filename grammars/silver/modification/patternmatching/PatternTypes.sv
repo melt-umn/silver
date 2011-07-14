@@ -18,7 +18,7 @@ p::Pattern ::= num::Int_t
   p.patternIsVariable = false;
   p.patternProduction = nothing();
   p.patternVariableName = nothing();
-  p.patternSubPatternList = decorate patternList_nil() with {};
+  p.patternSubPatternList = decorate patternList_nil(terminal(Epsilon_For_Location, "", $1)) with {};
 }
 
 concrete production strPattern
@@ -30,7 +30,7 @@ p::Pattern ::= str::String_t
   p.patternIsVariable = false;
   p.patternProduction = nothing();
   p.patternVariableName = nothing();
-  p.patternSubPatternList = decorate patternList_nil() with {};
+  p.patternSubPatternList = decorate patternList_nil(terminal(Epsilon_For_Location, "", $1)) with {};
 }
 
 concrete production truePattern
@@ -42,7 +42,7 @@ p::Pattern ::= 'true'
   p.patternIsVariable = false;
   p.patternProduction = nothing();
   p.patternVariableName = nothing();
-  p.patternSubPatternList = decorate patternList_nil() with {};
+  p.patternSubPatternList = decorate patternList_nil(terminal(Epsilon_For_Location, "", $1)) with {};
 }
 
 concrete production falsePattern
@@ -54,7 +54,7 @@ p::Pattern ::= 'false'
   p.patternIsVariable = false;
   p.patternProduction = nothing();
   p.patternVariableName = nothing();
-  p.patternSubPatternList = decorate patternList_nil() with {};
+  p.patternSubPatternList = decorate patternList_nil(terminal(Epsilon_For_Location, "", $1)) with {};
 }
 
 concrete production nilListPattern
@@ -66,7 +66,7 @@ p::Pattern ::= '[' ']'
   p.patternIsVariable = false;
   p.patternProduction = nothing();
   p.patternVariableName = nothing();
-  p.patternSubPatternList = decorate patternList_nil() with {};
+  p.patternSubPatternList = decorate patternList_nil(terminal(Epsilon_For_Location, "", $1)) with {};
 }
 
 concrete production consListPattern
