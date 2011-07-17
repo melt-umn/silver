@@ -92,6 +92,20 @@ equalityTest ( treeLookup("hello", t6), [4], [Integer], core_tests ) ;
 equalityTest ( treeLookup("hola", t6), [6], [Integer], core_tests ) ;
 equalityTest ( treeLookup("quepasa", t6), [11], [Integer], core_tests ) ;
 
+global l2 :: [Pair<String Integer>] =
+ treeDeconvert( treeConvert( l1, e ) );
+
+equalityTest ( head(l2).fst, "hello", String, core_tests ) ;
+equalityTest ( head(tail(l2)).fst, "hi", String, core_tests ) ;
+equalityTest ( head(tail(tail(l2))).fst, "hola", String, core_tests ) ;
+equalityTest ( head(tail(tail(tail(l2)))).fst, "quepasa", String, core_tests ) ;
+
+equalityTest ( head(l2).snd, 4, Integer, core_tests ) ;
+equalityTest ( head(tail(l2)).snd, 2, Integer, core_tests ) ;
+equalityTest ( head(tail(tail(l2))).snd, 6, Integer, core_tests ) ;
+equalityTest ( head(tail(tail(tail(l2)))).snd, 11, Integer, core_tests ) ;
+
+equalityTest ( null(tail(tail(tail(tail(l2))))), true, Boolean, core_tests ) ;
 
 -- Extra testing stuff
 synthesized attribute debugIdentity :: String occurs on TreeMap<a b>;

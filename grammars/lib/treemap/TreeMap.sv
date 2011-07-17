@@ -61,9 +61,21 @@ TreeMap<a b> ::= l::[Pair<a b>] t::TreeMap<a b>
          else treeConvert(tail(l), treeInsert(head(l).fst, head(l).snd, t));
 }
 
+{--
+ - Reverts a tree back into an association list. Any key associated with
+ - multiple values will appear multiple times in the list, for each value.
+ - 
+ - @param t  The existing tree
+ - @return  A list of key-value pairs.
+ -}
+function treeDeconvert
+[Pair<a b>] ::= t::TreeMap<a b>
+{
+  return t.treeDeconvert;
+}
 -- The implementation:
 
-nonterminal TreeMap<a b> with treeKey<a>, treeLookup<b>, treeValue<b>, treeInsert<a b>, makeBlack<a b>;
+nonterminal TreeMap<a b> with treeKey<a>, treeLookup<b>, treeValue<b>, treeInsert<a b>, makeBlack<a b>, treeDeconvert<a b>;
 
 inherited attribute treeKey<a> :: a;
 synthesized attribute treeLookup<b> :: [b]; -- key
@@ -73,6 +85,8 @@ synthesized attribute treeInsert<a b> :: TreeMap<a b>; -- key, value
 
 synthesized attribute makeBlack<a b> :: TreeMap<a b>;
 
+synthesized attribute treeDeconvert<a b> :: [Pair<a b>];
+
 abstract production leaf
 top::TreeMap<a b> ::= LTEop :: Function(Boolean ::= a a)
                       EQop :: Function(Boolean ::= a a)
@@ -80,6 +94,7 @@ top::TreeMap<a b> ::= LTEop :: Function(Boolean ::= a a)
   top.treeLookup = [];
   top.treeInsert = node(false, top, top, top.treeKey, [top.treeValue], LTEop, EQop);
   top.makeBlack = top;
+  top.treeDeconvert = [];
 }
 
 abstract production node
@@ -101,11 +116,18 @@ top::TreeMap<a b> ::= black::Boolean lefttree::TreeMap<a b> righttree::TreeMap<a
                    else      balance(black, lefttree,            righttree.treeInsert, label, values,                  LTEop, EQop);
 
   top.makeBlack = if black then top else node(true, lefttree, righttree, label, values, LTEop, EQop);
+  top.treeDeconvert = lefttree.treeDeconvert ++ treeMapKeyValues(label, values) ++ righttree.treeDeconvert;
   
   lefttree.treeKey = top.treeKey;
   lefttree.treeValue = top.treeValue;
   righttree.treeKey = top.treeKey;
   righttree.treeValue = top.treeValue;
+}
+
+function treeMapKeyValues
+[Pair<a b>] ::= k::a v::[b]
+{
+  return if null(v) then [] else pair(k, head(v)) :: treeMapKeyValues(k, tail(v));
 }
 
 function balance
