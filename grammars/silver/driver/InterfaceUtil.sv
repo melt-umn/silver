@@ -83,7 +83,10 @@ function normalizeImports
   return if null(ifs) then [] else [[n] ++ head(ifs).moduleNames] ++ normalizeImports(tail(ifs));
 }
 
--- expands initial inductively using rules
+{--
+ - Process rules, but this time DO allow triggers to trigger more triggers.
+ - @see noninductiveExpansion
+ -}
 function inductivelyExpand
 [String] ::= initial::[String] rules::[[String]]
 {
@@ -99,7 +102,14 @@ function inductivelyExpand
   return if null(result) then initial else inductivelyExpand(result, rules) ++ initial;
 }
 
--- finds those elements that would be added to initial in "one iteration" of an inductive expansion
+{--
+ - Return those triggers set off by the initial set. One iteration only.
+ - (i.e. don't consider triggers triggering triggers)
+ -
+ - @param initial  A set of strings
+ - @param rules  A set of rules [[trigger, triggered by any of...]...]
+ - @return  A list of triggers that the initial set tripped, not in the inital set already.
+ -}
 function noninductiveExpansion
 [String] ::= initial::[String] rules::[[String]]
 {

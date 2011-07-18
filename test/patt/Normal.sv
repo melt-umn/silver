@@ -109,5 +109,45 @@ equalityTest ( lookattees([a(),b(),c(),d()]), [true, false, true, false],
 equalityTest ( map(indivtee, [a(),b(),c(),d()]), [true, false, true, false],
                [Boolean], pat_tests );
 
+-- just checking to make sure pattern matching error get out properly
+wrongCode "doesnotexist" {
+ function fooDontCare
+ a ::=
+ {
+   return case "hi" of
+            "boo" -> doesnotexist()
+          | "foo" -> wat()
+          end;
+ }
+}
 
+wrongCode "Fewer patterns than expected" {
+ function fooDontCare
+ String ::=
+ {
+   return case pair(1,2) of
+            pair() -> ""
+          end;
+ }
+}
+
+wrongCode "More patterns than expected" {
+ function fooDontCare
+ String ::=
+ {
+   return case pair(1,2) of
+            pair(b,c,d) -> ""
+          end;
+ }
+}
+
+wrongCode "Fewer patterns than expected" {
+ function fooDontCare
+ String ::=
+ {
+   return case pair(1,2) of
+            pair(d) -> ""
+          end;
+ }
+}
 
