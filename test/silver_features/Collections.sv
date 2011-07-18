@@ -60,3 +60,30 @@ top::ColNT ::=
 equalityTest ( colFwdNode(colProdLeaf()).colSyn, " j  k  j  k  b  q ", String, silver_tests ) ;
 equalityTest ( colNode(colProdLeaf(), colLeaf()).colSyn, " j  k ( d  e ) b ", String, silver_tests ) ;
 
+
+wrongCode "is a collection attribute" {
+  aspect production colNode
+  top::ColNT ::= c1::ColNT c2::ColNT
+  { top.colSyn = ""; }
+}
+
+wrongCode "is a collection attribute" {
+  aspect production colNode
+  top::ColNT ::= c1::ColNT c2::ColNT
+  { c1.colInh = ""; }
+}
+
+synthesized attribute colNotCol :: String occurs on ColNT;
+
+wrongCode "can only be used for collections" {
+  aspect production colNode
+  top::ColNT ::= c1::ColNT c2::ColNT
+  { top.colNotCol := ""; }
+}
+
+wrongCode "can only be used for collections" {
+  aspect production colNode
+  top::ColNT ::= c1::ColNT c2::ColNT
+  { top.colNotCol <- ""; }
+}
+
