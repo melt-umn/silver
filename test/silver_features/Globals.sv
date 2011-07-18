@@ -44,3 +44,7 @@ global deT :: Decorated Tglob = decorate unT with {};
 
 equalityTest ( deT.strGlob, "Hi", String, silver_tests ) ;
 
+wrongCode "initialization expression with type" {
+  global badT :: Decorated Tglob = Tfoo();
+}
+

@@ -182,7 +182,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   top.errors := e.errors;
 
   top.errors <- if !top.blockContext.permitForward
-                then [err(top.location, "Forwarding is not permitted in this context.")]
+                then [err(top.location, "Forwarding is not permitted in this context. (Only permitted in non-aspect productions.)")]
                 else [];
 
   forwards to defaultProductionStmt();
