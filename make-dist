@@ -23,6 +23,7 @@ tar zcvf $SV.tar.gz \
  $SV/support/ \
  $SV/tutorials/ \
  $SV/grammars/core/ \
+ $SV/grammars/lib/extcore/ \
  $SV/grammars/lib/stringmap/ \
  $SV/grammars/lib/treemap/ \
  $SV/grammars/lib/xml/ \
