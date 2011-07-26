@@ -40,7 +40,7 @@ tail -n 5 $RESDIR/silver-rebuild.output
 # The silver-run-tests script just runs this jar file.
 cd "$SILVER_HOME/../trunk/grammars/silver/testing/bin"
 echo "In ...`pwd`"
-./silver-compile --clean  >& ../../../$RESDIR/testing-build.output
+./silver-compile --clean  >& ../../../../$RESDIR/testing-build.output
 
 
 # cd to silver/trunk and run all tests.
