@@ -25,7 +25,7 @@ top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String]
   d3 = if null(w) then d2 else mapRenameDefs(d2, w); -- with
 
   local attribute d4 :: Defs;
-  d4 = if a == "" then d3 else mapPrependDefs(d3, a); -- as
+  d4 = if a == "" then d3 else mapPrependDefs(d3, a ++ ":"); -- as
 
   top.defs = d4;		  
   top.errors := med.errors;
