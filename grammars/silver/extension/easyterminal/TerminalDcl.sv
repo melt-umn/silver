@@ -104,7 +104,7 @@ top::Expr ::= t::RegExpr
   regName = getTerminalRegexDclAll(regExpPat, top.env);
 
   local attribute escapedName :: String;
-  escapedName = makeEscapedName(substring(1, length(regExpPat)-1, regExpPat));
+  escapedName = makeEscapedName(regExpPat);
 
   top.errors := if null(regName) 
                 then [err(top.location, "Could not find terminal declaration for " ++ t.pp )]
