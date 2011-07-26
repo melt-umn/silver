@@ -3,6 +3,8 @@ grammar copper_features;
 imports silver:testing ;
 imports lib:extcore ;
 
+import copper_features:test_layout;
+
 mainTestSuite copper_tests ;
 
 {- Needed: 
