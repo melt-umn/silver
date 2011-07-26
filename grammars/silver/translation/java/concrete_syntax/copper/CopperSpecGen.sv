@@ -186,7 +186,7 @@ String ::= univLayout::String lhs::String rhs::[Decorated RHSSpec]
 	makeProdRHS(head(rhs).ruleRHS) ++
 "    </rhs>\n" ++
 "    <layout>" ++ (if head(rhs).hasCustomLayout
-                   then generateCustomLayoutList(head(rhs).customLayout)
+                   then generateCustomLayoutList("EmptyString" :: head(rhs).customLayout)
                    else univLayout) ++
     "</layout>\n" ++
 
