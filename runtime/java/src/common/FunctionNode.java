@@ -28,7 +28,7 @@ public abstract class FunctionNode extends Node {
 		}
 		
 		try {
-			return getSynthesized(0).eval(this.decorate());
+			return getSynthesized(0).eval(this.decorate(TopNode.singleton, (Lazy[])null));
 		} catch(Throwable t) {
 			throw new TraceException("Error while evaluating function " + getName(), t);
 		}
