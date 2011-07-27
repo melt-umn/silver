@@ -3,6 +3,16 @@ grammar lib:treemap;
 -- The API:
 
 {--
+ - A comparison function for strings.
+ - @return Negative if l<r, 0 if l==r, positive if l>r
+ -}
+function compareString
+Integer ::= l::String  r::String
+{
+  return if l <= r then if l == r then 0 else -1 else 1;
+}
+
+{--
  - Creates a new (empty) tree.
  - 
  - @param TLEop  The "less that or equal to" operator on the key values for this tree
@@ -10,10 +20,9 @@ grammar lib:treemap;
  - @return A new empty tree.
  -}
 function treeNew
-TreeMap<a b> ::= LTEop :: Function(Boolean ::= a a)
-                 EQop :: Function(Boolean ::= a a)
+TreeMap<a b> ::= CMP :: Function(Integer ::= a a)
 {
-  return leaf(LTEop, EQop);
+  return leaf(CMP);
 }
 
 {--
@@ -88,11 +97,10 @@ synthesized attribute makeBlack<a b> :: TreeMap<a b>;
 synthesized attribute treeDeconvert<a b> :: [Pair<a b>];
 
 abstract production leaf
-top::TreeMap<a b> ::= LTEop :: Function(Boolean ::= a a)
-                      EQop :: Function(Boolean ::= a a)
+top::TreeMap<a b> ::= CMP :: Function(Integer ::= a a)
 {
   top.treeLookup = [];
-  top.treeInsert = node(false, top, top, top.treeKey, [top.treeValue], LTEop, EQop);
+  top.treeInsert = node(false, top, top, top.treeKey, [top.treeValue], CMP);
   top.makeBlack = top;
   top.treeDeconvert = [];
 }
@@ -100,22 +108,30 @@ top::TreeMap<a b> ::= LTEop :: Function(Boolean ::= a a)
 abstract production node
 top::TreeMap<a b> ::= black::Boolean lefttree::TreeMap<a b> righttree::TreeMap<a b>
                       label::a  values::[b] 
-                      LTEop :: Function(Boolean ::= a a)
-                      EQop :: Function(Boolean ::= a a)
+                      CMP :: Function(Integer ::= a a)
 {
-  top.treeLookup = if LTEop(top.treeKey, label)
-                   then if EQop(top.treeKey, label)
+  top.treeLookup = let cmpr :: Integer = CMP(top.treeKey, label)
+                   in if cmpr <= 0
+                   then if cmpr == 0
                         then values
                         else lefttree.treeLookup
-                   else righttree.treeLookup;
+                   else righttree.treeLookup
+                   end;
 
-  top.treeInsert = if LTEop(top.treeKey, label)
-                   then if EQop(top.treeKey, label)
-                        then    node(black, lefttree,            righttree,            label, top.treeValue :: values, LTEop, EQop)
-                        else balance(black, lefttree.treeInsert, righttree,            label, values,                  LTEop, EQop)
-                   else      balance(black, lefttree,            righttree.treeInsert, label, values,                  LTEop, EQop);
+  top.treeInsert = let cmpr :: Integer = CMP(top.treeKey, label)
+                   in if cmpr <= 0
+                   then if cmpr == 0
+                        then     node(black, lefttree,            righttree,            label, top.treeValue :: values, CMP)
+                        else 
+                        if black
+                        then balanceL(       lefttree.treeInsert, righttree,            label, values,                  CMP)
+                        else     node(false, lefttree.treeInsert, righttree,            label, values,                  CMP)
+                   else if black
+                        then balanceR(       lefttree,            righttree.treeInsert, label, values,                  CMP)
+                        else     node(false, lefttree,            righttree.treeInsert, label, values,                  CMP)
+                   end;
 
-  top.makeBlack = if black then top else node(true, lefttree, righttree, label, values, LTEop, EQop);
+  top.makeBlack = if black then top else node(true, lefttree, righttree, label, values, CMP);
   top.treeDeconvert = lefttree.treeDeconvert ++ treeMapKeyValues(label, values) ++ righttree.treeDeconvert;
   
   lefttree.treeKey = top.treeKey;
@@ -130,26 +146,34 @@ function treeMapKeyValues
   return if null(v) then [] else pair(k, head(v)) :: treeMapKeyValues(k, tail(v));
 }
 
-function balance
-TreeMap<a b> ::= black::Boolean lefttree::TreeMap<a b> righttree::TreeMap<a b>
-                 label::a  values::[b]
-                 LTEop :: Function(Boolean ::= a a)
-                 EQop :: Function(Boolean ::= a a)
-{
 -- Invariant: every black node does not have double reds below it (on any of the 4 paths)
-return case black, lefttree, righttree, label, values of
--- left tree is red
-  true, node(false, node(false, a, b, x1, x2,_,_), c, y1, y2,_,_), d, z1, z2 -> 
-                                                    node(false, node(true, a, b, x1, x2, LTEop, EQop), node(true, c, d, z1, z2, LTEop, EQop), y1, y2, LTEop, EQop)
-| true, node(false, a, node(false, b, c, y1, y2,_,_), x1, x2,_,_), d, z1, z2 -> 
-                                                    node(false, node(true, a, b, x1, x2, LTEop, EQop), node(true, c, d, z1, z2, LTEop, EQop), y1, y2, LTEop, EQop)
--- right tree is red
-| true, a, node(false, node(false, b, c, y1, y2,_,_), d, z1, z2,_,_), x1, x2 -> 
-                                                    node(false, node(true, a, b, x1, x2, LTEop, EQop), node(true, c, d, z1, z2, LTEop, EQop), y1, y2, LTEop, EQop)
-| true, a, node(false, b, node(false, c, d, z1, z2,_,_), y1, y2,_,_), x1, x2 -> 
-                                                    node(false, node(true, a, b, x1, x2, LTEop, EQop), node(true, c, d, z1, z2, LTEop, EQop), y1, y2, LTEop, EQop)
--- we're red, or black with no double red children
-| color, a, b, x1, x2 -> node(color, a, b, x1, x2, LTEop, EQop)
+-- Whenever we're reconstructing after an insert, all black nodes will examine the modified subtree
+-- to see if there are any double-reds, and act accordingly.
+-- These functions are only called by black nodes.
+function balanceL
+TreeMap<a b> ::= lefttree::TreeMap<a b> righttree::TreeMap<a b>
+                 label::a  values::[b]
+                 CMP :: Function(Integer ::= a a)
+{
+return case lefttree of
+  node(false, node(false, a, b, x1, x2,_), c, y1, y2,_) -> 
+                                                    node(false, node(true, a, b, x1, x2, CMP), node(true, c, righttree, label, values, CMP), y1, y2, CMP)
+| node(false, a, node(false, b, c, y1, y2,_), x1, x2,_) -> 
+                                                    node(false, node(true, a, b, x1, x2, CMP), node(true, c, righttree, label, values, CMP), y1, y2, CMP)
+| a -> node(true, a, righttree, label, values, CMP)
+end;
+}
+function balanceR
+TreeMap<a b> ::= lefttree::TreeMap<a b> righttree::TreeMap<a b>
+                 label::a  values::[b]
+                 CMP :: Function(Integer ::= a a)
+{
+return case righttree of
+  node(false, node(false, b, c, y1, y2,_), d, z1, z2,_) -> 
+                                                    node(false, node(true, lefttree, b, label, values, CMP), node(true, c, d, z1, z2, CMP), y1, y2, CMP)
+| node(false, b, node(false, c, d, z1, z2,_), y1, y2,_) -> 
+                                                    node(false, node(true, lefttree, b, label, values, CMP), node(true, c, d, z1, z2, CMP), y1, y2, CMP)
+| b -> node(true, lefttree, b, label, values, CMP)
 end;
 }
 

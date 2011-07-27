@@ -5,7 +5,7 @@ import lib:extcore;
 import lib:treemap;
 import stdlib;
 
-global e :: TreeMap<String Integer> = treeNew(stringLte, stringEq);
+global e :: TreeMap<String Integer> = treeNew(compareString);
 
 global t1 :: TreeMap<String Integer> =
   treeInsert("1", 1, 
@@ -120,8 +120,7 @@ String ::= s::String
 }
 
 aspect production leaf
-top::TreeMap<a b> ::= treeLTEop :: Function(Boolean ::= a a)
-                      treeEQop :: Function(Boolean ::= a a)
+top::TreeMap<a b> ::= CMP :: Function(Integer ::= a a)
 {
   top.debugIdentity = "leaf" ++ toString(genInt());
   top.debugDot = top.debugIdentity ++ "[color=black, style=filled];\n";
@@ -132,8 +131,7 @@ top::TreeMap<a b> ::= treeLTEop :: Function(Boolean ::= a a)
 aspect production node
 top::TreeMap<a b> ::= black::Boolean lefttree::TreeMap<a b> righttree::TreeMap<a b>
                       label::a  values::[b] 
-                      treeLTEop :: Function(Boolean ::= a a)
-                      treeEQop :: Function(Boolean ::= a a)
+                      CMP :: Function(Integer ::= a a)
 {
   top.debugIdentity = "node" ++ toString(genInt());
   top.debugDot = top.debugIdentity ++ "[color=" ++ (if black then "black" else "red") ++ ", label=\"" ++ escape(hackUnparse(label) ++ " -> " ++ hackUnparse(values)) ++ "\"];\n"
