@@ -93,7 +93,9 @@ public class DecoratedNode {
 	 * @param inhs The inherited attributes to decorate this node with.
 	 * @param forwardParent The node to request inherited attributes from instead of using 'inhs'.
 	 */
-	protected DecoratedNode(final Node self, final DecoratedNode parent,
+	DecoratedNode(
+			final int cc, final int ic, final int sc, final int lc,
+			final Node self, final DecoratedNode parent,
 			final Lazy[] inhs, final DecoratedNode forwardParent) {
 		this.self = self;
 		this.parent = parent;
@@ -101,25 +103,10 @@ public class DecoratedNode {
 		this.forwardParent = forwardParent;
 		
 		// create caches
-		if(self != null && self.getNumberOfChildren() > 0)
-			this.childrenValues = new Object[self.getNumberOfChildren()];
-		else
-			this.childrenValues = null;
-		
-		if(self != null && self.getNumberOfInhAttrs() > 0)
-			this.inheritedValues = new Object[self.getNumberOfInhAttrs()];
-		else
-			this.inheritedValues = null;
-		
-		if(self != null)
-			this.synthesizedValues = new Object[self.getNumberOfSynAttrs()];
-		else
-			this.synthesizedValues = null;
-		
-		if(self != null && self.getNumberOfLocalAttrs() > 0)
-			this.localValues = new Object[self.getNumberOfLocalAttrs()];
-		else
-			this.localValues = null;
+		this.childrenValues =    (cc > 0) ? new Object[cc] : null;
+		this.inheritedValues =   (ic > 0) ? new Object[ic] : null;
+		this.synthesizedValues = (sc > 0) ? new Object[sc] : null;
+		this.localValues =       (lc > 0) ? new Object[lc] : null;
 		
 		// STATS: Uncomment to enable statistics
 		//Statistics.dnSpawn(self!=null?self.getClass():TopNode.class);
@@ -138,9 +125,9 @@ public class DecoratedNode {
 	 * @param parent The Node supplying the inherited attributes. (Not null)
 	 * @param inhs The inherited attributes being supplied to this node. (may be null)
 	 */
-	public DecoratedNode(final Node self, final DecoratedNode parent, final Lazy[] inhs) {
-		this(self,parent,inhs,null);
-	}
+//	public DecoratedNode(final Node self, final DecoratedNode parent, final Lazy[] inhs) {
+//		this(self,parent,inhs,null);
+//	}
 
 	/**
 	 * The way of creating forwarded-to DecoratedNodes.
@@ -151,9 +138,9 @@ public class DecoratedNode {
 	 * 
 	 * @see #inheritedForwarded(String)
 	 */
-	public DecoratedNode(final Node self, final DecoratedNode parent, final DecoratedNode forwardParent) {
-		this(self,parent,null,forwardParent);
-	}
+//	public DecoratedNode(final Node self, final DecoratedNode parent, final DecoratedNode forwardParent) {
+//		this(self,parent,null,forwardParent);
+//	}
 
 	/**
 	 * @return The {@link Node} this decorates.

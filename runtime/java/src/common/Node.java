@@ -34,7 +34,7 @@ public abstract class Node {
 	 * @return A "decorated" form of this Node 
 	 */
 	public final DecoratedNode decorate() {
-		return decorate(TopNode.singleton);
+		return decorate(TopNode.singleton, (Lazy[])null);
 	}
 
 	/**
@@ -57,7 +57,11 @@ public abstract class Node {
 	 * @return A "decorated" form of this Node
 	 */
 	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
-		return new DecoratedNode(this, parent, inhs);
+		return new DecoratedNode(getNumberOfChildren(),
+				                 getNumberOfInhAttrs(),
+				                 getNumberOfSynAttrs(),
+				                 getNumberOfLocalAttrs(),
+				                 this, parent, inhs, null);
 	}
 
 	/**
@@ -69,7 +73,11 @@ public abstract class Node {
 	 * @return A "decorated" form of this Node 
 	 */
 	public final DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
-		return new DecoratedNode(this, parent, fwdParent);
+		return new DecoratedNode(getNumberOfChildren(),
+                                 getNumberOfInhAttrs(),
+                                 getNumberOfSynAttrs(),
+                                 getNumberOfLocalAttrs(),
+                                 this, parent, null, fwdParent);
 	}
 
 	/**
@@ -101,8 +109,9 @@ public abstract class Node {
 	 * @return The number of children this Node has.
 	 */
 	public final int getNumberOfChildren() {
-		if(children == null)
-			return 0;
+		// Is there even a point to this check?
+		//if(children == null)
+		//	return 0;
 		return children.length;
 	}
 	
