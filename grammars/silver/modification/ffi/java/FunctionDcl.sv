@@ -30,7 +30,7 @@ top::FFIDef ::= name::String_t ':' 'return' code::String_t ';'
 function childAccessor
 String ::= t::TypeExp fName::String className::String
 {
-  return "((" ++ t.transType ++ ")context.childAsIs(" ++ className ++ ".i_" ++ fName  ++ "))";
+  return "((" ++ t.transType ++ ")getChild(" ++ className ++ ".i_" ++ fName  ++ "))";
 }
 
 function computeSigTranslation
@@ -58,7 +58,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   actionResult = 
      if null(ffidefs.ffiTranslationString)
      then "return (" ++ namedSig.outputElement.typerep.transType ++ ")super.doReturn();\n"
-     else "common.DecoratedNode context = this.decorate(); return (" ++ namedSig.outputElement.typerep.transType ++ ")"
+     else "return (" ++ namedSig.outputElement.typerep.transType ++ ")"
           ++ computeSigTranslation(head(ffidefs.ffiTranslationString), namedSig) ++ ";\n";
 
   top.javaClasses = [["P" ++ id.name,
