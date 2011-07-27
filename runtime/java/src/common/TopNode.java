@@ -17,7 +17,7 @@ public class TopNode extends DecoratedNode{ // TODO: this should become a Node!
 	public static final TopNode singleton = new TopNode();
 	
 	private TopNode() {
-		super(null,null,null,null);
+		super(0,0,0,0,null,null,null,null);
 	}
 	
 	@Override
