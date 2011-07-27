@@ -82,16 +82,23 @@ public class DecoratedNode {
 
 	
 	/**
-	 * Construct a decorated form of a Node.
+	 * Construct a decorated form of a Node. Called only via Node.
 	 * 
 	 * <p> 'self' and 'parent' are not null (except for TopNode)
 	 * 
 	 * <p> Only one or none of 'inhs' and 'forwardParent' should be supplied.
 	 * 
-	 * @param self The Node to decorate.
-	 * @param parent The DecoratedNode creating this one, to evaluate inhs in.
-	 * @param inhs The inherited attributes to decorate this node with.
-	 * @param forwardParent The node to request inherited attributes from instead of using 'inhs'.
+	 * @param cc  Child count
+	 * @param ic  Inherited attribute count
+	 * @param sc  Synthesized attribute count
+	 * @param lc  Local/prod attribute count
+	 * @param self  The Node to decorate.
+	 * @param parent  The DecoratedNode creating this one, to evaluate inhs in.
+	 * @param inhs  The inherited attributes to decorate this node with.
+	 * @param forwardParent  The node to request inherited attributes from instead of using 'inhs'.
+	 * 
+	 * @see Node#decorate(DecoratedNode, DecoratedNode)
+	 * @see Node#decorate(DecoratedNode, Lazy[])
 	 */
 	DecoratedNode(
 			final int cc, final int ic, final int sc, final int lc,
@@ -117,30 +124,6 @@ public class DecoratedNode {
 	//protected void finalize() throws Throwable {
 	//	Statistics.dnFinal(self!=null?self.getClass():TopNode.class);
 	//}
-
-	/**
-	 * The standard way of creating a DecoratedNode.
-	 * 
-	 * @param self The Node being decorated. (Not null)
-	 * @param parent The Node supplying the inherited attributes. (Not null)
-	 * @param inhs The inherited attributes being supplied to this node. (may be null)
-	 */
-//	public DecoratedNode(final Node self, final DecoratedNode parent, final Lazy[] inhs) {
-//		this(self,parent,inhs,null);
-//	}
-
-	/**
-	 * The way of creating forwarded-to DecoratedNodes.
-	 * 
-	 * @param self The Node being decorated. (Not null)
-	 * @param parent The Node that is our actual parent. (Not null)
-	 * @param forwardParent The Node to request inherited attributes from.
-	 * 
-	 * @see #inheritedForwarded(String)
-	 */
-//	public DecoratedNode(final Node self, final DecoratedNode parent, final DecoratedNode forwardParent) {
-//		this(self,parent,null,forwardParent);
-//	}
 
 	/**
 	 * @return The {@link Node} this decorates.

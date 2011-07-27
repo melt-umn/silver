@@ -28,28 +28,6 @@ public abstract class Node {
 //	}
 
 	/**
-	 * Decorates a Node, without a parent or inherited attributes.
-	 * Generally only used for function calls. (and empty decorate exprs) (note: generated code for fun calls, too)
-	 * 
-	 * @return A "decorated" form of this Node
-	 * @deprecated
-	 */
-	public final DecoratedNode decorate() {
-		return decorate(TopNode.singleton, (Lazy[])null);
-	}
-
-	/**
-	 * Used by the translation, whenever there are no inherited attributes to be supplied.
-	 * 
-	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
-	 * @return A "decorated" form of this Node
-	 * @deprecated
-	 */
-//	public final DecoratedNode decorate(final DecoratedNode parent) {
-//		return decorate(parent, (Lazy[])null);
-//	}
-
-	/**
 	 * The normal way of decorating a node. 
 	 * (child and local)
 	 * 
