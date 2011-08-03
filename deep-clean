@@ -10,6 +10,7 @@ find ./ -name "*~" $1
 find ./test/ -name "build.xml" $1
 find ./test/ -name "*.jar" $1
 find ./test/ -name "*.test.output" $1
+find ./test/ -name "*.copperdump.html" $1
 find ./runtime/ -name "SilverRuntime.jar" $1
 find ./runtime/ -name "RunSilver.jar" $1
 find ./grammars/ -name "*.jar" $1

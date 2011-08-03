@@ -6,12 +6,11 @@ imports copper_features hiding A;
 
 nonterminal BRoot;
 terminal BTerm 'asdf';
-terminal MyES ''; -- EmptyString Hack
 terminal IGN 'IGN';
 
 concrete production anASDF
 top::BRoot ::= BTerm BTerm
-layout { MyES, IGN }
+layout { IGN }
 {}
 
 parser basic_parse :: BRoot {
