@@ -64,7 +64,7 @@ top::Operation ::=
 aspect production plusPlusOperationList
 top::Operation ::= 
 {
-  top.frontTrans = "new common.AppendCell(";
+  top.frontTrans = "common.AppendCell.append(";
   top.midTrans = ", ";
   top.endTrans = ")";
 }
