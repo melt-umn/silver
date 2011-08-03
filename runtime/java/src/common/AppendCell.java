@@ -40,123 +40,112 @@ package common;
  */
 public class AppendCell extends ConsCell {
 
-	// Laziness once again plays hell with this code.
-	// We want to do a "right rotate"
-	// i.e. AC(AC(x,y),z) -> AC(x,AC(y,z))
-	// but we have to delay doing this until we actually demand the head
-	// otherwise we risk evaluating a thunk that's NOT an AC.
-	
-	// Why do we want this optimization?
-	// Look at a tree building up a list via appends.
-	// If we don't do this, when we evaluate, we get the lists evaluated
-	// at each level of the tree.  Wasted.
-	// This way, we get something like StringCatter, where if we're only
-	// evaluating at the top, then we only pay the price at the top.
-	
-	// Basically,  (a ++ (b ++ (c ++ d))) is more efficient than
-	//             (((a ++ b) ++ c) ++ d)
-	// n vs n^2.
+	/**
+	 * If we've not yet been evaluated to a ConsCell, false. (head :: ConsCell)
+	 * 
+	 * <p>Once head or tail have been demanded, however, true, as
+	 * we've "become" a ConsCell. (head :: Object)
+	 */
+	private boolean literalConsCell = false;
 	
 	/**
-	 * If evaluated is true, then we've mutated into a glorified ConsCell, and nothing more.
+	 * Construct an append cell, an optimized way of doing list appends.
 	 * 
-	 * <p>That is, if evaluated is false, then head and tail are both ConsCells
+	 * <p>Invariant 1: l is not a Nil
+	 * <br>Invariant 2: l is not an AppendCell
+	 * <br>Invariant 3: l is not a Closure (enforced by types. yay!) 
 	 * 
-	 * If evaluated is true, then head is a head object, and tail is a ConsCell.
+	 * @param l A real, literal ConsCell
+	 * @param r ConsCell (or closure that evaluates to one) to put on the right.
 	 */
-	boolean evaluated = false;
-	
-	/**
-	 * Construct an append cell, and optimized way of doing list appends.
-	 * 
-	 * @param l ConsCell (or thunk that evaluates to one) to put on the left.
-	 * @param r ConsCell (or thunk that evaluates to one) to put on the right.
-	 */
-	public AppendCell(Object l, Object r) {
+	private AppendCell(ConsCell l, Object r) {
 		super(l, r);
+		assert( !(l instanceof ConsCell.NilConsCell) );
+		assert( !(l instanceof AppendCell) || ((AppendCell)l).literalConsCell );
 	}
 	
 	/**
-	 * This method eliminates attempts to try to append nil to the left of a list,
-	 * by mutating into whatever is on our right.  e.g. [] ++ [a] becomes [a].
+	 * Append two lists together. This is the only way to create append cells,
+	 * the constructor is private.
+	 * 
+	 * <p>The append operation is completely allowed to be strict in its LHS.
+	 * 
+	 * @param l (strict) A list
+	 * @param r (lazy) A list
+	 * @return A ConsCell representing the appended lists
 	 */
-	private void becomeRight() {
-		ConsCell right = super.tail();
-
-		// BUG: TODO: If right is [], then we end up getting NullPointerExceptions instead
-		// of "requested head of nil" errors! NEEDS FIX!
-
-		head = right.head;
-		tail = right.tail;
-		if(right instanceof AppendCell) {
-			evaluated = ((AppendCell)right).evaluated;
-		} else {
-			evaluated = true;
-		}		
+	public final static ConsCell append(Object l, Object r) {
+		if(l instanceof Closure)
+			l = ((Closure)l).eval();
+		ConsCell left = (ConsCell)l;
+		
+		// Kill off nil LHS
+		if(left.nil()) {
+			if(r instanceof Closure)
+				r = ((Closure)r).eval();
+			ConsCell right = (ConsCell)r;
+			
+			return right;
+		}
+		// Kill off append LHS
+		if(left instanceof AppendCell) {
+			AppendCell leftap = (AppendCell) left;
+			// This, right here, is the principal reason this optimization can't be
+			// accomplished with forwarding: we're checking internal implementation
+			// details to SEE if "the forward" has been evaluated yet.
+			// If so, then gosh, it's a ConsCell, forget this. If NOT, well, let's be smart!
+			if(! leftap.literalConsCell) {
+				return append(leftap.head, append(leftap.tail, r));
+			}
+		}
+		// Okay, we're a real append of a real, literal ConsCell on the LHS.
+		return new AppendCell(left, r);
 	}
-
+	
+	private final void becomeLiteralConsCell() {
+		assert(!literalConsCell);
+		// By invariants, head is ConsCell
+		final ConsCell left = (ConsCell)super.head();
+		head = left.head();
+		// append is strict in its LHS, so calling left.tail() is okay.
+		// STRICTLY SPEAKING, however, this whole assignment to tail a bug:
+		// we should be creating this as a CLOSURE.
+		// TODO: investigate what consequences appear here?
+		// TODO: depends on fixing the bug that makes all FFI calls strict anyway!
+		tail = append(left.tail(), tail);
+		//final Object oldtail = tail;
+		//tail = new Closure(null) { public final Object eval() { return append(left.tail(), oldtail); } };
+		literalConsCell = true;
+	}
+	
 	@Override
 	public Object head() {
-		// evaluated means we've degenerated into a ConsCell.
-		// see tail() below.
-		if(evaluated)
+		if(literalConsCell)
 			return super.head();
-		
-		// Examine our left child
-		ConsCell left = (ConsCell)super.head();
-		// If it's null, defer to the right!
-		if(left.nil()) {
-			// mutate away the left side.
-			becomeRight();
-			return head();
-		}
-		// If it's an AppendCell, do the rotate optimization
-		if(left instanceof AppendCell && !((AppendCell)left).evaluated) {
-			// We want to do a rotate, as an optimization.
-			tail = new AppendCell(left.tail, tail);
-			head = left.head;
-			// Yes, this is recursion. not meant to be super.head
-			return head();
-		}
-		// otherwise, return the head of our left child.
-		return left.head();
+			
+		becomeLiteralConsCell();
+		return super.head();
 	}
 
 	@Override
 	public ConsCell tail() {
-		// if we've degenerated into a ConsCell.  See below
-		if(evaluated)
+		if(literalConsCell)
 			return super.tail();
-		
-		ConsCell left = (ConsCell)super.head();
-		if(left.nil()) {
-			// mutate away the left side
-			becomeRight();
-			return tail(); // yes recurse, not super.tail
-		}
-		// If there's more than one thing on the left, then
-		// We need to carry over the rest to a new append
-		// on the right
-		if( ! left.tail().nil())
-			tail = new AppendCell(left.tail(), tail);
-		// otherwise, claim out actual head, and return the tail.
-		head = left.head();
-		evaluated = true;
+			
+		becomeLiteralConsCell();
 		return super.tail();
 	}
 
 	@Override
 	public boolean nil() {
-		if(evaluated)
-			return false;
-		// We're nil iff left.nil() and right.nil()
-		return ((ConsCell)super.head()).nil() && super.tail().nil();
+		return false; // By invariants, LHS is a literal ConsCell
 	}
 
 	@Override
 	public int length() {
-		if(evaluated)
+		if(literalConsCell)
 			return super.length();
+		
 		return ((ConsCell)super.head()).length() + super.tail().length();
 	}
 }

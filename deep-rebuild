@@ -1,19 +1,32 @@
 #!/bin/bash
 
 # just run this script, no parameters or options.
+# One new option: --newcore, for when the core FFI stuff has to change in tandem with the runtime
+# Only I should ever have to use this, as once it's done ONCE, fetch-jars will eliminate anyone else's need to do it.
 
 mkdir -p build || exit
 cd build || exit
+
+# Modifications may have been made to how the translation is done
 
 echo "One full cycle ..."
 time java -Xss8M -Xmx3000M -jar ../jars/RunSilver.jar --clean silver:composed:Default || exit
 ant || exit
 mv silver.composed.Default.jar ../jars/ || exit
 
+# Modifications may need to be made to how core translates, to accomodate translation/runtime changes
+if [ "$1" == "--newcore" ]; then
+  echo -e "\a"
+  echo " Updates to core should be made NOW, to accomodate a new runtime... "
+  read
+fi
+
 echo "Before we start, let's get this thing built ..."
 java -Xss8M -Xmx3000M -jar ../jars/RunSilver.jar --clean lib:xml:ast || exit
 echo "Start ..."
 time java -Xss8M -Xmx3000M -jar ../jars/RunSilver.jar --clean silver:composed:Default || exit
+
+# Modifications may have been made to the runtime
 
 echo "No ant yet! Let's go build the runtime! ..."
 cd ../runtime/java || exit
@@ -24,6 +37,8 @@ cd ../../build || exit
 echo "Now finish ..."
 ant || exit
 mv silver.composed.Default.jar ../jars/ || exit
+
+# Finally, we should have a fully working binary on all the new code. Run it again to reach a fixed point:
 
 echo "One more full cycle ..."
 time java -Xss8M -Xmx3000M -jar ../jars/RunSilver.jar --clean silver:composed:Default || exit

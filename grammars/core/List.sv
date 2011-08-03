@@ -297,7 +297,7 @@ function append
          then l2
          else cons(head(l1), append(tail(l1), l2));
 } foreign {
-  "java" : return "new common.AppendCell(%l1%, %l2%)";
+  "java" : return "common.AppendCell.append(%l1%, %l2%)";
 }
 
 
