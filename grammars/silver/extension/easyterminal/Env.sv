@@ -24,9 +24,9 @@ function filterAndConvertTermDcls
 }
 
 function buildTerminalTree
-Decorated EnvTree ::= eis::[Decorated EnvItem]
+EnvTree ::= eis::[Decorated EnvItem]
 {
-  return buildTreeFromCollected(collectEnvItems(sortEnvItems(foldr(filterAndConvertTermDcls,[],eis))));
+  return buildTreeFromCollected(groupEnvItems(sortEnvItems(foldr(filterAndConvertTermDcls,[],eis))));
 }
 
 aspect production i_emptyEnv 

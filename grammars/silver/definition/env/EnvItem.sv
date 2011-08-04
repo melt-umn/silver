@@ -124,11 +124,20 @@ function sortEnvItems
 {
   return sortBy(envItemLTE, eis);
 }
-
+function groupEnvItems
+[[Decorated EnvItem]] ::= eis::[Decorated EnvItem]
+{
+  return groupBy(envItemEQ, eis);
+}
 function envItemLTE
 Boolean ::= e1::Decorated EnvItem e2::Decorated EnvItem
 {
   return e1.itemName <= e2.itemName;
+}
+function envItemEQ
+Boolean ::= e1::Decorated EnvItem e2::Decorated EnvItem
+{
+  return e1.itemName == e2.itemName;
 }
 
 -- Substitutions
