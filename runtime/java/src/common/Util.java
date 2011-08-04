@@ -323,10 +323,12 @@ public final class Util {
 		} else if(o instanceof TerminalRecord) {
 			TerminalRecord t = (TerminalRecord) o;
 			sb.append("'" + t.lexeme + "'");
-		} else if(o instanceof StringCatter || 
-				  o instanceof Integer || 
-				  o instanceof Float) {
+		} else if(o instanceof StringCatter) {
 			sb.append("\"" + o.toString() + "\"");
+		} else if(o instanceof Integer ||
+				  o instanceof Float ||
+    			  o instanceof Boolean) {
+			sb.append(o.toString());
 		} else if(o instanceof ConsCell) {
 			hackyhackyUnparseList((ConsCell)o, sb);
 		} else {
