@@ -15,6 +15,7 @@ nonterminal QNameWithTL with location, grammarName, file, env, pp, qname, typeli
 
 synthesized attribute qname :: Decorated QName;
 synthesized attribute typelist :: Decorated TypeList;
+synthesized attribute dcls :: [Decorated DclInfo];
 
 
 concrete production qNameId

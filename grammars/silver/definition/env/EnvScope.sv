@@ -4,13 +4,13 @@ grammar silver:definition:env;
 -- collapseEnvScope [Decorated DclInfo] ::= e::Decorated EnvScope
 
 -- emptyEnvScope    Decorated EnvScope ::=
--- oneEnvScope      Decorated EnvScope ::= eis::Decorated EnvTree
+-- oneEnvScope      Decorated EnvScope ::= eis::EnvTree
 -- appendEnvScope   Decorated EnvScope ::= l::Decorated EnvScope r::Decorated EnvScope
--- consEnvScope     Decorated EnvScope ::= l::Decorated EnvTree r::Decorated EnvScope
+-- consEnvScope     Decorated EnvScope ::= l::EnvTree r::Decorated EnvScope
 
 
 nonterminal EnvScope with envTrees;
-synthesized attribute envTrees :: [Decorated EnvTree] ;
+synthesized attribute envTrees :: [EnvTree] ;
 
 function emptyEnvScope
 Decorated EnvScope ::=
@@ -24,12 +24,12 @@ et::EnvScope ::=
 }
 
 function oneEnvScope
-Decorated EnvScope ::= eis::Decorated EnvTree
+Decorated EnvScope ::= eis::EnvTree
 {
   return decorate i_oneEnvScope(eis) with {};
 }
 abstract production i_oneEnvScope
-et::EnvScope ::= eis::Decorated EnvTree
+et::EnvScope ::= eis::EnvTree
 {
   et.envTrees = [eis] ;
 }
@@ -46,12 +46,12 @@ et::EnvScope ::=  l::Decorated EnvScope r::Decorated EnvScope
 }
 
 function consEnvScope
-Decorated EnvScope ::= l::Decorated EnvTree r::Decorated EnvScope
+Decorated EnvScope ::= l::EnvTree r::Decorated EnvScope
 {
   return decorate i_consEnvScope(l, r) with {};
 }
 abstract production i_consEnvScope
-et::EnvScope ::= l::Decorated EnvTree  r::Decorated EnvScope
+et::EnvScope ::= l::EnvTree  r::Decorated EnvScope
 {
  et.envTrees = l :: r.envTrees;
 }
@@ -62,10 +62,10 @@ function searchEnvScope
   return searchEnvScopeHelp(search, e.envTrees);
 }
 function searchEnvScopeHelp
-[Decorated DclInfo] ::= search::String e::[Decorated EnvTree]
+[Decorated DclInfo] ::= search::String e::[EnvTree]
 {
   return if null(e)
-         then [ ]    
+         then [ ]
          else searchEnvTree(search, head(e)) ++ searchEnvScopeHelp(search, tail(e));
 }
 
@@ -75,7 +75,7 @@ function collapseEnvScope
   return collapseEnvScopeHelp(e.envTrees);
 }
 function collapseEnvScopeHelp
-[Decorated DclInfo] ::= e::[Decorated EnvTree]
+[Decorated DclInfo] ::= e::[EnvTree]
 {
   return if null(e)
          then []
