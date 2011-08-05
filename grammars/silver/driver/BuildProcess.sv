@@ -171,15 +171,16 @@ top::RunUnit ::= iIn::IO args::String
   
   top.io = if preIO.iovalue != 0 --the preops tell us to quit.
            then exit(preIO.iovalue, preIO.io)
-           else if a.okay && grammarLocation.iovalue.isJust && !null(unit.compiledList) --the args were okay and the grammar was found.
-           then exit(postIO.iovalue, postIO.io)
-           else if a.okay --the args were okay but the grammar was not found
-           then if grammarLocation.iovalue.isJust && null(unit.compiledList)
-                then if null(grammars)
-                     then exit(3, print("\nGrammar '" ++ a.gName ++ "' was found at '" ++ grammarLocation.iovalue.fromJust ++ "' but there were no silver source files there!\n\n", grammarLocation.io))
-                     else exit(4, print("\nGrammar '" ++ a.gName ++ "' is up to date. Use --clean to force a recompile.\n\n", grammarLocation.io))
-                else exit(2, print("\nGrammar '" ++ a.gName ++ "' could not be located, make sure that the grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
-           else exit(1, print(a.usage, iIn)); -- the args were not okay.
+           else case a.okay, grammarLocation.iovalue.isJust, null(unit.compiledList ++ condUnit.compiledList), null(grammars) of
+             true, true, false, _     -> exit(postIO.iovalue, postIO.io)
+           | true, true,  true, true  -> exit(3, print("\nGrammar '" ++ a.gName ++ "' was found at '" ++ grammarLocation.iovalue.fromJust 
+                                                       ++ "' but there were no silver source files there!\n\n", grammarLocation.io))
+           | true, true,  true, false -> exit(4, print("\nGrammar '" ++ a.gName ++ "' is up to date. Use --clean to force a recompile.\n\n",
+                                                       grammarLocation.io))
+           | true, false, _,    _     -> exit(2, print("\nGrammar '" ++ a.gName ++ "' could not be located, make sure that the " ++ 
+                                                       "grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
+           | false, _,    _,    _     -> exit(1, print(a.usage, iIn))
+           end;
 }
 
 
