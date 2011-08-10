@@ -98,24 +98,15 @@ function mapPrependEnvItems
 }
 
 function mapRenameEnvItems
-[Decorated EnvItem] ::= items::[Decorated EnvItem] renames::[[String]]
+[Decorated EnvItem] ::= items::[Decorated EnvItem] renames::[Pair<String String>]
 {
-  local attribute result :: [String];
-  result = lookupRename(head(items).itemName, renames);
+  local attribute result :: Maybe<String>;
+  result = lookupBy(stringEq, head(items).itemName, renames);
   
   return if null(items) then []
-         else if null(result)
+         else if !result.isJust
               then head(items) :: mapRenameEnvItems(tail(items), renames)
-              else renamedEnvItem(head(result), head(items).dcl) :: mapRenameEnvItems(tail(items), renames);
-}
-
-function lookupRename
-[String] ::= v::String lst::[[String]]
-{
-  return if null(lst) then []
-         else if v == head(head(lst))
-              then [head(tail(head(lst)))]
-              else lookupRename(v, tail(lst));
+              else renamedEnvItem(result.fromJust, head(items).dcl) :: mapRenameEnvItems(tail(items), renames);
 }
 
 -- Sort function

@@ -139,7 +139,7 @@ top::Defs ::= d::Defs pfx::String
   forwards to d;
 }
 abstract production mapRenameDefs
-top::Defs ::= d::Defs rns::[[String]]
+top::Defs ::= d::Defs rns::[Pair<String String>]
 {
   top.typeList = mapRenameEnvItems(forward.typeList, rns);
   top.attrList = mapRenameEnvItems(forward.attrList, rns);
