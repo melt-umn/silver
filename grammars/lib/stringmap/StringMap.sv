@@ -1,5 +1,7 @@
 grammar lib:stringmap;
 
+deprecated "StringMap is inefficient and no longer recommended: use lib:treemap instead.";
+
 -- hide the representation of StringMap, as we someday plan to make this a tree
 nonterminal StringMap<a> with bindings<a>;
 
