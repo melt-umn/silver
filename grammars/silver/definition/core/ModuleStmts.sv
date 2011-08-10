@@ -6,7 +6,7 @@ grammar silver:definition:core;
 --apply with
 --apply as
 abstract production module 
-top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[[String]]
+top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[Pair<String String>]
 {
   production attribute med :: ModuleExportedDefs;
   med = moduleExportedDefs(c, [g.name], []);
@@ -333,7 +333,7 @@ top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
   top.defs = m.defs;
 }
 
-synthesized attribute envMaps :: [[String]] occurs on WithElems, WithElem;
+synthesized attribute envMaps :: [Pair<String String>] occurs on WithElems, WithElem;
 
 concrete production withElemsOne
 top::WithElems ::= we::WithElem
@@ -356,7 +356,7 @@ top::WithElem ::= n::QName 'as' newname::QName
 {
   top.pp = n.pp ++ " as " ++ newname.pp;
   top.location = loc(top.file, $2.line, $2.column);
-  top.envMaps = [[n.name, newname.name]];
+  top.envMaps = [pair(n.name, newname.name)];
 }
 
 
