@@ -1,13 +1,13 @@
-grammar simple:host ;
+grammar simple:host;
 
 {- Export the four grammars that make up the 'host' language.  This
    allows extension to see the host langauge as one grammar and not
    all the component grammars from which it is composed.
 -}
-exports simple:terminals ;
-exports simple:concretesyntax ;
-exports simple:abstractsyntax ;
-exports simple:host:driver ;
+exports simple:terminals;
+exports simple:concretesyntax;
+exports simple:abstractsyntax;
+exports simple:host:driver;
 
 
 {- We import the concrete syntax and driver grammars in order to build
@@ -18,10 +18,10 @@ This parse and version of main are exported, but this causes no
 problems in the compsed languages.
 -}
 
-import simple:concretesyntax only Root_c ;
-import simple:host:driver ;
+import simple:concretesyntax only Root;
+import simple:host:driver;
 
-parser parse :: Root_c {
+parser parse :: Root {
   simple:concretesyntax;
   simple:terminals;
 } 

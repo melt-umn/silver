@@ -12,9 +12,9 @@ grammar simple:abstractsyntax ;
 nonterminal Env<a> ;
 
 function addBinding
-Env<a> ::= name::String v::a env::Env<a>
+Env<a> ::= n::String v::a env::Env<a>
 {
-  return addBinding_p (name, v, env) ;
+  return addBinding_p (n, v, env) ;
 }
 
 function appendEnv
@@ -30,20 +30,20 @@ Env<a> ::=
 }
 
 function lookup
-Maybe<a> ::= name::String e::Env<a>
+Maybe<a> ::= n::String e::Env<a>
 {
   return if   null(matches)
          then nothing()
          else just( head(matches) ) ;
 
   local attribute matches :: [a] ;
-  matches = allMatches (name, e) ;
+  matches = allMatches (n, e) ;
 }
 
 function allMatches
-[a] ::= name::String e::Env<a>
+[a] ::= n::String e::Env<a>
 {
-  return allMatches_helper (name, e.bindings) ;
+  return allMatches_helper (n, e.bindings) ;
 }
 
 ------------------------------------------------------------
@@ -59,9 +59,9 @@ e::Env<a> ::=
 }
 
 abstract production addBinding_p
-e::Env<a> ::= name::String v::a env::Env<a>
+e::Env<a> ::= n::String v::a env::Env<a>
 {
-  e.bindings = cons( pair(name,v), env.bindings ) ;
+  e.bindings = cons( pair(n,v), env.bindings ) ;
 }
 
 abstract production appendEnv_p
@@ -71,14 +71,14 @@ e::Env<a> ::= e1::Env<a> e2::Env<a>
 }
 
 function allMatches_helper
-[a] ::= name::String ps::[Pair<String a>]
+[a] ::= n::String ps::[Pair<String a>]
 {
   return if   null(ps)
          then [ ]
-         else thisMatch ++ allMatches_helper(name, tail(ps)) ;
+         else thisMatch ++ allMatches_helper(n, tail(ps)) ;
 
   local attribute thisMatch :: [a] ;
-  thisMatch = if   name == head(ps).fst
+  thisMatch = if   n == head(ps).fst
               then [ head(ps).snd ]
               else [ ] ;
 }

@@ -1,20 +1,22 @@
-grammar simple:extensions:implication ;
+grammar simple:extensions:implication;
 
-imports simple:host ;
+imports lib:lang;
+imports simple:concretesyntax as cst;
+imports simple:abstractsyntax;
 
-terminal Implies_t  '=>'  precedence =  6 ;
+terminal Implies  '=>'  precedence = 6;
 
 concrete production implies_c
-e::Expr_c ::= l::Expr_c '=>' r::Expr_c
+e::cst:Expr ::= l::cst:Expr '=>' r::cst:Expr
 {
-  e.pp = "(" ++  l.pp ++ " => " ++ r.pp ++ ")" ;
-  e.ast_Expr = implies(l.ast_Expr, r.ast_Expr) ;
+  e.pp = "(" ++  l.pp ++ " => " ++ r.pp ++ ")";
+  e.ast = implies(l.ast, r.ast);
 }
 
 abstract production implies
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = "(" ++  l.pp ++ " => " ++ r.pp ++ ")" ;
+  e.pp = "(" ++  l.pp ++ " => " ++ r.pp ++ ")";
   --   l => r   is equivalent to   !l || r
-  forwards to or ( not(l), r);
+  forwards to or(not(l), r);
 }

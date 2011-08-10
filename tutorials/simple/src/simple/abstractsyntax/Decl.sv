@@ -1,46 +1,48 @@
-grammar simple:abstractsyntax ;
+grammar simple:abstractsyntax;
 
-nonterminal Decl with pp, env, defs, errors ;
-nonterminal TypeExpr with pp, type ;
-nonterminal Type with pp ;
+{--
+ - Declaration statement ast
+ -}
+nonterminal Decl with pp, env, defs, errors;
 
--- Declarations
 abstract production decl
-d::Decl ::= t::TypeExpr id::Id_t 
+d::Decl ::= t::TypeExpr id::Name 
 {
-  d.pp = t.pp ++ " " ++ id.lexeme ++ " ; \n" ; 
-  d.defs = addBinding(id.lexeme, t, emptyEnv());
-  d.errors := [ ] ;
+  d.pp = t.pp ++ " " ++ id.pp ++ "; \n"; 
+  d.defs = addBinding(id.pp, t, emptyEnv());
+  d.errors := [];
 }
 
--- Type Expressions
+{--
+ - Type expression ast
+ -}
+nonterminal TypeExpr with pp, type;
+
 abstract production typeExprInteger
 t::TypeExpr ::=  
 {
-  t.pp = "Integer" ;  
-  t.type = integerType() ;
+  t.pp = "Integer";  
+  t.type = integerType();
 }
 abstract production typeExprFloat
 t::TypeExpr ::=  
 {
-  t.pp = "Float" ; 
-  t.type = floatType() ;
+  t.pp = "Float"; 
+  t.type = floatType();
 }
 abstract production typeExprBoolean
 t::TypeExpr ::=  
 {
-  t.pp = "Boolean" ; 
-  t.type = booleanType() ;
+  t.pp = "Boolean"; 
+  t.type = booleanType();
 }
 abstract production typeExprString
 t::TypeExpr ::=  
 {
-  t.pp = "String" ; 
-  t.type = stringType() ;
+  t.pp = "String"; 
+  t.type = stringType();
 }
 
-
--- Types
 {- Typically, type expressions (TypeExpr) are not used in the process
    of type checking as it is often necessary to compute a standard
    representation of types.  For example, languages that let
@@ -51,29 +53,31 @@ t::TypeExpr ::=
    expression is then decorated by the Type that is represented by the
    type expressions.
 -}
+nonterminal Type with pp;
+
 abstract production integerType
 t::Type ::=   
 {
-  t.pp = "Integer" ;
+  t.pp = "Integer";
 }
 abstract production floatType
 t::Type ::=   
 {
-  t.pp = "Float" ;
+  t.pp = "Float";
 }
 abstract production booleanType
 t::Type ::=   
 {
-  t.pp = "Boolean" ;
+  t.pp = "Boolean";
 }
 abstract production stringType
 t::Type ::=   
 {
-  t.pp = "String" ;
+  t.pp = "String";
 }
 abstract production errorType
 t::Type ::=   
 {
-  t.pp = "Erroneous Type" ;
+  t.pp = "Erroneous Type";
 }
 
