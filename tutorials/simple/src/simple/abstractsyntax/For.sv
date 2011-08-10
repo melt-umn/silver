@@ -1,7 +1,7 @@
 grammar simple:abstractsyntax ;
 
 abstract production for
-s::Stmt ::= i::Id_t lower::Expr upper::Expr body::Stmt
+s::Stmt ::= i::Name lower::Expr upper::Expr body::Stmt
 {
   forwards to
     {- i = lower ;
@@ -15,7 +15,7 @@ s::Stmt ::= i::Id_t lower::Expr upper::Expr body::Stmt
              block(
                 seq(body, 
                     assignment(i, add(varRef(i),
-                                  intLit(terminal(IntegerLiteral_t, "1"))
+                                  intLit(i.location, "1")
                               )
                    )
                   )

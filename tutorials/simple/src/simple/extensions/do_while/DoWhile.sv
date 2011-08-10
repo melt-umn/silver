@@ -1,4 +1,4 @@
-grammar simple:extensions:do_while ;
+grammar simple:extensions:do_while;
 
 {- We import the Simple language extended with the repeat-until loop
    instead of importing the Simple host language.  This is because the
@@ -7,26 +7,29 @@ grammar simple:extensions:do_while ;
    this way provides an example of building an extension for an
    extended language.
 -}
-imports simple:composed:simple_repeat_until ;
+imports lib:lang;
+imports simple:concretesyntax as cst;
+imports simple:abstractsyntax;
+imports simple:extensions:repeat_until;
 
-terminal Do_t 'do' lexer classes { keywords } ;
+terminal Do 'do' lexer classes { KEYWORDS };
 
 concrete production dowhile_c 
-s::StmtMatched_c ::= 'do' body::Stmt_c 'while' '(' cond::Expr_c ')' ';'
+s::cst:StmtMatched ::= 'do' body::cst:Stmt 'while' '(' cond::cst:Expr ')' ';'
 {
-  s.pp = "do \n" ++ body.pp ++ "\n" ++ "while " ++ cond.pp ++ " ; \n" ;
-  s.ast_Stmt = dowhile (body.ast_Stmt, cond.ast_Expr ) ; 
+  s.pp = "do \n" ++ body.pp ++ "\n" ++ "while " ++ cond.pp ++ "; \n";
+  s.ast = dowhile(body.ast, cond.ast); 
 }
 
 abstract production dowhile
 s::Stmt ::= body::Stmt cond::Expr
 {
-  -- s.pp = "do \n" ++ body.pp ++ "\n" ++ "while " ++ cond.pp ++ " ; \n" ;
+  -- s.pp = "do \n" ++ body.pp ++ "\n" ++ "while " ++ cond.pp ++ "; \n";
   forwards to 
     {-  repeat
           body
-        until (! cond) ;
+        until (! cond);
      -}
-    repeatStmt ( body, not(cond) ) ;
+    repeatStmt(body, not(cond));
 }
 

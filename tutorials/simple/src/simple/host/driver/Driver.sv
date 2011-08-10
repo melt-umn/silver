@@ -1,12 +1,12 @@
-grammar simple:host:driver ;
+grammar simple:host:driver;
 
-import simple:terminals ;
-import simple:concretesyntax ;
-import simple:abstractsyntax ;
+import lib:lang;
+import simple:concretesyntax as cst;
+import simple:abstractsyntax as ast;
 
 function driver
 IO ::= args::String io_in::IO 
-       the_parser::Function(ParseResult<Root_c>::=String String)
+       the_parser::Function(ParseResult<cst:Root>::=String String)
 {
   production attribute isF :: IOVal<Boolean>;
   isF = isFile(args, io_in);
@@ -14,17 +14,17 @@ IO ::= args::String io_in::IO
   production attribute text :: IOVal<String>;
   text = readFile(args, isF.io);
 
-  local attribute result :: ParseResult<Root_c>;
+  local attribute result :: ParseResult<cst:Root>;
   result = the_parser(text.iovalue, args);
 
-  local attribute r_cst :: Root_c ;
-  r_cst = result.parseTree ;
+  local attribute r_cst :: cst:Root;
+  r_cst = result.parseTree;
 
--- local attribute write_c_io :: IO ;
--- write_c_io = writeFile("output.c", r_cst.c_code, text.io ) ;
+-- local attribute write_c_io :: IO;
+-- write_c_io = writeFile("output.c", r_cst.c_code, text.io );
 
-  local attribute r_ast :: Root ;
-  r_ast = r_cst.ast_Root ;
+  local attribute r_ast :: ast:Root;
+  r_ast = r_cst.ast;
 
   local attribute print_success :: IO;
   print_success = 
@@ -37,13 +37,13 @@ IO ::= args::String io_in::IO
            "Errors: " ++
            (if null(r_ast.errors)  then " No semantic errors!\n" 
             else "\n" ++
-                 implode("", r_ast.errors) 
+                 implode("", ppMessages(r_ast.errors))
            )
            , text.io );
 
-  local attribute write_success :: IO ;
+  local attribute write_success :: IO;
   write_success =
-    writeFile ( "output.c", r_ast.c_code, print_success ) ;
+    writeFile ( "output.c", r_ast.ast:c_code, print_success );
 
   local attribute print_failure :: IO;
   print_failure =

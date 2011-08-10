@@ -1,27 +1,29 @@
-grammar simple:extensions:repeat_until ;
+grammar simple:extensions:repeat_until;
 
-imports simple:host ;
+imports lib:lang;
+imports simple:concretesyntax as cst;
+imports simple:abstractsyntax;
 
-terminal Repeat_t 'repeat' lexer classes { keywords } ;
-terminal Until_t  'until'  lexer classes { keywords } ;
+terminal Repeat 'repeat' lexer classes { KEYWORDS };
+terminal Until  'until'  lexer classes { KEYWORDS };
 
-concrete production repeat_c 
-s::StmtMatched_c ::= 'repeat' body::Stmts_c 'until' cond::Expr_c ';'
+concrete production repeatStmt_c
+s::cst:StmtMatched ::= 'repeat' body::cst:Stmts 'until' cond::cst:Expr ';'
 {
-  s.pp = "repeat \n" ++ body.pp ++ "\n" ++ "until " ++ cond.pp ++ " ; \n" ;
-  s.ast_Stmt = repeatStmt (body.ast_Stmt, cond.ast_Expr ) ; 
+  s.pp = "repeat \n" ++ body.pp ++ "\n" ++ "until " ++ cond.pp ++ "; \n";
+  s.ast = repeatStmt(body.ast, cond.ast); 
 }
 
 abstract production repeatStmt
 s::Stmt ::= body::Stmt cond::Expr
 {
-  -- s.pp = "repeat \n" ++ body.pp ++ "\n" ++ "until " ++ cond.pp ++ " ; \n" ;
+  -- s.pp = "repeat \n" ++ body.pp ++ "\n" ++ "until " ++ cond.pp ++ "; \n";
   forwards to 
     {-  body
         while (! cond) { body }
      -}
-    seq ( body ,
-          while ( not(cond), block(body))
-        ) ;
+    seq ( body,
+          while(not(cond), block(body))
+        );
 }
 
