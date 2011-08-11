@@ -4,7 +4,7 @@ main() {
   Integer rows;
   rows = 100;
   Integer cols;
-  cols = 80;
+  cols = 50;
   
   Matrix data[rows,cols] i,j = j; // dummy data
   
@@ -26,14 +26,25 @@ main() {
              then 0.0-25 
              else data[row, i*season_length + j];
     
+    Matrix comparisonMatrix[years, years] i,j =
+             if j <= i then 0.0
+             else let
+                    // diff these two years
+                    Float diff;
+                    diff = 0;
+                    Integer k;
+                    for(k = 0 to season_length-1) {
+                      diff = diff + pt[i,k] - pt[j,k];
+                    }
+                  in diff / season_length end;
   //}
   
   
   Integer i;
   Integer j;
   for(i = 0 to years-1) {
-   for(j = 0 to season_length-1) {
-    print(pt[i,j]);
+   for(j = 0 to years-1) {
+    print(comparisonMatrix[i,j]);
     print("\t");
    }
    print("\n");

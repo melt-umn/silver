@@ -22,6 +22,7 @@ parser parse :: cst:Root {
   simple:extensions:implication;
   simple:extensions:matrix;
   simple:extensions:expr_if;
+  simple:extensions:expr_let;
 } 
 
 function main 

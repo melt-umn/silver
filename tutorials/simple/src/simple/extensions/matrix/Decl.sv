@@ -31,6 +31,7 @@ d::Decl ::= id::Name r::Expr c::Expr ri::Name ci::Name v::Expr
            addBinding(ci.pp, decorate typeExprInteger() with {},
             d.env));
   
+  -- May require using --std=c99
   d.c_code = 
    "double " ++ id.pp ++ "[" ++ r.c_code ++ "][" ++ c.c_code ++ "];\n" ++
    "for(int " ++ ri.pp ++ " = 0; " ++ ri.pp ++ " < " ++ r.c_code ++ "; " ++ ri.pp ++ "++) {\n" ++
