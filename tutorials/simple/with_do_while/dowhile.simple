@@ -14,4 +14,5 @@ main () {
   } while (x <= 10) ;
 
   print (y);
+  print("\n");
 }

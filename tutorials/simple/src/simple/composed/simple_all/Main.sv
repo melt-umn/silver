@@ -20,6 +20,8 @@ parser parse :: cst:Root {
   simple:extensions:do_while;
   simple:extensions:repeat_until; 
   simple:extensions:implication;
+  simple:extensions:matrix;
+  simple:extensions:expr_if;
 } 
 
 function main 

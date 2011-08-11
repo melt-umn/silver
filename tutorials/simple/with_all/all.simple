@@ -5,22 +5,22 @@ main () {
   y = 1 ;
   x = y ; 
 
-  print (x) ;
-  print (y) ;
+  print (x) ; print("\n");
+  print (y) ; print("\n");
 
   Integer i ;
   i = 1 ;
   while (i < 10 ) {
-    print(i) ;
+    print(i) ; print("\n");
     i = i + 1 ;
     x = x + x ;
-    print(x) ;
+    print(x) ; print("\n");
   }
 
   x = 1 ;
   i = 1 ;
   repeat 
-    print (i) ;
+    print (i) ; print("\n");
     x = x + i ;
     y = x * y ;
   until x == 10 ;
@@ -28,7 +28,7 @@ main () {
   Boolean b ;
   b = x > 1 => y > 3 ;
 
-  print ("x is");
-  print (x) ;
-  print (y) ;
+  print ("x is ");
+  print (x) ; print("\n");
+  print (y) ; print("\n");
 }

@@ -1,0 +1,41 @@
+
+main() {
+  // inputs
+  Integer rows;
+  rows = 100;
+  Integer cols;
+  cols = 80;
+  
+  Matrix data[rows,cols] i,j = j; // dummy data
+  
+  Integer season_length;
+  season_length = 7;
+  
+  Integer years; // haha, lacking a ceil function...
+  years = cols * 1.0 / season_length + 1.0 - 1.0/season_length;
+
+  // Begin real code
+
+  Integer row;
+  row = 0;
+//  for(row = 0 to rows-1) {
+    // Turns the data vector for this point into a matrix
+    // Each row is a year, and each column is the same point in time in that year
+    Matrix pt[years, season_length] i,j = 
+             if i*season_length + j >= cols 
+             then 0.0-25 
+             else data[row, i*season_length + j];
+    
+  //}
+  
+  
+  Integer i;
+  Integer j;
+  for(i = 0 to years-1) {
+   for(j = 0 to season_length-1) {
+    print(pt[i,j]);
+    print("\t");
+   }
+   print("\n");
+  }
+}

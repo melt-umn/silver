@@ -44,7 +44,7 @@ s::Stmt ::= e::Expr
              | booleanType() -> "%d"
              | stringType()  -> "%s"
              end ++
-             "\\n\", " ++ e.c_code ++ "); \n";
+             "\", " ++ e.c_code ++ "); \n";
 }
 
 aspect production skip
@@ -94,7 +94,7 @@ t::TypeExpr ::=
 aspect production typeExprFloat
 t::TypeExpr ::=  
 {
-  t.c_code = "float";
+  t.c_code = "double";
 }
 aspect production typeExprBoolean
 t::TypeExpr ::=  

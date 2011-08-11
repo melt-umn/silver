@@ -1,0 +1,15 @@
+
+main() {
+  Matrix m[5,5] i,j = i + j;
+  Matrix n[6,6] i,j = if i == 5 || j == 5 then 0.0-1 else m[i,j] / 8;
+  
+  Integer i;
+  Integer j;
+  for(i = 0 to 5) {
+   for(j = 0 to 5) {
+    print(n[i,j]);
+    print("\t");
+   }
+   print("\n");
+  }
+}
