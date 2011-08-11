@@ -37,7 +37,7 @@ IO ::= args::String io_in::IO
            "Errors: " ++
            (if null(r_ast.errors)  then " No semantic errors!\n" 
             else "\n" ++
-                 implode("", ppMessages(r_ast.errors))
+                 implode("", ppMessages(r_ast.errors)) ++ "\n"
            )
            , text.io );
 

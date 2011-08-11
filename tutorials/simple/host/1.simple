@@ -10,7 +10,7 @@ main () {
   }
 
   if (x < 4)
-    print ("x is less than 4") ;
+    print ("x is less than 4\n") ;
   else
-    print ("x is not less than 4") ;
+    print ("x is not less than 4\n") ;
 }

@@ -11,5 +11,6 @@ main() {
   }
   
   print(a);
+  print("\n");
 }
 

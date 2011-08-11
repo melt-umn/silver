@@ -48,7 +48,7 @@ lexer class KEYWORDS;
 -- Statements
 
 terminal If    'if'    lexer classes { KEYWORDS }; 
-terminal Else  'else'  lexer classes { KEYWORDS }; 
+terminal Else  'else'  lexer classes { KEYWORDS };
 terminal While 'while' lexer classes { KEYWORDS }; 
 terminal Print 'print' lexer classes { KEYWORDS }; 
 terminal For   'for'   lexer classes { KEYWORDS } ;
