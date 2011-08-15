@@ -1,5 +1,16 @@
 
 --------------------------------------------------------------------------------
+Silver 0.3.4      Aug ??, 2011
+
+ - New lib:treemap RB tree library
+ - Performance and translation improvements
+ - Dramatic (30%) reduction in binary sizes
+ - Testing framework (unstable interface, yet)
+ - Update and modernization of the 'simple' tutorial language
+ - Minor change to the way production-specific layout declarations worked
+ - Many bug fixes, including some pattern matching fixes. [IN PROGRESS]
+
+--------------------------------------------------------------------------------
 Silver 0.3.3      Jun 30, 2011
 
  - Improved pattern matching support
