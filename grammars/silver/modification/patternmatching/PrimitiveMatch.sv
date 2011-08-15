@@ -95,7 +95,8 @@ top::Expr ::= ll::Decorated Location e::Expr t::Type pr::PrimPatterns f::Expr
                           pr.translation) ++
                         "return " ++ f.translation ++ ";" ++ 
                     "}}.eval(context, (" ++ scrutineeType.transType ++")" ++ e.translation ++ ")";
-                          
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
   
   forwards to defaultExpr();
 }

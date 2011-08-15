@@ -11,6 +11,7 @@ top::Expr ::= q::Decorated QName
   top.typerep = q.lookupValue.typerep;
 
   top.translation = "((" ++ q.lookupValue.typerep.transType ++ ")((common.Node)RESULT).getChild(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName ++ "))";
+  top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
   
@@ -28,6 +29,7 @@ top::Expr ::= q::Decorated QName
   top.typerep = errorType(); -- TODO: BUG: Need a real type here (AnyTerminalType or something)
   
   top.translation = makeCopperName(q.lookupValue.fullName); -- Value right here?
+  top.lazyTranslation = top.translation; -- never, but okay!
   
   top.upSubst = top.downSubst;
   
@@ -45,6 +47,7 @@ top::Expr ::= q::Decorated QName
   top.typerep = stringTypeExp();
   
   top.translation = "new common.StringCatter(lexeme)";
+  top.lazyTranslation = top.translation; -- never, but okay!
   
   top.upSubst = top.downSubst;
   
@@ -64,6 +67,7 @@ top::Expr ::= q::Decorated QName
   top.typerep = q.lookupValue.typerep;
 
   top.translation = makeCopperName(q.lookupValue.fullName);
+  top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
   
@@ -86,6 +90,7 @@ top::Expr ::= q::Decorated QName
                     if q.name == "column" then "virtualLocation.getColumn()" else
                     if q.name == "filename" then "new common.StringCatter(virtualLocation.getFileName())" else
                     error("unknown actionTerminalReference " ++ q.name); -- should never be called, but here for safety
+  top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
   

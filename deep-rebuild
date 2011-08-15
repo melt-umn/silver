@@ -47,4 +47,7 @@ mv silver.composed.Default.jar ../jars/ || exit
 
 echo -e "\a"
 
+echo "Cleaning out stale runtime class files..."
+rm -rf ../generated/bin/common || exit
+
 echo "deep-rebuild success"
