@@ -18,6 +18,8 @@ top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
   top.translation = "((" ++ finalType(top).transType ++ ")(new common.Lazy() { public final Object eval(final common.DecoratedNode context) { " 
     ++ la.let_translation
     ++ "return " ++ forward.translation ++ "; } }).eval(context))";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 synthesized attribute let_translation :: String occurs on LetAssigns, AssignExpr;
@@ -53,5 +55,7 @@ top::Expr ::= q::Decorated QName
   top.translation = if q.lookupValue.typerep.isDecorated && !finalType(top).isDecorated
                     then "((" ++ finalType(top).transType ++ ")((common.DecoratedNode)" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()).undecorate())"
                     else "((" ++ finalType(top).transType ++ ")(" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()))";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 

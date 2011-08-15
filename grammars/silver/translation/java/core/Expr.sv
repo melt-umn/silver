@@ -12,17 +12,22 @@ TypeExp ::= e::Decorated Expr
 
 -- These attributes help us generate slightly less awful code, by not going through reflection for direct function/production calls.
 synthesized attribute isAppReference :: Boolean;
-synthesized attribute isStaticValue :: Boolean;
 synthesized attribute appReference :: String;
 
-attribute translation, isAppReference, isStaticValue, appReference occurs on Expr, Exprs;
+{--
+ - A translation string that will be a closure instead of the raw value.
+ - BUT, is permitted to be a raw value IF it's totally safe to do so.
+ -}
+synthesized attribute lazyTranslation :: String;
+
+attribute lazyTranslation, translation, isAppReference, appReference occurs on Expr;
+attribute lazyTranslation occurs on Exprs;
 
 aspect production defaultExpr
 top::Expr ::=
 {
   top.isAppReference = false;
   -- deliberately leave appReference undefined.
-  top.isStaticValue = false;
 }
 
 aspect production nestedExpr
@@ -37,12 +42,6 @@ top::Expr ::= '(' e::Expr ')'
 --       efficient.  We could even kill the runtime check to see if it's
 --       a node, since we know.
 
-aspect production errorReference
-top::Expr ::= q::Decorated QName
-{
-  top.translation = error("Demanded translation for " ++ q.pp ++ " at " ++ q.location.unparse);
-}
-
 aspect production childReference
 top::Expr ::= q::Decorated QName
 {
@@ -55,8 +54,9 @@ top::Expr ::= q::Decorated QName
          then {- type Node -} "context.childDecorated(" ++ childIDref ++ ").undecorate()"
          else {- type DecoratedNode -} "context.childDecorated(" ++ childIDref ++ ")"
     else "((" ++ finalType(top).transType ++ ")context.childAsIs(" ++ childIDref ++ "))";
-
   -- reminder: the reason we do .childDecorated().undecorate() is that it's not safe to mix asis/decorated accesses.
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production lhsReference
@@ -68,6 +68,8 @@ top::Expr ::= q::Decorated QName
     if finalType(top).isDecorable
     then "context.undecorate()"
     else "context";
+
+  top.lazyTranslation = top.translation;
 }
 
 aspect production localReference
@@ -79,8 +81,9 @@ top::Expr ::= q::Decorated QName
          then {- type Node -} "context.localDecorated(" ++ q.lookupValue.dcl.attrOccursIndex ++ ").undecorate()"
          else {- type DecoratedNode -} "context.localDecorated(" ++ q.lookupValue.dcl.attrOccursIndex ++ ")"
     else "((" ++ finalType(top).transType ++ ")context.localAsIs(" ++ q.lookupValue.dcl.attrOccursIndex ++ "))";
-
   -- reminder: the reason we do .localDecorated().undecorate() is that it's not safe to mix asis/decorated accesses.
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production productionReference
@@ -90,6 +93,7 @@ top::Expr ::= q::Decorated QName
   top.appReference = makeClassName(q.lookupValue.fullName);
 
   top.translation = makeClassName(q.lookupValue.fullName) ++ ".factory";
+  top.lazyTranslation = top.translation;
 }
 
 aspect production functionReference
@@ -99,6 +103,7 @@ top::Expr ::= q::Decorated QName
   top.appReference = makeClassName(q.lookupValue.fullName);
 
   top.translation = makeClassName(q.lookupValue.fullName) ++ ".factory";
+  top.lazyTranslation = top.translation;
 }
 
 aspect production forwardReference
@@ -110,6 +115,8 @@ top::Expr ::= q::Decorated QName
     if finalType(top).isDecorable
     then "context.forward().undecorate()"
     else "context.forward()";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production globalValueReference
@@ -117,34 +124,44 @@ top::Expr ::= q::Decorated QName
 {
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ 
                       makeName(q.lookupValue.dcl.sourceGrammar) ++ ".Init." ++ fullNameToShort(q.lookupValue.fullName) ++ ".eval())";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production productionApplicationDispatcher
 top::Expr ::= e::Decorated Expr es::Exprs
 {
   top.translation = if e.isAppReference 
-                    then "((" ++ finalType(top).transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ "))"
-                    else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ es.translation ++ "}))";
+                    then "((" ++ finalType(top).transType ++ ")new " ++ e.appReference ++ "(" ++ es.lazyTranslation ++ "))"
+                    else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ es.lazyTranslation ++ "}))";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production functionApplicationDispatcher
 top::Expr ::= e::Decorated Expr es::Exprs
 {
   top.translation = if e.isAppReference 
-                    then "((" ++ finalType(top).transType ++ ")" ++ e.appReference ++ ".invoke(new Object[]{" ++ es.translation ++ "}))"
-                    else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ es.translation ++ "}))";
+                    then "((" ++ finalType(top).transType ++ ")" ++ e.appReference ++ ".invoke(new Object[]{" ++ es.lazyTranslation ++ "}))"
+                    else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ es.lazyTranslation ++ "}))";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production synDNTAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".synthesized(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production inhDNTAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".inherited(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production terminalAccessDispatcher
@@ -152,6 +169,8 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   -- TODO: we should maybe map the name properly to the field we access?
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ "." ++ q.name ++ ")";
+
+  top.lazyTranslation = top.translation;
 }
 
 aspect production decorateExprWith
@@ -165,6 +184,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
                                       "new int[]{" ++ implode(", ", inh.nameTrans) ++ "}, " ++ 
                                       "new common.Lazy[]{" ++ implode(", ", inh.valueTrans) ++ "}))"
     end;
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 synthesized attribute nameTrans :: [String];
 synthesized attribute valueTrans :: [String];
@@ -211,33 +232,39 @@ top::ExprLHSExpr ::= q::QName
 aspect production trueConst
 top::Expr ::='true'
 {
-  top.isStaticValue = true;
   top.translation = "true";
+  top.lazyTranslation = top.translation;
 }
 
 aspect production falseConst
 top::Expr ::= 'false'
 {
-  top.isStaticValue = true;
   top.translation = "false";
+  top.lazyTranslation = top.translation;
 }
 
 aspect production and
 top::Expr ::= e1::Expr '&&' e2::Expr
 {
   top.translation = "(" ++ e1.translation ++ " && " ++ e2.translation ++ ")";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production or
 top::Expr ::= e1::Expr '||' e2::Expr
 {
   top.translation = "(" ++ e1.translation ++ " || " ++ e2.translation ++ ")";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production not
 top::Expr ::= '!' e::Expr
 {
   top.translation = "(!" ++ e.translation ++ ")";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 -- Some notes on numbers:
@@ -255,6 +282,8 @@ top::Expr ::= e1::Expr '>' e2::Expr
                     | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) > 0"
                     | t -> error("INTERNAL ERROR: no > trans for type " ++ prettyType(t))
                     end;
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production lt
@@ -266,6 +295,8 @@ top::Expr ::= e1::Expr '<' e2::Expr
                     | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) < 0"
                     | t -> error("INTERNAL ERROR: no < trans for type " ++ prettyType(t))
                     end;
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production gteq
@@ -277,6 +308,8 @@ top::Expr ::= e1::Expr '>=' e2::Expr
                     | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) >= 0"
                     | t -> error("INTERNAL ERROR: no >= trans for type " ++ prettyType(t))
                     end;
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production lteq
@@ -288,38 +321,46 @@ top::Expr ::= e1::Expr '<=' e2::Expr
                     | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) <= 0"
                     | t -> error("INTERNAL ERROR: no <= trans for type " ++ prettyType(t))
                     end;
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production eqeq
 top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.translation = e1.translation ++ ".equals(" ++ e2.translation ++ ")";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production neq
 top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.translation = "!" ++ e1.translation ++ ".equals(" ++ e2.translation ++ ")";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
   top.translation = "(" ++ e1.translation ++ " ? " ++ e2.translation ++ " : " ++ e3.translation ++ ")";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production intConst
 top::Expr ::= i::Int_t
 {
-  top.isStaticValue = true;
   top.translation = "Integer.valueOf((int)" ++ i.lexeme ++ ")";
+  top.lazyTranslation = top.translation;
 }
 
 aspect production floatConst
 top::Expr ::= f::Float_t
 {
-  top.isStaticValue = true;
   top.translation = "Float.valueOf((float)" ++ f.lexeme ++ ")";
+  top.lazyTranslation = top.translation;
 }
 
 aspect production plus
@@ -330,6 +371,8 @@ top::Expr ::= e1::Expr '+' e2::Expr
                     | floatTypeExp() -> "Float.valueOf(" ++ e1.translation ++ " + " ++ e2.translation ++ ")"
                     | t -> error("INTERNAL ERROR: no + trans for type " ++ prettyType(t))
                     end;
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 aspect production minus
 top::Expr ::= e1::Expr '-' e2::Expr
@@ -339,6 +382,8 @@ top::Expr ::= e1::Expr '-' e2::Expr
                     | floatTypeExp() -> "Float.valueOf(" ++ e1.translation ++ " - " ++ e2.translation ++ ")"
                     | t -> error("INTERNAL ERROR: no - trans for type " ++ prettyType(t))
                     end;
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
@@ -348,6 +393,8 @@ top::Expr ::= e1::Expr '*' e2::Expr
                     | floatTypeExp() -> "Float.valueOf(" ++ e1.translation ++ " * " ++ e2.translation ++ ")"
                     | t -> error("INTERNAL ERROR: no * trans for type " ++ prettyType(t))
                     end;
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 aspect production divide
 top::Expr ::= e1::Expr '/' e2::Expr
@@ -357,6 +404,8 @@ top::Expr ::= e1::Expr '/' e2::Expr
                     | floatTypeExp() -> "Float.valueOf(" ++ e1.translation ++ " / " ++ e2.translation ++ ")"
                     | t -> error("INTERNAL ERROR: no / trans for type " ++ prettyType(t))
                     end;
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 aspect production neg
 top::Expr ::= '-' e::Expr
@@ -366,13 +415,15 @@ top::Expr ::= '-' e::Expr
                     | floatTypeExp() -> "Float.valueOf(-" ++ e.translation ++ ")"
                     | t -> error("INTERNAL ERROR: no unary - trans for type " ++ prettyType(t))
                     end;
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production stringConst
 top::Expr ::= s::String_t
 {
-  top.isStaticValue = true;
   top.translation = "(new common.StringCatter(" ++ s.lexeme ++ "))";
+  top.lazyTranslation = top.translation;
 }
 
 aspect production stringPlusPlus
@@ -381,44 +432,43 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
   -- cast, rather than toString. Otherwise we don't gain anything with StringCatter
   -- literal here, rather than transType.  why not? Catch bugs, just in case.
   top.translation = "new common.StringCatter((common.StringCatter)" ++ e1.translation ++ ", (common.StringCatter)" ++ e2.translation ++ ")";
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
 aspect production exprsEmpty
 top::Exprs ::=
 {
-  top.translation = "";
+  top.lazyTranslation = "";
 }
 
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.translation = wrapThunk(e, top.blockContext.lazyApplication);
+  top.lazyTranslation = e.lazyTranslation;
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  top.translation = wrapThunk(e1, top.blockContext.lazyApplication) ++ ", " ++ e2.translation;
+  top.lazyTranslation = e1.lazyTranslation ++ ", " ++ e2.lazyTranslation;
 }
 
 aspect production exprsDecorated
 top::Exprs ::= es::[Decorated Expr]
 {
-  top.translation = implode(", ", wrapThunks(es, top.blockContext.lazyApplication));
+  top.lazyTranslation = implode(", ", map(getLazyTranslation, es));
 }
 
-function wrapThunks
-[String] ::= es::[Decorated Expr] beLazy::Boolean
+function getLazyTranslation
+String ::= e::Decorated Expr
 {
-  return if null(es) then [] else wrapThunk(head(es), beLazy) :: wrapThunks(tail(es), beLazy);
+  return e.lazyTranslation;
 }
-function wrapThunk
-String ::= original::Decorated Expr beLazy::Boolean
+function wrapClosure
+String ::= t::String beLazy::Boolean
 {
-  -- TODO: in the future, we could also ask "isStaticReference" and copy the thunk, instead of creating a new one that just evaluates the existing.
-  return if beLazy && !original.isStaticValue
-         then wrapThunkText("context", original.translation)
-         else original.translation;
+  return if beLazy then wrapThunkText("context", t) else t;
 }
 function wrapThunkText
 String ::= ct::String s::String
