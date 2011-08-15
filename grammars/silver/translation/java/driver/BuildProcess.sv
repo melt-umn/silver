@@ -98,8 +98,8 @@ String ::= r::Decorated RootSpec{
 "\t\t" ++ package ++ ".Init.init();\n" ++
 "\t\t" ++ package ++ ".Init.postInit();\n" ++
 "\t\ttry {\n" ++
-"\t\t\tcommon.Node rv = (common.Node) new " ++ package ++ ".Pmain(cvargs(args), null).doReturn();\n" ++
-"\t\t\trv.getChild(core.Pioval.i_i); // demand the io token\n" ++
+"\t\t\tcommon.Node rv = (common.Node) " ++ package ++ ".Pmain.invoke(new Object[]{cvargs(args), null});\n" ++
+"\t\t\trv.getChild(core.Pioval.i_i); // demand the io token\n" ++ -- TODO bug: should be via synthesized, not child!! buggy!!
 "\t\t\tSystem.exit( (Integer)rv.getChild(core.Pioval.i_v) );\n" ++
 "\t\t} catch(Throwable t) {\n" ++
 "\t\t\tcommon.Util.printStackCauses(t);\n" ++

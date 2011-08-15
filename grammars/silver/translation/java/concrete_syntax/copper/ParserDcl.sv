@@ -25,7 +25,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
   local attribute parseResult :: String;
   parseResult = 
    "try {\n" ++
-"\t\t\treturn new core.PparseSucceeded( new " ++ packageName ++ "." ++ parserName ++ "().parse(new java.io.StringReader(((common.StringCatter)getChild(0)).toString()), ((common.StringCatter)getChild(1)).toString()) );\n" ++
+"\t\t\treturn new core.PparseSucceeded( new " ++ packageName ++ "." ++ parserName ++ "().parse(new java.io.StringReader(((common.StringCatter)common.Util.demand(args[0])).toString()), ((common.StringCatter)common.Util.demand(args[1])).toString()) );\n" ++
 "\t\t} catch(edu.umn.cs.melt.copper.runtime.logging.CopperParserException e) {\n" ++
 "\t\t\treturn new core.PparseFailed( new common.StringCatter(e.getMessage()) );\n" ++
 "\t\t} catch(Throwable t) {\n" ++

@@ -141,9 +141,13 @@ public abstract class Node {
 	public abstract String getNameOfLocalAttr(final int index);
 
 	/**
-	 * @return A Lazy to evaluate on a decorated form of this Node, to get a Node that this one forwards to.
+	 * It may help conceptually to imagine this returns a Lazy that the DN then calls with itself as context.
+	 * We've simply merged this into this method to avoid an unnecessary Lazy.
+	 *
+	 * @param context The DN of this node, to use to evaluate the forward equation.
+	 * @return The Node this node forwards to.
 	 */
-	public abstract Lazy getForward();
+	public abstract Node getForward(final DecoratedNode context);
 
 	/**
 	 * Get any overridden attributes for this node's forward.  (e.g. forwarding with { inh = foo; })

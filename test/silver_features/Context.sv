@@ -23,3 +23,25 @@ wrongCode "Return is not valid in this context" {
   }
 }
 
+wrongCode "does not have a return value" {
+  function noretlol
+  Context ::=
+  { }
+}
+
+wrongCode "has more than one declared return value" {
+  function retretlol
+  Context ::=
+  { return error("a");
+    return error("b");
+  }
+}
+
+wrongCode "has more than one forward declaration" {
+  abstract production fwdfwdlol
+  t::Context ::=
+  {
+    forwards to context();
+    forwards to fwdfwdlol();
+  }
+}

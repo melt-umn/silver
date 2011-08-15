@@ -251,7 +251,7 @@ public class DecoratedNode {
 				} catch(Throwable t) {
 					throw new TraceException("Error while evaluating synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' in production '" + self.getName() + "'", t);
 				}
-			} else if(self.getForward() != null) {
+			} else if(forward() != null) {
 				try {
 					o = forward().synthesized(attribute);
 				} catch(Throwable t) {
@@ -274,13 +274,13 @@ public class DecoratedNode {
 	 * @return The DecoratedNode this one forwards to, or null if this node does not forward.
 	 */
 	public DecoratedNode forward() {
-		Lazy l = self.getForward();
-		if(l == null)
-			return null;
 		if(this.forwardValue == null) {
 			try {
+				final Node n = self.getForward(this);
+				if(n == null)
+					return null;
 				// CACHE : should not comment out forward caching !
-				this.forwardValue = ((Node)l.eval(this)).decorate(parent, this);
+				this.forwardValue = n.decorate(parent, this);
 			} catch(Throwable t) {
 				throw new TraceException("Error evaluating forward node in production '" + self.getName() + "'", t);
 			}

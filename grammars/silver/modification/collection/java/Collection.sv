@@ -43,9 +43,9 @@ attribute frontTrans, midTrans, endTrans occurs on Operation;
 aspect production functionOperation
 top::Operation ::= s::String
 {
-  top.frontTrans = "new " ++ makeClassName(s) ++"(";
+  top.frontTrans = "" ++ makeClassName(s) ++".invoke(new Object[]{";
   top.midTrans = ", ";
-  top.endTrans = ").doReturn()";
+  top.endTrans = "})";
 }
 aspect production productionOperation
 top::Operation ::= s::String

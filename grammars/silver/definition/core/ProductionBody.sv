@@ -1,5 +1,11 @@
 grammar silver:definition:core;
 
+{--
+ - Either the 'forward' expression, or the 'return' expression.
+ - I gave it an obtuse name so it could easily be renamed in the future.
+ -}
+synthesized attribute uniqueSignificantExpression :: [Decorated Expr] occurs on ProductionBody, ProductionStmts, ProductionStmt;
+
 concrete production emptyProductionBodySemi
 top::ProductionBody ::= ';'
 {
@@ -38,6 +44,7 @@ top::ProductionBody ::= stmts::ProductionStmts
   top.defs = stmts.defs;
 
   top.productionAttributes = stmts.productionAttributes;
+  top.uniqueSignificantExpression = stmts.uniqueSignificantExpression;
 
   top.errors := stmts.errors;
   top.warnings := stmts.warnings;
@@ -51,6 +58,7 @@ top::ProductionStmts ::=
   top.defs = emptyDefs();
 
   top.productionAttributes = emptyDefs();
+  top.uniqueSignificantExpression = [];
 
   top.errors := [];
   top.warnings := [];
@@ -63,6 +71,7 @@ top::ProductionStmts ::= stmt::ProductionStmt
   top.location = stmt.location;
 
   top.productionAttributes = stmt.productionAttributes;
+  top.uniqueSignificantExpression = stmt.uniqueSignificantExpression;
  
   top.defs = stmt.defs;
   top.errors := stmt.errors;
@@ -74,7 +83,9 @@ top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
 {
   top.pp = h.pp ++ "\n" ++ t.pp;
   top.location = h.location;
+  
   top.productionAttributes = appendDefs(h.productionAttributes, t.productionAttributes);
+  top.uniqueSignificantExpression = h.uniqueSignificantExpression ++ t.uniqueSignificantExpression;
 
   top.defs = appendDefs(h.defs, t.defs);
   top.errors := h.errors ++ t.errors;
@@ -89,6 +100,7 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
   top.defs = appendDefs(h.defs, t.defs);
 
   top.productionAttributes = appendDefs(h.productionAttributes, t.productionAttributes);
+  top.uniqueSignificantExpression = h.uniqueSignificantExpression ++ t.uniqueSignificantExpression;
 
   top.errors := h.errors ++ t.errors;
   top.warnings := h.warnings ++ t.warnings;
@@ -102,6 +114,7 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   top.defs = appendDefs(h.defs, t.defs);
 
   top.productionAttributes = appendDefs(h.productionAttributes, t.productionAttributes);
+  top.uniqueSignificantExpression = h.uniqueSignificantExpression ++ t.uniqueSignificantExpression;
 
   top.errors := h.errors ++ t.errors;
   top.warnings := h.warnings ++ t.warnings;
@@ -115,6 +128,8 @@ top::ProductionStmt ::=
   -- as is usual for defaults ("base classes")
   -- can't provide pp or location, errors should NOT be defined!
   top.productionAttributes = emptyDefs();
+  top.uniqueSignificantExpression = [];
+  
   top.defs = emptyDefs();
   top.warnings := [];
 }
@@ -124,6 +139,8 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 {
   top.pp = "\treturn " ++ e.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
+  
+  top.uniqueSignificantExpression = [e];
 
   top.errors := e.errors;
   
@@ -178,6 +195,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   top.location = loc(top.file, $1.line, $1.column);
 
   top.productionAttributes = addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
+  top.uniqueSignificantExpression = [e];
 
   top.errors := e.errors;
 
@@ -195,6 +213,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
   top.location = loc(top.file, $1.line, $1.column);
 
   top.productionAttributes = addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
+  top.uniqueSignificantExpression = [e];
 
   top.errors := e.errors ++ inh.errors;
 
