@@ -5,7 +5,7 @@ terminal Dominates_t 'dominates' ; --lexer classes {KEYWORD};
 terminal Submits_t   'submits'   ; --lexer classes {KEYWORD};
 terminal Classes_kwd 'classes'   ; --lexer classes {KEYWORD};
 
--- Concrete Syntax for new Copper --
+-- Concrete Syntax for Copper --
 concrete production terminalModifierDominates
 top::TerminalModifier ::= 'dominates' '{' terms::TermPrecList '}'
 {

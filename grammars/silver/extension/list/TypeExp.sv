@@ -12,7 +12,7 @@ top::TypeExp ::= el::TypeExp
   top.typepp = "[" ++ el.typepp ++ "]";
 
   top.unify = case top.unifyWith of
-               listTypeExp(fel) -> unify(el,new(fel))
+               listTypeExp(fel) -> unify(el,fel)
              | decoratedTypeExp(nonterminalTypeExp("core:List", ftes)) -> unify(el, head(ftes))
              | _ -> errorSubst("Tried to unify list with " ++ prettyType(top.unifyWith))
               end;

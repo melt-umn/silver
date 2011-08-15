@@ -78,7 +78,7 @@ Defs ::= l::[Decorated EnvItem]
 {
   return if null(l) then emptyDefs()
          else case head(l).dcl of
-                localDcl(sg,sl,fn,ty) -> addParserLocalDcl(sg,sl,fn,new(ty), hackTransformLocals(tail(l)))
+                localDcl(sg,sl,fn,ty) -> addParserLocalDcl(sg,sl,fn,ty, hackTransformLocals(tail(l)))
               | _ -> hackTransformLocals(tail(l)) -- TODO: possibly error??
               end;
 }

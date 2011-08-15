@@ -120,7 +120,7 @@ Maybe<Expr> ::= valueType::Type expr::Expr exprName::String
    | nothing() -> 
        case valueType of
          listType(_,elemType,_) 
-           -> case functionNameForBaseTypesCS(new(elemType),"toStringFrom") of
+           -> case functionNameForBaseTypesCS(elemType,"toStringFrom") of
                 just(btt) ->
                       just ( asExpr( "toStringFromList ( " ++ btt ++ ", " ++
                                                           exprName ++ ")", 
@@ -131,8 +131,6 @@ Maybe<Expr> ::= valueType::Type expr::Expr exprName::String
        | _ -> nothing()
        end 
    end ;
-   -- ToDo: The "new"s above should not be required. There is something wrong with
-   --       pattern matching as of Dec 6.
 }
 
 function mkEqualityTestExprCS
@@ -144,7 +142,7 @@ Maybe<Expr> ::= valueType::Type value::Expr expected::Expr
    | nothing() -> 
        case valueType of
          listType(_,elemType,_) 
-           -> case functionNameForBaseTypesCS(new(elemType),"equals") of
+           -> case functionNameForBaseTypesCS(elemType,"equals") of
                 just(btt) -> -- "equalsList(btt, value, expected)"
                       just ( asExpr( "equalsList(" ++ btt ++ ", value, expected)", 
                                     empty_CS_env(),7))
