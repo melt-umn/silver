@@ -45,7 +45,7 @@ top::LetAssigns ::= ae::AssignExpr
 aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
 {
-  -- " ++ t.typerep.transType ++ "    TODO
+  -- " ++ t.typerep.transType ++ "    TODO parameterize Thunk?
   top.let_translation = "final common.Thunk " ++ makeLocalValueName(fName) ++ " = " ++ "new common.Thunk(" ++ wrapThunkText("context", e.translation) ++ ");\n";
 }
 
@@ -56,6 +56,10 @@ top::Expr ::= q::Decorated QName
                     then "((" ++ finalType(top).transType ++ ")((common.DecoratedNode)" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()).undecorate())"
                     else "((" ++ finalType(top).transType ++ ")(" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()))";
 
-  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
+  top.lazyTranslation = 
+       if !top.blockContext.lazyApplication then top.translation else
+       if q.lookupValue.typerep.isDecorated && !finalType(top).isDecorated
+       then "common.Closure.transformUndecorate(new common.Closure.FromThunk(" ++ makeLocalValueName(q.lookupValue.fullName) ++ "))"
+       else "new common.Closure.FromThunk(" ++ makeLocalValueName(q.lookupValue.fullName) ++ ")";
 }
 

@@ -16,7 +16,6 @@ public class DecoratedNode {
 	// - Delete parent / forwardParent. Or coalesce them (only NEED for debugging purposes, if inh become thunks!)
 	// - Delete forwardValue (make it a local/production attribute)
 	// - merge inheritedAttributes into inheritedValues
-	// - Make locals/prodattrs ints, not strings
 
 	/**
 	 * The "undecorated" form of this DecoratedNode. (Never null)
@@ -356,4 +355,63 @@ public class DecoratedNode {
 		}
 	}
 
+	public final Object childDecoratedLazy(final int child) {
+		if(childrenValues[child] != null)
+			return childrenValues[child];
+		return new Closure(this) {
+			@Override
+			public final Object eval() {
+				return context.childDecorated(child);
+			}
+		};
+	}
+	public final Object childAsIsLazy(final int child) {
+		return new Closure(this) {
+			@Override
+			public final Object eval() {
+				return context.childAsIs(child);
+			}
+		};
+	}
+	public final Object localDecoratedLazy(final int index) {
+		if(localValues[index] != null)
+			return localValues[index];
+		return new Closure(this) {
+			@Override
+			public final Object eval() {
+				return context.localDecorated(index);
+			}
+		};
+	}
+	public final Object localAsIsLazy(final int index) {
+		return new Closure(this) {
+			@Override
+			public final Object eval() {
+				return context.localAsIs(index);
+			}
+		};
+	}
+	public final Object childSynthesizedLazy(final int child, final int index) {
+		if( childrenValues[child] != null && 
+			((DecoratedNode)childrenValues[child]).synthesizedValues[index] != null)
+		{
+			return ((DecoratedNode)childrenValues[child]).synthesizedValues[index];
+		}
+		return new Closure(this) {
+			@Override
+			public final Object eval() {
+				return context.childDecorated(child).synthesized(index);
+			}
+		};
+	}
+	public final Object contextInheritedLazy(final int index) {
+		if( inheritedValues[index] != null)
+			return inheritedValues[index];
+		return new Closure(this) {
+			@Override
+			public final Object eval() {
+				return context.inherited(index);
+			}
+		};
+	}
 }

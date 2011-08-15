@@ -30,13 +30,6 @@ top::Expr ::=
   -- deliberately leave appReference undefined.
 }
 
-aspect production nestedExpr
-top::Expr ::= '(' e::Expr ')'
-{
-  -- TODO: do we need this?
-  top.translation = "(" ++ forward.translation ++ ")";
-}
-
 -- TODO: these go through the process of decorating them, just to undecorate.
 --       we should maybe pass information to the runtime here to make it more
 --       efficient.  We could even kill the runtime check to see if it's
@@ -56,7 +49,13 @@ top::Expr ::= q::Decorated QName
     else "((" ++ finalType(top).transType ++ ")context.childAsIs(" ++ childIDref ++ "))";
   -- reminder: the reason we do .childDecorated().undecorate() is that it's not safe to mix asis/decorated accesses.
 
-  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
+  top.lazyTranslation =
+    if !top.blockContext.lazyApplication then top.translation else
+    if q.lookupValue.typerep.isDecorable
+    then if finalType(top).isDecorable
+         then "common.Closure.transformUndecorate(context.childDecoratedLazy(" ++ childIDref ++ "))"
+         else "context.childDecoratedLazy(" ++ childIDref ++ ")"
+    else "context.childAsIsLazy(" ++ childIDref ++ ")";
 }
 
 aspect production lhsReference
@@ -83,7 +82,13 @@ top::Expr ::= q::Decorated QName
     else "((" ++ finalType(top).transType ++ ")context.localAsIs(" ++ q.lookupValue.dcl.attrOccursIndex ++ "))";
   -- reminder: the reason we do .localDecorated().undecorate() is that it's not safe to mix asis/decorated accesses.
 
-  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
+  top.lazyTranslation =
+    if !top.blockContext.lazyApplication then top.translation else
+    if q.lookupValue.typerep.isDecorable
+    then if finalType(top).isDecorable
+         then "common.Closure.transformUndecorate(context.localDecoratedLazy(" ++ q.lookupValue.dcl.attrOccursIndex ++ "))"
+         else "context.localDecoratedLazy(" ++ q.lookupValue.dcl.attrOccursIndex ++ ")"
+    else "context.localAsIsLazy(" ++ q.lookupValue.dcl.attrOccursIndex ++ ")";
 }
 
 aspect production productionReference
@@ -125,7 +130,10 @@ top::Expr ::= q::Decorated QName
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ 
                       makeName(q.lookupValue.dcl.sourceGrammar) ++ ".Init." ++ fullNameToShort(q.lookupValue.fullName) ++ ".eval())";
 
-  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
+  top.lazyTranslation = 
+       if top.blockContext.lazyApplication
+       then "new common.Closure.FromThunk(" ++ makeName(q.lookupValue.dcl.sourceGrammar) ++ ".Init." ++ fullNameToShort(q.lookupValue.fullName) ++ ")"
+       else top.translation;
 }
 
 aspect production productionApplicationDispatcher
@@ -153,7 +161,12 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".synthesized(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
 
-  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
+  top.lazyTranslation = 
+       case e, top.blockContext.lazyApplication of
+         childReference(cqn), true -> "context.childSynthesizedLazy(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ cqn.lookupValue.fullName ++ ", " 
+                                                                ++ occursCheck.dcl.attrOccursIndex ++ ")"
+       | _, _ -> wrapClosure(top.translation, top.blockContext.lazyApplication)
+       end;
 }
 
 aspect production inhDNTAccessDispatcher
@@ -161,7 +174,11 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".inherited(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
 
-  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
+  top.lazyTranslation = 
+       case e, top.blockContext.lazyApplication of
+         lhsReference(lqn), true -> "context.contextInheritedLazy(" ++ occursCheck.dcl.attrOccursIndex ++ ")"
+       | _, _ -> wrapClosure(top.translation, top.blockContext.lazyApplication)
+       end;
 }
 
 aspect production terminalAccessDispatcher
@@ -279,7 +296,7 @@ top::Expr ::= e1::Expr '>' e2::Expr
   top.translation = case finalType(e1) of
                       intTypeExp() -> "(" ++ e1.translation ++ " > " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "(" ++ e1.translation ++ " > " ++ e2.translation ++ ")"
-                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) > 0"
+                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString()) > 0)"
                     | t -> error("INTERNAL ERROR: no > trans for type " ++ prettyType(t))
                     end;
 
@@ -292,7 +309,7 @@ top::Expr ::= e1::Expr '<' e2::Expr
   top.translation = case finalType(e1) of
                       intTypeExp() -> "(" ++ e1.translation ++ " < " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "(" ++ e1.translation ++ " < " ++ e2.translation ++ ")"
-                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) < 0"
+                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString()) < 0)"
                     | t -> error("INTERNAL ERROR: no < trans for type " ++ prettyType(t))
                     end;
 
@@ -305,7 +322,7 @@ top::Expr ::= e1::Expr '>=' e2::Expr
   top.translation = case finalType(e1) of
                       intTypeExp() -> "(" ++ e1.translation ++ " >= " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "(" ++ e1.translation ++ " >= " ++ e2.translation ++ ")"
-                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) >= 0"
+                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString()) >= 0)"
                     | t -> error("INTERNAL ERROR: no >= trans for type " ++ prettyType(t))
                     end;
 
@@ -318,7 +335,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
   top.translation = case finalType(e1) of
                       intTypeExp() -> "(" ++ e1.translation ++ " <= " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "(" ++ e1.translation ++ " <= " ++ e2.translation ++ ")"
-                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) <= 0"
+                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString()) <= 0)"
                     | t -> error("INTERNAL ERROR: no <= trans for type " ++ prettyType(t))
                     end;
 
