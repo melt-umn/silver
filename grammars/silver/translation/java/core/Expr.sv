@@ -253,7 +253,7 @@ top::Expr ::= e1::Expr '>' e2::Expr
                       intTypeExp() -> "(" ++ e1.translation ++ " > " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "(" ++ e1.translation ++ " > " ++ e2.translation ++ ")"
                     | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) > 0"
-                    | t -> error("INTERNAL ERROR: no > trans for type " ++ prettyType(new(t)))
+                    | t -> error("INTERNAL ERROR: no > trans for type " ++ prettyType(t))
                     end;
 }
 
@@ -264,7 +264,7 @@ top::Expr ::= e1::Expr '<' e2::Expr
                       intTypeExp() -> "(" ++ e1.translation ++ " < " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "(" ++ e1.translation ++ " < " ++ e2.translation ++ ")"
                     | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) < 0"
-                    | t -> error("INTERNAL ERROR: no < trans for type " ++ prettyType(new(t)))
+                    | t -> error("INTERNAL ERROR: no < trans for type " ++ prettyType(t))
                     end;
 }
 
@@ -275,7 +275,7 @@ top::Expr ::= e1::Expr '>=' e2::Expr
                       intTypeExp() -> "(" ++ e1.translation ++ " >= " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "(" ++ e1.translation ++ " >= " ++ e2.translation ++ ")"
                     | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) >= 0"
-                    | t -> error("INTERNAL ERROR: no >= trans for type " ++ prettyType(new(t)))
+                    | t -> error("INTERNAL ERROR: no >= trans for type " ++ prettyType(t))
                     end;
 }
 
@@ -286,7 +286,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
                       intTypeExp() -> "(" ++ e1.translation ++ " <= " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "(" ++ e1.translation ++ " <= " ++ e2.translation ++ ")"
                     | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString())) <= 0"
-                    | t -> error("INTERNAL ERROR: no <= trans for type " ++ prettyType(new(t)))
+                    | t -> error("INTERNAL ERROR: no <= trans for type " ++ prettyType(t))
                     end;
 }
 
@@ -328,7 +328,7 @@ top::Expr ::= e1::Expr '+' e2::Expr
   top.translation = case finalType(top) of
                       intTypeExp() -> "Integer.valueOf(" ++ e1.translation ++ " + " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "Float.valueOf(" ++ e1.translation ++ " + " ++ e2.translation ++ ")"
-                    | t -> error("INTERNAL ERROR: no + trans for type " ++ prettyType(new(t)))
+                    | t -> error("INTERNAL ERROR: no + trans for type " ++ prettyType(t))
                     end;
 }
 aspect production minus
@@ -337,7 +337,7 @@ top::Expr ::= e1::Expr '-' e2::Expr
   top.translation = case finalType(top) of
                       intTypeExp() -> "Integer.valueOf(" ++ e1.translation ++ " - " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "Float.valueOf(" ++ e1.translation ++ " - " ++ e2.translation ++ ")"
-                    | t -> error("INTERNAL ERROR: no - trans for type " ++ prettyType(new(t)))
+                    | t -> error("INTERNAL ERROR: no - trans for type " ++ prettyType(t))
                     end;
 }
 aspect production multiply
@@ -346,7 +346,7 @@ top::Expr ::= e1::Expr '*' e2::Expr
   top.translation = case finalType(top) of
                       intTypeExp() -> "Integer.valueOf(" ++ e1.translation ++ " * " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "Float.valueOf(" ++ e1.translation ++ " * " ++ e2.translation ++ ")"
-                    | t -> error("INTERNAL ERROR: no * trans for type " ++ prettyType(new(t)))
+                    | t -> error("INTERNAL ERROR: no * trans for type " ++ prettyType(t))
                     end;
 }
 aspect production divide
@@ -355,7 +355,7 @@ top::Expr ::= e1::Expr '/' e2::Expr
   top.translation = case finalType(top) of
                       intTypeExp() -> "Integer.valueOf(" ++ e1.translation ++ " / " ++ e2.translation ++ ")"
                     | floatTypeExp() -> "Float.valueOf(" ++ e1.translation ++ " / " ++ e2.translation ++ ")"
-                    | t -> error("INTERNAL ERROR: no / trans for type " ++ prettyType(new(t)))
+                    | t -> error("INTERNAL ERROR: no / trans for type " ++ prettyType(t))
                     end;
 }
 aspect production neg
@@ -364,7 +364,7 @@ top::Expr ::= '-' e::Expr
   top.translation = case finalType(top) of
                       intTypeExp() -> "Integer.valueOf(-" ++ e.translation ++ ")"
                     | floatTypeExp() -> "Float.valueOf(-" ++ e.translation ++ ")"
-                    | t -> error("INTERNAL ERROR: no unary - trans for type " ++ prettyType(new(t)))
+                    | t -> error("INTERNAL ERROR: no unary - trans for type " ++ prettyType(t))
                     end;
 }
 

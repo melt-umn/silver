@@ -114,8 +114,8 @@ top::Expr ::= locat::Decorated Location returnType::TypeExp es::Exprs ml::MRuleL
   
   forwards to {- if type is not nt then ... else -}
           case ml of
-            mRuleList_one(matchRule(p, _, e)) -> if p.patternListEmpty then new(e) else normalCase
-          | mRuleList_cons(matchRule(p, _, e),_,_) -> if p.patternListEmpty then new(e) else normalCase
+            mRuleList_one(matchRule(p, _, e)) -> if p.patternListEmpty then e else normalCase
+          | mRuleList_cons(matchRule(p, _, e),_,_) -> if p.patternListEmpty then e else normalCase
           end;
   
   top.errors <-

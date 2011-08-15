@@ -103,7 +103,7 @@ r::Root ::= AsName_t Name { }
 abstract production asName   
 top::Name ::= str::String cenv::CS_env id::Integer 
 { forwards to case getParseTree(str,"%%%Name",id) of
-                rootAs_Name(_,l) -> new(l)
+                rootAs_Name(_,l) -> l
               | _ -> error("Should NEVER access this in EqTestwCST.sv ... " ++ 
                            toString(id))  end 
     with {cs_env = cenv ;} ;
@@ -113,7 +113,7 @@ abstract production wrapName av::TreeValue ::= Name { }
 concrete production embedNameCS_c
 e::Name ::= flag::AsName_t name::IdLower_t
 { forwards to case cenv.tree_value of
-                wrapName ( e_tree ) -> new(e_tree)
+                wrapName ( e_tree ) -> e_tree
               | wrapNotFound ( m ) -> error ( m )
               | _ -> error ("incorrect type - expected " ++ name.lexeme ++ 
                             " to be an Name.\n\n" )
@@ -132,7 +132,7 @@ r::Root ::= AsExpr_t Expr { }
 abstract production asExpr   
 top::Expr ::= str::String cenv::CS_env id::Integer 
 { forwards to case getParseTree(str,"%%%Expr",id) of
-                rootAs_Expr(_,l) -> new(l)
+                rootAs_Expr(_,l) -> l
               | _ -> error("Should NEVER access this in EqTestwCST.sv ... " ++ 
                            toString(id))  end 
     with {cs_env = cenv ;} ;
@@ -142,7 +142,7 @@ abstract production wrapExpr av::TreeValue ::= Expr { }
 concrete production embedExprCS_c
 e::Expr ::= flag::AsExpr_t name::IdLower_t
 { forwards to case cenv.tree_value of
-                wrapExpr ( e_tree ) -> new(e_tree)
+                wrapExpr ( e_tree ) -> e_tree
               | wrapNotFound ( m ) -> error ( m )
               | _ -> error ("incorrect type - expected " ++ name.lexeme ++ 
                             " to be an Expr.\n\n" )
@@ -160,7 +160,7 @@ r::Root ::= AsType_t Type { }
 abstract production asType   
 top::Type ::= str::String cenv::CS_env id::Integer 
 { forwards to case getParseTree(str,"%%%Type",id) of
-                rootAs_Type(_,l) -> new(l)
+                rootAs_Type(_,l) -> l
               | _ -> error("Should NEVER access this in EqTestwCST.sv ... " ++ 
                            toString(id))  end 
     with {cs_env = cenv ;} ;
@@ -170,7 +170,7 @@ abstract production wrapType av::TreeValue ::= Type { }
 concrete production embedTypeCS_c
 e::Type ::= flag::AsType_t name::IdLower_t
 { forwards to case cenv.tree_value of
-                wrapType ( e_tree ) -> new(e_tree)
+                wrapType ( e_tree ) -> e_tree
               | wrapNotFound ( m ) -> error ( m )
               | _ -> error ("incorrect type - expected " ++ name.lexeme ++ 
                             " to be an Type.\n\n" )
@@ -188,7 +188,7 @@ r::Root ::= AsProductionStmt_t ProductionStmt { }
 abstract production asProductionStmt   
 top::ProductionStmt ::= str::String cenv::CS_env id::Integer 
 { forwards to case getParseTree(str,"%%%ProductionStmt",id) of
-                rootAs_ProductionStmt(_,l) -> new(l)
+                rootAs_ProductionStmt(_,l) -> l
               | _ -> error("Should NEVER access this in EqTestwCST.sv ... " ++ 
                            toString(id))  end 
     with {cs_env = cenv ;} ;
@@ -198,7 +198,7 @@ abstract production wrapProductionStmt av::TreeValue ::= ProductionStmt { }
 concrete production embedProductionStmtCS_c
 e::ProductionStmt ::= flag::AsProductionStmt_t name::IdLower_t
 { forwards to case cenv.tree_value of
-                wrapProductionStmt ( e_tree ) -> new(e_tree)
+                wrapProductionStmt ( e_tree ) -> e_tree
               | wrapNotFound ( m ) -> error ( m )
               | _ -> error ("incorrect type - expected " ++ name.lexeme ++ 
                             " to be an ProductionStmt.\n\n" )
@@ -216,7 +216,7 @@ r::Root ::= AsProductionStmts_t ProductionStmts { }
 abstract production asProductionStmts   
 top::ProductionStmts ::= str::String cenv::CS_env id::Integer 
 { forwards to case getParseTree(str,"%%%ProductionStmts",id) of
-                rootAs_ProductionStmts(_,l) -> new(l)
+                rootAs_ProductionStmts(_,l) -> l
               | _ -> error("Should NEVER access this in EqTestwCST.sv ... " ++ 
                            toString(id))  end 
     with {cs_env = cenv ;} ;
@@ -226,7 +226,7 @@ abstract production wrapProductionStmts av::TreeValue ::= ProductionStmts { }
 concrete production embedProductionStmtsCS_c
 e::ProductionStmts ::= flag::AsProductionStmts_t name::IdLower_t
 { forwards to case cenv.tree_value of
-                wrapProductionStmts ( e_tree ) -> new(e_tree)
+                wrapProductionStmts ( e_tree ) -> e_tree
               | wrapNotFound ( m ) -> error ( m )
               | _ -> error ("incorrect type - expected " ++ name.lexeme ++ 
                             " to be an ProductionStmts.\n\n" )
@@ -244,7 +244,7 @@ r::Root ::= AsProductionBody_t ProductionBody { }
 abstract production asProductionBody   
 top::ProductionBody ::= str::String cenv::CS_env id::Integer 
 { forwards to case getParseTree(str,"%%%ProductionBody",id) of
-                rootAs_ProductionBody(_,l) -> new(l)
+                rootAs_ProductionBody(_,l) -> l
               | _ -> error("Should NEVER access this in EqTestwCST.sv ... " ++ 
                            toString(id))  end 
     with {cs_env = cenv ;} ;
@@ -254,7 +254,7 @@ abstract production wrapProductionBody av::TreeValue ::= ProductionBody { }
 concrete production embedProductionBodyCS_c
 e::ProductionBody ::= flag::AsProductionBody_t name::IdLower_t
 { forwards to case cenv.tree_value of
-                wrapProductionBody ( e_tree ) -> new(e_tree)
+                wrapProductionBody ( e_tree ) -> e_tree
               | wrapNotFound ( m ) -> error ( m )
               | _ -> error ("incorrect type - expected " ++ name.lexeme ++ 
                             " to be an ProductionBody.\n\n" )
@@ -272,7 +272,7 @@ r::Root ::= AsProductionLHS_t ProductionLHS { }
 abstract production asProductionLHS   
 top::ProductionLHS ::= str::String cenv::CS_env id::Integer 
 { forwards to case getParseTree(str,"%%%ProductionLHS",id) of
-                rootAs_ProductionLHS(_,l) -> new(l)
+                rootAs_ProductionLHS(_,l) -> l
               | _ -> error("Should NEVER access this in EqTestwCST.sv ... " ++ 
                            toString(id))  end 
     with {cs_env = cenv ;} ;
@@ -282,7 +282,7 @@ abstract production wrapProductionLHS av::TreeValue ::= ProductionLHS { }
 concrete production embedProductionLHSCS_c
 e::ProductionLHS ::= flag::AsProductionLHS_t name::IdLower_t
 { forwards to case cenv.tree_value of
-                wrapProductionLHS ( e_tree ) -> new(e_tree)
+                wrapProductionLHS ( e_tree ) -> e_tree
               | wrapNotFound ( m ) -> error ( m )
               | _ -> error ("incorrect type - expected " ++ name.lexeme ++ 
                             " to be an ProductionLHS.\n\n" )
@@ -300,7 +300,7 @@ r::Root ::= AsAGDcl_t AGDcl { }
 abstract production asAGDcl   
 top::AGDcl ::= str::String cenv::CS_env id::Integer 
 { forwards to case getParseTree(str,"%%%AGDcl",id) of
-                rootAs_AGDcl(_,l) -> new(l)
+                rootAs_AGDcl(_,l) -> l
               | _ -> error("Should NEVER access this in EqTestwCST.sv ... " ++ 
                            toString(id))  end 
     with {cs_env = cenv ;} ;
@@ -314,7 +314,7 @@ r::Root ::= AsAGDcls_t AGDcls { }
 abstract production asAGDcls   
 top::AGDcls ::= str::String cenv::CS_env id::Integer 
 { forwards to case getParseTree(str,"%%%AGDcls",id) of
-                rootAs_AGDcls(_,l) -> new(l)
+                rootAs_AGDcls(_,l) -> l
               | _ -> error("Should NEVER access this in EqTestwCST.sv ... " ++ 
                            toString(id))  end 
     with {cs_env = cenv ;} ;
@@ -326,7 +326,7 @@ concrete production embedAGDclCS_c
 e::AGDcl ::= flag::AsAGDcl_t name::IdLower_t
   THIS FAILS ...
 { forwards to case cenv.tree_value of
-                wrapAGDcl ( e_tree ) -> new(e_tree)
+                wrapAGDcl ( e_tree ) -> e_tree
               | wrapNotFound ( m ) -> error ( m )
               | _ -> error ("incorrect type - expected " ++ name.lexeme ++ 
                             " to be an AGDcl.\n\n" )

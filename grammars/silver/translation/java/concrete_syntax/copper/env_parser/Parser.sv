@@ -64,7 +64,7 @@ top::IRootSpecPart ::= {
 }
 
 --------------------------------------------------------------------------------
--- RootSpecParts - new stuff
+-- RootSpecParts
 
 terminal DisambiguationTerm 'disambiguate' lexer classes {C_1};
 terminal EscapedStringTerm /"([^\"\\]|\\.)*"/ lexer classes {C_1};
