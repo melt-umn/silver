@@ -16,6 +16,20 @@ import common.exceptions.SilverError;
  */
 public final class Util {
 	/**
+	 * Ensures that a (potential) closure is evaluated.
+	 *
+	 * Use by writing  (v = Util.demand(v)), never just invoke it!
+	 *
+	 * @param c  Either a value, or a Closure
+	 * @return The value, either directly, or evaluating the Closure
+	 */
+	public static Object demand(Object c) {
+		if(c instanceof Closure)
+			return ((Closure)c).eval();
+		return c;
+	}
+
+	/**
 	 * Turns a list of names and values into a map.
 	 * 
 	 * <p>Used by the 'decorate ... with { THIS PART }' syntax.

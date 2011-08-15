@@ -37,7 +37,6 @@ makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tpublic static final int num_local_attrs = Init." ++ localVar ++ ";\n" ++
 "\tpublic static final String[] occurs_local = new String[num_local_attrs];\n\n" ++
 
-"\tpublic static common.Lazy forward;\n" ++
 "\tpublic static final common.Lazy[] forwardInheritedAttributes = new common.Lazy[" ++ fnnt ++ ".num_inh_attrs];\n\n" ++
 
 "\tpublic static final common.Lazy[] synthesizedAttributes = new common.Lazy[" ++ fnnt ++ ".num_syn_attrs];\n" ++
@@ -74,8 +73,8 @@ makeStaticDcls(className, ns.inputElements) ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic common.Lazy getForward() {\n" ++
-"\t\treturn forward;\n" ++
+"\tpublic common.Node getForward(final common.DecoratedNode context) {\n" ++
+"\t\treturn " ++ (if null(body.uniqueSignificantExpression) then "null" else head(body.uniqueSignificantExpression).translation) ++ ";\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
@@ -109,10 +108,10 @@ makeStaticDcls(className, ns.inputElements) ++
 
 "\tpublic static final common.NodeFactory<" ++ className ++ "> factory = new Factory();\n\n" ++
 
-"\tpublic static final class Factory implements common.NodeFactory<" ++ className ++ "> {\n\n" ++
+"\tpublic static final class Factory extends common.NodeFactory<" ++ className ++ "> {\n\n" ++
 
 "\t\t@Override\n" ++
-"\t\tpublic " ++ className ++ " construct(final Object[] children) {\n" ++
+"\t\tpublic " ++ className ++ " invoke(final Object[] children) {\n" ++
 "\t\t\treturn new " ++ className ++ "(children);\n" ++
 "\t\t}\n\n" ++
 "\t};\n" ++

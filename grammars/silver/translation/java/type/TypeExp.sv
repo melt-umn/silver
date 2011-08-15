@@ -88,15 +88,14 @@ top::TypeExp ::= te::TypeExp
 aspect production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
-  top.transType = "common.NodeFactory<common.FunctionNode>";
+  top.transType = "common.NodeFactory<" ++ out.transType ++ ">";
   top.transClassType = "common.NodeFactory";
 }
 
 aspect production productionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
-  -- TODO: tightening to out's nonterminal type?
-  top.transType = "common.NodeFactory<common.Node>";
+  top.transType = "common.NodeFactory<" ++ out.transType ++ ">";
   top.transClassType = "common.NodeFactory";
 }
 

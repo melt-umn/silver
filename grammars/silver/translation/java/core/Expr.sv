@@ -124,15 +124,15 @@ top::Expr ::= e::Decorated Expr es::Exprs
 {
   top.translation = if e.isAppReference 
                     then "((" ++ finalType(top).transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ "))"
-                    else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".construct(new Object[]{" ++ es.translation ++ "}))";
+                    else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ es.translation ++ "}))";
 }
 
 aspect production functionApplicationDispatcher
 top::Expr ::= e::Decorated Expr es::Exprs
 {
   top.translation = if e.isAppReference 
-                    then "((" ++ finalType(top).transType ++ ")new " ++ e.appReference ++ "(" ++ es.translation ++ ").doReturn())"
-                    else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".construct(new Object[]{" ++ es.translation ++ "}).doReturn())";
+                    then "((" ++ finalType(top).transType ++ ")" ++ e.appReference ++ ".invoke(new Object[]{" ++ es.translation ++ "}))"
+                    else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ es.translation ++ "}))";
 }
 
 aspect production synDNTAccessDispatcher

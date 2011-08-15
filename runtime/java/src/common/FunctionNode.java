@@ -5,7 +5,7 @@ import common.exceptions.SilverInternalError;
 import common.exceptions.TraceException;
 
 /**
- * FunctionNode is a Node, but with a doReturn method.
+ * FunctionNode is a Node, but with a few methods "removed".
  * 
  * We do things ever so slightly backwards. Instead of making production a subtype of function,
  * we make function a subtype of production.  Thus, here we wall off a few production-only things
@@ -20,22 +20,8 @@ public abstract class FunctionNode extends Node {
 		super(children);
 	}
 
-	// TODO: we should make doReturn an interface, perhaps?
-	public Object doReturn() {
-		
-		if(getSynthesized(0) == null) {
-			throw new MissingDefinitionException("Function " + getName() + " has no return value!");
-		}
-		
-		try {
-			return getSynthesized(0).eval(this.decorate(TopNode.singleton, (Lazy[])null));
-		} catch(Throwable t) {
-			throw new TraceException("Error while evaluating function " + getName(), t);
-		}
-	}
-
 	@Override
-	public final Lazy getForward() {
+	public final Node getForward(final DecoratedNode context) {
 		throw new SilverInternalError("Functions do not forward!");
 	}
 
@@ -45,13 +31,18 @@ public abstract class FunctionNode extends Node {
 	}
 
 	@Override
+	public final Lazy getSynthesized(final int index) {
+		throw new SilverInternalError("Functions do not possess synthesized attributes! (Requested index " + index + ")");
+	}
+
+	@Override
 	public final int getNumberOfInhAttrs() {
 		return 0;
 	}
 
 	@Override
 	public final int getNumberOfSynAttrs() {
-		return 1;
+		return 0;
 	}
 
 	@Override
@@ -61,12 +52,7 @@ public abstract class FunctionNode extends Node {
 
 	@Override
 	public final String getNameOfSynAttr(final int index) {
-		switch(index) {
-		case 0:
-			return "__return_value__"; // Should this be something else, perhaps?
-		default:
-			throw new SilverInternalError("Functions do not possess synthesized attributes beyond their return value. (Requested name of index " + index + ")");
-		}
+		throw new SilverInternalError("Functions do not possess synthesized attributes! (Requested name of index " + index + ")");
 	}
 	
 }

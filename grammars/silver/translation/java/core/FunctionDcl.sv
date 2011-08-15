@@ -16,7 +16,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   localVar = "count_local__ON__" ++ substitute("_", ":", fName);
 
   top.javaClasses = [["P" ++ id.name, 
-                      generateFunctionClassString(top.grammarName, id.name, namedSig, "return (" ++ ns.outputElement.typerep.transType ++ ")super.doReturn();\n")
+                      generateFunctionClassString(top.grammarName, id.name, namedSig, "final common.DecoratedNode context = new P" ++ id.name ++ "(args).decorate(common.TopNode.singleton, (common.Lazy[])null); return (" ++ namedSig.outputElement.typerep.transType ++ ")(" ++ head(body.uniqueSignificantExpression).translation ++ ");\n")
                     ]];
 
   -- main function signature check TODO: this should probably be elsewhere!
@@ -45,7 +45,7 @@ String ::= whatGrammar::String whatName::String whatSig::Decorated NamedSignatur
   return 
 "package " ++ makeName(whatGrammar) ++ ";\n\n" ++
 
-"public final class " ++ className ++ " extends common.FunctionNode{\n\n" ++	
+"public final class " ++ className ++ " extends common.FunctionNode {\n\n" ++	
 
 makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(whatSig.inputElements) ++ "};\n\n" ++
@@ -53,7 +53,6 @@ makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tpublic static final int num_local_attrs = Init." ++ localVar ++ ";\n" ++
 "\tpublic static final String[] occurs_local = new String[num_local_attrs];\n\n" ++
 
-"\tpublic static final common.Lazy[] synthesizedAttributes = new common.Lazy[1];\n" ++
 "\tpublic static final common.Lazy[][] childInheritedAttributes = new common.Lazy[" ++ toString(length(sigNames)) ++ "][];\n\n" ++	
 
 "\tpublic static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];\n" ++
@@ -70,11 +69,6 @@ makeStaticDcls(className, whatSig.inputElements) ++
 
 "\tpublic " ++ className ++ "(final Object[] args) {\n" ++
 "\t\tsuper(args);\n" ++
-"\t}\n\n" ++
-
-"\t@Override\n" ++
-"\tpublic common.Lazy getSynthesized(final int index) {\n" ++
-"\t\treturn synthesizedAttributes[index];\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
@@ -107,20 +101,22 @@ makeStaticDcls(className, whatSig.inputElements) ++
 "\t\treturn \"" ++ whatSig.fullName ++ "\";\n" ++
 "\t}\n\n" ++
 
-"\t@Override\n" ++
-"\tpublic " ++ whatSig.outputElement.typerep.transType ++ " doReturn(){\n" ++			
+"\tpublic static " ++ whatSig.outputElement.typerep.transType ++ " invoke(final Object[] args) {\n" ++
+"\t\ttry {\n" ++
 "\t\t" ++ whatResult ++
+"\t\t} catch(Throwable t) { throw new common.exceptions.TraceException(\"Error while evaluating function " ++ whatSig.fullName ++ "\", t); }\n" ++
 "\t}\n" ++ 
 
-"\tpublic static final common.NodeFactory<" ++ className ++ "> factory = new Factory();\n\n" ++
+"\tpublic static final common.NodeFactory<" ++ whatSig.outputElement.typerep.transType ++ "> factory = new Factory();\n\n" ++
 
-"\tpublic static final class Factory implements common.NodeFactory<" ++ className ++ "> {\n\n" ++
+"\tpublic static final class Factory extends common.NodeFactory<" ++ whatSig.outputElement.typerep.transType ++ "> {\n\n" ++
 
 "\t\t@Override\n" ++
-"\t\tpublic " ++ className ++ " construct(final Object[] children) {\n" ++
-"\t\t\treturn new " ++ className ++ "(children);\n" ++
+"\t\tpublic " ++ whatSig.outputElement.typerep.transType ++ " invoke(final Object[] args) {\n" ++
+"\t\t\treturn " ++ className ++ ".invoke(args);\n" ++
 "\t\t}\n\n" ++
 "\t};\n" ++
 
 "}\n";
 }
+

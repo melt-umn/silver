@@ -70,24 +70,13 @@ top::ProductionStmt ::=
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
-  local attribute className :: String;
-  className = makeClassName(top.signature.fullName);
-
-  top.translation = 
-	"\t\t//" ++ top.pp ++ "\n" ++
-	"\t\t" ++ className ++ ".forward = " ++ wrapLazy(e) ++ ";\n";
+  top.translation = "";
 }
 
 aspect production forwardsToWith
 top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
 {
-  local attribute className :: String;
-  className = makeClassName(top.signature.fullName);
-
-  top.translation =
-	"\t\t//" ++ top.pp ++ "\n" ++
-	"\t\t" ++ className ++ ".forward = " ++ wrapLazy(e) ++ ";\n" ++
-  	inh.translation;
+  top.translation = inh.translation;
 }
 
 aspect production forwardingWith
@@ -206,11 +195,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 aspect production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
-  local attribute className :: String;
-  className = makeClassName(top.signature.fullName);
-
-  top.translation =
-	"\t\t//" ++ top.pp ++ "\n" ++
-	"\t\t" ++ className ++ ".synthesizedAttributes[0] = " ++ wrapLazy(e) ++ ";\n";
+  top.translation = "";
 }
 

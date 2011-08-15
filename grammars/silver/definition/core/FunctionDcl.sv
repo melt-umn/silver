@@ -25,6 +25,13 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
+  top.errors <-
+        if null(body.uniqueSignificantExpression)
+        then [err(top.location, "Function '" ++ id.name ++ "' does not have a return value.")]
+        else if length(body.uniqueSignificantExpression) > 1
+        then [err(top.location, "Function '" ++ id.name ++ "' has more than one declared return value.")]
+        else [];
+
   top.errors := ns.errors ++ body.errors;
   top.warnings := body.warnings;
 

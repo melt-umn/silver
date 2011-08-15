@@ -30,7 +30,7 @@ top::FFIDef ::= name::String_t ':' 'return' code::String_t ';'
 function childAccessor
 String ::= t::TypeExp fName::String className::String
 {
-  return "((" ++ t.transType ++ ")getChild(" ++ className ++ ".i_" ++ fName  ++ "))";
+  return "((" ++ t.transType ++ ")(args[i_" ++ fName  ++ "] = common.Util.demand(args[i_" ++ fName  ++ "])))";
 }
 
 function computeSigTranslation
@@ -54,15 +54,11 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   top.initValues := "";
   top.postInit := "";
 
-  local attribute actionResult :: String;
-  actionResult = 
-     if null(ffidefs.ffiTranslationString)
-     then "return (" ++ namedSig.outputElement.typerep.transType ++ ")super.doReturn();\n"
-     else "return (" ++ namedSig.outputElement.typerep.transType ++ ")"
-          ++ computeSigTranslation(head(ffidefs.ffiTranslationString), namedSig) ++ ";\n";
-
-  top.javaClasses = [["P" ++ id.name,
-                      generateFunctionClassString(top.grammarName, id.name, namedSig, actionResult)
+  top.javaClasses = if null(ffidefs.ffiTranslationString)
+                    then forward.javaClasses
+                    else 
+                    [["P" ++ id.name,
+                      generateFunctionClassString(top.grammarName, id.name, namedSig, "return (" ++ namedSig.outputElement.typerep.transType ++ ")" ++ computeSigTranslation(head(ffidefs.ffiTranslationString), namedSig) ++ ";\n")
                     ]];
 
   top.errors <- if length(ffidefs.ffiTranslationString) > 1
