@@ -131,7 +131,7 @@ concrete production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 {
   top.pp = qn.pp ++ "(" ++ ns.pp ++ ") -> " ++ e.pp;
-  top.location = loc(top.file, $5.line, $5.column);
+  top.location = qn.location;
   
   top.errors := qn.lookupValue.errors ++ ns.errors ++ e.errors;
 
@@ -174,7 +174,7 @@ abstract production integerPattern
 top::PrimPattern ::= i::Int_t '->' e::Expr
 {
   top.pp = i.lexeme ++ " -> " ++ e.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = loc(top.file, $1.line, $1.column);
   
   top.errors := e.errors;
   
@@ -203,7 +203,7 @@ abstract production stringPattern
 top::PrimPattern ::= i::String_t '->' e::Expr
 {
   top.pp = i.lexeme ++ " -> " ++ e.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = loc(top.file, $1.line, $1.column);
   
   top.errors := e.errors;
   
@@ -232,7 +232,7 @@ abstract production booleanPattern
 top::PrimPattern ::= i::String '->' e::Expr
 {
   top.pp = i ++ " -> " ++ e.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = e.location;
   
   top.errors := e.errors;
   

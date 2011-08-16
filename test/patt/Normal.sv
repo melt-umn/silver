@@ -9,6 +9,15 @@ Boolean ::= s::String
          end;
 }
 
+function stringmatchingCoqStyleVBarSyntax
+Boolean ::= s::String
+{
+  return case s of
+         | "true" -> true
+         | "false" -> false
+         end;
+}
+
 equalityTest ( stringmatching("true"), true, Boolean, pat_tests ) ;
 equalityTest ( stringmatching("false"), false, Boolean, pat_tests ) ;
 

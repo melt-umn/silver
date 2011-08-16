@@ -11,11 +11,12 @@ import silver:extension:list; -- Oh no, this is a hack! TODO
 
 terminal Case_kwd 'case' lexer classes {KEYWORD};
 terminal Of_kwd 'of' lexer classes {KEYWORD};
-terminal Arrow_kwd '->' precedence = 7 ;
-terminal Vbar_kwd '|' precedence = 3 ;
+terminal Arrow_kwd '->' precedence = 7;
+terminal Vbar_kwd '|' precedence = 3;
+terminal Opt_Vbar_t /\|?/ precedence = 3;
 
 -- TODO: all of these can be removed if transform var case doesn't want them anymore.
-autocopy attribute patternListTypes :: [ TypeExp ] ;
+autocopy attribute patternListTypes :: [TypeExp];
 autocopy attribute patternListScrutinees :: [Expr];
 
 -- Whether or not the head pattern is a variable or wildcard
@@ -59,8 +60,9 @@ nonterminal PatternList with pp, grammarName, env, file, location, signature,
                              varTailPatternList, patternListVars, patternListEmpty ;
 
 concrete production caseExpr_c
-top::Expr ::= 'case' es::Exprs 'of' ml::MRuleList 'end'
+top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
+  top.location = loc(top.file, $1.line, $1.column);
   -- We're going to do FUNNY THINGS with types here.
   -- We want to know what type we should return, and we need to know this "directionally"
   -- for GADTs and for just general decoratedness/etc to work out.
@@ -80,9 +82,9 @@ top::Expr ::= 'case' es::Exprs 'of' ml::MRuleList 'end'
 
 
   -- introduce the failure case here.
-  forwards to caseExpr(loc(top.file, $1.line, $1.column), returnType, exprsDecorated(es.exprs), ml, 
-                productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t,"core:error")))), '(', 
-                  exprsSingle(stringConst(terminal(String_t, "\"Error: pattern match failed.\\n\""))), ')'));
+  forwards to caseExpr(top.location, returnType, exprsDecorated(es.exprs), ml, 
+                productionApp(baseExpr(qName(top.location, "core:error")), '(', 
+                  exprsSingle(stringConst(terminal(String_t, "\"Error: pattern match failed at " ++ top.location.unparse ++ "\\n\""))), ')'));
 }
 
 abstract production caseExpr
@@ -133,7 +135,7 @@ top::Expr ::= locat::Decorated Location returnType::TypeExp es::Exprs ml::MRuleL
               if null(ml.varRules)
               then matchPrimitive(locat, new(head(es.exprs)),
                                   typerepType(returnType),
-                                    head(ml.patternListTypes).primPatternGenerator(returnType, tail(es.exprs), failExpr, groupMRules(ml.prodRules)),
+                                    allConCaseTransform(returnType, tail(es.exprs), failExpr, groupMRules(ml.prodRules)),
                                   failExpr)
               else if null(ml.prodRules)
               then allVarCase
@@ -152,7 +154,7 @@ top::Expr ::= locat::Decorated Location returnType::TypeExp es::Exprs ml::MRuleL
   mixedCase = makeLet(freshFailName, returnType, 
                              caseExpr(locat, returnType, es, regenerateMatchRuleList(ml.varRules), failExpr),
                              caseExpr(locat, returnType, es, regenerateMatchRuleList(ml.prodRules),
-                              baseExpr(qNameId(nameIdLower(terminal(IdLower_t, freshFailName))))));
+                              baseExpr(qName(top.location, freshFailName))));
 }
 
 concrete production mRuleList_one
@@ -316,39 +318,14 @@ VarBinders ::= s::[String] l::Decorated Location
          else consVarBinder(f, ',', convStringsToVarBinders(tail(s), l));
 }
 function convStringsToExprs
-Exprs ::= s::[String] tl::[Decorated Expr]
+Exprs ::= s::[String] tl::[Decorated Expr] l::Decorated Location
 {
   local attribute f::Expr;
-  f = baseExpr(qNameId(nameIdLower(terminal(IdLower_t, head(s)))));
+  f = baseExpr(qName(l, head(s)));
   return if null(s) then exprsDecorated(tl)
-         else exprsCons(f, ',', convStringsToExprs(tail(s), tl));
+         else exprsCons(f, ',', convStringsToExprs(tail(s), tl, l));
 }
-function allConCaseTransform -- a primPatternGenerator
-PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
-{
-  -- okay, so we're looking at mrs groups by production.
-  -- So what we want to do is, for each list in mrs,
-  -- generate a PrimPattern on the production that is that group.
-  -- Then, push ALL the match rules into a case underneath that.
-  
-  -- pick out the first mrule of the first list, and get the name (for the list)
-  local attribute prodname :: QName;
-  prodname = qNameId(nameIdLower(terminal(IdLower_t, head(head(mrs)).headPattern.patternProduction.fromJust)));
-  
-  -- pick names for
-  local attribute names :: [String];
-  names = head(head(mrs)).headPattern.patternSubPatternList.patternListVars;
-  
-  local attribute fstPat :: PrimPattern;
-  fstPat = prodPattern(prodname, '(', convStringsToVarBinders(names, head(head(mrs)).location), ')', '->',
-                         caseExpr(head(head(mrs)).location, returnType,
-                                  convStringsToExprs(names, restExprs),
-                                  tailNestedPatternTransform(head(mrs)),
-                                  failCase));
-  
-  return if null(tail(mrs)) then onePattern(fstPat)
-         else consPattern(fstPat, '|', allConCaseTransform(returnType, restExprs, failCase, tail(mrs)));
-}
+
 function tailNestedPatternTransform
 MRuleList ::= mrl::[Decorated MatchRule]
 {
@@ -364,72 +341,40 @@ MRuleList ::= mrl::[Decorated MatchRule]
   return if null(tail(mrl)) then mRuleList_one(f)
          else mRuleList_cons(f, '|', tailNestedPatternTransform(tail(mrl)));
 }
-function allIntCaseTransform -- a primPatternGenerator
+
+function allConCaseTransform
 PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
 {
-  local attribute fstPat :: PrimPattern;
-  fstPat = integerPattern(case head(head(mrs)).headPattern of 
-                            intPattern(it) -> it
-                          end, '->', 
-                         caseExpr(head(head(mrs)).location, returnType,
-                                  convStringsToExprs([], restExprs),
-                                  tailNestedPatternTransform(head(mrs)),
-                                  failCase));
+  -- okay, so we're looking at mrs groups by production.
+  -- So what we want to do is, for each list in mrs,
+  -- generate a PrimPattern on the production that is that group.
+  -- Then, push ALL the match rules into a case underneath that.
   
-  return if null(tail(mrs)) then onePattern(fstPat)
-         else consPattern(fstPat, '|', allIntCaseTransform(returnType, restExprs, failCase, tail(mrs)));  
-}
-function allStrCaseTransform -- a primPatternGenerator
-PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
-{
-  local attribute fstPat :: PrimPattern;
-  fstPat = stringPattern(case head(head(mrs)).headPattern of 
-                            strPattern(it) -> it
-                          end, '->', 
-                         caseExpr(head(head(mrs)).location, returnType,
-                                  convStringsToExprs([], restExprs),
-                                  tailNestedPatternTransform(head(mrs)),
-                                  failCase));
-  
-  return if null(tail(mrs)) then onePattern(fstPat)
-         else consPattern(fstPat, '|', allStrCaseTransform(returnType, restExprs, failCase, tail(mrs)));  
-}
-function allBoolCaseTransform -- a primPatternGenerator
-PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
-{
-  local attribute fstPat :: PrimPattern;
-  fstPat = booleanPattern(case head(head(mrs)).headPattern of 
-                            truePattern(_) -> "true"
-                          | falsePattern(_) -> "false"
-                          end, '->', 
-                         caseExpr(head(head(mrs)).location, returnType,
-                                  convStringsToExprs([], restExprs),
-                                  tailNestedPatternTransform(head(mrs)),
-                                  failCase));
-  
-  return if null(tail(mrs)) then onePattern(fstPat)
-         else consPattern(fstPat, '|', allBoolCaseTransform(returnType, restExprs, failCase, tail(mrs)));  
-}
-function allListCaseTransform -- a primPatternGenerator
-PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
-{
   local attribute names :: [String];
   names = head(head(mrs)).headPattern.patternSubPatternList.patternListVars;
 
   local attribute subcase :: Expr;
   subcase =  caseExpr(head(head(mrs)).location, returnType,
-                      convStringsToExprs(names, restExprs),
+                      convStringsToExprs(names, restExprs, head(head(mrs)).location),
                       tailNestedPatternTransform(head(mrs)),
                       failCase);
+
   local attribute fstPat :: PrimPattern;
   fstPat = case head(head(mrs)).headPattern of
-             nilListPattern(_,_) ->    nilPattern(subcase)
+             prodAppPattern(qn,_,_,_) -> prodPattern(qn, '(', convStringsToVarBinders(names, head(head(mrs)).location), ')', '->', subcase)
+           | intPattern(it) -> integerPattern(it, '->', subcase)
+           | strPattern(it) -> stringPattern(it, '->', subcase)
+           | truePattern(_) -> booleanPattern("true", '->', subcase)
+           | falsePattern(_) -> booleanPattern("false", '->', subcase)
+           | nilListPattern(_,_) -> nilPattern(subcase)
            | consListPattern(h,_,t) -> conslstPattern(head(names), head(tail(names)), subcase)
            end;
   
   return if null(tail(mrs)) then onePattern(fstPat)
-         else consPattern(fstPat, '|', allListCaseTransform(returnType, restExprs, failCase, tail(mrs)));
+         else consPattern(fstPat, '|', allConCaseTransform(returnType, restExprs, failCase, tail(mrs)));
 }
+
+
 function regenerateMatchRuleList
 MRuleList ::= mr::[Decorated MatchRule]
 {
@@ -514,62 +459,4 @@ function groupMRules
 {
   return groupBy(mruleEqForGrouping, sortBy(mruleLTEForSorting, l));
 }
-
------------ Type Stuff
-
-synthesized attribute primPatternGenerator :: Function(PrimPatterns ::= TypeExp [Decorated Expr]  Expr  [[Decorated MatchRule]]);
-
-attribute primPatternGenerator occurs on TypeExp;
-
-function failPrimPatternGen
-PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
-{ return error("INTERNAL ERROR: tried to generate primitive pattern matches for an unsupported scrutinee type. " ++ head(head(mrs)).pp);
-}
-aspect production defaultTypeExp
-top::TypeExp ::=
-{
-  -- known includes: var/skolem/prod/fun/terminal
-  top.primPatternGenerator = failPrimPatternGen;
-}
-
-aspect production intTypeExp
-top::TypeExp ::=
-{
-  top.primPatternGenerator = allIntCaseTransform;
-}
-
-aspect production boolTypeExp
-top::TypeExp ::=
-{
-  top.primPatternGenerator = allBoolCaseTransform;
-}
-
-aspect production floatTypeExp
-top::TypeExp ::=
-{
-}
-
-aspect production stringTypeExp
-top::TypeExp ::=
-{
-  top.primPatternGenerator = allStrCaseTransform;
-}
-
-aspect production nonterminalTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
-{
-}
-
-aspect production decoratedTypeExp
-top::TypeExp ::= te::TypeExp
-{
-  top.primPatternGenerator = allConCaseTransform;
-}
-
-aspect production listTypeExp
-top::TypeExp ::= el::TypeExp
-{
-  top.primPatternGenerator = allListCaseTransform;
-}
-
 
