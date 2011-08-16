@@ -17,6 +17,11 @@ synthesized attribute qname :: Decorated QName;
 synthesized attribute typelist :: Decorated TypeList;
 synthesized attribute dcls :: [Decorated DclInfo];
 
+function qName
+QName ::= l::Decorated Location s::String
+{
+  return qNameId(nameIdLower(terminal(IdLower_t, s, l.line, l.column)));
+}
 
 concrete production qNameId
 top::QName ::= id::Name

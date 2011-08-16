@@ -126,10 +126,10 @@ a ::= e::Expr<a>
 equalityTest ( retExpr(etrue()), true, Boolean, pat_tests ) ;
 equalityTest ( retExpr(eone()), 1, Integer, pat_tests ) ;
 
-{--- this should error
-function wrongTypeEquals
-Maybe<Eq<a b>> ::= ta::Type<a>  tb::Type<b>
-{
+wrongCode "pattern expression should have type" {
+ function wrongTypeEquals
+ Maybe<Eq<a b>> ::= ta::Type<a>  tb::Type<b>
+ {
   return match ta return Maybe<Eq<a b>> with
           arrow(aa, ab) ->
             match tb return Maybe<Eq<a b>> with
@@ -138,6 +138,6 @@ Maybe<Eq<a b>> ::= ta::Type<a>  tb::Type<b>
             end
           else -> error("")
          end;
+ }
 }
--}
 
