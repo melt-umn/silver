@@ -10,6 +10,9 @@ function compareString
 Integer ::= l::String  r::String
 {
   return if l <= r then if l == r then 0 else -1 else 1;
+} foreign {
+  -- This is temporary until we have better analysis & translation of Silver functions.
+  "java" : return "Integer.valueOf(%l%.toString().compareTo(%r%.toString()))";
 }
 
 {--
