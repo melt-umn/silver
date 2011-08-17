@@ -195,7 +195,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.translation = e.translation ++ 
     case inh of
-      exprInhsEmpty() -> ".decorate(common.TopNode.singleton, (common.Lazy[])null)" -- EXPLICITLY NOT PASSING PARENT POINTER (context) HERE!
+      exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null)" -- TODO: we don't NEED to pass context here, but it's good for error messages!
     | _ -> ".decorate(context, common.Util.populateInh(" ++
                                       makeNTClassName(finalType(e).typeName) ++ ".num_inh_attrs, " ++
                                       "new int[]{" ++ implode(", ", inh.nameTrans) ++ "}, " ++ 
