@@ -80,23 +80,25 @@ top::Expr ::= ll::Decorated Location e::Expr t::Type pr::PrimPatterns f::Expr
   pr.scrutineeType = scrutineeType;
   pr.returnType = t.typerep;
   
-  top.translation = "new common.PatternLazy<" ++ scrutineeType.transType ++ ", " ++ t.typerep.transType ++ ">() { " ++
-                      "public final " ++ t.typerep.transType ++ " eval(final common.DecoratedNode context, " ++ scrutineeType.transType ++ " scrutineeIter) {" ++
-                        (if scrutineeType.isDecorated
-                         then
-                          "while(scrutineeIter != null) {" ++
-                            "final " ++ scrutineeType.transType ++ " scrutinee = scrutineeIter; " ++ -- dumb, but to get final to work out for Lazys & shizzle...
-                            "final common.Node scrutineeNode = scrutinee.undecorate(); " ++
-                            pr.translation ++
-                            "scrutineeIter = scrutineeIter.forward();" ++
-                          "}"
-                         else
-                          "final " ++ scrutineeType.transType ++ " scrutinee = scrutineeIter; " ++ -- dumb, but to get final to work out for Lazys & shizzle...
-                          pr.translation) ++
-                        "return " ++ f.translation ++ ";" ++ 
-                    "}}.eval(context, (" ++ scrutineeType.transType ++")" ++ e.translation ++ ")";
+  top.translation = 
+    "new common.PatternLazy<" ++ scrutineeType.transType ++ ", " ++ t.typerep.transType ++ ">() { " ++
+      "public final " ++ t.typerep.transType ++ " eval(final common.DecoratedNode context, " ++ scrutineeType.transType ++ " scrutineeIter) {" ++
+        (if scrutineeType.isDecorated
+         then
+          "while(scrutineeIter != null) {" ++
+           "final " ++ scrutineeType.transType ++ " scrutinee = scrutineeIter; " ++ -- dumb, but to get final to work out for Lazys & shizzle...
+           "final common.Node scrutineeNode = scrutinee.undecorate(); " ++
+            pr.translation ++
+           "scrutineeIter = scrutineeIter.forward();" ++
+          "}"
+         else
+          "final " ++ scrutineeType.transType ++ " scrutinee = scrutineeIter; " ++ -- dumb, but to get final to work out for Lazys & shizzle...
+           pr.translation) ++
+        "return " ++ f.translation ++ ";" ++ 
+    "}}.eval(context, (" ++ scrutineeType.transType ++")" ++ e.translation ++ ")";
 
-  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication); 
+  -- TODO there seems to be an opportunity here to avoid an anon class somehow...
   
   forwards to defaultExpr();
 }
@@ -322,12 +324,6 @@ top::PrimPattern ::= h::String t::String e::Expr
   
   e.env = newScopeEnv(consdefs, top.env);
   
-  -- TODO: oh my, please fix this.
---  top.translation = "if(!scrutineeIter.nil()) {" ++
---    " return (" ++ top.returnType.transType ++ ")common.Util.let(context, new String[]{"
---        ++ implode(", ", ["\"" ++ hFName ++ "\"","\"" ++ tFName ++ "\""]) ++ "}, " ++ "new common.Lazy[]{"
---        ++ implode(", ", ["new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return scrutinee.head(); } }",
---         "new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return scrutinee.tail(); } }"]) ++ "}, " ++ wrapLazy(e) ++ ")" ++ "; }";
   top.translation = "if(!scrutineeIter.nil()) {" ++
   makeSpecialLocalBinding(hFName, "scrutinee.head()") ++
   makeSpecialLocalBinding(tFName, "scrutinee.tail()") ++

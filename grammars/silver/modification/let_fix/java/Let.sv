@@ -8,21 +8,24 @@ import silver:translation:java:type;
 import silver:definition:type;
 import silver:definition:type:syntax;
 
--- TODO: this is an area where we're creating Lazys in a nested fashion.
--- (i.e. at execution, rather than initialization, continuously)
--- Ideally, we wouldn't be doing this...
-
 aspect production letp
-top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
+top::Expr ::= l::Decorated Location  la::AssignExpr  e::Expr
 {
-  top.translation = "((" ++ finalType(top).transType ++ ")(new common.Lazy() { public final Object eval(final common.DecoratedNode context) { " 
+  -- We need to create these nested locals, so we have no choice but to create a closure object so we can declare these things.
+  local attribute closureExpr::String;
+  closureExpr= "new common.Closure(context) { public final Object eval() { " 
     ++ la.let_translation
-    ++ "return " ++ forward.translation ++ "; } }).eval(context))";
+    ++ "return " ++ e.translation ++ "; } }";
+    
+  top.translation = "((" ++ finalType(top).transType ++ ")(" ++ closureExpr ++ ").eval())";
 
-  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
+  top.lazyTranslation = 
+       if top.blockContext.lazyApplication
+       then closureExpr
+       else top.translation;
 }
 
-synthesized attribute let_translation :: String occurs on LetAssigns, AssignExpr;
+synthesized attribute let_translation :: String occurs on AssignExpr;
 
 function makeLocalValueName
 String ::= s::String
@@ -30,16 +33,10 @@ String ::= s::String
   return "__SV_LOCAL_" ++ substitute("_", ":", s);
 }
 
-aspect production assigns
-top::LetAssigns ::= ae::AssignExpr ',' list::LetAssigns
+aspect production appendAssignExpr
+top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 {
-  top.let_translation = ae.let_translation ++ list.let_translation;
-}
-
-aspect production assignListSingle 
-top::LetAssigns ::= ae::AssignExpr
-{
-  top.let_translation = ae.let_translation;
+  top.let_translation = a1.let_translation ++ a2.let_translation;
 }
 
 aspect production assignExpr
@@ -52,9 +49,10 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
 aspect production lexicalLocalReference
 top::Expr ::= q::Decorated QName
 {
-  top.translation = if q.lookupValue.typerep.isDecorated && !finalType(top).isDecorated
-                    then "((" ++ finalType(top).transType ++ ")((common.DecoratedNode)" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()).undecorate())"
-                    else "((" ++ finalType(top).transType ++ ")(" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()))";
+  top.translation = 
+       if q.lookupValue.typerep.isDecorated && !finalType(top).isDecorated
+       then "((" ++ finalType(top).transType ++ ")((common.DecoratedNode)" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()).undecorate())"
+       else "((" ++ finalType(top).transType ++ ")(" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()))";
 
   top.lazyTranslation = 
        if !top.blockContext.lazyApplication then top.translation else
