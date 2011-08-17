@@ -31,12 +31,12 @@ top::NameOrBOperator ::= q::QName
   top.errors <- 
      case q.lookupValue.typerep of
        functionTypeExp(_,_) -> 
-          if unify(q.lookupValue.typerep, functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])).failure
+          if unify(freshenCompletely(q.lookupValue.typerep), functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])).failure
           then [err(top.location, q.pp ++ " must be of type " ++ prettyType(functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])) ++ " instead it is of type " ++ prettyType(q.lookupValue.typerep))]
           else []
                                
      | productionTypeExp(_,_) ->
-          if unify(q.lookupValue.typerep, productionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])).failure
+          if unify(freshenCompletely(q.lookupValue.typerep), productionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])).failure
           then [err(top.location, q.pp ++ " must be of type " ++ prettyType(productionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])) ++ " instead it is of type " ++ prettyType(q.lookupValue.typerep))]
           else []
                                
@@ -61,6 +61,29 @@ top::NameOrBOperator ::= '++'
                 end;
 }
 
+concrete production borOperator
+top::NameOrBOperator ::= '||'
+{
+  top.pp = "||";
+  top.location = loc(top.file, $1.line, $1.column);
+  top.operation = borOperation();
+  top.errors := case top.operatorForType of
+                  boolTypeExp() -> []
+                | _ -> [err(top.location, "|| operator will only work for collections of type Boolean")]
+                end;
+}
+concrete production bandOperator
+top::NameOrBOperator ::= '&&'
+{
+  top.pp = "&&";
+  top.location = loc(top.file, $1.line, $1.column);
+  top.operation = bandOperation();
+  top.errors := case top.operatorForType of
+                  boolTypeExp() -> []
+                | _ -> [err(top.location, "&& operator will only work for collections of type Boolean")]
+                end;
+}
+
 abstract production functionOperation
 top::Operation ::= s::String
 {
@@ -80,6 +103,16 @@ abstract production plusPlusOperationList
 top::Operation ::= 
 {
   top.unparse = "++list";
+}
+abstract production borOperation
+top::Operation ::= 
+{
+  top.unparse = "||";
+}
+abstract production bandOperation
+top::Operation ::= 
+{
+  top.unparse = "&&";
 }
 
 --- Declarations ---------------------------------------------------------------

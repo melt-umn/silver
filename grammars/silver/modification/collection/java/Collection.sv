@@ -68,6 +68,20 @@ top::Operation ::=
   top.midTrans = ", ";
   top.endTrans = ")";
 }
+aspect production borOperation
+top::Operation ::= 
+{
+  top.frontTrans = "(";
+  top.midTrans = " || ";
+  top.endTrans = ")";
+}
+aspect production bandOperation
+top::Operation ::= 
+{
+  top.frontTrans = "(";
+  top.midTrans = " && ";
+  top.endTrans = ")";
+}
 
 --- Declarations ---------------------------------------------------------------
 

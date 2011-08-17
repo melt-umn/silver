@@ -10,6 +10,8 @@ terminal LocColTerm 'loccol' lexer classes {C_1};
 
 terminal PlusPlusStr '++string' lexer classes {C_1};
 terminal PlusPlusLst '++list' lexer classes {C_1};
+terminal BOrTerm '||' lexer classes {C_1};
+terminal PAndTerm '&&' lexer classes {C_1};
 
 nonterminal IOperation with operation;
 
@@ -32,6 +34,16 @@ concrete production operationPlusPlusLst
 top::IOperation ::= '++list'
 {
   top.operation = plusPlusOperationList();
+}
+concrete production operationBOr
+top::IOperation ::= '||'
+{
+  top.operation = borOperation();
+}
+concrete production operationBAnd
+top::IOperation ::= '&&'
+{
+  top.operation = bandOperation();
 }
 
 
