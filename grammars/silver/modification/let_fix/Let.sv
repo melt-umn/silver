@@ -1,56 +1,75 @@
 grammar silver:modification:let_fix;
 
+--- Concrete Syntax for lets
+--------------------------------------------------------------------------------
+
 terminal Let_kwd 'let' lexer classes {KEYWORD};
 terminal In_kwd 'in' lexer classes {KEYWORD};
 terminal End_kwd 'end' lexer classes {KEYWORD};
 
-nonterminal LetAssigns with pp, file, grammarName, defs, env, signature, errors, downSubst, upSubst, finalSubst, blockContext;
-nonterminal AssignExpr with pp, file, grammarName, defs, env, signature, errors, downSubst, upSubst, finalSubst, blockContext;
-
-concrete production nameLet
-top::Name ::= 'let'
-{
-  forwards to nameIdLower(terminal(IdLower_t, "let", $1));
-}
-
---TODO remove end keyword
-concrete production letp
+concrete production letp_c
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
-  top.pp = "let " ++ la.pp ++ " in " ++ forward.pp ++ " end";
-  top.errors <- la.errors;
-    
-  la.downSubst = top.downSubst;
-  forward.downSubst = la.upSubst;
-  
-  forward.env = newScopeEnv(la.defs, top.env);
+  top.location = loc(top.file, $1.line, $1.column);
 
-  forwards to e;
+  forwards to letp(top.location, la.letAssignExprs, e);
 }
 
-concrete production assigns
+nonterminal LetAssigns with letAssignExprs;
+
+synthesized attribute letAssignExprs :: AssignExpr;
+
+concrete production assignsListCons
 top::LetAssigns ::= ae::AssignExpr ',' list::LetAssigns
 {
-  top.pp = ae.pp ++ ", " ++ list.pp;
-  top.defs = appendDefs(ae.defs, list.defs);
-  top.errors := ae.errors ++ list.errors;
-  
-  ae.downSubst = top.downSubst;
-  list.downSubst = ae.upSubst;
-  top.upSubst = list.upSubst;
+  top.letAssignExprs = appendAssignExpr(ae, list.letAssignExprs);
 }
-
 concrete production assignListSingle 
 top::LetAssigns ::= ae::AssignExpr
 {
-  top.pp = ae.pp;
-  top.defs = ae.defs;
-  top.errors := ae.errors;
-  
-  ae.downSubst = top.downSubst;
-  top.upSubst = ae.upSubst;
+  top.letAssignExprs = ae;
 }
 
+--------------------------------------------------------------------------------
+--- Abstract Syntax for lets
+--------------------------------------------------------------------------------
+
+abstract production letp
+top::Expr ::= l::Decorated Location  la::AssignExpr  e::Expr
+{
+  top.pp = "let " ++ la.pp ++ " in " ++ e.pp ++ " end";
+  top.location = l;
+  
+  top.errors := la.errors ++ e.errors;
+  
+  top.typerep = e.typerep;
+    
+  la.downSubst = top.downSubst;
+  e.downSubst = la.upSubst;
+  top.upSubst = e.upSubst;
+  
+  e.env = newScopeEnv(la.defs, top.env);
+
+  forwards to defaultExpr();
+}
+
+nonterminal AssignExpr with file, grammarName, env, signature, 
+                            pp, defs, errors, upSubst, 
+                            downSubst, finalSubst, blockContext;
+
+abstract production appendAssignExpr
+top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
+{
+  top.pp = a1.pp ++ ", " ++ a2.pp;
+  top.defs = appendDefs(a1.defs, a2.defs);
+  top.errors := a1.errors ++ a2.errors;
+  
+  a1.downSubst = top.downSubst;
+  a2.downSubst = a1.upSubst;
+  top.upSubst = a2.upSubst;
+}
+
+-- TODO: Well, okay, so this isn't really abstract syntax...
 concrete production assignExpr
 top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
 {

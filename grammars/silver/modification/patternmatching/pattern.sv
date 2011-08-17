@@ -151,10 +151,10 @@ top::Expr ::= locat::Decorated Location returnType::TypeExp es::Exprs ml::MRuleL
   local attribute freshFailName :: String;
   freshFailName = "__fail_" ++ toString(genInt());
   local attribute mixedCase :: Expr;
-  mixedCase = makeLet(freshFailName, returnType, 
+  mixedCase = makeLet(top.location, freshFailName, returnType, 
                              caseExpr(locat, returnType, es, regenerateMatchRuleList(ml.varRules), failExpr),
-                             caseExpr(locat, returnType, es, regenerateMatchRuleList(ml.prodRules),
-                              baseExpr(qName(top.location, freshFailName))));
+                              caseExpr(locat, returnType, es, regenerateMatchRuleList(ml.prodRules),
+                               baseExpr(qName(top.location, freshFailName))));
 }
 
 concrete production mRuleList_one
@@ -199,7 +199,7 @@ top::MatchRule ::= pt::PatternList '->' e::Expr
   
   top.transformVarCase = matchRule(pt.varTailPatternList, $2, 
                              case pt.headPattern.patternVariableName of
-                               just(pvn) -> makeLet(pvn, head(top.patternListTypes), head(top.patternListScrutinees), e)
+                               just(pvn) -> makeLet(top.location, pvn, head(top.patternListTypes), head(top.patternListScrutinees), e)
                              | nothing() -> e
                              end);
 }
@@ -382,15 +382,9 @@ MRuleList ::= mr::[Decorated MatchRule]
          else mRuleList_cons(new(head(mr)), '|', regenerateMatchRuleList(tail(mr)));
 }
 function makeLet
-Expr ::= s::String t::TypeExp e::Expr o::Expr
+Expr ::= l::Decorated Location s::String t::TypeExp e::Expr o::Expr
 {
-  return letp('let', assignListSingle(assignExpr(nameIdLower(terminal(IdLower_t, s)), '::', typerepType(t), '=', e)), 'in', o, 'end');
-}
-function toAssigns
-LetAssigns ::= ls1::[AssignExpr]
-{
-  return if length(ls1) == 1 then assignListSingle(head(ls1))
-         else assigns(head(ls1), terminal(Comma_t, ","), toAssigns(tail(ls1))) ;
+  return letp(l, assignExpr(nameIdLower(terminal(IdLower_t, s)), '::', typerepType(t), '=', e), o);
 }
 
 function ensureDecoratedExpr
