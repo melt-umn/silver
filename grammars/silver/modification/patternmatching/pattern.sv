@@ -13,47 +13,31 @@ terminal Case_kwd 'case' lexer classes {KEYWORD};
 terminal Of_kwd 'of' lexer classes {KEYWORD};
 terminal Arrow_kwd '->' precedence = 7;
 terminal Vbar_kwd '|' precedence = 3;
-terminal Opt_Vbar_t /\|?/ precedence = 3;
+terminal Opt_Vbar_t /\|?/ ; -- optional Coq-style vbar.
 
--- TODO: all of these can be removed if transform var case doesn't want them anymore.
-autocopy attribute patternListTypes :: [TypeExp];
-autocopy attribute patternListScrutinees :: [Expr];
-
--- Whether or not the head pattern is a variable or wildcard
+-- The interface to Pattern elements
 synthesized attribute patternIsVariable :: Boolean;
--- The head pattern of a rule or pattern list.
-synthesized attribute headPattern :: Decorated Pattern;
-synthesized attribute patternListEmpty :: Boolean;
--- The production a pattern matches on, if it's a prod pattern.
-synthesized attribute patternProduction :: Maybe<String>;
 synthesized attribute patternVariableName :: Maybe<String>;
 synthesized attribute patternSubPatternList :: [Decorated Pattern];
+synthesized attribute patternSortKey :: String;
+
+-- The head pattern of a match rule
+synthesized attribute headPattern :: Decorated Pattern;
+-- Turns PatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
-synthesized attribute varTailPatternList :: PatternList;
-
-
-
--- These could possibly be replaced with partition & stuff
-synthesized attribute prodRules :: [Decorated MatchRule];
-synthesized attribute varRules :: [Decorated MatchRule];
-
-synthesized attribute transformVarCase<a> :: a;
-
+-- Turns MRuleList into [MatchRule]
+synthesized attribute matchRuleList :: [Decorated MatchRule];
 
 
 -- MR | ...
-nonterminal MRuleList with pp, grammarName, env, file, location, signature, 
-                           patternListTypes, patternListScrutinees, blockContext, prodRules, varRules,
-                           transformVarCase<MRuleList> ;
+nonterminal MRuleList with pp, env, file, matchRuleList;
 -- P -> E
-nonterminal MatchRule with pp, grammarName, env, file, location, signature, 
-                           patternListTypes, patternListScrutinees, blockContext, headPattern, prodRules, varRules,
-                           transformVarCase<MatchRule> ;
+nonterminal MatchRule with pp, env, file, location, headPattern;
 
 -- prod(PL) | int | string | bool | ...
-nonterminal Pattern with pp, patternIsVariable, patternProduction, patternVariableName, patternSubPatternList ;
+nonterminal Pattern with pp, env, file, patternIsVariable, patternVariableName, patternSubPatternList, patternSortKey;
 -- P , ...
-nonterminal PatternList with pp, patternList ;
+nonterminal PatternList with pp, patternList, env, file;
 
 concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
@@ -79,13 +63,13 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 
 
   -- introduce the failure case here.
-  forwards to caseExpr(top.location, returnType, exprsDecorated(es.exprs), ml, 
+  forwards to caseExpr(top.location, returnType, exprsDecorated(es.exprs), ml.matchRuleList, 
                 productionApp(baseExpr(qName(top.location, "core:error")), '(', 
                   exprsSingle(stringConst(terminal(String_t, "\"Error: pattern match failed at " ++ top.location.unparse ++ "\\n\""))), ')'));
 }
 
 abstract production caseExpr
-top::Expr ::= locat::Decorated Location returnType::TypeExp es::Exprs ml::MRuleList failExpr::Expr
+top::Expr ::= locat::Decorated Location returnType::TypeExp es::Exprs ml::[Decorated MatchRule] failExpr::Expr
 {
   --top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";  
   top.location = locat;
@@ -105,97 +89,81 @@ top::Expr ::= locat::Decorated Location returnType::TypeExp es::Exprs ml::MRuleL
                 then [err(forward.location, "pattern expression should have type " ++ errCheck1.leftpp ++ " instead it has type " ++ errCheck1.rightpp)]
                 else [];
   
-  ml.patternListTypes = map(ensureDecoratedType, getTypesExprsSubst(es.exprs)); -- subst somehow?
-  ml.patternListScrutinees = map(ensureDecoratedExpr, es.exprs);
-  
-  forwards to {- if type is not nt then ... else -}
+  forwards to
           case ml of
-            mRuleList_one(matchRule(p, e)) -> if null(p) then e else normalCase
-          | mRuleList_cons(matchRule(p, e),_,_) -> if null(p) then e else normalCase
+          | matchRule(_, [], e) :: _ -> e
+          | _ -> if null(varRules) then allConCase
+                 else if null(prodRules) then allVarCase
+                 else mixedCase
           end;
   
   top.errors <-
-       case ml of
-          mRuleList_cons(matchRule(p, e),_,_) -> if null(p) then 
-             [err(locat, "Pattern has overlapping cases!")] else []
-       | _ -> []
-       end;
+          case ml of -- are there multiple match rules, with no patterns left to distinguish?
+          | matchRule(_, [], e) :: _ :: _ -> [err(locat, "Pattern has overlapping cases!")]
+          | _ -> []
+          end;
        
 --  top.errors <- unsafeTrace([], 
 --     print(top.pp ++ "\n\n", unsafeIO()));
-  
-  local attribute normalCase :: Expr;
-  normalCase = 
-              if null(ml.varRules)
-              then matchPrimitive(locat, new(head(es.exprs)),
-                                  typerepType(returnType),
-                                    allConCaseTransform(returnType, tail(es.exprs), failExpr, groupMRules(ml.prodRules)),
-                                  failExpr)
-              else if null(ml.prodRules)
-              then allVarCase
-              else mixedCase;
-  
+
+  local attribute partMRs :: Pair<[Decorated MatchRule] [Decorated MatchRule]>;
+  partMRs = partition(isVarMatchRule, ml);
+  local varRules :: [Decorated MatchRule] = partMRs.fst;
+  local prodRules ::[Decorated MatchRule] = partMRs.snd;
   local attribute headExpr :: Expr;
   headExpr = new(head(es.exprs));
   local attribute tailExprs :: Exprs;
   tailExprs = exprsDecorated(tail(es.exprs));
+  
+  local attribute allConCase :: Expr;
+  allConCase = matchPrimitive(locat, headExpr,
+                              typerepType(returnType),
+                              allConCaseTransform(returnType, tail(es.exprs), failExpr, groupMRules(prodRules)),
+                              failExpr);
+  
   local attribute allVarCase :: Expr;
-  allVarCase = caseExpr(locat, returnType, tailExprs, ml.transformVarCase, failExpr);
+  allVarCase = caseExpr(locat, returnType, tailExprs,
+                        allVarCaseTransform(ensureDecoratedExpr(head(es.exprs)),
+                                            ensureDecoratedType(head(es.exprs)), ml),
+                        failExpr);
   
   local attribute freshFailName :: String;
   freshFailName = "__fail_" ++ toString(genInt());
   local attribute mixedCase :: Expr;
   mixedCase = makeLet(top.location, freshFailName, returnType, 
-                             caseExpr(locat, returnType, es, regenerateMatchRuleList(ml.varRules), failExpr),
-                              caseExpr(locat, returnType, es, regenerateMatchRuleList(ml.prodRules),
-                               baseExpr(qName(top.location, freshFailName))));
+                             caseExpr(locat, returnType, es, varRules, failExpr),
+                              caseExpr(locat, returnType, es, prodRules, baseExpr(qName(top.location, freshFailName))));
 }
 
 concrete production mRuleList_one
 top::MRuleList ::= m::MatchRule
 {
   top.pp = m.pp;
-  top.location = m.location;
   
-  top.varRules = m.varRules;
-  top.prodRules = m.prodRules;
-  
-  top.transformVarCase = mRuleList_one(m.transformVarCase);
+  top.matchRuleList = [m];
 }
 
 concrete production mRuleList_cons
 top::MRuleList ::= h::MatchRule '|' t::MRuleList
 {
   top.pp = h.pp ++ " | " ++ t.pp;
-  top.location = h.location;
-
-  top.varRules = h.varRules ++ t.varRules;
-  top.prodRules = h.prodRules ++ t.prodRules;
   
-  top.transformVarCase = mRuleList_cons(h.transformVarCase, $2, t.transformVarCase);
+  top.matchRuleList = h :: t.matchRuleList;
 }
 
 concrete production matchRule_c
 top::MatchRule ::= pt::PatternList '->' e::Expr
 {
-  forwards to matchRule(pt.patternList, e);
+  forwards to matchRule(loc(top.file, $2.line, $2.column), pt.patternList, e);
 }
 
 abstract production matchRule
-top::MatchRule ::= pl::[Decorated Pattern] e::Expr
+top::MatchRule ::= l::Decorated Location pl::[Decorated Pattern] e::Expr
 {
   top.pp = implode(", ", map(getPatternPP, pl)) ++ " -> " ++ e.pp;
   top.location = e.location;
 
   top.headPattern = head(pl);
-  top.varRules = if top.headPattern.patternIsVariable then [top] else [];
-  top.prodRules = if top.headPattern.patternIsVariable then [] else [top];
-  
-  top.transformVarCase = matchRule(tail(pl), 
-                             case head(pl).patternVariableName of
-                               just(pvn) -> makeLet(top.location, pvn, head(top.patternListTypes), head(top.patternListScrutinees), e)
-                             | nothing() -> e
-                             end);
 }
 
 concrete production patternList_one
@@ -220,47 +188,15 @@ top::PatternList ::= Epsilon_For_Location
   top.patternList = [];
 }
 
---------------------------------------------------------------------------------
-
-
-concrete production prodAppPattern
-p::Pattern ::= prod::QName '(' ps::PatternList ')'
-{
-  p.pp = prod.pp ++ "(" ++ ps.pp ++ ")" ;
-  --p.location = prod.location;
-
-  p.patternIsVariable = false;
-  p.patternProduction = just(prod.lookupValue.fullName);
-  p.patternVariableName = nothing();
-  p.patternSubPatternList = ps.patternList;
-} 
-
-concrete production wildcPattern
-p::Pattern ::= '_'
-{
-  p.pp = "_" ;
-  --p.location = loc(p.file, $1.line, $1.column);
-
-  p.patternIsVariable = true;
-  p.patternProduction = nothing();
-  p.patternVariableName = nothing();
-}
-
-concrete production varPattern
-p::Pattern ::= v::Name
-{
-  p.pp = v.name;
- -- p.location = v.location;
-
-  p.patternIsVariable = true;
-  p.patternProduction = nothing();
-  p.patternVariableName = just(v.name);
-}
-
 ----------------------------------------------------
 -- Added Functions
 ----------------------------------------------------
 
+function isVarMatchRule
+Boolean ::= mr::Decorated MatchRule
+{
+  return mr.headPattern.patternIsVariable;
+}
 function getPatternPP
 String ::= p::Decorated Pattern
 { return p.pp; }
@@ -289,21 +225,6 @@ Exprs ::= s::[String] tl::[Decorated Expr] l::Decorated Location
   f = baseExpr(qName(l, head(s)));
   return if null(s) then exprsDecorated(tl)
          else exprsCons(f, ',', convStringsToExprs(tail(s), tl, l));
-}
-
-function tailNestedPatternTransform
-MRuleList ::= mrl::[Decorated MatchRule]
-{
-  -- map tailRule mrl
-  -- Take off head pattern, jam sub patterns onto start, go!
-  -- allExprs and failCase are already set for us to use
-  local attribute f :: MatchRule;
-  f = case head(mrl) of
-        matchRule(p,e) -> matchRule(head(p).patternSubPatternList ++ tail(p), e)
-      end;
-  
-  return if null(tail(mrl)) then mRuleList_one(f)
-         else mRuleList_cons(f, '|', tailNestedPatternTransform(tail(mrl)));
 }
 
 function allConCaseTransform
@@ -338,13 +259,40 @@ PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Exp
          else consPattern(fstPat, '|', allConCaseTransform(returnType, restExprs, failCase, tail(mrs)));
 }
 
-
-function regenerateMatchRuleList
-MRuleList ::= mr::[Decorated MatchRule]
+function tailNestedPatternTransform
+[Decorated MatchRule] ::= lst::[Decorated MatchRule]
 {
-  return if null(tail(mr)) then mRuleList_one(new(head(mr)))
-         else mRuleList_cons(new(head(mr)), '|', regenerateMatchRuleList(tail(mr)));
+  -- TODO: this is a bit hacky, and potentially unnecessary... what with the redecorating and all.
+  local attribute fst :: MatchRule;
+  fst = case head(lst) of
+          matchRule(l, pl,e) -> matchRule(l, head(pl).patternSubPatternList ++ tail(pl), e)
+        end;
+  fst.env = head(lst).env;
+  fst.file = head(lst).file;
+  
+  return if null(lst) then []
+         else fst :: tailNestedPatternTransform(tail(lst));
 }
+
+function allVarCaseTransform
+[Decorated MatchRule] ::= headExpr::Expr  headType::TypeExp  lst::[Decorated MatchRule]
+{
+  -- TODO: this is a bit hacky, and potentially unnecessary... what with the redecorating and all.
+  local attribute fst :: MatchRule;
+  fst = case head(lst) of
+          matchRule(l, pl, e) -> matchRule(l, tail(pl), 
+                             case head(pl).patternVariableName of
+                               just(pvn) -> makeLet(head(lst).location, pvn, headType, headExpr, e)
+                             | nothing() -> e
+                             end)
+        end;
+  fst.env = head(lst).env;
+  fst.file = head(lst).file;
+
+  return if null(lst) then []
+         else fst :: allVarCaseTransform(headExpr, headType, tail(lst));
+}
+
 function makeLet
 Expr ::= l::Decorated Location s::String t::TypeExp e::Expr o::Expr
 {
@@ -362,52 +310,24 @@ Expr ::= e::Decorated Expr
          else new(e);
 }
 function ensureDecoratedType
-TypeExp ::= t::TypeExp
+TypeExp ::= e::Decorated Expr
 {
-  return if t.isDecorable
-         then decoratedTypeExp(t)
-         else t;
-}
-function getTypesExprsSubst
-[TypeExp] ::= es::[Decorated Expr]
-{
-  return if null(es) then [] else [performSubstitution(head(es).typerep, head(es).upSubst)] ++ getTypesExprsSubst(tail(es));
+  local attribute et :: TypeExp;
+  et = performSubstitution(e.typerep, e.upSubst);
+
+  return if et.isDecorable
+         then decoratedTypeExp(et)
+         else et;
 }
 function mruleEqForGrouping
 Boolean ::= a::Decorated MatchRule b::Decorated MatchRule
 {
-  production attribute rv :: Boolean with ||;
-  rv := case a.headPattern, b.headPattern of
-          prodAppPattern(aqn,_,_,_), prodAppPattern(bqn,_,_,_) -> aqn.name == bqn.name
-        | intPattern(an), intPattern(bn) -> toInt(an.lexeme) == toInt(bn.lexeme)
-        | strPattern(astr), strPattern(bstr) -> astr.lexeme == bstr.lexeme
-        | falsePattern(_), falsePattern(_) -> true
-        | truePattern(_),  truePattern(_)  -> true
-        | nilListPattern(_,_),    nilListPattern(_,_)    -> true
-        | consListPattern(_,_,_), consListPattern(_,_,_) -> true
-        | _, _ -> false
-        end;
-  rv <- (a.headPattern.patternIsVariable && b.headPattern.patternIsVariable);
-  return rv;
+  return a.headPattern.patternSortKey == b.headPattern.patternSortKey;
 }
 function mruleLTEForSorting
 Boolean ::= a::Decorated MatchRule b::Decorated MatchRule
 {
-  production attribute rv :: Boolean with ||;
-  rv := case a.headPattern, b.headPattern of
-          prodAppPattern(aqn,_,_,_), prodAppPattern(bqn,_,_,_) -> aqn.name <= bqn.name
-        | intPattern(an), intPattern(bn) -> toInt(an.lexeme) <= toInt(bn.lexeme)
-        | strPattern(astr), strPattern(bstr) -> astr.lexeme <= bstr.lexeme
-        | falsePattern(_), falsePattern(_) -> true
-        | falsePattern(_), truePattern(_)  -> true
-        | truePattern(_),  truePattern(_)  -> true
-        | nilListPattern(_,_),    nilListPattern(_,_)    -> true
-        | nilListPattern(_,_),    consListPattern(_,_,_) -> true
-        | consListPattern(_,_,_), consListPattern(_,_,_) -> true
-        | _, _ -> false
-        end;
-  rv <- (a.headPattern.patternIsVariable && b.headPattern.patternIsVariable);
-  return rv;
+  return a.headPattern.patternSortKey <= b.headPattern.patternSortKey;
 }
 function groupMRules
 [[Decorated MatchRule]] ::= l::[Decorated MatchRule]

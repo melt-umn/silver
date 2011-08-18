@@ -120,4 +120,19 @@ end;
 equalityTest ( basic7(mytriple(1,just(20),just(300))), 21, Integer, pat_tests ) ;
 equalityTest ( basic7(mytriple(1,nothing(),just(300))), 301, Integer, pat_tests ) ;
 
+function basic8 -- using mixed name/fullnames
+Integer ::= p::Pair<Integer Integer>
+{
+return case p of
+| pair(1,2) -> 1
+| core:pair(1,_) -> 2
+| pair(2,1) -> 3
+| core:pair(_,1) -> 4
+end;
+}
+
+equalityTest ( basic8(pair(1,2)), 1, Integer, pat_tests );
+equalityTest ( basic8(pair(1,3)), 2, Integer, pat_tests );
+equalityTest ( basic8(pair(2,1)), 3, Integer, pat_tests );
+equalityTest ( basic8(pair(3,1)), 4, Integer, pat_tests );
 

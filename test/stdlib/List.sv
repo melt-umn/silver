@@ -44,6 +44,20 @@ equalityTest ( filter(even, [1,5,3,7]), [],
 equalityTest ( filter(even, []), [],
                [Integer], core_tests ) ;
 
+-- partition tests
+
+equalityTest ( partition(even, []).fst,   [],
+               [Integer], core_tests ) ;
+equalityTest ( partition(even, []).snd,   [],
+               [Integer], core_tests ) ;
+equalityTest ( partition(even, [1]).fst,   [],
+               [Integer], core_tests ) ;
+equalityTest ( partition(even, [1]).snd,   [1],
+               [Integer], core_tests ) ;
+equalityTest ( partition(even, [1,2,3,4,5,6,7,8]).fst,   [2,4,6,8],
+               [Integer], core_tests ) ;
+
+
 -- containsBy TODO
 
 -- nubBy tests

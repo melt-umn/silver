@@ -87,6 +87,18 @@ function filter
               else filter(f, tail(lst));
 }
 
+function partition
+Pair<[a] [a]> ::= f::Function(Boolean ::= a) lst::[a]
+{
+  local attribute recurse :: Pair<[a] [a]>;
+  recurse = partition(f, tail(lst));
+  
+  return if null(lst) then pair([],[])
+         else if f(head(lst))
+              then pair(head(lst) :: recurse.fst, recurse.snd)
+              else pair(recurse.fst, head(lst) :: recurse.snd);
+}
+
 function containsBy
 Boolean ::= eq::Function(Boolean ::= a a)  elem::a  lst::[a]
 {
