@@ -13,73 +13,72 @@ concrete production intPattern
 p::Pattern ::= num::Int_t
 {
   p.pp = num.lexeme ;
-  p.location = loc(p.file, num.line, num.column);
+  --p.location = loc(p.file, num.line, num.column);
   
   p.patternIsVariable = false;
   p.patternProduction = nothing();
   p.patternVariableName = nothing();
-  p.patternSubPatternList = decorate patternList_nil(terminal(Epsilon_For_Location, "", $1)) with {};
+  p.patternSubPatternList = [];
 }
 
 concrete production strPattern
 p::Pattern ::= str::String_t
 {
   p.pp = str.lexeme ;
-  p.location = loc(p.file, str.line, str.column);
+  --p.location = loc(p.file, str.line, str.column);
   
   p.patternIsVariable = false;
   p.patternProduction = nothing();
   p.patternVariableName = nothing();
-  p.patternSubPatternList = decorate patternList_nil(terminal(Epsilon_For_Location, "", $1)) with {};
+  p.patternSubPatternList = [];
 }
 
 concrete production truePattern
 p::Pattern ::= 'true'
 {
   p.pp = "true";
-  p.location = loc(p.file, $1.line, $1.column);
+  --p.location = loc(p.file, $1.line, $1.column);
   
   p.patternIsVariable = false;
   p.patternProduction = nothing();
   p.patternVariableName = nothing();
-  p.patternSubPatternList = decorate patternList_nil(terminal(Epsilon_For_Location, "", $1)) with {};
+  p.patternSubPatternList = [];
 }
 
 concrete production falsePattern
 p::Pattern ::= 'false'
 {
   p.pp = "false" ;
-  p.location = loc(p.file, $1.line, $1.column);
+--  p.location = loc(p.file, $1.line, $1.column);
   
   p.patternIsVariable = false;
   p.patternProduction = nothing();
   p.patternVariableName = nothing();
-  p.patternSubPatternList = decorate patternList_nil(terminal(Epsilon_For_Location, "", $1)) with {};
+  p.patternSubPatternList = [];
 }
 
 concrete production nilListPattern
 p::Pattern ::= '[' ']'
 {
   p.pp = "[]";
-  p.location = loc(p.file, $1.line, $1.column);
+--  p.location = loc(p.file, $1.line, $1.column);
   
   p.patternIsVariable = false;
   p.patternProduction = nothing();
   p.patternVariableName = nothing();
-  p.patternSubPatternList = decorate patternList_nil(terminal(Epsilon_For_Location, "", $1)) with {};
+  p.patternSubPatternList = [];
 }
 
 concrete production consListPattern
 p::Pattern ::= hp::Pattern '::' tp::Pattern
 {
   p.pp = hp.pp ++ "::" ++ tp.pp;
-  p.location = loc(p.file, $2.line, $2.column);
+--  p.location = loc(p.file, $2.line, $2.column);
   
   p.patternIsVariable = false;
   p.patternProduction = nothing();
   p.patternVariableName = nothing();
-  p.patternSubPatternList = decorate patternList_more(hp,',',patternList_one(tp)) with {}; -- TODO hahahahahahahahahahaha
-  -- I can't wait to run into a bug and come find this sitting here someday!!
+  p.patternSubPatternList = [hp, tp];
 }
 
 

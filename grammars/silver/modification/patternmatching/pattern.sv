@@ -27,10 +27,10 @@ synthesized attribute patternListEmpty :: Boolean;
 -- The production a pattern matches on, if it's a prod pattern.
 synthesized attribute patternProduction :: Maybe<String>;
 synthesized attribute patternVariableName :: Maybe<String>;
-synthesized attribute patternSubPatternList :: Decorated PatternList;
+synthesized attribute patternSubPatternList :: [Decorated Pattern];
+synthesized attribute patternList :: [Decorated Pattern];
 synthesized attribute varTailPatternList :: PatternList;
 
-synthesized attribute patternListVars :: [String];
 
 
 -- These could possibly be replaced with partition & stuff
@@ -42,27 +42,24 @@ synthesized attribute transformVarCase<a> :: a;
 
 
 -- MR | ...
-nonterminal MRuleList with pp, grammarName, env, file, location, signature, downSubst, finalSubst,
+nonterminal MRuleList with pp, grammarName, env, file, location, signature, 
                            patternListTypes, patternListScrutinees, blockContext, prodRules, varRules,
                            transformVarCase<MRuleList> ;
 -- P -> E
-nonterminal MatchRule with pp, grammarName, env, file, location, signature, downSubst, finalSubst,
+nonterminal MatchRule with pp, grammarName, env, file, location, signature, 
                            patternListTypes, patternListScrutinees, blockContext, headPattern, prodRules, varRules,
                            transformVarCase<MatchRule> ;
 
 -- prod(PL) | int | string | bool | ...
-nonterminal Pattern with pp, grammarName, env, file, location, signature,
-                         blockContext, headPattern, patternIsVariable, patternProduction,
-                         patternVariableName, patternListVars, patternSubPatternList ;
+nonterminal Pattern with pp, patternIsVariable, patternProduction, patternVariableName, patternSubPatternList ;
 -- P , ...
-nonterminal PatternList with pp, grammarName, env, file, location, signature,
-                             blockContext, headPattern,
-                             varTailPatternList, patternListVars, patternListEmpty ;
+nonterminal PatternList with pp, patternList ;
 
 concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.location = loc(top.file, $1.line, $1.column);
+  
   -- We're going to do FUNNY THINGS with types here.
   -- We want to know what type we should return, and we need to know this "directionally"
   -- for GADTs and for just general decoratedness/etc to work out.
@@ -108,21 +105,18 @@ top::Expr ::= locat::Decorated Location returnType::TypeExp es::Exprs ml::MRuleL
                 then [err(forward.location, "pattern expression should have type " ++ errCheck1.leftpp ++ " instead it has type " ++ errCheck1.rightpp)]
                 else [];
   
-  -- TODO: this shouldn't be needed anymore
-  ml.downSubst = top.downSubst;
-  
   ml.patternListTypes = map(ensureDecoratedType, getTypesExprsSubst(es.exprs)); -- subst somehow?
   ml.patternListScrutinees = map(ensureDecoratedExpr, es.exprs);
   
   forwards to {- if type is not nt then ... else -}
           case ml of
-            mRuleList_one(matchRule(p, _, e)) -> if p.patternListEmpty then e else normalCase
-          | mRuleList_cons(matchRule(p, _, e),_,_) -> if p.patternListEmpty then e else normalCase
+            mRuleList_one(matchRule(p, e)) -> if null(p) then e else normalCase
+          | mRuleList_cons(matchRule(p, e),_,_) -> if null(p) then e else normalCase
           end;
   
   top.errors <-
        case ml of
-          mRuleList_cons(matchRule(p, _, e),_,_) -> if p.patternListEmpty then 
+          mRuleList_cons(matchRule(p, e),_,_) -> if null(p) then 
              [err(locat, "Pattern has overlapping cases!")] else []
        | _ -> []
        end;
@@ -162,7 +156,6 @@ top::MRuleList ::= m::MatchRule
 {
   top.pp = m.pp;
   top.location = m.location;
-  m.downSubst = top.downSubst;
   
   top.varRules = m.varRules;
   top.prodRules = m.prodRules;
@@ -176,63 +169,46 @@ top::MRuleList ::= h::MatchRule '|' t::MRuleList
   top.pp = h.pp ++ " | " ++ t.pp;
   top.location = h.location;
 
-  h.downSubst = top.downSubst;
-  t.downSubst = top.downSubst;
-  
   top.varRules = h.varRules ++ t.varRules;
   top.prodRules = h.prodRules ++ t.prodRules;
   
   top.transformVarCase = mRuleList_cons(h.transformVarCase, $2, t.transformVarCase);
 }
 
-concrete production matchRule
+concrete production matchRule_c
 top::MatchRule ::= pt::PatternList '->' e::Expr
 {
-  top.pp = pt.pp ++ " -> " ++ e.pp;
+  forwards to matchRule(pt.patternList, e);
+}
+
+abstract production matchRule
+top::MatchRule ::= pl::[Decorated Pattern] e::Expr
+{
+  top.pp = implode(", ", map(getPatternPP, pl)) ++ " -> " ++ e.pp;
   top.location = e.location;
 
-  e.downSubst = top.downSubst;
-  
-  top.headPattern = pt.headPattern;
+  top.headPattern = head(pl);
   top.varRules = if top.headPattern.patternIsVariable then [top] else [];
   top.prodRules = if top.headPattern.patternIsVariable then [] else [top];
   
-  top.transformVarCase = matchRule(pt.varTailPatternList, $2, 
-                             case pt.headPattern.patternVariableName of
+  top.transformVarCase = matchRule(tail(pl), 
+                             case head(pl).patternVariableName of
                                just(pvn) -> makeLet(top.location, pvn, head(top.patternListTypes), head(top.patternListScrutinees), e)
                              | nothing() -> e
                              end);
 }
 
-
 concrete production patternList_one
 top::PatternList ::= p::Pattern
 {
   top.pp = p.pp;
-  top.location = p.location;
-
-  top.headPattern = p;
-  top.patternListEmpty = false;
-  top.varTailPatternList = patternList_nil(terminal(Epsilon_For_Location, "", top.location.line, top.location.column));
-  top.patternListVars = [case p.patternVariableName of
-                           just(f) -> "__sv_sc_" ++ toString(genInt()) ++ f
-                         | _ -> "__sv_tmp_pv_" ++ toString(genInt())
-                         end];
+  top.patternList = [p];
 }
-
 concrete production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
   top.pp = ps1.pp ++ ", " ++ p.pp;
-  top.location = p.location;
-
-  top.headPattern = p;
-  top.patternListEmpty = false;
-  top.varTailPatternList = ps1;
-  top.patternListVars = [case p.patternVariableName of
-                           just(f) -> "__sv_sc_" ++ toString(genInt()) ++ f
-                         | _ -> "__sv_tmp_pv_" ++ toString(genInt())
-                         end] ++ ps1.patternListVars;
+  top.patternList = p :: ps1.patternList;
 }
 
 terminal Epsilon_For_Location //;
@@ -241,12 +217,7 @@ concrete production patternList_nil
 top::PatternList ::= Epsilon_For_Location
 {
   top.pp = "";
-  top.location = loc(top.file, $1.line, $1.column);
-
-  top.headPattern = error("empty pattern list consulted regarding its first pattern");
-  top.patternListEmpty = true;
-  top.varTailPatternList = error("tailed (var) pattern list that is empty.");
-  top.patternListVars = [];
+  top.patternList = [];
 }
 
 --------------------------------------------------------------------------------
@@ -256,19 +227,19 @@ concrete production prodAppPattern
 p::Pattern ::= prod::QName '(' ps::PatternList ')'
 {
   p.pp = prod.pp ++ "(" ++ ps.pp ++ ")" ;
-  p.location = prod.location;
+  --p.location = prod.location;
 
   p.patternIsVariable = false;
   p.patternProduction = just(prod.lookupValue.fullName);
   p.patternVariableName = nothing();
-  p.patternSubPatternList = ps;
+  p.patternSubPatternList = ps.patternList;
 } 
 
 concrete production wildcPattern
 p::Pattern ::= '_'
 {
   p.pp = "_" ;
-  p.location = loc(p.file, $1.line, $1.column);
+  --p.location = loc(p.file, $1.line, $1.column);
 
   p.patternIsVariable = true;
   p.patternProduction = nothing();
@@ -279,7 +250,7 @@ concrete production varPattern
 p::Pattern ::= v::Name
 {
   p.pp = v.name;
-  p.location = v.location;
+ -- p.location = v.location;
 
   p.patternIsVariable = true;
   p.patternProduction = nothing();
@@ -290,23 +261,17 @@ p::Pattern ::= v::Name
 -- Added Functions
 ----------------------------------------------------
 
-function patternListAppend
-PatternList ::= l::PatternList r::PatternList
+function getPatternPP
+String ::= p::Decorated Pattern
+{ return p.pp; }
+function patternListVars
+[String] ::= p::[Decorated Pattern]
 {
-  return case l of
-           patternList_one(p) -> patternList_more(p, ',', r)
-         | patternList_more(p,c,ps) -> patternList_more(p, c, patternListAppend(ps, r))
-         | patternList_nil(_) -> r
-         end;
-}
-function patternListTail
-PatternList ::= l::PatternList
-{
-  return case l of
-           patternList_one(p) -> patternList_nil(terminal(Epsilon_For_Location, "", p.location.line, p.location.column))
-         | patternList_more(p,_,ps) -> ps
-         | patternList_nil(_) -> error("tail of nil pattern list")
-         end;
+  return case p of
+  | [] -> []
+  | varPattern(pvn)::t -> ["__sv_sc_" ++ toString(genInt()) ++ pvn.name] ++ patternListVars(t)
+  | h::t -> ["__sv_tmp_pv_" ++ toString(genInt())] ++ patternListVars(t)
+  end;
 }
 function convStringsToVarBinders
 VarBinders ::= s::[String] l::Decorated Location
@@ -334,8 +299,7 @@ MRuleList ::= mrl::[Decorated MatchRule]
   -- allExprs and failCase are already set for us to use
   local attribute f :: MatchRule;
   f = case head(mrl) of
-        matchRule(p,t,e) -> matchRule(patternListAppend(new(p.headPattern.patternSubPatternList),
-                                                        patternListTail(p)), t, e)
+        matchRule(p,e) -> matchRule(head(p).patternSubPatternList ++ tail(p), e)
       end;
   
   return if null(tail(mrl)) then mRuleList_one(f)
@@ -351,7 +315,7 @@ PrimPatterns ::= returnType::TypeExp  restExprs::[Decorated Expr]  failCase::Exp
   -- Then, push ALL the match rules into a case underneath that.
   
   local attribute names :: [String];
-  names = head(head(mrs)).headPattern.patternSubPatternList.patternListVars;
+  names = patternListVars(head(head(mrs)).headPattern.patternSubPatternList);
 
   local attribute subcase :: Expr;
   subcase =  caseExpr(head(head(mrs)).location, returnType,
@@ -407,15 +371,12 @@ TypeExp ::= t::TypeExp
 function getTypesExprsSubst
 [TypeExp] ::= es::[Decorated Expr]
 {
-  return if null(es) then [] else [performSubstitution(head(es).typerep, head(es).upSubst)] ++ getTypesExprs(tail(es));
+  return if null(es) then [] else [performSubstitution(head(es).typerep, head(es).upSubst)] ++ getTypesExprsSubst(tail(es));
 }
-function myor
-Boolean ::= a::Boolean b::Boolean
-{ return a || b; }
 function mruleEqForGrouping
 Boolean ::= a::Decorated MatchRule b::Decorated MatchRule
 {
-  production attribute rv :: Boolean with myor;
+  production attribute rv :: Boolean with ||;
   rv := case a.headPattern, b.headPattern of
           prodAppPattern(aqn,_,_,_), prodAppPattern(bqn,_,_,_) -> aqn.name == bqn.name
         | intPattern(an), intPattern(bn) -> toInt(an.lexeme) == toInt(bn.lexeme)
@@ -432,7 +393,7 @@ Boolean ::= a::Decorated MatchRule b::Decorated MatchRule
 function mruleLTEForSorting
 Boolean ::= a::Decorated MatchRule b::Decorated MatchRule
 {
-  production attribute rv :: Boolean with myor;
+  production attribute rv :: Boolean with ||;
   rv := case a.headPattern, b.headPattern of
           prodAppPattern(aqn,_,_,_), prodAppPattern(bqn,_,_,_) -> aqn.name <= bqn.name
         | intPattern(an), intPattern(bn) -> toInt(an.lexeme) <= toInt(bn.lexeme)
