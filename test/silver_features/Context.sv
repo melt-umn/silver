@@ -7,6 +7,8 @@ t::Context ::=
   forwards to context();
 }
 
+--- Tests to ensure forward/return aren't allowed in wrong contexts
+
 wrongCode "Forwarding is not permitted in this context" {
   aspect production context
   t::Context ::=
@@ -22,6 +24,8 @@ wrongCode "Return is not valid in this context" {
     return context();
   }
 }
+
+--- Tests to ensure return / forward are used sensibly: exactly one in functions, at most one in productions.
 
 wrongCode "does not have a return value" {
   function noretlol
@@ -45,3 +49,24 @@ wrongCode "has more than one forward declaration" {
     forwards to fwdfwdlol();
   }
 }
+
+--- Tests to ensure that errors are raised if aspecting the wrong type of thing...
+
+wrongCode "does not have the right signature" {
+  aspect function context
+  Context ::=
+  {
+  }
+}
+
+function context2
+Context ::= 
+{ return error("SADF"); }
+
+wrongCode "does not have the right signature" {
+  aspect production context2
+  t::Context ::=
+  {
+  }
+}
+
