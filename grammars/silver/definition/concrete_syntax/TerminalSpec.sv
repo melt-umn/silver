@@ -31,17 +31,20 @@ top::TerminalSpec ::= fn::String t::[Decorated TerminalModifierSpec] reg::Decora
 }
 
 function findIgnore
-Boolean ::= l::[Decorated TerminalModifierSpec]{
+Boolean ::= l::[Decorated TerminalModifierSpec]
+{
   return !null(l) && (head(l).ignoreTerminal || findIgnore(tail(l))); 
 }
 
 function findPrecedence
-Integer ::= l::[Decorated TerminalModifierSpec]{
+Integer ::= l::[Decorated TerminalModifierSpec]
+{
   return if null(l) then 0 else if head(l).parserPrecedence != 0 then head(l).parserPrecedence else findPrecedence(tail(l));
 }
 
 function findAssociation
-String ::= l::[Decorated TerminalModifierSpec]{
+String ::= l::[Decorated TerminalModifierSpec]
+{
   return if null(l) then "nonassoc" else if head(l).parserAssociation != "" then head(l).parserAssociation else findAssociation(tail(l));
 }
 
@@ -61,7 +64,8 @@ Boolean ::= s::String l::[Decorated TerminalSpec]
 nonterminal TerminalModifierSpec with unparse, ignoreTerminal, parserPrecedence, parserAssociation;
 
 abstract production defaultTerminalModifierSpec
-top::TerminalModifierSpec ::={
+top::TerminalModifierSpec ::=
+{
   top.unparse = "";
   top.ignoreTerminal = false;
   top.parserPrecedence = 0;
@@ -69,24 +73,28 @@ top::TerminalModifierSpec ::={
 }
 
 function ignoreTerminalModifierSpec
-Decorated TerminalModifierSpec ::={
+Decorated TerminalModifierSpec ::=
+{
   return decorate i_ignoreTerminalModifierSpec() with {};
 }
 
 abstract production i_ignoreTerminalModifierSpec
-top::TerminalModifierSpec ::={
+top::TerminalModifierSpec ::=
+{
   top.unparse = "ignore";
   top.ignoreTerminal = true;
   forwards to defaultTerminalModifierSpec();
 }
 
 function precedenceTerminalModifierSpec
-Decorated TerminalModifierSpec ::= i::Integer{
+Decorated TerminalModifierSpec ::= i::Integer
+{
   return decorate i_precedenceTerminalModifierSpec(i) with {};
 }
 
 abstract production i_precedenceTerminalModifierSpec
-top::TerminalModifierSpec ::= i::Integer{
+top::TerminalModifierSpec ::= i::Integer
+{
   top.unparse = "precedence " ++ toString(i);
   top.parserPrecedence = i;
   forwards to defaultTerminalModifierSpec();
@@ -94,12 +102,14 @@ top::TerminalModifierSpec ::= i::Integer{
 
 
 function associationTerminalModifierSpec
-Decorated TerminalModifierSpec ::= s::String{
+Decorated TerminalModifierSpec ::= s::String
+{
   return decorate i_associationTerminalModifierSpec(s) with {};
 }
 
 abstract production i_associationTerminalModifierSpec
-top::TerminalModifierSpec ::= s::String{
+top::TerminalModifierSpec ::= s::String
+{
   top.unparse = "association " ++ s;
   top.parserAssociation = s;
   forwards to defaultTerminalModifierSpec();
