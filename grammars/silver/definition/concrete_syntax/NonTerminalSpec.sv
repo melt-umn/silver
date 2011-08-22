@@ -5,7 +5,8 @@ synthesized attribute nonTerminalName :: String;
 nonterminal NonTerminalSpec with nonTerminalName, unparse;
 
 function nonTerminalSpec
-Decorated NonTerminalSpec ::= fn::String {
+Decorated NonTerminalSpec ::= fn::String
+{
   return decorate i_nonTerminalSpec(fn) with {};
 }
 

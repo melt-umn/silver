@@ -6,7 +6,7 @@ package common;
  * @author tedinski
  * @see Closure
  */
-public class Thunk {
+public class Thunk<T> {
 	private Object data;
 	
 	/**
@@ -23,10 +23,10 @@ public class Thunk {
 	 * 
 	 * @return The value wrapped by this thunk.
 	 */
-	public Object eval() {
+	public T eval() {
 		if(data instanceof Closure) {
 			data = ((Closure)data).eval();
 		}
-		return data;
+		return (T) data;
 	}
 }

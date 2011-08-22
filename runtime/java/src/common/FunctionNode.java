@@ -1,8 +1,6 @@
 package common;
 
-import common.exceptions.MissingDefinitionException;
 import common.exceptions.SilverInternalError;
-import common.exceptions.TraceException;
 
 /**
  * FunctionNode is a Node, but with a few methods "removed".

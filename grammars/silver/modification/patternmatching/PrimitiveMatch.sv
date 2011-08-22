@@ -325,8 +325,8 @@ top::PrimPattern ::= h::String t::String e::Expr
   e.env = newScopeEnv(consdefs, top.env);
   
   top.translation = "if(!scrutineeIter.nil()) {" ++
-  makeSpecialLocalBinding(hFName, "scrutinee.head()") ++
-  makeSpecialLocalBinding(tFName, "scrutinee.tail()") ++
+  makeSpecialLocalBinding(hFName, "scrutinee.head()", performSubstitution(elemType, top.finalSubst).transType) ++
+  makeSpecialLocalBinding(tFName, "scrutinee.tail()", performSubstitution(top.scrutineeType, top.finalSubst).transType) ++
   "return " ++ e.translation ++ "; }";
 }
 --------------------------------------------------------------------------------
@@ -408,7 +408,7 @@ top::VarBinder ::= n::Name
                 (if top.bindingType.isDecorable
                  then "childDecorated("
                  else "childAsIs(")
-             ++ toString(top.bindingIndex) ++ ")");
+             ++ toString(top.bindingIndex) ++ ")", ty.transType);
   
   top.errors := []; -- TODO: check for rebinding? or not perhaps...
 }
@@ -424,9 +424,9 @@ top::VarBinder ::= '_'
 
 
 function makeSpecialLocalBinding
-String ::= fn::String  et::String
+String ::= fn::String  et::String  ty::String
 {
-  return "final common.Thunk " ++ makeLocalValueName(fn) ++ " = " ++ "new common.Thunk(" ++ wrapThunkText("context", et) ++ ");\n";
+  return "final common.Thunk<" ++ ty ++ "> " ++ makeLocalValueName(fn) ++ " = " ++ "new common.Thunk<" ++ ty ++ ">(" ++ wrapThunkText("context", et) ++ ");\n";
 }
 
 -----

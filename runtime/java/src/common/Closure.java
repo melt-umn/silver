@@ -63,8 +63,8 @@ public abstract class Closure {
 	 * @see Thunk
 	 */
 	public static final class FromThunk extends Closure {
-		protected final Thunk th;
-		public FromThunk(Thunk t) {
+		protected final Thunk<?> th;
+		public FromThunk(Thunk<?> t) {
 			super(null);
 			th = t;
 		}

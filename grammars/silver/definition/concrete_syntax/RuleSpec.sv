@@ -16,7 +16,8 @@ synthesized attribute productionModifiers :: [Decorated ProductionModifierSpec];
 synthesized attribute productionOperatorPrecedence :: String;
 
 function ruleSpec
-Decorated RuleSpec ::= l::String ns::[Decorated RHSSpec]{
+Decorated RuleSpec ::= l::String ns::[Decorated RHSSpec]
+{
   return decorate i_ruleSpec(l, ns) with {};
 }
 
@@ -29,7 +30,8 @@ top::RuleSpec ::= l::String ns::[Decorated RHSSpec]
 }
 
 function foldRHSSpec
-String::= l::[Decorated RHSSpec]{
+String::= l::[Decorated RHSSpec]
+{
   return if null(l) then "" else (head(l).unparse ++ (if null(tail(l)) then "" else ", " ++ foldRHSSpec(tail(l))));
 }
 
@@ -61,19 +63,22 @@ String ::= l::[Decorated ProductionModifierSpec]
 
 
 function findParserPrecedence
-Integer ::= l::[Decorated ProductionModifierSpec]{
+Integer ::= l::[Decorated ProductionModifierSpec]
+{
   return if null(l) then 0 else if head(l).parserPrecedence != 0 then head(l).parserPrecedence else findParserPrecedence(tail(l));
 }
 
 function findProductionOperatorPrecedence
-String ::= l::[Decorated ProductionModifierSpec]{
+String ::= l::[Decorated ProductionModifierSpec]
+{
   return if null(l) then "" else if head(l).productionOperatorPrecedence != "" then head(l).productionOperatorPrecedence else findProductionOperatorPrecedence(tail(l));
 }
 
 nonterminal ProductionModifierSpec with unparse, parserPrecedence, productionOperatorPrecedence;
 
 abstract production defaultProductionModifierSpec
-top::ProductionModifierSpec ::={
+top::ProductionModifierSpec ::=
+{
   top.unparse = "";
   top.parserPrecedence = 0;
   top.productionOperatorPrecedence = "";
@@ -81,24 +86,28 @@ top::ProductionModifierSpec ::={
 
 
 function precedenceProductionModifierSpec
-Decorated ProductionModifierSpec ::= i::Integer{
+Decorated ProductionModifierSpec ::= i::Integer
+{
   return decorate i_precedenceProductionModifierSpec(i) with {};
 }
 
 abstract production i_precedenceProductionModifierSpec
-top::ProductionModifierSpec ::= i::Integer{
+top::ProductionModifierSpec ::= i::Integer
+{
   top.unparse = "precedence " ++ toString(i);
   top.parserPrecedence = i;
   forwards to defaultProductionModifierSpec();
 }
 
 function operatorProductionModifierSpec
-Decorated ProductionModifierSpec ::= i::String{
+Decorated ProductionModifierSpec ::= i::String
+{
   return decorate i_operatorProductionModifierSpec(i) with {};
 }
 
 abstract production i_operatorProductionModifierSpec
-top::ProductionModifierSpec ::= i::String{
+top::ProductionModifierSpec ::= i::String
+{
   top.unparse = "operator '" ++ i ++ "'";
   top.productionOperatorPrecedence = i;
   forwards to defaultProductionModifierSpec();

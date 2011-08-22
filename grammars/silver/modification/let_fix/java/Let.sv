@@ -42,8 +42,7 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
 {
-  -- " ++ t.typerep.transType ++ "    TODO parameterize Thunk?
-  top.let_translation = "final common.Thunk " ++ makeLocalValueName(fName) ++ " = " ++ "new common.Thunk(" ++ wrapThunkText("context", e.translation) ++ ");\n";
+  top.let_translation = "final common.Thunk<" ++ t.typerep.transType ++ "> " ++ makeLocalValueName(fName) ++ " = " ++ "new common.Thunk<" ++ t.typerep.transType ++ ">(" ++ wrapThunkText("context", e.translation) ++ ");\n";
 }
 
 aspect production lexicalLocalReference
