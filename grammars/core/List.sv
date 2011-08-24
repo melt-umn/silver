@@ -284,6 +284,39 @@ function intersperse
 { return if null(xs) then [ ]
          else head(xs) :: sep :: intersperse(sep, tail(xs)) ;
 }
+
+
+-- Set operations
+function unionBy
+[a] ::= eq::Function(Boolean ::= a a) l::[a] r::[a] 
+{
+ return  if   null(l)
+         then r
+         else 
+         (if   containsBy (eq, head(l), r)
+          then [ ]
+          else [ head(l) ] )
+         ++ unionBy( eq, tail(l), r ) ;
+}
+
+function intersectBy
+[a] ::= eq::Function(Boolean ::= a a) l::[a] r::[a]
+{
+ return  if   null(l)
+         then [ ]
+         else 
+         (if   containsBy (eq, head(l), r)
+          then [ head(l) ]
+          else [ ] )
+         ++ intersectBy( eq, tail(l), r ) ;
+}
+
+function unionsBy
+[a] ::= eq::Function(Boolean ::= a a) ss::[ [a] ] 
+{
+ return nubBy(eq, foldr (append, [ ], ss) ) ;
+}
+
 --------------------------------------------------------------------------------
 
 function nil
