@@ -122,14 +122,25 @@ equalityTest( interpretCmdArgs(flags2, ["-verbose", "-nosilly", "-I", "document 
               Boolean, core_tests );
 
 -- Test the error message generator
+-- Should be fine
 equalityTest( interpretCmdArgs(flags2, ["-verbose", "-nosilly", "-I", "document and settings", "-silly", "-I", "elsewhere"]).cmdError.isJust, 
               false,
               Boolean, core_tests );
+-- Should have an error
 equalityTest( interpretCmdArgs(flags2, ["-verbose", "-nosilly", "-I", "document and settings", "-silly", "-I"]).cmdError.isJust, 
               true,
               Boolean, core_tests );
+-- Should have this specific error
 equalityTest( interpretCmdArgs(flags2, ["-verbose", "-nosilly", "-I", "document and settings", "-silly", "-I"]).cmdError.fromJust, 
               "-I is missing its parameter.",
               String, core_tests );
+-- Should error on unrecognized flag
+equalityTest( interpretCmdArgs(flags2, ["-verbose", "-notsilly", "-I", "document and settings", "-silly", "-I", "elsewhere"]).cmdError.fromJust, 
+              "Unrecognized flag: -notsilly",
+              String, core_tests );
+-- Should NOT raise an error!
+equalityTest( interpretCmdArgs(flags2, ["not a flag", "-notsilly"]).cmdError.isJust, 
+              false,
+              Boolean, core_tests );
 
 
