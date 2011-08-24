@@ -4,7 +4,6 @@ import silver:host;
 import silver:host:env;
 import silver:translation:java;
 import silver:driver;
-import silver:util:command;
 
 --import silver:extension:doc;
 --import silver:analysis:warnings;
@@ -33,10 +32,6 @@ parser rParse::Root {
 
 }
 
-parser cParse::Command {
-  silver:util:command;
-}
-
 parser iParse::IRootSpec {
   silver:host:env;
 
@@ -49,12 +44,9 @@ parser iParse::IRootSpec {
 }
 
 function main 
-IOVal<Integer> ::= largs::[String] i::IO
+IOVal<Integer> ::= args::[String] i::IO
 {
-  local attribute args :: String;
-  args = implode(" ", largs);
-
   -- please note that run in BuildProcess.sv will call exit(), so we may not "get back here"
-  return ioval((decorate run(i, args) with {rParser = rParse; cParser = cParse; iParser = iParse;}).io,
+  return ioval((decorate run(i, args) with {rParser = rParse; iParser = iParse;}).io,
                0);
 }

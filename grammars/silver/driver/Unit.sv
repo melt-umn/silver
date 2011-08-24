@@ -2,7 +2,7 @@ grammar silver:driver;
 import silver:definition:core;
 import silver:definition:env;
 import silver:util;
-import silver:util:command;
+import silver:util:cmdargs;
 
 synthesized attribute code :: Integer;
 synthesized attribute order :: Integer;
@@ -20,7 +20,7 @@ synthesized attribute ioOut :: IO;
 nonterminal Unit with ioIn, io, code, order;
 
 aspect production run
-top::RunUnit ::= iIn::IO args::String
+top::RunUnit ::= iIn::IO args::[String]
 {
   preOps <- [checkSilverHome(silverhome), checkSilverGen(silvergen)];
   preOps <- if a.displayVersion then [printVersion()] else [];

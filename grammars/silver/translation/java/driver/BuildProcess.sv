@@ -1,30 +1,56 @@
 grammar silver:translation:java:driver;
 import silver:translation:java:core;
-import silver:translation:java:command;
 
 import silver:driver;
 import silver:definition:env;
-import silver:definition:core hiding grammarName;
+import silver:definition:core;
 
 import silver:util;
-import silver:util:command;
+import silver:util:cmdargs;
+
+synthesized attribute noJavaGeneration :: Boolean occurs on CmdArgs;
+synthesized attribute buildSingleJar :: Boolean occurs on CmdArgs;
+
+aspect production endCmdArgs
+top::CmdArgs ::= _
+{
+  top.noJavaGeneration = false;
+  top.buildSingleJar = false;
+}
+abstract production xjFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.noJavaGeneration = true;
+  forwards to rest;
+}
+abstract production onejarFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.buildSingleJar = true;
+  forwards to rest;
+}
 
 aspect production run
-top::RunUnit ::= iIn::IO args::String
+top::RunUnit ::= iIn::IO args::[String]
 {
+  flags <- [pair("--xj", flag(xjFlag)),
+            pair("--onejar", flag(onejarFlag))
+           ];
+  flagdescs <- ["\t--onejar: include runtime libraries in the jar\n"];
+
   -- We need to re-translate the root grammar to properly handle conditional builds Init calls
-  depAnalysis.forceTaint <- [a.grammarName];
+  depAnalysis.forceTaint <- [a.buildGrammar];
 
   local attribute translate :: [Decorated RootSpec];
-  translate = if null(getRootSpec(a.grammarName, depAnalysis.compiledList))
-              then head(getRootSpec(a.grammarName, grammars)) :: depAnalysis.compiledList
+  translate = if null(getRootSpec(a.buildGrammar, depAnalysis.compiledList))
+              then head(getRootSpec(a.buildGrammar, grammars)) :: depAnalysis.compiledList
               else depAnalysis.compiledList;
               
   postOps <- if a.noJavaGeneration then [] else [genJava(a, translate, nonTreeGrammars, silvergen), genBuild(a, grammars, silverhome, silvergen, depAnalysis)]; 
 }
 
 abstract production genJava
-top::Unit ::= a::Decorated Command specs::[Decorated RootSpec] extras::[String] silvergen::String
+top::Unit ::= a::Decorated CmdArgs specs::[Decorated RootSpec] extras::[String] silvergen::String
 {
   local attribute pr::IO;
   pr = print("Generating Java Translation.\n", top.ioIn);
@@ -38,7 +64,7 @@ top::Unit ::= a::Decorated Command specs::[Decorated RootSpec] extras::[String] 
 }
 
 abstract production genBuild
-top::Unit ::= a::Decorated Command allspecs::[Decorated RootSpec] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+top::Unit ::= a::Decorated CmdArgs allspecs::[Decorated RootSpec] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
   local attribute buildFile :: IO;
   buildFile = writeBuildFile(top.ioIn, a, allspecs, silverhome, silvergen, da).io;
@@ -49,7 +75,7 @@ top::Unit ::= a::Decorated Command allspecs::[Decorated RootSpec] silverhome::St
 }
 
 function writeAll
-IO ::= i::IO a::Decorated Command l::[Decorated RootSpec] extras::[String] silvergen::String
+IO ::= i::IO a::Decorated CmdArgs l::[Decorated RootSpec] extras::[String] silvergen::String
 {
   local attribute now :: IO;
   now = writeSpec(i, head(l), a, extras, silvergen);
@@ -61,7 +87,7 @@ IO ::= i::IO a::Decorated Command l::[Decorated RootSpec] extras::[String] silve
 }
 
 function writeSpec
-IO ::= i::IO r::Decorated RootSpec a::Decorated Command extras::[String] silvergen::String
+IO ::= i::IO r::Decorated RootSpec a::Decorated CmdArgs extras::[String] silvergen::String
 {
   local attribute printio :: IO;
   printio = print("\t[" ++ r.declaredName ++ "]\n", i);
@@ -73,7 +99,7 @@ IO ::= i::IO r::Decorated RootSpec a::Decorated Command extras::[String] silverg
   specLocation = silvergen ++ "/src/" ++ package; 
 
   local attribute mki :: IO;
-  mki = writeFile(specLocation ++ "Init.java", makeInit(r, if a.grammarName == r.declaredName then extras else []), printio);
+  mki = writeFile(specLocation ++ "Init.java", makeInit(r, if a.buildGrammar == r.declaredName then extras else []), printio);
 
   local attribute mains :: [Decorated DclInfo];
   mains = getValueDcl(r.declaredName ++ ":main", toEnv(r.defs));
@@ -117,7 +143,7 @@ String ::= r::Decorated RootSpec{
 
 -- WTF why is this an IOVal, it doesn't return anything?  TODO
 abstract production writeBuildFile
-top::IOVal<String> ::= i::IO a::Decorated Command specs::[Decorated RootSpec] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+top::IOVal<String> ::= i::IO a::Decorated CmdArgs specs::[Decorated RootSpec] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
   production attribute extraTargets :: [String] with ++;
   extraTargets := [];
@@ -129,18 +155,18 @@ top::IOVal<String> ::= i::IO a::Decorated Command specs::[Decorated RootSpec] si
   extraDepends := ["init"];
 
   local attribute mains :: [Decorated DclInfo];
-  mains = getValueDcl(a.grammarName ++ ":main", toEnv(head(getRootSpec(a.grammarName, specs)).defs));
+  mains = getValueDcl(a.buildGrammar ++ ":main", toEnv(head(getRootSpec(a.buildGrammar, specs)).defs));
 
   local attribute outputFile :: String;
-  outputFile = if length(a.outName) > 0 then a.outName else (makeName(a.grammarName) ++ ".jar");
+  outputFile = if length(a.outName) > 0 then a.outName else (makeName(a.buildGrammar) ++ ".jar");
 
   -- TODO: this is local directory! move build.xml to generated space
   top.io = writeFile("build.xml", buildXml, i);
 
   local attribute buildXml :: String;
   buildXml =    
-"<project name='" ++ a.grammarName ++ "' default='dist' basedir='.'>\n" ++
-"  <description>Build the grammar " ++ a.grammarName ++ " </description>\n\n" ++
+"<project name='" ++ a.buildGrammar ++ "' default='dist' basedir='.'>\n" ++
+"  <description>Build the grammar " ++ a.buildGrammar ++ " </description>\n\n" ++
 
 "  <property environment='env'/>\n" ++
 "  <property name='jg' location='" ++ silvergen ++ "'/>\n" ++
@@ -182,7 +208,7 @@ implode("\n", extraTaskdefs) ++ "\n\n" ++
 
 "      <manifest>\n" ++
 (if !null(mains) then
-"       <attribute name='Main-Class' value='" ++ makeName(a.grammarName) ++ ".Main' />\n"
+"       <attribute name='Main-Class' value='" ++ makeName(a.buildGrammar) ++ ".Main' />\n"
  else "") ++
 
 (if !a.buildSingleJar then 
