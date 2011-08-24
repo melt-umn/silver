@@ -3,23 +3,27 @@ grammar silver:translation:java:concrete_syntax:copper;
 import silver:driver;
 import silver:translation:java:driver;
 
-import silver:util:command;
+import silver:util:cmdargs;
 
-synthesized attribute forceCopperDump :: Boolean occurs on Command;
+synthesized attribute forceCopperDump :: Boolean occurs on CmdArgs;
 
-aspect production cRootAll
-top::Command ::= c1::PieceList
+aspect production endCmdArgs
+top::CmdArgs ::= _
 {
-  flagLookups <- [flagLookup("--copperdump", false)];
-
-  uses <- ["\t--copperdump: force copper to dump parse table information\n"];
-
-  top.forceCopperDump = !null(findFlag("--copperdump", top.flags));
+  top.forceCopperDump = false;
 }
-
-aspect production run
-top::RunUnit ::= iIn::IO args::String
+abstract production copperdumpFlag
+top::CmdArgs ::= rest::CmdArgs
 {
+  top.forceCopperDump = true;
+  forwards to rest;
+}
+aspect production run
+top::RunUnit ::= iIn::IO args::[String]
+{
+  flags <- [pair("--copperdump", flag(copperdumpFlag))];
+  flagdescs <- ["\t--copperdump: force copper to dump parse table information\n"];
+
   postOps <- [generateCS(depAnalysis.taintedParsers, silvergen)]; 
 }
 
@@ -85,7 +89,7 @@ IO ::= i::IO silvergen::String specs::[Decorated ParserSpec]
 }
 
 aspect production writeBuildFile
-top::IOVal<String> ::= i::IO a::Decorated Command specs::[Decorated RootSpec] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+top::IOVal<String> ::= i::IO a::Decorated CmdArgs specs::[Decorated RootSpec] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
   extraTaskdefs <- ["  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='lib.classpath'/>\n" ];
   extraTargets <- ["  <target name='copper'>\n" ++ buildAntParserPart(
@@ -95,7 +99,7 @@ top::IOVal<String> ::= i::IO a::Decorated Command specs::[Decorated RootSpec] si
 }
 
 function buildAntParserPart
-String ::= r::[Decorated ParserSpec] a::Decorated Command
+String ::= r::[Decorated ParserSpec] a::Decorated CmdArgs
 {
   local attribute parserName :: String;
   parserName = makeParserName(head(r).fullName);

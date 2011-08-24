@@ -1,13 +1,29 @@
 grammar silver:analysis:binding:driver;
-import silver:analysis:binding:command;
 import silver:driver;
+import silver:util:cmdargs;
 
 import silver:definition:core;
 import silver:definition:env;
 
-aspect production run
-top::RunUnit ::= iIn::IO args::String
+synthesized attribute noBindingChecking :: Boolean occurs on CmdArgs;
+
+aspect production endCmdArgs
+top::CmdArgs ::= _
 {
+  top.noBindingChecking = false;
+}
+abstract production nobindingFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.noBindingChecking = true;
+  forwards to rest;
+}
+aspect production run
+top::RunUnit ::= iIn::IO args::[String]
+{
+  flags <- [pair("--xb", flag(nobindingFlag))];
+  -- omitting from descriptions deliberately!
+  
   postOps <- if a.noBindingChecking then [] else [printAllBindingErrors(grammars)]; 
 }
 

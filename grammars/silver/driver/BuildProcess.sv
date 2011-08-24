@@ -5,8 +5,7 @@ import silver:definition:env:env_parser;
 
 import silver:util;
 
---The two parsers that will be passed in refer to start nonterminals dfined in this package.
-import silver:util:command with grammarName as gName;
+import silver:util:cmdargs;
 
 
 synthesized attribute rSpec :: Decorated RootSpec;
@@ -14,22 +13,23 @@ synthesized attribute found :: Boolean;
 
 inherited attribute rParser :: Function(ParseResult<Root> ::= String String);
 inherited attribute iParser :: Function(ParseResult<IRootSpec> ::= String String);
-inherited attribute cParser :: Function(ParseResult<Command> ::= String String);
 
-nonterminal RunUnit with io, rParser, iParser, cParser;
+nonterminal RunUnit with io, rParser, iParser;
 
 --the entry point for silver build process.  It should be a function but aspects currently are not supported on functions.
 abstract production run
-top::RunUnit ::= iIn::IO args::String
+top::RunUnit ::= iIn::IO args::[String]
 {
+  production attribute flags::[Pair<String Flag>] with ++;
+  flags := [];
+  production attribute flagdescs::[String] with ++;
+  flagdescs := [];
+  local attribute usage::String;
+  usage = "Usage: silver [options] grammar\n\nFlag options:\n" ++ implode("\n", sortBy(stringLte, flagdescs)) ++ "\n";
+  
   --parse the command line
-  production attribute parsea :: ParseResult<Command>;
-  parsea = top.cParser(args, "<cmd line arguments>");
-
-  production attribute a :: Command;
-  a = if parsea.parseSuccess
-      then parsea.parseTree
-      else error("Failed to parse command line arguments: \n" ++ parsea.parseErrors);
+  production attribute a :: CmdArgs;
+  a = interpretCmdArgs(flags, args);
 
   local attribute envGP :: IOVal<String>;
   envGP = envVar("GRAMMAR_PATH", iIn);
@@ -40,13 +40,9 @@ top::RunUnit ::= iIn::IO args::String
   local attribute envSH :: IOVal<String>;
   envSH = envVar("SILVER_HOME", envSG.io);
 
-  --the command line path for searching
-  local attribute sPath :: String;
-  sPath = a.searchPath ++ ":" ++ envGP.iovalue;
-
-  --a list of directories to search
+  --a list of directories to search (cmdline, env vars)
   production attribute spath :: [String];
-  spath = map(endWithSlash,  explode(":", sPath));
+  spath = map(endWithSlash,  a.searchPath ++ explode(":", envGP.iovalue));
   
   production attribute silverhome :: String;
   silverhome = endWithSlash(envSH.iovalue);
@@ -57,7 +53,7 @@ top::RunUnit ::= iIn::IO args::String
 
   --the grammar path ':' replaced by '/'
   local attribute gpath :: String;
-  gpath = substitute("/", ":", a.gName) ++ "/";
+  gpath = substitute("/", ":", a.buildGrammar) ++ "/";
 
 --------
 -------- Phase 1: pre-compiling stuff
@@ -94,7 +90,7 @@ top::RunUnit ::= iIn::IO args::String
   -- we give a starting point and it will find and compile
   -- the other grammars needed
   production attribute unit :: CompilationUnit;
-  unit = compileGrammars(grammarLocation.io, spath, [a.gName] ++ extraUnit.needGrammars, extraUnit.seenGrammars, a.doClean, silvergen);
+  unit = compileGrammars(grammarLocation.io, spath, [a.buildGrammar] ++ extraUnit.needGrammars, extraUnit.seenGrammars, a.doClean, silvergen);
   unit.rParser = top.rParser;
   unit.iParser = top.iParser;
   unit.compiledGrammars = grammars;
@@ -169,18 +165,24 @@ top::RunUnit ::= iIn::IO args::String
   local attribute postIO :: IOVal<Integer>;
   postIO = runAll(reUnit.io, unitMergeSort(postOps));
   
-  top.io = if preIO.iovalue != 0 --the preops tell us to quit.
+  top.io = if a.cmdError.isJust
+           then exit(1, print("\n" ++ a.cmdError.fromJust ++ "\n\n" ++ usage, iIn))
+           else if preIO.iovalue != 0 --the preops tell us to quit.
            then exit(preIO.iovalue, preIO.io)
-           else case a.okay, grammarLocation.iovalue.isJust, null(unit.compiledList ++ condUnit.compiledList), null(grammars) of
-             true, true, false, _     -> exit(postIO.iovalue, postIO.io)
-           | true, true,  true, true  -> exit(3, print("\nGrammar '" ++ a.gName ++ "' was found at '" ++ grammarLocation.iovalue.fromJust 
+           else if null(a.cmdRemaining)
+           then exit(1, print("\nNo grammar to build was specified!\n\n" ++ usage, preIO.io))
+           else if length(a.cmdRemaining) > 1
+           then exit(1, print("\nUnable to interpret: " ++ implode(" ", a.cmdRemaining) ++ "\n\n" ++ usage, preIO.io))
+           else if !grammarLocation.iovalue.isJust
+           then exit(2, print("\nGrammar '" ++ a.buildGrammar ++ "' could not be located, make sure that the " ++ 
+                              "grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
+           else if null(unit.compiledList ++ condUnit.compiledList)
+           then if null(grammars)
+                then exit(3, print("\nGrammar '" ++ a.buildGrammar ++ "' was found at '" ++ grammarLocation.iovalue.fromJust 
                                                        ++ "' but there were no silver source files there!\n\n", grammarLocation.io))
-           | true, true,  true, false -> exit(4, print("\nGrammar '" ++ a.gName ++ "' is up to date. Use --clean to force a recompile.\n\n",
+                else exit(4, print("\nGrammar '" ++ a.buildGrammar ++ "' is up to date. Use --clean to force a recompile.\n\n",
                                                        grammarLocation.io))
-           | true, false, _,    _     -> exit(2, print("\nGrammar '" ++ a.gName ++ "' could not be located, make sure that the " ++ 
-                                                       "grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
-           | false, _,    _,    _     -> exit(1, print(a.usage, iIn))
-           end;
+           else exit(postIO.iovalue, postIO.io);
 }
 
 
