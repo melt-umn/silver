@@ -157,6 +157,41 @@ equalityTest ( map(listLength, groupBy(equalsInteger, [1, 1, 2, 1, 2, 2])),     
 
 -- intersperse TODO
 
+
+-- set operations
+equalityTest ( unionBy (equalsInteger, [], []), [],
+               [Integer], core_tests ) ;
+equalityTest ( unionBy (equalsInteger, [1,2,3], []), [1,2,3],
+               [Integer], core_tests ) ;
+equalityTest ( unionBy (equalsInteger, [], [1,2,3]), [1,2,3],
+               [Integer], core_tests ) ;
+equalityTest ( unionBy (equalsInteger, [1,2,3], [4,5,6]), [1,2,3,4,5,6],
+               [Integer], core_tests ) ;
+
+equalityTest ( unionBy (equalsInteger, [1,2,3], [1,4,5,6]), [2,3,1,4,5,6],
+               [Integer], core_tests ) ;
+equalityTest ( unionBy (equalsInteger, [1,2,3], [3,4,5,6,1]), [2,3,4,5,6,1],
+               [Integer], core_tests ) ;
+
+equalityTest ( intersectBy (equalsInteger, [], []), [],
+               [Integer], core_tests ) ;
+equalityTest ( intersectBy (equalsInteger, [1,2,3], []), [],
+               [Integer], core_tests ) ;
+equalityTest ( intersectBy (equalsInteger, [], [1,2,3]), [],
+               [Integer], core_tests ) ;
+equalityTest ( intersectBy (equalsInteger, [1,2,3], [4,5,6]), [],
+               [Integer], core_tests ) ;
+
+equalityTest ( intersectBy (equalsInteger, [1,2,3], [4,2,6]), [2],
+               [Integer], core_tests ) ;
+equalityTest ( intersectBy (equalsInteger, [1,2,3], [4,2,3,6]), [2,3],
+               [Integer], core_tests ) ;
+
+equalityTest ( unionsBy (equalsInteger, [ [1,2], [2,3], [1,4,5,6] ] ), [1,2,3,4,5,6] ,
+                [Integer], core_tests ) ;
+
+
+
 ---- from lib:extcore!
 equalityTest ( equalsList ( equalsInteger, [], []), true, Boolean, core_tests) ;
 equalityTest ( equalsList ( equalsInteger, [1], [1]), true, Boolean, core_tests) ;
