@@ -25,10 +25,11 @@ tar zcvf $SV.tar.gz \
  $SV/grammars/core/ \
  $SV/grammars/lib/extcore/ \
  $SV/grammars/lib/stringmap/ \
- $sv/grammars/lib/lang/ \
+ $SV/grammars/lib/lang/ \
  $SV/grammars/lib/treemap/ \
  $SV/grammars/lib/xml/ \
  $SV/grammars/silver/testing/ \
+ $SV/grammars/silver/util/cmdargs/ \
  $SV/COPYING.LESSER \
  $SV/HISTORY \
  $SV/README \

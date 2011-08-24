@@ -8,7 +8,8 @@ Silver 0.3.4      Aug ??, 2011
  - Testing framework (unstable interface, yet)
  - Update and modernization of the 'simple' tutorial language
  - Minor change to the way production-specific layout declarations worked
- - Many bug fixes, including some pattern matching fixes. [IN PROGRESS]
+ - Many bug fixes, including some pattern matching fixes.
+ - New silver:util:cmdargs library
 
 --------------------------------------------------------------------------------
 Silver 0.3.3      Jun 30, 2011

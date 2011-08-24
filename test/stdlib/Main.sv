@@ -4,6 +4,7 @@ imports silver:testing ;
 imports lib:extcore ;
 
 import stdlib:treemap; -- run test tests, too.
+import stdlib:cmdargs;
 
 
 mainTestSuite core_tests ;
