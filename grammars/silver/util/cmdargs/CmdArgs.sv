@@ -17,7 +17,10 @@ CmdArgs ::= flags::[Pair<String Flag>]  input::[String]
   here.flagOriginal = interpretCmdArgs(flags, here.flagOutput);
   
   return if null(input) then endCmdArgs([])
-         else if !l.isJust then endCmdArgs(input)
+         else if !l.isJust
+         then if startsWith("-", head(input))
+              then errorCmdArgs("Unrecognized flag: " ++ head(input))
+              else endCmdArgs(input)
          else here.flagModified;
 }
 
