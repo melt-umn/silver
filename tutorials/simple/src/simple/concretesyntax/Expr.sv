@@ -16,7 +16,12 @@ nonterminal Expr with pp, ast<ast:Expr>;
    introducing additional nonterminals.
 -}
 
-
+concrete production parensExpr
+e::Expr ::= '(' e1::Expr ')'
+{
+  e.pp = "(" ++ e1.pp ++ ")";
+  e.ast = e1.ast;
+}
 -- Logical Operations
 ---------------------
 {- In the specification for the logical operations we use just the
