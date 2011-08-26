@@ -48,6 +48,6 @@ top::AGDcl ::= 'attribute' at::QNameWithTL 'occurs' 'on' nt::QNameWithTL ';'
 function makeDecoratorClassName
 String ::= s::String
 {
-  return substituteLast(".D", ".", substitute(".", ":", s));
+  return substituteLast(".", ".D", makeName(s));
 }
 

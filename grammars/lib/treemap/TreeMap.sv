@@ -3,19 +3,6 @@ grammar lib:treemap;
 -- The API:
 
 {--
- - A comparison function for strings.
- - @return Negative if l<r, 0 if l==r, positive if l>r
- -}
-function compareString
-Integer ::= l::String  r::String
-{
-  return if l <= r then if l == r then 0 else -1 else 1;
-} foreign {
-  -- This is temporary until we have better analysis & translation of Silver functions.
-  "java" : return "Integer.valueOf(%l%.toString().compareTo(%r%.toString()))";
-}
-
-{--
  - Creates a new (empty) tree.
  - 
  - @param TLEop  The "less that or equal to" operator on the key values for this tree

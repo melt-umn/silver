@@ -93,7 +93,7 @@ IO ::= i::IO r::Decorated RootSpec a::Decorated CmdArgs extras::[String] silverg
   printio = print("\t[" ++ r.declaredName ++ "]\n", i);
 
   local attribute package :: String;
-  package = substitute("/", ":", r.declaredName) ++ "/";
+  package = grammarToPath(r.declaredName);
 
   production attribute specLocation :: String;
   specLocation = silvergen ++ "/src/" ++ package; 
@@ -247,7 +247,7 @@ function buildGrammarList
 String ::= r::[Decorated RootSpec] s::String
 {
   return if null(r) then "" else
-"       <include name='" ++ substitute("/", ":", head(r).declaredName) ++ "/" ++ s ++ "' />\n" ++
+"       <include name='" ++ grammarToPath(head(r).declaredName) ++ s ++ "' />\n" ++
   buildGrammarList(tail(r), s);
 }
 

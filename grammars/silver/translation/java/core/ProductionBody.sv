@@ -125,8 +125,8 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
   local attribute ugh_dcl_hack :: Decorated DclInfo;
   ugh_dcl_hack = head(getValueDcl(fName, top.env)); -- TODO
   
-  top.setupInh <- "\t\t" ++ substitute(".", ":", prod_orig_grammar) ++ ".P" ++ prod_orig_name ++ ".occurs_local[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = \"" ++ fName ++ "\";\n";
-  top.valueWeaving := "public static final int " ++ ugh_dcl_hack.attrOccursIndexName ++ " = " ++ makeName(prod_orig_grammar) ++ ".Init.count_local__ON__" ++ substitute("_", ":", top.signature.fullName) ++ "++;\n";
+  top.setupInh <- "\t\t" ++ makeName(prod_orig_grammar) ++ ".P" ++ prod_orig_name ++ ".occurs_local[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = \"" ++ fName ++ "\";\n";
+  top.valueWeaving := "public static final int " ++ ugh_dcl_hack.attrOccursIndexName ++ " = " ++ makeName(prod_orig_grammar) ++ ".Init.count_local__ON__" ++ makeIdName(top.signature.fullName) ++ "++;\n";
 
 
   top.setupInh := if !te.typerep.isDecorable then  "" else

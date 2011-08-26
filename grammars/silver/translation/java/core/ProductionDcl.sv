@@ -19,7 +19,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   top.valueWeaving := body.valueWeaving;
 
   local attribute localVar :: String;
-  localVar = "count_local__ON__" ++ substitute("_", ":", fName);
+  localVar = "count_local__ON__" ++ makeIdName(fName);
 
   local attribute fnnt :: String;
   fnnt = makeNTClassName(ns.outputElement.typerep.typeName);

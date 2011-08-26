@@ -10,7 +10,7 @@ function percentSubst
 String ::= s::String names::[String] results::[String]
 {
   return if null(names) then s
-         else percentSubst(substitute(head(results), "%" ++ head(names) ++ "%", s), tail(names), tail(results));
+         else percentSubst(substitute("%" ++ head(names) ++ "%", head(results), s), tail(names), tail(results));
 }
 
 function mapSignature

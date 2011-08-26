@@ -71,20 +71,6 @@ function remove
 	      else [head(s)] ++ remove(n, tail(s));
 }
 
-function substitute
-String ::= s::String r::String str::String
-{
-  local attribute i :: Integer;
-  i = indexOf(r, str);
-
-  return if i == -1
-         then str
-         else substring(0, i, str) ++ s ++ substitute(s, r, substring(i+length(r), length(str), str));
-} foreign {
-  -- TODO: we should expose this generally sometime...
-  "java" : return "new common.StringCatter(%str%.toString().replace((CharSequence)%r%.toString(),(CharSequence)%s%.toString()))";
-}
-
 function startsWithAny
 Boolean ::= pre::[String] s::String{
   return !null(pre) && (startsWith(head(pre), s) || startsWithAny(tail(pre), s));

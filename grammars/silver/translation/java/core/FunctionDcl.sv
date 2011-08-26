@@ -13,7 +13,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.valueWeaving := body.valueWeaving;
 
   local attribute localVar :: String;
-  localVar = "count_local__ON__" ++ substitute("_", ":", fName);
+  localVar = "count_local__ON__" ++ makeIdName(fName);
 
   top.javaClasses = [["P" ++ id.name, 
                       generateFunctionClassString(top.grammarName, id.name, namedSig, "final common.DecoratedNode context = new P" ++ id.name ++ "(args).decorate(common.TopNode.singleton, (common.Lazy[])null);\n\t\t//" ++ head(body.uniqueSignificantExpression).pp ++ "\n\t\t return (" ++ namedSig.outputElement.typerep.transType ++ ")(" ++ head(body.uniqueSignificantExpression).translation ++ ");\n")
@@ -37,7 +37,7 @@ String ::= whatGrammar::String whatName::String whatSig::Decorated NamedSignatur
   className = "P" ++ whatName;
 
   local attribute localVar :: String;
-  localVar = "count_local__ON__" ++ substitute("_", ":", whatGrammar) ++ "_" ++ whatName;
+  localVar = "count_local__ON__" ++ makeIdName(whatGrammar) ++ "_" ++ whatName;
 
   local attribute sigNames :: [String];
   sigNames = getNamesSignature(whatSig.inputElements);

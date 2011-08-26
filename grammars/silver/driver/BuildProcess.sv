@@ -7,6 +7,11 @@ import silver:util;
 
 import silver:util:cmdargs;
 
+function grammarToPath
+String ::= g::String
+{
+  return substitute(":", "/", g) ++ "/";
+}
 
 synthesized attribute rSpec :: Decorated RootSpec;
 synthesized attribute found :: Boolean;
@@ -53,7 +58,7 @@ top::RunUnit ::= iIn::IO args::[String]
 
   --the grammar path ':' replaced by '/'
   local attribute gpath :: String;
-  gpath = substitute("/", ":", a.buildGrammar) ++ "/";
+  gpath = grammarToPath(a.buildGrammar);
 
 --------
 -------- Phase 1: pre-compiling stuff
@@ -343,7 +348,7 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
 {
   --the grammar path ':' replaced by '/'
   local attribute gramPath :: String;
-  gramPath = substitute("/", ":", grammarName) ++ "/";
+  gramPath = grammarToPath(grammarName);
 
   -- the location (if found) of the grammar
   local attribute grammarLocation :: IOVal<Maybe<String>>;

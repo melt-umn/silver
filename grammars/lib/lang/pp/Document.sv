@@ -62,15 +62,8 @@ top::Document ::=
   top.outCHorizontals = top.inCHorizontals;
   top.outRemaining = if horizontal then top.inRemaining - 1 else top.width - top.indent;
 
-  top.result = if horizontal then " " else "\n" ++ nspaces(top.indent);
+  top.result = if horizontal then " " else "\n" ++ replicate(top.indent, " ");
   top.horizontals = pr.snd;
-}
-
-function nspaces
-String ::= i::Integer
-{ return error("lo, what a difficult task, apparently"); }
-foreign {
- "java" : return "new common.StringCatter(new String(new char[%i%.intValue()]).replace(\"\\0\", \" \"))";
 }
 
 abstract production cat

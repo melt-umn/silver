@@ -20,7 +20,7 @@ synthesized attribute attrOccursType :: String;
 aspect production occursDcl
 top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
 {
-  top.attrOccursIndexName = substitute("_", ":", fnat ++ "__ON__" ++ fnnt);
+  top.attrOccursIndexName = makeIdName(fnat ++ "__ON__" ++ fnnt);
   top.attrOccursIndex = makeName(sg) ++ ".Init." ++ top.attrOccursIndexName;
 }
 
@@ -40,6 +40,6 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
   local attribute li :: Integer;
   li = lastIndexOf(":local:", fn);
-  top.attrOccursIndexName = substitute("_", ":", substring(li+7, length(fn), fn) ++ "__ON__" ++ substring(0,li,fn));
+  top.attrOccursIndexName = makeIdName(substring(li+7, length(fn), fn) ++ "__ON__" ++ substring(0,li,fn));
   top.attrOccursIndex = makeName(sg) ++ ".Init." ++ top.attrOccursIndexName;
 }

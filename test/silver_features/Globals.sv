@@ -2,11 +2,12 @@
 
 import silver_features:global_sub;
 
-
+-- basics!
 global globstring1 :: String = "Hi";
 
 equalityTest ( globstring1, "Hi", String, silver_tests ) ;
 
+-- function call
 global globstring2 :: String = substring(2,4,"Heyooo");
 
 equalityTest ( globstring2, "yo", String, silver_tests ) ;
@@ -20,6 +21,7 @@ equalityTest ( globint2, 17, Integer, silver_tests ) ;
 -- refed by sub
 global globalbool1 :: Boolean = false;
 
+-- ref to sub
 equalityTest ( globalbool2, false, Boolean, silver_tests ) ;
 
 -- infinite lists are broken. see bug #1426
@@ -47,4 +49,12 @@ equalityTest ( deT.strGlob, "Hi", String, silver_tests ) ;
 wrongCode "initialization expression with type" {
   global badT :: Decorated Tglob = Tfoo();
 }
+
+wrongCode "does not have the right signature." { -- TODO: this error message should be improved!!
+  aspect production unT
+  t::Tglob ::=
+  {
+  }
+}
+
 

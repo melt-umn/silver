@@ -16,7 +16,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
   top.valueWeaving := "";
 
   local attribute localVar :: String;
-  localVar = "count_local__ON__" ++ substitute("_", ":", fName);
+  localVar = "count_local__ON__" ++ makeIdName(fName);
 
   top.javaClasses = [[className,
                       generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult)
