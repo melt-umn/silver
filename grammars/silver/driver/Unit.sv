@@ -89,7 +89,7 @@ function writeInterface
 IO ::= iIn::IO r::Decorated RootSpec genPath::String
 {
   local attribute pathName :: String;
-  pathName = genPath ++ "src/" ++ substitute("/", ":", r.declaredName) ++ "/";
+  pathName = genPath ++ "src/" ++ grammarToPath(r.declaredName);
 
   local attribute mkiotest :: IOVal<Boolean>;
   mkiotest = isDirectory(pathName, iIn);
@@ -117,10 +117,10 @@ function deleteStaleData
 IO ::= iIn::IO genPath::String gram::String
 {
   local attribute srcPath :: String;
-  srcPath = genPath ++ "src/" ++ substitute("/", ":", gram) ++ "/";
+  srcPath = genPath ++ "src/" ++ grammarToPath(gram);
 
   local attribute binPath :: String;
-  binPath = genPath ++ "bin/" ++ substitute("/", ":", gram) ++ "/";
+  binPath = genPath ++ "bin/" ++ grammarToPath(gram);
   
   local attribute srcFiles :: IOVal<[String]>;
   srcFiles = listContents(srcPath, iIn);

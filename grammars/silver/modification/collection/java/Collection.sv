@@ -235,6 +235,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {- <- -} e::Exp
 function makeCAClassName
 String ::= s::String
 {
-  return substituteLast(".CA", ".", substitute(".", ":", s));
+  return substituteLast(".", ".CA", makeName(s));
 }
 

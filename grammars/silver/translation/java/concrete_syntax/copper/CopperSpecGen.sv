@@ -5,15 +5,8 @@ import silver:definition:regex;
 function makeCopperName
 String ::= str::String
 {
-  return substitute("_", ":", str);
+  return makeIdName(str);
 }
-
-function makeCopperNames
-String ::= sep::String str::[String]
-{
-  return if null(str) then "" else substitute("_", ":", head(str)) ++ (if null(tail(str)) then "" else sep ++ makeCopperNames(sep, tail(str))) ;
-}
-
 
 function makeCopperGrammarSpec
 String ::= grammar_name::String spec::Decorated ParserSpec

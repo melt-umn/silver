@@ -21,13 +21,13 @@ function mapPAs
 function escapeString
 String ::= s::String
 {
-  return substitute("\\\"", "\"", s);
+  return substitute("\"", "\\\"", s);
 }
 
 function unescapeString
 String ::= s::String
 {
-  return substitute("\"", "\\\"", s);
+  return substitute("\\\"", "\"", s);
 }
 
 

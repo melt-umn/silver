@@ -30,7 +30,7 @@ synthesized attribute let_translation :: String occurs on AssignExpr;
 function makeLocalValueName
 String ::= s::String
 {
-  return "__SV_LOCAL_" ++ substitute("_", ":", s);
+  return "__SV_LOCAL_" ++ makeIdName(s);
 }
 
 aspect production appendAssignExpr

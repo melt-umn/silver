@@ -148,6 +148,37 @@ Boolean ::= post::String s::String
 }
 
 {--
+ - Replaces all instances of 'search' with 'replace' in 'str'
+ -
+ - @param search  The string to replace
+ - @param replace  The string to substitute in
+ - @param str  The string to operate on
+ - @return  The modified form of 'str'
+ -}
+function substitute
+String ::= search::String replace::String str::String
+{
+  return error("Not Yet Implemented: substitute");
+} foreign {
+  "java" : return "new common.StringCatter(%str%.toString().replace((CharSequence)%search%.toString(),(CharSequence)%replace%.toString()))";
+}
+
+{--
+ - Return a string with 's' repeated 'n' times.
+ -
+ - @param n  The number of times to repeat the string
+ - @param s  The string to repeat
+ - @return  The string with 'n' copies of 's'
+ -}
+function replicate
+String ::= n::Integer s::String
+{ return error("Not Yet Implemented: replicate"); }
+foreign {
+ "java" : return "new common.StringCatter(new String(new char[%n%.intValue()]).replace(\"\\0\", %s%.toString()))";
+}
+
+
+{--
  - Tests if all characters of a string are digits.  Partially unicode aware.
  - See java's Character.isDigit(char).
  -
@@ -222,6 +253,19 @@ Boolean ::= str::String
   return error("Not Yet Implemented: isUpper");
 } foreign {
   "java" : return "(common.Util.isUpper(%str%.toString()))";
+}
+
+{--
+ - A comparison function for strings.
+ - @return Negative if l<r, 0 if l==r, positive if l>r
+ -}
+function compareString
+Integer ::= l::String  r::String
+{
+  return if l <= r then if l == r then 0 else -1 else 1;
+} foreign {
+  -- This is temporary until we have better analysis & translation of Silver functions.
+  "java" : return "Integer.valueOf(%l%.toString().compareTo(%r%.toString()))";
 }
 
 function stringConcat

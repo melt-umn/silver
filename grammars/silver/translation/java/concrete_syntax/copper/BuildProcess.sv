@@ -80,7 +80,7 @@ IO ::= i::IO silvergen::String specs::[Decorated ParserSpec]
   printio = print("\t[" ++ head(specs).fullName ++ "]\n", i);
   
   local attribute copperFile :: String;
-  copperFile = silvergen ++ substitute("/", ":", hackilyFindGrammarName(head(specs).fullName)) ++ "/" ++ parserName ++ ".copper";
+  copperFile = silvergen ++ grammarToPath(hackilyFindGrammarName(head(specs).fullName)) ++ parserName ++ ".copper";
 
   local attribute copperBody :: String;
   copperBody = makeCopperGrammarSpec(parserName, head(specs));
@@ -108,14 +108,14 @@ String ::= r::[Decorated ParserSpec] a::Decorated CmdArgs
   hackgn = hackilyFindGrammarName(head(r).fullName);
   
   local attribute pn :: String; -- package name
-  pn = substitute(".", ":", hackgn);
+  pn = makeName(hackgn);
   
   local attribute pl :: String;
-  pl = substitute("/", ":", hackgn);
+  pl = grammarToPath(hackgn);
 
   return if null(r) then "" else( 
-"    <copper fullClassName='" ++ pn ++ "." ++ parserName ++ "' inputFile='${src}/" ++ pl ++ "/" ++ parserName ++ ".copper' " ++ 
-	"outputFile='${src}/" ++ pl ++ "/" ++ parserName ++ ".java' skin='xml' warnUselessNTs='no' dump='true' dumpType='html'" ++
+"    <copper fullClassName='" ++ pn ++ "." ++ parserName ++ "' inputFile='${src}/" ++ pl ++ parserName ++ ".copper' " ++ 
+	"outputFile='${src}/" ++ pl ++ parserName ++ ".java' skin='xml' warnUselessNTs='no' dump='true' dumpType='html'" ++
 	(if a.forceCopperDump then "" else " dumpOnlyOnError='true'") ++ " dumpFile='" ++ parserName ++ ".copperdump.html'"  ++ 
 	"/>\n" ++
  	 buildAntParserPart(tail(r), a));

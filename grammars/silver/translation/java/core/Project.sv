@@ -14,29 +14,34 @@ import silver:util;
 function makeName
 String ::= str::String
 {
-  return substitute(".", ":", str);
+  return substitute(":", ".", str);
+}
+function makeIdName
+String ::= str::String
+{
+  return substitute(":", "_", str);
 }
 
 function makeClassName
 String ::= s::String
 {
-  return substituteLast(".P", ".", substitute(".", ":", s));
+  return substituteLast(".", ".P", makeName(s));
 }
 
 function makeNTClassName
 String ::= s::String
 {
-  return substituteLast(".N", ".", substitute(".", ":", s));
+  return substituteLast(".", ".N", makeName(s));
 }
 
 function makeParserName
 String ::= s::String
 {
-  return "Parser_" ++ substitute("_", ":", s);
+  return "Parser_" ++ makeIdName(s);
 }
 
 function substituteLast
-String ::= s::String r::String str::String
+String ::= r::String s::String str::String
 {
   local attribute i::Integer;
   i = lastIndexOf(r, str);

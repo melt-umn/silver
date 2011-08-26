@@ -69,6 +69,23 @@ equalityTest ( endsWith("foo", "foobar"), false,
                Boolean, core_tests ) ;
 equalityTest ( endsWith("foo", ""), false,
                Boolean, core_tests ) ;
+
+-- substitute
+equalityTest ( substitute("abc", "def", "hijklmnop"), "hijklmnop",
+               String, core_tests ) ;
+equalityTest ( substitute("abc", "def", "abcdefhijklmnop"), "defdefhijklmnop",
+               String, core_tests ) ;
+equalityTest ( substitute("abc", "def", "abcabc"), "defdef",
+               String, core_tests ) ;
+
+-- replicate
+equalityTest ( replicate(3, " "), "   ",
+               String, core_tests ) ;
+equalityTest ( replicate(2, "abc"), "abcabc",
+               String, core_tests ) ;
+equalityTest ( replicate(0, " "), "",
+               String, core_tests ) ;
+
 -- isDigit isAlpha isSpace isLower isUpper TODO
 
 
