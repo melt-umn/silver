@@ -27,16 +27,24 @@ top::FFIDef ::= name::String_t ':' 'return' code::String_t ';'
   top.ffiTranslationString = if name.lexeme == "\"java\"" then [cleanStringLexeme(code.lexeme)] else [];
 }
 
-function childAccessor
-String ::= t::TypeExp fName::String className::String
+function strictChildAccessor
+String ::= ns::Decorated NamedSignatureElement
 {
-  return "((" ++ t.transType ++ ")(args[i_" ++ fName  ++ "] = common.Util.demand(args[i_" ++ fName  ++ "])))";
+  return "((" ++ ns.typerep.transType ++ ")(args[i_" ++ ns.elementName  ++ "] = common.Util.demand(args[i_" ++ ns.elementName  ++ "])))";
+}
+function lazyChildAccessor
+String ::= ns::Decorated NamedSignatureElement
+{
+  return "args[i_" ++ ns.elementName  ++ "]";
 }
 
 function computeSigTranslation
 String ::= str::String sig::Decorated NamedSignature
 {
-  return percentSubst(str, getNamesSignature(sig.inputElements), mapSignature(childAccessor, sig.inputElements, makeClassName(sig.fullName)));
+  return substituteAll(
+           substituteAll(str, map(wrapStrictNotation, getNamesSignature(sig.inputElements)), map(strictChildAccessor, sig.inputElements)),
+           map(wrapLazyNotation, getNamesSignature(sig.inputElements)),
+           map(lazyChildAccessor, sig.inputElements));
 }
 
 

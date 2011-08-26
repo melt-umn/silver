@@ -332,7 +332,7 @@ function cons
 {
   return decorate i_consList(h, t) with {};
 } foreign {
-  "java" : return "new common.ConsCell(%h%, %t%)";
+  "java" : return "new common.ConsCell(%?h?%, %?t?%)";
 }
 
 function append
@@ -342,7 +342,7 @@ function append
          then l2
          else cons(head(l1), append(tail(l1), l2));
 } foreign {
-  "java" : return "common.AppendCell.append(%l1%, %l2%)";
+  "java" : return "common.AppendCell.append(%l1%, %?l2?%)";
 }
 
 
