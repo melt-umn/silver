@@ -112,9 +112,9 @@ public class AppendCell extends ConsCell {
 		// we should be creating this as a CLOSURE.
 		// TODO: investigate what consequences appear here?
 		// TODO: depends on fixing the bug that makes all FFI calls strict anyway!
-		tail = append(left.tail(), tail);
-		//final Object oldtail = tail;
-		//tail = new Closure(null) { public final Object eval() { return append(left.tail(), oldtail); } };
+		//tail = append(left.tail(), tail);
+		final Object oldtail = tail;
+		tail = new Closure(null) { public final Object eval() { return append(left.tail(), oldtail); } };
 		literalConsCell = true;
 	}
 	

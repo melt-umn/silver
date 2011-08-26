@@ -6,17 +6,22 @@ import silver:definition:type;
 import silver:modification:ffi;
 import silver:util;
 
-function percentSubst
+function substituteAll
 String ::= s::String names::[String] results::[String]
 {
   return if null(names) then s
-         else percentSubst(substitute("%" ++ head(names) ++ "%", head(results), s), tail(names), tail(results));
+         else substituteAll(substitute(head(names), head(results), s), tail(names), tail(results));
 }
 
-function mapSignature
-[String] ::= f::Function(String ::= TypeExp String String) ns::[Decorated NamedSignatureElement] extra::String
+function wrapStrictNotation
+String ::= s::String
 {
-  return if null(ns) then [] else f(head(ns).typerep, head(ns).elementName, extra) :: mapSignature(f, tail(ns), extra);
+  return "%" ++ s ++ "%";
+}
+function wrapLazyNotation
+String ::= s::String
+{
+  return "%?" ++ s ++ "?%";
 }
 
 function cleanStringLexeme
@@ -26,6 +31,7 @@ String ::= s::String
   return cleanStringEscapes(substring(1,length(s)-1, s));
 }
 
+--TODO is this necessary? I... don't think it is.
 function cleanStringEscapes
 String ::= s::String
 {
