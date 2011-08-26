@@ -6,6 +6,7 @@ imports lib:extcore ;
 import stdlib:treemap; -- run test tests, too.
 import stdlib:cmdargs;
 import stdlib:deque;
+import stdlib:pplib;
 
 
 mainTestSuite core_tests ;
