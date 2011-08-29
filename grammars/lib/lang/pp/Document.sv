@@ -130,17 +130,8 @@ top::Document ::=
   forwards to text("");
 }
 
-abstract production lineLit
-top::Document ::=
-{
-  forwards to text("\n");
-}
 
-abstract production spaceLit
-top::Document ::=
-{
-  forwards to text(" ");
-}
+--------------------------------------------------------------------------------
 
 function prune
 Pair<Deque<Pair<Integer [Boolean]>> [Boolean]> ::= p::Integer q::Deque<Pair<Integer [Boolean]>>
