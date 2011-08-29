@@ -89,13 +89,14 @@ public class AppendCell extends ConsCell {
 		}
 		// Kill off append LHS
 		if(left instanceof AppendCell) {
-			AppendCell leftap = (AppendCell) left;
+			final AppendCell leftap = (AppendCell) left;
+			final Object rightap = r;
 			// This, right here, is the principal reason this optimization can't be
 			// accomplished with forwarding: we're checking internal implementation
 			// details to SEE if "the forward" has been evaluated yet.
 			// If so, then gosh, it's a ConsCell, forget this. If NOT, well, let's be smart!
 			if(! leftap.literalConsCell) {
-				return append(leftap.head, append(leftap.tail, r));
+				return append(leftap.head, new Closure(null) { public final Object eval() { return append(leftap.tail, rightap); }});
 			}
 		}
 		// Okay, we're a real append of a real, literal ConsCell on the LHS.
