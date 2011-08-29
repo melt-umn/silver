@@ -2,14 +2,16 @@
 --------------------------------------------------------------------------------
 Silver 0.3.4      Aug ??, 2011
 
- - New lib:treemap RB tree library
+ - New silver:util:treemap RB tree library
+ - New silver:util:deque double ended queue library
+ - New silver:util:cmdargs command line parsing library
+ - New silver:langutil:pp pretty printing library
  - Performance and translation improvements
  - Dramatic (30%) reduction in binary sizes
  - Testing framework (unstable interface, yet)
  - Update and modernization of the 'simple' tutorial language
- - Minor change to the way production-specific layout declarations worked
+ - Minor change to the way production-specific 'layout' declarations worked
  - Many bug fixes, including some pattern matching fixes.
- - New silver:util:cmdargs library
 
 --------------------------------------------------------------------------------
 Silver 0.3.3      Jun 30, 2011
