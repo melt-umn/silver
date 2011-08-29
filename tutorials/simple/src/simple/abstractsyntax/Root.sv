@@ -1,6 +1,6 @@
 grammar simple:abstractsyntax;
 
-imports lib:lang;
+imports silver:langutil;
 
 nonterminal Root with pp, errors;
 

@@ -1,6 +1,6 @@
 grammar simple:extensions:expr_let;
 
-imports lib:lang;
+imports silver:langutil;
 imports simple:concretesyntax as cst;
 imports simple:abstractsyntax;
 

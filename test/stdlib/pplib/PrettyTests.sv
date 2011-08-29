@@ -1,7 +1,7 @@
 
 import silver:testing;
 import lib:extcore;
-import lib:lang:pp;
+import silver:langutil:pp;
 import stdlib;
 import silver:util:deque;
 

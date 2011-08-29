@@ -1,6 +1,6 @@
 grammar simple:host:driver;
 
-import lib:lang;
+import silver:langutil;
 import simple:concretesyntax as cst;
 import simple:abstractsyntax as ast;
 

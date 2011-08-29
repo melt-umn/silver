@@ -7,7 +7,7 @@ grammar simple:extensions:do_while;
    this way provides an example of building an extension for an
    extended language.
 -}
-imports lib:lang;
+imports silver:langutil;
 imports simple:concretesyntax as cst;
 imports simple:abstractsyntax;
 imports simple:extensions:repeat_until;

@@ -1,6 +1,6 @@
 grammar simple:extensions:implication;
 
-imports lib:lang;
+imports silver:langutil;
 imports simple:concretesyntax as cst;
 imports simple:abstractsyntax;
 
