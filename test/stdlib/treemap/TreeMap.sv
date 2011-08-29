@@ -2,7 +2,7 @@
 
 import silver:testing;
 import lib:extcore;
-import lib:treemap;
+import silver:util:treemap;
 import stdlib;
 
 global e :: TreeMap<String Integer> = treeNew(compareString);

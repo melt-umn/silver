@@ -1,4 +1,4 @@
-grammar lib:treemap;
+grammar silver:util:treemap;
 
 -- The API:
 
