@@ -2,6 +2,8 @@ grammar lib:lang:pp;
 
 import silver:util:deque;
 
+import lib:extcore; -- TEMP TODO
+
 function show
 String ::= width::Integer d::Document
 {
@@ -49,6 +51,7 @@ top::Document ::= s::String
 
   top.result = s;
   top.horizontals = pr.snd;
+--  top.horizontals = unsafeTrace(pr.snd, print("text trace: horizontal: " ++ toStringFromList(toStringFromBoolean, pr.snd) ++ "\n", unsafeIO()));
 }
 
 abstract production line
@@ -64,6 +67,7 @@ top::Document ::=
 
   top.result = if horizontal then " " else "\n" ++ replicate(top.indent, " ");
   top.horizontals = pr.snd;
+--  top.horizontals = unsafeTrace(pr.snd, print("line trace: horizontal: " ++ toStringFromList(toStringFromBoolean, pr.snd) ++ "\n", unsafeIO()));
 }
 
 abstract production cat
@@ -86,6 +90,7 @@ top::Document ::= d1::Document d2::Document
 
   top.result = d1.result ++ d2.result;
   top.horizontals = d1.horizontals ++ d2.horizontals;
+--  top.horizontals = unsafeTrace(d1.horizontals ++ d2.horizontals, print("cat trace: horizontal: " ++ toStringFromList(toStringFromBoolean, d1.horizontals ++ d2.horizontals) ++ "\n", unsafeIO()));
 }
 
 abstract production group
@@ -93,6 +98,8 @@ top::Document ::= d::Document
 {
   d.inPosition = top.inPosition;
   d.inDq = enter(top.inPosition + top.inRemaining, top.inDq);
+  -- the head of this is the "is local group horizontal" information. So, we remove it to
+  -- expose the inner group's info
   d.inCHorizontals = tail(top.inCHorizontals);
   d.inRemaining = top.inRemaining;
 
@@ -100,11 +107,14 @@ top::Document ::= d::Document
 
   top.outPosition = d.outPosition;
   top.outDq = le.fst;
+  -- Put the local group's info back on the top, then consume the inner group's info
+  -- so it's no longer there. (so the next group get its inner when it does the tail)
   top.outCHorizontals = head(top.inCHorizontals) :: tail(d.outCHorizontals);
   top.outRemaining = d.outRemaining;
 
   top.result = d.result;
   top.horizontals = d.horizontals ++ le.snd;
+--  top.horizontals = unsafeTrace(d.horizontals ++ le.snd, print("group trace: horizontal: " ++ toStringFromList(toStringFromBoolean, d.horizontals ++ le.snd) ++ "\n", unsafeIO()));
 }
 
 abstract production nest
@@ -137,9 +147,9 @@ Pair<Deque<Pair<Integer [Boolean]>> [Boolean]> ::= p::Integer q::Deque<Pair<Inte
 {
   return if dqIsEmpty(q) then pair(q, [])
          else let h::Pair<Integer [Boolean]> = dqHead(q)
-               in if p < h.fst then pair(q, [])
+               in if p <= h.fst then pair(q, [])
                   else let recur::Pair<Deque<Pair<Integer [Boolean]>> [Boolean]> = prune(p, dqTail(q))
-                        in pair(recur.fst, false :: h.snd ++ recur.snd)
+                        in pair(recur.fst, false :: (h.snd ++ recur.snd))
                        end
               end;
 }
@@ -154,10 +164,10 @@ function leave
 Pair<Deque<Pair<Integer [Boolean]>> [Boolean]> ::= p::Integer q::Deque<Pair<Integer [Boolean]>>
 {
   return if dqIsEmpty(q) then pair(q, [])
-         else let h1::Pair<Integer [Boolean]> = dqHead(q),
+         else let h1::Pair<Integer [Boolean]> = dqLast(q),
                   t1::Deque<Pair<Integer [Boolean]>> = dqInit(q)
                in if dqIsEmpty(t1) then pair(t1, true :: h1.snd)
-                  else let h2::Pair<Integer [Boolean]> = dqHead(t1),
+                  else let h2::Pair<Integer [Boolean]> = dqLast(t1),
                            t2::Deque<Pair<Integer [Boolean]>> = dqInit(t1)
                         in pair(dqSnoc(t2, pair(h2.fst, h2.snd ++ [p <= h1.fst] ++ h1.snd)), [])
                        end

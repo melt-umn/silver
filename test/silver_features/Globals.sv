@@ -24,11 +24,6 @@ global globalbool1 :: Boolean = false;
 -- ref to sub
 equalityTest ( globalbool2, false, Boolean, silver_tests ) ;
 
--- infinite lists 
-global infiniteOnes :: [Integer] = 1 :: infiniteOnes;
-
-equalityTest ( take(5,infiniteOnes), [1,1,1,1,1], [Integer], silver_tests ) ;
-
 --some decoratedness tests
 nonterminal Tglob with strGlob;
 synthesized attribute strGlob :: String;
