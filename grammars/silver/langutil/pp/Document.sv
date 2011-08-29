@@ -1,4 +1,4 @@
-grammar lib:lang:pp;
+grammar silver:langutil:pp;
 
 import silver:util:deque;
 

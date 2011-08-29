@@ -1,6 +1,6 @@
 grammar simple:extensions:expr_if;
 
-imports lib:lang;
+imports silver:langutil;
 imports simple:concretesyntax as cst;
 imports simple:abstractsyntax;
 

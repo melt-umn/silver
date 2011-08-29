@@ -1,5 +1,5 @@
 {- A Universal set of common attributes for use in language descriptions -}
-grammar lib:lang;
+grammar silver:langutil;
 
 deprecated "This library is not deprecated, but users should be aware it is not stable and very subject to change!";
 

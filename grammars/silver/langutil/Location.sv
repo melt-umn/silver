@@ -1,5 +1,5 @@
 {- A Universal location information data structure -}
-grammar lib:lang;
+grammar silver:langutil;
 
 nonterminal Location with pp;
 

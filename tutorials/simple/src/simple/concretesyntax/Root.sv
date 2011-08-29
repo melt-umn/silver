@@ -7,7 +7,7 @@ exports simple:terminals;
  - Thus "import" (no s) statements for these grammars
  - are not needed (or allowed) in other files in this grammar.
  -}
-imports lib:lang;
+imports silver:langutil;
 imports simple:terminals as term;
 imports simple:abstractsyntax as ast;
 
@@ -17,7 +17,7 @@ imports simple:abstractsyntax as ast;
 nonterminal Root with pp, ast<ast:Root>;
 
 {- The use of ast<...> above is a "parameterized attribute"
- - The 'ast' attribute is declared in lib:lang.
+ - The 'ast' attribute is declared in silver:langutil.
  -
  - 'ast:Root' is the nonterminal Root from our abstract syntax.
  - it is accessed via the namespace 'ast' because we used "as ast"
