@@ -30,6 +30,9 @@ equalityTest ( head(1 :: error("demanded tail!!")), 1, Integer, performance_test
 equalityTest ( head([1] ++ error("demanded tail!!")), 1, Integer, performance_tests ) ;
 equalityTest ( null([1] ++ error("demanded tail!!")), false, Boolean, performance_tests ) ;
 equalityTest ( tail([error("demanded head!!")]), [], [Integer], performance_tests ) ;
+equalityTest ( head((1 :: error("demaned tail1")) ++ error("demanded tail2")), 1, Integer, performance_tests ) ;
+equalityTest ( head((1 :: error("demaned tail1")) ++ error("demanded tail2") ++ 2 :: error("demanded tail3")), 1, Integer, performance_tests ) ;
+equalityTest ( head(((1 :: error("demaned tail1")) ++ error("demanded tail2")) ++ 2 :: error("demanded tail3")), 1, Integer, performance_tests ) ;
 
 global nolist :: [Integer] = error ("oops!");
 
