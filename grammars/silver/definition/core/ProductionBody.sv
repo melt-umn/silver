@@ -385,6 +385,7 @@ top::DefLHS ::= q::Decorated QName
   top.errors := if top.isSynthesizedDefinition
                 then [err(q.location, "Cannot define synthesized attribute on child " ++ q.pp)]
                 else [];
+                
   top.typerep = q.lookupValue.typerep;
 }
 

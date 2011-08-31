@@ -186,6 +186,20 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
        else [];
 }
 
+aspect production childDefLHS
+top::DefLHS ::= q::Decorated QName
+{
+  top.errors <- if top.typerep.isDecorable then []
+                else [err(top.location, "Inherited attributes can only be defined on (undecorated) nonterminals.")];
+}
+
+aspect production localDefLHS
+top::DefLHS ::= q::Decorated QName
+{
+  top.errors <- if top.typerep.isDecorable then []
+                else [err(top.location, "Inherited attributes can only be defined on (undecorated) nonterminals.")];
+}
+
 aspect production localValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
