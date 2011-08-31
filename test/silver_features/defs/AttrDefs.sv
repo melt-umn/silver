@@ -56,3 +56,43 @@ wrongCode "Undeclared type 'a'" {
 }
 
 
+abstract production goodEqs
+top::Foo ::= a::Foo b::Decorated Foo e::Integer
+{
+  a.bar = "";
+  
+  production attribute c :: Foo;
+  c = a;
+  c.bar = "";
+  
+  production attribute d :: Decorated Foo;
+  d = b;
+}
+
+wrongCode "Inherited attributes can only be defined on" {
+ abstract production badEqs
+ top::Foo ::= a::Foo b::Decorated Foo e::Integer
+ {
+  b.bar = "";
+ }
+}
+
+wrongCode "Inherited attributes can only be defined on" {
+ abstract production badEqs
+ top::Foo ::= a::Foo b::Decorated Foo e::Integer
+ {
+  e.bar = "";
+ }
+}
+
+wrongCode "Inherited attributes can only be defined on" {
+ abstract production badEqs
+ top::Foo ::= a::Foo b::Decorated Foo e::Integer
+ {
+  production attribute d :: Decorated Foo;
+  d = b;
+  d.bar = "";
+ }
+}
+
+
