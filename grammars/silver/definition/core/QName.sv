@@ -8,13 +8,7 @@ nonterminal QName with name, location, grammarName, file, env, pp;
  - Qualified names where the LAST name has an upper case first letter.
  -}
 nonterminal QNameUpper with name, location, grammarName, file, env, pp;
-{--
- - Qualified names with an optional type list following it.
- -}
-nonterminal QNameWithTL with location, grammarName, file, env, pp, qname, typelist;
 
-synthesized attribute qname :: Decorated QName;
-synthesized attribute typelist :: Decorated TypeList;
 synthesized attribute dcls :: [Decorated DclInfo];
 
 function qName
@@ -109,22 +103,4 @@ top::QNameUpper ::= id::Name ':' qn::QNameUpper
   
   top.lookupType = decorate customLookup("type", getTypeDcl, top.name, top.location) with { env = top.env; };
 }
-
-
-
-concrete production qNameWithoutTL
-top::QNameWithTL ::= q::QName
-{
-  top.pp = q.pp;
-  forwards to qNameWithTL(q, '<', typeListNone(), '>');
-}
-concrete production qNameWithTL
-top::QNameWithTL ::= q::QName '<' tl::TypeList '>'
-{
-  top.pp = q.pp ++ "<" ++ tl.pp ++ ">";
-  top.location = q.location;
-  top.qname = q;
-  top.typelist = tl;
-}
-
 

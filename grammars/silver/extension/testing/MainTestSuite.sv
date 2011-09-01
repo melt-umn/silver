@@ -23,7 +23,7 @@ ag::AGDcl ::= kwd::'makeTestSuite'  name::IdLower_t ';'
     -- t::TestSuite ::=
     productionSignatureEmptyRHS (
      productionLHS ( mkName("t"), '::', 
-                     nominalType( qNameUpperId (terminal(IdUpper_t,"TestSuite"))) ) ,
+                     nominalType( qNameUpperId (terminal(IdUpper_t,"TestSuite")), botlNone()) ) ,
      '::=' ) ,
     -- { ... body
     defaultProductionBody (
@@ -36,7 +36,7 @@ ag::AGDcl ::= kwd::'makeTestSuite'  name::IdLower_t ';'
        -- h::ProductionStmt -- prod attr ...
        collectionAttributeDclProd ('production', 'attribute',
          mkName("testsToPerform"), '::',
-          listType ( '[', nominalType( qNameUpperId (terminal(IdUpper_t,"Test"))), ']' ),
+          listType ( '[', nominalType( qNameUpperId (terminal(IdUpper_t,"Test")), botlNone()), ']' ),
           'with', plusplusOperator('++'), ';') ,
        productionStmts (
         --h::ProductionStmt -- testsToPerform = ...
@@ -71,9 +71,9 @@ ag::AGDcl ::= kwd::'mainTestSuite'  name::IdLower_t ';'
     -- IOVal<Integer> ::= args::[String]  mainIO::IO
     functionSignature (  
      functionLHS ( 
-       nominalTypeWithParams( 
-         qNameId ( nameIdLower ( terminal(IdLower_t, "IOVal"))) ,
-         '<', typeListSingle(integerType('Integer')), '>' ) ) ,
+       nominalType( 
+         qNameUpperId ( terminal(IdUpper_t, "IOVal")) ,
+         botlSome('<', typeListSingle(integerType('Integer')), '>' )) ) ,
      '::=' ,
      productionRHSCons (  
       productionRHSElemType ( listType( '[', stringType('String'), ']') ) ,
@@ -91,7 +91,7 @@ ag::AGDcl ::= kwd::'mainTestSuite'  name::IdLower_t ';'
      --  local testResults :: TestSuite ;
      localAttributeDcl (
       'local', 'attribute', nameIdLower(terminal(IdLower_t,"testResults")), '::',
-      nominalType( qNameUpperId (terminal(IdUpper_t,"TestSuite"))), ';'
+      nominalType( qNameUpperId (terminal(IdUpper_t,"TestSuite")), botlNone()), ';'
      ),
      productionStmtsCons (
       -- testResults = name()

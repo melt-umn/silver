@@ -8,25 +8,22 @@ import silver:definition:type;
 
 terminal AutoCopy_kwd 'autocopy' lexer classes {KEYWORD};
 
-concrete production attributeDclAutoEmpty
-top::AGDcl ::= 'autocopy' 'attribute' a::Name '::' te::Type ';'
-{
-  forwards to attributeDclAuto($1,$2,a,'<',typeListNone(),'>', $4, te, $6);
-}
-
 concrete production attributeDclAuto
-top::AGDcl ::= 'autocopy' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type ';'
+top::AGDcl ::= 'autocopy' 'attribute' a::Name botl::BracketedOptTypeList '::' te::Type ';'
 {
-  top.pp = "autocopy attribute " ++ a.pp ++ " :: " ++ te.pp ++ ";";
+  top.pp = "autocopy attribute " ++ a.pp ++ botl.pp ++ " :: " ++ te.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
+  production attribute tl :: Decorated TypeList;
+  tl = botl.typelist;
+
   top.defs = addAutocopyDcl(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, emptyDefs());
 
 --------
-  tl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
+  botl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
                         top.env);
   te.env = tl.env;
   top.errors <- if containsDuplicates(tl.lexicalTypeVariables)
@@ -49,6 +46,6 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type
 
   top.errors := te.errors;
   
-  forwards to attributeDclInh(terminal(Inherited_kwd, "inherited", $1), $2, a, $4, tl, $6, $7, te, $9);
+  forwards to attributeDclInh(terminal(Inherited_kwd, "inherited", $1), $2, a, botl, $5, te, $7);
 }
 

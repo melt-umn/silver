@@ -16,8 +16,8 @@ top::Type ::= '[' te::Type ']'
   top.typerep = listTypeExp(te.typerep);
 
   forwards to refType('Decorated', 
-                   nominalTypeWithParams(qNameId(nameIdLower(terminal(IdLower_t, "core:List"))),
-                                    '<', typeListSingle(te), '>'));
+                   nominalType(qNameUpperId(terminal(IdUpper_t, "core:List")),
+                                    botlSome('<', typeListSingle(te), '>')));
 }
 
 -- The expressions -------------------------------------------------------------

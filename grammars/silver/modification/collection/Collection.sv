@@ -116,24 +116,22 @@ top::Operation ::=
 }
 
 --- Declarations ---------------------------------------------------------------
-concrete production collectionAttributeDclSynEmpty
-top::AGDcl ::= 'synthesized' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
-{
-  forwards to collectionAttributeDclSyn($1,$2,a,'<',typeListNone(),'>',$4, te, $6, q, $8);
-}
 concrete production collectionAttributeDclSyn
-top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type 'with' q::NameOrBOperator ';'
+top::AGDcl ::= 'synthesized' 'attribute' a::Name botl::BracketedOptTypeList '::' te::Type 'with' q::NameOrBOperator ';'
 {
-  top.pp = "synthesized attribute " ++ a.name ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
+  top.pp = "synthesized attribute " ++ a.name ++ botl.pp ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
   top.location = loc(top.file, $1.line, $1.column);
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
+
+  production attribute tl :: Decorated TypeList;
+  tl = botl.typelist;
 
   top.defs = addSynColDcl(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation, emptyDefs());
 
 --------
-  tl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
+  botl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
                         top.env);
   te.env = tl.env;
   top.errors <- if containsDuplicates(tl.lexicalTypeVariables)
@@ -150,27 +148,25 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::T
   q.operatorForType = te.typerep;
   top.errors := te.errors ++ q.errors ++ tl.errors;
 
-  forwards to attributeDclSyn($1, $2, a, $4, tl, $6, $7, te, $11);
+  forwards to attributeDclSyn($1, $2, a, botl, $5, te, $9);
 }
 
-concrete production collectionAttributeDclInhEmpty
-top::AGDcl ::= 'inherited' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
-{
-  forwards to collectionAttributeDclInh($1,$2,a,'<',typeListNone(),'>',$4, te, $6, q, $8);
-}
 concrete production collectionAttributeDclInh
-top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type 'with' q::NameOrBOperator ';'
+top::AGDcl ::= 'inherited' 'attribute' a::Name botl::BracketedOptTypeList '::' te::Type 'with' q::NameOrBOperator ';'
 {
-  top.pp = "inherited attribute " ++ a.name ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
+  top.pp = "inherited attribute " ++ a.name ++ botl.pp ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
   top.location = loc(top.file, $1.line, $1.column);
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
+  production attribute tl :: Decorated TypeList;
+  tl = botl.typelist;
+
   top.defs = addInhColDcl(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation, emptyDefs());
 
 --------
-  tl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
+  botl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
                         top.env);
   te.env = tl.env;
   top.errors <- if containsDuplicates(tl.lexicalTypeVariables)
@@ -187,7 +183,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Typ
   q.operatorForType = te.typerep;
   top.errors := te.errors ++ q.errors ++ tl.errors;
 
-  forwards to attributeDclInh($1, $2, a, $4, tl, $6, $7, te, $11);
+  forwards to attributeDclInh($1, $2, a, botl, $5, te, $9);
 }
 
 
