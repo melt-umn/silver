@@ -8,6 +8,7 @@ import stdlib:cmdargs;
 import stdlib:deque;
 import stdlib:pplib;
 import stdlib:rawtreeset;
+import stdlib:xml;
 
 
 mainTestSuite core_tests ;
