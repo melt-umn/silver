@@ -7,6 +7,7 @@ import stdlib:treemap; -- run test tests, too.
 import stdlib:cmdargs;
 import stdlib:deque;
 import stdlib:pplib;
+import stdlib:rawtreeset;
 
 
 mainTestSuite core_tests ;
