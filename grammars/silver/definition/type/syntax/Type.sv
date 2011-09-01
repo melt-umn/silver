@@ -1,10 +1,10 @@
 grammar silver:definition:type:syntax;
 
-import silver:definition:core;
-import silver:definition:type;
-import silver:definition:env;
-import silver:util;
-import silver:definition:type:gatherfreevars;
+imports silver:definition:core;
+imports silver:definition:type;
+imports silver:definition:env;
+imports silver:util;
+imports silver:definition:type:gatherfreevars;
 
 nonterminal Type      with location, grammarName, file, errors, env, pp, typerep, lexicalTypeVariables;
 nonterminal Signature with location, grammarName, file, errors, env, pp, types,   lexicalTypeVariables;
@@ -104,27 +104,41 @@ top::Type ::= q::QNameUpper botl::BracketedOptTypeList
 {
   top.pp = q.pp ++ botl.pp;
   top.location = q.location;
-
-  top.typerep = case q.lookupType.typerep of
-                  nonterminalTypeExp(ofn, op) -> nonterminalTypeExp(ofn, botl.typelist.types)
-                | _ -> if null(botl.typelist.types)
-                       then q.lookupType.typerep
-                       else errorType()
-                end;
-
-  top.errors := q.lookupType.errors ++ botl.typelist.errors;
-  
-  top.errors <- case q.lookupType.typerep of
-                  nonterminalTypeExp(_,orig) ->
-                       if length(orig) != length(botl.typelist.types)
-                       then [err(top.location, q.pp ++ " has " ++ toString(length(orig)) ++ " type variables, but there are " ++ toString(length(botl.typelist.types)) ++ " supplied here.")]
-                       else []
-                | _ -> if null(botl.typelist.types)
-                       then []
-                       else [err(top.location, q.pp ++ " is not a nonterminal, and cannot be parameterized by types")]
-                end;
-
+  top.errors <- q.lookupType.errors;
   top.lexicalTypeVariables = botl.typelist.lexicalTypeVariables;
+
+  forwards to if null(q.lookupType.dcls)
+              then nominalTypeError(q, botl)
+              else q.lookupType.typerep.typeHandler(q, botl);
+}
+abstract production nominalTypeError
+top::Type ::= q::Decorated QNameUpper botl::BracketedOptTypeList
+{
+  top.errors := []; -- already taken care of
+  top.typerep = errorType();
+}
+abstract production nominalTypeNormal
+top::Type ::= q::Decorated QNameUpper botl::BracketedOptTypeList
+{
+  top.errors := if null(botl.typelist.types) then []
+                else [err(q.location, q.pp ++ " is not a nonterminal, and cannot be parameterized by types")];
+  top.typerep = q.lookupType.typerep;
+}
+abstract production nominalTypeNonterminal
+top::Type ::= q::Decorated QNameUpper botl::BracketedOptTypeList
+{
+  top.errors := case q.lookupType.typerep of
+                  nonterminalTypeExp(ofn, op) ->
+                     if length(op) == length(botl.typelist.types)
+                     then []
+                     else [err(top.location, q.pp ++ " has " ++ toString(length(op)) ++ " type variables, but there are " ++ toString(length(botl.typelist.types)) ++ " supplied here.")]
+                end;
+  top.errors <- botl.typelist.errors;
+  top.typerep = case q.lookupType.typerep of
+                  nonterminalTypeExp(ofn, op) -> if length(op) == length(botl.typelist.types)
+                                                 then nonterminalTypeExp(ofn, botl.typelist.types)
+                                                 else freshenCompletely(q.lookupType.typerep)
+                end;
 }
 
 concrete production typeVariableType

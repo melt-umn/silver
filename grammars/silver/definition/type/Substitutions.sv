@@ -76,6 +76,7 @@ Maybe<TypeExp> ::= tv::TyVar s::Substitution
 
 --------------------------------------------------------------------------------
 
+-- These are for ordinary tyvar substitutions.
 autocopy attribute substitution :: Substitution occurs on TypeExp;
 synthesized attribute substituted :: TypeExp occurs on TypeExp;
 

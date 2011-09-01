@@ -7,7 +7,7 @@ import silver:translation:java:type;
 import silver:modification:ffi;
 
 aspect production foreignTypeExp
-top::TypeExp ::= fn::String
+top::TypeExp ::= fn::String params::[TypeExp]
 {
   top.transType = "Object";
   top.transClassType = "Object";
