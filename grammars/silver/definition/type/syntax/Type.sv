@@ -9,6 +9,7 @@ import silver:definition:type:gatherfreevars;
 nonterminal Type      with location, grammarName, file, errors, env, pp, typerep, lexicalTypeVariables;
 nonterminal Signature with location, grammarName, file, errors, env, pp, types,   lexicalTypeVariables;
 nonterminal TypeList  with location, grammarName, file, errors, env, pp, types,   lexicalTypeVariables, errorsTyVars, freeVariables;
+nonterminal BracketedOptTypeList with grammarName, file, env, pp, typelist;
 
 synthesized attribute types :: [TypeExp];
 
@@ -18,6 +19,9 @@ synthesized attribute lexicalTypeVariables :: [String];
 
 -- These attributes are used if we're using the TypeList as type variables-only.
 synthesized attribute errorsTyVars :: [Decorated Message] with ++;
+
+-- For bracketed lists
+synthesized attribute typelist :: Decorated TypeList;
 
 -- TODO: This function should go away because it doesn't do location correctly.
 -- But for now, we'll use it. It might be easier to get rid of once we know exactly
@@ -96,48 +100,31 @@ top::Type ::= 'Boolean'
 }
 
 concrete production nominalType
-top::Type ::= q::QNameUpper
+top::Type ::= q::QNameUpper botl::BracketedOptTypeList
 {
-  top.pp = q.pp;
-  top.location = q.location;
-
-  top.typerep = q.lookupType.typerep;
-
-  top.errors := q.lookupType.errors;
-
-  top.errors <- case q.lookupType.typerep of
-                  nonterminalTypeExp(_,orig) ->
-                       if !null(orig)
-                       then [err(top.location, q.pp ++ " has " ++ toString(length(orig)) ++ " type variables, but there are 0 supplied here.")]
-                       else []
-                | _ -> []
-                end;
-
-  top.lexicalTypeVariables = [];
-}
-
-concrete production nominalTypeWithParams
-top::Type ::= q::QName '<' tl::TypeList '>'
-{
-  top.pp = q.pp ++ "<" ++ tl.pp ++ ">";
+  top.pp = q.pp ++ botl.pp;
   top.location = q.location;
 
   top.typerep = case q.lookupType.typerep of
-                  nonterminalTypeExp(ofn, op) -> nonterminalTypeExp(ofn, tl.types)
-                | _ -> errorType()
+                  nonterminalTypeExp(ofn, op) -> nonterminalTypeExp(ofn, botl.typelist.types)
+                | _ -> if null(botl.typelist.types)
+                       then q.lookupType.typerep
+                       else errorType()
                 end;
 
-  top.errors := q.lookupType.errors ++ tl.errors;
+  top.errors := q.lookupType.errors ++ botl.typelist.errors;
   
   top.errors <- case q.lookupType.typerep of
                   nonterminalTypeExp(_,orig) ->
-                       if length(orig) != length(tl.types)
-                       then [err(top.location, q.pp ++ " has " ++ toString(length(orig)) ++ " type variables, but there are " ++ toString(length(tl.types)) ++ " supplied here.")]
+                       if length(orig) != length(botl.typelist.types)
+                       then [err(top.location, q.pp ++ " has " ++ toString(length(orig)) ++ " type variables, but there are " ++ toString(length(botl.typelist.types)) ++ " supplied here.")]
                        else []
-                | _ -> [err(top.location, q.pp ++ " is not a nonterminal, and cannot be parameterized by types")]
+                | _ -> if null(botl.typelist.types)
+                       then []
+                       else [err(top.location, q.pp ++ " is not a nonterminal, and cannot be parameterized by types")]
                 end;
 
-  top.lexicalTypeVariables = tl.lexicalTypeVariables;
+  top.lexicalTypeVariables = botl.typelist.lexicalTypeVariables;
 }
 
 concrete production typeVariableType
@@ -224,6 +211,22 @@ top::Signature ::= t::Type '::=' list::TypeList
   top.types = [t.typerep] ++ list.types;
 
   top.lexicalTypeVariables = t.lexicalTypeVariables ++ list.lexicalTypeVariables;
+}
+
+-- Bracketed Optional Type Lists -----------------------------------------------
+
+concrete production botlNone
+top::BracketedOptTypeList ::=
+{
+  top.pp = "";
+  forwards to botlSome('<', typeListNone(), '>');
+}
+
+concrete production botlSome
+top::BracketedOptTypeList ::= '<' tl::TypeList '>'
+{
+  top.pp = "<" ++ tl.pp ++ ">";
+  top.typelist = tl;
 }
 
 -- TypeLists -------------------------------------------------------------------

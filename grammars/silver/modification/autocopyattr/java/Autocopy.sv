@@ -13,7 +13,7 @@ import silver:util;
 
 
 aspect production attributeDclAuto
-top::AGDcl ::= 'autocopy' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type ';'
+top::AGDcl ::= 'autocopy' 'attribute' a::Name botl::BracketedOptTypeList '::' te::Type ';'
 {
   local attribute className :: String;
   className = "D" ++ a.name;
@@ -36,11 +36,11 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type
 }
 
 aspect production attributionDcl
-top::AGDcl ::= 'attribute' at::QNameWithTL 'occurs' 'on' nt::QNameWithTL ';'
+top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
 {
   top.setupInh <- 
-    case at.qname.lookupAttribute.dcl of
-      autocopyDcl(_,_,_,_,_) ->  "\t\t" ++ makeNTClassName(nt.qname.lookupType.fullName) ++ ".decorators.add(" ++ makeDecoratorClassName(at.qname.lookupAttribute.fullName) ++ ".singleton);\n"
+    case at.lookupAttribute.dcl of
+      autocopyDcl(_,_,_,_,_) ->  "\t\t" ++ makeNTClassName(nt.lookupType.fullName) ++ ".decorators.add(" ++ makeDecoratorClassName(at.lookupAttribute.fullName) ++ ".singleton);\n"
     | _ -> ""
     end;
 }

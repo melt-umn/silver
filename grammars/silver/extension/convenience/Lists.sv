@@ -2,6 +2,18 @@ grammar silver:extension:convenience;
 import silver:definition:core;
 import silver:definition:type:syntax;
 
+nonterminal QNameWithTL with pp,qnwtQN, qnwtTL;
+synthesized attribute qnwtQN :: QName;
+synthesized attribute qnwtTL :: BracketedOptTypeList;
+
+concrete production qNameWithTL
+top::QNameWithTL ::= qn::QName tl::BracketedOptTypeList
+{
+  top.pp = qn.pp ++ tl.pp;
+  top.qnwtQN = qn;
+  top.qnwtTL = tl;
+}
+
 {- QNames2 is needed because we would otherwise have a syntactic ambiguity with
    the ordinary declarations. QNames2 requires 2 or more QNames, so that if they
    list just one, then it goes to the ordinary, non-convenience extension form.
@@ -57,7 +69,7 @@ AGDcl ::= l::Integer c::Integer at::QNameWithTL nts::[QNameWithTL]
   return if null(nts) 
 	 then agDclNone()
 	 else agDclAppend(
-	        attributionDcl(attr_kwd, at, occurs_kwd, on_kwd, head(nts), ';'),
+	        attributionDcl(attr_kwd, at.qnwtQN, at.qnwtTL, occurs_kwd, on_kwd, head(nts).qnwtQN, head(nts).qnwtTL, ';'),
 		makeOccursDclsHelp(l, c, at, tail(nts)));
 
   local attribute attr_kwd :: Attribute_kwd ;

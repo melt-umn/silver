@@ -1,7 +1,7 @@
 grammar silver:translation:java:core;
 
 aspect production defaultNonterminalDcl
-top::AGDcl ::= id::Name tl::TypeList
+top::AGDcl ::= id::Name botl::BracketedOptTypeList
 {
   local attribute className :: String;
   className = "N" ++ id.name;

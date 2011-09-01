@@ -110,7 +110,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
 }
 
 aspect production collectionAttributeDclSyn
-top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type 'with' q::NameOrBOperator ';'
+top::AGDcl ::= 'synthesized' 'attribute' a::Name botl::BracketedOptTypeList '::' te::Type 'with' q::NameOrBOperator ';'
 {
   local attribute className :: String;
   className = "CA" ++ a.name;
@@ -141,7 +141,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name '<' tl::TypeList '>' '::' te::T
 }
 
 aspect production collectionAttributeDclInh
-top::AGDcl ::= 'inherited' 'attribute' a::Name '<' tl::TypeList '>' '::' te::Type 'with' q::NameOrBOperator ';'
+top::AGDcl ::= 'inherited' 'attribute' a::Name botl::BracketedOptTypeList '::' te::Type 'with' q::NameOrBOperator ';'
 {
   local attribute className :: String;
   className = "CA" ++ a.name;
