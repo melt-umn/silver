@@ -1,6 +1,5 @@
 grammar silver:definition:type:syntax;
 
-import silver:definition:core only IDENTIFIER;
 
 lexer class TYPE_KEYWORD dominates IDENTIFIER;
 

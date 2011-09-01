@@ -1,6 +1,4 @@
 grammar silver:modification:ffi;
-import silver:definition:core;
-import silver:definition:env;
 
 nonterminal FFIDefs with location, grammarName, file, errors, signature, env, pp;
 nonterminal FFIDef with location, grammarName, file, errors, signature, env, pp;
