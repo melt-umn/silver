@@ -21,9 +21,7 @@
 
   <target name='build' depends='init'>
     <javac debug='on' source='1.5' srcdir='${src}:${grammars}' destdir='${bin}' includeantruntime='false'>
-      <include name='common/*.java' />
-      <include name='common/exceptions/*.java' />
-      <include name='common/xml/*.java' />
+      <include name='common/**/*.java' />
       <include name='core/*.java' />
       <include name='lib/xml/ast/*.java' />
       <include name='silver/*.java' />
@@ -32,9 +30,7 @@
   
   <target name='dist' depends='build'>
     <jar destfile='${dist}/SilverRuntime.jar' basedir='${bin}' compress='true' level='9'>
-      <include name='common/*.class' />
-      <include name='common/exceptions/*.class' />
-      <include name='common/xml/*.class' />
+      <include name='common/**/*.class' />
       <manifest>
         <attribute name='Built-By' value='${user.name}' />
         <section name='version'>

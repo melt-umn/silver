@@ -7,6 +7,8 @@ import java.util.TreeMap;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.NamespaceContext;
 
+import common.javainterop.ConsCellCollection;
+
 import core.NPair;
 
 public class PairListNSContext implements NamespaceContext {
@@ -19,19 +21,14 @@ public class PairListNSContext implements NamespaceContext {
 	 * @param current a key-value pair of prefixes to namespace URIs
 	 */
 	public PairListNSContext(common.ConsCell current) {
-		
 		resolver = new TreeMap<String, String>();
-		while(!current.nil()) {
-			core.NPair elem = (NPair) current.head();
-			
+		
+		for(NPair elem : new ConsCellCollection<NPair>(current)) {
 			String fst = elem.getChild(0).toString();
 			String snd = elem.getChild(1).toString();
 			
 			resolver.put(fst, snd);
-			
-			current = current.tail();
 		}
-		
 	}
 	
 	@Override
