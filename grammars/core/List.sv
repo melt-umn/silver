@@ -279,9 +279,13 @@ Pair<[a] [a]> ::= eq::Function(Boolean ::= a a) f::a l::[a]
          else pair(head(l) :: recurse.fst, recurse.snd);
 }
 
+{--
+ - Inserts the separator in between all elements of the list.
+ -}
 function intersperse 
 [a] ::= sep::a xs::[a]
 { return if null(xs) then [ ]
+         else if null(tail(xs)) then xs
          else head(xs) :: sep :: intersperse(sep, tail(xs)) ;
 }
 

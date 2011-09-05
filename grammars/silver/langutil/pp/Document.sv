@@ -2,8 +2,6 @@ grammar silver:langutil:pp;
 
 import silver:util:deque;
 
-import lib:extcore; -- TEMP TODO
-
 function show
 String ::= width::Integer d::Document
 {
@@ -26,19 +24,47 @@ nonterminal Document with indent, width,
 autocopy attribute indent :: Integer;
 autocopy attribute width :: Integer;
 
+-- The scanning process
 inherited attribute inPosition :: Integer;
 inherited attribute inDq :: Deque<Pair<Integer [Boolean]>>;
-inherited attribute inCHorizontals :: [Boolean];
-inherited attribute inRemaining :: Integer;
-
 synthesized attribute outPosition :: Integer;
 synthesized attribute outDq :: Deque<Pair<Integer [Boolean]>>;
+
+synthesized attribute horizontals :: [Boolean]; -- output of scanning process
+
+-- The printing process
+inherited attribute inCHorizontals :: [Boolean];
+inherited attribute inRemaining :: Integer;
 synthesized attribute outCHorizontals :: [Boolean];
 synthesized attribute outRemaining :: Integer;
 
-synthesized attribute result :: String;
-synthesized attribute horizontals :: [Boolean];
+synthesized attribute result :: String; -- output of printing process
 
+{-
+Some notes on deciphering all this:
+
+in/out Position is some hypothetical value that's part of the "scanning process"
+that doesn't represent real horizontal position.
+
+in/out Dq is a deque that represent all current "pending" groups, top to bottom.
+It's a deque because we might "decide" groups higher up in the tree, as well as
+at the bottom.  Wholy a part of the "scanning process."
+
+in/out CHorizontals is a list of H/V values that will be consumed by groups
+during the "printing process."
+
+in/out Remaining records real horizontal position of the "printing process."
+(Also peeked at by the scanning process)
+
+horizontals is the initially produced H/V values by the "scanning process."
+It's essentially a list of booleans produced by a pre-order scan of the tree,
+meant to be consumed by a pre-order scan of the tree.
+-}
+
+
+{--
+ - Literal text. (Do not use with newlines!)
+ -}
 abstract production text
 top::Document ::= s::String
 {
@@ -51,25 +77,11 @@ top::Document ::= s::String
 
   top.result = s;
   top.horizontals = pr.snd;
---  top.horizontals = unsafeTrace(pr.snd, print("text trace: horizontal: " ++ toStringFromList(toStringFromBoolean, pr.snd) ++ "\n", unsafeIO()));
 }
 
-abstract production line
-top::Document ::= 
-{
-  local pr :: Pair<Deque<Pair<Integer [Boolean]>> [Boolean]> = prune(top.outPosition, top.inDq);
-  local horizontal :: Boolean = head(top.inCHorizontals);
-  
-  top.outPosition = top.inPosition + 1;
-  top.outDq = pr.fst;
-  top.outCHorizontals = top.inCHorizontals;
-  top.outRemaining = if horizontal then top.inRemaining - 1 else top.width - top.indent;
-
-  top.result = if horizontal then " " else "\n" ++ replicate(top.indent, " ");
-  top.horizontals = pr.snd;
---  top.horizontals = unsafeTrace(pr.snd, print("line trace: horizontal: " ++ toStringFromList(toStringFromBoolean, pr.snd) ++ "\n", unsafeIO()));
-}
-
+{--
+ - Concatenate two documents.
+ -}
 abstract production cat
 top::Document ::= d1::Document d2::Document
 {
@@ -90,9 +102,31 @@ top::Document ::= d1::Document d2::Document
 
   top.result = d1.result ++ d2.result;
   top.horizontals = d1.horizontals ++ d2.horizontals;
---  top.horizontals = unsafeTrace(d1.horizontals ++ d2.horizontals, print("cat trace: horizontal: " ++ toStringFromList(toStringFromBoolean, d1.horizontals ++ d2.horizontals) ++ "\n", unsafeIO()));
 }
 
+{--
+ - Either a space, or a linebreak plus indentation.
+ - The behavior of EVERY line in a group is identical.
+ -}
+abstract production line
+top::Document ::= 
+{
+  local pr :: Pair<Deque<Pair<Integer [Boolean]>> [Boolean]> = prune(top.outPosition, top.inDq);
+  local horizontal :: Boolean = head(top.inCHorizontals);
+  
+  top.outPosition = top.inPosition + 1;
+  top.outDq = pr.fst;
+  top.outCHorizontals = top.inCHorizontals;
+  top.outRemaining = if horizontal then top.inRemaining - 1 else top.width - top.indent;
+
+  top.result = if horizontal then " " else "\n" ++ replicate(top.indent, " ");
+  top.horizontals = pr.snd;
+}
+
+{--
+ - Does nothing but control the behavior of all lines that have this group
+ - as their closest enclosing group.
+ -}
 abstract production group
 top::Document ::= d::Document
 {
@@ -114,9 +148,11 @@ top::Document ::= d::Document
 
   top.result = d.result;
   top.horizontals = d.horizontals ++ le.snd;
---  top.horizontals = unsafeTrace(d.horizontals ++ le.snd, print("group trace: horizontal: " ++ toStringFromList(toStringFromBoolean, d.horizontals ++ le.snd) ++ "\n", unsafeIO()));
 }
 
+{--
+ - Increase the indentation level (but does not directly indent itself!)
+ -}
 abstract production nest
 top::Document ::= depth::Integer d::Document
 {
@@ -130,6 +166,13 @@ top::Document ::=
   forwards to text("");
 }
 
+abstract production box
+top::Document ::= d::Document
+{
+  forwards to d;
+  -- top.inPosition doesn't represent our horizontal position in actual printing
+  forward.indent = top.width - top.inRemaining;
+}
 
 --------------------------------------------------------------------------------
 
