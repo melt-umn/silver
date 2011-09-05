@@ -91,5 +91,11 @@ equalityTest ( "\n" ++ show(20, doc6), "\n(cons (list foo bar baz)\n      (cons 
 equalityTest ( "\n" ++ show(25, doc6), "\n(cons (list foo bar baz) (cons (hello world)\n                               (more qwerty)))", String, core_tests ) ;
 equalityTest ( "\n" ++ show(80, doc6), "\n(cons (list foo bar baz) (cons (hello world) (more qwerty)))", String, core_tests ) ;
 
+global doc7 :: Document =
+  group(cat(cat(cat(cat(text(" 1234567890"), realLine()), text(" 1234567890")), line()), text("1234567890")));
+
+equalityTest ( "\n" ++ show(22, doc7), "\n 1234567890\n 1234567890 1234567890", String, core_tests ) ;
+equalityTest ( "\n" ++ show(21, doc7), "\n 1234567890\n 1234567890\n1234567890", String, core_tests ) ;
+
 
 

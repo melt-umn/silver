@@ -174,6 +174,19 @@ top::Document ::= d::Document
   forward.indent = top.width - top.inRemaining;
 }
 
+abstract production realLine
+top::Document ::= 
+{
+  -- I'm not 100% on this combinator
+  top.outPosition = top.inPosition + (top.inRemaining - top.outRemaining);
+  top.outDq = top.inDq;
+  top.outCHorizontals = top.inCHorizontals;
+  top.outRemaining = top.width - top.indent;
+
+  top.result = "\n" ++ replicate(top.indent, " ");
+  top.horizontals = [];
+}
+
 --------------------------------------------------------------------------------
 
 function prune
