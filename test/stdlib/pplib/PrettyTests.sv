@@ -61,6 +61,7 @@ global doc4 :: Document =
 equalityTest ( show(20, doc4), "{poiu asdf lkjh }", String, core_tests ) ;
 equalityTest ( show(10, doc4), "{poiu\n   asdf\n   lkjh\n   }", String, core_tests ) ;
 
+-- TODO: move into the library?
 function args
 Document ::= d1::Document ds::[Document] dm::Document d2::Document
 {
@@ -96,6 +97,29 @@ global doc7 :: Document =
 
 equalityTest ( "\n" ++ show(22, doc7), "\n 1234567890\n 1234567890 1234567890", String, core_tests ) ;
 equalityTest ( "\n" ++ show(21, doc7), "\n 1234567890\n 1234567890\n1234567890", String, core_tests ) ;
+
+-- TODO: move into the library?
+function dgroup
+Document ::= d1::Document n::Integer ds::[Document] d2::Document
+{
+  -- care: the first line should be INSIDE the nest,
+  -- the second line should be OUTSIDE the next
+  -- both should be in the same group.
+  return cat(cat(d1, group(cat(nest(n, cat(line(),foldr_p(cat, notext(), intersperse(line(), ds)))), line()))), d2);
+}
+
+global doc8 :: Document =
+  cat(text("int main() "), dgroup(text("{"), 3, [text("stm1;"),text("stm2;"),text("stm3;"),text("stm4;"),text("stm5;")], text("}")));
+
+equalityTest ( "\n" ++ show(20, doc8), "\nint main() {\n   stm1;\n   stm2;\n   stm3;\n   stm4;\n   stm5;\n}", String, core_tests ) ;
+equalityTest ( "\n" ++ show(80, doc8), "\nint main() { stm1; stm2; stm3; stm4; stm5; }", String, core_tests ) ;
+
+global doc9 :: Document =
+  cat(text("int main() "), dgroup(text("{"), 3, [text("stm0;"),doc8,text("stm6;"),text("stm7;")], text("}")));
+
+equalityTest ( "\n" ++ show(20, doc9), "\nint main() {\n   stm0;\n   int main() {\n      stm1;\n      stm2;\n      stm3;\n      stm4;\n      stm5;\n   }\n   stm6;\n   stm7;\n}", String, core_tests ) ;
+equalityTest ( "\n" ++ show(60, doc9), "\nint main() {\n   stm0;\n   int main() { stm1; stm2; stm3; stm4; stm5; }\n   stm6;\n   stm7;\n}", String, core_tests ) ;
+
 
 
 
