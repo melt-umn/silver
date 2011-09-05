@@ -61,5 +61,35 @@ global doc4 :: Document =
 equalityTest ( show(20, doc4), "{poiu asdf lkjh }", String, core_tests ) ;
 equalityTest ( show(10, doc4), "{poiu\n   asdf\n   lkjh\n   }", String, core_tests ) ;
 
+function args
+Document ::= d1::Document ds::[Document] dm::Document d2::Document
+{
+  return cat(cat(d1, box(foldr_p(cat, text(""), intersperse(cat(dm, group(line())), ds)))), d2);
+}
+
+global doc5 :: Document =
+  cat(text("int decl"), args(text("("), [text("int arg1"), text("int arg2"), text("int arg3"), text("int arg4")], text(","), text(")")));
+
+equalityTest ( "\n" ++ show(0, doc5), "\nint decl(int arg1,\n         int arg2,\n         int arg3,\n         int arg4)", String, core_tests ) ;
+equalityTest ( "\n" ++ show(80, doc5), "\nint decl(int arg1, int arg2, int arg3, int arg4)", String, core_tests ) ;
+equalityTest ( "\n" ++ show(20, doc5), "\nint decl(int arg1, int arg2,\n         int arg3, int arg4)", String, core_tests ) ;
+equalityTest ( "\n" ++ show(30, doc5), "\nint decl(int arg1, int arg2, int arg3,\n         int arg4)", String, core_tests ) ;
+
+function sexp
+Document ::= s::String d::[Document]
+{
+  return cat(cat(text("(" ++ s ++ " "), args(notext(), d, notext(), notext())), text(")"));
+}
+
+global doc6 :: Document = 
+  sexp("cons", [sexp("list", [text("foo"), text("bar"), text("baz")]),
+                sexp("cons", [sexp("hello", [text("world")]),
+                              sexp("more", [text("qwerty")])])]);
+
+equalityTest ( "\n" ++ show(0, doc6), "\n(cons (list foo\n            bar\n            baz)\n      (cons (hello world)\n            (more qwerty)))", String, core_tests ) ;
+equalityTest ( "\n" ++ show(20, doc6), "\n(cons (list foo bar baz)\n      (cons (hello world)\n            (more qwerty)))", String, core_tests ) ;
+equalityTest ( "\n" ++ show(25, doc6), "\n(cons (list foo bar baz) (cons (hello world)\n                               (more qwerty)))", String, core_tests ) ;
+equalityTest ( "\n" ++ show(80, doc6), "\n(cons (list foo bar baz) (cons (hello world) (more qwerty)))", String, core_tests ) ;
+
 
 

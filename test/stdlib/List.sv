@@ -155,8 +155,10 @@ equalityTest ( head(tail(groupBy(equalsInteger, [1, 1, 2, 1, 2, 2]))),       [2]
 equalityTest ( map(listLength, groupBy(equalsInteger, [1, 1, 2, 1, 2, 2])),      [2,1,1,2],
                [Integer], core_tests ) ;
 
--- intersperse TODO
-
+-- intersperse
+equalityTest ( intersperse(1, [2,3,4,5]), [2,1,3,1,4,1,5], [Integer], core_tests ) ;
+equalityTest ( intersperse(1, [2]), [2], [Integer], core_tests ) ;
+equalityTest ( intersperse(1, []), [], [Integer], core_tests ) ;
 
 -- set operations
 equalityTest ( unionBy (equalsInteger, [], []), [],
