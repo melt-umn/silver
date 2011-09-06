@@ -1,6 +1,7 @@
 grammar simple:host:driver;
 
 import silver:langutil;
+import silver:langutil:pp;
 import simple:concretesyntax as cst;
 import simple:abstractsyntax as ast;
 
@@ -30,9 +31,9 @@ IO ::= args::String io_in::IO
   print_success = 
     print( "Command line arguments: " ++ args ++
            "\n\n" ++
-           "CST pretty print: \n" ++ r_cst.pp ++
+           "CST pretty print: \n" ++ r_cst.unparse ++
            "\n\n" ++ 
-           "AST pretty print: \n" ++ r_ast.pp ++
+           "AST pretty print: \n" ++ show(100, r_ast.pp) ++
            "\n\n" ++
            "Errors: " ++
            (if null(r_ast.errors)  then " No semantic errors!\n" 

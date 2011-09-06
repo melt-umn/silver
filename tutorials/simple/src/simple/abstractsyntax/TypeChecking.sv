@@ -4,7 +4,7 @@ grammar simple:abstractsyntax;
 abstract production locUnknown
 l::Location ::=
 {
-  l.pp = "??";
+  l.unparse = "??";
 }
 
 
@@ -83,10 +83,10 @@ e::Expr ::= l::Expr r::Expr
 {
   e.type = resolveNumericTypes (l.type, r.type);
   e.errors <- (if isNumeric(l.type) then []
-               else [err(locUnknown(), "Expression \"" ++ l.pp ++ 
+               else [err(locUnknown(), "Expression \"" ++ show(100,l.pp) ++ 
                       "\" must be of type Integer or Float.\n")]) ++
               (if isNumeric(r.type) then []
-               else [err(locUnknown(), "Expression \"" ++ r.pp ++ 
+               else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Integer or Float.\n")]);
 }
 aspect production sub
@@ -94,10 +94,10 @@ e::Expr ::= l::Expr r::Expr
 {
   e.type = resolveNumericTypes (l.type, r.type);
   e.errors <- (if isNumeric(l.type) then []
-               else [err(locUnknown(), "Expression \"" ++ l.pp ++ 
+               else [err(locUnknown(), "Expression \"" ++ show(100,l.pp) ++ 
                       "\" must be of type Integer or Float.\n")]) ++
               (if isNumeric(r.type) then []
-               else [err(locUnknown(), "Expression \"" ++ r.pp ++ 
+               else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Integer or Float.\n")]);
 }
 aspect production mul
@@ -105,10 +105,10 @@ e::Expr ::= l::Expr r::Expr
 {
   e.type = resolveNumericTypes (l.type, r.type);
   e.errors <- (if isNumeric(l.type) then []
-               else [err(locUnknown(), "Expression \"" ++ l.pp ++ 
+               else [err(locUnknown(), "Expression \"" ++ show(100,l.pp) ++ 
                       "\" must be of type Integer or Float.\n")]) ++
               (if isNumeric(r.type) then []
-               else [err(locUnknown(), "Expression \"" ++ r.pp ++ 
+               else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Integer or Float.\n")]);
 }
 aspect production div
@@ -116,10 +116,10 @@ e::Expr ::= l::Expr r::Expr
 {
   e.type = resolveNumericTypes (l.type, r.type);
   e.errors <- (if isNumeric(l.type) then []
-               else [err(locUnknown(), "Expression \"" ++ l.pp ++ 
+               else [err(locUnknown(), "Expression \"" ++ show(100,l.pp) ++ 
                       "\" must be of type Integer or Float.\n")]) ++
               (if isNumeric(r.type) then []
-               else [err(locUnknown(), "Expression \"" ++ r.pp ++ 
+               else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Integer or Float.\n")]);
 }
 
@@ -157,10 +157,10 @@ e::Expr ::= l::Expr r::Expr
 {
   e.type = booleanType();
   e.errors <- (if isNumeric(l.type) then []
-               else [err(locUnknown(), "Expression \"" ++ l.pp ++ 
+               else [err(locUnknown(), "Expression \"" ++ show(100,l.pp) ++ 
                       "\" must be of type Integer or Float.\n")]) ++
               (if isNumeric(r.type) then []
-               else [err(locUnknown(), "Expression \"" ++ r.pp ++ 
+               else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Integer or Float.\n")]);
 }
 aspect production lt
@@ -168,10 +168,10 @@ e::Expr ::= l::Expr r::Expr
 {
   e.type = booleanType();
   e.errors <- (if isNumeric(l.type) then []
-               else [err(locUnknown(), "Expression \"" ++ l.pp ++ 
+               else [err(locUnknown(), "Expression \"" ++ show(100,l.pp) ++ 
                       "\" must be of type Integer or Float.\n")]) ++
               (if isNumeric(r.type) then []
-               else [err(locUnknown(), "Expression \"" ++ r.pp ++ 
+               else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Integer or Float.\n")]);
 }
 
@@ -180,10 +180,10 @@ e::Expr ::= l::Expr r::Expr
 {
   e.type = booleanType();
   e.errors <- (if isBoolean(l.type) then []
-               else [err(locUnknown(), "Expression \"" ++ l.pp ++ 
+               else [err(locUnknown(), "Expression \"" ++ show(100,l.pp) ++ 
                       "\" must be of type Boolean.\n")]) ++
               (if isBoolean(r.type) then []
-               else [err(locUnknown(), "Expression \"" ++ r.pp ++ 
+               else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Boolean.\n")]);
 }
 
@@ -192,7 +192,7 @@ e::Expr ::= ne::Expr
 {
   e.type = booleanType();
   e.errors <- if isBoolean(ne.type) then []
-              else [err(locUnknown(), "Expression \"" ++ ne.pp ++ 
+              else [err(locUnknown(), "Expression \"" ++ show(100,ne.pp) ++ 
                      "\" must be of type Boolean.\n")];
 }
 
@@ -211,7 +211,7 @@ aspect production ifthen
 s::Stmt ::= c::Expr t::Stmt 
 {
   s.errors <- if isBoolean(c.type) then []
-              else [err(locUnknown(), "Expression \"" ++ c.pp ++ 
+              else [err(locUnknown(), "Expression \"" ++ show(100,c.pp) ++ 
                      "\" must be of type Boolean.\n")];
 }
 
@@ -219,7 +219,7 @@ aspect production ifelse
 s::Stmt ::= c::Expr t::Stmt e::Stmt 
 {
   s.errors <- if isBoolean(c.type) then []
-              else [err(locUnknown(), "Expression \"" ++ c.pp ++ 
+              else [err(locUnknown(), "Expression \"" ++ show(100,c.pp) ++ 
                      "\" must be of type Boolean.\n")];
 }
 

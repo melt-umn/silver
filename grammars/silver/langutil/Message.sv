@@ -4,7 +4,7 @@ grammar silver:langutil;
 {--
  - A Message represents a compiler output message (error/warning)
  -}
-nonterminal Message with pp, location;
+nonterminal Message with unparse, location;
 
 {--
  - A error that should halt compilation before translation proceeds on the 
@@ -13,7 +13,7 @@ nonterminal Message with pp, location;
 abstract production err
 top::Message ::= l::Location m::String
 {
-  top.pp = l.pp ++ ": error: " ++ m;
+  top.unparse = l.unparse ++ ": error: " ++ m;
   top.location = l;
 }
 
@@ -24,7 +24,7 @@ top::Message ::= l::Location m::String
 abstract production wrn
 top::Message ::= l::Location m::String
 {
-  top.pp = l.pp ++ ": warning: " ++ m;
+  top.unparse = l.unparse ++ ": warning: " ++ m;
   top.location = l;
 }
 
@@ -55,10 +55,10 @@ Boolean ::= l::[Message] wError::Boolean
 function ppMessages
 [String] ::= l::[Message]
 {
--- someday we can just map((.pp), msgs), but today is not yet that day
+-- someday we can just map((.unparse), msgs), but today is not yet that day
   return case l of
            [] -> []
-         | h::t -> h.pp :: ppMessages(t)
+         | h::t -> h.unparse :: ppMessages(t)
          end;
 }
 

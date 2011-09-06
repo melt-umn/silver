@@ -1,7 +1,7 @@
 {- A Universal location information data structure -}
 grammar silver:langutil;
 
-nonterminal Location with pp;
+nonterminal Location with unparse;
 
 {--
  - The sole constructor for location information.
@@ -10,7 +10,7 @@ nonterminal Location with pp;
 abstract production loc
 top::Location ::= file::String line::Integer column::Integer
 {
-  top.pp = file ++ ":" ++ toString(line) ++ "." ++ toString(column);
+  top.unparse = file ++ ":" ++ toString(line) ++ "." ++ toString(column);
 }
 
 {--

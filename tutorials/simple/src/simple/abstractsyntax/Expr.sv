@@ -5,14 +5,16 @@ grammar simple:abstractsyntax;
  - frequently want to do similar things to them: look them up in the
  - environment, for example.
  -}
-nonterminal Name with pp, location, env, lookup;
+nonterminal Name with pp, name, location, env, lookup;
 
 synthesized attribute lookup :: Maybe<Decorated TypeExpr>;
+synthesized attribute name :: String;
 
 abstract production name
 n::Name ::= l::Location s::String
 {
-  n.pp = s;
+  n.name = s;
+  n.pp = text(s);
   n.location = l;
 
   n.lookup = lookup(s, n.env);
@@ -25,28 +27,28 @@ nonterminal Expr with pp, env, errors;
 abstract production intLit   
 e::Expr ::= l::Location s::String
 {
-  e.pp = s;
+  e.pp = text(s);
   e.errors := [];
 }
 
 abstract production floatLit 
 e::Expr ::= l::Location s::String
 {
-  e.pp = s;
+  e.pp = text(s);
   e.errors := [];
 }
 
 abstract production boolLit   
 e::Expr ::= l::Location s::String
 {
-  e.pp = s;
+  e.pp = text(s);
   e.errors := [];
 }
 
 abstract production stringLit 
 e::Expr ::= l::Location s::String
 {
-  e.pp = s;
+  e.pp = text(s);
   e.errors := [];
 }
 
@@ -73,10 +75,19 @@ e::Expr ::= id::Name
 
   e.errors := case id.lookup of
                 just(_)   -> []
-              | nothing() -> [err(id.location, "variable \"" ++ id.pp ++ "\" was not declared.")] 
+              | nothing() -> [err(id.location, "variable \"" ++ id.name ++ "\" was not declared.")] 
               end;
 }
 
+
+function ppparens
+Document ::= d1::Document
+{ return cat(cat(text("("), d1), text(")"));
+}
+function ppoperator
+Document ::= d1::Document op::String d2::Document
+{ return ppparens(cat(cat(d1, text(" " ++ op ++ " ")), d2));
+}
 
 -- Arithmetic Operations
 ------------------------
@@ -85,25 +96,25 @@ e::Expr ::= id::Name
 abstract production add 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = "(" ++  l.pp ++ " + " ++ r.pp ++ ")";
+  e.pp = ppoperator(l.pp, "+", r.pp);
   e.errors := l.errors ++ r.errors;
 }
 abstract production sub 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = "(" ++  l.pp ++ " - " ++ r.pp ++ ")";
+  e.pp = ppoperator(l.pp, "-", r.pp);
   e.errors := l.errors ++ r.errors;
 }
 abstract production mul 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = "(" ++  l.pp ++ " * " ++ r.pp ++ ")";
+  e.pp = ppoperator(l.pp, "*", r.pp);
   e.errors := l.errors ++ r.errors;
 }
 abstract production div 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = "(" ++  l.pp ++ " / " ++ r.pp ++ ")";
+  e.pp = ppoperator(l.pp, "/", r.pp);
   e.errors := l.errors ++ r.errors; 
 }
 
@@ -127,21 +138,21 @@ e::Expr ::= l::Expr r::Expr
 abstract production eq 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = "(" ++  l.pp ++ " == " ++ r.pp ++ ")";
+  e.pp = ppoperator(l.pp, "==", r.pp);
   e.errors := l.errors ++ r.errors;
 }
 
 abstract production lt 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = "(" ++  l.pp ++ " < " ++ r.pp ++ ")";
+  e.pp = ppoperator(l.pp, "<", r.pp);
   e.errors := l.errors ++ r.errors;
 }
 
 abstract production neq 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = "(" ++  l.pp ++ " != " ++ r.pp ++ ")";
+  e.pp = ppoperator(l.pp, "!=", r.pp);
   forwards to not (eq(l,r));
   -- e.errors is copied from the forwarded-to tree
   -- Similarly, type checking attributes defined TypeChecking.sv are
@@ -150,19 +161,19 @@ e::Expr ::= l::Expr r::Expr
 abstract production lte 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = "(" ++  l.pp ++ " <= " ++ r.pp ++ ")";
+  e.pp = ppoperator(l.pp, "<=", r.pp);
   forwards to or( lt(l,r), eq(l,r) );
 }
 abstract production gt 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = "(" ++  l.pp ++ " > " ++ r.pp ++ ")";
+  e.pp = ppoperator(l.pp, ">", r.pp);
   forwards to not(lte(l,r));
 }
 abstract production gte 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = "(" ++  l.pp ++ " >= " ++ r.pp ++ ")";
+  e.pp = ppoperator(l.pp, ">=", r.pp);
   forwards to not(lt(l,r));
 }
 
@@ -172,13 +183,13 @@ e::Expr ::= l::Expr r::Expr
 abstract production and 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = "(" ++  l.pp ++ " && " ++ r.pp ++ ")";
+  e.pp = ppoperator(l.pp, "&&", r.pp);
   e.errors := l.errors ++ r.errors;
 }
 abstract production not 
 e::Expr ::= ne::Expr 
 {
-  e.pp = "!(" ++  ne.pp ++ ")";
+  e.pp = cat(text("!"), ppparens(ne.pp));
   e.errors := ne.errors;
 }
 
@@ -186,7 +197,7 @@ e::Expr ::= ne::Expr
 abstract production or 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = "(" ++  l.pp ++ " || " ++ r.pp ++ ")";
+  e.pp = ppoperator(l.pp, "||", r.pp);
   forwards to not( and(not(l), not(r)) );
 }
 

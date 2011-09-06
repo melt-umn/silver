@@ -8,8 +8,8 @@ nonterminal Decl with pp, env, defs, errors;
 abstract production decl
 d::Decl ::= t::TypeExpr id::Name 
 {
-  d.pp = t.pp ++ " " ++ id.pp ++ "; \n"; 
-  d.defs = addBinding(id.pp, t, emptyEnv());
+  d.pp = cat(cat(cat(t.pp, text(" ")), id.pp), cat(text(";"), line()));
+  d.defs = addBinding(id.name, t, emptyEnv());
   d.errors := [];
 }
 
@@ -21,25 +21,25 @@ nonterminal TypeExpr with pp, type;
 abstract production typeExprInteger
 t::TypeExpr ::=  
 {
-  t.pp = "Integer";  
+  t.pp = text("Integer");  
   t.type = integerType();
 }
 abstract production typeExprFloat
 t::TypeExpr ::=  
 {
-  t.pp = "Float"; 
+  t.pp = text("Float"); 
   t.type = floatType();
 }
 abstract production typeExprBoolean
 t::TypeExpr ::=  
 {
-  t.pp = "Boolean"; 
+  t.pp = text("Boolean"); 
   t.type = booleanType();
 }
 abstract production typeExprString
 t::TypeExpr ::=  
 {
-  t.pp = "String"; 
+  t.pp = text("String"); 
   t.type = stringType();
 }
 
@@ -58,26 +58,26 @@ nonterminal Type with pp;
 abstract production integerType
 t::Type ::=   
 {
-  t.pp = "Integer";
+  t.pp = text("Integer");
 }
 abstract production floatType
 t::Type ::=   
 {
-  t.pp = "Float";
+  t.pp = text("Float");
 }
 abstract production booleanType
 t::Type ::=   
 {
-  t.pp = "Boolean";
+  t.pp = text("Boolean");
 }
 abstract production stringType
 t::Type ::=   
 {
-  t.pp = "String";
+  t.pp = text("String");
 }
 abstract production errorType
 t::Type ::=   
 {
-  t.pp = "Erroneous Type";
+  t.pp = text("Erroneous Type");
 }
 

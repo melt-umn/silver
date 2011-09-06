@@ -85,7 +85,7 @@ main() {
        k = 0;
        for(k = 0 to years-1) {
          if(modelAvgScore[k,0] > maximum) {
-           modelAvgScore[k,0] = maximum;
+           maximum = modelAvgScore[k,0];
          }
        }
    in // back to defining avgScore
