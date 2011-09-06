@@ -1,6 +1,7 @@
 grammar simple:extensions:expr_let;
 
 imports silver:langutil;
+imports silver:langutil:pp;
 imports simple:concretesyntax as cst;
 imports simple:abstractsyntax;
 
@@ -11,14 +12,14 @@ terminal End 'end' lexer classes { KEYWORDS };
 concrete production letExpr_c
 e::cst:Expr ::= 'let' s::cst:Stmts 'in' e1::cst:Expr 'end'
 {
-  e.pp = "let " ++ s.pp ++ " in " ++ e1.pp ++ " end";
+  e.unparse = "let " ++ s.unparse ++ " in " ++ e1.unparse ++ " end";
   e.ast = letExpr(s.ast, e1.ast);
 }
 
 abstract production letExpr
 e::Expr ::= s::Stmt e1::Expr
 {
-  e.pp = "let " ++ s.pp ++ " in " ++ e1.pp ++ " end";
+  e.pp = box(cat(cat(cat(cat(text("let "), box(s.pp)), cat(line(), text(" in "))), box(e1.pp)), cat(line(), text("end"))));
   e.type = e1.type;
   e.errors := s.errors ++ e1.errors;
 

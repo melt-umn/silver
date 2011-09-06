@@ -17,7 +17,7 @@ terminal Do 'do' lexer classes { KEYWORDS };
 concrete production dowhile_c 
 s::cst:StmtMatched ::= 'do' body::cst:Stmt 'while' '(' cond::cst:Expr ')' ';'
 {
-  s.pp = "do \n" ++ body.pp ++ "\n" ++ "while " ++ cond.pp ++ "; \n";
+  s.unparse = "do \n" ++ body.unparse ++ "\n" ++ "while " ++ cond.unparse ++ "; \n";
   s.ast = dowhile(body.ast, cond.ast); 
 }
 

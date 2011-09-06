@@ -1,13 +1,19 @@
 {- A Universal set of common attributes for use in language descriptions -}
 grammar silver:langutil;
 
+import silver:langutil:pp;
+
 deprecated "This library is not deprecated, but users should be aware it is not stable and very subject to change!";
 
 {--
- - The pretty print of a syntax tree.
- - FUTURE WARNING: In the future this may change from String to a PP library!
+ - The unparse of a syntax tree.
  -}
-synthesized attribute pp :: String;
+synthesized attribute unparse :: String;
+
+{--
+ - The pretty print of a syntax tree.
+ -}
+synthesized attribute pp :: Document;
 
 {--
  - For computing the abstract syntax tree from a concrete syntax tree

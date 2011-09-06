@@ -61,7 +61,7 @@ global doc4 :: Document =
 equalityTest ( show(20, doc4), "{poiu asdf lkjh }", String, core_tests ) ;
 equalityTest ( show(10, doc4), "{poiu\n   asdf\n   lkjh\n   }", String, core_tests ) ;
 
--- TODO: move into the library?
+-- TODO: This is an example of how to do formatting for argument lists to functions. It should be moved into the standard library.
 function args
 Document ::= d1::Document ds::[Document] dm::Document d2::Document
 {
@@ -98,7 +98,7 @@ global doc7 :: Document =
 equalityTest ( "\n" ++ show(22, doc7), "\n 1234567890\n 1234567890 1234567890", String, core_tests ) ;
 equalityTest ( "\n" ++ show(21, doc7), "\n 1234567890\n 1234567890\n1234567890", String, core_tests ) ;
 
--- TODO: move into the library?
+-- TODO: This is an example of how to do formatting for statement lists. It should be moved into the standard library.
 function dgroup
 Document ::= d1::Document n::Integer ds::[Document] d2::Document
 {
@@ -120,6 +120,19 @@ global doc9 :: Document =
 equalityTest ( "\n" ++ show(20, doc9), "\nint main() {\n   stm0;\n   int main() {\n      stm1;\n      stm2;\n      stm3;\n      stm4;\n      stm5;\n   }\n   stm6;\n   stm7;\n}", String, core_tests ) ;
 equalityTest ( "\n" ++ show(60, doc9), "\nint main() {\n   stm0;\n   int main() { stm1; stm2; stm3; stm4; stm5; }\n   stm6;\n   stm7;\n}", String, core_tests ) ;
 
+-- TODO: This is an example of how to do formatting for single statement indenting. It should be moved into the standard library.
+function ifstmt
+Document ::= d1::Document n::Integer d2::Document
+{
+  -- d1 d2
+  -- d1
+  --   d2
+  return cat(d1, nest(n, cat(group(line()), d2)));
+}
 
+global doc10 :: Document =
+  cat(text("int main() "), dgroup(text("{"), 3, [text("stm0;"),ifstmt(text("if(a boolean condition)"), 3, text("stm1;")),ifstmt(text("if(another boolean)"), 3, text("stm2;")), text("stm3;")], text("}")));
 
+equalityTest ( "\n" ++ show(60, doc10), "\nint main() {\n   stm0;\n   if(a boolean condition) stm1;\n   if(another boolean) stm2;\n   stm3;\n}", String, core_tests ) ;
+equalityTest ( "\n" ++ show(0, doc10), "\nint main() {\n   stm0;\n   if(a boolean condition)\n      stm1;\n   if(another boolean)\n      stm2;\n   stm3;\n}", String, core_tests ) ;
 

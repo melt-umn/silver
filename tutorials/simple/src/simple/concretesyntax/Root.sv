@@ -14,7 +14,7 @@ imports simple:abstractsyntax as ast;
 {--
  - The concrete syntax represent a complete Simple program.
  -}
-nonterminal Root with pp, ast<ast:Root>;
+nonterminal Root with unparse, ast<ast:Root>;
 
 {- The use of ast<...> above is a "parameterized attribute"
  - The 'ast' attribute is declared in silver:langutil.
@@ -28,7 +28,7 @@ nonterminal Root with pp, ast<ast:Root>;
 concrete production rootStmt
 r::Root ::= 'main' '(' ')' '{' s::Stmts '}'
 {
-  r.pp = "main () {\n" ++ s.pp ++ "}\n";
+  r.unparse = "main () {\n" ++ s.unparse ++ "}\n";
   -- We're again about to use the 'ast' namespace to refer to rootStmt in
   -- our abstractsyntax:
   r.ast = ast:rootStmt(s.ast);

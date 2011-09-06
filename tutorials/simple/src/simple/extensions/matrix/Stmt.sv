@@ -1,9 +1,10 @@
 grammar simple:extensions:matrix;
 
+{-
 concrete production assignmentMatrix_c
 s::cst:StmtMatched ::= id::cst:Id '[' row::cst:Expr ',' col::cst:Expr ']' '=' value::cst:Expr ';' 
 {
-  s.pp = id.lexeme ++ "[" ++ row.pp ++ ", " ++ col.pp ++ "] = " ++ value.pp ++ ";\n";
+  s.unparse = id.lexeme ++ "[" ++ row.unparse ++ ", " ++ col.unparse ++ "] = " ++ value.unparse ++ ";\n";
   s.ast = assignmentMatrix(cst:name(id), row.ast, col.ast, value.ast); 
 }
 
@@ -34,4 +35,4 @@ s::Stmt ::= id::Name r::Expr c::Expr e::Expr
   
   s.c_code = "set_matrix(&" ++ id.pp ++ ", " ++ r.c_code ++ ", " ++ c.c_code ++ ", " ++ e.c_code ++ ");\n";
 }
-
+---}

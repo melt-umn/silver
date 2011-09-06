@@ -75,7 +75,7 @@ s::Stmt ::= c::Expr t::Stmt e::Stmt
 aspect production assignment
 s::Stmt ::= id::Name e::Expr 
 {
-  s.c_code = id.pp ++ " = " ++ e.c_code ++ "; \n";
+  s.c_code = id.name ++ " = " ++ e.c_code ++ "; \n";
 }
 
 ---------------------------------------------------------------------------
@@ -83,7 +83,7 @@ s::Stmt ::= id::Name e::Expr
 aspect production decl
 d::Decl ::= t::TypeExpr id::Name 
 {
-  d.c_code = t.c_code ++ " " ++ id.pp ++ "; \n";
+  d.c_code = t.c_code ++ " " ++ id.name ++ "; \n";
 }
 
 aspect production typeExprInteger
@@ -137,7 +137,7 @@ e::Expr ::= l::Location s::String
 aspect production varRef
 e::Expr ::= id::Name
 {
-  e.c_code = id.pp;  
+  e.c_code = id.name;  
 }
 
 aspect production add
