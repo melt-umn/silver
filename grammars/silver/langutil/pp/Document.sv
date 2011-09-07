@@ -16,6 +16,67 @@ String ::= width::Integer d::Document
   return d.result;
 }
 
+--------------------------------------------------------------------------------
+
+function concat
+Document ::= ds::[Document]
+{
+  return if null(ds) then notext()
+         else foldl_p(cat, head(ds), tail(ds));
+}
+function nestlines
+Document ::= n::Integer inner::Document
+{
+  return cat(nest(n, cat(line(), inner)), line());
+}
+function space
+Document ::=
+{
+  return text(" ");
+}
+function softbreak
+Document ::=
+{
+  return group(line());
+}
+function semi
+Document ::=
+{
+  return text(";");
+}
+function comma
+Document ::=
+{
+  return text(",");
+}
+function braces
+Document ::= d::Document
+{
+  return cat(cat(text("{"), d), text("}"));
+}
+function parens
+Document ::= d::Document
+{
+  return cat(cat(text("("), d), text(")"));
+}
+function brackets
+Document ::= d::Document
+{
+  return cat(cat(text("["), d), text("]"));
+}
+
+{- Below this line:
+text     Document ::= String
+cat      Document ::= Document Document
+line     Document ::= 
+group    Document ::= Document
+nest     Document ::= Integer Document
+notext   Document ::=
+box      Document ::= Document
+realLine Document ::= 
+-}
+--------------------------------------------------------------------------------
+
 nonterminal Document with indent, width,
                           inPosition, inDq, inCHorizontals, inRemaining,
                           outPosition, outDq, outCHorizontals, outRemaining,

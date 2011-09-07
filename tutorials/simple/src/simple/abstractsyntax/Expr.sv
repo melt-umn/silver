@@ -80,13 +80,9 @@ e::Expr ::= id::Name
 }
 
 
-function ppparens
-Document ::= d1::Document
-{ return cat(cat(text("("), d1), text(")"));
-}
 function ppoperator
 Document ::= d1::Document op::String d2::Document
-{ return ppparens(cat(cat(d1, text(" " ++ op ++ " ")), d2));
+{ return parens(cat(cat(d1, text(" " ++ op ++ " ")), d2));
 }
 
 -- Arithmetic Operations
@@ -189,7 +185,7 @@ e::Expr ::= l::Expr r::Expr
 abstract production not 
 e::Expr ::= ne::Expr 
 {
-  e.pp = cat(text("!"), ppparens(ne.pp));
+  e.pp = cat(text("!"), parens(ne.pp));
   e.errors := ne.errors;
 }
 
