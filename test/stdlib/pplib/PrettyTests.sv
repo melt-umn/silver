@@ -18,16 +18,16 @@ equalityTest ( show(0, group(line())), "\n", String, core_tests ) ;
 equalityTest ( show(20, group(group(line()))), " ", String, core_tests ) ;
 equalityTest ( show(0, group(group(line()))), "\n", String, core_tests ) ;
 
-
+-- basic test of cat and line breaks
 global doc1 :: Document =
   group(cat(cat(text("int var1"), line()), text("int var2")));
 
 equalityTest ( show(80, doc1), "int var1 int var2", String, core_tests ) ;
 equalityTest ( show(1, doc1), "int var1\nint var2", String, core_tests ) ;
 
-
+-- less basic test of concat and linebreaks
 global doc2 :: Document =
-  group(cat(cat(cat(cat(text("int var1"), line()), text("int var2")), line()), text("int var3")));
+  group(concat([text("int var1"), line(), text("int var2"), line(), text("int var3")]));
 
 equalityTest ( show(80, doc2), "int var1 int var2 int var3", String, core_tests ) ;
 equalityTest ( show(1, doc2), "int var1\nint var2\nint var3", String, core_tests ) ;
@@ -43,19 +43,19 @@ equalityTest ( show(10, doc3so), "  ", String, core_tests ) ;
 equalityTest ( show(1, doc3so), " \n", String, core_tests ) ;
 equalityTest ( show(0, doc3so), "\n\n", String, core_tests ) ;
 
-
+-- test of individually grouped linebreaks
 global doc3 :: Document =
-  cat(cat(cat(cat(text("int var1"), group(line())), text("int var2")), group(line())), text("int var3"));
+  concat([text("int var1"), group(line()), text("int var2"), group(line()), text("int var3")]);
 
 equalityTest ( show(80, doc3), "int var1 int var2 int var3", String, core_tests ) ;
 equalityTest ( show(1, doc3), "int var1\nint var2\nint var3", String, core_tests ) ;
 --equalityTest ( show(20, doc3), "int var1 int var2\nint var3", String, core_tests ) ; -- Apparently not?
 equalityTest ( show(10, doc3), "int var1 int var2\nint var3", String, core_tests ) ;
 
-
+-- testing nest
 global doc4 :: Document =
   cat(cat(text("{"), nest(3, group(
-       cat(cat(cat(cat(cat(text("poiu"), line()), text("asdf")), line()), text("lkjh")), line())
+       concat([text("poiu"), line(), text("asdf"), line(), text("lkjh"), line()])
   ))), text("}"));
 
 equalityTest ( show(20, doc4), "{poiu asdf lkjh }", String, core_tests ) ;
@@ -65,7 +65,7 @@ equalityTest ( show(10, doc4), "{poiu\n   asdf\n   lkjh\n   }", String, core_tes
 function args
 Document ::= d1::Document ds::[Document] dm::Document d2::Document
 {
-  return cat(cat(d1, box(foldr_p(cat, text(""), intersperse(cat(dm, group(line())), ds)))), d2);
+  return cat(cat(d1, box(concat(intersperse(cat(dm, group(line())), ds))), d2);
 }
 
 global doc5 :: Document =
@@ -93,7 +93,7 @@ equalityTest ( "\n" ++ show(25, doc6), "\n(cons (list foo bar baz) (cons (hello 
 equalityTest ( "\n" ++ show(80, doc6), "\n(cons (list foo bar baz) (cons (hello world) (more qwerty)))", String, core_tests ) ;
 
 global doc7 :: Document =
-  group(cat(cat(cat(cat(text(" 1234567890"), realLine()), text(" 1234567890")), line()), text("1234567890")));
+  group(concat([text(" 1234567890"), realLine(), text(" 1234567890"), line(), text("1234567890")]));
 
 equalityTest ( "\n" ++ show(22, doc7), "\n 1234567890\n 1234567890 1234567890", String, core_tests ) ;
 equalityTest ( "\n" ++ show(21, doc7), "\n 1234567890\n 1234567890\n1234567890", String, core_tests ) ;
