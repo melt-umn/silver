@@ -19,7 +19,10 @@ concrete production stmtCons
 ss::Stmts ::= s::Stmt rest::Stmts
 {
   ss.unparse = s.unparse ++ rest.unparse;
-  ss.ast = ast:seq(s.ast, rest.ast); 
+  ss.ast = case rest of
+             stmtNone() -> s.ast
+           | _ -> ast:seq(s.ast, rest.ast)
+           end;
 }
 
 concrete production stmtNone

@@ -19,7 +19,9 @@ e::cst:Expr ::= 'let' s::cst:Stmts 'in' e1::cst:Expr 'end'
 abstract production letExpr
 e::Expr ::= s::Stmt e1::Expr
 {
-  e.pp = box(cat(cat(cat(cat(text("let "), box(s.pp)), cat(line(), text(" in "))), box(e1.pp)), cat(line(), text("end"))));
+  e.pp = box(concat([text("let "), box(s.pp), line(), -- BUG: stmts end with lines, but we need this line OUTSIDE the box()
+                     text(" in "), box(e1.pp), line(),
+                     text("end")]));
   e.type = e1.type;
   e.errors := s.errors ++ e1.errors;
 

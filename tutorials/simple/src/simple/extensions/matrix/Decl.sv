@@ -10,8 +10,8 @@ d::cst:Decl ::= 'Matrix' id::cst:Id '[' r::cst:Expr ',' c::cst:Expr ']' ri::cst:
 abstract production declMatrix
 d::Decl ::= id::Name r::Expr c::Expr ri::Name ci::Name v::Expr
 {
-  --d.pp = "Matrix " ++ id.pp ++ "[" ++ r.pp ++ ", " ++ c.pp ++ "] " ++ ri.pp ++ "," ++ ci.pp ++ " = " ++ v.pp ++ ";\n";
-  d.pp = cat(cat(cat(cat(cat(cat(cat(cat(cat(cat(cat(cat(text("Matrix "), id.pp), text("[")), r.pp), text(", ")), c.pp), text("] ")), ri.pp), text(",")), ci.pp), text(" = ")), nest(3, cat(realLine(), v.pp))), cat(text(";"), line()));
+  d.pp = concat([text("Matrix "), id.pp, brackets(concat([r.pp, text(", "), c.pp])), space(), ri.pp, text(", "), ci.pp, text(" ="), 
+                 groupnest(3, concat([line(), v.pp, semi()]))]);
   d.defs = addBinding(id.name, decorate typeExprMatrix() with {}, emptyEnv());
   d.errors := r.errors;
   d.errors <- case r.type of

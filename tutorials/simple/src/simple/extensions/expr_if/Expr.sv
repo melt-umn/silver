@@ -18,7 +18,9 @@ e::cst:Expr ::= 'if' c::cst:Expr 'then' t::cst:Expr Else e1::cst:Expr
 abstract production ifthenelse
 e::Expr ::= c::Expr t::Expr e1::Expr
 {
-  e.pp = parens(box(cat(cat(cat(cat(cat(text("if "), c.pp), cat(line(), text("then "))), t.pp), cat(line(), text("else "))), e1.pp)));
+  e.pp = parens(box(concat([text("if "), c.pp, line(), 
+                            text("then "), t.pp, line(), 
+                            text("else "), e1.pp])));
   e.type = t.type;
   e.errors := c.errors ++ t.errors ++ e1.errors;
   e.errors <- if show(100,t.type.pp) == show(100,e1.type.pp) then []  -- TODO: this is the WORST wrong way to do this!!
