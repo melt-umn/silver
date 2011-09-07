@@ -8,7 +8,7 @@ nonterminal Decl with pp, env, defs, errors;
 abstract production decl
 d::Decl ::= t::TypeExpr id::Name 
 {
-  d.pp = concat([t.pp, space(), id.pp, semi(), line()]);
+  d.pp = concat([t.pp, space(), id.pp, semi()]);
   d.defs = addBinding(id.name, t, emptyEnv());
   d.errors := [];
 }

@@ -23,7 +23,7 @@ s::Stmt ::= d::Decl
 abstract production block
 s::Stmt ::= body::Stmt 
 {
-  s.pp = cat(braces(group(nestlines(3, body.pp))), line());
+  s.pp = braces(nestlines(3, body.pp));
   s.defs = emptyEnv();
   s.errors := body.errors;
 }
@@ -31,7 +31,7 @@ s::Stmt ::= body::Stmt
 abstract production seq
 s::Stmt ::= s1::Stmt s2::Stmt 
 {
-  s.pp = cat(s1.pp, s2.pp);
+  s.pp = cat(cat(s1.pp, line()), s2.pp);
   s.defs = appendEnv (s1.defs, s2.defs);
   s.errors := s1.errors ++ s2.errors;
 
@@ -41,7 +41,7 @@ s::Stmt ::= s1::Stmt s2::Stmt
 abstract production printStmt
 s::Stmt ::= e::Expr 
 {
-  s.pp = concat([text("print"), parens(e.pp), semi(), line()]);
+  s.pp = concat([text("print"), parens(e.pp), semi()]);
   s.defs = emptyEnv();
   s.errors := e.errors;
 }
@@ -49,7 +49,7 @@ s::Stmt ::= e::Expr
 abstract production skip
 s::Stmt ::= 
 {
-  s.pp = cat(semi(), line());
+  s.pp = semi();
   s.defs = emptyEnv();
   s.errors := [ ];
 }
@@ -82,7 +82,7 @@ s::Stmt ::= c::Expr t::Stmt e::Stmt
 abstract production assignment
 s::Stmt ::= id::Name e::Expr 
 {
-  s.pp = concat([id.pp, text(" = "), e.pp, semi(), line()]);
+  s.pp = concat([id.pp, text(" = "), e.pp, semi()]);
   s.defs = emptyEnv();
   s.errors := case id.lookup of
                 just(_)   -> []

@@ -10,7 +10,7 @@ e::cst:Expr ::= id::cst:Id '[' r::cst:Expr ',' c::cst:Expr ']'
 abstract production matrixRef
 e::Expr ::= id::Name r::Expr c::Expr
 {
-  e.pp = cat(cat(cat(cat(cat(id.pp, text("[")), r.pp), text(", ")), c.pp), text("]"));
+  e.pp = cat(id.pp, brackets(concat([r.pp, text(", "), c.pp])));
 
   e.type = floatType();
 

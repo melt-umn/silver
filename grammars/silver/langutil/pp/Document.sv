@@ -29,6 +29,16 @@ Document ::= n::Integer inner::Document
 {
   return cat(nest(n, cat(line(), inner)), line());
 }
+function groupnest
+Document ::= n::Integer inner::Document
+{
+  return group(nest(n, inner));
+}
+function groupnestlines
+Document ::= n::Integer inner::Document
+{
+  return cat(groupnest(n, cat(line(), inner)), line());
+}
 function space
 Document ::=
 {
