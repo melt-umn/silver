@@ -86,21 +86,6 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   forwards to agDclDefault();
 }
 
-concrete production aspectProductionSignatureEmptyRHS
-top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' 
-{
-  top.pp = lhs.pp ++ " ::= ";
-  top.location = loc(top.file, $2.line, $2.column);
-
-  top.defs = lhs.defs;
-  top.errors := lhs.errors;
-
-  top.inputElements = [];
-  top.outputElement = lhs.outputElement;
-
-  lhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
-}
-
 concrete production aspectProductionSignature
 top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS 
 {
@@ -168,18 +153,15 @@ top::AspectProductionLHS ::= id::Name t::TypeExp
                 else [];
 }
 
-concrete production aspectRHSElem
-top::AspectRHS ::= rhs::AspectRHSElem
+concrete production aspectRHSElemNil
+top::AspectRHS ::= 
 {
-  top.pp = rhs.pp;
-  top.location = rhs.location;
+  top.pp = "";
+  top.location = loc(top.file,-1,-1);
 
-  top.defs = rhs.defs;
-  top.errors := rhs.errors;
-  top.inputElements = rhs.inputElements;
-
-  rhs.deterministicCount = 0;
-  rhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
+  top.defs = emptyDefs();
+  top.errors := [];
+  top.inputElements = [];
 }
 
 concrete production aspectRHSElemCons
@@ -250,21 +232,6 @@ top::AspectRHSElem ::= id::Name t::TypeExp
   top.errors := if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
                 else [];
-}
-
-concrete production aspectFunctionSignatureEmptyRHS
-top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' 
-{
-  top.pp = lhs.pp ++ " ::= ";
-  top.location = loc(top.file, $2.line, $2.column);
-
-  top.defs = lhs.defs;
-  top.errors := lhs.errors;
-
-  top.inputElements = [];
-  top.outputElement = lhs.outputElement;
-
-  lhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
 }
 
 concrete production aspectFunctionSignature

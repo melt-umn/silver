@@ -98,12 +98,6 @@ top::ProductionModifier ::= 'operator' '=' n::QName
 synthesized attribute concreteSyntaxTypeErrors :: [Decorated Message] with ++;
 attribute concreteSyntaxTypeErrors occurs on ProductionSignature, ProductionRHS, ProductionRHSElem;
 
-aspect production productionSignatureEmptyRHS
-top::ProductionSignature ::= lhs::ProductionLHS '::='
-{
-  top.concreteSyntaxTypeErrors := [];
-}
-
 aspect production productionSignature
 top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
@@ -111,10 +105,10 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
   top.concreteSyntaxTypeErrors := rhs.concreteSyntaxTypeErrors;
 }
 
-aspect production productionRHSSingle
-top::ProductionRHS ::= rhs::ProductionRHSElem
+aspect production productionRHSNil
+top::ProductionRHS ::= 
 {
-  top.concreteSyntaxTypeErrors := rhs.concreteSyntaxTypeErrors;
+  top.concreteSyntaxTypeErrors := [];
 }
 
 aspect production productionRHSCons

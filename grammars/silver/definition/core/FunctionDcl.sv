@@ -50,19 +50,6 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   forwards to agDclDefault();
 }
 
-concrete production functionSignatureEmptyRHS
-top::FunctionSignature ::= lhs::FunctionLHS '::='
-{
-  top.pp = lhs.pp ++ " ::= ";
-  top.location = loc(top.file, $2.line, $2.column);
-  
-  top.defs = lhs.defs;
-  top.errors := lhs.errors;
-
-  top.inputElements = [];
-  top.outputElement = lhs.outputElement;
-}
-
 concrete production functionSignature
 top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS 
 {

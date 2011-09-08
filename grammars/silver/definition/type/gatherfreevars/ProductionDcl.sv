@@ -16,12 +16,6 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, allLexicalTyVars);
 }
 
-aspect production productionSignatureEmptyRHS
-top::ProductionSignature ::= lhs::ProductionLHS '::='
-{
-  top.lexicalTypeVariables = makeSet(lhs.lexicalTypeVariables);
-}
-
 aspect production productionSignature
 top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
@@ -34,10 +28,10 @@ top::ProductionLHS ::= id::Name '::' t::Type
   top.lexicalTypeVariables = t.lexicalTypeVariables;
 }
 
-aspect production productionRHSSingle
-top::ProductionRHS ::= rhs::ProductionRHSElem
+aspect production productionRHSNil
+top::ProductionRHS ::= 
 {
-  top.lexicalTypeVariables = rhs.lexicalTypeVariables;
+  top.lexicalTypeVariables = [];
 }
 
 aspect production productionRHSCons

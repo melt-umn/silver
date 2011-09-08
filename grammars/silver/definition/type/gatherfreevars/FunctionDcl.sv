@@ -16,12 +16,6 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, allLexicalTyVars);
 }
 
-aspect production functionSignatureEmptyRHS
-top::FunctionSignature ::= lhs::FunctionLHS '::='
-{
-  top.lexicalTypeVariables = makeSet(lhs.lexicalTypeVariables);
-}
-
 aspect production functionSignature
 top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS 
 {

@@ -52,19 +52,6 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   forwards to agDclDefault();
 }
 
-concrete production productionSignatureEmptyRHS
-top::ProductionSignature ::= lhs::ProductionLHS '::='
-{
-  top.pp = lhs.pp ++ " ::= ";
-  top.location = loc(top.file, $2.line, $2.column);
-  
-  top.defs = lhs.defs;
-  top.errors := lhs.errors;
-
-  top.inputElements = [];
-  top.outputElement = lhs.outputElement;
-}
-
 concrete production productionSignature
 top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
@@ -100,17 +87,16 @@ top::ProductionLHS ::= id::Name '::' t::Type
   top.errors := t.errors;
 }
 
-concrete production productionRHSSingle
-top::ProductionRHS ::= rhs::ProductionRHSElem
+concrete production productionRHSNil
+top::ProductionRHS ::=
 {
-  top.pp = rhs.pp;
-  top.location = rhs.location;
+  top.pp = "";
+  top.location = loc(top.file,-1,-1);
 
-  top.defs = rhs.defs;
-  top.errors := rhs.errors;
+  top.defs = emptyDefs();
+  top.errors := [];
 
-  top.inputElements = rhs.inputElements;
-  rhs.deterministicCount = 0;
+  top.inputElements = [];
 }
 
 concrete production productionRHSCons
