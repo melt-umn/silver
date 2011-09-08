@@ -1,12 +1,6 @@
 grammar silver:definition:concrete_syntax;
 
 concrete production concreteProductionDcl
-top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature body::ProductionBody
-{
-  forwards to concreteProductionDclModifiers($1, $2, id, ns, productionModifiersNone(), body);
-}
-
-concrete production concreteProductionDclModifiers
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody
 {
   top.pp = "concrete production " ++ id.pp ++ "\n" ++ ns.pp ++ " " ++ pm.pp ++ "\n" ++ body.pp; 
@@ -29,10 +23,11 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   forwards to productionDcl(terminal(Abstract_kwd, "abstract", $1.line, $1.column), $2, id, ns, body);
 }
 
-nonterminal ProductionModifiers with location, file, pp, unparse, productionModifiers, errors, env;
-nonterminal ProductionModifier with location, file, pp, unparse, productionModifiers, errors, env;
+nonterminal ProductionModifiers with location, file, pp, unparse, productionModifiers, errors, env; -- 0 or some
+nonterminal ProductionModifierList with location, file, pp, unparse, productionModifiers, errors, env; -- 1 or more
+nonterminal ProductionModifier with location, file, pp, unparse, productionModifiers, errors, env; -- 1
 
-abstract production productionModifiersNone
+concrete production productionModifiersNone
 top::ProductionModifiers ::=
 {
   top.pp = "";
@@ -41,9 +36,8 @@ top::ProductionModifiers ::=
   top.productionModifiers = [];
   top.errors := [];
 }
-
-concrete production productionModifierSingle
-top::ProductionModifiers ::= pm::ProductionModifier
+concrete production productionModifierSome
+top::ProductionModifiers ::= pm::ProductionModifierList
 {
   top.pp = pm.pp;
   top.location = pm.location;
@@ -52,8 +46,17 @@ top::ProductionModifiers ::= pm::ProductionModifier
   top.errors := pm.errors;
 }
 
+concrete production productionModifierSingle
+top::ProductionModifierList ::= pm::ProductionModifier
+{
+  top.pp = pm.pp;
+  top.location = pm.location;
+  
+  top.productionModifiers = pm.productionModifiers;
+  top.errors := pm.errors;
+}
 concrete production productionModifiersCons
-top::ProductionModifiers ::= h::ProductionModifier ',' t::ProductionModifiers
+top::ProductionModifierList ::= h::ProductionModifier ',' t::ProductionModifierList
 {
   top.pp = h.pp ++ ", " ++ t.pp;
   top.location = loc(top.file, $2.line, $2.column);
@@ -61,6 +64,7 @@ top::ProductionModifiers ::= h::ProductionModifier ',' t::ProductionModifiers
   top.productionModifiers = h.productionModifiers ++ t.productionModifiers;
   top.errors := h.errors ++ t.errors;
 }
+
 
 concrete production productionModifierPrecedence
 top::ProductionModifier ::= 'precedence' '=' i::Int_t
