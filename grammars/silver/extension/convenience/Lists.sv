@@ -1,6 +1,4 @@
 grammar silver:extension:convenience;
-import silver:definition:core;
-import silver:definition:type:syntax;
 
 nonterminal QNameWithTL with pp,qnwtQN, qnwtTL;
 synthesized attribute qnwtQN :: QName;
