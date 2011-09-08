@@ -65,7 +65,7 @@ equalityTest ( show(10, doc4), "{poiu\n   asdf\n   lkjh\n   }", String, core_tes
 function args
 Document ::= d1::Document ds::[Document] dm::Document d2::Document
 {
-  return cat(cat(d1, box(concat(intersperse(cat(dm, group(line())), ds))), d2);
+  return cat(cat(d1, box(concat(intersperse(cat(dm, group(line())), ds)))), d2);
 }
 
 global doc5 :: Document =
