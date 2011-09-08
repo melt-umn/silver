@@ -1,6 +1,4 @@
 grammar silver:extension:convenience;
-import silver:definition:core;
-import silver:definition:env;
 
 terminal Children_kwd '$';
 

@@ -1,9 +1,5 @@
 grammar silver:extension:convenience;
 
-import silver:definition:core;
-import silver:definition:type;
-import silver:definition:type:syntax;
-
 concrete production shortLocalDecl
 top::ProductionStmt ::= lk::'local' a::Name ht::'::' te::Type 
                         eq::'=' v::Expr sm::';'

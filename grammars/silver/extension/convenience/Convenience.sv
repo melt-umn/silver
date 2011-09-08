@@ -1,8 +1,9 @@
 grammar silver:extension:convenience;
-import silver:definition:core;
-import silver:definition:concrete_syntax;
-import silver:definition:type;
-import silver:definition:type:syntax;
+imports silver:definition:env;
+imports silver:definition:core;
+imports silver:definition:concrete_syntax;
+imports silver:definition:type;
+imports silver:definition:type:syntax;
 
 concrete production multipleAttributionDclsManyMany
 top::AGDcl ::= 'attribute' a::QNames2 'occurs' 'on' nts::QNames2 ';'
