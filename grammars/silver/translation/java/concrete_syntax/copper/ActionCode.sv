@@ -6,7 +6,7 @@ synthesized attribute actionCode :: String;
 
 terminal Action_kwd 'action' lexer classes {KEYWORD};
 
-concrete production concreteProductionDclModifiersAction
+concrete production concreteProductionDclAction
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody 'action' acode::ActionCode_c
 {
   production attribute fName :: String;
@@ -35,14 +35,9 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   -- note that we're not merging the typing contexts between action blocks and productions
   -- this seems reasonable since inference should never have effects across this border...
 
-  forwards to concreteProductionDclModifiers($1, $2, id, ns, pm, body);
+  forwards to concreteProductionDcl($1, $2, id, ns, pm, body);
 }
 
-concrete production concreteProductionDclAction
-top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature body::ProductionBody 'action' acode::ActionCode_c
-{
-  forwards to concreteProductionDclModifiersAction($1, $2, id, ns, productionModifiersNone(), body, $6, acode);
-}
 
 concrete production actionCode_c
 top::ActionCode_c ::= '{' stmts::ProductionStmts '}'

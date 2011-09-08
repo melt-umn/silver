@@ -31,7 +31,7 @@ top::ProductionDclStmts ::= s::ProductionDclStmt ss::ProductionDclStmts
 concrete production productionDclStmt
 top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
                            rhs::ProductionRHS
-                           optm::OptionalModifiers
+                           mods::ProductionModifiers
                            body::ProductionBody
                            opta::OptionalAction
 {
@@ -45,19 +45,13 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
         | anOptionalName(_, n, _) -> n
         end;
 
-  local attribute mods :: ProductionModifiers;
-  mods = case optm of
-         | noOptionalModifiers() -> productionModifiersNone()
-         | someOptionalModifiers(m) -> m
-         end;
-
   top.proddcls = 
     let ct :: Concrete_kwd = terminal(Concrete_kwd, "concrete", v.line, v.column),
         pt :: Production_kwd = terminal(Production_kwd, "production", v.line, v.column)
     in
     case opta of
-    | noOptionalAction() -> concreteProductionDclModifiers(ct, pt, nme, productionSignature(top.lhsdcl, '::=', rhs), mods, body)
-    | anOptionalAction(a,c) -> concreteProductionDclModifiersAction(ct, pt, nme, productionSignature(top.lhsdcl, '::=', rhs), mods, body, a, c)
+    | noOptionalAction() -> concreteProductionDcl(ct, pt, nme, productionSignature(top.lhsdcl, '::=', rhs), mods, body)
+    | anOptionalAction(a,c) -> concreteProductionDclAction(ct, pt, nme, productionSignature(top.lhsdcl, '::=', rhs), mods, body, a, c)
     end end;
 }
 
@@ -68,16 +62,6 @@ optn::OptionalName ::=
 }
 concrete production anOptionalName
 optn::OptionalName ::= '(' id::Name ')'
-{
-}
-
-nonterminal OptionalModifiers;
-concrete production noOptionalModifiers
-optm::OptionalModifiers ::=
-{
-}
-concrete production someOptionalModifiers
-optm::OptionalModifiers ::= m::ProductionModifiers
 {
 }
 
