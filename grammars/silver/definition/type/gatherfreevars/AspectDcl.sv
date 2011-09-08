@@ -38,12 +38,6 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, allLexicalTyVars);
 }
 
-aspect production aspectProductionSignatureEmptyRHS
-top::AspectProductionSignature ::= lhs::AspectProductionLHS '::='
-{
-  top.lexicalTypeVariables = makeSet(lhs.lexicalTypeVariables);
-}
-
 aspect production aspectProductionSignature
 top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 {
@@ -61,10 +55,10 @@ top::AspectProductionLHS ::= id::Name t::TypeExp
   top.lexicalTypeVariables = []; -- The above overrides this
 }
 
-aspect production aspectRHSElem
-top::AspectRHS ::= rhs::AspectRHSElem
+aspect production aspectRHSElemNil
+top::AspectRHS ::= 
 {
-  top.lexicalTypeVariables = rhs.lexicalTypeVariables;
+  top.lexicalTypeVariables = [];
 }
 
 aspect production aspectRHSElemCons
@@ -82,12 +76,6 @@ aspect production aspectRHSElemFull
 top::AspectRHSElem ::= id::Name t::TypeExp
 {
   top.lexicalTypeVariables = []; -- The above overrides this
-}
-
-aspect production aspectFunctionSignatureEmptyRHS
-top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' 
-{
-  top.lexicalTypeVariables = makeSet(lhs.lexicalTypeVariables);
 }
 
 aspect production aspectFunctionSignature

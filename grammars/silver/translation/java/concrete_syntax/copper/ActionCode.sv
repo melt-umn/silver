@@ -118,22 +118,16 @@ String ::= l::[Decorated ProductionModifierSpec]{
 
 synthesized attribute actionDefs :: Defs occurs on ProductionSignature, ProductionRHS, ProductionRHSElem;
 
-aspect production productionSignatureEmptyRHS
-top::ProductionSignature ::= lhs::ProductionLHS '::='
-{
-  top.actionDefs = emptyDefs();
-}
-
 aspect production productionSignature
 top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
   top.actionDefs = rhs.actionDefs;
 }
 
-aspect production productionRHSSingle
-top::ProductionRHS ::= rhs::ProductionRHSElem
+aspect production productionRHSNil
+top::ProductionRHS ::= 
 {
-  top.actionDefs = rhs.actionDefs;
+  top.actionDefs = emptyDefs();
 }
 
 aspect production productionRHSCons

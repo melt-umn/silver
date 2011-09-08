@@ -21,10 +21,10 @@ ag::AGDcl ::= kwd::'makeTestSuite'  name::IdLower_t ';'
  forwards to
   productionDcl ( 'abstract', 'production', nameIdLower(name), 
     -- t::TestSuite ::=
-    productionSignatureEmptyRHS (
+    productionSignature (
      productionLHS ( mkName("t"), '::', 
                      nominalType( qNameUpperId (terminal(IdUpper_t,"TestSuite")), botlNone()) ) ,
-     '::=' ) ,
+     '::=', productionRHSNil() ) ,
     -- { ... body
     defaultProductionBody (
      productionStmtsCons (
@@ -77,10 +77,11 @@ ag::AGDcl ::= kwd::'mainTestSuite'  name::IdLower_t ';'
      '::=' ,
      productionRHSCons (  
       productionRHSElemType ( listType( '[', stringType('String'), ']') ) ,
-      productionRHSSingle ( 
+      productionRHSCons ( 
        productionRHSElem (
         nameIdLower( terminal(IdLower_t, "mainIO" ))  ,
-        '::' , ioType ('IO') )
+        '::' , ioType ('IO') ),
+       productionRHSNil()
       )
      )
     )

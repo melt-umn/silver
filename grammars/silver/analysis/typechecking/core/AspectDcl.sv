@@ -59,13 +59,6 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 
 --
 
-aspect production aspectProductionSignatureEmptyRHS
-top::AspectProductionSignature ::= lhs::AspectProductionLHS '::='
-{
-  lhs.downSubst = top.downSubst;
-  top.upSubst = lhs.upSubst;
-}
-
 aspect production aspectProductionSignature
 top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 {
@@ -89,11 +82,10 @@ top::AspectProductionLHS ::= id::Name t::TypeExp
         else [];
 }
 
-aspect production aspectRHSElem
-top::AspectRHS ::= rhs::AspectRHSElem
+aspect production aspectRHSElemNil
+top::AspectRHS ::= 
 {
-  rhs.downSubst = top.downSubst;
-  top.upSubst = rhs.upSubst;
+  top.upSubst = top.downSubst;
 }
 
 aspect production aspectRHSElemCons
@@ -117,13 +109,6 @@ top::AspectRHSElem ::= id::Name t::TypeExp
         if errCheck1.typeerror
         then [err(top.location, "Type incorrect in aspect signature. Expected: " ++ errCheck1.leftpp ++ "  Got: " ++ errCheck1.rightpp)]
         else [];
-}
-
-aspect production aspectFunctionSignatureEmptyRHS
-top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' 
-{
-  lhs.downSubst = top.downSubst;
-  top.upSubst = lhs.upSubst;
 }
 
 aspect production aspectFunctionSignature
