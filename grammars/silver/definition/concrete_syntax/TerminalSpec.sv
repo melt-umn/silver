@@ -54,12 +54,6 @@ String ::= l::[Decorated TerminalModifierSpec]
   return if null(l) then "" else head(l).unparse ++ (if null(tail(l)) then "" else ", " ++ foldModifiers(tail(l)));
 }
 
-function terminalCheck
-Boolean ::= s::String l::[Decorated TerminalSpec]
-{
-  return !null(l) && ( s == head(l).terminalName || terminalCheck(s, tail(l)));
-}
-
 
 nonterminal TerminalModifierSpec with unparse, ignoreTerminal, parserPrecedence, parserAssociation;
 

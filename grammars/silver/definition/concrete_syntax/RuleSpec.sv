@@ -113,20 +113,3 @@ top::ProductionModifierSpec ::= i::String
   forwards to defaultProductionModifierSpec();
 }
 
-function mergeRules
-[Decorated RuleSpec] ::= c1::[Decorated RuleSpec]
-{
-  return if null(c1)
-	 then []
-	 else mergeRuleSpec(head(c1), mergeRules(tail(c1)));
-}
-
-function mergeRuleSpec
-[Decorated RuleSpec] ::= c1::Decorated RuleSpec c2::[Decorated RuleSpec]
-{
-  return if null(c2) then [c1]
-         else if head(c2).ruleLHS == c1.ruleLHS
-	      then cons(ruleSpec(c1.ruleLHS, head(c2).ruleRHSSpec ++ c1.ruleRHSSpec), tail(c2))
-	      else cons(head(c2), mergeRuleSpec(c1, tail(c2)));
-}
-
