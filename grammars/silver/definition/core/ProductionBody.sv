@@ -364,7 +364,7 @@ top::DefLHS ::= q::QName
   top.pp = q.pp;
   top.location = q.location;
 
-  top.errors <- q.lookupValue.errors;
+  top.errors := q.lookupValue.errors ++ forward.errors;
   
   forwards to if null(q.lookupValue.dcls)
               then errorDefLHS(q)
