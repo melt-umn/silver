@@ -65,7 +65,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
   -- introduce the failure case here.
   forwards to caseExpr(top.location, returnType, exprsDecorated(es.exprs), ml.matchRuleList, 
                 productionApp(baseExpr(qName(top.location, "core:error")), '(', 
-                  exprsSingle(stringConst(terminal(String_t, "\"Error: pattern match failed at " ++ top.location.unparse ++ "\\n\""))), ')'));
+                  exprsSingle(stringConst(terminal(String_t, "\"Error: pattern match failed at " ++ top.grammarName ++ top.location.unparse ++ "\\n\""))), ')'));
 }
 
 abstract production caseExpr
