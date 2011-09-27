@@ -1,6 +1,6 @@
 
 --------------------------------------------------------------------------------
-Silver 0.3.4      Aug ??, 2011
+Silver 0.3.4      Sep 27, 2011
 
  - New silver:util:treemap RB tree library
  - New silver:util:deque double ended queue library
@@ -9,7 +9,7 @@ Silver 0.3.4      Aug ??, 2011
  - Performance and translation improvements
  - Dramatic (30%) reduction in binary sizes
  - Testing framework (unstable interface, yet)
- - Update and modernization of the 'simple' tutorial language
+ - Update and modernization of the 'simple' tutorial language (incomplete)
  - Minor change to the way production-specific 'layout' declarations worked
  - Many bug fixes, including some pattern matching fixes.
 

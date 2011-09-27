@@ -9,6 +9,8 @@ grammar simple:abstractsyntax ;
    environments are provided.
 -}
 
+-- TODO: This is not only a bad way of doing things, but we should be using
+-- a library environment anyway.
 nonterminal Env<a> ;
 
 function addBinding
