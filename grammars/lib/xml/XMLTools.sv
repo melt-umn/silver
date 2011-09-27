@@ -13,6 +13,6 @@ ParseResult<XMLDocument> ::= filename::String
 {
   return error("parseXMLFileN not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.parseXMLFileN(%filename%)";
+  "java" : return "common.rawlib.RawXML.parseXMLFileN(%filename%)";
 }
 
