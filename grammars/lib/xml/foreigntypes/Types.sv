@@ -16,7 +16,7 @@ ParseResult<XML_Document> ::= filename::String
 {
   return error("parseXMLFileF not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.parseXMLFileF(%filename%)";
+  "java" : return "common.rawlib.RawXML.parseXMLFileF(%filename%)";
 }
 
 -- NATIVE AST response. This is just a helper for 
@@ -32,7 +32,7 @@ XML_NodeList ::= query::String doc::XML_Document
 {
   return error("nodeListXPathQueryN not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.xpathQueryNodeSet(%doc%, %query%.toString(), null)";
+  "java" : return "common.rawlib.RawXML.xpathQueryNodeSet(%doc%, %query%.toString(), null)";
 }
 
 function stringXPathQuery
@@ -40,7 +40,7 @@ String ::= query::String doc::XML_Document
 {
   return error("stringXPathQuery not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.xpathQueryString(%doc%, %query%.toString(), null)";
+  "java" : return "common.rawlib.RawXML.xpathQueryString(%doc%, %query%.toString(), null)";
 }
 
 -- REQUERYING a previous query result...
@@ -49,14 +49,14 @@ XML_NodeList ::= query::String doc::XML_Node
 {
   return error("nodeListXPathReQueryF not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.xpathQueryNodeSet(%doc%, %query%.toString(), null)";
+  "java" : return "common.rawlib.RawXML.xpathQueryNodeSet(%doc%, %query%.toString(), null)";
 }
 function stringXPathReQuery
 String ::= query::String doc::XML_Node
 {
   return error("stringXPathReQuery not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.xpathQueryString(%doc%, %query%.toString(), null)";
+  "java" : return "common.rawlib.RawXML.xpathQueryString(%doc%, %query%.toString(), null)";
 }
 
 ----- namespace variants ------------------------------------------------------
@@ -67,7 +67,7 @@ XML_NodeList ::= query::String ns::[Pair<String String>] doc::XML_Document
 {
   return error("nodeListXPathQueryN not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.xpathQueryNodeSet(%doc%, %query%.toString(), %ns%)";
+  "java" : return "common.rawlib.RawXML.xpathQueryNodeSet(%doc%, %query%.toString(), %ns%)";
 }
 
 function stringXPathQueryns
@@ -75,7 +75,7 @@ String ::= query::String ns::[Pair<String String>] doc::XML_Document
 {
   return error("stringXPathQuery not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.xpathQueryString(%doc%, %query%.toString(), %ns%)";
+  "java" : return "common.rawlib.RawXML.xpathQueryString(%doc%, %query%.toString(), %ns%)";
 }
 
 -- REQUERYING a previous query result...
@@ -84,14 +84,14 @@ XML_NodeList ::= query::String ns::[Pair<String String>] doc::XML_Node
 {
   return error("nodeListXPathReQueryF not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.xpathQueryNodeSet(%doc%, %query%.toString(), %ns%)";
+  "java" : return "common.rawlib.RawXML.xpathQueryNodeSet(%doc%, %query%.toString(), %ns%)";
 }
 function stringXPathReQueryns
 String ::= query::String ns::[Pair<String String>] doc::XML_Node
 {
   return error("stringXPathReQuery not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.xpathQueryString(%doc%, %query%.toString(), %ns%)";
+  "java" : return "common.rawlib.RawXML.xpathQueryString(%doc%, %query%.toString(), %ns%)";
 }
 
 -------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ XMLNodeList ::= nl::XML_NodeList
 {
   return error("xmlNodeListF2N not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.nodeListF2N((org.w3c.dom.NodeList)%nl%)";
+  "java" : return "common.rawlib.RawXML.nodeListF2N((org.w3c.dom.NodeList)%nl%)";
 }
 
 function nodeListF2NPartial
@@ -110,7 +110,7 @@ function nodeListF2NPartial
 {
   return error("nodeListF2NPartial not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.nodeListF2NPartial((org.w3c.dom.NodeList)%nl%)";
+  "java" : return "common.rawlib.RawXML.nodeListF2NPartial((org.w3c.dom.NodeList)%nl%)";
 }
 
 -- TODO: xmlNodeListN2F? Can accomplish for now by wrapping in a document, perhaps.
@@ -121,7 +121,7 @@ XMLDocument ::= doc::XML_Document
 {
   return error("xmlDocumentF2N not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.documentF2N((org.w3c.dom.Document)%doc%)";
+  "java" : return "common.rawlib.RawXML.documentF2N((org.w3c.dom.Document)%doc%)";
 }
 
 function xmlDocumentN2F
@@ -129,7 +129,7 @@ XML_Document ::= doc::XMLDocument
 {
   return error("xmlDocumentN2F not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.documentN2F((lib.xml.ast.NXMLDocument)%doc%)";
+  "java" : return "common.rawlib.RawXML.documentN2F((lib.xml.ast.NXMLDocument)%doc%)";
 }
 
 function xmlDocumentF2String
@@ -137,7 +137,7 @@ String ::= doc::XML_Document
 {
   return error("xmlDocumentF2String not yet implemented");
 } foreign {
-  "java" : return "common.xml.Util.documentF2String((org.w3c.dom.Document)%doc%)";
+  "java" : return "common.rawlib.RawXML.documentF2String((org.w3c.dom.Document)%doc%)";
 }
 
 function xmlDocumentN2String

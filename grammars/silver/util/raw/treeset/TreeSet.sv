@@ -13,8 +13,10 @@ Set<a> ::= comparator::Function(Integer ::= a a)
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.lib.treeset.Util.empty(%comparator%)";
+  "java" : return "common.rawlib.RawTreeSet.empty(%comparator%)";
 }
+
+-- an 'insert' function is deliberating omitted due to its inefficiency, but there's add:
 
 {--
  - Adds a list of elements to a set.
@@ -24,7 +26,7 @@ Set<a> ::= lst::[a] set::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.lib.treeset.Util.addList(%lst%, (java.util.TreeSet<Object>)%set%)";
+  "java" : return "common.rawlib.RawTreeSet.addList(%lst%, (java.util.TreeSet<Object>)%set%)";
 }
 
 {--
@@ -35,7 +37,7 @@ function toList
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.lib.treeset.Util.toList((java.util.TreeSet<Object>)%set%)";
+  "java" : return "common.rawlib.RawTreeSet.toList((java.util.TreeSet<Object>)%set%)";
 }
 
 {--
@@ -46,7 +48,7 @@ Set<a> ::= l::Set<a> r::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.lib.treeset.Util.union((java.util.TreeSet<Object>)%l%,(java.util.TreeSet<Object>)%r%)";
+  "java" : return "common.rawlib.RawTreeSet.union((java.util.TreeSet<Object>)%l%,(java.util.TreeSet<Object>)%r%)";
 }
 
 {--
@@ -57,7 +59,7 @@ Set<a> ::= l::Set<a> r::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.lib.treeset.Util.intersect((java.util.TreeSet<Object>)%l%,(java.util.TreeSet<Object>)%r%)";
+  "java" : return "common.rawlib.RawTreeSet.intersect((java.util.TreeSet<Object>)%l%,(java.util.TreeSet<Object>)%r%)";
 }
 
 {--
@@ -68,7 +70,7 @@ Set<a> ::= l::Set<a> r::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.lib.treeset.Util.difference((java.util.TreeSet<Object>)%l%,(java.util.TreeSet<Object>)%r%)";
+  "java" : return "common.rawlib.RawTreeSet.difference((java.util.TreeSet<Object>)%l%,(java.util.TreeSet<Object>)%r%)";
 }
 
 {--
@@ -79,7 +81,7 @@ Boolean ::= e::a set::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.lib.treeset.Util.contains(%e%,(java.util.TreeSet<Object>)%set%)";
+  "java" : return "common.rawlib.RawTreeSet.contains(%e%,(java.util.TreeSet<Object>)%set%)";
 }
 
 {--
@@ -90,7 +92,7 @@ Boolean ::= e::[a] set::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.lib.treeset.Util.containsAll(%e%,(java.util.TreeSet<Object>)%set%)";
+  "java" : return "common.rawlib.RawTreeSet.containsAll(%e%,(java.util.TreeSet<Object>)%set%)";
 }
 
 {--
@@ -101,7 +103,7 @@ Boolean ::= l::Set<a> r::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.lib.treeset.Util.subset((java.util.TreeSet<Object>)%l%,(java.util.TreeSet<Object>)%r%)";
+  "java" : return "common.rawlib.RawTreeSet.subset((java.util.TreeSet<Object>)%l%,(java.util.TreeSet<Object>)%r%)";
 }
 
 {--
