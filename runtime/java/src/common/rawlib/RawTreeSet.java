@@ -1,11 +1,11 @@
-package common.lib.treeset;
+package common.rawlib;
 
 import java.util.TreeSet;
 
 import common.*;
 import common.javainterop.*;
 
-public final class Util {
+public final class RawTreeSet {
 
 	public static TreeSet<Object> empty(NodeFactory<Integer> cmp) {
 		return new TreeSet<Object>(new SilverComparator<Object>(cmp));
