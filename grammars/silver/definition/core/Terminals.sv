@@ -60,6 +60,7 @@ terminal Plus_t		'+'  precedence = 11, association = left;
 terminal Minus_t	'-'  precedence = 11, association = left;
 terminal Multiply_t	'*'  precedence = 12, association = left;
 terminal Divide_t	'/'  precedence = 12, association = left;
+terminal Modulus_t      '%'  precedence = 12, association = left;
 terminal ColonColon_t	'::' precedence = 14, association = right; -- HasType AND cons. right due to cons.
 terminal LParen_t	'('  precedence = 24;
 terminal RParen_t	')'  ;

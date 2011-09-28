@@ -494,6 +494,27 @@ top::Expr ::= e1::Expr '/' e2::Expr
        then []
        else [err(top.location, "Operands to / must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
+aspect production modulus
+top::Expr ::= e1::Expr '%' e2::Expr
+{
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  e1.downSubst = top.downSubst;
+  e2.downSubst = e1.upSubst;
+  errCheck1.downSubst = e2.upSubst;
+  top.upSubst = errCheck1.upSubst;
+  
+  errCheck1 = check(e1.typerep, e2.typerep);
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operands to % must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       else [];
+
+  top.errors <-
+       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+       then []
+       else [err(top.location, "Operands to % must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+}
 aspect production neg
 top::Expr ::= '-' e1::Expr
 {

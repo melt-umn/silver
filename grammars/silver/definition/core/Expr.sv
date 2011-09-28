@@ -611,6 +611,18 @@ top::Expr ::= e1::Expr '/' e2::Expr
   forwards to defaultExpr();
 }
 
+concrete production modulus
+top::Expr ::= e1::Expr '%' e2::Expr
+{
+  top.pp = e1.pp ++ " % " ++ e2.pp;
+  top.location = loc(top.file, $2.line, $2.column);
+
+  top.errors := e1.errors ++ e2.errors;
+  top.typerep = e1.typerep;
+  
+  forwards to defaultExpr();
+}
+
 concrete production neg
 top::Expr ::= '-' e::Expr
 precedence = 13

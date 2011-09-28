@@ -424,6 +424,17 @@ top::Expr ::= e1::Expr '/' e2::Expr
 
   top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
+aspect production modulus
+top::Expr ::= e1::Expr '%' e2::Expr
+{
+  top.translation = case finalType(top) of
+                      intTypeExp() -> "Integer.valueOf(" ++ e1.translation ++ " % " ++ e2.translation ++ ")"
+                    | floatTypeExp() -> "Float.valueOf(" ++ e1.translation ++ " % " ++ e2.translation ++ ")"
+                    | t -> error("INTERNAL ERROR: no % trans for type " ++ prettyType(t))
+                    end;
+
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
+}
 aspect production neg
 top::Expr ::= '-' e::Expr
 {
