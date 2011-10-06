@@ -88,6 +88,14 @@ equalityTest ( replicate(0, " "), "",
 
 -- isDigit isAlpha isSpace isLower isUpper TODO
 
+-- toIntSafe
+equalityTest ( toIntSafe("2147483647").isJust, true,
+               Boolean, core_tests ) ;
+equalityTest ( toIntSafe("2147483647").fromJust, 2147483647,
+               Integer, core_tests ) ;
+equalityTest ( toIntSafe("2147483648").isJust, false,
+               Boolean, core_tests ) ;
+
 
 
 -- from lib:extcore!

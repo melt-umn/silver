@@ -190,7 +190,7 @@ Boolean ::= str::String
 {
   return error("Not Yet Implemented: isDigit");
 } foreign {
-  "java" : return "(common.Util.isDigit(%str%.toString()))";
+  "java" : return "common.Util.isDigit(%str%.toString())";
 }
 
 {--
@@ -205,7 +205,7 @@ Boolean ::= str::String
 {
   return error("Not Yet Implemented: isAlpha");
 } foreign {
-  "java" : return "(common.Util.isAlpha(%str%.toString()))";
+  "java" : return "common.Util.isAlpha(%str%.toString())";
 }
 
 {--
@@ -222,7 +222,7 @@ Boolean ::= str::String
 {
   return error("Not Yet Implemented: isSpace");
 } foreign {
-  "java" : return "(common.Util.isSpace(%str%.toString()))";
+  "java" : return "common.Util.isSpace(%str%.toString())";
 }
 
 {--
@@ -237,7 +237,7 @@ Boolean ::= str::String
 {
   return error("Not Yet Implemented: isLower");
 } foreign {
-  "java" : return "(common.Util.isLower(%str%.toString()))";
+  "java" : return "common.Util.isLower(%str%.toString())";
 }
 
 {--
@@ -252,7 +252,15 @@ Boolean ::= str::String
 {
   return error("Not Yet Implemented: isUpper");
 } foreign {
-  "java" : return "(common.Util.isUpper(%str%.toString()))";
+  "java" : return "common.Util.isUpper(%str%.toString())";
+}
+
+function toIntSafe
+Maybe<Integer> ::= str::String
+{
+  return error("Not Yet Implemented: toIntSafe");
+} foreign {
+  "java" : return "common.Util.safetoInt(%str%.toString())";
 }
 
 {--
