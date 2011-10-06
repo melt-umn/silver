@@ -66,10 +66,9 @@ public final class Util {
 		throw new SilverError(o.toString());
 	}
 	
-	public static core.NMaybe safetoInt(Object o) {
-		StringCatter s = (StringCatter)demand(o);
+	public static core.NMaybe safetoInt(String s) {
 		try {
-			return new core.Pjust( Integer.valueOf(s.toString()) );
+			return new core.Pjust( Integer.valueOf(s) );
 		} catch(NumberFormatException e) {
 			return new core.Pnothing();
 		}
