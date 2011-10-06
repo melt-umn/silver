@@ -65,6 +65,15 @@ public final class Util {
 		System.err.print(o);
 		throw new SilverError(o.toString());
 	}
+	
+	public static core.NMaybe safetoInt(Object o) {
+		StringCatter s = (StringCatter)demand(o);
+		try {
+			return new core.Pjust( Integer.valueOf(s.toString()) );
+		} catch(NumberFormatException e) {
+			return new core.Pnothing();
+		}
+	}
 
 	public static boolean isAlpha(String sb) {
 		boolean result = true;
