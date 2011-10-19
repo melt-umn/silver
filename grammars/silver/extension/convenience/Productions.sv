@@ -39,8 +39,8 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
   local attribute nme :: Name;
   nme = case optn of
         | noOptionalName() -> nameIdLower(terminal(IdLower_t, 
-                                                   "P_" ++ substitute("_", ".", top.file)
-                                                   -- substitute("_", ":", top.lhsdcl.outputElement.typerep.typeName) TODO
+                                                   "P_" ++ substitute(".", "_", top.file)
+                                                   -- substitute(":", "_", top.lhsdcl.outputElement.typerep.typeName) TODO
                                                    ++ "_" ++ toString(v.line) ++ "_" ++ toString(v.column),
                                                    v.line, v.column))
         | anOptionalName(_, n, _) -> n
