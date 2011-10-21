@@ -1,11 +1,8 @@
 grammar simple:extensions:matrix;
 
-concrete production matrixRef_c
-e::cst:Expr ::= id::cst:Id '[' r::cst:Expr ',' c::cst:Expr ']'
-{
-  e.unparse = id.lexeme;
-  e.ast = matrixRef(cst:name(id), r.ast, c.ast);
-}
+concrete productions e::cst:Expr
+ | id::cst:Id '[' r::cst:Expr ',' c::cst:Expr ']'  { e.unparse = id.lexeme;
+                                                     e.ast = matrixRef(cst:name(id), r.ast, c.ast); }
 
 abstract production matrixRef
 e::Expr ::= id::Name r::Expr c::Expr

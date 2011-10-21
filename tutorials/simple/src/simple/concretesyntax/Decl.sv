@@ -5,35 +5,20 @@ grammar simple:concretesyntax;
  -}
 nonterminal Decl with unparse, ast<ast:Decl>;
 
-concrete production decl
-d::Decl ::= te::TypeExpr id::term:Id ';'
-{
-  d.unparse = te.unparse ++ " " ++ id.lexeme ++ "; \n";
-  d.ast = ast:decl(te.ast, name(id));
-}
+concrete productions d::Decl
+ | te::TypeExpr id::term:Id ';'  { d.unparse = te.unparse ++ " " ++ id.lexeme ++ "; \n";
+                                   d.ast = ast:decl(te.ast, name(id)); }
 
 {--
  - A concrete expression denoting a type
  -}
 nonterminal TypeExpr with unparse, ast<ast:TypeExpr>;
 
-concrete production typeExprInteger
-t::TypeExpr ::= 'Integer' 
-{
-  t.unparse = "Integer";
-  t.ast = ast:typeExprInteger(); 
-}
+concrete productions t::TypeExpr
+ | 'Integer'  { t.unparse = "Integer";
+                t.ast = ast:typeExprInteger(); }
 
-concrete production typeExprFloat
-t::TypeExpr ::=  'Float' 
-{
-  t.unparse = "Float";
-  t.ast = ast:typeExprFloat(); 
-}
-
-concrete production typeExprBoolean
-t::TypeExpr ::=  'Boolean' 
-{
-  t.unparse = "Boolean";
-  t.ast = ast:typeExprBoolean(); 
-}
+ | 'Float'    { t.unparse = "Float";
+                t.ast = ast:typeExprFloat(); }
+ | 'Boolean'  { t.unparse = "Boolean";
+                t.ast = ast:typeExprBoolean(); }

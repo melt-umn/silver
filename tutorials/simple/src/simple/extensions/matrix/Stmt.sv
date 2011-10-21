@@ -1,12 +1,9 @@
 grammar simple:extensions:matrix;
 
 {-
-concrete production assignmentMatrix_c
-s::cst:StmtMatched ::= id::cst:Id '[' row::cst:Expr ',' col::cst:Expr ']' '=' value::cst:Expr ';' 
-{
-  s.unparse = id.lexeme ++ "[" ++ row.unparse ++ ", " ++ col.unparse ++ "] = " ++ value.unparse ++ ";\n";
-  s.ast = assignmentMatrix(cst:name(id), row.ast, col.ast, value.ast); 
-}
+concrete productions s::cst:StmtMatched
+ | id::cst:Id '[' row::cst:Expr ',' col::cst:Expr ']' '=' value::cst:Expr ';'  { s.unparse = id.lexeme ++ "[" ++ row.unparse ++ ", " ++ col.unparse ++ "] = " ++ value.unparse ++ ";\n";
+                                                                                 s.ast = assignmentMatrix(cst:name(id), row.ast, col.ast, value.ast); }
 
 abstract production assignmentMatrix
 s::Stmt ::= id::Name r::Expr c::Expr e::Expr 

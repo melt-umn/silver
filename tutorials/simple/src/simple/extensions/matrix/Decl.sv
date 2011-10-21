@@ -1,11 +1,10 @@
 grammar simple:extensions:matrix;
 
-concrete production declMatrix_C
-d::cst:Decl ::= 'Matrix' id::cst:Id '[' r::cst:Expr ',' c::cst:Expr ']' ri::cst:Id ',' ci::cst:Id '=' e::cst:Expr ';'
-{
-  d.unparse = "Matrix " ++ id.lexeme ++ "[" ++ r.unparse ++ ", " ++ c.unparse ++ "] " ++ ri.lexeme ++ "," ++ ci.lexeme ++ " = " ++ e.unparse ++ ";\n";
-  d.ast = declMatrix(cst:name(id), r.ast, c.ast, cst:name(ri), cst:name(ci), e.ast);
-}
+concrete productions d::cst:Decl
+ | 'Matrix' id::cst:Id '[' r::cst:Expr ',' c::cst:Expr ']' 
+            ri::cst:Id ',' ci::cst:Id '=' e::cst:Expr ';'  { d.unparse = "Matrix " ++ id.lexeme ++ "[" ++ r.unparse ++ ", " ++ c.unparse ++ "] " ++ ri.lexeme 
+                                                               ++ "," ++ ci.lexeme ++ " = " ++ e.unparse ++ ";\n";
+                                                             d.ast = declMatrix(cst:name(id), r.ast, c.ast, cst:name(ri), cst:name(ci), e.ast); }
 
 abstract production declMatrix
 d::Decl ::= id::Name r::Expr c::Expr ri::Name ci::Name v::Expr
@@ -44,12 +43,9 @@ d::Decl ::= id::Name r::Expr c::Expr ri::Name ci::Name v::Expr
 
 
 -- Don't permit normal declarations
---concrete production typeExprMatrix_c
---t::cst:TypeExpr ::= 'Matrix' 
---{
---  t.pp = "Matrix";
---  t.ast = typeExprMatrix(); 
---}
+--concrete productions t::cst:TypeExpr
+-- | 'Matrix'  { t.pp = "Matrix";
+--               t.ast = typeExprMatrix(); }
 
 abstract production typeExprMatrix
 t::TypeExpr ::=  

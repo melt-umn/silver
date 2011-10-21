@@ -8,12 +8,9 @@ imports simple:abstractsyntax;
 terminal Then 'then' lexer classes { KEYWORDS };
 terminal Else 'else' lexer classes { KEYWORDS }, precedence = 4;
 
-concrete production ifthenelse_c
-e::cst:Expr ::= 'if' c::cst:Expr 'then' t::cst:Expr Else e1::cst:Expr
-{
-  e.unparse = "if " ++ c.unparse ++ " then " ++ t.unparse ++ " else " ++ e1.unparse;
-  e.ast = ifthenelse(c.ast, t.ast, e1.ast);
-}
+concrete productions e::cst:Expr
+ | 'if' c::cst:Expr 'then' t::cst:Expr Else e1::cst:Expr  { e.unparse = "if " ++ c.unparse ++ " then " ++ t.unparse ++ " else " ++ e1.unparse;
+                                                            e.ast = ifthenelse(c.ast, t.ast, e1.ast); }
 
 abstract production ifthenelse
 e::Expr ::= c::Expr t::Expr e1::Expr

@@ -7,12 +7,9 @@ imports simple:abstractsyntax;
 
 terminal Implies  '=>'  precedence = 6;
 
-concrete production implies_c
-e::cst:Expr ::= l::cst:Expr '=>' r::cst:Expr
-{
-  e.unparse = "(" ++  l.unparse ++ " => " ++ r.unparse ++ ")";
-  e.ast = implies(l.ast, r.ast);
-}
+concrete productions e::cst:Expr
+ | l::cst:Expr '=>' r::cst:Expr  { e.unparse = "(" ++  l.unparse ++ " => " ++ r.unparse ++ ")";
+                                   e.ast = implies(l.ast, r.ast); }
 
 abstract production implies
 e::Expr ::= l::Expr r::Expr 
