@@ -9,12 +9,9 @@ terminal Let 'let' lexer classes { KEYWORDS };
 terminal In 'in'   lexer classes { KEYWORDS };
 terminal End 'end' lexer classes { KEYWORDS };
 
-concrete production letExpr_c
-e::cst:Expr ::= 'let' s::cst:Stmts 'in' e1::cst:Expr 'end'
-{
-  e.unparse = "let " ++ s.unparse ++ " in " ++ e1.unparse ++ " end";
-  e.ast = letExpr(s.ast, e1.ast);
-}
+concrete productions e::cst:Expr
+ | 'let' s::cst:Stmts 'in' e1::cst:Expr 'end'  { e.unparse = "let " ++ s.unparse ++ " in " ++ e1.unparse ++ " end";
+                                                 e.ast = letExpr(s.ast, e1.ast); }
 
 abstract production letExpr
 e::Expr ::= s::Stmt e1::Expr

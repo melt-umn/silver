@@ -25,6 +25,14 @@ nonterminal Root with unparse, ast<ast:Root>;
  - grammar. The colon is Silver's namespace resolution operator.
  -}
 
+
+concrete productions r::Root
+ | 'main' '(' ')' '{' s::Stmts '}'  { r.unparse = "main () {\n" ++ s.unparse ++ "}\n";
+                                      -- We're again about to use the 'ast' namespace to refer to rootStmt in
+                                      -- our abstractsyntax:
+                                      r.ast = ast:rootStmt(s.ast); }
+
+{-
 concrete production rootStmt
 r::Root ::= 'main' '(' ')' '{' s::Stmts '}'
 {
@@ -33,3 +41,4 @@ r::Root ::= 'main' '(' ')' '{' s::Stmts '}'
   -- our abstractsyntax:
   r.ast = ast:rootStmt(s.ast);
 }
+-}

@@ -14,12 +14,9 @@ imports simple:extensions:repeat_until;
 
 terminal Do 'do' lexer classes { KEYWORDS };
 
-concrete production dowhile_c 
-s::cst:StmtMatched ::= 'do' body::cst:Stmt 'while' '(' cond::cst:Expr ')' ';'
-{
-  s.unparse = "do \n" ++ body.unparse ++ "\n" ++ "while " ++ cond.unparse ++ "; \n";
-  s.ast = dowhile(body.ast, cond.ast); 
-}
+concrete productions s::cst:StmtMatched
+ | 'do' body::cst:Stmt 'while' '(' cond::cst:Expr ')' ';'  { s.unparse = "do \n" ++ body.unparse ++ "\n" ++ "while " ++ cond.unparse ++ "; \n";
+                                                             s.ast = dowhile(body.ast, cond.ast); }
 
 abstract production dowhile
 s::Stmt ::= body::Stmt cond::Expr
