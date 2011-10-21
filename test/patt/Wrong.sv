@@ -28,3 +28,17 @@ wrongCode "1 is an Integer but we're trying to match against String" {
  }
 }
 
+wrongCode "aValidProduction has type" {
+ nonterminal AValidNonterminal;
+ abstract production aValidProduction
+ t::AValidNonterminal ::= {}
+
+ function funfoo
+ String ::= t::mistakenly_a_type_variable
+ {
+  return case t of
+         | aValidProduction() -> "hi"
+         | _ -> "result"
+         end; 
+ }
+}

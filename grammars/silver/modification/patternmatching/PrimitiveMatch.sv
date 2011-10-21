@@ -159,7 +159,7 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
   -- Pass us by!! We're cheating here for a bit!
   top.upSubst = top.downSubst;
   -- Okay, now come back after checking everything else, let's check me... wheee
-  errCheck1.downSubst = composeSubst(top.finalSubst, refine(top.scrutineeType, decoratedTypeExp(prod_type.outputType)));
+  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, decoratedTypeExp(prod_type.outputType)));
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   -- Okay, now update the finalSubst....
@@ -552,6 +552,26 @@ top::TypeExp ::= out::TypeExp params::[TypeExp]
                productionTypeExp(oo, op) -> refineAll(out :: params, oo :: op)
              | _ -> errorSubst("Tried to refine production type with " ++ prettyType(top.refineWith))
               end;
+}
+
+{--
+ - Produces substitutions that may involve skolem constants, as well as free variables
+ - for constructors.
+ -
+ - @param scrutineeType  The decorated type of the value being examined. Should not be a type variable!
+ - @param constructorType  The decorated type of the production's product (i.e. the type it constructs)
+ -}
+function produceRefinement
+Substitution ::= scrutineeType::TypeExp  constructorType::TypeExp
+{
+  -- only do refinement if they're the same type constructor.
+  -- If you look at the type rules, you'll notice they're requiring "T" be the same,
+  -- and this refinement only happens on the parameters (i.e. fmgu(T p = T a))
+  return case scrutineeType, constructorType of
+         | decoratedTypeExp(nonterminalTypeExp(n1, p1)), decoratedTypeExp(nonterminalTypeExp(n2,p2))
+            -> if n1 == n2 then refineAll(p1,p2) else emptySubst()
+         | _ -> emptySubst()
+         end;
 }
 
 function refine
