@@ -215,10 +215,7 @@ implode("\n", extraTaskdefs) ++ "\n\n" ++
 "       <attribute name='Class-Path' value='${man.classpath}' />\n"
  else "") ++
 "       <attribute name='Built-By' value='${user.name}' />\n" ++
-"       <section name='version'>\n" ++
-"         <attribute name='Specification-Version' value='' />\n" ++
-"         <attribute name='Implementation-Version' value='${TIME}' />\n" ++
-"       </section>\n" ++
+"       <attribute name='Implementation-Version' value='${TIME}' />\n" ++
 "      </manifest>\n" ++
 
 -- If we're building a single jar, then include it, and don't write out a script.
@@ -233,7 +230,7 @@ implode("\n", extraTaskdefs) ++ "\n\n" ++
 
 "  <target name='grammars' depends='" ++ implode(", ", extraDepends) ++ "'>\n" ++
 
-"      <javac debug='on' source='1.5' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false'>\n" ++
+"      <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false'>\n" ++
     buildGrammarList(specs, "*.java") ++ 
 "      </javac>\n" ++
 "  </target>\n\n" ++
