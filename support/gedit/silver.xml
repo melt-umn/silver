@@ -1,0 +1,8 @@
+<mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+  <mime-type type="text/x-melt-silver">
+    <comment>Silver Source</comment>
+    <sub-class-of type="text/plain"/>
+    <!-- 51 to defeat SystemVerilog. -->
+    <glob pattern="*.sv" weight="51"/>
+  </mime-type>
+</mime-info>
