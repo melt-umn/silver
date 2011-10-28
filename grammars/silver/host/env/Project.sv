@@ -13,7 +13,14 @@ exports silver:definition:env;
 import silver:definition:regex;
 import silver:definition:env:env_parser;
 
+-- should be escaped
 disambiguate RegexChar_t, RegExprDelim
 {
   pluck RegExprDelim;
+}
+-- For now, preserve existing behavior. Whitespace is allowed in regex, and ignored.
+-- Escape it if you want it.
+disambiguate RegexChar_t, WS
+{
+  pluck WS;
 }
