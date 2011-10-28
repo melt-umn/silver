@@ -13,7 +13,7 @@ terminal Suite_t 'suite' ;
 terminal Jar_t   /[a-zA-Z_\-\.]+\.jar/ ;
 
 terminal Command_t /[\"]([^\"]|[\\][\"])*[\"]/ ;
-terminal CommandAlt_t /.*/ ;  -- to follow "run:"
+terminal CommandAlt_t /.*/ submits to {LineComment, BlockComment, WhiteSpace};  -- to follow "run:"
 
 ignore terminal LineComment  /[\/][\/].*/ ;
 ignore terminal BlockComment 

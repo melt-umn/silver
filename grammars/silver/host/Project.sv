@@ -15,7 +15,14 @@ exports silver:analysis:typechecking:core;
 import silver:definition:regex;
 import silver:definition:core;
 
+-- Regexes end with /. Escape it if you want it.
 disambiguate RegexChar_t, Divide_t
 {
   pluck Divide_t;
+}
+-- For now, preserve existing behavior. Whitespace is allowed in regex, and ignored.
+-- Escape it if you want it.
+disambiguate RegexChar_t, WhiteSpace
+{
+  pluck WhiteSpace;
 }

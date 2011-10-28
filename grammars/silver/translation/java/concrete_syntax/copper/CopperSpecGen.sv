@@ -14,12 +14,8 @@ String ::= grammar_name::String spec::Decorated ParserSpec
   local attribute s :: String;
   s = makeCopperName(spec.startName);
 
-  -- Copper does something odd with layouts, apparently.
-  local attribute emptyStr :: Decorated TerminalSpec;
-  emptyStr = terminalSpec("EmptyString", [ignoreTerminalModifierSpec()], decorate Rtoeps() with {});
-
   local attribute univLayout :: String;
-  univLayout = generateUniversalLayout(grammar_name, cons(emptyStr, spec.terminalDcls));
+  univLayout = generateUniversalLayout(grammar_name, spec.terminalDcls);
 
   local attribute rv :: String;
   rv = 
@@ -37,7 +33,7 @@ String ::= grammar_name::String spec::Decorated ParserSpec
 
              makeDisambiguateSpecString(spec.disambiguationGroupDcls) ++ "\n" ++
              makeParserAttrString(spec.parserAttrDcls) ++ "\n" ++
-             makeTermTokenSpecString(cons(emptyStr, spec.terminalDcls), grammar_name) ++
+             makeTermTokenSpecString(spec.terminalDcls, grammar_name) ++
              makeNonTermList(spec.nonTerminalDcls) ++ "\n" ++
              makeStartDclString(spec.startName, univLayout) ++ "\n" ++
              makeProdDclString(univLayout,spec.ruleDcls) ++
@@ -179,7 +175,7 @@ String ::= univLayout::String lhs::String rhs::[Decorated RHSSpec]
 	makeProdRHS(head(rhs).ruleRHS) ++
 "    </rhs>\n" ++
 "    <layout>" ++ (if head(rhs).hasCustomLayout
-                   then generateCustomLayoutList("EmptyString" :: head(rhs).customLayout)
+                   then generateCustomLayoutList(head(rhs).customLayout)
                    else univLayout) ++
     "</layout>\n" ++
 
