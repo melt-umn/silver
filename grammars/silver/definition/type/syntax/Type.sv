@@ -104,41 +104,14 @@ top::Type ::= q::QNameUpper botl::BracketedOptTypeList
 {
   top.pp = q.pp ++ botl.pp;
   top.location = q.location;
-  top.errors <- q.lookupType.errors;
+  top.errors := q.lookupType.errors ++ botl.typelist.errors;
   top.lexicalTypeVariables = botl.typelist.lexicalTypeVariables;
 
-  forwards to if null(q.lookupType.dcls)
-              then nominalTypeError(q, botl)
-              else q.lookupType.typerep.typeHandler(q, botl);
-}
-abstract production nominalTypeError
-top::Type ::= q::Decorated QNameUpper botl::BracketedOptTypeList
-{
-  top.errors := []; -- already taken care of
-  top.typerep = errorType();
-}
-abstract production nominalTypeNormal
-top::Type ::= q::Decorated QNameUpper botl::BracketedOptTypeList
-{
-  top.errors := if null(botl.typelist.types) then []
-                else [err(q.location, q.pp ++ " is not a nonterminal, and cannot be parameterized by types")];
-  top.typerep = q.lookupType.typerep;
-}
-abstract production nominalTypeNonterminal
-top::Type ::= q::Decorated QNameUpper botl::BracketedOptTypeList
-{
-  top.errors := case q.lookupType.typerep of
-                  nonterminalTypeExp(ofn, op) ->
-                     if length(op) == length(botl.typelist.types)
-                     then []
-                     else [err(top.location, q.pp ++ " has " ++ toString(length(op)) ++ " type variables, but there are " ++ toString(length(botl.typelist.types)) ++ " supplied here.")]
-                end;
-  top.errors <- botl.typelist.errors;
-  top.typerep = case q.lookupType.typerep of
-                  nonterminalTypeExp(ofn, op) -> if length(op) == length(botl.typelist.types)
-                                                 then nonterminalTypeExp(ofn, botl.typelist.types)
-                                                 else freshenCompletely(q.lookupType.typerep)
-                end;
+  top.errors <- if length(botl.typelist.types) != length(q.lookupType.dclBoundVars)
+                then [err(top.location, q.pp ++ " has " ++ toString(length(q.lookupType.dclBoundVars)) ++ " type variables, but there are " ++ toString(length(botl.typelist.types)) ++ " supplied here.")]
+                else [];
+
+  top.typerep = performSubstitution(q.lookupType.typerep, zipVarsAndTypesIntoSubstitution(q.lookupType.dclBoundVars, botl.typelist.types));
 }
 
 concrete production typeVariableType
