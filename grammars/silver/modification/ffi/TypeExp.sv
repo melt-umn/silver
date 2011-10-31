@@ -20,24 +20,6 @@ top::TypeExp ::= fn::String params::[TypeExp]
   -- env
   top.unparse = "foreigntype('" ++ fn ++ "', " ++ unparseTypes(params, top.boundVariables) ++ ")";
   
-  top.typeHandler = nominalTypeForeign;
-  
   forwards to defaultTypeExp();
 }
 
-abstract production nominalTypeForeign
-top::Type ::= q::Decorated QNameUpper botl::BracketedOptTypeList
-{
-  top.errors := case q.lookupType.typerep of
-                  foreignTypeExp(ofn, op) ->
-                     if length(op) == length(botl.typelist.types)
-                     then []
-                     else [err(top.location, q.pp ++ " has " ++ toString(length(op)) ++ " type variables, but there are " ++ toString(length(botl.typelist.types)) ++ " supplied here.")]
-                end;
-  top.errors <- botl.typelist.errors;
-  top.typerep = case q.lookupType.typerep of
-                  foreignTypeExp(ofn, op) -> if length(op) == length(botl.typelist.types)
-                                             then foreignTypeExp(ofn, botl.typelist.types)
-                                             else freshenCompletely(q.lookupType.typerep)
-                end;
-}
