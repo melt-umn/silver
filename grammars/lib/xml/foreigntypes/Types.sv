@@ -2,9 +2,9 @@ grammar lib:xml:foreigntypes;
 
 import lib:xml:ast;
 
-nonterminal foreign type XML_Document;
-nonterminal foreign type XML_NodeList;
-nonterminal foreign type XML_Node;
+type XML_Document foreign;
+type XML_NodeList foreign;
+type XML_Node foreign;
 
 
 {--

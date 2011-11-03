@@ -3,7 +3,7 @@ grammar silver:util:raw:treemap;
 -- One should always import this via 'import silver:util:raw:treemap as ...'
 -- The names are too general otherwise.
 
-nonterminal foreign type Map<a b>;
+type Map<a b> foreign;
 
 {--
  - Returns a new, empty, multimap using the specified comparator.

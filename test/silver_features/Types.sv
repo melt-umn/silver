@@ -24,7 +24,9 @@ wrongCode "NTOne has 1 type variables, but there are 2 supplied here" {
 wrongCode "NTZero' is already bound" {
  nonterminal NTZero;
 }
-
+wrongCode "Duplicate type variable names listed" {
+ nonterminal NTTwo<a a>;
+}
 
 --nonterminal IO; -- parse error
 
@@ -53,4 +55,17 @@ wrongCode "Operands to == must be the same type. Instead they are String and Int
  global t :: Boolean = astr1 == anum1;
 }
 
+wrongCode "Duplicate type variable names listed" {
+ type TypeTwo<a a> = Integer;
+}
+
+----------------------------------------- Foreign type decls
+
+type FType<a> foreign;
+
+global aft1 :: FType<Integer> = error("");
+
+wrongCode "Declaration of global aft2 with type silver_features:FType<String> has initialization expression with type silver_features:FType<Integer>" {
+ global aft2 :: FType<String> = aft1;
+}
 
