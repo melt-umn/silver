@@ -70,11 +70,11 @@ TreeMap<a b> ::= l::[Pair<a b>] t::TreeMap<a b>
 function treeDeconvert
 [Pair<a b>] ::= t::TreeMap<a b>
 {
-  return t.treeDeconvert;
+  return t.treeToList;
 }
 -- The implementation:
 
-nonterminal TreeMap<a b> with treeKey<a>, treeLookup<b>, treeValue<b>, treeInsert<a b>, makeBlack<a b>, treeDeconvert<a b>;
+nonterminal TreeMap<a b> with treeKey<a>, treeLookup<b>, treeValue<b>, treeInsert<a b>, makeBlack<a b>, treeToList<a b>;
 
 inherited attribute treeKey<a> :: a;
 synthesized attribute treeLookup<b> :: [b]; -- key
@@ -84,7 +84,7 @@ synthesized attribute treeInsert<a b> :: TreeMap<a b>; -- key, value
 
 synthesized attribute makeBlack<a b> :: TreeMap<a b>;
 
-synthesized attribute treeDeconvert<a b> :: [Pair<a b>];
+synthesized attribute treeToList<a b> :: [Pair<a b>];
 
 abstract production leaf
 top::TreeMap<a b> ::= CMP :: Function(Integer ::= a a)
@@ -92,7 +92,7 @@ top::TreeMap<a b> ::= CMP :: Function(Integer ::= a a)
   top.treeLookup = [];
   top.treeInsert = node(false, top, top, top.treeKey, [top.treeValue], CMP);
   top.makeBlack = top;
-  top.treeDeconvert = [];
+  top.treeToList = [];
 }
 
 abstract production node
@@ -122,7 +122,7 @@ top::TreeMap<a b> ::= black::Boolean lefttree::TreeMap<a b> righttree::TreeMap<a
                    end;
 
   top.makeBlack = if black then top else node(true, lefttree, righttree, label, values, CMP);
-  top.treeDeconvert = lefttree.treeDeconvert ++ treeMapKeyValues(label, values) ++ righttree.treeDeconvert;
+  top.treeToList = lefttree.treeToList ++ treeMapKeyValues(label, values) ++ righttree.treeToList;
   
   lefttree.treeKey = top.treeKey;
   lefttree.treeValue = top.treeValue;

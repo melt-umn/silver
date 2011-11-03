@@ -41,7 +41,7 @@ function lookup
 }
 
 {--
- - Converts a set back to a list, in sorted order.
+ - Converts a multimap back to a list of pairs, in sorted order by key.
  -}
 function toList
 [Pair<a b>] ::= mp::Map<a b>
