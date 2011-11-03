@@ -3,7 +3,7 @@ grammar silver:util:raw:treeset;
 -- One should always import this via 'import silver:util:raw:treeset as ...'
 -- The names are too general otherwise.
 
-nonterminal foreign type Set<a>;
+type Set<a> foreign;
 
 {--
  - Returns a new, empty, set using the specified comparator.
