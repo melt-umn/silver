@@ -114,6 +114,7 @@ String ::= specs::[Decorated TerminalSpec] grammar_name::String
 	head(specs).terminalRegExprSpec.regXML ++
 
 "    </regex>\n" ++
+     -- TODO WARNING BUG: These may refer to terminal CLASSES, copper currently only takes the name, so it's silently accepted!!
 "    <dominates>\n" ++
 	makeTermList(head(specs).termDominates) ++
 "    </dominates>\n" ++
