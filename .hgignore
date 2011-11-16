@@ -1,1 +1,4 @@
-^jars/*.jar$
+^jars/.*\.jar$
+^build
+^generated/src
+^generated/bin
