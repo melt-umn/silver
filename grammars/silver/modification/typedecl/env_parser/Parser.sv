@@ -11,7 +11,7 @@ terminal TypeTerm          'type'        lexer classes {C_1};
 
 
 concrete production aDclInfoType
-top::IDclInfo ::= 'type' '(' l::ILocation ',' s::Name ',' td::ITyVarDcls ',' t::ITypeRep ')'
+top::IDclInfo ::= 'type' '(' l::ILocation ',' s::IName ',' td::ITyVarDcls ',' t::ITypeRep ')'
 {
   t.env = newScopeEnv(td.defs, top.env);
   

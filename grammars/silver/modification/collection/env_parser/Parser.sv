@@ -16,12 +16,12 @@ terminal PAndTerm '&&' lexer classes {C_1};
 nonterminal IOperation with operation;
 
 concrete production operationNameFun
-top::IOperation ::= 'fun' '(' n::Name ')'
+top::IOperation ::= 'fun' '(' n::IName ')'
 {
   top.operation = functionOperation(n.aname);
 }
 concrete production operationNameProd
-top::IOperation ::= 'prod' '(' n::Name ')'
+top::IOperation ::= 'prod' '(' n::IName ')'
 {
   top.operation = productionOperation(n.aname);
 }
@@ -48,7 +48,7 @@ top::IOperation ::= '&&'
 
 
 concrete production aDclInfoSynthesizedCol
-top::IDclInfo ::= 'syncol' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' t::ITypeRep ',' o::IOperation ')'
+top::IDclInfo ::= 'syncol' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' t::ITypeRep ',' o::IOperation ')'
 {
   t.env = newScopeEnv(td.defs, top.env);
   
@@ -56,7 +56,7 @@ top::IDclInfo ::= 'syncol' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' 
 }
 
 concrete production aDclInfoInheritedCol
-top::IDclInfo ::= 'inhcol' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' t::ITypeRep ',' o::IOperation ')'
+top::IDclInfo ::= 'inhcol' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' t::ITypeRep ',' o::IOperation ')'
 {
   t.env = newScopeEnv(td.defs, top.env);
   
@@ -64,7 +64,7 @@ top::IDclInfo ::= 'inhcol' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' 
 }
 
 concrete production aDclInfoLocalCol
-top::IDclInfo ::= 'loccol' '(' l::ILocation ',' fn::Name ',' t::ITypeRep ',' o::IOperation ')'
+top::IDclInfo ::= 'loccol' '(' l::ILocation ',' fn::IName ',' t::ITypeRep ',' o::IOperation ')'
 {
   top.defs = addLocalColDcl(top.grammarName, l.location, fn.aname, t.typerep, o.operation, emptyDefs());
 }

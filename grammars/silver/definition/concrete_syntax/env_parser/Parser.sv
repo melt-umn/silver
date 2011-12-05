@@ -79,7 +79,7 @@ top::ITerminalSpecInner ::= s1::ITerminalSpec ',' s2::ITerminalSpecInner {
 }
 
 concrete production aTerminalSpecDef
-top::ITerminalSpec ::= '(' n::Name ','  m::ITerminalModifiers ',' '/' r::Regex_R '/' ')'{
+top::ITerminalSpec ::= '(' n::IName ','  m::ITerminalModifiers ',' '/' r::Regex_R '/' ')'{
   top.terminalDcls = [terminalSpec(n.aname, m.terminalModifiers, r)];
 }
 
@@ -176,7 +176,7 @@ top::IRuleSpecInner ::= d1::IRuleSpec ',' d2::IRuleSpecInner {
 }
 
 concrete production aRuleSpecDef
-top::IRuleSpec ::= '(' n::Name ',' rhs::IRHSSpecs ')' {
+top::IRuleSpec ::= '(' n::IName ',' rhs::IRHSSpecs ')' {
   top.ruleDcls = [ruleSpec(n.aname, rhs.ruleRHSSpec)];
 }
 
@@ -205,7 +205,7 @@ top::IRHSSpecInner ::= d1::IRHSSpec ',' d2::IRHSSpecInner {
 }
 
 concrete production aRHSSpecDef
-top::IRHSSpec ::= '(' gn::Name ',' fn::Name ',' ns::INames ',' pm::IProductionModifiers ')' {
+top::IRHSSpec ::= '(' gn::IName ',' fn::IName ',' ns::INames ',' pm::IProductionModifiers ')' {
   top.ruleRHSSpec = [rhsSpec(gn.aname, fn.aname, ns.names, pm.productionModifiers)];
 }
 
@@ -240,13 +240,13 @@ top::IProductionModifierSpec ::= 'precedence' n::Num_t {
 
 terminal OperatorTerm 'operator' lexer classes {C_1};
 concrete production aProductionModifierSpecOperator
-top::IProductionModifierSpec ::= 'operator' n::Name {
+top::IProductionModifierSpec ::= 'operator' n::IName {
   top.productionModifiers = [operatorProductionModifierSpec(n.aname)];
 }
 
 
 concrete production aRootParsers
-top::IRootSpecPart ::= t::ParserTerm n::Name ',' s::Name ',' gs::INames {
+top::IRootSpecPart ::= t::ParserTerm n::IName ',' s::IName ',' gs::INames {
   top.parserDcls = [parserSpecFromList(loc(t.filename,t.line,t.column), n.aname, s.aname, gs.names, top.compiledGrammars)];
   forwards to aRootSpecDefault();
 }
