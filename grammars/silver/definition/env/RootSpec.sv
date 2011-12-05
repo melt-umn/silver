@@ -69,3 +69,10 @@ function getDeclaredNames
 [String] ::= r::[Decorated RootSpec]{
   return if null(r) then [] else [head(r).declaredName] ++ getDeclaredNames(tail(r)); 
 }
+
+function unparseStrings
+String ::= s::[String]
+{
+  return "[" ++ implode(",", quoteStrings(s)) ++ "]";
+}
+

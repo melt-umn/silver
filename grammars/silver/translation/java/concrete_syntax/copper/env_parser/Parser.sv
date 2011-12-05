@@ -19,13 +19,13 @@ terminal LexerClassTerm 'lexer_class' lexer classes {C_1};
 terminal ParseAttrTerm 'parse_attr' lexer classes {C_1};
 
 concrete production aDclInfoLexerClass
-top::IDclInfo ::= 'lexer_class' '(' l::ILocation ',' fn::Name ',' s::INames ',' d::INames ')'
+top::IDclInfo ::= 'lexer_class' '(' l::ILocation ',' fn::IName ',' s::INames ',' d::INames ')'
 {
   top.defs = addLexerClassDcl(top.grammarName, l.location, fn.aname, s.names, d.names, emptyDefs());
 }
 
 concrete production aDclInfoParseAttr
-top::IDclInfo ::= 'parse_attr' '(' l::ILocation ',' fn::Name ',' t::ITypeRep ')'
+top::IDclInfo ::= 'parse_attr' '(' l::ILocation ',' fn::IName ',' t::ITypeRep ')'
 {
   top.defs = addParserAttrDcl(top.grammarName, l.location, fn.aname, t.typerep, emptyDefs());
 }
@@ -84,7 +84,7 @@ top::IRootSpecPart ::= 'disambiguate' '[' n::INames ',' s::EscapedStringTerm ']'
 }
 
 concrete production aParserAttribute
-top::IRootSpecPart ::= 'parse_attr' '[' n::Name ',' t::ITypeRep ',' s::EscapedStringTerm ']'
+top::IRootSpecPart ::= 'parse_attr' '[' n::IName ',' t::ITypeRep ',' s::EscapedStringTerm ']'
 {
   top.parserAttrDcls = [parserAttrSpec(n.aname, t.typerep, decodeEscapedStringTerm(s.lexeme))];
   

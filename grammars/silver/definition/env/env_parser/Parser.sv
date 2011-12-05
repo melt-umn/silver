@@ -101,20 +101,20 @@ nonterminal INamedSignature with signature, env, grammarName;
 nonterminal INames with names;
 nonterminal INamesInner with names;
 {- A (single-quoted) name -}
-nonterminal Name with aname;
+nonterminal IName with aname;
 {- Location info (Used by dclinfos, usually) -}
 nonterminal ILocation with location;
 
 -- a few simple utilities
 
 concrete production quoted_name
-top::Name ::= i::Id_t
+top::IName ::= i::Id_t
 {
   top.aname = substring(1, length(i.lexeme)-1, i.lexeme);
 }
 
 concrete production aLocationInfo
-top::ILocation ::= filename::Name ',' line::Num_t ',' column::Num_t
+top::ILocation ::= filename::IName ',' line::Num_t ',' column::Num_t
 {
   top.location = loc(filename.aname, toInt(line.lexeme), toInt(column.lexeme));
 }
@@ -175,7 +175,7 @@ top::IRootSpecPart ::= {
 }
 
 concrete production aRootDeclaredName
-top::IRootSpecPart ::= 'declaredName' i::Name{
+top::IRootSpecPart ::= 'declaredName' i::IName{
   top.declaredName = i.aname;
   forwards to aRootSpecDefault();
 }
@@ -249,13 +249,13 @@ top::INames ::= '[' d::INamesInner ']'
 }
 
 concrete production aNamesInnerOne
-top::INamesInner ::= d::Name
+top::INamesInner ::= d::IName
 {
   top.names = [d.aname];
 }
 
 concrete production aNamesInnerCons
-top::INamesInner ::= d1::Name ',' d2::INamesInner
+top::INamesInner ::= d1::IName ',' d2::INamesInner
 {
   top.names = [d1.aname] ++ d2.names;
 }
@@ -344,7 +344,7 @@ top::ITyVarDclsInner ::= t1::ITyVar ',' t2::ITyVarDclsInner
 --The DclInfos
 
 concrete production aDclInfoLocal
-top::IDclInfo ::= 'loc' '(' l::ILocation ',' fn::Name ',' t::ITypeRep ')'
+top::IDclInfo ::= 'loc' '(' l::ILocation ',' fn::IName ',' t::ITypeRep ')'
 {
   top.defs = addLocalDcl(top.grammarName, l.location, fn.aname, t.typerep, emptyDefs());
 }
@@ -366,13 +366,13 @@ top::IDclInfo ::= 'fun' '(' l::ILocation ',' td::ITyVarDcls ',' s::INamedSignatu
 }
 
 concrete production aDclInfoGlobalValue
-top::IDclInfo ::= 'glob' '(' l::ILocation ',' fn::Name ',' t::ITypeRep ')'
+top::IDclInfo ::= 'glob' '(' l::ILocation ',' fn::IName ',' t::ITypeRep ')'
 {
   top.defs = addGlobalValueDcl(top.grammarName, l.location, fn.aname, t.typerep, emptyDefs());
 }
 
 concrete production aDclInfoNonterminal
-top::IDclInfo ::= 'nt' '(' l::ILocation ',' s::Name ',' td::ITyVarDcls ',' t::ITypeRep ')'
+top::IDclInfo ::= 'nt' '(' l::ILocation ',' s::IName ',' td::ITyVarDcls ',' t::ITypeRep ')'
 {
   t.env = newScopeEnv(td.defs, top.env);
   
@@ -380,13 +380,13 @@ top::IDclInfo ::= 'nt' '(' l::ILocation ',' s::Name ',' td::ITyVarDcls ',' t::IT
 }
 
 concrete production aDclInfoTerminal
-top::IDclInfo ::= 'term' '(' l::ILocation ',' n::Name ',' '/' r::Regex_R '/' ')'
+top::IDclInfo ::= 'term' '(' l::ILocation ',' n::IName ',' '/' r::Regex_R '/' ')'
 {
   top.defs = addTermDcl(top.grammarName, l.location, n.aname, r, emptyDefs());
 }
 
 concrete production aDclInfoSynthesized
-top::IDclInfo ::= 'syn' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' t::ITypeRep ')'
+top::IDclInfo ::= 'syn' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' t::ITypeRep ')'
 {
   t.env = newScopeEnv(td.defs, top.env);
   
@@ -394,7 +394,7 @@ top::IDclInfo ::= 'syn' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' t::
 }
 
 concrete production aDclInfoInherited
-top::IDclInfo ::= 'inh' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' t::ITypeRep ')'
+top::IDclInfo ::= 'inh' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' t::ITypeRep ')'
 {
   t.env = newScopeEnv(td.defs, top.env);
   
@@ -402,7 +402,7 @@ top::IDclInfo ::= 'inh' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' t::
 }
 
 concrete production aDclInfoProdAttr
-top::IDclInfo ::= 'p@' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' ot::ITypeRep '::=' its::ITypeReps ',' t::IDefs ')'
+top::IDclInfo ::= 'p@' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' ot::ITypeRep '::=' its::ITypeReps ',' t::IDefs ')'
 {
   ot.env = newScopeEnv(td.defs, top.env);
   its.env = ot.env;
@@ -418,7 +418,7 @@ top::IDclInfo ::= 'fwd' '(' l::ILocation ',' t::ITypeRep ')'
 }
 
 concrete production aDclInfoOccurs
-top::IDclInfo ::= '@' '(' l::ILocation ',' fnnt::Name ',' fnat::Name ',' td::ITyVarDcls ',' ntt::ITypeRep ',' att::ITypeRep ')'
+top::IDclInfo ::= '@' '(' l::ILocation ',' fnnt::IName ',' fnat::IName ',' td::ITyVarDcls ',' ntt::ITypeRep ',' att::ITypeRep ')'
 {
   ntt.env = newScopeEnv(td.defs, top.env);
   att.env = ntt.env;
@@ -460,13 +460,13 @@ top::ITypeRep ::= 'bool'
 }
 
 concrete production aTypeRepTerminal
-top::ITypeRep ::= 'term' '(' n::Name ')'
+top::ITypeRep ::= 'term' '(' n::IName ')'
 {
   top.typerep = terminalTypeExp(n.aname);
 }
 
 concrete production aTypeRepNonterminal
-top::ITypeRep ::= 'nt' '(' n::Name ',' ty::ITypeReps ')'
+top::ITypeRep ::= 'nt' '(' n::IName ',' ty::ITypeReps ')'
 {
   top.typerep = nonterminalTypeExp(n.aname, ty.typereps);
 }
@@ -511,7 +511,7 @@ top::ITypeRep ::= t::ITyVar
 
 --The NamedSignatures
 concrete production aNamedSignatureDcl
-top::INamedSignature ::= 'signature' '(' fn::Name ',' i::INamedSignatureElements ',' o::INamedSignatureElement ')'
+top::INamedSignature ::= 'signature' '(' fn::IName ',' i::INamedSignatureElements ',' o::INamedSignatureElement ')'
 {
   top.signature = namedSignatureDcl(fn.aname, i.elements, o.element);
 }
@@ -523,7 +523,7 @@ top::INamedSignature ::= 'signature'
 }
 
 concrete production aNamedSignatureElementDcl
-top::INamedSignatureElement ::= 'element' '(' n::Name ',' t::ITypeRep ')'
+top::INamedSignatureElement ::= 'element' '(' n::IName ',' t::ITypeRep ')'
 {
   top.element = namedSignatureElement(n.aname, t.typerep);
 }

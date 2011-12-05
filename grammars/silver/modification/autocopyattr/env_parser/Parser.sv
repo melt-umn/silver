@@ -8,7 +8,7 @@ import silver:definition:core only grammarName, location, env;
 terminal AutoCopyTerm 'autocopy' lexer classes {C_1};
 
 concrete production aDclInfoAutoCopy
-top::IDclInfo ::= 'autocopy' '(' l::ILocation ',' fn::Name ',' td::ITyVarDcls ',' t::ITypeRep ')'
+top::IDclInfo ::= 'autocopy' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' t::ITypeRep ')'
 {
   t.env = newScopeEnv(td.defs, top.env);
   
