@@ -179,6 +179,10 @@
 <keyword>if</keyword>
 <keyword>new</keyword>
 <keyword>then</keyword>
+<keyword>toString</keyword>
+<keyword>toInt</keyword>
+<keyword>toFloat</keyword>
+<keyword>length</keyword>
     </context>
 
     <context id="future-reserved-words" style-ref="reserved">
