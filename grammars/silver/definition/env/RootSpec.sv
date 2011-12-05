@@ -75,4 +75,9 @@ String ::= s::[String]
 {
   return "[" ++ implode(",", quoteStrings(s)) ++ "]";
 }
+function unparseNonStrings
+String ::= s::[String]
+{
+  return "[" ++ implode(",", s) ++ "]";
+}
 
