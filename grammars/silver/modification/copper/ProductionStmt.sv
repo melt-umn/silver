@@ -1,4 +1,4 @@
-grammar silver:translation:java:concrete_syntax:copper;
+grammar silver:modification:copper;
 
 terminal Pluck_kwd 'pluck' lexer classes {KEYWORD};
 terminal Print_kwd 'print' lexer classes {KEYWORD};

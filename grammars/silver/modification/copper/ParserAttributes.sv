@@ -1,4 +1,4 @@
-grammar silver:translation:java:concrete_syntax:copper;
+grammar silver:modification:copper;
 
 synthesized attribute parserAttrDcls :: [Decorated ParserAttrSpec] occurs on Root, RootSpec, AGDcls, AGDcl;
 

@@ -1,4 +1,4 @@
-grammar silver:translation:java:concrete_syntax:copper;
+grammar silver:modification:copper;
 
 aspect production parserDcl
 top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'

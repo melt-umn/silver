@@ -1,4 +1,4 @@
-grammar silver:translation:java:concrete_syntax:copper;
+grammar silver:modification:copper;
 
 attribute permitActions, permitPluck occurs on BlockContext;
 

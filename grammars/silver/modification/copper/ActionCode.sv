@@ -1,4 +1,4 @@
-grammar silver:translation:java:concrete_syntax:copper;
+grammar silver:modification:copper;
 
 nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,signature,file,errors,blockContext,warnings;
 

@@ -1,4 +1,4 @@
-grammar silver:translation:java:concrete_syntax:copper;
+grammar silver:modification:copper;
 
 terminal Class_kwd   'class'     ; --lexer classes {KEYWORD};
 terminal Dominates_t 'dominates' ; --lexer classes {KEYWORD};

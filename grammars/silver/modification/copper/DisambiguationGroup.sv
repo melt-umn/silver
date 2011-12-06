@@ -1,4 +1,4 @@
-grammar silver:translation:java:concrete_syntax:copper;
+grammar silver:modification:copper;
 
 terminal Disambiguation_kwd 'disambiguate' lexer classes {KEYWORD};
 

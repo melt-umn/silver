@@ -1,6 +1,6 @@
 grammar silver:extension:convenience;
 
-import silver:translation:java:concrete_syntax:copper;
+import silver:modification:copper;
 
 synthesized attribute proddcls :: AGDcl;
 autocopy attribute lhsdcl :: ProductionLHS;

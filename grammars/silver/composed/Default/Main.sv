@@ -28,9 +28,7 @@ parser rParse::Root {
   silver:modification:autocopyattr:convenience; -- TODO: we need a condition export, perhaps? Why didn't we include this?
   silver:modification:ffi;
   silver:modification:typedecl;
-  
-  silver:translation:java:concrete_syntax:copper;
-
+  silver:modification:copper;
 }
 
 parser iParse::IRootSpec {
@@ -40,10 +38,9 @@ parser iParse::IRootSpec {
   silver:modification:autocopyattr:env_parser;
   silver:modification:ffi:env_parser;
   silver:modification:typedecl:env_parser;
+  silver:modification:copper:env_parser;
   
   silver:extension:list:env_parser;
-
-  silver:translation:java:concrete_syntax:copper:env_parser;
 }
 
 function main 

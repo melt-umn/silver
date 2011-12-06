@@ -1,4 +1,4 @@
-grammar silver:translation:java:concrete_syntax:copper;
+grammar silver:modification:copper;
 
 -- These do not need to go into defaultDcl, because they appear on lexer class only
 -- which have their own namespace.  We're essentially defining these to be the required
