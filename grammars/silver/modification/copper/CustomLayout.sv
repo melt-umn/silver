@@ -1,4 +1,4 @@
-grammar silver:translation:java:concrete_syntax:copper;
+grammar silver:modification:copper;
 
 terminal Layout_kwd 'layout' lexer classes {KEYWORD};
 

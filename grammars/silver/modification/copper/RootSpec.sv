@@ -1,4 +1,4 @@
-grammar silver:translation:java:concrete_syntax:copper;
+grammar silver:modification:copper;
 
 aspect production unparseRootSpec
 top::RootSpecUnparse ::= r::Decorated RootSpec{

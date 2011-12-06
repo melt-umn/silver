@@ -1,4 +1,4 @@
-grammar silver:translation:java:concrete_syntax:copper;
+grammar silver:modification:copper;
 
 abstract production actionChildReference
 top::Expr ::= q::Decorated QName

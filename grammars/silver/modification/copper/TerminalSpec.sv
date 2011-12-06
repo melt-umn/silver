@@ -1,4 +1,4 @@
-grammar silver:translation:java:concrete_syntax:copper;
+grammar silver:modification:copper;
 
 attribute lexerClasses,submitsTo,termDominates,actionCode occurs on TerminalSpec, TerminalModifierSpec ;
 
