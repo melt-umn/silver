@@ -13,19 +13,22 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
   ns.env = newScopeEnv(ns.defs, top.env);
 
-  -- TODO: we should get the ruleSpec off ns as an attribute, rather than computing it with getTypeNames etc
-  top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName, 
-                           [rhsSpec(top.grammarName, fName, getTypeNamesSignature(ns.inputElements), pm.productionModifiers)])];
-  
   top.errors <- pm.errors;
   top.errors <- ns.concreteSyntaxTypeErrors;
 
+  -- TODO: we should get the ruleSpec off ns as an attribute, rather than computing it with getTypeNames etc
+  top.syntaxAst = [
+    syntaxProduction(fName, ns.outputElement.typerep, getTypesSignature(ns.inputElements),
+      foldr_p(consProductionMod, nilProductionMod(), pm.productionModifiers))];
+  
   forwards to productionDcl(terminal(Abstract_kwd, "abstract", $1.line, $1.column), $2, id, ns, body);
 }
 
 nonterminal ProductionModifiers with location, file, pp, unparse, productionModifiers, errors, env; -- 0 or some
 nonterminal ProductionModifierList with location, file, pp, unparse, productionModifiers, errors, env; -- 1 or more
 nonterminal ProductionModifier with location, file, pp, unparse, productionModifiers, errors, env; -- 1
+
+synthesized attribute productionModifiers :: [SyntaxProductionModifier];
 
 concrete production productionModifiersNone
 top::ProductionModifiers ::=
@@ -72,7 +75,7 @@ top::ProductionModifier ::= 'precedence' '=' i::Int_t
   top.pp = "precedence = " ++ i.lexeme;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionModifiers = [precedenceProductionModifierSpec(toInt(i.lexeme))];
+  top.productionModifiers = [prodPrecedence(toInt(i.lexeme))];
   top.errors := [];
 }
 
@@ -84,7 +87,7 @@ top::ProductionModifier ::= 'operator' '=' n::QName
   top.pp = "operator = " ++ n.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionModifiers = [operatorProductionModifierSpec(n.lookupType.fullName)];
+  top.productionModifiers = [prodOperator(n.lookupType.fullName)];
 
   top.errors := n.lookupType.errors ++
                 if !n.lookupType.typerep.isTerminal

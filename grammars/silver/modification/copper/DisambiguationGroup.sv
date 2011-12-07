@@ -2,10 +2,8 @@ grammar silver:modification:copper;
 
 terminal Disambiguation_kwd 'disambiguate' lexer classes {KEYWORD};
 
-synthesized attribute disambiguationGroupDcls :: [Decorated DisambiguationGroupSpec];
-attribute disambiguationGroupDcls occurs on Root, RootSpec, AGDcls, AGDcl;
+-- TODO Separate 'TermPrecList'. That allows lexer classes which is nonsense here
 
--- Separate 'TermPrecList' syntax if proper type-checking is made possible.
 concrete production disambiguationGroupDcl
 top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
 {
@@ -20,11 +18,13 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
                           top.env);
 
   -- Give the group a name, deterministically, based on line number
-  acode.signature = namedNamedSignature(top.grammarName ++ ":__disam" ++ toString($1.line));
-
+  production attribute fName :: String;
+  fName = top.grammarName ++ ":__disam" ++ toString($1.line);
+  
+  acode.signature = namedNamedSignature(fName);
   acode.blockContext = disambiguationContext();
 
-  top.disambiguationGroupDcls = [disambiguationGroupSpec(terms.precTermList,acode.actionCode)];
+  top.syntaxAst = [syntaxDisambiguationGroup(fName,terms.precTermList,acode.actionCode)];
   
   forwards to agDclDefault();
 }

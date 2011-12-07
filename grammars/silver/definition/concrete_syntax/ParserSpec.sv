@@ -1,27 +1,30 @@
 grammar silver:definition:concrete_syntax;
 
-synthesized attribute startName :: String;
 
-nonterminal ParserSpec with startName, nonTerminalDcls, terminalDcls, ruleDcls, fullName, moduleNames;
+nonterminal ParserSpec with fullName, compiledGrammars, cstAst, moduleNames, unparse;
 
-function parserSpecFromList
-Decorated ParserSpec ::= locat::Decorated Location name::String start::String mods::[String] grams::[Decorated RootSpec]
+synthesized attribute cstAst :: SyntaxRoot;
+
+-- TODO: the copper spec gen would like grammar name added to this!!
+-- see: hackilyFindGrammarName
+
+abstract production parserSpec
+top::ParserSpec ::= l::Decorated Location  n::String  snt::String  grams::[String]
 {
-  return decorate i_parserSpecFL(locat, name, start, mods, grams) with {};
-}
-abstract production i_parserSpecFL
-top::ParserSpec ::= locat::Decorated Location name::String start::String mods::[String] grams::[Decorated RootSpec]
-{
-  top.fullName = name;
-  top.startName = start;
-  top.moduleNames = mods;
-  
+  top.fullName = n;
+  top.moduleNames = grams;
+
   production attribute med :: ModuleExportedDefs;
-  med = moduleExportedDefs(grams, mods, []);
-  med.importLocation = locat;
+  med = moduleExportedDefs(top.compiledGrammars, grams, []);
+  med.importLocation = l;
 
-  top.ruleDcls = med.ruleDcls;
-  top.terminalDcls = med.terminalDcls;
-  top.nonTerminalDcls = med.nonTerminalDcls;
+  top.cstAst = cstRoot(n, snt, foldr_p(syntaxAppend, syntaxNone(), map_p(syntaxOne, med.syntaxAst)));
+  
+  top.unparse = "parser(" ++ l.unparse ++ "," ++ quoteString(n) ++ "," ++ quoteString(snt) ++ "," ++ unparseStrings(grams) ++ ")";
 }
 
+function unparseParser -- lol
+String ::= p::ParserSpec
+{
+  return p.unparse;
+}

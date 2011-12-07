@@ -11,7 +11,7 @@ top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs = addLexerClassDcl(top.grammarName, id.location, fName, subs.precTermList, doms.precTermList,
+  top.defs = addLexerClassDcl(top.grammarName, id.location, fName,
              emptyDefs());
 
   top.errors <- if length(getLexerClassDcl(fName, top.env)) > 1
@@ -19,6 +19,8 @@ top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
                 else [];	
 
   top.errors := subs.errors ++ doms.errors;
+  
+  top.syntaxAst = [syntaxLexerClass(fName, doms.precTermList, subs.precTermList)];
 
   forwards to agDclDefault();
 }

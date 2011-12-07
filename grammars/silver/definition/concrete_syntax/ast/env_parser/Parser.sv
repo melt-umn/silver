@@ -3,14 +3,16 @@ grammar silver:definition:concrete_syntax:ast:env_parser;
 import silver:definition:env;
 import silver:definition:env:env_parser;
 
+import silver:definition:core only location;
+import silver:definition:concrete_syntax only parserSpecs, parserSpec, syntaxAst;
 import silver:definition:concrete_syntax:ast;
 import silver:definition:regex hiding RegexRBrack_t, RegexLBrack_t, RegexLParen_t, RegexRParen_t; -- TODO: a bit of a hack?
 
 import silver:definition:core only compiledGrammars, env;
 
-synthesized attribute syntaxAst :: [SyntaxDcl];
-
 terminal SyntaxTerm 'syntax' lexer classes {C_1};
+terminal ParsersTerm 'parsers' lexer classes {C_1};
+terminal ParserTerm 'parser' lexer classes {C_1};
 
 -- syntax dcls
 -- nt, term, prod  already taken care of
@@ -30,13 +32,14 @@ terminal SubTerm 'sub' lexer classes {C_1};
 terminal DomTerm 'dom' lexer classes {C_1};
 
 
-attribute syntaxAst occurs on IRootSpecParts, IRootSpecPart;
+attribute syntaxAst, parserSpecs occurs on IRootSpecParts, IRootSpecPart;
 
 --------------- i don't know yet ------------------------
 aspect production parserRootSpec
 top::RootSpec ::= p::IRootSpecParts _
 {
---  top.syntaxAst = p.syntaxAst;
+  top.syntaxAst = p.syntaxAst;
+  top.parserSpecs = p.parserSpecs;
 }
 ---------------------------------------------------------
 
@@ -44,12 +47,14 @@ aspect production aRoot1
 top::IRootSpecParts ::= r::IRootSpecPart
 {
   top.syntaxAst = r.syntaxAst;
+  top.parserSpecs = r.parserSpecs;
 }
 
 aspect production aRoot2
 top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
 {
   top.syntaxAst = r1.syntaxAst ++ r2.syntaxAst;
+  top.parserSpecs = r1.parserSpecs ++ r2.parserSpecs;
 }
 
 ----
@@ -58,6 +63,7 @@ aspect production aRootSpecDefault
 top::IRootSpecPart ::=
 {
   top.syntaxAst = [];
+  top.parserSpecs = [];
 }
 
 concrete production aRootSyntax
@@ -66,6 +72,46 @@ top::IRootSpecPart ::= 'syntax' s::ISyntax
   top.syntaxAst = s.syntaxAst;
   
   forwards to aRootSpecDefault();
+}
+
+concrete production aRootParsers
+top::IRootSpecPart ::= 'parsers' s::IParsers
+{
+  top.parserSpecs = s.parserSpecs;
+  
+  forwards to aRootSpecDefault();
+}
+
+nonterminal IParsers with parserSpecs;
+nonterminal IParsersInner with parserSpecs;
+nonterminal IParser with parserSpecs;
+
+concrete production aParsersNone
+top::IParsers ::= '[' ']'
+{
+  top.parserSpecs = [];
+}
+concrete production aParsersSome
+top::IParsers ::= '[' l::IParsersInner ']'
+{
+  top.parserSpecs = l.parserSpecs;
+}
+
+concrete production aParsersOne
+top::IParsersInner ::= l::IParser
+{
+  top.parserSpecs = l.parserSpecs;
+}
+concrete production aParsersCons
+top::IParsersInner ::= l::IParsersInner ',' r::IParser
+{
+  top.parserSpecs = l.parserSpecs ++ r.parserSpecs;
+}
+
+concrete production aParser
+top::IParser ::= 'parser' '(' l::ILocation ',' n::IName ',' snt::IName ',' gr::INames ')'
+{
+  top.parserSpecs = [parserSpec(l.location, n.aname, snt.aname, gr.names)];
 }
 
 

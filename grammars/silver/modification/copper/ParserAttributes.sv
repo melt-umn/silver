@@ -1,7 +1,5 @@
 grammar silver:modification:copper;
 
-synthesized attribute parserAttrDcls :: [Decorated ParserAttrSpec] occurs on Root, RootSpec, AGDcls, AGDcl;
-
 concrete production attributeDclParser
 top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::ActionCode_c ';'
 {
@@ -24,7 +22,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
   acode.blockContext = actionContext();
   acode.env = newScopeEnv(acode.defs, top.env);
   
-  top.parserAttrDcls = [parserAttrSpec(makeCopperName(fName), te.typerep, acode.actionCode)];
+  top.syntaxAst = [syntaxParserAttribute(fName, te.typerep, acode.actionCode)];
 
   forwards to agDclDefault();
 }

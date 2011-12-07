@@ -203,7 +203,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
   forwards to defaultDcl();
 }
 abstract production termDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String regex::Decorated Regex_R
+top::DclInfo ::= sg::String sl::Decorated Location fn::String regex::Regex_R
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;

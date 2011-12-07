@@ -93,7 +93,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
 {
 }
 aspect production termDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String regex::Decorated Regex_R
+top::DclInfo ::= sg::String sl::Decorated Location fn::String regex::Regex_R
 {
 }
 
