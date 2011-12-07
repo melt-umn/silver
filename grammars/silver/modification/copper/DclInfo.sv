@@ -1,15 +1,5 @@
 grammar silver:modification:copper;
 
--- These do not need to go into defaultDcl, because they appear on lexer class only
--- which have their own namespace.  We're essentially defining these to be the required
--- attributes of anything that appears in this namespace.
-attribute submitsTo,termDominates occurs on DclInfo;
-
-aspect production defaultDcl
-top::DclInfo ::=
-{
-}
-
 abstract production parserAttrDcl
 top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 {
@@ -66,16 +56,13 @@ top::DclInfo ::= sg::String sl::Decorated Location
 }
 
 abstract production lexerClassDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String tst::[String] td::[String]
+top::DclInfo ::= sg::String sl::Decorated Location fn::String
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = "lexer_class(" ++ sl.unparse ++ ", '" ++ fn ++ "', [" ++ implode(", ", quoteStrings(tst)) ++ "], [" ++ implode(", ", quoteStrings(td)) ++ "])";
-  
-  top.submitsTo = tst;
-  top.termDominates = td;
+  top.unparse = "lexer_class(" ++ sl.unparse ++ ", '" ++ fn ++ "')";
   
   forwards to defaultDcl();
 }

@@ -2,12 +2,6 @@ grammar silver:definition:concrete_syntax;
 
 import silver:definition:regex;
 
-
-nonterminal RegExpr with location, grammarName, file, pp, terminalRegExprSpec;
-nonterminal TerminalModifiers with location, file, pp, terminalModifiers, errors, env, grammarName;
-nonterminal TerminalModifier with location, file, pp, terminalModifiers, errors, env, grammarName;
-nonterminal TerminalKeywordModifier with  location, file, pp, terminalModifiers, errors, env, grammarName;
-
 terminal Ignore_kwd      'ignore'      lexer classes {KEYWORD};
 terminal Left_kwd        'left'        ; --lexer classes {KEYWORD};
 terminal Association_kwd 'association' ; --lexer classes {KEYWORD};
@@ -36,11 +30,12 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
 
   top.errors := t.errors ++ tm.errors;
 
-  top.terminalDcls = [terminalSpec(fName, t.terminalModifiers ++ tm.terminalModifiers, r.terminalRegExprSpec)];			   
+  top.syntaxAst = [
+    syntaxTerminal(fName, r.terminalRegExprSpec, 
+      foldr_p(consTerminalMod, nilTerminalMod(), t.terminalModifiers ++ tm.terminalModifiers))];
 
   forwards to agDclDefault();
 }
-
 
 concrete production terminalDcl
 top::AGDcl ::= 'terminal' id::Name r::RegExpr ';'
@@ -78,6 +73,24 @@ top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr tm::Ter
   forwards to terminalDclDefault(t, id, r, tm);
 }
 
+{--
+ - This exists as a catch-all for representing regular expressions for terminals.
+ - There's only one option here, but it's an extension point.
+ -}
+nonterminal RegExpr with location, grammarName, file, pp, terminalRegExprSpec;
+
+synthesized attribute terminalRegExprSpec :: Regex_R;
+
+concrete production regExpr
+top::RegExpr ::= '/' r::Regex_R '/'
+{
+  top.pp = "/" ++ r.regString ++ "/";
+  top.location = loc(top.file, $1.line, $1.column);
+  top.terminalRegExprSpec = r;
+}
+
+
+nonterminal TerminalKeywordModifier with  location, file, pp, terminalModifiers, errors, env, grammarName;
 
 concrete production terminalKeywordModifierIgnore
 top::TerminalKeywordModifier ::= 'ignore'
@@ -85,7 +98,7 @@ top::TerminalKeywordModifier ::= 'ignore'
   top.pp = "ignore";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.terminalModifiers = [ignoreTerminalModifierSpec()];
+  top.terminalModifiers = [termIgnore()];
 
   forwards to terminalKeywordModifierDefault();
 }
@@ -102,26 +115,19 @@ top::TerminalKeywordModifier ::=
 }
 
 
-abstract production terminalModifierDefault
-top::TerminalModifier ::=
-{
-  top.errors := [];
-  top.terminalModifiers = [];
-}
+nonterminal TerminalModifiers with location, file, pp, terminalModifiers, errors, env, grammarName;
+nonterminal TerminalModifier with location, file, pp, terminalModifiers, errors, env, grammarName;
+
+synthesized attribute terminalModifiers :: [SyntaxTerminalModifier];
 
 abstract production terminalModifiersNone
 top::TerminalModifiers ::= 
 {
+  top.pp = "";
+  top.location = loc(top.file, -1, -1);
 
-  production attribute tm :: TerminalModifier;
-  tm = terminalModifierDefault();
-
-  top.pp = tm.pp;
-  top.location = tm.location;
-
-  top.terminalModifiers = tm.terminalModifiers;
-
-  top.errors := tm.errors;
+  top.terminalModifiers = [];
+  top.errors := [];
 }
 concrete production terminalModifierSingle
 top::TerminalModifiers ::= tm::TerminalModifier
@@ -132,7 +138,6 @@ top::TerminalModifiers ::= tm::TerminalModifier
   top.terminalModifiers = tm.terminalModifiers;
   top.errors := tm.errors; 
 }
-
 concrete production terminalModifiersCons
 top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
 {
@@ -140,7 +145,6 @@ top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
   top.location = loc(top.file, $2.line, $2.column);
 
   top.terminalModifiers = h.terminalModifiers ++ t.terminalModifiers;
-
   top.errors := h.errors ++ t.errors;
 }
 
@@ -150,20 +154,17 @@ top::TerminalModifier ::= 'association' '=' 'left'
   top.pp = "association = left";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.terminalModifiers = [associationTerminalModifierSpec("left")];
-  
-  forwards to terminalModifierDefault();
+  top.terminalModifiers = [termAssociation("left")];
+  top.errors := [];
 }
-
 concrete production terminalModifierRight
 top::TerminalModifier ::= 'association' '=' 'right'
 {
   top.pp = "association = right";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.terminalModifiers = [associationTerminalModifierSpec("right")];
-
-  forwards to terminalModifierDefault();
+  top.terminalModifiers = [termAssociation("right")];
+  top.errors := [];
 }
 
 concrete production terminalModifierPrecedence
@@ -172,16 +173,7 @@ top::TerminalModifier ::= 'precedence' '=' i::Int_t
   top.pp = "precedence = " ++ i.lexeme;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.terminalModifiers = [precedenceTerminalModifierSpec(toInt(i.lexeme))];
-
-  forwards to terminalModifierDefault();
-}
-
-concrete production regExpr
-top::RegExpr ::= '/' r::Regex_R '/'
-{
-  top.pp = "/" ++ r.regString ++ "/";
-  top.location = loc(top.file, $1.line, $1.column);
-  top.terminalRegExprSpec = r;
+  top.terminalModifiers = [termPrecedence(toInt(i.lexeme))];
+  top.errors := [];
 }
 

@@ -1,9 +1,5 @@
 grammar silver:modification:copper;
 
-nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,signature,file,errors,blockContext,warnings;
-
-synthesized attribute actionCode :: String;
-
 terminal Action_kwd 'action' lexer classes {KEYWORD};
 
 concrete production concreteProductionDclAction
@@ -12,9 +8,10 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.ruleDcls = [ruleSpec(ns.outputElement.typerep.typeName,
-                           [rhsSpec(top.grammarName, fName, getTypeNamesSignature(ns.inputElements),
-                                    cons(actionProductionModifierSpec(acode.actionCode), pm.productionModifiers))])];
+  top.syntaxAst = [
+    syntaxProduction(fName, ns.outputElement.typerep, getTypesSignature(ns.inputElements),
+      foldr_p(consProductionMod, nilProductionMod(), 
+        prodAction(acode.actionCode) :: pm.productionModifiers))];
 
   top.pp = forward.pp ++ "action " ++ acode.pp;
 
@@ -38,6 +35,10 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   forwards to concreteProductionDcl($1, $2, id, ns, pm, body);
 }
 
+
+nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,signature,file,errors,blockContext,warnings;
+
+synthesized attribute actionCode :: String;
 
 concrete production actionCode_c
 top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
@@ -76,39 +77,6 @@ Defs ::= l::[Decorated EnvItem]
                 localDcl(sg,sl,fn,ty) -> addParserLocalDcl(sg,sl,fn,ty, hackTransformLocals(tail(l)))
               | _ -> hackTransformLocals(tail(l)) -- TODO: possibly error??
               end;
-}
-
-
-attribute actionCode occurs on RHSSpec, ProductionModifierSpec;
-
-function actionProductionModifierSpec
-Decorated ProductionModifierSpec ::= s::String
-{
-  return decorate i_actionProductionModifierSpec(s) with {};
-}
-
-abstract production i_actionProductionModifierSpec
-top::ProductionModifierSpec ::= s::String
-{
-  top.unparse = "action \"" ++ escapeString(s) ++ "\"";
-  top.actionCode = s;
-  forwards to defaultProductionModifierSpec();
-}
-
-aspect production defaultProductionModifierSpec
-top::ProductionModifierSpec ::={
-  top.actionCode = "";
-}
-
-aspect production i_rhsSpec
-top::RHSSpec ::= gn::String fn::String ns::[String] pm::[Decorated ProductionModifierSpec]
-{
-  top.actionCode = findProductionAction(pm);
-}
-
-function findProductionAction
-String ::= l::[Decorated ProductionModifierSpec]{
-  return if null(l) then "" else if head(l).actionCode != "" then head(l).actionCode else findProductionAction(tail(l));
 }
 
 --------------------------------------------------------------------------------

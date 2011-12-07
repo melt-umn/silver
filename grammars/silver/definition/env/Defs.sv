@@ -188,7 +188,7 @@ Defs ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp
   return consTypeDef(defaultEnvItem(decorate ntDcl(sg,sl,fn,bound,ty) with {}), defs);
 }
 function addTermDcl
-Defs ::= sg::String sl::Decorated Location fn::String regex::Decorated Regex_R defs::Defs
+Defs ::= sg::String sl::Decorated Location fn::String regex::Regex_R defs::Defs
 {
   return consTypeDef(defaultEnvItem(decorate termDcl(sg,sl,fn,regex) with {}), defs);
 }

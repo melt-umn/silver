@@ -5,37 +5,43 @@ terminal Dominates_t 'dominates' ; --lexer classes {KEYWORD};
 terminal Submits_t   'submits'   ; --lexer classes {KEYWORD};
 terminal Classes_kwd 'classes'   ; --lexer classes {KEYWORD};
 
--- Concrete Syntax for Copper --
 concrete production terminalModifierDominates
 top::TerminalModifier ::= 'dominates' '{' terms::TermPrecList '}'
 {
-  top.pp = "dominates { " ++ terms.pp ++ " } " ;
+  top.pp = "dominates { " ++ terms.pp ++ " } ";
+  top.location = loc(top.file, $1.line, $1.column);
 
-  top.terminalModifiers = [dominatesTerminalModifierSpec(terms.precTermList)];
-
+  top.terminalModifiers = [termDominates(terms.precTermList)];
   top.errors := terms.errors;
-
-  forwards to terminalModifierDefault();
 }
 
 concrete production terminalModifierSubmitsTo
 top::TerminalModifier ::= 'submits' 'to' '{' terms::TermPrecList  '}'
 {
   top.pp = "submits to { " ++ terms.pp ++ " } " ;
+  top.location = loc(top.file, $1.line, $1.column);
 
-  top.terminalModifiers = [submitsToTerminalModifierSpec(terms.precTermList)];
-
+  top.terminalModifiers = [termSubmits(terms.precTermList)];
   top.errors := terms.errors;
+}
 
-  forwards to terminalModifierDefault();
+concrete production terminalModifierClassSpec
+top::TerminalModifier ::= 'lexer' 'classes' '{' cl::ClassList '}'
+{
+  top.pp = "lexer classes { " ++ cl.pp ++ " } " ;
+  top.location = loc(top.file, $1.line, $1.column);
+
+  top.terminalModifiers = [termClasses(cl.lexerClasses)];
+  top.errors := cl.errors;
 }
 
 concrete production terminalModifierActionCode
 top::TerminalModifier ::= 'action' acode::ActionCode_c
 {
   top.pp = "action " ++ acode.actionCode;
+  top.location = loc(top.file, $1.line, $1.column);
 
-  top.terminalModifiers = [actionCodeTerminalModifierSpec(acode.actionCode)];
+  top.terminalModifiers = [termAction(acode.actionCode)];
 
   acode.blockContext = actionContext();
   acode.env = newScopeEnv(addTerminalAttrDefs(acode.defs), top.env);
@@ -45,27 +51,13 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
   
   top.errors := acode.errors;
   -- TODO: warnings?
-
-  forwards to terminalModifierDefault();
 }
-
-concrete production terminalModifierClassSpec
-top::TerminalModifier ::= 'lexer' 'classes' '{' cl::ClassList '}'
-{
-  top.pp = "lexer classes { " ++ cl.pp ++ " } " ;
-
-  top.terminalModifiers = [lexerClassesTerminalModifierSpec(cl.lexerClasses)] ++ cl.terminalModifiers;
-  top.errors := cl.errors;
-
-  forwards to terminalModifierDefault();
-}
-
 
 nonterminal TermPrecList with grammarName, pp, location, precTermList, defs, errors, env, file;
+
 synthesized attribute precTermList :: [String];
 
--- The reason these forward is that it's easier to avoid code duplication with cons and nil,
--- while the grammar has to enforce at least one element.
+-- The rest of this file is written quite sillily. It'll be automatically fixed when we get a proper ast/cst split
 
 concrete production termPrecListOne
 terms::TermPrecList ::= t::QName
@@ -131,7 +123,9 @@ Defs ::= tailDefs::Defs
 }
 
 
-nonterminal ClassList with pp, lexerClasses, errors, env, file, terminalModifiers;
+nonterminal ClassList with pp, lexerClasses, errors, env, file;
+
+synthesized attribute lexerClasses :: [String];
 
 concrete production lexerClassesOne
 cl::ClassList ::= n::QName
@@ -155,19 +149,12 @@ top::ClassList ::= n::QName t::ClassList
 
   top.errors := n.lookupLexerClass.errors ++ t.errors;
 
-  -- Neither of these things should be demanded if there are errors, right?
   top.lexerClasses = [n.lookupLexerClass.dcl.fullName] ++ t.lexerClasses;
-  
-  -- wtf? This seems buggy... How are lexer classes handled by copper? TODO
-  -- Is it just that lexer class declarations don't get to have dominates/submits in copper, so we translate it away here?
-  top.terminalModifiers = [submitsToTerminalModifierSpec(n.lookupLexerClass.dcl.submitsTo),
-                           dominatesTerminalModifierSpec(n.lookupLexerClass.dcl.termDominates)] ++ t.terminalModifiers;
 }
 
 abstract production lexerClassesNull
 cl::ClassList ::=
 {
-  cl.terminalModifiers = [];
   cl.pp = "";
   cl.errors := [];
   cl.lexerClasses = [];

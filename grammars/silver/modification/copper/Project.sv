@@ -3,6 +3,7 @@ grammar silver:modification:copper;
 imports silver:definition:core;
 imports silver:definition:env;
 imports silver:definition:concrete_syntax;
+imports silver:definition:concrete_syntax:ast;
 imports silver:definition:type;
 imports silver:definition:type:syntax;
 

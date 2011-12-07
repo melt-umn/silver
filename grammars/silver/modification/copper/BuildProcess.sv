@@ -18,18 +18,19 @@ top::CmdArgs ::= rest::CmdArgs
   top.forceCopperDump = true;
   forwards to rest;
 }
+
 aspect production run
 top::RunUnit ::= iIn::IO args::[String]
 {
   flags <- [pair("--copperdump", flag(copperdumpFlag))];
   flagdescs <- ["\t--copperdump: force copper to dump parse table information\n"];
 
-  postOps <- [generateCS(depAnalysis.taintedParsers, silvergen)]; 
+  postOps <- [generateCS(grammars, depAnalysis.taintedParsers, silvergen)]; 
 }
 
 -- InterfaceUtil.sv
-synthesized attribute taintedParsers:: [Decorated ParserSpec] occurs on DependencyAnalysis;
-synthesized attribute allParsers :: [Decorated ParserSpec] occurs on DependencyAnalysis;
+synthesized attribute taintedParsers:: [ParserSpec] occurs on DependencyAnalysis;
+synthesized attribute allParsers :: [ParserSpec] occurs on DependencyAnalysis;
 
 aspect production dependencyAnalysis
 top::DependencyAnalysis ::= ifaces::[Decorated Interface]
@@ -40,52 +41,58 @@ top::DependencyAnalysis ::= ifaces::[Decorated Interface]
 }
 
 function collectParserSpecs
-[Decorated ParserSpec] ::= rs::[Decorated RootSpec]
+[ParserSpec] ::= rs::[Decorated RootSpec]
 {
-  return if null(rs) then [] else head(rs).parserDcls ++ collectParserSpecs(tail(rs));
+  return if null(rs) then [] else head(rs).parserSpecs ++ collectParserSpecs(tail(rs));
 }
 
 function findTaintedParsers
-[Decorated ParserSpec] ::= rs::[Decorated ParserSpec] ta::[String] a::[String]
+[ParserSpec] ::= rs::[ParserSpec] ta::[String] a::[String]
 {
-  return if null(rs)
-         then []
-              -- tainted parsers makes use of CS of a tainted grammar.  Also taint any parsers defined in an altered grammar.
-         else (if containsAny(ta, head(rs).moduleNames) || startsWithAny(a, head(rs).fullName) 
-               then [head(rs)]
-               else [])
-              ++ findTaintedParsers(tail(rs), ta, a);
+  return if null(rs) then []
+         else if containsAny(ta, head(rs).moduleNames) -- The parser uses an altered/tainted grammar. (TODO: should we include suspect grammars?)
+              || startsWithAny(a, head(rs).fullName) -- The parser is IN an altered grammar. (NOT tainted, that's fine.)
+              then [head(rs)] ++ findTaintedParsers(tail(rs), ta, a)
+              else findTaintedParsers(tail(rs), ta, a);
 }
 
 
 
 abstract production generateCS
-top::Unit ::= specs::[Decorated ParserSpec] silvergen::String
+top::Unit ::= grams::[Decorated RootSpec] specs::[ParserSpec] silvergen::String
 {
   local attribute pr::IO;
   pr = print("Generating Parsers and Scanners.\n", top.ioIn);
   
-  top.io = writeCSSpec(pr, silvergen ++ "src/", specs);
+  top.io = writeCSSpec(pr, grams, silvergen ++ "src/", specs);
   top.code = 0;
   top.order = 5;
 }
 
 function writeCSSpec
-IO ::= i::IO silvergen::String specs::[Decorated ParserSpec]
+IO ::= i::IO grams::[Decorated RootSpec] silvergen::String specs::[ParserSpec]
 {
+  local attribute p :: ParserSpec;
+  p = head(specs);
+  p.compiledGrammars = grams;
+  
+  local attribute ast :: SyntaxRoot;
+  ast = p.cstAst; -- TODO: we can check for errors on this parser now!! :D
+  
   local attribute parserName :: String;
-  parserName = makeParserName(head(specs).fullName);
+  parserName = makeParserName(p.fullName);
+
+  local attribute copperFile :: String;
+  copperFile = silvergen ++ grammarToPath(hackilyFindGrammarName(p.fullName)) ++ parserName ++ ".copper";
 
   local attribute printio :: IO;
-  printio = print("\t[" ++ head(specs).fullName ++ "]\n", i);
+  printio = print("\t[" ++ p.fullName ++ "]\n", i);
   
-  local attribute copperFile :: String;
-  copperFile = silvergen ++ grammarToPath(hackilyFindGrammarName(head(specs).fullName)) ++ parserName ++ ".copper";
-
-  local attribute copperBody :: String;
-  copperBody = makeCopperGrammarSpec(parserName, head(specs));
- 
-  return if null(specs) then i else writeCSSpec(writeFile(copperFile, copperBody, printio), silvergen, tail(specs));
+  local attribute writeio :: IO;
+  writeio = writeFile(copperFile, ast.xmlCopper, printio);
+  
+  return if null(specs) then i
+         else writeCSSpec(writeio, grams, silvergen, tail(specs));
 }
 
 aspect production writeBuildFile
@@ -99,23 +106,26 @@ top::IOVal<String> ::= i::IO a::Decorated CmdArgs specs::[Decorated RootSpec] si
 }
 
 function buildAntParserPart
-String ::= r::[Decorated ParserSpec] a::Decorated CmdArgs
+String ::= r::[ParserSpec] a::Decorated CmdArgs
 {
+  local attribute p :: ParserSpec;
+  p = head(r);
+
   local attribute parserName :: String;
-  parserName = makeParserName(head(r).fullName);
+  parserName = makeParserName(p.fullName);
   
   local attribute hackgn :: String;
-  hackgn = hackilyFindGrammarName(head(r).fullName);
+  hackgn = hackilyFindGrammarName(p.fullName);
   
-  local attribute pn :: String; -- package name
-  pn = makeName(hackgn);
+  local attribute packagename :: String;
+  packagename = makeName(hackgn);
   
-  local attribute pl :: String;
-  pl = grammarToPath(hackgn);
+  local attribute packagepath :: String;
+  packagepath = grammarToPath(hackgn);
 
   return if null(r) then "" else( 
-"    <copper fullClassName='" ++ pn ++ "." ++ parserName ++ "' inputFile='${src}/" ++ pl ++ parserName ++ ".copper' " ++ 
-	"outputFile='${src}/" ++ pl ++ parserName ++ ".java' skin='xml' warnUselessNTs='no' dump='true' dumpType='html'" ++
+"    <copper fullClassName='" ++ packagename ++ "." ++ parserName ++ "' inputFile='${src}/" ++ packagepath ++ parserName ++ ".copper' " ++ 
+	"outputFile='${src}/" ++ packagepath ++ parserName ++ ".java' skin='xml' warnUselessNTs='no' dump='true' dumpType='html'" ++
 	(if a.forceCopperDump then "" else " dumpOnlyOnError='true'") ++ " dumpFile='" ++ parserName ++ ".copperdump.html'"  ++ 
 	"/>\n" ++
  	 buildAntParserPart(tail(r), a));

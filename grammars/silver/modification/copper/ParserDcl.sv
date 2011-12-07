@@ -33,12 +33,3 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
 "\t\t}\n";
 }
 
-attribute disambiguationGroupDcls,parserAttrDcls occurs on ModuleExportedDefs;
-
-aspect production moduleExportedDefs
-top::ModuleExportedDefs ::= compiled::[Decorated RootSpec] need::[String] seen::[String]
-{
-  top.disambiguationGroupDcls = if null(need) || null(rs) then [] else (head(rs).disambiguationGroupDcls ++ recurse.disambiguationGroupDcls);
-  top.parserAttrDcls = if null(need) || null(rs) then [] else (head(rs).parserAttrDcls ++ recurse.parserAttrDcls);
-}
-
