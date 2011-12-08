@@ -6,7 +6,7 @@ import silver:definition:env:env_parser;
 import silver:definition:core;
 
 aspect production parserRootSpec
-top::RootSpec ::= p::IRootSpecParts _
+top::RootSpec ::= p::IRootSpecParts
 {
   top.interface= true;
 }

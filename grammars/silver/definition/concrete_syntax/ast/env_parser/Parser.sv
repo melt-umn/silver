@@ -36,7 +36,7 @@ attribute syntaxAst, parserSpecs occurs on IRootSpecParts, IRootSpecPart;
 
 --------------- i don't know yet ------------------------
 aspect production parserRootSpec
-top::RootSpec ::= p::IRootSpecParts _
+top::RootSpec ::= p::IRootSpecParts
 {
   top.syntaxAst = p.syntaxAst;
   top.parserSpecs = p.parserSpecs;
