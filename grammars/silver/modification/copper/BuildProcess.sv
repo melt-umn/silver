@@ -83,7 +83,7 @@ IO ::= i::IO grams::[Decorated RootSpec] silvergen::String specs::[ParserSpec]
   parserName = makeParserName(p.fullName);
 
   local attribute copperFile :: String;
-  copperFile = silvergen ++ grammarToPath(hackilyFindGrammarName(p.fullName)) ++ parserName ++ ".copper";
+  copperFile = silvergen ++ grammarToPath(p.sourceGrammar) ++ parserName ++ ".copper";
 
   local attribute printio :: IO;
   printio = print("\t[" ++ p.fullName ++ "]\n", i);
@@ -114,14 +114,11 @@ String ::= r::[ParserSpec] a::Decorated CmdArgs
   local attribute parserName :: String;
   parserName = makeParserName(p.fullName);
   
-  local attribute hackgn :: String;
-  hackgn = hackilyFindGrammarName(p.fullName);
-  
   local attribute packagename :: String;
-  packagename = makeName(hackgn);
+  packagename = makeName(p.sourceGrammar);
   
   local attribute packagepath :: String;
-  packagepath = grammarToPath(hackgn);
+  packagepath = grammarToPath(p.sourceGrammar);
 
   return if null(r) then "" else( 
 "    <copper fullClassName='" ++ packagename ++ "." ++ parserName ++ "' inputFile='${src}/" ++ packagepath ++ parserName ++ ".copper' " ++ 
@@ -131,10 +128,3 @@ String ::= r::[ParserSpec] a::Decorated CmdArgs
  	 buildAntParserPart(tail(r), a));
 }
 
--- This exists to infer the path to output copper files to... just from the ParserSpec, without knowing what grammar it is in.
-function hackilyFindGrammarName
-String ::= svName::String
-{
-  return substring(0, length(svName) - length(last(explode(":", svName))) - 1, svName);
-
-}
