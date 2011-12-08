@@ -22,7 +22,7 @@ synthesized attribute unparses :: [String];
  -}
 nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, univLayout, xmlCopper, unparses;
 
-abstract production syntaxNone
+abstract production nilSyntax
 top::Syntax ::=
 {
   top.cstDcls = [];
@@ -33,8 +33,8 @@ top::Syntax ::=
   top.xmlCopper = "";
   top.unparses = [];
 }
-abstract production syntaxAppend
-top::Syntax ::= s1::Syntax s2::Syntax
+abstract production consSyntax
+top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {
   top.cstDcls = s1.cstDcls ++ s2.cstDcls;
   top.cstErrors := s1.cstErrors ++ s2.cstErrors;
@@ -44,18 +44,6 @@ top::Syntax ::= s1::Syntax s2::Syntax
   top.xmlCopper = s1.xmlCopper ++ s2.xmlCopper;
   top.unparses = s1.unparses ++ s2.unparses;
 }
-abstract production syntaxOne
-top::Syntax ::= s::SyntaxDcl
-{
-  top.cstDcls = s.cstDcls;
-  top.cstErrors := s.cstErrors;
-  top.cstProds = s.cstProds;
-  top.cstNormalize = s.cstNormalize;
-  top.allIgnoreTerminals = s.allIgnoreTerminals;
-  top.xmlCopper = s.xmlCopper;
-  top.unparses = s.unparses;
-}
-
 
 {--
  - An individual declaration of a concrete syntax element.
@@ -78,7 +66,7 @@ top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModi
                    else ["Name conflict with nonterminal " ++ t.typeName];
   top.cstErrors <- subdcls.cstErrors;
   top.cstProds = subdcls.cstProds;
-  top.cstNormalize = [syntaxNonterminal(t, foldr_p(syntaxAppend, syntaxNone(), map_p(syntaxOne, treeLookup(t.typeName, top.cstNTProds))))];
+  top.cstNormalize = [syntaxNonterminal(t, foldr_p(consSyntax, nilSyntax(), treeLookup(t.typeName, top.cstNTProds)))];
   top.allIgnoreTerminals = [];
   
   top.xmlCopper = 

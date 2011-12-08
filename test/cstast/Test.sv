@@ -24,11 +24,11 @@ parser syntaxInterfaceParser :: ISyntaxInner {
 
 global obj::SyntaxRoot =
   cstRoot("lol", "Foo",
-    foldr_p(syntaxAppend, syntaxNone(), map_p(syntaxOne,
-     [syntaxNonterminal(nonterminalTypeExp("Foo", []), syntaxNone()),
+    foldr_p(consSyntax, nilSyntax(), 
+     [syntaxNonterminal(nonterminalTypeExp("Foo", []), nilSyntax()),
       syntaxTerminal("XTerm", literalRegex("x"), nilTerminalMod()),
       syntaxProduction("foo", nonterminalTypeExp("Foo", []), [], nilProductionMod())
-     ])));
+     ]));
 
 equalityTest( obj.cstErrors, [], [String], csttests );
 --equalityTest( substitute("silver:definition:concrete_syntax:ast:", "", hackUnparse(obj)), "", String, csttests );
@@ -38,8 +38,8 @@ equalityTest( obj.unparse, "nt([], nt('Foo', [])),\n term('XTerm', /x/, []),\n p
 
 global obj_again :: SyntaxRoot =
   cstRoot("lol", "Foo",
-    foldr_p(syntaxAppend, syntaxNone(), map_p(syntaxOne,
-      syntaxInterfaceParser(obj.unparse, "<>").parseTree.syntaxAst)));
+    foldr_p(consSyntax, nilSyntax(), 
+      syntaxInterfaceParser(obj.unparse, "<>").parseTree.syntaxAst));
 
 equalityTest( obj_again.xmlCopper, obj.xmlCopper, String, csttests );
 equalityTest( obj_again.unparse, obj.unparse, String, csttests );
@@ -47,11 +47,11 @@ equalityTest( obj_again.unparse, obj.unparse, String, csttests );
 
 global obj2::SyntaxRoot =
   cstRoot("lol", "Foo",
-    foldr_p(syntaxAppend, syntaxNone(), map_p(syntaxOne,
-     [syntaxNonterminal(nonterminalTypeExp("Foo", []), syntaxNone()),
+    foldr_p(consSyntax, nilSyntax(), 
+     [syntaxNonterminal(nonterminalTypeExp("Foo", []), nilSyntax()),
       syntaxTerminal("XTerm", literalRegex("x"), nilTerminalMod()),
       syntaxProduction("foo", nonterminalTypeExp("Oops", []), [], nilProductionMod())
-     ])));
+     ]));
 
 equalityTest( obj2.cstErrors, ["Lookup error with LHS nonterminal Oops"], [String], csttests );
 
@@ -59,8 +59,8 @@ equalityTest( obj2.cstErrors, ["Lookup error with LHS nonterminal Oops"], [Strin
 
 global obj3::SyntaxRoot =
   cstRoot("lol", "Foo",
-    foldr_p(syntaxAppend, syntaxNone(), map_p(syntaxOne, [
-      syntaxNonterminal(nonterminalTypeExp("Foo", []), syntaxNone()),
+    foldr_p(consSyntax, nilSyntax(), [
+      syntaxNonterminal(nonterminalTypeExp("Foo", []), nilSyntax()),
       syntaxTerminal("XTerm", literalRegex("x"), 
         foldr_p(consTerminalMod, nilTerminalMod(), [
           termIgnore(),
@@ -83,12 +83,12 @@ global obj3::SyntaxRoot =
       syntaxTerminal("C", literalRegex("y"), nilTerminalMod()),
       syntaxParserAttribute("asdf", stringTypeExp(), "asdf = 'asfd';"),
       syntaxDisambiguationGroup("g23", ["XTerm", "C"], "return C;")
-     ])));
+     ]));
 
 global obj3_again :: SyntaxRoot =
   cstRoot("lol", "Foo",
-    foldr_p(syntaxAppend, syntaxNone(), map_p(syntaxOne,
-      syntaxInterfaceParser(obj3.unparse, "<>").parseTree.syntaxAst)));
+    foldr_p(consSyntax, nilSyntax(),
+      syntaxInterfaceParser(obj3.unparse, "<>").parseTree.syntaxAst));
 
 equalityTest( obj3.cstErrors, [], [String], csttests );
 --equalityTest( obj3.unparse, "", String, csttests );

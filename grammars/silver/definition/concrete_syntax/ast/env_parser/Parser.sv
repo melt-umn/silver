@@ -148,7 +148,7 @@ top::ISyntaxDcl ::= 'nt' '(' td::ITyVarDcls ',' t::ITypeRep ')'
 {
   t.env = toEnv(td.defs);
   
-  top.syntaxAst = [syntaxNonterminal(t.typerep, syntaxNone())];
+  top.syntaxAst = [syntaxNonterminal(t.typerep, nilSyntax())];
 }
 concrete production aSyntaxTerm
 top::ISyntaxDcl ::= 'term' '(' n::IName ',' '/' r::Regex_R '/' ',' tm::ITerminalModifiers ')'
