@@ -53,7 +53,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
     "  <start>\n" ++
     "    <nonterm id=\"" ++ makeCopperName(startnt) ++ "\"/>\n" ++
     "    <layout>" ++ univLayout ++ "</layout>\n" ++
-    "  </start>\n" ++
+    "  </start>\n\n" ++
 
       s2.xmlCopper ++
     
