@@ -82,7 +82,7 @@ top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModi
   top.allIgnoreTerminals = [];
   
   top.xmlCopper = 
-    "  <nonterm id=\"" ++ makeCopperName(t.typeName) ++ "\" />\n" ++
+    "\n  <nonterm id=\"" ++ makeCopperName(t.typeName) ++ "\" />\n" ++
     subdcls.xmlCopper;
   t.boundVariables = t.freeVariables;
   top.unparses = ["nt(" ++ unparseTyVars(t.freeVariables,t.boundVariables) ++ ", " ++ t.unparse ++ ")"] ++ subdcls.unparses;
@@ -110,9 +110,7 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
     "RESULT = new common.TerminalRecord(lexeme,virtualLocation.getFileName(),virtualLocation.getLine(),virtualLocation.getColumn());\n" ++
       modifiers.acode ++ 
     "    ]]></code>\n" ++
-    "    <classes>\n" ++
-      modifiers.lexerclasses ++ 
-    "    </classes>\n" ++
+    "    <classes>" ++ modifiers.lexerclasses ++ "</classes>\n" ++
     "    <regex>" ++ regex.regXML ++ "</regex>\n" ++
     "    <dominates>" ++ modifiers.dominatesXML ++ "</dominates>\n" ++
     "    <submits>" ++ modifiers.submitsXML ++ "</submits>\n" ++
