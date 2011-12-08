@@ -5,8 +5,7 @@ import silver:definition:type:io;
 import silver:definition:regex hiding RegexRBrack_t, RegexLBrack_t, RegexLParen_t, RegexRParen_t; -- TODO: a bit of a hack?
 import silver:definition:type;
 
--- TODO: why is compiledGrammars here?
-import silver:definition:core only compiledGrammars, grammarName, location, env;
+import silver:definition:core only grammarName, location, env;
 
 lexer class C_0;
 lexer class C_1 dominates C_0;
@@ -74,8 +73,8 @@ synthesized attribute tyvars :: [TyVar];
 
 {- The "uninteresting" plumbing of interface files: -}
 
-nonterminal IRootSpec with spec, compiledGrammars;
-nonterminal IRootSpecParts with defs, exportedGrammars, condBuild, declaredName, moduleNames, compiledGrammars, grammarName;
+nonterminal IRootSpec with spec;
+nonterminal IRootSpecParts with defs, exportedGrammars, condBuild, declaredName, moduleNames, grammarName;
 nonterminal IDefs with defs, env, grammarName; -- including square brackets
 nonterminal IDefsInner with defs, env, grammarName; -- inside square brackets
 nonterminal ITypeReps with env, typereps, grammarName; -- including square brackets
@@ -84,7 +83,7 @@ nonterminal ITypeRepsInner with env, typereps, grammarName; -- inside square bra
 {- Extension points! -}
 
 {- Top-level elements of the interface file -}
-nonterminal IRootSpecPart with defs, exportedGrammars, condBuild, declaredName, moduleNames, compiledGrammars, grammarName;
+nonterminal IRootSpecPart with defs, exportedGrammars, condBuild, declaredName, moduleNames, grammarName;
 {- A DclInfo record -}
 nonterminal IDclInfo with defs, env, grammarName;
 {- A TypeExp record -}
@@ -122,9 +121,8 @@ top::ILocation ::= filename::IName ',' line::Num_t ',' column::Num_t
 -- Exposing the interface to the outside world
 
 abstract production parserRootSpec
-top::RootSpec ::= p::IRootSpecParts cg::[Decorated RootSpec]
+top::RootSpec ::= p::IRootSpecParts
 {
-  p.compiledGrammars = cg;
   p.grammarName = p.declaredName;
 
   top.unparse = unparseRootSpec(top).unparse;
@@ -143,7 +141,7 @@ top::RootSpec ::= p::IRootSpecParts cg::[Decorated RootSpec]
 
 concrete production aRootFull
 top::IRootSpec ::= r::IRootSpecParts{
-  top.spec = decorate parserRootSpec(r, top.compiledGrammars) with { };
+  top.spec = decorate parserRootSpec(r) with { };
 }
 
 concrete production aRoot1

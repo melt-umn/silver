@@ -439,7 +439,6 @@ top::IOInterface ::= iIn::IO f::String genPath::String{
 
   local attribute ir :: IRootSpec;
   ir = top.iParser(text.iovalue, f).parseTree; -- I'm assuming that interface files never parse error, so we aren't making this pretty.
-  ir.compiledGrammars = top.compiledGrammars;
 
   local attribute inf :: Interface; 
   inf = fullInterface(modTime.iovalue, f, genPath, ir.spec);
