@@ -217,7 +217,7 @@ top::SyntaxDcl ::= n::String domlist::[String] sublist::[String]
   top.allIgnoreTerminals = [];
   
   top.xmlCopper = ""; -- Apparently does not exist as a declaration in the copper xml skin
-  top.unparses = ["lclass('" ++ n ++ "'," ++ unparseStrings(domlist) ++ "," ++ unparseStrings(sublist) ++ ")"];
+  top.unparses = ["lclass('" ++ makeCopperName(n) ++ "'," ++ unparseStrings(domlist) ++ "," ++ unparseStrings(sublist) ++ ")"];
 }
 
 {--
@@ -236,7 +236,7 @@ top::SyntaxDcl ::= n::String ty::TypeExp acode::String
   top.allIgnoreTerminals = [];
 
   top.xmlCopper =
-    "  <attribute id=\"" ++ n ++"\" type=\"" ++ ty.transType ++ "\">\n" ++
+    "  <attribute id=\"" ++ makeCopperName(n) ++"\" type=\"" ++ ty.transType ++ "\">\n" ++
     "    <code><![CDATA[" ++
       acode ++
     "    ]]></code>\n" ++
