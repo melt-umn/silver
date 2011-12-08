@@ -25,7 +25,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
                                 namedSignatureElement("filenameToReport", stringTypeExp())],
                                namedSignatureElement("__func__lhs", nonterminalTypeExp("core:ParseResult", [t.typerep])));
 
-  top.parserSpecs = [parserSpec(top.location, fName, t.typerep.typeName, m.moduleNames)];
+  top.parserSpecs = [parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames)];
 
   forwards to agDclDefault();
 }
