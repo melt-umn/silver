@@ -18,7 +18,7 @@ top::ParserSpec ::= l::Decorated Location  n::String  snt::String  grams::[Strin
   med = moduleExportedDefs(top.compiledGrammars, grams, []);
   med.importLocation = l;
 
-  top.cstAst = cstRoot(n, snt, foldr_p(syntaxAppend, syntaxNone(), map_p(syntaxOne, med.syntaxAst)));
+  top.cstAst = cstRoot(n, snt, foldr_p(consSyntax, nilSyntax(), med.syntaxAst));
   
   top.unparse = "parser(" ++ l.unparse ++ "," ++ quoteString(n) ++ "," ++ quoteString(snt) ++ "," ++ unparseStrings(grams) ++ ")";
 }

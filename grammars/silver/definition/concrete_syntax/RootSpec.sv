@@ -7,7 +7,7 @@ attribute syntaxAst, parserSpecs occurs on RootSpec, ModuleExportedDefs;
 aspect production unparseRootSpec
 top::RootSpecUnparse ::= r::Decorated RootSpec
 {
-  unparses <- ["syntax [" ++ implode(",\n ", foldr_p(syntaxAppend, syntaxNone(), map_p(syntaxOne, r.syntaxAst)).unparses) ++ "]"];
+  unparses <- ["syntax [" ++ implode(",\n ", foldr_p(consSyntax, nilSyntax(), r.syntaxAst).unparses) ++ "]"];
   unparses <- ["parsers [" ++ implode(",\n ", map(unparseParser, r.parserSpecs)) ++ "]"];
 }
 
