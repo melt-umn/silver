@@ -2,3 +2,5 @@
 ^build
 ^generated/src
 ^generated/bin
+^JARS-BAK
+^grp$
