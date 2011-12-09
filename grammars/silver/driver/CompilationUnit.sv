@@ -1,8 +1,17 @@
 grammar silver:driver;
 
-synthesized attribute compiledList :: [Decorated RootSpec];
+{--
+ - The list of grammar names seen in total, so far.
+ -}
 synthesized attribute seenGrammars :: [String];
+{--
+ - The list of interface files used.
+ -}
 synthesized attribute interfaces :: [Decorated Interface];
+{--
+ - The list of RootSpecs belonging to grammars that were actually parsed.
+ -}
+synthesized attribute compiledList :: [Decorated RootSpec];
 
 {--
  - Top-level control flow for various compilation tasks.
