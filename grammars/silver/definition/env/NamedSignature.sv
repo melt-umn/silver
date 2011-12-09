@@ -22,12 +22,7 @@ function getNamesSignature
  return if null(ns) then [] else [head(ns).elementName] ++ getNamesSignature(tail(ns));  
 }
 
--- Used by concrete syntax to get names of nonterminals/terminals.
-function getTypeNamesSignature
-[String] ::= ns::[Decorated NamedSignatureElement]
-{
- return if null(ns) then [] else [head(ns).typerep.typeName] ++ getTypeNamesSignature(tail(ns));  
-}
+
 
 function namedNamedSignature
 Decorated NamedSignature ::= fn::String
