@@ -75,7 +75,11 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.errors := gdcl.errors ++ ms.errors ++ allImports.errors ++ ags.errors;
   top.warnings := ags.warnings;
   
-  -- Entire grammar is in one, local, scope. Then file imports. Then grammar-wide imports.
+  -- We have an mismatch in how the environment gets put together:
+  --  Outermost, we have grammar-wide imports in one sope.  That's top.globalImports here.
+  --  THEN, we have this particular file's list of local imports. That's allImports.importedDefs here.
+  --  THEN, we have the grammar-wide definitions, from the whole grammr. That's top.env here.
+  -- So we're kind of injecting local imports in between two grammar-wide things there.
   ags.env = appendEnv(top.env, newScopeEnv(allImports.importedDefs, top.globalImports));
 }
 
