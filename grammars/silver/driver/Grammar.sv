@@ -37,7 +37,7 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   pr = print("Compiling Grammar: " ++ grammarName ++ "\n", hasInterface.io); 
 	
   --the result of compiling all of the files.
-  production attribute cu :: Roots;
+  production attribute cu :: Roots; -- See GrammarSources.sv
   cu = compileFiles(pr, grammarName, files, grammarLocation.iovalue.fromJust);
   cu.rParser = top.rParser;
   cu.env = toEnv(cu.defs);
@@ -45,7 +45,7 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   cu.compiledGrammars = top.compiledGrammars;
 
   -- OR the result of reading the interface.
-  production attribute inf :: IOInterface;
+  production attribute inf :: IOInterface; -- See GrammarInterface.sv
   inf = compileInterface(pr, "Silver.svi", genPath ++ "src/" ++ gramPath);
   inf.iParser = top.iParser;
   inf.compiledGrammars = top.compiledGrammars;

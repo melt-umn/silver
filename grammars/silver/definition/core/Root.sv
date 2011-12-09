@@ -1,63 +1,51 @@
 grammar silver:definition:core;
 
 concrete production root1
-top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls{
+top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
+{
   forwards to root(gdcl, ms, ims, ags);
 }
 
 concrete production root2
-top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts{
+top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts
+{
   forwards to root(gdcl, ms, ims, agDclsOne(agDclNone()));
 }
 
 concrete production root3
-top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ags::AGDcls{
+top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ags::AGDcls
+{
   forwards to root(gdcl, ms, importStmtsNone(), ags);
 }
 
 concrete production root4
-top::Root ::= gdcl::GrammarDcl ms::ModuleStmts{
+top::Root ::= gdcl::GrammarDcl ms::ModuleStmts
+{
   forwards to root(gdcl, ms, importStmtsNone(), agDclsOne(agDclNone()));
 }
 
 concrete production root5
-top::Root ::= gdcl::GrammarDcl ims::ImportStmts ags::AGDcls{
+top::Root ::= gdcl::GrammarDcl ims::ImportStmts ags::AGDcls
+{
   forwards to root(gdcl, moduleStmtsNone(), ims, ags);
 }
 
 concrete production root6
-top::Root ::= gdcl::GrammarDcl ims::ImportStmts{
+top::Root ::= gdcl::GrammarDcl ims::ImportStmts
+{
   forwards to root(gdcl, moduleStmtsNone(), ims, agDclsOne(agDclNone()));
 }
 
 concrete production root7
-top::Root ::= gdcl::GrammarDcl ags::AGDcls{
+top::Root ::= gdcl::GrammarDcl ags::AGDcls
+{
   forwards to root(gdcl, moduleStmtsNone(), importStmtsNone(), ags);
 }
 
 concrete production root8
-top::Root ::= gdcl::GrammarDcl{
+top::Root ::= gdcl::GrammarDcl
+{
   forwards to root(gdcl, moduleStmtsNone(), importStmtsNone(), agDclsOne(agDclNone()));
-}
-
-concrete production root9
-top::Root ::= ims::ImportStmts ags::AGDcls{
-  forwards to root(grammarDcl(top.grammarName), moduleStmtsNone(), ims, ags);
-}
-
-concrete production root10
-top::Root ::= ims::ImportStmts{
-  forwards to root(grammarDcl(top.grammarName), moduleStmtsNone(), ims, agDclsOne(agDclNone()));
-}
-
-concrete production root11
-top::Root ::= ags::AGDcls{
-  forwards to root(grammarDcl(top.grammarName), moduleStmtsNone(), importStmtsNone(), ags);
-}
-
-concrete production root12
-top::Root ::= {
-  forwards to root(grammarDcl(top.grammarName), moduleStmtsNone(), importStmtsNone(), agDclsOne(agDclNone()));
 }
 
 abstract production root
@@ -91,19 +79,24 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   ags.env = appendEnv(top.env, newScopeEnv(allImports.importedDefs, top.globalImports));
 }
 
-abstract production grammarDcl
-top::GrammarDcl ::= s::String
+concrete production noGrammarDcl
+top::GrammarDcl ::=
 {
-  top.pp = "grammar " ++ s;
+  top.pp = "";
   top.location = loc(top.file, 1, 1);
-  top.declaredName = s;
-  top.errors := if s == top.grammarName then [] else [err(top.location, "Grammar declaration is incorrect: " ++ s)];
+  top.declaredName = top.grammarName;
+  top.errors := [];
 }
 
 concrete production grammarDcl_c
 top::GrammarDcl ::= 'grammar' qn::QName ';'
 {
-  forwards to grammarDcl(qn.name);
+  top.pp = "grammar " ++ qn.pp ++ ";";
+  top.location = loc(top.file, $1.line, $1.column);
+  top.declaredName = qn.name;
+  top.errors := 
+    if qn.name == top.grammarName then []
+    else [err(top.location, "Grammar declaration is incorrect: " ++ qn.name)];
 }
 
 
@@ -142,6 +135,7 @@ top::AGDcls ::= h::AGDcls t::AGDcls
   top.warnings := h.warnings ++ t.warnings;
   top.moduleNames = h.moduleNames ++ t.moduleNames;
 }
+
 
 abstract production agDclNone
 top::AGDcl ::=
