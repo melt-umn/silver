@@ -217,7 +217,7 @@ top::SyntaxDcl ::= n::String domlist::[String] sublist::[String]
   top.allIgnoreTerminals = [];
   
   top.xmlCopper = ""; -- Apparently does not exist as a declaration in the copper xml skin
-  top.unparses = ["lclass('" ++ makeCopperName(n) ++ "'," ++ unparseStrings(domlist) ++ "," ++ unparseStrings(sublist) ++ ")"];
+  top.unparses = ["lclass('" ++ n ++ "'," ++ unparseStrings(domlist) ++ "," ++ unparseStrings(sublist) ++ ")"];
 }
 
 {--
