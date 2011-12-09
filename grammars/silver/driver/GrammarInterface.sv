@@ -3,8 +3,8 @@ grammar silver:driver;
 nonterminal IOInterface with io, interfaces, iParser, compiledGrammars;
 
 abstract production compileInterface
-top::IOInterface ::= iIn::IO f::String genPath::String{
-
+top::IOInterface ::= iIn::IO f::String genPath::String
+{
   local attribute modTime :: IOVal<Integer>;
   modTime = fileTime(genPath ++ f, iIn);
 
@@ -24,20 +24,12 @@ top::IOInterface ::= iIn::IO f::String genPath::String{
   top.io = text.io;
 }
 
+-- TODO: this type isn't properly used. at all. we should remove 
 nonterminal Interface with rSpec, lastModified, interfaceFile, interfaceLocation;
 
 synthesized attribute lastModified :: Integer;
 synthesized attribute interfaceFile :: String;
 synthesized attribute interfaceLocation :: String;
-
-abstract production rootSpecInterface
-top::Interface ::= r::Decorated RootSpec
-{
-  top.lastModified = 0;
-  top.interfaceFile = "_NULL_";
-  top.interfaceLocation = "_NULL_";
-  top.rSpec = r;
-}
 
 abstract production fullInterface
 top::Interface ::= i::Integer f::String l::String r::Decorated RootSpec
@@ -47,9 +39,4 @@ top::Interface ::= i::Integer f::String l::String r::Decorated RootSpec
   top.interfaceLocation = l;
   top.rSpec = r;
 }
-
-
-
-
-
 
