@@ -1,6 +1,6 @@
 grammar silver:definition:env;
+
 import silver:definition:type;
-import silver:util;
 
 -- Just to clarify:
 -- call prettyType to pretty print the type.

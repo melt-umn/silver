@@ -1,8 +1,7 @@
 grammar silver:definition:env;
 
-import silver:definition:type;
-
-import silver:util;
+import silver:definition:type only Substitution;
+import silver:util only contains;
 
 --fullNameToShort  String ::= s::String
 --defaultEnvItem   Decorate EnvItem ::= di::Decorated DclInfo
