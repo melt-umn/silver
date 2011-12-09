@@ -1,13 +1,4 @@
 grammar silver:driver;
-import silver:definition:core;
-import silver:definition:env;
-import silver:util;
-import silver:util:cmdargs;
-
-synthesized attribute code :: Integer;
-synthesized attribute order :: Integer;
-inherited attribute ioIn :: IO;
-synthesized attribute ioOut :: IO;
 
 {-
  - A short guide to error codes:
@@ -18,6 +9,12 @@ synthesized attribute ioOut :: IO;
  - 0 = success of course
  -}
 nonterminal Unit with ioIn, io, code, order;
+
+synthesized attribute code :: Integer;
+synthesized attribute order :: Integer;
+inherited attribute ioIn :: IO;
+synthesized attribute ioOut :: IO;
+
 
 aspect production run
 top::RunUnit ::= iIn::IO args::[String]

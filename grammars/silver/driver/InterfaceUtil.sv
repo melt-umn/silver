@@ -1,11 +1,8 @@
 grammar silver:driver;
-import silver:util;
-import silver:definition:env;
 
-import silver:definition:core;
+nonterminal DependencyAnalysis with compiledList, needGrammars, interfaces, compiledGrammars, forceTaint;
 
 inherited attribute forceTaint::[String] with ++;
-nonterminal DependencyAnalysis with compiledList, needGrammars, interfaces, compiledGrammars, forceTaint;
 
   -- at this point we need to partition everything into groups:
   -- Group 1: ALTERED.  = extraUnit.compiledList ++ unit.compiledList ++ condUnit.compiledList;
@@ -120,6 +117,7 @@ function noninductiveExpansion
 }
 
 function keepInterfaces
-[Decorated Interface] ::= k::[String] d::[Decorated Interface]{ 
+[Decorated Interface] ::= k::[String] d::[Decorated Interface]
+{
   return if null(d) then [] else (if contains(head(d).rSpec.declaredName, k) then [head(d)] else []) ++ keepInterfaces(k, tail(d));
 }
