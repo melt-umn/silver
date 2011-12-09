@@ -2,7 +2,6 @@ grammar silver:host:env;
 
 -- concrete syntax
 exports silver:definition:env:env_parser;
-exports silver:definition:core:env_parser;
 exports silver:definition:concrete_syntax:ast:env_parser;
 exports silver:definition:regex;
 
