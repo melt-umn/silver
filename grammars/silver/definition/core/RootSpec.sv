@@ -1,14 +1,10 @@
 grammar silver:definition:core;
 
-synthesized attribute interface :: Boolean;
-
-attribute importedDefs, warnings, errors, interface occurs on RootSpec;
+attribute importedDefs, warnings, errors occurs on RootSpec;
 
 aspect production i_emptyRootSpec
 top::RootSpec ::= 
 {
-  top.interface =  false;
-
   top.importedDefs = emptyDefs();
   top.errors := [];
   top.warnings := [];
@@ -22,8 +18,6 @@ Decorated RootSpec ::=  c1::Decorated Root
 abstract production i_rootSpecRoot
 top::RootSpec ::=  c1::Decorated Root
 { 
-  top.interface = false;
-
   top.unparse = unparseRootSpec(top).unparse;
   top.declaredName = c1.declaredName;
   top.moduleNames = makeSet(c1.moduleNames);
@@ -59,8 +53,6 @@ Decorated RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
 abstract production i_appendRootSpec
 top::RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
 {
-  top.interface = c1.interface || c2.interface;
-
   top.unparse = unparseRootSpec(top).unparse;
   top.declaredName = c1.declaredName;
   top.moduleNames = makeSet(c1.moduleNames ++ c2.moduleNames);
