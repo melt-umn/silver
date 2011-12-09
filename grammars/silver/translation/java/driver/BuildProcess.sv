@@ -30,6 +30,7 @@ top::CmdArgs ::= rest::CmdArgs
   forwards to rest;
 }
 
+
 aspect production run
 top::RunUnit ::= iIn::IO args::[String]
 {
@@ -48,6 +49,7 @@ top::RunUnit ::= iIn::IO args::[String]
               
   postOps <- if a.noJavaGeneration then [] else [genJava(a, translate, nonTreeGrammars, silvergen), genBuild(a, grammars, silverhome, silvergen, depAnalysis)]; 
 }
+
 
 abstract production genJava
 top::Unit ::= a::Decorated CmdArgs specs::[Decorated RootSpec] extras::[String] silvergen::String
@@ -107,7 +109,7 @@ IO ::= i::IO r::Decorated RootSpec a::Decorated CmdArgs extras::[String] silverg
   local attribute mainIO :: IO;
   mainIO = if null(mains) then mki else writeFile(specLocation ++ "Main.java", makeMain(r), mki);
 
-  return if !r.interface then writeClasses(mainIO, specLocation, r.javaClasses) else i;
+  return writeClasses(mainIO, specLocation, r.javaClasses);
 }
 
 function makeMain
