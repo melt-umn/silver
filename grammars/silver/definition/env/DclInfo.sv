@@ -6,7 +6,6 @@ import silver:definition:type;
 synthesized attribute sourceGrammar :: String;
 synthesized attribute sourceLocation :: Decorated Location;
 synthesized attribute fullName :: String;
-synthesized attribute unparse :: String;
 
 -- types
 synthesized attribute typerep :: TypeExp;
@@ -184,7 +183,6 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 
   top.typerep = ty;
   forwards to defaultDcl();
-
 }
 
 -- -- interface types
