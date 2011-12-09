@@ -1,6 +1,4 @@
 grammar silver:driver;
-import silver:util:cmdargs;
-import silver:util;
 
 synthesized attribute searchPath :: [String];
 synthesized attribute outName :: String;
