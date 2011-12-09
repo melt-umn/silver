@@ -11,6 +11,15 @@ synthesized attribute needGrammars :: [String];
   -- Group 3: SUSPECT.  = Anything that imports anything ALTERED or TAINTED (noninductively)
   -- Group 4: SAFE.     = All interfaces that aren't in any above group.
 
+{--
+ - Inputs:
+ -   @param ifaces  The list of interface files that were used, instead of the sources
+ -   @inh compiledGrammars  The list of all RootSpec obtained up to this point
+ - Outputs:
+ -   @syn compiledList  The list of all RootSpecs obtained up to this point (these get translated!)
+ -   @syn needGrammars  The list of grammars that must be recompiled.
+ -   @syn interfaces  The list of safe interfaces.
+ -}
 abstract production dependencyAnalysis
 top::DependencyAnalysis ::= ifaces::[Decorated Interface]
 {
