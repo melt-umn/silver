@@ -1,12 +1,35 @@
 grammar silver:definition:env;
-import silver:util;
 
-synthesized attribute declaredName :: String;
-synthesized attribute defs :: Defs;
-synthesized attribute exportedGrammars :: [String];
-synthesized attribute condBuild :: [[String]];
-synthesized attribute moduleNames :: [String];
+{--
+ - RootSpecs have two functions:
+ - 1. Abstract away from whether the information comes from a grammar (Root)
+ -    or from an interface file.
+ - 2. Abstract away from the number of files that are in the grammar.
+ -    (i.e. handle a list of Root nonterminals.)
+ -}
 nonterminal RootSpec with defs, declaredName, exportedGrammars, condBuild, moduleNames, unparse;
+
+{--
+ - The name of the grammar this RootSpec represents.
+ -}
+synthesized attribute declaredName :: String;
+{--
+ - A list of definitions exported.
+ -}
+synthesized attribute defs :: Defs;
+{--
+ - Grammars DIRECTLY exported by this grammar.
+ -}
+synthesized attribute exportedGrammars :: [String];
+{--
+ - A list of triggered builds. Format is actually [ [build x, with gram], ... ]
+ -}
+synthesized attribute condBuild :: [[String]];
+{--
+ - A list of grammars that should be built along with this grammar.
+ - e.g. all imports, exports, grammars included in parsers, etc.
+ -}
+synthesized attribute moduleNames :: [String];
 
 function emptyRootSpec
 Decorated RootSpec ::= 

@@ -1,5 +1,5 @@
 grammar silver:definition:env;
-import silver:util;
+
 import silver:definition:regex; -- soley for Terms. TODO : fix?
 import silver:definition:type;
 

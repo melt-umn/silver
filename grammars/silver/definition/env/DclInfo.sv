@@ -1,7 +1,7 @@
 grammar silver:definition:env;
+
 import silver:definition:regex;  -- soley for Terms. TODO : fix?
 import silver:definition:type;
-import silver:util;
 
 synthesized attribute sourceGrammar :: String;
 synthesized attribute sourceLocation :: Decorated Location;

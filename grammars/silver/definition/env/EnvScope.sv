@@ -8,8 +8,8 @@ grammar silver:definition:env;
 -- appendEnvScope   Decorated EnvScope ::= l::Decorated EnvScope r::Decorated EnvScope
 -- consEnvScope     Decorated EnvScope ::= l::EnvTree r::Decorated EnvScope
 
-
 nonterminal EnvScope with envTrees;
+
 synthesized attribute envTrees :: [EnvTree] ;
 
 function emptyEnvScope
