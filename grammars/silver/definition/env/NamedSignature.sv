@@ -29,22 +29,6 @@ function getTypeNamesSignature
  return if null(ns) then [] else [head(ns).typerep.typeName] ++ getTypeNamesSignature(tail(ns));  
 }
 
-function unparseSignatureElements
-String ::= s::[Decorated NamedSignatureElement] bv::[TyVar]
-{
-  return "[" ++ unparseSignatureElementsHelp(s, bv) ++ "]";
-}
-
-function unparseSignatureElementsHelp
-String ::= s::[Decorated NamedSignatureElement] bv::[TyVar]
-{
-  local attribute h :: NamedSignatureElement;
-  h = new(head(s));
-  h.boundVariables = bv;
-
-  return if null(s) then "" else h.unparse ++ (if null(tail(s)) then "" else (", " ++ unparseSignatureElementsHelp(tail(s), bv)));
-}
-
 function namedNamedSignature
 Decorated NamedSignature ::= fn::String
 {
