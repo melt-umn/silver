@@ -44,6 +44,7 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   cu.globalImports = toEnv(cu.importedDefs);
   cu.compiledGrammars = top.compiledGrammars;
 
+  -- OR the result of reading the interface.
   production attribute inf :: IOInterface;
   inf = compileInterface(pr, "Silver.svi", genPath ++ "src/" ++ gramPath);
   inf.iParser = top.iParser;

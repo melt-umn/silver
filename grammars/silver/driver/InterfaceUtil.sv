@@ -3,6 +3,7 @@ grammar silver:driver;
 nonterminal DependencyAnalysis with compiledList, needGrammars, interfaces, compiledGrammars, forceTaint;
 
 inherited attribute forceTaint::[String] with ++;
+synthesized attribute needGrammars :: [String];
 
   -- at this point we need to partition everything into groups:
   -- Group 1: ALTERED.  = extraUnit.compiledList ++ unit.compiledList ++ condUnit.compiledList;

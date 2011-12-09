@@ -75,29 +75,18 @@ top::RunUnit ::= iIn::IO args::[String]
 -------- Phase 2: Begin actually compiling things
 --------
 
-  -- a hook for extensions to add extra grammars - like list, pattern matching.
-  production attribute extraGrammars :: [[String]] with ++;
-  extraGrammars := [];
-
-  -- the extra grammars after they have been compiled.
-  local attribute extraUnit :: CompilationUnit;
-  extraUnit = compileAllExtra(extraGrammars, [], []);
-  extraUnit.rParser = top.rParser;
-  extraUnit.iParser = top.iParser;
-  extraUnit.compiledGrammars = grammars;
-
   -- the grammars we need to compile - this is a dynamic process
   -- we give a starting point and it will find and compile
   -- the other grammars needed
   production attribute unit :: CompilationUnit;
-  unit = compileGrammars(grammarLocation.io, spath, [a.buildGrammar] ++ extraUnit.needGrammars, extraUnit.seenGrammars, a.doClean, silvergen);
+  unit = compileGrammars(grammarLocation.io, spath, [a.buildGrammar], [], a.doClean, silvergen);
   unit.rParser = top.rParser;
   unit.iParser = top.iParser;
   unit.compiledGrammars = grammars;
  
   -- a list of the specs from all the grammars compiled EXCEPT the conditional build grammars! (and before recompiles!)
   local attribute grammarsBeforeCond :: [Decorated RootSpec];
-  grammarsBeforeCond = unit.compiledList ++ getSpecs(unit.interfaces) ++ extraUnit.compiledList;
+  grammarsBeforeCond = unit.compiledList ++ getSpecs(unit.interfaces);
 
   production attribute condUnit :: CompilationUnit;
   condUnit = compileConditionals(unit.io, spath, collectGrammars(grammarsBeforeCond), a.doClean, grammarsBeforeCond, silvergen);
@@ -105,9 +94,9 @@ top::RunUnit ::= iIn::IO args::[String]
   condUnit.iParser = top.iParser;
   condUnit.compiledGrammars = grammars;
   
-  --all of the interfaces that we parsed (or faked due to extra gramamrs)
+  -- all of the interfaces that we parsed
   production attribute ifaces :: [Decorated Interface];
-  ifaces = unit.interfaces ++ extraUnit.interfaces ++ condUnit.interfaces;
+  ifaces = unit.interfaces ++ condUnit.interfaces;
 
 --------
 -------- Phase 3: We've compiled things, now figure out what we need to recompile (ONLY for analysis, not re-translation)
@@ -115,7 +104,7 @@ top::RunUnit ::= iIn::IO args::[String]
   
   production attribute depAnalysis :: DependencyAnalysis;
   depAnalysis = dependencyAnalysis(ifaces);
-  depAnalysis.compiledGrammars = unit.compiledList ++ extraUnit.compiledList ++ condUnit.compiledList;
+  depAnalysis.compiledGrammars = unit.compiledList ++ condUnit.compiledList;
   depAnalysis.forceTaint := [];
   
   -- depAnalysis.compiledList = RootSpecs needing translation
@@ -124,7 +113,7 @@ top::RunUnit ::= iIn::IO args::[String]
 
   -- the names of the grammars that have been seen. 
   local attribute seenNames :: [String];
-  seenNames = unit.seenGrammars ++ extraUnit.seenGrammars ++ condUnit.seenGrammars;
+  seenNames = unit.seenGrammars ++ condUnit.seenGrammars;
 
   -- Note that we already have the latest translation of all the grammars. This just does semantic analysis to make sure they're still okay.
   production attribute reUnit :: CompilationUnit;
@@ -140,7 +129,7 @@ top::RunUnit ::= iIn::IO args::[String]
   -- grammars not in the dependency tree formed by moduleNames on the root grammar
   -- this is interesting because translations must be sure to account for them (for example, in initialization)
   production attribute nonTreeRootSpecs :: [Decorated RootSpec];
-  nonTreeRootSpecs = condUnit.compiledList ++ getSpecs(condUnit.interfaces) ++ extraUnit.compiledList;
+  nonTreeRootSpecs = condUnit.compiledList ++ getSpecs(condUnit.interfaces);
   
   production attribute nonTreeGrammars :: [String];
   nonTreeGrammars = collectGrammars(nonTreeRootSpecs);
