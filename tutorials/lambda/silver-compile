@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# This script will use Silver to build an AG evaluator for the
+# tutorials grammar and run ant to compile the resulting Java code.
+
+export GRAMMAR_PATH=".."
+
+SILVER_DIR="../../../silver/jars"
+time java -jar $SILVER_DIR/RunSilver.jar $1  -o lambda.jar \
+     lambda \
+     && ant
+
