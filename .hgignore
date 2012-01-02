@@ -5,3 +5,7 @@
 ^JARS-BAK
 ^grp$
 ~$
+^test/.*test\.output$
+^test/.*test\.jar$
+^test/.*build\.xml$
+^test/silver\.testing\.bin\.jar$
