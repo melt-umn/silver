@@ -1,25 +1,18 @@
 grammar silver:modification:patternmatching;
+
 import silver:definition:core;
 import silver:definition:env;
-import silver:definition:concrete_syntax;
 import silver:definition:type;
-import silver:definition:type:syntax;
-import silver:analysis:typechecking:core;
+import silver:definition:type:syntax only typerepType;
 import silver:analysis:typechecking;
+import silver:analysis:typechecking:core only upSubst, downSubst, finalSubst;
 import silver:modification:let_fix;
-import silver:extension:list; -- Oh no, this is a hack! TODO
 
 terminal Case_kwd 'case' lexer classes {KEYWORD};
 terminal Of_kwd 'of' lexer classes {KEYWORD};
 terminal Arrow_kwd '->' precedence = 7;
 terminal Vbar_kwd '|' precedence = 3;
 terminal Opt_Vbar_t /\|?/ ; -- optional Coq-style vbar.
-
--- The interface to Pattern elements
-synthesized attribute patternIsVariable :: Boolean;
-synthesized attribute patternVariableName :: Maybe<String>;
-synthesized attribute patternSubPatternList :: [Decorated Pattern];
-synthesized attribute patternSortKey :: String;
 
 -- The head pattern of a match rule
 synthesized attribute headPattern :: Decorated Pattern;
@@ -34,8 +27,6 @@ nonterminal MRuleList with pp, env, file, matchRuleList;
 -- P -> E
 nonterminal MatchRule with pp, env, file, location, headPattern;
 
--- prod(PL) | int | string | bool | ...
-nonterminal Pattern with pp, env, file, patternIsVariable, patternVariableName, patternSubPatternList, patternSortKey;
 -- P , ...
 nonterminal PatternList with pp, patternList, env, file;
 
