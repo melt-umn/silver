@@ -2,11 +2,10 @@ grammar silver:modification:patternmatching;
 
 import silver:definition:core;
 import silver:definition:env;
-import silver:definition:concrete_syntax;
 import silver:definition:type;
-import silver:definition:type:syntax;
-import silver:analysis:typechecking:core;
+import silver:definition:type:syntax only typerepType, Type;
 import silver:analysis:typechecking;
+import silver:analysis:typechecking:core only upSubst, downSubst, finalSubst;
 
 import silver:translation:java:core;
 import silver:translation:java:type;
@@ -50,7 +49,7 @@ top::Expr ::= ll::Decorated Location e::Expr t::Type pr::PrimPatterns f::Expr
 abstract production matchPrimitiveReal
 top::Expr ::= ll::Decorated Location e::Expr t::Type pr::PrimPatterns f::Expr
 {
-  top.pp = "match " ++ e.pp ++ " return " ++ t. pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
+  top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
   top.location = ll;
   
   top.typerep = t.typerep;
