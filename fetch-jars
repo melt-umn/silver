@@ -1,7 +1,9 @@
 #!/bin/bash
 
+mkdir -p jars
+
 if [ -x /project/melt4/People/ted/jars ]; then
     cp /project/melt4/People/ted/jars/*.jar jars/
 else
-    scp caesar.cs.umn.edu:/project/melt4/People/ted/jars/*.jar jars
+    scp caesar.cs.umn.edu:/project/melt4/People/ted/jars/*.jar jars/
 fi
