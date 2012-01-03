@@ -2,15 +2,15 @@ grammar lambda ;
 
 function driver
 IOVal<Integer> ::= args::[String]
-                   parse::Function(ParseResult<Program_c> ::= String String)
+                   parse::Function(ParseResult<Root_c> ::= String String)
                    driverIO::IO
 {
  production filename::String = head(args) ;
  local fileExists::IOVal<Boolean> = isFile(filename, driverIO);
  local text::IOVal<String> = readFile(filename,fileExists.io);
  local result::ParseResult<Root_c> = parse(text.iovalue, filename);
- local p_cst::Root_c = result.parseTree ;
- production p_ast::Root = p_cst.ast_Program ;
+ local r_cst::Root_c = result.parseTree ;
+ production r_ast::Root = r_cst.ast_Root ;
 
  local print_failure::IO
   = print("parse failed.\n" ++ result.parseErrors ++ "\n", text.io);
@@ -29,12 +29,12 @@ IOVal<Integer> ::= args::[String]
 
  production attribute tasks::[Task] with ++ ;
  tasks :=
---   (if displayPrettyPrint then [ printPPTask(filename,p_ast) ] else [ ]) ++
---  (if displayErrors then [ printErrorsTask(filename,p_ast) ] else [ ]) ++
-   [ printPPTask(filename, p_cst)
-     , writePPTask(filename, p_ast) 
-     , printErrorsTask(filename, p_ast)
-     --, displayErrorLineNum(p_ast)
+--   (if displayPrettyPrint then [ printPPTask(filename,r_ast) ] else [ ]) ++
+--  (if displayErrors then [ printErrorsTask(filename,r_ast) ] else [ ]) ++
+   [ printPPTask(filename, r_cst)
+     , writePPTask(filename, r_ast) 
+     , printErrorsTask(filename, r_ast)
+     --, displayErrorLineNum(r_ast)
    ]
    ;
 
@@ -59,33 +59,33 @@ inherited attribute tioIn :: IO ;
 synthesized attribute tioOut :: IO ;
 
 abstract production printPPTask
-t::Task ::= filename::String p_cst::Decorated Program_c
+t::Task ::= filename::String r_cst::Decorated Root_c
 { t.tioOut = print("Pretty print of program in \"" ++ filename ++ "\":\n" ++
-                   p_cst.pp ++ "\n\n" ++ "CST:\n" ++ p_cst.ast_Program.pp ++ "\n\n", t.tioIn) ;
+                   r_cst.pp ++ "\n\n" ++ "CST:\n" ++ r_cst.ast_Root.pp ++ "\n\n", t.tioIn) ;
 }
 abstract production writePPTask
-t::Task ::= filename::String p_ast::Decorated Program
-{ t.tioOut = writeFile(filenamePP, p_ast.pp, t.tioIn) ;
+t::Task ::= filename::String r_ast::Decorated Root
+{ t.tioOut = writeFile(filenamePP, r_ast.pp, t.tioIn) ;
   local filenamePP::String = substring(0, length(filename)-4, filename) ++ "_pp.lambda" ;
 }
 abstract production printErrorsTask
-t::Task ::= filename::String p_ast::Decorated Program
+t::Task ::= filename::String r_ast::Decorated Root
 { t.tioOut = print("Errors of program in \"" ++ filename ++ "\":\n" ++
-                   p_ast.errors ++ 
+                   r_ast.errors ++ 
                    "\n\n", t.tioIn )  ;
 }
 abstract production writeErrorsTask
-t::Task ::= filename::String p_ast::Decorated Program
+t::Task ::= filename::String r_ast::Decorated Root
 { t.tioOut = writeFile(filenameErrors,  
-                       p_ast.errors ++ "\n\n",
+                       r_ast.errors ++ "\n\n",
                        t.tioIn) ;
   local filenameErrors::String = substring(0, length(filename)-3, filename) ++ ".errors" ;
 }
 --abstract production displayErrorLineNum
---t::Task ::= p_ast::Decorated Root
---{ t.tioOut = if   null(p_ast.errors)
+--t::Task ::= r_ast::Decorated Root
+--{ t.tioOut = if   null(r_ast.errors)
 --             then t.tioIn
---             else print( toString(head(p_ast.errors).location.line) ++ "\n\n", t.tioIn )  ;
+--             else print( toString(head(r_ast.errors).location.line) ++ "\n\n", t.tioIn )  ;
 --}
 
 

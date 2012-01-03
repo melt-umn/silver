@@ -262,7 +262,7 @@ nonterminal Var with pp, ok, envs, type, errors ;
 abstract production var
 v::Var ::= d::Decl
 {
- v.pp = cat(text("\\"), d.pp) ;
+ v.pp = cat(text("lambda "), d.pp) ;
  v.ok = d.ok ;
  v.envs = d.envs ;
  v.type = d.type ;
