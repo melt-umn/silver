@@ -15,11 +15,10 @@ This parse and version of main are exported, but this causes no
 problems in the compsed languages.
 -}
 
-import lambda only Program_c, Driver;
+--import lambda only Root_c, Driver;
 
-parser hostParse :: Program_c {
-  lambda:concretesyntax;
-  lambda:terminals;
+parser hostParse :: Root_c {
+  lambda;
 } 
 
 function main 
