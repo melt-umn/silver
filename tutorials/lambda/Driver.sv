@@ -1,7 +1,5 @@
 grammar lambda ;
 
-import lambda ;
-
 function driver
 IOVal<Integer> ::= args::[String]
                    parse::Function(ParseResult<Program_c> ::= String String)
