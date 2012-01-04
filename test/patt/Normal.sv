@@ -160,3 +160,30 @@ wrongCode "Fewer patterns than expected" {
  }
 }
 
+{- TODO
+wrongCode "Fewer patterns than expected" {
+ function fooDontCare
+ String ::=
+ {
+   return case 1, 2 of
+          | _ -> "" -- wrong!
+          end;
+ }
+}
+
+wrongCode "More patterns than expected" {
+ function fooDontCare
+ String ::=
+ {
+   return case 1, 2 of
+          | _, _, _ -> "" -- wrong!
+          end;
+ }
+}
+-}
+
+-- That toString works on a pattern expression (type information is available)
+function sssss String ::= { return toString(case just(1) of just(x) -> x end); } -- TODO: LOL LOL also patterm matching problem without signatures FIX LOL
+--global ssss :: String = toString(case just(1) of just(x) -> x end); -- TODO: pretty printing problem with pattern matching. fix!
+equalityTest ( sssss(), "1", String, pat_tests ) ;
+

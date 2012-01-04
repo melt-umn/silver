@@ -56,20 +56,21 @@ top::Expr ::= ll::Decorated Location e::Expr t::Type pr::PrimPatterns f::Expr
   
   top.errors := e.errors ++ t.errors ++ pr.errors ++ f.errors;
   
+  {--
+   - Invariant: if we were given an undecorated expression, it should have been
+   - decorated by matchPrimitive before we got here, so we should either
+   - have a decorated expr, or some other type.
+   -}
   local attribute scrutineeType :: TypeExp;
   scrutineeType = performSubstitution(e.typerep, e.upSubst);
   
---  top.errors <- if !scrutineeType.isDecorated
---                then [err(top.location, "match scrutinee should be decorated, instead it's type " ++ prettyType(scrutineeType))]
---                else [];
-  
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
-  
   errCheck2 = check(f.typerep, t.typerep);
   top.errors <- if errCheck2.typeerror
                 then [err(f.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
 
+  -- ordinary threading: e, pr, f, errCheck2
   e.downSubst = top.downSubst;
   pr.downSubst = e.upSubst;
   f.downSubst = pr.upSubst;
@@ -131,19 +132,42 @@ top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
 concrete production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 {
+  local isGadt :: Boolean =
+    case qn.lookupValue.typerep.outputType of
+    -- If the lookup is successful, and it's a production type, and it 
+    -- constructs a nonterminal that either:
+    --  1. has a non-type-variable parameter (e.g. Expr<Boolean>)
+    --  2. has fewer free variables than parameters (e.g. Eq<a a>)
+    -- THEN it's a gadt.
+    | nonterminalTypeExp(_, tvs) -> !isOnlyTyVars(tvs) || length(tvs) != length(setUnionTyVarsAll(mapFreeVariables(tvs)))
+    | _ -> false
+    end;
+  
+  -- The reason we do it this way is because the threading of type information
+  -- around is very different, and I don't want to confuse myself while I'm writing
+  -- the code. After it works, perhaps these can be merged into one non-forwarding
+  -- production, once the code is understood fully.
+  forwards to if isGadt
+              then prodPatternGadt(qn, ns, e)
+              else prodPatternNormal(qn, ns, e);
+}
+abstract production prodPatternNormal
+top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
+{
   top.pp = qn.pp ++ "(" ++ ns.pp ++ ") -> " ++ e.pp;
   top.location = qn.location;
   
   top.errors := qn.lookupValue.errors ++ ns.errors ++ e.errors;
 
+  -- Turns the existential variables existential
   local attribute prod_type :: TypeExp;
-  prod_type = skolemizeTypeExp(qn.lookupValue.typerep);
+  prod_type = skolemizeProductionType(qn.lookupValue.typerep);
   
   ns.bindingTypes = prod_type.inputTypes;
   ns.bindingIndex = 0;
   
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst);
-  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst);
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
   errCheck1 = check(decoratedTypeExp(prod_type.outputType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
@@ -155,15 +179,58 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
   
-  -- Pass us by!! We're cheating here for a bit!
+  -- Thread NORMALLY! YAY!
+  errCheck1.downSubst = top.downSubst;
+  e.downSubst = errCheck1.upSubst;
+  errCheck2.downSubst = e.upSubst;
+  top.upSubst = errCheck2.upSubst;
+  
+  e.env = newScopeEnv(ns.defs, top.env);
+  
+  top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
+    ") { " ++ ns.let_translation ++ " return (" ++ top.returnType.transType ++ ")" ++ e.translation ++ "; }";
+}
+
+abstract production prodPatternGadt
+top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
+{
+  top.pp = qn.pp ++ "(" ++ ns.pp ++ ") -> " ++ e.pp;
+  top.location = qn.location;
+  
+  top.errors := qn.lookupValue.errors ++ ns.errors ++ e.errors;
+
+  local attribute prod_type :: TypeExp;
+  prod_type = fullySkolemizeProductionType(qn.lookupValue.typerep); -- that says FULLY. See the comments on that function.
+  
+  ns.bindingTypes = prod_type.inputTypes;
+  ns.bindingIndex = 0;
+  
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- part of the
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- threading hack
+  
+  errCheck1 = check(decoratedTypeExp(prod_type.outputType), top.scrutineeType);
+  top.errors <- if errCheck1.typeerror
+                then [err(top.location, qn.pp ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                else [];
+  
+  errCheck2 = check(e.typerep, top.returnType);
+  top.errors <- if errCheck2.typeerror
+                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                else [];
+  
+  -- For GADTs, threading gets a bit weird.
+  -- TODO: we SHOULD check that the "base type" is accurate for the pattern / scrutineeType first.
+  --       but for now for simplicity, we avoid that.
+  -- So for now, we're just skipping over this case entirely:
   top.upSubst = top.downSubst;
-  -- Okay, now come back after checking everything else, let's check me... wheee
+  
+  -- AFTER everything is done elsewhere, we come back with finalSubst, and we produce the refinement, and thread THAT through everything.
   errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, decoratedTypeExp(prod_type.outputType)));
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   -- Okay, now update the finalSubst....
   e.finalSubst = errCheck2.upSubst;
-  -- Hack over. Solved by pushing type information down... TODO
+  -- Here ends the hack
   
   e.env = newScopeEnv(ns.defs, top.env);
   
@@ -430,11 +497,63 @@ String ::= fn::String  et::String  ty::String
 
 -----
 
-function skolemizeTypeExp
+{--
+ - Turns the existential variables of a production type into skolem constants,
+ - and freshen the rest.
+ - e.g. (?a -> ?b -> F ?a) becomes (?c -> !d -> F ?c)
+ - This is done so we can just unify the scrutinee type an go, no hairy details!
+ -}
+function skolemizeProductionType
 TypeExp ::= te::TypeExp
 {
-  return performSubstitution(te, zipVarsIntoSkolemizedSubstitution(te.freeVariables, freshTyVars(length(te.freeVariables))));
+  local attribute existentialVars :: [TyVar];
+  existentialVars = removeTyVars(te.freeVariables, te.outputType.freeVariables);
+  
+  local attribute skolemize :: Substitution;
+  skolemize = composeSubst(
+    zipVarsIntoSkolemizedSubstitution(existentialVars, freshTyVars(length(existentialVars))),
+    zipVarsIntoSubstitution(te.outputType.freeVariables, freshTyVars(length(te.outputType.freeVariables))));
+  
+  return performSubstitution(te, skolemize);
 }
+
+{--
+ - wat? why? well, one skolem constant is as good as another, and we're here INTRODUCING
+ - new variables, and we need to make them skolem constants.
+ -
+ - Here's the example, suppose we have 'arrow :: T<a> -> T<b> -> T<A<a b>>'
+ - and we do 'case (::Type<c>) of arrow(...)' we're going to refine 
+ - the c to A<a b>, but there's a HUGE HUGE PROBLEM THERE because we can't
+ - allow a and b to be unified together later on, because we have no idea what
+ - types they are!  So a and b MUST wind up as different skolem constants,
+ - not as type variables, despite appearing in the 'output type'.
+ -
+ - So my solution right now is to skolemize the entire type, and I *think* this
+ - works just fine... for now.  The reason is that we're going OutsideIn, so
+ - type checking should be 'completed'.  That is, there should be
+ - *** NO TYPE VARIABLES AT ALL *** in the scrutineeType anymore.
+ - Either they got unified with some skolem constant, got unified with some type
+ - or an error should have been raised somewhere.  (Even once we add real inference
+ - this should be the case, since all free type variables should end up unified with
+ - some skolem constant upon generalization of an expression...)
+ -
+ - TODO: what about nontermination / truely useless ones?
+ -     case error("lol") of eq() -> "umm" | unit() -> "lol" end
+ -   is a-okay with the type checker, but that's because of the TODO in prodPatternGadt.
+ -   Could there be any other issues?
+ -
+ - And since we're just doing a 'refine' afterwards, well... one skolem constant
+ - is as good as another, as far as correctness goes, anyway...
+ -}
+function fullySkolemizeProductionType
+TypeExp ::= te::TypeExp
+{
+  local attribute skolemize :: Substitution;
+  skolemize = zipVarsIntoSkolemizedSubstitution(te.freeVariables, freshTyVars(length(te.freeVariables)));
+  
+  return performSubstitution(te, skolemize);
+}
+
 
 
 --- This is unification, EXCEPT that skolem constants behave like type variables!
@@ -467,7 +586,7 @@ top::TypeExp ::= tv::TyVar
                     else subst(tv, top.refineWith)
               end;
 }
-
+ 
 aspect production intTypeExp
 top::TypeExp ::=
 {
@@ -602,3 +721,15 @@ Substitution ::= te1::[TypeExp] te2::[TypeExp]
                                             mapSubst(tail(te2), first) ));
 }
 
+
+--------
+function isOnlyTyVars
+Boolean ::= ls::[TypeExp]
+{
+  return case ls of
+         | [] -> true
+         | varTypeExp(_) :: t -> isOnlyTyVars(t)
+         | skolemTypeExp(_) :: t -> isOnlyTyVars(t)
+         | _ -> false
+         end;
+}

@@ -684,6 +684,11 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 }
 
 
+{--
+ - Get each individual Expr, without decorating them.
+ -}
+synthesized attribute rawExprs :: [Expr] occurs on Exprs;
+
 abstract production exprsEmpty
 top::Exprs ::=
 {
@@ -691,6 +696,7 @@ top::Exprs ::=
   top.location = loc("exprsEmpty", -1, -1);
   top.errors := [];
   top.exprs = [];
+  top.rawExprs = [];
 }
 
 concrete production exprsSingle
@@ -701,6 +707,7 @@ top::Exprs ::= e::Expr
 
   top.errors := e.errors;
   top.exprs = [e];
+  top.rawExprs = [e];
 }
 
 concrete production exprsCons
@@ -711,6 +718,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 
   top.errors := e1.errors ++ e2.errors;
   top.exprs = [e1] ++ e2.exprs;
+  top.rawExprs = [e1] ++ e2.rawExprs;
 }
 
 abstract production exprsDecorated
@@ -721,6 +729,7 @@ top::Exprs ::= es::[Decorated Expr]
   
   top.errors := foldr(append, [], getErrorsExprs(es));
   top.exprs = es;
+  top.rawExprs = error("internal error: not yet implemented: rawExprs from exprsDecorated");
 }
 
 
