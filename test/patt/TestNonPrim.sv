@@ -19,4 +19,3 @@ equalityTest ( typeEqualsNonPrim(unit(),unit()).isJust, true, Boolean, pat_tests
 equalityTest ( typeEqualsNonPrim(arrow(unit(),unit()),unit()).isJust, false, Boolean, pat_tests ) ;
 equalityTest ( typeEqualsNonPrim(arrow(unit(),unit()),arrow(unit(),unit())).isJust, true, Boolean, pat_tests ) ;
 
-

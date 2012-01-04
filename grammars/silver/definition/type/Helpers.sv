@@ -1,13 +1,13 @@
 grammar silver:definition:type;
 
-
+-- set contains:  s 'in' sl
 function containsTyVar
 Boolean ::= s::TyVar sl::[TyVar]
 {
   return (!null(sl)) && (tyVarEqual(s, head(sl)) || containsTyVar(s, tail(sl)));
 }
 
-
+-- set difference:  startswith - toremove
 function removeTyVars
 [TyVar] ::= startswith::[TyVar] toremove::[TyVar]
 {
