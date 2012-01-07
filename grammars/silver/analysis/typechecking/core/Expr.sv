@@ -108,6 +108,12 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.upSubst = es.upSubst;
 }
 
+aspect production attributeSection
+top::Expr ::= '(' '.' q::QName ')'
+{
+  top.upSubst = top.downSubst;
+}
+
 aspect production attributeAccess
 top::Expr ::= e::Expr '.' q::QName
 {
