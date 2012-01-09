@@ -33,45 +33,52 @@ concrete productions e::Expr_c
  | e1::Expr_funct_c { e.pp = e1.pp;
                       e.ast_Expr = expr_expr_f(e1.ast_Expr_funct); }
  | 'let' ic::Id_t ':' ty::TypeList_c '=' e1::Expr_c 'in' e2::Expr_c
-                    { e.pp = concat([text("let"), text(ic.lexeme), text(":"), ty.pp, text("="), e1.pp, text("in"), e2.pp]); }
+                    { e.pp = concat([text("let"), text(ic.lexeme), text(":"), ty.pp, text("="), e1.pp, text("in"), e2.pp]); 
+                      e.ast_Expr = expr_let(ic.lexeme, ty.ast_Type, e1.ast_Expr, e2.ast_Expr); }
  | 'lambda' i::Id_t ':' ty::TypeList_c '.' e1::Expr_c
-                    { e.pp = concat([text("lambda"), text(i.lexeme), text(":"), ty.pp, text("."), e1.pp]); }
+                    { e.pp = concat([text("lambda"), text(i.lexeme), text(":"), ty.pp, text("."), e1.pp]);
+                      e.ast_Expr = expr_lambda(i.lexeme, ty.ast_Type, e1.ast_Expr); }
 
 concrete productions e::Expr_funct_c
- | e1::Expr_funct_c e2::Expr_arith_c { e.pp = cat(e1.pp, e2.pp); } --TODO
+ | e1::Expr_funct_c e2::Expr_arith_c { e.pp = cat(e1.pp, e2.pp);
+                                       e.ast_Expr_funct = expr_funct(e1.ast_Expr_funct, e2.ast_Expr_arith); }
  | e1::Expr_arith_c                  { e.pp = e1.pp;
                                        e.ast_Expr_funct = methodpassing_ex(e1.ast_Expr_arith); }
 
 concrete productions e::Expr_arith_c
- | e1::Expr_arith_c '+' t::Term_c { e.pp = concat([e1.pp, text("+"), t.pp]); }
- | e1::Expr_arith_c '-' t::Term_c { e.pp = concat([e1.pp, text("-"), t.pp]); }
+ | e1::Expr_arith_c '+' t::Term_c { e.pp = concat([e1.pp, text("+"), t.pp]);
+                                    e.ast_Expr_arith = expr_add(e1.ast_Expr_arith, t.ast_Term); }
+ | e1::Expr_arith_c '-' t::Term_c { e.pp = concat([e1.pp, text("-"), t.pp]);
+                                    e.ast_Expr_arith = expr_sub(e1.ast_Expr_arith, t.ast_Term); }
  | t::Term_c                      { e.pp = t.pp;
                                     e.ast_Expr_arith = expr_term(t.ast_Term); }
 
 concrete productions t::Term_c
- | t1::Term_c '*' f::Factor_c { t.pp = concat([t1.pp, text("*"), f.pp]); }
- | t1::Term_c '/' f::Factor_c { t.pp = concat([t1.pp, text("/"), f.pp]); }
+ | t1::Term_c '*' f::Factor_c { t.pp = concat([t1.pp, text("*"), f.pp]);
+                                t.ast_Term = term_mul(t1.ast_Term, f.ast_Factor); }
+ | t1::Term_c '/' f::Factor_c { t.pp = concat([t1.pp, text("/"), f.pp]);
+                                t.ast_Term = term_div(t1.ast_Term, f.ast_Factor); }
  | f::Factor_c                { t.pp = f.pp;
                                 t.ast_Term = term_factor(f.ast_Factor); }
 
 concrete productions e::Factor_c
  | '(' inner::Expr_c ')' { e.pp = parens(inner.pp);
                            e.ast_Factor = factor_parens(inner.ast_Expr); }
- | i::Id_t { e.pp = text(i.lexeme);
-             e.ast_Factor = factor_id(i.lexeme); }
- | i::IntLit_t { e.pp = text(i.lexeme);
-                 e.ast_Factor = factor_int(i.lexeme); }
+ | i::Id_t               { e.pp = text(i.lexeme);
+                           e.ast_Factor = factor_id(i.lexeme); }
+ | i::IntLit_t           { e.pp = text(i.lexeme);
+                           e.ast_Factor = factor_int(i.lexeme); }
 
 -- Types
 concrete productions tl::TypeList_c
  | ti::TypeItem_c '->' tl1::TypeList_c { tl.pp = concat([ti.pp, text("->"), tl1.pp]);
                                          tl.ast_Type = arrow(ti.ast_Type,tl1.ast_Type); }
- | ti::TypeItem_c { tl.pp = ti.pp;
-                    tl.ast_Type = ti.ast_Type; }
+ | ti::TypeItem_c                      { tl.pp = ti.pp;
+                                         tl.ast_Type = ti.ast_Type; }
 
 concrete productions ti::TypeItem_c
- | 'int' { ti.pp = text("int");
-           ti.ast_Type = int(); }
+ | 'int'                  { ti.pp = text("int");
+                            ti.ast_Type = int(); }
  | '(' tl::TypeList_c ')' { ti.pp = parens(tl.pp);
                             ti.ast_Type = tl.ast_Type; }
 {-
