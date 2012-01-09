@@ -31,30 +31,47 @@ p::Root ::= r::Expr
  r.envi = [] ;
 }
 
+
 -- Expr
 nonterminal Expr with pp, ok, type, envi, errors ;
-abstract production expr_dcl
-r::Expr ::= d::Decl r1::Expr r2::Expr
+abstract production expr_let
+e::Expr ::= id::String t::Type e1::Expr e2::Expr
 {
---TODO: FIX THIS
  local attribute synErrors :: String ;
- synErrors = d.errors ++ r1.errors ++ r2.errors ;
+ synErrors = t.errors ++ e1.errors ++ e2.errors ;
 
- r.pp = concat([text("let "), d.pp, text("="), r1.pp, text(" in "), r2.pp]) ;
- r.ok = d.ok
-        && r1.ok
-        && r2.ok 
-        && eqType(r1.type, head(d.envs).snd) ;
- r.errors = if !eqType(r1.type, head(d.envs).snd)
+ e.pp = concat([text("let "), text(id), text(":"), t.pp, text("="), e1.pp, text(" in "), e2.pp]);
+
+ e.ok = t.ok
+        && e1.ok
+        && e2.ok 
+        && eqType(e1.type, t) ;
+ e.errors = if !eqType(e1.type, t)
             then "Declaration type and definition are mismatched\n" 
-              ++ "\tDecl:" ++ printType(head(d.envs).snd) ++ "\n"
-              ++ "\tDef :" ++ printType(r1.type) ++ "\n"
+              ++ "\tDecl:" ++ printType(t) ++ "\n"
+              ++ "\tDef :" ++ printType(e1.type) ++ "\n"
               ++ synErrors
             else synErrors ;
- r.type = r2.type ;
+ e.type = e2.type ;
 
- r1.envi = [] ++ r.envi ;
- r2.envi = d.envs ++ r.envi ;
+ e1.envi = [] ++ e.envi ;
+ e2.envi = [pair(id, t)] ;
+}
+
+abstract production expr_lambda
+e::Expr ::= id::String tl::Type e1::Expr
+{
+ local attribute synErrors :: String ;
+ synErrors = tl.errors ++ e1.errors ;
+
+ e.pp = concat([text("lambda "), text(id), text(":"), tl.pp, text("."), e1.pp]);
+ e.ok = tl.ok
+        && e1.ok ;
+
+ e.errors = synErrors ;
+ e.type = arrow(tl, e1.type) ;
+
+ e1.envi = [pair(id, tl)] ++ e.envi ;
 }
 
 abstract production expr_expr_f
@@ -67,6 +84,7 @@ r::Expr ::= uf::Expr_funct
 
  uf.envi = r.envi ;
 }
+
 
 -- Expr_funct
 nonterminal Expr_funct with pp, ok, type, envi, errors ;
@@ -115,9 +133,10 @@ mp::Expr_funct ::= e::Expr_arith
  e.envi = mp.envi ;
 }
 
+
 -- Expr_arith
 nonterminal Expr_arith with pp, ok, type, envi, errors ;
-abstract production expr_op
+abstract production expr_add
 e::Expr_arith ::= e1::Expr_arith t::Term
 {
  local attribute synErrors :: String ;
@@ -143,6 +162,15 @@ e::Expr_arith ::= e1::Expr_arith t::Term
  t.envi = e.envi ;
 }
 
+abstract production expr_sub
+e::Expr_arith ::= e1::Expr_arith t::Term
+{
+ e.pp = concat([e1.pp, text("-"), t.pp]) ;
+
+ -- All other functionality is identical to expr_add
+ forwards to expr_add(e1, t);
+}
+
 abstract production expr_term
 e::Expr_arith ::= t::Term
 {
@@ -154,9 +182,10 @@ e::Expr_arith ::= t::Term
  t.envi = e.envi ;
 }
 
+
 -- Term
 nonterminal Term with pp, ok, type, envi, errors ;
-abstract production term_op
+abstract production term_mul
 t::Term ::= t1::Term f::Factor
 {
  local attribute synErrors :: String ;
@@ -183,6 +212,15 @@ t::Term ::= t1::Term f::Factor
  f.envi = t.envi ;
 }
 
+abstract production term_div
+t::Term ::= t1::Term f::Factor
+{
+ t.pp = concat([t1.pp, text("/"), f.pp]) ;
+
+ -- All other functionality is identical to term_mul
+ forwards to term_mul(t1,f);
+}
+
 abstract production term_factor
 t::Term ::= f::Factor
 {
@@ -193,6 +231,7 @@ t::Term ::= f::Factor
 
  f.envi = t.envi ;
 }
+
 
 -- Factor
 nonterminal Factor with pp, ok, type, envi, errors ;
@@ -231,6 +270,7 @@ f::Factor ::= r::Expr
  r.envi = f.envi ;
 }
 
+
 -- Type
 nonterminal Type with pp, ok, errors ;
 abstract production arrow
@@ -257,29 +297,6 @@ t::Type ::=
  t.errors = "TYPE ERROR" ;
 }
 
--- Var
-nonterminal Var with pp, ok, envs, type, errors ;
-abstract production var
-v::Var ::= d::Decl
-{
- v.pp = cat(text("lambda "), d.pp) ;
- v.ok = d.ok ;
- v.envs = d.envs ;
- v.type = d.type ;
- v.errors = d.errors ;
-}
-
--- Decl
-nonterminal Decl with pp, ok, envs, type, errors ;
-abstract production decl
-d::Decl ::= id::String t::Type
-{
- d.pp = concat([text(id), text(":"), t.pp]) ;
- d.ok = t.ok ;
- d.envs = [pair(id, t)] ;
- d.type = t ;
- d.errors = t.errors ;
-}
 
 -- SymbolTable functions --
 function isin
