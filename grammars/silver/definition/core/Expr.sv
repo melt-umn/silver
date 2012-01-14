@@ -213,6 +213,41 @@ top::Expr ::= e::Decorated Expr es::Exprs
   forwards to defaultExpr();
 }
 
+concrete production attributeSection
+top::Expr ::= '(' '.' q::QName ')'
+{
+  top.pp = "(." ++ q.pp ++ ")";
+  top.location = loc(top.file, $2.line, $2.column);
+  
+  -- Fresh variable for the input type, and we'll come back later and check that it occurs on that type.
+  
+  -- Also, freshen the attribute type, because even though there currently should NOT be any type variables
+  -- there, there could be if the code will raise an error.
+  top.typerep = functionTypeExp(freshenCompletely(q.lookupAttribute.typerep), [errorType()]);
+  
+  top.errors := q.lookupAttribute.errors;
+  
+  top.errors <- if null(q.lookupAttribute.dclBoundVars) then []
+                else [err(q.location, "Attribute " ++ q.pp ++ " is parameterized, and attribute sections currently do not work with parameterized attributes, yet.")]; -- TODO The type inference system is too weak, currently.
+  
+  top.errors <- case q.lookupAttribute.dcls of -- TODO HORRIBLE. FIX. PLZ.
+                | synDcl(_,_,_,_,_) :: _ -> []
+                | [] -> [] -- ignore
+                | _ -> [err(q.location, "Only synthesized attributes are currently supported in attribute sections.")]
+                end;
+  
+  -- Only known after the inference pass (uses final subst)
+  production attribute inputType :: TypeExp;
+  inputType = performSubstitution(head(top.typerep.inputTypes), top.finalSubst);
+  
+  production attribute occursCheck :: OccursCheck;
+  occursCheck = occursCheckQName(q, if inputType.isDecorated then inputType.decoratedType else inputType);
+
+  top.errors <- occursCheck.errors;
+
+  forwards to defaultExpr();
+}
+
 concrete production attributeAccess
 top::Expr ::= e::Expr '.' q::QName
 {

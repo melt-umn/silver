@@ -156,6 +156,16 @@ top::Expr ::= e::Decorated Expr es::Exprs
   top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
 
+aspect production attributeSection
+top::Expr ::= '(' '.' q::QName ')'
+{
+  top.translation = if inputType.isDecorated
+                    then "new common.AttributeSection(" ++ occursCheck.dcl.attrOccursIndex ++ ")"
+                    else "new common.AttributeSection.Undecorated(" ++ occursCheck.dcl.attrOccursIndex ++ ")";
+
+  top.lazyTranslation = top.translation;
+}
+
 aspect production synDNTAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
