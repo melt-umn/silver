@@ -1,9 +1,27 @@
 #!/bin/bash
 
+LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
+REMOTE_STORE="http://melt.cs.umn.edu/downloads/silver-dev/jars"
+
+FILES="CopperCompiler.jar CopperRuntime.jar RunSilver.jar silver.composed.Default.jar SilverRuntime.jar"
+
 mkdir -p jars
 
-if [ -x /project/melt4/People/ted/jars ]; then
-    cp /project/melt4/People/ted/jars/*.jar jars/
+if [ -d $LOCAL_STORE ]; then
+  cp $LOCAL_STORE/*.jar jars/
 else
-    scp caesar.cs.umn.edu:/project/melt4/People/ted/jars/*.jar jars/
+  # There's probably a better way to do this!
+  # Using -r causes lots of pointless downloads of variations of the index.html
+  # even if -A.jar is used they still get downloaded...
+  
+  URLS=""
+  for file in $FILES; do
+    URLS="$URLS $REMOTE_STORE/$file"
+  done
+  
+  # -N Pay attention to timestamps, to avoid needless redownloads.
+  # -P jars/  Put the files in jars/
+  # -nv Don't be so verbose!
+  wget -N -P jars/ -nv $URLS 
 fi
+
