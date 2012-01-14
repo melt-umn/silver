@@ -1,0 +1,27 @@
+#!/bin/bash
+
+DT=`date +"%Y.%m.%d.%H.%M"`
+JARS_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
+JARS_BACKUP=/project/melt4/People/ted/jars_bak
+
+if [ ! -d $JARS_STORE ]; then
+  echo "Must be running on a umn machine in the melt group."
+  exit 1
+fi
+
+if [ ! -d jars ]; then
+  echo "Should be run from root of silver tree."
+  exit 2
+fi
+
+# I like to keep a backup series of our jars...
+cp $JARS_STORE/silver.composed.Default.jar $JARS_BACKUP/silver.composed.Default.jar.${DT}
+
+# Do the copy with rsync, so we only copy if the file changed...
+# -c  Use checksums and avoid copying if it's the same.
+rsync -c jars/*.jar $JARS_STORE
+
+# fix permissions
+chgrp melt $JARS_STORE/*.jar
+chmod 775 $JARS_STORE/*.jar
+
