@@ -36,9 +36,9 @@ function basic3 -- "nondeterministic" multiple matching
 String ::= s::Maybe<String>  t::Maybe<String>  u::Maybe<String>
 {
   return case s, t, u of
-    a, just(b), c -> b
-  | just(a), b, c -> a
-  | a, b, just(c) -> c
+    aa, just(bb), cc -> bb
+  | just(aa), bb, cc -> aa
+  | aa, bb, just(cc) -> cc
   | _, _, _ -> "oh noes"
   end;
 }
@@ -111,8 +111,8 @@ function basic7 -- using the same names of pattern variables
 Integer ::= p::MyTriple<Integer Maybe<Integer> Maybe<Integer>>
 {
 return case p of
-  mytriple(a, b, just(c)) -> a + c
-| mytriple(b, just(a), c) -> a + b
+  mytriple(aa, bb, just(cc)) -> aa + cc
+| mytriple(bb, just(aa), cc) -> aa + bb
 end;
 }
 
