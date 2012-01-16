@@ -93,6 +93,13 @@ top::Expr ::= q::Decorated QName
   forwards to defaultExpr();
 }
 
+{- Eventhough bug #16 removes the production type, we still need the
+production reference for code generation purposes.  Type checking does
+not need to distinguish between functions and productions, excpet for
+the need to detect cases when, for example, a function aspect attempts
+to aspect a production. --EVW
+ -}
+
 abstract production productionReference
 top::Expr ::= q::Decorated QName
 {
@@ -354,11 +361,11 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   -- TODO: this is a hacky way of dealing with terminal attributes
   top.typerep = if q.name == "lexeme" || q.name == "filename"
                 then stringTypeExp()
-                else if q.name == "line" || q.name == "column"
+                else if q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn"
                 then intTypeExp()
                 else errorType();
   top.errors :=
-        if q.name == "lexeme" || q.name == "filename" || q.name == "line" || q.name == "column"
+        if q.name == "lexeme" || q.name == "filename" || q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn"
         then []
         else [err(q.location, q.name ++ " is not a terminal attribute")];
   

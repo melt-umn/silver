@@ -35,6 +35,12 @@ TypeExp ::=
   return varTypeExp(freshTyVar());
 }
 
+function freshType
+TypeExp ::=
+{
+  return varTypeExp(freshTyVar());
+}
+
 function newSkolemConstant
 TypeExp ::=
 {
@@ -133,14 +139,6 @@ top::TypeExp ::= nt::TypeExp  hidden::TypeExp
 }
 
 abstract production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
-{
-  top.freeVariables = setUnionTyVarsAll(mapFreeVariables(out :: params));
-  
-  forwards to defaultTypeExp();
-}
-
-abstract production productionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
   top.freeVariables = setUnionTyVarsAll(mapFreeVariables(out :: params));

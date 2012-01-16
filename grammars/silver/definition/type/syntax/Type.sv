@@ -156,7 +156,7 @@ top::Type ::= 'Production' '(' sig::Signature ')'
 
   top.errors := sig.errors;
 
-  top.typerep = productionTypeExp(head(sig.types), tail(sig.types));
+  top.typerep = functionTypeExp(head(sig.types), tail(sig.types));
 
   top.lexicalTypeVariables = sig.lexicalTypeVariables;
 }

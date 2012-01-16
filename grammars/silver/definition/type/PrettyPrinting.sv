@@ -86,12 +86,6 @@ top::TypeExp ::= out::TypeExp params::[TypeExp]
   top.typepp =   "Function(" ++ out.typepp ++ " ::= " ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ")" ;
 }
 
-aspect production productionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
-{
-  top.typepp = "Production(" ++ out.typepp ++ " ::= " ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ")" ;
-}
-
 --------------------------------------------------------------------------------
 function findAbbrevFor
 String ::= tv::TyVar  bv::[TyVar]
