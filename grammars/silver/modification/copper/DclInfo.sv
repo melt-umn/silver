@@ -28,7 +28,8 @@ top::DclInfo ::= sg::String sl:: Location fn::String
 
   top.unparse = error("Internal error: pluck-terms should never appear in interface files.");
   
-  top.typerep = errorType(); -- TODO: need a real type for this
+  --top.typerep = errorType();
+  top.typerep = freshType(); -- #HACK2012 Issue 4
   
   top.refDispatcher = pluckTerminalReference;
   top.defDispatcher = errorValueDef;
