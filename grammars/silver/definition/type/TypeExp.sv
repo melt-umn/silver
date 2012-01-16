@@ -35,6 +35,12 @@ TypeExp ::=
   return varTypeExp(freshTyVar());
 }
 
+function freshType
+TypeExp ::=
+{
+  return varTypeExp(freshTyVar());
+}
+
 function newSkolemConstant
 TypeExp ::=
 {
