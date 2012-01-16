@@ -39,7 +39,7 @@ top::Expr ::= 'match' e::Expr 'return' t::Type 'with' pr::PrimPatterns 'else' '-
   forwards to matchPrimitive(loc(top.file, $1.line, $1.column), e, t, pr, f);
 }
 abstract production matchPrimitive
-top::Expr ::= ll::Decorated Location e::Expr t::Type pr::PrimPatterns f::Expr
+top::Expr ::= ll:: Location e::Expr t::Type pr::PrimPatterns f::Expr
 {
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
@@ -47,7 +47,7 @@ top::Expr ::= ll::Decorated Location e::Expr t::Type pr::PrimPatterns f::Expr
   forwards to matchPrimitiveReal(ll, ensureDecoratedExpr(e), t, pr, f);
 }
 abstract production matchPrimitiveReal
-top::Expr ::= ll::Decorated Location e::Expr t::Type pr::PrimPatterns f::Expr
+top::Expr ::= ll:: Location e::Expr t::Type pr::PrimPatterns f::Expr
 {
   top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
   top.location = ll;
@@ -476,7 +476,19 @@ top::VarBinder ::= n::Name
                  else "childAsIs(")
              ++ toString(top.bindingIndex) ++ ")", ty.transType);
   
-  top.errors := []; -- TODO: check for rebinding? or not perhaps...
+  --top.errors := []; -- TODO: check for rebinding? or not perhaps...
+
+  ---- TODO: Should be here, but does nothing
+  -- MUST start with lower case #HACK2012
+  top.errors := (if isUpper(substring(0,1,n.name))
+                 then [err(top.location, "Pattern variable names start with a lower case letter")]
+                 else [])
+  -- MUST NOT shadow any _production_ names #HACK2012
+  -- TODO: Add function to find all prodDcl in env
+             ++ (case getValueDcl(n.name, top.env) of
+                 | prodDcl(_,_,_) :: _ -> [err(top.location, "Production name can't be used in pattern")]
+                 | _ -> []
+                 end) ;
 }
 concrete production ignoreVarBinder
 top::VarBinder ::= '_'

@@ -11,7 +11,7 @@ synthesized attribute pp :: String;
 {--
  - The location of this node in the original source file.
  -}
-synthesized attribute location :: Decorated Location;
+synthesized attribute location :: Location;
 {--
  - The file containing this tree. (Still used, but legacy now that terminals carry filenames.)
  -}

@@ -18,25 +18,25 @@ synthesized attribute attrOccursIndex :: String;
 synthesized attribute attrOccursType :: String;
 
 aspect production occursDcl
-top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
 {
   top.attrOccursIndexName = makeIdName(fnat ++ "__ON__" ++ fnnt);
   top.attrOccursIndex = makeName(sg) ++ ".Init." ++ top.attrOccursIndexName;
 }
 
 aspect production synDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.attrOccursType = "syn";
 }
 aspect production inhDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.attrOccursType = "inh";
 }
 
 aspect production localDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
 {
   local attribute li :: Integer;
   li = lastIndexOf(":local:", fn);

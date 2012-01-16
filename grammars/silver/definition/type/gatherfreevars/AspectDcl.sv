@@ -9,7 +9,7 @@ import silver:util;
 attribute lexicalTypeVariables occurs on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectRHSElem, AspectFunctionSignature, AspectFunctionLHS;
 
 function addNewLexicalTyVars_ActuallyVariables
-Defs ::= gn::String sl::Decorated Location l::[String]
+Defs ::= gn::String sl:: Location l::[String]
 {
   return if null(l) then emptyDefs()
          else addLexTyVarDcl(gn, sl, head(l), errorType(),
