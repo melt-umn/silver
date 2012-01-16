@@ -35,7 +35,7 @@ top::LetAssigns ::= ae::AssignExpr
 --------------------------------------------------------------------------------
 
 abstract production letp
-top::Expr ::= l::Decorated Location  la::AssignExpr  e::Expr
+top::Expr ::= l:: Location  la::AssignExpr  e::Expr
 {
   top.pp = "let " ++ la.pp ++ " in " ++ e.pp ++ " end";
   top.location = l;
