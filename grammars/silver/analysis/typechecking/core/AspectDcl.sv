@@ -9,7 +9,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   realType = id.lookupValue.typerep;
   
   local attribute aspectType :: TypeExp;
-  aspectType = productionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements));
+  aspectType = functionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements));
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = body.finalSubst;
 
@@ -19,7 +19,12 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
         then [err(top.location, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "
                                 ++ errCheck1.leftpp ++ "\nActual: "
                                 ++ errCheck1.rightpp)]
-        else [];
+        else 
+        case id.lookupValue.dcl of
+          prodDcl (_, _, _) -> [ ]
+        | funDcl  (_, _, _) -> [err(top.location, "Production aspect for '" ++ id.name ++ "' should be a 'function' aspect instead.") ]
+        | _ -> [ ] 
+        end ;
 
   ns.downSubst = emptySubst();
   errCheck1.downSubst = ns.upSubst;
@@ -47,7 +52,12 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
         then [err(top.location, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "
                                 ++ errCheck1.leftpp ++ "\nActual: "
                                 ++ errCheck1.rightpp)]
-        else [];
+        else
+        case id.lookupValue.dcl of
+          funDcl (_, _, _) -> [ ]
+        | prodDcl  (_, _, _) -> [err(top.location, "Function aspect for '" ++ id.name ++ "' should be a 'production' aspect instead.") ]
+        | _ -> [ ] 
+        end ;
 
   ns.downSubst = emptySubst();
   errCheck1.downSubst = ns.upSubst;

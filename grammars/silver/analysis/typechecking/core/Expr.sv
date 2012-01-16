@@ -58,27 +58,6 @@ top::Expr ::= e::Expr '(' es::Exprs ')'
   es.downSubst = top.downSubst; -- TODO REMOVE THIS (it's garbage related to bugs in pretty printing, afaict)
 }
 
-aspect production productionApplicationDispatcher
-top::Expr ::= e::Decorated Expr es::Exprs
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  local attribute apparentTy :: TypeExp;
-  apparentTy = productionTypeExp(e.typerep.outputType, getTypesExprs(es.exprs));
-  
-  es.downSubst = e.upSubst;
-  errCheck1.downSubst = es.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e.typerep, apparentTy);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Production signature mismatch for " ++ e.pp
-                         ++ "\n  Function type signature: " ++ errCheck1.leftpp
-                         ++ "\n  Parameters provided for: " ++ errCheck1.rightpp)]
-       else [];
-}
-
 aspect production functionApplicationDispatcher
 top::Expr ::= e::Decorated Expr es::Exprs
 {
@@ -94,9 +73,9 @@ top::Expr ::= e::Decorated Expr es::Exprs
   errCheck1 = check(e.typerep, apparentTy);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Function signature mismatch for " ++ e.pp
-                         ++ "\n  Function type signature: " ++ errCheck1.leftpp
-                         ++ "\n  Parameters provided for: " ++ errCheck1.rightpp)]
+       then [err(top.location, "Incorrect number or type of arguments provided to " ++ e.pp
+                         ++ "\n  Expected type signature: " ++ errCheck1.leftpp
+                         ++ "\n  Provided type signature: " ++ errCheck1.rightpp)]
        else [];
 }
 

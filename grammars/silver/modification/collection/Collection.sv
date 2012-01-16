@@ -19,9 +19,10 @@ top::NameOrBOperator ::= q::QName
 {
   top.pp = q.pp;
   top.location = q.location;
-  top.operation = case q.lookupValue.typerep of
-                    functionTypeExp(_,_) -> functionOperation(q.lookupValue.fullName)
-                  | productionTypeExp(_,_) -> productionOperation(q.lookupValue.fullName)
+
+  top.operation = case q.lookupValue.dcl of
+                    funDcl(_,_,_) -> functionOperation(q.lookupValue.fullName)
+                  | prodDcl(_,_,_) -> productionOperation(q.lookupValue.fullName)
                   | _ -> error("INTERNAL ERROR: operation attribute demanded for non-function or production.")
                   end;
 
@@ -29,15 +30,15 @@ top::NameOrBOperator ::= q::QName
   
   -- TODO: this is a complete mess.  refactor it someday, please!
   top.errors <- 
-     case q.lookupValue.typerep of
-       functionTypeExp(_,_) -> 
+     case q.lookupValue.dcl of
+       funDcl(_,_,_) -> 
           if unify(freshenCompletely(q.lookupValue.typerep), functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])).failure
           then [err(top.location, q.pp ++ " must be of type " ++ prettyType(functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])) ++ " instead it is of type " ++ prettyType(q.lookupValue.typerep))]
           else []
                                
-     | productionTypeExp(_,_) ->
-          if unify(freshenCompletely(q.lookupValue.typerep), productionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])).failure
-          then [err(top.location, q.pp ++ " must be of type " ++ prettyType(productionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])) ++ " instead it is of type " ++ prettyType(q.lookupValue.typerep))]
+     | prodDcl(_,_,_) ->
+          if unify(freshenCompletely(q.lookupValue.typerep), functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])).failure
+          then [err(top.location, q.pp ++ " must be of type " ++ prettyType(functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])) ++ " instead it is of type " ++ prettyType(q.lookupValue.typerep))]
           else []
                                
      | _ -> [err(top.location, q.pp ++ " is of type " ++ prettyType(q.lookupValue.typerep) ++ " and is not a valid operator for collections.")]

@@ -92,11 +92,3 @@ top::TypeExp ::= out::TypeExp params::[TypeExp]
   top.transClassType = "common.NodeFactory";
 }
 
-aspect production productionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
-{
-  top.transType = "common.NodeFactory<" ++ out.transType ++ ">";
-  top.transClassType = "common.NodeFactory";
-}
-
-

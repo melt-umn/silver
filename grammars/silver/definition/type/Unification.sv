@@ -130,15 +130,6 @@ top::TypeExp ::= out::TypeExp params::[TypeExp]
               end;
 }
 
-aspect production productionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
-{
-  top.unify = case top.unifyWith of
-               productionTypeExp(oo, op) -> unifyAll(out :: params, oo :: op)
-             | _ -> errorSubst("Tried to unify production type with " ++ prettyType(top.unifyWith))
-              end;
-}
-
 --------------------------------------------------------------------------------
 
 function unify

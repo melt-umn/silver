@@ -107,10 +107,3 @@ top::TypeExp ::= out::TypeExp params::[TypeExp]
   top.outputType = out;
 }
 
-aspect production productionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
-{
-  top.inputTypes = params;
-  top.outputType = out;
-}
-

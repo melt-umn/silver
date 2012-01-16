@@ -140,14 +140,6 @@ top::TypeExp ::= out::TypeExp params::[TypeExp]
   forwards to defaultTypeExp();
 }
 
-abstract production productionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
-{
-  top.freeVariables = setUnionTyVarsAll(mapFreeVariables(out :: params));
-  
-  forwards to defaultTypeExp();
-}
-
 --------------------------------------------------------------------------------
 
 -- TODO: this is dumb

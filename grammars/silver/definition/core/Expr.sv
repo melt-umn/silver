@@ -93,6 +93,13 @@ top::Expr ::= q::Decorated QName
   forwards to defaultExpr();
 }
 
+{- Eventhough bug #16 removes the production type, we still need the
+production reference for code generation purposes.  Type checking does
+not need to distinguish between functions and productions, excpet for
+the need to detect cases when, for example, a function aspect attempts
+to aspect a production. --EVW
+ -}
+
 abstract production productionReference
 top::Expr ::= q::Decorated QName
 {

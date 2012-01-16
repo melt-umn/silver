@@ -663,15 +663,6 @@ top::TypeExp ::= out::TypeExp params::[TypeExp]
               end;
 }
 
-aspect production productionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
-{
-  top.refine = case top.refineWith of
-               productionTypeExp(oo, op) -> refineAll(out :: params, oo :: op)
-             | _ -> errorSubst("Tried to refine production type with " ++ prettyType(top.refineWith))
-              end;
-}
-
 {--
  - Produces substitutions that may involve skolem constants, as well as free variables
  - for constructors.
