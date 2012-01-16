@@ -148,7 +148,7 @@ top::DclInfo ::= sg::String sl::Decorated Location ns::Decorated NamedSignature
   top.unparse = "prod(" ++ sl.unparse ++ ", " ++ unparseTyVars(boundvars, upns.boundVariables) ++ ", " ++ upns.unparse ++ ")";
 
   top.namedSignature = ns;  
-  top.typerep = productionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements));
+  top.typerep = functionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements));
   forwards to defaultDcl();
 }
 abstract production funDcl
@@ -266,7 +266,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String outty::TypeExp int
   top.fullName = fn;
   
   local attribute newboundvars :: [TyVar];
-  newboundvars = productionTypeExp(outty, intys).freeVariables;
+  newboundvars = functionTypeExp(outty, intys).freeVariables;
   local attribute boundvars :: [TyVar];
   boundvars = top.boundVariables ++ newboundvars;
   
@@ -274,7 +274,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String outty::TypeExp int
   top.unparse = "p@(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(newboundvars, boundvars) ++ ", " ++ outty.unparse ++ " ::= " ++ unparseTypes(intys, boundvars) ++ ", [" ++ unparseDefs(dcls, boundvars) ++ "])";
   
   top.prodDefs = dcls;
-  top.typerep = productionTypeExp(outty, intys); -- Using 'production' here, despite also working on 'function's
+  top.typerep = functionTypeExp(outty, intys); -- Using 'production' here, despite also working on 'function's
   forwards to defaultDcl();
 }
 abstract production forwardDcl
@@ -349,7 +349,7 @@ Defs ::= d::[Decorated DclInfo] s::Decorated NamedSignature
 {
   -- We want to rewrite FROM the sig these PAs were declared with, TO the given sig
   local attribute subst :: Substitution;
-  subst = unifyDirectional( head(d).typerep,  productionTypeExp(s.outputElement.typerep, getTypesSignature(s.inputElements)));
+  subst = unifyDirectional( head(d).typerep, functionTypeExp(s.outputElement.typerep, getTypesSignature(s.inputElements)));
   
   
   return if null(d) then emptyDefs()

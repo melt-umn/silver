@@ -19,7 +19,7 @@ equalityTest ( applyExist(existentialprod(1, toStringFromInteger)), "1", String,
 equalityTest ( applyExist(existentialprod(2, toStringFromInteger)), "2", String, pat_tests ) ;
 equalityTest ( applyExist(existentialprod(1.0, toStringFromFloat)), "1.0", String, pat_tests ) ;
 
-wrongCode "Function signature mismatch" {
+wrongCode "Incorrect number or type of arguments provided to" {
  function applyExistBadType
  String ::= v::Existential
  {

@@ -11,7 +11,6 @@ TypeExp ::= e::Decorated Expr
 }
 
 -- These attributes help us generate slightly less awful code, by not going through reflection for direct function/production calls.
-synthesized attribute isAppReference :: Boolean;
 synthesized attribute appReference :: String;
 
 {--
@@ -20,13 +19,12 @@ synthesized attribute appReference :: String;
  -}
 synthesized attribute lazyTranslation :: String;
 
-attribute lazyTranslation, translation, isAppReference, appReference occurs on Expr;
+attribute lazyTranslation, translation, appReference occurs on Expr;
 attribute lazyTranslation occurs on Exprs;
 
 aspect production defaultExpr
 top::Expr ::=
 {
-  top.isAppReference = false;
   -- deliberately leave appReference undefined.
 }
 
@@ -94,7 +92,6 @@ top::Expr ::= q::Decorated QName
 aspect production productionReference
 top::Expr ::= q::Decorated QName
 {
-  top.isAppReference = true;
   top.appReference = makeClassName(q.lookupValue.fullName);
 
   top.translation = makeClassName(q.lookupValue.fullName) ++ ".factory";
@@ -104,7 +101,6 @@ top::Expr ::= q::Decorated QName
 aspect production functionReference
 top::Expr ::= q::Decorated QName
 {
-  top.isAppReference = true;
   top.appReference = makeClassName(q.lookupValue.fullName);
 
   top.translation = makeClassName(q.lookupValue.fullName) ++ ".factory";
@@ -136,22 +132,18 @@ top::Expr ::= q::Decorated QName
        else top.translation;
 }
 
-aspect production productionApplicationDispatcher
-top::Expr ::= e::Decorated Expr es::Exprs
-{
-  top.translation = if e.isAppReference 
-                    then "((" ++ finalType(top).transType ++ ")new " ++ e.appReference ++ "(" ++ es.lazyTranslation ++ "))"
-                    else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ es.lazyTranslation ++ "}))";
-
-  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
-}
-
 aspect production functionApplicationDispatcher
 top::Expr ::= e::Decorated Expr es::Exprs
 {
-  top.translation = if e.isAppReference 
-                    then "((" ++ finalType(top).transType ++ ")" ++ e.appReference ++ ".invoke(new Object[]{" ++ es.lazyTranslation ++ "}))"
-                    else "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ es.lazyTranslation ++ "}))";
+  top.translation = case e of 
+                      functionReference ( _ ) ->
+                         "((" ++ finalType(top).transType ++ ")" ++ e.appReference ++ ".invoke(new Object[]{" ++ es.lazyTranslation ++ "}))"
+
+                    | productionReference ( _ ) -> 
+                         "((" ++ finalType(top).transType ++ ")new " ++ e.appReference ++ "(" ++ es.lazyTranslation ++ "))"
+
+                    | _ -> "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ es.lazyTranslation ++ "}))" 
+                    end ;
 
   top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
