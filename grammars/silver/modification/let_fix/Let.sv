@@ -111,7 +111,8 @@ top::Expr ::= q::Decorated QName
   --  be used either way.)
   
   top.typerep = if q.lookupValue.typerep.isDecorated
-                then ntOrDecTypeExp(q.lookupValue.typerep.decoratedType, errorType(){-fresh tyvar-})
+                --then ntOrDecTypeExp(q.lookupValue.typerep.decoratedType, errorType(){-fresh tyvar-})
+                then ntOrDecTypeExp(q.lookupValue.typerep.decoratedType, freshType(){-fresh tyvar-}) -- #HACK2012 Issue 4
                 else q.lookupValue.typerep;
 
   top.upSubst = top.downSubst;
