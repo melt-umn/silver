@@ -333,7 +333,7 @@ function groupMRules
 }
 
 function errorConcat
-[Decorated Message] ::= p::Decorated Pattern ml::[Decorated Message]
+[Message] ::= p::Decorated Pattern ml::[Message]
 {
  return p.errors ++ ml;
 }
