@@ -42,3 +42,31 @@ wrongCode "aValidProduction has type" {
          end; 
  }
 }
+
+-- Pattern MUST NOT be a production #HACK2012
+wrongCode "Production name can't be used in pattern" {
+ nonterminal TotallyValidNonterminal;
+ abstract production empty_TVN
+ tvn::TotallyValidNonterminal ::= {}
+
+ function funfoo
+ String ::= tvn::TotallyValidNonterminal
+ {
+  return case just(tvn) of
+         | just(empty_TVN) -> "Fail"
+         end;
+ }
+}
+
+-- Pattern MUST start with a lower case letter #HACK2012
+wrongCode "Pattern variable names start with a lower case letter" {
+ nonterminal CompletelyValidNonterminal;
+ 
+ function funfoo
+ String ::=
+ {
+  return case "a string" of
+         | CapitalizedStuff -> "Fail"
+         end;
+ }
+}
