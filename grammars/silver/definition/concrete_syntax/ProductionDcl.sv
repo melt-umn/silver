@@ -98,7 +98,7 @@ top::ProductionModifier ::= 'operator' '=' n::QName
 --------------------------------------------------------------------------------
 -- Type sanity checking on concrete productions
 
-synthesized attribute concreteSyntaxTypeErrors :: [Decorated Message] with ++;
+synthesized attribute concreteSyntaxTypeErrors :: [Message] with ++;
 attribute concreteSyntaxTypeErrors occurs on ProductionSignature, ProductionRHS, ProductionRHSElem;
 
 aspect production productionSignature
