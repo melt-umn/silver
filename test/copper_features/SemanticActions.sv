@@ -34,12 +34,12 @@ synthesized attribute semResult :: String;
 concrete production aorb_a
 top::AOrB ::= 'a'
 {
-  top.semResult = "(" ++ implode(",", [$1.lexeme, $1.filename, toString($1.line), toString($1.column)]) ++ ")";
+  top.semResult = "(" ++ implode(",", [$1.lexeme, $1.filename, toString($1.line), toString($1.column)]) ++ " [" ++ toString($1.index) ++ "])";
 }
 concrete production aorb_b
 top::AOrB ::= 'b'
 {
-  top.semResult = "(" ++ implode(",", [$1.lexeme, $1.filename, toString($1.line), toString($1.column)]) ++ ")";
+  top.semResult = "(" ++ implode(",", [$1.lexeme, $1.filename, toString($1.line), toString($1.column)]) ++ " [" ++ toString($1.index) ++ "])";
 }
 
 nonterminal AOrBs with semResult;
@@ -61,7 +61,7 @@ parser saParse :: AOrBs {
 
 equalityTest ( saParse("abab", "FILENAME").parseSuccess, true, Boolean, copper_tests ) ;
 equalityTest ( saParse("abab", "FILENAME").parseTree.semResult, -- this is a bit silly:
-"(a,FILENAME,1,0)(b,FILENAME:1.1,1,1)(a,FILENAME:1.1,2,1)(b,FILENAME:1.1:2.2,2,2)", String, copper_tests ) ;
+"(a,FILENAME,1,0 [0])(b,FILENAME:1.1,1,1 [1])(a,FILENAME:1.1,2,1 [2])(b,FILENAME:1.1:2.2,2,2 [3])", String, copper_tests ) ;
 
 -- TODO: in fact, there are several ways in which we could argue that result is broken...
 -- - It claims actions take effect AFTER that terminal, which is counter-intuitive to a
