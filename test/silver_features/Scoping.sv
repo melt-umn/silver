@@ -31,6 +31,8 @@ top::Scope ::= s::String
         end;
 }
 
+
+
 wrongCode "Undeclared attribute 'DOESNOTEXIST'." {
  function foo
  Decorated Scope ::=

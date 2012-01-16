@@ -123,7 +123,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
   local attribute prod_orig_name :: String;
   prod_orig_name = substring(lastIndexOf(":", top.signature.fullName)+1, length(top.signature.fullName), top.signature.fullName);
   local attribute ugh_dcl_hack :: Decorated DclInfo;
-  ugh_dcl_hack = head(getValueDclInScope(fName, top.env)); -- TODO
+  ugh_dcl_hack = head(getValueDclAll(fName, top.env)); -- TODO
   
   top.setupInh <- "\t\t" ++ makeName(prod_orig_grammar) ++ ".P" ++ prod_orig_name ++ ".occurs_local[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = \"" ++ fName ++ "\";\n";
   top.valueWeaving := "public static final int " ++ ugh_dcl_hack.attrOccursIndexName ++ " = " ++ makeName(prod_orig_grammar) ++ ".Init.count_local__ON__" ++ makeIdName(top.signature.fullName) ++ "++;\n";
