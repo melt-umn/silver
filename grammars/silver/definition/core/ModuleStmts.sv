@@ -33,7 +33,7 @@ top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String]
 
 -- recurses through exportedGrammars, grabbing all definitions
 
-inherited attribute importLocation :: Decorated Location;
+inherited attribute importLocation :: Location;
 nonterminal ModuleExportedDefs with defs, errors, importLocation;
 abstract production moduleExportedDefs
 top::ModuleExportedDefs ::= compiled::[Decorated RootSpec] need::[String] seen::[String]
