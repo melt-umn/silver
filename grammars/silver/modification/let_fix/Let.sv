@@ -80,7 +80,7 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
   top.defs = addLexicalLocalDcl(top.grammarName, id.location, fName, t.typerep, emptyDefs());
   top.errors := t.errors ++ e.errors;
   
-  top.errors <- if length(getValueDclAll(fName, top.env)) > 1
+  top.errors <- if length(getValueDclInScope(fName, top.env)) > 1
                 then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
                 else [];
 
