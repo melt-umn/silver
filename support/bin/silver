@@ -4,10 +4,12 @@
 # (i.e. the directory where 'jars/RunSilver.jar' exists.
 
 #SILVER_HOME=
-JVM_FLAGS="-Xmx2000M -Xss4M "
+JVM_FLAGS="-Xmx1800M -Xss4M "
 
+# 4M should be sufficient for nearly everything. In fact, 2M may be...
+# 1800M is simply choosing something slightly smaller than what any system should have.
 
-# No futher changes need to be made here.
+# No futher changes need to be made here. This if block is not important:
 
 if [ -z "$SILVER_HOME" ]; then
 
