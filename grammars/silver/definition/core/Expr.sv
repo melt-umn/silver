@@ -784,7 +784,7 @@ function getPPsExprs
   return if null(es) then [] else [head(es).pp] ++ getPPsExprs(tail(es));
 }
 function getErrorsExprs
-[[Decorated Message]] ::= es::[Decorated Expr]{
+[[Message]] ::= es::[Decorated Expr]{
   return if null(es) then [] else [head(es).errors] ++ getErrorsExprs(tail(es));
 }
 

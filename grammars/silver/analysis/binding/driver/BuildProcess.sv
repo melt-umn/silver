@@ -39,7 +39,7 @@ top::Unit ::= specs::[Decorated RootSpec]
 abstract production printAllBindingErrorsHelp
 top::Unit ::= specs::[Decorated RootSpec]
 {
-  local attribute es :: [Decorated Message];
+  local attribute es :: [Message];
   es = head(specs).errors;
 
   local attribute i :: IO;

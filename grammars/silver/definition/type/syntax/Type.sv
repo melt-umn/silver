@@ -18,7 +18,7 @@ synthesized attribute lexicalTypeVariables :: [String];
 -- freeVariables also occurs on TypeList, and should be IN ORDER
 
 -- These attributes are used if we're using the TypeList as type variables-only.
-synthesized attribute errorsTyVars :: [Decorated Message] with ++;
+synthesized attribute errorsTyVars :: [Message] with ++;
 
 -- For bracketed lists
 synthesized attribute typelist :: Decorated TypeList;

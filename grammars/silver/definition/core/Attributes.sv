@@ -52,11 +52,11 @@ autocopy attribute env :: Decorated Env;
 {--
  - Errors that should stop compilation from succeeding.
  -}
-synthesized attribute errors :: [Decorated Message] with ++;
+synthesized attribute errors :: [Message] with ++;
 {--
  - Warnings of code that looks wrong.
  -}
-synthesized attribute warnings :: [Decorated Message] with ++;
+synthesized attribute warnings :: [Message] with ++;
 
 {--
  - A list of decorated expressions from an Exprs.
