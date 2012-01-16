@@ -1,0 +1,37 @@
+#!/bin/bash
+
+if [ ! -d ~/bin ]; then
+  echo "This script is intended to place the 'silver' script in ~/bin."
+  echo "You do no have a ~/bin directory, so this script is aborting."
+  echo "In many distributions, you can simply create it and it will work,"
+  echo "but in some cases you may also have to alter your shell startup"
+  echo "scripts to include it in your PATH."
+  exit 1
+fi
+
+echo "Found ~/bin"
+
+REPO=$(readlink -f ../..)
+
+echo "Found $REPO"
+
+if [ ! -d $REPO/jars ]; then
+  echo "But I couldn't find jars there! Aborting."
+  echo "(if this is a fresh checkout, run fetch-jars before this script.)"
+  exit 2
+fi
+
+#escape backslashes for sed
+EREPO=$( echo $REPO | sed -e's/\//\\\//g')
+
+sed -e"s/#SILVER_HOME=/SILVER_HOME=$EREPO/g" < silver > ~/bin/silver
+
+if [ ! $? ]; then
+  echo "Install failed!!"
+  exit 3
+fi
+
+chmod +x ~/bin/silver
+
+echo "Install finished."
+
