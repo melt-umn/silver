@@ -165,7 +165,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
   top.errors := te.errors;
 
   top.errors <-
-        if length(getValueDclAll(fName, top.env)) > 1
+        if length(getValueDclAll(fName, top.env)) > 1 
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 

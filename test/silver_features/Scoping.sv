@@ -31,6 +31,22 @@ top::Scope ::= s::String
         end;
 }
 
+-- we have an attribute called "loc", which now works.
+abstract production rightCodeNaming
+top::Scope ::= loc::String
+{
+  local attribute hi3::String;
+  hi3 = let bar :: String = "asdf" in bar end;
+  
+  local attribute hi4::String;
+  hi3 = case rightCodeScoping("Huh") of
+         rightCodeScoping(bar) -> bar
+         | _ -> "oh"
+        end;
+}
+
+
+
 wrongCode "Undeclared attribute 'DOESNOTEXIST'." {
  function foo
  Decorated Scope ::=

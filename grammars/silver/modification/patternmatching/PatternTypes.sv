@@ -4,7 +4,8 @@ import silver:definition:core;
 import silver:definition:env;
 import silver:extension:list only LSqr_t, RSqr_t;
 
-nonterminal Pattern with pp, env, file, patternIsVariable, patternVariableName, patternSubPatternList, patternSortKey;
+-- See comment in pattern.sv regarding errors #HACK2012
+nonterminal Pattern with pp, env, file, errors, patternIsVariable, patternVariableName, patternSubPatternList, patternSortKey;
 
 {--
  - False if it actually matches anything specific, true if it's a variable/wildcard.
@@ -30,6 +31,7 @@ concrete production prodAppPattern
 p::Pattern ::= prod::QName '(' ps::PatternList ')'
 {
   p.pp = prod.pp ++ "(" ++ ps.pp ++ ")" ;
+  p.errors := ps.errors;
 
   p.patternIsVariable = false;
   p.patternVariableName = nothing();
@@ -41,6 +43,7 @@ concrete production wildcPattern
 p::Pattern ::= '_'
 {
   p.pp = "_" ;
+  p.errors := [];
 
   p.patternIsVariable = true;
   p.patternVariableName = nothing();
@@ -51,6 +54,17 @@ concrete production varPattern
 p::Pattern ::= v::Name
 {
   p.pp = v.name;
+  -- MUST start with lower case #HACK2012
+  p.errors := (if isUpper(substring(0,1,v.name))
+                 then [err(v.location, "Pattern variable names start with a lower case letter")]
+                 else [])
+  -- MUST NOT shadow any _production_ names #HACK2012
+  -- TODO: Add function to find all prodDcl in env
+             ++ (case getValueDcl(v.name, p.env) of
+                 | prodDcl(_,_,_) :: _ -> [err(v.location, "Production name can't be used in pattern")]
+                 | _ -> []
+                 end) ;
+
 
   p.patternIsVariable = true;
   p.patternVariableName = just(v.name);
@@ -63,6 +77,7 @@ concrete production intPattern
 p::Pattern ::= num::Int_t
 {
   p.pp = num.lexeme ;
+  p.errors := [];
   
   p.patternIsVariable = false;
   p.patternVariableName = nothing();
@@ -74,6 +89,7 @@ concrete production strPattern
 p::Pattern ::= str::String_t
 {
   p.pp = str.lexeme ;
+  p.errors := [];
   
   p.patternIsVariable = false;
   p.patternVariableName = nothing();
@@ -85,6 +101,7 @@ concrete production truePattern
 p::Pattern ::= 'true'
 {
   p.pp = "true";
+  p.errors := [];
   
   p.patternIsVariable = false;
   p.patternVariableName = nothing();
@@ -96,6 +113,7 @@ concrete production falsePattern
 p::Pattern ::= 'false'
 {
   p.pp = "false" ;
+  p.errors := [];
   
   p.patternIsVariable = false;
   p.patternVariableName = nothing();
@@ -107,6 +125,7 @@ concrete production nilListPattern
 p::Pattern ::= '[' ']'
 {
   p.pp = "[]";
+  p.errors := [];
   
   p.patternIsVariable = false;
   p.patternVariableName = nothing();
@@ -118,6 +137,7 @@ concrete production consListPattern
 p::Pattern ::= hp::Pattern '::' tp::Pattern
 {
   p.pp = hp.pp ++ "::" ++ tp.pp;
+  p.errors := hp.errors ++ tp.errors;
   
   p.patternIsVariable = false;
   p.patternVariableName = nothing();
