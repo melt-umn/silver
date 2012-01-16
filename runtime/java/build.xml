@@ -7,6 +7,10 @@
   <property name='bin' location='../../generated/bin'/>
   <property name='dist' location='.'/>
 
+  <path id='compile.classpath'>
+    <fileset dir='../../jars' includes='CopperRuntime.jar CopperCompiler.jar' />
+  </path>
+
   <target name='init'>
     <tstamp>
       <format property='TIME' pattern='MM/dd/yyyy hh:mm aa'/>
@@ -20,7 +24,7 @@
   </target>
 
   <target name='build' depends='init'>
-    <javac debug='on' source='1.5' srcdir='${src}:${grammars}' destdir='${bin}' includeantruntime='false'>
+    <javac debug='on' source='1.5' classpathref='compile.classpath' srcdir='${src}:${grammars}' destdir='${bin}' includeantruntime='false'>
       <include name='common/**/*.java' />
       <include name='core/*.java' />
       <include name='lib/xml/ast/*.java' />

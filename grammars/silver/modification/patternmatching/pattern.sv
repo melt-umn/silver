@@ -23,18 +23,33 @@ synthesized attribute matchRuleList :: [Decorated MatchRule];
 
 
 -- MR | ...
-nonterminal MRuleList with pp, env, file, matchRuleList;
+nonterminal MRuleList with pp, env, file, matchRuleList, errors;
 -- P -> E
-nonterminal MatchRule with pp, env, file, location, headPattern;
+nonterminal MatchRule with pp, env, file, location, headPattern, errors;
 
 -- P , ...
-nonterminal PatternList with pp, patternList, env, file;
+nonterminal PatternList with pp, patternList, env, file, errors;
+
+{- NOTE ON ERRORS: #HACK2012
+ -
+ - All of the real error checking should be done in PrimitiveMatch.sv on the
+ - more primitive form of pattern matching. BUT, there are a few
+ - kinds of errors that the pattern matching compiler will OBSCURE
+ - and so we must check for them here.
+ -
+ - ANY error on MRuleList, MatchRule, PatternList, or Pattern should
+ - be accompanied by a comment explaining why it's there, and not on
+ - primitive match.
+ -}
+
 
 concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";
   top.location = loc(top.file, $1.line, $1.column);
+
+  top.errors <- ml.errors;
   
   -- introduce the failure case here.
   forwards to 
@@ -45,7 +60,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 }
 
 abstract production caseExpr
-top::Expr ::= locat::Decorated Location es::[Expr] ml::[Decorated MatchRule] failExpr::Expr
+top::Expr ::= locat:: Location es::[Expr] ml::[Decorated MatchRule] failExpr::Expr
 {
   top.location = locat;
 
@@ -108,7 +123,8 @@ concrete production mRuleList_one
 top::MRuleList ::= m::MatchRule
 {
   top.pp = m.pp;
-  
+  top.errors := m.errors;  
+
   top.matchRuleList = [m];
 }
 
@@ -116,6 +132,7 @@ concrete production mRuleList_cons
 top::MRuleList ::= h::MatchRule '|' t::MRuleList
 {
   top.pp = h.pp ++ " | " ++ t.pp;
+  top.errors := h.errors ++ t.errors;
   
   top.matchRuleList = h :: t.matchRuleList;
 }
@@ -123,13 +140,18 @@ top::MRuleList ::= h::MatchRule '|' t::MRuleList
 concrete production matchRule_c
 top::MatchRule ::= pt::PatternList '->' e::Expr
 {
+  -- UNCOMMENT if no longer forwarding to matchRule #HACK2012
+  --top.errors <- pt.errors;
+
   forwards to matchRule(loc(top.file, $2.line, $2.column), pt.patternList, e);
 }
 
 abstract production matchRule
-top::MatchRule ::= l::Decorated Location pl::[Decorated Pattern] e::Expr
+top::MatchRule ::= l:: Location pl::[Decorated Pattern] e::Expr
 {
   top.pp = implode(", ", map(getPatternPP, pl)) ++ " -> " ++ e.pp;
+  -- TODO: This is a #HACK(2012). Replace errorConcat if better solution exists
+  top.errors := foldr(errorConcat,[],pl);
   top.location = e.location;
 
   top.headPattern = head(pl);
@@ -139,12 +161,16 @@ concrete production patternList_one
 top::PatternList ::= p::Pattern
 {
   top.pp = p.pp;
+  top.errors := p.errors;
+
   top.patternList = [p];
 }
 concrete production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
   top.pp = ps1.pp ++ ", " ++ p.pp;
+  top.errors := p.errors ++ ps1.errors;
+
   top.patternList = p :: ps1.patternList;
 }
 
@@ -154,6 +180,8 @@ concrete production patternList_nil
 top::PatternList ::= Epsilon_For_Location
 {
   top.pp = "";
+  top.errors := [];
+
   top.patternList = [];
 }
 
@@ -181,7 +209,7 @@ function patternListVars
   end;
 }
 function convStringsToVarBinders
-VarBinders ::= s::[String] l::Decorated Location
+VarBinders ::= s::[String] l:: Location
 {
   local attribute f::VarBinder;
   f = varVarBinder(nameIdLower(terminal(IdLower_t, head(s), l.line, l.column)));
@@ -190,7 +218,7 @@ VarBinders ::= s::[String] l::Decorated Location
          else consVarBinder(f, ',', convStringsToVarBinders(tail(s), l));
 }
 function convStringsToExprs
-[Expr] ::= s::[String] tl::[Expr] l::Decorated Location
+[Expr] ::= s::[String] tl::[Expr] l:: Location
 {
   return if null(s) then tl
          else baseExpr(qName(l, head(s))) :: convStringsToExprs(tail(s), tl, l);
@@ -263,7 +291,7 @@ function allVarCaseTransform
 }
 
 function makeLet
-Expr ::= l::Decorated Location s::String t::TypeExp e::Expr o::Expr
+Expr ::= l:: Location s::String t::TypeExp e::Expr o::Expr
 {
   return letp(l, assignExpr(nameIdLower(terminal(IdLower_t, s)), '::', typerepType(t), '=', e), o);
 }
@@ -304,3 +332,8 @@ function groupMRules
   return groupBy(mruleEqForGrouping, sortBy(mruleLTEForSorting, l));
 }
 
+function errorConcat
+[Decorated Message] ::= p::Decorated Pattern ml::[Decorated Message]
+{
+ return p.errors ++ ml;
+}

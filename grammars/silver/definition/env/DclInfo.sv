@@ -4,7 +4,7 @@ import silver:definition:regex;  -- soley for Terms. TODO : fix?
 import silver:definition:type;
 
 synthesized attribute sourceGrammar :: String;
-synthesized attribute sourceLocation :: Decorated Location;
+synthesized attribute sourceLocation :: Location;
 synthesized attribute fullName :: String;
 
 -- types
@@ -90,7 +90,7 @@ top::DclInfo ::=
 
 -- -- non-interface values
 abstract production childDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -101,7 +101,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
   forwards to defaultDcl();
 }
 abstract production lhsDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -112,7 +112,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
   forwards to defaultDcl();
 }
 abstract production localDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -132,7 +132,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 
 -- -- interface values
 abstract production prodDcl
-top::DclInfo ::= sg::String sl::Decorated Location ns::Decorated NamedSignature
+top::DclInfo ::= sg::String sl:: Location ns::Decorated NamedSignature
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -152,7 +152,7 @@ top::DclInfo ::= sg::String sl::Decorated Location ns::Decorated NamedSignature
   forwards to defaultDcl();
 }
 abstract production funDcl
-top::DclInfo ::= sg::String sl::Decorated Location ns::Decorated NamedSignature
+top::DclInfo ::= sg::String sl:: Location ns::Decorated NamedSignature
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -172,7 +172,7 @@ top::DclInfo ::= sg::String sl::Decorated Location ns::Decorated NamedSignature
   forwards to defaultDcl();
 }
 abstract production globalValueDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -187,7 +187,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 
 -- -- interface types
 abstract production ntDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -201,7 +201,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
   forwards to defaultDcl();
 }
 abstract production termDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String regex::Regex_R
+top::DclInfo ::= sg::String sl:: Location fn::String regex::Regex_R
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -214,7 +214,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String regex::Regex_R
   forwards to defaultDcl();
 }
 abstract production lexTyVarDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -229,7 +229,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 
 -- -- interface Attributes
 abstract production synDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -243,7 +243,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
   forwards to defaultDcl();
 }
 abstract production inhDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -259,7 +259,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty:
 
 -- -- interface Production attr (values)
 abstract production paDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String outty::TypeExp intys::[TypeExp] dcls::Defs
+top::DclInfo ::= sg::String sl:: Location fn::String outty::TypeExp intys::[TypeExp] dcls::Defs
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -278,7 +278,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String outty::TypeExp int
   forwards to defaultDcl();
 }
 abstract production forwardDcl
-top::DclInfo ::= sg::String sl::Decorated Location ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -295,7 +295,7 @@ top::DclInfo ::= sg::String sl::Decorated Location ty::TypeExp
 
 -- -- interface other
 abstract production occursDcl
-top::DclInfo ::= sg::String sl::Decorated Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;

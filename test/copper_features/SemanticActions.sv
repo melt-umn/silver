@@ -61,7 +61,7 @@ parser saParse :: AOrBs {
 
 equalityTest ( saParse("abab", "FILENAME").parseSuccess, true, Boolean, copper_tests ) ;
 equalityTest ( saParse("abab", "FILENAME").parseTree.semResult, -- this is a bit silly:
-"(a,FILENAME,1,0)(b,FILENAME:1.0,1,0)(a,FILENAME:1.0,0,1)(b,FILENAME:1.0:0.1,0,1)", String, copper_tests ) ;
+"(a,FILENAME,1,0)(b,FILENAME:1.1,1,1)(a,FILENAME:1.1,2,1)(b,FILENAME:1.1:2.2,2,2)", String, copper_tests ) ;
 
 -- TODO: in fact, there are several ways in which we could argue that result is broken...
 -- - It claims actions take effect AFTER that terminal, which is counter-intuitive to a
