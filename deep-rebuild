@@ -7,6 +7,11 @@
 mkdir -p build || exit
 cd build || exit
 
+if [ -d ../generated/bin/common ]; then
+ # oh man, let's make sure stale runtimes aren't causing us serious problems here
+ rm -rf ../generated/bin/common
+fi
+
 # Modifications may have been made to how the translation is done
 
 echo "One full cycle ..."
