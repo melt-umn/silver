@@ -77,6 +77,7 @@ top::Expr ::= e::Decorated Expr es::Exprs
                          ++ "\n  Expected type signature: " ++ errCheck1.leftpp
                          ++ "\n  Provided type signature: " ++ errCheck1.rightpp)]
        else [];
+
 }
 
 aspect production errorApplicationDispatcher
