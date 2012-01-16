@@ -8,6 +8,9 @@ import silver:definition:type:syntax;
 import silver:modification:collection ;
 import silver:extension:list ;
 
+import silver:analysis:typechecking;
+import silver:analysis:typechecking:core;
+
 import lib:extcore ;
 
 terminal EqualityTest_t 'equalityTest' lexer classes {KEYWORD} ;
@@ -25,9 +28,32 @@ ag::AGDcl ::= kwd::'equalityTest'
                                              "\" not suported on equality tests.")]
               end ;
  ag.errors <- [ ] ; -- check that value and expected are of the same type 
+
+  local attribute errCheck1 :: TypeCheck; 
+  errCheck1.finalSubst = expected.finalSubst;
+  errCheck1.downSubst = emptySubst();
+
+  errCheck1 = check(value.typerep, expected.typerep);
+
+  ag.errors <-
+       if errCheck1.typeerror
+       then [err(value.location, "Type of first and second experssions in equalityTest do not match. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       else [];
+
+  value.env = ag.env ;
+  expected.env = ag.env ;
+
+  value.downSubst = emptySubst();
+  expected.downSubst = value.upSubst ;
+
+  value.finalSubst = expected.upSubst;
+  expected.finalSubst = expected.upSubst;
+
  ag.errors <- forward.errors ;
 
- forwards to agDclAppend ( absProdCS, aspProdCS ) ;
+
+
+ forwards to agDclAppend ( absProdCS, aspProdCS ) ; --with { downSubst = errCheck1.upSubst; } ;
  local absProdCS :: AGDcl = asAGDcl (
    "abstract production " ++ testName ++ "\n" ++
    "t::Test ::= \n" ++

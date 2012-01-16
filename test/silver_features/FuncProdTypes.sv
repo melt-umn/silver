@@ -1,4 +1,3 @@
-
 nonterminal IntNT ;
 synthesized attribute intValue :: Integer occurs on IntNT ;
 abstract production intTestProd
