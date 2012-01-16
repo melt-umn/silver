@@ -105,12 +105,12 @@ Defs ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp o::Opera
   return consAttrDef(defaultEnvItem(decorate synCollectionDcl(sg,sl,fn,bound,ty,o) with {}), defs);
 }
 function addInhColDcl
-Defs ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp o::Operation defs::Defs
+Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o::Operation defs::Defs
 {
   return consAttrDef(defaultEnvItem(decorate inhCollectionDcl(sg,sl,fn,bound,ty,o) with {}), defs);
 }
 function addLocalColDcl
-Defs ::= sg::String sl:: Location fn::String ty::TypeExp o::Operation defs::Defs
+Defs ::= sg::String sl::Location fn::String ty::TypeExp o::Operation defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate localCollectionDcl(sg,sl,fn,ty,o) with {}), defs);
 }
