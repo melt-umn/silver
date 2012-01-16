@@ -12,7 +12,8 @@ function addNewLexicalTyVars_ActuallyVariables
 Defs ::= gn::String sl:: Location l::[String]
 {
   return if null(l) then emptyDefs()
-         else addLexTyVarDcl(gn, sl, head(l), errorType(),
+         --else addLexTyVarDcl(gn, sl, head(l), errorType(),
+         else addLexTyVarDcl(gn, sl, head(l), freshType(), -- #HACK2012 Issue 4
                   addNewLexicalTyVars_ActuallyVariables(gn, sl, tail(l)));
 }
 

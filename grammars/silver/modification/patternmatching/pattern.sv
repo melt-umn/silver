@@ -95,7 +95,8 @@ top::Expr ::= locat:: Location es::[Expr] ml::[Decorated MatchRule] failExpr::Ex
    -}
   local attribute allConCase :: Expr;
   allConCase = matchPrimitive(locat, head(es),
-                              typerepType(errorType()),
+                              --typerepType(errorType()),
+                              typerepType(freshType()), -- #HACK2012 Issue 4
                               allConCaseTransform(tail(es), failExpr, groupMRules(prodRules)),
                               failExpr);
   
@@ -104,7 +105,8 @@ top::Expr ::= locat:: Location es::[Expr] ml::[Decorated MatchRule] failExpr::Ex
    -}
   local attribute allVarCase :: Expr;
   allVarCase = caseExpr(locat, tail(es),
-                        allVarCaseTransform(head(es), errorType(), ml),
+                        --allVarCaseTransform(head(es), errorType(), ml),
+                        allVarCaseTransform(head(es), freshType(), ml), -- #HACK2012 Issue 4
                         failExpr);
   
   {--
@@ -115,7 +117,8 @@ top::Expr ::= locat:: Location es::[Expr] ml::[Decorated MatchRule] failExpr::Ex
   freshFailName = "__fail_" ++ toString(genInt());
   local attribute mixedCase :: Expr;
   mixedCase = makeLet(top.location,
-                freshFailName, errorType(), caseExpr(locat, es, varRules, failExpr),
+                --freshFailName, errorType(), caseExpr(locat, es, varRules, failExpr),
+                freshFailName, freshType(), caseExpr(locat, es, varRules, failExpr), -- #HACK2012 Issue 4
                 caseExpr(locat, es, prodRules, baseExpr(qName(top.location, freshFailName))));
 }
 

@@ -48,7 +48,8 @@ top::Expr ::= q::Decorated QName
   top.location = q.location;
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable
-                then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                then ntOrDecTypeExp(q.lookupValue.typerep, freshType(){-fresh tyvar-}) -- #HACK2012 Issue 4
                 else q.lookupValue.typerep;
   
   forwards to defaultExpr();
@@ -61,7 +62,8 @@ top::Expr ::= q::Decorated QName
   top.location = q.location;
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable -- actually always decorable...
-                then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                then ntOrDecTypeExp(q.lookupValue.typerep, freshType(){-fresh tyvar-}) -- #HACK2012 Issue 4
                 else q.lookupValue.typerep;
   
   forwards to defaultExpr();
@@ -74,7 +76,8 @@ top::Expr ::= q::Decorated QName
   top.location = q.location;
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable
-                then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                then ntOrDecTypeExp(q.lookupValue.typerep, freshType(){-fresh tyvar-}) -- #HACK2012 Issue 4
                 else q.lookupValue.typerep;
   
   forwards to defaultExpr();
@@ -87,7 +90,8 @@ top::Expr ::= q::Decorated QName
   top.location = q.location;
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable -- actually always decorable...
-                then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                then ntOrDecTypeExp(q.lookupValue.typerep, freshType(){-fresh tyvar-}) -- #HACK2012 Issue 4
                 else q.lookupValue.typerep;
   
   forwards to defaultExpr();
@@ -230,7 +234,8 @@ top::Expr ::= '(' '.' q::QName ')'
   
   -- Also, freshen the attribute type, because even though there currently should NOT be any type variables
   -- there, there could be if the code will raise an error.
-  top.typerep = functionTypeExp(freshenCompletely(q.lookupAttribute.typerep), [errorType()]);
+  --top.typerep = functionTypeExp(freshenCompletely(q.lookupAttribute.typerep), [errorType()]);
+  top.typerep = functionTypeExp(freshenCompletely(q.lookupAttribute.typerep), [freshType()]); -- #HACK2012 Issue 4
   
   top.errors := q.lookupAttribute.errors;
   

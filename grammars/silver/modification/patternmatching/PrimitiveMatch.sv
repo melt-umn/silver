@@ -336,7 +336,8 @@ top::PrimPattern ::= e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
-  errCheck1 = check(listTypeExp(errorType()), top.scrutineeType);
+  --errCheck1 = check(listTypeExp(errorType()), top.scrutineeType);
+  errCheck1 = check(listTypeExp(freshType()), top.scrutineeType); -- #HACK2012 Issue 4
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, "nil() constructs type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -365,7 +366,8 @@ top::PrimPattern ::= h::String t::String e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   local attribute elemType :: TypeExp;
-  elemType = errorType();
+  --elemType = errorType();
+  elemType = freshType(); -- #HACK2012 Issue 4
   
   errCheck1 = check(listTypeExp(elemType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
@@ -432,7 +434,8 @@ top::VarBinders ::= v::VarBinder ',' vs::VarBinders
   vs.bindingIndex = top.bindingIndex + 1;
 
   v.bindingType = if null(top.bindingTypes)
-                  then errorType()
+                  --then errorType()
+                  then freshType() -- #HACK2012 Issue 4
                   else head(top.bindingTypes);
   vs.bindingTypes = if null(top.bindingTypes)
                   then []
