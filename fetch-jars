@@ -19,6 +19,10 @@ else
     URLS="$URLS $REMOTE_STORE/$file"
   done
   
+  echo "Note: only those files listed below are being updated."
+  echo "If you need to force updating (e.g. to resolve a problem),"
+  echo "Then you should 'rm jars/*.jar' and then fetch-jars!"
+  
   # -N Pay attention to timestamps, to avoid needless redownloads.
   # -P jars/  Put the files in jars/
   # -nv Don't be so verbose!
