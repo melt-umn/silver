@@ -1,5 +1,7 @@
 #!/bin/bash
 
+exit 1 # this script is bad, don't use!!
+
 if [ ! -f run-overnight-tests ]; then
     echo "This script must  be run from the test/ directory."
     exit
@@ -53,7 +55,8 @@ tail -n 5 $RESDIR/silver-testing.output
 
 cd "$SILVER_HOME/../../grammars/"
 echo `pwd`
-rm -Rf *
+#UMM
+#rm -Rf *
 /soft/subversion/1.6.3/ubuntuamd1/bin/svn up > /dev/null
 echo "svn up - rc = $?"
 

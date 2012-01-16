@@ -1,7 +1,7 @@
 grammar silver:modification:copper;
 
 abstract production parserAttrDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -20,7 +20,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 }
 
 abstract production pluckTermDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String
+top::DclInfo ::= sg::String sl:: Location fn::String
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -38,7 +38,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String
 }
 
 abstract production disambigLexemeDcl
-top::DclInfo ::= sg::String sl::Decorated Location
+top::DclInfo ::= sg::String sl:: Location
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -56,7 +56,7 @@ top::DclInfo ::= sg::String sl::Decorated Location
 }
 
 abstract production lexerClassDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String
+top::DclInfo ::= sg::String sl:: Location fn::String
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -68,7 +68,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String
 }
 
 abstract production termAttrValueDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -86,7 +86,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 }
 
 abstract production actionChildDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -104,7 +104,7 @@ top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
 }
 
 abstract production parserLocalDcl
-top::DclInfo ::= sg::String sl::Decorated Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;

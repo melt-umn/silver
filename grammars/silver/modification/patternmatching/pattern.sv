@@ -60,7 +60,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 }
 
 abstract production caseExpr
-top::Expr ::= locat::Decorated Location es::[Expr] ml::[Decorated MatchRule] failExpr::Expr
+top::Expr ::= locat:: Location es::[Expr] ml::[Decorated MatchRule] failExpr::Expr
 {
   top.location = locat;
 
@@ -147,7 +147,7 @@ top::MatchRule ::= pt::PatternList '->' e::Expr
 }
 
 abstract production matchRule
-top::MatchRule ::= l::Decorated Location pl::[Decorated Pattern] e::Expr
+top::MatchRule ::= l:: Location pl::[Decorated Pattern] e::Expr
 {
   top.pp = implode(", ", map(getPatternPP, pl)) ++ " -> " ++ e.pp;
   -- TODO: This is a #HACK(2012). Replace errorConcat if better solution exists
@@ -209,7 +209,7 @@ function patternListVars
   end;
 }
 function convStringsToVarBinders
-VarBinders ::= s::[String] l::Decorated Location
+VarBinders ::= s::[String] l:: Location
 {
   local attribute f::VarBinder;
   f = varVarBinder(nameIdLower(terminal(IdLower_t, head(s), l.line, l.column)));
@@ -218,7 +218,7 @@ VarBinders ::= s::[String] l::Decorated Location
          else consVarBinder(f, ',', convStringsToVarBinders(tail(s), l));
 }
 function convStringsToExprs
-[Expr] ::= s::[String] tl::[Expr] l::Decorated Location
+[Expr] ::= s::[String] tl::[Expr] l:: Location
 {
   return if null(s) then tl
          else baseExpr(qName(l, head(s))) :: convStringsToExprs(tail(s), tl, l);
@@ -291,7 +291,7 @@ function allVarCaseTransform
 }
 
 function makeLet
-Expr ::= l::Decorated Location s::String t::TypeExp e::Expr o::Expr
+Expr ::= l:: Location s::String t::TypeExp e::Expr o::Expr
 {
   return letp(l, assignExpr(nameIdLower(terminal(IdLower_t, s)), '::', typerepType(t), '=', e), o);
 }

@@ -153,83 +153,83 @@ top::Defs ::= d::Defs rns::[Pair<String String>]
 ----------------------------------------------------------------------------------------------------
 
 function addChildDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
+Defs ::= sg::String sl:: Location fn::String ty::TypeExp defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate childDcl(sg,sl,fn,ty) with {}), defs);
 }
 function addLhsDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
+Defs ::= sg::String sl:: Location fn::String ty::TypeExp defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate lhsDcl(sg,sl,fn,ty) with {}), defs);
 }
 function addLocalDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
+Defs ::= sg::String sl:: Location fn::String ty::TypeExp defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate localDcl(sg,sl,fn,ty) with {}), defs);
 }
 function addProdDcl
-Defs ::= sg::String sl::Decorated Location ns::Decorated NamedSignature defs::Defs
+Defs ::= sg::String sl:: Location ns::Decorated NamedSignature defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate prodDcl(sg,sl,ns) with {}), defs);
 }
 function addFunDcl
-Defs ::= sg::String sl::Decorated Location ns::Decorated NamedSignature defs::Defs
+Defs ::= sg::String sl:: Location ns::Decorated NamedSignature defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate funDcl(sg,sl,ns) with {}), defs);
 }
 function addGlobalValueDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
+Defs ::= sg::String sl:: Location fn::String ty::TypeExp defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate globalValueDcl(sg,sl,fn,ty) with {}), defs);
 }
 function addNtDcl
-Defs ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
+Defs ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
 {
   return consTypeDef(defaultEnvItem(decorate ntDcl(sg,sl,fn,bound,ty) with {}), defs);
 }
 function addTermDcl
-Defs ::= sg::String sl::Decorated Location fn::String regex::Regex_R defs::Defs
+Defs ::= sg::String sl:: Location fn::String regex::Regex_R defs::Defs
 {
   return consTypeDef(defaultEnvItem(decorate termDcl(sg,sl,fn,regex) with {}), defs);
 }
 function addLexTyVarDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp defs::Defs
+Defs ::= sg::String sl:: Location fn::String ty::TypeExp defs::Defs
 {
   return consTypeDef(defaultEnvItem(decorate lexTyVarDcl(sg,sl,fn,ty) with {}), defs);
 }
 function addSynDcl
-Defs ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
+Defs ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
 {
   return consAttrDef(defaultEnvItem(decorate synDcl(sg,sl,fn,bound,ty) with {}), defs);
 }
 function addInhDcl
-Defs ::= sg::String sl::Decorated Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
+Defs ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
 {
   return consAttrDef(defaultEnvItem(decorate inhDcl(sg,sl,fn,bound,ty) with {}), defs);
 }
 function addPaDcl
-Defs ::= sg::String sl::Decorated Location fn::String outty::TypeExp intys::[TypeExp] dcls::Defs defs::Defs
+Defs ::= sg::String sl:: Location fn::String outty::TypeExp intys::[TypeExp] dcls::Defs defs::Defs
 {
   return consProdOccursDef(decorate paDcl(sg,sl,fn,outty,intys,dcls) with {}, defs);
 }
 function addForwardDcl
-Defs ::= sg::String sl::Decorated Location ty::TypeExp defs::Defs
+Defs ::= sg::String sl:: Location ty::TypeExp defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate forwardDcl(sg,sl,ty) with {}), defs);
 }
 function addOccursDcl
-Defs ::= sg::String sl::Decorated Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp defs::Defs
+Defs ::= sg::String sl:: Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp defs::Defs
 {
   return consOccursDef(decorate occursDcl(sg,sl,fnnt,fnat,ntty,atty) with {}, defs);
 }
 -- These aliased functions are used for aspects.
 function addAliasedLhsDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp alias::String defs::Defs
+Defs ::= sg::String sl:: Location fn::String ty::TypeExp alias::String defs::Defs
 {
   return consValueDef(renamedEnvItem(alias, decorate lhsDcl(sg,sl,fn,ty) with {}), defs);
 }
 function addAliasedChildDcl
-Defs ::= sg::String sl::Decorated Location fn::String ty::TypeExp alias::String defs::Defs
+Defs ::= sg::String sl:: Location fn::String ty::TypeExp alias::String defs::Defs
 {
   return consValueDef(renamedEnvItem(alias, decorate childDcl(sg,sl,fn,ty) with {}), defs);
 }

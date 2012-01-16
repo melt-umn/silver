@@ -80,7 +80,7 @@ top::ProductionLHS ::= id::Name '::' t::Type
   top.defs = addLhsDcl(top.grammarName, t.location, fName, t.typerep, emptyDefs());
 
   top.errors <-
-       if length(getValueDclAll(fName, top.env)) > 1
+       if length(getValueDclInScope(fName, top.env)) > 1 -- Hackathon Modified
        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
        else [];	
 
@@ -130,7 +130,7 @@ top::ProductionRHSElem ::= id::Name '::' t::Type
   top.defs = addChildDcl(top.grammarName, t.location, fName, t.typerep, emptyDefs());
 
   top.errors <-
-       if length(getValueDclAll(fName, top.env)) > 1
+       if length(getValueDclInScope(fName, top.env)) > 1 
        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
        else [];	
 
