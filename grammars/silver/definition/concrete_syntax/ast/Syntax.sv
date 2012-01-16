@@ -96,7 +96,7 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
     "  <term id=\"" ++ makeCopperName(n) ++ "\">\n" ++
     "    <code><![CDATA[\n" ++
 -- "RESULT = new common.TerminalRecord(lexeme,virtualLocation.getFileName(),virtualLocation.getLine(),virtualLocation.getColumn());\n" ++
-    "RESULT = new common.TerminalRecord(lexeme,virtualLocation);\n" ++
+    "RESULT = new common.TerminalRecord(lexeme,virtualLocation,Integer.valueOf((int)getStartRealLocation().getPos()),Integer.valueOf((int)getEndRealLocation().getPos()));\n" ++
       modifiers.acode ++ 
     "    ]]></code>\n" ++
     "    <classes>" ++ modifiers.lexerclasses ++ "</classes>\n" ++
