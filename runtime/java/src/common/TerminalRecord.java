@@ -17,8 +17,10 @@ public final class TerminalRecord {
 	final public Integer column;
 	final public Integer endLine;
 	final public Integer endColumn;
+	final public Integer index;
+	final public Integer endIndex;
 
-	public TerminalRecord(final String lx, final VirtualLocation vl){
+	public TerminalRecord(final String lx, final VirtualLocation vl, final Integer index, final Integer endIndex){
 		lexeme = new StringCatter(lx);
 		filename = new StringCatter(vl.getFileName());
 		line = vl.getLine();
@@ -26,6 +28,8 @@ public final class TerminalRecord {
 		vl.defaultUpdate(lx);
 		endLine = vl.getLine();
 		endColumn = vl.getColumn();
+		this.index = index;
+		this.endIndex = endIndex;
 	}
 			
 	public TerminalRecord(final String lx, final String fn, final Integer ln, final Integer cl) {
@@ -35,6 +39,8 @@ public final class TerminalRecord {
 		column = cl;
 		endLine = line;
 		endColumn = column;
+		index = 0;
+		endIndex = 0;
 	}
 
 	public TerminalRecord(final String lx, final Integer ln, final Integer cl) {

@@ -366,11 +366,11 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   -- TODO: this is a hacky way of dealing with terminal attributes
   top.typerep = if q.name == "lexeme" || q.name == "filename"
                 then stringTypeExp()
-                else if q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn"
+                else if q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn" || q.name == "index" || q.name == "endIndex"
                 then intTypeExp()
                 else errorType();
   top.errors :=
-        if q.name == "lexeme" || q.name == "filename" || q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn"
+        if q.name == "lexeme" || q.name == "filename" || q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn" || q.name == "index" || q.name == "endIndex"
         then []
         else [err(q.location, q.name ++ " is not a terminal attribute")];
   
