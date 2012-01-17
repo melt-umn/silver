@@ -14,8 +14,9 @@ import silver:util only contains;
 
 synthesized attribute itemName :: String;
 synthesized attribute dcl :: Decorated DclInfo;
+synthesized attribute envContribs :: [Pair<String Decorated DclInfo>];
 
-nonterminal EnvItem with itemName, dcl;
+nonterminal EnvItem with itemName, dcl, envContribs;
 
 function fullNameToShort
 String ::= s::String
@@ -24,6 +25,36 @@ String ::= s::String
   return substring(lastIndexOf(":", s) + 1, length(s), s);
 }
 
+abstract production defaultEnvItem
+ei::EnvItem ::= di::Decorated DclInfo
+{
+  ei.itemName = fullNameToShort(di.fullName);
+  ei.dcl = di;
+  ei.envContribs = [pair(ei.itemName, di), pair(di.fullName, di)];
+}
+abstract production renamedEnvItem
+ei::EnvItem ::= newname::String di::Decorated DclInfo
+{
+  ei.itemName = newname;
+  ei.dcl = di;
+  ei.envContribs = [pair(newname, di), pair(di.fullName, di)];
+}
+abstract production fullNameEnvItem
+ei::EnvItem ::= di::Decorated DclInfo
+{
+  ei.itemName = di.fullName;
+  ei.dcl = di;
+  ei.envContribs = [pair(ei.itemName, di)];
+}
+abstract production onlyRenamedEnvItem
+ei::EnvItem ::= newname::String di::Decorated DclInfo
+{
+  ei.itemName = newname;
+  ei.dcl = di;
+  ei.envContribs = [pair(ei.itemName, di)];
+}
+
+{-
 function defaultEnvItem
 Decorated EnvItem ::= di::Decorated DclInfo
 {
@@ -42,29 +73,34 @@ Decorated EnvItem ::= di::Decorated DclInfo
   return decorate i_envItem(di.fullName, di) with {};
 }
 
+function onlyRenamedEnvItem
+Decorated EnvItem ::= newname::String
+{
+  return decorate i_envItem(newname, decorate defaultDcl() with {}) with {};
+}
 abstract production i_envItem
 top::EnvItem ::= short::String di::Decorated DclInfo
 {
   top.itemName = short;
   top.dcl = di;
 }
-
+-}
 function mapGetDcls
-[Decorated DclInfo] ::= i::[Decorated EnvItem]
+[Decorated DclInfo] ::= i::[EnvItem]
 {
   return if null(i) then []
          else head(i).dcl :: mapGetDcls(tail(i));
 }
 
 function mapFullnameDcls
-[Decorated EnvItem] ::= i::[Decorated DclInfo]
+[EnvItem] ::= i::[Decorated DclInfo]
 {
   return if null(i) then []
          else fullNameEnvItem(head(i)) :: mapFullnameDcls(tail(i));
 }
 
 function mapDefaultWrapDcls
-[Decorated EnvItem] ::= i::[Decorated DclInfo]
+[EnvItem] ::= i::[Decorated DclInfo]
 {
   return if null(i) then []
          else defaultEnvItem(head(i)) :: mapDefaultWrapDcls(tail(i));
@@ -72,7 +108,7 @@ function mapDefaultWrapDcls
 
 
 function filterEnvItemsExclude
-[Decorated EnvItem] ::= items::[Decorated EnvItem] exclude::[String]
+[EnvItem] ::= items::[EnvItem] exclude::[String]
 {
   return if null(items) then []
          else if contains(head(items).itemName, exclude)
@@ -81,7 +117,7 @@ function filterEnvItemsExclude
 }
 
 function filterEnvItemsInclude
-[Decorated EnvItem] ::= items::[Decorated EnvItem] include::[String]
+[EnvItem] ::= items::[EnvItem] include::[String]
 {
   return if null(items) then []
          else if contains(head(items).itemName, include)
@@ -90,14 +126,14 @@ function filterEnvItemsInclude
 }
 
 function mapPrependEnvItems
-[Decorated EnvItem] ::= items::[Decorated EnvItem] prefi::String
+[EnvItem] ::= items::[EnvItem] prefi::String
 {
   return if null(items) then []
          else renamedEnvItem(prefi ++ head(items).itemName, head(items).dcl) :: mapPrependEnvItems(tail(items), prefi);
 }
 
 function mapRenameEnvItems
-[Decorated EnvItem] ::= items::[Decorated EnvItem] renames::[Pair<String String>]
+[EnvItem] ::= items::[EnvItem] renames::[Pair<String String>]
 {
   local attribute result :: Maybe<String>;
   result = lookupBy(stringEq, head(items).itemName, renames);
@@ -110,22 +146,22 @@ function mapRenameEnvItems
 
 -- Sort function
 function sortEnvItems
-[Decorated EnvItem] ::= eis::[Decorated EnvItem]
+[EnvItem] ::= eis::[EnvItem]
 {
   return sortBy(envItemLTE, eis);
 }
 function groupEnvItems
-[[Decorated EnvItem]] ::= eis::[Decorated EnvItem]
+[[EnvItem]] ::= eis::[EnvItem]
 {
   return groupBy(envItemEQ, eis);
 }
 function envItemLTE
-Boolean ::= e1::Decorated EnvItem e2::Decorated EnvItem
+Boolean ::= e1::EnvItem e2::EnvItem
 {
   return e1.itemName <= e2.itemName;
 }
 function envItemEQ
-Boolean ::= e1::Decorated EnvItem e2::Decorated EnvItem
+Boolean ::= e1::EnvItem e2::EnvItem
 {
   return e1.itemName == e2.itemName;
 }
@@ -133,10 +169,11 @@ Boolean ::= e1::Decorated EnvItem e2::Decorated EnvItem
 -- Substitutions
 
 function performSubstitutionEnvItem
-[Decorated EnvItem] ::= e::[Decorated EnvItem] s::Substitution
+[EnvItem] ::= e::[EnvItem] s::Substitution
 {
   return if null(e) then []
-         else decorate i_envItem(head(e).itemName, performSubstitutionDclInfo(head(e).dcl, s)) with {}
+         --else decorate i_envItem(head(e).itemName, performSubstitutionDclInfo(head(e).dcl, s)) with {}
+         else onlyRenamedEnvItem(head(e).itemName, performSubstitutionDclInfo(head(e).dcl, s))
               :: performSubstitutionEnvItem(tail(e), s);
 }
 

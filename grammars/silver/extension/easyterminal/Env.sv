@@ -15,7 +15,7 @@ function getTerminalRegexDclAll
 synthesized attribute terminalTree :: Decorated EnvScope occurs on Env; -- must be kept in sync with typeTree's type!! (whether its a [] or not)
 
 function filterAndConvertTermDcls
-[Pair<String Decorated DclInfo>] ::= ei::Decorated EnvItem sofar::[Pair<String Decorated DclInfo>]
+[Pair<String Decorated DclInfo>] ::= ei::EnvItem sofar::[Pair<String Decorated DclInfo>]
 {
   return case ei.dcl of
            termDcl(_, _, fn, regex) -> pair(regex.regString, ei.dcl) :: sofar
@@ -24,7 +24,7 @@ function filterAndConvertTermDcls
 }
 
 function buildTerminalTree
-EnvTree ::= eis::[Decorated EnvItem]
+EnvTree ::= eis::[EnvItem]
 {
   return directBuildTree(foldr(filterAndConvertTermDcls,[],eis));
 }
