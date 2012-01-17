@@ -30,61 +30,34 @@ ei::EnvItem ::= di::Decorated DclInfo
 {
   ei.itemName = fullNameToShort(di.fullName);
   ei.dcl = di;
-  ei.envContribs = [pair(ei.itemName, di), pair(di.fullName, di)];
+  ei.envContribs = if ei.itemName != di.fullName
+                   then [pair(ei.itemName, di), pair(di.fullName, di)]
+                   else [pair(ei.itemName, di)];
 }
 abstract production renamedEnvItem
 ei::EnvItem ::= newname::String di::Decorated DclInfo
 {
   ei.itemName = newname;
   ei.dcl = di;
-  ei.envContribs = [pair(newname, di), pair(di.fullName, di)];
+  ei.envContribs = if newname != di.fullName
+                   then [pair(newname, di), pair(di.fullName, di)]
+                   else [pair(newname, di)];
 }
 abstract production fullNameEnvItem
 ei::EnvItem ::= di::Decorated DclInfo
 {
   ei.itemName = di.fullName;
   ei.dcl = di;
-  ei.envContribs = [pair(ei.itemName, di)];
+  ei.envContribs = [pair(di.fullName, di)];
 }
 abstract production onlyRenamedEnvItem
 ei::EnvItem ::= newname::String di::Decorated DclInfo
 {
   ei.itemName = newname;
   ei.dcl = di;
-  ei.envContribs = [pair(ei.itemName, di)];
+  ei.envContribs = [pair(newname, di)];
 }
 
-{-
-function defaultEnvItem
-Decorated EnvItem ::= di::Decorated DclInfo
-{
-  return decorate i_envItem(fullNameToShort(di.fullName), di) with {};
-}
-
-function renamedEnvItem
-Decorated EnvItem ::= newname::String di::Decorated DclInfo
-{
-  return decorate i_envItem(newname, di) with {};
-}
-
-function fullNameEnvItem
-Decorated EnvItem ::= di::Decorated DclInfo
-{
-  return decorate i_envItem(di.fullName, di) with {};
-}
-
-function onlyRenamedEnvItem
-Decorated EnvItem ::= newname::String
-{
-  return decorate i_envItem(newname, decorate defaultDcl() with {}) with {};
-}
-abstract production i_envItem
-top::EnvItem ::= short::String di::Decorated DclInfo
-{
-  top.itemName = short;
-  top.dcl = di;
-}
--}
 function mapGetDcls
 [Decorated DclInfo] ::= i::[EnvItem]
 {
@@ -173,7 +146,7 @@ function performSubstitutionEnvItem
 {
   return if null(e) then []
          --else decorate i_envItem(head(e).itemName, performSubstitutionDclInfo(head(e).dcl, s)) with {}
-         else onlyRenamedEnvItem(head(e).itemName, performSubstitutionDclInfo(head(e).dcl, s))
+         else renamedEnvItem(head(e).itemName, performSubstitutionDclInfo(head(e).dcl, s))
               :: performSubstitutionEnvItem(tail(e), s);
 }
 
