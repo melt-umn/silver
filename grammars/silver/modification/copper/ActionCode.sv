@@ -64,13 +64,13 @@ top::ActionCode_c ::= '{' '}'
 
 -- TODO hacky. ideally we'd do this where local attributes are declared, not here.
 function hacklocaldeclarations
-String ::= l::[Decorated EnvItem]
+String ::= l::[EnvItem]
 {
   return if null(l) then "" else head(l).dcl.typerep.transType ++ " " ++ makeCopperName(head(l).dcl.fullName) ++ ";\n" ++ hacklocaldeclarations(tail(l));
 }
 
 function hackTransformLocals
-Defs ::= l::[Decorated EnvItem]
+Defs ::= l::[EnvItem]
 {
   return if null(l) then emptyDefs()
          else case head(l).dcl of

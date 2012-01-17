@@ -3,7 +3,7 @@ grammar silver:modification:copper;
 --------------------------------------------------------------------------------
 -- Defs.sv
 
-synthesized attribute lexerClassList :: [Decorated EnvItem] occurs on Defs;
+synthesized attribute lexerClassList :: [EnvItem] occurs on Defs;
 
 aspect function unparseDefs
 String ::= d_un::Defs bv::[TyVar]
@@ -24,7 +24,7 @@ top::Defs ::= e1_un::Defs e2_un::Defs
 }
 
 abstract production consLexerClassDef
-top::Defs ::= d::Decorated EnvItem e2::Defs
+top::Defs ::= d::EnvItem e2::Defs
 {
   top.lexerClassList = d :: forward.lexerClassList;
   forwards to e2;

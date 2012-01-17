@@ -6,9 +6,9 @@ import silver:definition:type;
 --TODO: unparse
 nonterminal Defs with typeList, valueList, attrList, prodOccursList, occursList;
 
-synthesized attribute typeList :: [Decorated EnvItem];
-synthesized attribute valueList :: [Decorated EnvItem];
-synthesized attribute attrList :: [Decorated EnvItem];
+synthesized attribute typeList :: [EnvItem];
+synthesized attribute valueList :: [EnvItem];
+synthesized attribute attrList :: [EnvItem];
 synthesized attribute prodOccursList :: [Decorated DclInfo];
 synthesized attribute occursList :: [Decorated DclInfo];
 
@@ -80,19 +80,19 @@ top::Defs ::= e1::Defs s::Substitution
 --------------------------------------------------------------------------------
 
 abstract production consTypeDef
-top::Defs ::= d::Decorated EnvItem e2::Defs
+top::Defs ::= d::EnvItem e2::Defs
 {
   top.typeList = d :: forward.typeList;
   forwards to e2;
 }
 abstract production consValueDef
-top::Defs ::= d::Decorated EnvItem e2::Defs
+top::Defs ::= d::EnvItem e2::Defs
 {
   top.valueList = d :: forward.valueList;
   forwards to e2;
 }
 abstract production consAttrDef
-top::Defs ::= d::Decorated EnvItem e2::Defs
+top::Defs ::= d::EnvItem e2::Defs
 {
   top.attrList = d :: forward.attrList;
   forwards to e2;

@@ -26,7 +26,7 @@ b ::= p::Pair<a b>
 { return p.snd; }
 
 function buildTree
-EnvTree ::= eis::[Decorated EnvItem]
+EnvTree ::= eis::[EnvItem]
 {
   return directBuildTree( explodeEnvItems(eis) );
 }
@@ -48,15 +48,12 @@ Boolean ::= p::Pair<String Decorated DclInfo>
 -- Take (shortName, fullName) and turns it into [(shortName, fullName), (fullName, fullName)]
 -- So lookups see both.
 function explodeEnvItems
-[Pair<String Decorated DclInfo>] ::= eis::[Decorated EnvItem]
+[Pair<String Decorated DclInfo>] ::= eis::[EnvItem]
 {
-  local attribute h :: Decorated EnvItem;
+  local attribute h :: EnvItem;
   h = head(eis);
-  
+
   return if null(eis) then [] else
-         pair(h.dcl.fullName, h.dcl) ::
-           (if h.itemName == h.dcl.fullName
-            then explodeEnvItems(tail(eis))
-            else pair(h.itemName, h.dcl) :: explodeEnvItems(tail(eis)));
+            head(eis).envContribs ++ explodeEnvItems(tail(eis));
 }
 
