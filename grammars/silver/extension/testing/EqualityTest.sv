@@ -40,8 +40,22 @@ ag::AGDcl ::= kwd::'equalityTest'
        then [err(value.location, "Type of first and second experssions in equalityTest do not match. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
        else [];
 
+
+  ag.errors <-
+       if errCheck2.typeerror
+       then [err(value.location, "Type of initial expression does not match specified type (3rd argument). Instead they are " ++
+                                  errCheck2.leftpp ++ " and " ++ errCheck2.rightpp)]
+       else [];
+
+  ag.errors <-
+       if errCheck3.typeerror
+       then [err(value.location, "Type of second expression does not match specified type (3rd argument). Instead they are " ++
+                                  errCheck3.leftpp ++ " and " ++ errCheck3.rightpp)]
+       else [];
+
   value.env = ag.env ;
   expected.env = ag.env ;
+  valueType.env = ag.env ;
 
   value.downSubst = emptySubst();
   expected.downSubst = value.upSubst ;
@@ -49,11 +63,24 @@ ag::AGDcl ::= kwd::'equalityTest'
   value.finalSubst = expected.upSubst;
   expected.finalSubst = expected.upSubst;
 
- ag.errors <- forward.errors ;
+
+  local attribute errCheck2 :: TypeCheck; 
+  errCheck2.finalSubst = value.finalSubst;
+  errCheck2.downSubst = emptySubst();
+  errCheck2 = check(value.typerep, valueType.typerep);
+
+  local attribute errCheck3 :: TypeCheck; 
+  errCheck3.finalSubst = expected.finalSubst;
+  errCheck3.downSubst = emptySubst();
+  errCheck3 = check(expected.typerep, valueType.typerep);
 
 
 
- forwards to agDclAppend ( absProdCS, aspProdCS ) ; --with { downSubst = errCheck1.upSubst; } ;
+  ag.errors <- forward.errors ;
+
+
+
+ forwards to agDclAppend ( absProdCS, aspProdCS ) ;
  local absProdCS :: AGDcl = asAGDcl (
    "abstract production " ++ testName ++ "\n" ++
    "t::Test ::= \n" ++
