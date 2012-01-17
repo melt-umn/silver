@@ -85,9 +85,3 @@ top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
   top.applicationDispatcher = functionApplicationDispatcher;
 }
-
-aspect production productionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
-{
-  top.applicationDispatcher = productionApplicationDispatcher;
-}

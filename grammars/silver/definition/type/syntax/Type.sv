@@ -18,7 +18,7 @@ synthesized attribute lexicalTypeVariables :: [String];
 -- freeVariables also occurs on TypeList, and should be IN ORDER
 
 -- These attributes are used if we're using the TypeList as type variables-only.
-synthesized attribute errorsTyVars :: [Decorated Message] with ++;
+synthesized attribute errorsTyVars :: [Message] with ++;
 
 -- For bracketed lists
 synthesized attribute typelist :: Decorated TypeList;
@@ -156,7 +156,7 @@ top::Type ::= 'Production' '(' sig::Signature ')'
 
   top.errors := sig.errors;
 
-  top.typerep = productionTypeExp(head(sig.types), tail(sig.types));
+  top.typerep = functionTypeExp(head(sig.types), tail(sig.types));
 
   top.lexicalTypeVariables = sig.lexicalTypeVariables;
 }

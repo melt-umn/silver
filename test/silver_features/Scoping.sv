@@ -22,11 +22,11 @@ abstract production rightCodeScoping
 top::Scope ::= s::String
 {
   local attribute hi1::String;
-  hi1 = let bar :: String = "asdf" in bar end;
+  hi1 = let barAgain :: String = "asdf" in barAgain end;
   
   local attribute hi2::String;
   hi2 = case rightCodeScoping("Huh") of
-         rightCodeScoping(bar) -> bar
+         rightCodeScoping(barAgain) -> barAgain
          | _ -> "oh"
         end;
 }
@@ -35,14 +35,6 @@ top::Scope ::= s::String
 abstract production rightCodeNaming
 top::Scope ::= loc::String
 {
-  local attribute hi3::String;
-  hi3 = let bar :: String = "asdf" in bar end;
-  
-  local attribute hi4::String;
-  hi3 = case rightCodeScoping("Huh") of
-         rightCodeScoping(bar) -> bar
-         | _ -> "oh"
-        end;
 }
 
 

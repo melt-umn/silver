@@ -52,7 +52,7 @@ wrongCode "has more than one forward declaration" {
 
 --- Tests to ensure that errors are raised if aspecting the wrong type of thing...
 
-wrongCode "does not have the right signature" {
+wrongCode "should be a 'production' aspect instead" {
   aspect function context
   Context ::=
   {
@@ -63,7 +63,7 @@ function context2
 Context ::= 
 { return error("SADF"); }
 
-wrongCode "does not have the right signature" {
+wrongCode "should be a 'function' aspect instead" {
   aspect production context2
   t::Context ::=
   {

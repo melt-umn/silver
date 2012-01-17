@@ -70,6 +70,7 @@ aspect production prodDcl
 top::DclInfo ::= sg::String sl:: Location ns::Decorated NamedSignature
 {
   top.refDispatcher = productionReference;
+   -- Note that we still need production references, even though bug #16 removes the production type.
   top.defDispatcher = errorValueDef;
   top.defLHSDispatcher = errorDefLHS;
 }

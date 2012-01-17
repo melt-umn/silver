@@ -26,7 +26,8 @@ top::Expr ::= q::Decorated QName
 
   top.errors := []; -- Should only be referenceable from a context where its valid.
 
-  top.typerep = errorType(); -- TODO: BUG: Need a real type here (AnyTerminalType or something)
+  --top.typerep = errorType(); -- TODO: BUG: Need a real type here (AnyTerminalType or something)
+  top.typerep = freshType(); -- #HACK2012 Issue 4
   
   top.translation = makeCopperName(q.lookupValue.fullName); -- Value right here?
   top.lazyTranslation = top.translation; -- never, but okay!

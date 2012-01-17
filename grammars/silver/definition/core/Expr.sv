@@ -48,7 +48,8 @@ top::Expr ::= q::Decorated QName
   top.location = q.location;
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable
-                then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                then ntOrDecTypeExp(q.lookupValue.typerep, freshType(){-fresh tyvar-}) -- #HACK2012 Issue 4
                 else q.lookupValue.typerep;
   
   forwards to defaultExpr();
@@ -61,7 +62,8 @@ top::Expr ::= q::Decorated QName
   top.location = q.location;
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable -- actually always decorable...
-                then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                then ntOrDecTypeExp(q.lookupValue.typerep, freshType(){-fresh tyvar-}) -- #HACK2012 Issue 4
                 else q.lookupValue.typerep;
   
   forwards to defaultExpr();
@@ -74,7 +76,8 @@ top::Expr ::= q::Decorated QName
   top.location = q.location;
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable
-                then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                then ntOrDecTypeExp(q.lookupValue.typerep, freshType(){-fresh tyvar-}) -- #HACK2012 Issue 4
                 else q.lookupValue.typerep;
   
   forwards to defaultExpr();
@@ -87,11 +90,19 @@ top::Expr ::= q::Decorated QName
   top.location = q.location;
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable -- actually always decorable...
-                then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
+                then ntOrDecTypeExp(q.lookupValue.typerep, freshType(){-fresh tyvar-}) -- #HACK2012 Issue 4
                 else q.lookupValue.typerep;
   
   forwards to defaultExpr();
 }
+
+{- Eventhough bug #16 removes the production type, we still need the
+production reference for code generation purposes.  Type checking does
+not need to distinguish between functions and productions, excpet for
+the need to detect cases when, for example, a function aspect attempts
+to aspect a production. --EVW
+ -}
 
 abstract production productionReference
 top::Expr ::= q::Decorated QName
@@ -223,7 +234,8 @@ top::Expr ::= '(' '.' q::QName ')'
   
   -- Also, freshen the attribute type, because even though there currently should NOT be any type variables
   -- there, there could be if the code will raise an error.
-  top.typerep = functionTypeExp(freshenCompletely(q.lookupAttribute.typerep), [errorType()]);
+  --top.typerep = functionTypeExp(freshenCompletely(q.lookupAttribute.typerep), [errorType()]);
+  top.typerep = functionTypeExp(freshenCompletely(q.lookupAttribute.typerep), [freshType()]); -- #HACK2012 Issue 4
   
   top.errors := q.lookupAttribute.errors;
   
@@ -777,7 +789,7 @@ function getPPsExprs
   return if null(es) then [] else [head(es).pp] ++ getPPsExprs(tail(es));
 }
 function getErrorsExprs
-[[Decorated Message]] ::= es::[Decorated Expr]{
+[[Message]] ::= es::[Decorated Expr]{
   return if null(es) then [] else [head(es).errors] ++ getErrorsExprs(tail(es));
 }
 

@@ -3,9 +3,10 @@ grammar silver:definition:core;
 synthesized attribute msg :: String;
 nonterminal Message with location, msg, pp;
 
+
 function err
-Decorated Message ::= l::Location s::String{
-  return decorate i_err(l, s) with {};
+Message ::= l::Location s::String{
+  return  i_err(l, s);-- with {};
 }
 
 abstract production i_err
@@ -16,8 +17,8 @@ top::Message ::= l::Location s::String{
 }
 
 function wrn
-Decorated Message ::= l::Location s::String{
-  return decorate i_wrn(l, s) with {};
+Message ::= l::Location s::String{
+  return  i_wrn(l, s);-- with {};
 }
 
 abstract production i_wrn
@@ -28,6 +29,13 @@ top::Message ::= l::Location s::String{
 }
 
 function foldMessages
-String ::= es::[Decorated Message]{
+String ::= es::[Message]{
   return if null(es) then "" else head(es).pp ++ "\n" ++ foldMessages(tail(es));
 }
+{-
+abstract production err
+top::Message ::= l::Location m::String
+{
+  top.unparse = l.unparse ++ ": error: " ++ m;
+  top.location = l;
+}-}

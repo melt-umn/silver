@@ -182,12 +182,6 @@ top::TypeExp ::= out::TypeExp params::[TypeExp]
   top.substituted = functionTypeExp(out.substituted, mapSubst(params, top.substitution));
 }
 
-aspect production productionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
-{
-  top.substituted = productionTypeExp(out.substituted, mapSubst(params, top.substitution));
-}
-
 --------------------------------------------------------------------------------
 
 function performSubstitution
