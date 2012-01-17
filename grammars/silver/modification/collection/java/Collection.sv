@@ -95,7 +95,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
   o = q.operation;
 
   local attribute ugh_dcl_hack :: Decorated DclInfo;
-  ugh_dcl_hack = head(getValueDcl(fName, top.env)); -- TODO
+  ugh_dcl_hack = head(getValueDclAll(fName, top.env)); -- TODO
 
   top.setupInh <-
         "\t\t" ++ className ++ ".localAttributes[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = new common.CollectionAttribute(){\n" ++ 
