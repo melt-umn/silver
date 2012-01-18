@@ -19,7 +19,6 @@ terminal Eq     '=';
 
 -- Punctuation
 
-terminal Lambda     'lambda';
 terminal Period     '.';
 terminal LeftParen  '(';
 terminal RightParen ')';
@@ -34,6 +33,7 @@ lexer class KEYWORDS;
 
 -- Statements
 
+terminal Lambda_t 'lambda'  lexer classes { KEYWORDS } ;
 terminal In_t     'in'      lexer classes { KEYWORDS } ;
 terminal Let_t    'let'     lexer classes { KEYWORDS } ;
 

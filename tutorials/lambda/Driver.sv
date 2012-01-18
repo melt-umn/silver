@@ -1,5 +1,8 @@
 grammar lambda ;
 
+import silver:langutil only pp;
+import silver:langutil:pp;
+
 function driver
 IOVal<Integer> ::= args::[String]
                    parse::Function(ParseResult<Root_c> ::= String String)
@@ -61,11 +64,11 @@ synthesized attribute tioOut :: IO ;
 abstract production printPPTask
 t::Task ::= filename::String r_cst::Decorated Root_c
 { t.tioOut = print("Pretty print of program in \"" ++ filename ++ "\":\n" ++
-                   r_cst.pp ++ "\n\n" ++ "CST:\n" ++ r_cst.ast_Root.pp ++ "\n\n", t.tioIn) ;
+                   r_cst.pp.result ++ "\n\n" ++ "CST:\n" ++ r_cst.ast_Root.pp.result ++ "\n\n", t.tioIn) ;
 }
 abstract production writePPTask
 t::Task ::= filename::String r_ast::Decorated Root
-{ t.tioOut = writeFile(filenamePP, r_ast.pp, t.tioIn) ;
+{ t.tioOut = writeFile(filenamePP, r_ast.pp.result, t.tioIn) ;
   local filenamePP::String = substring(0, length(filename)-4, filename) ++ "_pp.lambda" ;
 }
 abstract production printErrorsTask
