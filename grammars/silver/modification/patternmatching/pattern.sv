@@ -46,7 +46,8 @@ nonterminal PatternList with pp, patternList, env, file, errors;
 concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
-  top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";
+  -- TODO: causes problems with ring. Investigate!
+  --top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors <- ml.errors;
@@ -150,7 +151,7 @@ top::MatchRule ::= pt::PatternList '->' e::Expr
 }
 
 abstract production matchRule
-top::MatchRule ::= l:: Location pl::[Decorated Pattern] e::Expr
+top::MatchRule ::= l::Location pl::[Decorated Pattern] e::Expr
 {
   top.pp = implode(", ", map(getPatternPP, pl)) ++ " -> " ++ e.pp;
   -- TODO: This is a #HACK(2012). Replace errorConcat if better solution exists
