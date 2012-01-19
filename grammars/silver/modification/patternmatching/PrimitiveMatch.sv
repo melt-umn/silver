@@ -81,8 +81,8 @@ top::Expr ::= ll:: Location e::Expr t::Type pr::PrimPatterns f::Expr
   pr.returnType = t.typerep;
   
   top.translation = 
-    "new common.PatternLazy<" ++ scrutineeType.transType ++ ", " ++ t.typerep.transType ++ ">() { " ++
-      "public final " ++ t.typerep.transType ++ " eval(final common.DecoratedNode context, " ++ scrutineeType.transType ++ " scrutineeIter) {" ++
+    "new common.PatternLazy<" ++ scrutineeType.transType ++ ", " ++ performSubstitution(t.typerep, top.finalSubst).transType ++ ">() { " ++
+      "public final " ++ performSubstitution(t.typerep, top.finalSubst).transType ++ " eval(final common.DecoratedNode context, " ++ scrutineeType.transType ++ " scrutineeIter) {" ++
         (if scrutineeType.isDecorated
          then
           "while(scrutineeIter != null) {" ++
@@ -188,7 +188,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   e.env = newScopeEnv(ns.defs, top.env);
   
   top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
-    ") { " ++ ns.let_translation ++ " return (" ++ top.returnType.transType ++ ")" ++ e.translation ++ "; }";
+    ") { " ++ ns.let_translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
 }
 
 abstract production prodPatternGadt
@@ -235,7 +235,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   e.env = newScopeEnv(ns.defs, top.env);
   
   top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
-    ") { " ++ ns.let_translation ++ " return (" ++ top.returnType.transType ++ ")" ++ e.translation ++ "; }";
+    ") { " ++ ns.let_translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
 }
 
 abstract production integerPattern
@@ -264,7 +264,7 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
   errCheck2.downSubst = e.upSubst;
   top.upSubst = errCheck2.upSubst;
 
-  top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ top.returnType.transType ++ ")" ++
+  top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
 abstract production stringPattern
@@ -293,7 +293,7 @@ top::PrimPattern ::= i::String_t '->' e::Expr
   errCheck2.downSubst = e.upSubst;
   top.upSubst = errCheck2.upSubst;
 
-  top.translation = "if(scrutinee.equals(" ++ i.lexeme ++ ")) { return (" ++ top.returnType.transType ++ ")" ++
+  top.translation = "if(scrutinee.equals(" ++ i.lexeme ++ ")) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
 abstract production booleanPattern
@@ -322,7 +322,7 @@ top::PrimPattern ::= i::String '->' e::Expr
   errCheck2.downSubst = e.upSubst;
   top.upSubst = errCheck2.upSubst;
 
-  top.translation = "if(scrutinee == " ++ i ++ ") { return (" ++ top.returnType.transType ++ ")" ++
+  top.translation = "if(scrutinee == " ++ i ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
 abstract production nilPattern
@@ -352,7 +352,7 @@ top::PrimPattern ::= e::Expr
   errCheck2.downSubst = e.upSubst;
   top.upSubst = errCheck2.upSubst;
 
-  top.translation = "if(scrutinee.nil()) { return (" ++ top.returnType.transType ++ ")" ++
+  top.translation = "if(scrutinee.nil()) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
 abstract production conslstPattern
@@ -434,8 +434,7 @@ top::VarBinders ::= v::VarBinder ',' vs::VarBinders
   vs.bindingIndex = top.bindingIndex + 1;
 
   v.bindingType = if null(top.bindingTypes)
-                  --then errorType()
-                  then freshType() -- #HACK2012 Issue 4
+                  then errorType()
                   else head(top.bindingTypes);
   vs.bindingTypes = if null(top.bindingTypes)
                   then []
@@ -465,6 +464,9 @@ top::VarBinder ::= n::Name
   production attribute fName :: String;
   fName = top.signature.fullName ++ ":local:" ++ n.name; -- TODO: eliminate this :local: garbage later
 
+  -- bindingType comes straight from the type in the production signature, so this logic
+  -- should be 100% cool because only statically known nonterminal types are ones that
+  -- become decorated.  So it's impossible for inference to affect this logic:
   local attribute ty :: TypeExp;
   ty = if top.bindingType.isDecorable
        then decoratedTypeExp(top.bindingType)

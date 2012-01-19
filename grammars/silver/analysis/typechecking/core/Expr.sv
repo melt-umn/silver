@@ -120,8 +120,20 @@ top::Expr ::= e::Expr '.' q::Decorated QName
 aspect production decoratedAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  -- It's possible we should be unifying here? (checkDecorated(e) just in case) TODO
-  top.upSubst = e.upSubst;
+  -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're decorated,
+  -- ensuring that type's specialization, otherwise we could end up in trouble!
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  errCheck1 = checkDecorated(e.typerep);
+
+  -- TECHNICALLY, I think the current implementation makes this impossible,
+  -- But let's leave it since it's the right thing to do.
+  top.errors <-
+    if errCheck1.typeerror
+    then [err(top.location, "Attribute " ++ q.name ++ " being accessed from an undecorated type.")]
+    else [];
+  
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst;
 }
 
 aspect production synDNTAccessDispatcher
