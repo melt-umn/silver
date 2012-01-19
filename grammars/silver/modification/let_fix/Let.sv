@@ -35,7 +35,7 @@ top::LetAssigns ::= ae::AssignExpr
 --------------------------------------------------------------------------------
 
 abstract production letp
-top::Expr ::= l:: Location  la::AssignExpr  e::Expr
+top::Expr ::= l::Location  la::AssignExpr  e::Expr
 {
   top.pp = "let " ++ la.pp ++ " in " ++ e.pp ++ " end";
   top.location = l;
@@ -48,6 +48,8 @@ top::Expr ::= l:: Location  la::AssignExpr  e::Expr
   e.downSubst = la.upSubst;
   top.upSubst = e.upSubst;
   
+  -- Semantics for the moment is these are not mutually recursive,
+  -- so la does NOT get new environment, only e. Thus, la.defs can depend on downSubst...
   e.env = newScopeEnv(la.defs, top.env);
 
   forwards to defaultExpr();
@@ -77,12 +79,20 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
   fName = top.signature.fullName ++ ":local:" ++ id.name;
 
   top.pp = id.name ++ " :: " ++ t.pp ++ " = " ++ e.pp;
-  top.defs = addLexicalLocalDcl(top.grammarName, id.location, fName, t.typerep, emptyDefs());
+  
+  -- Using finalTy here, so our defs requires we have downSubst...
+  -- The reason we're putting the type in the environment AFTER inference is so that
+  -- wonky things don't happen with the auto-dedecorate behavior in lexicalLocalReference
+  top.defs = addLexicalLocalDcl(top.grammarName, id.location, fName, finalTy, emptyDefs());
+  
   top.errors := t.errors ++ e.errors;
   
   top.errors <- if length(getValueDclInScope(fName, top.env)) > 1
                 then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
                 else [];
+
+  production attribute finalTy :: TypeExp;
+  finalTy = performSubstitution(t.typerep, errCheck1.upSubst);
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
