@@ -62,13 +62,20 @@ abstract production expr_lambda
 e::Expr ::= id::String tl::Type e1::Expr
 {
  local attribute synErrors :: String ;
- synErrors = tl.errors ++ e1.errors ;
+ synErrors = tl.errors ++ e1.errors;
 
  e.pp = concat([text("lambda "), text(id), text(":"), tl.pp, text("."), e1.pp]);
  e.ok = tl.ok
         && e1.ok ;
 
- e.errors = synErrors ;
+ e.errors = case tl of
+              type_err() -> id ++ " is type_err\n"
+            | _ -> ""
+            end ++ 
+            case e1.type of
+              type_err() -> e1.pp.result ++ " is type_err\n"
+            | _ -> ""
+            end ++ synErrors ;
  e.type = arrow(tl, e1.type) ;
 
  e1.envi = [pair(id, tl)] ++ e.envi ;
