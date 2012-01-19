@@ -1,7 +1,7 @@
 grammar lambda ;
 
-import silver:langutil only pp;
-import silver:langutil:pp;
+imports silver:langutil only pp, ast;
+imports silver:langutil:pp;
 
 function driver
 IOVal<Integer> ::= args::[String]
@@ -13,33 +13,30 @@ IOVal<Integer> ::= args::[String]
  local text::IOVal<String> = readFile(filename,fileExists.io);
  local result::ParseResult<Root_c> = parse(text.iovalue, filename);
  local r_cst::Root_c = result.parseTree ;
- production r_ast::Root = r_cst.ast_Root ;
+ production r_ast::Root = r_cst.ast ;
 
  local print_failure::IO
   = print("parse failed.\n" ++ result.parseErrors ++ "\n", text.io);
  
- -- Display pp unless it is "turned on" by some aspect of the driver
- -- production contributing the value 'true' to the collection
- -- attribute displayPP.
+ {- Display pp unless it is "turned on" by some aspect of the driver
+  - production contributing the value 'true' to the collection
+  - attribute displayPP.
+  -}
  production attribute displayPrettyPrint :: Boolean with || ;
  displayPrettyPrint := false ;
 
- -- Display errors if it is "turned on" by some aspect of the driver
- -- production contributing the value 'true' to the collection
- -- attribute displayErrors.
+ {- Display errors if it is "turned on" by some aspect of the driver
+  - production contributing the value 'true' to the collection
+  - attribute displayErrors.
+  -}
  production attribute displayErrors :: Boolean with || ;
  displayErrors := true ;
 
  production attribute tasks::[Task] with ++ ;
  tasks :=
---   (if displayPrettyPrint then [ printPPTask(filename,r_ast) ] else [ ]) ++
---  (if displayErrors then [ printErrorsTask(filename,r_ast) ] else [ ]) ++
    [ printPPTask(filename, r_cst)
      , writePPTask(filename, r_ast) 
-     , printErrorsTask(filename, r_ast)
-     --, displayErrorLineNum(r_ast)
-   ]
-   ;
+     , printErrorsTask(filename, r_ast)];
 
  local allTasks :: Task = concatTasks(tasks) ;
  allTasks.tioIn = text.io ;
@@ -64,12 +61,12 @@ synthesized attribute tioOut :: IO ;
 abstract production printPPTask
 t::Task ::= filename::String r_cst::Decorated Root_c
 { t.tioOut = print("Pretty print of program in \"" ++ filename ++ "\":\n" ++
-                   r_cst.pp.result ++ "\n\n" ++ "CST:\n" ++ r_cst.ast_Root.pp.result ++ "\n\n", t.tioIn) ;
+                   r_cst.pp.result ++ "\n\n" ++ "CST:\n" ++ r_cst.ast.pp.result ++ "\n\n", t.tioIn) ;
 }
 abstract production writePPTask
 t::Task ::= filename::String r_ast::Decorated Root
 { t.tioOut = writeFile(filenamePP, r_ast.pp.result, t.tioIn) ;
-  local filenamePP::String = substring(0, length(filename)-4, filename) ++ "_pp.lambda" ;
+  local filenamePP::String = substring(0, length(filename)-7, filename) ++ "_pp.lambda" ;
 }
 abstract production printErrorsTask
 t::Task ::= filename::String r_ast::Decorated Root
@@ -84,13 +81,6 @@ t::Task ::= filename::String r_ast::Decorated Root
                        t.tioIn) ;
   local filenameErrors::String = substring(0, length(filename)-3, filename) ++ ".errors" ;
 }
---abstract production displayErrorLineNum
---t::Task ::= r_ast::Decorated Root
---{ t.tioOut = if   null(r_ast.errors)
---             then t.tioIn
---             else print( toString(head(r_ast.errors).location.line) ++ "\n\n", t.tioIn )  ;
---}
-
 
 abstract production concatTasks
 t::Task ::= ts::[Task]

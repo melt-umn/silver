@@ -5,9 +5,10 @@ grammar lambda;
  -}
 ignore terminal WhiteSpace /[\t\n\ ]+/;
 
--- Operator precedence and associativity can be specified directly.
--- Higher values indicate higher precedence operators.
--- Associativity can be set to "left" or "right", default is none.
+{- Operator precedence and associativity can be specified directly.
+ - Higher values indicate higher precedence operators.
+ - Associativity can be set to "left" or "right", default is none.
+ -}
 
 terminal Star   '*'   precedence = 12, association = left;
 terminal Slash  '/'   precedence = 12, association = left;
@@ -42,7 +43,7 @@ terminal Let_t    'let'     lexer classes { KEYWORDS } ;
 terminal Integer_t 'int' lexer classes { KEYWORDS }; 
 
 {- Alternatively, we could avoid the keywords lexer class and put the
-   clause "dominates { Id_t}" on each keyword.  But the use of the
+   clause "dominates { Id_t }" on each keyword.  But the use of the
    lexer class makes our intention more clear.  
 -}
 
