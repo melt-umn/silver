@@ -46,7 +46,8 @@ nonterminal PatternList with pp, patternList, env, file, errors;
 concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
-  top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";
+  -- TODO: causes problems with ring. Investigate!
+  --top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors <- ml.errors;
@@ -95,8 +96,7 @@ top::Expr ::= locat:: Location es::[Expr] ml::[Decorated MatchRule] failExpr::Ex
    -}
   local attribute allConCase :: Expr;
   allConCase = matchPrimitive(locat, head(es),
-                              --typerepType(errorType()),
-                              typerepType(freshType()), -- #HACK2012 Issue 4
+                              typerepType(freshType()),
                               allConCaseTransform(tail(es), failExpr, groupMRules(prodRules)),
                               failExpr);
   
@@ -105,8 +105,7 @@ top::Expr ::= locat:: Location es::[Expr] ml::[Decorated MatchRule] failExpr::Ex
    -}
   local attribute allVarCase :: Expr;
   allVarCase = caseExpr(locat, tail(es),
-                        --allVarCaseTransform(head(es), errorType(), ml),
-                        allVarCaseTransform(head(es), freshType(), ml), -- #HACK2012 Issue 4
+                        allVarCaseTransform(head(es), freshType(), ml),
                         failExpr);
   
   {--
@@ -117,8 +116,7 @@ top::Expr ::= locat:: Location es::[Expr] ml::[Decorated MatchRule] failExpr::Ex
   freshFailName = "__fail_" ++ toString(genInt());
   local attribute mixedCase :: Expr;
   mixedCase = makeLet(top.location,
-                --freshFailName, errorType(), caseExpr(locat, es, varRules, failExpr),
-                freshFailName, freshType(), caseExpr(locat, es, varRules, failExpr), -- #HACK2012 Issue 4
+                freshFailName, freshType(), caseExpr(locat, es, varRules, failExpr),
                 caseExpr(locat, es, prodRules, baseExpr(qName(top.location, freshFailName))));
 }
 
@@ -150,7 +148,7 @@ top::MatchRule ::= pt::PatternList '->' e::Expr
 }
 
 abstract production matchRule
-top::MatchRule ::= l:: Location pl::[Decorated Pattern] e::Expr
+top::MatchRule ::= l::Location pl::[Decorated Pattern] e::Expr
 {
   top.pp = implode(", ", map(getPatternPP, pl)) ++ " -> " ++ e.pp;
   -- TODO: This is a #HACK(2012). Replace errorConcat if better solution exists

@@ -187,3 +187,34 @@ function sssss String ::= { return toString(case just(1) of just(x) -> x end); }
 --global ssss :: String = toString(case just(1) of just(x) -> x end); -- TODO: pretty printing problem with pattern matching. fix!
 equalityTest ( sssss(), "1", String, pat_tests ) ;
 
+
+------------------------
+-- Some typechecking issues popped up with:
+
+nonterminal OrdinaryNonterminal with ordinaryAttribute;
+synthesized attribute ordinaryAttribute :: String;
+
+abstract production ordinaryProduction
+top::OrdinaryNonterminal ::= ordinaryUndecorated::OrdinaryNonterminal
+{}
+
+function ordinaryFunction
+String ::= undecoratedFirst::OrdinaryNonterminal  decoratedSecond::Decorated OrdinaryNonterminal
+{ return ""; }
+function ordinaryFunction2
+String ::= undecoratedFirst::OrdinaryNonterminal  attrSecond::String
+{ return ""; }
+
+function doesThisGenerateSilverErrors
+String ::= d::OrdinaryNonterminal
+{ return case d of
+         | ordinaryProduction(p) -> ordinaryFunction(p,p) -- This should be okay!!
+         end;
+}
+function doesThisGenerateJavaCodeWithErrors
+String ::= d::OrdinaryNonterminal
+{ return case d of
+         | ordinaryProduction(p) -> ordinaryFunction2(p,p.ordinaryAttribute) -- Just checking we don't have type issues in the generated Java with this 'p' used both ways.
+         end;
+}
+-------------------
