@@ -1,27 +1,28 @@
 grammar lambda ;
 
-import silver:langutil only pp ;
-import silver:langutil:pp ;
-
+-- String used to hold informational error messages
 synthesized attribute errors :: String ;
-synthesized attribute ok :: Boolean ;
 
+-- Holds type description
 synthesized attribute type :: Type ;
 
+-- List of pairs to hold variables and their type
 inherited attribute envi :: [Pair<String Type>] ;
 synthesized attribute envs :: [Pair<String Type>] ;
 
+nonterminal Root       with pp, type, envs, errors ;
+nonterminal Expr       with pp, type, envi, errors ;
+nonterminal Expr_funct with pp, type, envi, errors ;
+nonterminal Expr_arith with pp, type, envi, errors ;
+nonterminal Term       with pp, type, envi, errors ;
+nonterminal Factor     with pp, type, envi, errors ;
+nonterminal Type       with pp, errors ;
+
 -- Root
-nonterminal Root with pp, ok, type, envs, errors ;
 abstract production root
 p::Root ::= r::Expr
 {
  p.pp = r.pp ;
- p.ok = case r.type of
-             int() -> r.ok
-           | arrow(t1, t2) -> false
-           | type_err() -> false
-        end ;
  p.errors = case r.type of
                  int() -> r.errors
                | _ -> "Final Type:" ++ printType(r.type) ++ "\n" ++ r.errors
@@ -33,7 +34,6 @@ p::Root ::= r::Expr
 
 
 -- Expr
-nonterminal Expr with pp, ok, type, envi, errors ;
 abstract production expr_let
 e::Expr ::= id::String t::Type e1::Expr e2::Expr
 {
@@ -41,11 +41,6 @@ e::Expr ::= id::String t::Type e1::Expr e2::Expr
  synErrors = t.errors ++ e1.errors ++ e2.errors ;
 
  e.pp = concat([text("let "), text(id), text(":"), t.pp, text("="), e1.pp, text(" in "), e2.pp]);
-
- e.ok = t.ok
-        && e1.ok
-        && e2.ok 
-        && eqType(e1.type, t) ;
  e.errors = if !eqType(e1.type, t)
             then "Declaration type and definition are mismatched\n" 
               ++ "\tDecl:" ++ printType(t) ++ "\n"
@@ -65,9 +60,6 @@ e::Expr ::= id::String tl::Type e1::Expr
  synErrors = tl.errors ++ e1.errors;
 
  e.pp = concat([text("lambda "), text(id), text(":"), tl.pp, text("."), e1.pp]);
- e.ok = tl.ok
-        && e1.ok ;
-
  e.errors = case tl of
               type_err() -> id ++ " is type_err\n"
             | _ -> ""
@@ -85,7 +77,6 @@ abstract production expr_expr_f
 r::Expr ::= uf::Expr_funct
 {
  r.pp = uf.pp ;
- r.ok = uf.ok ;
  r.type = uf.type ;
  r.errors = uf.errors ;
 
@@ -94,7 +85,6 @@ r::Expr ::= uf::Expr_funct
 
 
 -- Expr_funct
-nonterminal Expr_funct with pp, ok, type, envi, errors ;
 abstract production expr_funct
 mp::Expr_funct ::= mp1::Expr_funct e::Expr_arith
 {
@@ -102,10 +92,6 @@ mp::Expr_funct ::= mp1::Expr_funct e::Expr_arith
  synErrors = mp1.errors ++ e.errors ;
 
  mp.pp = concat([mp1.pp, space(), e.pp]) ;
- mp.ok = case mp1.type of
-           arrow(ta, tb) -> eqType(ta, e.type)
-         | int() -> eqType(int(), e.type)
-         end ;
  mp.type = case mp1.type of
              arrow(ta, tb) -> tb
            | int() -> type_err()
@@ -133,7 +119,6 @@ abstract production methodpassing_ex
 mp::Expr_funct ::= e::Expr_arith
 {
  mp.pp = e.pp ;
- mp.ok = e.ok ;
  mp.type = e.type ;
  mp.errors = e.errors ;
  
@@ -142,7 +127,6 @@ mp::Expr_funct ::= e::Expr_arith
 
 
 -- Expr_arith
-nonterminal Expr_arith with pp, ok, type, envi, errors ;
 abstract production expr_add
 e::Expr_arith ::= e1::Expr_arith t::Term
 {
@@ -150,9 +134,6 @@ e::Expr_arith ::= e1::Expr_arith t::Term
  synErrors = e1.errors ++ t.errors ;
 
  e.pp = concat([e1.pp, text("+"), t.pp]) ;
- e.ok = e1.ok 
-        && t.ok 
-        && (eqType(e1.type, int()) && eqType(t.type, int())) ;
  e.type = int() ;
  e.errors = if !eqType(e1.type, int())
             then "Invalid argument for binary operator:\n"
@@ -182,7 +163,6 @@ abstract production expr_term
 e::Expr_arith ::= t::Term
 {
  e.pp = t.pp ;
- e.ok = t.ok ;
  e.type = t.type ;
  e.errors = t.errors ;
 
@@ -191,7 +171,6 @@ e::Expr_arith ::= t::Term
 
 
 -- Term
-nonterminal Term with pp, ok, type, envi, errors ;
 abstract production term_mul
 t::Term ::= t1::Term f::Factor
 {
@@ -199,10 +178,6 @@ t::Term ::= t1::Term f::Factor
  synErrors = t1.errors ++ f.errors ;
 
  t.pp = concat([t1.pp, text("*"), f.pp]) ;
- t.ok = t1.ok 
-        && f.ok 
-        && eqType(t1.type, int()) 
-        && eqType(f.type, int()) ;
  t.type = int() ;
  t.errors = if !eqType(t1.type, int())
             then "Incompatible parameter for binary operator\n"
@@ -232,7 +207,6 @@ abstract production term_factor
 t::Term ::= f::Factor
 {
  t.pp = f.pp ;
- t.ok = f.ok ;
  t.type = f.type ;
  t.errors = f.errors ;
 
@@ -241,15 +215,12 @@ t::Term ::= f::Factor
 
 
 -- Factor
-nonterminal Factor with pp, ok, type, envi, errors ;
 abstract production factor_id
 f::Factor ::= id::String
 {
  f.pp = text(id) ;
- f.ok = isin(id, f.envi) ;
- f.type = if f.ok
-          then getType(id, f.envi)
-          else type_err() ;
+ f.type = getType(id, f.envi) ;
+
  f.errors = if !isin(id, f.envi)
             then "Unknown identifier: " ++ id ++ "\n"
             else "" ;
@@ -259,7 +230,6 @@ abstract production factor_int
 f::Factor ::= num::String
 {
  f.pp = text(num) ;
- f.ok = isDigit(num) ;
  f.type = int();
  f.errors = if !isDigit(num)
             then "Not an integer: " ++ num ++ "\n"
@@ -270,7 +240,6 @@ abstract production factor_parens
 f::Factor ::= r::Expr
 {
  f.pp = parens(r.pp) ;
- f.ok = r.ok ;
  f.type = r.type ;
  f.errors = r.errors ;
  
@@ -279,12 +248,10 @@ f::Factor ::= r::Expr
 
 
 -- Type
-nonterminal Type with pp, ok, errors ;
 abstract production arrow
 t::Type ::= t1::Type t2::Type
 {
  t.pp = concat([parens(t1.pp), text("->"), parens(t2.pp)]) ;
- t.ok = t1.ok && t2.ok ;
  t.errors = t1.errors ++ t2.errors ;
 }
 
@@ -292,7 +259,6 @@ abstract production int
 t::Type ::=
 {
  t.pp = text("int") ;
- t.ok = true ;
  t.errors = "" ;
 }
 
@@ -300,12 +266,11 @@ abstract production type_err
 t::Type ::=
 {
  t.pp = text("TYPE ERROR") ;
- t.ok = false ;
  t.errors = "TYPE ERROR" ;
 }
 
 
--- SymbolTable functions --
+-- Binding functions --
 function isin
 Boolean ::= s::String symboltable::[Pair<String Type>]
 {
