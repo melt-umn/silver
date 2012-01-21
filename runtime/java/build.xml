@@ -6,6 +6,7 @@
   <property name='src' location='./src'/>
   <property name='bin' location='../../generated/bin'/>
   <property name='dist' location='.'/>
+  <property name='version' value='0.0.1'/><!--dummy value for OSGi-->
 
   <path id='compile.classpath'>
     <fileset dir='../../jars' includes='CopperRuntime.jar CopperCompiler.jar' />
@@ -36,9 +37,14 @@
     <jar destfile='${dist}/SilverRuntime.jar' basedir='${bin}' compress='true' level='9'>
       <include name='common/**/*.class' />
       <manifest>
-        <attribute name='Built-By' value='${user.name}' />
+        <attribute name='Built-By' value='${user.name}'/>
+        <attribute name='Bundle-Name' value='Silver Runtime support'/>
+        <attribute name='Bundle-Vendor' value='melt.cs.umn.edu'/>
+        <attribute name='Bundle-Version' value='${version}'/>
+        <attribute name='Bundle-SymbolicName' value='common'/>
+        <attribute name='Export-Package' value='common;version="${version}", common.exceptions;version="${version}", common.javainterop;version="${version}", common.rawlib;version="${version}"'/>
         <section name='version'>
-          <attribute name='Build' value='${TIMESTAMP}' />
+          <attribute name='Build' value='${TIMESTAMP}'/>
         </section>
       </manifest>
     </jar>
