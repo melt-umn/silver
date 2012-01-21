@@ -1,6 +1,6 @@
 grammar lambda ;
 
-{- Borrowed from silver's implementation of simple -}
+{- Borrowed from Silver's implementation of Simple -}
 
 {- Export the four grammars that make up the 'host' language.  This
    allows extension to see the host langauge as one grammar and not
@@ -15,8 +15,10 @@ This parse and version of main are exported, but this causes no
 problems in the compsed languages.
 -}
 
---import lambda only Root_c, Driver;
-
+{- Here, we could include additional modules to be parsed. Only "lambda"
+ - is shown because all the necessary .sv files are located within the
+ - same directory.
+ -}
 parser hostParse :: Root_c {
   lambda;
 } 
