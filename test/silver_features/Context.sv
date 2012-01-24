@@ -70,3 +70,9 @@ wrongCode "should be a 'function' aspect instead" {
   }
 }
 
+wrongCode "Undeclared value" {
+  aspect production doesNotExistAtAll -- does not crash the compiler
+  t::Context ::=
+  {
+  }
+}
