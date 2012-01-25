@@ -76,3 +76,11 @@ wrongCode "Undeclared value" {
   {
   }
 }
+
+wrongCode "Undeclared value" {
+  aspect function doesNotExistAtAll -- does not crash the compiler
+  Context ::=
+  {
+  }
+}
+
