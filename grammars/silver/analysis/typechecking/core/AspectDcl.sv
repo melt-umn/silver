@@ -55,9 +55,10 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
                                 ++ errCheck1.leftpp ++ "\nActual: "
                                 ++ errCheck1.rightpp)]
         else
-        case id.lookupValue.dcl of
-          funDcl (_, _, _) -> [ ]
-        | prodDcl  (_, _, _) -> [err(top.location, "Function aspect for '" ++ id.name ++ "' should be a 'production' aspect instead.") ]
+        -- must be on dcls because lookup may have failed.
+        case id.lookupValue.dcls of
+        | funDcl (_, _, _) :: _ -> [ ]
+        | prodDcl  (_, _, _) :: _ -> [err(top.location, "Function aspect for '" ++ id.name ++ "' should be a 'production' aspect instead.") ]
         | _ -> [ ] 
         end ;
 
