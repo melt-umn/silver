@@ -781,3 +781,80 @@ function getErrorsExprs
   return if null(es) then [] else [head(es).errors] ++ getErrorsExprs(tail(es));
 }
 
+
+{--
+ - Exprs with optional underscores omitting parameters. Used exclusively for
+ - (partial) function application.
+ -}
+nonterminal AppExprs with rawExprs, isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTypereps, env, errors, location, file;
+
+nonterminal AppExpr with rawExprs, isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, location, file;
+
+synthesized attribute isPartial :: Boolean;
+synthesized attribute missingTypereps :: [TypeExp];
+synthesized attribute appExprIndicies :: [Integer];
+inherited attribute appExprIndex :: Integer;
+inherited attribute appExprTypereps :: [TypeExp];
+inherited attribute appExprTyperep :: TypeExp;
+
+concrete production appExprMissing
+top::AppExpr ::= '_'
+{
+  top.location = loc(top.file, $1.line, $1.column);
+  
+  top.isPartial = true;
+  top.missingTypereps = [top.appExprTyperep];
+  
+  top.rawExprs = [];
+  top.appExprIndicies = [];
+}
+
+concrete production appExprPresent
+top::AppExpr ::= e::Expr
+{
+  top.location = e.location;
+  
+  top.isPartial = false;
+  top.missingTypereps = [];
+  
+  top.rawExprs = [e];
+  top.appExprIndicies = [top.appExprIndex];
+}
+
+concrete production appExprCons
+top::AppExprs ::= e::AppExpr ',' es::AppExprs
+{
+  top.location = e.location;
+  top.rawExprs = e.rawExprs ++ es.rawExprs;
+  top.isPartial = e.isPartial || es.isPartial;
+  top.missingTypereps = e.missingTypereps ++ es.missingTypereps;
+  top.appExprIndicies = e.appExprIndicies ++ es.appExprIndicies;
+  top.errors := es.errors;
+  e.appExprIndex = top.appExprIndex;
+  e.appExprTyperep = if null(top.appExprTypereps)
+                     then errorType()
+                     else head(top.appExprTypereps);
+  es.appExprIndex = top.appExprIndex + 1;
+  es.appExprTypereps = if null(top.appExprTypereps) then [] else tail(top.appExprTypereps);
+}
+
+concrete production appExprSingle
+top::AppExprs ::= e::AppExpr
+{
+  top.location = e.location;
+  top.rawExprs = e.rawExprs;
+  top.isPartial = e.isPartial;
+  top.missingTypereps = e.missingTypereps;
+  top.appExprIndicies = e.appExprIndicies;
+  top.errors := if null(top.appExprTypereps)
+                then [err(top.location, "Insufficient parameters provided to ???")] -- TODO ???
+                else [];
+  top.errors <- if length(top.appExprTypereps) > 1
+                then [err(top.location, "Too many parameters provided to ???")] -- TODO ???
+                else [];
+  e.appExprIndex = top.appExprIndex;
+  e.appExprTyperep = if null(top.appExprTypereps)
+                     then errorType()
+                     else head(top.appExprTypereps);
+}
+
