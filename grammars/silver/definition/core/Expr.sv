@@ -188,18 +188,6 @@ top::Expr ::= e::Expr '(' ')'
   forwards to productionApp(e, $2, exprsEmpty(), $3);
 }
 
-abstract production productionApplicationDispatcher
-top::Expr ::= e::Decorated Expr es::Exprs
-{
-  top.pp = e.pp ++ "(" ++ es.pp ++ ")";
-  top.location = e.location;
-  top.errors := e.errors ++ es.errors; 
-
-  top.typerep = performSubstitution(e.typerep, e.upSubst).outputType;
-  
-  forwards to defaultExpr();
-}
-
 abstract production functionApplicationDispatcher
 top::Expr ::= e::Decorated Expr es::Exprs
 {
