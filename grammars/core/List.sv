@@ -363,7 +363,7 @@ Integer ::= l::[a]
 {
   return l.i_lengthList;
 } foreign {
-  "java" : return "new Integer(%l%.length())";
+  "java" : return "Integer.valueOf(%l%.length())";
 }
 
 function head
