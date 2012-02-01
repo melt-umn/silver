@@ -83,7 +83,7 @@ Integer ::= needle::String haystack::String
 {
   return error("Not Yet Implemented: indexOf");
 } foreign {
-  "java" : return "(new Integer((%haystack%.toString().indexOf(%needle%.toString()))))";
+  "java" : return "Integer.valueOf(%haystack%.toString().indexOf(%needle%.toString()))";
 }
 
 {--
@@ -98,7 +98,7 @@ Integer ::= needle::String haystack::String
 {
   return error("Not Yet Implemented: lastIndexOf");
 } foreign {
-  "java" : return "(new Integer((%haystack%.toString().lastIndexOf(%needle%.toString()))))";
+  "java" : return "Integer.valueOf(%haystack%.toString().lastIndexOf(%needle%.toString()))";
 }
 
 {--
@@ -129,7 +129,7 @@ Boolean ::= pre::String s::String
 {
   return error("Not Yet Implemented: startsWith");
 } foreign {
-  "java" : return "(new Boolean(%s%.toString().startsWith(%pre%.toString())))";
+  "java" : return "Boolean.valueOf(%s%.toString().startsWith(%pre%.toString()))";
 }
 
 {--
@@ -144,7 +144,7 @@ Boolean ::= post::String s::String
 {
   return error("Not Yet Implemented: endsWith");
 } foreign {
-  "java" : return "(new Boolean(%s%.toString().endsWith(%post%.toString())))";
+  "java" : return "Boolean.valueOf(%s%.toString().endsWith(%post%.toString()))";
 }
 
 {--
