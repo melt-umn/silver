@@ -75,20 +75,19 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 concrete production assignExpr
 top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
 {
-  production attribute fName :: String;
-  fName = top.signature.fullName ++ ":local:" ++ id.name;
-
   top.pp = id.name ++ " :: " ++ t.pp ++ " = " ++ e.pp;
   
   -- Using finalTy here, so our defs requires we have downSubst...
   -- The reason we're putting the type in the environment AFTER inference is so that
   -- wonky things don't happen with the auto-dedecorate behavior in lexicalLocalReference
-  top.defs = addLexicalLocalDcl(top.grammarName, id.location, fName, finalTy, emptyDefs());
+  top.defs = addLexicalLocalDcl(top.grammarName, id.location, id.name, finalTy, emptyDefs());
   
   top.errors := t.errors ++ e.errors;
   
-  top.errors <- if length(getValueDclInScope(fName, top.env)) > 1
-                then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
+  -- TODO: At present, this isn't working properly, because the local scope is
+  -- whatever scope encloses the real local scope... hrmm!
+  top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
+                then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
                 else [];
 
   production attribute finalTy :: TypeExp;

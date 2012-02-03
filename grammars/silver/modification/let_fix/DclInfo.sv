@@ -1,7 +1,7 @@
 grammar silver:modification:let_fix;
 
 abstract production lexicalLocalDcl
-top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
