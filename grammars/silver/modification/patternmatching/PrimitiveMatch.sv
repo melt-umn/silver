@@ -336,8 +336,7 @@ top::PrimPattern ::= e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
-  --errCheck1 = check(listTypeExp(errorType()), top.scrutineeType);
-  errCheck1 = check(listTypeExp(freshType()), top.scrutineeType); -- #HACK2012 Issue 4
+  errCheck1 = check(listTypeExp(freshType()), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, "nil() constructs type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -366,8 +365,7 @@ top::PrimPattern ::= h::String t::String e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   local attribute elemType :: TypeExp;
-  --elemType = errorType();
-  elemType = freshType(); -- #HACK2012 Issue 4
+  elemType = freshType();
   
   errCheck1 = check(listTypeExp(elemType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
@@ -384,17 +382,15 @@ top::PrimPattern ::= h::String t::String e::Expr
   errCheck2.downSubst = e.upSubst;
   top.upSubst = errCheck2.upSubst;
   
-  local attribute hFName :: String; hFName = top.signature.fullName ++ ":local:" ++ h;
-  local attribute tFName :: String; tFName = top.signature.fullName ++ ":local:" ++ t;
-  local attribute consdefs :: Defs; -- TODO: eliminate :local: garbage later.
-  consdefs = addLexicalLocalDcl(top.grammarName, top.location, hFName, elemType, 
-             addLexicalLocalDcl(top.grammarName, top.location, tFName, top.scrutineeType, emptyDefs()));
+  local attribute consdefs :: Defs;
+  consdefs = addLexicalLocalDcl(top.grammarName, top.location, h, elemType, 
+             addLexicalLocalDcl(top.grammarName, top.location, t, top.scrutineeType, emptyDefs()));
   
   e.env = newScopeEnv(consdefs, top.env);
   
   top.translation = "if(!scrutineeIter.nil()) {" ++
-  makeSpecialLocalBinding(hFName, "scrutinee.head()", performSubstitution(elemType, top.finalSubst).transType) ++
-  makeSpecialLocalBinding(tFName, "scrutinee.tail()", performSubstitution(top.scrutineeType, top.finalSubst).transType) ++
+  makeSpecialLocalBinding(h, "scrutinee.head()", performSubstitution(elemType, top.finalSubst).transType) ++
+  makeSpecialLocalBinding(t, "scrutinee.tail()", performSubstitution(top.scrutineeType, top.finalSubst).transType) ++
   "return " ++ e.translation ++ "; }";
 }
 --------------------------------------------------------------------------------
@@ -461,9 +457,6 @@ top::VarBinder ::= n::Name
   top.pp = n.pp;
   top.location = n.location;
   
-  production attribute fName :: String;
-  fName = top.signature.fullName ++ ":local:" ++ n.name; -- TODO: eliminate this :local: garbage later
-
   -- bindingType comes straight from the type in the production signature, so this logic
   -- should be 100% cool because only statically known nonterminal types are ones that
   -- become decorated.  So it's impossible for inference to affect this logic:
@@ -472,9 +465,9 @@ top::VarBinder ::= n::Name
        then decoratedTypeExp(top.bindingType)
        else top.bindingType;
 
-  top.defs = addLexicalLocalDcl(top.grammarName, n.location, fName, ty, emptyDefs());
+  top.defs = addLexicalLocalDcl(top.grammarName, n.location, n.name, ty, emptyDefs());
 
-  top.let_translation = makeSpecialLocalBinding(fName, 
+  top.let_translation = makeSpecialLocalBinding(n.name, 
              "(" ++ ty.transType ++ ")scrutinee." ++ 
                 (if top.bindingType.isDecorable
                  then "childDecorated("

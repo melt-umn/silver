@@ -12,7 +12,7 @@ nonterminal QNameUpper with name, location, grammarName, file, env, pp;
 synthesized attribute dcls :: [Decorated DclInfo];
 
 function qName
-QName ::= l:: Location s::String
+QName ::= l::Location s::String
 {
   return qNameId(nameIdLower(terminal(IdLower_t, s, l.line, l.column)));
 }

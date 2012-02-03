@@ -53,4 +53,6 @@ wrongCode "does not have the right signature." { -- TODO: this error message sho
   }
 }
 
+-- 'Let's function in a global. Used to rely on signatures...
+global letTest :: Integer = let x :: Integer = 5 in x end;
 

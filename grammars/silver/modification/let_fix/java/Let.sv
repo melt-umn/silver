@@ -42,7 +42,7 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
 {
-  top.let_translation = "final common.Thunk<" ++ finalTy.transType ++ "> " ++ makeLocalValueName(fName) ++ " = " ++ "new common.Thunk<" ++ finalTy.transType ++ ">(" ++ wrapThunkText("context", e.translation) ++ ");\n";
+  top.let_translation = "final common.Thunk<" ++ finalTy.transType ++ "> " ++ makeLocalValueName(id.name) ++ " = " ++ "new common.Thunk<" ++ finalTy.transType ++ ">(" ++ wrapThunkText("context", e.translation) ++ ");\n";
 }
 
 aspect production lexicalLocalReference

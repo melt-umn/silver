@@ -182,6 +182,9 @@ wrongCode "More patterns than expected" {
 }
 -}
 
+-- Silver used to crash because pattern used to rely on signature.
+global signatureTest :: Integer = case just(1) of just(x) -> x end;
+
 -- That toString works on a pattern expression (type information is available)
 function sssss String ::= { return toString(case just(1) of just(x) -> x end); } -- TODO: LOL LOL also patterm matching problem without signatures FIX LOL
 --global ssss :: String = toString(case just(1) of just(x) -> x end); -- TODO: pretty printing problem with pattern matching. fix!
