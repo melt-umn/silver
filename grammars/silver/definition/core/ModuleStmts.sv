@@ -100,7 +100,7 @@ top::ImportStmt ::= 'import' m::ModuleExpr ';'
   top.defs = m.defs;
 }
 
-abstract production importStmtsNone 
+concrete production nilImportStmts
 top::ImportStmts ::=
 {
   top.pp = "";
@@ -112,19 +112,7 @@ top::ImportStmts ::=
   top.defs = emptyDefs();
 }
 
-concrete production importStmtsOne 
-top::ImportStmts ::= im::ImportStmt
-{
-  top.pp = im.pp;
-  top.location = im.location;
-
-  top.errors := im.errors;
-
-  top.moduleNames = im.moduleNames;
-  top.defs = im.defs;
-}
-
-concrete production importStmtsCons
+concrete production consImportStmts
 top::ImportStmts ::= h::ImportStmt t::ImportStmts
 {
   top.pp = h.pp ++ "\n" ++ t.pp;
@@ -136,7 +124,7 @@ top::ImportStmts ::= h::ImportStmt t::ImportStmts
   top.defs = appendDefs(h.defs, t.defs);
 }
 
-abstract production importStmtsAppend
+abstract production appendImportStmts
 top::ImportStmts ::= h::ImportStmts t::ImportStmts
 {
   top.pp = h.pp ++ "\n" ++ t.pp;
@@ -151,7 +139,7 @@ top::ImportStmts ::= h::ImportStmts t::ImportStmts
 --------------
 -- ModuleStmts
 
-abstract production moduleStmtsNone 
+concrete production nilModuleStmts 
 top::ModuleStmts ::=
 {
   top.pp = "";
@@ -165,21 +153,7 @@ top::ModuleStmts ::=
   top.condBuild = [];
 }
 
-concrete production moduleStmtsOne 
-top::ModuleStmts ::= m::ModuleStmt
-{
-  top.pp = m.pp;
-  top.location = m.location;
-
-  top.errors := m.errors;
-
-  top.moduleNames = m.moduleNames;
-  top.defs = m.defs;
-  top.exportedGrammars = m.exportedGrammars;
-  top.condBuild = m.condBuild;
-}
-
-concrete production moduleStmtsCons
+concrete production consModulesStmts
 top::ModuleStmts ::= h::ModuleStmt t::ModuleStmts
 {
   top.pp = h.pp ++ "\n" ++ t.pp;
@@ -194,7 +168,8 @@ top::ModuleStmts ::= h::ModuleStmt t::ModuleStmts
 }
 
 concrete production importsStmt
-top::ModuleStmt ::= 'imports' m::ModuleExpr ';'{
+top::ModuleStmt ::= 'imports' m::ModuleExpr ';'
+{
   top.pp = "imports " ++ m.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
@@ -207,7 +182,8 @@ top::ModuleStmt ::= 'imports' m::ModuleExpr ';'{
 }
 
 concrete production exportsStmt
-top::ModuleStmt ::= 'exports' m::ModuleName ';'{
+top::ModuleStmt ::= 'exports' m::ModuleName ';'
+{
   top.pp = "exports " ++ m.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
@@ -220,7 +196,8 @@ top::ModuleStmt ::= 'exports' m::ModuleName ';'{
 }
 
 concrete production buildsStmt
-top::ModuleStmt ::= 'build' m::QName 'with' c::QName ';'{
+top::ModuleStmt ::= 'build' m::QName 'with' c::QName ';'
+{
   top.pp = "build " ++ m.pp ++ " with " ++ c.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
