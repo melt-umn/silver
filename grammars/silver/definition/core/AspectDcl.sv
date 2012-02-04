@@ -12,7 +12,7 @@ nonterminal AspectRHSElem with grammarName, file, env, location, pp, errors, def
 {--
  - The signature elements from the fun/produciton being aspected.
  -}
-autocopy attribute realSignature :: [Decorated NamedSignatureElement];
+autocopy attribute realSignature :: [NamedSignatureElement];
 
 
 concrete production aspectProductionDcl
@@ -24,17 +24,17 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   top.defs = if isEmptyOfValues(body.productionAttributes)
              then emptyDefs()
              else addPaDcl(top.grammarName, id.location, id.lookupValue.fullName,
-                       namedSig.outputElement.typerep, getTypesSignature(namedSig.inputElements),
+                       namedSig.outputElement.typerep, namedSig.inputTypes,
                        body.productionAttributes,
                         emptyDefs());
 
-  production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(id.lookupValue.fullName, ns.inputElements, ns.outputElement);
+  production attribute namedSig :: NamedSignature;
+  namedSig = namedSignature(id.lookupValue.fullName, ns.inputElements, ns.outputElement);
 
-  production attribute realSig :: Decorated NamedSignature;
+  production attribute realSig :: NamedSignature;
   realSig = if null(id.lookupValue.errors)
             then id.lookupValue.dcl.namedSignature
-            else decorate namedSignatureDefault() with {};
+            else bogusNamedSignature();
 
   -- Making sure we're aspecting a production is taken care of by type checking.
 
@@ -66,17 +66,17 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   top.location = loc(top.file, $1.line, $1.column);
 
   top.defs = addPaDcl(top.grammarName, id.location, id.lookupValue.fullName,
-                       namedSig.outputElement.typerep, getTypesSignature(namedSig.inputElements),
+                       namedSig.outputElement.typerep, namedSig.inputTypes,
                        body.productionAttributes,
                emptyDefs());
 
-  production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(id.lookupValue.fullName, ns.inputElements, ns.outputElement);
+  production attribute namedSig :: NamedSignature;
+  namedSig = namedSignature(id.lookupValue.fullName, ns.inputElements, ns.outputElement);
 
-  production attribute realSig :: Decorated NamedSignature;
+  production attribute realSig :: NamedSignature;
   realSig = if null(id.lookupValue.errors)
             then id.lookupValue.dcl.namedSignature
-            else decorate namedSignatureDefault() with {};
+            else bogusNamedSignature();
 
   -- Making sure we're aspecting a function is taken care of by type checking.
 

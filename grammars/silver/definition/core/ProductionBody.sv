@@ -19,6 +19,8 @@ nonterminal ForwardLHSExpr with grammarName, file, env, location, pp, errors, si
  - forwarded to by a dispatcher using something in the environment
  - provided by the production. Concretely: child reference dcls are only
  - available when a production added them to the env for its children.)
+ - It's decorated because why not? We're always looking at a physical signature
+ - anyway, so let's just reuse it, to avoid any recomputation.
  -}
 autocopy attribute signature :: Decorated NamedSignature;
 

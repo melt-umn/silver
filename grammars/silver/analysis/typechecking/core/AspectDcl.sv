@@ -5,15 +5,9 @@ attribute upSubst, downSubst, finalSubst occurs on AspectProductionSignature, As
 aspect production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 {
-  local attribute realType :: TypeExp;
-  realType = id.lookupValue.typerep;
-  
-  local attribute aspectType :: TypeExp;
-  aspectType = functionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements));
-
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = body.finalSubst;
 
-  errCheck1 = check(realType, aspectType);
+  errCheck1 = check(id.lookupValue.typerep, namedSig.typerep);
   top.errors <-
         if errCheck1.typeerror
         then [err(top.location, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "
@@ -40,15 +34,9 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 aspect production aspectFunctionDcl
 top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody 
 {
-  local attribute realType :: TypeExp;
-  realType = id.lookupValue.typerep;
-  
-  local attribute aspectType :: TypeExp;
-  aspectType = functionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements));
-
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = body.finalSubst;
 
-  errCheck1 = check(realType, aspectType);
+  errCheck1 = check(id.lookupValue.typerep, namedSig.typerep);
   top.errors <-
         if errCheck1.typeerror
         then [err(top.location, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "

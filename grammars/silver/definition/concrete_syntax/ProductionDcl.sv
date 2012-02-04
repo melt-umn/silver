@@ -9,8 +9,9 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
+  production attribute namedSig :: NamedSignature;
+  namedSig = namedSignature(fName, ns.inputElements, ns.outputElement);
+  
   ns.env = newScopeEnv(ns.defs, top.env);
 
   top.errors <- pm.errors;
@@ -18,7 +19,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
   -- TODO: we should get the ruleSpec off ns as an attribute, rather than computing it with getTypeNames etc
   top.syntaxAst = [
-    syntaxProduction(fName, ns.outputElement.typerep, getTypesSignature(ns.inputElements),
+    syntaxProduction(fName, namedSig.outputElement.typerep, namedSig.inputTypes,
       foldr_p(consProductionMod, nilProductionMod(), pm.productionModifiers))];
   
   forwards to productionDcl(terminal(Abstract_kwd, "abstract", $1.line, $1.column), $2, id, ns, body);

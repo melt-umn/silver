@@ -12,7 +12,7 @@ synthesized attribute typerep :: TypeExp;
 synthesized attribute dclBoundVars :: [TyVar];
 
 
-synthesized attribute namedSignature :: Decorated NamedSignature;
+synthesized attribute namedSignature :: NamedSignature;
 
 {-
 -- values
@@ -30,7 +30,7 @@ synthesized attribute attrOccurring :: String;
 inherited attribute givenNonterminalType :: TypeExp;
 
 -- production attribute
-inherited attribute givenSignatureForDefs :: Decorated NamedSignature;
+inherited attribute givenSignatureForDefs :: NamedSignature;
 synthesized attribute prodDefs :: Defs;
 -- production attribute substitutions
 synthesized attribute substitutedDclInfo :: DclInfo;
@@ -85,7 +85,7 @@ top::DclInfo ::=
   -- this exists because extensions/modifications MUST not add any more musts.
   -- And then you need defaulting.  See collection attributes for an example.
   
-  top.namedSignature = decorate namedSignatureDefault() with {};
+  top.namedSignature = bogusNamedSignature();
 }
 
 -- -- non-interface values
@@ -132,7 +132,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 
 -- -- interface values
 abstract production prodDcl
-top::DclInfo ::= sg::String sl::Location ns::Decorated NamedSignature
+top::DclInfo ::= sg::String sl::Location ns::NamedSignature
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -141,18 +141,16 @@ top::DclInfo ::= sg::String sl::Location ns::Decorated NamedSignature
   local attribute boundvars :: [TyVar];
   boundvars = top.typerep.freeVariables;
   
-  local attribute upns :: NamedSignature;
-  upns = new(ns);
-  upns.boundVariables = top.boundVariables ++ boundvars;
+  ns.boundVariables = top.boundVariables ++ boundvars;
   
-  top.unparse = "prod(" ++ sl.unparse ++ ", " ++ unparseTyVars(boundvars, upns.boundVariables) ++ ", " ++ upns.unparse ++ ")";
+  top.unparse = "prod(" ++ sl.unparse ++ ", " ++ unparseTyVars(boundvars, ns.boundVariables) ++ ", " ++ ns.unparse ++ ")";
 
   top.namedSignature = ns;  
-  top.typerep = functionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements));
+  top.typerep = ns.typerep;
   forwards to defaultDcl();
 }
 abstract production funDcl
-top::DclInfo ::= sg::String sl::Location ns::Decorated NamedSignature
+top::DclInfo ::= sg::String sl::Location ns::NamedSignature
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -161,14 +159,12 @@ top::DclInfo ::= sg::String sl::Location ns::Decorated NamedSignature
   local attribute boundvars :: [TyVar];
   boundvars = top.typerep.freeVariables;
   
-  local attribute upns :: NamedSignature;
-  upns = new(ns);
-  upns.boundVariables = top.boundVariables ++ boundvars;
+  ns.boundVariables = top.boundVariables ++ boundvars;
   
-  top.unparse = "fun(" ++ sl.unparse ++ ", " ++ unparseTyVars(boundvars, upns.boundVariables) ++ ", " ++ upns.unparse ++ ")";
+  top.unparse = "fun(" ++ sl.unparse ++ ", " ++ unparseTyVars(boundvars, ns.boundVariables) ++ ", " ++ ns.unparse ++ ")";
 
   top.namedSignature = ns;  
-  top.typerep = functionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements));
+  top.typerep = ns.typerep;
   forwards to defaultDcl();
 }
 abstract production globalValueDcl
@@ -345,11 +341,11 @@ Decorated DclInfo ::= d::Decorated DclInfo s::Substitution
 }
 
 function defsFromPADcls
-Defs ::= d::[Decorated DclInfo] s::Decorated NamedSignature
+Defs ::= d::[Decorated DclInfo] s::NamedSignature
 {
   -- We want to rewrite FROM the sig these PAs were declared with, TO the given sig
   local attribute subst :: Substitution;
-  subst = unifyDirectional( head(d).typerep, functionTypeExp(s.outputElement.typerep, getTypesSignature(s.inputElements)));
+  subst = unifyDirectional( head(d).typerep, s.typerep);
   
   
   return if null(d) then emptyDefs()

@@ -9,7 +9,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   fName = top.grammarName ++ ":" ++ id.name;
 
   top.syntaxAst = [
-    syntaxProduction(fName, ns.outputElement.typerep, getTypesSignature(ns.inputElements),
+    syntaxProduction(fName, namedSig.outputElement.typerep, namedSig.inputTypes,
       foldr_p(consProductionMod, nilProductionMod(), 
         prodAction(acode.actionCode) :: pm.productionModifiers))];
 
@@ -21,8 +21,8 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
                 addTerminalAttrDefs(
                  appendDefs(acode.defs, ns.actionDefs)), top.env);
 
-  production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
+  production attribute namedSig :: NamedSignature;
+  namedSig = namedSignature(fName, ns.inputElements, ns.outputElement);
 
   acode.signature = namedSig;
 

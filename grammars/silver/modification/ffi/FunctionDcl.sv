@@ -4,8 +4,8 @@ nonterminal FFIDefs with location, grammarName, file, errors, signature, env, pp
 nonterminal FFIDef with location, grammarName, file, errors, signature, env, pp;
 terminal FFI_kwd 'foreign' lexer classes {KEYWORD};
 
--- This is an ugly pile of crap.  There should be a better way!
-synthesized attribute namedSigHack :: Decorated NamedSignature occurs on AGDcl;
+-- This is an ugly pile of crap.  There should be a better way! TODO
+synthesized attribute namedSigHack :: NamedSignature occurs on AGDcl;
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
@@ -18,7 +18,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   top.pp = "function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp ++ " foreign {\n" ++ ffidefs.pp ++ "}"; 
   top.location = loc(top.file, $1.line, $1.column);
 
-  production attribute namedSig :: Decorated NamedSignature;
+  production attribute namedSig :: NamedSignature;
   namedSig = forward.namedSigHack;
 
   production attribute fName :: String;

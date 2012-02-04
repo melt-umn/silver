@@ -18,7 +18,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
   top.errors := te.errors ++ acode.errors;
   top.warnings := acode.warnings;
   
-  acode.signature = namedNamedSignature(top.grammarName ++ ":" ++ a.name);
+  acode.signature = decorate namedNamedSignature(fName) with {};
   acode.blockContext = actionContext();
   acode.env = newScopeEnv(acode.defs, top.env);
   

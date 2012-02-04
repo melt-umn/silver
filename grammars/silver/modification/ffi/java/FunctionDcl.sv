@@ -28,22 +28,22 @@ top::FFIDef ::= name::String_t ':' 'return' code::String_t ';'
 }
 
 function strictChildAccessor
-String ::= ns::Decorated NamedSignatureElement
+String ::= ns::NamedSignatureElement
 {
   return "((" ++ ns.typerep.transType ++ ")(args[i_" ++ ns.elementName  ++ "] = common.Util.demand(args[i_" ++ ns.elementName  ++ "])))";
 }
 function lazyChildAccessor
-String ::= ns::Decorated NamedSignatureElement
+String ::= ns::NamedSignatureElement
 {
   return "args[i_" ++ ns.elementName  ++ "]";
 }
 
 function computeSigTranslation
-String ::= str::String sig::Decorated NamedSignature
+String ::= str::String sig::NamedSignature
 {
   return substituteAll(
-           substituteAll(str, map(wrapStrictNotation, getNamesSignature(sig.inputElements)), map(strictChildAccessor, sig.inputElements)),
-           map(wrapLazyNotation, getNamesSignature(sig.inputElements)),
+           substituteAll(str, map(wrapStrictNotation, sig.inputNames), map(strictChildAccessor, sig.inputElements)),
+           map(wrapLazyNotation, sig.inputNames),
            map(lazyChildAccessor, sig.inputElements));
 }
 

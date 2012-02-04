@@ -14,14 +14,14 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
+  production attribute namedSig :: NamedSignature;
+  namedSig = namedSignature(fName, ns.inputElements, ns.outputElement);
 
   top.defs = addProdDcl(top.grammarName, id.location, namedSig,
               if isEmptyOfValues(body.productionAttributes)
               then emptyDefs()
               else addPaDcl(top.grammarName, id.location, fName,
-                       namedSig.outputElement.typerep, getTypesSignature(namedSig.inputElements),
+                       namedSig.outputElement.typerep, namedSig.inputTypes,
                        body.productionAttributes,
                         emptyDefs()) );
 
