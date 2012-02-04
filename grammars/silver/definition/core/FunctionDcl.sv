@@ -1,5 +1,8 @@
 grammar silver:definition:core;
 
+nonterminal FunctionSignature with grammarName, file, env, location, pp, errors, defs, inputElements, outputElement;
+nonterminal FunctionLHS with grammarName, file, env, location, pp, errors, defs, outputElement;
+
 concrete production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 
 {

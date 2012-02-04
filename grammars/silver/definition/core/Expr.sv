@@ -3,6 +3,28 @@ grammar silver:definition:core;
 import silver:analysis:typechecking:core;
 import silver:analysis:typechecking;
 
+nonterminal Expr with grammarName, file, env, location, pp, errors, defs, signature, typerep;
+nonterminal Exprs with grammarName, file, env, location, pp, errors, defs, signature, exprs, rawExprs;
+
+nonterminal ExprInhs with grammarName, file, env, location, pp, errors, defs, signature, decoratingnt;
+nonterminal ExprInh with grammarName, file, env, location, pp, errors, defs, signature, decoratingnt;
+nonterminal ExprLHSExpr with grammarName, file, env, location, pp, errors, defs, typerep, decoratingnt;
+
+{--
+ - The nonterminal being decorated. (Used for 'decorate with {}')
+ -}
+autocopy attribute decoratingnt :: TypeExp;
+{--
+ - A list of decorated expressions from an Exprs.
+ -}
+synthesized attribute exprs :: [Decorated Expr];
+{--
+ - Get each individual Expr, without decorating them.
+ -}
+synthesized attribute rawExprs :: [Expr];
+
+
+
 abstract production defaultExpr
 top::Expr ::=
 {
@@ -718,11 +740,6 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
   forwards to defaultExpr();
 }
 
-
-{--
- - Get each individual Expr, without decorating them.
- -}
-synthesized attribute rawExprs :: [Expr] occurs on Exprs;
 
 abstract production exprsEmpty
 top::Exprs ::=

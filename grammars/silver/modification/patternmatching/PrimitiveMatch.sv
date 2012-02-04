@@ -39,7 +39,7 @@ top::Expr ::= 'match' e::Expr 'return' t::Type 'with' pr::PrimPatterns 'else' '-
   forwards to matchPrimitive(loc(top.file, $1.line, $1.column), e, t, pr, f);
 }
 abstract production matchPrimitive
-top::Expr ::= ll:: Location e::Expr t::Type pr::PrimPatterns f::Expr
+top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
 {
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
@@ -47,7 +47,7 @@ top::Expr ::= ll:: Location e::Expr t::Type pr::PrimPatterns f::Expr
   forwards to matchPrimitiveReal(ll, ensureDecoratedExpr(e), t, pr, f);
 }
 abstract production matchPrimitiveReal
-top::Expr ::= ll:: Location e::Expr t::Type pr::PrimPatterns f::Expr
+top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
 {
   top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
   top.location = ll;

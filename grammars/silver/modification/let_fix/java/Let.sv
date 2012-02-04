@@ -9,7 +9,7 @@ import silver:definition:type;
 import silver:definition:type:syntax;
 
 aspect production letp
-top::Expr ::= l:: Location  la::AssignExpr  e::Expr
+top::Expr ::= l::Location  la::AssignExpr  e::Expr
 {
   -- We need to create these nested locals, so we have no choice but to create a closure object so we can declare these things.
   local attribute closureExpr::String;

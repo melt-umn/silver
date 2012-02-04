@@ -1,10 +1,36 @@
 grammar silver:definition:core;
 
+nonterminal ProductionBody with grammarName, file, env, location, pp, errors, defs, productionAttributes, warnings, signature, uniqueSignificantExpression;
+
+nonterminal ProductionStmts with grammarName, file, env, location, pp, errors, defs, productionAttributes, warnings, signature, uniqueSignificantExpression;
+nonterminal ProductionStmt with grammarName, file, env, location, pp, errors, defs, productionAttributes, warnings, signature, uniqueSignificantExpression;
+
+nonterminal DefLHS with grammarName, file, env, location, pp, errors, signature, typerep;
+
+nonterminal ForwardInhs with grammarName, file, env, location, pp, errors, signature;
+nonterminal ForwardInh with grammarName, file, env, location, pp, errors, signature;
+nonterminal ForwardLHSExpr with grammarName, file, env, location, pp, errors, signature, typerep;
+
+{--
+ - The signature of this fun/production, given to the production's body.
+ - This is mostly for the use of ProductionStmts, almost exclusively.
+ - It DOES however, validly occur on Expr. But, on Expr, all uses should be
+ - guarded. (e.g. nearly all uses are in productions that can only be
+ - forwarded to by a dispatcher using something in the environment
+ - provided by the production. Concretely: child reference dcls are only
+ - available when a production added them to the env for its children.)
+ -}
+autocopy attribute signature :: Decorated NamedSignature;
+
+{--
+ - Defs of attributes that should be wrapped up as production attributes.
+ -}
+synthesized attribute productionAttributes :: Defs;
 {--
  - Either the 'forward' expression, or the 'return' expression.
  - I gave it an obtuse name so it could easily be renamed in the future.
  -}
-synthesized attribute uniqueSignificantExpression :: [Decorated Expr] occurs on ProductionBody, ProductionStmts, ProductionStmt;
+synthesized attribute uniqueSignificantExpression :: [Decorated Expr];
 
 concrete production emptyProductionBodySemi
 top::ProductionBody ::= ';'

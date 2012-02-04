@@ -1,5 +1,32 @@
 grammar silver:definition:core;
 
+{--
+ - Root represents one textual file of Silver source.
+ -}
+nonterminal Root with
+  grammarName, file, env, location, pp, errors, defs, 
+  declaredName, moduleNames, importedDefs, exportedGrammars, condBuild, warnings, compiledGrammars, globalImports;
+nonterminal GrammarDcl with 
+  grammarName, file, location, pp, errors, declaredName;
+
+{--
+ - Top-level declarations of a Silver grammar. The "meat" of a file.
+ -}
+nonterminal AGDcls with grammarName, file, env, location, pp, errors, defs, warnings, moduleNames, compiledGrammars;
+nonterminal AGDcl  with grammarName, file, env, location, pp, errors, defs, warnings, moduleNames, compiledGrammars;
+
+{--
+ - Grammar-wide imports definitions.  Exists because we need to place
+ - a file's individual imports between grammar definitions and grammar
+ - wide imports.
+ -}
+autocopy attribute globalImports :: Decorated Env;
+{--
+ - The definitions resulting from grammar-wide imports definitions.
+ -}
+synthesized attribute importedDefs :: Defs;
+
+
 concrete production root1
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 {
@@ -68,7 +95,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 
   top.defs = ags.defs;
 
-  top.importedDefs = ms.importedDefs;
+  top.importedDefs = ms.defs;
   top.exportedGrammars = ms.exportedGrammars;
   top.condBuild = ms.condBuild;
 
@@ -77,10 +104,10 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   
   -- We have an mismatch in how the environment gets put together:
   --  Outermost, we have grammar-wide imports in one sope.  That's top.globalImports here.
-  --  THEN, we have this particular file's list of local imports. That's allImports.importedDefs here.
+  --  THEN, we have this particular file's list of local imports. That's allImports.defs here.
   --  THEN, we have the grammar-wide definitions, from the whole grammr. That's top.env here.
   -- So we're kind of injecting local imports in between two grammar-wide things there.
-  ags.env = appendEnv(top.env, newScopeEnv(allImports.importedDefs, top.globalImports));
+  ags.env = appendEnv(top.env, newScopeEnv(allImports.defs, top.globalImports));
 }
 
 concrete production noGrammarDcl

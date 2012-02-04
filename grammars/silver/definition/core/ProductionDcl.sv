@@ -1,5 +1,10 @@
 grammar silver:definition:core;
 
+nonterminal ProductionSignature with grammarName, file, env, location, pp, errors, defs, inputElements, outputElement;
+nonterminal ProductionLHS with grammarName, file, env, location, pp, errors, defs, outputElement;
+nonterminal ProductionRHS with grammarName, file, env, location, pp, errors, defs, inputElements;
+nonterminal ProductionRHSElem with grammarName, file, env, location, pp, errors, defs, inputElements;
+
 concrete production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
