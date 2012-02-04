@@ -28,50 +28,43 @@ synthesized attribute names :: [String];
 synthesized attribute envMaps :: [Pair<String String>];
 
 
-nonterminal Module with compiledGrammars, defs, errors;
+nonterminal Module with defs, errors;
 
---grammar g as a only o hiding h with w;
---apply only
---apply hiding
---apply with
---apply as
 abstract production module 
-top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String] h::[String] w::[Pair<String String>]
+top::Module ::= compiledGrammars::[Decorated RootSpec]
+                gram::Decorated QName
+                asPrepend::String
+                onlyFilter::[String]
+                hidingFilter::[String]
+                withRenames::[Pair<String String>]
 {
   production attribute med :: ModuleExportedDefs;
-  med = moduleExportedDefs(c, [g.name], []);
-  med.importLocation = g.location;
+  med = moduleExportedDefs(gram.location, compiledGrammars, [gram.name], []);
   
-  local attribute d :: Defs;
-  d = med.defs;  
-
   local attribute d1 :: Defs;
-  d1 = if null(o) then d else filterDefsInclude(d, o); -- only
+  d1 = if null(onlyFilter) then med.defs else filterDefsInclude(med.defs, onlyFilter);
 
   local attribute d2 :: Defs;
-  d2 = if null(h) then d1 else filterDefsExclude(d1, h); -- hiding
+  d2 = if null(hidingFilter) then d1 else filterDefsExclude(d1, hidingFilter);
 
   local attribute d3 :: Defs;
-  d3 = if null(w) then d2 else mapRenameDefs(d2, w); -- with
+  d3 = if null(withRenames) then d2 else mapRenameDefs(d2, withRenames);
 
   local attribute d4 :: Defs;
-  d4 = if a == "" then d3 else mapPrependDefs(d3, a ++ ":"); -- as
+  d4 = if asPrepend == "" then d3 else mapPrependDefs(d3, asPrepend ++ ":");
 
   top.defs = d4;		  
   top.errors := med.errors;
 }
 
 -- recurses through exportedGrammars, grabbing all definitions
-nonterminal ModuleExportedDefs with defs, errors, importLocation;
-
-inherited attribute importLocation :: Location;
+nonterminal ModuleExportedDefs with defs, errors;
 
 abstract production moduleExportedDefs
-top::ModuleExportedDefs ::= compiled::[Decorated RootSpec] need::[String] seen::[String]
+top::ModuleExportedDefs ::= l::Location compiledGrammars::[Decorated RootSpec] need::[String] seen::[String]
 {
   production attribute recurse :: ModuleExportedDefs;
-  recurse = moduleExportedDefs(compiled, new_need, new_seen);
-  recurse.importLocation = top.importLocation;
+  recurse = moduleExportedDefs(l, compiledGrammars, new_need, new_seen);
   
   local attribute gram :: String;
   gram = head(need);
@@ -80,7 +73,7 @@ top::ModuleExportedDefs ::= compiled::[Decorated RootSpec] need::[String] seen::
   new_seen = cons(gram, seen);
   
   production attribute rs :: [Decorated RootSpec];
-  rs = getRootSpec(gram, compiled);
+  rs = getRootSpec(gram, compiledGrammars);
   
   production attribute add_to_need :: [String] with ++;
   add_to_need := head(rs).exportedGrammars;
@@ -90,7 +83,7 @@ top::ModuleExportedDefs ::= compiled::[Decorated RootSpec] need::[String] seen::
   
   top.defs = if null(need) || null(rs) then emptyDefs() else appendDefs(head(rs).defs, recurse.defs);
   top.errors := if null(need) then [] else 
-             if null(rs) then [err(top.importLocation, "Grammar '" ++ gram ++ "' cannot be found.")] else recurse.errors;
+             if null(rs) then [err(l, "Grammar '" ++ gram ++ "' cannot be found.")] else recurse.errors;
 }
 
 --------------

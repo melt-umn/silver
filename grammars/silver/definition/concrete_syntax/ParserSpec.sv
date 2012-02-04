@@ -20,8 +20,7 @@ top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[S
   top.moduleNames = grams;
 
   production attribute med :: ModuleExportedDefs;
-  med = moduleExportedDefs(top.compiledGrammars, grams, []);
-  med.importLocation = sl;
+  med = moduleExportedDefs(sl, top.compiledGrammars, grams, []);
 
   top.cstAst = cstRoot(fn, snt, foldr_p(consSyntax, nilSyntax(), med.syntaxAst));
   
