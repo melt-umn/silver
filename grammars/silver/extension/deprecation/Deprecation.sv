@@ -17,6 +17,6 @@ top::AGDcl ::= 'deprecated' s::String_t ';'
   top.errors := [];
   top.warnings := [wrn(top.location, s.lexeme)];
   
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 

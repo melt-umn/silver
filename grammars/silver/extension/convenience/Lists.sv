@@ -57,16 +57,16 @@ function makeOccursDcls
 AGDcl ::= l::Integer c::Integer ats::[QNameWithTL] nts::[QNameWithTL]
 {
   return if null(ats) 
-	 then agDclNone()
-	 else agDclAppend(makeOccursDclsHelp(l, c, head(ats), nts), makeOccursDcls(l, c, tail(ats), nts));
+	 then emptyAGDcl()
+	 else appendAGDcl(makeOccursDclsHelp(l, c, head(ats), nts), makeOccursDcls(l, c, tail(ats), nts));
 }
 
 function makeOccursDclsHelp
 AGDcl ::= l::Integer c::Integer at::QNameWithTL nts::[QNameWithTL]
 {
   return if null(nts) 
-	 then agDclNone()
-	 else agDclAppend(
+	 then emptyAGDcl()
+	 else appendAGDcl(
 	        attributionDcl(attr_kwd, at.qnwtQN, at.qnwtTL, occurs_kwd, on_kwd, head(nts).qnwtQN, head(nts).qnwtTL, ';'),
 		makeOccursDclsHelp(l, c, at, tail(nts)));
 

@@ -31,7 +31,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name botl::BracketedOptTypeList '::' t
 
   top.errors := te.errors ++ tl.errors;
 
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 
 concrete production attributeDclSyn
@@ -66,6 +66,6 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name botl::BracketedOptTypeList '::'
   top.errors := te.errors ++ tl.errors;
   top.warnings := [];
 
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 

@@ -19,5 +19,5 @@ top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
   top.errors := t.errors ++ e.errors;
   e.blockContext = defaultContext();
 
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }

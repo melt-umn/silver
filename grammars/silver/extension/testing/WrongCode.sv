@@ -22,6 +22,6 @@ top::AGDcl ::= 'wrongCode' s::String_t '{' ags::AGDcls '}'
   -- do extend its environment with its defs
   ags.env = newScopeEnv(ags.defs, top.env);
   
-  forwards to agDclDefault();
+  forwards to emptyAGDcl();
 }
 

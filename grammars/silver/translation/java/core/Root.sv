@@ -14,19 +14,19 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.valueWeaving := ags.valueWeaving;
 }
 
-aspect production agDclsOne
-top::AGDcls ::= ag::AGDcl
+aspect production nilAGDcls
+top::AGDcls ::=
 {
-  top.javaClasses = ag.javaClasses;
-  top.setupInh := ag.setupInh; 
-  top.initProd := ag.initProd;
-  top.initValues := ag.initValues;
-  top.postInit := ag.postInit;
-  top.initWeaving := ag.initWeaving;
-  top.valueWeaving := ag.valueWeaving;
+  top.javaClasses = [];
+  top.setupInh := "";
+  top.initProd := "";
+  top.initValues := "";
+  top.postInit := "";
+  top.initWeaving := "";
+  top.valueWeaving := "";
 }
 
-aspect production agDclsCons
+aspect production consAGDcls
 top::AGDcls ::= h::AGDcl t::AGDcls
 {
   top.javaClasses = h.javaClasses ++ t.javaClasses;
@@ -38,19 +38,7 @@ top::AGDcls ::= h::AGDcl t::AGDcls
   top.valueWeaving := h.valueWeaving ++ t.valueWeaving;
 }
 
-aspect production agDclsAppend
-top::AGDcls ::= h::AGDcls t::AGDcls
-{
-  top.javaClasses = h.javaClasses ++ t.javaClasses;
-  top.setupInh := h.setupInh ++ t.setupInh;
-  top.initProd := h.initProd ++ t.initProd;
-  top.initValues := h.initValues ++ t.initValues;
-  top.postInit := h.postInit ++ t.postInit;
-  top.initWeaving := h.initWeaving ++ t.initWeaving;
-  top.valueWeaving := h.valueWeaving ++ t.valueWeaving;
-}
-
-aspect production agDclDefault
+aspect production defaultAGDcl
 top::AGDcl ::=
 {
   top.javaClasses = [];
@@ -62,7 +50,7 @@ top::AGDcl ::=
   top.valueWeaving := "";
 }
 
-aspect production agDclAppend
+aspect production appendAGDcl
 top::AGDcl ::= h::AGDcl t::AGDcl
 {
   top.javaClasses = h.javaClasses ++ t.javaClasses;

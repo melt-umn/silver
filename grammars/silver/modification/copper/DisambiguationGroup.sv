@@ -26,7 +26,7 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
 
   top.syntaxAst = [syntaxDisambiguationGroup(fName,terms.precTermList,acode.actionCode)];
   
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 
 

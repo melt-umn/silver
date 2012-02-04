@@ -25,7 +25,7 @@ top::ProductionDclStmts ::= s::ProductionDclStmt
 concrete production productionDclStmtsCons
 top::ProductionDclStmts ::= s::ProductionDclStmt ss::ProductionDclStmts
 {
-  top.proddcls = agDclAppend(s.proddcls, ss.proddcls);
+  top.proddcls = appendAGDcl(s.proddcls, ss.proddcls);
 }
 
 concrete production productionDclStmt
