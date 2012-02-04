@@ -69,6 +69,12 @@ synthesized attribute exprs :: [Decorated Expr];
 autocopy attribute realSignature :: [Decorated NamedSignatureElement];
 {--
  - The signature of this fun/production, given to the production's body.
+ - This is mostly for the use of ProductionStmts, almost exclusively.
+ - It DOES however, validly occur on Expr. But, on Expr, all uses should be
+ - guarded. (e.g. nearly all uses are in productions that can only be
+ - forwarded to by a dispatcher using something in the environment
+ - provided by the production. Concretely: child reference dcls are only
+ - available when a production added them to the env for its children.)
  -}
 autocopy attribute signature :: Decorated NamedSignature;
 

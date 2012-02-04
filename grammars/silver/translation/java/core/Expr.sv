@@ -164,11 +164,12 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".synthesized(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
 
   top.lazyTranslation = 
-       case e, top.blockContext.lazyApplication of
-         childReference(cqn), true -> "context.childSynthesizedLazy(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ cqn.lookupValue.fullName ++ ", " 
+    case e, top.blockContext.lazyApplication of
+    | childReference(cqn), true -> 
+        "context.childSynthesizedLazy(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ cqn.lookupValue.fullName ++ ", " 
                                                                 ++ occursCheck.dcl.attrOccursIndex ++ ")"
-       | _, _ -> wrapClosure(top.translation, top.blockContext.lazyApplication)
-       end;
+    | _, _ -> wrapClosure(top.translation, top.blockContext.lazyApplication)
+    end;
 }
 
 aspect production inhDNTAccessDispatcher

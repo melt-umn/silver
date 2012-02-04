@@ -23,9 +23,9 @@ synthesized attribute matchRuleList :: [Decorated MatchRule];
 
 
 -- MR | ...
-nonterminal MRuleList with pp, env, file, matchRuleList, errors;
+nonterminal MRuleList with pp, signature, env, file, matchRuleList, errors;
 -- P -> E
-nonterminal MatchRule with pp, env, file, location, headPattern, errors;
+nonterminal MatchRule with pp, signature, env, file, location, headPattern, errors;
 
 -- P , ...
 nonterminal PatternList with pp, patternList, env, file, errors;
@@ -47,7 +47,7 @@ concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   -- TODO: causes problems with ring. Investigate!
-  --top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";
+  top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors <- ml.errors;
