@@ -1,5 +1,35 @@
 grammar silver:definition:core;
 
+nonterminal ModuleStmts with grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, condBuild, compiledGrammars;
+nonterminal ModuleStmt with grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, condBuild, compiledGrammars;
+
+nonterminal ImportStmt with grammarName, file, location, pp, errors, moduleNames, compiledGrammars, defs;
+nonterminal ImportStmts with grammarName, file, location, pp, errors, moduleNames, compiledGrammars, defs;
+
+nonterminal ModuleExpr with grammarName, file, location, pp, errors, defs, moduleNames, compiledGrammars;
+nonterminal ModuleName with grammarName, file, location, pp, errors, defs, moduleNames, compiledGrammars;
+
+nonterminal NameList with grammarName, file, location, pp, names;
+
+nonterminal WithElems with grammarName, file, location, pp, envMaps;
+nonterminal WithElem with grammarName, file, location, pp, envMaps;
+
+{--
+ - All grammars Silver looked at. Despite the name, including interface files.
+ -}
+autocopy attribute compiledGrammars :: [Decorated RootSpec];
+{--
+ - A list of QName strings. Used for 'only' and 'hiding'.
+ -}
+synthesized attribute names :: [String];
+{--
+ - A renaming mapping used for 'with'.
+ -}
+synthesized attribute envMaps :: [Pair<String String>];
+
+
+nonterminal Module with compiledGrammars, defs, errors;
+
 --grammar g as a only o hiding h with w;
 --apply only
 --apply hiding
@@ -32,9 +62,10 @@ top::Module ::= c::[Decorated RootSpec] g::Decorated QName a::String o::[String]
 }
 
 -- recurses through exportedGrammars, grabbing all definitions
+nonterminal ModuleExportedDefs with defs, errors, importLocation;
 
 inherited attribute importLocation :: Location;
-nonterminal ModuleExportedDefs with defs, errors, importLocation;
+
 abstract production moduleExportedDefs
 top::ModuleExportedDefs ::= compiled::[Decorated RootSpec] need::[String] seen::[String]
 {
@@ -62,7 +93,7 @@ top::ModuleExportedDefs ::= compiled::[Decorated RootSpec] need::[String] seen::
              if null(rs) then [err(top.importLocation, "Grammar '" ++ gram ++ "' cannot be found.")] else recurse.errors;
 }
 
------------------------
+--------------
 -- ImportStmts
 
 concrete production importStmt
@@ -73,7 +104,7 @@ top::ImportStmt ::= 'import' m::ModuleExpr ';'
 
   top.errors := m.errors;
   top.moduleNames = m.moduleNames;
-  top.importedDefs = m.defs;
+  top.defs = m.defs;
 }
 
 abstract production importStmtsNone 
@@ -85,7 +116,7 @@ top::ImportStmts ::=
   top.errors := [];
 
   top.moduleNames = [];
-  top.importedDefs = emptyDefs();
+  top.defs = emptyDefs();
 }
 
 concrete production importStmtsOne 
@@ -97,7 +128,7 @@ top::ImportStmts ::= im::ImportStmt
   top.errors := im.errors;
 
   top.moduleNames = im.moduleNames;
-  top.importedDefs = im.importedDefs;
+  top.defs = im.defs;
 }
 
 concrete production importStmtsCons
@@ -109,7 +140,7 @@ top::ImportStmts ::= h::ImportStmt t::ImportStmts
   top.errors := h.errors ++ t.errors;
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
-  top.importedDefs = appendDefs(h.importedDefs, t.importedDefs);
+  top.defs = appendDefs(h.defs, t.defs);
 }
 
 abstract production importStmtsAppend
@@ -121,10 +152,10 @@ top::ImportStmts ::= h::ImportStmts t::ImportStmts
   top.errors := h.errors ++ t.errors;
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
-  top.importedDefs = appendDefs(h.importedDefs, t.importedDefs);
+  top.defs = appendDefs(h.defs, t.defs);
 }
 
------------------------
+--------------
 -- ModuleStmts
 
 abstract production moduleStmtsNone 
@@ -136,7 +167,7 @@ top::ModuleStmts ::=
   top.errors := [];
 
   top.moduleNames = [];
-  top.importedDefs = emptyDefs();
+  top.defs = emptyDefs();
   top.exportedGrammars = [];
   top.condBuild = [];
 }
@@ -150,7 +181,7 @@ top::ModuleStmts ::= m::ModuleStmt
   top.errors := m.errors;
 
   top.moduleNames = m.moduleNames;
-  top.importedDefs = m.importedDefs;
+  top.defs = m.defs;
   top.exportedGrammars = m.exportedGrammars;
   top.condBuild = m.condBuild;
 }
@@ -164,7 +195,7 @@ top::ModuleStmts ::= h::ModuleStmt t::ModuleStmts
   top.errors := h.errors ++ t.errors;
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
-  top.importedDefs = appendDefs(h.importedDefs, t.importedDefs);
+  top.defs = appendDefs(h.defs, t.defs);
   top.exportedGrammars = h.exportedGrammars ++ t.exportedGrammars;
   top.condBuild = h.condBuild ++ t.condBuild;
 }
@@ -177,7 +208,7 @@ top::ModuleStmt ::= 'imports' m::ModuleExpr ';'{
   top.errors := m.errors;
 
   top.moduleNames = m.moduleNames;
-  top.importedDefs = m.defs;
+  top.defs = m.defs;
   top.exportedGrammars = [];
   top.condBuild = [];
 }
@@ -190,7 +221,7 @@ top::ModuleStmt ::= 'exports' m::ModuleName ';'{
   top.errors := m.errors;
 
   top.moduleNames = m.moduleNames;
-  top.importedDefs = emptyDefs();
+  top.defs = emptyDefs();
   top.exportedGrammars = m.moduleNames;
   top.condBuild = [];
 }
@@ -204,14 +235,14 @@ top::ModuleStmt ::= 'build' m::QName 'with' c::QName ';'{
   top.errors := [];
 
   top.moduleNames = [];
-  top.importedDefs = emptyDefs();
+  top.defs = emptyDefs();
   top.exportedGrammars = [];
   top.condBuild = [[m.name, c.name]]; -- c -> m
 }
   
 
 -----------------------
--- ModuleExpr
+-- ModuleName
 
 concrete production moduleName
 top::ModuleName ::= pkg::QName
@@ -222,11 +253,13 @@ top::ModuleName ::= pkg::QName
 
   production attribute m :: Module;
   m = module(top.compiledGrammars, pkg, "", [], [], []);
-  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
 }
+
+-----------------------
+-- ModuleExpr
 
 concrete production moduleAll
 top::ModuleExpr ::= pkg::QName
@@ -237,7 +270,6 @@ top::ModuleExpr ::= pkg::QName
 
   production attribute m :: Module;
   m = module(top.compiledGrammars, pkg, "", [], [], []);
-  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -252,7 +284,6 @@ top::ModuleExpr ::= pkg::QName 'with' wc::WithElems
 
   production attribute m :: Module;
   m = module(top.compiledGrammars, pkg, "", [], [], wc.envMaps);
-  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -267,7 +298,6 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList
 
   production attribute m :: Module;
   m = module(top.compiledGrammars, pkg, "", ns.names, [], []);
-  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -282,7 +312,6 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList 'with' wc::WithElems
 
   production attribute m :: Module;
   m = module(top.compiledGrammars, pkg, "", ns.names, [], wc.envMaps);
-  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -297,7 +326,6 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList
 
   production attribute m :: Module;
   m = module(top.compiledGrammars, pkg, "", [], ns.names, []);
-  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -312,7 +340,6 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList 'with' wc::WithElems
 
   production attribute m :: Module;
   m = module(top.compiledGrammars, pkg, "", [], ns.names, wc.envMaps);
-  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -327,13 +354,13 @@ top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
 
   production attribute m :: Module;
   m = module(top.compiledGrammars, pkg1, pkg2.name, [], [], []);
-  m.grammarName = top.grammarName;
 
   top.errors := m.errors;
   top.defs = m.defs;
 }
 
-synthesized attribute envMaps :: [Pair<String String>] occurs on WithElems, WithElem;
+------------
+-- WithElems
 
 concrete production withElemsOne
 top::WithElems ::= we::WithElem
@@ -351,6 +378,7 @@ top::WithElems  ::= h::WithElem ',' t::WithElems
   top.envMaps = h.envMaps ++ t.envMaps;
 }
 
+-- TODO: Should this just be 'Name', at least for the initial
 concrete production withElement
 top::WithElem ::= n::QName 'as' newname::QName 
 {
@@ -359,6 +387,8 @@ top::WithElem ::= n::QName 'as' newname::QName
   top.envMaps = [pair(n.name, newname.name)];
 }
 
+-----------
+-- NameList
 
 concrete production nameListOne
 top::NameList ::= n::QName

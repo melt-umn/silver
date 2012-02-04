@@ -1,5 +1,20 @@
 grammar silver:definition:core;
 
+nonterminal AspectProductionSignature with grammarName, file, env, location, pp, errors, defs, inputElements, outputElement, realSignature;
+nonterminal AspectProductionLHS with grammarName, file, env, location, pp, errors, defs, outputElement, realSignature;
+
+nonterminal AspectFunctionSignature with grammarName, file, env, location, pp, errors, defs, inputElements, outputElement, realSignature;
+nonterminal AspectFunctionLHS with grammarName, file, env, location, pp, errors, defs, realSignature, outputElement;
+
+nonterminal AspectRHS with grammarName, file, env, location, pp, errors, defs, inputElements, realSignature;
+nonterminal AspectRHSElem with grammarName, file, env, location, pp, errors, defs, realSignature, inputElements;
+
+{--
+ - The signature elements from the fun/produciton being aspected.
+ -}
+autocopy attribute realSignature :: [Decorated NamedSignatureElement];
+
+
 concrete production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 {

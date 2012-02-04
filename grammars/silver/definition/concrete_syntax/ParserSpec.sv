@@ -12,7 +12,7 @@ nonterminal ParserSpec with
 synthesized attribute cstAst :: SyntaxRoot;
 
 abstract production parserSpec
-top::ParserSpec ::= sl:: Location  sg::String  fn::String  snt::String  grams::[String]
+top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[String]
 {
   top.sourceLocation = sl;
   top.sourceGrammar = sg;

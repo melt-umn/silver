@@ -33,43 +33,43 @@ top::Defs ::= d::EnvItem e2::Defs
 -- TODO: we don't do any renaming of lexer classes BUG
 
 function addParserAttrDcl
-Defs ::= sg::String sl:: Location fn::String ty::TypeExp defs::Defs
+Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate parserAttrDcl(sg,sl,fn,ty) with {}), defs);
 }
 
 function addPluckTermDcl
-Defs ::= sg::String sl:: Location fn::String defs::Defs
+Defs ::= sg::String sl::Location fn::String defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate pluckTermDcl(sg,sl,fn) with {}), defs);
 }
 
 function addDisambigLexemeDcl
-Defs ::= sg::String sl:: Location defs::Defs
+Defs ::= sg::String sl::Location defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate disambigLexemeDcl(sg,sl) with {}), defs);
 }
 
 function addLexerClassDcl
-Defs ::= sg::String sl:: Location fn::String defs::Defs
+Defs ::= sg::String sl::Location fn::String defs::Defs
 {
   return consLexerClassDef(defaultEnvItem(decorate lexerClassDcl(sg,sl,fn) with {}), defs);
 }
 
 function addTermAttrValueDcl
-Defs ::= sg::String sl:: Location fn::String ty::TypeExp defs::Defs
+Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate termAttrValueDcl(sg,sl,fn,ty) with {}), defs);
 }
 
 function addActionChildDcl
-Defs ::= sg::String sl:: Location fn::String ty::TypeExp defs::Defs
+Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate actionChildDcl(sg,sl,fn,ty) with {}), defs);
 }
 
 function addParserLocalDcl
-Defs ::= sg::String sl:: Location fn::String ty::TypeExp defs::Defs
+Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate parserLocalDcl(sg,sl,fn,ty) with {}), defs);
 }

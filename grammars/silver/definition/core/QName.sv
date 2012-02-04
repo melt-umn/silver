@@ -9,6 +9,9 @@ nonterminal QName with name, location, grammarName, file, env, pp;
  -}
 nonterminal QNameUpper with name, location, grammarName, file, env, pp;
 
+{--
+ - The list of declarations resulting from looking up this QName
+ -}
 synthesized attribute dcls :: [Decorated DclInfo];
 
 function qName
@@ -48,7 +51,7 @@ synthesized attribute lookupType :: Decorated QNameLookup occurs on QName;
 synthesized attribute lookupAttribute :: Decorated QNameLookup occurs on QName;
 
 abstract production customLookup
-top::QNameLookup ::= kindOfLookup::String lookupFunc::Function([Decorated DclInfo] ::= String Decorated Env) name::String l:: Location 
+top::QNameLookup ::= kindOfLookup::String lookupFunc::Function([Decorated DclInfo] ::= String Decorated Env) name::String l::Location 
 {
   top.dcls = lookupFunc(name, top.env);
   top.dcl = if null(top.dcls) then error("INTERNAL ERROR: Accessing dcl of " ++ kindOfLookup ++ " " ++ name ++ " at " ++ l.unparse)

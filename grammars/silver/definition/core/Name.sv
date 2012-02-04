@@ -1,5 +1,14 @@
 grammar silver:definition:core;
 
+nonterminal Name with grammarName, file, location, pp, name;
+nonterminal NameTick with grammarName, file, location, pp, name;
+nonterminal NameTickTick with grammarName, file, location, pp, name;
+
+{--
+ - An identifier's (possibly qualified) name.
+ -}
+synthesized attribute name :: String;
+
 concrete production nameIdLower
 top::Name ::= id::IdLower_t
 {

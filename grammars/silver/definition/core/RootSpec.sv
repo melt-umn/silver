@@ -11,12 +11,12 @@ top::RootSpec ::=
 }
 
 function rootSpecRoot
-Decorated RootSpec ::=  c1::Decorated Root
+Decorated RootSpec ::= c1::Decorated Root
 {
   return decorate i_rootSpecRoot(c1) with {};
 }
 abstract production i_rootSpecRoot
-top::RootSpec ::=  c1::Decorated Root
+top::RootSpec ::= c1::Decorated Root
 { 
   top.unparse = unparseRootSpec(top).unparse;
   top.declaredName = c1.declaredName;

@@ -43,21 +43,21 @@ top::DclInfo ::=
 
 -- -- non-interface values
 aspect production childDcl
-top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 {
   top.refDispatcher = childReference;
   top.defDispatcher = errorValueDef; -- TODO: we should be smarted about error messages, and mention its a child
   top.defLHSDispatcher = childDefLHS;
 }
 aspect production lhsDcl
-top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 {
   top.refDispatcher = lhsReference;
   top.defDispatcher = errorValueDef; -- TODO: be smarter about the error message
   top.defLHSDispatcher = lhsDefLHS;
 }
 aspect production localDcl
-top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 {
   top.refDispatcher = localReference;
   top.defDispatcher = localValueDef;
@@ -67,7 +67,7 @@ top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
 
 -- -- interface values
 aspect production prodDcl
-top::DclInfo ::= sg::String sl:: Location ns::Decorated NamedSignature
+top::DclInfo ::= sg::String sl::Location ns::Decorated NamedSignature
 {
   top.refDispatcher = productionReference;
    -- Note that we still need production references, even though bug #16 removes the production type.
@@ -75,14 +75,14 @@ top::DclInfo ::= sg::String sl:: Location ns::Decorated NamedSignature
   top.defLHSDispatcher = errorDefLHS;
 }
 aspect production funDcl
-top::DclInfo ::= sg::String sl:: Location ns::Decorated NamedSignature
+top::DclInfo ::= sg::String sl::Location ns::Decorated NamedSignature
 {
   top.refDispatcher = functionReference;
   top.defDispatcher = errorValueDef;
   top.defLHSDispatcher = errorDefLHS;
 }
 aspect production globalValueDcl
-top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 {
   top.refDispatcher = globalValueReference;
   top.defDispatcher = errorValueDef;
@@ -90,23 +90,23 @@ top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp
 }
 -- -- interface types
 aspect production ntDcl
-top::DclInfo ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
 }
 aspect production termDcl
-top::DclInfo ::= sg::String sl:: Location fn::String regex::Regex_R
+top::DclInfo ::= sg::String sl::Location fn::String regex::Regex_R
 {
 }
 
 -- -- interface Attributes
 aspect production synDcl
-top::DclInfo ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.attrAccessDispatcher = synDNTAccessDispatcher;
   top.attrDefDispatcher = synthesizedAttributeDef;
 }
 aspect production inhDcl
-top::DclInfo ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.attrAccessDispatcher = inhDNTAccessDispatcher;
   top.attrDefDispatcher = inheritedAttributeDef;
@@ -114,11 +114,11 @@ top::DclInfo ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp
 
 -- -- interface Production attr (values)
 aspect production paDcl
-top::DclInfo ::= sg::String sl:: Location fn::String outty::TypeExp intys::[TypeExp] dcls::Defs
+top::DclInfo ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeExp] dcls::Defs
 {
 }
 aspect production forwardDcl
-top::DclInfo ::= sg::String sl:: Location ty::TypeExp
+top::DclInfo ::= sg::String sl::Location ty::TypeExp
 {
   top.refDispatcher = forwardReference;
   top.defDispatcher = errorValueDef; -- TODO: better error message
@@ -127,7 +127,7 @@ top::DclInfo ::= sg::String sl:: Location ty::TypeExp
 
 -- -- interface other
 aspect production occursDcl
-top::DclInfo ::= sg::String sl:: Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
+top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
 {
 }
 

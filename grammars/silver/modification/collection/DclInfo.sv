@@ -25,7 +25,7 @@ top::DclInfo ::=
 }
 
 abstract production synCollectionDcl
-top::DclInfo ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp o::Operation
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o::Operation
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -48,7 +48,7 @@ top::DclInfo ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp 
   forwards to synDcl(sg,sl,fn,bound,ty);
 }
 abstract production inhCollectionDcl
-top::DclInfo ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp o::Operation
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o::Operation
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -72,7 +72,7 @@ top::DclInfo ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp 
 }
 
 abstract production localCollectionDcl
-top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp o::Operation
+top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp o::Operation
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -100,7 +100,7 @@ top::DclInfo ::= sg::String sl:: Location fn::String ty::TypeExp o::Operation
 
 -- Defs
 function addSynColDcl
-Defs ::= sg::String sl:: Location fn::String bound::[TyVar] ty::TypeExp o::Operation defs::Defs
+Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o::Operation defs::Defs
 {
   return consAttrDef(defaultEnvItem(decorate synCollectionDcl(sg,sl,fn,bound,ty,o) with {}), defs);
 }
