@@ -63,9 +63,9 @@ terminal CondBuildTerm        'condBuild'        lexer classes {C_1};
 
 
 synthesized attribute spec :: Decorated RootSpec;
-synthesized attribute signature :: Decorated NamedSignature;
-synthesized attribute elements :: [Decorated NamedSignatureElement];
-synthesized attribute element :: Decorated NamedSignatureElement;
+synthesized attribute signature :: NamedSignature;
+synthesized attribute elements :: [NamedSignatureElement];
+synthesized attribute element :: NamedSignatureElement;
 synthesized attribute typereps :: [TypeExp];
 synthesized attribute names :: [String];
 synthesized attribute aname :: String;
@@ -511,13 +511,7 @@ top::ITypeRep ::= t::ITyVar
 concrete production aNamedSignatureDcl
 top::INamedSignature ::= 'signature' '(' fn::IName ',' i::INamedSignatureElements ',' o::INamedSignatureElement ')'
 {
-  top.signature = namedSignatureDcl(fn.aname, i.elements, o.element);
-}
-
-concrete production aNamedSignatureDefault
-top::INamedSignature ::= 'signature'
-{ -- TODO: maybe remove this?
-  top.signature = decorate namedSignatureDefault() with {};
+  top.signature = namedSignature(fn.aname, i.elements, o.element);
 }
 
 concrete production aNamedSignatureElementDcl
@@ -526,8 +520,3 @@ top::INamedSignatureElement ::= 'element' '(' n::IName ',' t::ITypeRep ')'
   top.element = namedSignatureElement(n.aname, t.typerep);
 }
 
-concrete production aNamedSignatureElementDclDefault
-top::INamedSignatureElement ::= 'element'
-{ -- TODO: remove this?
-  top.element = decorate namedSignatureElementDefault() with {};
-}

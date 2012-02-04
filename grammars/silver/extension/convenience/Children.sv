@@ -15,7 +15,7 @@ top::Expr ::= '$' e::Int_t
   top.pp = "$" ++ e.lexeme;
   forwards to baseExpr(qName(loc(top.file, $1.line, $1.column),
     findChild(toInt(e.lexeme), 
-      [top.signature.outputElement.elementName] ++ getNamesSignature(top.signature.inputElements))));
+      [top.signature.outputElement.elementName] ++ top.signature.inputNames)));
 }
 
 function findChild

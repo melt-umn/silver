@@ -9,7 +9,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   className = "P" ++ id.name;
 
   local attribute sigNames :: [String];
-  sigNames = getNamesSignature(namedSig.inputElements);
+  sigNames = namedSig.inputNames;
 
   top.setupInh := body.setupInh;
   top.initProd := "\t\t" ++ makeName(top.grammarName) ++ "." ++ className ++ ".initProductionAttributeDefinitions();\n";
@@ -127,12 +127,14 @@ makeStaticDcls(className, ns.inputElements) ++
 }
 
 function makeIndexDcls
-String ::= i::Integer s::[String]{
+String ::= i::Integer s::[String]
+{
   return if null(s) then "" else "\tpublic static final int i_" ++ head(s) ++ " = " ++ toString(i) ++ ";\n"  ++ makeIndexDcls(i+1, tail(s));
 }
 
 function makeStaticDcls
-String ::= className::String s::[Decorated NamedSignatureElement]{
+String ::= className::String s::[NamedSignatureElement]
+{
   return if null(s) 
 	 then "" 
 	 else (if head(s).typerep.isDecorable then
@@ -142,19 +144,21 @@ String ::= className::String s::[Decorated NamedSignatureElement]{
 }
 
 function makeConstructor
-String ::= s::[String]{
+String ::= s::[String]
+{
   return if null(s) then "" else "final Object c_" ++ head(s) ++ (if null(tail(s)) then "" else (", " ++ makeConstructor(tail(s))));
 }
 
 function makeChildArray
-String ::= s::[String]{
+String ::= s::[String]
+{
   return if null(s) then "" else "c_" ++ head(s) ++ (if null(tail(s)) then "" else (", " ++ makeChildArray(tail(s))));
 }
 
 -- meant to turn  ::= Foo String Bar
 -- into {grammar.NFoo.class, String.class, other.NBar.class}
 function makeChildTypesList
-String ::= ns::[Decorated NamedSignatureElement]
+String ::= ns::[NamedSignatureElement]
 {
   return if null(ns)
          then ""

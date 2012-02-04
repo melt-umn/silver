@@ -67,7 +67,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 
 -- -- interface values
 aspect production prodDcl
-top::DclInfo ::= sg::String sl::Location ns::Decorated NamedSignature
+top::DclInfo ::= sg::String sl::Location ns::NamedSignature
 {
   top.refDispatcher = productionReference;
    -- Note that we still need production references, even though bug #16 removes the production type.
@@ -75,7 +75,7 @@ top::DclInfo ::= sg::String sl::Location ns::Decorated NamedSignature
   top.defLHSDispatcher = errorDefLHS;
 }
 aspect production funDcl
-top::DclInfo ::= sg::String sl::Location ns::Decorated NamedSignature
+top::DclInfo ::= sg::String sl::Location ns::NamedSignature
 {
   top.refDispatcher = functionReference;
   top.defDispatcher = errorValueDef;

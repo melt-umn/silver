@@ -2,78 +2,84 @@ grammar silver:definition:env;
 
 import silver:definition:type;
 
-nonterminal NamedSignature with inputElements, outputElement, fullName, unparse, boundVariables;
+nonterminal NamedSignature with inputElements, outputElement, fullName, unparse, boundVariables, inputNames, inputTypes, typerep;
 nonterminal NamedSignatureElement with typerep, elementName, unparse, boundVariables;
 
 synthesized attribute elementName :: String;
-synthesized attribute inputElements :: [Decorated NamedSignatureElement];
-synthesized attribute outputElement :: Decorated NamedSignatureElement;
+synthesized attribute inputElements :: [NamedSignatureElement];
+synthesized attribute outputElement :: NamedSignatureElement;
 
+synthesized attribute inputNames :: [String];
+-- inputTypes from the types grammar.
 
-function getTypesSignature
-[TypeExp] ::= ns::[Decorated NamedSignatureElement]
+{--
+ - Represents the signature of a function or production.
+ -}
+abstract production namedSignature
+top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatureElement
 {
- return if null(ns) then [] else [head(ns).typerep] ++ getTypesSignature(tail(ns));  
-}
-
-function getNamesSignature
-[String] ::= ns::[Decorated NamedSignatureElement]
-{
- return if null(ns) then [] else [head(ns).elementName] ++ getNamesSignature(tail(ns));  
-}
-
-
-
-function namedNamedSignature
-Decorated NamedSignature ::= fn::String
-{
-  return decorate i_namedSignature(fn, [], decorate namedSignatureElementDefault() with {}) with {};
-}
-
-function namedSignatureDcl
-Decorated NamedSignature ::= fn::String ie::[Decorated NamedSignatureElement] oe::Decorated NamedSignatureElement
-{
-  return decorate i_namedSignature(fn, ie, oe) with {};
-}
-
-abstract production i_namedSignature
-top::NamedSignature ::= fn::String ie::[Decorated NamedSignatureElement] oe::Decorated NamedSignatureElement
-{
-  top.unparse = "signature('" ++ fn ++ "', " ++ unparseSignatureElements(ie, top.boundVariables) ++ ", " ++ decorate new(oe) with {boundVariables = top.boundVariables;}.unparse ++ ")";
+  top.unparse = "signature('" ++ fn ++ "', " ++ unparseSignatureElements(ie, top.boundVariables) ++ ", " ++ oe.unparse ++ ")";
   top.fullName = fn;
   top.inputElements = ie;
   top.outputElement = oe;
+  top.inputNames = map((.elementName), ie);
+  top.inputTypes = map((.typerep), ie);
+  top.typerep = functionTypeExp(oe.typerep, top.inputTypes);
+  
+  oe.boundVariables = top.boundVariables;
 }
 
-abstract production namedSignatureDefault
+{--
+ - Represents the signature of something without parameters.
+ - Used for action code. i.e. Stuff that uses ProductionStmt, but
+ - isn't in a production/function.
+ -}
+abstract production namedNamedSignature
+top::NamedSignature ::= fn::String
+{
+  forwards to namedSignature(fn, [], bogusNamedSignatureElement());
+}
+
+{--
+ - Used ONLU when an error occurs. e.g. aspecting a non-existant production.
+ -}
+abstract production bogusNamedSignature
 top::NamedSignature ::= 
 {
-  top.unparse = "signature"; -- TODO: is this ever legal? can we do an internal error instead?
+  top.unparse = error("Bogus signatures should never make it into interface files!");
   top.fullName = "_NULL_";
   top.inputElements = [];
-  top.outputElement = decorate namedSignatureElementDefault() with {};
-}
-
-function namedSignatureElement
-Decorated NamedSignatureElement ::= n::String tr::TypeExp
-{
-  return decorate i_namedSignatureElement(n, tr) with {};
-}
-
-abstract production i_namedSignatureElement
-top::NamedSignatureElement ::= n::String ty::TypeExp
-{
-  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't  
-  top.unparse = "element('" ++ n ++ "', " ++ ty.unparse ++ ")"; -- TODO @#$#$%
-
-  top.elementName = n;
-  top.typerep = ty;
-}
-
-abstract production namedSignatureElementDefault
-top::NamedSignatureElement ::=
-{
-  top.unparse = "element"; -- TODO: can we do an internal error instead?
-  top.elementName = "_NULL_";
+  top.outputElement = bogusNamedSignatureElement();
+  top.inputNames = [];
+  top.inputTypes = [];
   top.typerep = errorType();
 }
+
+------------------------
+-- NamedSignatureElement
+
+{--
+ - Represents an element of the function/production signature.
+ -}
+abstract production namedSignatureElement
+top::NamedSignatureElement ::= n::String ty::TypeExp
+{
+  top.unparse = "element('" ++ n ++ "', " ++ ty.unparse ++ ")";
+  top.elementName = n;
+  top.typerep = ty;
+
+  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't  
+}
+
+{--
+ - A bogus output element, because an error occurred, or because
+ - There is no output type.
+ -}
+abstract production bogusNamedSignatureElement
+top::NamedSignatureElement ::=
+{
+  top.unparse = error("Bogus signature elements should never make it into interface files!");
+  top.elementName = "__SV_BOGUS_ELEM";
+  top.typerep = errorType();
+}
+

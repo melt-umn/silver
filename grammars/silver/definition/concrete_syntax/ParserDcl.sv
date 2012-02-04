@@ -19,8 +19,8 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ n.name;
 
-  production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(fName,
+  production attribute namedSig :: NamedSignature;
+  namedSig = namedSignature(fName,
                                [namedSignatureElement("stringToParse", stringTypeExp()),
                                 namedSignatureElement("filenameToReport", stringTypeExp())],
                                namedSignatureElement("__func__lhs", nonterminalTypeExp("core:ParseResult", [t.typerep])));

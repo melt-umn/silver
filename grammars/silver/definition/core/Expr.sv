@@ -244,8 +244,8 @@ top::Expr ::= '(' '.' q::QName ')'
   
   -- Also, freshen the attribute type, because even though there currently should NOT be any type variables
   -- there, there could be if the code will raise an error.
-  --top.typerep = functionTypeExp(freshenCompletely(q.lookupAttribute.typerep), [errorType()]);
-  top.typerep = functionTypeExp(freshenCompletely(q.lookupAttribute.typerep), [freshType()]); -- #HACK2012 Issue 4
+  local rawInputType :: TypeExp = freshType();
+  top.typerep = functionTypeExp(freshenCompletely(q.lookupAttribute.typerep), [rawInputType]);
   
   top.errors := q.lookupAttribute.errors;
   
@@ -260,7 +260,7 @@ top::Expr ::= '(' '.' q::QName ')'
   
   -- Only known after the inference pass (uses final subst)
   production attribute inputType :: TypeExp;
-  inputType = performSubstitution(head(top.typerep.inputTypes), top.finalSubst);
+  inputType = performSubstitution(rawInputType, top.finalSubst);
   
   production attribute occursCheck :: OccursCheck;
   occursCheck = occursCheckQName(q, if inputType.isDecorated then inputType.decoratedType else inputType);

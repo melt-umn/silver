@@ -12,14 +12,14 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  production attribute namedSig :: Decorated NamedSignature;
-  namedSig = namedSignatureDcl(fName, ns.inputElements, ns.outputElement);
+  production attribute namedSig :: NamedSignature;
+  namedSig = namedSignature(fName, ns.inputElements, ns.outputElement);
 
   top.defs = addFunDcl(top.grammarName, id.location, namedSig,
               if isEmptyOfValues(body.productionAttributes)
               then emptyDefs()
               else addPaDcl(top.grammarName, id.location, fName,
-                       namedSig.outputElement.typerep, getTypesSignature(namedSig.inputElements),
+                       namedSig.outputElement.typerep, namedSig.inputTypes,
                        body.productionAttributes,
                         emptyDefs()) );
 

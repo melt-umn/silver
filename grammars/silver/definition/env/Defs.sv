@@ -168,12 +168,12 @@ Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
   return consValueDef(defaultEnvItem(decorate localDcl(sg,sl,fn,ty) with {}), defs);
 }
 function addProdDcl
-Defs ::= sg::String sl::Location ns::Decorated NamedSignature defs::Defs
+Defs ::= sg::String sl::Location ns::NamedSignature defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate prodDcl(sg,sl,ns) with {}), defs);
 }
 function addFunDcl
-Defs ::= sg::String sl::Location ns::Decorated NamedSignature defs::Defs
+Defs ::= sg::String sl::Location ns::NamedSignature defs::Defs
 {
   return consValueDef(defaultEnvItem(decorate funDcl(sg,sl,ns) with {}), defs);
 }

@@ -47,7 +47,7 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
   acode.env = newScopeEnv(addTerminalAttrDefs(acode.defs), top.env);
 
   -- TODO: better name than this dummy one?
-  acode.signature = namedNamedSignature(top.grammarName ++ ":__ta" ++ toString($1.line));
+  acode.signature = decorate namedNamedSignature(top.grammarName ++ ":__ta" ++ toString($1.line)) with {};
   
   top.errors := acode.errors;
   -- TODO: warnings?

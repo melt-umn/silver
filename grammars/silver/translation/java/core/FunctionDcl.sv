@@ -21,13 +21,13 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 
   -- main function signature check TODO: this should probably be elsewhere!
   top.errors <-
-        if id.name == "main" &&
-           unify(functionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements)),
-                 functionTypeExp(nonterminalTypeExp("core:IOVal", [intTypeExp()]), [
-                                   decoratedTypeExp(nonterminalTypeExp("core:List", [stringTypeExp()])),
-                                   ioTypeExp()])).failure
-        then [err(top.location, "main function must have type signature Function(IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(functionTypeExp(ns.outputElement.typerep, getTypesSignature(ns.inputElements))))]
-        else [];
+    if id.name == "main" &&
+       unify(namedSig.typerep,
+         functionTypeExp(nonterminalTypeExp("core:IOVal", [intTypeExp()]), [
+           decoratedTypeExp(nonterminalTypeExp("core:List", [stringTypeExp()])),
+           ioTypeExp()])).failure
+    then [err(top.location, "main function must have type signature Function(IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(namedSig.typerep))]
+    else [];
 }
 
 function generateFunctionClassString
@@ -40,7 +40,7 @@ String ::= whatGrammar::String whatName::String whatSig::Decorated NamedSignatur
   localVar = "count_local__ON__" ++ makeIdName(whatGrammar) ++ "_" ++ whatName;
 
   local attribute sigNames :: [String];
-  sigNames = getNamesSignature(whatSig.inputElements);
+  sigNames = whatSig.inputNames;
 
   return 
 "package " ++ makeName(whatGrammar) ++ ";\n\n" ++

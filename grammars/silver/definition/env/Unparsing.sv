@@ -85,7 +85,7 @@ function mapUnparseTyVars
  - Turn a list of signature elements into a string can can be parsed by INamedSignatureElements.
  -}
 function unparseSignatureElements
-String ::= s::[Decorated NamedSignatureElement] bv::[TyVar]
+String ::= s::[NamedSignatureElement] bv::[TyVar]
 {
   return "[" ++ unparseSignatureElementsHelp(s, bv) ++ "]";
 }
@@ -94,10 +94,10 @@ String ::= s::[Decorated NamedSignatureElement] bv::[TyVar]
  - HELPR: must exist because of the bv parameter.
  -}
 function unparseSignatureElementsHelp
-String ::= s::[Decorated NamedSignatureElement] bv::[TyVar]
+String ::= s::[NamedSignatureElement] bv::[TyVar]
 {
   local attribute h :: NamedSignatureElement;
-  h = new(head(s));
+  h = head(s);
   h.boundVariables = bv;
 
   return if null(s) then "" else h.unparse ++ (if null(tail(s)) then "" else (", " ++ unparseSignatureElementsHelp(tail(s), bv)));
