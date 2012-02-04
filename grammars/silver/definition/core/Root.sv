@@ -21,37 +21,13 @@ autocopy attribute globalImports :: Decorated Env;
 synthesized attribute importedDefs :: Defs;
 
 
-concrete production root1
+concrete production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 {
-  forwards to root(gdcl, ms, ims, ags);
-}
-
-concrete production root3
-top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ags::AGDcls
-{
-  forwards to root(gdcl, ms, importStmtsNone(), ags);
-}
-
-concrete production root5
-top::Root ::= gdcl::GrammarDcl ims::ImportStmts ags::AGDcls
-{
-  forwards to root(gdcl, moduleStmtsNone(), ims, ags);
-}
-
-concrete production root7
-top::Root ::= gdcl::GrammarDcl ags::AGDcls
-{
-  forwards to root(gdcl, moduleStmtsNone(), importStmtsNone(), ags);
-}
-
-abstract production root
-top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
-{
-  production attribute allImports :: ImportStmts with importStmtsAppend;
+  production attribute allImports :: ImportStmts with appendImportStmts;
   allImports := if top.grammarName == "core" || contains("core", ims.moduleNames)
 		then ims 
-		else importStmtsCons(importStmt('import', moduleAll(qNameId(nameIdLower(terminal(IdLower_t, "core")))), ';'), ims);
+		else consImportStmts(importStmt('import', moduleAll(qNameId(nameIdLower(terminal(IdLower_t, "core")))), ';'), ims);
 
   allImports.compiledGrammars = top.compiledGrammars;
   allImports.grammarName = top.grammarName;
