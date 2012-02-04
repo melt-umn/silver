@@ -80,7 +80,7 @@ ag::AGDcl ::= kwd::'equalityTest'
 
 
 
- forwards to agDclAppend ( absProdCS, aspProdCS ) ;
+ forwards to appendAGDcl(absProdCS, aspProdCS);
  local absProdCS :: AGDcl = asAGDcl (
    "abstract production " ++ testName ++ "\n" ++
    "t::Test ::= \n" ++
@@ -228,7 +228,7 @@ Maybe<Expr> ::= valueType::Type prefix::String
 
 
 {-
---  agDclAppend
+--  appendAGDcl
 --  (
   local absProd::AGDcl =
    productionDcl

@@ -64,7 +64,7 @@ ag::AGDcl ::= kwd::'mainTestSuite'  name::IdLower_t ';'
  ag.pp = kwd.lexeme ++ " " ++ name.lexeme ++ " ; \n" ;
 
  forwards to 
-  agDclAppend ( 
+  appendAGDcl ( 
    functionDcl (
     -- function main
     'function', nameIdLower( terminal(IdLower_t,"main")),

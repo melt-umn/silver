@@ -3,7 +3,7 @@ grammar silver:definition:core;
 concrete production nonterminalDcl
 top::AGDcl ::= 'nonterminal' id::Name botl::BracketedOptTypeList ';'
 {
-  production attribute extraDcls :: AGDcl with agDclAppend;
+  production attribute extraDcls :: AGDcl with appendAGDcl;
   extraDcls := defaultNonterminalDcl(id, botl);
 
   forwards to extraDcls;
@@ -54,6 +54,6 @@ top::AGDcl ::= id::Name botl::BracketedOptTypeList
        then [err(id.location, "Types must be capitalized. Invalid nonterminal name " ++ id.name)]
        else [];
 
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 

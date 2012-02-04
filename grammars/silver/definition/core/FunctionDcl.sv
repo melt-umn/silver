@@ -50,7 +50,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   body.signature = namedSig;
   body.blockContext = functionContext();
 
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 
 concrete production functionSignature

@@ -27,7 +27,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
 
   top.parserSpecs = [parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames)];
 
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 
 nonterminal ModuleList with location, grammarName, file, moduleNames, compiledGrammars, errors, pp;

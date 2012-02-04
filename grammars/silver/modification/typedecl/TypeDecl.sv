@@ -44,7 +44,7 @@ top::AGDcl ::= 'type' id::Name botl::BracketedOptTypeList '=' te::Type ';'
        then [err(id.location, "Types must be capitalized. Invalid nonterminal name " ++ id.name)]
        else [];
 
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 
 

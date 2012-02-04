@@ -34,7 +34,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
     syntaxTerminal(fName, r.terminalRegExprSpec, 
       foldr_p(consTerminalMod, nilTerminalMod(), t.terminalModifiers ++ tm.terminalModifiers))];
 
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 
 concrete production terminalDcl

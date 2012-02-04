@@ -85,6 +85,6 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
                 then [err(nt.location, nt.name ++ " is not a nonterminal. Attributes can only occur on nonterminals.")]
                 else [];
 
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 

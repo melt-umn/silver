@@ -10,12 +10,6 @@ nonterminal GrammarDcl with
   grammarName, file, location, pp, errors, declaredName;
 
 {--
- - Top-level declarations of a Silver grammar. The "meat" of a file.
- -}
-nonterminal AGDcls with grammarName, file, env, location, pp, errors, defs, warnings, moduleNames, compiledGrammars;
-nonterminal AGDcl  with grammarName, file, env, location, pp, errors, defs, warnings, moduleNames, compiledGrammars;
-
-{--
  - Grammar-wide imports definitions.  Exists because we need to place
  - a file's individual imports between grammar definitions and grammar
  - wide imports.
@@ -33,22 +27,10 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   forwards to root(gdcl, ms, ims, ags);
 }
 
-concrete production root2
-top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts
-{
-  forwards to root(gdcl, ms, ims, agDclsOne(agDclNone()));
-}
-
 concrete production root3
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ags::AGDcls
 {
   forwards to root(gdcl, ms, importStmtsNone(), ags);
-}
-
-concrete production root4
-top::Root ::= gdcl::GrammarDcl ms::ModuleStmts
-{
-  forwards to root(gdcl, ms, importStmtsNone(), agDclsOne(agDclNone()));
 }
 
 concrete production root5
@@ -57,22 +39,10 @@ top::Root ::= gdcl::GrammarDcl ims::ImportStmts ags::AGDcls
   forwards to root(gdcl, moduleStmtsNone(), ims, ags);
 }
 
-concrete production root6
-top::Root ::= gdcl::GrammarDcl ims::ImportStmts
-{
-  forwards to root(gdcl, moduleStmtsNone(), ims, agDclsOne(agDclNone()));
-}
-
 concrete production root7
 top::Root ::= gdcl::GrammarDcl ags::AGDcls
 {
   forwards to root(gdcl, moduleStmtsNone(), importStmtsNone(), ags);
-}
-
-concrete production root8
-top::Root ::= gdcl::GrammarDcl
-{
-  forwards to root(gdcl, moduleStmtsNone(), importStmtsNone(), agDclsOne(agDclNone()));
 }
 
 abstract production root
@@ -130,74 +100,3 @@ top::GrammarDcl ::= 'grammar' qn::QName ';'
     else [err(top.location, "Grammar declaration is incorrect: " ++ qn.name)];
 }
 
-
-concrete production agDclsOne
-top::AGDcls ::= ag::AGDcl
-{
-  top.pp = ag.pp;
-  top.location = ag.location;
-
-  top.defs = ag.defs;
-  top.errors := ag.errors;
-  top.warnings := ag.warnings;
-  top.moduleNames = ag.moduleNames;
-}
-
-concrete production agDclsCons
-top::AGDcls ::= h::AGDcl t::AGDcls
-{
-  top.pp = h.pp ++ "\n" ++ t.pp;
-  top.location = h.location;
-
-  top.defs = appendDefs(h.defs, t.defs);
-  top.errors := h.errors ++ t.errors;
-  top.warnings := h.warnings ++ t.warnings;
-  top.moduleNames = h.moduleNames ++ t.moduleNames;
-}
-
-abstract production agDclsAppend
-top::AGDcls ::= h::AGDcls t::AGDcls
-{
-  top.pp = h.pp ++ "\n" ++ t.pp;
-  top.location = h.location;
-
-  top.defs = appendDefs(h.defs, t.defs);
-  top.errors := h.errors ++ t.errors;
-  top.warnings := h.warnings ++ t.warnings;
-  top.moduleNames = h.moduleNames ++ t.moduleNames;
-}
-
-
-abstract production agDclNone
-top::AGDcl ::=
-{
-  top.pp = "";
-  top.location = loc(top.file, -1, -1);
-
-  top.errors := [];
-
-  forwards to agDclDefault(); 
-}
-
-abstract production agDclAppend
-top::AGDcl ::= h::AGDcl t::AGDcl
-{
-  top.pp = h.pp ++ "\n" ++ t.pp;
-  top.location = h.location;
-
-  top.defs = appendDefs(h.defs, t.defs);
-  top.errors := h.errors ++ t.errors;
-  top.warnings := h.warnings ++ t.warnings;
-  top.moduleNames = h.moduleNames ++ t.moduleNames;
-}
-
-abstract production agDclDefault
-top::AGDcl ::=
-{
-  -- can't provide pp or location!
-  top.moduleNames = [];
-  top.defs = emptyDefs();
-  --top.errors := []; -- should never be omitted, really.
-  top.warnings := [];
-  
-}

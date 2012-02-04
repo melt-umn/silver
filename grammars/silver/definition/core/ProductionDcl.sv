@@ -54,7 +54,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   body.signature = namedSig;
   body.blockContext = productionContext();
 
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 
 concrete production productionSignature

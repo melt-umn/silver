@@ -48,6 +48,6 @@ top::AGDcl ::= 'type' id::Name botl::BracketedOptTypeList 'foreign' ';' -- '{' f
        then [err(id.location, "Types must be capitalized. Invalid foreign type name " ++ id.name)]
        else [];
 
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 

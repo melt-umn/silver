@@ -56,7 +56,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   body.signature = namedSig;
   body.blockContext = defaultContext();
   
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 
 concrete production aspectFunctionDcl
@@ -98,7 +98,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   body.signature = namedSig;
   body.blockContext = defaultContext();
 
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 
 concrete production aspectProductionSignature

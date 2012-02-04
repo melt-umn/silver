@@ -24,6 +24,6 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
   
   top.syntaxAst = [syntaxParserAttribute(fName, te.typerep, acode.actionCode)];
 
-  forwards to agDclDefault();
+  forwards to defaultAGDcl();
 }
 
