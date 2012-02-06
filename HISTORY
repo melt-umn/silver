@@ -1,5 +1,21 @@
 
 --------------------------------------------------------------------------------
+Silver 0.4.0      Feb ??, 2012
+(last updated feb 5)
+ - Now hosted on google code! http://code.google.com/p/silver
+ - New, recommended, short form syntax for concrete production listings
+ - Shell scripts for installing 'silver' script and gedit support
+ - Updated to newer version of Copper; better support for layout
+ - Attribute sections (.pp) introduced, in limited form
+ - Partial application introduced
+ - Slightly more location information available on terminals
+ - 'Production' type eliminated, along with its duplicate functions (map_p...)
+ - The compiler now uses signficantly less memory
+ - General improvements to compiler quality (e.g. code and error messages)
+ - Pattern matching bugfixes
+ - Other, various, bugfixes
+
+--------------------------------------------------------------------------------
 Silver 0.3.4      Sep 27, 2011
 
  - New silver:util:treemap RB tree library

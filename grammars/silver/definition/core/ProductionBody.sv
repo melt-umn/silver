@@ -1,15 +1,24 @@
 grammar silver:definition:core;
 
-nonterminal ProductionBody with grammarName, file, env, location, pp, errors, defs, productionAttributes, warnings, signature, uniqueSignificantExpression;
+nonterminal ProductionBody with
+  grammarName, file, env, location, pp, errors, defs, blockContext,
+  productionAttributes, warnings, signature, uniqueSignificantExpression;
+nonterminal ProductionStmts with 
+  grammarName, file, env, location, pp, errors, defs, blockContext,
+  productionAttributes, warnings, signature, uniqueSignificantExpression;
+nonterminal ProductionStmt with
+  grammarName, file, env, location, pp, errors, defs, blockContext,
+  productionAttributes, warnings, signature, uniqueSignificantExpression;
 
-nonterminal ProductionStmts with grammarName, file, env, location, pp, errors, defs, productionAttributes, warnings, signature, uniqueSignificantExpression;
-nonterminal ProductionStmt with grammarName, file, env, location, pp, errors, defs, productionAttributes, warnings, signature, uniqueSignificantExpression;
+nonterminal DefLHS with 
+  grammarName, file, env, location, pp, errors, blockContext, signature, typerep, isSynthesizedDefinition;
 
-nonterminal DefLHS with grammarName, file, env, location, pp, errors, signature, typerep;
-
-nonterminal ForwardInhs with grammarName, file, env, location, pp, errors, signature;
-nonterminal ForwardInh with grammarName, file, env, location, pp, errors, signature;
-nonterminal ForwardLHSExpr with grammarName, file, env, location, pp, errors, signature, typerep;
+nonterminal ForwardInhs with 
+  grammarName, file, env, location, pp, errors, blockContext, signature;
+nonterminal ForwardInh with 
+  grammarName, file, env, location, pp, errors, blockContext, signature;
+nonterminal ForwardLHSExpr with 
+  grammarName, file, env, location, pp, errors, signature, typerep;
 
 {--
  - The signature of this fun/production, given to the production's body.
@@ -23,6 +32,12 @@ nonterminal ForwardLHSExpr with grammarName, file, env, location, pp, errors, si
  - anyway, so let's just reuse it, to avoid any recomputation.
  -}
 autocopy attribute signature :: Decorated NamedSignature;
+{--
+ - Context for ProductionStmt blocks. (Function, production, other...)
+ - At some future time, we should consider the possibility of eliminating
+ - signature, and just using this. Or not.
+ -}
+autocopy attribute blockContext :: BlockContext;
 
 {--
  - Defs of attributes that should be wrapped up as production attributes.
@@ -33,6 +48,13 @@ synthesized attribute productionAttributes :: Defs;
  - I gave it an obtuse name so it could easily be renamed in the future.
  -}
 synthesized attribute uniqueSignificantExpression :: [Decorated Expr];
+
+{--
+ - Tell a DefLHS whether it is a synthesized or inherited attribute.
+ - true = synthesized, false = inherited
+ -}
+inherited attribute isSynthesizedDefinition :: Boolean;
+
 
 concrete production emptyProductionBodySemi
 top::ProductionBody ::= ';'
@@ -383,8 +405,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   
   forwards to defaultProductionStmt();
 }
-
-inherited attribute isSynthesizedDefinition :: Boolean occurs on DefLHS; -- true = syn, false = inh
 
 concrete production concreteDefLHS
 top::DefLHS ::= q::QName

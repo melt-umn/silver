@@ -1,12 +1,10 @@
 grammar silver:definition:core;
 
 {--
- - Context for ProductionStmt blocks. (Function, production, other...)
+ - Permissions management information for certain features that can appear in production
+ - statements, etc.  i.e. "can forward/return/pluck?"
+ - TODO: Probably should have a 'real' one for aspects...
  -}
-autocopy attribute blockContext :: BlockContext occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh, DefLHS, -- ProductionBody.sv
-                                                          Expr, Exprs, ExprInh, ExprInhs, AppExprs, AppExpr; -- Expr.sv
-
-
 nonterminal BlockContext with permitReturn, permitForward, permitProductionAttributes, lazyApplication;
 
 synthesized attribute permitReturn :: Boolean;
