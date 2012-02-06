@@ -7,7 +7,7 @@ nonterminal AspectFunctionSignature with grammarName, file, env, location, pp, e
 nonterminal AspectFunctionLHS with grammarName, file, env, location, pp, errors, defs, realSignature, outputElement;
 
 nonterminal AspectRHS with grammarName, file, env, location, pp, errors, defs, inputElements, realSignature;
-nonterminal AspectRHSElem with grammarName, file, env, location, pp, errors, defs, realSignature, inputElements;
+nonterminal AspectRHSElem with grammarName, file, env, location, pp, errors, defs, realSignature, inputElements, deterministicCount;
 
 {--
  - The signature elements from the fun/produciton being aspected.
@@ -194,8 +194,6 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
   h.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
   t.realSignature = if null(top.realSignature) then [] else tail(top.realSignature);
 }
-
-attribute deterministicCount occurs on AspectRHSElem;
 
 concrete production aspectRHSElemNone
 top::AspectRHSElem ::= '_'

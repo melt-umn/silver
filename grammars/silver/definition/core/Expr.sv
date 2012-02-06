@@ -3,12 +3,39 @@ grammar silver:definition:core;
 import silver:analysis:typechecking:core;
 import silver:analysis:typechecking;
 
-nonterminal Expr with grammarName, file, env, location, pp, errors, signature, typerep;
-nonterminal Exprs with grammarName, file, env, location, pp, errors, signature, exprs, rawExprs;
+nonterminal Expr with
+  grammarName, file, env, location, pp, errors, blockContext, signature, typerep;
+nonterminal Exprs with
+  grammarName, file, env, location, pp, errors, blockContext, signature, exprs, rawExprs;
 
-nonterminal ExprInhs with grammarName, file, env, location, pp, errors, signature, decoratingnt;
-nonterminal ExprInh with grammarName, file, env, location, pp, errors, signature, decoratingnt;
-nonterminal ExprLHSExpr with grammarName, file, env, location, pp, errors, typerep, decoratingnt;
+nonterminal ExprInhs with
+  grammarName, file, env, location, pp, errors, blockContext, signature, decoratingnt;
+nonterminal ExprInh with
+  grammarName, file, env, location, pp, errors, blockContext, signature, decoratingnt;
+nonterminal ExprLHSExpr with
+  grammarName, file, env, location, pp, errors, typerep, decoratingnt;
+
+{--
+ - Exprs with optional underscores omitting parameters. Used exclusively for
+ - (partial) function application.
+ -}
+nonterminal AppExprs with 
+  grammarName, file, env, location, pp, errors, blockContext, signature, exprs, rawExprs,
+  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTypereps, normalExprs, appExprApplied;
+
+nonterminal AppExpr with
+  grammarName, file, env, location, pp, errors, blockContext, signature, exprs, rawExprs,
+  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied;
+
+synthesized attribute normalExprs :: Exprs;
+synthesized attribute isPartial :: Boolean;
+synthesized attribute missingTypereps :: [TypeExp];
+synthesized attribute appExprIndicies :: [Integer];
+inherited attribute appExprIndex :: Integer;
+inherited attribute appExprTypereps :: [TypeExp];
+inherited attribute appExprTyperep :: TypeExp;
+autocopy attribute appExprApplied :: String;
+
 
 {--
  - The nonterminal being decorated. (Used for 'decorate with {}')
@@ -818,27 +845,6 @@ function getErrorsExprs
 [[Message]] ::= es::[Decorated Expr]{
   return if null(es) then [] else [head(es).errors] ++ getErrorsExprs(tail(es));
 }
-
-{--
- - Exprs with optional underscores omitting parameters. Used exclusively for
- - (partial) function application.
- -}
-nonterminal AppExprs with 
-  grammarName, file, env, location, pp, errors, signature, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTypereps, normalExprs, appExprApplied;
-
-nonterminal AppExpr with
-  grammarName, file, env, location, pp, errors, signature, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied;
-
-synthesized attribute normalExprs :: Exprs;
-synthesized attribute isPartial :: Boolean;
-synthesized attribute missingTypereps :: [TypeExp];
-synthesized attribute appExprIndicies :: [Integer];
-inherited attribute appExprIndex :: Integer;
-inherited attribute appExprTypereps :: [TypeExp];
-inherited attribute appExprTyperep :: TypeExp;
-autocopy attribute appExprApplied :: String;
 
 concrete production missingAppExpr
 top::AppExpr ::= '_'

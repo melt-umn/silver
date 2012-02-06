@@ -3,7 +3,12 @@ grammar silver:definition:core;
 nonterminal ProductionSignature with grammarName, file, env, location, pp, errors, defs, inputElements, outputElement;
 nonterminal ProductionLHS with grammarName, file, env, location, pp, errors, defs, outputElement;
 nonterminal ProductionRHS with grammarName, file, env, location, pp, errors, defs, inputElements;
-nonterminal ProductionRHSElem with grammarName, file, env, location, pp, errors, defs, inputElements;
+nonterminal ProductionRHSElem with grammarName, file, env, location, pp, errors, defs, inputElements, deterministicCount;
+
+{--
+ - Used to help give names to children, when names are omitted.
+ -}
+inherited attribute deterministicCount :: Integer;
 
 concrete production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
@@ -116,9 +121,6 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
   top.inputElements = h.inputElements ++ t.inputElements;
   h.deterministicCount = length(t.inputElements);
 }
-
--- used to avoid using gen int when not given an explicit name
-inherited attribute deterministicCount :: Integer occurs on ProductionRHSElem;
 
 concrete production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::Type
