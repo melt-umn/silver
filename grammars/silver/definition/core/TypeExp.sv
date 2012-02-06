@@ -1,10 +1,10 @@
 grammar silver:definition:core;
 
-synthesized attribute applicationDispatcher :: Production (Expr ::= Decorated Expr Exprs);
-synthesized attribute accessDispatcher :: Production (Expr ::= Decorated Expr Dot_t Decorated QName);
+synthesized attribute applicationDispatcher :: Production (Expr ::= Decorated Expr  AppExprs);
+synthesized attribute accessDispatcher :: Production (Expr ::= Decorated Expr  Dot_t  Decorated QName);
 
 synthesized attribute lengthDispatcher :: Production (Expr ::= Decorated Expr);
-synthesized attribute appendDispatcher :: Production (Expr ::= Decorated Expr Decorated Expr);
+synthesized attribute appendDispatcher :: Production (Expr ::= Decorated Expr  Decorated Expr);
 
 -- Used for poor man's type classes
 synthesized attribute instanceEq :: Boolean;
@@ -18,7 +18,7 @@ attribute applicationDispatcher, accessDispatcher, lengthDispatcher, appendDispa
 aspect production defaultTypeExp
 top::TypeExp ::=
 {
-  top.applicationDispatcher = errorApplicationDispatcher;
+  top.applicationDispatcher = errorApplication;
   top.accessDispatcher = errorAccessDispatcher;
   top.instanceEq = false;
   top.instanceOrd = false;
@@ -83,5 +83,5 @@ top::TypeExp ::= te::TypeExp
 aspect production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
-  top.applicationDispatcher = functionApplicationDispatcher;
+  top.applicationDispatcher = functionApplication;
 }

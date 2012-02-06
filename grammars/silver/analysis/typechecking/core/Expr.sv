@@ -1,6 +1,6 @@
 grammar silver:analysis:typechecking:core;
 
-attribute upSubst, downSubst, finalSubst occurs on Expr, ForwardInhs, ForwardInh, ForwardLHSExpr, ExprInhs, ExprInh, ExprLHSExpr, Exprs;
+attribute upSubst, downSubst, finalSubst occurs on Expr, ForwardInhs, ForwardInh, ForwardLHSExpr, ExprInhs, ExprInh, ExprLHSExpr, Exprs, AppExprs, AppExpr;
 
 aspect production errorReference
 top::Expr ::= q::Decorated QName
@@ -51,39 +51,39 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production productionApp
-top::Expr ::= e::Expr '(' es::Exprs ')'
+top::Expr ::= e::Expr '(' es::AppExprs ')'
 {
   e.downSubst = top.downSubst;
   
   es.downSubst = top.downSubst; -- TODO REMOVE THIS (it's garbage related to bugs in pretty printing, afaict)
 }
 
-aspect production functionApplicationDispatcher
-top::Expr ::= e::Decorated Expr es::Exprs
+aspect production functionApplication
+top::Expr ::= e::Decorated Expr es::AppExprs
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  local attribute apparentTy :: TypeExp;
-  apparentTy = functionTypeExp(e.typerep.outputType, getTypesExprs(es.exprs));
-  
+  -- e already set by productionApp
   es.downSubst = e.upSubst;
-  errCheck1.downSubst = es.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e.typerep, apparentTy);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Incorrect number or type of arguments provided to " ++ e.pp
-                         ++ "\n  Expected type signature: " ++ errCheck1.leftpp
-                         ++ "\n  Provided type signature: " ++ errCheck1.rightpp)]
-       else [];
-
+  -- forwards
 }
 
-aspect production errorApplicationDispatcher
-top::Expr ::= e::Decorated Expr es::Exprs
+aspect production functionInvocation
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 {
-  -- initial dispatcher already set e
+  -- es already set by functionApplication
+  top.upSubst = es.upSubst;
+}
+
+aspect production partialApplication
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs
+{
+  -- es already set by functionApplication
+  top.upSubst = es.upSubst;
+}
+
+aspect production errorApplication
+top::Expr ::= e::Decorated Expr es::AppExprs
+{
+  -- e already set by productionApp
   es.downSubst = e.upSubst;
   top.upSubst = es.upSubst;
 }
@@ -583,12 +583,6 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.upSubst = e2.upSubst;
 }
 
-aspect production exprsDecorated
-top::Exprs ::= es::[Decorated Expr]
-{
-  top.upSubst = top.downSubst;
-}
-
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
@@ -642,5 +636,67 @@ top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
   lhs.downSubst = top.downSubst;
   inh.downSubst = lhs.upSubst;
   top.upSubst = inh.upSubst;
+}
+
+aspect production missingAppExpr
+top::AppExpr ::= '_'
+{
+  top.upSubst = top.downSubst;
+}
+
+aspect production presentAppExpr
+top::AppExpr ::= e::Expr
+{
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  e.downSubst = top.downSubst;
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst;
+  
+  errCheck1 = check(e.typerep, top.appExprTyperep);
+  top.errors <-
+    if !errCheck1.typeerror then []
+    else [err(top.location, "Argument " ++ toString(top.appExprIndex+1) ++ " of function '" ++
+            top.appExprApplied ++ "' expected " ++ errCheck1.rightpp ++
+            " but argument is of type " ++ errCheck1.leftpp)];
+}
+
+aspect production decoratedAppExpr
+top::AppExpr ::= e::Decorated Expr
+{
+  -- The assumption is that the subst go threaded through e already, but isn't lost
+  -- it's already in our incoming subst.  Out only job here it to type check it:
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  errCheck1.downSubst = top.downSubst;
+  top.upSubst = errCheck1.upSubst;
+  
+  errCheck1 = check(e.typerep, top.appExprTyperep);
+  top.errors <-
+    if !errCheck1.typeerror then []
+    else [err(top.location, "Argument " ++ toString(top.appExprIndex+1) ++ " of function '" ++
+            top.appExprApplied ++ "' expected " ++ errCheck1.rightpp ++
+            " but argument is of type " ++ errCheck1.leftpp)];  
+}
+
+aspect production consAppExprs
+top::AppExprs ::= e::AppExpr ',' es::AppExprs
+{
+  e.downSubst = top.downSubst;
+  es.downSubst = e.upSubst;
+  top.upSubst = es.upSubst;
+}
+
+aspect production oneAppExprs
+top::AppExprs ::= e::AppExpr
+{
+  e.downSubst = top.downSubst;
+  top.upSubst = e.upSubst;
+}
+
+aspect production emptyAppExprs
+top::AppExprs ::= l::Location
+{
+  top.upSubst = top.downSubst;
 }
 

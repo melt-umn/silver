@@ -19,7 +19,8 @@ equalityTest ( applyExist(existentialprod(1, toStringFromInteger)), "1", String,
 equalityTest ( applyExist(existentialprod(2, toStringFromInteger)), "2", String, pat_tests ) ;
 equalityTest ( applyExist(existentialprod(1.0, toStringFromFloat)), "1.0", String, pat_tests ) ;
 
-wrongCode "Incorrect number or type of arguments provided to" {
+-- Make sure this raises an error instead of the existential type being unified
+wrongCode "expected a but argument is of type String" {
  function applyExistBadType
  String ::= v::Existential
  {

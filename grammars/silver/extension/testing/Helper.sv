@@ -41,8 +41,8 @@ Expr ::= s::String
 -- of Expr arguments.
 function prodFuncCall
 Expr ::= name::String args::[Expr]
-{ return
-   productionApp( mkNameExpr(name), '(',foldExprs(args) , ')' ) ;
+{ 
+  return mkFunctionInvocation(mkNameExpr(name), args);
 }
 
 -- Fold a list of expressions (Expr) into a Exprs nonterminal.
