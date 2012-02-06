@@ -1,6 +1,53 @@
 -- Function manipulations
 
+-----------------------------
+-- Basic function application
 
+function zeroArgFunction
+Integer ::=
+{
+  return 0;
+}
+
+function twoArgFunction
+Integer ::= s::String  i::Integer
+{
+  return i;
+}
+
+wrongCode "Undeclared value" {
+  global nop::Integer = oneArgFunction(1);
+}
+
+wrongCode "Too many arguments" {
+  global nop::Integer = zeroArgFunction(1);
+}
+
+wrongCode "Too few arguments" {
+  global nop::Integer = twoArgFunction();
+}
+
+wrongCode "Too few arguments" {
+  global nop::Integer = twoArgFunction("s");
+}
+
+wrongCode "Too many arguments" {
+  global nop::Integer = twoArgFunction("s",2,2);
+}
+
+wrongCode "expected Integer but argument is of type String" {
+  global nop::Integer = twoArgFunction("s","w");
+}
+
+wrongCode "expected String but argument is of type Integer" {
+  global nop::Integer = twoArgFunction(1,2);
+}
+
+-- Works applying indirectly
+equalityTest( head([zeroArgFunction])(), 0, Integer, silver_tests ) ;
+equalityTest( head([twoArgFunction])("s", 1), 1, Integer, silver_tests ) ;
+
+---------------------------
 -- Attribute sections (.pp)
 
 nonterminal Section;
@@ -37,4 +84,12 @@ wrongCode "Only synthesized attributes are currently supported" {
  -- Valid, but for the moment does not work! TODO
  global s :: [Integer] = map((.sec_inv3), sections);
 }
+
+-------------------------------
+-- Partial function application
+
+global onePartFun :: Function(Integer ::= Integer) = twoArgFunction("s",_);
+
+equalityTest( onePartFun(3), 3, Integer, silver_tests );
+
 

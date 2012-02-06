@@ -41,13 +41,19 @@ public class PartialNodeFactory<T> extends NodeFactory<T> {
 		
 		int argsindex = 0;
 		int restargsindex = 0;
-		for(int i = 0; i < fullsize; i++) {
+		// Only go up to args.length at first:
+		int i;
+		for(i = 0; i < args.length; i++) {
 			if(indices[argsindex] == i) {
 				// The we're at that argument, fill it in
 				fullargs[i] = args[argsindex++];
 			} else {
 				fullargs[i] = restargs[restargsindex++];
 			}
+		}
+		// Finished off args, just fill the rest in with restargs.
+		for(; i < fullsize; i++) {
+			fullargs[i] = restargs[restargsindex++];
 		}
 		return ref.invoke(fullargs);
 	}

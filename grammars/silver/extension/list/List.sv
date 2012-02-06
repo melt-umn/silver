@@ -26,8 +26,9 @@ concrete production emptyList
 top::Expr ::= '[' ']'
 {
   top.pp = "[]";
+  top.location = loc(top.file, $1.line, $1.column);
 
-  forwards to emptyProductionApp(baseExpr(qNameId(nameIdLower(terminal (IdLower_t, "core:nil")))), '(',')');
+  forwards to mkFunctionInvocation(baseExpr(qName(top.location, "core:nil")), []);
 }
 
 -- TODO: BUG: '::' is HasType_t.  We probably want to have a different
@@ -37,11 +38,11 @@ concrete production consListOp
 top::Expr ::= h::Expr '::' t::Expr
 {
   top.pp = "(" ++ h.pp ++ " :: " ++ t.pp ++ ")" ;
+  top.location = loc(top.file, $2.line, $2.column);
   
   h.downSubst = top.downSubst; t.downSubst = top.downSubst; -- TODO BUG: don't know what this is needed... pp apparently??
   
-  forwards to productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:cons")))),
-                    '(', exprsCons(h, ',', exprsSingle(t)), ')');
+  forwards to mkFunctionInvocation(baseExpr(qName(top.location, "core:cons")), [h, t]);
 }
 
 concrete production fullList
@@ -65,21 +66,13 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.listtrans = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:cons", e.location.line, e.location.column)))),
-                    '(', exprsCons(e, ',', exprsSingle(emptyList('[',']'))), ')');
+  top.listtrans = mkFunctionInvocation(baseExpr(qName(e.location, "core:cons")), [e, emptyList('[',']')]);
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr c::Comma_t e2::Exprs
 {
-  top.listtrans = productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:cons", e1.location.line, e1.location.column)))),
-                    '(', exprsCons(e1, ',', exprsSingle(e2.listtrans)), ')');
-}
-
-aspect production exprsDecorated
-top::Exprs ::= es::[Decorated Expr]
-{
-  top.listtrans = error("list translation for exprsDecorated is not yet implemented!");
+  top.listtrans = mkFunctionInvocation(baseExpr(qName(e1.location, "core:cons")), [e1, e2.listtrans]);
 }
 
 -- Overloaded operators --------------------------------------------------------
@@ -87,13 +80,11 @@ top::Exprs ::= es::[Decorated Expr]
 abstract production listPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
-  forwards to productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:append")))),
-                    '(', exprsDecorated([e1,e2]), ')');
+  forwards to mkFunctionInvocationDecorated(baseExpr(qName(e1.location, "core:append")), [e1,e2]);
 }
 abstract production listLengthBouncer
 top::Expr ::= e::Decorated Expr
 {
-  forwards to productionApp(baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "core:listLength")))),
-                    '(', exprsDecorated([e]), ')');
+  forwards to mkFunctionInvocationDecorated(baseExpr(qName(e.location, "core:listLength")), [e]);
 }
 

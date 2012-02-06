@@ -3,12 +3,12 @@ grammar silver:definition:core;
 import silver:analysis:typechecking:core;
 import silver:analysis:typechecking;
 
-nonterminal Expr with grammarName, file, env, location, pp, errors, defs, signature, typerep;
-nonterminal Exprs with grammarName, file, env, location, pp, errors, defs, signature, exprs, rawExprs;
+nonterminal Expr with grammarName, file, env, location, pp, errors, signature, typerep;
+nonterminal Exprs with grammarName, file, env, location, pp, errors, signature, exprs, rawExprs;
 
-nonterminal ExprInhs with grammarName, file, env, location, pp, errors, defs, signature, decoratingnt;
-nonterminal ExprInh with grammarName, file, env, location, pp, errors, defs, signature, decoratingnt;
-nonterminal ExprLHSExpr with grammarName, file, env, location, pp, errors, defs, typerep, decoratingnt;
+nonterminal ExprInhs with grammarName, file, env, location, pp, errors, signature, decoratingnt;
+nonterminal ExprInh with grammarName, file, env, location, pp, errors, signature, decoratingnt;
+nonterminal ExprLHSExpr with grammarName, file, env, location, pp, errors, typerep, decoratingnt;
 
 {--
  - The nonterminal being decorated. (Used for 'decorate with {}')
@@ -196,7 +196,7 @@ top::Expr ::= q::'forward'
 
 
 concrete production productionApp
-top::Expr ::= e::Expr '(' es::Exprs ')'
+top::Expr ::= e::Expr '(' es::AppExprs ')'
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   top.location = e.location;
@@ -207,31 +207,63 @@ top::Expr ::= e::Expr '(' es::Exprs ')'
 concrete production emptyProductionApp
 top::Expr ::= e::Expr '(' ')'
 {
-  forwards to productionApp(e, $2, exprsEmpty(), $3);
+  forwards to productionApp(e, $2, emptyAppExprs(forward.location), $3);
 }
 
-abstract production functionApplicationDispatcher
-top::Expr ::= e::Decorated Expr es::Exprs
+abstract production errorApplication
+top::Expr ::= e::Decorated Expr es::AppExprs
+{
+  top.pp = e.pp ++ "(" ++ es.pp ++ ")";
+  top.location = e.location;
+  top.errors := e.errors ++ 
+    [err(top.location, e.pp ++ " has type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++
+      " and cannot be invoked as a function.")] ++ es.errors;
+        -- TODO This error message is cumbersomely generated...
+
+  top.typerep = errorType();
+  
+  es.appExprIndex = 0;
+  es.appExprTypereps = [];
+  es.appExprApplied = e.pp;
+
+  forwards to defaultExpr();
+}
+
+abstract production functionApplication
+top::Expr ::= e::Decorated Expr es::AppExprs
+{
+  es.appExprIndex = 0;
+  -- We may need to resolve e's type to get at the actual 'function type'
+  es.appExprTypereps = performSubstitution(e.typerep, e.upSubst).inputTypes;
+  es.appExprApplied = e.pp;
+  
+  forwards to if es.isPartial
+              then partialApplication(e, es)
+              else functionInvocation(e, es);
+}
+
+abstract production functionInvocation
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   top.location = e.location;
   top.errors := e.errors ++ es.errors; 
 
-  top.typerep = performSubstitution(e.typerep, e.upSubst).outputType;
+  top.typerep = e.typerep.outputType;
   
   forwards to defaultExpr();
 }
 
-abstract production errorApplicationDispatcher
-top::Expr ::= e::Decorated Expr es::Exprs
+abstract production partialApplication
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   top.location = e.location;
-  top.errors := e.errors ++ [err(top.location, e.pp ++ " has type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ " and cannot be invoked as a function.")] ++ es.errors; -- TODO fix this.  Uhhh how? What's broken? My comments SUCK! Perhaps I didn't like doing the performsubst here
+  top.errors := e.errors ++ es.errors; 
 
-  top.typerep = errorType();
+  top.typerep = functionTypeExp(e.typerep.outputType, es.missingTypereps);
   
-  forwards to defaultExpr();
+  forwards to defaultExpr();  
 }
 
 concrete production attributeSection
@@ -773,17 +805,6 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.rawExprs = [e1] ++ e2.rawExprs;
 }
 
-abstract production exprsDecorated
-top::Exprs ::= es::[Decorated Expr]
-{
-  top.pp = implode(", ", getPPsExprs(es));
-  top.location = if null(es) then loc("nowhere",-1,-1) else head(es).location;
-  
-  top.errors := foldr(append, [], getErrorsExprs(es));
-  top.exprs = es;
-  top.rawExprs = error("internal error: not yet implemented: rawExprs from exprsDecorated");
-}
-
 
 function getTypesExprs
 [TypeExp] ::= es::[Decorated Expr]{
@@ -798,80 +819,187 @@ function getErrorsExprs
   return if null(es) then [] else [head(es).errors] ++ getErrorsExprs(tail(es));
 }
 
-
 {--
  - Exprs with optional underscores omitting parameters. Used exclusively for
  - (partial) function application.
  -}
-nonterminal AppExprs with rawExprs, isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTypereps, env, errors, location, file;
+nonterminal AppExprs with 
+  grammarName, file, env, location, pp, errors, signature, exprs, rawExprs,
+  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTypereps, normalExprs, appExprApplied;
 
-nonterminal AppExpr with rawExprs, isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, location, file;
+nonterminal AppExpr with
+  grammarName, file, env, location, pp, errors, signature, exprs, rawExprs,
+  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied;
 
+synthesized attribute normalExprs :: Exprs;
 synthesized attribute isPartial :: Boolean;
 synthesized attribute missingTypereps :: [TypeExp];
 synthesized attribute appExprIndicies :: [Integer];
 inherited attribute appExprIndex :: Integer;
 inherited attribute appExprTypereps :: [TypeExp];
 inherited attribute appExprTyperep :: TypeExp;
+autocopy attribute appExprApplied :: String;
 
-concrete production appExprMissing
+concrete production missingAppExpr
 top::AppExpr ::= '_'
 {
+  top.pp = "_";
   top.location = loc(top.file, $1.line, $1.column);
   
   top.isPartial = true;
   top.missingTypereps = [top.appExprTyperep];
   
   top.rawExprs = [];
+  top.exprs = [];
   top.appExprIndicies = [];
+  
+  top.errors := [];
 }
 
-concrete production appExprPresent
+concrete production presentAppExpr
 top::AppExpr ::= e::Expr
 {
+  top.pp = e.pp;
   top.location = e.location;
   
   top.isPartial = false;
   top.missingTypereps = [];
   
   top.rawExprs = [e];
+  top.exprs = [e];
   top.appExprIndicies = [top.appExprIndex];
+  
+  top.errors := e.errors;
 }
 
-concrete production appExprCons
+abstract production decoratedAppExpr
+top::AppExpr ::= e::Decorated Expr
+{
+  top.pp = e.pp;
+  top.location = e.location;
+  
+  top.isPartial = false;
+  top.missingTypereps = [];
+  
+  top.rawExprs = [new(e)];
+  top.exprs = [e];
+  top.appExprIndicies = [top.appExprIndex];
+  
+  top.errors := e.errors;
+}
+
+
+concrete production consAppExprs
 top::AppExprs ::= e::AppExpr ',' es::AppExprs
 {
+  top.pp = e.pp ++ ", " ++ es.pp;
   top.location = e.location;
-  top.rawExprs = e.rawExprs ++ es.rawExprs;
+
   top.isPartial = e.isPartial || es.isPartial;
   top.missingTypereps = e.missingTypereps ++ es.missingTypereps;
+
+  top.rawExprs = e.rawExprs ++ es.rawExprs;
+  top.exprs = e.exprs ++ es.exprs;
   top.appExprIndicies = e.appExprIndicies ++ es.appExprIndicies;
-  top.errors := es.errors;
+  top.normalExprs = exprsCons(head(e.rawExprs), $2, es.normalExprs);
+
+  top.errors := e.errors ++ es.errors;
+
   e.appExprIndex = top.appExprIndex;
   e.appExprTyperep = if null(top.appExprTypereps)
                      then errorType()
                      else head(top.appExprTypereps);
+
   es.appExprIndex = top.appExprIndex + 1;
   es.appExprTypereps = if null(top.appExprTypereps) then [] else tail(top.appExprTypereps);
 }
 
-concrete production appExprSingle
+concrete production oneAppExprs
 top::AppExprs ::= e::AppExpr
 {
+  top.pp = e.pp;
   top.location = e.location;
-  top.rawExprs = e.rawExprs;
+
   top.isPartial = e.isPartial;
   top.missingTypereps = e.missingTypereps;
+
+  top.rawExprs = e.rawExprs;
+  top.exprs = e.exprs;
   top.appExprIndicies = e.appExprIndicies;
+  top.normalExprs = exprsSingle(head(e.rawExprs));
+  
   top.errors := if null(top.appExprTypereps)
-                then [err(top.location, "Insufficient parameters provided to ???")] -- TODO ???
+                then [err(top.location, "Too many arguments provided to function '" ++ top.appExprApplied ++ "'")]
+                else if length(top.appExprTypereps) > 1
+                then [err(top.location, "Too few arguments provided to function '" ++ top.appExprApplied ++ "'")]
                 else [];
-  top.errors <- if length(top.appExprTypereps) > 1
-                then [err(top.location, "Too many parameters provided to ???")] -- TODO ???
-                else [];
+  top.errors <- e.errors;
+
   e.appExprIndex = top.appExprIndex;
   e.appExprTyperep = if null(top.appExprTypereps)
                      then errorType()
                      else head(top.appExprTypereps);
+}
+
+abstract production emptyAppExprs
+top::AppExprs ::= l::Location
+{
+  top.pp = "";
+  top.location = l;
+
+  top.isPartial = false;
+  top.missingTypereps = [];
+
+  top.rawExprs = [];
+  top.exprs = [];
+  top.appExprIndicies = [];
+  top.normalExprs = exprsEmpty();
+
+  -- Assumption: We only get here when we're looking at ()
+  -- i.e. we can't ever have 'too many' provided error
+  top.errors := if null(top.appExprTypereps) then []
+                else [err(top.location, "Too few arguments provided to function '" ++ top.appExprApplied ++ "'")];
+}
+
+{--
+ - Utility for other modules to create function invocations.
+ - This makes no assumptions, use it any way you wish!
+ -}
+function mkFunctionInvocation
+Expr ::= e::Expr  es::[Expr]
+{
+  return productionApp(e, '(', foldAppExprs(es,e.location), ')');
+}
+function foldAppExprs
+AppExprs ::= e::[Expr]  l::Location
+{
+  return if null(e) then emptyAppExprs(l)
+         else if null(tail(e)) then oneAppExprs(presentAppExpr(head(e)))
+         else consAppExprs(presentAppExpr(head(e)), ',', foldAppExprs(tail(e),l));
+}
+
+{--
+ - Utility for other modules to create function invocations.
+ -
+ - Major assumption: The expressions are already decorated, and the 
+ - typing substitution threaded through them will then be fed through
+ - the expr created by this function.
+ -
+ - The purpose of this vs just mkFunctionInvocationDecorated
+ - is to avoid exponential growth from forwarding. Type checking
+ - an expr, then forwarding to a function call that again type
+ - checks that expr well... just nest those and boom.
+ -}
+function mkFunctionInvocationDecorated
+Expr ::= e::Expr  es::[Decorated Expr]
+{
+  return productionApp(e, '(', foldAppExprsDecorated(es, e.location), ')');
+}
+function foldAppExprsDecorated
+AppExprs ::= e::[Decorated Expr]  l::Location
+{
+  return if null(e) then emptyAppExprs(l)
+         else if null(tail(e)) then oneAppExprs(decoratedAppExpr(head(e)))
+         else consAppExprs(decoratedAppExpr(head(e)), ',', foldAppExprsDecorated(tail(e),l));
 }
 

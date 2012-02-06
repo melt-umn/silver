@@ -4,7 +4,7 @@ grammar silver:definition:core;
  - Context for ProductionStmt blocks. (Function, production, other...)
  -}
 autocopy attribute blockContext :: BlockContext occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh, DefLHS, -- ProductionBody.sv
-                                                          Expr, Exprs, ExprInh, ExprInhs; -- Expr.sv
+                                                          Expr, Exprs, ExprInh, ExprInhs, AppExprs, AppExpr; -- Expr.sv
 
 
 nonterminal BlockContext with permitReturn, permitForward, permitProductionAttributes, lazyApplication;

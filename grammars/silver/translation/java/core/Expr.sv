@@ -10,22 +10,18 @@ TypeExp ::= e::Decorated Expr
   return performSubstitution(e.typerep, e.finalSubst);
 }
 
--- These attributes help us generate slightly less awful code, by not going through reflection for direct function/production calls.
-synthesized attribute appReference :: String;
-
 {--
  - A translation string that will be a closure instead of the raw value.
  - BUT, is permitted to be a raw value IF it's totally safe to do so.
  -}
 synthesized attribute lazyTranslation :: String;
 
-attribute lazyTranslation, translation, appReference occurs on Expr;
+attribute lazyTranslation, translation occurs on Expr;
 attribute lazyTranslation occurs on Exprs;
 
 aspect production defaultExpr
 top::Expr ::=
 {
-  -- deliberately leave appReference undefined.
 }
 
 -- TODO: these go through the process of decorating them, just to undecorate.
@@ -92,8 +88,6 @@ top::Expr ::= q::Decorated QName
 aspect production productionReference
 top::Expr ::= q::Decorated QName
 {
-  top.appReference = makeClassName(q.lookupValue.fullName);
-
   top.translation = makeClassName(q.lookupValue.fullName) ++ ".factory";
   top.lazyTranslation = top.translation;
 }
@@ -101,8 +95,6 @@ top::Expr ::= q::Decorated QName
 aspect production functionReference
 top::Expr ::= q::Decorated QName
 {
-  top.appReference = makeClassName(q.lookupValue.fullName);
-
   top.translation = makeClassName(q.lookupValue.fullName) ++ ".factory";
   top.lazyTranslation = top.translation;
 }
@@ -132,18 +124,40 @@ top::Expr ::= q::Decorated QName
        else top.translation;
 }
 
-aspect production functionApplicationDispatcher
-top::Expr ::= e::Decorated Expr es::Exprs
+aspect production functionInvocation
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 {
-  top.translation = case e of 
-                      functionReference ( _ ) ->
-                         "((" ++ finalType(top).transType ++ ")" ++ e.appReference ++ ".invoke(new Object[]{" ++ es.lazyTranslation ++ "}))"
+  top.translation = 
+    case e of 
+    | functionReference(q) -> -- static method invocation
+        "((" ++ finalType(top).transType ++ ")" ++ makeClassName(q.lookupValue.fullName) ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}))"
+    | productionReference(q) -> -- static constructor invocation
+        "((" ++ finalType(top).transType ++ ")new " ++ makeClassName(q.lookupValue.fullName) ++ "(" ++ argsTranslation(es) ++ "))"
+    | _ -> -- dynamic method invocation
+        "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}))" 
+    end ;
 
-                    | productionReference ( _ ) -> 
-                         "((" ++ finalType(top).transType ++ ")new " ++ e.appReference ++ "(" ++ es.lazyTranslation ++ "))"
+  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
+}
 
-                    | _ -> "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ es.lazyTranslation ++ "}))" 
-                    end ;
+function argsTranslation
+String ::= e::Decorated AppExprs
+{
+  return implode(", ", map((.lazyTranslation), e.exprs));
+}
+
+function int2str String ::= i::Integer { return toString(i); }
+
+aspect production partialApplication
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs
+{
+  top.translation = 
+    "((" ++ finalType(top).transType ++ ")new common.PartialNodeFactory<" ++ 
+      performSubstitution(e.typerep.outputType, top.finalSubst).transType ++
+      ">(new int[]{" ++ 
+      implode(", ", map(int2str, es.appExprIndicies)) ++ "}, new Object[]{" ++ 
+      argsTranslation(es) ++ "}, " ++ 
+      e.translation ++ "))";
 
   top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication);
 }
@@ -485,17 +499,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.lazyTranslation = e1.lazyTranslation ++ ", " ++ e2.lazyTranslation;
 }
 
-aspect production exprsDecorated
-top::Exprs ::= es::[Decorated Expr]
-{
-  top.lazyTranslation = implode(", ", map(getLazyTranslation, es));
-}
 
-function getLazyTranslation
-String ::= e::Decorated Expr
-{
-  return e.lazyTranslation;
-}
 function wrapClosure
 String ::= t::String beLazy::Boolean
 {
