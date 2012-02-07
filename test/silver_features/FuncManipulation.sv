@@ -92,4 +92,12 @@ global onePartFun :: Function(Integer ::= Integer) = twoArgFunction("s",_);
 
 equalityTest( onePartFun(3), 3, Integer, silver_tests );
 
+function addTwo
+Integer ::= a::Integer  b::Integer
+{
+  return a + b;
+}
+
+equalityTest( addTwo(addTwo(1,_)(2),_)(addTwo(_,3)(4)), 10, Integer, silver_tests ) ;
+
 
