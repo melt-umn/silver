@@ -1,5 +1,6 @@
 grammar silver:langutil:pp;
 
+import core hiding implode;
 import silver:util:deque;
 
 function show
@@ -23,6 +24,18 @@ Document ::= ds::[Document]
 {
   return if null(ds) then notext()
          else foldl_p(cat, head(ds), tail(ds));
+}
+function implode
+Document ::= sep::Document ds::[Document]
+{
+  return if null(ds) then notext()
+         else if null(tail(ds)) then head(ds)
+         else cat(cat(head(ds), sep), implode(sep, tail(ds)));
+}
+function terminate
+Document ::= sep::Document ds::[Document]
+{
+  return cat(implode(sep, ds), sep);
 }
 function nestlines
 Document ::= n::Integer inner::Document
