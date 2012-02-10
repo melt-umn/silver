@@ -1,7 +1,9 @@
 {- A Universal location information data structure -}
 grammar silver:langutil;
 
-nonterminal Location with unparse;
+nonterminal Location with unparse, line;
+
+synthesized attribute line :: Integer;
 
 {--
  - The sole constructor for location information.
@@ -11,6 +13,7 @@ abstract production loc
 top::Location ::= file::String line::Integer column::Integer
 {
   top.unparse = file ++ ":" ++ toString(line) ++ "." ++ toString(column);
+  top.line = line;
 }
 
 {--
