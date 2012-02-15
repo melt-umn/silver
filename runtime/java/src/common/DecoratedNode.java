@@ -358,17 +358,17 @@ public class DecoratedNode {
 	public final Object childDecoratedLazy(final int child) {
 		if(childrenValues[child] != null)
 			return childrenValues[child];
-		return new Closure(this) {
+		return new Thunk<Object>(this) {
 			@Override
-			public final Object eval() {
+			public final Object doEval() {
 				return context.childDecorated(child);
 			}
 		};
 	}
 	public final Object childAsIsLazy(final int child) {
-		return new Closure(this) {
+		return new Thunk<Object>(this) {
 			@Override
-			public final Object eval() {
+			public final Object doEval() {
 				return context.childAsIs(child);
 			}
 		};
@@ -376,17 +376,17 @@ public class DecoratedNode {
 	public final Object localDecoratedLazy(final int index) {
 		if(localValues[index] != null)
 			return localValues[index];
-		return new Closure(this) {
+		return new Thunk<Object>(this) {
 			@Override
-			public final Object eval() {
+			public final Object doEval() {
 				return context.localDecorated(index);
 			}
 		};
 	}
 	public final Object localAsIsLazy(final int index) {
-		return new Closure(this) {
+		return new Thunk<Object>(this) {
 			@Override
-			public final Object eval() {
+			public final Object doEval() {
 				return context.localAsIs(index);
 			}
 		};
@@ -397,9 +397,9 @@ public class DecoratedNode {
 		{
 			return ((DecoratedNode)childrenValues[child]).synthesizedValues[index];
 		}
-		return new Closure(this) {
+		return new Thunk<Object>(this) {
 			@Override
-			public final Object eval() {
+			public final Object doEval() {
 				return context.childDecorated(child).synthesized(index);
 			}
 		};
@@ -407,9 +407,9 @@ public class DecoratedNode {
 	public final Object contextInheritedLazy(final int index) {
 		if( inheritedValues[index] != null)
 			return inheritedValues[index];
-		return new Closure(this) {
+		return new Thunk<Object>(this) {
 			@Override
-			public final Object eval() {
+			public final Object doEval() {
 				return context.inherited(index);
 			}
 		};

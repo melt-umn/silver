@@ -68,13 +68,13 @@ public abstract class Node {
 	 */
 	public final Object getChild(final int child) {
 		Object o = children[child];
-		if(o instanceof Closure) {
+		if(o instanceof Thunk) {
 			// We're doing thunk evaluation on the Node level, rather
 			// than DecoratedNode.  This is more efficient, as there
 			// may be more than one DecoratedNode per Node.
 			// AND this eliminates all references to this thunk,
 			// eliminating all references to that DecoratedNode and so on.
-			o = ((Closure)o).eval();
+			o = ((Thunk<?>)o).eval();
 			children[child] = o;
 		}
 		return o;

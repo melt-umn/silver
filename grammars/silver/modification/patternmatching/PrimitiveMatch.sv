@@ -97,7 +97,7 @@ top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
         "return " ++ f.translation ++ ";" ++ 
     "}}.eval(context, (" ++ scrutineeType.transType ++")" ++ e.translation ++ ")";
 
-  top.lazyTranslation = wrapClosure(top.translation, top.blockContext.lazyApplication); 
+  top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication); 
   -- TODO there seems to be an opportunity here to avoid an anon class somehow...
   
   forwards to defaultExpr();
@@ -393,7 +393,9 @@ top::PrimPattern ::= h::String t::String e::Expr
   makeSpecialLocalBinding(t, "scrutinee.tail()", performSubstitution(top.scrutineeType, top.finalSubst).transType) ++
   "return " ++ e.translation ++ "; }";
 }
+
 --------------------------------------------------------------------------------
+
 concrete production oneVarBinder
 top::VarBinders ::= v::VarBinder
 {
@@ -498,12 +500,6 @@ top::VarBinder ::= '_'
   top.let_translation = "";
 }
 
-
-function makeSpecialLocalBinding
-String ::= fn::String  et::String  ty::String
-{
-  return "final common.Thunk<" ++ ty ++ "> " ++ makeLocalValueName(fn) ++ " = " ++ "new common.Thunk<" ++ ty ++ ">(" ++ wrapThunkText("context", et) ++ ");\n";
-}
 
 -----
 
