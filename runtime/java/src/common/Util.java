@@ -24,8 +24,8 @@ public final class Util {
 	 * @return The value, either directly, or evaluating the Closure
 	 */
 	public static Object demand(Object c) {
-		if(c instanceof Closure)
-			return ((Closure)c).eval();
+		if(c instanceof Thunk)
+			return ((Thunk<?>)c).eval();
 		return c;
 	}
 

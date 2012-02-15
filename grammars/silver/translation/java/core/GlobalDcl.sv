@@ -3,6 +3,7 @@ grammar silver:translation:java:core;
 aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
 {
-  top.initValues := "\tpublic static final common.Thunk<" ++ t.typerep.transType ++ "> " ++ id.name 
-      ++ " = new common.Thunk<" ++ t.typerep.transType ++ ">(" ++ wrapThunkText("common.TopNode.singleton", e.translation) ++ ");\n";
+  -- TODO: would be nice to use more specific types
+  top.initValues := "\tpublic static final common.Thunk<Object> " ++ id.name 
+      ++ " = " ++ wrapThunkText("common.TopNode.singleton", e.translation, "Object") ++ ";\n";
 }

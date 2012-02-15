@@ -56,3 +56,8 @@ wrongCode "does not have the right signature." { -- TODO: this error message sho
 -- 'Let's function in a global. Used to rely on signatures...
 global letTest :: Integer = let x :: Integer = 5 in x end;
 
+wrongCode "[String] has initialization expression with type [Integer]" {
+  -- Check that error messages are generated properly
+  global globIntList :: [Integer] = [1,2];
+  global globStrList :: [String] = tail(globIntList); -- thread type state properly to detect Str!=Int
+}

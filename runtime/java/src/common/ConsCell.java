@@ -41,8 +41,8 @@ public class ConsCell {
 	 * @return The head element.
 	 */
 	public Object head() {
-		if(head instanceof Closure) {
-			head = ((Closure)head).eval();
+		if(head instanceof Thunk) {
+			head = ((Thunk<?>)head).eval();
 		}
 		return head;
 	}
@@ -52,8 +52,8 @@ public class ConsCell {
 	 * @return The tail element.
 	 */
 	public ConsCell tail() {
-		if(tail instanceof Closure) {
-			tail = ((Closure)tail).eval();
+		if(tail instanceof Thunk) {
+			tail = ((Thunk<?>)tail).eval();
 		}
 		return (ConsCell)tail;
 	}

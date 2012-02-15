@@ -32,10 +32,6 @@ public class PartialNodeFactory<T> extends NodeFactory<T> {
 	
 	@Override
 	public T invoke(final Object[] restargs) {
-		// TODO: Optimization needed here!
-		// actually that's not an opt, it's a BUG FIXME
-		// We should fill in the args with thunks instead of closures
-		// These are getting evaluated every time!!
 		final int fullsize = args.length + restargs.length;
 		final Object[] fullargs = new Object[fullsize];
 		

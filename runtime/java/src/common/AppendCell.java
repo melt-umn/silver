@@ -75,14 +75,14 @@ public class AppendCell extends ConsCell {
 	 * @return A ConsCell representing the appended lists
 	 */
 	public final static ConsCell append(Object l, Object r) {
-		if(l instanceof Closure)
-			l = ((Closure)l).eval();
+		if(l instanceof Thunk)
+			l = ((Thunk<?>)l).eval();
 		ConsCell left = (ConsCell)l;
 		
 		// Kill off nil LHS
 		if(left.nil()) {
-			if(r instanceof Closure)
-				r = ((Closure)r).eval();
+			if(r instanceof Thunk)
+				r = ((Thunk<?>)r).eval();
 			ConsCell right = (ConsCell)r;
 			
 			return right;
@@ -96,7 +96,7 @@ public class AppendCell extends ConsCell {
 			// details to SEE if "the forward" has been evaluated yet.
 			// If so, then gosh, it's a ConsCell, forget this. If NOT, well, let's be smart!
 			if(! leftap.literalConsCell) {
-				return append(leftap.head, new Closure(null) { public final Object eval() { return append(leftap.tail, rightap); }});
+				return append(leftap.head, new Thunk<Object>(TopNode.singleton) { public final Object doEval() { return append(leftap.tail, rightap); }});
 			}
 		}
 		// Okay, we're a real append of a real, literal ConsCell on the LHS.
@@ -115,7 +115,7 @@ public class AppendCell extends ConsCell {
 		// TODO: depends on fixing the bug that makes all FFI calls strict anyway!
 		//tail = append(left.tail(), tail);
 		final Object oldtail = tail;
-		tail = new Closure(null) { public final Object eval() { return append(left.tail(), oldtail); } };
+		tail = new Thunk<Object>(TopNode.singleton) { public final Object doEval() { return append(left.tail(), oldtail); } };
 		literalConsCell = true;
 	}
 	

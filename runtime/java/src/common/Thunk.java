@@ -1,32 +1,88 @@
 package common;
 
 /**
- * Wrapper around a closure, to ensure it is not evaluated more than once.
+ * A thunk that ensures an expression is evaluated once, and memoizes the result.
  * 
  * @author tedinski
- * @see Closure
  */
-public class Thunk<T> {
-	private Object data;
+public abstract class Thunk<T> {
+	
+	protected T data;
+	protected DecoratedNode context;
 	
 	/**
-	 * Construct a (real) thunk, from either just a value, or a closure.
+	 * Construct a thunk, to be evaluated in context.
 	 * 
-	 * @param cls {@link Closure} or other value
+	 * @param ctx {@link DecoratedNode} to use as context for evaluating thunk
 	 */
-	public Thunk(final Object cls) {
-		data = cls;
+	public Thunk(final DecoratedNode ctx) {
+		assert(ctx != null);
+		context = ctx;
 	}
 	
 	/**
 	 * Either evaluates the closure to obtain a value, or returns the already evaluated result.
 	 * 
-	 * @return The value wrapped by this thunk.
+	 * @return The value wrapped by this Thunk.
 	 */
 	public T eval() {
-		if(data instanceof Closure) {
-			data = ((Closure)data).eval();
+		if(context != null) {
+			data = doEval();
+			context = null;
 		}
-		return (T) data;
+		return data;
 	}
+	
+	/**
+	 * Does the real evaluation of the Thunk.
+	 */
+	protected abstract T doEval();
+	
+	/**
+	 * Constructs a Thunk from a Lazy and a DecoratedNode context.
+	 */
+	public static Thunk<Object> fromLazy(Lazy l, DecoratedNode ctx) {
+		return new FromLazy(l,ctx);
+	}
+	
+	/**
+	 * Take a Thunk evaluating to a DecoratedNode, and undecorates it.
+	 * 
+	 * @param t  Either a DecoratedNode or a Thunk<DecoratedNode>
+	 * @return  Either a Node or a Thunk<Node>
+	 */
+	public static Object transformUndecorate(Object t) {
+		if(t instanceof DecoratedNode)
+			return ((DecoratedNode)t).undecorate();
+		return new TransformUndecorate((Thunk<DecoratedNode>)t);
+	}
+	
+	private static class FromLazy extends Thunk<Object> {
+
+		public FromLazy(Lazy l, DecoratedNode ctx) {
+			super(ctx);
+			data = l;
+		}
+		
+		@Override
+		protected Object doEval() {
+			return ((Lazy)data).eval(context);
+		}
+		
+	}
+	
+	private static class TransformUndecorate extends Thunk<Object> {
+
+		public TransformUndecorate(Thunk<DecoratedNode> t) {
+			super(t.context); // We don't need a context, so use a dummy value.
+			data = t;
+		}
+
+		@Override
+		protected Object doEval() {
+			return ((Thunk<DecoratedNode>)data).eval().undecorate();
+		}
+		
+	}
+	
 }
