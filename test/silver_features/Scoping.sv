@@ -31,10 +31,18 @@ top::Scope ::= s::String
         end;
 }
 
--- we have an attribute called "loc", which now works.
+-- we can shadow using children names
 abstract production rightCodeNaming
-top::Scope ::= loc::String
+top::Scope ::= rightCodeScoping::String -- shadowing the above production
 {
+}
+
+-- we can rename children properly, and get the appropriate types and so forth
+aspect production rightCodeNaming
+rightCodeScoping::Scope ::= top::String
+{
+  local sc::Scope = rightCodeScoping;
+  local tp::String = top;
 }
 
 
