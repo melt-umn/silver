@@ -6,7 +6,7 @@ import silver:definition:type:syntax;
 import silver:definition:concrete_syntax;
 import silver:definition:regex;
 
-terminal Terminal_t /[\']([^\'\n]|([\\][\']))*[\']/;
+terminal Terminal_t /\'[^\'\n]*\'/;
 
 concrete production regExprEasyTerm
 top::RegExpr ::= t::Terminal_t
@@ -70,7 +70,7 @@ top::AspectRHSElem ::= reg::RegExpr
                 then [err(reg.location, "Found ambiguous possibilities for " ++ reg.pp ++ "\n" ++ printPossibilities(regName))]
                 else [];
 
-  forwards to aspectRHSElemNone('_');
+  forwards to aspectRHSElemNone('_'); -- TODO This isn't checking if the type is right!!
 }
 
 concrete production aspectRHSElemTypedEasyReg
