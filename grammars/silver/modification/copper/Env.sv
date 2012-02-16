@@ -6,7 +6,7 @@ grammar silver:modification:copper;
 synthesized attribute lexerClassList :: [EnvItem] occurs on Defs;
 
 aspect function unparseDefs
-String ::= d_un::Defs bv::[TyVar]
+String ::= d::Defs bv::[TyVar]
 {
   dclinfos <- mapGetDcls(d.lexerClassList);
 }
@@ -18,7 +18,7 @@ top::Defs ::=
 }
 
 aspect production appendDefs 
-top::Defs ::= e1_un::Defs e2_un::Defs
+top::Defs ::= e1::Defs e2::Defs
 {
   top.lexerClassList = e1.lexerClassList ++ e2.lexerClassList;
 }
@@ -86,7 +86,7 @@ top::Env ::=
 }
 
 aspect production i_toEnv
-top::Env ::= d_un::Defs
+top::Env ::= d::Defs
 {
   top.lexerClassTree = oneEnvScope(buildTree(d.lexerClassList));
 }
@@ -98,7 +98,7 @@ top::Env ::= e1::Decorated Env  e2::Decorated Env
 }
 
 aspect production i_newScopeEnv
-top::Env ::= d_un::Defs  e::Decorated Env
+top::Env ::= d::Defs  e::Decorated Env
 {
   top.lexerClassTree = consEnvScope(buildTree(d.lexerClassList), e.lexerClassTree);
 }

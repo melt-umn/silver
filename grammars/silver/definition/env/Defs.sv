@@ -226,11 +226,11 @@ Defs ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp atty::T
 function addAliasedLhsDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp alias::String defs::Defs
 {
-  return consValueDef(renamedEnvItem(alias, decorate lhsDcl(sg,sl,fn,ty) with {}), defs);
+  return consValueDef(onlyRenamedEnvItem(alias, decorate lhsDcl(sg,sl,fn,ty) with {}), defs);
 }
 function addAliasedChildDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp alias::String defs::Defs
 {
-  return consValueDef(renamedEnvItem(alias, decorate childDcl(sg,sl,fn,ty) with {}), defs);
+  return consValueDef(onlyRenamedEnvItem(alias, decorate childDcl(sg,sl,fn,ty) with {}), defs);
 }
 
