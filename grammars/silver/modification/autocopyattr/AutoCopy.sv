@@ -33,7 +33,7 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name botl::BracketedOptTypeList '::' te
 --------
   
   top.errors <-
-        if length(getAttrDcl(fName, top.env)) > 1
+        if length(getAttrDclAll(fName, top.env)) > 1
         then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
         else [];
   

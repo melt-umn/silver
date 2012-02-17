@@ -45,7 +45,7 @@ top::AGDcl ::= id::Name botl::BracketedOptTypeList
 
   -- Redefinition check of the name
   top.errors <- 
-       if length(getTypeDcl(fName, top.env)) > 1 
+       if length(getTypeDclAll(fName, top.env)) > 1 
        then [err(top.location, "Type '" ++ fName ++ "' is already bound.")]
        else [];
 

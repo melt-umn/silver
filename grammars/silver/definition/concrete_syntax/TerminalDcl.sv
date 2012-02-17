@@ -19,7 +19,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
   top.defs = addTermDcl(top.grammarName, id.location, fName, r.terminalRegExprSpec, emptyDefs());
   
   top.errors <-
-        if length(getTypeDcl(fName, top.env)) > 1
+        if length(getTypeDclAll(fName, top.env)) > 1
         then [err(id.location, "Type '" ++ fName ++ "' is already bound.")]
         else [];
   

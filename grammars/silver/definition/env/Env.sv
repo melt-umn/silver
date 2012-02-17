@@ -15,9 +15,9 @@ grammar silver:definition:env;
 
 nonterminal Env with typeTree, valueTree, attrTree, prodOccursTree, occursTree;
 
-synthesized attribute typeTree      ::  Decorated EnvScope ; -- Expr is type tau
+synthesized attribute typeTree      :: [Decorated EnvScope]; -- Expr is type tau
 synthesized attribute valueTree     :: [Decorated EnvScope]; -- x has type tau
-synthesized attribute attrTree      ::  Decorated EnvScope ; -- attr a has type tau
+synthesized attribute attrTree      :: [Decorated EnvScope]; -- attr a has type tau
 
 synthesized attribute prodOccursTree :: Decorated EnvScope; -- value on prod
 synthesized attribute occursTree     :: Decorated EnvScope; -- attr on NT
@@ -34,9 +34,9 @@ Decorated Env ::=
 abstract production i_emptyEnv 
 top::Env ::= 
 {
-  top.typeTree = emptyEnvScope();
+  top.typeTree = [emptyEnvScope()];
   top.valueTree = [emptyEnvScope()];
-  top.attrTree = emptyEnvScope();
+  top.attrTree = [emptyEnvScope()];
   top.prodOccursTree = emptyEnvScope();
   top.occursTree = emptyEnvScope();
 }
@@ -49,9 +49,9 @@ Decorated Env ::= d::Defs
 abstract production i_toEnv
 top::Env ::= d::Defs
 {
-  top.typeTree = oneEnvScope(buildTree(d.typeList));
+  top.typeTree = [oneEnvScope(buildTree(d.typeList))];
   top.valueTree = [oneEnvScope(buildTree(d.valueList))];
-  top.attrTree = oneEnvScope(buildTree(d.attrList));
+  top.attrTree = [oneEnvScope(buildTree(d.attrList))];
 
   top.prodOccursTree = oneEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)));
   top.occursTree = oneEnvScope(buildTree(mapFullnameDcls(d.occursList)));
@@ -66,9 +66,9 @@ Decorated Env ::= e1::Decorated Env  e2::Decorated Env
 abstract production i_appendEnv
 top::Env ::= e1::Decorated Env  e2::Decorated Env
 {
-  top.typeTree =  appendEnvScope(e1.typeTree, e2.typeTree);
-  top.valueTree = e1.valueTree ++ e2.valueTree; -- See? Here we're creating new scopes! a bunch, too.
-  top.attrTree =  appendEnvScope(e1.attrTree, e2.attrTree);
+  top.typeTree = e1.typeTree ++ e2.typeTree;
+  top.valueTree = e1.valueTree ++ e2.valueTree;
+  top.attrTree = e1.attrTree ++ e2.attrTree;
 
   top.prodOccursTree = appendEnvScope(e1.prodOccursTree, e2.prodOccursTree);
   top.occursTree = appendEnvScope(e1.occursTree, e2.occursTree);
@@ -83,9 +83,9 @@ Decorated Env ::= e1::Defs  e2::Decorated Env
 abstract production i_newScopeEnv
 top::Env ::= d::Defs  e::Decorated Env
 {
-  top.typeTree = consEnvScope(buildTree(d.typeList), e.typeTree);
-  top.valueTree = oneEnvScope(buildTree(d.valueList)) :: e.valueTree; -- new scope of values
-  top.attrTree = consEnvScope(buildTree(d.attrList), e.attrTree);
+  top.typeTree = oneEnvScope(buildTree(d.typeList)) :: e.typeTree;
+  top.valueTree = oneEnvScope(buildTree(d.valueList)) :: e.valueTree;
+  top.attrTree = oneEnvScope(buildTree(d.attrList)) :: e.attrTree;
 
   top.prodOccursTree = consEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)), e.prodOccursTree);
   top.occursTree = consEnvScope(buildTree(mapFullnameDcls(d.occursList)), e.occursTree);
@@ -129,16 +129,36 @@ function getValueDclAll
   return searchEnvAll(search, e.valueTree);
 }
 
+function getTypeDclInScope
+[Decorated DclInfo] ::= search::String e::Decorated Env
+{
+  return searchEnvScope(search, head(e.typeTree));
+}
 function getTypeDcl
 [Decorated DclInfo] ::= search::String e::Decorated Env
 {
-  return searchEnvScope(search, e.typeTree);
+  return searchEnv(search, e.typeTree);
+}
+function getTypeDclAll
+[Decorated DclInfo] ::= search::String e::Decorated Env
+{
+  return searchEnvAll(search, e.typeTree);
 }
 
+function getAttrDclInScope
+[Decorated DclInfo] ::= search::String e::Decorated Env
+{
+  return searchEnvScope(search, head(e.attrTree));
+}
 function getAttrDcl
 [Decorated DclInfo] ::= search::String e::Decorated Env
 {
-  return searchEnvScope(search, e.attrTree);
+  return searchEnv(search, e.attrTree);
+}
+function getAttrDclAll
+[Decorated DclInfo] ::= search::String e::Decorated Env
+{
+  return searchEnvAll(search, e.attrTree);
 }
 
 function getOccursDcl
