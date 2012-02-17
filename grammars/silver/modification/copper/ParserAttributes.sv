@@ -11,7 +11,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
 
   top.defs = addParserAttrDcl(top.grammarName, a.location, fName, te.typerep, emptyDefs());
 
-  top.errors <- if length(getValueDcl(fName, top.env)) > 1
+  top.errors <- if length(getValueDclAll(fName, top.env)) > 1
                 then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
                 else [];
 
