@@ -26,11 +26,4 @@ synthesized attribute location :: Location;
  - Errors that should stop compilation from succeeding.
  -}
 synthesized attribute errors :: [Message] with ++;
-{--
- - Warnings of code that looks wrong.
- -}
-synthesized attribute warnings :: [Message] with ++;
-
-
-
 

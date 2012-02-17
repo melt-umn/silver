@@ -15,8 +15,8 @@ top::AGDcl ::= 'wrongCode' s::String_t '{' ags::AGDcls '}'
   top.location = loc(top.file, $1.line, $1.column);
   
   top.errors := if indexOf(substring(1,length(s.lexeme)-1,s.lexeme),
-                          foldMessages(ags.errors ++ ags.warnings)) == -1
-               then [err(top.location, "Wrong code did not raise an error containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ ags.errors ++ ags.warnings
+                          foldMessages(ags.errors)) == -1
+               then [err(top.location, "Wrong code did not raise an error containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ ags.errors
                else [];
   
   -- do extend its environment with its defs

@@ -1,13 +1,12 @@
 grammar silver:definition:core;
 
-attribute importedDefs, warnings, errors occurs on RootSpec;
+attribute importedDefs, errors occurs on RootSpec;
 
 aspect production i_emptyRootSpec
 top::RootSpec ::= 
 {
   top.importedDefs = emptyDefs();
   top.errors := [];
-  top.warnings := [];
 }
 
 function rootSpecRoot
@@ -28,7 +27,6 @@ top::RootSpec ::= c1::Decorated Root
   top.condBuild = c1.condBuild;
 
   top.errors := c1.errors;
-  top.warnings := c1.warnings;
 
   forwards to i_emptyRootSpec();
 }
@@ -63,7 +61,6 @@ top::RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
   top.condBuild = c1.condBuild ++ c2.condBuild;
 
   top.errors := c1.errors ++ c2.errors;
-  top.warnings := c1.warnings ++ c2.warnings;
 
   forwards to i_emptyRootSpec();
 }

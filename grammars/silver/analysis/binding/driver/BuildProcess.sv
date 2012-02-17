@@ -43,9 +43,9 @@ top::Unit ::= specs::[Decorated RootSpec]
   es = head(specs).errors;
 
   local attribute i :: IO;
-  i = if null(es) && null(head(specs).warnings)
+  i = if null(es)
       then top.ioIn
-      else print("Errors for : " ++ head(specs).declaredName ++ "\n" ++ foldMessages(es ++ head(specs).warnings) ++ "\n\n", top.ioIn);
+      else print("Errors for : " ++ head(specs).declaredName ++ " :\n" ++ foldMessages(es) ++ "\n\n", top.ioIn);
 
   local attribute recurse :: Unit;
   recurse = printAllBindingErrorsHelp(tail(specs));
@@ -53,8 +53,8 @@ top::Unit ::= specs::[Decorated RootSpec]
 
   top.io = if null(specs) then top.ioIn else recurse.io;
 
-  top.code = if null(specs) || (null(es) && recurse.code == 0)
-	     then 0 
+  top.code = if null(specs) || (!containsErrors(es, false) && recurse.code == 0)
+	     then 0
 	     else 20;
 
   top.order = 0;

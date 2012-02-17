@@ -64,7 +64,6 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name botl::BracketedOptTypeList '::'
         else [];	
 
   top.errors := te.errors ++ tl.errors;
-  top.warnings := [];
 
   forwards to defaultAGDcl();
 }

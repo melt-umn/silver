@@ -39,7 +39,6 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   -- Making sure we're aspecting a production is taken care of by type checking.
 
   top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
-  top.warnings := body.warnings;
 
   production attribute sigDefs :: Defs with appendDefs;
   sigDefs := ns.defs;
@@ -81,7 +80,6 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   -- Making sure we're aspecting a function is taken care of by type checking.
 
   top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
-  top.warnings := body.warnings;
 
   production attribute sigDefs :: Defs with appendDefs;
   sigDefs := ns.defs;

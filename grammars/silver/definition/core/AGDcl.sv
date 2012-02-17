@@ -3,8 +3,8 @@ grammar silver:definition:core;
 {--
  - Top-level declarations of a Silver grammar. The "meat" of a file.
  -}
-nonterminal AGDcls with grammarName, file, env, location, pp, errors, defs, warnings, moduleNames, compiledGrammars;
-nonterminal AGDcl  with grammarName, file, env, location, pp, errors, defs, warnings, moduleNames, compiledGrammars;
+nonterminal AGDcls with grammarName, file, env, location, pp, errors, defs, moduleNames, compiledGrammars;
+nonterminal AGDcl  with grammarName, file, env, location, pp, errors, defs, moduleNames, compiledGrammars;
 
 concrete production nilAGDcls
 top::AGDcls ::=
@@ -14,7 +14,6 @@ top::AGDcls ::=
 
   top.defs = emptyDefs();
   top.errors := [];
-  top.warnings := [];
   top.moduleNames = [];
 }
 
@@ -26,7 +25,6 @@ top::AGDcls ::= h::AGDcl t::AGDcls
 
   top.defs = appendDefs(h.defs, t.defs);
   top.errors := h.errors ++ t.errors;
-  top.warnings := h.warnings ++ t.warnings;
   top.moduleNames = h.moduleNames ++ t.moduleNames;
 }
 
@@ -60,7 +58,6 @@ top::AGDcl ::= h::AGDcl t::AGDcl
 
   top.defs = appendDefs(h.defs, t.defs);
   top.errors := h.errors ++ t.errors;
-  top.warnings := h.warnings ++ t.warnings;
   top.moduleNames = h.moduleNames ++ t.moduleNames;
 }
 
@@ -74,7 +71,6 @@ top::AGDcl ::=
   top.moduleNames = [];
   top.defs = emptyDefs();
   --top.errors := []; -- should never be omitted, really.
-  top.warnings := [];
 }
 
 -- All AGDcls have their own file, or modification. None here.

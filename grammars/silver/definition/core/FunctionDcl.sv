@@ -36,7 +36,6 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
         else [];
 
   top.errors := ns.errors ++ body.errors;
-  top.warnings := body.warnings;
 
   production attribute sigDefs :: Defs with appendDefs;
   sigDefs := ns.defs;

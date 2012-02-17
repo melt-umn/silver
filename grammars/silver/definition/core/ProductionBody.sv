@@ -2,13 +2,13 @@ grammar silver:definition:core;
 
 nonterminal ProductionBody with
   grammarName, file, env, location, pp, errors, defs, blockContext,
-  productionAttributes, warnings, signature, uniqueSignificantExpression;
+  productionAttributes, signature, uniqueSignificantExpression;
 nonterminal ProductionStmts with 
   grammarName, file, env, location, pp, errors, defs, blockContext,
-  productionAttributes, warnings, signature, uniqueSignificantExpression;
+  productionAttributes, signature, uniqueSignificantExpression;
 nonterminal ProductionStmt with
   grammarName, file, env, location, pp, errors, defs, blockContext,
-  productionAttributes, warnings, signature, uniqueSignificantExpression;
+  productionAttributes, signature, uniqueSignificantExpression;
 
 nonterminal DefLHS with 
   grammarName, file, env, location, pp, errors, blockContext, signature, typerep, isSynthesizedDefinition;
@@ -97,7 +97,6 @@ top::ProductionBody ::= stmts::ProductionStmts
   top.uniqueSignificantExpression = stmts.uniqueSignificantExpression;
 
   top.errors := stmts.errors;
-  top.warnings := stmts.warnings;
 }
 
 abstract production productionStmtsNone
@@ -111,7 +110,6 @@ top::ProductionStmts ::=
   top.uniqueSignificantExpression = [];
 
   top.errors := [];
-  top.warnings := [];
 }
 
 concrete production productionStmts
@@ -125,7 +123,6 @@ top::ProductionStmts ::= stmt::ProductionStmt
  
   top.defs = stmt.defs;
   top.errors := stmt.errors;
-  top.warnings := stmt.warnings;
 }
 
 concrete production productionStmtsCons
@@ -139,7 +136,6 @@ top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
 
   top.defs = appendDefs(h.defs, t.defs);
   top.errors := h.errors ++ t.errors;
-  top.warnings := h.warnings ++ t.warnings;
 }
 
 abstract production productionStmtsAppend
@@ -153,7 +149,6 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
   top.uniqueSignificantExpression = h.uniqueSignificantExpression ++ t.uniqueSignificantExpression;
 
   top.errors := h.errors ++ t.errors;
-  top.warnings := h.warnings ++ t.warnings;
 }
 
 abstract production productionStmtAppend
@@ -167,7 +162,6 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   top.uniqueSignificantExpression = h.uniqueSignificantExpression ++ t.uniqueSignificantExpression;
 
   top.errors := h.errors ++ t.errors;
-  top.warnings := h.warnings ++ t.warnings;
 }
 
 --------------------------------------------------------------------------------
@@ -181,7 +175,6 @@ top::ProductionStmt ::=
   top.uniqueSignificantExpression = [];
   
   top.defs = emptyDefs();
-  top.warnings := [];
 }
 
 concrete production returnDef

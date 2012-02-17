@@ -208,7 +208,6 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
 
   q.operatorForType = te.typerep;
   top.errors := te.errors ++ q.errors;
-  top.warnings := [];
  
   forwards to productionAttributeDcl($1, $2, a, $4, te, $8);
 }

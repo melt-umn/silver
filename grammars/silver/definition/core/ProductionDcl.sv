@@ -45,7 +45,6 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
         else [];
 
   top.errors := ns.errors ++ body.errors;
-  top.warnings := body.warnings;
 
   production attribute sigDefs :: Defs with appendDefs;
   sigDefs := ns.defs;

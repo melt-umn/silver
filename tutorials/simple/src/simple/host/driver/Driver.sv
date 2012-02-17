@@ -1,7 +1,7 @@
 grammar simple:host:driver;
 
 import silver:langutil;
-import silver:langutil:pp;
+import silver:langutil:pp as pp;
 import simple:concretesyntax as cst;
 import simple:abstractsyntax as ast;
 
@@ -33,7 +33,7 @@ IO ::= args::String io_in::IO
            "\n\n" ++
            "CST pretty print: \n" ++ r_cst.unparse ++
            "\n\n" ++ 
-           "AST pretty print: \n" ++ show(100, r_ast.pp) ++
+           "AST pretty print: \n" ++ pp:show(100, r_ast.pp) ++
            "\n\n" ++
            "Errors: " ++
            (if null(r_ast.errors)  then " No semantic errors!\n" 

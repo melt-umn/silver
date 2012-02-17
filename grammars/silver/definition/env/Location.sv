@@ -1,24 +1,26 @@
 grammar silver:definition:env;
 
+nonterminal Location with line, column, fileName, unparse;
+
 synthesized attribute fileName :: String;
 synthesized attribute line :: Integer;
 synthesized attribute column :: Integer;
 
-nonterminal Location with line, column, fileName, unparse;
-
 abstract production loc
-top::Location ::= f::String l::Integer c::Integer
+top::Location ::= file::String line::Integer column::Integer
 {
-  top.line = l;
-  top.column = c;
-  top.fileName = f;
---  top.pp = "[file: " ++ f ++ ", line: " ++ toString(l) ++ ", column: " ++ toString(c) ++ "]";
-  top.unparse = "'" ++ f ++ "', " ++ toString(l) ++ ", " ++ toString(c);
+  top.line = line;
+  top.column = column;
+  top.fileName = file;
+  top.unparse = "'" ++ file ++ "', " ++ toString(line) ++ ", " ++ toString(column);
 }
-{-
-function loc
-Decorated Location ::= f::String l::Integer c::Integer
+
+function locationLte
+Boolean ::= l1::Location l2::Location
 {
-  return decorate internal_loc(f, l, c) with {};
+  return case l1, l2 of
+         | loc(f1,l1,c1), loc(f2,l2,c2) -> !(f1 > f2 || (f1 == f2 && (l1 > l2 || (l1 == l2 && c1 > c2))))
+         end;
 }
--}
+
+

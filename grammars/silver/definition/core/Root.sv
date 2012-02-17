@@ -5,7 +5,7 @@ grammar silver:definition:core;
  -}
 nonterminal Root with
   grammarName, file, env, location, pp, errors, defs, 
-  declaredName, moduleNames, importedDefs, exportedGrammars, condBuild, warnings, compiledGrammars, globalImports;
+  declaredName, moduleNames, importedDefs, exportedGrammars, condBuild, compiledGrammars, globalImports;
 nonterminal GrammarDcl with 
   grammarName, file, location, pp, errors, declaredName;
 
@@ -46,7 +46,6 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.condBuild = ms.condBuild;
 
   top.errors := gdcl.errors ++ ms.errors ++ allImports.errors ++ ags.errors;
-  top.warnings := ags.warnings;
   
   -- We have an mismatch in how the environment gets put together:
   --  Outermost, we have grammar-wide imports in one sope.  That's top.globalImports here.
