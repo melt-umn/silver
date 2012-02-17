@@ -23,7 +23,7 @@ function locationLte
 Boolean ::= l1::Location l2::Location
 {
   return case l1, l2 of
-           loc(f1,l1,c1), loc(f2,l2,c2) -> !(f1 > f2 || (f1 == f2 && (l1 > l2 || (l1 == l2 && c1 > c2))))
+         | loc(f1,l1,c1), loc(f2,l2,c2) -> !(f1 > f2 || (f1 == f2 && (l1 > l2 || (l1 == l2 && c1 > c2))))
          end;
 --f1 <= f2 && (f1 != f2 || (l1 <= l2 && (l1 != l2 || c1 <= c2)))
 --!(f1 > f2 || (f1 == f2 && (l1 > l2 || (l1 == l2 && c1 > c2))))

@@ -9,7 +9,8 @@ wrongCode "1 is an Integer but we're trying to match against String" {
  }
 }
 
-wrongCode "line: 16" {
+-- gets the line number right
+wrongCode "Wrong.sv:17" {
  function funfoo
  String ::= {
   return case "a string" of

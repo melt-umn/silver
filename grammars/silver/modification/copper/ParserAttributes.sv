@@ -16,7 +16,6 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
                 else [];
 
   top.errors := te.errors ++ acode.errors;
-  top.warnings := acode.warnings;
   
   acode.signature = decorate namedNamedSignature(fName) with {};
   acode.blockContext = actionContext();

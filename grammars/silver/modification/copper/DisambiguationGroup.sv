@@ -10,7 +10,6 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
   top.pp = "disambiguate " ++ terms.pp ++ " " ++ acode.actionCode;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.warnings := acode.warnings;
   top.errors := acode.errors ++ terms.errors;
 
   acode.env = newScopeEnv(addDisambigLexemeDcl(top.grammarName, top.location,

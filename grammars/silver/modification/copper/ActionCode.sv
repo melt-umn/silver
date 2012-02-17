@@ -27,7 +27,6 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   acode.signature = namedSig;
 
   top.errors <- acode.errors;
-  top.warnings <- acode.warnings;
 
   -- note that we're not merging the typing contexts between action blocks and productions
   -- this seems reasonable since inference should never have effects across this border...
@@ -36,7 +35,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 }
 
 
-nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,signature,file,errors,blockContext,warnings;
+nonterminal ActionCode_c with pp,actionCode,env,defs,grammarName,signature,file,errors,blockContext;
 
 synthesized attribute actionCode :: String;
 
@@ -49,7 +48,6 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
   top.actionCode = hacklocaldeclarations(stmts.defs.valueList) ++ stmts.translation;
 
   top.errors := stmts.errors;
-  top.warnings := stmts.warnings;
   
   stmts.downSubst = emptySubst();
   stmts.finalSubst = stmts.upSubst;

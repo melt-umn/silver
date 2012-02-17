@@ -42,7 +42,7 @@ Boolean ::= l::[Message] wError::Boolean
 {
 -- someday we can just or(map(isError, l)), but today is not yet that day
   return case l of
-           [] -> false
+         | [] -> false
          | err(_,_) :: _ -> true
          | wrn(_,_) :: t -> if wError then true else containsErrors(t, false)
          | _ :: t -> containsErrors(t, wError)
@@ -53,13 +53,9 @@ Boolean ::= l::[Message] wError::Boolean
  - Returns a list of strings, ready to be printed to the command line.
  -}
 function ppMessages
-[String] ::= l::[Message]
+[String] ::= msgs::[Message]
 {
--- someday we can just map((.unparse), msgs), but today is not yet that day
-  return case l of
-           [] -> []
-         | h::t -> h.unparse :: ppMessages(t)
-         end;
+  return map((.unparse), msgs);
 }
 
 -- for use with sortBy

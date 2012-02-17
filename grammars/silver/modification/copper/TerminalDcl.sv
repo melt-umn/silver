@@ -50,7 +50,6 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
   acode.signature = decorate namedNamedSignature(top.grammarName ++ ":__ta" ++ toString($1.line)) with {};
   
   top.errors := acode.errors;
-  -- TODO: warnings?
 }
 
 nonterminal TermPrecList with grammarName, pp, location, precTermList, defs, errors, env, file;
