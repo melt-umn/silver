@@ -113,7 +113,8 @@ IO ::= i::IO r::Decorated RootSpec a::Decorated CmdArgs extras::[String] silverg
 }
 
 function makeMain
-String ::= r::Decorated RootSpec{
+String ::= r::Decorated RootSpec
+{
   local attribute package :: String;
   package = makeName(r.declaredName);
 
@@ -127,8 +128,9 @@ String ::= r::Decorated RootSpec{
 "\t\t" ++ package ++ ".Init.postInit();\n" ++
 "\t\ttry {\n" ++
 "\t\t\tcommon.Node rv = (common.Node) " ++ package ++ ".Pmain.invoke(new Object[]{cvargs(args), null});\n" ++
-"\t\t\trv.getChild(core.Pioval.i_i); // demand the io token\n" ++ -- TODO bug: should be via synthesized, not child!! buggy!!
-"\t\t\tSystem.exit( (Integer)rv.getChild(core.Pioval.i_v) );\n" ++
+"\t\t\tcommon.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);\n" ++
+"\t\t\tdrv.synthesized(core.Init.core_io__ON__core_IOVal); // demand the io token\n" ++
+"\t\t\tSystem.exit( (Integer)drv.synthesized(core.Init.core_iovalue__ON__core_IOVal) );\n" ++
 "\t\t} catch(Throwable t) {\n" ++
 "\t\t\tcommon.Util.printStackCauses(t);\n" ++
 "\t\t}\n" ++
@@ -251,12 +253,14 @@ String ::= r::[Decorated RootSpec] s::String
 }
 
 function writeClasses
-IO ::= i::IO l::String s::[[String]]{
+IO ::= i::IO l::String s::[[String]]
+{
   return if null(s) then i else writeFile(l ++ head(head(s)) ++ ".java", head(tail(head(s))), writeClasses(i, l, tail(s)));
 }
 
 function makeInit
-String ::= r::Decorated RootSpec extras::[String]{
+String ::= r::Decorated RootSpec extras::[String]
+{
   local attribute className :: String;
   className = makeName(r.declaredName) ++ ".Init";
 
@@ -315,6 +319,7 @@ r.initValues ++
 }
 
 function makeOthers
-String ::= others::[String] nme::String {
+String ::= others::[String] nme::String
+{
   return if null(others) then "" else "\t\t" ++ makeName(head(others)) ++ ".Init."++nme++"();\n" ++ makeOthers(tail(others),nme);
 }
