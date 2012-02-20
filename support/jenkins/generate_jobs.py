@@ -239,11 +239,12 @@ SubversionGrammarJob("meltsvn-Oberon0-A4", "Artifact 4 of Oberon0", "https://www
 ###########
 
 def main():
-	assert os.path.isdir(os.path.join(silverSharedWorkspace, "test")), "test directory not found... configure!"
-	assert os.path.isdir(os.path.join(silverSharedWorkspace, "tutorials")), "tutorials directory not found... configure!"
+	localSvRoot = "../.." # expected to be in support/jenkins
+	assert os.path.isdir(os.path.join(localSvRoot, "test")), "test directory not found... configure!"
+	assert os.path.isdir(os.path.join(localSvRoot, "tutorials")), "tutorials directory not found... configure!"
 	
-	svtests = find_all_sv_tests(silverSharedWorkspace)
-	svtuts = find_all_sv_tutorials(silverSharedWorkspace)
+	svtests = find_all_sv_tests(localSvRoot)
+	svtuts = find_all_sv_tutorials(localSvRoot)
 	
 	postsvjobs = [SilverTestJob(x) for x in svtests] + [SilverTutorialJob(x) for x in svtuts] # + meltsvngrammars
 	
