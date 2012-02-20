@@ -7,7 +7,7 @@
 
 export SILVER_HOME=../..
 
-java -Xss4M -Xmx1000M -jar $SILVER_HOME/jars/RunSilver.jar $1  -o test.jar \
+java -Xss4M -Xmx1000M -jar $SILVER_HOME/jars/RunSilver.jar $@  -o test.jar \
      -I .. cstast \
      && ant
 
