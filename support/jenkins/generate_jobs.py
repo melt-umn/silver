@@ -5,12 +5,16 @@ import sys
 import glob
 import string
 import httplib
+import base64
 
 # Configure this!
-silverSharedWorkspace = "/home/tedinski/.jenkins/MYCUSTOM/silver"
+silverSharedWorkspace = "/export/scratch/melt-jenkins/custom-silver"
 jenkinsURL = "localhost:8080"
+jenkinsUsername = "tedinski"
+jenkinsAPIToken = "" # replace with API key!!
 
-
+##
+jenkinsAuth = "Basic " + base64.encodestring('%s:%s' % (jenkinsUsername, jenkinsAPIToken))[:-1]
 
 #############
 
@@ -59,7 +63,7 @@ class JenkinsJobConfig:
 
 	def createJob(self):
 		conn = httplib.HTTPConnection(jenkinsURL)
-		conn.request("POST", "/createItem?name=" + self.getJobName(), self.configXml(), {"Content-type": "text/xml"})
+		conn.request("POST", "/createItem?name=" + self.getJobName(), self.configXml(), {"Content-type": "text/xml", "Authorization" : jenkinsAuth})
 		r2 = conn.getresponse()
 		if r2.status != 200:
 			print(str(r2.status) + " " + r2.reason + "\nWhile posting new job: " + self.getJobName() + "\n" + r2.read())
@@ -67,7 +71,7 @@ class JenkinsJobConfig:
 
 	def updateJob(self):
 		conn = httplib.HTTPConnection(jenkinsURL)
-		conn.request("POST", "/job/" + self.getJobName() + "/config.xml", self.configXml(), {"Content-type": "text/xml"})
+		conn.request("POST", "/job/" + self.getJobName() + "/config.xml", self.configXml(), {"Content-type": "text/xml", "Authorization" : jenkinsAuth})
 		r2 = conn.getresponse()
 		if r2.status != 200:
 			print(str(r2.status) + " " + r2.reason + "\nWhile updating job: " + self.getJobName() + "\n" + r2.read())
@@ -75,7 +79,7 @@ class JenkinsJobConfig:
 
 	def createOrUpdateJob(self):
 		conn = httplib.HTTPConnection(jenkinsURL)
-		conn.request("GET", "/job/" + self.getJobName() + "/config.xml")
+		conn.request("GET", "/job/" + self.getJobName() + "/config.xml", headers = {"Authorization" : jenkinsAuth})
 		r1 = conn.getresponse()
 		if r1.status == 404:
 			self.createJob()
@@ -92,14 +96,16 @@ class SilverTestJob(JenkinsJobConfig):
 		self.description = testname + " test suite for the Silver compiler"
 		self.command = "cd " + os.path.join(silverSharedWorkspace, "test", testname) + "\n" + \
 		               "./silver-compile --clean -G $WORKSPACE\n" + \
-		               "java -jar test.jar\n"
+		               "java -jar test.jar\n" + \
+		               "rm -rf $WORKSPACE/src $WORKSPACE/bin\n"
 
 class SilverTutorialJob(JenkinsJobConfig):
 	def __init__(self, tutorialpath):
 		self.jobname = "silver-tutorial-" + tutorialpath.replace("/","-")
 		self.description = tutorialpath + " tutorial included with the Silver compiler"
 		self.command = "cd " + os.path.join(silverSharedWorkspace, "tutorials", tutorialpath) + "\n" + \
-		               "./silver-compile --clean -G $WORKSPACE\n"
+		               "./silver-compile --clean -G $WORKSPACE\n" + \
+		               "rm -rf $WORKSPACE/src $WORKSPACE/bin\n"
 
 class SilverJob(JenkinsJobConfig):
 	def __init__(self, triggers):
@@ -118,6 +124,7 @@ class SilverJob(JenkinsJobConfig):
   <keepDependencies>false</keepDependencies>
   <properties/>
   <scm class="hudson.plugins.mercurial.MercurialSCM">
+    <installation>Module system mercurial</installation>
     <source>http://code.google.com/p/silver</source>
     <modules></modules>
     <clean>true</clean>
@@ -127,8 +134,8 @@ class SilverJob(JenkinsJobConfig):
   </scm>
   <canRoam>true</canRoam>
   <disabled>false</disabled>
-  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
-  <blockBuildWhenUpstreamBuilding>true</blockBuildWhenUpstreamBuilding>
+  <blockBuildWhenDownstreamBuilding>true</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
   <triggers class="vector">
     <hudson.triggers.SCMTrigger>
       <spec>@hourly</spec>
@@ -196,7 +203,7 @@ class SubversionGrammarJob(JenkinsJobConfig):
   <canRoam>true</canRoam>
   <disabled>false</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
-  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>true</blockBuildWhenUpstreamBuilding>
   <triggers class="vector">
     <hudson.triggers.SCMTrigger>
       <spec>@midnight</spec>
@@ -238,7 +245,7 @@ def main():
 	svtests = find_all_sv_tests(silverSharedWorkspace)
 	svtuts = find_all_sv_tutorials(silverSharedWorkspace)
 	
-	postsvjobs = [SilverTestJob(x) for x in svtests] + [SilverTutorialJob(x) for x in svtuts] + meltsvngrammars
+	postsvjobs = [SilverTestJob(x) for x in svtests] + [SilverTutorialJob(x) for x in svtuts] # + meltsvngrammars
 	
 	
 	
