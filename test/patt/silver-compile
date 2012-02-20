@@ -7,7 +7,7 @@
 
 export SILVER_HOME=../..
 
-java -jar $SILVER_HOME/jars/RunSilver.jar $1  -o test.jar \
+java -jar $SILVER_HOME/jars/RunSilver.jar $@  -o test.jar \
      -I .. patt \
      && ant
 
