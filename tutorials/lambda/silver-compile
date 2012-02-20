@@ -1,12 +1,11 @@
 #!/bin/bash
 
-# This script will use Silver to build an AG evaluator for the
-# tutorials grammar and run ant to compile the resulting Java code.
+WHERE_IS_SILVER=../../jars
+WHERE_IS_THE_SOURCE=..  # cheating a bit. Current directory should be 'lambda'
+WHAT_GRAMMAR_TO_BUILD=lambda
 
-export GRAMMAR_PATH=".."
+java -jar $WHERE_IS_SILVER/RunSilver.jar \
+  -I $WHERE_IS_THE_SOURCE $@ $WHAT_GRAMMAR_TO_BUILD && ant
 
-SILVER_DIR="../../../silver/jars"
-time java -jar $SILVER_DIR/RunSilver.jar $@  -o lambda.jar \
-     lambda \
-     && ant
+# The $@ helpfully passes along any arguments this script got to silver.
 
