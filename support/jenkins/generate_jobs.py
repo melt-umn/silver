@@ -26,7 +26,7 @@ def silverInvoke(grammar, include="", generated="", output=""):
 		cmdStr = cmdStr + " -G " + generated
 	if output != "":
 		cmdStr = cmdStr + " -o " + output
-	return cmdStr + " " + grammar
+	return cmdStr + " " + grammar + "\nant"
 
 
 class JenkinsJobConfig:
@@ -117,6 +117,10 @@ class SilverJob(JenkinsJobConfig):
 		self.customWorkspace = silverSharedWorkspace  # global
 
 	def configXml(self):
+		assert self.description != "", "Must provide description"
+		assert self.command != "", "Must provide command"
+		assert self.customWorkspace != "", "Must provide customWorkspace"
+		assert self.triggers != "", "Must provide triggers"
 		return string.Template("""<?xml version='1.0' encoding='UTF-8'?>
 <project>
   <actions/>
@@ -169,17 +173,19 @@ class SilverJob(JenkinsJobConfig):
   <buildWrappers/>
 </project>""").substitute(self.__dict__)
 
-class SubversionGrammarJob(JenkinsJobConfig):
-	def __init__(self, jobname, description, remotepath, localpath, grammar):
+class SubversionJob(JenkinsJobConfig):
+	def __init__(self, jobname, description, remotepath, localpath, command):
 		self.jobname = jobname
 		self.description = description
-		self.command = silverInvoke(grammar=grammar, generated=".")
+		self.command = command
 		self.svnremote = remotepath
 		self.svnlocal = localpath
-		self.grammar = grammar
-		
 
 	def configXml(self):
+		assert self.description != "", "Must provide description"
+		assert self.command != "", "Must provide command"
+		assert self.svnremote != "", "Must provide svnremote"
+		assert self.svnlocal != "", "Must provide svnlocal"
 		return string.Template("""<?xml version='1.0' encoding='UTF-8'?>
 <project>
   <actions/>
@@ -219,6 +225,21 @@ class SubversionGrammarJob(JenkinsJobConfig):
   <buildWrappers/>
 </project>""").substitute(self.__dict__)
 
+class MeltsvnGrammarJob(SubversionJob):
+	def __init__(self, jobname, pregrammar, subgrammar, includepath="grammars", invoke=""):
+		self.jobname = "meltsvn-" + jobname
+		self.grammar = pregrammar + ":" + subgrammar
+		self.description = "Build grammar " + self.grammar + " located in meltsvn/" + includepath
+		self.svnlocal = includepath + "/" + pregrammar.replace(":", "/")
+		self.svnremote = "https://www-users.cs.umn.edu/meltsvn/" + self.svnlocal
+		self.command = silverInvoke(grammar=self.grammar, generated=".", include=includepath)
+		if invoke == True:
+			self.command = self.command + "\n" + \
+			               "cd " + self.svnlocal + "/" + subgrammar.replace(":", "/") + "\n" + \
+			               "java -jar $WORKSPACE/" + self.grammar.replace(":",".") + ".jar"
+		elif invoke != "":
+			self.command = self.command + "\n" + invoke
+
 ################################################################################
 
 def find_all_sv_tests(svroot):
@@ -229,11 +250,35 @@ def find_all_sv_tutorials(svroot):
 
 # Manually set:
 meltsvngrammars = [
-SubversionGrammarJob("meltsvn-Oberon0-A1", "Artifact 1 of Oberon0", "https://www-users.cs.umn.edu/meltsvn/grammars/edu/umn/cs/melt/Oberon0", "edu/umn/cs/melt/Oberon0", "edu:umn:cs:melt:Oberon0:artifacts:A1"),
-SubversionGrammarJob("meltsvn-Oberon0-A2a", "Artifact 2a of Oberon0", "https://www-users.cs.umn.edu/meltsvn/grammars/edu/umn/cs/melt/Oberon0", "edu/umn/cs/melt/Oberon0", "edu:umn:cs:melt:Oberon0:artifacts:A2a"),
-SubversionGrammarJob("meltsvn-Oberon0-A2b", "Artifact 2b of Oberon0", "https://www-users.cs.umn.edu/meltsvn/grammars/edu/umn/cs/melt/Oberon0", "edu/umn/cs/melt/Oberon0", "edu:umn:cs:melt:Oberon0:artifacts:A2b"),
-SubversionGrammarJob("meltsvn-Oberon0-A3", "Artifact 3 of Oberon0", "https://www-users.cs.umn.edu/meltsvn/grammars/edu/umn/cs/melt/Oberon0", "edu/umn/cs/melt/Oberon0", "edu:umn:cs:melt:Oberon0:artifacts:A3"),
-SubversionGrammarJob("meltsvn-Oberon0-A4", "Artifact 4 of Oberon0", "https://www-users.cs.umn.edu/meltsvn/grammars/edu/umn/cs/melt/Oberon0", "edu/umn/cs/melt/Oberon0", "edu:umn:cs:melt:Oberon0:artifacts:A4"),
+MeltsvnGrammarJob("Oberon0-A1", "edu:umn:cs:melt:Oberon0", "artifacts:A1"),
+MeltsvnGrammarJob("Oberon0-A2a", "edu:umn:cs:melt:Oberon0", "artifacts:A2a"),
+MeltsvnGrammarJob("Oberon0-A2b", "edu:umn:cs:melt:Oberon0", "artifacts:A2b"),
+MeltsvnGrammarJob("Oberon0-A3", "edu:umn:cs:melt:Oberon0", "artifacts:A3"),
+MeltsvnGrammarJob("Oberon0-A4", "edu:umn:cs:melt:Oberon0", "artifacts:A4"),
+MeltsvnGrammarJob("Oberon0-A5", "edu:umn:cs:melt:Oberon0", "artifacts:A5"),
+
+MeltsvnGrammarJob("Matlab-host", "edu:umn:cs:melt:MATLAB", "artifacts:MATLAB"),
+
+# miniHaskell has apparently atrophied beyond easy redemption. Seriously, it looks like something exploded all over it...
+#MeltsvnGrammarJob("miniHaskell-host", "edu:umn:cs:melt:miniHaskell", "host:bin"),
+#MeltsvnGrammarJob("miniHaskell-host-tests", "edu:umn:cs:melt:miniHaskell", "host:tests", invoke=True),
+
+# TODO: Will be rebuilt way too often. Find better solution for getting ableC with it?
+MeltsvnGrammarJob("ableP-host", "edu:umn:cs:melt", "ableP:artifacts:promela"), 
+MeltsvnGrammarJob("ableP-host-tests", "edu:umn:cs:melt", "ableP:artifacts:promela:tests", invoke=True), 
+MeltsvnGrammarJob("ableP-promelaCore", "edu:umn:cs:melt", "ableP:artifacts:promelaCore"), 
+MeltsvnGrammarJob("ableP-promelaCore-tests", "edu:umn:cs:melt", "ableP:artifacts:promelaCore:tests", invoke=True), 
+MeltsvnGrammarJob("ableP-aviation", "edu:umn:cs:melt", "ableP:artifacts:aviation"), 
+MeltsvnGrammarJob("ableP-aviation-tests", "edu:umn:cs:melt", "ableP:artifacts:aviation:tests", invoke=True), 
+
+MeltsvnGrammarJob("ableC-host", "edu:umn:cs:melt:ableC", "host:bin"), 
+MeltsvnGrammarJob("ableC-host-tests", "edu:umn:cs:melt:ableC", "host:tests", invoke=True), 
+
+# simple is not set up to build properly yet
+#MeltsvnGrammarJob("simple-host", "edu:umn:cs:melt:simple", "host"), 
+
+MeltsvnGrammarJob("ring-host", "react", "bin", includepath="users/srinivasr/trunk/grammars"),
+MeltsvnGrammarJob("ring-host-tests", "react", "tests", includepath="users/srinivasr/trunk/grammars", invoke=True),
 ]
 
 ###########
@@ -246,7 +291,7 @@ def main():
 	svtests = find_all_sv_tests(localSvRoot)
 	svtuts = find_all_sv_tutorials(localSvRoot)
 	
-	postsvjobs = [SilverTestJob(x) for x in svtests] + [SilverTutorialJob(x) for x in svtuts] # + meltsvngrammars
+	postsvjobs = [SilverTestJob(x) for x in svtests] + [SilverTutorialJob(x) for x in svtuts]  + meltsvngrammars
 	
 	
 	
