@@ -55,7 +55,7 @@ top::Expr ::= l::Location  la::AssignExpr  e::Expr
   forwards to defaultExpr();
 }
 
-nonterminal AssignExpr with file, grammarName, env, signature, 
+nonterminal AssignExpr with config, file, grammarName, env, signature, 
                             pp, defs, errors, upSubst, 
                             downSubst, finalSubst, blockContext;
 

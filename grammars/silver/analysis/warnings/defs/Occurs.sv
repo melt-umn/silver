@@ -1,31 +1,48 @@
 grammar silver:analysis:warnings:defs;
 
-import silver:analysis:warnings;
-import silver:util:command hiding grammarName;
+imports silver:analysis:warnings;
+imports silver:driver;
+imports silver:util:cmdargs;
+imports silver:util;
 
-import silver:definition:core;
-import silver:definition:type;
-import silver:definition:type:syntax;
-import silver:definition:env;
+imports silver:definition:core;
+imports silver:definition:type;
+imports silver:definition:type:syntax;
+imports silver:definition:env;
 
-synthesized attribute warnOrphaned :: Boolean occurs on Command;
+synthesized attribute warnOrphaned :: Boolean occurs on CmdArgs;
 
-aspect production cRootAll
-top::Command ::= c1::PieceList
+aspect production endCmdArgs
+top::CmdArgs ::= l::[String]
 {
-  flagLookups <- [flagLookup("--warn-orphaned",false)];
-
-  top.warnOrphaned = !null(findFlag("--warn-orphaned", top.flags));
+  top.warnOrphaned = false;
+}
+abstract production warnOrphanedFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.warnOrphaned = true;
+  forwards to rest;
+}
+aspect production run
+top::RunUnit ::= iIn::IO args::[String]
+{
+  flags <- [pair("--warn-orphaned", flag(warnOrphanedFlag))];
 }
 
 aspect production attributionDcl
-top::AGDcl ::= 'attribute' a::QName '<' tlat::TypeList '>' 'occurs' 'on' nt::QName '<' tlnt::TypeList '>' ';'
+top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
 {
-  top.warnings <-
-    if (cmdLineArgs.warnAll || cmdLineArgs.warnOrphaned)
-    && null(top.errors)
+  -- The occurs declarations should be exported by either:
+  -- 1. the grammar declaring the nonterminal
+  -- 2. the grammar declaring the attribute.
+  
+  -- TODO: only checks grammar equals, does NOT pay attention to exports!
+  
+  top.errors <-
+    if null(nt.lookupType.errors ++ at.lookupAttribute.errors)
+    && (top.config.warnAll || top.config.warnOrphaned)
     && nt.lookupType.dcl.sourceGrammar != top.grammarName
-    && a.lookupAttribute.dcl.sourceGrammar != top.grammarName
-    then [wrn(top.location, "Orphaned occurs declaration: " ++ a.pp ++ " (from " ++ a.lookupAttribute.dcl.sourceGrammar ++ ") on " ++ nt.pp ++ "(from " ++ nt.lookupType.dcl.sourceGrammar ++ ")")]
+    && at.lookupAttribute.dcl.sourceGrammar != top.grammarName
+    then [wrn(top.location, "Orphaned occurs declaration: " ++ at.lookupAttribute.fullName ++ " on " ++ nt.lookupType.fullName)]
     else [];
 }

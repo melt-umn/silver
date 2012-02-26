@@ -22,9 +22,9 @@ public class PartialNodeFactory<T> extends NodeFactory<T> {
 	/**
 	 * The function to transform.
 	 */
-	private final NodeFactory<T> ref;
+	private final NodeFactory<? extends T> ref;
 	
-	public PartialNodeFactory(final int[] indices, final Object[] args, final NodeFactory<T> ref) {
+	public PartialNodeFactory(final int[] indices, final Object[] args, final NodeFactory<? extends T> ref) {
 		this.indices = indices;
 		this.args = args;
 		this.ref = ref;

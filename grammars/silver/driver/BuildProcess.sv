@@ -83,6 +83,7 @@ top::RunUnit ::= iIn::IO args::[String]
   unit.rParser = top.rParser;
   unit.iParser = top.iParser;
   unit.compiledGrammars = grammars;
+  unit.config = a;
  
   -- a list of the specs from all the grammars compiled EXCEPT the conditional build grammars! (and before recompiles!)
   local attribute grammarsBeforeCond :: [Decorated RootSpec];
@@ -93,6 +94,7 @@ top::RunUnit ::= iIn::IO args::[String]
   condUnit.rParser = top.rParser;
   condUnit.iParser = top.iParser;
   condUnit.compiledGrammars = grammars;
+  condUnit.config = a;
   
   -- all of the interfaces that we parsed
   production attribute ifaces :: [Decorated Interface];
@@ -121,6 +123,7 @@ top::RunUnit ::= iIn::IO args::[String]
   reUnit.rParser = top.rParser;
   reUnit.iParser = top.iParser;
   reUnit.compiledGrammars = grammars;
+  reUnit.config = a;
 
 --------
 -------- Now let's put the pieces together.
@@ -154,13 +157,13 @@ top::RunUnit ::= iIn::IO args::[String]
   local attribute postIO :: IOVal<Integer>;
   postIO = runAll(reUnit.io, unitMergeSort(postOps));
   
-  top.io = if a.cmdError.isJust
+  top.io = if a.cmdError.isJust -- problem interpreting args
            then exit(1, print("\n" ++ a.cmdError.fromJust ++ "\n\n" ++ usage, iIn))
-           else if preIO.iovalue != 0 --the preops tell us to quit.
+           else if preIO.iovalue != 0 -- the preops tell us to quit.
            then exit(preIO.iovalue, preIO.io)
-           else if null(a.cmdRemaining)
+           else if null(a.cmdRemaining) -- no grammar left on cmd line
            then exit(1, print("\nNo grammar to build was specified!\n\n" ++ usage, preIO.io))
-           else if length(a.cmdRemaining) > 1
+           else if length(a.cmdRemaining) > 1 -- more than just a grammar left
            then exit(1, print("\nUnable to interpret: " ++ implode(" ", a.cmdRemaining) ++ "\n\n" ++ usage, preIO.io))
            else if !grammarLocation.iovalue.isJust
            then exit(2, print("\nGrammar '" ++ a.buildGrammar ++ "' could not be located, make sure that the " ++ 
@@ -174,3 +177,16 @@ top::RunUnit ::= iIn::IO args::[String]
            else exit(postIO.iovalue, postIO.io);
 }
 
+
+{---
+Some notes on "compiler state":
+
+Things that are copied down from driver to asts:
+ - compiledGrammars - all root specs that are being built.
+ - command - command line arguments (turn warnings, etc on)
+ - dependency analysis - translation, etc wants to know what to build
+ - exports graph - it'd be nice for some of those future warnings
+ - 
+
+
+---}

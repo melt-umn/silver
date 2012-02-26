@@ -6,7 +6,7 @@ import silver:translation:java;
 import silver:driver;
 
 --import silver:extension:doc;
---import silver:analysis:warnings;
+import silver:analysis:warnings:defs;
 
 parser rParse::Root {
   silver:host;

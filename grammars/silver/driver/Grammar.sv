@@ -3,7 +3,7 @@ grammar silver:driver;
 {--
  - Responsible for the control-flow that figures out how to obtain a grammar's symbols.
  -}
-nonterminal Grammar with io, rSpec, rParser, compiledGrammars, found, interfaces, iParser;
+nonterminal Grammar with config, io, rSpec, rParser, compiledGrammars, found, interfaces, iParser;
 
 synthesized attribute rSpec :: Decorated RootSpec;
 synthesized attribute found :: Boolean;
@@ -43,6 +43,7 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   cu.env = toEnv(cu.defs);
   cu.globalImports = toEnv(cu.importedDefs);
   cu.compiledGrammars = top.compiledGrammars;
+  cu.config = top.config;
 
   -- OR the result of reading the interface.
   production attribute inf :: IOInterface; -- See GrammarInterface.sv

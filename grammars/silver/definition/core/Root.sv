@@ -1,13 +1,15 @@
 grammar silver:definition:core;
 
+import silver:util:cmdargs only CmdArgs; -- TODO: maybe we need to structure some of this better...
+
 {--
  - Root represents one textual file of Silver source.
  -}
 nonterminal Root with
-  grammarName, file, env, location, pp, errors, defs, 
+  config, grammarName, file, env, location, pp, errors, defs, 
   declaredName, moduleNames, importedDefs, exportedGrammars, condBuild, compiledGrammars, globalImports;
 nonterminal GrammarDcl with 
-  grammarName, file, location, pp, errors, declaredName;
+  config, grammarName, file, location, pp, errors, declaredName;
 
 {--
  - Grammar-wide imports definitions.  Exists because we need to place
@@ -19,7 +21,14 @@ autocopy attribute globalImports :: Decorated Env;
  - The definitions resulting from grammar-wide imports definitions.
  -}
 synthesized attribute importedDefs :: Defs;
-
+{--
+ - All grammars Silver looked at. Despite the name, including interface files.
+ -}
+autocopy attribute compiledGrammars :: [Decorated RootSpec];
+{--
+ - Compiler configuration information, made available everywhere.
+ -}
+autocopy attribute config :: Decorated CmdArgs;
 
 concrete production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls

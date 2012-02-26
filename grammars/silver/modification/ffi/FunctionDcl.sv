@@ -1,7 +1,7 @@
 grammar silver:modification:ffi;
 
-nonterminal FFIDefs with location, grammarName, file, errors, signature, env, pp;
-nonterminal FFIDef with location, grammarName, file, errors, signature, env, pp;
+nonterminal FFIDefs with config, location, grammarName, file, errors, signature, env, pp;
+nonterminal FFIDef with config, location, grammarName, file, errors, signature, env, pp;
 terminal FFI_kwd 'foreign' lexer classes {KEYWORD};
 
 -- This is an ugly pile of crap.  There should be a better way! TODO

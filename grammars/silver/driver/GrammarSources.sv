@@ -3,7 +3,7 @@ grammar silver:driver;
 {--
  - Turns a list of files that compose a grammar into a RootSpec, having compiled them.
  -}
-nonterminal Roots with env, io, rSpec, rParser, defs, compiledGrammars, importedDefs, globalImports;
+nonterminal Roots with config, env, io, rSpec, rParser, defs, compiledGrammars, importedDefs, globalImports;
 
 abstract production compileFiles
 top::Roots ::= iIn::IO gn::String files::[String] gpath::String
@@ -19,6 +19,7 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   r.file = head(files);
   r.compiledGrammars = top.compiledGrammars;
   r.grammarName = gn;
+  r.config = top.config;
 
   --the rest of the files.
   production attribute recurse :: Roots ;
@@ -27,6 +28,7 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   recurse.env = top.env;
   recurse.compiledGrammars = top.compiledGrammars;
   recurse.globalImports = top.globalImports;
+  recurse.config = top.config;
 
   top.rSpec = if null(files) then emptyRootSpec() else consRootSpec(r, recurse.rSpec); 
   top.io = if null(files)
