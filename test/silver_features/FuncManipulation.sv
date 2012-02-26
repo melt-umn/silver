@@ -106,4 +106,22 @@ global invoker :: Function(Integer ::= String) = twoArgFunction(_,genInt());
 -- [0,2,3,4,5] [1,1,1,1,1]
 equalityTest( map(invoker, repeat("", 5)), repeat(invoker(""), 5), [Integer], silver_tests ) ;
 
+nonterminal FuncManipNT with fmeval;
+synthesized attribute fmeval :: Integer;
+
+abstract production fmadd
+top::FuncManipNT ::= a::Integer b::Integer
+{
+  top.fmeval = a + b;
+}
+
+-- There was a bug where the types for productions NodeFactories were too
+-- specific (the production node type, not nonterminal node type),
+-- not permitted because generics are invariant.
+global fmeOne :: Function(FuncManipNT ::= Integer) = fmadd(2,_);
+global fmeTwo :: Function(FuncManipNT ::= Integer) = fmadd(_,3);
+
+equalityTest( fmeOne(3).fmeval, 5, Integer, silver_tests );
+equalityTest( fmeTwo(3).fmeval, 6, Integer, silver_tests );
+
 
