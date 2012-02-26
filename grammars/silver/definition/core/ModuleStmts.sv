@@ -1,23 +1,19 @@
 grammar silver:definition:core;
 
-nonterminal ModuleStmts with grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, condBuild, compiledGrammars;
-nonterminal ModuleStmt with grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, condBuild, compiledGrammars;
+nonterminal ModuleStmts with config, grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, condBuild, compiledGrammars;
+nonterminal ModuleStmt with config, grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, condBuild, compiledGrammars;
 
-nonterminal ImportStmt with grammarName, file, location, pp, errors, moduleNames, compiledGrammars, defs;
-nonterminal ImportStmts with grammarName, file, location, pp, errors, moduleNames, compiledGrammars, defs;
+nonterminal ImportStmt with config, grammarName, file, location, pp, errors, moduleNames, compiledGrammars, defs;
+nonterminal ImportStmts with config, grammarName, file, location, pp, errors, moduleNames, compiledGrammars, defs;
 
-nonterminal ModuleExpr with grammarName, file, location, pp, errors, defs, moduleNames, compiledGrammars;
-nonterminal ModuleName with grammarName, file, location, pp, errors, defs, moduleNames, compiledGrammars;
+nonterminal ModuleExpr with config, grammarName, file, location, pp, errors, defs, moduleNames, compiledGrammars;
+nonterminal ModuleName with config, grammarName, file, location, pp, errors, defs, moduleNames, compiledGrammars;
 
-nonterminal NameList with grammarName, file, location, pp, names;
+nonterminal NameList with config, grammarName, file, location, pp, names;
 
-nonterminal WithElems with grammarName, file, location, pp, envMaps;
-nonterminal WithElem with grammarName, file, location, pp, envMaps;
+nonterminal WithElems with config, grammarName, file, location, pp, envMaps;
+nonterminal WithElem with config, grammarName, file, location, pp, envMaps;
 
-{--
- - All grammars Silver looked at. Despite the name, including interface files.
- -}
-autocopy attribute compiledGrammars :: [Decorated RootSpec];
 {--
  - A list of QName strings. Used for 'only' and 'hiding'.
  -}

@@ -8,7 +8,7 @@ import silver:util;
 
 import silver:analysis:typechecking:core;
 
-nonterminal NameOrBOperator with location, grammarName, file, errors, env, pp, operation, operatorForType;
+nonterminal NameOrBOperator with config, location, grammarName, file, errors, env, pp, operation, operatorForType;
 nonterminal Operation with unparse;
 
 synthesized attribute operation :: Operation;

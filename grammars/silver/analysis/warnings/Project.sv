@@ -1,32 +1,26 @@
 grammar silver:analysis:warnings;
 
-exports silver:analysis:warnings:defs;
+imports silver:util:cmdargs;
+imports silver:driver;
 
-import silver:util:command;
+synthesized attribute warnAll :: Boolean occurs on CmdArgs;
 
--- TODO : WARNING AWFUL HACK AHEAD
--- I sneak the arguments into the environment, so we can find command line state deep in the code.
--- This would be better done with some configuration information getting copied down...
-
--- yeah, another one.  I said this was ugly, alright?
-parser warnCmdParse :: Command {
-  silver:util:command;
+aspect production endCmdArgs
+top::CmdArgs ::= l::[String]
+{
+  top.warnAll = false;
+}
+abstract production warnAllFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.warnAll = true;
+  forwards to rest;
 }
 
-
-global cmdLineArgs :: Decorated Command = decorate warnCmdParse(envVar("SILVER_ARGS",unsafeIO()).iovalue,"<args-wrn>").parseTree with {};
-
-
-
-
-synthesized attribute warnAll :: Boolean occurs on Command;
-
-aspect production cRootAll
-top::Command ::= c1::PieceList
+aspect production run
+top::RunUnit ::= iIn::IO args::[String]
 {
-  flagLookups <- [flagLookup("--warn-all",false)];
-  uses <- ["\t--warn-all  Enable all warning messages"];
-
-  top.warnAll = !null(findFlag("--warn-all", top.flags));
+  flags <- [pair("--warn-all", flag(warnAllFlag))];
+  flagdescs <- ["\t--warn-all  : enable all warnings\n"];
 }
 

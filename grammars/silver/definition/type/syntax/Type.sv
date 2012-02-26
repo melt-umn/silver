@@ -6,10 +6,10 @@ imports silver:definition:env;
 imports silver:util;
 imports silver:definition:type:gatherfreevars;
 
-nonterminal Type      with location, grammarName, file, errors, env, pp, typerep, lexicalTypeVariables;
-nonterminal Signature with location, grammarName, file, errors, env, pp, types,   lexicalTypeVariables;
-nonterminal TypeList  with location, grammarName, file, errors, env, pp, types,   lexicalTypeVariables, errorsTyVars, freeVariables;
-nonterminal BracketedOptTypeList with grammarName, file, env, pp, typelist;
+nonterminal Type      with config, location, grammarName, file, errors, env, pp, typerep, lexicalTypeVariables;
+nonterminal Signature with config, location, grammarName, file, errors, env, pp, types,   lexicalTypeVariables;
+nonterminal TypeList  with config, location, grammarName, file, errors, env, pp, types,   lexicalTypeVariables, errorsTyVars, freeVariables;
+nonterminal BracketedOptTypeList with config, grammarName, file, env, pp, typelist;
 
 synthesized attribute types :: [TypeExp];
 

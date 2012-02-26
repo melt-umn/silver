@@ -4,27 +4,27 @@ import silver:analysis:typechecking:core;
 import silver:analysis:typechecking;
 
 nonterminal Expr with
-  grammarName, file, env, location, pp, errors, blockContext, signature, typerep;
+  config, grammarName, file, env, location, pp, errors, blockContext, signature, typerep;
 nonterminal Exprs with
-  grammarName, file, env, location, pp, errors, blockContext, signature, exprs, rawExprs;
+  config, grammarName, file, env, location, pp, errors, blockContext, signature, exprs, rawExprs;
 
 nonterminal ExprInhs with
-  grammarName, file, env, location, pp, errors, blockContext, signature, decoratingnt;
+  config, grammarName, file, env, location, pp, errors, blockContext, signature, decoratingnt;
 nonterminal ExprInh with
-  grammarName, file, env, location, pp, errors, blockContext, signature, decoratingnt;
+  config, grammarName, file, env, location, pp, errors, blockContext, signature, decoratingnt;
 nonterminal ExprLHSExpr with
-  grammarName, file, env, location, pp, errors, typerep, decoratingnt;
+  config, grammarName, file, env, location, pp, errors, typerep, decoratingnt;
 
 {--
  - Exprs with optional underscores omitting parameters. Used exclusively for
  - (partial) function application.
  -}
 nonterminal AppExprs with 
-  grammarName, file, env, location, pp, errors, blockContext, signature, exprs, rawExprs,
+  config, grammarName, file, env, location, pp, errors, blockContext, signature, exprs, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTypereps, normalExprs, appExprApplied;
 
 nonterminal AppExpr with
-  grammarName, file, env, location, pp, errors, blockContext, signature, exprs, rawExprs,
+  config, grammarName, file, env, location, pp, errors, blockContext, signature, exprs, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied;
 
 synthesized attribute normalExprs :: Exprs;

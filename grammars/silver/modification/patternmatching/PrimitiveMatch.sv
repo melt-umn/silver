@@ -17,14 +17,14 @@ import silver:extension:list; -- Oh no, this is a hack! TODO
 
 terminal Match_kwd 'match' lexer classes {KEYWORD}; -- temporary!!!
 
-nonterminal PrimPatterns with location, pp, file, grammarName, env, signature, errors, downSubst, upSubst, finalSubst, blockContext
+nonterminal PrimPatterns with config, location, pp, file, grammarName, env, signature, errors, downSubst, upSubst, finalSubst, blockContext
                             , scrutineeType, returnType, translation;
-nonterminal PrimPattern  with location, pp, file, grammarName, env, signature, errors, downSubst, upSubst, finalSubst, blockContext
+nonterminal PrimPattern  with config, location, pp, file, grammarName, env, signature, errors, downSubst, upSubst, finalSubst, blockContext
                             , scrutineeType, returnType, translation;
 
-nonterminal VarBinders with location, pp, file, grammarName, env, signature, errors, downSubst, upSubst, finalSubst, blockContext
+nonterminal VarBinders with config, location, pp, file, grammarName, env, signature, errors, downSubst, upSubst, finalSubst, blockContext
                           , bindingTypes, bindingIndex, defs, let_translation;
-nonterminal VarBinder  with location, pp, file, grammarName, env, signature, errors, downSubst, upSubst, finalSubst, blockContext
+nonterminal VarBinder  with config, location, pp, file, grammarName, env, signature, errors, downSubst, upSubst, finalSubst, blockContext
                           , bindingType, bindingIndex, defs, let_translation;
 
 autocopy attribute scrutineeType :: TypeExp;

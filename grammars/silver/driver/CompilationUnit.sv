@@ -1,6 +1,12 @@
 grammar silver:driver;
 
 {--
+ - Top-level control flow for various compilation tasks.
+ -}
+nonterminal CompilationUnit with config, io, compiledGrammars, rParser, iParser, compiledList, seenGrammars, interfaces;
+
+
+{--
  - The list of grammar names seen in total, so far.
  -}
 synthesized attribute seenGrammars :: [String];
@@ -12,11 +18,6 @@ synthesized attribute interfaces :: [Decorated Interface];
  - The list of RootSpecs belonging to grammars that were actually parsed.
  -}
 synthesized attribute compiledList :: [Decorated RootSpec];
-
-{--
- - Top-level control flow for various compilation tasks.
- -}
-nonterminal CompilationUnit with io, compiledGrammars, rParser, iParser, compiledList, seenGrammars, interfaces;
 
 
 {--
@@ -37,6 +38,7 @@ top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] c
   now.rParser = top.rParser;
   now.iParser = top.iParser;
   now.compiledGrammars = top.compiledGrammars;
+  now.config = top.config;
 
   -- Add the grammar we just build to the seen list
   local attribute new_seen :: [String];
@@ -52,6 +54,7 @@ top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] c
   recurse.rParser = top.rParser;
   recurse.iParser = top.iParser;
   recurse.compiledGrammars = top.compiledGrammars;
+  recurse.config = top.config;
  
 
   top.seenGrammars = if null(need) then seen else recurse.seenGrammars;
@@ -89,6 +92,7 @@ top::CompilationUnit ::= iIn::IO sPath::[String] seen::[String] clean::Boolean s
   now.rParser = top.rParser;
   now.iParser = top.iParser;
   now.compiledGrammars = top.compiledGrammars;
+  now.config = top.config;
 
   -- the recursion
   production attribute recurse :: CompilationUnit;
@@ -96,6 +100,7 @@ top::CompilationUnit ::= iIn::IO sPath::[String] seen::[String] clean::Boolean s
   recurse.rParser = top.rParser;
   recurse.iParser = top.iParser;
   recurse.compiledGrammars = top.compiledGrammars;
+  recurse.config = top.config;
 
   top.seenGrammars = if null(foundGrammar) then seen else recurse.seenGrammars;
 

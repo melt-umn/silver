@@ -25,9 +25,9 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   forwards to productionDcl(terminal(Abstract_kwd, "abstract", $1.line, $1.column), $2, id, ns, body);
 }
 
-nonterminal ProductionModifiers with location, file, pp, unparse, productionModifiers, errors, env; -- 0 or some
-nonterminal ProductionModifierList with location, file, pp, unparse, productionModifiers, errors, env; -- 1 or more
-nonterminal ProductionModifier with location, file, pp, unparse, productionModifiers, errors, env; -- 1
+nonterminal ProductionModifiers with config, location, file, pp, unparse, productionModifiers, errors, env; -- 0 or some
+nonterminal ProductionModifierList with config, location, file, pp, unparse, productionModifiers, errors, env; -- 1 or more
+nonterminal ProductionModifier with config, location, file, pp, unparse, productionModifiers, errors, env; -- 1
 
 synthesized attribute productionModifiers :: [SyntaxProductionModifier];
 

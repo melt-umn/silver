@@ -1,8 +1,8 @@
 grammar silver:definition:core;
 
-nonterminal Name with grammarName, file, location, pp, name;
-nonterminal NameTick with grammarName, file, location, pp, name;
-nonterminal NameTickTick with grammarName, file, location, pp, name;
+nonterminal Name with config, grammarName, file, location, pp, name;
+nonterminal NameTick with config, grammarName, file, location, pp, name;
+nonterminal NameTickTick with config, grammarName, file, location, pp, name;
 
 {--
  - An identifier's (possibly qualified) name.

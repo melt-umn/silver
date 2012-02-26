@@ -23,12 +23,12 @@ synthesized attribute matchRuleList :: [Decorated MatchRule];
 
 
 -- MR | ...
-nonterminal MRuleList with pp, signature, env, file, matchRuleList, errors;
+nonterminal MRuleList with config, pp, signature, env, file, matchRuleList, errors;
 -- P -> E
-nonterminal MatchRule with pp, signature, env, file, location, headPattern, errors;
+nonterminal MatchRule with config, pp, signature, env, file, location, headPattern, errors;
 
 -- P , ...
-nonterminal PatternList with pp, patternList, env, file, errors;
+nonterminal PatternList with config, pp, patternList, env, file, errors;
 
 {- NOTE ON ERRORS: #HACK2012
  -

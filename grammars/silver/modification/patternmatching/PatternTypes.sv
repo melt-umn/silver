@@ -5,7 +5,7 @@ import silver:definition:env;
 import silver:extension:list only LSqr_t, RSqr_t;
 
 -- See comment in pattern.sv regarding errors #HACK2012
-nonterminal Pattern with pp, env, file, errors, patternIsVariable, patternVariableName, patternSubPatternList, patternSortKey;
+nonterminal Pattern with config, pp, env, file, errors, patternIsVariable, patternVariableName, patternSubPatternList, patternSortKey;
 
 {--
  - False if it actually matches anything specific, true if it's a variable/wildcard.
