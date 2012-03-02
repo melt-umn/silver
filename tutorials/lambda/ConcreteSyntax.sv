@@ -21,10 +21,12 @@ nonterminal Expr_funct_c with pp,ast<Expr_funct>;
 synthesized attribute ast_Expr_arith::Expr_arith;
 nonterminal Expr_arith_c with pp,ast<Expr_arith>;
 
+-- Root
 concrete productions r::Root_c
  | e::Expr_c { r.pp = e.pp;
                r.ast = root(e.ast); }
 
+-- Expressions
 concrete productions e::Expr_c
  | e1::Expr_funct_c { e.pp = e1.pp;
                       e.ast = expr_expr_f(e1.ast); }
@@ -35,12 +37,14 @@ concrete productions e::Expr_c
                     { e.pp = concat([text("lambda"), text(i.lexeme), text(":"), ty.pp, text("."), e1.pp]);
                       e.ast = expr_lambda(i.lexeme, ty.ast, e1.ast); }
 
+-- Function expressions
 concrete productions e::Expr_funct_c
  | e1::Expr_funct_c e2::Expr_arith_c { e.pp = cat(e1.pp, e2.pp);
                                        e.ast = expr_funct(e1.ast, e2.ast); }
  | e1::Expr_arith_c                  { e.pp = e1.pp;
                                        e.ast = methodpassing_ex(e1.ast); }
 
+-- Arithmetic expressions
 concrete productions e::Expr_arith_c
  | e1::Expr_arith_c '+' t::Term_c { e.pp = concat([e1.pp, text("+"), t.pp]);
                                     e.ast = expr_add(e1.ast, t.ast); }
@@ -49,6 +53,7 @@ concrete productions e::Expr_arith_c
  | t::Term_c                      { e.pp = t.pp;
                                     e.ast = expr_term(t.ast); }
 
+-- Term
 concrete productions t::Term_c
  | t1::Term_c '*' f::Factor_c { t.pp = concat([t1.pp, text("*"), f.pp]);
                                 t.ast = term_mul(t1.ast, f.ast); }
@@ -57,6 +62,7 @@ concrete productions t::Term_c
  | f::Factor_c                { t.pp = f.pp;
                                 t.ast = term_factor(f.ast); }
 
+-- Factor
 concrete productions e::Factor_c
  | '(' inner::Expr_c ')' { e.pp = parens(inner.pp);
                            e.ast = factor_parens(inner.ast); }
