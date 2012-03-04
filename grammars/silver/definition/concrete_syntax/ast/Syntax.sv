@@ -17,6 +17,7 @@ synthesized attribute classSubContribs :: String;
 
 synthesized attribute unparses :: [String];
 
+
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
@@ -66,12 +67,16 @@ top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModi
                    else ["Name conflict with nonterminal " ++ t.typeName];
   top.cstErrors <- subdcls.cstErrors;
   top.cstProds = subdcls.cstProds;
-  top.cstNormalize = [syntaxNonterminal(t, foldr_p(consSyntax, nilSyntax(), treeLookup(t.typeName, top.cstNTProds)))];
+  top.cstNormalize = [syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), treeLookup(t.typeName, top.cstNTProds)))];
   top.allIgnoreTerminals = [];
   
   top.xmlCopper = 
-    "\n  <nonterm id=\"" ++ makeCopperName(t.typeName) ++ "\" />\n" ++
+    "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
+      "    <PP>" ++ t.typeName ++ "</PP>\n" ++
+      "    <Type><![CDATA[" ++ makeNTClassName(t.typeName) ++ "]]></Type>\n" ++
+      "  </Nonterminal>\n" ++
     subdcls.xmlCopper;
+
   t.boundVariables = t.freeVariables;
   top.unparses = ["nt(" ++ unparseTyVars(t.freeVariables,t.boundVariables) ++ ", " ++ t.unparse ++ ")"] ++ subdcls.unparses;
 }
@@ -93,34 +98,41 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
   top.allIgnoreTerminals = if modifiers.ignored then [top] else [];
 
   top.xmlCopper =
-    "  <term id=\"" ++ makeCopperName(n) ++ "\">\n" ++
-    "    <code><![CDATA[\n" ++
--- "RESULT = new common.TerminalRecord(lexeme,virtualLocation.getFileName(),virtualLocation.getLine(),virtualLocation.getColumn());\n" ++
-    "RESULT = new common.TerminalRecord(lexeme,virtualLocation,Integer.valueOf((int)getStartRealLocation().getPos()),Integer.valueOf((int)getEndRealLocation().getPos()));\n" ++
-      modifiers.acode ++ 
-    "    ]]></code>\n" ++
-    "    <classes>" ++ modifiers.lexerclasses ++ "</classes>\n" ++
-    "    <regex>" ++ regex.regXML ++ "</regex>\n" ++
-    "    <dominates>" ++ modifiers.dominatesXML ++ "</dominates>\n" ++
-    "    <submits>" ++ modifiers.submitsXML ++ "</submits>\n" ++
-
+    "  <Terminal id=\"" ++ makeCopperName(n) ++ "\">\n" ++
+    "    <PP>" ++ n ++ "</PP>\n" ++
+    "    <Regex>" ++ regex.xmlCopper ++ "</Regex>\n" ++ 
     (if modifiers.opPrecedence.isJust || modifiers.opAssociation.isJust then
-    "    <operator>\n" ++
-    "      <precedence>" ++ toString(fromMaybe(0, modifiers.opPrecedence)) ++ "</precedence>\n" ++
-    "      <associativity>" ++ fromMaybe("nonassoc", modifiers.opAssociation) ++ "</associativity>\n" ++
-    "      <opclass id=\"main\"/>\n" ++
-    "    </operator>\n"
-     else "") ++
+    "    <Operator>\n" ++
+    "      <Class>main</Class>\n" ++
+    "      <Precedence>" ++ toString(fromMaybe(0, modifiers.opPrecedence)) ++ "</Precedence>\n" ++
+    "      " ++ convertAssocNXML(modifiers.opAssociation) ++ "\n" ++ -- TODO
+    "    </Operator>\n"
+    else "") ++
+    "    <Type>common.TerminalRecord</Type>\n" ++ 
+    "    <Code><![CDATA[\n" ++ 
+    "RESULT = new common.TerminalRecord(lexeme,virtualLocation,Integer.valueOf((int)getStartRealLocation().getPos()),Integer.valueOf((int)getEndRealLocation().getPos()));\n" ++
+      modifiers.acode ++
+    "]]></Code>\n" ++ 
+    "    <InClasses>" ++ modifiers.lexerclassesXML ++ "</InClasses>\n" ++ 
+    -- TODO: prefix?
+    "    <Submits>" ++ modifiers.submitsXML ++ "</Submits>\n" ++ 
+    "    <Dominates>" ++ modifiers.dominatesXML ++ "</Dominates>\n" ++
+    "  </Terminal>\n";
 
--- TODO: prefix isn't currently used!
---"    <prefix>
---"      <term id="-"/>
---"    </prefix>
-
-    "  </term>\n";
-    
   top.unparses = ["term('" ++ n ++ "', /" ++ regex.regString ++ "/, " ++ unparseNonStrings(modifiers.unparses) ++ ")"];
 }
+
+-- New XML Skin START	
+function convertAssocNXML -- TODO remove, make attribute
+String ::= opassoc::Maybe<String>
+{ 
+  local attribute assoc::String;
+  assoc = fromMaybe("", opassoc);
+  return if assoc=="left" then "<LeftAssociative/>" 
+          else if assoc=="right" then "<RightAssociative/>" 
+          else "<NonAssociative/>";
+}
+-- New XML Skin END
 
 {--
  - A (named) production. Using types for later parameterization.
@@ -140,7 +152,7 @@ top::SyntaxDcl ::= n::String lhs::TypeExp rhs::[TypeExp] modifiers::SyntaxProduc
                       | _ -> ["LHS of production " ++ n ++ " is not a nonterminal"] end
                    else ["Lookup error with LHS nonterminal " ++ lhs.typeName];
   local attribute rhsRefs :: [[Decorated SyntaxDcl]];
-  rhsRefs = lookupStrings(map(getTypeName, rhs), top.cstEnv);
+  rhsRefs = lookupStrings(map((.typeName), rhs), top.cstEnv);
   top.cstErrors <- checkRHS(n, rhs, rhsRefs);
 
   top.cstProds = [pair(lhs.typeName,top)];
@@ -148,20 +160,24 @@ top::SyntaxDcl ::= n::String lhs::TypeExp rhs::[TypeExp] modifiers::SyntaxProduc
   top.allIgnoreTerminals = [];
   
   top.xmlCopper =
-    "  <prod id=\"" ++ makeCopperName(n) ++ "\" class=\"main\" precedence=\"" ++ toString(fromMaybe(0, modifiers.productionPrecedence)) ++"\">\n" ++
-    "    <code><![CDATA[\n" ++
+    "  <Production id=\"" ++ makeCopperName(n) ++ "\">\n" ++
+    (if modifiers.productionPrecedence.isJust then
+    "    <Class>main</Class>\n" ++
+    "    <Precedence>" ++ toString(modifiers.productionPrecedence.fromJust) ++ "</Precedence>\n"
+    else "") ++
+    "    <Code><![CDATA[\n" ++ 
     "RESULT = new " ++ makeClassName(n) ++ "(_children);\n" ++
       modifiers.acode ++
-    "    ]]></code>\n" ++
-    "    <lhs><nonterm id=\"" ++ makeCopperName(lhs.typeName) ++ "\"/></lhs>\n" ++
-    "    <rhs>" ++ implode("", map(xmlCopperRef, map(head, rhsRefs))) ++ "</rhs>\n" ++
-    "    <layout>" ++ fromMaybe(top.univLayout, modifiers.customLayout) ++ "</layout>\n" ++
-    
+    "]]></Code>\n" ++
+    "    <LHS>" ++ xmlCopperNontermRef(lhs.typeName) ++ "</LHS>\n" ++
+    "    <RHS>" ++ implode("", map(xmlCopperRef, map(head, rhsRefs))) ++ "</RHS>\n" ++
+    (if modifiers.customLayout.isJust then
+    "    <Layout>" ++ modifiers.customLayout.fromJust ++ "</Layout>\n"
+    else "") ++
     (if modifiers.productionOperator.isJust then
-     "    <operator>" ++ xmlCopperTermRef(modifiers.productionOperator.fromJust) ++ "</operator>\n"
-     else "") ++
-
-    "  </prod>\n";
+    "    <Operator>" ++ xmlCopperTermRef(modifiers.productionOperator.fromJust) ++ "</Operator>\n"
+    else "") ++
+    "  </Production>\n";
 
   local attribute tvs :: [TyVar];
   tvs = setUnionTyVarsAll(mapFreeVariables(lhs :: rhs));
@@ -169,14 +185,10 @@ top::SyntaxDcl ::= n::String lhs::TypeExp rhs::[TypeExp] modifiers::SyntaxProduc
   top.unparses = ["prod('" ++ n ++ "'," ++ unparseTyVars(tvs,tvs) ++ "," ++ lhs.unparse ++ "," ++ unparseTypes(rhs, tvs) ++ "," ++ unparseNonStrings(modifiers.unparses) ++ ")"];
 }
 
-function getTypeName
-String ::= t::TypeExp
-{ return t.typeName; }
 function lookupStrings
 [[Decorated SyntaxDcl]] ::= t::[String] e::TreeMap<String Decorated SyntaxDcl>
 {
-  return if null(t) then []
-         else treeLookup(head(t), e) :: lookupStrings(tail(t), e);
+  return map(treeLookup(_, e), t);
 }
 function checkRHS
 [String] ::= pn::String rhs::[TypeExp] refs::[[Decorated SyntaxDcl]]
@@ -217,7 +229,9 @@ top::SyntaxDcl ::= n::String domlist::[String] sublist::[String]
   top.cstNormalize = [top];
   top.allIgnoreTerminals = [];
   
-  top.xmlCopper = ""; -- Apparently does not exist as a declaration in the copper xml skin
+  top.xmlCopper = 
+    "  <TerminalClass id=\"" ++ makeCopperName(n) ++ "\" />\n";
+
   top.unparses = ["lclass('" ++ n ++ "'," ++ unparseStrings(domlist) ++ "," ++ unparseStrings(sublist) ++ ")"];
 }
 
@@ -237,11 +251,12 @@ top::SyntaxDcl ::= n::String ty::TypeExp acode::String
   top.allIgnoreTerminals = [];
 
   top.xmlCopper =
-    "  <attribute id=\"" ++ makeCopperName(n) ++"\" type=\"" ++ ty.transType ++ "\">\n" ++
-    "    <code><![CDATA[" ++
+    "  <ParserAttribute id=\"" ++ makeCopperName(n) ++ "\">\n" ++
+    "    <Type><![CDATA[" ++ ty.transType ++ "]]></Type>\n" ++
+    "    <Code><![CDATA[\n" ++
       acode ++
-    "    ]]></code>\n" ++
-    "  </attribute>\n";
+    "]]></Code>\n" ++
+    "  </ParserAttribute>\n";
 
   -- TODO: technically, there should be no free variables in ty.
   top.unparses = ["pattr('" ++ n ++ "', " ++ ty.unparse ++ ",\"" ++ escapeString(acode) ++ "\")"];
@@ -266,15 +281,15 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
   top.allIgnoreTerminals = [];
 
   top.xmlCopper =
-    "  <disambig_func id=\"" ++ makeCopperName(n) ++ "\">\n    " ++
-      implode("\n    ", map(xmlCopperTermRef, terms)) ++
-    "\n    <code><![CDATA[" ++
-      acode ++
-    "    ]]></code>\n" ++
-    "  </disambig_func>\n";
+    "  <DisambiguationFunction id=\"" ++ makeCopperName(n) ++ "\">\n" ++
+    "    <Members>" ++ implode("", map(xmlCopperTermRef, terms)) ++ "</Members>\n" ++
+    "    <Code><![CDATA[\n" ++
+    acode ++  
+    "]]></Code>\n" ++
+    "  </DisambiguationFunction>\n";
+
   top.unparses = ["disambig('" ++ n ++ "', " ++ unparseStrings(terms) ++ ", \"" ++ escapeString(acode) ++ "\")"];
 }
-
 
 function syntaxDclLte
 Boolean ::= l::SyntaxDcl r::SyntaxDcl
@@ -293,17 +308,17 @@ Boolean ::= l::SyntaxDcl r::SyntaxDcl
 function xmlCopperTermRef
 String ::= s::String
 {
-  return "<term id=\"" ++ makeCopperName(s) ++ "\" />";
+  return "<TerminalRef id=\"" ++ makeCopperName(s) ++ "\" grammar=\"" ++ copperGrammarId ++ "\" />";
 }
 function xmlCopperClassRef
 String ::= s::String
 {
-  return "<termclass id=\"" ++ makeCopperName(s) ++ "\" />";
+  return "<TerminalClassRef id=\"" ++ makeCopperName(s) ++ "\" grammar=\"" ++ copperGrammarId ++ "\" />";
 }
 function xmlCopperNontermRef
 String ::= s::String
 {
-  return "<nonterm id=\"" ++ makeCopperName(s) ++ "\" />";
+  return "<NonterminalRef id=\"" ++ makeCopperName(s) ++ "\" grammar=\"" ++ copperGrammarId ++ "\" />";
 }
 function xmlCopperRef
 String ::= d::Decorated SyntaxDcl
@@ -315,13 +330,6 @@ String ::= d::Decorated SyntaxDcl
          end;
 }
 
--- TODO uggggllly
-function getclassDomContribs
-String ::= d::Decorated SyntaxDcl
-{ return d.classDomContribs; }
-function getclassSubContribs
-String ::= d::Decorated SyntaxDcl
-{ return d.classSubContribs; }
 
 -- TODO: fix
 function escapeString
