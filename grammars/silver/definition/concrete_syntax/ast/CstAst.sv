@@ -5,7 +5,7 @@ imports silver:definition:type;
 imports silver:util:treemap;
 imports silver:definition:env only typeName, unparse, unparseStrings, unparseNonStrings, quoteString, escapeString, unparseTyVars, unparseTypes;
 
-imports silver:translation:java:core only makeIdName, makeClassName;
+imports silver:translation:java:core only makeIdName, makeClassName, makeNTClassName;
 imports silver:translation:java:type only transType;
 
 {--
@@ -16,6 +16,12 @@ nonterminal SyntaxRoot with cstErrors, cstNormal, xmlCopper, {-TODO:debugging-}u
 synthesized attribute cstNormal :: SyntaxRoot; -- TODO basically just a debugging thing
 synthesized attribute xmlCopper :: String;
 
+{--
+ - We need to give a name to the "grammar" all the syntax information goes
+ - into on Copper's side. For now, just call it host, because we're not
+ - taking advantage of multiple Copper grammars.
+ -}
+global copperGrammarId :: String = "host";
 
 abstract production cstRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
@@ -38,26 +44,47 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
 
   s2.univLayout = univLayout;
   top.xmlCopper =
-    "<?xml version=\"1.0\"?>\n\n" ++
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ++
 
-    "<copperspec id=\"" ++ parsername ++ "\" type=\"LALR1\" version=\"1.1\">\n" ++
-    "  <preamble>\n" ++
-    "     <code><![CDATA[\n" ++
-    "import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;\n" ++
-    "     ]]></code>\n" ++
-    "  </preamble>\n" ++
-    "  <attribute id=\"context\" type=\"common.DecoratedNode\">\n" ++
-    "    <code>context = common.TopNode.singleton;</code>\n" ++
-    "  </attribute>\n\n" ++ 
-    
-    "  <start>\n" ++
-    "    <nonterm id=\"" ++ makeCopperName(startnt) ++ "\"/>\n" ++
-    "    <layout>" ++ univLayout ++ "</layout>\n" ++
-    "  </start>\n\n" ++
+"<CopperSpec xmlns=\"http://melt.cs.umn.edu/copper/xmlns\">\n" ++
+"  <Parser id=\"" ++ makeCopperName(parsername) ++ "\" isUnitary=\"true\">\n" ++
+"    <PP>" ++ parsername ++ "</PP>\n" ++
+"    <Grammars><GrammarRef id=\"" ++ copperGrammarId ++ "\"/></Grammars>\n" ++
+"    <StartSymbol>" ++ xmlCopperNontermRef(startnt) ++ "</StartSymbol>\n" ++
+-- The layout before and after the root nonterminal. For now, universal layout.
+"    <StartLayout>" ++ univLayout ++ "</StartLayout>\n" ++
+-- TODO fix: ?
+--"    <Package>parsers</Package>\n" ++
+--"    <ClassName>SingleParser</ClassName>\n" ++
+-- This stuff gets dumped onto the outer class:
+--"    <ClassAuxiliaryCode><Code><![CDATA[  ]]></Code></ClassAuxiliaryCode>\n" ++
+-- If not otherwise specified. We always specify.
+--"    <DefaultProductionCode><Code><![CDATA[  ]]></Code></DefaultProductionCode>\n" ++
+-- If not otherwise specified. We should do this, maybe...
+--"    <DefaultTerminalCode><Code><![CDATA[  ]]></Code></DefaultTerminalCode>\n" ++
+-- Call just before a parse:
+--"    <ParserInitCode><Code><![CDATA[  ]]></Code></ParserInitCode>\n" ++
+-- Ditto, after:
+--"    <PostParseCode><Code><![CDATA[  ]]></Code></PostParseCode>\n" ++
+-- Imports and whatnot:
+--"    <Preamble><Code><![CDATA[  ]]></Code></Preamble>\n" ++
+-- This stuff gets dumped onto the semantic action container class:
+--"    <SemanticActionAuxiliaryCode><Code><![CDATA[  ]]></Code></SemanticActionAuxiliaryCode>\n" ++
+"  </Parser>\n\n" ++
 
-      s2.xmlCopper ++
-    
-    "</copperspec>\n";
+"  <Grammar id=\"" ++ copperGrammarId ++ "\">\n\n" ++
+"    <PP>" ++ copperGrammarId ++ "</PP>\n\n" ++
+-- Default layout for production, unless otherwise specified.
+"    <Layout>" ++ univLayout ++ "</Layout>\n\n" ++
+"    <Declarations>\n" ++
+"      <ParserAttribute id=\"context\">\n" ++
+"        <Type><![CDATA[common.DecoratedNode]]></Type>\n" ++
+"        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>\n" ++
+"      </ParserAttribute>\n" ++
+       s2.xmlCopper ++
+"    </Declarations>\n" ++
+"  </Grammar>\n" ++
+"</CopperSpec>\n";
 
   top.unparse = implode(",\n ", s.unparses);
 }
