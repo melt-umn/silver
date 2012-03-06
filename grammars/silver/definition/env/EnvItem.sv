@@ -95,6 +95,7 @@ function mapPrependEnvItems
 [EnvItem] ::= items::[EnvItem] prefi::String
 {
   return if null(items) then []
+         -- this should clobber any 'onlyrenamed' but those shouldn't appear in imports, where this is used.
          else renamedEnvItem(prefi ++ head(items).itemName, head(items).dcl) :: mapPrependEnvItems(tail(items), prefi);
 }
 
@@ -107,6 +108,7 @@ function mapRenameEnvItems
   return if null(items) then []
          else if !result.isJust
               then head(items) :: mapRenameEnvItems(tail(items), renames)
+              -- this should clobber any 'onlyrenamed' but those shouldn't appear in imports, where this is used.
               else renamedEnvItem(result.fromJust, head(items).dcl) :: mapRenameEnvItems(tail(items), renames);
 }
 
@@ -138,7 +140,7 @@ function performSubstitutionEnvItem
 [EnvItem] ::= e::[EnvItem] s::Substitution
 {
   return if null(e) then []
-         -- TODO: this is potentially buggy! It's okay right now because we only use this on production attributes
+         -- this should clobber any 'onlyrenamed' but those shouldn't appear in production attributes, where this is used.
          else renamedEnvItem(head(e).itemName, performSubstitutionDclInfo(head(e).dcl, s))
               :: performSubstitutionEnvItem(tail(e), s);
 }
