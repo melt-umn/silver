@@ -54,13 +54,13 @@ top::DependencyAnalysis ::= ifaces::[Decorated Interface]
 function getSpecs
 [Decorated RootSpec] ::= s::[Decorated Interface]
 {
-  return if null(s) then [] else [head(s).rSpec] ++ getSpecs(tail(s));
+  return map((.rSpec), s);
 }
 
 function collectGrammars
 [String] ::= lst::[Decorated RootSpec]
 {
-  return if null(lst) then [] else cons(head(lst).declaredName, collectGrammars(tail(lst)));
+  return map((.declaredName), lst);
 }
 
 -- All of these functions give rules of the form [value, conditions.....]

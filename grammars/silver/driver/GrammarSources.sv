@@ -22,8 +22,8 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   r.config = top.config;
 
   --the rest of the files.
-  production attribute recurse :: Roots ;
-  recurse = compileFiles(text.io, gn, tail(files), gpath) ;
+  production attribute recurse :: Roots;
+  recurse = compileFiles(text.io, gn, tail(files), gpath);
   recurse.rParser = top.rParser;
   recurse.env = top.env;
   recurse.compiledGrammars = top.compiledGrammars;
