@@ -15,12 +15,12 @@ grammar silver:definition:env;
 
 nonterminal Env with typeTree, valueTree, attrTree, prodOccursTree, occursTree;
 
-synthesized attribute typeTree      :: [Decorated EnvScope]; -- Expr is type tau
-synthesized attribute valueTree     :: [Decorated EnvScope]; -- x has type tau
-synthesized attribute attrTree      :: [Decorated EnvScope]; -- attr a has type tau
+synthesized attribute typeTree      :: [Decorated EnvScope<Decorated DclInfo>]; -- Expr is type tau
+synthesized attribute valueTree     :: [Decorated EnvScope<Decorated DclInfo>]; -- x has type tau
+synthesized attribute attrTree      :: [Decorated EnvScope<Decorated DclInfo>]; -- attr a has type tau
 
-synthesized attribute prodOccursTree :: Decorated EnvScope; -- value on prod
-synthesized attribute occursTree     :: Decorated EnvScope; -- attr on NT
+synthesized attribute prodOccursTree :: Decorated EnvScope<Decorated DclInfo>; -- value on prod
+synthesized attribute occursTree     :: Decorated EnvScope<Decorated DclInfo>; -- attr on NT
 
 ----------------------------------------------------------------------------------------------------
 --Environment creation functions--------------------------------------------------------------------
@@ -96,14 +96,14 @@ top::Env ::= d::Defs  e::Decorated Env
 ----------------------------------------------------------------------------------------------------
 
 function searchEnvAll
-[Decorated DclInfo] ::= search::String e::[Decorated EnvScope]
+[Decorated DclInfo] ::= search::String e::[Decorated EnvScope<Decorated DclInfo>]
 {
   return if null(e) then []
          else searchEnvScope(search, head(e)) ++ searchEnvAll(search, tail(e));
 }
 
 function searchEnv
-[Decorated DclInfo] ::= search::String e::[Decorated EnvScope]
+[Decorated DclInfo] ::= search::String e::[Decorated EnvScope<Decorated DclInfo>]
 {
   local attribute found :: [Decorated DclInfo];
   found = searchEnvScope(search, head(e));

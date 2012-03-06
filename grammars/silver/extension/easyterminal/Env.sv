@@ -12,7 +12,7 @@ function getTerminalRegexDclAll
 
 
 
-synthesized attribute terminalTree :: Decorated EnvScope occurs on Env; -- must be kept in sync with typeTree's type!! (whether its a [] or not)
+synthesized attribute terminalTree :: Decorated EnvScope<Decorated DclInfo> occurs on Env; -- must be kept in sync with typeTree's type!! (whether its a [] or not)
 
 function filterAndConvertTermDcls
 [Pair<String Decorated DclInfo>] ::= ei::EnvItem sofar::[Pair<String Decorated DclInfo>]

@@ -77,7 +77,7 @@ Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 --------------------------------------------------------------------------------
 -- Env.sv
 
-synthesized attribute lexerClassTree :: Decorated EnvScope occurs on Env;
+synthesized attribute lexerClassTree :: Decorated EnvScope<Decorated DclInfo> occurs on Env;
 
 aspect production i_emptyEnv 
 top::Env ::= 
