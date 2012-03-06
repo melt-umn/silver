@@ -28,7 +28,7 @@ String ::= s::String
 function unparseStrings
 String ::= s::[String]
 {
-  return "[" ++ implode(",", quoteStrings(s)) ++ "]";
+  return "[" ++ implode(", ", quoteStrings(s)) ++ "]";
 }
 
 {--

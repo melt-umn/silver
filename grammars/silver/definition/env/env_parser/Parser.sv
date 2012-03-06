@@ -125,8 +125,6 @@ top::RootSpec ::= p::IRootSpecParts
 {
   p.grammarName = p.declaredName;
 
-  top.unparse = unparseRootSpec(top).unparse;
-
   top.declaredName = p.declaredName; 
   top.moduleNames = p.moduleNames;
   top.defs = p.defs;

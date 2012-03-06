@@ -17,7 +17,6 @@ Decorated RootSpec ::= c1::Decorated Root
 abstract production i_rootSpecRoot
 top::RootSpec ::= c1::Decorated Root
 { 
-  top.unparse = unparseRootSpec(top).unparse;
   top.declaredName = c1.declaredName;
   top.moduleNames = makeSet(c1.moduleNames);
 
@@ -34,24 +33,12 @@ top::RootSpec ::= c1::Decorated Root
 function consRootSpec
 Decorated RootSpec ::= c1::Decorated Root c2::Decorated RootSpec
 {
-  return decorate i_consRootSpec(c1, c2) with {};
+  return decorate i_appendRootSpec(rootSpecRoot(c1), c2) with {};
 }
 
-abstract production i_consRootSpec
-top::RootSpec ::= c1::Decorated Root c2::Decorated RootSpec
-{
-  forwards to i_appendRootSpec(rootSpecRoot(c1), c2);
-}
-
-function appendRootSpec
-Decorated RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
-{
-  return decorate i_appendRootSpec(c1, c2) with {};
-}
 abstract production i_appendRootSpec
 top::RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
 {
-  top.unparse = unparseRootSpec(top).unparse;
   top.declaredName = c1.declaredName;
   top.moduleNames = makeSet(c1.moduleNames ++ c2.moduleNames);
 
