@@ -2,12 +2,12 @@ grammar silver:definition:concrete_syntax:ast;
 
 -- For looking syntax elements up by name.
 synthesized attribute cstDcls :: [Pair<String Decorated SyntaxDcl>];
-autocopy attribute cstEnv :: TreeMap<String Decorated SyntaxDcl>;
+autocopy attribute cstEnv :: EnvTree<Decorated SyntaxDcl>;
 synthesized attribute cstErrors :: [String] with ++;
 
 -- Transformation that moves productions underneath their respective nonterminals.
 synthesized attribute cstProds :: [Pair<String SyntaxDcl>];
-autocopy attribute cstNTProds :: TreeMap<String SyntaxDcl>;
+autocopy attribute cstNTProds :: EnvTree<SyntaxDcl>;
 synthesized attribute cstNormalize :: [SyntaxDcl];
 
 synthesized attribute allIgnoreTerminals :: [Decorated SyntaxDcl];
@@ -63,11 +63,11 @@ top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModi
 {
   top.sortKey = "EEE" ++ t.typeName;
   top.cstDcls = [pair(t.typeName, top)] ++ subdcls.cstDcls;
-  top.cstErrors := if length(treeLookup(t.typeName, top.cstEnv)) == 1 then []
+  top.cstErrors := if length(searchEnvTree(t.typeName, top.cstEnv)) == 1 then []
                    else ["Name conflict with nonterminal " ++ t.typeName];
   top.cstErrors <- subdcls.cstErrors;
   top.cstProds = subdcls.cstProds;
-  top.cstNormalize = [syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), treeLookup(t.typeName, top.cstNTProds)))];
+  top.cstNormalize = [syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), searchEnvTree(t.typeName, top.cstNTProds)))];
   top.allIgnoreTerminals = [];
   
   top.xmlCopper = 
@@ -90,7 +90,7 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
   top.sortKey = "CCC" ++ n;
   top.cstDcls = [pair(n, top)];
   -- TODO get errors from modifiers
-  top.cstErrors := if length(treeLookup(n, top.cstEnv)) == 1 then []
+  top.cstErrors := if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with terminal " ++ n];
 
   top.cstProds = [];
@@ -143,10 +143,10 @@ top::SyntaxDcl ::= n::String lhs::TypeExp rhs::[TypeExp] modifiers::SyntaxProduc
   top.sortKey = "FFF" ++ n;
   top.cstDcls = [pair(n, top)];
   -- TODO modifiers errors
-  top.cstErrors := if length(treeLookup(n, top.cstEnv)) == 1 then []
+  top.cstErrors := if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with production " ++ n];
   local attribute lhsRef :: [Decorated SyntaxDcl];
-  lhsRef = treeLookup(lhs.typeName, top.cstEnv);
+  lhsRef = searchEnvTree(lhs.typeName, top.cstEnv);
   top.cstErrors <- if length(lhsRef) == 1 then
                    case head(lhsRef) of syntaxNonterminal(_,_) -> []
                       | _ -> ["LHS of production " ++ n ++ " is not a nonterminal"] end
@@ -186,9 +186,9 @@ top::SyntaxDcl ::= n::String lhs::TypeExp rhs::[TypeExp] modifiers::SyntaxProduc
 }
 
 function lookupStrings
-[[Decorated SyntaxDcl]] ::= t::[String] e::TreeMap<String Decorated SyntaxDcl>
+[[Decorated SyntaxDcl]] ::= t::[String] e::EnvTree<Decorated SyntaxDcl>
 {
-  return map(treeLookup(_, e), t);
+  return map(searchEnvTree(_, e), t);
 }
 function checkRHS
 [String] ::= pn::String rhs::[TypeExp] refs::[[Decorated SyntaxDcl]]
@@ -213,7 +213,7 @@ top::SyntaxDcl ::= n::String domlist::[String] sublist::[String]
 {
   top.sortKey = "AAA" ++ n;
   top.cstDcls = [pair(n, top)];
-  top.cstErrors := if length(treeLookup(n, top.cstEnv)) == 1 then []
+  top.cstErrors := if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with lexer class " ++ n];
   local attribute drefs :: [[Decorated SyntaxDcl]];
   drefs = lookupStrings(domlist, top.cstEnv);
@@ -243,7 +243,7 @@ top::SyntaxDcl ::= n::String ty::TypeExp acode::String
 {
   top.sortKey = "BBB" ++ n;
   top.cstDcls = [pair(n, top)];
-  top.cstErrors := if length(treeLookup(n, top.cstEnv)) == 1 then []
+  top.cstErrors := if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with parser attribute " ++ n];
 
   top.cstProds = [];
