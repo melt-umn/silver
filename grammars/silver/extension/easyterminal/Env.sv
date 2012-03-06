@@ -24,7 +24,7 @@ function filterAndConvertTermDcls
 }
 
 function buildTerminalTree
-EnvTree ::= eis::[EnvItem]
+EnvTree<Decorated DclInfo> ::= eis::[EnvItem]
 {
   return directBuildTree(foldr(filterAndConvertTermDcls,[],eis));
 }

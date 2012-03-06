@@ -4,13 +4,13 @@ grammar silver:definition:env;
 -- collapseEnvScope [Decorated DclInfo] ::= e::Decorated EnvScope
 
 -- emptyEnvScope    Decorated EnvScope ::=
--- oneEnvScope      Decorated EnvScope ::= eis::EnvTree
+-- oneEnvScope      Decorated EnvScope ::= eis::EnvTree<Decorated DclInfo>
 -- appendEnvScope   Decorated EnvScope ::= l::Decorated EnvScope r::Decorated EnvScope
--- consEnvScope     Decorated EnvScope ::= l::EnvTree r::Decorated EnvScope
+-- consEnvScope     Decorated EnvScope ::= l::EnvTree<Decorated DclInfo> r::Decorated EnvScope
 
 nonterminal EnvScope with envTrees;
 
-synthesized attribute envTrees :: [EnvTree] ;
+synthesized attribute envTrees :: [EnvTree<Decorated DclInfo>];
 
 function emptyEnvScope
 Decorated EnvScope ::=
@@ -24,14 +24,14 @@ et::EnvScope ::=
 }
 
 function oneEnvScope
-Decorated EnvScope ::= eis::EnvTree
+Decorated EnvScope ::= eis::EnvTree<Decorated DclInfo>
 {
   return decorate i_oneEnvScope(eis) with {};
 }
 abstract production i_oneEnvScope
-et::EnvScope ::= eis::EnvTree
+et::EnvScope ::= eis::EnvTree<Decorated DclInfo>
 {
-  et.envTrees = [eis] ;
+  et.envTrees = [eis];
 }
 
 function appendEnvScope
@@ -46,12 +46,12 @@ et::EnvScope ::=  l::Decorated EnvScope r::Decorated EnvScope
 }
 
 function consEnvScope
-Decorated EnvScope ::= l::EnvTree r::Decorated EnvScope
+Decorated EnvScope ::= l::EnvTree<Decorated DclInfo> r::Decorated EnvScope
 {
   return decorate i_consEnvScope(l, r) with {};
 }
 abstract production i_consEnvScope
-et::EnvScope ::= l::EnvTree  r::Decorated EnvScope
+et::EnvScope ::= l::EnvTree<Decorated DclInfo>  r::Decorated EnvScope
 {
  et.envTrees = l :: r.envTrees;
 }
@@ -62,23 +62,10 @@ function searchEnvScope
   return searchEnvScopeHelp(search, e.envTrees);
 }
 function searchEnvScopeHelp
-[Decorated DclInfo] ::= search::String e::[EnvTree]
+[Decorated DclInfo] ::= search::String e::[EnvTree<Decorated DclInfo>]
 {
   return if null(e)
          then [ ]
          else searchEnvTree(search, head(e)) ++ searchEnvScopeHelp(search, tail(e));
-}
-
-function collapseEnvScope
-[Decorated DclInfo] ::= e::Decorated EnvScope
-{
-  return collapseEnvScopeHelp(e.envTrees);
-}
-function collapseEnvScopeHelp
-[Decorated DclInfo] ::= e::[EnvTree]
-{
-  return if null(e)
-         then []
-         else collapseEnvTree(head(e)) ++ collapseEnvScopeHelp(tail(e));
 }
 

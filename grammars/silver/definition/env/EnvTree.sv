@@ -1,58 +1,50 @@
 grammar silver:definition:env;
 
--- searchEnvTree   [Decorated DclInfo] ::= search::String et::EnvTree
--- buildTree       EnvTree ::= eis::[Decorated EnvItem]
--- collapseEnvTree [Decorated DclInfo] ::= et::EnvTree
+import silver:util:raw:treemap as rtm; -- good performance (mostly due to strictness!)
+--import silver:util:fixedmap as fm; -- decent performance
+--import silver:util:treemap as tm; -- poor performance
 
-import silver:util:raw:treemap as rtm;
---import silver:util:fixedmap as fm;
+{--
+ - The abstraction for maps throughout the Silver compiler.
+ -}
+type EnvTree<a> = rtm:Map<String a>;
 
-type EnvTree = rtm:Map<String Decorated DclInfo>;
-
+{--
+ - Look up function for maps.
+ -}
 function searchEnvTree
-[Decorated DclInfo] ::= search::String et::EnvTree
+[a] ::= search::String et::EnvTree<a>
 {
   return rtm:lookup(search, et);
 }
 
-function collapseEnvTree
-[Decorated DclInfo] ::= et::EnvTree
-{
-  -- preserve only full name env items.
-  return map(myGetSnd, filter(isSameKey, rtm:toList(et)));
-}
-function myGetSnd
-b ::= p::Pair<a b>
-{ return p.snd; }
-
+{--
+ - Standard environment constructor for a map.
+ - Obey's EnvItem's rules for what names should appear for each item.
+ -}
 function buildTree
-EnvTree ::= eis::[EnvItem]
+EnvTree<Decorated DclInfo> ::= eis::[EnvItem]
 {
   return directBuildTree( explodeEnvItems(eis) );
 }
 
+{--
+ - Arbitrary environment constructor for a map.
+ -}
 function directBuildTree
-EnvTree ::= eis::[Pair<String Decorated DclInfo>]
+EnvTree<a> ::= eis::[Pair<String a>]
 {
   return rtm:add(eis, rtm:empty(compareString));
---  return fm:create( eis );
 }
 
+----
 
--- Utility functions
-
-function isSameKey
-Boolean ::= p::Pair<String Decorated DclInfo>
-{ return p.fst == p.snd.fullName; }
-
--- Take (shortName, fullName) and turns it into [(shortName, fullName), (fullName, fullName)]
--- So lookups see both.
+{--
+ - Helper for buildTree.
+ -}
 function explodeEnvItems
 [Pair<String Decorated DclInfo>] ::= eis::[EnvItem]
 {
-  local attribute h :: EnvItem;
-  h = head(eis);
-
   return if null(eis) then [] else
             head(eis).envContribs ++ explodeEnvItems(tail(eis));
 }

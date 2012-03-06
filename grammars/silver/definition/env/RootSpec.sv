@@ -54,11 +54,6 @@ function getRootSpec
   return if null(rs) then [] else if head(rs).declaredName == n then [head(rs)] else getRootSpec(n, tail(rs));
 }
 
-function getDeclaredNames
-[String] ::= r::[Decorated RootSpec]{
-  return if null(r) then [] else [head(r).declaredName] ++ getDeclaredNames(tail(r)); 
-}
-
 -- TODO: eliminate this NT and fold this code into RootSpec.  Why is it separate?
 nonterminal RootSpecUnparse with unparse;
 abstract production unparseRootSpec
