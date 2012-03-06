@@ -2,8 +2,7 @@ grammar silver:definition:concrete_syntax:ast;
 
 imports silver:definition:regex;
 imports silver:definition:type;
-imports silver:util:treemap;
-imports silver:definition:env only typeName, unparse, unparseStrings, unparseNonStrings, quoteString, escapeString, unparseTyVars, unparseTypes;
+imports silver:definition:env only typeName, unparse, unparseStrings, unparseNonStrings, quoteString, escapeString, unparseTyVars, unparseTypes, EnvTree, searchEnvTree, directBuildTree;
 
 imports silver:translation:java:core only makeIdName, makeClassName, makeNTClassName;
 imports silver:translation:java:type only transType;
@@ -26,13 +25,13 @@ global copperGrammarId :: String = "host";
 abstract production cstRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
 {
-  s.cstEnv = treeConvert(s.cstDcls, treeNew(compareString));
-  s.cstNTProds = treeConvert(s.cstProds, treeNew(compareString));
+  s.cstEnv = directBuildTree(s.cstDcls);
+  s.cstNTProds = directBuildTree(s.cstProds);
   
   -- Move productions under their nonterminal, and sort the declarations
   local attribute s2 :: Syntax;
   s2 = foldr_p(consSyntax, nilSyntax(), sortBy(syntaxDclLte, s.cstNormalize));
-  s2.cstEnv = treeConvert(s.cstDcls, treeNew(compareString));
+  s2.cstEnv = directBuildTree(s.cstDcls);
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.
   -- In particular, it drops productions it can't find an NT for.
