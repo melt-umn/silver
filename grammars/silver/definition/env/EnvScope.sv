@@ -1,59 +1,44 @@
 grammar silver:definition:env;
 
--- searchEnvScope   [Decorated DclInfo] ::= search::String e::Decorated EnvScope
--- collapseEnvScope [Decorated DclInfo] ::= e::Decorated EnvScope
-
--- emptyEnvScope    Decorated EnvScope ::=
--- oneEnvScope      Decorated EnvScope ::= eis::EnvTree<Decorated DclInfo>
--- appendEnvScope   Decorated EnvScope ::= l::Decorated EnvScope r::Decorated EnvScope
--- consEnvScope     Decorated EnvScope ::= l::EnvTree<Decorated DclInfo> r::Decorated EnvScope
-
+{--
+ - Just an abstraction for representing one scope.
+ -}
 nonterminal EnvScope with envTrees;
 
-synthesized attribute envTrees :: [EnvTree<Decorated DclInfo>];
+{--
+ - Our EnvTree abstraction is immutable, so we have a list here
+ - to accomodate any situation where we might need to add to an
+ - existing scope, rather than create a new one.
+ -}
+inherited attribute envTrees :: [EnvTree<Decorated DclInfo>];
+
+abstract production i_envScope_dummy_record
+top::EnvScope ::=
+{
+}
 
 function emptyEnvScope
 Decorated EnvScope ::=
 {
-  return decorate i_emptyEnvScope() with {};
-}
-abstract production i_emptyEnvScope
-et::EnvScope ::= 
-{
-  et.envTrees = [];
+  return decorate i_envScope_dummy_record() with {envTrees = [];};
 }
 
 function oneEnvScope
 Decorated EnvScope ::= eis::EnvTree<Decorated DclInfo>
 {
-  return decorate i_oneEnvScope(eis) with {};
-}
-abstract production i_oneEnvScope
-et::EnvScope ::= eis::EnvTree<Decorated DclInfo>
-{
-  et.envTrees = [eis];
+  return decorate i_envScope_dummy_record() with {envTrees = [eis];};
 }
 
 function appendEnvScope
 Decorated EnvScope ::= l::Decorated EnvScope r::Decorated EnvScope
 {
-  return decorate i_appendEnvScope(l, r) with {};
-}
-abstract production i_appendEnvScope
-et::EnvScope ::=  l::Decorated EnvScope r::Decorated EnvScope
-{
-  et.envTrees = l.envTrees ++ r.envTrees;
+  return decorate i_envScope_dummy_record() with {envTrees = l.envTrees ++ r.envTrees;};
 }
 
 function consEnvScope
 Decorated EnvScope ::= l::EnvTree<Decorated DclInfo> r::Decorated EnvScope
 {
-  return decorate i_consEnvScope(l, r) with {};
-}
-abstract production i_consEnvScope
-et::EnvScope ::= l::EnvTree<Decorated DclInfo>  r::Decorated EnvScope
-{
- et.envTrees = l :: r.envTrees;
+  return decorate i_envScope_dummy_record() with {envTrees = l :: r.envTrees;};
 }
 
 function searchEnvScope
