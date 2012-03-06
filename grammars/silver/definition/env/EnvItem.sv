@@ -25,14 +25,10 @@ String ::= s::String
   return substring(lastIndexOf(":", s) + 1, length(s), s);
 }
 
-abstract production defaultEnvItem
-ei::EnvItem ::= di::Decorated DclInfo
+function defaultEnvItem
+EnvItem ::= di::Decorated DclInfo
 {
-  ei.itemName = fullNameToShort(di.fullName);
-  ei.dcl = di;
-  ei.envContribs = if ei.itemName != di.fullName
-                   then [pair(ei.itemName, di), pair(di.fullName, di)]
-                   else [pair(ei.itemName, di)];
+  return renamedEnvItem(fullNameToShort(di.fullName), di);
 }
 abstract production renamedEnvItem
 ei::EnvItem ::= newname::String di::Decorated DclInfo
@@ -61,22 +57,19 @@ ei::EnvItem ::= newname::String di::Decorated DclInfo
 function mapGetDcls
 [Decorated DclInfo] ::= i::[EnvItem]
 {
-  return if null(i) then []
-         else head(i).dcl :: mapGetDcls(tail(i));
+  return map((.dcl), i);
 }
 
 function mapFullnameDcls
 [EnvItem] ::= i::[Decorated DclInfo]
 {
-  return if null(i) then []
-         else fullNameEnvItem(head(i)) :: mapFullnameDcls(tail(i));
+  return map(fullNameEnvItem, i);
 }
 
 function mapDefaultWrapDcls
 [EnvItem] ::= i::[Decorated DclInfo]
 {
-  return if null(i) then []
-         else defaultEnvItem(head(i)) :: mapDefaultWrapDcls(tail(i));
+  return map(defaultEnvItem, i);
 }
 
 
@@ -145,7 +138,7 @@ function performSubstitutionEnvItem
 [EnvItem] ::= e::[EnvItem] s::Substitution
 {
   return if null(e) then []
-         --else decorate i_envItem(head(e).itemName, performSubstitutionDclInfo(head(e).dcl, s)) with {}
+         -- TODO: this is potentially buggy! It's okay right now because we only use this on production attributes
          else renamedEnvItem(head(e).itemName, performSubstitutionDclInfo(head(e).dcl, s))
               :: performSubstitutionEnvItem(tail(e), s);
 }
