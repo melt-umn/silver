@@ -17,7 +17,8 @@ function quoteStrings
  - Turns a String into a string that can be parsed with IName.
  -}
 function quoteString
-String ::= s::String{
+String ::= s::String
+{
   return "'" ++ s ++ "'";
 }
 
