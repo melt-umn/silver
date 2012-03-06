@@ -105,7 +105,7 @@ IO ::= iIn::IO r::Decorated RootSpec genPath::String
   rm = deleteStaleData(pr, genPath, r.declaredName);
   
   local attribute wr :: IO;
-  wr = writeFile(pathName ++ "Silver.svi", r.unparse, rm);
+  wr = writeFile(pathName ++ "Silver.svi", unparseRootSpec(r), rm);
   
   return wr;
 }
