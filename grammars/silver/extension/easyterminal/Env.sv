@@ -7,12 +7,12 @@ import silver:definition:regex;
 function getTerminalRegexDclAll
 [Decorated DclInfo] ::= search::String e::Decorated Env
 {
-  return searchEnvScope(search, e.terminalTree);
+  return searchEnv(search, e.terminalTree);
 }
 
 
 
-synthesized attribute terminalTree :: Decorated EnvScope<Decorated DclInfo> occurs on Env; -- must be kept in sync with typeTree's type!! (whether its a [] or not)
+inherited attribute terminalTree :: [Decorated EnvScope<Decorated DclInfo>] occurs on Env; -- must be kept in sync with typeTree's type!! (whether its a [] or not)
 
 function filterAndConvertTermDcls
 [Pair<String Decorated DclInfo>] ::= ei::EnvItem sofar::[Pair<String Decorated DclInfo>]
@@ -29,27 +29,27 @@ EnvTree<Decorated DclInfo> ::= eis::[EnvItem]
   return directBuildTree(foldr(filterAndConvertTermDcls,[],eis));
 }
 
-aspect production i_emptyEnv 
-top::Env ::= 
+aspect function emptyEnv
+Decorated Env ::=
 {
-  top.terminalTree = emptyEnvScope();
+  top.terminalTree = [emptyEnvScope()];
 }
 
-aspect production i_toEnv
-top::Env ::= d::Defs
+aspect function toEnv
+Decorated Env ::= d::Defs
 {
-  top.terminalTree = oneEnvScope(buildTerminalTree(d.typeList));
+  top.terminalTree = [oneEnvScope(buildTerminalTree(d.typeList))];
 }
 
-aspect production i_appendEnv
-top::Env ::= e1::Decorated Env  e2::Decorated Env
+aspect function appendEnv
+Decorated Env ::= e1::Decorated Env  e2::Decorated Env
 {
-  top.terminalTree = appendEnvScope(e1.terminalTree, e2.terminalTree);
+  top.terminalTree = e1.terminalTree ++ e2.terminalTree;
 }
 
-aspect production i_newScopeEnv
-top::Env ::= d::Defs  e::Decorated Env
+aspect function newScopeEnv
+Decorated Env ::= d::Defs  e::Decorated Env
 {
-  top.terminalTree = consEnvScope(buildTerminalTree(d.typeList), e.terminalTree);
+  top.terminalTree = oneEnvScope(buildTerminalTree(d.typeList)) :: e.terminalTree;
 }
 

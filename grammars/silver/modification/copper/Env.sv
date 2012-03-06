@@ -77,28 +77,28 @@ Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 --------------------------------------------------------------------------------
 -- Env.sv
 
-synthesized attribute lexerClassTree :: Decorated EnvScope<Decorated DclInfo> occurs on Env;
+inherited attribute lexerClassTree :: Decorated EnvScope<Decorated DclInfo> occurs on Env;
 
-aspect production i_emptyEnv 
-top::Env ::= 
+aspect function emptyEnv
+Decorated Env ::=
 {
   top.lexerClassTree = emptyEnvScope();
 }
 
-aspect production i_toEnv
-top::Env ::= d::Defs
+aspect function toEnv
+Decorated Env ::= d::Defs
 {
   top.lexerClassTree = oneEnvScope(buildTree(d.lexerClassList));
 }
 
-aspect production i_appendEnv
-top::Env ::= e1::Decorated Env  e2::Decorated Env
+aspect function appendEnv
+Decorated Env ::= e1::Decorated Env  e2::Decorated Env
 {
   top.lexerClassTree = appendEnvScope(e1.lexerClassTree, e2.lexerClassTree);
 }
 
-aspect production i_newScopeEnv
-top::Env ::= d::Defs  e::Decorated Env
+aspect function newScopeEnv
+Decorated Env ::= d::Defs  e::Decorated Env
 {
   top.lexerClassTree = consEnvScope(buildTree(d.lexerClassList), e.lexerClassTree);
 }
