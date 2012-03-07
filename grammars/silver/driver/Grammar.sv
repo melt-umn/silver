@@ -40,8 +40,8 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   production attribute cu :: Roots; -- See GrammarSources.sv
   cu = compileFiles(pr, grammarName, files, grammarLocation.iovalue.fromJust);
   cu.rParser = top.rParser;
-  cu.env = toEnv(cu.defs);
-  cu.globalImports = toEnv(cu.importedDefs);
+  cu.env = toEnv(cu.rSpec.defs);
+  cu.globalImports = toEnv(cu.rSpec.importedDefs);
   cu.compiledGrammars = top.compiledGrammars;
   cu.config = top.config;
 
@@ -51,8 +51,8 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   inf.iParser = top.iParser;
 
   top.found = grammarLocation.iovalue.isJust && !null(files);
-  top.interfaces = if top.found && !clean && hasInterface.iovalue then inf.interfaces else [];
   top.io =  if top.found then (if !clean && hasInterface.iovalue then inf.io else cu.io) else grammarLocation.io;
+  top.interfaces = if top.found && !clean && hasInterface.iovalue then inf.interfaces else [];
   top.rSpec = if top.found then (if !clean && hasInterface.iovalue then head(inf.interfaces).rSpec else cu.rSpec) else emptyRootSpec();
 }
 
