@@ -9,6 +9,8 @@ wrongCode "Could not find terminal declaration for 'double'" {
 }
 
 wrongCode "Found ambiguous possibilities for 'single'" {
+ -- It's now looking only in the closest environment. hmmm... expected behavior?
  terminal Dupe 'single';
+ terminal Dupe2 'single';
  global t :: Single_t = 'single';
 }
