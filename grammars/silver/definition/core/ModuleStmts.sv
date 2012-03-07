@@ -27,7 +27,7 @@ synthesized attribute envMaps :: [Pair<String String>];
 nonterminal Module with defs, errors;
 
 abstract production module 
-top::Module ::= compiledGrammars::[Decorated RootSpec]
+top::Module ::= compiledGrammars::EnvTree<Decorated RootSpec>
                 gram::Decorated QName
                 asPrepend::String
                 onlyFilter::[String]
@@ -57,7 +57,7 @@ top::Module ::= compiledGrammars::[Decorated RootSpec]
 nonterminal ModuleExportedDefs with defs, errors;
 
 abstract production moduleExportedDefs
-top::ModuleExportedDefs ::= l::Location compiledGrammars::[Decorated RootSpec] need::[String] seen::[String]
+top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated RootSpec> need::[String] seen::[String]
 {
   production attribute recurse :: ModuleExportedDefs;
   recurse = moduleExportedDefs(l, compiledGrammars, new_need, new_seen);
@@ -69,7 +69,7 @@ top::ModuleExportedDefs ::= l::Location compiledGrammars::[Decorated RootSpec] n
   new_seen = cons(gram, seen);
   
   production attribute rs :: [Decorated RootSpec];
-  rs = getRootSpec(gram, compiledGrammars);
+  rs = searchEnvTree(gram, compiledGrammars);
   
   production attribute add_to_need :: [String] with ++;
   add_to_need := head(rs).exportedGrammars;

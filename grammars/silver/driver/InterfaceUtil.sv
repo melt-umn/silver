@@ -1,6 +1,6 @@
 grammar silver:driver;
 
-nonterminal DependencyAnalysis with compiledList, needGrammars, interfaces, compiledGrammars, forceTaint;
+nonterminal DependencyAnalysis with compiledList, needGrammars, interfaces, forceTaint;
 
 inherited attribute forceTaint::[String] with ++;
 synthesized attribute needGrammars :: [String];
@@ -14,14 +14,14 @@ synthesized attribute needGrammars :: [String];
 {--
  - Inputs:
  -   @param ifaces  The list of interface files that were used, instead of the sources
- -   @inh compiledGrammars  The list of all RootSpec obtained up to this point
+ -   @param compiledRootSpecs  The list of all RootSpec obtained up to this point, from actually parsing a grammar
  - Outputs:
  -   @syn compiledList  The list of all RootSpecs obtained up to this point (these get translated!)
  -   @syn needGrammars  The list of grammars that must be recompiled.
  -   @syn interfaces  The list of safe interfaces.
  -}
 abstract production dependencyAnalysis
-top::DependencyAnalysis ::= ifaces::[Decorated Interface]
+top::DependencyAnalysis ::= ifaces::[Decorated Interface]  compiledRootSpecs::[Decorated RootSpec]
 {
   production attribute ifspecs::[Decorated RootSpec];
   ifspecs = getSpecs(ifaces);
@@ -32,21 +32,33 @@ top::DependencyAnalysis ::= ifaces::[Decorated Interface]
   production attribute importsnifs::[[String]];
   importsnifs = normalizeImports(ifspecs);
   
+  {--
+   - The names of the grammars that were dirty, and actually underwent changes.
+   -}
   production attribute altered::[String];
-  altered = collectGrammars(top.compiledGrammars); -- actually underwent changes
+  altered = collectGrammars(compiledRootSpecs);
   
-  production attribute taintedaltered::[String]; -- exports something that underwent changes
-  taintedaltered = makeSet( top.forceTaint ++ inductivelyExpand(altered, exportsnifs));
+  {--
+   - Those interfaces that _export_ something that was altered.
+   -}
+  production attribute taintedaltered::[String];
+  taintedaltered = makeSet(top.forceTaint ++ inductivelyExpand(altered, exportsnifs));
   
+  {--
+   - Those interfaces the _import_ something that was tainted/altered.
+   -}
   production attribute suspect::[String]; -- directly imports something tainted or altered
   suspect = noninductiveExpansion(taintedaltered, importsnifs);
   
+  {--
+   - Those interfaces that are not affected at all by any changes.
+   -}
   production attribute safe::[String];
   safe = rem(collectGrammars(ifspecs), taintedaltered ++ suspect);
 
   -- tainted == rem(taintedaltered, altered)
   
-  top.compiledList = top.compiledGrammars;
+  top.compiledList = compiledRootSpecs;
   top.needGrammars = rem(taintedaltered ++ suspect, altered);
   top.interfaces = keepInterfaces(safe, ifaces);
 }

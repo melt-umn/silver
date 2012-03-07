@@ -1,6 +1,8 @@
 grammar silver:definition:concrete_syntax;
 
-
+{--
+ - An abstract representation of a parser declaration.
+ -}
 nonterminal ParserSpec with 
   sourceGrammar, sourceLocation, fullName,
   compiledGrammars,

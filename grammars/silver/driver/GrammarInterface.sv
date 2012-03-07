@@ -1,6 +1,6 @@
 grammar silver:driver;
 
-nonterminal IOInterface with io, interfaces, iParser, compiledGrammars;
+nonterminal IOInterface with io, interfaces, iParser;
 
 abstract production compileInterface
 top::IOInterface ::= iIn::IO f::String genPath::String

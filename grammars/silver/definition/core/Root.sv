@@ -24,7 +24,7 @@ synthesized attribute importedDefs :: Defs;
 {--
  - All grammars Silver looked at. Despite the name, including interface files.
  -}
-autocopy attribute compiledGrammars :: [Decorated RootSpec];
+autocopy attribute compiledGrammars :: EnvTree<Decorated RootSpec>;
 {--
  - Compiler configuration information, made available everywhere.
  -}
