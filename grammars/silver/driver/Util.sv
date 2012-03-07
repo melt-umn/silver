@@ -96,4 +96,11 @@ IOVal<Maybe<String>> ::= path::String searchPaths::[String] iIn::IO
               else findGrammarLocation(path, tail(searchPaths), exists.io);
 }
 
-
+{--
+ - Returns a pair, suitable for building an environment
+ -}
+function grammarPairing
+Pair<String Decorated RootSpec> ::= r::Decorated RootSpec
+{
+  return pair(r.declaredName, r);
+}

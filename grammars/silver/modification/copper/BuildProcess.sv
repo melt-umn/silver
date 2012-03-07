@@ -25,7 +25,7 @@ top::RunUnit ::= iIn::IO args::[String]
   flags <- [pair("--copperdump", flag(copperdumpFlag))];
   flagdescs <- ["\t--copperdump: force copper to dump parse table information\n"];
 
-  postOps <- [generateCS(grammars, depAnalysis.taintedParsers, silvergen)]; 
+  postOps <- [generateCS(grammarEnv, depAnalysis.taintedParsers, silvergen)]; 
 }
 
 -- InterfaceUtil.sv
@@ -33,9 +33,10 @@ synthesized attribute taintedParsers:: [ParserSpec] occurs on DependencyAnalysis
 synthesized attribute allParsers :: [ParserSpec] occurs on DependencyAnalysis;
 
 aspect production dependencyAnalysis
-top::DependencyAnalysis ::= ifaces::[Decorated Interface]
+top::DependencyAnalysis ::= ifaces::[Decorated Interface]  compiledRootSpecs::[Decorated RootSpec]
 {
-  top.allParsers = collectParserSpecs(ifspecs ++ top.compiledGrammars); -- collect them from everything
+  -- collect parsers from both interfaces and compiled grammars
+  top.allParsers = collectParserSpecs(ifspecs ++ compiledRootSpecs);
   
   top.taintedParsers = findTaintedParsers(top.allParsers, taintedaltered, altered);
 }
@@ -59,7 +60,7 @@ function findTaintedParsers
 
 
 abstract production generateCS
-top::Unit ::= grams::[Decorated RootSpec] specs::[ParserSpec] silvergen::String
+top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::String
 {
   local attribute pr::IO;
   pr = print("Generating Parsers and Scanners.\n", top.ioIn);
@@ -70,7 +71,7 @@ top::Unit ::= grams::[Decorated RootSpec] specs::[ParserSpec] silvergen::String
 }
 
 function writeCSSpec
-IO ::= i::IO grams::[Decorated RootSpec] silvergen::String specs::[ParserSpec]
+IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[ParserSpec]
 {
   local attribute p :: ParserSpec;
   p = head(specs);

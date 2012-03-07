@@ -82,7 +82,7 @@ top::RunUnit ::= iIn::IO args::[String]
   unit = compileGrammars(grammarLocation.io, spath, [a.buildGrammar], [], a.doClean, silvergen);
   unit.rParser = top.rParser;
   unit.iParser = top.iParser;
-  unit.compiledGrammars = grammars;
+  unit.compiledGrammars = grammarEnv;
   unit.config = a;
  
   -- a list of the specs from all the grammars compiled EXCEPT the conditional build grammars! (and before recompiles!)
@@ -93,7 +93,7 @@ top::RunUnit ::= iIn::IO args::[String]
   condUnit = compileConditionals(unit.io, spath, collectGrammars(grammarsBeforeCond), a.doClean, grammarsBeforeCond, silvergen);
   condUnit.rParser = top.rParser;
   condUnit.iParser = top.iParser;
-  condUnit.compiledGrammars = grammars;
+  condUnit.compiledGrammars = grammarEnv;
   condUnit.config = a;
   
   -- all of the interfaces that we parsed
@@ -105,8 +105,7 @@ top::RunUnit ::= iIn::IO args::[String]
 --------
   
   production attribute depAnalysis :: DependencyAnalysis;
-  depAnalysis = dependencyAnalysis(ifaces);
-  depAnalysis.compiledGrammars = unit.compiledList ++ condUnit.compiledList;
+  depAnalysis = dependencyAnalysis(ifaces, unit.compiledList ++ condUnit.compiledList);
   depAnalysis.forceTaint := [];
   
   -- depAnalysis.compiledList = RootSpecs needing translation
@@ -122,7 +121,7 @@ top::RunUnit ::= iIn::IO args::[String]
   reUnit = compileGrammars(condUnit.io, spath, depAnalysis.needGrammars, seenNames, true, silvergen);
   reUnit.rParser = top.rParser;
   reUnit.iParser = top.iParser;
-  reUnit.compiledGrammars = grammars;
+  reUnit.compiledGrammars = grammarEnv;
   reUnit.config = a;
 
 --------
@@ -140,6 +139,9 @@ top::RunUnit ::= iIn::IO args::[String]
   -- a list of the specs from _all_ the grammars we've looked at
   production attribute grammars :: [Decorated RootSpec];
   grammars = unit.compiledList ++ reUnit.compiledList ++ getSpecs(depAnalysis.interfaces) ++ nonTreeRootSpecs;
+  
+  production attribute grammarEnv :: EnvTree<Decorated RootSpec>;
+  grammarEnv = directBuildTree(map(grammarPairing, grammars));
   
 --------
 -------- Translation:  grammars has up-to-date RootSpec for everything. Should be used by analysis.

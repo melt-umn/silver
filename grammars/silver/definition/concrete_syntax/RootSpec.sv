@@ -31,7 +31,7 @@ top::RootSpec ::= c1::Decorated RootSpec  c2::Decorated RootSpec
 }
 
 aspect production moduleExportedDefs
-top::ModuleExportedDefs ::= l::Location  compiled::[Decorated RootSpec]  need::[String]  seen::[String]
+top::ModuleExportedDefs ::= l::Location  compiled::EnvTree<Decorated RootSpec>  need::[String]  seen::[String]
 {
   top.syntaxAst = if null(need) || null(rs) then [] else (head(rs).syntaxAst ++ recurse.syntaxAst);
   top.parserSpecs = if null(need) || null(rs) then [] else (head(rs).parserSpecs ++ recurse.parserSpecs);

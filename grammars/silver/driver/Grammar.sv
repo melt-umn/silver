@@ -49,7 +49,6 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   production attribute inf :: IOInterface; -- See GrammarInterface.sv
   inf = compileInterface(pr, "Silver.svi", genPath ++ "src/" ++ gramPath);
   inf.iParser = top.iParser;
-  inf.compiledGrammars = top.compiledGrammars;
 
   top.found = grammarLocation.iovalue.isJust && !null(files);
   top.interfaces = if top.found && !clean && hasInterface.iovalue then inf.interfaces else [];
