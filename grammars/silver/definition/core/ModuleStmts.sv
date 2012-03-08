@@ -1,13 +1,13 @@
 grammar silver:definition:core;
 
-nonterminal ModuleStmts with config, grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, condBuild, compiledGrammars;
-nonterminal ModuleStmt with config, grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, condBuild, compiledGrammars;
+nonterminal ModuleStmts with config, grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, condBuild, compiledGrammars, grammarDependencies;
+nonterminal ModuleStmt with config, grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, condBuild, compiledGrammars, grammarDependencies;
 
-nonterminal ImportStmt with config, grammarName, file, location, pp, errors, moduleNames, compiledGrammars, defs;
-nonterminal ImportStmts with config, grammarName, file, location, pp, errors, moduleNames, compiledGrammars, defs;
+nonterminal ImportStmt with config, grammarName, file, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
+nonterminal ImportStmts with config, grammarName, file, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
 
-nonterminal ModuleExpr with config, grammarName, file, location, pp, errors, defs, moduleNames, compiledGrammars;
-nonterminal ModuleName with config, grammarName, file, location, pp, errors, defs, moduleNames, compiledGrammars;
+nonterminal ModuleExpr with config, grammarName, file, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
+nonterminal ModuleName with config, grammarName, file, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
 
 nonterminal NameList with config, grammarName, file, location, pp, names;
 
@@ -23,19 +23,22 @@ synthesized attribute names :: [String];
  -}
 synthesized attribute envMaps :: [Pair<String String>];
 
-
+-- TODO: eliminate, fold into ModuleName, make filter parameters inh attrs.
 nonterminal Module with defs, errors;
 
 abstract production module 
 top::Module ::= compiledGrammars::EnvTree<Decorated RootSpec>
+                grammarDependencies::[String]
                 gram::Decorated QName
                 asPrepend::String
                 onlyFilter::[String]
                 hidingFilter::[String]
                 withRenames::[Pair<String String>]
 {
+  -- TODO: starting with 'gram.grammarName' in seen is a hack:
+  -- what we really need is some way to eliminate duplicate imports.
   production attribute med :: ModuleExportedDefs;
-  med = moduleExportedDefs(gram.location, compiledGrammars, [gram.name], []);
+  med = moduleExportedDefs(gram.location, compiledGrammars, grammarDependencies, [gram.name], [gram.grammarName]);
   
   local attribute d1 :: Defs;
   d1 = if null(onlyFilter) then med.defs else filterDefsInclude(med.defs, onlyFilter);
@@ -57,10 +60,10 @@ top::Module ::= compiledGrammars::EnvTree<Decorated RootSpec>
 nonterminal ModuleExportedDefs with defs, errors;
 
 abstract production moduleExportedDefs
-top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated RootSpec> need::[String] seen::[String]
+top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated RootSpec> grammarDependencies::[String] need::[String] seen::[String]
 {
   production attribute recurse :: ModuleExportedDefs;
-  recurse = moduleExportedDefs(l, compiledGrammars, new_need, new_seen);
+  recurse = moduleExportedDefs(l, compiledGrammars, grammarDependencies, new_need, new_seen);
   
   local attribute gram :: String;
   gram = head(need);
@@ -72,7 +75,7 @@ top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated Root
   rs = searchEnvTree(gram, compiledGrammars);
   
   production attribute add_to_need :: [String] with ++;
-  add_to_need := head(rs).exportedGrammars;
+  add_to_need := head(rs).exportedGrammars ++ triggeredGrammars(grammarDependencies, head(rs).condBuild);
   
   local attribute new_need :: [String];
   new_need = rem(makeSet(tail(need) ++ add_to_need), new_seen);
@@ -80,6 +83,14 @@ top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated Root
   top.defs = if null(need) || null(rs) then emptyDefs() else appendDefs(head(rs).defs, recurse.defs);
   top.errors := if null(need) then [] else 
              if null(rs) then [err(l, "Grammar '" ++ gram ++ "' cannot be found.")] else recurse.errors;
+}
+
+function triggeredGrammars
+[String] ::= grammarDependencies::[String]  trig::[[String]]
+{
+  return if null(trig) then []
+         else if contains(head(tail(head(trig))), grammarDependencies) then head(head(trig)) :: triggeredGrammars(grammarDependencies, tail(trig))
+         else triggeredGrammars(grammarDependencies, tail(trig));
 }
 
 --------------
@@ -218,7 +229,7 @@ top::ModuleName ::= pkg::QName
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, pkg, "", [], [], []);
+  m = module(top.compiledGrammars, top.grammarDependencies, pkg, "", [], [], []);
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -235,7 +246,7 @@ top::ModuleExpr ::= pkg::QName
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, pkg, "", [], [], []);
+  m = module(top.compiledGrammars, top.grammarDependencies, pkg, "", [], [], []);
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -249,7 +260,7 @@ top::ModuleExpr ::= pkg::QName 'with' wc::WithElems
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, pkg, "", [], [], wc.envMaps);
+  m = module(top.compiledGrammars, top.grammarDependencies, pkg, "", [], [], wc.envMaps);
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -263,7 +274,7 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, pkg, "", ns.names, [], []);
+  m = module(top.compiledGrammars, top.grammarDependencies, pkg, "", ns.names, [], []);
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -277,7 +288,7 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList 'with' wc::WithElems
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, pkg, "", ns.names, [], wc.envMaps);
+  m = module(top.compiledGrammars, top.grammarDependencies, pkg, "", ns.names, [], wc.envMaps);
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -291,7 +302,7 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, pkg, "", [], ns.names, []);
+  m = module(top.compiledGrammars, top.grammarDependencies, pkg, "", [], ns.names, []);
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -305,7 +316,7 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList 'with' wc::WithElems
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, pkg, "", [], ns.names, wc.envMaps);
+  m = module(top.compiledGrammars, top.grammarDependencies, pkg, "", [], ns.names, wc.envMaps);
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -319,7 +330,7 @@ top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
   top.moduleNames = [pkg1.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, pkg1, pkg2.name, [], [], []);
+  m = module(top.compiledGrammars, top.grammarDependencies, pkg1, pkg2.name, [], [], []);
 
   top.errors := m.errors;
   top.defs = m.defs;

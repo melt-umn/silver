@@ -7,7 +7,7 @@ import silver:util:cmdargs only CmdArgs; -- TODO: maybe we need to structure som
  -}
 nonterminal Root with
   config, grammarName, file, env, location, pp, errors, defs, 
-  declaredName, moduleNames, importedDefs, exportedGrammars, condBuild, compiledGrammars, globalImports;
+  declaredName, moduleNames, importedDefs, exportedGrammars, condBuild, compiledGrammars, globalImports, grammarDependencies;
 nonterminal GrammarDcl with 
   config, grammarName, file, location, pp, errors, declaredName;
 
@@ -26,6 +26,11 @@ synthesized attribute importedDefs :: Defs;
  -}
 autocopy attribute compiledGrammars :: EnvTree<Decorated RootSpec>;
 {--
+ - A list of grammars that this grammar depends upon,
+ - directly or indirectly. (i.e. based on other grammar's exports)
+ -}
+autocopy attribute grammarDependencies :: [String];
+{--
  - Compiler configuration information, made available everywhere.
  -}
 autocopy attribute config :: Decorated CmdArgs;
@@ -39,6 +44,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 		else consImportStmts(importStmt('import', moduleAll(qNameId(nameIdLower(terminal(IdLower_t, "core")))), ';'), ims);
 
   allImports.compiledGrammars = top.compiledGrammars;
+  allImports.grammarDependencies = top.grammarDependencies;
   allImports.grammarName = top.grammarName;
   allImports.file = top.file;
 
