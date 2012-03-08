@@ -3,8 +3,8 @@ grammar silver:definition:core;
 {--
  - Top-level declarations of a Silver grammar. The "meat" of a file.
  -}
-nonterminal AGDcls with config, grammarName, file, env, location, pp, errors, defs, moduleNames, compiledGrammars;
-nonterminal AGDcl  with config, grammarName, file, env, location, pp, errors, defs, moduleNames, compiledGrammars;
+nonterminal AGDcls with config, grammarName, file, env, location, pp, errors, defs, moduleNames, compiledGrammars, grammarDependencies;
+nonterminal AGDcl  with config, grammarName, file, env, location, pp, errors, defs, moduleNames, compiledGrammars, grammarDependencies;
 
 concrete production nilAGDcls
 top::AGDcls ::=

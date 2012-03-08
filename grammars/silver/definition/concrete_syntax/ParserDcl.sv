@@ -30,7 +30,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
   forwards to defaultAGDcl();
 }
 
-nonterminal ModuleList with config, location, grammarName, file, moduleNames, compiledGrammars, errors, pp;
+nonterminal ModuleList with config, location, grammarName, file, moduleNames, compiledGrammars, errors, pp, grammarDependencies;
 
 concrete production moduleListOne
 top::ModuleList ::= c1::ModuleName ';'

@@ -45,7 +45,7 @@ function makeSet
   local attribute recurse :: [String];
   recurse = makeSet(tail(list));
 
-  return if null(list) then list
+  return if null(list) then []
          else if contains(head(list), recurse)
 	      then recurse
 	      else cons(head(list), recurse);

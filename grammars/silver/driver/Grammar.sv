@@ -42,6 +42,7 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   cu.rParser = top.rParser;
   cu.env = toEnv(cu.rSpec.defs);
   cu.globalImports = toEnv(cu.rSpec.importedDefs);
+  cu.grammarDependencies = computeDependencies(cu.rSpec.moduleNames, top.compiledGrammars);
   cu.compiledGrammars = top.compiledGrammars;
   cu.config = top.config;
 
@@ -56,3 +57,55 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   top.rSpec = if top.found then (if !clean && hasInterface.iovalue then head(inf.interfaces).rSpec else cu.rSpec) else emptyRootSpec();
 }
 
+function computeDependencies
+[String] ::= init::[String] e::EnvTree<Decorated RootSpec>
+{
+  return expandCondBuilds(expandExports(init, [], e), [], [], e);
+}
+
+{--
+ - Find all exported grammars
+ - @param need  The initial set of imported grammars
+ - @param seen  Initially []
+ - @param e  All built grammars
+ - @return  The initial set, plus any grammar directly or indirectly exported by it
+ -}
+function expandExports
+[String] ::= need::[String]  seen::[String]  e::EnvTree<Decorated RootSpec>
+{
+  local attribute g :: [Decorated RootSpec];
+  g = searchEnvTree(head(need), e);
+
+  return if null(need) then seen
+         -- If the grammar has already been taken care of, or doesn't exist, discard it.
+         else if contains(head(need), seen) || null(g) then expandExports(tail(need), seen, e)
+         -- Otherwise, tack its exported list to the need list, and add this grammar to the taken care of list.
+         else expandExports(tail(need) ++ head(g).exportedGrammars, head(need) :: seen, e);
+}
+
+{--
+ - Find all exported grammars - including any triggered CONDITIONALLY
+ - @param need  The initial set of imported grammars (ALL are assumed to be found in e, now.)
+ - @param seen  Initially []
+ - @param triggers  Initially []
+ - @param e  All built grammars
+ - @return  The initial set, plus any grammar directly or indirectly exported by it
+ -}
+function expandCondBuilds
+[String] ::= need::[String]  seen::[String]  triggers::[[String]]  e::EnvTree<Decorated RootSpec>
+{
+  -- Map each grammar name to its triggers, and concat.
+  local attribute newtriggers :: [[String]];
+  newtriggers = foldr(append, triggers, map((.condBuild), map(head, map(searchEnvTree(_, e), need))));
+
+  local attribute newset :: [String];
+  newset = need ++ seen;
+
+  -- Find out about any new triggers as a result of adding 'need' to the set, plus need's triggers
+  local attribute triggered :: [String];
+  triggered = noninductiveExpansion(newset, newtriggers);
+
+  return if null(need) || null(triggered) then newset
+         -- If new triggers fire, continue with the new triggers as need:
+         else expandCondBuilds(triggered, newset, newtriggers, e);
+}

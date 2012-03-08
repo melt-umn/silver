@@ -104,3 +104,16 @@ Pair<String Decorated RootSpec> ::= r::Decorated RootSpec
 {
   return pair(r.declaredName, r);
 }
+
+function getSpecs
+[Decorated RootSpec] ::= s::[Decorated Interface]
+{
+  return map((.rSpec), s);
+}
+
+function collectGrammars
+[String] ::= lst::[Decorated RootSpec]
+{
+  return map((.declaredName), lst);
+}
+
