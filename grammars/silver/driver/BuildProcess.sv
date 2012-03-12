@@ -82,40 +82,26 @@ top::RunUnit ::= iIn::IO args::[String]
   -- 2: unit.interfaces  ==  grammars that we went with the interface files semi-optimistically.
   -- 3: unit.seenGrammars  ==  the names of all of the above, together.
  
-  -- Extract all grammars from the two sources (parsed + interfaces)
-  local attribute grammarsBeforeCond :: [Decorated RootSpec];
-  grammarsBeforeCond = unit.compiledList ++ getSpecs(unit.interfaces);
-
-  production attribute condUnit :: CompilationUnit;
-  condUnit = compileConditionals(unit.io, searchPaths, collectGrammars(grammarsBeforeCond), a.doClean, grammarsBeforeCond, silvergen);
-  condUnit.rParser = top.rParser;
-  condUnit.iParser = top.iParser;
-  condUnit.compiledGrammars = grammarEnv;
-  condUnit.config = a;
-  
-  -- all of the interfaces that we parsed
-  production attribute ifaces :: [Decorated Interface];
-  ifaces = unit.interfaces ++ condUnit.interfaces;
-
 --------
 -------- Phase 3: We've compiled things, now figure out what we need to recompile (ONLY for analysis, not re-translation)
 --------
   
   production attribute depAnalysis :: DependencyAnalysis;
-  depAnalysis = dependencyAnalysis(ifaces, unit.compiledList ++ condUnit.compiledList);
+  depAnalysis = dependencyAnalysis(unit.interfaces, unit.compiledList);
   depAnalysis.forceTaint := [];
   
   -- depAnalysis.compiledList = RootSpecs needing translation
   -- depAnalysis.needGrammars = grammars names that need to be rechecked for errors, but not translated
   -- depAnalysis.interfaces = interfaces that are Just Fine and A-Okay as is
 
-  -- the names of the grammars that have been seen. 
-  local attribute seenNames :: [String];
-  seenNames = unit.seenGrammars ++ condUnit.seenGrammars;
+--------
+-------- Phase 4: Check those grammars we're uncertain about, to make sure there are no semantic errors, but
+--------  don't do translation on them. (TODO: technically this is the source of build bugs...)
+--------
 
-  -- Note that we already have the latest translation of all the grammars. This just does semantic analysis to make sure they're still okay.
+  -- Parse those grammars that depend on a changed grammar:
   production attribute reUnit :: CompilationUnit;
-  reUnit = compileGrammars(condUnit.io, searchPaths, depAnalysis.needGrammars, seenNames, true, silvergen);
+  reUnit = compileGrammars(unit.io, searchPaths, depAnalysis.needGrammars, unit.seenGrammars, true, silvergen);
   reUnit.rParser = top.rParser;
   reUnit.iParser = top.iParser;
   reUnit.compiledGrammars = grammarEnv;
@@ -125,18 +111,11 @@ top::RunUnit ::= iIn::IO args::[String]
 -------- Now let's put the pieces together.
 --------
 
-  -- grammars not in the dependency tree formed by moduleNames on the root grammar
-  -- this is interesting because translations must be sure to account for them (for example, in initialization)
-  production attribute nonTreeRootSpecs :: [Decorated RootSpec];
-  nonTreeRootSpecs = condUnit.compiledList ++ getSpecs(condUnit.interfaces);
-  
-  production attribute nonTreeGrammars :: [String];
-  nonTreeGrammars = collectGrammars(nonTreeRootSpecs);
-
-  -- a list of the specs from _all_ the grammars we've looked at
+  -- All the specs we're looking at:
   production attribute grammars :: [Decorated RootSpec];
-  grammars = unit.compiledList ++ reUnit.compiledList ++ getSpecs(depAnalysis.interfaces) ++ nonTreeRootSpecs;
+  grammars = unit.compiledList ++ reUnit.compiledList ++ getSpecs(depAnalysis.interfaces);
   
+  -- A nice environment for looking up a grammar: (used above, passed down into each grammar)
   production attribute grammarEnv :: EnvTree<Decorated RootSpec>;
   grammarEnv = directBuildTree(map(grammarPairing, grammars));
   
@@ -145,8 +124,6 @@ top::RunUnit ::= iIn::IO args::[String]
 --------               (e.g. typechecking/binding)
 --------
 --------               depAnalysis.compiledList is the list needing re-translation
---------               HOWEVER, translations might need to add more (e.g. the root grammar for cond build Init calls)
---------               AND TO DO SO, they need to force the root grammar to be recompiled.
 --------
 
   --the operations that will be executed _after_ parsing and linking of the grammars has been done
@@ -167,7 +144,7 @@ top::RunUnit ::= iIn::IO args::[String]
            else if !grammarLocation.iovalue.isJust
            then exit(2, print("\nGrammar '" ++ a.buildGrammar ++ "' could not be located, make sure that the " ++ 
                               "grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
-           else if null(unit.compiledList ++ condUnit.compiledList)
+           else if null(unit.compiledList)
            then if null(grammars)
                 then exit(3, print("\nGrammar '" ++ a.buildGrammar ++ "' was found at '" ++ grammarLocation.iovalue.fromJust 
                                                        ++ "' but there were no silver source files there!\n\n", grammarLocation.io))

@@ -6,7 +6,7 @@ inherited attribute forceTaint::[String] with ++;
 synthesized attribute needGrammars :: [String];
 
   -- at this point we need to partition everything into groups:
-  -- Group 1: ALTERED.  = extraUnit.compiledList ++ unit.compiledList ++ condUnit.compiledList;
+  -- Group 1: ALTERED.  = anything parsed from source; interface invalid/nonexistant.
   -- Group 2: TAINTED.  = anything that exports anything ALTERED or TAINTED (inductively)
   -- Group 3: SUSPECT.  = Anything that imports anything ALTERED or TAINTED (noninductively)
   -- Group 4: SAFE.     = All interfaces that aren't in any above group.
