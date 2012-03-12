@@ -39,26 +39,20 @@ top::RunUnit ::= iIn::IO args::[String]
            ];
   flagdescs <- ["\t--onejar: include runtime libraries in the jar\n"];
 
-  -- We need to re-translate the root grammar to properly handle conditional builds Init calls
-  depAnalysis.forceTaint <- [a.buildGrammar];
-
-  local attribute translate :: [Decorated RootSpec];
-  translate = if null(getRootSpec(a.buildGrammar, depAnalysis.compiledList))
-              then head(getRootSpec(a.buildGrammar, grammars)) :: depAnalysis.compiledList
-              else depAnalysis.compiledList;
-              
-  postOps <- if a.noJavaGeneration then [] else [genJava(a, translate, nonTreeGrammars, silvergen), genBuild(a, grammars, silverhome, silvergen, depAnalysis)]; 
+  postOps <- if a.noJavaGeneration then [] else 
+    [genJava(a, depAnalysis.compiledList, silvergen), 
+     genBuild(a, grammars, silverhome, silvergen, depAnalysis)]; 
 }
 
 
 abstract production genJava
-top::Unit ::= a::Decorated CmdArgs specs::[Decorated RootSpec] extras::[String] silvergen::String
+top::Unit ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silvergen::String
 {
   local attribute pr::IO;
   pr = print("Generating Java Translation.\n", top.ioIn);
 
   local attribute i :: IO;
-  i = writeAll(pr, a, specs, extras, silvergen);
+  i = writeAll(pr, a, specs, silvergen);
  
   top.io = i;
   top.code = 0;
@@ -77,19 +71,19 @@ top::Unit ::= a::Decorated CmdArgs allspecs::[Decorated RootSpec] silverhome::St
 }
 
 function writeAll
-IO ::= i::IO a::Decorated CmdArgs l::[Decorated RootSpec] extras::[String] silvergen::String
+IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]  silvergen::String
 {
   local attribute now :: IO;
-  now = writeSpec(i, head(l), a, extras, silvergen);
+  now = writeSpec(i, head(l), a, silvergen);
 
   local attribute recurse :: IO;
-  recurse = writeAll(now, a, tail(l), extras, silvergen);
+  recurse = writeAll(now, a, tail(l), silvergen);
 
   return if null(l) then i else recurse;
 }
 
 function writeSpec
-IO ::= i::IO r::Decorated RootSpec a::Decorated CmdArgs extras::[String] silvergen::String
+IO ::= i::IO  r::Decorated RootSpec  a::Decorated CmdArgs  silvergen::String
 {
   local attribute printio :: IO;
   printio = print("\t[" ++ r.declaredName ++ "]\n", i);
@@ -101,7 +95,7 @@ IO ::= i::IO r::Decorated RootSpec a::Decorated CmdArgs extras::[String] silverg
   specLocation = silvergen ++ "/src/" ++ package; 
 
   local attribute mki :: IO;
-  mki = writeFile(specLocation ++ "Init.java", makeInit(r, if a.buildGrammar == r.declaredName then extras else []), printio);
+  mki = writeFile(specLocation ++ "Init.java", makeInit(r), printio);
 
   local attribute mains :: [Decorated DclInfo];
   mains = getValueDcl(r.declaredName ++ ":main", toEnv(r.defs));
@@ -259,7 +253,7 @@ IO ::= i::IO l::String s::[[String]]
 }
 
 function makeInit
-String ::= r::Decorated RootSpec extras::[String]
+String ::= r::Decorated RootSpec
 {
   local attribute className :: String;
   className = makeName(r.declaredName) ++ ".Init";
@@ -275,30 +269,33 @@ String ::= r::Decorated RootSpec extras::[String]
 
 "\tpublic static void initAllStatics(){\n" ++
 "\t\tif(" ++ className ++ ".preInit) return;\n\n" ++
-
 "\t\t" ++ className ++ ".preInit = true;\n\n" ++
 
-makeOthers(r.moduleNames ++ extras, "initAllStatics") ++ "\n" ++
+makeOthers(r.allGrammarDependencies, "initAllStatics") ++ "\n" ++
+
 "\t}\n\n" ++
 
 
 "\tpublic static void init(){\n" ++
 "\t\tif(" ++ className ++ ".init) return;\n\n" ++
+"\t\t" ++ className ++ ".init = true;\n\n" ++
 
 "\t\t" ++ className ++ ".setupInheritedAttributes();\n\n" ++	
 
-"\t\t" ++ className ++ ".init = true;\n\n" ++
-
-makeOthers(r.moduleNames ++ extras, "init") ++ "\n" ++
+makeOthers(r.allGrammarDependencies, "init") ++ "\n" ++
 
 "\t\t" ++ className ++ ".initProductionAttributeDefinitions();\n" ++
+
 "\t}\n\n" ++
 
 "\tpublic static void postInit(){\n" ++
 "\t\tif(" ++ className ++ ".postInit) return;\n\n" ++
 "\t\t" ++ className ++ ".postInit = true;\n\n" ++
-makeOthers(r.moduleNames ++ extras, "postInit") ++ "\n\n" ++
+
+makeOthers(r.allGrammarDependencies, "postInit") ++ "\n\n" ++
+
 r.postInit ++
+
 "\t}\n\n" ++
 
 "\tprivate static void setupInheritedAttributes(){\n" ++

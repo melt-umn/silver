@@ -46,7 +46,7 @@ top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] c
 
   -- Add this grammar's dependencies that we haven't already seen to the need list.
   local attribute new_need :: [String];
-  new_need = makeSet(rem(now.rSpec.moduleNames, new_seen) ++ tail(need));
+  new_need = makeSet(rem(now.rSpec.moduleNames ++ foldr(append, [], now.rSpec.condBuild), new_seen) ++ tail(need));
 
   -- Recurse for the rest of the grammars needed.
   production attribute recurse :: CompilationUnit;
@@ -72,46 +72,5 @@ top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] c
 		   else if !now.found 
 			then recurse.interfaces
 			else now.interfaces ++ recurse.interfaces;
-}
-
-
-{--
- - Given the current compile state as input (seen, sofar, etc), triggers the building of
- - all appropriate conditionally compiled grammars.
- -}
-abstract production compileConditionals
-top::CompilationUnit ::= iIn::IO sPath::[String] seen::[String] clean::Boolean sofar::[Decorated RootSpec] genPath::String
-{
-  -- Compute whether there are any new triggered builds, given 'seen' as the current list of built grammars
-  local attribute foundGrammar :: [String];
-  foundGrammar = noninductiveExpansion(seen, normalizeCondBuilds(sofar));
-
-  -- the current triggered grammar(s?)
-  production attribute now :: CompilationUnit;
-  now = compileGrammars(iIn, sPath, foundGrammar, seen, clean, genPath);
-  now.rParser = top.rParser;
-  now.iParser = top.iParser;
-  now.compiledGrammars = top.compiledGrammars;
-  now.config = top.config;
-
-  -- the recursion
-  production attribute recurse :: CompilationUnit;
-  recurse = compileConditionals(now.io, sPath, now.seenGrammars, clean, now.compiledList ++ getSpecs(now.interfaces) ++ sofar, genPath);
-  recurse.rParser = top.rParser;
-  recurse.iParser = top.iParser;
-  recurse.compiledGrammars = top.compiledGrammars;
-  recurse.config = top.config;
-
-  top.seenGrammars = if null(foundGrammar) then seen else recurse.seenGrammars;
-
-  top.io = if null(foundGrammar) then iIn else recurse.io;
-
-  top.compiledList = if null(foundGrammar)
-		     then []
-		     else now.compiledList ++ recurse.compiledList;
-
-  top.interfaces = if null(foundGrammar)
-		   then []
-		   else now.interfaces ++ recurse.interfaces;
 }
 
