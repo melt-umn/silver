@@ -36,17 +36,19 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   local attribute pr :: IO;
   pr = print("Compiling Grammar: " ++ grammarName ++ "\n", hasInterface.io); 
 	
-  --the result of compiling all of the files.
+  -- Compile all the individual files in the grammar
   production attribute cu :: Roots; -- See GrammarSources.sv
   cu = compileFiles(pr, grammarName, files, grammarLocation.iovalue.fromJust);
   cu.rParser = top.rParser;
+  -- Create the values for grammar-wide inherited attributes.
   cu.env = toEnv(cu.rSpec.defs);
   cu.globalImports = toEnv(cu.rSpec.importedDefs);
   cu.grammarDependencies = computeDependencies(cu.rSpec.moduleNames, top.compiledGrammars);
+  -- Echo the compilation-wide ones:
   cu.compiledGrammars = top.compiledGrammars;
   cu.config = top.config;
 
-  -- OR the result of reading the interface.
+  -- **OR** the result of reading the interface.
   production attribute inf :: IOInterface; -- See GrammarInterface.sv
   inf = compileInterface(pr, "Silver.svi", genPath ++ "src/" ++ gramPath);
   inf.iParser = top.iParser;
@@ -57,6 +59,11 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   top.rSpec = if top.found then (if !clean && hasInterface.iovalue then head(inf.interfaces).rSpec else cu.rSpec) else emptyRootSpec();
 }
 
+
+{--
+ - Expand an initial set of modules names to all exported dependencies,
+ - direct, indirect, or conditionally triggered.
+ -}
 function computeDependencies
 [String] ::= init::[String] e::EnvTree<Decorated RootSpec>
 {

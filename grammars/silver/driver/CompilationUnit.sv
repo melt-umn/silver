@@ -42,7 +42,7 @@ top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] c
 
   -- Add the grammar we just build to the seen list
   local attribute new_seen :: [String];
-  new_seen = [head(need)] ++  seen;
+  new_seen = head(need) :: seen;
 
   -- Add this grammar's dependencies that we haven't already seen to the need list.
   local attribute new_need :: [String];
