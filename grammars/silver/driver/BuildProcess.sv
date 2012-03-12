@@ -20,6 +20,7 @@ nonterminal RunUnit with io, rParser, iParser;
 abstract production run
 top::RunUnit ::= iIn::IO args::[String]
 {
+  -- See Command.sv for some flags.
   production attribute flags::[Pair<String Flag>] with ++;
   flags := [];
   production attribute flagdescs::[String] with ++;
@@ -27,70 +28,66 @@ top::RunUnit ::= iIn::IO args::[String]
   local attribute usage::String;
   usage = "Usage: silver [options] grammar\n\nFlag options:\n" ++ implode("\n", sortBy(stringLte, flagdescs)) ++ "\n";
   
-  --parse the command line
+  -- Parse the command line
   production attribute a :: CmdArgs;
   a = interpretCmdArgs(flags, args);
 
-  local attribute envGP :: IOVal<String>;
-  envGP = envVar("GRAMMAR_PATH", iIn);
-  
-  local attribute envSG :: IOVal<String>;
-  envSG = envVar("SILVER_GEN", envGP.io);
-  
-  local attribute envSH :: IOVal<String>;
-  envSH = envVar("SILVER_HOME", envSG.io);
+  -- Grab a few environment variables
+  local envGP :: IOVal<String> = envVar("GRAMMAR_PATH", iIn);
+  local envSG :: IOVal<String> = envVar("SILVER_GEN", envGP.io);
+  local envSH :: IOVal<String> = envVar("SILVER_HOME", envSG.io);
 
-  --a list of directories to search (cmdline, env vars)
-  production attribute spath :: [String];
-  spath = map(endWithSlash,  a.searchPath ++ explode(":", envGP.iovalue));
+  -- A list of directories to search for grammars. (cmd line has priority over env)
+  production attribute searchPaths :: [String];
+  searchPaths = map(endWithSlash,  a.searchPath ++ explode(":", envGP.iovalue));
   
+  -- Where Silver is installed. (env var should be set by RunSilver.jar)
   production attribute silverhome :: String;
   silverhome = endWithSlash(envSH.iovalue);
   
-  -- This is a collection so that in the future translations can have their own sub-directories
+  -- The directory where generated files should be stored. (again, cmd line > env)
   production attribute silvergen :: String with ++;
   silvergen := endWithSlash(if a.genLocation == "" then envSG.iovalue else a.genLocation);
-
-  --the grammar path ':' replaced by '/'
-  local attribute gpath :: String;
-  gpath = grammarToPath(a.buildGrammar);
 
 --------
 -------- Phase 1: pre-compiling stuff
 --------
 
-  -- operations to execute _before_ we parse and link the grammars.
+  -- Operations to execute _before_ we parse and link the grammars.
   production attribute preOps :: [Unit] with ++;
-  preOps := [];
+  preOps := []; -- See Unit.sv
 
-  --the result of running the pre operations
+  -- Run the pre-ops.
   local attribute preIO :: IOVal<Integer>;
   preIO = runAll(envSH.io, unitMergeSort(preOps));
 
-  --the directory which contains the grammar
+  -- Let's actually go see if we can find this grammar.
   local attribute grammarLocation :: IOVal<Maybe<String>>;
-  grammarLocation = findGrammarLocation(gpath, spath, preIO.io);
+  grammarLocation = findGrammarLocation(grammarToPath(a.buildGrammar), searchPaths, preIO.io);
 
 --------
 -------- Phase 2: Begin actually compiling things
 --------
 
-  -- the grammars we need to compile - this is a dynamic process
-  -- we give a starting point and it will find and compile
-  -- the other grammars needed
+  -- Begin compiling the target grammar, and then chase down dependencies as needed.
   production attribute unit :: CompilationUnit;
-  unit = compileGrammars(grammarLocation.io, spath, [a.buildGrammar], [], a.doClean, silvergen);
+  unit = compileGrammars(grammarLocation.io, searchPaths, [a.buildGrammar], [], a.doClean, silvergen);
   unit.rParser = top.rParser;
   unit.iParser = top.iParser;
   unit.compiledGrammars = grammarEnv;
   unit.config = a;
+  
+  -- Let's pause a moment and note what the result of the above is:
+  -- 1: unit.compiledList  ==  grammars actually parsed.
+  -- 2: unit.interfaces  ==  grammars that we went with the interface files semi-optimistically.
+  -- 3: unit.seenGrammars  ==  the names of all of the above, together.
  
-  -- a list of the specs from all the grammars compiled EXCEPT the conditional build grammars! (and before recompiles!)
+  -- Extract all grammars from the two sources (parsed + interfaces)
   local attribute grammarsBeforeCond :: [Decorated RootSpec];
   grammarsBeforeCond = unit.compiledList ++ getSpecs(unit.interfaces);
 
   production attribute condUnit :: CompilationUnit;
-  condUnit = compileConditionals(unit.io, spath, collectGrammars(grammarsBeforeCond), a.doClean, grammarsBeforeCond, silvergen);
+  condUnit = compileConditionals(unit.io, searchPaths, collectGrammars(grammarsBeforeCond), a.doClean, grammarsBeforeCond, silvergen);
   condUnit.rParser = top.rParser;
   condUnit.iParser = top.iParser;
   condUnit.compiledGrammars = grammarEnv;
@@ -118,7 +115,7 @@ top::RunUnit ::= iIn::IO args::[String]
 
   -- Note that we already have the latest translation of all the grammars. This just does semantic analysis to make sure they're still okay.
   production attribute reUnit :: CompilationUnit;
-  reUnit = compileGrammars(condUnit.io, spath, depAnalysis.needGrammars, seenNames, true, silvergen);
+  reUnit = compileGrammars(condUnit.io, searchPaths, depAnalysis.needGrammars, seenNames, true, silvergen);
   reUnit.rParser = top.rParser;
   reUnit.iParser = top.iParser;
   reUnit.compiledGrammars = grammarEnv;
