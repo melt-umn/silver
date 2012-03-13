@@ -52,7 +52,7 @@ top::Module ::= compiledGrammars::EnvTree<Decorated RootSpec>
   local attribute d4 :: Defs;
   d4 = if asPrepend == "" then d3 else mapPrependDefs(d3, asPrepend ++ ":");
 
-  top.defs = d4;		  
+  top.defs = d4;
   top.errors := med.errors;
 }
 

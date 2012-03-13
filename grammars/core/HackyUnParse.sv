@@ -1,11 +1,13 @@
 grammar core;
 
 {--
- - hackUnparse takes a Decorated nonterminal, and produce a string that represents
- - the tree corresponding to that value.  It is mainly useful for writing tests.
+ - hackUnparse takes any value, and produce a string that represents
+ - that value.  It is mainly useful for debugging.
  -
  - Not considered part of the "standard" library of Silver.  It may change from
- - release to release.
+ - release to release. Don't rely on it.
+ -
+ - In the distant future, this may become obsolete when a 'Show' typeclass is available.
  -}
 function hackUnparse
 String ::= nt::a

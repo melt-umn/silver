@@ -105,7 +105,7 @@ Document ::= d1::Document n::Integer ds::[Document] d2::Document
   -- care: the first line should be INSIDE the nest,
   -- the second line should be OUTSIDE the next
   -- both should be in the same group.
-  return cat(cat(d1, group(cat(nest(n, cat(line(),foldr_p(cat, notext(), intersperse(line(), ds)))), line()))), d2);
+  return cat(cat(d1, group(cat(nest(n, cat(line(),foldr(cat, notext(), intersperse(line(), ds)))), line()))), d2);
 }
 
 global doc8 :: Document =

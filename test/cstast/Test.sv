@@ -24,7 +24,7 @@ parser syntaxInterfaceParser :: ISyntaxInner {
 
 global obj::SyntaxRoot =
   cstRoot("lol", "Foo",
-    foldr_p(consSyntax, nilSyntax(), 
+    foldr(consSyntax, nilSyntax(), 
      [syntaxNonterminal(nonterminalTypeExp("Foo", []), nilSyntax()),
       syntaxTerminal("XTerm", literalRegex("x"), nilTerminalMod()),
       syntaxProduction("foo", nonterminalTypeExp("Foo", []), [], nilProductionMod())
@@ -39,7 +39,7 @@ equalityTest( obj.unparse, "nt([], nt('Foo', [])),\n term('XTerm', /x/, []),\n p
 
 global obj_again :: SyntaxRoot =
   cstRoot("lol", "Foo",
-    foldr_p(consSyntax, nilSyntax(), 
+    foldr(consSyntax, nilSyntax(), 
       syntaxInterfaceParser(obj.unparse, "<>").parseTree.syntaxAst));
 
 equalityTest( obj_again.xmlCopper, obj.xmlCopper, String, csttests );
@@ -48,7 +48,7 @@ equalityTest( obj_again.unparse, obj.unparse, String, csttests );
 
 global obj2::SyntaxRoot =
   cstRoot("lol", "Foo",
-    foldr_p(consSyntax, nilSyntax(), 
+    foldr(consSyntax, nilSyntax(), 
      [syntaxNonterminal(nonterminalTypeExp("Foo", []), nilSyntax()),
       syntaxTerminal("XTerm", literalRegex("x"), nilTerminalMod()),
       syntaxProduction("foo", nonterminalTypeExp("Oops", []), [], nilProductionMod())
@@ -60,10 +60,10 @@ equalityTest( obj2.cstErrors, ["Lookup error with LHS nonterminal Oops"], [Strin
 
 global obj3::SyntaxRoot =
   cstRoot("lol", "Foo",
-    foldr_p(consSyntax, nilSyntax(), [
+    foldr(consSyntax, nilSyntax(), [
       syntaxNonterminal(nonterminalTypeExp("Foo", []), nilSyntax()),
       syntaxTerminal("XTerm", literalRegex("x"), 
-        foldr_p(consTerminalMod, nilTerminalMod(), [
+        foldr(consTerminalMod, nilTerminalMod(), [
           termIgnore(),
           termPrecedence(3),
           termAssociation("left"),
@@ -73,7 +73,7 @@ global obj3::SyntaxRoot =
           termAction("blah;")
         ])),
       syntaxProduction("foo", nonterminalTypeExp("Foo", []), [],
-        foldr_p(consProductionMod, nilProductionMod(), [
+        foldr(consProductionMod, nilProductionMod(), [
           prodPrecedence(2),
           prodOperator("XTerm"),
           prodAction("asdf;"),
@@ -88,7 +88,7 @@ global obj3::SyntaxRoot =
 
 global obj3_again :: SyntaxRoot =
   cstRoot("lol", "Foo",
-    foldr_p(consSyntax, nilSyntax(),
+    foldr(consSyntax, nilSyntax(),
       syntaxInterfaceParser(obj3.unparse, "<>").parseTree.syntaxAst));
 
 equalityTest( obj3.cstErrors, [], [String], csttests );

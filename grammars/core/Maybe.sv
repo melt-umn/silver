@@ -21,18 +21,28 @@ top::Maybe<a> ::=
 
 --------------------------------------------------------------------------------
 
+{--
+ - The corresponding fold for Maybes.
+ -
+ - @param otherwise  The element to return if 'ifJust' is 'nothing'
+ - @param ifJust  The maybe value to scrutinize
+ - @return  Either the contents of the Maybe (if 'just'), or the otherwise element.
+ -}
 function fromMaybe
 a ::= otherwise::a ifJust::Maybe<a>
 {
-  return if ifJust.isJust
-         then ifJust.fromJust
-         else otherwise;
+  return if ifJust.isJust then ifJust.fromJust else otherwise;
 }
 
+{--
+ - Selects the first existing element, favoring the left.
+ -
+ - @param l  The first element
+ - @param r  The second element
+ - @return  A wrapped element, if any, favoring 'l'
+ -}
 function orElse
-Maybe<a> ::= f::Maybe<a> s::Maybe<a>
+Maybe<a> ::= l::Maybe<a> r::Maybe<a>
 {
-  return if f.isJust
-         then f
-         else s;
+  return if l.isJust then l else r;
 }

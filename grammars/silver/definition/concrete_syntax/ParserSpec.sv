@@ -29,7 +29,7 @@ top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[S
   production attribute med :: ModuleExportedDefs;
   med = moduleExportedDefs(sl, top.compiledGrammars, computeDependencies(grams, top.compiledGrammars), grams, []);
 
-  top.cstAst = cstRoot(fn, snt, foldr_p(consSyntax, nilSyntax(), med.syntaxAst));
+  top.cstAst = cstRoot(fn, snt, foldr(consSyntax, nilSyntax(), med.syntaxAst));
   
   top.unparse = "parser(" ++ sl.unparse ++ "," ++ quoteString(sg) ++ "," ++ quoteString(fn) ++ "," ++ quoteString(snt) ++ "," ++ unparseStrings(grams) ++ ")";
 }

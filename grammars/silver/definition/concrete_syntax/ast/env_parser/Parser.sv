@@ -153,7 +153,7 @@ top::ISyntaxDcl ::= 'nt' '(' td::ITyVarDcls ',' t::ITypeRep ')'
 concrete production aSyntaxTerm
 top::ISyntaxDcl ::= 'term' '(' n::IName ',' '/' r::Regex_R '/' ',' tm::ITerminalModifiers ')'
 {
-  top.syntaxAst = [syntaxTerminal(n.aname, r, foldr_p(consTerminalMod, nilTerminalMod(), tm.terminalModifiers))];
+  top.syntaxAst = [syntaxTerminal(n.aname, r, foldr(consTerminalMod, nilTerminalMod(), tm.terminalModifiers))];
 }
 concrete production aSyntaxProd
 top::ISyntaxDcl ::= 'prod' '(' n::IName ',' td::ITyVarDcls ',' l::ITypeRep ',' r::ITypeReps ',' pm::IProductionModifiers ')'
@@ -161,7 +161,7 @@ top::ISyntaxDcl ::= 'prod' '(' n::IName ',' td::ITyVarDcls ',' l::ITypeRep ',' r
   l.env = toEnv(td.defs);
   r.env = l.env;
   
-  top.syntaxAst = [syntaxProduction(n.aname, l.typerep, r.typereps, foldr_p(consProductionMod, nilProductionMod(), pm.productionModifiers))];
+  top.syntaxAst = [syntaxProduction(n.aname, l.typerep, r.typereps, foldr(consProductionMod, nilProductionMod(), pm.productionModifiers))];
 }
 concrete production aSyntaxLclass
 top::ISyntaxDcl ::= 'lclass' '(' n::IName ',' d::INames ',' s::INames ')'

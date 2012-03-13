@@ -30,7 +30,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
   
   -- Move productions under their nonterminal, and sort the declarations
   local attribute s2 :: Syntax;
-  s2 = foldr_p(consSyntax, nilSyntax(), sortBy(syntaxDclLte, s.cstNormalize));
+  s2 = foldr(consSyntax, nilSyntax(), sortBy(syntaxDclLte, s.cstNormalize));
   s2.cstEnv = directBuildTree(s.cstDcls);
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.
