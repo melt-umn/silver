@@ -202,19 +202,26 @@ top::ModuleStmt ::= 'exports' m::ModuleName ';'
   top.condBuild = [];
 }
 
-concrete production buildsStmt
-top::ModuleStmt ::= 'build' m::QName 'with' c::QName ';'
+concrete production exportsWithStmt
+top::ModuleStmt ::= 'exports' m::QName 'with' c::QName ';'
 {
-  top.pp = "build " ++ m.pp ++ " with " ++ c.pp ++ ";";
+  top.pp = "exports " ++ m.pp ++ " with " ++ c.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
-  -- TODO: should check to make sure these grammars are found, somehow?
   top.errors := [];
 
   top.moduleNames = [];
   top.defs = emptyDefs();
   top.exportedGrammars = [];
-  top.condBuild = [[m.name, c.name]]; -- c -> m
+  top.condBuild = [[m.name, c.name]];
+}
+concrete production buildsStmt
+top::ModuleStmt ::= 'build' m::QName 'with' c::QName ';'
+{
+  -- TODO: you know, remove eventually. And stuff.
+  top.errors <- [wrn(forward.location, "Conditional export using old-style 'build ... with' rather than 'exports ... with'")];
+
+  forwards to exportsWithStmt(terminal(Exports_kwd, "exports", $1), m, $3, c, $5);
 }
   
 
