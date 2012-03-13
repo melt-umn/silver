@@ -9,7 +9,7 @@ type Map<a b> foreign;
  - Returns a new, empty, multimap using the specified comparator.
  -}
 function empty
-Map<a b> ::= comparator::Function(Integer ::= a a)
+Map<a b> ::= comparator::(Integer ::= a a)
 {
   return error("NYI");
 } foreign {

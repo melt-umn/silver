@@ -70,7 +70,7 @@ function keepInterfaces
 }
 
 function normalizer
-[String] ::= f::Function([String] ::= Decorated RootSpec)  r::Decorated RootSpec
+[String] ::= f::([String] ::= Decorated RootSpec)  r::Decorated RootSpec
 {
   return r.declaredName :: f(r);
 }

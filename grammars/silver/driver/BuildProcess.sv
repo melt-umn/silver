@@ -8,8 +8,8 @@ imports silver:util;
 
 imports silver:util:cmdargs;
 
-inherited attribute rParser :: Function(ParseResult<Root> ::= String String);
-inherited attribute iParser :: Function(ParseResult<IRootSpec> ::= String String);
+inherited attribute rParser :: (ParseResult<Root> ::= String String);
+inherited attribute iParser :: (ParseResult<IRootSpec> ::= String String);
 
 {--
  - Controls the compiler.
