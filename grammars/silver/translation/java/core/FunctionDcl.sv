@@ -26,7 +26,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
          functionTypeExp(nonterminalTypeExp("core:IOVal", [intTypeExp()]), [
            decoratedTypeExp(nonterminalTypeExp("core:List", [stringTypeExp()])),
            ioTypeExp()])).failure
-    then [err(top.location, "main function must have type signature Function(IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(namedSig.typerep))]
+    then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(namedSig.typerep))]
     else [];
 }
 
