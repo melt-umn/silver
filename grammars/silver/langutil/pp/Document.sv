@@ -23,7 +23,7 @@ function concat
 Document ::= ds::[Document]
 {
   return if null(ds) then notext()
-         else foldl_p(cat, head(ds), tail(ds));
+         else foldl(cat, head(ds), tail(ds));
 }
 function implode
 Document ::= sep::Document ds::[Document]

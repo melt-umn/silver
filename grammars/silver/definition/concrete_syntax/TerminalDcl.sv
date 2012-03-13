@@ -32,7 +32,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
 
   top.syntaxAst = [
     syntaxTerminal(fName, r.terminalRegExprSpec, 
-      foldr_p(consTerminalMod, nilTerminalMod(), t.terminalModifiers ++ tm.terminalModifiers))];
+      foldr(consTerminalMod, nilTerminalMod(), t.terminalModifiers ++ tm.terminalModifiers))];
 
   forwards to defaultAGDcl();
 }

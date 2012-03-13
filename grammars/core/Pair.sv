@@ -12,6 +12,16 @@ top::Pair<a b> ::= f::a  s::b
   top.snd = s;
 }
 
+{--
+ - Look up an element in an association list, using the specified equality
+ - function.
+ -
+ - @param eqf  The function to use to test for equality
+ - @param elem   The element to look up
+ - @param lst  The list of assocation pairs
+ - @return  The first association pair found in the list, where the element
+ -   equaled the first element of the pair.
+ -}
 function lookupBy
 Maybe<b> ::= eqf::Function(Boolean ::= a a) elem::a lst::[Pair<a b>]
 {

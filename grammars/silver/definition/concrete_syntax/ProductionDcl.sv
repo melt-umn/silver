@@ -20,7 +20,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   -- TODO: we should get the ruleSpec off ns as an attribute, rather than computing it with getTypeNames etc
   top.syntaxAst = [
     syntaxProduction(fName, namedSig.outputElement.typerep, namedSig.inputTypes,
-      foldr_p(consProductionMod, nilProductionMod(), pm.productionModifiers))];
+      foldr(consProductionMod, nilProductionMod(), pm.productionModifiers))];
   
   forwards to productionDcl(terminal(Abstract_kwd, "abstract", $1.line, $1.column), $2, id, ns, body);
 }

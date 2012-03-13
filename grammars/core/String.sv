@@ -32,7 +32,7 @@ function explode
          else if str == "" then []
          else explodeNormal(sep, str);
 }
-function explodeNormal
+function explodeNormal -- do not use
 [String] ::= sep::String str::String
 {
   local attribute i :: Integer;
@@ -41,35 +41,16 @@ function explodeNormal
   return if i == -1
          then [str]
          else substring(0, i, str) ::
-              explodeNormal(sep, substring(i+length(sep), length(str), str)) ;
+              explodeNormal(sep, substring(i+length(sep), length(str), str));
 }
-function explodeSingle
+function explodeSingle -- do not use
 [String] ::= str::String
 {
   return if length(str) == 0
          then []
          else substring(0,1,str) ::
-              explodeSingle (substring(1,length(str),str)) ;
+              explodeSingle (substring(1,length(str),str));
 }
-
-{--
- - String equality test.  Useful for some "...By" higher order functions.
- -}
-function stringEq
-Boolean ::= s1::String s2::String
-{
-  return s1 == s2;
-}
-
-{--
- - String <= test.  Useful for some "...By" higher order functions. (like sortBy)
- -}
-function stringLte
-Boolean ::= s1::String s2::String
-{
-  return s1 <= s2;
-}
-
 
 {--
  - Find the index of a needle in the haystack.  (Indices are 0-based.)
@@ -255,6 +236,13 @@ Boolean ::= str::String
   "java" : return "common.Util.isUpper(%str%.toString())";
 }
 
+{--
+ - Safely converts a string to an integer.
+ -
+ - @param str  The string to convert
+ - @return  The converted integer wrapped in just, or nothing if the
+ -   conversion failed (e.g. not a number, or the number was too large)
+ -}
 function toIntSafe
 Maybe<Integer> ::= str::String
 {
@@ -276,6 +264,28 @@ Integer ::= l::String  r::String
   "java" : return "Integer.valueOf(%l%.toString().compareTo(%r%.toString()))";
 }
 
+{--
+ - String append. Useful for higher order functions.
+ -}
 function stringConcat
 String ::= s1::String s2::String
-{ return s1 ++ s2 ; }
+{ return s1 ++ s2; }
+
+{--
+ - String equality test.  Useful for some "...By" higher order functions.
+ -}
+function stringEq
+Boolean ::= s1::String s2::String
+{
+  return s1 == s2;
+}
+
+{--
+ - String <= test.  Useful for some "...By" higher order functions. (like sortBy)
+ -}
+function stringLte
+Boolean ::= s1::String s2::String
+{
+  return s1 <= s2;
+}
+

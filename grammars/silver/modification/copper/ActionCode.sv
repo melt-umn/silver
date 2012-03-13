@@ -10,7 +10,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
   top.syntaxAst = [
     syntaxProduction(fName, namedSig.outputElement.typerep, namedSig.inputTypes,
-      foldr_p(consProductionMod, nilProductionMod(), 
+      foldr(consProductionMod, nilProductionMod(), 
         prodAction(acode.actionCode) :: pm.productionModifiers))];
 
   top.pp = forward.pp ++ "action " ++ acode.pp;

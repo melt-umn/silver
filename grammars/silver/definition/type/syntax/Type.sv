@@ -151,14 +151,8 @@ top::Type ::= 'Decorated' t::Type
 concrete production prodType
 top::Type ::= 'Production' '(' sig::Signature ')'
 {
-  top.pp = "Production(" ++ sig.pp ++ ")";
-  top.location = loc(top.file, $1.line, $1.column);
-
-  top.errors := sig.errors;
-
-  top.typerep = functionTypeExp(head(sig.types), tail(sig.types));
-
-  top.lexicalTypeVariables = sig.lexicalTypeVariables;
+  top.errors <- [wrn(forward.location, "'Production' types are deprecated and will be removed. Just use 'Function'.")];
+  forwards to funType(terminal(Function_tkwd, "Function", $1), $2, sig, $4);
 }
 
 concrete production funType

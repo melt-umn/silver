@@ -80,7 +80,7 @@ IOVal<Boolean> ::= s::String i::IO
 
 {--
  - Executes a shell command.  ONLY WORKS ON LINUX (or rather, doesn't work on windows.)
- - Specifically executes 'bash -c'. 
+ - Specifically executes 'bash -c'.
  -
  - Avoid using this if possible.  If you need an IO action not present, request it, please.
  -
@@ -278,7 +278,7 @@ a ::= msg::String
  - @see unsafeTrace
  -}
 function unsafeIO
-IO ::= 
+IO ::=
 {
   return error("Not Yet Implemented: unsafeIO");
 } foreign {
@@ -292,7 +292,7 @@ IO ::=
  - @return  An integer unique to this process.
  -}
 function genInt
-Integer ::= 
+Integer ::=
 {
   return error("Not Yet Implemented: genInt");
 } foreign {
@@ -323,34 +323,32 @@ a ::= val::a act::IO
 function dirNameInFilePath
 String ::= filePath::String
 {
- return if   indexOfLastSlash == -1 -- slash not found
-        then filePath
-        else substring(0, indexOfLastSlash, filePath) ;
+  return if indexOfLastSlash == -1 then filePath
+         else substring(0, indexOfLastSlash, filePath);
 
- local attribute indexOfLastSlash :: Integer ;
- indexOfLastSlash = lastIndexOf("/", filePath) ;
+  local attribute indexOfLastSlash :: Integer;
+  indexOfLastSlash = lastIndexOf("/", filePath);
 }
 
 function fileNameInFilePath
 String ::= filePath::String
 {
- return if   indexOfLastSlash == -1 -- slash not found
-        then filePath
-        else substring(indexOfLastSlash+1, length(filePath), filePath) ;
+  return if indexOfLastSlash == -1 then filePath
+         else substring(indexOfLastSlash+1, length(filePath), filePath);
 
- local attribute indexOfLastSlash :: Integer ;
- indexOfLastSlash = lastIndexOf("/", filePath) ;
+  local attribute indexOfLastSlash :: Integer;
+  indexOfLastSlash = lastIndexOf("/", filePath);
 }
 
 
 function splitFileNameAndExtension
 Pair<String String> ::= filePath::String
 {
- return if   indexOfLastDot == -1 -- dot not found
-        then pair( filePath, "" )
-        else pair( substring(0, indexOfLastDot, filePath) ,
-                   substring(indexOfLastDot+1, length(filePath), filePath) ) ;
+  return if indexOfLastDot == -1 then pair(filePath, "")
+         else pair(substring(0, indexOfLastDot, filePath) ,
+                   substring(indexOfLastDot+1, length(filePath), filePath));
 
- local attribute indexOfLastDot :: Integer ;
- indexOfLastDot = lastIndexOf(".", filePath) ;
+  local attribute indexOfLastDot :: Integer;
+  indexOfLastDot = lastIndexOf(".", filePath);
 }
+
