@@ -1,8 +1,7 @@
 grammar silver:driver;
 
-nonterminal DependencyAnalysis with compiledList, needGrammars, interfaces, forceTaint;
+nonterminal DependencyAnalysis with compiledList, needGrammars, interfaces;
 
-inherited attribute forceTaint::[String] with ++;
 synthesized attribute needGrammars :: [String];
 
   -- at this point we need to partition everything into groups:
@@ -42,7 +41,7 @@ top::DependencyAnalysis ::= ifaces::[Decorated Interface]  compiledRootSpecs::[D
    - Those interfaces that _export_ something that was altered.
    -}
   production attribute taintedaltered::[String];
-  taintedaltered = makeSet(top.forceTaint ++ inductivelyExpand(altered, exportsnifs));
+  taintedaltered = inductivelyExpand(altered, exportsnifs);
   
   {--
    - Those interfaces the _import_ something that was tainted/altered.
@@ -56,11 +55,12 @@ top::DependencyAnalysis ::= ifaces::[Decorated Interface]  compiledRootSpecs::[D
   production attribute safe::[String];
   safe = rem(collectGrammars(ifspecs), taintedaltered ++ suspect);
 
+  -- not used, so not computed..
   -- tainted == rem(taintedaltered, altered)
   
-  top.compiledList = compiledRootSpecs;
-  top.needGrammars = rem(taintedaltered ++ suspect, altered);
+  top.needGrammars = rem(taintedaltered ++ suspect, altered); -- i.e. tainted + suspect
   top.interfaces = keepInterfaces(safe, ifaces);
+  top.compiledList = compiledRootSpecs;
 }
 
 function keepInterfaces
@@ -69,26 +69,20 @@ function keepInterfaces
   return if null(d) then [] else (if contains(head(d).rSpec.declaredName, k) then [head(d)] else []) ++ keepInterfaces(k, tail(d));
 }
 
-
--- All of these functions give rules of the form [value, conditions.....]
--- put another way, (cadr OR caddr OR cadddr OR ... IMPLIES car)
--- [build what, if what is included]
-function normalizeCondBuilds
-[[String]] ::= lst::[Decorated RootSpec]
+function normalizer
+[String] ::= f::Function([String] ::= Decorated RootSpec)  r::Decorated RootSpec
 {
-  return if null(lst) then [] else head(lst).condBuild ++ normalizeCondBuilds(tail(lst));
+  return r.declaredName :: f(r);
 }
--- [grammar, grammars exported by this grammar]
 function normalizeExports
 [[String]] ::= ifs::[Decorated RootSpec]
 {
-  return if null(ifs) then [] else [[head(ifs).declaredName] ++ head(ifs).exportedGrammars] ++ normalizeExports(tail(ifs));
+  return map(normalizer((.exportedGrammars), _), ifs);
 }
--- [grammar, grammars imported by this grammar]
 function normalizeImports
 [[String]] ::= ifs::[Decorated RootSpec]
 {
-  return if null(ifs) then [] else [[head(ifs).declaredName] ++ head(ifs).moduleNames] ++ normalizeImports(tail(ifs));
+  return map(normalizer((.moduleNames), _), ifs);
 }
 
 {--
