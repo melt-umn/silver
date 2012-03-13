@@ -1,20 +1,12 @@
 grammar silver:definition:core;
 
-attribute importedDefs, errors, allGrammarDependencies occurs on RootSpec;
-
-{--
- - Echos the grammar's dependencies back upwards, so it's available
- - on RootSpecs.  This is mostly necessary because RootSpec is badly
- - designed at the moment... TODO: eventually make RootSpec non-decorated.
- -}
-synthesized attribute allGrammarDependencies :: [String];
+attribute importedDefs, errors occurs on RootSpec;
 
 aspect production i_emptyRootSpec
 top::RootSpec ::= 
 {
   top.importedDefs = emptyDefs();
   top.errors := [];
-  top.allGrammarDependencies = [];
 }
 
 function rootSpecRoot

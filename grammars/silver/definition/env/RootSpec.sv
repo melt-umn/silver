@@ -7,7 +7,7 @@ grammar silver:definition:env;
  - 2. Abstract away from the number of files that are in the grammar.
  -    (i.e. handle a list of Root nonterminals.)
  -}
-nonterminal RootSpec with defs, declaredName, exportedGrammars, condBuild, moduleNames;
+nonterminal RootSpec with defs, declaredName, exportedGrammars, condBuild, moduleNames, allGrammarDependencies;
 
 {--
  - The name of the grammar this RootSpec represents.
@@ -30,6 +30,12 @@ synthesized attribute condBuild :: [[String]];
  - e.g. all imports, exports, grammars included in parsers, etc.
  -}
 synthesized attribute moduleNames :: [String];
+{--
+ - Echos the grammar's dependencies back upwards, so it's available
+ - on RootSpecs.  This is mostly necessary because RootSpec is badly
+ - designed at the moment... TODO: eventually make RootSpec non-decorated.
+ -}
+synthesized attribute allGrammarDependencies :: [String];
 
 function emptyRootSpec
 Decorated RootSpec ::= 
@@ -42,6 +48,7 @@ top::RootSpec ::=
 {
   top.declaredName = "_NULL_";
   top.moduleNames = [];
+  top.allGrammarDependencies = [];
   top.defs = emptyDefs();
   top.exportedGrammars = [];
   top.condBuild = [];
@@ -60,6 +67,7 @@ String ::= r::Decorated RootSpec
   unparses := [
 		"declaredName " ++ quoteString(r.declaredName),
 		"moduleNames " ++ unparseStrings(r.moduleNames),
+		"allDeps " ++ unparseStrings(r.allGrammarDependencies),
 	       	"defs [" ++ unparseDefs(r.defs, []) ++ "]",
 	       	"exportedGrammars " ++ unparseStrings(r.exportedGrammars),
 	       	"condBuild " ++ unparseStrings(foldr(append, [], r.condBuild)) ++ ""
