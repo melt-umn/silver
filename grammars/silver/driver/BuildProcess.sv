@@ -50,7 +50,7 @@ top::RunUnit ::= iIn::IO args::[String]
   silvergen := endWithSlash(if a.genLocation == "" then envSG.iovalue else a.genLocation);
 
 --------
--------- Phase 1: pre-compiling stuff
+-------- Phase 1: Pre-ops. Things that go on before we start parsing.
 --------
 
   -- Operations to execute _before_ we parse and link the grammars.
@@ -70,7 +70,7 @@ top::RunUnit ::= iIn::IO args::[String]
 --------
 
   -- Begin compiling the target grammar, and then chase down dependencies as needed.
-  production attribute unit :: CompilationUnit;
+  local attribute unit :: CompilationUnit;
   unit = compileGrammars(grammarLocation.io, searchPaths, [a.buildGrammar], [], a.doClean, silvergen);
   unit.rParser = top.rParser;
   unit.iParser = top.iParser;
@@ -89,6 +89,7 @@ top::RunUnit ::= iIn::IO args::[String]
   production attribute depAnalysis :: DependencyAnalysis;
   depAnalysis = dependencyAnalysis(unit.interfaces, unit.compiledList);
   
+  -- Again, the results of the above are:
   -- depAnalysis.compiledList = RootSpecs needing translation
   -- depAnalysis.needGrammars = grammars names that need to be rechecked for errors, but not translated
   -- depAnalysis.interfaces = interfaces that are Just Fine and A-Okay as is
@@ -99,18 +100,23 @@ top::RunUnit ::= iIn::IO args::[String]
 --------
 
   -- Parse those grammars that depend on a changed grammar:
-  production attribute reUnit :: CompilationUnit;
+  local attribute reUnit :: CompilationUnit;
   reUnit = compileGrammars(unit.io, searchPaths, depAnalysis.needGrammars, unit.seenGrammars, true, silvergen);
   reUnit.rParser = top.rParser;
   reUnit.iParser = top.iParser;
   reUnit.compiledGrammars = grammarEnv;
   reUnit.config = a;
+  
+  -- Once more,
+  -- 1: reUnit.compiledList  ==  parsed versions of grammar that we aren't translating.
+  -- (2: reUnit.interfaces  ==  EMPTY.)
+  -- (3: reUnit.seenGrammars  ==  should be the same set as unit.seenGrammars)
 
 --------
--------- Now let's put the pieces together.
+-------- Phase 5: Let's pull a few things that are very useful for post-ops to use here:
 --------
 
-  -- All the specs we're looking at:
+  -- All the specs we're looking at, for analysis:
   production attribute grammars :: [Decorated RootSpec];
   grammars = unit.compiledList ++ reUnit.compiledList ++ getSpecs(depAnalysis.interfaces);
   
@@ -118,11 +124,17 @@ top::RunUnit ::= iIn::IO args::[String]
   production attribute grammarEnv :: EnvTree<Decorated RootSpec>;
   grammarEnv = directBuildTree(map(grammarPairing, grammars));
   
+  -- Only those grammars that are used. (unit unconditionally builts conditionally built
+  -- grammars. Here we produce a set that would not include them if they are not used.)
+  production attribute grammarsDependedUpon :: [String];
+  grammarsDependedUpon = expandAllDeps([a.buildGrammar], [], grammarEnv);
+  
+  -- This is a list of RootSpecs that need translating:
+  production attribute grammarsToTranslate :: [Decorated RootSpec];
+  grammarsToTranslate = keepGrammars(grammarsDependedUpon, depAnalysis.compiledList);
+  
 --------
--------- Translation:  grammars has up-to-date RootSpec for everything. Should be used by analysis.
---------               (e.g. typechecking/binding)
---------
---------               depAnalysis.compiledList is the list needing re-translation
+-------- Phase 6: Translation.  Makes use of the above production attributes.
 --------
 
   --the operations that will be executed _after_ parsing and linking of the grammars has been done
@@ -163,5 +175,25 @@ Things that are copied down from driver to asts:
  - exports graph - it'd be nice for some of those future warnings
  - 
 
-
 ---}
+
+
+function expandAllDeps
+[String] ::= need::[String]  seen::[String]  e::EnvTree<Decorated RootSpec>
+{
+  local attribute g :: [Decorated RootSpec];
+  g = searchEnvTree(head(need), e);
+
+  return if null(need) then seen
+         -- If the grammar has already been taken care of, or doesn't exist, discard it.
+         else if contains(head(need), seen) || null(g) then expandExports(tail(need), seen, e)
+         -- Otherwise, tack its all deps list to the need list, and add this grammar to the taken care of list.
+         else expandAllDeps(tail(need) ++ head(g).allGrammarDependencies, head(need) :: seen, e);
+}
+
+function keepGrammars
+[Decorated RootSpec] ::= k::[String] d::[Decorated RootSpec]
+{
+  return if null(d) then [] else (if contains(head(d).declaredName, k) then [head(d)] else []) ++ keepGrammars(k, tail(d));
+}
+

@@ -21,7 +21,7 @@ top::RunUnit ::= iIn::IO args::[String]
 {
   preOps <- [checkSilverHome(silverhome), checkSilverGen(silvergen)];
   preOps <- if a.displayVersion then [printVersion()] else [];
-  postOps <- [doInterfaces(depAnalysis.compiledList, silvergen)];
+  postOps <- [doInterfaces(grammarsToTranslate, silvergen)];
 }
 
 function runAll
