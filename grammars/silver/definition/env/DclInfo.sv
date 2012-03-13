@@ -16,13 +16,13 @@ synthesized attribute namedSignature :: NamedSignature;
 
 {-
 -- values
-synthesized attribute refDispatcher :: Production(Expr ::= Decorated QName);
-synthesized attribute defDispatcher :: Production(ProductionStmt ::= Decorated QName  Equal_t  Expr);
-synthesized attribute defLHSDispatcher :: Production (DefLHS ::= Decorated QName);
+synthesized attribute refDispatcher :: Function(Expr ::= Decorated QName);
+synthesized attribute defDispatcher :: Function(ProductionStmt ::= Decorated QName  Equal_t  Expr);
+synthesized attribute defLHSDispatcher :: Function (DefLHS ::= Decorated QName);
 
 -- attributes
-synthesized attribute attrAccessDispatcher :: Production (Expr ::= Decorated Expr '.' Decorated QName);
-synthesized attribute attrDefDispatcher :: Production (ProductionStmt ::= DefLHS '.' Decorated QName Equal_t Expr);
+synthesized attribute attrAccessDispatcher :: Function (Expr ::= Decorated Expr '.' Decorated QName);
+synthesized attribute attrDefDispatcher :: Function (ProductionStmt ::= DefLHS '.' Decorated QName Equal_t Expr);
 -}
 
 -- occurs
@@ -38,8 +38,8 @@ inherited attribute givenSubstitution :: Substitution;
 
 
 -- on TYPEREP:
--- synthesized attribute applicationDispatcher :: Production (Expr ::= Decorated Expr Exprs);
--- synthesized attribute accessDispatcher :: Production (Expr ::= Decorated Expr '.' Decorated QName);
+-- synthesized attribute applicationDispatcher :: Function (Expr ::= Decorated Expr Exprs);
+-- synthesized attribute accessDispatcher :: Function (Expr ::= Decorated Expr '.' Decorated QName);
 
 {- Algorithms:
 

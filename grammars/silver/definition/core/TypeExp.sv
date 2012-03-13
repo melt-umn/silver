@@ -1,10 +1,10 @@
 grammar silver:definition:core;
 
-synthesized attribute applicationDispatcher :: Production (Expr ::= Decorated Expr  AppExprs);
-synthesized attribute accessDispatcher :: Production (Expr ::= Decorated Expr  Dot_t  Decorated QName);
+synthesized attribute applicationDispatcher :: Function(Expr ::= Decorated Expr  AppExprs);
+synthesized attribute accessDispatcher :: Function(Expr ::= Decorated Expr  Dot_t  Decorated QName);
 
-synthesized attribute lengthDispatcher :: Production (Expr ::= Decorated Expr);
-synthesized attribute appendDispatcher :: Production (Expr ::= Decorated Expr  Decorated Expr);
+synthesized attribute lengthDispatcher :: Function(Expr ::= Decorated Expr);
+synthesized attribute appendDispatcher :: Function(Expr ::= Decorated Expr  Decorated Expr);
 
 -- Used for poor man's type classes
 synthesized attribute instanceEq :: Boolean;

@@ -5,17 +5,17 @@ import silver:definition:regex;  -- soley for Terms. TODO : fix?
 -- values
 
 -- reference a value
-synthesized attribute refDispatcher :: Production(Expr ::= Decorated QName) occurs on DclInfo;
+synthesized attribute refDispatcher :: Function(Expr ::= Decorated QName) occurs on DclInfo;
 -- define a value in a semantic block
-synthesized attribute defDispatcher :: Production(ProductionStmt ::= Decorated QName  Equal_t  Expr) occurs on DclInfo;
+synthesized attribute defDispatcher :: Function(ProductionStmt ::= Decorated QName  Equal_t  Expr) occurs on DclInfo;
 -- define attributes on a value in a semantic block
-synthesized attribute defLHSDispatcher :: Production (DefLHS ::= Decorated QName) occurs on DclInfo;
+synthesized attribute defLHSDispatcher :: Function(DefLHS ::= Decorated QName) occurs on DclInfo;
 
 -- attributes
 -- access attribute on a value
-synthesized attribute attrAccessDispatcher :: Production (Expr ::= Decorated Expr Dot_t Decorated QName) occurs on DclInfo;
+synthesized attribute attrAccessDispatcher :: Function(Expr ::= Decorated Expr Dot_t Decorated QName) occurs on DclInfo;
 -- define an attribute on a value
-synthesized attribute attrDefDispatcher :: Production (ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr) occurs on DclInfo;
+synthesized attribute attrDefDispatcher :: Function(ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr) occurs on DclInfo;
 
 
 {- Algorithms:
