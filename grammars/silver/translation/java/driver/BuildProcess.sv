@@ -40,8 +40,8 @@ top::RunUnit ::= iIn::IO args::[String]
   flagdescs <- ["\t--onejar: include runtime libraries in the jar\n"];
 
   postOps <- if a.noJavaGeneration then [] else 
-    [genJava(a, depAnalysis.compiledList, silvergen), 
-     genBuild(a, grammars, silverhome, silvergen, depAnalysis)]; 
+    [genJava(a, grammarsToTranslate, silvergen), 
+     genBuild(a, grammarsDependedUpon, silverhome, silvergen, depAnalysis)]; 
 }
 
 
@@ -60,7 +60,7 @@ top::Unit ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silvergen::Stri
 }
 
 abstract production genBuild
-top::Unit ::= a::Decorated CmdArgs allspecs::[Decorated RootSpec] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+top::Unit ::= a::Decorated CmdArgs allspecs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
   local attribute buildFile :: IO;
   buildFile = writeBuildFile(top.ioIn, a, allspecs, silverhome, silvergen, da).io;
@@ -141,7 +141,7 @@ String ::= r::Decorated RootSpec
 
 -- WTF why is this an IOVal, it doesn't return anything?  TODO
 abstract production writeBuildFile
-top::IOVal<String> ::= i::IO a::Decorated CmdArgs specs::[Decorated RootSpec] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+top::IOVal<String> ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
   production attribute extraTargets :: [String] with ++;
   extraTargets := [];
@@ -151,9 +151,6 @@ top::IOVal<String> ::= i::IO a::Decorated CmdArgs specs::[Decorated RootSpec] si
 
   production attribute extraDepends :: [String] with ++;
   extraDepends := ["init"];
-
-  local attribute mains :: [Decorated DclInfo];
-  mains = getValueDcl(a.buildGrammar ++ ":main", toEnv(head(getRootSpec(a.buildGrammar, specs)).defs));
 
   local attribute outputFile :: String;
   outputFile = if length(a.outName) > 0 then a.outName else (makeName(a.buildGrammar) ++ ".jar");
@@ -205,9 +202,7 @@ implode("\n", extraTaskdefs) ++ "\n\n" ++
     buildGrammarList(specs, "*.class") ++ 
 
 "      <manifest>\n" ++
-(if !null(mains) then
-"       <attribute name='Main-Class' value='" ++ makeName(a.buildGrammar) ++ ".Main' />\n"
- else "") ++
+"       <attribute name='Main-Class' value='" ++ makeName(a.buildGrammar) ++ ".Main' />\n" ++
 
 (if !a.buildSingleJar then 
 "       <attribute name='Class-Path' value='${man.classpath}' />\n"
@@ -239,11 +234,10 @@ implode("\n", extraTargets) ++ "\n\n" ++
 }
 
 function buildGrammarList
-String ::= r::[Decorated RootSpec] s::String
+String ::= r::[String] s::String
 {
   return if null(r) then "" else
-"       <include name='" ++ grammarToPath(head(r).declaredName) ++ s ++ "' />\n" ++
-  buildGrammarList(tail(r), s);
+"       <include name='" ++ grammarToPath(head(r)) ++ s ++ "' />\n" ++ buildGrammarList(tail(r), s);
 }
 
 function writeClasses
