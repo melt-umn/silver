@@ -92,9 +92,19 @@ equalityTest ( removeAllBy (equalsInteger, [1,3,5], [1,1,3,4,5,3]), [4],
 equalityTest ( removeAllBy (equalsInteger, [1,3,5], [5,3,1,3,5]), [],
                [Integer], core_tests ) ;
 
--- last TODO
--- drop TODO
--- take TODO
+-- last
+equalityTest ( last([5,3,1,3,5]), 5, Integer, core_tests ) ;
+
+-- drop
+equalityTest ( drop(0, [5,3,1,4,7]), [5,3,1,4,7], [Integer], core_tests ) ;
+equalityTest ( drop(2, [5,3,1,4,7]), [1,4,7], [Integer], core_tests ) ;
+equalityTest ( drop(44, [5,3,1,4,7]), [], [Integer], core_tests ) ;
+
+-- take
+equalityTest ( take(0, [5,3,1,4,7]), [], [Integer], core_tests ) ;
+equalityTest ( take(2, [5,3,1,4,7]), [5,3], [Integer], core_tests ) ;
+equalityTest ( take(44, [5,3,1,4,7]), [5,3,1,4,7], [Integer], core_tests ) ;
+
 
 function equals1  Boolean ::= x::Integer { return x==1;}
 function notEquals1  Boolean ::= x::Integer { return x!=1;}
