@@ -199,7 +199,7 @@ top::Expr ::= q::NameTick
   top.pp = q.pp;
   top.location = q.location;
 
-  -- TODO: warn obsolete. no longer does ANYTHING
+  top.errors <- [wrn(top.location, "Tick suffixes no longer do ANYTHING. Remove it!")];
 
   forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, q.name, q.location.line, q.location.column))));
 }
@@ -210,7 +210,7 @@ top::Expr ::= q::NameTickTick
   top.pp = q.pp;
   top.location = q.location;
 
-  -- TODO: warn obsolete. no longer does ANYTHING
+  top.errors <- [wrn(top.location, "Double tick suffixes no longer do ANYTHING. Remove it!")];
 
   forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, q.name, q.location.line, q.location.column))));
 }
