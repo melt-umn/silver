@@ -88,7 +88,6 @@ top::RunUnit ::= iIn::IO args::[String]
   
   production attribute depAnalysis :: DependencyAnalysis;
   depAnalysis = dependencyAnalysis(unit.interfaces, unit.compiledList);
-  depAnalysis.forceTaint := [];
   
   -- depAnalysis.compiledList = RootSpecs needing translation
   -- depAnalysis.needGrammars = grammars names that need to be rechecked for errors, but not translated
