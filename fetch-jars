@@ -19,13 +19,15 @@ else
     URLS="$URLS $REMOTE_STORE/$file"
   done
   
-  echo "Note: only those files listed below are being updated."
-  echo "If you need to force updating (e.g. to resolve a problem),"
-  echo "Then you should 'rm jars/*.jar' and then fetch-jars!"
+  # We're going to download them to here
+  mkdir -p JARS-BAK
   
   # -N Pay attention to timestamps, to avoid needless redownloads.
   # -P jars/  Put the files in jars/
   # -nv Don't be so verbose!
-  wget -N -P jars/ -nv $URLS 
+  wget -N -P JARS-BAK/ -nv $URLS
+  
+  # Always overwrite all the files in jars.
+  cp JARS-BAK/*.jar jars/
 fi
 
