@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
-Silver 0.4.0      Feb ??, 2012
-(last updated feb 5)
+Silver 0.4.0      Mar ??, 2012
+(last updated mar 12)
  - Now hosted on google code! http://code.google.com/p/silver
  - New, recommended, short form syntax for concrete production listings
  - Shell scripts for installing 'silver' script and gedit support
@@ -10,6 +10,8 @@ Silver 0.4.0      Feb ??, 2012
  - Partial application introduced
  - Slightly more location information available on terminals
  - 'Production' type eliminated, along with its duplicate functions (map_p...)
+ - The compiler may issues warnings now, for some deprecated features.
+ - New 'conditional export' feature introduced.
  - The compiler now uses signficantly less memory
  - General improvements to compiler quality (e.g. code and error messages)
  - Pattern matching bugfixes
