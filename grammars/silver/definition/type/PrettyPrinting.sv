@@ -83,14 +83,13 @@ top::TypeExp ::= nt::TypeExp  hidden::TypeExp
 aspect production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
-  top.typepp =   "Function(" ++ out.typepp ++ " ::= " ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ")" ;
+  top.typepp = "(" ++ out.typepp ++ " ::= " ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ")" ;
 }
 
 --------------------------------------------------------------------------------
 function findAbbrevFor
 String ::= tv::TyVar  bv::[TyVar]
 {
-  -- TODO: temporary while our type variables are ticked
   return findAbbrevHelp(tv, bv, ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"]);
 }
 

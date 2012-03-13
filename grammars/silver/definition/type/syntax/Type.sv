@@ -151,14 +151,19 @@ top::Type ::= 'Decorated' t::Type
 concrete production prodType
 top::Type ::= 'Production' '(' sig::Signature ')'
 {
-  top.errors <- [wrn(forward.location, "'Production' types are deprecated and will be removed. Just use 'Function'.")];
-  forwards to funType(terminal(Function_tkwd, "Function", $1), $2, sig, $4);
+  top.errors <- [wrn(forward.location, "'Production' keyword in types is no longer necessary. Remove it.")];
+  forwards to funType($2, sig, $4);
 }
-
-concrete production funType
+concrete production funTypeLegacy
 top::Type ::= 'Function' '(' sig::Signature ')'
 {
-  top.pp = "Function(" ++ sig.pp ++ ")";
+  top.errors <- [wrn(forward.location, "'Function' keyword in types is no longer necessary. Remove it.")];
+  forwards to funType($2, sig, $4);
+}
+concrete production funType
+top::Type ::= '(' sig::Signature ')'
+{
+  top.pp = "(" ++ sig.pp ++ ")";
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors := sig.errors;
