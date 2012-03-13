@@ -494,12 +494,6 @@ top::ITypeRep ::= 'decorated' '(' t::ITypeRep ')'
   top.typerep = decoratedTypeExp(t.typerep);
 }
 
-concrete production aTypeRepProduction
-top::ITypeRep ::= 'prod' '(' it::ITypeReps ','  ot::ITypeRep ')'
-{
-  top.typerep = functionTypeExp(ot.typerep, it.typereps);
-}
-
 concrete production aTypeRepFunction
 top::ITypeRep ::= 'fun' '(' it::ITypeReps ','  ot::ITypeRep ')'
 {
