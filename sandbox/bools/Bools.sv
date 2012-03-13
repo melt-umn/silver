@@ -9,8 +9,8 @@ synthesized attribute condValue<a> :: a;
 
 -- Some operators on booleans
 synthesized attribute not<a> :: Bool<a>;
-synthesized attribute and<a> :: Production(Bool<a> ::= Bool<a>);
-synthesized attribute or<a> :: Production(Bool<a> ::= Bool<a>);
+synthesized attribute and<a> :: Function(Bool<a> ::= Bool<a>);
+synthesized attribute or<a> :: Function(Bool<a> ::= Bool<a>);
 
 -- The introduction forms for booleans
 

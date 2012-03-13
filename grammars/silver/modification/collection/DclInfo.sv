@@ -7,11 +7,11 @@ import silver:definition:type;
 attribute operation occurs on DclInfo;
 
 
-synthesized attribute attrBaseDefDispatcher :: Production (ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr) occurs on DclInfo;
-synthesized attribute attrAppendDefDispatcher :: Production (ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr) occurs on DclInfo;
+synthesized attribute attrBaseDefDispatcher :: Function(ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr) occurs on DclInfo;
+synthesized attribute attrAppendDefDispatcher :: Function(ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr) occurs on DclInfo;
 
-synthesized attribute baseDefDispatcher :: Production(ProductionStmt ::= Decorated QName  Equal_t  Expr) occurs on DclInfo;
-synthesized attribute appendDefDispatcher :: Production(ProductionStmt ::= Decorated QName  Equal_t  Expr) occurs on DclInfo;
+synthesized attribute baseDefDispatcher :: Function(ProductionStmt ::= Decorated QName  Equal_t  Expr) occurs on DclInfo;
+synthesized attribute appendDefDispatcher :: Function(ProductionStmt ::= Decorated QName  Equal_t  Expr) occurs on DclInfo;
 
 
 aspect production defaultDcl
