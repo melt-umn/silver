@@ -186,7 +186,7 @@ function expandAllDeps
 
   return if null(need) then seen
          -- If the grammar has already been taken care of, or doesn't exist, discard it.
-         else if contains(head(need), seen) || null(g) then expandExports(tail(need), seen, e)
+         else if contains(head(need), seen) || null(g) then expandAllDeps(tail(need), seen, e)
          -- Otherwise, tack its all deps list to the need list, and add this grammar to the taken care of list.
          else expandAllDeps(tail(need) ++ head(g).allGrammarDependencies, head(need) :: seen, e);
 }
