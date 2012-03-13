@@ -1,44 +1,85 @@
 grammar core;
 
+{--
+ - Applies a function to each element of the list
+ -
+ - @param f  The function to apply
+ - @param l  The list to map over
+ - @return  The list containing the results of applying the function to 'l'
+ -}
 function map
 [b] ::= f::Function(b ::= a)  l::[a]
-{ return if null(l)
-         then []
+{
+  return if null(l) then []
          else f(head(l)) :: map(f, tail(l));
 }
 
--- folds - left/right, function/production, zero/one min num elements
+{--
+ - Applies an operator right-associatively over a list.
+ - (i.e. replaces cons with 'f', nil with 'i' in the list)
+ -
+ - @param f  The operator to apply
+ - @param i  The "end element" to use in place of 'nil'
+ - @param l  The list to fold
+ - @return  The result of the function applied right-associatively to the list.
+ -}
 function foldr
 b ::= f::Function(b ::= a b)  i::b  l::[a]
-{ return if null(l)
-         then i
+{
+  return if null(l) then i
          else f(head(l), foldr(f, i, tail(l)));
 }
 
+{--
+ - Applies an operator left-associatively over a list.
+ -
+ - @param f  The operator to apply
+ - @param i  The value to "start with"
+ - @param l  The list to fold
+ - @return  The result of the function applied left-associatively to the list.
+ -}
 function foldl
-a ::= f::Function(a ::= a b)  i::a  l::[b]
-{ return if null(l)
-         then i
+b ::= f::Function(b ::= b a)  i::b  l::[a]
+{
+  return if null(l) then i
          else foldl(f, f(i, head(l)), tail(l));
 }
 
+{--
+ - Right-fold, assuming there is always one element, and leaving that element
+ - unchanged for single element lists.
+ -
+ - @see foldr
+ -}
 function foldr1
-a ::= f::Function(a ::= a a) l::[a]
-{ return if null(l)
-         then error ("Applying foldr1 to empty list.")
-         else
-         if length(l) == 1
-         then head(l)
+a ::= f::Function(a ::= a a)  l::[a]
+{
+  return if null(l) then error("Applying foldr1 to empty list.")
+         else if null(tail(l)) then head(l)
          else f(head(l), foldr1(f, tail(l)));
 }
 
+{--
+ - Left-fold, assuming there is always one element, and leaving that element
+ - unchanged for single element lists.
+ -
+ - @see foldl
+ -}
 function foldl1
-a ::= f::Function(a ::= a a) l::[a]
-{ return if null(l)
-         then error ("Applying foldl1 to empty list.")
+a ::= f::Function(a ::= a a)  l::[a]
+{
+  return if null(l) then error("Applying foldl1 to empty list.")
          else foldl(f, head(l), tail(l));
 }
 
+{--
+ - Filter out elements of a list.
+ -
+ - @param f  The filter function
+ - @param lst  The input list to filter
+ - @return  Only those elements of 'lst' that 'f' returns true for, in the
+ -   same order as they appeared in 'lst'
+ -}
 function filter
 [a] ::= f::Function(Boolean ::= a) lst::[a]
 {
@@ -49,6 +90,13 @@ function filter
               else filter(f, tail(lst));
 }
 
+{--
+ - Partition a list in two
+ -
+ - @param f  Decision function
+ - @param lst  The list to partition
+ - @return  A pair of all elements returning true, and all elements returning false.
+ -}
 function partition
 Pair<[a] [a]> ::= f::Function(Boolean ::= a) lst::[a]
 {
@@ -61,12 +109,28 @@ Pair<[a] [a]> ::= f::Function(Boolean ::= a) lst::[a]
               else pair(recurse.fst, head(lst) :: recurse.snd);
 }
 
+{--
+ - Determine if an element appears in a list.
+ -
+ - @param eq  The equality function to use
+ - @param elem  The element to search for
+ - @param lst  The list to search
+ - @return  True if the equality function returns true for some element of the list,
+ -   false otherwise.
+ -}
 function containsBy
 Boolean ::= eq::Function(Boolean ::= a a)  elem::a  lst::[a]
 {
   return (!null(lst)) && (eq(elem, head(lst)) || containsBy(eq, elem, tail(lst)));
 }
 
+{--
+ - Removes all duplicates from a list.
+ -
+ - @param eq  The equality function to use
+ - @param xs  The list to remove duplicates from
+ - @return  A list containing no duplicates, according to the equality function.
+ -}
 function nubBy
 [a] ::= eq::Function(Boolean ::= a a)  xs::[a]
 {
@@ -74,14 +138,29 @@ function nubBy
         else head(xs) :: nubBy(eq, removeBy(eq, head(xs), tail(xs)));
 }
 
+{--
+ - Removes all instances of an element from a list.
+ -
+ - @param eq  The equality function to use
+ - @param x  The element to remove
+ - @param xs  The list to remove the element from
+ - @return  A list with no remaining instances of 'x' according to 'eq'
+ -}
 function removeBy
 [a] ::= eq::Function(Boolean ::= a a)  x::a  xs::[a]
 {
  return if null(xs) then []
-        else (if eq(x,head(xs)) then [] else [head(xs)]) ++
-             removeBy (eq, x, tail(xs));
+        else (if eq(x,head(xs)) then [] else [head(xs)]) ++ removeBy(eq, x, tail(xs));
 }
 
+{--
+ - Removes all instances of several elements from a list.
+ -
+ - @param eq  The equality function to use
+ - @param ys  The list of elements to remove
+ - @param xs  The list to remove elements from
+ - @return  A list with no remaining instances in 'ys' according to 'eq'
+ -}
 function removeAllBy
 [a] ::= eq::Function(Boolean ::= a a)  ys::[a]  xs::[a]
 {
@@ -89,39 +168,41 @@ function removeAllBy
         else removeAllBy(eq, tail(ys), removeBy(eq, head(ys), xs));
 }
 
+{--
+ - Returns the last element of a list.
+ -
+ - @param lst  The list to examine
+ - @return  The last element of 'lst'. If 'lst' is empty, crash.
+ -}
 function last
 a ::= lst::[a]
 {
-  return if null(tail(lst))
-         then head(lst)
+  return if null(tail(lst)) then head(lst)
          else last(tail(lst));
 }
 
 function drop
 [a] ::= number::Integer lst::[a]
 {
-  return if number <= 0
-         then lst
+  return if null(lst) || number <= 0 then lst
          else drop(number-1, tail(lst));
 }
 function take
 [a] ::= number::Integer lst::[a]
 {
-  return if number <= 0
-         then []
+  return if null(lst) || number <= 0 then []
          else head(lst) :: take(number-1, tail(lst));
 }
 function dropWhile
 [a] ::= f::Function(Boolean::=a) lst::[a]
 {
-  return if null(lst) || !f(head(lst))
-         then lst
+  return if null(lst) || !f(head(lst)) then lst
          else dropWhile(f, tail(lst));
 }
 function takeWhile
 [a] ::= f::Function(Boolean::=a) lst::[a]
-{ return if null(lst) || !f(head(lst))
-         then []
+{
+  return if null(lst) || !f(head(lst)) then []
          else head(lst) :: takeWhile(f, tail(lst));
 }
 function takeUntil
@@ -213,7 +294,7 @@ function groupBy
          else helpercall.fst :: if null(helpercall.snd) then []
                                 else groupBy(eq, helpercall.snd);
 }
-function groupByHelp
+function groupByHelp -- do not use
 Pair<[a] [a]> ::= eq::Function(Boolean ::= a a) f::a l::[a]
 {
   -- f is the representative element we're comparing with, but is not considered
