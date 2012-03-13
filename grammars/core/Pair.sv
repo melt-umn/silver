@@ -23,7 +23,7 @@ top::Pair<a b> ::= f::a  s::b
  -   equaled the first element of the pair.
  -}
 function lookupBy
-Maybe<b> ::= eqf::Function(Boolean ::= a a) elem::a lst::[Pair<a b>]
+Maybe<b> ::= eqf::(Boolean ::= a a)  elem::a  lst::[Pair<a b>]
 {
   return if null(lst)
          then nothing()

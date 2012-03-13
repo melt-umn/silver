@@ -35,7 +35,7 @@ Boolean ::= a::Boolean b::Boolean
 { return a == b ; }
 
 function equalsList
-Boolean ::= eq::Function(Boolean ::= a a) l1::[a] l2::[a]
+Boolean ::= eq::(Boolean ::= a a) l1::[a] l2::[a]
 { return if   null(l1)
          then null(l2)
          else !null(l2) &&
@@ -62,7 +62,7 @@ Boolean ::= a::Boolean b::Boolean
 { return a != b ; }
 
 function notEqualsList
-Boolean ::= neq::Function(Boolean ::= a a) l1::[a] l2::[a]
+Boolean ::= neq::(Boolean ::= a a) l1::[a] l2::[a]
 { return if   null(l1)
          then ! null(l2)
          else null(l2) ||

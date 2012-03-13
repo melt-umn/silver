@@ -61,7 +61,7 @@ synthesized attribute flagModified::CmdArgs;
  - with no parameters.
  -}
 abstract production flag
-top::Flag ::= ast::Function(CmdArgs ::= CmdArgs)
+top::Flag ::= ast::(CmdArgs ::= CmdArgs)
 {
   top.flagOutput = tail(top.flagInput);
   top.flagModified = ast(top.flagOriginal);
@@ -72,7 +72,7 @@ top::Flag ::= ast::Function(CmdArgs ::= CmdArgs)
  - with one, single parameter.
  -}
 abstract production option
-top::Flag ::= ast::Function(CmdArgs ::= String CmdArgs)
+top::Flag ::= ast::(CmdArgs ::= String CmdArgs)
 {
   top.flagOutput = if null(tail(top.flagInput)) then [] else tail(tail(top.flagInput));
   top.flagModified = if null(tail(top.flagInput))
@@ -85,7 +85,7 @@ top::Flag ::= ast::Function(CmdArgs ::= String CmdArgs)
  - with n parameters.
  -}
 abstract production nOptions
-top::Flag ::= n::Integer  ast::Function(CmdArgs ::= [String] CmdArgs)
+top::Flag ::= n::Integer  ast::(CmdArgs ::= [String] CmdArgs)
 {
   top.flagOutput = if length(top.flagInput) <= n then [] else drop(n, top.flagInput);
   top.flagModified = if length(top.flagInput) <= n

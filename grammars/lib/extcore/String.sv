@@ -29,11 +29,11 @@ String ::= v::String
 { return v ; }
 
 function toStringFromList
-String ::= toStr::Function(String ::= a) xs::[a]
+String ::= toStr::(String ::= a) xs::[a]
 { return "[" ++ toStringFromListHelper(toStr, xs) ++ "]" ; }
 
 function toStringFromListHelper
-String ::= toStr::Function(String ::= a) xs::[a]
+String ::= toStr::(String ::= a) xs::[a]
 { return if  null(xs) 
          then ""
          else toStr(head(xs)) ++
