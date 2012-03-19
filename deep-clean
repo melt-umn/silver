@@ -4,9 +4,17 @@
 # ./deep-clean -delete      to blow it away
 # ./deep-clean -delete all  to blow everything away
 
+# Quick sanity check, since we'd be deleting things
+if [ ! -d grammars ] || [ ! -d tutorials ]; then
+  echo "Wrong directory? Run as ./deep-clean"
+  exit 1
+fi
+
+# Note: use ./* rather than .  This avoids looking in .hg
 find ./build/ $1
 find ./grammars/ -name "build.xml" $1
-find ./ -name "*~" $1
+find ./* -name "*~" $1
+find ./* -name "*.orig" $1
 find ./test/ -name "build.xml" $1
 find ./test/ -name "*.jar" $1
 find ./test/ -name "*.test.output" $1
