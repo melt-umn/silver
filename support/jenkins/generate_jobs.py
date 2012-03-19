@@ -7,13 +7,23 @@ import string
 import httplib
 import base64
 
-# Configure this!
-silverSharedWorkspace = "/export/scratch/melt-jenkins/custom-silver"
-jenkinsURL = "localhost:8080"
-jenkinsUsername = "tedinski"
-jenkinsAPIToken = "" # replace with API key!!
+## BEGIN: Configure this before running!
 
-##
+# Silver is built here. Shared workspace because everything needs to use it.
+silverSharedWorkspace = "/export/scratch/melt-jenkins/custom-silver"
+# "Deployment test" location.  The make-dist script is used, and unpacked here. This is where tutorials are tested!!
+silverDeployWorkspace = "/export/scratch/melt-jenkins/custom-deploy"
+# Where to dump the latest tar and jars when all tests and builds succeed.
+silverStableWorkspace = "/export/scratch/melt-jenkins/custom-stable-dump"
+# URL for the jenkins server
+jenkinsURL = "localhost:8080"
+# User name and API token. Note this is not your password! Check user config page to see it.
+jenkinsUsername = "tedinski"
+jenkinsAPIToken = ""
+
+## END: config stuff
+
+# We just do http basic auth manually because it's easier than the alternatives, apparently.
 jenkinsAuth = "Basic " + base64.encodestring('%s:%s' % (jenkinsUsername, jenkinsAPIToken))[:-1]
 
 #############
@@ -21,14 +31,14 @@ jenkinsAuth = "Basic " + base64.encodestring('%s:%s' % (jenkinsUsername, jenkins
 def silverInvoke(grammar, include="", generated="", output=""):
 	cmdStr = "java -Xmx2000M -Xss4M -jar " + silverSharedWorkspace + "/jars/RunSilver.jar --clean"
 	if include != "":
-		cmdStr = cmdStr + " -I " + include
+		cmdStr += " -I " + include
 	if generated != "":
-		cmdStr = cmdStr + " -G " + generated
+		cmdStr += " -G " + generated
 	if output != "":
-		cmdStr = cmdStr + " -o " + output
+		cmdStr += " -o " + output
 	return cmdStr + " " + grammar + "\nant"
 
-
+#####
 class JenkinsJobConfig:
 	def __init__(self, jobname):
 		self.jobname = jobname
@@ -90,6 +100,7 @@ class JenkinsJobConfig:
 			sys.exit(r1.status)
 
 
+#####
 class SilverTestJob(JenkinsJobConfig):
 	def __init__(self, testname):
 		self.jobname = "silver-test-" + testname
@@ -99,32 +110,49 @@ class SilverTestJob(JenkinsJobConfig):
 		               "java -jar test.jar\n" + \
 		               "rm -rf $WORKSPACE/src $WORKSPACE/bin\n"
 
+#####
 class SilverTutorialJob(JenkinsJobConfig):
 	def __init__(self, tutorialpath):
 		self.jobname = "silver-tutorial-" + tutorialpath.replace("/","-")
 		self.description = tutorialpath + " tutorial included with the Silver compiler"
-		self.command = "cd " + os.path.join(silverSharedWorkspace, "tutorials", tutorialpath) + "\n" + \
+		self.command = "cd " + os.path.join(silverDeployWorkspace, "silver-latest", "tutorials", tutorialpath) + "\n" + \
 		               "./silver-compile --clean -G $WORKSPACE\n" + \
 		               "rm -rf $WORKSPACE/src $WORKSPACE/bin\n"
 
+#####
 class SilverJob(JenkinsJobConfig):
-	def __init__(self, triggers):
+	def __init__(self, testtriggers, othertriggers):
 		self.jobname = "silver"
 		self.description = "The Silver compiler"
-		self.command = "./fetch-jars\n./deep-rebuild\n./deep-clean -delete all\n"
-		self.triggers = ', '.join(triggers)
-		self.triggers_orig = triggers
+		self.command = "./fetch-jars\n" + \
+		               "./deep-rebuild\n" + \
+		               "./deep-clean -delete all\n" + \
+		               "./make-dist latest\n" + \
+		               "cd " + silverDeployWorkspace + "\n" + \
+		               "rm -rf *\n" + \
+		               "tar zxvf " + silverSharedWorkspace + "/silver-latest.tar.gz\n"
+		self.testtriggers = ', '.join(testtriggers)
+		self.testtriggers_orig = testtriggers
+		self.othertriggers = ', '.join(othertriggers)
+		self.othertriggers_orig = othertriggers
 		self.customWorkspace = silverSharedWorkspace  # global
 
 	def configXml(self):
 		assert self.description != "", "Must provide description"
 		assert self.command != "", "Must provide command"
 		assert self.customWorkspace != "", "Must provide customWorkspace"
-		assert self.triggers != "", "Must provide triggers"
+		assert self.testtriggers != "", "Must provide testtriggers"
+		assert self.othertriggers != "", "Must provide othertriggers"
 		return string.Template("""<?xml version='1.0' encoding='UTF-8'?>
 <project>
   <actions/>
   <description>${description}</description>
+  <logRotator>
+    <daysToKeep>-1</daysToKeep>
+    <numToKeep>-1</numToKeep>
+    <artifactDaysToKeep>14</artifactDaysToKeep>
+    <artifactNumToKeep>-1</artifactNumToKeep>
+  </logRotator>
   <keepDependencies>false</keepDependencies>
   <properties/>
   <scm class="hudson.plugins.mercurial.MercurialSCM">
@@ -158,13 +186,18 @@ class SilverJob(JenkinsJobConfig):
       <latestOnly>false</latestOnly>
     </hudson.tasks.ArtifactArchiver>
     <hudson.tasks.BuildTrigger>
-      <childProjects>${triggers}</childProjects>
+      <childProjects>${testtriggers}</childProjects>
       <threshold>
         <name>SUCCESS</name>
         <ordinal>0</ordinal>
         <color>BLUE</color>
       </threshold>
     </hudson.tasks.BuildTrigger>
+    <join.JoinTrigger>
+      <joinProjects>${othertriggers}</joinProjects>
+      <joinPublishers/>
+      <evenIfDownstreamUnstable>false</evenIfDownstreamUnstable>
+    </join.JoinTrigger>
     <hudson.tasks.Fingerprinter>
       <targets></targets>
       <recordBuildArtifacts>true</recordBuildArtifacts>
@@ -173,6 +206,7 @@ class SilverJob(JenkinsJobConfig):
   <buildWrappers/>
 </project>""").substitute(self.__dict__)
 
+#####
 class SubversionJob(JenkinsJobConfig):
 	def __init__(self, jobname, description, remotepath, localpath, command):
 		self.jobname = jobname
@@ -225,6 +259,7 @@ class SubversionJob(JenkinsJobConfig):
   <buildWrappers/>
 </project>""").substitute(self.__dict__)
 
+#####
 class MeltsvnGrammarJob(SubversionJob):
 	def __init__(self, jobname, pregrammar, subgrammar, includepath="grammars", invoke=""):
 		self.jobname = "meltsvn-" + jobname
@@ -234,11 +269,58 @@ class MeltsvnGrammarJob(SubversionJob):
 		self.svnremote = "https://www-users.cs.umn.edu/meltsvn/" + self.svnlocal
 		self.command = silverInvoke(grammar=self.grammar, generated=".", include=includepath)
 		if invoke == True:
-			self.command = self.command + "\n" + \
+			self.command += "\n" + \
 			               "cd " + self.svnlocal + "/" + subgrammar.replace(":", "/") + "\n" + \
 			               "java -jar $WORKSPACE/" + self.grammar.replace(":",".") + ".jar"
 		elif invoke != "":
-			self.command = self.command + "\n" + invoke
+			self.command += "\n" + invoke
+
+#####
+class ProxyJob(JenkinsJobConfig):
+	def __init__(self, jobname, description, triggers=[], jointriggers=[]):
+		assert len(triggers + jointriggers) != 0, "must provide some triggers!"
+		self.jobname = jobname
+		self.description = description
+		self.triggers_orig = triggers
+		self.jointriggers_orig = jointriggers
+		self.publishers = ""
+		if len(triggers) > 0:
+			self.publishers += "<hudson.tasks.BuildTrigger><childProjects>" + ', '.join(triggers) + "</childProjects><threshold><name>SUCCESS</name><ordinal>0</ordinal><color>BLUE</color></threshold></hudson.tasks.BuildTrigger>"
+		if len(jointriggers) > 0:
+			self.publishers += "<join.JoinTrigger><joinProjects>" + ', '.join(jointriggers) + "</joinProjects><joinPublishers/><evenIfDownstreamUnstable>false</evenIfDownstreamUnstable></join.JoinTrigger>"
+
+	def configXml(self):
+		assert self.description != "", "Must provide description"
+		assert self.publishers != "", "Must provide publishers"
+		return string.Template("""<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description>${description}</description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers class="vector"/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders/>
+  <publishers>
+    ${publishers}
+  </publishers>
+  <buildWrappers/>
+</project>""").substitute(self.__dict__)
+
+#####
+class SilverStableJob(JenkinsJobConfig):
+	def __init__(self):
+		self.jobname = "silver-stable-deploy"
+		self.description = "Copies the latest tar file and jars to a deployment staging area, whenever all tests pass and grammars build."
+		self.command = "cd " + silverStableWorkspace + "\n" + \
+		               "cp " + silverSharedWorkspace + "/silver-latest.tar.gz .\n" + \
+		               "cp " + silverSharedWorkspace + "/jars/*.jar .\n"
+
 
 ################################################################################
 
@@ -250,12 +332,12 @@ def find_all_sv_tutorials(svroot):
 
 # Manually set:
 meltsvngrammars = [
-MeltsvnGrammarJob("Oberon0-A1", "edu:umn:cs:melt:Oberon0", "artifacts:A1"),
+MeltsvnGrammarJob("Oberon0-A1",  "edu:umn:cs:melt:Oberon0", "artifacts:A1"),
 MeltsvnGrammarJob("Oberon0-A2a", "edu:umn:cs:melt:Oberon0", "artifacts:A2a"),
 MeltsvnGrammarJob("Oberon0-A2b", "edu:umn:cs:melt:Oberon0", "artifacts:A2b"),
-MeltsvnGrammarJob("Oberon0-A3", "edu:umn:cs:melt:Oberon0", "artifacts:A3"),
-MeltsvnGrammarJob("Oberon0-A4", "edu:umn:cs:melt:Oberon0", "artifacts:A4"),
-MeltsvnGrammarJob("Oberon0-A5", "edu:umn:cs:melt:Oberon0", "artifacts:A5"),
+MeltsvnGrammarJob("Oberon0-A3",  "edu:umn:cs:melt:Oberon0", "artifacts:A3"),
+MeltsvnGrammarJob("Oberon0-A4",  "edu:umn:cs:melt:Oberon0", "artifacts:A4"),
+MeltsvnGrammarJob("Oberon0-A5",  "edu:umn:cs:melt:Oberon0", "artifacts:A5"),
 
 MeltsvnGrammarJob("Matlab-host", "edu:umn:cs:melt:MATLAB", "artifacts:MATLAB"),
 
@@ -264,18 +346,27 @@ MeltsvnGrammarJob("Matlab-host", "edu:umn:cs:melt:MATLAB", "artifacts:MATLAB"),
 #MeltsvnGrammarJob("miniHaskell-host-tests", "edu:umn:cs:melt:miniHaskell", "host:tests", invoke=True),
 
 # TODO: Will be rebuilt way too often. Find better solution for getting ableC with it?
-MeltsvnGrammarJob("ableP-host", "edu:umn:cs:melt", "ableP:artifacts:promela"), 
-MeltsvnGrammarJob("ableP-host-tests", "edu:umn:cs:melt", "ableP:artifacts:promela:tests", invoke=True), 
-MeltsvnGrammarJob("ableP-promelaCore", "edu:umn:cs:melt", "ableP:artifacts:promelaCore"), 
+MeltsvnGrammarJob("ableP-host",              "edu:umn:cs:melt", "ableP:artifacts:promela"), 
+MeltsvnGrammarJob("ableP-host-tests",        "edu:umn:cs:melt", "ableP:artifacts:promela:tests", invoke=True), 
+MeltsvnGrammarJob("ableP-promelaCore",       "edu:umn:cs:melt", "ableP:artifacts:promelaCore"), 
 MeltsvnGrammarJob("ableP-promelaCore-tests", "edu:umn:cs:melt", "ableP:artifacts:promelaCore:tests", invoke=True), 
-MeltsvnGrammarJob("ableP-aviation", "edu:umn:cs:melt", "ableP:artifacts:aviation"), 
-MeltsvnGrammarJob("ableP-aviation-tests", "edu:umn:cs:melt", "ableP:artifacts:aviation:tests", invoke=True), 
+MeltsvnGrammarJob("ableP-aviation",          "edu:umn:cs:melt", "ableP:artifacts:aviation"), 
+MeltsvnGrammarJob("ableP-aviation-tests",    "edu:umn:cs:melt", "ableP:artifacts:aviation:tests", invoke=True), 
 
 MeltsvnGrammarJob("ableC-host", "edu:umn:cs:melt:ableC", "host:bin"), 
 MeltsvnGrammarJob("ableC-host-tests", "edu:umn:cs:melt:ableC", "host:tests", invoke=True), 
 
+MeltsvnGrammarJob("ableJ-alone",      "edu:umn:cs:melt:ableJ14", "composed:java_alone:bin"), 
+MeltsvnGrammarJob("ableJ-autoboxing", "edu:umn:cs:melt:ableJ14", "composed:java_autoboxing:bin"), 
+MeltsvnGrammarJob("ableJ-sql",        "edu:umn:cs:melt:ableJ14", "composed:java_sql:bin"), 
+MeltsvnGrammarJob("ableJ-complex",    "edu:umn:cs:melt:ableJ14", "composed:java_complex:bin"), 
+MeltsvnGrammarJob("ableJ-foreach",    "edu:umn:cs:melt:ableJ14", "composed:java_foreach:bin"), 
+MeltsvnGrammarJob("ableJ-tables",     "edu:umn:cs:melt:ableJ14", "composed:java_tables:bin"), 
+MeltsvnGrammarJob("ableJ-pizza",      "edu:umn:cs:melt:ableJ14", "composed:java_pizza:bin"), 
+MeltsvnGrammarJob("ableJ-rlp",        "edu:umn:cs:melt:ableJ14", "composed:java_rlp:bin"), 
+
 # simple is not set up to build properly yet
-#MeltsvnGrammarJob("simple-host", "edu:umn:cs:melt:simple", "host"), 
+MeltsvnGrammarJob("simple-host", "edu:umn:cs:melt:simple", "host"), 
 
 MeltsvnGrammarJob("ring-host", "react", "bin", includepath="users/srinivasr/trunk/grammars"),
 MeltsvnGrammarJob("ring-host-tests", "react", "tests", includepath="users/srinivasr/trunk/grammars", invoke=True),
@@ -287,18 +378,31 @@ def main():
 	localSvRoot = "../.." # expected to be in support/jenkins
 	assert os.path.isdir(os.path.join(localSvRoot, "test")), "test directory not found... configure!"
 	assert os.path.isdir(os.path.join(localSvRoot, "tutorials")), "tutorials directory not found... configure!"
+	assert jenkinsAPIToken != "", "Forgot API token"
 	
 	svtests = find_all_sv_tests(localSvRoot)
 	svtuts = find_all_sv_tutorials(localSvRoot)
 	
-	postsvjobs = [SilverTestJob(x) for x in svtests] + [SilverTutorialJob(x) for x in svtuts]  + meltsvngrammars
+	# runs immediately after silver
+	svtestjobs = [SilverTestJob(x) for x in svtests]
+	# runs only after all previous succeed
+	postsvjobs = [SilverTutorialJob(x) for x in svtuts] + meltsvngrammars
 	
-	
-	
-	for job in postsvjobs:
+	for job in postsvjobs + svtestjobs:
 		job.createOrUpdateJob()
 	
-	SilverJob([x.getJobName() for x in postsvjobs]).createOrUpdateJob()
+	# Deploy stuff if it all succeeds, oh happy day
+	svdeployjob = SilverStableJob()
+	svdeployjob.createOrUpdateJob()
+	
+	# After silver tests pass, build all grammars.
+	svtestproxy = ProxyJob("silver-tests-okay", "Proxy to trigger more builds once Silver's tests pass", \
+	   triggers=[x.getJobName() for x in postsvjobs], \
+	   jointriggers=[svdeployjob.getJobName()])
+	svtestproxy.createOrUpdateJob()
+	
+	# After silver builds, and the tests pass, trigger the proxy.
+	SilverJob([x.getJobName() for x in svtestjobs], [svtestproxy.getJobName()]).createOrUpdateJob()
 	
 
 if __name__ == "__main__":
