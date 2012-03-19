@@ -16,11 +16,13 @@ fi
 
 ln -s . $SV
 
-tar zcvf $SV.tar.gz \
- "--exclude=.svn" "--exclude=*~" "--exclude=*test" \
+tar -zcvf $SV.tar.gz \
+ "--exclude=*.test" \
  $SV/generated/whatisthis.txt \
  $SV/jars/*.jar \
- $SV/support/ \
+ $SV/support/bin \
+ $SV/support/emacs \
+ $SV/support/gedit \
  $SV/tutorials/ \
  $SV/grammars/core/ \
  $SV/grammars/lib/extcore/ \
