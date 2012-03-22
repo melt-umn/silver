@@ -1,13 +1,13 @@
 grammar silver:definition:core;
 
 nonterminal ProductionBody with
-  config, grammarName, file, env, location, pp, errors, defs, blockContext,
+  config, grammarName, file, env, location, pp, errors, defs, blockContext, compiledGrammars,
   productionAttributes, signature, uniqueSignificantExpression;
 nonterminal ProductionStmts with 
-  config, grammarName, file, env, location, pp, errors, defs, blockContext,
+  config, grammarName, file, env, location, pp, errors, defs, blockContext, compiledGrammars,
   productionAttributes, signature, uniqueSignificantExpression;
 nonterminal ProductionStmt with
-  config, grammarName, file, env, location, pp, errors, defs, blockContext,
+  config, grammarName, file, env, location, pp, errors, defs, blockContext, compiledGrammars,
   productionAttributes, signature, uniqueSignificantExpression;
 
 nonterminal DefLHS with 
