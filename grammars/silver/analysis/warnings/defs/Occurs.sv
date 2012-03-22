@@ -1,7 +1,7 @@
 grammar silver:analysis:warnings:defs;
 
 imports silver:analysis:warnings;
-imports silver:driver;
+imports silver:driver only run, RunUnit, computeDependencies;
 imports silver:util:cmdargs;
 imports silver:util;
 
@@ -41,8 +41,9 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   top.errors <-
     if null(nt.lookupType.errors ++ at.lookupAttribute.errors)
     && (top.config.warnAll || top.config.warnOrphaned)
-    && nt.lookupType.dcl.sourceGrammar != top.grammarName
-    && at.lookupAttribute.dcl.sourceGrammar != top.grammarName
+    --&& nt.lookupType.dcl.sourceGrammar != top.grammarName
+    --&& at.lookupAttribute.dcl.sourceGrammar != top.grammarName
+    && !contains(top.grammarName, computeDependencies([nt.lookupType.dcl.sourceGrammar, at.lookupAttribute.dcl.sourceGrammar], top.compiledGrammars))
     then [wrn(top.location, "Orphaned occurs declaration: " ++ at.lookupAttribute.fullName ++ " on " ++ nt.lookupType.fullName)]
     else [];
 }
