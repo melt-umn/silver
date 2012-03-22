@@ -1,4 +1,4 @@
 grammar silver:modification:ffi;
 
-exports silver:modification:ffi:java with silver:translation:java;
+exports silver:modification:ffi:java with silver:translation:java:core;
 

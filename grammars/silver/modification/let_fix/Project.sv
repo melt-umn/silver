@@ -7,5 +7,6 @@ imports silver:definition:type:syntax;
 imports silver:analysis:typechecking;
 imports silver:analysis:typechecking:core;
 
-exports silver:modification:let_fix:java with silver:translation:java;
+exports silver:modification:let_fix:java with silver:translation:java:core;
+exports silver:modification:let_fix:java with silver:translation:java:type;
 

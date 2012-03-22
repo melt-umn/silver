@@ -11,7 +11,6 @@ import silver:translation:java:core;
 import silver:translation:java:type;
 
 import silver:modification:let_fix;
-import silver:modification:let_fix:java;
 
 import silver:extension:list; -- Oh no, this is a hack! TODO
 
