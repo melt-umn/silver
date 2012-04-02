@@ -32,12 +32,6 @@ top::RunUnit ::= iIn::IO args::[String]
 aspect production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
 {
-  -- The occurs declarations should be exported by either:
-  -- 1. the grammar declaring the nonterminal
-  -- 2. the grammar declaring the attribute.
-  
-  -- TODO: only checks grammar equals, does NOT pay attention to exports!
-  
   top.errors <-
     if null(nt.lookupType.errors ++ at.lookupAttribute.errors)
     && (top.config.warnAll || top.config.warnOrphaned)
