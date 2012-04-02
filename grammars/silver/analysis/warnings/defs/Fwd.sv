@@ -22,13 +22,6 @@ top::RunUnit ::= iIn::IO args::[String]
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
-  -- The production declarations should be exported by:
-  -- 1. the grammar declaring the nonterminal
-  -- ALTERNATIVELY,
-  -- 2. they must forward
-  
-  -- TODO: only checks grammar equals, does NOT pay attention to exports!
-
   local attribute ntDefGram :: String;
   ntDefGram = substring(0, lastIndexOf(":", namedSig.outputElement.typerep.typeName), namedSig.outputElement.typerep.typeName);
 
