@@ -145,7 +145,7 @@ public abstract class Node {
 	 * We've simply merged this into this method to avoid an unnecessary Lazy.
 	 *
 	 * @param context The DN of this node, to use to evaluate the forward equation.
-	 * @return The Node this node forwards to.
+	 * @return The Node that context forwards to.
 	 */
 	public abstract Node getForward(final DecoratedNode context);
 
@@ -164,20 +164,20 @@ public abstract class Node {
 	public abstract Lazy getSynthesized(final int index);
 
 	/**
-	 * @param key The key for a local to retrieve inherited attributes for.
+	 * @param key The index for a local, to retrieve inherited attributes for.
 	 * @return An array containing the inherited attributes supplied to that local 
 	 */
-	public abstract Lazy[] getLocalInheritedAttributes(final int key);
+	public abstract Lazy[] getLocalInheritedAttributes(final int index);
 	
 	/**
 	 * @param key The child index to look up the inherited attributes.
 	 * @return An array containing the inherited attributes supplied to that child 
 	 */
-	public abstract Lazy[] getChildInheritedAttributes(final int key);
+	public abstract Lazy[] getChildInheritedAttributes(final int index);
 	
 	/**
-	 * @param name Any local or production attribute on this Node
+	 * @param name The index of a local or production attribute on this Node
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of the attribute
 	 */
-	public abstract Lazy getLocal(final int name);
+	public abstract Lazy getLocal(final int index);
 }
