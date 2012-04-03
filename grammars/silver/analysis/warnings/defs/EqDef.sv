@@ -37,8 +37,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
     if null(occursCheck.errors ++ attr.lookupAttribute.errors)
     && (top.config.warnAll || top.config.warnEqdef)
     && $4.lexeme != "<-" -- hack to omit collections
-    --&& occursCheck.dcl.sourceGrammar != top.grammarName
-    --&& prodDefGram != top.grammarName
     && !contains(top.grammarName, computeDependencies([prodDefGram, occursCheck.dcl.sourceGrammar], top.compiledGrammars))
     then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " (occurs from " ++ occursCheck.dcl.sourceGrammar ++ ") on " ++ top.signature.fullName)]
     else [];
@@ -58,11 +56,4 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
     then [wrn(top.location, "Orphaned inherited equation: " ++ attr.pp ++ " (occurs from " ++ occursCheck.dcl.sourceGrammar ++ ") on " ++ top.signature.fullName)]
     else [];
 }
-
-aspect production localValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
-{
-  
-}
-
 
