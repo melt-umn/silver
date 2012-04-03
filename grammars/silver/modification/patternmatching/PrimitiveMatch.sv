@@ -98,8 +98,6 @@ top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication); 
   -- TODO there seems to be an opportunity here to avoid an anon class somehow...
-  
-  forwards to defaultExpr();
 }
 
 concrete production onePattern

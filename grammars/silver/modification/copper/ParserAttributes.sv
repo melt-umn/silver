@@ -22,7 +22,5 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
   acode.env = newScopeEnv(acode.defs, top.env);
   
   top.syntaxAst = [syntaxParserAttribute(fName, te.typerep, acode.actionCode)];
-
-  forwards to defaultAGDcl();
 }
 

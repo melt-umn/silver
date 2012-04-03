@@ -57,8 +57,6 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   body.env = newScopeEnv(appendDefs(body.defs, sigDefs), newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;
   body.blockContext = productionContext();
-
-  forwards to defaultAGDcl();
 }
 
 concrete production productionSignature

@@ -25,7 +25,7 @@ top::AGDcls ::= h::AGDcl t::AGDcls
   top.parserSpecs = h.parserSpecs ++ t.parserSpecs;
 }
 
-aspect production defaultAGDcl
+aspect default production
 top::AGDcl ::=
 {
   top.syntaxAst = [];

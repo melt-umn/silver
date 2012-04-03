@@ -30,8 +30,6 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
   e.downSubst = top.downSubst;
   
   top.upSubst = e.upSubst;
-  
-  forwards to defaultProductionStmt();
 }
 
 concrete production printStmt
@@ -58,8 +56,6 @@ top::ProductionStmt ::= 'print' e::Expr ';'
        if errCheck1.typeerror
        then [err(e.location, "print expects a string, instead it recieved a " ++ errCheck1.leftpp)]
        else [];
-  
-  forwards to defaultProductionStmt();
 }
 
 aspect production localAttributeDcl
@@ -92,8 +88,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
        if errCheck1.typeerror
        then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
        else [];
-  
-  forwards to defaultProductionStmt();
 }
 
 abstract production parserAttributeDefLHS
@@ -138,7 +132,5 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
        if errCheck1.typeerror
        then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
        else [];
-  
-  forwards to defaultProductionStmt();
 }
 

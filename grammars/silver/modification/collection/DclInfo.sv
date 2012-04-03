@@ -14,7 +14,7 @@ synthesized attribute baseDefDispatcher :: (ProductionStmt ::= Decorated QName  
 synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated QName  Equal_t  Expr) occurs on DclInfo;
 
 
-aspect production defaultDcl
+aspect default production
 top::DclInfo ::=
 {
   top.attrBaseDefDispatcher = errorCollectionDefDispatcher;

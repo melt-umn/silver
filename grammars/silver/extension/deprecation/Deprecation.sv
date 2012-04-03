@@ -15,7 +15,5 @@ top::AGDcl ::= 'deprecated' s::String_t ';'
   top.location = loc(top.file, $1.line, $1.column);
   
   top.errors := [wrn(top.location, s.lexeme)];
-  
-  forwards to defaultAGDcl();
 }
 

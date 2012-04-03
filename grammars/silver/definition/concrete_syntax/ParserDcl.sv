@@ -26,8 +26,6 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
                                namedSignatureElement("__func__lhs", nonterminalTypeExp("core:ParseResult", [t.typerep])));
 
   top.parserSpecs = [parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames)];
-
-  forwards to defaultAGDcl();
 }
 
 nonterminal ModuleList with config, location, grammarName, file, moduleNames, compiledGrammars, errors, pp, grammarDependencies;

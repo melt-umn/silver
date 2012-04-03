@@ -32,7 +32,7 @@ synthesized attribute attrDefDispatcher :: (ProductionStmt ::= DefLHS Dot_t Deco
   
 -}
 
-aspect production defaultDcl
+aspect default production
 top::DclInfo ::=
 {
   -- again, blank.

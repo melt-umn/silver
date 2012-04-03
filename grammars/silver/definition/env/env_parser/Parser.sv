@@ -168,7 +168,7 @@ top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
 }
 
 --The pieces
-abstract production aRootSpecDefault
+aspect default production
 top::IRootSpecPart ::=
 {
   top.declaredName = "";
@@ -183,21 +183,18 @@ concrete production aRootDeclaredName
 top::IRootSpecPart ::= 'declaredName' i::IName
 {
   top.declaredName = i.aname;
-  forwards to aRootSpecDefault();
 }
 
 concrete production aRootModuleNames
 top::IRootSpecPart ::= 'moduleNames' i::INames
 {
   top.moduleNames = i.names;
-  forwards to aRootSpecDefault();
 }
 
 concrete production aRootAllDeps
 top::IRootSpecPart ::= 'allDeps' i::INames
 {
   top.allGrammarDependencies = i.names;
-  forwards to aRootSpecDefault();
 }
 
 concrete production aRootDefs
@@ -205,21 +202,18 @@ top::IRootSpecPart ::= 'defs' i::IDefs
 {
   top.defs = i.defs;
   i.env = emptyEnv();
-  forwards to aRootSpecDefault();
 }
 
 concrete production aRootExportedGrammars
 top::IRootSpecPart ::= 'exportedGrammars' i::INames
 {
   top.exportedGrammars = i.names;
-  forwards to aRootSpecDefault();
 }
 
 concrete production aRootCondBuilds
 top::IRootSpecPart ::= 'condBuild' i::INames
 {
   top.condBuild = unfoldCB(i.names);
-  forwards to aRootSpecDefault();
 }
 
 function unfoldCB

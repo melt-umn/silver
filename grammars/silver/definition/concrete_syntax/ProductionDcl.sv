@@ -132,7 +132,7 @@ top::ProductionRHSElem ::= id::Name '::' t::Type
 
 synthesized attribute permittedInConcreteSyntax :: Boolean occurs on TypeExp;
 
-aspect production defaultTypeExp
+aspect default production
 top::TypeExp ::=
 {
   top.permittedInConcreteSyntax = false;

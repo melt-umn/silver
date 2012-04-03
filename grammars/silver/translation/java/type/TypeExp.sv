@@ -12,13 +12,6 @@ synthesized attribute transClassType :: String;
 
 attribute transType, transClassType occurs on TypeExp;
 
-aspect production defaultTypeExp
-top::TypeExp ::=
-{
-  top.transType = error("INTERNAL ERROR: Some type forgot to define its Java transType.");
-  top.transClassType = error("INTERNAL ERROR: Some type forgot to define its Java transClassType.");
-}
-
 aspect production varTypeExp
 top::TypeExp ::= tv::TyVar
 {

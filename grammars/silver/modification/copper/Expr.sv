@@ -14,8 +14,6 @@ top::Expr ::= q::Decorated QName
   top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
-  
-  forwards to defaultExpr();
 }
 
 abstract production pluckTerminalReference
@@ -33,8 +31,6 @@ top::Expr ::= q::Decorated QName
   top.lazyTranslation = top.translation; -- never, but okay!
   
   top.upSubst = top.downSubst;
-  
-  forwards to defaultExpr();
 }
 
 abstract production disambigLexemeReference
@@ -51,8 +47,6 @@ top::Expr ::= q::Decorated QName
   top.lazyTranslation = top.translation; -- never, but okay!
   
   top.upSubst = top.downSubst;
-  
-  forwards to defaultExpr();
 }
 
 abstract production parserAttributeReference
@@ -71,8 +65,6 @@ top::Expr ::= q::Decorated QName
   top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
-  
-  forwards to defaultExpr();
 }
 
 abstract production termAttrValueReference
@@ -94,7 +86,5 @@ top::Expr ::= q::Decorated QName
   top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
-  
-  forwards to defaultExpr();
 }
 

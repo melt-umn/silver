@@ -38,7 +38,7 @@ top::AGDcls ::= h::AGDcl t::AGDcls
   top.valueWeaving := h.valueWeaving ++ t.valueWeaving;
 }
 
-aspect production defaultAGDcl
+aspect default production
 top::AGDcl ::=
 {
   top.javaClasses = [];
