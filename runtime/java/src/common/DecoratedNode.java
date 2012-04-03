@@ -257,7 +257,16 @@ public class DecoratedNode {
 					throw new TraceException("Error attempting to fetch from forward in production " + self.getName() + ".", t);
 				}
 			} else {
-				throw new MissingDefinitionException("Synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' is not defined in production '" + self.getName() + "'");
+				l = self.getDefaultSynthesized(attribute);
+				if(l != null) {
+					try {
+						o = l.eval(this);
+					} catch(Throwable t) {
+						throw new TraceException("Error evaluating default attribute '" + self.getNameOfSynAttr(attribute) + "' in production '" + self.getName() + "'", t);
+					}
+				} else {
+					throw new MissingDefinitionException("Synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' is not defined in production '" + self.getName() + "'");	
+				}
 			}
 			
 			// CACHE : comment out to disable caching for synthesized attributes

@@ -29,6 +29,8 @@ top::AGDcl ::= id::Name botl::BracketedOptTypeList
 "\tpublic static final String[] occurs_syn = new String[num_syn_attrs];\n" ++
 "\tpublic static final LinkedList<common.Decorator> decorators = new LinkedList<common.Decorator>();\n\n" ++
 
+"\tpublic static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];\n\n" ++
+
 "\tprotected " ++ className ++ "(Object[] children) {\n" ++
 "\t\tsuper(children);\n" ++
 "\t}\n\n" ++
@@ -41,6 +43,11 @@ top::AGDcl ::= id::Name botl::BracketedOptTypeList
 "\t@Override\n" ++
 "\tpublic final int getNumberOfSynAttrs() {\n" ++
 "\t\treturn num_syn_attrs;\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic final common.Lazy getDefaultSynthesized(final int index) {\n" ++
+"\t\treturn defaultSynthesizedAttributes[index];\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
