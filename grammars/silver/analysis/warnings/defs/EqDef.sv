@@ -37,7 +37,12 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
     if null(occursCheck.errors ++ attr.lookupAttribute.errors)
     && (top.config.warnAll || top.config.warnEqdef)
     && $4.lexeme != "<-" -- hack to omit collections
-    && !contains(top.grammarName, computeDependencies([prodDefGram, occursCheck.dcl.sourceGrammar], top.compiledGrammars))
+    && !contains(top.grammarName,
+         computeDependencies(
+           if top.blockContext.hasPartialSignature
+           then [prodDefGram, occursCheck.dcl.sourceGrammar]
+           else [occursCheck.dcl.sourceGrammar],
+           top.compiledGrammars))
     then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " (occurs from " ++ occursCheck.dcl.sourceGrammar ++ ") on " ++ top.signature.fullName)]
     else [];
 }
@@ -52,7 +57,12 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
    if null(occursCheck.errors ++ attr.lookupAttribute.errors)
     && (top.config.warnAll || top.config.warnEqdefInh)
     && $4.lexeme != "<-" -- hack to omit collections
-    && !contains(top.grammarName, computeDependencies([prodDefGram, occursCheck.dcl.sourceGrammar], top.compiledGrammars))
+    && !contains(top.grammarName,
+         computeDependencies(
+           if top.blockContext.hasPartialSignature
+           then [prodDefGram, occursCheck.dcl.sourceGrammar]
+           else [occursCheck.dcl.sourceGrammar],
+           top.compiledGrammars))
     then [wrn(top.location, "Orphaned inherited equation: " ++ attr.pp ++ " (occurs from " ++ occursCheck.dcl.sourceGrammar ++ ") on " ++ top.signature.fullName)]
     else [];
 }
