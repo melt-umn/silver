@@ -162,6 +162,14 @@ public abstract class Node {
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of the attribute
 	 */
 	public abstract Lazy getSynthesized(final int index);
+	
+	/**
+	 * When a production does not forward and lacks an equation for a synthesized attribute, this is consulted instead.
+	 * 
+	 * @param index Any synthesized attribute on this Node
+	 * @return A Lazy to evaluate on a decorated form of this Node, to get the DEFAULT value of the attribute.
+	 */
+	public abstract Lazy getDefaultSynthesized(final int index);
 
 	/**
 	 * @param key The index for a local, to retrieve inherited attributes for.

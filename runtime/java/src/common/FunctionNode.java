@@ -34,6 +34,11 @@ public abstract class FunctionNode extends Node {
 	}
 
 	@Override
+	public Lazy getDefaultSynthesized(int index) {
+		throw new SilverInternalError("Functions do not possess synthesized attributes! (Requested default for index " + index + ")");
+	}
+	
+	@Override
 	public final int getNumberOfInhAttrs() {
 		return 0;
 	}
@@ -52,5 +57,5 @@ public abstract class FunctionNode extends Node {
 	public final String getNameOfSynAttr(final int index) {
 		throw new SilverInternalError("Functions do not possess synthesized attributes! (Requested name of index " + index + ")");
 	}
-	
+
 }

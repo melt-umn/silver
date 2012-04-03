@@ -29,6 +29,7 @@ parser rParse::Root {
   silver:modification:ffi;
   silver:modification:typedecl;
   silver:modification:copper;
+  silver:modification:defaultattr;
 }
 
 parser iParse::IRootSpec {
