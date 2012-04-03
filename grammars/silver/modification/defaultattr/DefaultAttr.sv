@@ -22,7 +22,7 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   top.defs = emptyDefs();
 
   production attribute namedSig :: NamedSignature;
-  namedSig = namedSignature("_DEFAULT_ERROR_", [], namedSignatureElement(lhs.name, te.typerep));
+  namedSig = namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName, [], namedSignatureElement(lhs.name, te.typerep));
 
   top.errors := te.errors ++ body.errors;
 

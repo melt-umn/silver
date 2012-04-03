@@ -29,7 +29,6 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     if null(body.errors ++ ns.errors{-TODO-})
     && (top.config.warnAll || top.config.warnFwd)
     && null(body.uniqueSignificantExpression) -- no forward
-    --&& ntDefGram != top.grammarName
     && !contains(top.grammarName, computeDependencies([ntDefGram], top.compiledGrammars))
     then [wrn(top.location, "Orphaned production: " ++ id.pp ++ " on " ++ namedSig.outputElement.typerep.typeName)]
     else [];
