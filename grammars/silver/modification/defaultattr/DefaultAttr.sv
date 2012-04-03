@@ -34,8 +34,7 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 
   body.env = newScopeEnv(appendDefs(fakedDefs, sigDefs), top.env);
   body.signature = namedSig;
-  body.blockContext = defaultContext();
-  -- TODO: must also forbid local attributes.
+  body.blockContext = defaultAspectContext();
 
   body.downSubst = emptySubst();
   body.finalSubst = body.upSubst;
@@ -77,5 +76,13 @@ top::DefLHS ::= q::Decorated QName
   top.typerep = q.lookupValue.typerep;
 
   top.translation = makeNTClassName(top.signature.outputElement.typerep.typeName) ++ ".defaultSynthesizedAttributes";
+}
+
+abstract production defaultAspectContext
+top::BlockContext ::=
+{
+  top.permitLocalAttributes = false;
+  top.permitProductionAttributes = false;
+  forwards to defaultContext();
 }
 

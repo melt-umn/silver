@@ -209,6 +209,10 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
         if length(getValueDclAll(fName, top.env)) > 1 
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
+
+  top.errors <- if !top.blockContext.permitLocalAttributes
+                then [err(top.location, "Local attributes are not valid in this context.")]
+                else [];
 }
 
 concrete production productionAttributeDcl
