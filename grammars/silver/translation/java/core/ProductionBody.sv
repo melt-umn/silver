@@ -59,7 +59,7 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 
 --------------------------------------------------------------------------------
 
-aspect production defaultProductionStmt
+aspect default production
 top::ProductionStmt ::=
 {
   top.setupInh := "";

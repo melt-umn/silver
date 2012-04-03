@@ -48,81 +48,59 @@ TypeExp ::=
 }
 
 --------------------------------------------------------------------------------
-abstract production defaultTypeExp
-top::TypeExp ::=
-{
-}
 
 abstract production varTypeExp
 top::TypeExp ::= tv::TyVar
 {
   top.freeVariables = [tv];
-  
-  forwards to defaultTypeExp();
 }
 
 abstract production skolemTypeExp
 top::TypeExp ::= tv::TyVar
 {
   top.freeVariables = [tv];
-  
-  forwards to defaultTypeExp();
 }
 
 abstract production intTypeExp
 top::TypeExp ::=
 {
   top.freeVariables = [];
-  
-  forwards to defaultTypeExp();
 }
 
 abstract production boolTypeExp
 top::TypeExp ::=
 {
   top.freeVariables = [];
-  
-  forwards to defaultTypeExp();
 }
 
 abstract production floatTypeExp
 top::TypeExp ::=
 {
   top.freeVariables = [];
-  
-  forwards to defaultTypeExp();
 }
 
 abstract production stringTypeExp
 top::TypeExp ::=
 {
   top.freeVariables = [];
-  
-  forwards to defaultTypeExp();
 }
 
 abstract production nonterminalTypeExp
 top::TypeExp ::= fn::String params::[TypeExp]
 {
   top.freeVariables = setUnionTyVarsAll(mapFreeVariables(params));
-  
-  forwards to defaultTypeExp();
 }
 
 abstract production terminalTypeExp
 top::TypeExp ::= fn::String
 {
   top.freeVariables = [];
-  
-  forwards to defaultTypeExp();
 }
 
 abstract production decoratedTypeExp
 top::TypeExp ::= te::TypeExp
 {
   top.freeVariables = te.freeVariables;
-  
-  forwards to defaultTypeExp();
 }
 
 -- This will ONLY appear in the types of expressions, nowhere else!
@@ -142,8 +120,6 @@ abstract production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp]
 {
   top.freeVariables = setUnionTyVarsAll(mapFreeVariables(out :: params));
-  
-  forwards to defaultTypeExp();
 }
 
 --------------------------------------------------------------------------------

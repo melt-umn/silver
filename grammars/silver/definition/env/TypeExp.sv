@@ -11,7 +11,7 @@ attribute unparse, typeName occurs on TypeExp;
 
 synthesized attribute typeName :: String;
 
-aspect production defaultTypeExp
+aspect default production
 top::TypeExp ::=
 {
   top.typeName = ""; -- We actually put a value here, since it's possible for us to request typeName of nonsensical things.

@@ -43,8 +43,6 @@ top::AGDcl ::= 'type' id::Name botl::BracketedOptTypeList '=' te::Type ';'
        if isLower(substring(0,1,id.name))
        then [err(id.location, "Types must be capitalized. Invalid nonterminal name " ++ id.name)]
        else [];
-
-  forwards to defaultAGDcl();
 }
 
 
@@ -66,7 +64,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
   
   top.typerep = ty;
   top.dclBoundVars = bound;
-  forwards to defaultDcl();
 }
 
 

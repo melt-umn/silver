@@ -15,8 +15,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.refDispatcher = parserAttributeReference;
   top.defDispatcher = parserAttributeValueDef;
   top.defLHSDispatcher = parserAttributeDefLHS;
-
-  forwards to defaultDcl();
 }
 
 abstract production pluckTermDcl
@@ -34,8 +32,6 @@ top::DclInfo ::= sg::String sl::Location fn::String
   top.refDispatcher = pluckTerminalReference;
   top.defDispatcher = errorValueDef;
   top.defLHSDispatcher = errorDefLHS;
-
-  forwards to defaultDcl();
 }
 
 abstract production disambigLexemeDcl
@@ -52,8 +48,6 @@ top::DclInfo ::= sg::String sl::Location
   top.refDispatcher = disambigLexemeReference;
   top.defDispatcher = errorValueDef;
   top.defLHSDispatcher = errorDefLHS;
-
-  forwards to defaultDcl();
 }
 
 abstract production lexerClassDcl
@@ -64,8 +58,6 @@ top::DclInfo ::= sg::String sl::Location fn::String
   top.fullName = fn;
 
   top.unparse = "lexer_class(" ++ sl.unparse ++ ", '" ++ fn ++ "')";
-  
-  forwards to defaultDcl();
 }
 
 abstract production termAttrValueDcl
@@ -82,8 +74,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.refDispatcher = termAttrValueReference;
   top.defDispatcher = termAttrValueValueDef;
   top.defLHSDispatcher = errorDefLHS;
-
-  forwards to defaultDcl();
 }
 
 abstract production actionChildDcl
@@ -100,8 +90,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.refDispatcher = actionChildReference;
   top.defDispatcher = errorValueDef;
   top.defLHSDispatcher = parserAttributeDefLHS; -- TODO: specialize this
-
-  forwards to defaultDcl();
 }
 
 abstract production parserLocalDcl
@@ -119,7 +107,5 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.refDispatcher = parserAttributeReference;
   top.defDispatcher = parserAttributeValueDef;
   top.defLHSDispatcher = parserAttributeDefLHS;
-
-  forwards to defaultDcl();
 }
 

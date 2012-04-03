@@ -19,11 +19,6 @@ synthesized attribute lazyTranslation :: String;
 attribute lazyTranslation, translation occurs on Expr;
 attribute lazyTranslation occurs on Exprs;
 
-aspect production defaultExpr
-top::Expr ::=
-{
-}
-
 -- TODO: these go through the process of decorating them, just to undecorate.
 --       we should maybe pass information to the runtime here to make it more
 --       efficient.  We could even kill the runtime check to see if it's

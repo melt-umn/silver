@@ -13,8 +13,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.refDispatcher = lexicalLocalReference;
   top.defDispatcher = errorValueDef; -- TODO for better error messages, mention it's a lexical local
   top.defLHSDispatcher = errorDefLHS;
-
-  forwards to defaultDcl();
 }
 
 function addLexicalLocalDcl

@@ -43,8 +43,6 @@ top::AGDcl ::=
   top.location = loc(top.file, -1, -1);
 
   top.errors := [];
-
-  forwards to defaultAGDcl(); 
 }
 
 {--
@@ -61,10 +59,7 @@ top::AGDcl ::= h::AGDcl t::AGDcl
   top.moduleNames = h.moduleNames ++ t.moduleNames;
 }
 
-{--
- - TODO: remove and replace with default productions...
- -}
-abstract production defaultAGDcl
+aspect default production
 top::AGDcl ::=
 {
   -- can't provide pp or location!

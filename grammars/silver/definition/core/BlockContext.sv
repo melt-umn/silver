@@ -12,6 +12,12 @@ synthesized attribute permitForward :: Boolean;
 synthesized attribute permitProductionAttributes :: Boolean;
 synthesized attribute lazyApplication :: Boolean;
 
+{-
+ - We're deliberately continuing to have a "default production" here because
+ - default is a legit thing, rather than just an artifact of trying to avoid
+ - writing too many equations.
+ -}
+
 abstract production defaultContext
 top::BlockContext ::=
 {

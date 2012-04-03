@@ -166,7 +166,7 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 
 --------------------------------------------------------------------------------
 
-abstract production defaultProductionStmt
+aspect default production
 top::ProductionStmt ::=
 {
   -- as is usual for defaults ("base classes")
@@ -190,8 +190,6 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   top.errors <- if !top.blockContext.permitReturn
                 then [err(top.location, "Return is not valid in this context. (They are only permitted in function declarations.)")]
                 else [];
-
-  forwards to defaultProductionStmt();
 }
 
 concrete production localAttributeDcl
@@ -211,8 +209,6 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
         if length(getValueDclAll(fName, top.env)) > 1 
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
-
-  forwards to defaultProductionStmt();
 }
 
 concrete production productionAttributeDcl
@@ -245,8 +241,6 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   top.errors <- if !top.blockContext.permitForward
                 then [err(top.location, "Forwarding is not permitted in this context. (Only permitted in non-aspect productions.)")]
                 else [];
-
-  forwards to defaultProductionStmt();
 }
 
 concrete production forwardsToWith
@@ -263,8 +257,6 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
   top.errors <- if !top.blockContext.permitForward
                 then [err(top.location, "Forwarding is not permitted in this context.")]
                 else [];
-
-  forwards to defaultProductionStmt(); -- TODO forward to ordinary fwd + set of inh defs
 }
 
 concrete production forwardingWith
@@ -281,8 +273,6 @@ top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
   top.errors <- if null(fwdDcls)
                 then [err(top.location, "'forwarding with' clause for a production that does not forward!")]
                 else [];
-
-  forwards to defaultProductionStmt(); -- TODO forward to set of ordinary inh defs (see above)
 }
 
 -- TODO eliminate these (/ combine with the ones for decorate expression)
@@ -357,8 +347,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   top.errors := e.errors;
   
   -- ignore dl, we don't have the proper set of inh attrs to give it!
-  
-  forwards to defaultProductionStmt();
 }
 
 abstract production synthesizedAttributeDef
@@ -376,8 +364,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   -- TODO: missing redefinition check
 
   dl.isSynthesizedDefinition = true;
-  
-  forwards to defaultProductionStmt();
 }
 
 abstract production inheritedAttributeDef
@@ -395,8 +381,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   -- TODO: missing redefinition check
 
   dl.isSynthesizedDefinition = false;
-  
-  forwards to defaultProductionStmt();
 }
 
 concrete production concreteDefLHS
@@ -506,8 +490,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   -- We get here two ways: the defDispatcher is us, or the lookup failed.
   -- TODO: this leads to duplicate error messages, when (a) the lookup fails and (b) we error here too
   top.errors := [err(val.location, val.pp ++ " cannot be assigned to.")] ++ e.errors;
-
-  forwards to defaultProductionStmt();
 }
 
 abstract production localValueDef
@@ -520,7 +502,5 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.errors := e.errors;
 
   -- TODO: missing redefinition check
-
-  forwards to defaultProductionStmt();
 }
 

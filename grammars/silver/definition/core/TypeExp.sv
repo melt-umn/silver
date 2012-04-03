@@ -15,7 +15,7 @@ synthesized attribute instanceConvertible :: Boolean;
 attribute applicationDispatcher, accessDispatcher, lengthDispatcher, appendDispatcher,
           instanceEq, instanceOrd, instanceNum, instanceConvertible occurs on TypeExp;
 
-aspect production defaultTypeExp
+aspect default production
 top::TypeExp ::=
 {
   top.applicationDispatcher = errorApplication;

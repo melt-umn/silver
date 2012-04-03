@@ -65,7 +65,7 @@ nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
                          substitutedDclInfo, givenSubstitution -- type substitutions on dcls
                          ;
 
-abstract production defaultDcl
+aspect default production
 top::DclInfo ::=
 {
   -- This space intentionally left blank.
@@ -98,7 +98,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.unparse = error("child values should never appear in interace files.");
   
   top.typerep = ty;
-  forwards to defaultDcl();
 }
 abstract production lhsDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
@@ -109,7 +108,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.unparse = error("lhs values should never appear in interace files.");
   
   top.typerep = ty;
-  forwards to defaultDcl();
 }
 abstract production localDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
@@ -122,7 +120,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.unparse = "loc(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
   
   top.typerep = ty;
-  forwards to defaultDcl();
   
   top.substitutedDclInfo = localDcl(sg,sl, fn, performSubstitution(ty, top.givenSubstitution));
 }
@@ -147,7 +144,6 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature
 
   top.namedSignature = ns;  
   top.typerep = ns.typerep;
-  forwards to defaultDcl();
 }
 abstract production funDcl
 top::DclInfo ::= sg::String sl::Location ns::NamedSignature
@@ -165,7 +161,6 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature
 
   top.namedSignature = ns;  
   top.typerep = ns.typerep;
-  forwards to defaultDcl();
 }
 abstract production globalValueDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
@@ -178,7 +173,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.unparse = "glob(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
 
   top.typerep = ty;
-  forwards to defaultDcl();
 }
 
 -- -- interface types
@@ -194,7 +188,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
   
   top.typerep = ty;
   top.dclBoundVars = bound;
-  forwards to defaultDcl();
 }
 abstract production termDcl
 top::DclInfo ::= sg::String sl::Location fn::String regex::Regex_R
@@ -207,7 +200,6 @@ top::DclInfo ::= sg::String sl::Location fn::String regex::Regex_R
   
   top.typerep = terminalTypeExp(fn);
   top.dclBoundVars = [];
-  forwards to defaultDcl();
 }
 abstract production lexTyVarDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
@@ -220,7 +212,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   
   top.typerep = ty;
   top.dclBoundVars = [];
-  forwards to defaultDcl();
 }
 
 -- -- interface Attributes
@@ -236,7 +227,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
   
   top.typerep = ty;
   top.dclBoundVars = bound;
-  forwards to defaultDcl();
 }
 abstract production inhDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
@@ -250,7 +240,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
   
   top.typerep = ty;
   top.dclBoundVars = bound;
-  forwards to defaultDcl();
 }
 
 -- -- interface Production attr (values)
@@ -271,7 +260,6 @@ top::DclInfo ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeE
   
   top.prodDefs = dcls;
   top.typerep = functionTypeExp(outty, intys); -- Using 'production' here, despite also working on 'function's
-  forwards to defaultDcl();
 }
 abstract production forwardDcl
 top::DclInfo ::= sg::String sl::Location ty::TypeExp
@@ -284,7 +272,6 @@ top::DclInfo ::= sg::String sl::Location ty::TypeExp
   top.unparse = "fwd(" ++ sl.unparse ++ ", " ++ ty.unparse ++ ")";
   
   top.typerep = ty;
-  forwards to defaultDcl();
   
   top.substitutedDclInfo = forwardDcl(sg,sl, performSubstitution(ty, top.givenSubstitution));
 }
@@ -319,7 +306,6 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp
                 else performSubstitution(atty, subst);
   
   top.attrOccurring = fnat;
-  forwards to defaultDcl();
 }
 
 -- TODO: this should probably go elsewhere?

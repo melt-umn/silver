@@ -84,7 +84,5 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   top.errors <- if !nt.lookupType.typerep.isDecorable
                 then [err(nt.location, nt.name ++ " is not a nonterminal. Attributes can only occur on nonterminals.")]
                 else [];
-
-  forwards to defaultAGDcl();
 }
 

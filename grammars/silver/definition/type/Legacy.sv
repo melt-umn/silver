@@ -26,7 +26,7 @@ synthesized attribute decoratedType :: TypeExp;
 synthesized attribute unifyInstanceNonterminal :: Substitution;
 synthesized attribute unifyInstanceDecorated :: Substitution;
 
-aspect production defaultTypeExp
+aspect default production
 top::TypeExp ::=
 {
   top.inputTypes = [];

@@ -43,8 +43,6 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   top.setupInh := body.setupInh; -- Probably should be empty?
   top.initProd := "\t\t//ASPECT DEFAULT PRODUCTION for " ++ te.pp ++ "\n" ++ body.translation;
   top.valueWeaving := body.valueWeaving; -- Probably should be empty?
-
-  forwards to defaultAGDcl();
 }
 
 function addDefaultLhsDcl
@@ -66,8 +64,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.refDispatcher = errorReference; -- Technically, we can make this lhsReference, but the semantics of that are stupid... (it would refer to the last (non-forwarding) production)
   top.defDispatcher = errorValueDef; -- TODO: be smarter about the error message
   top.defLHSDispatcher = defaultLhsDefLHS;
-
-  forwards to defaultDcl();
 }
 abstract production defaultLhsDefLHS
 top::DefLHS ::= q::Decorated QName

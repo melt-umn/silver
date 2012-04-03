@@ -18,16 +18,12 @@ top::Expr ::= e::Decorated Expr
 {
   top.location = e.location;
   top.errors := [err(e.location, "Operand to length is not compatible. It is of type " ++ prettyType(performSubstitution(e.typerep, top.finalSubst)))] ++ e.errors;
-  
-  forwards to defaultExpr();
 }
 
 abstract production stringLength
 top::Expr ::= e::Decorated Expr
 {
   top.errors := e.errors;
-  
-  forwards to defaultExpr();
 }
 
 concrete production toIntFunction
@@ -38,8 +34,6 @@ top::Expr ::= 'toInt' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.typerep = intTypeExp();
-  
-  forwards to defaultExpr();
 }
 
 concrete production toFloatFunction
@@ -50,8 +44,6 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.typerep = floatTypeExp();
-  
-  forwards to defaultExpr();
 }
 
 concrete production toStringFunction
@@ -62,8 +54,6 @@ top::Expr ::= 'toString' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.typerep = stringTypeExp();
-  
-  forwards to defaultExpr();
 }
 
 concrete production newFunction
@@ -74,8 +64,6 @@ top::Expr ::= 'new' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.typerep = performSubstitution(e.typerep, top.upSubst).decoratedType;
-  
-  forwards to defaultExpr();
 }
 
 concrete production terminalFunction
@@ -86,8 +74,6 @@ top::Expr ::= 'terminal' '(' t::Type ',' e::Expr ')'
 
   top.errors := t.errors ++ e.errors;
   top.typerep = t.typerep;
-  
-  forwards to defaultExpr();
 }
 
 concrete production terminalFunctionLineCol
@@ -98,8 +84,6 @@ top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
 
   top.errors := t.errors ++ e1.errors ++ e2.errors ++ e3.errors;
   top.typerep = t.typerep;
-  
-  forwards to defaultExpr();
 }
 
 concrete production terminalFunctionInherited
@@ -110,6 +94,4 @@ top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ')'
 
   top.errors := t.errors ++ e1.errors ++ e2.errors;
   top.typerep = t.typerep;
-  
-  forwards to defaultExpr();
 }

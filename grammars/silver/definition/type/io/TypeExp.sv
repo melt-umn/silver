@@ -16,7 +16,5 @@ top::TypeExp ::=
               end;
   
   top.unparse = "io";
-  
-  forwards to defaultTypeExp();
 }
 

@@ -59,7 +59,7 @@ top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
 
 ----
 
-aspect production aRootSpecDefault
+aspect default production
 top::IRootSpecPart ::=
 {
   top.syntaxAst = [];
@@ -70,16 +70,12 @@ concrete production aRootSyntax
 top::IRootSpecPart ::= 'syntax' s::ISyntax
 {
   top.syntaxAst = s.syntaxAst;
-  
-  forwards to aRootSpecDefault();
 }
 
 concrete production aRootParsers
 top::IRootSpecPart ::= 'parsers' s::IParsers
 {
   top.parserSpecs = s.parserSpecs;
-  
-  forwards to aRootSpecDefault();
 }
 
 nonterminal IParsers with parserSpecs;

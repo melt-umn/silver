@@ -19,7 +19,5 @@ top::TypeExp ::= fn::String params::[TypeExp]
 
   -- env
   top.unparse = "foreigntype('" ++ fn ++ "', " ++ unparseTypes(params, top.boundVariables) ++ ")";
-  
-  forwards to defaultTypeExp();
 }
 

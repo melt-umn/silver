@@ -51,8 +51,6 @@ top::Expr ::= l::Location  la::AssignExpr  e::Expr
   -- Semantics for the moment is these are not mutually recursive,
   -- so la does NOT get new environment, only e. Thus, la.defs can depend on downSubst...
   e.env = newScopeEnv(la.defs, top.env);
-
-  forwards to defaultExpr();
 }
 
 nonterminal AssignExpr with config, file, grammarName, env, signature, 
@@ -125,7 +123,5 @@ top::Expr ::= q::Decorated QName
                 else q.lookupValue.typerep;
 
   top.upSubst = top.downSubst;
-  
-  forwards to defaultExpr();
 }
 
