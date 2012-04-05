@@ -60,6 +60,7 @@ terminal ModuleNamesTerm      'moduleNames'      lexer classes {C_1};
 terminal AllDepsTerm          'allDeps'          lexer classes {C_1};
 terminal DefsTerm             'defs'             lexer classes {C_1};
 terminal ExportedGrammarsTerm 'exportedGrammars' lexer classes {C_1};
+terminal OptionalGrammarsTerm 'optionalGrammars' lexer classes {C_1};
 terminal CondBuildTerm        'condBuild'        lexer classes {C_1};
 
 
@@ -75,7 +76,7 @@ synthesized attribute tyvars :: [TyVar];
 {- The "uninteresting" plumbing of interface files: -}
 
 nonterminal IRootSpec with spec;
-nonterminal IRootSpecParts with defs, exportedGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
+nonterminal IRootSpecParts with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
 nonterminal IDefs with defs, env, grammarName; -- including square brackets
 nonterminal IDefsInner with defs, env, grammarName; -- inside square brackets
 nonterminal ITypeReps with env, typereps, grammarName; -- including square brackets
@@ -84,7 +85,7 @@ nonterminal ITypeRepsInner with env, typereps, grammarName; -- inside square bra
 {- Extension points! -}
 
 {- Top-level elements of the interface file -}
-nonterminal IRootSpecPart with defs, exportedGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
+nonterminal IRootSpecPart with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
 {- A DclInfo record -}
 nonterminal IDclInfo with defs, env, grammarName;
 {- A TypeExp record -}
@@ -131,6 +132,7 @@ top::RootSpec ::= p::IRootSpecParts
   top.allGrammarDependencies = p.allGrammarDependencies;
   top.defs = p.defs;
   top.exportedGrammars = p.exportedGrammars;
+  top.optionalGrammars = p.optionalGrammars;
   top.condBuild = p.condBuild;
 
   forwards to i_emptyRootSpec();
@@ -153,6 +155,7 @@ top::IRootSpecParts ::= r::IRootSpecPart
   top.moduleNames = r.moduleNames;
   top.allGrammarDependencies = r.allGrammarDependencies;
   top.exportedGrammars = r.exportedGrammars;
+  top.optionalGrammars = r.optionalGrammars;
   top.condBuild = r.condBuild;  
 }
 
@@ -164,6 +167,7 @@ top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
   top.moduleNames = r1.moduleNames ++ r2.moduleNames;
   top.allGrammarDependencies = r1.allGrammarDependencies ++ r2.allGrammarDependencies;
   top.exportedGrammars = r1.exportedGrammars ++ r2.exportedGrammars;
+  top.optionalGrammars = r1.optionalGrammars ++ r2.optionalGrammars;
   top.condBuild = r1.condBuild ++ r2.condBuild;
 }
 
@@ -176,6 +180,7 @@ top::IRootSpecPart ::=
   top.allGrammarDependencies = [];
   top.defs = emptyDefs();
   top.exportedGrammars = [];
+  top.optionalGrammars = [];
   top.condBuild = [];
 }
 
@@ -208,6 +213,12 @@ concrete production aRootExportedGrammars
 top::IRootSpecPart ::= 'exportedGrammars' i::INames
 {
   top.exportedGrammars = i.names;
+}
+
+concrete production aRootOptionalGrammars
+top::IRootSpecPart ::= 'optionalGrammars' i::INames
+{
+  top.optionalGrammars = i.names;
 }
 
 concrete production aRootCondBuilds

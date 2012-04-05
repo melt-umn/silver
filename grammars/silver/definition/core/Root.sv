@@ -7,7 +7,7 @@ import silver:util:cmdargs only CmdArgs; -- TODO: maybe we need to structure som
  -}
 nonterminal Root with
   config, grammarName, file, env, location, pp, errors, defs, 
-  declaredName, moduleNames, importedDefs, exportedGrammars, condBuild, compiledGrammars, globalImports, grammarDependencies;
+  declaredName, moduleNames, importedDefs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, globalImports, grammarDependencies;
 nonterminal GrammarDcl with 
   config, grammarName, file, location, pp, errors, declaredName;
 
@@ -58,6 +58,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 
   top.importedDefs = ms.defs;
   top.exportedGrammars = ms.exportedGrammars;
+  top.optionalGrammars = ms.optionalGrammars;
   top.condBuild = ms.condBuild;
 
   top.errors := gdcl.errors ++ ms.errors ++ allImports.errors ++ ags.errors;

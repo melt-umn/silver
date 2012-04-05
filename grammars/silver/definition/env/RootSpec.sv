@@ -7,7 +7,7 @@ grammar silver:definition:env;
  - 2. Abstract away from the number of files that are in the grammar.
  -    (i.e. handle a list of Root nonterminals.)
  -}
-nonterminal RootSpec with defs, declaredName, exportedGrammars, condBuild, moduleNames, allGrammarDependencies;
+nonterminal RootSpec with defs, declaredName, exportedGrammars, optionalGrammars, condBuild, moduleNames, allGrammarDependencies;
 
 {--
  - The name of the grammar this RootSpec represents.
@@ -21,6 +21,11 @@ synthesized attribute defs :: Defs;
  - Grammars DIRECTLY exported by this grammar.
  -}
 synthesized attribute exportedGrammars :: [String];
+{--
+ - Grammars this grammar specifies as optional modifications.
+ - (i.e. grammars that introduce more productions that do no forward)
+ -}
+synthesized attribute optionalGrammars :: [String];
 {--
  - A list of triggered builds. Format is actually [ [build x, with gram], ... ]
  -}
@@ -51,6 +56,7 @@ top::RootSpec ::=
   top.allGrammarDependencies = [];
   top.defs = emptyDefs();
   top.exportedGrammars = [];
+  top.optionalGrammars = [];
   top.condBuild = [];
 }
 
@@ -70,6 +76,7 @@ String ::= r::Decorated RootSpec
 		"allDeps " ++ unparseStrings(r.allGrammarDependencies),
 	       	"defs [" ++ unparseDefs(r.defs, []) ++ "]",
 	       	"exportedGrammars " ++ unparseStrings(r.exportedGrammars),
+	       	"optionalGrammars " ++ unparseStrings(r.optionalGrammars),
 	       	"condBuild " ++ unparseStrings(foldr(append, [], r.condBuild)) ++ ""
 	      ];
 
