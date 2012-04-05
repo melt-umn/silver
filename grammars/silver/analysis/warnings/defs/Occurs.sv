@@ -1,7 +1,7 @@
 grammar silver:analysis:warnings:defs;
 
 imports silver:analysis:warnings;
-imports silver:driver only run, RunUnit, computeDependencies;
+imports silver:driver only run, RunUnit, computeDependencies, computeOptionalDeps;
 imports silver:util:cmdargs;
 imports silver:util;
 

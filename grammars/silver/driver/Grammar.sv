@@ -117,3 +117,33 @@ function expandCondBuilds
          -- And don't forget anything exported by those triggers.
          else expandCondBuilds(expandExports(triggered, newset, e), newset, newtriggers, e);
 }
+
+{--
+ - Does one iteration of expanding optionals.
+ - What does that mean? Well, it means there may be exports / cond builds that aren't yet included.
+ -}
+function expandOptionalsIter
+[String] ::= need::[String]  seen::[String]  e::EnvTree<Decorated RootSpec>
+{
+  local attribute g :: [Decorated RootSpec];
+  g = searchEnvTree(head(need), e);
+
+  return if null(need) then seen
+         -- If the grammar has already been taken care of, or doesn't exist, discard it.
+         else if contains(head(need), seen) || null(g) then expandOptionalsIter(tail(need), seen, e)
+         -- Otherwise, tack its exported list to the need list, and add this grammar to the taken care of list.
+         else expandOptionalsIter(tail(need) ++ head(g).optionalGrammars, head(need) :: seen, e);
+}
+
+{--
+ - Follow all optionals, exports, and condbuilds to a full set.
+ -}
+function computeOptionalDeps
+[String] ::= init::[String]  e::EnvTree<Decorated RootSpec>
+{
+  local eoi :: [String] = expandOptionalsIter(init, [], e);
+  
+  return if null(rem(eoi, init)) then init
+         else computeOptionalDeps(computeDependencies(eoi, e), e);
+}
+
