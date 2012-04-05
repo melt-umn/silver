@@ -1,7 +1,7 @@
 grammar silver:definition:core;
 
-nonterminal ModuleStmts with config, grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, condBuild, compiledGrammars, grammarDependencies;
-nonterminal ModuleStmt with config, grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, condBuild, compiledGrammars, grammarDependencies;
+nonterminal ModuleStmts with config, grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
+nonterminal ModuleStmt with config, grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
 
 nonterminal ImportStmt with config, grammarName, file, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
 nonterminal ImportStmts with config, grammarName, file, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
@@ -157,6 +157,7 @@ top::ModuleStmts ::=
   top.moduleNames = [];
   top.defs = emptyDefs();
   top.exportedGrammars = [];
+  top.optionalGrammars = [];
   top.condBuild = [];
 }
 
@@ -171,6 +172,7 @@ top::ModuleStmts ::= h::ModuleStmt t::ModuleStmts
   top.moduleNames = h.moduleNames ++ t.moduleNames;
   top.defs = appendDefs(h.defs, t.defs);
   top.exportedGrammars = h.exportedGrammars ++ t.exportedGrammars;
+  top.optionalGrammars = h.optionalGrammars ++ t.optionalGrammars;
   top.condBuild = h.condBuild ++ t.condBuild;
 }
 
@@ -185,6 +187,7 @@ top::ModuleStmt ::= 'imports' m::ModuleExpr ';'
   top.moduleNames = m.moduleNames;
   top.defs = m.defs;
   top.exportedGrammars = [];
+  top.optionalGrammars = [];
   top.condBuild = [];
 }
 
@@ -199,6 +202,7 @@ top::ModuleStmt ::= 'exports' m::ModuleName ';'
   top.moduleNames = m.moduleNames;
   top.defs = emptyDefs();
   top.exportedGrammars = m.moduleNames;
+  top.optionalGrammars = [];
   top.condBuild = [];
 }
 
@@ -213,6 +217,7 @@ top::ModuleStmt ::= 'exports' m::QName 'with' c::QName ';'
   top.moduleNames = [];
   top.defs = emptyDefs();
   top.exportedGrammars = [];
+  top.optionalGrammars = [];
   top.condBuild = [[m.name, c.name]];
 }
 concrete production buildsStmt
@@ -222,6 +227,20 @@ top::ModuleStmt ::= 'build' m::QName 'with' c::QName ';'
   top.errors <- [wrn(forward.location, "Conditional export using old-style 'build ... with' rather than 'exports ... with'")];
 
   forwards to exportsWithStmt(terminal(Exports_kwd, "exports", $1), m, $3, c, $5);
+}
+concrete production optionalStmt
+top::ModuleStmt ::= 'optional' m::QName ';'
+{
+  top.pp = "optional " ++ m.pp ++ ";";
+  top.location = loc(top.file, $1.line, $1.column);
+
+  top.errors := [];
+
+  top.moduleNames = [];
+  top.defs = emptyDefs();
+  top.exportedGrammars = [];
+  top.optionalGrammars = [m.name];
+  top.condBuild = [];
 }
   
 
