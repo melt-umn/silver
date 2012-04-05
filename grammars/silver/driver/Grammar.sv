@@ -114,5 +114,6 @@ function expandCondBuilds
 
   return if null(need) || null(triggered) then newset
          -- If new triggers fire, continue with the new triggers as need:
-         else expandCondBuilds(triggered, newset, newtriggers, e);
+         -- And don't forget anything exported by those triggers.
+         else expandCondBuilds(expandExports(triggered, newset, e), newset, newtriggers, e);
 }
