@@ -29,7 +29,8 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     if null(body.errors ++ ns.errors{-TODO-})
     && (top.config.warnAll || top.config.warnFwd)
     && null(body.uniqueSignificantExpression) -- no forward
-    && !contains(top.grammarName, computeDependencies([ntDefGram], top.compiledGrammars))
+    -- We use compute OPTIONAL deps here to allow for non-forwarding production in certain grammars
+    && !contains(top.grammarName, computeOptionalDeps([ntDefGram], top.compiledGrammars))
     then [wrn(top.location, "Orphaned production: " ++ id.pp ++ " on " ++ namedSig.outputElement.typerep.typeName)]
     else [];
 
