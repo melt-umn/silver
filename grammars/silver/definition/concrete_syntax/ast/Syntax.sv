@@ -222,7 +222,8 @@ top::SyntaxDcl ::= n::String domlist::[String] sublist::[String]
   srefs = lookupStrings(sublist, top.cstEnv);
   -- TODO: check terminal/lexer class
 
-  -- TODO: this is an ugly way to do this...
+  -- TODO: these attributes are on all SyntaxDcls, but only have meaning for this production
+  -- that's UUUUGLY.
   top.classDomContribs = implode("", map(xmlCopperRef, map(head, drefs)));
   top.classSubContribs = implode("", map(xmlCopperRef, map(head, srefs)));
 
@@ -306,33 +307,18 @@ Boolean ::= l::SyntaxDcl r::SyntaxDcl
 --}
 }
 
-function xmlCopperTermRef
-String ::= sym::String  gram::String
-{
-  return "<TerminalRef id=\"" ++ makeCopperName(sym) ++ "\" grammar=\"" ++ gram ++ "\" />";
-}
-function xmlCopperClassRef
-String ::= sym::String  gram::String
-{
-  return "<TerminalClassRef id=\"" ++ makeCopperName(sym) ++ "\" grammar=\"" ++ gram ++ "\" />";
-}
-function xmlCopperNontermRef
-String ::= sym::String  gram::String
-{
-  return "<NonterminalRef id=\"" ++ makeCopperName(sym) ++ "\" grammar=\"" ++ gram ++ "\" />";
-}
 function xmlCopperRef
 String ::= d::Decorated SyntaxDcl
 {
   return case d of
-         | syntaxLexerClass(n, _, _) -> xmlCopperClassRef(n, d.containingGrammar)
-         | syntaxTerminal(n, _, _)   -> xmlCopperTermRef(n, d.containingGrammar)
-         | syntaxNonterminal(n, _)   -> xmlCopperNontermRef(n.typeName, d.containingGrammar)
-         end;
+  | syntaxLexerClass(n, _, _) -> "<TerminalClassRef id=\"" ++ makeCopperName(n) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
+  | syntaxTerminal(n, _, _) -> "<TerminalRef id=\"" ++ makeCopperName(n) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
+  | syntaxNonterminal(n, _) -> "<NonterminalRef id=\"" ++ makeCopperName(n.typeName) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
+  end;
 }
 
 
--- TODO: fix
+-- TODO: fix. These should exist in some sort of library somewhere...
 function escapeString
 String ::= s::String
 {
