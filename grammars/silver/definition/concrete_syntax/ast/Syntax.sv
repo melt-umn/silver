@@ -14,6 +14,7 @@ synthesized attribute allIgnoreTerminals :: [Decorated SyntaxDcl];
 autocopy attribute univLayout :: String;
 synthesized attribute classDomContribs :: String;
 synthesized attribute classSubContribs :: String;
+autocopy attribute containingGrammar :: String;
 
 synthesized attribute unparses :: [String];
 
@@ -21,7 +22,7 @@ synthesized attribute unparses :: [String];
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, univLayout, xmlCopper, unparses;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, univLayout, xmlCopper, unparses, containingGrammar;
 
 abstract production nilSyntax
 top::Syntax ::=
@@ -49,7 +50,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, univLayout, xmlCopper, classDomContribs, classSubContribs, unparses;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, univLayout, xmlCopper, classDomContribs, classSubContribs, unparses, containingGrammar;
 
 synthesized attribute sortKey :: String;
 
@@ -169,13 +170,13 @@ top::SyntaxDcl ::= n::String lhs::TypeExp rhs::[TypeExp] modifiers::SyntaxProduc
     "RESULT = new " ++ makeClassName(n) ++ "(_children);\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++
-    "    <LHS>" ++ xmlCopperNontermRef(lhs.typeName) ++ "</LHS>\n" ++
+    "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++
     "    <RHS>" ++ implode("", map(xmlCopperRef, map(head, rhsRefs))) ++ "</RHS>\n" ++
     (if modifiers.customLayout.isJust then
     "    <Layout>" ++ modifiers.customLayout.fromJust ++ "</Layout>\n"
     else "") ++
     (if modifiers.productionOperator.isJust then
-    "    <Operator>" ++ xmlCopperTermRef(modifiers.productionOperator.fromJust) ++ "</Operator>\n"
+    "    <Operator>" ++ modifiers.productionOperator.fromJust ++ "</Operator>\n"
     else "") ++
     "  </Production>\n";
 
@@ -282,7 +283,7 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
 
   top.xmlCopper =
     "  <DisambiguationFunction id=\"" ++ makeCopperName(n) ++ "\">\n" ++
-    "    <Members>" ++ implode("", map(xmlCopperTermRef, terms)) ++ "</Members>\n" ++
+    "    <Members>" ++ implode("", map(xmlCopperRef, map(head, trefs))) ++ "</Members>\n" ++
     "    <Code><![CDATA[\n" ++
     acode ++  
     "]]></Code>\n" ++
@@ -306,27 +307,27 @@ Boolean ::= l::SyntaxDcl r::SyntaxDcl
 }
 
 function xmlCopperTermRef
-String ::= s::String
+String ::= sym::String  gram::String
 {
-  return "<TerminalRef id=\"" ++ makeCopperName(s) ++ "\" grammar=\"" ++ copperGrammarId ++ "\" />";
+  return "<TerminalRef id=\"" ++ makeCopperName(sym) ++ "\" grammar=\"" ++ gram ++ "\" />";
 }
 function xmlCopperClassRef
-String ::= s::String
+String ::= sym::String  gram::String
 {
-  return "<TerminalClassRef id=\"" ++ makeCopperName(s) ++ "\" grammar=\"" ++ copperGrammarId ++ "\" />";
+  return "<TerminalClassRef id=\"" ++ makeCopperName(sym) ++ "\" grammar=\"" ++ gram ++ "\" />";
 }
 function xmlCopperNontermRef
-String ::= s::String
+String ::= sym::String  gram::String
 {
-  return "<NonterminalRef id=\"" ++ makeCopperName(s) ++ "\" grammar=\"" ++ copperGrammarId ++ "\" />";
+  return "<NonterminalRef id=\"" ++ makeCopperName(sym) ++ "\" grammar=\"" ++ gram ++ "\" />";
 }
 function xmlCopperRef
 String ::= d::Decorated SyntaxDcl
 {
   return case d of
-         | syntaxLexerClass(n, _, _) -> xmlCopperClassRef(n)
-         | syntaxTerminal(n, _, _)   -> xmlCopperTermRef(n)
-         | syntaxNonterminal(n, _)   -> xmlCopperNontermRef(n.typeName)
+         | syntaxLexerClass(n, _, _) -> xmlCopperClassRef(n, d.containingGrammar)
+         | syntaxTerminal(n, _, _)   -> xmlCopperTermRef(n, d.containingGrammar)
+         | syntaxNonterminal(n, _)   -> xmlCopperNontermRef(n.typeName, d.containingGrammar)
          end;
 }
 

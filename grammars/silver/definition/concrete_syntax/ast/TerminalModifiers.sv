@@ -49,6 +49,21 @@ top::SyntaxTerminalModifiers ::=
  -}
 nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, dominatesXML, submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, unparses;
 
+{- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
+aspect default production
+top::SyntaxTerminalModifier ::=
+{
+  top.cstErrors := [];
+  top.dominatesXML = "";
+  top.submitsXML = "";
+  top.lexerclassesXML = "";
+  top.ignored = false;
+  top.acode = "";
+  top.opPrecedence = nothing();
+  top.opAssociation = nothing();
+  --top.unparses -- don't default unparses
+}
+
 {--
  - If present, it's an ignore terminal, otherwise ordinary terminal.
  - Copper has no notion of an ignore terminal, this is translated away.
@@ -56,14 +71,7 @@ nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, dominatesXML, submits
 abstract production termIgnore
 top::SyntaxTerminalModifier ::=
 {
-  top.cstErrors := [];
-  top.dominatesXML = "";
-  top.submitsXML = "";
-  top.lexerclassesXML = "";
-  top.ignored = true; -- the interesting one
-  top.acode = "";
-  top.opPrecedence = nothing();
-  top.opAssociation = nothing();
+  top.ignored = true;
   top.unparses = ["ignore()"];
 }
 {--
@@ -72,14 +80,7 @@ top::SyntaxTerminalModifier ::=
 abstract production termPrecedence
 top::SyntaxTerminalModifier ::= lvl::Integer
 {
-  top.cstErrors := [];
-  top.dominatesXML = "";
-  top.submitsXML = "";
-  top.lexerclassesXML = "";
-  top.ignored = false;
-  top.acode = "";
-  top.opPrecedence = just(lvl); -- the interesting one
-  top.opAssociation = nothing();
+  top.opPrecedence = just(lvl);
   top.unparses = ["prec(" ++ toString(lvl) ++ ")"];
 }
 {--
@@ -88,14 +89,7 @@ top::SyntaxTerminalModifier ::= lvl::Integer
 abstract production termAssociation
 top::SyntaxTerminalModifier ::= direction::String
 {
-  top.cstErrors := [];
-  top.dominatesXML = "";
-  top.submitsXML = "";
-  top.lexerclassesXML = "";
-  top.ignored = false;
-  top.acode = "";
-  top.opPrecedence = nothing();
-  top.opAssociation = just(direction); -- the interesting one
+  top.opAssociation = just(direction);
   top.unparses = ["assoc(" ++ quoteString(direction) ++ ")"];
 }
 {--
@@ -104,17 +98,14 @@ top::SyntaxTerminalModifier ::= direction::String
 abstract production termClasses
 top::SyntaxTerminalModifier ::= cls::[String]
 {
-  local attribute clsRefs :: [[Decorated SyntaxDcl]];
-  clsRefs = lookupStrings(cls, top.cstEnv);
+  local clsRefsL :: [[Decorated SyntaxDcl]] = lookupStrings(cls, top.cstEnv);
+  local clsRefs :: [Decorated SyntaxDcl] = map(head, clsRefsL);
 
   top.cstErrors := []; -- TODO error checking!
-  top.dominatesXML = implode("", map((.classDomContribs), map(head, clsRefs))); -- ALSO interesting
-  top.submitsXML = implode("", map((.classSubContribs), map(head, clsRefs))); -- ALSO interesting
-  top.lexerclassesXML = implode("", map(xmlCopperClassRef, cls)); -- the interesting one
-  top.ignored = false;
-  top.acode = "";
-  top.opPrecedence = nothing();
-  top.opAssociation = nothing();
+  -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
+  top.dominatesXML = implode("", map((.classDomContribs), clsRefs));
+  top.submitsXML = implode("", map((.classSubContribs), clsRefs));
+  top.lexerclassesXML = implode("", map(xmlCopperRef, clsRefs));
   top.unparses = ["classes(" ++ unparseStrings(cls) ++ ")"];
 }
 {--
@@ -123,17 +114,10 @@ top::SyntaxTerminalModifier ::= cls::[String]
 abstract production termSubmits
 top::SyntaxTerminalModifier ::= sub::[String]
 {
-  local attribute subRefs :: [[Decorated SyntaxDcl]];
-  subRefs = lookupStrings(sub, top.cstEnv);
+  local subRefs :: [[Decorated SyntaxDcl]] = lookupStrings(sub, top.cstEnv);
 
   top.cstErrors := []; -- TODO error checking!
-  top.dominatesXML = "";
-  top.submitsXML = implode("", map(xmlCopperRef, map(head, subRefs))); -- the interesting one
-  top.lexerclassesXML = "";
-  top.ignored = false;
-  top.acode = "";
-  top.opPrecedence = nothing();
-  top.opAssociation = nothing();
+  top.submitsXML = implode("", map(xmlCopperRef, map(head, subRefs)));
   top.unparses = ["sub(" ++ unparseStrings(sub) ++ ")"];
 }
 {--
@@ -142,17 +126,10 @@ top::SyntaxTerminalModifier ::= sub::[String]
 abstract production termDominates
 top::SyntaxTerminalModifier ::= dom::[String]
 {
-  local attribute domRefs :: [[Decorated SyntaxDcl]];
-  domRefs = lookupStrings(dom, top.cstEnv);
+  local domRefs :: [[Decorated SyntaxDcl]] = lookupStrings(dom, top.cstEnv);
 
   top.cstErrors := []; -- TODO error checking!
-  top.dominatesXML = implode("", map(xmlCopperRef, map(head, domRefs))); -- the interesting one
-  top.submitsXML = "";
-  top.lexerclassesXML = "";
-  top.ignored = false;
-  top.acode = "";
-  top.opPrecedence = nothing();
-  top.opAssociation = nothing();
+  top.dominatesXML = implode("", map(xmlCopperRef, map(head, domRefs)));
   top.unparses = ["dom(" ++ unparseStrings(dom) ++ ")"];
 }
 {--
@@ -161,14 +138,7 @@ top::SyntaxTerminalModifier ::= dom::[String]
 abstract production termAction
 top::SyntaxTerminalModifier ::= acode::String
 {
-  top.cstErrors := [];
-  top.dominatesXML = "";
-  top.submitsXML = "";
-  top.lexerclassesXML = "";
-  top.ignored = false;
-  top.acode = acode; -- the interesting one
-  top.opPrecedence = nothing();
-  top.opAssociation = nothing();
+  top.acode = acode;
   top.unparses = ["acode(\"" ++ escapeString(acode) ++ "\")"];
 }
 

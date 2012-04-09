@@ -38,17 +38,24 @@ top::SyntaxProductionModifiers ::=
  -}
 nonterminal SyntaxProductionModifier with cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, unparses;
 
+aspect default production
+top::SyntaxProductionModifier ::=
+{
+  top.cstErrors := [];
+  top.acode = "";
+  top.customLayout = nothing();
+  top.productionOperator = nothing();
+  top.productionPrecedence = nothing();
+  --top.unparses -- do not default this. always provide it.
+}
+
 {--
  - The precedence for the production. (Resolves reduce/reduce conflicts.)
  -}
 abstract production prodPrecedence
 top::SyntaxProductionModifier ::= lvl::Integer
 {
-  top.cstErrors := [];
-  top.acode = "";
-  top.customLayout = nothing();
-  top.productionOperator = nothing();
-  top.productionPrecedence = just(lvl); -- the interesting one
+  top.productionPrecedence = just(lvl);
   top.unparses = ["prec(" ++ toString(lvl) ++ ")"];
 }
 {--
@@ -58,12 +65,10 @@ top::SyntaxProductionModifier ::= lvl::Integer
 abstract production prodOperator
 top::SyntaxProductionModifier ::= term::String
 {
-  -- TODO look up that term and error
-  top.cstErrors := [];
-  top.acode = "";
-  top.customLayout = nothing();
-  top.productionOperator = just(term); -- the interesting one
-  top.productionPrecedence = nothing();
+  local termRef :: [Decorated SyntaxDcl] = searchEnvTree(term, top.cstEnv);
+  
+  top.cstErrors := []; -- TODO check for errors
+  top.productionOperator = just(xmlCopperRef(head(termRef)));
   top.unparses = ["oper(" ++ quoteString(term) ++ ")"];
 }
 {--
@@ -72,11 +77,7 @@ top::SyntaxProductionModifier ::= term::String
 abstract production prodAction
 top::SyntaxProductionModifier ::= acode::String
 {
-  top.cstErrors := [];
-  top.acode = acode; -- the interesting one
-  top.customLayout = nothing();
-  top.productionOperator = nothing();
-  top.productionPrecedence = nothing();
+  top.acode = acode;
   top.unparses = ["acode(\"" ++ escapeString(acode) ++ "\")"];
 }
 {--
@@ -85,12 +86,10 @@ top::SyntaxProductionModifier ::= acode::String
 abstract production prodLayout
 top::SyntaxProductionModifier ::= terms::[String]
 {
-  -- TODO: look up those terms and error
-  top.cstErrors := [];
-  top.acode = "";
-  top.customLayout = just(implode("", map(xmlCopperTermRef, terms))); -- the interesting one
-  top.productionOperator = nothing();
-  top.productionPrecedence = nothing();
+  local termRefs :: [[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
+
+  top.cstErrors := []; -- TODO: check for errors
+  top.customLayout = just(implode("", map(xmlCopperRef, map(head, termRefs))));
   top.unparses = ["layout(" ++ unparseStrings(terms) ++ ")"];
 }
 
