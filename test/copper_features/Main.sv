@@ -4,6 +4,7 @@ imports silver:testing ;
 imports lib:extcore ;
 
 import copper_features:test_layout;
+import copper_features:mdatests;
 
 mainTestSuite copper_tests ;
 
