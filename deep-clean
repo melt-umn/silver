@@ -32,5 +32,5 @@ find "build.xml" $1
 find "silver.testing.bin.jar" $1
 
 if [ "$2" == "all" ]; then
-  rm -rf generated/src/* generated/bin/*
+  rm -rf generated/src/* generated/bin/* runtime/java/bin/*
 fi
