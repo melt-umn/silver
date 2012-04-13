@@ -5,7 +5,6 @@ import silver:definition:env;
 import silver:definition:type;
 import silver:definition:type:gatherfreevars;
 import silver:definition:type:syntax;
-import silver:analysis:typechecking;
 import silver:analysis:typechecking:core;
 import silver:translation:java;
 

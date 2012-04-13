@@ -1,7 +1,6 @@
-grammar silver:analysis:typechecking;
+grammar silver:analysis:typechecking:core;
 
 import silver:definition:type;
-import silver:analysis:typechecking:core;
 
 synthesized attribute leftpp :: String;
 synthesized attribute rightpp :: String;

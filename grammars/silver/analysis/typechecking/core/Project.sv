@@ -1,7 +1,5 @@
 grammar silver:analysis:typechecking:core;
 
-imports silver:analysis:typechecking;
-
 imports silver:definition:core;
 imports silver:definition:type:syntax;
 
