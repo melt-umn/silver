@@ -8,7 +8,6 @@ imports silver:definition:type;
 imports silver:definition:type:syntax;
 
 imports silver:analysis:typechecking:core;
-imports silver:analysis:typechecking;
 
 imports silver:translation:java:core;
 imports silver:translation:java:type;
