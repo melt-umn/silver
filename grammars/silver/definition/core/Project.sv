@@ -14,4 +14,14 @@ imports silver:definition:env;
 -- Utilities
 imports silver:util;
 
+option silver:definition:concrete_syntax;
+option silver:modification:let_fix;
+option silver:modification:patternmatching;
+option silver:modification:ffi;
+option silver:modification:typedecl;
+option silver:modification:copper;
+option silver:modification:defaultattr;
+option silver:modification:copper_mda;
+
+option silver:extension:testing; -- TODO this is about that buggy experiment of Eric's...
 
