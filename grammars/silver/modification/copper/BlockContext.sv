@@ -8,7 +8,7 @@ attribute permitActions, permitPluck occurs on BlockContext;
 synthesized attribute permitActions :: Boolean;
 synthesized attribute permitPluck :: Boolean;
 
-aspect production defaultContext
+aspect default production
 top::BlockContext ::=
 {
   top.permitActions = false;
@@ -21,7 +21,8 @@ top::BlockContext ::=
   top.lazyApplication = false;
   top.permitActions = true;
   top.permitProductionAttributes = false;
-  forwards to defaultContext();
+  top.permitLocalAttributes = true;
+  -- TODO: signature??
 }
 
 abstract production disambiguationContext

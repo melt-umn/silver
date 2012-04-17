@@ -30,21 +30,14 @@ synthesized attribute hasPartialSignature :: Boolean;
 synthesized attribute lazyApplication :: Boolean;
 
 
-{-
- - We're deliberately continuing to have a "default production" here because
- - default is a legit thing, rather than just an artifact of trying to avoid
- - writing too many equations.
- - TODO: Changed my mind. Eliminate this, and actually give names to all 
- - contexts that use the default...
- -}
-
-abstract production defaultContext
+aspect default production
 top::BlockContext ::=
 {
+  -- most restrictive possible
   top.permitReturn = false;
   top.permitForward = false;
-  top.permitProductionAttributes = true;
-  top.permitLocalAttributes = true;
+  top.permitProductionAttributes = false;
+  top.permitLocalAttributes = false;
   top.lazyApplication = true;
   top.hasPartialSignature = false;
   top.hasFullSignature = false;
@@ -55,7 +48,8 @@ top::BlockContext ::=
 {
   top.permitReturn = true;
   top.hasPartialSignature = true;
-  forwards to defaultContext();
+  top.permitProductionAttributes = true;
+  top.permitLocalAttributes = true;
 }
 
 abstract production productionContext
@@ -64,6 +58,26 @@ top::BlockContext ::=
   top.permitForward = true;
   top.hasPartialSignature = true;
   top.hasFullSignature = true;
-  forwards to defaultContext();
+  top.permitProductionAttributes = true;
+  top.permitLocalAttributes = true;
+}
+
+abstract production aspectFunctionContext
+top::BlockContext ::=
+{
+  top.permitReturn = false;
+  forwards to functionContext();
+}
+
+abstract production aspectProductionContext
+top::BlockContext ::=
+{
+  top.permitForward = false;
+  forwards to productionContext();
+}
+
+abstract production globalExprContext
+top::BlockContext ::=
+{
 }
 
