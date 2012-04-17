@@ -46,7 +46,7 @@ top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] c
 
   -- Add this grammar's dependencies that we haven't already seen to the need list.
   local attribute new_need :: [String];
-  new_need = makeSet(rem(now.rSpec.moduleNames ++ foldr(append, [], now.rSpec.condBuild), new_seen) ++ tail(need));
+  new_need = makeSet(rem(now.rSpec.moduleNames ++ foldr(append, [], now.rSpec.condBuild) ++ now.rSpec.optionalGrammars, new_seen) ++ tail(need));
 
   -- Recurse for the rest of the grammars needed.
   production attribute recurse :: CompilationUnit;
