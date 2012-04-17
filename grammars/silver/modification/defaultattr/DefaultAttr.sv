@@ -80,8 +80,5 @@ top::DefLHS ::= q::Decorated QName
 abstract production defaultAspectContext
 top::BlockContext ::=
 {
-  top.permitLocalAttributes = false;
-  top.permitProductionAttributes = false;
-  forwards to defaultContext();
 }
 
