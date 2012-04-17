@@ -4,7 +4,6 @@ imports silver:definition:core;
 imports silver:definition:type;
 imports silver:definition:env;
 imports silver:util;
-imports silver:definition:type:gatherfreevars;
 
 nonterminal Type      with config, location, grammarName, file, errors, env, pp, typerep, lexicalTypeVariables;
 nonterminal Signature with config, location, grammarName, file, errors, env, pp, types,   lexicalTypeVariables;
