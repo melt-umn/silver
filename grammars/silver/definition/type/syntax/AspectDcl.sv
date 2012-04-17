@@ -1,10 +1,4 @@
-grammar silver:definition:type:gatherfreevars;
-
-import silver:definition:core;
-import silver:definition:env;
-import silver:definition:type;
-import silver:definition:type:syntax;
-import silver:util;
+grammar silver:definition:type:syntax;
 
 attribute lexicalTypeVariables occurs on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectRHSElem, AspectFunctionSignature, AspectFunctionLHS;
 
