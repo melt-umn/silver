@@ -8,3 +8,5 @@ imports silver:definition:type;
 
 imports silver:definition:concrete_syntax:ast;
 
+option silver:modification:copper;
+
