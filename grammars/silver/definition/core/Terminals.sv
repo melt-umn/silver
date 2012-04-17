@@ -30,7 +30,7 @@ terminal NonTerminal_kwd	'nonterminal'	lexer classes {KEYWORD};
 terminal Occurs_kwd		'occurs'	lexer classes {KEYWORD};
 terminal On_kwd			'on'		lexer classes {KEYWORD};
 terminal Only_kwd		'only'		lexer classes {KEYWORD};
-terminal Optional_kwd           'optional'      ;
+terminal Optional_kwd           'option'      ;
 terminal Production_kwd		'production'	lexer classes {KEYWORD};
 terminal Return_kwd		'return'	lexer classes {KEYWORD};
 terminal Synthesized_kwd	'synthesized'	lexer classes {KEYWORD};

@@ -229,9 +229,9 @@ top::ModuleStmt ::= 'build' m::QName 'with' c::QName ';'
   forwards to exportsWithStmt(terminal(Exports_kwd, "exports", $1), m, $3, c, $5);
 }
 concrete production optionalStmt
-top::ModuleStmt ::= 'optional' m::QName ';'
+top::ModuleStmt ::= 'option' m::QName ';'
 {
-  top.pp = "optional " ++ m.pp ++ ";";
+  top.pp = "option " ++ m.pp ++ ";";
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors := [];
