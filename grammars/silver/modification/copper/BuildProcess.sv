@@ -25,26 +25,21 @@ top::RunUnit ::= iIn::IO args::[String]
   flags <- [pair("--copperdump", flag(copperdumpFlag))];
   flagdescs <- ["\t--copperdump: force copper to dump parse table information\n"];
 
+  -- Only examine grammar depended upon to determine what parsers may be built
+  -- but do include both interface files and rootspecs.
+  depAnalysis.allParsers = foldr(append, [], map((.parserSpecs), grammarsToTranslate));
+
   postOps <- [generateCS(grammarEnv, depAnalysis.taintedParsers, silvergen)]; 
 }
 
 -- InterfaceUtil.sv
 synthesized attribute taintedParsers:: [ParserSpec] occurs on DependencyAnalysis;
-synthesized attribute allParsers :: [ParserSpec] occurs on DependencyAnalysis;
+inherited attribute allParsers :: [ParserSpec] occurs on DependencyAnalysis;
 
 aspect production dependencyAnalysis
 top::DependencyAnalysis ::= ifaces::[Decorated Interface]  compiledRootSpecs::[Decorated RootSpec]
 {
-  -- collect parsers from both interfaces and compiled grammars
-  top.allParsers = collectParserSpecs(ifspecs ++ compiledRootSpecs);
-  
   top.taintedParsers = findTaintedParsers(top.allParsers, taintedaltered, altered);
-}
-
-function collectParserSpecs
-[ParserSpec] ::= rs::[Decorated RootSpec]
-{
-  return if null(rs) then [] else head(rs).parserSpecs ++ collectParserSpecs(tail(rs));
 }
 
 function findTaintedParsers
