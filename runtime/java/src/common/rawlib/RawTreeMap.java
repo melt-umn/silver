@@ -12,6 +12,8 @@ public final class RawTreeMap {
 		return new TreeMap<Object,ConsCell>(new SilverComparator<Object>(cmp));
 	}
 	public static TreeMap<Object, ConsCell> addList(ConsCell l, TreeMap<Object, ConsCell> t) {
+		if(l.nil())
+			return t;
 		TreeMap<Object,ConsCell> ret = (TreeMap<Object,ConsCell>)t.clone();
 		for(core.NPair elem : new ConsCellCollection<core.NPair>(l)) {
 			assert(elem instanceof core.Ppair); // document as an assert why not
