@@ -364,6 +364,11 @@ public class DecoratedNode {
 		}
 	}
 
+	// The following are very common types of thunks.
+	// We put them here in the runtime to reduce generated jar sizes,
+	// as many class files can start eating space like crazy.
+	// Was something like 30% reduction, just from these...
+	
 	public final Object childDecoratedLazy(final int child) {
 		if(childrenValues[child] != null)
 			return childrenValues[child];
@@ -375,12 +380,8 @@ public class DecoratedNode {
 		};
 	}
 	public final Object childAsIsLazy(final int child) {
-		return new Thunk<Object>(this) {
-			@Override
-			public final Object doEval() {
-				return context.childAsIs(child);
-			}
-		};
+		// Straight up use whatever thunk (or not) is in the node...
+		return self.getChildLazy(child);
 	}
 	public final Object localDecoratedLazy(final int index) {
 		if(localValues[index] != null)
