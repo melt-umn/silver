@@ -26,3 +26,9 @@ equalityTest( -4 % 3, -1, Integer, silver_tests );
 equalityTest( 4 % -3, 1, Integer, silver_tests );
 equalityTest( -4 % -3, -1, Integer, silver_tests );
 
+-- String tests
+equalityTest( "abc" == "abc", true, Boolean, silver_tests );
+equalityTest( "abc" == "ABC", false, Boolean, silver_tests );
+equalityTest( "abc" != "ABC", true, Boolean, silver_tests );
+
+
