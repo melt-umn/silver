@@ -19,7 +19,7 @@ cp $JARS_STORE/silver.composed.Default.jar $JARS_BACKUP/silver.composed.Default.
 
 # Do the copy with rsync, so we only copy if the file changed...
 # -c  Use checksums and avoid copying if it's the same.
-rsync -c jars/*.jar $JARS_STORE
+rsync -ic jars/*.jar $JARS_STORE
 
 # fix permissions
 chgrp melt $JARS_STORE/*.jar
