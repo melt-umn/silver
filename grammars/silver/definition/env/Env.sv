@@ -13,7 +13,7 @@ grammar silver:definition:env;
 
 -- getProdAttrs [Decorated DclInfo] ::= prod::String e::Decorated Env
 
-nonterminal Env with typeTree, valueTree, attrTree, prodOccursTree, occursTree;
+nonterminal Env with typeTree, valueTree, attrTree, prodOccursTree, occursTree, constructorTree;
 
 inherited attribute typeTree      :: [Decorated EnvScope<Decorated DclInfo>]; -- Expr is type tau
 inherited attribute valueTree     :: [Decorated EnvScope<Decorated DclInfo>]; -- x has type tau
@@ -21,6 +21,8 @@ inherited attribute attrTree      :: [Decorated EnvScope<Decorated DclInfo>]; --
 
 inherited attribute prodOccursTree :: Decorated EnvScope<Decorated DclInfo>; -- value on prod
 inherited attribute occursTree     :: Decorated EnvScope<Decorated DclInfo>; -- attr on NT
+
+inherited attribute constructorTree :: Decorated EnvScope<Decorated DclInfo>; -- productions by nonterminal
 
 ----------------------------------------------------------------------------------------------------
 --Environment creation functions--------------------------------------------------------------------
@@ -39,8 +41,11 @@ Decorated Env ::=
   top.typeTree = [emptyEnvScope()];
   top.valueTree = [emptyEnvScope()];
   top.attrTree = [emptyEnvScope()];
+  
   top.prodOccursTree = emptyEnvScope();
   top.occursTree = emptyEnvScope();
+  
+  top.constructorTree = emptyEnvScope();
   
   return top;
 }
@@ -57,6 +62,8 @@ Decorated Env ::= d::Defs
   top.prodOccursTree = oneEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)));
   top.occursTree = oneEnvScope(buildTree(mapFullnameDcls(d.occursList)));
   
+  top.constructorTree = oneEnvScope(directBuildTree(d.constructorList));
+  
   return top;
 }
 function appendEnv
@@ -71,6 +78,8 @@ Decorated Env ::= e1::Decorated Env  e2::Decorated Env
   top.prodOccursTree = appendEnvScope(e1.prodOccursTree, e2.prodOccursTree);
   top.occursTree = appendEnvScope(e1.occursTree, e2.occursTree);
   
+  top.constructorTree = appendEnvScope(e1.constructorTree, e2.constructorTree);
+
   return top;
 }
 
@@ -87,6 +96,8 @@ Decorated Env ::= d::Defs  e::Decorated Env
   top.prodOccursTree = consEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)), e.prodOccursTree);
   top.occursTree = consEnvScope(buildTree(mapFullnameDcls(d.occursList)), e.occursTree);
   
+  top.constructorTree = consEnvScope(directBuildTree(d.constructorList), e.constructorTree);
+
   return top;
 }
 
@@ -182,3 +193,15 @@ function getProdAttrs
   return searchEnvScope(fnprod, e.prodOccursTree);
 }
 
+
+function getProdsOn
+[Decorated DclInfo] ::= fnnt::String e::Decorated Env
+{
+  return searchEnvScope(fnnt, e.constructorTree);
+}
+
+function getAttrsOn
+[Decorated DclInfo] ::= fnnt::String e::Decorated Env
+{
+  return searchEnvScope(fnnt, e.occursTree);
+}
