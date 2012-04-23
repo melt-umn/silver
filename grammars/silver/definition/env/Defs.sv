@@ -3,14 +3,19 @@ grammar silver:definition:env;
 import silver:definition:regex; -- soley for Terms. TODO : fix?
 import silver:definition:type;
 
---TODO: unparse
-nonterminal Defs with typeList, valueList, attrList, prodOccursList, occursList;
+nonterminal Defs with typeList, valueList, attrList, prodOccursList, occursList, constructorList;
 
+-- The standard namespaces
 synthesized attribute typeList :: [EnvItem];
 synthesized attribute valueList :: [EnvItem];
 synthesized attribute attrList :: [EnvItem];
+
+-- Attribute occurs and production attributes.
 synthesized attribute prodOccursList :: [Decorated DclInfo];
 synthesized attribute occursList :: [Decorated DclInfo];
+
+-- Special namespace for looking up productions by nonterminal they construct
+synthesized attribute constructorList :: [Pair<String Decorated DclInfo>];
 
 -- I'm leaving "Defsironment" here just for the lols
 ----------------------------------------------------------------------------------------------------
@@ -54,8 +59,11 @@ top::Defs ::=
   top.typeList = [];
   top.valueList = [];
   top.attrList = [];
+  
   top.prodOccursList = [];
   top.occursList = [];
+  
+  top.constructorList = [];
 }
 
 abstract production appendDefs 
@@ -64,8 +72,11 @@ top::Defs ::= e1::Defs e2::Defs
   top.typeList = e1.typeList ++ e2.typeList;
   top.valueList = e1.valueList ++ e2.valueList;
   top.attrList = e1.attrList ++ e2.attrList;
+  
   top.prodOccursList = e1.prodOccursList ++ e2.prodOccursList;
   top.occursList = e1.occursList ++ e2.occursList;
+  
+  top.constructorList = e1.constructorList ++ e2.constructorList;
 }
 
 abstract production substitutedDefs
@@ -97,6 +108,7 @@ top::Defs ::= d::EnvItem e2::Defs
   top.attrList = d :: forward.attrList;
   forwards to e2;
 }
+
 abstract production consProdOccursDef
 top::Defs ::= d::Decorated DclInfo e2::Defs
 {
@@ -107,6 +119,16 @@ abstract production consOccursDef
 top::Defs ::= d::Decorated DclInfo e2::Defs
 {
   top.occursList = d :: forward.occursList;
+  forwards to e2;
+}
+
+abstract production consConstructorDef
+top::Defs ::= d::EnvItem e2::Defs
+{
+  -- we're going to do BOTH value and constructor here
+  top.valueList = d :: forward.valueList;
+  top.constructorList = pair(d.dcl.typerep.outputType.typeName, d.dcl) :: forward.constructorList;
+  
   forwards to e2;
 }
 
@@ -170,7 +192,8 @@ Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 function addProdDcl
 Defs ::= sg::String sl::Location ns::NamedSignature defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate prodDcl(sg,sl,ns) with {}), defs);
+  -- special cons here that puts it in value and constructor namespaces
+  return consConstructorDef(defaultEnvItem(decorate prodDcl(sg,sl,ns) with {}), defs);
 }
 function addFunDcl
 Defs ::= sg::String sl::Location ns::NamedSignature defs::Defs
