@@ -3,12 +3,10 @@ grammar silver:definition:concrete_syntax:ast:env_parser;
 import silver:definition:env;
 import silver:definition:env:env_parser;
 
-import silver:definition:core only location;
+import silver:definition:core only location, env;
 import silver:definition:concrete_syntax only parserSpecs, parserSpec, syntaxAst;
 import silver:definition:concrete_syntax:ast;
 import silver:definition:regex hiding RegexRBrack_t, RegexLBrack_t, RegexLParen_t, RegexRParen_t; -- TODO: a bit of a hack?
-
-import silver:definition:core only env;
 
 terminal SyntaxTerm 'syntax' lexer classes {C_1};
 terminal ParsersTerm 'parsers' lexer classes {C_1};

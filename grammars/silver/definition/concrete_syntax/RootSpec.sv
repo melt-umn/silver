@@ -1,14 +1,11 @@
 grammar silver:definition:concrete_syntax;
 
-import silver:util;
-
 attribute syntaxAst, parserSpecs occurs on RootSpec, ModuleExportedDefs;
 
 aspect function unparseRootSpec
 String ::= r::Decorated RootSpec
 {
   unparses <- ["syntax [" ++ implode(",\n ", foldr(consSyntax, nilSyntax(), r.syntaxAst).unparses) ++ "]"];
-  unparses <- ["parsers [" ++ implode(",\n ", map(unparseParser, r.parserSpecs)) ++ "]"];
 }
 
 aspect production i_emptyRootSpec
