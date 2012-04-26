@@ -4,6 +4,7 @@ grammar silver:host:env;
 exports silver:definition:env:env_parser;
 exports silver:definition:concrete_syntax:ast:env_parser;
 exports silver:definition:regex;
+exports silver:definition:flow:env_parser;
 
 -- symbols
 exports silver:definition:env;
