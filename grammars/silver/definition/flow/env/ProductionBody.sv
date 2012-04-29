@@ -1,5 +1,7 @@
 grammar silver:definition:flow:env;
 
+import silver:modification:defaultattr;
+
 attribute flowDefs occurs on ProductionBody, ProductionStmts, ProductionStmt;
 
 
@@ -54,7 +56,10 @@ top::ProductionStmt ::=
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  top.flowDefs = [synEq(top.signature.fullName, attr.lookupAttribute.fullName)];
+  top.flowDefs = case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
+                 | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.lookupAttribute.fullName)]
+                 | _ -> [synEq(top.signature.fullName, attr.lookupAttribute.fullName)]
+                 end;
 }
 
 

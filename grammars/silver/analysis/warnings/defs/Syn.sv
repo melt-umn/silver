@@ -42,6 +42,7 @@ function raiseMissingAttrs
   return if null(attrs) then []
   else (
        if (case head(attrs) of synDcl(_,_,_,_,_) -> true | _ -> false end)
+       && null(lookupDef(head(attrs).fullName, head(attrs).attrOccurring, e)) -- no default eq!
        then
          case lookupSyn(fName, head(attrs).attrOccurring, e) of
          | eq :: _ -> []
@@ -63,6 +64,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
     if null(nt.lookupType.errors ++ at.lookupAttribute.errors)
     && (top.config.warnAll || top.config.warnMissingSyn)
     && (case at.lookupAttribute.dcl of synDcl(_,_,_,_,_) -> true | _ -> false end) -- TODO: we really need a better way to do this
+    && null(lookupDef(nt.lookupType.fullName, at.lookupAttribute.fullName, top.flowEnv)) -- no default eq!
     then raiseMissingProds(top.location, at.lookupAttribute.fullName, prods, top.flowEnv)
     else [];
 }
