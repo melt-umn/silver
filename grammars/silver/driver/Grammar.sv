@@ -1,5 +1,8 @@
 grammar silver:driver;
 
+imports silver:definition:flow:env;
+imports silver:definition:flow:ast;
+
 {--
  - Responsible for the control-flow that figures out how to obtain a grammar's symbols.
  -}
@@ -44,6 +47,7 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   cu.env = toEnv(cu.rSpec.defs);
   cu.globalImports = toEnv(cu.rSpec.importedDefs);
   cu.grammarDependencies = computeDependencies(cu.rSpec.moduleNames, top.compiledGrammars);
+  cu.flowEnv = fromFlowDefs(foldr(consFlow, nilFlow(), gatherFlowEnv(cu.grammarDependencies, top.compiledGrammars)));
   -- Echo the compilation-wide ones:
   cu.compiledGrammars = top.compiledGrammars;
   cu.config = top.config;
@@ -146,4 +150,15 @@ function computeOptionalDeps
   return if null(rem(eoi, init)) then init
          else computeOptionalDeps(computeDependencies(eoi, e), e);
 }
+
+function gatherFlowEnv
+[FlowDef] ::= deps::[String]  e::EnvTree<Decorated RootSpec>
+{
+  return if null(deps) then []
+         else case searchEnvTree(head(deps), e) of
+              | r :: _ -> r.flowDefs ++ gatherFlowEnv(tail(deps), e)
+              | [] -> gatherFlowEnv(tail(deps), e)
+              end;
+}
+
 
