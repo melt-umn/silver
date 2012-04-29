@@ -35,6 +35,7 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   recurse.env = top.env;
   recurse.globalImports = top.globalImports;
   recurse.grammarDependencies = top.grammarDependencies;
+  recurse.flowEnv = top.flowEnv;
   -- Echo compilation-wide stuffs:
   recurse.compiledGrammars = top.compiledGrammars;
   recurse.config = top.config;
