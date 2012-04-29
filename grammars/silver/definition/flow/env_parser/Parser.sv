@@ -8,6 +8,7 @@ import silver:definition:flow:env only flowDefs;
 import silver:definition:flow:ast;
 
 terminal FlowTerm 'flow' lexer classes {C_1};
+terminal DefTerm 'def' lexer classes {C_1};
 
 attribute flowDefs occurs on IRootSpecParts, IRootSpecPart;
 
@@ -76,6 +77,12 @@ concrete production aFlowSyn
 top::IFlow ::= 'syn' '(' prod::IName ',' attr::IName ')'
 {
   top.flowDefs = [synEq(prod.aname, attr.aname)];
+}
+
+concrete production aFlowDef
+top::IFlow ::= 'def' '(' nt::IName ',' attr::IName ')'
+{
+  top.flowDefs = [defEq(nt.aname, attr.aname)];
 }
 
 concrete production aFlowFwd
