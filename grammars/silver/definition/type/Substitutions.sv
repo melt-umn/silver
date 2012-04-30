@@ -1,8 +1,7 @@
 grammar silver:definition:type;
 
-nonterminal Substitution with debugOutput, substList, substErrors, failure;
+nonterminal Substitution with substList, substErrors, failure;
 
-synthesized attribute debugOutput :: String;
 synthesized attribute substList :: [Pair<TyVar TypeExp>];
 synthesized attribute substErrors :: [String];
 synthesized attribute failure :: Boolean; -- this is a bad hack to work around unify being unable to return a pair
