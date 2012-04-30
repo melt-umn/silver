@@ -20,9 +20,9 @@ nonterminal PrimPatterns with config, location, pp, file, grammarName, env, sign
 nonterminal PrimPattern  with config, location, pp, file, grammarName, env, signature, errors, downSubst, upSubst, finalSubst, blockContext
                             , scrutineeType, returnType, translation;
 
-nonterminal VarBinders with config, location, pp, file, grammarName, env, signature, errors, downSubst, upSubst, finalSubst, blockContext
+nonterminal VarBinders with config, location, pp, file, grammarName, env, signature, errors, blockContext
                           , bindingTypes, bindingIndex, defs, let_translation;
-nonterminal VarBinder  with config, location, pp, file, grammarName, env, signature, errors, downSubst, upSubst, finalSubst, blockContext
+nonterminal VarBinder  with config, location, pp, file, grammarName, env, signature, errors, blockContext
                           , bindingType, bindingIndex, defs, let_translation;
 
 autocopy attribute scrutineeType :: TypeExp;
