@@ -26,7 +26,9 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   -- Lookup all attribute that occurs on our LHS (filter to SYN!)
   -- Ensure there exists an equation for each on this production
   
-  local attrs :: [Decorated DclInfo] = getAttrsOn(namedSig.outputElement.typerep.typeName, top.env);
+  local attrs :: [Decorated DclInfo] = 
+    filter(isOccursSynthesized(_, top.env),
+      getAttrsOn(namedSig.outputElement.typerep.typeName, top.env));
 
   top.errors <-
     if null(body.errors ++ ns.errors{-TODO-})
@@ -36,13 +38,21 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     else [];
 }
 
+function isOccursSynthesized
+Boolean ::= occs::Decorated DclInfo  e::Decorated Env
+{
+  return case getAttrDcl(occs.attrOccurring, e) of
+  | synDcl(_,_,_,_,_) :: _ -> true
+  | _ -> false
+  end;
+}
+
 function raiseMissingAttrs
 [Message] ::= l::Location  fName::String  attrs::[Decorated DclInfo]  e::Decorated FlowEnv
 {
   return if null(attrs) then []
   else (
-       if (case head(attrs) of synDcl(_,_,_,_,_) -> true | _ -> false end)
-       && null(lookupDef(head(attrs).fullName, head(attrs).attrOccurring, e)) -- no default eq!
+       if null(lookupDef(head(attrs).fullName, head(attrs).attrOccurring, e)) -- no default eq!
        then
          case lookupSyn(fName, head(attrs).attrOccurring, e) of
          | eq :: _ -> []
