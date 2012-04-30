@@ -24,6 +24,8 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   production attribute fName :: String;
   fName = namedSig.fullName;
 
+  top.errors <- ffidefs.errors;
+
   forwards to functionDcl($1, id, ns, body);
 }
 
@@ -51,6 +53,7 @@ top::FFIDef ::= name::String_t ':' 'return' code::String_t ';'
   top.pp = name.lexeme ++ ": return " ++ code.lexeme ++ ";\n";
   top.location = loc(top.file, name.line, name.column);
   
+  top.errors := [];
   -- Up to each translation to do something with this.
 }
 
