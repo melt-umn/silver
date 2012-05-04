@@ -47,7 +47,10 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   cu.env = toEnv(cu.rSpec.defs);
   cu.globalImports = toEnv(cu.rSpec.importedDefs);
   cu.grammarDependencies = computeDependencies(cu.rSpec.moduleNames, top.compiledGrammars);
-  cu.flowEnv = fromFlowDefs(foldr(consFlow, nilFlow(), gatherFlowEnv(makeSet(grammarName::cu.grammarDependencies), top.compiledGrammars)));
+  cu.flowEnv = fromFlowDefs(foldr(consFlow, nilFlow(), 
+    gatherFlowEnv(
+      makeSet(computeOptionalDeps(grammarName::cu.grammarDependencies, top.compiledGrammars)),
+      top.compiledGrammars)));
   -- Echo the compilation-wide ones:
   cu.compiledGrammars = top.compiledGrammars;
   cu.config = top.config;
