@@ -1,8 +1,9 @@
 grammar silver:definition:flow:env;
 
 import silver:modification:defaultattr;
+import silver:modification:collection;
 
-attribute flowDefs occurs on ProductionBody, ProductionStmts, ProductionStmt;
+attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt;
 
 
 aspect production defaultProductionBody
@@ -60,6 +61,13 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
                  | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.lookupAttribute.fullName)]
                  | _ -> [synEq(top.signature.fullName, attr.lookupAttribute.fullName)]
                  end;
+}
+
+
+aspect production synAppendColAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {-That's really a <- -} e::Expr
+{
+  top.flowDefs = []; -- TODO: this should probably amount to a new type of contibution, eventually...
 }
 
 

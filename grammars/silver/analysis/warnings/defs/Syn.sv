@@ -91,3 +91,13 @@ function raiseMissingProds
 
 }
 
+aspect production synthesizedAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+{
+  -- This should be an error, because it's always definitely wrong! so it's a bit misplaced here, but whatever.
+  top.errors <-
+    if length(lookupSyn(top.signature.fullName, attr.lookupAttribute.fullName, top.flowEnv)) > 1
+    then [err(top.location, "duplicate equation for attribute " ++ attr.pp)]
+    else [];
+}
+
