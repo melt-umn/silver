@@ -8,10 +8,6 @@ import silver:definition:type:syntax;
 import silver:modification:collection ;
 import silver:extension:list ;
 
-function mkNameQName
-QName ::= name::String
-{ return qNameId( nameIdLower( terminal(IdLower_t, name))) ;  }
-
 function mkName
 Name ::= name::String
 { return nameIdLower( terminal(IdLower_t, name)) ;  }
@@ -58,7 +54,7 @@ Exprs ::= es::[Expr]
 function attrAcc
 Expr ::= n::String a::String
 { return  
-   attributeAccess ( mkNameExpr(n), '.', mkNameQName(a) ) ; 
+   attributeAccess ( mkNameExpr(n), '.', qName(loc("??",-1,-1), a) ) ; 
 }
 
 -- replace " characters with two: \ and "

@@ -5,94 +5,79 @@ import silver:definition:env;
 import silver:definition:concrete_syntax;
 import silver:definition:type;
 import silver:definition:type:syntax;
-import silver:modification:collection ;
-import silver:extension:list ;
+import silver:modification:collection;
+import silver:extension:list;
 
 import silver:analysis:typechecking:core;
 
-import lib:extcore ;
+import lib:extcore;
 
-terminal EqualityTest_t 'equalityTest' lexer classes {KEYWORD} ;
+terminal EqualityTest_t 'equalityTest' lexer classes {KEYWORD};
 concrete production equalityTest2_p
 ag::AGDcl ::= kwd::'equalityTest' 
               '(' value::Expr ',' expected::Expr ',' 
                   valueType::Type ',' testSuite::Name ')' ';'
 {
- ag.pp = "equalityTest (" ++ value.pp ++ "," ++ expected.pp ++ ",\n" ++ 
-         "              " ++ valueType.pp ++ ", " ++ testSuite.pp ++ ") ;\n" ;
- ag.location = loc(ag.file, kwd.line, kwd.column);
- ag.errors := case equalityTestExpr of
-                just(_) -> [ ]
-              | nothing() -> [err(ag.location, "Type \"" ++ valueType.pp ++ 
-                                             "\" not suported on equality tests.")]
-              end ;
- ag.errors <- [ ] ; -- check that value and expected are of the same type 
+  ag.pp = "equalityTest (" ++ value.pp ++ "," ++ expected.pp ++ ",\n" ++ 
+          "              " ++ valueType.pp ++ ", " ++ testSuite.pp ++ ");\n";
+  ag.location = loc(ag.file, kwd.line, kwd.column);
+  ag.errors := case equalityTestExpr of
+               | just(_) -> []
+               | nothing() -> 
+                   [err(ag.location, "Type \"" ++ valueType.pp ++ "\" not suported on equality tests.")]
+               end;
 
   local attribute errCheck1 :: TypeCheck; 
-  errCheck1.finalSubst = expected.finalSubst;
-  errCheck1.downSubst = emptySubst();
-
-  errCheck1 = check(value.typerep, expected.typerep);
-
-  ag.errors <-
-       if errCheck1.typeerror
-       then [err(value.location, "Type of first and second experssions in equalityTest do not match. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-
-  ag.errors <-
-       if errCheck2.typeerror
-       then [err(value.location, "Type of initial expression does not match specified type (3rd argument). Instead they are " ++
-                                  errCheck2.leftpp ++ " and " ++ errCheck2.rightpp)]
-       else [];
-
-  ag.errors <-
-       if errCheck3.typeerror
-       then [err(value.location, "Type of second expression does not match specified type (3rd argument). Instead they are " ++
-                                  errCheck3.leftpp ++ " and " ++ errCheck3.rightpp)]
-       else [];
-
-  value.env = ag.env ;
-  expected.env = ag.env ;
-  valueType.env = ag.env ;
-
-  value.downSubst = emptySubst();
-  expected.downSubst = value.upSubst ;
-
-  value.finalSubst = expected.upSubst;
-  expected.finalSubst = expected.upSubst;
-
-
   local attribute errCheck2 :: TypeCheck; 
-  errCheck2.finalSubst = value.finalSubst;
-  errCheck2.downSubst = emptySubst();
-  errCheck2 = check(value.typerep, valueType.typerep);
-
   local attribute errCheck3 :: TypeCheck; 
-  errCheck3.finalSubst = expected.finalSubst;
-  errCheck3.downSubst = emptySubst();
+  errCheck1 = check(value.typerep, expected.typerep);
+  errCheck2 = check(value.typerep, valueType.typerep);
   errCheck3 = check(expected.typerep, valueType.typerep);
 
+  ag.errors <-
+    if !errCheck1.typeerror then []
+    else [err(value.location, "Type of first and second experssions in equalityTest do not match. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
 
+  ag.errors <-
+    if !errCheck1.typeerror then []
+    else [err(value.location, "Type of initial expression does not match specified type (3rd argument). Instead they are " ++
+                               errCheck2.leftpp ++ " and " ++ errCheck2.rightpp)];
 
-  ag.errors <- forward.errors ;
+  ag.errors <-
+    if !errCheck1.typeerror then []
+    else [err(value.location, "Type of second expression does not match specified type (3rd argument). Instead they are " ++
+                               errCheck3.leftpp ++ " and " ++ errCheck3.rightpp)];
 
+  value.downSubst = emptySubst();
+  expected.downSubst = value.upSubst;
+  errCheck1.downSubst = expected.upSubst;
+  errCheck2.downSubst = errCheck1.upSubst;
+  errCheck3.downSubst = errCheck2.upSubst;
+  
+  value.finalSubst = errCheck3.upSubst;
+  expected.finalSubst = errCheck3.upSubst;
+  errCheck1.finalSubst = errCheck3.upSubst;
+  errCheck2.finalSubst = errCheck3.upSubst;
+  errCheck3.finalSubst = errCheck3.upSubst;
 
+  ag.errors <- if !errCheck1.typeerror && !errCheck2.typeerror && errCheck3.typeerror
+               then forward.errors else [];
 
- forwards to appendAGDcl(absProdCS, aspProdCS);
- local absProdCS :: AGDcl = asAGDcl (
+  forwards to appendAGDcl(absProdCS, aspProdCS);
+
+  local absProdCS :: AGDcl = asAGDcl (
    "abstract production " ++ testName ++ "\n" ++
    "t::Test ::= \n" ++
    "{ \n" ++
-   "  local attribute value :: %%%Type valueType ;  \n" ++
-   "  value =  %%%Expr value ; \n" ++
-   "  local attribute expected :: %%%Type valueType ;  \n" ++
-   "  expected = %%%Expr expected ; \n"  ++
+   "  local attribute value :: %%%Type valueType;  \n" ++
+   "  value =  %%%Expr value; \n" ++
+   "  local attribute expected :: %%%Type valueType;  \n" ++
+   "  expected = %%%Expr expected; \n"  ++
 
---   "  local attribute valueAsString :: String ;  \n" ++
---   "  valueAsString =  %%%Expr toStringValueExpr ; \n" ++
---   "  local attribute expectedAsString :: String ;  \n" ++
---   "  expectedAsString =  %%%Expr toStringExpectedExpr ; \n" ++
+--   "  local attribute valueAsString :: String;  \n" ++
+--   "  valueAsString =  %%%Expr toStringValueExpr; \n" ++
+--   "  local attribute expectedAsString :: String;  \n" ++
+--   "  expectedAsString =  %%%Expr toStringExpectedExpr; \n" ++
 
    "  t.msg = \"Test at " ++ ag.location.unparse ++ " failed. \\n\" ++ \n" ++ 
    "          \"Checking that expression \\n\" ++ \n" ++
@@ -109,9 +94,9 @@ ag::AGDcl ::= kwd::'equalityTest'
 --   "         valueAsString ++ \"\\n\" ++ \n" ++
 --   "         \"exptectedAsString: \\n\" ++ \n" ++
 --   "         expectedAsString ++ \n" ++
-   "         \"\" ;\n" ++
-   "  t.pass = %%%Expr equalityTestCode ; \n" ++ 
-   "  forwards to defTest() ; \n" ++
+   "         \"\";\n" ++
+   "  t.pass = %%%Expr equalityTestCode; \n" ++ 
+   "  forwards to defTest(); \n" ++
    "}" ,
    cons_CS_env("value", wrapExpr(value), 
    cons_CS_env("expected", wrapExpr(expected), 
@@ -123,33 +108,35 @@ ag::AGDcl ::= kwd::'equalityTest'
      wrapExpr( fromMaybe(error("TypeNotSupportedInternalError") ,toStringExpectedExpr)),
    cons_CS_env("equalityTestCode",
      wrapExpr( fromMaybe(error("TypeNotSupportedInternalError") ,equalityTestExpr)) ,
-   empty_CS_env()))))))) , 3 ) ;
+   empty_CS_env()))))))) , 3 );
 
- local attribute eqTestExpr :: Expr ;
- eqTestExpr =  fromMaybe(error("TypeNotSupportedInternalError") ,equalityTestExpr ) ;
+ local attribute eqTestExpr :: Expr;
+ eqTestExpr =  fromMaybe(error("TypeNotSupportedInternalError") ,equalityTestExpr );
 
  local aspProdCS :: AGDcl = asAGDcl (
    "aspect production %%%Name testSuite \n" ++
    "top ::=  \n" ++
-   "{ testsToPerform <- [ " ++ testName ++ "() ] ; } " ,
-   cons_CS_env("testSuite", wrapName(testSuite), empty_CS_env()) , 4 ) ;
+   "{ testsToPerform <- [ " ++ testName ++ "() ]; } " ,
+   cons_CS_env("testSuite", wrapName(testSuite), empty_CS_env()) , 4 );
 
  -- If valueType is a base type (Integer, Float, etc.) or a List whose
  -- element type is a base type, then we can check for equality.
  -- With curried functions we could handle nested lists, but not now.
  local equalityTestExpr :: Maybe<Expr> =
-   mkEqualityTestExprCS(valueType, value, expected) ;
+   mkEqualityTestExprCS(valueType, value, expected);
 
  local toStringValueExpr :: Maybe<Expr> =
-   mkToStringExprCS (valueType, value, "value") ;
+   mkToStringExprCS (valueType, value, "value");
  local toStringExpectedExpr :: Maybe<Expr> =
-   mkToStringExprCS (valueType, expected, "expected") ;
+   mkToStringExprCS (valueType, expected, "expected");
 
  local testName :: String = "generatedTest" ++ "_" ++ 
                             replaceChars(".","_",kwd.filename) ++ "_" ++ 
                             toString(kwd.line) ++ "_" ++ 
-                            toString(genInt()) ;
+                            toString(genInt());
 }
+
+-- Oh, boy... this whole pile of code is awful
 
 function functionNameForBaseTypesCS
 Maybe<String> ::= valueType::Type prefix::String
@@ -160,7 +147,7 @@ Maybe<String> ::= valueType::Type prefix::String
    | stringType(_)  -> just(prefix ++ "String")
    | booleanType(_) -> just(prefix ++ "Boolean")
    | _ -> nothing()
-   end ;
+   end;
 }
 
 function mkToStringExprCS
@@ -182,7 +169,7 @@ Maybe<Expr> ::= valueType::Type expr::Expr exprName::String
               end
        | _ -> nothing()
        end 
-   end ;
+   end;
 }
 
 function mkEqualityTestExprCS
@@ -202,29 +189,8 @@ Maybe<Expr> ::= valueType::Type value::Expr expected::Expr
               end
        | _ -> nothing()
        end 
-   end ;
+   end;
 }
-
--- create a production
-function mkProductionExpr
-Expr ::= prefix::String typeName::String
-{ return mkNameExpr(prefix ++ typeName) ;  }
-
--- Think about resurecting this when the concrete syntax stuff doesn't require passing in the explicit CS_env mess.
-function functionForBaseTypesCS
-Maybe<Expr> ::= valueType::Type prefix::String
-{
- return
-   case valueType of
---     integerType(_) -> just( mkProductionExpr(prefix, "Integer"))
-     integerType(_) -> just( asExpr("Integer", empty_CS_env(), 5) )
-   | floatType(_) -> just( mkProductionExpr(prefix, "Float"))
-   | stringType(_) -> just( mkProductionExpr(prefix, "String"))
-   | booleanType(_) -> just( mkProductionExpr(prefix, "Boolean"))
-   | _ -> nothing()
-   end ;
-}
-
 
 {-
 --  appendAGDcl
@@ -257,7 +223,7 @@ Maybe<Expr> ::= valueType::Type prefix::String
                        terminal(Equal_t, "=", expected.location.line, expected.location.column),
                        expected, ';' ) ,
 
-          -- t.msg = "FAIL" ;
+          -- t.msg = "FAIL";
           productionStmtsCons (
             attributeDef ( concreteDefLHS(qNameId(tName)), '.',
                            qNameId(msgName), '=',
@@ -281,7 +247,7 @@ Maybe<Expr> ::= valueType::Type prefix::String
                             ] ) ,
                            ';' ) ,
 
-          -- t.pass = equalsInteger (value, expected) ; 
+          -- t.pass = equalsInteger (value, expected); 
           productionStmtsCons (
             attributeDef ( concreteDefLHS(qNameId(tName)), '.',
                            qNameId(passName), '=',
@@ -295,20 +261,20 @@ Maybe<Expr> ::= valueType::Type prefix::String
           )))))) -- 1 close paren for each productionStmtCons
         )
      )
-  ;
+;
 
   local aspProd :: AGDcl =
    asAGDcl ( "aspect production %%%Name testSuite \n" ++
              "top ::=  \n" ++
-             "{ testsToPerform <- [ " ++ testName ++ "() ] ; }" ,
+             "{ testsToPerform <- [ " ++ testName ++ "() ]; }" ,
              cons_CS_env("testSuite", wrapName(testSuite), empty_CS_env()) , 3
-           ) ;
+           );
 
- local valueName :: Name = nameIdLower( terminal(IdLower_t, "value" )) ;
- local tName :: Name = nameIdLower( terminal(IdLower_t, "t" )) ;
- local msgName :: Name = nameIdLower( terminal(IdLower_t, "msg" )) ;
- local passName :: Name = nameIdLower( terminal(IdLower_t, "pass" )) ;
- local expectedName :: Name = nameIdLower( terminal(IdLower_t, "expected" )) ;
+ local valueName :: Name = nameIdLower( terminal(IdLower_t, "value" ));
+ local tName :: Name = nameIdLower( terminal(IdLower_t, "t" ));
+ local msgName :: Name = nameIdLower( terminal(IdLower_t, "msg" ));
+ local passName :: Name = nameIdLower( terminal(IdLower_t, "pass" ));
+ local expectedName :: Name = nameIdLower( terminal(IdLower_t, "expected" ));
 
 -}
 
@@ -339,7 +305,7 @@ Maybe<Expr> ::= valueType::Type prefix::String
      ) 
 -}
 
---  ) ;
+--  );
 
 
 
