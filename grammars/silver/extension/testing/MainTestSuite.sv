@@ -7,63 +7,55 @@ import silver:definition:type;
 import silver:definition:type:syntax;
 import silver:definition:type:io;
 
-import silver:modification:collection ;
-import silver:extension:list ;
+import silver:modification:collection;
+import silver:extension:list;
 
-terminal MainTestSuite_t 'mainTestSuite' lexer classes {KEYWORD} ;
-terminal MakeTestSuite_t 'makeTestSuite' lexer classes {KEYWORD} ;
+terminal MainTestSuite_t 'mainTestSuite' lexer classes {KEYWORD};
+terminal MakeTestSuite_t 'makeTestSuite' lexer classes {KEYWORD};
 
 concrete production makeTestSuite_p
-ag::AGDcl ::= kwd::'makeTestSuite'  name::IdLower_t ';'
+top::AGDcl ::= 'makeTestSuite' name::IdLower_t ';'
 {
- ag.pp = kwd.lexeme ++ " " ++ name.lexeme ++ " ; \n" ;
+  top.pp = "makeTestSuite " ++ name.lexeme ++ ";\n";
+  top.location = loc(top.file, $1.line, $1.column);
 
- forwards to
-  productionDcl ( 'abstract', 'production', nameIdLower(name), 
-    -- t::TestSuite ::=
-    productionSignature (
-     productionLHS ( mkName("t"), '::', 
-                     nominalType( qNameUpperId (terminal(IdUpper_t,"TestSuite")), botlNone()) ) ,
-     '::=', productionRHSNil() ) ,
-    -- { ... body
-    defaultProductionBody (
-     productionStmtsCons (
-      -- h::ProductionStmt -- forwards to ...
-      forwardsTo ('forwards', 'to', 
-                  prodFuncCall("testsAsNT", [ mkNameExpr("testsToPerform") ]), 
-                  ';' ) ,
-      productionStmtsCons (
-       -- h::ProductionStmt -- prod attr ...
-       collectionAttributeDclProd ('production', 'attribute',
-         mkName("testsToPerform"), '::',
-          listType ( '[', nominalType( qNameUpperId (terminal(IdUpper_t,"Test")), botlNone()), ']' ),
-          'with', plusplusOperator('++'), ';') ,
-       productionStmts (
-        --h::ProductionStmt -- testsToPerform = ...
-        valContainsBase ( mkNameQName("testsToPerform"), ':=',
-                          emptyList('[',']'), ';')
-       ) ) )
-    )
-   ) ;
+  local sig :: ProductionSignature =
+    productionSignature(
+      productionLHS(mkName("t"), '::',
+        nominalType(qNameUpperId(terminal(IdUpper_t, "TestSuite")), botlNone())),
+     '::=', productionRHSNil());
 
-       {-
-       abstract production core_tests
-       t::TestSuite ::= 
-       {
-	forwards to testsAsNT ( testsToPerform ) ;
-	production attribute testsToPerform :: [ Test ] with ++ ;
-	testsToPerform := [ ] ;
-       }
-       -}
+  local bod :: [ProductionStmt] =
+    [forwardsTo('forwards', 'to', prodFuncCall("testsAsNT", [mkNameExpr("testsToPerform")]), ';'),
+     collectionAttributeDclProd('production', 'attribute', mkName("testsToPerform"), '::',
+       listType('[', nominalType(qNameUpperId(terminal(IdUpper_t, "Test")), botlNone()), ']'),
+       'with', plusplusOperator('++'), ';'),
+     valContainsBase(qName(top.location, "testsToPerform"), ':=', emptyList('[',']'), ';')
+    ];
 
+  forwards to
+    productionDcl('abstract', 'production', nameIdLower(name), sig,
+      defaultProductionBody(
+        foldr(productionStmtsCons, productionStmtsNone(), bod)));
+
+  {-
+    abstract production core_tests
+    t::TestSuite ::= 
+    {
+      forwards to testsAsNT(testsToPerform);
+       production attribute testsToPerform :: [Test] with ++;
+       testsToPerform := [];
+    }
+  -}
 }
 
 concrete production mainTestSuite_p
-ag::AGDcl ::= kwd::'mainTestSuite'  name::IdLower_t ';'
+top::AGDcl ::= 'mainTestSuite' name::IdLower_t ';'
 {
- ag.pp = kwd.lexeme ++ " " ++ name.lexeme ++ " ; \n" ;
+  top.pp = "mainTestSuite " ++ name.lexeme ++ ";\n";
+  top.location = loc(top.file, $1.line, $1.column);
 
- forwards to 
+  forwards to 
   appendAGDcl ( 
    functionDcl (
     -- function main
@@ -89,20 +81,20 @@ ag::AGDcl ::= kwd::'mainTestSuite'  name::IdLower_t ';'
     -- body::ProductionBody 
    defaultProductionBody (
     productionStmtsCons (
-     --  local testResults :: TestSuite ;
+     --  local testResults :: TestSuite;
      localAttributeDcl (
       'local', 'attribute', nameIdLower(terminal(IdLower_t,"testResults")), '::',
       nominalType( qNameUpperId (terminal(IdUpper_t,"TestSuite")), botlNone()), ';'
      ),
      productionStmtsCons (
       -- testResults = name()
-      valueDef ( mkNameQName("testResults"), '=', 
+      valueDef ( qName(top.location, "testResults"), '=', 
                  emptyProductionApp ( baseExpr( qNameId(nameIdLower(name))) , 
                   '(', ')' ) ,
                  ';' ) ,
       productionStmtsCons (
        attributeDef ( 
-         concreteDefLHS( mkNameQName("testResults")), '.', mkNameQName("ioIn"),
+         concreteDefLHS( qName(top.location, "testResults")), '.', qName(top.location, "ioIn"),
          '=' , mkNameExpr("mainIO"), ';' ) ,
       productionStmts (
        returnDef ('return' ,
@@ -138,7 +130,7 @@ ag::AGDcl ::= kwd::'mainTestSuite'  name::IdLower_t ';'
 
   makeTestSuite_p ( 'makeTestSuite', name, ';' )
 
-  ) ;
+  );
 }
 
 
@@ -146,8 +138,8 @@ ag::AGDcl ::= kwd::'mainTestSuite'  name::IdLower_t ';'
 function main
 IO ::= args::String mainIO::IO
 {
- local testResults :: TestSuite = core_tests( ) ;
- testResults.ioIn = mainIO ;
+ local testResults :: TestSuite = core_tests( );
+ testResults.ioIn = mainIO;
 
  return
    exit ( testResults.numTests - testResults.numPassed,
@@ -160,17 +152,17 @@ IO ::= args::String mainIO::IO
             toString (testResults.numTests) ++ "\n" ++
             "============================================================\n",
             testResults.ioOut ) 
-   ) ;
+   );
 }
 
 abstract production core_tests
 t::TestSuite ::= 
 {
- forwards to tsAsNT ;
- local tsAsNT :: TestSuite = testsAsNT ( testsToPerform ) ;
- production attribute testsToPerform :: [ Test ] with ++ ;
- testsToPerform := [ ] ;
+ forwards to tsAsNT;
+ local tsAsNT :: TestSuite = testsAsNT ( testsToPerform );
+ production attribute testsToPerform :: [ Test ] with ++;
+ testsToPerform := [ ];
 }
 
-mainTestSuite core_tests ;
+mainTestSuite core_tests;
 -}
