@@ -24,7 +24,7 @@ top::DclInfo ::= sg::String sl::Location fn::String
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("Internal error: pluck-terms should never appear in interface files.");
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
   
   --top.typerep = errorType();
   top.typerep = freshType(); -- #HACK2012 Issue 4
@@ -41,7 +41,7 @@ top::DclInfo ::= sg::String sl::Location
   top.sourceLocation = sl;
   top.fullName = "lexeme";
 
-  top.unparse = error("Internal error: disambig-lexeme should never appear in interface files.");
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
   
   top.typerep = stringTypeExp();
   
@@ -67,7 +67,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("INTERNAL ERROR: terminal attribute values should never appear in interface files");
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
   
   top.typerep = ty;
   
@@ -83,7 +83,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("INTERNAL ERROR: action block child values should never appear in interface files");
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
   
   top.typerep = ty;
   
@@ -99,7 +99,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("INTERNAL ERROR: local parser attributes should never appear in interface files");
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
   
   top.typerep = ty;
   

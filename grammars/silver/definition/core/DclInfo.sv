@@ -2,35 +2,29 @@ grammar silver:definition:core;
 
 import silver:definition:regex;  -- soley for Terms. TODO : fix?
 
--- values
-
--- reference a value
+{--
+ - The production a variable reference should forward to for this type of value
+ -}
 synthesized attribute refDispatcher :: (Expr ::= Decorated QName) occurs on DclInfo;
--- define a value in a semantic block
+{--
+ - The production an "assignment" should forward to for this type of value
+ -}
 synthesized attribute defDispatcher :: (ProductionStmt ::= Decorated QName  Equal_t  Expr) occurs on DclInfo;
--- define attributes on a value in a semantic block
+{--
+ - The production an "equation" left hand side should forward to for this type of value (i.e. the 'x' in 'x.a = e')
+ -}
 synthesized attribute defLHSDispatcher :: (DefLHS ::= Decorated QName) occurs on DclInfo;
 
--- attributes
--- access attribute on a value
+{--
+ - The production an attribute access should forward to for this type of attribute (i.e. the a in 'x.a')
+ - WHEN the left hand side is a decorated nonterminal **only** (i.e. the 'x' is decorated)
+ - @see accessDispather in TypeExp.sv, for the first step in that process...
+ -}
 synthesized attribute attrAccessDispatcher :: (Expr ::= Decorated Expr Dot_t Decorated QName) occurs on DclInfo;
--- define an attribute on a value
+{--
+ - The production an "equation" shuld forward to for this type of attribute (i.e. the 'a' in 'x.a = e')
+ -}
 synthesized attribute attrDefDispatcher :: (ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr) occurs on DclInfo;
-
-
-{- Algorithms:
-
-  Expr.QName     accessDispatcher on Expr.typerep.  NT will dispatch on QName.attrAccessDispatcher.
-  
-  Expr(Exprs)    applicationDispatcher on Expr.typerep.
-  
-  QName          refDispatcher on QName
-  
-  QName = Expr   defDispatcher on QName
-  
-  DefLHS . QName = Expr   attrDefDispatcher. Give isInherited/isSynthesized to DefLHS (which is gotten via defLHSDispatcher)
-  
--}
 
 aspect default production
 top::DclInfo ::=
@@ -38,7 +32,12 @@ top::DclInfo ::=
   -- again, blank.
   
   -- all values must provide refDispatcher, defDispatcher, dehLHSDispatcher.
+  top.refDispatcher = error("Internal compiler error: must be defined for all value declarations");
+  top.defDispatcher = error("Internal compiler error: must be defined for all value declarations");
+  top.defLHSDispatcher = error("Internal compiler error: must be defined for all value declarations");
   -- all attributes must provide attrAccessDispatcher, attrDefDispatcher.
+  top.attrAccessDispatcher = error("Internal compiler error: must be defined for all attribute declarations");  
+  top.attrDefDispatcher = error("Internal compiler error: must be defined for all attribute declarations");  
 }
 
 -- -- non-interface values
