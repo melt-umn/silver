@@ -68,8 +68,8 @@ nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
 aspect default production
 top::DclInfo ::=
 {
-  -- This space intentionally left blank.
   -- All dcls must provide sourceGrammar, sourceLocation, fullName
+
   -- All dcls that appear in interface files must provide unparse
   
   -- All values must provide typerep.
@@ -82,9 +82,18 @@ top::DclInfo ::=
   
   -- See silver:definition:core for more "musts"
   
-  -- this exists because extensions/modifications MUST not add any more musts.
-  -- And then you need defaulting.  See collection attributes for an example.
+  -- TODO: DESIGN PROBLEM:
+  -- The following defaults are provided to account for this one type (dclinfo)
+  -- being used, when there really SHOULD be different types.
+  -- (The only reason we use one type right now is that we like to have
+  -- e.g. fullName on all declarations, and we currently can't write a type
+  -- like "anything with a fullName".)
+  top.attrOccurring = error("Internal compiler error: must be defined for all occurs declarations");
+  top.prodDefs = error("Internal compiler error: must be defined for all production attribute declarations");
+  top.dclBoundVars = error("Internal compiler error: must be defined for all value declarations");
+  top.substitutedDclInfo = error("Internal compiler error: must be defined for all value declarations that are production attributes");
   
+  -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
 }
 
@@ -95,7 +104,8 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = error("child values should never appear in interace files.");
+
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
   
   top.typerep = ty;
 }
@@ -105,7 +115,8 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = error("lhs values should never appear in interace files.");
+
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
   
   top.typerep = ty;
 }
@@ -208,7 +219,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("Lexical type variables dcls should never appear in interface files. (This is the DclInfo complaining here.)");
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
   
   top.typerep = ty;
   top.dclBoundVars = [];
@@ -339,3 +350,4 @@ Defs ::= d::[Decorated DclInfo] s::NamedSignature
               then defsFromPADcls(tail(d), s) -- this can happen if the aspect sig is wrong. Error already reported. error("INTERNAL ERROR: PA subst unify error")
               else appendDefs( substitutedDefs( head(d).prodDefs, subst ), defsFromPADcls(tail(d), s));
 }
+

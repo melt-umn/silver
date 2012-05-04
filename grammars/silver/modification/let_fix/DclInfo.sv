@@ -6,7 +6,8 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-  top.unparse = error("lexical values should never appear in interface files.");
+
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
   
   top.typerep = ty;
 

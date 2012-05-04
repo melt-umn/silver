@@ -17,6 +17,17 @@ synthesized attribute attrOccursIndex :: String;
  -}
 synthesized attribute attrOccursType :: String;
 
+aspect default production
+top::DclInfo ::=
+{
+  -- See TODO in the env DclInfo
+  top.attrOccursIndexName = error("Internal compiler error: must be defined for all occurs declarations");
+  top.attrOccursIndex = error("Internal compiler error: must be defined for all occurs declarations");
+  
+  top.attrOccursType = error("Internal compiler error: must be defined for all attribute declarations");  
+}
+
+
 aspect production occursDcl
 top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
 {

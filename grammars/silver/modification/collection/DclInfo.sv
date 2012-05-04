@@ -4,14 +4,13 @@ import silver:definition:env;
 import silver:definition:core;
 import silver:definition:type;
 
-attribute operation occurs on DclInfo;
+attribute operation, attrBaseDefDispatcher, attrAppendDefDispatcher, baseDefDispatcher, appendDefDispatcher occurs on DclInfo;
 
+synthesized attribute attrBaseDefDispatcher :: (ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr);
+synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr);
 
-synthesized attribute attrBaseDefDispatcher :: (ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr) occurs on DclInfo;
-synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr) occurs on DclInfo;
-
-synthesized attribute baseDefDispatcher :: (ProductionStmt ::= Decorated QName  Equal_t  Expr) occurs on DclInfo;
-synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated QName  Equal_t  Expr) occurs on DclInfo;
+synthesized attribute baseDefDispatcher :: (ProductionStmt ::= Decorated QName  Equal_t  Expr);
+synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated QName  Equal_t  Expr);
 
 
 aspect default production
