@@ -4,22 +4,15 @@ nonterminal FFIDefs with config, location, grammarName, file, errors, signature,
 nonterminal FFIDef with config, location, grammarName, file, errors, signature, env, pp;
 terminal FFI_kwd 'foreign' lexer classes {KEYWORD};
 
--- This is an ugly pile of crap.  There should be a better way! TODO
-synthesized attribute namedSigHack :: NamedSignature occurs on AGDcl;
-aspect production functionDcl
-top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
-{
-  top.namedSigHack = namedSig;
-}
-
 concrete production functionDclFFI
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'foreign' '{' ffidefs::FFIDefs '}'
 {
   top.pp = "function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp ++ " foreign {\n" ++ ffidefs.pp ++ "}"; 
   top.location = loc(top.file, $1.line, $1.column);
 
-  production attribute namedSig :: NamedSignature;
-  namedSig = forward.namedSigHack;
+  -- TODO: okay, so this isn't pleasant, but it's better than the dumb attribute...
+  production attribute namedSig :: Decorated NamedSignature;
+  namedSig = case forward of functionDcl(_, _, _, decBody) -> decBody.signature end;
 
   production attribute fName :: String;
   fName = namedSig.fullName;
