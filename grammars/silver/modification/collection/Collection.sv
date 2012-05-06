@@ -21,28 +21,30 @@ top::NameOrBOperator ::= q::QName
   top.location = q.location;
 
   top.operation = case q.lookupValue.dcl of
-                    funDcl(_,_,_) -> functionOperation(q.lookupValue.fullName)
+                  | funDcl(_,_,_) -> functionOperation(q.lookupValue.fullName)
                   | prodDcl(_,_,_) -> productionOperation(q.lookupValue.fullName)
                   | _ -> error("INTERNAL ERROR: operation attribute demanded for non-function or production.")
                   end;
 
   top.errors := q.lookupValue.errors;
   
-  -- TODO: this is a complete mess.  refactor it someday, please!
+  local checkOperationType :: TypeCheck =
+    check(freshenCompletely(q.lookupValue.typerep),
+      functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType]));
+  checkOperationType.downSubst = emptySubst();
+  checkOperationType.finalSubst = checkOperationType.upSubst;
+  
+  local operationErrors :: [Message] =
+    if !checkOperationType.typeerror then []
+    else [err(top.location, q.pp ++ " must be of type " ++ checkOperationType.rightpp ++
+            " instead it is of type " ++ checkOperationType.leftpp)];
+  
   top.errors <- 
-     case q.lookupValue.dcl of
-       funDcl(_,_,_) -> 
-          if unify(freshenCompletely(q.lookupValue.typerep), functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])).failure
-          then [err(top.location, q.pp ++ " must be of type " ++ prettyType(functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])) ++ " instead it is of type " ++ prettyType(q.lookupValue.typerep))]
-          else []
-                               
-     | prodDcl(_,_,_) ->
-          if unify(freshenCompletely(q.lookupValue.typerep), functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])).failure
-          then [err(top.location, q.pp ++ " must be of type " ++ prettyType(functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType])) ++ " instead it is of type " ++ prettyType(q.lookupValue.typerep))]
-          else []
-                               
-     | _ -> [err(top.location, q.pp ++ " is of type " ++ prettyType(q.lookupValue.typerep) ++ " and is not a valid operator for collections.")]
-     end;
+    case q.lookupValue.dcl of
+    | funDcl(_,_,_) -> operationErrors
+    | prodDcl(_,_,_) -> operationErrors
+    | _ -> [err(top.location, q.pp ++ " is not a valid operator for collections.")]
+    end;
 }
 
 concrete production plusplusOperator
@@ -51,12 +53,12 @@ top::NameOrBOperator ::= '++'
   top.pp = "++";
   top.location = loc(top.file, $1.line, $1.column);
   top.operation = case top.operatorForType of
-                    stringTypeExp() -> plusPlusOperationString()
+                  | stringTypeExp() -> plusPlusOperationString()
                   | listTypeExp(_) -> plusPlusOperationList()
                   | _ -> error("INTERNAL ERROR: operation attribute demanded for ++ that isn't string or list.")
                   end;
   top.errors := case top.operatorForType of
-                  stringTypeExp() -> []
+                | stringTypeExp() -> []
                 | listTypeExp(_) -> []
                 | _ -> [err(top.location, "++ operator will only work for collections of type list or String")]
                 end;
@@ -69,7 +71,7 @@ top::NameOrBOperator ::= '||'
   top.location = loc(top.file, $1.line, $1.column);
   top.operation = borOperation();
   top.errors := case top.operatorForType of
-                  boolTypeExp() -> []
+                | boolTypeExp() -> []
                 | _ -> [err(top.location, "|| operator will only work for collections of type Boolean")]
                 end;
 }
@@ -80,7 +82,7 @@ top::NameOrBOperator ::= '&&'
   top.location = loc(top.file, $1.line, $1.column);
   top.operation = bandOperation();
   top.errors := case top.operatorForType of
-                  boolTypeExp() -> []
+                | boolTypeExp() -> []
                 | _ -> [err(top.location, "&& operator will only work for collections of type Boolean")]
                 end;
 }
