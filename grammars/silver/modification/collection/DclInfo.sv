@@ -4,7 +4,7 @@ import silver:definition:env;
 import silver:definition:core;
 import silver:definition:type;
 
-attribute operation, attrBaseDefDispatcher, attrAppendDefDispatcher, baseDefDispatcher, appendDefDispatcher occurs on DclInfo;
+attribute attrBaseDefDispatcher, attrAppendDefDispatcher, baseDefDispatcher, appendDefDispatcher occurs on DclInfo;
 
 synthesized attribute attrBaseDefDispatcher :: (ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr);
 synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr);
@@ -12,6 +12,8 @@ synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= DefLHS Dot_
 synthesized attribute baseDefDispatcher :: (ProductionStmt ::= Decorated QName  Equal_t  Expr);
 synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated QName  Equal_t  Expr);
 
+-- TODO: the 'operation' value on these declarations is never used.
+-- Please take a moment to think about whether it should even exist or not.
 
 aspect default production
 top::DclInfo ::=
@@ -36,8 +38,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o
   top.typerep = ty;
   top.dclBoundVars = bound;
 
-  top.operation = o;
-  
   top.attrAccessDispatcher = synDNTAccessDispatcher;
   top.attrDefDispatcher = errorColNormalAttributeDef;
 
@@ -59,8 +59,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o
   top.typerep = ty;
   top.dclBoundVars = bound;
 
-  top.operation = o;
-  
   top.attrAccessDispatcher = inhDNTAccessDispatcher;
   top.attrDefDispatcher = errorColNormalAttributeDef;
 
@@ -81,8 +79,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp o::Operation
   top.unparse = "loccol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ", " ++ o.unparse ++ ")";
   
   top.typerep = ty;
-  
-  top.operation = o;
   
   top.refDispatcher = localReference;
   top.defDispatcher = errorColNormalValueDef;
