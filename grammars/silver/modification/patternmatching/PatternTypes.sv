@@ -47,6 +47,7 @@ p::Pattern ::= '_'
 
   p.patternIsVariable = true;
   p.patternVariableName = nothing();
+  p.patternSubPatternList = [];
   p.patternSortKey = "~var";
 }
 
@@ -68,6 +69,7 @@ p::Pattern ::= v::Name
 
   p.patternIsVariable = true;
   p.patternVariableName = just(v.name);
+  p.patternSubPatternList = [];
   p.patternSortKey = "~var";
 }
 
