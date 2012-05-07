@@ -56,6 +56,8 @@ top::DclInfo ::= sg::String sl::Location fn::String
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
+  
+  top.typerep = error("Internal compiler error: lexer classes do not have types");
 
   top.unparse = "lexer_class(" ++ sl.unparse ++ ", '" ++ fn ++ "')";
 }
