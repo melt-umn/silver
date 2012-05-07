@@ -96,9 +96,12 @@ top::DefLHS ::= q::Decorated QName
   top.pp = q.pp;
   top.location = q.location;
   
+  -- Note this is always erroring!
   top.errors := if !top.blockContext.permitActions
                 then [err(q.location, "Parser attributes can only be used in action blocks")]
                 else [err(q.location, "Parser action blocks are imperative, not declarative. You cannot modify the attributes of " ++ q.name ++ ". If you are trying to set inherited attributes, you should use 'decorate ... with { ... }' when you create it.")];
+
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 
   top.typerep = q.lookupValue.typerep;
 }
