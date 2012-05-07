@@ -16,13 +16,22 @@ top::Expr ::= 'length' '(' e::Expr ')'
 abstract production errorLength
 top::Expr ::= e::Decorated Expr
 {
+  top.pp = "length(" ++ e.pp ++ ")";
   top.location = e.location;
+
+  top.typerep = intTypeExp();
+
   top.errors := [err(e.location, "Operand to length is not compatible. It is of type " ++ prettyType(performSubstitution(e.typerep, top.finalSubst)))] ++ e.errors;
 }
 
 abstract production stringLength
 top::Expr ::= e::Decorated Expr
 {
+  top.pp = "length(" ++ e.pp ++ ")";
+  top.location = e.location;
+
+  top.typerep = intTypeExp();
+
   top.errors := e.errors;
 }
 
