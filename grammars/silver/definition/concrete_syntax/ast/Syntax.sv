@@ -54,6 +54,16 @@ nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cst
 
 synthesized attribute sortKey :: String;
 
+aspect default production
+top::SyntaxDcl ::=
+{
+  top.cstProds = [];
+  top.allIgnoreTerminals = [];
+  top.classDomContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
+  top.classSubContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
+}
+
+
 {--
  - A nonterminal. Using TypeExp instead of String, because we'll be doing parameterization later.
  - subdcls is empty to start. A transformed version of the tree will move all 
@@ -69,7 +79,6 @@ top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModi
   top.cstErrors <- subdcls.cstErrors;
   top.cstProds = subdcls.cstProds;
   top.cstNormalize = [syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), searchEnvTree(t.typeName, top.cstNTProds)))];
-  top.allIgnoreTerminals = [];
   
   top.xmlCopper = 
     "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
@@ -94,7 +103,6 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
   top.cstErrors := if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with terminal " ++ n];
 
-  top.cstProds = [];
   top.cstNormalize = [top];
   top.allIgnoreTerminals = if modifiers.ignored then [top] else [];
 
@@ -158,7 +166,6 @@ top::SyntaxDcl ::= n::String lhs::TypeExp rhs::[TypeExp] modifiers::SyntaxProduc
 
   top.cstProds = [pair(lhs.typeName,top)];
   top.cstNormalize = [];
-  top.allIgnoreTerminals = [];
   
   top.xmlCopper =
     "  <Production id=\"" ++ makeCopperName(n) ++ "\">\n" ++
@@ -227,9 +234,7 @@ top::SyntaxDcl ::= n::String domlist::[String] sublist::[String]
   top.classDomContribs = implode("", map(xmlCopperRef, map(head, drefs)));
   top.classSubContribs = implode("", map(xmlCopperRef, map(head, srefs)));
 
-  top.cstProds = [];
   top.cstNormalize = [top];
-  top.allIgnoreTerminals = [];
   
   top.xmlCopper = 
     "  <TerminalClass id=\"" ++ makeCopperName(n) ++ "\" />\n";
@@ -248,9 +253,7 @@ top::SyntaxDcl ::= n::String ty::TypeExp acode::String
   top.cstErrors := if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with parser attribute " ++ n];
 
-  top.cstProds = [];
   top.cstNormalize = [top];
-  top.allIgnoreTerminals = [];
 
   top.xmlCopper =
     "  <ParserAttribute id=\"" ++ makeCopperName(n) ++ "\">\n" ++
@@ -278,9 +281,7 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
   trefs = lookupStrings(terms, top.cstEnv);
   -- TODO: check terminal
 
-  top.cstProds = [];
   top.cstNormalize = [top];
-  top.allIgnoreTerminals = [];
 
   top.xmlCopper =
     "  <DisambiguationFunction id=\"" ++ makeCopperName(n) ++ "\">\n" ++
