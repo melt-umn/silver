@@ -43,6 +43,7 @@ top::CmdArgs ::= errmsg::String
 {
   top.cmdRemaining = [];
   top.cmdError = just(errmsg);
+  forwards to endCmdArgs([]); -- Well, this is an abuse, but this whole thing is an abuse, really.
 }
 
 {--
