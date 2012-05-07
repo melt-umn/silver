@@ -11,7 +11,8 @@ terminal Precedence_kwd  'precedence'  lexer classes {KEYWORD};
 abstract production terminalDclDefault
 top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifiers
 {
-  top.location = t.location;
+  top.pp = t.pp ++ "terminal " ++ id.pp ++ " " ++ r.pp ++ " " ++ tm.pp ++ ";";
+  top.location = id.location;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
@@ -19,55 +20,31 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
   top.defs = addTermDcl(top.grammarName, id.location, fName, r.terminalRegExprSpec, emptyDefs());
   
   top.errors <-
-        if length(getTypeDclAll(fName, top.env)) > 1
-        then [err(id.location, "Type '" ++ fName ++ "' is already bound.")]
-        else [];
+    if length(getTypeDclAll(fName, top.env)) > 1
+    then [err(id.location, "Type '" ++ fName ++ "' is already bound.")]
+    else [];
   
   top.errors <-
-        if isLower(substring(0,1,id.name))
-        then [err(id.location, "Types must be capitalized. Invalid terminal name " ++ id.name)]
-        else [];
+    if isLower(substring(0,1,id.name))
+    then [err(id.location, "Types must be capitalized. Invalid terminal name " ++ id.name)]
+    else [];
 
-  top.errors := t.errors ++ tm.errors;
+  top.errors := tm.errors;
 
   top.syntaxAst = [
     syntaxTerminal(fName, r.terminalRegExprSpec, 
       foldr(consTerminalMod, nilTerminalMod(), t.terminalModifiers ++ tm.terminalModifiers))];
 }
 
-concrete production terminalDcl
-top::AGDcl ::= 'terminal' id::Name r::RegExpr ';'
-{
-  top.pp = "terminal " ++ id.pp ++ r.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
-
-  forwards to terminalDclDefault(terminalKeywordModifierDefault(), id, r, terminalModifiersNone());
-}
-
-concrete production terminalDclModifiers
-top::AGDcl ::= 'terminal' id::Name r::RegExpr tm::TerminalModifiers ';'
-{
-  top.pp = "terminal " ++ id.pp ++ " " ++ r.pp ++ " " ++ tm.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
-
-  forwards to terminalDclDefault(terminalKeywordModifierDefault(), id, r, tm);
-}
-
 concrete production terminalDclKwdModifiers
 top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr ';'
 {
-  top.pp = t.pp ++ " terminal " ++ id.pp ++ " " ++ r.pp ++ ";";
-  top.location = t.location;
-
   forwards to terminalDclDefault(t, id, r, terminalModifiersNone());
 }
 
 concrete production terminalDclAllModifiers
 top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr tm::TerminalModifiers ';'
 {
-  top.pp = t.pp ++ " terminal " ++ id.pp ++ " " ++ r.pp ++ " " ++ tm.pp ++ ";";
-  top.location = t.location;
-
   forwards to terminalDclDefault(t, id, r, tm);
 }
 
@@ -88,26 +65,20 @@ top::RegExpr ::= '/' r::Regex_R '/'
 }
 
 
-nonterminal TerminalKeywordModifier with config, location, file, pp, terminalModifiers, errors, env, grammarName;
+nonterminal TerminalKeywordModifier with pp, terminalModifiers;
 
 concrete production terminalKeywordModifierIgnore
 top::TerminalKeywordModifier ::= 'ignore'
 {
-  top.pp = "ignore";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.pp = "ignore ";
 
   top.terminalModifiers = [termIgnore()];
-
-  forwards to terminalKeywordModifierDefault();
 }
 
-abstract production terminalKeywordModifierDefault
+concrete production terminalKeywordModifierNone
 top::TerminalKeywordModifier ::= 
 {
   top.pp = "";
-  top.location = loc(top.file, -1, -1);
-
-  top.errors := [];
 
   top.terminalModifiers = [];
 }
