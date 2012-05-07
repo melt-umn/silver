@@ -10,7 +10,7 @@ aspect production stringLength
 top::Expr ::= e::Decorated Expr
 {
 }
-aspect production unknownLength
+aspect production errorLength
 top::Expr ::= e::Decorated Expr
 {
 }

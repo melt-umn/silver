@@ -1,5 +1,12 @@
 grammar silver:translation:java:core;
 
+aspect production errorLength
+top::Expr ::= e::Decorated Expr
+{
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  top.lazyTranslation = top.translation;
+}
+
 aspect production stringLength
 top::Expr ::= e::Decorated Expr
 {

@@ -24,6 +24,13 @@ attribute lazyTranslation occurs on Exprs;
 --       efficient.  We could even kill the runtime check to see if it's
 --       a node, since we know.
 
+aspect production errorReference
+top::Expr ::= q::Decorated QName
+{
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  top.lazyTranslation = top.translation;
+}
+
 aspect production childReference
 top::Expr ::= q::Decorated QName
 {
@@ -119,6 +126,13 @@ top::Expr ::= q::Decorated QName
        else top.translation;
 }
 
+aspect production errorApplication
+top::Expr ::= e::Decorated Expr es::AppExprs
+{
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  top.lazyTranslation = top.translation;
+}
+
 aspect production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 {
@@ -164,6 +178,20 @@ top::Expr ::= '(' '.' q::QName ')'
                     then "new common.AttributeSection(" ++ occursCheck.dcl.attrOccursIndex ++ ")"
                     else "new common.AttributeSection.Undecorated(" ++ occursCheck.dcl.attrOccursIndex ++ ")";
 
+  top.lazyTranslation = top.translation;
+}
+
+aspect production errorAccessDispatcher
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  top.lazyTranslation = top.translation;
+}
+
+aspect production errorDNTAccessDispatcher
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
@@ -463,6 +491,13 @@ aspect production stringConst
 top::Expr ::= s::String_t
 {
   top.translation = "(new common.StringCatter(" ++ s.lexeme ++ "))";
+  top.lazyTranslation = top.translation;
+}
+
+aspect production errorPlusPlus
+top::Expr ::= e1::Decorated Expr e2::Decorated Expr
+{
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
