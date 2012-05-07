@@ -91,8 +91,8 @@ IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[Parser
          else writeCSSpec(writeio, grams, silvergen, tail(specs));
 }
 
-aspect production writeBuildFile
-top::IOVal<String> ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+aspect function writeBuildFile
+IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
   extraTaskdefs <- ["  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='lib.classpath'/>\n" ];
   extraTargets <- ["  <target name='copper'>\n" ++ buildAntParserPart(

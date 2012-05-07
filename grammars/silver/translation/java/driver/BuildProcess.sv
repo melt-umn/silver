@@ -63,7 +63,7 @@ abstract production genBuild
 top::Unit ::= a::Decorated CmdArgs allspecs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
   local attribute buildFile :: IO;
-  buildFile = writeBuildFile(top.ioIn, a, allspecs, silverhome, silvergen, da).io;
+  buildFile = writeBuildFile(top.ioIn, a, allspecs, silverhome, silvergen, da);
 
   top.io = buildFile;
   top.code = 0;
@@ -139,9 +139,8 @@ String ::= r::Decorated RootSpec
 "}\n";
 }
 
--- WTF why is this an IOVal, it doesn't return anything?  TODO
-abstract production writeBuildFile
-top::IOVal<String> ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+function writeBuildFile
+IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
   production attribute extraTargets :: [String] with ++;
   extraTargets := [];
@@ -156,7 +155,7 @@ top::IOVal<String> ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::St
   outputFile = if length(a.outName) > 0 then a.outName else (makeName(a.buildGrammar) ++ ".jar");
 
   -- TODO: this is local directory! move build.xml to generated space
-  top.io = writeFile("build.xml", buildXml, i);
+  return writeFile("build.xml", buildXml, i);
 
   local attribute buildXml :: String;
   buildXml =    
