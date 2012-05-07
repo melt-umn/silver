@@ -104,17 +104,17 @@ top::AGDcl ::= 'mainTestSuite' name::IdLower_t ';'
            [ attrAcc("testResults","numFailed") ,
              prodFuncCall ("print", 
               [ foldStringExprs (
-                 [ strCnst ("\\n\\n"),
-                   strCnst ("============================================================\\n") ,
-                   strCnst ("Test Results:\\n"), 
+                 [ strCnst ("\n\n"),
+                   strCnst ("============================================================\n") ,
+                   strCnst ("Test Results:\n"), 
                    attrAcc("testResults","msg"),
-                   strCnst ("\\n\\n"), 
+                   strCnst ("\n\n"), 
                    strCnst ("Passed "), 
                    prodFuncCall("toStringFromInteger", [ attrAcc("testResults","numPassed") ]),
                    strCnst (" tests out of "), 
                    prodFuncCall("toStringFromInteger", [ attrAcc("testResults","numTests") ]),
-                   strCnst ("\\n"), 
-                   strCnst ("============================================================\\n") 
+                   strCnst ("\n"), 
+                   strCnst ("============================================================\n") 
                  ] ) ,
                 attrAcc("testResults", "ioOut" )     
               ] )
