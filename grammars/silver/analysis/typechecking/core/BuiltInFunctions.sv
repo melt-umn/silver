@@ -9,10 +9,12 @@ top::Expr ::= 'length' '(' e::Expr ')'
 aspect production stringLength
 top::Expr ::= e::Decorated Expr
 {
+  top.upSubst = error("Internal compiler error: should be hidden by the dispatcher that forwards here.");
 }
 aspect production errorLength
 top::Expr ::= e::Decorated Expr
 {
+  top.upSubst = error("Internal compiler error: should be hidden by the dispatcher that forwards here.");
 }
 
 aspect production toIntFunction
