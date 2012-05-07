@@ -1,6 +1,6 @@
 grammar silver:analysis:typechecking:core;
 
-attribute upSubst, downSubst, finalSubst occurs on Expr, ForwardInhs, ForwardInh, ForwardLHSExpr, ExprInhs, ExprInh, ExprLHSExpr, Exprs, AppExprs, AppExpr;
+attribute upSubst, downSubst, finalSubst occurs on Expr, ForwardInhs, ForwardInh, ForwardLHSExpr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
 
 aspect production errorReference
 top::Expr ::= q::Decorated QName
@@ -139,14 +139,17 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 aspect production synDNTAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
+  top.upSubst = error("Internal compiler error: should be hidden by the dispatcher that forwards here.");
 }
 aspect production inhDNTAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
+  top.upSubst = error("Internal compiler error: should be hidden by the dispatcher that forwards here.");
 }
 aspect production errorDNTAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
+  top.upSubst = error("Internal compiler error: should be hidden by the dispatcher that forwards here.");
 }
 
 
