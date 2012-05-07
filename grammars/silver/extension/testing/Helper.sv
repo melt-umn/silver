@@ -31,7 +31,7 @@ Expr ::= es::[Expr]
 -- Create an Expr that is a string constant from a string.
 function strCnst
 Expr ::= s::String
-{ return stringConst (terminal(String_t, "\"" ++ s ++ "\"")) ; }
+{ return stringConst (terminal(String_t, "\"" ++ stringifyString(s) ++ "\"")) ; }
 
 -- Create a production or function call from a String (the name) and list
 -- of Expr arguments.
@@ -61,27 +61,10 @@ Expr ::= n::String a::String
 function stringifyString
 String ::= s::String
 {
- return implode("", stringifyString_Helper ( explode("",s) ) ) ;
+  -- be sure to escape backslashes first!
+  return substitute("\n", "\\n",
+          substitute("\t", "\\t",
+           substitute("\"", "\\\"",
+            substitute("\\",  "\\\\", s))));
 }
 
-function stringifyString_Helper
-[String] ::= ss::[String]
-{
- return if   null(ss) 
-        then [ ]
-        else stringifyHead ++ stringifyString_Helper(tail(ss)) ;
-
- local attribute stringifyHead :: [String] ;
- stringifyHead = if head(ss) =="\""
-                 then [ "\\", "\"" ]
-                 else
-                 if head(ss) =="\\"
-                 then [ "\\", "\\" ]
-                 else
-                 if head(ss) =="\n"
-                 then [ "\\", "n" ]
-                 else
-                 if head(ss) =="\t"
-                 then [ "\\", "t" ]
-                 else [ head(ss) ] ;
-}
