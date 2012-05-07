@@ -8,8 +8,8 @@ import silver:util:cmdargs;
 
 -- TODO CRIPES this is all bad, bad, bad code.
 
-aspect production writeBuildFile
-top::IOVal<String> ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+aspect function writeBuildFile
+IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
   local targets :: String = mdaBuildTarget(da.compiledList, silverhome, silvergen);
   extraTargets <- if length(targets) != 0 then ["  <target name='copper_mda'>\n" ++ targets ++ "  </target>\n"] else [];
