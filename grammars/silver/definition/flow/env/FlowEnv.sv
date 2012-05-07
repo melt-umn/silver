@@ -4,6 +4,8 @@ imports silver:definition:flow:ast;
 imports silver:definition:env;
 imports silver:definition:core;
 
+exports silver:definition:flow:env_parser with silver:definition:env:env_parser;
+
 autocopy attribute flowEnv :: Decorated FlowEnv;
 synthesized attribute flowDefs :: [FlowDef];
 

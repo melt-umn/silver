@@ -10,3 +10,4 @@ imports silver:definition:concrete_syntax:ast;
 
 option silver:modification:copper;
 
+exports silver:definition:concrete_syntax:ast:env_parser with silver:definition:env:env_parser;
