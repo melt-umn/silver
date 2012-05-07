@@ -100,6 +100,7 @@
 <keyword>hiding</keyword>
 <keyword>as</keyword>
 <keyword>only</keyword>
+<keyword>option</keyword>
     </context>
 
     <context id="declarations" style-ref="declaration">
