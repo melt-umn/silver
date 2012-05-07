@@ -24,7 +24,7 @@ top::TypeExp ::=
   top.instanceOrd = false;
   top.instanceNum = false;
   top.instanceConvertible = false;
-  top.lengthDispatcher = unknownLength;
+  top.lengthDispatcher = errorLength;
   top.appendDispatcher = errorPlusPlus;
 }
 

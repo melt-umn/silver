@@ -164,6 +164,18 @@ top::DefLHS ::= q::Decorated QName
   top.translation = makeClassName(top.signature.fullName) ++ ".forwardInheritedAttributes";
 }
 
+aspect production errorDefLHS
+top::DefLHS ::= q::Decorated QName
+{
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+}
+
+aspect production errorAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+{
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+}
+
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
@@ -180,6 +192,12 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
         "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
 }
 
+
+aspect production errorValueDef
+top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+{
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+}
 
 aspect production localValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr

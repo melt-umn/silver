@@ -13,7 +13,7 @@ top::Expr ::= 'length' '(' e::Expr ')'
   forwards to performSubstitution(e.typerep, e.upSubst).lengthDispatcher(e);
 }
 
-abstract production unknownLength
+abstract production errorLength
 top::Expr ::= e::Decorated Expr
 {
   top.location = e.location;
