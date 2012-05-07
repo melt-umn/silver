@@ -64,9 +64,13 @@ ag::AGDcl ::= kwd::'equalityTest'
 
   ag.errors <- forward.errors;
 
+{- Causes some circularities with the environment. TODO
   forwards to if !errCheck1.typeerror && !errCheck2.typeerror && !errCheck3.typeerror
               then appendAGDcl(absProdCS, aspProdCS)
               else emptyAGDcl();
+-}
+
+  forwards to appendAGDcl(absProdCS, aspProdCS);
 
 {-
   local absProdCS :: AGDcl = asAGDcl (
