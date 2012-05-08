@@ -4,11 +4,13 @@ lexer class IDENTIFIER;
 lexer class KEYWORD dominates IDENTIFIER;
 lexer class BUILTIN dominates IDENTIFIER;
 
+-- TODO: there's a bunch of things here that really should be 'keywords' really
 terminal Abstract_kwd		'abstract'	lexer classes {KEYWORD};
 terminal As_kwd			'as'		lexer classes {KEYWORD};
 terminal Aspect_kwd		'aspect'	lexer classes {KEYWORD};
 terminal Attribute_kwd		'attribute'	lexer classes {KEYWORD};
-terminal Build_kwd		'build'		lexer classes {KEYWORD};
+terminal Build_kwd		'build';
+terminal Closed_kwd             'closed';
 terminal Concrete_kwd		'concrete'	lexer classes {KEYWORD};
 terminal Decorate_kwd		'decorate'	lexer classes {KEYWORD};
 terminal Else_kwd		'else'		lexer classes {KEYWORD}, precedence = 4;
@@ -30,7 +32,7 @@ terminal NonTerminal_kwd	'nonterminal'	lexer classes {KEYWORD};
 terminal Occurs_kwd		'occurs'	lexer classes {KEYWORD};
 terminal On_kwd			'on'		lexer classes {KEYWORD};
 terminal Only_kwd		'only'		lexer classes {KEYWORD};
-terminal Optional_kwd           'option'      ;
+terminal Optional_kwd           'option';
 terminal Production_kwd		'production'	lexer classes {KEYWORD};
 terminal Return_kwd		'return'	lexer classes {KEYWORD};
 terminal Synthesized_kwd	'synthesized'	lexer classes {KEYWORD};
