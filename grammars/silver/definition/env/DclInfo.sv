@@ -55,7 +55,7 @@ inherited attribute givenSubstitution :: Substitution;
   
 -}
 
-nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
+closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
                          unparse, boundVariables, -- unparsing to interface files
                          typerep, givenNonterminalType, -- types (gNT for occurs)
                          namedSignature, -- values that are fun/prod
