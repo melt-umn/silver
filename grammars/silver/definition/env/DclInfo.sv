@@ -188,14 +188,15 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 
 -- -- interface types
 abstract production ntDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp closed::Boolean
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
 
   ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
-  top.unparse = "nt(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ")";
+  top.unparse = "nt(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ", " ++ 
+    (if closed then "t" else "f") ++ ")";
   
   top.typerep = ty;
   top.dclBoundVars = bound;

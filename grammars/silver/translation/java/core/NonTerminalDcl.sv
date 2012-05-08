@@ -1,7 +1,7 @@
 grammar silver:translation:java:core;
 
 aspect production nonterminalDcl
-top::AGDcl ::= 'nonterminal' id::Name botl::BracketedOptTypeList ';'
+top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name botl::BracketedOptTypeList ';'
 {
   local attribute className :: String;
   className = "N" ++ id.name;

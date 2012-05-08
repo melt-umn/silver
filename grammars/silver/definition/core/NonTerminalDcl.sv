@@ -1,7 +1,7 @@
 grammar silver:definition:core;
 
 concrete production nonterminalDcl
-top::AGDcl ::= 'nonterminal' id::Name botl::BracketedOptTypeList ';'
+top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name botl::BracketedOptTypeList ';'
 {
   top.pp = "nonterminal " ++ id.pp ++ botl.pp ++ ";";
   top.location = id.location;
@@ -19,7 +19,7 @@ top::AGDcl ::= 'nonterminal' id::Name botl::BracketedOptTypeList ';'
     * we get tl.freeVariables (which must be IN ORDER) and list them as the bound variables of this declaration.
   -}
   
-  top.defs = addNtDcl(top.grammarName, id.location, fName, tl.freeVariables, nonterminalTypeExp(fName, tl.types), emptyDefs());
+  top.defs = cl.whichDcl(top.grammarName, id.location, fName, tl.freeVariables, nonterminalTypeExp(fName, tl.types), emptyDefs());
 
   -- Include normal binding errors.
   top.errors := tl.errors;
@@ -46,9 +46,19 @@ top::AGDcl ::= 'nonterminal' id::Name botl::BracketedOptTypeList ';'
        else [];
 }
 
-concrete production closedNonterminalDcl
-top::AGDcl ::= 'closed' 'nonterminal' id::Name botl::BracketedOptTypeList ';'
+nonterminal ClosedOrNot with whichDcl;
+
+synthesized attribute whichDcl :: (Defs ::= String Location String [TyVar] TypeExp Defs);
+
+concrete production openNt
+top::ClosedOrNot ::=
 {
-  forwards to nonterminalDcl($2, id, botl, $5);
+  top.whichDcl = addNtDcl;
+}
+
+concrete production closedNt
+top::ClosedOrNot ::= 'closed'
+{
+  top.whichDcl = addClosedNtDcl;
 }
 
