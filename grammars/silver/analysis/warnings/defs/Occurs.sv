@@ -53,7 +53,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
               -- For closed nt, either we're exported by only the nt, OR there MUST be a default!
          else if !contains(top.grammarName, computeDependencies([nt.lookupType.dcl.sourceGrammar], top.compiledGrammars))
               && null(lookupDef(nt.lookupType.fullName, at.lookupAttribute.fullName, top.flowEnv))
-              then [wrn(top.location, "Nonterminal " ++ nt.lookupType.fullName ++ " is closed, and cannot have new attributes without a default equation.")]
+              then [wrn(top.location, at.lookupAttribute.fullName ++ " cannot occur on " ++ nt.lookupType.fullName ++ " because that nonterminal is closed, and this attribute does not have a default equation.")]
               else [];
 }
 
