@@ -26,11 +26,11 @@ top::AGDcl ::= 'attribute' a::QNames2 'occurs' 'on' nts::QNameWithTL ';'
 
 
 concrete production nonterminalWithDcl
-top::AGDcl ::= 'nonterminal' id::Name botl::BracketedOptTypeList 'with' attrs::QNames ';'
+top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name botl::BracketedOptTypeList 'with' attrs::QNames ';'
 {
   top.pp = "nonterminal " ++ id.pp ++ botl.pp ++ " with " ++ attrs.pp ++ " ;";
-  forwards to appendAGDcl(nonterminalDcl($1, id, botl, $6),
-                          makeOccursDcls($1.line, $1.column, attrs.qnames, [qNameWithTL(qNameId(id), botl)]) );
+  forwards to appendAGDcl(nonterminalDcl(cl, $2, id, botl, $7),
+                          makeOccursDcls($2.line, $2.column, attrs.qnames, [qNameWithTL(qNameId(id), botl)]) );
 }
 
 

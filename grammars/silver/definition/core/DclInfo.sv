@@ -89,7 +89,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 }
 -- -- interface types
 aspect production ntDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp closed::Boolean
 {
 }
 aspect production termDcl

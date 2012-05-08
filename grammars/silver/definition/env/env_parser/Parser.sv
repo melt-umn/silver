@@ -24,6 +24,9 @@ terminal Sigturnstile '::=' ;
 terminal Id_t /[\']([^\'\\]|[\\][\']|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\']/ lexer classes {C_0};
 terminal Num_t /\-?[0-9]+/ lexer classes {C_0};
 
+terminal T_t 't';
+terminal F_t 'f';
+
 terminal DefaultTerm  'default' lexer classes {C_1};
 
 -- Dcls
@@ -105,8 +108,24 @@ nonterminal INamesInner with names;
 nonterminal IName with aname;
 {- Location info (Used by dclinfos, usually) -}
 nonterminal ILocation with location;
+{- A boolean value -}
+nonterminal IBool with bval;
+
+synthesized attribute bval :: Boolean;
 
 -- a few simple utilities
+
+concrete production aTrue
+top::IBool ::= 't'
+{
+  top.bval = true;
+}
+
+concrete production aFalse
+top::IBool ::= 'f'
+{
+  top.bval = false;
+}
 
 concrete production quoted_name
 top::IName ::= i::Id_t
@@ -394,11 +413,13 @@ top::IDclInfo ::= 'glob' '(' l::ILocation ',' fn::IName ',' t::ITypeRep ')'
 }
 
 concrete production aDclInfoNonterminal
-top::IDclInfo ::= 'nt' '(' l::ILocation ',' s::IName ',' td::ITyVarDcls ',' t::ITypeRep ')'
+top::IDclInfo ::= 'nt' '(' l::ILocation ',' s::IName ',' td::ITyVarDcls ',' t::ITypeRep ',' cl::IBool ')'
 {
   t.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = addNtDcl(top.grammarName, l.location, s.aname, td.tyvars, t.typerep, emptyDefs());
+  top.defs = if cl.bval
+             then addClosedNtDcl(top.grammarName, l.location, s.aname, td.tyvars, t.typerep, emptyDefs())
+             else addNtDcl(top.grammarName, l.location, s.aname, td.tyvars, t.typerep, emptyDefs());
 }
 
 concrete production aDclInfoTerminal

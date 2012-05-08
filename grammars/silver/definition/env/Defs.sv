@@ -208,7 +208,12 @@ Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 function addNtDcl
 Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
 {
-  return consTypeDef(defaultEnvItem(decorate ntDcl(sg,sl,fn,bound,ty) with {}), defs);
+  return consTypeDef(defaultEnvItem(decorate ntDcl(sg,sl,fn,bound,ty, false) with {}), defs);
+}
+function addClosedNtDcl
+Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
+{
+  return consTypeDef(defaultEnvItem(decorate ntDcl(sg,sl,fn,bound,ty, true) with {}), defs);
 }
 function addTermDcl
 Defs ::= sg::String sl::Location fn::String regex::Regex_R defs::Defs
