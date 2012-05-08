@@ -10,7 +10,7 @@ imports silver:translation:java:type only transType;
 {--
  - Encapsulates transformations and analysis of Syntax
  -}
-nonterminal SyntaxRoot with cstErrors, cstNormal, xmlCopper, {-TODO:debugging-}unparse;
+closed nonterminal SyntaxRoot with cstErrors, cstNormal, xmlCopper, {-TODO:debugging-}unparse;
 
 synthesized attribute cstNormal :: SyntaxRoot; -- TODO basically just a debugging thing
 synthesized attribute xmlCopper :: String;

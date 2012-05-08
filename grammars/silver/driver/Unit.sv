@@ -8,7 +8,7 @@ grammar silver:driver;
  - 127 = "abnormal" success (e.g. printed version string, quit now)
  - 0 = success of course
  -}
-nonterminal Unit with ioIn, io, code, order;
+closed nonterminal Unit with ioIn, io, code, order;
 
 synthesized attribute code :: Integer;
 synthesized attribute order :: Integer;

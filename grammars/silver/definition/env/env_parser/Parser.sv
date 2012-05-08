@@ -88,11 +88,11 @@ nonterminal ITypeRepsInner with env, typereps, grammarName; -- inside square bra
 {- Extension points! -}
 
 {- Top-level elements of the interface file -}
-nonterminal IRootSpecPart with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
+closed nonterminal IRootSpecPart with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
 {- A DclInfo record -}
-nonterminal IDclInfo with defs, env, grammarName;
+closed nonterminal IDclInfo with defs, env, grammarName;
 {- A TypeExp record -}
-nonterminal ITypeRep with env, typerep, grammarName;
+closed nonterminal ITypeRep with env, typerep, grammarName;
 
 {- Utilities -}
 nonterminal ITyVarDcls with defs, tyvars;
