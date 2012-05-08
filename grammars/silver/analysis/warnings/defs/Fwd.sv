@@ -25,11 +25,20 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local attribute ntDefGram :: String;
   ntDefGram = substring(0, lastIndexOf(":", namedSig.outputElement.typerep.typeName), namedSig.outputElement.typerep.typeName);
 
+  local attribute isClosedNt :: Boolean;
+  isClosedNt = case getTypeDclAll(namedSig.outputElement.typerep.typeName, top.env) of
+               | ntDcl(_, _, _, _, _, closed) :: _ -> closed
+               | _ -> false -- default, if the lookup fails
+               end;
+
   top.errors <-
     if null(body.errors ++ ns.errors{-TODO-})
     && (top.config.warnAll || top.config.warnFwd)
-    && null(body.uniqueSignificantExpression) -- no forward
-    -- We use compute OPTIONAL deps here to allow for non-forwarding production in certain grammars
+    -- If this production does not forward
+    && null(body.uniqueSignificantExpression)
+    -- AND this is not a closed nonterminal
+    && !isClosedNt
+    -- AND this production is not exported by the nonterminal definition grammar... even including options
     && !contains(top.grammarName, computeOptionalDeps([ntDefGram], top.compiledGrammars))
     then [wrn(top.location, "Orphaned production: " ++ id.pp ++ " on " ++ namedSig.outputElement.typerep.typeName)]
     else [];
