@@ -34,8 +34,3 @@ top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[S
   top.unparse = "parser(" ++ sl.unparse ++ "," ++ quoteString(sg) ++ "," ++ quoteString(fn) ++ "," ++ quoteString(snt) ++ "," ++ unparseStrings(grams) ++ ")";
 }
 
-function unparseParser -- lol
-String ::= p::ParserSpec
-{
-  return p.unparse;
-}
