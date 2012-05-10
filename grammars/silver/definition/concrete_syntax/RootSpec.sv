@@ -6,6 +6,7 @@ aspect function unparseRootSpec
 String ::= r::Decorated RootSpec
 {
   unparses <- ["syntax [" ++ implode(",\n ", foldr(consSyntax, nilSyntax(), r.syntaxAst).unparses) ++ "]"];
+  unparses <- ["parsers [" ++ implode(",\n ", map((.unparse), r.parserSpecs)) ++ "]"];
 }
 
 aspect production i_emptyRootSpec
