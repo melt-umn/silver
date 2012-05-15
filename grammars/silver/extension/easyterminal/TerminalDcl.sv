@@ -22,7 +22,7 @@ top::ProductionRHSElem ::= id::Name '::' reg::RegExpr
 {
   top.pp = id.pp ++ "::" ++ reg.pp;
   
-  local attribute regName :: [Decorated DclInfo];
+  local attribute regName :: [DclInfo];
   regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
   top.errors <- if null(regName) 
@@ -41,7 +41,7 @@ top::ProductionRHSElem ::= reg::RegExpr
 {
   top.pp = reg.pp;
   
-  local attribute regName :: [Decorated DclInfo];
+  local attribute regName :: [DclInfo];
   regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
   top.errors <- if null(regName) 
@@ -60,7 +60,7 @@ top::AspectRHSElem ::= reg::RegExpr
 {
   top.pp = reg.pp;
   
-  local attribute regName :: [Decorated DclInfo];
+  local attribute regName :: [DclInfo];
   regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
   top.errors <- if null(regName) 
@@ -79,7 +79,7 @@ top::AspectRHSElem ::= id::Name '::' reg::RegExpr
 {
   top.pp = id.pp ++ " :: " ++ reg.pp;
   
-  local attribute regName :: [Decorated DclInfo];
+  local attribute regName :: [DclInfo];
   regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
   top.errors <- if null(regName) 
@@ -101,7 +101,7 @@ top::Expr ::= t::RegExpr
   local attribute regExpPat :: String;
   regExpPat = t.terminalRegExprSpec.regString;
 
-  local attribute regName :: [Decorated DclInfo];
+  local attribute regName :: [DclInfo];
   regName = getTerminalRegexDclAll(regExpPat, top.env);
 
   local attribute escapedName :: String;

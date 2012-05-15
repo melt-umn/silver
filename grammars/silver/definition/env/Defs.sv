@@ -11,11 +11,11 @@ synthesized attribute valueList :: [EnvItem];
 synthesized attribute attrList :: [EnvItem];
 
 -- Attribute occurs and production attributes.
-synthesized attribute prodOccursList :: [Decorated DclInfo];
-synthesized attribute occursList :: [Decorated DclInfo];
+synthesized attribute prodOccursList :: [DclInfo];
+synthesized attribute occursList :: [DclInfo];
 
 -- Special namespace for looking up productions by nonterminal they construct
-synthesized attribute constructorList :: [Pair<String Decorated DclInfo>];
+synthesized attribute constructorList :: [Pair<String DclInfo>];
 
 -- I'm leaving "Defsironment" here just for the lols
 ----------------------------------------------------------------------------------------------------
@@ -25,7 +25,7 @@ synthesized attribute constructorList :: [Pair<String Decorated DclInfo>];
 function unparseDefs
 String ::= d::Defs bv::[TyVar]
 {
-  production attribute dclinfos::[Decorated DclInfo] with ++;
+  production attribute dclinfos::[DclInfo] with ++;
   dclinfos := mapGetDcls(d.typeList) ++
               mapGetDcls(d.valueList) ++
               mapGetDcls(d.attrList) ++
@@ -36,10 +36,10 @@ String ::= d::Defs bv::[TyVar]
 }
 
 function mapUnparseDcls
-[String] ::= d::[Decorated DclInfo] bv::[TyVar]
+[String] ::= d::[DclInfo] bv::[TyVar]
 {
   local attribute h :: DclInfo;
-  h = new(head(d));
+  h = head(d);
   h.boundVariables = bv;
 
   return if null(d) then [] else h.unparse :: mapUnparseDcls(tail(d), bv);
@@ -110,13 +110,13 @@ top::Defs ::= d::EnvItem e2::Defs
 }
 
 abstract production consProdOccursDef
-top::Defs ::= d::Decorated DclInfo e2::Defs
+top::Defs ::= d::DclInfo e2::Defs
 {
   top.prodOccursList = d :: forward.prodOccursList;
   forwards to e2;
 }
 abstract production consOccursDef
-top::Defs ::= d::Decorated DclInfo e2::Defs
+top::Defs ::= d::DclInfo e2::Defs
 {
   top.occursList = d :: forward.occursList;
   forwards to e2;
@@ -177,88 +177,88 @@ top::Defs ::= d::Defs rns::[Pair<String String>]
 function addChildDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate childDcl(sg,sl,fn,ty) with {}), defs);
+  return consValueDef(defaultEnvItem(childDcl(sg,sl,fn,ty)), defs);
 }
 function addLhsDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate lhsDcl(sg,sl,fn,ty) with {}), defs);
+  return consValueDef(defaultEnvItem(lhsDcl(sg,sl,fn,ty)), defs);
 }
 function addLocalDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate localDcl(sg,sl,fn,ty) with {}), defs);
+  return consValueDef(defaultEnvItem(localDcl(sg,sl,fn,ty)), defs);
 }
 function addProdDcl
 Defs ::= sg::String sl::Location ns::NamedSignature defs::Defs
 {
   -- special cons here that puts it in value and constructor namespaces
-  return consConstructorDef(defaultEnvItem(decorate prodDcl(sg,sl,ns) with {}), defs);
+  return consConstructorDef(defaultEnvItem(prodDcl(sg,sl,ns)), defs);
 }
 function addFunDcl
 Defs ::= sg::String sl::Location ns::NamedSignature defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate funDcl(sg,sl,ns) with {}), defs);
+  return consValueDef(defaultEnvItem(funDcl(sg,sl,ns)), defs);
 }
 function addGlobalValueDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate globalValueDcl(sg,sl,fn,ty) with {}), defs);
+  return consValueDef(defaultEnvItem(globalValueDcl(sg,sl,fn,ty)), defs);
 }
 function addNtDcl
 Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
 {
-  return consTypeDef(defaultEnvItem(decorate ntDcl(sg,sl,fn,bound,ty, false) with {}), defs);
+  return consTypeDef(defaultEnvItem(ntDcl(sg,sl,fn,bound,ty, false)), defs);
 }
 function addClosedNtDcl
 Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
 {
-  return consTypeDef(defaultEnvItem(decorate ntDcl(sg,sl,fn,bound,ty, true) with {}), defs);
+  return consTypeDef(defaultEnvItem(ntDcl(sg,sl,fn,bound,ty, true)), defs);
 }
 function addTermDcl
 Defs ::= sg::String sl::Location fn::String regex::Regex_R defs::Defs
 {
-  return consTypeDef(defaultEnvItem(decorate termDcl(sg,sl,fn,regex) with {}), defs);
+  return consTypeDef(defaultEnvItem(termDcl(sg,sl,fn,regex)), defs);
 }
 function addLexTyVarDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
-  return consTypeDef(defaultEnvItem(decorate lexTyVarDcl(sg,sl,fn,ty) with {}), defs);
+  return consTypeDef(defaultEnvItem(lexTyVarDcl(sg,sl,fn,ty)), defs);
 }
 function addSynDcl
 Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
 {
-  return consAttrDef(defaultEnvItem(decorate synDcl(sg,sl,fn,bound,ty) with {}), defs);
+  return consAttrDef(defaultEnvItem(synDcl(sg,sl,fn,bound,ty)), defs);
 }
 function addInhDcl
 Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
 {
-  return consAttrDef(defaultEnvItem(decorate inhDcl(sg,sl,fn,bound,ty) with {}), defs);
+  return consAttrDef(defaultEnvItem(inhDcl(sg,sl,fn,bound,ty)), defs);
 }
 function addPaDcl
 Defs ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeExp] dcls::Defs defs::Defs
 {
-  return consProdOccursDef(decorate paDcl(sg,sl,fn,outty,intys,dcls) with {}, defs);
+  return consProdOccursDef(paDcl(sg,sl,fn,outty,intys,dcls), defs);
 }
 function addForwardDcl
 Defs ::= sg::String sl::Location ty::TypeExp defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate forwardDcl(sg,sl,ty) with {}), defs);
+  return consValueDef(defaultEnvItem(forwardDcl(sg,sl,ty)), defs);
 }
 function addOccursDcl
 Defs ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp defs::Defs
 {
-  return consOccursDef(decorate occursDcl(sg,sl,fnnt,fnat,ntty,atty) with {}, defs);
+  return consOccursDef(occursDcl(sg,sl,fnnt,fnat,ntty,atty), defs);
 }
 -- These aliased functions are used for aspects.
 function addAliasedLhsDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp alias::String defs::Defs
 {
-  return consValueDef(onlyRenamedEnvItem(alias, decorate lhsDcl(sg,sl,fn,ty) with {}), defs);
+  return consValueDef(onlyRenamedEnvItem(alias, lhsDcl(sg,sl,fn,ty)), defs);
 }
 function addAliasedChildDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp alias::String defs::Defs
 {
-  return consValueDef(onlyRenamedEnvItem(alias, decorate childDcl(sg,sl,fn,ty) with {}), defs);
+  return consValueDef(onlyRenamedEnvItem(alias, childDcl(sg,sl,fn,ty)), defs);
 }
 

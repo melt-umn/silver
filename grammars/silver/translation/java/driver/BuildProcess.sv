@@ -97,7 +97,7 @@ IO ::= i::IO  r::Decorated RootSpec  a::Decorated CmdArgs  silvergen::String
   local attribute mki :: IO;
   mki = writeFile(specLocation ++ "Init.java", makeInit(r), printio);
 
-  local attribute mains :: [Decorated DclInfo];
+  local attribute mains :: [DclInfo];
   mains = getValueDcl(r.declaredName ++ ":main", toEnv(r.defs));
 
   local attribute mainIO :: IO;

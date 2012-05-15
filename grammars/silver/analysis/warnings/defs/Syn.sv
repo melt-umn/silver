@@ -26,7 +26,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   -- Lookup all attribute that occurs on our LHS (filter to SYN!)
   -- Ensure there exists an equation for each on this production
   
-  local attrs :: [Decorated DclInfo] = 
+  local attrs :: [DclInfo] = 
     filter(isOccursSynthesized(_, top.env),
       getAttrsOn(namedSig.outputElement.typerep.typeName, top.env));
 
@@ -39,7 +39,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 }
 
 function isOccursSynthesized
-Boolean ::= occs::Decorated DclInfo  e::Decorated Env
+Boolean ::= occs::DclInfo  e::Decorated Env
 {
   return case getAttrDcl(occs.attrOccurring, e) of
   | synDcl(_,_,_,_,_) :: _ -> true
@@ -48,7 +48,7 @@ Boolean ::= occs::Decorated DclInfo  e::Decorated Env
 }
 
 function raiseMissingAttrs
-[Message] ::= l::Location  fName::String  attrs::[Decorated DclInfo]  e::Decorated FlowEnv
+[Message] ::= l::Location  fName::String  attrs::[DclInfo]  e::Decorated FlowEnv
 {
   return if null(attrs) then []
   else (
@@ -68,7 +68,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   -- Lookup all productions for this nonterminal
   -- ensure an equation exists for each production or the production forwards
   
-  local prods :: [Decorated DclInfo] = getProdsOn(nt.lookupType.typerep.typeName, top.env);
+  local prods :: [DclInfo] = getProdsOn(nt.lookupType.typerep.typeName, top.env);
 
   top.errors <-
     if null(nt.lookupType.errors ++ at.lookupAttribute.errors)
@@ -80,7 +80,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
 }
 
 function raiseMissingProds
-[Message] ::= l::Location  fName::String  prods::[Decorated DclInfo]  e::Decorated FlowEnv
+[Message] ::= l::Location  fName::String  prods::[DclInfo]  e::Decorated FlowEnv
 {
   return if null(prods) then []
   else case lookupSyn(head(prods).fullName, fName, e),  lookupFwd(head(prods).fullName, e) of

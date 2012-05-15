@@ -35,49 +35,49 @@ top::Defs ::= d::EnvItem e2::Defs
 function addParserAttrDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate parserAttrDcl(sg,sl,fn,ty) with {}), defs);
+  return consValueDef(defaultEnvItem(parserAttrDcl(sg,sl,fn,ty)), defs);
 }
 
 function addPluckTermDcl
 Defs ::= sg::String sl::Location fn::String defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate pluckTermDcl(sg,sl,fn) with {}), defs);
+  return consValueDef(defaultEnvItem(pluckTermDcl(sg,sl,fn)), defs);
 }
 
 function addDisambigLexemeDcl
 Defs ::= sg::String sl::Location defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate disambigLexemeDcl(sg,sl) with {}), defs);
+  return consValueDef(defaultEnvItem(disambigLexemeDcl(sg,sl)), defs);
 }
 
 function addLexerClassDcl
 Defs ::= sg::String sl::Location fn::String defs::Defs
 {
-  return consLexerClassDef(defaultEnvItem(decorate lexerClassDcl(sg,sl,fn) with {}), defs);
+  return consLexerClassDef(defaultEnvItem(lexerClassDcl(sg,sl,fn)), defs);
 }
 
 function addTermAttrValueDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate termAttrValueDcl(sg,sl,fn,ty) with {}), defs);
+  return consValueDef(defaultEnvItem(termAttrValueDcl(sg,sl,fn,ty)), defs);
 }
 
 function addActionChildDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate actionChildDcl(sg,sl,fn,ty) with {}), defs);
+  return consValueDef(defaultEnvItem(actionChildDcl(sg,sl,fn,ty)), defs);
 }
 
 function addParserLocalDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate parserLocalDcl(sg,sl,fn,ty) with {}), defs);
+  return consValueDef(defaultEnvItem(parserLocalDcl(sg,sl,fn,ty)), defs);
 }
 
 --------------------------------------------------------------------------------
 -- Env.sv
 
-inherited attribute lexerClassTree :: Decorated EnvScope<Decorated DclInfo> occurs on Env;
+inherited attribute lexerClassTree :: Decorated EnvScope<DclInfo> occurs on Env;
 
 aspect function emptyEnv
 Decorated Env ::=
@@ -104,7 +104,7 @@ Decorated Env ::= d::Defs  e::Decorated Env
 }
 
 function getLexerClassDcl
-[Decorated DclInfo] ::= search::String e::Decorated Env
+[DclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvScope(search, e.lexerClassTree);
 }

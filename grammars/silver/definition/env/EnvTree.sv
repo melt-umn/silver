@@ -23,7 +23,7 @@ function searchEnvTree
  - Obey's EnvItem's rules for what names should appear for each item.
  -}
 function buildTree
-EnvTree<Decorated DclInfo> ::= eis::[EnvItem]
+EnvTree<DclInfo> ::= eis::[EnvItem]
 {
   return directBuildTree( explodeEnvItems(eis) );
 }
@@ -43,7 +43,7 @@ EnvTree<a> ::= eis::[Pair<String a>]
  - Helper for buildTree.
  -}
 function explodeEnvItems
-[Pair<String Decorated DclInfo>] ::= eis::[EnvItem]
+[Pair<String DclInfo>] ::= eis::[EnvItem]
 {
   return if null(eis) then [] else
             head(eis).envContribs ++ explodeEnvItems(tail(eis));

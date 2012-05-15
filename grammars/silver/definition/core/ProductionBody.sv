@@ -269,7 +269,7 @@ top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
   top.pp = "\tforwarding with {" ++ inh.pp ++ "};";
   top.location = loc(top.file, $1.line, $1.column);
 
-  production attribute fwdDcls :: [Decorated DclInfo];
+  production attribute fwdDcls :: [DclInfo];
   fwdDcls = getValueDcl("forward", top.env);
 
   top.errors := inh.errors;

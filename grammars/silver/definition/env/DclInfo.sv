@@ -11,19 +11,8 @@ synthesized attribute fullName :: String;
 synthesized attribute typerep :: TypeExp;
 synthesized attribute dclBoundVars :: [TyVar];
 
-
-synthesized attribute namedSignature :: NamedSignature;
-
-{-
 -- values
-synthesized attribute refDispatcher :: Function(Expr ::= Decorated QName);
-synthesized attribute defDispatcher :: Function(ProductionStmt ::= Decorated QName  Equal_t  Expr);
-synthesized attribute defLHSDispatcher :: Function (DefLHS ::= Decorated QName);
-
--- attributes
-synthesized attribute attrAccessDispatcher :: Function (Expr ::= Decorated Expr '.' Decorated QName);
-synthesized attribute attrDefDispatcher :: Function (ProductionStmt ::= DefLHS '.' Decorated QName Equal_t Expr);
--}
+synthesized attribute namedSignature :: NamedSignature;
 
 -- occurs
 synthesized attribute attrOccurring :: String;
@@ -36,24 +25,6 @@ synthesized attribute prodDefs :: Defs;
 synthesized attribute substitutedDclInfo :: DclInfo;
 inherited attribute givenSubstitution :: Substitution;
 
-
--- on TYPEREP:
--- synthesized attribute applicationDispatcher :: Function (Expr ::= Decorated Expr Exprs);
--- synthesized attribute accessDispatcher :: Function (Expr ::= Decorated Expr '.' Decorated QName);
-
-{- Algorithms:
-
-  Expr.QName     accessDispatcher on Expr.typerep.  NT will dispatch on QName.attrAccessDispatcher.
-  
-  Expr(Exprs)    applicationDispatcher on Expr.typerep.
-  
-  QName          refDispatcher on QName
-  
-  QName = Expr   defDispatcher on QName
-  
-  DefLHS . QName = Expr   attrDefDispatcher. Give isInherited/isSynthesized to DefLHS (which is gotten via defLHSDispatcher)
-  
--}
 
 closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
                          unparse, boundVariables, -- unparsing to interface files
@@ -97,7 +68,7 @@ top::DclInfo ::=
   top.namedSignature = bogusNamedSignature();
 }
 
--- -- non-interface values
+-- ValueDclInfos that can NEVER appear in interface files:
 abstract production childDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 {
@@ -120,6 +91,8 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   
   top.typerep = ty;
 }
+
+-- ValueDclInfos that CAN appear in interface files, but only via "production attributes:"
 abstract production localDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 {
@@ -134,11 +107,22 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   
   top.substitutedDclInfo = localDcl(sg,sl, fn, performSubstitution(ty, top.givenSubstitution));
 }
--- let ( possibly replacement? problem: caching result )
--- NEW shadowed syn attributes? or inh?
--- NEW specific production type?
+abstract production forwardDcl
+top::DclInfo ::= sg::String sl::Location ty::TypeExp
+{
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = "forward";
+  
+  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't  
+  top.unparse = "fwd(" ++ sl.unparse ++ ", " ++ ty.unparse ++ ")";
+  
+  top.typerep = ty;
+  
+  top.substitutedDclInfo = forwardDcl(sg,sl, performSubstitution(ty, top.givenSubstitution));
+}
 
--- -- interface values
+-- ValueDclInfos that DO appear in interface files:
 abstract production prodDcl
 top::DclInfo ::= sg::String sl::Location ns::NamedSignature
 {
@@ -186,7 +170,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.typerep = ty;
 }
 
--- -- interface types
+-- TypeDclInfos
 abstract production ntDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp closed::Boolean
 {
@@ -226,7 +210,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.dclBoundVars = [];
 }
 
--- -- interface Attributes
+-- AttributeDclInfos
 abstract production synDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
@@ -254,7 +238,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
   top.dclBoundVars = bound;
 }
 
--- -- interface Production attr (values)
+-- ProductionAttrDclInfo
 abstract production paDcl
 top::DclInfo ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeExp] dcls::Defs
 {
@@ -273,22 +257,8 @@ top::DclInfo ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeE
   top.prodDefs = dcls;
   top.typerep = functionTypeExp(outty, intys); -- Using 'production' here, despite also working on 'function's
 }
-abstract production forwardDcl
-top::DclInfo ::= sg::String sl::Location ty::TypeExp
-{
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
-  top.fullName = "forward";
-  
-  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't  
-  top.unparse = "fwd(" ++ sl.unparse ++ ", " ++ ty.unparse ++ ")";
-  
-  top.typerep = ty;
-  
-  top.substitutedDclInfo = forwardDcl(sg,sl, performSubstitution(ty, top.givenSubstitution));
-}
 
--- -- interface other
+-- OccursDclInfo
 abstract production occursDcl
 top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
 {
@@ -322,33 +292,30 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp
 
 -- TODO: this should probably go elsewhere?
 function determineAttributeType
-TypeExp ::= occursDclInfo::Decorated DclInfo ntty::TypeExp
+TypeExp ::= occursDclInfo::DclInfo ntty::TypeExp
 {
-  return decorate new(occursDclInfo) with { givenNonterminalType = ntty; } . typerep;
+  occursDclInfo.givenNonterminalType = ntty;
+  return occursDclInfo.typerep;
 }
 
 -- Dealing with substitutions for production attributes
 function performSubstitutionDclInfo
-Decorated DclInfo ::= d::Decorated DclInfo s::Substitution
+DclInfo ::= d::DclInfo s::Substitution
 {
-  local attribute dcl :: DclInfo;
-  dcl = new(d);
-  dcl.givenSubstitution = s;
-  
-  return decorate dcl.substitutedDclInfo with {};
+  d.givenSubstitution = s;
+  return d.substitutedDclInfo;
 }
 
 function defsFromPADcls
-Defs ::= d::[Decorated DclInfo] s::NamedSignature
+Defs ::= d::[DclInfo] s::NamedSignature
 {
   -- We want to rewrite FROM the sig these PAs were declared with, TO the given sig
   local attribute subst :: Substitution;
-  subst = unifyDirectional( head(d).typerep, s.typerep);
-  
+  subst = unifyDirectional(head(d).typerep, s.typerep);
   
   return if null(d) then emptyDefs()
          else if subst.failure
               then defsFromPADcls(tail(d), s) -- this can happen if the aspect sig is wrong. Error already reported. error("INTERNAL ERROR: PA subst unify error")
-              else appendDefs( substitutedDefs( head(d).prodDefs, subst ), defsFromPADcls(tail(d), s));
+              else appendDefs(substitutedDefs(head(d).prodDefs, subst), defsFromPADcls(tail(d), s));
 }
 

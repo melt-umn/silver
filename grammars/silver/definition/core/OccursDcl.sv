@@ -74,7 +74,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
    -}
 
   -- Now, finally, make sure we're not "redefining" the occurs.
-  production attribute occursCheck :: [Decorated DclInfo];
+  production attribute occursCheck :: [DclInfo];
   occursCheck = getOccursDcl(at.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
   
   top.errors <- if length(occursCheck) > 1

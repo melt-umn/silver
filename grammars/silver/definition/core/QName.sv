@@ -12,7 +12,7 @@ nonterminal QNameUpper with config, name, location, grammarName, file, env, pp;
 {--
  - The list of declarations resulting from looking up this QName
  -}
-synthesized attribute dcls :: [Decorated DclInfo];
+synthesized attribute dcls :: [DclInfo];
 
 function qName
 QName ::= l::Location s::String
@@ -51,7 +51,7 @@ synthesized attribute lookupType :: Decorated QNameLookup occurs on QName;
 synthesized attribute lookupAttribute :: Decorated QNameLookup occurs on QName;
 
 abstract production customLookup
-top::QNameLookup ::= kindOfLookup::String lookupFunc::([Decorated DclInfo] ::= String Decorated Env) name::String l::Location 
+top::QNameLookup ::= kindOfLookup::String lookupFunc::([DclInfo] ::= String Decorated Env) name::String l::Location 
 {
   top.dcls = lookupFunc(name, top.env);
   top.dcl = if null(top.dcls) then error("INTERNAL ERROR: Accessing dcl of " ++ kindOfLookup ++ " " ++ name ++ " at " ++ l.unparse)
@@ -72,9 +72,9 @@ top::QNameLookup ::= kindOfLookup::String lookupFunc::([Decorated DclInfo] ::= S
 }
 
 function printPossibilities
-String ::= lst::[Decorated DclInfo]
+String ::= lst::[DclInfo]
 {
-  local attribute dcl :: Decorated DclInfo;
+  local attribute dcl :: DclInfo;
   dcl = head(lst);
   
   -- TODO: perhaps some way of including types, when they are relevant (attributes, values)

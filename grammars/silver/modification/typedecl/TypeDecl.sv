@@ -50,7 +50,7 @@ top::AGDcl ::= 'type' id::Name botl::BracketedOptTypeList '=' te::Type ';'
 function addTypeDcl
 Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
 {
-  return consTypeDef(defaultEnvItem(decorate typeDcl(sg,sl,fn,bound,ty) with {}), defs);
+  return consTypeDef(defaultEnvItem(typeDcl(sg,sl,fn,bound,ty)), defs);
 }
 abstract production typeDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
