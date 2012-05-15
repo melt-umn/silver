@@ -45,6 +45,7 @@ function mapUnparseDcls
   return if null(d) then [] else h.unparse :: mapUnparseDcls(tail(d), bv);
 }
 
+-- Only ever used by production attributes
 function isEmptyOfValues
 Boolean ::= d::Defs
 {

@@ -22,10 +22,20 @@ inherited attribute givenNonterminalType :: TypeExp;
 inherited attribute givenSignatureForDefs :: NamedSignature;
 synthesized attribute prodDefs :: Defs;
 -- production attribute substitutions
-synthesized attribute substitutedDclInfo :: DclInfo;
+synthesized attribute substitutedDclInfo :: DclInfo; -- really ValueDclInfo
 inherited attribute givenSubstitution :: Substitution;
 
 
+{--
+ - DclInfo SHOULD be several different types: TypeDclInfo, Value, Attribute,
+ - Occurs, ProductionAttr, etc.
+ -
+ - The reason it's not is we lack the ability to abstract over different types
+ - with "the same" interface (need typeclasses tia): this is necessary for some
+ - things that make use of e.g. fullName, unparse, etc.
+ -
+ - hmm, unparsing could probably be fixed...
+ -}
 closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
                          unparse, boundVariables, -- unparsing to interface files
                          typerep, givenNonterminalType, -- types (gNT for occurs)
@@ -298,24 +308,25 @@ TypeExp ::= occursDclInfo::DclInfo ntty::TypeExp
   return occursDclInfo.typerep;
 }
 
--- Dealing with substitutions for production attributes
+-- Dealing with substitutions for production attributes. Really ValueDclInfos
 function performSubstitutionDclInfo
-DclInfo ::= d::DclInfo s::Substitution
+DclInfo ::= valueDclInfo::DclInfo s::Substitution
 {
-  d.givenSubstitution = s;
-  return d.substitutedDclInfo;
+  valueDclInfo.givenSubstitution = s;
+  return valueDclInfo.substitutedDclInfo;
 }
 
+-- This function really takes a list of ValueDclInfos
 function defsFromPADcls
-Defs ::= d::[DclInfo] s::NamedSignature
+Defs ::= valueDclInfos::[DclInfo] s::NamedSignature
 {
   -- We want to rewrite FROM the sig these PAs were declared with, TO the given sig
   local attribute subst :: Substitution;
-  subst = unifyDirectional(head(d).typerep, s.typerep);
+  subst = unifyDirectional(head(valueDclInfos).typerep, s.typerep);
   
-  return if null(d) then emptyDefs()
+  return if null(valueDclInfos) then emptyDefs()
          else if subst.failure
-              then defsFromPADcls(tail(d), s) -- this can happen if the aspect sig is wrong. Error already reported. error("INTERNAL ERROR: PA subst unify error")
-              else appendDefs(substitutedDefs(head(d).prodDefs, subst), defsFromPADcls(tail(d), s));
+              then defsFromPADcls(tail(valueDclInfos), s) -- this can happen if the aspect sig is wrong. Error already reported. error("INTERNAL ERROR: PA subst unify error")
+              else appendDefs(substitutedDefs(head(valueDclInfos).prodDefs, subst), defsFromPADcls(tail(valueDclInfos), s));
 }
 
