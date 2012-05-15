@@ -5,17 +5,17 @@ import silver:definition:regex;
 
 
 function getTerminalRegexDclAll
-[Decorated DclInfo] ::= search::String e::Decorated Env
+[DclInfo] ::= search::String e::Decorated Env
 {
   return searchEnv(search, e.terminalTree);
 }
 
 
 
-inherited attribute terminalTree :: [Decorated EnvScope<Decorated DclInfo>] occurs on Env; -- must be kept in sync with typeTree's type!! (whether its a [] or not)
+inherited attribute terminalTree :: [Decorated EnvScope<DclInfo>] occurs on Env; -- must be kept in sync with typeTree's type!! (whether its a [] or not)
 
 function filterAndConvertTermDcls
-[Pair<String Decorated DclInfo>] ::= ei::EnvItem sofar::[Pair<String Decorated DclInfo>]
+[Pair<String DclInfo>] ::= ei::EnvItem sofar::[Pair<String DclInfo>]
 {
   return case ei.dcl of
            termDcl(_, _, fn, regex) -> pair(regex.regString, ei.dcl) :: sofar
@@ -24,7 +24,7 @@ function filterAndConvertTermDcls
 }
 
 function buildTerminalTree
-EnvTree<Decorated DclInfo> ::= eis::[EnvItem]
+EnvTree<DclInfo> ::= eis::[EnvItem]
 {
   return directBuildTree(foldr(filterAndConvertTermDcls,[],eis));
 }

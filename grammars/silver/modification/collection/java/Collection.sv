@@ -94,7 +94,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
   local attribute o :: Operation;
   o = q.operation;
 
-  local attribute ugh_dcl_hack :: Decorated DclInfo;
+  local attribute ugh_dcl_hack :: DclInfo;
   ugh_dcl_hack = head(getValueDclAll(fName, top.env)); -- TODO
 
   top.setupInh <-

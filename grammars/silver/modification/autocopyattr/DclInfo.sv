@@ -28,5 +28,5 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 function addAutocopyDcl
 Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
 {
-  return consAttrDef(defaultEnvItem(decorate autocopyDcl(sg,sl,fn,bound,ty) with {}), defs);
+  return consAttrDef(defaultEnvItem(autocopyDcl(sg,sl,fn,bound,ty)), defs);
 }

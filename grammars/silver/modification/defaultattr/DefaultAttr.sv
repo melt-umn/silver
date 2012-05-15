@@ -45,7 +45,7 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 function addDefaultLhsDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate defaultLhsDcl(sg,sl,fn,ty) with {}), defs);
+  return consValueDef(defaultEnvItem(defaultLhsDcl(sg,sl,fn,ty)), defs);
 }
 abstract production defaultLhsDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp

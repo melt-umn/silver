@@ -137,7 +137,7 @@ nonterminal OccursCheck with errors, typerep, dcl;
 abstract production occursCheckQName
 top::OccursCheck ::= at::Decorated QName  ntty::TypeExp
 {
-  local attribute occursCheck :: [Decorated DclInfo];
+  local attribute occursCheck :: [DclInfo];
   occursCheck = getOccursDcl(at.lookupAttribute.fullName, ntty.typeName, at.env); -- cheating to get env! :) Must be decorated!
 
   top.errors := if null(at.lookupAttribute.errors) && null(occursCheck)

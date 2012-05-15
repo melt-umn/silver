@@ -6,23 +6,23 @@ grammar silver:definition:env;
 -- appendEnv   Decorated Env ::= e1::Decorated Env  e2::Decorated Env
 -- newScopeEnv Decorated Env ::= e1::Defs  e2::Decorated Env
 
--- [Decorated DclInfo] ::= search::String e::Decorated Env
+-- [DclInfo] ::= search::String e::Decorated Env
 -- getValueDclInScope getValueDcl getValueDclAll
 -- getTypeDcl
 -- getAttrDcl
 
--- getProdAttrs [Decorated DclInfo] ::= prod::String e::Decorated Env
+-- getProdAttrs [DclInfo] ::= prod::String e::Decorated Env
 
 nonterminal Env with typeTree, valueTree, attrTree, prodOccursTree, occursTree, constructorTree;
 
-inherited attribute typeTree      :: [Decorated EnvScope<Decorated DclInfo>]; -- Expr is type tau
-inherited attribute valueTree     :: [Decorated EnvScope<Decorated DclInfo>]; -- x has type tau
-inherited attribute attrTree      :: [Decorated EnvScope<Decorated DclInfo>]; -- attr a has type tau
+inherited attribute typeTree      :: [Decorated EnvScope<DclInfo>]; -- Expr is type tau
+inherited attribute valueTree     :: [Decorated EnvScope<DclInfo>]; -- x has type tau
+inherited attribute attrTree      :: [Decorated EnvScope<DclInfo>]; -- attr a has type tau
 
-inherited attribute prodOccursTree :: Decorated EnvScope<Decorated DclInfo>; -- value on prod
-inherited attribute occursTree     :: Decorated EnvScope<Decorated DclInfo>; -- attr on NT
+inherited attribute prodOccursTree :: Decorated EnvScope<DclInfo>; -- value on prod
+inherited attribute occursTree     :: Decorated EnvScope<DclInfo>; -- attr on NT
 
-inherited attribute constructorTree :: Decorated EnvScope<Decorated DclInfo>; -- productions by nonterminal
+inherited attribute constructorTree :: Decorated EnvScope<DclInfo>; -- productions by nonterminal
 
 ----------------------------------------------------------------------------------------------------
 --Environment creation functions--------------------------------------------------------------------
@@ -106,16 +106,16 @@ Decorated Env ::= d::Defs  e::Decorated Env
 ----------------------------------------------------------------------------------------------------
 
 function searchEnvAll
-[Decorated DclInfo] ::= search::String e::[Decorated EnvScope<Decorated DclInfo>]
+[DclInfo] ::= search::String e::[Decorated EnvScope<DclInfo>]
 {
   return if null(e) then []
          else searchEnvScope(search, head(e)) ++ searchEnvAll(search, tail(e));
 }
 
 function searchEnv
-[Decorated DclInfo] ::= search::String e::[Decorated EnvScope<Decorated DclInfo>]
+[DclInfo] ::= search::String e::[Decorated EnvScope<DclInfo>]
 {
-  local attribute found :: [Decorated DclInfo];
+  local attribute found :: [DclInfo];
   found = searchEnvScope(search, head(e));
   
   return if null(e) then []
@@ -124,61 +124,61 @@ function searchEnv
 }
 
 function getValueDclInScope
-[Decorated DclInfo] ::= search::String e::Decorated Env
+[DclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvScope(search, head(e.valueTree));
 }
 function getValueDcl
-[Decorated DclInfo] ::= search::String e::Decorated Env
+[DclInfo] ::= search::String e::Decorated Env
 {
   return searchEnv(search, e.valueTree);
 }
 function getValueDclAll
-[Decorated DclInfo] ::= search::String e::Decorated Env
+[DclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvAll(search, e.valueTree);
 }
 
 function getTypeDclInScope
-[Decorated DclInfo] ::= search::String e::Decorated Env
+[DclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvScope(search, head(e.typeTree));
 }
 function getTypeDcl
-[Decorated DclInfo] ::= search::String e::Decorated Env
+[DclInfo] ::= search::String e::Decorated Env
 {
   return searchEnv(search, e.typeTree);
 }
 function getTypeDclAll
-[Decorated DclInfo] ::= search::String e::Decorated Env
+[DclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvAll(search, e.typeTree);
 }
 
 function getAttrDclInScope
-[Decorated DclInfo] ::= search::String e::Decorated Env
+[DclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvScope(search, head(e.attrTree));
 }
 function getAttrDcl
-[Decorated DclInfo] ::= search::String e::Decorated Env
+[DclInfo] ::= search::String e::Decorated Env
 {
   return searchEnv(search, e.attrTree);
 }
 function getAttrDclAll
-[Decorated DclInfo] ::= search::String e::Decorated Env
+[DclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvAll(search, e.attrTree);
 }
 
 function getOccursDcl
-[Decorated DclInfo] ::= fnat::String fnnt::String e::Decorated Env
+[DclInfo] ::= fnat::String fnnt::String e::Decorated Env
 {
   -- retrieve all attribute Dcls on NT fnnt
   return occursOnHelp(searchEnvScope(fnnt, e.occursTree), fnat);
 }
 function occursOnHelp
-[Decorated DclInfo] ::= i::[Decorated DclInfo] fnat::String
+[DclInfo] ::= i::[DclInfo] fnat::String
 {
   -- Inefficiency. Linear search for attribute on a nonterminal
   return if null(i) then []
@@ -188,20 +188,20 @@ function occursOnHelp
 }
 
 function getProdAttrs
-[Decorated DclInfo] ::= fnprod::String e::Decorated Env
+[DclInfo] ::= fnprod::String e::Decorated Env
 {
   return searchEnvScope(fnprod, e.prodOccursTree);
 }
 
 
 function getProdsOn
-[Decorated DclInfo] ::= fnnt::String e::Decorated Env
+[DclInfo] ::= fnnt::String e::Decorated Env
 {
   return searchEnvScope(fnnt, e.constructorTree);
 }
 
 function getAttrsOn
-[Decorated DclInfo] ::= fnnt::String e::Decorated Env
+[DclInfo] ::= fnnt::String e::Decorated Env
 {
   return searchEnvScope(fnnt, e.occursTree);
 }

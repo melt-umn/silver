@@ -19,6 +19,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 function addLexicalLocalDcl
 Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 {
-  return consValueDef(defaultEnvItem(decorate lexicalLocalDcl(sg,sl,fn,ty) with {}), defs);
+  return consValueDef(defaultEnvItem(lexicalLocalDcl(sg,sl,fn,ty)), defs);
 }
 

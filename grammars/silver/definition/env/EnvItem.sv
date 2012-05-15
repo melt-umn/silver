@@ -4,17 +4,17 @@ import silver:definition:type only Substitution;
 import silver:util only contains;
 
 --fullNameToShort  String ::= s::String
---defaultEnvItem   Decorate EnvItem ::= di::Decorated DclInfo
---renamedEnvItem   Decorate EnvItem ::= newname::String di::Decorated DclInfo
---mapGetDcls       [Decorated DclInfo] ::= i::[Decorated EnvItem]
---mapDefaultWrapDcls [Decorated EnvItem] ::= i::[Decorated DclInfo]
---mapFullnameDcls  [Decorated EnvItem] ::= i::[Decorated DclInfo]
+--defaultEnvItem   Decorate EnvItem ::= di::DclInfo
+--renamedEnvItem   Decorate EnvItem ::= newname::String di::DclInfo
+--mapGetDcls       [DclInfo] ::= i::[Decorated EnvItem]
+--mapDefaultWrapDcls [Decorated EnvItem] ::= i::[DclInfo]
+--mapFullnameDcls  [Decorated EnvItem] ::= i::[DclInfo]
 --sortEnvItems     [Decorated EnvItem] ::= eis::[Decorated EnvItem]
 
 
 synthesized attribute itemName :: String;
-synthesized attribute dcl :: Decorated DclInfo;
-synthesized attribute envContribs :: [Pair<String Decorated DclInfo>];
+synthesized attribute dcl :: DclInfo;
+synthesized attribute envContribs :: [Pair<String DclInfo>];
 
 nonterminal EnvItem with itemName, dcl, envContribs;
 
@@ -26,12 +26,12 @@ String ::= s::String
 }
 
 function defaultEnvItem
-EnvItem ::= di::Decorated DclInfo
+EnvItem ::= di::DclInfo
 {
   return renamedEnvItem(fullNameToShort(di.fullName), di);
 }
 abstract production renamedEnvItem
-ei::EnvItem ::= newname::String di::Decorated DclInfo
+ei::EnvItem ::= newname::String di::DclInfo
 {
   ei.itemName = newname;
   ei.dcl = di;
@@ -40,14 +40,14 @@ ei::EnvItem ::= newname::String di::Decorated DclInfo
                    else [pair(newname, di)];
 }
 abstract production fullNameEnvItem
-ei::EnvItem ::= di::Decorated DclInfo
+ei::EnvItem ::= di::DclInfo
 {
   ei.itemName = di.fullName;
   ei.dcl = di;
   ei.envContribs = [pair(di.fullName, di)];
 }
 abstract production onlyRenamedEnvItem
-ei::EnvItem ::= newname::String di::Decorated DclInfo
+ei::EnvItem ::= newname::String di::DclInfo
 {
   ei.itemName = newname;
   ei.dcl = di;
@@ -55,19 +55,19 @@ ei::EnvItem ::= newname::String di::Decorated DclInfo
 }
 
 function mapGetDcls
-[Decorated DclInfo] ::= i::[EnvItem]
+[DclInfo] ::= i::[EnvItem]
 {
   return map((.dcl), i);
 }
 
 function mapFullnameDcls
-[EnvItem] ::= i::[Decorated DclInfo]
+[EnvItem] ::= i::[DclInfo]
 {
   return map(fullNameEnvItem, i);
 }
 
 function mapDefaultWrapDcls
-[EnvItem] ::= i::[Decorated DclInfo]
+[EnvItem] ::= i::[DclInfo]
 {
   return map(defaultEnvItem, i);
 }

@@ -535,7 +535,7 @@ top::ITypeRep ::= 'io'
 concrete production aTypeRepVar
 top::ITypeRep ::= t::ITyVar
 {
-  local attribute res :: [Decorated DclInfo];
+  local attribute res :: [DclInfo];
   res = getTypeDcl(t.lexeme, top.env);
   
   top.typerep = if null(res)
