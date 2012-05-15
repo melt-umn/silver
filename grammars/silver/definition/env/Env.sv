@@ -106,16 +106,16 @@ Decorated Env ::= d::Defs  e::Decorated Env
 ----------------------------------------------------------------------------------------------------
 
 function searchEnvAll
-[DclInfo] ::= search::String e::[Decorated EnvScope<DclInfo>]
+[a] ::= search::String e::[Decorated EnvScope<a>]
 {
   return if null(e) then []
          else searchEnvScope(search, head(e)) ++ searchEnvAll(search, tail(e));
 }
 
 function searchEnv
-[DclInfo] ::= search::String e::[Decorated EnvScope<DclInfo>]
+[a] ::= search::String e::[Decorated EnvScope<a>]
 {
-  local attribute found :: [DclInfo];
+  local attribute found :: [a];
   found = searchEnvScope(search, head(e));
   
   return if null(e) then []
