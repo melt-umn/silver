@@ -42,25 +42,104 @@ top::FlowDef ::=
   top.fwdTreeContribs = [];
 }
 
+{--
+ - The definition of a synthesized attribute in a production.
+ -
+ - @param prod  the full name of the production
+ - @param attr  the full name of the attribute
+ - @param deps  the dependencies of this equation on other flow graph elements
+ - CONTRIBUTIONS ARE POSSIBLE
+ -}
 abstract production synEq
-top::FlowDef ::= prod::String  attr::String
+top::FlowDef ::= prod::String  attr::String  --  deps::[FlowVertex]
 {
   top.synTreeContribs = [pair(crossnames(prod, attr), top)];
   top.unparses = ["syn(" ++ quoteString(prod) ++ ", " ++ quoteString(attr) ++ ")"];
 }
 
+{--
+ - The definition of a inherited attribute for a signature element in a production.
+ -
+ - @param prod  the full name of the production
+ - @param sigName  the name of the RHS element
+ - @param attr  the full name of the attribute
+ - @param deps  the dependencies of this equation on other flow graph elements
+ - CONTRIBUTIONS ARE POSSIBLE
+ -}
+abstract production inhEq
+top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
+{
+}
+
+{--
+ - The definition of a default equation for a synthesized attribute on a nonterminal.
+ -
+ - @param nt  the full name of the *nonterminal*
+ - @param attr  the full name of the attribute
+ - @param deps  the dependencies of this equation on other flow graph elements
+ - CONTRIBUTIONS ARE POSSIBLE
+ -}
 abstract production defEq
-top::FlowDef ::= nt::String  attr::String
+top::FlowDef ::= nt::String  attr::String  --  deps::[FlowVertex]
 {
   top.defTreeContribs = [pair(crossnames(nt, attr), top)];
   top.unparses = ["def(" ++ quoteString(nt) ++ ", " ++ quoteString(attr) ++ ")"];
 }
 
+{--
+ - The definition of the forward of a production.
+ -
+ - @param prod  the full name of the production
+ - @param deps  the dependencies of this equation on other flow graph elements
+ - CONTRIBUTIONS ARE *NOT* repeat *NOT* POSSIBLE
+ -}
 abstract production fwdEq
-top::FlowDef ::= prod::String
+top::FlowDef ::= prod::String  --  deps::[FlowVertex]
 {
   top.fwdTreeContribs = [pair(prod, top)];
   top.unparses = ["fwd(" ++ quoteString(prod) ++ ")"];
+}
+
+{--
+ - The definition of an inherited attribute on the forward
+ -
+ - @param prod  the full name of the production
+ - @param deps  the dependencies of this equation on other flow graph elements
+ - CONTRIBUTIONS ARE POSSIBLE
+ -}
+abstract production fwdInhEq
+top::FlowDef ::= prod::String  deps::[FlowVertex]
+{
+  top.fwdTreeContribs = [pair(prod, top)];
+  top.unparses = ["fwd(" ++ quoteString(prod) ++ ")"];
+}
+
+{--
+ - The definition of a local or production attribute's equation.
+ - MAY not be a nonterminal type!
+ -
+ - @param prod  the full name of the production
+ - @param fName  the name of the local/production attribute
+ - @param deps  the dependencies of this equation on other flow graph elements
+ - CONTRIBUTIONS ARE POSSIBLE
+ -}
+abstract production localEq
+top::FlowDef ::= prod::String  fName::String  deps::[FlowVertex]
+{
+}
+
+{--
+ - The definition of an inherited attribute for a local attribute.
+ -
+ - @param prod  the full name of the production
+ - @param fName  the name of the local/production attribute
+ - @param attr  the full name of the attribute
+ - @param deps  the dependencies of this equation on other flow graph elements
+ - CONTRIBUTIONS ARE POSSIBLE
+ -}
+abstract production localInhEq
+top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
+{
 }
 
 --
@@ -70,3 +149,57 @@ String ::= a::String b::String
 {
   return a ++ " @ " ++ b;
 }
+
+--
+
+{--
+ - Data structure representing vertices in the flow graph within a single production.
+ -}
+nonterminal FlowVertex;
+
+{--
+ - A vertex representing an attribute on the nonterminal being constructed by this production.
+ -
+ - @param attrName  the full name of an attribute on the lhs.
+ -}
+abstract production lhsVertex
+top::FlowVertex ::= attrName::String
+{
+}
+
+{--
+ - A vertex representing an attribute on an element of the signature RHS.
+ -
+ - @param sigName  the name given to a signature nonterminal.
+ - @param attrName  the full name of an attribute on that signature element.
+ -}
+abstract production rhsVertex
+top::FlowVertex ::= sigName::String  attrName::String
+{
+}
+
+{--
+ - A vertex representing a local equation. i.e. forward, local attribute, production
+ - attribute, etc.  Note that this may be defined for MORE than just those with
+ - nonterminal type!! (e.g. local foo :: String  will appear!)
+ -
+ - @param fName  the full name of the NTA/FWD being defined
+ -}
+abstract production localEqVertex
+top::FlowVertex ::= fName::String
+{
+}
+
+{--
+ - A vertex representing an attribute on a local equation. i.e. forward, local
+ - attribute, production attribute, etc.  Note this this implies the equation
+ - above IS a nonterminal type!!
+ -
+ - @param fName  the full name of the NTA/FWD
+ - @param attrName  the fulle name of the attribute on that element
+ -}
+abstract production localVertex
+top::FlowVertex ::= fName::String  attrName::String
+{
+}
+

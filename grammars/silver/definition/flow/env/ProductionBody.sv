@@ -67,7 +67,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 aspect production synAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {-That's really a <- -} e::Expr
 {
-  top.flowDefs = []; -- TODO: this should probably amount to a new type of contibution, eventually...
+  top.flowDefs = []; -- TODO [synContribEq(top.signature.fullName, attr.lookupAttribute.fullName)];
 }
 
 
