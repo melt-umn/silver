@@ -5,8 +5,8 @@ import silver:definition:env;
 import silver:definition:concrete_syntax;
 import silver:definition:type;
 import silver:definition:type:syntax;
-import silver:definition:type:io;
 
+import silver:modification:ffi;
 import silver:modification:collection;
 import silver:extension:list;
 
@@ -56,23 +56,23 @@ top::AGDcl ::= 'mainTestSuite' name::IdLower_t ';'
   top.location = loc(top.file, $1.line, $1.column);
 
   forwards to 
-  appendAGDcl ( 
-   functionDcl (
+  appendAGDcl(
+   functionDcl(
     -- function main
-    'function', nameIdLower( terminal(IdLower_t,"main")),
+    'function', nameIdLower(terminal(IdLower_t,"main")),
     -- IOVal<Integer> ::= args::[String]  mainIO::IO
-    functionSignature (  
-     functionLHS ( 
+    functionSignature(
+     functionLHS(
        nominalType( 
-         qNameUpperId ( terminal(IdUpper_t, "IOVal")) ,
-         botlSome('<', typeListSingle(integerType('Integer')), '>' )) ) ,
-     '::=' ,
-     productionRHSCons (  
-      productionRHSElemType ( listType( '[', stringType('String'), ']') ) ,
-      productionRHSCons ( 
-       productionRHSElem (
-        nameIdLower( terminal(IdLower_t, "mainIO" ))  ,
-        '::' , ioType ('IO') ),
+         qNameUpperId(terminal(IdUpper_t, "IOVal")) ,
+         botlSome('<', typeListSingle(integerType('Integer')), '>' ))),
+     '::=',
+     productionRHSCons(
+      productionRHSElemType(listType('[', stringType('String'), ']')),
+      productionRHSCons(
+       productionRHSElem(
+        nameIdLower(terminal(IdLower_t, "mainIO")),
+        '::', typerepType(foreignTypeExp("core:IO", []))),
        productionRHSNil()
       )
      )
