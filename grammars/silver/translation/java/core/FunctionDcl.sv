@@ -1,6 +1,6 @@
 grammar silver:translation:java:core;
 
-import silver:definition:type:io; -- for main type check only
+import silver:modification:ffi only foreignTypeExp; -- for main type check only
 import silver:util;
 
 aspect production functionDcl
@@ -25,7 +25,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
        unify(namedSig.typerep,
          functionTypeExp(nonterminalTypeExp("core:IOVal", [intTypeExp()]), [
            decoratedTypeExp(nonterminalTypeExp("core:List", [stringTypeExp()])),
-           ioTypeExp()])).failure
+           foreignTypeExp("core:IO", [])])).failure
     then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(namedSig.typerep))]
     else [];
 }

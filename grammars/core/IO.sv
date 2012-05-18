@@ -29,6 +29,10 @@ top::IOVal<a> ::= i::IO v::a
   top.iovalue = v;
 }
 
+{--
+ - IO is the IO Token used to sequence actions.
+ -}
+type IO foreign;
 
 ------ IO Actions:
 

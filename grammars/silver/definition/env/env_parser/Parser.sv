@@ -1,7 +1,6 @@
 grammar silver:definition:env:env_parser;
 
 import silver:definition:env;
-import silver:definition:type:io;
 import silver:definition:regex hiding RegexRBrack_t, RegexLBrack_t, RegexLParen_t, RegexRParen_t; -- TODO: a bit of a hack?
 import silver:definition:type;
 
@@ -524,12 +523,6 @@ concrete production aTypeRepFunction
 top::ITypeRep ::= 'fun' '(' it::ITypeReps ','  ot::ITypeRep ')'
 {
   top.typerep = functionTypeExp(ot.typerep, it.typereps);
-}
-
-concrete production aTypeRepIO
-top::ITypeRep ::= 'io'
-{
-  top.typerep = ioTypeExp();
 }
 
 concrete production aTypeRepVar

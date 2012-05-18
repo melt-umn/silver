@@ -1,5 +1,7 @@
 grammar silver:definition:type;
 
+option silver:modification:ffi; -- foreign types
+
 nonterminal TypeExp with freeVariables;
 nonterminal TyVar ;
 

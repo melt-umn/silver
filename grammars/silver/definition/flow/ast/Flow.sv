@@ -69,6 +69,7 @@ top::FlowDef ::= prod::String  attr::String  --  deps::[FlowVertex]
 abstract production inhEq
 top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
 {
+  top.unparses = error("TODO"); -- TODO
 }
 
 {--
@@ -126,6 +127,7 @@ top::FlowDef ::= prod::String  deps::[FlowVertex]
 abstract production localEq
 top::FlowDef ::= prod::String  fName::String  deps::[FlowVertex]
 {
+  top.unparses = error("TODO"); -- TODO
 }
 
 {--
@@ -140,6 +142,7 @@ top::FlowDef ::= prod::String  fName::String  deps::[FlowVertex]
 abstract production localInhEq
 top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 {
+  top.unparses = error("TODO"); -- TODO
 }
 
 --

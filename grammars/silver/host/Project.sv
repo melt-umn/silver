@@ -3,7 +3,6 @@ grammar silver:host;
 -- concrete syntax from these grammars
 exports silver:definition:core;
 exports silver:definition:concrete_syntax;
-exports silver:definition:type:io;
 exports silver:definition:type:syntax;
 exports silver:definition:regex;
 
