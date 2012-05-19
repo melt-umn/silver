@@ -10,6 +10,7 @@ import silver:translation:java:core;
 import silver:translation:java:type;
 
 import silver:modification:let_fix;
+import silver:modification:ffi; -- so we cover foreignTypeExp with the 'refine' hack below. TODO
 
 import silver:extension:list; -- Oh no, this is a hack! TODO
 
@@ -662,6 +663,17 @@ top::TypeExp ::= out::TypeExp params::[TypeExp]
   top.refine = case top.refineWith of
                functionTypeExp(oo, op) -> refineAll(out :: params, oo :: op)
              | _ -> errorSubst("Tried to refine function type with " ++ prettyType(top.refineWith))
+              end;
+}
+
+aspect production foreignTypeExp
+top::TypeExp ::= fn::String params::[TypeExp]
+{
+  top.refine = case top.refineWith of
+               foreignTypeExp(ofn, op) -> if fn == ofn
+                                          then refineAll( params, op )
+                                          else errorSubst("Tried to refine conflicting foreign types " ++ fn ++ " and " ++ ofn)
+             | _ -> errorSubst("Tried to refine foreign type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
               end;
 }
 
