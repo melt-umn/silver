@@ -2,12 +2,13 @@ grammar silver:definition:flow:ast;
 
 import silver:definition:env only quoteString;
 
-nonterminal FlowDefs with synTreeContribs, defTreeContribs, fwdTreeContribs, unparses;
-nonterminal FlowDef with synTreeContribs, defTreeContribs, fwdTreeContribs, unparses;
+nonterminal FlowDefs with synTreeContribs, defTreeContribs, fwdTreeContribs, unparses, prodTreeContribs;
+nonterminal FlowDef with synTreeContribs, defTreeContribs, fwdTreeContribs, unparses, prodTreeContribs;
 
 synthesized attribute synTreeContribs :: [Pair<String FlowDef>];
 synthesized attribute defTreeContribs :: [Pair<String FlowDef>];
 synthesized attribute fwdTreeContribs :: [Pair<String FlowDef>];
+synthesized attribute prodTreeContribs :: [Pair<String FlowDef>];
 synthesized attribute unparses :: [String];
 
 abstract production consFlow
@@ -16,6 +17,7 @@ top::FlowDefs ::= h::FlowDef  t::FlowDefs
   top.synTreeContribs = h.synTreeContribs ++ t.synTreeContribs;
   top.defTreeContribs = h.defTreeContribs ++ t.defTreeContribs;
   top.fwdTreeContribs = h.fwdTreeContribs ++ t.fwdTreeContribs;
+  top.prodTreeContribs = h.prodTreeContribs ++ t.prodTreeContribs;
   top.unparses = h.unparses ++ t.unparses;
 }
 
@@ -25,6 +27,7 @@ top::FlowDefs ::=
   top.synTreeContribs = [];
   top.defTreeContribs = [];
   top.fwdTreeContribs = [];
+  top.prodTreeContribs = [];
   top.unparses = [];
 }
 
@@ -40,6 +43,21 @@ top::FlowDef ::=
   top.synTreeContribs = [];
   top.defTreeContribs = [];
   top.fwdTreeContribs = [];
+  top.prodTreeContribs = [];
+}
+
+{--
+ - Declaration of a NON-FORWARDING production. Exists to allow lookups of productions
+ - from nonterminal name.
+ -
+ - @param nt  The full name of the nonterminal it constructs
+ - @param prod  The full name of the production
+ -}
+abstract production prodFlowDef
+top::FlowDef ::= nt::String  prod::String
+{
+  top.prodTreeContribs = [pair(nt, top)];
+  top.unparses = ["prod(" ++ quoteString(nt) ++ ", " ++ quoteString(prod) ++ ")"];
 }
 
 {--

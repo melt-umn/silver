@@ -13,7 +13,7 @@ grammar silver:definition:env;
 
 -- getProdAttrs [DclInfo] ::= prod::String e::Decorated Env
 
-nonterminal Env with typeTree, valueTree, attrTree, prodOccursTree, occursTree, constructorTree;
+nonterminal Env with typeTree, valueTree, attrTree, prodOccursTree, occursTree;
 
 inherited attribute typeTree      :: [Decorated EnvScope<DclInfo>]; -- Expr is type tau
 inherited attribute valueTree     :: [Decorated EnvScope<DclInfo>]; -- x has type tau
@@ -21,8 +21,6 @@ inherited attribute attrTree      :: [Decorated EnvScope<DclInfo>]; -- attr a ha
 
 inherited attribute prodOccursTree :: Decorated EnvScope<DclInfo>; -- value on prod
 inherited attribute occursTree     :: Decorated EnvScope<DclInfo>; -- attr on NT
-
-inherited attribute constructorTree :: Decorated EnvScope<DclInfo>; -- productions by nonterminal
 
 ----------------------------------------------------------------------------------------------------
 --Environment creation functions--------------------------------------------------------------------
@@ -45,8 +43,6 @@ Decorated Env ::=
   top.prodOccursTree = emptyEnvScope();
   top.occursTree = emptyEnvScope();
   
-  top.constructorTree = emptyEnvScope();
-  
   return top;
 }
 
@@ -62,8 +58,6 @@ Decorated Env ::= d::Defs
   top.prodOccursTree = oneEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)));
   top.occursTree = oneEnvScope(buildTree(mapFullnameDcls(d.occursList)));
   
-  top.constructorTree = oneEnvScope(directBuildTree(d.constructorList));
-  
   return top;
 }
 function appendEnv
@@ -77,8 +71,6 @@ Decorated Env ::= e1::Decorated Env  e2::Decorated Env
 
   top.prodOccursTree = appendEnvScope(e1.prodOccursTree, e2.prodOccursTree);
   top.occursTree = appendEnvScope(e1.occursTree, e2.occursTree);
-  
-  top.constructorTree = appendEnvScope(e1.constructorTree, e2.constructorTree);
 
   return top;
 }
@@ -95,8 +87,6 @@ Decorated Env ::= d::Defs  e::Decorated Env
 
   top.prodOccursTree = consEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)), e.prodOccursTree);
   top.occursTree = consEnvScope(buildTree(mapFullnameDcls(d.occursList)), e.occursTree);
-  
-  top.constructorTree = consEnvScope(directBuildTree(d.constructorList), e.constructorTree);
 
   return top;
 }
@@ -194,14 +184,14 @@ function getProdAttrs
 }
 
 
-function getProdsOn
-[DclInfo] ::= fnnt::String e::Decorated Env
-{
-  return searchEnvScope(fnnt, e.constructorTree);
-}
+-- It's never possible to know "all" attributes, so the next function is okay,
+-- but it is possible to know all non-forwarding productions, but the normal
+-- environment can't do it.  So you should consult the flow env for that info.
+--function getProdsOn
 
 function getAttrsOn
 [DclInfo] ::= fnnt::String e::Decorated Env
 {
   return searchEnvScope(fnnt, e.occursTree);
 }
+
