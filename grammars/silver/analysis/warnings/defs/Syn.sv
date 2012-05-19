@@ -68,7 +68,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   -- Lookup all productions for this nonterminal
   -- ensure an equation exists for each production or the production forwards
   
-  local prods :: [DclInfo] = getProdsOn(nt.lookupType.typerep.typeName, top.env);
+  local prods :: [FlowDef] = getProdsOn(nt.lookupType.typerep.typeName, top.flowEnv);
 
   top.errors <-
     if null(nt.lookupType.errors ++ at.lookupAttribute.errors)
@@ -80,13 +80,15 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
 }
 
 function raiseMissingProds
-[Message] ::= l::Location  fName::String  prods::[DclInfo]  e::Decorated FlowEnv
+[Message] ::= l::Location  fName::String  prods::[FlowDef]  e::Decorated FlowEnv
 {
+  local headProdName :: String = case head(prods) of prodFlowDef(_, p) -> p end;
+  
   return if null(prods) then []
-  else case lookupSyn(head(prods).fullName, fName, e),  lookupFwd(head(prods).fullName, e) of
+  else case lookupSyn(headProdName, fName, e),  lookupFwd(headProdName, e) of
        | _ :: _, _ -> [] -- eq present
        | [], _ :: _ -> [] -- prod forwards
-       | [], [] -> [wrn(l, "attribute "  ++ fName ++ " missing equation for production " ++ head(prods).fullName)]
+       | [], [] -> [wrn(l, "attribute "  ++ fName ++ " missing equation for production " ++ headProdName)]
        end ++ raiseMissingProds(l, fName, tail(prods), e);
 
 }

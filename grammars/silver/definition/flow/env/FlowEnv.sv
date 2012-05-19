@@ -9,11 +9,12 @@ exports silver:definition:flow:env_parser with silver:definition:env:env_parser;
 autocopy attribute flowEnv :: Decorated FlowEnv;
 synthesized attribute flowDefs :: [FlowDef];
 
-nonterminal FlowEnv with synTree, defTree, fwdTree;
+nonterminal FlowEnv with synTree, defTree, fwdTree, prodTree;
 
 inherited attribute synTree :: EnvTree<FlowDef>;
 inherited attribute defTree :: EnvTree<FlowDef>;
 inherited attribute fwdTree :: EnvTree<FlowDef>;
+inherited attribute prodTree :: EnvTree<FlowDef>;
 
 abstract production dummyFlowEnv
 top::FlowEnv ::=
@@ -28,6 +29,7 @@ Decorated FlowEnv ::= d::FlowDefs
   e.synTree = directBuildTree(d.synTreeContribs);
   e.defTree = directBuildTree(d.defTreeContribs);
   e.fwdTree = directBuildTree(d.fwdTreeContribs);
+  e.prodTree = directBuildTree(d.prodTreeContribs);
   
   return e;
 }
@@ -49,5 +51,11 @@ function lookupFwd
 [FlowDef] ::= prod::String  e::Decorated FlowEnv
 {
   return searchEnvTree(prod, e.fwdTree);
+}
+
+function getProdsOn
+[FlowDef] ::= nt::String  e::Decorated FlowEnv
+{
+  return searchEnvTree(nt, e.prodTree);
 }
 

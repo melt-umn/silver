@@ -91,4 +91,9 @@ top::IFlow ::= 'fwd' '(' prod::IName ')'
   top.flowDefs = [fwdEq(prod.aname)];
 }
 
+concrete production aFlowProd
+top::IFlow ::= 'prod' '(' nt::IName ',' prod::IName ')'
+{
+  top.flowDefs = [prodFlowDef(nt.aname, prod.aname)];
+}
 

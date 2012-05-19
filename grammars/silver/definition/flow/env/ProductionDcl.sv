@@ -6,7 +6,8 @@ aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
   top.flowDefs = body.flowDefs ++ 
-    if null(body.uniqueSignificantExpression) then []
+    if null(body.uniqueSignificantExpression)
+    then [prodFlowDef(namedSig.outputElement.typerep.typeName, fName)]
     else [fwdEq(fName)];
 }
 
