@@ -1,6 +1,6 @@
 grammar silver:analysis:typechecking:core;
 
-attribute upSubst, downSubst, finalSubst occurs on Expr, ForwardInhs, ForwardInh, ForwardLHSExpr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
+attribute upSubst, downSubst, finalSubst occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
 
 aspect production errorReference
 top::Expr ::= q::Decorated QName

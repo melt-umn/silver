@@ -2,7 +2,7 @@ grammar silver:analysis:typechecking:core;
 
 import silver:util;
 
-attribute upSubst, downSubst, finalSubst occurs on ProductionBody, ProductionStmts, ProductionStmt;
+attribute upSubst, downSubst, finalSubst occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
 
 aspect production defaultProductionBody
 top::ProductionBody ::= stmts::ProductionStmts
