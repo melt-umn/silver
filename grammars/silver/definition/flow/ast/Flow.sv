@@ -224,3 +224,15 @@ top::FlowVertex ::= fName::String  attrName::String
 {
 }
 
+
+function forwardEqVertex
+FlowVertex ::=
+{
+  return localEqVertex("forward");
+}
+function forwardVertex
+FlowVertex ::= attrName::String
+{
+  return localVertex("forward", attrName);
+}
+
