@@ -5,7 +5,7 @@ import silver:modification:defaultattr;
 import silver:modification:collection;
 import silver:modification:copper;
 
-attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt;
+attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
 
 
 aspect production defaultProductionBody
@@ -48,212 +48,152 @@ top::ProductionStmt ::= h::ProductionStmt  t::ProductionStmt
   top.flowDefs = h.flowDefs ++ t.flowDefs;
 }
 
+{-
 aspect default production
 top::ProductionStmt ::=
 {
   top.flowDefs = [];
 }
+-}
 
 ----
-
-aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
-{
-  top.flowDefs = case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
-                 | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.lookupAttribute.fullName)]
-                 | _ -> [synEq(top.signature.fullName, attr.lookupAttribute.fullName)]
-                 end;
-}
-
-
-aspect production synAppendColAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {-That's really a <- -} e::Expr
-{
-  top.flowDefs = []; -- TODO [synContribEq(top.signature.fullName, attr.lookupAttribute.fullName)];
-}
-
------------
-
-synthesized attribute flowEdges :: [Pair<FlowVertex FlowVertex>];
-
-attribute flowEdges occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
-
-aspect production defaultProductionBody
-top::ProductionBody ::= stmts::ProductionStmts
-{
-  top.flowEdges = stmts.flowEdges;
-}
-aspect production productionStmtsNone
-top::ProductionStmts ::= 
-{
-  top.flowEdges = [];
-}
-aspect production productionStmts
-top::ProductionStmts ::= stmt::ProductionStmt
-{
-  top.flowEdges = stmt.flowEdges;
-}
-aspect production productionStmtsCons
-top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
-{
-  top.flowEdges = h.flowEdges ++ t.flowEdges;
-}
-aspect production productionStmtsAppend
-top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
-{
-  top.flowEdges = h.flowEdges ++ t.flowEdges;
-}
-aspect production productionStmtAppend
-top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
-{
-  top.flowEdges = h.flowEdges ++ t.flowEdges;
-}
-
-
 
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
-  top.flowEdges = map(pair(forwardEqVertex(), _), e.flowDeps);
+  top.flowDefs = [fwdEq(top.signature.fullName, e.flowDeps)];
 }
 aspect production forwardsToWith
 top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
 {
-  top.flowEdges = map(pair(forwardEqVertex(), _), e.flowDeps) ++ inh.flowEdges;
+  top.flowDefs = [fwdEq(top.signature.fullName, e.flowDeps)] ++ inh.flowDefs;
 }
 aspect production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {
-  top.flowEdges = inh.flowEdges;
+  top.flowDefs = inh.flowDefs;
 }
 
 aspect production forwardInhsOne
 top::ForwardInhs ::= lhs::ForwardInh
 {
-  top.flowEdges = lhs.flowEdges;
+  top.flowDefs = lhs.flowDefs;
 }
 aspect production forwardInhsCons
 top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 {
-  top.flowEdges = lhs.flowEdges ++ rhs.flowEdges;
+  top.flowDefs = lhs.flowDefs ++ rhs.flowDefs;
 }
 aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
-  top.flowEdges =
+  top.flowDefs =
     case lhs of
-    | forwardLhsExpr(q) -> map(pair(forwardVertex(q.lookupAttribute.fullName), _), e.flowDeps)
+    | forwardLhsExpr(q) -> [fwdInhEq(top.signature.fullName, q.lookupAttribute.fullName, e.flowDeps)]
     end;
 }
 
 aspect production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 {
-  top.flowEdges = [];
+  top.flowDefs = [];
 }
-
 aspect production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
-  top.flowEdges = []; -- we don't really care about function's flow info!
+  top.flowDefs = []; -- we don't really care about function's flow info!
 }
-
 aspect production errorAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  top.flowEdges = [];
+  top.flowDefs = [];
 }
 
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  top.flowEdges = map(pair(dl.partialVertex(attr.lookupAttribute.fullName), _), e.flowDeps);
+  top.flowDefs = case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
+                 | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.lookupAttribute.fullName, e.flowDeps)]
+                 | _ -> [synEq(top.signature.fullName, attr.lookupAttribute.fullName, e.flowDeps)]
+                 end;
 }
-
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  top.flowEdges = map(pair(dl.partialVertex(attr.lookupAttribute.fullName), _), e.flowDeps);
-}
-
-synthesized attribute partialVertex :: (FlowVertex ::= String) occurs on DefLHS;
-
-aspect production childDefLHS
-top::DefLHS ::= q::Decorated QName
-{
-  top.partialVertex = rhsVertex(q.lookupValue.fullName, _);
-}
-aspect production localDefLHS
-top::DefLHS ::= q::Decorated QName
-{
-  top.partialVertex = localVertex(q.lookupValue.fullName, _);
-}
-aspect production lhsDefLHS
-top::DefLHS ::= q::Decorated QName
-{
-  top.partialVertex = lhsVertex;
-}
-aspect production forwardDefLHS
-top::DefLHS ::= q::Decorated QName
-{
-  top.partialVertex = forwardVertex;
-}
-aspect production errorDefLHS
-top::DefLHS ::= q::Decorated QName
-{
-  top.partialVertex = localVertex("unknown:vertex", _); -- TODO ??
+  top.flowDefs = 
+    case dl of
+    | childDefLHS(q) -> [inhEq(top.signature.fullName, q.lookupValue.fullName, attr.lookupAttribute.fullName, e.flowDeps)]
+    | localDefLHS(q) -> [localInhEq(top.signature.fullName, q.lookupValue.fullName, attr.lookupAttribute.fullName, e.flowDeps)]
+    | forwardDefLHS(q) -> [fwdInhEq(top.signature.fullName, attr.lookupAttribute.fullName, e.flowDeps)]
+    | _ -> [] -- TODO : this isn't quite extensible... more better way eventually, plz
+    end;
 }
 
 aspect production localValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
-  top.flowEdges = map(pair(localEqVertex(val.lookupValue.fullName), _), e.flowDeps);
+  top.flowDefs = [localEq(top.signature.fullName, val.lookupValue.fullName, e.flowDeps)];
 }
 aspect production errorValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
-  top.flowEdges = [];
+  top.flowDefs = [];
 }
 
+-- TODO COLLECTIONS
+
+aspect production synAppendColAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {-That's really a <- -} e::Expr
+{
+  -- override the usual flow def...
+  top.flowDefs = [extraEq(top.signature.fullName, lhsVertex(attr.lookupAttribute.fullName), e.flowDeps)];
+}
+
+aspect production inhAppendColAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+{
+  local vertex :: FlowVertex =
+    case dl of
+    | childDefLHS(q) -> rhsVertex(q.lookupValue.fullName, attr.lookupAttribute.fullName)
+    | localDefLHS(q) -> localVertex(q.lookupValue.fullName, attr.lookupAttribute.fullName)
+    | forwardDefLHS(q) -> forwardVertex(attr.lookupAttribute.fullName)
+    | _ -> localEqVertex("bogus:value:from:inhcontrib:flow")
+    end;
+  top.flowDefs = [extraEq(top.signature.fullName, vertex, e.flowDeps)];
+}
 
 ------ FROM COPPER TODO
 
 aspect production pluckDef
 top::ProductionStmt ::= 'pluck' e::Expr ';'
 {
-  top.flowEdges = error("Internal compiler error: flow edge information is invalid on action statements");
+  top.flowDefs = [];
 }
 
 aspect production printStmt
 top::ProductionStmt ::= 'print' e::Expr ';'
 {
-  top.flowEdges = error("Internal compiler error: flow edge information is invalid on action statements");
+  top.flowDefs = [];
 }
 
 aspect production parserAttributeValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
-  top.flowEdges = error("Internal compiler error: flow edge information is invalid on action statements");
-}
-
-aspect production parserAttributeDefLHS
-top::DefLHS ::= q::Decorated QName
-{
-  top.partialVertex = error("Internal compiler error: flow edge information is invalid on action statements");
+  top.flowDefs = [];
 }
 
 aspect production termAttrValueValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
-  top.flowEdges = error("Internal compiler error: flow edge information is invalid on action statements");
+  top.flowDefs = [];
 }
 
 
 -- FROM DEFAULTATTR TODO
-
+{-
 aspect production defaultLhsDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   top.partialVertex = lhsVertex;
 }
-
+-}

@@ -1,6 +1,6 @@
 grammar silver:definition:flow:ast;
 
-import silver:definition:env only quoteString;
+import silver:definition:env only quoteString, unparse;
 
 nonterminal FlowDefs with synTreeContribs, defTreeContribs, fwdTreeContribs, unparses, prodTreeContribs;
 nonterminal FlowDef with synTreeContribs, defTreeContribs, fwdTreeContribs, unparses, prodTreeContribs;
@@ -69,10 +69,10 @@ top::FlowDef ::= nt::String  prod::String
  - CONTRIBUTIONS ARE POSSIBLE
  -}
 abstract production synEq
-top::FlowDef ::= prod::String  attr::String  --  deps::[FlowVertex]
+top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 {
   top.synTreeContribs = [pair(crossnames(prod, attr), top)];
-  top.unparses = ["syn(" ++ quoteString(prod) ++ ", " ++ quoteString(attr) ++ ")"];
+  top.unparses = ["syn(" ++ implode(", ", [quoteString(prod), quoteString(attr), unparseVertices(deps)]) ++ ")"];
 }
 
 {--
@@ -87,7 +87,7 @@ top::FlowDef ::= prod::String  attr::String  --  deps::[FlowVertex]
 abstract production inhEq
 top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
 {
-  top.unparses = error("TODO"); -- TODO
+  top.unparses = ["inh(" ++ implode(", ", [quoteString(prod), quoteString(sigName), quoteString(attr), unparseVertices(deps)]) ++ ")"];
 }
 
 {--
@@ -97,12 +97,13 @@ top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
  - @param attr  the full name of the attribute
  - @param deps  the dependencies of this equation on other flow graph elements
  - CONTRIBUTIONS ARE POSSIBLE
+ - TODO: rename defaultEq because this is confusingly named
  -}
 abstract production defEq
-top::FlowDef ::= nt::String  attr::String  --  deps::[FlowVertex]
+top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
 {
   top.defTreeContribs = [pair(crossnames(nt, attr), top)];
-  top.unparses = ["def(" ++ quoteString(nt) ++ ", " ++ quoteString(attr) ++ ")"];
+  top.unparses = ["def(" ++ implode(", ", [quoteString(nt), quoteString(attr), unparseVertices(deps)]) ++ ")"];
 }
 
 {--
@@ -113,24 +114,25 @@ top::FlowDef ::= nt::String  attr::String  --  deps::[FlowVertex]
  - CONTRIBUTIONS ARE *NOT* repeat *NOT* POSSIBLE
  -}
 abstract production fwdEq
-top::FlowDef ::= prod::String  --  deps::[FlowVertex]
+top::FlowDef ::= prod::String  deps::[FlowVertex]
 {
   top.fwdTreeContribs = [pair(prod, top)];
-  top.unparses = ["fwd(" ++ quoteString(prod) ++ ")"];
+  top.unparses = ["fwd(" ++ implode(", ", [quoteString(prod), unparseVertices(deps)]) ++ ")"];
 }
 
 {--
  - The definition of an inherited attribute on the forward
  -
  - @param prod  the full name of the production
+ - @param attrName  the full name of the inherited attribute given to the forward
  - @param deps  the dependencies of this equation on other flow graph elements
  - CONTRIBUTIONS ARE POSSIBLE
  -}
 abstract production fwdInhEq
-top::FlowDef ::= prod::String  deps::[FlowVertex]
+top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 {
   top.fwdTreeContribs = [pair(prod, top)];
-  top.unparses = ["fwd(" ++ quoteString(prod) ++ ")"];
+  top.unparses = ["fwdInh(" ++ implode(", ", [quoteString(prod), quoteString(attr), unparseVertices(deps)]) ++ ")"];
 }
 
 {--
@@ -145,7 +147,7 @@ top::FlowDef ::= prod::String  deps::[FlowVertex]
 abstract production localEq
 top::FlowDef ::= prod::String  fName::String  deps::[FlowVertex]
 {
-  top.unparses = error("TODO"); -- TODO
+  top.unparses = ["local(" ++ implode(", ", [quoteString(prod), quoteString(fName), unparseVertices(deps)]) ++ ")"];
 }
 
 {--
@@ -160,7 +162,21 @@ top::FlowDef ::= prod::String  fName::String  deps::[FlowVertex]
 abstract production localInhEq
 top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 {
-  top.unparses = error("TODO"); -- TODO
+  top.unparses = ["localInh(" ++ implode(", ", [quoteString(prod), quoteString(fName), quoteString(attr), unparseVertices(deps)]) ++ ")"];
+}
+
+{--
+ - Used for contributions to collections. Allows tacking on dependencies
+ - to vertices.
+ -
+ - @param prod  the full name of the production
+ - @param src  the vertex to add dependencies to
+ - @param deps  the dependencies of this vertex
+ -}
+abstract production extraEq
+top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]
+{
+  top.unparses = ["extra(" ++ implode(", ", [quoteString(prod), src.unparse, unparseVertices(deps)]) ++ ")"];
 }
 
 --
@@ -176,7 +192,7 @@ String ::= a::String b::String
 {--
  - Data structure representing vertices in the flow graph within a single production.
  -}
-nonterminal FlowVertex;
+nonterminal FlowVertex with unparse;
 
 {--
  - A vertex representing an attribute on the nonterminal being constructed by this production.
@@ -186,6 +202,7 @@ nonterminal FlowVertex;
 abstract production lhsVertex
 top::FlowVertex ::= attrName::String
 {
+  top.unparse = "lhsV(" ++ quoteString(attrName) ++ ")";
 }
 
 {--
@@ -197,6 +214,7 @@ top::FlowVertex ::= attrName::String
 abstract production rhsVertex
 top::FlowVertex ::= sigName::String  attrName::String
 {
+  top.unparse = "rhsV(" ++ quoteString(sigName) ++ ", " ++ quoteString(attrName) ++ ")";
 }
 
 {--
@@ -209,6 +227,7 @@ top::FlowVertex ::= sigName::String  attrName::String
 abstract production localEqVertex
 top::FlowVertex ::= fName::String
 {
+  top.unparse = "localEqV(" ++ quoteString(fName) ++ ")";
 }
 
 {--
@@ -222,6 +241,7 @@ top::FlowVertex ::= fName::String
 abstract production localVertex
 top::FlowVertex ::= fName::String  attrName::String
 {
+  top.unparse = "localV(" ++ quoteString(fName) ++ ", " ++ quoteString(attrName) ++ ")";
 }
 
 
@@ -234,5 +254,11 @@ function forwardVertex
 FlowVertex ::= attrName::String
 {
   return localVertex("forward", attrName);
+}
+
+function unparseVertices
+String ::= fvs::[FlowVertex]
+{
+  return "[" ++ implode(", ", map((.unparse), fvs)) ++ "]";
 }
 

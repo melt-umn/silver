@@ -55,6 +55,7 @@ top::IFlows ::= '[' ']'
 {
   top.flowDefs = [];
 }
+{- FOR THE MOMENT, I'm just going to deliberately break this
 concrete production aFlowsSome
 top::IFlows ::= '[' l::IFlowsInner ']'
 {
@@ -71,7 +72,6 @@ top::IFlowsInner ::= l::IFlowsInner ',' r::IFlow
 {
   top.flowDefs = l.flowDefs ++ r.flowDefs;
 }
-
 
 concrete production aFlowSyn
 top::IFlow ::= 'syn' '(' prod::IName ',' attr::IName ')'
@@ -96,4 +96,4 @@ top::IFlow ::= 'prod' '(' nt::IName ',' prod::IName ')'
 {
   top.flowDefs = [prodFlowDef(nt.aname, prod.aname)];
 }
-
+-}
