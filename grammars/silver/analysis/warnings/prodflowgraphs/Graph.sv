@@ -178,7 +178,7 @@ String ::= specs::[Pair<String [Pair<FlowVertex FlowVertex>]>]
   return case specs of
   | [] -> ""
   | pair(prod, edges)::t ->
-      "subgraph \"" ++ prod ++ "\" {\n" ++ 
+      "subgraph \"cluster:" ++ prod ++ "\" {\n" ++ 
       implode("", map(makeDotArrow(prod, _), edges)) ++
       "}\n" ++
       generateDotGraph(t)
