@@ -132,7 +132,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 aspect production localValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
-  top.flowDefs = [localEq(top.signature.fullName, val.lookupValue.fullName, e.flowDeps)];
+  top.flowDefs = [localEq(top.signature.fullName, val.lookupValue.fullName, val.lookupValue.typerep.typeName, e.flowDeps)];
 }
 aspect production errorValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr

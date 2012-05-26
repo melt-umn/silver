@@ -2,22 +2,40 @@ grammar silver:definition:flow:ast;
 
 import silver:definition:env only quoteString, unparse;
 
-nonterminal FlowDefs with synTreeContribs, defTreeContribs, fwdTreeContribs, unparses, prodTreeContribs;
-nonterminal FlowDef with synTreeContribs, defTreeContribs, fwdTreeContribs, unparses, prodTreeContribs;
+nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges;
+nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges;
 
+{-- lookup (production, attribute) to find synthesized equations -}
 synthesized attribute synTreeContribs :: [Pair<String FlowDef>];
+{-- lookup (production, attribute) to find inherited equation -}
+synthesized attribute inhTreeContribs :: [Pair<String FlowDef>];
+{-- lookup (nonterminal, attribute) to find default syn equations -}
 synthesized attribute defTreeContribs :: [Pair<String FlowDef>];
+{-- lookup (production) to find forward equations -}
 synthesized attribute fwdTreeContribs :: [Pair<String FlowDef>];
+{-- lookup (production) to find forward INHERITED equations -}
+synthesized attribute fwdInhTreeContribs :: [Pair<String FlowDef>];
+{-- lookup (nonterminal) to find all non-forwarding production -}
 synthesized attribute prodTreeContribs :: [Pair<String FlowDef>];
+{-- find all equations having to do DIRECTLY with a production
+    (directly meaning e.g. no default equations, even if they might
+    affect it) -}
+synthesized attribute prodGraphContribs :: [Pair<String FlowDef>];
+{-- Edge lists from equations -}
+synthesized attribute flowEdges :: [Pair<FlowVertex FlowVertex>];
+
 synthesized attribute unparses :: [String];
 
 abstract production consFlow
 top::FlowDefs ::= h::FlowDef  t::FlowDefs
 {
   top.synTreeContribs = h.synTreeContribs ++ t.synTreeContribs;
+  top.inhTreeContribs = h.inhTreeContribs ++ t.inhTreeContribs;
   top.defTreeContribs = h.defTreeContribs ++ t.defTreeContribs;
   top.fwdTreeContribs = h.fwdTreeContribs ++ t.fwdTreeContribs;
+  top.fwdInhTreeContribs = h.fwdInhTreeContribs ++ t.fwdInhTreeContribs;
   top.prodTreeContribs = h.prodTreeContribs ++ t.prodTreeContribs;
+  top.prodGraphContribs = h.prodGraphContribs ++ t.prodGraphContribs;
   top.unparses = h.unparses ++ t.unparses;
 }
 
@@ -25,9 +43,12 @@ abstract production nilFlow
 top::FlowDefs ::=
 {
   top.synTreeContribs = [];
+  top.inhTreeContribs = [];
   top.defTreeContribs = [];
   top.fwdTreeContribs = [];
+  top.fwdInhTreeContribs = [];
   top.prodTreeContribs = [];
+  top.prodGraphContribs = [];
   top.unparses = [];
 }
 
@@ -41,8 +62,10 @@ aspect default production
 top::FlowDef ::=
 {
   top.synTreeContribs = [];
+  top.inhTreeContribs = [];
   top.defTreeContribs = [];
   top.fwdTreeContribs = [];
+  top.fwdInhTreeContribs = [];
   top.prodTreeContribs = [];
 }
 
@@ -57,6 +80,8 @@ abstract production prodFlowDef
 top::FlowDef ::= nt::String  prod::String
 {
   top.prodTreeContribs = [pair(nt, top)];
+  top.prodGraphContribs = [];
+  top.flowEdges = [];
   top.unparses = ["prod(" ++ quoteString(nt) ++ ", " ++ quoteString(prod) ++ ")"];
 }
 
@@ -72,6 +97,8 @@ abstract production synEq
 top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 {
   top.synTreeContribs = [pair(crossnames(prod, attr), top)];
+  top.prodGraphContribs = [pair(prod, top)];
+  top.flowEdges = map(pair(lhsVertex(attr), _), deps);
   top.unparses = ["syn(" ++ implode(", ", [quoteString(prod), quoteString(attr), unparseVertices(deps)]) ++ ")"];
 }
 
@@ -87,6 +114,9 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 abstract production inhEq
 top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
 {
+  top.inhTreeContribs = [pair(crossnames(prod, attr), top)];
+  top.prodGraphContribs = [pair(prod, top)];
+  top.flowEdges = map(pair(rhsVertex(sigName, attr), _), deps);
   top.unparses = ["inh(" ++ implode(", ", [quoteString(prod), quoteString(sigName), quoteString(attr), unparseVertices(deps)]) ++ ")"];
 }
 
@@ -103,6 +133,8 @@ abstract production defEq
 top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
 {
   top.defTreeContribs = [pair(crossnames(nt, attr), top)];
+  top.prodGraphContribs = []; -- defaults don't show up in the prod graph!!
+  top.flowEdges = map(pair(lhsVertex(attr), _), deps);
   top.unparses = ["def(" ++ implode(", ", [quoteString(nt), quoteString(attr), unparseVertices(deps)]) ++ ")"];
 }
 
@@ -117,6 +149,8 @@ abstract production fwdEq
 top::FlowDef ::= prod::String  deps::[FlowVertex]
 {
   top.fwdTreeContribs = [pair(prod, top)];
+  top.prodGraphContribs = [pair(prod, top)];
+  top.flowEdges = map(pair(forwardEqVertex(), _), deps);
   top.unparses = ["fwd(" ++ implode(", ", [quoteString(prod), unparseVertices(deps)]) ++ ")"];
 }
 
@@ -131,7 +165,9 @@ top::FlowDef ::= prod::String  deps::[FlowVertex]
 abstract production fwdInhEq
 top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 {
-  top.fwdTreeContribs = [pair(prod, top)];
+  top.fwdInhTreeContribs = [pair(crossnames(prod, attr), top)];
+  top.prodGraphContribs = [pair(prod, top)];
+  top.flowEdges = map(pair(forwardVertex(attr), _), deps);
   top.unparses = ["fwdInh(" ++ implode(", ", [quoteString(prod), quoteString(attr), unparseVertices(deps)]) ++ ")"];
 }
 
@@ -141,13 +177,16 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
  -
  - @param prod  the full name of the production
  - @param fName  the name of the local/production attribute
+ - @param typeName  the full name of the type, or empty string if not a decorable type!
  - @param deps  the dependencies of this equation on other flow graph elements
  - CONTRIBUTIONS ARE POSSIBLE
  -}
 abstract production localEq
-top::FlowDef ::= prod::String  fName::String  deps::[FlowVertex]
+top::FlowDef ::= prod::String  fName::String  typeName::String  deps::[FlowVertex]
 {
-  top.unparses = ["local(" ++ implode(", ", [quoteString(prod), quoteString(fName), unparseVertices(deps)]) ++ ")"];
+  top.prodGraphContribs = [pair(prod, top)];
+  top.flowEdges = map(pair(localEqVertex(fName), _), deps);
+  top.unparses = ["local(" ++ implode(", ", [quoteString(prod), quoteString(fName), quoteString(typeName), unparseVertices(deps)]) ++ ")"];
 }
 
 {--
@@ -162,6 +201,8 @@ top::FlowDef ::= prod::String  fName::String  deps::[FlowVertex]
 abstract production localInhEq
 top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 {
+  top.prodGraphContribs = [pair(prod, top)];
+  top.flowEdges = map(pair(localVertex(fName, attr), _), deps);
   top.unparses = ["localInh(" ++ implode(", ", [quoteString(prod), quoteString(fName), quoteString(attr), unparseVertices(deps)]) ++ ")"];
 }
 
@@ -176,6 +217,8 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 abstract production extraEq
 top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]
 {
+  top.prodGraphContribs = [pair(prod, top)];
+  top.flowEdges = map(pair(src, _), deps);
   top.unparses = ["extra(" ++ implode(", ", [quoteString(prod), src.unparse, unparseVertices(deps)]) ++ ")"];
 }
 
