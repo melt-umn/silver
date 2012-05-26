@@ -8,6 +8,7 @@ import silver:driver;
 --import silver:extension:doc;
 import silver:analysis:warnings:defs;
 import silver:analysis:warnings:exporting;
+import silver:analysis:warnings:prodflowgraphs;
 
 parser rParse::Root {
   silver:host;
