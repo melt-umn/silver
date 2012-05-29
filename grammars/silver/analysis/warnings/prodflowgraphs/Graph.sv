@@ -48,9 +48,18 @@ top::Unit ::= grammars::[Decorated RootSpec]
   local prodGraph :: [Pair<String [Pair<FlowVertex FlowVertex>]>] = 
     fixupGraphs(allProds, prodTree, allEnv, allRealEnv);
   
+  local prodinfos :: EnvTree<Pair<NamedSignature [Pair<String String>]>> =
+    directBuildTree(makeProdLocalInfo(allProds, prodTree, allRealEnv));
   
-  top.io = writeFile("flow-deps.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}",
-    print("Generating flow graphs\n", top.ioIn));
+  local flowTypes :: EnvTree<Pair<String String>> =
+    fullySolveFlowTypes(prodinfos, prodGraph, allRealEnv, rtm:empty(compareString));
+  
+  local allNts :: [String] = findAllNts(allProds, allRealEnv);
+  
+  top.io = 
+    writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(allNts, flowTypes) ++ "}", 
+      writeFile("flow-deps.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}",
+        print("Generating flow graphs\n", top.ioIn)));
 
   top.code = 0;
   top.order = 0;
@@ -171,6 +180,24 @@ function addAutocopyEqs
 }
 
 
+function generateFlowDotGraph
+String ::= nts::[String]  ft::EnvTree<Pair<String String>>
+{
+  local nt::String = head(nts);
+  local edges::[Pair<String String>] = searchEnvTree(nt, ft);
+  
+  return if null(nts) then ""
+  else "subgraph \"clust:" ++ nt ++ "\" {\n" ++
+       implode("", map(makeNtFlow(nt, _), edges)) ++
+       "}\n" ++
+       generateFlowDotGraph(tail(nts), ft);
+}
+
+function makeNtFlow
+String ::= nt::String  e::Pair<String String>
+{
+  return "\"" ++ nt ++ "/" ++ e.fst ++ "\" -> \"" ++ nt ++ "/" ++ e.snd ++ "\";\n";
+}
 
 function generateDotGraph
 String ::= specs::[Pair<String [Pair<FlowVertex FlowVertex>]>]
@@ -191,6 +218,176 @@ String ::= p::String e::Pair<FlowVertex FlowVertex>
   return "\"" ++ p ++ "/" ++ e.fst.dotName ++ "\" -> \"" ++ p ++ "/" ++ e.snd.dotName ++ "\";\n";
 }
 
+-- (prod, (sig, [local, type]))
+function makeProdLocalInfo
+[Pair<String Pair<NamedSignature [Pair<String String>]>>] ::= prods::[String]  prodTree::EnvTree<FlowDef>  realEnv::Decorated Env
+{
+  return if null(prods) then []
+  else pair(head(prods), 
+         pair(
+           head(getValueDclAll(head(prods), realEnv)).namedSignature,
+           findAllLocals(searchEnvTree(head(prods), prodTree)))) ::
+       makeProdLocalInfo(tail(prods), prodTree, realEnv);
+}
+function findAllLocals
+[Pair<String String>] ::= d::[FlowDef]
+{
+  return case d of
+  | [] -> []
+  | localEq(_, fN, "", deps) :: rest -> findAllLocals(rest)
+  | localEq(_, fN, tN, deps) :: rest -> pair(fN, tN) :: findAllLocals(rest)
+  | _ :: rest -> findAllLocals(rest)
+  end;
+}
+
+function findAllNts
+[String] ::=  prods::[String]  realEnv::Decorated Env
+{
+  return nubBy(stringEq, map((.typeName), map((.typerep), map((.outputElement), map((.namedSignature), map(head, map(getValueDclAll(_, realEnv), prods)))))));
+}
+
+-- nt -> [(syn, inh)]
+function fullySolveFlowTypes
+EnvTree<Pair<String String>> ::= prodinfos::EnvTree<Pair<NamedSignature [Pair<String String>]>>
+                                 graphs::[Pair<String [Pair<FlowVertex FlowVertex>]>]
+                                 realEnv::Decorated Env
+                                 ntEnv::EnvTree<Pair<String String>>
+{
+  local iter :: [Pair<String Pair<String String>>] =
+    solveFlowTypes(prodinfos, graphs, realEnv, ntEnv);
+  
+  return if null(iter) then ntEnv
+  else fullySolveFlowTypes(prodinfos, graphs, realEnv, 
+         rtm:add(iter, ntEnv));
+}
+
+
+-- (nt, [(syn, inh)]) ::= 
+function solveFlowTypes
+[Pair<String Pair<String String>>] ::= prodinfos::EnvTree<Pair<NamedSignature [Pair<String String>]>>
+                                       graphs::[Pair<String [Pair<FlowVertex FlowVertex>]>]
+                                       realEnv::Decorated Env
+                                       ntEnv::EnvTree<Pair<String String>>
+{
+  local graph :: Pair<String [Pair<FlowVertex FlowVertex>]> = head(graphs);
+  local prodInfo :: Pair<NamedSignature [Pair<String String>]> = head(searchEnvTree(prod, prodinfos));
+
+  local prod :: String = graph.fst;
+  local nt :: String = sig.outputElement.typerep.typeName;
+  local edges :: [Pair<FlowVertex FlowVertex>] = graph.snd;
+  local sig :: NamedSignature = prodInfo.fst;
+  local localTypes :: [Pair<String String>] = prodInfo.snd;
+  
+  local stitchedGraph :: [Pair<FlowVertex FlowVertex>] =
+    edges ++
+    stitchEdges(forwardVertex, searchEnvTree(nt, ntEnv)) ++
+    stitchRhsEdges(sig.inputElements, ntEnv) ++
+    stitchLocalEdges(localTypes, ntEnv);
+  
+  local attrs :: Pair<[DclInfo] [DclInfo]> = partition(isOccursSynthesized(_, realEnv), getAttrsOn(nt, realEnv));
+  local syns :: [String] = map((.attrOccurring), attrs.fst);
+  local inhs :: [String] = map((.attrOccurring), attrs.snd);
+  
+  local currentFlowType :: EnvTree<String> =
+    directBuildTree(searchEnvTree(nt, ntEnv));
+  
+  -- The New Improved Flow Type
+  local synExpansion :: [Pair<String [String]>] =
+    expandForEach(syns, inhs, stitchedGraph);
+  
+  -- Find what edges are NEW NEW NEW
+  local brandNewEdges :: [Pair<String String>] =
+    findBrandNewEdges(synExpansion, currentFlowType);
+  
+  return if null(graphs) then [] else map(pair(nt, _), brandNewEdges) ++ solveFlowTypes(prodinfos, tail(graphs), realEnv, ntEnv);
+}
+
+function findBrandNewEdges
+[Pair<String String>] ::= candidates::[Pair<String [String]>]  currentFlowType::EnvTree<String>
+{
+  local syn :: String = head(candidates).fst;
+  local inhs :: [String] = head(candidates).snd;
+  
+  local newinhs :: [String] = removeAllBy(stringEq, searchEnvTree(syn, currentFlowType), inhs);
+  
+  local newEdges :: [Pair<String String>] = map(pair(syn, _), newinhs);
+  
+  return if null(candidates) then [] else newEdges ++ findBrandNewEdges(tail(candidates), currentFlowType);
+}
+
+function dualApply
+Pair<b b> ::= f::(b ::= a)  x::Pair<a a>
+{
+  return pair(f(x.fst), f(x.snd));
+}
+function stitchEdges
+[Pair<FlowVertex FlowVertex>] ::= obj::(FlowVertex ::= String) lst::[Pair<String String>]
+{
+  return map(dualApply(obj, _), lst);
+}
+function stitchRhsEdges
+[Pair<FlowVertex FlowVertex>] ::= rhs::[NamedSignatureElement]  ntEnv::EnvTree<Pair<String String>>
+{
+  return if null(rhs) then []
+  else stitchEdges(rhsVertex(head(rhs).elementName, _), searchEnvTree(head(rhs).typerep.typeName, ntEnv)) ++ stitchRhsEdges(tail(rhs), ntEnv);
+}
+function stitchLocalEdges
+[Pair<FlowVertex FlowVertex>] ::= locals::[Pair<String String>]  ntEnv::EnvTree<Pair<String String>>
+{
+  return if null(locals) then []
+  else stitchEdges(localVertex(head(locals).fst, _), searchEnvTree(head(locals).snd, ntEnv)) ++ stitchLocalEdges(tail(locals), ntEnv);
+}
+
+function expandGraph
+[FlowVertex] ::= set::[FlowVertex]  graph::[Pair<FlowVertex FlowVertex>]
+{
+  local expanded :: [FlowVertex] =
+    nubBy(flowVertexEq, foldr(append, [], map(expandNode(_, graph), set)));
+  
+  local newNodes :: [FlowVertex] =
+    removeAllBy(flowVertexEq, set, expanded);
+  
+  return if null(newNodes) then set else expandGraph(expanded, graph);
+}
+
+function expandNode
+[FlowVertex] ::= n::FlowVertex  graph::[Pair<FlowVertex FlowVertex>]
+{
+  return if null(graph) then []
+  else (if flowVertexEq(n, head(graph).fst) then [head(graph).snd] else []) ++
+    expandNode(n, tail(graph));
+}
+
+function expandForEach
+[Pair<String [String]>] ::= syns::[String]  inhs::[String]  graph::[Pair<FlowVertex FlowVertex>]
+{
+  return if null(syns) then []
+  else pair(head(syns), map(inhNameFrom, filter(isInInhs(inhs, _), expandGraph([lhsVertex(head(syns))], graph)))) ::
+         expandForEach(tail(syns), inhs, graph);
+}
+
+
+function flowVertexEq
+Boolean ::= a::FlowVertex  b::FlowVertex
+{
+  -- eh, good enough
+  return a.dotName == b.dotName;
+}
+function isInInhs
+Boolean ::= inhs::[String]  f::FlowVertex
+{
+  return case f of
+  | lhsVertex(a) -> containsBy(stringEq, a, inhs)
+  | _ -> false
+  end;
+}
+function inhNameFrom
+String ::= f::FlowVertex
+{
+  return case f of
+  | lhsVertex(a) -> a
+  end;
+}
 
 
 synthesized attribute dotName :: String occurs on FlowVertex;
