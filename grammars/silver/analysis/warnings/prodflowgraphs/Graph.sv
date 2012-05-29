@@ -364,7 +364,7 @@ function expandGraph
   local newNodes :: [FlowVertex] =
     removeAllBy(flowVertexEq, set, expanded);
   
-  return if null(newNodes) then set else expandGraph(expanded, graph);
+  return if null(newNodes) then set else expandGraph(set ++ newNodes, graph);
 }
 
 
