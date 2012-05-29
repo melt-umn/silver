@@ -290,9 +290,11 @@ function solveFlowTypes
   local currentFlowType :: EnvTree<String> =
     directBuildTree(searchEnvTree(nt, ntEnv));
   
+  local stitchedGraphEnv :: EnvTree<FlowVertex> =
+    directBuildTree(map(makeGraphEnv, stitchedGraph));
   -- The New Improved Flow Type
   local synExpansion :: [Pair<String [String]>] =
-    expandForEach(syns, inhs, stitchedGraph);
+    expandForEach(syns, inhs, stitchedGraphEnv);
   
   -- Find what edges are NEW NEW NEW
   local brandNewEdges :: [Pair<String Pair<String String>>] =
@@ -301,6 +303,12 @@ function solveFlowTypes
   return if null(graphs) then []
   else brandNewEdges ++
          solveFlowTypes(prodinfos, tail(graphs), realEnv, rtm:add(brandNewEdges, ntEnv));
+}
+
+function makeGraphEnv
+Pair<String FlowVertex> ::= p::Pair<FlowVertex FlowVertex>
+{
+  return pair(p.fst.dotName, p.snd);
 }
 
 function findBrandNewEdges
@@ -339,11 +347,19 @@ function stitchLocalEdges
   else stitchEdges(localVertex(head(locals).fst, _), searchEnvTree(head(locals).snd, ntEnv)) ++ stitchLocalEdges(tail(locals), ntEnv);
 }
 
+function expandForEach
+[Pair<String [String]>] ::= syns::[String]  inhs::[String]  graph::EnvTree<FlowVertex>
+{
+  return if null(syns) then []
+  else pair(head(syns), map(inhNameFrom, filter(isInInhs(inhs, _), expandGraph([lhsVertex(head(syns))], graph)))) ::
+         expandForEach(tail(syns), inhs, graph);
+}
+
 function expandGraph
-[FlowVertex] ::= set::[FlowVertex]  graph::[Pair<FlowVertex FlowVertex>]
+[FlowVertex] ::= set::[FlowVertex]  graph::EnvTree<FlowVertex>
 {
   local expanded :: [FlowVertex] =
-    nubBy(flowVertexEq, foldr(append, [], map(expandNode(_, graph), set)));
+    nubBy(flowVertexEq, foldr(append, [], map(searchEnvTree(_, graph), map((.dotName), set))));
   
   local newNodes :: [FlowVertex] =
     removeAllBy(flowVertexEq, set, expanded);
@@ -351,21 +367,7 @@ function expandGraph
   return if null(newNodes) then set else expandGraph(expanded, graph);
 }
 
-function expandNode
-[FlowVertex] ::= n::FlowVertex  graph::[Pair<FlowVertex FlowVertex>]
-{
-  return if null(graph) then []
-  else (if flowVertexEq(n, head(graph).fst) then [head(graph).snd] else []) ++
-    expandNode(n, tail(graph));
-}
 
-function expandForEach
-[Pair<String [String]>] ::= syns::[String]  inhs::[String]  graph::[Pair<FlowVertex FlowVertex>]
-{
-  return if null(syns) then []
-  else pair(head(syns), map(inhNameFrom, filter(isInInhs(inhs, _), expandGraph([lhsVertex(head(syns))], graph)))) ::
-         expandForEach(tail(syns), inhs, graph);
-}
 
 
 function flowVertexEq
