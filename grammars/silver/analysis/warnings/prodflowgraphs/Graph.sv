@@ -187,7 +187,7 @@ String ::= nts::[String]  ft::EnvTree<Pair<String String>>
   local edges::[Pair<String String>] = searchEnvTree(nt, ft);
   
   return if null(nts) then ""
-  else "subgraph \"clust:" ++ nt ++ "\" {\n" ++
+  else "subgraph \"cluster:" ++ nt ++ "\" {\n" ++
        implode("", map(makeNtFlow(nt, _), edges)) ++
        "}\n" ++
        generateFlowDotGraph(tail(nts), ft);
