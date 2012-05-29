@@ -187,12 +187,24 @@ String ::= nts::[String]  ft::EnvTree<Pair<String String>>
   local edges::[Pair<String String>] = searchEnvTree(nt, ft);
   
   return if null(nts) then ""
-  else "subgraph \"cluster:" ++ nt ++ "\" {\n" ++
+  else "subgraph \"cluster:" ++ nt ++ "\" {\nlabel=\"" ++ substring(lastIndexOf(":", nt) + 1, length(nt), nt) ++ "\";\n" ++ 
+       implode("", map(makeLabelDcls(nt, _), nubBy(stringEq, expandLabels(edges)))) ++
        implode("", map(makeNtFlow(nt, _), edges)) ++
        "}\n" ++
        generateFlowDotGraph(tail(nts), ft);
 }
 
+function expandLabels
+[String] ::= l::[Pair<String String>]
+{
+  return if null(l) then [] else head(l).fst :: head(l).snd :: expandLabels(tail(l));
+}
+function makeLabelDcls
+String ::= nt::String  attr::String
+{
+  local a :: String = substring(lastIndexOf(":", attr) + 1, length(attr), attr);
+  return "\"" ++ nt ++ "/" ++ attr ++ "\"[label=\"" ++ a ++ "\"];\n";
+}
 function makeNtFlow
 String ::= nt::String  e::Pair<String String>
 {
