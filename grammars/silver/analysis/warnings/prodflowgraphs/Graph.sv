@@ -363,7 +363,7 @@ function expandForEach
 [Pair<String [String]>] ::= syns::[String]  inhs::[String]  graph::EnvTree<FlowVertex>
 {
   return if null(syns) then []
-  else pair(head(syns), map(inhNameFrom, filter(isInInhs(inhs, _), expandGraph([lhsVertex(head(syns))], graph)))) ::
+  else pair(head(syns), foldr(collectInhs(inhs,_,_), [], expandGraph([lhsVertex(head(syns))], graph))) ::
          expandForEach(tail(syns), inhs, graph);
 }
 
@@ -379,7 +379,14 @@ function expandGraph
   return if null(newNodes) then set else expandGraph(set ++ newNodes, graph);
 }
 
-
+function collectInhs
+[String] ::= inhs::[String]  f::FlowVertex  l::[String]
+{
+  return case f of
+  | lhsVertex(a) -> if containsBy(stringEq, a, l) then l else a::l
+  | _ -> l
+  end;
+}
 
 
 function flowVertexEq
@@ -387,21 +394,6 @@ Boolean ::= a::FlowVertex  b::FlowVertex
 {
   -- eh, good enough
   return a.dotName == b.dotName;
-}
-function isInInhs
-Boolean ::= inhs::[String]  f::FlowVertex
-{
-  return case f of
-  | lhsVertex(a) -> containsBy(stringEq, a, inhs)
-  | _ -> false
-  end;
-}
-function inhNameFrom
-String ::= f::FlowVertex
-{
-  return case f of
-  | lhsVertex(a) -> a
-  end;
 }
 
 
