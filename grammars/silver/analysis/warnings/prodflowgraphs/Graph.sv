@@ -261,7 +261,6 @@ EnvTree<Pair<String String>> ::= prodinfos::EnvTree<Pair<NamedSignature [Pair<St
          rtm:add(iter, ntEnv));
 }
 
-
 -- (nt, [(syn, inh)]) ::= 
 function solveFlowTypes
 [Pair<String Pair<String String>>] ::= prodinfos::EnvTree<Pair<NamedSignature [Pair<String String>]>>
@@ -296,10 +295,12 @@ function solveFlowTypes
     expandForEach(syns, inhs, stitchedGraph);
   
   -- Find what edges are NEW NEW NEW
-  local brandNewEdges :: [Pair<String String>] =
-    findBrandNewEdges(synExpansion, currentFlowType);
+  local brandNewEdges :: [Pair<String Pair<String String>>] =
+    map(pair(nt, _), findBrandNewEdges(synExpansion, currentFlowType));
   
-  return if null(graphs) then [] else map(pair(nt, _), brandNewEdges) ++ solveFlowTypes(prodinfos, tail(graphs), realEnv, ntEnv);
+  return if null(graphs) then []
+  else brandNewEdges ++
+         solveFlowTypes(prodinfos, tail(graphs), realEnv, rtm:add(brandNewEdges, ntEnv));
 }
 
 function findBrandNewEdges
