@@ -8,7 +8,7 @@ import silver:modification:copper hiding Disambiguation_kwd, Submits_t, Dominate
 import silver:definition:env;
 import silver:definition:concrete_syntax;
 
-import silver:definition:core only grammarName, location;
+import silver:definition:core only grammarName, location, env;
 
 import silver:util;
 

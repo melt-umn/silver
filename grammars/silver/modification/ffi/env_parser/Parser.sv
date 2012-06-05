@@ -1,5 +1,6 @@
 grammar silver:modification:ffi:env_parser;
 
+import silver:definition:core only grammarName, location, env;
 import silver:definition:env:env_parser;
 import silver:modification:ffi;
 import silver:definition:env;

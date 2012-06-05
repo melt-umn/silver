@@ -264,6 +264,7 @@ top::SyntaxDcl ::= n::String ty::TypeExp acode::String
     "  </ParserAttribute>\n";
 
   -- TODO: technically, there should be no free variables in ty.
+  ty.boundVariables = [];
   top.unparses = ["pattr('" ++ n ++ "', " ++ ty.unparse ++ ",\"" ++ escapeString(acode) ++ "\")"];
 }
 

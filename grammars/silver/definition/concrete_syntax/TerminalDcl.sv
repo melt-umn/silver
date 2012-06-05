@@ -84,8 +84,8 @@ top::TerminalKeywordModifier ::=
 }
 
 
-nonterminal TerminalModifiers with config, location, file, pp, terminalModifiers, errors, env, grammarName;
-nonterminal TerminalModifier with config, location, file, pp, terminalModifiers, errors, env, grammarName;
+nonterminal TerminalModifiers with config, location, file, pp, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+nonterminal TerminalModifier with config, location, file, pp, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 
 synthesized attribute terminalModifiers :: [SyntaxTerminalModifier];
 

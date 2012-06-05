@@ -7,3 +7,4 @@ top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
   top.initValues := "\tpublic static final common.Thunk<Object> " ++ id.name 
       ++ " = " ++ wrapThunkText("common.TopNode.singleton", e.translation, "Object") ++ ";\n";
 }
+
