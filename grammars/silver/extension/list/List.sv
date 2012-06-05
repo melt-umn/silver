@@ -1,10 +1,8 @@
 grammar silver:extension:list;
-import silver:definition:core;
-import silver:definition:env;
-import silver:definition:type;
+
 import silver:definition:type:syntax;
 
-import silver:analysis:typechecking:core;
+--import silver:analysis:typechecking:core;
 
 terminal LSqr_t '[' lexer classes {KEYWORD};
 terminal RSqr_t ']' lexer classes {KEYWORD};

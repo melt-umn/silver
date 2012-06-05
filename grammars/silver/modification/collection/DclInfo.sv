@@ -1,9 +1,5 @@
 grammar silver:modification:collection;
 
-import silver:definition:env;
-import silver:definition:core;
-import silver:definition:type;
-
 attribute attrBaseDefDispatcher, attrAppendDefDispatcher, baseDefDispatcher, appendDefDispatcher occurs on DclInfo;
 
 synthesized attribute attrBaseDefDispatcher :: (ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr);

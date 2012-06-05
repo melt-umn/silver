@@ -10,7 +10,7 @@ imports silver:definition:type;
 imports silver:definition:type:syntax;
 imports silver:definition:env;
 
-imports silver:definition:flow:env;
+--imports silver:definition:flow:env;
 imports silver:definition:flow:ast;
 
 synthesized attribute warnOrphaned :: Boolean occurs on CmdArgs;

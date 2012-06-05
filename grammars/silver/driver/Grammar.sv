@@ -1,6 +1,6 @@
 grammar silver:driver;
 
-imports silver:definition:flow:env;
+--imports silver:definition:flow:env;
 imports silver:definition:flow:ast;
 imports silver:analysis:warnings:prodflowgraphs; -- TODO oh my
 import silver:util:raw:treemap as rtm;

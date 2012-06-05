@@ -4,7 +4,7 @@ import silver:definition:core;
 import silver:definition:env;
 import silver:definition:type;
 import silver:definition:type:syntax only typerepType, Type;
-import silver:analysis:typechecking:core only TypeCheck, check, leftpp, rightpp, typeerror, upSubst, downSubst, finalSubst;
+--import silver:analysis:typechecking:core only TypeCheck, check, leftpp, rightpp, typeerror, upSubst, downSubst, finalSubst;
 
 import silver:translation:java:core;
 import silver:translation:java:type;
