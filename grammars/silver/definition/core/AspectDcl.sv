@@ -145,7 +145,7 @@ top::AspectProductionLHS ::= id::Name '::' t::Type
 abstract production aspectProductionLHSFull
 top::AspectProductionLHS ::= id::Name t::TypeExp
 {
-  top.pp = id.pp ++ "::" ++ t.unparse;
+  top.pp = id.pp ++ "::" ++ prettyType(t);
   top.location = id.location;
 
   production attribute fName :: String;
@@ -224,7 +224,7 @@ top::AspectRHSElem ::= id::Name '::' t::Type
 abstract production aspectRHSElemFull
 top::AspectRHSElem ::= id::Name t::TypeExp
 {
-  top.pp = id.pp ++ "::" ++ t.unparse;
+  top.pp = id.pp ++ "::" ++ prettyType(t);
   top.location = id.location;
 
   production attribute fName :: String;

@@ -3,7 +3,7 @@ grammar silver:definition:concrete_syntax:ast:env_parser;
 import silver:definition:env;
 import silver:definition:env:env_parser;
 
-import silver:definition:core only location, env;
+import silver:definition:core only grammarName, location, env;
 import silver:definition:concrete_syntax only parserSpecs, parserSpec, syntaxAst;
 import silver:definition:concrete_syntax:ast;
 import silver:definition:regex hiding RegexRBrack_t, RegexLBrack_t, RegexLParen_t, RegexRParen_t; -- TODO: a bit of a hack?
@@ -110,9 +110,9 @@ top::IParser ::= 'parser' '(' l::ILocation ',' g::IName ',' n::IName ',' snt::IN
 
 
 --------------------------------------------------------------------------------
-nonterminal ISyntax with syntaxAst;
-nonterminal ISyntaxInner with syntaxAst;
-nonterminal ISyntaxDcl with syntaxAst;
+nonterminal ISyntax with syntaxAst, grammarName;
+nonterminal ISyntaxInner with syntaxAst, grammarName;
+nonterminal ISyntaxDcl with syntaxAst, grammarName;
 
 concrete production aSyntaxNone
 top::ISyntax ::= '[' ']'
@@ -165,6 +165,7 @@ top::ISyntaxDcl ::= 'lclass' '(' n::IName ',' d::INames ',' s::INames ')'
 concrete production aSyntaxPattr
 top::ISyntaxDcl ::= 'pattr' '(' n::IName ',' t::ITypeRep ',' s::IString ')'
 {
+  t.env = emptyEnv();
   top.syntaxAst = [syntaxParserAttribute(n.aname, t.typerep, s.str)];
 }
 concrete production aSyntaxDisambig
