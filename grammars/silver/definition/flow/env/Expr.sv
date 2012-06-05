@@ -6,6 +6,7 @@ import silver:modification:patternmatching;
 import silver:modification:let_fix;
 
 synthesized attribute flowDeps :: [FlowVertex] occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
+attribute flowEnv occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
 
 --attribute upSubst, downSubst, finalSubst occurs on Expr, ForwardInhs, ForwardInh, ForwardLHSExpr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
 
@@ -406,7 +407,7 @@ top::Expr ::= q::Decorated QName
 
 
 -- FROM LET TODO
-attribute flowDeps occurs on AssignExpr;
+attribute flowDeps, flowEnv occurs on AssignExpr;
 
 aspect production letp
 top::Expr ::= l::Location  la::AssignExpr  e::Expr
@@ -434,7 +435,7 @@ top::Expr ::= q::Decorated QName
 
 
 -- FROM PATTERN TODO
-attribute flowDeps occurs on PrimPatterns, PrimPattern;
+attribute flowDeps, flowEnv occurs on PrimPatterns, PrimPattern;
 
 aspect production matchPrimitiveReal
 top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr

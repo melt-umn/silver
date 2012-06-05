@@ -20,6 +20,7 @@ top::RootSpec ::= c1::Decorated Root
   top.declaredName = c1.declaredName;
   top.moduleNames = makeSet(c1.moduleNames);
   top.allGrammarDependencies = c1.grammarDependencies; -- grabbing the inh
+  top.flowTypes = c1.grammarFlowTypes;
 
   top.importedDefs = c1.importedDefs;
   top.defs = c1.defs;
@@ -44,6 +45,7 @@ top::RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
   top.declaredName = c1.declaredName;
   top.moduleNames = makeSet(c1.moduleNames ++ c2.moduleNames);
   top.allGrammarDependencies = c1.allGrammarDependencies;
+  top.flowTypes = c1.flowTypes;
 
   top.importedDefs = appendDefs(c1.importedDefs, c2.importedDefs);
   top.defs = appendDefs(c1.defs, c2.defs);

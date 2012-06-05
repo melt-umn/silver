@@ -3,7 +3,7 @@ grammar silver:driver;
 {--
  - Turns a list of files that compose a grammar into a RootSpec, having compiled them.
  -}
-nonterminal Roots with config, env, io, rSpec, rParser, compiledGrammars, globalImports, grammarDependencies, flowEnv;
+nonterminal Roots with config, env, io, rSpec, rParser, compiledGrammars, globalImports, grammarDependencies, flowEnv, productionFlowGraphs, grammarFlowTypes;
 
 abstract production compileFiles
 top::Roots ::= iIn::IO gn::String files::[String] gpath::String
@@ -22,6 +22,8 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   r.env = top.env;
   r.globalImports = top.globalImports;
   r.grammarDependencies = top.grammarDependencies;
+  r.productionFlowGraphs = top.productionFlowGraphs;
+  r.grammarFlowTypes = top.grammarFlowTypes;
   r.flowEnv = top.flowEnv;
   -- These are compilation-wide inherited attributes:
   r.compiledGrammars = top.compiledGrammars;
@@ -35,6 +37,8 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   recurse.env = top.env;
   recurse.globalImports = top.globalImports;
   recurse.grammarDependencies = top.grammarDependencies;
+  recurse.productionFlowGraphs = top.productionFlowGraphs;
+  recurse.grammarFlowTypes = top.grammarFlowTypes;
   recurse.flowEnv = top.flowEnv;
   -- Echo compilation-wide stuffs:
   recurse.compiledGrammars = top.compiledGrammars;

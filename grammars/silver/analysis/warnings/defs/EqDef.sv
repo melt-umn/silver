@@ -39,12 +39,19 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
     && $4.lexeme != "<-" -- hack to omit collections
     && !contains(top.grammarName,
          computeDependencies(
-           if top.blockContext.hasPartialSignature
+           if top.blockContext.hasPartialSignature -- is not a default production
            then [prodDefGram, occursCheck.dcl.sourceGrammar]
            else [occursCheck.dcl.sourceGrammar],
            top.compiledGrammars))
     then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " (occurs from " ++ occursCheck.dcl.sourceGrammar ++ ") on " ++ top.signature.fullName)]
-    else [];
+    -- Now, check for duplicate equations!
+    else if top.blockContext.hasPartialSignature
+         then if length(lookupSyn(top.signature.fullName, attr.lookupAttribute.fullName, top.flowEnv)) > 1
+              then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " on " ++ top.signature.fullName)]
+              else []
+         else if length(lookupDef(top.signature.outputElement.typerep.typeName, attr.lookupAttribute.fullName, top.flowEnv)) > 1
+              then [wrn(top.location, "Duplicate default equation for " ++ attr.pp ++ " on " ++ top.signature.outputElement.typerep.typeName)]
+              else [];
 }
 
 aspect production inheritedAttributeDef
@@ -64,6 +71,22 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
            else [occursCheck.dcl.sourceGrammar],
            top.compiledGrammars))
     then [wrn(top.location, "Orphaned inherited equation: " ++ attr.pp ++ " (occurs from " ++ occursCheck.dcl.sourceGrammar ++ ") on " ++ top.signature.fullName)]
-    else [];
+    -- Now, check for duplicate equations!
+    else case dl of
+         | childDefLHS(q) ->
+             if length(lookupInh(top.signature.fullName, q.lookupValue.fullName, attr.lookupAttribute.fullName, top.flowEnv)) > 1
+             then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " on " ++ q.lookupValue.fullName)]
+             else []
+         | localDefLHS(q) ->
+             if length(lookupLocalInh(top.signature.fullName, q.lookupValue.fullName, attr.lookupAttribute.fullName, top.flowEnv)) > 1
+             then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " on " ++ q.lookupValue.fullName)]
+             else []
+         | forwardDefLHS(q) ->
+             if length(lookupFwdInh(top.signature.fullName, attr.lookupAttribute.fullName, top.flowEnv)) > 1
+             then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " on " ++ q.lookupValue.fullName)]
+             else []
+         | _ -> [] -- TODO : this isn't quite extensible... more better way eventually, plz
+         end;
+
 }
 

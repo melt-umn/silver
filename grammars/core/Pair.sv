@@ -32,3 +32,13 @@ Maybe<b> ::= eqf::(Boolean ::= a a)  elem::a  lst::[Pair<a b>]
               else lookupBy(eqf, elem, tail(lst));
 }
 
+function lookupAllBy
+[b] ::= eqf::(Boolean ::= a a)  elem::a  lst::[Pair<a b>]
+{
+  return if null(lst)
+         then []
+         else if eqf(elem, head(lst).fst)
+              then head(lst).snd :: lookupAllBy(eqf, elem, tail(lst))
+              else lookupAllBy(eqf, elem, tail(lst));
+}
+

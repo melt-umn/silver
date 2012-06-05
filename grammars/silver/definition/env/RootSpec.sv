@@ -1,5 +1,7 @@
 grammar silver:definition:env;
 
+import silver:util:raw:treemap as rtm; -- TODO 
+
 {--
  - RootSpecs have two functions:
  - 1. Abstract away from whether the information comes from a grammar (Root)
@@ -7,7 +9,7 @@ grammar silver:definition:env;
  - 2. Abstract away from the number of files that are in the grammar.
  -    (i.e. handle a list of Root nonterminals.)
  -}
-nonterminal RootSpec with defs, declaredName, exportedGrammars, optionalGrammars, condBuild, moduleNames, allGrammarDependencies;
+nonterminal RootSpec with defs, declaredName, exportedGrammars, optionalGrammars, condBuild, moduleNames, allGrammarDependencies, flowTypes;
 
 {--
  - The name of the grammar this RootSpec represents.
@@ -41,6 +43,8 @@ synthesized attribute moduleNames :: [String];
  - designed at the moment... TODO: eventually make RootSpec non-decorated.
  -}
 synthesized attribute allGrammarDependencies :: [String];
+{-- flow stuff -}
+synthesized attribute flowTypes :: EnvTree<Pair<String String>>;
 
 function emptyRootSpec
 Decorated RootSpec ::= 
@@ -58,6 +62,7 @@ top::RootSpec ::=
   top.exportedGrammars = [];
   top.optionalGrammars = [];
   top.condBuild = [];
+  top.flowTypes = rtm:empty(compareString);
 }
 
 function getRootSpec

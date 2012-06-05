@@ -2,21 +2,25 @@ grammar silver:definition:flow:ast;
 
 import silver:definition:env only quoteString, unparse;
 
-nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges;
-nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges;
+nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs;
+nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs;
 
 {-- lookup (production, attribute) to find synthesized equations -}
 synthesized attribute synTreeContribs :: [Pair<String FlowDef>];
-{-- lookup (production, attribute) to find inherited equation -}
+{-- lookup (production, sig, attribute) to find inherited equation -}
 synthesized attribute inhTreeContribs :: [Pair<String FlowDef>];
 {-- lookup (nonterminal, attribute) to find default syn equations -}
 synthesized attribute defTreeContribs :: [Pair<String FlowDef>];
 {-- lookup (production) to find forward equations -}
 synthesized attribute fwdTreeContribs :: [Pair<String FlowDef>];
-{-- lookup (production) to find forward INHERITED equations -}
+{-- lookup (production, attr) to find forward INHERITED equations -}
 synthesized attribute fwdInhTreeContribs :: [Pair<String FlowDef>];
+{-- lookup (production, local, attr) to find local INHERITED equations -}
+synthesized attribute localInhTreeContribs :: [Pair<String FlowDef>];
 {-- lookup (nonterminal) to find all non-forwarding production -}
 synthesized attribute prodTreeContribs :: [Pair<String FlowDef>];
+{-- lookup (nonterminal) to find all inherited attributes in the host -}
+synthesized attribute refTreeContribs :: [Pair<String FlowDef>];
 {-- find all equations having to do DIRECTLY with a production
     (directly meaning e.g. no default equations, even if they might
     affect it) -}
@@ -36,6 +40,8 @@ top::FlowDefs ::= h::FlowDef  t::FlowDefs
   top.fwdInhTreeContribs = h.fwdInhTreeContribs ++ t.fwdInhTreeContribs;
   top.prodTreeContribs = h.prodTreeContribs ++ t.prodTreeContribs;
   top.prodGraphContribs = h.prodGraphContribs ++ t.prodGraphContribs;
+  top.refTreeContribs = h.refTreeContribs ++ t.refTreeContribs;
+  top.localInhTreeContribs = h.localInhTreeContribs ++ t.localInhTreeContribs;
   top.unparses = h.unparses ++ t.unparses;
 }
 
@@ -49,6 +55,8 @@ top::FlowDefs ::=
   top.fwdInhTreeContribs = [];
   top.prodTreeContribs = [];
   top.prodGraphContribs = [];
+  top.refTreeContribs = [];
+  top.localInhTreeContribs = [];
   top.unparses = [];
 }
 
@@ -67,6 +75,8 @@ top::FlowDef ::=
   top.fwdTreeContribs = [];
   top.fwdInhTreeContribs = [];
   top.prodTreeContribs = [];
+  top.refTreeContribs = [];
+  top.localInhTreeContribs = [];
 }
 
 {--
@@ -81,8 +91,20 @@ top::FlowDef ::= nt::String  prod::String
 {
   top.prodTreeContribs = [pair(nt, top)];
   top.prodGraphContribs = [];
-  top.flowEdges = [];
+  top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
   top.unparses = ["prod(" ++ quoteString(nt) ++ ", " ++ quoteString(prod) ++ ")"];
+}
+
+{--
+ - Declaration of the inherited attributes known from the host language
+ -}
+abstract production ntRefFlowDef
+top::FlowDef ::= nt::String  inhs::[String]
+{
+  top.refTreeContribs = [pair(nt, top)];
+  top.prodGraphContribs = [];
+  top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
+  top.unparses = error("TODO");
 }
 
 {--
@@ -114,7 +136,7 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 abstract production inhEq
 top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
 {
-  top.inhTreeContribs = [pair(crossnames(prod, attr), top)];
+  top.inhTreeContribs = [pair(crossnames(prod, crossnames(sigName, attr)), top)];
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(rhsVertex(sigName, attr), _), deps);
   top.unparses = ["inh(" ++ implode(", ", [quoteString(prod), quoteString(sigName), quoteString(attr), unparseVertices(deps)]) ++ ")"];
@@ -201,6 +223,7 @@ top::FlowDef ::= prod::String  fName::String  typeName::String  deps::[FlowVerte
 abstract production localInhEq
 top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 {
+  top.localInhTreeContribs = [pair(crossnames(prod, crossnames(fName, attr)), top)];
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(localVertex(fName, attr), _), deps);
   top.unparses = ["localInh(" ++ implode(", ", [quoteString(prod), quoteString(fName), quoteString(attr), unparseVertices(deps)]) ++ ")"];

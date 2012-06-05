@@ -1,13 +1,14 @@
 grammar silver:definition:core;
 
 import silver:util:cmdargs only CmdArgs; -- TODO: maybe we need to structure some of this better...
+import silver:definition:flow:ast only FlowVertex; -- TODO ARGH
 
 {--
  - Root represents one textual file of Silver source.
  -}
 nonterminal Root with
   config, grammarName, file, env, location, pp, errors, defs, 
-  declaredName, moduleNames, importedDefs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, globalImports, grammarDependencies;
+  declaredName, moduleNames, importedDefs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, globalImports, grammarDependencies, productionFlowGraphs, grammarFlowTypes;
 nonterminal GrammarDcl with 
   config, grammarName, file, location, pp, errors, declaredName;
 
@@ -28,12 +29,18 @@ autocopy attribute compiledGrammars :: EnvTree<Decorated RootSpec>;
 {--
  - A list of grammars that this grammar depends upon,
  - directly or indirectly. (i.e. based on other grammar's exports)
+ - NOT including options.
  -}
 autocopy attribute grammarDependencies :: [String];
 {--
  - Compiler configuration information, made available everywhere.
  -}
 autocopy attribute config :: Decorated CmdArgs;
+{--
+ - Flow information computed for this grammar
+ -}
+autocopy attribute productionFlowGraphs :: [Pair<String [Pair<FlowVertex FlowVertex>]>];
+autocopy attribute grammarFlowTypes :: EnvTree<Pair<String String>>;
 
 concrete production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
