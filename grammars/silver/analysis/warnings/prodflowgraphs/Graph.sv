@@ -172,7 +172,7 @@ function addAutocopyEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::String sigName::NamedSignatureElement inhs::[String] flowEnv::Decorated FlowEnv realEnv::Decorated Env
 {
   return if null(inhs) then []
-  else (if null(lookupInh(prod, head(inhs), flowEnv))  -- no equation
+  else (if null(lookupInh(prod, sigName.elementName, head(inhs), flowEnv))  -- no equation
         && !null(getOccursDcl(head(inhs), sigName.typerep.typeName, realEnv)) -- and it occurs on this type
         then [pair(rhsVertex(sigName.elementName, head(inhs)), lhsVertex(head(inhs)))]
         else []) ++

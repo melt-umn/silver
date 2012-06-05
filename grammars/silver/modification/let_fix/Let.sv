@@ -53,7 +53,7 @@ top::Expr ::= l::Location  la::AssignExpr  e::Expr
   e.env = newScopeEnv(la.defs, top.env);
 }
 
-nonterminal AssignExpr with config, file, grammarName, env, signature, 
+nonterminal AssignExpr with config, file, grammarName, env, compiledGrammars, signature, 
                             pp, defs, errors, upSubst, 
                             downSubst, finalSubst, blockContext;
 

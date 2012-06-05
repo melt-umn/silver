@@ -2,6 +2,8 @@ grammar silver:driver;
 
 imports silver:definition:flow:env;
 imports silver:definition:flow:ast;
+imports silver:analysis:warnings:prodflowgraphs; -- TODO oh my
+import silver:util:raw:treemap as rtm;
 
 {--
  - Responsible for the control-flow that figures out how to obtain a grammar's symbols.
@@ -46,11 +48,21 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   -- Create the values for grammar-wide inherited attributes.
   cu.env = toEnv(cu.rSpec.defs);
   cu.globalImports = toEnv(cu.rSpec.importedDefs);
+  -- TODO: write a comment explaining why grammarName isn't put here??
   cu.grammarDependencies = computeDependencies(cu.rSpec.moduleNames, top.compiledGrammars);
-  cu.flowEnv = fromFlowDefs(foldr(consFlow, nilFlow(), 
-    gatherFlowEnv(
-      makeSet(computeOptionalDeps(grammarName::cu.grammarDependencies, top.compiledGrammars)),
-      top.compiledGrammars)));
+  local andOpts :: [String] = makeSet(completeDependencyClosure([grammarName], top.compiledGrammars)); --makeSet(computeOptionalDeps(grammarName::cu.grammarDependencies, top.compiledGrammars));
+  local allFlow :: FlowDefs = foldr(consFlow, nilFlow(), gatherFlowEnv(andOpts, top.compiledGrammars));
+  cu.flowEnv = fromFlowDefs(allFlow);
+  local andOptsGrams :: [Decorated RootSpec] = foldr(append, [], map(searchEnvTree(_, top.compiledGrammars), andOpts));
+  local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlow.prodGraphContribs);
+  local allProds :: [String] = nubBy(stringEq, map(getFst, rtm:toList(prodTree)));
+  local allRealEnv :: Decorated Env = toEnv(foldr(appendDefs, emptyDefs(), map((.defs), andOptsGrams)));
+  local prodGraph :: [Pair<String [Pair<FlowVertex FlowVertex>]>] = fixupGraphs(allProds, prodTree, cu.flowEnv, allRealEnv);
+
+  cu.productionFlowGraphs = prodGraph;
+  local prodinfos :: EnvTree<Pair<NamedSignature [Pair<String String>]>> =
+    directBuildTree(makeProdLocalInfo(allProds, prodTree, allRealEnv));
+  cu.grammarFlowTypes = fullySolveFlowTypes(prodinfos, prodGraph, allRealEnv, rtm:empty(compareString));
   -- Echo the compilation-wide ones:
   cu.compiledGrammars = top.compiledGrammars;
   cu.config = top.config;
@@ -152,6 +164,18 @@ function computeOptionalDeps
   
   return if null(rem(eoi, init)) then init
          else computeOptionalDeps(computeDependencies(eoi, e), e);
+}
+
+{--
+ - Sheesh, compute everything this grammar depends on or may depend on etc etc
+ -}
+function completeDependencyClosure
+[String] ::= init::[String]  e::EnvTree<Decorated RootSpec>
+{
+  local n :: [String] = rem(makeSet(foldr(append, [], map((.moduleNames), map(head, map(searchEnvTree(_, e), init))))), init);
+  
+  return if null(n) then init
+  else completeDependencyClosure(computeOptionalDeps(n ++ init, e), e);
 }
 
 function gatherFlowEnv

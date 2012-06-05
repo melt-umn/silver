@@ -11,12 +11,12 @@ nonterminal ProductionStmt with
   productionAttributes, signature, uniqueSignificantExpression;
 
 nonterminal DefLHS with 
-  config, grammarName, file, env, location, pp, errors, blockContext, signature, typerep, isSynthesizedDefinition;
+  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, typerep, isSynthesizedDefinition;
 
 nonterminal ForwardInhs with 
-  config, grammarName, file, env, location, pp, errors, blockContext, signature;
+  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature;
 nonterminal ForwardInh with 
-  config, grammarName, file, env, location, pp, errors, blockContext, signature;
+  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature;
 nonterminal ForwardLHSExpr with 
   config, grammarName, file, env, location, pp, errors, signature, typerep;
 
