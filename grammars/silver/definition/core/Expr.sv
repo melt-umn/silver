@@ -1,6 +1,6 @@
 grammar silver:definition:core;
 
-import silver:analysis:typechecking:core;
+--import silver:analysis:typechecking:core;
 
 nonterminal Expr with
   config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, typerep;
@@ -82,6 +82,7 @@ top::Expr ::= q::Decorated QName
   top.typerep = errorType();
 }
 
+-- TODO: We should separate this out, even, to be "nonterminal/decorable" and "as-is"
 abstract production childReference
 top::Expr ::= q::Decorated QName
 {

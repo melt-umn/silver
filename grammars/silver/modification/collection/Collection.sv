@@ -1,12 +1,10 @@
 grammar silver:modification:collection;
-import silver:definition:core;
-import silver:definition:env;
-import silver:definition:type;
+
 import silver:definition:type:syntax;
 import silver:extension:list;
 import silver:util;
 
-import silver:analysis:typechecking:core;
+--import silver:analysis:typechecking:core;
 
 nonterminal NameOrBOperator with config, location, grammarName, file, errors, env, pp, operation, operatorForType;
 nonterminal Operation with unparse;

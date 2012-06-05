@@ -25,3 +25,8 @@ option silver:modification:copper_mda;
 
 option silver:extension:testing; -- TODO this is about that buggy experiment of Eric's...
 
+exports silver:analysis:typechecking:core;
+exports silver:definition:flow:env;
+imports silver:analysis:typechecking:core;
+imports silver:definition:flow:env;
+

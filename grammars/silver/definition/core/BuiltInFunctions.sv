@@ -1,6 +1,6 @@
 grammar silver:definition:core;
 
-import silver:analysis:typechecking:core;
+--import silver:analysis:typechecking:core;
 
 concrete production lengthFunction
 top::Expr ::= 'length' '(' e::Expr ')'

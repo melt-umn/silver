@@ -4,7 +4,7 @@ import silver:definition:core;
 import silver:definition:env;
 import silver:definition:type;
 import silver:definition:type:syntax only typerepType;
-import silver:analysis:typechecking:core only upSubst, downSubst, finalSubst;
+--import silver:analysis:typechecking:core only upSubst, downSubst, finalSubst;
 import silver:modification:let_fix;
 
 terminal Case_kwd 'case' lexer classes {KEYWORD};

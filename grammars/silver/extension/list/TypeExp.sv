@@ -1,9 +1,5 @@
 grammar silver:extension:list;
 
-import silver:definition:type;
-import silver:definition:env;
-import silver:definition:core;
-
 abstract production listTypeExp
 top::TypeExp ::= el::TypeExp
 {

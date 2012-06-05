@@ -8,7 +8,7 @@ import silver:definition:type:syntax;
 import silver:modification:collection;
 import silver:extension:list;
 
-import silver:analysis:typechecking:core;
+--import silver:analysis:typechecking:core;
 
 import lib:extcore;
 

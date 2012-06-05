@@ -5,7 +5,7 @@ import silver:util:cmdargs;
 
 import silver:definition:core;
 import silver:definition:env;
-import silver:definition:flow:env;
+--import silver:definition:flow:env;
 import silver:definition:flow:ast;
 import silver:analysis:warnings:defs only isOccursSynthesized;
 
@@ -268,6 +268,7 @@ EnvTree<Pair<String String>> ::= prodinfos::EnvTree<Pair<NamedSignature [Pair<St
   local iter :: [Pair<String Pair<String String>>] =
     solveFlowTypes(prodinfos, graphs, realEnv, ntEnv);
   
+  -- Just iterate until no new edges are added
   return if null(iter) then ntEnv
   else fullySolveFlowTypes(prodinfos, graphs, realEnv, 
          rtm:add(iter, ntEnv));
@@ -383,7 +384,7 @@ function collectInhs
 [String] ::= inhs::[String]  f::FlowVertex  l::[String]
 {
   return case f of
-  | lhsVertex(a) -> if containsBy(stringEq, a, l) then l else a::l
+  | lhsVertex(a) -> if containsBy(stringEq, a, l) || !containsBy(stringEq, a, inhs) then l else a::l
   | _ -> l
   end;
 }
