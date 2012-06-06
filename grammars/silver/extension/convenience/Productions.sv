@@ -4,8 +4,8 @@ import silver:modification:copper;
 
 synthesized attribute proddcls :: AGDcl;
 autocopy attribute lhsdcl :: ProductionLHS;
-nonterminal ProductionDclStmts with proddcls, lhsdcl, file, grammarName;
-nonterminal ProductionDclStmt with proddcls, lhsdcl, file, grammarName;
+nonterminal ProductionDclStmts with pp, proddcls, lhsdcl, file, grammarName;
+nonterminal ProductionDclStmt with pp, proddcls, lhsdcl, file, grammarName;
 
 terminal Productions_kwd 'productions' lexer classes {KEYWORD};
 terminal ProdVBar '|';
@@ -13,6 +13,7 @@ terminal ProdVBar '|';
 concrete production productionDclC
 top::AGDcl ::= 'concrete' 'productions' lhs::ProductionLHS stmts::ProductionDclStmts 
 {
+  top.pp = "concrete productions " ++ lhs.pp ++ stmts.pp;
   stmts.lhsdcl = lhs;
   forwards to stmts.proddcls;
 }
@@ -20,11 +21,13 @@ top::AGDcl ::= 'concrete' 'productions' lhs::ProductionLHS stmts::ProductionDclS
 concrete production productionDclStmtsOne
 top::ProductionDclStmts ::= s::ProductionDclStmt
 {
+  top.pp = s.pp;
   top.proddcls = s.proddcls;
 }
 concrete production productionDclStmtsCons
 top::ProductionDclStmts ::= s::ProductionDclStmt ss::ProductionDclStmts
 {
+  top.pp = s.pp ++ ss.pp;
   top.proddcls = appendAGDcl(s.proddcls, ss.proddcls);
 }
 
@@ -35,6 +38,7 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
                            body::ProductionBody
                            opta::OptionalAction
 {
+  top.pp = "| " ++ rhs.pp ++ mods.pp ++ body.pp; -- TODO missing some here...
   -- Either we have a name, or we generate an appropriate one.
   local attribute nme :: Name;
   nme = case optn of

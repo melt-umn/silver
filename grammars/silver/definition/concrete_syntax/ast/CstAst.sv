@@ -21,12 +21,14 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
   s.cstEnv = directBuildTree(s.cstDcls);
   s.cstNTProds = directBuildTree(s.cstProds);
   s.containingGrammar = "host";
+  s.univLayout = error("TODO: make this environment not be decorated?"); -- TODO
   
   -- Move productions under their nonterminal, and sort the declarations
   local attribute s2 :: Syntax;
   s2 = foldr(consSyntax, nilSyntax(), sortBy(syntaxDclLte, s.cstNormalize));
   s2.cstEnv = directBuildTree(s.cstDcls);
   s2.containingGrammar = "host";
+  s2.cstNTProds = error("TODO: make this environmnet not be decorated?"); -- TODO
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.
   -- In particular, it drops productions it can't find an NT for.

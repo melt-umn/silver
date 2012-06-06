@@ -35,11 +35,13 @@ inherited attribute bindingIndex :: Integer;
 concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::Type 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
 {
+  top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
   forwards to matchPrimitive(loc(top.file, $1.line, $1.column), e, t, pr, f);
 }
 abstract production matchPrimitive
 top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
 {
+  top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
   

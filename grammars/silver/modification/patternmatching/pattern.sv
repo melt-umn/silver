@@ -62,6 +62,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 abstract production caseExpr
 top::Expr ::= locat::Location es::[Expr] ml::[Decorated MatchRule] failExpr::Expr
 {
+  top.pp = error("Internal error: pretty of intermediate data structure");
   top.location = locat;
 
   -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
