@@ -5,7 +5,7 @@ terminal Lexer_kwd 'lexer' lexer classes {KEYWORD};
 abstract production lexerClassDclFull
 top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
 {
-  top.pp = "lexer class " ++ id.name ++ ";";
+  top.pp = "lexer class " ++ id.name ++ ";"; -- TODO incomplete
   top.location = id.location;
 
   production attribute fName :: String;

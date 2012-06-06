@@ -236,6 +236,7 @@ top::Expr ::= e::Decorated Expr es::AppExprs
 abstract production functionApplication
 top::Expr ::= e::Decorated Expr es::AppExprs
 {
+  top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   es.appExprIndex = 0;
   -- We may need to resolve e's type to get at the actual 'function type'
   es.appExprTypereps = performSubstitution(e.typerep, e.upSubst).inputTypes;

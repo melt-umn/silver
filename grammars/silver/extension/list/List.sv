@@ -11,6 +11,7 @@ terminal RSqr_t ']' lexer classes {KEYWORD};
 concrete production listType
 top::Type ::= '[' te::Type ']'
 {
+  top.pp = "[" ++ te.pp ++ "]";
   top.typerep = listTypeExp(te.typerep);
 
   forwards to refType('Decorated', 

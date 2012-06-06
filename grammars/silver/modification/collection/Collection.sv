@@ -358,6 +358,7 @@ terminal BaseContains_t   ':=';
 concrete production attrContainsAppend
 top::ProductionStmt ::= dl::DefLHS '.' attr::QName '<-' e::Expr ';'
 {
+  top.pp = dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
   top.errors <- attr.lookupAttribute.errors;
 
   top.productionAttributes = emptyDefs();
@@ -371,6 +372,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QName '<-' e::Expr ';'
 concrete production attrContainsBase
 top::ProductionStmt ::= dl::DefLHS '.' attr::QName ':=' e::Expr ';'
 {
+  top.pp = dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
   top.errors <- attr.lookupAttribute.errors;
 
   top.productionAttributes = emptyDefs();
@@ -384,6 +386,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QName ':=' e::Expr ';'
 concrete production valContainsAppend
 top::ProductionStmt ::= val::QName '<-' e::Expr ';'
 {
+  top.pp = val.pp ++ " <- " ++ e.pp ++ ";";
   top.errors <- val.lookupValue.errors;
 
   top.productionAttributes = emptyDefs();
@@ -397,6 +400,7 @@ top::ProductionStmt ::= val::QName '<-' e::Expr ';'
 concrete production valContainsBase
 top::ProductionStmt ::= val::QName ':=' e::Expr ';'
 {
+  top.pp = val.pp ++ " := " ++ e.pp ++ ";";
   top.errors <- val.lookupValue.errors;
 
   top.productionAttributes = emptyDefs();
