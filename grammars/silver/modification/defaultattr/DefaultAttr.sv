@@ -14,7 +14,7 @@ concrete production aspectDefaultProduction
 top::AGDcl ::= 'aspect' 'default' 'production' 
                lhs::Name '::' te::Type '::=' body::ProductionBody 
 {
-  top.pp = "aspect default production\n" ++ lhs.pp ++ "::" ++ prettyType(te.typerep) ++ " ::=\n" ++ body.pp;
+  top.pp = "aspect default production\n" ++ lhs.pp ++ "::" ++ te.pp ++ " ::=\n" ++ body.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
   top.defs = emptyDefs();

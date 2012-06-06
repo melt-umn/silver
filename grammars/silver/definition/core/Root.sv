@@ -54,6 +54,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   allImports.grammarDependencies = top.grammarDependencies;
   allImports.grammarName = top.grammarName;
   allImports.file = top.file;
+  allImports.config = top.config;
 
   top.pp = gdcl.pp ++ "\n\n" ++ ms.pp ++ "\n\n" ++ ims.pp ++ "\n\n" ++ ags.pp;
   top.location = gdcl.location;

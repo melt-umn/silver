@@ -38,7 +38,7 @@ top::TerminalModifier ::= 'lexer' 'classes' '{' cl::ClassList '}'
 concrete production terminalModifierActionCode
 top::TerminalModifier ::= 'action' acode::ActionCode_c
 {
-  top.pp = "action " ++ acode.actionCode;
+  top.pp = "action " ++ acode.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
   top.terminalModifiers = [termAction(acode.actionCode)];

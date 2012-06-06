@@ -7,7 +7,7 @@ terminal Disambiguation_kwd 'disambiguate' lexer classes {KEYWORD};
 concrete production disambiguationGroupDcl
 top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
 {
-  top.pp = "disambiguate " ++ terms.pp ++ " " ++ acode.actionCode;
+  top.pp = "disambiguate " ++ terms.pp ++ " " ++ acode.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
   top.errors := acode.errors ++ terms.errors;
