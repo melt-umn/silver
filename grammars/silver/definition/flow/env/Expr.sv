@@ -1,6 +1,7 @@
 grammar silver:definition:flow:env;
 
 import silver:definition:type:syntax;
+import silver:definition:type;
 import silver:modification:copper;
 import silver:modification:patternmatching;
 import silver:modification:let_fix;
@@ -10,6 +11,16 @@ attribute flowEnv occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
 
 --attribute upSubst, downSubst, finalSubst occurs on Expr, ForwardInhs, ForwardInh, ForwardLHSExpr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
 
+function depsForTakingRef
+[FlowVertex] ::= f::(FlowVertex ::= String)  nt::String  flowEnv::Decorated FlowEnv
+{
+  -- TODO nasty expression
+  local ds :: [FlowDef] = getInhsForNtRef(nt, flowEnv);
+  local inhs :: [String] = if null(ds) then [] else case head(ds) of ntRefFlowDef(nt, inhs) -> inhs end;
+
+  return map(f, inhs);  
+}
+
 aspect production errorReference
 top::Expr ::= q::Decorated QName
 {
@@ -18,21 +29,34 @@ top::Expr ::= q::Decorated QName
 aspect production childReference
 top::Expr ::= q::Decorated QName
 {
-  -- Directly accessing a child should be a 'taking a reference' action
-  top.flowDeps = [];
+  top.flowDeps =
+    if q.lookupValue.typerep.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    then depsForTakingRef(rhsVertex(q.lookupValue.fullName, _), q.lookupValue.typerep.typeName, top.flowEnv)
+    else [];
 }
 aspect production lhsReference
 top::Expr ::= q::Decorated QName
 {
-  -- Directly accessing the lhs should be a 'taking a reference' action
-  -- Er, I suppose this will emit deps on all the reference inhs?
-  top.flowDeps = [];
+  top.flowDeps =
+    if {-always decorable-} !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    then depsForTakingRef(lhsVertex, q.lookupValue.typerep.typeName, top.flowEnv)
+    else [];
 }
 aspect production localReference
 top::Expr ::= q::Decorated QName
 {
-  -- Directly accessing a local should be a 'taking a reference' action
-  top.flowDeps = [localEqVertex(q.lookupValue.fullName)];
+  top.flowDeps = [localEqVertex(q.lookupValue.fullName)] ++
+    if q.lookupValue.typerep.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    then depsForTakingRef(localVertex(q.lookupValue.fullName, _), q.lookupValue.typerep.typeName, top.flowEnv)
+    else [];
+}
+aspect production forwardReference
+top::Expr ::= q::Decorated QName
+{
+  top.flowDeps = [forwardEqVertex()]++
+    if q.lookupValue.typerep.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    then depsForTakingRef(forwardVertex, q.lookupValue.typerep.typeName, top.flowEnv)
+    else [];
 }
 aspect production productionReference
 top::Expr ::= q::Decorated QName
@@ -43,12 +67,6 @@ aspect production functionReference
 top::Expr ::= q::Decorated QName
 {
   top.flowDeps = [];
-}
-aspect production forwardReference
-top::Expr ::= q::Decorated QName
-{
-  -- Directly accessing the forward should be a 'taking a reference' action
-  top.flowDeps = [forwardEqVertex()];
 }
 aspect production globalValueReference
 top::Expr ::= q::Decorated QName
@@ -85,6 +103,8 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.flowDeps = [];
 }
+-- Note that below we IGNORE the flow deps of the lhs if we know what it is
+-- this is because by default the lhs will have 'taking ref' flow deps (see above)
 aspect production synDNTAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
@@ -440,7 +460,10 @@ attribute flowDeps, flowEnv occurs on PrimPatterns, PrimPattern;
 aspect production matchPrimitiveReal
 top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
 {
-  top.flowDeps = e.flowDeps ++ pr.flowDeps ++ f.flowDeps;
+  -- TODO: We need to be "smarter" here and only demand the inh to evaluate forward
+  -- otherwise pattern matching on something is considered 'taking a reference' and
+  -- generates spurious deps
+  top.flowDeps = {-e.flowDeps ++-} pr.flowDeps ++ f.flowDeps;
 }
 
 aspect production onePattern
