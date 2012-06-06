@@ -38,7 +38,7 @@ Defs ::= gn::String sl::Location l::[String]
 abstract production typerepType
 top::Type ::= t::TypeExp
 {
-  top.pp = prettyType(top.typerep);
+  top.pp = prettyType(t);
   top.location = loc("typerepType", -1, -1);
 
   top.typerep = t;
