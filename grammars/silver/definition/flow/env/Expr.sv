@@ -508,7 +508,7 @@ top::PrimPattern ::= e::Expr
   top.flowDeps = e.flowDeps;
 }
 aspect production conslstPattern
-top::PrimPattern ::= h::String t::String e::Expr
+top::PrimPattern ::= h::Name t::Name e::Expr
 {
   top.flowDeps = e.flowDeps;
 }
