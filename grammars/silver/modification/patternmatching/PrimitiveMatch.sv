@@ -354,9 +354,9 @@ top::PrimPattern ::= e::Expr
                          e.translation ++ "; }";
 }
 abstract production conslstPattern
-top::PrimPattern ::= h::String t::String e::Expr
+top::PrimPattern ::= h::Name t::Name e::Expr
 {
-  top.pp = "cons(" ++ h ++ ", " ++ t ++ ") -> " ++ e.pp;
+  top.pp = "cons(" ++ h.pp ++ ", " ++ t.pp ++ ") -> " ++ e.pp;
   top.location = e.location;
   
   top.errors := e.errors;
@@ -382,14 +382,14 @@ top::PrimPattern ::= h::String t::String e::Expr
   top.upSubst = errCheck2.upSubst;
   
   local attribute consdefs :: Defs;
-  consdefs = addLexicalLocalDcl(top.grammarName, top.location, h, elemType, 
-             addLexicalLocalDcl(top.grammarName, top.location, t, top.scrutineeType, emptyDefs()));
+  consdefs = addLexicalLocalDcl(top.grammarName, top.location, h.name, elemType, 
+             addLexicalLocalDcl(top.grammarName, top.location, t.name, top.scrutineeType, emptyDefs()));
   
   e.env = newScopeEnv(consdefs, top.env);
   
   top.translation = "if(!scrutineeIter.nil()) {" ++
-  makeSpecialLocalBinding(h, "scrutinee.head()", performSubstitution(elemType, top.finalSubst).transType) ++
-  makeSpecialLocalBinding(t, "scrutinee.tail()", performSubstitution(top.scrutineeType, top.finalSubst).transType) ++
+  makeSpecialLocalBinding(h.name, "scrutinee.head()", performSubstitution(elemType, top.finalSubst).transType) ++
+  makeSpecialLocalBinding(t.name, "scrutinee.tail()", performSubstitution(top.scrutineeType, top.finalSubst).transType) ++
   "return " ++ e.translation ++ "; }";
 }
 

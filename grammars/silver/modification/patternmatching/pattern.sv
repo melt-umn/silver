@@ -151,8 +151,7 @@ abstract production matchRule
 top::MatchRule ::= l::Location pl::[Decorated Pattern] e::Expr
 {
   top.pp = implode(", ", map(getPatternPP, pl)) ++ " -> " ++ e.pp;
-  -- TODO: This is a #HACK(2012). Replace errorConcat if better solution exists
-  top.errors := foldr(errorConcat,[],pl);
+  top.errors := foldr(append,[],map((.errors), pl));
   top.location = e.location;
 
   top.headPattern = head(pl);
@@ -201,28 +200,27 @@ String ::= p::Decorated Pattern
   return p.pp;
 }
 function patternListVars
-[String] ::= p::[Decorated Pattern]
+Name ::= p::Decorated Pattern
 {
-  return case p of
-  | [] -> []
-  | varPattern(pvn)::t -> ["__sv_sc_" ++ toString(genInt()) ++ pvn.name] ++ patternListVars(t)
-  | h::t -> ["__sv_tmp_pv_" ++ toString(genInt())] ++ patternListVars(t)
-  end;
+  local n :: String =
+    case p of
+    | varPattern(pvn) -> "__sv_pv_" ++ toString(genInt()) ++ "_" ++ pvn.name
+    | h -> "__sv_tmp_pv_" ++ toString(genInt())
+    end;
+  return nameIdLower(terminal(IdLower_t, n, p.location.line, p.location.column));
 }
 function convStringsToVarBinders
-VarBinders ::= s::[String] l::Location
+VarBinders ::= s::[Name] l::Location
 {
-  local attribute f::VarBinder;
-  f = varVarBinder(nameIdLower(terminal(IdLower_t, head(s), l.line, l.column)));
   return if null(s) then nilVarBinder(terminal(Epsilon_For_Location, "", l.line, l.column))
-         else if null(tail(s)) then oneVarBinder(f)
-         else consVarBinder(f, ',', convStringsToVarBinders(tail(s), l));
+         else if null(tail(s)) then oneVarBinder(varVarBinder(head(s)))
+         else consVarBinder(varVarBinder(head(s)), ',', convStringsToVarBinders(tail(s), l));
 }
 function convStringsToExprs
-[Expr] ::= s::[String] tl::[Expr] l::Location
+[Expr] ::= s::[Name] tl::[Expr]
 {
   return if null(s) then tl
-         else baseExpr(qName(l, head(s))) :: convStringsToExprs(tail(s), tl, l);
+         else baseExpr(qNameId(head(s))) :: convStringsToExprs(tail(s), tl);
 }
 
 function allConCaseTransform
@@ -233,18 +231,20 @@ PrimPatterns ::= restExprs::[Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
   -- generate a PrimPattern on the production that is that group.
   -- Then, push ALL the match rules into a case underneath that.
   
-  local attribute names :: [String];
-  names = patternListVars(head(head(mrs)).headPattern.patternSubPatternList);
+  -- TODO: head(head(mrs)).location is probably not the correct thing to use here??
+  
+  local attribute names :: [Name];
+  names = map(patternListVars, head(head(mrs)).headPattern.patternSubPatternList);
 
   local attribute subcase :: Expr;
   subcase =  caseExpr(head(head(mrs)).location,
-                      convStringsToExprs(names, restExprs, head(head(mrs)).location),
+                      convStringsToExprs(names, restExprs),
                       tailNestedPatternTransform(head(mrs)),
                       failCase);
 
   local attribute fstPat :: PrimPattern;
   fstPat = case head(head(mrs)).headPattern of
-             prodAppPattern(qn,_,_,_) -> prodPattern(qn, '(', convStringsToVarBinders(names, head(head(mrs)).location), ')', '->', subcase)
+           | prodAppPattern(qn,_,_,_) -> prodPattern(qn, '(', convStringsToVarBinders(names, head(head(mrs)).location), ')', '->', subcase)
            | intPattern(it) -> integerPattern(it, '->', subcase)
            | strPattern(it) -> stringPattern(it, '->', subcase)
            | truePattern(_) -> booleanPattern("true", '->', subcase)
@@ -333,8 +333,4 @@ function groupMRules
   return groupBy(mruleEqForGrouping, sortBy(mruleLTEForSorting, l));
 }
 
-function errorConcat
-[Message] ::= p::Decorated Pattern ml::[Message]
-{
- return p.errors ++ ml;
-}
+
