@@ -1,85 +1,15 @@
-grammar silver:analysis:warnings:prodflowgraphs;
+grammar silver:definition:flow:driver;
 
-import silver:driver;
-import silver:util:cmdargs;
-
-import silver:definition:core;
-import silver:definition:env;
+imports silver:definition:core;
+imports silver:definition:env;
 --import silver:definition:flow:env;
-import silver:definition:flow:ast;
-import silver:analysis:warnings:defs only isOccursSynthesized;
+imports silver:definition:flow:ast;
+imports silver:analysis:warnings:defs only isOccursSynthesized, isAutocopy;
 
-import silver:modification:autocopyattr;
+imports silver:modification:autocopyattr;
 
-import silver:util:raw:treemap as rtm;
+imports silver:util:raw:treemap as rtm;
 
--- This isn't exactly a warning, but it can live here for now...
-
-synthesized attribute dumpFlowGraph :: Boolean occurs on CmdArgs;
-
-aspect production endCmdArgs
-top::CmdArgs ::= _
-{
-  top.dumpFlowGraph = false;
-}
-abstract production dumpFlowGraphFlag
-top::CmdArgs ::= rest::CmdArgs
-{
-  top.dumpFlowGraph = true;
-  forwards to rest;
-}
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
-{
-  flags <- [pair("--dump-flow-deps", flag(dumpFlowGraphFlag))];
-  -- omitting from descriptions deliberately!
-  
-  postOps <- if a.dumpFlowGraph then [dumpFlowGraphAction(findAllNts(allProds, allRealEnv), prodGraph, flowTypes)] else [];
-
-  -- compute flow info and shit
-
-  -- aggregate all flow def information
-  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), grammars)));
-  local allFlowEnv :: Decorated FlowEnv = fromFlowDefs(allFlowDefs);
-  -- Look up tree for production info
-  local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlowDefs.prodGraphContribs);
-  local allProds :: [String] = nubBy(stringEq, map(getFst, rtm:toList(prodTree)));
-  -- hack to allow us to look up certain info... TODO: maybe hack?
-  local allRealEnv :: Decorated Env = toEnv(foldr(appendDefs, emptyDefs(), map((.defs), grammars)));
-  -- Fix the production graph information from the flow defs TODO: some of this maybe should be fixed somehow
-  local prodGraph :: [Pair<String [Pair<FlowVertex FlowVertex>]>] = 
-    fixupGraphs(allProds, prodTree, allFlowEnv, allRealEnv);
-  -- Graph some random info about productions TODO: maybe hack?
-  local prodinfos :: EnvTree<Pair<NamedSignature [Pair<String String>]>> =
-    directBuildTree(makeProdLocalInfo(allProds, prodTree, allRealEnv));
-  -- Now, solve for flow types!!
-  local flowTypes :: EnvTree<Pair<String String>> =
-    fullySolveFlowTypes(prodinfos, prodGraph, allRealEnv, rtm:empty(compareString));
-  
-
-  unit.flowEnv = allFlowEnv;
-  reUnit.flowEnv = allFlowEnv;
-  unit.productionFlowGraphs = prodGraph;
-  reUnit.productionFlowGraphs = prodGraph;
-  unit.grammarFlowTypes = flowTypes;
-  reUnit.grammarFlowTypes = flowTypes;
-}
-
-abstract production dumpFlowGraphAction
-top::Unit ::= allNts::[String]  prodGraph::[Pair<String [Pair<FlowVertex FlowVertex>]>]  flowTypes::EnvTree<Pair<String String>>
-{
-  top.io = 
-    writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(allNts, flowTypes) ++ "}", 
-      writeFile("flow-deps.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}",
-        print("Generating flow graphs\n", top.ioIn)));
-
-  top.code = 0;
-  top.order = 0;
-}
-
-function getFst
-a ::= v::Pair<a b>
-{ return v.fst; }
 
 {--
  - Deal with the defaults/forwarding and HOA logic on production graphs.
@@ -111,15 +41,6 @@ function fixupGraphs
 
   return if null(prods) then []
   else [pair(p, fixedEdges)] ++ fixupGraphs(tail(prods), prodTree, flowEnv, realEnv);
-}
-
-function isAutocopy
-Boolean ::= attr::String  e::Decorated Env
-{
-  return case getAttrDclAll(attr, e) of
-  | autocopyDcl(_,_,_,_,_) :: _ -> true
-  | _ -> false
-  end;
 }
 
 function fixupAllHOAs
@@ -192,55 +113,10 @@ function addAutocopyEqs
 }
 
 
-function generateFlowDotGraph
-String ::= nts::[String]  ft::EnvTree<Pair<String String>>
-{
-  local nt::String = head(nts);
-  local edges::[Pair<String String>] = searchEnvTree(nt, ft);
-  
-  return if null(nts) then ""
-  else "subgraph \"cluster:" ++ nt ++ "\" {\nlabel=\"" ++ substring(lastIndexOf(":", nt) + 1, length(nt), nt) ++ "\";\n" ++ 
-       implode("", map(makeLabelDcls(nt, _), nubBy(stringEq, expandLabels(edges)))) ++
-       implode("", map(makeNtFlow(nt, _), edges)) ++
-       "}\n" ++
-       generateFlowDotGraph(tail(nts), ft);
-}
 
-function expandLabels
-[String] ::= l::[Pair<String String>]
-{
-  return if null(l) then [] else head(l).fst :: head(l).snd :: expandLabels(tail(l));
-}
-function makeLabelDcls
-String ::= nt::String  attr::String
-{
-  local a :: String = substring(lastIndexOf(":", attr) + 1, length(attr), attr);
-  return "\"" ++ nt ++ "/" ++ attr ++ "\"[label=\"" ++ a ++ "\"];\n";
-}
-function makeNtFlow
-String ::= nt::String  e::Pair<String String>
-{
-  return "\"" ++ nt ++ "/" ++ e.fst ++ "\" -> \"" ++ nt ++ "/" ++ e.snd ++ "\";\n";
-}
 
-function generateDotGraph
-String ::= specs::[Pair<String [Pair<FlowVertex FlowVertex>]>]
-{
-  return case specs of
-  | [] -> ""
-  | pair(prod, edges)::t ->
-      "subgraph \"cluster:" ++ prod ++ "\" {\n" ++ 
-      implode("", map(makeDotArrow(prod, _), edges)) ++
-      "}\n" ++
-      generateDotGraph(t)
-  end;
-}
 
-function makeDotArrow
-String ::= p::String e::Pair<FlowVertex FlowVertex>
-{
-  return "\"" ++ p ++ "/" ++ e.fst.dotName ++ "\" -> \"" ++ p ++ "/" ++ e.snd.dotName ++ "\";\n";
-}
+
 
 -- (prod, (sig, [local, type]))
 function makeProdLocalInfo
@@ -405,31 +281,8 @@ function collectInhs
 function flowVertexEq
 Boolean ::= a::FlowVertex  b::FlowVertex
 {
-  -- eh, good enough
+  -- eh, good enough TODO
   return a.dotName == b.dotName;
 }
 
-
-synthesized attribute dotName :: String occurs on FlowVertex;
-
-aspect production lhsVertex
-top::FlowVertex ::= attrName::String
-{
-  top.dotName = attrName;
-}
-aspect production rhsVertex
-top::FlowVertex ::= sigName::String  attrName::String
-{
-  top.dotName = sigName ++ "/" ++ attrName;
-}
-aspect production localEqVertex
-top::FlowVertex ::= fName::String
-{
-  top.dotName = fName;
-}
-aspect production localVertex
-top::FlowVertex ::= fName::String  attrName::String
-{
-  top.dotName = fName ++ "/" ++ attrName;
-}
 

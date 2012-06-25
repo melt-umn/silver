@@ -1,6 +1,6 @@
 grammar silver:analysis:warnings:defs;
 
-import silver:analysis:warnings:prodflowgraphs only isAutocopy;
+import silver:modification:autocopyattr only autocopyDcl;
 
 synthesized attribute warnMissingInh :: Boolean occurs on CmdArgs;
 
@@ -83,5 +83,14 @@ Boolean ::= lhsNt::String  env::Decorated Env  attr::String
   return !(isAutocopy(attr, env) && !null(getOccursDcl(attr, lhsNt, env)));
 }
 
+
+function isAutocopy
+Boolean ::= attr::String  e::Decorated Env
+{
+  return case getAttrDclAll(attr, e) of
+  | autocopyDcl(_,_,_,_,_) :: _ -> true
+  | _ -> false
+  end;
+}
 
 
