@@ -10,12 +10,16 @@ imports silver:modification:autocopyattr;
 
 imports silver:util:raw:treemap as rtm;
 
-
+-- TODO: Ideally, we wouldn't have to do this, as these show up organically from the trees?
 {--
  - Deal with the defaults/forwarding and HOA logic on production graphs.
  -
- - 1. All HOA syn have a dep on their Eq. Same for forwarding.
- - 2. All syn without equations have dep on their fwd OR default syn.
+ - 1. All HOA synthesized attributes have a dep on their equation. 
+ - 1b. Same for forwarding.
+ - 2. All synthesized attributes missing equations have dep on their corresponding fwd.
+ - 2b. OR use their default if not forwarding and it exists.
+ - 3. All inherited attributes not supplied to forward have copies.
+ - 4. All autocopy attributes not supplied to childred have copies.
  -}
 function fixupGraphs
 [Pair<String [Pair<FlowVertex FlowVertex>]>] ::= prods::[String]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
@@ -43,6 +47,8 @@ function fixupGraphs
   else [pair(p, fixedEdges)] ++ fixupGraphs(tail(prods), prodTree, flowEnv, realEnv);
 }
 
+---- Begin helpers for fixing up graphs ----------------------------------------
+
 function fixupAllHOAs
 [Pair<FlowVertex FlowVertex>] ::= d::[FlowDef] flowEnv::Decorated FlowEnv realEnv::Decorated Env
 {
@@ -55,7 +61,6 @@ function fixupAllHOAs
   | _ :: rest -> fixupAllHOAs(rest, flowEnv, realEnv)
   end;
 }
-
 function addHOASynDeps
 [Pair<FlowVertex FlowVertex>] ::= synattrs::[String]  fName::String
 {
@@ -72,7 +77,6 @@ function addFwdEqs
     (if null(lookupSyn(prod, head(syns), flowEnv)) then [pair(lhsVertex(head(syns)), forwardVertex(head(syns)))] else []) ++
     addFwdEqs(prod, tail(syns), flowEnv);
 }
-
 function addFwdInhEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::String inhs::[String] flowEnv::Decorated FlowEnv
 {
@@ -100,7 +104,6 @@ function addAllAutoCopyEqs
   return if null(sigNames) then []
   else addAutocopyEqs(prod, head(sigNames), inhs, flowEnv, realEnv) ++ addAllAutoCopyEqs(prod, tail(sigNames), inhs, flowEnv, realEnv);
 }
-
 function addAutocopyEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::String sigName::NamedSignatureElement inhs::[String] flowEnv::Decorated FlowEnv realEnv::Decorated Env
 {
@@ -112,13 +115,19 @@ function addAutocopyEqs
     addAutocopyEqs(prod, sigName, tail(inhs), flowEnv, realEnv);
 }
 
+---- End helpers for fixing up graphs ------------------------------------------
 
 
 
 
 
 
--- (prod, (sig, [local, type]))
+{--
+ - This is a slightly bizarro data structure that lets us find out 
+ - (fst) the signature
+ - (snd) the type of each local attribute
+ - for a production.
+ -}
 function makeProdLocalInfo
 [Pair<String Pair<NamedSignature [Pair<String String>]>>] ::= prods::[String]  prodTree::EnvTree<FlowDef>  realEnv::Decorated Env
 {
@@ -140,13 +149,13 @@ function findAllLocals
   end;
 }
 
-function findAllNts
-[String] ::=  prods::[String]  realEnv::Decorated Env
-{
-  return nubBy(stringEq, map((.typeName), map((.typerep), map((.outputElement), map((.namedSignature), map(head, map(getValueDclAll(_, realEnv), prods)))))));
-}
 
--- nt -> [(syn, inh)]
+
+
+{--
+ - Produces flow types for every nonterminal.
+ - Iterates until convergence.
+ -}
 function fullySolveFlowTypes
 EnvTree<Pair<String String>> ::= prodinfos::EnvTree<Pair<NamedSignature [Pair<String String>]>>
                                  graphs::[Pair<String [Pair<FlowVertex FlowVertex>]>]
@@ -162,7 +171,9 @@ EnvTree<Pair<String String>> ::= prodinfos::EnvTree<Pair<NamedSignature [Pair<St
          rtm:add(iter, ntEnv));
 }
 
--- (nt, [(syn, inh)]) ::= 
+{--
+ - One iteration of solving flow type equations. Goes through each production once.
+ -}
 function solveFlowTypes
 [Pair<String Pair<String String>>] ::= prodinfos::EnvTree<Pair<NamedSignature [Pair<String String>]>>
                                        graphs::[Pair<String [Pair<FlowVertex FlowVertex>]>]
@@ -183,6 +194,8 @@ function solveFlowTypes
     stitchEdges(forwardVertex, searchEnvTree(nt, ntEnv)) ++
     stitchRhsEdges(sig.inputElements, ntEnv) ++
     stitchLocalEdges(localTypes, ntEnv);
+  local stitchedGraphEnv :: EnvTree<FlowVertex> =
+    directBuildTree(map(makeGraphEnv, stitchedGraph));
   
   local attrs :: Pair<[DclInfo] [DclInfo]> = partition(isOccursSynthesized(_, realEnv), getAttrsOn(nt, realEnv));
   local syns :: [String] = map((.attrOccurring), attrs.fst);
@@ -191,11 +204,10 @@ function solveFlowTypes
   local currentFlowType :: EnvTree<String> =
     directBuildTree(searchEnvTree(nt, ntEnv));
   
-  local stitchedGraphEnv :: EnvTree<FlowVertex> =
-    directBuildTree(map(makeGraphEnv, stitchedGraph));
   -- The New Improved Flow Type
+  -- TODO: We also need to compute flow type information for locals... somehow. Maybe? Maybe not....
   local synExpansion :: [Pair<String [String]>] =
-    expandForEach(syns, inhs, stitchedGraphEnv);
+    expandForEach(map(lhsVertex, syns) ++ [forwardEqVertex()], inhs, stitchedGraphEnv);
   
   -- Find what edges are NEW NEW NEW
   local brandNewEdges :: [Pair<String Pair<String String>>] =
@@ -235,12 +247,15 @@ function stitchEdges
 {
   return map(dualApply(obj, _), lst);
 }
+
+-- Produces edges for each RHS element according to the current flow type
 function stitchRhsEdges
 [Pair<FlowVertex FlowVertex>] ::= rhs::[NamedSignatureElement]  ntEnv::EnvTree<Pair<String String>>
 {
   return if null(rhs) then []
   else stitchEdges(rhsVertex(head(rhs).elementName, _), searchEnvTree(head(rhs).typerep.typeName, ntEnv)) ++ stitchRhsEdges(tail(rhs), ntEnv);
 }
+-- Produces edges for each local element according to the current flow type
 function stitchLocalEdges
 [Pair<FlowVertex FlowVertex>] ::= locals::[Pair<String String>]  ntEnv::EnvTree<Pair<String String>>
 {
@@ -248,14 +263,16 @@ function stitchLocalEdges
   else stitchEdges(localVertex(head(locals).fst, _), searchEnvTree(head(locals).snd, ntEnv)) ++ stitchLocalEdges(tail(locals), ntEnv);
 }
 
+-- For each vertex, do a graph expansion and then filter down to just inherited attributes
 function expandForEach
-[Pair<String [String]>] ::= syns::[String]  inhs::[String]  graph::EnvTree<FlowVertex>
+[Pair<String [String]>] ::= syns::[FlowVertex]  inhs::[String]  graph::EnvTree<FlowVertex>
 {
   return if null(syns) then []
-  else pair(head(syns), foldr(collectInhs(inhs,_,_), [], expandGraph([lhsVertex(head(syns))], graph))) ::
+  else pair(head(syns).flowTypeName, foldr(collectInhs(inhs,_,_), [], expandGraph([head(syns)], graph))) ::
          expandForEach(tail(syns), inhs, graph);
 }
 
+-- Transitive closure under the graph
 function expandGraph
 [FlowVertex] ::= set::[FlowVertex]  graph::EnvTree<FlowVertex>
 {
@@ -268,6 +285,13 @@ function expandGraph
   return if null(newNodes) then set else expandGraph(set ++ newNodes, graph);
 }
 
+{--
+ - Used to filter down to just the inherited attributes
+ - @param inhs  All inherited attributes on the LHS
+ - @param f  The flow vertex in question
+ - @param l  The current set of inherited attribute dependencies
+ - @return  {l} with {f} added to it, IF it's in {inhs} and not already in {l}
+ -}
 function collectInhs
 [String] ::= inhs::[String]  f::FlowVertex  l::[String]
 {
@@ -285,4 +309,32 @@ Boolean ::= a::FlowVertex  b::FlowVertex
   return a.dotName == b.dotName;
 }
 
+
+
+
+{--
+ - Flow type lookup names for vertices
+ -}
+synthesized attribute flowTypeName :: String occurs on FlowVertex;
+
+aspect production lhsVertex
+top::FlowVertex ::= attrName::String
+{
+  top.flowTypeName = attrName; -- for syn only, but no way to error on inh here
+}
+aspect production rhsVertex
+top::FlowVertex ::= sigName::String  attrName::String
+{
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for child inherited attributes?");
+}
+aspect production localEqVertex
+top::FlowVertex ::= fName::String
+{
+  top.flowTypeName = fName;
+}
+aspect production localVertex
+top::FlowVertex ::= fName::String  attrName::String
+{
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for local inherited attributes?");
+}
 

@@ -18,6 +18,7 @@ top::CmdArgs ::= rest::CmdArgs
   top.dumpFlowGraph = true;
   forwards to rest;
 }
+
 aspect production run
 top::RunUnit ::= iIn::IO args::[String]
 {
@@ -26,6 +27,12 @@ top::RunUnit ::= iIn::IO args::[String]
   
   postOps <- if a.dumpFlowGraph then [dumpFlowGraphAction(findAllNts(allProds, allRealEnv), prodGraph, flowTypes)] else [];
 }
+function findAllNts
+[String] ::=  prods::[String]  realEnv::Decorated Env
+{
+  return nubBy(stringEq, map((.typeName), map((.typerep), map((.outputElement), map((.namedSignature), map(head, map(getValueDclAll(_, realEnv), prods)))))));
+}
+
 
 abstract production dumpFlowGraphAction
 top::Unit ::= allNts::[String]  prodGraph::[Pair<String [Pair<FlowVertex FlowVertex>]>]  flowTypes::EnvTree<Pair<String String>>
