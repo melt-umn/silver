@@ -22,14 +22,14 @@ top::RunUnit ::= iIn::IO args::[String]
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
-  local attribute ntDefGram :: String;
-  ntDefGram = substring(0, lastIndexOf(":", namedSig.outputElement.typerep.typeName), namedSig.outputElement.typerep.typeName);
+  local ntDefGram :: String =
+    substring(0, lastIndexOf(":", namedSig.outputElement.typerep.typeName), namedSig.outputElement.typerep.typeName);
 
-  local attribute isClosedNt :: Boolean;
-  isClosedNt = case getTypeDclAll(namedSig.outputElement.typerep.typeName, top.env) of
-               | ntDcl(_, _, _, _, _, closed) :: _ -> closed
-               | _ -> false -- default, if the lookup fails
-               end;
+  local isClosedNt :: Boolean =
+    case getTypeDclAll(namedSig.outputElement.typerep.typeName, top.env) of
+    | ntDcl(_, _, _, _, _, closed) :: _ -> closed
+    | _ -> false -- default, if the lookup fails
+    end;
 
   top.errors <-
     if null(body.errors ++ ns.errors{-TODO-})
