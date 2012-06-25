@@ -2,7 +2,6 @@ grammar silver:driver;
 
 --imports silver:definition:flow:env;
 imports silver:definition:flow:ast;
-imports silver:analysis:warnings:prodflowgraphs; -- TODO oh my
 import silver:util:raw:treemap as rtm;
 
 {--
@@ -112,7 +111,7 @@ function expandCondBuilds
 {
   -- Map each grammar name to its triggers, and concat.
   local attribute newtriggers :: [[String]];
-  newtriggers = foldr(append, triggers, map((.condBuild), map(head, map(searchEnvTree(_, e), need))));
+  newtriggers = foldr(append, triggers, map(skipNulls((.condBuild), _), map(searchEnvTree(_, e), need)));
 
   local attribute newset :: [String];
   newset = need ++ seen;
@@ -162,7 +161,7 @@ function computeOptionalDeps
 function completeDependencyClosure
 [String] ::= init::[String]  e::EnvTree<Decorated RootSpec>
 {
-  local n :: [String] = rem(makeSet(foldr(append, [], map((.moduleNames), map(head, map(searchEnvTree(_, e), init))))), init);
+  local n :: [String] = rem(makeSet(foldr(append, [], map(skipNulls((.moduleNames), _), map(searchEnvTree(_, e), init)))), init);
   
   return if null(n) then init
   else completeDependencyClosure(computeOptionalDeps(n ++ init, e), e);
@@ -179,3 +178,9 @@ function gatherFlowEnv
 }
 
 
+
+function skipNulls
+[b] ::= f::([b] ::= a)  l::[a]
+{
+  return if null(l) then [] else f(head(l));
+}

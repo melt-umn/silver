@@ -69,14 +69,26 @@ top::ProductionStmt ::=
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
-  -- TODO just nt here
-  top.flowDefs = [fwdEq(top.signature.fullName, e.flowDeps)];
+  local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
+
+  local mayAffectFlowType :: Boolean =
+    contains(top.grammarName, computeOptionalDeps([ntDefGram], top.compiledGrammars));
+    
+  local myFlowDeps :: [FlowVertex] = if mayAffectFlowType then e.flowDeps else [];
+  
+  top.flowDefs = [fwdEq(top.signature.fullName, myFlowDeps)];
 }
 aspect production forwardsToWith
 top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
 {
-  -- TODO ditto
-  top.flowDefs = [fwdEq(top.signature.fullName, e.flowDeps)] ++ inh.flowDefs;
+  local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
+
+  local mayAffectFlowType :: Boolean =
+    contains(top.grammarName, computeOptionalDeps([ntDefGram], top.compiledGrammars));
+    
+  local myFlowDeps :: [FlowVertex] = if mayAffectFlowType then e.flowDeps else [];
+  
+  top.flowDefs = [fwdEq(top.signature.fullName, myFlowDeps)] ++ inh.flowDefs;
 }
 aspect production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
@@ -97,7 +109,7 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
-  -- TODO maybe orphaned flow type blah blah
+  -- TODO figure out if we need to omit deps for inhs??
   top.flowDefs =
     case lhs of
     | forwardLhsExpr(q) -> [fwdInhEq(top.signature.fullName, q.lookupAttribute.fullName, e.flowDeps)]
@@ -112,7 +124,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 aspect production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
-  top.flowDefs = []; -- we don't really care about function's flow info!
+  top.flowDefs = [];
 }
 aspect production errorAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
@@ -125,8 +137,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
 
-  -- The flow type for a syn attr on a prod of a nt maybe be affected if:
-  -- Exported by the NT's grammar, or exported by the syn occur's grammar
   local mayAffectFlowType :: Boolean =
     contains(top.grammarName, computeOptionalDeps([ntDefGram, occursCheck.dcl.sourceGrammar], top.compiledGrammars));
     
@@ -141,7 +151,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  -- TODO: potential point of orphanedness
+  -- TODO: figure out if we need to omit deps for inhs??
   top.flowDefs = 
     case dl of
     | childDefLHS(q) -> [inhEq(top.signature.fullName, q.lookupValue.fullName, attr.lookupAttribute.fullName, e.flowDeps)]
@@ -154,7 +164,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 aspect production localValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
-  -- TODO: potential point of orphanedness ?????? maybe?
+  -- TODO: So, I'm just going to assume for the moment that we're always allowed to define the eq for a local...
+  -- technically, it's possible to break this if you declare it in one grammar, but define it in another, but
+  -- I think we should forbid that syntactically, later on...
   top.flowDefs = [localEq(top.signature.fullName, val.lookupValue.fullName, val.lookupValue.typerep.typeName, e.flowDeps)];
 }
 aspect production errorValueDef
@@ -168,15 +180,22 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 aspect production synAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {-That's really a <- -} e::Expr
 {
-  -- override the usual flow def...
-  -- TODO: potential point of orphanedness
-  top.flowDefs = [extraEq(top.signature.fullName, lhsVertex(attr.lookupAttribute.fullName), e.flowDeps)];
+  local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
+
+  local mayAffectFlowType :: Boolean =
+    contains(top.grammarName, computeOptionalDeps([ntDefGram], top.compiledGrammars));
+
+  -- extraEq only exists to affect flow type, so if we're not allowed to, then don't bother.
+  top.flowDefs = 
+    if mayAffectFlowType 
+    then [extraEq(top.signature.fullName, lhsVertex(attr.lookupAttribute.fullName), e.flowDeps)]
+    else [];
 }
 
 aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  -- TODO: potential point of orphanedness
+  -- TODO: figure out if we need to omit deps for inhs??
   local vertex :: FlowVertex =
     case dl of
     | childDefLHS(q) -> rhsVertex(q.lookupValue.fullName, attr.lookupAttribute.fullName)
