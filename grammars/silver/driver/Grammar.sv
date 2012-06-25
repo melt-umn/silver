@@ -8,7 +8,7 @@ import silver:util:raw:treemap as rtm;
 {--
  - Responsible for the control-flow that figures out how to obtain a grammar's symbols.
  -}
-nonterminal Grammar with config, io, rSpec, rParser, compiledGrammars, found, interfaces, iParser;
+nonterminal Grammar with config, io, rSpec, rParser, compiledGrammars, found, interfaces, iParser, flowEnv, productionFlowGraphs, grammarFlowTypes;
 
 synthesized attribute rSpec :: Decorated RootSpec;
 synthesized attribute found :: Boolean;
@@ -50,19 +50,9 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   cu.globalImports = toEnv(cu.rSpec.importedDefs);
   -- TODO: write a comment explaining why grammarName isn't put here??
   cu.grammarDependencies = computeDependencies(cu.rSpec.moduleNames, top.compiledGrammars);
-  local andOpts :: [String] = makeSet(completeDependencyClosure([grammarName], top.compiledGrammars)); --makeSet(computeOptionalDeps(grammarName::cu.grammarDependencies, top.compiledGrammars));
-  local allFlow :: FlowDefs = foldr(consFlow, nilFlow(), gatherFlowEnv(andOpts, top.compiledGrammars));
-  cu.flowEnv = fromFlowDefs(allFlow);
-  local andOptsGrams :: [Decorated RootSpec] = foldr(append, [], map(searchEnvTree(_, top.compiledGrammars), andOpts));
-  local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlow.prodGraphContribs);
-  local allProds :: [String] = nubBy(stringEq, map(getFst, rtm:toList(prodTree)));
-  local allRealEnv :: Decorated Env = toEnv(foldr(appendDefs, emptyDefs(), map((.defs), andOptsGrams)));
-  local prodGraph :: [Pair<String [Pair<FlowVertex FlowVertex>]>] = fixupGraphs(allProds, prodTree, cu.flowEnv, allRealEnv);
-
-  cu.productionFlowGraphs = prodGraph;
-  local prodinfos :: EnvTree<Pair<NamedSignature [Pair<String String>]>> =
-    directBuildTree(makeProdLocalInfo(allProds, prodTree, allRealEnv));
-  cu.grammarFlowTypes = fullySolveFlowTypes(prodinfos, prodGraph, allRealEnv, rtm:empty(compareString));
+  cu.flowEnv = top.flowEnv;
+  cu.productionFlowGraphs = top.productionFlowGraphs;
+  cu.grammarFlowTypes = top.grammarFlowTypes;
   -- Echo the compilation-wide ones:
   cu.compiledGrammars = top.compiledGrammars;
   cu.config = top.config;

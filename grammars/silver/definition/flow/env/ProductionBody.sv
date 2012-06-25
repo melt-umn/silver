@@ -4,9 +4,17 @@ import silver:definition:type:syntax;
 import silver:modification:defaultattr;
 import silver:modification:collection;
 import silver:modification:copper;
+import silver:util only contains;
+import silver:driver only computeOptionalDeps;
 
 attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
 
+{- A short note on how flowDefs are generated:
+
+  - We ALWAYS produce the flowDef itself. This is necessary to catch missing or duplicate equations.
+  - We omit the dependencies if it appears in a location not permitted to affect the flow type.
+    This is to allow us to just compute flow types once, globally.
+-}
 
 aspect production defaultProductionBody
 top::ProductionBody ::= stmts::ProductionStmts
@@ -61,11 +69,13 @@ top::ProductionStmt ::=
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
+  -- TODO just nt here
   top.flowDefs = [fwdEq(top.signature.fullName, e.flowDeps)];
 }
 aspect production forwardsToWith
 top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
 {
+  -- TODO ditto
   top.flowDefs = [fwdEq(top.signature.fullName, e.flowDeps)] ++ inh.flowDefs;
 }
 aspect production forwardingWith
@@ -87,6 +97,7 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
+  -- TODO maybe orphaned flow type blah blah
   top.flowDefs =
     case lhs of
     | forwardLhsExpr(q) -> [fwdInhEq(top.signature.fullName, q.lookupAttribute.fullName, e.flowDeps)]
@@ -112,14 +123,25 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  top.flowDefs = case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
-                 | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.lookupAttribute.fullName, e.flowDeps)]
-                 | _ -> [synEq(top.signature.fullName, attr.lookupAttribute.fullName, e.flowDeps)]
-                 end;
+  local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
+
+  -- The flow type for a syn attr on a prod of a nt maybe be affected if:
+  -- Exported by the NT's grammar, or exported by the syn occur's grammar
+  local mayAffectFlowType :: Boolean =
+    contains(top.grammarName, computeOptionalDeps([ntDefGram, occursCheck.dcl.sourceGrammar], top.compiledGrammars));
+    
+  local myFlowDeps :: [FlowVertex] = if mayAffectFlowType then e.flowDeps else [];
+  
+  top.flowDefs = 
+    case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
+    | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.lookupAttribute.fullName, myFlowDeps)]
+    | _ -> [synEq(top.signature.fullName, attr.lookupAttribute.fullName, myFlowDeps)]
+    end;
 }
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
+  -- TODO: potential point of orphanedness
   top.flowDefs = 
     case dl of
     | childDefLHS(q) -> [inhEq(top.signature.fullName, q.lookupValue.fullName, attr.lookupAttribute.fullName, e.flowDeps)]
@@ -132,6 +154,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 aspect production localValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
+  -- TODO: potential point of orphanedness ?????? maybe?
   top.flowDefs = [localEq(top.signature.fullName, val.lookupValue.fullName, val.lookupValue.typerep.typeName, e.flowDeps)];
 }
 aspect production errorValueDef
@@ -140,18 +163,20 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.flowDefs = [];
 }
 
--- TODO COLLECTIONS
+-- FROM COLLECTIONS TODO
 
 aspect production synAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {-That's really a <- -} e::Expr
 {
   -- override the usual flow def...
+  -- TODO: potential point of orphanedness
   top.flowDefs = [extraEq(top.signature.fullName, lhsVertex(attr.lookupAttribute.fullName), e.flowDeps)];
 }
 
 aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
+  -- TODO: potential point of orphanedness
   local vertex :: FlowVertex =
     case dl of
     | childDefLHS(q) -> rhsVertex(q.lookupValue.fullName, attr.lookupAttribute.fullName)
@@ -197,3 +222,15 @@ top::DefLHS ::= q::Decorated QName
   top.partialVertex = lhsVertex;
 }
 -}
+
+
+
+--- A few helper functions
+
+function hackGramFromFName
+String ::= s::String
+{
+  return substring(0, lastIndexOf(":", s), s);
+}
+
+

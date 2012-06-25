@@ -70,7 +70,7 @@ top::RunUnit ::= iIn::IO args::[String]
 --------
 
   -- Begin compiling the target grammar, and then chase down dependencies as needed.
-  local attribute unit :: CompilationUnit;
+  production attribute unit :: CompilationUnit;
   unit = compileGrammars(grammarLocation.io, searchPaths, [a.buildGrammar], [], a.doClean, silvergen);
   unit.rParser = top.rParser;
   unit.iParser = top.iParser;
@@ -100,7 +100,7 @@ top::RunUnit ::= iIn::IO args::[String]
 --------
 
   -- Parse those grammars that depend on a changed grammar:
-  local attribute reUnit :: CompilationUnit;
+  production attribute reUnit :: CompilationUnit;
   reUnit = compileGrammars(unit.io, searchPaths, depAnalysis.needGrammars, unit.seenGrammars, true, silvergen);
   reUnit.rParser = top.rParser;
   reUnit.iParser = top.iParser;

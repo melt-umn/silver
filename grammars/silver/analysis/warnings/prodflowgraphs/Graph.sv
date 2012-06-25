@@ -34,28 +34,40 @@ top::RunUnit ::= iIn::IO args::[String]
   flags <- [pair("--dump-flow-deps", flag(dumpFlowGraphFlag))];
   -- omitting from descriptions deliberately!
   
-  postOps <- if a.dumpFlowGraph then [dumpFlowGraphAction(grammars)] else [];
-}
+  postOps <- if a.dumpFlowGraph then [dumpFlowGraphAction(findAllNts(allProds, allRealEnv), prodGraph, flowTypes)] else [];
 
-abstract production dumpFlowGraphAction
-top::Unit ::= grammars::[Decorated RootSpec]
-{
-  local allFlow :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), grammars)));
-  local allEnv :: Decorated FlowEnv = fromFlowDefs(allFlow);
-  local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlow.prodGraphContribs);
+  -- compute flow info and shit
+
+  -- aggregate all flow def information
+  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), grammars)));
+  local allFlowEnv :: Decorated FlowEnv = fromFlowDefs(allFlowDefs);
+  -- Look up tree for production info
+  local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlowDefs.prodGraphContribs);
   local allProds :: [String] = nubBy(stringEq, map(getFst, rtm:toList(prodTree)));
+  -- hack to allow us to look up certain info... TODO: maybe hack?
   local allRealEnv :: Decorated Env = toEnv(foldr(appendDefs, emptyDefs(), map((.defs), grammars)));
+  -- Fix the production graph information from the flow defs TODO: some of this maybe should be fixed somehow
   local prodGraph :: [Pair<String [Pair<FlowVertex FlowVertex>]>] = 
-    fixupGraphs(allProds, prodTree, allEnv, allRealEnv);
-  
+    fixupGraphs(allProds, prodTree, allFlowEnv, allRealEnv);
+  -- Graph some random info about productions TODO: maybe hack?
   local prodinfos :: EnvTree<Pair<NamedSignature [Pair<String String>]>> =
     directBuildTree(makeProdLocalInfo(allProds, prodTree, allRealEnv));
-  
+  -- Now, solve for flow types!!
   local flowTypes :: EnvTree<Pair<String String>> =
     fullySolveFlowTypes(prodinfos, prodGraph, allRealEnv, rtm:empty(compareString));
   
-  local allNts :: [String] = findAllNts(allProds, allRealEnv);
-  
+
+  unit.flowEnv = allFlowEnv;
+  reUnit.flowEnv = allFlowEnv;
+  unit.productionFlowGraphs = prodGraph;
+  reUnit.productionFlowGraphs = prodGraph;
+  unit.grammarFlowTypes = flowTypes;
+  reUnit.grammarFlowTypes = flowTypes;
+}
+
+abstract production dumpFlowGraphAction
+top::Unit ::= allNts::[String]  prodGraph::[Pair<String [Pair<FlowVertex FlowVertex>]>]  flowTypes::EnvTree<Pair<String String>>
+{
   top.io = 
     writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(allNts, flowTypes) ++ "}", 
       writeFile("flow-deps.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}",

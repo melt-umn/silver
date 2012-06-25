@@ -3,7 +3,7 @@ grammar silver:driver;
 {--
  - Top-level control flow for various compilation tasks.
  -}
-nonterminal CompilationUnit with config, io, compiledGrammars, rParser, iParser, compiledList, seenGrammars, interfaces;
+nonterminal CompilationUnit with config, io, compiledGrammars, rParser, iParser, compiledList, seenGrammars, interfaces, flowEnv, productionFlowGraphs, grammarFlowTypes;
 
 
 {--
@@ -39,6 +39,9 @@ top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] c
   now.iParser = top.iParser;
   now.compiledGrammars = top.compiledGrammars;
   now.config = top.config;
+  now.flowEnv = top.flowEnv;
+  now.productionFlowGraphs = top.productionFlowGraphs;
+  now.grammarFlowTypes = top.grammarFlowTypes;
 
   -- Add the grammar we just build to the seen list
   local attribute new_seen :: [String];
@@ -55,6 +58,9 @@ top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] c
   recurse.iParser = top.iParser;
   recurse.compiledGrammars = top.compiledGrammars;
   recurse.config = top.config;
+  recurse.flowEnv = top.flowEnv;
+  recurse.productionFlowGraphs = top.productionFlowGraphs;
+  recurse.grammarFlowTypes = top.grammarFlowTypes;
  
 
   top.seenGrammars = if null(need) then seen else recurse.seenGrammars;
