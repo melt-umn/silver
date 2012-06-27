@@ -4,11 +4,13 @@ imports silver:testing ;
 imports lib:extcore ;
 imports copper_features hiding A;
 
+ignore terminal NormalWhiteSpace_t /[\n\t\r\ ]+/;
+
+{--- TODO these all currently FAIL. I can't figure out how to make this grammar work...
 parser layout_parse :: LayoutRoot {
   copper_features:test_layout;
 }
 
-ignore terminal NormalWhiteSpace_t /[\n\t\r\ ]+/;
 terminal WS_t /[\n\t\r\ ]*/;
 terminal NoNewlineWhiteSpace_t /[\t\ ]*/;
 terminal DOESNOTMATTER '{BROEKNIMPOSSIBLETOKEN}'; -- EmptyString Hack
@@ -42,7 +44,6 @@ top::OptDelim ::= ','
 {}
 
 equalityTest ( layout_parse("if a a end", "").parseSuccess, false, Boolean, copper_tests );
-{--- TODO these all currently FAIL. I can't figure out how to make this grammar work...
 equalityTest ( layout_parse("if a , a end", "").parseErrors, "", String, copper_tests );
 equalityTest ( layout_parse("if a , a end", "").parseSuccess, true, Boolean, copper_tests );
 equalityTest ( layout_parse("if a, a end", "").parseSuccess, true, Boolean, copper_tests );
