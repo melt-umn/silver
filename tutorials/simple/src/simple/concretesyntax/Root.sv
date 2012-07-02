@@ -14,7 +14,7 @@ imports simple:abstractsyntax as ast;
 {--
  - The concrete syntax represent a complete Simple program.
  -}
-nonterminal Root with unparse, ast<ast:Root>;
+closed nonterminal Root with unparse, ast<ast:Root>;
 
 {- The use of ast<...> above is a "parameterized attribute"
  - The 'ast' attribute is declared in silver:langutil.

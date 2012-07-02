@@ -13,7 +13,7 @@ grammar simple:concretesyntax;
 
  -- A possibly empty sequence of statements
 
-nonterminal Stmts with unparse, ast<ast:Stmt>;
+closed nonterminal Stmts with unparse, ast<ast:Stmt>;
 
 concrete productions ss::Stmts
  | s::Stmt rest::Stmts  { ss.unparse = s.unparse ++ rest.unparse;
@@ -27,7 +27,7 @@ concrete productions ss::Stmts
 
  -- A non-empty statement. (Either semicolon or closing brace terminated)
 
-nonterminal Stmt with unparse, ast<ast:Stmt>;
+closed nonterminal Stmt with unparse, ast<ast:Stmt>;
 
 concrete productions s::Stmt
  | um::StmtUnMatched  { s.unparse = um.unparse;
@@ -40,7 +40,7 @@ concrete productions s::Stmt
 
  -- A matched statement.
  
-nonterminal StmtMatched with unparse, ast<ast:Stmt>;
+closed nonterminal StmtMatched with unparse, ast<ast:Stmt>;
 
 concrete productions s::StmtMatched
  | '{' ss::Stmts '}'  { s.unparse = "{\n" ++ ss.unparse ++ "}\n";
@@ -57,7 +57,7 @@ concrete productions s::StmtMatched
 
  -- An unmatched statement
 
-nonterminal StmtUnMatched with unparse, ast<ast:Stmt>;
+closed nonterminal StmtUnMatched with unparse, ast<ast:Stmt>;
 
 concrete productions s::StmtUnMatched 
  | 'while' '(' c::Expr ')' body::StmtUnMatched  { s.unparse = "while (" ++ c.unparse ++ ") \n" ++ body.unparse;

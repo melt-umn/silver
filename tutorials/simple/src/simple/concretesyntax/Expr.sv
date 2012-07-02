@@ -3,7 +3,7 @@ grammar simple:concretesyntax;
 {--
  - An expression, concrete syntax.
  -}
-nonterminal Expr with unparse, ast<ast:Expr>;
+closed nonterminal Expr with unparse, ast<ast:Expr>;
 
 {- The productions given below for binary operators are ambiguous but
    traditional operator precedence and associativity specifications
