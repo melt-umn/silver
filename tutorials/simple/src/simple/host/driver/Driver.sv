@@ -7,7 +7,7 @@ import simple:abstractsyntax as ast;
 
 function driver
 IO ::= args::String io_in::IO 
-       the_parser::Function(ParseResult<cst:Root>::=String String)
+       the_parser::(ParseResult<cst:Root>::=String String)
 {
   production attribute isF :: IOVal<Boolean>;
   isF = isFile(args, io_in);
