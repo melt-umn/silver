@@ -17,7 +17,7 @@ n::Name ::= l::Location s::String
   n.pp = text(s);
   n.location = l;
 
-  n.lookup = lookup(s, n.env);
+  n.lookup = lookupValue(s, n.env);
 }
 
 nonterminal Expr with pp, env, errors;

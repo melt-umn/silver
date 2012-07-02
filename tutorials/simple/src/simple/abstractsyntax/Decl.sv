@@ -9,7 +9,7 @@ abstract production decl
 d::Decl ::= t::TypeExpr id::Name 
 {
   d.pp = concat([t.pp, space(), id.pp, semi()]);
-  d.defs = addBinding(id.name, t, emptyEnv());
+  d.defs = [valueDef(id.name, t)];
   d.errors := [];
 }
 
