@@ -54,6 +54,10 @@ public abstract class Thunk<T> {
 	public static Object transformUndecorate(Object t) {
 		if(t instanceof DecoratedNode)
 			return ((DecoratedNode)t).undecorate();
+		else if(/* instance of Thunk */ ((Thunk)t).context == null) // already evaluated!
+			return ((DecoratedNode)((Thunk)t).data).undecorate();
+		// This second check is important, otherwise doEval needs modifying for this class...
+		
 		return new TransformUndecorate((Thunk<DecoratedNode>)t);
 	}
 	
@@ -75,6 +79,8 @@ public abstract class Thunk<T> {
 
 		public TransformUndecorate(Thunk<DecoratedNode> t) {
 			super(t.context); // We don't need a context, so use a dummy value.
+			// Note that the check for context == null in transformUndecorate
+			// becomes important here, because otherwise doEval won't be called!
 			data = t;
 		}
 
