@@ -3,7 +3,7 @@ grammar simple:concretesyntax;
 {--
  - A statement declaring a variable and its type.
  -}
-nonterminal Decl with unparse, ast<ast:Decl>;
+closed nonterminal Decl with unparse, ast<ast:Decl>;
 
 concrete productions d::Decl
  | te::TypeExpr id::term:Id ';'  { d.unparse = te.unparse ++ " " ++ id.lexeme ++ "; \n";

@@ -4,7 +4,7 @@ grammar simple:abstractsyntax;
 abstract production locUnknown
 l::Location ::=
 {
-  l.unparse = "??";
+  forwards to loc("??", -1, -1);
 }
 
 
