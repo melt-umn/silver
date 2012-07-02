@@ -1,86 +1,117 @@
-grammar simple:abstractsyntax ;
+grammar simple:abstractsyntax;
 
-{- This file defines a parametric environment that may be used to
-   store bindings of names to some form of type representation for use
-   in name analysis and type checking.  The nonterminal Env<a>
-   maintains a set of bindings from strings to values of type a.  
+import silver:util:raw:treemap as tm;
 
-   The type Env<a> and various functions for creating and examining
-   environments are provided.
--}
+{- This is slightly overkill for simple, however it's an ideal way to set up the
+   environment for larger projects and more realistic languages. -}
 
--- TODO: This is not only a bad way of doing things, but we should be using
--- a library environment anyway.
-nonterminal Env<a> ;
+nonterminal Env;
+nonterminal Defs;
+closed nonterminal Def;
 
-function addBinding
-Env<a> ::= n::String v::a env::Env<a>
-{
-  return addBinding_p (n, v, env) ;
-}
-
-function appendEnv
-Env<a> ::= e1::Env<a> e2::Env<a>
-{
-  return appendEnv_p(e1, e2) ;
-}
+-- Environment manipulation functions
 
 function emptyEnv
-Env<a> ::=
+Decorated Env ::=
 {
-  return emptyEnv_p() ;
+  return decorate emptyEnv_i() with {};
+}
+function addEnv
+Decorated Env ::= d::[Def]  e::Decorated Env
+{
+  return decorate addEnv_i(d, e) with {};
 }
 
-function lookup
-Maybe<a> ::= n::String e::Env<a>
-{
-  return if   null(matches)
-         then nothing()
-         else just( head(matches) ) ;
+-- Environement representation productions
 
-  local attribute matches :: [a] ;
-  matches = allMatches (n, e) ;
+abstract production emptyEnv_i
+top::Env ::=
+{
+}
+abstract production addEnv_i
+top::Env ::= dlist::[Def]  e::Decorated Env
+{
+  production d::Defs = foldr(consDefs, nilDefs(), dlist);
 }
 
-function allMatches
-[a] ::= n::String e::Env<a>
+-- Definition list productions
+
+abstract production nilDefs
+top::Defs ::=
 {
-  return allMatches_helper (n, e.bindings) ;
 }
 
-------------------------------------------------------------
--- Env implementation productions and functions.  Do not use.
-------------------------------------------------------------
-synthesized attribute bindings<a> :: [ Pair<String a> ] ;
-attribute bindings<a> occurs on Env<a> ;
-
-abstract production emptyEnv_p
-e::Env<a> ::= 
+abstract production consDefs
+top::Defs ::= h::Def  t::Defs
 {
-  e.bindings = [ ] ;
 }
 
-abstract production addBinding_p
-e::Env<a> ::= n::String v::a env::Env<a>
+-- Individual definitions
+
+aspect default production
+top::Def ::=
 {
-  e.bindings = cons( pair(n,v), env.bindings ) ;
 }
 
-abstract production appendEnv_p
-e::Env<a> ::= e1::Env<a> e2::Env<a>
+
+-------------
+
+{- We add this attribute the the environment separately from the above, so that
+   it can serve as a model for how extensions can add new namespaces (or other
+   information) to the environment. -}
+
+synthesized attribute values :: tm:Map<String Decorated TypeExpr> occurs on Env;
+synthesized attribute valueContribs :: [Pair<String Decorated TypeExpr>] occurs on Defs, Def;
+
+aspect production emptyEnv_i
+top::Env ::=
 {
-  e.bindings = e1.bindings ++ e2.bindings ;
+  top.values = tm:empty(compareString);
+}
+aspect production addEnv_i
+top::Env ::= dlist::[Def]  e::Decorated Env
+{
+  top.values = tm:add(d.valueContribs, e.values);
 }
 
-function allMatches_helper
-[a] ::= n::String ps::[Pair<String a>]
+aspect production nilDefs
+top::Defs ::=
 {
-  return if   null(ps)
-         then [ ]
-         else thisMatch ++ allMatches_helper(n, tail(ps)) ;
-
-  local attribute thisMatch :: [a] ;
-  thisMatch = if   n == head(ps).fst
-              then [ head(ps).snd ]
-              else [ ] ;
+  top.valueContribs = [];
 }
+aspect production consDefs
+top::Defs ::= h::Def  t::Defs
+{
+  top.valueContribs = h.valueContribs ++ t.valueContribs;
+}
+
+aspect default production
+top::Def ::=
+{
+  top.valueContribs = [];
+}
+abstract production valueDef
+top::Def ::= n::String  t::Decorated TypeExpr
+{
+  top.valueContribs = [pair(n, t)];
+}
+
+function lookupValue
+Maybe<Decorated TypeExpr> ::= n::String  e::Decorated Env
+{
+  return adaptMaybe(tm:lookup(n, e.values));
+}
+function lookupValueAll
+[Decorated TypeExpr] ::= n::String  e::Decorated Env
+{
+  return tm:lookup(n, e.values);
+}
+
+  
+-- Helper function
+
+function adaptMaybe
+Maybe<a> ::= l::[a]
+{ return if null(l) then nothing() else just(head(l)); }
+
+
