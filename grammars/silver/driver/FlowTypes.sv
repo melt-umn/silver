@@ -8,8 +8,8 @@ import silver:util:raw:treemap as rtm;
 aspect production run
 top::RunUnit ::= iIn::IO args::[String]
 {
-  -- aggregate all flow def information
-  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), grammars)));
+  -- aggregate all flow def information, filtering out those that are not permitted to affect flow types
+  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), filter((.mayAffectFlowType), foldr(append, [], map((.flowDefs), grammars))));
   local allFlowEnv :: Decorated FlowEnv = fromFlowDefs(allFlowDefs);
   
   -- Look up tree for production info
@@ -32,11 +32,9 @@ top::RunUnit ::= iIn::IO args::[String]
     fullySolveFlowTypes(prodinfos, prodGraph, allRealEnv, rtm:empty(compareString));
   
 
-  unit.flowEnv = allFlowEnv;
   unit.productionFlowGraphs = prodGraph;
   unit.grammarFlowTypes = flowTypes;
 
-  reUnit.flowEnv = allFlowEnv;
   reUnit.productionFlowGraphs = prodGraph;
   reUnit.grammarFlowTypes = flowTypes;
 }
