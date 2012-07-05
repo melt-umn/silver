@@ -3,7 +3,7 @@ grammar silver:definition:flow:ast;
 import silver:definition:env only quoteString, unparse;
 
 nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs;
-nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs;
+nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, mayAffectFlowType;
 
 {-- lookup (production, attribute) to find synthesized equations -}
 synthesized attribute synTreeContribs :: [Pair<String FlowDef>];
@@ -27,6 +27,8 @@ synthesized attribute refTreeContribs :: [Pair<String FlowDef>];
 synthesized attribute prodGraphContribs :: [Pair<String FlowDef>];
 {-- Edge lists from equations -}
 synthesized attribute flowEdges :: [Pair<FlowVertex FlowVertex>];
+{-- Whether this flow def may affect the flow type computation -}
+synthesized attribute mayAffectFlowType :: Boolean;
 
 synthesized attribute unparses :: [String];
 
@@ -93,6 +95,7 @@ top::FlowDef ::= nt::String  prod::String
   top.prodGraphContribs = [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
   top.unparses = ["prod(" ++ quoteString(nt) ++ ", " ++ quoteString(prod) ++ ")"];
+  top.mayAffectFlowType = true;
 }
 
 {--
@@ -105,6 +108,7 @@ top::FlowDef ::= nt::String  inhs::[String]
   top.prodGraphContribs = [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
   top.unparses = error("TODO");
+  top.mayAffectFlowType = true;
 }
 
 {--
@@ -116,12 +120,13 @@ top::FlowDef ::= nt::String  inhs::[String]
  - CONTRIBUTIONS ARE POSSIBLE
  -}
 abstract production synEq
-top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
+top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
   top.synTreeContribs = [pair(crossnames(prod, attr), top)];
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(lhsVertex(attr), _), deps);
   top.unparses = ["syn(" ++ implode(", ", [quoteString(prod), quoteString(attr), unparseVertices(deps)]) ++ ")"];
+  top.mayAffectFlowType = mayAffectFlowType;
 }
 
 {--
@@ -140,6 +145,7 @@ top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(rhsVertex(sigName, attr), _), deps);
   top.unparses = ["inh(" ++ implode(", ", [quoteString(prod), quoteString(sigName), quoteString(attr), unparseVertices(deps)]) ++ ")"];
+  top.mayAffectFlowType = true;
 }
 
 {--
@@ -158,6 +164,7 @@ top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
   top.prodGraphContribs = []; -- defaults don't show up in the prod graph!!
   top.flowEdges = map(pair(lhsVertex(attr), _), deps);
   top.unparses = ["def(" ++ implode(", ", [quoteString(nt), quoteString(attr), unparseVertices(deps)]) ++ ")"];
+  top.mayAffectFlowType = true;
 }
 
 {--
@@ -168,12 +175,13 @@ top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
  - CONTRIBUTIONS ARE *NOT* repeat *NOT* POSSIBLE
  -}
 abstract production fwdEq
-top::FlowDef ::= prod::String  deps::[FlowVertex]
+top::FlowDef ::= prod::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
   top.fwdTreeContribs = [pair(prod, top)];
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(forwardEqVertex(), _), deps);
   top.unparses = ["fwd(" ++ implode(", ", [quoteString(prod), unparseVertices(deps)]) ++ ")"];
+  top.mayAffectFlowType = mayAffectFlowType;
 }
 
 {--
@@ -191,6 +199,7 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(forwardVertex(attr), _), deps);
   top.unparses = ["fwdInh(" ++ implode(", ", [quoteString(prod), quoteString(attr), unparseVertices(deps)]) ++ ")"];
+  top.mayAffectFlowType = true;
 }
 
 {--
@@ -209,6 +218,7 @@ top::FlowDef ::= prod::String  fName::String  typeName::String  deps::[FlowVerte
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(localEqVertex(fName), _), deps);
   top.unparses = ["local(" ++ implode(", ", [quoteString(prod), quoteString(fName), quoteString(typeName), unparseVertices(deps)]) ++ ")"];
+  top.mayAffectFlowType = true;
 }
 
 {--
@@ -227,6 +237,7 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(localVertex(fName, attr), _), deps);
   top.unparses = ["localInh(" ++ implode(", ", [quoteString(prod), quoteString(fName), quoteString(attr), unparseVertices(deps)]) ++ ")"];
+  top.mayAffectFlowType = true;
 }
 
 {--
@@ -238,11 +249,12 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
  - @param deps  the dependencies of this vertex
  -}
 abstract production extraEq
-top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]
+top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(src, _), deps);
   top.unparses = ["extra(" ++ implode(", ", [quoteString(prod), src.unparse, unparseVertices(deps)]) ++ ")"];
+  top.mayAffectFlowType = mayAffectFlowType;
 }
 
 --

@@ -7,7 +7,7 @@ import silver:util:raw:treemap as rtm;
 {--
  - Responsible for the control-flow that figures out how to obtain a grammar's symbols.
  -}
-nonterminal Grammar with config, io, rSpec, rParser, compiledGrammars, found, interfaces, iParser, flowEnv, productionFlowGraphs, grammarFlowTypes;
+nonterminal Grammar with config, io, rSpec, rParser, compiledGrammars, found, interfaces, iParser, productionFlowGraphs, grammarFlowTypes;
 
 synthesized attribute rSpec :: Decorated RootSpec;
 synthesized attribute found :: Boolean;
@@ -47,9 +47,12 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   -- Create the values for grammar-wide inherited attributes.
   cu.env = toEnv(cu.rSpec.defs);
   cu.globalImports = toEnv(cu.rSpec.importedDefs);
-  -- TODO: write a comment explaining why grammarName isn't put here??
-  cu.grammarDependencies = computeDependencies(cu.rSpec.moduleNames, top.compiledGrammars);
-  cu.flowEnv = top.flowEnv;
+  -- This grammar, its direct imports, and only transitively close over exports and TRIGGERED conditional imports.
+  local actualDependencies :: [String] = makeSet(computeDependencies(grammarName :: cu.rSpec.moduleNames, top.compiledGrammars));
+  cu.grammarDependencies = actualDependencies;
+  -- deps for flow analysis reasons: now, close over imports and options, as well as exports and TRIGGERED conditional imports.
+  local depsPlusOptions :: [String] = makeSet(completeDependencyClosure(actualDependencies, top.compiledGrammars));
+  cu.flowEnv = fromFlowDefs(foldr(consFlow, nilFlow(), gatherFlowEnv(depsPlusOptions, top.compiledGrammars)));
   cu.productionFlowGraphs = top.productionFlowGraphs;
   cu.grammarFlowTypes = top.grammarFlowTypes;
   -- Echo the compilation-wide ones:
@@ -69,8 +72,7 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
 
 
 {--
- - Expand an initial set of modules names to all exported dependencies,
- - direct, indirect, or conditionally triggered.
+ - Closes over exports, including triggered conditional exports (by grammars in the set.)
  -}
 function computeDependencies
 [String] ::= init::[String] e::EnvTree<Decorated RootSpec>
@@ -79,7 +81,8 @@ function computeDependencies
 }
 
 {--
- - Find all exported grammars
+ - Closes over exports only.
+ -
  - @param need  The initial set of imported grammars
  - @param seen  Initially []
  - @param e  All built grammars
@@ -99,7 +102,10 @@ function expandExports
 }
 
 {--
- - Find all exported grammars - including any triggered CONDITIONALLY
+ - Closes over triggered grammars, including the exports (and triggers ofc) of those triggered grammars.
+ -
+ - @see computeDependencies
+ -
  - @param need  The initial set of imported grammars (ALL are assumed to be found in e, now.)
  - @param seen  Initially []
  - @param triggers  Initially []
@@ -144,19 +150,21 @@ function expandOptionalsIter
 }
 
 {--
- - Follow all optionals, exports, and condbuilds to a full set.
+ - Close over options only, exports, and triggered cond exports
  -}
 function computeOptionalDeps
 [String] ::= init::[String]  e::EnvTree<Decorated RootSpec>
 {
-  local eoi :: [String] = expandOptionalsIter(init, [], e);
+  local initPlusExported :: [String] = computeDependencies(init, e);
+  local closeOptions :: [String] = expandOptionalsIter(initPlusExported, [], e);
   
-  return if null(rem(eoi, init)) then init
-         else computeOptionalDeps(computeDependencies(eoi, e), e);
+  return if null(rem(closeOptions, initPlusExported)) then initPlusExported
+         else computeOptionalDeps(closeOptions, e);
 }
 
 {--
- - Sheesh, compute everything this grammar depends on or may depend on etc etc
+ - Close over imports, options, exports, and triggered cond exports.
+ - Note that we might trigger more things here than previously...
  -}
 function completeDependencyClosure
 [String] ::= init::[String]  e::EnvTree<Decorated RootSpec>

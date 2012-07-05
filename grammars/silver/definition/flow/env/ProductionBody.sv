@@ -73,10 +73,8 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 
   local mayAffectFlowType :: Boolean =
     contains(top.grammarName, computeOptionalDeps([ntDefGram], top.compiledGrammars));
-    
-  local myFlowDeps :: [FlowVertex] = if mayAffectFlowType then e.flowDeps else [];
   
-  top.flowDefs = [fwdEq(top.signature.fullName, myFlowDeps)];
+  top.flowDefs = [fwdEq(top.signature.fullName, e.flowDeps, mayAffectFlowType)];
 }
 aspect production forwardsToWith
 top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
@@ -85,10 +83,8 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
 
   local mayAffectFlowType :: Boolean =
     contains(top.grammarName, computeOptionalDeps([ntDefGram], top.compiledGrammars));
-    
-  local myFlowDeps :: [FlowVertex] = if mayAffectFlowType then e.flowDeps else [];
   
-  top.flowDefs = [fwdEq(top.signature.fullName, myFlowDeps)] ++ inh.flowDefs;
+  top.flowDefs = [fwdEq(top.signature.fullName, e.flowDeps, mayAffectFlowType)] ++ inh.flowDefs;
 }
 aspect production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
@@ -139,13 +135,11 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 
   local mayAffectFlowType :: Boolean =
     contains(top.grammarName, computeOptionalDeps([ntDefGram, occursCheck.dcl.sourceGrammar], top.compiledGrammars));
-    
-  local myFlowDeps :: [FlowVertex] = if mayAffectFlowType then e.flowDeps else [];
   
   top.flowDefs = 
     case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
-    | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.lookupAttribute.fullName, myFlowDeps)]
-    | _ -> [synEq(top.signature.fullName, attr.lookupAttribute.fullName, myFlowDeps)]
+    | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.lookupAttribute.fullName, e.flowDeps)]
+    | _ -> [synEq(top.signature.fullName, attr.lookupAttribute.fullName, e.flowDeps, mayAffectFlowType)]
     end;
 }
 aspect production inheritedAttributeDef
@@ -185,11 +179,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {-That's really
   local mayAffectFlowType :: Boolean =
     contains(top.grammarName, computeOptionalDeps([ntDefGram], top.compiledGrammars));
 
-  -- extraEq only exists to affect flow type, so if we're not allowed to, then don't bother.
-  top.flowDefs = 
-    if mayAffectFlowType 
-    then [extraEq(top.signature.fullName, lhsVertex(attr.lookupAttribute.fullName), e.flowDeps)]
-    else [];
+  top.flowDefs = [extraEq(top.signature.fullName, lhsVertex(attr.lookupAttribute.fullName), e.flowDeps, mayAffectFlowType)];
 }
 
 aspect production inhAppendColAttributeDef
@@ -203,7 +193,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
     | forwardDefLHS(q) -> forwardVertex(attr.lookupAttribute.fullName)
     | _ -> localEqVertex("bogus:value:from:inhcontrib:flow")
     end;
-  top.flowDefs = [extraEq(top.signature.fullName, vertex, e.flowDeps)];
+  top.flowDefs = [extraEq(top.signature.fullName, vertex, e.flowDeps, true)];
 }
 
 ------ FROM COPPER TODO
