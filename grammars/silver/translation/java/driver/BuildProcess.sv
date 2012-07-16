@@ -142,15 +142,28 @@ String ::= r::Decorated RootSpec
 function writeBuildFile
 IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
-  production attribute extraTargets :: [String] with ++;
-  extraTargets := [];
+  -- The prefix 'extra' here is used partially for historical reasons, and partially
+  -- because it makes it easy to search/highlight all uses of these
 
-  production attribute extraTaskdefs :: [String] with ++;
-  extraTaskdefs := [];
+  production attribute extraTopLevelDecls :: [String] with ++;
+  extraTopLevelDecls := [];
 
-  production attribute extraDepends :: [String] with ++;
-  extraDepends := ["init"];
+  production attribute extraDistDeps :: [String] with ++;
+  extraDistDeps := ["grammars"];
 
+  production attribute extraGrammarsDeps :: [String] with ++;
+  extraGrammarsDeps := ["init"];
+  
+  production attribute extraManifestAttributes :: [String] with ++;
+  extraManifestAttributes := [
+    "<attribute name='Built-By' value='${user.name}' />",
+    "<attribute name='Implementation-Version' value='${TIME}' />",
+    "<attribute name='Main-Class' value='" ++ makeName(a.buildGrammar) ++ ".Main' />"]; -- TODO: we "should" make main depend on whether there is a main...
+
+  extraManifestAttributes <-
+    if a.buildSingleJar then []
+    else ["<attribute name='Class-Path' value='${man.classpath}' />\n"];
+  
   local attribute outputFile :: String;
   outputFile = if length(a.outName) > 0 then a.outName else (makeName(a.buildGrammar) ++ ".jar");
 
@@ -160,7 +173,7 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
   local attribute buildXml :: String;
   buildXml =    
 "<project name='" ++ a.buildGrammar ++ "' default='dist' basedir='.'>\n" ++
-"  <description>Build the grammar " ++ a.buildGrammar ++ " </description>\n\n" ++
+"  <description>Generated build script for the grammar " ++ a.buildGrammar ++ " </description>\n\n" ++
 
 "  <property environment='env'/>\n" ++
 "  <property name='jg' location='" ++ silvergen ++ "'/>\n" ++
@@ -181,54 +194,37 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
 "    <path refid='lib.classpath'/>\n" ++
 "  </path>\n\n" ++
 
-implode("\n", extraTaskdefs) ++ "\n\n" ++
+implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 
-"  <target name='init'>\n\n" ++
-"    <!-- Create the time stamp -->\n" ++
+"  <target name='init'>\n" ++
 "    <tstamp>\n" ++
-"      <format property='TIME' pattern='MM/dd/yyyy hh:mm aa'/>\n" ++
-"    </tstamp>\n\n" ++
-
+"      <format property='TIME' pattern='yyyy.MM.dd.HH.mm.ss'/>\n" ++
+"    </tstamp>\n" ++
 "    <mkdir dir='${bin}'/>\n" ++
 "  </target>\n\n" ++
 
-"  <target name='dist' depends='grammars'>\n\n" ++
-
+"  <target name='dist' depends='" ++ implode(", ", extraDistDeps) ++ "'>\n" ++
 "    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath' />\n" ++
-
 "    <jar destfile='" ++ outputFile ++ "' basedir='${bin}'>\n" ++
-
     buildGrammarList(specs, "*.class") ++ 
-
 "      <manifest>\n" ++
-"       <attribute name='Main-Class' value='" ++ makeName(a.buildGrammar) ++ ".Main' />\n" ++
-
-(if !a.buildSingleJar then 
-"       <attribute name='Class-Path' value='${man.classpath}' />\n"
- else "") ++
-"       <attribute name='Built-By' value='${user.name}' />\n" ++
-"       <attribute name='Implementation-Version' value='${TIME}' />\n" ++
+"       " ++ implode("\n       ", extraManifestAttributes) ++
 "      </manifest>\n" ++
 
--- If we're building a single jar, then include it, and don't write out a script.
+-- If we're building a single jar, then include the runtimes TODO: this method kinda sucks
 (if a.buildSingleJar then
 "      <zipfileset src='${sh}/jars/CopperRuntime.jar' excludes='META-INF/*' />\n" ++
 "      <zipfileset src='${sh}/jars/SilverRuntime.jar' excludes='META-INF/*' />\n"
  else "") ++
  
-"    </jar>\n\n" ++
-
+"    </jar>\n" ++
 "  </target>\n\n" ++
 
-"  <target name='grammars' depends='" ++ implode(", ", extraDepends) ++ "'>\n" ++
-
+"  <target name='grammars' depends='" ++ implode(", ", extraGrammarsDeps) ++ "'>\n" ++
 "      <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false'>\n" ++
     buildGrammarList(specs, "*.java") ++ 
 "      </javac>\n" ++
-"  </target>\n\n" ++
-
-implode("\n", extraTargets) ++ "\n\n" ++
-
+"  </target>\n" ++
 "</project>\n";
 }
 
@@ -313,3 +309,4 @@ String ::= others::[String] nme::String
 {
   return if null(others) then "" else "\t\t" ++ makeName(head(others)) ++ ".Init."++nme++"();\n" ++ makeOthers(tail(others),nme);
 }
+

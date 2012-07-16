@@ -94,11 +94,10 @@ IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[Parser
 aspect function writeBuildFile
 IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
-  extraTaskdefs <- ["  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='lib.classpath'/>\n" ];
-  extraTargets <- ["  <target name='copper'>\n" ++ buildAntParserPart(
-                                                                      if a.forceCopperDump then da.allParsers else da.taintedParsers
-                                                                      , a) ++ "  </target>\n"];
-  extraDepends <- ["copper"];
+  extraTopLevelDecls <- [
+    "  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='lib.classpath'/>",
+    "  <target name='copper'>\n" ++ buildAntParserPart(if a.forceCopperDump then da.allParsers else da.taintedParsers, a) ++ "  </target>"];
+  extraGrammarsDeps <- ["copper"];
 }
 
 function buildAntParserPart
