@@ -12,8 +12,8 @@ aspect function writeBuildFile
 IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
 {
   local targets :: String = mdaBuildTarget(da.compiledList, silverhome, silvergen);
-  extraTargets <- if length(targets) != 0 then ["  <target name='copper_mda'>\n" ++ targets ++ "  </target>\n"] else [];
-  extraDepends <- if length(targets) != 0 then ["copper_mda"] else [];
+  extraTopLevelDecls <- if length(targets) != 0 then ["  <target name='copper_mda'>\n" ++ targets ++ "  </target>\n"] else [];
+  extraGrammarsDeps <- if length(targets) != 0 then ["copper_mda"] else [];
 }
 
 aspect production run
