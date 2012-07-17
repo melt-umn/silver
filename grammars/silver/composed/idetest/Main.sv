@@ -1,4 +1,6 @@
-grammar silver:composed:Default;
+grammar silver:composed:idetest;
+
+-- This grammar is a duplicate of Default, but...
 
 import silver:host;
 import silver:host:env;
@@ -55,3 +57,11 @@ IOVal<Integer> ::= args::[String] i::IO
   return ioval((decorate run(i, args) with {rParser = rParse; iParser = iParse;}).io,
                0);
 }
+
+--- ... we're adding an ide declaration here
+
+temp_imp_ide_dcl rParse ".sv" ;
+
+
+-- Yeah, that's a hack! :D
+

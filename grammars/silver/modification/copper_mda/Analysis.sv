@@ -25,8 +25,7 @@ top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ModuleList
   local attribute spec :: [ParserSpec];
   spec = findSpec(orig.lookupValue.fullName, origgram.parserSpecs);
   
-  top.errors <- if !null(spec) then []
-                else if !null(orig.lookupValue.errors) then []
+  top.errors <- if !null(orig.lookupValue.errors) || !null(spec) then []
                 else [err(orig.location, orig.name ++ " is not a parser.")];
 
   top.mdaSpecs =

@@ -149,7 +149,10 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
   extraTopLevelDecls := [];
 
   production attribute extraDistDeps :: [String] with ++;
-  extraDistDeps := ["grammars"];
+  extraDistDeps := ["jars"];
+  
+  production attribute extraJarsDeps :: [String] with ++;
+  extraJarsDeps := ["grammars"];
 
   production attribute extraGrammarsDeps :: [String] with ++;
   extraGrammarsDeps := ["init"];
@@ -204,6 +207,9 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "  </target>\n\n" ++
 
 "  <target name='dist' depends='" ++ implode(", ", extraDistDeps) ++ "'>\n" ++
+"  </target>\n\n" ++
+
+"  <target name='jars' depends='" ++ implode(", ", extraJarsDeps) ++ "'>\n" ++
 "    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath' />\n" ++
 "    <jar destfile='" ++ outputFile ++ "' basedir='${bin}'>\n" ++
     buildGrammarList(specs, "*.class") ++ 
