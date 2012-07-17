@@ -10,6 +10,12 @@ imports silver:modification:autocopyattr;
 
 imports silver:util:raw:treemap as rtm;
 
+
+-- Help some type signatures suck a little less
+type ProdName = String;
+type NtName = String;
+
+
 -- TODO: Ideally, we wouldn't have to do this, as these show up organically from the trees?
 {--
  - Deal with the defaults/forwarding and HOA logic on production graphs.
@@ -22,11 +28,11 @@ imports silver:util:raw:treemap as rtm;
  - 4. All autocopy attributes not supplied to childred have copies.
  -}
 function fixupGraphs
-[Pair<String [Pair<FlowVertex FlowVertex>]>] ::= prods::[String]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+[Pair<ProdName [Pair<FlowVertex FlowVertex>]>] ::= prods::[ProdName]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
 {
-  local p :: String = head(prods);
+  local p :: ProdName = head(prods);
   local dcl :: DclInfo = head(getValueDclAll(p, realEnv));
-  local nt :: String = dcl.namedSignature.outputElement.typerep.typeName;
+  local nt :: NtName = dcl.namedSignature.outputElement.typerep.typeName;
   local attrs :: Pair<[DclInfo] [DclInfo]> = partition(isOccursSynthesized(_, realEnv), getAttrsOn(nt, realEnv));
   local syns :: [String] = map((.attrOccurring), attrs.fst);
   local inhs :: [String] = map((.attrOccurring), attrs.snd);
@@ -69,7 +75,7 @@ function addHOASynDeps
 }
 
 function addFwdEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::String syns::[String] flowEnv::Decorated FlowEnv
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String] flowEnv::Decorated FlowEnv
 {
   return if null(syns) then []
   else 
@@ -78,7 +84,7 @@ function addFwdEqs
     addFwdEqs(prod, tail(syns), flowEnv);
 }
 function addFwdInhEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::String inhs::[String] flowEnv::Decorated FlowEnv
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String] flowEnv::Decorated FlowEnv
 {
   return if null(inhs) then []
   else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [pair(forwardVertex(head(inhs)), lhsVertex(head(inhs)))] else []) ++
@@ -87,7 +93,7 @@ function addFwdInhEqs
 
 
 function addDefEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::String nt::String syns::[String] flowEnv :: Decorated FlowEnv
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName nt::NtName syns::[String] flowEnv :: Decorated FlowEnv
 {
   return if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv)) 
@@ -99,13 +105,13 @@ function addDefEqs
 }
 
 function addAllAutoCopyEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::String sigNames::[NamedSignatureElement] inhs::[String] flowEnv::Decorated FlowEnv realEnv::Decorated Env
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName sigNames::[NamedSignatureElement] inhs::[String] flowEnv::Decorated FlowEnv realEnv::Decorated Env
 {
   return if null(sigNames) then []
   else addAutocopyEqs(prod, head(sigNames), inhs, flowEnv, realEnv) ++ addAllAutoCopyEqs(prod, tail(sigNames), inhs, flowEnv, realEnv);
 }
 function addAutocopyEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::String sigName::NamedSignatureElement inhs::[String] flowEnv::Decorated FlowEnv realEnv::Decorated Env
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName sigName::NamedSignatureElement inhs::[String] flowEnv::Decorated FlowEnv realEnv::Decorated Env
 {
   return if null(inhs) then []
   else (if null(lookupInh(prod, sigName.elementName, head(inhs), flowEnv))  -- no equation
@@ -129,25 +135,40 @@ function addAutocopyEqs
  - for a production.
  -}
 function makeProdLocalInfo
-[Pair<String Pair<NamedSignature [Pair<String String>]>>] ::= prods::[String]  prodTree::EnvTree<FlowDef>  realEnv::Decorated Env
+[Pair<ProdName Pair<NtName [Pair<(FlowVertex ::= String) String>]>>] ::= prods::[ProdName]  prodTree::EnvTree<FlowDef>  realEnv::Decorated Env
 {
+  local prod :: ProdName = head(prods);
+  local sig :: NamedSignature = head(getValueDclAll(prod, realEnv)).namedSignature;
+  local nt :: NtName = sig.outputElement.typerep.typeName;
+  
   return if null(prods) then []
-  else pair(head(prods), 
-         pair(
-           head(getValueDclAll(head(prods), realEnv)).namedSignature,
-           findAllLocals(searchEnvTree(head(prods), prodTree)))) ::
+  else pair(head(prods), pair(nt,
+         rhsStitchPoints(sig.inputElements) ++
+         localStitchPoints(nt, searchEnvTree(prod, prodTree)))) ::
        makeProdLocalInfo(tail(prods), prodTree, realEnv);
 }
-function findAllLocals
-[Pair<String String>] ::= d::[FlowDef]
+function localStitchPoints
+[Pair<(FlowVertex ::= String) String>] ::= nt::NtName  d::[FlowDef]
 {
   return case d of
   | [] -> []
-  | localEq(_, fN, "", deps) :: rest -> findAllLocals(rest)
-  | localEq(_, fN, tN, deps) :: rest -> pair(fN, tN) :: findAllLocals(rest)
-  | _ :: rest -> findAllLocals(rest)
+  -- We add the forward stitch point here, too!
+  | fwdEq(_, _, _) :: rest -> pair(forwardVertex, nt) :: localStitchPoints(nt, rest)
+  -- Ignore locals that aren't nonterminal types!
+  | localEq(_, fN, "", deps) :: rest -> localStitchPoints(nt, rest)
+  -- Add locals that are nonterminal types.
+  | localEq(_, fN, tN, deps) :: rest -> pair(localVertex(fN, _), tN) :: localStitchPoints(nt, rest)
+  -- Ignore all other flow def info
+  | _ :: rest -> localStitchPoints(nt, rest)
   end;
 }
+function rhsStitchPoints
+[Pair<(FlowVertex ::= String) String>] ::= rhs::[NamedSignatureElement]
+{
+  return if null(rhs) then []
+  else pair(rhsVertex(head(rhs).elementName, _), head(rhs).typerep.typeName) :: rhsStitchPoints(tail(rhs));
+}
+
 
 
 
@@ -157,12 +178,12 @@ function findAllLocals
  - Iterates until convergence.
  -}
 function fullySolveFlowTypes
-EnvTree<Pair<String String>> ::= prodinfos::EnvTree<Pair<NamedSignature [Pair<String String>]>>
-                                 graphs::[Pair<String [Pair<FlowVertex FlowVertex>]>]
+EnvTree<Pair<String String>> ::= prodinfos::EnvTree<Pair<NtName [Pair<(FlowVertex ::= String) String>]>>
+                                 graphs::[Pair<ProdName [Pair<FlowVertex FlowVertex>]>]
                                  realEnv::Decorated Env
                                  ntEnv::EnvTree<Pair<String String>>
 {
-  local iter :: [Pair<String Pair<String String>>] =
+  local iter :: [Pair<NtName Pair<String String>>] =
     solveFlowTypes(prodinfos, graphs, realEnv, ntEnv);
   
   -- Just iterate until no new edges are added
@@ -175,27 +196,21 @@ EnvTree<Pair<String String>> ::= prodinfos::EnvTree<Pair<NamedSignature [Pair<St
  - One iteration of solving flow type equations. Goes through each production once.
  -}
 function solveFlowTypes
-[Pair<String Pair<String String>>] ::= prodinfos::EnvTree<Pair<NamedSignature [Pair<String String>]>>
-                                       graphs::[Pair<String [Pair<FlowVertex FlowVertex>]>]
+[Pair<NtName Pair<String String>>] ::= prodinfos::EnvTree<Pair<NtName [Pair<(FlowVertex ::= String) String>]>>
+                                       graphs::[Pair<ProdName [Pair<FlowVertex FlowVertex>]>]
                                        realEnv::Decorated Env
                                        ntEnv::EnvTree<Pair<String String>>
 {
-  local graph :: Pair<String [Pair<FlowVertex FlowVertex>]> = head(graphs);
-  local prodInfo :: Pair<NamedSignature [Pair<String String>]> = head(searchEnvTree(prod, prodinfos));
-
-  local prod :: String = graph.fst;
-  local nt :: String = sig.outputElement.typerep.typeName;
+  local graph :: Pair<ProdName [Pair<FlowVertex FlowVertex>]> = head(graphs);
+  local prod :: ProdName = graph.fst;
   local edges :: [Pair<FlowVertex FlowVertex>] = graph.snd;
-  local sig :: NamedSignature = prodInfo.fst;
-  local localTypes :: [Pair<String String>] = prodInfo.snd;
+
+  local prodInfo :: Pair<NtName [Pair<(FlowVertex ::= String) String>]> = head(searchEnvTree(prod, prodinfos));
+  local nt :: NtName = prodInfo.fst;
+  local stitchPoints :: [Pair<(FlowVertex ::= String) String>] = prodInfo.snd;
   
-  local stitchedGraph :: [Pair<FlowVertex FlowVertex>] =
-    edges ++
-    stitchEdges(forwardVertex, searchEnvTree(nt, ntEnv)) ++
-    stitchRhsEdges(sig.inputElements, ntEnv) ++
-    stitchLocalEdges(localTypes, ntEnv);
   local stitchedGraphEnv :: EnvTree<FlowVertex> =
-    directBuildTree(map(makeGraphEnv, stitchedGraph));
+    directBuildTree(map(makeGraphEnv, stitchGraph(edges, stitchPoints, ntEnv)));
   
   local attrs :: Pair<[DclInfo] [DclInfo]> = partition(isOccursSynthesized(_, realEnv), getAttrsOn(nt, realEnv));
   local syns :: [String] = map((.attrOccurring), attrs.fst);
@@ -210,7 +225,7 @@ function solveFlowTypes
     expandForEach(map(lhsVertex, syns) ++ [forwardEqVertex()], inhs, stitchedGraphEnv);
   
   -- Find what edges are NEW NEW NEW
-  local brandNewEdges :: [Pair<String Pair<String String>>] =
+  local brandNewEdges :: [Pair<NtName Pair<String String>>] =
     map(pair(nt, _), findBrandNewEdges(synExpansion, currentFlowType));
   
   return if null(graphs) then []
@@ -247,21 +262,25 @@ function stitchEdges
 {
   return map(dualApply(obj, _), lst);
 }
+{--
+ - @param spec A "stitch point." fst is a vertex set in the graph, snd is the nonterminal type for that vertex
+ - @param ntEnv is a flow type set to use
+ - @return A set of edges to add to a production graph, for this stich-point, given the flow type.
+ -}
+function stitchEdgesFor
+[Pair<FlowVertex FlowVertex>] ::= spec::Pair<(FlowVertex ::= String) NtName>  ntEnv::EnvTree<Pair<String String>>
+{
+  return stitchEdges(spec.fst, searchEnvTree(spec.snd, ntEnv));
+}
 
--- Produces edges for each RHS element according to the current flow type
-function stitchRhsEdges
-[Pair<FlowVertex FlowVertex>] ::= rhs::[NamedSignatureElement]  ntEnv::EnvTree<Pair<String String>>
+function stitchGraph
+[Pair<FlowVertex FlowVertex>] ::= edges::[Pair<FlowVertex FlowVertex>]
+                                  stitchPoints::[Pair<(FlowVertex ::= String) String>]
+                                  ntEnv::EnvTree<Pair<String String>>
 {
-  return if null(rhs) then []
-  else stitchEdges(rhsVertex(head(rhs).elementName, _), searchEnvTree(head(rhs).typerep.typeName, ntEnv)) ++ stitchRhsEdges(tail(rhs), ntEnv);
+  return edges ++ foldr(append, [], map(stitchEdgesFor(_, ntEnv), stitchPoints));
 }
--- Produces edges for each local element according to the current flow type
-function stitchLocalEdges
-[Pair<FlowVertex FlowVertex>] ::= locals::[Pair<String String>]  ntEnv::EnvTree<Pair<String String>>
-{
-  return if null(locals) then []
-  else stitchEdges(localVertex(head(locals).fst, _), searchEnvTree(head(locals).snd, ntEnv)) ++ stitchLocalEdges(tail(locals), ntEnv);
-}
+
 
 -- For each vertex, do a graph expansion and then filter down to just inherited attributes
 function expandForEach
@@ -330,7 +349,7 @@ top::FlowVertex ::= sigName::String  attrName::String
 aspect production localEqVertex
 top::FlowVertex ::= fName::String
 {
-  top.flowTypeName = fName;
+  top.flowTypeName = fName; -- should be okay because they should never overlap with a syn name
 }
 aspect production localVertex
 top::FlowVertex ::= fName::String  attrName::String
