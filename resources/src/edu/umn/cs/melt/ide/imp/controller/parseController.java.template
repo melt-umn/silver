@@ -1,0 +1,101 @@
+package @PKG_NAME@.imp.controller;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Iterator;
+
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.imp.parser.ISourcePositionLocator;
+import org.eclipse.imp.parser.ParseControllerBase;
+import org.eclipse.imp.parser.SimpleAnnotationTypeInfo;
+import org.eclipse.imp.services.IAnnotationTypeInfo;
+import org.eclipse.imp.services.ILanguageSyntaxProperties;
+
+import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
+import @PKG_NAME@.copper.engine.SimpleEnhancedSilverParser;
+import @PKG_NAME@.imp.@LANG_NAME@Plugin;
+
+/**
+ * Extends ParseControllerBase to use the default implementation of several
+ * interface methods. The following variables are inherited:
+ * 	 protected ISourceProject fProject;
+ * 	 protected IPath fFilePath;
+ * 	 protected IMessageHandler handler;
+ * 	 protected Object fCurrentAst;
+ * @author patrick
+ */
+public class @LANG_NAME@ParseController extends ParseControllerBase {
+	
+	static private DateFormat DATE_FORMAT = new SimpleDateFormat();
+	
+	/**
+	 * Construct an instance of the parser.
+	 */
+	private SimpleEnhancedSilverParser parser = new SimpleEnhancedSilverParser();
+
+	private final SimpleAnnotationTypeInfo fSimpleAnnotationTypeInfo
+		= new SimpleAnnotationTypeInfo();
+
+	
+	public @LANG_NAME@ParseController() {
+		super(@LANG_NAME@Plugin.kLanguageID);
+	}
+	
+	/**
+	 * Return an instance of SimpleAnnotationTypeInfo
+	 */
+	@Override
+	public IAnnotationTypeInfo getAnnotationTypeInfo() {
+		return fSimpleAnnotationTypeInfo;
+	}
+	
+	@Override
+	public ISourcePositionLocator getSourcePositionLocator() {
+		return null;
+	}
+
+	@Override
+	public ILanguageSyntaxProperties getSyntaxProperties() {
+		return null;
+	}
+	
+	@Override
+	public Object parse(String input, IProgressMonitor monitor) {
+		Object result = null;
+		boolean parsed = false;
+		handler.clearMessages();
+		
+		try {
+			Reader reader = new StringReader(input);
+			
+			result = parser.parse(reader);
+		    parsed = (result==null)?false:true;
+		} catch (CopperParserException e) {
+			handler.handleSimpleMessage(//TODO: S-R error
+				e.getMessage(), 0, 0, 0, 0, 1, 1);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		String date = DATE_FORMAT.format(new Date()).toString();
+		if(parsed){
+			System.out.println(date + ": Parsed correctly.");
+		} else {
+			System.err.println(date + ": Parsing failed.");
+		}
+		
+		fCurrentAst = result;
+		return fCurrentAst;
+	}
+
+	//Delegate to auto-generated (enhanced) parser
+	@Override
+	public Iterator getTokenIterator(org.eclipse.jface.text.IRegion region) {
+		return null;
+	}
+
+}

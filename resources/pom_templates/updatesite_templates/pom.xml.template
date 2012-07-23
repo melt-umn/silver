@@ -1,0 +1,17 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>@GROUP_ID@</groupId>
+  <artifactId>@LANG_NAME@_UPDATESITE</artifactId>
+  <version>@IDE_VERSION@</version>
+  <packaging>eclipse-repository</packaging>
+  <name>@LANG_NAME@'s IDE plugin update site</name>
+  <description>@LANG_NAME@'s IDE plugin update site</description>
+ 
+  <parent>
+    <groupId>@GROUP_ID@</groupId>
+    <artifactId>parent</artifactId>
+    <version>@IDE_VERSION@</version>
+    <relativePath>../</relativePath>
+  </parent>
+
+</project>
