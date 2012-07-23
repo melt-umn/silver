@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<!--
+Variables used:
+  PKG_NAME
+  LANG_NAME
+  SOURCE_EXT
+-->
+<plugin>
+
+   <extension
+         point="org.eclipse.imp.runtime.languageDescription">
+      <language
+            extensions="@SOURCE_EXT@"
+            description="nothing here"
+            natureID="@LANG_NAME@_IDE.imp.nature"
+            language="@LANG_NAME@">
+      </language>
+   </extension>
+   <extension
+         id="@LANG_NAME@_IDE.parserWrapper"
+         name="@LANG_NAME@ Parser Wrapper"
+         point="org.eclipse.imp.runtime.parser">
+      <parserWrapper
+            class="@PKG_NAME@.imp.controller.@LANG_NAME@ParseController"
+            language="@LANG_NAME@">
+      </parserWrapper>
+   </extension>
+   <extension
+         id="@LANG_NAME@_IDE.@LANG_NAME@.imp.builder"
+         name="@LANG_NAME@ builder"
+         point="org.eclipse.core.resources.builders">
+      <builder>
+         <run
+               class="@PKG_NAME@.imp.builders.@LANG_NAME@Builder">
+            <parameter
+                  name="foo"
+                  value="bar">
+            </parameter>
+         </run>
+      </builder>
+   </extension>
+   <extension
+         id="@LANG_NAME@_IDE.imp.nature"
+         name="@LANG_NAME@ Nature"
+         point="org.eclipse.core.resources.natures">
+      <builder
+            id="@LANG_NAME@_IDE.@LANG_NAME@.imp.builder">
+      </builder>
+      <runtime>
+         <run
+               class="@PKG_NAME@.imp.builders.@LANG_NAME@Nature">
+         </run>
+      </runtime>
+   </extension>
+   <extension
+         id="@LANG_NAME@.imp.builder.problem"
+         name="@LANG_NAME@ Error"
+         point="org.eclipse.core.resources.markers">
+      <super
+            type="org.eclipse.core.resources.problemmarker">
+      </super>
+      <persistent
+            value="true">
+      </persistent>
+   </extension>
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            objectClass="org.eclipse.core.resources.IProject"
+            adaptable="true"
+            nameFilter="*"
+            id="@LANG_NAME@.imp.projectContextMenu">
+         <action
+               label="Enable @LANG_NAME@ Builder"
+               tooltip="Enable the @LANG_NAME@ builder for this project"
+               class="@PKG_NAME@.imp.actions.Enable@LANG_NAME@Nature"
+               id="@LANG_NAME@.imp.actions.enableNatureAction">
+         </action>
+      </objectContribution>
+   </extension>
+</plugin>

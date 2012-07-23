@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="@LANG_NAME@_FEATURE"
+      label="@LANG_NAME@_FEATURE"
+      version="@IDE_VERSION@">
+
+   <description url="@FEATURE_DESCRIPTION_URL@">
+      @FEATURE_DESCRIPTION_TEXT@
+   </description>
+
+   <copyright url="@FEATURE_COPYRIGHT_URL@">
+      @FEATURE_COPYRIGHT_TEXT@
+   </copyright>
+
+   <license url="@FEATURE_LICENSE_URL@">
+      @FEATURE_LICENSE_TEXT@
+   </license>
+
+   <!-- The IDE plugin's id is the symbolic name in manifest file -->
+   <plugin
+         id="@LANG_NAME@_IDE"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="edu.umn.cs.melt.copper"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="edu.umn.cs.melt.silver"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+         
+   <plugin
+         id="com.ibm.wala.shrike"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="lpg.runtime"
+         download-size="0"
+         install-size="0"
+         version="2.0.18"
+         unpack="false"/>
+
+   <plugin
+         id="lpg.runtime.java"
+         download-size="0"
+         install-size="0"
+         version="2.0.18"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.imp.java.hosted"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.imp.runtime"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.imp.smapi"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.imp.smapifier"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>

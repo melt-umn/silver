@@ -1,0 +1,48 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<!--
+Variables:
+	GROUP_ID 
+	IDE_VERSION 
+	LANG_NAME
+-->
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>@GROUP_ID@</groupId>
+  <artifactId>parent</artifactId>
+  <version>@IDE_VERSION@</version>
+  <packaging>pom</packaging>
+  <name>IDE for @LANG_NAME@</name>
+
+  <modules>
+    <module>./plugin</module>
+    <module>./feature</module>
+    <module>./updatesite</module>
+  </modules>
+
+  <properties>
+    <tycho-version>0.14.1</tycho-version>
+  </properties>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-maven-plugin</artifactId>
+        <version>${tycho-version}</version>
+        <extensions>true</extensions>
+      </plugin>
+    </plugins>
+  </build>
+  
+  <repositories>
+    <repository>
+      <id>helios</id>
+      <layout>p2</layout>
+      <url>http://download.eclipse.org/releases/helios/</url>
+    </repository>
+    <repository>
+      <id>imp</id>
+      <layout>p2</layout>
+      <url>http://melt.cs.umn.edu/downloads/imp-mirror/</url>
+    </repository>
+  </repositories>
+</project>
