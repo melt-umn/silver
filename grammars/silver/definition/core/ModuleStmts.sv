@@ -69,7 +69,7 @@ top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated Root
   gram = head(need);
   
   local attribute new_seen :: [String];
-  new_seen = cons(gram, seen);
+  new_seen = gram :: seen;
   
   production attribute rs :: [Decorated RootSpec];
   rs = searchEnvTree(gram, compiledGrammars);
@@ -78,11 +78,13 @@ top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated Root
   add_to_need := head(rs).exportedGrammars ++ triggeredGrammars(grammarDependencies, head(rs).condBuild);
   
   local attribute new_need :: [String];
-  new_need = rem(makeSet(tail(need) ++ add_to_need), new_seen);
+  new_need = if null(rs) then tail(need)
+             else rem(makeSet(tail(need) ++ add_to_need), new_seen);
   
-  top.defs = if null(need) || null(rs) then emptyDefs() else appendDefs(head(rs).defs, recurse.defs);
+  top.defs = if null(need) then emptyDefs() else
+             if null(rs) then recurse.defs else appendDefs(head(rs).defs, recurse.defs);
   top.errors := if null(need) then [] else 
-             if null(rs) then [err(l, "Grammar '" ++ gram ++ "' cannot be found.")] else recurse.errors;
+             if null(rs) then [err(l, "Grammar '" ++ gram ++ "' cannot be found.")] ++ recurse.errors else recurse.errors;
 }
 
 function triggeredGrammars
