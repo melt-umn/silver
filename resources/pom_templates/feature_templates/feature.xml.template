@@ -37,6 +37,13 @@
          install-size="0"
          version="0.0.0"
          unpack="false"/>
+
+   <plugin
+         id="edu.umn.cs.melt.ide.copper"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
          
    <plugin
          id="com.ibm.wala.shrike"
