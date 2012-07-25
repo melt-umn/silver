@@ -1,6 +1,7 @@
 grammar silver:definition:env;
 
 import silver:util:raw:treemap as rtm; -- TODO 
+import silver:definition:flow:ast only FlowVertex;
 
 {--
  - RootSpecs have two functions:
@@ -9,7 +10,7 @@ import silver:util:raw:treemap as rtm; -- TODO
  - 2. Abstract away from the number of files that are in the grammar.
  -    (i.e. handle a list of Root nonterminals.)
  -}
-nonterminal RootSpec with defs, declaredName, exportedGrammars, optionalGrammars, condBuild, moduleNames, allGrammarDependencies, flowTypes;
+nonterminal RootSpec with defs, declaredName, exportedGrammars, optionalGrammars, condBuild, moduleNames, allGrammarDependencies, flowTypes, prodFlowGraphs;
 
 {--
  - The name of the grammar this RootSpec represents.
@@ -45,6 +46,7 @@ synthesized attribute moduleNames :: [String];
 synthesized attribute allGrammarDependencies :: [String];
 {-- flow stuff -}
 synthesized attribute flowTypes :: EnvTree<Pair<String String>>;
+synthesized attribute prodFlowGraphs :: [Pair<String [Pair<FlowVertex FlowVertex>]>];
 
 function emptyRootSpec
 Decorated RootSpec ::= 
@@ -63,6 +65,7 @@ top::RootSpec ::=
   top.optionalGrammars = [];
   top.condBuild = [];
   top.flowTypes = rtm:empty(compareString);
+  top.prodFlowGraphs = [];
 }
 
 function getRootSpec
