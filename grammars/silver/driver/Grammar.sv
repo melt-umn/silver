@@ -95,8 +95,10 @@ function expandExports
   g = searchEnvTree(head(need), e);
 
   return if null(need) then seen
-         -- If the grammar has already been taken care of, or doesn't exist, discard it.
-         else if contains(head(need), seen) || null(g) then expandExports(tail(need), seen, e)
+         -- If the grammar has already been taken care of, discard it.
+         else if contains(head(need), seen) then expandExports(tail(need), seen, e)
+         -- If the grammar does not exist, skip over it. (DO NOT REMOVE, as it may have been added by another loop)
+         else if null(g) then expandExports(tail(need), head(need) :: seen, e)
          -- Otherwise, tack its exported list to the need list, and add this grammar to the taken care of list.
          else expandExports(tail(need) ++ head(g).exportedGrammars, head(need) :: seen, e);
 }
@@ -143,8 +145,10 @@ function expandOptionalsIter
   g = searchEnvTree(head(need), e);
 
   return if null(need) then seen
-         -- If the grammar has already been taken care of, or doesn't exist, discard it.
-         else if contains(head(need), seen) || null(g) then expandOptionalsIter(tail(need), seen, e)
+         -- If the grammar has already been taken care of, discard it.
+         else if contains(head(need), seen) then expandOptionalsIter(tail(need), seen, e)
+         -- If the grammar does not exist, skip over it. (DO NOT REMOVE, as it may have been added by another loop)
+         else if null(g) then expandOptionalsIter(tail(need), head(need) :: seen, e)
          -- Otherwise, tack its exported list to the need list, and add this grammar to the taken care of list.
          else expandOptionalsIter(tail(need) ++ head(g).optionalGrammars, head(need) :: seen, e);
 }
