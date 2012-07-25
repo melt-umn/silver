@@ -35,10 +35,11 @@ top::RunUnit ::= iIn::IO args::[String]
   unit.grammarFlowTypes = flowTypes;
   reUnit.grammarFlowTypes = flowTypes;
 
-  -- We'd like a version of the stiched flow graphs to pass down
-
-  unit.productionFlowGraphs = prodGraph;
-  reUnit.productionFlowGraphs = prodGraph;
+  -- We'd like a final version of the stitched flow graphs to pass down
+  unit.productionFlowGraphs = stitchAllGraphs(prodGraph, prodinfos, flowTypes);
+  reUnit.productionFlowGraphs = unit.productionFlowGraphs;
+  -- TODO: Turn these into trees prior to passing them down. (i.e. EnvTree<EnvTree<FlowVertex>>)
+  -- Note: I'm pretty sure it's okay to use the filtered flow graphs here.
 }
 
 
