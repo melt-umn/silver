@@ -2,12 +2,16 @@
 
 # Set SILVER_HOME to the directory where silver was unpacked.
 # (i.e. the directory where 'jars/RunSilver.jar' exists.
+# The 'install-silver-bin' script will replace this with the correct value:
 
 #SILVER_HOME=
-JVM_FLAGS="-Xmx1800M -Xss4M "
 
-# 4M should be sufficient for nearly everything. In fact, 2M may be...
-# 1800M is simply choosing something slightly smaller than what any system should have.
+if [ -z "$SVJVM_FLAGS" ]; then
+  # Stack: 4M should be sufficient for nearly everything. In fact, 2M may be...
+  # Heap: 1800M just because most systems should have at least 2gb these days...
+  SVJVM_FLAGS="-Xmx1800M -Xss4M"
+fi
+
 
 # No futher changes need to be made here. This if block is not important:
 
@@ -40,6 +44,6 @@ fi
 
 
 
-java $JVM_FLAGS -jar $SILVER_HOME/jars/RunSilver.jar $@ && ant
+java $SVJVM_FLAGS -jar $SILVER_HOME/jars/RunSilver.jar $@ && ant
 
 
