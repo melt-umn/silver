@@ -44,5 +44,10 @@ Variables:
       <layout>p2</layout>
       <url>http://melt.cs.umn.edu/downloads/imp-mirror/</url>
     </repository>
+    <repository>
+      <id>runtimes</id>
+      <layout>p2</layout>
+      <url>http://melt.cs.umn.edu/downloads/silver-dev/eclipse/</url>
+    </repository>
   </repositories>
 </project>
