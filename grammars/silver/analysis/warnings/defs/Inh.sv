@@ -51,21 +51,47 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
              in if null(inhs) then []
                 else [wrn(top.location, "Access of syn attribute " ++ q.pp ++ " on " ++ e.pp ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
-          else [] -- TODO: type is 'decorated blah'
+          else checkRefAccess(
+                 inhsForTakingRef(e.typerep.typeName, top.flowEnv),
+                 inhDepsForSyn(q.lookupAttribute.fullName, e.typerep.typeName, myFlow),
+                 top.location, q.pp)
       | lhsReference(lq) -> [] -- actually okay, only affects flow
       | localReference(lq) ->
           if lq.lookupValue.typerep.isDecorable
           then
-            let inhs :: [String] = filter(isEquationMissing(lookupLocalInh(top.signature.fullName, lq.lookupValue.fullName, _, top.flowEnv), _), inhDepsForSyn(q.lookupAttribute.fullName, e.typerep.typeName, myFlow))
+            let inhs :: [String] = 
+                  filter(
+                    isEquationMissing(
+                      lookupLocalInh(top.signature.fullName, lq.lookupValue.fullName, _, top.flowEnv),
+                      _),
+                    inhDepsForSyn(q.lookupAttribute.fullName, e.typerep.typeName, myFlow))
              in if null(inhs) then []
                 else [wrn(top.location, "Access of syn attribute " ++ q.pp ++ " on " ++ e.pp ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
-          else [] -- TODO: reference
+          else checkRefAccess(
+                 inhsForTakingRef(e.typerep.typeName, top.flowEnv),
+                 inhDepsForSyn(q.lookupAttribute.fullName, e.typerep.typeName, myFlow),
+                 top.location, q.pp)
       | forwardReference(lq) -> [] -- actually okay, only affects flow
-      | _ -> []
+      | _ -> checkRefAccess(
+                 inhsForTakingRef(e.typerep.typeName, top.flowEnv),
+                 inhDepsForSyn(q.lookupAttribute.fullName, e.typerep.typeName, myFlow),
+                 top.location, q.pp) -- TODO: need special case for 'decorate .... }. attr' others???
     end
     else [];
 }
+
+-- TODO: need inh checks here too~! or do we? I suppose to check any inh accesses on references. any other reason?
+
+
+function checkRefAccess
+[Message] ::= blessedSet::[String]  neededSet::[String]  l::Location  attrpp::String
+{
+  local diff::[String] = rem(neededSet, blessedSet);
+  
+  return if null(diff) then [] else [wrn(l, "Access of " ++ attrpp ++ " from reference requires inherited attributes not known to be supplied to references: " ++ implode(", ", diff))];
+}
+
 
 function inhDepsForSyn
 [String] ::= syn::String  nt::String  flow::EnvTree<Pair<String String>>
@@ -113,8 +139,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   top.errors <-
     if null(occursCheck.errors ++ attr.lookupAttribute.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
-    && !null(lhsInhExceedsFlowType)
-    then [wrn(top.location, "Synthesized equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
+    then foldr(append, [], map(checkEqDeps(_, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env), transitiveDeps)) ++
+         if null(lhsInhExceedsFlowType) then []
+         else [wrn(top.location, "Synthesized equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
 }
 
@@ -122,17 +149,61 @@ function isLhsInh
 Boolean ::= v::FlowVertex  e::Decorated Env
 {
   return case v of
-  | lhsVertex(a) -> 
-      case getAttrDcl(a, e) of
-      | inhDcl(_,_,_,_,_) :: _ -> true
-      | _ -> false
-      end
+  | lhsVertex(a) -> isInherited(a, e)
   | _ -> false
   end;
 }
 
+function isInherited
+Boolean ::= a::String  e::Decorated Env
+{
+  return case getAttrDcl(a, e) of
+  | inhDcl(_,_,_,_,_) :: _ -> true
+  | _ -> false
+  end;
+}
 
--- TODO: locals and forwards
+function sigNotAReference
+Boolean ::= sigName::String  e::Decorated Env
+{
+  local d :: [DclInfo] = getValueDcl(sigName, e);
+  
+  return if null(d) then false else head(d).typerep.isDecorable;
+}
+
+function checkEqDeps
+[Message] ::= v::FlowVertex  l::Location  prodName::String  prodNt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+{
+  return case v of 
+  | lhsVertex(attrName) ->
+      if isInherited(attrName, realEnv)
+      then [] -- Do nothing. This just affects flow types.
+      else if !null(lookupSyn(prodName, attrName, flowEnv)) -- no equation
+           || !null(lookupDef(prodNt, attrName, flowEnv)) -- no default
+           then []
+           else [wrn(l, "Equation has transitive dependency on this production's synthesized equation for " ++ attrName ++ " but this equation appears to be missing.")]
+  | rhsVertex(sigName, attrName) ->
+      if isInherited(attrName, realEnv)
+      then if !null(lookupInh(prodName, sigName, attrName, flowEnv)) -- no equation
+           || !ignoreIfAutoCopyOnLhs(prodNt, realEnv, attrName) -- no autocopy
+           || !sigNotAReference(sigName, realEnv) -- not Decorated type
+           then []
+           else [wrn(l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
+      else [] -- Do nothing. This just affects inh dependencies on this rhs via flow types.
+  | localEqVertex(fName) -> [] -- Anything to do here? I am uncertain.
+  | localVertex(fName, attrName) -> 
+      if isInherited(attrName, realEnv)
+      then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv)) -- no equation
+           || fName == "forward" -- not forward
+           || !sigNotAReference(fName, realEnv) -- not Decorated type
+           then []
+           else [wrn(l, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
+      else [] -- Do nothing. This again just affects inh dependencies via flow types.
+  end;
+}
+
+
+-- TODO: locals and forwards equations do not exceed their flow types
 
 
 

@@ -43,50 +43,61 @@ Decorated FlowEnv ::= d::FlowDefs
 }
 
 
+-- synthesized equation in a production
 function lookupSyn
 [FlowDef] ::= prod::String  attr::String  e::Decorated FlowEnv
 {
   return searchEnvTree(crossnames(prod, attr), e.synTree);
 }
 
+-- inherited equation for a child in a production
 function lookupInh
 [FlowDef] ::= prod::String  sigName::String  attr::String  e::Decorated FlowEnv
 {
   return searchEnvTree(crossnames(prod, crossnames(sigName, attr)), e.inhTree);
 }
 
+-- default equation for a nonterminal
 function lookupDef
 [FlowDef] ::= nt::String  attr::String  e::Decorated FlowEnv
 {
   return searchEnvTree(crossnames(nt, attr), e.defTree);
 }
 
+-- forward equation for a production
 function lookupFwd
 [FlowDef] ::= prod::String  e::Decorated FlowEnv
 {
   return searchEnvTree(prod, e.fwdTree);
 }
 
+-- inherited equation for the forward in a production
 function lookupFwdInh
 [FlowDef] ::= prod::String  attr::String  e::Decorated FlowEnv
 {
   return searchEnvTree(crossnames(prod, attr), e.fwdInhTree);
 }
 
+-- inherited equation for a local in a production
 function lookupLocalInh
 [FlowDef] ::= prod::String  fName::String  attr::String  e::Decorated FlowEnv
 {
   return searchEnvTree(crossnames(prod, crossnames(fName, attr)), e.localInhTree);
 }
 
+-- all (non-forwarding) productions constructing a nonterminal
 function getProdsOn
 [FlowDef] ::= nt::String  e::Decorated FlowEnv
 {
   return searchEnvTree(nt, e.prodTree);
 }
 
+-- "blessed set" of inherited attribute required/assumed to exist for references
 function getInhsForNtRef
 [FlowDef] ::= nt::String  e::Decorated FlowEnv
 {
   return searchEnvTree(nt, e.refTree);
 }
+
+
+

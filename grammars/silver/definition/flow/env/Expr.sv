@@ -11,14 +11,20 @@ attribute flowEnv occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
 
 --attribute upSubst, downSubst, finalSubst occurs on Expr, ForwardInhs, ForwardInh, ForwardLHSExpr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
 
-function depsForTakingRef
-[FlowVertex] ::= f::(FlowVertex ::= String)  nt::String  flowEnv::Decorated FlowEnv
+function inhsForTakingRef
+[String] ::= nt::String  flowEnv::Decorated FlowEnv
 {
   -- TODO nasty expression
   local ds :: [FlowDef] = getInhsForNtRef(nt, flowEnv);
   local inhs :: [String] = if null(ds) then [] else case head(ds) of ntRefFlowDef(nt, inhs) -> inhs end;
 
-  return map(f, inhs);  
+  return inhs;
+}
+
+function depsForTakingRef
+[FlowVertex] ::= f::(FlowVertex ::= String)  nt::String  flowEnv::Decorated FlowEnv
+{
+  return map(f, inhsForTakingRef(nt, flowEnv));  
 }
 
 aspect production errorReference
