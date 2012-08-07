@@ -96,7 +96,10 @@ public class AppendCell extends ConsCell {
 			// details to SEE if "the forward" has been evaluated yet.
 			// If so, then gosh, it's a ConsCell, forget this. If NOT, well, let's be smart!
 			if(! leftap.literalConsCell) {
-				return append(leftap.head, new Thunk<Object>(TopNode.singleton) { public final Object doEval() { return append(leftap.tail, rightap); }});
+				// We MUST grab the tail of leftap now. If we do not, then it may mutate (becomeLiteralConsCell) before we
+				// evaluate the thunk! If that happens, we get duplication.
+				final Object leftaptail = leftap.tail;
+				return append(leftap.head, new Thunk<Object>(TopNode.singleton) { public final Object doEval() { return append(leftaptail, rightap); }});
 			}
 		}
 		// Okay, we're a real append of a real, literal ConsCell on the LHS.
@@ -106,7 +109,7 @@ public class AppendCell extends ConsCell {
 	private final void becomeLiteralConsCell() {
 		assert(!literalConsCell);
 		// By invariants, head is ConsCell
-		final ConsCell left = (ConsCell)super.head();
+		final ConsCell left = (ConsCell)head;
 		head = left.head();
 		// append is strict in its LHS, so calling left.tail() is okay.
 		// STRICTLY SPEAKING, however, this whole assignment to tail a bug:
