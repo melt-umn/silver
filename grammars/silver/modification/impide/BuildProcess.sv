@@ -24,6 +24,7 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
   local parserPackageName :: String = makeName(ide.ideParserSpec.sourceGrammar);
   local parserPackagePath :: String = grammarToPath(ide.ideParserSpec.sourceGrammar);
   local parserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ ".copper";
+  local ideParserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ "_ide.copper";
   local pkgName :: String = grammarToPackage(a.buildGrammar);
 
   extraTopLevelDecls <- if !isIde then [] else [
@@ -42,6 +43,7 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
     "<property name='ide.parser.package' value='" ++ parserPackageName ++ "' />",
     "<property name='ide.parser.classname' value='" ++ parserClassName ++ "' />",
     "<property name='ide.parser.copperfile' value='" ++ parserFullPath ++ "' />",
+    "<property name='ide.parser.ide_copperfile' value='" ++ ideParserFullPath ++ "' />",
     "<property name='ide.fileextension' value='" ++ ide.ideExtension ++ "' />",
 
     "<target name='ide' depends='jars, copper, grammars'>" ++ getIDETarget() ++ "</target>\n\n"
@@ -110,9 +112,17 @@ String ::=
 
     "<!-- 3. copper parser -->\n" ++
     "<mkdir dir='${ide.pkg.path}/copper/parser/'/>\n" ++
+    {--
     "<copper\n" ++
     "  fullClassName='${ide.pkg.name}.copper.parser.${ide.parser.classname}'\n" ++ 
     "  inputFile='${ide.parser.copperfile}'\n" ++ 
+    "  outputFile='${ide.pkg.path}/copper/parser/${ide.parser.classname}.java'\n" ++ 
+    "  skin='XML' warnUselessNTs='no' dump='no'/>\n" ++ 
+    "\n" ++
+    --}
+    "<copper\n" ++ 
+    "  fullClassName='${ide.pkg.name}.copper.parser.${ide.parser.classname}'\n" ++ 
+    "  inputFile='${ide.parser.ide_copperfile}'\n" ++ 
     "  outputFile='${ide.pkg.path}/copper/parser/${ide.parser.classname}.java'\n" ++ 
     "  skin='XML' warnUselessNTs='no' dump='no'/>\n" ++ 
     "\n" ++
@@ -136,16 +146,9 @@ String ::=
 
     "<!-- 7. customized IDE parser -->\n" ++
     "<mkdir dir='${ide.pkg.path}/copper/engine/'/>\n" ++
-    --TODO [Pending on new skin]: use "EnhancedSilverParser" after new skin copper parser is committed.
-    --"<copy file=\"${res}/src/edu/umn/cs/melt/ide/copper/engine/EnhancedSilverParser.java.template\"\n" ++
-    --"      tofile=\"${ide.pkg.path}/copper/engine/EnhancedSilverParser.java\" filtering=\"true\"/>\n" ++
-    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/copper/engine/SimpleEnhancedSilverParser.java.template\"\n" ++
-    "      tofile=\"${ide.pkg.path}/copper/engine/SimpleEnhancedSilverParser.java\" filtering=\"true\"/>\n" ++
-    "\n" ++
-
+    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/copper/engine/EnhancedSilverParser.java.template\"\n" ++
+    "      tofile=\"${ide.pkg.path}/copper/engine/EnhancedSilverParser.java\" filtering=\"true\"/>\n" ++
     "<mkdir dir='${ide.pkg.path}/imp/controller'/>\n" ++
-    --TODO [Pending on new skin]: a template created based on SimpleParseController is in use now. 
-    --Need to revert to the origanl template after new skin copper parser is committed.
     "<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/controller/parseController.java.template\"\n" ++
     "      tofile=\"${ide.pkg.path}/imp/controller/${lang.name}ParseController.java\" filtering=\"true\"/>\n" ++
     "\n" ++
@@ -219,4 +222,3 @@ String ::= g::String
 {
   return grammarToPackage(g) ++ ";version=\"${ide.version}\"";
 }
-
