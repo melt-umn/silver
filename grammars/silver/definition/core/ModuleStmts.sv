@@ -27,18 +27,20 @@ synthesized attribute envMaps :: [Pair<String String>];
 nonterminal Module with defs, errors;
 
 abstract production module 
-top::Module ::= compiledGrammars::EnvTree<Decorated RootSpec>
+top::Module ::= l::Location
+                need::[String]
+                seen::[String]
+                compiledGrammars::EnvTree<Decorated RootSpec>
                 grammarDependencies::[String]
-                gram::Decorated QName
                 asPrepend::String
                 onlyFilter::[String]
                 hidingFilter::[String]
                 withRenames::[Pair<String String>]
 {
-  -- TODO: starting with 'gram.grammarName' in seen is a hack:
+  -- TODO: the use of 'seen' below is a not fully fleshed out.
   -- what we really need is some way to eliminate duplicate imports.
   production attribute med :: ModuleExportedDefs;
-  med = moduleExportedDefs(gram.location, compiledGrammars, grammarDependencies, [gram.name], [gram.grammarName]);
+  med = moduleExportedDefs(l, compiledGrammars, grammarDependencies, need, seen);
   
   local attribute d1 :: Defs;
   d1 = if null(onlyFilter) then med.defs else filterDefsInclude(med.defs, onlyFilter);
@@ -257,7 +259,7 @@ top::ModuleName ::= pkg::QName
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, top.grammarDependencies, pkg, "", [], [], []);
+  m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], []);
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -274,7 +276,7 @@ top::ModuleExpr ::= pkg::QName
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, top.grammarDependencies, pkg, "", [], [], []);
+  m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], []);
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -288,7 +290,7 @@ top::ModuleExpr ::= pkg::QName 'with' wc::WithElems
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, top.grammarDependencies, pkg, "", [], [], wc.envMaps);
+  m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], wc.envMaps);
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -302,7 +304,7 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, top.grammarDependencies, pkg, "", ns.names, [], []);
+  m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", ns.names, [], []);
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -316,7 +318,7 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList 'with' wc::WithElems
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, top.grammarDependencies, pkg, "", ns.names, [], wc.envMaps);
+  m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", ns.names, [], wc.envMaps);
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -330,7 +332,7 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, top.grammarDependencies, pkg, "", [], ns.names, []);
+  m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], ns.names, []);
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -344,7 +346,7 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList 'with' wc::WithElems
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, top.grammarDependencies, pkg, "", [], ns.names, wc.envMaps);
+  m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], ns.names, wc.envMaps);
 
   top.errors := m.errors;
   top.defs = m.defs;
@@ -358,7 +360,7 @@ top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
   top.moduleNames = [pkg1.name];
 
   production attribute m :: Module;
-  m = module(top.compiledGrammars, top.grammarDependencies, pkg1, pkg2.name, [], [], []);
+  m = module(pkg1.location, [pkg1.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, pkg2.name, [], [], []);
 
   top.errors := m.errors;
   top.defs = m.defs;
