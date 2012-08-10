@@ -229,10 +229,6 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
     else [];
 }
 
-aspect production forwardsToWith
-top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
-{ -- TODO WHY IS THIS A SEPARATE PRODUCTION!?
-}
 
 
 

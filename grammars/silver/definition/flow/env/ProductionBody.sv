@@ -76,16 +76,6 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   
   top.flowDefs = [fwdEq(top.signature.fullName, e.flowDeps, mayAffectFlowType)];
 }
-aspect production forwardsToWith
-top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
-{
-  local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
-
-  local mayAffectFlowType :: Boolean =
-    contains(top.grammarName, computeOptionalDeps([ntDefGram], top.compiledGrammars));
-  
-  top.flowDefs = [fwdEq(top.signature.fullName, e.flowDeps, mayAffectFlowType)] ++ inh.flowDefs;
-}
 aspect production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {

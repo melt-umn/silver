@@ -253,14 +253,9 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
   top.pp = "\tforwards to " ++ e.pp ++ " with {" ++ inh.pp ++ "};";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionAttributes = addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
-  top.uniqueSignificantExpression = [e];
-
-  top.errors := e.errors ++ inh.errors;
-
-  top.errors <- if !top.blockContext.permitForward
-                then [err(top.location, "Forwarding is not permitted in this context.")]
-                else [];
+  forwards to productionStmtAppend(
+    forwardsTo($1, $2, $3, $8),
+    forwardingWith(terminal(Forwarding_kwd, "forwarding", $1), $4, $5, inh, $7, $8));
 }
 
 concrete production forwardingWith
