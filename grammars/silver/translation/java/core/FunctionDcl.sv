@@ -31,7 +31,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 }
 
 function generateFunctionClassString
-String ::= whatGrammar::String whatName::String whatSig::Decorated NamedSignature whatResult::String
+String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResult::String
 {
   local attribute className :: String;
   className = "P" ++ whatName;

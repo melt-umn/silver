@@ -10,12 +10,11 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   top.pp = "function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp ++ " foreign {\n" ++ ffidefs.pp ++ "}"; 
   top.location = loc(top.file, $1.line, $1.column);
 
-  -- TODO: okay, so this isn't pleasant, but it's better than the dumb attribute...
-  production attribute namedSig :: Decorated NamedSignature;
-  namedSig = case forward of functionDcl(_, _, _, decBody) -> decBody.signature end;
-
   production attribute fName :: String;
-  fName = namedSig.fullName;
+  fName = top.grammarName ++ ":" ++ id.name;
+
+  production attribute namedSig :: NamedSignature;
+  namedSig = namedSignature(fName, ns.inputElements, ns.outputElement);
 
   top.errors <- ffidefs.errors;
 
