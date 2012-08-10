@@ -141,6 +141,7 @@ top::MRuleList ::= h::MatchRule '|' t::MRuleList
 concrete production matchRule_c
 top::MatchRule ::= pt::PatternList '->' e::Expr
 {
+  top.pp = pt.pp ++ " -> " ++ e.pp;
   -- UNCOMMENT if no longer forwarding to matchRule #HACK2012
   --top.errors <- pt.errors;
 
@@ -152,7 +153,7 @@ top::MatchRule ::= l::Location pl::[Decorated Pattern] e::Expr
 {
   top.pp = implode(", ", map(getPatternPP, pl)) ++ " -> " ++ e.pp;
   top.errors := foldr(append,[],map((.errors), pl));
-  top.location = e.location;
+  top.location = l;
 
   top.headPattern = head(pl);
 }
@@ -168,7 +169,7 @@ top::PatternList ::= p::Pattern
 concrete production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
-  top.pp = ps1.pp ++ ", " ++ p.pp;
+  top.pp = p.pp ++ ", " ++ ps1.pp;
   top.errors := p.errors ++ ps1.errors;
 
   top.patternList = p :: ps1.patternList;

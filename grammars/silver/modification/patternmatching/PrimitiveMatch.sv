@@ -36,12 +36,16 @@ concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::Type 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
 {
   top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
+  top.location = loc(top.file, $1.line, $1.column);
+
   forwards to matchPrimitive(loc(top.file, $1.line, $1.column), e, t, pr, f);
 }
 abstract production matchPrimitive
 top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
 {
   top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
+  top.location = loc(top.file, $1.line, $1.column);
+
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
   
@@ -131,6 +135,9 @@ top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
 concrete production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 {
+  top.pp = qn.pp ++ "(" ++ ns.pp ++ ") -> " ++ e.pp;
+  top.location = qn.location;
+
   local isGadt :: Boolean =
     case qn.lookupValue.typerep.outputType of
     -- If the lookup is successful, and it's a production type, and it 

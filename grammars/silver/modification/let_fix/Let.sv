@@ -10,23 +10,26 @@ terminal End_kwd 'end' lexer classes {KEYWORD};
 concrete production letp_c
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
+  top.pp = "let " ++ la.pp ++ " in " ++ e.pp ++ " end";
   top.location = loc(top.file, $1.line, $1.column);
 
   forwards to letp(top.location, la.letAssignExprs, e);
 }
 
-nonterminal LetAssigns with letAssignExprs;
+nonterminal LetAssigns with pp, letAssignExprs;
 
 synthesized attribute letAssignExprs :: AssignExpr;
 
 concrete production assignsListCons
 top::LetAssigns ::= ae::AssignExpr ',' list::LetAssigns
 {
+  top.pp = ae.pp ++ ", " ++ list.pp;
   top.letAssignExprs = appendAssignExpr(ae, list.letAssignExprs);
 }
 concrete production assignListSingle 
 top::LetAssigns ::= ae::AssignExpr
 {
+  top.pp = ae.pp;
   top.letAssignExprs = ae;
 }
 
