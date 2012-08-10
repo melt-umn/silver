@@ -45,5 +45,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t ';'
   local fext :: String = substring(2, length(fileextension.lexeme) - 1, fileextension.lexeme);
   
   top.ideSpecs = [ideSpec(fext, head(spec))];
+  
+  forwards to emptyAGDcl();
 }
 
