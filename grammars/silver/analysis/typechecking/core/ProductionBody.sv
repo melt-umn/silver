@@ -63,22 +63,6 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
                 else [];
 }
 
-aspect production forwardsToWith
-top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  inh.downSubst = errCheck1.upSubst;
-  top.upSubst = inh.upSubst;
-
-  errCheck1 = check(e.typerep, top.signature.outputElement.typerep);
-  top.errors <- if errCheck1.typeerror
-                then [err(e.location, "Forward's expected type is " ++ errCheck1.rightpp ++ ", but the actual type supplied is " ++ errCheck1.leftpp)]
-                else [];
-}
-
 aspect production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {

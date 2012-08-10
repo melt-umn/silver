@@ -73,12 +73,6 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   top.translation = "";
 }
 
-aspect production forwardsToWith
-top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
-{
-  top.translation = inh.translation;
-}
-
 aspect production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {
