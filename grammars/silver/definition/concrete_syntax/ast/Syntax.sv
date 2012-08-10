@@ -154,13 +154,13 @@ top::SyntaxDcl ::= n::String lhs::TypeExp rhs::[TypeExp] modifiers::SyntaxProduc
   -- TODO modifiers errors
   top.cstErrors := if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with production " ++ n];
-  local attribute lhsRef :: [Decorated SyntaxDcl];
+  production attribute lhsRef :: [Decorated SyntaxDcl];
   lhsRef = searchEnvTree(lhs.typeName, top.cstEnv);
   top.cstErrors <- if length(lhsRef) == 1 then
                    case head(lhsRef) of syntaxNonterminal(_,_) -> []
                       | _ -> ["LHS of production " ++ n ++ " is not a nonterminal"] end
                    else ["Lookup error with LHS nonterminal " ++ lhs.typeName];
-  local attribute rhsRefs :: [[Decorated SyntaxDcl]];
+  production attribute rhsRefs :: [[Decorated SyntaxDcl]];
   rhsRefs = lookupStrings(map((.typeName), rhs), top.cstEnv);
   top.cstErrors <- checkRHS(n, rhs, rhsRefs);
 
@@ -223,9 +223,9 @@ top::SyntaxDcl ::= n::String domlist::[String] sublist::[String]
   top.cstDcls = [pair(n, top)];
   top.cstErrors := if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with lexer class " ++ n];
-  local attribute drefs :: [[Decorated SyntaxDcl]];
+  production attribute drefs :: [[Decorated SyntaxDcl]];
   drefs = lookupStrings(domlist, top.cstEnv);
-  local attribute srefs :: [[Decorated SyntaxDcl]];
+  production attribute srefs :: [[Decorated SyntaxDcl]];
   srefs = lookupStrings(sublist, top.cstEnv);
   -- TODO: check terminal/lexer class
 
