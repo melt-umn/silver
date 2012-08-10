@@ -31,7 +31,7 @@ nonterminal ForwardLHSExpr with
  - It's decorated because why not? We're always looking at a physical signature
  - anyway, so let's just reuse it, to avoid any recomputation.
  -}
-autocopy attribute signature :: Decorated NamedSignature;
+autocopy attribute signature :: NamedSignature;
 {--
  - Context for ProductionStmt blocks. (Function, production, other...)
  - At some future time, we should consider the possibility of eliminating
