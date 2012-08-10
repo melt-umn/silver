@@ -180,6 +180,7 @@ function checkEqDeps
       then [] -- Do nothing. This just affects flow types.
       else if !null(lookupSyn(prodName, attrName, flowEnv)) -- no equation
            || !null(lookupDef(prodNt, attrName, flowEnv)) -- no default
+           || !null(lookupFwd(prodName, flowEnv)) -- no forward
            then []
            else [wrn(l, "Equation has transitive dependency on this production's synthesized equation for " ++ attrName ++ " but this equation appears to be missing.")]
   | rhsVertex(sigName, attrName) ->
