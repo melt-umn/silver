@@ -131,7 +131,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 
   local immediateDeps :: [FlowVertex] = e.flowDeps;
   local productionFlowGraph :: EnvTree<FlowVertex> = directBuildTree(map(makeGraphEnv, fromMaybe([], lookupBy(stringEq, top.signature.fullName, myGraphs))));
-  local transitiveDeps :: [FlowVertex] = expandGraph(immediateDeps, productionFlowGraph);
+  local transitiveDeps :: [FlowVertex] = nubBy(equalFlowVertex, expandGraph(immediateDeps, productionFlowGraph));
   
   local lhsInhDeps :: [String] = map((.flowTypeName), filter(isLhsInh(_, top.env), transitiveDeps));
   local lhsInhExceedsFlowType :: [String] = rem(lhsInhDeps, inhDepsForSyn(attr.lookupAttribute.fullName, top.signature.outputElement.typerep.typeName, myFlow));
@@ -205,6 +205,55 @@ function checkEqDeps
 
 
 -- TODO: locals and forwards equations do not exceed their flow types
+-- AND that all transitive deps are satisfied for them!!
+
+aspect production forwardsTo
+top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
+{
+  -- TODO oh no again!
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
+  local myGraphs :: [Pair<String [Pair<FlowVertex FlowVertex>]>] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).prodFlowGraphs;
+
+  local immediateDeps :: [FlowVertex] = e.flowDeps;
+  local productionFlowGraph :: EnvTree<FlowVertex> = directBuildTree(map(makeGraphEnv, fromMaybe([], lookupBy(stringEq, top.signature.fullName, myGraphs))));
+  local transitiveDeps :: [FlowVertex] = nubBy(equalFlowVertex, expandGraph(immediateDeps, productionFlowGraph));
+  
+  local lhsInhDeps :: [String] = map((.flowTypeName), filter(isLhsInh(_, top.env), transitiveDeps));
+  local lhsInhExceedsFlowType :: [String] = rem(lhsInhDeps, inhDepsForSyn("forward", top.signature.outputElement.typerep.typeName, myFlow));
+
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh)
+    then foldr(append, [], map(checkEqDeps(_, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env), transitiveDeps)) ++
+         if null(lhsInhExceedsFlowType) then []
+         else [wrn(top.location, "Forward equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
+    else [];
+}
+
+aspect production forwardsToWith
+top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
+{ -- TODO WHY IS THIS A SEPARATE PRODUCTION!?
+}
 
 
+
+aspect production decorateExprWith
+top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
+{
+  -- TODO: we are being WAY overly conservative here and requiring 'decorate' expressions
+  -- to ALWAYS provide the full blessed set.
+  -- We could do better by detecting those situations where we immediate access
+  -- a synthesized attribute, and only requiring the flow there....
+  -- Alternatively, by introducing a full "decoration site" notion...
+  local blessedSet :: [String] = inhsForTakingRef(e.typerep.typeName, top.flowEnv);
+  local diff :: [String] = rem(blessedSet, inh.suppliedInhs);
+
+  top.errors <- 
+    if null(e.errors)
+    && (top.config.warnAll || top.config.warnMissingInh)
+    && top.blockContext.hasFullSignature -- TODO: only checking productions at the moment!!
+    then
+      if null(diff) then []
+      else [wrn(top.location, "Decoration producing a reference does not supply " ++ implode(", ", diff))]
+    else [];
+}
 

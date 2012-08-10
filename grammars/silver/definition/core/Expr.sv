@@ -8,11 +8,11 @@ nonterminal Exprs with
   config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, exprs, rawExprs;
 
 nonterminal ExprInhs with
-  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, decoratingnt;
+  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, decoratingnt, suppliedInhs;
 nonterminal ExprInh with
-  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, decoratingnt;
+  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, decoratingnt, suppliedInhs;
 nonterminal ExprLHSExpr with
-  config, grammarName, file, env, location, pp, errors, typerep, decoratingnt;
+  config, grammarName, file, env, location, pp, errors, typerep, decoratingnt, suppliedInhs;
 
 {--
  - Exprs with optional underscores omitting parameters. Used exclusively for
@@ -40,6 +40,10 @@ autocopy attribute appExprApplied :: String;
  - The nonterminal being decorated. (Used for 'decorate with {}')
  -}
 autocopy attribute decoratingnt :: TypeExp;
+{--
+ - The inherited attributes being supplied in a decorate expression
+ -}
+synthesized attribute suppliedInhs :: [String];
 {--
  - A list of decorated expressions from an Exprs.
  -}
@@ -349,7 +353,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 
   -- and this is a positively UGLY way of getting around this... *evil grin*
   
-  forwards to CHEAT_HACK_DISPATCHER( decorateExprWithEmpty('decorate', new(e), 'with', '{', '}'), $2, q);
+  forwards to CHEAT_HACK_DISPATCHER( decorateExprWithEmpty(terminal(Decorate_kwd, "decorate", $2), new(e), 'with', '{', '}'), $2, q);
 }
 abstract production CHEAT_HACK_DISPATCHER -- muahaahahahahaha
 top::Expr ::= e::Expr '.' q::Decorated QName
@@ -462,6 +466,7 @@ top::ExprInhs ::=
   top.location = loc(top.file, -1, -1);
   
   top.errors := [];
+  top.suppliedInhs = [];
 }
 
 concrete production exprInhsOne
@@ -471,6 +476,7 @@ top::ExprInhs ::= lhs::ExprInh
   top.location = lhs.location;
   
   top.errors := lhs.errors;
+  top.suppliedInhs = lhs.suppliedInhs;
 }
 
 concrete production exprInhsCons
@@ -480,6 +486,7 @@ top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
   top.location = lhs.location;
   
   top.errors := lhs.errors ++ inh.errors;
+  top.suppliedInhs = lhs.suppliedInhs ++ inh.suppliedInhs;
 }
 
 concrete production exprInh
@@ -489,6 +496,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
   top.location = loc(top.file, $2.line, $2.column);
   
   top.errors := lhs.errors ++ e.errors;
+  top.suppliedInhs = lhs.suppliedInhs;
 }
 
 concrete production exprLhsExpr
@@ -502,6 +510,7 @@ top::ExprLHSExpr ::= q::QName
 
   top.errors := q.lookupAttribute.errors ++ occursCheck.errors;
   top.typerep = occursCheck.typerep;
+  top.suppliedInhs = [q.lookupAttribute.fullName];
 }
 
 concrete production trueConst

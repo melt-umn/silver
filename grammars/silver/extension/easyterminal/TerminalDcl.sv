@@ -13,7 +13,9 @@ top::RegExpr ::= t::Terminal_t
 {
   top.pp = t.lexeme;
   top.location = loc(top.file, t.line, t.column);
+  
   top.terminalRegExprSpec = literalRegex(substring(1, length(t.lexeme)-1, t.lexeme));
+  
   forwards to regExpr('/', top.terminalRegExprSpec, '/');
 }
 
