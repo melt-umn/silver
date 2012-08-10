@@ -24,7 +24,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
   s.univLayout = error("TODO: make this environment not be decorated?"); -- TODO
   
   -- Move productions under their nonterminal, and sort the declarations
-  local attribute s2 :: Syntax;
+  production attribute s2 :: Syntax;
   s2 = foldr(consSyntax, nilSyntax(), sortBy(syntaxDclLte, s.cstNormalize));
   s2.cstEnv = directBuildTree(s.cstDcls);
   s2.containingGrammar = "host";

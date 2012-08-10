@@ -15,8 +15,15 @@ import org.eclipse.imp.parser.SimpleAnnotationTypeInfo;
 import org.eclipse.imp.services.IAnnotationTypeInfo;
 import org.eclipse.imp.services.ILanguageSyntaxProperties;
 
+import silver.definition.core.NRoot;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
-import @PKG_NAME@.copper.engine.SimpleEnhancedSilverParser;
+import edu.umn.cs.melt.ide.copper.AdaptiveEnhancedParseTreeInnerNode;
+import edu.umn.cs.melt.ide.copper.EnhancedCopperParserException;
+import edu.umn.cs.melt.ide.copper.IEnhancedParseTreeNode;
+import edu.umn.cs.melt.ide.copper.IToken;
+import edu.umn.cs.melt.ide.copper.SourcePositionLocator;
+
+import @PKG_NAME@.copper.engine.EnhancedSilverParser;
 import @PKG_NAME@.imp.@LANG_NAME@Plugin;
 
 /**
@@ -26,23 +33,22 @@ import @PKG_NAME@.imp.@LANG_NAME@Plugin;
  * 	 protected IPath fFilePath;
  * 	 protected IMessageHandler handler;
  * 	 protected Object fCurrentAst;
- * @author patrick
  */
 public class @LANG_NAME@ParseController extends ParseControllerBase {
 	
 	static private DateFormat DATE_FORMAT = new SimpleDateFormat();
 	
-	/**
-	 * Construct an instance of the parser.
-	 */
-	private SimpleEnhancedSilverParser parser = new SimpleEnhancedSilverParser();
+	/** Construct an instance of the parser. */
+	private EnhancedSilverParser parser = new EnhancedSilverParser();
 
 	private final SimpleAnnotationTypeInfo fSimpleAnnotationTypeInfo
 		= new SimpleAnnotationTypeInfo();
 
+	private SourcePositionLocator<IEnhancedParseTreeNode, IToken> locator;
 	
 	public @LANG_NAME@ParseController() {
 		super(@LANG_NAME@Plugin.kLanguageID);
+		locator = new SourcePositionLocator<IEnhancedParseTreeNode, IToken>(this);
 	}
 	
 	/**
@@ -55,29 +61,37 @@ public class @LANG_NAME@ParseController extends ParseControllerBase {
 	
 	@Override
 	public ISourcePositionLocator getSourcePositionLocator() {
-		return null;
+		return locator;
 	}
 
 	@Override
 	public ILanguageSyntaxProperties getSyntaxProperties() {
-		return null;
+		return null;//TODO
 	}
 	
 	@Override
 	public Object parse(String input, IProgressMonitor monitor) {
-		Object result = null;
+		AdaptiveEnhancedParseTreeInnerNode<NRoot> result = null;
 		boolean parsed = false;
 		handler.clearMessages();
 		
 		try {
+			parser.reset();
 			Reader reader = new StringReader(input);
-			
-			result = parser.parse(reader);
+			result = parser.parse(reader, getPath().toFile().getName());
 		    parsed = (result==null)?false:true;
+		} catch (EnhancedCopperParserException e) {
+			//System.err.println("ERROR 1");
+			//System.err.println(e);
+			handler.handleSimpleMessage(
+				e.getMessage(), (int)e.getOffset(), (int)e.getOffset(), e.getColumn(), e.getColumn(), e.getLine(), e.getLine());
 		} catch (CopperParserException e) {
+			//System.err.println("ERROR 2");
+			//e.printStackTrace();
 			handler.handleSimpleMessage(//TODO: S-R error
 				e.getMessage(), 0, 0, 0, 0, 1, 1);
 		} catch (IOException e) {
+			//System.err.println("ERROR 3");
 			e.printStackTrace();
 		}
 		
@@ -95,7 +109,7 @@ public class @LANG_NAME@ParseController extends ParseControllerBase {
 	//Delegate to auto-generated (enhanced) parser
 	@Override
 	public Iterator getTokenIterator(org.eclipse.jface.text.IRegion region) {
-		return null;
+		return parser.getTokenIterator(region);
 	}
-
+	
 }
