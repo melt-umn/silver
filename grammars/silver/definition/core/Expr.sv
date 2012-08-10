@@ -54,7 +54,7 @@ synthesized attribute rawExprs :: [Expr];
 concrete production nestedExpr
 top::Expr ::= '(' e::Expr ')'
 {
-  top.pp = "(" ++ forward.pp ++ ")";
+  top.pp = "(" ++ e.pp ++ ")";
   top.location = loc(top.file, $1.line, $1.column);
   
   forwards to e;
@@ -65,6 +65,7 @@ top::Expr ::= q::QName
 {
   top.pp = q.pp;
   top.location = q.location;
+  
   top.errors <- q.lookupValue.errors;
 
   forwards to if null(q.lookupValue.dcls)
@@ -77,6 +78,7 @@ top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
   top.location = q.location;
+  
   top.errors := []; -- The reason we don't error here: we only forward here
                     -- if the lookup failed, which already produced an error.
   top.typerep = errorType();
@@ -88,6 +90,7 @@ top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
   top.location = q.location;
+  
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable
                 --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
@@ -100,6 +103,7 @@ top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
   top.location = q.location;
+  
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable -- actually always decorable...
                 --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
@@ -112,6 +116,7 @@ top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
   top.location = q.location;
+  
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable
                 --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
@@ -124,6 +129,7 @@ top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
   top.location = q.location;
+  
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable -- actually always decorable...
                 --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
@@ -197,6 +203,9 @@ top::Expr ::= q::NameTickTick
 concrete production concreteForwardExpr
 top::Expr ::= q::'forward'
 {
+  top.pp = "forward";
+  top.location = loc(top.file, $1.line, $1.column);
+
   forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "forward", q))));
 }
 
@@ -213,6 +222,9 @@ top::Expr ::= e::Expr '(' es::AppExprs ')'
 concrete production emptyProductionApp
 top::Expr ::= e::Expr '(' ')'
 {
+  top.pp = e.pp ++ "()";
+  top.location = e.location;
+  
   forwards to productionApp(e, $2, emptyAppExprs(forward.location), $3);
 }
 
@@ -221,6 +233,7 @@ top::Expr ::= e::Decorated Expr es::AppExprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   top.location = e.location;
+  
   top.errors := e.errors ++ 
     [err(top.location, e.pp ++ " has type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++
       " and cannot be invoked as a function.")] ++ es.errors;
@@ -237,6 +250,8 @@ abstract production functionApplication
 top::Expr ::= e::Decorated Expr es::AppExprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
+  top.location = e.location;
+  
   es.appExprIndex = 0;
   -- We may need to resolve e's type to get at the actual 'function type'
   es.appExprTypereps = performSubstitution(e.typerep, e.upSubst).inputTypes;
@@ -252,6 +267,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   top.location = e.location;
+  
   top.errors := e.errors ++ es.errors; 
 
   top.typerep = e.typerep.outputType;
@@ -262,6 +278,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   top.location = e.location;
+  
   top.errors := e.errors ++ es.errors; 
 
   top.typerep = functionTypeExp(e.typerep.outputType, es.missingTypereps);
@@ -325,6 +342,9 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 abstract production undecoratedAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
+  top.pp = e.pp ++ "." ++ q.pp;
+  top.location = loc(top.file, $2.line, $2.column);
+
   -- TODO BUG: It's expecting something decorated here. We want to give all inherited attributes of 'e' to 'decorateExprWithEmpty...'
 
   -- and this is a positively UGLY way of getting around this... *evil grin*
@@ -334,6 +354,9 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 abstract production CHEAT_HACK_DISPATCHER -- muahaahahahahaha
 top::Expr ::= e::Expr '.' q::Decorated QName
 {
+  top.pp = e.pp ++ "." ++ q.pp;
+  top.location = loc(top.file, $2.line, $2.column);
+
   forwards to decoratedAccessDispatcher( e {- it gets decorated :) -} , $2, q);
 }
 
@@ -384,9 +407,10 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = loc(top.file, $2.line, $2.column);
-  top.typerep = errorType();
-  
+
   top.errors := []; -- empty because we only ever get here if lookup failed. see above.
+
+  top.typerep = errorType();
 }
 
 
@@ -396,21 +420,26 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = loc(top.file, $2.line, $2.column);
   
-  -- TODO: this is a hacky way of dealing with terminal attributes
-  top.typerep = if q.name == "lexeme" || q.name == "filename"
-                then stringTypeExp()
-                else if q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn" || q.name == "index" || q.name == "endIndex"
-                then intTypeExp()
-                else errorType();
   top.errors :=
-        if q.name == "lexeme" || q.name == "filename" || q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn" || q.name == "index" || q.name == "endIndex"
-        then []
-        else [err(q.location, q.name ++ " is not a terminal attribute")];
+    if q.name == "lexeme" || q.name == "filename" || q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn" || q.name == "index" || q.name == "endIndex"
+    then []
+    else [err(q.location, q.name ++ " is not a terminal attribute")];
+
+  -- TODO: this is a hacky way of dealing with terminal attributes
+  top.typerep =
+    if q.name == "lexeme" || q.name == "filename"
+    then stringTypeExp()
+    else if q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn" || q.name == "index" || q.name == "endIndex"
+    then intTypeExp()
+    else errorType();
 }
 
 concrete production decorateExprWithEmpty
 top::Expr ::= 'decorate' e::Expr 'with' '{' '}'
 {
+  top.pp = "decorate " ++ e.pp ++ " with {}";
+  top.location = loc(top.file, $1.line, $1.column);
+
   forwards to decorateExprWith($1, e, $3, $4, exprInhsEmpty(), $5);
 }
 
@@ -431,6 +460,7 @@ top::ExprInhs ::=
 {
   top.pp = "";
   top.location = loc(top.file, -1, -1);
+  
   top.errors := [];
 }
 
@@ -439,6 +469,7 @@ top::ExprInhs ::= lhs::ExprInh
 {
   top.pp = lhs.pp;
   top.location = lhs.location;
+  
   top.errors := lhs.errors;
 }
 
@@ -447,6 +478,7 @@ top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
 {
   top.pp = lhs.pp ++ " " ++ inh.pp;
   top.location = lhs.location;
+  
   top.errors := lhs.errors ++ inh.errors;
 }
 
@@ -455,6 +487,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 {
   top.pp = lhs.pp ++ " = " ++ e.pp ++ ";";
   top.location = loc(top.file, $2.line, $2.column);
+  
   top.errors := lhs.errors ++ e.errors;
 }
 
@@ -467,9 +500,8 @@ top::ExprLHSExpr ::= q::QName
   production attribute occursCheck :: OccursCheck;
   occursCheck = occursCheckQName(q, top.decoratingnt);
 
-  top.typerep = occursCheck.typerep;
-  
   top.errors := q.lookupAttribute.errors ++ occursCheck.errors;
+  top.typerep = occursCheck.typerep;
 }
 
 concrete production trueConst
@@ -477,6 +509,7 @@ top::Expr ::= 'true'
 {
   top.pp = "true";
   top.location = loc(top.file, $1.line, $1.column);
+  
   top.errors := [];
   top.typerep = boolTypeExp();
 }
@@ -486,6 +519,7 @@ top::Expr ::= 'false'
 {
   top.pp = "false";
   top.location = loc(top.file, $1.line, $1.column);
+  
   top.errors := [];
   top.typerep = boolTypeExp();
 }
@@ -719,6 +753,7 @@ top::Exprs ::=
 {
   top.pp = "";
   top.location = loc("exprsEmpty", -1, -1);
+  
   top.errors := [];
   top.exprs = [];
   top.rawExprs = [];

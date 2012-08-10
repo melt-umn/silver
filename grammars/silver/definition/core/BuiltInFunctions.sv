@@ -104,3 +104,4 @@ top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ')'
   top.errors := t.errors ++ e1.errors ++ e2.errors;
   top.typerep = t.typerep;
 }
+

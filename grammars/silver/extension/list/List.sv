@@ -12,6 +12,7 @@ concrete production listType
 top::Type ::= '[' te::Type ']'
 {
   top.pp = "[" ++ te.pp ++ "]";
+  top.location = loc(top.file, $1.line, $1.column);
   top.typerep = listTypeExp(te.typerep);
 
   forwards to refType('Decorated', 
@@ -48,6 +49,7 @@ concrete production fullList
 top::Expr ::= '[' es::Exprs ']'
 { 
   top.pp = "[ " ++ es.pp ++ " ]";
+  top.location = loc(top.file, $1.line, $1.column);
   
   es.downSubst = top.downSubst; -- TODO again, pretty printing garbage.
 

@@ -3,7 +3,7 @@ grammar silver:modification:copper;
 abstract production actionChildReference
 top::Expr ::= q::Decorated QName
 {
-  top.pp = q.pp; 
+  top.pp = q.pp;
   top.location = q.location;
 
   top.errors := []; -- Should only ever be in scope when valid
@@ -19,7 +19,7 @@ top::Expr ::= q::Decorated QName
 abstract production pluckTerminalReference
 top::Expr ::= q::Decorated QName
 {
-  top.pp = q.pp; 
+  top.pp = q.pp;
   top.location = q.location;
 
   top.errors := []; -- Should only be referenceable from a context where its valid.
@@ -36,7 +36,7 @@ top::Expr ::= q::Decorated QName
 abstract production disambigLexemeReference
 top::Expr ::= q::Decorated QName
 {
-  top.pp = q.pp; 
+  top.pp = q.pp;
   top.location = q.location;
 
   top.errors := []; -- Should only ever be in scope when valid
@@ -52,7 +52,7 @@ top::Expr ::= q::Decorated QName
 abstract production parserAttributeReference
 top::Expr ::= q::Decorated QName
 {
-  top.pp = q.pp; 
+  top.pp = q.pp;
   top.location = q.location;
 
   top.errors := if !top.blockContext.permitActions
@@ -70,7 +70,7 @@ top::Expr ::= q::Decorated QName
 abstract production termAttrValueReference
 top::Expr ::= q::Decorated QName
 {
-  top.pp = q.pp; 
+  top.pp = q.pp;
   top.location = q.location;
 
   top.errors := []; -- Should only ever be in scope in action blocks

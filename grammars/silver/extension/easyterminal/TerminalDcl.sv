@@ -97,6 +97,7 @@ concrete production terminalExprReg
 top::Expr ::= t::RegExpr
 {
   top.pp = t.pp;
+  top.location = t.location;
   
   local attribute regExpPat :: String;
   regExpPat = t.terminalRegExprSpec.regString;
