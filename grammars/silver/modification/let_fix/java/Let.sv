@@ -58,14 +58,22 @@ String ::= fn::String  et::String  ty::String
 aspect production lexicalLocalReference
 top::Expr ::= q::Decorated QName
 {
+  -- To account for a magic case where we generate a let expression with a type
+  -- that is, for example, a ntOrDecTypeExp or something,
+  -- we do final subst on q.lookupValue ALSO here...
+  -- it could be isDecorated (ntOrDecTypeExp) that later gets specialized to undecorated
+  -- and therefore we must be careful not to try to undecorate it again!
+  local needsUndecorating :: Boolean =
+    performSubstitution(q.lookupValue.typerep, top.finalSubst).isDecorated && !finalType(top).isDecorated;
+  
   top.translation = 
-    if q.lookupValue.typerep.isDecorated && !finalType(top).isDecorated
+    if needsUndecorating
     then "((" ++ finalType(top).transType ++ ")((common.DecoratedNode)" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()).undecorate())"
     else "((" ++ finalType(top).transType ++ ")(" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()))";
 
   top.lazyTranslation = 
     if !top.blockContext.lazyApplication then top.translation
-    else if q.lookupValue.typerep.isDecorated && !finalType(top).isDecorated
+    else if needsUndecorating
     then "common.Thunk.transformUndecorate(" ++ makeLocalValueName(q.lookupValue.fullName) ++ ")"
     else makeLocalValueName(q.lookupValue.fullName);
 }

@@ -340,3 +340,15 @@ String ::= fvs::[FlowVertex]
   return "[" ++ implode(", ", map((.unparse), fvs)) ++ "]";
 }
 
+function equalFlowVertex
+Boolean ::= a::FlowVertex  b::FlowVertex
+{
+  return case a, b of
+  | lhsVertex(a1), lhsVertex(a2) -> a1 == a2
+  | rhsVertex(s1, a1), rhsVertex(s2, a2) -> s1 == s2 && a1 == a2
+  | localEqVertex(f1), localEqVertex(f2) -> f1 == f2
+  | localVertex(f1, a1), localVertex(f2, a2) -> f1 == f2 && a1 == a2
+  | _, _ -> false
+  end;
+}
+

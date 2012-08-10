@@ -120,9 +120,17 @@ top::Expr ::= q::Decorated QName
   -- (The usual behavior is a declared Foo, but value is Decorated Foo, can
   --  be used either way.)
   
+  -- A note about possible unexpected behavior here: if q.lookupValue.typerep
+  -- is itself a ntOrDecTypeExp, which is only possible if for generated 'let'
+  -- expressions that use a type variable as their type, then this ntOrDecTypeExp
+  -- we're generating here means we're NOT propagating the information about the
+  -- "actual usage" backwards to expression.
+  -- i.e.  "let x :: a = someLocal in wantsUndecorated(x) end"
+  --       will mean "let x = decorated version of someLocal in wantsUndecorated(x.undecorate())"
+  --       and not "let x = undecorated someLocal in wantsUndecorated(x)"
+  
   top.typerep = if q.lookupValue.typerep.isDecorated
-                --then ntOrDecTypeExp(q.lookupValue.typerep.decoratedType, errorType(){-fresh tyvar-})
-                then ntOrDecTypeExp(q.lookupValue.typerep.decoratedType, freshType(){-fresh tyvar-}) -- #HACK2012 Issue 4
+                then ntOrDecTypeExp(q.lookupValue.typerep.decoratedType, freshType())
                 else q.lookupValue.typerep;
 
   top.upSubst = top.downSubst;
