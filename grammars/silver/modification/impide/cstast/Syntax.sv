@@ -19,6 +19,13 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   top.nxmlCopper = s1.nxmlCopper ++ s2.nxmlCopper;
 }
 
+aspect default production
+top::SyntaxDcl ::=
+{
+  top.classDomContribsNXML = error("Internal compiler error: should only ever be demanded of lexer classes");
+  top.classSubContribsNXML = error("Internal compiler error: should only ever be demanded of lexer classes");
+}
+
 aspect production syntaxNonterminal
 top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModifiers
 {

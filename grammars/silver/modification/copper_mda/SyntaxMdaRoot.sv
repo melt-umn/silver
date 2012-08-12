@@ -10,8 +10,10 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   -- TODO: we could consider making host host-only, and ext have both...
   host.cstEnv = directBuildTree(host.cstDcls ++ ext.cstDcls);
   host.containingGrammar = "host";
+  host.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
   ext.cstEnv = host.cstEnv;
   ext.containingGrammar = "ext";
+  ext.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
   
   top.cstErrors := host.cstErrors ++ ext.cstErrors;
   top.cstNormal = top; -- meh

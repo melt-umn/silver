@@ -39,7 +39,7 @@ String ::= ns::NamedSignatureElement
 }
 
 function computeSigTranslation
-String ::= str::String sig::Decorated NamedSignature
+String ::= str::String sig::NamedSignature
 {
   return substituteAll(
            substituteAll(str, map(wrapStrictNotation, sig.inputNames), map(strictChildAccessor, sig.inputElements)),

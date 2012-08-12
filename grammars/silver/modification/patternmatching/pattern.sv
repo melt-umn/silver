@@ -56,11 +56,12 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
     caseExpr(top.location, es.rawExprs, ml.matchRuleList, 
       mkFunctionInvocation(baseExpr(qName(top.location, "core:error")),
         [stringConst(terminal(String_t, 
-          "\"Error: pattern match failed at " ++ top.grammarName ++ " " ++ top.location.unparse ++ "\\n\""))]));
+          "\"Error: pattern match failed at " ++ top.grammarName ++ " " ++ top.location.unparse ++ "\\n\""))]),
+      freshType());
 }
 
 abstract production caseExpr
-top::Expr ::= locat::Location es::[Expr] ml::[Decorated MatchRule] failExpr::Expr
+top::Expr ::= locat::Location es::[Expr] ml::[Decorated MatchRule] failExpr::Expr retType::TypeExp
 {
   top.pp = error("Internal error: pretty of intermediate data structure");
   top.location = locat;
@@ -96,8 +97,8 @@ top::Expr ::= locat::Location es::[Expr] ml::[Decorated MatchRule] failExpr::Exp
    -}
   local attribute allConCase :: Expr;
   allConCase = matchPrimitive(locat, head(es),
-                              typerepType(freshType()),
-                              allConCaseTransform(tail(es), failExpr, groupMRules(prodRules)),
+                              typerepType(retType),
+                              allConCaseTransform(tail(es), failExpr, retType, groupMRules(prodRules)),
                               failExpr);
   
   {--
@@ -105,8 +106,8 @@ top::Expr ::= locat::Location es::[Expr] ml::[Decorated MatchRule] failExpr::Exp
    -}
   local attribute allVarCase :: Expr;
   allVarCase = caseExpr(locat, tail(es),
-                        allVarCaseTransform(head(es), freshType(), ml),
-                        failExpr);
+                        allVarCaseTransform(head(es), freshType(){-whatever the first expression's type is?-}, ml),
+                        failExpr, retType);
   
   {--
    - Mixed con/var? Partition, and push the vars into the "fail" branch.
@@ -116,8 +117,8 @@ top::Expr ::= locat::Location es::[Expr] ml::[Decorated MatchRule] failExpr::Exp
   freshFailName = "__fail_" ++ toString(genInt());
   local attribute mixedCase :: Expr;
   mixedCase = makeLet(top.location,
-                freshFailName, freshType(), caseExpr(locat, es, varRules, failExpr),
-                caseExpr(locat, es, prodRules, baseExpr(qName(top.location, freshFailName))));
+                freshFailName, retType, caseExpr(locat, es, varRules, failExpr, retType),
+                caseExpr(locat, es, prodRules, baseExpr(qName(top.location, freshFailName)), retType));
 }
 
 concrete production mRuleList_one
@@ -141,6 +142,7 @@ top::MRuleList ::= h::MatchRule '|' t::MRuleList
 concrete production matchRule_c
 top::MatchRule ::= pt::PatternList '->' e::Expr
 {
+  top.pp = pt.pp ++ " -> " ++ e.pp;
   -- UNCOMMENT if no longer forwarding to matchRule #HACK2012
   --top.errors <- pt.errors;
 
@@ -152,7 +154,7 @@ top::MatchRule ::= l::Location pl::[Decorated Pattern] e::Expr
 {
   top.pp = implode(", ", map(getPatternPP, pl)) ++ " -> " ++ e.pp;
   top.errors := foldr(append,[],map((.errors), pl));
-  top.location = e.location;
+  top.location = l;
 
   top.headPattern = head(pl);
 }
@@ -168,7 +170,7 @@ top::PatternList ::= p::Pattern
 concrete production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
-  top.pp = ps1.pp ++ ", " ++ p.pp;
+  top.pp = p.pp ++ ", " ++ ps1.pp;
   top.errors := p.errors ++ ps1.errors;
 
   top.patternList = p :: ps1.patternList;
@@ -224,7 +226,7 @@ function convStringsToExprs
 }
 
 function allConCaseTransform
-PrimPatterns ::= restExprs::[Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
+PrimPatterns ::= restExprs::[Expr]  failCase::Expr  retType::TypeExp  mrs::[[Decorated MatchRule]]
 {
   -- okay, so we're looking at mrs groups by production.
   -- So what we want to do is, for each list in mrs,
@@ -240,7 +242,7 @@ PrimPatterns ::= restExprs::[Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
   subcase =  caseExpr(head(head(mrs)).location,
                       convStringsToExprs(names, restExprs),
                       tailNestedPatternTransform(head(mrs)),
-                      failCase);
+                      failCase, retType);
 
   local attribute fstPat :: PrimPattern;
   fstPat = case head(head(mrs)).headPattern of
@@ -254,7 +256,7 @@ PrimPatterns ::= restExprs::[Expr]  failCase::Expr  mrs::[[Decorated MatchRule]]
            end;
   
   return if null(tail(mrs)) then onePattern(fstPat)
-         else consPattern(fstPat, '|', allConCaseTransform(restExprs, failCase, tail(mrs)));
+         else consPattern(fstPat, '|', allConCaseTransform(restExprs, failCase, retType, tail(mrs)));
 }
 
 function tailNestedPatternTransform
@@ -304,7 +306,7 @@ Expr ::= e::Decorated Expr
   et = performSubstitution(e.typerep, e.upSubst);
 
   return if et.isDecorable
-         then decorateExprWithEmpty('decorate', new(e), 'with', '{', '}')
+         then decorateExprWithEmpty(terminal(Decorate_kwd, "decorate", e.location.line, e.location.column), new(e), 'with', '{', '}')
          else new(e);
 }
 function ensureDecoratedType
