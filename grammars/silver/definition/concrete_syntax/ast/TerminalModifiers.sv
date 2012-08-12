@@ -99,7 +99,7 @@ abstract production termClasses
 top::SyntaxTerminalModifier ::= cls::[String]
 {
   local clsRefsL :: [[Decorated SyntaxDcl]] = lookupStrings(cls, top.cstEnv);
-  local clsRefs :: [Decorated SyntaxDcl] = map(head, clsRefsL);
+  production clsRefs :: [Decorated SyntaxDcl] = map(head, clsRefsL);
 
   top.cstErrors := []; -- TODO error checking!
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
@@ -114,7 +114,7 @@ top::SyntaxTerminalModifier ::= cls::[String]
 abstract production termSubmits
 top::SyntaxTerminalModifier ::= sub::[String]
 {
-  local subRefs :: [[Decorated SyntaxDcl]] = lookupStrings(sub, top.cstEnv);
+  production subRefs :: [[Decorated SyntaxDcl]] = lookupStrings(sub, top.cstEnv);
 
   top.cstErrors := []; -- TODO error checking!
   top.submitsXML = implode("", map(xmlCopperRef, map(head, subRefs)));
@@ -126,7 +126,7 @@ top::SyntaxTerminalModifier ::= sub::[String]
 abstract production termDominates
 top::SyntaxTerminalModifier ::= dom::[String]
 {
-  local domRefs :: [[Decorated SyntaxDcl]] = lookupStrings(dom, top.cstEnv);
+  production domRefs :: [[Decorated SyntaxDcl]] = lookupStrings(dom, top.cstEnv);
 
   top.cstErrors := []; -- TODO error checking!
   top.dominatesXML = implode("", map(xmlCopperRef, map(head, domRefs)));

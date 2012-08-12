@@ -27,10 +27,10 @@ Variables used:
       </parserWrapper>
    </extension>
    <extension
-         id="@LANG_NAME@_IDE.@LANG_NAME@.imp.builder"
+         id="@LANG_NAME@.imp.builder"
          name="@LANG_NAME@ builder"
          point="org.eclipse.core.resources.builders">
-      <builder>
+      <builder hasNature="true">
          <run
                class="@PKG_NAME@.imp.builders.@LANG_NAME@Builder">
             <parameter
@@ -41,7 +41,7 @@ Variables used:
       </builder>
    </extension>
    <extension
-         id="@LANG_NAME@_IDE.imp.nature"
+         id="imp.nature"
          name="@LANG_NAME@ Nature"
          point="org.eclipse.core.resources.natures">
       <builder
