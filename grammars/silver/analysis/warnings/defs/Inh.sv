@@ -81,7 +81,35 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
     else [];
 }
 
--- TODO: need inh checks here too~! or do we? I suppose to check any inh accesses on references. any other reason?
+aspect production inhDNTAccessDispatcher
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  -- We're only concerned here with accessing an inherited attribute from
+  -- a reference.  All other situations taken care of elsewhere:
+  --  * accessing an inherited attribute from a child? will show up as a transitive dep, checked for there.
+  local refCheck :: [Message] =
+    if contains(q.lookupAttribute.fullName, inhsForTakingRef(e.typerep.typeName, top.flowEnv))
+    then []
+    else [wrn(top.location, "Access of inherited attribute " ++ q.pp ++ " from a reference is not permitted, as references are not know to be decorated with this attribute.")];
+  
+  top.errors <- 
+    if null(e.errors)
+    && (top.config.warnAll || top.config.warnMissingInh)
+    && top.blockContext.hasFullSignature -- TODO: only checking productions at the moment!!
+    then
+      case e of
+      | childReference(lq) ->
+          if lq.lookupValue.typerep.isDecorable then [] -- only affects flow
+          else refCheck
+      | lhsReference(lq) -> [] -- only affects flow
+      | localReference(lq) ->
+          if lq.lookupValue.typerep.isDecorable then [] -- only affects flow
+          else refCheck
+      | forwardReference(lq) -> [] -- actually okay, only affects flow
+      | _ -> refCheck
+    end
+    else [];      
+}
 
 
 function checkRefAccess
@@ -252,4 +280,5 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
       else [wrn(top.location, "Decoration producing a reference does not supply " ++ implode(", ", diff))]
     else [];
 }
+
 
