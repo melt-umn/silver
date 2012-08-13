@@ -244,6 +244,21 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }
+aspect production decorateExprWithIntention
+top::Expr ::= l::Location  e::Expr  inh::ExprInhs  intention::[String]
+{
+  -- pure duplication of the above. See comment in core's Expr.
+  top.translation = e.translation ++ 
+    case inh of
+      exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null)" -- TODO: we don't NEED to pass context here, but it's good for error messages!
+    | _ -> ".decorate(context, common.Util.populateInh(" ++
+                                      makeNTClassName(finalType(e).typeName) ++ ".num_inh_attrs, " ++
+                                      "new int[]{" ++ implode(", ", inh.nameTrans) ++ "}, " ++ 
+                                      "new common.Lazy[]{" ++ implode(", ", inh.valueTrans) ++ "}))"
+    end;
+
+  top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
+}
 synthesized attribute nameTrans :: [String];
 synthesized attribute valueTrans :: [String];
 

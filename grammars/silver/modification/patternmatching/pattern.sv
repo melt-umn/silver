@@ -299,6 +299,7 @@ Expr ::= l::Location s::String t::TypeExp e::Expr o::Expr
   return letp(l, assignExpr(nameIdLower(terminal(IdLower_t, s)), '::', typerepType(t), '=', e), o);
 }
 
+-- Please note that this function is now specifically for decorating with intention to access a forward!
 function ensureDecoratedExpr
 Expr ::= e::Decorated Expr
 {
@@ -306,7 +307,7 @@ Expr ::= e::Decorated Expr
   et = performSubstitution(e.typerep, e.upSubst);
 
   return if et.isDecorable
-         then decorateExprWithEmpty(terminal(Decorate_kwd, "decorate", e.location.line, e.location.column), new(e), 'with', '{', '}')
+         then decorateExprWithIntention(e.location, new(e), exprInhsEmpty(), ["forward"])
          else new(e);
 }
 function ensureDecoratedType
