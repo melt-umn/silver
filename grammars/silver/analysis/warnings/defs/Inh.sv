@@ -1,6 +1,7 @@
 grammar silver:analysis:warnings:defs;
 
 import silver:modification:autocopyattr only autocopyDcl;
+import silver:modification:collection;
 import silver:definition:flow:driver only makeGraphEnv, expandGraph, flowTypeName;
 
 synthesized attribute warnMissingInh :: Boolean occurs on CmdArgs;
@@ -257,7 +258,28 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
     else [];
 }
 
+aspect production inheritedAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+{
+  -- TODO: check transitive deps only. Nothing to be done for flow types
+}
 
+aspect production localValueDef
+top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+{
+  -- TODO: check transitive deps only.
+}
+aspect production synAppendColAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+{
+  -- TODO: compute transitive for e AND transitive for original dl.attr, ensure lhs inh are subset
+  -- plus, the usualy transitive deps thing.
+}
+aspect production appendCollectionValueDef
+top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+{
+  -- TODO: ditto above.
+}
 
 
 aspect production decorateExprWith
@@ -280,5 +302,24 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
       else [wrn(top.location, "Decoration producing a reference does not supply " ++ implode(", ", diff))]
     else [];
 }
+aspect production decorateExprWithIntention
+top::Expr ::= l::Location  e::Expr  inh::ExprInhs  intention::[String]
+{
+  -- TODO oh hell look at that
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
 
+
+  -- Look up each 'intention' in the flow type, and merge that together.
+  local neededSet :: [String] = makeSet(foldr(append, [], map(inhDepsForSyn(_, performSubstitution(e.typerep, e.upSubst).typeName, myFlow), intention)));
+  local diff :: [String] = rem(neededSet, inh.suppliedInhs);
+
+  top.errors <- 
+    if null(e.errors)
+    && (top.config.warnAll || top.config.warnMissingInh)
+    && top.blockContext.hasFullSignature -- TODO: only checking productions at the moment!!
+    then
+      if null(diff) then []
+      else [wrn(top.location, "Decorate expression does not supply needed inherited attributes: " ++ implode(", ", diff))]
+    else [];
+}
 

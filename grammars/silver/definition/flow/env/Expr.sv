@@ -152,6 +152,11 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.flowDeps = e.flowDeps ++ inh.flowDeps;
 }
+aspect production decorateExprWithIntention
+top::Expr ::= l::Location  e::Expr  inh::ExprInhs  intention::[String]
+{
+  top.flowDeps = e.flowDeps ++ inh.flowDeps;
+}
 
 aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
@@ -466,10 +471,7 @@ attribute flowDeps, flowEnv occurs on PrimPatterns, PrimPattern;
 aspect production matchPrimitiveReal
 top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
 {
-  -- TODO: We need to be "smarter" here and only demand the inh to evaluate forward
-  -- otherwise pattern matching on something is considered 'taking a reference' and
-  -- generates spurious deps
-  top.flowDeps = {-e.flowDeps ++-} pr.flowDeps ++ f.flowDeps;
+  top.flowDeps = e.flowDeps ++ pr.flowDeps ++ f.flowDeps;
 }
 
 aspect production onePattern

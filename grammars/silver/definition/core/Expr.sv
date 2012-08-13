@@ -353,7 +353,10 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 
   -- and this is a positively UGLY way of getting around this... *evil grin*
   
-  forwards to CHEAT_HACK_DISPATCHER( decorateExprWithEmpty(terminal(Decorate_kwd, "decorate", $2), new(e), 'with', '{', '}'), $2, q);
+  -- OKAY, and now we're compounding this by using a fancy little thing to make the flow type computation
+  -- work a little bit better by using WithIntention...
+  
+  forwards to CHEAT_HACK_DISPATCHER( decorateExprWithIntention(e.location, new(e), exprInhsEmpty(), [q.lookupAttribute.fullName]), $2, q);
 }
 abstract production CHEAT_HACK_DISPATCHER -- muahaahahahahaha
 top::Expr ::= e::Expr '.' q::Decorated QName
@@ -452,6 +455,25 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.pp = "decorate " ++ e.pp ++ " with {" ++ inh.pp ++ "}";
   top.location = loc(top.file, $1.line, $1.column);
+
+  top.typerep = decoratedTypeExp(performSubstitution(e.typerep, e.upSubst)); -- .decoratedForm?
+  top.errors := e.errors ++ inh.errors;
+  
+  inh.decoratingnt = performSubstitution(e.typerep, e.upSubst);
+}
+
+abstract production decorateExprWithIntention
+top::Expr ::= l::Location  e::Expr  inh::ExprInhs  intention::[String]
+{
+  -- TODO: this whole production is a hack to work around some problems computing
+  -- flow types. The idea is the few places where we "auto decorate" in order to
+  -- do something else, we can indicate that using this production, by specifying
+  -- the "intention."
+  
+  -- This production should eventually be eliminated, somehow. It's pure duplication of the above.
+  
+  top.pp = "decorate " ++ e.pp ++ " with {" ++ inh.pp ++ "}";
+  top.location = l;
 
   top.typerep = decoratedTypeExp(performSubstitution(e.typerep, e.upSubst)); -- .decoratedForm?
   top.errors := e.errors ++ inh.errors;
