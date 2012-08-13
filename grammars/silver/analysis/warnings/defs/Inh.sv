@@ -261,24 +261,73 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  -- TODO: check transitive deps only. Nothing to be done for flow types
+  -- check transitive deps only. Nothing to be done for flow types
+  -- TODO oh no again!
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
+  local myGraphs :: [Pair<String [Pair<FlowVertex FlowVertex>]>] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).prodFlowGraphs;
+
+  local immediateDeps :: [FlowVertex] = e.flowDeps;
+  local productionFlowGraph :: EnvTree<FlowVertex> = directBuildTree(map(makeGraphEnv, fromMaybe([], lookupBy(stringEq, top.signature.fullName, myGraphs))));
+  local transitiveDeps :: [FlowVertex] = nubBy(equalFlowVertex, expandGraph(immediateDeps, productionFlowGraph));
+  
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh)
+    then foldr(append, [], map(checkEqDeps(_, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env), transitiveDeps))
+    else [];
 }
 
 aspect production localValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
-  -- TODO: check transitive deps only.
+  -- check transitive deps only. No worries about flow types.
+  -- TODO oh no again!
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
+  local myGraphs :: [Pair<String [Pair<FlowVertex FlowVertex>]>] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).prodFlowGraphs;
+
+  local immediateDeps :: [FlowVertex] = e.flowDeps;
+  local productionFlowGraph :: EnvTree<FlowVertex> = directBuildTree(map(makeGraphEnv, fromMaybe([], lookupBy(stringEq, top.signature.fullName, myGraphs))));
+  local transitiveDeps :: [FlowVertex] = nubBy(equalFlowVertex, expandGraph(immediateDeps, productionFlowGraph));
+  
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh)
+    then foldr(append, [], map(checkEqDeps(_, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env), transitiveDeps))
+    else [];
 }
-aspect production synAppendColAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
-{
-  -- TODO: compute transitive for e AND transitive for original dl.attr, ensure lhs inh are subset
-  -- plus, the usualy transitive deps thing.
-}
+
+-- For most collection append operators, the checking is already done by the thing they forward to.
+-- Local collections are a special case though: typically they're always considered "authoritative"
+-- and thus flow types don't need checking (unlike syn defs), but for contributions to locals we do
+-- need to do a check!
 aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
-  -- TODO: ditto above.
+  -- transitive deps check is already happening via the forward.
+  -- So, here we check against a "flow type" for the local, produced by
+  -- evaluating the graph's dependencies for this local.
+  
+  -- TODO oh no again!
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
+  local myGraphs :: [Pair<String [Pair<FlowVertex FlowVertex>]>] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).prodFlowGraphs;
+
+  local immediateDeps :: [FlowVertex] = e.flowDeps;
+  local productionFlowGraph :: EnvTree<FlowVertex> = directBuildTree(map(makeGraphEnv, fromMaybe([], lookupBy(stringEq, top.signature.fullName, myGraphs))));
+  
+  local transitiveDeps :: [FlowVertex] = nubBy(equalFlowVertex, expandGraph(immediateDeps, productionFlowGraph));
+  
+  local originalEqDeps :: [FlowVertex] = nubBy(equalFlowVertex, 
+    expandGraph([localEqVertex(val.lookupValue.fullName)], productionFlowGraph));
+  
+  local lhsInhDeps :: [String] = map((.flowTypeName), filter(isLhsInh(_, top.env), transitiveDeps));
+  
+  local originalEqLhsInhDeps :: [String] = map((.flowTypeName), filter(isLhsInh(_, top.env), originalEqDeps));
+  
+  local lhsInhExceedsFlowType :: [String] = rem(lhsInhDeps, originalEqLhsInhDeps);
+
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh)
+    then if null(lhsInhExceedsFlowType) then []
+         else [wrn(top.location, "Local contribution (<-) equation exceeds flow dependencies with: " ++ implode(", ", lhsInhExceedsFlowType))]
+    else [];
 }
 
 

@@ -471,7 +471,11 @@ attribute flowDeps, flowEnv occurs on PrimPatterns, PrimPattern;
 aspect production matchPrimitiveReal
 top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
 {
-  top.flowDeps = e.flowDeps ++ pr.flowDeps ++ f.flowDeps;
+  -- TODO: thanks to the decorateWithIntention hack, this works okay for
+  -- matching on undecorated types, but we've got a MAJOR problem when
+  -- for example, matching on a child: it registers as a "take a reference"
+  -- operation!! Despite us only wanting "evaluate the forward" as the dep.
+  top.flowDeps = {- e.flowDeps ++ -}  pr.flowDeps ++ f.flowDeps;
 }
 
 aspect production onePattern
