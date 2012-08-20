@@ -78,7 +78,11 @@ top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModi
                    else ["Name conflict with nonterminal " ++ t.typeName];
   top.cstErrors <- subdcls.cstErrors;
   top.cstProds = subdcls.cstProds;
-  top.cstNormalize = [syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), searchEnvTree(t.typeName, top.cstNTProds)))];
+  top.cstNormalize = 
+    let myProds :: [SyntaxDcl] = searchEnvTree(t.typeName, top.cstNTProds)
+    in if null(myProds) then [] -- Eliminate "Useless nonterminals" as these are expected in Silver code (non-syntax)
+       else [syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), myProds))]
+    end;
   
   top.xmlCopper = 
     "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
