@@ -220,9 +220,9 @@ function solveFlowTypes
     directBuildTree(searchEnvTree(nt, ntEnv));
   
   -- The New Improved Flow Type
-  -- TODO: We also need to compute flow type information for locals... somehow. Maybe? Maybe not....
   local synExpansion :: [Pair<String [String]>] =
-    expandForEach(map(lhsVertex, syns) ++ [forwardEqVertex()], inhs, stitchedGraphEnv);
+    map(expandVertexFilterTo(_, inhs, stitchedGraphEnv),
+      forwardEqVertex() :: map(lhsVertex, syns));
   
   -- Find what edges are NEW NEW NEW
   local brandNewEdges :: [Pair<NtName Pair<String String>>] =
@@ -282,13 +282,11 @@ function stitchGraph
 }
 
 
--- For each vertex, do a graph expansion and then filter down to just inherited attributes
-function expandForEach
-[Pair<String [String]>] ::= syns::[FlowVertex]  inhs::[String]  graph::EnvTree<FlowVertex>
+-- Expand 'ver' using 'graph', then filter down to just those in 'inhs'
+function expandVertexFilterTo
+Pair<String [String]> ::= ver::FlowVertex  inhs::[String]  graph::EnvTree<FlowVertex>
 {
-  return if null(syns) then []
-  else pair(head(syns).flowTypeName, foldr(collectInhs(inhs,_,_), [], expandGraph([head(syns)], graph))) ::
-         expandForEach(tail(syns), inhs, graph);
+  return pair(ver.flowTypeName, foldr(collectInhs(inhs,_,_), [], expandGraph([ver], graph)));
 }
 
 -- Transitive closure under the graph
@@ -349,7 +347,7 @@ top::FlowVertex ::= sigName::String  attrName::String
 aspect production localEqVertex
 top::FlowVertex ::= fName::String
 {
-  top.flowTypeName = fName; -- should be okay because they should never overlap with a syn name
+  top.flowTypeName = fName; -- secretly only ever "forward"
 }
 aspect production localVertex
 top::FlowVertex ::= fName::String  attrName::String
