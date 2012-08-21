@@ -322,17 +322,39 @@ top::FlowVertex ::= fName::String  attrName::String
   top.unparse = "localV(" ++ quoteString(fName) ++ ", " ++ quoteString(attrName) ++ ")";
 }
 
-
+-- The forward equation for this production
 function forwardEqVertex
 FlowVertex ::=
 {
   return localEqVertex("forward");
 }
+-- An attribute on the forward node for this production
 function forwardVertex
 FlowVertex ::= attrName::String
 {
   return localVertex("forward", attrName);
 }
+
+-- This set of vertexes are typically used with pattern matching:
+-- Demanding the forward equation of a child
+function rhsForwardVertex
+FlowVertex ::= sigName::String
+{
+  return rhsVertex(sigName, "forward");
+}
+-- Demanding the forward equation of a local
+function localForwardVertex
+FlowVertex ::= fName::String
+{
+  return localVertex(fName, "forward");
+}
+-- heh. Demanding the forward equation of a forward!
+function forwardForwardVertex
+FlowVertex ::=
+{
+  return localVertex("forward", "forward");
+}
+
 
 function unparseVertices
 String ::= fvs::[FlowVertex]
