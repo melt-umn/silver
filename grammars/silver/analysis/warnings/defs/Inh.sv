@@ -267,6 +267,93 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 
 --TODO: return statements for functions
 
+
+--------------------------------------------------------------------------------
+
+-- Step 1.5: implicit equations due to forwards need their flow types checked!
+-- We could get rid of these, if we generated the copy equations, as then this
+-- would be checked on those copy equations.
+
+-- Side note: the "authoritative source" for these checks / errors
+-- should be the production, unless the attribute isn't known to the production.
+-- Later, carefully think about how to formulate "isn't known to the production"
+-- so we know when to do that check. TODO
+
+aspect production attributionDcl
+top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
+{
+  -- TODO oh no again!
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
+  local myGraphs :: [Pair<String [Pair<FlowVertex FlowVertex>]>] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).prodFlowGraphs;
+  
+  local depsForThisAttr :: [String] = inhDepsForSyn(at.lookupAttribute.fullName, nt.lookupType.fullName, myFlow);
+
+  top.errors <-
+    if null(nt.lookupType.errors ++ at.lookupAttribute.errors)
+    && (top.config.warnAll || top.config.warnMissingInh)
+    && (case at.lookupAttribute.dcl of synDcl(_,_,_,_,_) -> true | _ -> false end) -- TODO: we really need a better way to do this
+    then raiseImplicitFwdEqFlowTypesForAttr(top.location, at.lookupAttribute.fullName, prods, top.flowEnv, depsForThisAttr, myGraphs, top.env)
+    else [];
+}
+function raiseImplicitFwdEqFlowTypesForAttr
+[Message] ::= l::Location  attr::String  prods::[FlowDef]  e::Decorated FlowEnv  depsForThisAttr::[String]  myGraphs::[Pair<String [Pair<FlowVertex FlowVertex>]>]  theEnv::Decorated Env
+{
+  local headProdName :: String = case head(prods) of prodFlowDef(_, p) -> p end;
+  local productionFlowGraph :: EnvTree<FlowVertex> = 
+    directBuildTree(map(makeGraphEnv, fromMaybe([], lookupBy(stringEq, headProdName, myGraphs))));
+  local transitiveDeps :: [FlowVertex] = nubBy(equalFlowVertex, expandGraph([forwardEqVertex()], productionFlowGraph));
+  local thisFlowDeps :: [String] = map((.flowTypeName), filter(isLhsInh(_, theEnv), transitiveDeps));
+  local diff :: [String] = rem(thisFlowDeps, depsForThisAttr);
+
+  return if null(prods) then []
+  else case lookupSyn(headProdName, attr, e),  lookupFwd(headProdName, e) of
+       | _ :: _, _ -> [] -- eq present, checked elsewhere
+       -- if no equation and DOES forward, do the error check (no worries about defaults!)
+       | [], fwdFD :: _ -> if null(diff) then [] else [wrn(l, "Implicit forward copy equation for attribute " ++ attr ++ " on production " ++ headProdName ++ " exceeds the flow type for this attribute because the forward additionally depends on " ++ implode(", ", diff))]
+       | [], [] -> [] -- different error situation (or non-error for defaults)
+       end ++ raiseImplicitFwdEqFlowTypesForAttr(l, attr, tail(prods), e, depsForThisAttr, myGraphs, theEnv);
+}
+aspect production productionDcl
+top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+{
+  -- TODO oh no again!
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
+  local myGraphs :: [Pair<String [Pair<FlowVertex FlowVertex>]>] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).prodFlowGraphs;
+  
+  local productionFlowGraph :: EnvTree<FlowVertex> = 
+    directBuildTree(map(makeGraphEnv, fromMaybe([], lookupBy(stringEq, fName, myGraphs))));
+  local transitiveDeps :: [FlowVertex] = nubBy(equalFlowVertex, expandGraph([forwardEqVertex()], productionFlowGraph));
+  local fwdFlowDeps :: [String] = map((.flowTypeName), filter(isLhsInh(_, top.env), transitiveDeps));
+
+  top.errors <-
+    if null(body.errors ++ ns.errors{-TODO-})
+    && (top.config.warnAll || top.config.warnMissingInh)
+    && !null(body.uniqueSignificantExpression) -- don't bother checking if this production doesn't forward
+    then raiseImplicitFwdEqFlowTypesForProd(top.location, fName, attrs, top.flowEnv, fwdFlowDeps, myFlow)
+    else [];
+}
+function raiseImplicitFwdEqFlowTypesForProd
+[Message] ::= l::Location  prod::String  attrs::[DclInfo]  e::Decorated FlowEnv  fwdFlowDeps::[String]  myFlow::EnvTree<Pair<String String>>
+{
+  local depsForThisAttr :: [String] = inhDepsForSyn(head(attrs).attrOccurring, head(attrs).fullName, myFlow);
+  local diff :: [String] = rem(fwdFlowDeps, depsForThisAttr);
+
+  return if null(attrs) then []
+  else case lookupSyn(prod, head(attrs).attrOccurring, e) of
+       | eq :: _ -> []
+       | [] -> if null(diff) then [] else [wrn(l, "Implicit forward copy equation for attribute " ++ head(attrs).attrOccurring ++ " in production " ++ prod ++ " exceeds flow type because the forward depends on " ++ implode(", ", diff))]
+       end ++ raiseImplicitFwdEqFlowTypesForProd(l, prod, tail(attrs), e, fwdFlowDeps, myFlow);
+}
+
+-- General TODO: we should probably find another way of generating errors,
+-- so that we can eliminate these silly checks...
+-- Perhaps put "namespaces" in errors? (Check from [Message] to ErrorSpace with multiple [Message]?)
+-- Then we could 1. Issue normal errors; If none, 2. Issue syn-completeness errors; If none, 3. Issue inh-completeness errors
+
+-- TODO: major BUG: We can't know all forward copy equations, ever.
+-- So this is incomplete. We need to add a constraint.
+-- Perhaps require non-host attributes to have 'forward' flow type minimum?
+
 --------------------------------------------------------------------------------
 
 

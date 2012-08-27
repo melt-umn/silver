@@ -26,7 +26,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   -- Lookup all attribute that occurs on our LHS (filter to SYN!)
   -- Ensure there exists an equation for each on this production
   
-  local attrs :: [DclInfo] = 
+  production attrs :: [DclInfo] = 
     filter(isOccursSynthesized(_, top.env),
       getAttrsOn(namedSig.outputElement.typerep.typeName, top.env));
 
@@ -68,7 +68,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   -- Lookup all productions for this nonterminal
   -- ensure an equation exists for each production or the production forwards
   
-  local prods :: [FlowDef] = getProdsOn(nt.lookupType.typerep.typeName, top.flowEnv);
+  production prods :: [FlowDef] = getProdsOn(nt.lookupType.typerep.typeName, top.flowEnv);
 
   top.errors <-
     if null(nt.lookupType.errors ++ at.lookupAttribute.errors)
