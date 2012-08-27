@@ -392,7 +392,6 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.errors <- 
     if null(e.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
-    && top.blockContext.hasFullSignature -- TODO: only checking productions at the moment!!
     then
       case e of
       | childReference(lq) ->
@@ -445,7 +444,6 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.errors <- 
     if null(e.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
-    && top.blockContext.hasFullSignature -- TODO: only checking productions at the moment!!
     then
       case e of
       | childReference(lq) ->
@@ -475,7 +473,6 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.errors <- 
     if null(e.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
-    && top.blockContext.hasFullSignature -- TODO: only checking productions at the moment!!
     then
       if null(diff) then []
       else [wrn(top.location, "Decoration producing a reference does not supply " ++ implode(", ", diff))]
@@ -495,7 +492,6 @@ top::Expr ::= l::Location  e::Expr  inh::ExprInhs  intention::[String]
   top.errors <- 
     if null(e.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
-    && top.blockContext.hasFullSignature -- TODO: only checking productions at the moment!!
     then
       if null(diff) then []
       else [wrn(top.location, "Decorate expression does not supply needed inherited attributes: " ++ implode(", ", diff))]
