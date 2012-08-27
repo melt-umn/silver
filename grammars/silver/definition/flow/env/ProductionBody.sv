@@ -106,6 +106,7 @@ aspect production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 {
   top.flowDefs = [];
+  -- This is basically taken care of by the definition equation, rather than here.
 }
 aspect production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
