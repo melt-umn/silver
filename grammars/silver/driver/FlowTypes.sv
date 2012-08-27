@@ -14,10 +14,13 @@ top::RunUnit ::= iIn::IO args::[String]
   
   -- Look up tree for production info
   local prodTree :: EnvTree<FlowDef> = directBuildTree(filteredFlowDefs.prodGraphContribs);
-  production allProds :: [String] = nubBy(stringEq, map(getFst, rtm:toList(prodTree)));
   
   -- hack to allow us to look up certain info... TODO: maybe hack?
-  production allRealEnv :: Decorated Env = toEnv(foldr(appendDefs, emptyDefs(), map((.defs), grammars)));
+  local allRealDefs :: Defs = foldr(appendDefs, emptyDefs(), map((.defs), grammars));
+  production allRealEnv :: Decorated Env = toEnv(allRealDefs);
+  
+  -- List of all productions (is this nub needed? TODO)
+  production allProds :: [String] = nubBy(stringEq, map((.fullName), allRealDefs.prodDclList));
   
   -- Fix the production graph information from the flow defs TODO: some of this maybe should be fixed somehow
   production prodGraph :: [Pair<ProdName [Pair<FlowVertex FlowVertex>]>] = 

@@ -3,7 +3,7 @@ grammar silver:definition:env;
 import silver:definition:regex; -- soley for Terms. TODO : fix?
 import silver:definition:type;
 
-nonterminal Defs with typeList, valueList, attrList, prodOccursList, occursList;
+nonterminal Defs with typeList, valueList, attrList, prodOccursList, occursList, prodDclList;
 
 -- The standard namespaces
 synthesized attribute typeList :: [EnvItem];
@@ -13,6 +13,9 @@ synthesized attribute attrList :: [EnvItem];
 -- Attribute occurs and production attributes.
 synthesized attribute prodOccursList :: [DclInfo];
 synthesized attribute occursList :: [DclInfo];
+
+-- Extra space for production list
+synthesized attribute prodDclList :: [DclInfo];
 
 -- I'm leaving "Defsironment" here just for the lols
 ----------------------------------------------------------------------------------------------------
@@ -60,6 +63,8 @@ top::Defs ::=
   
   top.prodOccursList = [];
   top.occursList = [];
+  
+  top.prodDclList = [];
 }
 
 abstract production appendDefs 
@@ -71,6 +76,8 @@ top::Defs ::= e1::Defs e2::Defs
   
   top.prodOccursList = e1.prodOccursList ++ e2.prodOccursList;
   top.occursList = e1.occursList ++ e2.occursList;
+  
+  top.prodDclList = e1.prodDclList ++ e2.prodDclList;
 }
 
 abstract production substitutedDefs
@@ -113,6 +120,13 @@ abstract production consOccursDef
 top::Defs ::= d::DclInfo e2::Defs
 {
   top.occursList = d :: forward.occursList;
+  forwards to e2;
+}
+
+abstract production consProdDclDef
+top::Defs ::= d::DclInfo e2::Defs
+{
+  top.prodDclList = d :: forward.prodDclList;
   forwards to e2;
 }
 
@@ -177,7 +191,8 @@ Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
 function addProdDcl
 Defs ::= sg::String sl::Location ns::NamedSignature defs::Defs
 {
-  return consValueDef(defaultEnvItem(prodDcl(sg,sl,ns)), defs);
+  return consProdDclDef(prodDcl(sg,sl,ns),
+           consValueDef(defaultEnvItem(prodDcl(sg,sl,ns)), defs));
 }
 function addFunDcl
 Defs ::= sg::String sl::Location ns::NamedSignature defs::Defs
