@@ -95,7 +95,11 @@ Boolean ::= sigName::String  e::Decorated Env
 {
   local d :: [DclInfo] = getValueDcl(sigName, e);
   
-  return if null(d) then false else head(d).typerep.isDecorable;
+  -- TODO BUG: it's actually possible for this to to fail to lookup
+  -- due to aspects renaming the sig name!!  We're conservative here and return true if that happens
+  -- but this could lead to spurious errors.
+  
+  return if null(d) then true else head(d).typerep.isDecorable;
 }
 
 {--
