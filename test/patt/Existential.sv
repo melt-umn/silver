@@ -3,7 +3,7 @@ grammar patt;
 nonterminal Existential;
 
 abstract production existentialprod
-top::Existential ::= arg::a  fun::Function(String ::= a)
+top::Existential ::= arg::a  fun::(String ::= a)
 {
 }
 
