@@ -269,8 +269,22 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
     else [];
 }
 
---TODO: return statements for functions
+aspect production returnDef
+top::ProductionStmt ::= 'return' e::Expr ';'
+{
+  -- TODO: lacking a graph, we're going to just do this on immediate deps directly.
+  -- This still captures the really necessary case of 'take reference' equations needed
+  -- But it's maybe less safe. At the very least, there should be a comment here
+  -- explaining why more is unnecessary.
 
+  -- Note: "::nolhs" is the nonterminal name of the lhs. This *should* only be used by
+  -- checkEqDeps for default equations and autocopy info, so giving a bogus value here
+  -- should be correct as those are not relevant to functions.
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh)
+    then foldr(append, [], map(checkEqDeps(_, top.location, top.signature.fullName, "::nolhs", top.flowEnv, top.env), e.flowDeps))
+    else [];
+}
 
 --------------------------------------------------------------------------------
 
