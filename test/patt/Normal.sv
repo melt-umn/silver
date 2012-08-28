@@ -219,3 +219,31 @@ String ::= d::OrdinaryNonterminal
          end;
 }
 -------------------
+
+
+-- Make sure Silver doesn't crash compiling this:
+wrongCode "error" {
+  global normalCrashTest225 :: Integer =
+    case pair(1,2) of
+    | pair(_, _) -> 2
+    | pair(_) -> 3 -- oops!
+    end;
+}
+
+-- Make sure an error is raised for this:
+wrongCode "Fewer" {
+  global normalErrorTest234 :: Integer =
+    case pair(1,2) of
+    | pair(2, 3) -> 2
+    | pair(_) -> 3 -- oops!
+    end;
+}
+
+wrongCode "More" {
+  global normalErrorTest243 :: Integer =
+    case pair(1,2) of
+    | pair(2, 3) -> 2
+    | pair(_, _, _) -> 3 -- oops!
+    end;
+}
+

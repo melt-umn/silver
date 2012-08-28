@@ -286,6 +286,14 @@ top::ProductionStmt ::= 'return' e::Expr ';'
     else [];
 }
 
+-- TODO: bug: we don't have graphs for functions, so we have a problem with the above
+-- implementation needing those graphs.
+-- However, it's possible those graphs aren't necessary? Or perhaps not for functions?
+-- Thought needed. Perhaps a comment explaining why we need the graph propagation
+-- (Currently, I think we need to checkEqDeps the immediateDeps to take care of
+--  references and such, and the flow through the graph in order to check flow types,
+--  but nothing else. I'm not sure that's fully true, though!)
+
 --------------------------------------------------------------------------------
 
 -- Step 1.5: implicit equations due to forwards need their flow types checked!

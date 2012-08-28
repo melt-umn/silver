@@ -15,6 +15,8 @@ terminal Opt_Vbar_t /\|?/ ; -- optional Coq-style vbar.
 
 -- The head pattern of a match rule
 synthesized attribute headPattern :: Decorated Pattern;
+-- Whether the head pattern of a match rule is a variable binder or not
+synthesized attribute isVarMatchRule :: Boolean;
 -- Turns PatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
 -- Turns MRuleList into [MatchRule]
@@ -24,7 +26,7 @@ synthesized attribute matchRuleList :: [Decorated MatchRule];
 -- MR | ...
 nonterminal MRuleList with config, pp, signature, env, file, matchRuleList, errors;
 -- P -> E
-nonterminal MatchRule with config, pp, signature, env, file, location, headPattern, errors;
+nonterminal MatchRule with config, pp, signature, env, file, location, headPattern, errors, isVarMatchRule;
 
 -- P , ...
 nonterminal PatternList with config, pp, patternList, env, file, errors;
@@ -67,19 +69,27 @@ top::Expr ::= locat::Location es::[Expr] ml::[Decorated MatchRule] failExpr::Exp
   top.location = locat;
 
   -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
+  -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
   forwards to
     case ml of
-    | matchRule(_, [], e) :: _ -> e
-    | _ -> if null(varRules) then allConCase
+    | matchRule(_, [], e) :: _ -> e -- valid or error case
+    | _ -> if null(es) then failExpr -- error case
+           else if null(varRules) then allConCase
            else if null(prodRules) then allVarCase
            else mixedCase
     end;
+  -- TODO: BUG: we're using the left of patterns in the first match rule as a guide here
+  -- which means we run into serious problems if not all match rules agree on the length
+  -- of the pattern list. We don't report some errors related to not having enough
+  -- variable binders
   
   top.errors <-
     case ml of
     -- are there multiple match rules, with no patterns left to distinguish between them?
     | matchRule(_, [], e) :: _ :: _ -> [err(locat, "Pattern has overlapping cases!")]
-    | _ -> []
+    -- Is there just one rule but uhhh, we've got multiple expressions!?
+    | matchRule(_, [], _) :: [] -> if null(es) then [] else [err(locat, "Fewer that expected patterns in pattern list")]
+    | _ -> if null(es) then [err(locat, "More than expected patterns in pattern list")] else []
     end;
     
   -- TODO: problem: check patternlist size and size of 'es'!
@@ -88,7 +98,7 @@ top::Expr ::= locat::Location es::[Expr] ml::[Decorated MatchRule] failExpr::Exp
 --     print(top.pp ++ "\n\n", unsafeIO()));
 
   local attribute partMRs :: Pair<[Decorated MatchRule] [Decorated MatchRule]>;
-  partMRs = partition(isVarMatchRule, ml);
+  partMRs = partition((.isVarMatchRule), ml);
   local varRules :: [Decorated MatchRule] = partMRs.fst;
   local prodRules ::[Decorated MatchRule] = partMRs.snd;
   
@@ -152,11 +162,14 @@ top::MatchRule ::= pt::PatternList '->' e::Expr
 abstract production matchRule
 top::MatchRule ::= l::Location pl::[Decorated Pattern] e::Expr
 {
-  top.pp = implode(", ", map(getPatternPP, pl)) ++ " -> " ++ e.pp;
+  top.pp = implode(", ", map((.pp), pl)) ++ " -> " ++ e.pp;
   top.errors := foldr(append,[],map((.errors), pl));
   top.location = l;
 
   top.headPattern = head(pl);
+  -- Here we return true if we have no patterns: essentially, claim missing
+  -- rules are '_'
+  top.isVarMatchRule = null(pl) || head(pl).patternIsVariable;
 }
 
 concrete production patternList_one
@@ -191,16 +204,6 @@ top::PatternList ::= Epsilon_For_Location
 -- Added Functions
 ----------------------------------------------------
 
-function isVarMatchRule
-Boolean ::= mr::Decorated MatchRule
-{
-  return mr.headPattern.patternIsVariable;
-}
-function getPatternPP
-String ::= p::Decorated Pattern
-{
-  return p.pp;
-}
 function patternListVars
 Name ::= p::Decorated Pattern
 {

@@ -702,7 +702,7 @@ Substitution ::= scrutineeType::TypeExp  constructorType::TypeExp
   return case scrutineeType, constructorType of
          | decoratedTypeExp(nonterminalTypeExp(n1, p1)), decoratedTypeExp(nonterminalTypeExp(n2,p2))
             -> if n1 == n2 then refineAll(p1,p2) else emptySubst()
-         | _ -> emptySubst()
+         | _, _ -> emptySubst()
          end;
 }
 
