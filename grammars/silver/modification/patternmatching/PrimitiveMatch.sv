@@ -682,7 +682,7 @@ top::TypeExp ::= fn::String params::[TypeExp]
                foreignTypeExp(ofn, op) -> if fn == ofn
                                           then refineAll( params, op )
                                           else errorSubst("Tried to refine conflicting foreign types " ++ fn ++ " and " ++ ofn)
-             | _ -> errorSubst("Tried to refine foreign type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
+             | _ -> errorSubst("Tried to refine foreign type " ++ fn ++ " with " ++ prettyType(top.refineWith))
               end;
 }
 
