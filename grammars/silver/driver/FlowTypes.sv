@@ -31,18 +31,29 @@ top::RunUnit ::= iIn::IO args::[String]
     directBuildTree(makeProdLocalInfo(allProds, prodTree, allRealEnv));
   
   -- Now, solve for flow types!!
-  production flowTypes :: EnvTree<Pair<String String>> =
+  production flowTypes_almost :: EnvTree<Pair<String String>> =
     fullySolveFlowTypes(prodinfos, prodGraph, allRealEnv, rtm:empty(compareString));
+  
+  -- Non-host syn patch the flow types! (Composition generates new equations
+  -- that requires non-host syn to potentially need to evaluate forwards
+  -- to be able to evaluate on new productions.)
+  -- TODO: think about whether this is a bug or not! Do we need to propagate these
+  -- constraints? Can they affect other flow info? Possibly... maybe we should somehow
+  -- be generating edges instead in the graphs??
+  production flowTypes :: EnvTree<Pair<String String>> =
+    patchFlowTypes(flowTypes_almost, filteredFlowDefs.nonHostSynAttrs);
   
 
   unit.grammarFlowTypes = flowTypes;
   reUnit.grammarFlowTypes = flowTypes;
 
+  -- Note: Nope! Not okay to use the filtered flowdefs for these. UGHHH
+  -- Problem with 'fwd' nodes disappearing in some computations (checking known-generated fwd equations flow types)
+
   -- We'd like a final version of the stitched flow graphs to pass down
   unit.productionFlowGraphs = stitchAllGraphs(prodGraph, prodinfos, flowTypes);
   reUnit.productionFlowGraphs = unit.productionFlowGraphs;
   -- TODO: Turn these into trees prior to passing them down. (i.e. EnvTree<EnvTree<FlowVertex>>)
-  -- Note: I'm pretty sure it's okay to use the filtered flow graphs here.
 }
 
 

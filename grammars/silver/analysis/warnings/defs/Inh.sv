@@ -376,9 +376,6 @@ function raiseImplicitFwdEqFlowTypesForProd
 -- Perhaps put "namespaces" in errors? (Check from [Message] to ErrorSpace with multiple [Message]?)
 -- Then we could 1. Issue normal errors; If none, 2. Issue syn-completeness errors; If none, 3. Issue inh-completeness errors
 
--- TODO: major BUG: We can't know all forward copy equations, ever.
--- So this is incomplete. We need to add a constraint.
--- Perhaps require non-host attributes to have 'forward' flow type minimum?
 
 --------------------------------------------------------------------------------
 

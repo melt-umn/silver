@@ -2,8 +2,8 @@ grammar silver:definition:flow:ast;
 
 import silver:definition:env only quoteString, unparse;
 
-nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs;
-nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, mayAffectFlowType;
+nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, nonHostSynAttrs;
+nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, mayAffectFlowType, nonHostSynAttrs;
 
 {-- lookup (production, attribute) to find synthesized equations -}
 synthesized attribute synTreeContribs :: [Pair<String FlowDef>];
@@ -29,6 +29,8 @@ synthesized attribute prodGraphContribs :: [Pair<String FlowDef>];
 synthesized attribute flowEdges :: [Pair<FlowVertex FlowVertex>];
 {-- Whether this flow def may affect the flow type computation -}
 synthesized attribute mayAffectFlowType :: Boolean;
+{-- A list of non-host synthesized occurrences, to patch up flow types -}
+synthesized attribute nonHostSynAttrs :: [FlowDef];
 
 synthesized attribute unparses :: [String];
 
@@ -44,6 +46,7 @@ top::FlowDefs ::= h::FlowDef  t::FlowDefs
   top.prodGraphContribs = h.prodGraphContribs ++ t.prodGraphContribs;
   top.refTreeContribs = h.refTreeContribs ++ t.refTreeContribs;
   top.localInhTreeContribs = h.localInhTreeContribs ++ t.localInhTreeContribs;
+  top.nonHostSynAttrs = h.nonHostSynAttrs ++ t.nonHostSynAttrs;
   top.unparses = h.unparses ++ t.unparses;
 }
 
@@ -59,6 +62,7 @@ top::FlowDefs ::=
   top.prodGraphContribs = [];
   top.refTreeContribs = [];
   top.localInhTreeContribs = [];
+  top.nonHostSynAttrs = [];
   top.unparses = [];
 }
 
@@ -79,6 +83,7 @@ top::FlowDef ::=
   top.prodTreeContribs = [];
   top.refTreeContribs = [];
   top.localInhTreeContribs = [];
+  top.nonHostSynAttrs = [];
 }
 
 {--
@@ -109,6 +114,22 @@ top::FlowDef ::= nt::String  inhs::[String]
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
   top.unparses = error("TODO");
   top.mayAffectFlowType = true;
+}
+
+{--
+ - Declaration that a synthesized attribute occurrence is not in the host
+ - and therefore subject to the forward flow type's whims.
+ - @param attr  the full name of the synthesized attribute
+ - @param nt  the full name of the nonterminal
+ -}
+abstract production nonHostSynDef
+top::FlowDef ::= attr::String  nt::String
+{
+  top.nonHostSynAttrs = [top];
+  top.prodGraphContribs = [];
+  top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
+  top.unparses = ["nonHostSyn(" ++ quoteString(attr) ++ ", " ++ quoteString(nt) ++ ")"];
+  top.mayAffectFlowType = true;  
 }
 
 {--

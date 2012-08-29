@@ -10,6 +10,8 @@ imports silver:modification:autocopyattr;
 
 imports silver:util:raw:treemap as rtm;
 
+import silver:util only rem;
+
 
 -- Help some type signatures suck a little less
 type ProdName = String;
@@ -317,6 +319,37 @@ function collectInhs
   | _ -> l
   end;
 }
+
+{--
+ - Used to add the 'minimum' flow type for non-host synthesized attributes.
+ - These attributes need to be able to evaluate the forwards of productions
+ - to be able to be evaluated.
+ - @param initial  the results from fullySolveFlowTypes
+ - @param edits  the list of non-host synthesized attribute occurrences
+ - @return the modified flow types
+ -}
+function patchFlowTypes
+EnvTree<Pair<String String>> ::= initial::EnvTree<Pair<String String>>  edits::[FlowDef]
+{
+  return rtm:add(foldr(append, [], map(patchEditPair(_, initial), edits)), initial);
+}
+function patchEditPair
+[Pair<String Pair<String String>>] ::= edit::FlowDef  current::EnvTree<Pair<String String>>
+{
+  return case edit of
+  | nonHostSynDef(attr, nt) -> 
+      let fwdInhs :: [String] = lookupAllBy(stringEq, "forward", searchEnvTree(nt, current)),
+          alreadyInhs :: [String] = lookupAllBy(stringEq, attr, searchEnvTree(nt, current))
+       in
+          map(pair(nt, _), map(pair(attr, _), rem(fwdInhs, alreadyInhs)))
+      end
+  end; -- for everything found under nt->forward, add something under nt->attr, if it doesn't exist already
+}
+
+
+
+
+
 
 
 function flowVertexEq
