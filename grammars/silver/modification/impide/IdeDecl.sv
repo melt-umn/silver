@@ -1,10 +1,9 @@
 grammar silver:modification:impide;
 
-imports silver:definition:core;
-imports silver:definition:env;
-imports silver:definition:concrete_syntax;
+import silver:definition:env only emptyDefs;
 
 import silver:modification:copper_mda only findSpec; -- TODO
+import silver:modification:impide:cstast;
 
 -- We're going to make this an especially annoying looking declaration
 -- to emphasize that this is currently a temporary hack just to get things
@@ -49,3 +48,94 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t ';'
   forwards to emptyAGDcl();
 }
 
+--Type: Color
+synthesized attribute r :: Integer;
+synthesized attribute g :: Integer;
+synthesized attribute b :: Integer;
+nonterminal Color with r, g, b;
+abstract production makeColor
+top::Color ::= r::Integer g::Integer b::Integer
+{
+  top.r = r;
+  top.g = g;
+  top.b = b;
+}
+
+--Type: Font
+synthesized attribute color :: Color;
+synthesized attribute isBold :: Boolean;
+synthesized attribute isItalic :: Boolean;
+nonterminal Font with color, isBold, isItalic;
+abstract production font
+top::Font ::= color::Color isBold::Boolean isItalic::Boolean
+{
+  top.color = color;
+  top.isBold = isBold;
+  top.isItalic = isItalic;
+}
+
+--CST for font declaration
+terminal ImpFont_t 'temp_imp_ide_font' lexer classes {KEYWORD};
+terminal Color_kwd 'color' ;
+terminal Bold_kwd 'bold' ;
+terminal Italic_kwd 'italic' ;
+
+synthesized attribute fontList :: [Pair<String Font>];
+attribute fontList occurs on Syntax, SyntaxDcl;
+
+concrete production fontDcl
+top::AGDcl ::= 'temp_imp_ide_font' fontName::IdLower_t 'color' '(' r::Int_t ',' g::Int_t ',' b::Int_t ')' fontStyles::FontStyles ';'
+{
+
+  top.pp = "temp_imp_ide_font " ++ fontName.lexeme ++ " color(" ++ r.lexeme ++ ", " ++ g.lexeme ++ ", " ++ b.lexeme ++ ")" ++ fontStyles.pp ++ "\n";
+  top.location = loc(top.file, $1.line, $1.column);
+
+  top.defs = emptyDefs();
+  
+  top.errors := [];--TODO: add errors later
+
+  top.syntaxAst = [syntaxFont(
+                   fontName.lexeme, 
+                   font(makeColor(toInt(r.lexeme),toInt(g.lexeme),toInt(b.lexeme)), 
+                        fontStyles.isBold, 
+                        fontStyles.isItalic)
+		  )];
+
+  top.ideSpecs = [];
+
+  forwards to emptyAGDcl();
+}
+
+nonterminal FontStyles with isBold, isItalic, pp;
+nonterminal FontStyle with isBold, isItalic;
+
+concrete production consFontStylesDcl
+top::FontStyles ::= fontStyle::FontStyle fontStyles::FontStyles
+{
+  top.isBold = fontStyle.isBold || fontStyles.isBold;
+  top.isItalic = fontStyle.isItalic || fontStyles.isItalic;
+
+  top.pp = (if(top.isBold) then "<bold>" else "") ++ (if(top.isItalic) then "<italic>" else "");
+}
+concrete production nilFontStylesDcl
+top::FontStyles ::= 
+{
+  top.isBold = false;
+  top.isItalic = false;
+}
+
+concrete production fontStyleBoldDcl
+top::FontStyle ::= 'bold'
+{
+  top.isBold = true;
+  top.isItalic = false;
+}
+concrete production fontStyleItalicDcl
+top::FontStyle ::= 'italic'
+{
+  top.isBold = false;
+  top.isItalic = true;
+}
+
+
+-- temp_imp_ide_font KeywordFont color(255,0,0) bold;

@@ -7,6 +7,7 @@ imports silver:definition:env only typeName, unparse, unparseStrings, unparseNon
 
 imports silver:translation:java:core only makeIdName, makeClassName, makeNTClassName;
 imports silver:translation:java:type only transType;
+imports silver:modification:impide;
 
 -- The attribute into which the copper parser is built
 synthesized attribute nxmlCopper :: String;
@@ -60,7 +61,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
 "		<ClassAuxiliaryCode>\n" ++
 "			<Code><![CDATA[\n" ++ 
 
-		getAuxCode() ++
+		getAuxCode(s.fontList, s.termFontPairList) ++ 
 
 "		]]></Code>\n" ++
 "		</ClassAuxiliaryCode>\n" ++
@@ -94,9 +95,13 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
 "import java.util.ArrayList;\n" ++
 "import java.util.Iterator;\n" ++
 "import java.util.List;\n" ++
+"import java.util.HashMap;\n" ++
+"import java.util.Map;\n" ++
 "import edu.umn.cs.melt.copper.runtime.engines.single.scanner.SingleDFAMatchData;\n" ++
 "import edu.umn.cs.melt.ide.copper.*;\n" ++
-"//import edu.umn.cs.melt.ide.copper.coloring.*;\n" ++
+"import edu.umn.cs.melt.ide.copper.coloring.*;\n" ++
+"import org.eclipse.jface.text.TextAttribute;\n" ++
+"import org.eclipse.swt.widgets.Display;\n" ++
 "]]></Code>\n" ++
 "		</Preamble>\n" ++
 
@@ -179,9 +184,10 @@ String ::= syn::Pair<Decorated SyntaxDcl Pair<String String>>
 }
 
 function getAuxCode
-String ::=
+String ::= fontList::[Pair<String Font>] termFontPairList::[Pair<String String>] 
 {
-return "\t//Added by Ming Zhou START\n" ++
+return 
+"\t//IDE Extension START\n" ++
 "    \n" ++
 "\tprotected AdaptiveEnhancedParseTreeInnerNode createPTNode(final Object obj){\n" ++
 "\t    int production = semantics.getCurrentProduction();\n" ++
@@ -249,12 +255,15 @@ return "\t//Added by Ming Zhou START\n" ++
 "\tprivate int _totalOffset = 0;\n" ++
 "\tprivate int _startOffset = 0;\n" ++
 "\tprivate int _endOffset = 0;\n" ++
-"    protected List<IToken> tokenList = null;\n" ++
+"\tprotected List<IToken> tokenList = null;\n" ++
+"\tprivate final Object LOCK = new Object();\n" ++
 "\n" ++
 "    private void addToken(SingleDFAMatchData _terminal){\n" ++
 "    	IToken t = createToken(_terminal);\n" ++
 "\t\tif(t != null){\n" ++
-"\t\t\ttokenList.add(t);\n" ++
+"\t\t\tsynchronized(LOCK){\n" ++
+"\t\t\t\ttokenList.add(t);\n" ++
+"\t\t\t}\n" ++
 "\t\t}  	\n" ++
 "    }\n" ++
 "    \n" ++
@@ -262,7 +271,9 @@ return "\t//Added by Ming Zhou START\n" ++
 "     * Called at the beginning of parse\n" ++
 "     */\n" ++
 "    public void reset(){\n" ++
-"\t\ttokenList = new ArrayList<IToken>();\n" ++
+"\t\tsynchronized(LOCK){\n" ++
+"\t\t\ttokenList = new ArrayList<IToken>();\n" ++
+"\t\t}\n" ++
 "\t\t_totalOffset = 0;\n" ++
 "\t\t_startOffset = 0;\n" ++
 "\t\t_endOffset = 0;\n" ++
@@ -332,13 +343,15 @@ return "\t//Added by Ming Zhou START\n" ++
 "\t\tint endOffset = startOffset + region.getLength();\n" ++
 "\t\t\n" ++
 "\t\tList<IToken> list = new ArrayList<IToken>();\n" ++
-"\t\tIterator<IToken> iter = tokenList.iterator();\n" ++
-"\t\twhile(iter.hasNext()){\n" ++
-"\t\t\tIToken next = iter.next();\n" ++
-"\t\t\tif(next.getStartOffset() < startOffset || next.getEndOffset() > endOffset){\n" ++
-"\t\t\t\tcontinue;\n" ++
-"\t\t\t} else {\n" ++
-"\t\t\t\tlist.add(next);\n" ++
+"\t\tsynchronized(LOCK){\n" ++
+"\t\t\tIterator<IToken> iter = tokenList.iterator();\n" ++
+"\t\t\twhile(iter.hasNext()){\n" ++
+"\t\t\t\tIToken next = iter.next();\n" ++
+"\t\t\t\tif(next.getStartOffset() < startOffset || next.getEndOffset() > endOffset){\n" ++
+"\t\t\t\t\tcontinue;\n" ++
+"\t\t\t\t} else {\n" ++
+"\t\t\t\t\tlist.add(next);\n" ++
+"\t\t\t\t}\n" ++
 "\t\t\t}\n" ++
 "\t\t}\n" ++
 "\t\t\n" ++
@@ -352,12 +365,152 @@ return "\t//Added by Ming Zhou START\n" ++
 "    protected EnhancedParseTree<IEnhancedParseTreeNode> enParseTree = new EnhancedParseTree<IEnhancedParseTreeNode>();\n\n" ++
 
 "\tprotected int getKind(SingleDFAMatchData scanResult){\n" ++
-"\t\t//String term = getSymbolNames()[scanResult.firstTerm];\n" ++
-"\t\t//return tokenClassifier.getKind(term);\n" ++
-"\t\treturn 0;\n" ++
+"\t\tString term = getSymbolNames()[scanResult.firstTerm];\n" ++
+"\t\treturn tokenClassifier.getKind(term);\n" ++
 "\t}\n\n" ++
-"\t//private ICopperTokenClassifier tokenClassifier = SilverLangTokenClassifier.getInstance();\n" ++ --FIXME: the class used here MUST be configurable
-
-"\t//Added by Ming Zhou END\n";
+"\t\n" ++
+"\tprivate ICopperTokenClassifier tokenClassifier = TokenClassifier.getInstance();\n" ++
+"\t\n" ++
+getTokenClassifier(fontList, termFontPairList) ++
+"\t\n" ++
+getTextAttributeDecider(fontList) ++
+"\t//IDE Extension END\n";
 }
 
+-- Inner class TokenClassifier
+function getTokenClassifier
+String ::= fontList::[Pair<String Font>] termFontPairList::[Pair<String String>]
+{
+return
+"\tpublic static class TokenClassifier implements ICopperTokenClassifier {\n" ++
+"\t\tstatic final String PREFIX = \"" ++ getGrammarId() ++ "\" + \"$\";\n" ++
+"\t\t\n" ++
+"\t\tprivate static Map<String, Integer> map = new HashMap<String, Integer>();\n" ++	
+"\t\t\n" ++
+"\t\tpublic final static class TokenType {\n" ++
+"\t\t\tpublic static final int DEFAULT = 0;\n" ++ 
+"\t\t\t\n" ++ 
+getConstantDeclarations(1, fontList) ++
+"\t\t\t\n" ++ 
+"\t\t\tpublic static final int TOTAL = " ++ toString(length(fontList)+1) ++ ";\n" ++ 
+"\t\t}\n" ++	
+"\t\t\n" ++	
+"\t\tstatic{\n" ++	
+"\t\t\t" ++ getPutNameFontPairsIntoMap(termFontPairList) ++ "\n" ++ 
+"\t\t}\n" ++
+"\t\t\n" ++
+"\t\t@Override\n" ++
+"\t\tpublic int getKind(String symbolName) {\n" ++
+"\t\t\tif(symbolName==null || \"\".equals(symbolName)){\n" ++
+"\t\t\t\treturn TokenType.DEFAULT;\n" ++
+"\t\t\t}\n" ++
+"\t\t\t\n" ++		
+"\t\t\tInteger kind = map.get(symbolName);\n" ++
+"\t\t\t\n" ++			
+"\t\t\tif(kind==null){\n" ++
+"\t\t\t\treturn TokenType.DEFAULT;\n" ++
+"\t\t\t}\n" ++
+"\t\t\t\n" ++		
+"\t\t\treturn kind;\n" ++
+"\t\t}\n" ++
+"\t\t\n" ++			
+"\t\tprivate static TokenClassifier INSTANCE = new TokenClassifier();\n" ++
+"\t\t\n" ++		
+"\t\tpublic static TokenClassifier getInstance(){\n" ++
+"\t\t\treturn INSTANCE;\n" ++
+"\t\t}\n" ++
+"\t\t\n" ++		
+"\t\tprivate TokenClassifier(){\n" ++	
+"\t\t\n" ++
+"\t\t}\n" ++
+"\t\n" ++
+"\t}\n";
+}
+
+function getPutNameFontPairsIntoMap
+String ::= termFontPairList::[Pair<String String>]
+{
+return implode("\n\t\t\t", map(getPutNameFontPairIntoMap, termFontPairList));
+}
+
+function getPutNameFontPairIntoMap
+String ::= tokenNameAndFontName::Pair<String String>
+{
+return "map.put(PREFIX+\"" ++ tokenNameAndFontName.fst ++ "\", " ++ "TokenType." ++ 
+       (if(tokenNameAndFontName.snd!="") 
+        then tokenNameAndFontName.snd --TODO check if font name is defined, if not, use DEFAULT
+        else "DEFAULT") ++ ");"; 
+}
+
+function getConstantDeclarations
+String ::= i::Integer fontList::[Pair<String Font>]
+{
+  return if (null(fontList)) 
+         then "" 
+         else ("\t\t\tpublic static final int " ++ 
+              (head(fontList)).fst ++ 
+              " = " ++ toString(i) ++ ";\n" ++ 
+              getConstantDeclarations(i+1, tail(fontList)));
+}
+
+-- Inner class TextAttributeDecider
+function getTextAttributeDecider
+String ::= fontList::[Pair<String Font>]
+{
+return
+"\tpublic static class TextAttributeDecider extends CopperTextAttributeDecider {\n" ++
+"\t\t\n" ++
+"\t\tprivate static TextAttributeDecider INSTANCE = new TextAttributeDecider();\n" ++
+"\t\t\n" ++
+"\t\tpublic static TextAttributeDecider getInstance(){\n" ++
+"\t\t\treturn INSTANCE;\n" ++
+"\t\t}\n" ++
+"\t\t\n" ++
+"\t\tprotected final TextAttribute[] attributes = new TextAttribute[TokenClassifier.TokenType.TOTAL];\n" ++
+"\t\t\n" ++
+"\t\tprivate TextAttributeDecider(){\n" ++
+"\t\t\tDisplay display = Display.getDefault();\n" ++
+"\t\t\t\n" ++
+"\t\t\t" ++ getAttributeInitializations(fontList) ++ "\n" ++
+"\t\t\t\n" ++
+"\t\t\t" ++ getPutAttributesIntoMap(fontList) ++ "\n" ++
+"\t\t}\n" ++
+"\t\n" ++
+"\t}\n";
+}
+
+function getAttributeInitializations
+String ::= fontList::[Pair<String Font>]
+{
+return implode("\n\t\t\t", map(getAttributeInitialization, fontList));
+}
+
+function getAttributeInitialization
+String ::= namedFont::Pair<String Font>
+{
+return "attributes[TokenClassifier.TokenType." ++ namedFont.fst ++ "] = " ++ getAttributeInitializer(namedFont.snd) ++ ";";
+}
+
+function getAttributeInitializer
+String ::= font::Font
+{
+  local attribute color :: Color;
+  color = font.color;
+
+  return "TextAttributeProvider.getAttribute(display, " ++ 
+          toString(color.r) ++ ", " ++ toString(color.g) ++ ", " ++ toString(color.b) ++ ", " ++ 
+          (if(font.isBold) then "true" else "false") ++ ", " ++ 
+          (if(font.isItalic) then "true" else "false") ++ ")";
+}
+
+function getPutAttributesIntoMap
+String ::= fontList::[Pair<String Font>]
+{
+return implode("\n\t\t\t", map(getPutAttributeIntoMap, fontList));
+}
+
+function getPutAttributeIntoMap
+String ::= namedFont::Pair<String Font>
+{
+return "addTextAttribute(TokenClassifier.TokenType." ++ namedFont.fst ++ ", attributes[TokenClassifier.TokenType." ++ namedFont.fst ++ "]);";
+}

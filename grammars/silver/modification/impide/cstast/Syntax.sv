@@ -7,16 +7,23 @@ synthesized attribute classSubContribsNXML :: String;
 attribute classDomContribsNXML occurs on SyntaxDcl;
 attribute classSubContribsNXML occurs on SyntaxDcl;
 
+synthesized attribute termFontPairList :: [Pair<String String>];
+attribute termFontPairList occurs on Syntax, SyntaxDcl;
+
 aspect production nilSyntax
 top::Syntax ::=
 {
   top.nxmlCopper = "";
+  top.fontList = [];
+  top.termFontPairList = [];
 }
 
 aspect production consSyntax
 top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {
   top.nxmlCopper = s1.nxmlCopper ++ s2.nxmlCopper;
+  top.fontList = s1.fontList ++ s2.fontList;
+  top.termFontPairList = s1.termFontPairList ++ s2.termFontPairList;
 }
 
 aspect default production
@@ -24,6 +31,8 @@ top::SyntaxDcl ::=
 {
   top.classDomContribsNXML = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.classSubContribsNXML = error("Internal compiler error: should only ever be demanded of lexer classes");
+  top.fontList = [];
+  top.termFontPairList = [];
 }
 
 aspect production syntaxNonterminal
@@ -40,6 +49,7 @@ top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModi
 aspect production syntaxTerminal
 top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
 {
+  top.termFontPairList = [ pair(makeCopperName(n), modifiers.fontAttr) ];
   top.nxmlCopper =
     "\n\t\t\t<Terminal id=\"" ++ makeCopperName(n) ++ "\">\n" ++
       "\t\t\t\t<PP>" ++ makeCopperName(n) ++ "</PP>\n" ++
@@ -134,6 +144,22 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
     "return " ++ getGrammarId() ++ "$" ++ substring(7, length(acode), acode) ++  
     "\n]]></Code>\n" ++
     "  </DisambiguationFunction>\n";
+}
+
+abstract production syntaxFont
+top::SyntaxDcl ::= fontName::String fnt::Font
+{
+  top.nxmlCopper = "";
+  top.fontList = [pair(fontName, fnt)];
+
+  top.sortKey = "111"; -- Doesn't really matter
+  top.cstDcls = [pair(fontName, top)]; -- maybe this isn't needed.
+  top.cstErrors := [];
+  top.cstNormalize = [top];
+  
+  top.xmlCopper = "";
+  top.unparses = [];-- TODO builds won't work right unless you provide --clean
+
 }
 
 function createNxmlCopperTermElementRef
