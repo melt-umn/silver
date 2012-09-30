@@ -76,7 +76,7 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 concrete production assignExpr
 top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
 {
-  top.pp = id.name ++ " :: " ++ t.pp ++ " = " ++ e.pp;
+  top.pp = id.pp ++ " :: " ++ t.pp ++ " = " ++ e.pp;
   
   -- Using finalTy here, so our defs requires we have downSubst...
   -- The reason we're putting the type in the environment AFTER inference is so that

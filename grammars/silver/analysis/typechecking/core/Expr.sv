@@ -667,18 +667,8 @@ top::AppExpr ::= '_'
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
   e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e.typerep, top.appExprTyperep);
-  top.errors <-
-    if !errCheck1.typeerror then []
-    else [err(top.location, "Argument " ++ toString(top.appExprIndex+1) ++ " of function '" ++
-            top.appExprApplied ++ "' expected " ++ errCheck1.rightpp ++
-            " but argument is of type " ++ errCheck1.leftpp)];
+  forward.downSubst = e.upSubst;
 }
 
 aspect production decoratedAppExpr
