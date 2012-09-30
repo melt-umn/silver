@@ -9,7 +9,7 @@ aspect production run
 top::RunUnit ::= iIn::IO args::[String]
 {
   -- aggregate all flow def information, filtering out those that are not permitted to affect flow types
-  local filteredFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), filter((.mayAffectFlowType), foldr(append, [], map((.flowDefs), grammars))));
+  local filteredFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), grammars)));
   local allFlowEnv :: Decorated FlowEnv = fromFlowDefs(filteredFlowDefs);
   
   -- Look up tree for production info
@@ -23,23 +23,18 @@ top::RunUnit ::= iIn::IO args::[String]
   production allProds :: [String] = nubBy(stringEq, map((.fullName), allRealDefs.prodDclList));
   
   -- Fix the production graph information from the flow defs TODO: some of this maybe should be fixed somehow
-  production prodGraph :: [Pair<ProdName [Pair<FlowVertex FlowVertex>]>] = 
-    fixupGraphs(allProds, prodTree, allFlowEnv, allRealEnv);
-  
-  -- Graph some random info about productions TODO: maybe hack?
-  local prodinfos :: EnvTree<Pair<NtName [Pair<(FlowVertex ::= String) String>]>> =
-    directBuildTree(makeProdLocalInfo(allProds, prodTree, allRealEnv));
+  production prodGraph :: [ProductionGraph] = 
+    computeAllProductionGraphs(allProds, prodTree, allFlowEnv, allRealEnv);
   
   -- Now, solve for flow types!!
   production flowTypes_almost :: EnvTree<Pair<String String>> =
-    fullySolveFlowTypes(prodinfos, prodGraph, allRealEnv, rtm:empty(compareString));
+    fullySolveFlowTypes(prodGraph, allRealEnv, rtm:empty(compareString));
   
   -- Non-host syn patch the flow types! (Composition generates new equations
   -- that requires non-host syn to potentially need to evaluate forwards
   -- to be able to evaluate on new productions.)
   -- TODO: think about whether this is a bug or not! Do we need to propagate these
-  -- constraints? Can they affect other flow info? Possibly... maybe we should somehow
-  -- be generating edges instead in the graphs??
+  -- constraints? YES WE DO. THIS IS A BUG. FIXME.
   production flowTypes :: EnvTree<Pair<String String>> =
     patchFlowTypes(flowTypes_almost, filteredFlowDefs.nonHostSynAttrs);
   
@@ -49,32 +44,50 @@ top::RunUnit ::= iIn::IO args::[String]
 
   -- Note: Nope! Not okay to use the filtered flowdefs for these. UGHHH
   -- Problem with 'fwd' nodes disappearing in some computations (checking known-generated fwd equations flow types)
+  -- And the possibility (not sure) that the production flow graphs are assumed to be "fully there"
+  
+  -- TODO: perhaps we should be constructing these graphs more locally?
+  -- If we need to NOT filter, then they're kinda local things right?
+  -- Maybe the production/function/aspect itself should gather up
+  -- the info and stitch their own flow graphs? TODO consider doing this instead!!
+  
+  -- So, what do we need? prodGraph and prodinfos.
+  -- What do we need for prodGraph? allProds prodTree allFlowEnv allRealEnv
+  -- allProds and allRealEnv are okay.  prodTree and allFlowEnv are suspect.
+  -- Both come straight from the flowdefs.
+  -- What about prodinfos? allPRods prodTree allRealEnv.
+  -- Again, only prodTree is suspect.
+  -- So, all flow defs, prodtree, allflowenv, 
+  -- TODO: problem: we're filtering out some fwdDefs and then using the existence of them to know if
+  -- a prod forwards.  Further, we're removing those deps, not just for fwd but for syn too,
+  -- when they maybe SHOULD affect flow types of other things. Problem is there's no way to say
+  -- "these edges, IFF they appear in the flow type for this equation" in the graph computation...
+  -- What to do?
+  -- Run the graph computation. Get result, add appropriate edges that we previously filtered out,
+  -- iterate until we converge on no new admitted edges? I suppose...
+  
 
   -- We'd like a final version of the stitched flow graphs to pass down
-  unit.productionFlowGraphs = stitchAllGraphs(prodGraph, prodinfos, flowTypes);
+  unit.productionFlowGraphs = stitchAllGraphs(prodGraph, flowTypes);
   reUnit.productionFlowGraphs = unit.productionFlowGraphs;
   -- TODO: Turn these into trees prior to passing them down. (i.e. EnvTree<EnvTree<FlowVertex>>)
 }
 
 
-function getFst
-a ::= v::Pair<a b>
-{ return v.fst; }
 
 function stitchAllGraphs
-[Pair<ProdName [Pair<FlowVertex FlowVertex>]>] ::=
-  graphs :: [Pair<ProdName [Pair<FlowVertex FlowVertex>]>]
-  prodinfos :: EnvTree<Pair<NtName [Pair<(FlowVertex ::= String) String>]>>
+[ProductionGraph] ::=
+  graphs :: [ProductionGraph]
   finalFlowTypes :: EnvTree<Pair<String String>>
 {
-  return map(stitchAProdGraph(_, prodinfos, finalFlowTypes), graphs);
+  return map(stitchAProdGraph(_, finalFlowTypes), graphs);
 }
 function stitchAProdGraph
-Pair<ProdName [Pair<FlowVertex FlowVertex>]> ::=
-  graphs :: Pair<ProdName [Pair<FlowVertex FlowVertex>]>
-  prodinfos :: EnvTree<Pair<NtName [Pair<(FlowVertex ::= String) String>]>>
+ProductionGraph ::=
+  graphs :: ProductionGraph
   finalFlowTypes :: EnvTree<Pair<String String>>
 {
-  return pair(graphs.fst, stitchGraph(graphs.snd, head(searchEnvTree(graphs.fst, prodinfos)).snd, finalFlowTypes));
+  graphs.flowTypes = finalFlowTypes;
+  return graphs.stitchedGraph;
 }
 
