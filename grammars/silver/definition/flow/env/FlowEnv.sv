@@ -9,7 +9,7 @@ exports silver:definition:flow:env_parser with silver:definition:env:env_parser;
 autocopy attribute flowEnv :: Decorated FlowEnv;
 synthesized attribute flowDefs :: [FlowDef];
 
-nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree;
+nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree;
 
 inherited attribute synTree :: EnvTree<FlowDef>;
 inherited attribute inhTree :: EnvTree<FlowDef>;
@@ -19,6 +19,7 @@ inherited attribute fwdInhTree :: EnvTree<FlowDef>;
 inherited attribute prodTree :: EnvTree<FlowDef>;
 inherited attribute refTree :: EnvTree<FlowDef>;
 inherited attribute localInhTree ::EnvTree<FlowDef>;
+inherited attribute localTree :: EnvTree<FlowDef>;
 
 abstract production dummyFlowEnv
 top::FlowEnv ::=
@@ -38,6 +39,7 @@ Decorated FlowEnv ::= d::FlowDefs
   e.prodTree = directBuildTree(d.prodTreeContribs);
   e.refTree = directBuildTree(d.refTreeContribs);
   e.localInhTree = directBuildTree(d.localInhTreeContribs);
+  e.localTree = directBuildTree(d.localTreeContribs);
   
   return e;
 }
@@ -83,6 +85,12 @@ function lookupLocalInh
 [FlowDef] ::= prod::String  fName::String  attr::String  e::Decorated FlowEnv
 {
   return searchEnvTree(crossnames(prod, crossnames(fName, attr)), e.localInhTree);
+}
+
+function lookupLocalEq
+[FlowDef] ::= prod::String  fName::String  e::Decorated FlowEnv
+{
+  return searchEnvTree(crossnames(prod, fName), e.localTree);
 }
 
 -- all (non-forwarding) productions constructing a nonterminal

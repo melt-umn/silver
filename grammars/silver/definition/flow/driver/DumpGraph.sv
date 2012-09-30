@@ -35,7 +35,7 @@ function findAllNts
 
 
 abstract production dumpFlowGraphAction
-top::Unit ::= allNts::[String]  prodGraph::[Pair<String [Pair<FlowVertex FlowVertex>]>]  flowTypes::EnvTree<Pair<String String>>
+top::Unit ::= allNts::[String]  prodGraph::[ProductionGraph]  flowTypes::EnvTree<Pair<String String>>
 {
   top.io = 
     writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(allNts, flowTypes) ++ "}", 
@@ -79,11 +79,11 @@ String ::= nt::String  e::Pair<String String>
 }
 
 function generateDotGraph
-String ::= specs::[Pair<String [Pair<FlowVertex FlowVertex>]>]
+String ::= specs::[ProductionGraph]
 {
   return case specs of
   | [] -> ""
-  | pair(prod, edges)::t ->
+  | productionGraph(prod, _, _, edges, _, _, _)::t ->
       "subgraph \"cluster:" ++ prod ++ "\" {\n" ++ 
       implode("", map(makeDotArrow(prod, _), edges)) ++
       "}\n" ++
@@ -104,7 +104,12 @@ String ::= p::String e::Pair<FlowVertex FlowVertex>
  -}
 synthesized attribute dotName :: String occurs on FlowVertex;
 
-aspect production lhsVertex
+aspect production lhsSynVertex
+top::FlowVertex ::= attrName::String
+{
+  top.dotName = attrName;
+}
+aspect production lhsInhVertex
 top::FlowVertex ::= attrName::String
 {
   top.dotName = attrName;
