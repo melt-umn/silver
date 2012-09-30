@@ -22,7 +22,7 @@ Decorated Env ::= d::[Def]  e::Decorated Env
   return decorate addEnv_i(d, e) with {};
 }
 
--- Environement representation productions
+-- Environment representation productions
 
 abstract production emptyEnv_i
 top::Env ::=

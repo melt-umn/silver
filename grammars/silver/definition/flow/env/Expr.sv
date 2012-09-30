@@ -319,11 +319,6 @@ top::AppExpr ::= '_'
 {
   top.flowDeps = [];
 }
-aspect production presentAppExpr
-top::AppExpr ::= e::Expr
-{
-  top.flowDeps = e.flowDeps;
-}
 aspect production decoratedAppExpr
 top::AppExpr ::= e::Decorated Expr
 {
