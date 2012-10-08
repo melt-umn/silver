@@ -208,18 +208,23 @@ class SilverJob(JenkinsJobConfig):
 
 #####
 class SubversionJob(JenkinsJobConfig):
-	def __init__(self, jobname, description, remotepath, localpath, command):
+	def __init__(self, jobname, description, paths, command):
 		self.jobname = jobname
 		self.description = description
 		self.command = command
-		self.svnremote = remotepath
-		self.svnlocal = localpath
+		self.paths = ''.join([self.pairToConfig(p) for p in paths])
+
+	def pairToConfig(self, (r,l)):
+		return string.Template("""
+      <hudson.scm.SubversionSCM_-ModuleLocation>
+        <remote>${r}</remote>
+        <local>${l}</local>
+      </hudson.scm.SubversionSCM_-ModuleLocation>""").substitute(r=r, l=l)
 
 	def configXml(self):
 		assert self.description != "", "Must provide description"
 		assert self.command != "", "Must provide command"
-		assert self.svnremote != "", "Must provide svnremote"
-		assert self.svnlocal != "", "Must provide svnlocal"
+		assert self.paths != "", "Must provide paths"
 		return string.Template("""<?xml version='1.0' encoding='UTF-8'?>
 <project>
   <actions/>
@@ -227,11 +232,7 @@ class SubversionJob(JenkinsJobConfig):
   <keepDependencies>false</keepDependencies>
   <properties/>
   <scm class="hudson.scm.SubversionSCM">
-    <locations>
-      <hudson.scm.SubversionSCM_-ModuleLocation>
-        <remote>${svnremote}</remote>
-        <local>${svnlocal}</local>
-      </hudson.scm.SubversionSCM_-ModuleLocation>
+    <locations>${paths}
     </locations>
     <excludedRegions></excludedRegions>
     <includedRegions></includedRegions>
@@ -261,19 +262,24 @@ class SubversionJob(JenkinsJobConfig):
 
 #####
 class MeltsvnGrammarJob(SubversionJob):
-	def __init__(self, jobname, pregrammar, subgrammar, includepath="grammars", invoke=""):
+	def __init__(self, jobname, pregrammar, subgrammar, includepath="grammars", invoke="", deps=[]):
 		self.jobname = "meltsvn-" + jobname
 		self.grammar = pregrammar + ":" + subgrammar
 		self.description = "Build grammar " + self.grammar + " located in meltsvn/" + includepath
-		self.svnlocal = includepath + "/" + pregrammar.replace(":", "/")
-		self.svnremote = "https://www-users.cs.umn.edu/meltsvn/" + self.svnlocal
+		svnlocal = includepath + "/" + pregrammar.replace(":", "/")
+		self.paths = ''.join([self.grammarToConfig(includepath, g) for g in [pregrammar] + deps])
 		self.command = silverInvoke(grammar=self.grammar, generated=".", include=includepath)
 		if invoke == True:
 			self.command += "\n" + \
-			               "cd " + self.svnlocal + "/" + subgrammar.replace(":", "/") + "\n" + \
+			               "cd " + svnlocal + "/" + subgrammar.replace(":", "/") + "\n" + \
 			               "java -jar $WORKSPACE/" + self.grammar.replace(":",".") + ".jar"
 		elif invoke != "":
 			self.command += "\n" + invoke
+	
+	def grammarToConfig(self, includepath, g):
+		local = includepath + "/" + g.replace(":", "/")
+		remote = "https://www-users.cs.umn.edu/meltsvn/" + local
+		return self.pairToConfig((remote, local))
 
 #####
 class ProxyJob(JenkinsJobConfig):
@@ -345,13 +351,12 @@ MeltsvnGrammarJob("Matlab-host", "edu:umn:cs:melt:MATLAB", "artifacts:MATLAB"),
 #MeltsvnGrammarJob("miniHaskell-host", "edu:umn:cs:melt:miniHaskell", "host:bin"),
 #MeltsvnGrammarJob("miniHaskell-host-tests", "edu:umn:cs:melt:miniHaskell", "host:tests", invoke=True),
 
-# TODO: Will be rebuilt way too often. Find better solution for getting ableC with it?
-MeltsvnGrammarJob("ableP-host",              "edu:umn:cs:melt", "ableP:artifacts:promela"), 
-MeltsvnGrammarJob("ableP-host-tests",        "edu:umn:cs:melt", "ableP:artifacts:promela:tests", invoke=True), 
-MeltsvnGrammarJob("ableP-promelaCore",       "edu:umn:cs:melt", "ableP:artifacts:promelaCore"), 
-MeltsvnGrammarJob("ableP-promelaCore-tests", "edu:umn:cs:melt", "ableP:artifacts:promelaCore:tests", invoke=True), 
-MeltsvnGrammarJob("ableP-aviation",          "edu:umn:cs:melt", "ableP:artifacts:aviation"), 
-MeltsvnGrammarJob("ableP-aviation-tests",    "edu:umn:cs:melt", "ableP:artifacts:aviation:tests", invoke=True), 
+MeltsvnGrammarJob("ableP-host",              "edu:umn:cs:melt:ableP", "artifacts:promela", deps=["edu:umn:cs:melt:ableC"]), 
+MeltsvnGrammarJob("ableP-host-tests",        "edu:umn:cs:melt:ableP", "artifacts:promela:tests", deps=["edu:umn:cs:melt:ableC"], invoke=True), 
+MeltsvnGrammarJob("ableP-promelaCore",       "edu:umn:cs:melt:ableP", "artifacts:promelaCore", deps=["edu:umn:cs:melt:ableC"]),
+MeltsvnGrammarJob("ableP-promelaCore-tests", "edu:umn:cs:melt:ableP", "artifacts:promelaCore:tests", deps=["edu:umn:cs:melt:ableC"], invoke=True), 
+MeltsvnGrammarJob("ableP-aviation",          "edu:umn:cs:melt:ableP", "artifacts:aviation", deps=["edu:umn:cs:melt:ableC"]), 
+MeltsvnGrammarJob("ableP-aviation-tests",    "edu:umn:cs:melt:ableP", "artifacts:aviation:tests", deps=["edu:umn:cs:melt:ableC"], invoke=True), 
 
 MeltsvnGrammarJob("ableC-host", "edu:umn:cs:melt:ableC", "host:bin"), 
 MeltsvnGrammarJob("ableC-host-tests", "edu:umn:cs:melt:ableC", "host:tests", invoke=True), 
