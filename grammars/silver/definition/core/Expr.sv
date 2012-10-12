@@ -220,6 +220,8 @@ top::Expr ::= e::Expr '(' es::AppExprs ')'
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   top.location = e.location;
   
+  -- TODO: You know, since the rule is we can't access .typerep without "first" supplying
+  -- .downSubst, perhaps we should just... report .typerep after substitution in the first place!
   forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es);
 }
 
@@ -847,15 +849,8 @@ top::AppExpr ::= e::Expr
 {
   top.pp = e.pp;
   top.location = e.location;
-  
-  top.isPartial = false;
-  top.missingTypereps = [];
-  
-  top.rawExprs = [e];
-  top.exprs = [e];
-  top.appExprIndicies = [top.appExprIndex];
-  
-  top.errors := e.errors;
+
+  forwards to decoratedAppExpr(e);
 }
 
 abstract production decoratedAppExpr

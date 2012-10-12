@@ -168,9 +168,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {-That's really
   local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
 
   local mayAffectFlowType :: Boolean =
-    contains(top.grammarName, computeOptionalDeps([ntDefGram], top.compiledGrammars));
+    contains(top.grammarName, computeOptionalDeps([ntDefGram, occursCheck.dcl.sourceGrammar], top.compiledGrammars));
 
-  top.flowDefs = [extraEq(top.signature.fullName, lhsVertex(attr.lookupAttribute.fullName), e.flowDeps, mayAffectFlowType)];
+  top.flowDefs = [extraEq(top.signature.fullName, lhsSynVertex(attr.lookupAttribute.fullName), e.flowDeps, mayAffectFlowType)];
 }
 
 aspect production inhAppendColAttributeDef
@@ -187,6 +187,26 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   top.flowDefs = [extraEq(top.signature.fullName, vertex, e.flowDeps, true)];
 }
 
+aspect production appendCollectionValueDef
+top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+{
+  local locDefGram :: String = if null(val.lookupValue.dcls) then "" else val.lookupValue.dcl.sourceGrammar;
+
+  local mayAffectFlowType :: Boolean =
+    contains(top.grammarName, computeOptionalDeps([locDefGram], top.compiledGrammars));
+
+  -- TODO: So, locals that may affect flow types' suspect edges can NEVER have an effect
+  -- so we don't bother to even emit the extra equations in that case.
+  -- But, this means we might lose out on knowing there's a contribution here.
+  -- If we ever start using this information to locate contributions.
+  -- If we do, we'll have to come back here to add 'location' info anyway,
+  -- so if we do that, uhhh... fix this! Because you're here! Reading this!
+
+  top.flowDefs = 
+    if mayAffectFlowType
+    then [extraEq(top.signature.fullName, localEqVertex(val.lookupValue.fullName), e.flowDeps, true)]
+    else [];
+}
 ------ FROM COPPER TODO
 
 aspect production pluckDef
@@ -214,14 +234,6 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 }
 
 
--- FROM DEFAULTATTR TODO
-{-
-aspect production defaultLhsDefLHS
-top::DefLHS ::= q::Decorated QName
-{
-  top.partialVertex = lhsVertex;
-}
--}
 
 
 

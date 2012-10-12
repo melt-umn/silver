@@ -1,7 +1,7 @@
 grammar silver:definition:env;
 
 import silver:util:raw:treemap as rtm; -- TODO 
-import silver:definition:flow:ast only FlowVertex;
+import silver:definition:flow:driver only ProductionGraph;
 
 {--
  - RootSpecs have two functions:
@@ -46,7 +46,7 @@ synthesized attribute moduleNames :: [String];
 synthesized attribute allGrammarDependencies :: [String];
 {-- flow stuff -}
 synthesized attribute flowTypes :: EnvTree<Pair<String String>>;
-synthesized attribute prodFlowGraphs :: [Pair<String [Pair<FlowVertex FlowVertex>]>];
+synthesized attribute prodFlowGraphs :: [ProductionGraph];
 
 function emptyRootSpec
 Decorated RootSpec ::= 
