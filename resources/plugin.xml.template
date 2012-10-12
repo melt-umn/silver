@@ -79,4 +79,11 @@ Variables used:
          </action>
       </objectContribution>
    </extension>
+   <extension
+         point="org.eclipse.imp.runtime.tokenColorer">
+      <tokenColorer
+            class="@PKG_NAME@.imp.coloring.Colorer"
+            language="@LANG_NAME@">
+      </tokenColorer>
+   </extension>
 </plugin>

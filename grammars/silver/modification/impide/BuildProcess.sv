@@ -82,7 +82,7 @@ String ::=
     "<filter token=\"LANG_NAME\" value='${lang.name}'/>\n" ++
     "<filter token=\"SOURCE_EXT\" value='${ide.fileextension}'/>\n" ++
     "<filter token=\"IDE_VERSION\" value='${ide.version}'/>\n" ++
-    "<filter token=\"PROJ_NAME\" value='${lang.name}_IDE_RPOJECT'/>\n" ++
+    "<filter token=\"PROJ_NAME\" value='${lang.name}_IDE_PROJECT'/>\n" ++
     "<filter token=\"COPPER_RUNTIME_PATH\" value='${sh}/jars/CopperRuntime.jar'/>\n" ++
     "<filter token=\"LANG_COMPOSED\" value='${lang.composed}'/>\n" ++
     "<filter token=\"FEATURE_DESCRIPTION_URL\" value='http://some.user.provided.url'/>\n" ++	-- TODO User-provided variables
@@ -169,6 +169,11 @@ String ::=
     "      tofile=\"${ide.pkg.path}/imp/builders/${lang.name}Nature.java\" filtering=\"true\"/>\n" ++
     "<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/builder.java.template\"\n" ++
     "      tofile=\"${ide.pkg.path}/imp/builders/${lang.name}Builder.java\" filtering=\"true\"/>\n" ++
+    "\n" ++
+
+    "<mkdir dir='${ide.pkg.path}/imp/coloring'/>\n" ++
+    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/coloring/Colorer.java.template\"\n" ++
+    "      tofile=\"${ide.pkg.path}/imp/coloring/Colorer.java\" filtering=\"true\"/>\n" ++
     "\n" ++
 
     "<!-- 9. pom.xml (using tycho) -->\n" ++
