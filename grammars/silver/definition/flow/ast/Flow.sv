@@ -1,6 +1,6 @@
 grammar silver:definition:flow:ast;
 
-imports silver:definition:env only quoteString, unparse;
+imports silver:definition:env only quoteString,unparseStrings, unparse;
 
 nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, nonHostSynAttrs, localTreeContribs;
 nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, suspectFlowEdges, nonHostSynAttrs, localTreeContribs;
@@ -143,7 +143,7 @@ top::FlowDef ::= nt::String  inhs::[String]
   top.refTreeContribs = [pair(nt, top)];
   top.prodGraphContribs = [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
-  top.unparses = error("TODO");
+  top.unparses = ["ntRefFlowDef(" ++quoteString(nt)++ ", " ++ unparseStrings(inhs) ++ ")"];
 }
 
 {--
@@ -177,7 +177,8 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]  mayAffectFlowTy
   local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(lhsSynVertex(attr), _), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
-  top.unparses = ["syn(" ++ implode(", ", [quoteString(prod), quoteString(attr), unparseVertices(deps)]) ++ ")"];
+  
+  top.unparses = ["syn(" ++ implode(", ", [quoteString(prod), quoteString(attr), unparseVertices(deps),if mayAffectFlowType then "t" else "f"]) ++ ")"];
 }
 
 {--
@@ -231,7 +232,7 @@ top::FlowDef ::= prod::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
   local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(forwardEqVertex(), _), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
-  top.unparses = ["fwd(" ++ implode(", ", [quoteString(prod), unparseVertices(deps)]) ++ ")"];
+  top.unparses = ["fwd(" ++ implode(", ", [quoteString(prod), unparseVertices(deps),if mayAffectFlowType then "t" else "f"]) ++ ")"];
 }
 
 {--
@@ -303,7 +304,7 @@ top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]  mayAffectFlo
   local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(src, _), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
-  top.unparses = ["extra(" ++ implode(", ", [quoteString(prod), src.unparse, unparseVertices(deps)]) ++ ")"];
+  top.unparses = ["extra(" ++ implode(", ", [quoteString(prod), src.unparse, unparseVertices(deps),if mayAffectFlowType then "t" else "f"]) ++ ")"];
 }
 
 --

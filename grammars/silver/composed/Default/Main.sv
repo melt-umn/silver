@@ -38,13 +38,14 @@ parser rParse::Root {
 
 parser iParse::IRootSpec {
   silver:host:env;
-
+  silver:definition:flow:env_parser;
+  
   silver:modification:collection:env_parser;
   silver:modification:autocopyattr:env_parser;
   silver:modification:ffi:env_parser;
   silver:modification:typedecl:env_parser;
   silver:modification:copper:env_parser;
-  
+
   silver:extension:list:env_parser;
 }
 
