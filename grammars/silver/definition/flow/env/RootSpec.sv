@@ -6,8 +6,9 @@ attribute flowDefs occurs on RootSpec;
 aspect function unparseRootSpec
 String ::= r::Decorated RootSpec
 {
-  -- TEMPORARILY DISABLED TODO FIX ENV PARSER (finish it)
-  --unparses <- ["flow [" ++ implode(",\n ", foldr(consFlow, nilFlow(), r.flowDefs).unparses) ++ "]"];
+  
+  unparses <- ["flow [" ++ implode(",\n ", foldr(consFlow, nilFlow(), r.flowDefs).unparses) ++ "]"];
+  
 }
 
 aspect production i_emptyRootSpec
