@@ -55,9 +55,12 @@ top::ProductionGraph ::=
     let newEdges :: [Pair<FlowVertex FlowVertex>] =
           filter(edgeIsNew(_, edgeGraph),
             foldr(append, [], map(stitchEdgesFor(_, top.flowTypes), stitchPoints)))
-    in
-      if null(newEdges) then top else
-        productionGraph(prod, lhsNt, nubBy(flowVertexEq, map(getFst, newEdges) ++ vertexes), newEdges ++ edges, extendEnv(newEdges, edgeGraph), suspectEdges, stitchPoints).transitiveClosure end;
+    in let newVertexes :: [FlowVertex] = nubBy(flowVertexEq, map(getFst, newEdges) ++ vertexes)
+    in let repaired :: Pair<[Pair<FlowVertex FlowVertex>] EnvTree<FlowVertex>> =
+             repairClosure(newEdges, newVertexes, edges, edgeGraph)
+    in if null(newEdges) then top else
+         productionGraph(prod, lhsNt, newVertexes, repaired.fst, repaired.snd, suspectEdges, stitchPoints)
+    end end end;
   
   top.transitiveClosure =
     let transitiveClosure :: Pair<[Pair<FlowVertex FlowVertex>] EnvTree<FlowVertex>> =
@@ -68,11 +71,15 @@ top::ProductionGraph ::=
   top.edgeMap = searchGraphEnv(_, edgeGraph);
   
   top.cullSuspect = 
-    let admissible :: [Pair<FlowVertex FlowVertex>] =
+    let newEdges :: [Pair<FlowVertex FlowVertex>] =
           foldr(append, [], 
             map(isSuspectEdgeAdmissible(_, edgeGraph, searchEnvTree(lhsNt, top.flowTypes)), suspectEdges))
-    in
-      productionGraph(prod, lhsNt, vertexes, admissible ++ edges, extendEnv(admissible, edgeGraph), suspectEdges, stitchPoints).transitiveClosure end;
+    in let newVertexes :: [FlowVertex] = nubBy(flowVertexEq, map(getFst, newEdges) ++ vertexes)
+    in let repaired :: Pair<[Pair<FlowVertex FlowVertex>] EnvTree<FlowVertex>> =
+             repairClosure(newEdges, newVertexes, edges, edgeGraph)
+    in if null(newEdges) then top else
+         productionGraph(prod, lhsNt, newVertexes, repaired.fst, repaired.snd, suspectEdges, stitchPoints)
+    end end end;
 }
 
 {--
@@ -286,14 +293,25 @@ function transitiveCloseIteration
   
   return map(pair(vertex, _), newEdges);
 }
+{--
+ - @param need  A set of vertexes to examine the dependencies of
+ - @param seen  A set of already processed vertexes
+ - @param old   A set of edges that already exist
+ - @param graph The graph
+ - @return A set of NEW vertexes that should be introduced!
+ -}
 function transitiveCloseSet
 [FlowVertex] ::= need::[FlowVertex]  seen::[FlowVertex]  old::[FlowVertex]  graph::EnvTree<FlowVertex>
 {
   local expanded :: [FlowVertex] = searchGraphEnv(head(need), graph);
 
+  -- If there's nothing needed, then no new edges are introduced.
   return if null(need) then []
+  -- If this vertex has already been processed, discard it.
   else if containsBy(flowVertexEq, head(need), seen) then transitiveCloseSet(tail(need), seen, old, graph)
+  -- If this vertex is already in the dependencies, discard. But we must consider those dependencies, still...
   else if containsBy(flowVertexEq, head(need), old) then transitiveCloseSet(expanded ++ tail(need), head(need) :: seen, old, graph)
+  -- The vertex is new! Emit the new edge, and continue... (note this is the same continue as above ^^)
   else head(need) :: transitiveCloseSet(expanded ++ tail(need), head(need) :: seen, old, graph);
 }
 function getFst
@@ -317,19 +335,58 @@ EnvTree<FlowVertex> ::= newEdges::[Pair<FlowVertex FlowVertex>]  currentGraph::E
 ---- End transitive Closure computation ----------------------------------------
 
 ---- Begin transitive closure repair function ----------------------------------
-{- Reconsidered, for the moment. 
 function repairClosure
 Pair<[Pair<FlowVertex FlowVertex>] EnvTree<FlowVertex>> ::=
   newEdges::[Pair<FlowVertex FlowVertex>]
+  vertexes::[FlowVertex]
   currentEdges::[Pair<FlowVertex FlowVertex>]
   currentGraph::EnvTree<FlowVertex>
 {
-  
+  local repairIter :: Pair<[Pair<FlowVertex FlowVertex>] EnvTree<FlowVertex>> = 
+    repairClosureEdge(head(newEdges), vertexes, currentEdges, currentGraph);
 
   return if null(newEdges) then pair(currentEdges, currentGraph)
-  else error(""); -- TODO finish!
+  else repairClosure(tail(newEdges), vertexes, repairIter.fst, repairIter.snd);
 }
--}
+function repairClosureEdge
+Pair<[Pair<FlowVertex FlowVertex>] EnvTree<FlowVertex>> ::=
+  newEdge::Pair<FlowVertex FlowVertex>
+  vertexes::[FlowVertex]
+  currentEdges::[Pair<FlowVertex FlowVertex>]
+  currentGraph::EnvTree<FlowVertex>
+{
+  local allNewEdges :: [Pair<FlowVertex FlowVertex>] =
+    foldr(append, [], map(repairClosureVertex(newEdge, _, currentEdges, currentGraph), vertexes));
+  
+  return pair(allNewEdges ++ currentEdges, extendEnv(allNewEdges, currentGraph));
+}
+{--
+ - @param newEdge  An edge to consider
+ - @param vertex  A vertex to consider
+ - @return A list of NEW edges to introduce to the graph, to repair the
+ -  existing transitive closure, adding this edge.
+ -}
+function repairClosureVertex
+[Pair<FlowVertex FlowVertex>] ::=
+  newEdge::Pair<FlowVertex FlowVertex>
+  vertex::FlowVertex
+  currentEdges::[Pair<FlowVertex FlowVertex>]
+  currentGraph::EnvTree<FlowVertex>
+{
+  -- Input graph (edges, graph) is already transitively closed.
+  -- We're focused on JUST vertex
+  
+  local deps :: [FlowVertex] = searchGraphEnv(vertex, currentGraph);
+  local newDeps :: [FlowVertex] = searchGraphEnv(newEdge.snd, currentGraph);
+  
+  -- If the edge source not this vertex, nor in the existing deps, do nothing
+  return if !containsBy(flowVertexEq, newEdge.fst, vertex :: deps) then []
+  -- From here on out, the target deps should be added to this vertex.
+  -- If the edge target is already in the deps, do nothing. Old news.
+  else if containsBy(flowVertexEq, newEdge.snd, deps) then []
+  -- Otherwise, remove all source deps from target deps, and introduce these edges.
+  else map(pair(vertex, _), removeAllBy(flowVertexEq, deps, newEdge.snd :: newDeps));
+}
 ---- End transitive closure repair function ------------------------------------
 
 
