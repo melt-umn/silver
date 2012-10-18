@@ -19,7 +19,7 @@ silverStableWorkspace = "/export/scratch/melt-jenkins/custom-stable-dump"
 jenkinsURL = "localhost:8080"
 # User name and API token. Note this is not your password! Check user config page to see it.
 jenkinsUsername = "tedinski"
-jenkinsAPIToken = ""
+jenkinsAPIToken = "33f325b9b8a8cacd5cf612e2017a91e1"
 
 ## END: config stuff
 
@@ -370,8 +370,9 @@ MeltsvnGrammarJob("ableJ-tables",     "edu:umn:cs:melt:ableJ14", "composed:java_
 MeltsvnGrammarJob("ableJ-pizza",      "edu:umn:cs:melt:ableJ14", "composed:java_pizza:bin"), 
 MeltsvnGrammarJob("ableJ-rlp",        "edu:umn:cs:melt:ableJ14", "composed:java_rlp:bin"), 
 
-# simple is not set up to build properly yet
-MeltsvnGrammarJob("simple-host", "edu:umn:cs:melt:simple", "host"), 
+MeltsvnGrammarJob("simple-host",   "edu:umn:cs:melt:simple", "host:artifact"),
+MeltsvnGrammarJob("simple-matrix", "edu:umn:cs:melt:simple", "compositions:simple_matrix"),
+MeltsvnGrammarJob("simple-all",    "edu:umn:cs:melt:simple", "compositions:simple_all"),
 
 MeltsvnGrammarJob("ring-host", "react", "bin", includepath="users/srinivasr/trunk/grammars"),
 MeltsvnGrammarJob("ring-host-tests", "react", "tests", includepath="users/srinivasr/trunk/grammars", invoke=True),
