@@ -54,6 +54,7 @@ top::ProductionRHSElem ::= reg::RegExpr
                 then [err(reg.location, "Found ambiguous possibilities for " ++ reg.pp ++ "\n" ++ printPossibilities(regName))]
                 else [];
 
+  -- TODO: we lose location information here!
   forwards to productionRHSElemType(typerepType(if null(regName) then errorType() else head(regName).typerep));
 }
 

@@ -18,8 +18,23 @@ public abstract class FunctionNode extends Node {
 		super(children);
 	}
 
+	/**
+	 * The normal way of decorating a function node. 
+	 * 
+	 * @return A "decorated" form of this FunctionNode
+	 */
+	public final DecoratedNode decorate() {
+		return new DecoratedNode(getNumberOfChildren(), getNumberOfLocalAttrs(), this);
+	}
+
 	@Override
-	public final Node getForward(final DecoratedNode context) {
+	public final boolean hasForward() {
+		// Functions should never even have this consulted. Ever.
+		throw new SilverInternalError("Functions do not forward!");
+	}
+
+	@Override
+	public final Node evalForward(final DecoratedNode context) {
 		throw new SilverInternalError("Functions do not forward!");
 	}
 

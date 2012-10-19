@@ -203,8 +203,13 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.lazyTranslation = 
     case e, top.blockContext.lazyApplication of
     | childReference(cqn), true -> 
-        "context.childSynthesizedLazy(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ cqn.lookupValue.fullName ++ ", " 
-                                                                ++ occursCheck.dcl.attrOccursIndex ++ ")"
+        if cqn.lookupValue.typerep.isDecorable
+        then
+          "context.childDecoratedSynthesizedLazy(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ cqn.lookupValue.fullName ++ ", " ++ occursCheck.dcl.attrOccursIndex ++ ")"
+        else
+          "context.childAsIsSynthesizedLazy(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ cqn.lookupValue.fullName ++ ", " ++ occursCheck.dcl.attrOccursIndex ++ ")"
+    | lhsReference(_), true ->
+        "context.contextSynthesizedLazy(" ++ occursCheck.dcl.attrOccursIndex ++ ")"
     | _, _ -> wrapThunk(top.translation, top.blockContext.lazyApplication)
     end;
 }
@@ -215,10 +220,10 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".inherited(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
 
   top.lazyTranslation = 
-       case e, top.blockContext.lazyApplication of
-         lhsReference(lqn), true -> "context.contextInheritedLazy(" ++ occursCheck.dcl.attrOccursIndex ++ ")"
-       | _, _ -> wrapThunk(top.translation, top.blockContext.lazyApplication)
-       end;
+    case e, top.blockContext.lazyApplication of
+    | lhsReference(_), true -> "context.contextInheritedLazy(" ++ occursCheck.dcl.attrOccursIndex ++ ")"
+    | _, _ -> wrapThunk(top.translation, top.blockContext.lazyApplication)
+    end;
 }
 
 aspect production terminalAccessDispatcher

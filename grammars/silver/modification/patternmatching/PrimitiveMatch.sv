@@ -90,10 +90,11 @@ top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
       "public final " ++ performSubstitution(t.typerep, top.finalSubst).transType ++ " eval(final common.DecoratedNode context, " ++ scrutineeType.transType ++ " scrutineeIter) {" ++
         (if scrutineeType.isDecorated
          then
-          "while(scrutineeIter != null) {" ++
+          "while(true) {" ++
            "final " ++ scrutineeType.transType ++ " scrutinee = scrutineeIter; " ++ -- dumb, but to get final to work out for Lazys & shizzle...
            "final common.Node scrutineeNode = scrutinee.undecorate(); " ++
             pr.translation ++
+           "if(!scrutineeIter.undecorate().hasForward()) break;" ++ 
            "scrutineeIter = scrutineeIter.forward();" ++
           "}"
          else

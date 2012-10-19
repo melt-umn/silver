@@ -54,17 +54,15 @@ public abstract class CollectionAttribute implements Lazy {
 		}
 		@Override
 		public Object eval(final DecoratedNode context) {
-			final DecoratedNode n = context.forward();
-			if(n != null) {
+			final Node un = context.undecorate();
+			if(un.hasForward()) {
 				try {
-					return n.synthesized(index);
+					return context.forward().synthesized(index);
 				} catch(Throwable t) {
-					final Node un = context.undecorate();
 					throw new TraceException("Error evaluating base of collection attribute " + un.getNameOfSynAttr(index) + " via forward of " + un.getName(),t);
 				}
 			}	
 
-			final Node un = context.undecorate();
 			throw new MissingDefinitionException("No base defined for collection attribute " + un.getNameOfSynAttr(index) + " in " + un.getName());
 		}
 		
