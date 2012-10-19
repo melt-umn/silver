@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/project/melt4/People/ted/hg/silver/jars/CopperRuntime.jar"/>
-	<classpathentry kind="lib" path="/project/melt4/People/ted/hg/silver/generated/bin"/>
+	<classpathentry kind="var" path="HOME/repos/silver/jars/CopperRuntime.jar"/>
+	<classpathentry kind="var" path="HOME/repos/silver/generated/bin"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

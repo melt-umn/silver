@@ -16,6 +16,11 @@ public class DecoratedNode {
 	// - Delete parent / forwardParent. Or coalesce them (only NEED for debugging purposes, if inh become thunks!)
 	// - Delete forwardValue (make it a local/production attribute)
 	// - merge inheritedAttributes into inheritedValues
+	
+	// Please note: the methods in this file have been refined to be quite small
+	// because the JVM makes inlining decisions on a per-method basis (of course!)
+	// So we try to keep the "slow paths" in a separate method, so the hot paths
+	// can be inlined.
 
 	/**
 	 * The "undecorated" form of this DecoratedNode. (Never null)
@@ -117,6 +122,28 @@ public class DecoratedNode {
 		// STATS: Uncomment to enable statistics
 		//Statistics.dnSpawn(self!=null?self.getClass():TopNode.class);
 	}
+	/**
+	 * Initialize a DecorateNode created by a FunctionNode.
+	 * 
+	 * @param cc number of children
+	 * @param lc number of locals
+	 * @param self The FunctionNode
+	 * @see {@link FunctionNode#decorate()}
+	 */
+	DecoratedNode(final int cc, final int lc, final FunctionNode self) {
+		// TODO: I added this constructor largely because I wanted to
+		// see if I could make all this fit under the 37 byte inline limit.
+		// This doesn't. :(  Leaving it, because it certainly doesn't hurt.
+		this.self = self;
+		this.parent = TopNode.singleton;
+		this.inheritedAttributes = null;
+		this.forwardParent = null;
+		
+		this.childrenValues = new Object[cc];
+		this.inheritedValues = null;
+		this.synthesizedValues = null;
+		this.localValues = (lc > 0) ? new Object[lc] : null;
+	}
 	
 	// STATS: Uncomment to enable statistics
 	//@Override
@@ -131,11 +158,6 @@ public class DecoratedNode {
 		return self;
 	}
 
-	
-	// TODO: The AsIs/Decorated distinction could go away and we could go for storing
-	// information in Node on whether it's decorable.
-	
-	
 	/**
 	 * Returns the child of this DecoratedNode, without potentially decorating it.
 	 * 
@@ -145,7 +167,7 @@ public class DecoratedNode {
 	 * @param child The number of the child to obtain.
 	 * @return The unmodified value of the child.
 	 */
-	public Object childAsIs(final int child){
+	public Object childAsIs(final int child) {
 		return self.getChild(child);
 	}
 	
@@ -159,19 +181,24 @@ public class DecoratedNode {
 	 * @param child The number of the child to obtain.
 	 * @return The decorated value of the child.
 	 */
-	public DecoratedNode childDecorated(final int child){
+	public DecoratedNode childDecorated(final int child) {
 		Object o = this.childrenValues[child]; 
 		if(o == null) {
-			o = self.getChild(child);
-			// Thunk evaluation is now handled in Node, rather than here.
-			if (o instanceof Node) {
-				o = ((Node)o).decorate(this, self.getChildInheritedAttributes(child));
-			}
+			o = createDecoratedChild(child);
 			
 			// CACHE : probably should not comment out child caching?
 			this.childrenValues[child] = o;
 		}
 		return (DecoratedNode)o;
+	}
+	
+	/**
+	 * Create the DecoratedNode for a child.
+	 * Separate function to keep {@link #childDecorated} small and inlineable.
+	 * This is, after all, the "slow path."
+	 */
+	private final DecoratedNode createDecoratedChild(final int child) {
+		return ((Node)self.getChild(child)).decorate(this, self.getChildInheritedAttributes(child));
 	}
 	
 	/**
@@ -185,21 +212,36 @@ public class DecoratedNode {
 	public Object localAsIs(final int attribute) {
 		Object o = this.localValues[attribute];
 		if(o == null) {
-			Lazy l = self.getLocal(attribute);
-			if(l == null) {
-				throw new MissingDefinitionException("Local attribute '" + self.getNameOfLocalAttr(attribute) + "' is not defined in production '" + self.getName() + "'");
-			}
-			try {
-				o = l.eval(this);
-			} catch(Throwable t){
-				throw new TraceException("Error while evaluating local attribute '" + self.getNameOfLocalAttr(attribute) + "' in production '" + self.getName() + "'", t);
-			}
+			o = evalLocalAsIs(attribute);
 			
 			// CACHE : comment out to disable caching for local attributes
 			// not recommended due to IO objects (IOString, etc)
 			this.localValues[attribute] = o;
 		}
 		return o;
+	}
+	
+	/**
+	 * Slow path to eval a local, kept separate for inlining reasons.
+	 */
+	private final Object evalLocalAsIs(final int attribute) {
+		try {
+			return self.getLocal(attribute).eval(this);
+		} catch(Throwable t) {
+			throw handleLocalError(attribute, t);
+		}		
+	}
+	
+	/**
+	 * Error generation code for local attribute evaluation.
+	 * Kept separate so as not to impact inlining decisions.
+	 */
+	private final RuntimeException handleLocalError(final int attribute, final Throwable t) {
+		// Rather than checking in the fast path, we try to reconstruct what went wrong in the slow path.
+		if(self.getLocal(attribute) == null) {
+			return new MissingDefinitionException("Local attribute '" + self.getNameOfLocalAttr(attribute) + "' is not defined in production '" + self.getName() + "'");
+		}
+		return new TraceException("Error while evaluating local attribute '" + self.getNameOfLocalAttr(attribute) + "' in production '" + self.getName() + "'", t);
 	}
 
 	/**
@@ -213,22 +255,20 @@ public class DecoratedNode {
 	public DecoratedNode localDecorated(final int attribute) {
 		Object o = this.localValues[attribute];
 		if(o == null) {
-			Lazy l = self.getLocal(attribute);
-			if(l == null) {
-				throw new MissingDefinitionException("Local attribute '" + self.getNameOfLocalAttr(attribute) + "' is not defined in production '" + self.getName() + "'");
-			}
-			try {
-				o = l.eval(this);
-				o = ((Node)o).decorate(this, self.getLocalInheritedAttributes(attribute));
-			} catch(Throwable t){
-				throw new TraceException("Error while evaluating local attribute '" + self.getNameOfLocalAttr(attribute) + "' in production '" + self.getName() + "'", t);
-			}
+			o = evalLocalDecorated(attribute);
 			
 			// CACHE : comment out to disable caching for local attributes
 			// not recommended due to IO objects (IOString, etc)
 			this.localValues[attribute] = o;
 		}
 		return (DecoratedNode)o;
+	}
+	
+	/**
+	 * Another case of keeping the slow paths out of here, so it can be inlined.
+	 */
+	private final DecoratedNode evalLocalDecorated(final int attribute) {
+		return ((Node)evalLocalAsIs(attribute)).decorate(this, self.getLocalInheritedAttributes(attribute));
 	}
 
 	/**
@@ -243,36 +283,41 @@ public class DecoratedNode {
 		
 		Object o = this.synthesizedValues[attribute];
 		if(o == null) {
-			Lazy l = self.getSynthesized(attribute);
-			if(l != null) {
-				try {
-					o = l.eval(this);
-				} catch(Throwable t) {
-					throw new TraceException("Error while evaluating synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' in production '" + self.getName() + "'", t);
-				}
-			} else if(forward() != null) {
-				try {
-					o = forward().synthesized(attribute);
-				} catch(Throwable t) {
-					throw new TraceException("Error attempting to fetch from forward in production " + self.getName() + ".", t);
-				}
-			} else {
-				l = self.getDefaultSynthesized(attribute);
-				if(l != null) {
-					try {
-						o = l.eval(this);
-					} catch(Throwable t) {
-						throw new TraceException("Error evaluating default attribute '" + self.getNameOfSynAttr(attribute) + "' in production '" + self.getName() + "'", t);
-					}
-				} else {
-					throw new MissingDefinitionException("Synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' is not defined in production '" + self.getName() + "'");	
-				}
-			}
+			o = evalSyn(attribute);
 			
 			// CACHE : comment out to disable caching for synthesized attributes
 			this.synthesizedValues[attribute] = o;
 		}
 		return o;
+	}
+	
+	private final Object evalSyn(final int attribute) {
+		// TODO: Try to break this up into < 37 byte methods?
+		Lazy l = self.getSynthesized(attribute);
+		if(l != null) {
+			try {
+				return l.eval(this);
+			} catch(Throwable t) {
+				throw new TraceException("Error while evaluating synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' in production '" + self.getName() + "'", t);
+			}
+		} else if(self.hasForward()) {
+			try {
+				return forward().synthesized(attribute);
+			} catch(Throwable t) {
+				throw new TraceException("Error attempting to fetch from forward in production " + self.getName() + ".", t);
+			}
+		} else {
+			l = self.getDefaultSynthesized(attribute);
+			if(l != null) {
+				try {
+					return l.eval(this);
+				} catch(Throwable t) {
+					throw new TraceException("Error evaluating default attribute '" + self.getNameOfSynAttr(attribute) + "' in production '" + self.getName() + "'", t);
+				}
+			} else {
+				throw new MissingDefinitionException("Synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' is not defined in production '" + self.getName() + "'");	
+			}
+		}
 	}
 	
 	/**
@@ -283,17 +328,25 @@ public class DecoratedNode {
 	 */
 	public DecoratedNode forward() {
 		if(this.forwardValue == null) {
-			try {
-				final Node n = self.getForward(this);
-				if(n == null)
-					return null;
-				// CACHE : should not comment out forward caching !
-				this.forwardValue = n.decorate(parent, this);
-			} catch(Throwable t) {
-				throw new TraceException("Error evaluating forward node in production '" + self.getName() + "'", t);
-			}
+			// CACHE : should not comment out forward caching !
+			this.forwardValue = evalForward();
 		}
 		return this.forwardValue;
+	}
+	
+	/**
+	 * Also to keep the fast path small and inlineable.
+	 */
+	private final DecoratedNode evalForward() {
+		try {
+			return self.evalForward(this).decorate(parent, this);
+		} catch(Throwable t) {
+			throw handleFwdError(t);
+		}
+	}
+	
+	private final RuntimeException handleFwdError(Throwable t) {
+		return new TraceException("Error evaluating forward node in production '" + self.getName() + "'", t);
 	}
 
 	/**
@@ -310,25 +363,7 @@ public class DecoratedNode {
 		
 		Object o = this.inheritedValues[attribute];
 		if(o == null) {
-			Lazy l;
-			// Note: inheritedAttributes is validly null here!  (forward nodes have no inherited attributes)
-			if(this.inheritedAttributes == null || (l = this.inheritedAttributes[attribute]) == null) {
-				if(forwardParent != null) {
-					try {
-						o = forwardParent.inheritedForwarded(attribute);
-					} catch(Throwable t) {
-						throw new TraceException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' demanded by forward production'" + self.getName() +"'.", t);
-					}
-				} else {
-					throw new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to '" + self.getName() + "' by '" + parent.self.getName() + "'" + (forwardParent==null?"":" (forwardParent: '" + forwardParent.self.getName() + "')"));
-				}
-			} else {
-				try {
-					o = l.eval(this.parent);
-				} catch(Throwable t) {
-					throw new TraceException("Error evaluating inherited attribute '" + self.getNameOfInhAttr(attribute) + "' in production '" + self.getName() + "'", t);
-				}
-			}
+			o = evalInhSomehow(attribute);
 			
 			// CACHE : comment out to disable caching of inherited attributes
 			// not recommended because it leads to a combinatoric explosion for environments
@@ -337,6 +372,39 @@ public class DecoratedNode {
 			this.inheritedValues[attribute] = o;
 		}
 		return o;
+	}
+	
+	private final Object evalInhSomehow(final int attribute) {
+		if(forwardParent == null)
+			return evalInhHere(attribute);
+		else
+			return evalInhViaFwdP(attribute);
+	}
+	private final Object evalInhViaFwdP(final int attribute) {
+		try {
+			return forwardParent.inheritedForwarded(attribute);
+		} catch(Throwable t) {
+			throw handleInhFwdPError(attribute, t); 
+		}
+	}
+	private final RuntimeException handleInhFwdPError(final int attribute, Throwable t) {
+		if(forwardParent == null) {
+			return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to '" + self.getName() + "' by '" + parent.self.getName() + "'");
+		}
+		return new TraceException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' demanded by forward production'" + self.getName() +"'.", t);
+	}
+	private final Object evalInhHere(final int attribute) {
+		try {
+			return this.inheritedAttributes[attribute].eval(this.parent);
+		} catch(Throwable t) {
+			throw handleInhHereError(attribute, t);
+		}
+	}
+	private final RuntimeException handleInhHereError(final int attribute, Throwable t) {
+		if(this.inheritedAttributes[attribute] == null) {
+			return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to '" + self.getName() + "' by '" + parent.self.getName() + "'");
+		}
+		return new TraceException("Error evaluating inherited attribute '" + self.getNameOfInhAttr(attribute) + "' in production '" + self.getName() + "'", t);
 	}
 	
 	/**
@@ -360,8 +428,12 @@ public class DecoratedNode {
 			// No need for caching here, it'll be cached by the inherited() that called us
 			return l.eval(this);
 		} catch(Throwable t) {
-			throw new TraceException("Error evaluating inherited attribute '" + self.getNameOfInhAttr(attribute) + "' for forward production in production '" + self.getName() + "'", t);
+			throw handleInhFwdError(attribute, t);
 		}
+	}
+	
+	private final RuntimeException handleInhFwdError(final int attribute, Throwable t) {
+		return new TraceException("Error evaluating inherited attribute '" + self.getNameOfInhAttr(attribute) + "' for forward production in production '" + self.getName() + "'", t);
 	}
 
 	// The following are very common types of thunks.
@@ -372,6 +444,7 @@ public class DecoratedNode {
 	public final Object childDecoratedLazy(final int child) {
 		if(childrenValues[child] != null)
 			return childrenValues[child];
+		
 		return new Thunk<Object>(this) {
 			@Override
 			public final Object doEval() {
@@ -380,12 +453,14 @@ public class DecoratedNode {
 		};
 	}
 	public final Object childAsIsLazy(final int child) {
-		// Straight up use whatever thunk (or not) is in the node...
+		// childAsIs does not store in the childrenValues array, so...
+		// Straight up use whatever thunk (or not!) is in the node.
 		return self.getChildLazy(child);
 	}
 	public final Object localDecoratedLazy(final int index) {
 		if(localValues[index] != null)
 			return localValues[index];
+		
 		return new Thunk<Object>(this) {
 			@Override
 			public final Object doEval() {
@@ -394,6 +469,9 @@ public class DecoratedNode {
 		};
 	}
 	public final Object localAsIsLazy(final int index) {
+		if(localValues[index] != null)
+			return localValues[index];
+
 		return new Thunk<Object>(this) {
 			@Override
 			public final Object doEval() {
@@ -401,12 +479,12 @@ public class DecoratedNode {
 			}
 		};
 	}
-	public final Object childSynthesizedLazy(final int child, final int index) {
-		if( childrenValues[child] != null && 
-			((DecoratedNode)childrenValues[child]).synthesizedValues[index] != null)
-		{
-			return ((DecoratedNode)childrenValues[child]).synthesizedValues[index];
+	public final Object childDecoratedSynthesizedLazy(final int child, final int index) {
+		Object v = childrenValues[child];
+		if(v != null) {
+			return ((DecoratedNode)v).contextSynthesizedLazy(index);
 		}
+
 		return new Thunk<Object>(this) {
 			@Override
 			public final Object doEval() {
@@ -414,9 +492,36 @@ public class DecoratedNode {
 			}
 		};
 	}
+	public final Object childAsIsSynthesizedLazy(final int child, final int index) {
+		// For as-is children, we do not store in childrenValues
+		Object v = self.getChildLazy(child);
+		if(!(v instanceof Thunk)) {
+			return ((DecoratedNode)v).contextSynthesizedLazy(index);
+		}
+
+		return new Thunk<Object>(this) {
+			@Override
+			public final Object doEval() {
+				return ((DecoratedNode)context.childAsIs(child)).synthesized(index);
+			}
+		};
+	}
+	public final Object contextSynthesizedLazy(final int index) {
+		if(synthesizedValues[index] != null) {
+			return synthesizedValues[index];
+		}
+		
+		return new Thunk<Object>(this) {
+			@Override
+			public final Object doEval() {
+				return context.synthesized(index);
+			}
+		};
+	}
 	public final Object contextInheritedLazy(final int index) {
-		if( inheritedValues[index] != null)
+		if(inheritedValues[index] != null)
 			return inheritedValues[index];
+		
 		return new Thunk<Object>(this) {
 			@Override
 			public final Object doEval() {
