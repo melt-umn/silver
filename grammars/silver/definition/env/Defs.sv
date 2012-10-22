@@ -77,6 +77,14 @@ top::Def ::= d::EnvItem
   top.dcl = d.dcl;
   top.attrList = [d];
 }
+abstract production prodDclDef
+top::Def ::= d::EnvItem
+{
+  top.dcl = d.dcl;
+  top.valueList = [d];
+  top.prodDclList = [d.dcl];
+}
+
 abstract production paDef
 top::Def ::= d::DclInfo
 {
@@ -88,13 +96,6 @@ top::Def ::= d::DclInfo
 {
   top.dcl = d;
   top.occursList = [d];
-}
-abstract production prodDclDef
-top::Def ::= d::EnvItem
-{
-  top.dcl = d.dcl;
-  top.valueList = [d];
-  top.prodDclList = [d.dcl];
 }
 
 
@@ -228,6 +229,7 @@ Boolean ::= fn::(Boolean ::= EnvItem)  d::Def
   | valueDef(ei) -> fn(ei)
   | typeDef(ei) -> fn(ei)
   | attrDef(ei) -> fn(ei)
+  | prodDclDef(ei) -> fn(ei)
   | _ -> true -- preserve all others for now (legit don't consider occurs, pa)
   end;
 }
@@ -238,6 +240,7 @@ Def ::= fn::(EnvItem ::= EnvItem)  d::Def
   | valueDef(ei) -> valueDef(fn(ei))
   | typeDef(ei) -> typeDef(fn(ei))
   | attrDef(ei) -> attrDef(fn(ei))
+  | prodDclDef(ei) -> prodDclDef(fn(ei))
   | _ -> d -- ditto
   end;
 }
