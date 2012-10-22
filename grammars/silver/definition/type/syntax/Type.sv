@@ -28,11 +28,11 @@ synthesized attribute typelist :: Decorated TypeList;
 -- But for now, we'll use it. It might be easier to get rid of once we know exactly
 -- how ty vars end up in the environment.
 function addNewLexicalTyVars
-Defs ::= gn::String sl::Location l::[String]
+[Def] ::= gn::String sl::Location l::[String]
 {
-  return if null(l) then emptyDefs()
-         else addLexTyVarDcl(gn, sl, head(l), skolemTypeExp(freshTyVar()),
-                  addNewLexicalTyVars(gn, sl, tail(l)));
+  return if null(l) then []
+         else lexTyVarDef(gn, sl, head(l), skolemTypeExp(freshTyVar())) ::
+                  addNewLexicalTyVars(gn, sl, tail(l));
 }
 
 abstract production typerepType

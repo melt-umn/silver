@@ -20,7 +20,7 @@ inherited attribute givenNonterminalType :: TypeExp;
 
 -- production attribute
 inherited attribute givenSignatureForDefs :: NamedSignature;
-synthesized attribute prodDefs :: Defs;
+synthesized attribute prodDefs :: [Def];
 -- production attribute substitutions
 synthesized attribute substitutedDclInfo :: DclInfo; -- really ValueDclInfo
 inherited attribute givenSubstitution :: Substitution;
@@ -250,7 +250,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 
 -- ProductionAttrDclInfo
 abstract production paDcl
-top::DclInfo ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeExp] dcls::Defs
+top::DclInfo ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeExp] dcls::[Def]
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -318,15 +318,15 @@ DclInfo ::= valueDclInfo::DclInfo s::Substitution
 
 -- This function really takes a list of ValueDclInfos
 function defsFromPADcls
-Defs ::= valueDclInfos::[DclInfo] s::NamedSignature
+[Def] ::= valueDclInfos::[DclInfo] s::NamedSignature
 {
   -- We want to rewrite FROM the sig these PAs were declared with, TO the given sig
   local attribute subst :: Substitution;
   subst = unifyDirectional(head(valueDclInfos).typerep, s.typerep);
   
-  return if null(valueDclInfos) then emptyDefs()
+  return if null(valueDclInfos) then []
          else if subst.failure
               then defsFromPADcls(tail(valueDclInfos), s) -- this can happen if the aspect sig is wrong. Error already reported. error("INTERNAL ERROR: PA subst unify error")
-              else appendDefs(substitutedDefs(head(valueDclInfos).prodDefs, subst), defsFromPADcls(tail(valueDclInfos), s));
+              else map(performSubstitutionDef(_, subst), head(valueDclInfos).prodDefs) ++ defsFromPADcls(tail(valueDclInfos), s);
 }
 

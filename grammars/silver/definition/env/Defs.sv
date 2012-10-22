@@ -1,9 +1,10 @@
 grammar silver:definition:env;
 
-import silver:definition:regex; -- soley for Terms. TODO : fix?
+import silver:definition:regex; -- soley for Terminals. TODO : perhaps this shouldn't be here!
 import silver:definition:type;
 
 nonterminal Defs with typeList, valueList, attrList, prodOccursList, occursList, prodDclList;
+closed nonterminal Def with typeList, valueList, attrList, prodOccursList, occursList, prodDclList, dcl;
 
 -- The standard namespaces
 synthesized attribute typeList :: [EnvItem];
@@ -17,44 +18,8 @@ synthesized attribute occursList :: [DclInfo];
 -- Extra space for production list
 synthesized attribute prodDclList :: [DclInfo];
 
--- I'm leaving "Defsironment" here just for the lols
-----------------------------------------------------------------------------------------------------
---Defsironment creation functions--------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
 
-function unparseDefs
-String ::= d::Defs bv::[TyVar]
-{
-  production attribute dclinfos::[DclInfo] with ++;
-  dclinfos := mapGetDcls(d.typeList) ++
-              mapGetDcls(d.valueList) ++
-              mapGetDcls(d.attrList) ++
-              d.prodOccursList ++
-              d.occursList;
-  
-  return implode(",\n ", mapUnparseDcls(dclinfos, bv));
-}
-
-function mapUnparseDcls
-[String] ::= d::[DclInfo] bv::[TyVar]
-{
-  local attribute h :: DclInfo;
-  h = head(d);
-  h.boundVariables = bv;
-
-  return if null(d) then [] else h.unparse :: mapUnparseDcls(tail(d), bv);
-}
-
--- Only ever used by production attributes
-function isEmptyOfValues
-Boolean ::= d::Defs
-{
-  return null(d.valueList);
-}
-
---------------------------------------------------------------------------------
-
-abstract production emptyDefs 
+abstract production nilDefs 
 top::Defs ::= 
 {
   top.typeList = [];
@@ -67,8 +32,8 @@ top::Defs ::=
   top.prodDclList = [];
 }
 
-abstract production appendDefs 
-top::Defs ::= e1::Defs e2::Defs
+abstract production consDefs 
+top::Defs ::= e1::Def e2::Defs
 {
   top.typeList = e1.typeList ++ e2.typeList;
   top.valueList = e1.valueList ++ e2.valueList;
@@ -80,58 +45,205 @@ top::Defs ::= e1::Defs e2::Defs
   top.prodDclList = e1.prodDclList ++ e2.prodDclList;
 }
 
-abstract production substitutedDefs
-top::Defs ::= e1::Defs s::Substitution
-{
-  -- Only exists for production attributes at this time, so I was lazy!
-  top.valueList = performSubstitutionEnvItem(e1.valueList, s);
-  
-  forwards to emptyDefs();
-}
-
 --------------------------------------------------------------------------------
 
-abstract production consTypeDef
-top::Defs ::= d::EnvItem e2::Defs
+aspect default production
+top::Def ::=
 {
-  top.typeList = d :: forward.typeList;
-  forwards to e2;
+  top.typeList = [];
+  top.valueList = [];
+  top.attrList = [];
+  
+  top.prodOccursList = [];
+  top.occursList = [];
+  
+  top.prodDclList = [];
 }
-abstract production consValueDef
-top::Defs ::= d::EnvItem e2::Defs
+abstract production typeDef
+top::Def ::= d::EnvItem
 {
-  top.valueList = d :: forward.valueList;
-  forwards to e2;
+  top.dcl = d.dcl;
+  top.typeList = [d];
 }
-abstract production consAttrDef
-top::Defs ::= d::EnvItem e2::Defs
+abstract production valueDef
+top::Def ::= d::EnvItem
 {
-  top.attrList = d :: forward.attrList;
-  forwards to e2;
+  top.dcl = d.dcl;
+  top.valueList = [d];
+}
+abstract production attrDef
+top::Def ::= d::EnvItem
+{
+  top.dcl = d.dcl;
+  top.attrList = [d];
+}
+abstract production paDef
+top::Def ::= d::DclInfo
+{
+  top.dcl = d;
+  top.prodOccursList = [d];
+}
+abstract production oDef
+top::Def ::= d::DclInfo
+{
+  top.dcl = d;
+  top.occursList = [d];
+}
+abstract production prodDclDef
+top::Def ::= d::EnvItem
+{
+  top.dcl = d.dcl;
+  top.valueList = [d];
+  top.prodDclList = [d.dcl];
 }
 
-abstract production consProdOccursDef
-top::Defs ::= d::DclInfo e2::Defs
+
+
+function childDef
+Def ::= sg::String  sl::Location  fn::String  ty::TypeExp
 {
-  top.prodOccursList = d :: forward.prodOccursList;
-  forwards to e2;
+  return valueDef(defaultEnvItem(childDcl(sg,sl,fn,ty)));
 }
-abstract production consOccursDef
-top::Defs ::= d::DclInfo e2::Defs
+function lhsDef
+Def ::= sg::String  sl::Location  fn::String  ty::TypeExp
 {
-  top.occursList = d :: forward.occursList;
-  forwards to e2;
+  return valueDef(defaultEnvItem(lhsDcl(sg,sl,fn,ty)));
 }
-
-abstract production consProdDclDef
-top::Defs ::= d::DclInfo e2::Defs
+function localDef
+Def ::= sg::String  sl::Location  fn::String  ty::TypeExp
 {
-  top.prodDclList = d :: forward.prodDclList;
-  forwards to e2;
+  return valueDef(defaultEnvItem(localDcl(sg,sl,fn,ty)));
+}
+function prodDef
+Def ::= sg::String  sl::Location  ns::NamedSignature
+{
+  return prodDclDef(defaultEnvItem(prodDcl(sg,sl,ns)));
+}
+function funDef
+Def ::= sg::String  sl::Location  ns::NamedSignature
+{
+  return valueDef(defaultEnvItem(funDcl(sg,sl,ns)));
+}
+function globalDef
+Def ::= sg::String  sl::Location  fn::String  ty::TypeExp
+{
+  return valueDef(defaultEnvItem(globalValueDcl(sg,sl,fn,ty)));
+}
+function ntDef
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::TypeExp
+{
+  return typeDef(defaultEnvItem(ntDcl(sg,sl,fn,bound,ty,false)));
+}
+function closedNtDef
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::TypeExp
+{
+  return typeDef(defaultEnvItem(ntDcl(sg,sl,fn,bound,ty,true)));
+}
+function termDef
+Def ::= sg::String  sl::Location  fn::String  regex::Regex_R
+{
+  return typeDef(defaultEnvItem(termDcl(sg,sl,fn,regex)));
+}
+function lexTyVarDef
+Def ::= sg::String  sl::Location  fn::String  ty::TypeExp
+{
+  return typeDef(defaultEnvItem(lexTyVarDcl(sg,sl,fn,ty)));
+}
+function synDef
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::TypeExp
+{
+  return attrDef(defaultEnvItem(synDcl(sg,sl,fn,bound,ty)));
+}
+function inhDef
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::TypeExp
+{
+  return attrDef(defaultEnvItem(inhDcl(sg,sl,fn,bound,ty)));
+}
+function prodOccursDef
+Def ::= sg::String  sl::Location  fn::String  outty::TypeExp  intys::[TypeExp]  dcls::[Def]
+{ 
+  return paDef(paDcl(sg,sl,fn,outty,intys,dcls));
+}
+function forwardDef
+Def ::= sg::String  sl::Location  ty::TypeExp
+{
+  return valueDef(defaultEnvItem(forwardDcl(sg,sl,ty)));
+}
+function occursDef
+Def ::= sg::String  sl::Location  fnnt::String  fnat::String  ntty::TypeExp  atty::TypeExp
+{
+  return oDef(occursDcl(sg,sl,fnnt,fnat,ntty,atty));
+}
+-- These aliased functions are used for aspects.
+function aliasedLhsDef
+Def ::= sg::String  sl::Location  fn::String  ty::TypeExp  alias::String
+{
+  return valueDef(onlyRenamedEnvItem(alias, lhsDcl(sg,sl,fn,ty)));
+}
+function aliasedChildDef
+Def ::= sg::String  sl::Location  fn::String  ty::TypeExp  alias::String
+{
+  return valueDef(onlyRenamedEnvItem(alias, childDcl(sg,sl,fn,ty)));
+}
+
+-- I'm leaving "Defsironment" here just for the lols
+----------------------------------------------------------------------------------------------------
+--Defsironment creation functions--------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+
+function unparseDefs
+String ::= d::[Def] bv::[TyVar]
+{
+  return implode(",\n ", mapUnparseDcls(map((.dcl), d), bv));
+}
+
+function mapUnparseDcls
+[String] ::= d::[DclInfo] bv::[TyVar]
+{
+  local h :: DclInfo = head(d);
+  h.boundVariables = bv;
+
+  return if null(d) then [] else h.unparse :: mapUnparseDcls(tail(d), bv);
+}
+
+--
+
+{--
+ - Used only to substitute defs from paDcls...
+ - And so we screw up a few things:
+ - 1. We expect ONLY valueDefs.
+ - 2. We expect ONLY 'defaultEnvItems'
+ -}
+function performSubstitutionDef
+Def ::= d::Def  s::Substitution
+{
+  return valueDef(defaultEnvItem(performSubstitutionDclInfo(d.dcl, s)));
+}
+
+-- TODO: these are non-extensible. Fixme.
+function filterDefOnEnvItem
+Boolean ::= fn::(Boolean ::= EnvItem)  d::Def
+{
+  return case d of
+  | valueDef(ei) -> fn(ei)
+  | typeDef(ei) -> fn(ei)
+  | attrDef(ei) -> fn(ei)
+  | _ -> true -- preserve all others for now (legit don't consider occurs, pa)
+  end;
+}
+function mapDefOnEnvItem
+Def ::= fn::(EnvItem ::= EnvItem)  d::Def
+{
+  return case d of
+  | valueDef(ei) -> valueDef(fn(ei))
+  | typeDef(ei) -> typeDef(fn(ei))
+  | attrDef(ei) -> attrDef(fn(ei))
+  | _ -> d -- ditto
+  end;
 }
 
 
-
+{- TODO
 abstract production filterDefsInclude
 top::Defs ::= d::Defs incl::[String]
 {
@@ -168,96 +280,10 @@ top::Defs ::= d::Defs rns::[Pair<String String>]
   
   forwards to d;
 }
+-}
 
 ----------------------------------------------------------------------------------------------------
 --Defs Helper Functions------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
 
-function addChildDcl
-Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
-{
-  return consValueDef(defaultEnvItem(childDcl(sg,sl,fn,ty)), defs);
-}
-function addLhsDcl
-Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
-{
-  return consValueDef(defaultEnvItem(lhsDcl(sg,sl,fn,ty)), defs);
-}
-function addLocalDcl
-Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
-{
-  return consValueDef(defaultEnvItem(localDcl(sg,sl,fn,ty)), defs);
-}
-function addProdDcl
-Defs ::= sg::String sl::Location ns::NamedSignature defs::Defs
-{
-  return consProdDclDef(prodDcl(sg,sl,ns),
-           consValueDef(defaultEnvItem(prodDcl(sg,sl,ns)), defs));
-}
-function addFunDcl
-Defs ::= sg::String sl::Location ns::NamedSignature defs::Defs
-{
-  return consValueDef(defaultEnvItem(funDcl(sg,sl,ns)), defs);
-}
-function addGlobalValueDcl
-Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
-{
-  return consValueDef(defaultEnvItem(globalValueDcl(sg,sl,fn,ty)), defs);
-}
-function addNtDcl
-Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
-{
-  return consTypeDef(defaultEnvItem(ntDcl(sg,sl,fn,bound,ty, false)), defs);
-}
-function addClosedNtDcl
-Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
-{
-  return consTypeDef(defaultEnvItem(ntDcl(sg,sl,fn,bound,ty, true)), defs);
-}
-function addTermDcl
-Defs ::= sg::String sl::Location fn::String regex::Regex_R defs::Defs
-{
-  return consTypeDef(defaultEnvItem(termDcl(sg,sl,fn,regex)), defs);
-}
-function addLexTyVarDcl
-Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
-{
-  return consTypeDef(defaultEnvItem(lexTyVarDcl(sg,sl,fn,ty)), defs);
-}
-function addSynDcl
-Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
-{
-  return consAttrDef(defaultEnvItem(synDcl(sg,sl,fn,bound,ty)), defs);
-}
-function addInhDcl
-Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
-{
-  return consAttrDef(defaultEnvItem(inhDcl(sg,sl,fn,bound,ty)), defs);
-}
-function addPaDcl
-Defs ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeExp] dcls::Defs defs::Defs
-{
-  return consProdOccursDef(paDcl(sg,sl,fn,outty,intys,dcls), defs);
-}
-function addForwardDcl
-Defs ::= sg::String sl::Location ty::TypeExp defs::Defs
-{
-  return consValueDef(defaultEnvItem(forwardDcl(sg,sl,ty)), defs);
-}
-function addOccursDcl
-Defs ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp defs::Defs
-{
-  return consOccursDef(occursDcl(sg,sl,fnnt,fnat,ntty,atty), defs);
-}
--- These aliased functions are used for aspects.
-function addAliasedLhsDcl
-Defs ::= sg::String sl::Location fn::String ty::TypeExp alias::String defs::Defs
-{
-  return consValueDef(onlyRenamedEnvItem(alias, lhsDcl(sg,sl,fn,ty)), defs);
-}
-function addAliasedChildDcl
-Defs ::= sg::String sl::Location fn::String ty::TypeExp alias::String defs::Defs
-{
-  return consValueDef(onlyRenamedEnvItem(alias, childDcl(sg,sl,fn,ty)), defs);
-}
 

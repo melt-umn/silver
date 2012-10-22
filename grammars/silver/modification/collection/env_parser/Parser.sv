@@ -52,7 +52,7 @@ top::IDclInfo ::= 'syncol' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ','
 {
   t.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = addSynColDcl(top.grammarName, l.location, fn.aname, td.tyvars, t.typerep, o.operation, emptyDefs());
+  top.defs = [synColDef(top.grammarName, l.location, fn.aname, td.tyvars, t.typerep, o.operation)];
 }
 
 concrete production aDclInfoInheritedCol
@@ -60,12 +60,12 @@ top::IDclInfo ::= 'inhcol' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ','
 {
   t.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = addInhColDcl(top.grammarName, l.location, fn.aname, td.tyvars, t.typerep, o.operation, emptyDefs());
+  top.defs = [inhColDef(top.grammarName, l.location, fn.aname, td.tyvars, t.typerep, o.operation)];
 }
 
 concrete production aDclInfoLocalCol
 top::IDclInfo ::= 'loccol' '(' l::ILocation ',' fn::IName ',' t::ITypeRep ',' o::IOperation ')'
 {
-  top.defs = addLocalColDcl(top.grammarName, l.location, fn.aname, t.typerep, o.operation, emptyDefs());
+  top.defs = [localColDef(top.grammarName, l.location, fn.aname, t.typerep, o.operation)];
 }
 

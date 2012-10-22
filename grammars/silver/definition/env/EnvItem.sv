@@ -9,7 +9,6 @@ import silver:util only contains;
 --mapGetDcls       [DclInfo] ::= i::[Decorated EnvItem]
 --mapDefaultWrapDcls [Decorated EnvItem] ::= i::[DclInfo]
 --mapFullnameDcls  [Decorated EnvItem] ::= i::[DclInfo]
---sortEnvItems     [Decorated EnvItem] ::= eis::[Decorated EnvItem]
 
 
 synthesized attribute itemName :: String;
@@ -73,76 +72,32 @@ function mapDefaultWrapDcls
 }
 
 
-function filterEnvItemsExclude
-[EnvItem] ::= items::[EnvItem] exclude::[String]
+function envItemExclude
+Boolean ::= ei::EnvItem  exclude::[String]
 {
-  return if null(items) then []
-         else if contains(head(items).itemName, exclude)
-              then filterEnvItemsExclude(tail(items), exclude)
-              else head(items) :: filterEnvItemsExclude(tail(items), exclude);
+  return !contains(ei.itemName, exclude);
 }
-
-function filterEnvItemsInclude
-[EnvItem] ::= items::[EnvItem] include::[String]
+function envItemInclude
+Boolean ::= ei::EnvItem  include::[String]
 {
-  return if null(items) then []
-         else if contains(head(items).itemName, include)
-              then head(items) :: filterEnvItemsInclude(tail(items), include)
-              else filterEnvItemsInclude(tail(items), include);
+  return contains(ei.itemName, include);
 }
-
-function mapPrependEnvItems
-[EnvItem] ::= items::[EnvItem] prefi::String
+function envItemPrepend
+EnvItem ::= ei::EnvItem  pfx::String
 {
-  return if null(items) then []
-         -- this should clobber any 'onlyrenamed' but those shouldn't appear in imports, where this is used.
-         else renamedEnvItem(prefi ++ head(items).itemName, head(items).dcl) :: mapPrependEnvItems(tail(items), prefi);
+  -- This clobbers 'onlyRenamed' but that's okay because this is only used
+  -- by imports, where that doesn't appear.
+  return renamedEnvItem(pfx ++ ei.itemName, ei.dcl);
 }
-
-function mapRenameEnvItems
-[EnvItem] ::= items::[EnvItem] renames::[Pair<String String>]
+function envItemApplyRenaming
+EnvItem ::= ei::EnvItem  renames::[Pair<String String>]
 {
   local attribute result :: Maybe<String>;
-  result = lookupBy(stringEq, head(items).itemName, renames);
+  result = lookupBy(stringEq, ei.itemName, renames);
   
-  return if null(items) then []
-         else if !result.isJust
-              then head(items) :: mapRenameEnvItems(tail(items), renames)
-              -- this should clobber any 'onlyrenamed' but those shouldn't appear in imports, where this is used.
-              else renamedEnvItem(result.fromJust, head(items).dcl) :: mapRenameEnvItems(tail(items), renames);
-}
-
--- Sort function
-function sortEnvItems
-[EnvItem] ::= eis::[EnvItem]
-{
-  return sortBy(envItemLTE, eis);
-}
-function groupEnvItems
-[[EnvItem]] ::= eis::[EnvItem]
-{
-  return groupBy(envItemEQ, eis);
-}
-function envItemLTE
-Boolean ::= e1::EnvItem e2::EnvItem
-{
-  return e1.itemName <= e2.itemName;
-}
-function envItemEQ
-Boolean ::= e1::EnvItem e2::EnvItem
-{
-  return e1.itemName == e2.itemName;
-}
-
--- Substitutions
-
-function performSubstitutionEnvItem
-[EnvItem] ::= e::[EnvItem] s::Substitution
-{
-  return if null(e) then []
-         -- this should clobber any 'onlyrenamed' but those shouldn't appear in production attributes, where this is used.
-         else renamedEnvItem(head(e).itemName, performSubstitutionDclInfo(head(e).dcl, s))
-              :: performSubstitutionEnvItem(tail(e), s);
+  return if !result.isJust then ei
+         -- this should clobber any 'onlyrenamed' but those shouldn't appear in imports, where this is used.
+         else renamedEnvItem(result.fromJust, ei.dcl);
 }
 
 

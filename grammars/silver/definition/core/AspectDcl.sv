@@ -21,12 +21,10 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   top.pp = "aspect production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.defs = if isEmptyOfValues(body.productionAttributes)
-             then emptyDefs()
-             else addPaDcl(top.grammarName, id.location, id.lookupValue.fullName,
-                       namedSig.outputElement.typerep, namedSig.inputTypes,
-                       body.productionAttributes,
-                        emptyDefs());
+  top.defs = if null(body.productionAttributes) then []
+             else [prodOccursDef(top.grammarName, id.location, id.lookupValue.fullName,
+                     namedSig.outputElement.typerep, namedSig.inputTypes,
+                     body.productionAttributes)];
 
   production attribute namedSig :: NamedSignature;
   namedSig = namedSignature(id.lookupValue.fullName, ns.inputElements, ns.outputElement);
@@ -40,18 +38,18 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 
   top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
 
-  production attribute sigDefs :: Defs with appendDefs;
+  production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
 
   ns.env = newScopeEnv(sigDefs, top.env);  
   ns.realSignature = if null(id.lookupValue.dcls) then [] else [realSig.outputElement] ++ realSig.inputElements;
 
-  local attribute prodAtts :: Defs;
+  local attribute prodAtts :: [Def];
   prodAtts = if null(id.lookupValue.errors)
              then defsFromPADcls(getProdAttrs(id.lookupValue.fullName, top.env), namedSig)
-             else emptyDefs();
+             else [];
 
-  body.env = newScopeEnv(appendDefs(body.defs, sigDefs), newScopeEnv(prodAtts, top.env));
+  body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;
   body.blockContext = aspectProductionContext();
 }
@@ -62,10 +60,10 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   top.pp = "aspect function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.defs = addPaDcl(top.grammarName, id.location, id.lookupValue.fullName,
-                       namedSig.outputElement.typerep, namedSig.inputTypes,
-                       body.productionAttributes,
-               emptyDefs());
+  top.defs = if null(body.productionAttributes) then []
+             else [prodOccursDef(top.grammarName, id.location, id.lookupValue.fullName,
+                     namedSig.outputElement.typerep, namedSig.inputTypes,
+                     body.productionAttributes)];
 
   production attribute namedSig :: NamedSignature;
   namedSig = namedSignature(id.lookupValue.fullName, ns.inputElements, ns.outputElement);
@@ -79,18 +77,18 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 
   top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
 
-  production attribute sigDefs :: Defs with appendDefs;
+  production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
 
   ns.env = newScopeEnv(sigDefs, top.env);
   ns.realSignature = if null(id.lookupValue.dcls) then [] else [realSig.outputElement] ++ realSig.inputElements;
 
-  local attribute prodAtts :: Defs;
+  local attribute prodAtts :: [Def];
   prodAtts = if null(id.lookupValue.errors)
              then defsFromPADcls(getProdAttrs(id.lookupValue.fullName, top.env), namedSig)
-             else emptyDefs();
+             else [];
 
-  body.env = newScopeEnv(appendDefs(body.defs, sigDefs), newScopeEnv(prodAtts, top.env));
+  body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;
   body.blockContext = aspectFunctionContext();
 }
@@ -101,7 +99,7 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
   top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
   top.location = loc(top.file, $2.line, $2.column);
 
-  top.defs = appendDefs(lhs.defs, rhs.defs);
+  top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
 
   top.inputElements = rhs.inputElements;
@@ -155,7 +153,7 @@ top::AspectProductionLHS ::= id::Name t::TypeExp
 
   top.outputElement = namedSignatureElement(id.name, t);
   
-  top.defs = addAliasedLhsDcl(top.grammarName, id.location, fName, t, id.name, emptyDefs());
+  top.defs = [aliasedLhsDef(top.grammarName, id.location, fName, t, id.name)];
 
   top.errors := if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
@@ -168,7 +166,7 @@ top::AspectRHS ::=
   top.pp = "";
   top.location = loc(top.file,-1,-1);
 
-  top.defs = emptyDefs();
+  top.defs = [];
   top.errors := [];
   top.inputElements = [];
 }
@@ -179,7 +177,7 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
   top.pp = h.pp ++ " " ++ t.pp;
   top.location = h.location;
 
-  top.defs = appendDefs(h.defs, t.defs);
+  top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
 
   top.inputElements = h.inputElements ++ t.inputElements;
@@ -234,7 +232,7 @@ top::AspectRHSElem ::= id::Name t::TypeExp
 
   top.inputElements = [namedSignatureElement(id.name, t)];
 
-  top.defs = addAliasedChildDcl(top.grammarName, id.location, fName, t, id.name, emptyDefs());
+  top.defs = [aliasedChildDef(top.grammarName, id.location, fName, t, id.name)];
 
   top.errors := if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
@@ -247,7 +245,7 @@ top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS
   top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
   top.location = loc(top.file, $2.line, $2.column);
 
-  top.defs = appendDefs(lhs.defs, rhs.defs);
+  top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
 
   top.inputElements = rhs.inputElements;
@@ -271,7 +269,7 @@ top::AspectFunctionLHS ::= t::Type
   top.outputElement = namedSignatureElement(fName, t.typerep);
   
   -- TODO: this needs thinking. is it broken? maybe __return? or wait, it's doing that automatically isnt it...
-  top.defs = addAliasedLhsDcl(top.grammarName, t.location, fName, t.typerep, fName, emptyDefs());
+  top.defs = [aliasedLhsDef(top.grammarName, t.location, fName, t.typerep, fName)];
 
   top.errors := [];
 }

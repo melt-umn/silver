@@ -15,80 +15,70 @@ grammar silver:definition:env;
 
 nonterminal Env with typeTree, valueTree, attrTree, prodOccursTree, occursTree;
 
-inherited attribute typeTree      :: [Decorated EnvScope<DclInfo>]; -- Expr is type tau
-inherited attribute valueTree     :: [Decorated EnvScope<DclInfo>]; -- x has type tau
-inherited attribute attrTree      :: [Decorated EnvScope<DclInfo>]; -- attr a has type tau
+synthesized attribute typeTree      :: [Decorated EnvScope<DclInfo>]; -- Expr is type tau
+synthesized attribute valueTree     :: [Decorated EnvScope<DclInfo>]; -- x has type tau
+synthesized attribute attrTree      :: [Decorated EnvScope<DclInfo>]; -- attr a has type tau
 
-inherited attribute prodOccursTree :: Decorated EnvScope<DclInfo>; -- value on prod
-inherited attribute occursTree     :: Decorated EnvScope<DclInfo>; -- attr on NT
+synthesized attribute prodOccursTree :: Decorated EnvScope<DclInfo>; -- value on prod
+synthesized attribute occursTree     :: Decorated EnvScope<DclInfo>; -- attr on NT
 
 ----------------------------------------------------------------------------------------------------
 --Environment creation functions--------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
 
-abstract production i_env_dummy_record
-top::Env ::=
-{
-}
-
 function emptyEnv
 Decorated Env ::=
 {
-  production attribute top::Env;  top = i_env_dummy_record();
-  
+  return decorate i_emptyEnv() with {};
+}
+abstract production i_emptyEnv
+top::Env ::=
+{
   top.typeTree = [emptyEnvScope()];
   top.valueTree = [emptyEnvScope()];
   top.attrTree = [emptyEnvScope()];
   
   top.prodOccursTree = emptyEnvScope();
   top.occursTree = emptyEnvScope();
-  
-  return top;
 }
 
 function toEnv
-Decorated Env ::= d::Defs
+Decorated Env ::= d::[Def]
 {
-  production attribute top::Env;  top = i_env_dummy_record();
-  
-  top.typeTree = [oneEnvScope(buildTree(d.typeList))];
-  top.valueTree = [oneEnvScope(buildTree(d.valueList))];
-  top.attrTree = [oneEnvScope(buildTree(d.attrList))];
-
-  top.prodOccursTree = oneEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)));
-  top.occursTree = oneEnvScope(buildTree(mapFullnameDcls(d.occursList)));
-  
-  return top;
+  return newScopeEnv(d, emptyEnv());
 }
+
 function appendEnv
 Decorated Env ::= e1::Decorated Env  e2::Decorated Env
 {
-  production attribute top::Env;  top = i_env_dummy_record();
-  
+  return decorate i_appendEnv(e1, e2) with {};
+}
+abstract production i_appendEnv
+top::Env ::= e1::Decorated Env  e2::Decorated Env
+{
   top.typeTree = e1.typeTree ++ e2.typeTree;
   top.valueTree = e1.valueTree ++ e2.valueTree;
   top.attrTree = e1.attrTree ++ e2.attrTree;
 
   top.prodOccursTree = appendEnvScope(e1.prodOccursTree, e2.prodOccursTree);
   top.occursTree = appendEnvScope(e1.occursTree, e2.occursTree);
-
-  return top;
 }
 
 -- Better replacement for appendDefsEnv(x, pushScope(env)) pattern
 function newScopeEnv
-Decorated Env ::= d::Defs  e::Decorated Env
+Decorated Env ::= d::[Def]  e::Decorated Env
 {
-  production attribute top::Env;  top = i_env_dummy_record();
-  
+  return decorate i_newScopeEnv(foldr(consDefs, nilDefs(), d), e) with {};
+}
+abstract production i_newScopeEnv
+top::Env ::= d::Defs  e::Decorated Env
+{
   top.typeTree = oneEnvScope(buildTree(d.typeList)) :: e.typeTree;
   top.valueTree = oneEnvScope(buildTree(d.valueList)) :: e.valueTree;
   top.attrTree = oneEnvScope(buildTree(d.attrList)) :: e.attrTree;
 
   top.prodOccursTree = consEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)), e.prodOccursTree);
   top.occursTree = consEnvScope(buildTree(mapFullnameDcls(d.occursList)), e.occursTree);
-
-  return top;
 }
 
 ----------------------------------------------------------------------------------------------------

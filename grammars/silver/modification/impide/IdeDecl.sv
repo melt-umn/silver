@@ -1,6 +1,6 @@
 grammar silver:modification:impide;
 
-import silver:definition:env only emptyDefs;
+--import silver:definition:env only emptyDefs;
 
 import silver:modification:copper_mda only findSpec; -- TODO
 import silver:modification:impide:cstast;
@@ -16,7 +16,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t ';'
   top.pp = "temp_imp_ide_dcl " ++ parsername.pp ++ " " ++ fileextension.lexeme ++ "\n";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.defs = emptyDefs();
+  top.defs = [];
 
   top.errors := parsername.lookupValue.errors;
 
@@ -90,7 +90,7 @@ top::AGDcl ::= 'temp_imp_ide_font' fontName::IdLower_t 'color' '(' r::Int_t ',' 
   top.pp = "temp_imp_ide_font " ++ fontName.lexeme ++ " color(" ++ r.lexeme ++ ", " ++ g.lexeme ++ ", " ++ b.lexeme ++ ")" ++ fontStyles.pp ++ "\n";
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.defs = emptyDefs();
+  top.defs = [];
   
   top.errors := [];--TODO: add errors later
 

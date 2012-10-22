@@ -51,7 +51,7 @@ top::IRootSpecPart ::=
   top.flowDefs = [];
 }
 
-concrete production aRootSyntax
+concrete production aRootFlow
 top::IRootSpecPart ::= 'flow' s::IFlows
 {
   top.flowDefs = s.flowDefs;

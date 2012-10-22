@@ -64,7 +64,7 @@ abstract production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 {
   top.pp = a1.pp ++ ", " ++ a2.pp;
-  top.defs = appendDefs(a1.defs, a2.defs);
+  top.defs = a1.defs ++ a2.defs;
   top.errors := a1.errors ++ a2.errors;
   
   a1.downSubst = top.downSubst;
@@ -81,7 +81,7 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
   -- Using finalTy here, so our defs requires we have downSubst...
   -- The reason we're putting the type in the environment AFTER inference is so that
   -- wonky things don't happen with the auto-dedecorate behavior in lexicalLocalReference
-  top.defs = addLexicalLocalDcl(top.grammarName, id.location, id.name, finalTy, emptyDefs());
+  top.defs = [lexicalLocalDef(top.grammarName, id.location, id.name, finalTy)];
   
   top.errors := t.errors ++ e.errors;
   
