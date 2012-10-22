@@ -7,10 +7,9 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   top.location = loc(top.file, $1.line, $1.column);
 
   -- TODO: we should decide which location to use (a or nt) better somehow (not using top.location because that can't be trusted! ext:convenience may create these out of thin air)
-  top.defs = addOccursDcl(top.grammarName, at.location, 
-                          nt.lookupType.fullName, at.lookupAttribute.fullName,
-                          protontty, protoatty,
-                          emptyDefs());
+  top.defs = [occursDef(top.grammarName, at.location, 
+                        nt.lookupType.fullName, at.lookupAttribute.fullName,
+                        protontty, protoatty)];
 
   -- binding errors in looking up these names.
   top.errors := at.lookupAttribute.errors ++ nt.lookupType.errors;

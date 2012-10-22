@@ -90,19 +90,19 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp o::Operation
 
 
 -- Defs
-function addSynColDcl
-Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o::Operation defs::Defs
+function synColDef
+Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o::Operation
 {
-  return consAttrDef(defaultEnvItem(synCollectionDcl(sg,sl,fn,bound,ty,o)), defs);
+  return attrDef(defaultEnvItem(synCollectionDcl(sg,sl,fn,bound,ty,o)));
 }
-function addInhColDcl
-Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o::Operation defs::Defs
+function inhColDef
+Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o::Operation
 {
-  return consAttrDef(defaultEnvItem(inhCollectionDcl(sg,sl,fn,bound,ty,o)), defs);
+  return attrDef(defaultEnvItem(inhCollectionDcl(sg,sl,fn,bound,ty,o)));
 }
-function addLocalColDcl
-Defs ::= sg::String sl::Location fn::String ty::TypeExp o::Operation defs::Defs
+function localColDef
+Def ::= sg::String sl::Location fn::String ty::TypeExp o::Operation
 {
-  return consValueDef(defaultEnvItem(localCollectionDcl(sg,sl,fn,ty,o)), defs);
+  return valueDef(defaultEnvItem(localCollectionDcl(sg,sl,fn,ty,o)));
 }
 

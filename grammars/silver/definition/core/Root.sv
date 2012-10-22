@@ -21,7 +21,7 @@ autocopy attribute globalImports :: Decorated Env;
 {--
  - The definitions resulting from grammar-wide imports definitions.
  -}
-synthesized attribute importedDefs :: Defs;
+synthesized attribute importedDefs :: [Def];
 {--
  - All grammars Silver looked at. Despite the name, including interface files.
  -}

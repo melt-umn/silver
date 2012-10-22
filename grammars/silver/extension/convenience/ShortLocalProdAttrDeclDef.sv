@@ -7,7 +7,7 @@ top::ProductionStmt ::= lk::'local' a::Name ht::'::' te::Type
  forwards to
     productionStmtAppend (
        localAttributeDcl (lk, ak, a, ht, te, sm ) ,
-       valueDef ( qNameId(a), eq, v, sm ) ) ;
+       valueEq ( qNameId(a), eq, v, sm ) ) ;
 
  --local attribute lk :: Local_kwd ;
  --lk = terminal(Local_kwd, "local");
@@ -23,7 +23,7 @@ top::ProductionStmt ::= lk::'local' ak::'attribute' a::Name ht::'::' te::Type
  forwards to
     productionStmtAppend (
        localAttributeDcl (lk, ak, a, ht, te, sm ) ,
-       valueDef ( qNameId(a), eq, v, sm ) ) ;
+       valueEq ( qNameId(a), eq, v, sm ) ) ;
 }
 
 concrete production shortProductionDecl
@@ -33,7 +33,7 @@ top::ProductionStmt ::= pk::'production' a::Name ht::'::' te::Type
  forwards to
     productionStmtAppend (
        productionAttributeDcl (pk, ak, a, ht, te, sm ) ,
-       valueDef ( qNameId(a), eq, v, sm ) ) ;
+       valueEq ( qNameId(a), eq, v, sm ) ) ;
 
  local attribute ak :: Attribute_kwd ;
  ak = terminal(Attribute_kwd, "attribute");
@@ -46,5 +46,5 @@ top::ProductionStmt ::= pk::'production' ak::'attribute'
  forwards to
     productionStmtAppend (
        productionAttributeDcl (pk, ak, a, ht, te, sm ) ,
-       valueDef ( qNameId(a), eq, v, sm ) ) ;
+       valueEq ( qNameId(a), eq, v, sm ) ) ;
 }

@@ -181,7 +181,7 @@ concrete production aRoot2
 top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
 {
   top.declaredName = if r1.declaredName == "" then r2.declaredName else r1.declaredName; 
-  top.defs = appendDefs(r1.defs, r2.defs);
+  top.defs = r1.defs ++ r2.defs;
   top.moduleNames = r1.moduleNames ++ r2.moduleNames;
   top.allGrammarDependencies = r1.allGrammarDependencies ++ r2.allGrammarDependencies;
   top.exportedGrammars = r1.exportedGrammars ++ r2.exportedGrammars;
@@ -196,7 +196,7 @@ top::IRootSpecPart ::=
   top.declaredName = "";
   top.moduleNames = [];
   top.allGrammarDependencies = [];
-  top.defs = emptyDefs();
+  top.defs = [];
   top.exportedGrammars = [];
   top.optionalGrammars = [];
   top.condBuild = [];
@@ -255,7 +255,7 @@ function unfoldCB
 concrete production aDefsNone
 top::IDefs ::= '[' ']'
 {
-  top.defs = emptyDefs();
+  top.defs = [];
 }
 
 concrete production aDefsOne
@@ -273,7 +273,7 @@ top::IDefsInner ::= d::IDclInfo
 concrete production aDefsInnerCons
 top::IDefsInner ::= d1::IDclInfo ',' d2::IDefsInner
 {
-  top.defs = appendDefs(d1.defs, d2.defs);
+  top.defs = d1.defs ++ d2.defs;
 }
 
 concrete production aNamesNone
@@ -357,7 +357,7 @@ top::ITyVarDcls ::= '[' t::ITyVarDclsInner ']'
 concrete production aTyVarDclsNone
 top::ITyVarDcls ::= '[' ']'
 {
-  top.defs = emptyDefs();
+  top.defs = [];
   top.tyvars = [];
 }
 
@@ -367,7 +367,7 @@ top::ITyVarDclsInner ::= t1::ITyVar
   local attribute tv :: TyVar;
   tv = freshTyVar();
   
-  top.defs = addLexTyVarDcl("IFACE", loc("IFACE",-1,-1), t1.lexeme, skolemTypeExp(tv), emptyDefs());
+  top.defs = [lexTyVarDef("IFACE", loc("IFACE",-1,-1), t1.lexeme, skolemTypeExp(tv))];
   top.tyvars = [tv];
 }
 
@@ -377,7 +377,7 @@ top::ITyVarDclsInner ::= t1::ITyVar ',' t2::ITyVarDclsInner
   local attribute tv :: TyVar;
   tv = freshTyVar();
   
-  top.defs = addLexTyVarDcl("IFACE", loc("IFACE",-1,-1), t1.lexeme, skolemTypeExp(tv), t2.defs);
+  top.defs = lexTyVarDef("IFACE", loc("IFACE",-1,-1), t1.lexeme, skolemTypeExp(tv)) :: t2.defs;
   top.tyvars = [tv] ++ t2.tyvars;
 }
 
@@ -386,7 +386,7 @@ top::ITyVarDclsInner ::= t1::ITyVar ',' t2::ITyVarDclsInner
 concrete production aDclInfoLocal
 top::IDclInfo ::= 'loc' '(' l::ILocation ',' fn::IName ',' t::ITypeRep ')'
 {
-  top.defs = addLocalDcl(top.grammarName, l.location, fn.aname, t.typerep, emptyDefs());
+  top.defs = [localDef(top.grammarName, l.location, fn.aname, t.typerep)];
 }
 
 concrete production aDclInfoProduction
@@ -394,7 +394,7 @@ top::IDclInfo ::= 'prod' '(' l::ILocation ',' td::ITyVarDcls ',' s::INamedSignat
 {
   s.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = addProdDcl(top.grammarName, l.location, s.signature, emptyDefs());
+  top.defs = [prodDef(top.grammarName, l.location, s.signature)];
 }
 
 concrete production aDclInfoFunction
@@ -402,13 +402,13 @@ top::IDclInfo ::= 'fun' '(' l::ILocation ',' td::ITyVarDcls ',' s::INamedSignatu
 {
   s.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = addFunDcl(top.grammarName, l.location, s.signature, emptyDefs());
+  top.defs = [funDef(top.grammarName, l.location, s.signature)];
 }
 
 concrete production aDclInfoGlobalValue
 top::IDclInfo ::= 'glob' '(' l::ILocation ',' fn::IName ',' t::ITypeRep ')'
 {
-  top.defs = addGlobalValueDcl(top.grammarName, l.location, fn.aname, t.typerep, emptyDefs());
+  top.defs = [globalDef(top.grammarName, l.location, fn.aname, t.typerep)];
 }
 
 concrete production aDclInfoNonterminal
@@ -417,14 +417,14 @@ top::IDclInfo ::= 'nt' '(' l::ILocation ',' s::IName ',' td::ITyVarDcls ',' t::I
   t.env = newScopeEnv(td.defs, top.env);
   
   top.defs = if cl.bval
-             then addClosedNtDcl(top.grammarName, l.location, s.aname, td.tyvars, t.typerep, emptyDefs())
-             else addNtDcl(top.grammarName, l.location, s.aname, td.tyvars, t.typerep, emptyDefs());
+             then [closedNtDef(top.grammarName, l.location, s.aname, td.tyvars, t.typerep)]
+             else [ntDef(top.grammarName, l.location, s.aname, td.tyvars, t.typerep)];
 }
 
 concrete production aDclInfoTerminal
 top::IDclInfo ::= 'term' '(' l::ILocation ',' n::IName ',' '/' r::Regex_R '/' ')'
 {
-  top.defs = addTermDcl(top.grammarName, l.location, n.aname, r, emptyDefs());
+  top.defs = [termDef(top.grammarName, l.location, n.aname, r)];
 }
 
 concrete production aDclInfoSynthesized
@@ -432,7 +432,7 @@ top::IDclInfo ::= 'syn' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' t:
 {
   t.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = addSynDcl(top.grammarName, l.location, fn.aname, td.tyvars, t.typerep, emptyDefs());
+  top.defs = [synDef(top.grammarName, l.location, fn.aname, td.tyvars, t.typerep)];
 }
 
 concrete production aDclInfoInherited
@@ -440,7 +440,7 @@ top::IDclInfo ::= 'inh' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' t:
 {
   t.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = addInhDcl(top.grammarName, l.location, fn.aname, td.tyvars, t.typerep, emptyDefs());
+  top.defs = [inhDef(top.grammarName, l.location, fn.aname, td.tyvars, t.typerep)];
 }
 
 concrete production aDclInfoProdAttr
@@ -450,13 +450,13 @@ top::IDclInfo ::= 'p@' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' ot:
   its.env = ot.env;
   t.env = ot.env;
 
-  top.defs = addPaDcl(top.grammarName, l.location, fn.aname, ot.typerep, its.typereps, t.defs, emptyDefs());
+  top.defs = [prodOccursDef(top.grammarName, l.location, fn.aname, ot.typerep, its.typereps, t.defs)];
 }
 
 concrete production aDclInfoForward
 top::IDclInfo ::= 'fwd' '(' l::ILocation ',' t::ITypeRep ')'
 {
-  top.defs = addForwardDcl(top.grammarName, l.location, t.typerep, emptyDefs());
+  top.defs = [forwardDef(top.grammarName, l.location, t.typerep)];
 }
 
 concrete production aDclInfoOccurs
@@ -470,10 +470,9 @@ top::IDclInfo ::= '@' '(' l::ILocation ',' fnnt::IName ',' fnat::IName ',' td::I
 
   -- Recall that constraint on occurs DclInfos: the types need to be tyvars, not skolem constants.
   
-  top.defs = addOccursDcl( top.grammarName, l.location, fnnt.aname, fnat.aname, 
-                           freshenTypeExpWith(ntt.typerep, td.tyvars, fresh),
-                           freshenTypeExpWith(att.typerep, td.tyvars, fresh),
-                           emptyDefs());
+  top.defs = [occursDef(top.grammarName, l.location, fnnt.aname, fnat.aname, 
+                        freshenTypeExpWith(ntt.typerep, td.tyvars, fresh),
+                        freshenTypeExpWith(att.typerep, td.tyvars, fresh))];
 }
 
 --The TypeReps

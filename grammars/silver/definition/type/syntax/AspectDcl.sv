@@ -3,11 +3,11 @@ grammar silver:definition:type:syntax;
 attribute lexicalTypeVariables occurs on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectRHSElem, AspectFunctionSignature, AspectFunctionLHS;
 
 function addNewLexicalTyVars_ActuallyVariables
-Defs ::= gn::String sl::Location l::[String]
+[Def] ::= gn::String sl::Location l::[String]
 {
-  return if null(l) then emptyDefs()
-         else addLexTyVarDcl(gn, sl, head(l), freshType(),
-                  addNewLexicalTyVars_ActuallyVariables(gn, sl, tail(l)));
+  return if null(l) then []
+         else lexTyVarDef(gn, sl, head(l), freshType()) ::
+                  addNewLexicalTyVars_ActuallyVariables(gn, sl, tail(l));
 }
 
 -- This binds variables that appear in the signature to type variables, rather than skolem constants

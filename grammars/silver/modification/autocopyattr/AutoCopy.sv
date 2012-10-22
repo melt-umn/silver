@@ -20,7 +20,7 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name botl::BracketedOptTypeList '::' te
   production attribute tl :: Decorated TypeList;
   tl = botl.typelist;
 
-  top.defs = addAutocopyDcl(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, emptyDefs());
+  top.defs = [autocopyDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
 
 --------
   botl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),

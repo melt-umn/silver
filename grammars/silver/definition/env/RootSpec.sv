@@ -19,7 +19,7 @@ synthesized attribute declaredName :: String;
 {--
  - A list of definitions exported.
  -}
-synthesized attribute defs :: Defs;
+synthesized attribute defs :: [Def];
 {--
  - Grammars DIRECTLY exported by this grammar.
  -}
@@ -60,7 +60,7 @@ top::RootSpec ::=
   top.declaredName = "_NULL_";
   top.moduleNames = [];
   top.allGrammarDependencies = [];
-  top.defs = emptyDefs();
+  top.defs = [];
   top.exportedGrammars = [];
   top.optionalGrammars = [];
   top.condBuild = [];

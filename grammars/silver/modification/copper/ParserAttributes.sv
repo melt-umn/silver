@@ -9,7 +9,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = addParserAttrDcl(top.grammarName, a.location, fName, te.typerep, emptyDefs());
+  top.defs = [parserAttrDef(top.grammarName, a.location, fName, te.typerep)];
 
   top.errors <- if length(getValueDclAll(fName, top.env)) > 1
                 then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
