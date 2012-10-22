@@ -71,6 +71,7 @@ top::ProductionGraph ::=
   top.edgeMap = searchGraphEnv(_, edgeGraph);
   
   top.cullSuspect = 
+    -- TODO: this potentially introduces the same edge twice?
     let newEdges :: [Pair<FlowVertex FlowVertex>] =
           foldr(append, [], 
             map(isSuspectEdgeAdmissible(_, edgeGraph, searchEnvTree(lhsNt, top.flowTypes)), suspectEdges))
@@ -407,6 +408,13 @@ function repairClosureVertex
  - This way, after (b,c)'s edges are admitted, we come back to (a,b) and do not
  - admit the extra edges c introduced for a.
  -
+ - A note on this being applied "in parallel:" it's okay not to update 'ft' and 'graph'
+ - after each edge is introduced, as this is conservative: it just means we'll
+ - potentially introduce an edge next iteration.
+ - The reason is that each edge is TO an lhsInh, which never gets edges from it.
+ - So once valid that edge is valid, it is always valid. No additional edges or
+ - flow type updates will change that.
+ -
  - @param edge  A suspect edge. INVARIANT: edge.fst is always a syn or fwd.
  -              (or rather, can always be looked up in the flow type.)
  - @param graph  The current graph
@@ -417,13 +425,16 @@ function repairClosureVertex
 function isSuspectEdgeAdmissible
 [Pair<FlowVertex FlowVertex>] ::= edge::Pair<FlowVertex FlowVertex>  graph::EnvTree<FlowVertex>  ft::[Pair<String String>]
 {
+  -- The existing dependencies of the edge's source vertex
   local sourceDeps :: [String] = foldr(collectInhs, [], searchGraphEnv(edge.fst, graph));
+  -- Ditto for the target vertex
   local targetDeps :: [String] = foldr(collectInhs, [], searchGraphEnv(edge.snd, graph));
+  -- The current flow type of the edge's source vertex (which is always a thing in the flow type)
   local currentDeps :: [String] = lookupAllBy(stringEq, edge.fst.flowTypeName, ft);
   
-  -- We want to introduce edges for all attrs in 'targetDeps' that are not in 'sourceDeps' that ARE in 'currentDeps'.
-  -- i.e. "valid" inhs that aren't currently depended upon.
+  -- Those dependencies in the target that are NOT in the source. i.e. potentially new dependencies!
   local targetNotSource :: [String] = rem(targetDeps, sourceDeps);
+  -- ONLY those that ARE in current. i.e. dependencies that do not expand the flow type of this source vertex.
   local validDeps :: [FlowVertex] = map(lhsInhVertex, filter(contains(_, currentDeps), targetNotSource));
   
   return if null(currentDeps) then [] -- just a quick optimization.
