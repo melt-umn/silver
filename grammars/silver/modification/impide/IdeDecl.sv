@@ -10,8 +10,53 @@ import silver:modification:impide:cstast;
 -- moving.
 terminal ImpIde_t 'temp_imp_ide_dcl' lexer classes {KEYWORD};
 
+terminal ImpIde_OptFunc_Analyzer 'analyzer';
+
+nonterminal IdeFunctions ;
+nonterminal IdeFunction ;
+nonterminal IdeFunctionList ;
+
+concrete production emptyIdeFunctions
+optFunctions::IdeFunctions ::=
+{
+
+}
+
+concrete production listIdeFunctions
+optFunctions::IdeFunctions ::= '{' funcList::IdeFunctionList '}'
+{
+
+}
+
+concrete production nilIdeFunctionList
+funcList::IdeFunctionList ::= 
+{
+
+}
+
+concrete production consIdeFunctionList
+funcList1::IdeFunctionList ::= func::IdeFunction funcList2::IdeFunctionList
+{
+
+}
+
+concrete production makeIdeFunction_Analyzer
+func::IdeFunction ::= 'analyzer' analyzerName::QName ';' 
+{
+  --func.name = "analyzer";
+
+  local attribute analyzerFuncDcl :: DclInfo;
+  analyzerFuncDcl = analyzerName.lookupValue.dcl;
+
+  
+} 
+
+--action {
+--  print "!!!****** Saw analyzer function with sig = " ++ analyzerName.lookupValue.dcl.unparse ++ "\n";
+--}
+
 concrete production ideDcl
-top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t ';'
+top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optFunctions::IdeFunctions ';'
 {
   top.pp = "temp_imp_ide_dcl " ++ parsername.pp ++ " " ++ fileextension.lexeme ++ "\n";
   top.location = loc(top.file, $1.line, $1.column);

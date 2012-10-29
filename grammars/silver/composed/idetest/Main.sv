@@ -62,6 +62,14 @@ IOVal<Integer> ::= args::[String] i::IO
 
 temp_imp_ide_dcl rParse ".sv" ;
 
+function getErrors 
+[String] ::= args::[String] i::IO
+{
 
+  local attribute ru :: Decorated RunUnit;
+  ru = decorate run(i, args) with {rParser = rParse; iParser = iParse;};
+
+  return ru.errorList;
+}
 -- Yeah, that's a hack! :D
 
