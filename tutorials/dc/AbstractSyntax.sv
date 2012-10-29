@@ -22,7 +22,7 @@ synthesized attribute value :: Integer occurs on Root;
 abstract production root
 r::Root ::= e::Expr
 {
-  r.pp = e.pp ;
+  r.pp1 = e.pp ;
   r.value = e.value ;
 }
 
