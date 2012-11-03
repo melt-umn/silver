@@ -46,7 +46,10 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
     "<property name='ide.parser.ide_copperfile' value='" ++ ideParserFullPath ++ "' />",
     "<property name='ide.fileextension' value='" ++ ide.ideExtension ++ "' />",
 
-    "<target name='ide' depends='jars, copper, grammars'>" ++ getIDETarget() ++ "</target>\n\n"
+    "<target name='arg-check'>" ++ getTargetArgCheck() ++ "</target>",
+    "<target name='filters'>" ++ getTargetFilters() ++ "</target>",
+    "<target name='ide' depends='arg-check, filters, jars, copper, grammars'>" ++ getIDETarget() ++ "</target>\n\n",
+    getBuildTargets()
     ];
 
   -- The following line may be commented out for test purpose.
@@ -66,16 +69,22 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
     ];
 }
 
-function getIDETarget
+function getTargetArgCheck
 String ::=
 {
-  return 
+    return
     "\n" ++
-    "<!-- clean up -->\n" ++
-    "<delete dir='${ide.proj.parent.path}'/>\n" ++
-    "\n" ++
+    "  <condition property=\"is-all-in-one\">\n"++
+    "    <equals arg1=\"${all-in-one}\" arg2=\"true\" />\n"++
+    "  </condition>\n";
+}
 
-    "<!-- define variables -->\n" ++
+function getTargetFilters
+String ::=
+{
+    return
+    "\n" ++
+    "<!-- define variables used in template file -->\n" ++
     "<filter token=\"GROUP_ID\" value='${ide.pkg.name}'/>\n" ++
     "<filter token=\"PKG_NAME\" value='${ide.pkg.name}'/>\n" ++
     "<filter token=\"PARSER_NAME\" value='${ide.parser.classname}'/>\n" ++
@@ -90,7 +99,16 @@ String ::=
     "<filter token=\"FEATURE_COPYRIGHT_URL\" value='http://some.user.provided.url'/>\n" ++
     "<filter token=\"FEATURE_COPYRIGHT_TEXT\" value='no copyright information available'/>\n" ++
     "<filter token=\"FEATURE_LICENSE_URL\" value='http://some.user.provided.url'/>\n" ++
-    "<filter token=\"FEATURE_LICENSE_TEXT\" value='no license information available'/>\n" ++
+    "<filter token=\"FEATURE_LICENSE_TEXT\" value='no license information available'/>\n";
+}
+
+function getIDETarget
+String ::=
+{
+  return 
+    "\n" ++
+    "<!-- clean up -->\n" ++
+    "<delete dir='${ide.proj.parent.path}'/>\n" ++
     "\n" ++
 
     "<!-- 1. create project folder -->\n" ++
@@ -101,25 +119,8 @@ String ::=
     "<mkdir dir='${ide.proj.updatesite.path}'/>\n" ++
     "\n" ++
 
-    {-- No longer needed as these classes are now shipped as a separate Eclipse plugin.
-    "<!-- 2. copy static classes -->\n" ++ 
-    "<mkdir dir='${ide.pkg.path}/copper/'/>\n" ++
-    "<copy todir='${ide.proj.plugin.path}/src/edu/umn/cs/melt/ide/copper/'>\n" ++
-    "  <fileset dir='${res}/src/edu/umn/cs/melt/ide/copper/' includes='*.java'/>\n" ++
-    "</copy>\n" ++
-    "\n" ++
-    --}
-
     "<!-- 3. copper parser -->\n" ++
     "<mkdir dir='${ide.pkg.path}/copper/parser/'/>\n" ++
-    {--
-    "<copper\n" ++
-    "  fullClassName='${ide.pkg.name}.copper.parser.${ide.parser.classname}'\n" ++ 
-    "  inputFile='${ide.parser.copperfile}'\n" ++ 
-    "  outputFile='${ide.pkg.path}/copper/parser/${ide.parser.classname}.java'\n" ++ 
-    "  skin='XML' warnUselessNTs='no' dump='no'/>\n" ++ 
-    "\n" ++
-    --}
     "<copper\n" ++ 
     "  fullClassName='${ide.pkg.name}.copper.parser.${ide.parser.classname}'\n" ++ 
     "  inputFile='${ide.parser.ide_copperfile}'\n" ++ 
@@ -128,7 +129,11 @@ String ::=
     "\n" ++
 
     "<!-- 4. build properties -->\n" ++
-    "<copy file=\"${res}/build.properties.template\" tofile=\"${ide.proj.plugin.path}/build.properties\" filtering=\"true\"/>\n" ++
+    -- commented out to support different build modes
+    -- "<copy file=\"${res}/build.properties.template\" tofile=\"${ide.proj.plugin.path}/build.properties\" filtering=\"true\"/>\n" ++
+    "<antcall target=\"create build.properties\" inheritAll=\"true\"/>\n" ++
+    "<antcall target=\"create build.properties (all-on-one)\" inheritAll=\"true\"/>\n" ++
+
     "\n" ++
 
     "<!-- 5. plugin.xml -->\n" ++
@@ -137,11 +142,16 @@ String ::=
 
     "<!-- copy plugin dependency (composed jar) -->\n" ++
     "<copy file=\"${lang.composed}.jar\" tofile=\"${ide.proj.plugin.path}/${lang.composed}.jar\"/>\n" ++
+    -- called only in all-in-one mode
+    "<antcall target=\"copy plugin dependencies\"/>\n"++
     "\n" ++
 
     "<!-- 6. manifest file -->\n" ++
     "<mkdir dir='${ide.proj.plugin.path}/META-INF/'/>\n" ++
-    "<copy file=\"${res}/META-INF/MANIFEST.MF.template\" tofile=\"${ide.proj.plugin.path}/META-INF/MANIFEST.MF\" filtering=\"true\"/>\n" ++
+    -- commented out to support different build modes
+    -- "<copy file=\"${res}/META-INF/MANIFEST.MF.template\" tofile=\"${ide.proj.plugin.path}/META-INF/MANIFEST.MF\" filtering=\"true\"/>\n" ++
+    "<antcall target=\"create manifest file\" inheritAll=\"true\"/>\n" ++
+    "<antcall target=\"create manifest file (all-on-one)\" inheritAll=\"true\"/>\n" ++
     "\n" ++
 
     "<!-- 7. customized IDE parser -->\n" ++
@@ -192,9 +202,46 @@ String ::=
 
     "<!-- 10. eclipse project -->\n" ++
     "<copy file=\"${res}/project.template\" tofile=\"${ide.proj.plugin.path}/.project\" filtering=\"true\"/>\n" ++
-    "<copy file=\"${res}/classpath.template\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n" ++
+    -- commented out to support different build modes
+    -- "<copy file=\"${res}/classpath.template\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n" ++
+    "<antcall target=\"set classpaths for Eclipse\" inheritAll=\"true\"/>\n" ++
+    "<antcall target=\"set classpaths for Eclipse (all-on-one)\" inheritAll=\"true\"/>\n" ++
+
     "\n"
   ;
+}
+
+function getBuildTargets
+String ::=
+{
+return
+"<!-- Supporting targets based on the build mode -->\n" ++
+"<target name=\"create build.properties\" unless=\"is-all-in-one\" depends=\"filters\">\n"++
+"  <copy file=\"${res}/build.properties.template\" tofile=\"${ide.proj.plugin.path}/build.properties\" filtering=\"true\"/>\n"++
+"</target>\n"++
+"<target name=\"create build.properties (all-on-one)\" if=\"is-all-in-one\" depends=\"filters\">\n"++
+"  <copy file=\"${res}/build.properties.template.all_in_one\" tofile=\"${ide.proj.plugin.path}/build.properties\" filtering=\"true\"/>\n"++
+"</target>\n"++
+"\n"++
+"<target name=\"create manifest file\" unless=\"is-all-in-one\" depends=\"filters\">\n"++	
+"  <copy file=\"${res}/META-INF/MANIFEST.MF.template\" tofile=\"${ide.proj.plugin.path}/META-INF/MANIFEST.MF\" filtering=\"true\"/>\n"++
+"</target>\n"++
+"<target name=\"create manifest file (all-on-one)\" if=\"is-all-in-one\" depends=\"filters\">\n"++	
+"  <copy file=\"${res}/META-INF/MANIFEST.MF.template.all_in_one\" tofile=\"${ide.proj.plugin.path}/META-INF/MANIFEST.MF\" filtering=\"true\"/>\n"++
+"</target>\n"++
+"\n"++
+"<target name=\"set classpaths for Eclipse\" unless=\"is-all-in-one\" depends=\"filters\">\n"++	
+"  <copy file=\"${res}/classpath.template\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n"++
+"</target>\n"++
+"<target name=\"set classpaths for Eclipse (all-on-one)\" if=\"is-all-in-one\" depends=\"filters\">\n"++	
+"  <copy file=\"${res}/classpath.template.all_in_one\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n"++
+"</target>\n"++
+"\n"++
+"<target name=\"copy plugin dependencies\" if=\"is-all-in-one\">\n"++	
+"  <copy file=\"${sh}/jars/CopperRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.copper.jar\"/>\n"++
+"  <copy file=\"${sh}/jars/SilverRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.silver.jar\"/>\n"++
+"  <copy file=\"${sh}/jars/IDEPluginRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.ide.copper-1.0.0.jar\"/>\n"++
+"</target>\n\n";
 }
 
 function toUpperCase
