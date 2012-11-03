@@ -3,102 +3,96 @@ grammar silver:modification:copper;
 --------------------------------------------------------------------------------
 -- Defs.sv
 
-synthesized attribute lexerClassList :: [EnvItem] occurs on Defs;
+synthesized attribute lexerClassList :: [EnvItem] occurs on Defs, Def;
 
-aspect function unparseDefs
-String ::= d::Defs bv::[TyVar]
-{
-  dclinfos <- mapGetDcls(d.lexerClassList);
-}
-
-aspect production emptyDefs 
+aspect production nilDefs 
 top::Defs ::= 
 {
   top.lexerClassList = [];
 }
 
-aspect production appendDefs 
-top::Defs ::= e1::Defs e2::Defs
+aspect production consDefs 
+top::Defs ::= e1::Def e2::Defs
 {
   top.lexerClassList = e1.lexerClassList ++ e2.lexerClassList;
 }
 
-abstract production consLexerClassDef
-top::Defs ::= d::EnvItem e2::Defs
+aspect default production
+top::Def ::=
 {
-  top.lexerClassList = d :: forward.lexerClassList;
-  forwards to e2;
+  top.lexerClassList = [];
+}
+
+abstract production lxrClsDef
+top::Def ::= d::EnvItem
+{
+  top.dcl = d.dcl;
+  top.lexerClassList = [d];
 }
 
 -- TODO: we don't do any renaming of lexer classes BUG
 
-function addParserAttrDcl
-Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
+function parserAttrDef
+Def ::= sg::String sl::Location fn::String ty::TypeExp
 {
-  return consValueDef(defaultEnvItem(parserAttrDcl(sg,sl,fn,ty)), defs);
+  return valueDef(defaultEnvItem(parserAttrDcl(sg,sl,fn,ty)));
 }
 
-function addPluckTermDcl
-Defs ::= sg::String sl::Location fn::String defs::Defs
+function pluckTermDef
+Def ::= sg::String sl::Location fn::String
 {
-  return consValueDef(defaultEnvItem(pluckTermDcl(sg,sl,fn)), defs);
+  return valueDef(defaultEnvItem(pluckTermDcl(sg,sl,fn)));
 }
 
-function addDisambigLexemeDcl
-Defs ::= sg::String sl::Location defs::Defs
+function disambigLexemeDef
+Def ::= sg::String sl::Location
 {
-  return consValueDef(defaultEnvItem(disambigLexemeDcl(sg,sl)), defs);
+  return valueDef(defaultEnvItem(disambigLexemeDcl(sg,sl)));
 }
 
-function addLexerClassDcl
-Defs ::= sg::String sl::Location fn::String defs::Defs
+function lexerClassDef
+Def ::= sg::String sl::Location fn::String
 {
-  return consLexerClassDef(defaultEnvItem(lexerClassDcl(sg,sl,fn)), defs);
+  return lxrClsDef(defaultEnvItem(lexerClassDcl(sg,sl,fn)));
 }
 
-function addTermAttrValueDcl
-Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
+function termAttrValueDef
+Def ::= sg::String sl::Location fn::String ty::TypeExp
 {
-  return consValueDef(defaultEnvItem(termAttrValueDcl(sg,sl,fn,ty)), defs);
+  return valueDef(defaultEnvItem(termAttrValueDcl(sg,sl,fn,ty)));
 }
 
-function addActionChildDcl
-Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
+function actionChildDef
+Def ::= sg::String sl::Location fn::String ty::TypeExp
 {
-  return consValueDef(defaultEnvItem(actionChildDcl(sg,sl,fn,ty)), defs);
+  return valueDef(defaultEnvItem(actionChildDcl(sg,sl,fn,ty)));
 }
 
-function addParserLocalDcl
-Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
+function parserLocalDef
+Def ::= sg::String sl::Location fn::String ty::TypeExp
 {
-  return consValueDef(defaultEnvItem(parserLocalDcl(sg,sl,fn,ty)), defs);
+  return valueDef(defaultEnvItem(parserLocalDcl(sg,sl,fn,ty)));
 }
 
 --------------------------------------------------------------------------------
 -- Env.sv
 
-inherited attribute lexerClassTree :: Decorated EnvScope<DclInfo> occurs on Env;
+synthesized attribute lexerClassTree :: Decorated EnvScope<DclInfo> occurs on Env;
 
-aspect function emptyEnv
-Decorated Env ::=
+aspect production i_emptyEnv
+top::Env ::=
 {
   top.lexerClassTree = emptyEnvScope();
 }
 
-aspect function toEnv
-Decorated Env ::= d::Defs
-{
-  top.lexerClassTree = oneEnvScope(buildTree(d.lexerClassList));
-}
-
-aspect function appendEnv
-Decorated Env ::= e1::Decorated Env  e2::Decorated Env
+aspect production i_appendEnv
+top::Env ::= e1::Decorated Env  e2::Decorated Env
 {
   top.lexerClassTree = appendEnvScope(e1.lexerClassTree, e2.lexerClassTree);
 }
 
-aspect function newScopeEnv
-Decorated Env ::= d::Defs  e::Decorated Env
+aspect production i_newScopeEnv
+top::Env ::= d::Defs  e::Decorated Env
 {
   top.lexerClassTree = consEnvScope(buildTree(d.lexerClassList), e.lexerClassTree);
 }

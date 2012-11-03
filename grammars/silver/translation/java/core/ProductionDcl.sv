@@ -73,8 +73,15 @@ makeStaticDcls(className, ns.inputElements) ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
-"\tpublic common.Node getForward(final common.DecoratedNode context) {\n" ++
-"\t\treturn " ++ (if null(body.uniqueSignificantExpression) then "null" else head(body.uniqueSignificantExpression).translation) ++ ";\n" ++
+"\tpublic boolean hasForward() {\n" ++
+"\t\treturn " ++ (if null(body.uniqueSignificantExpression) then "false" else "true") ++ ";\n" ++
+"\t}\n\n" ++
+
+"\t@Override\n" ++
+"\tpublic common.Node evalForward(final common.DecoratedNode context) {\n" ++
+"\t\t" ++ (if null(body.uniqueSignificantExpression) 
+           then "throw new common.exceptions.SilverInternalError(\"Production " ++ fName ++ " erroneously claimed to forward\");\n"
+           else "return " ++ head(body.uniqueSignificantExpression).translation ++ ";\n") ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++

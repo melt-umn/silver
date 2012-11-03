@@ -15,13 +15,11 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   production attribute namedSig :: NamedSignature;
   namedSig = namedSignature(fName, ns.inputElements, ns.outputElement);
 
-  top.defs = addFunDcl(top.grammarName, id.location, namedSig,
-              if isEmptyOfValues(body.productionAttributes)
-              then emptyDefs()
-              else addPaDcl(top.grammarName, id.location, fName,
-                       namedSig.outputElement.typerep, namedSig.inputTypes,
-                       body.productionAttributes,
-                        emptyDefs()) );
+  top.defs = funDef(top.grammarName, id.location, namedSig) ::
+    if null(body.productionAttributes) then []
+    else [prodOccursDef(top.grammarName, id.location, fName,
+            namedSig.outputElement.typerep, namedSig.inputTypes,
+            body.productionAttributes)];
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
@@ -37,15 +35,15 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 
   top.errors := ns.errors ++ body.errors;
 
-  production attribute sigDefs :: Defs with appendDefs;
+  production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
 
   ns.env = newScopeEnv(sigDefs, top.env);
 
-  local attribute prodAtts :: Defs;
+  local attribute prodAtts :: [Def];
   prodAtts = defsFromPADcls(getProdAttrs(fName, top.env), namedSig);
 
-  body.env = newScopeEnv(appendDefs(body.defs, sigDefs), newScopeEnv(prodAtts, top.env));
+  body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;
   body.blockContext = functionContext();
 }
@@ -56,7 +54,7 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
   top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
   top.location = loc(top.file, $2.line, $2.column);
 
-  top.defs = appendDefs(lhs.defs, rhs.defs);
+  top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
 
   top.inputElements = rhs.inputElements;
@@ -75,7 +73,7 @@ top::FunctionLHS ::= t::Type
   top.outputElement = namedSignatureElement(fName, t.typerep);
 
   -- TODO: think about this. lhs doesn't really have an fName.
-  top.defs = addLhsDcl(top.grammarName, t.location, fName, t.typerep, emptyDefs());
+  top.defs = [lhsDef(top.grammarName, t.location, fName, t.typerep)];
 
   top.errors := t.errors;
 }

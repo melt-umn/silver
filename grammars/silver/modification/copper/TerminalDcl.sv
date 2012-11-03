@@ -87,7 +87,7 @@ top::TermPrecList ::= h::QName t::TermPrecList
 
   -- This is just for disambiguation groups. TODO: remove and make it separate concrete syntax!
   top.defs = if null(h.lookupType.dcls) then t.defs
-             else addPluckTermDcl(top.grammarName, h.location, h.lookupType.dcl.fullName, t.defs);
+             else pluckTermDef(top.grammarName, h.location, h.lookupType.dcl.fullName) :: t.defs;
 
   top.errors := t.errors;
   
@@ -103,22 +103,23 @@ abstract production termPrecListNull
 top::TermPrecList ::=
 {
   top.precTermList = [];
-  top.defs = emptyDefs();
+  top.defs = [];
   top.pp = "";
   top.location = loc("termPrecListNull", -1, -1);
   top.errors := [];
 }
 
 
+-- TODO this should probably be a global or something now...
 function addTerminalAttrDefs
-Defs ::= tailDefs::Defs
+[Def] ::= moredefs::[Def]
 {
   -- TODO: no grammar or location? how to deal with this?
-  return addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "lexeme", stringTypeExp(),
-         addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "filename", stringTypeExp(),
-         addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "line", intTypeExp(),
-         addTermAttrValueDcl("DBGtav", loc("DBGtav.sv", -1, -1), "column", intTypeExp(),
-         tailDefs))));
+  return [termAttrValueDef("DBGtav", loc("DBGtav.sv", -1, -1), "lexeme", stringTypeExp()),
+          termAttrValueDef("DBGtav", loc("DBGtav.sv", -1, -1), "filename", stringTypeExp()),
+          termAttrValueDef("DBGtav", loc("DBGtav.sv", -1, -1), "line", intTypeExp()),
+          termAttrValueDef("DBGtav", loc("DBGtav.sv", -1, -1), "column", intTypeExp())] ++
+           moredefs;
 }
 
 

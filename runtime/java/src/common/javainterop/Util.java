@@ -39,13 +39,19 @@ public final class Util {
 	}
 
 	public static int indexOfSynOn(String syn, DecoratedNode dn) {
-		String[] so = getOccursSynFor(dn.undecorate());
+		return indexOfSynOn(syn, dn.undecorate());
+	}
+	public static int indexOfSynOn(String syn, Node n) {
+		String[] so = getOccursSynFor(n);
 		
 		return Arrays.asList(so).indexOf(syn);
 	}
 
 	public static int indexOfInhOn(String inh, DecoratedNode dn) {
-		String[] io = getOccursInhFor(dn.undecorate());
+		return indexOfInhOn(inh, dn.undecorate());
+	}
+	public static int indexOfInhOn(String inh, Node n) {
+		String[] io = getOccursInhFor(n);
 		
 		return Arrays.asList(io).indexOf(inh);
 	}

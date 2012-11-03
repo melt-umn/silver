@@ -16,7 +16,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
 
   -- TODO: dunno, should we keep this separate? For now, masquerade as a function.
   -- Only bug is that you can aspect it, but it's pointless to do so, you can't affect anything.
-  top.defs = addFunDcl(top.grammarName, n.location, namedSig, emptyDefs());
+  top.defs = [funDef(top.grammarName, n.location, namedSig)];
   
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ n.name;

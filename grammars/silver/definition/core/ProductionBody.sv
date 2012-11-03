@@ -42,7 +42,7 @@ autocopy attribute blockContext :: BlockContext;
 {--
  - Defs of attributes that should be wrapped up as production attributes.
  -}
-synthesized attribute productionAttributes :: Defs;
+synthesized attribute productionAttributes :: [Def];
 {--
  - Either the 'forward' expression, or the 'return' expression.
  - I gave it an obtuse name so it could easily be renamed in the future.
@@ -104,9 +104,9 @@ top::ProductionStmts ::=
 {
   top.pp = "";
   top.location = loc(top.file, -1, -1);
-  top.defs = emptyDefs();
+  top.defs = [];
 
-  top.productionAttributes = emptyDefs();
+  top.productionAttributes = [];
   top.uniqueSignificantExpression = [];
 
   top.errors := [];
@@ -131,10 +131,10 @@ top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
   top.pp = h.pp ++ "\n" ++ t.pp;
   top.location = h.location;
   
-  top.productionAttributes = appendDefs(h.productionAttributes, t.productionAttributes);
+  top.productionAttributes = h.productionAttributes ++ t.productionAttributes;
   top.uniqueSignificantExpression = h.uniqueSignificantExpression ++ t.uniqueSignificantExpression;
 
-  top.defs = appendDefs(h.defs, t.defs);
+  top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
 }
 
@@ -143,9 +143,9 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
 {
   top.pp = h.pp ++ "\n" ++ t.pp;
   top.location = h.location;
-  top.defs = appendDefs(h.defs, t.defs);
+  top.defs = h.defs ++ t.defs;
 
-  top.productionAttributes = appendDefs(h.productionAttributes, t.productionAttributes);
+  top.productionAttributes = h.productionAttributes ++ t.productionAttributes;
   top.uniqueSignificantExpression = h.uniqueSignificantExpression ++ t.uniqueSignificantExpression;
 
   top.errors := h.errors ++ t.errors;
@@ -156,9 +156,9 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 {
   top.pp = h.pp ++ "\n" ++ t.pp;
   top.location = h.location;
-  top.defs = appendDefs(h.defs, t.defs);
+  top.defs = h.defs ++ t.defs;
 
-  top.productionAttributes = appendDefs(h.productionAttributes, t.productionAttributes);
+  top.productionAttributes = h.productionAttributes ++ t.productionAttributes;
   top.uniqueSignificantExpression = h.uniqueSignificantExpression ++ t.uniqueSignificantExpression;
 
   top.errors := h.errors ++ t.errors;
@@ -171,10 +171,10 @@ top::ProductionStmt ::=
 {
   -- as is usual for defaults ("base classes")
   -- can't provide pp or location, errors should NOT be defined!
-  top.productionAttributes = emptyDefs();
+  top.productionAttributes = [];
   top.uniqueSignificantExpression = [];
   
-  top.defs = emptyDefs();
+  top.defs = [];
 }
 
 concrete production returnDef
@@ -201,7 +201,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
   production attribute fName :: String;
   fName = top.signature.fullName ++ ":local:" ++ a.name;
 
-  top.defs = addLocalDcl(top.grammarName, a.location, fName, te.typerep, emptyDefs());
+  top.defs = [localDef(top.grammarName, a.location, fName, te.typerep)];
 
   top.errors := te.errors;
 
@@ -222,7 +222,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
   --top.pp = "\tproduction attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";
 
   top.productionAttributes = forward.defs;
-  top.defs = emptyDefs();
+  top.defs = [];
 
   top.errors <- if !top.blockContext.permitProductionAttributes
                 then [err(top.location, "Production attributes are not valid in this context.")]
@@ -237,7 +237,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   top.pp = "\tforwards to " ++ e.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionAttributes = addForwardDcl(top.grammarName, top.location, top.signature.outputElement.typerep, emptyDefs());
+  top.productionAttributes = [forwardDef(top.grammarName, top.location, top.signature.outputElement.typerep)];
   top.uniqueSignificantExpression = [e];
 
   top.errors := e.errors;
@@ -322,8 +322,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QName '=' e::Expr ';'
   top.errors <- attr.lookupAttribute.errors;
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
-  top.productionAttributes = emptyDefs();
-  top.defs = emptyDefs();
+  top.productionAttributes = [];
+  top.defs = [];
 
   forwards to if null(attr.lookupAttribute.dcls)
               then errorAttributeDef(dl, $2, attr, $4, e)
@@ -463,7 +463,7 @@ top::DefLHS ::= q::Decorated QName
   top.typerep = q.lookupValue.typerep;
 }
 
-concrete production valueDef
+concrete production valueEq
 top::ProductionStmt ::= val::QName '=' e::Expr ';'
 {
   top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
@@ -472,8 +472,8 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
   top.errors <- val.lookupValue.errors;
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
-  top.productionAttributes = emptyDefs();
-  top.defs = emptyDefs();
+  top.productionAttributes = [];
+  top.defs = [];
   
   forwards to if null(val.lookupValue.dcls)
               then errorValueDef(val, $2, e)

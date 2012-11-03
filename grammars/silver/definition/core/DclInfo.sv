@@ -113,7 +113,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 
 -- -- interface Production attr (values)
 aspect production paDcl
-top::DclInfo ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeExp] dcls::Defs
+top::DclInfo ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeExp] dcls::[Def]
 {
 }
 aspect production forwardDcl

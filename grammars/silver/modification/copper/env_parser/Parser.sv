@@ -21,13 +21,13 @@ terminal ParseAttrTerm 'parse_attr' lexer classes {C_1};
 concrete production aDclInfoLexerClass
 top::IDclInfo ::= 'lexer_class' '(' l::ILocation ',' fn::IName ')'
 {
-  top.defs = addLexerClassDcl(top.grammarName, l.location, fn.aname, emptyDefs());
+  top.defs = [lexerClassDef(top.grammarName, l.location, fn.aname)];
 }
 
 concrete production aDclInfoParseAttr
 top::IDclInfo ::= 'parse_attr' '(' l::ILocation ',' fn::IName ',' t::ITypeRep ')'
 {
-  top.defs = addParserAttrDcl(top.grammarName, l.location, fn.aname, t.typerep, emptyDefs());
+  top.defs = [parserAttrDef(top.grammarName, l.location, fn.aname, t.typerep)];
 }
 
 

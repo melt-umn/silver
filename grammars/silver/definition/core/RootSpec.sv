@@ -5,7 +5,7 @@ attribute importedDefs, errors occurs on RootSpec;
 aspect production i_emptyRootSpec
 top::RootSpec ::= 
 {
-  top.importedDefs = emptyDefs();
+  top.importedDefs = [];
   top.errors := [];
 }
 
@@ -49,8 +49,8 @@ top::RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
   top.flowTypes = c1.flowTypes;
   top.prodFlowGraphs = c1.prodFlowGraphs;
 
-  top.importedDefs = appendDefs(c1.importedDefs, c2.importedDefs);
-  top.defs = appendDefs(c1.defs, c2.defs);
+  top.importedDefs = c1.importedDefs ++ c2.importedDefs;
+  top.defs = c1.defs ++ c2.defs;
   top.exportedGrammars = c1.exportedGrammars ++ c2.exportedGrammars;
   top.optionalGrammars = c1.optionalGrammars ++ c2.optionalGrammars;
   top.condBuild = c1.condBuild ++ c2.condBuild;

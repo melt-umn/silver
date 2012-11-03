@@ -1,7 +1,7 @@
 grammar silver:definition:core;
 
 import silver:util:cmdargs only CmdArgs; -- TODO: maybe we need to structure some of this better...
-import silver:definition:flow:ast only FlowVertex; -- TODO ARGH
+import silver:definition:flow:driver only ProductionGraph; -- TODO ARGH
 
 {--
  - Root represents one textual file of Silver source.
@@ -21,7 +21,7 @@ autocopy attribute globalImports :: Decorated Env;
 {--
  - The definitions resulting from grammar-wide imports definitions.
  -}
-synthesized attribute importedDefs :: Defs;
+synthesized attribute importedDefs :: [Def];
 {--
  - All grammars Silver looked at. Despite the name, including interface files.
  -}
@@ -39,7 +39,7 @@ autocopy attribute config :: Decorated CmdArgs;
 {--
  - Flow information computed for this grammar
  -}
-autocopy attribute productionFlowGraphs :: [Pair<String [Pair<FlowVertex FlowVertex>]>];
+autocopy attribute productionFlowGraphs :: [ProductionGraph];
 autocopy attribute grammarFlowTypes :: EnvTree<Pair<String String>>;
 
 concrete production root

@@ -1,7 +1,7 @@
 grammar silver:definition:env;
 
 import silver:util:raw:treemap as rtm; -- TODO 
-import silver:definition:flow:ast only FlowVertex;
+import silver:definition:flow:driver only ProductionGraph;
 
 {--
  - RootSpecs have two functions:
@@ -19,7 +19,7 @@ synthesized attribute declaredName :: String;
 {--
  - A list of definitions exported.
  -}
-synthesized attribute defs :: Defs;
+synthesized attribute defs :: [Def];
 {--
  - Grammars DIRECTLY exported by this grammar.
  -}
@@ -46,7 +46,7 @@ synthesized attribute moduleNames :: [String];
 synthesized attribute allGrammarDependencies :: [String];
 {-- flow stuff -}
 synthesized attribute flowTypes :: EnvTree<Pair<String String>>;
-synthesized attribute prodFlowGraphs :: [Pair<String [Pair<FlowVertex FlowVertex>]>];
+synthesized attribute prodFlowGraphs :: [ProductionGraph];
 
 function emptyRootSpec
 Decorated RootSpec ::= 
@@ -60,7 +60,7 @@ top::RootSpec ::=
   top.declaredName = "_NULL_";
   top.moduleNames = [];
   top.allGrammarDependencies = [];
-  top.defs = emptyDefs();
+  top.defs = [];
   top.exportedGrammars = [];
   top.optionalGrammars = [];
   top.condBuild = [];
