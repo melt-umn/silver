@@ -39,7 +39,7 @@ Boolean ::= enclosingPrecedence::Integer thisPrecedence::Integer
 aspect production root
 r::Root ::= e::Expr
 {
-  r.bpp2 = e.bpp2 ;
+  r.bpp = e.bpp ;
   e.enclosingOpPrecedence = 0 ; -- lower than anything else
   e.leftOrRight = "none" ; {- does not matter since higher precedence prevents
                               wrapping without considering associativity -}

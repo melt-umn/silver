@@ -11,6 +11,9 @@ import silver:driver;
 import silver:analysis:warnings:defs;
 import silver:analysis:warnings:exporting;
 
+--hack for now
+import silver:modification:impide;
+
 parser rParse::Root {
   silver:host;
 
