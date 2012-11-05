@@ -10,12 +10,14 @@ import silver:util:cmdargs;
 
 synthesized attribute noJavaGeneration :: Boolean occurs on CmdArgs;
 synthesized attribute buildSingleJar :: Boolean occurs on CmdArgs;
+synthesized attribute includeRTJars :: [String] occurs on CmdArgs;
 
 aspect production endCmdArgs
 top::CmdArgs ::= _
 {
   top.noJavaGeneration = false;
   top.buildSingleJar = false;
+  top.includeRTJars = [];
 }
 abstract production xjFlag
 top::CmdArgs ::= rest::CmdArgs
@@ -29,13 +31,20 @@ top::CmdArgs ::= rest::CmdArgs
   top.buildSingleJar = true;
   forwards to rest;
 }
+abstract production includeRTJarFlag
+top::CmdArgs ::= s::String rest::CmdArgs
+{
+  top.includeRTJars = s :: forward.includeRTJars;
+  forwards to rest;
+}
 
 
 aspect production run
 top::RunUnit ::= iIn::IO args::[String]
 {
   flags <- [pair("--xj", flag(xjFlag)),
-            pair("--onejar", flag(onejarFlag))
+            pair("--onejar", flag(onejarFlag)),
+            pair("--XRTjar", option(includeRTJarFlag))
            ];
   flagdescs <- ["\t--onejar: include runtime libraries in the jar\n"];
 
@@ -157,6 +166,15 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
   production attribute extraGrammarsDeps :: [String] with ++;
   extraGrammarsDeps := ["init"];
   
+  production attribute classpathCompiler :: [String] with ++;
+  classpathCompiler := [];
+  
+  production attribute classpathRuntime :: [String] with ++;
+  classpathRuntime := ["${sh}/jars/SilverRuntime.jar"];
+  
+  -- The --XRTjar hack
+  classpathRuntime <- a.includeRTJars;
+
   production attribute extraManifestAttributes :: [String] with ++;
   extraManifestAttributes := [
     "<attribute name='Built-By' value='${user.name}' />",
@@ -165,7 +183,7 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
 
   extraManifestAttributes <-
     if a.buildSingleJar then []
-    else ["<attribute name='Class-Path' value='${man.classpath}' />\n"];
+    else ["<attribute name='Class-Path' value='${man.classpath}' />"];
   
   local attribute outputFile :: String;
   outputFile = if length(a.outName) > 0 then a.outName else (makeName(a.buildGrammar) ++ ".jar");
@@ -176,7 +194,7 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
   local attribute buildXml :: String;
   buildXml =    
 "<project name='" ++ a.buildGrammar ++ "' default='dist' basedir='.'>\n" ++
-"  <description>Generated build script for the grammar " ++ a.buildGrammar ++ " </description>\n\n" ++
+"  <description>Generated build script for the grammar " ++ a.buildGrammar ++ "</description>\n\n" ++
 
 "  <property environment='env'/>\n" ++
 "  <property name='jg' location='" ++ silvergen ++ "'/>\n" ++
@@ -185,16 +203,13 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
 "  <property name='src' location='${jg}/src'/>\n\n" ++
 
 "  <path id='lib.classpath'>\n" ++
-"    <fileset dir='${sh}/jars' includes='SilverRuntime.jar CopperRuntime.jar CopperCompiler.jar' />\n" ++ -- TODO: separate this information out. (runtime/compiler cps)
-"  </path>\n\n" ++
-
-"  <path id='src.classpath'>\n" ++
-"    <pathelement location='${src}' />\n" ++
+    implode("", map(pathLocation, classpathRuntime)) ++
 "  </path>\n\n" ++
 
 "  <path id='compile.classpath'>\n" ++
-"    <path refid='src.classpath'/>\n" ++
+"    <pathelement location='${src}' />\n" ++
 "    <path refid='lib.classpath'/>\n" ++
+    implode("", map(pathLocation, classpathCompiler)) ++
 "  </path>\n\n" ++
 
 implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
@@ -212,33 +227,39 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "  <target name='jars' depends='" ++ implode(", ", extraJarsDeps) ++ "'>\n" ++
 "    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath' />\n" ++
 "    <jar destfile='" ++ outputFile ++ "' basedir='${bin}'>\n" ++
-    buildGrammarList(specs, "*.class") ++ 
+    implode("", map(includeName(_, "*.class"), specs)) ++ 
 "      <manifest>\n" ++
-"       " ++ implode("\n       ", extraManifestAttributes) ++
+"        " ++ implode("\n        ", extraManifestAttributes) ++ "\n" ++
 "      </manifest>\n" ++
 
 -- If we're building a single jar, then include the runtimes TODO: this method kinda sucks
-(if a.buildSingleJar then
-"      <zipfileset src='${sh}/jars/CopperRuntime.jar' excludes='META-INF/*' />\n" ++
-"      <zipfileset src='${sh}/jars/SilverRuntime.jar' excludes='META-INF/*' />\n"
- else "") ++
+    (if a.buildSingleJar then implode("", map(zipfileset, classpathRuntime)) else "") ++
  
 "    </jar>\n" ++
 "  </target>\n\n" ++
 
 "  <target name='grammars' depends='" ++ implode(", ", extraGrammarsDeps) ++ "'>\n" ++
-"      <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false'>\n" ++
-    buildGrammarList(specs, "*.java") ++ 
-"      </javac>\n" ++
+"    <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false'>\n" ++
+    implode("", map(includeName(_, "*.java"), specs)) ++ 
+"    </javac>\n" ++
 "  </target>\n" ++
 "</project>\n";
 }
 
-function buildGrammarList
-String ::= r::[String] s::String
+function zipfileset
+String ::= s::String
 {
-  return if null(r) then "" else
-"       <include name='" ++ grammarToPath(head(r)) ++ s ++ "' />\n" ++ buildGrammarList(tail(r), s);
+  return "      <zipfileset src='" ++ s ++ "' excludes='META-INF/*' />\n";
+}
+function pathLocation
+String ::= s::String
+{
+  return "    <pathelement location='" ++ s ++ "' />\n";
+}
+function includeName
+String ::= gram::String suffix::String
+{
+  return "      <include name='" ++ grammarToPath(gram) ++ suffix ++ "' />\n";
 }
 
 function writeClasses
