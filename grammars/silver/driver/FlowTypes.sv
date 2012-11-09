@@ -9,11 +9,11 @@ aspect production run
 top::RunUnit ::= iIn::IO args::[String]
 {
   -- aggregate all flow def information, filtering out those that are not permitted to affect flow types
-  local filteredFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), grammars)));
-  local allFlowEnv :: Decorated FlowEnv = fromFlowDefs(filteredFlowDefs);
+  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), grammars)));
+  local allFlowEnv :: Decorated FlowEnv = fromFlowDefs(allFlowDefs);
   
   -- Look up tree for production info
-  local prodTree :: EnvTree<FlowDef> = directBuildTree(filteredFlowDefs.prodGraphContribs);
+  local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlowDefs.prodGraphContribs);
   
   -- hack to allow us to look up certain info... TODO: maybe hack?
   local allRealDefs :: [Def] = foldr(append, [], map((.defs), grammars));
@@ -27,16 +27,21 @@ top::RunUnit ::= iIn::IO args::[String]
     computeAllProductionGraphs(allProds, prodTree, allFlowEnv, allRealEnv);
   
   -- Now, solve for flow types!!
-  production flowTypes_almost :: EnvTree<Pair<String String>> =
+  production flowTypes1 :: Pair<[ProductionGraph] EnvTree<Pair<String String>>> =
     fullySolveFlowTypes(prodGraph, allRealEnv, rtm:empty(compareString));
   
   -- Non-host syn patch the flow types! (Composition generates new equations
   -- that requires non-host syn to potentially need to evaluate forwards
   -- to be able to evaluate on new productions.)
-  -- TODO: think about whether this is a bug or not! Do we need to propagate these
-  -- constraints? YES WE DO. THIS IS A BUG. FIXME.
-  production flowTypes :: EnvTree<Pair<String String>> =
-    patchFlowTypes(flowTypes_almost, filteredFlowDefs.nonHostSynAttrs);
+  production flowTypes2 :: EnvTree<Pair<String String>> =
+    patchFlowTypes(flowTypes1.snd, allFlowDefs.nonHostSynAttrs);
+    
+  -- Iterate once more, to propagate the patch above across flow types!
+  production flowTypes3 :: Pair<[ProductionGraph] EnvTree<Pair<String String>>> =
+    fullySolveFlowTypes(flowTypes1.fst, allRealEnv, flowTypes2);
+  
+  production flowTypes :: EnvTree<Pair<String String>> = flowTypes3.snd;
+  production finalGraphs :: [ProductionGraph] = flowTypes3.fst;
   
 
   unit.grammarFlowTypes = flowTypes;
@@ -68,26 +73,8 @@ top::RunUnit ::= iIn::IO args::[String]
   
 
   -- We'd like a final version of the stitched flow graphs to pass down
-  unit.productionFlowGraphs = stitchAllGraphs(prodGraph, flowTypes);
-  reUnit.productionFlowGraphs = unit.productionFlowGraphs;
+  unit.productionFlowGraphs = finalGraphs;
+  reUnit.productionFlowGraphs = finalGraphs;
   -- TODO: Turn these into trees prior to passing them down. (i.e. EnvTree<EnvTree<FlowVertex>>)
-}
-
-
-
-function stitchAllGraphs
-[ProductionGraph] ::=
-  graphs :: [ProductionGraph]
-  finalFlowTypes :: EnvTree<Pair<String String>>
-{
-  return map(stitchAProdGraph(_, finalFlowTypes), graphs);
-}
-function stitchAProdGraph
-ProductionGraph ::=
-  graphs :: ProductionGraph
-  finalFlowTypes :: EnvTree<Pair<String String>>
-{
-  graphs.flowTypes = finalFlowTypes;
-  return graphs.stitchedGraph;
 }
 
