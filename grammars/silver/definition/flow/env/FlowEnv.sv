@@ -9,7 +9,7 @@ exports silver:definition:flow:env_parser with silver:definition:env:env_parser;
 autocopy attribute flowEnv :: Decorated FlowEnv;
 synthesized attribute flowDefs :: [FlowDef];
 
-nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree;
+nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree, nonSuspectTree;
 
 inherited attribute synTree :: EnvTree<FlowDef>;
 inherited attribute inhTree :: EnvTree<FlowDef>;
@@ -20,6 +20,7 @@ inherited attribute prodTree :: EnvTree<FlowDef>;
 inherited attribute refTree :: EnvTree<FlowDef>;
 inherited attribute localInhTree ::EnvTree<FlowDef>;
 inherited attribute localTree :: EnvTree<FlowDef>;
+inherited attribute nonSuspectTree :: EnvTree<[String]>;
 
 abstract production dummyFlowEnv
 top::FlowEnv ::=
@@ -40,6 +41,7 @@ Decorated FlowEnv ::= d::FlowDefs
   e.refTree = directBuildTree(d.refTreeContribs);
   e.localInhTree = directBuildTree(d.localInhTreeContribs);
   e.localTree = directBuildTree(d.localTreeContribs);
+  e.nonSuspectTree = directBuildTree(d.nonSuspectContribs);
   
   return e;
 }
@@ -107,5 +109,9 @@ function getInhsForNtRef
   return searchEnvTree(nt, e.refTree);
 }
 
-
+function getNonSuspectAttrsForProd
+[String] ::= prod::String  e::Decorated FlowEnv
+{
+  return foldr(append, [], searchEnvTree(prod, e.nonSuspectTree));
+}
 

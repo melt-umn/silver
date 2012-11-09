@@ -9,6 +9,7 @@ import silver:definition:flow:ast;
 
 terminal FlowTerm 'flow' lexer classes {C_1};
 terminal DefTerm 'def' lexer classes {C_1};
+terminal ImplicitFwdAffectsTerm 'implicitFwdAffects' lexer classes {C_1};
 terminal LhsSynVTerm     'lhsSynV' lexer classes {C_1};
 terminal LhsInhVTerm     'lhsInhV' lexer classes {C_1};
 terminal RhsVTerm        'rhsV' lexer classes {C_1};
@@ -179,6 +180,11 @@ top::IFlow ::= 'ntRefFlowDef' '(' nt::IName ',' prod::INames ')'
   top.flowDefs = [ntRefFlowDef(nt.aname, prod.names)];
 }
 
+concrete production aFlowImplicitFwdAffects
+top::IFlow ::= 'implicitFwdAffects' '(' prd::IName ',' attrs::INames ')'
+{
+  top.flowDefs = [implicitFwdAffects(prd.aname, attrs.names)];
+}
 
 concrete production aFlowNonHostSyn
 top::IFlow ::= 'nonHostSyn' '(' attr::IName ',' nt::IName  ')'

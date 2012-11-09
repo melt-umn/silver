@@ -25,7 +25,7 @@ top::RunUnit ::= iIn::IO args::[String]
   flags <- [pair("--dump-flow-deps", flag(dumpFlowGraphFlag))];
   -- omitting from descriptions deliberately!
   
-  postOps <- if a.dumpFlowGraph then [dumpFlowGraphAction(findAllNts(allProds, allRealEnv), prodGraph, flowTypes)] else [];
+  postOps <- if a.dumpFlowGraph then [dumpFlowGraphAction(findAllNts(allProds, allRealEnv), finalGraphs, flowTypes)] else [];
 }
 function findAllNts
 [String] ::=  prods::[String]  realEnv::Decorated Env

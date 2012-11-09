@@ -2,8 +2,8 @@ grammar silver:definition:flow:ast;
 
 imports silver:definition:env only quoteString,unparseStrings, unparse;
 
-nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, nonHostSynAttrs, localTreeContribs;
-nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, suspectFlowEdges, nonHostSynAttrs, localTreeContribs;
+nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, nonHostSynAttrs, nonSuspectContribs, localTreeContribs;
+nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, suspectFlowEdges, nonHostSynAttrs, nonSuspectContribs, localTreeContribs;
 
 {-- lookup (production, attribute) to find synthesized equations
  - Used to ensure a necessary lhs.syn equation exists.
@@ -59,6 +59,9 @@ synthesized attribute suspectFlowEdges :: [Pair<FlowVertex FlowVertex>];
 {-- A list of non-host synthesized occurrences, to patch up flow types -}
 synthesized attribute nonHostSynAttrs :: [FlowDef];
 
+{-- A list of attributes for a production that are non-suspect -}
+synthesized attribute nonSuspectContribs :: [Pair<String [String]>];
+
 synthesized attribute unparses :: [String];
 
 abstract production consFlow
@@ -75,6 +78,7 @@ top::FlowDefs ::= h::FlowDef  t::FlowDefs
   top.localInhTreeContribs = h.localInhTreeContribs ++ t.localInhTreeContribs;
   top.localTreeContribs = h.localTreeContribs ++ t.localTreeContribs;
   top.nonHostSynAttrs = h.nonHostSynAttrs ++ t.nonHostSynAttrs;
+  top.nonSuspectContribs = h.nonSuspectContribs ++ t.nonSuspectContribs;
   top.unparses = h.unparses ++ t.unparses;
 }
 
@@ -92,6 +96,7 @@ top::FlowDefs ::=
   top.localInhTreeContribs = [];
   top.localTreeContribs = [];
   top.nonHostSynAttrs = [];
+  top.nonSuspectContribs = [];
   top.unparses = [];
 }
 
@@ -114,8 +119,9 @@ top::FlowDef ::=
   top.localInhTreeContribs = [];
   top.localTreeContribs = [];
   top.nonHostSynAttrs = [];
+  top.nonSuspectContribs = [];
   top.suspectFlowEdges = []; -- flowEdges is required, but suspect is typically not!
-  -- require unparses, prodGraphContibs
+  -- require unparses, prodGraphContibs, flowEdges
 }
 
 {--
@@ -233,6 +239,18 @@ top::FlowDef ::= prod::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
   top.unparses = ["fwd(" ++ implode(", ", [quoteString(prod), unparseVertices(deps),if mayAffectFlowType then "t" else "f"]) ++ ")"];
+}
+
+{--
+ - Attributes that are non-suspect.
+ -}
+abstract production implicitFwdAffects
+top::FlowDef ::= prod::String  attrs::[String]
+{
+  top.nonSuspectContribs = [pair(prod, attrs)];
+  top.prodGraphContribs = [];
+  top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
+  top.unparses = ["implicitFwdAffects(" ++ quoteString(prod) ++ ", " ++ unparseStrings(attrs) ++ ")"];
 }
 
 {--

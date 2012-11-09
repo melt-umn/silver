@@ -66,6 +66,15 @@ top::ProductionStmt ::=
 
 ----
 
+{--
+ - An occurs dcl info 's flow type can be affected here
+ -}
+function isAffectable
+Boolean ::= prodgram::String  ntgram::String  cg::EnvTree<Decorated RootSpec>  d::DclInfo
+{
+  return contains(prodgram, computeOptionalDeps([ntgram, d.sourceGrammar], cg));
+}
+
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
@@ -74,7 +83,10 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   local mayAffectFlowType :: Boolean =
     contains(top.grammarName, computeOptionalDeps([ntDefGram], top.compiledGrammars));
   
-  top.flowDefs = [fwdEq(top.signature.fullName, e.flowDeps, mayAffectFlowType)];
+  top.flowDefs = [fwdEq(top.signature.fullName, e.flowDeps, mayAffectFlowType),
+    implicitFwdAffects(top.signature.fullName, map((.attrOccurring),
+      filter(isAffectable(top.grammarName, ntDefGram, top.compiledGrammars, _),
+        getAttrsOn(top.signature.outputElement.typerep.typeName, top.env))))];
 }
 aspect production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
@@ -95,7 +107,6 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
-  -- TODO figure out if we need to omit deps for inhs??
   top.flowDefs =
     case lhs of
     | forwardLhsExpr(q) -> [fwdInhEq(top.signature.fullName, q.lookupAttribute.fullName, e.flowDeps)]
@@ -136,7 +147,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  -- TODO: figure out if we need to omit deps for inhs??
   top.flowDefs = 
     case dl of
     | childDefLHS(q) -> [inhEq(top.signature.fullName, q.lookupValue.fullName, attr.lookupAttribute.fullName, e.flowDeps)]
@@ -176,7 +186,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {-That's really
 aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
-  -- TODO: figure out if we need to omit deps for inhs??
   local vertex :: FlowVertex =
     case dl of
     | childDefLHS(q) -> rhsVertex(q.lookupValue.fullName, attr.lookupAttribute.fullName)
