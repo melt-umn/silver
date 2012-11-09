@@ -81,6 +81,7 @@ concrete production aspectRHSElemTypedEasyReg
 top::AspectRHSElem ::= id::Name '::' reg::RegExpr
 {
   top.pp = id.pp ++ " :: " ++ reg.pp;
+  top.location = id.location;
   
   local attribute regName :: [DclInfo];
   regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
