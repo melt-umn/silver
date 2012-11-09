@@ -1,6 +1,7 @@
 grammar silver:definition:flow:driver;
 
 import silver:util only rem, contains;
+import silver:definition:type only isDecorable;
 
 nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, cullSuspect;
 
@@ -125,16 +126,21 @@ ProductionGraph ::= prod::String  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
     normalEdges ++
     (if null(lookupFwd(prod, flowEnv))
      then addDefEqs(prod, nt, syns, flowEnv)
-     else addFwdEqs(prod, syns, flowEnv) ++ addFwdInhEqs(prod, inhs, flowEnv)) ++
+     else addFwdEqs(syns) ++ addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ addFwdInhEqs(prod, inhs, flowEnv)) ++
     fixupAllHOAs(defs, flowEnv, realEnv) ++
     addAllAutoCopyEqs(prod, dcl.namedSignature.inputElements, autos, flowEnv, realEnv);
   
   local vertexes :: [FlowVertex] =
     nubBy(flowVertexEq, map(getFst, fixedEdges));
   
+  -- (safe, suspect)
+  local synsBySuspicion :: Pair<[String] [String]> =
+    partition(contains(_, getNonSuspectAttrsForProd(prod, flowEnv)), syns);
+  
   -- No implicit equations here, just keep track.
   local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
-    foldr(append, [], map((.suspectFlowEdges), defs));
+    foldr(append, [], map((.suspectFlowEdges), defs)) ++
+    if null(lookupFwd(prod, flowEnv)) then [] else addFwdSynEqs(prod, synsBySuspicion.snd, flowEnv);
 
   -- RHS and locals and forward.
   local stitchPoints :: [Pair<(FlowVertex ::= String) String>] =
@@ -146,6 +152,10 @@ ProductionGraph ::= prod::String  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
 
 ---- Begin helpers for fixing up graphs ----------------------------------------
 
+{--
+ - Introduces 'hoa.syn -> hoaeq' edges.
+ - These are ALWAYS included in standard edges.
+ -}
 function fixupAllHOAs
 [Pair<FlowVertex FlowVertex>] ::= d::[FlowDef] flowEnv::Decorated FlowEnv realEnv::Decorated Env
 {
@@ -158,22 +168,39 @@ function fixupAllHOAs
   | _ :: rest -> fixupAllHOAs(rest, flowEnv, realEnv)
   end;
 }
+-- Helper for above
 function addHOASynDeps
 [Pair<FlowVertex FlowVertex>] ::= synattrs::[String]  fName::String
 {
   return if null(synattrs) then []
   else pair(localVertex(fName, head(synattrs)), localEqVertex(fName)) :: addHOASynDeps(tail(synattrs), fName);
 }
-
+{--
+ - Introduces implicit 'forward.syn -> forward' equations.
+ -}
 function addFwdEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String] flowEnv::Decorated FlowEnv
+[Pair<FlowVertex FlowVertex>] ::= syns::[String]
 {
   return if null(syns) then []
   else 
-    [pair(forwardVertex(head(syns)), forwardEqVertex())] ++
-    (if null(lookupSyn(prod, head(syns), flowEnv)) then [pair(lhsSynVertex(head(syns)), forwardVertex(head(syns)))] else []) ++
-    addFwdEqs(prod, tail(syns), flowEnv);
+    pair(forwardVertex(head(syns)), forwardEqVertex()) :: addFwdEqs(tail(syns));
 }
+{--
+ - Introduces implicit 'lhs.syn -> forward.syn' equations.
+ - TODO: BUG: these should be suspect only when they're introduced externally!!!
+ -}
+function addFwdSynEqs
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String] flowEnv::Decorated FlowEnv
+{
+  return if null(syns) then []
+  else (if null(lookupSyn(prod, head(syns), flowEnv))
+    then [pair(lhsSynVertex(head(syns)), forwardVertex(head(syns)))] else []) ++
+    addFwdSynEqs(prod, tail(syns), flowEnv);
+}
+{--
+ - Introduces implicit 'forward.inh = lhs.inh' equations.
+ - Inherited equations are never suspect.
+ -}
 function addFwdInhEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String] flowEnv::Decorated FlowEnv
 {
@@ -181,8 +208,9 @@ function addFwdInhEqs
   else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [pair(forwardVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
     addFwdInhEqs(prod, tail(inhs), flowEnv);
 }
-
-
+{--
+ - Introduces default equations deps. Realistically, should be empty, always.
+ -}
 function addDefEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::ProdName nt::NtName syns::[String] flowEnv :: Decorated FlowEnv
 {
@@ -194,13 +222,17 @@ function addDefEqs
         else []) ++
     addDefEqs(prod, nt, tail(syns), flowEnv);
 }
-
+{--
+ - Introduces 'rhs.inh = lhs.inh' wherever not present.
+ - Inherited equations are never suspect.
+ -}
 function addAllAutoCopyEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::ProdName sigNames::[NamedSignatureElement] inhs::[String] flowEnv::Decorated FlowEnv realEnv::Decorated Env
 {
   return if null(sigNames) then []
   else addAutocopyEqs(prod, head(sigNames), inhs, flowEnv, realEnv) ++ addAllAutoCopyEqs(prod, tail(sigNames), inhs, flowEnv, realEnv);
 }
+-- Helper for above.
 function addAutocopyEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::ProdName sigName::NamedSignatureElement inhs::[String] flowEnv::Decorated FlowEnv realEnv::Decorated Env
 {
@@ -235,7 +267,10 @@ function rhsStitchPoints
 [Pair<(FlowVertex ::= String) String>] ::= rhs::[NamedSignatureElement]
 {
   return if null(rhs) then []
-  else pair(rhsVertex(head(rhs).elementName, _), head(rhs).typerep.typeName) :: rhsStitchPoints(tail(rhs));
+  -- We want only NONTERMINAL stitch points!
+  else if head(rhs).typerep.isDecorable
+       then pair(rhsVertex(head(rhs).elementName, _), head(rhs).typerep.typeName) :: rhsStitchPoints(tail(rhs))
+       else rhsStitchPoints(tail(rhs));
 }
 
 ---- End helpers for figuring our stitch points --------------------------------

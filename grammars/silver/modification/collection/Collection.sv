@@ -359,6 +359,8 @@ concrete production attrContainsAppend
 top::ProductionStmt ::= dl::DefLHS '.' attr::QName '<-' e::Expr ';'
 {
   top.pp = dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
+  top.location = attr.location;
+  
   top.errors <- attr.lookupAttribute.errors;
 
   top.productionAttributes = [];
@@ -373,6 +375,8 @@ concrete production attrContainsBase
 top::ProductionStmt ::= dl::DefLHS '.' attr::QName ':=' e::Expr ';'
 {
   top.pp = dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
+  top.location = attr.location;
+
   top.errors <- attr.lookupAttribute.errors;
 
   top.productionAttributes = [];
@@ -387,6 +391,8 @@ concrete production valContainsAppend
 top::ProductionStmt ::= val::QName '<-' e::Expr ';'
 {
   top.pp = val.pp ++ " <- " ++ e.pp ++ ";";
+  top.location = val.location;
+  
   top.errors <- val.lookupValue.errors;
 
   top.productionAttributes = [];
@@ -401,6 +407,8 @@ concrete production valContainsBase
 top::ProductionStmt ::= val::QName ':=' e::Expr ';'
 {
   top.pp = val.pp ++ " := " ++ e.pp ++ ";";
+  top.location = val.location;
+
   top.errors <- val.lookupValue.errors;
 
   top.productionAttributes = [];

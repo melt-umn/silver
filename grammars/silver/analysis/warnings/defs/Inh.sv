@@ -420,10 +420,11 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   -- TODO oh hell look at that
   local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
 
+  local eTypeName :: String = performSubstitution(e.typerep, e.upSubst).typeName;
   local diff :: [String] =
     rem(
-      inhDepsForSyn(q.lookupAttribute.fullName, e.typerep.typeName, myFlow), -- needed inhs
-      inhsForTakingRef(e.typerep.typeName, top.flowEnv)); -- blessed inhs for a reference
+      inhDepsForSyn(q.lookupAttribute.fullName, eTypeName, myFlow), -- needed inhs
+      inhsForTakingRef(eTypeName, top.flowEnv)); -- blessed inhs for a reference
   
   local refCheck :: [Message] =
     if null(diff) then []
@@ -447,7 +448,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
                       isEquationMissing(
                         lookupInh(top.signature.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                         _),
-                      inhDepsForSyn(q.lookupAttribute.fullName, e.typerep.typeName, myFlow)))
+                      inhDepsForSyn(q.lookupAttribute.fullName, eTypeName, myFlow)))
              in if null(inhs) then []
                 else [wrn(top.location, "Access of syn attribute " ++ q.pp ++ " on " ++ e.pp ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
@@ -461,7 +462,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
                     isEquationMissing(
                       lookupLocalInh(top.signature.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                       _),
-                    inhDepsForSyn(q.lookupAttribute.fullName, e.typerep.typeName, myFlow))
+                    inhDepsForSyn(q.lookupAttribute.fullName, eTypeName, myFlow))
              in if null(inhs) then []
                 else [wrn(top.location, "Access of syn attribute " ++ q.pp ++ " on " ++ e.pp ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
@@ -477,9 +478,9 @@ aspect production inhDNTAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   local refCheck :: [Message] =
-    if contains(q.lookupAttribute.fullName, inhsForTakingRef(e.typerep.typeName, top.flowEnv))
+    if contains(q.lookupAttribute.fullName, inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv))
     then []
-    else [wrn(top.location, "Access of inherited attribute " ++ q.pp ++ " from a reference is not permitted, as references are not know to be decorated with this attribute.")];
+    else [wrn(top.location, "Access of inherited attribute " ++ q.pp ++ " from a reference is not permitted, as references are not known to be decorated with this attribute.")];
   
   -- In this case, ONLY check for references.
   -- The transitive deps error will be less difficult to figure out when there's
@@ -510,7 +511,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- We could do better by detecting those situations where we immediate access
   -- a synthesized attribute, and only requiring the flow there....
   -- Alternatively, by introducing a full "decoration site" notion...
-  local blessedSet :: [String] = inhsForTakingRef(e.typerep.typeName, top.flowEnv);
+  local blessedSet :: [String] = inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv);
   local diff :: [String] = rem(blessedSet, inh.suppliedInhs);
 
   top.errors <- 

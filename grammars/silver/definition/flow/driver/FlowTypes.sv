@@ -32,7 +32,7 @@ function computeAllProductionGraphs
  - Iterates until convergence.
  -}
 function fullySolveFlowTypes
-EnvTree<Pair<String String>> ::= graphs::[ProductionGraph]
+Pair<[ProductionGraph] EnvTree<Pair<String String>>> ::= graphs::[ProductionGraph]
                                  realEnv::Decorated Env
                                  ntEnv::EnvTree<Pair<String String>>
 {
@@ -40,7 +40,7 @@ EnvTree<Pair<String String>> ::= graphs::[ProductionGraph]
     solveFlowTypes(graphs, realEnv, ntEnv);
   
   -- Just iterate until no new edges are added
-  return if !iter.fst then iter.snd.snd
+  return if !iter.fst then iter.snd
   else fullySolveFlowTypes(iter.snd.fst, realEnv, iter.snd.snd);
 }
 
