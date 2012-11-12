@@ -8,14 +8,14 @@ imports silver:util;
 
 imports silver:util:cmdargs;
 
-inherited attribute rParser :: (ParseResult<Root> ::= String String);
-inherited attribute iParser :: (ParseResult<IRootSpec> ::= String String);
+inherited attribute svParser :: (ParseResult<Root> ::= String String);
+inherited attribute sviParser :: (ParseResult<IRootSpec> ::= String String);
 
 {--
  - Controls the compiler.
  - Could be eliminated, and the production turned into a function nowadays.
  -}
-nonterminal RunUnit with io, rParser, iParser;
+nonterminal RunUnit with io, svParser, sviParser;
 
 abstract production run
 top::RunUnit ::= iIn::IO args::[String]
@@ -75,8 +75,8 @@ top::RunUnit ::= iIn::IO args::[String]
   -- Begin compiling the target grammar, and then chase down dependencies as needed.
   production attribute unit :: CompilationUnit;
   unit = compileGrammars(grammarLocation.io, searchPaths, [a.buildGrammar], [], a.doClean, silvergen);
-  unit.rParser = top.rParser;
-  unit.iParser = top.iParser;
+  unit.svParser = top.svParser;
+  unit.sviParser = top.sviParser;
   unit.compiledGrammars = grammarEnv;
   unit.config = a;
   
@@ -105,8 +105,8 @@ top::RunUnit ::= iIn::IO args::[String]
   -- Parse those grammars that depend on a changed grammar:
   production attribute reUnit :: CompilationUnit;
   reUnit = compileGrammars(unit.io, searchPaths, depAnalysis.needGrammars, unit.seenGrammars, true, silvergen);
-  reUnit.rParser = top.rParser;
-  reUnit.iParser = top.iParser;
+  reUnit.svParser = top.svParser;
+  reUnit.sviParser = top.sviParser;
   reUnit.compiledGrammars = grammarEnv;
   reUnit.config = a;
   

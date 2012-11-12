@@ -7,7 +7,7 @@ import silver:util:raw:treemap as rtm;
 {--
  - Responsible for the control-flow that figures out how to obtain a grammar's symbols.
  -}
-nonterminal Grammar with config, io, rSpec, rParser, compiledGrammars, found, interfaces, iParser, productionFlowGraphs, grammarFlowTypes;
+nonterminal Grammar with config, io, rSpec, svParser, compiledGrammars, found, interfaces, sviParser, productionFlowGraphs, grammarFlowTypes;
 
 synthesized attribute rSpec :: Decorated RootSpec;
 synthesized attribute found :: Boolean;
@@ -43,7 +43,7 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   -- Compile all the individual files in the grammar
   production attribute cu :: Roots; -- See GrammarSources.sv
   cu = compileFiles(pr, grammarName, files, grammarLocation.iovalue.fromJust);
-  cu.rParser = top.rParser;
+  cu.svParser = top.svParser;
   -- Create the values for grammar-wide inherited attributes.
   cu.env = toEnv(cu.rSpec.defs);
   cu.globalImports = toEnv(cu.rSpec.importedDefs);
@@ -62,7 +62,7 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   -- **OR** the result of reading the interface.
   production attribute inf :: IOInterface; -- See GrammarInterface.sv
   inf = compileInterface(pr, "Silver.svi", genPath ++ "src/" ++ gramPath);
-  inf.iParser = top.iParser;
+  inf.sviParser = top.sviParser;
 
   top.found = grammarLocation.iovalue.isJust && !null(files);
   top.io =  if top.found then (if !clean && hasInterface.iovalue then inf.io else cu.io) else grammarLocation.io;
