@@ -17,8 +17,8 @@ top::CmdArgs ::= rest::CmdArgs
   top.warnMissingInh = true;
   forwards to rest;
 }
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect function parseArgs
+ParseResult<Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--warn-missing-inh", flag(warnMissingInhFlag))];
 }

@@ -85,39 +85,9 @@ function normalizeImports
   return map(normalizer((.moduleNames), _), ifs);
 }
 
-{--
- - Process rules, but this time DO allow triggers to trigger more triggers.
- - @see noninductiveExpansion
- -}
-function inductivelyExpand
-[String] ::= initial::[String] rules::[[String]]
+function collectGrammars
+[String] ::= lst::[Decorated RootSpec]
 {
-  local attribute result::[String];
-  result = noninductiveExpansion(initial, rules);
-  
-  -- We're doing a slight optimization here:
-  -- We only have to recursively call with 'result' as the initial set
-  -- because the only additions will be those that trigger on one of those
-  -- as anything that triggers on anything in 'initial' is in 'result'.
-  -- This is thanks to our rules being all disjunctive
-  
-  return if null(result) then initial else inductivelyExpand(result, rules) ++ initial;
-}
-
-{--
- - Return those triggers set off by the initial set. One iteration only.
- - (i.e. don't consider triggers triggering triggers)
- -
- - @param initial  A set of strings
- - @param rules  A set of rules [[trigger, triggered by any of...]...]
- - @return  A list of triggers that the initial set tripped, not in the inital set already.
- -}
-function noninductiveExpansion
-[String] ::= initial::[String] rules::[[String]]
-{
-  return if null(rules) then []
-         else if containsAny(tail(head(rules)), initial) && !contains(head(head(rules)), initial)
-              then head(head(rules)) :: noninductiveExpansion(initial, tail(rules))
-              else noninductiveExpansion(initial, tail(rules));
+  return map((.declaredName), lst);
 }
 

@@ -50,22 +50,3 @@ top::CmdArgs ::= s::String rest::CmdArgs
   forwards to rest;
 }
 
-
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
-{
-  flags <- [pair("-I",      option(includeFlag)),
-            pair("-o",      option(outFlag)),
-            pair("-v",      flag(versionFlag)),
-            pair("--clean", flag(cleanFlag)),
-            pair("-G",      option(genFlag))
-           ];
-  flagdescs <- 
-          ["\t-I <path>  : path to grammars (GRAMMAR_PATH)\n",
-           "\t-o <file>  : name of binary file\n",
-           "\t-v  : display version\n",
-           "\t--clean  : overwrite interface files\n",
-           "\t-G <path>  : Location to store generate files (SILVER_GEN)\n"
-          ];
-}
-

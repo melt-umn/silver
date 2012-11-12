@@ -8,35 +8,6 @@ grammar silver:driver;
  - 127 = "abnormal" success (e.g. printed version string, quit now)
  - 0 = success of course
  -}
-closed nonterminal Unit with ioIn, io, code, order;
-
-synthesized attribute code :: Integer;
-synthesized attribute order :: Integer;
-inherited attribute ioIn :: IO;
-synthesized attribute ioOut :: IO;
-
-
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
-{
-  preOps <- [checkSilverHome(silverhome), checkSilverGen(silvergen)];
-  preOps <- if a.displayVersion then [printVersion()] else [];
-  postOps <- [doInterfaces(grammarsToTranslate, silvergen)];
-}
-
-function runAll
-IOVal<Integer> ::= i::IO l::[Unit]
-{
-  local attribute now :: Unit;
-  now = head(l);
-  now.ioIn = i;
-
-  return  if null(l) 
-	  then ioval(i, 0)
-	  else if now.code != 0
-	       then ioval(now.io, now.code)
-	       else runAll(now.io, tail(l));
-}
 
 abstract production checkSilverHome
 top::Unit ::= s::String

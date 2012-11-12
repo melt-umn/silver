@@ -40,3 +40,10 @@ top::Interface ::= i::Integer f::String l::String r::Decorated RootSpec
   top.rSpec = r;
 }
 
+function getSpecs
+[Decorated RootSpec] ::= s::[Decorated Interface]
+{
+  return map((.rSpec), s);
+}
+
+

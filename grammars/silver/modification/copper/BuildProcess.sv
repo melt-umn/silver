@@ -18,13 +18,15 @@ top::CmdArgs ::= rest::CmdArgs
   top.forceCopperDump = true;
   forwards to rest;
 }
-
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect function parseArgs
+ParseResult<Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--copperdump", flag(copperdumpFlag))];
   flagdescs <- ["\t--copperdump: force copper to dump parse table information\n"];
-
+}
+aspect production run
+top::RunUnit ::= iIn::IO args::[String]
+{
   -- Only examine grammar depended upon to determine what parsers may be built
   -- but do include both interface files and rootspecs.
   depAnalysis.allParsers = foldr(append, [], map((.parserSpecs), grammarsToTranslate));
