@@ -21,6 +21,6 @@ aspect function parseArgs
 ParseResult<Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--warn-all", flag(warnAllFlag))];
-  flagdescs <- ["\t--warn-all  : enable all warnings\n"];
+  flagdescs <- ["\t--warn-all  : enable all warnings"];
 }
 

@@ -22,7 +22,7 @@ aspect function parseArgs
 ParseResult<Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--copperdump", flag(copperdumpFlag))];
-  flagdescs <- ["\t--copperdump: force copper to dump parse table information\n"];
+  flagdescs <- ["\t--copperdump  : force Copper to dump parse table information"];
 }
 aspect production run
 top::RunUnit ::= iIn::IO args::[String]
@@ -31,7 +31,7 @@ top::RunUnit ::= iIn::IO args::[String]
   -- but do include both interface files and rootspecs.
   depAnalysis.allParsers = foldr(append, [], map((.parserSpecs), grammarsToTranslate));
 
-  postOps <- [generateCS(grammarEnv, depAnalysis.taintedParsers, silvergen)]; 
+  postOps <- [generateCS(grammarEnv, depAnalysis.taintedParsers, silverGen)]; 
 }
 
 -- InterfaceUtil.sv

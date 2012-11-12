@@ -46,14 +46,14 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
             pair("--onejar", flag(onejarFlag)),
             pair("--XRTjar", option(includeRTJarFlag))
            ];
-  flagdescs <- ["\t--onejar: include runtime libraries in the jar\n"];
+  flagdescs <- ["\t--onejar  : include runtime libraries in the jar"];
 }
 aspect production run
 top::RunUnit ::= iIn::IO args::[String]
 {
   postOps <- if a.noJavaGeneration then [] else 
-    [genJava(a, grammarsToTranslate, silvergen), 
-     genBuild(a, grammarsDependedUpon, silverhome, silvergen, depAnalysis, grammarLocationString)]; 
+    [genJava(a, grammarsToTranslate, silverGen), 
+     genBuild(a, grammarsDependedUpon, silverHome, silverGen, depAnalysis, grammarLocationString)]; 
 }
 
 
