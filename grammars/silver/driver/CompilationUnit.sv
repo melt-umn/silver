@@ -3,7 +3,7 @@ grammar silver:driver;
 {--
  - Top-level control flow for various compilation tasks.
  -}
-nonterminal CompilationUnit with config, io, compiledGrammars, rParser, iParser, compiledList, seenGrammars, interfaces, productionFlowGraphs, grammarFlowTypes;
+nonterminal CompilationUnit with config, io, compiledGrammars, svParser, sviParser, compiledList, seenGrammars, interfaces, productionFlowGraphs, grammarFlowTypes;
 
 
 {--
@@ -35,8 +35,8 @@ top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] c
   -- Build the first gramamr in the need list.
   production attribute now :: Grammar;
   now = compileGrammar(iIn, head(need), sPath, clean, genPath);
-  now.rParser = top.rParser;
-  now.iParser = top.iParser;
+  now.svParser = top.svParser;
+  now.sviParser = top.sviParser;
   now.compiledGrammars = top.compiledGrammars;
   now.config = top.config;
   now.productionFlowGraphs = top.productionFlowGraphs;
@@ -53,8 +53,8 @@ top::CompilationUnit ::= iIn::IO sPath::[String] need::[String] seen::[String] c
   -- Recurse for the rest of the grammars needed.
   production attribute recurse :: CompilationUnit;
   recurse = compileGrammars(now.io, sPath, new_need, new_seen, clean, genPath);
-  recurse.rParser = top.rParser;
-  recurse.iParser = top.iParser;
+  recurse.svParser = top.svParser;
+  recurse.sviParser = top.sviParser;
   recurse.compiledGrammars = top.compiledGrammars;
   recurse.config = top.config;
   recurse.productionFlowGraphs = top.productionFlowGraphs;

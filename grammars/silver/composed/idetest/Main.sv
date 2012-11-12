@@ -14,7 +14,7 @@ import silver:analysis:warnings:exporting;
 --hack for now
 import silver:modification:impide;
 
-parser rParse::Root {
+parser svParse::Root {
   silver:host;
 
   silver:extension:convenience;
@@ -41,7 +41,7 @@ parser rParse::Root {
   silver:modification:impide;
 }
 
-parser iParse::IRootSpec {
+parser sviParse::IRootSpec {
   silver:host:env;
 
   silver:modification:collection:env_parser;
@@ -57,20 +57,20 @@ function main
 IOVal<Integer> ::= args::[String] i::IO
 {
   -- please note that run in BuildProcess.sv will call exit(), so we may not "get back here"
-  return ioval((decorate run(i, args) with {rParser = rParse; iParser = iParse;}).io,
+  return ioval((decorate run(i, args) with {svParser = svParse; sviParser = sviParse;}).io,
                0);
 }
 
 --- ... we're adding an ide declaration here
 
-temp_imp_ide_dcl rParse ".sv" ;
+temp_imp_ide_dcl svParse ".sv" ;
 
 function getErrors 
 [String] ::= args::[String] i::IO
 {
 
   local attribute ru :: Decorated RunUnit;
-  ru = decorate run(i, args) with {rParser = rParse; iParser = iParse;};
+  ru = decorate run(i, args) with {svParser = svParse; sviParser = sviParse;};
 
   return ru.errorList;
 }

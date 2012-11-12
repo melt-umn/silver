@@ -1,6 +1,6 @@
 grammar silver:driver;
 
-nonterminal IOInterface with io, interfaces, iParser;
+nonterminal IOInterface with io, interfaces, sviParser;
 
 abstract production compileInterface
 top::IOInterface ::= iIn::IO f::String genPath::String
@@ -15,7 +15,7 @@ top::IOInterface ::= iIn::IO f::String genPath::String
   text = readFile(genPath ++ f, i);
 
   local attribute ir :: IRootSpec;
-  ir = top.iParser(text.iovalue, f).parseTree; -- I'm assuming that interface files never parse error, so we aren't making this pretty.
+  ir = top.sviParser(text.iovalue, f).parseTree; -- I'm assuming that interface files never parse error, so we aren't making this pretty.
 
   local attribute inf :: Interface; 
   inf = fullInterface(modTime.iovalue, f, genPath, ir.spec);

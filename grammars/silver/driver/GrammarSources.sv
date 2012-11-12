@@ -3,7 +3,7 @@ grammar silver:driver;
 {--
  - Turns a list of files that compose a grammar into a RootSpec, having compiled them.
  -}
-nonterminal Roots with config, env, io, rSpec, rParser, compiledGrammars, globalImports, grammarDependencies, flowEnv, productionFlowGraphs, grammarFlowTypes;
+nonterminal Roots with config, env, io, rSpec, svParser, compiledGrammars, globalImports, grammarDependencies, flowEnv, productionFlowGraphs, grammarFlowTypes;
 
 abstract production compileFiles
 top::Roots ::= iIn::IO gn::String files::[String] gpath::String
@@ -14,7 +14,7 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
 
   -- This is where a .sv file actually gets parsed:
   production attribute r :: Root;
-  r = parseTreeOrDieWithoutStackTrace(top.rParser(text.iovalue, head(files)));
+  r = parseTreeOrDieWithoutStackTrace(top.svParser(text.iovalue, head(files)));
   -- These are file-specific inherited attributes:
   r.file = head(files);
   r.grammarName = gn;
@@ -32,7 +32,7 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   -- Continue parsing the rest of the files.
   production attribute recurse :: Roots;
   recurse = compileFiles(text.io, gn, tail(files), gpath);
-  recurse.rParser = top.rParser;
+  recurse.svParser = top.svParser;
   -- Echo grammar-wide stuffs:
   recurse.env = top.env;
   recurse.globalImports = top.globalImports;
