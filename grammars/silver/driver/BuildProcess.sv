@@ -18,51 +18,6 @@ inherited attribute sviParser :: (ParseResult<IRootSpec> ::= String String);
  -}
 nonterminal RunUnit with io, svParser, sviParser;
 
-function parseArgs
-ParseResult<Decorated CmdArgs> ::= args::[String]
-{
-  production attribute flags::[Pair<String Flag>] with ++;
-  flags := [];
-  production attribute flagdescs::[String] with ++;
-  flagdescs := [];
-
-  -- General rules of thumb:
-  --  Use -- as your prefix
-  --  Unless it's an OPTION, and it's commonly used, and it's obvious from context what it means
-  -- e.g. -I my/grammars is obvious because it refers to a location to include.
-
-  -- See Command.sv
-  flags <- [pair("-I",        option(includeFlag)),
-            pair("-o",        option(outFlag)),
-            pair("-G",        option(genFlag)),
-            pair("--version", flag(versionFlag)),
-            pair("--clean",   flag(cleanFlag))
-           ];
-  -- Always start with \t, name options descriptively in <>
-  flagdescs <- 
-          ["\t-I <path>  : path to grammars (GRAMMAR_PATH)\n",
-           "\t-o <file>  : name of binary file\n",
-           "\t--version  : display version\n",
-           "\t--clean  : overwrite interface files\n",
-           "\t-G <path>  : Location to store generate files (SILVER_GEN)\n"
-          ];
-  
-  local attribute usage::String;
-  usage = "Usage: silver [options] grammar:to:build\n\nFlag options:\n" ++ implode("\n", sortBy(stringLte, flagdescs)) ++ "\n";
-  
-  -- Parse the command line
-  local attribute a :: CmdArgs;
-  a = interpretCmdArgs(flags, args);
-  
-  return if a.cmdError.isJust -- problem interpreting args
-         then parseFailed(a.cmdError.fromJust ++ "\n\n" ++ usage)
-         else if null(a.cmdRemaining) -- no grammar left on cmd line
-         then parseFailed("No grammar to build was specified.\n\n" ++ usage)
-         else if length(a.cmdRemaining) > 1 -- more than just a grammar left
-         then parseFailed("Unable to interpret arguments: " ++ implode(" ", a.cmdRemaining) ++ "\n\n" ++ usage)
-         else parseSucceeded(a);
-}
-
 abstract production run
 top::RunUnit ::= iIn::IO args::[String]
 {
@@ -78,16 +33,16 @@ top::RunUnit ::= iIn::IO args::[String]
   local envSH :: IOVal<String> = envVar("SILVER_HOME", envSG.io);
 
   -- A list of directories to search for grammars. (cmd line has priority over env)
-  production attribute searchPaths :: [String];
-  searchPaths = map(endWithSlash,  a.searchPath ++ explode(":", envGP.iovalue));
+  production attribute grammarPath :: [String];
+  grammarPath = map(endWithSlash,  a.searchPath ++ explode(":", envGP.iovalue));
   
   -- Where Silver is installed. (env var should be set by RunSilver.jar)
-  production attribute silverhome :: String;
-  silverhome = endWithSlash(envSH.iovalue);
+  production attribute silverHome :: String;
+  silverHome = endWithSlash(envSH.iovalue);
   
   -- The directory where generated files should be stored. (again, cmd line > env)
-  production attribute silvergen :: String with ++;
-  silvergen := endWithSlash(if a.genLocation == "" then envSG.iovalue else a.genLocation);
+  production attribute silverGen :: String with ++;
+  silverGen := endWithSlash(if a.genLocation == "" then envSG.iovalue else a.genLocation);
 
 --------
 -------- Phase 1: Pre-ops. Things that go on before we start parsing.
@@ -95,7 +50,7 @@ top::RunUnit ::= iIn::IO args::[String]
 
   -- Operations to execute _before_ we parse and link the grammars.
   production attribute preOps :: [Unit] with ++;
-  preOps := [checkSilverHome(silverhome), checkSilverGen(silvergen)] ++
+  preOps := [checkSilverHome(silverHome), checkSilverGen(silverGen)] ++
     if a.displayVersion then [printVersion()] else [];
 
   -- Run the pre-ops.
@@ -104,7 +59,7 @@ top::RunUnit ::= iIn::IO args::[String]
 
   -- Let's actually go see if we can find this grammar.
   local attribute grammarLocation :: IOVal<Maybe<String>>;
-  grammarLocation = findGrammarLocation(grammarToPath(a.buildGrammar), searchPaths, preIO.io);
+  grammarLocation = findGrammarLocation(grammarToPath(a.buildGrammar), grammarPath, preIO.io);
 
   -- The grammar location as string. Used for extensions.
   production attribute grammarLocationString :: String = fromMaybe(".", grammarLocation.iovalue);
@@ -115,7 +70,7 @@ top::RunUnit ::= iIn::IO args::[String]
 
   -- Begin compiling the target grammar, and then chase down dependencies as needed.
   production attribute unit :: CompilationUnit;
-  unit = compileGrammars(grammarLocation.io, searchPaths, [a.buildGrammar], [], a.doClean, silvergen);
+  unit = compileGrammars(grammarLocation.io, grammarPath, [a.buildGrammar], [], a.doClean, silverGen);
   unit.svParser = top.svParser;
   unit.sviParser = top.sviParser;
   unit.compiledGrammars = grammarEnv;
@@ -145,7 +100,7 @@ top::RunUnit ::= iIn::IO args::[String]
 
   -- Parse those grammars that depend on a changed grammar:
   production attribute reUnit :: CompilationUnit;
-  reUnit = compileGrammars(unit.io, searchPaths, depAnalysis.needGrammars, unit.seenGrammars, true, silvergen);
+  reUnit = compileGrammars(unit.io, grammarPath, depAnalysis.needGrammars, unit.seenGrammars, true, silverGen);
   reUnit.svParser = top.svParser;
   reUnit.sviParser = top.sviParser;
   reUnit.compiledGrammars = grammarEnv;
@@ -183,13 +138,13 @@ top::RunUnit ::= iIn::IO args::[String]
 
   --the operations that will be executed _after_ parsing and linking of the grammars has been done
   production attribute postOps :: [Unit] with ++;
-  postOps := [doInterfaces(grammarsToTranslate, silvergen)];
+  postOps := [doInterfaces(grammarsToTranslate, silverGen)];
   
   local attribute postIO :: IOVal<Integer>;
   postIO = runAll(reUnit.io, sortUnits(postOps));
   
   top.io = if !argResult.parseSuccess -- problem interpreting args
-           then exit(1, print("\n" ++ argResult.parseErrors, iIn))
+           then exit(1, print(argResult.parseErrors, iIn))
            else if preIO.iovalue != 0 -- the preops tell us to quit.
            then exit(preIO.iovalue, preIO.io)
            else if !grammarLocation.iovalue.isJust

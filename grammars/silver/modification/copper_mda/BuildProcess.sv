@@ -19,7 +19,7 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
 aspect production run
 top::RunUnit ::= iIn::IO args::[String]
 {
-  postOps <- [generateMdaSpecs(grammarEnv, depAnalysis.compiledList, silvergen)]; 
+  postOps <- [generateMdaSpecs(grammarEnv, depAnalysis.compiledList, silverGen)]; 
 }
 
 abstract production generateMdaSpecs

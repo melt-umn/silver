@@ -19,7 +19,7 @@ top::RunUnit ::= iIn::IO args::[String]
   -- we're going to go with assuming there's just one IDE declaration...
   local isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
 
-  postOps <- if !isIde then [] else [generateNCS(grammarEnv, depAnalysis.taintedParsers, silvergen)];
+  postOps <- if !isIde then [] else [generateNCS(grammarEnv, depAnalysis.taintedParsers, silverGen)];
 }
 
 abstract production generateNCS
