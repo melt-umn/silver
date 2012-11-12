@@ -65,6 +65,9 @@ top::RunUnit ::= iIn::IO args::[String]
   local attribute grammarLocation :: IOVal<Maybe<String>>;
   grammarLocation = findGrammarLocation(grammarToPath(a.buildGrammar), searchPaths, preIO.io);
 
+  -- The grammar location as string. Used for extensions.
+  production attribute grammarLocationString :: String = fromMaybe(".", grammarLocation.iovalue);
+
 --------
 -------- Phase 2: Begin actually compiling things
 --------

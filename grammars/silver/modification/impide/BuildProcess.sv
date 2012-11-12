@@ -10,7 +10,7 @@ import silver:util:cmdargs;
 -- Here we're just aspecting that, using '<-' to contribute things to the production attributes declared there
 
 aspect function writeBuildFile
-IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis grammarLoc::String
 {
   -- The RootSpec representing the grammar actually being built (specified on the command line)
   local builtGrammar :: [Decorated RootSpec] = getRootSpec(a.buildGrammar, da.compiledList);
@@ -28,6 +28,7 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
   local pkgName :: String = grammarToPackage(a.buildGrammar);
 
   extraTopLevelDecls <- if !isIde then [] else [
+    "<property name='grammar.path' value='" ++ grammarLoc ++ "'/>", 
     "<property name='res' value='${sh}/resources'/>", --TODO: add all templates to here.
     "<property name='ide.version' value='1.0.0'/>",
     -- derive the name of language from grammar. TODO: In future we must allow users to define the name themselves.
@@ -46,9 +47,12 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
     "<property name='ide.parser.ide_copperfile' value='" ++ ideParserFullPath ++ "' />",
     "<property name='ide.fileextension' value='" ++ ide.ideExtension ++ "' />",
 
-    "<target name='arg-check'>" ++ getTargetArgCheck() ++ "</target>",
-    "<target name='filters'>" ++ getTargetFilters() ++ "</target>",
-    "<target name='ide' depends='arg-check, filters, jars, copper, grammars'>" ++ getIDETarget() ++ "</target>\n\n",
+    "<target name='ide' depends='arg-check, filters, jars, copper, grammars, create-folders, customize'>\n\n</target>\n\n",
+    "<target name='arg-check'>" ++ getArgCheckTarget() ++ "</target>",
+    "<target name='filters'>" ++ getFiltersTarget() ++ "</target>",
+    "<target name='create-folders'>" ++ getCreateFoldersTarget() ++ "</target>\n\n",
+    "<target name='customize' if=\"to-customize\">" ++ getCustomizeTarget() ++ "</target>\n\n",
+
     getBuildTargets()
     ];
 
@@ -69,40 +73,44 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
     ];
 }
 
-function getTargetArgCheck
+function getArgCheckTarget
 String ::=
 {
     return
     "\n" ++
     "  <condition property=\"is-all-in-one\">\n"++
     "    <equals arg1=\"${all-in-one}\" arg2=\"true\" />\n"++
+    "  </condition>\n"++
+    "  \n"++
+    "  <condition property=\"to-customize\">\n"++
+    "    <available file=\"${grammar.path}/plugin\" type=\"dir\"/>\n"++
     "  </condition>\n";
 }
 
-function getTargetFilters
+function getFiltersTarget
 String ::=
 {
     return
     "\n" ++
-    "<!-- define variables used in template file -->\n" ++
-    "<filter token=\"GROUP_ID\" value='${ide.pkg.name}'/>\n" ++
-    "<filter token=\"PKG_NAME\" value='${ide.pkg.name}'/>\n" ++
-    "<filter token=\"PARSER_NAME\" value='${ide.parser.classname}'/>\n" ++
-    "<filter token=\"LANG_NAME\" value='${lang.name}'/>\n" ++
-    "<filter token=\"SOURCE_EXT\" value='${ide.fileextension}'/>\n" ++
-    "<filter token=\"IDE_VERSION\" value='${ide.version}'/>\n" ++
-    "<filter token=\"PROJ_NAME\" value='${lang.name}_IDE_PROJECT'/>\n" ++
-    "<filter token=\"COPPER_RUNTIME_PATH\" value='${sh}/jars/CopperRuntime.jar'/>\n" ++
-    "<filter token=\"LANG_COMPOSED\" value='${lang.composed}'/>\n" ++
-    "<filter token=\"FEATURE_DESCRIPTION_URL\" value='http://some.user.provided.url'/>\n" ++	-- TODO User-provided variables
-    "<filter token=\"FEATURE_DESCRIPTION_TEXT\" value='no description of the software'/>\n" ++
-    "<filter token=\"FEATURE_COPYRIGHT_URL\" value='http://some.user.provided.url'/>\n" ++
-    "<filter token=\"FEATURE_COPYRIGHT_TEXT\" value='no copyright information available'/>\n" ++
-    "<filter token=\"FEATURE_LICENSE_URL\" value='http://some.user.provided.url'/>\n" ++
-    "<filter token=\"FEATURE_LICENSE_TEXT\" value='no license information available'/>\n";
+    "  <!-- define variables used in template file -->\n" ++
+    "  <filter token=\"GROUP_ID\" value='${ide.pkg.name}'/>\n" ++
+    "  <filter token=\"PKG_NAME\" value='${ide.pkg.name}'/>\n" ++
+    "  <filter token=\"PARSER_NAME\" value='${ide.parser.classname}'/>\n" ++
+    "  <filter token=\"LANG_NAME\" value='${lang.name}'/>\n" ++
+    "  <filter token=\"SOURCE_EXT\" value='${ide.fileextension}'/>\n" ++
+    "  <filter token=\"IDE_VERSION\" value='${ide.version}'/>\n" ++
+    "  <filter token=\"PROJ_NAME\" value='${lang.name}_IDE_PROJECT'/>\n" ++
+    "  <filter token=\"COPPER_RUNTIME_PATH\" value='${sh}/jars/CopperRuntime.jar'/>\n" ++
+    "  <filter token=\"LANG_COMPOSED\" value='${lang.composed}'/>\n" ++
+    "  <filter token=\"FEATURE_DESCRIPTION_URL\" value='http://some.user.provided.url'/>\n" ++	-- TODO User-provided variables
+    "  <filter token=\"FEATURE_DESCRIPTION_TEXT\" value='no description of the software'/>\n" ++
+    "  <filter token=\"FEATURE_COPYRIGHT_URL\" value='http://some.user.provided.url'/>\n" ++
+    "  <filter token=\"FEATURE_COPYRIGHT_TEXT\" value='no copyright information available'/>\n" ++
+    "  <filter token=\"FEATURE_LICENSE_URL\" value='http://some.user.provided.url'/>\n" ++
+    "  <filter token=\"FEATURE_LICENSE_TEXT\" value='no license information available'/>\n";
 }
 
-function getIDETarget
+function getCreateFoldersTarget
 String ::=
 {
   return 
@@ -209,6 +217,16 @@ String ::=
 
     "\n"
   ;
+}
+
+function getCustomizeTarget
+String ::=
+{
+    return
+    "\n" ++
+    "<copy todir=\"${ide.proj.plugin.path}\" overwrite=\"true\">\n" ++
+    "  <fileset dir=\"${grammar.path}/plugin/\"/>\n" ++
+    "</copy>\n";
 }
 
 function getBuildTargets

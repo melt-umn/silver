@@ -9,7 +9,7 @@ import silver:util:cmdargs;
 -- TODO CRIPES this is all bad, bad, bad code.
 
 aspect function writeBuildFile
-IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis grammarLoc::String
 {
   local targets :: String = mdaBuildTarget(da.compiledList, silverhome, silvergen);
   extraTopLevelDecls <- if length(targets) != 0 then ["  <target name='copper_mda'>\n" ++ targets ++ "  </target>\n"] else [];
