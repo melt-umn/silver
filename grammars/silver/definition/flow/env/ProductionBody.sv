@@ -5,7 +5,7 @@ import silver:modification:defaultattr;
 import silver:modification:collection;
 import silver:modification:copper;
 import silver:util only contains;
-import silver:driver only computeOptionalDeps;
+import silver:driver:util only computeOptionalDeps;
 
 attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
 

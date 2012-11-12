@@ -70,113 +70,51 @@ top::Grammar ::= iIn::IO grammarName::String sPath::[String] clean::Boolean genP
   top.rSpec = if top.found then (if !clean && hasInterface.iovalue then head(inf.interfaces).rSpec else cu.rSpec) else emptyRootSpec();
 }
 
-
 {--
- - Closes over exports, including triggered conditional exports (by grammars in the set.)
+ - Determined whether a file name should be considered a Silver source file.
  -}
-function computeDependencies
-[String] ::= init::[String] e::EnvTree<Decorated RootSpec>
+function isValidSilverFile
+Boolean ::= f::String
 {
-  return expandCondBuilds(expandExports(init, [], e), [], [], e);
+  return endsWith(".sv", f) && !startsWith(".", f);
 }
 
 {--
- - Closes over exports only.
- -
- - @param need  The initial set of imported grammars
- - @param seen  Initially []
- - @param e  All built grammars
- - @return  The initial set, plus any grammar directly or indirectly exported by it
+ - Determines whether an interface file is newer or older than the grammar.
  -}
-function expandExports
-[String] ::= need::[String]  seen::[String]  e::EnvTree<Decorated RootSpec>
+function isValidInterface
+IOVal<Boolean> ::= iIn::IO ifacefile::String grammarPath::String fs::[String]
 {
-  local attribute g :: [Decorated RootSpec];
-  g = searchEnvTree(head(need), e);
+  local attribute hasInterface :: IOVal<Boolean>;
+  hasInterface = isFile(ifacefile, iIn);
 
-  return if null(need) then seen
-         -- If the grammar has already been taken care of, discard it.
-         else if contains(head(need), seen) then expandExports(tail(need), seen, e)
-         -- If the grammar does not exist, skip over it. (DO NOT REMOVE, as it may have been added by another loop)
-         else if null(g) then expandExports(tail(need), head(need) :: seen, e)
-         -- Otherwise, tack its exported list to the need list, and add this grammar to the taken care of list.
-         else expandExports(tail(need) ++ head(g).exportedGrammars, head(need) :: seen, e);
+  local attribute modTime :: IOVal<Integer>;
+  modTime = fileTime(ifacefile, hasInterface.io);
+
+  local attribute maxTime :: IOVal<Integer>;
+  maxTime = fileTimes(modTime.io, grammarPath, fs);
+
+  return if !hasInterface.iovalue then ioval(hasInterface.io, false) else ioval(maxTime.io, modTime.iovalue > maxTime.iovalue);
 }
 
 {--
- - Closes over triggered grammars, including the exports (and triggers ofc) of those triggered grammars.
- -
- - @see computeDependencies
- -
- - @param need  The initial set of imported grammars (ALL are assumed to be found in e, now.)
- - @param seen  Initially []
- - @param triggers  Initially []
- - @param e  All built grammars
- - @return  The initial set, plus any grammar directly or indirectly exported by it
+ - Determines the maximum modification time of all files in a directory.
+ - Including the directory itself, to detect file deletions.
  -}
-function expandCondBuilds
-[String] ::= need::[String]  seen::[String]  triggers::[[String]]  e::EnvTree<Decorated RootSpec>
+function fileTimes
+IOVal<Integer> ::= i::IO dir::String is::[String]
 {
-  -- Map each grammar name to its triggers, and concat.
-  local attribute newtriggers :: [[String]];
-  newtriggers = foldr(append, triggers, map(skipNulls((.condBuild), _), map(searchEnvTree(_, e), need)));
+  local attribute ft :: IOVal<Integer>;
+  ft = fileTime(dir ++ head(is), i);
 
-  local attribute newset :: [String];
-  newset = need ++ seen;
+  local attribute rest :: IOVal<Integer>;
+  rest = fileTimes(ft.io, dir, tail(is));
 
-  -- Find out about any new triggers as a result of adding 'need' to the set, plus need's triggers
-  local attribute triggered :: [String];
-  triggered = noninductiveExpansion(newset, newtriggers);
-
-  return if null(need) || null(triggered) then newset
-         -- If new triggers fire, continue with the new triggers as need:
-         -- And don't forget anything exported by those triggers.
-         else expandCondBuilds(expandExports(triggered, newset, e), newset, newtriggers, e);
-}
-
-{--
- - Does one iteration of expanding optionals.
- - What does that mean? Well, it means there may be exports / cond builds that aren't yet included.
- -}
-function expandOptionalsIter
-[String] ::= need::[String]  seen::[String]  e::EnvTree<Decorated RootSpec>
-{
-  local attribute g :: [Decorated RootSpec];
-  g = searchEnvTree(head(need), e);
-
-  return if null(need) then seen
-         -- If the grammar has already been taken care of, discard it.
-         else if contains(head(need), seen) then expandOptionalsIter(tail(need), seen, e)
-         -- If the grammar does not exist, skip over it. (DO NOT REMOVE, as it may have been added by another loop)
-         else if null(g) then expandOptionalsIter(tail(need), head(need) :: seen, e)
-         -- Otherwise, tack its exported list to the need list, and add this grammar to the taken care of list.
-         else expandOptionalsIter(tail(need) ++ head(g).optionalGrammars, head(need) :: seen, e);
-}
-
-{--
- - Close over options only, exports, and triggered cond exports
- -}
-function computeOptionalDeps
-[String] ::= init::[String]  e::EnvTree<Decorated RootSpec>
-{
-  local initPlusExported :: [String] = computeDependencies(init, e);
-  local closeOptions :: [String] = expandOptionalsIter(initPlusExported, [], e);
-  
-  return if null(rem(closeOptions, initPlusExported)) then initPlusExported
-         else computeOptionalDeps(closeOptions, e);
-}
-
-{--
- - Close over imports, options, exports, and triggered cond exports.
- - Note that we might trigger more things here than previously...
- -}
-function completeDependencyClosure
-[String] ::= init::[String]  e::EnvTree<Decorated RootSpec>
-{
-  local n :: [String] = rem(makeSet(foldr(append, [], map(skipNulls((.moduleNames), _), map(searchEnvTree(_, e), init)))), init);
-  
-  return if null(n) then init
-  else completeDependencyClosure(computeOptionalDeps(n ++ init, e), e);
+  return if null(is)
+         then fileTime(dir, i) -- check the directory itself. Catches deleted files.
+         else if ft.iovalue > rest.iovalue
+              then ioval(rest.io, ft.iovalue)
+              else rest;
 }
 
 function gatherFlowEnv
@@ -190,9 +128,3 @@ function gatherFlowEnv
 }
 
 
-
-function skipNulls
-[b] ::= f::([b] ::= a)  l::[a]
-{
-  return if null(l) then [] else f(head(l));
-}

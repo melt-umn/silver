@@ -18,13 +18,16 @@ top::CmdArgs ::= rest::CmdArgs
   top.dumpFlowGraph = true;
   forwards to rest;
 }
+aspect function parseArgs
+ParseResult<Decorated CmdArgs> ::= args::[String]
+{
+  flags <- [pair("--dump-flow-graph", flag(dumpFlowGraphFlag))];
+  -- omitting from descriptions deliberately!
+}
 
 aspect production run
 top::RunUnit ::= iIn::IO args::[String]
 {
-  flags <- [pair("--dump-flow-deps", flag(dumpFlowGraphFlag))];
-  -- omitting from descriptions deliberately!
-  
   postOps <- if a.dumpFlowGraph then [dumpFlowGraphAction(findAllNts(allProds, allRealEnv), finalGraphs, flowTypes)] else [];
 }
 function findAllNts

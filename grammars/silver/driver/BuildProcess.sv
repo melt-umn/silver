@@ -4,8 +4,9 @@ imports silver:definition:core;
 imports silver:definition:env;
 imports silver:definition:env:env_parser;
 
+imports silver:driver:util;
+exports silver:driver:util;
 imports silver:util;
-
 imports silver:util:cmdargs;
 
 inherited attribute svParser :: (ParseResult<Root> ::= String String);
@@ -17,20 +18,59 @@ inherited attribute sviParser :: (ParseResult<IRootSpec> ::= String String);
  -}
 nonterminal RunUnit with io, svParser, sviParser;
 
-abstract production run
-top::RunUnit ::= iIn::IO args::[String]
+function parseArgs
+ParseResult<Decorated CmdArgs> ::= args::[String]
 {
-  -- See Command.sv for some flags.
   production attribute flags::[Pair<String Flag>] with ++;
   flags := [];
   production attribute flagdescs::[String] with ++;
   flagdescs := [];
+
+  -- General rules of thumb:
+  --  Use -- as your prefix
+  --  Unless it's an OPTION, and it's commonly used, and it's obvious from context what it means
+  -- e.g. -I my/grammars is obvious because it refers to a location to include.
+
+  -- See Command.sv
+  flags <- [pair("-I",        option(includeFlag)),
+            pair("-o",        option(outFlag)),
+            pair("-G",        option(genFlag)),
+            pair("--version", flag(versionFlag)),
+            pair("--clean",   flag(cleanFlag))
+           ];
+  -- Always start with \t, name options descriptively in <>
+  flagdescs <- 
+          ["\t-I <path>  : path to grammars (GRAMMAR_PATH)\n",
+           "\t-o <file>  : name of binary file\n",
+           "\t--version  : display version\n",
+           "\t--clean  : overwrite interface files\n",
+           "\t-G <path>  : Location to store generate files (SILVER_GEN)\n"
+          ];
+  
   local attribute usage::String;
-  usage = "Usage: silver [options] grammar\n\nFlag options:\n" ++ implode("\n", sortBy(stringLte, flagdescs)) ++ "\n";
+  usage = "Usage: silver [options] grammar:to:build\n\nFlag options:\n" ++ implode("\n", sortBy(stringLte, flagdescs)) ++ "\n";
   
   -- Parse the command line
-  production attribute a :: CmdArgs;
+  local attribute a :: CmdArgs;
   a = interpretCmdArgs(flags, args);
+  
+  return if a.cmdError.isJust -- problem interpreting args
+         then parseFailed(a.cmdError.fromJust ++ "\n\n" ++ usage)
+         else if null(a.cmdRemaining) -- no grammar left on cmd line
+         then parseFailed("No grammar to build was specified.\n\n" ++ usage)
+         else if length(a.cmdRemaining) > 1 -- more than just a grammar left
+         then parseFailed("Unable to interpret arguments: " ++ implode(" ", a.cmdRemaining) ++ "\n\n" ++ usage)
+         else parseSucceeded(a);
+}
+
+abstract production run
+top::RunUnit ::= iIn::IO args::[String]
+{
+  local argResult :: ParseResult<Decorated CmdArgs> = parseArgs(args);
+
+  -- Parse the command line
+  production attribute a :: Decorated CmdArgs;
+  a = argResult.parseTree;
 
   -- Grab a few environment variables
   local envGP :: IOVal<String> = envVar("GRAMMAR_PATH", iIn);
@@ -55,11 +95,12 @@ top::RunUnit ::= iIn::IO args::[String]
 
   -- Operations to execute _before_ we parse and link the grammars.
   production attribute preOps :: [Unit] with ++;
-  preOps := []; -- See Unit.sv
+  preOps := [checkSilverHome(silverhome), checkSilverGen(silvergen)] ++
+    if a.displayVersion then [printVersion()] else [];
 
   -- Run the pre-ops.
   local attribute preIO :: IOVal<Integer>;
-  preIO = runAll(envSH.io, unitMergeSort(preOps));
+  preIO = runAll(envSH.io, sortUnits(preOps));
 
   -- Let's actually go see if we can find this grammar.
   local attribute grammarLocation :: IOVal<Maybe<String>>;
@@ -142,19 +183,15 @@ top::RunUnit ::= iIn::IO args::[String]
 
   --the operations that will be executed _after_ parsing and linking of the grammars has been done
   production attribute postOps :: [Unit] with ++;
-  postOps := [];
+  postOps := [doInterfaces(grammarsToTranslate, silvergen)];
   
   local attribute postIO :: IOVal<Integer>;
-  postIO = runAll(reUnit.io, unitMergeSort(postOps));
+  postIO = runAll(reUnit.io, sortUnits(postOps));
   
-  top.io = if a.cmdError.isJust -- problem interpreting args
-           then exit(1, print("\n" ++ a.cmdError.fromJust ++ "\n\n" ++ usage, iIn))
+  top.io = if !argResult.parseSuccess -- problem interpreting args
+           then exit(1, print("\n" ++ argResult.parseErrors, iIn))
            else if preIO.iovalue != 0 -- the preops tell us to quit.
            then exit(preIO.iovalue, preIO.io)
-           else if null(a.cmdRemaining) -- no grammar left on cmd line
-           then exit(1, print("\nNo grammar to build was specified!\n\n" ++ usage, preIO.io))
-           else if length(a.cmdRemaining) > 1 -- more than just a grammar left
-           then exit(1, print("\nUnable to interpret: " ++ implode(" ", a.cmdRemaining) ++ "\n\n" ++ usage, preIO.io))
            else if !grammarLocation.iovalue.isJust
            then exit(2, print("\nGrammar '" ++ a.buildGrammar ++ "' could not be located, make sure that the " ++ 
                               "grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
@@ -173,7 +210,7 @@ Some notes on "compiler state":
 
 Things that are copied down from driver to asts:
  - compiledGrammars - all root specs that are being built.
- - command - command line arguments (turn warnings, etc on)
+ - config - command line arguments (turn warnings, etc on)
  - dependency analysis - translation, etc wants to know what to build
  - exports graph - it'd be nice for some of those future warnings
  - 
@@ -181,22 +218,32 @@ Things that are copied down from driver to asts:
 ---}
 
 
-function expandAllDeps
-[String] ::= need::[String]  seen::[String]  e::EnvTree<Decorated RootSpec>
+{--
+ - Keep only a selected set of grammars.
+ - @param keep  The set of grammars to keep
+ - @param d  The list of grammars to filter
+ -}
+function keepGrammars
+[Decorated RootSpec] ::= keep::[String] d::[Decorated RootSpec]
 {
-  local attribute g :: [Decorated RootSpec];
-  g = searchEnvTree(head(need), e);
-
-  return if null(need) then seen
-         -- If the grammar has already been taken care of, or doesn't exist, discard it.
-         else if contains(head(need), seen) || null(g) then expandAllDeps(tail(need), seen, e)
-         -- Otherwise, tack its all deps list to the need list, and add this grammar to the taken care of list.
-         else expandAllDeps(tail(need) ++ head(g).allGrammarDependencies, head(need) :: seen, e);
+  return if null(d) then [] else (if contains(head(d).declaredName, keep) then [head(d)] else []) ++ keepGrammars(keep, tail(d));
 }
 
-function keepGrammars
-[Decorated RootSpec] ::= k::[String] d::[Decorated RootSpec]
+{--
+ - Ensures a string ends with a forward slash. Safe to use if it already has one.
+ -}
+function endWithSlash
+String ::= s::String
 {
-  return if null(d) then [] else (if contains(head(d).declaredName, k) then [head(d)] else []) ++ keepGrammars(k, tail(d));
+  return if endsWith("/", s) then s else s ++ "/";
+}
+
+{--
+ - Returns a pair, suitable for building an environment
+ -}
+function grammarPairing
+Pair<String Decorated RootSpec> ::= r::Decorated RootSpec
+{
+  return pair(r.declaredName, r);
 }
 

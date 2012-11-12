@@ -2,7 +2,7 @@ grammar silver:definition:flow:env;
 
 import silver:util only contains;
 import silver:definition:type:syntax;
-import silver:driver only computeDependencies;
+import silver:driver:util only computeDependencies;
 
 aspect production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'

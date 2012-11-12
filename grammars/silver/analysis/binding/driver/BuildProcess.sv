@@ -1,4 +1,5 @@
 grammar silver:analysis:binding:driver;
+
 import silver:driver;
 import silver:util:cmdargs;
 
@@ -18,12 +19,15 @@ top::CmdArgs ::= rest::CmdArgs
   top.noBindingChecking = true;
   forwards to rest;
 }
+aspect function parseArgs
+ParseResult<Decorated CmdArgs> ::= args::[String]
+{
+  flags <- [pair("--dont-analyze", flag(nobindingFlag))];
+  -- omitting from descriptions deliberately!
+}  
 aspect production run
 top::RunUnit ::= iIn::IO args::[String]
 {
-  flags <- [pair("--xb", flag(nobindingFlag))];
-  -- omitting from descriptions deliberately!
-  
   postOps <- if a.noBindingChecking then [] else [printAllBindingErrors(grammars)]; 
 }
 

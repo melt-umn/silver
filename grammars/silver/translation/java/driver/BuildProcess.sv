@@ -1,4 +1,5 @@
 grammar silver:translation:java:driver;
+
 import silver:translation:java:core;
 
 import silver:driver;
@@ -38,16 +39,18 @@ top::CmdArgs ::= s::String rest::CmdArgs
   forwards to rest;
 }
 
-
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect function parseArgs
+ParseResult<Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--xj", flag(xjFlag)),
+  flags <- [pair("--dont-translate", flag(xjFlag)),
             pair("--onejar", flag(onejarFlag)),
             pair("--XRTjar", option(includeRTJarFlag))
            ];
   flagdescs <- ["\t--onejar: include runtime libraries in the jar\n"];
-
+}
+aspect production run
+top::RunUnit ::= iIn::IO args::[String]
+{
   postOps <- if a.noJavaGeneration then [] else 
     [genJava(a, grammarsToTranslate, silvergen), 
      genBuild(a, grammarsDependedUpon, silverhome, silvergen, depAnalysis, grammarLocationString)]; 

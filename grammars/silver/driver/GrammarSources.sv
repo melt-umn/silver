@@ -44,7 +44,7 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   recurse.compiledGrammars = top.compiledGrammars;
   recurse.config = top.config;
 
-  top.rSpec =        if null(files) then emptyRootSpec() else consRootSpec(r, recurse.rSpec); 
-  top.io =           if null(files) then iIn             else recurse.io;
+  top.rSpec = if null(files) then emptyRootSpec() else consRootSpec(r, recurse.rSpec); 
+  top.io =    if null(files) then iIn             else recurse.io;
 }
 

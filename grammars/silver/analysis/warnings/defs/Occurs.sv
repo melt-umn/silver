@@ -1,7 +1,8 @@
 grammar silver:analysis:warnings:defs;
 
 imports silver:analysis:warnings;
-imports silver:driver only run, RunUnit, computeDependencies, computeOptionalDeps;
+imports silver:driver only parseArgs;
+imports silver:driver:util only computeDependencies, computeOptionalDeps;
 imports silver:util:cmdargs;
 imports silver:util;
 
@@ -10,7 +11,6 @@ imports silver:definition:type;
 imports silver:definition:type:syntax;
 imports silver:definition:env;
 
---imports silver:definition:flow:env;
 imports silver:definition:flow:ast;
 
 synthesized attribute warnOrphaned :: Boolean occurs on CmdArgs;
@@ -26,8 +26,8 @@ top::CmdArgs ::= rest::CmdArgs
   top.warnOrphaned = true;
   forwards to rest;
 }
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect function parseArgs
+ParseResult<Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--warn-orphaned", flag(warnOrphanedFlag))];
 }
