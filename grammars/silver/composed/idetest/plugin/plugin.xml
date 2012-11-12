@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<!--
+Variables used:
+  PKG_NAME
+  LANG_NAME
+  SOURCE_EXT
+-->
+<plugin>
+
+   <extension
+         point="org.eclipse.imp.runtime.languageDescription">
+      <language
+            extensions="sv"
+            description="nothing here"
+            natureID="SILVER_IDE.imp.nature"
+            language="SILVER">
+      </language>
+   </extension>
+   <extension
+         id="SILVER_IDE.parserWrapper"
+         name="SILVER Parser Wrapper"
+         point="org.eclipse.imp.runtime.parser">
+      <parserWrapper
+            class="silver.composed.idetest.imp.controller.SILVERParseController"
+            language="SILVER">
+      </parserWrapper>
+   </extension>
+   <extension
+         id="SILVER.imp.builder"
+         name="SILVER builder"
+         point="org.eclipse.core.resources.builders">
+      <builder hasNature="true">
+         <run
+               class="silver.composed.idetest.imp.builders.SILVERBuilder">
+            <parameter
+                  name="foo"
+                  value="bar">
+            </parameter>
+         </run>
+      </builder>
+   </extension>
+   <extension
+         id="imp.nature"
+         name="SILVER Nature"
+         point="org.eclipse.core.resources.natures">
+      <builder
+            id="SILVER_IDE.SILVER.imp.builder">
+      </builder>
+      <runtime>
+         <run
+               class="silver.composed.idetest.imp.builders.SILVERNature">
+         </run>
+      </runtime>
+   </extension>
+   <extension
+         id="SILVER.imp.builder.problem"
+         name="SILVER Error"
+         point="org.eclipse.core.resources.markers">
+      <super
+            type="org.eclipse.core.resources.problemmarker">
+      </super>
+      <persistent
+            value="true">
+      </persistent>
+   </extension>
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            objectClass="org.eclipse.core.resources.IProject"
+            adaptable="true"
+            nameFilter="*"
+            id="SILVER.imp.projectContextMenu">
+         <action
+               label="Enable SILVER Builder"
+               tooltip="Enable the SILVER builder for this project"
+               class="silver.composed.idetest.imp.actions.EnableSILVERNature"
+               id="SILVER.imp.actions.enableNatureAction">
+         </action>
+      </objectContribution>
+   </extension>
+   <extension
+         point="org.eclipse.imp.runtime.tokenColorer">
+      <tokenColorer
+            class="silver.composed.idetest.imp.coloring.Colorer"
+            language="SILVER">
+      </tokenColorer>
+   </extension>
+   
+      <!-- From here are customerized additions to Silver IDE -->
+   <!-- Preference -->
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            name="SILVER"
+            class="edu.umn.cs.melt.ide.silver.preferences.SilverPreferencePage"
+            id="edu.umn.cs.melt.ide.silver.preferences.SILVER">
+      </page>
+   </extension>
+   
+   <!-- Perspective -->
+   <extension
+         point="org.eclipse.ui.perspectives">
+      <perspective
+            class="edu.umn.cs.melt.ide.silver.perspective.SilverPerspective"
+            id="SILVER_IDE.perspective"
+            name="Silver">
+      </perspective>
+   </extension>
+   
+   <!-- Wizard -->
+   <extension
+         id="SILVER_IDE.wizards"
+         name="Silver Project Wizards"
+         point="org.eclipse.ui.newWizards">
+      <wizard
+            category="SILVER_IDE.wizards.category/"
+            class="edu.umn.cs.melt.ide.silver.wizards.NewProjectWizard"
+            finalPerspective="SILVER_IDE.perspective"
+            id="SILVER_IDE.wizard.newProject"
+            name="New Silver Project"
+            project="true">
+      </wizard>
+      <category
+            id="SILVER_IDE.wizards.category"
+            name="Silver">
+      </category>
+   </extension>
+   
+   <!-- Commands 
+   		Note a command is typically used with menu and handler declared separately:
+   		Menu - (refer to) -> Command
+   		Handler - (refer to) -> Command
+   -->
+   <extension
+         id="SILVER_IDE.commands"
+         point="org.eclipse.ui.commands">
+      <command
+            id="SILVER_IDE.command.quickbuild"
+            name="Quick Build">
+      </command>
+   </extension>
+   
+   <!-- Menu and menu items -->
+   <extension
+         id="SILVER_IDE.menus"
+         point="org.eclipse.ui.menus">
+      <!-- "Quick Build" button -->
+      <menuContribution
+            locationURI="menu:project?after=buildProject">
+         <command
+            commandId="SILVER_IDE.command.quickbuild"
+            id="edu.umn.cs.melt.ide.silver.menu.quickbuild"
+            label="Quick Build">
+            <visibleWhen checkEnabled="false">
+               <with variable="activeWorkbenchWindow.activePerspective">
+                  <equals value="SILVER_IDE.perspective"/>
+               </with>
+            </visibleWhen>
+         </command>
+      </menuContribution>
+   </extension>
+   
+   <!-- Handlers -->
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            commandId="SILVER_IDE.command.quickbuild">
+         <enabledWhen>
+            <and>
+		        <with variable="edu.umn.cs.melt.ide.silver.quickbuildcommand.enablement">
+		           <equals value="ENABLED"/>
+		        </with>
+				<test property="SILVER_IDE.properties.quickbuildcommand.isEnabled"/>
+		        <!--
+                <with variable="selection">
+	               <iterate>
+		               <or>
+		                  <instanceof value="org.eclipse.core.resources.IProject"/>
+		                  <instanceof value="org.eclipse.core.resources.IFile"/>
+		               </or>
+	               </iterate>
+	               <count value="1"/>
+                </with>
+                -->
+            </and>
+         </enabledWhen>
+         <class class="edu.umn.cs.melt.ide.silver.commands.QuickBuildCommand"/>
+      </handler>
+   </extension> 
+   
+   <!-- Services -->
+   <extension
+         point="org.eclipse.ui.services">
+      <!-- provides access to state (enabled/disabled) of Quick Build button -->
+      <sourceProvider
+            provider="edu.umn.cs.melt.ide.silver.commands.QuickBuildCommandState">
+         <variable
+               name="edu.umn.cs.melt.ide.silver.quickbuildcommand.enablement"
+               priorityLevel="workbench">
+         </variable>
+      </sourceProvider>
+   </extension>
+   
+   <!-- Property testers -->
+   <extension
+         point="org.eclipse.core.expressions.propertyTesters">
+      <propertyTester
+            class="edu.umn.cs.melt.ide.silver.commands.QuickBuildCommandEnablementTester"
+            id="edu.umn.cs.melt.ide.silver.tester.quickbuildcommand"
+            namespace="SILVER_IDE.properties.quickbuildcommand"
+            properties="isEnabled"
+            type="java.lang.Object">
+      </propertyTester>
+   </extension>
+   
+   <!-- Startup hook. Called even before plugin is loaded. -->
+   <extension
+         point="org.eclipse.ui.startup">
+      <startup
+            class="edu.umn.cs.melt.ide.silver.StartupHook">
+      </startup>
+   </extension>
+   
+</plugin>

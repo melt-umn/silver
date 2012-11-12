@@ -92,7 +92,7 @@ IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[Parser
 }
 
 aspect function writeBuildFile
-IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis grammarLoc::String
 {
   classpathCompiler <- ["${sh}/jars/CopperCompiler.jar"];
   classpathRuntime <- ["${sh}/jars/CopperRuntime.jar"];

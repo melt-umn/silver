@@ -50,7 +50,7 @@ top::RunUnit ::= iIn::IO args::[String]
 
   postOps <- if a.noJavaGeneration then [] else 
     [genJava(a, grammarsToTranslate, silvergen), 
-     genBuild(a, grammarsDependedUpon, silverhome, silvergen, depAnalysis)]; 
+     genBuild(a, grammarsDependedUpon, silverhome, silvergen, depAnalysis, grammarLocationString)]; 
 }
 
 
@@ -69,10 +69,10 @@ top::Unit ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silvergen::Stri
 }
 
 abstract production genBuild
-top::Unit ::= a::Decorated CmdArgs allspecs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+top::Unit ::= a::Decorated CmdArgs allspecs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis grammarLoc::String
 {
   local attribute buildFile :: IO;
-  buildFile = writeBuildFile(top.ioIn, a, allspecs, silverhome, silvergen, da);
+  buildFile = writeBuildFile(top.ioIn, a, allspecs, silverhome, silvergen, da, grammarLoc);
 
   top.io = buildFile;
   top.code = 0;
@@ -149,7 +149,7 @@ String ::= r::Decorated RootSpec
 }
 
 function writeBuildFile
-IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis
+IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis grammarLoc::String
 {
   -- The prefix 'extra' here is used partially for historical reasons, and partially
   -- because it makes it easy to search/highlight all uses of these
