@@ -17,8 +17,8 @@ top::Roots ::= iIn::IO gn::String files::[String] gpath::String
   r = parseTreeOrDieWithoutStackTrace(top.svParser(text.iovalue, head(files)));
   -- These are file-specific inherited attributes:
   r.file = head(files);
-  r.grammarName = gn;
   -- These are grammar-specific inherited attributes:
+  r.grammarName = gn;
   r.env = top.env;
   r.globalImports = top.globalImports;
   r.grammarDependencies = top.grammarDependencies;

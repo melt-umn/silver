@@ -13,7 +13,7 @@ inherited attribute svParser :: SVParser;
 inherited attribute sviParser :: SVIParser;
 
 type SVParser = (ParseResult<Root> ::= String String);
-type SVIParser = (ParseResult<IRootSpec> ::= String String);
+type SVIParser = (ParseResult<IRoot> ::= String String);
 
 {--
  - Run the silver compiler, as if invoked from the command line.

@@ -14,7 +14,7 @@ top::IOInterface ::= iIn::IO f::String genPath::String
   local attribute text :: IOVal<String>;
   text = readFile(genPath ++ f, i);
 
-  local attribute ir :: IRootSpec;
+  local attribute ir :: IRoot;
   ir = top.sviParser(text.iovalue, f).parseTree; -- I'm assuming that interface files never parse error, so we aren't making this pretty.
 
   local attribute inf :: Interface; 

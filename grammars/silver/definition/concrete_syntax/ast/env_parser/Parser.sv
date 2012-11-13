@@ -30,11 +30,11 @@ terminal SubTerm 'sub' lexer classes {C_1};
 terminal DomTerm 'dom' lexer classes {C_1};
 
 
-attribute syntaxAst, parserSpecs occurs on IRootSpecParts, IRootSpecPart;
+attribute syntaxAst, parserSpecs occurs on IRootParts, IRootPart;
 
 --------------- i don't know yet ------------------------
 aspect production parserRootSpec
-top::RootSpec ::= p::IRootSpecParts
+top::RootSpec ::= p::IRootParts
 {
   top.syntaxAst = p.syntaxAst;
   top.parserSpecs = p.parserSpecs;
@@ -42,14 +42,14 @@ top::RootSpec ::= p::IRootSpecParts
 ---------------------------------------------------------
 
 aspect production aRoot1
-top::IRootSpecParts ::= r::IRootSpecPart
+top::IRootParts ::= r::IRootPart
 {
   top.syntaxAst = r.syntaxAst;
   top.parserSpecs = r.parserSpecs;
 }
 
 aspect production aRoot2
-top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
+top::IRootParts ::= r1::IRootPart r2::IRootParts
 {
   top.syntaxAst = r1.syntaxAst ++ r2.syntaxAst;
   top.parserSpecs = r1.parserSpecs ++ r2.parserSpecs;
@@ -58,20 +58,20 @@ top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
 ----
 
 aspect default production
-top::IRootSpecPart ::=
+top::IRootPart ::=
 {
   top.syntaxAst = [];
   top.parserSpecs = [];
 }
 
 concrete production aRootSyntax
-top::IRootSpecPart ::= 'syntax' s::ISyntax
+top::IRootPart ::= 'syntax' s::ISyntax
 {
   top.syntaxAst = s.syntaxAst;
 }
 
 concrete production aRootParsers
-top::IRootSpecPart ::= 'parsers' s::IParsers
+top::IRootPart ::= 'parsers' s::IParsers
 {
   top.parserSpecs = s.parserSpecs;
 }
