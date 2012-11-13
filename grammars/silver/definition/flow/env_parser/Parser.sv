@@ -22,24 +22,24 @@ terminal LocalInhTerm 	 'localInh' lexer classes {C_1};
 terminal FwdInhTerm 	 'fwdInh' lexer classes {C_1};  
 terminal ExtraTerm 	 'extra' lexer classes {C_1};  
 
-attribute flowDefs occurs on IRootParts, IRootPart;
+attribute flowDefs occurs on IRoot, IRootPart;
 
 --------------- i don't know yet ------------------------
-aspect production parserRootSpec
-top::RootSpec ::= p::IRootParts
+aspect production interfaceRootSpec
+top::RootSpec ::= p::IRoot
 {
   top.flowDefs = p.flowDefs;
 }
 ---------------------------------------------------------
 
 aspect production aRoot1
-top::IRootParts ::= r::IRootPart
+top::IRoot ::= r::IRootPart
 {
   top.flowDefs = r.flowDefs;
 }
 
 aspect production aRoot2
-top::IRootParts ::= r1::IRootPart r2::IRootParts
+top::IRoot ::= r1::IRootPart r2::IRoot
 {
   top.flowDefs = r1.flowDefs ++ r2.flowDefs;
 }
