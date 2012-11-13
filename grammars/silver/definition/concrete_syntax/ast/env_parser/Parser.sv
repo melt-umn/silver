@@ -30,11 +30,11 @@ terminal SubTerm 'sub' lexer classes {C_1};
 terminal DomTerm 'dom' lexer classes {C_1};
 
 
-attribute syntaxAst, parserSpecs occurs on IRootParts, IRootPart;
+attribute syntaxAst, parserSpecs occurs on IRoot, IRootPart;
 
 --------------- i don't know yet ------------------------
-aspect production parserRootSpec
-top::RootSpec ::= p::IRootParts
+aspect production interfaceRootSpec
+top::RootSpec ::= p::IRoot
 {
   top.syntaxAst = p.syntaxAst;
   top.parserSpecs = p.parserSpecs;
@@ -42,14 +42,14 @@ top::RootSpec ::= p::IRootParts
 ---------------------------------------------------------
 
 aspect production aRoot1
-top::IRootParts ::= r::IRootPart
+top::IRoot ::= r::IRootPart
 {
   top.syntaxAst = r.syntaxAst;
   top.parserSpecs = r.parserSpecs;
 }
 
 aspect production aRoot2
-top::IRootParts ::= r1::IRootPart r2::IRootParts
+top::IRoot ::= r1::IRootPart r2::IRoot
 {
   top.syntaxAst = r1.syntaxAst ++ r2.syntaxAst;
   top.parserSpecs = r1.parserSpecs ++ r2.parserSpecs;

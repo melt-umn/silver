@@ -18,7 +18,7 @@ top::IOInterface ::= iIn::IO f::String genPath::String
   ir = top.sviParser(text.iovalue, f).parseTree; -- I'm assuming that interface files never parse error, so we aren't making this pretty.
 
   local attribute inf :: Interface; 
-  inf = fullInterface(modTime.iovalue, f, genPath, ir.spec);
+  inf = fullInterface(modTime.iovalue, f, genPath, decorate interfaceRootSpec(ir) with {});
 
   top.interfaces = [inf];
   top.io = text.io;

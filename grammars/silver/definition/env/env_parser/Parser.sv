@@ -66,7 +66,6 @@ terminal OptionalGrammarsTerm 'optionalGrammars' lexer classes {C_1};
 terminal CondBuildTerm        'condBuild'        lexer classes {C_1};
 
 
-synthesized attribute spec :: Decorated RootSpec;
 synthesized attribute signature :: NamedSignature;
 synthesized attribute elements :: [NamedSignatureElement];
 synthesized attribute element :: NamedSignatureElement;
@@ -77,8 +76,7 @@ synthesized attribute tyvars :: [TyVar];
 
 {- The "uninteresting" plumbing of interface files: -}
 
-nonterminal IRoot with spec;
-nonterminal IRootParts with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
+nonterminal IRoot with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
 nonterminal IDefs with defs, env, grammarName; -- including square brackets
 nonterminal IDefsInner with defs, env, grammarName; -- inside square brackets
 nonterminal ITypeReps with env, typereps, grammarName; -- including square brackets
@@ -140,8 +138,8 @@ top::ILocation ::= filename::IName ',' line::Num_t ',' column::Num_t
 
 -- Exposing the interface to the outside world
 
-abstract production parserRootSpec
-top::RootSpec ::= p::IRootParts
+abstract production interfaceRootSpec
+top::RootSpec ::= p::IRoot
 {
   p.grammarName = p.declaredName;
 
@@ -159,14 +157,8 @@ top::RootSpec ::= p::IRootParts
 
 --The Grammar 
 
-concrete production aRootFull
-top::IRoot ::= r::IRootParts
-{
-  top.spec = decorate parserRootSpec(r) with { };
-}
-
 concrete production aRoot1
-top::IRootParts ::= r::IRootPart
+top::IRoot ::= r::IRootPart
 {
   top.declaredName = r.declaredName; 
   top.defs = r.defs;
@@ -178,7 +170,7 @@ top::IRootParts ::= r::IRootPart
 }
 
 concrete production aRoot2
-top::IRootParts ::= r1::IRootPart r2::IRootParts
+top::IRoot ::= r1::IRootPart r2::IRoot
 {
   top.declaredName = if r1.declaredName == "" then r2.declaredName else r1.declaredName; 
   top.defs = r1.defs ++ r2.defs;
