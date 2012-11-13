@@ -24,8 +24,8 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
   flags <- [pair("--copperdump", flag(copperdumpFlag))];
   flagdescs <- ["\t--copperdump  : force Copper to dump parse table information"];
 }
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect function run
+IOVal<Integer> ::= _ _ _ _ silverGen::String _ _ _
 {
   -- Only examine grammar depended upon to determine what parsers may be built
   -- but do include both interface files and rootspecs.

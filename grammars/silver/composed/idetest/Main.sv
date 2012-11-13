@@ -54,16 +54,23 @@ parser sviParse::IRootSpec {
 }
 
 function main 
-IOVal<Integer> ::= args::[String] i::IO
+IOVal<Integer> ::= args::[String] ioin::IO
 {
-  -- please note that run in BuildProcess.sv will call exit(), so we may not "get back here"
-  return ioval((decorate run(i, args) with {svParser = svParse; sviParser = sviParse;}).io,
-               0);
+  return cmdLineRun(args, svParse, sviParse, ioin);
 }
 
 --- ... we're adding an ide declaration here
 
 temp_imp_ide_dcl svParse ".sv" ;
+
+{-
+Hi Ming:
+
+run got restructured. You can see the invocation above for an example.
+It now properly returns an IOVal instead of calling exit() when an error
+happens.
+
+It's probably not suitable for you currently, but I'm fixing that...
 
 function getErrors 
 [String] ::= args::[String] i::IO
@@ -74,5 +81,6 @@ function getErrors
 
   return ru.errorList;
 }
+-}
 -- Yeah, that's a hack! :D
 
