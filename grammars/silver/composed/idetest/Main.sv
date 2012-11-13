@@ -41,7 +41,7 @@ parser svParse::Root {
   silver:modification:impide;
 }
 
-parser sviParse::IRootSpec {
+parser sviParse::IRoot {
   silver:host:env;
 
   silver:modification:collection:env_parser;

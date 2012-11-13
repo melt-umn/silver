@@ -77,8 +77,8 @@ synthesized attribute tyvars :: [TyVar];
 
 {- The "uninteresting" plumbing of interface files: -}
 
-nonterminal IRootSpec with spec;
-nonterminal IRootSpecParts with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
+nonterminal IRoot with spec;
+nonterminal IRootParts with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
 nonterminal IDefs with defs, env, grammarName; -- including square brackets
 nonterminal IDefsInner with defs, env, grammarName; -- inside square brackets
 nonterminal ITypeReps with env, typereps, grammarName; -- including square brackets
@@ -87,7 +87,7 @@ nonterminal ITypeRepsInner with env, typereps, grammarName; -- inside square bra
 {- Extension points! -}
 
 {- Top-level elements of the interface file -}
-closed nonterminal IRootSpecPart with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
+closed nonterminal IRootPart with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
 {- A DclInfo record -}
 closed nonterminal IDclInfo with defs, env, grammarName;
 {- A TypeExp record -}
@@ -141,7 +141,7 @@ top::ILocation ::= filename::IName ',' line::Num_t ',' column::Num_t
 -- Exposing the interface to the outside world
 
 abstract production parserRootSpec
-top::RootSpec ::= p::IRootSpecParts
+top::RootSpec ::= p::IRootParts
 {
   p.grammarName = p.declaredName;
 
@@ -160,13 +160,13 @@ top::RootSpec ::= p::IRootSpecParts
 --The Grammar 
 
 concrete production aRootFull
-top::IRootSpec ::= r::IRootSpecParts
+top::IRoot ::= r::IRootParts
 {
   top.spec = decorate parserRootSpec(r) with { };
 }
 
 concrete production aRoot1
-top::IRootSpecParts ::= r::IRootSpecPart
+top::IRootParts ::= r::IRootPart
 {
   top.declaredName = r.declaredName; 
   top.defs = r.defs;
@@ -178,7 +178,7 @@ top::IRootSpecParts ::= r::IRootSpecPart
 }
 
 concrete production aRoot2
-top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
+top::IRootParts ::= r1::IRootPart r2::IRootParts
 {
   top.declaredName = if r1.declaredName == "" then r2.declaredName else r1.declaredName; 
   top.defs = r1.defs ++ r2.defs;
@@ -191,7 +191,7 @@ top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
 
 --The pieces
 aspect default production
-top::IRootSpecPart ::=
+top::IRootPart ::=
 {
   top.declaredName = "";
   top.moduleNames = [];
@@ -203,44 +203,44 @@ top::IRootSpecPart ::=
 }
 
 concrete production aRootDeclaredName
-top::IRootSpecPart ::= 'declaredName' i::IName
+top::IRootPart ::= 'declaredName' i::IName
 {
   top.declaredName = i.aname;
 }
 
 concrete production aRootModuleNames
-top::IRootSpecPart ::= 'moduleNames' i::INames
+top::IRootPart ::= 'moduleNames' i::INames
 {
   top.moduleNames = i.names;
 }
 
 concrete production aRootAllDeps
-top::IRootSpecPart ::= 'allDeps' i::INames
+top::IRootPart ::= 'allDeps' i::INames
 {
   top.allGrammarDependencies = i.names;
 }
 
 concrete production aRootDefs
-top::IRootSpecPart ::= 'defs' i::IDefs
+top::IRootPart ::= 'defs' i::IDefs
 {
   top.defs = i.defs;
   i.env = emptyEnv();
 }
 
 concrete production aRootExportedGrammars
-top::IRootSpecPart ::= 'exportedGrammars' i::INames
+top::IRootPart ::= 'exportedGrammars' i::INames
 {
   top.exportedGrammars = i.names;
 }
 
 concrete production aRootOptionalGrammars
-top::IRootSpecPart ::= 'optionalGrammars' i::INames
+top::IRootPart ::= 'optionalGrammars' i::INames
 {
   top.optionalGrammars = i.names;
 }
 
 concrete production aRootCondBuilds
-top::IRootSpecPart ::= 'condBuild' i::INames
+top::IRootPart ::= 'condBuild' i::INames
 {
   top.condBuild = unfoldCB(i.names);
 }
