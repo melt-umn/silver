@@ -258,6 +258,21 @@ IOVal<Boolean> ::= s::String i::IO
   "java" : return "new core.Pioval(%i%, common.Util.deleteFile(%s%.toString()))";
 }
 
+{--
+ - Copy a file from src to dst.
+ -
+ - @param src  The path to read
+ - @param dst  The path to write
+ - @return  the IO token. Errors are fatal.
+ -}
+function copyFile
+IO ::= src::String  dst::String  i::IO
+{
+  return error("Not Yet Implemented: copyFile");
+} foreign {
+  "java" : return "common.Util.io(%i%, common.Util.copyFile(%src%.toString(), %dst%.toString()))";
+}
+
 ------ IO Misc.
 
 {--
