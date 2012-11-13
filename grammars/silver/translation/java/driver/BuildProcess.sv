@@ -48,8 +48,8 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
            ];
   flagdescs <- ["\t--onejar  : include runtime libraries in the jar"];
 }
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect function run
+IOVal<Integer> ::= a::Decorated CmdArgs _ _ silverHome::String  silverGen::String _ _ _
 {
   postOps <- if a.noJavaGeneration then [] else 
     [genJava(a, grammarsToTranslate, silverGen), 
@@ -157,6 +157,8 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
   -- The prefix 'extra' here is used partially for historical reasons, and partially
   -- because it makes it easy to search/highlight all uses of these
 
+  local builtGrammar :: String = head(a.buildGrammar);
+
   production attribute extraTopLevelDecls :: [String] with ++;
   extraTopLevelDecls := [];
 
@@ -182,22 +184,22 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
   extraManifestAttributes := [
     "<attribute name='Built-By' value='${user.name}' />",
     "<attribute name='Implementation-Version' value='${TIME}' />",
-    "<attribute name='Main-Class' value='" ++ makeName(a.buildGrammar) ++ ".Main' />"]; -- TODO: we "should" make main depend on whether there is a main...
+    "<attribute name='Main-Class' value='" ++ makeName(builtGrammar) ++ ".Main' />"]; -- TODO: we "should" make main depend on whether there is a main...
 
   extraManifestAttributes <-
     if a.buildSingleJar then []
     else ["<attribute name='Class-Path' value='${man.classpath}' />"];
   
   local attribute outputFile :: String;
-  outputFile = if length(a.outName) > 0 then a.outName else (makeName(a.buildGrammar) ++ ".jar");
+  outputFile = if !null(a.outName) then head(a.outName) else makeName(builtGrammar) ++ ".jar";
 
   -- TODO: this is local directory! move build.xml to generated space
   return writeFile("build.xml", buildXml, i);
 
   local attribute buildXml :: String;
   buildXml =    
-"<project name='" ++ a.buildGrammar ++ "' default='dist' basedir='.'>\n" ++
-"  <description>Generated build script for the grammar " ++ a.buildGrammar ++ "</description>\n\n" ++
+"<project name='" ++ builtGrammar ++ "' default='dist' basedir='.'>\n" ++
+"  <description>Generated build script for the grammar " ++ builtGrammar ++ "</description>\n\n" ++
 
 "  <property environment='env'/>\n" ++
 "  <property name='jg' location='" ++ silvergen ++ "'/>\n" ++

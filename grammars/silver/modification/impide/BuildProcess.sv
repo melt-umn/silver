@@ -13,7 +13,7 @@ aspect function writeBuildFile
 IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis grammarLoc::String
 {
   -- The RootSpec representing the grammar actually being built (specified on the command line)
-  local builtGrammar :: [Decorated RootSpec] = getRootSpec(a.buildGrammar, da.compiledList);
+  local builtGrammar :: [Decorated RootSpec] = getRootSpec(head(a.buildGrammar), da.compiledList);
   
   -- Empty if no ide decl in that grammar, otherwise has at least one spec... note that
   -- we're going to go with assuming there's just one IDE declaration...
@@ -25,7 +25,7 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
   local parserPackagePath :: String = grammarToPath(ide.ideParserSpec.sourceGrammar);
   local parserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ ".copper";
   local ideParserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ "_ide.copper";
-  local pkgName :: String = grammarToPackage(a.buildGrammar);
+  local pkgName :: String = grammarToPackage(head(a.buildGrammar));
 
   extraTopLevelDecls <- if !isIde then [] else [
     "<property name='grammar.path' value='" ++ grammarLoc ++ "'/>", 

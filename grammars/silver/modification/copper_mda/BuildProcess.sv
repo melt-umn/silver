@@ -16,8 +16,8 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
   extraGrammarsDeps <- if length(targets) != 0 then ["copper_mda"] else [];
 }
 
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect function run
+IOVal<Integer> ::= _ _ _ _ silverGen::String _ _ _
 {
   postOps <- [generateMdaSpecs(grammarEnv, depAnalysis.compiledList, silverGen)]; 
 }

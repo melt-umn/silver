@@ -9,35 +9,6 @@ grammar silver:driver;
  - 0 = success of course
  -}
 
-abstract production checkSilverHome
-top::Unit ::= s::String
-{
-  local attribute problem :: Boolean;
-  problem = s == "/";
-
-  top.io = if problem then print("Missing SILVER_HOME. Installation problem?\n",top.ioIn) else top.ioIn;
-  top.code = if problem then -1 else 0;
-  top.order = 0;
-}
-
-abstract production checkSilverGen
-top::Unit ::= s::String
-{
-  local attribute problem :: Boolean;
-  problem = s == "/";
-
-  top.io = if problem then print("Missing SILVER_GEN or -G <path>. A location to store intermediate files is necessary.\n",top.ioIn) else top.ioIn;
-  top.code = if problem then -2 else 0;
-  top.order = 0;
-}
-
-abstract production printVersion
-top::Unit ::= 
-{
-  top.order = 0;
-  top.io = print("Silver Version 0.3.6-dev\n", top.ioIn);
-  top.code = 127;
-}
 
 abstract production doInterfaces
 top::Unit ::= u::[Decorated RootSpec] genPath::String
@@ -110,4 +81,36 @@ IO ::= iIn::IO path::String files::[String]
          else deleteStaleDataFiles( deleteFile(path ++ head(files), isf.io).io, path, tail(files));
 }
 
+abstract production printAllBindingErrors
+top::Unit ::= specs::[Decorated RootSpec]
+{
+  forwards to printAllBindingErrorsHelp(specs)
+	with {
+		ioIn = print("Checking For Errors.\n", top.ioIn);
+	};
+}
+
+abstract production printAllBindingErrorsHelp
+top::Unit ::= specs::[Decorated RootSpec]
+{
+  local attribute es :: [Message];
+  es = head(specs).errors;
+
+  local attribute i :: IO;
+  i = if null(es)
+      then top.ioIn
+      else print("Errors for : " ++ head(specs).declaredName ++ " :\n" ++ foldMessages(es) ++ "\n\n", top.ioIn);
+
+  local attribute recurse :: Unit;
+  recurse = printAllBindingErrorsHelp(tail(specs));
+  recurse.ioIn = i;
+
+  top.io = if null(specs) then top.ioIn else recurse.io;
+
+  top.code = if null(specs) || (!containsErrors(es, false) && recurse.code == 0)
+	     then 0
+	     else 20;
+
+  top.order = 0;
+}
 

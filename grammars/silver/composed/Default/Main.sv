@@ -50,9 +50,7 @@ parser sviParse::IRootSpec {
 }
 
 function main 
-IOVal<Integer> ::= args::[String] i::IO
+IOVal<Integer> ::= args::[String] ioin::IO
 {
-  -- please note that run in BuildProcess.sv will call exit(), so we may not "get back here"
-  return ioval((decorate run(i, args) with {svParser = svParse; sviParser = sviParse;}).io,
-               0);
+  return cmdLineRun(args, svParse, sviParse, ioin);
 }

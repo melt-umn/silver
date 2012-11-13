@@ -9,107 +9,91 @@ exports silver:driver:util;
 imports silver:util;
 imports silver:util:cmdargs;
 
-inherited attribute svParser :: (ParseResult<Root> ::= String String);
-inherited attribute sviParser :: (ParseResult<IRootSpec> ::= String String);
+inherited attribute svParser :: SVParser;
+inherited attribute sviParser :: SVIParser;
+
+type SVParser = (ParseResult<Root> ::= String String);
+type SVIParser = (ParseResult<IRootSpec> ::= String String);
 
 {--
- - Controls the compiler.
- - Could be eliminated, and the production turned into a function nowadays.
+ - Run the silver compiler, as if invoked from the command line.
  -}
-nonterminal RunUnit with io, svParser, sviParser;
-
-abstract production run
-top::RunUnit ::= iIn::IO args::[String]
+function cmdLineRun
+IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
 {
   local argResult :: ParseResult<Decorated CmdArgs> = parseArgs(args);
+  local a :: Decorated CmdArgs = argResult.parseTree;
 
-  -- Parse the command line
-  production attribute a :: Decorated CmdArgs;
-  a = argResult.parseTree;
-
-  -- Grab a few environment variables
-  local envGP :: IOVal<String> = envVar("GRAMMAR_PATH", iIn);
+  -- Let's locally set up and verify the environment
+  local envSH :: IOVal<String> = envVar("SILVER_HOME", ioin);
+  local envGP :: IOVal<String> = envVar("GRAMMAR_PATH", envSH.io);
   local envSG :: IOVal<String> = envVar("SILVER_GEN", envGP.io);
-  local envSH :: IOVal<String> = envVar("SILVER_HOME", envSG.io);
-
-  -- A list of directories to search for grammars. (cmd line has priority over env)
-  production attribute grammarPath :: [String];
-  grammarPath = map(endWithSlash,  a.searchPath ++ explode(":", envGP.iovalue));
   
-  -- Where Silver is installed. (env var should be set by RunSilver.jar)
-  production attribute silverHome :: String;
-  silverHome = endWithSlash(envSH.iovalue);
-  
-  -- The directory where generated files should be stored. (again, cmd line > env)
-  production attribute silverGen :: String with ++;
-  silverGen := endWithSlash(if a.genLocation == "" then envSG.iovalue else a.genLocation);
+  local silverHome :: String =
+    endWithSlash(head(a.silverHomeOption ++ [envSH.iovalue]));
+  local silverGen :: String =
+    endWithSlash(head(a.genLocation ++ (if envSG.iovalue == "" then [] else [envSG.iovalue]) ++ [silverHome ++ "generated/"]));
+  local grammarPath :: [String] =
+    map(endWithSlash, a.searchPath ++ [silverHome ++ "grammars/"] ++ explode(":", envGP.iovalue) ++ ["."]);
+  local buildGrammar :: String = head(a.buildGrammar);
 
---------
--------- Phase 1: Pre-ops. Things that go on before we start parsing.
---------
+  local check :: IOVal<[String]> =
+    checkEnvironment(a, silverHome, silverGen, grammarPath, buildGrammar, envSG.io);
+    
+  return if a.displayVersion then ioval(print("Silver Version 0.3.6-dev\n", ioin), 0)
+  else if !argResult.parseSuccess then ioval(print(argResult.parseErrors, ioin), 1)
+  else if !null(check.iovalue) then ioval(print(implode("\n", check.iovalue), check.io), 1)
+  else run(a, svParser, sviParser, silverHome, silverGen, grammarPath, buildGrammar, check.io);
+}
 
-  -- Operations to execute _before_ we parse and link the grammars.
-  production attribute preOps :: [Unit] with ++;
-  preOps := [checkSilverHome(silverHome), checkSilverGen(silverGen)] ++
-    if a.displayVersion then [printVersion()] else [];
-
-  -- Run the pre-ops.
-  local attribute preIO :: IOVal<Integer>;
-  preIO = runAll(envSH.io, sortUnits(preOps));
-
-  -- Let's actually go see if we can find this grammar.
+function run
+IOVal<Integer> ::=
+  a::Decorated CmdArgs
+  svParser::SVParser
+  sviParser::SVIParser
+  silverHome::String
+  silverGen::String
+  grammarPath::[String]
+  buildGrammar::String
+  ioin::IO
+{
+  -- To improve error checking, we try to find the build grammar explicitly
   local attribute grammarLocation :: IOVal<Maybe<String>>;
-  grammarLocation = findGrammarLocation(grammarToPath(a.buildGrammar), grammarPath, preIO.io);
+  grammarLocation = findGrammarLocation(grammarToPath(buildGrammar), grammarPath, ioin);
 
-  -- The grammar location as string. Used for extensions.
+  -- The grammar location as string. Used for extensions. TODO remove
   production attribute grammarLocationString :: String = fromMaybe(".", grammarLocation.iovalue);
-
---------
--------- Phase 2: Begin actually compiling things
---------
 
   -- Begin compiling the target grammar, and then chase down dependencies as needed.
   production attribute unit :: CompilationUnit;
-  unit = compileGrammars(grammarLocation.io, grammarPath, [a.buildGrammar], [], a.doClean, silverGen);
-  unit.svParser = top.svParser;
-  unit.sviParser = top.sviParser;
+  unit = compileGrammars(grammarLocation.io, grammarPath, [buildGrammar], [], a.doClean, silverGen);
+  unit.svParser = svParser;
+  unit.sviParser = sviParser;
   unit.compiledGrammars = grammarEnv;
   unit.config = a;
-  
   -- Let's pause a moment and note what the result of the above is:
   -- 1: unit.compiledList  ==  grammars actually parsed.
   -- 2: unit.interfaces  ==  grammars that we went with the interface files semi-optimistically.
   -- 3: unit.seenGrammars  ==  the names of all of the above, together.
  
---------
--------- Phase 3: We've compiled things, now figure out what we need to recompile (ONLY for analysis, not re-translation)
---------
-  
   production attribute depAnalysis :: DependencyAnalysis;
   depAnalysis = dependencyAnalysis(unit.interfaces, unit.compiledList);
-  
   -- Again, the results of the above are:
   -- depAnalysis.compiledList = RootSpecs needing translation
   -- depAnalysis.needGrammars = grammars names that need to be rechecked for errors, but not translated
   -- depAnalysis.interfaces = interfaces that are Just Fine and A-Okay as is
 
---------
--------- Phase 4: Check those grammars we're uncertain about, to make sure there are no semantic errors, but
---------  don't do translation on them. (TODO: technically this is the source of build bugs...)
---------
-
   -- Parse those grammars that depend on a changed grammar:
   production attribute reUnit :: CompilationUnit;
   reUnit = compileGrammars(unit.io, grammarPath, depAnalysis.needGrammars, unit.seenGrammars, true, silverGen);
-  reUnit.svParser = top.svParser;
-  reUnit.sviParser = top.sviParser;
+  reUnit.svParser = svParser;
+  reUnit.sviParser = sviParser;
   reUnit.compiledGrammars = grammarEnv;
   reUnit.config = a;
-  
   -- Once more,
   -- 1: reUnit.compiledList  ==  parsed versions of grammar that we aren't translating.
-  -- (2: reUnit.interfaces  ==  EMPTY.)
-  -- (3: reUnit.seenGrammars  ==  should be the same set as unit.seenGrammars)
+  -- (2: reUnit.interfaces  ==  [])
+  -- (3: reUnit.seenGrammars  ==  unit.seenGrammars)
 
 --------
 -------- Phase 5: Let's pull a few things that are very useful for post-ops to use here:
@@ -126,7 +110,7 @@ top::RunUnit ::= iIn::IO args::[String]
   -- Only those grammars that are used. (unit unconditionally builts conditionally built
   -- grammars. Here we produce a set that would not include them if they are not used.)
   production attribute grammarsDependedUpon :: [String];
-  grammarsDependedUpon = expandAllDeps([a.buildGrammar], [], grammarEnv);
+  grammarsDependedUpon = expandAllDeps([buildGrammar], [], grammarEnv);
   
   -- This is a list of RootSpecs that need translating:
   production attribute grammarsToTranslate :: [Decorated RootSpec];
@@ -139,24 +123,22 @@ top::RunUnit ::= iIn::IO args::[String]
   --the operations that will be executed _after_ parsing and linking of the grammars has been done
   production attribute postOps :: [Unit] with ++;
   postOps := [doInterfaces(grammarsToTranslate, silverGen)];
+  postOps <- if a.noBindingChecking then [] else [printAllBindingErrors(grammars)]; 
   
   local attribute postIO :: IOVal<Integer>;
   postIO = runAll(reUnit.io, sortUnits(postOps));
   
-  top.io = if !argResult.parseSuccess -- problem interpreting args
-           then exit(1, print(argResult.parseErrors, iIn))
-           else if preIO.iovalue != 0 -- the preops tell us to quit.
-           then exit(preIO.iovalue, preIO.io)
-           else if !grammarLocation.iovalue.isJust
-           then exit(2, print("\nGrammar '" ++ a.buildGrammar ++ "' could not be located, make sure that the " ++ 
-                              "grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
-           else if null(unit.compiledList)
-           then if null(grammars)
-                then exit(3, print("\nGrammar '" ++ a.buildGrammar ++ "' was found at '" ++ grammarLocation.iovalue.fromJust 
-                                                       ++ "' but there were no silver source files there!\n\n", grammarLocation.io))
-                else exit(4, print("\nGrammar '" ++ a.buildGrammar ++ "' is up to date. Use --clean to force a recompile.\n\n",
-                                                       grammarLocation.io))
-           else exit(postIO.iovalue, postIO.io);
+  return
+    if !grammarLocation.iovalue.isJust
+    then ioval(print("\nGrammar '" ++ buildGrammar ++ "' could not be located, make sure that the " ++ 
+                       "grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io), 2)
+    else if null(unit.compiledList)
+    then if null(grammars)
+         then ioval(print("\nGrammar '" ++ buildGrammar ++ "' was found at '" ++ grammarLocation.iovalue.fromJust ++
+                            "' but there were no silver source files there!\n\n", grammarLocation.io), 3)
+         else ioval(print("\nGrammar '" ++ buildGrammar ++ "' is up to date. Use --clean to force a recompile.\n\n",
+                            grammarLocation.io), 4)
+    else postIO;
 }
 
 

@@ -25,8 +25,8 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
   -- omitting from descriptions deliberately!
 }
 
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect function run
+IOVal<Integer> ::= a::Decorated CmdArgs _ _ _ _ _ _ _
 {
   postOps <- if a.dumpFlowGraph then [dumpFlowGraphAction(findAllNts(allProds, allRealEnv), finalGraphs, flowTypes)] else [];
 }

@@ -9,11 +9,11 @@ import silver:translation:java;
 import silver:translation:java:driver;
 import silver:util:cmdargs;
 
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect function run
+IOVal<Integer> ::= _ _ _ _ silverGen::String _ buildGrammar::String _
 {
   -- The RootSpec representing the grammar actually being built (specified on the command line)
-  local builtGrammar :: [Decorated RootSpec] = getRootSpec(a.buildGrammar, depAnalysis.compiledList);
+  local builtGrammar :: [Decorated RootSpec] = getRootSpec(buildGrammar, depAnalysis.compiledList);
   
   -- Empty if no ide decl in that grammar, otherwise has at least one spec... note that
   -- we're going to go with assuming there's just one IDE declaration...
