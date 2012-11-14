@@ -21,8 +21,7 @@ public class StartupHook implements IStartup {
 	@Override
 	public void earlyStartup() {
 		//addPerspectiveListeners();
-		SilverAnalysisInvoker.prepare();
-		//System.out.println("Analyzer prepared.");
+		SilverAnalysisInvoker2.prepare();
 	}
 
 	public void addPerspectiveListeners(){

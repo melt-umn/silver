@@ -60,7 +60,7 @@ import org.eclipse.ui.services.ISourceProviderService;
 import silver.composed.idetest.imp.SILVERPlugin;
 import silver.composed.idetest.imp.controller.SILVERParseController;
 import edu.umn.cs.melt.ide.silver.ConsoleLoggingStream;
-import edu.umn.cs.melt.ide.silver.SilverAnalysisInvoker;
+import edu.umn.cs.melt.ide.silver.SilverAnalysisInvoker2;
 import edu.umn.cs.melt.ide.silver.SilverAnalysisInvoker.AnalysisHandler;
 import edu.umn.cs.melt.ide.silver.commands.QuickBuildCommandState;
 import edu.umn.cs.melt.ide.silver.problem.Problem;
@@ -447,7 +447,7 @@ public class SILVERBuilder extends BuilderBase implements AnalysisHandler {
 	    FillLayout layout1 = new FillLayout(SWT.VERTICAL);
 	    controlComp.setLayout(layout1);
 	    
-	    //Convert data for combo
+	    //Convert data for combo-box
 	    final Combo simple = new Combo(controlComp, SWT.DROP_DOWN);
 	    Object[] objs = grammars.toArray();
 	    String[] strs = new String[objs.length];
@@ -473,7 +473,7 @@ public class SILVERBuilder extends BuilderBase implements AnalysisHandler {
 	        	//Save the specified grammar 
 	        	grammarLastSelected = simple.getText();
 	        	
-	        	//Invoke the compliation task
+	        	//Invoke the compilation task
 	        	future = createBuildTask(project, projectPath, monitor);
 	        	EXECUTOR.execute(future);  
 	        	
@@ -525,7 +525,7 @@ public class SILVERBuilder extends BuilderBase implements AnalysisHandler {
 		    		}
 		    		
 		    		//Now we can continue the process.
-			    	boolean res = SilverAnalysisInvoker.build(//SilverCompilerInvoker
+			    	boolean res = SilverAnalysisInvoker2.build(//SilverCompilerInvoker
 			    		new String[]{"-I", projectPath, grammarLastSelected},
 			    		projectPath, 
 			    		getConsoleLoggingStream(),

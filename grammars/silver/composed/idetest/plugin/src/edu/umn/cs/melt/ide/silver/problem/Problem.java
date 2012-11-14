@@ -62,7 +62,7 @@ public class Problem {
 	 * </pre>
 	 * Example:
 	 * <pre>
-	 *  sample:grammar:name#AbstractSyntax.sv:48:5: error: Undeclared attribute 'undeca'.
+	 *  sample:grammar:name#AbstractSyntax.sv:48:5: error: Undeclared attribute 'abc'.
 	 * </pre>
 	 * @param silverMessage
 	 * @return null if parsing is failed.
