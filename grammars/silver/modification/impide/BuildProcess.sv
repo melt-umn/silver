@@ -172,6 +172,11 @@ String ::=
     "\n" ++
 
     "<!-- 8. core plug-in classes -->\n" ++
+    "<mkdir dir='${ide.pkg.path}/'/>\n" ++  
+    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/Initializer.java.template\"\n" ++
+    "      tofile=\"${ide.pkg.path}/${lang.name}Initializer.java\" filtering=\"true\"/>\n" ++
+    "\n" ++
+
     "<mkdir dir='${ide.pkg.path}/imp/'/>\n" ++  
     "<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/plugin.java.template\"\n" ++
     "      tofile=\"${ide.pkg.path}/imp/${lang.name}Plugin.java\" filtering=\"true\"/>\n" ++
