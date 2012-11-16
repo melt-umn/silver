@@ -45,20 +45,24 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
     "<property name='ide.parser.classname' value='" ++ parserClassName ++ "' />",
     "<property name='ide.parser.copperfile' value='" ++ parserFullPath ++ "' />",
     "<property name='ide.parser.ide_copperfile' value='" ++ ideParserFullPath ++ "' />",
-    "<property name='ide.fileextension' value='" ++ ide.ideExtension ++ "' />",
+    "<property name='ide.fileextension' value='" ++ ide.ideExtension ++ "' />"] ++ 
 
-    "<target name='ide' depends='arg-check, filters, jars, copper, grammars, create-folders, customize'>\n\n</target>\n\n",
+    getIDEFunctionsDcls(ide.funcDcls) ++
+
+    [
+    "<target name='ide' depends='arg-check, filters, enhance, jars, copper, grammars, create-folders, customize'>\n\n</target>",
     "<target name='arg-check'>" ++ getArgCheckTarget() ++ "</target>",
     "<target name='filters'>" ++ getFiltersTarget() ++ "</target>",
-    "<target name='create-folders'>" ++ getCreateFoldersTarget() ++ "</target>\n\n",
-    "<target name='customize' if=\"to-customize\">" ++ getCustomizeTarget() ++ "</target>\n\n",
-
+    "<target name='create-folders'>" ++ getCreateFoldersTarget() ++ "</target>",
+    "<target name='customize' if=\"to-customize\">" ++ getCustomizeTarget() ++ "</target>",
+    "<target name='enhance' depends='arg-check, filters' if=\"ide-function-analyzer-exists\">" ++ getEnhanceTarget(ide.funcDcls) ++ "</target>",
     getBuildTargets()
     ];
 
-  -- The following line may be commented out for test purpose.
   extraDistDeps <- if !isIde then [] else ["ide"]; -- Here's where we demand that target be built ('dist' is a dummy target that just depends on 'jars' initially)
   
+  extraGrammarsDeps <- if !isIde then [] else ["enhance"]; -- enhance the language implementation by adding more source files, for use of IDE. (see target enahnce)
+
   -- attributes required as an OSGi module
   extraManifestAttributes <- if !isIde then [] else [
     "<attribute name='Bundle-ManifestVersion' value='1' />",
@@ -73,17 +77,68 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
     ];
 }
 
+function getIDEFunctionsDcls
+[String] ::= funcDcls :: [Pair<String String>]
+{
+    return if null(funcDcls) --length(funcDcls) < 1
+           then []
+           else map(getIDEFunctionDcl, funcDcls);
+}
+
+function getIDEFunctionDcl
+String ::= funcDcl :: Pair<String String>
+{
+    local attribute lastInd :: Integer = lastIndexOf(":", funcDcl.snd);
+    local attribute grammarPart :: String = substring(0, lastInd, funcDcl.snd);
+    local attribute functionPart :: String = substring(lastInd + 1, length(funcDcl.snd), funcDcl.snd);
+
+    return "<property name='" ++ getIDEFunctionPropertyKey(funcDcl) ++ "' value='" ++ 
+           if lastInd > -1
+           then substitute(":", ".", grammarPart) ++ ".P" ++ functionPart ++ "' />"
+           else "P" ++ funcDcl.snd ++ "' />";
+}
+
+function getIDEFunctionPropertyKey
+String ::= funcDcl :: Pair<String String>
+{
+    return "ide.function." ++ funcDcl.fst;
+}
+
+function getEnhanceTarget
+String ::= funcDcls :: [Pair<String String>]
+{
+    return if null(funcDcls)
+           then "\n"
+           else getEnhanceTargetPerFunction(head(funcDcls)) ++ getEnhanceTarget(tail(funcDcls));
+}
+
+function getEnhanceTargetPerFunction
+String ::= funcDcl :: Pair<String String>
+{
+    local attribute lastInd :: Integer = lastIndexOf(":", funcDcl.snd);
+    local attribute grammarPart :: String = substitute(":", "/", substring(0, lastInd, funcDcl.snd));
+
+    return "\n" ++ 
+           "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Analyze.java.template\"\n" ++ 
+           "        tofile=\"${src}/" ++ grammarPart ++ "/Analyze.java\" filtering=\"true\" overwrite=\"true\"/>";
+}
+
 function getArgCheckTarget
 String ::=
 {
     return
     "\n" ++
+
     "  <condition property=\"is-all-in-one\">\n"++
     "    <equals arg1=\"${all-in-one}\" arg2=\"true\" />\n"++
     "  </condition>\n"++
     "  \n"++
     "  <condition property=\"to-customize\">\n"++
     "    <available file=\"${grammar.path}/plugin\" type=\"dir\"/>\n"++
+    "  </condition>\n"++
+    "  \n"++
+    "  <condition property=\"ide-function-analyzer-exists\" else=\"false\">\n"++
+    "    <isset property=\"ide.function.analyzer\"/>\n"++
     "  </condition>\n";
 }
 
@@ -107,7 +162,9 @@ String ::=
     "  <filter token=\"FEATURE_COPYRIGHT_URL\" value='http://some.user.provided.url'/>\n" ++
     "  <filter token=\"FEATURE_COPYRIGHT_TEXT\" value='no copyright information available'/>\n" ++
     "  <filter token=\"FEATURE_LICENSE_URL\" value='http://some.user.provided.url'/>\n" ++
-    "  <filter token=\"FEATURE_LICENSE_TEXT\" value='no license information available'/>\n";
+    "  <filter token=\"FEATURE_LICENSE_TEXT\" value='no license information available'/>\n" ++
+    "  <filter token=\"ANALYZER_CLASS_QNAME\" value='${ide.function.analyzer}'/>\n" ++
+    "  <filter token=\"LANG_COMPOSED_PKG\" value='${lang.composed}'/>\n";
 }
 
 function getCreateFoldersTarget
