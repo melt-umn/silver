@@ -224,8 +224,11 @@ String ::=
     "<copy file=\"${res}/src/edu/umn/cs/melt/ide/copper/engine/EnhancedSilverParser.java.template\"\n" ++
     "      tofile=\"${ide.pkg.path}/copper/engine/EnhancedSilverParser.java\" filtering=\"true\"/>\n" ++
     "<mkdir dir='${ide.pkg.path}/imp/controller'/>\n" ++
-    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/controller/parseController.java.template\"\n" ++
-    "      tofile=\"${ide.pkg.path}/imp/controller/${lang.name}ParseController.java\" filtering=\"true\"/>\n" ++
+    -- commented out to support different build modes
+    --"<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/controller/parseController.java.template\"\n" ++
+    --"      tofile=\"${ide.pkg.path}/imp/controller/${lang.name}ParseController.java\" filtering=\"true\"/>\n" ++
+    "<antcall target=\"create parser controller\" inheritAll=\"true\"/>\n" ++
+    "<antcall target=\"create parser controller (all-on-one)\" inheritAll=\"true\"/>\n" ++
     "\n" ++
 
     "<!-- 8. core plug-in classes -->\n" ++
@@ -303,6 +306,7 @@ return
 "  <copy file=\"${res}/build.properties.template.all_in_one\" tofile=\"${ide.proj.plugin.path}/build.properties\" filtering=\"true\"/>\n"++
 "</target>\n"++
 "\n"++
+
 "<target name=\"create manifest file\" unless=\"is-all-in-one\" depends=\"filters\">\n"++	
 "  <copy file=\"${res}/META-INF/MANIFEST.MF.template\" tofile=\"${ide.proj.plugin.path}/META-INF/MANIFEST.MF\" filtering=\"true\"/>\n"++
 "</target>\n"++
@@ -310,6 +314,7 @@ return
 "  <copy file=\"${res}/META-INF/MANIFEST.MF.template.all_in_one\" tofile=\"${ide.proj.plugin.path}/META-INF/MANIFEST.MF\" filtering=\"true\"/>\n"++
 "</target>\n"++
 "\n"++
+
 "<target name=\"set classpaths for Eclipse\" unless=\"is-all-in-one\" depends=\"filters\">\n"++	
 "  <copy file=\"${res}/classpath.template\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n"++
 "</target>\n"++
@@ -317,6 +322,18 @@ return
 "  <copy file=\"${res}/classpath.template.all_in_one\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n"++
 "</target>\n"++
 "\n"++
+
+"<target name=\"create parser controller\" unless=\"is-all-in-one\" depends=\"filters\">\n"++	
+"  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/controller/parseController.java.template\"\n" ++
+"      tofile=\"${ide.pkg.path}/imp/controller/${lang.name}ParseController.java\" filtering=\"true\"/>\n" ++
+"</target>\n"++
+"<target name=\"create parser controller (all-on-one)\" if=\"is-all-in-one\" depends=\"filters\">\n"++	
+"  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/controller/parseController.java.template.all_in_one\"\n" ++
+"      tofile=\"${ide.pkg.path}/imp/controller/${lang.name}ParseController.java\" filtering=\"true\"/>\n" ++
+"</target>\n"++
+"\n"++
+
+-- these dependencies are copied to plugin folder only if it's all-in-one mode.
 "<target name=\"copy plugin dependencies\" if=\"is-all-in-one\">\n"++	
 "  <copy file=\"${sh}/jars/CopperRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.copper.jar\"/>\n"++
 "  <copy file=\"${sh}/jars/SilverRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.silver.jar\"/>\n"++

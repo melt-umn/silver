@@ -64,14 +64,8 @@ IOVal<Integer> ::= args::[String] i::IO
 --- ... we're adding an ide declaration here
 
 temp_imp_ide_dcl rParse ".sv" { 
-	analyzer getErrors;
+  analyzer getErrors;--a function whose signature must be "[String] ::= args::[String] i::IO"
 };
-
-function getErrors2 
-String ::= args::String
-{
-	return "haha";
-}
 
 function getErrors 
 [String] ::= args::[String] i::IO

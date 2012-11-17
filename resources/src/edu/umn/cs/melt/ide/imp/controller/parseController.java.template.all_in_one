@@ -25,6 +25,7 @@ import edu.umn.cs.melt.ide.copper.SourcePositionLocator;
 
 import @PKG_NAME@.copper.engine.EnhancedSilverParser;
 import @PKG_NAME@.imp.@LANG_NAME@Plugin;
+import @PKG_NAME@.@LANG_NAME@Initializer;
 
 /**
  * Extends ParseControllerBase to use the default implementation of several
@@ -45,6 +46,10 @@ public class @LANG_NAME@ParseController extends ParseControllerBase {
 		= new SimpleAnnotationTypeInfo();
 
 	private SourcePositionLocator<IEnhancedParseTreeNode, IToken> locator;
+	
+	static {
+		@LANG_NAME@Initializer.initialize();
+	}
 	
 	public @LANG_NAME@ParseController() {
 		super(@LANG_NAME@Plugin.kLanguageID);
