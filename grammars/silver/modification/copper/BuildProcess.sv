@@ -36,47 +36,6 @@ IOVal<Integer> ::=
   -- TODO: production because of hack!
   production allParsers :: [ParserSpec] = foldr(append, [], map((.parserSpecs), grammarsToTranslate));
   -- TODO: temporarily all parsers!
-  postOps <- [generateCS(grammarEnv, allParsers, silverGen)]; 
-}
-
-
-
-
-abstract production generateCS
-top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::String
-{
-  local attribute pr::IO;
-  pr = print("Generating Parsers and Scanners.\n", top.ioIn);
-  
-  top.io = writeCSSpec(pr, grams, silvergen ++ "src/", specs);
-  top.code = 0;
-  top.order = 5;
-}
-
-function writeCSSpec
-IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[ParserSpec]
-{
-  local attribute p :: ParserSpec;
-  p = head(specs);
-  p.compiledGrammars = grams;
-  
-  local attribute ast :: SyntaxRoot;
-  ast = p.cstAst; -- TODO: we can check for errors on this parser now!! :D
-  
-  local attribute parserName :: String;
-  parserName = makeParserName(p.fullName);
-
-  local attribute copperFile :: String;
-  copperFile = silvergen ++ grammarToPath(p.sourceGrammar) ++ parserName ++ ".copper";
-
-  local attribute printio :: IO;
-  printio = print("\t[" ++ p.fullName ++ "]\n", i);
-  
-  local attribute writeio :: IO;
-  writeio = writeFile(copperFile, ast.xmlCopper, printio);
-  
-  return if null(specs) then i
-         else writeCSSpec(writeio, grams, silvergen, tail(specs));
 }
 
 aspect function writeBuildFile
