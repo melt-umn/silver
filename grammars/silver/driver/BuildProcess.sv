@@ -45,7 +45,8 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
     compileGrammars(svParser, sviParser, grammarPath, silverGen, buildGrammar :: grammarStream, true{-TODO a.doClean-}, check.io);
   
   local unit :: Compilation =
-    compilation(foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], rootStream.iovalue)));
+    compilation(foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], rootStream.iovalue)),
+      buildGrammar, silverHome, silverGen);
   unit.config = a;
   
   -- Note that this is used above. This outputs deps, and rootStream informs it.
@@ -54,8 +55,7 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
   
   -- TODO: Find "out of date" grammars, rebuild them.
 
-  local actions :: IOVal<Integer> =
-    runActions(silverHome, silverGen, buildGrammar, unit, ioin);
+  local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), rootStream.io);
 
   return if a.displayVersion then ioval(print("Silver Version 0.3.6-dev\n", ioin), 0)
   else if !argResult.parseSuccess then ioval(print(argResult.parseErrors, ioin), 1)
@@ -91,30 +91,6 @@ function eatGrammars
       newDeps ++ eatGrammars(n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars));
 }
 
-function runActions
-IOVal<Integer> ::=
-  silverHome::String
-  silverGen::String
-  buildGrammar::String
-  unit::Decorated Compilation
-  ioin::IO
-{
-  -- Only those grammars that are used. (unit unconditionally builts conditionally built
-  -- grammars. Here we produce a set that would not include them if they are not used.)
-  production attribute grammarsDependedUpon :: [String];
-  grammarsDependedUpon = expandAllDeps([buildGrammar], [], unit.grammarEnv);
-  
-  -- This is a list of RootSpecs that need translating:
-  production attribute grammarsToTranslate :: [Decorated RootSpec];
-  grammarsToTranslate = keepGrammars(grammarsDependedUpon, unit.grammarList);
-
-  production attribute postOps :: [Unit] with ++;
-  postOps := [doInterfaces(grammarsToTranslate, silverGen)];
-  postOps <- if unit.config.noBindingChecking then [] else [printAllBindingErrors(unit.grammarList)]; 
-  
-  return runAll(sortUnits(postOps), ioin);
-}
-
 -- TODO: look up a standard name for this, and put in std lib?
 function consMaybe
 [a] ::= h::Maybe<a>  t::[a]
@@ -122,17 +98,6 @@ function consMaybe
   return if h.isJust then h.fromJust :: t else t;
 }
 
-
-{--
- - Keep only a selected set of grammars.
- - @param keep  The set of grammars to keep
- - @param d  The list of grammars to filter
- -}
-function keepGrammars
-[Decorated RootSpec] ::= keep::[String] d::[Decorated RootSpec]
-{
-  return if null(d) then [] else (if contains(head(d).declaredName, keep) then [head(d)] else []) ++ keepGrammars(keep, tail(d));
-}
 
 {--
  - Ensures a string ends with a forward slash. Safe to use if it already has one.
@@ -143,12 +108,4 @@ String ::= s::String
   return if endsWith("/", s) then s else s ++ "/";
 }
 
-{--
- - Returns a pair, suitable for building an environment
- -}
-function grammarPairing
-Pair<String Decorated RootSpec> ::= r::Decorated RootSpec
-{
-  return pair(r.declaredName, r);
-}
 

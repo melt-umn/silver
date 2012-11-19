@@ -51,17 +51,12 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
            ];
   flagdescs <- ["\t--onejar  : include runtime libraries in the jar"];
 }
-aspect function runActions
-IOVal<Integer> ::=
-  silverHome::String
-  silverGen::String
-  buildGrammar::String
-  unit::Decorated Compilation
-  ioin::IO
+aspect production compilation
+top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
 {
-  postOps <- if unit.config.noJavaGeneration then [] else 
-    [genJava(unit.config, grammarsToTranslate, silverGen), 
-     genBuild(unit.config, grammarsDependedUpon, silverHome, silverGen, allParsers)]; 
+  top.postOps <- if top.config.noJavaGeneration then [] else 
+    [genJava(top.config, grammarsToTranslate, silverGen), 
+     genBuild(top.config, grammarsDependedUpon, silverHome, silverGen, allParsers)]; 
 }
 
 
