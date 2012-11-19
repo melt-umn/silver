@@ -62,12 +62,12 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   top.initValues := "";
   top.postInit := "";
 
-  top.javaClasses = if null(ffidefs.ffiTranslationString)
-                    then forward.javaClasses
+  top.genFiles := if null(ffidefs.ffiTranslationString)
+                    then forward.genFiles
                     else 
-                    [["P" ++ id.name,
+                    [pair("P" ++ id.name ++ ".java",
                       generateFunctionClassString(top.grammarName, id.name, namedSig, "return (" ++ namedSig.outputElement.typerep.transType ++ ")" ++ computeSigTranslation(head(ffidefs.ffiTranslationString), namedSig) ++ ";\n")
-                    ]];
+                    )];
 
   top.errors <- if length(ffidefs.ffiTranslationString) > 1
                 then [err(ffidefs.location, "There is more than one Java translation in this FFI function")]

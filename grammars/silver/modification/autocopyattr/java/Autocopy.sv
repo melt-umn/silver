@@ -18,7 +18,7 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name botl::BracketedOptTypeList '::' te
   local attribute className :: String;
   className = "D" ++ a.name;
 
-  top.javaClasses = [[className,
+  top.genFiles := [pair(className ++ ".java",
 		
 "package " ++ makeName(top.grammarName) ++ ";\n\n" ++
 
@@ -31,8 +31,7 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name botl::BracketedOptTypeList '::' te
 "\tpublic void decorate(Class production) {\n" ++
 "\t\tdecorateAutoCopy(production, \"" ++ fName ++ "\");\n" ++
 "\t}\n" ++
-"}\n"
-		]];
+"}\n")];
 }
 
 aspect production attributionDcl

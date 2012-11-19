@@ -2,19 +2,19 @@ grammar silver:translation:java:core;
 
 import silver:driver:util;
 
-attribute javaClasses occurs on RootSpec;
+attribute genFiles occurs on RootSpec;
 
 aspect production interfaceRootSpec
 top::RootSpec ::= _
 {
-  top.javaClasses = [];
+  top.genFiles := [];
 }
 
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _
 {
-  top.javaClasses = g.javaClasses ++
-  [["Init",
+  top.genFiles := g.genFiles ++
+  [pair("Init.java",
 "package " ++ makeName(g.declaredName) ++ ";\n\n" ++
 
 "public class Init{\n\n" ++
@@ -55,7 +55,7 @@ top::RootSpec ::= g::Grammar  _
   g.initWeaving ++ 
   g.valueWeaving ++
   g.initValues ++
-"}\n"]];
+"}\n")];
 }
 
 function makeOthers

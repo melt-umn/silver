@@ -112,13 +112,13 @@ IO ::= i::IO  r::Decorated RootSpec  silverGen::String
   production attribute specLocation :: String;
   specLocation = silverGen ++ "src/" ++ grammarToPath(r.declaredName); 
 
-  return writeClasses(printio, specLocation, r.javaClasses);
+  return writeClasses(printio, specLocation, r.genFiles);
 }
 
 function writeClasses
-IO ::= i::IO l::String s::[[String]]
+IO ::= i::IO l::String s::[Pair<String String>]
 {
-  return if null(s) then i else writeFile(l ++ head(head(s)) ++ ".java", head(tail(head(s))), writeClasses(i, l, tail(s)));
+  return if null(s) then i else writeFile(l ++ head(s).fst, head(s).snd, writeClasses(i, l, tail(s)));
 }
 
 function writeBuildFile
