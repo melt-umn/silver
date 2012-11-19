@@ -6,7 +6,7 @@ import silver:definition:flow:env only flowEnv, flowDefs, fromFlowDefs;
 import silver:definition:flow:ast only nilFlow, consFlow, FlowDef;
 
 {--
- - A representation of a grammar, from an unknown source.
+ - A representation of a grammar, from an unknown source. TODO: rename GrammarSpec
  -}
 nonterminal RootSpec with
   -- compiler-wide inherited attributes
