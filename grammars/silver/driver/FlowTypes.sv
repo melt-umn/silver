@@ -6,20 +6,18 @@ import silver:util:raw:treemap as rtm;
 
 -- Hide all the flow type computation over here
 
-aspect function analyzeGrammars
-Pair<[Decorated RootSpec] [Maybe<Decorated RootSpec>]> ::=
-  config::Decorated CmdArgs
-  inputStream::[Maybe<RootSpec>]
+aspect production compilation
+top::Compilation ::= g::Grammars
 {
   -- aggregate all flow def information, filtering out those that are not permitted to affect flow types
-  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), grammars)));
+  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), top.grammarList)));
   local allFlowEnv :: Decorated FlowEnv = fromFlowDefs(allFlowDefs);
   
   -- Look up tree for production info
   local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlowDefs.prodGraphContribs);
   
   -- hack to allow us to look up certain info... TODO: maybe hack?
-  local allRealDefs :: [Def] = foldr(append, [], map((.defs), grammars));
+  local allRealDefs :: [Def] = foldr(append, [], map((.defs), top.grammarList));
   local allRealEnv :: Decorated Env = toEnv(allRealDefs);
   
   -- List of all productions (is this nub needed? TODO)

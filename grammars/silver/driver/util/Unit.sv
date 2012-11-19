@@ -5,13 +5,21 @@ closed nonterminal Unit with ioIn, io, code, order;
 synthesized attribute code :: Integer;
 synthesized attribute order :: Integer;
 inherited attribute ioIn :: IO;
-synthesized attribute ioOut :: IO;
+
+abstract production wrapUnit
+top::Unit ::= f::(IOVal<Integer> ::= IO) order::Integer
+{
+  local call :: IOVal<Integer> = f(top.ioIn);
+  top.io = call.io;
+  top.code = call.iovalue;
+  top.order = order;
+}
 
 {--
  - Run units until a non-zero error code is encountered.
  -}
 function runAll
-IOVal<Integer> ::= i::IO l::[Unit]
+IOVal<Integer> ::= l::[Unit] i::IO
 {
   local attribute now :: Unit;
   now = head(l);
@@ -21,7 +29,7 @@ IOVal<Integer> ::= i::IO l::[Unit]
 	  then ioval(i, 0)
 	  else if now.code != 0
 	       then ioval(now.io, now.code)
-	       else runAll(now.io, tail(l));
+	       else runAll(tail(l), now.io);
 }
 
 {--

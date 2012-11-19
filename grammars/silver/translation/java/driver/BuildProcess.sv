@@ -53,16 +53,15 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
 }
 aspect function runActions
 IOVal<Integer> ::=
-  a::Decorated CmdArgs
   silverHome::String
   silverGen::String
   buildGrammar::String
-  grammars::[Decorated RootSpec]
+  unit::Decorated Compilation
   ioin::IO
 {
-  postOps <- if a.noJavaGeneration then [] else 
-    [genJava(a, grammarsToTranslate, silverGen), 
-     genBuild(a, grammarsDependedUpon, silverHome, silverGen, allParsers)]; 
+  postOps <- if unit.config.noJavaGeneration then [] else 
+    [genJava(unit.config, grammarsToTranslate, silverGen), 
+     genBuild(unit.config, grammarsDependedUpon, silverHome, silverGen, allParsers)]; 
 }
 
 
