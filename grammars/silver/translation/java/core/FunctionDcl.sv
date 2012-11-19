@@ -15,11 +15,11 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   local attribute localVar :: String;
   localVar = "count_local__ON__" ++ makeIdName(fName);
 
-  top.javaClasses =
-    [["P" ++ id.name, 
-      generateFunctionClassString(top.grammarName, id.name, namedSig, "final common.DecoratedNode context = new P" ++ id.name ++ "(args).decorate();\n\t\t//" ++ head(body.uniqueSignificantExpression).pp ++ "\n\t\t return (" ++ namedSig.outputElement.typerep.transType ++ ")(" ++ head(body.uniqueSignificantExpression).translation ++ ");\n")]] ++
+  top.genFiles :=
+    [pair("P" ++ id.name ++ ".java", 
+      generateFunctionClassString(top.grammarName, id.name, namedSig, "final common.DecoratedNode context = new P" ++ id.name ++ "(args).decorate();\n\t\t//" ++ head(body.uniqueSignificantExpression).pp ++ "\n\t\t return (" ++ namedSig.outputElement.typerep.transType ++ ")(" ++ head(body.uniqueSignificantExpression).translation ++ ");\n"))] ++
     if id.name == "main" then
-      [["Main", generateMainClassString(top.grammarName)]]
+      [pair("Main.java", generateMainClassString(top.grammarName))]
     else
       [];
 

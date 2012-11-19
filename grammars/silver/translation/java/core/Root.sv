@@ -1,14 +1,11 @@
 grammar silver:translation:java:core;
 
-attribute javaClasses,setupInh,initProd,initValues,postInit,initWeaving,valueWeaving occurs on Root, AGDcls, AGDcl, GrammarPart, Grammar;
-
--- TODO: Should have made javaClasses a collection, too, while I was at it.
--- TODO: also, make it a pair now that we can!
+attribute genFiles,setupInh,initProd,initValues,postInit,initWeaving,valueWeaving occurs on Root, AGDcls, AGDcl, GrammarPart, Grammar;
 
 {--
  - Java classes to generate. (filename, contents)
  -}
-synthesized attribute javaClasses :: [[String]];
+synthesized attribute genFiles :: [Pair<String String>] with ++;
 {--
  - Early initializers: occurs.add, local's inh attr map creation, decorators.add, collection object creation
  -}
@@ -41,7 +38,7 @@ synthesized attribute valueWeaving :: String with ++;
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 {
-  top.javaClasses = ags.javaClasses;
+  top.genFiles := ags.genFiles;
   top.setupInh := ags.setupInh;
   top.initProd := ags.initProd;
   top.initValues := ags.initValues;
@@ -53,7 +50,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 aspect production nilAGDcls
 top::AGDcls ::=
 {
-  top.javaClasses = [];
+  top.genFiles := [];
   top.setupInh := "";
   top.initProd := "";
   top.initValues := "";
@@ -65,7 +62,7 @@ top::AGDcls ::=
 aspect production consAGDcls
 top::AGDcls ::= h::AGDcl t::AGDcls
 {
-  top.javaClasses = h.javaClasses ++ t.javaClasses;
+  top.genFiles := h.genFiles ++ t.genFiles;
   top.setupInh := h.setupInh ++ t.setupInh;
   top.initProd := h.initProd ++ t.initProd;
   top.initValues := h.initValues ++ t.initValues;
@@ -77,7 +74,7 @@ top::AGDcls ::= h::AGDcl t::AGDcls
 aspect default production
 top::AGDcl ::=
 {
-  top.javaClasses = [];
+  top.genFiles := [];
   top.setupInh := "";
   top.initProd := "";
   top.initValues := "";
@@ -89,7 +86,7 @@ top::AGDcl ::=
 aspect production appendAGDcl
 top::AGDcl ::= h::AGDcl t::AGDcl
 {
-  top.javaClasses = h.javaClasses ++ t.javaClasses;
+  top.genFiles := h.genFiles ++ t.genFiles;
   top.setupInh := h.setupInh ++ t.setupInh;
   top.initProd := h.initProd ++ t.initProd;
   top.initValues := h.initValues ++ t.initValues;
@@ -101,7 +98,7 @@ top::AGDcl ::= h::AGDcl t::AGDcl
 aspect production grammarPart
 top::GrammarPart ::= c1::Root  fn::String
 {
-  top.javaClasses = c1.javaClasses;
+  top.genFiles := c1.genFiles;
   top.setupInh := c1.setupInh;
   top.initProd := c1.initProd;
   top.initValues := c1.initValues;
@@ -113,7 +110,7 @@ top::GrammarPart ::= c1::Root  fn::String
 aspect production nilGrammar
 top::Grammar ::=
 {
-  top.javaClasses = [];
+  top.genFiles := [];
   top.setupInh := "";
   top.initProd := "";
   top.initValues := "";
@@ -125,7 +122,7 @@ top::Grammar ::=
 aspect production consGrammar
 top::Grammar ::= c1::GrammarPart  c2::Grammar
 {
-  top.javaClasses = c1.javaClasses ++ c2.javaClasses;
+  top.genFiles := c1.genFiles ++ c2.genFiles;
   top.setupInh := c1.setupInh ++ c2.setupInh;  
   top.initProd := c1.initProd ++ c2.initProd;  
   top.initValues := c1.initValues ++ c2.initValues;
