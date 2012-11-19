@@ -27,7 +27,10 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
                                 namedSignatureElement("filenameToReport", stringTypeExp())],
                                namedSignatureElement("__func__lhs", nonterminalTypeExp("core:ParseResult", [t.typerep])));
 
-  top.parserSpecs = [parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames)];
+  production spec :: ParserSpec = parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames);
+  spec.compiledGrammars = top.compiledGrammars;
+
+  top.parserSpecs = [spec]; -- Note that this is undecorated.
 }
 
 nonterminal ModuleList with config, location, grammarName, file, moduleNames, compiledGrammars, errors, pp, grammarDependencies;
@@ -71,8 +74,11 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
   local attribute localVar :: String;
   localVar = "count_local__ON__" ++ makeIdName(fName);
 
-  top.genFiles := [pair(className ++ ".java",
-                     generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult))];
+  top.genFiles :=
+    [pair(className ++ ".java",
+          generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult)),
+     pair(makeParserName(spec.fullName) ++ ".copper",
+          spec.cstAst.xmlCopper)];
   
   local attribute parseResult :: String;
   parseResult = 
