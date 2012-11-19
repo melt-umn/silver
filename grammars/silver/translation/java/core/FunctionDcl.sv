@@ -15,9 +15,13 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   local attribute localVar :: String;
   localVar = "count_local__ON__" ++ makeIdName(fName);
 
-  top.javaClasses = [["P" ++ id.name, 
-                      generateFunctionClassString(top.grammarName, id.name, namedSig, "final common.DecoratedNode context = new P" ++ id.name ++ "(args).decorate();\n\t\t//" ++ head(body.uniqueSignificantExpression).pp ++ "\n\t\t return (" ++ namedSig.outputElement.typerep.transType ++ ")(" ++ head(body.uniqueSignificantExpression).translation ++ ");\n")
-                    ]];
+  top.javaClasses =
+    [["P" ++ id.name, 
+      generateFunctionClassString(top.grammarName, id.name, namedSig, "final common.DecoratedNode context = new P" ++ id.name ++ "(args).decorate();\n\t\t//" ++ head(body.uniqueSignificantExpression).pp ++ "\n\t\t return (" ++ namedSig.outputElement.typerep.transType ++ ")(" ++ head(body.uniqueSignificantExpression).translation ++ ");\n")]] ++
+    if id.name == "main" then
+      [["Main", generateMainClassString(top.grammarName)]]
+    else
+      [];
 
   -- main function signature check TODO: this should probably be elsewhere!
   top.errors <-
@@ -117,6 +121,39 @@ makeStaticDcls(className, whatSig.inputElements) ++
 "\t\t}\n\n" ++
 "\t};\n" ++
 
+"}\n";
+}
+
+function generateMainClassString
+String ::= whatGrammar::String
+{
+  local attribute package :: String;
+  package = makeName(whatGrammar);
+
+  return 
+"package " ++ package ++ ";\n\n" ++
+
+"public class Main {\n" ++
+"\tpublic static void main(String[] args) {\n" ++
+"\t\t" ++ package ++ ".Init.initAllStatics();\n" ++
+"\t\t" ++ package ++ ".Init.init();\n" ++
+"\t\t" ++ package ++ ".Init.postInit();\n" ++
+"\t\ttry {\n" ++
+"\t\t\tcommon.Node rv = (common.Node) " ++ package ++ ".Pmain.invoke(new Object[]{cvargs(args), null});\n" ++
+"\t\t\tcommon.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);\n" ++
+"\t\t\tdrv.synthesized(core.Init.core_io__ON__core_IOVal); // demand the io token\n" ++
+"\t\t\tSystem.exit( (Integer)drv.synthesized(core.Init.core_iovalue__ON__core_IOVal) );\n" ++
+"\t\t} catch(Throwable t) {\n" ++
+"\t\t\tcommon.Util.printStackCauses(t);\n" ++
+"\t\t}\n" ++
+"\t}\n" ++
+"\tpublic static common.ConsCell cvargs(String [] args){\n" ++ 
+"\t\tcommon.ConsCell result = common.ConsCell.nil;\n" ++ 
+"\t\tfor(int i = args.length - 1; i >= 0; i --) {\n" ++ 
+"\t\t\tresult = new common.ConsCell(new common.StringCatter(args[i]), result);\n" ++ 
+"\t\t}\n" ++ 
+"\t\treturn result;\n" ++ 
+"\t}\n" ++ 
 "}\n";
 }
 

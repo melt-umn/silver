@@ -67,13 +67,13 @@ IOVal<Integer> ::=
 
 
 abstract production genJava
-top::Unit ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silvergen::String
+top::Unit ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silverGen::String
 {
   local attribute pr::IO;
   pr = print("Generating Java Translation.\n", top.ioIn);
 
   local attribute i :: IO;
-  i = writeAll(pr, a, specs, silvergen);
+  i = writeAll(pr, a, specs, silverGen);
  
   top.io = i;
   top.code = 0;
@@ -81,10 +81,10 @@ top::Unit ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silvergen::Stri
 }
 
 abstract production genBuild
-top::Unit ::= a::Decorated CmdArgs allspecs::[String] silverhome::String silvergen::String allParsers::[ParserSpec]
+top::Unit ::= a::Decorated CmdArgs allspecs::[String] silverhome::String silverGen::String allParsers::[ParserSpec]
 {
   local attribute buildFile :: IO;
-  buildFile = writeBuildFile(top.ioIn, a, allspecs, silverhome, silvergen, allParsers);
+  buildFile = writeBuildFile(top.ioIn, a, allspecs, silverhome, silverGen, allParsers);
 
   top.io = buildFile;
   top.code = 0;
@@ -92,79 +92,37 @@ top::Unit ::= a::Decorated CmdArgs allspecs::[String] silverhome::String silverg
 }
 
 function writeAll
-IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]  silvergen::String
+IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]  silverGen::String
 {
   local attribute now :: IO;
-  now = case head(l) of
-        | grammarRootSpec(_,_) -> writeSpec(i, head(l), a, silvergen)
-        | _ -> i -- TODO: fix this. We should not have to do this shit
-        end;
+  now = writeSpec(i, head(l), silverGen);
 
   local attribute recurse :: IO;
-  recurse = writeAll(now, a, tail(l), silvergen);
+  recurse = writeAll(now, a, tail(l), silverGen);
 
   return if null(l) then i else recurse;
 }
 
 function writeSpec
-IO ::= i::IO  r::Decorated RootSpec  a::Decorated CmdArgs  silvergen::String
+IO ::= i::IO  r::Decorated RootSpec  silverGen::String
 {
   local attribute printio :: IO;
   printio = print("\t[" ++ r.declaredName ++ "]\n", i);
 
-  local attribute package :: String;
-  package = grammarToPath(r.declaredName);
-
   production attribute specLocation :: String;
-  specLocation = silvergen ++ "/src/" ++ package; 
+  specLocation = silverGen ++ "src/" ++ grammarToPath(r.declaredName); 
 
-  local attribute mki :: IO;
-  mki = writeFile(specLocation ++ "Init.java", makeInit(r), printio);
-
-  local attribute mains :: [DclInfo];
-  mains = getValueDcl(r.declaredName ++ ":main", toEnv(r.defs));
-
-  local attribute mainIO :: IO;
-  mainIO = if null(mains) then mki else writeFile(specLocation ++ "Main.java", makeMain(r), mki);
-
-  return writeClasses(mainIO, specLocation, r.javaClasses);
+  return writeClasses(printio, specLocation, r.javaClasses);
 }
 
-function makeMain
-String ::= r::Decorated RootSpec
+function writeClasses
+IO ::= i::IO l::String s::[[String]]
 {
-  local attribute package :: String;
-  package = makeName(r.declaredName);
-
-  return 
-"package " ++ package ++ ";\n\n" ++
-
-"public class Main {\n" ++
-"\tpublic static void main(String[] args) {\n" ++
-"\t\t" ++ package ++ ".Init.initAllStatics();\n" ++
-"\t\t" ++ package ++ ".Init.init();\n" ++
-"\t\t" ++ package ++ ".Init.postInit();\n" ++
-"\t\ttry {\n" ++
-"\t\t\tcommon.Node rv = (common.Node) " ++ package ++ ".Pmain.invoke(new Object[]{cvargs(args), null});\n" ++
-"\t\t\tcommon.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);\n" ++
-"\t\t\tdrv.synthesized(core.Init.core_io__ON__core_IOVal); // demand the io token\n" ++
-"\t\t\tSystem.exit( (Integer)drv.synthesized(core.Init.core_iovalue__ON__core_IOVal) );\n" ++
-"\t\t} catch(Throwable t) {\n" ++
-"\t\t\tcommon.Util.printStackCauses(t);\n" ++
-"\t\t}\n" ++
-"\t}\n" ++
-"\tpublic static common.ConsCell cvargs(String [] args){\n" ++ 
-"\t\tcommon.ConsCell result = common.ConsCell.nil;\n" ++ 
-"\t\tfor(int i = args.length - 1; i >= 0; i --) {\n" ++ 
-"\t\t\tresult = new common.ConsCell(new common.StringCatter(args[i]), result);\n" ++ 
-"\t\t}\n" ++ 
-"\t\treturn result;\n" ++ 
-"\t}\n" ++ 
-"}\n";
+  return if null(s) then i else writeFile(l ++ head(head(s)) ++ ".java", head(tail(head(s))), writeClasses(i, l, tail(s)));
 }
 
 function writeBuildFile
-IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String allParsers::[ParserSpec]
+IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silverGen::String allParsers::[ParserSpec]
 {
   -- The prefix 'extra' here is used partially for historical reasons, and partially
   -- because it makes it easy to search/highlight all uses of these
@@ -214,7 +172,7 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
 "  <description>Generated build script for the grammar " ++ builtGrammar ++ "</description>\n\n" ++
 
 "  <property environment='env'/>\n" ++
-"  <property name='jg' location='" ++ silvergen ++ "'/>\n" ++
+"  <property name='jg' location='" ++ silverGen ++ "'/>\n" ++
 "  <property name='sh' location='" ++ silverhome ++ "'/>\n" ++ 
 "  <property name='bin' location='${jg}/bin'/>\n" ++
 "  <property name='src' location='${jg}/src'/>\n\n" ++
@@ -277,80 +235,5 @@ function includeName
 String ::= gram::String suffix::String
 {
   return "      <include name='" ++ grammarToPath(gram) ++ suffix ++ "' />\n";
-}
-
-function writeClasses
-IO ::= i::IO l::String s::[[String]]
-{
-  return if null(s) then i else writeFile(l ++ head(head(s)) ++ ".java", head(tail(head(s))), writeClasses(i, l, tail(s)));
-}
-
-function makeInit
-String ::= r::Decorated RootSpec
-{
-  local attribute className :: String;
-  className = makeName(r.declaredName) ++ ".Init";
-
-  return 
-"package " ++ makeName(r.declaredName) ++ ";\n\n" ++
-
-"public class Init{\n\n" ++
-
-"\tprivate static boolean preInit = false;\n" ++
-"\tprivate static boolean init = false;\n" ++
-"\tprivate static boolean postInit = false;\n\n" ++
-
-"\tpublic static void initAllStatics(){\n" ++
-"\t\tif(" ++ className ++ ".preInit) return;\n\n" ++
-"\t\t" ++ className ++ ".preInit = true;\n\n" ++
-
-makeOthers(r.allGrammarDependencies, "initAllStatics") ++ "\n" ++
-
-"\t}\n\n" ++
-
-
-"\tpublic static void init(){\n" ++
-"\t\tif(" ++ className ++ ".init) return;\n\n" ++
-"\t\t" ++ className ++ ".init = true;\n\n" ++
-
-"\t\t" ++ className ++ ".setupInheritedAttributes();\n\n" ++	
-
-makeOthers(r.allGrammarDependencies, "init") ++ "\n" ++
-
-"\t\t" ++ className ++ ".initProductionAttributeDefinitions();\n" ++
-
-"\t}\n\n" ++
-
-"\tpublic static void postInit(){\n" ++
-"\t\tif(" ++ className ++ ".postInit) return;\n\n" ++
-"\t\t" ++ className ++ ".postInit = true;\n\n" ++
-
-makeOthers(r.allGrammarDependencies, "postInit") ++ "\n\n" ++
-
-r.postInit ++
-
-"\t}\n\n" ++
-
-"\tprivate static void setupInheritedAttributes(){\n" ++
-r.setupInh ++
-"\t}\n\n" ++
-
-"\tprivate static void initProductionAttributeDefinitions(){\n" ++
-r.initProd ++
-"\t}\n\n" ++
-
-r.initWeaving ++ 
-r.valueWeaving ++
-
-r.initValues ++
-
-"}\n";
-
-}
-
-function makeOthers
-String ::= others::[String] nme::String
-{
-  return if null(others) then "" else "\t\t" ++ makeName(head(others)) ++ ".Init."++nme++"();\n" ++ makeOthers(tail(others),nme);
 }
 
