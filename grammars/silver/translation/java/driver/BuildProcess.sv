@@ -9,6 +9,9 @@ import silver:definition:core;
 import silver:util;
 import silver:util:cmdargs;
 
+import silver:modification:copper only allParsers; -- TODO REMOVE THIS DEP
+import silver:definition:concrete_syntax only ParserSpec; -- DITTO
+
 synthesized attribute noJavaGeneration :: Boolean occurs on CmdArgs;
 synthesized attribute buildSingleJar :: Boolean occurs on CmdArgs;
 synthesized attribute includeRTJars :: [String] occurs on CmdArgs;
@@ -48,12 +51,18 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
            ];
   flagdescs <- ["\t--onejar  : include runtime libraries in the jar"];
 }
-aspect function run
-IOVal<Integer> ::= a::Decorated CmdArgs _ _ silverHome::String  silverGen::String _ _ _
+aspect function runActions
+IOVal<Integer> ::=
+  a::Decorated CmdArgs
+  silverHome::String
+  silverGen::String
+  buildGrammar::String
+  grammars::[Decorated RootSpec]
+  ioin::IO
 {
   postOps <- if a.noJavaGeneration then [] else 
     [genJava(a, grammarsToTranslate, silverGen), 
-     genBuild(a, grammarsDependedUpon, silverHome, silverGen, depAnalysis, grammarLocationString)]; 
+     genBuild(a, grammarsDependedUpon, silverHome, silverGen, allParsers)]; 
 }
 
 
@@ -72,10 +81,10 @@ top::Unit ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silvergen::Stri
 }
 
 abstract production genBuild
-top::Unit ::= a::Decorated CmdArgs allspecs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis grammarLoc::String
+top::Unit ::= a::Decorated CmdArgs allspecs::[String] silverhome::String silvergen::String allParsers::[ParserSpec]
 {
   local attribute buildFile :: IO;
-  buildFile = writeBuildFile(top.ioIn, a, allspecs, silverhome, silvergen, da, grammarLoc);
+  buildFile = writeBuildFile(top.ioIn, a, allspecs, silverhome, silvergen, allParsers);
 
   top.io = buildFile;
   top.code = 0;
@@ -86,7 +95,10 @@ function writeAll
 IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]  silvergen::String
 {
   local attribute now :: IO;
-  now = writeSpec(i, head(l), a, silvergen);
+  now = case head(l) of
+        | grammarRootSpec(_,_) -> writeSpec(i, head(l), a, silvergen)
+        | _ -> i -- TODO: fix this. We should not have to do this shit
+        end;
 
   local attribute recurse :: IO;
   recurse = writeAll(now, a, tail(l), silvergen);
@@ -152,7 +164,7 @@ String ::= r::Decorated RootSpec
 }
 
 function writeBuildFile
-IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis grammarLoc::String
+IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String allParsers::[ParserSpec]
 {
   -- The prefix 'extra' here is used partially for historical reasons, and partially
   -- because it makes it easy to search/highlight all uses of these

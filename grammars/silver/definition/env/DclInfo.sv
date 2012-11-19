@@ -1,7 +1,8 @@
 grammar silver:definition:env;
 
+imports silver:definition:type;
+
 import silver:definition:regex;  -- soley for Terms. TODO : fix?
-import silver:definition:type;
 
 synthesized attribute sourceGrammar :: String;
 synthesized attribute sourceLocation :: Location;
@@ -262,7 +263,7 @@ top::DclInfo ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeE
   boundvars = top.boundVariables ++ newboundvars;
   
   outty.boundVariables = boundvars;
-  top.unparse = "p@(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(newboundvars, boundvars) ++ ", " ++ outty.unparse ++ " ::= " ++ unparseTypes(intys, boundvars) ++ ", [" ++ unparseDefs(dcls, boundvars) ++ "])";
+  top.unparse = "p@(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(newboundvars, boundvars) ++ ", " ++ outty.unparse ++ " ::= " ++ unparseTypes(intys, boundvars) ++ ", " ++ unparseDefs(dcls, boundvars) ++ ")";
   
   top.prodDefs = dcls;
   top.typerep = functionTypeExp(outty, intys); -- Using 'production' here, despite also working on 'function's

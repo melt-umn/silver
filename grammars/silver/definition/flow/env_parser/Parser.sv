@@ -6,6 +6,7 @@ import silver:definition:env:env_parser;
 import silver:definition:core only location, env;
 import silver:definition:flow:env only flowDefs,flowDeps;
 import silver:definition:flow:ast;
+import silver:driver:util only RootSpec, interfaceRootSpec;
 
 terminal FlowTerm 'flow' lexer classes {C_1};
 terminal DefTerm 'def' lexer classes {C_1};

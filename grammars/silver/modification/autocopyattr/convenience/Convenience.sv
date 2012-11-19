@@ -6,6 +6,7 @@ import silver:definition:core;
 import silver:definition:concrete_syntax;
 import silver:definition:type:syntax;
 import silver:definition:type;
+import silver:definition:env;
 
 concrete production attributeDclAutoMultiple
 top::AGDcl ::= 'autocopy' 'attribute' a::Name botl::BracketedOptTypeList '::' te::Type 'occurs' 'on' qs::QNames ';'

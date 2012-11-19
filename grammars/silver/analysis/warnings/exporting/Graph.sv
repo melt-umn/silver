@@ -27,8 +27,14 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
   flags <- [pair("--dump-import-graph", flag(dumpDepGraphFlag))];
   -- omitting from descriptions deliberately!
 }
-aspect function run
-IOVal<Integer> ::= a::Decorated CmdArgs _ _ _ _ _ _ _
+aspect function runActions
+IOVal<Integer> ::=
+  a::Decorated CmdArgs
+  silverHome::String
+  silverGen::String
+  buildGrammar::String
+  grammars::[Decorated RootSpec]
+  ioin::IO
 {
   postOps <- if a.dumpDepGraph then [dumpDepGraphAction(grammars)] else [];
 }

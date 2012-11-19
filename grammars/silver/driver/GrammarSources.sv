@@ -2,49 +2,29 @@ grammar silver:driver;
 
 {--
  - Turns a list of files that compose a grammar into a RootSpec, having compiled them.
+ - @param svParser  The parser to use to contruct Roots
+ - @param gpath  The path where we found the grammar. Ends in a slash/
+ - @param files  The list of .sv files to read.
+ - @param ioin  The io token
+ - @return An ioval wrapping a GrammarParts structure containing the whole grammar.
  -}
-nonterminal Roots with config, env, io, rSpec, svParser, compiledGrammars, globalImports, grammarDependencies, flowEnv, productionFlowGraphs, grammarFlowTypes;
-
-abstract production compileFiles
-top::Roots ::= iIn::IO gn::String files::[String] gpath::String
+function compileFiles
+IOVal<Grammar> ::= svParser::SVParser  gpath::String  files::[String]  ioin::IO
 {
+  local file :: String = head(files);
+  
   -- Print the path we're reading, and read the file.
   local attribute text :: IOVal<String>;
-  text = readFile(gpath ++ head(files), print("\t[" ++ gpath ++ head(files) ++ "]\n", iIn));
+  text = readFile(gpath ++ file, print("\t[" ++ gpath ++ file ++ "]\n", ioin));
 
   -- This is where a .sv file actually gets parsed:
-  production attribute r :: Root;
-  r = parseTreeOrDieWithoutStackTrace(top.svParser(text.iovalue, head(files)));
-  -- These are file-specific inherited attributes:
-  r.file = head(files);
-  -- These are grammar-specific inherited attributes:
-  r.grammarName = gn;
-  r.env = top.env;
-  r.globalImports = top.globalImports;
-  r.grammarDependencies = top.grammarDependencies;
-  r.productionFlowGraphs = top.productionFlowGraphs;
-  r.grammarFlowTypes = top.grammarFlowTypes;
-  r.flowEnv = top.flowEnv;
-  -- These are compilation-wide inherited attributes:
-  r.compiledGrammars = top.compiledGrammars;
-  r.config = top.config;
+  local r :: Root = parseTreeOrDieWithoutStackTrace(svParser(text.iovalue, file));
 
   -- Continue parsing the rest of the files.
-  production attribute recurse :: Roots;
-  recurse = compileFiles(text.io, gn, tail(files), gpath);
-  recurse.svParser = top.svParser;
-  -- Echo grammar-wide stuffs:
-  recurse.env = top.env;
-  recurse.globalImports = top.globalImports;
-  recurse.grammarDependencies = top.grammarDependencies;
-  recurse.productionFlowGraphs = top.productionFlowGraphs;
-  recurse.grammarFlowTypes = top.grammarFlowTypes;
-  recurse.flowEnv = top.flowEnv;
-  -- Echo compilation-wide stuffs:
-  recurse.compiledGrammars = top.compiledGrammars;
-  recurse.config = top.config;
+  production attribute recurse :: IOVal<Grammar>;
+  recurse = compileFiles(svParser, gpath, tail(files), text.io);
 
-  top.rSpec = if null(files) then emptyRootSpec() else consRootSpec(r, recurse.rSpec); 
-  top.io =    if null(files) then iIn             else recurse.io;
+  return if null(files) then ioval(ioin, nilGrammar())
+         else ioval(recurse.io, consGrammar(grammarPart(r, file), recurse.iovalue));
 }
 

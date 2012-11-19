@@ -1,7 +1,5 @@
 grammar silver:definition:env;
 
-import silver:definition:type;
-
 synthesized attribute unparse :: String;
 
 {--

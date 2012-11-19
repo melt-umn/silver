@@ -1,6 +1,8 @@
 grammar silver:modification:copper_mda;
 
-synthesized attribute mdaSpecs :: [MdaSpec] occurs on Root, AGDcls, AGDcl, RootSpec;
+import silver:driver:util;
+
+synthesized attribute mdaSpecs :: [MdaSpec] occurs on Root, AGDcls, AGDcl, RootSpec, GrammarPart, Grammar;
 
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
@@ -30,19 +32,27 @@ top::AGDcl ::= ag1::AGDcl ag2::AGDcl
   top.mdaSpecs = ag1.mdaSpecs ++ ag2.mdaSpecs;
 }
 
-aspect production i_emptyRootSpec
-top::RootSpec ::= 
+aspect production grammarRootSpec
+top::RootSpec ::= g::Grammar  _
+{
+  top.mdaSpecs = g.mdaSpecs;
+}
+
+aspect production grammarPart
+top::GrammarPart ::= r::Root  fn::String
+{
+  top.mdaSpecs = r.mdaSpecs;
+}
+
+aspect production nilGrammar
+top::Grammar ::=
 {
   top.mdaSpecs = [];
 }
-aspect production i_rootSpecRoot
-top::RootSpec ::= c1::Decorated Root
+
+aspect production consGrammar
+top::Grammar ::= h::GrammarPart  t::Grammar
 {
-  top.mdaSpecs = c1.mdaSpecs;
-}
-aspect production i_appendRootSpec
-top::RootSpec ::= c1::Decorated RootSpec  c2::Decorated RootSpec
-{
-  top.mdaSpecs = c1.mdaSpecs ++ c2.mdaSpecs;
+  top.mdaSpecs = h.mdaSpecs ++ t.mdaSpecs;
 }
 

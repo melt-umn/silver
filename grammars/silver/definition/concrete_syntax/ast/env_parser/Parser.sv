@@ -7,6 +7,7 @@ import silver:definition:core only grammarName, location, env;
 import silver:definition:concrete_syntax only parserSpecs, parserSpec, syntaxAst;
 import silver:definition:concrete_syntax:ast;
 import silver:definition:regex hiding RegexRBrack_t, RegexLBrack_t, RegexLParen_t, RegexRParen_t; -- TODO: a bit of a hack?
+import silver:driver:util only RootSpec, interfaceRootSpec;
 
 terminal SyntaxTerm 'syntax' lexer classes {C_1};
 terminal ParsersTerm 'parsers' lexer classes {C_1};

@@ -1,6 +1,8 @@
 grammar silver:definition:concrete_syntax;
 
-attribute syntaxAst, parserSpecs occurs on RootSpec, ModuleExportedDefs;
+import silver:driver:util;
+
+attribute syntaxAst, parserSpecs occurs on RootSpec, ModuleExportedDefs, Grammar, GrammarPart;
 
 aspect function unparseRootSpec
 String ::= r::Decorated RootSpec
@@ -9,20 +11,29 @@ String ::= r::Decorated RootSpec
   unparses <- ["parsers [" ++ implode(",\n ", map((.unparse), r.parserSpecs)) ++ "]"];
 }
 
-aspect production i_emptyRootSpec
-top::RootSpec ::= 
-{
-  top.syntaxAst = [];
-  top.parserSpecs = [];
-}
-aspect production i_rootSpecRoot
-top::RootSpec ::= c1::Decorated Root
+aspect production grammarRootSpec
+top::RootSpec ::= c1::Grammar  _
 {
   top.syntaxAst = c1.syntaxAst;
   top.parserSpecs = c1.parserSpecs;
 }
-aspect production i_appendRootSpec
-top::RootSpec ::= c1::Decorated RootSpec  c2::Decorated RootSpec
+
+aspect production grammarPart
+top::GrammarPart ::= c1::Root  fn::String
+{
+  top.syntaxAst = c1.syntaxAst;
+  top.parserSpecs = c1.parserSpecs;
+}
+
+aspect production nilGrammar
+top::Grammar ::=
+{
+  top.syntaxAst = [];
+  top.parserSpecs = [];
+}
+
+aspect production consGrammar
+top::Grammar ::= c1::GrammarPart  c2::Grammar
 {
   top.syntaxAst = c1.syntaxAst ++ c2.syntaxAst;
   top.parserSpecs = c1.parserSpecs ++ c2.parserSpecs;
@@ -34,4 +45,5 @@ top::ModuleExportedDefs ::= l::Location  compiled::EnvTree<Decorated RootSpec>  
   top.syntaxAst = if null(need) || null(rs) then [] else (head(rs).syntaxAst ++ recurse.syntaxAst);
   top.parserSpecs = if null(need) || null(rs) then [] else (head(rs).parserSpecs ++ recurse.parserSpecs);
 }
+
 
