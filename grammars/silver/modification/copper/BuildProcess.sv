@@ -27,20 +27,15 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
 aspect production compilation
 top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
 {
-  -- TODO: production because of hack!
-  production allParsers :: [ParserSpec] = foldr(append, [], map((.parserSpecs), grammarsToTranslate));
-  -- TODO: temporarily all parsers!
-}
-
-aspect function writeBuildFile
-IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String allParsers::[ParserSpec]
-{
   classpathCompiler <- ["${sh}/jars/CopperCompiler.jar"];
   classpathRuntime <- ["${sh}/jars/CopperRuntime.jar"];
   extraTopLevelDecls <- [
     "  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='compile.classpath'/>",
-    "  <target name='copper'>\n" ++ buildAntParserPart(allParsers, a) ++ "  </target>"];
+    "  <target name='copper'>\n" ++ buildAntParserPart(allParsers, top.config) ++ "  </target>"];
   extraGrammarsDeps <- ["copper"];
+
+  local allParsers :: [ParserSpec] = foldr(append, [], map((.parserSpecs), grammarsToTranslate));
+  -- TODO: temporarily all parsers!
 }
 
 function buildAntParserPart
