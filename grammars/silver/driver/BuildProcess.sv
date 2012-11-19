@@ -41,20 +41,21 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
     checkEnvironment(a, silverHome, silverGen, grammarPath, buildGrammar, envSG.io);
   
   -- Compile grammars. There's some tricky circular program data flow here:
-  local firstPass :: IOVal<[Maybe<RootSpec>]> =
-    compileGrammars(svParser, sviParser, grammarPath, silverGen, buildGrammar :: grammarList, true{-a.doClean-}, check.io);
+  local rootStream :: IOVal<[Maybe<RootSpec>]> =
+    compileGrammars(svParser, sviParser, grammarPath, silverGen, buildGrammar :: grammarStream, true{-TODO a.doClean-}, check.io);
   
-  local analyzePass :: Pair<[Decorated RootSpec] [Maybe<Decorated RootSpec>]> =
-    analyzeGrammars(a, firstPass.iovalue);
+  local unit :: Compilation =
+    compilation(foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], rootStream.iovalue)));
+  unit.config = a;
   
-  local grammarList :: [String] =
-    eatGrammars(1, [], analyzePass.snd);
+  -- Note that this is used above. This outputs deps, and rootStream informs it.
+  local grammarStream :: [String] =
+    eatGrammars(1, [buildGrammar], rootStream.iovalue, unit.grammarList);
   
   -- TODO: Find "out of date" grammars, rebuild them.
 
   local actions :: IOVal<Integer> =
-    runActions(a, silverHome, silverGen, buildGrammar, analyzePass.fst, ioin);
-
+    runActions(silverHome, silverGen, buildGrammar, unit, ioin);
 
   return if a.displayVersion then ioval(print("Silver Version 0.3.6-dev\n", ioin), 0)
   else if !argResult.parseSuccess then ioval(print(argResult.parseErrors, ioin), 1)
@@ -62,39 +63,20 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
   else actions;
 }
 
-function runActions
-IOVal<Integer> ::=
-  a::Decorated CmdArgs
-  silverHome::String
-  silverGen::String
-  buildGrammar::String
-  grammars::[Decorated RootSpec]
-  ioin::IO
-{
-  production attribute grammarEnv :: EnvTree<Decorated RootSpec>;
-  grammarEnv = directBuildTree(map(grammarPairing, grammars));
-  
-  -- Only those grammars that are used. (unit unconditionally builts conditionally built
-  -- grammars. Here we produce a set that would not include them if they are not used.)
-  production attribute grammarsDependedUpon :: [String];
-  grammarsDependedUpon = expandAllDeps([buildGrammar], [], grammarEnv);
-  
-  -- This is a list of RootSpecs that need translating:
-  production attribute grammarsToTranslate :: [Decorated RootSpec];
-  grammarsToTranslate = keepGrammars(grammarsDependedUpon, grammars);
-
-  production attribute postOps :: [Unit] with ++;
-  postOps := [doInterfaces(grammarsToTranslate, silverGen)];
-  postOps <- if a.noBindingChecking then [] else [printAllBindingErrors(grammars)]; 
-  
-  return runAll(ioin, sortUnits(postOps));
-}
-
-
+{--
+ - Consumes a stream of parses, outputs a stream of new dependencies.
+ - Typically used as a circular program with 'compileGrammars'
+ -
+ - @param n  Expected number of new inputs from rootStream
+ - @param sofar  Set of grammars already seen, and should not be requested again
+ - @param rootStream  Stream of found/not found info. Should not be used except to test presence
+ - @param grammars  List of grammars *in the same order as 'just' appears in rootStream*
+ - @return  A stream of new dependencies
+ -}
 function eatGrammars
-[String] ::= n::Integer  sofar::[String]  l::[Maybe<Decorated RootSpec>]
+[String] ::= n::Integer  sofar::[String]  rootStream::[Maybe<a>]  grammars::[Decorated RootSpec]
 {
-  local it :: Decorated RootSpec = head(l).fromJust;
+  local it :: Decorated RootSpec = head(grammars);
   
   local directDeps :: [String] = mentionedGrammars(it);
   
@@ -103,50 +85,41 @@ function eatGrammars
   return
     if n == 0 then
       []
-    else if !head(l).isJust then
-      eatGrammars(n-1, sofar, tail(l))
+    else if !head(rootStream).isJust then
+      eatGrammars(n-1, sofar, tail(rootStream), grammars)
     else
-      newDeps ++ eatGrammars(n-1+length(newDeps), newDeps ++ sofar, tail(l));
+      newDeps ++ eatGrammars(n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars));
 }
 
-function analyzeGrammars
-Pair<[Decorated RootSpec] [Maybe<Decorated RootSpec>]> ::=
-  config::Decorated CmdArgs
-  inputStream::[Maybe<RootSpec>]
+function runActions
+IOVal<Integer> ::=
+  silverHome::String
+  silverGen::String
+  buildGrammar::String
+  unit::Decorated Compilation
+  ioin::IO
 {
-  local decInputStream :: [Maybe<Decorated RootSpec>] =
-    map(decorateGrammar(config, grammarEnv, finalGraphs, flowTypes, _), inputStream);
+  -- Only those grammars that are used. (unit unconditionally builts conditionally built
+  -- grammars. Here we produce a set that would not include them if they are not used.)
+  production attribute grammarsDependedUpon :: [String];
+  grammarsDependedUpon = expandAllDeps([buildGrammar], [], unit.grammarEnv);
   
-  production grammars :: [Decorated RootSpec] = foldr(foldMaybe, [], decInputStream);
+  -- This is a list of RootSpecs that need translating:
+  production attribute grammarsToTranslate :: [Decorated RootSpec];
+  grammarsToTranslate = keepGrammars(grammarsDependedUpon, unit.grammarList);
+
+  production attribute postOps :: [Unit] with ++;
+  postOps := [doInterfaces(grammarsToTranslate, silverGen)];
+  postOps <- if unit.config.noBindingChecking then [] else [printAllBindingErrors(unit.grammarList)]; 
   
-  -- TODO Add additional input stream of re-parsed grammars that are tainted
-  
-  production grammarEnv :: EnvTree<Decorated RootSpec> =
-    directBuildTree(map(grammarPairing, grammars));
-  
-  return pair(grammars, decInputStream);
+  return runAll(sortUnits(postOps), ioin);
 }
 
 -- TODO: look up a standard name for this, and put in std lib?
-function foldMaybe
+function consMaybe
 [a] ::= h::Maybe<a>  t::[a]
 {
   return if h.isJust then h.fromJust :: t else t;
-}
-function decorateGrammar
-Maybe<Decorated RootSpec> ::=
-  config :: Decorated CmdArgs
-  compiledGrammars :: EnvTree<Decorated RootSpec>
-  productionFlowGraphs :: [ProductionGraph]
-  grammarFlowTypes :: EnvTree<Pair<String String>>
-  mrs :: Maybe<RootSpec>
-{
-  local rs :: RootSpec = mrs.fromJust;
-  rs.config = config;
-  rs.compiledGrammars = compiledGrammars;
-  rs.productionFlowGraphs = productionFlowGraphs;
-  rs.grammarFlowTypes = grammarFlowTypes;
-  return if mrs.isJust then just(rs) else nothing();
 }
 
 

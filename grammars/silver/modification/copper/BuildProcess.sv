@@ -26,11 +26,10 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
 }
 aspect function runActions
 IOVal<Integer> ::=
-  a::Decorated CmdArgs
   silverHome::String
   silverGen::String
   buildGrammar::String
-  grammars::[Decorated RootSpec]
+  unit::Decorated Compilation
   ioin::IO
 {
   -- TODO: production because of hack!

@@ -29,14 +29,13 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
 }
 aspect function runActions
 IOVal<Integer> ::=
-  a::Decorated CmdArgs
   silverHome::String
   silverGen::String
   buildGrammar::String
-  grammars::[Decorated RootSpec]
+  unit::Decorated Compilation
   ioin::IO
 {
-  postOps <- if a.dumpDepGraph then [dumpDepGraphAction(grammars)] else [];
+  postOps <- if unit.config.dumpDepGraph then [dumpDepGraphAction(unit.grammarList)] else [];
 }
 
 abstract production dumpDepGraphAction
