@@ -4,6 +4,7 @@ grammar silver:modification:impide;
 
 import silver:modification:copper_mda only findSpec; -- TODO
 import silver:modification:impide:cstast;
+import silver:driver:util only RootSpec;
 
 -- We're going to make this an especially annoying looking declaration
 -- to emphasize that this is currently a temporary hack just to get things

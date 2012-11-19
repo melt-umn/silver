@@ -70,8 +70,6 @@ synthesized attribute signature :: NamedSignature;
 synthesized attribute elements :: [NamedSignatureElement];
 synthesized attribute element :: NamedSignatureElement;
 synthesized attribute typereps :: [TypeExp];
-synthesized attribute names :: [String];
-synthesized attribute aname :: String;
 synthesized attribute tyvars :: [TyVar];
 
 {- The "uninteresting" plumbing of interface files: -}
@@ -98,36 +96,28 @@ nonterminal INamedSignature with signature, env, grammarName;
  nonterminal INamedSignatureElement with element, env, grammarName;
  nonterminal INamedSignatureElements with elements, env, grammarName;
  nonterminal INamedSignatureElementsInner with elements, env, grammarName;
-{- List of (single-quoted) names, inside brackets [] -}
-nonterminal INames with names;
-nonterminal INamesInner with names;
-{- A (single-quoted) name -}
-nonterminal IName with aname;
-{- Location info (Used by dclinfos, usually) -}
-nonterminal ILocation with location;
-{- A boolean value -}
-nonterminal IBool with bval;
-
-synthesized attribute bval :: Boolean;
 
 -- a few simple utilities
+
+nonterminal IName with aname;
+nonterminal ILocation with location;
+nonterminal IBool with bval;
+nonterminal INames with names;
+nonterminal INamesInner with names;
+
+synthesized attribute bval :: Boolean;
+synthesized attribute names :: [String];
+synthesized attribute aname :: String;
 
 concrete production aTrue
 top::IBool ::= 't'
 {
   top.bval = true;
 }
-
 concrete production aFalse
 top::IBool ::= 'f'
 {
   top.bval = false;
-}
-
-concrete production quoted_name
-top::IName ::= i::Id_t
-{
-  top.aname = substring(1, length(i.lexeme)-1, i.lexeme);
 }
 
 concrete production aLocationInfo
@@ -136,22 +126,31 @@ top::ILocation ::= filename::IName ',' line::Num_t ',' column::Num_t
   top.location = loc(filename.aname, toInt(line.lexeme), toInt(column.lexeme));
 }
 
--- Exposing the interface to the outside world
-
-abstract production interfaceRootSpec
-top::RootSpec ::= p::IRoot
+concrete production aName
+top::IName ::= i::Id_t
 {
-  p.grammarName = p.declaredName;
+  top.aname = substring(1, length(i.lexeme)-1, i.lexeme);
+}
 
-  top.declaredName = p.declaredName; 
-  top.moduleNames = p.moduleNames;
-  top.allGrammarDependencies = p.allGrammarDependencies;
-  top.defs = p.defs;
-  top.exportedGrammars = p.exportedGrammars;
-  top.optionalGrammars = p.optionalGrammars;
-  top.condBuild = p.condBuild;
-
-  forwards to i_emptyRootSpec();
+concrete production aNamesNone
+top::INames ::= '[' ']'
+{
+  top.names = [];
+}
+concrete production aNamesOne
+top::INames ::= '[' d::INamesInner ']'
+{
+  top.names = d.names;
+}
+concrete production aNamesInnerOne
+top::INamesInner ::= d::IName
+{
+  top.names = [d.aname];
+}
+concrete production aNamesInnerCons
+top::INamesInner ::= d1::IName ',' d2::INamesInner
+{
+  top.names = [d1.aname] ++ d2.names;
 }
 
 
@@ -181,7 +180,8 @@ top::IRoot ::= r1::IRootPart r2::IRoot
   top.condBuild = r1.condBuild ++ r2.condBuild;
 }
 
---The pieces
+-- The pieces
+
 aspect default production
 top::IRootPart ::=
 {
@@ -266,30 +266,6 @@ concrete production aDefsInnerCons
 top::IDefsInner ::= d1::IDclInfo ',' d2::IDefsInner
 {
   top.defs = d1.defs ++ d2.defs;
-}
-
-concrete production aNamesNone
-top::INames ::= '[' ']'
-{
-  top.names = [];
-}
-
-concrete production aNamesOne
-top::INames ::= '[' d::INamesInner ']'
-{
-  top.names = d.names;
-}
-
-concrete production aNamesInnerOne
-top::INamesInner ::= d::IName
-{
-  top.names = [d.aname];
-}
-
-concrete production aNamesInnerCons
-top::INamesInner ::= d1::IName ',' d2::INamesInner
-{
-  top.names = [d1.aname] ++ d2.names;
 }
 
 concrete production aTypeRepsNone

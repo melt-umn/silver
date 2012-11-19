@@ -1,6 +1,8 @@
 grammar silver:translation:java:core;
 
-attribute javaClasses,setupInh,initProd,initValues,postInit,initWeaving,valueWeaving occurs on RootSpec;
+import silver:driver:util;
+
+attribute javaClasses,setupInh,initProd,initValues,postInit,initWeaving,valueWeaving occurs on RootSpec, GrammarPart, Grammar;
 
 
 -- TODO: Should have made javaClasses a collection, too, while I was at it.
@@ -38,9 +40,8 @@ synthesized attribute initWeaving :: String with ++;
  -}
 synthesized attribute valueWeaving :: String with ++;
 
-
-aspect production i_emptyRootSpec
-top::RootSpec ::= 
+aspect production interfaceRootSpec
+top::RootSpec ::= _
 {
   top.javaClasses = [];
   top.setupInh := "";
@@ -51,8 +52,8 @@ top::RootSpec ::=
   top.valueWeaving := "";
 }
 
-aspect production i_rootSpecRoot
-top::RootSpec ::= c1::Decorated Root
+aspect production grammarRootSpec
+top::RootSpec ::= c1::Grammar  _
 {
   top.javaClasses = c1.javaClasses;
   top.setupInh := c1.setupInh;
@@ -63,8 +64,32 @@ top::RootSpec ::= c1::Decorated Root
   top.valueWeaving := c1.valueWeaving;
 }
 
-aspect production i_appendRootSpec
-top::RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
+aspect production grammarPart
+top::GrammarPart ::= c1::Root  fn::String
+{
+  top.javaClasses = c1.javaClasses;
+  top.setupInh := c1.setupInh;
+  top.initProd := c1.initProd;
+  top.initValues := c1.initValues;
+  top.postInit := c1.postInit;
+  top.initWeaving := c1.initWeaving;
+  top.valueWeaving := c1.valueWeaving;
+}
+
+aspect production nilGrammar
+top::Grammar ::=
+{
+  top.javaClasses = [];
+  top.setupInh := "";
+  top.initProd := "";
+  top.initValues := "";
+  top.postInit := "";
+  top.initWeaving := "";
+  top.valueWeaving := "";
+}
+
+aspect production consGrammar
+top::Grammar ::= c1::GrammarPart  c2::Grammar
 {
   top.javaClasses = c1.javaClasses ++ c2.javaClasses;
   top.setupInh := c1.setupInh ++ c2.setupInh;  
@@ -74,3 +99,4 @@ top::RootSpec ::= c1::Decorated RootSpec c2::Decorated RootSpec
   top.initWeaving := c1.initWeaving ++ c2.initWeaving;
   top.valueWeaving := c1.valueWeaving ++ c2.valueWeaving;
 }
+

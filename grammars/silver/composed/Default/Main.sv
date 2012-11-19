@@ -32,8 +32,8 @@ parser svParse::Root {
   silver:modification:defaultattr;
   
   -- slight hacks, for the moment
-  silver:modification:copper_mda;
-  silver:modification:impide;
+  --silver:modification:copper_mda;
+  --silver:modification:impide;
 }
 
 parser sviParse::IRoot {

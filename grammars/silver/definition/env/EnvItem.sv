@@ -1,6 +1,5 @@
 grammar silver:definition:env;
 
-import silver:definition:type only Substitution;
 import silver:util only contains;
 
 --fullNameToShort  String ::= s::String
