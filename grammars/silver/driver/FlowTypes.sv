@@ -7,7 +7,7 @@ import silver:util:raw:treemap as rtm;
 -- Hide all the flow type computation over here
 
 aspect production compilation
-top::Compilation ::= g::Grammars
+top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
 {
   -- aggregate all flow def information, filtering out those that are not permitted to affect flow types
   local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), top.grammarList)));

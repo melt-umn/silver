@@ -24,13 +24,8 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
   flags <- [pair("--copperdump", flag(copperdumpFlag))];
   flagdescs <- ["\t--copperdump  : force Copper to dump parse table information"];
 }
-aspect function runActions
-IOVal<Integer> ::=
-  silverHome::String
-  silverGen::String
-  buildGrammar::String
-  unit::Decorated Compilation
-  ioin::IO
+aspect production compilation
+top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
 {
   -- TODO: production because of hack!
   production allParsers :: [ParserSpec] = foldr(append, [], map((.parserSpecs), grammarsToTranslate));

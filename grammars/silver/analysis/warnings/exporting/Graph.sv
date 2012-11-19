@@ -27,15 +27,10 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
   flags <- [pair("--dump-import-graph", flag(dumpDepGraphFlag))];
   -- omitting from descriptions deliberately!
 }
-aspect function runActions
-IOVal<Integer> ::=
-  silverHome::String
-  silverGen::String
-  buildGrammar::String
-  unit::Decorated Compilation
-  ioin::IO
+aspect production compilation
+top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
 {
-  postOps <- if unit.config.dumpDepGraph then [dumpDepGraphAction(unit.grammarList)] else [];
+  top.postOps <- if top.config.dumpDepGraph then [dumpDepGraphAction(g.grammarList)] else [];
 }
 
 abstract production dumpDepGraphAction

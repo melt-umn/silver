@@ -26,16 +26,11 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
   -- omitting from descriptions deliberately!
 }
 
-aspect function runActions
-IOVal<Integer> ::=
-  silverHome::String
-  silverGen::String
-  buildGrammar::String
-  unit::Decorated Compilation
-  ioin::IO
+aspect production compilation
+top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
 {
-  local anyG :: Decorated RootSpec = head(unit.grammarList);
-  postOps <- if unit.config.dumpFlowGraph then [dumpFlowGraphAction(anyG.productionFlowGraphs, unList(rtm:toList(anyG.grammarFlowTypes)))] else [];
+  local anyG :: Decorated RootSpec = head(g.grammarList);
+  top.postOps <- if top.config.dumpFlowGraph then [dumpFlowGraphAction(anyG.productionFlowGraphs, unList(rtm:toList(anyG.grammarFlowTypes)))] else [];
 }
 
 function unList
