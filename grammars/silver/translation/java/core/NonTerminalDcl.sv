@@ -14,7 +14,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name botl::BracketedOptTypeList
   top.initWeaving := "\tpublic static int " ++ inhVar ++ " = 0;\n"
                   ++ "\tpublic static int " ++ synVar ++ " = 0;\n";
   
-  top.javaClasses = [[className,
+  top.genFiles := [pair(className ++ ".java",
 		
 "package " ++ makeName(top.grammarName) ++ ";\n\n" ++
 
@@ -60,8 +60,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name botl::BracketedOptTypeList
 "\t\treturn occurs_syn[index];\n" ++
 "\t}\n\n" ++
 
-"}\n"
-		]];
+"}\n")];
 
 }
 

@@ -1,7 +1,6 @@
 grammar silver:definition:env;
 
 import silver:definition:regex; -- soley for Terminals. TODO : perhaps this shouldn't be here!
-import silver:definition:type;
 
 nonterminal Defs with typeList, valueList, attrList, prodOccursList, occursList, prodDclList;
 closed nonterminal Def with typeList, valueList, attrList, prodOccursList, occursList, prodDclList, dcl;
@@ -195,7 +194,7 @@ Def ::= sg::String  sl::Location  fn::String  ty::TypeExp  alias::String
 function unparseDefs
 String ::= d::[Def] bv::[TyVar]
 {
-  return implode(",\n ", mapUnparseDcls(map((.dcl), d), bv));
+  return "[\n " ++ implode(",\n ", mapUnparseDcls(map((.dcl), d), bv)) ++ "]";
 }
 
 function mapUnparseDcls

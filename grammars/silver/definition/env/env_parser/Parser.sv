@@ -22,6 +22,7 @@ terminal Sigturnstile '::=' ;
 
 terminal Id_t /[\']([^\'\\]|[\\][\']|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\']/ lexer classes {C_0};
 terminal Num_t /\-?[0-9]+/ lexer classes {C_0};
+terminal EscapedStringTerm /"([^\"\\]|\\.)*"/ lexer classes {C_1};
 
 terminal T_t 't';
 terminal F_t 'f';
@@ -64,21 +65,18 @@ terminal DefsTerm             'defs'             lexer classes {C_1};
 terminal ExportedGrammarsTerm 'exportedGrammars' lexer classes {C_1};
 terminal OptionalGrammarsTerm 'optionalGrammars' lexer classes {C_1};
 terminal CondBuildTerm        'condBuild'        lexer classes {C_1};
+terminal GrammarSourceTerm    'grammarSource'    lexer classes {C_1};
 
 
-synthesized attribute spec :: Decorated RootSpec;
 synthesized attribute signature :: NamedSignature;
 synthesized attribute elements :: [NamedSignatureElement];
 synthesized attribute element :: NamedSignatureElement;
 synthesized attribute typereps :: [TypeExp];
-synthesized attribute names :: [String];
-synthesized attribute aname :: String;
 synthesized attribute tyvars :: [TyVar];
 
 {- The "uninteresting" plumbing of interface files: -}
 
-nonterminal IRootSpec with spec;
-nonterminal IRootSpecParts with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
+nonterminal IRoot with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, grammarSource, moduleNames, grammarName, allGrammarDependencies;
 nonterminal IDefs with defs, env, grammarName; -- including square brackets
 nonterminal IDefsInner with defs, env, grammarName; -- inside square brackets
 nonterminal ITypeReps with env, typereps, grammarName; -- including square brackets
@@ -87,7 +85,7 @@ nonterminal ITypeRepsInner with env, typereps, grammarName; -- inside square bra
 {- Extension points! -}
 
 {- Top-level elements of the interface file -}
-closed nonterminal IRootSpecPart with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
+closed nonterminal IRootPart with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, grammarSource, moduleNames, grammarName, allGrammarDependencies;
 {- A DclInfo record -}
 closed nonterminal IDclInfo with defs, env, grammarName;
 {- A TypeExp record -}
@@ -100,36 +98,30 @@ nonterminal INamedSignature with signature, env, grammarName;
  nonterminal INamedSignatureElement with element, env, grammarName;
  nonterminal INamedSignatureElements with elements, env, grammarName;
  nonterminal INamedSignatureElementsInner with elements, env, grammarName;
-{- List of (single-quoted) names, inside brackets [] -}
-nonterminal INames with names;
-nonterminal INamesInner with names;
-{- A (single-quoted) name -}
-nonterminal IName with aname;
-{- Location info (Used by dclinfos, usually) -}
-nonterminal ILocation with location;
-{- A boolean value -}
-nonterminal IBool with bval;
-
-synthesized attribute bval :: Boolean;
 
 -- a few simple utilities
+
+nonterminal IName with aname;
+nonterminal ILocation with location;
+nonterminal IBool with bval;
+nonterminal INames with names;
+nonterminal INamesInner with names;
+nonterminal IString with str;
+
+synthesized attribute bval :: Boolean;
+synthesized attribute names :: [String];
+synthesized attribute aname :: String;
+synthesized attribute str :: String;
 
 concrete production aTrue
 top::IBool ::= 't'
 {
   top.bval = true;
 }
-
 concrete production aFalse
 top::IBool ::= 'f'
 {
   top.bval = false;
-}
-
-concrete production quoted_name
-top::IName ::= i::Id_t
-{
-  top.aname = substring(1, length(i.lexeme)-1, i.lexeme);
 }
 
 concrete production aLocationInfo
@@ -138,37 +130,47 @@ top::ILocation ::= filename::IName ',' line::Num_t ',' column::Num_t
   top.location = loc(filename.aname, toInt(line.lexeme), toInt(column.lexeme));
 }
 
--- Exposing the interface to the outside world
-
-abstract production parserRootSpec
-top::RootSpec ::= p::IRootSpecParts
+concrete production aString
+top::IString ::= s::EscapedStringTerm
 {
-  p.grammarName = p.declaredName;
+  top.str = unescapeString(substring(1,length(s.lexeme)-1,s.lexeme)); -- TODO fix unescape and escape!!
+}
 
-  top.declaredName = p.declaredName; 
-  top.moduleNames = p.moduleNames;
-  top.allGrammarDependencies = p.allGrammarDependencies;
-  top.defs = p.defs;
-  top.exportedGrammars = p.exportedGrammars;
-  top.optionalGrammars = p.optionalGrammars;
-  top.condBuild = p.condBuild;
+concrete production aName
+top::IName ::= i::Id_t
+{
+  top.aname = substring(1, length(i.lexeme)-1, i.lexeme);
+}
 
-  forwards to i_emptyRootSpec();
+concrete production aNamesNone
+top::INames ::= '[' ']'
+{
+  top.names = [];
+}
+concrete production aNamesOne
+top::INames ::= '[' d::INamesInner ']'
+{
+  top.names = d.names;
+}
+concrete production aNamesInnerOne
+top::INamesInner ::= d::IName
+{
+  top.names = [d.aname];
+}
+concrete production aNamesInnerCons
+top::INamesInner ::= d1::IName ',' d2::INamesInner
+{
+  top.names = [d1.aname] ++ d2.names;
 }
 
 
 --The Grammar 
 
-concrete production aRootFull
-top::IRootSpec ::= r::IRootSpecParts
-{
-  top.spec = decorate parserRootSpec(r) with { };
-}
-
 concrete production aRoot1
-top::IRootSpecParts ::= r::IRootSpecPart
+top::IRoot ::= r::IRootPart
 {
-  top.declaredName = r.declaredName; 
+  top.declaredName = r.declaredName;
+  top.grammarSource = r.grammarSource;
   top.defs = r.defs;
   top.moduleNames = r.moduleNames;
   top.allGrammarDependencies = r.allGrammarDependencies;
@@ -178,9 +180,10 @@ top::IRootSpecParts ::= r::IRootSpecPart
 }
 
 concrete production aRoot2
-top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
+top::IRoot ::= r1::IRootPart r2::IRoot
 {
-  top.declaredName = if r1.declaredName == "" then r2.declaredName else r1.declaredName; 
+  top.declaredName = if r1.declaredName == "" then r2.declaredName else r1.declaredName;
+  top.grammarSource = if r1.grammarSource == "" then r2.grammarSource else r1.grammarSource;
   top.defs = r1.defs ++ r2.defs;
   top.moduleNames = r1.moduleNames ++ r2.moduleNames;
   top.allGrammarDependencies = r1.allGrammarDependencies ++ r2.allGrammarDependencies;
@@ -189,11 +192,13 @@ top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
   top.condBuild = r1.condBuild ++ r2.condBuild;
 }
 
---The pieces
+-- The pieces
+
 aspect default production
-top::IRootSpecPart ::=
+top::IRootPart ::=
 {
   top.declaredName = "";
+  top.grammarSource = "";
   top.moduleNames = [];
   top.allGrammarDependencies = [];
   top.defs = [];
@@ -203,44 +208,50 @@ top::IRootSpecPart ::=
 }
 
 concrete production aRootDeclaredName
-top::IRootSpecPart ::= 'declaredName' i::IName
+top::IRootPart ::= 'declaredName' i::IName
 {
   top.declaredName = i.aname;
 }
 
+concrete production aRootGrammarSource
+top::IRootPart ::= 'grammarSource' s::IString
+{
+  top.grammarSource = s.str;
+}
+
 concrete production aRootModuleNames
-top::IRootSpecPart ::= 'moduleNames' i::INames
+top::IRootPart ::= 'moduleNames' i::INames
 {
   top.moduleNames = i.names;
 }
 
 concrete production aRootAllDeps
-top::IRootSpecPart ::= 'allDeps' i::INames
+top::IRootPart ::= 'allDeps' i::INames
 {
   top.allGrammarDependencies = i.names;
 }
 
 concrete production aRootDefs
-top::IRootSpecPart ::= 'defs' i::IDefs
+top::IRootPart ::= 'defs' i::IDefs
 {
   top.defs = i.defs;
   i.env = emptyEnv();
 }
 
 concrete production aRootExportedGrammars
-top::IRootSpecPart ::= 'exportedGrammars' i::INames
+top::IRootPart ::= 'exportedGrammars' i::INames
 {
   top.exportedGrammars = i.names;
 }
 
 concrete production aRootOptionalGrammars
-top::IRootSpecPart ::= 'optionalGrammars' i::INames
+top::IRootPart ::= 'optionalGrammars' i::INames
 {
   top.optionalGrammars = i.names;
 }
 
 concrete production aRootCondBuilds
-top::IRootSpecPart ::= 'condBuild' i::INames
+top::IRootPart ::= 'condBuild' i::INames
 {
   top.condBuild = unfoldCB(i.names);
 }
@@ -274,30 +285,6 @@ concrete production aDefsInnerCons
 top::IDefsInner ::= d1::IDclInfo ',' d2::IDefsInner
 {
   top.defs = d1.defs ++ d2.defs;
-}
-
-concrete production aNamesNone
-top::INames ::= '[' ']'
-{
-  top.names = [];
-}
-
-concrete production aNamesOne
-top::INames ::= '[' d::INamesInner ']'
-{
-  top.names = d.names;
-}
-
-concrete production aNamesInnerOne
-top::INamesInner ::= d::IName
-{
-  top.names = [d.aname];
-}
-
-concrete production aNamesInnerCons
-top::INamesInner ::= d1::IName ',' d2::INamesInner
-{
-  top.names = [d1.aname] ++ d2.names;
 }
 
 concrete production aTypeRepsNone

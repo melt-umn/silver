@@ -24,7 +24,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local attribute fnnt :: String;
   fnnt = makeNTClassName(ns.outputElement.typerep.typeName);
 
-  top.javaClasses = [[className,
+  top.genFiles := [pair(className ++ ".java",
 		
 "package " ++ makeName(top.grammarName) ++ ";\n\n" ++
 
@@ -123,8 +123,7 @@ makeStaticDcls(className, ns.inputElements) ++
 "\t\t}\n\n" ++
 "\t};\n" ++
 
-"}\n"
-  ]];
+"}\n")];
 
   -- main function signature check TODO: this should probably be elsewhere!
   top.errors <-

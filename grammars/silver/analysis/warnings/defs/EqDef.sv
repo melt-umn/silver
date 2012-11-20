@@ -1,13 +1,11 @@
 grammar silver:analysis:warnings:defs;
 
 synthesized attribute warnEqdef :: Boolean occurs on CmdArgs;
-synthesized attribute warnEqdefInh :: Boolean occurs on CmdArgs;
 
 aspect production endCmdArgs
 top::CmdArgs ::= l::[String]
 {
   top.warnEqdef = false;
-  top.warnEqdefInh = false;
 }
 abstract production warnEqdefFlag
 top::CmdArgs ::= rest::CmdArgs
@@ -15,16 +13,10 @@ top::CmdArgs ::= rest::CmdArgs
   top.warnEqdef = true;
   forwards to rest;
 }
-abstract production warnEqdefInhFlag
-top::CmdArgs ::= rest::CmdArgs
+aspect function parseArgs
+ParseResult<Decorated CmdArgs> ::= args::[String]
 {
-  top.warnEqdefInh = true;
-  forwards to rest;
-}
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
-{
-  flags <- [pair("--warn-eqdef", flag(warnEqdefFlag)), pair("--warn-eqdef-inh", flag(warnEqdefInhFlag))];
+  flags <- [pair("--warn-eqdef", flag(warnEqdefFlag))];
 }
 
 aspect production synthesizedAttributeDef
@@ -84,7 +76,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 
   top.errors <-
     if null(occursCheck.errors ++ attr.lookupAttribute.errors ++ dl.errors)
-    && (top.config.warnAll || top.config.warnEqdefInh)
+    && (top.config.warnAll || top.config.warnEqdef)
     && $4.lexeme != "<-" -- hack to omit collections
     && !contains(top.grammarName, computeDependencies(exportedBy, top.compiledGrammars))
     then [wrn(top.location, "Orphaned inherited equation: " ++ attr.pp ++ " (occurs from " ++ occursCheck.dcl.sourceGrammar ++ ") in " ++ top.signature.fullName ++ " on " ++ dl.pp)]

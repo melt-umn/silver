@@ -21,13 +21,16 @@ top::CmdArgs ::= rest::CmdArgs
   top.dumpDepGraph = true;
   forwards to rest;
 }
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect function parseArgs
+ParseResult<Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--dump-deps", flag(dumpDepGraphFlag))];
+  flags <- [pair("--dump-import-graph", flag(dumpDepGraphFlag))];
   -- omitting from descriptions deliberately!
-  
-  postOps <- if a.dumpDepGraph then [dumpDepGraphAction(grammars)] else [];
+}
+aspect production compilation
+top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
+{
+  top.postOps <- if top.config.dumpDepGraph then [dumpDepGraphAction(grammars)] else [];
 }
 
 abstract production dumpDepGraphAction

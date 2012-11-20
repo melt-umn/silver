@@ -7,6 +7,7 @@ import silver:definition:core only grammarName, location, env;
 import silver:definition:concrete_syntax only parserSpecs, parserSpec, syntaxAst;
 import silver:definition:concrete_syntax:ast;
 import silver:definition:regex hiding RegexRBrack_t, RegexLBrack_t, RegexLParen_t, RegexRParen_t; -- TODO: a bit of a hack?
+import silver:driver:util only RootSpec, interfaceRootSpec;
 
 terminal SyntaxTerm 'syntax' lexer classes {C_1};
 terminal ParsersTerm 'parsers' lexer classes {C_1};
@@ -30,11 +31,11 @@ terminal SubTerm 'sub' lexer classes {C_1};
 terminal DomTerm 'dom' lexer classes {C_1};
 
 
-attribute syntaxAst, parserSpecs occurs on IRootSpecParts, IRootSpecPart;
+attribute syntaxAst, parserSpecs occurs on IRoot, IRootPart;
 
 --------------- i don't know yet ------------------------
-aspect production parserRootSpec
-top::RootSpec ::= p::IRootSpecParts
+aspect production interfaceRootSpec
+top::RootSpec ::= p::IRoot _
 {
   top.syntaxAst = p.syntaxAst;
   top.parserSpecs = p.parserSpecs;
@@ -42,14 +43,14 @@ top::RootSpec ::= p::IRootSpecParts
 ---------------------------------------------------------
 
 aspect production aRoot1
-top::IRootSpecParts ::= r::IRootSpecPart
+top::IRoot ::= r::IRootPart
 {
   top.syntaxAst = r.syntaxAst;
   top.parserSpecs = r.parserSpecs;
 }
 
 aspect production aRoot2
-top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
+top::IRoot ::= r1::IRootPart r2::IRoot
 {
   top.syntaxAst = r1.syntaxAst ++ r2.syntaxAst;
   top.parserSpecs = r1.parserSpecs ++ r2.parserSpecs;
@@ -58,20 +59,20 @@ top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
 ----
 
 aspect default production
-top::IRootSpecPart ::=
+top::IRootPart ::=
 {
   top.syntaxAst = [];
   top.parserSpecs = [];
 }
 
 concrete production aRootSyntax
-top::IRootSpecPart ::= 'syntax' s::ISyntax
+top::IRootPart ::= 'syntax' s::ISyntax
 {
   top.syntaxAst = s.syntaxAst;
 }
 
 concrete production aRootParsers
-top::IRootSpecPart ::= 'parsers' s::IParsers
+top::IRootPart ::= 'parsers' s::IParsers
 {
   top.parserSpecs = s.parserSpecs;
 }
@@ -293,17 +294,4 @@ top::IProductionModifier ::= 'layout' '(' n::INames ')'
   top.productionModifiers = [prodLayout(n.names)];
 }
 
-
---------------------------------------------------------------------------------
-nonterminal IString with str;
-
-terminal EscapedStringTerm /"([^\"\\]|\\.)*"/ lexer classes {C_1};
-
-synthesized attribute str :: String;
-
-concrete production aString
-top::IString ::= s::EscapedStringTerm
-{
-  top.str = substitute("\\\"", "\"", substring(1,length(s.lexeme)-1,s.lexeme));
-}
 

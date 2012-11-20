@@ -17,8 +17,8 @@ top::CmdArgs ::= rest::CmdArgs
   top.warnMissingInh = true;
   forwards to rest;
 }
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect function parseArgs
+ParseResult<Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--warn-missing-inh", flag(warnMissingInhFlag))];
 }
@@ -171,8 +171,8 @@ aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   -- TODO oh no again!
-  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
-  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).prodFlowGraphs;
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local immediateDeps :: [FlowVertex] = e.flowDeps;
   local productionFlowGraph :: ProductionGraph = findProduction(top.signature.fullName, myGraphs);
@@ -194,8 +194,8 @@ aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
   -- TODO oh no again!
-  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
-  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).prodFlowGraphs;
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local immediateDeps :: [FlowVertex] = e.flowDeps;
   local productionFlowGraph :: ProductionGraph = findProduction(top.signature.fullName, myGraphs);
@@ -216,8 +216,8 @@ aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   -- TODO oh no again!
-  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
-  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).prodFlowGraphs;
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local immediateDeps :: [FlowVertex] = e.flowDeps;
   local productionFlowGraph :: ProductionGraph = findProduction(top.signature.fullName, myGraphs);
@@ -237,8 +237,8 @@ aspect production localValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   -- TODO oh no again!
-  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
-  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).prodFlowGraphs;
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local immediateDeps :: [FlowVertex] = e.flowDeps;
   local productionFlowGraph :: ProductionGraph = findProduction(top.signature.fullName, myGraphs);
@@ -258,8 +258,8 @@ aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   -- TODO oh no again!
-  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
-  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).prodFlowGraphs;
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local immediateDeps :: [FlowVertex] = e.flowDeps;
   local productionFlowGraph :: ProductionGraph = findProduction(top.signature.fullName, myGraphs);
@@ -335,8 +335,8 @@ aspect production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
 {
   -- TODO oh no again!
-  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
-  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).prodFlowGraphs;
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
   
   local depsForThisAttr :: [String] = inhDepsForSyn(at.lookupAttribute.fullName, nt.lookupType.fullName, myFlow);
 
@@ -368,8 +368,8 @@ aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
   -- TODO oh no again!
-  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
-  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).prodFlowGraphs;
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
   
   local productionFlowGraph :: ProductionGraph = findProduction(fName, myGraphs);
   local transitiveDeps :: [FlowVertex] = expandGraph([forwardEqVertex()], productionFlowGraph);
@@ -418,7 +418,7 @@ aspect production synDNTAccessDispatcher
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   -- TODO oh hell look at that
-  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
   local eTypeName :: String = performSubstitution(e.typerep, e.upSubst).typeName;
   local diff :: [String] =
@@ -526,7 +526,7 @@ aspect production decorateExprWithIntention
 top::Expr ::= l::Location  e::Expr  inh::ExprInhs  intention::[String]
 {
   -- TODO oh hell look at that
-  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).flowTypes;
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
 
   -- Look up each 'intention' in the flow type, and merge that together.

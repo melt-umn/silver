@@ -6,6 +6,7 @@ import silver:definition:env:env_parser;
 import silver:definition:core only location, env;
 import silver:definition:flow:env only flowDefs,flowDeps;
 import silver:definition:flow:ast;
+import silver:driver:util only RootSpec, interfaceRootSpec;
 
 terminal FlowTerm 'flow' lexer classes {C_1};
 terminal DefTerm 'def' lexer classes {C_1};
@@ -22,24 +23,24 @@ terminal LocalInhTerm 	 'localInh' lexer classes {C_1};
 terminal FwdInhTerm 	 'fwdInh' lexer classes {C_1};  
 terminal ExtraTerm 	 'extra' lexer classes {C_1};  
 
-attribute flowDefs occurs on IRootSpecParts, IRootSpecPart;
+attribute flowDefs occurs on IRoot, IRootPart;
 
 --------------- i don't know yet ------------------------
-aspect production parserRootSpec
-top::RootSpec ::= p::IRootSpecParts
+aspect production interfaceRootSpec
+top::RootSpec ::= p::IRoot _
 {
   top.flowDefs = p.flowDefs;
 }
 ---------------------------------------------------------
 
 aspect production aRoot1
-top::IRootSpecParts ::= r::IRootSpecPart
+top::IRoot ::= r::IRootPart
 {
   top.flowDefs = r.flowDefs;
 }
 
 aspect production aRoot2
-top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
+top::IRoot ::= r1::IRootPart r2::IRoot
 {
   top.flowDefs = r1.flowDefs ++ r2.flowDefs;
 }
@@ -47,13 +48,13 @@ top::IRootSpecParts ::= r1::IRootSpecPart r2::IRootSpecParts
 ----
 
 aspect default production
-top::IRootSpecPart ::=
+top::IRootPart ::=
 {
   top.flowDefs = [];
 }
 
 concrete production aRootFlow
-top::IRootSpecPart ::= 'flow' s::IFlows
+top::IRootPart ::= 'flow' s::IFlows
 {
   top.flowDefs = s.flowDefs;
 }

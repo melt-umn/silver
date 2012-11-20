@@ -1,7 +1,5 @@
 grammar silver:definition:env;
 
-import silver:definition:type;
-
 synthesized attribute unparse :: String;
 
 {--
@@ -104,4 +102,17 @@ String ::= s::[NamedSignatureElement] bv::[TyVar]
   return if null(s) then "" else h.unparse ++ (if null(tail(s)) then "" else (", " ++ unparseSignatureElementsHelp(tail(s), bv)));
 }
 
+-- TODO: these are broken
+
+function escapeString
+String ::= s::String
+{
+  return substitute("\"", "\\\"", s);
+}
+
+function unescapeString
+String ::= s::String
+{
+  return substitute("\\\"", "\"", s);
+}
 

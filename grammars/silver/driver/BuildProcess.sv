@@ -4,199 +4,111 @@ imports silver:definition:core;
 imports silver:definition:env;
 imports silver:definition:env:env_parser;
 
+imports silver:driver:util;
+exports silver:driver:util;
 imports silver:util;
-
 imports silver:util:cmdargs;
 
-inherited attribute rParser :: (ParseResult<Root> ::= String String);
-inherited attribute iParser :: (ParseResult<IRootSpec> ::= String String);
+inherited attribute svParser :: SVParser;
+inherited attribute sviParser :: SVIParser;
+
+type SVParser = (ParseResult<Root> ::= String String);
+type SVIParser = (ParseResult<IRoot> ::= String String);
 
 {--
- - Controls the compiler.
- - Could be eliminated, and the production turned into a function nowadays.
+ - Run the silver compiler, as if invoked from the command line.
  -}
-nonterminal RunUnit with io, rParser, iParser;
-
-abstract production run
-top::RunUnit ::= iIn::IO args::[String]
+function cmdLineRun
+IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
 {
-  -- See Command.sv for some flags.
-  production attribute flags::[Pair<String Flag>] with ++;
-  flags := [];
-  production attribute flagdescs::[String] with ++;
-  flagdescs := [];
-  local attribute usage::String;
-  usage = "Usage: silver [options] grammar\n\nFlag options:\n" ++ implode("\n", sortBy(stringLte, flagdescs)) ++ "\n";
-  
-  -- Parse the command line
-  production attribute a :: CmdArgs;
-  a = interpretCmdArgs(flags, args);
+  local argResult :: ParseResult<Decorated CmdArgs> = parseArgs(args);
+  local a :: Decorated CmdArgs = argResult.parseTree;
 
-  -- Grab a few environment variables
-  local envGP :: IOVal<String> = envVar("GRAMMAR_PATH", iIn);
+  -- Let's locally set up and verify the environment
+  local envSH :: IOVal<String> = envVar("SILVER_HOME", ioin);
+  local envGP :: IOVal<String> = envVar("GRAMMAR_PATH", envSH.io);
   local envSG :: IOVal<String> = envVar("SILVER_GEN", envGP.io);
-  local envSH :: IOVal<String> = envVar("SILVER_HOME", envSG.io);
-
-  -- A list of directories to search for grammars. (cmd line has priority over env)
-  production attribute searchPaths :: [String];
-  searchPaths = map(endWithSlash,  a.searchPath ++ explode(":", envGP.iovalue));
   
-  -- Where Silver is installed. (env var should be set by RunSilver.jar)
-  production attribute silverhome :: String;
-  silverhome = endWithSlash(envSH.iovalue);
+  local silverHome :: String =
+    endWithSlash(head(a.silverHomeOption ++ [envSH.iovalue]));
+  local silverGen :: String =
+    endWithSlash(head(a.genLocation ++ (if envSG.iovalue == "" then [] else [envSG.iovalue]) ++ [silverHome ++ "generated/"]));
+  local grammarPath :: [String] =
+    map(endWithSlash, a.searchPath ++ [silverHome ++ "grammars/"] ++ explode(":", envGP.iovalue) ++ ["."]);
+  local buildGrammar :: String = head(a.buildGrammar);
+
+  local check :: IOVal<[String]> =
+    checkEnvironment(a, silverHome, silverGen, grammarPath, buildGrammar, envSG.io);
   
-  -- The directory where generated files should be stored. (again, cmd line > env)
-  production attribute silvergen :: String with ++;
-  silvergen := endWithSlash(if a.genLocation == "" then envSG.iovalue else a.genLocation);
-
---------
--------- Phase 1: Pre-ops. Things that go on before we start parsing.
---------
-
-  -- Operations to execute _before_ we parse and link the grammars.
-  production attribute preOps :: [Unit] with ++;
-  preOps := []; -- See Unit.sv
-
-  -- Run the pre-ops.
-  local attribute preIO :: IOVal<Integer>;
-  preIO = runAll(envSH.io, unitMergeSort(preOps));
-
-  -- Let's actually go see if we can find this grammar.
-  local attribute grammarLocation :: IOVal<Maybe<String>>;
-  grammarLocation = findGrammarLocation(grammarToPath(a.buildGrammar), searchPaths, preIO.io);
-
-  -- The grammar location as string. Used for extensions.
-  production attribute grammarLocationString :: String = fromMaybe(".", grammarLocation.iovalue);
-
---------
--------- Phase 2: Begin actually compiling things
---------
-
-  -- Begin compiling the target grammar, and then chase down dependencies as needed.
-  production attribute unit :: CompilationUnit;
-  unit = compileGrammars(grammarLocation.io, searchPaths, [a.buildGrammar], [], a.doClean, silvergen);
-  unit.rParser = top.rParser;
-  unit.iParser = top.iParser;
-  unit.compiledGrammars = grammarEnv;
+  -- Compile grammars. There's some tricky circular program data flow here:
+  local rootStream :: IOVal<[Maybe<RootSpec>]> =
+    compileGrammars(svParser, sviParser, grammarPath, silverGen, buildGrammar :: grammarStream, a.doClean, check.io);
+  
+  local unit :: Compilation =
+    compilation(
+      foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], rootStream.iovalue)),
+      foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], reRootStream.iovalue)),
+      buildGrammar, silverHome, silverGen);
   unit.config = a;
   
-  -- Let's pause a moment and note what the result of the above is:
-  -- 1: unit.compiledList  ==  grammars actually parsed.
-  -- 2: unit.interfaces  ==  grammars that we went with the interface files semi-optimistically.
-  -- 3: unit.seenGrammars  ==  the names of all of the above, together.
- 
---------
--------- Phase 3: We've compiled things, now figure out what we need to recompile (ONLY for analysis, not re-translation)
---------
+  -- Note that this is used above. This outputs deps, and rootStream informs it.
+  local grammarStream :: [String] =
+    eatGrammars(1, [buildGrammar], rootStream.iovalue, unit.grammarList);
   
-  production attribute depAnalysis :: DependencyAnalysis;
-  depAnalysis = dependencyAnalysis(unit.interfaces, unit.compiledList);
-  
-  -- Again, the results of the above are:
-  -- depAnalysis.compiledList = RootSpecs needing translation
-  -- depAnalysis.needGrammars = grammars names that need to be rechecked for errors, but not translated
-  -- depAnalysis.interfaces = interfaces that are Just Fine and A-Okay as is
+  local reRootStream :: IOVal<[Maybe<RootSpec>]> =
+    compileGrammars(svParser, sviParser, grammarPath, silverGen, unit.recheckGrammars, true, rootStream.io);
 
---------
--------- Phase 4: Check those grammars we're uncertain about, to make sure there are no semantic errors, but
---------  don't do translation on them. (TODO: technically this is the source of build bugs...)
---------
+  local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), reRootStream.io);
 
-  -- Parse those grammars that depend on a changed grammar:
-  production attribute reUnit :: CompilationUnit;
-  reUnit = compileGrammars(unit.io, searchPaths, depAnalysis.needGrammars, unit.seenGrammars, true, silvergen);
-  reUnit.rParser = top.rParser;
-  reUnit.iParser = top.iParser;
-  reUnit.compiledGrammars = grammarEnv;
-  reUnit.config = a;
-  
-  -- Once more,
-  -- 1: reUnit.compiledList  ==  parsed versions of grammar that we aren't translating.
-  -- (2: reUnit.interfaces  ==  EMPTY.)
-  -- (3: reUnit.seenGrammars  ==  should be the same set as unit.seenGrammars)
-
---------
--------- Phase 5: Let's pull a few things that are very useful for post-ops to use here:
---------
-
-  -- All the specs we're looking at, for analysis:
-  production attribute grammars :: [Decorated RootSpec];
-  grammars = unit.compiledList ++ reUnit.compiledList ++ getSpecs(depAnalysis.interfaces);
-  
-  -- A nice environment for looking up a grammar: (used above, passed down into each grammar)
-  production attribute grammarEnv :: EnvTree<Decorated RootSpec>;
-  grammarEnv = directBuildTree(map(grammarPairing, grammars));
-  
-  -- Only those grammars that are used. (unit unconditionally builts conditionally built
-  -- grammars. Here we produce a set that would not include them if they are not used.)
-  production attribute grammarsDependedUpon :: [String];
-  grammarsDependedUpon = expandAllDeps([a.buildGrammar], [], grammarEnv);
-  
-  -- This is a list of RootSpecs that need translating:
-  production attribute grammarsToTranslate :: [Decorated RootSpec];
-  grammarsToTranslate = keepGrammars(grammarsDependedUpon, depAnalysis.compiledList);
-  
---------
--------- Phase 6: Translation.  Makes use of the above production attributes.
---------
-
-  --the operations that will be executed _after_ parsing and linking of the grammars has been done
-  production attribute postOps :: [Unit] with ++;
-  postOps := [];
-  
-  local attribute postIO :: IOVal<Integer>;
-  postIO = runAll(reUnit.io, unitMergeSort(postOps));
-  
-  top.io = if a.cmdError.isJust -- problem interpreting args
-           then exit(1, print("\n" ++ a.cmdError.fromJust ++ "\n\n" ++ usage, iIn))
-           else if preIO.iovalue != 0 -- the preops tell us to quit.
-           then exit(preIO.iovalue, preIO.io)
-           else if null(a.cmdRemaining) -- no grammar left on cmd line
-           then exit(1, print("\nNo grammar to build was specified!\n\n" ++ usage, preIO.io))
-           else if length(a.cmdRemaining) > 1 -- more than just a grammar left
-           then exit(1, print("\nUnable to interpret: " ++ implode(" ", a.cmdRemaining) ++ "\n\n" ++ usage, preIO.io))
-           else if !grammarLocation.iovalue.isJust
-           then exit(2, print("\nGrammar '" ++ a.buildGrammar ++ "' could not be located, make sure that the " ++ 
-                              "grammar name is correct and it's location is on $GRAMMAR_PATH.\n\n", grammarLocation.io))
-           else if null(unit.compiledList)
-           then if null(grammars)
-                then exit(3, print("\nGrammar '" ++ a.buildGrammar ++ "' was found at '" ++ grammarLocation.iovalue.fromJust 
-                                                       ++ "' but there were no silver source files there!\n\n", grammarLocation.io))
-                else exit(4, print("\nGrammar '" ++ a.buildGrammar ++ "' is up to date. Use --clean to force a recompile.\n\n",
-                                                       grammarLocation.io))
-           else exit(postIO.iovalue, postIO.io);
+  return if a.displayVersion then ioval(print("Silver Version 0.3.6-dev\n", ioin), 0)
+  else if !argResult.parseSuccess then ioval(print(argResult.parseErrors, ioin), 1)
+  else if !null(check.iovalue) then ioval(print(implode("\n", check.iovalue), check.io), 1)
+  else actions;
 }
 
-
-{---
-Some notes on "compiler state":
-
-Things that are copied down from driver to asts:
- - compiledGrammars - all root specs that are being built.
- - command - command line arguments (turn warnings, etc on)
- - dependency analysis - translation, etc wants to know what to build
- - exports graph - it'd be nice for some of those future warnings
- - 
-
----}
-
-
-function expandAllDeps
-[String] ::= need::[String]  seen::[String]  e::EnvTree<Decorated RootSpec>
+{--
+ - Consumes a stream of parses, outputs a stream of new dependencies.
+ - Typically used as a circular program with 'compileGrammars'
+ -
+ - @param n  Expected number of new inputs from rootStream
+ - @param sofar  Set of grammars already seen, and should not be requested again
+ - @param rootStream  Stream of found/not found info. Should not be used except to test presence
+ - @param grammars  List of grammars *in the same order as 'just' appears in rootStream*
+ - @return  A stream of new dependencies
+ -}
+function eatGrammars
+[String] ::= n::Integer  sofar::[String]  rootStream::[Maybe<a>]  grammars::[Decorated RootSpec]
 {
-  local attribute g :: [Decorated RootSpec];
-  g = searchEnvTree(head(need), e);
-
-  return if null(need) then seen
-         -- If the grammar has already been taken care of, or doesn't exist, discard it.
-         else if contains(head(need), seen) || null(g) then expandAllDeps(tail(need), seen, e)
-         -- Otherwise, tack its all deps list to the need list, and add this grammar to the taken care of list.
-         else expandAllDeps(tail(need) ++ head(g).allGrammarDependencies, head(need) :: seen, e);
+  local it :: Decorated RootSpec = head(grammars);
+  
+  local directDeps :: [String] = mentionedGrammars(it);
+  
+  local newDeps :: [String] = rem(directDeps, sofar);
+  
+  return
+    if n == 0 then
+      []
+    else if !head(rootStream).isJust then
+      eatGrammars(n-1, sofar, tail(rootStream), grammars)
+    else
+      newDeps ++ eatGrammars(n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars));
 }
 
-function keepGrammars
-[Decorated RootSpec] ::= k::[String] d::[Decorated RootSpec]
+-- TODO: look up a standard name for this, and put in std lib?
+function consMaybe
+[a] ::= h::Maybe<a>  t::[a]
 {
-  return if null(d) then [] else (if contains(head(d).declaredName, k) then [head(d)] else []) ++ keepGrammars(k, tail(d));
+  return if h.isJust then h.fromJust :: t else t;
 }
+
+
+{--
+ - Ensures a string ends with a forward slash. Safe to use if it already has one.
+ -}
+function endWithSlash
+String ::= s::String
+{
+  return if endsWith("/", s) then s else s ++ "/";
+}
+
 

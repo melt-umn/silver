@@ -9,7 +9,7 @@ import silver:driver;
 import silver:analysis:warnings:defs;
 import silver:analysis:warnings:exporting;
 
-parser rParse::Root {
+parser svParse::Root {
   silver:host;
 
   silver:extension:convenience;
@@ -36,7 +36,7 @@ parser rParse::Root {
   silver:modification:impide;
 }
 
-parser iParse::IRootSpec {
+parser sviParse::IRoot {
   silver:host:env;
   silver:definition:flow:env_parser;
   
@@ -50,9 +50,7 @@ parser iParse::IRootSpec {
 }
 
 function main 
-IOVal<Integer> ::= args::[String] i::IO
+IOVal<Integer> ::= args::[String] ioin::IO
 {
-  -- please note that run in BuildProcess.sv will call exit(), so we may not "get back here"
-  return ioval((decorate run(i, args) with {rParser = rParse; iParser = iParse;}).io,
-               0);
+  return cmdLineRun(args, svParse, sviParse, ioin);
 }

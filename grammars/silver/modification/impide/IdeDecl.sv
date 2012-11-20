@@ -4,6 +4,7 @@ grammar silver:modification:impide;
 
 import silver:modification:copper_mda only findSpec; -- TODO
 import silver:modification:impide:cstast;
+import silver:driver:util only RootSpec;
 import silver:extension:list;
 import silver:analysis:typechecking:core;
 import silver:modification:ffi;
