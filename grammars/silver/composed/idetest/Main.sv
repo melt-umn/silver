@@ -61,26 +61,18 @@ IOVal<Integer> ::= args::[String] ioin::IO
 
 --- ... we're adding an ide declaration here
 
-temp_imp_ide_dcl svParse ".sv" ;
-
-{-
-Hi Ming:
-
-run got restructured. You can see the invocation above for an example.
-It now properly returns an IOVal instead of calling exit() when an error
-happens.
-
-It's probably not suitable for you currently, but I'm fixing that...
+temp_imp_ide_dcl rParse ".sv" { 
+  analyzer getErrors;--a function whose signature must be "[String] ::= args::[String] i::IO"
+};
 
 function getErrors 
 [String] ::= args::[String] i::IO
 {
 
-  local attribute ru :: Decorated RunUnit;
-  ru = decorate run(i, args) with {svParser = svParse; sviParser = sviParse;};
+  local ru :: IOVal<[String]> = ideRun(args, svParse, sviParser, i);
 
-  return ru.errorList;
+  return ru.iovalue;
 }
--}
+
 -- Yeah, that's a hack! :D
 
