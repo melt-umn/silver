@@ -40,9 +40,14 @@ top::AGDcl ::= ag1::AGDcl ag2::AGDcl
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  _ _
+top::RootSpec ::= g::Grammar  _ _ _
 {
   top.ideSpecs = g.ideSpecs;
+}
+aspect production interfaceRootSpec
+top::RootSpec ::= _ _
+{
+  top.ideSpecs = []; -- todo
 }
 
 aspect production grammarPart

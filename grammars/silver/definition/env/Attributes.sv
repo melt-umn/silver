@@ -93,6 +93,7 @@ autocopy attribute grammarFlowTypes :: EnvTree<Pair<String String>>;
  - The path to the origin of this root spec
  -}
 synthesized attribute grammarSource :: String;
+synthesized attribute grammarTime :: Integer;
 
 
 

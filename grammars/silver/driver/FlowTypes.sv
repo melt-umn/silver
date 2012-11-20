@@ -7,17 +7,17 @@ import silver:util:raw:treemap as rtm;
 -- Hide all the flow type computation over here
 
 aspect production compilation
-top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::String silverGen::String
 {
   -- aggregate all flow def information, filtering out those that are not permitted to affect flow types
-  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), top.grammarList)));
+  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), grammars)));
   local allFlowEnv :: Decorated FlowEnv = fromFlowDefs(allFlowDefs);
   
   -- Look up tree for production info
   local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlowDefs.prodGraphContribs);
   
   -- hack to allow us to look up certain info... TODO: maybe hack?
-  local allRealDefs :: [Def] = foldr(append, [], map((.defs), top.grammarList));
+  local allRealDefs :: [Def] = foldr(append, [], map((.defs), grammars));
   local allRealEnv :: Decorated Env = toEnv(allRealDefs);
   
   -- List of all productions (is this nub needed? TODO)
@@ -44,6 +44,11 @@ top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverG
   production flowTypes :: EnvTree<Pair<String String>> = flowTypes3.snd;
   production finalGraphs :: [ProductionGraph] = flowTypes3.fst;
   
+  g.productionFlowGraphs = finalGraphs;
+  g.grammarFlowTypes = flowTypes;
+  
+  r.productionFlowGraphs = finalGraphs;
+  r.grammarFlowTypes = flowTypes;
 
   -- Note: Nope! Not okay to use the filtered flowdefs for these. UGHHH
   -- Problem with 'fwd' nodes disappearing in some computations (checking known-generated fwd equations flow types)

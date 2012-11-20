@@ -13,7 +13,7 @@ String ::= r::Decorated RootSpec
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  _ _
+top::RootSpec ::= g::Grammar  _ _ _
 {
   top.flowDefs = g.flowDefs;
 }

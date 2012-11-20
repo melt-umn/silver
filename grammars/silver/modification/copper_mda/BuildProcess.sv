@@ -9,7 +9,7 @@ import silver:util:cmdargs;
 -- TODO CRIPES this is all bad, bad, bad code.
 
 aspect production compilation
-top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
 {
   top.postOps <- [generateMdaSpecs(g.compiledGrammars, grammarsToTranslate, silverGen)]; 
 

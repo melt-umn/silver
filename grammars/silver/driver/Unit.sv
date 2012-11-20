@@ -9,6 +9,23 @@ grammar silver:driver;
  - 0 = success of course
  -}
 
+{- Orders:
+ - 0: errors
+ - 1: recheck errors
+ - 3: interfaces
+ - 4: classes
+ - 5: copper_mda
+ - 6: buildxml
+ - 7: impide
+ -}
+
+aspect production compilation
+top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::String silverGen::String
+{
+  top.postOps <- [doInterfaces(grammarsToTranslate, silverGen)];
+  top.postOps <- if top.config.noBindingChecking then [] else
+    [printAllBindingErrors(grammars ++ r.grammarList)]; 
+}
 
 abstract production doInterfaces
 top::Unit ::= u::[Decorated RootSpec] genPath::String
@@ -113,4 +130,5 @@ top::Unit ::= specs::[Decorated RootSpec]
 
   top.order = 0;
 }
+
 

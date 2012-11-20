@@ -25,7 +25,7 @@ IOVal<Integer> ::= l::[Unit] i::IO
   now = head(l);
   now.ioIn = i;
 
-  return  if null(l) 
+  return  if unsafeTrace(null(l), i) -- TODO: this is just to force strictness...
 	  then ioval(i, 0)
 	  else if now.code != 0
 	       then ioval(now.io, now.code)

@@ -25,7 +25,7 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
   flagdescs <- ["\t--copperdump  : force Copper to dump parse table information"];
 }
 aspect production compilation
-top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
 {
   classpathCompiler <- ["${sh}/jars/CopperCompiler.jar"];
   classpathRuntime <- ["${sh}/jars/CopperRuntime.jar"];
