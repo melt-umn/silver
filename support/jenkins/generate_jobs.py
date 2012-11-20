@@ -19,7 +19,11 @@ silverStableWorkspace = "/export/scratch/melt-jenkins/custom-stable-dump"
 jenkinsURL = "localhost:8080"
 # User name and API token. Note this is not your password! Check user config page to see it.
 jenkinsUsername = "tedinski"
-jenkinsAPIToken = "33f325b9b8a8cacd5cf612e2017a91e1"
+
+# To avoid committing API tokens ever again...
+f = open("~/.jenkinsapi", 'r')
+jenkinsAPIToken = f.readline()
+f.close()
 
 ## END: config stuff
 
