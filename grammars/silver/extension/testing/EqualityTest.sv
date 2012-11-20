@@ -128,9 +128,9 @@ ag::AGDcl ::= kwd::'equalityTest'
         '::=', productionRHSNil()),
       defaultProductionBody(foldr(productionStmtsCons, productionStmtsNone(), [
         localAttributeDcl('local', 'attribute', valueref, '::', valueType, ';'),
-        valueDef(qNameId(valueref), '=', value, ';'),
+        valueEq(qNameId(valueref), '=', value, ';'),
         localAttributeDcl('local', 'attribute', expectedref, '::', valueType, ';'),
-        valueDef(qNameId(expectedref), '=', expected, ';'),
+        valueEq(qNameId(expectedref), '=', expected, ';'),
         attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameId(msgref), '=',
           foldStringExprs([
             strCnst("Test at " ++ ag.location.unparse ++ " failed.\nChecking that expression\n   " ++

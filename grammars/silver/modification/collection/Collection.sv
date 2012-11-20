@@ -37,7 +37,7 @@ top::NameOrBOperator ::= q::QName
     else [err(top.location, q.pp ++ " must be of type " ++ checkOperationType.rightpp ++
             " instead it is of type " ++ checkOperationType.leftpp)];
   
-  top.errors <- 
+  top.errors <- if !null(q.lookupValue.errors) then [] else
     case q.lookupValue.dcl of
     | funDcl(_,_,_) -> operationErrors
     | prodDcl(_,_,_) -> operationErrors
@@ -129,7 +129,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name botl::BracketedOptTypeList '::'
   production attribute tl :: Decorated TypeList;
   tl = botl.typelist;
 
-  top.defs = addSynColDcl(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation, emptyDefs());
+  top.defs = [synColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
 
 --------
   botl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
@@ -164,7 +164,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name botl::BracketedOptTypeList '::' t
   production attribute tl :: Decorated TypeList;
   tl = botl.typelist;
 
-  top.defs = addInhColDcl(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation, emptyDefs());
+  top.defs = [inhColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
 
 --------
   botl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
@@ -194,12 +194,12 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
   top.pp = "production attribute " ++ a.name ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.productionAttributes = addLocalColDcl(top.grammarName, a.location, fName, te.typerep, q.operation, emptyDefs());
+  top.productionAttributes = [localColDef(top.grammarName, a.location, fName, te.typerep, q.operation)];
 
   production attribute fName :: String;
   fName = top.signature.fullName ++ ":local:" ++ a.name;
 
-  top.defs = emptyDefs();
+  top.defs = [];
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
@@ -359,10 +359,12 @@ concrete production attrContainsAppend
 top::ProductionStmt ::= dl::DefLHS '.' attr::QName '<-' e::Expr ';'
 {
   top.pp = dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
+  top.location = attr.location;
+  
   top.errors <- attr.lookupAttribute.errors;
 
-  top.productionAttributes = emptyDefs();
-  top.defs = emptyDefs();
+  top.productionAttributes = [];
+  top.defs = [];
 
   forwards to if null(attr.lookupAttribute.dcls)
               then errorAttributeDef(dl, $2, attr, terminal(Equal_t, "<-", $4), e)
@@ -373,10 +375,12 @@ concrete production attrContainsBase
 top::ProductionStmt ::= dl::DefLHS '.' attr::QName ':=' e::Expr ';'
 {
   top.pp = dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
+  top.location = attr.location;
+
   top.errors <- attr.lookupAttribute.errors;
 
-  top.productionAttributes = emptyDefs();
-  top.defs = emptyDefs();
+  top.productionAttributes = [];
+  top.defs = [];
 
   forwards to if null(attr.lookupAttribute.dcls)
               then errorAttributeDef(dl, $2, attr, terminal(Equal_t, ":=", $4), e)
@@ -387,10 +391,12 @@ concrete production valContainsAppend
 top::ProductionStmt ::= val::QName '<-' e::Expr ';'
 {
   top.pp = val.pp ++ " <- " ++ e.pp ++ ";";
+  top.location = val.location;
+  
   top.errors <- val.lookupValue.errors;
 
-  top.productionAttributes = emptyDefs();
-  top.defs = emptyDefs();
+  top.productionAttributes = [];
+  top.defs = [];
   
   forwards to if null(val.lookupValue.dcls)
               then errorValueDef(val, terminal(Equal_t, "<-", $2), e)
@@ -401,10 +407,12 @@ concrete production valContainsBase
 top::ProductionStmt ::= val::QName ':=' e::Expr ';'
 {
   top.pp = val.pp ++ " := " ++ e.pp ++ ";";
+  top.location = val.location;
+
   top.errors <- val.lookupValue.errors;
 
-  top.productionAttributes = emptyDefs();
-  top.defs = emptyDefs();
+  top.productionAttributes = [];
+  top.defs = [];
   
   forwards to if null(val.lookupValue.dcls)
               then errorValueDef(val, terminal(Equal_t, ":=", $2), e)

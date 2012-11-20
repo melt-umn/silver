@@ -15,6 +15,6 @@ top::IDclInfo ::= 'type' '(' l::ILocation ',' s::IName ',' td::ITyVarDcls ',' t:
 {
   t.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = addTypeDcl(top.grammarName, l.location, s.aname, td.tyvars, t.typerep, emptyDefs());
+  top.defs = [typeAliasDef(top.grammarName, l.location, s.aname, td.tyvars, t.typerep)];
 }
 

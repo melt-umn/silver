@@ -12,7 +12,7 @@ top::AGDcls ::=
   top.pp = "";
   top.location = loc(top.file, -1, -1);
 
-  top.defs = emptyDefs();
+  top.defs = [];
   top.errors := [];
   top.moduleNames = [];
 }
@@ -23,7 +23,7 @@ top::AGDcls ::= h::AGDcl t::AGDcls
   top.pp = h.pp ++ "\n" ++ t.pp;
   top.location = h.location;
 
-  top.defs = appendDefs(h.defs, t.defs);
+  top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
   top.moduleNames = h.moduleNames ++ t.moduleNames;
 }
@@ -54,7 +54,7 @@ top::AGDcl ::= h::AGDcl t::AGDcl
   top.pp = h.pp ++ "\n" ++ t.pp;
   top.location = h.location;
 
-  top.defs = appendDefs(h.defs, t.defs);
+  top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
   top.moduleNames = h.moduleNames ++ t.moduleNames;
 }
@@ -64,7 +64,7 @@ top::AGDcl ::=
 {
   -- can't provide pp or location!
   top.moduleNames = [];
-  top.defs = emptyDefs();
+  top.defs = [];
   --top.errors := []; -- should never be omitted, really.
 }
 

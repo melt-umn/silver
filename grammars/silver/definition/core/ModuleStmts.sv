@@ -1,5 +1,7 @@
 grammar silver:definition:core;
 
+imports silver:driver:util;
+
 nonterminal ModuleStmts with config, grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
 nonterminal ModuleStmt with config, grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
 
@@ -42,17 +44,17 @@ top::Module ::= l::Location
   production attribute med :: ModuleExportedDefs;
   med = moduleExportedDefs(l, compiledGrammars, grammarDependencies, need, seen);
   
-  local attribute d1 :: Defs;
-  d1 = if null(onlyFilter) then med.defs else filterDefsInclude(med.defs, onlyFilter);
+  local attribute d1 :: [Def];
+  d1 = if null(onlyFilter) then med.defs else filter(filterDefOnEnvItem(envItemInclude(_, onlyFilter), _), med.defs);
 
-  local attribute d2 :: Defs;
-  d2 = if null(hidingFilter) then d1 else filterDefsExclude(d1, hidingFilter);
+  local attribute d2 :: [Def];
+  d2 = if null(hidingFilter) then d1 else filter(filterDefOnEnvItem(envItemExclude(_, hidingFilter), _), d1);
 
-  local attribute d3 :: Defs;
-  d3 = if null(withRenames) then d2 else mapRenameDefs(d2, withRenames);
+  local attribute d3 :: [Def];
+  d3 = if null(withRenames) then d2 else map(mapDefOnEnvItem(envItemApplyRenaming(_, withRenames), _), d2);
 
-  local attribute d4 :: Defs;
-  d4 = if asPrepend == "" then d3 else mapPrependDefs(d3, asPrepend ++ ":");
+  local attribute d4 :: [Def];
+  d4 = if asPrepend == "" then d3 else map(mapDefOnEnvItem(envItemPrepend(_, asPrepend ++ ":"), _), d3);
 
   top.defs = d4;
   top.errors := med.errors;
@@ -83,8 +85,8 @@ top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated Root
   new_need = if null(rs) then tail(need)
              else rem(makeSet(tail(need) ++ add_to_need), new_seen);
   
-  top.defs = if null(need) then emptyDefs() else
-             if null(rs) then recurse.defs else appendDefs(head(rs).defs, recurse.defs);
+  top.defs = if null(need) then [] else
+             if null(rs) then recurse.defs else head(rs).defs ++ recurse.defs;
   top.errors := if null(need) then [] else 
              if null(rs) then [err(l, "Grammar '" ++ gram ++ "' cannot be found.")] ++ recurse.errors else recurse.errors;
 }
@@ -120,7 +122,7 @@ top::ImportStmts ::=
   top.errors := [];
 
   top.moduleNames = [];
-  top.defs = emptyDefs();
+  top.defs = [];
 }
 
 concrete production consImportStmts
@@ -132,7 +134,7 @@ top::ImportStmts ::= h::ImportStmt t::ImportStmts
   top.errors := h.errors ++ t.errors;
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
-  top.defs = appendDefs(h.defs, t.defs);
+  top.defs = h.defs ++ t.defs;
 }
 
 abstract production appendImportStmts
@@ -144,7 +146,7 @@ top::ImportStmts ::= h::ImportStmts t::ImportStmts
   top.errors := h.errors ++ t.errors;
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
-  top.defs = appendDefs(h.defs, t.defs);
+  top.defs = h.defs ++ t.defs;
 }
 
 --------------
@@ -159,7 +161,7 @@ top::ModuleStmts ::=
   top.errors := [];
 
   top.moduleNames = [];
-  top.defs = emptyDefs();
+  top.defs = [];
   top.exportedGrammars = [];
   top.optionalGrammars = [];
   top.condBuild = [];
@@ -174,7 +176,7 @@ top::ModuleStmts ::= h::ModuleStmt t::ModuleStmts
   top.errors := h.errors ++ t.errors;
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
-  top.defs = appendDefs(h.defs, t.defs);
+  top.defs = h.defs ++ t.defs;
   top.exportedGrammars = h.exportedGrammars ++ t.exportedGrammars;
   top.optionalGrammars = h.optionalGrammars ++ t.optionalGrammars;
   top.condBuild = h.condBuild ++ t.condBuild;
@@ -204,7 +206,7 @@ top::ModuleStmt ::= 'exports' m::ModuleName ';'
   top.errors := m.errors;
 
   top.moduleNames = m.moduleNames;
-  top.defs = emptyDefs();
+  top.defs = [];
   top.exportedGrammars = m.moduleNames;
   top.optionalGrammars = [];
   top.condBuild = [];
@@ -219,7 +221,7 @@ top::ModuleStmt ::= 'exports' m::QName 'with' c::QName ';'
   top.errors := [];
 
   top.moduleNames = [];
-  top.defs = emptyDefs();
+  top.defs = [];
   top.exportedGrammars = [];
   top.optionalGrammars = [];
   top.condBuild = [[m.name, c.name]];
@@ -241,7 +243,7 @@ top::ModuleStmt ::= 'option' m::QName ';'
   top.errors := [];
 
   top.moduleNames = [];
-  top.defs = emptyDefs();
+  top.defs = [];
   top.exportedGrammars = [];
   top.optionalGrammars = [m.name];
   top.condBuild = [];

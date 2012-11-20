@@ -8,64 +8,23 @@ grammar silver:driver;
  - 127 = "abnormal" success (e.g. printed version string, quit now)
  - 0 = success of course
  -}
-closed nonterminal Unit with ioIn, io, code, order;
 
-synthesized attribute code :: Integer;
-synthesized attribute order :: Integer;
-inherited attribute ioIn :: IO;
-synthesized attribute ioOut :: IO;
+{- Orders:
+ - 0: errors
+ - 1: recheck errors
+ - 3: interfaces
+ - 4: classes
+ - 5: copper_mda
+ - 6: buildxml
+ - 7: impide
+ -}
 
-
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect production compilation
+top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::String silverGen::String
 {
-  preOps <- [checkSilverHome(silverhome), checkSilverGen(silvergen)];
-  preOps <- if a.displayVersion then [printVersion()] else [];
-  postOps <- [doInterfaces(grammarsToTranslate, silvergen)];
-}
-
-function runAll
-IOVal<Integer> ::= i::IO l::[Unit]
-{
-  local attribute now :: Unit;
-  now = head(l);
-  now.ioIn = i;
-
-  return  if null(l) 
-	  then ioval(i, 0)
-	  else if now.code != 0
-	       then ioval(now.io, now.code)
-	       else runAll(now.io, tail(l));
-}
-
-abstract production checkSilverHome
-top::Unit ::= s::String
-{
-  local attribute problem :: Boolean;
-  problem = s == "/";
-
-  top.io = if problem then print("Missing SILVER_HOME. Installation problem?\n",top.ioIn) else top.ioIn;
-  top.code = if problem then -1 else 0;
-  top.order = 0;
-}
-
-abstract production checkSilverGen
-top::Unit ::= s::String
-{
-  local attribute problem :: Boolean;
-  problem = s == "/";
-
-  top.io = if problem then print("Missing SILVER_GEN or -G <path>. A location to store intermediate files is necessary.\n",top.ioIn) else top.ioIn;
-  top.code = if problem then -2 else 0;
-  top.order = 0;
-}
-
-abstract production printVersion
-top::Unit ::= 
-{
-  top.order = 0;
-  top.io = print("Silver Version 0.3.6-dev\n", top.ioIn);
-  top.code = 127;
+  top.postOps <- [doInterfaces(grammarsToTranslate, silverGen)];
+  top.postOps <- if top.config.noBindingChecking then [] else
+    [printAllBindingErrors(grammars ++ r.grammarList)]; 
 }
 
 abstract production doInterfaces
@@ -137,6 +96,39 @@ IO ::= iIn::IO path::String files::[String]
   return if null(files) then iIn
          else if !isf.iovalue then deleteStaleDataFiles(isf.io, path, tail(files))
          else deleteStaleDataFiles( deleteFile(path ++ head(files), isf.io).io, path, tail(files));
+}
+
+abstract production printAllBindingErrors
+top::Unit ::= specs::[Decorated RootSpec]
+{
+  forwards to printAllBindingErrorsHelp(specs)
+	with {
+		ioIn = print("Checking For Errors.\n", top.ioIn);
+	};
+}
+
+abstract production printAllBindingErrorsHelp
+top::Unit ::= specs::[Decorated RootSpec]
+{
+  local attribute es :: [Message];
+  es = head(specs).errors;
+
+  local attribute i :: IO;
+  i = if null(es)
+      then top.ioIn
+      else print("Errors for : " ++ head(specs).declaredName ++ " :\n" ++ foldMessages(es) ++ "\n\n", top.ioIn);
+
+  local attribute recurse :: Unit;
+  recurse = printAllBindingErrorsHelp(tail(specs));
+  recurse.ioIn = i;
+
+  top.io = if null(specs) then top.ioIn else recurse.io;
+
+  top.code = if null(specs) || (!containsErrors(es, false) && recurse.code == 0)
+	     then 0
+	     else 20;
+
+  top.order = 0;
 }
 
 

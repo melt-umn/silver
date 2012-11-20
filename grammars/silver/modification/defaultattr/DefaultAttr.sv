@@ -17,20 +17,20 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   top.pp = "aspect default production\n" ++ lhs.pp ++ "::" ++ te.pp ++ " ::=\n" ++ body.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.defs = emptyDefs();
+  top.defs = [];
 
   production attribute namedSig :: NamedSignature;
   namedSig = namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName, [], namedSignatureElement(lhs.name, te.typerep));
 
   top.errors := te.errors ++ body.errors;
 
-  local attribute fakedDefs :: Defs;
-  fakedDefs = addDefaultLhsDcl(top.grammarName, lhs.location, lhs.name, te.typerep, emptyDefs());
+  local attribute fakedDefs :: [Def];
+  fakedDefs = [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];
   
-  local attribute sigDefs :: Defs;
+  local attribute sigDefs :: [Def];
   sigDefs = addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, te.lexicalTypeVariables);
 
-  body.env = newScopeEnv(appendDefs(fakedDefs, sigDefs), top.env);
+  body.env = newScopeEnv(fakedDefs ++ sigDefs, top.env);
   body.signature = namedSig;
   body.blockContext = defaultAspectContext();
 
@@ -42,10 +42,10 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   top.valueWeaving := body.valueWeaving; -- Probably should be empty?
 }
 
-function addDefaultLhsDcl
-Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
+function defaultLhsDef
+Def ::= sg::String sl::Location fn::String ty::TypeExp
 {
-  return consValueDef(defaultEnvItem(defaultLhsDcl(sg,sl,fn,ty)), defs);
+  return valueDef(defaultEnvItem(defaultLhsDcl(sg,sl,fn,ty)));
 }
 abstract production defaultLhsDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp

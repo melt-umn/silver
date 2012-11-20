@@ -323,17 +323,3 @@ String ::= d::Decorated SyntaxDcl
   end;
 }
 
-
--- TODO: fix. These should exist in some sort of library somewhere...
-function escapeString
-String ::= s::String
-{
-  return substitute("\"", "\\\"", s);
-}
-
-function unescapeString
-String ::= s::String
-{
-  return substitute("\\\"", "\"", s);
-}
-

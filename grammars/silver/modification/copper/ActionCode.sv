@@ -19,7 +19,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
   acode.env = newScopeEnv(
                 addTerminalAttrDefs(
-                 appendDefs(acode.defs, ns.actionDefs)), top.env);
+                 acode.defs ++ ns.actionDefs), top.env);
 
   production attribute namedSig :: NamedSignature;
   namedSig = namedSignature(fName, ns.inputElements, ns.outputElement);
@@ -43,9 +43,9 @@ concrete production actionCode_c
 top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 {
   top.pp = "{\n" ++ stmts.pp ++ "}\n";
-  top.defs = hackTransformLocals(stmts.defs.valueList);
+  top.defs = hackTransformLocals(stmts.defs);
 
-  top.actionCode = hacklocaldeclarations(stmts.defs.valueList) ++ stmts.translation;
+  top.actionCode = hacklocaldeclarations(stmts.defs) ++ stmts.translation;
 
   top.errors := stmts.errors;
   
@@ -62,17 +62,17 @@ top::ActionCode_c ::= '{' '}'
 
 -- TODO hacky. ideally we'd do this where local attributes are declared, not here.
 function hacklocaldeclarations
-String ::= l::[EnvItem]
+String ::= l::[Def]
 {
   return if null(l) then "" else head(l).dcl.typerep.transType ++ " " ++ makeCopperName(head(l).dcl.fullName) ++ ";\n" ++ hacklocaldeclarations(tail(l));
 }
 
 function hackTransformLocals
-Defs ::= l::[EnvItem]
+[Def] ::= l::[Def]
 {
-  return if null(l) then emptyDefs()
+  return if null(l) then []
          else case head(l).dcl of
-                localDcl(sg,sl,fn,ty) -> addParserLocalDcl(sg,sl,fn,ty, hackTransformLocals(tail(l)))
+              | localDcl(sg,sl,fn,ty) -> parserLocalDef(sg,sl,fn,ty) :: hackTransformLocals(tail(l))
               | _ -> hackTransformLocals(tail(l)) -- TODO: possibly error??
               end;
 }
@@ -82,7 +82,7 @@ Defs ::= l::[EnvItem]
 
 -- We don't care about the LHS.
 
-synthesized attribute actionDefs :: Defs occurs on ProductionSignature, ProductionRHS, ProductionRHSElem;
+synthesized attribute actionDefs :: [Def] occurs on ProductionSignature, ProductionRHS, ProductionRHSElem;
 
 aspect production productionSignature
 top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
@@ -93,18 +93,18 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
 aspect production productionRHSNil
 top::ProductionRHS ::= 
 {
-  top.actionDefs = emptyDefs();
+  top.actionDefs = [];
 }
 
 aspect production productionRHSCons
 top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 {
-  top.actionDefs = appendDefs(h.actionDefs, t.actionDefs);
+  top.actionDefs = h.actionDefs ++ t.actionDefs;
 }
 
 aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::Type
 {
-  top.actionDefs = addActionChildDcl(top.grammarName, t.location, fName, t.typerep, emptyDefs());
+  top.actionDefs = [actionChildDef(top.grammarName, t.location, fName, t.typerep)];
 }
 

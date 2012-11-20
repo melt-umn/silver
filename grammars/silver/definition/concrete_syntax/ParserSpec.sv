@@ -1,6 +1,6 @@
 grammar silver:definition:concrete_syntax;
 
-import silver:driver only computeDependencies; -- TODO this is a bad dependency!!
+import silver:driver:util only computeDependencies; -- TODO this is a bad dependency!!
 
 {--
  - An abstract representation of a parser declaration.

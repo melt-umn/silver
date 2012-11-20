@@ -7,7 +7,6 @@ exports silver:definition:type:syntax;
 exports silver:definition:regex;
 
 -- symbols
-exports silver:analysis:binding:driver;
 exports silver:analysis:typechecking:core;
 
 --We wish regex to remain a generic grammar, so we resolve the conflict here!

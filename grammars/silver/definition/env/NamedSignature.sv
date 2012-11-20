@@ -1,7 +1,5 @@
 grammar silver:definition:env;
 
-import silver:definition:type;
-
 nonterminal NamedSignature with inputElements, outputElement, fullName, unparse, boundVariables, inputNames, inputTypes, typerep;
 nonterminal NamedSignatureElement with typerep, elementName, unparse, boundVariables;
 

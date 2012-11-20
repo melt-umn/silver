@@ -145,13 +145,19 @@ public abstract class Node {
 	public abstract String getNameOfLocalAttr(final int index);
 
 	/**
+	 * Reports whether or not this production forwards.
+	 * 
+	 * @return true is {@link #evalForward} can be called, false if that immediately throws.
+	 */
+	public abstract boolean hasForward();
+	/**
 	 * It may help conceptually to imagine this returns a Lazy that the DN then calls with itself as context.
 	 * We've simply merged this into this method to avoid an unnecessary Lazy.
 	 *
 	 * @param context The DN of this node, to use to evaluate the forward equation.
 	 * @return The Node that context forwards to.
 	 */
-	public abstract Node getForward(final DecoratedNode context);
+	public abstract Node evalForward(final DecoratedNode context);
 
 	/**
 	 * Get any overridden attributes for this node's forward.  (e.g. forwarding with { inh = foo; })

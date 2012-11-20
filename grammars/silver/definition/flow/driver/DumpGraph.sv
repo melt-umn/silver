@@ -2,6 +2,7 @@ grammar silver:definition:flow:driver;
 
 import silver:driver;
 import silver:util:cmdargs;
+import silver:util:raw:treemap as rtm;
 
 -- This isn't exactly a warning, but it can live here for now...
 
@@ -18,27 +19,40 @@ top::CmdArgs ::= rest::CmdArgs
   top.dumpFlowGraph = true;
   forwards to rest;
 }
-
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect function parseArgs
+ParseResult<Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--dump-flow-deps", flag(dumpFlowGraphFlag))];
+  flags <- [pair("--dump-flow-graph", flag(dumpFlowGraphFlag))];
   -- omitting from descriptions deliberately!
-  
-  postOps <- if a.dumpFlowGraph then [dumpFlowGraphAction(findAllNts(allProds, allRealEnv), prodGraph, flowTypes)] else [];
 }
-function findAllNts
-[String] ::=  prods::[String]  realEnv::Decorated Env
+
+aspect production compilation
+top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
 {
-  return nubBy(stringEq, map((.typeName), map((.typerep), map((.outputElement), map((.namedSignature), map(head, map(getValueDclAll(_, realEnv), prods)))))));
+  local anyG :: Decorated RootSpec = head(g.grammarList);
+  top.postOps <- if top.config.dumpFlowGraph then [dumpFlowGraphAction(anyG.productionFlowGraphs, unList(rtm:toList(anyG.grammarFlowTypes)))] else [];
 }
+
+function unList
+[Pair<String [b]>] ::= l::[Pair<String b>]
+{
+  local recurse :: [Pair<String [b]>] = unList(tail(l));
+  
+  return if null(l) then
+    []
+  else if !null(recurse) && head(recurse).fst == head(l).fst then
+    pair(head(l).fst, head(l).snd :: head(recurse).snd) :: tail(recurse)
+  else
+    pair(head(l).fst, [head(l).snd]) :: recurse;
+}
+
 
 
 abstract production dumpFlowGraphAction
-top::Unit ::= allNts::[String]  prodGraph::[Pair<String [Pair<FlowVertex FlowVertex>]>]  flowTypes::EnvTree<Pair<String String>>
+top::Unit ::= prodGraph::[ProductionGraph]  flowTypes::[Pair<String [Pair<String String>]>]
 {
   top.io = 
-    writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(allNts, flowTypes) ++ "}", 
+    writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}", 
       writeFile("flow-deps.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}",
         print("Generating flow graphs\n", top.ioIn)));
 
@@ -48,17 +62,17 @@ top::Unit ::= allNts::[String]  prodGraph::[Pair<String [Pair<FlowVertex FlowVer
 
 
 function generateFlowDotGraph
-String ::= nts::[String]  ft::EnvTree<Pair<String String>>
+String ::= flowTypes::[Pair<String [Pair<String String>]>]
 {
-  local nt::String = head(nts);
-  local edges::[Pair<String String>] = searchEnvTree(nt, ft);
+  local nt::String = head(flowTypes).fst;
+  local edges::[Pair<String String>] = head(flowTypes).snd;
   
-  return if null(nts) then ""
+  return if null(flowTypes) then ""
   else "subgraph \"cluster:" ++ nt ++ "\" {\nlabel=\"" ++ substring(lastIndexOf(":", nt) + 1, length(nt), nt) ++ "\";\n" ++ 
        implode("", map(makeLabelDcls(nt, _), nubBy(stringEq, expandLabels(edges)))) ++
        implode("", map(makeNtFlow(nt, _), edges)) ++
        "}\n" ++
-       generateFlowDotGraph(tail(nts), ft);
+       generateFlowDotGraph(tail(flowTypes));
 }
 
 function expandLabels
@@ -79,11 +93,11 @@ String ::= nt::String  e::Pair<String String>
 }
 
 function generateDotGraph
-String ::= specs::[Pair<String [Pair<FlowVertex FlowVertex>]>]
+String ::= specs::[ProductionGraph]
 {
   return case specs of
   | [] -> ""
-  | pair(prod, edges)::t ->
+  | productionGraph(prod, _, _, edges, _, _, _)::t ->
       "subgraph \"cluster:" ++ prod ++ "\" {\n" ++ 
       implode("", map(makeDotArrow(prod, _), edges)) ++
       "}\n" ++
@@ -104,7 +118,12 @@ String ::= p::String e::Pair<FlowVertex FlowVertex>
  -}
 synthesized attribute dotName :: String occurs on FlowVertex;
 
-aspect production lhsVertex
+aspect production lhsSynVertex
+top::FlowVertex ::= attrName::String
+{
+  top.dotName = attrName;
+}
+aspect production lhsInhVertex
 top::FlowVertex ::= attrName::String
 {
   top.dotName = attrName;

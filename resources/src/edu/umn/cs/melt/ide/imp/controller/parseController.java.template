@@ -28,15 +28,15 @@ import @PKG_NAME@.imp.@LANG_NAME@Plugin;
 
 /**
  * Extends ParseControllerBase to use the default implementation of several
- * interface methods. The following variables are inherited:
- * 	 protected ISourceProject fProject;
- * 	 protected IPath fFilePath;
- * 	 protected IMessageHandler handler;
- * 	 protected Object fCurrentAst;
+ * interface methods. The following variables are inherited:<br>
+ * 	 protected ISourceProject fProject;<br>
+ * 	 protected IPath fFilePath;<br>
+ * 	 protected IMessageHandler handler;<br>
+ * 	 protected Object fCurrentAst;<br>
  */
 public class @LANG_NAME@ParseController extends ParseControllerBase {
 	
-	static private DateFormat DATE_FORMAT = new SimpleDateFormat();
+	private static DateFormat DATE_FORMAT = new SimpleDateFormat();
 	
 	/** Construct an instance of the parser. */
 	private EnhancedSilverParser parser = new EnhancedSilverParser();
@@ -81,17 +81,17 @@ public class @LANG_NAME@ParseController extends ParseControllerBase {
 			result = parser.parse(reader, getPath().toFile().getName());
 		    parsed = (result==null)?false:true;
 		} catch (EnhancedCopperParserException e) {
-			//System.err.println("ERROR 1");
+			//System.err.println("ERROR EnhancedCopperParserException");
 			//System.err.println(e);
 			handler.handleSimpleMessage(
 				e.getMessage(), (int)e.getOffset(), (int)e.getOffset(), e.getColumn(), e.getColumn(), e.getLine(), e.getLine());
 		} catch (CopperParserException e) {
-			//System.err.println("ERROR 2");
+			//System.err.println("ERROR CopperParserException");
 			//e.printStackTrace();
 			handler.handleSimpleMessage(//TODO: S-R error
 				e.getMessage(), 0, 0, 0, 0, 1, 1);
 		} catch (IOException e) {
-			//System.err.println("ERROR 3");
+			//System.err.println("ERROR IOException");
 			e.printStackTrace();
 		}
 		

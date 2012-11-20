@@ -118,7 +118,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name botl::BracketedOptTypeList '::'
   local attribute o :: Operation;
   o = q.operation;
 
-  top.javaClasses = [[className,
+  top.genFiles := [pair(className ++ ".java",
                 
 "package " ++ makeName(top.grammarName) ++ ";\n\n" ++
 
@@ -136,8 +136,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name botl::BracketedOptTypeList '::'
 "\t\treturn result;\n" ++ 
 "\t}\n\n" ++ 
 
-
-"}\n"]];
+"}\n")];
 }
 
 aspect production collectionAttributeDclInh
@@ -149,7 +148,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name botl::BracketedOptTypeList '::' t
   local attribute o :: Operation;
   o = q.operation;
 
-  top.javaClasses = [[className,
+  top.genFiles := [pair(className ++ ".java",
                 
 "package " ++ makeName(top.grammarName) ++ ";\n\n" ++
 
@@ -167,8 +166,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name botl::BracketedOptTypeList '::' t
 "\t\treturn result;\n" ++ 
 "\t}\n\n" ++ 
 
-
-"}\n"]];
+"}\n")];
 }
 
 --- Use semantics translation --------------------------------------------------

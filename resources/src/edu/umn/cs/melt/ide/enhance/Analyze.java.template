@@ -1,0 +1,34 @@
+/*
+ * Variables used:
+ *   LANG_COMPOSED_PKG
+ *   ANALYZER_CLASS_QNAME
+ */
+package @LANG_COMPOSED_PKG@;
+
+public class Analyze {
+	public static java.util.List<String> analyze(String[] args) {
+		try {
+			common.ConsCell cc = (common.ConsCell) @ANALYZER_CLASS_QNAME@.invoke(
+				new Object[]{cvargs(args), null});
+			
+			java.util.List<String> list = new java.util.ArrayList<String>();
+			while(!cc.nil()){
+				common.StringCatter sc = (common.StringCatter)cc.head();
+				list.add(sc.toString());
+				cc = cc.tail();
+			}
+			
+			return list;
+		} catch(Throwable t) {
+			common.Util.printStackCauses(t);
+			return null;
+		}
+	}
+	public static common.ConsCell cvargs(String [] args){
+		common.ConsCell result = common.ConsCell.nil;
+		for(int i = args.length - 1; i >= 0; i --) {
+			result = new common.ConsCell(new common.StringCatter(args[i]), result);
+		}
+		return result;
+	}
+}

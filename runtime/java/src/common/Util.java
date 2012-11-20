@@ -1,6 +1,8 @@
 package common;
 
 import java.io.*;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.util.*;
 
 import common.exceptions.SilverError;
@@ -134,21 +136,48 @@ public final class Util {
 		return new File(sb).delete();
 	}
 	
+	public static Object copyFile(String from, String to) {
+		// TODO: When we're good to depend on Java 7, there's Files.copy. This method should work for 4:
+	    FileChannel source = null;
+	    FileChannel destination = null;
+
+	    try {
+			File toFile = new File(to);
+			File fromFile = new File(from);
+		    if(!toFile.exists()) {
+		        toFile.createNewFile();
+		    }
+
+	        source = new FileInputStream(fromFile).getChannel();
+	        destination = new FileOutputStream(toFile).getChannel();
+	        destination.transferFrom(source, 0, source.size());
+	        
+	        source.close();
+	        destination.close();
+	        return null;
+	    } catch(Exception io) {
+	    	throw new RuntimeException(io);
+	    }
+	}
+	
 	/**
 	 * Slurps the contents of a file into a string.  May cause IO exceptions.
 	 * 
 	 * @param sb  The filename
 	 * @return  The file contents.
 	 */
-	public static StringCatter readFile(String sb) {
+	public static StringCatter readFile(String filename) {
 		try {
-			FileInputStream file = new FileInputStream(sb);
-			DataInputStream in = new DataInputStream(file);
-			byte[] b = new byte[in.available()];
-			in.readFully(b);
+			// TODO: Java 7 : Files.readAllBytes(...)
+			File file = new File(filename);
+			FileInputStream fis = new FileInputStream(file);
+			DataInputStream in = new DataInputStream(fis);
+			byte[] b = new byte[(int)file.length()];
+			in.readFully(b); // The only reason we use DataInputStream is this method.
 			in.close();
-			file.close();
-			// TODO: is there a better way of handling \r\n?
+			fis.close();
+			// TODO: is there a better way of handling \r\n? (Maybe implicitly in copper specs?)
+			// (We should also probably be more discriminating about charsets)
 			return new StringCatter(new String(b).replace("\r\n","\n"));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -197,6 +226,7 @@ public final class Util {
 	 */
 	public static Object writeFile(String file, Object content) {
 		try {
+			// TODO: Java 7 : Files.write
 			Writer fout = new FileWriter(file); // already buffered
 			if(content instanceof StringCatter)
 				((StringCatter)content).write(fout);

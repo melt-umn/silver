@@ -1,6 +1,6 @@
 grammar silver:definition:flow:env;
 
-attribute flowDefs, flowEnv occurs on Root, AGDcls, AGDcl;
+attribute flowDefs, flowEnv occurs on Root, AGDcls, AGDcl, GrammarPart, Grammar;
 
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
