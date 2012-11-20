@@ -90,10 +90,11 @@ top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
       "public final " ++ performSubstitution(t.typerep, top.finalSubst).transType ++ " eval(final common.DecoratedNode context, " ++ scrutineeType.transType ++ " scrutineeIter) {" ++
         (if scrutineeType.isDecorated
          then
-          "while(scrutineeIter != null) {" ++
+          "while(true) {" ++
            "final " ++ scrutineeType.transType ++ " scrutinee = scrutineeIter; " ++ -- dumb, but to get final to work out for Lazys & shizzle...
            "final common.Node scrutineeNode = scrutinee.undecorate(); " ++
             pr.translation ++
+           "if(!scrutineeIter.undecorate().hasForward()) break;" ++ 
            "scrutineeIter = scrutineeIter.forward();" ++
           "}"
          else
@@ -388,9 +389,9 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   errCheck2.downSubst = e.upSubst;
   top.upSubst = errCheck2.upSubst;
   
-  local attribute consdefs :: Defs;
-  consdefs = addLexicalLocalDcl(top.grammarName, top.location, h.name, elemType, 
-             addLexicalLocalDcl(top.grammarName, top.location, t.name, top.scrutineeType, emptyDefs()));
+  local attribute consdefs :: [Def];
+  consdefs = [lexicalLocalDef(top.grammarName, top.location, h.name, elemType), 
+              lexicalLocalDef(top.grammarName, top.location, t.name, top.scrutineeType)];
   
   e.env = newScopeEnv(consdefs, top.env);
   
@@ -429,7 +430,7 @@ top::VarBinders ::= v::VarBinder ',' vs::VarBinders
 {
   top.pp = v.pp ++ ", " ++ vs.pp;
   top.location = v.location;
-  top.defs = appendDefs(v.defs, vs.defs);
+  top.defs = v.defs ++ vs.defs;
   top.errors := v.errors ++ vs.errors;
 
   top.let_translation = v.let_translation ++ vs.let_translation;
@@ -449,7 +450,7 @@ top::VarBinders ::= Epsilon_For_Location  -- technically a bug, but forget it fo
 {
   top.pp = "";
   top.location = loc(top.file, $1.line, $1.column);
-  top.defs = emptyDefs();
+  top.defs = [];
   top.errors := [];
   
   top.let_translation = "";
@@ -473,7 +474,7 @@ top::VarBinder ::= n::Name
        then decoratedTypeExp(top.bindingType)
        else top.bindingType;
 
-  top.defs = addLexicalLocalDcl(top.grammarName, n.location, n.name, ty, emptyDefs());
+  top.defs = [lexicalLocalDef(top.grammarName, n.location, n.name, ty)];
 
   top.let_translation = makeSpecialLocalBinding(n.name, 
              "(" ++ ty.transType ++ ")scrutinee." ++ 
@@ -501,7 +502,7 @@ top::VarBinder ::= '_'
 {
   top.pp = "_";
   top.location = loc(top.file, $1.line, $1.column);
-  top.defs = emptyDefs();
+  top.defs = [];
   top.errors := [];
   top.let_translation = "";
 }

@@ -17,7 +17,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs = addTermDcl(top.grammarName, id.location, fName, r.terminalRegExprSpec, emptyDefs());
+  top.defs = [termDef(top.grammarName, id.location, fName, r.terminalRegExprSpec)];
   
   top.errors <-
     if length(getTypeDclAll(fName, top.env)) > 1

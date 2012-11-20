@@ -6,7 +6,7 @@ imports silver:definition:concrete_syntax;
 imports silver:definition:concrete_syntax:ast;
 imports silver:modification:copper;
 
-import silver:driver only computeDependencies;
+import silver:driver:util only computeDependencies, RootSpec;
 
 
 terminal CopperMDA 'copper_mda' ;

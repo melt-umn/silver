@@ -16,9 +16,9 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.defLHSDispatcher = errorDefLHS;
 }
 
-function addLexicalLocalDcl
-Defs ::= sg::String sl::Location fn::String ty::TypeExp defs::Defs
+function lexicalLocalDef
+Def ::= sg::String sl::Location fn::String ty::TypeExp
 {
-  return consValueDef(defaultEnvItem(lexicalLocalDcl(sg,sl,fn,ty)), defs);
+  return valueDef(defaultEnvItem(lexicalLocalDcl(sg,sl,fn,ty)));
 }
 

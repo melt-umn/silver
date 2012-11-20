@@ -20,7 +20,7 @@ top::AGDcl ::= 'type' id::Name botl::BracketedOptTypeList '=' te::Type ';'
   production attribute tl :: Decorated TypeList;
   tl = botl.typelist;
 
-  top.defs = addTypeDcl(top.grammarName, id.location, fName, tl.freeVariables, te.typerep, emptyDefs());
+  top.defs = [typeAliasDef(top.grammarName, id.location, fName, tl.freeVariables, te.typerep)];
 
   top.errors := tl.errors ++ te.errors;
   
@@ -47,10 +47,10 @@ top::AGDcl ::= 'type' id::Name botl::BracketedOptTypeList '=' te::Type ';'
 
 
 
-function addTypeDcl
-Defs ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp defs::Defs
+function typeAliasDef
+Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
-  return consTypeDef(defaultEnvItem(typeDcl(sg,sl,fn,bound,ty)), defs);
+  return typeDef(defaultEnvItem(typeDcl(sg,sl,fn,bound,ty)));
 }
 abstract production typeDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp

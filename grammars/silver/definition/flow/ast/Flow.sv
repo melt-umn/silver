@@ -1,36 +1,66 @@
 grammar silver:definition:flow:ast;
 
-import silver:definition:env only quoteString, unparse;
+imports silver:definition:env only quoteString,unparseStrings, unparse;
 
-nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, nonHostSynAttrs;
-nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, mayAffectFlowType, nonHostSynAttrs;
+nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, nonHostSynAttrs, nonSuspectContribs, localTreeContribs;
+nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, suspectFlowEdges, nonHostSynAttrs, nonSuspectContribs, localTreeContribs;
 
-{-- lookup (production, attribute) to find synthesized equations -}
+{-- lookup (production, attribute) to find synthesized equations
+ - Used to ensure a necessary lhs.syn equation exists.
+ - Also decides whether to add a forward or default equation while computing flow types. -}
 synthesized attribute synTreeContribs :: [Pair<String FlowDef>];
-{-- lookup (production, sig, attribute) to find inherited equation -}
+
+{-- lookup (production, sig, attribute) to find inherited equation
+ - Used to ensure a necessary rhs.inh equation exists.
+ - Also decides whether to add a copy equation for autocopy attributes to rhs elements. -}
 synthesized attribute inhTreeContribs :: [Pair<String FlowDef>];
-{-- lookup (nonterminal, attribute) to find default syn equations -}
+
+{-- lookup (nonterminal, attribute) to find default syn equations
+ - Used to obtain default equation dependencies, when it exists. -}
 synthesized attribute defTreeContribs :: [Pair<String FlowDef>];
-{-- lookup (production) to find forward equations -}
+
+{-- lookup (production) to find forward equations.
+ - Decides whether default or forward equations should be added. -}
 synthesized attribute fwdTreeContribs :: [Pair<String FlowDef>];
-{-- lookup (production, attr) to find forward INHERITED equations -}
+
+{-- lookup (production, attr) to find forward INHERITED equations
+ - Used to ensure equations for inherited attributes exist for all inh of a fwd. -}
 synthesized attribute fwdInhTreeContribs :: [Pair<String FlowDef>];
-{-- lookup (production, local, attr) to find local INHERITED equations -}
+
+{-- lookup (production, local, attr) to find local INHERITED equations.
+ - ONLY used to check whether an equation exists. -}
 synthesized attribute localInhTreeContribs :: [Pair<String FlowDef>];
-{-- lookup (nonterminal) to find all non-forwarding production -}
+
+{-- lookup (production, local) to find the local equation -}
+synthesized attribute localTreeContribs :: [Pair<String FlowDef>];
+
+{-- lookup (nonterminal) to find all non-forwarding production.
+ - ONLY used to determine all productions that need an equation for a new attribute. -}
 synthesized attribute prodTreeContribs :: [Pair<String FlowDef>];
+
 {-- lookup (nonterminal) to find all inherited attributes in the host -}
 synthesized attribute refTreeContribs :: [Pair<String FlowDef>];
+
 {-- find all equations having to do DIRECTLY with a production
     (directly meaning e.g. no default equations, even if they might
-    affect it) -}
+    affect it)  These FlowDefs MUST have a flowEdges for this production. -}
 synthesized attribute prodGraphContribs :: [Pair<String FlowDef>];
-{-- Edge lists from equations -}
+
+{-- Edge lists from equations
+ - ONLY used to extract edges for a production graph from production-internal flowDefs. -}
 synthesized attribute flowEdges :: [Pair<FlowVertex FlowVertex>];
-{-- Whether this flow def may affect the flow type computation -}
-synthesized attribute mayAffectFlowType :: Boolean;
+
+{-- Like flowEdges, but these edges originate from equations that are not
+ - allowed to affect their OWN flow type.  We must still track them because
+ - they may affect others' flow types.
+ - (e.g.  extsyn = hostsyn; hostsyn = hostinh; need to reflect extsyn's dep on hostinh) -}
+synthesized attribute suspectFlowEdges :: [Pair<FlowVertex FlowVertex>];
+
 {-- A list of non-host synthesized occurrences, to patch up flow types -}
 synthesized attribute nonHostSynAttrs :: [FlowDef];
+
+{-- A list of attributes for a production that are non-suspect -}
+synthesized attribute nonSuspectContribs :: [Pair<String [String]>];
 
 synthesized attribute unparses :: [String];
 
@@ -46,7 +76,9 @@ top::FlowDefs ::= h::FlowDef  t::FlowDefs
   top.prodGraphContribs = h.prodGraphContribs ++ t.prodGraphContribs;
   top.refTreeContribs = h.refTreeContribs ++ t.refTreeContribs;
   top.localInhTreeContribs = h.localInhTreeContribs ++ t.localInhTreeContribs;
+  top.localTreeContribs = h.localTreeContribs ++ t.localTreeContribs;
   top.nonHostSynAttrs = h.nonHostSynAttrs ++ t.nonHostSynAttrs;
+  top.nonSuspectContribs = h.nonSuspectContribs ++ t.nonSuspectContribs;
   top.unparses = h.unparses ++ t.unparses;
 }
 
@@ -62,7 +94,9 @@ top::FlowDefs ::=
   top.prodGraphContribs = [];
   top.refTreeContribs = [];
   top.localInhTreeContribs = [];
+  top.localTreeContribs = [];
   top.nonHostSynAttrs = [];
+  top.nonSuspectContribs = [];
   top.unparses = [];
 }
 
@@ -83,7 +117,11 @@ top::FlowDef ::=
   top.prodTreeContribs = [];
   top.refTreeContribs = [];
   top.localInhTreeContribs = [];
+  top.localTreeContribs = [];
   top.nonHostSynAttrs = [];
+  top.nonSuspectContribs = [];
+  top.suspectFlowEdges = []; -- flowEdges is required, but suspect is typically not!
+  -- require unparses, prodGraphContibs, flowEdges
 }
 
 {--
@@ -100,7 +138,6 @@ top::FlowDef ::= nt::String  prod::String
   top.prodGraphContribs = [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
   top.unparses = ["prod(" ++ quoteString(nt) ++ ", " ++ quoteString(prod) ++ ")"];
-  top.mayAffectFlowType = true;
 }
 
 {--
@@ -112,8 +149,7 @@ top::FlowDef ::= nt::String  inhs::[String]
   top.refTreeContribs = [pair(nt, top)];
   top.prodGraphContribs = [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
-  top.unparses = error("TODO");
-  top.mayAffectFlowType = true;
+  top.unparses = ["ntRefFlowDef(" ++quoteString(nt)++ ", " ++ unparseStrings(inhs) ++ ")"];
 }
 
 {--
@@ -129,7 +165,6 @@ top::FlowDef ::= attr::String  nt::String
   top.prodGraphContribs = [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
   top.unparses = ["nonHostSyn(" ++ quoteString(attr) ++ ", " ++ quoteString(nt) ++ ")"];
-  top.mayAffectFlowType = true;  
 }
 
 {--
@@ -145,9 +180,11 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]  mayAffectFlowTy
 {
   top.synTreeContribs = [pair(crossnames(prod, attr), top)];
   top.prodGraphContribs = [pair(prod, top)];
-  top.flowEdges = map(pair(lhsVertex(attr), _), deps);
-  top.unparses = ["syn(" ++ implode(", ", [quoteString(prod), quoteString(attr), unparseVertices(deps)]) ++ ")"];
-  top.mayAffectFlowType = mayAffectFlowType;
+  local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(lhsSynVertex(attr), _), deps);
+  top.flowEdges = if mayAffectFlowType then edges else [];
+  top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
+  
+  top.unparses = ["syn(" ++ implode(", ", [quoteString(prod), quoteString(attr), unparseVertices(deps),if mayAffectFlowType then "t" else "f"]) ++ ")"];
 }
 
 {--
@@ -166,7 +203,6 @@ top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(rhsVertex(sigName, attr), _), deps);
   top.unparses = ["inh(" ++ implode(", ", [quoteString(prod), quoteString(sigName), quoteString(attr), unparseVertices(deps)]) ++ ")"];
-  top.mayAffectFlowType = true;
 }
 
 {--
@@ -183,9 +219,8 @@ top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
 {
   top.defTreeContribs = [pair(crossnames(nt, attr), top)];
   top.prodGraphContribs = []; -- defaults don't show up in the prod graph!!
-  top.flowEdges = map(pair(lhsVertex(attr), _), deps);
+  top.flowEdges = map(pair(lhsSynVertex(attr), _), deps); -- but their edges WILL end up added to graphs in fixup-phase!!
   top.unparses = ["def(" ++ implode(", ", [quoteString(nt), quoteString(attr), unparseVertices(deps)]) ++ ")"];
-  top.mayAffectFlowType = true;
 }
 
 {--
@@ -200,9 +235,22 @@ top::FlowDef ::= prod::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
   top.fwdTreeContribs = [pair(prod, top)];
   top.prodGraphContribs = [pair(prod, top)];
-  top.flowEdges = map(pair(forwardEqVertex(), _), deps);
-  top.unparses = ["fwd(" ++ implode(", ", [quoteString(prod), unparseVertices(deps)]) ++ ")"];
-  top.mayAffectFlowType = mayAffectFlowType;
+  local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(forwardEqVertex(), _), deps);
+  top.flowEdges = if mayAffectFlowType then edges else [];
+  top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
+  top.unparses = ["fwd(" ++ implode(", ", [quoteString(prod), unparseVertices(deps),if mayAffectFlowType then "t" else "f"]) ++ ")"];
+}
+
+{--
+ - Attributes that are non-suspect.
+ -}
+abstract production implicitFwdAffects
+top::FlowDef ::= prod::String  attrs::[String]
+{
+  top.nonSuspectContribs = [pair(prod, attrs)];
+  top.prodGraphContribs = [];
+  top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
+  top.unparses = ["implicitFwdAffects(" ++ quoteString(prod) ++ ", " ++ unparseStrings(attrs) ++ ")"];
 }
 
 {--
@@ -220,7 +268,6 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(forwardVertex(attr), _), deps);
   top.unparses = ["fwdInh(" ++ implode(", ", [quoteString(prod), quoteString(attr), unparseVertices(deps)]) ++ ")"];
-  top.mayAffectFlowType = true;
 }
 
 {--
@@ -236,10 +283,10 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 abstract production localEq
 top::FlowDef ::= prod::String  fName::String  typeName::String  deps::[FlowVertex]
 {
+  top.localTreeContribs = [pair(crossnames(prod, fName), top)];
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(localEqVertex(fName), _), deps);
   top.unparses = ["local(" ++ implode(", ", [quoteString(prod), quoteString(fName), quoteString(typeName), unparseVertices(deps)]) ++ ")"];
-  top.mayAffectFlowType = true;
 }
 
 {--
@@ -258,7 +305,6 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(localVertex(fName, attr), _), deps);
   top.unparses = ["localInh(" ++ implode(", ", [quoteString(prod), quoteString(fName), quoteString(attr), unparseVertices(deps)]) ++ ")"];
-  top.mayAffectFlowType = true;
 }
 
 {--
@@ -273,9 +319,10 @@ abstract production extraEq
 top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
   top.prodGraphContribs = [pair(prod, top)];
-  top.flowEdges = map(pair(src, _), deps);
-  top.unparses = ["extra(" ++ implode(", ", [quoteString(prod), src.unparse, unparseVertices(deps)]) ++ ")"];
-  top.mayAffectFlowType = mayAffectFlowType;
+  local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(src, _), deps);
+  top.flowEdges = if mayAffectFlowType then edges else [];
+  top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
+  top.unparses = ["extra(" ++ implode(", ", [quoteString(prod), src.unparse, unparseVertices(deps),if mayAffectFlowType then "t" else "f"]) ++ ")"];
 }
 
 --
@@ -286,112 +333,4 @@ String ::= a::String b::String
   return a ++ " @ " ++ b;
 }
 
---
-
-{--
- - Data structure representing vertices in the flow graph within a single production.
- -}
-nonterminal FlowVertex with unparse;
-
-{--
- - A vertex representing an attribute on the nonterminal being constructed by this production.
- -
- - @param attrName  the full name of an attribute on the lhs.
- -}
-abstract production lhsVertex
-top::FlowVertex ::= attrName::String
-{
-  top.unparse = "lhsV(" ++ quoteString(attrName) ++ ")";
-}
-
-{--
- - A vertex representing an attribute on an element of the signature RHS.
- -
- - @param sigName  the name given to a signature nonterminal.
- - @param attrName  the full name of an attribute on that signature element.
- -}
-abstract production rhsVertex
-top::FlowVertex ::= sigName::String  attrName::String
-{
-  top.unparse = "rhsV(" ++ quoteString(sigName) ++ ", " ++ quoteString(attrName) ++ ")";
-}
-
-{--
- - A vertex representing a local equation. i.e. forward, local attribute, production
- - attribute, etc.  Note that this may be defined for MORE than just those with
- - nonterminal type!! (e.g. local foo :: String  will appear!)
- -
- - @param fName  the full name of the NTA/FWD being defined
- -}
-abstract production localEqVertex
-top::FlowVertex ::= fName::String
-{
-  top.unparse = "localEqV(" ++ quoteString(fName) ++ ")";
-}
-
-{--
- - A vertex representing an attribute on a local equation. i.e. forward, local
- - attribute, production attribute, etc.  Note this this implies the equation
- - above IS a nonterminal type!!
- -
- - @param fName  the full name of the NTA/FWD
- - @param attrName  the fulle name of the attribute on that element
- -}
-abstract production localVertex
-top::FlowVertex ::= fName::String  attrName::String
-{
-  top.unparse = "localV(" ++ quoteString(fName) ++ ", " ++ quoteString(attrName) ++ ")";
-}
-
--- The forward equation for this production
-function forwardEqVertex
-FlowVertex ::=
-{
-  return localEqVertex("forward");
-}
--- An attribute on the forward node for this production
-function forwardVertex
-FlowVertex ::= attrName::String
-{
-  return localVertex("forward", attrName);
-}
-
--- This set of vertexes are typically used with pattern matching:
--- Demanding the forward equation of a child
-function rhsForwardVertex
-FlowVertex ::= sigName::String
-{
-  return rhsVertex(sigName, "forward");
-}
--- Demanding the forward equation of a local
-function localForwardVertex
-FlowVertex ::= fName::String
-{
-  return localVertex(fName, "forward");
-}
--- heh. Demanding the forward equation of a forward!
-function forwardForwardVertex
-FlowVertex ::=
-{
-  return localVertex("forward", "forward");
-}
-
-
-function unparseVertices
-String ::= fvs::[FlowVertex]
-{
-  return "[" ++ implode(", ", map((.unparse), fvs)) ++ "]";
-}
-
-function equalFlowVertex
-Boolean ::= a::FlowVertex  b::FlowVertex
-{
-  return case a, b of
-  | lhsVertex(a1), lhsVertex(a2) -> a1 == a2
-  | rhsVertex(s1, a1), rhsVertex(s2, a2) -> s1 == s2 && a1 == a2
-  | localEqVertex(f1), localEqVertex(f2) -> f1 == f2
-  | localVertex(f1, a1), localVertex(f2, a2) -> f1 == f2 && a1 == a2
-  | _, _ -> false
-  end;
-}
 

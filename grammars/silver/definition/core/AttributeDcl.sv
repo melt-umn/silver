@@ -12,7 +12,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name botl::BracketedOptTypeList '::' t
   production attribute tl :: Decorated TypeList;
   tl = botl.typelist;
 
-  top.defs = addInhDcl(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, emptyDefs());
+  top.defs = [inhDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
 
 --------
   botl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
@@ -44,7 +44,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name botl::BracketedOptTypeList '::'
   production attribute tl :: Decorated TypeList;
   tl = botl.typelist;
 
-  top.defs = addSynDcl(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, emptyDefs());
+  top.defs = [synDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
 
 --------
   botl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),

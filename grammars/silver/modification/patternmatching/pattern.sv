@@ -272,6 +272,8 @@ function tailNestedPatternTransform
         end;
   fst.env = head(lst).env;
   fst.file = head(lst).file;
+  fst.signature = head(lst).signature;
+  fst.config = head(lst).config;
   
   return if null(lst) then []
          else fst :: tailNestedPatternTransform(tail(lst));
@@ -291,6 +293,8 @@ function allVarCaseTransform
         end;
   fst.env = head(lst).env;
   fst.file = head(lst).file;
+  fst.signature = head(lst).signature;
+  fst.config = head(lst).config;
 
   return if null(lst) then []
          else fst :: allVarCaseTransform(headExpr, headType, tail(lst));

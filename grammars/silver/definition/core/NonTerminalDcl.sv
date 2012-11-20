@@ -19,7 +19,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name botl::BracketedOptTypeList
     * we get tl.freeVariables (which must be IN ORDER) and list them as the bound variables of this declaration.
   -}
   
-  top.defs = cl.whichDcl(top.grammarName, id.location, fName, tl.freeVariables, nonterminalTypeExp(fName, tl.types), emptyDefs());
+  top.defs = [cl.whichDcl(top.grammarName, id.location, fName, tl.freeVariables, nonterminalTypeExp(fName, tl.types))];
 
   -- Include normal binding errors.
   top.errors := tl.errors;
@@ -48,17 +48,17 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name botl::BracketedOptTypeList
 
 nonterminal ClosedOrNot with whichDcl;
 
-synthesized attribute whichDcl :: (Defs ::= String Location String [TyVar] TypeExp Defs);
+synthesized attribute whichDcl :: (Def ::= String Location String [TyVar] TypeExp);
 
 concrete production openNt
 top::ClosedOrNot ::=
 {
-  top.whichDcl = addNtDcl;
+  top.whichDcl = ntDef;
 }
 
 concrete production closedNt
 top::ClosedOrNot ::= 'closed'
 {
-  top.whichDcl = addClosedNtDcl;
+  top.whichDcl = closedNtDef;
 }
 

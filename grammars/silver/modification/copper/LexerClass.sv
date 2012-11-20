@@ -11,8 +11,7 @@ top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs = addLexerClassDcl(top.grammarName, id.location, fName,
-             emptyDefs());
+  top.defs = [lexerClassDef(top.grammarName, id.location, fName)];
 
   top.errors <- if length(getLexerClassDcl(fName, top.env)) > 1
                 then [err(top.location, "Lexer class '" ++ fName ++ "' is already bound.")]

@@ -1,29 +1,38 @@
 grammar silver:definition:flow:env;
 
+import silver:driver:util;
 
 attribute flowDefs occurs on RootSpec;
 
 aspect function unparseRootSpec
 String ::= r::Decorated RootSpec
 {
-  -- TEMPORARILY DISABLED TODO FIX ENV PARSER (finish it)
-  --unparses <- ["flow [" ++ implode(",\n ", foldr(consFlow, nilFlow(), r.flowDefs).unparses) ++ "]"];
+  
+  unparses <- ["flow [" ++ implode(",\n ", foldr(consFlow, nilFlow(), r.flowDefs).unparses) ++ "]"];
+  
 }
 
-aspect production i_emptyRootSpec
-top::RootSpec ::= 
+aspect production grammarRootSpec
+top::RootSpec ::= g::Grammar  _ _ _
+{
+  top.flowDefs = g.flowDefs;
+}
+
+aspect production grammarPart
+top::GrammarPart ::= r::Root  fn::String
+{
+  top.flowDefs = r.flowDefs;
+}
+
+aspect production nilGrammar
+top::Grammar ::=
 {
   top.flowDefs = [];
 }
-aspect production i_rootSpecRoot
-top::RootSpec ::= c1::Decorated Root
-{
-  top.flowDefs = c1.flowDefs;
-}
-aspect production i_appendRootSpec
-top::RootSpec ::= c1::Decorated RootSpec  c2::Decorated RootSpec
-{
-  top.flowDefs = c1.flowDefs ++ c2.flowDefs;
-}
 
+aspect production consGrammar
+top::Grammar ::= h::GrammarPart  t::Grammar
+{
+  top.flowDefs = h.flowDefs ++ t.flowDefs;
+}
 

@@ -45,7 +45,7 @@ top::Expr ::= q::Decorated QName
 {
   top.flowDeps =
     if {-always decorable-} !performSubstitution(top.typerep, top.finalSubst).isDecorable
-    then depsForTakingRef(lhsVertex, q.lookupValue.typerep.typeName, top.flowEnv)
+    then depsForTakingRef(lhsInhVertex, q.lookupValue.typerep.typeName, top.flowEnv)
     else [];
 }
 aspect production localReference
@@ -117,7 +117,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.flowDeps = 
     case e of
     | childReference(lq) -> [rhsVertex(lq.lookupValue.fullName, q.lookupAttribute.fullName)]
-    | lhsReference(lq) -> [lhsVertex(q.lookupAttribute.fullName)]
+    | lhsReference(lq) -> [lhsSynVertex(q.lookupAttribute.fullName)]
     | localReference(lq) -> [localVertex(lq.lookupValue.fullName, q.lookupAttribute.fullName)]
     | forwardReference(lq) -> [forwardVertex(q.lookupAttribute.fullName)]
     | _ -> e.flowDeps
@@ -129,7 +129,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.flowDeps = 
     case e of
     | childReference(lq) -> [rhsVertex(lq.lookupValue.fullName, q.lookupAttribute.fullName)]
-    | lhsReference(lq) -> [lhsVertex(q.lookupAttribute.fullName)]
+    | lhsReference(lq) -> [lhsInhVertex(q.lookupAttribute.fullName)]
     | localReference(lq) -> [localVertex(lq.lookupValue.fullName, q.lookupAttribute.fullName)]
     | forwardReference(lq) -> [forwardVertex(q.lookupAttribute.fullName)]
     | _ -> e.flowDeps
@@ -318,11 +318,6 @@ aspect production missingAppExpr
 top::AppExpr ::= '_'
 {
   top.flowDeps = [];
-}
-aspect production presentAppExpr
-top::AppExpr ::= e::Expr
-{
-  top.flowDeps = e.flowDeps;
 }
 aspect production decoratedAppExpr
 top::AppExpr ::= e::Decorated Expr

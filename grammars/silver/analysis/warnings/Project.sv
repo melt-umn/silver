@@ -1,7 +1,7 @@
 grammar silver:analysis:warnings;
 
 imports silver:util:cmdargs;
-imports silver:driver;
+imports silver:driver only parseArgs;
 
 synthesized attribute warnAll :: Boolean occurs on CmdArgs;
 
@@ -17,10 +17,10 @@ top::CmdArgs ::= rest::CmdArgs
   forwards to rest;
 }
 
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect function parseArgs
+ParseResult<Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--warn-all", flag(warnAllFlag))];
-  flagdescs <- ["\t--warn-all  : enable all warnings\n"];
+  flagdescs <- ["\t--warn-all  : enable all warnings"];
 }
 

@@ -249,6 +249,7 @@ return
 "\t\t}\n" ++
 "\t}\n" ++
 "\t\n" ++
+
 "\tprivate AdaptiveParseNodeBuilder nodeBuilder = new AdaptiveParseNodeBuilder();\n" ++
 "\t\n" ++
 "\t//The following variables are used for building token list\n" ++
@@ -267,19 +268,27 @@ return
 "\t\t}  	\n" ++
 "    }\n" ++
 "    \n" ++
+
 "    /**\n" ++
-"     * Called at the beginning of parse\n" ++
+"     * Called at start of parsing\n" ++
 "     */\n" ++
-"    public void reset(){\n" ++
+"\tpublic void reset(){\n" ++
 "\t\tsynchronized(LOCK){\n" ++
 "\t\t\ttokenList = new ArrayList<IToken>();\n" ++
 "\t\t}\n" ++
 "\t\t_totalOffset = 0;\n" ++
 "\t\t_startOffset = 0;\n" ++
 "\t\t_endOffset = 0;\n" ++
+"\t\tstartColumnForNextToken = 1;\n" ++
 "\t\tenParseTree.clear();\n" ++
-"    }\n" ++
+"\t}\n" ++
 "\t\n" ++
+
+"\tprivate int startColumnForNextToken = 1;\n" ++ 
+"\t\n" ++
+"\tprivate final static String SEPARATOR = System.getProperty(\"line.separator\").toString();\n" ++
+"\t\n" ++
+
 "    protected IToken createToken(SingleDFAMatchData scanResult) {\n" ++
 "    	_startOffset = _totalOffset;\n" ++
 "\t\tif(scanResult.lexeme.length()>0){\n" ++
@@ -292,10 +301,11 @@ return
 "    	\n" ++
 "    	_endOffset--;\n" ++
 "\t\tint line =  virtualLocation.getLine();\n" ++
-"\t\tint startColumn = virtualLocation.getColumn();\n" ++
-"\t\tint endColumn = startColumn + scanResult.lexeme.length();\n" ++
-"    	int kind = getKind(scanResult);\n" ++
-"    	\n" ++
+"\t\tint endColumn = virtualLocation.getColumn();\n" ++
+"\t\tint startColumn = scanResult.lexeme.startsWith(SEPARATOR) ? 0 : startColumnForNextToken;\n" ++
+"\t\tstartColumnForNextToken = endColumn + 1;\n" ++
+"\t\tint kind = getKind(scanResult);\n" ++
+"\t\t\n" ++
 "\t\treturn new EnhancedCopperToken(\n" ++
 "\t\t\tkind, \n" ++
 "\t\t\tscanResult.firstTerm, \n" ++
@@ -328,6 +338,7 @@ return
 "\t\t}\n" ++
 "    }\n" ++
 "\t\n" ++
+
 "\tpublic void printTokenList(){\n" ++
 "\t\tIterator<IToken> iter = tokenList.iterator();\n" ++
 "\t\tStringBuilder sb = new StringBuilder(\"TOKEN LIST (\" + tokenList.size() + \" in total) = \");\n" ++
@@ -338,6 +349,7 @@ return
 "\t\tSystem.out.println(sb);\n" ++
 "\t}\n" ++
 "\t\n" ++
+
 "\tpublic Iterator<IToken> getTokenIterator(org.eclipse.jface.text.IRegion region) {\n" ++
 "\t\tint startOffset = region.getOffset();\n" ++
 "\t\tint endOffset = startOffset + region.getLength();\n" ++

@@ -23,7 +23,7 @@ top::AGDcl ::= 'type' id::Name botl::BracketedOptTypeList 'foreign' ';' -- '{' f
   production attribute tl :: Decorated TypeList;
   tl = botl.typelist;
 
-  top.defs = addTypeDcl(top.grammarName, id.location, fName, tl.freeVariables, foreignTypeExp(fName, tl.types), emptyDefs());
+  top.defs = [typeAliasDef(top.grammarName, id.location, fName, tl.freeVariables, foreignTypeExp(fName, tl.types))];
 
   top.errors := tl.errors;
   

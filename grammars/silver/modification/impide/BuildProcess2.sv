@@ -9,17 +9,17 @@ import silver:translation:java;
 import silver:translation:java:driver;
 import silver:util:cmdargs;
 
-aspect production run
-top::RunUnit ::= iIn::IO args::[String]
+aspect production compilation
+top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
 {
   -- The RootSpec representing the grammar actually being built (specified on the command line)
-  local builtGrammar :: [Decorated RootSpec] = getRootSpec(a.buildGrammar, depAnalysis.compiledList);
+  production builtGrammar :: [Decorated RootSpec] = searchEnvTree(buildGrammar, g.compiledGrammars);
   
   -- Empty if no ide decl in that grammar, otherwise has at least one spec... note that
   -- we're going to go with assuming there's just one IDE declaration...
-  local isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
+  production isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
 
-  postOps <- if !isIde then [] else [generateNCS(grammarEnv, depAnalysis.taintedParsers, silvergen)];
+  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, allParsers, silverGen)];
 }
 
 abstract production generateNCS

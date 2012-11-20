@@ -11,7 +11,10 @@ import silver:driver;
 import silver:analysis:warnings:defs;
 import silver:analysis:warnings:exporting;
 
-parser rParse::Root {
+--hack for now
+import silver:modification:impide;
+
+parser svParse::Root {
   silver:host;
 
   silver:extension:convenience;
@@ -38,7 +41,7 @@ parser rParse::Root {
   silver:modification:impide;
 }
 
-parser iParse::IRootSpec {
+parser sviParse::IRoot {
   silver:host:env;
 
   silver:modification:collection:env_parser;
@@ -51,17 +54,25 @@ parser iParse::IRootSpec {
 }
 
 function main 
-IOVal<Integer> ::= args::[String] i::IO
+IOVal<Integer> ::= args::[String] ioin::IO
 {
-  -- please note that run in BuildProcess.sv will call exit(), so we may not "get back here"
-  return ioval((decorate run(i, args) with {rParser = rParse; iParser = iParse;}).io,
-               0);
+  return cmdLineRun(args, svParse, sviParse, ioin);
 }
 
 --- ... we're adding an ide declaration here
 
-temp_imp_ide_dcl rParse ".sv" ;
+temp_imp_ide_dcl rParse ".sv" { 
+  analyzer getErrors;--a function whose signature must be "[String] ::= args::[String] i::IO"
+};
 
+function getErrors 
+[String] ::= args::[String] i::IO
+{
+
+  local ru :: IOVal<[String]> = ideRun(args, svParse, sviParser, i);
+
+  return ru.iovalue;
+}
 
 -- Yeah, that's a hack! :D
 

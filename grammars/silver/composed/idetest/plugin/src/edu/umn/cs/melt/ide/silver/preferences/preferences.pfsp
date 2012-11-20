@@ -1,0 +1,14 @@
+package edu.umn.cs.melt.ide.silver.preferences;
+
+tabs {
+    	default out { }
+    	configuration out { }
+    	instance in {  }
+    	project out { }
+}
+
+page Silver {
+    fields {
+        directory silverHome	      { defvalue "/"; }
+    }
+}

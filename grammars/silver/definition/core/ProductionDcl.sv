@@ -22,13 +22,11 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   production attribute namedSig :: NamedSignature;
   namedSig = namedSignature(fName, ns.inputElements, ns.outputElement);
 
-  top.defs = addProdDcl(top.grammarName, id.location, namedSig,
-              if isEmptyOfValues(body.productionAttributes)
-              then emptyDefs()
-              else addPaDcl(top.grammarName, id.location, fName,
-                       namedSig.outputElement.typerep, namedSig.inputTypes,
-                       body.productionAttributes,
-                        emptyDefs()) );
+  top.defs = prodDef(top.grammarName, id.location, namedSig) ::
+    if null(body.productionAttributes) then []
+    else [prodOccursDef(top.grammarName, id.location, fName,
+            namedSig.outputElement.typerep, namedSig.inputTypes,
+            body.productionAttributes)];
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
@@ -46,15 +44,15 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   top.errors := ns.errors ++ body.errors;
 
-  production attribute sigDefs :: Defs with appendDefs;
+  production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
 
   ns.env = newScopeEnv(sigDefs, top.env);
 
-  local attribute prodAtts :: Defs;
+  local attribute prodAtts :: [Def];
   prodAtts = defsFromPADcls(getProdAttrs(fName, top.env), namedSig);
 
-  body.env = newScopeEnv(appendDefs(body.defs, sigDefs), newScopeEnv(prodAtts, top.env));
+  body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
   body.signature = namedSig;
   body.blockContext = productionContext();
 }
@@ -65,7 +63,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
   top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
   top.location = loc(top.file, $2.line, $2.column);
 
-  top.defs = appendDefs(lhs.defs, rhs.defs);
+  top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
 
   top.inputElements = rhs.inputElements;
@@ -84,7 +82,7 @@ top::ProductionLHS ::= id::Name '::' t::Type
   top.outputElement = namedSignatureElement(id.name, t.typerep);
 
   -- TODO: think about this. lhs doesn't really have an fName.
-  top.defs = addLhsDcl(top.grammarName, t.location, fName, t.typerep, emptyDefs());
+  top.defs = [lhsDef(top.grammarName, t.location, fName, t.typerep)];
 
   top.errors <-
        if length(getValueDclInScope(fName, top.env)) > 1 -- Hackathon Modified
@@ -100,7 +98,7 @@ top::ProductionRHS ::=
   top.pp = "";
   top.location = loc(top.file,-1,-1);
 
-  top.defs = emptyDefs();
+  top.defs = [];
   top.errors := [];
 
   top.inputElements = [];
@@ -112,7 +110,7 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
   top.pp = h.pp ++ " " ++ t.pp;
   top.location = h.location;
 
-  top.defs = appendDefs(h.defs, t.defs);
+  top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
 
   top.inputElements = h.inputElements ++ t.inputElements;
@@ -131,7 +129,7 @@ top::ProductionRHSElem ::= id::Name '::' t::Type
   top.inputElements = [namedSignatureElement(id.name, t.typerep)];
 
   -- TODO: think about this. child doesn't really have an fName.
-  top.defs = addChildDcl(top.grammarName, t.location, fName, t.typerep, emptyDefs());
+  top.defs = [childDef(top.grammarName, t.location, fName, t.typerep)];
 
   top.errors <-
        if length(getValueDclInScope(fName, top.env)) > 1 

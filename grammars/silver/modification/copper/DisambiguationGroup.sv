@@ -12,9 +12,8 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
 
   top.errors := acode.errors ++ terms.errors;
 
-  acode.env = newScopeEnv(addDisambigLexemeDcl(top.grammarName, top.location,
-                                               appendDefs(acode.defs,terms.defs)),
-                          top.env);
+  acode.env = newScopeEnv(disambigLexemeDef(top.grammarName, top.location) ::
+                            acode.defs ++ terms.defs, top.env);
 
   -- Give the group a name, deterministically, based on line number
   production attribute fName :: String;
