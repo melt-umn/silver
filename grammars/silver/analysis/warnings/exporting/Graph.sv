@@ -28,9 +28,9 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
   -- omitting from descriptions deliberately!
 }
 aspect production compilation
-top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
 {
-  top.postOps <- if top.config.dumpDepGraph then [dumpDepGraphAction(g.grammarList)] else [];
+  top.postOps <- if top.config.dumpDepGraph then [dumpDepGraphAction(grammars)] else [];
 }
 
 abstract production dumpDepGraphAction

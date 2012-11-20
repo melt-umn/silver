@@ -27,7 +27,7 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
 }
 
 aspect production compilation
-top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
 {
   local anyG :: Decorated RootSpec = head(g.grammarList);
   top.postOps <- if top.config.dumpFlowGraph then [dumpFlowGraphAction(anyG.productionFlowGraphs, unList(rtm:toList(anyG.grammarFlowTypes)))] else [];

@@ -1,45 +1,47 @@
 grammar silver:driver:util;
 
-import silver:driver only finalGraphs, flowTypes, doInterfaces, noBindingChecking, printAllBindingErrors;
-
-nonterminal Compilation with config, postOps, grammarList;
+nonterminal Compilation with config, postOps, grammarList, recheckGrammars;
 
 synthesized attribute postOps :: [Unit] with ++;
 synthesized attribute grammarList :: [Decorated RootSpec];
+synthesized attribute recheckGrammars :: [String];
 
 abstract production compilation
-top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::String silverGen::String
 {
-  top.grammarList = g.grammarList;
+  top.grammarList = g.grammarList; -- this is the stream from g ONLY
 
-  g.config = top.config;
-  g.compiledGrammars = directBuildTree(map(grammarPairing, top.grammarList));
-  -- TODO: fix these:
-  g.productionFlowGraphs = finalGraphs;
-  g.grammarFlowTypes = flowTypes;
+  production grammars :: [Decorated RootSpec] = g.grammarList;
+  
+  g.compiledGrammars = directBuildTree(map(grammarPairing, grammars));
+  r.compiledGrammars = g.compiledGrammars;
   
   production attribute grammarsDependedUpon :: [String];
   grammarsDependedUpon = expandAllDeps([buildGrammar], [], g.compiledGrammars);
   
   production attribute grammarsToTranslate :: [Decorated RootSpec];
-  grammarsToTranslate = keepGrammars(grammarsDependedUpon, top.grammarList);
+  grammarsToTranslate = keepGrammars(grammarsDependedUpon, g.translateGrammars);
 
-  top.postOps := [doInterfaces(grammarsToTranslate, silverGen)];
-  top.postOps <- if top.config.noBindingChecking then [] else [printAllBindingErrors(top.grammarList)]; 
+  top.postOps := [];
+  top.recheckGrammars = g.recheckGrammars;
 }
 
-nonterminal Grammars with config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarList;
+nonterminal Grammars with config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarList, recheckGrammars, translateGrammars;
 
 abstract production consGrammars
 top::Grammars ::= h::RootSpec  t::Grammars
 {
   top.grammarList = h :: t.grammarList;
+  top.recheckGrammars = h.recheckGrammars ++ t.recheckGrammars;
+  top.translateGrammars = h.translateGrammars ++ t.translateGrammars;
 }
 
 abstract production nilGrammars
 top::Grammars ::=
 {
   top.grammarList = [];
+  top.recheckGrammars = [];
+  top.translateGrammars = [];
 }
 
 {--

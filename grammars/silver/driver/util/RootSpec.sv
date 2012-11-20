@@ -13,13 +13,15 @@ nonterminal RootSpec with
   config, compiledGrammars, productionFlowGraphs, grammarFlowTypes,
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
-  defs, errors, grammarSource;
+  defs, errors, grammarSource, grammarTime, recheckGrammars, translateGrammars;
+
+synthesized attribute translateGrammars :: [Decorated RootSpec];
 
 {--
  - Create a RootSpec from a real grammar, a set of .sv files.
  -}
 abstract production grammarRootSpec
-top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String
+top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  grammarTime::Integer
 {
   g.grammarName = grammarName;
   
@@ -41,6 +43,9 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String
   g.compiledGrammars = top.compiledGrammars;
   
   top.grammarSource = grammarSource;
+  top.grammarTime = grammarTime;
+  top.recheckGrammars = [];
+  top.translateGrammars = [top];
 
   top.declaredName = g.declaredName;
   top.moduleNames = makeSet(g.moduleNames);
@@ -57,11 +62,16 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String
  - Create a RootSpec from an interface file, representing a grammar.
  -}
 abstract production interfaceRootSpec
-top::RootSpec ::= p::IRoot
+top::RootSpec ::= p::IRoot  grammarTime::Integer
 {
   p.grammarName = p.declaredName;
 
   top.grammarSource = p.grammarSource;
+  top.grammarTime = grammarTime;
+  -- Sigh, let's say three second leeway here...
+  local ood :: Boolean = isOutOfDate(grammarTime + 3, top.allGrammarDependencies, top.compiledGrammars);
+  top.recheckGrammars = if ood then [p.grammarName] else [];
+  top.translateGrammars = [];
 
   top.declaredName = p.declaredName; 
   top.moduleNames = p.moduleNames;
@@ -116,3 +126,15 @@ function gatherFlowEnv
               end;
 }
 
+function isOutOfDate
+Boolean ::= mine::Integer  l::[String]  e::EnvTree<Decorated RootSpec>
+{
+  local n :: [Decorated RootSpec] = searchEnvTree(head(l), e);
+
+  return if null(l) then
+    false
+  else if null(n) || mine >= head(n).grammarTime then
+    isOutOfDate(mine, tail(l), e)
+  else
+    true;
+}

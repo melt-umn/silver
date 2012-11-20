@@ -5,13 +5,13 @@ import silver:driver:util;
 attribute genFiles occurs on RootSpec;
 
 aspect production interfaceRootSpec
-top::RootSpec ::= _
+top::RootSpec ::= _ _
 {
   top.genFiles := [];
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  _ _
+top::RootSpec ::= g::Grammar  _ _ _
 {
   top.genFiles := g.genFiles ++
   [pair("Init.java",

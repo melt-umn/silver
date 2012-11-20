@@ -42,10 +42,12 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
   
   -- Compile grammars. There's some tricky circular program data flow here:
   local rootStream :: IOVal<[Maybe<RootSpec>]> =
-    compileGrammars(svParser, sviParser, grammarPath, silverGen, buildGrammar :: grammarStream, true{-TODO a.doClean-}, check.io);
+    compileGrammars(svParser, sviParser, grammarPath, silverGen, buildGrammar :: grammarStream, a.doClean, check.io);
   
   local unit :: Compilation =
-    compilation(foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], rootStream.iovalue)),
+    compilation(
+      foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], rootStream.iovalue)),
+      foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], reRootStream.iovalue)),
       buildGrammar, silverHome, silverGen);
   unit.config = a;
   
@@ -53,9 +55,10 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
   local grammarStream :: [String] =
     eatGrammars(1, [buildGrammar], rootStream.iovalue, unit.grammarList);
   
-  -- TODO: Find "out of date" grammars, rebuild them.
+  local reRootStream :: IOVal<[Maybe<RootSpec>]> =
+    compileGrammars(svParser, sviParser, grammarPath, silverGen, unit.recheckGrammars, true, rootStream.io);
 
-  local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), rootStream.io);
+  local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), reRootStream.io);
 
   return if a.displayVersion then ioval(print("Silver Version 0.3.6-dev\n", ioin), 0)
   else if !argResult.parseSuccess then ioval(print(argResult.parseErrors, ioin), 1)

@@ -10,7 +10,7 @@ import silver:translation:java:driver;
 import silver:util:cmdargs;
 
 aspect production compilation
-top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
 {
   -- The RootSpec representing the grammar actually being built (specified on the command line)
   production builtGrammar :: [Decorated RootSpec] = searchEnvTree(buildGrammar, g.compiledGrammars);

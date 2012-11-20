@@ -49,7 +49,7 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
   flagdescs <- ["\t--onejar  : include runtime libraries in the jar"];
 }
 aspect production compilation
-top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
 {
   top.postOps <- if top.config.noJavaGeneration then [] else 
     [genJava(top.config, grammarsToTranslate, silverGen), 
