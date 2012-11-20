@@ -8,18 +8,14 @@ import silver:util:cmdargs;
 
 -- TODO CRIPES this is all bad, bad, bad code.
 
-aspect function writeBuildFile
-IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis grammarLoc::String
+aspect production compilation
+top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
 {
-  local targets :: String = mdaBuildTarget(da.compiledList, silverhome, silvergen);
+  top.postOps <- [generateMdaSpecs(g.compiledGrammars, grammarsToTranslate, silverGen)]; 
+
+  local targets :: String = mdaBuildTarget(grammarsToTranslate, silverHome, silverGen);
   extraTopLevelDecls <- if length(targets) != 0 then ["  <target name='copper_mda'>\n" ++ targets ++ "  </target>\n"] else [];
   extraGrammarsDeps <- if length(targets) != 0 then ["copper_mda"] else [];
-}
-
-aspect function run
-IOVal<Integer> ::= _ _ _ _ silverGen::String _ _ _
-{
-  postOps <- [generateMdaSpecs(grammarEnv, depAnalysis.compiledList, silverGen)]; 
 }
 
 abstract production generateMdaSpecs

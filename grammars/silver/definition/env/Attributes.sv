@@ -73,7 +73,7 @@ autocopy attribute env :: Decorated Env;
 
 --
 -- Top-level, compiler-wide information passed down by the build process
---
+-- TODO: these don't necessarily make sense. Can we move them pleaaase?!
 
 {--
 - All grammars Silver looked at. Despite the name, including interface files.
@@ -88,4 +88,11 @@ autocopy attribute config :: Decorated CmdArgs;
 -}
 autocopy attribute productionFlowGraphs :: [ProductionGraph];
 autocopy attribute grammarFlowTypes :: EnvTree<Pair<String String>>;
+
+{--
+ - The path to the origin of this root spec
+ -}
+synthesized attribute grammarSource :: String;
+
+
 

@@ -12,7 +12,7 @@ String ::= r::Decorated RootSpec
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= c1::Grammar  _
+top::RootSpec ::= c1::Grammar  _ _
 {
   top.syntaxAst = c1.syntaxAst;
   top.parserSpecs = c1.parserSpecs;

@@ -34,7 +34,7 @@ top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverG
     "  <target name='copper'>\n" ++ buildAntParserPart(allParsers, top.config) ++ "  </target>"];
   extraGrammarsDeps <- ["copper"];
 
-  local allParsers :: [ParserSpec] = foldr(append, [], map((.parserSpecs), grammarsToTranslate));
+  production allParsers :: [ParserSpec] = foldr(append, [], map((.parserSpecs), grammarsToTranslate));
   -- TODO: temporarily all parsers!
 }
 

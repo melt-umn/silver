@@ -295,16 +295,3 @@ top::IProductionModifier ::= 'layout' '(' n::INames ')'
 }
 
 
---------------------------------------------------------------------------------
-nonterminal IString with str;
-
-terminal EscapedStringTerm /"([^\"\\]|\\.)*"/ lexer classes {C_1};
-
-synthesized attribute str :: String;
-
-concrete production aString
-top::IString ::= s::EscapedStringTerm
-{
-  top.str = substitute("\\\"", "\"", substring(1,length(s.lexeme)-1,s.lexeme));
-}
-

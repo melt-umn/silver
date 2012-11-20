@@ -49,7 +49,7 @@ IOVal<Maybe<RootSpec>> ::=
     if useInterface && ifaceCompile.iovalue.parseSuccess then
       interfaceRootSpec(ifaceCompile.iovalue.parseTree)
     else
-      grammarRootSpec(gramCompile.iovalue, grammarName);
+      grammarRootSpec(gramCompile.iovalue, grammarName, grammarLocation.iovalue.fromJust);
   
   return if !grammarLocation.iovalue.isJust then
     ioval(grammarLocation.io, nothing())
