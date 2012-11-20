@@ -22,6 +22,7 @@ terminal Sigturnstile '::=' ;
 
 terminal Id_t /[\']([^\'\\]|[\\][\']|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\']/ lexer classes {C_0};
 terminal Num_t /\-?[0-9]+/ lexer classes {C_0};
+terminal EscapedStringTerm /"([^\"\\]|\\.)*"/ lexer classes {C_1};
 
 terminal T_t 't';
 terminal F_t 'f';
@@ -64,6 +65,7 @@ terminal DefsTerm             'defs'             lexer classes {C_1};
 terminal ExportedGrammarsTerm 'exportedGrammars' lexer classes {C_1};
 terminal OptionalGrammarsTerm 'optionalGrammars' lexer classes {C_1};
 terminal CondBuildTerm        'condBuild'        lexer classes {C_1};
+terminal GrammarSourceTerm    'grammarSource'    lexer classes {C_1};
 
 
 synthesized attribute signature :: NamedSignature;
@@ -74,7 +76,7 @@ synthesized attribute tyvars :: [TyVar];
 
 {- The "uninteresting" plumbing of interface files: -}
 
-nonterminal IRoot with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
+nonterminal IRoot with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, grammarSource, moduleNames, grammarName, allGrammarDependencies;
 nonterminal IDefs with defs, env, grammarName; -- including square brackets
 nonterminal IDefsInner with defs, env, grammarName; -- inside square brackets
 nonterminal ITypeReps with env, typereps, grammarName; -- including square brackets
@@ -83,7 +85,7 @@ nonterminal ITypeRepsInner with env, typereps, grammarName; -- inside square bra
 {- Extension points! -}
 
 {- Top-level elements of the interface file -}
-closed nonterminal IRootPart with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, moduleNames, grammarName, allGrammarDependencies;
+closed nonterminal IRootPart with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, grammarSource, moduleNames, grammarName, allGrammarDependencies;
 {- A DclInfo record -}
 closed nonterminal IDclInfo with defs, env, grammarName;
 {- A TypeExp record -}
@@ -104,10 +106,12 @@ nonterminal ILocation with location;
 nonterminal IBool with bval;
 nonterminal INames with names;
 nonterminal INamesInner with names;
+nonterminal IString with str;
 
 synthesized attribute bval :: Boolean;
 synthesized attribute names :: [String];
 synthesized attribute aname :: String;
+synthesized attribute str :: String;
 
 concrete production aTrue
 top::IBool ::= 't'
@@ -124,6 +128,12 @@ concrete production aLocationInfo
 top::ILocation ::= filename::IName ',' line::Num_t ',' column::Num_t
 {
   top.location = loc(filename.aname, toInt(line.lexeme), toInt(column.lexeme));
+}
+
+concrete production aString
+top::IString ::= s::EscapedStringTerm
+{
+  top.str = unescapeString(substring(1,length(s.lexeme)-1,s.lexeme)); -- TODO fix unescape and escape!!
 }
 
 concrete production aName
@@ -159,7 +169,8 @@ top::INamesInner ::= d1::IName ',' d2::INamesInner
 concrete production aRoot1
 top::IRoot ::= r::IRootPart
 {
-  top.declaredName = r.declaredName; 
+  top.declaredName = r.declaredName;
+  top.grammarSource = r.grammarSource;
   top.defs = r.defs;
   top.moduleNames = r.moduleNames;
   top.allGrammarDependencies = r.allGrammarDependencies;
@@ -171,7 +182,8 @@ top::IRoot ::= r::IRootPart
 concrete production aRoot2
 top::IRoot ::= r1::IRootPart r2::IRoot
 {
-  top.declaredName = if r1.declaredName == "" then r2.declaredName else r1.declaredName; 
+  top.declaredName = if r1.declaredName == "" then r2.declaredName else r1.declaredName;
+  top.grammarSource = if r1.grammarSource == "" then r2.grammarSource else r1.grammarSource;
   top.defs = r1.defs ++ r2.defs;
   top.moduleNames = r1.moduleNames ++ r2.moduleNames;
   top.allGrammarDependencies = r1.allGrammarDependencies ++ r2.allGrammarDependencies;
@@ -186,6 +198,7 @@ aspect default production
 top::IRootPart ::=
 {
   top.declaredName = "";
+  top.grammarSource = "";
   top.moduleNames = [];
   top.allGrammarDependencies = [];
   top.defs = [];
@@ -198,6 +211,12 @@ concrete production aRootDeclaredName
 top::IRootPart ::= 'declaredName' i::IName
 {
   top.declaredName = i.aname;
+}
+
+concrete production aRootGrammarSource
+top::IRootPart ::= 'grammarSource' s::IString
+{
+  top.grammarSource = s.str;
 }
 
 concrete production aRootModuleNames

@@ -13,14 +13,13 @@ nonterminal RootSpec with
   config, compiledGrammars, productionFlowGraphs, grammarFlowTypes,
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
-  defs, errors;
-
+  defs, errors, grammarSource;
 
 {--
  - Create a RootSpec from a real grammar, a set of .sv files.
  -}
 abstract production grammarRootSpec
-top::RootSpec ::= g::Grammar  grammarName::String
+top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String
 {
   g.grammarName = grammarName;
   
@@ -41,6 +40,8 @@ top::RootSpec ::= g::Grammar  grammarName::String
   g.config = top.config;
   g.compiledGrammars = top.compiledGrammars;
   
+  top.grammarSource = grammarSource;
+
   top.declaredName = g.declaredName;
   top.moduleNames = makeSet(g.moduleNames);
   top.exportedGrammars = g.exportedGrammars;
@@ -59,6 +60,8 @@ abstract production interfaceRootSpec
 top::RootSpec ::= p::IRoot
 {
   p.grammarName = p.declaredName;
+
+  top.grammarSource = p.grammarSource;
 
   top.declaredName = p.declaredName; 
   top.moduleNames = p.moduleNames;
@@ -82,6 +85,7 @@ String ::= r::Decorated RootSpec
   production attribute unparses :: [String] with ++;
   unparses := [
 		"declaredName " ++ quoteString(r.declaredName),
+		"grammarSource \"" ++ escapeString(r.grammarSource) ++ "\"",
 		"moduleNames " ++ unparseStrings(r.moduleNames),
 		"allDeps " ++ unparseStrings(r.allGrammarDependencies),
 	       	"exportedGrammars " ++ unparseStrings(r.exportedGrammars),

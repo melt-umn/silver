@@ -11,7 +11,7 @@ top::RootSpec ::= _
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  _
+top::RootSpec ::= g::Grammar  _ _
 {
   top.genFiles := g.genFiles ++
   [pair("Init.java",

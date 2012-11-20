@@ -9,15 +9,11 @@ import silver:util:cmdargs;
 -- The file where function writeBuildFile is originally defined is silver/translation/java/driver/BuildProcess.sv
 -- Here we're just aspecting that, using '<-' to contribute things to the production attributes declared there
 
-aspect function writeBuildFile
-IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::String da::Decorated DependencyAnalysis grammarLoc::String
+aspect production compilation
+top::Compilation ::= g::Grammars buildGrammar::String silverHome::String silverGen::String
 {
-  -- The RootSpec representing the grammar actually being built (specified on the command line)
-  local builtGrammar :: [Decorated RootSpec] = getRootSpec(head(a.buildGrammar), da.compiledList);
-  
   -- Empty if no ide decl in that grammar, otherwise has at least one spec... note that
   -- we're going to go with assuming there's just one IDE declaration...
-  local isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
   local ide :: IdeSpec = head(head(builtGrammar).ideSpecs);
 
   local parserClassName :: String = makeParserName(ide.ideParserSpec.fullName);
@@ -25,10 +21,10 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
   local parserPackagePath :: String = grammarToPath(ide.ideParserSpec.sourceGrammar);
   local parserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ ".copper";
   local ideParserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ "_ide.copper";
-  local pkgName :: String = grammarToPackage(head(a.buildGrammar));
+  local pkgName :: String = grammarToPackage(buildGrammar);
 
   extraTopLevelDecls <- if !isIde then [] else [
-    "<property name='grammar.path' value='" ++ grammarLoc ++ "'/>", 
+    "<property name='grammar.path' value='" ++ head(builtGrammar).grammarSource ++ "'/>", 
     "<property name='res' value='${sh}/resources'/>", --TODO: add all templates to here.
     "<property name='ide.version' value='1.0.0'/>",
     -- derive the name of language from grammar. TODO: In future we must allow users to define the name themselves.
@@ -66,7 +62,7 @@ IO ::= i::IO a::Decorated CmdArgs specs::[String] silverhome::String silvergen::
     "<attribute name='Bundle-SymbolicName' value='${lang.composed}' />", -- according to OSGi recommendation, use reversed domain name
     "<attribute name='Bundle-Version' value='${ide.version}' />",
     "<attribute name='Bundle-Vendor' value='${user.name}' />",
-    "<attribute name='Export-Package' value='" ++ implode(", ", map(grammarToExportString, specs)) ++ "' />",
+    "<attribute name='Export-Package' value='" ++ implode(", ", map(grammarToExportString, grammarsDependedUpon)) ++ "' />",
     "<attribute name='Bundle-RequiredExecutionEnvironment' value='J2SE-1.5' />",
     "<attribute name='Require-Bundle' value='edu.umn.cs.melt.copper;bundle-version=\"1.0.0\", edu.umn.cs.melt.silver;bundle-version=\"1.0.0\"' />" 
     -- TODO: generate version of silver/copper bundles dynamically
@@ -292,3 +288,4 @@ String ::= g::String
 {
   return grammarToPackage(g) ++ ";version=\"${ide.version}\"";
 }
+
