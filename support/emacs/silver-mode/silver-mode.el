@@ -14,7 +14,7 @@ For detail, see `comment-dwim'."
   (list
    '("[\']\\(\\([\\\\].\\)\\|[^\']\\)*[\']". font-lock-string-face)
    '("[\/]\\(\\([\\\\].\\)\\|[^\/]\\)*[\/]". font-lock-string-face)
-   '("\\<\\(production\\|productions\\|occurs\\|on\\|nonterminal\\|attribute\\|if\\|then\\|else\\|export\\|exports\\|close\\|closed\\)\\>" . font-lock-keyword-face)
+   '("\\<\\(production\\|productions\\|occurs\\|on\\|nonterminal\\|attribute\\|if\\|then\\|else\\|option\\|exports\\|close\\|closed\\)\\>" . font-lock-keyword-face)
    '("\\<\\(local\\|terminal\\|concrete\\|abstract\\|ignore\\|start\\|lexer\\|aspect\\|decorate\\|autocopy\\)\\>" . font-lock-keyword-face)
    '("\\<\\(import\\|imports\\|grammar\\|association\\|precedence\\|synthesized\\|inherited\\|with\\|as\\|include\\)\\>" . font-lock-keyword-face)
    '("\\<\\(only\\|hiding\\|using\\|forwards\\|to\\|use\\|syntax\\|forwarding\\|function\\|return\\)\\>" . font-lock-keyword-face)
@@ -25,7 +25,7 @@ For detail, see `comment-dwim'."
    '("\\<\\(case\\|of\\|end\\)\\>" . font-lock-keyword-face)
    '("\\<grammar\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-function-name-face)
    '("\\<import\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-function-name-face)
-   '("\\<export\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-function-name-face)
+   '("\\<option\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-function-name-face)
    '("\\<imports\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-function-name-face)
    '("\\<exports\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-function-name-face)
    '("\\<as\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-function-name-face)
