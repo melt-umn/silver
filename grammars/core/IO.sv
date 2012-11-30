@@ -51,6 +51,14 @@ IO ::= s::String i::IO
   "java" : return "common.Util.io(%i%, common.Util.print(%s%.toString()))";
 }
 
+function readLineStdin
+IOVal<String> ::= i::IO
+{
+  return error ("Not Yet Implemented: getStr");
+} foreign {
+  "java" : return "new core.Pioval(%i%, common.Util.getStr() )";
+}
+
 {--
  - Terminates with the specified error code.
  -

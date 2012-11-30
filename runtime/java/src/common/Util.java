@@ -135,6 +135,20 @@ public final class Util {
 		return new File(sb).delete();
 	}
 	
+    public static StringCatter getStr ( ) {
+	try {
+	    InputStreamReader isr = new InputStreamReader(System.in);
+	    BufferedReader br = new BufferedReader(isr);
+	    String s = br.readLine();
+	    return new StringCatter (s) ;
+	}
+	catch (IOException e) {
+	    String s = "IO EXCEPTION" ;
+	    return new StringCatter (s) ;
+	}
+
+    }
+
 	public static Object copyFile(String from, String to) {
 		// TODO: When we're good to depend on Java 7, there's Files.copy. This method should work for 4:
 	    FileChannel source = null;
