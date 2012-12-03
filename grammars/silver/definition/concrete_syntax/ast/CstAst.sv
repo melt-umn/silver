@@ -7,10 +7,13 @@ imports silver:definition:env only typeName, unparse, unparseStrings, unparseNon
 imports silver:translation:java:core only makeIdName, makeClassName, makeNTClassName;
 imports silver:translation:java:type only transType;
 
+-- The name of start nonterminal
+synthesized attribute startNT :: String;
+
 {--
  - Encapsulates transformations and analysis of Syntax
  -}
-closed nonterminal SyntaxRoot with cstErrors, cstNormal, xmlCopper, {-TODO:debugging-}unparse;
+closed nonterminal SyntaxRoot with cstErrors, cstNormal, xmlCopper, {-TODO:debugging-}unparse, startNT;
 
 synthesized attribute cstNormal :: SyntaxRoot; -- TODO basically just a debugging thing
 synthesized attribute xmlCopper :: String;

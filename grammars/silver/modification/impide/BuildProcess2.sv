@@ -6,7 +6,8 @@ import silver:definition:concrete_syntax;
 import silver:definition:concrete_syntax:ast;
 import silver:driver;
 import silver:translation:java;
-import silver:translation:java:driver;
+--import silver:translation:java:core only makeIdName, makeNTClassName;
+--import silver:translation:java:driver;
 import silver:util:cmdargs;
 
 aspect production compilation
@@ -20,6 +21,10 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
   production isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
 
   top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, allParsers, silverGen)];
+
+  extraTopLevelDecls <- if !isIde then [] else [
+    "<property name='start.nonterminal.class' value='" ++ makeNTClassName(head(allParsers).cstAst.startNT) ++ "'/>"]; 
+  -- FIXME? we now only track the first parser.
 }
 
 abstract production generateNCS

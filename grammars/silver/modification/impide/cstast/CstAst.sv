@@ -9,7 +9,7 @@ imports silver:translation:java:core only makeIdName, makeClassName, makeNTClass
 imports silver:translation:java:type only transType;
 imports silver:modification:impide;
 
--- The attribute into which the copper parser is built
+-- The attribute into which the copper parser in new XML skin is written
 synthesized attribute nxmlCopper :: String;
 attribute nxmlCopper occurs on SyntaxRoot, Syntax, SyntaxDcl;
 
@@ -32,6 +32,8 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
   -- for <Grammar>-wide <Layout>
   local attribute newUnivLayout :: String;
   newUnivLayout = implode("			\n", map(nxmlCopperElementRef, ignoredTerminals));
+
+  top.startNT = startnt;
 
   -- 2) The copper parser
   top.nxmlCopper =
