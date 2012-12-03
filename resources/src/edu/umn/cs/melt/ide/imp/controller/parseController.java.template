@@ -1,3 +1,8 @@
+/**
+ * PKG_NAME
+ * START_NONTERMINAL_CLASS
+ * LANG_NAME
+ */
 package @PKG_NAME@.imp.controller;
 
 import java.io.IOException;
@@ -15,7 +20,6 @@ import org.eclipse.imp.parser.SimpleAnnotationTypeInfo;
 import org.eclipse.imp.services.IAnnotationTypeInfo;
 import org.eclipse.imp.services.ILanguageSyntaxProperties;
 
-import silver.definition.core.NRoot;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.ide.copper.AdaptiveEnhancedParseTreeInnerNode;
 import edu.umn.cs.melt.ide.copper.EnhancedCopperParserException;
@@ -71,7 +75,7 @@ public class @LANG_NAME@ParseController extends ParseControllerBase {
 	
 	@Override
 	public Object parse(String input, IProgressMonitor monitor) {
-		AdaptiveEnhancedParseTreeInnerNode<NRoot> result = null;
+		AdaptiveEnhancedParseTreeInnerNode<@START_NONTERMINAL_CLASS@> result = null;
 		boolean parsed = false;
 		handler.clearMessages();
 		

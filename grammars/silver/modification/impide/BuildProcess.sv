@@ -6,8 +6,11 @@ import silver:translation:java:core only makeParserName, makeName;
 
 import silver:util:cmdargs;
 
--- The file where function writeBuildFile is originally defined is silver/translation/java/driver/BuildProcess.sv
--- Here we're just aspecting that, using '<-' to contribute things to the production attributes declared there
+{--
+  The file where production compilation (used to be called buildWriteFile) is originally 
+  defined in "silver/translation/java/driver/BuildProcess.sv"; here we're just aspecting 
+  that, using '<-' to contribute things to the production attributes declared there.
+--}
 
 aspect production compilation
 top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
@@ -160,7 +163,8 @@ String ::=
     "  <filter token=\"FEATURE_LICENSE_URL\" value='http://some.user.provided.url'/>\n" ++
     "  <filter token=\"FEATURE_LICENSE_TEXT\" value='no license information available'/>\n" ++
     "  <filter token=\"ANALYZER_CLASS_QNAME\" value='${ide.function.analyzer}'/>\n" ++
-    "  <filter token=\"LANG_COMPOSED_PKG\" value='${lang.composed}'/>\n";
+    "  <filter token=\"LANG_COMPOSED_PKG\" value='${lang.composed}'/>\n" ++ 
+    "  <filter token=\"START_NONTERMINAL_CLASS\" value='${start.nonterminal.class}'/>\n";
 }
 
 function getCreateFoldersTarget
