@@ -61,7 +61,7 @@ IOVal<Integer> ::= args::[String] ioin::IO
 
 --- ... we're adding an ide declaration here
 
-temp_imp_ide_dcl rParse ".sv" { 
+temp_imp_ide_dcl svParse ".sv" { 
   analyzer getErrors;--a function whose signature must be "[String] ::= args::[String] i::IO"
 };
 
@@ -69,7 +69,7 @@ function getErrors
 [String] ::= args::[String] i::IO
 {
 
-  local ru :: IOVal<[String]> = ideRun(args, svParse, sviParser, i);
+  local ru :: IOVal<[String]> = ideRun(args, svParse, sviParse, i);
 
   return ru.iovalue;
 }
