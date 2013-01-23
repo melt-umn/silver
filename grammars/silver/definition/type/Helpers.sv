@@ -17,6 +17,7 @@ function removeTyVars
 	      else cons(head(startswith), removeTyVars(tail(startswith), toremove));
 }
 
+-- HUGE LIE: This is not a set. Well, maybe. We *might* depend on this being ordered.
 function setUnionTyVars
 [TyVar] ::= a::[TyVar] b::[TyVar]
 {

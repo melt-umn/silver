@@ -10,7 +10,7 @@ option silver:definition:type:io;
 nonterminal Type      with config, location, grammarName, file, errors, env, pp, typerep, lexicalTypeVariables;
 nonterminal Signature with config, location, grammarName, file, errors, env, pp, types,   lexicalTypeVariables;
 nonterminal TypeList  with config, location, grammarName, file, errors, env, pp, types,   lexicalTypeVariables, errorsTyVars, freeVariables;
-nonterminal BracketedOptTypeList with config, grammarName, file, env, pp, typelist;
+nonterminal BracketedOptTypeList with config, location, grammarName, file, errors, env, pp, types, lexicalTypeVariables, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 
 synthesized attribute types :: [TypeExp];
 
@@ -20,9 +20,9 @@ synthesized attribute lexicalTypeVariables :: [String];
 
 -- These attributes are used if we're using the TypeList as type variables-only.
 synthesized attribute errorsTyVars :: [Message] with ++;
-
--- For bracketed lists
-synthesized attribute typelist :: Decorated TypeList;
+-- A new environment, with the type variables in this list appearing bound
+inherited attribute initialEnv :: Decorated Env;
+synthesized attribute envBindingTyVars :: Decorated Env;
 
 -- TODO: This function should go away because it doesn't do location correctly.
 -- But for now, we'll use it. It might be easier to get rid of once we know exactly
@@ -101,18 +101,18 @@ top::Type ::= 'Boolean'
 }
 
 concrete production nominalType
-top::Type ::= q::QNameUpper botl::BracketedOptTypeList
+top::Type ::= q::QNameUpper tl::BracketedOptTypeList
 {
-  top.pp = q.pp ++ botl.pp;
+  top.pp = q.pp ++ tl.pp;
   top.location = q.location;
-  top.errors := q.lookupType.errors ++ botl.typelist.errors;
-  top.lexicalTypeVariables = botl.typelist.lexicalTypeVariables;
+  top.errors := q.lookupType.errors ++ tl.errors;
+  top.lexicalTypeVariables = tl.lexicalTypeVariables;
 
-  top.errors <- if length(botl.typelist.types) != length(q.lookupType.dclBoundVars)
-                then [err(top.location, q.pp ++ " has " ++ toString(length(q.lookupType.dclBoundVars)) ++ " type variables, but there are " ++ toString(length(botl.typelist.types)) ++ " supplied here.")]
+  top.errors <- if length(tl.types) != length(q.lookupType.dclBoundVars)
+                then [err(top.location, q.pp ++ " has " ++ toString(length(q.lookupType.dclBoundVars)) ++ " type variables, but there are " ++ toString(length(tl.types)) ++ " supplied here.")]
                 else [];
 
-  top.typerep = performSubstitution(q.lookupType.typerep, zipVarsAndTypesIntoSubstitution(q.lookupType.dclBoundVars, botl.typelist.types));
+  top.typerep = performSubstitution(q.lookupType.typerep, zipVarsAndTypesIntoSubstitution(q.lookupType.dclBoundVars, tl.types));
 }
 
 concrete production typeVariableType
@@ -213,7 +213,23 @@ concrete production botlSome
 top::BracketedOptTypeList ::= '<' tl::TypeList '>'
 {
   top.pp = "<" ++ tl.pp ++ ">";
-  top.typelist = tl;
+  top.location = tl.location;
+
+  top.errors := tl.errors;
+  top.types = tl.types;
+
+  top.lexicalTypeVariables = tl.lexicalTypeVariables;
+  top.freeVariables = tl.freeVariables;
+  
+  top.errorsTyVars := tl.errorsTyVars ++
+    if containsDuplicates(tl.lexicalTypeVariables)
+    then [err(top.location, "Type parameter list repeats type variable names")]
+    else [];
+
+  top.envBindingTyVars =
+    newScopeEnv(
+      addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
+      top.initialEnv);
 }
 
 -- TypeLists -------------------------------------------------------------------

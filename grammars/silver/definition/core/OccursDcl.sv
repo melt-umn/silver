@@ -4,74 +4,75 @@ concrete production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
 {
   top.pp = "attribute " ++ at.pp ++ attl.pp ++ " occurs on " ++ nt.pp ++ nttl.pp ++ ";";
+
+  -- TODO: this location is highly unreliable.
   top.location = loc(top.file, $1.line, $1.column);
 
-  -- TODO: we should decide which location to use (a or nt) better somehow (not using top.location because that can't be trusted! ext:convenience may create these out of thin air)
-  top.defs = [occursDef(top.grammarName, at.location, 
-                        nt.lookupType.fullName, at.lookupAttribute.fullName,
-                        protontty, protoatty)];
+  top.defs = [
+    occursDef(top.grammarName, at.location,
+      nt.lookupType.fullName, at.lookupAttribute.fullName,
+      protontty, protoatty)];
 
   -- binding errors in looking up these names.
-  top.errors := at.lookupAttribute.errors ++ nt.lookupType.errors;
+  top.errors := at.lookupAttribute.errors ++ nt.lookupType.errors ++
+    attl.errors ++ nttl.errors ++
+    -- The nonterminal type list is strictly type VARIABLES only
+    nttl.errorsTyVars;
   
-  -- TODO SOMEDAY: relax the requirement that nt.typelist be all type variables. (partial occurences e.g. 'sum occurs on List Int')
-  top.errors <- attl.typelist.errors{-nonTyVars-} ++ nttl.typelist.errorsTyVars;
-  -- We are permitting "over-specified occurrences" hence nonTyVars
-  
-  -- Declare ONLY those type variables on the NT, (in TLAT and TLNT ONLY (that is, this does not belong in defs!))
-  production attribute typingEnv :: Decorated Env;
-  typingEnv = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, nttl.typelist.lexicalTypeVariables),
-                           top.env);
-  attl.env = typingEnv;
-  nttl.env = typingEnv;
-  top.errors <- if containsDuplicates(nttl.typelist.lexicalTypeVariables)
-                then [err(nt.location, "Duplicate type variable names listed in nonterminal")]
-                else [];
+  nttl.initialEnv = top.env;
+  attl.env = nttl.envBindingTyVars;
+  nttl.env = nttl.envBindingTyVars;
   
   -- Make sure we get the number of tyvars correct for the NT
-  top.errors <- if length(nt.lookupType.dclBoundVars) != length(nttl.typelist.types)
+  top.errors <- if length(nt.lookupType.dclBoundVars) != length(nttl.types)
                 then [err(nt.location, nt.pp ++ " expects " ++ toString(length(nt.lookupType.dclBoundVars)) ++
-                                       " type variables, but " ++ toString(length(nttl.typelist.types)) ++ " were provided.")]
+                                       " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
                 else [];
 
   -- Make sure we get the number of tyvars correct for the ATTR
-  top.errors <- if length(at.lookupAttribute.dclBoundVars) != length(attl.typelist.types)
+  top.errors <- if length(at.lookupAttribute.dclBoundVars) != length(attl.types)
                 then [err(at.location, at.pp ++ " expects " ++ toString(length(at.lookupAttribute.dclBoundVars)) ++
-                                       " type variables, but " ++ toString(length(attl.typelist.types)) ++ " were provided.")]
+                                       " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
                 else [];
 
-  -- Create two substitutions that translate the types listed in the env
-  -- for the nt and at TO the type we write down here.
-  -- THEN, include a subsitution from the skolems constants (that are here)
-  -- TO fresh type variables that we generate.
+  -- We have 4 types.
+  -- 1: A type, from env, for the nonterminal
+  -- 2: A type, from syntax, for the nonterminal
+  -- 3: A type, from env, for the attribute
+  -- 4: A type, from syntax, for the attribute.
+  
+  -- Our goal is to be able to take a (unknown) nonterminal type
+  -- and yield the appropriate attribute type it corresponds to.
+  
+  -- To that end, we want two things:
+  -- 1: A type that we can unify with some nonterminal type.
+  -- 2: A type that, under than unification, will be the resulting attribute type.
+
+  -- So we generate three substitutions:
+  -- 1: Rewrite the tyvars of type #1 to the types of type #2.
+  -- 2: Rewrite the tyvars of type #4 to the types of type #4.
+  -- 3: Rewrite our local tyvars to fresh variables.
+  
+  -- Thus, we apply this to type #2 and #4, and get our goal.
+  
+  -- This is perfectly correct, but it can probably be simplified with some invariants
+  -- on what appears in the environment.
+  
   production attribute rewriteAndFreshenSubst :: Substitution;
-  rewriteAndFreshenSubst = composeSubst(composeSubst(
-                     -- nt's env types -> local skolem types  (okay because we only permit tyvars!!)
-                     zipVarsIntoSubstitution(nt.lookupType.dclBoundVars, nttl.typelist.freeVariables),
-                     -- at's env types -> local skolem types  (AndTypes because over-spec means it's not just free vars!)
-                     zipVarsAndTypesIntoSubstitution(at.lookupAttribute.dclBoundVars, attl.typelist.types)),
-                   -- local skolem types -> fresh ty vars (non-skolem)  (here we're just tyvars and skolems again...)
-                   zipVarsIntoSubstitution(nttl.typelist.freeVariables, freshTyVars(length(nttl.typelist.freeVariables))));
-                   
+  rewriteAndFreshenSubst = 
+    composeSubst(composeSubst(
+      -- nt's env types -> local skolem types  (vars -> vars)
+      zipVarsIntoSubstitution(nt.lookupType.dclBoundVars, nttl.freeVariables),
+      -- at's env types -> local skolem types  (vars -> types)
+      zipVarsAndTypesIntoSubstitution(at.lookupAttribute.dclBoundVars, attl.types)),
+      -- local skolem types -> fresh ty vars (non-skolem)
+      zipVarsIntoSubstitution(nttl.freeVariables, freshTyVars(length(nttl.freeVariables))));
+  
   production attribute protontty :: TypeExp;
   production attribute protoatty :: TypeExp;
   protontty = performSubstitution(nt.lookupType.typerep, rewriteAndFreshenSubst);
   protoatty = performSubstitution(at.lookupAttribute.typerep, rewriteAndFreshenSubst);
   
-  {-  Look up nt and nt.bound
-      Zip (nt.bound -> tlnt.types)
-      Look up at and at.bound
-      Zip (at.bound -> tlat.types)
-      create a freshening substitution to get rid of skolems (Should only be those in tlnt)
-      freshen both with this
-      finally, put them in the environment.
-      
-      The end result should be a TyVars-only (no skolems, so unify works) pair of types, with shared
-      type variables according to the occurs declaration.
-      
-      This code needs review from someone to make sure it all makes sense. Maybe just me, later, when I'm not sick and stuffy.
-   -}
-
   -- Now, finally, make sure we're not "redefining" the occurs.
   production attribute occursCheck :: [DclInfo];
   occursCheck = getOccursDcl(at.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
