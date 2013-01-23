@@ -9,29 +9,21 @@ imports silver:util;
 terminal Type_t 'type' ; -- lexer classes { KEYWORD };
 
 concrete production typeDecl
-top::AGDcl ::= 'type' id::Name botl::BracketedOptTypeList '=' te::Type ';'
+top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeList '=' te::Type ';'
 {
-  top.pp = "type " ++ id.pp ++ botl.pp ++ "=" ++ te.pp ++ ";";
+  top.pp = "type " ++ id.pp ++ tl.pp ++ "=" ++ te.pp ++ ";";
   top.location = id.location;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
   
-  production attribute tl :: Decorated TypeList;
-  tl = botl.typelist;
-
   top.defs = [typeAliasDef(top.grammarName, id.location, fName, tl.freeVariables, te.typerep)];
 
-  top.errors := tl.errors ++ te.errors;
+  top.errors := tl.errors ++ te.errors ++ tl.errorsTyVars;
   
-  botl.env = newScopeEnv(addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
-                         top.env);
-  te.env = botl.env;
-  
-  top.errors <- tl.errorsTyVars;
-  top.errors <- if containsDuplicates(tl.lexicalTypeVariables)
-                then [err(top.location, "Duplicate type variable names listed")]
-                else [];
+  tl.initialEnv = top.env;
+  tl.env = tl.envBindingTyVars;
+  te.env = tl.envBindingTyVars;
   
   -- Redefinition check of the name
   top.errors <- 
