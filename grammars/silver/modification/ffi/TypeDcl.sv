@@ -12,9 +12,9 @@ imports silver:modification:typedecl;
 -- but right now, we don't. Phooey.
 
 concrete production ffiTypeDcl
-top::AGDcl ::= 'type' id::Name botl::BracketedOptTypeList 'foreign' ';' -- '{' ffidefs::FFIDefs '}'
+top::AGDcl ::= 'type' id::Name botl::BracketedOptTypeList 'foreign' ';'
 {
-  top.pp = "type " ++ id.pp ++ botl.pp ++ " foreign;"; -- "{\n" ++ ffidefs.pp ++ "}";
+  top.pp = "type " ++ id.pp ++ botl.pp ++ " foreign ;";
   top.location = loc(top.file, $1.line, $1.column);
   
   production attribute fName :: String;
@@ -39,13 +39,13 @@ top::AGDcl ::= 'type' id::Name botl::BracketedOptTypeList 'foreign' ';' -- '{' f
   
   -- Redefinition check of the name
   top.errors <- 
-       if length(getTypeDclAll(fName, top.env)) > 1 
-       then [err(top.location, "Type '" ++ fName ++ "' is already bound.")]
-       else [];
+    if length(getTypeDclAll(fName, top.env)) > 1 
+    then [err(top.location, "Type '" ++ fName ++ "' is already bound.")]
+    else [];
 
   top.errors <-
-       if isLower(substring(0,1,id.name))
-       then [err(id.location, "Types must be capitalized. Invalid foreign type name " ++ id.name)]
-       else [];
+    if isLower(substring(0, 1, id.name))
+    then [err(id.location, "Types must be capitalized. Invalid foreign type name " ++ id.name)]
+    else [];
 }
 
