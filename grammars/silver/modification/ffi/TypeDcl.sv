@@ -12,40 +12,31 @@ imports silver:modification:typedecl;
 -- but right now, we don't. Phooey.
 
 concrete production ffiTypeDcl
-top::AGDcl ::= 'type' id::Name botl::BracketedOptTypeList 'foreign' ';' -- '{' ffidefs::FFIDefs '}'
+top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeList 'foreign' ';'
 {
-  top.pp = "type " ++ id.pp ++ botl.pp ++ " foreign;"; -- "{\n" ++ ffidefs.pp ++ "}";
+  top.pp = "type " ++ id.pp ++ tl.pp ++ " foreign ;";
   top.location = loc(top.file, $1.line, $1.column);
   
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  production attribute tl :: Decorated TypeList;
-  tl = botl.typelist;
-
   top.defs = [typeAliasDef(top.grammarName, id.location, fName, tl.freeVariables, foreignTypeExp(fName, tl.types))];
 
-  top.errors := tl.errors;
+  top.errors := tl.errors ++ tl.errorsTyVars;
   
   -- Put the variables listed on the rhs in the environment FOR TL ONLY, so they're all "declared"
-  botl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
-                        top.env);
-  top.errors <- if containsDuplicates(tl.lexicalTypeVariables)
-                then [err(top.location, "Duplicate type variable names listed")]
-                else [];
-  
-  -- Make sure only type variables show up in the tl
-  top.errors <- tl.errorsTyVars;
+  tl.initialEnv = top.env;
+  tl.env = tl.envBindingTyVars;
   
   -- Redefinition check of the name
   top.errors <- 
-       if length(getTypeDclAll(fName, top.env)) > 1 
-       then [err(top.location, "Type '" ++ fName ++ "' is already bound.")]
-       else [];
+    if length(getTypeDclAll(fName, top.env)) > 1 
+    then [err(top.location, "Type '" ++ fName ++ "' is already bound.")]
+    else [];
 
   top.errors <-
-       if isLower(substring(0,1,id.name))
-       then [err(id.location, "Types must be capitalized. Invalid foreign type name " ++ id.name)]
-       else [];
+    if isLower(substring(0, 1, id.name))
+    then [err(id.location, "Types must be capitalized. Invalid foreign type name " ++ id.name)]
+    else [];
 }
 

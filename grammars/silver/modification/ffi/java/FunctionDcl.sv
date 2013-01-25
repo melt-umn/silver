@@ -1,4 +1,5 @@
 grammar silver:modification:ffi:java;
+
 import silver:modification:ffi;
 import silver:modification:ffi:util;
 import silver:translation:java:core;
@@ -30,21 +31,23 @@ top::FFIDef ::= name::String_t ':' 'return' code::String_t ';'
 function strictChildAccessor
 String ::= ns::NamedSignatureElement
 {
-  return "((" ++ ns.typerep.transType ++ ")(args[i_" ++ ns.elementName  ++ "] = common.Util.demand(args[i_" ++ ns.elementName  ++ "])))";
+  return "((" ++ ns.typerep.transType ++ ")(args[i_" ++ ns.elementName ++ "] = common.Util.demand(args[i_" ++ ns.elementName ++ "])))";
 }
 function lazyChildAccessor
 String ::= ns::NamedSignatureElement
 {
-  return "args[i_" ++ ns.elementName  ++ "]";
+  return "args[i_" ++ ns.elementName ++ "]";
 }
 
 function computeSigTranslation
 String ::= str::String sig::NamedSignature
 {
   return substituteAll(
-           substituteAll(str, map(wrapStrictNotation, sig.inputNames), map(strictChildAccessor, sig.inputElements)),
-           map(wrapLazyNotation, sig.inputNames),
-           map(lazyChildAccessor, sig.inputElements));
+    substituteAll(str,
+      map(wrapStrictNotation, sig.inputNames),
+      map(strictChildAccessor, sig.inputElements)),
+    map(wrapLazyNotation, sig.inputNames),
+    map(lazyChildAccessor, sig.inputElements));
 }
 
 
@@ -73,3 +76,4 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
                 then [err(ffidefs.location, "There is more than one Java translation in this FFI function")]
                 else [];
 }
+

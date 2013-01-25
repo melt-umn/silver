@@ -24,8 +24,17 @@ wrongCode "NTOne has 1 type variables, but there are 2 supplied here" {
 wrongCode "NTZero' is already bound" {
  nonterminal NTZero;
 }
-wrongCode "Duplicate type variable names listed" {
- nonterminal NTTwo<a a>;
+
+wrongCode "repeats type variable names" {
+ nonterminal NTTwoBad<a a>;
+}
+
+nonterminal NTTwo<a b>;
+
+synthesized attribute typeTest<a> :: a;
+
+wrongCode "repeats type variable names" {
+ attribute typeTest<a> occurs on NTTwo<a a>;
 }
 
 --nonterminal IO; -- parse error
@@ -55,7 +64,7 @@ wrongCode "Operands to == must be the same type. Instead they are String and Int
  global t :: Boolean = astr1 == anum1;
 }
 
-wrongCode "Duplicate type variable names listed" {
+wrongCode "repeats type variable names" {
  type TypeTwo<a a> = Integer;
 }
 
