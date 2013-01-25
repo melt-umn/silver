@@ -13,7 +13,7 @@ import silver:util;
 
 
 aspect production attributeDclAuto
-top::AGDcl ::= 'autocopy' 'attribute' a::Name botl::BracketedOptTypeList '::' te::Type ';'
+top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type ';'
 {
   local attribute className :: String;
   className = "D" ++ a.name;

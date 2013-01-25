@@ -118,28 +118,21 @@ top::Operation ::=
 
 --- Declarations ---------------------------------------------------------------
 concrete production collectionAttributeDclSyn
-top::AGDcl ::= 'synthesized' 'attribute' a::Name botl::BracketedOptTypeList '::' te::Type 'with' q::NameOrBOperator ';'
+top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type 'with' q::NameOrBOperator ';'
 {
-  top.pp = "synthesized attribute " ++ a.name ++ botl.pp ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
+  top.pp = "synthesized attribute " ++ a.name ++ tl.pp ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
   top.location = loc(top.file, $1.line, $1.column);
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
-
-  production attribute tl :: Decorated TypeList;
-  tl = botl.typelist;
 
   top.defs = [synColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
 
---------
-  botl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
-                        top.env);
-  te.env = tl.env;
-  top.errors <- if containsDuplicates(tl.lexicalTypeVariables)
-                then [err(top.location, "Duplicate type variable names listed")]
-                else [];
-  top.errors <- tl.errorsTyVars;
---------
+  tl.initialEnv = top.env;
+  tl.env = tl.envBindingTyVars;
+  te.env = tl.envBindingTyVars;
+
+  top.errors := te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
@@ -147,34 +140,26 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name botl::BracketedOptTypeList '::'
         else [];	
 
   q.operatorForType = te.typerep;
-  top.errors := te.errors ++ q.errors ++ tl.errors;
 
-  forwards to attributeDclSyn($1, $2, a, botl, $5, te, $9);
+  forwards to attributeDclSyn($1, $2, a, tl, $5, te, $9);
 }
 
 concrete production collectionAttributeDclInh
-top::AGDcl ::= 'inherited' 'attribute' a::Name botl::BracketedOptTypeList '::' te::Type 'with' q::NameOrBOperator ';'
+top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type 'with' q::NameOrBOperator ';'
 {
-  top.pp = "inherited attribute " ++ a.name ++ botl.pp ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
+  top.pp = "inherited attribute " ++ a.name ++ tl.pp ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
   top.location = loc(top.file, $1.line, $1.column);
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  production attribute tl :: Decorated TypeList;
-  tl = botl.typelist;
-
   top.defs = [inhColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
 
---------
-  botl.env = newScopeEnv( addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
-                        top.env);
-  te.env = tl.env;
-  top.errors <- if containsDuplicates(tl.lexicalTypeVariables)
-                then [err(top.location, "Duplicate type variable names listed")]
-                else [];
-  top.errors <- tl.errorsTyVars;
---------
+  tl.initialEnv = top.env;
+  tl.env = tl.envBindingTyVars;
+  te.env = tl.envBindingTyVars;
+
+  top.errors := te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
@@ -182,9 +167,8 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name botl::BracketedOptTypeList '::' t
         else [];	
 
   q.operatorForType = te.typerep;
-  top.errors := te.errors ++ q.errors ++ tl.errors;
 
-  forwards to attributeDclInh($1, $2, a, botl, $5, te, $9);
+  forwards to attributeDclInh($1, $2, a, tl, $5, te, $9);
 }
 
 
@@ -201,13 +185,14 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
 
   top.defs = [];
 
+  top.errors := te.errors ++ q.errors;
+
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
         then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
   q.operatorForType = te.typerep;
-  top.errors := te.errors ++ q.errors;
  
   forwards to productionAttributeDcl($1, $2, a, $4, te, $8);
 }
