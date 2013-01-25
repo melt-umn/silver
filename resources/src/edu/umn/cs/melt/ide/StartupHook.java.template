@@ -1,0 +1,17 @@
+/*
+ * Variables used:
+ *   PKG_NAME
+ *   LANG_NAME
+ */
+package @PKG_NAME@;
+
+import org.eclipse.ui.IStartup;
+
+public class StartupHook implements IStartup {
+
+	@Override
+	public void earlyStartup() {
+		@LANG_NAME@Initializer.initialize();
+	}
+	
+}
