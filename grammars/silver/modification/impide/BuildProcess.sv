@@ -131,7 +131,7 @@ String ::=
     "\n" ++
 
     "  <condition property=\"is-all-in-one\">\n"++
-    "    <equals arg1=\"${all-in-one}\" arg2=\"true\" />\n"++
+    "    <not><equals arg1=\"${multiple-plugins}\" arg2=\"true\"/></not>\n"++	--"all-in-one" mode is default
     "  </condition>\n"++
     "  \n"++
     "  <condition property=\"to-customize\">\n"++
