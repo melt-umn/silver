@@ -62,8 +62,50 @@ IOVal<Integer> ::= args::[String] ioin::IO
 --- ... we're adding an ide declaration here
 
 temp_imp_ide_dcl svParse ".sv" { 
-  analyzer getErrors;--a function whose signature must be "[String] ::= args::[String] i::IO"
+  analyzer getErrors2;--a function whose signature must be "[String] ::= args::[IdeProperty] i::IO"
+  property grammar_to_compile string;
+  property grammar_to_include string;
 };
+
+function getErrors2
+[String] ::= args::[IdeProperty] i::IO
+{
+
+  local sargs::[String] = getArgStrings(args) ++ getGrammarToCompile(args);
+
+  local ru :: IOVal<[String]> = ideRun(sargs, svParse, sviParse, i);
+
+  return ru.iovalue;
+}
+
+function getArgStrings
+[String] ::= args::[IdeProperty]
+{
+  return
+    if(null(args))
+    then []
+    else getArgString(head(args)) ++ getArgStrings(tail(args));
+}
+
+function getArgString
+[String] ::= arg::IdeProperty
+{
+  return
+    if arg.propName == "grammar_to_include"
+    then ["-I", arg.propType]--FIXME: add new attribute propValue; now we just reuse propType (improperly)
+    else [];
+}
+
+function getGrammarToCompile
+[String] ::= args::[IdeProperty]
+{
+  return
+    if(null(args))
+    then []
+    else if head(args).propName == "grammar_to_compile"
+	    then [head(args).propType]--FIXME: add new attribute propValue; now we just reuse propType (improperly)
+	    else getGrammarToCompile(tail(args));
+}
 
 function getErrors 
 [String] ::= args::[String] i::IO

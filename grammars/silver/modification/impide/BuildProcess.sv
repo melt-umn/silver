@@ -17,7 +17,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
 {
   -- Empty if no ide decl in that grammar, otherwise has at least one spec... note that
   -- we're going to go with assuming there's just one IDE declaration...
-  local ide :: IdeSpec = head(head(builtGrammar).ideSpecs);
+  production ide :: IdeSpec = head(head(builtGrammar).ideSpecs);
 
   local parserClassName :: String = makeParserName(ide.ideParserSpec.fullName);
   local parserPackageName :: String = makeName(ide.ideParserSpec.sourceGrammar);
@@ -118,8 +118,10 @@ String ::= funcDcl :: Pair<String String>
     local attribute grammarPart :: String = substitute(":", "/", substring(0, lastInd, funcDcl.snd));
 
     return "\n" ++ 
-           "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Analyze.java.template\"\n" ++ 
-           "        tofile=\"${src}/" ++ grammarPart ++ "/Analyze.java\" filtering=\"true\" overwrite=\"true\"/>";
+           "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Analyze.java.template\"\n" ++ --String[], to be deleted
+           "        tofile=\"${src}/" ++ grammarPart ++ "/Analyze.java\" filtering=\"true\" overwrite=\"true\"/>\n" ++
+           "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Analyze2.java.template\"\n" ++ --NIdeProperty[]
+           "        tofile=\"${src}/" ++ grammarPart ++ "/Analyze2.java\" filtering=\"true\" overwrite=\"true\"/>";
 }
 
 function getArgCheckTarget
@@ -252,11 +254,20 @@ String ::=
     "      tofile=\"${ide.pkg.path}/imp/builders/${lang.name}Nature.java\" filtering=\"true\"/>\n" ++
     "<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/builder.java.template\"\n" ++
     "      tofile=\"${ide.pkg.path}/imp/builders/${lang.name}Builder.java\" filtering=\"true\"/>\n" ++
+    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/analysis_invoker.java.template\"\n" ++
+    "      tofile=\"${ide.pkg.path}/imp/builders/${lang.name}AnalysisInvoker.java\" filtering=\"true\"/>\n" ++
     "\n" ++
 
     "<mkdir dir='${ide.pkg.path}/imp/coloring'/>\n" ++
     "<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/coloring/Colorer.java.template\"\n" ++
     "      tofile=\"${ide.pkg.path}/imp/coloring/Colorer.java\" filtering=\"true\"/>\n" ++
+    "\n" ++
+
+    "<mkdir dir='${ide.pkg.path}/eclipse/wizard'/>\n" ++
+    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/wizard/NewProjectWizard.java.template\"\n" ++
+    "      tofile=\"${ide.pkg.path}/eclipse/wizard/NewProjectWizard.java\" filtering=\"true\"/>\n" ++
+    "<copy file=\"./ide_files/eclipse/wizard/PropertyGenerator.java.template\"\n" ++
+    "      tofile=\"${ide.pkg.path}/eclipse/wizard/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
     "\n" ++
 
     "<!-- 9. pom.xml (using tycho) -->\n" ++
@@ -279,7 +290,10 @@ String ::=
     -- "<copy file=\"${res}/classpath.template\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n" ++
     "<antcall target=\"set classpaths for Eclipse\" inheritAll=\"true\"/>\n" ++
     "<antcall target=\"set classpaths for Eclipse (all-on-one)\" inheritAll=\"true\"/>\n" ++
+    "\n" ++
 
+    "<!-- 11. project properties -->\n" ++
+    "<copy file=\"./project.properties\" tofile=\"${ide.proj.plugin.path}/project.properties\"/>\n" ++
     "\n"
   ;
 }

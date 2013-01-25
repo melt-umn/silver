@@ -1,0 +1,45 @@
+/*
+ * Variables used:
+ *   LANG_COMPOSED_PKG
+ *   ANALYZER_CLASS_QNAME
+ */
+package @LANG_COMPOSED_PKG@;
+
+import silver.modification.impide.NIdeProperty;
+
+/**
+ * This class invokes the analyzer function defined in Silver code.
+ */
+public class Analyze2 {
+
+	//Call user-defined analyzer
+	public static java.util.List<String> analyze(NIdeProperty[] args) {
+		try {
+			common.ConsCell cc = (common.ConsCell) @ANALYZER_CLASS_QNAME@.invoke(
+				new Object[]{cvargs(args), null});
+			
+			//Translate the returned String (message) array into a list
+			java.util.List<String> list = new java.util.ArrayList<String>();
+			while(!cc.nil()){
+				common.StringCatter sc = (common.StringCatter)cc.head();
+				list.add(sc.toString());
+				cc = cc.tail();
+			}
+			
+			return list;
+		} catch(Throwable t) {
+			common.Util.printStackCauses(t);
+			return null;
+		}
+	}
+
+	//Convert array to cons
+	public static common.ConsCell cvargs(NIdeProperty [] args){
+		common.ConsCell result = common.ConsCell.nil;
+		for(int i = args.length - 1; i >= 0; i --) {
+			result = new common.ConsCell(args[i], result);
+		}
+		return result;
+	}
+
+}
