@@ -237,6 +237,8 @@ String ::=
     "<mkdir dir='${ide.pkg.path}/'/>\n" ++  
     "<copy file=\"${res}/src/edu/umn/cs/melt/ide/Initializer.java.template\"\n" ++
     "      tofile=\"${ide.pkg.path}/${lang.name}Initializer.java\" filtering=\"true\"/>\n" ++
+    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/StartupHook.java.template\"\n" ++
+    "      tofile=\"${ide.pkg.path}/StartupHook.java\" filtering=\"true\"/>\n" ++
     "\n" ++
 
     "<mkdir dir='${ide.pkg.path}/imp/'/>\n" ++  

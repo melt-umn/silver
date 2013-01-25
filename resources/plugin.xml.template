@@ -103,4 +103,11 @@ Variables used:
             name="@LANG_NAME@">
       </category>
    </extension>
+   <!-- Startup hook (called when the plugin is loaded, mainly used for early initialization) -->
+   <extension
+         point="org.eclipse.ui.startup">
+      <startup
+            class="@PKG_NAME@.StartupHook">
+      </startup>
+   </extension>
 </plugin>
