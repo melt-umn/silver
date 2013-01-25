@@ -290,10 +290,10 @@ String ::=
     -- "<copy file=\"${res}/classpath.template\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n" ++
     "<antcall target=\"set classpaths for Eclipse\" inheritAll=\"true\"/>\n" ++
     "<antcall target=\"set classpaths for Eclipse (all-on-one)\" inheritAll=\"true\"/>\n" ++
-    "\n" ++
+    --"\n" ++
 
-    "<!-- 11. project properties -->\n" ++
-    "<copy file=\"./project.properties\" tofile=\"${ide.proj.plugin.path}/project.properties\"/>\n" ++
+    --"<!-- 11. project properties -->\n" ++
+    --"<copy file=\"./project.properties\" tofile=\"${ide.proj.plugin.path}/project.properties\"/>\n" ++
     "\n"
   ;
 }
