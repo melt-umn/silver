@@ -1,0 +1,143 @@
+/*
+ * Variables used:
+ *   PKG_NAME
+ *   LANG_NAME
+ */
+package @PKG_NAME@.imp.builders;
+
+import java.io.File;
+import java.util.List;
+import java.util.Set;
+import java.util.Map.Entry;
+
+import org.eclipse.core.runtime.IProgressMonitor;
+
+import silver.modification.impide.NIdeProperty;
+import silver.modification.impide.PmakeIdeProperty;
+
+import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
+import edu.umn.cs.melt.ide.silver.property.Property;
+import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
+
+/**
+ * A helper class used to invoke the method Analyze(NIdeProperty[]) in the language 
+ * implementation jar.
+ * <p>
+ * Used for all-in-one plugin.
+ */
+public class @LANG_NAME@AnalysisInvoker {
+
+	private ProjectProperties properties;
+	
+	private File gpLocation;
+	
+	private boolean prepared = false;
+	
+	private String preparingError;
+	
+	public static @LANG_NAME@AnalysisInvoker getInstance(String projectPath){
+		@LANG_NAME@AnalysisInvoker invoker = new @LANG_NAME@AnalysisInvoker();
+		invoker.prepare(projectPath);
+		return invoker;
+	}
+	
+	private File findHome() {
+		String silverHome = properties.get("silver_home").getSValue();
+		File home = new File(silverHome);
+		return home;
+	}
+	
+	private boolean prepare(String projectPath){
+		if(prepared){
+			return true;
+		}
+		
+		if(properties==null){
+			properties = ProjectProperties.getPropertyPersister(projectPath);
+		}
+		
+		// Step 1 : Get the Silver Home
+		File home = findHome();
+		if(!home.exists()){
+			preparingError = "BUILD FAILED: the location of Silver installation is not correct." +
+				" (Please set the path of Silver installation in Preferences page)";
+			return false;
+		}
+		
+		// Step 2 : Check and set SILVER_GEN
+		String java_gen = null;
+		File jgLocation = new File(home, "generated");
+		if(!jgLocation.canWrite()) {
+			preparingError = "BUILD FAILED: the location for code egenration (" +
+				jgLocation.getAbsolutePath() + ") doesn't exist or is not writable by the user. " +
+				"(Please check the folder to make sure it's existent and writable)";
+			return false;
+		}
+		java_gen = jgLocation.getPath();
+		
+		// Step 3 : Check and set GRAMMAR_PATH
+		gpLocation = new File(home, "grammars");
+		if(!gpLocation.canRead()) {
+			preparingError = "BUILD FAILED: the folder of core grammars (" +
+				gpLocation.getAbsolutePath() + ") doesn't exist or is not readable by the user. " +
+				"(Please check the folder to make sure it's existent and readable)";
+			return false;
+		}
+		
+		// Step 4.1: amend the environment. (we can't change the actual environment in java
+		// for some reason, so we depend on altering an environment map in the runtime library)
+		common.Util.environment.put("SILVER_HOME", home.getPath());
+		common.Util.environment.put("SILVER_GEN", java_gen);
+
+		return prepared = true;
+	}
+	
+	public boolean build(String projectPath, ConsoleLoggingStream clstream, IProgressMonitor monitor,
+			AnalysisHandler handler) {
+		
+		if(!prepare(projectPath)){
+			clstream.error(preparingError);
+			return false;
+		}
+		
+		common.Util.environment.put("GRAMMAR_PATH", gpLocation.getPath() + ":" + projectPath);
+		
+		// Step 4.2: GO!
+		try {
+			//clstream.info("Building...");
+			
+			//Get properties			
+			Set<Entry<String, Property>> set = properties.getAll();
+			NIdeProperty[] args = new NIdeProperty[set.size()];
+			int i=0;
+			for(Entry<String, Property> entry: set){
+				args[i] = PmakeIdeProperty.factory.invoke(new Object[]{
+					new common.StringCatter(entry.getKey()), 
+					new common.StringCatter(entry.getValue().getSValue())
+				});
+				i++;
+			}
+			
+			List<String> list = @PKG_NAME@.Analyze2.analyze(args);
+			return handler.handle(list);
+		} catch (Exception t) {
+			t.printStackTrace();
+			clstream.error("BUILD FAILED: failed to invoke Silver. " +
+				"(Please check the integrity of Silver installation. Re-install Silver if necessary.)");
+			return false;
+		}
+		
+	}
+	
+	public static interface AnalysisHandler {
+		/**
+		 * Handle the message list returned by analyzer.
+		 * 
+		 * @param list the message list. 
+		 * @return true if the build is considered successful; false otherwise
+		 */
+		boolean handle(List<String> list);
+	}
+
+}
+

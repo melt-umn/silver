@@ -16,11 +16,70 @@ import silver:definition:type;
 -- moving.
 terminal ImpIde_t 'temp_imp_ide_dcl' lexer classes {KEYWORD};
 
+-- Properties
+
+synthesized attribute propName :: String;
+synthesized attribute propType :: String;
+nonterminal IdeProperty with propName, propType;
+nonterminal TypeName with propType;
+
+abstract production makeIdeProperty
+top::IdeProperty ::= propName::String propType::String
+{
+  top.propName = propName;
+  top.propType = propType;
+}
+
+terminal ImpIde_OptFunc_Property 'property';
+
+terminal ImpIde_PropType_string_t 'string';
+terminal ImpIde_PropType_integer_t 'integer';
+terminal ImpIde_PropType_path_t 'path';
+terminal ImpIde_PropType_url_t 'url';
+
+concrete production makeIdeFunction_Porperty
+top::IdeFunction ::= 'property' pname::IdLower_t ptype::TypeName ';' 
+{
+  top.location = loc(top.file, $1.line, $1.column);
+
+  top.funcDcls := [];
+
+  top.propDcls := [makeIdeProperty(pname.lexeme, ptype.propType)];
+
+  top.errors := [];
+} 
+
+concrete production propType_String
+top::TypeName ::= 'string'
+{
+  top.propType = "string";
+}
+
+concrete production propType_Integer
+top::TypeName ::= 'integer'
+{
+  top.propType = "integer";
+}
+
+concrete production propType_Path
+top::TypeName ::= 'path'
+{
+  top.propType = "path";
+}
+
+concrete production propType_URL
+top::TypeName ::= 'url'
+{
+  top.propType = "url";
+}
+
+-- Functions
+
 terminal ImpIde_OptFunc_Analyzer 'analyzer';
 
-nonterminal IdeFunctions with env, location, errors, grammarName, file, funcDcls;--funcDcls is defined in ./IdeSpec.sv
-nonterminal IdeFunction with env, location, errors, grammarName, file, funcDcls;
-nonterminal IdeFunctionList with env, location, errors, grammarName, file, funcDcls;
+nonterminal IdeFunctions with env, location, errors, grammarName, file, funcDcls, propDcls;--funcDcls, propDcls are defined in ./IdeSpec.sv
+nonterminal IdeFunction with env, location, errors, grammarName, file, funcDcls, propDcls;
+nonterminal IdeFunctionList with env, location, errors, grammarName, file, funcDcls, propDcls;
 
 concrete production emptyIdeFunctions
 top::IdeFunctions ::=
@@ -28,6 +87,7 @@ top::IdeFunctions ::=
   top.location = loc(top.file, -1, -1);
   top.errors := [];
   top.funcDcls := [];
+  top.propDcls := [];
 }
 
 concrete production listIdeFunctions
@@ -36,6 +96,7 @@ top::IdeFunctions ::= '{' funcList::IdeFunctionList '}'
   top.location = loc(top.file, $1.line, $1.column);
   top.errors := funcList.errors;
   top.funcDcls := funcList.funcDcls;
+  top.propDcls := funcList.propDcls;
 }
 
 concrete production nilIdeFunctionList
@@ -44,6 +105,7 @@ top::IdeFunctionList ::=
   top.location = loc(top.file, -1, -1);
   top.errors := [];
   top.funcDcls := [];
+  top.propDcls := [];
 }
 
 concrete production consIdeFunctionList
@@ -52,6 +114,7 @@ top::IdeFunctionList ::= func::IdeFunction funcList::IdeFunctionList
   top.location = func.location;
   top.errors := func.errors ++ funcList.errors;
   top.funcDcls := func.funcDcls ++ funcList.funcDcls;
+  top.propDcls := func.propDcls ++ funcList.propDcls;
 }
 
 concrete production makeIdeFunction_Analyzer
@@ -64,6 +127,8 @@ top::IdeFunction ::= 'analyzer' analyzerName::QName ';'
 
   top.funcDcls := [pair("analyzer", fName)];
 
+  top.propDcls := [];
+
   top.errors := [];
 
   local attribute analyzerFuncDcls :: [DclInfo] = getValueDclAll(fName, top.env);
@@ -75,7 +140,7 @@ top::IdeFunction ::= 'analyzer' analyzerName::QName ';'
         then [err(top.location, "[IDE] Analyzer function '" ++ fName ++ "' doesn't exist.")]
         else 
 	    case analyzerFunc of
-	      funDcl(_, _, funcSign) -> checkAnalyzerSignature(fName, top.location, funcSign)
+	      funDcl(_, _, funcSign) -> [] --checkAnalyzerSignature(fName, top.location, funcSign)
 	      | _ -> [err(top.location, "[IDE] Analyzer function '" ++ fName ++ "' is not a function.")]
 	    end;
 
@@ -159,7 +224,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optF
   -- Strip off the quotes AND the initial dot
   local fext :: String = substring(2, length(fileextension.lexeme) - 1, fileextension.lexeme);
   
-  top.ideSpecs = [ideSpec(fext, optFunctions.funcDcls, head(spec))];
+  top.ideSpecs = [ideSpec(fext, optFunctions.funcDcls, optFunctions.propDcls, head(spec))];
   
   top.errors <- optFunctions.errors;
 

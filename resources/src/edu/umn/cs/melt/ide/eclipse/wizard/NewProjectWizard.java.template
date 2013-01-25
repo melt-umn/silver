@@ -1,5 +1,12 @@
-package edu.umn.cs.melt.ide.silver.wizards;
+/*
+ * Variables used:
+ *   PKG_NAME
+ *   LANG_NAME
+ */
 
+package @PKG_NAME@.eclipse.wizard;
+
+import java.io.ByteArrayInputStream;
 import java.net.URI;
 
 import org.eclipse.core.resources.IProject;
@@ -15,18 +22,17 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.dialogs.WizardNewProjectCreationPage;
 import org.eclipse.ui.wizards.newresource.BasicNewProjectResourceWizard;
 
-import silver.composed.idetest.imp.builders.SILVERNature;
+import @PKG_NAME@.imp.builders.@LANG_NAME@Nature;
 
 /**
- * The Silver's New Project Wizard is used to create Silver project. In general
+ * The @LANG_NAME@'s New Project Wizard is used to create @LANG_NAME@ project. In general
  * it follows these steps:
  * <p>
- * (1) show a page to get project's name <br>
+ * (1) show a page for user to name the project <br>
  * (2) create a project folder with the given name in current workspace <br>
- * (3) add Silver nature to the project (note nature is associated with builder) <br>
- * (4) open Silver perspective 
- * 
- * @author Ming Zhou
+ * (3) create a property file <br>
+ * (4) add @LANG_NAME@ nature to the project (note nature is associated with builder) <br>
+ *
  */
 public class NewProjectWizard extends Wizard implements INewWizard, IExecutableExtension {
 
@@ -35,7 +41,7 @@ public class NewProjectWizard extends Wizard implements INewWizard, IExecutableE
 	private IConfigurationElement configElement;
 	
 	public NewProjectWizard() {
-		setWindowTitle("Silver");
+		setWindowTitle("@LANG_NAME@");
 	}
 
 	@Override
@@ -47,16 +53,16 @@ public class NewProjectWizard extends Wizard implements INewWizard, IExecutableE
 	public void addPages() {
 	    super.addPages();
 
-	    page1 = new WizardNewProjectCreationPage("New Silver Project Wizard");
-	    page1.setTitle("Silver Project");
-	    page1.setDescription("Create new Silver project");
+	    page1 = new WizardNewProjectCreationPage("New @LANG_NAME@ Project Wizard");
+	    page1.setTitle("@LANG_NAME@ Project");
+	    page1.setDescription("Create new @LANG_NAME@ project");
 
 	    addPage(page1);
 	}
 
 	@Override
 	public boolean performFinish() {
-		//Get user's input
+	    //Get user's input
 	    String name = page1.getProjectName();
 	    URI location = null;
 	    if (!page1.useDefaults()) {
@@ -74,12 +80,12 @@ public class NewProjectWizard extends Wizard implements INewWizard, IExecutableE
 	
 	@Override
 	public void setInitializationData(
-		IConfigurationElement config, String propertyName, Object data) throws CoreException {
+	    IConfigurationElement config, String propertyName, Object data) throws CoreException {
 	    configElement = config;
 	}
 
     /**
-     * Create a Silver project and add nature to it.
+     * Create a @LANG_NAME@ project and add nature to it.
      *
      * @param location
      * @param projectName
@@ -89,7 +95,7 @@ public class NewProjectWizard extends Wizard implements INewWizard, IExecutableE
         IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
 
         if (!project.exists()) {
-        	//Set the description
+            //Set the description
             URI projectLocation = location;
             IProjectDescription desc = 
             	project.getWorkspace().newProjectDescription(project.getName());
@@ -108,29 +114,21 @@ public class NewProjectWizard extends Wizard implements INewWizard, IExecutableE
             } catch (CoreException e) {
                 e.printStackTrace();
             }
+            
+            //Create properties file
+            try {
+		project.getFile("project.properties").create(
+		new ByteArrayInputStream(PropertyGenerator.getAll().getBytes()), true, null);
+	    } catch (CoreException e) {
+		e.printStackTrace();
+	    }
+
         }
         
-        //Add Silver nature, if not added yet
+        //Add @LANG_NAME@ nature, if not added yet
         try {
-            if (!project.hasNature(SILVERNature.k_natureID)) {
-	            /*
-	            IProjectDescription description = project.getDescription();
-
-	            //Replicate nature list and add Silver nature
-	            String[] oldNatures = description.getNatureIds();
-	            String[] newNatures = new String[oldNatures.length + 1];
-	            int i=0;
-	            for(;i<oldNatures.length;i++){
-	            	newNatures[i] = oldNatures[i];
-	            }
-	            newNatures[i] = SILVERNature.k_natureID;
-	            
-	            //Set nature and description again
-	            description.setNatureIds(newNatures);
-	            project.setDescription(description, null);
-	  	        */         
-	            
-	            new SILVERNature().addToProject(project);
+            if (!project.hasNature(@LANG_NAME@Nature.k_natureID)) {	            
+	            new @LANG_NAME@Nature().addToProject(project);
             }
         } catch (CoreException e) {
             e.printStackTrace();
@@ -138,3 +136,4 @@ public class NewProjectWizard extends Wizard implements INewWizard, IExecutableE
     }
 
 }
+
