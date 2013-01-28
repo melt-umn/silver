@@ -16,7 +16,7 @@ top::TypeExp ::= el::TypeExp
   -- Suppress its "nonterminal"ness
   top.isDecorable = false;
   top.isDecorated = false;
-  --top.accessDispatcher = errorAccessDispatcher; -- permit this, since we need it for default, non-specialized java version
+  --top.accessHandler = errorAccessHandler; -- permit this, since we need it for default, non-specialized java version
   top.lengthDispatcher = listLengthBouncer;
   top.appendDispatcher = listPlusPlus;
   

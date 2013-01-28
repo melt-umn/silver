@@ -89,7 +89,7 @@ top::AGDcl ::= 'mainTestSuite' name::IdLower_t ';'
      productionStmtsCons (
       -- testResults = name()
       valueEq ( qName(top.location, "testResults"), '=', 
-                 emptyProductionApp ( baseExpr( qNameId(nameIdLower(name))) , 
+                 emptyApplication ( baseExpr( qNameId(nameIdLower(name))) , 
                   '(', ')' ) ,
                  ';' ) ,
       productionStmtsCons (

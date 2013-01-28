@@ -164,7 +164,7 @@ ag::AGDcl ::= kwd::'equalityTest'
             '<-',
             fullList('[',
               exprsSingle(
-                emptyProductionApp(
+                emptyApplication(
                   baseExpr(qNameId(testNameref)), '(', ')')),
               ']'),
             ';'))));

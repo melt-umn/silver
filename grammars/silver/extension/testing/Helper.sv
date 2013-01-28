@@ -54,7 +54,7 @@ Exprs ::= es::[Expr]
 function attrAcc
 Expr ::= n::String a::String
 { return  
-   attributeAccess ( mkNameExpr(n), '.', qName(loc("??",-1,-1), a) ) ; 
+   access ( mkNameExpr(n), '.', qName(loc("??",-1,-1), a) ) ; 
 }
 
 -- replace " characters with two: \ and "
