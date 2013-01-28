@@ -1,6 +1,9 @@
 grammar silver:definition:core;
 
+-- LHS type gives this to 'productionApp' for "foo(...)" calls.
 synthesized attribute applicationDispatcher :: (Expr ::= Decorated Expr  AppExprs);
+-- LHS type gives this to 'attributeAccess' for "foo.some" accesses.
+-- (See DclInfo for the next step)
 synthesized attribute accessDispatcher :: (Expr ::= Decorated Expr  Dot_t  Decorated QName);
 
 synthesized attribute lengthDispatcher :: (Expr ::= Decorated Expr);

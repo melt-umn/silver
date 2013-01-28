@@ -20,13 +20,12 @@ nonterminal ExprLHSExpr with
  -}
 nonterminal AppExprs with 
   config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTypereps, normalExprs, appExprApplied;
+  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTypereps, appExprApplied;
 
 nonterminal AppExpr with
   config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, exprs, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied;
 
-synthesized attribute normalExprs :: Exprs;
 synthesized attribute isPartial :: Boolean;
 synthesized attribute missingTypereps :: [TypeExp];
 synthesized attribute appExprIndicies :: [Integer];
@@ -332,7 +331,13 @@ top::Expr ::= e::Expr '.' q::QName
   
   top.errors := e.errors ++ forward.errors; -- So that e.errors appears first!
   
+  -- Note: we're first consulting the TYPE of the LHS.
   forwards to performSubstitution(e.typerep, e.upSubst).accessDispatcher(e, $2, q);
+  -- This jumps to:
+  -- errorAccessDispatcher  (e.g. 1.pp)
+  -- undecoratedAccessDispatcher
+  -- decoratedAccessDispatcher  (see that production, for how normal attribute access proceeds!)
+  -- terminalAccessDispatcher
 }
 
 abstract production errorAccessDispatcher
@@ -358,7 +363,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   -- OKAY, and now we're compounding this by using a fancy little thing to make the flow type computation
   -- work a little bit better by using WithIntention...
   
-  forwards to CHEAT_HACK_DISPATCHER( decorateExprWithIntention(e.location, new(e), exprInhsEmpty(), [q.lookupAttribute.fullName]), $2, q);
+  forwards to CHEAT_HACK_DISPATCHER( decorateExprWithIntention(e.location, exprRef(e), exprInhsEmpty(), [q.lookupAttribute.fullName]), $2, q);
 }
 abstract production CHEAT_HACK_DISPATCHER -- muahaahahahahaha
 top::Expr ::= e::Expr '.' q::Decorated QName
@@ -377,10 +382,17 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 
   top.errors := q.lookupAttribute.errors ++ forward.errors; -- so that these errors appear first.
   
-  -- We dispatch again, based on the kind of attribute
+  -- TODO: We should consider disambiguating based on what dcls *actually*
+  -- occur on the LHS here.
+  
+  -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
   forwards to if null(q.lookupAttribute.dcls)
               then errorDNTAccessDispatcher(e, $2, q)
               else q.lookupAttribute.dcl.attrAccessDispatcher(e, $2, q);
+  -- From here we go to:
+  -- synDNTAccessDispatcher
+  -- inhDNTAccessDispatcher
+  -- errorDNTAccessDispatcher  -- unknown attribute error raised already.
 }
 
 abstract production synDNTAccessDispatcher
@@ -755,7 +767,7 @@ top::Expr ::= e1::Expr '++' e2::Expr
   top.pp = e1.pp ++ " ++ " ++ e2.pp;
   top.location = loc(top.file, $2.line, $2.column);
 
-  top.typerep = performSubstitution(e1.typerep, errCheck1.upSubst); -- is it safe to report a typerep using substs? hope so!
+  top.typerep = performSubstitution(e1.typerep, errCheck1.upSubst); -- TODO: a bit silly we depend on errCheck, which isn't here...
 
   forwards to top.typerep.appendDispatcher(e1,e2);
 }
@@ -780,7 +792,9 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
   top.typerep = errorType();
 }
 
-
+-- These sorta seem obsolete, but there are some important differences from AppExprs.
+-- For one, AppExprs expects a fixed, imposed list of types. Here we're flexible!
+-- This is used by both pattern matching and list literals.
 abstract production exprsEmpty
 top::Exprs ::=
 {
@@ -791,7 +805,6 @@ top::Exprs ::=
   top.exprs = [];
   top.rawExprs = [];
 }
-
 concrete production exprsSingle
 top::Exprs ::= e::Expr
 {
@@ -802,7 +815,6 @@ top::Exprs ::= e::Expr
   top.exprs = [e];
   top.rawExprs = [e];
 }
-
 concrete production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
@@ -815,19 +827,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 }
 
 
-function getTypesExprs
-[TypeExp] ::= es::[Decorated Expr]{
-  return if null(es) then [] else [head(es).typerep] ++ getTypesExprs(tail(es));
-}
-function getPPsExprs
-[String] ::= es::[Decorated Expr]{
-  return if null(es) then [] else [head(es).pp] ++ getPPsExprs(tail(es));
-}
-function getErrorsExprs
-[[Message]] ::= es::[Decorated Expr]{
-  return if null(es) then [] else [head(es).errors] ++ getErrorsExprs(tail(es));
-}
-
+-- These are the "new" Exprs syntax. This allows missing (_) arguments, to indicate partial application.
 concrete production missingAppExpr
 top::AppExpr ::= '_'
 {
@@ -843,18 +843,8 @@ top::AppExpr ::= '_'
   
   top.errors := [];
 }
-
 concrete production presentAppExpr
 top::AppExpr ::= e::Expr
-{
-  top.pp = e.pp;
-  top.location = e.location;
-
-  forwards to decoratedAppExpr(e);
-}
-
-abstract production decoratedAppExpr
-top::AppExpr ::= e::Decorated Expr
 {
   top.pp = e.pp;
   top.location = e.location;
@@ -862,13 +852,12 @@ top::AppExpr ::= e::Decorated Expr
   top.isPartial = false;
   top.missingTypereps = [];
   
-  top.rawExprs = [new(e)];
+  top.rawExprs = [e];
   top.exprs = [e];
   top.appExprIndicies = [top.appExprIndex];
   
   top.errors := e.errors;
 }
-
 
 concrete production consAppExprs
 top::AppExprs ::= e::AppExpr ',' es::AppExprs
@@ -882,7 +871,6 @@ top::AppExprs ::= e::AppExpr ',' es::AppExprs
   top.rawExprs = e.rawExprs ++ es.rawExprs;
   top.exprs = e.exprs ++ es.exprs;
   top.appExprIndicies = e.appExprIndicies ++ es.appExprIndicies;
-  top.normalExprs = exprsCons(head(e.rawExprs), $2, es.normalExprs);
 
   top.errors := e.errors ++ es.errors;
 
@@ -894,7 +882,6 @@ top::AppExprs ::= e::AppExpr ',' es::AppExprs
   es.appExprIndex = top.appExprIndex + 1;
   es.appExprTypereps = if null(top.appExprTypereps) then [] else tail(top.appExprTypereps);
 }
-
 concrete production oneAppExprs
 top::AppExprs ::= e::AppExpr
 {
@@ -907,7 +894,6 @@ top::AppExprs ::= e::AppExpr
   top.rawExprs = e.rawExprs;
   top.exprs = e.exprs;
   top.appExprIndicies = e.appExprIndicies;
-  top.normalExprs = exprsSingle(head(e.rawExprs));
   
   top.errors := if null(top.appExprTypereps)
                 then [err(top.location, "Too many arguments provided to function '" ++ top.appExprApplied ++ "'")]
@@ -921,7 +907,6 @@ top::AppExprs ::= e::AppExpr
                      then errorType()
                      else head(top.appExprTypereps);
 }
-
 abstract production emptyAppExprs
 top::AppExprs ::= l::Location
 {
@@ -934,7 +919,6 @@ top::AppExprs ::= l::Location
   top.rawExprs = [];
   top.exprs = [];
   top.appExprIndicies = [];
-  top.normalExprs = exprsEmpty();
 
   -- Assumption: We only get here when we're looking at ()
   -- i.e. we can't ever have 'too many' provided error
@@ -974,13 +958,31 @@ AppExprs ::= e::[Expr]  l::Location
 function mkFunctionInvocationDecorated
 Expr ::= e::Expr  es::[Decorated Expr]
 {
-  return productionApp(e, '(', foldAppExprsDecorated(es, e.location), ')');
+  return mkFunctionInvocation(e, map(exprRef, es));
 }
-function foldAppExprsDecorated
-AppExprs ::= e::[Decorated Expr]  l::Location
+
+{--
+ - We allow references to existing subexpressions to appear arbitrarily in trees.
+ - 
+ - There is one MAJOR restriction on the use of this production:
+ -   The referenced expression (e) MUST APPEAR in the same expression tree
+ -   as it is referenced in.
+ -
+ - This is for type information reasons: the subtree referenced must have been
+ - typechecked in the same 'typing context' as wherever this tree appears.
+ -
+ - This is trivially satisfied for the typical use case for this production,
+ - where you're typechecking your children, then forwarding to some tree with
+ - references to those children.
+ -}
+abstract production exprRef
+top::Expr ::= e::Decorated Expr
 {
-  return if null(e) then emptyAppExprs(l)
-         else if null(tail(e)) then oneAppExprs(decoratedAppExpr(head(e)))
-         else consAppExprs(decoratedAppExpr(head(e)), ',', foldAppExprsDecorated(tail(e),l));
+  top.pp = e.pp;
+  top.location = e.location;
+
+  -- See the major restriction. This should have been checked for error already!
+  top.errors := [];
+  top.typerep = e.typerep;
 }
 

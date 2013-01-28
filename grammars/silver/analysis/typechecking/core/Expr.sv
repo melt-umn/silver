@@ -667,18 +667,10 @@ top::AppExpr ::= '_'
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
-  e.downSubst = top.downSubst;
-  forward.downSubst = e.upSubst;
-}
-
-aspect production decoratedAppExpr
-top::AppExpr ::= e::Decorated Expr
-{
-  -- The assumption is that the subst go threaded through e already, but isn't lost
-  -- it's already in our incoming subst.  Out only job here it to type check it:
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  errCheck1.downSubst = top.downSubst;
+  e.downSubst = top.downSubst;
+  errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
   
   errCheck1 = check(e.typerep, top.appExprTyperep);
@@ -707,6 +699,14 @@ top::AppExprs ::= e::AppExpr
 aspect production emptyAppExprs
 top::AppExprs ::= l::Location
 {
+  top.upSubst = top.downSubst;
+}
+
+aspect production exprRef
+top::Expr ::= e::Decorated Expr
+{
+  -- See documentation for major restriction on use of exprRef.
+  -- Essentially, the referred expression MUST have already been type checked.
   top.upSubst = top.downSubst;
 }
 

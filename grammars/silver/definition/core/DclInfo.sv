@@ -19,6 +19,7 @@ synthesized attribute defLHSDispatcher :: (DefLHS ::= Decorated QName) occurs on
  - The production an attribute access should forward to for this type of attribute (i.e. the a in 'x.a')
  - WHEN the left hand side is a decorated nonterminal **only** (i.e. the 'x' is decorated)
  - @see accessDispather in TypeExp.sv, for the first step in that process...
+ - @see decoratedAccessDispatcher production for where this is used
  -}
 synthesized attribute attrAccessDispatcher :: (Expr ::= Decorated Expr Dot_t Decorated QName) occurs on DclInfo;
 {--
