@@ -348,22 +348,39 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = loc(top.file, $2.line, $2.column);
 
-  -- TODO BUG: It's expecting something decorated here. We want to give all inherited attributes of 'e' to 'decorateExprWithEmpty...'
-
-  -- and this is a positively UGLY way of getting around this... *evil grin*
+  top.errors := q.lookupAttribute.errors ++ forward.errors; -- so that these errors appear first.
   
-  -- OKAY, and now we're compounding this by using a fancy little thing to make the flow type computation
-  -- work a little bit better by using WithIntention...
+  -- TODO: We should consider disambiguating based on what dcls *actually*
+  -- occur on the LHS here.
   
-  forwards to CHEAT_HACK_DISPATCHER( decorateExprWithIntention(e.location, exprRef(e), exprInhsEmpty(), [q.lookupAttribute.fullName]), $2, q);
+  -- Note: LHS is UNdecorated, here we dispatch based on the kind of attribute.
+  forwards to if null(q.lookupAttribute.dcls)
+              then errorDecoratedAccessHandler(e, $2, q)
+              else q.lookupAttribute.dcl.undecoratedAccessHandler(e, $2, q);
 }
-abstract production CHEAT_HACK_DISPATCHER -- muahaahahahahaha
-top::Expr ::= e::Expr '.' q::Decorated QName
+
+{--
+ - Accessing an attribute occasionally demands manipulating the left-hand side.
+ - This production is intended to permit that.
+ -}
+abstract production accessBouncer
+top::Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QName) e::Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = loc(top.file, $3.line, $3.column);
 
-  forwards to decoratedAccessHandler( e {- it gets decorated :) -} , $2, q);
+  -- Basically the only purpose here is to decorate 'e'.
+  forwards to target(e, $3, q);
+}
+function accessBounceDecorate
+Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QName) e::Decorated Expr '.' q::Decorated QName
+{
+  return accessBouncer(target, decorateExprWithIntention(e.location, exprRef(e), exprInhsEmpty(), [q.lookupAttribute.fullName]), $3, q);
+}
+function accessBounceUndecorate
+Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QName) e::Decorated Expr '.' q::Decorated QName
+{
+  return accessBouncer(target, newFunction(terminal(New_kwd, "new", e.location.line, e.location.column), '(', exprRef(e), ')'), $3, q);
 }
 
 abstract production decoratedAccessHandler
@@ -415,6 +432,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.errors := occursCheck.errors;
 }
 
+-- TODO: change name. really "unknownDclAccessHandler"
 abstract production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
@@ -956,5 +974,10 @@ top::Expr ::= e::Decorated Expr
   -- See the major restriction. This should have been checked for error already!
   top.errors := [];
   top.typerep = e.typerep;
+  
+  -- TODO: one of the little things we might want is to make this transparent to
+  -- forwarding. e.g. e might be a 'childReference' and pattern matching would
+  -- need to separately account for this!
+  -- To accomplish this, we might want some notion of a decorated forward.
 }
 

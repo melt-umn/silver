@@ -54,6 +54,7 @@ aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ')'
 {
   e.downSubst = top.downSubst;
+  forward.downSubst = e.upSubst;
   
   es.downSubst = top.downSubst; -- TODO REMOVE THIS (it's garbage related to bugs in pretty printing, afaict)
 }
@@ -61,30 +62,26 @@ top::Expr ::= e::Expr '(' es::AppExprs ')'
 aspect production functionApplication
 top::Expr ::= e::Decorated Expr es::AppExprs
 {
-  -- e already set by application
-  es.downSubst = e.upSubst;
-  -- forwards
+  es.downSubst = top.downSubst;
+  forward.downSubst = es.upSubst;
 }
 
 aspect production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 {
-  -- es already set by functionApplication
-  top.upSubst = es.upSubst;
+  top.upSubst = top.downSubst;
 }
 
 aspect production partialApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 {
-  -- es already set by functionApplication
-  top.upSubst = es.upSubst;
+  top.upSubst = top.downSubst;
 }
 
 aspect production errorApplication
 top::Expr ::= e::Decorated Expr es::AppExprs
 {
-  -- e already set by application
-  es.downSubst = e.upSubst;
+  es.downSubst = top.downSubst;
   top.upSubst = es.upSubst;
 }
 
@@ -98,23 +95,39 @@ aspect production access
 top::Expr ::= e::Expr '.' q::QName
 {
   e.downSubst = top.downSubst;
+  forward.downSubst = e.upSubst;
 }
 
 aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.upSubst = e.upSubst;
+  top.upSubst = top.downSubst;
 }
 
-aspect production undecoratedAccessHandler -- TODO OH MY NO, THIS POLLUTION IS SPREADING!
+aspect production undecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  forwarding with { downSubst = e.upSubst; }; -- TODO OH MY NO, THIS POLLUTION IS SPREADING!
+  -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're UNdecorated,
+  -- ensuring that type's specialization, otherwise we could end up in trouble!
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  errCheck1 = checkNonterminal(e.typerep);
+
+  -- TECHNICALLY, I think the current implementation makes this impossible,
+  -- But let's leave it since it's the right thing to do.
+  top.errors <-
+    if errCheck1.typeerror
+    then [err(top.location, "Access of " ++ q.name ++ " from a decorated type.")]
+    else [];
+  
+  errCheck1.downSubst = top.downSubst;
+  top.upSubst = errCheck1.upSubst;
 }
-aspect production CHEAT_HACK_DISPATCHER -- TODO OH MY NO, THIS POLLUTION IS SPREADING!
-top::Expr ::= e::Expr '.' q::Decorated QName
+
+aspect production accessBouncer
+top::Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QName) e::Expr '.' q::Decorated QName
 {
-  e.downSubst = top.downSubst; -- do what access does.
+  e.downSubst = top.downSubst;
+  forward.downSubst = e.upSubst;
 }
 
 aspect production decoratedAccessHandler
@@ -132,31 +145,31 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
     then [err(top.location, "Attribute " ++ q.name ++ " being accessed from an undecorated type.")]
     else [];
   
-  errCheck1.downSubst = e.upSubst;
+  errCheck1.downSubst = top.downSubst;
   top.upSubst = errCheck1.upSubst;
 }
 
 aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.upSubst = error("Internal compiler error: should be hidden by the dispatcher that forwards here.");
+  top.upSubst = top.downSubst;
 }
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.upSubst = error("Internal compiler error: should be hidden by the dispatcher that forwards here.");
+  top.upSubst = top.downSubst;
 }
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.upSubst = error("Internal compiler error: should be hidden by the dispatcher that forwards here.");
+  top.upSubst = top.downSubst;
 }
 
 
 aspect production terminalAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.upSubst = e.upSubst;
+  top.upSubst = e.downSubst;
 }
 
 

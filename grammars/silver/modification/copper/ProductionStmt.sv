@@ -28,7 +28,6 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
   -- TODO: figure out wtf is going on with type here! (needs to be a terminal, plus one of the ones in the disgroup)
 
   e.downSubst = top.downSubst;
-  
   top.upSubst = e.upSubst;
 }
 

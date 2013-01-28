@@ -19,6 +19,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 
   -- the core dispatchers
   top.decoratedAccessHandler = inhDecoratedAccessHandler;
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler, _, _, _); -- TODO: should probably be an error handler!
   top.attrDefDispatcher = inheritedAttributeDef;
   forwards to inhDcl(sg,sl,fn,bound,ty);
 }
