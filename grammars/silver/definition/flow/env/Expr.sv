@@ -9,8 +9,6 @@ import silver:modification:let_fix;
 synthesized attribute flowDeps :: [FlowVertex] occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
 attribute flowEnv occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
 
---attribute upSubst, downSubst, finalSubst occurs on Expr, ForwardInhs, ForwardInh, ForwardLHSExpr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
-
 function inhsForTakingRef
 [String] ::= nt::String  flowEnv::Decorated FlowEnv
 {

@@ -16,12 +16,17 @@ synthesized attribute defDispatcher :: (ProductionStmt ::= Decorated QName  Equa
 synthesized attribute defLHSDispatcher :: (DefLHS ::= Decorated QName) occurs on DclInfo;
 
 {--
- - The production an attribute access should forward to for this type of attribute (i.e. the a in 'x.a')
- - WHEN the left hand side is a decorated nonterminal **only** (i.e. the 'x' is decorated)
+ - The handler for 'x.a' for 'a', given that 'x' is DECORATED.
  - @see accessDispather in TypeExp.sv, for the first step in that process...
  - @see decoratedAccessHandler production for where this is used
  -}
 synthesized attribute decoratedAccessHandler :: (Expr ::= Decorated Expr Dot_t Decorated QName) occurs on DclInfo;
+{--
+ - The handler for 'x.a' for 'a', given that 'x' is UNdecorated.
+ - @see accessDispather in TypeExp.sv, for the first step in that process...
+ - @see undecoratedAccessHandler production for where this is used
+ -}
+synthesized attribute undecoratedAccessHandler :: (Expr ::= Decorated Expr Dot_t Decorated QName) occurs on DclInfo;
 {--
  - The production an "equation" shuld forward to for this type of attribute (i.e. the 'a' in 'x.a = e')
  -}
@@ -37,7 +42,8 @@ top::DclInfo ::=
   top.defDispatcher = error("Internal compiler error: must be defined for all value declarations");
   top.defLHSDispatcher = error("Internal compiler error: must be defined for all value declarations");
   -- all attributes must provide decoratedAccessHandler, attrDefDispatcher.
-  top.decoratedAccessHandler = error("Internal compiler error: must be defined for all attribute declarations");  
+  top.decoratedAccessHandler = error("Internal compiler error: must be defined for all attribute declarations");
+  top.undecoratedAccessHandler = error("Internal compiler error: must be defined for all attribute declarations");
   top.attrDefDispatcher = error("Internal compiler error: must be defined for all attribute declarations");  
 }
 
@@ -103,12 +109,14 @@ aspect production synDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.decoratedAccessHandler = synDecoratedAccessHandler;
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _, _);
   top.attrDefDispatcher = synthesizedAttributeDef;
 }
 aspect production inhDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.decoratedAccessHandler = inhDecoratedAccessHandler;
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler, _, _, _); -- TODO: should probably be an error handler!
   top.attrDefDispatcher = inheritedAttributeDef;
 }
 
