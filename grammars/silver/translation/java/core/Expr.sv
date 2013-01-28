@@ -152,6 +152,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 function argsTranslation
 String ::= e::Decorated AppExprs
 {
+  -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
   return implode(", ", map((.lazyTranslation), e.exprs));
 }
 
@@ -549,6 +550,13 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.lazyTranslation = e1.lazyTranslation ++ ", " ++ e2.lazyTranslation;
 }
 
+aspect production exprRef
+top::Expr ::= e::Decorated Expr
+{
+  top.translation = e.translation;
+  top.lazyTranslation = e.lazyTranslation;
+}
+
 
 function wrapThunk
 String ::= exp::String  beLazy::Boolean
@@ -565,3 +573,4 @@ String ::= e::Decorated Expr
 {
   return "new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return " ++ e.translation ++ "; } }";
 }
+

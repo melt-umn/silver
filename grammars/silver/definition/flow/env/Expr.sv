@@ -319,8 +319,8 @@ top::AppExpr ::= '_'
 {
   top.flowDeps = [];
 }
-aspect production decoratedAppExpr
-top::AppExpr ::= e::Decorated Expr
+aspect production presentAppExpr
+top::AppExpr ::= e::Expr
 {
   top.flowDeps = e.flowDeps;
 }
@@ -341,6 +341,17 @@ top::AppExprs ::= l::Location
   top.flowDeps = [];
 }
 
+aspect production exprRef
+top::Expr ::= e::Decorated Expr
+{
+  -- There is a decision to make here.
+  -- We DO refer to flowDeps here. Errors should have been already checked, but
+  -- we shouldn't expect that of flowdeps!
+  top.flowDeps = e.flowDeps;
+}
+
+
+-- builtins
 
 aspect production stringLength
 top::Expr ::= e::Decorated Expr

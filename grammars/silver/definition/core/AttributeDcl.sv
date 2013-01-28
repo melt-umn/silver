@@ -16,9 +16,9 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te:
   te.env = tl.envBindingTyVars;
 
   top.errors <-
-        if length(getAttrDclAll(fName, top.env)) > 1
-        then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
-        else [];	
+    if length(getAttrDclAll(fName, top.env)) > 1
+    then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
+    else [];	
 
   top.errors := te.errors ++ tl.errors ++ tl.errorsTyVars;
 }
@@ -39,9 +39,9 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeList '::' t
   te.env = tl.envBindingTyVars;
   
   top.errors <-
-        if length(getAttrDclAll(fName, top.env)) > 1
-        then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
-        else [];	
+    if length(getAttrDclAll(fName, top.env)) > 1
+    then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
+    else [];	
 
   top.errors := te.errors ++ tl.errors ++ tl.errorsTyVars;
 }
