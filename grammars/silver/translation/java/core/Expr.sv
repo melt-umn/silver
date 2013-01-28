@@ -182,21 +182,21 @@ top::Expr ::= '(' '.' q::QName ')'
   top.lazyTranslation = top.translation;
 }
 
-aspect production errorAccessDispatcher
+aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
-aspect production errorDNTAccessDispatcher
+aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
-aspect production synDNTAccessDispatcher
+aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".synthesized(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
@@ -215,7 +215,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
     end;
 }
 
-aspect production inhDNTAccessDispatcher
+aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".inherited(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
@@ -227,7 +227,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
     end;
 }
 
-aspect production terminalAccessDispatcher
+aspect production terminalAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   -- TODO: we should maybe map the name properly to the field we access?

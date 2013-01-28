@@ -19,9 +19,9 @@ synthesized attribute defLHSDispatcher :: (DefLHS ::= Decorated QName) occurs on
  - The production an attribute access should forward to for this type of attribute (i.e. the a in 'x.a')
  - WHEN the left hand side is a decorated nonterminal **only** (i.e. the 'x' is decorated)
  - @see accessDispather in TypeExp.sv, for the first step in that process...
- - @see decoratedAccessDispatcher production for where this is used
+ - @see decoratedAccessHandler production for where this is used
  -}
-synthesized attribute attrAccessDispatcher :: (Expr ::= Decorated Expr Dot_t Decorated QName) occurs on DclInfo;
+synthesized attribute decoratedAccessHandler :: (Expr ::= Decorated Expr Dot_t Decorated QName) occurs on DclInfo;
 {--
  - The production an "equation" shuld forward to for this type of attribute (i.e. the 'a' in 'x.a = e')
  -}
@@ -36,8 +36,8 @@ top::DclInfo ::=
   top.refDispatcher = error("Internal compiler error: must be defined for all value declarations");
   top.defDispatcher = error("Internal compiler error: must be defined for all value declarations");
   top.defLHSDispatcher = error("Internal compiler error: must be defined for all value declarations");
-  -- all attributes must provide attrAccessDispatcher, attrDefDispatcher.
-  top.attrAccessDispatcher = error("Internal compiler error: must be defined for all attribute declarations");  
+  -- all attributes must provide decoratedAccessHandler, attrDefDispatcher.
+  top.decoratedAccessHandler = error("Internal compiler error: must be defined for all attribute declarations");  
   top.attrDefDispatcher = error("Internal compiler error: must be defined for all attribute declarations");  
 }
 
@@ -102,13 +102,13 @@ top::DclInfo ::= sg::String sl::Location fn::String regex::Regex_R
 aspect production synDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
-  top.attrAccessDispatcher = synDNTAccessDispatcher;
+  top.decoratedAccessHandler = synDecoratedAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef;
 }
 aspect production inhDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
-  top.attrAccessDispatcher = inhDNTAccessDispatcher;
+  top.decoratedAccessHandler = inhDecoratedAccessHandler;
   top.attrDefDispatcher = inheritedAttributeDef;
 }
 

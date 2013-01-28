@@ -96,8 +96,7 @@ top::Expr ::= q::Decorated QName
   
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable
-                --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
-                then ntOrDecTypeExp(q.lookupValue.typerep, freshType(){-fresh tyvar-}) -- #HACK2012 Issue 4
+                then ntOrDecTypeExp(q.lookupValue.typerep, freshType())
                 else q.lookupValue.typerep;
 }
 
@@ -108,10 +107,8 @@ top::Expr ::= q::Decorated QName
   top.location = q.location;
   
   top.errors := [];
-  top.typerep = if q.lookupValue.typerep.isDecorable -- actually always decorable...
-                --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
-                then ntOrDecTypeExp(q.lookupValue.typerep, freshType(){-fresh tyvar-}) -- #HACK2012 Issue 4
-                else q.lookupValue.typerep;
+  -- An LHS is *always* a decorable (nonterminal) type.
+  top.typerep = ntOrDecTypeExp(q.lookupValue.typerep, freshType());
 }
 
 abstract production localReference
@@ -122,8 +119,7 @@ top::Expr ::= q::Decorated QName
   
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable
-                --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
-                then ntOrDecTypeExp(q.lookupValue.typerep, freshType(){-fresh tyvar-}) -- #HACK2012 Issue 4
+                then ntOrDecTypeExp(q.lookupValue.typerep, freshType())
                 else q.lookupValue.typerep;
 }
 
@@ -134,18 +130,12 @@ top::Expr ::= q::Decorated QName
   top.location = q.location;
   
   top.errors := [];
-  top.typerep = if q.lookupValue.typerep.isDecorable -- actually always decorable...
-                --then ntOrDecTypeExp(q.lookupValue.typerep, errorType(){-fresh tyvar-})
-                then ntOrDecTypeExp(q.lookupValue.typerep, freshType(){-fresh tyvar-}) -- #HACK2012 Issue 4
-                else q.lookupValue.typerep;
+  -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
+  top.typerep = ntOrDecTypeExp(q.lookupValue.typerep, freshType());
 }
 
-{- Eventhough bug #16 removes the production type, we still need the
-production reference for code generation purposes.  Type checking does
-not need to distinguish between functions and productions, excpet for
-the need to detect cases when, for example, a function aspect attempts
-to aspect a production. --EVW
- -}
+-- Note here that production and function *references* are distinguished.
+-- Later on, we do *not* distinguish for application.
 
 abstract production productionReference
 top::Expr ::= q::Decorated QName
@@ -181,39 +171,18 @@ top::Expr ::= q::Decorated QName
   top.typerep = freshenCompletely(q.lookupValue.typerep); -- TODO see above
 }
 
-concrete production concreteDecorateExpr
-top::Expr ::= q::NameTick
-{
-  top.pp = q.pp;
-  top.location = q.location;
-
-  top.errors <- [wrn(top.location, "Tick suffixes no longer do ANYTHING. Remove it!")];
-
-  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, q.name, q.location.line, q.location.column))));
-}
-
-concrete production concreteDontDecorateExpr
-top::Expr ::= q::NameTickTick
-{
-  top.pp = q.pp;
-  top.location = q.location;
-
-  top.errors <- [wrn(top.location, "Double tick suffixes no longer do ANYTHING. Remove it!")];
-
-  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, q.name, q.location.line, q.location.column))));
-}
-
 concrete production concreteForwardExpr
 top::Expr ::= q::'forward'
 {
   top.pp = "forward";
   top.location = loc(top.file, $1.line, $1.column);
 
+  -- TODO: we're forwarding to baseExpr just to decorate the tree we create.
+  -- That's a bit weird.
   forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "forward", q))));
 }
 
-
-concrete production productionApp
+concrete production application
 top::Expr ::= e::Expr '(' es::AppExprs ')'
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
@@ -224,13 +193,13 @@ top::Expr ::= e::Expr '(' es::AppExprs ')'
   forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es);
 }
 
-concrete production emptyProductionApp
+concrete production emptyApplication
 top::Expr ::= e::Expr '(' ')'
 {
   top.pp = e.pp ++ "()";
   top.location = e.location;
   
-  forwards to productionApp(e, $2, emptyAppExprs(forward.location), $3);
+  forwards to application(e, $2, emptyAppExprs(forward.location), $3);
 }
 
 abstract production errorApplication
@@ -251,6 +220,9 @@ top::Expr ::= e::Decorated Expr es::AppExprs
   es.appExprApplied = e.pp;
 }
 
+-- Note that this applies to both function and productions.
+-- We don't distinguish anymore at this point. A production reference
+-- becomes a function, effectively.
 abstract production functionApplication
 top::Expr ::= e::Decorated Expr es::AppExprs
 {
@@ -323,7 +295,7 @@ top::Expr ::= '(' '.' q::QName ')'
   top.errors <- occursCheck.errors;
 }
 
-concrete production attributeAccess
+concrete production access
 top::Expr ::= e::Expr '.' q::QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
@@ -332,15 +304,15 @@ top::Expr ::= e::Expr '.' q::QName
   top.errors := e.errors ++ forward.errors; -- So that e.errors appears first!
   
   -- Note: we're first consulting the TYPE of the LHS.
-  forwards to performSubstitution(e.typerep, e.upSubst).accessDispatcher(e, $2, q);
+  forwards to performSubstitution(e.typerep, e.upSubst).accessHandler(e, $2, q);
   -- This jumps to:
-  -- errorAccessDispatcher  (e.g. 1.pp)
-  -- undecoratedAccessDispatcher
-  -- decoratedAccessDispatcher  (see that production, for how normal attribute access proceeds!)
-  -- terminalAccessDispatcher
+  -- errorAccessHandler  (e.g. 1.pp)
+  -- undecoratedAccessHandler
+  -- decoratedAccessHandler  (see that production, for how normal attribute access proceeds!)
+  -- terminalAccessHandler
 }
 
-abstract production errorAccessDispatcher
+abstract production errorAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
@@ -350,7 +322,27 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.errors := [err(top.location, "LHS of '.' is type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ " and cannot have attributes.")] ++ q.lookupAttribute.errors; -- TODO fix this. How? Why? What's wrong? Perhaps I didn't like doing the performsubst here
 }
 
-abstract production undecoratedAccessDispatcher
+abstract production terminalAccessHandler
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  top.pp = e.pp ++ "." ++ q.pp;
+  top.location = loc(top.file, $2.line, $2.column);
+  
+  top.errors :=
+    if q.name == "lexeme" || q.name == "filename" || q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn" || q.name == "index" || q.name == "endIndex"
+    then []
+    else [err(q.location, q.name ++ " is not a terminal attribute")];
+
+  -- TODO: this is a hacky way of dealing with terminal attributes
+  top.typerep =
+    if q.name == "lexeme" || q.name == "filename"
+    then stringTypeExp()
+    else if q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn" || q.name == "index" || q.name == "endIndex"
+    then intTypeExp()
+    else errorType();
+}
+
+abstract production undecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
@@ -371,10 +363,10 @@ top::Expr ::= e::Expr '.' q::Decorated QName
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = loc(top.file, $2.line, $2.column);
 
-  forwards to decoratedAccessDispatcher( e {- it gets decorated :) -} , $2, q);
+  forwards to decoratedAccessHandler( e {- it gets decorated :) -} , $2, q);
 }
 
-abstract production decoratedAccessDispatcher
+abstract production decoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
@@ -387,15 +379,15 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   
   -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
   forwards to if null(q.lookupAttribute.dcls)
-              then errorDNTAccessDispatcher(e, $2, q)
-              else q.lookupAttribute.dcl.attrAccessDispatcher(e, $2, q);
+              then errorDecoratedAccessHandler(e, $2, q)
+              else q.lookupAttribute.dcl.decoratedAccessHandler(e, $2, q);
   -- From here we go to:
-  -- synDNTAccessDispatcher
-  -- inhDNTAccessDispatcher
-  -- errorDNTAccessDispatcher  -- unknown attribute error raised already.
+  -- synDecoratedAccessHandler
+  -- inhDecoratedAccessHandler
+  -- errorDecoratedAccessHandler  -- unknown attribute error raised already.
 }
 
-abstract production synDNTAccessDispatcher
+abstract production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
@@ -409,7 +401,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.errors := occursCheck.errors;
 }
 
-abstract production inhDNTAccessDispatcher
+abstract production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
@@ -423,7 +415,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.errors := occursCheck.errors;
 }
 
-abstract production errorDNTAccessDispatcher
+abstract production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
@@ -434,26 +426,6 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.typerep = errorType();
 }
 
-
-abstract production terminalAccessDispatcher
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
-{
-  top.pp = e.pp ++ "." ++ q.pp;
-  top.location = loc(top.file, $2.line, $2.column);
-  
-  top.errors :=
-    if q.name == "lexeme" || q.name == "filename" || q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn" || q.name == "index" || q.name == "endIndex"
-    then []
-    else [err(q.location, q.name ++ " is not a terminal attribute")];
-
-  -- TODO: this is a hacky way of dealing with terminal attributes
-  top.typerep =
-    if q.name == "lexeme" || q.name == "filename"
-    then stringTypeExp()
-    else if q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn" || q.name == "index" || q.name == "endIndex"
-    then intTypeExp()
-    else errorType();
-}
 
 concrete production decorateExprWithEmpty
 top::Expr ::= 'decorate' e::Expr 'with' '{' '}'
@@ -933,7 +905,7 @@ top::AppExprs ::= l::Location
 function mkFunctionInvocation
 Expr ::= e::Expr  es::[Expr]
 {
-  return productionApp(e, '(', foldAppExprs(es,e.location), ')');
+  return application(e, '(', foldAppExprs(es,e.location), ')');
 }
 function foldAppExprs
 AppExprs ::= e::[Expr]  l::Location

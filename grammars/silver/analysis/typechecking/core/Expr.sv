@@ -50,7 +50,7 @@ top::Expr ::= q::Decorated QName
   top.upSubst = top.downSubst;
 }
 
-aspect production productionApp
+aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ')'
 {
   e.downSubst = top.downSubst;
@@ -61,7 +61,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ')'
 aspect production functionApplication
 top::Expr ::= e::Decorated Expr es::AppExprs
 {
-  -- e already set by productionApp
+  -- e already set by application
   es.downSubst = e.upSubst;
   -- forwards
 }
@@ -83,7 +83,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 aspect production errorApplication
 top::Expr ::= e::Decorated Expr es::AppExprs
 {
-  -- e already set by productionApp
+  -- e already set by application
   es.downSubst = e.upSubst;
   top.upSubst = es.upSubst;
 }
@@ -94,19 +94,19 @@ top::Expr ::= '(' '.' q::QName ')'
   top.upSubst = top.downSubst;
 }
 
-aspect production attributeAccess
+aspect production access
 top::Expr ::= e::Expr '.' q::QName
 {
   e.downSubst = top.downSubst;
 }
 
-aspect production errorAccessDispatcher
+aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.upSubst = e.upSubst;
 }
 
-aspect production undecoratedAccessDispatcher -- TODO OH MY NO, THIS POLLUTION IS SPREADING!
+aspect production undecoratedAccessHandler -- TODO OH MY NO, THIS POLLUTION IS SPREADING!
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   forwarding with { downSubst = e.upSubst; }; -- TODO OH MY NO, THIS POLLUTION IS SPREADING!
@@ -114,10 +114,10 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 aspect production CHEAT_HACK_DISPATCHER -- TODO OH MY NO, THIS POLLUTION IS SPREADING!
 top::Expr ::= e::Expr '.' q::Decorated QName
 {
-  e.downSubst = top.downSubst; -- do what attributeAccess does.
+  e.downSubst = top.downSubst; -- do what access does.
 }
 
-aspect production decoratedAccessDispatcher
+aspect production decoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're decorated,
@@ -136,24 +136,24 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.upSubst = errCheck1.upSubst;
 }
 
-aspect production synDNTAccessDispatcher
+aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.upSubst = error("Internal compiler error: should be hidden by the dispatcher that forwards here.");
 }
-aspect production inhDNTAccessDispatcher
+aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.upSubst = error("Internal compiler error: should be hidden by the dispatcher that forwards here.");
 }
-aspect production errorDNTAccessDispatcher
+aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.upSubst = error("Internal compiler error: should be hidden by the dispatcher that forwards here.");
 }
 
 
-aspect production terminalAccessDispatcher
+aspect production terminalAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.upSubst = e.upSubst;

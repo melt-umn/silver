@@ -34,7 +34,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o
   top.typerep = ty;
   top.dclBoundVars = bound;
 
-  top.attrAccessDispatcher = synDNTAccessDispatcher;
+  top.decoratedAccessHandler = synDecoratedAccessHandler;
   top.attrDefDispatcher = errorColNormalAttributeDef;
 
   top.attrBaseDefDispatcher = synBaseColAttributeDef;
@@ -55,7 +55,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o
   top.typerep = ty;
   top.dclBoundVars = bound;
 
-  top.attrAccessDispatcher = inhDNTAccessDispatcher;
+  top.decoratedAccessHandler = inhDecoratedAccessHandler;
   top.attrDefDispatcher = errorColNormalAttributeDef;
 
   top.attrBaseDefDispatcher = inhBaseColAttributeDef;

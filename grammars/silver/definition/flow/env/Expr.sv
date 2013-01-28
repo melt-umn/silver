@@ -104,14 +104,14 @@ top::Expr ::= '(' '.' q::QName ')'
   top.flowDeps = [];
 }
 
-aspect production errorAccessDispatcher
+aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.flowDeps = [];
 }
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
-aspect production synDNTAccessDispatcher
+aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.flowDeps = 
@@ -123,7 +123,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
     | _ -> e.flowDeps
     end;
 }
-aspect production inhDNTAccessDispatcher
+aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.flowDeps = 
@@ -135,12 +135,12 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
     | _ -> e.flowDeps
     end;
 }
-aspect production errorDNTAccessDispatcher
+aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.flowDeps = [];
 }
-aspect production terminalAccessDispatcher
+aspect production terminalAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.flowDeps = [];
