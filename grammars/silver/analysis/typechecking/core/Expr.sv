@@ -694,12 +694,12 @@ top::AppExpr ::= e::Expr
             " but argument is of type " ++ errCheck1.leftpp)];  
 }
 
-aspect production consAppExprs
-top::AppExprs ::= e::AppExpr ',' es::AppExprs
+aspect production snocAppExprs
+top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
-  e.downSubst = top.downSubst;
-  es.downSubst = e.upSubst;
-  top.upSubst = es.upSubst;
+  es.downSubst = top.downSubst;
+  e.downSubst = es.upSubst;
+  top.upSubst = e.upSubst;
 }
 
 aspect production oneAppExprs

@@ -20,7 +20,7 @@ nonterminal ExprLHSExpr with
  -}
 nonterminal AppExprs with 
   config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTypereps, appExprApplied;
+  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied;
 
 nonterminal AppExpr with
   config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, exprs, rawExprs,
@@ -29,6 +29,7 @@ nonterminal AppExpr with
 synthesized attribute isPartial :: Boolean;
 synthesized attribute missingTypereps :: [TypeExp];
 synthesized attribute appExprIndicies :: [Integer];
+synthesized attribute appExprSize :: Integer;
 inherited attribute appExprIndex :: Integer;
 inherited attribute appExprTypereps :: [TypeExp];
 inherited attribute appExprTyperep :: TypeExp;
@@ -215,7 +216,6 @@ top::Expr ::= e::Decorated Expr es::AppExprs
 
   top.typerep = errorType();
   
-  es.appExprIndex = 0;
   es.appExprTypereps = [];
   es.appExprApplied = e.pp;
 }
@@ -229,9 +229,9 @@ top::Expr ::= e::Decorated Expr es::AppExprs
   top.pp = e.pp ++ "(" ++ es.pp ++ ")";
   top.location = e.location;
   
-  es.appExprIndex = 0;
+  -- NOTE: REVERSED ORDER
   -- We may need to resolve e's type to get at the actual 'function type'
-  es.appExprTypereps = performSubstitution(e.typerep, e.upSubst).inputTypes;
+  es.appExprTypereps = reverse(performSubstitution(e.typerep, e.upSubst).inputTypes);
   es.appExprApplied = e.pp;
   
   forwards to if es.isPartial
@@ -849,27 +849,27 @@ top::AppExpr ::= e::Expr
   top.errors := e.errors;
 }
 
-concrete production consAppExprs
-top::AppExprs ::= e::AppExpr ',' es::AppExprs
+concrete production snocAppExprs
+top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
-  top.pp = e.pp ++ ", " ++ es.pp;
-  top.location = e.location;
+  top.pp = es.pp ++ ", " ++ e.pp;
+  top.location = es.location;
 
-  top.isPartial = e.isPartial || es.isPartial;
-  top.missingTypereps = e.missingTypereps ++ es.missingTypereps;
+  top.isPartial = es.isPartial || e.isPartial;
+  top.missingTypereps = es.missingTypereps ++ e.missingTypereps;
 
-  top.rawExprs = e.rawExprs ++ es.rawExprs;
-  top.exprs = e.exprs ++ es.exprs;
-  top.appExprIndicies = e.appExprIndicies ++ es.appExprIndicies;
+  top.rawExprs = es.rawExprs ++ e.rawExprs;
+  top.exprs = es.exprs ++ e.exprs;
+  top.appExprIndicies = es.appExprIndicies ++ e.appExprIndicies;
 
-  top.errors := e.errors ++ es.errors;
+  top.errors := es.errors ++ e.errors;
+  top.appExprSize = es.appExprSize + 1;
 
-  e.appExprIndex = top.appExprIndex;
+  e.appExprIndex = es.appExprSize;
   e.appExprTyperep = if null(top.appExprTypereps)
                      then errorType()
                      else head(top.appExprTypereps);
 
-  es.appExprIndex = top.appExprIndex + 1;
   es.appExprTypereps = if null(top.appExprTypereps) then [] else tail(top.appExprTypereps);
 }
 concrete production oneAppExprs
@@ -891,8 +891,9 @@ top::AppExprs ::= e::AppExpr
                 then [err(top.location, "Too few arguments provided to function '" ++ top.appExprApplied ++ "'")]
                 else [];
   top.errors <- e.errors;
+  top.appExprSize = 1;
 
-  e.appExprIndex = top.appExprIndex;
+  e.appExprIndex = 0;
   e.appExprTyperep = if null(top.appExprTypereps)
                      then errorType()
                      else head(top.appExprTypereps);
@@ -923,14 +924,14 @@ top::AppExprs ::= l::Location
 function mkFunctionInvocation
 Expr ::= e::Expr  es::[Expr]
 {
-  return application(e, '(', foldAppExprs(es,e.location), ')');
+  return application(e, '(', foldAppExprs(reverse(es),e.location), ')');
 }
 function foldAppExprs
 AppExprs ::= e::[Expr]  l::Location
 {
   return if null(e) then emptyAppExprs(l)
          else if null(tail(e)) then oneAppExprs(presentAppExpr(head(e)))
-         else consAppExprs(presentAppExpr(head(e)), ',', foldAppExprs(tail(e),l));
+         else snocAppExprs(foldAppExprs(tail(e),l), ',', presentAppExpr(head(e)));
 }
 
 {--

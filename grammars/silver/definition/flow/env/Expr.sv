@@ -323,10 +323,10 @@ top::AppExpr ::= e::Expr
   top.flowDeps = e.flowDeps;
 }
 
-aspect production consAppExprs
-top::AppExprs ::= e::AppExpr ',' es::AppExprs
+aspect production snocAppExprs
+top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
-  top.flowDeps = e.flowDeps ++ es.flowDeps;
+  top.flowDeps = es.flowDeps ++ e.flowDeps;
 }
 aspect production oneAppExprs
 top::AppExprs ::= e::AppExpr
