@@ -279,7 +279,10 @@ String ::=
     "<copy file=\"${res}/pom_templates/plugin.pom.xml.template\" tofile=\"${ide.proj.plugin.path}/pom.xml\" filtering=\"true\"/>\n" ++
     "<!-- feature -->\n" ++
     "<copy file=\"${res}/pom_templates/feature_templates/build.properties.template\" tofile=\"${ide.proj.feature.path}/build.properties\" filtering=\"true\"/>\n" ++
-    "<copy file=\"${res}/pom_templates/feature_templates/feature.xml.template\" tofile=\"${ide.proj.feature.path}/feature.xml\" filtering=\"true\"/>\n" ++
+    -- commented out to support different build modes
+    -- "<copy file=\"${res}/pom_templates/feature_templates/feature.xml.template\" tofile=\"${ide.proj.feature.path}/feature.xml\" filtering=\"true\"/>\n" ++
+    "<antcall target=\"create Eclipse feature\" inheritAll=\"true\"/>\n" ++
+    "<antcall target=\"create Eclipse feature (all-on-one)\" inheritAll=\"true\"/>\n" ++
     "<copy file=\"${res}/pom_templates/feature_templates/pom.xml.template\" tofile=\"${ide.proj.feature.path}/pom.xml\" filtering=\"true\"/>\n" ++
     "<!-- update site (repository) -->\n" ++
     "<copy file=\"${res}/pom_templates/updatesite_templates/category.xml.template\" tofile=\"${ide.proj.updatesite.path}/category.xml\" filtering=\"true\"/>\n" ++
@@ -346,6 +349,16 @@ return
 "<target name=\"create parser controller (all-on-one)\" if=\"is-all-in-one\" depends=\"filters\">\n"++	
 "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/controller/parseController.java.template.all_in_one\"\n" ++
 "      tofile=\"${ide.pkg.path}/imp/controller/${lang.name}ParseController.java\" filtering=\"true\"/>\n" ++
+"</target>\n"++
+"\n"++
+
+"<target name=\"create Eclipse feature\" unless=\"is-all-in-one\" depends=\"filters\">\n"++	
+"  <copy file=\"${res}/pom_templates/feature_templates/feature.xml.template\"\n" ++
+"      tofile=\"${ide.proj.feature.path}/feature.xml\" filtering=\"true\"/>\n" ++
+"</target>\n"++
+"<target name=\"create Eclipse feature (all-on-one)\" if=\"is-all-in-one\" depends=\"filters\">\n"++	
+"  <copy file=\"${res}/pom_templates/feature_templates/feature.xml.template.all_in_one\"\n" ++
+"      tofile=\"${ide.proj.feature.path}/feature.xml\" filtering=\"true\"/>\n" ++
 "</target>\n"++
 "\n"++
 
