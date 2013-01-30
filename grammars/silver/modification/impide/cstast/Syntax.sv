@@ -112,10 +112,11 @@ top::SyntaxDcl ::= n::String lhs::TypeExp rhs::[TypeExp] modifiers::SyntaxProduc
 }
 
 aspect production syntaxLexerClass
-top::SyntaxDcl ::= n::String domlist::[String] sublist::[String]
+top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
-  top.classDomContribsNXML = implode("", map(nxmlCopperElementRef, map(createPairForSyntaxDcl, map(head, drefs))));
-  top.classSubContribsNXML = implode("", map(nxmlCopperElementRef, map(createPairForSyntaxDcl, map(head, srefs))));
+  -- Uhh, TODO. This code needs some clean up work. I think this ought to work fine, though.
+  top.classDomContribsNXML = modifiers.dominatesXML;
+  top.classSubContribsNXML = modifiers.submitsXML;
 
   top.nxmlCopper = "\t\t\t" ++ nxmlCopperElement(top) ++ "\n";
 }
@@ -188,7 +189,7 @@ function nxmlCopperElement
 String ::= d::Decorated SyntaxDcl
 {
   return case d of
-         | syntaxLexerClass(n, _, _) -> nxmlCopperClassElement(n)
+         | syntaxLexerClass(n, _) -> nxmlCopperClassElement(n)
          | syntaxTerminal(n, _, _)   -> nxmlCopperTermElement(n)
          | syntaxNonterminal(n, _)   -> nxmlCopperNontermElement(n.typeName)
          end;
@@ -223,7 +224,7 @@ String ::= p::Pair<Decorated SyntaxDcl Pair<String String>>
   gr = p.snd.fst;
   name = p.snd.snd;
   return case syn of
-         | syntaxLexerClass(n, _, _) -> nxmlCopperClassElementRef(n,gr,name)
+         | syntaxLexerClass(n, _) -> nxmlCopperClassElementRef(n,gr,name)
          | syntaxTerminal(n, _, _)   -> nxmlCopperTermElementRef(n,gr,name)
          | syntaxNonterminal(n, _)   -> nxmlCopperNontermElementRef(n.typeName,gr,name)
          end;
