@@ -1,7 +1,10 @@
 grammar silver:definition:core;
 
+-- LHS type gives this to 'application' for "foo(...)" calls.
 synthesized attribute applicationDispatcher :: (Expr ::= Decorated Expr  AppExprs);
-synthesized attribute accessDispatcher :: (Expr ::= Decorated Expr  Dot_t  Decorated QName);
+-- LHS type gives this to 'access' for "foo.some" accesses.
+-- (See DclInfo for the next step)
+synthesized attribute accessHandler :: (Expr ::= Decorated Expr  Dot_t  Decorated QName);
 
 synthesized attribute lengthDispatcher :: (Expr ::= Decorated Expr);
 synthesized attribute appendDispatcher :: (Expr ::= Decorated Expr  Decorated Expr);
@@ -12,14 +15,14 @@ synthesized attribute instanceOrd :: Boolean;
 synthesized attribute instanceNum :: Boolean;
 synthesized attribute instanceConvertible :: Boolean;
 
-attribute applicationDispatcher, accessDispatcher, lengthDispatcher, appendDispatcher,
+attribute applicationDispatcher, accessHandler, lengthDispatcher, appendDispatcher,
           instanceEq, instanceOrd, instanceNum, instanceConvertible occurs on TypeExp;
 
 aspect default production
 top::TypeExp ::=
 {
   top.applicationDispatcher = errorApplication;
-  top.accessDispatcher = errorAccessDispatcher;
+  top.accessHandler = errorAccessHandler;
   top.instanceEq = false;
   top.instanceOrd = false;
   top.instanceNum = false;
@@ -65,19 +68,19 @@ top::TypeExp ::=
 aspect production nonterminalTypeExp
 top::TypeExp ::= fn::String params::[TypeExp]
 {
-  top.accessDispatcher = undecoratedAccessDispatcher;
+  top.accessHandler = undecoratedAccessHandler;
 }
 
 aspect production terminalTypeExp
 top::TypeExp ::= fn::String
 {
-  top.accessDispatcher = terminalAccessDispatcher;
+  top.accessHandler = terminalAccessHandler;
 }
 
 aspect production decoratedTypeExp
 top::TypeExp ::= te::TypeExp
 {
-  top.accessDispatcher = decoratedAccessDispatcher;
+  top.accessHandler = decoratedAccessHandler;
 }
 
 aspect production functionTypeExp

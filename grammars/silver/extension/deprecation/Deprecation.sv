@@ -1,7 +1,7 @@
 grammar silver:extension:deprecation;
 
-import silver:definition:core;
-import silver:definition:env;
+imports silver:definition:core;
+imports silver:definition:env;
 
 terminal Deprecated_kwd 'deprecated' ; -- no lexer class!
 

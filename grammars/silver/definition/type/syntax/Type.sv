@@ -149,18 +149,6 @@ top::Type ::= 'Decorated' t::Type
   top.lexicalTypeVariables = t.lexicalTypeVariables;
 }
 
-concrete production prodType
-top::Type ::= 'Production' '(' sig::Signature ')'
-{
-  top.errors <- [wrn(forward.location, "'Production' keyword in types is no longer necessary. Remove it.")];
-  forwards to funType($2, sig, $4);
-}
-concrete production funTypeLegacy
-top::Type ::= 'Function' '(' sig::Signature ')'
-{
-  top.errors <- [wrn(forward.location, "'Function' keyword in types is no longer necessary. Remove it.")];
-  forwards to funType($2, sig, $4);
-}
 concrete production funType
 top::Type ::= '(' sig::Signature ')'
 {

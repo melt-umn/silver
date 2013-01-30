@@ -226,14 +226,6 @@ top::ModuleStmt ::= 'exports' m::QName 'with' c::QName ';'
   top.optionalGrammars = [];
   top.condBuild = [[m.name, c.name]];
 }
-concrete production buildsStmt
-top::ModuleStmt ::= 'build' m::QName 'with' c::QName ';'
-{
-  -- TODO: you know, remove eventually. And stuff.
-  top.errors <- [wrn(forward.location, "Conditional export using old-style 'build ... with' rather than 'exports ... with'")];
-
-  forwards to exportsWithStmt(terminal(Exports_kwd, "exports", $1), m, $3, c, $5);
-}
 concrete production optionalStmt
 top::ModuleStmt ::= 'option' m::QName ';'
 {

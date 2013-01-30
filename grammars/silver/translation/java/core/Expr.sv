@@ -152,6 +152,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 function argsTranslation
 String ::= e::Decorated AppExprs
 {
+  -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
   return implode(", ", map((.lazyTranslation), e.exprs));
 }
 
@@ -181,21 +182,21 @@ top::Expr ::= '(' '.' q::QName ')'
   top.lazyTranslation = top.translation;
 }
 
-aspect production errorAccessDispatcher
+aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
-aspect production errorDNTAccessDispatcher
+aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
-aspect production synDNTAccessDispatcher
+aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".synthesized(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
@@ -214,7 +215,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
     end;
 }
 
-aspect production inhDNTAccessDispatcher
+aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".inherited(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
@@ -226,7 +227,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
     end;
 }
 
-aspect production terminalAccessDispatcher
+aspect production terminalAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   -- TODO: we should maybe map the name properly to the field we access?
@@ -549,6 +550,13 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.lazyTranslation = e1.lazyTranslation ++ ", " ++ e2.lazyTranslation;
 }
 
+aspect production exprRef
+top::Expr ::= e::Decorated Expr
+{
+  top.translation = e.translation;
+  top.lazyTranslation = e.lazyTranslation;
+}
+
 
 function wrapThunk
 String ::= exp::String  beLazy::Boolean
@@ -565,3 +573,4 @@ String ::= e::Decorated Expr
 {
   return "new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return " ++ e.translation ++ "; } }";
 }
+

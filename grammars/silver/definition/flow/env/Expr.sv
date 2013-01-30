@@ -9,8 +9,6 @@ import silver:modification:let_fix;
 synthesized attribute flowDeps :: [FlowVertex] occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
 attribute flowEnv occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
 
---attribute upSubst, downSubst, finalSubst occurs on Expr, ForwardInhs, ForwardInh, ForwardLHSExpr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
-
 function inhsForTakingRef
 [String] ::= nt::String  flowEnv::Decorated FlowEnv
 {
@@ -104,14 +102,14 @@ top::Expr ::= '(' '.' q::QName ')'
   top.flowDeps = [];
 }
 
-aspect production errorAccessDispatcher
+aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.flowDeps = [];
 }
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
-aspect production synDNTAccessDispatcher
+aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.flowDeps = 
@@ -123,7 +121,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
     | _ -> e.flowDeps
     end;
 }
-aspect production inhDNTAccessDispatcher
+aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.flowDeps = 
@@ -135,12 +133,12 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
     | _ -> e.flowDeps
     end;
 }
-aspect production errorDNTAccessDispatcher
+aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.flowDeps = [];
 }
-aspect production terminalAccessDispatcher
+aspect production terminalAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.flowDeps = [];
@@ -319,16 +317,16 @@ top::AppExpr ::= '_'
 {
   top.flowDeps = [];
 }
-aspect production decoratedAppExpr
-top::AppExpr ::= e::Decorated Expr
+aspect production presentAppExpr
+top::AppExpr ::= e::Expr
 {
   top.flowDeps = e.flowDeps;
 }
 
-aspect production consAppExprs
-top::AppExprs ::= e::AppExpr ',' es::AppExprs
+aspect production snocAppExprs
+top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
-  top.flowDeps = e.flowDeps ++ es.flowDeps;
+  top.flowDeps = es.flowDeps ++ e.flowDeps;
 }
 aspect production oneAppExprs
 top::AppExprs ::= e::AppExpr
@@ -341,6 +339,17 @@ top::AppExprs ::= l::Location
   top.flowDeps = [];
 }
 
+aspect production exprRef
+top::Expr ::= e::Decorated Expr
+{
+  -- There is a decision to make here.
+  -- We DO refer to flowDeps here. Errors should have been already checked, but
+  -- we shouldn't expect that of flowdeps!
+  top.flowDeps = e.flowDeps;
+}
+
+
+-- builtins
 
 aspect production stringLength
 top::Expr ::= e::Decorated Expr

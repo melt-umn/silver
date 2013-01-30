@@ -9,7 +9,6 @@ terminal Abstract_kwd		'abstract'	lexer classes {KEYWORD};
 terminal As_kwd			'as'		lexer classes {KEYWORD};
 terminal Aspect_kwd		'aspect'	lexer classes {KEYWORD};
 terminal Attribute_kwd		'attribute'	lexer classes {KEYWORD};
-terminal Build_kwd		'build';
 terminal Closed_kwd             'closed';
 terminal Concrete_kwd		'concrete'	lexer classes {KEYWORD};
 terminal Decorate_kwd		'decorate'	lexer classes {KEYWORD};
@@ -85,9 +84,6 @@ ignore terminal WhiteSpace /[\n\t\ ]+/;
 
 terminal IdLower_t /[a-z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
 terminal IdUpper_t /[A-Z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
-
-terminal IdTick_t /[A-Za-z][A-Za-z0-9\_]*[\']/ lexer classes {IDENTIFIER};
-terminal IdTickTick_t /[A-Za-z][A-Za-z0-9\_]*[\'][\']/ lexer classes {IDENTIFIER};
 
 terminal Int_t /[0-9]+/;
 terminal Float_t /[0-9]+[\.][0-9]+/;

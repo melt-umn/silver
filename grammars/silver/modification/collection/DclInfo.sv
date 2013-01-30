@@ -34,7 +34,8 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o
   top.typerep = ty;
   top.dclBoundVars = bound;
 
-  top.attrAccessDispatcher = synDNTAccessDispatcher;
+  top.decoratedAccessHandler = synDecoratedAccessHandler;
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _, _);
   top.attrDefDispatcher = errorColNormalAttributeDef;
 
   top.attrBaseDefDispatcher = synBaseColAttributeDef;
@@ -55,7 +56,8 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o
   top.typerep = ty;
   top.dclBoundVars = bound;
 
-  top.attrAccessDispatcher = inhDNTAccessDispatcher;
+  top.decoratedAccessHandler = inhDecoratedAccessHandler;
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler, _, _, _); -- TODO: should probably be an error handler!
   top.attrDefDispatcher = errorColNormalAttributeDef;
 
   top.attrBaseDefDispatcher = inhBaseColAttributeDef;

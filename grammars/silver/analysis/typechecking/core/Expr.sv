@@ -50,10 +50,11 @@ top::Expr ::= q::Decorated QName
   top.upSubst = top.downSubst;
 }
 
-aspect production productionApp
+aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ')'
 {
   e.downSubst = top.downSubst;
+  forward.downSubst = e.upSubst;
   
   es.downSubst = top.downSubst; -- TODO REMOVE THIS (it's garbage related to bugs in pretty printing, afaict)
 }
@@ -61,30 +62,26 @@ top::Expr ::= e::Expr '(' es::AppExprs ')'
 aspect production functionApplication
 top::Expr ::= e::Decorated Expr es::AppExprs
 {
-  -- e already set by productionApp
-  es.downSubst = e.upSubst;
-  -- forwards
+  es.downSubst = top.downSubst;
+  forward.downSubst = es.upSubst;
 }
 
 aspect production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 {
-  -- es already set by functionApplication
-  top.upSubst = es.upSubst;
+  top.upSubst = top.downSubst;
 }
 
 aspect production partialApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 {
-  -- es already set by functionApplication
-  top.upSubst = es.upSubst;
+  top.upSubst = top.downSubst;
 }
 
 aspect production errorApplication
 top::Expr ::= e::Decorated Expr es::AppExprs
 {
-  -- e already set by productionApp
-  es.downSubst = e.upSubst;
+  es.downSubst = top.downSubst;
   top.upSubst = es.upSubst;
 }
 
@@ -94,30 +91,46 @@ top::Expr ::= '(' '.' q::QName ')'
   top.upSubst = top.downSubst;
 }
 
-aspect production attributeAccess
+aspect production access
 top::Expr ::= e::Expr '.' q::QName
 {
   e.downSubst = top.downSubst;
+  forward.downSubst = e.upSubst;
 }
 
-aspect production errorAccessDispatcher
+aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.upSubst = e.upSubst;
+  top.upSubst = top.downSubst;
 }
 
-aspect production undecoratedAccessDispatcher -- TODO OH MY NO, THIS POLLUTION IS SPREADING!
+aspect production undecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  forwarding with { downSubst = e.upSubst; }; -- TODO OH MY NO, THIS POLLUTION IS SPREADING!
-}
-aspect production CHEAT_HACK_DISPATCHER -- TODO OH MY NO, THIS POLLUTION IS SPREADING!
-top::Expr ::= e::Expr '.' q::Decorated QName
-{
-  e.downSubst = top.downSubst; -- do what attributeAccess does.
+  -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're UNdecorated,
+  -- ensuring that type's specialization, otherwise we could end up in trouble!
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  errCheck1 = checkNonterminal(e.typerep);
+
+  -- TECHNICALLY, I think the current implementation makes this impossible,
+  -- But let's leave it since it's the right thing to do.
+  top.errors <-
+    if errCheck1.typeerror
+    then [err(top.location, "Access of " ++ q.name ++ " from a decorated type.")]
+    else [];
+  
+  errCheck1.downSubst = top.downSubst;
+  top.upSubst = errCheck1.upSubst;
 }
 
-aspect production decoratedAccessDispatcher
+aspect production accessBouncer
+top::Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QName) e::Expr '.' q::Decorated QName
+{
+  e.downSubst = top.downSubst;
+  forward.downSubst = e.upSubst;
+}
+
+aspect production decoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're decorated,
@@ -132,31 +145,31 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
     then [err(top.location, "Attribute " ++ q.name ++ " being accessed from an undecorated type.")]
     else [];
   
-  errCheck1.downSubst = e.upSubst;
+  errCheck1.downSubst = top.downSubst;
   top.upSubst = errCheck1.upSubst;
 }
 
-aspect production synDNTAccessDispatcher
+aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.upSubst = error("Internal compiler error: should be hidden by the dispatcher that forwards here.");
+  top.upSubst = top.downSubst;
 }
-aspect production inhDNTAccessDispatcher
+aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.upSubst = error("Internal compiler error: should be hidden by the dispatcher that forwards here.");
+  top.upSubst = top.downSubst;
 }
-aspect production errorDNTAccessDispatcher
+aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.upSubst = error("Internal compiler error: should be hidden by the dispatcher that forwards here.");
+  top.upSubst = top.downSubst;
 }
 
 
-aspect production terminalAccessDispatcher
+aspect production terminalAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.upSubst = e.upSubst;
+  top.upSubst = e.downSubst;
 }
 
 
@@ -667,18 +680,10 @@ top::AppExpr ::= '_'
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
-  e.downSubst = top.downSubst;
-  forward.downSubst = e.upSubst;
-}
-
-aspect production decoratedAppExpr
-top::AppExpr ::= e::Decorated Expr
-{
-  -- The assumption is that the subst go threaded through e already, but isn't lost
-  -- it's already in our incoming subst.  Out only job here it to type check it:
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  errCheck1.downSubst = top.downSubst;
+  e.downSubst = top.downSubst;
+  errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
   
   errCheck1 = check(e.typerep, top.appExprTyperep);
@@ -689,12 +694,12 @@ top::AppExpr ::= e::Decorated Expr
             " but argument is of type " ++ errCheck1.leftpp)];  
 }
 
-aspect production consAppExprs
-top::AppExprs ::= e::AppExpr ',' es::AppExprs
+aspect production snocAppExprs
+top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
-  e.downSubst = top.downSubst;
-  es.downSubst = e.upSubst;
-  top.upSubst = es.upSubst;
+  es.downSubst = top.downSubst;
+  e.downSubst = es.upSubst;
+  top.upSubst = e.upSubst;
 }
 
 aspect production oneAppExprs
@@ -707,6 +712,14 @@ top::AppExprs ::= e::AppExpr
 aspect production emptyAppExprs
 top::AppExprs ::= l::Location
 {
+  top.upSubst = top.downSubst;
+}
+
+aspect production exprRef
+top::Expr ::= e::Decorated Expr
+{
+  -- See documentation for major restriction on use of exprRef.
+  -- Essentially, the referred expression MUST have already been type checked.
   top.upSubst = top.downSubst;
 }
 

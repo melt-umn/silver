@@ -24,6 +24,7 @@ top::DclInfo ::=
   top.attrOccursIndexName = error("Internal compiler error: must be defined for all occurs declarations");
   top.attrOccursIndex = error("Internal compiler error: must be defined for all occurs declarations");
   
+  -- TODO: Actually just for things in 'occurs' We should remove this, add proper "is syn/inh" question
   top.attrOccursType = error("Internal compiler error: must be defined for all attribute declarations");  
 }
 

@@ -414,7 +414,7 @@ Step 2: Let's go check on expressions. This has two purposes:
 
 
 
-aspect production synDNTAccessDispatcher
+aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   -- TODO oh hell look at that
@@ -474,7 +474,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
     else [];
 }
 
-aspect production inhDNTAccessDispatcher
+aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   local refCheck :: [Message] =

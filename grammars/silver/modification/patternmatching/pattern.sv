@@ -53,6 +53,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 
   top.errors <- ml.errors;
   
+  -- TODO: this is the only use of .rawExprs. FIXME
   -- introduce the failure case here.
   forwards to 
     caseExpr(top.location, es.rawExprs, ml.matchRuleList, 
@@ -314,8 +315,8 @@ Expr ::= e::Decorated Expr
   et = performSubstitution(e.typerep, e.upSubst);
 
   return if et.isDecorable
-         then decorateExprWithIntention(e.location, new(e), exprInhsEmpty(), ["forward"])
-         else new(e);
+         then decorateExprWithIntention(e.location, exprRef(e), exprInhsEmpty(), ["forward"])
+         else exprRef(e);
 }
 function ensureDecoratedType
 TypeExp ::= e::Decorated Expr
