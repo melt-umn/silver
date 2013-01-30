@@ -63,6 +63,7 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
   return if a.displayVersion then ioval(print("Silver Version 0.3.6-dev\n", ioin), 0)
   else if !argResult.parseSuccess then ioval(print(argResult.parseErrors, ioin), 1)
   else if !null(check.iovalue) then ioval(print(implode("\n", check.iovalue), check.io), 1)
+  else if !head(rootStream.iovalue).isJust then ioval(print("The specified grammar (" ++ buildGrammar ++ ") could not be found.\n", rootStream.io), 1)
   else actions;
 }
 
