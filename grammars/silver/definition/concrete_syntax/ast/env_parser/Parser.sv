@@ -159,9 +159,9 @@ top::ISyntaxDcl ::= 'prod' '(' n::IName ',' td::ITyVarDcls ',' l::ITypeRep ',' r
   top.syntaxAst = [syntaxProduction(n.aname, l.typerep, r.typereps, foldr(consProductionMod, nilProductionMod(), pm.productionModifiers))];
 }
 concrete production aSyntaxLclass
-top::ISyntaxDcl ::= 'lclass' '(' n::IName ',' d::INames ',' s::INames ')'
+top::ISyntaxDcl ::= 'lclass' '(' n::IName ',' lm::ILexerClassModifiers ')'
 {
-  top.syntaxAst = [syntaxLexerClass(n.aname, d.names, s.names)];
+  top.syntaxAst = [syntaxLexerClass(n.aname, foldr(consLexerClassMod, nilLexerClassMod(), lm.lexerClassModifiers))];
 }
 concrete production aSyntaxPattr
 top::ISyntaxDcl ::= 'pattr' '(' n::IName ',' t::ITypeRep ',' s::IString ')'
@@ -294,4 +294,45 @@ top::IProductionModifier ::= 'layout' '(' n::INames ')'
   top.productionModifiers = [prodLayout(n.names)];
 }
 
+--------------------------------------------------------------------------------
+
+nonterminal ILexerClassModifiers with lexerClassModifiers;
+nonterminal ILexerClassModifiersInner with lexerClassModifiers;
+nonterminal ILexerClassModifier with lexerClassModifiers;
+
+synthesized attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
+
+concrete production aLexerClassModifiersNone
+top::ILexerClassModifiers ::= '[' ']'
+{
+  top.lexerClassModifiers = [];
+}
+concrete production aLexerClassModifiersOne
+top::ILexerClassModifiers ::= '[' d::ILexerClassModifiersInner ']'
+{
+  top.lexerClassModifiers = d.lexerClassModifiers;
+}
+
+concrete production aLexerClassModifiersInnerOne
+top::ILexerClassModifiersInner ::= d::ILexerClassModifier
+{
+  top.lexerClassModifiers = d.lexerClassModifiers;
+}
+concrete production aLexerClassModifierInnersCons
+top::ILexerClassModifiersInner ::= d1::ILexerClassModifier ',' d2::ILexerClassModifiersInner
+{
+  top.lexerClassModifiers = d1.lexerClassModifiers ++ d2.lexerClassModifiers;
+}
+
+
+concrete production aLexerClassModifierSubmits
+top::ILexerClassModifier ::= 'sub' '(' n::INames ')'
+{
+  top.lexerClassModifiers = [lexerClassSubmits(n.names)];
+}
+concrete production aLexerClassModifierDominates
+top::ILexerClassModifier ::= 'dom' '(' n::INames ')'
+{
+  top.lexerClassModifiers = [lexerClassDominates(n.names)];
+}
 

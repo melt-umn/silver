@@ -19,7 +19,12 @@ top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
 
   top.errors := subs.errors ++ doms.errors;
   
-  top.syntaxAst = [syntaxLexerClass(fName, doms.precTermList, subs.precTermList)];
+  top.syntaxAst = [syntaxLexerClass(fName, 
+    consLexerClassMod(
+      lexerClassDominates(doms.precTermList),
+      consLexerClassMod(
+        lexerClassSubmits(subs.precTermList),
+        nilLexerClassMod())))];
 }
 
 concrete production lexerClassDclConcrete

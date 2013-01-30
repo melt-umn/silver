@@ -221,29 +221,25 @@ function checkRHS
  - the domlist/sublist that appear here.
  -}
 abstract production syntaxLexerClass
-top::SyntaxDcl ::= n::String domlist::[String] sublist::[String]
+top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
   top.sortKey = "AAA" ++ n;
   top.cstDcls = [pair(n, top)];
-  top.cstErrors := if length(searchEnvTree(n, top.cstEnv)) == 1 then []
-                   else ["Name conflict with lexer class " ++ n];
-  production attribute drefs :: [[Decorated SyntaxDcl]];
-  drefs = lookupStrings(domlist, top.cstEnv);
-  production attribute srefs :: [[Decorated SyntaxDcl]];
-  srefs = lookupStrings(sublist, top.cstEnv);
-  -- TODO: check terminal/lexer class
+  top.cstErrors := modifiers.cstErrors ++ 
+    if length(searchEnvTree(n, top.cstEnv)) == 1 then []
+    else ["Name conflict with lexer class " ++ n];
 
   -- TODO: these attributes are on all SyntaxDcls, but only have meaning for this production
   -- that's UUUUGLY.
-  top.classDomContribs = implode("", map(xmlCopperRef, map(head, drefs)));
-  top.classSubContribs = implode("", map(xmlCopperRef, map(head, srefs)));
+  top.classDomContribs = modifiers.dominatesXML;
+  top.classSubContribs = modifiers.submitsXML;
 
   top.cstNormalize = [top];
   
   top.xmlCopper = 
     "  <TerminalClass id=\"" ++ makeCopperName(n) ++ "\" />\n";
 
-  top.unparses = ["lclass('" ++ n ++ "'," ++ unparseStrings(domlist) ++ "," ++ unparseStrings(sublist) ++ ")"];
+  top.unparses = ["lclass('" ++ n ++ "', " ++ unparseNonStrings(modifiers.unparses) ++ ")"];
 }
 
 {--
@@ -317,7 +313,7 @@ function xmlCopperRef
 String ::= d::Decorated SyntaxDcl
 {
   return case d of
-  | syntaxLexerClass(n, _, _) -> "<TerminalClassRef id=\"" ++ makeCopperName(n) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
+  | syntaxLexerClass(n, _) -> "<TerminalClassRef id=\"" ++ makeCopperName(n) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   | syntaxTerminal(n, _, _) -> "<TerminalRef id=\"" ++ makeCopperName(n) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   | syntaxNonterminal(n, _) -> "<NonterminalRef id=\"" ++ makeCopperName(n.typeName) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   end;
