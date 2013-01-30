@@ -1,11 +1,18 @@
 grammar silver:modification:copper;
 
 terminal Lexer_kwd 'lexer' lexer classes {KEYWORD};
+terminal Class_kwd 'class' ; --lexer classes {KEYWORD};
 
-abstract production lexerClassDclFull
-top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
+concrete production lexerClassDclEmpty
+top::AGDcl ::= 'lexer' 'class' id::Name ';'
 {
-  top.pp = "lexer class " ++ id.name ++ ";"; -- TODO incomplete
+  forwards to lexerClassDecl($1, $2, id, lexerClassModifiersNone(), $4);
+}
+
+concrete production lexerClassDecl
+top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
+{
+  top.pp = "lexer class " ++ id.name ++ modifiers.pp ++ ";";
   top.location = id.location;
 
   production attribute fName :: String;
@@ -17,43 +24,62 @@ top::AGDcl ::= id::Name subs::TermPrecList doms::TermPrecList
                 then [err(top.location, "Lexer class '" ++ fName ++ "' is already bound.")]
                 else [];	
 
-  top.errors := subs.errors ++ doms.errors;
+  top.errors := modifiers.errors;
   
   top.syntaxAst = [syntaxLexerClass(fName, 
-    consLexerClassMod(
-      lexerClassDominates(doms.precTermList),
-      consLexerClassMod(
-        lexerClassSubmits(subs.precTermList),
-        nilLexerClassMod())))];
+    foldr(consLexerClassMod, nilLexerClassMod(), modifiers.lexerClassModifiers))];
 }
 
-concrete production lexerClassDclConcrete
-top::AGDcl ::= 'lexer' 'class' id::Name ';'
+nonterminal LexerClassModifiers with config, location, file, pp, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+nonterminal LexerClassModifier with config, location, file, pp, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+
+synthesized attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
+
+abstract production lexerClassModifiersNone
+top::LexerClassModifiers ::= 
 {
-  forwards to lexerClassDclFull(id, termPrecListNull(), termPrecListNull());
+  top.pp = "";
+  top.location = loc(top.file, -1, -1);
+
+  top.lexerClassModifiers = [];
+  top.errors := [];
+}
+concrete production lexerClassModifierSingle
+top::LexerClassModifiers ::= tm::LexerClassModifier
+{
+  top.pp = tm.pp;
+  top.location = tm.location;
+
+  top.lexerClassModifiers = tm.lexerClassModifiers;
+  top.errors := tm.errors; 
+}
+concrete production lexerClassModifiersCons
+top::LexerClassModifiers ::= h::LexerClassModifier  t::LexerClassModifiers
+{
+  top.pp = h.pp ++ " " ++ t.pp;
+  top.location = h.location;
+
+  top.lexerClassModifiers = h.lexerClassModifiers ++ t.lexerClassModifiers;
+  top.errors := h.errors ++ t.errors;
 }
 
-concrete production lexerClassDclSubmits
-top::AGDcl ::= 'lexer' 'class' id::Name 'submits' 'to' t::TermPrecList ';'
+concrete production lexerClassModifierDominates
+top::LexerClassModifier ::= 'dominates' terms::TermPrecList
 {
-  forwards to lexerClassDclFull(id, t, termPrecListNull());
+  top.pp = "dominates " ++ terms.pp;
+  top.location = loc(top.file, $1.line, $1.column);
+
+  top.lexerClassModifiers = [lexerClassDominates(terms.precTermList)];
+  top.errors := terms.errors;
 }
 
-concrete production lexerClassDclDominates
-top::AGDcl ::= 'lexer' 'class' id::Name 'dominates' t::TermPrecList ';'
+concrete production lexerClassModifierSubmitsTo
+top::LexerClassModifier ::= 'submits' 'to' terms::TermPrecList
 {
-  forwards to lexerClassDclFull(id, termPrecListNull(), t);
-}
+  top.pp = "submits to " ++ terms.pp;
+  top.location = loc(top.file, $1.line, $1.column);
 
-concrete production lexerClassDclBoth1
-top::AGDcl ::= 'lexer' 'class' id::Name 'dominates' t1::TermPrecList 'submits' 'to' t2::TermPrecList ';'
-{
-  forwards to lexerClassDclFull(id, t1, t2);
-}
-
-concrete production lexerClassDclBoth2
-top::AGDcl ::= 'lexer' 'class' id::Name 'submits' 'to' t1::TermPrecList 'dominates' t2::TermPrecList ';'
-{
-  forwards to lexerClassDclFull(id, t2, t1);
+  top.lexerClassModifiers = [lexerClassSubmits(terms.precTermList)];
+  top.errors := terms.errors;
 }
 
