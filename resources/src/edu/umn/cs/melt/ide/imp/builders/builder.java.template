@@ -280,7 +280,7 @@ public class @LANG_NAME@Builder extends BuilderBase implements @LANG_NAME@Analys
             IParseController parseController = new @LANG_NAME@ParseController();
             
             //Create marker creator
-            MarkerCreator markerCreator = new MarkerCreator(file, parseController, PROBLEM_MARKER_ID);
+            MarkerCreator markerCreator = new MarkerCreator(file, PROBLEM_MARKER_ID);
             parseController.getAnnotationTypeInfo().addProblemMarkerType(getErrorMarkerID());
 
             //Initialize parser controller
@@ -407,13 +407,12 @@ public class @LANG_NAME@Builder extends BuilderBase implements @LANG_NAME@Analys
      * param monitor progress monitor
      */
     protected void runParserForCompiler(final IFile file, IProgressMonitor monitor) {
-    	/* //Commented out due to the incompatibility with IMP 0.2 - FIXME*/
         try {
             IParseController parseController = new @LANG_NAME@ParseController();
 
             // TODO:  Pick a version of the marker creator (or just go with this one)
-            MarkerCreator markerCreator = new MarkerCreator(file, parseController, PROBLEM_MARKER_ID);
-//			MarkerCreatorWithBatching markerCreator = new MarkerCreatorWithBatching(file, parseController, this);
+            MarkerCreator markerCreator = new MarkerCreator(file, PROBLEM_MARKER_ID);
+//          MarkerCreatorWithBatching markerCreator = new MarkerCreatorWithBatching(file, this);
             
             parseController.getAnnotationTypeInfo().addProblemMarkerType(getErrorMarkerID());
 
@@ -429,6 +428,5 @@ public class @LANG_NAME@Builder extends BuilderBase implements @LANG_NAME@Analys
         } catch (ModelException e) {
             getPlugin().logException("Example builder returns without parsing due to a ModelException", e);
         }
-        //*/
     }
 }
