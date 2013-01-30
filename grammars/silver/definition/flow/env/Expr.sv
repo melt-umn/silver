@@ -476,11 +476,12 @@ aspect production matchPrimitiveReal
 top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
 {
   -- thanks to the decorateWithIntention hack, this works okay for
-  -- matching on undecorated types
+  -- matching on undecorated types (because e.flowDeps will be appropriate)
+
   -- Let's make sure for decorated types, we only demand what's necessary for forward
   -- evaluation.
   top.flowDeps = pr.flowDeps ++ f.flowDeps ++
-    case e of
+    case (case e of exprRef(e1) -> e1 | _ -> e end) of -- TODO: Here we have a dumb hack to deal with exprRef!
     | childReference(lq) -> [rhsForwardVertex(lq.lookupValue.fullName)]
     | lhsReference(lq) -> [forwardEqVertex()] -- weirdos!
     | localReference(lq) -> [localForwardVertex(lq.lookupValue.fullName)]
