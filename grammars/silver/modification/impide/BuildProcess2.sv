@@ -1,13 +1,7 @@
 grammar silver:modification:impide;
 
-import silver:modification:impide:cstast;
-import silver:modification:copper;
-import silver:definition:concrete_syntax;
-import silver:definition:concrete_syntax:ast;
 import silver:driver;
 import silver:translation:java;
---import silver:translation:java:core only makeIdName, makeNTClassName;
---import silver:translation:java:driver;
 import silver:util:cmdargs;
 
 aspect production compilation

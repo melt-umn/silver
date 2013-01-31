@@ -910,6 +910,7 @@ top::AppExprs ::= l::Location
   top.rawExprs = [];
   top.exprs = [];
   top.appExprIndicies = [];
+  top.appExprSize = 0;
 
   -- Assumption: We only get here when we're looking at ()
   -- i.e. we can't ever have 'too many' provided error

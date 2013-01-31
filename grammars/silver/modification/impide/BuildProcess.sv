@@ -2,7 +2,7 @@ grammar silver:modification:impide;
 
 import silver:driver;
 import silver:translation:java:driver;
-import silver:translation:java:core only makeParserName, makeName;
+import silver:translation:java:core only makeParserName, makeName, makeClassName;
 
 import silver:util:cmdargs;
 
@@ -24,7 +24,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
   local parserPackagePath :: String = grammarToPath(ide.ideParserSpec.sourceGrammar);
   local parserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ ".copper";
   local ideParserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ "_ide.copper";
-  local pkgName :: String = grammarToPackage(buildGrammar);
+  local pkgName :: String = makeName(buildGrammar);
 
   extraTopLevelDecls <- if !isIde then [] else [
     "<property name='grammar.path' value='" ++ head(builtGrammar).grammarSource ++ "'/>", 
@@ -87,14 +87,7 @@ function getIDEFunctionsDcls
 function getIDEFunctionDcl
 String ::= funcDcl :: Pair<String String>
 {
-    local attribute lastInd :: Integer = lastIndexOf(":", funcDcl.snd);
-    local attribute grammarPart :: String = substring(0, lastInd, funcDcl.snd);
-    local attribute functionPart :: String = substring(lastInd + 1, length(funcDcl.snd), funcDcl.snd);
-
-    return "<property name='" ++ getIDEFunctionPropertyKey(funcDcl) ++ "' value='" ++ 
-           if lastInd > -1
-           then substitute(":", ".", grammarPart) ++ ".P" ++ functionPart ++ "' />"
-           else "P" ++ funcDcl.snd ++ "' />";
+  return "<property name='" ++ getIDEFunctionPropertyKey(funcDcl) ++ "' value='" ++ makeClassName(funcDcl.snd) ++ "' />";
 }
 
 function getIDEFunctionPropertyKey
@@ -390,14 +383,9 @@ String ::= pkg::String
   return substitute(".", "/", pkg);
 }
 
-function grammarToPackage
-String ::= g::String
-{
-  return substitute(":", ".", g);
-}
 function grammarToExportString
 String ::= g::String
 {
-  return grammarToPackage(g) ++ ";version=\"${ide.version}\"";
+  return makeName(g) ++ ";version=\"${ide.version}\"";
 }
 

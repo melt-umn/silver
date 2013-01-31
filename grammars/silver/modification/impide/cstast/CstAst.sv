@@ -10,20 +10,17 @@ imports silver:translation:java:type only transType;
 imports silver:modification:impide;
 
 -- The attribute into which the copper parser in new XML skin is written
-synthesized attribute nxmlCopper :: String;
-attribute nxmlCopper occurs on SyntaxRoot, Syntax, SyntaxDcl;
+synthesized attribute nxmlCopper :: String occurs on SyntaxRoot, Syntax, SyntaxDcl;
 
 aspect default production
 top::SyntaxRoot ::=
 {
-  top.nxmlCopper = error("nxmlCopper not defined");
+  top.nxmlCopper = error("This should only ever be demanded from cstRoot.");
 }
 
 aspect production cstRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
 {
-  top.startNT = startnt;
-
   -- 2) The copper parser
   top.nxmlCopper =
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ++

@@ -1,15 +1,11 @@
 grammar silver:modification:impide;
 
-import silver:driver:util;
+import silver:driver;
 
--- All we're doing here is propagating the information up from lower down the ASTs
-
--- RootSpec is the representation of a grammar
--- Root is a file
--- AGDcls is the "declarations" portion of a file (vs import statements, etc)
--- AGDcl is one declaration
-
-attribute ideSpecs occurs on RootSpec, Root, AGDcls, AGDcl, GrammarPart, Grammar;
+{--
+ - This attribute will by accumulated up on each 
+ -}
+synthesized attribute ideSpecs :: [IdeSpec] occurs on RootSpec, Root, AGDcls, AGDcl, GrammarPart, Grammar;
 
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
@@ -47,7 +43,7 @@ top::RootSpec ::= g::Grammar  _ _ _
 aspect production interfaceRootSpec
 top::RootSpec ::= _ _
 {
-  top.ideSpecs = []; -- todo
+  top.ideSpecs = []; -- TODO: This, of course, means we're forgetting ide specs in interfaces
 }
 
 aspect production grammarPart

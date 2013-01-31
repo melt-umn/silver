@@ -1,8 +1,5 @@
 grammar silver:modification:impide;
 
-import silver:modification:impide:cstast;
-import silver:modification:copper;
-
 -- terminal's font in IDE
 terminal Font_kwd  'font';
 
