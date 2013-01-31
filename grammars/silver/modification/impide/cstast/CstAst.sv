@@ -22,17 +22,6 @@ top::SyntaxRoot ::=
 aspect production cstRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
 {
-
-  -- 1) Layouts (ignored tokens, such as comments)
-  local attribute ignoredTerminals :: [Pair<Decorated SyntaxDcl Pair<String String>>];
-  ignoredTerminals = map(createPairForSyntaxDcl, s2.allIgnoreTerminals);--s2 is defined in silver:definition:concrete_syntax:ast:cstRoot.sv
-  -- for <StartLayout>
-  local attribute newStartLayout :: String;
-  newStartLayout = implode("\n\t\t\t", map(nxmlCopperElementRef, ignoredTerminals));  
-  -- for <Grammar>-wide <Layout>
-  local attribute newUnivLayout :: String;
-  newUnivLayout = implode("			\n", map(nxmlCopperElementRef, ignoredTerminals));
-
   top.startNT = startnt;
 
   -- 2) The copper parser
@@ -40,59 +29,23 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ++
 
 "<CopperSpec xmlns=\"http://melt.cs.umn.edu/copper/xmlns\">\n" ++
-"	<Parser id=\"SingleParser\" isUnitary=\"false\">\n" ++
-
-"		<PP>SingleParser</PP>\n" ++
-
-"		<Grammars>\n" ++
-"			<GrammarRef id=\"" ++ getGrammarId() ++ "\"/>\n" ++
-"		</Grammars>\n" ++
-
-"		<StartSymbol>\n" ++
-"			<NonterminalRef grammar=\"" ++ getGrammarId() ++ "\" id=\"" ++ makeCopperName(startnt) ++ "\"/>\n" ++
-"		</StartSymbol>\n" ++
-
-"		<StartLayout>\n" ++
-"			" ++ newStartLayout ++ "\n" ++
-"		</StartLayout>\n" ++
-
-"		<Package>parsers</Package>\n" ++
-
-"		<ClassName>SingleParser</ClassName>\n" ++
-
-"		<ClassAuxiliaryCode>\n" ++
-"			<Code><![CDATA[\n" ++ 
-
-		getAuxCode(s.fontList, s.termFontPairList) ++ 
-
-"		]]></Code>\n" ++
-"		</ClassAuxiliaryCode>\n" ++
-
-"		<DefaultProductionCode>\n" ++
-"			<Code><![CDATA[\n" ++
-"/* Define default production action here. */\n" ++
-"			]]></Code>\n" ++
-"		</DefaultProductionCode>\n" ++
-
-"		<DefaultTerminalCode>\n" ++
-"			<Code><![CDATA[\n " ++
-"/* Define default terminal action here. */\n" ++
-"			]]></Code>\n" ++
-"		</DefaultTerminalCode>\n" ++
-
-"		<ParserInitCode>\n" ++
-"			<Code><![CDATA[\n" ++
-"reset();\n" ++
-"			]]></Code>\n" ++
-"		</ParserInitCode>\n" ++
-
-"		<PostParseCode>\n" ++
-"			<Code><![CDATA[\n" ++
-"/* Insert PostParseCode here. */\n" ++
-"			]]></Code>\n" ++
-"		</PostParseCode>\n" ++
-
-"		<Preamble>\n" ++
+"  <Parser id=\"" ++ makeCopperName(parsername) ++ "\" isUnitary=\"true\">\n" ++
+"    <PP>" ++ parsername ++ "</PP>\n" ++
+"    <Grammars><GrammarRef id=\"" ++ s2.containingGrammar ++ "\"/></Grammars>\n" ++
+"    <StartSymbol>" ++ xmlCopperRef(head(startFound)) ++ "</StartSymbol>\n" ++
+"    <StartLayout>" ++ univLayout ++ "</StartLayout>\n" ++
+-- DIFFERENCES ****************************************************************
+"    <ClassAuxiliaryCode>\n" ++
+"      <Code><![CDATA[\n" ++ 
+  getAuxCode(s2.fontList, s2.termFontPairList) ++ 
+"      ]]></Code>\n" ++
+"    </ClassAuxiliaryCode>\n" ++
+"    <ParserInitCode>\n" ++
+"      <Code><![CDATA[\n" ++
+"        reset();\n" ++
+"      ]]></Code>\n" ++
+"    </ParserInitCode>\n" ++
+"    <Preamble>\n" ++
 "<Code><![CDATA[\n" ++
 "import java.util.ArrayList;\n" ++
 "import java.util.Iterator;\n" ++
@@ -105,38 +58,29 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
 "import org.eclipse.jface.text.TextAttribute;\n" ++
 "import org.eclipse.swt.widgets.Display;\n" ++
 "]]></Code>\n" ++
-"		</Preamble>\n" ++
-
-"		<SemanticActionAuxiliaryCode>\n" ++
-"			<Code><![CDATA[\n" ++ 
+"    </Preamble>\n" ++
+"    <SemanticActionAuxiliaryCode>\n" ++
+"      <Code><![CDATA[\n" ++ 
 "private int getCurrentProduction(){\n" ++
-" 	return _prod;\n" ++
+"  return _prod;\n" ++
 "}\n" ++
-"			]]></Code>\n" ++
-"		</SemanticActionAuxiliaryCode>\n" ++
+"      ]]></Code>\n" ++
+"    </SemanticActionAuxiliaryCode>\n" ++
+-- END DIFFERENCES ************************************************************
+"  </Parser>\n\n" ++
 
-"	</Parser>\n\n" ++
-
-"	<Grammar id=\"" ++ getGrammarId() ++ "\">\n\n" ++
-	
-"		<PP>" ++ getGrammarId() ++ "</PP>\n\n" ++
-	
-"		<Layout>\n" ++
-"			" ++ newUnivLayout ++ "\n" ++
-"		</Layout>\n\n" ++
-			
-"  		<Declarations>\n" ++
-
-			s2.nxmlCopper ++ 
-
-"			<ParserAttribute id=\"context\">\n" ++
-"				<Type><![CDATA[common.DecoratedNode]]></Type>\n" ++
-"				<Code><![CDATA[ " ++ getGrammarId() ++ "$context = common.TopNode.singleton; ]]></Code>\n" ++
-"			</ParserAttribute>\n" ++
-
-"		</Declarations>\n" ++
-"	</Grammar>\n" ++
-"</CopperSpec>";
+"  <Grammar id=\"" ++ s2.containingGrammar ++ "\">\n\n" ++
+"    <PP>" ++ s2.containingGrammar ++ "</PP>\n\n" ++
+"    <Layout>" ++ univLayout ++ "</Layout>\n\n" ++
+"    <Declarations>\n" ++
+"      <ParserAttribute id=\"context\">\n" ++
+"        <Type><![CDATA[common.DecoratedNode]]></Type>\n" ++
+"        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>\n" ++
+"      </ParserAttribute>\n" ++
+       s2.nxmlCopper ++
+"    </Declarations>\n" ++
+"  </Grammar>\n" ++
+"</CopperSpec>\n";
 }
 
 
@@ -145,45 +89,6 @@ Assumptions we make about initial Syntax:
 
 1. All type parameter lists are the appropriate length. (Silver type checking)
 -}
-
-function makeCopperName
-String ::= str::String
-{
-  return makeIdName(str);
-}
-
-function getGrammarId
-String ::=
-{
-  return "host";--used to be "singlegrammar"
-}
-
-function createPairForSyntaxDcl
-Pair<Decorated SyntaxDcl Pair<String String>> ::= term::Decorated SyntaxDcl
-{
-  return pair(term, pair(getGrammarId(), ""));
-}
-
-function createNamedPairForSyntaxDcl
-Pair<Decorated SyntaxDcl Pair<String String>> ::= term::Decorated SyntaxDcl index::Integer
-{
-  return pair(term, pair(getGrammarId(), "r" ++ toString(index)));
-}
-
-function createNamedSyntaxDclsForRHSXml
-[Pair<Decorated SyntaxDcl Pair<String String>>] ::= syns::[Decorated SyntaxDcl] index::Integer
-{
-  return if (null(syns)) then [] else (createNamedPairForSyntaxDcl(head(syns), index) :: (createNamedSyntaxDclsForRHSXml(tail(syns), index+1)));
-}
-
-function getAccesserCodeForTermNonterm
-String ::= syn::Pair<Decorated SyntaxDcl Pair<String String>>
-{
-    return case syn.fst of
-         | syntaxTerminal(n, _, _)   -> syn.snd.snd
-         | syntaxNonterminal(n, _)   -> syn.snd.snd ++ ".getLangSpecNode()"
-         end;
-}
 
 function getAuxCode
 String ::= fontList::[Pair<String Font>] termFontPairList::[Pair<String String>] 
@@ -195,7 +100,7 @@ return
 "\t    int production = semantics.getCurrentProduction();\n" ++
 "\t\tnodeBuilder.setLangSpecNode(obj);\n" ++
 "\t\tint _productionLength = actionIndex(getSymbolNumbers()[production]);\n" ++
-"\t\tint _productionLHS = actionIndex(getProductionLHSs()[production - getGRAMMAR_SYMBOL_COUNT()]);		\n" ++
+"\t\tint _productionLHS = actionIndex(getProductionLHSs()[production - getGRAMMAR_SYMBOL_COUNT()]);\n" ++
 "\t\tenParseTree.reduce(nodeBuilder, production, _productionLength, _productionLHS);\n" ++
 "\t\treturn (AdaptiveEnhancedParseTreeInnerNode)enParseTree.getLowestNode();\n" ++
 "\t}\n" ++
@@ -209,7 +114,7 @@ return
 "\t\tshiftPTNode(null, scanResult);\n" ++
 "\t}\n" ++
 "\t\n" ++
-"\tclass AdaptiveParseNodeBuilder implements ParseNodeBuilder<IEnhancedParseTreeNode> {	\n" ++
+"\tclass AdaptiveParseNodeBuilder implements ParseNodeBuilder<IEnhancedParseTreeNode> {\n" ++
 "\t\tprivate Object langSpecNode;\n" ++
 "\t\t\n" ++
 "\t\tAdaptiveParseNodeBuilder(){\n" ++
@@ -397,8 +302,6 @@ String ::= fontList::[Pair<String Font>] termFontPairList::[Pair<String String>]
 {
 return
 "\tpublic static class TokenClassifier implements ICopperTokenClassifier {\n" ++
-"\t\tstatic final String PREFIX = \"" ++ getGrammarId() ++ "\" + \"$\";\n" ++
-"\t\t\n" ++
 "\t\tprivate static Map<String, Integer> map = new HashMap<String, Integer>();\n" ++	
 "\t\t\n" ++
 "\t\tpublic final static class TokenType {\n" ++
@@ -429,12 +332,12 @@ getConstantDeclarations(1, fontList) ++
 "\t\t}\n" ++
 "\t\t\n" ++			
 "\t\tprivate static TokenClassifier INSTANCE = new TokenClassifier();\n" ++
-"\t\t\n" ++		
+"\t\t\n" ++
 "\t\tpublic static TokenClassifier getInstance(){\n" ++
 "\t\t\treturn INSTANCE;\n" ++
 "\t\t}\n" ++
-"\t\t\n" ++		
-"\t\tprivate TokenClassifier(){\n" ++	
+"\t\t\n" ++
+"\t\tprivate TokenClassifier(){\n" ++
 "\t\t\n" ++
 "\t\t}\n" ++
 "\t\n" ++
@@ -450,7 +353,7 @@ return implode("\n\t\t\t", map(getPutNameFontPairIntoMap, termFontPairList));
 function getPutNameFontPairIntoMap
 String ::= tokenNameAndFontName::Pair<String String>
 {
-return "map.put(PREFIX+\"" ++ tokenNameAndFontName.fst ++ "\", " ++ "TokenType." ++ 
+return "map.put(\"" ++ tokenNameAndFontName.fst ++ "\", " ++ "TokenType." ++ 
        (if(tokenNameAndFontName.snd!="") 
         then tokenNameAndFontName.snd --TODO check if font name is defined, if not, use DEFAULT
         else "DEFAULT") ++ ");"; 
@@ -528,3 +431,4 @@ String ::= namedFont::Pair<String Font>
 {
 return "addTextAttribute(TokenClassifier.TokenType." ++ namedFont.fst ++ ", attributes[TokenClassifier.TokenType." ++ namedFont.fst ++ "]);";
 }
+

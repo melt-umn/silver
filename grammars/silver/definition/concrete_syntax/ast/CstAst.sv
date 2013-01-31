@@ -38,10 +38,10 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
   top.cstErrors := s.cstErrors;
   top.cstNormal = cstRoot(parsername, startnt, s2);
   
-  local startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, s2.cstEnv);
+  production startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, s2.cstEnv);
   -- TODO check if this is found!!
 
-  local attribute univLayout :: String;
+  production attribute univLayout :: String;
   univLayout = implode("", map(xmlCopperRef, s2.allIgnoreTerminals));
 
   s2.univLayout = univLayout;
