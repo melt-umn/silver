@@ -21,8 +21,8 @@ jenkinsURL = "localhost:8080"
 jenkinsUsername = "tedinski"
 
 # To avoid committing API tokens ever again...
-f = open("~/.jenkinsapi", 'r')
-jenkinsAPIToken = f.readline()
+f = open(os.path.expanduser("~/.jenkinsapi"), 'r')
+jenkinsAPIToken = f.readline().strip()
 f.close()
 
 ## END: config stuff
