@@ -49,7 +49,7 @@ top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModi
 aspect production syntaxTerminal
 top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
 {
-  top.termFontPairList = [ pair(makeCopperName(n), modifiers.fontAttr) ];
+  top.termFontPairList = [ pair(makeCopperName(n), if modifiers.fontAttr == "" then modifiers.fontAttrFromClass else modifiers.fontAttr) ];
   top.nxmlCopper =
     "\n\t\t\t<Terminal id=\"" ++ makeCopperName(n) ++ "\">\n" ++
       "\t\t\t\t<PP>" ++ makeCopperName(n) ++ "</PP>\n" ++
