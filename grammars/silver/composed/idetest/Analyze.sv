@@ -1,7 +1,8 @@
 -- This file defines the error demanding function that can be interfaced by IDE plugin written in Java.
 
 --grammar silver:analysis:binding:driver;
-grammar silver:modification:impide;
+grammar silver:composed:idetest;
+
 import silver:driver;
 import silver:util:cmdargs;
 

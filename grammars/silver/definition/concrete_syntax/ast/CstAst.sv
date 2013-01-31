@@ -7,7 +7,9 @@ imports silver:definition:env only typeName, unparse, unparseStrings, unparseNon
 imports silver:translation:java:core only makeIdName, makeClassName, makeNTClassName;
 imports silver:translation:java:type only transType;
 
--- The name of start nonterminal
+{--
+ - The name of the start nonterminal of this parser spec.
+ -}
 synthesized attribute startNT :: String;
 
 {--
@@ -15,7 +17,14 @@ synthesized attribute startNT :: String;
  -}
 closed nonterminal SyntaxRoot with cstErrors, cstNormal, xmlCopper, {-TODO:debugging-}unparse, startNT;
 
-synthesized attribute cstNormal :: SyntaxRoot; -- TODO basically just a debugging thing
+{--
+ - This attribute exists for debugging purposes only. Nothing should need to extract
+ - the normalize tree from us. TODO
+ -}
+synthesized attribute cstNormal :: SyntaxRoot;
+{--
+ - Translation of a CST AST to Copper XML.
+ -}
 synthesized attribute xmlCopper :: String;
 
 abstract production cstRoot
@@ -33,6 +42,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
   s2.containingGrammar = "host";
   s2.cstNTProds = error("TODO: make this environmnet not be decorated?"); -- TODO
   
+  top.startNT = startnt;
   -- This should be on s1, because the s2 transform assumes everything is well formed.
   -- In particular, it drops productions it can't find an NT for.
   top.cstErrors := s.cstErrors;
