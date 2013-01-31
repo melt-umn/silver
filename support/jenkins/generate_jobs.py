@@ -374,9 +374,10 @@ MeltsvnGrammarJob("ableJ-tables",     "edu:umn:cs:melt:ableJ14", "composed:java_
 MeltsvnGrammarJob("ableJ-pizza",      "edu:umn:cs:melt:ableJ14", "composed:java_pizza:bin"), 
 MeltsvnGrammarJob("ableJ-rlp",        "edu:umn:cs:melt:ableJ14", "composed:java_rlp:bin"), 
 
+MeltsvnGrammarJob("simple-core",   "edu:umn:cs:melt:simple", "artifacts:core"),
 MeltsvnGrammarJob("simple-host",   "edu:umn:cs:melt:simple", "artifacts:host"),
-MeltsvnGrammarJob("simple-matrix", "edu:umn:cs:melt:simple", "compositions:simple_matrix"),
-MeltsvnGrammarJob("simple-all",    "edu:umn:cs:melt:simple", "compositions:simple_all"),
+MeltsvnGrammarJob("simple-matrix", "edu:umn:cs:melt:simple", "artifacts:with_matrix"),
+MeltsvnGrammarJob("simple-all",    "edu:umn:cs:melt:simple", "artifacts:with_all"),
 
 MeltsvnGrammarJob("ring-host", "react", "bin", includepath="users/srinivasr/trunk/grammars"),
 MeltsvnGrammarJob("ring-host-tests", "react", "tests", includepath="users/srinivasr/trunk/grammars", invoke=True),
