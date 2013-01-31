@@ -4,23 +4,23 @@ grammar silver:modification:impide;
 terminal Font_kwd  'font';
 
 concrete production terminalModifierFont
-top::TerminalModifier ::= 'font' '=' fontName::IdLower_t
+top::TerminalModifier ::= 'font' '=' id::QName
 {
-  top.pp = "font = " ++ fontName.lexeme;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.pp = "font = " ++ id.name;
+  top.location = id.location;
 
-  top.terminalModifiers = [termFont(fontName.lexeme)];
-  top.errors := [];
+  top.terminalModifiers = [termFont(id.lookupFont.fullName)];
+  top.errors := id.lookupFont.errors;
 }
 
 -- Allows fonts on lexer classes, too!
 concrete production lexerClassModifierFont
-top::LexerClassModifier ::= 'font' '=' fontName::IdLower_t
+top::LexerClassModifier ::= 'font' '=' id::QName
 {
-  top.pp = "font = " ++ fontName.lexeme;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.pp = "font = " ++ id.name;
+  top.location = id.location;
 
-  top.lexerClassModifiers = [lexerClassFont(fontName.lexeme)];
-  top.errors := [];
+  top.lexerClassModifiers = [lexerClassFont(id.lookupFont.fullName)];
+  top.errors := id.lookupFont.errors;
 }
 

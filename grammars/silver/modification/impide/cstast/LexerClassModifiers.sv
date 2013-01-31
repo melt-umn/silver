@@ -31,6 +31,6 @@ top::SyntaxLexerClassModifier ::= fontName::String
   top.cstErrors := [];
   top.unparses = ["font('" ++ fontName ++ "')"];
 
-  top.fontAttr = fontName;
+  top.fontAttr = makeCopperName(fontName);
 }
 

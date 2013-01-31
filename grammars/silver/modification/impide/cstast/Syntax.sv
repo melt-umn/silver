@@ -139,7 +139,7 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
 abstract production syntaxFont
 top::SyntaxDcl ::= fontName::String fnt::Font -- TODO: we probably? need to factor out this data structure somehow?
 {
-  top.fontList = [pair(fontName, fnt)];
+  top.fontList = [pair(makeCopperName(fontName), fnt)];
 
   top.sortKey = "111"; -- Doesn't really matter, it doesn't show up in the copper XML
   top.cstDcls = [pair(fontName, top)];

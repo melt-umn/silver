@@ -351,8 +351,8 @@ function getPutNameFontPairIntoMap
 String ::= tokenNameAndFontName::Pair<String String>
 {
 return "map.put(\"" ++ tokenNameAndFontName.fst ++ "\", " ++ "TokenType." ++ 
-       (if(tokenNameAndFontName.snd!="") 
-        then tokenNameAndFontName.snd --TODO check if font name is defined, if not, use DEFAULT
+       (if tokenNameAndFontName.snd != ""
+        then tokenNameAndFontName.snd
         else "DEFAULT") ++ ");"; 
 }
 
@@ -362,7 +362,7 @@ String ::= i::Integer fontList::[Pair<String Font>]
   return if (null(fontList)) 
          then "" 
          else ("\t\t\tpublic static final int " ++ 
-              (head(fontList)).fst ++ 
+              head(fontList).fst ++ 
               " = " ++ toString(i) ++ ";\n" ++ 
               getConstantDeclarations(i+1, tail(fontList)));
 }

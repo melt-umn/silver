@@ -5,18 +5,22 @@ terminal Color_kwd 'color' ;
 terminal Bold_kwd 'bold' ;
 terminal Italic_kwd 'italic' ;
 
-concrete production fontDcl
-top::AGDcl ::= 'temp_imp_ide_font' fontName::IdLower_t 'color' '(' r::Int_t ',' g::Int_t ',' b::Int_t ')' fontStyles::FontStyles ';'
+concrete production fontDecl
+top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',' b::Int_t ')' fontStyles::FontStyles ';'
 {
-  top.pp = "temp_imp_ide_font " ++ fontName.lexeme ++ " color(" ++ r.lexeme ++ ", " ++ g.lexeme ++ ", " ++ b.lexeme ++ ")" ++ fontStyles.pp ++ "\n";
-  top.location = loc(top.file, $1.line, $1.column);
-
-  top.defs = [];
+  top.pp = "temp_imp_ide_font " ++ id.name ++ " color(" ++ r.lexeme ++ ", " ++ g.lexeme ++ ", " ++ b.lexeme ++ ")" ++ fontStyles.pp ++ "\n";
+  top.location = id.location;
   
-  top.errors := [];--TODO: add errors later
+  production fName :: String = top.grammarName ++ ":" ++ id.name;
+
+  top.defs = [fontDef(top.grammarName, top.location, fName)];
+  
+  top.errors := if length(getFontDcl(fName, top.env)) > 1
+                then [err(top.location, "Font style '" ++ fName ++ "' is already bound.")]
+                else [];
 
   top.syntaxAst = [syntaxFont(
-                   fontName.lexeme, 
+                   fName, 
                    font(makeColor(toInt(r.lexeme),toInt(g.lexeme),toInt(b.lexeme)), 
                         fontStyles.isBold, 
                         fontStyles.isItalic)
