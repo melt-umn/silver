@@ -79,8 +79,12 @@ global obj3::SyntaxRoot =
           prodAction("asdf;"),
           prodLayout(["XTerm", "C"])
         ])),
-      syntaxLexerClass("A", ["B"], ["C"]),
-      syntaxLexerClass("B", [], []),
+      syntaxLexerClass("A", 
+        foldr(consLexerClassMod, nilLexerClassMod(), [
+          lexerClassDominates(["B"]),
+          lexerClassSubmits(["C"])
+        ])),
+      syntaxLexerClass("B", nilLexerClassMod()),
       syntaxTerminal("C", literalRegex("y"), nilTerminalMod()),
       syntaxParserAttribute("asdf", stringTypeExp(), "asdf = 'asfd';"),
       syntaxDisambiguationGroup("g23", ["XTerm", "C"], "return C;")
