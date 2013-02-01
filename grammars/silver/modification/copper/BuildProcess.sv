@@ -54,10 +54,8 @@ String ::= r::[ParserSpec] a::Decorated CmdArgs
   packagepath = grammarToPath(p.sourceGrammar);
 
   return if null(r) then "" else( 
-"    <copper fullClassName='" ++ packagename ++ "." ++ parserName ++ "' inputFile='${src}/" ++ packagepath ++ parserName ++ ".copper' " ++ 
-	"outputFile='${src}/" ++ packagepath ++ parserName ++ ".java' skin='XML' warnUselessNTs='no' dump='true' dumpType='HTML'" ++
-	(if a.forceCopperDump then "" else " dumpOnlyOnError='true'") ++ " dumpFile='" ++ parserName ++ ".copperdump.html'"  ++ 
-	"/>\n" ++
- 	 buildAntParserPart(tail(r), a));
+"    <copper packageName='" ++ packagename ++ "' parserName='" ++ parserName ++ "' outputFile='${src}/" ++ packagepath ++ parserName ++ ".java' useSkin='XML' warnUselessNTs='false' dump='" ++ (if a.forceCopperDump then "ON" else "ERROR_ONLY") ++ "' dumpFormat='HTML' dumpFile='" ++ parserName ++ ".copperdump.html'>\n" ++
+"      <inputs file='${src}/" ++ packagepath ++ parserName ++ ".copper'/>\n    </copper>\n" ++
+  buildAntParserPart(tail(r), a));
 }
 
