@@ -14,7 +14,7 @@ import silver:modification:ffi; -- so we cover foreignTypeExp with the 'refine' 
 
 import silver:extension:list; -- Oh no, this is a hack! TODO
 
-terminal Match_kwd 'match' lexer classes {KEYWORD}; -- temporary!!!
+terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 
 nonterminal PrimPatterns with config, location, pp, file, grammarName, env, compiledGrammars, signature, errors, downSubst, upSubst, finalSubst, blockContext
                             , scrutineeType, returnType, translation;

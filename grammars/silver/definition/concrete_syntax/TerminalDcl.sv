@@ -3,10 +3,12 @@ grammar silver:definition:concrete_syntax;
 import silver:definition:regex;
 
 terminal Ignore_kwd      'ignore'      lexer classes {KEYWORD};
-terminal Left_kwd        'left'        ; --lexer classes {KEYWORD};
-terminal Association_kwd 'association' ; --lexer classes {KEYWORD};
-terminal Right_kwd       'right'       ; --lexer classes {KEYWORD};
-terminal Precedence_kwd  'precedence'  lexer classes {KEYWORD};
+terminal Left_kwd        'left'        lexer classes {KEYWORD};
+terminal Association_kwd 'association' lexer classes {KEYWORD};
+terminal Right_kwd       'right'       lexer classes {KEYWORD};
+
+-- We actually need to reserved this due to its appearance in PRODUCTION modifiers.
+terminal Precedence_kwd  'precedence'  lexer classes {KEYWORD,RESERVED};
 
 abstract production terminalDclDefault
 top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifiers

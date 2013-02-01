@@ -1,8 +1,8 @@
 grammar silver:modification:copper;
 
-terminal Dominates_t 'dominates' ; --lexer classes {KEYWORD};
-terminal Submits_t   'submits'   ; --lexer classes {KEYWORD};
-terminal Classes_kwd 'classes'   ; --lexer classes {KEYWORD};
+terminal Dominates_t 'dominates' lexer classes {KEYWORD};
+terminal Submits_t   'submits'   lexer classes {KEYWORD};
+terminal Classes_kwd 'classes'   lexer classes {KEYWORD};
 
 concrete production terminalModifierDominates
 top::TerminalModifier ::= 'dominates' '{' terms::TermPrecList '}'

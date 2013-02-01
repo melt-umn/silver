@@ -9,7 +9,7 @@ imports silver:modification:copper;
 import silver:driver:util only computeDependencies, RootSpec;
 
 
-terminal CopperMDA 'copper_mda' ;
+terminal CopperMDA 'copper_mda' lexer classes {KEYWORD};
 
 concrete production copperMdaDcl
 top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ModuleList '}'

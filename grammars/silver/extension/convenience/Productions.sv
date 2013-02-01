@@ -2,10 +2,11 @@ grammar silver:extension:convenience;
 
 import silver:modification:copper;
 
-synthesized attribute proddcls :: AGDcl;
-autocopy attribute lhsdcl :: ProductionLHS;
 nonterminal ProductionDclStmts with pp, proddcls, lhsdcl, file, grammarName;
 nonterminal ProductionDclStmt with pp, proddcls, lhsdcl, file, grammarName;
+
+synthesized attribute proddcls :: AGDcl;
+autocopy attribute lhsdcl :: ProductionLHS;
 
 terminal Productions_kwd 'productions' lexer classes {KEYWORD};
 terminal ProdVBar '|';

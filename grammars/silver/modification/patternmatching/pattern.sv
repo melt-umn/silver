@@ -7,8 +7,8 @@ import silver:definition:type:syntax only typerepType;
 --import silver:analysis:typechecking:core only upSubst, downSubst, finalSubst;
 import silver:modification:let_fix;
 
-terminal Case_kwd 'case' lexer classes {KEYWORD};
-terminal Of_kwd 'of' lexer classes {KEYWORD};
+terminal Case_kwd 'case' lexer classes {KEYWORD,RESERVED};
+terminal Of_kwd 'of' lexer classes {KEYWORD,RESERVED};
 terminal Arrow_kwd '->' precedence = 7;
 terminal Vbar_kwd '|' precedence = 3;
 terminal Opt_Vbar_t /\|?/ ; -- optional Coq-style vbar.

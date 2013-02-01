@@ -6,7 +6,7 @@ import silver:definition:type:syntax;
 import silver:definition:concrete_syntax;
 import silver:definition:regex;
 
-terminal Terminal_t /\'[^\'\n]*\'/;
+terminal Terminal_t /\'[^\'\n]*\'/ lexer classes {LITERAL};
 
 concrete production regExprEasyTerm
 top::RegExpr ::= t::Terminal_t

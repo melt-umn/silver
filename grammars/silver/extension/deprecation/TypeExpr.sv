@@ -2,8 +2,8 @@ grammar silver:extension:deprecation;
 
 import silver:definition:type:syntax;
 
-terminal Function_tkwd		'Function'	lexer classes {TYPE_KEYWORD};
-terminal Production_tkwd	'Production'	lexer classes {TYPE_KEYWORD};
+terminal Function_tkwd    'Function'   lexer classes {TYPE,RESERVED};
+terminal Production_tkwd  'Production' lexer classes {TYPE,RESERVED};
 
 concrete production prodType
 top::Type ::= 'Production' '(' sig::Signature ')'

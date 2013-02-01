@@ -8,7 +8,7 @@ import silver:definition:type:syntax;
 import silver:translation:java;
 
 
-terminal Default_kwd 'default' ;
+terminal Default_kwd 'default' lexer classes {KEYWORD};
 
 concrete production aspectDefaultProduction
 top::AGDcl ::= 'aspect' 'default' 'production' 

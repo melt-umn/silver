@@ -1,7 +1,7 @@
 grammar silver:modification:copper;
 
-terminal Pluck_kwd 'pluck' lexer classes {KEYWORD};
-terminal Print_kwd 'print' lexer classes {KEYWORD};
+terminal Pluck_kwd 'pluck' lexer classes {KEYWORD,RESERVED};
+terminal Print_kwd 'print' lexer classes {KEYWORD,RESERVED};
 
 concrete production namePrint
 top::Name ::= 'print'

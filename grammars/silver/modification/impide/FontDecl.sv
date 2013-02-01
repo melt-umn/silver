@@ -1,9 +1,9 @@
 grammar silver:modification:impide;
 
-terminal ImpFont_t 'temp_imp_ide_font' lexer classes {KEYWORD};
-terminal Color_kwd 'color' ;
-terminal Bold_kwd 'bold' ;
-terminal Italic_kwd 'italic' ;
+terminal ImpFont_t 'temp_imp_ide_font' lexer classes {KEYWORD,RESERVED};
+terminal Color_kwd 'color' lexer classes {KEYWORD};
+terminal Bold_kwd 'bold' lexer classes {KEYWORD};
+terminal Italic_kwd 'italic' lexer classes {KEYWORD};
 
 concrete production fontDecl
 top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',' b::Int_t ')' fontStyles::FontStyles ';'

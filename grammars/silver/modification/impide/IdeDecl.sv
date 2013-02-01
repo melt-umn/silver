@@ -10,14 +10,14 @@ import silver:definition:type;
 -- We're going to make this an especially annoying looking declaration
 -- to emphasize that this is currently a temporary hack just to get things
 -- moving.
-terminal ImpIde_t 'temp_imp_ide_dcl' lexer classes {KEYWORD};
+terminal ImpIde_t 'temp_imp_ide_dcl' lexer classes {KEYWORD,RESERVED};
 
-terminal ImpIde_OptFunc_Property 'property';
+terminal ImpIde_OptFunc_Property 'property' lexer classes {KEYWORD};
 
-terminal ImpIde_PropType_string_t 'string';
-terminal ImpIde_PropType_integer_t 'integer';
-terminal ImpIde_PropType_path_t 'path';
-terminal ImpIde_PropType_url_t 'url';
+terminal ImpIde_PropType_string_t 'string' lexer classes {KEYWORD};
+terminal ImpIde_PropType_integer_t 'integer' lexer classes {KEYWORD};
+terminal ImpIde_PropType_path_t 'path' lexer classes {KEYWORD};
+terminal ImpIde_PropType_url_t 'url' lexer classes {KEYWORD};
 
 
 concrete production ideDcl

@@ -1,7 +1,7 @@
 grammar silver:modification:impide;
 
 -- terminal's font in IDE
-terminal Font_kwd  'font';
+terminal Font_kwd  'font' lexer classes {KEYWORD};
 
 concrete production terminalModifierFont
 top::TerminalModifier ::= 'font' '=' id::QName
