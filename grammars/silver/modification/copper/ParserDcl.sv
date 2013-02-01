@@ -1,6 +1,6 @@
 grammar silver:modification:copper;
 
-terminal Parser_kwd /parser/ lexer classes {KEYWORD};
+terminal Parser_kwd 'parser' lexer classes {KEYWORD};
 
 -- TODO: You know, maybe parser specs should get moved over here as well.
 

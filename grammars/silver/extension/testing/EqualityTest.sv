@@ -13,6 +13,7 @@ import silver:extension:list;
 import lib:extcore;
 
 terminal EqualityTest_t 'equalityTest' lexer classes {KEYWORD};
+
 concrete production equalityTest2_p
 ag::AGDcl ::= kwd::'equalityTest' 
               '(' value::Expr ',' expected::Expr ',' 

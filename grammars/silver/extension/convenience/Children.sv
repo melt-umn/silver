@@ -1,6 +1,6 @@
 grammar silver:extension:convenience;
 
-terminal Children_kwd '$';
+terminal Children_kwd '$' lexer classes {LITERAL};
 
 -- TODO: BUG: global Foo :: Integer = $1; -- CRASH
 -- Similarly, $99 -- CRASH

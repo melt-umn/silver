@@ -2,10 +2,8 @@ grammar silver:extension:list;
 
 import silver:definition:type:syntax;
 
---import silver:analysis:typechecking:core;
-
-terminal LSqr_t '[' lexer classes {KEYWORD};
-terminal RSqr_t ']' lexer classes {KEYWORD};
+terminal LSqr_t '[' ;
+terminal RSqr_t ']' ;
 
 -- The TYPE --------------------------------------------------------------------
 concrete production listType

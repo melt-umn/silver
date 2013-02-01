@@ -337,8 +337,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 
 -- The use syntax --------------------------------------------------------------
 
-terminal Contains_t   '<-';
-terminal BaseContains_t   ':=';
+terminal Contains_t      '<-' lexer classes {SPECOP};
+terminal BaseContains_t  ':=' lexer classes {SPECOP};
 
 concrete production attrContainsAppend
 top::ProductionStmt ::= dl::DefLHS '.' attr::QName '<-' e::Expr ';'

@@ -3,9 +3,9 @@ grammar silver:modification:let_fix;
 --- Concrete Syntax for lets
 --------------------------------------------------------------------------------
 
-terminal Let_kwd 'let' lexer classes {KEYWORD};
-terminal In_kwd 'in' lexer classes {KEYWORD};
-terminal End_kwd 'end' lexer classes {KEYWORD};
+terminal Let_kwd 'let' lexer classes {KEYWORD,RESERVED};
+terminal In_kwd 'in' lexer classes {KEYWORD,RESERVED};
+terminal End_kwd 'end' lexer classes {KEYWORD,RESERVED};
 
 concrete production letp_c
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'

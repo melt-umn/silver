@@ -3,10 +3,10 @@ grammar silver:extension:testing;
 import silver:definition:core;
 import silver:definition:env;
 
-terminal WrongCode_kwd 'wrongCode' ; -- no lexer class!
+terminal WrongCode_kwd 'wrongCode' lexer classes {KEYWORD};
 
 -- ugh, the production convenience stuff is causing problems
-disambiguate WrongCode_kwd, IdLower_t { pluck WrongCode_kwd; }
+--disambiguate WrongCode_kwd, IdLower_t { pluck WrongCode_kwd; }
 
 concrete production wrongDecl
 top::AGDcl ::= 'wrongCode' s::String_t '{' ags::AGDcls '}'

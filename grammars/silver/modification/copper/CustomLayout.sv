@@ -1,6 +1,7 @@
 grammar silver:modification:copper;
 
-terminal Layout_kwd 'layout' lexer classes {KEYWORD};
+-- It would be nice if this weren't a keyword, but...
+terminal Layout_kwd 'layout' lexer classes {KEYWORD,RESERVED};
 
 concrete production productionModifierLayout
 top::ProductionModifier ::= 'layout' '{' terms::TermPrecList '}'

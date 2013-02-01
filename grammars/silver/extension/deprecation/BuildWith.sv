@@ -1,6 +1,6 @@
 grammar silver:extension:deprecation;
 
-terminal Build_kwd		'build';
+terminal Build_kwd 'build' lexer classes {MODSTMT};
 
 concrete production buildsStmt
 top::ModuleStmt ::= 'build' m::QName 'with' c::QName ';'

@@ -80,7 +80,7 @@ top::ProductionModifier ::= 'precedence' '=' i::Int_t
   top.errors := [];
 }
 
-terminal Operator_kwd /operator/ lexer classes {KEYWORD};
+terminal Operator_kwd /operator/ lexer classes {KEYWORD,RESERVED};
 
 concrete production productionModifierOperator
 top::ProductionModifier ::= 'operator' '=' n::QName
