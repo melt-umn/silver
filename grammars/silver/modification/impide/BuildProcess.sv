@@ -181,12 +181,14 @@ String ::=
 
     "<!-- 3. copper parser -->\n" ++
     "<mkdir dir='${ide.pkg.path}/copper/parser/'/>\n" ++
-    "<copper\n" ++ 
-    "  fullClassName='${ide.pkg.name}.copper.parser.${ide.parser.classname}'\n" ++ 
-    "  inputFile='${ide.parser.ide_copperfile}'\n" ++ 
-    "  outputFile='${ide.pkg.path}/copper/parser/${ide.parser.classname}.java'\n" ++ 
-    "  skin='XML' warnUselessNTs='no' dump='no'/>\n" ++ 
-    "\n" ++
+    "<copper\n" ++
+    "  packageName='${ide.pkg.name}.copper.parser'\n" ++
+    "  parserName='${ide.parser.classname}'\n" ++
+    "  outputFile='${ide.pkg.path}/copper/parser/${ide.parser.classname}.java'\n" ++
+    "  useSkin='XML' warnUselessNTs='false' dumpFormat='HTML' dump='ERROR_ONLY'\n" ++
+    "  dumpFile='${ide.parser.classname}.copperdump.html'>\n" ++
+    "    <inputs file='${ide.parser.ide_copperfile}'/>\n" ++
+    "</copper>\n\n" ++
 
     "<!-- 4. build properties -->\n" ++
     -- commented out to support different build modes
