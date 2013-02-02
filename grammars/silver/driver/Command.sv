@@ -144,6 +144,8 @@ IOVal<[String]> ::=
     then ["Missing standard library grammars: tried " ++ silverHome ++ "grammar/ but failed."]
     else if indexOf("/", buildGrammar) != -1 -- basic sanity check
     then ["Build grammar appears to contain slashes: " ++ buildGrammar]
+    else if indexOf(".", buildGrammar) != -1 -- also, now
+    then ["Build grammar appears to contain dots: " ++ buildGrammar]
     else [];
 
   return ioval(isGramDir.io, errors);
