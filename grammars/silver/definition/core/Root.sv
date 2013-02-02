@@ -20,22 +20,17 @@ nonterminal GrammarDcl with
 concrete production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 {
-  production attribute allImports :: ImportStmts with appendImportStmts;
-  allImports := if top.grammarName == "core" || contains("core", ims.moduleNames)
-		then ims 
-		else consImportStmts(importStmt('import', moduleAll(qNameId(nameIdLower(terminal(IdLower_t, "core")))), ';'), ims);
-
-  allImports.compiledGrammars = top.compiledGrammars;
-  allImports.grammarDependencies = top.grammarDependencies;
-  allImports.grammarName = top.grammarName;
-  allImports.file = top.file;
-  allImports.config = top.config;
+  ims.compiledGrammars = top.compiledGrammars;
+  ims.grammarDependencies = top.grammarDependencies;
+  ims.grammarName = top.grammarName;
+  ims.file = top.file;
+  ims.config = top.config;
 
   top.pp = gdcl.pp ++ "\n\n" ++ ms.pp ++ "\n\n" ++ ims.pp ++ "\n\n" ++ ags.pp;
   top.location = gdcl.location;
   top.declaredName = gdcl.declaredName;
 
-  top.moduleNames = allImports.moduleNames ++ ms.moduleNames ++ ags.moduleNames;
+  top.moduleNames = ims.moduleNames ++ ms.moduleNames ++ ags.moduleNames;
 
   top.defs = ags.defs;
 
@@ -44,14 +39,14 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.optionalGrammars = ms.optionalGrammars;
   top.condBuild = ms.condBuild;
 
-  top.errors := gdcl.errors ++ ms.errors ++ allImports.errors ++ ags.errors;
+  top.errors := gdcl.errors ++ ms.errors ++ ims.errors ++ ags.errors;
   
   -- We have an mismatch in how the environment gets put together:
   --  Outermost, we have grammar-wide imports in one sope.  That's top.globalImports here.
-  --  THEN, we have this particular file's list of local imports. That's allImports.defs here.
+  --  THEN, we have this particular file's list of local imports. That's ims.defs here.
   --  THEN, we have the grammar-wide definitions, from the whole grammr. That's top.env here.
   -- So we're kind of injecting local imports in between two grammar-wide things there.
-  ags.env = appendEnv(top.env, newScopeEnv(allImports.defs, top.globalImports));
+  ags.env = appendEnv(top.env, newScopeEnv(ims.defs, top.globalImports));
 }
 
 concrete production noGrammarDcl
