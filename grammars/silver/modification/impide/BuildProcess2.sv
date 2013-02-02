@@ -51,10 +51,6 @@ String ::= propDcls :: [IdeProperty]
 	"        if(properties==null){\n" ++
 	"            StringBuilder sb = new StringBuilder();\n" ++
 	"    \n" ++				
-
-	--should prevent duplicate definition of silver_home by user
-	"            sb.append(\"silver_home\");sb.append(\"/\");sb.append(\"path\");sb.append(\"=\\n\");\n" ++
-
 	getProperties(propDcls) ++
 
 	"    \n" ++			

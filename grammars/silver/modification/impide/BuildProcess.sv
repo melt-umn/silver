@@ -166,135 +166,135 @@ function getCreateFoldersTarget
 String ::=
 {
   return 
-    "\n" ++
-    "<!-- clean up -->\n" ++
-    "<delete dir='${ide.proj.parent.path}'/>\n" ++
-    "\n" ++
-
-    "<!-- 1. create project folder -->\n" ++
-    "<mkdir dir='${ide.proj.plugin.path}'/>\n" ++
-    "<mkdir dir='${ide.proj.plugin.path}/src'/>\n" ++
-    "<mkdir dir='${ide.proj.plugin.path}/bin'/>\n" ++
-    "<mkdir dir='${ide.proj.feature.path}'/>\n" ++
-    "<mkdir dir='${ide.proj.updatesite.path}'/>\n" ++
+    "  \n" ++
+    "  <!-- 0. clean up -->\n" ++
+    "  <delete dir='${ide.proj.parent.path}'/>\n" ++
     "\n" ++
 
-    "<!-- 3. copper parser -->\n" ++
-    "<mkdir dir='${ide.pkg.path}/copper/parser/'/>\n" ++
-    "<copper\n" ++
-    "  packageName='${ide.pkg.name}.copper.parser'\n" ++
-    "  parserName='${ide.parser.classname}'\n" ++
-    "  outputFile='${ide.pkg.path}/copper/parser/${ide.parser.classname}.java'\n" ++
-    "  useSkin='XML' warnUselessNTs='false' dumpFormat='HTML' dump='ERROR_ONLY'\n" ++
-    "  dumpFile='${ide.parser.classname}.copperdump.html'>\n" ++
-    "    <inputs file='${ide.parser.ide_copperfile}'/>\n" ++
-    "</copper>\n\n" ++
+    "  <!-- 1. create project folder -->\n" ++
+    "  <mkdir dir='${ide.proj.plugin.path}'/>\n" ++
+    "  <mkdir dir='${ide.proj.plugin.path}/src'/>\n" ++
+    "  <mkdir dir='${ide.proj.plugin.path}/bin'/>\n" ++
+    "  <mkdir dir='${ide.proj.feature.path}'/>\n" ++
+    "  <mkdir dir='${ide.proj.updatesite.path}'/>\n" ++
+    "\n" ++
 
-    "<!-- 4. build properties -->\n" ++
+    "  <!-- 2. copper parser -->\n" ++
+    "  <mkdir dir='${ide.pkg.path}/copper/parser/'/>\n" ++
+    "  <copper\n" ++
+    "    packageName='${ide.pkg.name}.copper.parser'\n" ++
+    "    parserName='${ide.parser.classname}'\n" ++
+    "    outputFile='${ide.pkg.path}/copper/parser/${ide.parser.classname}.java'\n" ++
+    "    useSkin='XML' warnUselessNTs='false' dumpFormat='HTML' dump='ERROR_ONLY'\n" ++
+    "    dumpFile='${ide.parser.classname}.copperdump.html'>\n" ++
+    "      <inputs file='${ide.parser.ide_copperfile}'/>\n" ++
+    "  </copper>\n\n" ++
+
+    "  <!-- 3. build properties -->\n" ++
     -- commented out to support different build modes
     -- "<copy file=\"${res}/build.properties.template\" tofile=\"${ide.proj.plugin.path}/build.properties\" filtering=\"true\"/>\n" ++
-    "<antcall target=\"create build.properties\" inheritAll=\"true\"/>\n" ++
-    "<antcall target=\"create build.properties (all-on-one)\" inheritAll=\"true\"/>\n" ++
+    "  <antcall target=\"create build.properties\" inheritAll=\"true\"/>\n" ++
+    "  <antcall target=\"create build.properties (all-on-one)\" inheritAll=\"true\"/>\n" ++
 
     "\n" ++
 
-    "<!-- 5. plugin.xml -->\n" ++
-    "<copy file=\"${res}/plugin.xml.template\" tofile=\"${ide.proj.plugin.path}/plugin.xml\" filtering=\"true\"/>\n" ++
-    "\n" ++
+    "  <!-- 4. plugin.xml -->\n" ++
+    "  <copy file=\"${res}/plugin.xml.template\" tofile=\"${ide.proj.plugin.path}/plugin.xml\" filtering=\"true\"/>\n" ++
+    "  \n" ++
 
-    "<!-- copy plugin dependency (composed jar) -->\n" ++
-    "<copy file=\"${lang.composed}.jar\" tofile=\"${ide.proj.plugin.path}/${lang.composed}.jar\"/>\n" ++
-    -- called only in all-in-one mode
-    "<antcall target=\"copy plugin dependencies\"/>\n"++
-    "\n" ++
+    "  <!-- 5. plugin dependencies -->\n" ++
+    "  <!-- (1) language implementation -->\n" ++
+    "  <copy file=\"${lang.composed}.jar\" tofile=\"${ide.proj.plugin.path}/${lang.composed}.jar\"/>\n" ++
+    "  <!-- (2) runtimes; copied only in all-in-one mode -->\n" ++
+    "  <antcall target=\"copy plugin dependencies\"/>\n"++
+    "  \n" ++
 
-    "<!-- 6. manifest file -->\n" ++
-    "<mkdir dir='${ide.proj.plugin.path}/META-INF/'/>\n" ++
+    "  <!-- 6. manifest file -->\n" ++
+    "  <mkdir dir='${ide.proj.plugin.path}/META-INF/'/>\n" ++
     -- commented out to support different build modes
     -- "<copy file=\"${res}/META-INF/MANIFEST.MF.template\" tofile=\"${ide.proj.plugin.path}/META-INF/MANIFEST.MF\" filtering=\"true\"/>\n" ++
-    "<antcall target=\"create manifest file\" inheritAll=\"true\"/>\n" ++
-    "<antcall target=\"create manifest file (all-on-one)\" inheritAll=\"true\"/>\n" ++
-    "\n" ++
+    "  <antcall target=\"create manifest file\" inheritAll=\"true\"/>\n" ++
+    "  <antcall target=\"create manifest file (all-on-one)\" inheritAll=\"true\"/>\n" ++
+    "  \n" ++
 
-    "<!-- 7. customized IDE parser -->\n" ++
-    "<mkdir dir='${ide.pkg.path}/copper/engine/'/>\n" ++
-    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/copper/engine/EnhancedSilverParser.java.template\"\n" ++
-    "      tofile=\"${ide.pkg.path}/copper/engine/EnhancedSilverParser.java\" filtering=\"true\"/>\n" ++
-    "<mkdir dir='${ide.pkg.path}/imp/controller'/>\n" ++
+    "  <!-- 7. customized IDE parser -->\n" ++
+    "  <mkdir dir='${ide.pkg.path}/copper/engine/'/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/copper/engine/EnhancedSilverParser.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/copper/engine/EnhancedSilverParser.java\" filtering=\"true\"/>\n" ++
+    "  <mkdir dir='${ide.pkg.path}/imp/controller'/>\n" ++
     -- commented out to support different build modes
     --"<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/controller/parseController.java.template\"\n" ++
     --"      tofile=\"${ide.pkg.path}/imp/controller/${lang.name}ParseController.java\" filtering=\"true\"/>\n" ++
-    "<antcall target=\"create parser controller\" inheritAll=\"true\"/>\n" ++
-    "<antcall target=\"create parser controller (all-on-one)\" inheritAll=\"true\"/>\n" ++
-    "\n" ++
+    "  <antcall target=\"create parser controller\" inheritAll=\"true\"/>\n" ++
+    "  <antcall target=\"create parser controller (all-on-one)\" inheritAll=\"true\"/>\n" ++
+    "  \n" ++
 
-    "<!-- 8. core plug-in classes -->\n" ++
-    "<mkdir dir='${ide.pkg.path}/'/>\n" ++  
-    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/Initializer.java.template\"\n" ++
-    "      tofile=\"${ide.pkg.path}/${lang.name}Initializer.java\" filtering=\"true\"/>\n" ++
-    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/StartupHook.java.template\"\n" ++
-    "      tofile=\"${ide.pkg.path}/StartupHook.java\" filtering=\"true\"/>\n" ++
-    "\n" ++
+    "  <!-- 8. core plug-in classes -->\n" ++
+    "  <mkdir dir='${ide.pkg.path}/'/>\n" ++  
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/Initializer.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/${lang.name}Initializer.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/StartupHook.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/StartupHook.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/Properties.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/${lang.name}Properties.java\" filtering=\"true\"/>\n" ++
+    "  \n" ++
 
-    "<mkdir dir='${ide.pkg.path}/imp/'/>\n" ++  
-    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/plugin.java.template\"\n" ++
-    "      tofile=\"${ide.pkg.path}/imp/${lang.name}Plugin.java\" filtering=\"true\"/>\n" ++
-    "\n" ++
+    "  <mkdir dir='${ide.pkg.path}/imp/'/>\n" ++  
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/plugin.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/imp/${lang.name}Plugin.java\" filtering=\"true\"/>\n" ++
+    "  \n" ++
 
-    "<mkdir dir='${ide.pkg.path}/imp/actions'/>\n" ++
-    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/actions/EnableLANGNature.java.template\"\n" ++
-    "      tofile=\"${ide.pkg.path}/imp/actions/Enable${lang.name}Nature.java\" filtering=\"true\"/>\n" ++
-    "\n" ++
+    "  <mkdir dir='${ide.pkg.path}/imp/actions'/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/actions/EnableLANGNature.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/imp/actions/Enable${lang.name}Nature.java\" filtering=\"true\"/>\n" ++
+    "  \n" ++
 
-    "<mkdir dir='${ide.pkg.path}/imp/builders'/>\n" ++
-    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/nature.java.template\"\n" ++
-    "      tofile=\"${ide.pkg.path}/imp/builders/${lang.name}Nature.java\" filtering=\"true\"/>\n" ++
-    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/builder.java.template\"\n" ++
-    "      tofile=\"${ide.pkg.path}/imp/builders/${lang.name}Builder.java\" filtering=\"true\"/>\n" ++
-    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/analysis_invoker.java.template\"\n" ++
-    "      tofile=\"${ide.pkg.path}/imp/builders/${lang.name}AnalysisInvoker.java\" filtering=\"true\"/>\n" ++
-    "\n" ++
+    "  <mkdir dir='${ide.pkg.path}/imp/builders'/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/nature.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/imp/builders/${lang.name}Nature.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/builder.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/imp/builders/${lang.name}Builder.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/analysis_invoker.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/imp/builders/${lang.name}AnalysisInvoker.java\" filtering=\"true\"/>\n" ++
+    "  \n" ++
 
-    "<mkdir dir='${ide.pkg.path}/imp/coloring'/>\n" ++
-    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/coloring/Colorer.java.template\"\n" ++
-    "      tofile=\"${ide.pkg.path}/imp/coloring/Colorer.java\" filtering=\"true\"/>\n" ++
-    "\n" ++
+    "  <mkdir dir='${ide.pkg.path}/imp/coloring'/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/coloring/Colorer.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/imp/coloring/Colorer.java\" filtering=\"true\"/>\n" ++
+    "  \n" ++
 
-    "<mkdir dir='${ide.pkg.path}/eclipse/wizard'/>\n" ++
-    "<copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/wizard/NewProjectWizard.java.template\"\n" ++
-    "      tofile=\"${ide.pkg.path}/eclipse/wizard/NewProjectWizard.java\" filtering=\"true\"/>\n" ++
-    "<copy file=\"./ide_files/eclipse/wizard/PropertyGenerator.java.template\"\n" ++
-    "      tofile=\"${ide.pkg.path}/eclipse/wizard/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
-    "\n" ++
+    "  <mkdir dir='${ide.pkg.path}/eclipse/wizard'/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/wizard/NewProjectWizard.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/wizard/NewProjectWizard.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"./ide_files/eclipse/wizard/PropertyGenerator.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/wizard/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
+    "  \n" ++
 
-    "<!-- 9. pom.xml (using tycho) -->\n" ++
-    "<!-- parent -->\n" ++
-    "<copy file=\"${res}/pom_templates/parent.pom.xml.template\" tofile=\"${ide.proj.parent.path}/pom.xml\" filtering=\"true\"/>\n" ++
-    "<!-- plugin -->\n" ++
-    "<copy file=\"${res}/pom_templates/plugin.pom.xml.template\" tofile=\"${ide.proj.plugin.path}/pom.xml\" filtering=\"true\"/>\n" ++
-    "<!-- feature -->\n" ++
-    "<copy file=\"${res}/pom_templates/feature_templates/build.properties.template\" tofile=\"${ide.proj.feature.path}/build.properties\" filtering=\"true\"/>\n" ++
+    "  <!-- 9. pom.xml (using tycho) -->\n" ++
+    "  <!-- parent -->\n" ++
+    "  <copy file=\"${res}/pom_templates/parent.pom.xml.template\" tofile=\"${ide.proj.parent.path}/pom.xml\" filtering=\"true\"/>\n" ++
+    "  <!-- plugin -->\n" ++
+    "  <copy file=\"${res}/pom_templates/plugin.pom.xml.template\" tofile=\"${ide.proj.plugin.path}/pom.xml\" filtering=\"true\"/>\n" ++
+    "  <!-- feature -->\n" ++
+    "  <copy file=\"${res}/pom_templates/feature_templates/build.properties.template\" tofile=\"${ide.proj.feature.path}/build.properties\" filtering=\"true\"/>\n" ++
     -- commented out to support different build modes
     -- "<copy file=\"${res}/pom_templates/feature_templates/feature.xml.template\" tofile=\"${ide.proj.feature.path}/feature.xml\" filtering=\"true\"/>\n" ++
-    "<antcall target=\"create Eclipse feature\" inheritAll=\"true\"/>\n" ++
-    "<antcall target=\"create Eclipse feature (all-on-one)\" inheritAll=\"true\"/>\n" ++
-    "<copy file=\"${res}/pom_templates/feature_templates/pom.xml.template\" tofile=\"${ide.proj.feature.path}/pom.xml\" filtering=\"true\"/>\n" ++
-    "<!-- update site (repository) -->\n" ++
-    "<copy file=\"${res}/pom_templates/updatesite_templates/category.xml.template\" tofile=\"${ide.proj.updatesite.path}/category.xml\" filtering=\"true\"/>\n" ++
-    "<copy file=\"${res}/pom_templates/updatesite_templates/pom.xml.template\" tofile=\"${ide.proj.updatesite.path}/pom.xml\" filtering=\"true\"/>\n" ++
-    "\n" ++
+    "  <antcall target=\"create Eclipse feature\" inheritAll=\"true\"/>\n" ++
+    "  <antcall target=\"create Eclipse feature (all-on-one)\" inheritAll=\"true\"/>\n" ++
+    "  <copy file=\"${res}/pom_templates/feature_templates/pom.xml.template\" tofile=\"${ide.proj.feature.path}/pom.xml\" filtering=\"true\"/>\n" ++
+    "  <!-- update site (repository) -->\n" ++
+    "  <copy file=\"${res}/pom_templates/updatesite_templates/category.xml.template\" tofile=\"${ide.proj.updatesite.path}/category.xml\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/pom_templates/updatesite_templates/pom.xml.template\" tofile=\"${ide.proj.updatesite.path}/pom.xml\" filtering=\"true\"/>\n" ++
+    "  \n" ++
 
-    "<!-- 10. eclipse project -->\n" ++
-    "<copy file=\"${res}/project.template\" tofile=\"${ide.proj.plugin.path}/.project\" filtering=\"true\"/>\n" ++
+    "  <!-- 10. eclipse project -->\n" ++
+    "  <copy file=\"${res}/project.template\" tofile=\"${ide.proj.plugin.path}/.project\" filtering=\"true\"/>\n" ++
     -- commented out to support different build modes
     -- "<copy file=\"${res}/classpath.template\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n" ++
-    "<antcall target=\"set classpaths for Eclipse\" inheritAll=\"true\"/>\n" ++
-    "<antcall target=\"set classpaths for Eclipse (all-on-one)\" inheritAll=\"true\"/>\n" ++
-    --"\n" ++
+    "  <antcall target=\"set classpaths for Eclipse\" inheritAll=\"true\"/>\n" ++
+    "  <antcall target=\"set classpaths for Eclipse (all-on-one)\" inheritAll=\"true\"/>\n" ++
 
-    --"<!-- 11. project properties -->\n" ++
-    --"<copy file=\"./project.properties\" tofile=\"${ide.proj.plugin.path}/project.properties\"/>\n" ++
-    "\n"
+    "  \n"
   ;
 }
 
