@@ -1,0 +1,66 @@
+/*
+ * Variables used:
+ *   PKG_NAME
+ *   LANG_NAME
+ */
+package @PKG_NAME@;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.eclipse.core.resources.IProject;
+
+import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
+
+/**
+ * Manage properties for each project of @LANG_NAME@ in the workspace.
+ */
+public class @LANG_NAME@Properties {
+
+	private Map<String, ProjectProperties> map;
+	
+	private @LANG_NAME@Properties(){
+		if(map==null){
+			map = new HashMap<String, ProjectProperties>();
+		}
+	}
+	
+	private final static @LANG_NAME@Properties singleton = new @LANG_NAME@Properties();
+	
+	public static @LANG_NAME@Properties getInstance(){
+		return singleton;
+	}
+	
+	/**
+	 * Get properties of project specified by given path.
+	 * 
+	 * @param projectPath	relative to workspace root; can be obtained by calling 
+	 * 		IProject's method getLocation(). see wrapper method {@link #getByProject(IProject)}
+	 * @return
+	 */
+	public ProjectProperties getByProject(String projectPath){
+		ProjectProperties pp = map.get(projectPath);
+		if(pp==null){
+			pp = ProjectProperties.getPropertyPersister(projectPath);
+			map.put(projectPath, pp);
+		}
+		
+		return pp;
+	}
+	
+	/**
+	 * Get properties of project specified by given IProject instance.
+	 * <p>
+	 * The instance is given by Eclipse API when applicable, for example as
+	 * argument of {@link org.eclipse.core.resources.IncrementalProjectBuilder}'s 
+	 * build() method.
+	 * 
+	 * @param project
+	 * @return
+	 */
+	public ProjectProperties getByProject(IProject project){		
+		return getByProject(project.getLocation().toString());
+	}
+	
+}
+
