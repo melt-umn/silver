@@ -27,7 +27,9 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   
   -- Create the environments for this grammar
   g.env = toEnv(g.defs);
-  g.globalImports = toEnv(g.importedDefs);
+  g.globalImports = toEnv(
+    if contains("core", g.moduleNames) || grammarName == "core" then g.importedDefs
+    else g.importedDefs ++ head(searchEnvTree("core", top.compiledGrammars)).defs);
   
   -- This grammar, its direct imports, and only transitively close over exports and TRIGGERED conditional imports.
   -- i.e. these are the things that we really, truly depend upon.
@@ -48,7 +50,7 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   top.translateGrammars = [top];
 
   top.declaredName = g.declaredName;
-  top.moduleNames = makeSet(g.moduleNames);
+  top.moduleNames = makeSet(g.moduleNames ++ ["core"]); -- Ensure the prelude is in the deps, always
   top.exportedGrammars = g.exportedGrammars;
   top.optionalGrammars = g.optionalGrammars;
   top.condBuild = g.condBuild;
