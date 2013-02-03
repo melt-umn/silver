@@ -3,7 +3,7 @@
  *   PKG_NAME
  *   LANG_NAME
  */
-package @PKG_NAME@.imp.builders;
+package silver.composed.idetest.imp.builders;
 
 import java.io.File;
 import java.util.List;
@@ -14,10 +14,11 @@ import org.eclipse.core.runtime.IProgressMonitor;
 
 import silver.modification.impide.NIdeProperty;
 import silver.modification.impide.PmakeIdeProperty;
-import @PKG_NAME@.@LANG_NAME@Properties;
+import silver.composed.idetest.SILVERProperties;
 
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 import edu.umn.cs.melt.ide.silver.property.Property;
+import edu.umn.cs.melt.ide.silver.env.SilverEnv;
 import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
 
 /**
@@ -26,14 +27,17 @@ import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
  * <p>
  * Used for all-in-one plugin.
  */
-public class @LANG_NAME@AnalysisInvoker {
+public class SILVERAnalysisInvoker {
 	
-	private static @LANG_NAME@AnalysisInvoker invoker;
+	private static SILVERAnalysisInvoker invoker;
 	
-	public static @LANG_NAME@AnalysisInvoker getInstance(){
+	public static SILVERAnalysisInvoker getInstance(){
 		if(invoker==null){
-			invoker = new @LANG_NAME@AnalysisInvoker();
+			invoker = new SILVERAnalysisInvoker();
 		}
+		
+		common.Util.environment.put("SILVER_HOME", SilverEnv.getSilverHome().getAbsolutePath());
+		
 		return invoker;
 	}
 	
@@ -52,8 +56,8 @@ public class @LANG_NAME@AnalysisInvoker {
 		AnalysisHandler handler) {
 
 		//Get properties
-		ProjectProperties properties = @LANG_NAME@Properties.getInstance().getByProject(projectPath);
-
+		ProjectProperties properties = SILVERProperties.getInstance().getByProject(projectPath);
+		
 		try {
 			//Extract properties			
 			Set<Entry<String, Property>> set = properties.getAll();
@@ -67,11 +71,11 @@ public class @LANG_NAME@AnalysisInvoker {
 				i++;
 			}
 			
-			List<String> list = @PKG_NAME@.Analyze2.analyze(args);
+			List<String> list = silver.composed.idetest.Analyze2.analyze(args);
 			return handler.handle(list);
 		} catch (Exception t) {
 			t.printStackTrace();
-			clstream.error("BUILD FAILED: failed to invoke analyzer of @LANG_NAME@.)");
+			clstream.error("BUILD FAILED: failed to invoke analyzer of SILVER.)");
 			return false;
 		}
 		
