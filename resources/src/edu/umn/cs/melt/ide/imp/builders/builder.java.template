@@ -184,12 +184,12 @@ public class @LANG_NAME@Builder extends BuilderBase implements @LANG_NAME@Analys
 		}
 		
 		if(analysisInvoker==null){
-			analysisInvoker = @LANG_NAME@AnalysisInvoker.getInstance(projectPath);
+			analysisInvoker = @LANG_NAME@AnalysisInvoker.getInstance();
 		}
 		
 		//Build certain grammar from the given grammar list
 		buildSuccessful = //buildGrammar(project, projectPath, grammars, isQuickBuild, monitor);
-			analysisInvoker.build(
+			analysisInvoker.analyze(
 		    		projectPath, 
 		    		getConsoleLoggingStream(),
 		    		monitor,
