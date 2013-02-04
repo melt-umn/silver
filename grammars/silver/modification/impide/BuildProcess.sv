@@ -49,11 +49,12 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     getIDEFunctionsDcls(ide.funcDcls) ++
 
     [
-    "<target name='ide' depends='arg-check, filters, enhance, jars, copper, grammars, create-folders, customize'>\n\n</target>",
+    "<target name='ide' depends='arg-check, filters, enhance, jars, copper, grammars, create-folders, customize, postbuild'>\n\n</target>",
     "<target name='arg-check'>" ++ getArgCheckTarget() ++ "</target>",
     "<target name='filters'>" ++ getFiltersTarget() ++ "</target>",
     "<target name='create-folders'>" ++ getCreateFoldersTarget() ++ "</target>",
     "<target name='customize' if=\"to-customize\">" ++ getCustomizeTarget() ++ "</target>",
+    "<target name='postbuild' if=\"to-postbuild\">" ++ getPostBuildTarget() ++ "</target>",
     "<target name='enhance' depends='arg-check, filters' if=\"ide-function-analyzer-exists\">" ++ getEnhanceTarget(ide.funcDcls) ++ "</target>",
     getBuildTargets()
     ];
@@ -129,6 +130,10 @@ String ::=
     "  \n"++
     "  <condition property=\"to-customize\">\n"++
     "    <available file=\"${grammar.path}/plugin\" type=\"dir\"/>\n"++
+    "  </condition>\n"++
+    "  \n"++
+    "  <condition property=\"to-postbuild\">\n"++
+    "    <available file=\"${grammar.path}/postbuild.xml\" type=\"file\"/>\n"++
     "  </condition>\n"++
     "  \n"++
     "  <condition property=\"ide-function-analyzer-exists\" else=\"false\">\n"++
@@ -306,6 +311,16 @@ String ::=
     "<copy todir=\"${ide.proj.plugin.path}\" overwrite=\"true\">\n" ++
     "  <fileset dir=\"${grammar.path}/plugin/\"/>\n" ++
     "</copy>\n";
+}
+
+function getPostBuildTarget
+String ::=
+{
+    return
+    "\n" ++
+    "<ant antfile=\"${grammar.path}/postbuild.xml\">\n" ++
+    "   <!-- all the global properties defined in build.xml will be passed along to postbuild.xml -->\n" ++
+    "</ant>\n";
 }
 
 function getBuildTargets
