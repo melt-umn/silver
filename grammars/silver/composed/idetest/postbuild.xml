@@ -1,0 +1,34 @@
+<project default='default' basedir='.'>
+  <property name='temp' location='temp' relative="true"/>
+  <property name='grammars' location='${temp}/grammars' relative="true"/>
+  <property name='dist' location='grammars.zip' relative="true"/>
+
+  <target name='default'>
+    <!-- defensive clean-up -->
+    <delete dir="${temp}"/>
+
+    <!-- 1, create folder structure -->
+    <mkdir dir="${temp}"/>
+    <mkdir dir="${grammars}"/>
+    <mkdir dir="${grammars}/core"/>
+    <mkdir dir="${grammars}/lib"/>
+
+    <!-- 2, grab grammar files -->
+    <copy todir="${grammars}/core" overwrite="true">
+      <fileset dir="${sh}/grammars/core"/>
+    </copy>
+    <copy todir="${grammars}/lib" overwrite="true">
+      <fileset dir="${sh}/grammars/lib"/>
+    </copy>
+
+    <!-- 3, compress -->
+    <zip destfile="${dist}" basedir="${temp}" update="true"/>
+
+    <!-- 4, move -->
+    <move file="${dist}" todir="${ide.proj.plugin.path}" overwrite="true"/>
+
+    <!-- 5, clean up -->
+    <delete dir="${temp}"/>
+  </target>
+
+</project>
