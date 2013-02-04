@@ -19,7 +19,6 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.jdt.core,
  org.eclipse.ui.editors,
  org.eclipse.ui.workbench.texteditor,
- lpg.runtime,
  org.eclipse.ui.console,
  org.eclipse.ui.ide
 Bundle-Activator: @PKG_NAME@.imp.@LANG_NAME@Plugin
