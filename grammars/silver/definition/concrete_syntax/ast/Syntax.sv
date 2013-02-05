@@ -192,7 +192,7 @@ top::SyntaxDcl ::= n::String lhs::TypeExp rhs::[TypeExp] modifiers::SyntaxProduc
     "  </Production>\n";
 
   local attribute tvs :: [TyVar];
-  tvs = setUnionTyVarsAll(mapFreeVariables(lhs :: rhs));
+  tvs = setUnionTyVarsAll(map((.freeVariables), lhs :: rhs));
   lhs.boundVariables = tvs;
   top.unparses = ["prod('" ++ n ++ "'," ++ unparseTyVars(tvs,tvs) ++ "," ++ lhs.unparse ++ "," ++ unparseTypes(rhs, tvs) ++ "," ++ unparseNonStrings(modifiers.unparses) ++ ")"];
 }

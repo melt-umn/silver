@@ -258,7 +258,7 @@ top::DclInfo ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeE
   top.fullName = fn;
   
   local attribute newboundvars :: [TyVar];
-  newboundvars = functionTypeExp(outty, intys).freeVariables;
+  newboundvars = functionTypeExp(outty, intys, []).freeVariables;
   local attribute boundvars :: [TyVar];
   boundvars = top.boundVariables ++ newboundvars;
   
@@ -266,7 +266,7 @@ top::DclInfo ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeE
   top.unparse = "p@(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(newboundvars, boundvars) ++ ", " ++ outty.unparse ++ " ::= " ++ unparseTypes(intys, boundvars) ++ ", " ++ unparseDefs(dcls, boundvars) ++ ")";
   
   top.prodDefs = dcls;
-  top.typerep = functionTypeExp(outty, intys); -- Using 'production' here, despite also working on 'function's
+  top.typerep = functionTypeExp(outty, intys, []); -- does anything actually access this?
 }
 
 -- OccursDclInfo

@@ -146,7 +146,7 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
     --  1. has a non-type-variable parameter (e.g. Expr<Boolean>)
     --  2. has fewer free variables than parameters (e.g. Eq<a a>)
     -- THEN it's a gadt.
-    | nonterminalTypeExp(_, tvs) -> !isOnlyTyVars(tvs) || length(tvs) != length(setUnionTyVarsAll(mapFreeVariables(tvs)))
+    | nonterminalTypeExp(_, tvs) -> !isOnlyTyVars(tvs) || length(tvs) != length(setUnionTyVarsAll(map((.freeVariables), tvs)))
     | _ -> false
     end;
   
@@ -668,10 +668,10 @@ top::TypeExp ::= te::TypeExp
 }
 
 aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
+top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
 {
   top.refine = case top.refineWith of
-               functionTypeExp(oo, op) -> refineAll(out :: params, oo :: op)
+               functionTypeExp(oo, op, onp) -> refineAll(out :: params ++ map((.argType), namedParams), oo :: op ++ map((.argType), onp))
              | _ -> errorSubst("Tried to refine function type with " ++ prettyType(top.refineWith))
               end;
 }

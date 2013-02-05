@@ -506,10 +506,29 @@ top::ITypeRep ::= 'decorated' '(' t::ITypeRep ')'
 }
 
 concrete production aTypeRepFunction
-top::ITypeRep ::= 'fun' '(' it::ITypeReps ','  ot::ITypeRep ')'
+top::ITypeRep ::= 'fun' '(' it::ITypeReps ','  ot::ITypeRep na::INamedArgTypes ')'
 {
-  top.typerep = functionTypeExp(ot.typerep, it.typereps);
+  top.typerep = functionTypeExp(ot.typerep, it.typereps, na.aNamedArgs);
 }
+
+terminal Semi ';';
+terminal Eq '=';
+nonterminal INamedArgTypes with aNamedArgs;
+
+synthesized attribute aNamedArgs :: [NamedArgType];
+
+concrete production aNamedArgTypeNil
+top::INamedArgTypes ::=
+{
+  top.aNamedArgs = [];
+}
+
+concrete production aNamedArgTypeCons
+top::INamedArgTypes ::= ';' n::IName '=' ty::ITypeRep rest::INamedArgTypes
+{
+  top.aNamedArgs = namedArgType(n.aname, ty.typerep) :: rest.aNamedArgs;
+}
+
 
 concrete production aTypeRepVar
 top::ITypeRep ::= t::ITyVar

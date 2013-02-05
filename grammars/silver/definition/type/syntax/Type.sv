@@ -157,7 +157,7 @@ top::Type ::= '(' sig::Signature ')'
 
   top.errors := sig.errors;
 
-  top.typerep = functionTypeExp(head(sig.types), tail(sig.types));
+  top.typerep = functionTypeExp(head(sig.types), tail(sig.types), []);
 
   top.lexicalTypeVariables = sig.lexicalTypeVariables;
 }

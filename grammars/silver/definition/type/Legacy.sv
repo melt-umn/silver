@@ -101,7 +101,7 @@ top::TypeExp ::= nt::TypeExp  hidden::TypeExp
 }
 
 aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
+top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
 {
   top.inputTypes = params;
   top.outputType = out;

@@ -84,7 +84,7 @@ top::TypeExp ::= te::TypeExp
 }
 
 aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
+top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
 {
   top.applicationDispatcher = functionApplication;
 }

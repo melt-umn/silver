@@ -73,7 +73,17 @@ top::TypeExp ::= te::TypeExp
 }
 
 aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
+top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
 {
-  top.unparse = "fun(" ++ unparseTypes(params, top.boundVariables) ++ ", " ++ out.unparse ++ ")"  ;
+  top.unparse = "fun(" ++ unparseTypes(params, top.boundVariables) ++ ", " ++ out.unparse ++ unparseNameArgTypes(namedParams, top.boundVariables) ++ ")"  ;
 }
+
+function unparseNameArgTypes
+String ::= np::[NamedArgType]  bv::[TyVar]
+{
+  return case np of
+         | [] -> ""
+         | namedArgType(s, t) :: rest -> ";" ++ quoteString(s) ++ "=" ++ decorate t with {boundVariables = bv;}.unparse ++ unparseNameArgTypes(rest, bv)
+         end;
+}
+

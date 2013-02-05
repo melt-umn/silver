@@ -22,7 +22,7 @@ top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatur
   top.outputElement = oe;
   top.inputNames = map((.elementName), ie);
   top.inputTypes = map((.typerep), ie);
-  top.typerep = functionTypeExp(oe.typerep, top.inputTypes);
+  top.typerep = functionTypeExp(oe.typerep, top.inputTypes, []);
   
   oe.boundVariables = top.boundVariables;
 }
