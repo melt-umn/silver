@@ -24,7 +24,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
   local parserPackagePath :: String = grammarToPath(ide.ideParserSpec.sourceGrammar);
   local parserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ ".copper";
   local ideParserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ "_ide.copper";
-  local pkgName :: String = makeName(buildGrammar);
+  production pkgName :: String = makeName(buildGrammar);
 
   extraTopLevelDecls <- if !isIde then [] else [
     "<property name='grammar.path' value='" ++ head(builtGrammar).grammarSource ++ "'/>", 
@@ -49,7 +49,9 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     getIDEFunctionsDcls(ide.funcDcls) ++
 
     [
-    "<target name='ide' depends='arg-check, filters, enhance, jars, copper, grammars, create-folders, customize, postbuild'>\n\n</target>",
+    "<target name='ide' depends='arg-check, filters, enhance, jars, copper, grammars, create-folders, customize, postbuild'>\n"++
+    "    <delete dir='" ++ getIDETempFolder() ++ "'/>\n"++
+    "</target>",
     "<target name='arg-check'>" ++ getArgCheckTarget() ++ "</target>",
     "<target name='filters'>" ++ getFiltersTarget() ++ "</target>",
     "<target name='create-folders'>" ++ getCreateFoldersTarget() ++ "</target>",
@@ -200,7 +202,6 @@ String ::=
     -- "<copy file=\"${res}/build.properties.template\" tofile=\"${ide.proj.plugin.path}/build.properties\" filtering=\"true\"/>\n" ++
     "  <antcall target=\"create build.properties\" inheritAll=\"true\"/>\n" ++
     "  <antcall target=\"create build.properties (all-on-one)\" inheritAll=\"true\"/>\n" ++
-
     "\n" ++
 
     "  <!-- 4. plugin.xml -->\n" ++
@@ -266,12 +267,16 @@ String ::=
     "  <mkdir dir='${ide.pkg.path}/imp/coloring'/>\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/coloring/Colorer.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/imp/coloring/Colorer.java\" filtering=\"true\"/>\n" ++
+    "  <copy todir=\"${ide.pkg.path}/imp/coloring/\" overwrite=\"true\" filtering=\"true\">\n" ++
+    "        <fileset dir=\"" ++ getIDETempFolder() ++ "imp/coloring/\"/>\n" ++
+    "        <globmapper from=\"*.java.template\" to=\"*.java\"/>\n" ++
+    "  </copy>\n" ++
     "  \n" ++
 
     "  <mkdir dir='${ide.pkg.path}/eclipse/wizard'/>\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/wizard/NewProjectWizard.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/eclipse/wizard/NewProjectWizard.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"./ide_files/eclipse/wizard/PropertyGenerator.java.template\"\n" ++
+    "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/wizard/PropertyGenerator.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/eclipse/wizard/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
