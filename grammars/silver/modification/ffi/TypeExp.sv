@@ -5,7 +5,7 @@ grammar silver:modification:ffi;
 abstract production foreignTypeExp
 top::TypeExp ::= fn::String params::[TypeExp]
 {
-  top.freeVariables = setUnionTyVarsAll(mapFreeVariables(params));
+  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), params));
   top.substituted = foreignTypeExp(fn, mapSubst(params, top.substitution));
   top.typepp = fn ++ if !null(params) then "<" ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ">" else "";
 

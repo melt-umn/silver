@@ -176,9 +176,9 @@ top::TypeExp ::= nt::TypeExp  hidden::TypeExp
 }
 
 aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
+top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
 {
-  top.substituted = functionTypeExp(out.substituted, mapSubst(params, top.substitution));
+  top.substituted = functionTypeExp(out.substituted, mapSubst(params, top.substitution), mapNamedSubst(namedParams, top.substitution));
 }
 
 --------------------------------------------------------------------------------
@@ -195,6 +195,16 @@ function mapSubst
 {
   return if null(tes) then []
          else performSubstitution(head(tes), s) :: mapSubst(tail(tes), s);
+}
+
+function mapNamedSubst
+[NamedArgType] ::= np::[NamedArgType] s::Substitution
+{
+  return case np of
+         | [] -> []
+         | namedArgType(n, t) :: rest ->
+             namedArgType(n, performSubstitution(t, s)) :: mapNamedSubst(rest, s)
+         end;
 }
 
 --------------------------------------------------------------------------------

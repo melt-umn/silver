@@ -121,7 +121,7 @@ top::IdeFunction ::= 'analyzer' analyzerName::QName ';'
     functionTypeExp(
       listTypeExp(stringTypeExp()),
       [listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeProperty", [])),
-        foreignTypeExp("core:IO", [])]);
+        foreignTypeExp("core:IO", [])], []);
   
   local tc1 :: TypeCheck = check(freshenCompletely(analyzerName.lookupValue.typerep), analyzerTypeExpected);
   tc1.downSubst = emptySubst();

@@ -28,7 +28,7 @@ top::NameOrBOperator ::= q::QName
   
   local checkOperationType :: TypeCheck =
     check(freshenCompletely(q.lookupValue.typerep),
-      functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType]));
+      functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType], []));
   checkOperationType.downSubst = emptySubst();
   checkOperationType.finalSubst = checkOperationType.upSubst;
   

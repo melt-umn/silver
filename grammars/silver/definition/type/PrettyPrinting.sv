@@ -81,9 +81,10 @@ top::TypeExp ::= nt::TypeExp  hidden::TypeExp
 }
 
 aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
+top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
 {
-  top.typepp = "(" ++ out.typepp ++ " ::= " ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ")" ;
+  top.typepp = "(" ++ out.typepp ++ " ::= " ++ implode(" ", mapTypePP(params, top.boundVariables)) ++
+    (if null(namedParams) then ")" else "; TODO)"); -- TODO
 }
 
 --------------------------------------------------------------------------------

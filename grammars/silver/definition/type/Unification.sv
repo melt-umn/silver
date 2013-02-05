@@ -122,10 +122,10 @@ top::TypeExp ::= nt::TypeExp  hidden::TypeExp
 }
 
 aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp]
+top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
 {
   top.unify = case top.unifyWith of
-               functionTypeExp(oo, op) -> unifyAll(out :: params, oo :: op)
+               functionTypeExp(oo, op, onp) -> unifyAll(out :: params ++ map((.argType), namedParams), oo :: op ++ map((.argType), onp))
              | _ -> errorSubst("Tried to unify function type with " ++ prettyType(top.unifyWith))
               end;
 }

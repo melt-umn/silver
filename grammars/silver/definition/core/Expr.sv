@@ -258,7 +258,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs
   
   top.errors := e.errors ++ es.errors; 
 
-  top.typerep = functionTypeExp(e.typerep.outputType, es.missingTypereps);
+  top.typerep = functionTypeExp(e.typerep.outputType, es.missingTypereps, []);
 }
 
 concrete production attributeSection
@@ -272,7 +272,7 @@ top::Expr ::= '(' '.' q::QName ')'
   -- Also, freshen the attribute type, because even though there currently should NOT be any type variables
   -- there, there could be if the code will raise an error.
   local rawInputType :: TypeExp = freshType();
-  top.typerep = functionTypeExp(freshenCompletely(q.lookupAttribute.typerep), [rawInputType]);
+  top.typerep = functionTypeExp(freshenCompletely(q.lookupAttribute.typerep), [rawInputType], []);
   
   top.errors := q.lookupAttribute.errors;
   
