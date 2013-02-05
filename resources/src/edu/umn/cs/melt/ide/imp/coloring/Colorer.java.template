@@ -14,12 +14,11 @@ import org.eclipse.jface.text.TextAttribute;
 import edu.umn.cs.melt.ide.copper.CopperToken;
 import edu.umn.cs.melt.ide.copper.IToken;
 import edu.umn.cs.melt.ide.copper.coloring.CopperTextAttributeDecider;
-import @PKG_NAME@.copper.parser.@PARSER_NAME@;
 
 public class Colorer extends TokenColorerBase implements ITokenColorer {
 
 	private CopperTextAttributeDecider decider = 
-		@PARSER_NAME@.TextAttributeDecider.getInstance();
+		@PARSER_NAME@_TextAttributeDecider.getInstance();
 	
 	public Colorer() {
 		super();

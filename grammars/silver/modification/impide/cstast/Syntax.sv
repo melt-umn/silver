@@ -3,10 +3,10 @@ grammar silver:modification:impide:cstast;
 --import (see grammar-wide import in cstast.sv)
 
 synthesized attribute fontList :: [Pair<String Font>];
-attribute fontList occurs on Syntax, SyntaxDcl;
+attribute fontList occurs on Syntax, SyntaxDcl, SyntaxRoot;
 
 synthesized attribute termFontPairList :: [Pair<String String>];
-attribute termFontPairList occurs on Syntax, SyntaxDcl;
+attribute termFontPairList occurs on Syntax, SyntaxDcl, SyntaxRoot;
 
 aspect production nilSyntax
 top::Syntax ::=

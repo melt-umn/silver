@@ -12,15 +12,28 @@ imports silver:modification:impide;
 -- The attribute into which the copper parser in new XML skin is written
 synthesized attribute nxmlCopper :: String occurs on SyntaxRoot, Syntax, SyntaxDcl;
 
+-- The attribute carries the name of IDE plugin packge, which is ultimately 
+-- derived from the name of grammar where IDE declaration block is defined.
+inherited attribute jPkgName :: String occurs on SyntaxRoot;
+-- The attribute is the name of generated Java parser.
+inherited attribute jParserName :: String occurs on SyntaxRoot;
+
 aspect default production
 top::SyntaxRoot ::=
 {
   top.nxmlCopper = error("This should only ever be demanded from cstRoot.");
+  top.fontList = error("This should only ever be demanded from cstRoot.");
+  top.termFontPairList = error("This should only ever be demanded from cstRoot.");
 }
 
 aspect production cstRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
 {
+
+  -- 1) font information
+  top.fontList = s2.fontList;
+  top.termFontPairList = s2.termFontPairList;
+
   -- 2) The copper parser
   top.nxmlCopper =
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ++
@@ -34,7 +47,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
 -- DIFFERENCES ****************************************************************
 "    <ClassAuxiliaryCode>\n" ++
 "      <Code><![CDATA[\n" ++ 
-  getAuxCode(s2.fontList, s2.termFontPairList) ++ 
+  getAuxCode(top.jPkgName ++ ".imp.coloring." ++ top.jParserName ++ "_") ++
 "      ]]></Code>\n" ++
 "    </ClassAuxiliaryCode>\n" ++
 "    <ParserInitCode>\n" ++
@@ -47,13 +60,9 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
 "import java.util.ArrayList;\n" ++
 "import java.util.Iterator;\n" ++
 "import java.util.List;\n" ++
-"import java.util.HashMap;\n" ++
-"import java.util.Map;\n" ++
 "import edu.umn.cs.melt.copper.runtime.engines.single.scanner.SingleDFAMatchData;\n" ++
 "import edu.umn.cs.melt.ide.copper.*;\n" ++
 "import edu.umn.cs.melt.ide.copper.coloring.*;\n" ++
-"import org.eclipse.jface.text.TextAttribute;\n" ++
-"import org.eclipse.swt.widgets.Display;\n" ++
 "]]></Code>\n" ++
 "    </Preamble>\n" ++
 "    <SemanticActionAuxiliaryCode>\n" ++
@@ -88,7 +97,7 @@ Assumptions we make about initial Syntax:
 -}
 
 function getAuxCode
-String ::= fontList::[Pair<String Font>] termFontPairList::[Pair<String String>] 
+String ::= classPrefix::String
 {
 return 
 "\t//IDE Extension START\n" ++
@@ -285,147 +294,6 @@ return
 "\t\treturn tokenClassifier.getKind(term);\n" ++
 "\t}\n\n" ++
 "\t\n" ++
-"\tprivate ICopperTokenClassifier tokenClassifier = TokenClassifier.getInstance();\n" ++
-"\t\n" ++
-getTokenClassifier(fontList, termFontPairList) ++
-"\t\n" ++
-getTextAttributeDecider(fontList) ++
+"\tprivate ICopperTokenClassifier tokenClassifier = " ++ classPrefix ++ "TokenClassifier.getInstance();\n" ++
 "\t//IDE Extension END\n";
 }
-
--- Inner class TokenClassifier
-function getTokenClassifier
-String ::= fontList::[Pair<String Font>] termFontPairList::[Pair<String String>]
-{
-return
-"\tpublic static class TokenClassifier implements ICopperTokenClassifier {\n" ++
-"\t\tprivate static Map<String, Integer> map = new HashMap<String, Integer>();\n" ++	
-"\t\t\n" ++
-"\t\tpublic final static class TokenType {\n" ++
-"\t\t\tpublic static final int DEFAULT = 0;\n" ++ 
-"\t\t\t\n" ++ 
-getConstantDeclarations(1, fontList) ++
-"\t\t\t\n" ++ 
-"\t\t\tpublic static final int TOTAL = " ++ toString(length(fontList)+1) ++ ";\n" ++ 
-"\t\t}\n" ++	
-"\t\t\n" ++	
-"\t\tstatic{\n" ++	
-"\t\t\t" ++ getPutNameFontPairsIntoMap(termFontPairList) ++ "\n" ++ 
-"\t\t}\n" ++
-"\t\t\n" ++
-"\t\t@Override\n" ++
-"\t\tpublic int getKind(String symbolName) {\n" ++
-"\t\t\tif(symbolName==null || \"\".equals(symbolName)){\n" ++
-"\t\t\t\treturn TokenType.DEFAULT;\n" ++
-"\t\t\t}\n" ++
-"\t\t\t\n" ++		
-"\t\t\tInteger kind = map.get(symbolName);\n" ++
-"\t\t\t\n" ++			
-"\t\t\tif(kind==null){\n" ++
-"\t\t\t\treturn TokenType.DEFAULT;\n" ++
-"\t\t\t}\n" ++
-"\t\t\t\n" ++		
-"\t\t\treturn kind;\n" ++
-"\t\t}\n" ++
-"\t\t\n" ++			
-"\t\tprivate static TokenClassifier INSTANCE = new TokenClassifier();\n" ++
-"\t\t\n" ++
-"\t\tpublic static TokenClassifier getInstance(){\n" ++
-"\t\t\treturn INSTANCE;\n" ++
-"\t\t}\n" ++
-"\t\t\n" ++
-"\t\tprivate TokenClassifier(){\n" ++
-"\t\t\n" ++
-"\t\t}\n" ++
-"\t\n" ++
-"\t}\n";
-}
-
-function getPutNameFontPairsIntoMap
-String ::= termFontPairList::[Pair<String String>]
-{
-return implode("\n\t\t\t", map(getPutNameFontPairIntoMap, termFontPairList));
-}
-
-function getPutNameFontPairIntoMap
-String ::= tokenNameAndFontName::Pair<String String>
-{
-return "map.put(\"" ++ tokenNameAndFontName.fst ++ "\", " ++ "TokenType." ++ 
-       (if tokenNameAndFontName.snd != ""
-        then tokenNameAndFontName.snd
-        else "DEFAULT") ++ ");"; 
-}
-
-function getConstantDeclarations
-String ::= i::Integer fontList::[Pair<String Font>]
-{
-  return if (null(fontList)) 
-         then "" 
-         else ("\t\t\tpublic static final int " ++ 
-              head(fontList).fst ++ 
-              " = " ++ toString(i) ++ ";\n" ++ 
-              getConstantDeclarations(i+1, tail(fontList)));
-}
-
--- Inner class TextAttributeDecider
-function getTextAttributeDecider
-String ::= fontList::[Pair<String Font>]
-{
-return
-"\tpublic static class TextAttributeDecider extends CopperTextAttributeDecider {\n" ++
-"\t\t\n" ++
-"\t\tprivate static TextAttributeDecider INSTANCE = new TextAttributeDecider();\n" ++
-"\t\t\n" ++
-"\t\tpublic static TextAttributeDecider getInstance(){\n" ++
-"\t\t\treturn INSTANCE;\n" ++
-"\t\t}\n" ++
-"\t\t\n" ++
-"\t\tprotected final TextAttribute[] attributes = new TextAttribute[TokenClassifier.TokenType.TOTAL];\n" ++
-"\t\t\n" ++
-"\t\tprivate TextAttributeDecider(){\n" ++
-"\t\t\tDisplay display = Display.getDefault();\n" ++
-"\t\t\t\n" ++
-"\t\t\t" ++ getAttributeInitializations(fontList) ++ "\n" ++
-"\t\t\t\n" ++
-"\t\t\t" ++ getPutAttributesIntoMap(fontList) ++ "\n" ++
-"\t\t}\n" ++
-"\t\n" ++
-"\t}\n";
-}
-
-function getAttributeInitializations
-String ::= fontList::[Pair<String Font>]
-{
-return implode("\n\t\t\t", map(getAttributeInitialization, fontList));
-}
-
-function getAttributeInitialization
-String ::= namedFont::Pair<String Font>
-{
-return "attributes[TokenClassifier.TokenType." ++ namedFont.fst ++ "] = " ++ getAttributeInitializer(namedFont.snd) ++ ";";
-}
-
-function getAttributeInitializer
-String ::= font::Font
-{
-  local attribute color :: Color;
-  color = font.color;
-
-  return "TextAttributeProvider.getAttribute(display, " ++ 
-          toString(color.r) ++ ", " ++ toString(color.g) ++ ", " ++ toString(color.b) ++ ", " ++ 
-          (if(font.isBold) then "true" else "false") ++ ", " ++ 
-          (if(font.isItalic) then "true" else "false") ++ ")";
-}
-
-function getPutAttributesIntoMap
-String ::= fontList::[Pair<String Font>]
-{
-return implode("\n\t\t\t", map(getPutAttributeIntoMap, fontList));
-}
-
-function getPutAttributeIntoMap
-String ::= namedFont::Pair<String Font>
-{
-return "addTextAttribute(TokenClassifier.TokenType." ++ namedFont.fst ++ ", attributes[TokenClassifier.TokenType." ++ namedFont.fst ++ "]);";
-}
-
