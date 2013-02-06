@@ -70,8 +70,15 @@ top::RootSpec ::= p::IRoot  grammarTime::Integer
 
   top.grammarSource = p.grammarSource;
   top.grammarTime = grammarTime;
-  -- Sigh, let's say three second leeway here...
-  local ood :: Boolean = isOutOfDate(grammarTime + 3, top.allGrammarDependencies, top.compiledGrammars);
+  -- TODO: change this back to primarily using 'dirtyGrammars' to decide whether to rebuild.
+  -- Time here should be used as a back-up, and with a larger margin for error (20 seconds?)
+  -- Generally, for same-project builds dirty should work just fine. For building
+  -- different projects, the time fallback will trigger re-checking. This should be large
+  -- enough that slow builds don't cause problems, but small enough that nobody is likely to
+  -- actually try to build two projects at the same time in that time.
+  
+  -- In the meantime, 5 seconds seems to work... okay.
+  local ood :: Boolean = isOutOfDate(grammarTime + 5, top.allGrammarDependencies, top.compiledGrammars);
   top.recheckGrammars = if ood then [p.grammarName] else [];
   top.translateGrammars = [];
 
