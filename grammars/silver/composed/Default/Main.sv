@@ -30,7 +30,7 @@ parser svParse::Root {
   silver:modification:typedecl;
   silver:modification:copper;
   silver:modification:defaultattr;
---  silver:modification:annotation;
+  silver:modification:annotation;
   
   -- slight hacks, for the moment
   silver:modification:copper_mda;
@@ -47,7 +47,7 @@ parser sviParse::IRoot {
   silver:modification:typedecl:env_parser;
   silver:modification:copper:env_parser;
   silver:modification:impide:env_parser;
---  silver:modification:annotation:env_parser;
+  silver:modification:annotation:env_parser;
 
   silver:extension:list:env_parser;
 }

@@ -84,7 +84,7 @@ aspect production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
 {
   top.typepp = "(" ++ out.typepp ++ " ::= " ++ implode(" ", mapTypePP(params, top.boundVariables)) ++
-    (if null(namedParams) then ")" else "; TODO)"); -- TODO
+    (if null(namedParams) then ")" else mapNamedPP(namedParams, top.boundVariables) ++ ")");
 }
 
 --------------------------------------------------------------------------------
@@ -110,10 +110,19 @@ String ::= tv::TyVar  bv::[TyVar]  vn::[String]
 function mapTypePP
 [String] ::= tes::[TypeExp] bv::[TyVar]
 {
-  local attribute fst :: TypeExp;
-  fst = head(tes);
+  local fst :: TypeExp = head(tes);
   fst.boundVariables = bv;
   
   return if null(tes) then []
          else fst.typepp :: mapTypePP(tail(tes), bv);
+}
+-- This is crummy:
+function mapNamedPP
+String ::= tes::[NamedArgType] bv::[TyVar]
+{
+  local fst :: NamedArgType = head(tes);
+  fst.boundVariables = bv;
+  
+  return if null(tes) then ""
+         else fst.typepp ++ mapNamedPP(tail(tes), bv);
 }

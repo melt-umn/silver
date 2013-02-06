@@ -1,5 +1,7 @@
 grammar silver:definition:core;
 
+import silver:modification:annotation only annotationsForNonterminal;
+
 nonterminal ProductionSignature with config, grammarName, file, env, location, pp, errors, defs, namedSignature, signatureName;
 nonterminal ProductionLHS with config, grammarName, file, env, location, pp, errors, defs, outputElement;
 nonterminal ProductionRHS with config, grammarName, file, env, location, pp, errors, defs, inputElements;
@@ -67,7 +69,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
 
-  top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement);
+  top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, annotationsForNonterminal(lhs.outputElement.typerep, top.env));
 }
 
 concrete production productionLHS

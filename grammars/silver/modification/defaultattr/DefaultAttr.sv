@@ -6,6 +6,7 @@ import silver:definition:type;
 import silver:definition:type:syntax;
 --import silver:analysis:typechecking:core;
 import silver:translation:java;
+import silver:modification:annotation only annotationsForNonterminal;
 
 
 terminal Default_kwd 'default' lexer classes {KEYWORD};
@@ -20,7 +21,8 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   top.defs = [];
 
   production attribute namedSig :: NamedSignature;
-  namedSig = namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName, [], namedSignatureElement(lhs.name, te.typerep));
+  namedSig = namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName, [], namedSignatureElement(lhs.name, te.typerep),
+    annotationsForNonterminal(te.typerep, top.env));
 
   top.errors := te.errors ++ body.errors;
 

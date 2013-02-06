@@ -53,7 +53,8 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
 
-  top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement);
+  -- For the moment, functions do not have named parameters (hence, [])
+  top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, []);
 }
 
 concrete production functionLHS
