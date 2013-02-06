@@ -122,7 +122,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 
 -- -- interface Production attr (values)
 aspect production paDcl
-top::DclInfo ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeExp] dcls::[Def]
+top::DclInfo ::= sg::String sl::Location ns::NamedSignature dcls::[Def]
 {
 }
 aspect production forwardDcl

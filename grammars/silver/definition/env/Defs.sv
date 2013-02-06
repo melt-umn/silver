@@ -160,9 +160,9 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::TypeExp
   return attrDef(defaultEnvItem(inhDcl(sg,sl,fn,bound,ty)));
 }
 function prodOccursDef
-Def ::= sg::String  sl::Location  fn::String  outty::TypeExp  intys::[TypeExp]  dcls::[Def]
+Def ::= sg::String  sl::Location  ns::NamedSignature  dcls::[Def]
 { 
-  return paDef(paDcl(sg,sl,fn,outty,intys,dcls));
+  return paDef(paDcl(sg,sl,ns,dcls));
 }
 function forwardDef
 Def ::= sg::String  sl::Location  ty::TypeExp

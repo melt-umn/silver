@@ -431,13 +431,11 @@ top::IDclInfo ::= 'inh' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' t:
 }
 
 concrete production aDclInfoProdAttr
-top::IDclInfo ::= 'p@' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' ot::ITypeRep '::=' its::ITypeReps ',' t::IDefs ')'
+top::IDclInfo ::= 'p@' '(' l::ILocation ',' td::ITyVarDcls ',' s::INamedSignature ',' t::IDefs ')'
 {
-  ot.env = newScopeEnv(td.defs, top.env);
-  its.env = ot.env;
-  t.env = ot.env;
+  s.env = newScopeEnv(td.defs, top.env);
 
-  top.defs = [prodOccursDef(top.grammarName, l.location, fn.aname, ot.typerep, its.typereps, t.defs)];
+  top.defs = [prodOccursDef(top.grammarName, l.location, s.signature, t.defs)];
 }
 
 concrete production aDclInfoForward

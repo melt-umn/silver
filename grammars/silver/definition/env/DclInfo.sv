@@ -249,22 +249,24 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 
 -- ProductionAttrDclInfo
 abstract production paDcl
-top::DclInfo ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeExp] dcls::[Def]
+top::DclInfo ::= sg::String sl::Location ns::NamedSignature{-fn::String outty::TypeExp intys::[TypeExp]-} dcls::[Def]
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
-  top.fullName = fn;
+  top.fullName = ns.fullName;
+
+  local boundvars :: [TyVar] = top.typerep.freeVariables;
   
-  local newboundvars :: [TyVar] = setUnionTyVarsAll(map((.freeVariables), outty :: intys));
-  local boundvars :: [TyVar] = top.boundVariables ++ newboundvars;
-  
-  outty.boundVariables = boundvars;
-  top.unparse = "p@(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(newboundvars, boundvars) ++ ", " ++ outty.unparse ++ " ::= " ++ unparseTypes(intys, boundvars) ++ ", " ++ unparseDefs(dcls, boundvars) ++ ")";
+  ns.boundVariables = top.boundVariables ++ boundvars;
+
+  top.unparse = "p@(" ++ sl.unparse ++ ", " ++ unparseTyVars(boundvars, ns.boundVariables) ++ ", " ++ ns.unparse ++ ", " ++ unparseDefs(dcls, boundvars) ++ ")";
   
   top.prodDefs = dcls;
   
-  -- This is used by the function that computes the substituted defs. Perhaps we should consider just having a namedsig...
-  top.typerep = functionTypeExp(outty, intys, []);
+  -- This is used by the function that computes the substituted defs.
+  top.typerep = ns.typerep;
+  -- We do have this now... any refactoring that should use it?
+  --top.namedSignature = ns;
 }
 
 -- OccursDclInfo

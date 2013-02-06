@@ -26,9 +26,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   top.defs = prodDef(top.grammarName, id.location, namedSig) ::
     if null(body.productionAttributes) then []
-    else [prodOccursDef(top.grammarName, id.location, fName,
-            namedSig.outputElement.typerep, namedSig.inputTypes,
-            body.productionAttributes)];
+    else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
@@ -83,9 +81,9 @@ top::ProductionLHS ::= id::Name '::' t::Type
   top.defs = [lhsDef(top.grammarName, t.location, id.name, t.typerep)];
 
   top.errors <-
-       if length(getValueDclInScope(id.name, top.env)) > 1 -- Hackathon Modified
-       then [err(top.location, "Value '" ++ id.name ++ "' is already bound.")]
-       else [];	
+    if length(getValueDclInScope(id.name, top.env)) > 1
+    then [err(top.location, "Value '" ++ id.name ++ "' is already bound.")]
+    else [];	
 
   top.errors := t.errors;
 }
@@ -126,9 +124,9 @@ top::ProductionRHSElem ::= id::Name '::' t::Type
   top.defs = [childDef(top.grammarName, t.location, id.name, t.typerep)];
 
   top.errors <-
-       if length(getValueDclInScope(id.name, top.env)) > 1 
-       then [err(top.location, "Value '" ++ id.name ++ "' is already bound.")]
-       else [];	
+    if length(getValueDclInScope(id.name, top.env)) > 1 
+    then [err(top.location, "Value '" ++ id.name ++ "' is already bound.")]
+    else [];	
 
   top.errors := t.errors;
 }
@@ -141,3 +139,4 @@ top::ProductionRHSElem ::= t::Type
 
   forwards to productionRHSElem(nameIdLower(terminal(IdLower_t, "_G_" ++ toString(top.deterministicCount))), terminal(ColonColon_t, "::"), t);
 }
+
