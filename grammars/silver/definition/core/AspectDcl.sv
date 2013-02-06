@@ -21,10 +21,9 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   top.pp = "aspect production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.defs = if null(body.productionAttributes) then []
-             else [prodOccursDef(top.grammarName, id.location, id.lookupValue.fullName,
-                     namedSig.outputElement.typerep, namedSig.inputTypes,
-                     body.productionAttributes)];
+  top.defs = 
+    if null(body.productionAttributes) then []
+    else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
   production namedSig :: NamedSignature = ns.namedSignature;
 
@@ -60,10 +59,9 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   top.pp = "aspect function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
   top.location = loc(top.file, $1.line, $1.column);
 
-  top.defs = if null(body.productionAttributes) then []
-             else [prodOccursDef(top.grammarName, id.location, id.lookupValue.fullName,
-                     namedSig.outputElement.typerep, namedSig.inputTypes,
-                     body.productionAttributes)];
+  top.defs = 
+    if null(body.productionAttributes) then []
+    else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
   production namedSig :: NamedSignature = ns.namedSignature;
 

@@ -10,6 +10,10 @@ synthesized attribute outputElement :: NamedSignatureElement;
 synthesized attribute inputNames :: [String];
 -- inputTypes from the types grammar.
 
+-- TODO Make named signatures... not named.
+-- It seems to be largely redundant information.
+-- The name portion can be moved into 'context' instead of 'signature'
+
 {--
  - Represents the signature of a function or production.
  -}

@@ -14,9 +14,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 
   top.defs = funDef(top.grammarName, id.location, namedSig) ::
     if null(body.productionAttributes) then []
-    else [prodOccursDef(top.grammarName, id.location, fName,
-            namedSig.outputElement.typerep, namedSig.inputTypes,
-            body.productionAttributes)];
+    else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
