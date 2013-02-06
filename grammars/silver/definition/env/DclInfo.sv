@@ -141,8 +141,7 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature
   top.sourceLocation = sl;
   top.fullName = ns.fullName;
 
-  local attribute boundvars :: [TyVar];
-  boundvars = top.typerep.freeVariables;
+  local boundvars :: [TyVar] = top.typerep.freeVariables;
   
   ns.boundVariables = top.boundVariables ++ boundvars;
   
@@ -158,8 +157,7 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature
   top.sourceLocation = sl;
   top.fullName = ns.fullName;
   
-  local attribute boundvars :: [TyVar];
-  boundvars = top.typerep.freeVariables;
+  local boundvars :: [TyVar] = top.typerep.freeVariables;
   
   ns.boundVariables = top.boundVariables ++ boundvars;
   
@@ -257,16 +255,16 @@ top::DclInfo ::= sg::String sl::Location fn::String outty::TypeExp intys::[TypeE
   top.sourceLocation = sl;
   top.fullName = fn;
   
-  local attribute newboundvars :: [TyVar];
-  newboundvars = functionTypeExp(outty, intys, []).freeVariables;
-  local attribute boundvars :: [TyVar];
-  boundvars = top.boundVariables ++ newboundvars;
+  local newboundvars :: [TyVar] = setUnionTyVarsAll(map((.freeVariables), outty :: intys));
+  local boundvars :: [TyVar] = top.boundVariables ++ newboundvars;
   
   outty.boundVariables = boundvars;
   top.unparse = "p@(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(newboundvars, boundvars) ++ ", " ++ outty.unparse ++ " ::= " ++ unparseTypes(intys, boundvars) ++ ", " ++ unparseDefs(dcls, boundvars) ++ ")";
   
   top.prodDefs = dcls;
-  top.typerep = functionTypeExp(outty, intys, []); -- does anything actually access this?
+  
+  -- This is used by the function that computes the substituted defs. Perhaps we should consider just having a namedsig...
+  top.typerep = functionTypeExp(outty, intys, []);
 }
 
 -- OccursDclInfo

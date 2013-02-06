@@ -16,7 +16,6 @@ synthesized attribute inputNames :: [String];
 abstract production namedSignature
 top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatureElement
 {
-  top.unparse = "signature('" ++ fn ++ "', " ++ unparseSignatureElements(ie, top.boundVariables) ++ ", " ++ oe.unparse ++ ")";
   top.fullName = fn;
   top.inputElements = ie;
   top.outputElement = oe;
@@ -25,6 +24,7 @@ top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatur
   top.typerep = functionTypeExp(oe.typerep, top.inputTypes, []);
   
   oe.boundVariables = top.boundVariables;
+  top.unparse = "signature('" ++ fn ++ "', " ++ unparseSignatureElements(ie, top.boundVariables) ++ ", " ++ oe.unparse ++ ")";
 }
 
 {--
