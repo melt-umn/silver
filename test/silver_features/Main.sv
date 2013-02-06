@@ -5,6 +5,7 @@ imports lib:extcore;
 
 import silver_features:defs;
 import silver_features:cond;
+import silver_features:anno;
 
 mainTestSuite silver_tests;
 

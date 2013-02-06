@@ -25,7 +25,8 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
   namedSig = namedSignature(fName,
                                [namedSignatureElement("stringToParse", stringTypeExp()),
                                 namedSignatureElement("filenameToReport", stringTypeExp())],
-                               namedSignatureElement("__func__lhs", nonterminalTypeExp("core:ParseResult", [t.typerep])));
+                               namedSignatureElement("__func__lhs", nonterminalTypeExp("core:ParseResult", [t.typerep])),
+                               []);
 
   production spec :: ParserSpec = parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames);
   spec.compiledGrammars = top.compiledGrammars;

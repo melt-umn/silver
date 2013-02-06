@@ -3,13 +3,10 @@ grammar silver:translation:java:core;
 aspect production nonterminalDcl
 top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList ';'
 {
-  local attribute className :: String;
-  className = "N" ++ id.name;
+  local className :: String = "N" ++ id.name;
   
-  local attribute inhVar :: String;
-  inhVar = "count_inh__ON__" ++ id.name;
-  local attribute synVar :: String;
-  synVar = "count_syn__ON__" ++ id.name;
+  local inhVar :: String = "count_inh__ON__" ++ id.name;
+  local synVar :: String = "count_syn__ON__" ++ id.name;
   
   top.initWeaving := "\tpublic static int " ++ inhVar ++ " = 0;\n"
                   ++ "\tpublic static int " ++ synVar ++ " = 0;\n";

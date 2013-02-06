@@ -1,11 +1,12 @@
 grammar silver:definition:env;
 
 nonterminal NamedSignature with inputElements, outputElement, fullName, unparse, boundVariables, inputNames, inputTypes, typerep;
-nonterminal NamedSignatureElement with typerep, elementName, unparse, boundVariables;
+nonterminal NamedSignatureElement with typerep, elementName, unparse, boundVariables, toNamedArgType;
 
 synthesized attribute elementName :: String;
 synthesized attribute inputElements :: [NamedSignatureElement];
 synthesized attribute outputElement :: NamedSignatureElement;
+synthesized attribute toNamedArgType :: NamedArgType;
 
 synthesized attribute inputNames :: [String];
 -- inputTypes from the types grammar.
@@ -16,16 +17,20 @@ synthesized attribute inputNames :: [String];
 
 {--
  - Represents the signature of a function or production.
+ - @param fn  The full name
+ - @param ie  The input elements
+ - @param oe  The output element
+ - @param np  Named parameters that are part of the signature.
  -}
 abstract production namedSignature
-top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatureElement
+top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
 {
   top.fullName = fn;
   top.inputElements = ie;
   top.outputElement = oe;
   top.inputNames = map((.elementName), ie);
   top.inputTypes = map((.typerep), ie);
-  top.typerep = functionTypeExp(oe.typerep, top.inputTypes, []);
+  top.typerep = functionTypeExp(oe.typerep, top.inputTypes, map((.toNamedArgType), np));
   
   oe.boundVariables = top.boundVariables;
   top.unparse = "signature('" ++ fn ++ "', " ++ unparseSignatureElements(ie, top.boundVariables) ++ ", " ++ oe.unparse ++ ")";
@@ -39,7 +44,7 @@ top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatur
 abstract production namedNamedSignature
 top::NamedSignature ::= fn::String
 {
-  forwards to namedSignature(fn, [], bogusNamedSignatureElement());
+  forwards to namedSignature(fn, [], bogusNamedSignatureElement(), []);
 }
 
 {--
@@ -69,6 +74,7 @@ top::NamedSignatureElement ::= n::String ty::TypeExp
   top.unparse = "element('" ++ n ++ "', " ++ ty.unparse ++ ")";
   top.elementName = n;
   top.typerep = ty;
+  top.toNamedArgType = namedArgType(n, ty);
 
   ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't  
 }
@@ -83,5 +89,14 @@ top::NamedSignatureElement ::=
   top.unparse = error("Bogus signature elements should never make it into interface files!");
   top.elementName = "__SV_BOGUS_ELEM";
   top.typerep = errorType();
+  top.toNamedArgType = error("Bogus signature elements should not be converted to types?");
+}
+
+----------------
+
+function namedSignatureElementLte
+Boolean ::= a::NamedSignatureElement  b::NamedSignatureElement
+{
+  return a.elementName <= b.elementName;
 }
 

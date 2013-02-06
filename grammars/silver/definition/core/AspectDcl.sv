@@ -1,5 +1,7 @@
 grammar silver:definition:core;
 
+import silver:modification:annotation only annotationsForNonterminal;
+
 nonterminal AspectProductionSignature with config, grammarName, file, env, location, pp, errors, defs, realSignature, namedSignature, signatureName;
 nonterminal AspectProductionLHS with config, grammarName, file, env, location, pp, errors, defs, outputElement, realSignature;
 
@@ -100,7 +102,7 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
 
-  top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement);
+  top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, annotationsForNonterminal(lhs.outputElement.typerep, top.env));
 
   lhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
   rhs.realSignature = if null(top.realSignature) then [] else tail(top.realSignature);
@@ -245,7 +247,8 @@ top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
 
-  top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement);
+  -- For the moment, functions do not have named parameters (hence, [])
+  top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, []);
 
   lhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
   rhs.realSignature = if null(top.realSignature) then [] else tail(top.realSignature);

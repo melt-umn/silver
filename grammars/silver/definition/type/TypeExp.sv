@@ -132,7 +132,7 @@ top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
 
 --------------------------------------------------------------------------------
 
-nonterminal NamedArgType with argName, argType;
+nonterminal NamedArgType with argName, argType, typepp, boundVariables;
 
 synthesized attribute argName :: String;
 synthesized attribute argType :: TypeExp;
@@ -140,6 +140,7 @@ synthesized attribute argType :: TypeExp;
 abstract production namedArgType
 top::NamedArgType ::= s::String  ty::TypeExp
 {
+  top.typepp = "; " ++ s ++ "::" ++ ty.typepp;
   top.argName = s;
   top.argType = ty;
 }
