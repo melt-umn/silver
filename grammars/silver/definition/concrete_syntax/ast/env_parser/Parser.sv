@@ -151,12 +151,11 @@ top::ISyntaxDcl ::= 'term' '(' n::IName ',' '/' r::Regex_R '/' ',' tm::ITerminal
   top.syntaxAst = [syntaxTerminal(n.aname, r, foldr(consTerminalMod, nilTerminalMod(), tm.terminalModifiers))];
 }
 concrete production aSyntaxProd
-top::ISyntaxDcl ::= 'prod' '(' n::IName ',' td::ITyVarDcls ',' l::ITypeRep ',' r::ITypeReps ',' pm::IProductionModifiers ')'
+top::ISyntaxDcl ::= 'prod' '(' td::ITyVarDcls ',' ns::INamedSignature ',' pm::IProductionModifiers ')'
 {
-  l.env = toEnv(td.defs);
-  r.env = l.env;
+  ns.env = toEnv(td.defs);
   
-  top.syntaxAst = [syntaxProduction(n.aname, l.typerep, r.typereps, foldr(consProductionMod, nilProductionMod(), pm.productionModifiers))];
+  top.syntaxAst = [syntaxProduction(ns.signature, foldr(consProductionMod, nilProductionMod(), pm.productionModifiers))];
 }
 concrete production aSyntaxLclass
 top::ISyntaxDcl ::= 'lclass' '(' n::IName ',' lm::ILexerClassModifiers ')'

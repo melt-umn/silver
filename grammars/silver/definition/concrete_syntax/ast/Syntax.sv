@@ -151,34 +151,38 @@ String ::= opassoc::Maybe<String>
  - A (named) production. Using types for later parameterization.
  -}
 abstract production syntaxProduction
-top::SyntaxDcl ::= n::String lhs::TypeExp rhs::[TypeExp] modifiers::SyntaxProductionModifiers
+top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 {
-  top.sortKey = "FFF" ++ n;
-  top.cstDcls = [pair(n, top)];
-  -- TODO modifiers errors
-  top.cstErrors := if length(searchEnvTree(n, top.cstEnv)) == 1 then []
-                   else ["Name conflict with production " ++ n];
-  production attribute lhsRef :: [Decorated SyntaxDcl];
-  lhsRef = searchEnvTree(lhs.typeName, top.cstEnv);
-  top.cstErrors <- if length(lhsRef) == 1 then
-                   case head(lhsRef) of syntaxNonterminal(_,_) -> []
-                      | _ -> ["LHS of production " ++ n ++ " is not a nonterminal"] end
-                   else ["Lookup error with LHS nonterminal " ++ lhs.typeName];
-  production attribute rhsRefs :: [[Decorated SyntaxDcl]];
-  rhsRefs = lookupStrings(map((.typeName), rhs), top.cstEnv);
-  top.cstErrors <- checkRHS(n, rhs, rhsRefs);
+  top.sortKey = "FFF" ++ ns.fullName;
+  top.cstDcls = [pair(ns.fullName, top)];
+  
+  production lhsRef :: [Decorated SyntaxDcl] =
+    searchEnvTree(ns.outputElement.typerep.typeName, top.cstEnv);
+  production rhsRefs :: [[Decorated SyntaxDcl]] =
+    lookupStrings(map((.typeName), map((.typerep), ns.inputElements)), top.cstEnv);
 
-  top.cstProds = [pair(lhs.typeName,top)];
+  -- TODO modifiers errors
+  top.cstErrors := if length(searchEnvTree(ns.fullName, top.cstEnv)) == 1 then []
+                   else ["Name conflict with production " ++ ns.fullName];
+  top.cstErrors <- if length(lhsRef) == 1 then
+                   case head(lhsRef) of 
+                   | syntaxNonterminal(_,_) -> []
+                   | _ -> ["LHS of production " ++ ns.fullName ++ " is not a nonterminal"] end
+                   else ["Lookup error with LHS nonterminal " ++ ns.outputElement.typerep.typeName];
+                   
+  top.cstErrors <- checkRHS(ns.fullName, map((.typerep), ns.inputElements), rhsRefs);
+
+  top.cstProds = [pair(ns.outputElement.typerep.typeName, top)];
   top.cstNormalize = [];
   
   top.xmlCopper =
-    "  <Production id=\"" ++ makeCopperName(n) ++ "\">\n" ++
+    "  <Production id=\"" ++ makeCopperName(ns.fullName) ++ "\">\n" ++
     (if modifiers.productionPrecedence.isJust then
     "    <Class>main</Class>\n" ++
     "    <Precedence>" ++ toString(modifiers.productionPrecedence.fromJust) ++ "</Precedence>\n"
     else "") ++
     "    <Code><![CDATA[\n" ++ 
-    "RESULT = new " ++ makeClassName(n) ++ "(_children);\n" ++
+    "RESULT = new " ++ makeClassName(ns.fullName) ++ "(_children);\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++
     "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++
@@ -191,10 +195,8 @@ top::SyntaxDcl ::= n::String lhs::TypeExp rhs::[TypeExp] modifiers::SyntaxProduc
     else "") ++
     "  </Production>\n";
 
-  local attribute tvs :: [TyVar];
-  tvs = setUnionTyVarsAll(map((.freeVariables), lhs :: rhs));
-  lhs.boundVariables = tvs;
-  top.unparses = ["prod('" ++ n ++ "'," ++ unparseTyVars(tvs,tvs) ++ "," ++ lhs.unparse ++ "," ++ unparseTypes(rhs, tvs) ++ "," ++ unparseNonStrings(modifiers.unparses) ++ ")"];
+  ns.boundVariables = ns.typerep.freeVariables;
+  top.unparses = ["prod(" ++ unparseTyVars(ns.boundVariables, ns.boundVariables) ++ ", " ++ ns.unparse ++ ", " ++ unparseNonStrings(modifiers.unparses) ++ ")"];
 }
 
 function lookupStrings

@@ -80,17 +80,17 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
 }
 
 aspect production syntaxProduction
-top::SyntaxDcl ::= n::String lhs::TypeExp rhs::[TypeExp] modifiers::SyntaxProductionModifiers
+top::SyntaxDcl ::= ns::NamedSignature modifiers::SyntaxProductionModifiers
 {
   top.nxmlCopper =
-    "  <Production id=\"" ++ makeCopperName(n) ++ "\">\n" ++
+    "  <Production id=\"" ++ makeCopperName(ns.fullName) ++ "\">\n" ++
     (if modifiers.productionPrecedence.isJust then
     "    <Class>main</Class>\n" ++
     "    <Precedence>" ++ toString(modifiers.productionPrecedence.fromJust) ++ "</Precedence>\n"
     else "") ++
     -- BEGIN DIFFERENCE *******************************************************
     "    <Code><![CDATA[\n" ++ 
-"            RESULT = createPTNode(new " ++ makeClassName(n) ++ "(new Object[]{" ++ implode(", ", extractNonterminalsFromChildren(0, map(head, rhsRefs))) ++ "}));\n" ++
+"            RESULT = createPTNode(new " ++ makeClassName(ns.fullName) ++ "(new Object[]{" ++ implode(", ", extractNonterminalsFromChildren(0, map(head, rhsRefs))) ++ "}));\n" ++
 "]]></Code>\n" ++
     -- END DIFFERENCE *********************************************************
     "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++
