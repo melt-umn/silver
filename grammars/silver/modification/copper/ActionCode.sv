@@ -11,7 +11,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   production namedSig :: NamedSignature = ns.namedSignature;
 
   top.syntaxAst = [
-    syntaxProduction(fName, namedSig.outputElement.typerep, namedSig.inputTypes,
+    syntaxProduction(namedSig,
       foldr(consProductionMod, nilProductionMod(), 
         prodAction(acode.actionCode) :: pm.productionModifiers))];
 

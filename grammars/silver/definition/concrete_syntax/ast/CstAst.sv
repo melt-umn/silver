@@ -2,7 +2,7 @@ grammar silver:definition:concrete_syntax:ast;
 
 imports silver:definition:regex;
 imports silver:definition:type;
-imports silver:definition:env only typeName, unparse, unparseStrings, unparseNonStrings, quoteString, escapeString, unparseTyVars, unparseTypes, EnvTree, searchEnvTree, directBuildTree;
+imports silver:definition:env;
 
 imports silver:translation:java:core only makeIdName, makeClassName, makeNTClassName;
 imports silver:translation:java:type only transType;
