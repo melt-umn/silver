@@ -6,23 +6,21 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   top.pp = "concrete production " ++ id.pp ++ "\n" ++ ns.pp ++ " " ++ pm.pp ++ "\n" ++ body.pp; 
   top.location = loc(top.file, $1.line, $1.column);
 
-  production attribute fName :: String;
-  fName = top.grammarName ++ ":" ++ id.name;
-
-  production attribute namedSig :: NamedSignature;
-  namedSig = namedSignature(fName, ns.inputElements, ns.outputElement);
+  production fName :: String = top.grammarName ++ ":" ++ id.name;
+  production namedSig :: NamedSignature = ns.namedSignature;
   
+  ns.signatureName = fName;
   ns.env = newScopeEnv(ns.defs, top.env);
 
   top.errors <- pm.errors;
   top.errors <- ns.concreteSyntaxTypeErrors;
 
-  -- TODO: we should get the ruleSpec off ns as an attribute, rather than computing it with getTypeNames etc
+  -- TODO: we should CHANGE syntaxProduction so it just plain takes a NamedSignature!
   top.syntaxAst = [
     syntaxProduction(fName, namedSig.outputElement.typerep, namedSig.inputTypes,
       foldr(consProductionMod, nilProductionMod(), pm.productionModifiers))];
   
-  forwards to productionDcl(terminal(Abstract_kwd, "abstract", $1.line, $1.column), $2, id, ns, body);
+  forwards to productionDcl(terminal(Abstract_kwd, "abstract", $1), $2, id, ns, body);
 }
 
 nonterminal ProductionModifiers with config, location, file, pp, productionModifiers, errors, env; -- 0 or some

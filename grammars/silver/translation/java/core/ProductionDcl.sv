@@ -22,7 +22,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   localVar = "count_local__ON__" ++ makeIdName(fName);
 
   local attribute fnnt :: String;
-  fnnt = makeNTClassName(ns.outputElement.typerep.typeName);
+  fnnt = makeNTClassName(namedSig.outputElement.typerep.typeName);
 
   top.genFiles := [pair(className ++ ".java",
 		
@@ -32,7 +32,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 "public final class " ++ className ++ " extends " ++ fnnt ++ " {\n\n" ++
 
 makeIndexDcls(0, sigNames) ++ "\n" ++
-"\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(ns.inputElements) ++ "};\n\n" ++
+"\tpublic static final Class<?> childTypes[] = {" ++ makeChildTypesList(namedSig.inputElements) ++ "};\n\n" ++
 
 "\tpublic static final int num_local_attrs = Init." ++ localVar ++ ";\n" ++
 "\tpublic static final String[] occurs_local = new String[num_local_attrs];\n\n" ++
@@ -46,7 +46,7 @@ makeIndexDcls(0, sigNames) ++ "\n" ++
 "\tpublic static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];\n\n" ++
 
 "\tstatic{\n" ++
-makeStaticDcls(className, ns.inputElements) ++
+makeStaticDcls(className, namedSig.inputElements) ++
 "\t}\n\n" ++ 
 
 "\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ ") {\n" ++

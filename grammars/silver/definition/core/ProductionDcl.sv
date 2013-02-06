@@ -1,6 +1,6 @@
 grammar silver:definition:core;
 
-nonterminal ProductionSignature with config, grammarName, file, env, location, pp, errors, defs, inputElements, outputElement;
+nonterminal ProductionSignature with config, grammarName, file, env, location, pp, errors, defs, namedSignature, signatureName;
 nonterminal ProductionLHS with config, grammarName, file, env, location, pp, errors, defs, outputElement;
 nonterminal ProductionRHS with config, grammarName, file, env, location, pp, errors, defs, inputElements;
 nonterminal ProductionRHSElem with config, grammarName, file, env, location, pp, errors, defs, inputElements, deterministicCount;
@@ -10,17 +10,19 @@ nonterminal ProductionRHSElem with config, grammarName, file, env, location, pp,
  -}
 inherited attribute deterministicCount :: Integer;
 
+{--
+ - Given to signature syntax, so as to construct a named signature representation.
+ -}
+inherited attribute signatureName :: String;
+
 concrete production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
   top.pp = "abstract production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp; 
   top.location = loc(top.file, $1.line, $1.column);
 
-  production attribute fName :: String;
-  fName = top.grammarName ++ ":" ++ id.name;
-
-  production attribute namedSig :: NamedSignature;
-  namedSig = namedSignature(fName, ns.inputElements, ns.outputElement);
+  production fName :: String = top.grammarName ++ ":" ++ id.name;
+  production namedSig :: NamedSignature = ns.namedSignature;
 
   top.defs = prodDef(top.grammarName, id.location, namedSig) ::
     if null(body.productionAttributes) then []
@@ -47,6 +49,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
 
+  ns.signatureName = fName;
   ns.env = newScopeEnv(sigDefs, top.env);
 
   local attribute prodAtts :: [Def];
@@ -66,8 +69,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
 
-  top.inputElements = rhs.inputElements;
-  top.outputElement = lhs.outputElement;
+  top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement);
 }
 
 concrete production productionLHS
@@ -76,17 +78,13 @@ top::ProductionLHS ::= id::Name '::' t::Type
   top.pp = id.pp ++ "::" ++ t.pp;
   top.location = loc(top.file, $2.line, $2.column);
 
-  production attribute fName :: String;
-  fName = id.name;
-
   top.outputElement = namedSignatureElement(id.name, t.typerep);
 
-  -- TODO: think about this. lhs doesn't really have an fName.
-  top.defs = [lhsDef(top.grammarName, t.location, fName, t.typerep)];
+  top.defs = [lhsDef(top.grammarName, t.location, id.name, t.typerep)];
 
   top.errors <-
-       if length(getValueDclInScope(fName, top.env)) > 1 -- Hackathon Modified
-       then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
+       if length(getValueDclInScope(id.name, top.env)) > 1 -- Hackathon Modified
+       then [err(top.location, "Value '" ++ id.name ++ "' is already bound.")]
        else [];	
 
   top.errors := t.errors;
@@ -123,17 +121,13 @@ top::ProductionRHSElem ::= id::Name '::' t::Type
   top.pp = id.pp ++ "::" ++ t.pp;
   top.location = loc(top.file, $2.line, $2.column);
 
-  production attribute fName :: String;
-  fName = id.name;
-
   top.inputElements = [namedSignatureElement(id.name, t.typerep)];
 
-  -- TODO: think about this. child doesn't really have an fName.
-  top.defs = [childDef(top.grammarName, t.location, fName, t.typerep)];
+  top.defs = [childDef(top.grammarName, t.location, id.name, t.typerep)];
 
   top.errors <-
-       if length(getValueDclInScope(fName, top.env)) > 1 
-       then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
+       if length(getValueDclInScope(id.name, top.env)) > 1 
+       then [err(top.location, "Value '" ++ id.name ++ "' is already bound.")]
        else [];	
 
   top.errors := t.errors;
@@ -145,5 +139,5 @@ top::ProductionRHSElem ::= t::Type
   top.pp = t.pp;
   top.location = t.location;
 
-  forwards to productionRHSElem(nameIdLower(terminal(IdLower_t, "_G_" ++ toString(top.deterministicCount))), terminal(ColonColon_t, "::="), t);
+  forwards to productionRHSElem(nameIdLower(terminal(IdLower_t, "_G_" ++ toString(top.deterministicCount))), terminal(ColonColon_t, "::"), t);
 }

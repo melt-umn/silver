@@ -11,11 +11,10 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   top.pp = "function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp ++ " foreign {\n" ++ ffidefs.pp ++ "}"; 
   top.location = loc(top.file, $1.line, $1.column);
 
-  production attribute fName :: String;
-  fName = top.grammarName ++ ":" ++ id.name;
+  production fName :: String = top.grammarName ++ ":" ++ id.name;
+  production namedSig :: NamedSignature = ns.namedSignature;
 
-  production attribute namedSig :: NamedSignature;
-  namedSig = namedSignature(fName, ns.inputElements, ns.outputElement);
+  ns.signatureName = fName;
 
   top.errors <- ffidefs.errors;
 
