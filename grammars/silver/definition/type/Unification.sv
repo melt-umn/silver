@@ -125,7 +125,7 @@ aspect production functionTypeExp
 top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
 {
   top.unify = case top.unifyWith of
-               functionTypeExp(oo, op, onp) -> unifyAll(out :: params ++ map((.argType), namedParams), oo :: op ++ map((.argType), onp))
+               functionTypeExp(oo, op, onp) -> unifyFunctions(out :: params, oo :: op, namedParams, onp)
              | _ -> errorSubst("Tried to unify function type with " ++ prettyType(top.unifyWith))
               end;
 }
@@ -166,8 +166,7 @@ Substitution ::= fromte::TypeExp tote::TypeExp
 function unifyAll
 Substitution ::= te1::[TypeExp] te2::[TypeExp]
 {
-  local attribute first :: Substitution;
-  first = unify(head(te1), head(te2));
+  local first :: Substitution = unify(head(te1), head(te2));
   
   return if null(te1) && null(te2)
          then emptySubst()
@@ -180,8 +179,7 @@ Substitution ::= te1::[TypeExp] te2::[TypeExp]
 function unifyAllShortCircuit
 Substitution ::= te1::[TypeExp] te2::[TypeExp]
 {
-  local attribute first :: Substitution;
-  first = unify(head(te1), head(te2));
+  local first :: Substitution = unify(head(te1), head(te2));
   
   return if null(te1) && null(te2)
          then emptySubst()
@@ -191,5 +189,29 @@ Substitution ::= te1::[TypeExp] te2::[TypeExp]
          then first -- terminate recursion!
          else composeSubst(first, unifyAllShortCircuit( mapSubst(tail(te1), first),
                                                         mapSubst(tail(te2), first) ));
+}
+
+function unifyAllNamed
+Substitution ::= te1::[NamedArgType]  te2::[NamedArgType]
+{
+  local first :: Substitution = unify(head(te1).argType, head(te2).argType);
+  
+  return if null(te1) && null(te2)
+         then emptySubst()
+         else if null(te1) || null(te2)
+         then errorSubst("Internal error: unifying mismatching numbers")
+         else if head(te1).argName != head(te2).argName -- additionally check names
+         then errorSubst("Mismatching named parameters")
+         else composeSubst(first, unifyAllNamed( mapNamedSubst(tail(te1), first),
+                                                 mapNamedSubst(tail(te2), first) ));  
+}
+
+function unifyFunctions
+Substitution ::= te1::[TypeExp]  te2::[TypeExp]  n1::[NamedArgType]  n2::[NamedArgType]
+{
+  local first :: Substitution = unifyAll(te1, te2);
+  local second :: Substitution = unifyAllNamed(mapNamedSubst(n1, first), mapNamedSubst(n2, first));
+  
+  return composeSubst(first, second);
 }
 
