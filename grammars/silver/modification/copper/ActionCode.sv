@@ -5,26 +5,22 @@ terminal Action_kwd 'action' lexer classes {KEYWORD};
 concrete production concreteProductionDclAction
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody 'action' acode::ActionCode_c
 {
-  production attribute fName :: String;
-  fName = top.grammarName ++ ":" ++ id.name;
+  top.pp = forward.pp ++ "action " ++ acode.pp;
+
+  production fName :: String = top.grammarName ++ ":" ++ id.name;
+  production namedSig :: NamedSignature = ns.namedSignature;
 
   top.syntaxAst = [
     syntaxProduction(fName, namedSig.outputElement.typerep, namedSig.inputTypes,
       foldr(consProductionMod, nilProductionMod(), 
         prodAction(acode.actionCode) :: pm.productionModifiers))];
 
-  top.pp = forward.pp ++ "action " ++ acode.pp;
-
+  ns.signatureName = fName;
   acode.blockContext = actionContext();
-
+  acode.signature = namedSig;
   acode.env = newScopeEnv(
                 addTerminalAttrDefs(
                  acode.defs ++ ns.actionDefs), top.env);
-
-  production attribute namedSig :: NamedSignature;
-  namedSig = namedSignature(fName, ns.inputElements, ns.outputElement);
-
-  acode.signature = namedSig;
 
   top.errors <- acode.errors;
 
@@ -105,6 +101,6 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::Type
 {
-  top.actionDefs = [actionChildDef(top.grammarName, t.location, fName, t.typerep)];
+  top.actionDefs = [actionChildDef(top.grammarName, t.location, id.name, t.typerep)];
 }
 

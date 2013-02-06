@@ -1,9 +1,9 @@
 grammar silver:definition:core;
 
-nonterminal AspectProductionSignature with config, grammarName, file, env, location, pp, errors, defs, inputElements, outputElement, realSignature;
+nonterminal AspectProductionSignature with config, grammarName, file, env, location, pp, errors, defs, realSignature, namedSignature, signatureName;
 nonterminal AspectProductionLHS with config, grammarName, file, env, location, pp, errors, defs, outputElement, realSignature;
 
-nonterminal AspectFunctionSignature with config, grammarName, file, env, location, pp, errors, defs, inputElements, outputElement, realSignature;
+nonterminal AspectFunctionSignature with config, grammarName, file, env, location, pp, errors, defs, realSignature, namedSignature, signatureName;
 nonterminal AspectFunctionLHS with config, grammarName, file, env, location, pp, errors, defs, realSignature, outputElement;
 
 nonterminal AspectRHS with config, grammarName, file, env, location, pp, errors, defs, inputElements, realSignature;
@@ -26,8 +26,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
                      namedSig.outputElement.typerep, namedSig.inputTypes,
                      body.productionAttributes)];
 
-  production attribute namedSig :: NamedSignature;
-  namedSig = namedSignature(id.lookupValue.fullName, ns.inputElements, ns.outputElement);
+  production namedSig :: NamedSignature = ns.namedSignature;
 
   production attribute realSig :: NamedSignature;
   realSig = if null(id.lookupValue.errors)
@@ -41,6 +40,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
 
+  ns.signatureName = id.lookupValue.fullName;
   ns.env = newScopeEnv(sigDefs, top.env);  
   ns.realSignature = if null(id.lookupValue.dcls) then [] else [realSig.outputElement] ++ realSig.inputElements;
 
@@ -65,8 +65,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
                      namedSig.outputElement.typerep, namedSig.inputTypes,
                      body.productionAttributes)];
 
-  production attribute namedSig :: NamedSignature;
-  namedSig = namedSignature(id.lookupValue.fullName, ns.inputElements, ns.outputElement);
+  production namedSig :: NamedSignature = ns.namedSignature;
 
   production attribute realSig :: NamedSignature;
   realSig = if null(id.lookupValue.errors)
@@ -80,6 +79,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
 
+  ns.signatureName = id.lookupValue.fullName;
   ns.env = newScopeEnv(sigDefs, top.env);
   ns.realSignature = if null(id.lookupValue.dcls) then [] else [realSig.outputElement] ++ realSig.inputElements;
 
@@ -102,8 +102,7 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
 
-  top.inputElements = rhs.inputElements;
-  top.outputElement = lhs.outputElement;
+  top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement);
 
   lhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
   rhs.realSignature = if null(top.realSignature) then [] else tail(top.realSignature);
@@ -248,8 +247,7 @@ top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
 
-  top.inputElements = rhs.inputElements;
-  top.outputElement = lhs.outputElement;
+  top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement);
 
   lhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
   rhs.realSignature = if null(top.realSignature) then [] else tail(top.realSignature);
@@ -273,3 +271,4 @@ top::AspectFunctionLHS ::= t::Type
 
   top.errors := [];
 }
+

@@ -1,6 +1,6 @@
 grammar silver:definition:core;
 
-nonterminal FunctionSignature with config, grammarName, file, env, location, pp, errors, defs, inputElements, outputElement;
+nonterminal FunctionSignature with config, grammarName, file, env, location, pp, errors, defs, namedSignature, signatureName;
 nonterminal FunctionLHS with config, grammarName, file, env, location, pp, errors, defs, outputElement;
 
 concrete production functionDcl
@@ -9,11 +9,8 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.pp = "function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp; 
   top.location = loc(top.file, $1.line, $1.column);
 
-  production attribute fName :: String;
-  fName = top.grammarName ++ ":" ++ id.name;
-
-  production attribute namedSig :: NamedSignature;
-  namedSig = namedSignature(fName, ns.inputElements, ns.outputElement);
+  production fName :: String = top.grammarName ++ ":" ++ id.name;
+  production namedSig :: NamedSignature = ns.namedSignature;
 
   top.defs = funDef(top.grammarName, id.location, namedSig) ::
     if null(body.productionAttributes) then []
@@ -38,6 +35,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
 
+  ns.signatureName = fName;
   ns.env = newScopeEnv(sigDefs, top.env);
 
   local attribute prodAtts :: [Def];
@@ -57,8 +55,7 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
 
-  top.inputElements = rhs.inputElements;
-  top.outputElement = lhs.outputElement;
+  top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement);
 }
 
 concrete production functionLHS
@@ -77,3 +74,4 @@ top::FunctionLHS ::= t::Type
 
   top.errors := t.errors;
 }
+
