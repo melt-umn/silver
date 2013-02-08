@@ -67,8 +67,8 @@ makeIndexDcls(0, sigNames) ++ "\n" ++
 makeStaticDcls(className, whatSig.inputElements) ++
 "\t}\n\n" ++ 
 	
-"\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ ") {\n" ++
-"\t\tthis(new Object[]{" ++ makeChildArray(sigNames) ++ "});\n" ++
+"\tpublic " ++ className ++ "(" ++ implode(", ", map(makeConstructorDcl, sigNames)) ++ ") {\n" ++
+"\t\tthis(new Object[]{" ++ implode(", ", map(makeConstructorAccess, sigNames)) ++ "});\n" ++
 "\t}\n\n" ++
 
 "\tpublic " ++ className ++ "(final Object[] args) {\n" ++
@@ -105,7 +105,7 @@ makeStaticDcls(className, whatSig.inputElements) ++
 "\t\treturn \"" ++ whatSig.fullName ++ "\";\n" ++
 "\t}\n\n" ++
 
-"\tpublic static " ++ whatSig.outputElement.typerep.transType ++ " invoke(final Object[] args) {\n" ++
+"\tpublic static " ++ whatSig.outputElement.typerep.transType ++ " invoke(final Object[] args, final Object[] namedNotApplicable) {\n" ++
 "\t\ttry {\n" ++
 "\t\t" ++ whatResult ++
 "\t\t} catch(Throwable t) { throw new common.exceptions.TraceException(\"Error while evaluating function " ++ whatSig.fullName ++ "\", t); }\n" ++
@@ -116,8 +116,8 @@ makeStaticDcls(className, whatSig.inputElements) ++
 "\tpublic static final class Factory extends common.NodeFactory<" ++ whatSig.outputElement.typerep.transType ++ "> {\n\n" ++
 
 "\t\t@Override\n" ++
-"\t\tpublic " ++ whatSig.outputElement.typerep.transType ++ " invoke(final Object[] args) {\n" ++
-"\t\t\treturn " ++ className ++ ".invoke(args);\n" ++
+"\t\tpublic " ++ whatSig.outputElement.typerep.transType ++ " invoke(final Object[] args, final Object[] namedNotApplicable) {\n" ++
+"\t\t\treturn " ++ className ++ ".invoke(args, namedNotApplicable);\n" ++
 "\t\t}\n\n" ++
 "\t};\n" ++
 
@@ -139,7 +139,7 @@ String ::= whatGrammar::String
 "\t\t" ++ package ++ ".Init.init();\n" ++
 "\t\t" ++ package ++ ".Init.postInit();\n" ++
 "\t\ttry {\n" ++
-"\t\t\tcommon.Node rv = (common.Node) " ++ package ++ ".Pmain.invoke(new Object[]{cvargs(args), null});\n" ++
+"\t\t\tcommon.Node rv = (common.Node) " ++ package ++ ".Pmain.invoke(new Object[]{cvargs(args), null}, null);\n" ++
 "\t\t\tcommon.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);\n" ++
 "\t\t\tdrv.synthesized(core.Init.core_io__ON__core_IOVal); // demand the io token\n" ++
 "\t\t\tSystem.exit( (Integer)drv.synthesized(core.Init.core_iovalue__ON__core_IOVal) );\n" ++

@@ -28,8 +28,8 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList '
 
 "\tpublic static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];\n\n" ++
 
-"\tprotected " ++ className ++ "(Object[] children) {\n" ++
-"\t\tsuper(children);\n" ++
+"\tprotected " ++ className ++ "(final Object[] children, final Object[] annos) {\n" ++
+"\t\tsuper(children, annos);\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++

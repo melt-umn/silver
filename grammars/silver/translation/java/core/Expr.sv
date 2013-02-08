@@ -139,11 +139,11 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs
   top.translation = 
     case e of 
     | functionReference(q) -> -- static method invocation
-        "((" ++ finalType(top).transType ++ ")" ++ makeClassName(q.lookupValue.fullName) ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}))"
+        "((" ++ finalType(top).transType ++ ")" ++ makeClassName(q.lookupValue.fullName) ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}, null))"
     | productionReference(q) -> -- static constructor invocation
         "((" ++ finalType(top).transType ++ ")new " ++ makeClassName(q.lookupValue.fullName) ++ "(" ++ argsTranslation(es) ++ "))"
     | _ -> -- dynamic method invocation
-        "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}))" 
+        "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}, null))" 
     end ;
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
@@ -161,13 +161,10 @@ function int2str String ::= i::Integer { return toString(i); }
 aspect production partialApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs
 {
-  top.translation = 
-    "((" ++ finalType(top).transType ++ ")new common.PartialNodeFactory<" ++ 
-      performSubstitution(e.typerep.outputType, top.finalSubst).transType ++
-      ">(new int[]{" ++ 
-      implode(", ", map(int2str, es.appExprIndicies)) ++ "}, new Object[]{" ++ 
-      argsTranslation(es) ++ "}, " ++ 
-      e.translation ++ "))";
+  top.translation =
+    e.translation ++ ".invokePartial(new int[]{" ++ 
+    implode(", ", map(int2str, es.appExprIndicies)) ++ "}, new Object[]{" ++ 
+    argsTranslation(es) ++ "})";
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }

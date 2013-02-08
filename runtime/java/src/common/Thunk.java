@@ -3,6 +3,8 @@ package common;
 /**
  * A thunk that ensures an expression is evaluated once, and memoizes the result.
  * 
+ * <p>Thunks represent suspended computations that may be demanded later on (or never.)
+ * 
  * @author tedinski
  */
 public abstract class Thunk<T> {
