@@ -1,6 +1,6 @@
 grammar silver:definition:env;
 
-nonterminal NamedSignature with inputElements, outputElement, fullName, unparse, boundVariables, inputNames, inputTypes, typerep;
+nonterminal NamedSignature with inputElements, outputElement, fullName, unparse, boundVariables, inputNames, inputTypes, typerep, namedInputNames;
 nonterminal NamedSignatureElement with typerep, elementName, unparse, boundVariables, toNamedArgType;
 
 synthesized attribute elementName :: String;
@@ -9,6 +9,7 @@ synthesized attribute outputElement :: NamedSignatureElement;
 synthesized attribute toNamedArgType :: NamedArgType;
 
 synthesized attribute inputNames :: [String];
+synthesized attribute namedInputNames :: [String];
 -- inputTypes from the types grammar.
 
 -- TODO Make named signatures... not named.
@@ -30,6 +31,7 @@ top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatur
   top.outputElement = oe;
   top.inputNames = map((.elementName), ie);
   top.inputTypes = map((.typerep), ie);
+  top.namedInputNames = map((.elementName), np);
   top.typerep = functionTypeExp(oe.typerep, top.inputTypes, map((.toNamedArgType), np));
   
   oe.boundVariables = top.boundVariables;

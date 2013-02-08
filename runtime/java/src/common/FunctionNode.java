@@ -9,13 +9,16 @@ import common.exceptions.SilverInternalError;
  * we make function a subtype of production.  Thus, here we wall off a few production-only things
  * that don't apply to functions (and throw exceptions if they are requested.)
  * 
+ * The reason for this is simply so that DecoratedNode doesn't have to also deal with multiple
+ * types of Node.
+ * 
  * @author tedinski
  * @see Node
  */
 public abstract class FunctionNode extends Node {
 
 	protected FunctionNode(final Object[] children) {
-		super(children);
+		super(children, null);
 	}
 
 	/**

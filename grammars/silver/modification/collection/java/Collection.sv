@@ -45,7 +45,7 @@ top::Operation ::= s::String
 {
   top.frontTrans = "" ++ makeClassName(s) ++".invoke(new Object[]{";
   top.midTrans = ", ";
-  top.endTrans = "})";
+  top.endTrans = "}, null)";
 }
 aspect production productionOperation
 top::Operation ::= s::String

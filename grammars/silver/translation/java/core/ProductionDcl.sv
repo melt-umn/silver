@@ -1,6 +1,7 @@
 grammar silver:translation:java:core;
 
 import silver:util;
+import silver:modification:annotation;
 
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
@@ -49,12 +50,15 @@ makeIndexDcls(0, sigNames) ++ "\n" ++
 makeStaticDcls(className, namedSig.inputElements) ++
 "\t}\n\n" ++ 
 
-"\tpublic " ++ className ++ "(" ++ makeConstructor(sigNames) ++ ") {\n" ++
-"\t\tthis(new Object[]{" ++ makeChildArray(sigNames) ++ "});\n" ++
+"\tpublic " ++ className ++ "(" ++ implode(", ", map(makeConstructorDcl, sigNames) ++ map(makeConstructorAnnoDcl, namedSig.namedInputNames)) ++ ") {\n" ++
+"\t\tthis(new Object[]{" ++ implode(", ", map(makeConstructorAccess, sigNames)) ++ "}, " ++
+  (if null(namedSig.namedInputNames)
+  then "null);\n"
+  else "new Object[]{" ++ implode(", ", map(makeConstructorAnnoAccess, namedSig.namedInputNames)) ++ "});\n") ++
 "\t}\n\n" ++
 
-"\tpublic " ++ className ++ "(final Object[] args) {\n" ++
-"\t\tsuper(args);\n" ++
+"\tpublic " ++ className ++ "(final Object[] args, final Object[] annos) {\n" ++
+"\t\tsuper(args, annos);\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
@@ -118,8 +122,8 @@ makeStaticDcls(className, namedSig.inputElements) ++
 "\tpublic static final class Factory extends common.NodeFactory<" ++ className ++ "> {\n\n" ++
 
 "\t\t@Override\n" ++
-"\t\tpublic " ++ className ++ " invoke(final Object[] children) {\n" ++
-"\t\t\treturn new " ++ className ++ "(children);\n" ++
+"\t\tpublic " ++ className ++ " invoke(final Object[] children, final Object[] annotations) {\n" ++
+"\t\t\treturn new " ++ className ++ "(children, annotations);\n" ++
 "\t\t}\n\n" ++
 "\t};\n" ++
 
@@ -149,17 +153,22 @@ String ::= className::String s::[NamedSignatureElement]
                else "") ++ makeStaticDcls(className, tail(s));
 }
 
-function makeConstructor
-String ::= s::[String]
-{
-  return if null(s) then "" else "final Object c_" ++ head(s) ++ (if null(tail(s)) then "" else (", " ++ makeConstructor(tail(s))));
+function makeConstructorDcl
+String ::= s::String
+{ return "final Object c_" ++ s; }
+function makeConstructorAccess
+String ::= s::String
+{ return "c_" ++ s; 
+}
+function makeConstructorAnnoDcl
+String ::= s::String
+{ return "final Object a_" ++ s; }
+function makeConstructorAnnoAccess
+String ::= s::String
+{ return "a_" ++ s; 
 }
 
-function makeChildArray
-String ::= s::[String]
-{
-  return if null(s) then "" else "c_" ++ head(s) ++ (if null(tail(s)) then "" else (", " ++ makeChildArray(tail(s))));
-}
+
 
 -- meant to turn  ::= Foo String Bar
 -- into {grammar.NFoo.class, String.class, other.NBar.class}
