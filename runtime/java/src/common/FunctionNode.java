@@ -18,7 +18,7 @@ import common.exceptions.SilverInternalError;
 public abstract class FunctionNode extends Node {
 
 	protected FunctionNode(final Object[] children) {
-		super(children, null);
+		super(children);
 	}
 
 	/**

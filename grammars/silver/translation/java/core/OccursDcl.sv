@@ -16,3 +16,4 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   top.valueWeaving := "public static final int " ++ head(occursCheck).attrOccursIndexName
                       ++ " = " ++ makeName(ntgrammar) ++ ".Init.count_" ++ at.lookupAttribute.dcl.attrOccursType ++ "__ON__" ++ ntname ++ "++;\n";
 }
+

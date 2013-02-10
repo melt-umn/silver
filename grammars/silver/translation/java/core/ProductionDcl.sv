@@ -50,14 +50,14 @@ makeStaticDcls(className, namedSig.inputElements) ++
 "\t}\n\n" ++ 
 
 "\tpublic " ++ className ++ "(" ++ implode(", ", map(makeConstructorDcl, sigNames) ++ map(makeConstructorAnnoDcl, namedSig.namedInputNames)) ++ ") {\n" ++
-"\t\tthis(new Object[]{" ++ implode(", ", map(makeConstructorAccess, sigNames)) ++ "}, " ++
+"\t\tthis(new Object[]{" ++ implode(", ", map(makeConstructorAccess, sigNames)) ++ "}" ++
   (if null(namedSig.namedInputNames)
-  then "null);\n"
-  else "new Object[]{" ++ implode(", ", map(makeConstructorAnnoAccess, namedSig.namedInputNames)) ++ "});\n") ++
+  then ");\n"
+  else ", " ++ implode(", ", map(makeConstructorAnnoAccess, namedSig.namedInputNames)) ++ ");\n") ++
 "\t}\n\n" ++
 
-"\tpublic " ++ className ++ "(final Object[] args, final Object[] annos) {\n" ++
-"\t\tsuper(args, annos);\n" ++
+"\tpublic " ++ className ++ "(" ++ implode(", ", "final Object[] children" :: map(makeConstructorAnnoDcl, namedSig.namedInputNames)) ++ ") {\n" ++
+"\t\tsuper(" ++ implode(", ", "children" :: map(makeConstructorAnnoAccess, namedSig.namedInputNames)) ++ ");\n" ++
 "\t}\n\n" ++
 
 "\t@Override\n" ++
@@ -122,7 +122,7 @@ makeStaticDcls(className, namedSig.inputElements) ++
 
 "\t\t@Override\n" ++
 "\t\tpublic " ++ className ++ " invoke(final Object[] children, final Object[] annotations) {\n" ++
-"\t\t\treturn new " ++ className ++ "(children, annotations);\n" ++
+"\t\t\treturn new " ++ className ++ "(children" ++ unpackAnnotations(0, namedSig.namedInputNames) ++ ");\n" ++
 "\t\t}\n\n" ++
 "\t};\n" ++
 
@@ -166,7 +166,12 @@ function makeConstructorAnnoAccess
 String ::= s::String
 { return "a_" ++ s; 
 }
-
+function unpackAnnotations
+String ::= i::Integer  ns::[String]
+{
+  return if null(ns) then ""
+  else ", annotations[" ++ toString(i) ++ "]" ++ unpackAnnotations(i + 1, tail(ns));
+}
 
 
 -- meant to turn  ::= Foo String Bar

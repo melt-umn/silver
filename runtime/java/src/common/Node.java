@@ -13,11 +13,9 @@ package common;
 public abstract class Node {
 	
 	private final Object[] children;
-	private final Object[] annotations;
 	
-	protected Node(final Object[] children, final Object[] annos) {
+	protected Node(final Object[] children) {
 		this.children = children;
-		this.annotations = annos;
 
 		// STATS: Uncomment to enable statistics
 		//Statistics.nSpawn(this.getClass());
@@ -99,13 +97,6 @@ public abstract class Node {
 		return children.length;
 	}
 	
-	public final Object getAnnotation(final int index) {
-		Object o = annotations[index];
-		if(o instanceof Thunk) {
-			annotations[index] = o = ((Thunk)o).eval();
-		}
-		return o;
-	}
 	/**
 	 * Used to create arrays of appropriate size in DecoratedNode.
 	 * 

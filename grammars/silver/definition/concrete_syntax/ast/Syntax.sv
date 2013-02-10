@@ -182,7 +182,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     "    <Precedence>" ++ toString(modifiers.productionPrecedence.fromJust) ++ "</Precedence>\n"
     else "") ++
     "    <Code><![CDATA[\n" ++ 
-    "RESULT = new " ++ makeClassName(ns.fullName) ++ "(_children, null);\n" ++ -- TODO here we'd add location if its on the cs
+    "RESULT = new " ++ makeClassName(ns.fullName) ++ "(_children);\n" ++ -- TODO here we'd add location if its on the cs
       modifiers.acode ++
     "]]></Code>\n" ++
     "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++
