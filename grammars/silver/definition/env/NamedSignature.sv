@@ -103,3 +103,12 @@ Boolean ::= a::NamedSignatureElement  b::NamedSignatureElement
   return a.elementName <= b.elementName;
 }
 
+-- This is a big of an awful pile. Related to annotations, for now.
+function findNamedSigElem
+Integer ::= s::String l::[NamedSignatureElement] z::Integer
+{
+  return if null(l) then -1
+  else if s == head(l).elementName then z
+  else findNamedSigElem(s, tail(l), z+1);
+}
+

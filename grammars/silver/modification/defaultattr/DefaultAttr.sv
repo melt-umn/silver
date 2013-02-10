@@ -6,7 +6,6 @@ import silver:definition:type;
 import silver:definition:type:syntax;
 --import silver:analysis:typechecking:core;
 import silver:translation:java;
-import silver:modification:annotation only annotationsForNonterminal;
 
 
 terminal Default_kwd 'default' lexer classes {KEYWORD};

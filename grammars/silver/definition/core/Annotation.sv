@@ -1,6 +1,6 @@
-grammar silver:modification:annotation;
+grammar silver:definition:core;
 
-imports silver:definition:core;
+{-imports silver:definition:core;
 imports silver:definition:env;
 imports silver:definition:type:syntax;
 imports silver:definition:type;
@@ -8,6 +8,7 @@ imports silver:util;
 imports silver:translation:java:core;
 
 import silver:driver:util only computeOptionalDeps, RootSpec;
+-}
 
 terminal Annotation_kwd 'annotation' lexer classes {KEYWORD};
 terminal Annotate_kwd 'annotate' lexer classes {KEYWORD};
