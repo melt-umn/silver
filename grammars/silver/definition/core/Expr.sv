@@ -225,7 +225,7 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
   es.appExprApplied = e.pp;
   anns.appExprApplied = e.pp;
   anns.remainingFuncAnnotations = t.namedTypes;
-  anns.funcAnnotations = anns.funcAnnotations;
+  anns.funcAnnotations = anns.remainingFuncAnnotations;
   
   -- TODO: we have an ambiguity here in the longer term.
   -- How to distinguish between
