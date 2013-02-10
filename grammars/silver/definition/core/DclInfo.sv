@@ -119,6 +119,12 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler, _, _, _); -- TODO: should probably be an error handler!
   top.attrDefDispatcher = inheritedAttributeDef;
 }
+aspect production annoDcl
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
+{
+  top.decoratedAccessHandler = accessBounceUndecorate(annoAccessHandler, _, _, _);
+  top.undecoratedAccessHandler = annoAccessHandler;
+}
 
 -- -- interface Production attr (values)
 aspect production paDcl

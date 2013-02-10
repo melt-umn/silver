@@ -1,7 +1,6 @@
 grammar silver:translation:java:core;
 
 import silver:util;
-import silver:modification:annotation;
 
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody

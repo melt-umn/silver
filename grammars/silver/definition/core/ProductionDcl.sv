@@ -1,7 +1,5 @@
 grammar silver:definition:core;
 
-import silver:modification:annotation only annotationsForNonterminal;
-
 nonterminal ProductionSignature with config, grammarName, file, env, location, pp, errors, defs, namedSignature, signatureName;
 nonterminal ProductionLHS with config, grammarName, file, env, location, pp, errors, defs, outputElement;
 nonterminal ProductionRHS with config, grammarName, file, env, location, pp, errors, defs, inputElements;

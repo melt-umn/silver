@@ -1,7 +1,6 @@
 grammar silver:definition:core;
 
 --import silver:analysis:typechecking:core;
-import silver:modification:annotation;
 
 nonterminal Expr with
   config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, typerep;

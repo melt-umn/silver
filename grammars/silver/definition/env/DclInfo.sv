@@ -18,6 +18,7 @@ synthesized attribute namedSignature :: NamedSignature;
 -- occurs
 synthesized attribute attrOccurring :: String;
 inherited attribute givenNonterminalType :: TypeExp;
+synthesized attribute isAnnotation :: Boolean;
 
 -- production attribute
 inherited attribute givenSignatureForDefs :: NamedSignature;
@@ -41,7 +42,7 @@ closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- ever
                          unparse, boundVariables, -- unparsing to interface files
                          typerep, givenNonterminalType, -- types (gNT for occurs)
                          namedSignature, -- values that are fun/prod
-                         attrOccurring, -- occurs
+                         attrOccurring, isAnnotation, -- occurs
                          prodDefs, -- production attributes
                          dclBoundVars, -- Global values (where we have type schemes)
                          substitutedDclInfo, givenSubstitution -- type substitutions on dcls
@@ -77,6 +78,9 @@ top::DclInfo ::=
   
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
+
+  -- On Occurs declarations
+  top.isAnnotation = false;
 }
 
 -- ValueDclInfos that can NEVER appear in interface files:
@@ -246,6 +250,19 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
   top.typerep = ty;
   top.dclBoundVars = bound;
 }
+abstract production annoDcl
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
+{
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = fn;
+
+  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
+  top.unparse = "anno(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ")";
+  
+  top.typerep = ty;
+  top.dclBoundVars = bound;
+}
 
 -- ProductionAttrDclInfo
 abstract production paDcl
@@ -299,6 +316,40 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp
                 else performSubstitution(atty, subst);
   
   top.attrOccurring = fnat;
+}
+
+abstract production annoInstanceDcl
+top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
+{
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = fnnt;
+  
+  ntty.boundVariables = top.boundVariables ++ ntty.freeVariables;
+  atty.boundVariables = ntty.boundVariables;
+  top.unparse = "anno@(" ++ sl.unparse ++ ", '" ++ fnnt ++ "', '" ++ fnat ++ "', " ++ 
+                       unparseTyVars(ntty.freeVariables, ntty.boundVariables) ++ ", " ++
+                       ntty.unparse ++ ", " ++ 
+                       atty.unparse ++ ")";
+
+  -- There should be no type variables in atty that aren't in ntty. (Important constraint!)
+  -- that's why we only use ntty.FV above.
+  
+  -- ALSO IMPORTANT: ntty and atty should be tyvar'd up, not skolem'd up. You dig?
+  
+  -- Here we use givenNonterminalType to find the attribute type:
+  local attribute subst :: Substitution;
+  subst = unifyDirectional(ntty, top.givenNonterminalType); -- must rewrite FROM ntty TO gNT
+  
+  top.typerep = if subst.failure
+                then -- We didn't get a sensible type for givenNonterminalType. Let's do our best? (This error should already be caught!)
+                     freshenCompletely(atty)
+                else performSubstitution(atty, subst);
+  
+  top.attrOccurring = fnat;
+
+  -- UGH
+  top.isAnnotation = true;
 }
 
 -- TODO: this should probably go elsewhere?

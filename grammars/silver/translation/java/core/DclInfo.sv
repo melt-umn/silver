@@ -35,6 +35,13 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp
   top.attrOccursIndexName = makeIdName(fnat ++ "__ON__" ++ fnnt);
   top.attrOccursIndex = makeName(sg) ++ ".Init." ++ top.attrOccursIndexName;
 }
+aspect production annoInstanceDcl
+top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
+{
+  top.attrOccursIndexName = error("Not actually an attribute");
+  top.attrOccursIndex = error("Not actually an attribute");
+}
+
 
 aspect production synDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
@@ -46,6 +53,12 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.attrOccursType = "inh";
 }
+aspect production annoDcl
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
+{
+  top.attrOccursType = error("Not actually an attribute");
+}
+
 
 aspect production localDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
