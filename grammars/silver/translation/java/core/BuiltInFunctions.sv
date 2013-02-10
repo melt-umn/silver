@@ -42,7 +42,7 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
 aspect production toStringFunction
 top::Expr ::= 'toString' '(' e::Expr ')'
 {
-  top.translation = "(new common.StringCatter(String.valueOf(" ++ e.translation ++ ")))";
+  top.translation = "new common.StringCatter(String.valueOf(" ++ e.translation ++ "))";
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }
@@ -50,7 +50,7 @@ top::Expr ::= 'toString' '(' e::Expr ')'
 aspect production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {
-  top.translation = "((" ++ e.translation ++ ").undecorate())";
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".undecorate())";
   
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }
@@ -58,7 +58,7 @@ top::Expr ::= 'new' '(' e::Expr ')'
 aspect production terminalFunction
 top::Expr ::= 'terminal' '(' t::Type ',' e::Expr ')'
 {
-  top.translation = "(new common.TerminalRecord(" ++ e.translation ++ ".toString(), -1, -1))";
+  top.translation = "new common.TerminalRecord(" ++ e.translation ++ ".toString(), -1, -1)";
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }
@@ -66,7 +66,7 @@ top::Expr ::= 'terminal' '(' t::Type ',' e::Expr ')'
 aspect production terminalFunctionLineCol
 top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
 {
-  top.translation = "(new common.TerminalRecord(" ++ e1.translation ++ ".toString(), " ++ e2.translation ++ ", " ++ e3.translation ++ "))";
+  top.translation = "new common.TerminalRecord(" ++ e1.translation ++ ".toString(), " ++ e2.translation ++ ", " ++ e3.translation ++ ")";
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }
@@ -74,7 +74,7 @@ top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
 aspect production terminalFunctionInherited
 top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ')'
 {
-  top.translation = "(new common.TerminalRecord(" ++ e1.translation ++ ".toString(), " ++ e2.translation ++ "))";
+  top.translation = "new common.TerminalRecord(" ++ e1.translation ++ ".toString(), " ++ e2.translation ++ ")";
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }

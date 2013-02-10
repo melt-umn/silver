@@ -6,8 +6,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList '
   top.pp = "nonterminal " ++ id.pp ++ tl.pp ++ ";";
   top.location = id.location;
 
-  production attribute fName :: String;
-  fName = top.grammarName ++ ":" ++ id.name;
+  production fName :: String = top.grammarName ++ ":" ++ id.name;
   
   -- tl.freeVariables is our order list of the bound types for this nonterminal.
   top.defs = [cl.whichDcl(top.grammarName, id.location, fName, tl.freeVariables, nonterminalTypeExp(fName, tl.types))];

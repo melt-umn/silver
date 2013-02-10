@@ -8,6 +8,9 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList '
   local inhVar :: String = "count_inh__ON__" ++ id.name;
   local synVar :: String = "count_syn__ON__" ++ id.name;
   
+  local myAnnos :: [NamedSignatureElement] =
+    annotationsForNonterminal(nonterminalTypeExp(fName, tl.types), top.env);
+  
   top.initWeaving := "\tpublic static int " ++ inhVar ++ " = 0;\n"
                   ++ "\tpublic static int " ++ synVar ++ " = 0;\n";
   
@@ -28,9 +31,14 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList '
 
 "\tpublic static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];\n\n" ++
 
-"\tprotected " ++ className ++ "(final Object[] children, final Object[] annos) {\n" ++
-"\t\tsuper(children, annos);\n" ++
+implode("", map(makeAnnoDcl, myAnnos)) ++ "\n" ++
+
+"\tprotected " ++ className ++ "(" ++ implode(", ", "final Object[] children" :: map(makeNTConstructorAnnoDcl, myAnnos)) ++ ") {\n" ++
+"\t\tsuper(children);\n" ++
+implode("", map(makeAnnoAssign, myAnnos)) ++
 "\t}\n\n" ++
+
+implode("", map(makeAnnoAccessor, myAnnos)) ++
 
 "\t@Override\n" ++
 "\tpublic final int getNumberOfInhAttrs() {\n" ++
@@ -59,5 +67,28 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList '
 
 "}\n")];
 
+}
+
+function makeNTConstructorAnnoDcl
+String ::= s::NamedSignatureElement
+{ return "final Object a_" ++ s.elementName; }
+function makeAnnoDcl
+String ::= n::NamedSignatureElement
+{
+  -- non final... gets replaced when eval'd
+  return "\tprivate Object /*Thunk or " ++ n.typerep.transType ++ "*/ anno_" ++ n.elementName ++ ";\n";
+}
+function makeAnnoAssign
+String ::= n::NamedSignatureElement
+{
+  return "\t\tthis.anno_" ++ n.elementName ++ " = a_" ++ n.elementName ++ ";\n";
+}
+function makeAnnoAccessor
+String ::= n::NamedSignatureElement
+{
+  return
+    "\tpublic final Object /*Thunk or " ++ n.typerep.transType ++ "*/ getAnno_" ++ n.elementName ++ "() {\n" ++
+    "\t\treturn anno_" ++ n.elementName ++ " = common.Util.demand(anno_" ++ n.elementName ++ ");\n" ++
+    "\t}\n\n";
 }
 

@@ -139,7 +139,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
   top.translation = 
     case e of 
     | functionReference(q) -> -- static method invocation
-        "((" ++ finalType(top).transType ++ ")" ++ makeClassName(q.lookupValue.fullName) ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}, " ++ namedargsTranslation(annos) ++ "))"
+        "((" ++ finalType(top).transType ++ ")" ++ makeClassName(q.lookupValue.fullName) ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}))"
     | productionReference(q) -> -- static constructor invocation
         "((" ++ finalType(top).transType ++ ")new " ++ makeClassName(q.lookupValue.fullName) ++ "(" ++ implode(", ", map((.lazyTranslation), es.exprs ++ annos.exprs)) ++ "))"
     | _ -> -- dynamic method invocation
@@ -260,7 +260,8 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 aspect production annoAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".getAnnotation(" ++ toString(index) ++ "))";
+  -- Note that the transType is specific to the nonterminal we're accessing from.
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".getAnno_" ++ q.name ++ "())";
   
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }
