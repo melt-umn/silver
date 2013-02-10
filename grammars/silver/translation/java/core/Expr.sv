@@ -169,14 +169,17 @@ aspect production partialApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
 {
   local step1 :: String = e.translation;
+  -- Note: we check for nullity of the index lists instead of use
+  -- isPartial here... Because we may supply ALL values (thus, NOT isPartial!)
+  -- of one of the param lists, but that means we still need to apply it!!
   local step2 :: String =
-    if !annos.isPartial then
+    if !null(es.appExprIndicies) then
       step1 ++ ".invokePartial(" ++
       "new int[]{" ++ implode(", ", map(int2str, es.appExprIndicies)) ++ "}, " ++
       "new Object[]{" ++ argsTranslation(es) ++ "})"
     else step1;
   local step3 :: String =
-    if !es.isPartial then
+    if !null(annos.annoIndexConverted) || !null(annos.annoIndexSupplied) then
       step2 ++ ".invokeNamedPartial(" ++
       (if null(annos.annoIndexConverted) then "null"
        else "new int[]{" ++ implode(", ", map(int2str, annos.annoIndexConverted)) ++ "}") ++ ", " ++
