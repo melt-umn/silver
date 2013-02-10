@@ -88,7 +88,7 @@ wrongCode "Only synthesized attributes are currently supported" {
 -------------------------------
 -- Partial function application
 
-global onePartFun :: Function(Integer ::= Integer) = twoArgFunction("s",_);
+global onePartFun :: (Integer ::= Integer) = twoArgFunction("s",_);
 
 equalityTest( onePartFun(3), 3, Integer, silver_tests );
 
@@ -100,7 +100,7 @@ Integer ::= a::Integer  b::Integer
 
 equalityTest( addTwo(addTwo(1,_)(2),_)(addTwo(_,3)(4)), 10, Integer, silver_tests ) ;
 
-global invoker :: Function(Integer ::= String) = twoArgFunction(_,genInt());
+global invoker :: (Integer ::= String) = twoArgFunction(_,genInt());
 
 -- If the arg passed in invoker is getting re-evaluated, this will result in something like
 -- [0,2,3,4,5] [1,1,1,1,1]
@@ -118,8 +118,8 @@ top::FuncManipNT ::= a::Integer b::Integer
 -- There was a bug where the types for productions NodeFactories were too
 -- specific (the production node type, not nonterminal node type),
 -- not permitted because generics are invariant.
-global fmeOne :: Function(FuncManipNT ::= Integer) = fmadd(2,_);
-global fmeTwo :: Function(FuncManipNT ::= Integer) = fmadd(_,3);
+global fmeOne :: (FuncManipNT ::= Integer) = fmadd(2,_);
+global fmeTwo :: (FuncManipNT ::= Integer) = fmadd(_,3);
 
 equalityTest( fmeOne(3).fmeval, 5, Integer, silver_tests );
 equalityTest( fmeTwo(3).fmeval, 6, Integer, silver_tests );
