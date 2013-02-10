@@ -79,11 +79,13 @@ top::Exprs ::= e1::Expr c::Comma_t e2::Exprs
 abstract production listPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
+  top.errors <- e1.errors ++ e2.errors;
   forwards to mkFunctionInvocationDecorated(baseExpr(qName(e1.location, "core:append")), [e1,e2]);
 }
 abstract production listLengthBouncer
 top::Expr ::= e::Decorated Expr
 {
+  top.errors <- e.errors;
   forwards to mkFunctionInvocationDecorated(baseExpr(qName(e.location, "core:listLength")), [e]);
 }
 

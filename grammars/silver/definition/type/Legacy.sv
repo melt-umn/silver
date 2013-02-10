@@ -1,11 +1,12 @@
 grammar silver:definition:type;
 
 -- DEPRECATED STUFF
-attribute inputTypes, outputType, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on TypeExp;
+attribute inputTypes, outputType, namedTypes, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on TypeExp;
 
 -- exists because we want to access both these and pattern matching can only extract one thing at a time (so far)
 synthesized attribute inputTypes :: [TypeExp];
 synthesized attribute outputType :: TypeExp;
+synthesized attribute namedTypes :: [NamedArgType];
 
 -- Used by Expr, could possibly be replaced by pattern matching for decoratedTypeExp
 -- Also used by 'new()'
@@ -31,6 +32,7 @@ top::TypeExp ::=
 {
   top.inputTypes = [];
   top.outputType = errorType();
+  top.namedTypes = [];
   
   top.isDecorated = false;
   top.isDecorable = false;
@@ -105,5 +107,6 @@ top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
 {
   top.inputTypes = params;
   top.outputType = out;
+  top.namedTypes = namedParams;
 }
 

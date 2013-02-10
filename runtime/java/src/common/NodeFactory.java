@@ -30,8 +30,8 @@ public abstract class NodeFactory<T> {
 	/**
 	 * Partial application of "named" arguments.
 	 * 
-	 * @param iConvertedToOrdered  Unordered index list of values moved to regular args
-	 * @param iSuppliedHere  Ordered index list of values supplied here
+	 * @param iConvertedToOrdered  index list of values moved to regular args
+	 * @param iSuppliedHere  index list of values supplied here
 	 * @param args  The values supplied here
 	 * @see PartialNameNodeFactory#PartialNameNodeFactory(NodeFactory, int[], int[], Object[])
 	 */

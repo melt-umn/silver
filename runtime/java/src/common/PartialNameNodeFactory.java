@@ -53,32 +53,39 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 		// STEP 1 : cut 'args' down to the true args we'll be supplying to 'ref'
 		final int numConverted = (iConvertedToOrdered == null) ? 0 : iConvertedToOrdered.length;
 		final int newArgsLength = restargs.length - numConverted;
+		
+		// Here's what we should give ref, as the first parameter:
 		final Object[] finalArgs = 
 				(restargs.length == newArgsLength) ? restargs : Arrays.copyOf(restargs, newArgsLength);
 		
 		// STEP 2 : construct the appropriate new namedArgs parameter to pass to the underlying ref
 		final int namedArgsLen = (namedArgs == null) ? 0 : namedArgs.length;
-		final int fullNamedArgsSize = numConverted + namedArgsLen + args.length;
+		final int argsLen = (args == null) ? 0 : args.length;
+		final int fullNamedArgsSize = numConverted + namedArgsLen + argsLen;
+		
+		// We're filling this in:
 		final Object[] fullNamedArgs = new Object[fullNamedArgsSize];
 		
-		// We START by filling in the arguments that were converted to ordered
+		// Step 2.1: Get out of 'restargs' those values that were converted to ordered parameters
 		for(int i = newArgsLength; i < restargs.length; i++) {
 			fullNamedArgs[iConvertedToOrdered[i-newArgsLength]] = restargs[i];
 		}
-		// This is because these are scattered in the new array, so doing it first
-		// creates the ability to check for where they are: is this spot null still?
-		// TODO: this is a kinda maybe someday bug, since the iotoken is currently a null. That should be fixed!
+		
+		// Step 2.2: Do the same for 'args' which were supplied at this partial application site.
+		for(int i = 0; i < argsLen; i++) {
+			fullNamedArgs[iSuppliedHere[i]] = args[i];
+		}
 
-		// Then we fill in (a) what we're invoked with here and (b) what was partially applied
-		int argsIndex = 0;
-		int namedArgsIndex = 0;
-		for(int i = 0; i < fullNamedArgsSize; i++) {
-			if(argsIndex < args.length && iSuppliedHere[argsIndex] == i) {
-				fullNamedArgs[i] = args[argsIndex++];
-			} else if(namedArgsIndex < namedArgsLen && fullNamedArgs[i] == null) {
+		// Step 2.3: Now, we just fill in the empty spaces with the values we're being given
+		for(int i = 0, namedArgsIndex = 0; i < fullNamedArgsSize && namedArgsIndex < namedArgsLen; i++) {
+			// TODO: this is a kinda maybe someday bug, since the iotoken is currently a null.
+			// So we could filling in a "missing spot" that's actually not missing, but the iotoken.
+			// The fix is that we should use the proper iotoken already!
+			if(fullNamedArgs[i] == null) {
 				fullNamedArgs[i] = namedArgs[namedArgsIndex++];
 			}
 		}
+		
 		return ref.invoke(finalArgs, fullNamedArgs);
 	}
 

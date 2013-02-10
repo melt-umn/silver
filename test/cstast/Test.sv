@@ -29,7 +29,7 @@ global obj::SyntaxRoot =
       syntaxTerminal("XTerm", literalRegex("x"), nilTerminalMod()),
       syntaxProduction(
         namedSignature("foo", [],
-          namedSignatureElement("asdf", nonterminalTypeExp("Foo", []))),
+          namedSignatureElement("asdf", nonterminalTypeExp("Foo", [])), []),
         nilProductionMod())
      ]));
 
@@ -37,8 +37,8 @@ equalityTest( obj.cstErrors, [], [String], csttests );
 --equalityTest( substitute("silver:definition:concrete_syntax:ast:", "", hackUnparse(obj)), "", String, csttests );
 --equalityTest( substitute("silver:definition:concrete_syntax:ast:", "", hackUnparse(obj.cstNormal)), "", String, csttests );
 -- This test is super fragile...
-equalityTest( obj.xmlCopper, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n<CopperSpec xmlns=\"http://melt.cs.umn.edu/copper/xmlns\">\n  <Parser id=\"lol\" isUnitary=\"true\">\n    <PP>lol</PP>\n    <Grammars><GrammarRef id=\"host\"/></Grammars>\n    <StartSymbol><NonterminalRef id=\"Foo\" grammar=\"host\" /></StartSymbol>\n    <StartLayout></StartLayout>\n  </Parser>\n\n  <Grammar id=\"host\">\n\n    <PP>host</PP>\n\n    <Layout></Layout>\n\n    <Declarations>\n      <ParserAttribute id=\"context\">\n        <Type><![CDATA[common.DecoratedNode]]></Type>\n        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>\n      </ParserAttribute>\n  <Terminal id=\"XTerm\">\n    <PP>XTerm</PP>\n    <Regex><CharacterSet><SingleCharacter char=\"x\"/></CharacterSet></Regex>\n    <Type>common.TerminalRecord</Type>\n    <Code><![CDATA[\nRESULT = new common.TerminalRecord(lexeme,virtualLocation,Integer.valueOf((int)getStartRealLocation().getPos()),Integer.valueOf((int)getEndRealLocation().getPos()));\n]]></Code>\n    <InClasses></InClasses>\n    <Submits></Submits>\n    <Dominates></Dominates>\n  </Terminal>\n\n  <Nonterminal id=\"Foo\">\n    <PP>Foo</PP>\n    <Type><![CDATA[Foo]]></Type>\n  </Nonterminal>\n  <Production id=\"foo\">\n    <Code><![CDATA[\nRESULT = new foo(_children);\n]]></Code>\n    <LHS><NonterminalRef id=\"Foo\" grammar=\"host\" /></LHS>\n    <RHS></RHS>\n  </Production>\n    </Declarations>\n  </Grammar>\n</CopperSpec>\n", String, csttests );
-equalityTest( obj.unparse, "nt([], nt('Foo', [])),\n term('XTerm', /x/, []),\n prod([], signature('foo', [], element('asdf', nt('Foo', []))), [])", String, csttests );
+equalityTest( obj.xmlCopper, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n<CopperSpec xmlns=\"http://melt.cs.umn.edu/copper/xmlns\">\n  <Parser id=\"lol\" isUnitary=\"true\">\n    <PP>lol</PP>\n    <Grammars><GrammarRef id=\"host\"/></Grammars>\n    <StartSymbol><NonterminalRef id=\"Foo\" grammar=\"host\" /></StartSymbol>\n    <StartLayout></StartLayout>\n  </Parser>\n\n  <Grammar id=\"host\">\n\n    <PP>host</PP>\n\n    <Layout></Layout>\n\n    <Declarations>\n      <ParserAttribute id=\"context\">\n        <Type><![CDATA[common.DecoratedNode]]></Type>\n        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>\n      </ParserAttribute>\n  <Terminal id=\"XTerm\">\n    <PP>XTerm</PP>\n    <Regex><CharacterSet><SingleCharacter char=\"x\"/></CharacterSet></Regex>\n    <Type>common.TerminalRecord</Type>\n    <Code><![CDATA[\nRESULT = new common.TerminalRecord(lexeme,virtualLocation,Integer.valueOf((int)getStartRealLocation().getPos()),Integer.valueOf((int)getEndRealLocation().getPos()));\n]]></Code>\n    <InClasses></InClasses>\n    <Submits></Submits>\n    <Dominates></Dominates>\n  </Terminal>\n\n  <Nonterminal id=\"Foo\">\n    <PP>Foo</PP>\n    <Type><![CDATA[Foo]]></Type>\n  </Nonterminal>\n  <Production id=\"foo\">\n    <Code><![CDATA[\nRESULT = new foo(_children, null);\n]]></Code>\n    <LHS><NonterminalRef id=\"Foo\" grammar=\"host\" /></LHS>\n    <RHS></RHS>\n  </Production>\n    </Declarations>\n  </Grammar>\n</CopperSpec>\n", String, csttests );
+equalityTest( obj.unparse, "nt([], nt('Foo', [])),\n term('XTerm', /x/, []),\n prod([], signature('foo', [], element('asdf', nt('Foo', [])), []), [])", String, csttests );
 
 global obj_again :: SyntaxRoot =
   cstRoot("lol", "Foo",
@@ -56,7 +56,7 @@ global obj2::SyntaxRoot =
       syntaxTerminal("XTerm", literalRegex("x"), nilTerminalMod()),
       syntaxProduction(
         namedSignature("foo", [],
-          namedSignatureElement("asdf", nonterminalTypeExp("Oops", []))),
+          namedSignatureElement("asdf", nonterminalTypeExp("Oops", [])), []),
         nilProductionMod())
      ]));
 
@@ -80,7 +80,7 @@ global obj3::SyntaxRoot =
         ])),
       syntaxProduction(
         namedSignature("foo", [],
-          namedSignatureElement("asdf", nonterminalTypeExp("Foo", []))),
+          namedSignatureElement("asdf", nonterminalTypeExp("Foo", [])), []),
         foldr(consProductionMod, nilProductionMod(), [
           prodPrecedence(2),
           prodOperator("XTerm"),
