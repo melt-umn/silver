@@ -19,7 +19,7 @@ wrongCode "has initialization expression with type" {
   global aasdf :: (AnnoNT::=) = anAnnoNT;
 }
 
-wrongCode "already occurs onasfasgsg" {
+wrongCode "Missing named parameters" {
   global aasdf :: AnnoNT = anAnnoNT();
 }
 

@@ -6,8 +6,8 @@ import silver:modification:copper;
 import silver:modification:patternmatching;
 import silver:modification:let_fix;
 
-synthesized attribute flowDeps :: [FlowVertex] occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
-attribute flowEnv occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
+synthesized attribute flowDeps :: [FlowVertex] occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
+attribute flowEnv occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
 function inhsForTakingRef
 [String] ::= nt::String  flowEnv::Decorated FlowEnv
@@ -33,6 +33,11 @@ top::Expr ::= q::Decorated QName
 aspect production childReference
 top::Expr ::= q::Decorated QName
 {
+  -- TODO: there might be a problem! with this not detecting some decorations.
+  
+  -- Notes: q should find the actual type listed in the signature. Note that's different
+  -- than childReference's reported typerep (which is that either/or type). So that's okay.
+
   top.flowDeps =
     if q.lookupValue.typerep.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
     then depsForTakingRef(rhsVertex(q.lookupValue.fullName, _), q.lookupValue.typerep.typeName, top.flowEnv)
@@ -80,17 +85,17 @@ top::Expr ::= q::Decorated QName
 
 
 aspect production functionInvocation
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
 {
-  top.flowDeps = e.flowDeps ++ es.flowDeps;
+  top.flowDeps = e.flowDeps ++ es.flowDeps ++ annos.flowDeps;
 }
 aspect production partialApplication
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
 {
-  top.flowDeps = e.flowDeps ++ es.flowDeps;
+  top.flowDeps = e.flowDeps ++ es.flowDeps ++ annos.flowDeps;
 }
 aspect production errorApplication
-top::Expr ::= e::Decorated Expr es::AppExprs
+top::Expr ::= e::Decorated Expr es::AppExprs annos::AnnoAppExprs
 {
   top.flowDeps = [];
 }
@@ -338,6 +343,27 @@ top::AppExprs ::= l::Location
 {
   top.flowDeps = [];
 }
+aspect production annoExpr
+top::AnnoExpr ::= qn::QName '=' e::AppExpr
+{
+  top.flowDeps = e.flowDeps;
+}
+aspect production snocAnnoAppExprs
+top::AnnoAppExprs ::= es::AnnoAppExprs ',' e::AnnoExpr
+{
+  top.flowDeps = es.flowDeps ++ e.flowDeps;
+}
+aspect production oneAnnoAppExprs
+top::AnnoAppExprs ::= e::AnnoExpr
+{
+  top.flowDeps = e.flowDeps;
+}
+aspect production emptyAnnoAppExprs
+top::AnnoAppExprs ::= l::Location
+{
+  top.flowDeps = [];
+}
+
 
 aspect production exprRef
 top::Expr ::= e::Decorated Expr

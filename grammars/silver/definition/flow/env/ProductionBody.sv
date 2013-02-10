@@ -135,8 +135,12 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
 
+  local srcGrams :: [String] =
+    if null(occursCheck.errors) then [ntDefGram, occursCheck.dcl.sourceGrammar]
+    else [ntDefGram];
+
   local mayAffectFlowType :: Boolean =
-    contains(top.grammarName, computeOptionalDeps([ntDefGram, occursCheck.dcl.sourceGrammar], top.compiledGrammars));
+    contains(top.grammarName, computeOptionalDeps(srcGrams, top.compiledGrammars));
   
   top.flowDefs = 
     case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....

@@ -15,28 +15,6 @@ nonterminal ExprLHSExpr with
   config, grammarName, file, env, location, pp, errors, typerep, decoratingnt, suppliedInhs;
 
 {--
- - Exprs with optional underscores omitting parameters. Used exclusively for
- - (partial) function application.
- -}
-nonterminal AppExprs with 
-  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied;
-
-nonterminal AppExpr with
-  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied;
-
-synthesized attribute isPartial :: Boolean;
-synthesized attribute missingTypereps :: [TypeExp];
-synthesized attribute appExprIndicies :: [Integer];
-synthesized attribute appExprSize :: Integer;
-inherited attribute appExprIndex :: Integer;
-inherited attribute appExprTypereps :: [TypeExp];
-inherited attribute appExprTyperep :: TypeExp;
-autocopy attribute appExprApplied :: String;
-
-
-{--
  - The nonterminal being decorated. (Used for 'decorate with {}')
  -}
 autocopy attribute decoratingnt :: TypeExp;
@@ -184,81 +162,101 @@ top::Expr ::= q::'forward'
 }
 
 concrete production application
-top::Expr ::= e::Expr '(' es::AppExprs ')'
+top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  top.pp = e.pp ++ "(" ++ es.pp ++ ")";
+  -- TODO: fix comma when one or the other is empty
+  top.pp = e.pp ++ "(" ++ es.pp ++ "," ++ anns.pp ++ ")";
   top.location = e.location;
   
   -- TODO: You know, since the rule is we can't access .typerep without "first" supplying
   -- .downSubst, perhaps we should just... report .typerep after substitution in the first place!
-  forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es);
+  forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es, anns);
 }
 
-concrete production emptyApplication
+concrete production applicationAnno
+top::Expr ::= e::Expr '(' anns::AnnoAppExprs ')'
+{
+  forwards to application(e, $2, emptyAppExprs(forward.location), ',', anns, $4);
+}
+concrete production applicationExpr
+top::Expr ::= e::Expr '(' es::AppExprs ')'
+{
+  forwards to application(e, $2, es, ',', emptyAnnoAppExprs(forward.location), $4);
+}
+concrete production applicationEmpty
 top::Expr ::= e::Expr '(' ')'
 {
-  top.pp = e.pp ++ "()";
-  top.location = e.location;
-  
-  forwards to application(e, $2, emptyAppExprs(forward.location), $3);
+  forwards to application(e, $2, emptyAppExprs(forward.location), ',', emptyAnnoAppExprs(forward.location), $3);
 }
 
 abstract production errorApplication
-top::Expr ::= e::Decorated Expr es::AppExprs
+top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
-  top.pp = e.pp ++ "(" ++ es.pp ++ ")";
+  top.pp = e.pp ++ "(" ++ es.pp ++ "," ++ anns.pp ++ ")";
   top.location = e.location;
   
   top.errors := e.errors ++ 
     [err(top.location, e.pp ++ " has type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++
-      " and cannot be invoked as a function.")] ++ es.errors;
+      " and cannot be invoked as a function.")] ++ es.errors ++ anns.errors;
         -- TODO This error message is cumbersomely generated...
 
   top.typerep = errorType();
   
   es.appExprTypereps = [];
   es.appExprApplied = e.pp;
+  anns.appExprApplied = e.pp;
+  anns.remainingFuncAnnotations = [];
+  anns.funcAnnotations = [];
 }
 
 -- Note that this applies to both function and productions.
 -- We don't distinguish anymore at this point. A production reference
 -- becomes a function, effectively.
 abstract production functionApplication
-top::Expr ::= e::Decorated Expr es::AppExprs
+top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
-  top.pp = e.pp ++ "(" ++ es.pp ++ ")";
+  top.pp = e.pp ++ "(" ++ es.pp ++ "," ++ anns.pp ++ ")";
   top.location = e.location;
   
   -- NOTE: REVERSED ORDER
   -- We may need to resolve e's type to get at the actual 'function type'
-  es.appExprTypereps = reverse(performSubstitution(e.typerep, e.upSubst).inputTypes);
+  local t :: TypeExp = performSubstitution(e.typerep, e.upSubst);
+  es.appExprTypereps = reverse(t.inputTypes);
   es.appExprApplied = e.pp;
+  anns.appExprApplied = e.pp;
+  anns.remainingFuncAnnotations = t.namedTypes;
+  anns.funcAnnotations = anns.funcAnnotations;
   
-  forwards to if es.isPartial
-              then partialApplication(e, es)
-              else functionInvocation(e, es);
+  -- TODO: we have an ambiguity here in the longer term.
+  -- How to distinguish between
+  -- foo(x) where there is an annotation 'a'?
+  -- Is this partial application, give (Foo ::= ;a::Something) or (Foo) + error.
+  -- Possibly this can be solved by having somehting like "foo(x,a=?)"
+  forwards to if es.isPartial || anns.isPartial
+              then partialApplication(e, es, anns)
+              else functionInvocation(e, es, anns);
 }
 
 abstract production functionInvocation
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
-  top.pp = e.pp ++ "(" ++ es.pp ++ ")";
+  top.pp = e.pp ++ "(" ++ es.pp ++ "," ++ anns.pp ++ ")";
   top.location = e.location;
   
-  top.errors := e.errors ++ es.errors; 
+  top.errors := e.errors ++ es.errors ++ anns.errors;
 
   top.typerep = e.typerep.outputType;
 }
 
 abstract production partialApplication
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
-  top.pp = e.pp ++ "(" ++ es.pp ++ ")";
+  top.pp = e.pp ++ "(" ++ es.pp ++ "," ++ anns.pp ++ ")";
   top.location = e.location;
   
-  top.errors := e.errors ++ es.errors; 
+  top.errors := e.errors ++ es.errors ++ anns.errors;
 
-  top.typerep = functionTypeExp(e.typerep.outputType, es.missingTypereps, []);
+  top.typerep = functionTypeExp(e.typerep.outputType, es.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
 }
 
 concrete production attributeSection
@@ -817,6 +815,27 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 }
 
 
+{--
+ - Exprs with optional underscores omitting parameters. Used exclusively for
+ - (partial) function application.
+ -}
+nonterminal AppExprs with 
+  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, exprs, rawExprs,
+  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied;
+
+nonterminal AppExpr with
+  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, exprs, rawExprs,
+  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied;
+
+synthesized attribute isPartial :: Boolean;
+synthesized attribute missingTypereps :: [TypeExp];
+synthesized attribute appExprIndicies :: [Integer];
+synthesized attribute appExprSize :: Integer;
+inherited attribute appExprIndex :: Integer;
+inherited attribute appExprTypereps :: [TypeExp];
+inherited attribute appExprTyperep :: TypeExp;
+autocopy attribute appExprApplied :: String;
+
 -- These are the "new" Exprs syntax. This allows missing (_) arguments, to indicate partial application.
 concrete production missingAppExpr
 top::AppExpr ::= '_'
@@ -918,6 +937,136 @@ top::AppExprs ::= l::Location
                 else [err(top.location, "Too few arguments provided to function '" ++ top.appExprApplied ++ "'")];
 }
 
+
+nonterminal AnnoAppExprs with
+  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature,
+  isPartial, appExprApplied, exprs,
+  remainingFuncAnnotations, funcAnnotations,
+  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied;
+nonterminal AnnoExpr with
+  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature,
+  isPartial, appExprApplied, exprs,
+  remainingFuncAnnotations, funcAnnotations,
+  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied;
+
+{--
+ - Annotations that have not yet been supplied
+ -}
+inherited attribute remainingFuncAnnotations :: [NamedArgType];
+{--
+ - All annotations of this function
+ -}
+autocopy attribute funcAnnotations :: [NamedArgType];
+{--
+ - Annotations that have not been supplied (by subtracting from remainingFuncAnnotations)
+ -}
+synthesized attribute missingAnnotations :: [NamedArgType];
+{--
+ - Typereps of those annotations that are partial (_)
+ -}
+synthesized attribute partialAnnoTypereps :: [TypeExp];
+
+synthesized attribute annoIndexConverted :: [Integer];
+synthesized attribute annoIndexSupplied :: [Integer];
+
+concrete production annoExpr
+top::AnnoExpr ::= qn::QName '=' e::AppExpr
+{
+  top.pp = qn.pp ++ "=" ++ e.pp;
+  top.location = qn.location;
+  
+  local fq :: Pair<Maybe<NamedArgType> [NamedArgType]> =
+    extractNamedArg(qn.name, top.remainingFuncAnnotations);
+    
+  e.appExprIndex =
+    findNamedArgType(qn.name, top.funcAnnotations, 0);
+  e.appExprTyperep =
+    if fq.fst.isJust then fq.fst.fromJust.argType else errorType();
+    
+  top.missingAnnotations = fq.snd; -- minus qn, if it was there
+  top.partialAnnoTypereps = e.missingTypereps;
+  
+  top.errors :=
+    (if fq.fst.isJust then []
+     else [err(qn.location, "Named parameter '" ++ qn.name ++ "' is not appropriate for this function.")]) ++
+    e.errors;
+  top.isPartial = e.isPartial;
+  top.exprs = e.exprs;
+  top.annoIndexConverted =
+    if e.isPartial then [e.appExprIndex] else [];
+  top.annoIndexSupplied =
+    if e.isPartial then [] else [e.appExprIndex];
+}
+
+concrete production snocAnnoAppExprs
+top::AnnoAppExprs ::= es::AnnoAppExprs ',' e::AnnoExpr
+{
+  top.pp = es.pp ++ ", " ++ e.pp;
+  top.location = es.location;
+
+  top.isPartial = es.isPartial || e.isPartial;
+  top.errors := es.errors ++ e.errors;
+
+  e.remainingFuncAnnotations = top.remainingFuncAnnotations;
+  es.remainingFuncAnnotations = e.missingAnnotations;
+  top.missingAnnotations = es.missingAnnotations;
+  
+  top.partialAnnoTypereps = es.partialAnnoTypereps ++ e.partialAnnoTypereps;
+  top.annoIndexConverted = es.annoIndexConverted ++ e.annoIndexConverted;
+  top.annoIndexSupplied = es.annoIndexSupplied ++ e.annoIndexSupplied;
+  top.exprs = es.exprs ++ e.exprs;
+}
+
+concrete production oneAnnoAppExprs
+top::AnnoAppExprs ::= e::AnnoExpr
+{
+  top.pp = e.pp;
+  top.location = e.location;
+
+  top.isPartial = e.isPartial;
+  top.errors :=
+    if null(top.missingAnnotations) then []
+    else [err(top.location, "Missing named parameters for function '" ++ top.appExprApplied ++ "'")];
+    -- TODO say what's missing
+
+  top.errors <- e.errors;
+
+  e.remainingFuncAnnotations = top.remainingFuncAnnotations;
+  top.missingAnnotations = e.missingAnnotations;
+
+  top.partialAnnoTypereps = e.partialAnnoTypereps;
+  top.annoIndexConverted = e.annoIndexConverted;
+  top.annoIndexSupplied = e.annoIndexSupplied;
+  top.exprs = e.exprs;
+}
+
+abstract production emptyAnnoAppExprs
+top::AnnoAppExprs ::= l::Location
+{
+  top.pp = "";
+  top.location = l;
+
+  top.isPartial = false;
+  top.errors :=
+    if null(top.missingAnnotations) then []
+    else [err(top.location, "Missing named parameters for function '" ++ top.appExprApplied ++ "'")];
+    -- TODO say what's missing
+
+  top.missingAnnotations = top.remainingFuncAnnotations;
+  
+  top.partialAnnoTypereps = [];
+  top.annoIndexConverted = [];
+  top.annoIndexSupplied = [];
+  top.exprs = [];
+}
+
+
+
+
+
+
+
+
 {--
  - Utility for other modules to create function invocations.
  - This makes no assumptions, use it any way you wish!
@@ -925,7 +1074,7 @@ top::AppExprs ::= l::Location
 function mkFunctionInvocation
 Expr ::= e::Expr  es::[Expr]
 {
-  return application(e, '(', foldAppExprs(reverse(es),e.location), ')');
+  return application(e, '(', foldAppExprs(reverse(es),e.location), ',', emptyAnnoAppExprs(e.location), ')');
 }
 function foldAppExprs
 AppExprs ::= e::[Expr]  l::Location

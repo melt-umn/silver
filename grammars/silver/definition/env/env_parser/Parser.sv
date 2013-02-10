@@ -511,7 +511,7 @@ top::ITypeRep ::= 'fun' '(' it::ITypeReps ','  ot::ITypeRep na::INamedArgTypes '
 
 terminal Semi ';';
 terminal Eq '=';
-nonterminal INamedArgTypes with aNamedArgs;
+nonterminal INamedArgTypes with grammarName, env, aNamedArgs;
 
 synthesized attribute aNamedArgs :: [NamedArgType];
 

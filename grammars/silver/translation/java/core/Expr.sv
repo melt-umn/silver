@@ -127,23 +127,23 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated Expr es::AppExprs
+top::Expr ::= e::Decorated Expr es::AppExprs annos::AnnoAppExprs
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production functionInvocation
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
 {
   top.translation = 
     case e of 
     | functionReference(q) -> -- static method invocation
-        "((" ++ finalType(top).transType ++ ")" ++ makeClassName(q.lookupValue.fullName) ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}, null))"
+        "((" ++ finalType(top).transType ++ ")" ++ makeClassName(q.lookupValue.fullName) ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}, " ++ namedargsTranslation(annos) ++ "))"
     | productionReference(q) -> -- static constructor invocation
-        "((" ++ finalType(top).transType ++ ")new " ++ makeClassName(q.lookupValue.fullName) ++ "(" ++ argsTranslation(es) ++ "))"
+        "((" ++ finalType(top).transType ++ ")new " ++ makeClassName(q.lookupValue.fullName) ++ "(" ++ implode(", ", map((.lazyTranslation), es.exprs ++ annos.exprs)) ++ "))"
     | _ -> -- dynamic method invocation
-        "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}, null))" 
+        "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}, " ++ namedargsTranslation(annos) ++ "))" 
     end ;
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
@@ -155,16 +155,37 @@ String ::= e::Decorated AppExprs
   -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
   return implode(", ", map((.lazyTranslation), e.exprs));
 }
+function namedargsTranslation
+String ::= e::Decorated AnnoAppExprs
+{
+  -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
+  return if null(e.exprs) then "null"
+  else "new Object[]{" ++ implode(", ", map((.lazyTranslation), e.exprs)) ++ "}";
+}
 
 function int2str String ::= i::Integer { return toString(i); }
 
 aspect production partialApplication
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
 {
-  top.translation =
-    e.translation ++ ".invokePartial(new int[]{" ++ 
-    implode(", ", map(int2str, es.appExprIndicies)) ++ "}, new Object[]{" ++ 
-    argsTranslation(es) ++ "})";
+  local step1 :: String = e.translation;
+  local step2 :: String =
+    if !annos.isPartial then
+      step1 ++ ".invokePartial(" ++
+      "new int[]{" ++ implode(", ", map(int2str, es.appExprIndicies)) ++ "}, " ++
+      "new Object[]{" ++ argsTranslation(es) ++ "})"
+    else step1;
+  local step3 :: String =
+    if !es.isPartial then
+      step2 ++ ".invokeNamedPartial(" ++
+      (if null(annos.annoIndexConverted) then "null"
+       else "new int[]{" ++ implode(", ", map(int2str, annos.annoIndexConverted)) ++ "}") ++ ", " ++
+      (if null(annos.annoIndexSupplied) then "null"
+       else "new int[]{" ++ implode(", ", map(int2str, annos.annoIndexSupplied)) ++ "}") ++ ", " ++
+      namedargsTranslation(annos) ++ ")"
+    else step2;
+    
+  top.translation = step3;
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }

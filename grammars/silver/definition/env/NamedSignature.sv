@@ -35,7 +35,7 @@ top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatur
   top.typerep = functionTypeExp(oe.typerep, top.inputTypes, map((.toNamedArgType), np));
   
   oe.boundVariables = top.boundVariables;
-  top.unparse = "signature('" ++ fn ++ "', " ++ unparseSignatureElements(ie, top.boundVariables) ++ ", " ++ oe.unparse ++ ")";
+  top.unparse = "signature('" ++ fn ++ "', " ++ unparseSignatureElements(ie, top.boundVariables) ++ ", " ++ oe.unparse ++ ", " ++ unparseSignatureElements(np, top.boundVariables) ++ ")";
 }
 
 {--
@@ -59,6 +59,7 @@ top::NamedSignature ::=
   top.fullName = "_NULL_";
   top.inputElements = [];
   top.outputElement = bogusNamedSignatureElement();
+  top.namedInputNames = [];
   top.inputNames = [];
   top.inputTypes = [];
   top.typerep = errorType();

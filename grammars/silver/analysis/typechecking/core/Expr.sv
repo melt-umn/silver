@@ -1,6 +1,6 @@
 grammar silver:analysis:typechecking:core;
 
-attribute upSubst, downSubst, finalSubst occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr;
+attribute upSubst, downSubst, finalSubst occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
 aspect production errorReference
 top::Expr ::= q::Decorated QName
@@ -51,38 +51,40 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production application
-top::Expr ::= e::Expr '(' es::AppExprs ')'
+top::Expr ::= e::Expr '(' es::AppExprs ',' annos::AnnoAppExprs ')'
 {
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
   
-  es.downSubst = top.downSubst; -- TODO REMOVE THIS (it's garbage related to bugs in pretty printing, afaict)
+  --es.downSubst = top.downSubst; -- TODO REMOVE THIS (it's garbage related to bugs in pretty printing, afaict)
 }
 
 aspect production functionApplication
-top::Expr ::= e::Decorated Expr es::AppExprs
+top::Expr ::= e::Decorated Expr es::AppExprs annos::AnnoAppExprs
 {
   es.downSubst = top.downSubst;
-  forward.downSubst = es.upSubst;
+  annos.downSubst = es.upSubst;
+  forward.downSubst = annos.upSubst;
 }
 
 aspect production functionInvocation
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
 {
   top.upSubst = top.downSubst;
 }
 
 aspect production partialApplication
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
 {
   top.upSubst = top.downSubst;
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated Expr es::AppExprs
+top::Expr ::= e::Decorated Expr es::AppExprs annos::AnnoAppExprs
 {
   es.downSubst = top.downSubst;
-  top.upSubst = es.upSubst;
+  annos.downSubst = es.upSubst;
+  top.upSubst = annos.upSubst;
 }
 
 aspect production attributeSection
@@ -676,7 +678,6 @@ top::AppExpr ::= '_'
 {
   top.upSubst = top.downSubst;
 }
-
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
@@ -693,7 +694,6 @@ top::AppExpr ::= e::Expr
             top.appExprApplied ++ "' expected " ++ errCheck1.rightpp ++
             " but argument is of type " ++ errCheck1.leftpp)];  
 }
-
 aspect production snocAppExprs
 top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
@@ -701,19 +701,43 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
   e.downSubst = es.upSubst;
   top.upSubst = e.upSubst;
 }
-
 aspect production oneAppExprs
 top::AppExprs ::= e::AppExpr
 {
   e.downSubst = top.downSubst;
   top.upSubst = e.upSubst;
 }
-
 aspect production emptyAppExprs
 top::AppExprs ::= l::Location
 {
   top.upSubst = top.downSubst;
 }
+
+aspect production annoExpr
+top::AnnoExpr ::= qn::QName '=' e::AppExpr
+{
+  e.downSubst = top.downSubst;
+  top.upSubst = e.upSubst;
+}
+aspect production snocAnnoAppExprs
+top::AnnoAppExprs ::= es::AnnoAppExprs ',' e::AnnoExpr
+{
+  es.downSubst = top.downSubst;
+  e.downSubst = es.upSubst;
+  top.upSubst = e.upSubst;
+}
+aspect production oneAnnoAppExprs
+top::AnnoAppExprs ::= e::AnnoExpr
+{
+  e.downSubst = top.downSubst;
+  top.upSubst = e.upSubst;
+}
+aspect production emptyAnnoAppExprs
+top::AnnoAppExprs ::= l::Location
+{
+  top.upSubst = top.downSubst;
+}
+
 
 aspect production exprRef
 top::Expr ::= e::Decorated Expr

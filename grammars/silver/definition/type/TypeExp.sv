@@ -151,6 +151,25 @@ Boolean ::= a::NamedArgType  b::NamedArgType
   return a.argName <= b.argName;
 }
 
+function extractNamedArg
+Pair<Maybe<NamedArgType> [NamedArgType]> ::= n::String  l::[NamedArgType]
+{
+  local recurse :: Pair<Maybe<NamedArgType> [NamedArgType]> =
+    extractNamedArg(n, tail(l));
+
+  return if null(l) then pair(nothing(), [])
+  else if head(l).argName == n then pair(just(head(l)), tail(l))
+  else pair(recurse.fst, head(l) :: recurse.snd);
+}
+
+function findNamedArgType
+Integer ::= s::String l::[NamedArgType] z::Integer
+{
+  return if null(l) then -1
+  else if s == head(l).argName then z
+  else findNamedArgType(s, tail(l), z+1);
+}
+
 --------------------------------------------------------------------------------
 
 nonterminal TyVar ;
