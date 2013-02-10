@@ -1,6 +1,7 @@
 grammar silver:definition:core;
 
 --import silver:analysis:typechecking:core;
+import silver:modification:annotation;
 
 nonterminal Expr with
   config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, typerep;
@@ -308,6 +309,7 @@ top::Expr ::= e::Expr '.' q::QName
   -- undecoratedAccessHandler
   -- decoratedAccessHandler  (see that production, for how normal attribute access proceeds!)
   -- terminalAccessHandler
+  -- annoAccessHandler
 }
 
 abstract production errorAccessHandler
@@ -318,6 +320,25 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   
   top.typerep = q.lookupAttribute.typerep;
   top.errors := [err(top.location, "LHS of '.' is type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ " and cannot have attributes.")] ++ q.lookupAttribute.errors; -- TODO fix this. How? Why? What's wrong? Perhaps I didn't like doing the performsubst here
+}
+
+abstract production annoAccessHandler
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  top.pp = e.pp ++ "." ++ q.pp;
+  top.location = loc(top.file, $2.line, $2.column);
+  
+  local t :: TypeExp = performSubstitution(e.typerep, e.upSubst);
+  
+  production occursCheck :: OccursCheck =
+    occursCheckQName(q, t);
+  
+  production index :: Integer =
+    findNamedSigElem(q.name, annotationsForNonterminal(t, top.env), 0);
+
+  top.typerep = occursCheck.typerep;
+  
+  top.errors := occursCheck.errors;
 }
 
 abstract production terminalAccessHandler

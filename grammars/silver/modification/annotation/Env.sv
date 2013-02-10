@@ -36,3 +36,11 @@ NamedSignatureElement ::= nt::TypeExp  anno::DclInfo
   return namedSignatureElement(annoShortName, anno.typerep);
 }
 
+function findNamedSigElem
+Integer ::= s::String l::[NamedSignatureElement] z::Integer
+{
+  return if null(l) then -1
+  else if s == head(l).elementName then z
+  else findNamedSigElem(s, tail(l), z+1);
+}
+

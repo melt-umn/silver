@@ -254,6 +254,15 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.lazyTranslation = top.translation;
 }
 
+aspect production annoAccessHandler
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".getAnnotation(" ++ toString(index) ++ "))";
+  
+  top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
+}
+
+
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
