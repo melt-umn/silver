@@ -141,12 +141,17 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.flowDeps = [];
+  top.flowDeps = []; -- errors, who cares?
 }
 aspect production terminalAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  top.flowDeps = [];
+  top.flowDeps = e.flowDeps;
+}
+aspect production annoAccessHandler
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  top.flowDeps = e.flowDeps;
 }
 
 

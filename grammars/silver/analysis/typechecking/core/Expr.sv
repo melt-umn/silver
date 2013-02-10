@@ -173,6 +173,12 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.upSubst = e.downSubst;
 }
+aspect production annoAccessHandler
+top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+{
+  top.upSubst = e.downSubst;
+}
+
 
 
 aspect production trueConst
