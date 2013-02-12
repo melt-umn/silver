@@ -139,7 +139,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
   top.translation = 
     case e of 
     | functionReference(q) -> -- static method invocation
-        "((" ++ finalType(top).transType ++ ")" ++ makeClassName(q.lookupValue.fullName) ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}))"
+        "((" ++ finalType(top).transType ++ ")" ++ makeClassName(q.lookupValue.fullName) ++ ".invoke(" ++ argsTranslation(es) ++ "))"
     | productionReference(q) -> -- static constructor invocation
         "((" ++ finalType(top).transType ++ ")new " ++ makeClassName(q.lookupValue.fullName) ++ "(" ++ implode(", ", map((.lazyTranslation), es.exprs ++ annos.exprs)) ++ "))"
     | _ -> -- dynamic method invocation

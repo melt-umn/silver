@@ -182,7 +182,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     "    <Precedence>" ++ toString(modifiers.productionPrecedence.fromJust) ++ "</Precedence>\n"
     else "") ++
     "    <Code><![CDATA[\n" ++ 
-    "RESULT = new " ++ makeClassName(ns.fullName) ++ "(_children);\n" ++ -- TODO here we'd add location if its on the cs
+    "RESULT = new " ++ makeClassName(ns.fullName) ++ "(" ++ fetchChildren(0, ns.inputElements) ++ ");\n" ++ -- TODO here we'd add location if its on the cs
       modifiers.acode ++
     "]]></Code>\n" ++
     "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++
@@ -197,6 +197,14 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 
   ns.boundVariables = ns.typerep.freeVariables;
   top.unparses = ["prod(" ++ unparseTyVars(ns.boundVariables, ns.boundVariables) ++ ", " ++ ns.unparse ++ ", " ++ unparseNonStrings(modifiers.unparses) ++ ")"];
+}
+
+function fetchChildren
+String ::= i::Integer  ns::[NamedSignatureElement]
+{
+  return if null(ns) then ""
+  else if null(tail(ns)) then "_children[" ++ toString(i) ++ "]"
+  else "_children[" ++ toString(i) ++ "], " ++ fetchChildren(i + 1, tail(ns));
 }
 
 function lookupStrings

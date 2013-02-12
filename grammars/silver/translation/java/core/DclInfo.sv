@@ -68,3 +68,4 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.attrOccursIndexName = makeIdName(substring(li+7, length(fn), fn) ++ "__ON__" ++ substring(0,li,fn));
   top.attrOccursIndex = makeName(sg) ++ ".Init." ++ top.attrOccursIndexName;
 }
+

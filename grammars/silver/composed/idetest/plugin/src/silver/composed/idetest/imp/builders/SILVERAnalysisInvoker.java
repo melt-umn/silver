@@ -64,10 +64,10 @@ public class SILVERAnalysisInvoker {
 			NIdeProperty[] args = new NIdeProperty[set.size()];
 			int i=0;
 			for(Entry<String, Property> entry: set){
-				args[i] = PmakeIdeProperty.factory.invoke(new Object[]{
+				args[i] = PmakeIdeProperty.factory.invoke(
 					new common.StringCatter(entry.getKey()), 
 					new common.StringCatter(entry.getValue().getSValue())
-				});
+				);
 				i++;
 			}
 			
