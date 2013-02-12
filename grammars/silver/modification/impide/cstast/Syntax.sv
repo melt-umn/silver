@@ -90,7 +90,7 @@ top::SyntaxDcl ::= ns::NamedSignature modifiers::SyntaxProductionModifiers
     else "") ++
     -- BEGIN DIFFERENCE *******************************************************
     "    <Code><![CDATA[\n" ++ 
-"            RESULT = createPTNode(new " ++ makeClassName(ns.fullName) ++ "(new Object[]{" ++ implode(", ", extractNonterminalsFromChildren(0, map(head, rhsRefs))) ++ "}));\n" ++
+"            RESULT = createPTNode(new " ++ makeClassName(ns.fullName) ++ "(" ++ implode(", ", extractNonterminalsFromChildren(0, map(head, rhsRefs))) ++ "));\n" ++
 "]]></Code>\n" ++
     -- END DIFFERENCE *********************************************************
     "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++

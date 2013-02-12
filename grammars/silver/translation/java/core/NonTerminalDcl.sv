@@ -33,8 +33,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList '
 
 implode("", map(makeAnnoDcl, myAnnos)) ++ "\n" ++
 
-"\tprotected " ++ className ++ "(" ++ implode(", ", "final Object[] children" :: map(makeNTConstructorAnnoDcl, myAnnos)) ++ ") {\n" ++
-"\t\tsuper(children);\n" ++
+"\tprotected " ++ className ++ "(" ++ implode(", ", map(makeNTConstructorAnnoDcl, myAnnos)) ++ ") {\n" ++
 implode("", map(makeAnnoAssign, myAnnos)) ++
 "\t}\n\n" ++
 

@@ -16,7 +16,7 @@ public class Analyze2 {
 	public static java.util.List<String> analyze(NIdeProperty[] args) {
 		try {
 			common.ConsCell cc = (common.ConsCell) @ANALYZER_CLASS_QNAME@.invoke(
-				new Object[]{cvargs(args), null});
+				cvargs(args), null);
 			
 			//Translate the returned String (message) array into a list
 			java.util.List<String> list = new java.util.ArrayList<String>();

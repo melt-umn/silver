@@ -31,12 +31,12 @@ top::FFIDef ::= name::String_t ':' 'return' code::String_t ';'
 function strictChildAccessor
 String ::= ns::NamedSignatureElement
 {
-  return "((" ++ ns.typerep.transType ++ ")(args[i_" ++ ns.elementName ++ "] = common.Util.demand(args[i_" ++ ns.elementName ++ "])))";
+  return "((" ++ ns.typerep.transType ++ ")common.Util.demand(c_" ++ ns.elementName ++ "))";
 }
 function lazyChildAccessor
 String ::= ns::NamedSignatureElement
 {
-  return "args[i_" ++ ns.elementName ++ "]";
+  return "c_" ++ ns.elementName;
 }
 
 function computeSigTranslation

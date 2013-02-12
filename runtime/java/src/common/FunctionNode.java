@@ -17,10 +17,6 @@ import common.exceptions.SilverInternalError;
  */
 public abstract class FunctionNode extends Node {
 
-	protected FunctionNode(final Object[] children) {
-		super(children);
-	}
-
 	/**
 	 * The normal way of decorating a function node. 
 	 * 

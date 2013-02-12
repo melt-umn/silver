@@ -20,7 +20,7 @@ public class DecoratedNode {
 	// Please note: the methods in this file have been refined to be quite small
 	// because the JVM makes inlining decisions on a per-method basis (of course!)
 	// So we try to keep the "slow paths" in a separate method, so the hot paths
-	// can be inlined.
+	// can be inlined. (Things are designed around 37 bytes of bytecode as the limit.)
 
 	/**
 	 * The "undecorated" form of this DecoratedNode. (Never null)

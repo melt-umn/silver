@@ -122,7 +122,6 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
   top.setupInh <- "\t\t" ++ makeName(prod_orig_grammar) ++ ".P" ++ prod_orig_name ++ ".occurs_local[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = \"" ++ fName ++ "\";\n";
   top.valueWeaving := "public static final int " ++ ugh_dcl_hack.attrOccursIndexName ++ " = " ++ makeName(prod_orig_grammar) ++ ".Init.count_local__ON__" ++ makeIdName(top.signature.fullName) ++ "++;\n";
 
-
   top.setupInh := if !te.typerep.isDecorable then  "" else
                  "\t\t//" ++ top.pp ++ "\n" ++
                  "\t\t" ++ 
@@ -174,16 +173,16 @@ aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.translation = 
-	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
-        "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
+    "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
+    "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
 }
 
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.translation = 
-	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
-        "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
+    "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
+    "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
 }
 
 

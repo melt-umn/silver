@@ -9,7 +9,7 @@ public class Analyze {
 	public static java.util.List<String> analyze(String[] args) {
 		try {
 			common.ConsCell cc = (common.ConsCell) @ANALYZER_CLASS_QNAME@.invoke(
-				new Object[]{cvargs(args), null});
+				cvargs(args), null);
 			
 			java.util.List<String> list = new java.util.ArrayList<String>();
 			while(!cc.nil()){
