@@ -15,7 +15,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.valueWeaving := body.valueWeaving;
 
   local argsAccess :: String =
-    implode(", ", map(makeConstructorAccess, namedSig.inputNames));
+    implode(", ", map((.childRefElem), namedSig.inputElements));
 
   local funBody :: String =
     "final common.DecoratedNode context = new P" ++ id.name ++ "(" ++ argsAccess ++ ").decorate();\n" ++
@@ -41,43 +41,37 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 function generateFunctionClassString
 String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResult::String
 {
-  local attribute className :: String;
-  className = "P" ++ whatName;
+  local className :: String = "P" ++ whatName;
 
-  local attribute localVar :: String;
-  localVar = "count_local__ON__" ++ makeIdName(whatGrammar) ++ "_" ++ whatName;
-
-  local attribute sigNames :: [String];
-  sigNames = whatSig.inputNames;
+  local localVar :: String = 
+    "count_local__ON__" ++ makeIdName(whatGrammar) ++ "_" ++ whatName;
 
   return 
 "package " ++ makeName(whatGrammar) ++ ";\n\n" ++
 
 "public final class " ++ className ++ " extends common.FunctionNode {\n\n" ++	
 
-makeIndexDcls(0, sigNames) ++ "\n\n" ++
+makeIndexDcls(0, whatSig.inputElements) ++ "\n\n" ++
 
 "\tpublic static final Class<?> childTypes[] = {" ++ implode(",", map(makeChildTypes, whatSig.inputElements)) ++ "};\n\n" ++
 
 "\tpublic static final int num_local_attrs = Init." ++ localVar ++ ";\n" ++
 "\tpublic static final String[] occurs_local = new String[num_local_attrs];\n\n" ++
 
-"\tpublic static final common.Lazy[][] childInheritedAttributes = new common.Lazy[" ++ toString(length(sigNames)) ++ "][];\n\n" ++	
+"\tpublic static final common.Lazy[][] childInheritedAttributes = new common.Lazy[" ++ toString(length(whatSig.inputElements)) ++ "][];\n\n" ++	
 
 "\tpublic static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];\n" ++
 "\tpublic static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];\n\n" ++	
 
 "\tstatic{\n" ++
-makeStaticDcls(className, whatSig.inputElements) ++
+implode("", map((.childStaticElem), whatSig.inputElements)) ++
 "\t}\n\n" ++ 
 
-implode("", map(makeChildDcl, whatSig.inputElements)) ++ "\n" ++
-	
-"\tpublic " ++ className ++ "(" ++ implode(", ", map(makeConstructorDcl, sigNames)) ++ ") {\n" ++
+"\tpublic " ++ className ++ "(" ++ whatSig.javaSignature ++ ") {\n" ++
 implode("", map(makeChildAssign, whatSig.inputElements)) ++
 "\t}\n\n" ++
 
-implode("", map(makeChildAccessor, whatSig.inputElements)) ++
+implode("", map((.childDeclElem), whatSig.inputElements)) ++ "\n" ++
 
 "\t@Override\n" ++
 "\tpublic Object getChild(final int index) {\n" ++
@@ -130,7 +124,7 @@ implode("", map(makeChildAccessCaseLazy, whatSig.inputElements)) ++
 "\t\treturn \"" ++ whatSig.fullName ++ "\";\n" ++
 "\t}\n\n" ++
 
-"\tpublic static " ++ whatSig.outputElement.typerep.transType ++ " invoke(" ++ implode(", ", map(makeConstructorDcl, sigNames)) ++ ") {\n" ++
+"\tpublic static " ++ whatSig.outputElement.typerep.transType ++ " invoke(" ++ whatSig.javaSignature ++ ") {\n" ++
 "\t\ttry {\n" ++
 "\t\t" ++ whatResult ++
 "\t\t} catch(Throwable t) { throw new common.exceptions.TraceException(\"Error while evaluating function " ++ whatSig.fullName ++ "\", t); }\n" ++
@@ -142,7 +136,7 @@ implode("", map(makeChildAccessCaseLazy, whatSig.inputElements)) ++
 
 "\t\t@Override\n" ++
 "\t\tpublic " ++ whatSig.outputElement.typerep.transType ++ " invoke(final Object[] children, final Object[] namedNotApplicable) {\n" ++
-"\t\t\treturn " ++ className ++ ".invoke(" ++ implode(", ", unpackChildren(0, sigNames)) ++ ");\n" ++
+"\t\t\treturn " ++ className ++ ".invoke(" ++ implode(", ", unpackChildren(0, whatSig.inputElements)) ++ ");\n" ++
 "\t\t}\n\n" ++
 "\t};\n" ++
 

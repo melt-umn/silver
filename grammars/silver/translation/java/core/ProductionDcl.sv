@@ -6,7 +6,6 @@ aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
   local className :: String = "P" ++ id.name;
-  local sigNames :: [String] = namedSig.inputNames;
 
   top.setupInh := body.setupInh;
   top.initProd := "\t\t" ++ makeName(top.grammarName) ++ "." ++ className ++ ".initProductionAttributeDefinitions();\n";
@@ -25,7 +24,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 "// " ++ ns.pp ++ "\n" ++
 "public final class " ++ className ++ " extends " ++ fnnt ++ " {\n\n" ++
 
-makeIndexDcls(0, sigNames) ++ "\n\n" ++
+makeIndexDcls(0, namedSig.inputElements) ++ "\n\n" ++
 
 "\tpublic static final Class<?> childTypes[] = {" ++ implode(",", map(makeChildTypes, namedSig.inputElements)) ++ "};\n\n" ++
 
@@ -35,24 +34,21 @@ makeIndexDcls(0, sigNames) ++ "\n\n" ++
 "\tpublic static final common.Lazy[] forwardInheritedAttributes = new common.Lazy[" ++ fnnt ++ ".num_inh_attrs];\n\n" ++
 
 "\tpublic static final common.Lazy[] synthesizedAttributes = new common.Lazy[" ++ fnnt ++ ".num_syn_attrs];\n" ++
-"\tpublic static final common.Lazy[][] childInheritedAttributes = new common.Lazy[" ++ toString(length(sigNames)) ++ "][];\n\n" ++	
+"\tpublic static final common.Lazy[][] childInheritedAttributes = new common.Lazy[" ++ toString(length(namedSig.inputElements)) ++ "][];\n\n" ++	
 
 "\tpublic static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];\n" ++
 "\tpublic static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];\n\n" ++
 
 "\tstatic{\n" ++
-makeStaticDcls(className, namedSig.inputElements) ++
+implode("", map((.childStaticElem), namedSig.inputElements)) ++
 "\t}\n\n" ++ 
 
-implode("", map(makeChildDcl, namedSig.inputElements)) ++ "\n" ++
-
-"\tpublic " ++ className ++ "(" ++ 
-  implode(", ", map(makeConstructorDcl, sigNames) ++ map(makeConstructorAnnoDcl, namedSig.namedInputNames)) ++ ") {\n" ++
-"\t\tsuper(" ++ implode(", ", map(makeConstructorAnnoAccess, namedSig.namedInputNames)) ++ ");\n" ++
+"\tpublic " ++ className ++ "(" ++ namedSig.javaSignature ++ ") {\n" ++
+"\t\tsuper(" ++ implode(", ", map((.annoRefElem), namedSig.namedInputElements)) ++ ");\n" ++
 implode("", map(makeChildAssign, namedSig.inputElements)) ++
 "\t}\n\n" ++
 
-implode("", map(makeChildAccessor, namedSig.inputElements)) ++
+implode("", map((.childDeclElem), namedSig.inputElements)) ++ "\n" ++
 
 "\t@Override\n" ++
 "\tpublic Object getChild(final int index) {\n" ++
@@ -137,7 +133,7 @@ implode("", map(makeChildAccessCaseLazy, namedSig.inputElements)) ++
 
 "\t\t@Override\n" ++
 "\t\tpublic " ++ className ++ " invoke(final Object[] children, final Object[] annotations) {\n" ++
-"\t\t\treturn new " ++ className ++ "(" ++ implode(", ", unpackChildren(0, sigNames) ++ unpackAnnotations(0, namedSig.namedInputNames)) ++ ");\n" ++
+"\t\t\treturn new " ++ className ++ "(" ++ implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements)) ++ ");\n" ++
 "\t\t}\n\n" ++
 "\t};\n" ++
 
@@ -150,81 +146,4 @@ implode("", map(makeChildAccessCaseLazy, namedSig.inputElements)) ++
     else [];
 }
 
-function makeIndexDcls
-String ::= i::Integer s::[String]
-{
-  return if null(s) then "" else "\tpublic static final int i_" ++ head(s) ++ " = " ++ toString(i) ++ ";\n"  ++ makeIndexDcls(i+1, tail(s));
-}
-
-function makeStaticDcls
-String ::= className::String s::[NamedSignatureElement]
-{
-  return if null(s) then "" 
-  else (if head(s).typerep.isDecorable
-    then "\tchildInheritedAttributes[i_" ++ head(s).elementName ++ "] = " ++ 
-           "new common.Lazy[" ++ makeNTClassName(head(s).typerep.typeName) ++ ".num_inh_attrs];\n"
-    else "") ++ makeStaticDcls(className, tail(s));
-}
-
-function makeConstructorDcl
-String ::= s::String
-{ return "final Object c_" ++ s;
-}
-function makeConstructorAccess
-String ::= s::String
-{ return "c_" ++ s; 
-}
-function makeConstructorAnnoDcl
-String ::= s::String
-{ return "final Object a_" ++ s;
-}
-function makeConstructorAnnoAccess
-String ::= s::String
-{ return "a_" ++ s; 
-}
-function unpackChildren
-[String] ::= i::Integer  ns::[String]
-{
-  return if null(ns) then []
-  else ("children[" ++ toString(i) ++ "]") :: unpackChildren(i + 1, tail(ns));
-}
-function unpackAnnotations
-[String] ::= i::Integer  ns::[String]
-{
-  return if null(ns) then []
-  else ("annotations[" ++ toString(i) ++ "]") :: unpackAnnotations(i + 1, tail(ns));
-}
-function makeChildTypes
-String ::= ns::NamedSignatureElement
-{ return ns.typerep.transClassType ++ ".class";
-}
-function makeChildDcl
-String ::= n::NamedSignatureElement
-{
-  -- non final... gets replaced when eval'd
-  return "\tprivate Object /*Thunk or " ++ n.typerep.transType ++ "*/ child_" ++ n.elementName ++ ";\n";
-}
-function makeChildAccessor
-String ::= n::NamedSignatureElement
-{
-  return
-    "\tpublic final Object /*Thunk or " ++ n.typerep.transType ++ "*/ getChild_" ++ n.elementName ++ "() {\n" ++
-    "\t\treturn child_" ++ n.elementName ++ " = common.Util.demand(child_" ++ n.elementName ++ ");\n" ++
-    "\t}\n\n";
-}
-function makeChildAccessCase
-String ::= n::NamedSignatureElement
-{
-  return "\t\t\tcase i_" ++ n.elementName ++ ": return getChild_" ++ n.elementName ++ "();\n";
-}
-function makeChildAccessCaseLazy
-String ::= n::NamedSignatureElement
-{
-  return "\t\t\tcase i_" ++ n.elementName ++ ": return child_" ++ n.elementName ++ ";\n";
-}
-function makeChildAssign
-String ::= n::NamedSignatureElement
-{
-  return "\t\tthis.child_" ++ n.elementName ++ " = c_" ++ n.elementName ++ ";\n";
-}
 
