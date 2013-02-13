@@ -31,13 +31,11 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList '
 
 "\tpublic static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];\n\n" ++
 
-implode("", map(makeAnnoDcl, myAnnos)) ++ "\n" ++
-
-"\tprotected " ++ className ++ "(" ++ implode(", ", map(makeNTConstructorAnnoDcl, myAnnos)) ++ ") {\n" ++
+"\tprotected " ++ className ++ "(" ++ implode(", ", map((.annoSigElem), myAnnos)) ++ ") {\n" ++
 implode("", map(makeAnnoAssign, myAnnos)) ++
 "\t}\n\n" ++
 
-implode("", map(makeAnnoAccessor, myAnnos)) ++
+implode("", map((.annoDeclElem), myAnnos)) ++ "\n" ++
 
 "\t@Override\n" ++
 "\tpublic final int getNumberOfInhAttrs() {\n" ++
@@ -66,28 +64,5 @@ implode("", map(makeAnnoAccessor, myAnnos)) ++
 
 "}\n")];
 
-}
-
-function makeNTConstructorAnnoDcl
-String ::= s::NamedSignatureElement
-{ return "final Object a_" ++ s.elementName; }
-function makeAnnoDcl
-String ::= n::NamedSignatureElement
-{
-  -- non final... gets replaced when eval'd
-  return "\tprivate Object /*Thunk or " ++ n.typerep.transType ++ "*/ anno_" ++ n.elementName ++ ";\n";
-}
-function makeAnnoAssign
-String ::= n::NamedSignatureElement
-{
-  return "\t\tthis.anno_" ++ n.elementName ++ " = a_" ++ n.elementName ++ ";\n";
-}
-function makeAnnoAccessor
-String ::= n::NamedSignatureElement
-{
-  return
-    "\tpublic final Object /*Thunk or " ++ n.typerep.transType ++ "*/ getAnno_" ++ n.elementName ++ "() {\n" ++
-    "\t\treturn anno_" ++ n.elementName ++ " = common.Util.demand(anno_" ++ n.elementName ++ ");\n" ++
-    "\t}\n\n";
 }
 

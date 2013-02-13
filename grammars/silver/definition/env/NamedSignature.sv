@@ -1,15 +1,17 @@
 grammar silver:definition:env;
 
-nonterminal NamedSignature with inputElements, outputElement, fullName, unparse, boundVariables, inputNames, inputTypes, typerep, namedInputNames;
+nonterminal NamedSignature with inputElements, outputElement, fullName, unparse, boundVariables, inputNames, inputTypes, typerep, namedInputElements;
 nonterminal NamedSignatureElement with typerep, elementName, unparse, boundVariables, toNamedArgType;
 
-synthesized attribute elementName :: String;
 synthesized attribute inputElements :: [NamedSignatureElement];
 synthesized attribute outputElement :: NamedSignatureElement;
+synthesized attribute namedInputElements :: [NamedSignatureElement];
+synthesized attribute inputNames :: [String];
+
+synthesized attribute elementName :: String;
 synthesized attribute toNamedArgType :: NamedArgType;
 
-synthesized attribute inputNames :: [String];
-synthesized attribute namedInputNames :: [String];
+
 -- inputTypes from the types grammar.
 
 -- TODO Make named signatures... not named.
@@ -29,9 +31,9 @@ top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatur
   top.fullName = fn;
   top.inputElements = ie;
   top.outputElement = oe;
+  top.namedInputElements = np;
   top.inputNames = map((.elementName), ie);
-  top.inputTypes = map((.typerep), ie);
-  top.namedInputNames = map((.elementName), np);
+  top.inputTypes = map((.typerep), ie); -- Does anything actually use this? TODO: eliminate?
   top.typerep = functionTypeExp(oe.typerep, top.inputTypes, map((.toNamedArgType), np));
   
   oe.boundVariables = top.boundVariables;
@@ -46,23 +48,18 @@ top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatur
 abstract production namedNamedSignature
 top::NamedSignature ::= fn::String
 {
+  top.unparse = error("Bogus signatures should never make it into interface files!");
   forwards to namedSignature(fn, [], bogusNamedSignatureElement(), []);
 }
 
 {--
- - Used ONLU when an error occurs. e.g. aspecting a non-existant production.
+ - Used ONLY when an error occurs. e.g. aspecting a non-existant production.
  -}
 abstract production bogusNamedSignature
 top::NamedSignature ::= 
 {
   top.unparse = error("Bogus signatures should never make it into interface files!");
-  top.fullName = "_NULL_";
-  top.inputElements = [];
-  top.outputElement = bogusNamedSignatureElement();
-  top.namedInputNames = [];
-  top.inputNames = [];
-  top.inputTypes = [];
-  top.typerep = errorType();
+  forwards to namedSignature("_NULL_", [], bogusNamedSignatureElement(), []);
 }
 
 ------------------------
@@ -90,9 +87,7 @@ abstract production bogusNamedSignatureElement
 top::NamedSignatureElement ::=
 {
   top.unparse = error("Bogus signature elements should never make it into interface files!");
-  top.elementName = "__SV_BOGUS_ELEM";
-  top.typerep = errorType();
-  top.toNamedArgType = error("Bogus signature elements should not be converted to types?");
+  forwards to namedSignatureElement("__SV_BOGUS_ELEM", errorType());
 }
 
 ----------------
