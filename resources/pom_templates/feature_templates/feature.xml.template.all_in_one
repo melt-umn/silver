@@ -31,4 +31,18 @@
          version="0.0.0"
          unpack="false"/>
 
+   <plugin
+         id="lpg.runtime"
+         download-size="0"
+         install-size="0"
+         version="2.0.18"
+         unpack="false"/>
+
+   <plugin
+         id="lpg.runtime.java"
+         download-size="0"
+         install-size="0"
+         version="2.0.18"
+         unpack="false"/>
+
 </feature>
