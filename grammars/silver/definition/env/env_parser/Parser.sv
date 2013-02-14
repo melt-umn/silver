@@ -573,7 +573,7 @@ top::ITypeRep ::= t::ITyVar
 concrete production aNamedSignatureDcl
 top::INamedSignature ::= 'signature' '(' fn::IName ',' i::INamedSignatureElements ',' o::INamedSignatureElement ',' n::INamedSignatureElements ')'
 {
-  top.signature = namedSignature(fn.aname, i.elements, o.element, i.elements);
+  top.signature = namedSignature(fn.aname, i.elements, o.element, n.elements);
 }
 
 concrete production aNamedSignatureElementDcl
