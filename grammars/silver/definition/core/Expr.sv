@@ -1046,8 +1046,8 @@ top::AnnoAppExprs ::= e::AnnoExpr
   top.isPartial = e.isPartial;
   top.errors :=
     if null(top.missingAnnotations) then []
-    else [err(top.location, "Missing named parameters for function '" ++ top.appExprApplied ++ "'")];
-    -- TODO say what's missing
+    else [err(top.location, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "
+      ++ implode(", ", map((.argName), top.missingAnnotations)))];
 
   top.errors <- e.errors;
 
@@ -1069,8 +1069,8 @@ top::AnnoAppExprs ::= l::Location
   top.isPartial = false;
   top.errors :=
     if null(top.missingAnnotations) then []
-    else [err(top.location, "Missing named parameters for function '" ++ top.appExprApplied ++ "'")];
-    -- TODO say what's missing
+    else [err(top.location, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "
+      ++ implode(", ", map((.argName), top.missingAnnotations)))];
 
   top.missingAnnotations = top.remainingFuncAnnotations;
   
@@ -1094,6 +1094,8 @@ top::AnnoAppExprs ::= l::Location
 function mkFunctionInvocation
 Expr ::= e::Expr  es::[Expr]
 {
+  e.file = "BUG";
+  -- BUG: we don't have file to give to e to get location here DUGH TODO
   return application(e, '(', foldAppExprs(reverse(es),e.location), ',', emptyAnnoAppExprs(e.location), ')');
 }
 function foldAppExprs
