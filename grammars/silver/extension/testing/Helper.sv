@@ -38,7 +38,7 @@ Expr ::= s::String
 function prodFuncCall
 Expr ::= name::String args::[Expr]
 { 
-  return mkFunctionInvocation(mkNameExpr(name), args);
+  return mkFunctionInvocation(loc("??",-1,-1), mkNameExpr(name), args);
 }
 
 -- Fold a list of expressions (Expr) into a Exprs nonterminal.

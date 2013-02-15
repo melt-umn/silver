@@ -1092,11 +1092,9 @@ top::AnnoAppExprs ::= l::Location
  - This makes no assumptions, use it any way you wish!
  -}
 function mkFunctionInvocation
-Expr ::= e::Expr  es::[Expr]
+Expr ::= l::Location  e::Expr  es::[Expr]
 {
-  e.file = "BUG";
-  -- BUG: we don't have file to give to e to get location here DUGH TODO
-  return application(e, '(', foldAppExprs(reverse(es),e.location), ',', emptyAnnoAppExprs(e.location), ')');
+  return application(e, '(', foldAppExprs(reverse(es),l), ',', emptyAnnoAppExprs(l), ')');
 }
 function foldAppExprs
 AppExprs ::= e::[Expr]  l::Location
@@ -1119,9 +1117,9 @@ AppExprs ::= e::[Expr]  l::Location
  - checks that expr well... just nest those and boom.
  -}
 function mkFunctionInvocationDecorated
-Expr ::= e::Expr  es::[Decorated Expr]
+Expr ::= l::Location  e::Expr  es::[Decorated Expr]
 {
-  return mkFunctionInvocation(e, map(exprRef, es));
+  return mkFunctionInvocation(l, e, map(exprRef, es));
 }
 
 {--
