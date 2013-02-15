@@ -4,10 +4,10 @@ imports silver:definition:core;
 imports silver:definition:env;
 imports silver:definition:env:env_parser;
 
-imports silver:driver:util;
-exports silver:driver:util;
 imports silver:util;
 imports silver:util:cmdargs;
+
+exports silver:driver:util;
 
 inherited attribute svParser :: SVParser;
 inherited attribute sviParser :: SVIParser;

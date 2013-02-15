@@ -25,8 +25,7 @@ option silver:modification:defaultattr;
 
 option silver:extension:testing; -- TODO this is about that buggy experiment of Eric's...
 
+-- These are somewhat less than desirable exports, due to the modularity analysis.
 exports silver:analysis:typechecking:core;
 exports silver:definition:flow:env;
-imports silver:analysis:typechecking:core;
-imports silver:definition:flow:env;
 

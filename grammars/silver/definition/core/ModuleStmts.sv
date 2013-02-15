@@ -206,7 +206,7 @@ top::ModuleStmt ::= 'exports' m::ModuleName ';'
   top.errors := m.errors;
 
   top.moduleNames = m.moduleNames;
-  top.defs = [];
+  top.defs = m.defs; -- 'exports' now also 'imports' that grammar.
   top.exportedGrammars = m.moduleNames;
   top.optionalGrammars = [];
   top.condBuild = [];
