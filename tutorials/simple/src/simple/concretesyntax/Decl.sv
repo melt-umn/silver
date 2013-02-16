@@ -6,7 +6,7 @@ grammar simple:concretesyntax;
 closed nonterminal Decl with unparse, ast<ast:Decl>;
 
 concrete productions d::Decl
- | te::TypeExpr id::term:Id ';'  { d.unparse = te.unparse ++ " " ++ id.lexeme ++ "; \n";
+ | te::TypeExpr id::Id ';'  { d.unparse = te.unparse ++ " " ++ id.lexeme ++ "; \n";
                                    d.ast = ast:decl(te.ast, name(id)); }
 
 {--

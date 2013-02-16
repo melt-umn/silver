@@ -6,7 +6,7 @@ grammar simple:concretesyntax;
 
 
 function name
-ast:Name ::= id::term:Id
+ast:Name ::= id::Id
 {
   return ast:name(loc(id.filename, id.line, id.column), id.lexeme);
 }

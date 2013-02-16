@@ -10,18 +10,16 @@ exports simple:abstractsyntax;
 exports simple:host:driver;
 
 
-{- We import the concrete syntax and driver grammars in order to build
-a parser and specify the main function that specifies the compilation
-process.
+{- We use the concrete syntax and driver grammars in order to build
+   a parser and specify the main function that specifies the compilation
+   process.
 
-This parse and version of main are exported, but this causes no
-problems in the compsed languages.
+   This parse and version of main are exported, but this causes no
+   problems in the compsed languages.
 -}
 
-import simple:concretesyntax only Root;
-import simple:host:driver;
 
-parser parse :: Root {
+parser parse :: simple:concretesyntax:Root {
   simple:concretesyntax;
   simple:terminals;
 } 

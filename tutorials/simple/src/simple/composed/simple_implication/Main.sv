@@ -11,7 +11,6 @@ exports simple:extensions:implication;
 {- Below we import the host grammar so that it may be used in
    defining a parser and main function for this language.
 -}
-import simple:host;
 import simple:concretesyntax as cst;
 
 parser parse :: cst:Root {
