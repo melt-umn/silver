@@ -15,7 +15,6 @@ exports simple:extensions:do_while;
    language.  
 -}
 
-import simple:composed:simple_repeat_until;
 import simple:concretesyntax as cst;
 
 parser parse :: cst:Root {

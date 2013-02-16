@@ -82,21 +82,21 @@ concrete productions e::Expr
 
 -- Variable reference
 
- | id::term:Id  { e.unparse = id.lexeme;
+ | id::Id  { e.unparse = id.lexeme;
                   e.ast = ast:varRef(name(id)); }
 
 
 -- Literals
 
- | l::term:IntegerLiteral  { e.unparse = l.lexeme; 
+ | l::IntegerLiteral  { e.unparse = l.lexeme; 
                              e.ast = ast:intLit(loc(l.filename, l.line, l.column), l.lexeme); }
- | l::term:FloatLiteral    { e.unparse = l.lexeme;
+ | l::FloatLiteral    { e.unparse = l.lexeme;
                              e.ast = ast:floatLit(loc(l.filename, l.line, l.column), l.lexeme); }
 
- | l::term:BooleanLiteral  { e.unparse = l.lexeme;
+ | l::BooleanLiteral  { e.unparse = l.lexeme;
                              e.ast = ast:boolLit(loc(l.filename, l.line, l.column), l.lexeme); }
 
- | l::term:StringLiteral   { e.unparse = l.lexeme;
+ | l::StringLiteral   { e.unparse = l.lexeme;
                              e.ast = ast:stringLit(loc(l.filename, l.line, l.column), l.lexeme); }
 
 

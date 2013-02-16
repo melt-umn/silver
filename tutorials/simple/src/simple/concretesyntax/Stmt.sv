@@ -45,7 +45,7 @@ closed nonterminal StmtMatched with unparse, ast<ast:Stmt>;
 concrete productions s::StmtMatched
  | '{' ss::Stmts '}'  { s.unparse = "{\n" ++ ss.unparse ++ "}\n";
                         s.ast = ast:block(ss.ast); }
- | id::term:Id '='  value::Expr ';'  { s.unparse = id.lexeme ++ " = " ++ value.unparse ++ ";\n";
+ | id::Id '='  value::Expr ';'  { s.unparse = id.lexeme ++ " = " ++ value.unparse ++ ";\n";
                                          s.ast = ast:assignment(name(id), value.ast); }
  | ';'                               { s.unparse = "; \n";
                                        s.ast = ast:skip(); }

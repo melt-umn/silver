@@ -8,7 +8,6 @@ exports simple:terminals;
  - are not needed (or allowed) in other files in this grammar.
  -}
 imports silver:langutil;
-imports simple:terminals as term;
 imports simple:abstractsyntax as ast;
 
 {--

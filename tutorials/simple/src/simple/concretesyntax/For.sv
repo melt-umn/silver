@@ -1,17 +1,17 @@
 grammar simple:concretesyntax;
 
 concrete productions s::StmtMatched
- | 'for' '(' id::term:Id '=' lower::Expr 'to' upper::Expr ')' body::StmtMatched  { s.unparse = "for (" ++ id.lexeme ++ " = " ++ lower.unparse ++ " to " ++ upper.unparse ++ ")"
+ | 'for' '(' id::Id '=' lower::Expr 'to' upper::Expr ')' body::StmtMatched  { s.unparse = "for (" ++ id.lexeme ++ " = " ++ lower.unparse ++ " to " ++ upper.unparse ++ ")"
                                                                                    ++ "\n" ++ body.unparse;
                                                                                    s.ast = ast:for(name(id), lower.ast, upper.ast, body.ast); }
 concrete productions s::StmtUnMatched
- | 'for' '(' id::term:Id '=' lower::Expr 'to' upper::Expr ')' body::StmtUnMatched  { s.unparse = "for (" ++ id.lexeme ++ " = " ++ lower.unparse ++ " to " ++ upper.unparse ++ ")"
+ | 'for' '(' id::Id '=' lower::Expr 'to' upper::Expr ')' body::StmtUnMatched  { s.unparse = "for (" ++ id.lexeme ++ " = " ++ lower.unparse ++ " to " ++ upper.unparse ++ ")"
                                                                                      ++ "\n" ++ body.unparse;
                                                                                      s.ast = ast:for(name(id), lower.ast, upper.ast, body.ast); }
 {-
 
 concrete production forMatched
-s::StmtMatched ::= 'for' '(' id::term:Id '=' lower::Expr 'to' upper::Expr ')' body::StmtMatched  
+s::StmtMatched ::= 'for' '(' id::Id '=' lower::Expr 'to' upper::Expr ')' body::StmtMatched  
 {
   s.unparse = "for (" ++ id.lexeme ++ " = " ++ lower.unparse ++ " to " ++ upper.unparse ++ ")"
            ++ "\n" ++ body.unparse;
@@ -19,7 +19,7 @@ s::StmtMatched ::= 'for' '(' id::term:Id '=' lower::Expr 'to' upper::Expr ')' bo
 }
 
 concrete production forUnMatched
-s::StmtUnMatched ::= 'for' '(' id::term:Id '=' lower::Expr 'to' upper::Expr ')' body::StmtUnMatched  
+s::StmtUnMatched ::= 'for' '(' id::Id '=' lower::Expr 'to' upper::Expr ')' body::StmtUnMatched  
 {
   s.unparse = "for (" ++ id.lexeme ++ " = " ++ lower.unparse ++ " to " ++ upper.unparse ++ ")"
            ++ "\n" ++ body.unparse;
