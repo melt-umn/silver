@@ -51,7 +51,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production application
-top::Expr ::= e::Expr '(' es::AppExprs ',' annos::AnnoAppExprs ')'
+top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
@@ -60,31 +60,31 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' annos::AnnoAppExprs ')'
 }
 
 aspect production functionApplication
-top::Expr ::= e::Decorated Expr es::AppExprs annos::AnnoAppExprs
+top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
   es.downSubst = top.downSubst;
-  annos.downSubst = es.upSubst;
-  forward.downSubst = annos.upSubst;
+  anns.downSubst = es.upSubst;
+  forward.downSubst = anns.upSubst;
 }
 
 aspect production functionInvocation
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.upSubst = top.downSubst;
 }
 
 aspect production partialApplication
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.upSubst = top.downSubst;
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated Expr es::AppExprs annos::AnnoAppExprs
+top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
   es.downSubst = top.downSubst;
-  annos.downSubst = es.upSubst;
-  top.upSubst = annos.upSubst;
+  anns.downSubst = es.upSubst;
+  top.upSubst = anns.upSubst;
 }
 
 aspect production attributeSection

@@ -9,6 +9,8 @@ top::Expr ::= 'length' '(' e::Expr ')'
   top.location = loc(top.file, $1.line, $2.column);
 
   top.typerep = intTypeExp();
+  
+  top.errors := e.errors ++ forward.errors;
 
   forwards to performSubstitution(e.typerep, e.upSubst).lengthDispatcher(e);
 }
@@ -21,7 +23,7 @@ top::Expr ::= e::Decorated Expr
 
   top.typerep = intTypeExp();
 
-  top.errors := [err(e.location, "Operand to length is not compatible. It is of type " ++ prettyType(performSubstitution(e.typerep, top.finalSubst)))] ++ e.errors;
+  top.errors := [err(e.location, "Operand to length is not compatible. It is of type " ++ prettyType(performSubstitution(e.typerep, top.finalSubst)))];
 }
 
 abstract production stringLength
@@ -32,7 +34,7 @@ top::Expr ::= e::Decorated Expr
 
   top.typerep = intTypeExp();
 
-  top.errors := e.errors;
+  top.errors := [];
 }
 
 concrete production toIntFunction

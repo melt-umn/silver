@@ -4,7 +4,7 @@ aspect production lengthFunction
 top::Expr ::= 'length' '(' e::Expr ')'
 {
   e.downSubst = top.downSubst;
-  top.upSubst = e.upSubst;
+  forward.downSubst= e.upSubst;
 }
 aspect production stringLength
 top::Expr ::= e::Decorated Expr
