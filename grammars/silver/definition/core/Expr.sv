@@ -777,6 +777,8 @@ top::Expr ::= e1::Expr '++' e2::Expr
 
   top.typerep = performSubstitution(e1.typerep, errCheck1.upSubst); -- TODO: a bit silly we depend on errCheck, which isn't here...
 
+  top.errors := e1.errors ++ e2.errors ++ forward.errors;
+
   forwards to top.typerep.appendDispatcher(e1,e2);
 }
 
@@ -786,7 +788,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
   top.pp = e1.pp ++ " ++ " ++ e2.pp;
   top.location = e1.location;
 
-  top.errors := e1.errors ++ e2.errors;
+  top.errors := [];
   top.typerep = stringTypeExp();
 }
 
@@ -796,7 +798,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
   top.pp = e1.pp ++ " ++ " ++ e2.pp;
   top.location = e1.location;
 
-  top.errors := [err(e1.location, prettyType(performSubstitution(e1.typerep, e1.upSubst)) ++ " is not a concatenable type.")] ++ e1.errors ++ e2.errors;
+  top.errors := [err(e1.location, prettyType(performSubstitution(e1.typerep, e1.upSubst)) ++ " is not a concatenable type.")];
   top.typerep = errorType();
 }
 
