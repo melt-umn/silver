@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ ! -d grammars ] || [ ! -d tutorials ]; then
+  echo "Wrong directory? Run as ./update"
+  exit 1
+fi
+
+echo "Updating source files"
+hg pull -u || exit 1
+echo "Updating jar files"
+./fetch-jars || exit 1
+echo "Deleting old generated file cache:"
+for file in generated/*/*; do
+  echo $file
+  rm -rf $file
+done
+

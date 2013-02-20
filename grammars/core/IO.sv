@@ -281,6 +281,21 @@ IO ::= src::String  dst::String  i::IO
   "java" : return "common.Util.io(%i%, common.Util.copyFile(%src%.toString(), %dst%.toString()))";
 }
 
+{--
+ - Update a file's modification time to the current time.
+ - 
+ - @param file  The file to update the modification time of.
+ - @param i  The IO token.
+ - @return The IO token. Errors are suppressed.
+ -}
+function touchFile
+IO ::= file::String i::IO
+{
+  return error("Not Yet Implemented: touchFile");
+} foreign {
+  "java" : return "common.Util.io(%i%, common.Util.touchFile(%file%.toString()))";
+}
+
 ------ IO Misc.
 
 {--

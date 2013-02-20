@@ -22,7 +22,8 @@ grammar silver:driver;
 aspect production compilation
 top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::String silverGen::String
 {
-  top.postOps <- [doInterfaces(grammarsToTranslate, silverGen)];
+  top.postOps <- [doInterfaces(grammarsToTranslate, silverGen)] ++
+    map(touchIface(_, silverGen), r.grammarList);
   top.postOps <- if top.config.noBindingChecking then [] else
     [printAllBindingErrors(grammars ++ r.grammarList)]; 
 }
@@ -67,6 +68,14 @@ IO ::= iIn::IO r::Decorated RootSpec genPath::String
   wr = writeFile(pathName ++ "Silver.svi", unparseRootSpec(r), rm);
   
   return wr;
+}
+
+abstract production touchIface
+top::Unit ::= r::Decorated RootSpec genPath::String
+{
+  top.io = touchFile(genPath ++ "src/" ++ grammarToPath(r.declaredName) ++ "Silver.svi", top.ioIn);
+  top.code = 0;
+  top.order = 0;
 }
 
 function deleteStaleData

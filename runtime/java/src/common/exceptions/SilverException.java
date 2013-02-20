@@ -32,4 +32,9 @@ public class SilverException extends RuntimeException {
 		super(s,t);
 	}
 	
+	public static Throwable getRootCause(Throwable t) {
+		while(t.getCause() != null)
+			t = t.getCause();
+		return t;
+	}
 }

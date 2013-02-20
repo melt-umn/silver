@@ -18,13 +18,14 @@ IOVal<Grammar> ::= svParser::SVParser  gpath::String  files::[String]  ioin::IO
   text = readFile(gpath ++ file, print("\t[" ++ gpath ++ file ++ "]\n", ioin));
 
   -- This is where a .sv file actually gets parsed:
-  local r :: Root = parseTreeOrDieWithoutStackTrace(svParser(text.iovalue, file));
+  local r :: ParseResult<Root> = svParser(text.iovalue, file);
 
   -- Continue parsing the rest of the files.
   production attribute recurse :: IOVal<Grammar>;
   recurse = compileFiles(svParser, gpath, tail(files), text.io);
 
   return if null(files) then ioval(ioin, nilGrammar())
-         else ioval(recurse.io, consGrammar(grammarPart(r, file), recurse.iovalue));
+         else if !r.parseSuccess then ioval(exit(-1, print(r.parseErrors ++ "\n\n", text.io)), error("Should never be accessed."))
+         else ioval(recurse.io, consGrammar(grammarPart(r.parseTree, file), recurse.iovalue));
 }
 
