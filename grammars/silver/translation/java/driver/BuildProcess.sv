@@ -183,8 +183,8 @@ IO ::= i::IO  r::Decorated RootSpec  silverGen::String
   local attribute printio :: IO;
   printio = print("\t[" ++ r.declaredName ++ "]\n", i);
 
-  production attribute specLocation :: String;
-  specLocation = silverGen ++ "src/" ++ grammarToPath(r.declaredName); 
+  production specLocation :: String =
+    silverGen ++ "src/" ++ grammarToPath(r.declaredName); 
 
   return writeClasses(printio, specLocation, r.genFiles);
 }

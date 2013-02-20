@@ -13,8 +13,11 @@ nonterminal RootSpec with
   config, compiledGrammars, productionFlowGraphs, grammarFlowTypes,
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
-  defs, errors, grammarSource, grammarTime, recheckGrammars, translateGrammars;
+  defs, errors, grammarSource, grammarTime, interfaceTime, recheckGrammars, translateGrammars;
 
+{--
+ - Grammars that were read from source.
+ -}
 synthesized attribute translateGrammars :: [Decorated RootSpec];
 
 {--
@@ -33,10 +36,12 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   
   -- This grammar, its direct imports, and only transitively close over exports and TRIGGERED conditional imports.
   -- i.e. these are the things that we really, truly depend upon.
-  local actualDependencies :: [String] = makeSet(computeDependencies(grammarName :: top.moduleNames, top.compiledGrammars));
+  local actualDependencies :: [String] =
+    makeSet(computeDependencies(grammarName :: top.moduleNames, top.compiledGrammars));
 
   -- Compute flow information for this grammar, (closing over imports and options, too:)
-  local depsPlusOptions :: [String] = makeSet(completeDependencyClosure(actualDependencies, top.compiledGrammars));
+  local depsPlusOptions :: [String] =
+    makeSet(completeDependencyClosure(actualDependencies, top.compiledGrammars));
   g.grammarDependencies = actualDependencies;
   g.flowEnv = fromFlowDefs(foldr(consFlow, nilFlow(), gatherFlowEnv(depsPlusOptions, top.compiledGrammars)));
   
@@ -46,6 +51,7 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   
   top.grammarSource = grammarSource;
   top.grammarTime = grammarTime;
+  top.interfaceTime = grammarTime;
   top.recheckGrammars = [];
   top.translateGrammars = [top];
 
@@ -64,21 +70,15 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
  - Create a RootSpec from an interface file, representing a grammar.
  -}
 abstract production interfaceRootSpec
-top::RootSpec ::= p::IRoot  grammarTime::Integer
+top::RootSpec ::= p::IRoot  interfaceTime::Integer
 {
   p.grammarName = p.declaredName;
 
   top.grammarSource = p.grammarSource;
-  top.grammarTime = grammarTime;
-  -- TODO: change this back to primarily using 'dirtyGrammars' to decide whether to rebuild.
-  -- Time here should be used as a back-up, and with a larger margin for error (20 seconds?)
-  -- Generally, for same-project builds dirty should work just fine. For building
-  -- different projects, the time fallback will trigger re-checking. This should be large
-  -- enough that slow builds don't cause problems, but small enough that nobody is likely to
-  -- actually try to build two projects at the same time in that time.
+  top.grammarTime = p.grammarTime;
+  top.interfaceTime = interfaceTime;
   
-  -- In the meantime, 5 seconds seems to work... okay.
-  local ood :: Boolean = isOutOfDate(grammarTime + 5, top.allGrammarDependencies, top.compiledGrammars);
+  local ood :: Boolean = isOutOfDate(interfaceTime, top.allGrammarDependencies, top.compiledGrammars);
   top.recheckGrammars = if ood then [p.grammarName] else [];
   top.translateGrammars = [];
 
@@ -104,6 +104,7 @@ String ::= r::Decorated RootSpec
   production attribute unparses :: [String] with ++;
   unparses := [
 		"declaredName " ++ quoteString(r.declaredName),
+		"grammarTime " ++ toString(r.grammarTime),
 		"grammarSource \"" ++ escapeString(r.grammarSource) ++ "\"",
 		"moduleNames " ++ unparseStrings(r.moduleNames),
 		"allDeps " ++ unparseStrings(r.allGrammarDependencies),
@@ -135,6 +136,7 @@ function gatherFlowEnv
               end;
 }
 
+-- We're comparing INTERFACE TIME against GRAMMAR TIME, just to emphasize what's going on here...
 function isOutOfDate
 Boolean ::= mine::Integer  l::[String]  e::EnvTree<Decorated RootSpec>
 {
@@ -147,3 +149,4 @@ Boolean ::= mine::Integer  l::[String]  e::EnvTree<Decorated RootSpec>
   else
     true;
 }
+

@@ -1,9 +1,5 @@
 grammar silver:modification:autocopyattr;
 
-import silver:definition:env;
-import silver:definition:core;
-import silver:definition:type;
-
 abstract production autocopyDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
@@ -31,3 +27,4 @@ Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
   return attrDef(defaultEnvItem(autocopyDcl(sg,sl,fn,bound,ty)));
 }
+

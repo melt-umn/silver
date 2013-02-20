@@ -61,6 +61,7 @@ terminal SignatureElementTerm 'element' lexer classes {C_1};
 
 -- top level, root spec parts
 terminal DeclaredNameTerm     'declaredName'     lexer classes {C_1};
+terminal GrammarTimeTerm      'grammarTime'      lexer classes {C_1};
 terminal ModuleNamesTerm      'moduleNames'      lexer classes {C_1};
 terminal AllDepsTerm          'allDeps'          lexer classes {C_1};
 terminal DefsTerm             'defs'             lexer classes {C_1};
@@ -78,7 +79,7 @@ synthesized attribute tyvars :: [TyVar];
 
 {- The "uninteresting" plumbing of interface files: -}
 
-nonterminal IRoot with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, grammarSource, moduleNames, grammarName, allGrammarDependencies;
+nonterminal IRoot with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, grammarSource, moduleNames, grammarName, allGrammarDependencies, grammarTime;
 nonterminal IDefs with defs, env, grammarName; -- including square brackets
 nonterminal IDefsInner with defs, env, grammarName; -- inside square brackets
 nonterminal ITypeReps with env, typereps, grammarName; -- including square brackets
@@ -87,7 +88,7 @@ nonterminal ITypeRepsInner with env, typereps, grammarName; -- inside square bra
 {- Extension points! -}
 
 {- Top-level elements of the interface file -}
-closed nonterminal IRootPart with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, grammarSource, moduleNames, grammarName, allGrammarDependencies;
+closed nonterminal IRootPart with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, grammarSource, moduleNames, grammarName, allGrammarDependencies, grammarTime;
 {- A DclInfo record -}
 closed nonterminal IDclInfo with defs, env, grammarName;
 {- A TypeExp record -}
@@ -172,6 +173,7 @@ concrete production aRoot1
 top::IRoot ::= r::IRootPart
 {
   top.declaredName = r.declaredName;
+  top.grammarTime = r.grammarTime;
   top.grammarSource = r.grammarSource;
   top.defs = r.defs;
   top.moduleNames = r.moduleNames;
@@ -185,6 +187,7 @@ concrete production aRoot2
 top::IRoot ::= r1::IRootPart r2::IRoot
 {
   top.declaredName = if r1.declaredName == "" then r2.declaredName else r1.declaredName;
+  top.grammarTime = if r1.grammarTime == -1 then r2.grammarTime else r1.grammarTime;
   top.grammarSource = if r1.grammarSource == "" then r2.grammarSource else r1.grammarSource;
   top.defs = r1.defs ++ r2.defs;
   top.moduleNames = r1.moduleNames ++ r2.moduleNames;
@@ -200,6 +203,7 @@ aspect default production
 top::IRootPart ::=
 {
   top.declaredName = "";
+  top.grammarTime = -1;
   top.grammarSource = "";
   top.moduleNames = [];
   top.allGrammarDependencies = [];
@@ -213,6 +217,12 @@ concrete production aRootDeclaredName
 top::IRootPart ::= 'declaredName' i::IName
 {
   top.declaredName = i.aname;
+}
+
+concrete production aRootGrammarTime
+top::IRootPart ::= 'grammarTime' i::Num_t
+{
+  top.grammarTime = toInt(i.lexeme);
 }
 
 concrete production aRootGrammarSource

@@ -40,24 +40,33 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
   local check :: IOVal<[String]> =
     checkEnvironment(a, silverHome, silverGen, grammarPath, buildGrammar, envSG.io);
   
-  -- Compile grammars. There's some tricky circular program data flow here:
+  -- Compile grammars. There's some tricky circular program data flow here.
+  -- This does an "initial grammar stream" composed of 
+  -- grammars and interface files that *locally* seem good.
   local rootStream :: IOVal<[Maybe<RootSpec>]> =
-    compileGrammars(svParser, sviParser, grammarPath, silverGen, buildGrammar :: grammarStream, a.doClean, check.io);
+    compileGrammars(svParser, sviParser, grammarPath, silverGen, grammarStream, a.doClean, check.io);
+
+  -- The list of grammars to build. This is circular with the above, producing
+  -- a list that's terminated when the response count is equal to the number of emitted
+  -- grammar names.
+  local grammarStream :: [String] =
+    buildGrammar :: eatGrammars(1, [buildGrammar], rootStream.iovalue, unit.grammarList);
   
+  -- This is, essentially, a data structure representing a compilation.
+  -- Note that it is pure: it doesn't take any actions.
   local unit :: Compilation =
     compilation(
       foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], rootStream.iovalue)),
       foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], reRootStream.iovalue)),
       buildGrammar, silverHome, silverGen);
   unit.config = a;
-  
-  -- Note that this is used above. This outputs deps, and rootStream informs it.
-  local grammarStream :: [String] =
-    eatGrammars(1, [buildGrammar], rootStream.iovalue, unit.grammarList);
-  
+    
+  -- There is a second circularity here where we use unit.recheckGrammars
+  -- to supply the second parameter to unit.
   local reRootStream :: IOVal<[Maybe<RootSpec>]> =
     compileGrammars(svParser, sviParser, grammarPath, silverGen, unit.recheckGrammars, true, rootStream.io);
 
+  -- unit.postOps is a "pure value," here's where we make it go.
   local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), reRootStream.io);
 
   return if a.displayVersion then ioval(print("Silver Version 0.3.6-dev\n", ioin), 0)

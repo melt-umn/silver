@@ -163,6 +163,9 @@ String ::= whatGrammar::String
 "\t\t\tdrv.synthesized(core.Init.core_io__ON__core_IOVal); // demand the io token\n" ++
 "\t\t\tSystem.exit( (Integer)drv.synthesized(core.Init.core_iovalue__ON__core_IOVal) );\n" ++
 "\t\t} catch(Throwable t) {\n" ++
+"\t\t\tThrowable rt = common.exceptions.SilverException.getRootCause(t);\n" ++
+"\t\t\tif(rt instanceof common.exceptions.SilverExit)\n" ++
+"\t\t\t\tSystem.exit(((common.exceptions.SilverExit)rt).getExitCode());\n" ++
 "\t\t\tcommon.Util.printStackCauses(t);\n" ++
 "\t\t}\n" ++
 "\t}\n" ++

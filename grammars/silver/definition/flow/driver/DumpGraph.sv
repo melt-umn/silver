@@ -22,15 +22,18 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 ParseResult<Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--dump-flow-graph", flag(dumpFlowGraphFlag))];
+  flags <- [pair("--dump-flow-graph", flag(dumpFlowGraphFlag)),
+            pair("--dump-flow-graphs", flag(dumpFlowGraphFlag))]; -- I mistype this a lot.
   -- omitting from descriptions deliberately!
 }
 
 aspect production compilation
 top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
 {
-  local anyG :: Decorated RootSpec = head(g.grammarList);
-  top.postOps <- if top.config.dumpFlowGraph then [dumpFlowGraphAction(anyG.productionFlowGraphs, unList(rtm:toList(anyG.grammarFlowTypes)))] else [];
+  top.postOps <-
+    if top.config.dumpFlowGraph
+    then [dumpFlowGraphAction(finalGraphs, unList(rtm:toList(flowTypes)))]
+    else [];
 }
 
 function unList

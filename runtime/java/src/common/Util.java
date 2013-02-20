@@ -4,7 +4,7 @@ import java.io.*;
 import java.nio.channels.FileChannel;
 import java.util.*;
 
-import common.exceptions.SilverError;
+import common.exceptions.*;
 
 
 /**
@@ -52,8 +52,7 @@ public final class Util {
 	 * @return Does not return.
 	 */
 	public static Object exit(int status) {
-		System.exit(status);
-		return null;
+		throw new SilverExit(status);
 	}
 	
 	/**
@@ -117,6 +116,19 @@ public final class Util {
 
 	public static int fileTime(String sb) {
 		return (int) ((new File(sb).lastModified()) / 1000);
+	}
+	
+	public static Object touchFile(String sb) {
+		return setFileTime(sb, currentTime());
+	}
+	
+	public static Object setFileTime(String sb, int time) {
+		new File(sb).setLastModified(((long)time) * 1000);
+		return null;
+	}
+	
+	public static int currentTime() {
+		return (int)(System.currentTimeMillis() / 1000);
 	}
 
 	public static boolean isFile(String sb) {

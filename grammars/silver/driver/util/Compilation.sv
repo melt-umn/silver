@@ -22,21 +22,36 @@ synthesized attribute recheckGrammars :: [String];
 abstract production compilation
 top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::String silverGen::String
 {
-  top.grammarList = g.grammarList; -- this is the stream from g ONLY
-
+  -- the list of rootspecs coming out of g
+  top.grammarList = g.grammarList;
+  -- the list of grammars that should be re-checked
+  top.recheckGrammars = g.recheckGrammars;
+  
+  -- To compute recheckGrammars, we need .compiledGrammars:
   production grammars :: [Decorated RootSpec] = g.grammarList;
   
   g.compiledGrammars = directBuildTree(map(grammarPairing, grammars));
+  -- However, we are then forced to use the interface files that we are going to
+  -- recheck in the .compiledGrammars for the recheck.
+  -- That means they don't see "themselves" but their previous interface file.
   r.compiledGrammars = g.compiledGrammars;
+  -- This *should* be okay, because the information should be identical in both.
   
-  production attribute grammarsDependedUpon :: [String];
-  grammarsDependedUpon = expandAllDeps([buildGrammar], [], g.compiledGrammars);
+  -- This determines what is actually needed in this build.
+  -- For example, it excludes "options" and conditional builds that aren't
+  -- actually used / triggered.
+  production grammarsDependedUpon :: [String] =
+    expandAllDeps([buildGrammar], [], g.compiledGrammars);
   
-  production attribute grammarsToTranslate :: [Decorated RootSpec];
-  grammarsToTranslate = keepGrammars(grammarsDependedUpon, g.translateGrammars);
+  -- Ditto the above, but rootspecs
+  production grammarsRelevant :: [Decorated RootSpec] =
+    keepGrammars(grammarsDependedUpon, g.grammarList);
+  
+  -- JUST the grammars read from source, that are relevant, ignoring rechecked grammars
+  production grammarsToTranslate :: [Decorated RootSpec] =
+    keepGrammars(grammarsDependedUpon, g.translateGrammars);
 
   top.postOps := [];
-  top.recheckGrammars = g.recheckGrammars;
 }
 
 nonterminal Grammars with config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarList, recheckGrammars, translateGrammars;
@@ -76,5 +91,4 @@ function keepGrammars
 {
   return if null(d) then [] else (if contains(head(d).declaredName, keep) then [head(d)] else []) ++ keepGrammars(keep, tail(d));
 }
-
 

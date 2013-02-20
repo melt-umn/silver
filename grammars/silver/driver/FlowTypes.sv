@@ -9,7 +9,7 @@ import silver:util:raw:treemap as rtm;
 aspect production compilation
 top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::String silverGen::String
 {
-  -- aggregate all flow def information, filtering out those that are not permitted to affect flow types
+  -- aggregate all flow def information
   local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), grammars)));
   local allFlowEnv :: Decorated FlowEnv = fromFlowDefs(allFlowDefs);
   
@@ -49,33 +49,5 @@ top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::St
   
   r.productionFlowGraphs = finalGraphs;
   r.grammarFlowTypes = flowTypes;
-
-  -- Note: Nope! Not okay to use the filtered flowdefs for these. UGHHH
-  -- Problem with 'fwd' nodes disappearing in some computations (checking known-generated fwd equations flow types)
-  -- And the possibility (not sure) that the production flow graphs are assumed to be "fully there"
-  
-  -- TODO: perhaps we should be constructing these graphs more locally?
-  -- If we need to NOT filter, then they're kinda local things right?
-  -- Maybe the production/function/aspect itself should gather up
-  -- the info and stitch their own flow graphs? TODO consider doing this instead!!
-  
-  -- So, what do we need? prodGraph and prodinfos.
-  -- What do we need for prodGraph? allProds prodTree allFlowEnv allRealEnv
-  -- allProds and allRealEnv are okay.  prodTree and allFlowEnv are suspect.
-  -- Both come straight from the flowdefs.
-  -- What about prodinfos? allPRods prodTree allRealEnv.
-  -- Again, only prodTree is suspect.
-  -- So, all flow defs, prodtree, allflowenv, 
-  -- TODO: problem: we're filtering out some fwdDefs and then using the existence of them to know if
-  -- a prod forwards.  Further, we're removing those deps, not just for fwd but for syn too,
-  -- when they maybe SHOULD affect flow types of other things. Problem is there's no way to say
-  -- "these edges, IFF they appear in the flow type for this equation" in the graph computation...
-  -- What to do?
-  -- Run the graph computation. Get result, add appropriate edges that we previously filtered out,
-  -- iterate until we converge on no new admitted edges? I suppose...
-  
-
-  -- We'd like a final version of the stitched flow graphs to pass down
-  -- TODO: Turn these into trees prior to passing them down. (i.e. EnvTree<EnvTree<FlowVertex>>)
 }
 

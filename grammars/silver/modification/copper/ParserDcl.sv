@@ -23,10 +23,10 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
 
   production attribute namedSig :: NamedSignature;
   namedSig = namedSignature(fName,
-                               [namedSignatureElement("stringToParse", stringTypeExp()),
-                                namedSignatureElement("filenameToReport", stringTypeExp())],
-                               namedSignatureElement("__func__lhs", nonterminalTypeExp("core:ParseResult", [t.typerep])),
-                               []);
+    [namedSignatureElement("stringToParse", stringTypeExp()),
+     namedSignatureElement("filenameToReport", stringTypeExp())],
+    namedSignatureElement("__func__lhs", nonterminalTypeExp("core:ParseResult", [t.typerep])),
+    []);
 
   production spec :: ParserSpec = parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames);
   spec.compiledGrammars = top.compiledGrammars;
@@ -75,11 +75,12 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
   local attribute localVar :: String;
   localVar = "count_local__ON__" ++ makeIdName(fName);
 
+  -- We generate the copper files in BuildProcess instead of here, so that they
+  -- are regenerated when a dependency changes.
+  
   top.genFiles :=
     [pair(className ++ ".java",
-          generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult)),
-     pair(makeParserName(spec.fullName) ++ ".copper",
-          spec.cstAst.xmlCopper)];
+          generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult))];
   
   local attribute parseResult :: String;
   parseResult = 

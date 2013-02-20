@@ -1,10 +1,6 @@
 grammar silver:modification:autocopyattr;
 
 import silver:util;
-import silver:definition:core;
-import silver:definition:env;
-import silver:definition:type:syntax;
-import silver:definition:type;
 
 terminal AutoCopy_kwd 'autocopy' lexer classes {KEYWORD};
 
