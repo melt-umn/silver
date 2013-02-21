@@ -75,7 +75,7 @@ top::Unit ::= r::Decorated RootSpec genPath::String
 {
   top.io = touchFile(genPath ++ "src/" ++ grammarToPath(r.declaredName) ++ "Silver.svi", top.ioIn);
   top.code = 0;
-  top.order = 0;
+  top.order = 3;
 }
 
 function deleteStaleData
