@@ -1,4 +1,5 @@
 grammar silver:extension:easyterminal;
+
 import silver:definition:core;
 import silver:definition:env;
 import silver:definition:type;
@@ -12,7 +13,7 @@ concrete production regExprEasyTerm
 top::RegExpr ::= t::Terminal_t
 {
   top.pp = t.lexeme;
-  top.location = loc(top.file, t.line, t.column);
+  top.location = $1.location;
   
   top.terminalRegExprSpec = literalRegex(substring(1, length(t.lexeme)-1, t.lexeme));
   
@@ -112,7 +113,7 @@ top::Expr ::= t::RegExpr
   local attribute escapedName :: String;
   escapedName = makeEscapedName(regExpPat);
 
-  top.errors := if null(regName) 
+  top.errors <- if null(regName) 
                 then [err(top.location, "Could not find terminal declaration for " ++ t.pp )]
                 else [];
 

@@ -4,7 +4,7 @@ concrete production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
 {
   top.pp = "global " ++ id.pp ++ " :: " ++ t.pp ++ " = " ++ e.pp ++ "\n"; 
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;

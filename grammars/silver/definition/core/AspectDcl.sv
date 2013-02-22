@@ -19,7 +19,7 @@ concrete production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 {
   top.pp = "aspect production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.defs = 
     if null(body.productionAttributes) then []
@@ -57,7 +57,7 @@ concrete production aspectFunctionDcl
 top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody 
 {
   top.pp = "aspect function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.defs = 
     if null(body.productionAttributes) then []
@@ -95,7 +95,7 @@ concrete production aspectProductionSignature
 top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS 
 {
   top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
@@ -110,7 +110,7 @@ concrete production aspectProductionLHSNone
 top::AspectProductionLHS ::= '_'
 {
   top.pp = "_";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   forwards to aspectProductionLHSId(nameIdLower(terminal(IdLower_t, "p_top")));
 }
 
@@ -161,7 +161,7 @@ concrete production aspectRHSElemNil
 top::AspectRHS ::= 
 {
   top.pp = "";
-  top.location = loc(top.file,-1,-1);
+  top.location = bogusLocation();
 
   top.defs = [];
   top.errors := [];
@@ -188,7 +188,7 @@ concrete production aspectRHSElemNone
 top::AspectRHSElem ::= '_'
 {
   top.pp = "_";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   forwards to aspectRHSElemId(nameIdLower(terminal(IdLower_t, "p_" ++ toString(top.deterministicCount), $1.line, $1.column)));
 }
@@ -209,7 +209,7 @@ concrete production aspectRHSElemTyped
 top::AspectRHSElem ::= id::Name '::' t::Type
 {
   top.pp = id.pp ++ "::" ++ t.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   
   top.errors <- t.errors;
 
@@ -240,7 +240,7 @@ concrete production aspectFunctionSignature
 top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS 
 {
   top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;

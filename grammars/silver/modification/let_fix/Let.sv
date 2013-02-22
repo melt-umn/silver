@@ -11,7 +11,7 @@ concrete production letp_c
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
   top.pp = "let " ++ la.pp ++ " in " ++ e.pp ++ " end";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   forwards to letp(top.location, la.letAssignExprs, e);
 }

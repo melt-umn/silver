@@ -7,7 +7,7 @@ concrete production annotationDcl
 top::AGDcl ::= 'annotation' a::Name tl::BracketedOptTypeList '::' te::Type ';'
 {
   top.pp = "annotation " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -33,7 +33,7 @@ top::AGDcl ::= 'annotate' nt::QName nttl::BracketedOptTypeList 'with' at::QName 
   top.pp = "annotate " ++ nt.pp ++ nttl.pp ++ " with " ++ at.pp ++ attl.pp ++ ";";
 
   -- TODO: this location is highly unreliable.
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.defs = [
     annoInstanceDef(top.grammarName, at.location,

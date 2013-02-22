@@ -10,7 +10,7 @@ concrete production nilAGDcls
 top::AGDcls ::=
 {
   top.pp = "";
-  top.location = loc(top.file, -1, -1);
+  top.location = bogusLocation();
 
   top.defs = [];
   top.errors := [];
@@ -40,7 +40,7 @@ abstract production emptyAGDcl
 top::AGDcl ::=
 {
   top.pp = "";
-  top.location = loc(top.file, -1, -1);
+  top.location = bogusLocation();
 
   top.errors := [];
 }

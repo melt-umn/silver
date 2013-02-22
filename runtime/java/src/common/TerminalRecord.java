@@ -1,53 +1,57 @@
 package common;
 
 import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;
+import core.NLocation;
+import core.Ploc;
 
 /**
- * The new terminal representation object. This replaces Terminal, which carried the 
- * full, expensive machinery of DecoratedNode along with it.  This was made possible
- * by the environment changes done in Summer '10, which let us treat terminals as
- * something in their own right, rather than having to pretend they're DNs.
+ * The terminal representation object, containing a lexeme and a location.
  *
  * @author tedinski
  */
 public final class TerminalRecord {
-	final public StringCatter filename;
 	final public StringCatter lexeme;
-	final public Integer line;
-	final public Integer column;
-	final public Integer endLine;
-	final public Integer endColumn;
-	final public Integer index;
-	final public Integer endIndex;
-
-	public TerminalRecord(final String lx, final VirtualLocation vl, final Integer index, final Integer endIndex){
-		lexeme = new StringCatter(lx);
-		filename = new StringCatter(vl.getFileName());
-		line = vl.getLine();
-		column = vl.getColumn();
-		vl.defaultUpdate(lx);
-		endLine = vl.getLine();
-		endColumn = vl.getColumn();
-		this.index = index;
-		this.endIndex = endIndex;
+	final public NLocation location;
+	
+	/**
+	 * Construct a terminal from a Copper VirtualLocation, used during parse tree construction.
+	 */
+	public TerminalRecord(final String lexeme, final VirtualLocation vl, final int index, final int endIndex){
+		this.lexeme = new StringCatter(lexeme);
+		final int line = vl.getLine();
+		final int column = vl.getColumn();
+		vl.defaultUpdate(lexeme);
+		this.location = new Ploc(
+				new StringCatter(vl.getFileName()),
+				line,
+				column,
+				vl.getLine(),
+				vl.getColumn(),
+				index,
+				endIndex);
 	}
 			
-	public TerminalRecord(final String lx, final String fn, final Integer ln, final Integer cl) {
-		lexeme = new StringCatter(lx);
-		filename = new StringCatter(fn);
-		line = ln;
-		column = cl;
-		endLine = line;
-		endColumn = column;
-		index = 0;
-		endIndex = 0;
+	/**
+	 * The standard manual constructor for a terminal object.
+	 */
+	public TerminalRecord(final StringCatter lexeme, final NLocation location) {
+		this.lexeme = lexeme;
+		this.location = location;
 	}
-
-	public TerminalRecord(final String lx, final Integer ln, final Integer cl) {
-		this(lx, "_NULL_", ln, cl);
+	
+	// It'd be nice to just directly access its children, but we don't actually know
+	// that our NLocation is Ploc. :(
+	private Object getFromLoc(int syn) {
+		DecoratedNode d = location.decorate(TopNode.singleton, (Lazy[])null);
+		return d.synthesized(syn);
 	}
-
-	public TerminalRecord(final String lx, final TerminalRecord old) {
-		this(lx, old.filename.toString(), old.line, old.column);
+	public Integer getLine() {
+		return (Integer)getFromLoc(core.Init.core_line__ON__core_Location);
+	}
+	public Integer getColumn() {
+		return (Integer)getFromLoc(core.Init.core_column__ON__core_Location);
+	}
+	public StringCatter getFilename() {
+		return (StringCatter)getFromLoc(core.Init.core_filename__ON__core_Location);
 	}
 }

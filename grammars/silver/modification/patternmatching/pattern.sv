@@ -49,7 +49,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   -- TODO: causes problems with ring. Investigate!
   top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.errors <- ml.errors;
   
@@ -157,7 +157,7 @@ top::MatchRule ::= pt::PatternList '->' e::Expr
   -- UNCOMMENT if no longer forwarding to matchRule #HACK2012
   --top.errors <- pt.errors;
 
-  forwards to matchRule(loc(top.file, $2.line, $2.column), pt.patternList, e);
+  forwards to matchRule($2.location, pt.patternList, e);
 }
 
 abstract production matchRule

@@ -24,7 +24,7 @@ concrete production ideDcl
 top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optFunctions::IdeFunctions ';'
 {
   top.pp = "temp_imp_ide_dcl " ++ parsername.pp ++ " " ++ fileextension.lexeme ++ "\n";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.defs = [];
 
@@ -73,7 +73,7 @@ nonterminal IdeFunctionList with env, location, errors, grammarName, file, funcD
 concrete production emptyIdeFunctions
 top::IdeFunctions ::=
 {
-  top.location = loc(top.file, -1, -1);
+  top.location = bogusLocation();
   top.errors := [];
   top.funcDcls := [];
   top.propDcls := [];
@@ -82,7 +82,7 @@ top::IdeFunctions ::=
 concrete production listIdeFunctions
 top::IdeFunctions ::= '{' funcList::IdeFunctionList '}'
 {
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   top.errors := funcList.errors;
   top.funcDcls := funcList.funcDcls;
   top.propDcls := funcList.propDcls;
@@ -91,7 +91,7 @@ top::IdeFunctions ::= '{' funcList::IdeFunctionList '}'
 concrete production nilIdeFunctionList
 top::IdeFunctionList ::= 
 {
-  top.location = loc(top.file, -1, -1);
+  top.location = bogusLocation();
   top.errors := [];
   top.funcDcls := [];
   top.propDcls := [];
@@ -109,7 +109,7 @@ top::IdeFunctionList ::= func::IdeFunction funcList::IdeFunctionList
 concrete production makeIdeFunction_Analyzer
 top::IdeFunction ::= 'analyzer' analyzerName::QName ';' 
 {
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.funcDcls := [pair("analyzer", analyzerName.lookupValue.fullName)];
   top.propDcls := [];
@@ -135,7 +135,7 @@ top::IdeFunction ::= 'analyzer' analyzerName::QName ';'
 concrete production makeIdeFunction_Porperty
 top::IdeFunction ::= 'property' pname::IdLower_t ptype::TypeName ';' 
 {
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.funcDcls := [];
 

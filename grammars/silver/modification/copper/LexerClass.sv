@@ -39,7 +39,7 @@ abstract production lexerClassModifiersNone
 top::LexerClassModifiers ::= 
 {
   top.pp = "";
-  top.location = loc(top.file, -1, -1);
+  top.location = bogusLocation();
 
   top.lexerClassModifiers = [];
   top.errors := [];
@@ -67,7 +67,7 @@ concrete production lexerClassModifierDominates
 top::LexerClassModifier ::= 'dominates' terms::TermPrecList
 {
   top.pp = "dominates " ++ terms.pp;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.lexerClassModifiers = [lexerClassDominates(terms.precTermList)];
   top.errors := terms.errors;
@@ -77,7 +77,7 @@ concrete production lexerClassModifierSubmitsTo
 top::LexerClassModifier ::= 'submits' 'to' terms::TermPrecList
 {
   top.pp = "submits to " ++ terms.pp;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.lexerClassModifiers = [lexerClassSubmits(terms.precTermList)];
   top.errors := terms.errors;

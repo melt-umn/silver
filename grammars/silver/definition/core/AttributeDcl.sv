@@ -4,7 +4,7 @@ concrete production attributeDclInh
 top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type ';'
 {
   top.pp = "inherited attribute " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -27,7 +27,7 @@ concrete production attributeDclSyn
 top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type ';'
 {
   top.pp = "synthesized attribute " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;

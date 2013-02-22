@@ -10,14 +10,14 @@ abstract production err
 top::Message ::= l::Location s::String
 {
   top.location = l;
-  top.pp = l.fileName ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": error: " ++ s;
+  top.pp = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": error: " ++ s;
 }
 
 abstract production wrn
 top::Message ::= l::Location s::String
 {
   top.location = l;
-  top.pp = l.fileName ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": warning: " ++ s;
+  top.pp = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": warning: " ++ s;
 }
 
 function foldMessages

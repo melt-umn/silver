@@ -12,13 +12,13 @@ top::Name ::= id::IdLower_t
 {
   top.name = id.lexeme;
   top.pp = id.lexeme;
-  top.location = loc(top.file, id.line, id.column);
+  top.location = $1.location;
 }
 concrete production nameIdUpper
 top::Name ::= id::IdUpper_t
 {
   top.name = id.lexeme;
   top.pp = id.lexeme;
-  top.location = loc(top.file, id.line, id.column);
+  top.location = $1.location;
 }
 

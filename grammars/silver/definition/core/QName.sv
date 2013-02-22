@@ -37,7 +37,7 @@ top::QName ::= id::Name ':' qn::QName
 {
   top.name = id.name ++ ":" ++ qn.name;
   top.pp = id.pp ++ ":" ++ qn.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   
   top.lookupValue = decorate customLookup("value", getValueDcl, top.name, top.location) with { env = top.env; };
   top.lookupType = decorate customLookup("type", getTypeDcl, top.name, top.location) with { env = top.env; };
@@ -79,7 +79,7 @@ String ::= lst::[DclInfo]
   
   -- TODO: perhaps some way of including types, when they are relevant (attributes, values)
   return if null(lst) then ""
-         else ("\t" ++ dcl.fullName ++ " (" ++ dcl.sourceLocation.fileName ++ ":" ++ toString(dcl.sourceLocation.line) ++ ")\n")
+         else ("\t" ++ dcl.fullName ++ " (" ++ dcl.sourceLocation.filename ++ ":" ++ toString(dcl.sourceLocation.line) ++ ")\n")
               ++ printPossibilities(tail(lst));
 }
 
@@ -92,7 +92,7 @@ top::QNameUpper ::= id::IdUpper_t
 {
   top.name = id.lexeme;
   top.pp = id.lexeme;
-  top.location = loc(top.file, id.line, id.column);
+  top.location = $1.location;
   
   top.lookupType = decorate customLookup("type", getTypeDcl, top.name, top.location) with { env = top.env; };
 }
@@ -102,7 +102,7 @@ top::QNameUpper ::= id::Name ':' qn::QNameUpper
 {
   top.name = id.name ++ ":" ++ qn.name;
   top.pp = id.pp ++ ":" ++ qn.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   
   top.lookupType = decorate customLookup("type", getTypeDcl, top.name, top.location) with { env = top.env; };
 }

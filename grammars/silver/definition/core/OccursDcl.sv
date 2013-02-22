@@ -6,7 +6,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   top.pp = "attribute " ++ at.pp ++ attl.pp ++ " occurs on " ++ nt.pp ++ nttl.pp ++ ";";
 
   -- TODO: this location is highly unreliable.
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.defs = [
     occursDef(top.grammarName, at.location,

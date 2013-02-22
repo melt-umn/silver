@@ -8,7 +8,7 @@ concrete production terminalModifierDominates
 top::TerminalModifier ::= 'dominates' '{' terms::TermPrecList '}'
 {
   top.pp = "dominates { " ++ terms.pp ++ " } ";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.terminalModifiers = [termDominates(terms.precTermList)];
   top.errors := terms.errors;
@@ -18,7 +18,7 @@ concrete production terminalModifierSubmitsTo
 top::TerminalModifier ::= 'submits' 'to' '{' terms::TermPrecList  '}'
 {
   top.pp = "submits to { " ++ terms.pp ++ " } " ;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.terminalModifiers = [termSubmits(terms.precTermList)];
   top.errors := terms.errors;
@@ -28,7 +28,7 @@ concrete production terminalModifierClassSpec
 top::TerminalModifier ::= 'lexer' 'classes' '{' cl::ClassList '}'
 {
   top.pp = "lexer classes { " ++ cl.pp ++ " } " ;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.terminalModifiers = [termClasses(cl.lexerClasses)];
   top.errors := cl.errors;
@@ -38,7 +38,7 @@ concrete production terminalModifierActionCode
 top::TerminalModifier ::= 'action' acode::ActionCode_c
 {
   top.pp = "action " ++ acode.pp;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.terminalModifiers = [termAction(acode.actionCode)];
 
@@ -104,7 +104,7 @@ top::TermPrecList ::=
   top.precTermList = [];
   top.defs = [];
   top.pp = "";
-  top.location = loc("termPrecListNull", -1, -1);
+  top.location = bogusLocation();
   top.errors := [];
 }
 
@@ -114,10 +114,10 @@ function addTerminalAttrDefs
 [Def] ::= moredefs::[Def]
 {
   -- TODO: no grammar or location? how to deal with this?
-  return [termAttrValueDef("DBGtav", loc("DBGtav.sv", -1, -1), "lexeme", stringTypeExp()),
-          termAttrValueDef("DBGtav", loc("DBGtav.sv", -1, -1), "filename", stringTypeExp()),
-          termAttrValueDef("DBGtav", loc("DBGtav.sv", -1, -1), "line", intTypeExp()),
-          termAttrValueDef("DBGtav", loc("DBGtav.sv", -1, -1), "column", intTypeExp())] ++
+  return [termAttrValueDef("DBGtav", bogusLocation(), "lexeme", stringTypeExp()),
+          termAttrValueDef("DBGtav", bogusLocation(), "filename", stringTypeExp()),
+          termAttrValueDef("DBGtav", bogusLocation(), "line", intTypeExp()),
+          termAttrValueDef("DBGtav", bogusLocation(), "column", intTypeExp())] ++
            moredefs;
 }
 

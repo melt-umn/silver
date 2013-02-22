@@ -34,12 +34,12 @@ synthesized attribute semResult :: String;
 concrete production aorb_a
 top::AOrB ::= 'a'
 {
-  top.semResult = "(" ++ implode(",", [$1.lexeme, $1.filename, toString($1.line), toString($1.column)]) ++ " [" ++ toString($1.index) ++ "])";
+  top.semResult = "(" ++ implode(",", [$1.lexeme, $1.filename, toString($1.line), toString($1.column)]) ++ " [" ++ toString($1.location.index) ++ "])";
 }
 concrete production aorb_b
 top::AOrB ::= 'b'
 {
-  top.semResult = "(" ++ implode(",", [$1.lexeme, $1.filename, toString($1.line), toString($1.column)]) ++ " [" ++ toString($1.index) ++ "])";
+  top.semResult = "(" ++ implode(",", [$1.lexeme, $1.filename, toString($1.line), toString($1.column)]) ++ " [" ++ toString($1.location.index) ++ "])";
 }
 
 nonterminal AOrBs with semResult;

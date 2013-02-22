@@ -13,9 +13,9 @@ concrete production childrenRef
 top::Expr ::= '$' e::Int_t
 {
   top.pp = "$" ++ e.lexeme;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
-  forwards to baseExpr(qName(loc(top.file, $1.line, $1.column),
+  forwards to baseExpr(qName(top.location,
     findChild(toInt(e.lexeme), 
       [top.signature.outputElement.elementName] ++ top.signature.inputNames)));
 }

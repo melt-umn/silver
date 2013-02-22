@@ -13,7 +13,7 @@ nonterminal Message with unparse, location;
 abstract production err
 top::Message ::= l::Location m::String
 {
-  top.unparse = l.unparse ++ ": error: " ++ m;
+  top.unparse = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": error: " ++ m;
   top.location = l;
 }
 
@@ -24,7 +24,7 @@ top::Message ::= l::Location m::String
 abstract production wrn
 top::Message ::= l::Location m::String
 {
-  top.unparse = l.unparse ++ ": warning: " ++ m;
+  top.unparse = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": warning: " ++ m;
   top.location = l;
 }
 

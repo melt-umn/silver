@@ -19,7 +19,7 @@ concrete production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
   top.pp = "abstract production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp; 
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
@@ -62,7 +62,7 @@ concrete production productionSignature
 top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
   top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
@@ -74,7 +74,7 @@ concrete production productionLHS
 top::ProductionLHS ::= id::Name '::' t::Type
 {
   top.pp = id.pp ++ "::" ++ t.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.outputElement = namedSignatureElement(id.name, t.typerep);
 
@@ -92,7 +92,7 @@ concrete production productionRHSNil
 top::ProductionRHS ::=
 {
   top.pp = "";
-  top.location = loc(top.file,-1,-1);
+  top.location = bogusLocation();
 
   top.defs = [];
   top.errors := [];
@@ -117,7 +117,7 @@ concrete production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::Type
 {
   top.pp = id.pp ++ "::" ++ t.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.inputElements = [namedSignatureElement(id.name, t.typerep)];
 

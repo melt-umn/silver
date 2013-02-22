@@ -32,7 +32,7 @@ concrete production nameIdTick
 top::NameTick ::= id::IdTick_t
 {
   top.pp = id.lexeme;
-  top.location = loc(top.file, id.line, id.column);
+  top.location = $1.location;
   top.name = substring(0, length(id.lexeme) -1, id.lexeme);
 }
 
@@ -40,7 +40,7 @@ concrete production nameIdTickTick
 top::NameTickTick ::= id::IdTickTick_t
 {
   top.pp = id.lexeme;
-  top.location = loc(top.file, id.line, id.column);
+  top.location = $1.location;
   top.name = substring(0, length(id.lexeme) -2, id.lexeme);
 }
 

@@ -1,4 +1,5 @@
 grammar silver:extension:convenience;
+
 imports silver:definition:env;
 imports silver:definition:core;
 imports silver:definition:concrete_syntax;

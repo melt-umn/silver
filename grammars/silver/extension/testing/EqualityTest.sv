@@ -21,7 +21,8 @@ ag::AGDcl ::= kwd::'equalityTest'
 {
   ag.pp = "equalityTest (" ++ value.pp ++ "," ++ expected.pp ++ ",\n" ++ 
           "              " ++ valueType.pp ++ ", " ++ testSuite.pp ++ ");\n";
-  ag.location = loc(ag.file, kwd.line, kwd.column);
+  ag.location = $1.location;
+
   ag.errors := case equalityTestExpr of
                | just(_) -> []
                | nothing() -> 

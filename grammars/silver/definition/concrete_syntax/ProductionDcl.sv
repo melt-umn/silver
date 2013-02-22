@@ -4,7 +4,7 @@ concrete production concreteProductionDcl
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody
 {
   top.pp = "concrete production " ++ id.pp ++ "\n" ++ ns.pp ++ " " ++ pm.pp ++ "\n" ++ body.pp; 
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
@@ -20,7 +20,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
     syntaxProduction(namedSig,
       foldr(consProductionMod, nilProductionMod(), pm.productionModifiers))];
   
-  forwards to productionDcl(terminal(Abstract_kwd, "abstract", $1), $2, id, ns, body);
+  forwards to productionDcl(terminal(Abstract_kwd, "abstract", $1.location), $2, id, ns, body);
 }
 
 nonterminal ProductionModifiers with config, location, file, pp, productionModifiers, errors, env; -- 0 or some
@@ -33,7 +33,7 @@ concrete production productionModifiersNone
 top::ProductionModifiers ::=
 {
   top.pp = "";
-  top.location = loc("", -1, -1);
+  top.location = bogusLocation();
 
   top.productionModifiers = [];
   top.errors := [];
@@ -61,7 +61,7 @@ concrete production productionModifiersCons
 top::ProductionModifierList ::= h::ProductionModifier ',' t::ProductionModifierList
 {
   top.pp = h.pp ++ ", " ++ t.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.productionModifiers = h.productionModifiers ++ t.productionModifiers;
   top.errors := h.errors ++ t.errors;
@@ -72,7 +72,7 @@ concrete production productionModifierPrecedence
 top::ProductionModifier ::= 'precedence' '=' i::Int_t
 {
   top.pp = "precedence = " ++ i.lexeme;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $2.location;
 
   top.productionModifiers = [prodPrecedence(toInt(i.lexeme))];
   top.errors := [];
@@ -84,7 +84,7 @@ concrete production productionModifierOperator
 top::ProductionModifier ::= 'operator' '=' n::QName
 {
   top.pp = "operator = " ++ n.pp;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $2.location;
 
   top.productionModifiers = [prodOperator(n.lookupType.fullName)];
 
@@ -123,9 +123,8 @@ aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::Type
 {
   top.concreteSyntaxTypeErrors :=
-       if t.typerep.permittedInConcreteSyntax
-       then []
-       else [err(t.location, t.pp ++ " is not permitted on concrete productions.  Only terminals and nonterminals (without type variables) can appear here")];
+    if t.typerep.permittedInConcreteSyntax then []
+    else [err(t.location, t.pp ++ " is not permitted on concrete productions.  Only terminals and nonterminals (without type variables) can appear here")];
 }
 
 synthesized attribute permittedInConcreteSyntax :: Boolean occurs on TypeExp;

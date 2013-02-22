@@ -53,7 +53,7 @@ concrete production noGrammarDcl
 top::GrammarDcl ::=
 {
   top.pp = "";
-  top.location = loc(top.file, 1, 1);
+  top.location = bogusLocation();
   top.declaredName = top.grammarName;
   top.errors := [];
 }
@@ -62,7 +62,8 @@ concrete production grammarDcl_c
 top::GrammarDcl ::= 'grammar' qn::QName ';'
 {
   top.pp = "grammar " ++ qn.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
+
   top.declaredName = qn.name;
   top.errors := 
     if qn.name == top.grammarName then []

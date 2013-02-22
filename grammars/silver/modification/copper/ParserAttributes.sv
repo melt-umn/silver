@@ -3,8 +3,8 @@ grammar silver:modification:copper;
 concrete production attributeDclParser
 top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::ActionCode_c ';'
 {
-  top.location = loc(top.file, $1.line, $1.column);
   top.pp = "parser attribute " ++ a.name ++ " :: " ++ te.pp ++ " action " ++ acode.pp ++ " ;" ;
+  top.location = $1.location;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;

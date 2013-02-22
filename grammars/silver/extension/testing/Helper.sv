@@ -38,7 +38,7 @@ Expr ::= s::String
 function prodFuncCall
 Expr ::= name::String args::[Expr]
 { 
-  return mkFunctionInvocation(loc("??",-1,-1), mkNameExpr(name), args);
+  return mkFunctionInvocation(bogusLocation(), mkNameExpr(name), args);
 }
 
 -- Fold a list of expressions (Expr) into a Exprs nonterminal.
@@ -54,7 +54,7 @@ Exprs ::= es::[Expr]
 function attrAcc
 Expr ::= n::String a::String
 { return  
-   access ( mkNameExpr(n), '.', qName(loc("??",-1,-1), a) ) ; 
+   access ( mkNameExpr(n), '.', qName(bogusLocation(), a) ) ; 
 }
 
 -- replace " characters with two: \ and "

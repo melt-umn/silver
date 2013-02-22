@@ -55,26 +55,10 @@ top::Expr ::= 'new' '(' e::Expr ')'
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }
 
-aspect production terminalFunction
-top::Expr ::= 'terminal' '(' t::Type ',' e::Expr ')'
+aspect production terminalConstructor
+top::Expr ::= 'terminal' '(' t::Type ',' es::Expr ',' el::Expr ')'
 {
-  top.translation = "new common.TerminalRecord(" ++ e.translation ++ ".toString(), -1, -1)";
-
-  top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
-}
-
-aspect production terminalFunctionLineCol
-top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
-{
-  top.translation = "new common.TerminalRecord(" ++ e1.translation ++ ".toString(), " ++ e2.translation ++ ", " ++ e3.translation ++ ")";
-
-  top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
-}
-
-aspect production terminalFunctionInherited
-top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ')'
-{
-  top.translation = "new common.TerminalRecord(" ++ e1.translation ++ ".toString(), " ++ e2.translation ++ ")";
+  top.translation = "new common.TerminalRecord(" ++ es.translation ++ ", " ++ el.translation ++ ")";
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }

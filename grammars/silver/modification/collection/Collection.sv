@@ -49,7 +49,8 @@ concrete production plusplusOperator
 top::NameOrBOperator ::= '++'
 {
   top.pp = "++";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
+
   top.operation = case top.operatorForType of
                   | stringTypeExp() -> plusPlusOperationString()
                   | listTypeExp(_) -> plusPlusOperationList()
@@ -66,7 +67,8 @@ concrete production borOperator
 top::NameOrBOperator ::= '||'
 {
   top.pp = "||";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
+
   top.operation = borOperation();
   top.errors := case top.operatorForType of
                 | boolTypeExp() -> []
@@ -77,7 +79,8 @@ concrete production bandOperator
 top::NameOrBOperator ::= '&&'
 {
   top.pp = "&&";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
+
   top.operation = bandOperation();
   top.errors := case top.operatorForType of
                 | boolTypeExp() -> []
@@ -121,7 +124,7 @@ concrete production collectionAttributeDclSyn
 top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type 'with' q::NameOrBOperator ';'
 {
   top.pp = "synthesized attribute " ++ a.name ++ tl.pp ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -148,7 +151,7 @@ concrete production collectionAttributeDclInh
 top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type 'with' q::NameOrBOperator ';'
 {
   top.pp = "inherited attribute " ++ a.name ++ tl.pp ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -176,7 +179,7 @@ concrete production collectionAttributeDclProd
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
 {
   top.pp = "production attribute " ++ a.name ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.productionAttributes = [localColDef(top.grammarName, a.location, fName, te.typerep, q.operation)];
 
@@ -203,14 +206,14 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
 abstract production errorCollectionDefDispatcher
 top::ProductionStmt ::= dl::DefLHS '.' q::Decorated QName '=' e::Expr
 {
-  top.errors <- [err(loc(top.file, $4.line, $4.column), "The ':=' and '<-' operators can only be used for collections. " ++ q.pp ++ " is not a collection.")];
+  top.errors <- [err($4.location, "The ':=' and '<-' operators can only be used for collections. " ++ q.pp ++ " is not a collection.")];
 
   forwards to errorAttributeDef(dl,$2,q,$4,e);
 }
 abstract production errorColNormalAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' q::Decorated QName '=' e::Expr
 {
-  top.errors <- [err(loc(top.file, $4.line, $4.column), q.pp ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")];
+  top.errors <- [err($4.location, q.pp ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")];
 
   forwards to errorAttributeDef(dl,$2,q,$4,e);
 }
@@ -218,7 +221,7 @@ top::ProductionStmt ::= dl::DefLHS '.' q::Decorated QName '=' e::Expr
 abstract production errorCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
-  top.errors <- [err(loc(top.file, $2.line, $2.column), "The ':=' and '<-' operators can only be used for collections. " ++ val.pp ++ " is not a collection.")];
+  top.errors <- [err($2.location, "The ':=' and '<-' operators can only be used for collections. " ++ val.pp ++ " is not a collection.")];
   
   -- TODO: this production also produces an error message, so we'll produce two errors for one flaw.
   -- We don't want to use := for the errors, because we'd miss any errors in e, and we don't want to repeat
@@ -228,7 +231,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 abstract production errorColNormalValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
-  top.errors <- [err(loc(top.file, $2.line, $2.column), val.pp ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")];
+  top.errors <- [err($2.location, val.pp ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")];
   
   -- TODO: same problem
   forwards to errorValueDef(val, $2, e);
@@ -352,8 +355,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QName '<-' e::Expr ';'
   top.defs = [];
 
   forwards to if null(attr.lookupAttribute.dcls)
-              then errorAttributeDef(dl, $2, attr, terminal(Equal_t, "<-", $4), e)
-              else attr.lookupAttribute.dcl.attrAppendDefDispatcher(dl, $2, attr, terminal(Equal_t, "<-", $4), e);
+              then errorAttributeDef(dl, $2, attr, terminal(Equal_t, "<-", $4.location), e)
+              else attr.lookupAttribute.dcl.attrAppendDefDispatcher(dl, $2, attr, terminal(Equal_t, "<-", $4.location), e);
 }
 
 concrete production attrContainsBase
@@ -368,8 +371,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QName ':=' e::Expr ';'
   top.defs = [];
 
   forwards to if null(attr.lookupAttribute.dcls)
-              then errorAttributeDef(dl, $2, attr, terminal(Equal_t, ":=", $4), e)
-              else attr.lookupAttribute.dcl.attrBaseDefDispatcher(dl, $2, attr, terminal(Equal_t, ":=", $4), e);
+              then errorAttributeDef(dl, $2, attr, terminal(Equal_t, ":=", $4.location), e)
+              else attr.lookupAttribute.dcl.attrBaseDefDispatcher(dl, $2, attr, terminal(Equal_t, ":=", $4.location), e);
 }
 
 concrete production valContainsAppend
@@ -384,8 +387,8 @@ top::ProductionStmt ::= val::QName '<-' e::Expr ';'
   top.defs = [];
   
   forwards to if null(val.lookupValue.dcls)
-              then errorValueDef(val, terminal(Equal_t, "<-", $2), e)
-              else val.lookupValue.dcl.appendDefDispatcher(val, terminal(Equal_t, "<-", $2), e);
+              then errorValueDef(val, terminal(Equal_t, "<-", $2.location), e)
+              else val.lookupValue.dcl.appendDefDispatcher(val, terminal(Equal_t, "<-", $2.location), e);
 }
 
 concrete production valContainsBase
@@ -400,7 +403,7 @@ top::ProductionStmt ::= val::QName ':=' e::Expr ';'
   top.defs = [];
   
   forwards to if null(val.lookupValue.dcls)
-              then errorValueDef(val, terminal(Equal_t, ":=", $2), e)
-              else val.lookupValue.dcl.baseDefDispatcher(val, terminal(Equal_t, ":=", $2), e);
+              then errorValueDef(val, terminal(Equal_t, ":=", $2.location), e)
+              else val.lookupValue.dcl.baseDefDispatcher(val, terminal(Equal_t, ":=", $2.location), e);
 }
 
