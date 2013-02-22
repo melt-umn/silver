@@ -36,15 +36,15 @@ concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::Type 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
 {
   top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
-  forwards to matchPrimitive(loc(top.file, $1.line, $1.column), e, t, pr, f);
+  forwards to matchPrimitive(top.location, e, t, pr, f);
 }
 abstract production matchPrimitive
 top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
 {
   top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = ll;
 
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
@@ -123,7 +123,7 @@ concrete production consPattern
 top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
 {
   top.pp = p.pp ++ " | " ++ ps.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   
   top.errors := p.errors ++ ps.errors;
   top.translation = p.translation ++ "\nelse " ++ ps.translation;
@@ -249,7 +249,7 @@ abstract production integerPattern
 top::PrimPattern ::= i::Int_t '->' e::Expr
 {
   top.pp = i.lexeme ++ " -> " ++ e.pp;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   
   top.errors := e.errors;
   
@@ -278,7 +278,7 @@ abstract production stringPattern
 top::PrimPattern ::= i::String_t '->' e::Expr
 {
   top.pp = i.lexeme ++ " -> " ++ e.pp;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   
   top.errors := e.errors;
   
@@ -449,7 +449,7 @@ concrete production nilVarBinder
 top::VarBinders ::= Epsilon_For_Location  -- technically a bug, but forget it for now
 {
   top.pp = "";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   top.defs = [];
   top.errors := [];
   
@@ -501,7 +501,7 @@ concrete production ignoreVarBinder
 top::VarBinder ::= '_'
 {
   top.pp = "_";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   top.defs = [];
   top.errors := [];
   top.let_translation = "";

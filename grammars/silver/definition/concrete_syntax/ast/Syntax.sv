@@ -123,7 +123,7 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
     else "") ++
     "    <Type>common.TerminalRecord</Type>\n" ++ 
     "    <Code><![CDATA[\n" ++ 
-    "RESULT = new common.TerminalRecord(lexeme,virtualLocation,Integer.valueOf((int)getStartRealLocation().getPos()),Integer.valueOf((int)getEndRealLocation().getPos()));\n" ++
+    "RESULT = new common.TerminalRecord(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++ 
     "    <InClasses>" ++ modifiers.lexerclassesXML ++ "</InClasses>\n" ++ 

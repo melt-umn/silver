@@ -89,14 +89,14 @@ concrete productions e::Expr
 -- Literals
 
  | l::IntegerLiteral  { e.unparse = l.lexeme; 
-                             e.ast = ast:intLit(loc(l.filename, l.line, l.column), l.lexeme); }
+                             e.ast = ast:intLit(l.location, l.lexeme); }
  | l::FloatLiteral    { e.unparse = l.lexeme;
-                             e.ast = ast:floatLit(loc(l.filename, l.line, l.column), l.lexeme); }
+                             e.ast = ast:floatLit(l.location, l.lexeme); }
 
  | l::BooleanLiteral  { e.unparse = l.lexeme;
-                             e.ast = ast:boolLit(loc(l.filename, l.line, l.column), l.lexeme); }
+                             e.ast = ast:boolLit(l.location, l.lexeme); }
 
  | l::StringLiteral   { e.unparse = l.lexeme;
-                             e.ast = ast:stringLit(loc(l.filename, l.line, l.column), l.lexeme); }
+                             e.ast = ast:stringLit(l.location, l.lexeme); }
 
 

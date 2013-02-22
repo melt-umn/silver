@@ -60,7 +60,7 @@ concrete production emptyProductionBodySemi
 top::ProductionBody ::= ';'
 {
   top.pp = ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   forwards to defaultProductionBody(productionStmtsNone());
 }
@@ -69,7 +69,7 @@ concrete production emptyProductionBodyCurly
 top::ProductionBody ::= '{' '}'
 {
   top.pp = "{}";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   forwards to defaultProductionBody(productionStmtsNone());
 }
@@ -78,7 +78,7 @@ concrete production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
   top.pp = "{" ++ stmts.pp ++ "}";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   production attribute extraStmts :: ProductionStmts with productionStmtsAppend ;
   extraStmts := stmts;
@@ -103,7 +103,7 @@ abstract production productionStmtsNone
 top::ProductionStmts ::= 
 {
   top.pp = "";
-  top.location = loc(top.file, -1, -1);
+  top.location = bogusLocation();
   top.defs = [];
 
   top.productionAttributes = [];
@@ -181,7 +181,7 @@ concrete production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
   top.pp = "\treturn " ++ e.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   
   top.uniqueSignificantExpression = [e];
 
@@ -196,7 +196,7 @@ concrete production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 {
   top.pp = "\tlocal attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   production attribute fName :: String;
   fName = top.signature.fullName ++ ":local:" ++ a.name;
@@ -228,14 +228,14 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
                 then [err(top.location, "Production attributes are not valid in this context.")]
                 else [];
 
-  forwards to localAttributeDcl(terminal(Local_kwd, "local", $1), $2, a, $4, te, $6);
+  forwards to localAttributeDcl(terminal(Local_kwd, "local", $1.location), $2, a, $4, te, $6);
 }
 
 concrete production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
   top.pp = "\tforwards to " ++ e.pp;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.productionAttributes = [forwardDef(top.grammarName, top.location, top.signature.outputElement.typerep)];
   top.uniqueSignificantExpression = [e];
@@ -251,18 +251,18 @@ concrete production forwardsToWith
 top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
 {
   top.pp = "\tforwards to " ++ e.pp ++ " with {" ++ inh.pp ++ "};";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   forwards to productionStmtAppend(
     forwardsTo($1, $2, $3, $8),
-    forwardingWith(terminal(Forwarding_kwd, "forwarding", $1), $4, $5, inh, $7, $8));
+    forwardingWith(terminal(Forwarding_kwd, "forwarding", $1.location), $4, $5, inh, $7, $8));
 }
 
 concrete production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {
   top.pp = "\tforwarding with {" ++ inh.pp ++ "};";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   production attribute fwdDcls :: [DclInfo];
   fwdDcls = getValueDcl("forward", top.env);
@@ -279,7 +279,7 @@ concrete production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
   top.pp = lhs.pp ++ " = " ++ e.pp ++ ";";
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := lhs.errors ++ e.errors;
 }
@@ -317,7 +317,7 @@ concrete production attributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::QName '=' e::Expr ';'
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
-  top.location = loc(top.file, $4.line, $4.column);
+  top.location = $4.location;
 
   top.errors <- attr.lookupAttribute.errors;
 
@@ -340,7 +340,7 @@ abstract production errorAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
-  top.location = loc(top.file, $4.line, $4.column);
+  top.location = $4.location;
 
   -- No error message. We only get here via attributeDef, which will error for us
   top.errors := e.errors;
@@ -352,7 +352,7 @@ abstract production synthesizedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
-  top.location = loc(top.file, $4.line, $4.column);
+  top.location = $4.location;
 
   production attribute occursCheck :: OccursCheck;
   occursCheck = occursCheckQName(attr, dl.typerep);
@@ -369,7 +369,7 @@ abstract production inheritedAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
-  top.location = loc(top.file, $4.line, $4.column);
+  top.location = $4.location;
 
   production attribute occursCheck :: OccursCheck;
   occursCheck = occursCheckQName(attr, dl.typerep);
@@ -397,7 +397,7 @@ top::DefLHS ::= q::QName
 concrete production concreteDefLHSfwd
 top::DefLHS ::= q::'forward'
 {
-  forwards to concreteDefLHS(qNameId(nameIdLower(terminal(IdLower_t, "forward", q))));
+  forwards to concreteDefLHS(qNameId(nameIdLower(terminal(IdLower_t, "forward", q.location))));
 }
 
 abstract production childDefLHS
@@ -467,7 +467,7 @@ concrete production valueEq
 top::ProductionStmt ::= val::QName '=' e::Expr ';'
 {
   top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors <- val.lookupValue.errors;
 
@@ -484,7 +484,7 @@ abstract production errorValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   -- We get here two ways: the defDispatcher is us, or the lookup failed.
   -- TODO: this leads to duplicate error messages, when (a) the lookup fails and (b) we error here too
@@ -495,7 +495,7 @@ abstract production localValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   -- val is already valid here
   top.errors := e.errors;

@@ -12,7 +12,7 @@ concrete production wrongDecl
 top::AGDcl ::= 'wrongCode' s::String_t '{' ags::AGDcls '}'
 {
   top.pp = "wrongCode" ++ s.lexeme ++ "{" ++ ags.pp ++ "}";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   
   top.errors := if indexOf(substring(1,length(s.lexeme)-1,s.lexeme),
                           foldMessages(ags.errors)) == -1

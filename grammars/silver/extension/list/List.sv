@@ -10,7 +10,8 @@ concrete production listType
 top::Type ::= '[' te::Type ']'
 {
   top.pp = "[" ++ te.pp ++ "]";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
+
   top.typerep = listTypeExp(te.typerep);
 
   forwards to refType('Decorated', 
@@ -24,7 +25,7 @@ concrete production emptyList
 top::Expr ::= '[' ']'
 {
   top.pp = "[]";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   forwards to mkFunctionInvocation(top.location, baseExpr(qName(top.location, "core:nil")), []);
 }
@@ -36,7 +37,7 @@ concrete production consListOp
 top::Expr ::= h::Expr '::' t::Expr
 {
   top.pp = "(" ++ h.pp ++ " :: " ++ t.pp ++ ")" ;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   
   h.downSubst = top.downSubst; t.downSubst = top.downSubst; -- TODO BUG: don't know what this is needed... pp apparently??
   
@@ -47,7 +48,7 @@ concrete production fullList
 top::Expr ::= '[' es::Exprs ']'
 { 
   top.pp = "[ " ++ es.pp ++ " ]";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   
   es.downSubst = top.downSubst; -- TODO again, pretty printing garbage.
 

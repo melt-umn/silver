@@ -15,7 +15,7 @@ concrete production ffiTypeDcl
 top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeList 'foreign' ';'
 {
   top.pp = "type " ++ id.pp ++ tl.pp ++ " foreign ;";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;

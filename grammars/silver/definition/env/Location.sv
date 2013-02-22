@@ -1,26 +1,17 @@
 grammar silver:definition:env;
 
-nonterminal Location with line, column, fileName, unparse;
+attribute unparse occurs on Location;
 
-synthesized attribute fileName :: String;
-synthesized attribute line :: Integer;
-synthesized attribute column :: Integer;
-
-abstract production loc
-top::Location ::= file::String line::Integer column::Integer
+aspect production loc
+top::Location ::= filename::String  line::Integer  column::Integer
+                  endLine::Integer  endColumn::Integer
+                  index::Integer  endIndex::Integer
 {
-  top.line = line;
-  top.column = column;
-  top.fileName = file;
-  top.unparse = "'" ++ file ++ "', " ++ toString(line) ++ ", " ++ toString(column);
+  top.unparse = "'" ++ filename ++ "', " ++ toString(line) ++ ", " ++ toString(column);
 }
 
-function locationLte
-Boolean ::= l1::Location l2::Location
+function bogusLocation
+Location ::=
 {
-  return case l1, l2 of
-         | loc(f1,l1,c1), loc(f2,l2,c2) -> !(f1 > f2 || (f1 == f2 && (l1 > l2 || (l1 == l2 && c1 > c2))))
-         end;
+  return loc("??", -1, -1, -1, -1, -1, -1);
 }
-
-

@@ -8,7 +8,7 @@ concrete production parserDcl
 top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
 {
   top.pp = "parser " ++ m.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   
   top.moduleNames = m.moduleNames;
 

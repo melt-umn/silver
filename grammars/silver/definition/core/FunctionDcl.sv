@@ -7,7 +7,7 @@ concrete production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 
 {
   top.pp = "function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp; 
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
@@ -48,7 +48,7 @@ concrete production functionSignature
 top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS 
 {
   top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;

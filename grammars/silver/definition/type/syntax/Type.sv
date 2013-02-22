@@ -39,7 +39,7 @@ abstract production typerepType
 top::Type ::= t::TypeExp
 {
   top.pp = prettyType(t);
-  top.location = loc("typerepType", -1, -1);
+  top.location = bogusLocation();
 
   top.typerep = t;
 
@@ -52,7 +52,7 @@ concrete production integerType
 top::Type ::= 'Integer'
 {
   top.pp = "Integer";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.typerep = intTypeExp();
 
@@ -65,7 +65,7 @@ concrete production floatType
 top::Type ::= 'Float'
 {
   top.pp = "Float";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.typerep = floatTypeExp();
 
@@ -78,7 +78,7 @@ concrete production stringType
 top::Type ::= 'String'
 {
   top.pp = "String";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.typerep = stringTypeExp();
 
@@ -91,7 +91,7 @@ concrete production booleanType
 top::Type ::= 'Boolean'
 {
   top.pp = "Boolean";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.typerep = boolTypeExp();
 
@@ -119,7 +119,7 @@ concrete production typeVariableType
 top::Type ::= tv::IdLower_t
 {
   top.pp = tv.lexeme;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = tv.location;
   
   local attribute hack::QNameLookup;
   hack = customLookup("type", getTypeDcl, tv.lexeme, top.location);
@@ -135,7 +135,7 @@ concrete production refType
 top::Type ::= 'Decorated' t::Type
 {
   top.pp = "Decorated " ++ t.pp;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.typerep = decoratedTypeExp(t.typerep);
 
@@ -153,7 +153,7 @@ concrete production funType
 top::Type ::= '(' sig::Signature ')'
 {
   top.pp = "(" ++ sig.pp ++ ")";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.errors := sig.errors;
 
@@ -166,7 +166,7 @@ concrete production signatureEmptyRhs
 top::Signature ::= t::Type '::='
 {
   top.pp = t.pp ++ " ::=";
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := t.errors;
 
@@ -179,7 +179,7 @@ concrete production psignature
 top::Signature ::= t::Type '::=' list::TypeList 
 {
   top.pp = t.pp ++ " ::= " ++ list.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := t.errors ++ list.errors;
 
@@ -226,7 +226,7 @@ abstract production typeListNone
 top::TypeList ::=
 {
   top.pp = "";
-  top.location = loc(top.file, -1, -1);
+  top.location = bogusLocation();
   top.errors := [];
   top.types = [];
   top.lexicalTypeVariables = [];

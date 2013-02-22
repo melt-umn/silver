@@ -130,7 +130,7 @@ top::IBool ::= 'f'
 concrete production aLocationInfo
 top::ILocation ::= filename::IName ',' line::Num_t ',' column::Num_t
 {
-  top.location = loc(filename.aname, toInt(line.lexeme), toInt(column.lexeme));
+  top.location = loc(filename.aname, toInt(line.lexeme), toInt(column.lexeme), -1, -1, -1, -1);
 }
 
 concrete production aString
@@ -366,7 +366,7 @@ top::ITyVarDclsInner ::= t1::ITyVar
   local attribute tv :: TyVar;
   tv = freshTyVar();
   
-  top.defs = [lexTyVarDef("IFACE", loc("IFACE",-1,-1), t1.lexeme, skolemTypeExp(tv))];
+  top.defs = [lexTyVarDef("IFACE", bogusLocation(), t1.lexeme, skolemTypeExp(tv))];
   top.tyvars = [tv];
 }
 
@@ -376,7 +376,7 @@ top::ITyVarDclsInner ::= t1::ITyVar ',' t2::ITyVarDclsInner
   local attribute tv :: TyVar;
   tv = freshTyVar();
   
-  top.defs = lexTyVarDef("IFACE", loc("IFACE",-1,-1), t1.lexeme, skolemTypeExp(tv)) :: t2.defs;
+  top.defs = lexTyVarDef("IFACE", bogusLocation(), t1.lexeme, skolemTypeExp(tv)) :: t2.defs;
   top.tyvars = [tv] ++ t2.tyvars;
 }
 

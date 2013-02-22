@@ -17,7 +17,7 @@ concrete production makeTestSuite_p
 top::AGDcl ::= 'makeTestSuite' name::IdLower_t ';'
 {
   top.pp = "makeTestSuite " ++ name.lexeme ++ ";\n";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   local sig :: ProductionSignature =
     productionSignature(
@@ -53,7 +53,7 @@ concrete production mainTestSuite_p
 top::AGDcl ::= 'mainTestSuite' name::IdLower_t ';'
 {
   top.pp = "mainTestSuite " ++ name.lexeme ++ ";\n";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   forwards to 
   appendAGDcl(

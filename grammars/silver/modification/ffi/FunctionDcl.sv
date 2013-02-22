@@ -9,7 +9,7 @@ concrete production functionDclFFI
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'foreign' '{' ffidefs::FFIDefs '}'
 {
   top.pp = "function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp ++ " foreign {\n" ++ ffidefs.pp ++ "}"; 
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
@@ -43,7 +43,7 @@ concrete production ffidef
 top::FFIDef ::= name::String_t ':' 'return' code::String_t ';'
 {
   top.pp = name.lexeme ++ ": return " ++ code.lexeme ++ ";\n";
-  top.location = loc(top.file, name.line, name.column);
+  top.location = $1.location;
   
   top.errors := [];
   -- Up to each translation to do something with this.

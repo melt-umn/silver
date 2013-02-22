@@ -106,7 +106,7 @@ concrete production importStmt
 top::ImportStmt ::= 'import' m::ModuleExpr ';'
 {
   top.pp = "import " ++ m.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.errors := m.errors;
   top.moduleNames = m.moduleNames;
@@ -117,7 +117,7 @@ concrete production nilImportStmts
 top::ImportStmts ::=
 {
   top.pp = "";
-  top.location = loc(top.file, -1,-1);
+  top.location = bogusLocation();
 
   top.errors := [];
 
@@ -156,7 +156,7 @@ concrete production nilModuleStmts
 top::ModuleStmts ::=
 {
   top.pp = "";
-  top.location = loc(top.file, -1,-1);
+  top.location = bogusLocation();
 
   top.errors := [];
 
@@ -186,7 +186,7 @@ concrete production importsStmt
 top::ModuleStmt ::= 'imports' m::ModuleExpr ';'
 {
   top.pp = "imports " ++ m.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.errors := m.errors;
 
@@ -201,7 +201,7 @@ concrete production exportsStmt
 top::ModuleStmt ::= 'exports' m::ModuleName ';'
 {
   top.pp = "exports " ++ m.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.errors := m.errors;
 
@@ -216,7 +216,7 @@ concrete production exportsWithStmt
 top::ModuleStmt ::= 'exports' m::QName 'with' c::QName ';'
 {
   top.pp = "exports " ++ m.pp ++ " with " ++ c.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.errors := [];
 
@@ -230,7 +230,7 @@ concrete production optionalStmt
 top::ModuleStmt ::= 'option' m::QName ';'
 {
   top.pp = "option " ++ m.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.errors := [];
 
@@ -375,7 +375,7 @@ concrete production withElemsCons
 top::WithElems  ::= h::WithElem ',' t::WithElems
 {
   top.pp = h.pp ++ ", " ++ t.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   top.envMaps = h.envMaps ++ t.envMaps;
 }
 
@@ -384,7 +384,7 @@ concrete production withElement
 top::WithElem ::= n::QName 'as' newname::QName 
 {
   top.pp = n.pp ++ " as " ++ newname.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   top.envMaps = [pair(n.name, newname.name)];
 }
 
@@ -403,7 +403,7 @@ concrete production nameListCons
 top::NameList ::= h::QName ',' t::NameList
 {
   top.pp = h.pp ++ ", " ++ t.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   top.names = [h.name] ++ t.names;
 }
 

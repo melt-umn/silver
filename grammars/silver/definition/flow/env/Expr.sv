@@ -417,24 +417,11 @@ top::Expr ::= 'new' '(' e1::Expr ')'
   top.flowDeps = e1.flowDeps;
 }
 
-aspect production terminalFunction
-top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ')'
+aspect production terminalConstructor
+top::Expr ::= 'terminal' '(' t::Type ',' es::Expr ',' el::Expr ')'
 {
-  top.flowDeps = e1.flowDeps;
+  top.flowDeps = es.flowDeps ++ el.flowDeps;
 }
-
-aspect production terminalFunctionLineCol
-top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
-{
-  top.flowDeps = e1.flowDeps ++ e2.flowDeps ++ e3.flowDeps;
-}
-
-aspect production terminalFunctionInherited
-top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ')'
-{
-  top.flowDeps = e1.flowDeps ++ e2.flowDeps;
-}
-
 
 
 

@@ -1,10 +1,10 @@
 grammar simple:abstractsyntax;
 
 {- Simple doesn't properly track location info in ast -}
-abstract production locUnknown
-l::Location ::=
+function locUnknown
+Location ::=
 {
-  forwards to loc("??", -1, -1);
+  return loc("??", -1, -1, -1, -1, -1, -1);
 }
 
 

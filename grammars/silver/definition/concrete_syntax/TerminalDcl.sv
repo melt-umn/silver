@@ -62,7 +62,7 @@ concrete production regExpr
 top::RegExpr ::= '/' r::Regex_R '/'
 {
   top.pp = "/" ++ r.regString ++ "/";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   top.terminalRegExprSpec = r;
 }
 
@@ -95,7 +95,7 @@ abstract production terminalModifiersNone
 top::TerminalModifiers ::= 
 {
   top.pp = "";
-  top.location = loc(top.file, -1, -1);
+  top.location = bogusLocation();
 
   top.terminalModifiers = [];
   top.errors := [];
@@ -113,7 +113,7 @@ concrete production terminalModifiersCons
 top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
 {
   top.pp = h.pp ++ ", " ++ t.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.terminalModifiers = h.terminalModifiers ++ t.terminalModifiers;
   top.errors := h.errors ++ t.errors;
@@ -123,7 +123,7 @@ concrete production terminalModifierLeft
 top::TerminalModifier ::= 'association' '=' 'left'
 {
   top.pp = "association = left";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.terminalModifiers = [termAssociation("left")];
   top.errors := [];
@@ -132,7 +132,7 @@ concrete production terminalModifierRight
 top::TerminalModifier ::= 'association' '=' 'right'
 {
   top.pp = "association = right";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.terminalModifiers = [termAssociation("right")];
   top.errors := [];
@@ -142,7 +142,7 @@ concrete production terminalModifierPrecedence
 top::TerminalModifier ::= 'precedence' '=' i::Int_t
 {
   top.pp = "precedence = " ++ i.lexeme;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.terminalModifiers = [termPrecedence(toInt(i.lexeme))];
   top.errors := [];

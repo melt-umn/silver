@@ -8,7 +8,7 @@ concrete production attributeDclAuto
 top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type ';'
 {
   top.pp = "autocopy attribute " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -33,6 +33,6 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeList '::' te::
         then [err(top.location, "Autocopy attributes cannot be parameterized by type variables!")]
         else [];
 
-  forwards to attributeDclInh(terminal(Inherited_kwd, "inherited", $1), $2, a, tl, $5, te, $7);
+  forwards to attributeDclInh(terminal(Inherited_kwd, "inherited", $1.location), $2, a, tl, $5, te, $7);
 }
 

@@ -251,8 +251,18 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 aspect production terminalAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
-  -- TODO: we should maybe map the name properly to the field we access?
-  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ "." ++ q.name ++ ")";
+  local accessor :: String =
+    if q.name == "lexeme" || q.name == "location"
+    then q.name
+    else if q.name == "line"
+    then "getLine()"
+    else if q.name == "column"
+    then "getColumn()"
+    else if q.name == "filename"
+    then "getFilename()"
+    else error("Not possible -- an error should have been raised.");
+
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ "." ++ accessor ++ ")";
 
   top.lazyTranslation = top.translation;
 }

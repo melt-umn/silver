@@ -5,18 +5,18 @@ terminal Print_kwd 'print' lexer classes {KEYWORD,RESERVED};
 
 concrete production namePrint
 top::Name ::= 'print'
-{ forwards to nameIdLower(terminal(IdLower_t, "print", $1)); }
+{ forwards to nameIdLower(terminal(IdLower_t, "print", $1.location)); }
 
 concrete production namePluck
 top::Name ::= 'pluck'
-{ forwards to nameIdLower(terminal(IdLower_t, "pluck", $1)); }
+{ forwards to nameIdLower(terminal(IdLower_t, "pluck", $1.location)); }
 
 
 concrete production pluckDef
 top::ProductionStmt ::= 'pluck' e::Expr ';'
 {
   top.pp = "pluck " ++ e.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.translation = "return " ++ e.translation ++ ";\n";
 
@@ -35,7 +35,7 @@ concrete production printStmt
 top::ProductionStmt ::= 'print' e::Expr ';'
 {
   top.pp = "print " ++ e.pp ++ ";";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.translation = "System.err.println(" ++ e.translation ++ ");\n";
 
@@ -67,7 +67,7 @@ abstract production parserAttributeValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e.errors ++
                (if !top.blockContext.permitActions
@@ -109,7 +109,7 @@ abstract production termAttrValueValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 {
   top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   -- these values should only ever be in scope when it's valid to use them
   top.errors := e.errors;

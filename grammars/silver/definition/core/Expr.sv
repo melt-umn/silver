@@ -37,7 +37,7 @@ concrete production nestedExpr
 top::Expr ::= '(' e::Expr ')'
 {
   top.pp = "(" ++ e.pp ++ ")";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   
   forwards to e;
 }
@@ -154,11 +154,11 @@ concrete production concreteForwardExpr
 top::Expr ::= q::'forward'
 {
   top.pp = "forward";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   -- TODO: we're forwarding to baseExpr just to decorate the tree we create.
   -- That's a bit weird.
-  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "forward", q))));
+  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "forward", q.location))));
 }
 
 concrete production application
@@ -263,7 +263,7 @@ concrete production attributeSection
 top::Expr ::= '(' '.' q::QName ')'
 {
   top.pp = "(." ++ q.pp ++ ")";
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $1.location;
   
   -- Fresh variable for the input type, and we'll come back later and check that it occurs on that type.
   
@@ -297,7 +297,7 @@ concrete production access
 top::Expr ::= e::Expr '.' q::QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   
   top.errors := e.errors ++ forward.errors; -- So that e.errors appears first!
   
@@ -315,7 +315,7 @@ abstract production errorAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   
   top.typerep = q.lookupAttribute.typerep;
   top.errors := [err(top.location, "LHS of '.' is type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ " and cannot have attributes.")] ++ q.lookupAttribute.errors; -- TODO fix this. How? Why? What's wrong? Perhaps I didn't like doing the performsubst here
@@ -325,7 +325,7 @@ abstract production annoAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   
   local t :: TypeExp = performSubstitution(e.typerep, e.upSubst);
   
@@ -344,10 +344,12 @@ abstract production terminalAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   
   top.errors :=
-    if q.name == "lexeme" || q.name == "filename" || q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn" || q.name == "index" || q.name == "endIndex"
+    if q.name == "lexeme" || q.name == "location" || 
+       -- Temporary backwards compatibility bits:
+       q.name == "filename" || q.name == "line" || q.name == "column"
     then []
     else [err(q.location, q.name ++ " is not a terminal attribute")];
 
@@ -355,8 +357,10 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   top.typerep =
     if q.name == "lexeme" || q.name == "filename"
     then stringTypeExp()
-    else if q.name == "line" || q.name == "column" || q.name == "endLine" || q.name == "endColumn" || q.name == "index" || q.name == "endIndex"
+    else if q.name == "line" || q.name == "column"
     then intTypeExp()
+    else if q.name == "location"
+    then nonterminalTypeExp("core:Location", [])
     else errorType();
 }
 
@@ -364,7 +368,7 @@ abstract production undecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := q.lookupAttribute.errors ++ forward.errors; -- so that these errors appear first.
   
@@ -385,7 +389,7 @@ abstract production accessBouncer
 top::Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QName) e::Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = loc(top.file, $3.line, $3.column);
+  top.location = $3.location;
 
   -- Basically the only purpose here is to decorate 'e'.
   forwards to target(e, $3, q);
@@ -405,7 +409,7 @@ abstract production decoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := q.lookupAttribute.errors ++ forward.errors; -- so that these errors appear first.
   
@@ -426,7 +430,7 @@ abstract production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   
   production attribute occursCheck :: OccursCheck;
   occursCheck = occursCheckQName(q, performSubstitution(e.typerep, e.upSubst).decoratedType);
@@ -440,7 +444,7 @@ abstract production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   
   production attribute occursCheck :: OccursCheck;
   occursCheck = occursCheckQName(q, performSubstitution(e.typerep, e.upSubst).decoratedType);
@@ -455,7 +459,7 @@ abstract production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := []; -- empty because we only ever get here if lookup failed. see above.
 
@@ -467,7 +471,7 @@ concrete production decorateExprWithEmpty
 top::Expr ::= 'decorate' e::Expr 'with' '{' '}'
 {
   top.pp = "decorate " ++ e.pp ++ " with {}";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $2.location;
 
   forwards to decorateExprWith($1, e, $3, $4, exprInhsEmpty(), $5);
 }
@@ -476,7 +480,7 @@ concrete production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.pp = "decorate " ++ e.pp ++ " with {" ++ inh.pp ++ "}";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $2.location;
 
   top.typerep = decoratedTypeExp(performSubstitution(e.typerep, e.upSubst)); -- .decoratedForm?
   top.errors := e.errors ++ inh.errors;
@@ -507,7 +511,7 @@ abstract production exprInhsEmpty
 top::ExprInhs ::= 
 {
   top.pp = "";
-  top.location = loc(top.file, -1, -1);
+  top.location = bogusLocation();
   
   top.errors := [];
   top.suppliedInhs = [];
@@ -537,7 +541,7 @@ concrete production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 {
   top.pp = lhs.pp ++ " = " ++ e.pp ++ ";";
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
   
   top.errors := lhs.errors ++ e.errors;
   top.suppliedInhs = lhs.suppliedInhs;
@@ -561,7 +565,7 @@ concrete production trueConst
 top::Expr ::= 'true'
 {
   top.pp = "true";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   
   top.errors := [];
   top.typerep = boolTypeExp();
@@ -571,7 +575,7 @@ concrete production falseConst
 top::Expr ::= 'false'
 {
   top.pp = "false";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   
   top.errors := [];
   top.typerep = boolTypeExp();
@@ -581,7 +585,7 @@ concrete production and
 top::Expr ::= e1::Expr '&&' e2::Expr
 {
   top.pp = e1.pp ++ " && " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -591,7 +595,7 @@ concrete production or
 top::Expr ::= e1::Expr '||' e2::Expr
 {
   top.pp = e1.pp ++ " || " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -601,7 +605,7 @@ concrete production not
 top::Expr ::= '!' e::Expr
 {
   top.pp = "! " ++ e.pp;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $2.location;
 
   top.typerep = boolTypeExp();
   top.errors := e.errors;
@@ -611,7 +615,7 @@ concrete production gt
 top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.pp = e1.pp ++ " > " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -621,7 +625,7 @@ concrete production lt
 top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.pp = e1.pp ++ " < " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -631,7 +635,7 @@ concrete production gteq
 top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.pp = e1.pp ++ " >= " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -641,7 +645,7 @@ concrete production lteq
 top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.pp = e1.pp ++ " <= " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -651,7 +655,7 @@ concrete production eqeq
 top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.pp = e1.pp ++ " == " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -661,7 +665,7 @@ concrete production neq
 top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.pp = e1.pp ++ " != " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -672,7 +676,7 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 precedence = 0
 {
   top.pp = "if " ++ e1.pp ++ " then " ++ e2.pp ++ " else " ++ e3.pp;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.errors := e1.errors ++ e2.errors ++ e3.errors;
   top.typerep = e2.typerep;
@@ -682,7 +686,7 @@ concrete production intConst
 top::Expr ::= i::Int_t
 {
   top.pp = i.lexeme;
-  top.location = loc(top.file, i.line, i.column);
+  top.location = $1.location;
 
   top.errors := [];
   top.typerep = intTypeExp();
@@ -692,7 +696,7 @@ concrete production floatConst
 top::Expr ::= f::Float_t
 {
   top.pp = f.lexeme;
-  top.location = loc(top.file, f.line, f.column);
+  top.location = $1.location;
 
   top.errors := [];
   top.typerep = floatTypeExp();
@@ -702,7 +706,7 @@ concrete production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
   top.pp = e1.pp ++ " + " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
@@ -712,7 +716,7 @@ concrete production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
   top.pp = e1.pp ++ " - " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
@@ -722,7 +726,7 @@ concrete production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
   top.pp = e1.pp ++ " * " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
@@ -732,7 +736,7 @@ concrete production divide
 top::Expr ::= e1::Expr '/' e2::Expr
 {
   top.pp = e1.pp ++ " / " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
@@ -742,7 +746,7 @@ concrete production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
 {
   top.pp = e1.pp ++ " % " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
@@ -753,7 +757,7 @@ top::Expr ::= '-' e::Expr
 precedence = 13
 {
   top.pp = "- " ++ e.pp;
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
 
   top.errors := e.errors;
   top.typerep = e.typerep;
@@ -763,7 +767,7 @@ concrete production stringConst
 top::Expr ::= s::String_t
 {
   top.pp = s.lexeme;
-  top.location = loc(top.file, s.line, s.column);
+  top.location = $1.location;
 
   top.errors := [];
   top.typerep = stringTypeExp();
@@ -773,7 +777,7 @@ concrete production plusPlus
 top::Expr ::= e1::Expr '++' e2::Expr
 {
   top.pp = e1.pp ++ " ++ " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.typerep = performSubstitution(e1.typerep, errCheck1.upSubst); -- TODO: a bit silly we depend on errCheck, which isn't here...
 
@@ -809,7 +813,7 @@ abstract production exprsEmpty
 top::Exprs ::=
 {
   top.pp = "";
-  top.location = loc("exprsEmpty", -1, -1);
+  top.location = bogusLocation();
   
   top.errors := [];
   top.exprs = [];
@@ -829,7 +833,7 @@ concrete production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
   top.pp = e1.pp ++ ", " ++ e2.pp;
-  top.location = loc(top.file, $2.line, $2.column);
+  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.exprs = [e1] ++ e2.exprs;
@@ -863,7 +867,7 @@ concrete production missingAppExpr
 top::AppExpr ::= '_'
 {
   top.pp = "_";
-  top.location = loc(top.file, $1.line, $1.column);
+  top.location = $1.location;
   
   top.isPartial = true;
   top.missingTypereps = [top.appExprTyperep];
