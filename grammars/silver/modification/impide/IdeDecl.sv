@@ -116,10 +116,10 @@ top::IdeFunction ::= 'analyzer' analyzerName::QName ';'
 
   top.errors := analyzerName.lookupValue.errors;
   
-  -- [String] ::= [IdeProperty] IO
+  -- [IdeMessage] ::= [IdeProperty] IO
   local analyzerTypeExpected :: TypeExp =
     functionTypeExp(
-      listTypeExp(stringTypeExp()),
+      listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeMessage", [])), --listTypeExp(stringTypeExp()),
       [listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeProperty", [])),
         foreignTypeExp("core:IO", [])], []);
   

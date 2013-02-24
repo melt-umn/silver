@@ -114,10 +114,12 @@ String ::= funcDcl :: Pair<String String>
     local attribute grammarPart :: String = substitute(":", "/", substring(0, lastInd, funcDcl.snd));
 
     return "\n" ++ 
-           "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Analyze.java.template\"\n" ++ --String[], to be deleted
+           "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Analyze.java.template\"\n" ++ --String[] ::= String[], to be deleted
            "        tofile=\"${src}/" ++ grammarPart ++ "/Analyze.java\" filtering=\"true\" overwrite=\"true\"/>\n" ++
-           "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Analyze2.java.template\"\n" ++ --NIdeProperty[]
-           "        tofile=\"${src}/" ++ grammarPart ++ "/Analyze2.java\" filtering=\"true\" overwrite=\"true\"/>";
+           "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Analyze2.java.template\"\n" ++ --String[] ::= NIdeProperty[], to be deleted
+           "        tofile=\"${src}/" ++ grammarPart ++ "/Analyze2.java\" filtering=\"true\" overwrite=\"true\"/>\n" ++
+           "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Analyze3.java.template\"\n" ++ --NIdeMessage[] ::= NIdeProperty[]
+           "        tofile=\"${src}/" ++ grammarPart ++ "/Analyze3.java\" filtering=\"true\" overwrite=\"true\"/>";
 }
 
 function getArgCheckTarget
