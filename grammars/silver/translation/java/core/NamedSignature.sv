@@ -29,9 +29,9 @@ top::NamedSignatureElement ::= n::String ty::TypeExp
   top.childSigElem = "final Object c_" ++ n;
   top.childRefElem = "c_" ++ n;
   top.childDeclElem =
-    "\tprivate Object /*Thunk or " ++ ty.transType ++ "*/ child_" ++ n ++ ";\n" ++
-    "\tpublic final Object getChild_" ++ n ++ "() {\n" ++
-    "\t\treturn child_" ++ n ++ " = common.Util.demand(child_" ++ n ++ ");\n" ++
+    "\tprivate Object child_" ++ n ++ ";\n" ++
+    "\tpublic final " ++ ty.transType ++ " getChild_" ++ n ++ "() {\n" ++
+    "\t\treturn (" ++ ty.transType ++ ") (child_" ++ n ++ " = common.Util.demand(child_" ++ n ++ "));\n" ++
     "\t}\n\n";
   
   top.childStaticElem =
@@ -39,12 +39,17 @@ top::NamedSignatureElement ::= n::String ty::TypeExp
     else "\tchildInheritedAttributes[i_" ++ n ++ "] = " ++ 
            "new common.Lazy[" ++ makeNTClassName(ty.typeName) ++ ".num_inh_attrs];\n";
   
-  top.annoSigElem = "final Object a_" ++ n;
-  top.annoRefElem = "a_" ++ n;
+  -- annos are full names:
+  
+  local fn :: String = makeIdName(n);
+  
+  top.annoSigElem = "final Object a_" ++ fn;
+  top.annoRefElem = "a_" ++ fn;
   top.annoDeclElem =
-    "\tprivate Object /*Thunk or " ++ ty.transType ++ "*/ anno_" ++ n ++ ";\n" ++
-    "\tpublic final Object getAnno_" ++ n ++ "() {\n" ++
-    "\t\treturn anno_" ++ n ++ " = common.Util.demand(anno_" ++ n ++ ");\n" ++
+    "\tprivate Object anno_" ++ fn ++ ";\n" ++
+    "\t@Override\n" ++
+    "\tpublic final " ++ ty.transType ++ " getAnno_" ++ fn ++ "() {\n" ++
+    "\t\treturn (" ++ ty.transType ++ ") (anno_" ++ fn ++ " = common.Util.demand(anno_" ++ fn ++ "));\n" ++
     "\t}\n\n";
 }
 
@@ -88,7 +93,8 @@ String ::= n::NamedSignatureElement
 function makeAnnoAssign
 String ::= n::NamedSignatureElement
 {
-  return "\t\tthis.anno_" ++ n.elementName ++ " = a_" ++ n.elementName ++ ";\n";
+  local fn :: String = makeIdName(n.elementName);
+  return "\t\tthis.anno_" ++ fn ++ " = a_" ++ fn ++ ";\n";
 }
 function makeChildAssign
 String ::= n::NamedSignatureElement

@@ -201,12 +201,6 @@ NamedSignatureElement ::= nt::TypeExp  anno::DclInfo
   -- Used to compute the local typerep for this nonterminal
   anno.givenNonterminalType = nt;
   
-  -- We are currently cutting annotations down to just their SHORT NAME for the purpose of supplying the values.
-  -- Basically, nonterminals should have curated the list of annotations so the names do not overlap.
-  
-  local annoShortName :: String =
-    substring(lastIndexOf(":", anno.attrOccurring) + 1, length(anno.attrOccurring), anno.attrOccurring);
-  
-  return namedSignatureElement(annoShortName, anno.typerep);
+  return namedSignatureElement(anno.attrOccurring, anno.typerep);
 }
 
