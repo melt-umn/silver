@@ -260,7 +260,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
     then "getColumn()"
     else if q.name == "filename"
     then "getFilename()"
-    else error("Not possible -- an error should have been raised.");
+    else error("Not possible -- an error should have been raised about " ++ q.pp);
 
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ "." ++ accessor ++ ")";
 
@@ -271,7 +271,7 @@ aspect production annoAccessHandler
 top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 {
   -- Note that the transType is specific to the nonterminal we're accessing from.
-  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".getAnno_" ++ q.name ++ "())";
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".getAnno_" ++ makeIdName(q.lookupAttribute.fullName) ++ "())";
   
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }

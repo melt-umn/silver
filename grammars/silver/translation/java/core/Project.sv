@@ -34,6 +34,12 @@ String ::= s::String
   return substituteLast(".", ".N", makeName(s));
 }
 
+function makeAnnoClassName
+String ::= s::String
+{
+  return substituteLast(".", ".A", makeName(s));
+}
+
 function makeParserName
 String ::= s::String
 {

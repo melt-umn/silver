@@ -9,8 +9,7 @@ top::AGDcl ::= 'annotation' a::Name tl::BracketedOptTypeList '::' te::Type ';'
   top.pp = "annotation " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
   top.location = $1.location;
 
-  production attribute fName :: String;
-  fName = top.grammarName ++ ":" ++ a.name;
+  production fName :: String = top.grammarName ++ ":" ++ a.name;
 
   top.defs = [annoDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
 
