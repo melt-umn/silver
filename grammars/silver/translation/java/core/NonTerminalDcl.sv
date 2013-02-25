@@ -20,7 +20,10 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList '
 
 "import java.util.*;\n\n" ++
 
-"public abstract class " ++ className ++ " extends common.Node {\n\n" ++
+"public abstract class " ++ className ++ " extends common.Node" ++ 
+  (if null(myAnnos) then "" else 
+    " implements " ++ implode(", ", map(makeAnnoClassName, map((.elementName), myAnnos)))
+  ) ++ " {\n\n" ++
 
 "\tpublic static final int num_inh_attrs = Init." ++ inhVar ++ ";\n" ++
 "\tpublic static final int num_syn_attrs = Init." ++ synVar ++ ";\n\n" ++

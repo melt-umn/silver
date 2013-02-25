@@ -206,6 +206,18 @@ String ::= i::Integer  ns::[NamedSignatureElement]
   else if null(tail(ns)) then "_children[" ++ toString(i) ++ "]"
   else "_children[" ++ toString(i) ++ "], " ++ fetchChildren(i + 1, tail(ns));
 }
+{-
+function insertLocationAnnotation
+String ::= ns::Decorated NamedSignature
+{
+  local pfx :: String = if null(ns.inputElements) then "" else ", ";
+  
+  return if null(ns.namedInputElements) then ""
+  else if length(ns.namedInputElements) > 1 then pfx ++ "multiple_annotation_problem" -- TODO
+  else if head(ns.namedInputElements).typerep.typeName != "core:Location" then pfx ++ "unknown_annotation_type_problem"
+  else pfx ++ 
+}
+-}
 
 function lookupStrings
 [[Decorated SyntaxDcl]] ::= t::[String] e::EnvTree<Decorated SyntaxDcl>

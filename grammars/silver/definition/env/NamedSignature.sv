@@ -74,7 +74,12 @@ top::NamedSignatureElement ::= n::String ty::TypeExp
   top.unparse = "element('" ++ n ++ "', " ++ ty.unparse ++ ")";
   top.elementName = n;
   top.typerep = ty;
-  top.toNamedArgType = namedArgType(n, ty);
+
+  -- When we convert from a SignatureElement to a NamedArg, we cut down to the short name only:
+  local annoShortName :: String =
+    substring(lastIndexOf(":", n) + 1, length(n), n);
+  
+  top.toNamedArgType = namedArgType(annoShortName, ty);
 
   ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't  
 }
