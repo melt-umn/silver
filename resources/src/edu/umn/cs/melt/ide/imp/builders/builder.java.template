@@ -355,9 +355,9 @@ public class @LANG_NAME@Builder extends BuilderBase implements @LANG_NAME@Analys
 		//Extract values
     	common.DecoratedNode ideMsgDecNode = ideMsg.decorate(common.TopNode.singleton, (common.Lazy[])null);
     	
-    	common.StringCatter declName = (common.StringCatter) ideMsgDecNode.synthesized(
+    	common.StringCatter resPath = (common.StringCatter) ideMsgDecNode.synthesized(
     		silver.modification.impide.Init.
-    		silver_modification_impide_declName__ON__silver_modification_impide_IdeMessage);
+    		silver_modification_impide_resPath__ON__silver_modification_impide_IdeMessage);
     	
     	common.StringCatter msg = (common.StringCatter) ideMsgDecNode.synthesized(
         	silver.modification.impide.Init.
@@ -392,7 +392,7 @@ public class @LANG_NAME@Builder extends BuilderBase implements @LANG_NAME@Analys
     	//IProject project, String declName, String fileName, 
 		//int line, int column, int startInd, int endInd, int severity, String message, 
     	return Problem.createProblem(
-    		project, declName.toString(), fileName.toString(), 
+    		project, resPath.toString(), fileName.toString(), 
     		lineNo, columnNo, startInd, endInd, severity, msg.toString());
     }
 
