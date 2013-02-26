@@ -126,7 +126,7 @@ ag::AGDcl ::= kwd::'equalityTest'
     productionDcl('abstract', 'production', testNameref,
       productionSignature(
         productionLHS(tref, '::',
-          nominalType(qNameUpperId(terminal(IdUpper_t, "Test")), botlNone())),
+          nominalType(qNameTypeId(terminal(IdUpper_t, "Test")), botlNone())),
         '::=', productionRHSNil()),
       defaultProductionBody(foldr(productionStmtsCons, productionStmtsNone(), [
         localAttributeDcl('local', 'attribute', valueref, '::', valueType, ';'),

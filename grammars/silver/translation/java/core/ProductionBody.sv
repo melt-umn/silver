@@ -104,9 +104,9 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 }
 
 aspect production forwardLhsExpr
-top::ForwardLHSExpr ::= q::QName
+top::ForwardLHSExpr ::= q::QNameAttrOccur
 {
-  top.attrName = occursCheck.dcl.attrOccursIndex;
+  top.attrName = q.dcl.attrOccursIndex;
 }
 
 aspect production localAttributeDcl

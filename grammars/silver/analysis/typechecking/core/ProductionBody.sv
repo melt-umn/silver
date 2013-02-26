@@ -104,7 +104,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 }
 
 aspect production forwardLhsExpr
-top::ForwardLHSExpr ::= q::QName
+top::ForwardLHSExpr ::= q::QNameAttrOccur
 {
   top.upSubst = top.downSubst;
 }

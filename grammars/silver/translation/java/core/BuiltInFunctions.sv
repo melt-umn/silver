@@ -58,7 +58,7 @@ top::Expr ::= 'new' '(' e::Expr ')'
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::Type ',' es::Expr ',' el::Expr ')'
 {
-  top.translation = "new common.TerminalRecord(" ++ es.translation ++ ", " ++ el.translation ++ ")";
+  top.translation = "new common.TerminalRecord(" ++ es.translation ++ ", (core.NLocation)" ++ el.translation ++ ")";
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }

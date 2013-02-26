@@ -90,13 +90,13 @@ function getFontDcl
 aspect production qNameId
 top::QName ::= id::Name
 {
-  top.lookupFont = decorate customLookup("font style", getFontDcl, top.name, top.location) with { env = top.env; };
+  top.lookupFont = decorate customLookup("font style", getFontDcl(top.name, top.env), top.name, top.location) with {};
 }
 
 aspect production qNameCons
 top::QName ::= id::Name ':' qn::QName
 {
-  top.lookupFont = decorate customLookup("font style", getFontDcl, top.name, top.location) with { env = top.env; };
+  top.lookupFont = decorate customLookup("font style", getFontDcl(top.name, top.env), top.name, top.location) with {};
 }
 
 synthesized attribute lookupFont :: Decorated QNameLookup occurs on QName;

@@ -301,16 +301,15 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 }
 
 concrete production forwardLhsExpr
-top::ForwardLHSExpr ::= q::QName
+top::ForwardLHSExpr ::= q::QNameAttrOccur
 {
   top.pp = q.pp;
   top.location = q.location;
 
-  production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(q, top.signature.outputElement.typerep);
-
-  top.errors := q.lookupAttribute.errors ++ occursCheck.errors;
-  top.typerep = occursCheck.typerep;
+  top.errors := q.errors;
+  top.typerep = q.typerep;
+  
+  q.attrFor = top.signature.outputElement.typerep;
 }
 
 concrete production attributeDef
@@ -319,7 +318,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QName '=' e::Expr ';'
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
   top.location = $4.location;
 
-  top.errors <- attr.lookupAttribute.errors;
+  top.errors := attr.lookupAttribute.errors ++ forward.errors;
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = [];

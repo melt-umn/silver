@@ -109,13 +109,13 @@ function getLexerClassDcl
 aspect production qNameId
 top::QName ::= id::Name
 {
-  top.lookupLexerClass = decorate customLookup("lexer class", getLexerClassDcl, top.name, top.location) with { env = top.env; };
+  top.lookupLexerClass = decorate customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name, top.location) with {};
 }
 
 aspect production qNameCons
 top::QName ::= id::Name ':' qn::QName
 {
-  top.lookupLexerClass = decorate customLookup("lexer class", getLexerClassDcl, top.name, top.location) with { env = top.env; };
+  top.lookupLexerClass = decorate customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name, top.location) with {};
 }
 
 synthesized attribute lookupLexerClass :: Decorated QNameLookup occurs on QName;
