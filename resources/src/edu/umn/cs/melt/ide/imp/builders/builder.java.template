@@ -40,6 +40,8 @@ import @PKG_NAME@.imp.controller.@LANG_NAME@ParseController;
 import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
 import edu.umn.cs.melt.ide.silver.misc.Problem;
 
+import silver.modification.impide.NIdeMessage;
+
 /**
  * A builder may be activated on a file containing @LANG_NAME@ code every time it
  * has changed (when "Build automatically" is on), or when the programmer
@@ -308,7 +310,7 @@ public class @LANG_NAME@Builder extends BuilderBase implements @LANG_NAME@Analys
 	 * Handle the message list returned by @LANG_NAME@AnalysisInvoker.
 	 */
 	@Override
-	public boolean handle(List<String> list) {
+	public boolean handle(List<NIdeMessage> list) {
 		IProject project = getProject();
 		
 		//Clean markers
@@ -321,22 +323,22 @@ public class @LANG_NAME@Builder extends BuilderBase implements @LANG_NAME@Analys
 		boolean success = true;
 		
 		//Add markers
-		for(String message:list){
-			Problem p = Problem.createProblem(project, message);
-			
-			if(p==null){
-				//Parsing error. Shouldn't reach here.
-				success = false;
-				continue;
-			}
+		for(NIdeMessage message:list){
+			Problem p = getProblem(project, message);
 			
 			IFile file = p.getFile();
 			try {
 				IMarker marker = file.createMarker(getErrorMarkerID());
 				marker.setAttribute(IMarker.MESSAGE, p.getMessage());
 				marker.setAttribute(IMarker.LINE_NUMBER, p.getLine());
-				//marker.setAttribute(IMarker.CHAR_START, 0);
-				//marker.setAttribute(IMarker.CHAR_END, 0);
+				int index = p.getStartInd();
+				if(index!=Problem.UNKNOWN){
+					marker.setAttribute(IMarker.CHAR_START, index);
+				}
+				index = p.getEndInd();
+				if(index!=Problem.UNKNOWN){
+					marker.setAttribute(IMarker.CHAR_END, index);
+				}
 				marker.setAttribute(IMarker.SEVERITY, p.getLevel());
 				if(p.getLevel()==Problem.ERROR){
 					success = false;
@@ -349,6 +351,51 @@ public class @LANG_NAME@Builder extends BuilderBase implements @LANG_NAME@Analys
 		return success;
 	}
     
+	private Problem getProblem(IProject project, NIdeMessage ideMsg) {
+		//Extract values
+    	common.DecoratedNode ideMsgDecNode = ideMsg.decorate(common.TopNode.singleton, (common.Lazy[])null);
+    	
+    	common.StringCatter resPath = (common.StringCatter) ideMsgDecNode.synthesized(
+    		silver.modification.impide.Init.
+    		silver_modification_impide_resPath__ON__silver_modification_impide_IdeMessage);
+    	
+    	common.StringCatter msg = (common.StringCatter) ideMsgDecNode.synthesized(
+        	silver.modification.impide.Init.
+        	silver_definition_core_msg__ON__silver_modification_impide_IdeMessage);
+    	
+    	Integer severity = (Integer) ideMsgDecNode.synthesized(
+    		silver.modification.impide.Init.
+    		silver_definition_core_severity__ON__silver_modification_impide_IdeMessage);
+    
+    	core.NLocation loc = (core.NLocation) ideMsgDecNode.synthesized(
+        	silver.modification.impide.Init.
+        	silver_definition_env_location__ON__silver_modification_impide_IdeMessage);
+    	  	
+    	common.DecoratedNode locDecNode = loc.decorate(common.TopNode.singleton, (common.Lazy[])null);
+    	
+    	common.StringCatter fileName = (common.StringCatter) locDecNode.synthesized(
+    		core.Init.core_filename__ON__core_Location);
+    	
+    	Integer lineNo = (Integer) locDecNode.synthesized(
+    		core.Init.core_line__ON__core_Location);
+    	
+    	Integer columnNo = (Integer) locDecNode.synthesized(
+	    	core.Init.core_column__ON__core_Location);
+    	
+    	Integer startInd = (Integer) locDecNode.synthesized(
+        		core.Init.core_index__ON__core_Location);
+    
+    	Integer endInd = (Integer) locDecNode.synthesized(
+        		core.Init.core_endIndex__ON__core_Location);
+    	
+    	//Assemble a problem
+    	//IProject project, String declName, String fileName, 
+		//int line, int column, int startInd, int endInd, int severity, String message, 
+    	return Problem.createProblem(
+    		project, resPath.toString(), fileName.toString(), 
+    		lineNo, columnNo, startInd, endInd, severity, msg.toString());
+    }
+
     /**
      * Compile one @LANG_NAME@ file.
      */

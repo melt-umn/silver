@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 
+import silver.modification.impide.NIdeMessage;
 import silver.modification.impide.NIdeProperty;
 import silver.modification.impide.PmakeIdeProperty;
 import silver.composed.idetest.SILVERProperties;
@@ -71,7 +72,7 @@ public class SILVERAnalysisInvoker {
 				i++;
 			}
 			
-			List<String> list = silver.composed.idetest.Analyze2.analyze(args);
+			List<NIdeMessage> list = silver.composed.idetest.Analyze3.analyze(args);
 			return handler.handle(list);
 		} catch (Exception t) {
 			t.printStackTrace();
@@ -88,7 +89,7 @@ public class SILVERAnalysisInvoker {
 		 * @param list the message list. 
 		 * @return true if the build is considered successful; false otherwise
 		 */
-		boolean handle(List<String> list);
+		boolean handle(List<NIdeMessage> list);
 	}
 
 }

@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 
+import silver.modification.impide.NIdeMessage;
 import silver.modification.impide.NIdeProperty;
 import silver.modification.impide.PmakeIdeProperty;
 import @PKG_NAME@.@LANG_NAME@Properties;
@@ -67,7 +68,7 @@ public class @LANG_NAME@AnalysisInvoker {
 				i++;
 			}
 			
-			List<String> list = @PKG_NAME@.Analyze2.analyze(args);
+			List<NIdeMessage> list = @PKG_NAME@.Analyze3.analyze(args);
 			return handler.handle(list);
 		} catch (Exception t) {
 			t.printStackTrace();
@@ -84,7 +85,7 @@ public class @LANG_NAME@AnalysisInvoker {
 		 * @param list the message list. 
 		 * @return true if the build is considered successful; false otherwise
 		 */
-		boolean handle(List<String> list);
+		boolean handle(List<NIdeMessage> list);
 	}
 
 }

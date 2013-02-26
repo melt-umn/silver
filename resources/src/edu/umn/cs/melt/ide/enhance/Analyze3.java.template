@@ -1,0 +1,54 @@
+/*
+ * Variables used:
+ *   LANG_COMPOSED_PKG
+ *   ANALYZER_CLASS_QNAME
+ */
+package @LANG_COMPOSED_PKG@;
+
+import silver.modification.impide.NIdeProperty;
+import silver.modification.impide.NIdeMessage;
+
+/**
+ * This class invokes the analyzer function defined in Silver code.
+ */
+public class Analyze3 {
+
+	/**
+     * Invokes the analyzer function defined in Silver's IDE declaration block.
+     * <p>
+	 * @param args		an array of NIdeProperty
+     * (corresponding to silver nonterminal silver:modification:impide:IdeProperty)
+	 * @return          a list of NIdeMessage
+     * (corresponding to silver nonterminal silver:modification:impide:IdeMessage)
+     */
+	public static java.util.List<NIdeMessage> analyze(NIdeProperty[] args) {
+		try {
+			common.ConsCell cc = (common.ConsCell) @ANALYZER_CLASS_QNAME@.invoke(
+				cvargs(args), null);
+			
+			//Translate the returned NIdeMessage (corresponding to silver 
+            //nonterminal silver:modification:impide:IdeMessage) array into a 
+            //list
+			java.util.List<NIdeMessage> list = new java.util.ArrayList<NIdeMessage>();
+			while(!cc.nil()){
+				list.add((NIdeMessage) cc.head());
+				cc = cc.tail();
+			}
+			
+			return list;
+		} catch(Throwable t) {
+			common.Util.printStackCauses(t);
+			return null;
+		}
+	}
+
+	//Convert array to cons
+	public static common.ConsCell cvargs(NIdeProperty [] args){
+		common.ConsCell result = common.ConsCell.nil;
+		for(int i = args.length - 1; i >= 0; i --) {
+			result = new common.ConsCell(args[i], result);
+		}
+		return result;
+	}
+
+}
