@@ -9,9 +9,11 @@ import silver:util:cmdargs;
 import silver:definition:core;
 import silver:definition:env;
 
+import silver:modification:impide;
+
 -- I just copy and pasted this from BuildProcess for now...
 function ideRun
-IOVal<[String]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
+IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
 {
   local argResult :: ParseResult<Decorated CmdArgs> = parseArgs(args);
   local a :: Decorated CmdArgs = argResult.parseTree;
@@ -54,19 +56,33 @@ IOVal<[String]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  io
 }
 
 function getAllBindingErrors
-[String] ::= specs::[Decorated RootSpec]
+[IdeMessage] ::= specs::[Decorated RootSpec]
 {
   return if null(specs)
          then []
-         --else [foldMessages(head(specs).errors)] ++ getAllBindingErrors(tail(specs));
-         else rewriteMessages(head(specs).declaredName, head(specs).errors) ++ getAllBindingErrors(tail(specs));
+         else rewriteMessages(translateToPath(head(specs).declaredName), head(specs).errors) ++ getAllBindingErrors(tail(specs));
 }
 
 function rewriteMessages
-[String] ::= declaredName::String es::[Message]
+[IdeMessage] ::= path::String es::[Message]
 {
   return if null(es)
          then []
-         else [declaredName ++ "#" ++ head(es).pp] ++ rewriteMessages(declaredName, tail(es));
+         --else [declaredName ++ "#" ++ head(es).pp] ++ rewriteMessages(declaredName, tail(es));
+         --[makeIdeMessage(declaredName, head(es).location, head(es).severity, head(es).msg)] ++ rewriteMessages(declaredName, tail(es));
+         else [makeIdeMessage(path, head(es).location, head(es).severity, head(es).msg)] ++ rewriteMessages(path, tail(es));
+{--
+             let 
+                  head :: Message = head(es)
+              in 
+                  [makeIdeMessage(path, head.location, head.severity, head.msg)] ++ rewriteMessages(path, tail(es));
+              end;
+--}
+}
+
+function translateToPath
+String ::= declaredName::String
+{
+  return implode("/", explode(":", declaredName));
 }
 
