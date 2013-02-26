@@ -101,7 +101,7 @@ top::Type ::= 'Boolean'
 }
 
 concrete production nominalType
-top::Type ::= q::QNameUpper tl::BracketedOptTypeList
+top::Type ::= q::QNameType tl::BracketedOptTypeList
 {
   top.pp = q.pp ++ tl.pp;
   top.location = q.location;
@@ -122,8 +122,7 @@ top::Type ::= tv::IdLower_t
   top.location = tv.location;
   
   local attribute hack::QNameLookup;
-  hack = customLookup("type", getTypeDcl, tv.lexeme, top.location);
-  hack.env = top.env;
+  hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme, top.location);
   
   top.typerep = hack.typerep;
   top.errors := hack.errors;

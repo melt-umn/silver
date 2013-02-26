@@ -144,6 +144,6 @@ abstract production terminalFunctionInherited
 top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ')'
 {
   top.errors <- [wrn(t.location, "terminal(type,lexeme,terminal) is deprecated. Please just add '.location' on the terminal to use terminal(type,lexeme,location)")];
-  forwards to terminalConstructor($1, $2, t, $4, e1, $6, access(e2, '.', qName(forward.location, "location")), $8);
+  forwards to terminalConstructor($1, $2, t, $4, e1, $6, access(e2, '.', qNameAttrOccur(qName(forward.location, "location"))), $8);
 }
 

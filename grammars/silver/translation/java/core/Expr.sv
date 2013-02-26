@@ -204,52 +204,52 @@ top::Expr ::= '(' '.' q::QName ')'
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
-  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".synthesized(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".synthesized(" ++ q.dcl.attrOccursIndex ++ "))";
 
   top.lazyTranslation = 
     case e, top.blockContext.lazyApplication of
     | childReference(cqn), true -> 
         if cqn.lookupValue.typerep.isDecorable
         then
-          "context.childDecoratedSynthesizedLazy(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ cqn.lookupValue.fullName ++ ", " ++ occursCheck.dcl.attrOccursIndex ++ ")"
+          "context.childDecoratedSynthesizedLazy(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ cqn.lookupValue.fullName ++ ", " ++ q.dcl.attrOccursIndex ++ ")"
         else
-          "context.childAsIsSynthesizedLazy(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ cqn.lookupValue.fullName ++ ", " ++ occursCheck.dcl.attrOccursIndex ++ ")"
+          "context.childAsIsSynthesizedLazy(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ cqn.lookupValue.fullName ++ ", " ++ q.dcl.attrOccursIndex ++ ")"
     | lhsReference(_), true ->
-        "context.contextSynthesizedLazy(" ++ occursCheck.dcl.attrOccursIndex ++ ")"
+        "context.contextSynthesizedLazy(" ++ q.dcl.attrOccursIndex ++ ")"
     | _, _ -> wrapThunk(top.translation, top.blockContext.lazyApplication)
     end;
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
-  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".inherited(" ++ occursCheck.dcl.attrOccursIndex ++ "))";
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".inherited(" ++ q.dcl.attrOccursIndex ++ "))";
 
   top.lazyTranslation = 
     case e, top.blockContext.lazyApplication of
-    | lhsReference(_), true -> "context.contextInheritedLazy(" ++ occursCheck.dcl.attrOccursIndex ++ ")"
+    | lhsReference(_), true -> "context.contextInheritedLazy(" ++ q.dcl.attrOccursIndex ++ ")"
     | _, _ -> wrapThunk(top.translation, top.blockContext.lazyApplication)
     end;
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   local accessor :: String =
     if q.name == "lexeme" || q.name == "location"
@@ -268,10 +268,10 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   -- Note that the transType is specific to the nonterminal we're accessing from.
-  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".getAnno_" ++ makeIdName(q.lookupAttribute.fullName) ++ "())";
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".getAnno_" ++ makeIdName(q.attrDcl.fullName) ++ "())";
   
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }
@@ -342,9 +342,9 @@ top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
 
 
 aspect production exprLhsExpr
-top::ExprLHSExpr ::= q::QName
+top::ExprLHSExpr ::= q::QNameAttrOccur
 {
-  top.nameTrans = [occursCheck.dcl.attrOccursIndex];
+  top.nameTrans = [q.dcl.attrOccursIndex];
 }
 
 

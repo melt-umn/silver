@@ -94,20 +94,20 @@ top::Expr ::= '(' '.' q::QName ')'
 }
 
 aspect production access
-top::Expr ::= e::Expr '.' q::QName
+top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.upSubst = top.downSubst;
 }
 
 aspect production undecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're UNdecorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
@@ -126,14 +126,14 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 }
 
 aspect production accessBouncer
-top::Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QName) e::Expr '.' q::Decorated QName
+top::Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QNameAttrOccur) e::Expr '.' q::Decorated QNameAttrOccur
 {
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
 }
 
 aspect production decoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're decorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
@@ -152,29 +152,29 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.upSubst = top.downSubst;
 }
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.upSubst = top.downSubst;
 }
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.upSubst = top.downSubst;
 }
 
 
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.upSubst = e.downSubst;
 }
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.upSubst = e.downSubst;
 }

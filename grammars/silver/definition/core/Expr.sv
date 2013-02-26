@@ -294,58 +294,57 @@ top::Expr ::= '(' '.' q::QName ')'
 }
 
 concrete production access
-top::Expr ::= e::Expr '.' q::QName
+top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = $2.location;
   
-  top.errors := e.errors ++ forward.errors; -- So that e.errors appears first!
+  -- We don't include 'q' here because this might be a terminal, where
+  -- 'q' shouldn't actually resolve to a name!
+  top.errors := e.errors ++ forward.errors;
+  
+  q.attrFor = performSubstitution(e.typerep, e.upSubst);
   
   -- Note: we're first consulting the TYPE of the LHS.
-  forwards to performSubstitution(e.typerep, e.upSubst).accessHandler(e, $2, q);
+  forwards to q.attrFor.accessHandler(e, $2, q);
   -- This jumps to:
   -- errorAccessHandler  (e.g. 1.pp)
   -- undecoratedAccessHandler
   -- decoratedAccessHandler  (see that production, for how normal attribute access proceeds!)
   -- terminalAccessHandler
-  -- annoAccessHandler
 }
 
 abstract production errorAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = $2.location;
   
-  top.typerep = q.lookupAttribute.typerep;
-  top.errors := [err(top.location, "LHS of '.' is type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ " and cannot have attributes.")] ++ q.lookupAttribute.errors; -- TODO fix this. How? Why? What's wrong? Perhaps I didn't like doing the performsubst here
+  top.typerep = errorType();
+  top.errors := [err(top.location, "LHS of '.' is type " ++ prettyType(q.attrFor) ++ " and cannot have attributes.")] ++ q.errors;
 }
 
 abstract production annoAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = $2.location;
   
-  local t :: TypeExp = performSubstitution(e.typerep, e.upSubst);
-  
-  production occursCheck :: OccursCheck =
-    occursCheckQName(q, t);
-  
   production index :: Integer =
-    findNamedSigElem(q.name, annotationsForNonterminal(t, top.env), 0);
+    findNamedSigElem(q.name, annotationsForNonterminal(q.attrFor, top.env), 0);
 
-  top.typerep = occursCheck.typerep;
+  top.typerep = q.typerep;
   
-  top.errors := occursCheck.errors;
+  top.errors := q.errors;
 }
 
 abstract production terminalAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = $2.location;
   
+  -- NO q.errors!!
   top.errors :=
     if q.name == "lexeme" || q.name == "location" || 
        -- Temporary backwards compatibility bits:
@@ -365,20 +364,21 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 }
 
 abstract production undecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = $2.location;
 
-  top.errors := q.lookupAttribute.errors ++ forward.errors; -- so that these errors appear first.
+  top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   
   -- TODO: We should consider disambiguating based on what dcls *actually*
   -- occur on the LHS here.
   
   -- Note: LHS is UNdecorated, here we dispatch based on the kind of attribute.
-  forwards to if null(q.lookupAttribute.dcls)
-              then errorDecoratedAccessHandler(e, $2, q)
-              else q.lookupAttribute.dcl.undecoratedAccessHandler(e, $2, q);
+  forwards to if !null(q.errors) then errorDecoratedAccessHandler(e, $2, q)
+              else q.attrDcl.undecoratedAccessHandler(e, $2, q);
+  -- annoAccessHandler
+  -- accessBouncer
 }
 
 {--
@@ -386,7 +386,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
  - This production is intended to permit that.
  -}
 abstract production accessBouncer
-top::Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QName) e::Expr '.' q::Decorated QName
+top::Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QNameAttrOccur) e::Expr '.' q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = $3.location;
@@ -395,31 +395,30 @@ top::Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QName) e::Expr '.
   forwards to target(e, $3, q);
 }
 function accessBounceDecorate
-Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QName) e::Decorated Expr '.' q::Decorated QName
+Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QNameAttrOccur) e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
-  return accessBouncer(target, decorateExprWithIntention(e.location, exprRef(e), exprInhsEmpty(), [q.lookupAttribute.fullName]), $3, q);
+  return accessBouncer(target, decorateExprWithIntention(e.location, exprRef(e), exprInhsEmpty(), [q.attrDcl.fullName]), $3, q);
 }
 function accessBounceUndecorate
-Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QName) e::Decorated Expr '.' q::Decorated QName
+Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QNameAttrOccur) e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   return accessBouncer(target, newFunction(terminal(New_kwd, "new", e.location.line, e.location.column), '(', exprRef(e), ')'), $3, q);
 }
 
 abstract production decoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = $2.location;
 
-  top.errors := q.lookupAttribute.errors ++ forward.errors; -- so that these errors appear first.
+  top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   
   -- TODO: We should consider disambiguating based on what dcls *actually*
   -- occur on the LHS here.
   
   -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
-  forwards to if null(q.lookupAttribute.dcls)
-              then errorDecoratedAccessHandler(e, $2, q)
-              else q.lookupAttribute.dcl.decoratedAccessHandler(e, $2, q);
+  forwards to if !null(q.errors) then errorDecoratedAccessHandler(e, $2, q)
+              else q.attrDcl.decoratedAccessHandler(e, $2, q);
   -- From here we go to:
   -- synDecoratedAccessHandler
   -- inhDecoratedAccessHandler
@@ -427,36 +426,28 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 }
 
 abstract production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = $2.location;
   
-  production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(q, performSubstitution(e.typerep, e.upSubst).decoratedType);
-
-  top.typerep = occursCheck.typerep;
-  
-  top.errors := occursCheck.errors;
+  top.typerep = q.typerep;
+  top.errors := []; -- already included?
 }
 
 abstract production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = $2.location;
   
-  production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(q, performSubstitution(e.typerep, e.upSubst).decoratedType);
-
-  top.typerep = occursCheck.typerep;
-  
-  top.errors := occursCheck.errors;
+  top.typerep = q.typerep;
+  top.errors := []; -- already included?
 }
 
 -- TODO: change name. really "unknownDclAccessHandler"
 abstract production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
   top.location = $2.location;
@@ -548,17 +539,16 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 }
 
 concrete production exprLhsExpr
-top::ExprLHSExpr ::= q::QName
+top::ExprLHSExpr ::= q::QNameAttrOccur
 {
   top.pp = q.pp;
   top.location = q.location;
 
-  production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(q, top.decoratingnt);
-
-  top.errors := q.lookupAttribute.errors ++ occursCheck.errors;
-  top.typerep = occursCheck.typerep;
-  top.suppliedInhs = [q.lookupAttribute.fullName];
+  top.errors := q.errors;
+  top.typerep = q.typerep;
+  top.suppliedInhs = [q.dcl.attrOccurring];
+  
+  q.attrFor = top.decoratingnt;
 }
 
 concrete production trueConst

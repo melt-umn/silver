@@ -22,13 +22,13 @@ top::AGDcl ::= 'makeTestSuite' name::IdLower_t ';'
   local sig :: ProductionSignature =
     productionSignature(
       productionLHS(mkName("t"), '::',
-        nominalType(qNameUpperId(terminal(IdUpper_t, "TestSuite")), botlNone())),
+        nominalType(qNameTypeId(terminal(IdUpper_t, "TestSuite")), botlNone())),
      '::=', productionRHSNil());
 
   local bod :: [ProductionStmt] =
     [forwardsTo('forwards', 'to', prodFuncCall("testsAsNT", [mkNameExpr("testsToPerform")]), ';'),
      collectionAttributeDclProd('production', 'attribute', mkName("testsToPerform"), '::',
-       listType('[', nominalType(qNameUpperId(terminal(IdUpper_t, "Test")), botlNone()), ']'),
+       listType('[', nominalType(qNameTypeId(terminal(IdUpper_t, "Test")), botlNone()), ']'),
        'with', plusplusOperator('++'), ';'),
      valContainsBase(qName(top.location, "testsToPerform"), ':=', emptyList('[',']'), ';')
     ];
@@ -64,7 +64,7 @@ top::AGDcl ::= 'mainTestSuite' name::IdLower_t ';'
     functionSignature(
      functionLHS(
        nominalType( 
-         qNameUpperId(terminal(IdUpper_t, "IOVal")) ,
+         qNameTypeId(terminal(IdUpper_t, "IOVal")) ,
          botlSome('<', typeListSingle(integerType('Integer')), '>' ))),
      '::=',
      productionRHSCons(
@@ -84,7 +84,7 @@ top::AGDcl ::= 'mainTestSuite' name::IdLower_t ';'
      --  local testResults :: TestSuite;
      localAttributeDcl (
       'local', 'attribute', nameIdLower(terminal(IdLower_t,"testResults")), '::',
-      nominalType( qNameUpperId (terminal(IdUpper_t,"TestSuite")), botlNone()), ';'
+      nominalType( qNameTypeId (terminal(IdUpper_t,"TestSuite")), botlNone()), ';'
      ),
      productionStmtsCons (
       -- testResults = name()

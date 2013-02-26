@@ -4,6 +4,9 @@ import silver:modification:autocopyattr only autocopyDcl;
 import silver:modification:collection;
 import silver:definition:flow:driver only ProductionGraph, edgeMap, flowVertexEq, prod, collectInhs;
 
+-- TODO: I think this analysis breaks because we don't know about annotations.
+-- i.e. I think if it's not a inh, it's assumed to be a syn.
+
 synthesized attribute warnMissingInh :: Boolean occurs on CmdArgs;
 
 aspect production endCmdArgs
@@ -189,6 +192,10 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
          else [wrn(top.location, "Synthesized equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
 }
+
+-- TODO: We need to add checks for 'forwarding with' so that it enforces the
+-- "fwd flow type + this attribute" deps ONLY. Or rather... raises them as fwd deps?
+-- Figure that out, too.
 
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
@@ -415,7 +422,7 @@ Step 2: Let's go check on expressions. This has two purposes:
 
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   -- TODO oh hell look at that
   local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -423,7 +430,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
   local eTypeName :: String = performSubstitution(e.typerep, e.upSubst).typeName;
   local diff :: [String] =
     rem(
-      inhDepsForSyn(q.lookupAttribute.fullName, eTypeName, myFlow), -- needed inhs
+      inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow), -- needed inhs
       inhsForTakingRef(eTypeName, top.flowEnv)); -- blessed inhs for a reference
   
   local refCheck :: [Message] =
@@ -448,7 +455,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
                       isEquationMissing(
                         lookupInh(top.signature.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                         _),
-                      inhDepsForSyn(q.lookupAttribute.fullName, eTypeName, myFlow)))
+                      inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow)))
              in if null(inhs) then []
                 else [wrn(top.location, "Access of syn attribute " ++ q.pp ++ " on " ++ e.pp ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
@@ -462,7 +469,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
                     isEquationMissing(
                       lookupLocalInh(top.signature.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                       _),
-                    inhDepsForSyn(q.lookupAttribute.fullName, eTypeName, myFlow))
+                    inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow))
              in if null(inhs) then []
                 else [wrn(top.location, "Access of syn attribute " ++ q.pp ++ " on " ++ e.pp ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
@@ -475,10 +482,10 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QName
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   local refCheck :: [Message] =
-    if contains(q.lookupAttribute.fullName, inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv))
+    if contains(q.attrDcl.fullName, inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv))
     then []
     else [wrn(top.location, "Access of inherited attribute " ++ q.pp ++ " from a reference is not permitted, as references are not known to be decorated with this attribute.")];
   

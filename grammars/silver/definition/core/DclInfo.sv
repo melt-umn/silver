@@ -20,13 +20,13 @@ synthesized attribute defLHSDispatcher :: (DefLHS ::= Decorated QName) occurs on
  - @see accessDispather in TypeExp.sv, for the first step in that process...
  - @see decoratedAccessHandler production for where this is used
  -}
-synthesized attribute decoratedAccessHandler :: (Expr ::= Decorated Expr Dot_t Decorated QName) occurs on DclInfo;
+synthesized attribute decoratedAccessHandler :: (Expr ::= Decorated Expr Dot_t Decorated QNameAttrOccur) occurs on DclInfo;
 {--
  - The handler for 'x.a' for 'a', given that 'x' is UNdecorated.
  - @see accessDispather in TypeExp.sv, for the first step in that process...
  - @see undecoratedAccessHandler production for where this is used
  -}
-synthesized attribute undecoratedAccessHandler :: (Expr ::= Decorated Expr Dot_t Decorated QName) occurs on DclInfo;
+synthesized attribute undecoratedAccessHandler :: (Expr ::= Decorated Expr Dot_t Decorated QNameAttrOccur) occurs on DclInfo;
 {--
  - The production an "equation" shuld forward to for this type of attribute (i.e. the 'a' in 'x.a = e')
  -}
@@ -94,15 +94,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.defDispatcher = errorValueDef;
   top.defLHSDispatcher = errorDefLHS;
 }
--- -- interface types
-aspect production ntDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp closed::Boolean
-{
-}
-aspect production termDcl
-top::DclInfo ::= sg::String sl::Location fn::String regex::Regex_R
-{
-}
 
 -- -- interface Attributes
 aspect production synDcl
@@ -127,10 +118,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 }
 
 -- -- interface Production attr (values)
-aspect production paDcl
-top::DclInfo ::= sg::String sl::Location ns::NamedSignature dcls::[Def]
-{
-}
 aspect production forwardDcl
 top::DclInfo ::= sg::String sl::Location ty::TypeExp
 {
@@ -138,30 +125,4 @@ top::DclInfo ::= sg::String sl::Location ty::TypeExp
   top.defDispatcher = errorValueDef; -- TODO: better error message
   top.defLHSDispatcher = forwardDefLHS;
 }
-
--- -- interface other
-aspect production occursDcl
-top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
-{
-}
-
--- TODO THIS SHOULD GO ELSEWHERE
-nonterminal OccursCheck with errors, typerep, dcl;
-
--- Doc note: be sure you've included at.errors, as well as this production's errors!
-abstract production occursCheckQName
-top::OccursCheck ::= at::Decorated QName  ntty::TypeExp
-{
-  local attribute occursCheck :: [DclInfo];
-  occursCheck = getOccursDcl(at.lookupAttribute.fullName, ntty.typeName, at.env); -- cheating to get env! :) Must be decorated!
-
-  top.errors := if null(at.lookupAttribute.errors) && null(occursCheck)
-                then [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(ntty) ++ "'")]
-                else [];
-  top.typerep = if null(at.lookupAttribute.errors) && null(top.errors)
-                then determineAttributeType(head(occursCheck), ntty)
-                else errorType();
-  top.dcl = head(occursCheck);
-}
-
 

@@ -108,48 +108,48 @@ top::Expr ::= '(' '.' q::QName ')'
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.flowDeps = [];
 }
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.flowDeps = 
     case e of
-    | childReference(lq) -> [rhsVertex(lq.lookupValue.fullName, q.lookupAttribute.fullName)]
-    | lhsReference(lq) -> [lhsSynVertex(q.lookupAttribute.fullName)]
-    | localReference(lq) -> [localVertex(lq.lookupValue.fullName, q.lookupAttribute.fullName)]
-    | forwardReference(lq) -> [forwardVertex(q.lookupAttribute.fullName)]
+    | childReference(lq) -> [rhsVertex(lq.lookupValue.fullName, q.attrDcl.fullName)]
+    | lhsReference(lq) -> [lhsSynVertex(q.attrDcl.fullName)]
+    | localReference(lq) -> [localVertex(lq.lookupValue.fullName, q.attrDcl.fullName)]
+    | forwardReference(lq) -> [forwardVertex(q.attrDcl.fullName)]
     | _ -> e.flowDeps
     end;
 }
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.flowDeps = 
     case e of
-    | childReference(lq) -> [rhsVertex(lq.lookupValue.fullName, q.lookupAttribute.fullName)]
-    | lhsReference(lq) -> [lhsInhVertex(q.lookupAttribute.fullName)]
-    | localReference(lq) -> [localVertex(lq.lookupValue.fullName, q.lookupAttribute.fullName)]
-    | forwardReference(lq) -> [forwardVertex(q.lookupAttribute.fullName)]
+    | childReference(lq) -> [rhsVertex(lq.lookupValue.fullName, q.attrDcl.fullName)]
+    | lhsReference(lq) -> [lhsInhVertex(q.attrDcl.fullName)]
+    | localReference(lq) -> [localVertex(lq.lookupValue.fullName, q.attrDcl.fullName)]
+    | forwardReference(lq) -> [forwardVertex(q.attrDcl.fullName)]
     | _ -> e.flowDeps
     end;
 }
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.flowDeps = []; -- errors, who cares?
 }
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.flowDeps = e.flowDeps;
 }
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QName
+top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
   top.flowDeps = e.flowDeps;
 }
