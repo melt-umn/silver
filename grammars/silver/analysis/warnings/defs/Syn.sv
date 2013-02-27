@@ -42,9 +42,9 @@ function isOccursSynthesized
 Boolean ::= occs::DclInfo  e::Decorated Env
 {
   return case getAttrDcl(occs.attrOccurring, e) of
-  | synDcl(_,_,_,_,_) :: _ -> true
-  | _ -> false
-  end;
+         | at :: _ -> at.isSynthesized
+         | _ -> false
+         end;
 }
 
 function raiseMissingAttrs
@@ -73,7 +73,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   top.errors <-
     if null(nt.lookupType.errors ++ at.lookupAttribute.errors)
     && (top.config.warnAll || top.config.warnMissingSyn)
-    && (case at.lookupAttribute.dcl of synDcl(_,_,_,_,_) -> true | _ -> false end) -- TODO: we really need a better way to do this
+    && at.lookupAttribute.dcl.isSynthesized
     && null(lookupDef(nt.lookupType.fullName, at.lookupAttribute.fullName, top.flowEnv)) -- no default eq!
     then raiseMissingProds(top.location, at.lookupAttribute.fullName, prods, top.flowEnv)
     else [];

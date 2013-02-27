@@ -48,8 +48,8 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
     --&& at.lookupAttribute.dcl.sourceGrammar != top.grammarName
     && !contains(top.grammarName, computeDependencies([nt.lookupType.dcl.sourceGrammar, at.lookupAttribute.dcl.sourceGrammar], top.compiledGrammars))
     then [wrn(top.location, "Orphaned occurs declaration: " ++ at.lookupAttribute.fullName ++ " on " ++ nt.lookupType.fullName)]
-         -- If this is a non-closed NT, or not a synthesized attribute, then we're done. er TODO: only synthesized??
-    else if !isClosedNt || (case at.lookupAttribute.dcls of synDcl(_,_,_,_,_) :: _ -> false | _ -> true end) then []
+         -- If this is a non-closed NT, or not a synthesized attribute, then we're done.
+    else if !isClosedNt || !at.lookupAttribute.dcl.isSynthesized then []
               -- For closed nt, either we're exported by only the nt, OR there MUST be a default!
          else if !contains(top.grammarName, computeDependencies([nt.lookupType.dcl.sourceGrammar], top.compiledGrammars))
               && null(lookupDef(nt.lookupType.fullName, at.lookupAttribute.fullName, top.flowEnv))

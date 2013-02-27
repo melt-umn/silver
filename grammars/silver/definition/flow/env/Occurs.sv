@@ -8,7 +8,7 @@ aspect production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
 {
   local isHost :: Boolean = contains(top.grammarName, computeDependencies([nt.lookupType.dcl.sourceGrammar], top.compiledGrammars));
-  local isSyn :: Boolean = case at.lookupAttribute.dcls of synDcl(_,_,_,_,_) :: _ -> true | _ -> false end;
+  local isSyn :: Boolean = at.lookupAttribute.dcl.isSynthesized;
 
   -- Rule: non-host synthesized attributes' flow type must be a super set of that for the forward.
   top.flowDefs = 

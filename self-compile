@@ -3,8 +3,14 @@
 mkdir -p build
 cd build
 
-# This can be fun sometimes:   -XX:+PrintCompilation -verbose:gc
-time java -Xss6M -Xmx5500M -jar ../jars/RunSilver.jar $@ silver:composed:Default && ant
+# These can be fun sometimes:
+# -XX:+PrintCompilation
+# -verbose:gc -XX:+PrintGCTimeStamps -XX:+PrintGCDetails -XX:-PrintGC
+if [ -z "$SVJVM_FLAGS" ]; then
+  SVJVM_FLAGS="-Xmx1800M -Xss6M"
+fi
+
+time java $SVJVM_FLAGS -jar ../jars/RunSilver.jar $@ silver:composed:Default && ant
 
 echo -e "\a"
 

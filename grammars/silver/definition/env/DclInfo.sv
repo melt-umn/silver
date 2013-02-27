@@ -20,6 +20,10 @@ synthesized attribute attrOccurring :: String;
 inherited attribute givenNonterminalType :: TypeExp;
 synthesized attribute isAnnotation :: Boolean;
 
+-- attrs
+synthesized attribute isSynthesized :: Boolean;
+synthesized attribute isInherited :: Boolean;
+
 -- production attribute
 inherited attribute givenSignatureForDefs :: NamedSignature;
 synthesized attribute prodDefs :: [Def];
@@ -43,6 +47,7 @@ closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- ever
                          typerep, givenNonterminalType, -- types (gNT for occurs)
                          namedSignature, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
+                         isInherited, isSynthesized, -- attrs
                          prodDefs, -- production attributes
                          dclBoundVars, -- Global values (where we have type schemes)
                          substitutedDclInfo, givenSubstitution -- type substitutions on dcls
@@ -79,8 +84,12 @@ top::DclInfo ::=
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
 
-  -- On Occurs declarations
+  -- On Occurs declarations and attrs
   top.isAnnotation = false;
+  
+  -- attrs
+  top.isSynthesized = false;
+  top.isInherited = false;
 }
 
 -- ValueDclInfos that can NEVER appear in interface files:
@@ -236,6 +245,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
   
   top.typerep = ty;
   top.dclBoundVars = bound;
+  top.isSynthesized = true;
 }
 abstract production inhDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
@@ -249,6 +259,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
   
   top.typerep = ty;
   top.dclBoundVars = bound;
+  top.isInherited = true;
 }
 abstract production annoDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
@@ -262,6 +273,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
   
   top.typerep = ty;
   top.dclBoundVars = bound;
+  top.isAnnotation = true;
 }
 
 -- ProductionAttrDclInfo
@@ -348,7 +360,7 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp
   
   top.attrOccurring = fnat;
 
-  -- UGH
+  -- UGH - bit of a short hand here...
   top.isAnnotation = true;
 }
 

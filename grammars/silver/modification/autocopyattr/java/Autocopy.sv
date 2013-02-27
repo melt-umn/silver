@@ -38,10 +38,9 @@ aspect production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
 {
   top.setupInh <- 
-    case at.lookupAttribute.dcl of
-      autocopyDcl(_,_,_,_,_) ->  "\t\t" ++ makeNTClassName(nt.lookupType.fullName) ++ ".decorators.add(" ++ makeDecoratorClassName(at.lookupAttribute.fullName) ++ ".singleton);\n"
-    | _ -> ""
-    end;
+    if at.lookupAttribute.dcl.isAutocopy then
+      "\t\t" ++ makeNTClassName(nt.lookupType.fullName) ++ ".decorators.add(" ++ makeDecoratorClassName(at.lookupAttribute.fullName) ++ ".singleton);\n"
+    else "";
 }
 
 function makeDecoratorClassName
