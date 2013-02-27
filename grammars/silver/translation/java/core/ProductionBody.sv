@@ -9,15 +9,15 @@ attribute attrName occurs on ForwardLHSExpr;
 attribute setupInh, translation, valueWeaving occurs on ProductionBody, ProductionStmts, ProductionStmt;
 attribute           translation               occurs on DefLHS, ForwardInhs, ForwardInh;
 
-aspect production defaultProductionBody
-top::ProductionBody ::= stmts::ProductionStmts
+aspect production productionBody
+top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
   top.setupInh := stmts.setupInh;
   top.translation = stmts.translation;
   top.valueWeaving := stmts.valueWeaving;
 }
 
-aspect production productionStmtsNone
+aspect production productionStmtsNil
 top::ProductionStmts ::= 
 {
   top.setupInh := "";
@@ -25,29 +25,15 @@ top::ProductionStmts ::=
   top.valueWeaving := "";
 }
 
-aspect production productionStmts
-top::ProductionStmts ::= stmt::ProductionStmt
-{
-  top.setupInh := stmt.setupInh;
-  top.translation = stmt.translation;
-  top.valueWeaving := stmt.valueWeaving;
-}
-
-aspect production productionStmtsCons
-top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
+aspect production productionStmtsSnoc
+top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 {
   top.setupInh := h.setupInh ++ t.setupInh;
   top.translation = h.translation ++ t.translation;
   top.valueWeaving := h.valueWeaving ++ t.valueWeaving;
 }
 
-aspect production productionStmtsAppend
-top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
-{
-  top.setupInh := h.setupInh ++ t.setupInh;
-  top.translation = h.translation ++ t.translation;
-  top.valueWeaving := h.valueWeaving ++ t.valueWeaving;
-}
+-------
 
 aspect production productionStmtAppend
 top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt

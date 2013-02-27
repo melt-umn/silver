@@ -35,8 +35,8 @@ top::AGDcl ::= 'makeTestSuite' name::IdLower_t ';'
 
   forwards to
     productionDcl('abstract', 'production', nameIdLower(name), sig,
-      defaultProductionBody(
-        foldr(productionStmtsCons, productionStmtsNone(), bod)));
+      productionBody('{',
+        foldl(productionStmtsSnoc, productionStmtsNil(), bod), '}'));
 
   {-
     abstract production core_tests
@@ -79,25 +79,24 @@ top::AGDcl ::= 'mainTestSuite' name::IdLower_t ';'
     )
     ,
     -- body::ProductionBody 
-   defaultProductionBody (
-    productionStmtsCons (
+   productionBody ('{',
+    foldl(productionStmtsSnoc, productionStmtsNil(), [
      --  local testResults :: TestSuite;
      localAttributeDcl (
       'local', 'attribute', nameIdLower(terminal(IdLower_t,"testResults")), '::',
       nominalType( qNameTypeId (terminal(IdUpper_t,"TestSuite")), botlNone()), ';'
      ),
-     productionStmtsCons (
-      -- testResults = name()
-      valueEq ( qName(top.location, "testResults"), '=', 
+     -- testResults = name()
+     valueEq ( qName(top.location, "testResults"), '=', 
                  applicationEmpty ( baseExpr( qNameId(nameIdLower(name))) , 
                   '(', ')' ) ,
                  ';' ) ,
-      productionStmtsCons (
-       attributeDef ( 
+     -- testResults.ioIn = ...
+     attributeDef ( 
          concreteDefLHS( qName(top.location, "testResults")), '.', qName(top.location, "ioIn"),
          '=' , mkNameExpr("mainIO"), ';' ) ,
-      productionStmts (
-       returnDef ('return' ,
+     -- return ...
+     returnDef ('return' ,
         prodFuncCall( "ioval" ,
          [
           prodFuncCall( "exit" ,
@@ -122,11 +121,7 @@ top::AGDcl ::= 'mainTestSuite' name::IdLower_t ';'
            intConst ( terminal(Int_t, "0") ) 
          ] ) , 
          ';' )
-    ) ) ) )
-   )
-  )
-  ,
-
+    ]), '}')),
 
   makeTestSuite_p ( 'makeTestSuite', name, ';' )
 

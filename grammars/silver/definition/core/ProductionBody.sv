@@ -56,77 +56,34 @@ synthesized attribute uniqueSignificantExpression :: [Decorated Expr];
 inherited attribute isSynthesizedDefinition :: Boolean;
 
 
-concrete production emptyProductionBodySemi
-top::ProductionBody ::= ';'
-{
-  top.pp = ";";
-  top.location = $1.location;
-
-  forwards to defaultProductionBody(productionStmtsNone());
-}
-
-concrete production emptyProductionBodyCurly
-top::ProductionBody ::= '{' '}'
-{
-  top.pp = "{}";
-  top.location = $1.location;
-
-  forwards to defaultProductionBody(productionStmtsNone());
-}
-
 concrete production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
-  top.pp = "{" ++ stmts.pp ++ "}";
-  top.location = $1.location;
-
-  production attribute extraStmts :: ProductionStmts with productionStmtsAppend ;
-  extraStmts := stmts;
-
-  forwards to defaultProductionBody(extraStmts) ;
-}
-
-abstract production defaultProductionBody
-top::ProductionBody ::= stmts::ProductionStmts
-{
   top.pp = stmts.pp;
   top.location = stmts.location;
-  top.defs = stmts.defs;
 
   top.productionAttributes = stmts.productionAttributes;
   top.uniqueSignificantExpression = stmts.uniqueSignificantExpression;
 
+  top.defs = stmts.defs;
   top.errors := stmts.errors;
 }
 
-abstract production productionStmtsNone
+concrete production productionStmtsNil
 top::ProductionStmts ::= 
 {
   top.pp = "";
   top.location = bogusLocation();
-  top.defs = [];
 
   top.productionAttributes = [];
   top.uniqueSignificantExpression = [];
 
+  top.defs = [];
   top.errors := [];
 }
 
-concrete production productionStmts
-top::ProductionStmts ::= stmt::ProductionStmt
-{
-  top.pp = stmt.pp;
-  top.location = stmt.location;
-
-  top.productionAttributes = stmt.productionAttributes;
-  top.uniqueSignificantExpression = stmt.uniqueSignificantExpression;
- 
-  top.defs = stmt.defs;
-  top.errors := stmt.errors;
-}
-
-concrete production productionStmtsCons
-top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
+concrete production productionStmtsSnoc
+top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 {
   top.pp = h.pp ++ "\n" ++ t.pp;
   top.location = h.location;
@@ -138,29 +95,18 @@ top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
   top.errors := h.errors ++ t.errors;
 }
 
-abstract production productionStmtsAppend
-top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
-{
-  top.pp = h.pp ++ "\n" ++ t.pp;
-  top.location = h.location;
-  top.defs = h.defs ++ t.defs;
-
-  top.productionAttributes = h.productionAttributes ++ t.productionAttributes;
-  top.uniqueSignificantExpression = h.uniqueSignificantExpression ++ t.uniqueSignificantExpression;
-
-  top.errors := h.errors ++ t.errors;
-}
+----------
 
 abstract production productionStmtAppend
 top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 {
   top.pp = h.pp ++ "\n" ++ t.pp;
   top.location = h.location;
-  top.defs = h.defs ++ t.defs;
 
   top.productionAttributes = h.productionAttributes ++ t.productionAttributes;
   top.uniqueSignificantExpression = h.uniqueSignificantExpression ++ t.uniqueSignificantExpression;
 
+  top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
 }
 

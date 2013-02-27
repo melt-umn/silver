@@ -128,7 +128,7 @@ ag::AGDcl ::= kwd::'equalityTest'
         productionLHS(tref, '::',
           nominalType(qNameTypeId(terminal(IdUpper_t, "Test")), botlNone())),
         '::=', productionRHSNil()),
-      defaultProductionBody(foldr(productionStmtsCons, productionStmtsNone(), [
+      productionBody('{', foldl(productionStmtsSnoc, productionStmtsNil(), [
         localAttributeDcl('local', 'attribute', valueref, '::', valueType, ';'),
         valueEq(qNameId(valueref), '=', value, ';'),
         localAttributeDcl('local', 'attribute', expectedref, '::', valueType, ';'),
@@ -144,7 +144,7 @@ ag::AGDcl ::= kwd::'equalityTest'
             strCnst("\n")]), ';'),
         attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameId(passref), '=',
            equalityTestExpr.fromJust, ';'),
-        forwardsTo('forwards', 'to', prodFuncCall("defTest", []), ';')])));
+        forwardsTo('forwards', 'to', prodFuncCall("defTest", []), ';')]), '}'));
 
 {-
   local aspProdCS :: AGDcl = asAGDcl (
@@ -159,8 +159,9 @@ ag::AGDcl ::= kwd::'equalityTest'
       aspectProductionSignature(
         aspectProductionLHSId(tref),
           '::=', aspectRHSElemNil()),
-      defaultProductionBody(
-        productionStmts(
+      productionBody('{',
+        productionStmtsSnoc(
+          productionStmtsNil(),
           valContainsAppend(
             qNameId(nameIdLower(terminal(IdLower_t, "testsToPerform"))),
             '<-',
@@ -169,7 +170,7 @@ ag::AGDcl ::= kwd::'equalityTest'
                 applicationEmpty(
                   baseExpr(qNameId(testNameref)), '(', ')')),
               ']'),
-            ';'))));
+            ';')), '}'));
 
 
 
