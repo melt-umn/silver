@@ -1,6 +1,6 @@
 grammar silver:analysis:warnings:defs;
 
-import silver:modification:autocopyattr only autocopyDcl;
+import silver:modification:autocopyattr only isAutocopy;
 import silver:modification:collection;
 import silver:definition:flow:driver only ProductionGraph, edgeMap, flowVertexEq, prod, collectInhs;
 
@@ -77,7 +77,16 @@ function isAutocopy
 Boolean ::= attr::String  e::Decorated Env
 {
   return case getAttrDclAll(attr, e) of
-  | autocopyDcl(_,_,_,_,_) :: _ -> true
+  | at :: _ -> at.isAutocopy
+  | _ -> false
+  end;
+}
+-- TODO: why is this a thing I have to write here. Sheesh. FIX THIS.
+function isInherited
+Boolean ::= a::String  e::Decorated Env
+{
+  return case getAttrDclAll(a, e) of
+  | at :: _ -> at.isInherited
   | _ -> false
   end;
 }
@@ -87,16 +96,6 @@ Boolean ::= v::FlowVertex
 {
   return case v of
   | lhsInhVertex(a) -> true
-  | _ -> false
-  end;
-}
-
--- TODO: why is this a thing I have to write here. Sheesh. FIX THIS.
-function isInherited
-Boolean ::= a::String  e::Decorated Env
-{
-  return case getAttrDcl(a, e) of
-  | inhDcl(_,_,_,_,_) :: _ -> true
   | _ -> false
   end;
 }
@@ -350,7 +349,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   top.errors <-
     if null(nt.lookupType.errors ++ at.lookupAttribute.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
-    && (case at.lookupAttribute.dcl of synDcl(_,_,_,_,_) -> true | _ -> false end) -- TODO: we really need a better way to do this
+    && at.lookupAttribute.dcl.isSynthesized
     then raiseImplicitFwdEqFlowTypesForAttr(top.location, at.lookupAttribute.fullName, prods, top.flowEnv, depsForThisAttr, myGraphs)
     else [];
 }
