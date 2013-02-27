@@ -150,25 +150,25 @@ top::DefLHS ::= q::Decorated QName
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   top.translation = 
     "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
-    "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
+    "\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   top.translation = 
     "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
-    "\t\t" ++ dl.translation ++ "[" ++ occursCheck.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
+    "\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
 }
 
 

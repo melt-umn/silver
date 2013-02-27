@@ -204,14 +204,14 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
 
 -- ERROR ON ATTRIBUTE DEFS:
 abstract production errorCollectionDefDispatcher
-top::ProductionStmt ::= dl::DefLHS '.' q::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' q::Decorated QNameAttrOccur '=' e::Expr
 {
   top.errors <- [err($4.location, "The ':=' and '<-' operators can only be used for collections. " ++ q.pp ++ " is not a collection.")];
 
   forwards to errorAttributeDef(dl,$2,q,$4,e);
 }
 abstract production errorColNormalAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' q::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' q::Decorated QNameAttrOccur '=' e::Expr
 {
   top.errors <- [err($4.location, q.pp ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")];
 
@@ -267,75 +267,87 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 -- NON-ERRORS for SYN ATTRS
 
 abstract production synBaseColAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
+  top.location = attr.location;
 
-  production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(attr, dl.typerep);
+  top.errors := e.errors;
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   e.downSubst = top.downSubst;
-  -- the real type checking is done by the forward, but we must ensure things are tied up nicely
-  -- otherwise we don't specialize ntOrDecs in OUR e
-  forward.downSubst = unifyCheck(occursCheck.typerep, e.typerep, e.upSubst);
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst; 
 
-  dl.isSynthesizedDefinition = false;
-  
-  forwards to synthesizedAttributeDef(dl, $2, attr, $4, e);
+  errCheck1 = check(attr.typerep, e.typerep);
+  top.errors <-
+    if errCheck1.typeerror
+    then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
+    else [];
 }
 abstract production synAppendColAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
+  top.location = attr.location;
 
-  production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(attr, dl.typerep);
+  top.errors := e.errors;
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   e.downSubst = top.downSubst;
-  -- the real type checking is done by the forward, but we must ensure things are tied up nicely
-  -- otherwise we don't specialize ntOrDecs in OUR e
-  forward.downSubst = unifyCheck(occursCheck.typerep, e.typerep, e.upSubst);
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst; 
 
-  dl.isSynthesizedDefinition = false;
-  
-  forwards to synthesizedAttributeDef(dl, $2, attr, $4, e);
+  errCheck1 = check(attr.typerep, e.typerep);
+  top.errors <-
+    if errCheck1.typeerror
+    then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
+    else [];
 }
 
 -- NON-ERRORS for INHERITED ATTRS
 
 abstract production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
+  top.location = attr.location;
 
-  production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(attr, dl.typerep);
+  top.errors := e.errors;
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   e.downSubst = top.downSubst;
-  -- the real type checking is done by the forward, but we must ensure things are tied up nicely
-  -- otherwise we don't specialize ntOrDecs in OUR e
-  forward.downSubst = unifyCheck(occursCheck.typerep, e.typerep, e.upSubst);
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst; 
 
-  dl.isSynthesizedDefinition = false;
-  
-  forwards to inheritedAttributeDef(dl, $2, attr, $4, e);
+  errCheck1 = check(attr.typerep, e.typerep);
+  top.errors <-
+    if errCheck1.typeerror
+    then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
+    else [];
 }
 abstract production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
+  top.location = attr.location;
 
-  production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(attr, dl.typerep);
+  top.errors := e.errors;
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   e.downSubst = top.downSubst;
-  -- the real type checking is done by the forward, but we must ensure things are tied up nicely
-  -- otherwise we don't specialize ntOrDecs in OUR e
-  forward.downSubst = unifyCheck(occursCheck.typerep, e.typerep, e.upSubst);
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst; 
 
-  dl.isSynthesizedDefinition = false;
-  
-  forwards to inheritedAttributeDef(dl, $2, attr, $4, e);
+  errCheck1 = check(attr.typerep, e.typerep);
+  top.errors <-
+    if errCheck1.typeerror
+    then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
+    else [];
 }
 
 -- The use syntax --------------------------------------------------------------
@@ -344,35 +356,41 @@ terminal Contains_t      '<-' lexer classes {SPECOP};
 terminal BaseContains_t  ':=' lexer classes {SPECOP};
 
 concrete production attrContainsAppend
-top::ProductionStmt ::= dl::DefLHS '.' attr::QName '<-' e::Expr ';'
+top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
 {
-  top.pp = dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
+  top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
   top.location = attr.location;
-  
-  top.errors <- attr.lookupAttribute.errors;
 
+  top.errors := dl.errors ++ attr.errors ++ forward.errors;
+
+  -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = [];
   top.defs = [];
+  
+  dl.defLHSattr = attr;
+  attr.attrFor = dl.typerep;
 
-  forwards to if null(attr.lookupAttribute.dcls)
-              then errorAttributeDef(dl, $2, attr, terminal(Equal_t, "<-", $4.location), e)
-              else attr.lookupAttribute.dcl.attrAppendDefDispatcher(dl, $2, attr, terminal(Equal_t, "<-", $4.location), e);
+  forwards to if !null(attr.errors) then errorAttributeDef(dl, $2, attr, terminal(Equal_t, "<-", $4.location), e)
+              else attr.attrDcl.attrAppendDefDispatcher(dl, $2, attr, terminal(Equal_t, "<-", $4.location), e);
 }
 
 concrete production attrContainsBase
-top::ProductionStmt ::= dl::DefLHS '.' attr::QName ':=' e::Expr ';'
+top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
 {
-  top.pp = dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
+  top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
   top.location = attr.location;
 
-  top.errors <- attr.lookupAttribute.errors;
+  top.errors := dl.errors ++ attr.errors ++ forward.errors;
 
+  -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = [];
   top.defs = [];
+  
+  dl.defLHSattr = attr;
+  attr.attrFor = dl.typerep;
 
-  forwards to if null(attr.lookupAttribute.dcls)
-              then errorAttributeDef(dl, $2, attr, terminal(Equal_t, ":=", $4.location), e)
-              else attr.lookupAttribute.dcl.attrBaseDefDispatcher(dl, $2, attr, terminal(Equal_t, ":=", $4.location), e);
+  forwards to if !null(attr.errors) then errorAttributeDef(dl, $2, attr, terminal(Equal_t, ":=", $4.location), e)
+              else attr.attrDcl.attrBaseDefDispatcher(dl, $2, attr, terminal(Equal_t, ":=", $4.location), e);
 }
 
 concrete production valContainsAppend

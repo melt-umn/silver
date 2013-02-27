@@ -11,7 +11,7 @@ nonterminal ProductionStmt with
   productionAttributes, signature, uniqueSignificantExpression;
 
 nonterminal DefLHS with 
-  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, typerep, isSynthesizedDefinition;
+  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, typerep, defLHSattr;
 
 nonterminal ForwardInhs with 
   config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature;
@@ -50,10 +50,9 @@ synthesized attribute productionAttributes :: [Def];
 synthesized attribute uniqueSignificantExpression :: [Decorated Expr];
 
 {--
- - Tell a DefLHS whether it is a synthesized or inherited attribute.
- - true = synthesized, false = inherited
+ - The attribute we're defining on a DefLHS.
  -}
-inherited attribute isSynthesizedDefinition :: Boolean;
+inherited attribute defLHSattr :: Decorated QNameAttrOccur;
 
 
 concrete production productionBody
@@ -259,72 +258,49 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
 }
 
 concrete production attributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::QName '=' e::Expr ';'
+top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
   top.location = $4.location;
 
-  top.errors := attr.lookupAttribute.errors ++ forward.errors;
+  top.errors := dl.errors ++ attr.errors ++ forward.errors;
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = [];
   top.defs = [];
+  
+  dl.defLHSattr = attr;
+  attr.attrFor = dl.typerep;
 
-  forwards to if null(attr.lookupAttribute.dcls)
-              then errorAttributeDef(dl, $2, attr, $4, e)
-              else attr.lookupAttribute.dcl.attrDefDispatcher(dl, $2, attr, $4, e);
-
-  -- TODO: this design might be somewhat broken.
-  -- We'd like to automatically disambiguate attributes that don't occur on
-  -- the NT of interest. (e.g. two 'pp', but this NT only has one of them.)
-  -- Currently, we're uniquely choosing the attribute, before considering
-  -- the lhs. Perhaps that should be reversed!
+  forwards to if !null(attr.errors) then errorAttributeDef(dl, $2, attr, $4, e)
+              else attr.attrDcl.attrDefDispatcher(dl, $2, attr, $4, e);
 }
 
 abstract production errorAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
   top.location = $4.location;
 
-  -- No error message. We only get here via attributeDef, which will error for us
   top.errors := e.errors;
-  
-  -- ignore dl, we don't have the proper set of inh attrs to give it!
 }
 
 abstract production synthesizedAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
   top.location = $4.location;
 
-  production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(attr, dl.typerep);
-
-  -- we already know attr is valid here.
-  top.errors := dl.errors ++ occursCheck.errors ++ e.errors;
-  
-  -- TODO: missing redefinition check
-
-  dl.isSynthesizedDefinition = true;
+  top.errors := e.errors;
 }
 
 abstract production inheritedAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
   top.location = $4.location;
 
-  production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(attr, dl.typerep);
-
-  -- we already know attr is valid here.
-  top.errors := dl.errors ++ occursCheck.errors ++ e.errors;
-
-  -- TODO: missing redefinition check
-
-  dl.isSynthesizedDefinition = false;
+  top.errors := e.errors;
 }
 
 concrete production concreteDefLHS
@@ -351,9 +327,8 @@ top::DefLHS ::= q::Decorated QName
   top.pp = q.pp;
   top.location = q.location;
   
-  top.errors := if top.isSynthesizedDefinition
-                then [err(q.location, "Cannot define synthesized attribute on child " ++ q.pp)]
-                else [];
+  top.errors := if !null(top.defLHSattr.errors) || top.defLHSattr.attrDcl.isInherited then []
+                else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.pp ++ "' on child '" ++ q.pp ++ "'")];
                 
   top.typerep = q.lookupValue.typerep;
 }
@@ -364,9 +339,9 @@ top::DefLHS ::= q::Decorated QName
   top.pp = q.pp;
   top.location = q.location;
   
-  top.errors := if !top.isSynthesizedDefinition
-                then [err(q.location, "Cannot define inherited attribute on " ++ q.pp)]
-                else [];
+  top.errors := if !null(top.defLHSattr.errors) || top.defLHSattr.attrDcl.isSynthesized then []
+                else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.pp ++ "' on the lhs '" ++ q.pp ++ "'")];
+
   top.typerep = q.lookupValue.typerep;
 }
 
@@ -376,9 +351,9 @@ top::DefLHS ::= q::Decorated QName
   top.pp = q.pp;
   top.location = q.location;
   
-  top.errors := if top.isSynthesizedDefinition
-                then [err(q.location, "Cannot define synthesized attribute on local " ++ q.pp)]
-                else [];
+  top.errors := if !null(top.defLHSattr.errors) || top.defLHSattr.attrDcl.isInherited then []
+                else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.pp ++ "' on local '" ++ q.pp ++ "'")];
+
   top.typerep = q.lookupValue.typerep;
 }
 
@@ -388,9 +363,9 @@ top::DefLHS ::= q::Decorated QName
   top.pp = q.pp;
   top.location = q.location;
   
-  top.errors := if top.isSynthesizedDefinition
-                then [err(q.location, "Cannot define synthesized attribute on forward")]
-                else [];
+  top.errors := if !null(top.defLHSattr.errors) || top.defLHSattr.attrDcl.isInherited then []
+                else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.pp ++ "' on forward")];
+
   top.typerep = q.lookupValue.typerep;
 }
 

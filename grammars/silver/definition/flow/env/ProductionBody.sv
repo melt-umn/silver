@@ -114,18 +114,18 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   top.flowDefs = [];
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
 
   local srcGrams :: [String] =
-    if null(occursCheck.errors) then [ntDefGram, occursCheck.dcl.sourceGrammar]
+    if null(attr.errors) then [ntDefGram, attr.dcl.sourceGrammar]
     else [ntDefGram];
 
   local mayAffectFlowType :: Boolean =
@@ -133,18 +133,18 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   
   top.flowDefs = 
     case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
-    | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.lookupAttribute.fullName, e.flowDeps)]
-    | _ -> [synEq(top.signature.fullName, attr.lookupAttribute.fullName, e.flowDeps, mayAffectFlowType)]
+    | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.attrDcl.fullName, e.flowDeps)]
+    | _ -> [synEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
     end;
 }
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   top.flowDefs = 
     case dl of
-    | childDefLHS(q) -> [inhEq(top.signature.fullName, q.lookupValue.fullName, attr.lookupAttribute.fullName, e.flowDeps)]
-    | localDefLHS(q) -> [localInhEq(top.signature.fullName, q.lookupValue.fullName, attr.lookupAttribute.fullName, e.flowDeps)]
-    | forwardDefLHS(q) -> [fwdInhEq(top.signature.fullName, attr.lookupAttribute.fullName, e.flowDeps)]
+    | childDefLHS(q) -> [inhEq(top.signature.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
+    | localDefLHS(q) -> [localInhEq(top.signature.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
+    | forwardDefLHS(q) -> [fwdInhEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps)]
     | _ -> [] -- TODO : this isn't quite extensible... more better way eventually, plz
     end;
 }
@@ -166,28 +166,58 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 -- FROM COLLECTIONS TODO
 
 aspect production synAppendColAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' {-That's really a <- -} e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' {- <- -} e::Expr
 {
   local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
 
   local mayAffectFlowType :: Boolean =
-    contains(top.grammarName, computeOptionalDeps([ntDefGram, occursCheck.dcl.sourceGrammar], top.compiledGrammars));
+    contains(top.grammarName, computeOptionalDeps([ntDefGram, attr.dcl.sourceGrammar], top.compiledGrammars));
 
-  top.flowDefs = [extraEq(top.signature.fullName, lhsSynVertex(attr.lookupAttribute.fullName), e.flowDeps, mayAffectFlowType)];
+  top.flowDefs = [extraEq(top.signature.fullName, lhsSynVertex(attr.attrDcl.fullName), e.flowDeps, mayAffectFlowType)];
 }
 
 aspect production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' {- <- -} e::Expr
 {
   local vertex :: FlowVertex =
     case dl of
-    | childDefLHS(q) -> rhsVertex(q.lookupValue.fullName, attr.lookupAttribute.fullName)
-    | localDefLHS(q) -> localVertex(q.lookupValue.fullName, attr.lookupAttribute.fullName)
-    | forwardDefLHS(q) -> forwardVertex(attr.lookupAttribute.fullName)
+    | childDefLHS(q) -> rhsVertex(q.lookupValue.fullName, attr.attrDcl.fullName)
+    | localDefLHS(q) -> localVertex(q.lookupValue.fullName, attr.attrDcl.fullName)
+    | forwardDefLHS(q) -> forwardVertex(attr.attrDcl.fullName)
     | _ -> localEqVertex("bogus:value:from:inhcontrib:flow")
     end;
   top.flowDefs = [extraEq(top.signature.fullName, vertex, e.flowDeps, true)];
 }
+aspect production synBaseColAttributeDef
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
+{
+  local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
+
+  local srcGrams :: [String] =
+    if null(attr.errors) then [ntDefGram, attr.dcl.sourceGrammar]
+    else [ntDefGram];
+
+  local mayAffectFlowType :: Boolean =
+    contains(top.grammarName, computeOptionalDeps(srcGrams, top.compiledGrammars));
+  
+  top.flowDefs = 
+    case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
+    | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.attrDcl.fullName, e.flowDeps)]
+    | _ -> [synEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
+    end;
+}
+aspect production inhBaseColAttributeDef
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
+{
+  top.flowDefs = 
+    case dl of
+    | childDefLHS(q) -> [inhEq(top.signature.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
+    | localDefLHS(q) -> [localInhEq(top.signature.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
+    | forwardDefLHS(q) -> [fwdInhEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps)]
+    | _ -> [] -- TODO : this isn't quite extensible... more better way eventually, plz
+    end;
+}
+
 
 aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName '=' e::Expr

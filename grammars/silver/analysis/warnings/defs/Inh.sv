@@ -170,7 +170,7 @@ function checkEqDeps
 
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   -- TODO oh no again!
   local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -181,10 +181,10 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   local transitiveDeps :: [FlowVertex] = expandGraph(immediateDeps, productionFlowGraph);
   
   local lhsInhDeps :: [String] = foldr(collectInhs, [], transitiveDeps);
-  local lhsInhExceedsFlowType :: [String] = rem(lhsInhDeps, inhDepsForSyn(attr.lookupAttribute.fullName, top.signature.outputElement.typerep.typeName, myFlow));
+  local lhsInhExceedsFlowType :: [String] = rem(lhsInhDeps, inhDepsForSyn(attr.attrDcl.fullName, top.signature.outputElement.typerep.typeName, myFlow));
 
   top.errors <-
-    if null(occursCheck.errors ++ attr.lookupAttribute.errors)
+    if null(dl.errors ++ attr.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
     then foldr(append, [], map(checkEqDeps(_, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env), transitiveDeps)) ++
          if null(lhsInhExceedsFlowType) then []
@@ -219,7 +219,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   -- TODO oh no again!
   local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
