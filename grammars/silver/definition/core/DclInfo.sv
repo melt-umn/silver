@@ -30,7 +30,7 @@ synthesized attribute undecoratedAccessHandler :: (Expr ::= Decorated Expr Dot_t
 {--
  - The production an "equation" shuld forward to for this type of attribute (i.e. the 'a' in 'x.a = e')
  -}
-synthesized attribute attrDefDispatcher :: (ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr) occurs on DclInfo;
+synthesized attribute attrDefDispatcher :: (ProductionStmt ::= Decorated DefLHS Dot_t Decorated QNameAttrOccur Equal_t Expr) occurs on DclInfo;
 
 aspect default production
 top::DclInfo ::=

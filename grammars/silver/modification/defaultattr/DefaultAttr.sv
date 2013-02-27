@@ -69,9 +69,9 @@ top::DefLHS ::= q::Decorated QName
   top.pp = q.pp;
   top.location = q.location;
   
-  top.errors := if !top.isSynthesizedDefinition
-                then [err(q.location, "Cannot define inherited attribute on " ++ q.pp)]
-                else [];
+  top.errors := if !null(top.defLHSattr.errors) || top.defLHSattr.attrDcl.isSynthesized then []
+                else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.pp ++ "' on the lhs '" ++ q.pp ++ "'")];
+
   top.typerep = q.lookupValue.typerep;
 
   top.translation = makeNTClassName(top.signature.outputElement.typerep.typeName) ++ ".defaultSynthesizedAttributes";

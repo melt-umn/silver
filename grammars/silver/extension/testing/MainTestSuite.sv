@@ -93,7 +93,7 @@ top::AGDcl ::= 'mainTestSuite' name::IdLower_t ';'
                  ';' ) ,
      -- testResults.ioIn = ...
      attributeDef ( 
-         concreteDefLHS( qName(top.location, "testResults")), '.', qName(top.location, "ioIn"),
+         concreteDefLHS( qName(top.location, "testResults")), '.', qNameAttrOccur(qName(top.location, "ioIn")),
          '=' , mkNameExpr("mainIO"), ';' ) ,
      -- return ...
      returnDef ('return' ,

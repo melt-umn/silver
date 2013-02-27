@@ -133,7 +133,7 @@ ag::AGDcl ::= kwd::'equalityTest'
         valueEq(qNameId(valueref), '=', value, ';'),
         localAttributeDcl('local', 'attribute', expectedref, '::', valueType, ';'),
         valueEq(qNameId(expectedref), '=', expected, ';'),
-        attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameId(msgref), '=',
+        attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameAttrOccur(qNameId(msgref)), '=',
           foldStringExprs([
             strCnst("Test at " ++ ag.location.unparse ++ " failed.\nChecking that expression\n   " ++
               stringifyString(value.pp) ++ "\nshould be same as expression\n   " ++
@@ -142,7 +142,7 @@ ag::AGDcl ::= kwd::'equalityTest'
             strCnst("\nExpected value: \n   "),
             toStringExpectedExpr.fromJust,
             strCnst("\n")]), ';'),
-        attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameId(passref), '=',
+        attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameAttrOccur(qNameId(passref)), '=',
            equalityTestExpr.fromJust, ';'),
         forwardsTo('forwards', 'to', prodFuncCall("defTest", []), ';')]), '}'));
 

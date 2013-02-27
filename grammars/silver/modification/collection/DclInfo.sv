@@ -2,8 +2,8 @@ grammar silver:modification:collection;
 
 attribute attrBaseDefDispatcher, attrAppendDefDispatcher, baseDefDispatcher, appendDefDispatcher occurs on DclInfo;
 
-synthesized attribute attrBaseDefDispatcher :: (ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr);
-synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= DefLHS Dot_t Decorated QName Equal_t Expr);
+synthesized attribute attrBaseDefDispatcher :: (ProductionStmt ::= Decorated DefLHS Dot_t Decorated QNameAttrOccur Equal_t Expr);
+synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= Decorated DefLHS Dot_t Decorated QNameAttrOccur Equal_t Expr);
 
 synthesized attribute baseDefDispatcher :: (ProductionStmt ::= Decorated QName  Equal_t  Expr);
 synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated QName  Equal_t  Expr);

@@ -117,14 +117,14 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   e.downSubst = top.downSubst;
   top.upSubst = e.upSubst;
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
@@ -132,15 +132,15 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst; 
 
-  errCheck1 = check(occursCheck.typerep, e.typerep);
+  errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
-       else [];
+    if errCheck1.typeerror
+    then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
+    else [];
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
@@ -148,11 +148,11 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::Decorated QName '=' e::Expr
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst; 
 
-  errCheck1 = check(occursCheck.typerep, e.typerep);
+  errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
-       else [];
+    if errCheck1.typeerror
+    then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
+    else [];
 }
 
 aspect production childDefLHS
