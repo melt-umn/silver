@@ -49,12 +49,6 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
   stmts.finalSubst = stmts.upSubst;
 }
 
-concrete production actionCodeEmpty_c
-top::ActionCode_c ::= '{' '}'
-{
-  top.actionCode = "";
-  forwards to actionCode_c($1,productionStmtsNone(),$2);
-}
 
 -- TODO hacky. ideally we'd do this where local attributes are declared, not here.
 function hacklocaldeclarations

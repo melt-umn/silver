@@ -4,36 +4,21 @@ import silver:util;
 
 attribute upSubst, downSubst, finalSubst occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
 
-aspect production defaultProductionBody
-top::ProductionBody ::= stmts::ProductionStmts
+aspect production productionBody
+top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
   stmts.downSubst = top.downSubst;
   top.upSubst = stmts.upSubst;
 }
 
-aspect production productionStmtsNone
+aspect production productionStmtsNil
 top::ProductionStmts ::= 
 {
   top.upSubst = top.downSubst;
 }
 
-aspect production productionStmts
-top::ProductionStmts ::= stmt::ProductionStmt
-{
-  stmt.downSubst = top.downSubst;
-  top.upSubst = stmt.upSubst;
-}
-
-aspect production productionStmtsCons
-top::ProductionStmts ::= h::ProductionStmt t::ProductionStmts
-{
-  h.downSubst = top.downSubst;
-  t.downSubst = h.upSubst;
-  top.upSubst = t.upSubst;
-}
-
-aspect production productionStmtsAppend
-top::ProductionStmts ::= h::ProductionStmts t::ProductionStmts
+aspect production productionStmtsSnoc
+top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 {
   h.downSubst = top.downSubst;
   t.downSubst = h.upSubst;

@@ -16,34 +16,22 @@ attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, Productio
     This is to allow us to just compute flow types once, globally.
 -}
 
-aspect production defaultProductionBody
-top::ProductionBody ::= stmts::ProductionStmts
+aspect production productionBody
+top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
   top.flowDefs = stmts.flowDefs;
 }
 
 ----
 
-aspect production productionStmtsNone
+aspect production productionStmtsNil
 top::ProductionStmts ::= 
 {
   top.flowDefs = [];
 }
 
-aspect production productionStmts
-top::ProductionStmts ::= stmt::ProductionStmt
-{
-  top.flowDefs = stmt.flowDefs;
-}
-
-aspect production productionStmtsCons
-top::ProductionStmts ::= h::ProductionStmt  t::ProductionStmts
-{
-  top.flowDefs = h.flowDefs ++ t.flowDefs;
-}
-
-aspect production productionStmtsAppend
-top::ProductionStmts ::= h::ProductionStmts  t::ProductionStmts
+aspect production productionStmtsSnoc
+top::ProductionStmts ::= h::ProductionStmts  t::ProductionStmt
 {
   top.flowDefs = h.flowDefs ++ t.flowDefs;
 }
