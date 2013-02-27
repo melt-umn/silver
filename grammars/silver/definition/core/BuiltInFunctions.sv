@@ -92,6 +92,8 @@ top::Expr ::= 'terminal' '(' t::Type ',' es::Expr ',' el::Expr ')'
 concrete production terminalConstructorTemporaryDispatcher
 top::Expr ::= 'terminal' '(' t::Type ',' es::Expr ',' el::Expr ')'
 {
+  top.pp = "terminal(" ++ t.pp ++ ", " ++ es.pp ++ ", " ++ el.pp ++ ")";
+  top.location = $1.location;
   -- This is a temporary compatibility hack. It's really nasty. Remove as soon as possible. TODO
   
   -- We're being stupidly simple here.

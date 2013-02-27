@@ -24,7 +24,7 @@ top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::St
   local allProds :: [String] = nubBy(stringEq, map((.fullName), foldr(consDefs, nilDefs(), allRealDefs).prodDclList));
   
   -- Fix the production graph information from the flow defs TODO: some of this maybe should be fixed somehow
-  local prodGraph :: [ProductionGraph] = 
+  production prodGraph :: [ProductionGraph] = 
     computeAllProductionGraphs(allProds, prodTree, allFlowEnv, allRealEnv);
   
   -- Now, solve for flow types!!

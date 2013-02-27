@@ -32,7 +32,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
 {
   top.postOps <-
     if top.config.dumpFlowGraph
-    then [dumpFlowGraphAction(finalGraphs, unList(rtm:toList(flowTypes)))]
+    then [dumpFlowGraphAction(prodGraph, finalGraphs, unList(rtm:toList(flowTypes)))]
     else [];
 }
 
@@ -52,12 +52,13 @@ function unList
 
 
 abstract production dumpFlowGraphAction
-top::Unit ::= prodGraph::[ProductionGraph]  flowTypes::[Pair<String [Pair<String String>]>]
+top::Unit ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph]  flowTypes::[Pair<String [Pair<String String>]>]
 {
   top.io = 
     writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}", 
-      writeFile("flow-deps.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}",
-        print("Generating flow graphs\n", top.ioIn)));
+      writeFile("flow-deps-direct.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}",
+        writeFile("flow-deps-transitive.dot", "digraph flow {\n" ++ generateDotGraph(finalGraph) ++ "}",
+          print("Generating flow graphs\n", top.ioIn))));
 
   top.code = 0;
   top.order = 0;
