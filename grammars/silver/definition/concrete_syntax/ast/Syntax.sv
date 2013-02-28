@@ -182,7 +182,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     "    <Precedence>" ++ toString(modifiers.productionPrecedence.fromJust) ++ "</Precedence>\n"
     else "") ++
     "    <Code><![CDATA[\n" ++ 
-    "RESULT = new " ++ makeClassName(ns.fullName) ++ "(" ++ fetchChildren(0, ns.inputElements) ++ ");\n" ++ -- TODO here we'd add location if its on the cs
+    "RESULT = new " ++ makeClassName(ns.fullName) ++ "(" ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++
     "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++
@@ -206,7 +206,7 @@ String ::= i::Integer  ns::[NamedSignatureElement]
   else if null(tail(ns)) then "_children[" ++ toString(i) ++ "]"
   else "_children[" ++ toString(i) ++ "], " ++ fetchChildren(i + 1, tail(ns));
 }
-{-
+
 function insertLocationAnnotation
 String ::= ns::Decorated NamedSignature
 {
@@ -214,10 +214,10 @@ String ::= ns::Decorated NamedSignature
   
   return if null(ns.namedInputElements) then ""
   else if length(ns.namedInputElements) > 1 then pfx ++ "multiple_annotation_problem" -- TODO
-  else if head(ns.namedInputElements).typerep.typeName != "core:Location" then pfx ++ "unknown_annotation_type_problem"
-  else pfx ++ 
+  else if head(ns.namedInputElements).elementName != "silver:langutil:location:location" then pfx ++ "unknown_annotation_type_problem"
+  else pfx ++ "common.TerminalRecord.createSpan(_children, virtualLocation, (int)_pos.getPos())";
 }
--}
+
 
 function lookupStrings
 [[Decorated SyntaxDcl]] ::= t::[String] e::EnvTree<Decorated SyntaxDcl>

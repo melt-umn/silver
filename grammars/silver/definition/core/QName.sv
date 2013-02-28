@@ -145,7 +145,7 @@ top::QNameAttrOccur ::= at::QName
     else if null(dclsNarrowed) then 
       -- Note we're using the short name of the attribute... there may be more than one attribute Dcl
       -- But, none of them occur so this error quite suffices!
-      [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'")]
+      [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Looked at:\n" ++ printPossibilities(at.lookupAttribute.dcls))]
     else if length(attrsNarrowed) > 1 then
       -- Here we've found multiple attributes that occur here!
       [err(at.location, "Ambiguous reference to attribute occurring on '" ++ at.name ++ "'. Possibilities are:\n" ++ printPossibilities(attrsNarrowed))]
