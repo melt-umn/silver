@@ -3,6 +3,7 @@ package common;
 import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;
 import core.NLocation;
 import core.Ploc;
+import silver.langutil.location.Alocation;
 
 /**
  * The terminal representation object, containing a lexeme and a location.
@@ -53,5 +54,39 @@ public final class TerminalRecord {
 	}
 	public StringCatter getFilename() {
 		return (StringCatter)getFromLoc(core.Init.core_filename__ON__core_Location);
+	}
+	
+	// This is a utility that I put here because why not. Perhaps it should be moved?
+	public static NLocation span(final NLocation a, final NLocation b) {
+		final DecoratedNode x = a.decorate(TopNode.singleton, (Lazy[])null);
+		final DecoratedNode y = b.decorate(TopNode.singleton, (Lazy[])null);
+		
+		return new Ploc(
+				x.synthesized(core.Init.core_filename__ON__core_Location),
+				x.synthesized(core.Init.core_line__ON__core_Location),
+				x.synthesized(core.Init.core_column__ON__core_Location),
+				y.synthesized(core.Init.core_endLine__ON__core_Location),
+				y.synthesized(core.Init.core_endColumn__ON__core_Location),
+				x.synthesized(core.Init.core_index__ON__core_Location),
+				y.synthesized(core.Init.core_endIndex__ON__core_Location));
+	}
+	// Ditto
+	public static NLocation createSpan(final Object[] children, VirtualLocation l, int index) {
+		if(children.length == 0) {
+			return new Ploc(l.getFileName(), l.getLine(), l.getColumn(), l.getLine(), l.getColumn(), index, index);
+		} else if(children.length == 1) {
+			return extractLocation(children[0]);
+		} else {
+			return span(extractLocation(children[0]), extractLocation(children[children.length-1]));
+		}
+	}
+	public static NLocation extractLocation(Object o) {
+		if(o instanceof TerminalRecord) {
+			return ((TerminalRecord)o).location;
+		} else if(o instanceof Alocation) {
+			return (NLocation) ((Alocation)o).getAnno_silver_langutil_location_location();
+		}
+		// TODO: a better error, maybe? Eh, it should never happen.
+		throw new RuntimeException("Attempting to extract location from locationless object");
 	}
 }

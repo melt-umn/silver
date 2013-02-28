@@ -282,7 +282,10 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
   top.location = $4.location;
 
-  top.errors := e.errors;
+  -- TODO: We need a better way of handling this, really.
+  top.errors := 
+    if !null(attr.errors) then e.errors
+    else [err(top.location, attr.pp ++ " cannot be defined.")];
 }
 
 abstract production synthesizedAttributeDef

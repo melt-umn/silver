@@ -115,6 +115,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.decoratedAccessHandler = accessBounceUndecorate(annoAccessHandler, _, _, _);
   top.undecoratedAccessHandler = annoAccessHandler;
+  top.attrDefDispatcher = errorAttributeDef;
 }
 
 -- -- interface Production attr (values)

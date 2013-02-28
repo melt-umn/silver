@@ -8,6 +8,8 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   -- TODO: this location is highly unreliable.
   top.location = $1.location;
 
+  -- That we unconditionally emit this def is a little irritating, because it means
+  -- if there's an error we emit some garbage that might lead to later errors.
   top.defs = [
     occursDef(top.grammarName, at.location,
       nt.lookupType.fullName, at.lookupAttribute.fullName,
@@ -83,6 +85,10 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
 
   top.errors <- if !nt.lookupType.typerep.isDecorable
                 then [err(nt.location, nt.name ++ " is not a nonterminal. Attributes can only occur on nonterminals.")]
+                else [];
+                
+  top.errors <- if at.lookupAttribute.dcl.isAnnotation
+                then [err(at.location, "'" ++ at.name ++ "' is an annotation, not an attribute.")]
                 else [];
 }
 
