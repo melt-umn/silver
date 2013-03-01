@@ -109,7 +109,7 @@ top::Expr ::= 'terminal' '(' t::Type ',' es::Expr ',' el::Expr ')'
 concrete production terminalFunction
 top::Expr ::= 'terminal' '(' t::Type ',' e::Expr ')'
 {
-  --temporarily, don't complain. Yet.
+  -- let's temporarily not say anything about this one...
   --top.errors <- [wrn(t.location, "terminal(type,lexeme) is deprecated. Use terminal(type,lexeme,location) instead.")];
   forwards to terminalConstructor($1, $2, t, $4, e, ',',
     applicationExpr(baseExpr(qName(forward.location, "core:loc")), '(',
@@ -127,8 +127,7 @@ top::Expr ::= 'terminal' '(' t::Type ',' e::Expr ')'
 concrete production terminalFunctionLineCol
 top::Expr ::= 'terminal' '(' t::Type ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
 {
-  --temporarily, don't complain. Yet.
-  --top.errors <- [wrn(t.location, "terminal(type,lexeme) is deprecated. Use terminal(type,lexeme,location) instead.")];
+  top.errors <- [wrn(t.location, "terminal(type,lexeme,line,column) is deprecated. Use terminal(type,lexeme,location) instead.")];
   forwards to terminalConstructor($1, $2, t, $4, e1, $6,
     applicationExpr(baseExpr(qName(forward.location, "core:loc")), '(',
       foldl(snocAppExprs(_, ',', _), emptyAppExprs(forward.location), map(presentAppExpr, [

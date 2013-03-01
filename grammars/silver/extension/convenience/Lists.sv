@@ -54,30 +54,25 @@ top::QNames ::= id1::QNameWithTL ',' id2::QNames
 --------------------------------------------------------------------------------
 
 function makeOccursDcls
-AGDcl ::= l::Integer c::Integer ats::[QNameWithTL] nts::[QNameWithTL]
+AGDcl ::= l::Location ats::[QNameWithTL] nts::[QNameWithTL]
 {
   return if null(ats) 
 	 then emptyAGDcl()
-	 else appendAGDcl(makeOccursDclsHelp(l, c, head(ats), nts), makeOccursDcls(l, c, tail(ats), nts));
+	 else appendAGDcl(makeOccursDclsHelp(l, head(ats), nts), makeOccursDcls(l, tail(ats), nts));
 }
 
 function makeOccursDclsHelp
-AGDcl ::= l::Integer c::Integer at::QNameWithTL nts::[QNameWithTL]
+AGDcl ::= l::Location at::QNameWithTL nts::[QNameWithTL]
 {
   return if null(nts) 
 	 then emptyAGDcl()
 	 else appendAGDcl(
 	        attributionDcl(attr_kwd, at.qnwtQN, at.qnwtTL, occurs_kwd, on_kwd, head(nts).qnwtQN, head(nts).qnwtTL, ';'),
-		makeOccursDclsHelp(l, c, at, tail(nts)));
+		makeOccursDclsHelp(l, at, tail(nts)));
 
-  local attribute attr_kwd :: Attribute_kwd ;
-  attr_kwd = terminal ( Attribute_kwd, "attribute", l, c);
-
-  local attribute occurs_kwd :: Occurs_kwd ;
-  occurs_kwd = terminal ( Occurs_kwd, "occurs", l, c);
- 
-  local attribute on_kwd :: On_kwd ;
-  on_kwd = terminal ( On_kwd, "on", l, c);
+  local attr_kwd :: Attribute_kwd = terminal(Attribute_kwd, "attribute", l);
+  local occurs_kwd :: Occurs_kwd = terminal(Occurs_kwd, "occurs", l);
+  local on_kwd :: On_kwd = terminal(On_kwd, "on", l);
 }
 
 

@@ -13,7 +13,7 @@ top::ProductionStmt ::= lk::'local' a::Name ht::'::' te::Type
  --lk = terminal(Local_kwd, "local");
 
  local attribute ak :: Attribute_kwd ;
- ak = terminal(Attribute_kwd, "attribute");
+ ak = terminal(Attribute_kwd, "attribute", lk.location);
 }
 
 concrete production shortLocalDeclwKwds
@@ -36,7 +36,7 @@ top::ProductionStmt ::= pk::'production' a::Name ht::'::' te::Type
        valueEq ( qNameId(a), eq, v, sm ) ) ;
 
  local attribute ak :: Attribute_kwd ;
- ak = terminal(Attribute_kwd, "attribute");
+ ak = terminal(Attribute_kwd, "attribute", pk.location);
 }
 
 concrete production shortProductionDeclwKwds

@@ -169,11 +169,6 @@ Def ::= sg::String  sl::Location  ty::TypeExp
 {
   return valueDef(defaultEnvItem(forwardDcl(sg,sl,ty)));
 }
-function occursDef
-Def ::= sg::String  sl::Location  fnnt::String  fnat::String  ntty::TypeExp  atty::TypeExp
-{
-  return oDef(occursDcl(sg,sl,fnnt,fnat,ntty,atty));
-}
 -- These aliased functions are used for aspects.
 function aliasedLhsDef
 Def ::= sg::String  sl::Location  fn::String  ty::TypeExp  alias::String

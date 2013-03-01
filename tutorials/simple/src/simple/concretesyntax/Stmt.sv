@@ -13,7 +13,7 @@ grammar simple:concretesyntax;
 
  -- A possibly empty sequence of statements
 
-closed nonterminal Stmts with unparse, ast<ast:Stmt>;
+closed nonterminal Stmts with unparse, silver:langutil:location:location, ast<ast:Stmt>;
 
 concrete productions ss::Stmts
  | s::Stmt rest::Stmts  { ss.unparse = s.unparse ++ rest.unparse;
@@ -21,13 +21,13 @@ concrete productions ss::Stmts
                             stmtNone() -> s.ast
                           | _ -> ast:seq(s.ast, rest.ast)
                           end; }
- (stmtNone) |           { ss.unparse = "";
+ (stmtNone) |           { ss.unparse = "#### well a stmtNone here from line " ++ toString(ss.location.line) ++ " oh and character " ++ toString(ss.location.index) ++ "\n";
                           ss.ast = ast:skip(); }
 
 
  -- A non-empty statement. (Either semicolon or closing brace terminated)
 
-closed nonterminal Stmt with unparse, ast<ast:Stmt>;
+closed nonterminal Stmt with unparse, silver:langutil:location:location, ast<ast:Stmt>;
 
 concrete productions s::Stmt
  | um::StmtUnMatched  { s.unparse = um.unparse;
@@ -40,7 +40,7 @@ concrete productions s::Stmt
 
  -- A matched statement.
  
-closed nonterminal StmtMatched with unparse, ast<ast:Stmt>;
+closed nonterminal StmtMatched with unparse, silver:langutil:location:location, ast<ast:Stmt>;
 
 concrete productions s::StmtMatched
  | '{' ss::Stmts '}'  { s.unparse = "{\n" ++ ss.unparse ++ "}\n";
@@ -57,7 +57,7 @@ concrete productions s::StmtMatched
 
  -- An unmatched statement
 
-closed nonterminal StmtUnMatched with unparse, ast<ast:Stmt>;
+closed nonterminal StmtUnMatched with unparse, silver:langutil:location:location, ast<ast:Stmt>;
 
 concrete productions s::StmtUnMatched 
  | 'while' '(' c::Expr ')' body::StmtUnMatched  { s.unparse = "while (" ++ c.unparse ++ ") \n" ++ body.unparse;

@@ -17,7 +17,7 @@ synthesized attribute dcls :: [DclInfo];
 function qName
 QName ::= l::Location s::String
 {
-  return qNameId(nameIdLower(terminal(IdLower_t, s, l.line, l.column)));
+  return qNameId(nameIdLower(terminal(IdLower_t, s, l)));
 }
 
 concrete production qNameId

@@ -1,7 +1,7 @@
 grammar silver:translation:java:core;
 
 aspect production annotationDcl
-top::AGDcl ::= 'annotation' a::Name tl::BracketedOptTypeList '::' te::Type ';'
+top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeList '::' te::Type ';'
 {
   local className :: String = "A" ++ a.name;
 

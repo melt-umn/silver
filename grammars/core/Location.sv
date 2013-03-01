@@ -7,8 +7,6 @@
  -}
 nonterminal Location with filename, line, column, endLine, endColumn, index, endIndex;
 
--- TODO: unparse is not actually an unparse. What to call this attribute on Location?
-
 synthesized attribute filename :: String;
 synthesized attribute line :: Integer;
 synthesized attribute column :: Integer;

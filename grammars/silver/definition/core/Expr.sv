@@ -399,7 +399,7 @@ Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QNameAttrOccur) e::Dec
 function accessBounceUndecorate
 Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QNameAttrOccur) e::Decorated Expr '.' q::Decorated QNameAttrOccur
 {
-  return accessBouncer(target, newFunction(terminal(New_kwd, "new", e.location.line, e.location.column), '(', exprRef(e), ')'), $3, q);
+  return accessBouncer(target, newFunction(terminal(New_kwd, "new", e.location), '(', exprRef(e), ')'), $3, q);
 }
 
 abstract production decoratedAccessHandler

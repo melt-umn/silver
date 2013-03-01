@@ -115,18 +115,18 @@ ag::AGDcl ::= kwd::'equalityTest'
    empty_CS_env()))))))) , 3 );
 -}
 
-  local tref :: Name = nameIdLower(terminal(IdLower_t, "t"));
-  local testNameref :: Name = nameIdLower(terminal(IdLower_t, testName));
-  local valueref :: Name = nameIdLower(terminal(IdLower_t, "value"));
-  local expectedref :: Name = nameIdLower(terminal(IdLower_t, "expected"));
-  local msgref :: Name = nameIdLower(terminal(IdLower_t, "msg"));
-  local passref :: Name = nameIdLower(terminal(IdLower_t, "pass"));
+  local tref :: Name = nameIdLower(terminal(IdLower_t, "t", ag.location));
+  local testNameref :: Name = nameIdLower(terminal(IdLower_t, testName, ag.location));
+  local valueref :: Name = nameIdLower(terminal(IdLower_t, "value", ag.location));
+  local expectedref :: Name = nameIdLower(terminal(IdLower_t, "expected", ag.location));
+  local msgref :: Name = nameIdLower(terminal(IdLower_t, "msg", ag.location));
+  local passref :: Name = nameIdLower(terminal(IdLower_t, "pass", ag.location));
   
   local absProdCS :: AGDcl =
     productionDcl('abstract', 'production', testNameref,
       productionSignature(
         productionLHS(tref, '::',
-          nominalType(qNameTypeId(terminal(IdUpper_t, "Test")), botlNone())),
+          nominalType(qNameTypeId(terminal(IdUpper_t, "Test", ag.location)), botlNone())),
         '::=', productionRHSNil()),
       productionBody('{', foldl(productionStmtsSnoc, productionStmtsNil(), [
         localAttributeDcl('local', 'attribute', valueref, '::', valueType, ';'),
@@ -163,7 +163,7 @@ ag::AGDcl ::= kwd::'equalityTest'
         productionStmtsSnoc(
           productionStmtsNil(),
           valContainsAppend(
-            qNameId(nameIdLower(terminal(IdLower_t, "testsToPerform"))),
+            qNameId(nameIdLower(terminal(IdLower_t, "testsToPerform", ag.location))),
             '<-',
             fullList('[',
               exprsSingle(

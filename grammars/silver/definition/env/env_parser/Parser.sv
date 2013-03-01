@@ -467,9 +467,9 @@ top::IDclInfo ::= '@' '(' l::ILocation ',' fnnt::IName ',' fnat::IName ',' td::I
 
   -- Recall that constraint on occurs DclInfos: the types need to be tyvars, not skolem constants.
   
-  top.defs = [occursDef(top.grammarName, l.location, fnnt.aname, fnat.aname, 
+  top.defs = [oDef(occursDcl(top.grammarName, l.location, fnnt.aname, fnat.aname, 
                         freshenTypeExpWith(ntt.typerep, td.tyvars, fresh),
-                        freshenTypeExpWith(att.typerep, td.tyvars, fresh))];
+                        freshenTypeExpWith(att.typerep, td.tyvars, fresh)))];
 }
 
 concrete production aDclInfoAnno

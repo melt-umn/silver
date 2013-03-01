@@ -6,14 +6,16 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   top.pp = "attribute " ++ at.pp ++ attl.pp ++ " occurs on " ++ nt.pp ++ nttl.pp ++ ";";
 
   -- TODO: this location is highly unreliable.
-  top.location = $1.location;
+  top.location = at.location;
 
-  -- That we unconditionally emit this def is a little irritating, because it means
-  -- if there's an error we emit some garbage that might lead to later errors.
+  -- We must unconditionally emite the 'oDef' in order to signal to the
+  -- environment mechanism that we're in a different namespace than
+  -- the types/attributes.
   top.defs = [
-    occursDef(top.grammarName, at.location,
+    oDef((if at.lookupAttribute.dcl.isAnnotation then annoInstanceDcl else occursDcl)(
+      top.grammarName, at.location,
       nt.lookupType.fullName, at.lookupAttribute.fullName,
-      protontty, protoatty)];
+      protontty, protoatty))];
 
   -- binding errors in looking up these names.
   top.errors := at.lookupAttribute.errors ++ nt.lookupType.errors ++
@@ -79,16 +81,25 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   production attribute occursCheck :: [DclInfo];
   occursCheck = getOccursDcl(at.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
   
-  top.errors <- if length(occursCheck) > 1
-                then [err(at.location, "Attribute '" ++ at.name ++ "' already occurs on '" ++ nt.name ++ "'.")]
-                else [];
+  top.errors <-
+    if length(occursCheck) > 1
+    then [err(at.location, "Attribute '" ++ at.name ++ "' already occurs on '" ++ nt.name ++ "'.")]
+    else [];
 
-  top.errors <- if !nt.lookupType.typerep.isDecorable
-                then [err(nt.location, nt.name ++ " is not a nonterminal. Attributes can only occur on nonterminals.")]
-                else [];
+  top.errors <-
+    if !nt.lookupType.typerep.isDecorable
+    then [err(nt.location, nt.name ++ " is not a nonterminal. Attributes can only occur on nonterminals.")]
+    else [];
                 
-  top.errors <- if at.lookupAttribute.dcl.isAnnotation
-                then [err(at.location, "'" ++ at.name ++ "' is an annotation, not an attribute.")]
-                else [];
+  top.errors <-
+    if !null(nt.lookupType.errors) || !at.lookupAttribute.dcl.isAnnotation || 
+       contains(top.grammarName, computeOptionalDeps([nt.lookupType.dcl.sourceGrammar], top.compiledGrammars)) then []
+    else [err(top.location, "Annotations for a nonterminal must be in a module exported by the nonterminal's declaring grammar.")];
+}
+
+concrete production annotateDcl
+top::AGDcl ::= 'annotation' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
+{
+  forwards to attributionDcl(terminal(Attribute_kwd, $1.lexeme, $1.location), at, attl, $4, $5, nt, nttl, $8);
 }
 
