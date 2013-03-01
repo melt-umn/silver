@@ -213,12 +213,12 @@ Name ::= p::Decorated Pattern
     | varPattern(pvn) -> "__sv_pv_" ++ toString(genInt()) ++ "_" ++ pvn.name
     | h -> "__sv_tmp_pv_" ++ toString(genInt())
     end;
-  return nameIdLower(terminal(IdLower_t, n, p.location.line, p.location.column));
+  return nameIdLower(terminal(IdLower_t, n, p.location));
 }
 function convStringsToVarBinders
 VarBinders ::= s::[Name] l::Location
 {
-  return if null(s) then nilVarBinder(terminal(Epsilon_For_Location, "", l.line, l.column))
+  return if null(s) then nilVarBinder(terminal(Epsilon_For_Location, "", l))
          else if null(tail(s)) then oneVarBinder(varVarBinder(head(s)))
          else consVarBinder(varVarBinder(head(s)), ',', convStringsToVarBinders(tail(s), l));
 }
@@ -304,7 +304,7 @@ function allVarCaseTransform
 function makeLet
 Expr ::= l::Location s::String t::TypeExp e::Expr o::Expr
 {
-  return letp(l, assignExpr(nameIdLower(terminal(IdLower_t, s)), '::', typerepType(t), '=', e), o);
+  return letp(l, assignExpr(nameIdLower(terminal(IdLower_t, s, l)), '::', typerepType(t), '=', e), o);
 }
 
 -- Please note that this function is now specifically for decorating with intention to access a forward!

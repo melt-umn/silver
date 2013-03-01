@@ -122,7 +122,6 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
     if null(top.namedSignature.namedInputElements) then
       []
     else if length(top.namedSignature.namedInputElements) == 1 then
-      unsafeTrace(
       if head(top.namedSignature.namedInputElements).elementName == "silver:langutil:location:location" then
         if length(top.namedSignature.inputElements) > 1 then
           errFirst ++ errSecond
@@ -132,7 +131,6 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
           errFirst
       else
         [err(top.location, "Annotation on this production is not handlable by the parser generator.")]
-      , print("At " ++ lhs.outputElement.typerep.typeName ++ " and seeing " ++ head(top.namedSignature.namedInputElements).elementName ++ "\n", unsafeIO()))
     else
       [err(top.location, "Annotations on this production are not handlable by the parser generator.")];
 }

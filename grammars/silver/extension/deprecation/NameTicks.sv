@@ -11,7 +11,7 @@ top::Expr ::= q::NameTick
 
   top.errors <- [wrn(top.location, "Tick suffixes no longer do ANYTHING. Remove it!")];
 
-  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, q.name, q.location.line, q.location.column))));
+  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, q.name, q.location))));
 }
 concrete production concreteDontDecorateExpr
 top::Expr ::= q::NameTickTick
@@ -21,7 +21,7 @@ top::Expr ::= q::NameTickTick
 
   top.errors <- [wrn(top.location, "Double tick suffixes no longer do ANYTHING. Remove it!")];
 
-  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, q.name, q.location.line, q.location.column))));
+  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, q.name, q.location))));
 }
 
 

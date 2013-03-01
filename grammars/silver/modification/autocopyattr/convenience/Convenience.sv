@@ -13,6 +13,6 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeList '::' te::
 {
   top.pp = "autocopy attribute " ++ a.name ++ tl.pp ++ " :: " ++ te.pp ++ " occurs on " ++ qs.pp ++ ";" ;
   forwards to appendAGDcl(attributeDclAuto($1, $2, a, tl, $5, te, $10),
-                          makeOccursDclsHelp($1.line, $1.column, qNameWithTL(qNameId(a), tl), qs.qnames));
+                          makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a), tl), qs.qnames));
 }
 

@@ -49,13 +49,13 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
                                                    ++ substitute(".", "_", top.file)
                                                    -- substitute(":", "_", top.lhsdcl.outputElement.typerep.typeName) TODO
                                                    ++ "_" ++ toString(v.line) ++ "_" ++ toString(v.column),
-                                                   v.line, v.column))
+                                                   v.location))
         | anOptionalName(_, n, _) -> n
         end;
 
   top.proddcls = 
-    let ct :: Concrete_kwd = terminal(Concrete_kwd, "concrete", v.line, v.column),
-        pt :: Production_kwd = terminal(Production_kwd, "production", v.line, v.column)
+    let ct :: Concrete_kwd = terminal(Concrete_kwd, "concrete", v.location),
+        pt :: Production_kwd = terminal(Production_kwd, "production", v.location)
     in
     case opta of
     | noOptionalAction() -> concreteProductionDcl(ct, pt, nme, productionSignature(top.lhsdcl, '::=', rhs), mods, body)

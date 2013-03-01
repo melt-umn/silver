@@ -22,13 +22,13 @@ top::AGDcl ::= 'makeTestSuite' name::IdLower_t ';'
   local sig :: ProductionSignature =
     productionSignature(
       productionLHS(mkName("t"), '::',
-        nominalType(qNameTypeId(terminal(IdUpper_t, "TestSuite")), botlNone())),
+        nominalType(qNameTypeId(terminal(IdUpper_t, "TestSuite", top.location)), botlNone())),
      '::=', productionRHSNil());
 
   local bod :: [ProductionStmt] =
     [forwardsTo('forwards', 'to', prodFuncCall("testsAsNT", [mkNameExpr("testsToPerform")]), ';'),
      collectionAttributeDclProd('production', 'attribute', mkName("testsToPerform"), '::',
-       listType('[', nominalType(qNameTypeId(terminal(IdUpper_t, "Test")), botlNone()), ']'),
+       listType('[', nominalType(qNameTypeId(terminal(IdUpper_t, "Test", top.location)), botlNone()), ']'),
        'with', plusplusOperator('++'), ';'),
      valContainsBase(qName(top.location, "testsToPerform"), ':=', emptyList('[',']'), ';')
     ];
@@ -59,19 +59,19 @@ top::AGDcl ::= 'mainTestSuite' name::IdLower_t ';'
   appendAGDcl(
    functionDcl(
     -- function main
-    'function', nameIdLower(terminal(IdLower_t,"main")),
+    'function', nameIdLower(terminal(IdLower_t,"main", top.location)),
     -- IOVal<Integer> ::= args::[String]  mainIO::IO
     functionSignature(
      functionLHS(
        nominalType( 
-         qNameTypeId(terminal(IdUpper_t, "IOVal")) ,
+         qNameTypeId(terminal(IdUpper_t, "IOVal", top.location)) ,
          botlSome('<', typeListSingle(integerType('Integer')), '>' ))),
      '::=',
      productionRHSCons(
       productionRHSElemType(listType('[', stringType('String'), ']')),
       productionRHSCons(
        productionRHSElem(
-        nameIdLower(terminal(IdLower_t, "mainIO")),
+        nameIdLower(terminal(IdLower_t, "mainIO", top.location)),
         '::', typerepType(foreignTypeExp("core:IO", []))),
        productionRHSNil()
       )
@@ -83,8 +83,8 @@ top::AGDcl ::= 'mainTestSuite' name::IdLower_t ';'
     foldl(productionStmtsSnoc, productionStmtsNil(), [
      --  local testResults :: TestSuite;
      localAttributeDcl (
-      'local', 'attribute', nameIdLower(terminal(IdLower_t,"testResults")), '::',
-      nominalType( qNameTypeId (terminal(IdUpper_t,"TestSuite")), botlNone()), ';'
+      'local', 'attribute', nameIdLower(terminal(IdLower_t,"testResults", top.location)), '::',
+      nominalType( qNameTypeId (terminal(IdUpper_t,"TestSuite", top.location)), botlNone()), ';'
      ),
      -- testResults = name()
      valueEq ( qName(top.location, "testResults"), '=', 
@@ -118,7 +118,7 @@ top::AGDcl ::= 'mainTestSuite' name::IdLower_t ';'
                 attrAcc("testResults", "ioOut" )     
               ] )
            ] ),
-           intConst ( terminal(Int_t, "0") ) 
+           intConst ( terminal(Int_t, "0", top.location) ) 
          ] ) , 
          ';' )
     ]), '}')),

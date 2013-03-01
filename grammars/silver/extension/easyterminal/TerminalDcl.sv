@@ -121,7 +121,7 @@ top::Expr ::= t::RegExpr
                 then [err(t.location, "Found ambiguous possibilities for " ++ t.pp ++ "\n" ++ printPossibilities(regName))]
                 else [];
 
-  forwards to terminalFunction(terminal(Terminal_kwd, "terminal", t.location.line, t.location.column),
+  forwards to terminalFunction(terminal(Terminal_kwd, "terminal", t.location),
                                terminal(LParen_t, "("),
                                typerepType(if null(regName) then errorType() else head(regName).typerep),
                                terminal(Comma_t, ","),
