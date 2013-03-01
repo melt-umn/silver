@@ -18,7 +18,7 @@ f1::Foo ::= f2::Foo
   f3.bar = "lkjkj";
 }
 
-wrongCode "Cannot define inherited attribute on f1" {
+wrongCode "Cannot define inherited attribute" {
   aspect production foo
   f1::Foo ::= f2::Foo
   {
@@ -27,7 +27,7 @@ wrongCode "Cannot define inherited attribute on f1" {
   }
 }
 
-wrongCode "Cannot define synthesized attribute on child f2" {
+wrongCode "Cannot define synthesized attribute" {
   aspect production foo
   f1::Foo ::= f2::Foo
   {
@@ -36,7 +36,7 @@ wrongCode "Cannot define synthesized attribute on child f2" {
   }
 }
 
-wrongCode "Cannot define synthesized attribute on local f3" {
+wrongCode "Cannot define synthesized attribute" {
   aspect production foo
   f1::Foo ::= f2::Foo
   {

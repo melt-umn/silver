@@ -1,7 +1,6 @@
 grammar silver:definition:core;
 
 terminal Annotation_kwd 'annotation' lexer classes {KEYWORD};
-terminal Annotate_kwd 'annotate' lexer classes {KEYWORD};
 
 concrete production annotationDcl
 top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeList '::' te::Type ';'

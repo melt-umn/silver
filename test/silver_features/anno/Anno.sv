@@ -3,11 +3,9 @@ import silver_features;
 import silver:testing;
 import lib:extcore;
 
-nonterminal AnnoNT; -- our target of abuse!
+nonterminal AnnoNT with what; -- our target of abuse!
 
 annotation what :: Integer;
-
-annotate AnnoNT with what;
 
 abstract production anAnnoNT
 top::AnnoNT ::=
