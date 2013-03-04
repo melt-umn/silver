@@ -19,7 +19,6 @@ concrete production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 {
   top.pp = "aspect production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
-  top.location = $1.location;
 
   top.defs = 
     if null(body.productionAttributes) then []
@@ -57,7 +56,6 @@ concrete production aspectFunctionDcl
 top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody 
 {
   top.pp = "aspect function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
-  top.location = $1.location;
 
   top.defs = 
     if null(body.productionAttributes) then []
@@ -95,7 +93,6 @@ concrete production aspectProductionSignature
 top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS 
 {
   top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
-  top.location = $2.location;
 
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
@@ -110,38 +107,34 @@ concrete production aspectProductionLHSNone
 top::AspectProductionLHS ::= '_'
 {
   top.pp = "_";
-  top.location = $1.location;
-  forwards to aspectProductionLHSId(nameIdLower(terminal(IdLower_t, "p_top", top.location)));
+  forwards to aspectProductionLHSId(name("p_top", top.location), location=top.location);
 }
 
 concrete production aspectProductionLHSId
 top::AspectProductionLHS ::= id::Name
 {
   top.pp = id.pp;
-  top.location = id.location;
 
   production attribute rType :: TypeExp;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
-  forwards to aspectProductionLHSFull(id, rType);
+  forwards to aspectProductionLHSFull(id, rType, location=top.location);
 }
 
 concrete production aspectProductionLHSTyped
 top::AspectProductionLHS ::= id::Name '::' t::Type
 {
   top.pp = id.pp;
-  top.location = id.location;
 
   top.errors <- t.errors;
   
-  forwards to aspectProductionLHSFull(id, t.typerep);
+  forwards to aspectProductionLHSFull(id, t.typerep, location=top.location);
 }
 
 abstract production aspectProductionLHSFull
 top::AspectProductionLHS ::= id::Name t::TypeExp
 {
   top.pp = id.pp ++ "::" ++ prettyType(t);
-  top.location = id.location;
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
@@ -153,7 +146,7 @@ top::AspectProductionLHS ::= id::Name t::TypeExp
   top.defs = [aliasedLhsDef(top.grammarName, id.location, fName, t, id.name)];
 
   top.errors := if length(getValueDclInScope(id.name, top.env)) > 1
-                then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
+                then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
                 else [];
 }
 
@@ -161,7 +154,6 @@ concrete production aspectRHSElemNil
 top::AspectRHS ::= 
 {
   top.pp = "";
-  top.location = bogusLocation();
 
   top.defs = [];
   top.errors := [];
@@ -172,7 +164,6 @@ concrete production aspectRHSElemCons
 top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 {
   top.pp = h.pp ++ " " ++ t.pp;
-  top.location = h.location;
 
   top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
@@ -188,39 +179,35 @@ concrete production aspectRHSElemNone
 top::AspectRHSElem ::= '_'
 {
   top.pp = "_";
-  top.location = $1.location;
 
-  forwards to aspectRHSElemId(nameIdLower(terminal(IdLower_t, "p_" ++ toString(top.deterministicCount), $1.location)));
+  forwards to aspectRHSElemId(name("p_" ++ toString(top.deterministicCount), $1.location), location=top.location);
 }
 
 concrete production aspectRHSElemId
 top::AspectRHSElem ::= id::Name
 {
   top.pp = id.pp;
-  top.location = id.location;
 
   production attribute rType :: TypeExp;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
-  forwards to aspectRHSElemFull(id, rType);
+  forwards to aspectRHSElemFull(id, rType, location=top.location);
 }
 
 concrete production aspectRHSElemTyped
 top::AspectRHSElem ::= id::Name '::' t::Type
 {
   top.pp = id.pp ++ "::" ++ t.pp;
-  top.location = $2.location;
   
   top.errors <- t.errors;
 
-  forwards to aspectRHSElemFull(id, t.typerep);
+  forwards to aspectRHSElemFull(id, t.typerep, location=top.location);
 }
 
 abstract production aspectRHSElemFull
 top::AspectRHSElem ::= id::Name t::TypeExp
 {
   top.pp = id.pp ++ "::" ++ prettyType(t);
-  top.location = id.location;
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
@@ -232,7 +219,7 @@ top::AspectRHSElem ::= id::Name t::TypeExp
   top.defs = [aliasedChildDef(top.grammarName, id.location, fName, t, id.name)];
 
   top.errors := if length(getValueDclInScope(id.name, top.env)) > 1
-                then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
+                then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
                 else [];
 }
 
@@ -240,7 +227,6 @@ concrete production aspectFunctionSignature
 top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS 
 {
   top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
-  top.location = $2.location;
 
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
@@ -256,7 +242,6 @@ concrete production functionLHSType
 top::AspectFunctionLHS ::= t::Type
 {
   top.pp = t.pp;
-  top.location = t.location;
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then "_NULL_" else head(top.realSignature).elementName;

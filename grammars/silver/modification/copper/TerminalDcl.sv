@@ -8,7 +8,6 @@ concrete production terminalModifierDominates
 top::TerminalModifier ::= 'dominates' '{' terms::TermPrecList '}'
 {
   top.pp = "dominates { " ++ terms.pp ++ " } ";
-  top.location = $1.location;
 
   top.terminalModifiers = [termDominates(terms.precTermList)];
   top.errors := terms.errors;
@@ -18,7 +17,6 @@ concrete production terminalModifierSubmitsTo
 top::TerminalModifier ::= 'submits' 'to' '{' terms::TermPrecList  '}'
 {
   top.pp = "submits to { " ++ terms.pp ++ " } " ;
-  top.location = $1.location;
 
   top.terminalModifiers = [termSubmits(terms.precTermList)];
   top.errors := terms.errors;
@@ -28,7 +26,6 @@ concrete production terminalModifierClassSpec
 top::TerminalModifier ::= 'lexer' 'classes' '{' cl::ClassList '}'
 {
   top.pp = "lexer classes { " ++ cl.pp ++ " } " ;
-  top.location = $1.location;
 
   top.terminalModifiers = [termClasses(cl.lexerClasses)];
   top.errors := cl.errors;
@@ -38,7 +35,6 @@ concrete production terminalModifierActionCode
 top::TerminalModifier ::= 'action' acode::ActionCode_c
 {
   top.pp = "action " ++ acode.pp;
-  top.location = $1.location;
 
   top.terminalModifiers = [termAction(acode.actionCode)];
 
@@ -60,13 +56,13 @@ synthesized attribute precTermList :: [String];
 concrete production termPrecListOne
 terms::TermPrecList ::= t::QName
 {
-   forwards to termPrecList(t,termPrecListNull());
+   forwards to termPrecList(t,termPrecListNull(location=t.location), location=t.location);
 }
 
 concrete production termPrecListCons
 terms::TermPrecList ::= t::QName ',' terms_tail::TermPrecList
 {
-   forwards to termPrecList(t,terms_tail);
+   forwards to termPrecList(t,terms_tail,location=terms.location);
 }
 
 
@@ -77,7 +73,6 @@ top::TermPrecList ::= h::QName t::TermPrecList
              then h.pp
              else h.pp ++ ", " ++ t.pp;
 
-  top.location = h.location;
 
   production attribute fName :: String;
   fName = if null(h.lookupType.dcls) then h.lookupLexerClass.dcl.fullName else h.lookupType.dcl.fullName;
@@ -104,7 +99,6 @@ top::TermPrecList ::=
   top.precTermList = [];
   top.defs = [];
   top.pp = "";
-  top.location = bogusLocation();
   top.errors := [];
 }
 
@@ -122,20 +116,20 @@ function addTerminalAttrDefs
 }
 
 
-nonterminal ClassList with config, pp, lexerClasses, errors, env, file;
+nonterminal ClassList with location, config, pp, lexerClasses, errors, env, file;
 
 synthesized attribute lexerClasses :: [String];
 
 concrete production lexerClassesOne
-cl::ClassList ::= n::QName
+top::ClassList ::= n::QName
 {
-  forwards to lexerClassesMain(n,lexerClassesNull());
+  forwards to lexerClassesMain(n,lexerClassesNull(location=n.location), location=n.location);
 }
 
 concrete production lexerClassesCons
-cl::ClassList ::= n::QName ',' cl_tail::ClassList
+top::ClassList ::= n::QName ',' cl_tail::ClassList
 {
-  forwards to lexerClassesMain(n,cl_tail);
+  forwards to lexerClassesMain(n,cl_tail,location=top.location);
 }
 
 

@@ -10,19 +10,19 @@ concrete production multipleAttributionDclsManyMany
 top::AGDcl ::= 'attribute' a::QNames2 'occurs' 'on' nts::QNames2 ';'
 {
   top.pp = "attribute " ++ a.pp ++ " occurs on " ++ nts.pp ++ " ;" ;
-  forwards to makeOccursDcls($1.location, a.qnames, nts.qnames);
+  forwards to makeOccursDcls(top.location, a.qnames, nts.qnames);
 }
 concrete production multipleAttributionDclsSingleMany
 top::AGDcl ::= 'attribute' a::QName tl::BracketedOptTypeList 'occurs' 'on' nts::QNames2 ';' 
 {
   top.pp = "attribute " ++ a.pp ++ " occurs on " ++ nts.pp ++ " ;" ;
-  forwards to makeOccursDcls($1.location, [qNameWithTL(a, tl)], nts.qnames);
+  forwards to makeOccursDcls(top.location, [qNameWithTL(a, tl)], nts.qnames);
 }
 concrete production multipleAttributionDclsManySingle
 top::AGDcl ::= 'attribute' a::QNames2 'occurs' 'on' nts::QNameWithTL ';'
 {
   top.pp = "attribute " ++ a.pp ++ " occurs on " ++ nts.pp ++ " ;" ;
-  forwards to makeOccursDcls($1.location, a.qnames, [nts]);
+  forwards to makeOccursDcls(top.location, a.qnames, [nts]);
 }
 
 
@@ -30,8 +30,10 @@ concrete production nonterminalWithDcl
 top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList 'with' attrs::QNames ';'
 {
   top.pp = "nonterminal " ++ id.pp ++ tl.pp ++ " with " ++ attrs.pp ++ " ;";
-  forwards to appendAGDcl(nonterminalDcl(cl, $2, id, tl, $7),
-                          makeOccursDcls($2.location, attrs.qnames, [qNameWithTL(qNameId(id), tl)]) );
+  forwards to appendAGDcl(
+    nonterminalDcl(cl, $2, id, tl, $7, location=top.location),
+    makeOccursDcls(top.location, attrs.qnames, [qNameWithTL(qNameId(id, location=id.location), tl)]),
+    location=top.location);
 }
 
 
@@ -40,16 +42,20 @@ concrete production attributeDclInhMultiple
 top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type 'occurs' 'on' qs::QNames ';'
 {
   top.pp = "inherited attribute " ++ a.name ++ tl.pp ++ " :: " ++ te.pp ++ " occurs on " ++ qs.pp ++ ";" ;
-  forwards to appendAGDcl(attributeDclInh($1, $2, a, tl, $5, te, $10),
-                          makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a), tl), qs.qnames));
+  forwards to appendAGDcl(
+    attributeDclInh($1, $2, a, tl, $5, te, $10, location=top.location),
+    makeOccursDclsHelp(top.location, qNameWithTL(qNameId(a, location=a.location), tl), qs.qnames),
+    location=top.location);
 }
 
 concrete production attributeDclSynMultiple
 top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type 'occurs' 'on' qs::QNames ';'
 {
   top.pp = "synthesized attribute " ++ a.name ++ tl.pp ++ " :: " ++ te.pp ++ " occurs on " ++ qs.pp ++ ";" ;
-  forwards to appendAGDcl(attributeDclSyn($1, $2, a, tl, $5, te, $10),
-                          makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a), tl), qs.qnames));
+  forwards to appendAGDcl(
+    attributeDclSyn($1, $2, a, tl, $5, te, $10, location=top.location),
+    makeOccursDclsHelp(top.location, qNameWithTL(qNameId(a, location=a.location), tl), qs.qnames),
+    location=top.location);
 }
 
 

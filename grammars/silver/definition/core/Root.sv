@@ -27,7 +27,6 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   ims.config = top.config;
 
   top.pp = gdcl.pp ++ "\n\n" ++ ms.pp ++ "\n\n" ++ ims.pp ++ "\n\n" ++ ags.pp;
-  top.location = gdcl.location;
   top.declaredName = gdcl.declaredName;
 
   top.moduleNames = ims.moduleNames ++ ms.moduleNames ++ ags.moduleNames;
@@ -53,7 +52,6 @@ concrete production noGrammarDcl
 top::GrammarDcl ::=
 {
   top.pp = "";
-  top.location = bogusLocation();
   top.declaredName = top.grammarName;
   top.errors := [];
 }
@@ -62,7 +60,6 @@ concrete production grammarDcl_c
 top::GrammarDcl ::= 'grammar' qn::QName ';'
 {
   top.pp = "grammar " ++ qn.pp ++ ";";
-  top.location = $1.location;
 
   top.declaredName = qn.name;
   top.errors := 

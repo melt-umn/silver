@@ -95,6 +95,6 @@ top::Expr ::= 'terminal' '(' t::Type ',' es::Expr ',' el::Expr ')'
   top.errors <-
         if (t.typerep.isTerminal) 
         then []
-        else [err(top.location, "First operand to 'terminal(type,lexeme,location)' must be a Terminal, instead it is " ++ prettyType(t.typerep))];
+        else [err(t.location, "First operand to 'terminal(type,lexeme,location)' must be a Terminal, instead it is " ++ prettyType(t.typerep))];
 }
 

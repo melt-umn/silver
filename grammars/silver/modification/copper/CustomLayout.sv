@@ -7,7 +7,6 @@ concrete production productionModifierLayout
 top::ProductionModifier ::= 'layout' '{' terms::TermPrecList '}'
 {
   top.pp = "layout {" ++ terms.pp ++ "}";
-  top.location = $1.location;
 
   top.productionModifiers = [prodLayout(terms.precTermList)];
   top.errors := terms.errors;

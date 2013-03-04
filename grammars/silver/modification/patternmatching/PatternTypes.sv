@@ -31,7 +31,6 @@ concrete production prodAppPattern
 p::Pattern ::= prod::QName '(' ps::PatternList ')'
 {
   p.pp = prod.pp ++ "(" ++ ps.pp ++ ")";
-  p.location = prod.location;
   p.errors := ps.errors;
 
   p.patternIsVariable = false;
@@ -44,7 +43,6 @@ concrete production wildcPattern
 p::Pattern ::= '_'
 {
   p.pp = "_";
-  p.location = $1.location;
   p.errors := [];
 
   p.patternIsVariable = true;
@@ -57,7 +55,6 @@ concrete production varPattern
 p::Pattern ::= v::Name
 {
   p.pp = v.name;
-  p.location = v.location;
   -- MUST start with lower case #HACK2012
   p.errors := (if isUpper(substring(0,1,v.name))
                  then [err(v.location, "Pattern variable names start with a lower case letter")]
@@ -82,7 +79,6 @@ concrete production intPattern
 p::Pattern ::= num::Int_t
 {
   p.pp = num.lexeme;
-  p.location = $1.location;
   p.errors := [];
   
   p.patternIsVariable = false;
@@ -95,7 +91,6 @@ concrete production strPattern
 p::Pattern ::= str::String_t
 {
   p.pp = str.lexeme;
-  p.location = $1.location;
   p.errors := [];
   
   p.patternIsVariable = false;
@@ -108,7 +103,6 @@ concrete production truePattern
 p::Pattern ::= 'true'
 {
   p.pp = "true";
-  p.location = $1.location;
   p.errors := [];
   
   p.patternIsVariable = false;
@@ -121,7 +115,6 @@ concrete production falsePattern
 p::Pattern ::= 'false'
 {
   p.pp = "false";
-  p.location = $1.location;
   p.errors := [];
   
   p.patternIsVariable = false;
@@ -134,7 +127,6 @@ concrete production nilListPattern
 p::Pattern ::= '[' ']'
 {
   p.pp = "[]";
-  p.location = $1.location;
   p.errors := [];
   
   p.patternIsVariable = false;
@@ -147,7 +139,6 @@ concrete production consListPattern
 p::Pattern ::= hp::Pattern '::' tp::Pattern
 {
   p.pp = hp.pp ++ "::" ++ tp.pp;
-  p.location = $2.location;
   p.errors := hp.errors ++ tp.errors;
   
   p.patternIsVariable = false;

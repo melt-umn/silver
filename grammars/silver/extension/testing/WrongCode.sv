@@ -12,7 +12,6 @@ concrete production wrongDecl
 top::AGDcl ::= 'wrongCode' s::String_t '{' ags::AGDcls '}'
 {
   top.pp = "wrongCode" ++ s.lexeme ++ "{" ++ ags.pp ++ "}";
-  top.location = $1.location;
   
   top.errors := if indexOf(substring(1,length(s.lexeme)-1,s.lexeme),
                           foldMessages(ags.errors)) == -1
@@ -22,6 +21,6 @@ top::AGDcl ::= 'wrongCode' s::String_t '{' ags::AGDcls '}'
   -- do extend its environment with its defs
   ags.env = newScopeEnv(ags.defs, top.env);
   
-  forwards to emptyAGDcl();
+  forwards to emptyAGDcl(location=top.location);
 }
 

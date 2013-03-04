@@ -37,7 +37,6 @@ concrete production nestedExpr
 top::Expr ::= '(' e::Expr ')'
 {
   top.pp = "(" ++ e.pp ++ ")";
-  top.location = $1.location;
   
   forwards to e;
 }
@@ -46,20 +45,18 @@ concrete production baseExpr
 top::Expr ::= q::QName
 {
   top.pp = q.pp;
-  top.location = q.location;
   
   top.errors <- q.lookupValue.errors;
 
   forwards to if null(q.lookupValue.dcls)
-              then errorReference(q)
-              else q.lookupValue.dcl.refDispatcher(q);
+              then errorReference(q, location=top.location)
+              else q.lookupValue.dcl.refDispatcher(q, top.location);
 }
 
 abstract production errorReference
 top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
-  top.location = q.location;
   
   top.errors := []; -- The reason we don't error here: we only forward here
                     -- if the lookup failed, which already produced an error.
@@ -71,7 +68,6 @@ abstract production childReference
 top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
-  top.location = q.location;
   
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable
@@ -83,7 +79,6 @@ abstract production lhsReference
 top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
-  top.location = q.location;
   
   top.errors := [];
   -- An LHS is *always* a decorable (nonterminal) type.
@@ -94,7 +89,6 @@ abstract production localReference
 top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
-  top.location = q.location;
   
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable
@@ -106,7 +100,6 @@ abstract production forwardReference
 top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
-  top.location = q.location;
   
   top.errors := [];
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
@@ -120,7 +113,6 @@ abstract production productionReference
 top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
-  top.location = q.location;
 
   top.errors := [];
 
@@ -132,7 +124,6 @@ abstract production functionReference
 top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
-  top.location = q.location;
 
   top.errors := [];
 
@@ -143,7 +134,6 @@ abstract production globalValueReference
 top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
-  top.location = q.location;
 
   top.errors := [];
 
@@ -154,11 +144,10 @@ concrete production concreteForwardExpr
 top::Expr ::= q::'forward'
 {
   top.pp = "forward";
-  top.location = $1.location;
 
   -- TODO: we're forwarding to baseExpr just to decorate the tree we create.
   -- That's a bit weird.
-  forwards to baseExpr(qNameId(nameIdLower(terminal(IdLower_t, "forward", q.location))));
+  forwards to baseExpr(qName(q.location, "forward"), location=top.location);
 }
 
 concrete production application
@@ -166,34 +155,32 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   -- TODO: fix comma when one or the other is empty
   top.pp = e.pp ++ "(" ++ es.pp ++ "," ++ anns.pp ++ ")";
-  top.location = e.location;
   
   -- TODO: You know, since the rule is we can't access .typerep without "first" supplying
   -- .downSubst, perhaps we should just... report .typerep after substitution in the first place!
-  forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es, anns);
+  forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es, anns, top.location);
 }
 
 concrete production applicationAnno
 top::Expr ::= e::Expr '(' anns::AnnoAppExprs ')'
 {
-  forwards to application(e, $2, emptyAppExprs(forward.location), ',', anns, $4);
+  forwards to application(e, $2, emptyAppExprs(location=$2.location), ',', anns, $4, location=top.location);
 }
 concrete production applicationExpr
 top::Expr ::= e::Expr '(' es::AppExprs ')'
 {
-  forwards to application(e, $2, es, ',', emptyAnnoAppExprs(forward.location), $4);
+  forwards to application(e, $2, es, ',', emptyAnnoAppExprs(location=$4.location), $4, location=top.location);
 }
 concrete production applicationEmpty
 top::Expr ::= e::Expr '(' ')'
 {
-  forwards to application(e, $2, emptyAppExprs(forward.location), ',', emptyAnnoAppExprs(forward.location), $3);
+  forwards to application(e, $2, emptyAppExprs(location=$2.location), ',', emptyAnnoAppExprs(location=$3.location), $3, location=top.location);
 }
 
 abstract production errorApplication
 top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ "," ++ anns.pp ++ ")";
-  top.location = e.location;
   
   top.errors := e.errors ++ 
     [err(top.location, e.pp ++ " has type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++
@@ -216,7 +203,6 @@ abstract production functionApplication
 top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ "," ++ anns.pp ++ ")";
-  top.location = e.location;
   
   -- NOTE: REVERSED ORDER
   -- We may need to resolve e's type to get at the actual 'function type'
@@ -233,15 +219,14 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
   -- Is this partial application, give (Foo ::= ;a::Something) or (Foo) + error.
   -- Possibly this can be solved by having somehting like "foo(x,a=?)"
   forwards to if es.isPartial || anns.isPartial
-              then partialApplication(e, es, anns)
-              else functionInvocation(e, es, anns);
+              then partialApplication(e, es, anns, location=top.location)
+              else functionInvocation(e, es, anns, location=top.location);
 }
 
 abstract production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ "," ++ anns.pp ++ ")";
-  top.location = e.location;
   
   top.errors := e.errors ++ es.errors ++ anns.errors;
 
@@ -252,7 +237,6 @@ abstract production partialApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ "," ++ anns.pp ++ ")";
-  top.location = e.location;
   
   top.errors := e.errors ++ es.errors ++ anns.errors;
 
@@ -263,7 +247,6 @@ concrete production attributeSection
 top::Expr ::= '(' '.' q::QName ')'
 {
   top.pp = "(." ++ q.pp ++ ")";
-  top.location = $1.location;
   
   -- Fresh variable for the input type, and we'll come back later and check that it occurs on that type.
   
@@ -294,7 +277,6 @@ concrete production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = $2.location;
   
   -- We don't include 'q' here because this might be a terminal, where
   -- 'q' shouldn't actually resolve to a name!
@@ -303,7 +285,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   q.attrFor = performSubstitution(e.typerep, e.upSubst);
   
   -- Note: we're first consulting the TYPE of the LHS.
-  forwards to q.attrFor.accessHandler(e, $2, q);
+  forwards to q.attrFor.accessHandler(e, q, top.location);
   -- This jumps to:
   -- errorAccessHandler  (e.g. 1.pp)
   -- undecoratedAccessHandler
@@ -312,20 +294,18 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 }
 
 abstract production errorAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = $2.location;
   
   top.typerep = errorType();
   top.errors := [err(top.location, "LHS of '.' is type " ++ prettyType(q.attrFor) ++ " and cannot have attributes.")] ++ q.errors;
 }
 
 abstract production annoAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = $2.location;
   
   production index :: Integer =
     findNamedSigElem(q.name, annotationsForNonterminal(q.attrFor, top.env), 0);
@@ -336,10 +316,9 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 }
 
 abstract production terminalAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = $2.location;
   
   -- NO q.errors!!
   top.errors :=
@@ -361,10 +340,9 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 }
 
 abstract production undecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = $2.location;
 
   top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   
@@ -372,8 +350,8 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
   -- occur on the LHS here.
   
   -- Note: LHS is UNdecorated, here we dispatch based on the kind of attribute.
-  forwards to if !null(q.errors) then errorDecoratedAccessHandler(e, $2, q)
-              else q.attrDcl.undecoratedAccessHandler(e, $2, q);
+  forwards to if !null(q.errors) then errorDecoratedAccessHandler(e, q, location=top.location)
+              else q.attrDcl.undecoratedAccessHandler(e, q, top.location);
   -- annoAccessHandler
   -- accessBouncer
 }
@@ -383,30 +361,28 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
  - This production is intended to permit that.
  -}
 abstract production accessBouncer
-top::Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QNameAttrOccur) e::Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Expr  q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = $3.location;
 
   -- Basically the only purpose here is to decorate 'e'.
-  forwards to target(e, $3, q);
+  forwards to target(e, q, top.location);
 }
 function accessBounceDecorate
-Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QNameAttrOccur) e::Decorated Expr '.' q::Decorated QNameAttrOccur
+Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Decorated Expr  q::Decorated QNameAttrOccur  l::Location
 {
-  return accessBouncer(target, decorateExprWithIntention(e.location, exprRef(e), exprInhsEmpty(), [q.attrDcl.fullName]), $3, q);
+  return accessBouncer(target, decorateExprWithIntention(exprRef(e, location=l), exprInhsEmpty(location=l), [q.attrDcl.fullName], location=l), q, location=l);
 }
 function accessBounceUndecorate
-Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QNameAttrOccur) e::Decorated Expr '.' q::Decorated QNameAttrOccur
+Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Decorated Expr  q::Decorated QNameAttrOccur  l::Location
 {
-  return accessBouncer(target, newFunction(terminal(New_kwd, "new", e.location), '(', exprRef(e), ')'), $3, q);
+  return accessBouncer(target, newFunction('new', '(', exprRef(e, location=l), ')', location=l), q, location=l);
 }
 
 abstract production decoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = $2.location;
 
   top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   
@@ -414,8 +390,8 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
   -- occur on the LHS here.
   
   -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
-  forwards to if !null(q.errors) then errorDecoratedAccessHandler(e, $2, q)
-              else q.attrDcl.decoratedAccessHandler(e, $2, q);
+  forwards to if !null(q.errors) then errorDecoratedAccessHandler(e, q, location=top.location)
+              else q.attrDcl.decoratedAccessHandler(e, q, top.location);
   -- From here we go to:
   -- synDecoratedAccessHandler
   -- inhDecoratedAccessHandler
@@ -423,20 +399,18 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 }
 
 abstract production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = $2.location;
   
   top.typerep = q.typerep;
   top.errors := []; -- already included?
 }
 
 abstract production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = $2.location;
   
   top.typerep = q.typerep;
   top.errors := []; -- already included?
@@ -444,10 +418,9 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 
 -- TODO: change name. really "unknownDclAccessHandler"
 abstract production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
-  top.location = $2.location;
 
   top.errors := []; -- empty because we only ever get here if lookup failed. see above.
 
@@ -459,16 +432,14 @@ concrete production decorateExprWithEmpty
 top::Expr ::= 'decorate' e::Expr 'with' '{' '}'
 {
   top.pp = "decorate " ++ e.pp ++ " with {}";
-  top.location = $2.location;
 
-  forwards to decorateExprWith($1, e, $3, $4, exprInhsEmpty(), $5);
+  forwards to decorateExprWith($1, e, $3, $4, exprInhsEmpty(location=top.location), $5, location=top.location);
 }
 
 concrete production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.pp = "decorate " ++ e.pp ++ " with {" ++ inh.pp ++ "}";
-  top.location = $2.location;
 
   top.typerep = decoratedTypeExp(performSubstitution(e.typerep, e.upSubst)); -- .decoratedForm?
   top.errors := e.errors ++ inh.errors;
@@ -477,7 +448,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 }
 
 abstract production decorateExprWithIntention
-top::Expr ::= l::Location  e::Expr  inh::ExprInhs  intention::[String]
+top::Expr ::= e::Expr  inh::ExprInhs  intention::[String]
 {
   -- TODO: this whole production is a hack to work around some problems computing
   -- flow types. The idea is the few places where we "auto decorate" in order to
@@ -487,7 +458,6 @@ top::Expr ::= l::Location  e::Expr  inh::ExprInhs  intention::[String]
   -- This production should eventually be eliminated, somehow. It's pure duplication of the above.
   
   top.pp = "decorate " ++ e.pp ++ " with {" ++ inh.pp ++ "}";
-  top.location = l;
 
   top.typerep = decoratedTypeExp(performSubstitution(e.typerep, e.upSubst)); -- .decoratedForm?
   top.errors := e.errors ++ inh.errors;
@@ -499,7 +469,6 @@ abstract production exprInhsEmpty
 top::ExprInhs ::= 
 {
   top.pp = "";
-  top.location = bogusLocation();
   
   top.errors := [];
   top.suppliedInhs = [];
@@ -509,7 +478,6 @@ concrete production exprInhsOne
 top::ExprInhs ::= lhs::ExprInh
 {
   top.pp = lhs.pp;
-  top.location = lhs.location;
   
   top.errors := lhs.errors;
   top.suppliedInhs = lhs.suppliedInhs;
@@ -519,7 +487,6 @@ concrete production exprInhsCons
 top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
 {
   top.pp = lhs.pp ++ " " ++ inh.pp;
-  top.location = lhs.location;
   
   top.errors := lhs.errors ++ inh.errors;
   top.suppliedInhs = lhs.suppliedInhs ++ inh.suppliedInhs;
@@ -529,7 +496,6 @@ concrete production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 {
   top.pp = lhs.pp ++ " = " ++ e.pp ++ ";";
-  top.location = $2.location;
   
   top.errors := lhs.errors ++ e.errors;
   top.suppliedInhs = lhs.suppliedInhs;
@@ -539,7 +505,6 @@ concrete production exprLhsExpr
 top::ExprLHSExpr ::= q::QNameAttrOccur
 {
   top.pp = q.pp;
-  top.location = q.location;
 
   top.errors := q.errors;
   top.typerep = q.typerep;
@@ -552,7 +517,6 @@ concrete production trueConst
 top::Expr ::= 'true'
 {
   top.pp = "true";
-  top.location = $1.location;
   
   top.errors := [];
   top.typerep = boolTypeExp();
@@ -562,7 +526,6 @@ concrete production falseConst
 top::Expr ::= 'false'
 {
   top.pp = "false";
-  top.location = $1.location;
   
   top.errors := [];
   top.typerep = boolTypeExp();
@@ -572,7 +535,6 @@ concrete production and
 top::Expr ::= e1::Expr '&&' e2::Expr
 {
   top.pp = e1.pp ++ " && " ++ e2.pp;
-  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -582,7 +544,6 @@ concrete production or
 top::Expr ::= e1::Expr '||' e2::Expr
 {
   top.pp = e1.pp ++ " || " ++ e2.pp;
-  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -592,7 +553,6 @@ concrete production not
 top::Expr ::= '!' e::Expr
 {
   top.pp = "! " ++ e.pp;
-  top.location = $2.location;
 
   top.typerep = boolTypeExp();
   top.errors := e.errors;
@@ -602,7 +562,6 @@ concrete production gt
 top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.pp = e1.pp ++ " > " ++ e2.pp;
-  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -612,7 +571,6 @@ concrete production lt
 top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.pp = e1.pp ++ " < " ++ e2.pp;
-  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -622,7 +580,6 @@ concrete production gteq
 top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.pp = e1.pp ++ " >= " ++ e2.pp;
-  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -632,7 +589,6 @@ concrete production lteq
 top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.pp = e1.pp ++ " <= " ++ e2.pp;
-  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -642,7 +598,6 @@ concrete production eqeq
 top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.pp = e1.pp ++ " == " ++ e2.pp;
-  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -652,7 +607,6 @@ concrete production neq
 top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.pp = e1.pp ++ " != " ++ e2.pp;
-  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolTypeExp();
@@ -663,7 +617,6 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 precedence = 0
 {
   top.pp = "if " ++ e1.pp ++ " then " ++ e2.pp ++ " else " ++ e3.pp;
-  top.location = $1.location;
 
   top.errors := e1.errors ++ e2.errors ++ e3.errors;
   top.typerep = e2.typerep;
@@ -673,7 +626,6 @@ concrete production intConst
 top::Expr ::= i::Int_t
 {
   top.pp = i.lexeme;
-  top.location = $1.location;
 
   top.errors := [];
   top.typerep = intTypeExp();
@@ -683,7 +635,6 @@ concrete production floatConst
 top::Expr ::= f::Float_t
 {
   top.pp = f.lexeme;
-  top.location = $1.location;
 
   top.errors := [];
   top.typerep = floatTypeExp();
@@ -693,7 +644,6 @@ concrete production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
   top.pp = e1.pp ++ " + " ++ e2.pp;
-  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
@@ -703,7 +653,6 @@ concrete production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
   top.pp = e1.pp ++ " - " ++ e2.pp;
-  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
@@ -713,7 +662,6 @@ concrete production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
   top.pp = e1.pp ++ " * " ++ e2.pp;
-  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
@@ -723,7 +671,6 @@ concrete production divide
 top::Expr ::= e1::Expr '/' e2::Expr
 {
   top.pp = e1.pp ++ " / " ++ e2.pp;
-  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
@@ -733,7 +680,6 @@ concrete production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
 {
   top.pp = e1.pp ++ " % " ++ e2.pp;
-  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
@@ -744,7 +690,6 @@ top::Expr ::= '-' e::Expr
 precedence = 13
 {
   top.pp = "- " ++ e.pp;
-  top.location = $1.location;
 
   top.errors := e.errors;
   top.typerep = e.typerep;
@@ -754,7 +699,6 @@ concrete production stringConst
 top::Expr ::= s::String_t
 {
   top.pp = s.lexeme;
-  top.location = $1.location;
 
   top.errors := [];
   top.typerep = stringTypeExp();
@@ -764,20 +708,18 @@ concrete production plusPlus
 top::Expr ::= e1::Expr '++' e2::Expr
 {
   top.pp = e1.pp ++ " ++ " ++ e2.pp;
-  top.location = $2.location;
 
   top.typerep = performSubstitution(e1.typerep, errCheck1.upSubst); -- TODO: a bit silly we depend on errCheck, which isn't here...
 
   top.errors := e1.errors ++ e2.errors ++ forward.errors;
 
-  forwards to top.typerep.appendDispatcher(e1,e2);
+  forwards to top.typerep.appendDispatcher(e1, e2, top.location);
 }
 
 abstract production stringPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
+top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
 {
   top.pp = e1.pp ++ " ++ " ++ e2.pp;
-  top.location = e1.location;
 
   top.errors := [];
   top.typerep = stringTypeExp();
@@ -787,7 +729,6 @@ abstract production errorPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
   top.pp = e1.pp ++ " ++ " ++ e2.pp;
-  top.location = e1.location;
 
   top.errors := [err(e1.location, prettyType(performSubstitution(e1.typerep, e1.upSubst)) ++ " is not a concatenable type.")];
   top.typerep = errorType();
@@ -800,7 +741,6 @@ abstract production exprsEmpty
 top::Exprs ::=
 {
   top.pp = "";
-  top.location = bogusLocation();
   
   top.errors := [];
   top.exprs = [];
@@ -810,7 +750,6 @@ concrete production exprsSingle
 top::Exprs ::= e::Expr
 {
   top.pp = e.pp;
-  top.location = e.location;
 
   top.errors := e.errors;
   top.exprs = [e];
@@ -820,7 +759,6 @@ concrete production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
   top.pp = e1.pp ++ ", " ++ e2.pp;
-  top.location = $2.location;
 
   top.errors := e1.errors ++ e2.errors;
   top.exprs = [e1] ++ e2.exprs;
@@ -854,7 +792,6 @@ concrete production missingAppExpr
 top::AppExpr ::= '_'
 {
   top.pp = "_";
-  top.location = $1.location;
   
   top.isPartial = true;
   top.missingTypereps = [top.appExprTyperep];
@@ -869,7 +806,6 @@ concrete production presentAppExpr
 top::AppExpr ::= e::Expr
 {
   top.pp = e.pp;
-  top.location = e.location;
   
   top.isPartial = false;
   top.missingTypereps = [];
@@ -885,7 +821,6 @@ concrete production snocAppExprs
 top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
   top.pp = es.pp ++ ", " ++ e.pp;
-  top.location = es.location;
 
   top.isPartial = es.isPartial || e.isPartial;
   top.missingTypereps = es.missingTypereps ++ e.missingTypereps;
@@ -908,7 +843,6 @@ concrete production oneAppExprs
 top::AppExprs ::= e::AppExpr
 {
   top.pp = e.pp;
-  top.location = e.location;
 
   top.isPartial = e.isPartial;
   top.missingTypereps = e.missingTypereps;
@@ -931,10 +865,9 @@ top::AppExprs ::= e::AppExpr
                      else head(top.appExprTypereps);
 }
 abstract production emptyAppExprs
-top::AppExprs ::= l::Location
+top::AppExprs ::=
 {
   top.pp = "";
-  top.location = l;
 
   top.isPartial = false;
   top.missingTypereps = [];
@@ -986,7 +919,6 @@ concrete production annoExpr
 top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {
   top.pp = qn.pp ++ "=" ++ e.pp;
-  top.location = qn.location;
   
   local fq :: Pair<Maybe<NamedArgType> [NamedArgType]> =
     extractNamedArg(qn.name, top.remainingFuncAnnotations);
@@ -1001,7 +933,7 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
   
   top.errors :=
     (if fq.fst.isJust then []
-     else [err(qn.location, "Named parameter '" ++ qn.name ++ "' is not appropriate for this function.")]) ++
+     else [err(qn.location, "Named parameter '" ++ qn.name ++ "' is not appropriate for '" ++ top.appExprApplied ++ "'")]) ++
     e.errors;
   top.isPartial = e.isPartial;
   top.exprs = e.exprs;
@@ -1015,7 +947,6 @@ concrete production snocAnnoAppExprs
 top::AnnoAppExprs ::= es::AnnoAppExprs ',' e::AnnoExpr
 {
   top.pp = es.pp ++ ", " ++ e.pp;
-  top.location = es.location;
 
   top.isPartial = es.isPartial || e.isPartial;
   top.errors := es.errors ++ e.errors;
@@ -1034,7 +965,6 @@ concrete production oneAnnoAppExprs
 top::AnnoAppExprs ::= e::AnnoExpr
 {
   top.pp = e.pp;
-  top.location = e.location;
 
   top.isPartial = e.isPartial;
   top.errors :=
@@ -1054,10 +984,9 @@ top::AnnoAppExprs ::= e::AnnoExpr
 }
 
 abstract production emptyAnnoAppExprs
-top::AnnoAppExprs ::= l::Location
+top::AnnoAppExprs ::=
 {
   top.pp = "";
-  top.location = l;
 
   top.isPartial = false;
   top.errors :=
@@ -1084,17 +1013,22 @@ top::AnnoAppExprs ::= l::Location
  - Utility for other modules to create function invocations.
  - This makes no assumptions, use it any way you wish!
  -}
+function mkStrFunctionInvocation
+Expr ::= l::Location  e::String  es::[Expr]
+{
+  return mkFunctionInvocation(l, baseExpr(qName(l, e), location=l), es);
+}
 function mkFunctionInvocation
 Expr ::= l::Location  e::Expr  es::[Expr]
 {
-  return application(e, '(', foldAppExprs(reverse(es),l), ',', emptyAnnoAppExprs(l), ')');
+  return application(e, '(', foldAppExprs(l, reverse(es)), ',', emptyAnnoAppExprs(location=l), ')', location=l);
 }
 function foldAppExprs
-AppExprs ::= e::[Expr]  l::Location
+AppExprs ::= l::Location  e::[Expr]
 {
-  return if null(e) then emptyAppExprs(l)
-         else if null(tail(e)) then oneAppExprs(presentAppExpr(head(e)))
-         else snocAppExprs(foldAppExprs(tail(e),l), ',', presentAppExpr(head(e)));
+  return if null(e) then emptyAppExprs(location=l)
+         else if null(tail(e)) then oneAppExprs(presentAppExpr(head(e), location=l), location=l)
+         else snocAppExprs(foldAppExprs(l, tail(e)), ',', presentAppExpr(head(e), location=l), location=l);
 }
 
 {--
@@ -1112,7 +1046,12 @@ AppExprs ::= e::[Expr]  l::Location
 function mkFunctionInvocationDecorated
 Expr ::= l::Location  e::Expr  es::[Decorated Expr]
 {
-  return mkFunctionInvocation(l, e, map(exprRef, es));
+  return mkFunctionInvocation(l, e, map(exprRef(_, location=l), es));
+}
+function mkStrFunctionInvocationDecorated
+Expr ::= l::Location  e::String  es::[Decorated Expr]
+{
+  return mkFunctionInvocation(l, baseExpr(qName(l, e), location=l), map(exprRef(_, location=l), es));
 }
 
 {--
@@ -1133,7 +1072,6 @@ abstract production exprRef
 top::Expr ::= e::Decorated Expr
 {
   top.pp = e.pp;
-  top.location = e.location;
 
   -- See the major restriction. This should have been checked for error already!
   top.errors := [];

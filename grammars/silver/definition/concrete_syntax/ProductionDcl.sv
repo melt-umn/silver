@@ -4,7 +4,6 @@ concrete production concreteProductionDcl
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody
 {
   top.pp = "concrete production " ++ id.pp ++ "\n" ++ ns.pp ++ " " ++ pm.pp ++ "\n" ++ body.pp; 
-  top.location = $1.location;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
@@ -20,7 +19,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
     syntaxProduction(namedSig,
       foldr(consProductionMod, nilProductionMod(), pm.productionModifiers))];
   
-  forwards to productionDcl(terminal(Abstract_kwd, "abstract", $1.location), $2, id, ns, body);
+  forwards to productionDcl('abstract', $2, id, ns, body, location=top.location);
 }
 
 nonterminal ProductionModifiers with config, location, file, pp, productionModifiers, errors, env; -- 0 or some
@@ -33,7 +32,6 @@ concrete production productionModifiersNone
 top::ProductionModifiers ::=
 {
   top.pp = "";
-  top.location = bogusLocation();
 
   top.productionModifiers = [];
   top.errors := [];
@@ -42,7 +40,6 @@ concrete production productionModifierSome
 top::ProductionModifiers ::= pm::ProductionModifierList
 {
   top.pp = pm.pp;
-  top.location = pm.location;
   
   top.productionModifiers = pm.productionModifiers;
   top.errors := pm.errors;
@@ -52,7 +49,6 @@ concrete production productionModifierSingle
 top::ProductionModifierList ::= pm::ProductionModifier
 {
   top.pp = pm.pp;
-  top.location = pm.location;
   
   top.productionModifiers = pm.productionModifiers;
   top.errors := pm.errors;
@@ -61,7 +57,6 @@ concrete production productionModifiersCons
 top::ProductionModifierList ::= h::ProductionModifier ',' t::ProductionModifierList
 {
   top.pp = h.pp ++ ", " ++ t.pp;
-  top.location = $2.location;
 
   top.productionModifiers = h.productionModifiers ++ t.productionModifiers;
   top.errors := h.errors ++ t.errors;
@@ -72,7 +67,6 @@ concrete production productionModifierPrecedence
 top::ProductionModifier ::= 'precedence' '=' i::Int_t
 {
   top.pp = "precedence = " ++ i.lexeme;
-  top.location = $2.location;
 
   top.productionModifiers = [prodPrecedence(toInt(i.lexeme))];
   top.errors := [];
@@ -84,7 +78,6 @@ concrete production productionModifierOperator
 top::ProductionModifier ::= 'operator' '=' n::QName
 {
   top.pp = "operator = " ++ n.pp;
-  top.location = $2.location;
 
   top.productionModifiers = [prodOperator(n.lookupType.fullName)];
 
@@ -110,9 +103,9 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
   local lstType :: TypeExp = last(top.namedSignature.inputElements).typerep;
   
   local checkFirst :: Boolean =
-    fstType.isTerminal || !null(getOccursDcl("silver:langutil:location:location", fstType.typeName, top.env));
+    fstType.isTerminal || !null(getOccursDcl("core:location", fstType.typeName, top.env));
   local checkSecond :: Boolean =
-    lstType.isTerminal || !null(getOccursDcl("silver:langutil:location:location", lstType.typeName, top.env));
+    lstType.isTerminal || !null(getOccursDcl("core:location", lstType.typeName, top.env));
   local errFirst :: [Message] =
     if checkFirst then [] else [err(top.location, "Production has location annotation, but first element of signature does not have a location.")];
   local errSecond :: [Message] =
@@ -122,7 +115,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
     if null(top.namedSignature.namedInputElements) then
       []
     else if length(top.namedSignature.namedInputElements) == 1 then
-      if head(top.namedSignature.namedInputElements).elementName == "silver:langutil:location:location" then
+      if head(top.namedSignature.namedInputElements).elementName == "core:location" then
         if length(top.namedSignature.inputElements) > 1 then
           errFirst ++ errSecond
         else if null(top.namedSignature.inputElements) then

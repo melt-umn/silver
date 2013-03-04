@@ -9,14 +9,13 @@ concrete production fontDecl
 top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',' b::Int_t ')' fontStyles::FontStyles ';'
 {
   top.pp = "temp_imp_ide_font " ++ id.name ++ " color(" ++ r.lexeme ++ ", " ++ g.lexeme ++ ", " ++ b.lexeme ++ ")" ++ fontStyles.pp ++ "\n";
-  top.location = id.location;
   
   production fName :: String = top.grammarName ++ ":" ++ id.name;
 
   top.defs = [fontDef(top.grammarName, top.location, fName)];
   
   top.errors := if length(getFontDcl(fName, top.env)) > 1
-                then [err(top.location, "Font style '" ++ fName ++ "' is already bound.")]
+                then [err(id.location, "Font style '" ++ fName ++ "' is already bound.")]
                 else [];
 
   top.syntaxAst = [syntaxFont(
@@ -26,7 +25,7 @@ top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',
                         fontStyles.isItalic)
 		  )];
 
-  forwards to emptyAGDcl();
+  forwards to emptyAGDcl(location=top.location);
 }
 
 -- isBold etc are from IdeSpec.sv

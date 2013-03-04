@@ -21,12 +21,11 @@ ag::AGDcl ::= kwd::'equalityTest'
 {
   ag.pp = "equalityTest (" ++ value.pp ++ "," ++ expected.pp ++ ",\n" ++ 
           "              " ++ valueType.pp ++ ", " ++ testSuite.pp ++ ");\n";
-  ag.location = $1.location;
 
   ag.errors := case equalityTestExpr of
                | just(_) -> []
                | nothing() -> 
-                   [err(ag.location, "Type \"" ++ valueType.pp ++ "\" not suported on equality tests.")]
+                   [err(valueType.location, "Type \"" ++ valueType.pp ++ "\" not suported on equality tests.")]
                end;
 
   local attribute errCheck1 :: TypeCheck; 
@@ -78,7 +77,7 @@ ag::AGDcl ::= kwd::'equalityTest'
               else emptyAGDcl();
 -}
 
-  forwards to appendAGDcl(absProdCS, aspProdCS);
+  forwards to appendAGDcl(absProdCS, aspProdCS, location=ag.location);
 
 {-
   local absProdCS :: AGDcl = asAGDcl (
@@ -115,25 +114,25 @@ ag::AGDcl ::= kwd::'equalityTest'
    empty_CS_env()))))))) , 3 );
 -}
 
-  local tref :: Name = nameIdLower(terminal(IdLower_t, "t", ag.location));
-  local testNameref :: Name = nameIdLower(terminal(IdLower_t, testName, ag.location));
-  local valueref :: Name = nameIdLower(terminal(IdLower_t, "value", ag.location));
-  local expectedref :: Name = nameIdLower(terminal(IdLower_t, "expected", ag.location));
-  local msgref :: Name = nameIdLower(terminal(IdLower_t, "msg", ag.location));
-  local passref :: Name = nameIdLower(terminal(IdLower_t, "pass", ag.location));
+  local tref :: Name = name("t", ag.location);
+  local testNameref :: Name = name(testName, ag.location);
+  local valueref :: Name = name("value", ag.location);
+  local expectedref :: Name = name("expected", ag.location);
+  local msgref :: Name = name("msg", ag.location);
+  local passref :: Name = name("pass", ag.location);
   
   local absProdCS :: AGDcl =
     productionDcl('abstract', 'production', testNameref,
       productionSignature(
         productionLHS(tref, '::',
-          nominalType(qNameTypeId(terminal(IdUpper_t, "Test", ag.location)), botlNone())),
-        '::=', productionRHSNil()),
-      productionBody('{', foldl(productionStmtsSnoc, productionStmtsNil(), [
-        localAttributeDcl('local', 'attribute', valueref, '::', valueType, ';'),
-        valueEq(qNameId(valueref), '=', value, ';'),
-        localAttributeDcl('local', 'attribute', expectedref, '::', valueType, ';'),
-        valueEq(qNameId(expectedref), '=', expected, ';'),
-        attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameAttrOccur(qNameId(msgref)), '=',
+          nominalType(qNameTypeId(terminal(IdUpper_t, "Test", ag.location), location=ag.location), botlNone(location=ag.location), location=ag.location), location=ag.location),
+        '::=', productionRHSNil(location=ag.location), location=ag.location),
+      productionBody('{', foldl(productionStmtsSnoc(_, _, location=ag.location), productionStmtsNil(location=ag.location), [
+        localAttributeDcl('local', 'attribute', valueref, '::', valueType, ';', location=ag.location),
+        valueEq(qNameId(valueref, location=valueref.location), '=', value, ';', location=ag.location),
+        localAttributeDcl('local', 'attribute', expectedref, '::', valueType, ';', location=ag.location),
+        valueEq(qNameId(expectedref, location=expectedref.location), '=', expected, ';', location=ag.location),
+        attributeDef(concreteDefLHS(qNameId(tref, location=tref.location), location=tref.location), '.', qNameAttrOccur(qNameId(msgref, location=msgref.location), location=ag.location), '=',
           foldStringExprs([
             strCnst("Test at " ++ ag.location.unparse ++ " failed.\nChecking that expression\n   " ++
               stringifyString(value.pp) ++ "\nshould be same as expression\n   " ++
@@ -141,10 +140,10 @@ ag::AGDcl ::= kwd::'equalityTest'
             toStringValueExpr.fromJust,
             strCnst("\nExpected value: \n   "),
             toStringExpectedExpr.fromJust,
-            strCnst("\n")]), ';'),
-        attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameAttrOccur(qNameId(passref)), '=',
-           equalityTestExpr.fromJust, ';'),
-        forwardsTo('forwards', 'to', prodFuncCall("defTest", []), ';')]), '}'));
+            strCnst("\n")]), ';', location=ag.location),
+        attributeDef(concreteDefLHS(qNameId(tref, location=tref.location), location=tref.location), '.', qNameAttrOccur(qNameId(passref, location=passref.location), location=ag.location), '=',
+           equalityTestExpr.fromJust, ';', location=ag.location),
+        forwardsTo('forwards', 'to', mkStrFunctionInvocation(ag.location, "defTest", []), ';', location=ag.location)]), '}', location=ag.location), location=ag.location);
 
 {-
   local aspProdCS :: AGDcl = asAGDcl (
@@ -155,22 +154,22 @@ ag::AGDcl ::= kwd::'equalityTest'
 -}
 
   local aspProdCS :: AGDcl =
-    aspectProductionDcl('aspect', 'production', qNameId(testSuite),
+    aspectProductionDcl('aspect', 'production', qNameId(testSuite, location=ag.location),
       aspectProductionSignature(
-        aspectProductionLHSId(tref),
-          '::=', aspectRHSElemNil()),
+        aspectProductionLHSId(tref, location=ag.location),
+          '::=', aspectRHSElemNil(location=ag.location), location=ag.location),
       productionBody('{',
         productionStmtsSnoc(
-          productionStmtsNil(),
+          productionStmtsNil(location=ag.location),
           valContainsAppend(
-            qNameId(nameIdLower(terminal(IdLower_t, "testsToPerform", ag.location))),
+            qName(ag.location, "testsToPerform"),
             '<-',
             fullList('[',
               exprsSingle(
                 applicationEmpty(
-                  baseExpr(qNameId(testNameref)), '(', ')')),
-              ']'),
-            ';')), '}'));
+                  baseExpr(qNameId(testNameref, location=ag.location), location=ag.location), '(', ')', location=ag.location), location=ag.location),
+              ']', location=ag.location),
+            ';', location=ag.location), location=ag.location), '}', location=ag.location), location=ag.location);
 
 
 
@@ -178,12 +177,12 @@ ag::AGDcl ::= kwd::'equalityTest'
   -- element type is a base type, then we can check for equality.
   -- With curried functions we could handle nested lists, but not now.
   local equalityTestExpr :: Maybe<Expr> =
-    mkEqualityTestExprCS(valueType);
+    mkEqualityTestExprCS(valueType, ag.location);
 
   local toStringValueExpr :: Maybe<Expr> =
-    mkToStringExprCS (valueType, "value");
+    mkToStringExprCS(valueType, "value", ag.location);
   local toStringExpectedExpr :: Maybe<Expr> =
-    mkToStringExprCS (valueType, "expected");
+    mkToStringExprCS(valueType, "expected", ag.location);
 
   local testName :: String = "generatedTest" ++ "_" ++ 
                             replaceChars(".","_",kwd.filename) ++ "_" ++ 
@@ -206,38 +205,40 @@ Maybe<String> ::= valueType::Type prefix::String
 }
 
 function mkToStringExprCS
-Maybe<Expr> ::= valueType::Type  exprName::String
-{ return
-   case functionNameForBaseTypesCS(valueType, "toStringFrom") of
-   | just(btt) -> just(prodFuncCall(btt, [mkNameExpr(exprName)]))
-   | nothing() -> 
-       case valueType of
-       | listType(_,elemType,_) ->
-           case functionNameForBaseTypesCS(elemType,"toStringFrom") of
-           | just(btt) ->
-               just(prodFuncCall("toStringFromList", [mkNameExpr(btt), mkNameExpr(exprName)]))
-           | _ -> nothing()
-           end
-       | _ -> nothing()
-       end 
-   end;
+Maybe<Expr> ::= valueType::Type  exprName::String  l::Location
+{
+  return
+    case functionNameForBaseTypesCS(valueType, "toStringFrom") of
+    | just(btt) -> just(mkStrFunctionInvocation(l, btt, [mkNameExpr(exprName, l)]))
+    | nothing() -> 
+        case valueType of
+        | listType(_,elemType,_) ->
+            case functionNameForBaseTypesCS(elemType,"toStringFrom") of
+            | just(btt) ->
+                just(mkStrFunctionInvocation(l, "toStringFromList", [mkNameExpr(btt, l), mkNameExpr(exprName, l)]))
+            | _ -> nothing()
+            end
+        | _ -> nothing()
+        end 
+    end;
 }
 
 function mkEqualityTestExprCS
-Maybe<Expr> ::= valueType::Type
-{ return
-   case functionNameForBaseTypesCS(valueType, "equals") of
-   | just(btt) -> just(prodFuncCall(btt, [mkNameExpr("value"), mkNameExpr("expected")]))
-   | nothing() -> 
-       case valueType of
-       | listType(_,elemType,_) ->
-           case functionNameForBaseTypesCS(elemType, "equals") of
-           | just(btt) ->
-               just(prodFuncCall("equalsList", [mkNameExpr(btt), mkNameExpr("value"), mkNameExpr("expected")]))
-           | _ -> nothing()
-           end
-       | _ -> nothing()
-       end 
-   end;
+Maybe<Expr> ::= valueType::Type  l::Location
+{
+  return
+    case functionNameForBaseTypesCS(valueType, "equals") of
+    | just(btt) -> just(mkStrFunctionInvocation(l, btt, [mkNameExpr("value", l), mkNameExpr("expected", l)]))
+    | nothing() -> 
+        case valueType of
+        | listType(_,elemType,_) ->
+            case functionNameForBaseTypesCS(elemType, "equals") of
+            | just(btt) ->
+                just(mkStrFunctionInvocation(l, "equalsList", [mkNameExpr(btt, l), mkNameExpr("value", l), mkNameExpr("expected", l)]))
+            | _ -> nothing()
+            end
+        | _ -> nothing()
+        end 
+    end;
 }
 

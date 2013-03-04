@@ -17,8 +17,8 @@ top::TypeExp ::= el::TypeExp
   top.isDecorable = false;
   top.isDecorated = false;
   --top.accessHandler = errorAccessHandler; -- permit this, since we need it for default, non-specialized java version
-  top.lengthDispatcher = listLengthBouncer;
-  top.appendDispatcher = listPlusPlus;
+  top.lengthDispatcher = listLengthBouncer(_, location=_);
+  top.appendDispatcher = listPlusPlus(_, _, location=_);
   
   top.unparse = "[" ++ el.unparse ++ "]";
   --top.transType -- for translation.

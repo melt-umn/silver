@@ -15,7 +15,6 @@ concrete production ffiTypeDcl
 top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeList 'foreign' ';'
 {
   top.pp = "type " ++ id.pp ++ tl.pp ++ " foreign ;";
-  top.location = $1.location;
   
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
@@ -31,7 +30,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeList 'foreign' ';'
   -- Redefinition check of the name
   top.errors <- 
     if length(getTypeDclAll(fName, top.env)) > 1 
-    then [err(top.location, "Type '" ++ fName ++ "' is already bound.")]
+    then [err(id.location, "Type '" ++ fName ++ "' is already bound.")]
     else [];
 
   top.errors <-

@@ -4,7 +4,6 @@ concrete production nonterminalDcl
 top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList ';'
 {
   top.pp = "nonterminal " ++ id.pp ++ tl.pp ++ ";";
-  top.location = id.location;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   
@@ -25,7 +24,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList '
   -- Redefinition check of the name
   top.errors <- 
     if length(getTypeDclAll(fName, top.env)) > 1 
-    then [err(top.location, "Type '" ++ fName ++ "' is already bound.")]
+    then [err(id.location, "Type '" ++ fName ++ "' is already bound.")]
     else [];
 
   top.errors <-
@@ -35,7 +34,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList '
 }
 
 -- This feels a bit hackish.
-nonterminal ClosedOrNot with whichDcl;
+nonterminal ClosedOrNot with location, whichDcl;
 
 synthesized attribute whichDcl :: (Def ::= String Location String [TyVar] TypeExp);
 

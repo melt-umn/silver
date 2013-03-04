@@ -12,9 +12,9 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   
   top.typerep = ty;
   
-  top.refDispatcher = parserAttributeReference;
-  top.defDispatcher = parserAttributeValueDef;
-  top.defLHSDispatcher = parserAttributeDefLHS;
+  top.refDispatcher = parserAttributeReference(_, location=_);
+  top.defDispatcher = parserAttributeValueDef(_, _, location=_);
+  top.defLHSDispatcher = parserAttributeDefLHS(_, location=_);
 }
 
 abstract production pluckTermDcl
@@ -29,9 +29,9 @@ top::DclInfo ::= sg::String sl::Location fn::String
   --top.typerep = errorType();
   top.typerep = freshType(); -- #HACK2012 Issue 4
   
-  top.refDispatcher = pluckTerminalReference;
-  top.defDispatcher = errorValueDef;
-  top.defLHSDispatcher = errorDefLHS;
+  top.refDispatcher = pluckTerminalReference(_, location=_);
+  top.defDispatcher = errorValueDef(_, _, location=_);
+  top.defLHSDispatcher = errorDefLHS(_, location=_);
 }
 
 abstract production disambigLexemeDcl
@@ -45,9 +45,9 @@ top::DclInfo ::= sg::String sl::Location
   
   top.typerep = stringTypeExp();
   
-  top.refDispatcher = disambigLexemeReference;
-  top.defDispatcher = errorValueDef;
-  top.defLHSDispatcher = errorDefLHS;
+  top.refDispatcher = disambigLexemeReference(_, location=_);
+  top.defDispatcher = errorValueDef(_, _, location=_);
+  top.defLHSDispatcher = errorDefLHS(_, location=_);
 }
 
 abstract production lexerClassDcl
@@ -73,9 +73,9 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   
   top.typerep = ty;
   
-  top.refDispatcher = termAttrValueReference;
-  top.defDispatcher = termAttrValueValueDef;
-  top.defLHSDispatcher = errorDefLHS;
+  top.refDispatcher = termAttrValueReference(_, location=_);
+  top.defDispatcher = termAttrValueValueDef(_, _, location=_);
+  top.defLHSDispatcher = errorDefLHS(_, location=_);
 }
 
 abstract production actionChildDcl
@@ -89,9 +89,9 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   
   top.typerep = ty;
   
-  top.refDispatcher = actionChildReference;
-  top.defDispatcher = errorValueDef;
-  top.defLHSDispatcher = parserAttributeDefLHS; -- TODO: specialize this
+  top.refDispatcher = actionChildReference(_, location=_);
+  top.defDispatcher = errorValueDef(_, _, location=_);
+  top.defLHSDispatcher = parserAttributeDefLHS(_, location=_); -- TODO: specialize this
 }
 
 abstract production parserLocalDcl
@@ -106,8 +106,8 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.typerep = ty;
   
   -- TODO: use specialized ones that give better errors messages!
-  top.refDispatcher = parserAttributeReference;
-  top.defDispatcher = parserAttributeValueDef;
-  top.defLHSDispatcher = parserAttributeDefLHS;
+  top.refDispatcher = parserAttributeReference(_, location=_);
+  top.defDispatcher = parserAttributeValueDef(_, _, location=_);
+  top.defLHSDispatcher = parserAttributeDefLHS(_, location=_);
 }
 

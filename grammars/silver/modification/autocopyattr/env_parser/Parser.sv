@@ -12,6 +12,6 @@ top::IDclInfo ::= 'autocopy' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls '
 {
   t.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = [autocopyDef(top.grammarName, l.location, fn.aname, td.tyvars, t.typerep)];
+  top.defs = [autocopyDef(top.grammarName, l.alocation, fn.aname, td.tyvars, t.typerep)];
 }
 

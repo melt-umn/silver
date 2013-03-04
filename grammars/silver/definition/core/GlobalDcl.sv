@@ -4,7 +4,6 @@ concrete production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
 {
   top.pp = "global " ++ id.pp ++ " :: " ++ t.pp ++ " = " ++ e.pp ++ "\n"; 
-  top.location = $1.location;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
@@ -13,7 +12,7 @@ top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
-        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
+        then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
   top.errors := t.errors ++ e.errors;

@@ -5,7 +5,7 @@ synthesized attribute resPath :: String;
 {--
 The nonterminal representing a message to be displayed in generated IDE.  
 --}
-nonterminal IdeMessage with resPath, location, severity, msg;
+nonterminal IdeMessage with resPath, loc, severity, msg;
 
 {--
  resPath:    the path relative to root of project, in format "path/relative/to/project/root".
@@ -17,7 +17,7 @@ abstract production makeIdeMessage
 top::IdeMessage ::= resPath::String location::Location severity::Integer msg::String
 {
   top.resPath = resPath;
-  top.location = location;
+  top.loc = location;
   top.severity = severity;
   top.msg = msg;
 }

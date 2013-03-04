@@ -57,22 +57,18 @@ function makeOccursDcls
 AGDcl ::= l::Location ats::[QNameWithTL] nts::[QNameWithTL]
 {
   return if null(ats) 
-	 then emptyAGDcl()
-	 else appendAGDcl(makeOccursDclsHelp(l, head(ats), nts), makeOccursDcls(l, tail(ats), nts));
+	 then emptyAGDcl(location=l)
+	 else appendAGDcl(makeOccursDclsHelp(l, head(ats), nts), makeOccursDcls(l, tail(ats), nts), location=l);
 }
 
 function makeOccursDclsHelp
 AGDcl ::= l::Location at::QNameWithTL nts::[QNameWithTL]
 {
   return if null(nts) 
-	 then emptyAGDcl()
+	 then emptyAGDcl(location=l)
 	 else appendAGDcl(
-	        attributionDcl(attr_kwd, at.qnwtQN, at.qnwtTL, occurs_kwd, on_kwd, head(nts).qnwtQN, head(nts).qnwtTL, ';'),
-		makeOccursDclsHelp(l, at, tail(nts)));
-
-  local attr_kwd :: Attribute_kwd = terminal(Attribute_kwd, "attribute", l);
-  local occurs_kwd :: Occurs_kwd = terminal(Occurs_kwd, "occurs", l);
-  local on_kwd :: On_kwd = terminal(On_kwd, "on", l);
+	        attributionDcl('attribute', at.qnwtQN, at.qnwtTL, 'occurs', 'on', head(nts).qnwtQN, head(nts).qnwtTL, ';', location=l),
+		makeOccursDclsHelp(l, at, tail(nts)), location=l);
 }
 
 

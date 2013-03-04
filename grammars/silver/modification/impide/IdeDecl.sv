@@ -24,7 +24,6 @@ concrete production ideDcl
 top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optFunctions::IdeFunctions ';'
 {
   top.pp = "temp_imp_ide_dcl " ++ parsername.pp ++ " " ++ fileextension.lexeme ++ "\n";
-  top.location = $1.location;
 
   top.defs = [];
 
@@ -33,7 +32,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optF
   -- lexeme starts with ", but also ensure first character is a dot.
   top.errors <-
     if startsWith("\".", fileextension.lexeme) then []
-    else [err(top.location, "File extension should begin with dot (like \".sv\")")];
+    else [err(fileextension.location, "File extension should begin with dot (like \".sv\")")];
   
   -- This gets the compiler's representation of the grammar the parser is declared in
   -- This should NOT be accessed unless we know the lookup for the name succeeded
@@ -57,7 +56,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optF
   
   top.errors <- optFunctions.errors;
 
-  forwards to emptyAGDcl();
+  forwards to emptyAGDcl(location=top.location);
 }
 
 
@@ -73,7 +72,6 @@ nonterminal IdeFunctionList with env, location, errors, grammarName, file, funcD
 concrete production emptyIdeFunctions
 top::IdeFunctions ::=
 {
-  top.location = bogusLocation();
   top.errors := [];
   top.funcDcls := [];
   top.propDcls := [];
@@ -82,7 +80,6 @@ top::IdeFunctions ::=
 concrete production listIdeFunctions
 top::IdeFunctions ::= '{' funcList::IdeFunctionList '}'
 {
-  top.location = $1.location;
   top.errors := funcList.errors;
   top.funcDcls := funcList.funcDcls;
   top.propDcls := funcList.propDcls;
@@ -91,7 +88,6 @@ top::IdeFunctions ::= '{' funcList::IdeFunctionList '}'
 concrete production nilIdeFunctionList
 top::IdeFunctionList ::= 
 {
-  top.location = bogusLocation();
   top.errors := [];
   top.funcDcls := [];
   top.propDcls := [];
@@ -100,7 +96,6 @@ top::IdeFunctionList ::=
 concrete production consIdeFunctionList
 top::IdeFunctionList ::= func::IdeFunction funcList::IdeFunctionList
 {
-  top.location = func.location;
   top.errors := func.errors ++ funcList.errors;
   top.funcDcls := func.funcDcls ++ funcList.funcDcls;
   top.propDcls := func.propDcls ++ funcList.propDcls;
@@ -109,7 +104,6 @@ top::IdeFunctionList ::= func::IdeFunction funcList::IdeFunctionList
 concrete production makeIdeFunction_Analyzer
 top::IdeFunction ::= 'analyzer' analyzerName::QName ';' 
 {
-  top.location = $1.location;
 
   top.funcDcls := [pair("analyzer", analyzerName.lookupValue.fullName)];
   top.propDcls := [];
@@ -135,8 +129,6 @@ top::IdeFunction ::= 'analyzer' analyzerName::QName ';'
 concrete production makeIdeFunction_Porperty
 top::IdeFunction ::= 'property' pname::IdLower_t ptype::TypeName ';' 
 {
-  top.location = $1.location;
-
   top.funcDcls := [];
 
   top.propDcls := [makeIdeProperty(pname.lexeme, ptype.propType)];

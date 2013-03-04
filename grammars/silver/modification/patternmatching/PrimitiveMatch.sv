@@ -36,26 +36,23 @@ concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::Type 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
 {
   top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
-  top.location = $1.location;
 
-  forwards to matchPrimitive(top.location, e, t, pr, f);
+  forwards to matchPrimitive(e, t, pr, f, location=top.location);
 }
 abstract production matchPrimitive
-top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
+top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
 {
   top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
-  top.location = ll;
 
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
   
-  forwards to matchPrimitiveReal(ll, ensureDecoratedExpr(e), t, pr, f);
+  forwards to matchPrimitiveReal(ensureDecoratedExpr(e), t, pr, f, location=top.location);
 }
 abstract production matchPrimitiveReal
-top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
+top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
 {
   top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
-  top.location = ll;
   
   top.typerep = t.typerep;
   
@@ -72,7 +69,7 @@ top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   errCheck2 = check(f.typerep, t.typerep);
   top.errors <- if errCheck2.typeerror
-                then [err(f.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                then [err(top.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
 
   -- ordinary threading: e, pr, f, errCheck2
@@ -111,7 +108,6 @@ concrete production onePattern
 top::PrimPatterns ::= p::PrimPattern
 {
   top.pp = p.pp;
-  top.location = p.location;
   
   top.errors := p.errors;
   top.translation = p.translation;
@@ -123,7 +119,6 @@ concrete production consPattern
 top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
 {
   top.pp = p.pp ++ " | " ++ ps.pp;
-  top.location = $2.location;
   
   top.errors := p.errors ++ ps.errors;
   top.translation = p.translation ++ "\nelse " ++ ps.translation;
@@ -137,7 +132,6 @@ concrete production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 {
   top.pp = qn.pp ++ "(" ++ ns.pp ++ ") -> " ++ e.pp;
-  top.location = qn.location;
 
   local isGadt :: Boolean =
     case qn.lookupValue.typerep.outputType of
@@ -155,14 +149,13 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
   -- the code. After it works, perhaps these can be merged into one non-forwarding
   -- production, once the code is understood fully.
   forwards to if isGadt
-              then prodPatternGadt(qn, ns, e)
-              else prodPatternNormal(qn, ns, e);
+              then prodPatternGadt(qn, ns, e, location=top.location)
+              else prodPatternNormal(qn, ns, e, location=top.location);
 }
 abstract production prodPatternNormal
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.pp = qn.pp ++ "(" ++ ns.pp ++ ") -> " ++ e.pp;
-  top.location = qn.location;
   
   top.errors := qn.lookupValue.errors ++ ns.errors ++ e.errors;
 
@@ -202,7 +195,6 @@ abstract production prodPatternGadt
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.pp = qn.pp ++ "(" ++ ns.pp ++ ") -> " ++ e.pp;
-  top.location = qn.location;
   
   top.errors := qn.lookupValue.errors ++ ns.errors ++ e.errors;
 
@@ -249,7 +241,6 @@ abstract production integerPattern
 top::PrimPattern ::= i::Int_t '->' e::Expr
 {
   top.pp = i.lexeme ++ " -> " ++ e.pp;
-  top.location = $1.location;
   
   top.errors := e.errors;
   
@@ -278,7 +269,6 @@ abstract production stringPattern
 top::PrimPattern ::= i::String_t '->' e::Expr
 {
   top.pp = i.lexeme ++ " -> " ++ e.pp;
-  top.location = $1.location;
   
   top.errors := e.errors;
   
@@ -307,7 +297,6 @@ abstract production booleanPattern
 top::PrimPattern ::= i::String '->' e::Expr
 {
   top.pp = i ++ " -> " ++ e.pp;
-  top.location = e.location;
   
   top.errors := e.errors;
   
@@ -336,7 +325,6 @@ abstract production nilPattern
 top::PrimPattern ::= e::Expr
 {
   top.pp = "nil() -> " ++ e.pp;
-  top.location = e.location;
   
   top.errors := e.errors;
   
@@ -365,7 +353,6 @@ abstract production conslstPattern
 top::PrimPattern ::= h::Name t::Name e::Expr
 {
   top.pp = "cons(" ++ h.pp ++ ", " ++ t.pp ++ ") -> " ++ e.pp;
-  top.location = e.location;
   
   top.errors := e.errors;
 
@@ -407,7 +394,6 @@ concrete production oneVarBinder
 top::VarBinders ::= v::VarBinder
 {
   top.pp = v.pp;
-  top.location = v.location;
   top.defs = v.defs;
   top.errors := v.errors;
 
@@ -429,7 +415,6 @@ concrete production consVarBinder
 top::VarBinders ::= v::VarBinder ',' vs::VarBinders
 {
   top.pp = v.pp ++ ", " ++ vs.pp;
-  top.location = v.location;
   top.defs = v.defs ++ vs.defs;
   top.errors := v.errors ++ vs.errors;
 
@@ -446,10 +431,9 @@ top::VarBinders ::= v::VarBinder ',' vs::VarBinders
                   else tail(top.bindingTypes);
 }
 concrete production nilVarBinder
-top::VarBinders ::= Epsilon_For_Location  -- technically a bug, but forget it for now
+top::VarBinders ::=
 {
   top.pp = "";
-  top.location = $1.location;
   top.defs = [];
   top.errors := [];
   
@@ -464,7 +448,6 @@ concrete production varVarBinder
 top::VarBinder ::= n::Name
 {
   top.pp = n.pp;
-  top.location = n.location;
   
   -- bindingType comes straight from the type in the production signature, so this logic
   -- should be 100% cool because only statically known nonterminal types are ones that
@@ -501,7 +484,6 @@ concrete production ignoreVarBinder
 top::VarBinder ::= '_'
 {
   top.pp = "_";
-  top.location = $1.location;
   top.defs = [];
   top.errors := [];
   top.let_translation = "";

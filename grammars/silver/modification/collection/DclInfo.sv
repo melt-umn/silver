@@ -2,11 +2,11 @@ grammar silver:modification:collection;
 
 attribute attrBaseDefDispatcher, attrAppendDefDispatcher, baseDefDispatcher, appendDefDispatcher occurs on DclInfo;
 
-synthesized attribute attrBaseDefDispatcher :: (ProductionStmt ::= Decorated DefLHS Dot_t Decorated QNameAttrOccur Equal_t Expr);
-synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= Decorated DefLHS Dot_t Decorated QNameAttrOccur Equal_t Expr);
+synthesized attribute attrBaseDefDispatcher :: (ProductionStmt ::= Decorated DefLHS  Decorated QNameAttrOccur  Expr  Location);
+synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= Decorated DefLHS  Decorated QNameAttrOccur  Expr  Location);
 
-synthesized attribute baseDefDispatcher :: (ProductionStmt ::= Decorated QName  Equal_t  Expr);
-synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated QName  Equal_t  Expr);
+synthesized attribute baseDefDispatcher :: (ProductionStmt ::= Decorated QName  Expr  Location);
+synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated QName  Expr  Location);
 
 -- TODO: the 'operation' value on these declarations is never used.
 -- Please take a moment to think about whether it should even exist or not.
@@ -14,11 +14,11 @@ synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated QName
 aspect default production
 top::DclInfo ::=
 {
-  top.attrBaseDefDispatcher = errorCollectionDefDispatcher;
-  top.attrAppendDefDispatcher = errorCollectionDefDispatcher;
+  top.attrBaseDefDispatcher = errorCollectionDefDispatcher(_, _, _, location=_);
+  top.attrAppendDefDispatcher = errorCollectionDefDispatcher(_, _, _, location=_);
 
-  top.baseDefDispatcher = errorCollectionValueDef;
-  top.appendDefDispatcher = errorCollectionValueDef;
+  top.baseDefDispatcher = errorCollectionValueDef(_, _, location=_);
+  top.appendDefDispatcher = errorCollectionValueDef(_, _, location=_);
 }
 
 abstract production synCollectionDcl
@@ -34,12 +34,12 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o
   top.typerep = ty;
   top.dclBoundVars = bound;
 
-  top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _, _);
-  top.attrDefDispatcher = errorColNormalAttributeDef;
+  top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.attrDefDispatcher = errorColNormalAttributeDef(_, _, _, location=_);
 
-  top.attrBaseDefDispatcher = synBaseColAttributeDef;
-  top.attrAppendDefDispatcher = synAppendColAttributeDef;
+  top.attrBaseDefDispatcher = synBaseColAttributeDef(_, _, _, location=_);
+  top.attrAppendDefDispatcher = synAppendColAttributeDef(_, _, _, location=_);
 
   forwards to synDcl(sg,sl,fn,bound,ty);
 }
@@ -56,12 +56,12 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o
   top.typerep = ty;
   top.dclBoundVars = bound;
 
-  top.decoratedAccessHandler = inhDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler, _, _, _); -- TODO: should probably be an error handler!
-  top.attrDefDispatcher = errorColNormalAttributeDef;
+  top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler!
+  top.attrDefDispatcher = errorColNormalAttributeDef(_, _, _, location=_);
 
-  top.attrBaseDefDispatcher = inhBaseColAttributeDef;
-  top.attrAppendDefDispatcher = inhAppendColAttributeDef;
+  top.attrBaseDefDispatcher = inhBaseColAttributeDef(_, _, _, location=_);
+  top.attrAppendDefDispatcher = inhAppendColAttributeDef(_, _, _, location=_);
 
   forwards to inhDcl(sg,sl,fn,bound,ty);
 }
@@ -78,12 +78,12 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp o::Operation
   
   top.typerep = ty;
   
-  top.refDispatcher = localReference;
-  top.defDispatcher = errorColNormalValueDef;
-  top.defLHSDispatcher = localDefLHS;
+  top.refDispatcher = localReference(_, location=_);
+  top.defDispatcher = errorColNormalValueDef(_, _, location=_);
+  top.defLHSDispatcher = localDefLHS(_, location=_);
 
-  top.baseDefDispatcher = baseCollectionValueDef;
-  top.appendDefDispatcher = appendCollectionValueDef;
+  top.baseDefDispatcher = baseCollectionValueDef(_, _, location=_);
+  top.appendDefDispatcher = appendCollectionValueDef(_, _, location=_);
 
   forwards to localDcl(sg,sl,fn,ty);
   

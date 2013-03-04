@@ -6,7 +6,6 @@ concrete production annotationDcl
 top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeList '::' te::Type ';'
 {
   top.pp = "annotation " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
-  top.location = $1.location;
 
   production fName :: String = top.grammarName ++ ":" ++ a.name;
 
@@ -18,7 +17,7 @@ top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeList '::' te::Type ';'
 
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
-    then [err(top.location, "The name '" ++ fName ++ "' is already bound.")]
+    then [err(a.location, "The name '" ++ fName ++ "' is already bound.")]
     else [];
   top.errors <-
     if indexOf(":", a.name) == -1 then []

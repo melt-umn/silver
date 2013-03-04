@@ -20,7 +20,7 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur e::Expr
 {
   local attribute prodDefGram :: String;
   prodDefGram = substring(0, lastIndexOf(":", top.signature.fullName), top.signature.fullName);
@@ -41,7 +41,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
   top.errors <-
     if null(attr.errors ++ attr.errors)
     && (top.config.warnAll || top.config.warnEqdef)
-    && $4.lexeme != "<-" -- hack to omit collections
+    -- && $4.lexeme != "<-" -- hack to omit collections -- TODO BUG FIXME We need to aspect the new collections productions!!
     && !contains(top.grammarName, computeDependencies(exportedBy, top.compiledGrammars))
     then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") on " ++ top.signature.fullName)]
     -- Now, check for duplicate equations!
@@ -55,7 +55,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   local attribute prodDefGram :: String;
   prodDefGram = substring(0, lastIndexOf(":", top.signature.fullName), top.signature.fullName);
@@ -77,7 +77,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
   top.errors <-
     if null(attr.errors ++ attr.errors ++ dl.errors)
     && (top.config.warnAll || top.config.warnEqdef)
-    && $4.lexeme != "<-" -- hack to omit collections
+    -- && $4.lexeme != "<-" -- hack to omit collections -- TODO BUG FIXME ASPEC THE NEW COLLECTION PRODUCTION !!
     && !contains(top.grammarName, computeDependencies(exportedBy, top.compiledGrammars))
     then [wrn(top.location, "Orphaned inherited equation: " ++ attr.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in " ++ top.signature.fullName ++ " on " ++ dl.pp)]
     -- Now, check for duplicate equations!

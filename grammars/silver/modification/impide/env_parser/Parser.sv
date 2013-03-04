@@ -13,7 +13,7 @@ terminal FontTerm 'font' lexer classes {C_1};
 concrete production aDclInfoFont
 top::IDclInfo ::= 'font' '(' l::ILocation ',' fn::IName ')'
 {
-  top.defs = [fontDef(top.grammarName, l.location, fn.aname)];
+  top.defs = [fontDef(top.grammarName, l.alocation, fn.aname)];
 }
 
 concrete production aLexerClassModifierFont

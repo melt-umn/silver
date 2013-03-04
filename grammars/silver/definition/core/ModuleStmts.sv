@@ -106,7 +106,6 @@ concrete production importStmt
 top::ImportStmt ::= 'import' m::ModuleExpr ';'
 {
   top.pp = "import " ++ m.pp ++ ";";
-  top.location = $1.location;
 
   top.errors := m.errors;
   top.moduleNames = m.moduleNames;
@@ -117,7 +116,6 @@ concrete production nilImportStmts
 top::ImportStmts ::=
 {
   top.pp = "";
-  top.location = bogusLocation();
 
   top.errors := [];
 
@@ -129,7 +127,6 @@ concrete production consImportStmts
 top::ImportStmts ::= h::ImportStmt t::ImportStmts
 {
   top.pp = h.pp ++ "\n" ++ t.pp;
-  top.location = h.location;
 
   top.errors := h.errors ++ t.errors;
 
@@ -141,7 +138,6 @@ abstract production appendImportStmts
 top::ImportStmts ::= h::ImportStmts t::ImportStmts
 {
   top.pp = h.pp ++ "\n" ++ t.pp;
-  top.location = h.location;
 
   top.errors := h.errors ++ t.errors;
 
@@ -156,7 +152,6 @@ concrete production nilModuleStmts
 top::ModuleStmts ::=
 {
   top.pp = "";
-  top.location = bogusLocation();
 
   top.errors := [];
 
@@ -171,7 +166,6 @@ concrete production consModulesStmts
 top::ModuleStmts ::= h::ModuleStmt t::ModuleStmts
 {
   top.pp = h.pp ++ "\n" ++ t.pp;
-  top.location = h.location;
 
   top.errors := h.errors ++ t.errors;
 
@@ -186,7 +180,6 @@ concrete production importsStmt
 top::ModuleStmt ::= 'imports' m::ModuleExpr ';'
 {
   top.pp = "imports " ++ m.pp ++ ";";
-  top.location = $1.location;
 
   top.errors := m.errors;
 
@@ -201,7 +194,6 @@ concrete production exportsStmt
 top::ModuleStmt ::= 'exports' m::ModuleName ';'
 {
   top.pp = "exports " ++ m.pp ++ ";";
-  top.location = $1.location;
 
   top.errors := m.errors;
 
@@ -216,7 +208,6 @@ concrete production exportsWithStmt
 top::ModuleStmt ::= 'exports' m::QName 'with' c::QName ';'
 {
   top.pp = "exports " ++ m.pp ++ " with " ++ c.pp ++ ";";
-  top.location = $1.location;
 
   top.errors := [];
 
@@ -230,7 +221,6 @@ concrete production optionalStmt
 top::ModuleStmt ::= 'option' m::QName ';'
 {
   top.pp = "option " ++ m.pp ++ ";";
-  top.location = $1.location;
 
   top.errors := [];
 
@@ -249,7 +239,6 @@ concrete production moduleName
 top::ModuleName ::= pkg::QName
 {
   top.pp = pkg.pp;
-  top.location = pkg.location;
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
@@ -266,7 +255,6 @@ concrete production moduleAll
 top::ModuleExpr ::= pkg::QName
 {
   top.pp = pkg.pp;
-  top.location = pkg.location;
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
@@ -280,7 +268,6 @@ concrete production moduleAllWith
 top::ModuleExpr ::= pkg::QName 'with' wc::WithElems
 {
   top.pp = pkg.pp ++ " with " ++ wc.pp;
-  top.location = pkg.location;
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
@@ -294,7 +281,6 @@ concrete production moduleOnly
 top::ModuleExpr ::= pkg::QName 'only' ns::NameList
 {
   top.pp = pkg.pp ++ " only " ++ ns.pp;
-  top.location = pkg.location;
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
@@ -308,7 +294,6 @@ concrete production moduleOnlyWith
 top::ModuleExpr ::= pkg::QName 'only' ns::NameList 'with' wc::WithElems
 {
   top.pp = pkg.pp ++ " only " ++ ns.pp ++ " with " ++ wc.pp;
-  top.location = pkg.location;
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
@@ -322,7 +307,6 @@ concrete production moduleHiding
 top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList
 {
   top.pp = pkg.pp ++ " hiding " ++ ns.pp;
-  top.location = pkg.location;
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
@@ -336,7 +320,6 @@ concrete production moduleHidingWith
 top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList 'with' wc::WithElems 
 {
   top.pp = pkg.pp ++ " hiding " ++ ns.pp ++ " with " ++ wc.pp;
-  top.location = pkg.location;
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
@@ -350,7 +333,6 @@ concrete production moduleAs
 top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
 {
   top.pp = pkg1.pp ++ " as " ++ pkg2.pp;
-  top.location = pkg1.location;
   top.moduleNames = [pkg1.name];
 
   production attribute m :: Module;
@@ -367,7 +349,6 @@ concrete production withElemsOne
 top::WithElems ::= we::WithElem
 {
   top.pp = we.pp;
-  top.location = we.location;
   top.envMaps = we.envMaps;
 }
 
@@ -375,7 +356,6 @@ concrete production withElemsCons
 top::WithElems  ::= h::WithElem ',' t::WithElems
 {
   top.pp = h.pp ++ ", " ++ t.pp;
-  top.location = $2.location;
   top.envMaps = h.envMaps ++ t.envMaps;
 }
 
@@ -384,7 +364,6 @@ concrete production withElement
 top::WithElem ::= n::QName 'as' newname::QName 
 {
   top.pp = n.pp ++ " as " ++ newname.pp;
-  top.location = $2.location;
   top.envMaps = [pair(n.name, newname.name)];
 }
 
@@ -395,7 +374,6 @@ concrete production nameListOne
 top::NameList ::= n::QName
 {
   top.pp = n.pp;
-  top.location = n.location;
   top.names = [n.name];
 }
 
@@ -403,7 +381,6 @@ concrete production nameListCons
 top::NameList ::= h::QName ',' t::NameList
 {
   top.pp = h.pp ++ ", " ++ t.pp;
-  top.location = $2.location;
   top.names = [h.name] ++ t.names;
 }
 

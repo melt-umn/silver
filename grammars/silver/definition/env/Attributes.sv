@@ -59,10 +59,6 @@ synthesized attribute allGrammarDependencies :: [String];
  -}
 synthesized attribute pp :: String;
 {--
- - The location of this node in the original source file.
- -}
-synthesized attribute location :: Location;
-{--
  - A list of definitions exported by this particular grammar.
  -}
 synthesized attribute defs :: [Def];

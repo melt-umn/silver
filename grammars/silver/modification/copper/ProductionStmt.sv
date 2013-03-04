@@ -5,18 +5,17 @@ terminal Print_kwd 'print' lexer classes {KEYWORD,RESERVED};
 
 concrete production namePrint
 top::Name ::= 'print'
-{ forwards to nameIdLower(terminal(IdLower_t, "print", $1.location)); }
+{ forwards to name("print", top.location); }
 
 concrete production namePluck
 top::Name ::= 'pluck'
-{ forwards to nameIdLower(terminal(IdLower_t, "pluck", $1.location)); }
+{ forwards to name("pluck", top.location); }
 
 
 concrete production pluckDef
 top::ProductionStmt ::= 'pluck' e::Expr ';'
 {
   top.pp = "pluck " ++ e.pp ++ ";";
-  top.location = $1.location;
 
   top.translation = "return " ++ e.translation ++ ";\n";
 
@@ -35,7 +34,6 @@ concrete production printStmt
 top::ProductionStmt ::= 'print' e::Expr ';'
 {
   top.pp = "print " ++ e.pp ++ ";";
-  top.location = $1.location;
 
   top.translation = "System.err.println(" ++ e.translation ++ ");\n";
 
@@ -64,14 +62,13 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 }
 
 abstract production parserAttributeValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
-  top.location = $2.location;
 
   top.errors := e.errors ++
                (if !top.blockContext.permitActions
-                then [err(val.location, "Assignment to parser attributes only permitted in parser action blocks")]
+                then [err(top.location, "Assignment to parser attributes only permitted in parser action blocks")]
                 else []);
 
   top.translation = makeCopperName(val.lookupValue.fullName) ++ " = " ++ e.translation ++ ";\n";
@@ -93,7 +90,6 @@ abstract production parserAttributeDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   top.pp = q.pp;
-  top.location = q.location;
   
   -- Note this is always erroring!
   top.errors := if !top.blockContext.permitActions
@@ -106,10 +102,9 @@ top::DefLHS ::= q::Decorated QName
 }
 
 abstract production termAttrValueValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
-  top.location = $2.location;
 
   -- these values should only ever be in scope when it's valid to use them
   top.errors := e.errors;

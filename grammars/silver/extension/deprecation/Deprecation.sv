@@ -12,10 +12,9 @@ concrete production deprecatedDecl
 top::AGDcl ::= 'deprecated' s::String_t ';'
 {
   top.pp = "deprecated" ++ s.lexeme ++ ";";
-  top.location = $1.location;
   
   top.errors := [wrn(top.location, s.lexeme)];
   
-  forwards to emptyAGDcl();
+  forwards to emptyAGDcl(location=top.location);
 }
 

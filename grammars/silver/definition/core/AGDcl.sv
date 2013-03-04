@@ -10,7 +10,6 @@ concrete production nilAGDcls
 top::AGDcls ::=
 {
   top.pp = "";
-  top.location = bogusLocation();
 
   top.defs = [];
   top.errors := [];
@@ -21,7 +20,6 @@ concrete production consAGDcls
 top::AGDcls ::= h::AGDcl t::AGDcls
 {
   top.pp = h.pp ++ "\n" ++ t.pp;
-  top.location = h.location;
 
   top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
@@ -40,7 +38,6 @@ abstract production emptyAGDcl
 top::AGDcl ::=
 {
   top.pp = "";
-  top.location = bogusLocation();
 
   top.errors := [];
 }
@@ -52,7 +49,6 @@ abstract production appendAGDcl
 top::AGDcl ::= h::AGDcl t::AGDcl
 {
   top.pp = h.pp ++ "\n" ++ t.pp;
-  top.location = h.location;
 
   top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;

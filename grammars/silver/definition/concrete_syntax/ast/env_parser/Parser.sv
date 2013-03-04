@@ -106,7 +106,7 @@ top::IParsersInner ::= l::IParsersInner ',' r::IParser
 concrete production aParser
 top::IParser ::= 'parser' '(' l::ILocation ',' g::IName ',' n::IName ',' snt::IName ',' gr::INames ')'
 {
-  top.parserSpecs = [parserSpec(l.location, g.aname, n.aname, snt.aname, gr.names)];
+  top.parserSpecs = [parserSpec(l.alocation, g.aname, n.aname, snt.aname, gr.names)];
 }
 
 

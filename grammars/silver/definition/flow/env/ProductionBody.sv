@@ -114,13 +114,13 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.flowDefs = [];
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
 
@@ -138,7 +138,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
     end;
 }
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.flowDefs = 
     case dl of
@@ -150,7 +150,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
 }
 
 aspect production localValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   -- TODO: So, I'm just going to assume for the moment that we're always allowed to define the eq for a local...
   -- technically, it's possible to break this if you declare it in one grammar, but define it in another, but
@@ -158,7 +158,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
   top.flowDefs = [localEq(top.signature.fullName, val.lookupValue.fullName, val.lookupValue.typerep.typeName, e.flowDeps)];
 }
 aspect production errorValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.flowDefs = [];
 }
@@ -166,7 +166,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 -- FROM COLLECTIONS TODO
 
 aspect production synAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' {- <- -} e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- <- -} e::Expr
 {
   local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
 
@@ -177,7 +177,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
 }
 
 aspect production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' {- <- -} e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- <- -} e::Expr
 {
   local vertex :: FlowVertex =
     case dl of
@@ -189,7 +189,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
   top.flowDefs = [extraEq(top.signature.fullName, vertex, e.flowDeps, true)];
 }
 aspect production synBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
 
@@ -207,7 +207,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
     end;
 }
 aspect production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.flowDefs = 
     case dl of
@@ -220,7 +220,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
 
 
 aspect production appendCollectionValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   local locDefGram :: String = if null(val.lookupValue.dcls) then "" else val.lookupValue.dcl.sourceGrammar;
 
@@ -254,13 +254,13 @@ top::ProductionStmt ::= 'print' e::Expr ';'
 }
 
 aspect production parserAttributeValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.flowDefs = [];
 }
 
 aspect production termAttrValueValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.flowDefs = [];
 }

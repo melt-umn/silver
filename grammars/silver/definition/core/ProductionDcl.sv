@@ -19,7 +19,6 @@ concrete production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
   top.pp = "abstract production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp; 
-  top.location = $1.location;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
@@ -30,7 +29,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
-        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
+        then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
 
         -- TODO: Narrow this down to just a list of productions of the same nonterminal before deciding to error.
         else if length(getValueDclAll(id.name, top.env)) > 1
@@ -62,7 +61,6 @@ concrete production productionSignature
 top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
   top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
-  top.location = $2.location;
 
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
@@ -74,7 +72,6 @@ concrete production productionLHS
 top::ProductionLHS ::= id::Name '::' t::Type
 {
   top.pp = id.pp ++ "::" ++ t.pp;
-  top.location = $2.location;
 
   top.outputElement = namedSignatureElement(id.name, t.typerep);
 
@@ -82,7 +79,7 @@ top::ProductionLHS ::= id::Name '::' t::Type
 
   top.errors <-
     if length(getValueDclInScope(id.name, top.env)) > 1
-    then [err(top.location, "Value '" ++ id.name ++ "' is already bound.")]
+    then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
     else [];	
 
   top.errors := t.errors;
@@ -92,7 +89,6 @@ concrete production productionRHSNil
 top::ProductionRHS ::=
 {
   top.pp = "";
-  top.location = bogusLocation();
 
   top.defs = [];
   top.errors := [];
@@ -104,7 +100,6 @@ concrete production productionRHSCons
 top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 {
   top.pp = h.pp ++ " " ++ t.pp;
-  top.location = h.location;
 
   top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
@@ -117,7 +112,6 @@ concrete production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::Type
 {
   top.pp = id.pp ++ "::" ++ t.pp;
-  top.location = $2.location;
 
   top.inputElements = [namedSignatureElement(id.name, t.typerep)];
 
@@ -125,7 +119,7 @@ top::ProductionRHSElem ::= id::Name '::' t::Type
 
   top.errors <-
     if length(getValueDclInScope(id.name, top.env)) > 1 
-    then [err(top.location, "Value '" ++ id.name ++ "' is already bound.")]
+    then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
     else [];	
 
   top.errors := t.errors;
@@ -135,8 +129,7 @@ concrete production productionRHSElemType
 top::ProductionRHSElem ::= t::Type
 {
   top.pp = t.pp;
-  top.location = t.location;
 
-  forwards to productionRHSElem(nameIdLower(terminal(IdLower_t, "_G_" ++ toString(top.deterministicCount))), terminal(ColonColon_t, "::"), t);
+  forwards to productionRHSElem(name("_G_" ++ toString(top.deterministicCount), t.location), '::', t, location=top.location);
 }
 
