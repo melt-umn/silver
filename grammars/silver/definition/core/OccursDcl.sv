@@ -6,7 +6,6 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   top.pp = "attribute " ++ at.pp ++ attl.pp ++ " occurs on " ++ nt.pp ++ nttl.pp ++ ";";
 
   -- TODO: this location is highly unreliable.
-  top.location = at.location;
 
   -- We must unconditionally emite the 'oDef' in order to signal to the
   -- environment mechanism that we're in a different namespace than
@@ -100,6 +99,6 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
 concrete production annotateDcl
 top::AGDcl ::= 'annotation' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
 {
-  forwards to attributionDcl(terminal(Attribute_kwd, $1.lexeme, $1.location), at, attl, $4, $5, nt, nttl, $8);
+  forwards to attributionDcl('attribute', at, attl, $4, $5, nt, nttl, $8, location=top.location);
 }
 

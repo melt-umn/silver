@@ -11,12 +11,11 @@ concrete production letp_c
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
   top.pp = "let " ++ la.pp ++ " in " ++ e.pp ++ " end";
-  top.location = $1.location;
 
-  forwards to letp(top.location, la.letAssignExprs, e);
+  forwards to letp(la.letAssignExprs, e, location=top.location);
 }
 
-nonterminal LetAssigns with pp, letAssignExprs;
+nonterminal LetAssigns with pp, location, letAssignExprs;
 
 synthesized attribute letAssignExprs :: AssignExpr;
 
@@ -24,7 +23,7 @@ concrete production assignsListCons
 top::LetAssigns ::= ae::AssignExpr ',' list::LetAssigns
 {
   top.pp = ae.pp ++ ", " ++ list.pp;
-  top.letAssignExprs = appendAssignExpr(ae, list.letAssignExprs);
+  top.letAssignExprs = appendAssignExpr(ae, list.letAssignExprs, location=top.location);
 }
 concrete production assignListSingle 
 top::LetAssigns ::= ae::AssignExpr
@@ -38,10 +37,9 @@ top::LetAssigns ::= ae::AssignExpr
 --------------------------------------------------------------------------------
 
 abstract production letp
-top::Expr ::= l::Location  la::AssignExpr  e::Expr
+top::Expr ::= la::AssignExpr  e::Expr
 {
   top.pp = "let " ++ la.pp ++ " in " ++ e.pp ++ " end";
-  top.location = l;
   
   top.errors := la.errors ++ e.errors;
   
@@ -56,7 +54,7 @@ top::Expr ::= l::Location  la::AssignExpr  e::Expr
   e.env = newScopeEnv(la.defs, top.env);
 }
 
-nonterminal AssignExpr with config, file, grammarName, env, compiledGrammars, signature, 
+nonterminal AssignExpr with location, config, file, grammarName, env, compiledGrammars, signature, 
                             pp, defs, errors, upSubst, 
                             downSubst, finalSubst, blockContext;
 
@@ -111,7 +109,6 @@ abstract production lexicalLocalReference
 top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
-  top.location = q.location;
   top.errors := [];
   
   -- We're adding the "unusual" behavior that types like "Decorated Foo" in LETs

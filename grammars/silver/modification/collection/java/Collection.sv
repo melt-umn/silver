@@ -172,7 +172,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te:
 --- Use semantics translation --------------------------------------------------
 
 aspect production baseCollectionValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
@@ -182,7 +182,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
         "\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes[" ++ val.lookupValue.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
 }
 aspect production appendCollectionValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
@@ -193,7 +193,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 }
 
 aspect production synBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' {- := -} e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- := -} e::Expr
 {
   top.translation =
         "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ "\n" ++
@@ -202,7 +202,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
         "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
 }
 aspect production synAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' {- <- -} e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- <- -} e::Expr
 {
   top.translation = 
 	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ "\n" ++
@@ -211,7 +211,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
         "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";
 }
 aspect production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' {- := -} e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- := -} e::Expr
 {
   top.setupInh := 
         "\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.attrDcl.fullName) ++"();\n";
@@ -222,7 +222,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
         "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
 }
 aspect production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' {- <- -} e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- <- -} e::Expr
 {
   top.translation = 
 	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ "\n" ++

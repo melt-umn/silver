@@ -5,56 +5,40 @@ import silver:definition:env;
 import silver:definition:concrete_syntax;
 import silver:definition:type;
 import silver:definition:type:syntax;
-import silver:modification:collection ;
-import silver:extension:list ;
-
-function mkName
-Name ::= name::String
-{ return nameIdLower( terminal(IdLower_t, name)) ;  }
+import silver:modification:collection;
+import silver:extension:list;
 
 -- Expression creating functions
 
 -- Create an Expr from a String.
 function mkNameExpr
-Expr ::= name::String
-{ return baseExpr( qNameId( nameIdLower( terminal(IdLower_t, name)))) ;  }
+Expr ::= name::String  l::Location
+{ 
+  return baseExpr(qName(l, name), location=l);
+}
 
--- fold a list of expressions (Expr) into a single "++"-separated Expr
+-- fold a list of expressions(Expr) into a single "++"-separated Expr
 function foldStringExprs 
 Expr ::= es::[Expr]
 {
  return if null(es)
-        then stringConst (terminal(String_t,"\"\""))
-        else plusPlus ( head(es), '++', foldStringExprs(tail(es)) ) ;
+        then stringConst(terminal(String_t, "\"\""), location=bogusLocation())
+        else plusPlus(head(es), '++', foldStringExprs(tail(es)), location=head(es).location);
 }
 
 -- Create an Expr that is a string constant from a string.
 function strCnst
 Expr ::= s::String
-{ return stringConst (terminal(String_t, "\"" ++ stringifyString(s) ++ "\"")) ; }
-
--- Create a production or function call from a String (the name) and list
--- of Expr arguments.
-function prodFuncCall
-Expr ::= name::String args::[Expr]
-{ 
-  return mkFunctionInvocation(bogusLocation(), mkNameExpr(name), args);
-}
-
--- Fold a list of expressions (Expr) into a Exprs nonterminal.
-function foldExprs
-Exprs ::= es::[Expr]
-{ return if null(es) then  exprsEmpty()
-         else if null(tail(es))
-              then exprsSingle(head(es))
-              else exprsCons ( head(es), ',', foldExprs(tail(es))) ;
+{
+  return stringConst(terminal(String_t, "\"" ++ stringifyString(s) ++ "\""), location=bogusLocation());
 }
 
 -- Create an attribute reference from two names. as in "n.a"
 function attrAcc
-Expr ::= n::String a::String
-{ return  
-   access ( mkNameExpr(n), '.', qNameAttrOccur(qName(bogusLocation(), a)));
+Expr ::= n::String a::String l::Location
+{
+  return  
+    access(mkNameExpr(n, l), '.', qNameAttrOccur(qName(l, a), location=l), location=l);
 }
 
 -- replace " characters with two: \ and "

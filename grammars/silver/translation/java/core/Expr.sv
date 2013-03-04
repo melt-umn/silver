@@ -204,21 +204,21 @@ top::Expr ::= '(' '.' q::QName ')'
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".synthesized(" ++ q.dcl.attrOccursIndex ++ "))";
 
@@ -237,7 +237,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".inherited(" ++ q.dcl.attrOccursIndex ++ "))";
 
@@ -249,7 +249,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   local accessor :: String =
     if q.name == "lexeme" || q.name == "location"
@@ -268,7 +268,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   -- Note that the transType is specific to the nonterminal we're accessing from.
   top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".getAnno_" ++ makeIdName(q.attrDcl.fullName) ++ "())";
@@ -292,7 +292,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }
 aspect production decorateExprWithIntention
-top::Expr ::= l::Location  e::Expr  inh::ExprInhs  intention::[String]
+top::Expr ::= e::Expr  inh::ExprInhs  intention::[String]
 {
   -- pure duplication of the above. See comment in core's Expr.
   top.translation = e.translation ++ 

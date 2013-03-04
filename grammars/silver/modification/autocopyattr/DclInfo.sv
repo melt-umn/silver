@@ -25,9 +25,9 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
   top.isAutocopy = true;
   
   -- the core dispatchers
-  top.decoratedAccessHandler = inhDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler, _, _, _); -- TODO: should probably be an error handler!
-  top.attrDefDispatcher = inheritedAttributeDef;
+  top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler!
+  top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_);
   
   forwards to inhDcl(sg,sl,fn,bound,ty);
 }

@@ -4,7 +4,6 @@ concrete production attributeDclParser
 top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::ActionCode_c ';'
 {
   top.pp = "parser attribute " ++ a.name ++ " :: " ++ te.pp ++ " action " ++ acode.pp ++ " ;" ;
-  top.location = $1.location;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -12,7 +11,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::Type 'action' acode::Action
   top.defs = [parserAttrDef(top.grammarName, a.location, fName, te.typerep)];
 
   top.errors <- if length(getValueDclAll(fName, top.env)) > 1
-                then [err(top.location, "Attribute '" ++ fName ++ "' is already bound.")]
+                then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
                 else [];
 
   top.errors := te.errors ++ acode.errors;

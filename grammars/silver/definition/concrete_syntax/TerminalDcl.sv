@@ -14,7 +14,6 @@ abstract production terminalDclDefault
 top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifiers
 {
   top.pp = t.pp ++ "terminal " ++ id.pp ++ " " ++ r.pp ++ " " ++ tm.pp ++ ";";
-  top.location = id.location;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
@@ -41,13 +40,13 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
 concrete production terminalDclKwdModifiers
 top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr ';'
 {
-  forwards to terminalDclDefault(t, id, r, terminalModifiersNone());
+  forwards to terminalDclDefault(t, id, r, terminalModifiersNone(location=$5.location), location=top.location);
 }
 
 concrete production terminalDclAllModifiers
 top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr tm::TerminalModifiers ';'
 {
-  forwards to terminalDclDefault(t, id, r, tm);
+  forwards to terminalDclDefault(t, id, r, tm, location=top.location);
 }
 
 {--
@@ -62,12 +61,11 @@ concrete production regExpr
 top::RegExpr ::= '/' r::Regex_R '/'
 {
   top.pp = "/" ++ r.regString ++ "/";
-  top.location = $1.location;
   top.terminalRegExprSpec = r;
 }
 
 
-nonterminal TerminalKeywordModifier with pp, terminalModifiers;
+nonterminal TerminalKeywordModifier with pp, location, terminalModifiers;
 
 concrete production terminalKeywordModifierIgnore
 top::TerminalKeywordModifier ::= 'ignore'
@@ -95,7 +93,6 @@ abstract production terminalModifiersNone
 top::TerminalModifiers ::= 
 {
   top.pp = "";
-  top.location = bogusLocation();
 
   top.terminalModifiers = [];
   top.errors := [];
@@ -104,7 +101,6 @@ concrete production terminalModifierSingle
 top::TerminalModifiers ::= tm::TerminalModifier
 {
   top.pp = tm.pp;
-  top.location = tm.location;
 
   top.terminalModifiers = tm.terminalModifiers;
   top.errors := tm.errors; 
@@ -113,7 +109,6 @@ concrete production terminalModifiersCons
 top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
 {
   top.pp = h.pp ++ ", " ++ t.pp;
-  top.location = $2.location;
 
   top.terminalModifiers = h.terminalModifiers ++ t.terminalModifiers;
   top.errors := h.errors ++ t.errors;
@@ -123,7 +118,6 @@ concrete production terminalModifierLeft
 top::TerminalModifier ::= 'association' '=' 'left'
 {
   top.pp = "association = left";
-  top.location = $1.location;
 
   top.terminalModifiers = [termAssociation("left")];
   top.errors := [];
@@ -132,7 +126,6 @@ concrete production terminalModifierRight
 top::TerminalModifier ::= 'association' '=' 'right'
 {
   top.pp = "association = right";
-  top.location = $1.location;
 
   top.terminalModifiers = [termAssociation("right")];
   top.errors := [];
@@ -142,7 +135,6 @@ concrete production terminalModifierPrecedence
 top::TerminalModifier ::= 'precedence' '=' i::Int_t
 {
   top.pp = "precedence = " ++ i.lexeme;
-  top.location = $1.location;
 
   top.terminalModifiers = [termPrecedence(toInt(i.lexeme))];
   top.errors := [];

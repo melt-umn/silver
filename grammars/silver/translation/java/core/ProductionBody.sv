@@ -150,13 +150,13 @@ top::DefLHS ::= q::Decorated QName
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.translation = 
     "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
@@ -164,7 +164,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.translation = 
     "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ "\n" ++
@@ -173,13 +173,13 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
 
 
 aspect production errorValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 }
 
 aspect production localValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);

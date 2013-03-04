@@ -4,7 +4,7 @@ import silver:definition:env;
 import silver:definition:regex hiding RegexRBrack_t, RegexLBrack_t, RegexLParen_t, RegexRParen_t; -- TODO: a bit of a hack?
 import silver:definition:type;
 
-import silver:definition:core only grammarName, location, env;
+import silver:definition:core only grammarName, env;
 
 lexer class C_0;
 lexer class C_1 dominates C_0;
@@ -105,7 +105,7 @@ nonterminal INamedSignature with signature, env, grammarName;
 -- a few simple utilities
 
 nonterminal IName with aname;
-nonterminal ILocation with location;
+nonterminal ILocation with alocation;
 nonterminal IBool with bval;
 nonterminal INames with names;
 nonterminal INamesInner with names;
@@ -115,6 +115,7 @@ synthesized attribute bval :: Boolean;
 synthesized attribute names :: [String];
 synthesized attribute aname :: String;
 synthesized attribute str :: String;
+synthesized attribute alocation :: Location;
 
 concrete production aTrue
 top::IBool ::= 't'
@@ -130,7 +131,7 @@ top::IBool ::= 'f'
 concrete production aLocationInfo
 top::ILocation ::= filename::IName ',' line::Num_t ',' column::Num_t
 {
-  top.location = loc(filename.aname, toInt(line.lexeme), toInt(column.lexeme), -1, -1, -1, -1);
+  top.alocation = loc(filename.aname, toInt(line.lexeme), toInt(column.lexeme), -1, -1, -1, -1);
 }
 
 concrete production aString
@@ -385,7 +386,7 @@ top::ITyVarDclsInner ::= t1::ITyVar ',' t2::ITyVarDclsInner
 concrete production aDclInfoLocal
 top::IDclInfo ::= 'loc' '(' l::ILocation ',' fn::IName ',' t::ITypeRep ')'
 {
-  top.defs = [localDef(top.grammarName, l.location, fn.aname, t.typerep)];
+  top.defs = [localDef(top.grammarName, l.alocation, fn.aname, t.typerep)];
 }
 
 concrete production aDclInfoProduction
@@ -393,7 +394,7 @@ top::IDclInfo ::= 'prod' '(' l::ILocation ',' td::ITyVarDcls ',' s::INamedSignat
 {
   s.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = [prodDef(top.grammarName, l.location, s.signature)];
+  top.defs = [prodDef(top.grammarName, l.alocation, s.signature)];
 }
 
 concrete production aDclInfoFunction
@@ -401,13 +402,13 @@ top::IDclInfo ::= 'fun' '(' l::ILocation ',' td::ITyVarDcls ',' s::INamedSignatu
 {
   s.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = [funDef(top.grammarName, l.location, s.signature)];
+  top.defs = [funDef(top.grammarName, l.alocation, s.signature)];
 }
 
 concrete production aDclInfoGlobalValue
 top::IDclInfo ::= 'glob' '(' l::ILocation ',' fn::IName ',' t::ITypeRep ')'
 {
-  top.defs = [globalDef(top.grammarName, l.location, fn.aname, t.typerep)];
+  top.defs = [globalDef(top.grammarName, l.alocation, fn.aname, t.typerep)];
 }
 
 concrete production aDclInfoNonterminal
@@ -416,14 +417,14 @@ top::IDclInfo ::= 'nt' '(' l::ILocation ',' s::IName ',' td::ITyVarDcls ',' t::I
   t.env = newScopeEnv(td.defs, top.env);
   
   top.defs = if cl.bval
-             then [closedNtDef(top.grammarName, l.location, s.aname, td.tyvars, t.typerep)]
-             else [ntDef(top.grammarName, l.location, s.aname, td.tyvars, t.typerep)];
+             then [closedNtDef(top.grammarName, l.alocation, s.aname, td.tyvars, t.typerep)]
+             else [ntDef(top.grammarName, l.alocation, s.aname, td.tyvars, t.typerep)];
 }
 
 concrete production aDclInfoTerminal
 top::IDclInfo ::= 'term' '(' l::ILocation ',' n::IName ',' '/' r::Regex_R '/' ')'
 {
-  top.defs = [termDef(top.grammarName, l.location, n.aname, r)];
+  top.defs = [termDef(top.grammarName, l.alocation, n.aname, r)];
 }
 
 concrete production aDclInfoSynthesized
@@ -431,7 +432,7 @@ top::IDclInfo ::= 'syn' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' t:
 {
   t.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = [synDef(top.grammarName, l.location, fn.aname, td.tyvars, t.typerep)];
+  top.defs = [synDef(top.grammarName, l.alocation, fn.aname, td.tyvars, t.typerep)];
 }
 
 concrete production aDclInfoInherited
@@ -439,7 +440,7 @@ top::IDclInfo ::= 'inh' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' t:
 {
   t.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = [inhDef(top.grammarName, l.location, fn.aname, td.tyvars, t.typerep)];
+  top.defs = [inhDef(top.grammarName, l.alocation, fn.aname, td.tyvars, t.typerep)];
 }
 
 concrete production aDclInfoProdAttr
@@ -447,13 +448,13 @@ top::IDclInfo ::= 'p@' '(' l::ILocation ',' td::ITyVarDcls ',' s::INamedSignatur
 {
   s.env = newScopeEnv(td.defs, top.env);
 
-  top.defs = [prodOccursDef(top.grammarName, l.location, s.signature, t.defs)];
+  top.defs = [prodOccursDef(top.grammarName, l.alocation, s.signature, t.defs)];
 }
 
 concrete production aDclInfoForward
 top::IDclInfo ::= 'fwd' '(' l::ILocation ',' t::ITypeRep ')'
 {
-  top.defs = [forwardDef(top.grammarName, l.location, t.typerep)];
+  top.defs = [forwardDef(top.grammarName, l.alocation, t.typerep)];
 }
 
 concrete production aDclInfoOccurs
@@ -467,7 +468,7 @@ top::IDclInfo ::= '@' '(' l::ILocation ',' fnnt::IName ',' fnat::IName ',' td::I
 
   -- Recall that constraint on occurs DclInfos: the types need to be tyvars, not skolem constants.
   
-  top.defs = [oDef(occursDcl(top.grammarName, l.location, fnnt.aname, fnat.aname, 
+  top.defs = [oDef(occursDcl(top.grammarName, l.alocation, fnnt.aname, fnat.aname, 
                         freshenTypeExpWith(ntt.typerep, td.tyvars, fresh),
                         freshenTypeExpWith(att.typerep, td.tyvars, fresh)))];
 }
@@ -477,7 +478,7 @@ top::IDclInfo ::= 'anno' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' t
 {
   t.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = [annoDef(top.grammarName, l.location, fn.aname, td.tyvars, t.typerep)];
+  top.defs = [annoDef(top.grammarName, l.alocation, fn.aname, td.tyvars, t.typerep)];
 }
 
 concrete production aDclInfoAnnoInstance
@@ -492,7 +493,7 @@ top::IDclInfo ::= 'anno@' '(' l::ILocation ',' fnnt::IName ',' fnat::IName ',' t
   -- Recall that constraint on occurs DclInfos: the types need to be tyvars, not skolem constants.
   
   top.defs = [
-    annoInstanceDef(top.grammarName, l.location, fnnt.aname, fnat.aname, 
+    annoInstanceDef(top.grammarName, l.alocation, fnnt.aname, fnat.aname, 
       freshenTypeExpWith(ntt.typerep, td.tyvars, fresh),
       freshenTypeExpWith(att.typerep, td.tyvars, fresh))];
 }

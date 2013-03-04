@@ -8,7 +8,6 @@ concrete production parserDcl
 top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
 {
   top.pp = "parser " ++ m.pp ++ ";";
-  top.location = $1.location;
   
   top.moduleNames = m.moduleNames;
 
@@ -40,7 +39,6 @@ concrete production moduleListOne
 top::ModuleList ::= c1::ModuleName ';'
 {
   top.pp = c1.pp;
-  top.location = c1.location;
   top.moduleNames = c1.moduleNames;
 
   top.errors := c1.errors;
@@ -50,7 +48,6 @@ concrete production moduleListCons
 top::ModuleList ::= c1::ModuleName ';' c2::ModuleList
 {
   top.pp = c1.pp ++ ", " ++ c2.pp;
-  top.location = c1.location;
   top.moduleNames = c1.moduleNames ++ c2.moduleNames;
 
   top.errors := c1.errors ++ c2.errors;

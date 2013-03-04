@@ -3,7 +3,7 @@ package common;
 import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;
 import core.NLocation;
 import core.Ploc;
-import silver.langutil.location.Alocation;
+import core.Alocation;
 
 /**
  * The terminal representation object, containing a lexeme and a location.
@@ -73,7 +73,7 @@ public final class TerminalRecord {
 	// Ditto
 	public static NLocation createSpan(final Object[] children, VirtualLocation l, int index) {
 		if(children.length == 0) {
-			return new Ploc(l.getFileName(), l.getLine(), l.getColumn(), l.getLine(), l.getColumn(), index, index);
+			return new Ploc(new StringCatter(l.getFileName()), l.getLine(), l.getColumn(), l.getLine(), l.getColumn(), index, index);
 		} else if(children.length == 1) {
 			return extractLocation(children[0]);
 		} else {
@@ -84,7 +84,7 @@ public final class TerminalRecord {
 		if(o instanceof TerminalRecord) {
 			return ((TerminalRecord)o).location;
 		} else if(o instanceof Alocation) {
-			return (NLocation) ((Alocation)o).getAnno_silver_langutil_location_location();
+			return (NLocation) ((Alocation)o).getAnno_core_location();
 		}
 		// TODO: a better error, maybe? Eh, it should never happen.
 		throw new RuntimeException("Attempting to extract location from locationless object");

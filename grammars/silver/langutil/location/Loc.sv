@@ -1,3 +1,0 @@
-
-annotation location :: Location;
-

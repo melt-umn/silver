@@ -1,6 +1,6 @@
---grammar core;
+grammar core;
 
---annotation location :: Location;
+annotation location :: Location;
 
 {--
  - Data structure storing location information on tree nodes from a parse.

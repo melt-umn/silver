@@ -108,14 +108,14 @@ top::Expr ::= '(' '.' q::QName ')'
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.flowDeps = [];
 }
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.flowDeps = 
     case e of
@@ -127,7 +127,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
     end;
 }
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.flowDeps = 
     case e of
@@ -139,17 +139,17 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
     end;
 }
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.flowDeps = []; -- errors, who cares?
 }
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.flowDeps = e.flowDeps;
 }
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.flowDeps = e.flowDeps;
 }
@@ -161,7 +161,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.flowDeps = e.flowDeps ++ inh.flowDeps;
 }
 aspect production decorateExprWithIntention
-top::Expr ::= l::Location  e::Expr  inh::ExprInhs  intention::[String]
+top::Expr ::= e::Expr  inh::ExprInhs  intention::[String]
 {
   top.flowDeps = e.flowDeps ++ inh.flowDeps;
 }
@@ -344,7 +344,7 @@ top::AppExprs ::= e::AppExpr
   top.flowDeps = e.flowDeps;
 }
 aspect production emptyAppExprs
-top::AppExprs ::= l::Location
+top::AppExprs ::=
 {
   top.flowDeps = [];
 }
@@ -364,7 +364,7 @@ top::AnnoAppExprs ::= e::AnnoExpr
   top.flowDeps = e.flowDeps;
 }
 aspect production emptyAnnoAppExprs
-top::AnnoAppExprs ::= l::Location
+top::AnnoAppExprs ::=
 {
   top.flowDeps = [];
 }
@@ -463,7 +463,7 @@ top::Expr ::= q::Decorated QName
 attribute flowDeps, flowEnv occurs on AssignExpr;
 
 aspect production letp
-top::Expr ::= l::Location  la::AssignExpr  e::Expr
+top::Expr ::= la::AssignExpr  e::Expr
 {
   top.flowDeps = la.flowDeps ++ e.flowDeps;
 }
@@ -491,7 +491,7 @@ top::Expr ::= q::Decorated QName
 attribute flowDeps, flowEnv occurs on PrimPatterns, PrimPattern;
 
 aspect production matchPrimitiveReal
-top::Expr ::= ll::Location e::Expr t::Type pr::PrimPatterns f::Expr
+top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
 {
   -- thanks to the decorateWithIntention hack, this works okay for
   -- matching on undecorated types (because e.flowDeps will be appropriate)

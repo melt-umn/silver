@@ -170,7 +170,7 @@ function checkEqDeps
 
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   -- TODO oh no again!
   local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -219,7 +219,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur '=' e::Expr
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   -- TODO oh no again!
   local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -240,7 +240,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS '.' attr::Decorated QNameAttrOccur 
 }
 
 aspect production localValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   -- TODO oh no again!
   local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -261,7 +261,7 @@ top::ProductionStmt ::= val::Decorated QName '=' e::Expr
 }
 
 aspect production appendCollectionValueDef
-top::ProductionStmt ::= val::Decorated QName '=' e::Expr
+top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   -- TODO oh no again!
   local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -421,7 +421,7 @@ Step 2: Let's go check on expressions. This has two purposes:
 
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   -- TODO oh hell look at that
   local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -481,7 +481,7 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   local refCheck :: [Message] =
     if contains(q.attrDcl.fullName, inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv))
@@ -529,7 +529,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
     else [];
 }
 aspect production decorateExprWithIntention
-top::Expr ::= l::Location  e::Expr  inh::ExprInhs  intention::[String]
+top::Expr ::= e::Expr  inh::ExprInhs  intention::[String]
 {
   -- TODO oh hell look at that
   local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;

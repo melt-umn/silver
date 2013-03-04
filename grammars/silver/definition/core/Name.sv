@@ -12,13 +12,17 @@ top::Name ::= id::IdLower_t
 {
   top.name = id.lexeme;
   top.pp = id.lexeme;
-  top.location = $1.location;
 }
 concrete production nameIdUpper
 top::Name ::= id::IdUpper_t
 {
   top.name = id.lexeme;
   top.pp = id.lexeme;
-  top.location = $1.location;
+}
+
+function name
+Name ::= n::String l::Location
+{
+  return nameIdLower(terminal(IdLower_t, n, l), location=l);
 }
 

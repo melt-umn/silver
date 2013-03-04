@@ -7,7 +7,6 @@ concrete production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 
 {
   top.pp = "function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp; 
-  top.location = $1.location;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
@@ -18,7 +17,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
-        then [err(top.location, "Value '" ++ fName ++ "' is already bound.")]
+        then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
   top.errors <-
@@ -48,7 +47,6 @@ concrete production functionSignature
 top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS 
 {
   top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
-  top.location = $2.location;
 
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
@@ -61,7 +59,6 @@ concrete production functionLHS
 top::FunctionLHS ::= t::Type
 {
   top.pp = t.pp;
-  top.location = t.location;
 
   production attribute fName :: String;
   fName = "__func__lhs";

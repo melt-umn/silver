@@ -15,7 +15,6 @@ top::AGDcl ::= 'aspect' 'default' 'production'
                lhs::Name '::' te::Type '::=' body::ProductionBody 
 {
   top.pp = "aspect default production\n" ++ lhs.pp ++ "::" ++ te.pp ++ " ::=\n" ++ body.pp;
-  top.location = $1.location;
 
   top.defs = [];
 
@@ -59,15 +58,14 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   
   top.typerep = ty;
   
-  top.refDispatcher = errorReference; -- Technically, we can make this lhsReference, but the semantics of that are stupid... (it would refer to the last (non-forwarding) production)
-  top.defDispatcher = errorValueDef; -- TODO: be smarter about the error message
-  top.defLHSDispatcher = defaultLhsDefLHS;
+  top.refDispatcher = errorReference(_, location=_); -- Technically, we can make this lhsReference, but the semantics of that are stupid... (it would refer to the last (non-forwarding) production)
+  top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: be smarter about the error message
+  top.defLHSDispatcher = defaultLhsDefLHS(_, location=_);
 }
 abstract production defaultLhsDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   top.pp = q.pp;
-  top.location = q.location;
   
   top.errors := if !null(top.defLHSattr.errors) || top.defLHSattr.attrDcl.isSynthesized then []
                 else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.pp ++ "' on the lhs '" ++ q.pp ++ "'")];

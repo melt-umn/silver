@@ -12,7 +12,6 @@ concrete production typeDecl
 top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeList '=' te::Type ';'
 {
   top.pp = "type " ++ id.pp ++ tl.pp ++ "=" ++ te.pp ++ ";";
-  top.location = id.location;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
@@ -28,7 +27,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeList '=' te::Type ';'
   -- Redefinition check of the name
   top.errors <- 
        if length(getTypeDclAll(fName, top.env)) > 1 
-       then [err(top.location, "Type '" ++ fName ++ "' is already bound.")]
+       then [err(id.location, "Type '" ++ fName ++ "' is already bound.")]
        else [];
 
   top.errors <-

@@ -14,10 +14,11 @@ nonterminal QNameType with config, name, location, grammarName, file, env, pp;
  -}
 synthesized attribute dcls :: [DclInfo];
 
+-- TODO: for consistency, the order of these args should be flipped:
 function qName
 QName ::= l::Location s::String
 {
-  return qNameId(nameIdLower(terminal(IdLower_t, s, l)));
+  return qNameId(nameIdLower(terminal(IdLower_t, s, l), location=l), location=l);
 }
 
 concrete production qNameId
@@ -25,7 +26,6 @@ top::QName ::= id::Name
 {
   top.name = id.name;
   top.pp = id.pp;
-  top.location = id.location;
   
   top.lookupValue = decorate customLookup("value", getValueDcl(top.name, top.env), top.name, top.location) with {};
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
@@ -37,7 +37,6 @@ top::QName ::= id::Name ':' qn::QName
 {
   top.name = id.name ++ ":" ++ qn.name;
   top.pp = id.pp ++ ":" ++ qn.pp;
-  top.location = $2.location;
   
   top.lookupValue = decorate customLookup("value", getValueDcl(top.name, top.env), top.name, top.location) with {};
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
@@ -92,7 +91,6 @@ top::QNameType ::= id::IdUpper_t
 {
   top.name = id.lexeme;
   top.pp = id.lexeme;
-  top.location = $1.location;
   
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
 }
@@ -102,7 +100,6 @@ top::QNameType ::= id::Name ':' qn::QNameType
 {
   top.name = id.name ++ ":" ++ qn.name;
   top.pp = id.pp ++ ":" ++ qn.pp;
-  top.location = $2.location;
   
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
 }
@@ -124,7 +121,6 @@ top::QNameAttrOccur ::= at::QName
 {
   top.name = at.name;
   top.pp = at.pp;
-  top.location = at.location;
   
   -- Occurs dcls
   local narrowed :: [[DclInfo]] = 

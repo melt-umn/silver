@@ -39,7 +39,6 @@ abstract production typerepType
 top::Type ::= t::TypeExp
 {
   top.pp = prettyType(t);
-  top.location = bogusLocation();
 
   top.typerep = t;
 
@@ -52,7 +51,6 @@ concrete production integerType
 top::Type ::= 'Integer'
 {
   top.pp = "Integer";
-  top.location = $1.location;
 
   top.typerep = intTypeExp();
 
@@ -65,7 +63,6 @@ concrete production floatType
 top::Type ::= 'Float'
 {
   top.pp = "Float";
-  top.location = $1.location;
 
   top.typerep = floatTypeExp();
 
@@ -78,7 +75,6 @@ concrete production stringType
 top::Type ::= 'String'
 {
   top.pp = "String";
-  top.location = $1.location;
 
   top.typerep = stringTypeExp();
 
@@ -91,7 +87,6 @@ concrete production booleanType
 top::Type ::= 'Boolean'
 {
   top.pp = "Boolean";
-  top.location = $1.location;
 
   top.typerep = boolTypeExp();
 
@@ -104,7 +99,7 @@ concrete production nominalType
 top::Type ::= q::QNameType tl::BracketedOptTypeList
 {
   top.pp = q.pp ++ tl.pp;
-  top.location = q.location;
+
   top.errors := q.lookupType.errors ++ tl.errors;
   top.lexicalTypeVariables = tl.lexicalTypeVariables;
 
@@ -119,7 +114,6 @@ concrete production typeVariableType
 top::Type ::= tv::IdLower_t
 {
   top.pp = tv.lexeme;
-  top.location = tv.location;
   
   local attribute hack::QNameLookup;
   hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme, top.location);
@@ -134,7 +128,6 @@ concrete production refType
 top::Type ::= 'Decorated' t::Type
 {
   top.pp = "Decorated " ++ t.pp;
-  top.location = $1.location;
 
   top.typerep = decoratedTypeExp(t.typerep);
 
@@ -152,7 +145,6 @@ concrete production funType
 top::Type ::= '(' sig::Signature ')'
 {
   top.pp = "(" ++ sig.pp ++ ")";
-  top.location = $1.location;
 
   top.errors := sig.errors;
 
@@ -165,7 +157,6 @@ concrete production signatureEmptyRhs
 top::Signature ::= t::Type '::='
 {
   top.pp = t.pp ++ " ::=";
-  top.location = $2.location;
 
   top.errors := t.errors;
 
@@ -178,7 +169,6 @@ concrete production psignature
 top::Signature ::= t::Type '::=' list::TypeList 
 {
   top.pp = t.pp ++ " ::= " ++ list.pp;
-  top.location = $2.location;
 
   top.errors := t.errors ++ list.errors;
 
@@ -193,14 +183,13 @@ concrete production botlNone
 top::BracketedOptTypeList ::=
 {
   top.pp = "";
-  forwards to botlSome('<', typeListNone(), '>');
+  forwards to botlSome('<', typeListNone(location=top.location), '>', location=top.location);
 }
 
 concrete production botlSome
 top::BracketedOptTypeList ::= '<' tl::TypeList '>'
 {
   top.pp = "<" ++ tl.pp ++ ">";
-  top.location = tl.location;
 
   top.errors := tl.errors;
   top.types = tl.types;
@@ -225,7 +214,6 @@ abstract production typeListNone
 top::TypeList ::=
 {
   top.pp = "";
-  top.location = bogusLocation();
   top.errors := [];
   top.types = [];
   top.lexicalTypeVariables = [];
@@ -236,7 +224,6 @@ concrete production typeListSingle
 top::TypeList ::= t::Type
 {
   top.pp = t.pp;
-  top.location = t.location;
 
   top.errors := t.errors;
 
@@ -249,7 +236,6 @@ concrete production typeListCons
 top::TypeList ::= t::Type list::TypeList
 {
   top.pp = t.pp ++ " " ++ list.pp;
-  top.location = t.location;
 
   top.errors := t.errors ++ list.errors;
 

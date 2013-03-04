@@ -5,7 +5,7 @@ import silver:definition:env;
 import silver:definition:type;
 import silver:definition:type:syntax;
 import silver:definition:concrete_syntax;
-import silver:definition:regex;
+import silver:definition:regex only regString, literalRegex;
 
 terminal Terminal_t /\'[^\'\n]*\'/ lexer classes {LITERAL};
 
@@ -13,11 +13,10 @@ concrete production regExprEasyTerm
 top::RegExpr ::= t::Terminal_t
 {
   top.pp = t.lexeme;
-  top.location = $1.location;
   
   top.terminalRegExprSpec = literalRegex(substring(1, length(t.lexeme)-1, t.lexeme));
   
-  forwards to regExpr('/', top.terminalRegExprSpec, '/');
+  forwards to regExpr('/', top.terminalRegExprSpec, '/', location=top.location);
 }
 
 concrete production productionRhsElemEasyReg
@@ -36,7 +35,9 @@ top::ProductionRHSElem ::= id::Name '::' reg::RegExpr
                 then [err(reg.location, "Found ambiguous possibilities for " ++ reg.pp ++ "\n" ++ printPossibilities(regName))]
                 else [];
 
-  forwards to productionRHSElem(id, $2, typerepType(if null(regName) then errorType() else head(regName).typerep));
+  forwards to productionRHSElem(id, $2,
+    typerepType(if null(regName) then errorType() else head(regName).typerep, location=reg.location),
+    location=top.location);
 }
 
 concrete production productionRhsElemTypeEasyReg
@@ -55,8 +56,9 @@ top::ProductionRHSElem ::= reg::RegExpr
                 then [err(reg.location, "Found ambiguous possibilities for " ++ reg.pp ++ "\n" ++ printPossibilities(regName))]
                 else [];
 
-  -- TODO: we lose location information here!
-  forwards to productionRHSElemType(typerepType(if null(regName) then errorType() else head(regName).typerep));
+  forwards to productionRHSElemType(
+    typerepType(if null(regName) then errorType() else head(regName).typerep, location=top.location),
+    location=top.location);
 }
 
 concrete production aspectRHSElemEasyReg
@@ -68,41 +70,41 @@ top::AspectRHSElem ::= reg::RegExpr
   regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
   top.errors <- if null(regName) 
-                then [err(top.location, "Could not find terminal declaration for " ++ reg.pp )]
+                then [err(reg.location, "Could not find terminal declaration for " ++ reg.pp )]
                 else [];
 
   top.errors <- if length(regName) > 1
                 then [err(reg.location, "Found ambiguous possibilities for " ++ reg.pp ++ "\n" ++ printPossibilities(regName))]
                 else [];
 
-  forwards to aspectRHSElemNone('_'); -- TODO This isn't checking if the type is right!!
+  forwards to aspectRHSElemNone('_', location=reg.location); -- TODO This isn't checking if the type is right!!
 }
 
 concrete production aspectRHSElemTypedEasyReg
 top::AspectRHSElem ::= id::Name '::' reg::RegExpr
 {
   top.pp = id.pp ++ " :: " ++ reg.pp;
-  top.location = id.location;
   
   local attribute regName :: [DclInfo];
   regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
   top.errors <- if null(regName) 
-                then [err(top.location, "Could not find terminal declaration for " ++ reg.pp )]
+                then [err(reg.location, "Could not find terminal declaration for " ++ reg.pp )]
                 else [];
   
   top.errors <- if length(regName) > 1
                 then [err(reg.location, "Found ambiguous possibilities for " ++ reg.pp ++ "\n" ++ printPossibilities(regName))]
                 else [];
 
-  forwards to aspectRHSElemTyped(id, $2, typerepType(if null(regName) then errorType() else head(regName).typerep));
+  forwards to aspectRHSElemTyped(id, $2,
+    typerepType(if null(regName) then errorType() else head(regName).typerep, location=reg.location),
+    location=top.location);
 }
 
 concrete production terminalExprReg
 top::Expr ::= t::RegExpr
 {
   top.pp = t.pp;
-  top.location = t.location;
   
   local attribute regExpPat :: String;
   regExpPat = t.terminalRegExprSpec.regString;
@@ -114,19 +116,16 @@ top::Expr ::= t::RegExpr
   escapedName = makeEscapedName(regExpPat);
 
   top.errors <- if null(regName) 
-                then [err(top.location, "Could not find terminal declaration for " ++ t.pp )]
+                then [err(t.location, "Could not find terminal declaration for " ++ t.pp )]
                 else [];
 
   top.errors <- if length(regName) > 1
                 then [err(t.location, "Found ambiguous possibilities for " ++ t.pp ++ "\n" ++ printPossibilities(regName))]
                 else [];
 
-  forwards to terminalFunction(terminal(Terminal_kwd, "terminal", t.location),
-                               terminal(LParen_t, "("),
-                               typerepType(if null(regName) then errorType() else head(regName).typerep),
-                               terminal(Comma_t, ","),
-                               stringConst(terminal(String_t, "\"" ++ escapedName ++ "\"")),
-                               terminal(RParen_t, ")"));
+  forwards to terminalFunction('terminal', '(',
+    typerepType(if null(regName) then errorType() else head(regName).typerep, location=t.location),
+    ',', stringConst(terminal(String_t, "\"" ++ escapedName ++ "\""), location=t.location), ')', location=top.location);
 }
 
 function makeEscapedName

@@ -101,13 +101,13 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.upSubst = top.downSubst;
 }
 
 aspect production undecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're UNdecorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
@@ -126,14 +126,14 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 }
 
 aspect production accessBouncer
-top::Expr ::= target::(Expr ::= Decorated Expr Dot_t Decorated QNameAttrOccur) e::Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Expr  q::Decorated QNameAttrOccur
 {
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
 }
 
 aspect production decoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're decorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
@@ -152,29 +152,29 @@ top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.upSubst = top.downSubst;
 }
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.upSubst = top.downSubst;
 }
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.upSubst = top.downSubst;
 }
 
 
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.upSubst = e.downSubst;
 }
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated Expr '.' q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.upSubst = e.downSubst;
 }
@@ -624,7 +624,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
        else [];
 }
 aspect production decorateExprWithIntention
-top::Expr ::= l::Location  e::Expr  inh::ExprInhs  intention::[String]
+top::Expr ::= e::Expr  inh::ExprInhs  intention::[String]
 {
   -- Pure duplication of the above. See comment in core's Expr.
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
@@ -714,7 +714,7 @@ top::AppExprs ::= e::AppExpr
   top.upSubst = e.upSubst;
 }
 aspect production emptyAppExprs
-top::AppExprs ::= l::Location
+top::AppExprs ::=
 {
   top.upSubst = top.downSubst;
 }
@@ -739,7 +739,7 @@ top::AnnoAppExprs ::= e::AnnoExpr
   top.upSubst = e.upSubst;
 }
 aspect production emptyAnnoAppExprs
-top::AnnoAppExprs ::= l::Location
+top::AnnoAppExprs ::=
 {
   top.upSubst = top.downSubst;
 }

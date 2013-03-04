@@ -27,11 +27,11 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   -- note that we're not merging the typing contexts between action blocks and productions
   -- this seems reasonable since inference should never have effects across this border...
 
-  forwards to concreteProductionDcl($1, $2, id, ns, pm, body);
+  forwards to concreteProductionDcl($1, $2, id, ns, pm, body, location=top.location);
 }
 
 
-nonterminal ActionCode_c with config,pp,actionCode,env,defs,grammarName,signature,file,errors,blockContext, compiledGrammars, flowEnv;
+nonterminal ActionCode_c with location,config,pp,actionCode,env,defs,grammarName,signature,file,errors,blockContext, compiledGrammars, flowEnv;
 
 synthesized attribute actionCode :: String;
 

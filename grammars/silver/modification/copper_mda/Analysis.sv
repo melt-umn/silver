@@ -15,7 +15,6 @@ concrete production copperMdaDcl
 top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ModuleList '}'
 {
   top.pp = "";
-  top.location = orig.location;
   
   top.errors := orig.lookupValue.errors ++ m.errors;
   

@@ -9,7 +9,7 @@ import silver:definition:type;
 import silver:definition:type:syntax;
 
 aspect production letp
-top::Expr ::= l::Location  la::AssignExpr  e::Expr
+top::Expr ::= la::AssignExpr  e::Expr
 {
   local finTy :: TypeExp = finalType(top);
 

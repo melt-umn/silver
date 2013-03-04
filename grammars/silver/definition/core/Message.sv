@@ -6,17 +6,18 @@ grammar silver:definition:core;
 --}
 synthesized attribute severity :: Integer; 
 synthesized attribute msg :: String;
+synthesized attribute loc :: Location;
 
 {--
  - Representation of diagnostic outputs of the compiler.
  - e.g. errors, warnings, etc.
  -}
-nonterminal Message with location, pp, severity, msg;
+nonterminal Message with loc, pp, severity, msg;
 
 abstract production err
 top::Message ::= l::Location s::String
 {
-  top.location = l;
+  top.loc = l;
   top.pp = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": error: " ++ s;
   top.severity = 2;
   top.msg = s;
@@ -25,7 +26,7 @@ top::Message ::= l::Location s::String
 abstract production wrn
 top::Message ::= l::Location s::String
 {
-  top.location = l;
+  top.loc = l;
   top.pp = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": warning: " ++ s;
   top.severity = 1;
   top.msg = s;
@@ -51,6 +52,6 @@ Boolean ::= l::[Message] wError::Boolean
 function messageLte
 Boolean ::= m1::Message m2::Message
 {
-  return locationLte(m1.location, m2.location);
+  return locationLte(m1.loc, m2.loc);
 }
 
