@@ -90,9 +90,10 @@ top::SyntaxDcl ::= ns::NamedSignature modifiers::SyntaxProductionModifiers
     else "") ++
     -- BEGIN DIFFERENCE *******************************************************
     "    <Code><![CDATA[\n" ++ 
-"            RESULT = createPTNode(new " ++ makeClassName(ns.fullName) ++ "(" ++ implode(", ", extractNonterminalsFromChildren(0, map(head, rhsRefs))) ++ "));\n" ++
-"]]></Code>\n" ++
+    "      RESULT = createPTNode(new " ++ makeClassName(ns.fullName) ++ "(" ++ implode(", ", extractNonterminalsFromChildren(0, map(head, rhsRefs))) ++ insertLocationAnnotationAEPTIN(ns, map(head, rhsRefs)) ++ "));\n" ++
     -- END DIFFERENCE *********************************************************
+      modifiers.acode ++
+    "]]></Code>\n" ++
     "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++
     "    <RHS>" ++ implode("", map(xmlCopperRef, map(head, rhsRefs))) ++ "</RHS>\n" ++
     (if modifiers.customLayout.isJust then
@@ -115,6 +116,17 @@ function extractNonterminalsFromChildren
        | syntaxTerminal(n, _, _)   -> [accessor]
        | syntaxNonterminal(n, _)   -> ["((AdaptiveEnhancedParseTreeInnerNode)" ++ accessor ++ ").getLangSpecNode()"]
        end ++ extractNonterminalsFromChildren(index + 1, tail(from));
+}
+function insertLocationAnnotationAEPTIN
+String ::= ns::Decorated NamedSignature  from::[Decorated SyntaxDcl]
+{
+  local pfx :: String = if null(ns.inputElements) then "" else ", ";
+  
+  return if null(ns.namedInputElements) then ""
+  else if length(ns.namedInputElements) > 1 then pfx ++ "multiple_annotation_problem" -- TODO
+  else if head(ns.namedInputElements).elementName != "core:location" then pfx ++ "unknown_annotation_type_problem" -- TODO etc
+  -- This code is awful:
+  else pfx ++ "common.TerminalRecord.createSpan(new Object[] {" ++ implode(", ", extractNonterminalsFromChildren(0, from)) ++ "}, virtualLocation, (int)_pos.getPos())";
 }
 
 
