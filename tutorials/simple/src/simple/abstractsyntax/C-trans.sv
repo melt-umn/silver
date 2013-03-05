@@ -114,22 +114,22 @@ Note that we do not define the c_code attribute for those relational
 and logical operations that (umm that WHAT? hahahaha)
 -}
 aspect production intLit
-e::Expr ::= l::Location s::String
+e::Expr ::= s::String
 {
   e.c_code = s;
 }
 aspect production floatLit
-e::Expr ::= l::Location s::String
+e::Expr ::= s::String
 {
   e.c_code = s;
 }
 aspect production boolLit
-e::Expr ::= l::Location s::String
+e::Expr ::= s::String
 {
   e.c_code = s;
 }
 aspect production stringLit
-e::Expr ::= l::Location s::String
+e::Expr ::= s::String
 {
   e.c_code = s;
 }

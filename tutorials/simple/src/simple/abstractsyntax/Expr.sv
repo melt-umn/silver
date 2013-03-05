@@ -11,11 +11,10 @@ synthesized attribute lookup :: Maybe<Decorated TypeExpr>;
 synthesized attribute name :: String;
 
 abstract production name
-n::Name ::= l::Location s::String
+n::Name ::= s::String
 {
   n.name = s;
   n.pp = text(s);
-  n.location = l;
 
   n.lookup = lookupValue(s, n.env);
 }
@@ -25,28 +24,28 @@ nonterminal Expr with pp, env, errors;
 -- Constants
 ------------
 abstract production intLit   
-e::Expr ::= l::Location s::String
+e::Expr ::= s::String
 {
   e.pp = text(s);
   e.errors := [];
 }
 
 abstract production floatLit 
-e::Expr ::= l::Location s::String
+e::Expr ::= s::String
 {
   e.pp = text(s);
   e.errors := [];
 }
 
 abstract production boolLit   
-e::Expr ::= l::Location s::String
+e::Expr ::= s::String
 {
   e.pp = text(s);
   e.errors := [];
 }
 
 abstract production stringLit 
-e::Expr ::= l::Location s::String
+e::Expr ::= s::String
 {
   e.pp = text(s);
   e.errors := [];

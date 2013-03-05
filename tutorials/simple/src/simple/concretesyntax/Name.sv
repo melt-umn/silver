@@ -8,5 +8,5 @@ grammar simple:concretesyntax;
 function name
 ast:Name ::= id::Id
 {
-  return ast:name(id.location, id.lexeme);
+  return ast:name(id.lexeme, location=id.location);
 }

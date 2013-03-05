@@ -21,11 +21,6 @@ synthesized attribute pp :: Document;
 synthesized attribute ast<a> :: a;
 
 {--
- - The location information associated with a syntax tree node
- -}
-synthesized attribute location :: Location;
-
-{--
  - For accumulating error/warning messages over a syntax tree
  -}
 synthesized attribute errors :: [Message] with ++;
