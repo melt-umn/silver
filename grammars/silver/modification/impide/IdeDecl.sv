@@ -62,7 +62,11 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optF
 
 -- Functions
 
-terminal ImpIde_OptFunc_Analyzer 'analyzer';
+-- function called when build is triggered
+terminal ImpIde_OptFunc_Builder 'builder';
+
+-- function called after builder returns without errors
+terminal ImpIde_OptFunc_PostBuilder 'postbuilder';
 
 --funcDcls, propDcls are defined in ./IdeSpec.sv
 nonterminal IdeFunctions with env, location, errors, grammarName, file, funcDcls, propDcls;
@@ -101,6 +105,7 @@ top::IdeFunctionList ::= func::IdeFunction funcList::IdeFunctionList
   top.propDcls := func.propDcls ++ funcList.propDcls;
 }
 
+{--
 concrete production makeIdeFunction_Analyzer
 top::IdeFunction ::= 'analyzer' analyzerName::QName ';' 
 {
@@ -124,6 +129,57 @@ top::IdeFunction ::= 'analyzer' analyzerName::QName ';'
   top.errors <-
     if !tc1.typeerror then []
     else [err(analyzerName.location, "Analyzer function should have type:\n\t" ++ tc1.rightpp ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
+}  
+--}
+
+concrete production makeIdeFunction_Builder
+top::IdeFunction ::= 'builder' builderName::QName ';' 
+{
+  top.funcDcls := [pair("builder", builderName.lookupValue.fullName)];
+  top.propDcls := [];
+
+  top.errors := builderName.lookupValue.errors;
+  
+  -- [IdeMessage] ::= [IdeProperty] IO
+  local builderTypeExpected :: TypeExp =
+    functionTypeExp(
+      listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeMessage", [])),
+      [listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeProperty", [])),
+        foreignTypeExp("core:IO", [])], []);
+  
+  local tc1 :: TypeCheck = check(freshenCompletely(builderName.lookupValue.typerep), builderTypeExpected);
+  tc1.downSubst = emptySubst();
+  tc1.finalSubst = tc1.upSubst;
+
+  top.errors <-
+    if !tc1.typeerror then []
+    else [err(builderName.location, "Builder function should have type:\n\t" ++ tc1.rightpp 
+        ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
+}  
+
+concrete production makeIdeFunction_PostBuilder
+top::IdeFunction ::= 'postbuilder' postbuilderName::QName ';' 
+{
+  top.funcDcls := [pair("postbuilder", postbuilderName.lookupValue.fullName)];
+  top.propDcls := [];
+
+  top.errors := postbuilderName.lookupValue.errors;
+  
+  -- [IdeMessage] ::= [IdeProperty] IO
+  local postbuilderTypeExpected :: TypeExp =
+    functionTypeExp(
+      listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeMessage", [])),
+      [listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeProperty", [])),
+        foreignTypeExp("core:IO", [])], []);
+  
+  local tc1 :: TypeCheck = check(freshenCompletely(postbuilderName.lookupValue.typerep), postbuilderTypeExpected);
+  tc1.downSubst = emptySubst();
+  tc1.finalSubst = tc1.upSubst;
+
+  top.errors <-
+    if !tc1.typeerror then []
+    else [err(postbuilderName.location, "Post-builder function should have type:\n\t" ++ tc1.rightpp 
+        ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
 }  
 
 concrete production makeIdeFunction_Porperty

@@ -111,7 +111,7 @@ function extractNonterminalsFromChildren
 {
   local accessor :: String = "_children[" ++ toString(index) ++ "]";
   
-  return if null(from) then []
+  return if null(from) then []    -- "null": make the last argument to be null. An emergent fix to location
   else case head(from) of
        | syntaxTerminal(n, _, _)   -> [accessor]
        | syntaxNonterminal(n, _)   -> ["((AdaptiveEnhancedParseTreeInnerNode)" ++ accessor ++ ").getLangSpecNode()"]

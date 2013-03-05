@@ -22,18 +22,18 @@ import edu.umn.cs.melt.ide.silver.property.Property;
 import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
 
 /**
- * A helper class used to invoke the method Analyze(NIdeProperty[]) in the language 
+ * A helper class used to invoke the method build(NIdeProperty[]) in the language 
  * implementation jar.
  * <p>
  * Used for all-in-one plugin.
  */
-public class @LANG_NAME@AnalysisInvoker {
+public class @LANG_NAME@BuildInvoker {
 	
-	private static @LANG_NAME@AnalysisInvoker invoker;
+	private static @LANG_NAME@BuildInvoker invoker;
 	
-	public static @LANG_NAME@AnalysisInvoker getInstance(){
+	public static @LANG_NAME@BuildInvoker getInstance(){
 		if(invoker==null){
-			invoker = new @LANG_NAME@AnalysisInvoker();
+			invoker = new @LANG_NAME@BuildInvoker();
 		}
 		return invoker;
 	}
@@ -46,11 +46,11 @@ public class @LANG_NAME@AnalysisInvoker {
 	 * @param handler
 	 * @return
 	 */
-	public boolean analyze(
+	public boolean build(
 		String projectPath, 
 		ConsoleLoggingStream clstream, 
 		IProgressMonitor monitor,
-		AnalysisHandler handler) {
+		MessageHandler handler) {
 
 		//Get properties
 		ProjectProperties properties = @LANG_NAME@Properties.getInstance().getByProject(projectPath);
@@ -68,24 +68,14 @@ public class @LANG_NAME@AnalysisInvoker {
 				i++;
 			}
 			
-			List<NIdeMessage> list = @PKG_NAME@.Analyze3.analyze(args);
+			List<NIdeMessage> list = @PKG_NAME@.Build.build(args);
 			return handler.handle(list);
 		} catch (Exception t) {
 			t.printStackTrace();
-			clstream.error("BUILD FAILED: failed to invoke analyzer of @LANG_NAME@.)");
+			clstream.error("BUILD FAILED: failed to invoke builder of @LANG_NAME@.)");
 			return false;
 		}
 		
-	}
-	
-	public static interface AnalysisHandler {
-		/**
-		 * Handle the message list returned by analyzer.
-		 * 
-		 * @param list the message list. 
-		 * @return true if the build is considered successful; false otherwise
-		 */
-		boolean handle(List<NIdeMessage> list);
 	}
 
 }

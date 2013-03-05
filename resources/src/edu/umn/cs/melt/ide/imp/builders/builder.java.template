@@ -2,6 +2,7 @@
  * Variables used:
  *   PKG_NAME
  *   LANG_NAME
+ *   DELEGATE_BUILDER_NAME
  */
 package @PKG_NAME@.imp.builders;
 
@@ -43,15 +44,19 @@ import edu.umn.cs.melt.ide.silver.misc.Problem;
 import silver.modification.impide.NIdeMessage;
 
 /**
- * A builder may be activated on a file containing @LANG_NAME@ code every time it
- * has changed (when "Build automatically" is on), or when the programmer
- * chooses to "Build" a project.
+ * The builder triggered by Eclipse framework.
  * <p>
- * When the method build() is invoked, it first parses all the affected source 
- * files to see if there is any syntactic errors; if not, the builder further 
- * invokes the user-defined analyzer through @LANG_NAME@AnalysisInvoker.
+ * A new build is activated on a file containing @LANG_NAME@ code every time 
+ * it's saved since last change (when "Build automatically" is on), or when 
+ * the programmer chooses to "Build" a project manually from the Eclipse menu.
+ * <p>
+ * When the method {@link #build(int, Map, IProgressMonitor)} is invoked, it 
+ * first parses all the affected source files to see if there is any 
+ * syntactic errors; if not, a delegate builder will be invoked.
+ * <p> 
+ * The build will be completed after delegate builder returns.
  */
-public class @LANG_NAME@Builder extends BuilderBase implements @LANG_NAME@AnalysisInvoker.AnalysisHandler {
+public class @LANG_NAME@Builder extends BuilderBase implements MessageHandler {
     /**
      * Extension ID of the @LANG_NAME@ builder, which matches the ID in
      * the corresponding extension definition in plugin.xml.
@@ -166,7 +171,7 @@ public class @LANG_NAME@Builder extends BuilderBase implements @LANG_NAME@Analys
     	return ConsoleLoggingStream.getStream(getConsoleStream(), getConsoleStream());
     }
     
-    private @LANG_NAME@AnalysisInvoker analysisInvoker = null;
+    private DelegateBuilder delegateBuilder = new @DELEGATE_BUILDER_NAME@();
     
     @SuppressWarnings("unchecked")
     protected IProject[] build(int kind, Map args, IProgressMonitor monitor) {
@@ -185,28 +190,17 @@ public class @LANG_NAME@Builder extends BuilderBase implements @LANG_NAME@Analys
 			return new IProject[0];
 		}
 		
-		if(analysisInvoker==null){
-			analysisInvoker = @LANG_NAME@AnalysisInvoker.getInstance();
-		}
-		
-		//Build certain grammar from the given grammar list
-		buildSuccessful = //buildGrammar(project, projectPath, grammars, isQuickBuild, monitor);
-			analysisInvoker.analyze(
-		    		projectPath, 
-		    		getConsoleLoggingStream(),
-		    		monitor,
-		    		@LANG_NAME@Builder.this);
-
-		//Cancel the build if compilation ended up failed
-		//(this can stop ant-build from proceeding)
-		if(!buildSuccessful){
-			monitor.setCanceled(true);
-			getConsoleLoggingStream().error("Build failed.");
-		}
-		
-        return new IProject[0];
+		return delegateBuilder.build(
+			this, getConsoleLoggingStream(), projectPath, kind, args, monitor);
     }
  
+    /**
+     * Parse all the affected files again before build.
+     * 
+     * @param project
+     * @param monitor
+     * @return
+     */
 	private boolean parseAll(IProject project, final IProgressMonitor monitor) {
 		PROJECT_PARSER.reset(monitor);
 		
@@ -307,7 +301,7 @@ public class @LANG_NAME@Builder extends BuilderBase implements @LANG_NAME@Analys
     }
 	
 	/**
-	 * Handle the message list returned by @LANG_NAME@AnalysisInvoker.
+	 * Handle the message list returned by @LANG_NAME@BuildInvoker.
 	 */
 	@Override
 	public boolean handle(List<NIdeMessage> list) {
@@ -369,7 +363,7 @@ public class @LANG_NAME@Builder extends BuilderBase implements @LANG_NAME@Analys
     
     	core.NLocation loc = (core.NLocation) ideMsgDecNode.synthesized(
         	silver.modification.impide.Init.
-        	silver_definition_env_location__ON__silver_modification_impide_IdeMessage);
+        	silver_definition_core_loc__ON__silver_modification_impide_IdeMessage);
     	  	
     	common.DecoratedNode locDecNode = loc.decorate(common.TopNode.singleton, (common.Lazy[])null);
     	
