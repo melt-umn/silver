@@ -1,0 +1,49 @@
+/*
+ * Variables used:
+ *   PKG_NAME
+ *   LANG_NAME
+ */
+package @PKG_NAME@.imp.builders;
+
+import java.util.Map;
+
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.IProgressMonitor;
+
+import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
+
+/**
+ * A two-stage delegate builder for @LANG_NAME@.
+ * <p>
+ * A new build is activated on a file containing @LANG_NAME@ code every time 
+ * it's saved since last change (when "Build automatically" is on), or when 
+ * the programmer chooses to "Build" a project manually from the Eclipse menu.
+ * <p>
+ * When the method {@link @LANG_NAME@Builder#build(int, Map, IProgressMonitor)} is 
+ * invoked, it first parses all the affected source files to see if there is any 
+ * syntactic errors; if not, this builder will be invoked.
+ * <p>
+ * This builder will first calls build() in @LANG_NAME@BuildInvoker, which 
+ * returns a message list; if no error is present in the list, postbuild() in
+ * @LANG_NAME@PostBuildInvoker will be invoked in a background thread.
+ * <p>
+ * The build will be completed after @LANG_NAME@PostBuildInvoker returns. If 
+ * user intends to initiate another build when current build is underway (by 
+ * editing and saving a file, for example), the new build will not be triggered 
+ * until the completion of the active one.
+ */
+public class TwoStageBuilder implements DelegateBuilder {
+    
+    private @LANG_NAME@BuildInvoker buildInvoker = null;
+
+    private @LANG_NAME@PostBuildInvoker postbuildInvoker = null;
+
+	public IProject[] build(
+		@LANG_NAME@Builder builder, 
+		ConsoleLoggingStream cls,
+		String projectPath,
+		int kind, Map args, IProgressMonitor monitor) {
+		
+        return new IProject[0];
+	}
+}

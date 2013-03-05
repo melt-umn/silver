@@ -1,0 +1,21 @@
+/*
+ * Variables used:
+ *   PKG_NAME
+ *   LANG_NAME
+ */
+package @PKG_NAME@.imp.builders;
+
+import java.util.List;
+import silver.modification.impide.NIdeMessage;
+
+public interface MessageHandler {
+
+	/**
+	 * Handle an IDE message list.
+	 * 
+	 * @param list the message list. 
+	 * @return true if the handling is considered successful; false otherwise
+	 */
+	boolean handle(List<NIdeMessage> list);
+
+}

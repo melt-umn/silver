@@ -23,18 +23,18 @@ import edu.umn.cs.melt.ide.silver.env.SilverEnv;
 import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
 
 /**
- * A helper class used to invoke the method Analyze(NIdeProperty[]) in the language 
+ * A helper class used to invoke the method build(NIdeProperty[]) in the language 
  * implementation jar.
  * <p>
  * Used for all-in-one plugin.
  */
-public class SILVERAnalysisInvoker {
+public class SILVERBuildInvoker {
 	
-	private static SILVERAnalysisInvoker invoker;
+	private static SILVERBuildInvoker invoker;
 	
-	public static SILVERAnalysisInvoker getInstance(){
+	public static SILVERBuildInvoker getInstance(){
 		if(invoker==null){
-			invoker = new SILVERAnalysisInvoker();
+			invoker = new SILVERBuildInvoker();
 		}
 		
 		common.Util.environment.put("SILVER_HOME", SilverEnv.getSilverHome().getAbsolutePath());
@@ -50,15 +50,15 @@ public class SILVERAnalysisInvoker {
 	 * @param handler
 	 * @return
 	 */
-	public boolean analyze(
+	public boolean build(
 		String projectPath, 
 		ConsoleLoggingStream clstream, 
 		IProgressMonitor monitor,
-		AnalysisHandler handler) {
+		MessageHandler handler) {
 
 		//Get properties
 		ProjectProperties properties = SILVERProperties.getInstance().getByProject(projectPath);
-		
+
 		try {
 			//Extract properties			
 			Set<Entry<String, Property>> set = properties.getAll();
@@ -72,24 +72,14 @@ public class SILVERAnalysisInvoker {
 				i++;
 			}
 			
-			List<NIdeMessage> list = silver.composed.idetest.Analyze3.analyze(args);
+			List<NIdeMessage> list = silver.composed.idetest.Build.build(args);
 			return handler.handle(list);
 		} catch (Exception t) {
 			t.printStackTrace();
-			clstream.error("BUILD FAILED: failed to invoke analyzer of SILVER.)");
+			clstream.error("BUILD FAILED: failed to invoke builder of SILVER.)");
 			return false;
 		}
 		
-	}
-	
-	public static interface AnalysisHandler {
-		/**
-		 * Handle the message list returned by analyzer.
-		 * 
-		 * @param list the message list. 
-		 * @return true if the build is considered successful; false otherwise
-		 */
-		boolean handle(List<NIdeMessage> list);
 	}
 
 }

@@ -59,15 +59,21 @@ IOVal<Integer> ::= args::[String] ioin::IO
   return cmdLineRun(args, svParse, sviParse, ioin);
 }
 
---- ... we're adding an ide declaration here
-
+-- IDE declaration block
 temp_imp_ide_dcl svParse ".sv" { 
-  analyzer getErrors;--a function whose signature must be "[IdeMessage] ::= args::[IdeProperty] i::IO"
+  builder analyze;          --a function whose signature must be "[IdeMessage] ::= args::[IdeProperty] i::IO"
+  --postbuilder translate;    --a function whose signature must be "[IdeMessage] ::= args::[IdeProperty] i::IO"
   property grammar_to_compile string;
   property grammar_to_include string;
 };
 
-function getErrors
+function translate
+[IdeMessage] ::= args::[IdeProperty] i::IO
+{
+  return [];
+}
+
+function analyze
 [IdeMessage] ::= args::[IdeProperty] i::IO
 {
 

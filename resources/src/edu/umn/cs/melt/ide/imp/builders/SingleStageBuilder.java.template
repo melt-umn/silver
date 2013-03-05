@@ -1,0 +1,60 @@
+/*
+ * Variables used:
+ *   PKG_NAME
+ *   LANG_NAME
+ */
+package @PKG_NAME@.imp.builders;
+
+import java.util.Map;
+
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.IProgressMonitor;
+
+import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
+
+/**
+ * A single-stage delegate builder for @LANG_NAME@.
+ * <p>
+ * A new build is activated on a file containing @LANG_NAME@ code every time 
+ * it's saved since last change (when "Build automatically" is on), or when 
+ * the programmer chooses to "Build" a project manually from the Eclipse menu.
+ * <p>
+ * When the method {@link @LANG_NAME@Builder#build(int, Map, IProgressMonitor)} is 
+ * invoked, it first parses all the affected source files to see if there is any 
+ * syntactic errors; if not, this builder will be invoked.
+ * <p>
+ * The build will be completed after @LANG_NAME@BuildInvoker returns.
+ */
+public class SingleStageBuilder implements DelegateBuilder {
+
+    private @LANG_NAME@BuildInvoker buildInvoker = null;
+    
+	public IProject[] build(
+		@LANG_NAME@Builder builder, 
+		ConsoleLoggingStream cls,
+		String projectPath,
+		int kind, Map args, IProgressMonitor monitor) {
+
+    	boolean buildSuccessful = true;
+		
+		if(buildInvoker==null){
+			buildInvoker = @LANG_NAME@BuildInvoker.getInstance();
+		}
+		
+		//Build certain grammar from the given grammar list
+		buildSuccessful = //buildGrammar(project, projectPath, grammars, isQuickBuild, monitor);
+			buildInvoker.build(
+		    		projectPath, 
+		    		cls,
+		    		monitor,
+		    		builder);
+
+		//Cancel the build if compilation ended up failed
+		if(!buildSuccessful){
+			monitor.setCanceled(true);
+			cls.error("Build failed.");
+		}
+		
+        return new IProject[0];
+	}
+}
