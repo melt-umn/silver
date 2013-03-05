@@ -63,9 +63,10 @@ Pair<Boolean
 
   -- TODO it'd be nice if we didn't need to look this up every time we're called.
   -- IN PARTICULAR since it's the only use of realEnv here!
-  local attrs :: Pair<[DclInfo] [DclInfo]> = partition(isOccursSynthesized(_, realEnv), getAttrsOn(graph.lhsNt, realEnv));
-  local syns :: [String] = map((.attrOccurring), attrs.fst);
-  --local inhs :: [String] = map((.attrOccurring), attrs.snd); -- no longer used
+  local syns :: [String] =
+    map((.attrOccurring),
+      filter(isOccursSynthesized(_, realEnv),
+        getAttrsOn(graph.lhsNt, realEnv)));
   
   local currentFlowType :: EnvTree<String> =
     directBuildTree(searchEnvTree(graph.lhsNt, ntEnv));
