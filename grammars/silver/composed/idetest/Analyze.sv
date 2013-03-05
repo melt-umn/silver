@@ -70,7 +70,7 @@ function rewriteMessages
          then []
          --else [declaredName ++ "#" ++ head(es).pp] ++ rewriteMessages(declaredName, tail(es));
          --[makeIdeMessage(declaredName, head(es).location, head(es).severity, head(es).msg)] ++ rewriteMessages(declaredName, tail(es));
-         else [makeIdeMessage(path, head(es).location, head(es).severity, head(es).msg)] ++ rewriteMessages(path, tail(es));
+         else [makeIdeMessage(path, head(es).loc, head(es).severity, head(es).msg)] ++ rewriteMessages(path, tail(es));
 {--
              let 
                   head :: Message = head(es)
