@@ -4,7 +4,25 @@ grammar silver:langutil;
 {--
  - A Message represents a compiler output message (error/warning)
  -}
-nonterminal Message with unparse, location;
+nonterminal Message with message, where, output, severity;
+
+{--
+ - The location of an error message.
+ -}
+synthesized attribute where :: Location;
+{--
+ - The contents of the error message.
+ -}
+synthesized attribute message :: String;
+{--
+ - A recommended way to turn this message into console output.
+ -}
+synthesized attribute output :: String;
+{--
+ - A convention for determining message severity.
+ - Lower is more severe.
+ -}
+synthesized attribute severity :: Integer;
 
 {--
  - A error that should halt compilation before translation proceeds on the 
@@ -13,8 +31,10 @@ nonterminal Message with unparse, location;
 abstract production err
 top::Message ::= l::Location m::String
 {
-  top.unparse = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": error: " ++ m;
-  top.location = l;
+  top.where = l;
+  top.message = m;
+  top.output = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": error: " ++ m;
+  top.severity = 0;
 }
 
 {--
@@ -24,8 +44,10 @@ top::Message ::= l::Location m::String
 abstract production wrn
 top::Message ::= l::Location m::String
 {
-  top.unparse = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": warning: " ++ m;
-  top.location = l;
+  top.where = l;
+  top.message = m;
+  top.output = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": warning: " ++ m;
+  top.severity = 0;
 }
 
 -- Users can extend Message with more messages (info, dbg) as they desire
@@ -40,7 +62,6 @@ top::Message ::= l::Location m::String
 function containsErrors
 Boolean ::= l::[Message] wError::Boolean
 {
--- someday we can just or(map(isError, l)), but today is not yet that day
   return case l of
          | [] -> false
          | err(_,_) :: _ -> true
@@ -52,16 +73,16 @@ Boolean ::= l::[Message] wError::Boolean
 {--
  - Returns a list of strings, ready to be printed to the command line.
  -}
-function ppMessages
-[String] ::= msgs::[Message]
+function messagesToString
+String ::= msgs::[Message]
 {
-  return map((.unparse), msgs);
+  return implode("\n", map((.output), sortBy(messageLte, msgs)));
 }
 
 -- for use with sortBy
 function messageLte
 Boolean ::= m1::Message m2::Message
 {
-  return locationLte(m1.location, m2.location);
+  return locationLte(m1.where, m2.where);
 }
 

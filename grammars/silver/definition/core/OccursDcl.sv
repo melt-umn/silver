@@ -11,7 +11,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
   -- environment mechanism that we're in a different namespace than
   -- the types/attributes.
   top.defs = [
-    oDef((if at.lookupAttribute.dcl.isAnnotation then annoInstanceDcl else occursDcl)(
+    oDef((if !null(at.lookupAttribute.errors) || !at.lookupAttribute.dcl.isAnnotation then occursDcl else annoInstanceDcl)(
       top.grammarName, at.location,
       nt.lookupType.fullName, at.lookupAttribute.fullName,
       protontty, protoatty))];
@@ -91,7 +91,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
     else [];
                 
   top.errors <-
-    if !null(nt.lookupType.errors) || !at.lookupAttribute.dcl.isAnnotation || 
+    if !null(nt.lookupType.errors ++ at.lookupType.errors) || !at.lookupAttribute.dcl.isAnnotation || 
        contains(top.grammarName, computeOptionalDeps([nt.lookupType.dcl.sourceGrammar], top.compiledGrammars)) then []
     else [err(top.location, "Annotations for a nonterminal must be in a module exported by the nonterminal's declaring grammar.")];
 }

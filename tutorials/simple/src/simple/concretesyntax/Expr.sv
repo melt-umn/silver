@@ -3,7 +3,7 @@ grammar simple:concretesyntax;
 {--
  - An expression, concrete syntax.
  -}
-closed nonterminal Expr with unparse, silver:langutil:location:location, ast<ast:Expr>;
+closed nonterminal Expr with unparse, location, ast<ast:Expr>;
 
 {- The productions given below for binary operators are ambiguous but
    traditional operator precedence and associativity specifications
@@ -89,14 +89,14 @@ concrete productions e::Expr
 -- Literals
 
  | l::IntegerLiteral  { e.unparse = l.lexeme; 
-                             e.ast = ast:intLit(l.location, l.lexeme); }
+                             e.ast = ast:intLit(l.lexeme); }
  | l::FloatLiteral    { e.unparse = l.lexeme;
-                             e.ast = ast:floatLit(l.location, l.lexeme); }
+                             e.ast = ast:floatLit(l.lexeme); }
 
  | l::BooleanLiteral  { e.unparse = l.lexeme;
-                             e.ast = ast:boolLit(l.location, l.lexeme); }
+                             e.ast = ast:boolLit(l.lexeme); }
 
  | l::StringLiteral   { e.unparse = l.lexeme;
-                             e.ast = ast:stringLit(l.location, l.lexeme); }
+                             e.ast = ast:stringLit(l.lexeme); }
 
 

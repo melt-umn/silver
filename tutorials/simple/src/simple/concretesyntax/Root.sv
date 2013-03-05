@@ -9,13 +9,12 @@ exports simple:terminals;
  -}
 imports silver:langutil;
 imports simple:abstractsyntax as ast;
-imports silver:langutil:location;
 
 
 {--
  - The concrete syntax represent a complete Simple program.
  -}
-closed nonterminal Root with unparse, silver:langutil:location:location, ast<ast:Root>;
+closed nonterminal Root with unparse, location, ast<ast:Root>;
 
 {- The use of ast<...> above is a "parameterized attribute"
  - The 'ast' attribute is declared in silver:langutil.

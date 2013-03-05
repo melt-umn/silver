@@ -23,25 +23,25 @@ attribute type occurs on Expr;
    attribute directly.  
 -}
 aspect production intLit
-e::Expr ::= l::Location s::String
+e::Expr ::= s::String
 {
   e.type = integerType();
 }
 
 aspect production floatLit
-e::Expr ::= l::Location s::String
+e::Expr ::= s::String
 {
   e.type = floatType();
 }
 
 aspect production boolLit
-e::Expr ::= l::Location s::String
+e::Expr ::= s::String
 {
   e.type = booleanType();
 }
 
 aspect production stringLit
-e::Expr ::= l::Location s::String
+e::Expr ::= s::String
 {
   e.type = stringType();
 }

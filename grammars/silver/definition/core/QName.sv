@@ -154,9 +154,9 @@ top::QNameAttrOccur ::= at::QName
   
   top.typerep = if null(top.errors) then determineAttributeType(head(dclsNarrowed), top.attrFor) else errorType();
   top.dcl = if null(top.errors) then head(dclsNarrowed) else
-    error("INTERNAL ERROR: Accessing dcl of occurrence " ++ at.name ++ " at " ++ top.location.unparse);
+    error("INTERNAL ERROR: Accessing dcl of occurrence " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
   top.attrDcl = if length(attrsNarrowed) == 1 then head(attrsNarrowed) else
-    error("INTERNAL ERROR: Accessing dcl of attribute " ++ at.name ++ " at " ++ top.location.unparse);
+    error("INTERNAL ERROR: Accessing dcl of attribute " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
 }
 
 function zipFilterDcls
