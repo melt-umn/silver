@@ -129,38 +129,51 @@ Boolean ::= sigName::String  e::Decorated Env
  - The reason this exists is to handle 'taking a reference'
  - actions needing to ensure equations were actually provided for
  - things we reference.
+ -
+ - @param v  A value we need an equation for.
+ - @param l  Where to report an error, if it's missing
+ - @param prodName  The full name of the production we're in
+ - @param prodNt  The nonterminal is production belongs to
+ - @param flowEnv  The local flow environment
+ - @param realEnv  The local real environment
+ - @returns  Errors for missing equations
  -}
 function checkEqDeps
 [Message] ::= v::FlowVertex  l::Location  prodName::String  prodNt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
 {
+  -- We focus only on things that are "our problem."  Within a production,
+  -- we can only check: syn on LHS, inhs on RHS and locals.
+  -- LHS is someone else's job.
+  -- Inhs on Decorated types are someone else's job.
+  -- Inhs on forward is automatic.
+  
   return case v of 
-  | lhsInhVertex(_) -> [] -- Do nothing. This just affects flow types.
-  | lhsSynVertex(attrName) ->
-      if !null(lookupSyn(prodName, attrName, flowEnv)) -- no equation
-      || !null(lookupDef(prodNt, attrName, flowEnv)) -- no default
-      || !null(lookupFwd(prodName, flowEnv)) -- no forward
-      then []
-      else [wrn(l, "Equation has transitive dependency on this production's synthesized equation for " ++ attrName ++ " but this equation appears to be missing.")]
+  | lhsInhVertex(_) -> [] -- not our problem
+  | lhsSynVertex(attrName) -> [] -- actually, this should be an error elsewhere, so don't sweat it here
   | rhsVertex(sigName, attrName) ->
       if isInherited(attrName, realEnv)
       then if !null(lookupInh(prodName, sigName, attrName, flowEnv)) -- no equation
-           || !ignoreIfAutoCopyOnLhs(prodNt, realEnv, attrName) -- no autocopy
-           || !sigNotAReference(sigName, realEnv) -- not Decorated type
+           || !ignoreIfAutoCopyOnLhs(prodNt, realEnv, attrName) -- not autocopy (and on lhs)
+           || !sigNotAReference(sigName, realEnv) -- not Decorated type (which wouldn't be our problem)
            then []
            else [wrn(l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
-      else [] -- Do nothing. This just affects inh dependencies on this rhs via flow types.
-  | localEqVertex(fName) -> [] -- I'm just going to assume we give local equations. Technically there's something to check here but eh
+      else [] -- not our problem
+  | localEqVertex(fName) -> [] -- Technically there's something to check here but let's ignore the brokenness of local declarations
   | localVertex(fName, attrName) -> 
       if isInherited(attrName, realEnv)
       then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv)) -- no equation
-           || fName == "forward" -- not forward
-           || !sigNotAReference(fName, realEnv) -- not Decorated type
+           || fName == "forward" -- not forward (automatic)
+           || !sigNotAReference(fName, realEnv) -- not Decorated type (which wouldn't be our problem)
            then []
            else [wrn(l, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
-      else [] -- Do nothing. This again just affects inh dependencies via flow types.
+      else [] -- not our problem
   end;
 }
-
+function checkAllEqDeps
+[Message] ::= v::[FlowVertex]  l::Location  prodName::String  prodNt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+{
+  return foldr(append, [], map(checkEqDeps(_, l, prodName, prodNt, flowEnv, realEnv), v));
+}
 
 
 --------------------------------------------------------------------------------
@@ -176,9 +189,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
-  local immediateDeps :: [FlowVertex] = e.flowDeps;
-  local productionFlowGraph :: ProductionGraph = findProduction(top.signature.fullName, myGraphs);
-  local transitiveDeps :: [FlowVertex] = expandGraph(immediateDeps, productionFlowGraph);
+  local transitiveDeps :: [FlowVertex] =
+    expandGraph(e.flowDeps, findProduction(top.signature.fullName, myGraphs));
   
   local lhsInhDeps :: [String] = foldr(collectInhs, [], transitiveDeps);
   local lhsInhExceedsFlowType :: [String] = rem(lhsInhDeps, inhDepsForSyn(attr.attrDcl.fullName, top.signature.outputElement.typerep.typeName, myFlow));
@@ -186,15 +198,111 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors <-
     if null(dl.errors ++ attr.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
-    then foldr(append, [], map(checkEqDeps(_, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env), transitiveDeps)) ++
-         if null(lhsInhExceedsFlowType) then []
-         else [wrn(top.location, "Synthesized equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env) ++
+      if null(lhsInhExceedsFlowType) then []
+      else [wrn(top.location, "Synthesized equation " ++ attr.pp ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
 }
 
--- TODO: We need to add checks for 'forwarding with' so that it enforces the
--- "fwd flow type + this attribute" deps ONLY. Or rather... raises them as fwd deps?
--- Figure that out, too.
+aspect production inheritedAttributeDef
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+{
+  -- TODO oh no again!
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local transitiveDeps :: [FlowVertex] = 
+    if top.blockContext.hasFullSignature
+    then expandGraph(e.flowDeps, findProduction(top.signature.fullName, myGraphs))
+    else e.flowDeps; -- patch for functions lacking a graph
+  
+  -- check transitive deps only. Nothing to be done for flow types
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh)
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env)
+    else [];
+}
+
+----- WARNING TODO BEGIN MASSIVE COPY & PASTE SESSION
+aspect production synBaseColAttributeDef
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+{
+  -- TODO oh no again!
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local transitiveDeps :: [FlowVertex] =
+    expandGraph(e.flowDeps, findProduction(top.signature.fullName, myGraphs));
+  
+  local lhsInhDeps :: [String] = foldr(collectInhs, [], transitiveDeps);
+  local lhsInhExceedsFlowType :: [String] = rem(lhsInhDeps, inhDepsForSyn(attr.attrDcl.fullName, top.signature.outputElement.typerep.typeName, myFlow));
+
+  top.errors <-
+    if null(dl.errors ++ attr.errors)
+    && (top.config.warnAll || top.config.warnMissingInh)
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env) ++
+      if null(lhsInhExceedsFlowType) then []
+      else [wrn(top.location, "Synthesized equation " ++ attr.pp ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
+    else [];
+}
+aspect production synAppendColAttributeDef
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+{
+  -- TODO oh no again!
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local transitiveDeps :: [FlowVertex] =
+    expandGraph(e.flowDeps, findProduction(top.signature.fullName, myGraphs));
+  
+  local lhsInhDeps :: [String] = foldr(collectInhs, [], transitiveDeps);
+  local lhsInhExceedsFlowType :: [String] = rem(lhsInhDeps, inhDepsForSyn(attr.attrDcl.fullName, top.signature.outputElement.typerep.typeName, myFlow));
+
+  top.errors <-
+    if null(dl.errors ++ attr.errors)
+    && (top.config.warnAll || top.config.warnMissingInh)
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env) ++
+      if null(lhsInhExceedsFlowType) then []
+      else [wrn(top.location, "Synthesized equation " ++ attr.pp ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
+    else [];
+}
+aspect production inhBaseColAttributeDef
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+{
+  -- TODO oh no again!
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local transitiveDeps :: [FlowVertex] = 
+    if top.blockContext.hasFullSignature
+    then expandGraph(e.flowDeps, findProduction(top.signature.fullName, myGraphs))
+    else e.flowDeps; -- patch for functions lacking a graph
+  
+  -- check transitive deps only. Nothing to be done for flow types
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh)
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env)
+    else [];
+}
+aspect production inhAppendColAttributeDef
+top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+{
+  -- TODO oh no again!
+  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local transitiveDeps :: [FlowVertex] = 
+    if top.blockContext.hasFullSignature
+    then expandGraph(e.flowDeps, findProduction(top.signature.fullName, myGraphs))
+    else e.flowDeps; -- patch for functions lacking a graph
+  
+  -- check transitive deps only. Nothing to be done for flow types
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh)
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env)
+    else [];
+}
+------ END AWFUL COPY & PASTE SESSION
 
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
@@ -203,9 +311,8 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
-  local immediateDeps :: [FlowVertex] = e.flowDeps;
   local productionFlowGraph :: ProductionGraph = findProduction(top.signature.fullName, myGraphs);
-  local transitiveDeps :: [FlowVertex] = expandGraph(immediateDeps, productionFlowGraph);
+  local transitiveDeps :: [FlowVertex] = expandGraph(e.flowDeps, productionFlowGraph);
   
   local lhsInhDeps :: [String] = foldr(collectInhs, [], transitiveDeps);
   local lhsInhExceedsFlowType :: [String] = rem(lhsInhDeps, inhDepsForSyn("forward", top.signature.outputElement.typerep.typeName, myFlow));
@@ -217,26 +324,12 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
          else [wrn(top.location, "Forward equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
 }
-
-aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+aspect production forwardInh
+top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
-  -- TODO oh no again!
-  local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
-  local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
-
-  local immediateDeps :: [FlowVertex] = e.flowDeps;
-  local productionFlowGraph :: ProductionGraph = findProduction(top.signature.fullName, myGraphs);
-  local transitiveDeps :: [FlowVertex] = 
-    if top.blockContext.hasFullSignature
-    then expandGraph(immediateDeps, productionFlowGraph)
-    else immediateDeps; -- patch for functions lacking a graph
-  
-  -- check transitive deps only. Nothing to be done for flow types
-  top.errors <-
-    if (top.config.warnAll || top.config.warnMissingInh)
-    then foldr(append, [], map(checkEqDeps(_, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env), transitiveDeps))
-    else [];
+-- TODO: We need to add checks for 'forwarding with' so that it enforces the
+-- "fwd flow type + this attribute" deps ONLY. Or rather... raises them as fwd deps?
+-- Figure that out, too.
 }
 
 aspect production localValueDef
@@ -246,18 +339,41 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
-  local immediateDeps :: [FlowVertex] = e.flowDeps;
   local productionFlowGraph :: ProductionGraph = findProduction(top.signature.fullName, myGraphs);
   local transitiveDeps :: [FlowVertex] = 
     if top.blockContext.hasFullSignature
-    then expandGraph(immediateDeps, productionFlowGraph)
-    else immediateDeps; -- patch for functions lacking a graph
+    then expandGraph(e.flowDeps, productionFlowGraph)
+    else e.flowDeps; -- patch for functions lacking a graph
   
   -- check transitive deps only. No worries about flow types.
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh)
     then foldr(append, [], map(checkEqDeps(_, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env), transitiveDeps))
     else [];
+}
+
+aspect production returnDef
+top::ProductionStmt ::= 'return' e::Expr ';'
+{
+  -- TODO: lacking a graph, we're going to just do this on immediate deps directly.
+  -- This still captures the really necessary case of 'take reference' equations needed
+  -- But it's maybe less safe. At the very least, there should be a comment here
+  -- explaining why more is unnecessary.
+
+  -- Note: "::nolhs" is the nonterminal name of the lhs. This *should* only be used by
+  -- checkEqDeps for default equations and autocopy info, so giving a bogus value here
+  -- should be correct as those are not relevant to functions.
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh)
+    then foldr(append, [], map(checkEqDeps(_, top.location, top.signature.fullName, "::nolhs", top.flowEnv, top.env), e.flowDeps))
+    else [];
+-- TODO: bug: we don't have graphs for functions, so we have a problem with the above
+-- implementation needing those graphs.
+-- However, it's possible those graphs aren't necessary? Or perhaps not for functions?
+-- Thought needed. Perhaps a comment explaining why we need the graph propagation
+-- (Currently, I think we need to checkEqDeps the immediateDeps to take care of
+--  references and such, and the flow through the graph in order to check flow types,
+--  but nothing else. I'm not sure that's fully true, though!)
 }
 
 aspect production appendCollectionValueDef
@@ -267,18 +383,17 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   local myFlow :: EnvTree<Pair<String String>> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: [ProductionGraph] = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
-  local immediateDeps :: [FlowVertex] = e.flowDeps;
   local productionFlowGraph :: ProductionGraph = findProduction(top.signature.fullName, myGraphs);
   local transitiveDeps :: [FlowVertex] = 
     if top.blockContext.hasFullSignature
-    then expandGraph(immediateDeps, productionFlowGraph)
-    else immediateDeps; -- patch for functions lacking a graph
+    then expandGraph(e.flowDeps, productionFlowGraph)
+    else e.flowDeps; -- patch for functions lacking a graph
   
   -- TODO: BUG: deal with functions!!
   local originalEqDeps :: [FlowVertex] = 
     if top.blockContext.hasFullSignature
     then productionFlowGraph.edgeMap(localEqVertex(val.lookupValue.fullName))
-    else -- patch for functino laking graph
+    else -- patch for function lacking graph
       case lookupLocalEq(top.signature.fullName, val.lookupValue.fullName, top.flowEnv) of
       | [] -> [] -- error condition, no equations
       | localEq(_,_,_,ddeps) :: _ -> ddeps
@@ -301,30 +416,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
     else [];
 }
 
-aspect production returnDef
-top::ProductionStmt ::= 'return' e::Expr ';'
-{
-  -- TODO: lacking a graph, we're going to just do this on immediate deps directly.
-  -- This still captures the really necessary case of 'take reference' equations needed
-  -- But it's maybe less safe. At the very least, there should be a comment here
-  -- explaining why more is unnecessary.
 
-  -- Note: "::nolhs" is the nonterminal name of the lhs. This *should* only be used by
-  -- checkEqDeps for default equations and autocopy info, so giving a bogus value here
-  -- should be correct as those are not relevant to functions.
-  top.errors <-
-    if (top.config.warnAll || top.config.warnMissingInh)
-    then foldr(append, [], map(checkEqDeps(_, top.location, top.signature.fullName, "::nolhs", top.flowEnv, top.env), e.flowDeps))
-    else [];
-}
-
--- TODO: bug: we don't have graphs for functions, so we have a problem with the above
--- implementation needing those graphs.
--- However, it's possible those graphs aren't necessary? Or perhaps not for functions?
--- Thought needed. Perhaps a comment explaining why we need the graph propagation
--- (Currently, I think we need to checkEqDeps the immediateDeps to take care of
---  references and such, and the flow through the graph in order to check flow types,
---  but nothing else. I'm not sure that's fully true, though!)
 
 --------------------------------------------------------------------------------
 

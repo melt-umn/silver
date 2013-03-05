@@ -8,6 +8,7 @@ import silver:util only contains;
 import silver:driver:util only computeOptionalDeps, RootSpec;
 
 attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
+attribute flowEnv occurs on DefLHS;
 
 {- A short note on how flowDefs are generated:
 
@@ -71,7 +72,13 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   local mayAffectFlowType :: Boolean =
     contains(top.grammarName, computeOptionalDeps([ntDefGram], top.compiledGrammars));
   
-  top.flowDefs = [fwdEq(top.signature.fullName, e.flowDeps, mayAffectFlowType),
+  top.flowDefs = [
+    fwdEq(top.signature.fullName, e.flowDeps, mayAffectFlowType),
+    -- These are attributes that we know, here, occurs on this nonterminal.
+    -- The point is, these are the implicit equations we KNOW get generated, so
+    -- we regard these as non-suspect. That is, we implicitly insert these copy
+    -- equations here.
+    -- Currently, we don't bother to filter this to just synthesized, but we should?
     implicitFwdAffects(top.signature.fullName, map((.attrOccurring),
       filter(isAffectable(top.grammarName, ntDefGram, top.compiledGrammars, _),
         getAttrsOn(top.signature.outputElement.typerep.typeName, top.env))))];

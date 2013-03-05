@@ -109,11 +109,11 @@ ProductionGraph ::= prod::String  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   -- The LHS nonterminal full name
   local nt :: NtName = dcl.namedSignature.outputElement.typerep.typeName;
   -- All attributes occurrences
-  local attrs :: Pair<[DclInfo] [DclInfo]> = partition(isOccursSynthesized(_, realEnv), getAttrsOn(nt, realEnv));
+  local attrs :: [DclInfo] = getAttrsOn(nt, realEnv);
   -- Just synthesized attributes.
-  local syns :: [String] = map((.attrOccurring), attrs.fst);
+  local syns :: [String] = map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), attrs));
   -- Just inherited.
-  local inhs :: [String] = map((.attrOccurring), attrs.snd);
+  local inhs :: [String] = map((.attrOccurring), filter(isOccursInherited(_, realEnv), attrs));
   -- Autocopy.
   local autos :: [String] = filter(isAutocopy(_, realEnv), inhs);
   
@@ -163,8 +163,11 @@ function fixupAllHOAs
   | [] -> []
   | localEq(_, fN, "", deps) :: rest -> fixupAllHOAs(rest, flowEnv, realEnv)
   | localEq(_, fN, tN, deps) :: rest -> 
-      addHOASynDeps(map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), getAttrsOn(tN, realEnv))), fN) ++
-        fixupAllHOAs(rest, flowEnv, realEnv)
+      addHOASynDeps(
+        map((.attrOccurring),
+          filter(isOccursSynthesized(_, realEnv),
+            getAttrsOn(tN, realEnv))), fN) ++
+      fixupAllHOAs(rest, flowEnv, realEnv)
   | _ :: rest -> fixupAllHOAs(rest, flowEnv, realEnv)
   end;
 }

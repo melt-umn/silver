@@ -414,7 +414,16 @@ top::Expr ::= 'toString' '(' e1::Expr ')'
 aspect production newFunction
 top::Expr ::= 'new' '(' e1::Expr ')'
 {
-  top.flowDeps = e1.flowDeps;
+  -- accommodate using 'new' to undecorate children/locals/etc without penalty.
+  -- If we see it's a direct new of one of those, suppress the flow deps.
+  top.flowDeps =
+    case (case e1 of exprRef(e2) -> e2 | _ -> e1 end) of -- TODO: Here we have a dumb hack to deal with exprRef!
+    | childReference(_) -> []
+    | lhsReference(_) -> []
+    | localReference(_) -> []
+    | forwardReference(_) -> []
+    | _ -> e1.flowDeps
+    end;
 }
 
 aspect production terminalConstructor
