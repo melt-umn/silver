@@ -41,15 +41,10 @@ public class SingleStageBuilder implements DelegateBuilder {
 			buildInvoker = @LANG_NAME@BuildInvoker.getInstance();
 		}
 		
-		//Build certain grammar from the given grammar list
-		buildSuccessful = //buildGrammar(project, projectPath, grammars, isQuickBuild, monitor);
-			buildInvoker.build(
-		    		projectPath, 
-		    		cls,
-		    		monitor,
-		    		builder);
+		//Invoke Build
+		buildSuccessful = buildInvoker.build(projectPath, cls, monitor, builder);
 
-		//Cancel the build if compilation ended up failed
+		//Cancel the build if failed
 		if(!buildSuccessful){
 			monitor.setCanceled(true);
 			cls.error("Build failed.");
