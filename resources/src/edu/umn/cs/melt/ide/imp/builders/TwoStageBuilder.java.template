@@ -44,6 +44,115 @@ public class TwoStageBuilder implements DelegateBuilder {
 		String projectPath,
 		int kind, Map args, IProgressMonitor monitor) {
 		
+    	boolean buildSuccessful = false;
+    	//monitor.beginTask("Building @LANG_NAME@ project...", 2);
+		
+		if(buildInvoker==null){
+			buildInvoker = @LANG_NAME@BuildInvoker.getInstance();
+		}
+		
+		//Invoke Build
+		buildSuccessful = buildInvoker.build(projectPath, cls, monitor, builder);
+
+		//Cancel the build if stage one failed
+		if(!buildSuccessful){
+			monitor.setCanceled(true);
+			cls.error("Build failed.");
+		} else {
+			//monitor.worked(1);
+			//Otherwise invoke Post-Build 
+			if(postbuildInvoker==null){
+				postbuildInvoker = @LANG_NAME@PostBuildInvoker.getInstance();
+			}
+			
+			if(pbiThread==null){
+				pbiThread = new PostBuildInvokerThread(cls);
+			}
+			pbiThread.setMonitor(monitor);
+			
+			new Thread(pbiThread).start();
+			
+			//monitor.worked(2);
+		}
+		
         return new IProject[0];
+	}
+	
+	private PostBuildInvokerThread pbiThread;
+	
+	private class PostBuildInvokerThread implements Runnable {
+		
+	    private boolean isBuilding = false;
+	    
+	    private boolean needRebuild = false;
+	    
+		private ConsoleLoggingStream cls;
+		
+		private IProgressMonitor monitor;
+		
+		PostBuildInvokerThread(ConsoleLoggingStream cls){
+			this.cls = cls;
+		}
+		
+		void setMonitor(IProgressMonitor monitor){
+			this.monitor = monitor;
+		}
+		
+		@Override
+		public void run() {
+			//Secure the lock
+			synchronized(TwoStageBuilder.class){
+				if(isBuilding){
+					needRebuild = true;
+					cls.info("Build deferred.");
+					monitor.setCanceled(true);
+					return;
+				} else {
+					isBuilding = true;
+					needRebuild = false;
+				}
+			}
+			
+			boolean buildSuccessful = true;
+			
+//			try {
+//				Thread.currentThread().sleep(5000);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+			
+			buildSuccessful = postbuildInvoker.postbuild(projectPath, cls, monitor, builder);
+			
+			//Failed build without retry
+			if(!buildSuccessful){
+				monitor.setCanceled(true);
+				if(!needRebuild){
+					cls.error("Build failed.");
+				}
+				//Release the lock
+				synchronized(TwoStageBuilder.class){
+					isBuilding = false;
+				}
+				return;
+			}
+
+			//A retry is needed
+			if(needRebuild){
+				//Reset the flags
+				synchronized(TwoStageBuilder.class){
+					isBuilding = false;
+					needRebuild = false;
+				}
+				//cls.info("Deferred build starts.");//debug
+				run();
+			} else {
+				//Release the lock
+				synchronized(TwoStageBuilder.class){
+					isBuilding = false;
+				}
+				//cls.info("Build done.");//debug
+			}
+			
+		}
 	}
 }
