@@ -38,6 +38,7 @@ public class SILVERBuildInvoker {
 		}
 		
 		common.Util.environment.put("SILVER_HOME", SilverEnv.getSilverHome().getAbsolutePath());
+		common.Util.environment.put("SILVER_GEN", SilverEnv.getGeneratedFolder().getAbsolutePath());
 		
 		return invoker;
 	}
@@ -73,7 +74,7 @@ public class SILVERBuildInvoker {
 			}
 			
 			List<NIdeMessage> list = silver.composed.idetest.Build.build(args);
-			return handler.handle(list);
+			return handler.handleBuild(list);
 		} catch (Exception t) {
 			t.printStackTrace();
 			clstream.error("BUILD FAILED: failed to invoke builder of SILVER.)");

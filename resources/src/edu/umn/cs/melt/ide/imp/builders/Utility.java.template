@@ -1,0 +1,68 @@
+/*
+ * Variables used:
+ *   PKG_NAME
+ */
+package @PKG_NAME@.imp.builders;
+
+import org.eclipse.core.resources.IProject;
+
+import silver.modification.impide.NIdeMessage;
+import edu.umn.cs.melt.ide.silver.misc.Problem;
+
+public class Utility {
+
+	static Problem extractProblem(IProject project, NIdeMessage ideMsg) {
+		//Extract values
+    	common.DecoratedNode ideMsgDecNode = ideMsg.decorate(common.TopNode.singleton, (common.Lazy[])null);
+    	
+    	common.StringCatter msg = (common.StringCatter) ideMsgDecNode.synthesized(
+        	silver.modification.impide.Init.
+        	silver_definition_core_msg__ON__silver_modification_impide_IdeMessage);
+    	
+    	Integer severity = (Integer) ideMsgDecNode.synthesized(
+    		silver.modification.impide.Init.
+    		silver_definition_core_severity__ON__silver_modification_impide_IdeMessage);
+    
+    	Boolean isProjMsg = (Boolean) ideMsgDecNode.synthesized(
+        		silver.modification.impide.Init.
+        		silver_modification_impide_systemLevel__ON__silver_modification_impide_IdeMessage);
+    	
+    	if(!isProjMsg){
+        	common.StringCatter resPath = (common.StringCatter) ideMsgDecNode.synthesized(
+            		silver.modification.impide.Init.
+            		silver_modification_impide_resPath__ON__silver_modification_impide_IdeMessage);
+        	
+        	core.NLocation loc = (core.NLocation) ideMsgDecNode.synthesized(
+            	silver.modification.impide.Init.
+            	silver_definition_core_loc__ON__silver_modification_impide_IdeMessage);
+        	  	
+        	common.DecoratedNode locDecNode = loc.decorate(common.TopNode.singleton, (common.Lazy[])null);
+        	
+        	common.StringCatter fileName = (common.StringCatter) locDecNode.synthesized(
+        		core.Init.core_filename__ON__core_Location);
+        	
+        	Integer lineNo = (Integer) locDecNode.synthesized(
+        		core.Init.core_line__ON__core_Location);
+        	
+        	Integer columnNo = (Integer) locDecNode.synthesized(
+    	    	core.Init.core_column__ON__core_Location);
+        	
+        	Integer startInd = (Integer) locDecNode.synthesized(
+            		core.Init.core_index__ON__core_Location);
+        
+        	Integer endInd = (Integer) locDecNode.synthesized(
+            		core.Init.core_endIndex__ON__core_Location);
+        	
+        	//Assemble a problem
+        	//IProject project, String declName, String fileName, 
+    		//int line, int column, int startInd, int endInd, int severity, String message, 
+        	return Problem.createFileProblem(
+        		project, resPath.toString(), fileName.toString(), 
+        		lineNo, columnNo, startInd, endInd, severity, msg.toString());
+    	} else {
+        	return Problem.createProjectProblem(severity, msg.toString());
+    	}
+    	
+    }
+	
+}

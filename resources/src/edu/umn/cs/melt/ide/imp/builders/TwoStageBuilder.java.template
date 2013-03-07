@@ -68,7 +68,11 @@ public class TwoStageBuilder implements DelegateBuilder {
 			if(pbiThread==null){
 				pbiThread = new PostBuildInvokerThread(cls);
 			}
+            //Update arguments. These will be used in the following build, 
+            //either deferred or not.
 			pbiThread.setMonitor(monitor);
+			pbiThread.setProjectPath(projectPath);
+			pbiThread.setBuilder(builder);
 			
 			new Thread(pbiThread).start();
 			
@@ -89,6 +93,10 @@ public class TwoStageBuilder implements DelegateBuilder {
 		private ConsoleLoggingStream cls;
 		
 		private IProgressMonitor monitor;
+
+		private String projectPath;
+		
+		private @LANG_NAME@Builder builder;
 		
 		PostBuildInvokerThread(ConsoleLoggingStream cls){
 			this.cls = cls;
@@ -96,6 +104,14 @@ public class TwoStageBuilder implements DelegateBuilder {
 		
 		void setMonitor(IProgressMonitor monitor){
 			this.monitor = monitor;
+		}
+
+		void setProjectPath(String projectPath){
+			this.projectPath = projectPath;
+		}
+		
+		void setBuilder(@LANG_NAME@Builder builder){
+			this.builder = builder;
 		}
 		
 		@Override
