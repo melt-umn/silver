@@ -104,7 +104,7 @@ function getArgString
 {
   return
     if arg.propName == "grammar_to_include"
-    then ["-I", arg.propType]--FIXME: add new attribute propValue; now we just reuse propType (improperly)
+    then ["-I", arg.propType, "--build-xml-location", arg.propType ++ "/bin/build.xml"]--FIXME: add new attribute propValue; now we just reuse propType (improperly)
     else [];
 }
 
