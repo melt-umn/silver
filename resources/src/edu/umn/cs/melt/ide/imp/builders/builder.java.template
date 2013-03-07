@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IProject;
@@ -190,8 +191,35 @@ public class @LANG_NAME@Builder extends BuilderBase implements MessageHandler {
 			return new IProject[0];
 		}
 		
-		return delegateBuilder.build(
+		IFolder gen = getGenFolder(project);
+		
+		IProject[] toReturn = delegateBuilder.build(
 			this, getConsoleLoggingStream(), projectPath, kind, args, monitor);
+	
+		try {
+			gen.refreshLocal(IResource.DEPTH_INFINITE, null);
+		} catch (CoreException e) {
+			getConsoleLoggingStream().error("Refresh failed.");
+			e.printStackTrace();
+		}
+		
+		return toReturn;
+    }
+    
+    /** The per-project folder holding derived (generated) resources */
+    public static final String GEN_FOLDER = "bin";
+    
+    private IFolder getGenFolder(IProject project){
+    	IFolder gen = project.getFolder(GEN_FOLDER);
+    	if(!gen.exists()){
+    		try {
+				gen.create(IResource.FORCE|IResource.DERIVED|IResource.HIDDEN, true, null);
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
+    	}
+    	
+    	return gen;
     }
  
     /**
