@@ -12,6 +12,7 @@ import silver:util:cmdargs;
 synthesized attribute noJavaGeneration :: Boolean occurs on CmdArgs;
 synthesized attribute buildSingleJar :: Boolean occurs on CmdArgs;
 synthesized attribute includeRTJars :: [String] occurs on CmdArgs;
+synthesized attribute buildXmlLocation :: [String] occurs on CmdArgs;
 
 aspect production endCmdArgs
 top::CmdArgs ::= _
@@ -19,6 +20,7 @@ top::CmdArgs ::= _
   top.noJavaGeneration = false;
   top.buildSingleJar = false;
   top.includeRTJars = [];
+  top.buildXmlLocation = [];
 }
 abstract production xjFlag
 top::CmdArgs ::= rest::CmdArgs
@@ -38,22 +40,36 @@ top::CmdArgs ::= s::String rest::CmdArgs
   top.includeRTJars = s :: forward.includeRTJars;
   forwards to rest;
 }
+abstract production buildXmlFlag
+top::CmdArgs ::= s::String rest::CmdArgs
+{
+  top.buildXmlLocation = s :: forward.buildXmlLocation;
+  forwards to rest;
+}
 
 aspect function parseArgs
 ParseResult<Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--dont-translate", flag(xjFlag)),
             pair("--onejar", flag(onejarFlag)),
-            pair("--XRTjar", option(includeRTJarFlag))
+            pair("--XRTjar", option(includeRTJarFlag)),
+            pair("--build-xml-location", option(buildXmlFlag))
            ];
   flagdescs <- ["\t--onejar  : include runtime libraries in the jar"];
 }
 aspect production compilation
 top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
 {
+  -- This is a little bit of a hack. It's only job is to allow the Eclipse support
+  -- for Silver to put this file elsewhere than the local directory.
+  -- e.g. --build-xml-location /path/to/workspace/project/build.xml
+  local buildXmlLocation :: String =
+    if null(top.config.buildXmlLocation) then "build.xml"
+    else head(top.config.buildXmlLocation);
+  
   top.postOps <- if top.config.noJavaGeneration then [] else 
     [genJava(top.config, grammarsToTranslate, silverGen), 
-     genBuild(buildXml)]; 
+     genBuild(buildXmlLocation, buildXml)]; 
 
   -- From here on, it's all build.xml stuff:
 
@@ -158,9 +174,9 @@ top::Unit ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silverGen::Stri
 }
 
 abstract production genBuild
-top::Unit ::= buildXml::String
+top::Unit ::= buildFileLocation::String  buildXml::String
 {
-  top.io = writeFile("build.xml", buildXml, top.ioIn);
+  top.io = writeFile(buildFileLocation, buildXml, top.ioIn);
   top.code = 0;
   top.order = 6;
 }
