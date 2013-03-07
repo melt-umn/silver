@@ -105,33 +105,6 @@ top::IdeFunctionList ::= func::IdeFunction funcList::IdeFunctionList
   top.propDcls := func.propDcls ++ funcList.propDcls;
 }
 
-{--
-concrete production makeIdeFunction_Analyzer
-top::IdeFunction ::= 'analyzer' analyzerName::QName ';' 
-{
-
-  top.funcDcls := [pair("analyzer", analyzerName.lookupValue.fullName)];
-  top.propDcls := [];
-
-  top.errors := analyzerName.lookupValue.errors;
-  
-  -- [IdeMessage] ::= [IdeProperty] IO
-  local analyzerTypeExpected :: TypeExp =
-    functionTypeExp(
-      listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeMessage", [])), --listTypeExp(stringTypeExp()),
-      [listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeProperty", [])),
-        foreignTypeExp("core:IO", [])], []);
-  
-  local tc1 :: TypeCheck = check(freshenCompletely(analyzerName.lookupValue.typerep), analyzerTypeExpected);
-  tc1.downSubst = emptySubst();
-  tc1.finalSubst = tc1.upSubst;
-
-  top.errors <-
-    if !tc1.typeerror then []
-    else [err(analyzerName.location, "Analyzer function should have type:\n\t" ++ tc1.rightpp ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
-}  
---}
-
 concrete production makeIdeFunction_Builder
 top::IdeFunction ::= 'builder' builderName::QName ';' 
 {
@@ -165,10 +138,13 @@ top::IdeFunction ::= 'postbuilder' postbuilderName::QName ';'
 
   top.errors := postbuilderName.lookupValue.errors;
   
-  -- [IdeMessage] ::= [IdeProperty] IO
+  -- IOVal<[IdeMessage]> ::= [IdeProperty] IO
   local postbuilderTypeExpected :: TypeExp =
     functionTypeExp(
-      listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeMessage", [])),
+      nonterminalTypeExp(
+        "core:IOVal", 
+        [listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeMessage", []))]
+      ),
       [listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeProperty", [])),
         foreignTypeExp("core:IO", [])], []);
   
