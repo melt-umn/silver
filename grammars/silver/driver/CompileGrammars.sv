@@ -33,6 +33,6 @@ IOVal<[Maybe<RootSpec>]> ::=
     if null(need) then
       ioval(ioin, [])
     else
-      ioval(recurse.io, now.iovalue :: recurse.iovalue);
+      ioval(recurse.io, unsafeTrace(now.iovalue, now.io) :: recurse.iovalue);
 }
 
