@@ -115,8 +115,8 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
     else if !null(check.iovalue) then ioval(check.io, getSysMessages(check.iovalue))
     else if !head(rootStream.iovalue).isJust then ioval(rootStream.io, [makeSysIdeMessage(2, "The specified grammar (" ++ buildGrammar ++ ") could not be found. Configuration error?")])
     else if msgStatus.snd then ioval(ioin, messages)    --errors. abort
---    else ioval(actions.io, messages);
-    else ioval(print("Translation done.", actions.io), messages);
+    else ioval(actions.io, messages);
+--    else ioval(print("Translation done.", actions.io), messages);
 
 }
 
