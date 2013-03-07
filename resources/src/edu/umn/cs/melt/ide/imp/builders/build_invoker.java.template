@@ -69,7 +69,7 @@ public class @LANG_NAME@BuildInvoker {
 			}
 			
 			List<NIdeMessage> list = @PKG_NAME@.Build.build(args);
-			return handler.handle(list);
+			return handler.handleBuild(list);
 		} catch (Exception t) {
 			t.printStackTrace();
 			clstream.error("BUILD FAILED: failed to invoke builder of @LANG_NAME@.)");

@@ -5,6 +5,10 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.console.MessageConsoleStream;
 
+/**
+ * A wrapper of two standard {@link org.eclipse.ui.console.MessageConsoleStream}s,
+ * for information and error output respectively.
+ */
 public class ConsoleLoggingStream {
 
 	private MessageConsoleStream infoStream;

@@ -69,7 +69,7 @@ public class @LANG_NAME@PostBuildInvoker {
 			}
 			
 			List<NIdeMessage> list = @PKG_NAME@.PostBuild.postbuild(args);
-			return handler.handle(list);
+			return handler.handlePostBuild(list);
 		} catch (Exception t) {
 			t.printStackTrace();
 			clstream.error("BUILD FAILED: failed to invoke (background) post-builder of @LANG_NAME@.)");

@@ -11,11 +11,19 @@ import silver.modification.impide.NIdeMessage;
 public interface MessageHandler {
 
 	/**
-	 * Handle an IDE message list.
+	 * Handle the IDE message list returned by Builder.
 	 * 
 	 * @param list the message list. 
 	 * @return true if the handling is considered successful; false otherwise
 	 */
-	boolean handle(List<NIdeMessage> list);
+	boolean handleBuild(List<NIdeMessage> list);
+	
+	/**
+	 * Handle the IDE message list returned by Post-Builder.
+	 * 
+	 * @param list the message list. 
+	 * @return true if the handling is considered successful; false otherwise
+	 */
+	boolean handlePostBuild(List<NIdeMessage> list);
 
 }

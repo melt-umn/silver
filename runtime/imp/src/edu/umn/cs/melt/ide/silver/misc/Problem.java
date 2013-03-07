@@ -6,6 +6,12 @@ import org.eclipse.core.resources.IProject;
 
 /**
  * A wrapper of problem message returned by compiler.
+ * <p>
+ * There are two types of problems, based on its associativity with either file
+ * or project. For a file problem, the user should provide project, file, and 
+ * location information, in addition to the severity and message. 
+ * <p>
+ * For a project problem, the user only needs to provide severity and message.
  */
 public class Problem {
 	
@@ -22,67 +28,9 @@ public class Problem {
 	public static final int ERROR = IMarker.SEVERITY_ERROR;
 
 	public static final String[] LEVELS = new String[]{"info", "warning", "error"};
-	
-	/**
-	 * Create a Problem from a composite message, which has the format:<br>
-	 * <pre>
-	 *  GRAMMAR_NAME#FILE_NAME:LINE:COLUMN:LEVEL:MESSAGE
-	 * </pre>
-	 * Example:
-	 * <pre>
-	 *  sample:grammar:name#AbstractSyntax.sv:48:5: error: Undeclared attribute 'abc'.
-	 * </pre>
-	 * @param silverMessage
-	 * @deprecated this is historically for Silver language only. Developers should always use 
-	 * {@link #createProblem(IProject, String, String, int, int, int, String)}.
-	 * @return null if parsing is failed.
-	 */
-	public static Problem createProblem(IProject project, String silverMessage){
-		int sep = silverMessage.indexOf('#');
-		if(sep==-1){
-			//System.err.println("No '#' found!");
-			return null;
-		}
-		String name = silverMessage.substring(0, sep);
-		name = name.replace(':', '/');
-
-		String rest = silverMessage.substring(sep+1, silverMessage.length());
-		String[] parts = rest.split(":");
-		if(parts.length < 5){
-			//System.err.println("No enough ':'s!");
-			return null;	
-		}
-		
-		name = name + '/' + parts[0];
-		IFile file = project.getFile(name);
-		
-		int line = 0;
-		int column = 0;
-		try {
-			line = Integer.parseInt(parts[1]);
-			column = Integer.parseInt(parts[2]);
-		} catch (NumberFormatException e) {
-			//System.err.println("Should be a number for line and column.");
-			//e.printStackTrace();
-			return null;
-		}
-		
-		int level = INFO;
-		String levelStr = parts[3].trim().toLowerCase();	
-		if("warning".equals(levelStr)){
-			level = WARNING;
-		} else if ("error".equals(levelStr)) {
-			level = ERROR;
-		}
-		
-		int len = parts[0].length() + parts[1].length() + parts[2].length() + parts[3].length() + 4;
-		String message = rest.substring(len).trim();
-			
-		return new Problem(file, column, line, message, level);
-	}
 
 	/**
-	 * Create a problem from given argument set.
+	 * Create a file-related problem from given argument set.
 	 * 
 	 * @param project	the project under which the resource declName+fileName 
 	 * 	is found.
@@ -99,7 +47,7 @@ public class Problem {
 	 * @param message	a human-oriented message that will be shown in IDE.
 	 * @return
 	 */
-	public static Problem createProblem(
+	public static Problem createFileProblem(
 		IProject project, 
 		String filePath, String fileName, 
 		int line, int column, int startInd, int endInd, 
@@ -108,58 +56,25 @@ public class Problem {
 		String name = filePath + '/' + fileName;
 		IFile file = project.getFile(name);
 		
-		return new Problem(file, column, line, message, severity, startInd, endInd);
-	}
-
-	@Override
-	public String toString() {
-		return 
-			"Problem [file=" + file + 
-			", line=" + line + ", column=" + column + 
-			", startInd=" + ((startInd!=UNKNOWN)?startInd:"UNKNOWN") +
-			", endInd=" + ((endInd!=UNKNOWN)?endInd:"UNKNOWN") +
-			", level=" + ((level>=0&&level<LEVELS.length)?LEVELS[level]:"UNKNOWN") + 
-			", message=" + message + "]";
-	}
-	
-	public IFile getFile() {
-		return file;
-	}
-
-	public int getColumn() {
-		return column;
-	}
-
-	public int getLine() {
-		return line;
-	}
-
-	public String getMessage() {
-		return message;
-	}
-
-	public int getLevel() {
-		return level;
+		return new Problem(file, column, line, message, severity, startInd, endInd, false);
 	}
 	
 	/**
-	 * The starting index of the problem; relative to file start.
+	 * Create a project-level problem.
+	 * <p>
+	 * A project problem is not associated with any particular file.
 	 * 
+	 * @param severity	such as {@link #ERROR} and {@link #WARNING}
+	 * @param message	a human-oriented message that will be shown in IDE.
 	 * @return
 	 */
-	public int getStartInd() {
-		return startInd;
+	public static Problem createProjectProblem(int severity, String message){
+		return new Problem(null, UNKNOWN, UNKNOWN, message, severity, UNKNOWN, UNKNOWN, true);
 	}
 	
 	/**
-	 * The ending index of the problem; relative to file start.
-	 * 
-	 * @return
+	 * Create file problem with unknown indices.
 	 */
-	public int getEndInd() {
-		return endInd;
-	}
-
 	private Problem(IFile file, int column, int line, String message, int level) {
 		this.file = file;
 		this.column = column;
@@ -168,10 +83,93 @@ public class Problem {
 		this.level = level;
 	}
 	
-	private Problem(IFile file, int column, int line, String message, int level, int startInd, int endInd) {
+	/**
+	 * The most primitive constructor.
+	 */
+	private Problem(IFile file, int column, int line, String message, int level, 
+		int startInd, int endInd, boolean projMsg) {
 		this(file, column, line, message, level);
 		this.startInd = startInd;
 		this.endInd = endInd;
+		this.projMsg = projMsg;
+	}
+	
+	@Override
+	public String toString() {
+		return 
+			(projMsg) ?
+				"Project problem [level=" + ((level>=0&&level<LEVELS.length)?LEVELS[level]:"UNKNOWN") + 
+				", message=" + message + "]"
+			:	
+				"Problem [file=" + file + 
+				", line=" + line + ", column=" + column + 
+				", startInd=" + ((startInd!=UNKNOWN)?startInd:"UNKNOWN") +
+				", endInd=" + ((endInd!=UNKNOWN)?endInd:"UNKNOWN") +
+				", level=" + ((level>=0&&level<LEVELS.length)?LEVELS[level]:"UNKNOWN") + 
+				", message=" + message + "]";
+	}
+	
+	/**
+	 * @return	null if it's a project message.
+	 */
+	public IFile getFile() {
+		return file;
+	}
+
+	/**
+	 * 1-based column number.
+	 * 
+	 * @return	{@link #UNKNOWN} if it's a project message.
+	 */
+	public int getColumn() {
+		return column;
+	}
+
+	/**
+	 * 1-based line number.
+	 * 
+	 * @return	{@link #UNKNOWN} if it's a project message.
+	 */
+	public int getLine() {
+		return line;
+	}
+
+	public String getMessage() {
+		return message;
+	}
+
+	/**
+	 * @return {@link #INFO}|{@link #WARNING}|{@link #ERROR}
+	 */
+	public int getLevel() {
+		return level;
+	}
+	
+	/**
+	 * Whether this is a project problem (true) or file problem (false)
+	 * 
+	 * @return true if it's a project problem.
+	 */
+	public boolean isProjectProblem(){
+		return projMsg;
+	}
+	
+	/**
+	 * The starting index of the problem; relative to file start.
+	 * 
+	 * @return	can be {@link #UNKNOWN}.
+	 */
+	public int getStartInd() {
+		return startInd;
+	}
+	
+	/**
+	 * The ending index of the problem; relative to file start.
+	 * 
+	 * @return	can be {@link #UNKNOWN}.
+	 */
+	public int getEndInd() {
+		return endInd;
 	}
 	
 	private IFile file;
@@ -187,5 +185,7 @@ public class Problem {
 	private String message;
 	
 	private int level;
+	
+	private boolean projMsg = false;
 	
 }
