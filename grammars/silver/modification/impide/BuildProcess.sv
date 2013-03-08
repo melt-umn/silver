@@ -108,8 +108,9 @@ String ::= funcDcls :: [Pair<String String>]
 {
   local pr :: Pair<Boolean Boolean> = findAllBuilderFunctions(funcDcls, pair(false, false));
   return case pr of
-           pair(true, false) -> "SingleStageBuilder"
-         | pair(_, true) -> "TwoStageBuilder"   -- actually pair(false, true) shall not happen at all
+           pair(true, false) -> "BlockingBuilder"
+         | pair(false, true) -> "NonblockingBuilder"
+         | pair(true, true) -> "TwoStageBuilder"
          | _ -> "DummyBuilder"
          end;
 }

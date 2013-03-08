@@ -13,7 +13,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
 
 /**
- * A single-stage delegate builder for @LANG_NAME@.
+ * A single-stage blocking delegate builder for @LANG_NAME@.
  * <p>
  * A new build is activated on a file containing @LANG_NAME@ code every time 
  * it's saved since last change (when "Build automatically" is on), or when 
@@ -23,9 +23,11 @@ import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
  * invoked, it first parses all the affected source files to see if there is any 
  * syntactic errors; if not, this builder will be invoked.
  * <p>
- * The build will be completed after @LANG_NAME@BuildInvoker returns.
+ * The build will be completed after @LANG_NAME@BuildInvoker returns. Before 
+ * that, any further action (like save file) initiated by user will be blocked
+ * in an event queue by Eclipse.
  */
-public class SingleStageBuilder implements DelegateBuilder {
+public class BlockingBuilder implements DelegateBuilder {
 
     private @LANG_NAME@BuildInvoker buildInvoker = null;
     

@@ -52,7 +52,16 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
   local reRootStream :: IOVal<[Maybe<RootSpec>]> =
     compileGrammars(svParser, sviParser, grammarPath, silverGen, unit.recheckGrammars, true, rootStream.io);
 
-  return ioval(rootStream.io, getAllBindingErrors(unit.grammarList));
+  --return ioval(rootStream.io, getAllBindingErrors(unit.grammarList));
+
+
+  local messages :: [IdeMessage] = getAllBindingErrors(unit.grammarList);
+
+  return if !argResult.parseSuccess then ioval(ioin, [makeSysIdeMessage(2, "Parsing failed during build. Resource changed outside IDE? (Need refresh and rebuild).")])
+    else if !null(check.iovalue) then ioval(check.io, getSysMessages(check.iovalue))
+    else if !head(rootStream.iovalue).isJust then ioval(rootStream.io, [makeSysIdeMessage(2, "The specified grammar (" ++ buildGrammar ++ ") could not be found. Configuration error?")])
+    else ioval(rootStream.io, getAllBindingErrors(unit.grammarList));
+
 }
 
 function ideGenerate
@@ -106,18 +115,19 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
   -- unit.postOps is a "pure value," here's where we make it go.
   local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), reRootStream.io);
 
-  local messages :: [IdeMessage] = getAllBindingErrors(unit.grammarList);
+--  local messages :: [IdeMessage] = getAllBindingErrors(unit.grammarList);
 
-  local msgStatus :: Pair<Boolean Boolean> = getMsgStatus(messages, pair(false, false));
+--  local msgStatus :: Pair<Boolean Boolean> = getMsgStatus(messages, pair(false, false));
 
   return 
+{--
     if !argResult.parseSuccess then ioval(ioin, [makeSysIdeMessage(2, "Parsing failed during build. Resource changed outside IDE? (Need refresh and rebuild).")])
     else if !null(check.iovalue) then ioval(check.io, getSysMessages(check.iovalue))
     else if !head(rootStream.iovalue).isJust then ioval(rootStream.io, [makeSysIdeMessage(2, "The specified grammar (" ++ buildGrammar ++ ") could not be found. Configuration error?")])
     else if msgStatus.snd then ioval(ioin, messages)    --errors. abort
     else ioval(actions.io, messages);
---    else ioval(print("Translation done.", actions.io), messages);
-
+--}
+         ioval(actions.io, []);
 }
 
 -- status is a pair of boolean values indicating if warning (fst) or error (snd) is present

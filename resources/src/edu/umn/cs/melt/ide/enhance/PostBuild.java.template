@@ -23,8 +23,6 @@ public class PostBuild {
      */
 	public static java.util.List<NIdeMessage> postbuild(NIdeProperty[] args) {
 		try {
-			//common.ConsCell cc = (common.ConsCell) @POST_BUILDER_CLASS_QNAME@.invoke(cvargs(args), null);
-
             common.Node rv = (common.Node) @POST_BUILDER_CLASS_QNAME@.invoke(cvargs(args), null);
 			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
 

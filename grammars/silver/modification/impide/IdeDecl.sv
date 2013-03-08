@@ -113,10 +113,13 @@ top::IdeFunction ::= 'builder' builderName::QName ';'
 
   top.errors := builderName.lookupValue.errors;
   
-  -- [IdeMessage] ::= [IdeProperty] IO
+  -- IOVal<[IdeMessage]> ::= [IdeProperty] IO
   local builderTypeExpected :: TypeExp =
     functionTypeExp(
-      listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeMessage", [])),
+      nonterminalTypeExp(
+        "core:IOVal", 
+        [listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeMessage", []))]
+      ),
       [listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeProperty", [])),
         foreignTypeExp("core:IO", [])], []);
   

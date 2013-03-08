@@ -61,7 +61,7 @@ IOVal<Integer> ::= args::[String] ioin::IO
 
 -- IDE declaration block
 temp_imp_ide_dcl svParse ".sv" { 
-  builder analyze;          --a function whose signature must be "[IdeMessage] ::= args::[IdeProperty] i::IO"
+  builder analyze;          --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] i::IO"
   postbuilder generate;     --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] i::IO"
   property grammar_to_compile string;
   property grammar_to_include string;
@@ -80,14 +80,14 @@ IOVal<[IdeMessage]> ::= args::[IdeProperty] i::IO
 }
 
 function analyze
-[IdeMessage] ::= args::[IdeProperty] i::IO
+IOVal<[IdeMessage]> ::= args::[IdeProperty] i::IO
 {
 
   local sargs::[String] = getArgStrings(args) ++ getGrammarToCompile(args);
 
   local ru :: IOVal<[IdeMessage]> = ideAnalyze(sargs, svParse, sviParse, i);
 
-  return ru.iovalue;
+  return ru;
 }
 
 function getArgStrings
