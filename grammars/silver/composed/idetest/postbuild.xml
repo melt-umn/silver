@@ -1,7 +1,8 @@
 <project default='default' basedir='.'>
   <property name='temp' location='temp' relative="true"/>
   <property name='grammars' location='${temp}/grammars' relative="true"/>
-  <property name='dist' location='grammars.zip' relative="true"/>
+  <property name='jars' location='${temp}/jars' relative="true"/>
+  <property name='dist' location='silver.zip' relative="true"/>
 
   <target name='default'>
     <!-- defensive clean-up -->
@@ -12,6 +13,7 @@
     <mkdir dir="${grammars}"/>
     <mkdir dir="${grammars}/core"/>
     <mkdir dir="${grammars}/lib"/>
+    <mkdir dir="${jars}"/>
 
     <!-- 2, grab grammar files -->
     <copy todir="${grammars}/core" overwrite="true">
@@ -21,13 +23,18 @@
       <fileset dir="${sh}/grammars/lib"/>
     </copy>
 
-    <!-- 3, compress -->
+    <!-- 3, grab runtimes -->
+    <copy file="${sh}/jars/SilverRuntime.jar" tofile="${jars}/SilverRuntime.jar" overwrite="true"/>
+    <copy file="${sh}/jars/CopperRuntime.jar" tofile="${jars}/CopperRuntime.jar" overwrite="true"/>
+    <copy file="${sh}/jars/CopperCompiler.jar" tofile="${jars}/CopperCompiler.jar" overwrite="true"/>
+
+    <!-- 4, compress -->
     <zip destfile="${dist}" basedir="${temp}" update="true"/>
 
-    <!-- 4, move -->
+    <!-- 5, move -->
     <move file="${dist}" todir="${ide.proj.plugin.path}" overwrite="true"/>
 
-    <!-- 5, clean up -->
+    <!-- 6, clean up -->
     <delete dir="${temp}"/>
   </target>
 

@@ -221,9 +221,121 @@ public class @LANG_NAME@Builder extends BuilderBase implements MessageHandler {
     	
     	return gen;
     }
- 
+	
+	/**
+	 * Handle the message list returned by @LANG_NAME@BuildInvoker.
+	 */
+	@Override
+	public boolean handleBuild(List<NIdeMessage> list) {
+		boolean result =  handleMsgList(list);
+		
+		//Add customized code here
+		
+		return result;
+	}
+	
+	/**
+	 * Handle the message list returned by @LANG_NAME@PostBuildInvoker.
+	 * <p>
+	 * This method will be called back by @LANG_NAME@PostBuildInvoker, if user 
+	 * defines a post-builder function.
+	 */
+	@Override
+	public boolean handlePostBuild(List<NIdeMessage> list) {
+		boolean result =  handleMsgList(list);
+		
+		//Add customized code here
+		
+		return result;
+	}
+	
+	private boolean handleMsgList(List<NIdeMessage> list){
+		IProject project = getProject();
+		
+		//Clean markers
+		try {
+			project.deleteMarkers(getErrorMarkerID(), false, IResource.DEPTH_INFINITE);
+		} catch (CoreException e) {
+			e.printStackTrace();
+		}
+
+		boolean success = true;
+		
+		//Add markers
+		for(NIdeMessage message:list){
+			Problem p = Utility.extractProblem(project, message);
+			
+			if(!p.isProjectProblem()){
+				IFile file = p.getFile();
+				try {
+					//Reuse ErrorMarkerID for whatever kind of problem
+					IMarker marker = file.createMarker(getErrorMarkerID());
+					marker.setAttribute(IMarker.MESSAGE, p.getMessage());
+					marker.setAttribute(IMarker.LINE_NUMBER, p.getLine());
+					int index = p.getStartInd();
+					if(index!=Problem.UNKNOWN){
+						marker.setAttribute(IMarker.CHAR_START, index);
+					}
+					index = p.getEndInd();
+					if(index!=Problem.UNKNOWN){
+						marker.setAttribute(IMarker.CHAR_END, index);
+					}
+					marker.setAttribute(IMarker.SEVERITY, p.getLevel());
+					if(p.getLevel()==Problem.ERROR){
+						success = false;
+					}
+				} catch (CoreException e) {
+					e.printStackTrace();
+				}		
+			} else {
+				success = handleProjectProblem(project, p.getLevel(), p.getMessage());
+			}
+		}
+		
+		return lastBuildState = success;
+	}
+	
+	/** 
+     * The state of last build action. Useful for export or other actions 
+     * depending on successful build. 
+     */
+	private boolean lastBuildState = false;
+
+	/**
+	 * The default implementation of this method is to print the problem in 
+	 * console and mark the project in explorer.
+	 */
+	private boolean handleProjectProblem(IProject project, int level, String message){
+		switch(level){
+		case Problem.ERROR:
+			getConsoleLoggingStream().error("[BUILD ERROR] " + message);
+			try {
+				IMarker marker = project.createMarker(getErrorMarkerID());
+				marker.setAttribute(IMarker.MESSAGE, message);
+				marker.setAttribute(IMarker.SEVERITY, level);
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
+			return false;
+		case Problem.WARNING:
+			getConsoleLoggingStream().error("[BUILD WARNING] " + message);
+			try {
+				IMarker marker = project.createMarker(getWarningMarkerID());
+				marker.setAttribute(IMarker.MESSAGE, message);
+				marker.setAttribute(IMarker.SEVERITY, level);
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
+			break;		
+		default:
+			getConsoleLoggingStream().info("[BUILD INFO] " + message);
+		}
+		
+		return true;
+	}
+
     /**
-     * Parse all the affected files again before build.
+     * Parse all the affected files.
      * 
      * @param project
      * @param monitor
@@ -327,91 +439,6 @@ public class @LANG_NAME@Builder extends BuilderBase implements MessageHandler {
         
         return true;
     }
-	
-	/**
-	 * Handle the message list returned by @LANG_NAME@BuildInvoker.
-	 */
-	@Override
-	public boolean handleBuild(List<NIdeMessage> list) {
-		boolean result =  handleMsgList(list);
-		
-		//Add customized code here
-		
-		return result;
-	}
-	
-	/**
-	 * Handle the message list returned by @LANG_NAME@PostBuildInvoker.
-	 * <p>
-	 * This method will be called back by @LANG_NAME@PostBuildInvoker, if user 
-	 * defines a post-builder function.
-	 */
-	@Override
-	public boolean handlePostBuild(List<NIdeMessage> list) {
-		boolean result =  handleMsgList(list);
-		
-		//Add customized code here
-		
-		return result;
-	}
-	
-	private boolean handleMsgList(List<NIdeMessage> list){
-		IProject project = getProject();
-		
-		//Clean markers
-		try {
-			project.deleteMarkers(getErrorMarkerID(), false, IResource.DEPTH_INFINITE);
-		} catch (CoreException e) {
-			e.printStackTrace();
-		}
-
-		boolean success = true;
-		
-		//Add markers
-		for(NIdeMessage message:list){
-			Problem p = Utility.extractProblem(project, message);
-			
-			if(!p.isProjectProblem()){
-				IFile file = p.getFile();
-				try {
-					IMarker marker = file.createMarker(getErrorMarkerID());
-					marker.setAttribute(IMarker.MESSAGE, p.getMessage());
-					marker.setAttribute(IMarker.LINE_NUMBER, p.getLine());
-					int index = p.getStartInd();
-					if(index!=Problem.UNKNOWN){
-						marker.setAttribute(IMarker.CHAR_START, index);
-					}
-					index = p.getEndInd();
-					if(index!=Problem.UNKNOWN){
-						marker.setAttribute(IMarker.CHAR_END, index);
-					}
-					marker.setAttribute(IMarker.SEVERITY, p.getLevel());
-					if(p.getLevel()==Problem.ERROR){
-						success = false;
-					}
-				} catch (CoreException e) {
-					e.printStackTrace();
-				}		
-			} else {
-				printProjectProblem(p.getLevel(), p.getMessage());
-			}
-		}
-		
-		return success;
-	}
-
-	private void printProjectProblem(int level, String message){
-		switch(level){
-		case Problem.ERROR:
-			getConsoleLoggingStream().error("[BUILD ERROR] " + message);
-			break;
-		case Problem.WARNING:
-			getConsoleLoggingStream().error("[BUILD WARNING] " + message);
-			break;		
-		default:
-			getConsoleLoggingStream().info("[BUILD INFO] " + message);
-		}
-	}
 
     /**
      * Compile one @LANG_NAME@ file.
