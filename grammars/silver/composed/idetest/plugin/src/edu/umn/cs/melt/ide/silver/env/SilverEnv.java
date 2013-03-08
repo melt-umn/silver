@@ -30,12 +30,14 @@ import org.osgi.framework.Bundle;
  */
 public final class SilverEnv {
 
-	/** The root of Silver: ../Eclipse/silver/ */
+	/** The root of Silver: <ECLIPSE_HOME>/silver/ */
 	private static File ROOT;
 	
 	private static final String GENERATED = "generated";
 	
 	private static final String GRAMMARS = "grammars";
+	
+	private static final String JARS = "jars";
 	
 	/** A flag to identify if the environment is ready to use. */
 	private static boolean READY;
@@ -57,22 +59,20 @@ public final class SilverEnv {
 			
 			ROOT = new File(parent, "silver");
 			
-			if(!ROOT.exists()){
+			READY = sanityCheck();
+			
+			if(!READY){
 				//Create /silver
 				ROOT.mkdir();
 				
-				//Create /silver/grammars, extract grammar files there
-				extract(getGrammarsResource());
+				//Create /silver/grammars, extract grammar files there;
+				//Create /silver/jars, extract runtime jars there;
+				extract(getResource());
 				
 				//Create /silver/generated
 				new File(ROOT, GENERATED).mkdir();
 				
 				READY = true;
-			} else {
-				READY = sanityCheck();
-//				if(!READY){
-//					//TODO delete ROOT, and recall this method
-//				}
 			}
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
@@ -97,7 +97,7 @@ public final class SilverEnv {
 	/**
 	 * Get the generated folder of embedded Silver
 	 * <p>
-	 * By standard this is ../Eclipse/silver/generated
+	 * By standard this is <ECLIPSE_HOME>/silver/generated
 	 * 
 	 * @return
 	 */
@@ -108,7 +108,7 @@ public final class SilverEnv {
 	/**
 	 * Get the grammars folder of embedded Silver
 	 * <p>
-	 * By standard this is ../Eclipse/silver/grammars
+	 * By standard this is <ECLIPSE_HOME>/silver/grammars
 	 * 
 	 * @return
 	 */
@@ -117,9 +117,20 @@ public final class SilverEnv {
 	}
 	
 	/**
+	 * Get the jars folder of embedded Silver
+	 * <p>
+	 * By standard this is <ECLIPSE_HOME>/silver/jars
+	 * 
+	 * @return
+	 */
+	private static File getJarsFolder() {
+		return new File(ROOT, JARS);
+	}
+	
+	/**
 	 * Get the home of embedded Silver
 	 * <p>
-	 * By standard this is ../Eclipse/silver/
+	 * By standard this is <ECLIPSE_HOME>/silver/
 	 * 
 	 * @return
 	 */
@@ -174,9 +185,9 @@ public final class SilverEnv {
 		}
 	}
 
-	private static InputStream getGrammarsResource(){
+	private static InputStream getResource(){
 		//Bundle bundle = Platform.getBundle("silver.composed.idetest");//Name of silver plug-in bundle
-		URL fileURL = bundle.getEntry("grammars.zip");
+		URL fileURL = bundle.getEntry("silver.zip");
 		InputStream is = null;
 		try {
 			return is = FileLocator.resolve(fileURL).openStream();
@@ -188,7 +199,8 @@ public final class SilverEnv {
 	}
 	
 	private static boolean sanityCheck() {
-		return getGeneratedFolder().exists() && getGrammarsFolder().exists();
+		return getGeneratedFolder().exists() && getGrammarsFolder().exists() && getJarsFolder().exists();
 	}
+
 }
 
