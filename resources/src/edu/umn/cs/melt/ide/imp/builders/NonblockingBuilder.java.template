@@ -1,0 +1,151 @@
+/*
+ * Variables used:
+ *   PKG_NAME
+ *   LANG_NAME
+ */
+package @PKG_NAME@.imp.builders;
+
+import java.util.Map;
+
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.IProgressMonitor;
+
+import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
+
+/**
+ * A single-stage nonblocking delegate builder for @LANG_NAME@.
+ * <p>
+ * A new build is activated on a file containing @LANG_NAME@ code every time 
+ * it's saved since last change (when "Build automatically" is on), or when 
+ * the programmer chooses to "Build" a project manually from the Eclipse menu.
+ * <p>
+ * When the method {@link @LANG_NAME@Builder#build(int, Map, IProgressMonitor)} is 
+ * invoked, it first parses all the affected source files to see if there is any 
+ * syntactic errors; if not, this builder will be invoked.
+ * <p>
+ * This builder will call postbuild() in @LANG_NAME@PostBuildInvoker in a 
+ * background thread, finally returning a message list.
+ * <p>
+ * The build will be completed after @LANG_NAME@PostBuildInvoker returns. If 
+ * user intends to initiate another build when current build is underway (by 
+ * editing and saving a file, for example), the new build will not be triggered 
+ * until the completion of the active one.
+ */
+public class NonblockingBuilder implements DelegateBuilder {
+
+    private @LANG_NAME@PostBuildInvoker postbuildInvoker = null;
+
+	public IProject[] build(
+		@LANG_NAME@Builder builder, 
+		ConsoleLoggingStream cls,
+		String projectPath,
+		int kind, Map args, IProgressMonitor monitor) {
+		
+    	boolean buildSuccessful = false;
+
+		//monitor.worked(1);
+		//Otherwise invoke Post-Build 
+		if(postbuildInvoker==null){
+			postbuildInvoker = @LANG_NAME@PostBuildInvoker.getInstance();
+		}
+		
+		if(pbiThread==null){
+			pbiThread = new PostBuildInvokerThread(cls);
+		}
+        //Update arguments. These will be used in the following build, 
+        //either deferred or not.
+		pbiThread.setMonitor(monitor);
+		pbiThread.setProjectPath(projectPath);
+		pbiThread.setBuilder(builder);
+		
+		new Thread(pbiThread).start();
+		
+		//monitor.worked(2);
+		
+        return new IProject[0];
+	}
+	
+	private PostBuildInvokerThread pbiThread;
+	
+	private class PostBuildInvokerThread implements Runnable {
+		
+	    private boolean isBuilding = false;
+	    
+	    private boolean needRebuild = false;
+	    
+		private ConsoleLoggingStream cls;
+		
+		private IProgressMonitor monitor;
+
+		private String projectPath;
+		
+		private @LANG_NAME@Builder builder;
+		
+		PostBuildInvokerThread(ConsoleLoggingStream cls){
+			this.cls = cls;
+		}
+		
+		void setMonitor(IProgressMonitor monitor){
+			this.monitor = monitor;
+		}
+
+		void setProjectPath(String projectPath){
+			this.projectPath = projectPath;
+		}
+		
+		void setBuilder(@LANG_NAME@Builder builder){
+			this.builder = builder;
+		}
+		
+		@Override
+		public void run() {
+			//Secure the lock
+			synchronized(TwoStageBuilder.class){
+				if(isBuilding){
+					needRebuild = true;
+					cls.info("Build deferred.");
+					monitor.setCanceled(true);
+					return;
+				} else {
+					isBuilding = true;
+					needRebuild = false;
+				}
+			}
+			
+			boolean buildSuccessful = true;
+			
+			buildSuccessful = postbuildInvoker.postbuild(projectPath, cls, monitor, builder);
+			
+			//Failed build without retry
+			if(!buildSuccessful){
+				monitor.setCanceled(true);
+				if(!needRebuild){
+					cls.error("Build failed.");
+				}
+				//Release the lock
+				synchronized(TwoStageBuilder.class){
+					isBuilding = false;
+				}
+				return;
+			}
+
+			//A retry is needed
+			if(needRebuild){
+				//Reset the flags
+				synchronized(TwoStageBuilder.class){
+					isBuilding = false;
+					needRebuild = false;
+				}
+				//cls.info("Deferred build starts.");//debug
+				run();
+			} else {
+				//Release the lock
+				synchronized(TwoStageBuilder.class){
+					isBuilding = false;
+				}
+				//cls.info("Build done.");//debug
+			}
+			
+		}
+	}
+}
