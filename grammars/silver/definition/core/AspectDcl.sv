@@ -180,7 +180,13 @@ top::AspectRHSElem ::= '_'
 {
   top.pp = "_";
 
-  forwards to aspectRHSElemId(name("p_" ++ toString(top.deterministicCount), $1.location), location=top.location);
+  production attribute rType :: TypeExp;
+  rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
+
+  forwards to aspectRHSElemFull(
+    name("p_" ++ toString(top.deterministicCount), $1.location),
+    rType,
+    location=top.location);
 }
 
 concrete production aspectRHSElemId
@@ -191,6 +197,8 @@ top::AspectRHSElem ::= id::Name
   production attribute rType :: TypeExp;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
+  top.errors <- [wrn(top.location, "Giving just a name '" ++ id.name ++ "' is deprecated in aspect signature. Please explicitly use a name and type.")];
+  
   forwards to aspectRHSElemFull(id, rType, location=top.location);
 }
 
@@ -219,7 +227,7 @@ top::AspectRHSElem ::= id::Name t::TypeExp
   top.defs = [aliasedChildDef(top.grammarName, id.location, fName, t, id.name)];
 
   top.errors := if length(getValueDclInScope(id.name, top.env)) > 1
-                then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
+                then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
                 else [];
 }
 
