@@ -25,7 +25,8 @@ IOVal<Grammar> ::= svParser::SVParser  gpath::String  files::[String]  ioin::IO
   recurse = compileFiles(svParser, gpath, tail(files), text.io);
 
   return if null(files) then ioval(ioin, nilGrammar())
-         else if !r.parseSuccess then ioval(exit(-1, print(r.parseErrors ++ "\n\n", text.io)), error("Should never be accessed."))
+         -- Using nilGrammar in this case because there seems to be no end to io token demanding issues:
+         else if !r.parseSuccess then ioval(exit(-1, print(r.parseErrors ++ "\n\n", text.io)), nilGrammar())
          else ioval(recurse.io, consGrammar(grammarPart(r.parseTree, file), recurse.iovalue));
 }
 
