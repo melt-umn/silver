@@ -210,6 +210,14 @@ top::ModuleStmt ::= 'exports' m::QName 'with' c::QName ';'
   top.pp = "exports " ++ m.pp ++ " with " ++ c.pp ++ ";";
 
   top.errors := [];
+  
+  top.errors <-
+    if !null(searchEnvTree(m.name, top.compiledGrammars)) then []
+    else [err(m.location, "Grammar '" ++ m.name ++ "' cannot be found.")];
+
+  top.errors <-
+    if !null(searchEnvTree(c.name, top.compiledGrammars)) then []
+    else [err(c.location, "Grammar '" ++ c.name ++ "' cannot be found.")];
 
   top.moduleNames = [];
   top.defs = [];
@@ -223,6 +231,10 @@ top::ModuleStmt ::= 'option' m::QName ';'
   top.pp = "option " ++ m.pp ++ ";";
 
   top.errors := [];
+
+  top.errors <-
+    if !null(searchEnvTree(m.name, top.compiledGrammars)) then []
+    else [err(m.location, "Grammar '" ++ m.name ++ "' cannot be found.")];
 
   top.moduleNames = [];
   top.defs = [];

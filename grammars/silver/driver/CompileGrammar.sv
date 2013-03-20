@@ -51,7 +51,7 @@ IOVal<Maybe<RootSpec>> ::=
     else
       grammarRootSpec(gramCompile.iovalue, grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue);
   
-  return if !grammarLocation.iovalue.isJust then
+  return if !grammarLocation.iovalue.isJust || null(files.iovalue) then
     ioval(grammarLocation.io, nothing())
   else
     ioval(join, just(rs));

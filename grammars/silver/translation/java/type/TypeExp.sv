@@ -1,8 +1,5 @@
 grammar silver:translation:java:type;
 
-exports silver:translation:java:type:io
-   with silver:definition:type:io;
-
 import silver:definition:type;
 import silver:translation:java:core only makeNTClassName;
 
