@@ -1023,6 +1023,7 @@ Expr ::= l::Location  e::Expr  es::[Expr]
 {
   return application(e, '(', foldAppExprs(l, reverse(es)), ',', emptyAnnoAppExprs(location=l), ')', location=l);
 }
+-- WARNING: NOTE THAT YOU NEED TO REVERSE THE EXPR LIST BEFORE CALLING THIS:
 function foldAppExprs
 AppExprs ::= l::Location  e::[Expr]
 {
