@@ -13,12 +13,11 @@ parser svParse::Root {
   silver:host;
 
   silver:extension:convenience;
-
   silver:extension:list;
   silver:extension:easyterminal;
-
   silver:extension:deprecation;
   silver:extension:testing;
+  silver:extension:auto_ast;
 --  silver:extension:concreteSyntaxForTrees ;
   -- doc?
 
