@@ -10,7 +10,7 @@ grammar silver:util:treemap;
  - @return A new empty tree.
  -}
 function treeNew
-TreeMap<a b> ::= CMP :: Function(Integer ::= a a)
+TreeMap<a b> ::= CMP :: (Integer ::= a a)
 {
   return leaf(CMP);
 }
@@ -87,7 +87,7 @@ synthesized attribute makeBlack<a b> :: TreeMap<a b>;
 synthesized attribute treeToList<a b> :: [Pair<a b>];
 
 abstract production leaf
-top::TreeMap<a b> ::= CMP :: Function(Integer ::= a a)
+top::TreeMap<a b> ::= CMP :: (Integer ::= a a)
 {
   top.treeLookup = [];
   top.treeInsert = node(false, top, top, top.treeKey, [top.treeValue], CMP);
@@ -98,7 +98,7 @@ top::TreeMap<a b> ::= CMP :: Function(Integer ::= a a)
 abstract production node
 top::TreeMap<a b> ::= black::Boolean lefttree::TreeMap<a b> righttree::TreeMap<a b>
                       label::a  values::[b] 
-                      CMP :: Function(Integer ::= a a)
+                      CMP :: (Integer ::= a a)
 {
   top.treeLookup = let cmpr :: Integer = CMP(top.treeKey, label)
                    in if cmpr <= 0
@@ -143,7 +143,7 @@ function treeMapKeyValues
 function balanceL
 TreeMap<a b> ::= lefttree::TreeMap<a b> righttree::TreeMap<a b>
                  label::a  values::[b]
-                 CMP :: Function(Integer ::= a a)
+                 CMP :: (Integer ::= a a)
 {
 return case lefttree of
   node(false, node(false, a, b, x1, x2,_), c, y1, y2,_) -> 
@@ -156,7 +156,7 @@ end;
 function balanceR
 TreeMap<a b> ::= lefttree::TreeMap<a b> righttree::TreeMap<a b>
                  label::a  values::[b]
-                 CMP :: Function(Integer ::= a a)
+                 CMP :: (Integer ::= a a)
 {
 return case righttree of
   node(false, node(false, b, c, y1, y2,_), d, z1, z2,_) -> 
