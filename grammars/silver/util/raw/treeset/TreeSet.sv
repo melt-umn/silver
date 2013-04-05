@@ -9,7 +9,7 @@ type Set<a> foreign;
  - Returns a new, empty, set using the specified comparator.
  -}
 function empty
-Set<a> ::= comparator::Function(Integer ::= a a)
+Set<a> ::= comparator::(Integer ::= a a)
 {
   return error("NYI");
 } foreign {
