@@ -16,7 +16,7 @@ silverDeployWorkspace = "/export/scratch/melt-jenkins/custom-deploy"
 # Where to dump the latest tar and jars when all tests and builds succeed.
 silverStableWorkspace = "/export/scratch/melt-jenkins/custom-stable-dump"
 # URL for the jenkins server
-jenkinsURL = "localhost:8080"
+jenkinsURL = "bani.cs.umn.edu:8080"
 # User name and API token. Note this is not your password! Check user config page to see it.
 jenkinsUsername = "tedinski"
 
@@ -381,6 +381,8 @@ MeltsvnGrammarJob("simple-all",    "edu:umn:cs:melt:simple", "artifacts:with_all
 
 MeltsvnGrammarJob("ring-host", "react", "bin", includepath="users/srinivasr/trunk/grammars"),
 MeltsvnGrammarJob("ring-host-tests", "react", "tests", includepath="users/srinivasr/trunk/grammars", invoke=True),
+
+SubversionJob("x-metaII-artifacts", "Builds Adventium's metaII artifacts, including Modelica. Also tests interface files.", [("https://www-users.cs.umn.edu/meltsvn/grammars/com/adventiumenterprises/metaII", "grammars/com/adventiumenterprises/metaII")], "bash grammars/com/adventiumenterprises/metaII/compile-all-artifacts"),
 ]
 
 ###########
