@@ -5,5 +5,5 @@ bin.includes = META-INF/,\
                @LANG_COMPOSED@.jar,\
                edu.umn.cs.melt.copper.jar,\
                edu.umn.cs.melt.silver.jar,\
-               edu.umn.cs.melt.ide.copper-1.0.0.jar,\
+               edu.umn.cs.melt.ide.copper-@IDE_RT_VERSION@.jar,\
                plugin.xml
