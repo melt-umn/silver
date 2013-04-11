@@ -7,7 +7,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: .,
  @LANG_COMPOSED@.jar,
  edu.umn.cs.melt.copper.jar,
- edu.umn.cs.melt.ide.copper-1.0.0.jar,
+ edu.umn.cs.melt.ide.copper-@IDE_RT_VERSION@.jar,
  edu.umn.cs.melt.silver.jar
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources,
