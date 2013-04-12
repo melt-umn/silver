@@ -28,6 +28,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
   production pkgName :: String = makeName(buildGrammar);
 
   extraTopLevelDecls <- if !isIde then [] else [
+    getIDERuntimeVersion(),
     "<property name='grammar.path' value='" ++ head(builtGrammar).grammarSource ++ "'/>", 
     "<property name='res' value='${sh}/resources'/>", --TODO: add all templates to here.
     "<property name='ide.version' value='1.0.0'/>",
@@ -81,6 +82,36 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     "<attribute name='Require-Bundle' value='edu.umn.cs.melt.copper;bundle-version=\"1.0.0\", edu.umn.cs.melt.silver;bundle-version=\"1.0.0\"' />" 
     -- TODO: generate version of silver/copper bundles dynamically
     ];
+}
+
+{--
+Ant operations to read the version from Manifest file in the IDE Runtime jar, which has been fetched and stored locally.
+--}
+function getIDERuntimeVersion
+String ::= 
+{
+  return 
+    "<macrodef name=\"getIDERuntimeVersion\">\n"++
+    "    <sequential>\n"++
+    "        <loadproperties>\n"++
+    "            <!-- From ZIP entries in runtime jar, -->\n"++
+    "            <zipentry zipfile=\"${sh}/jars/IDEPluginRuntime.jar\" name=\"META-INF/MANIFEST.MF\"/>\n"++
+    "            <filterchain>\n"++
+    "                <!-- load the line containing \"Bundle-Version\", -->\n"++
+    "                <linecontains>\n"++
+    "                  <contains value=\"Bundle-Version\"/>\n"++
+    "                </linecontains>\n"++
+    "                <!-- as Ant property, with name set to be \"ide_rt.Bundle-Version\". -->\n"++
+    "                <prefixlines prefix=\"ide_rt.\"/>\n"++
+    "            </filterchain>\n"++
+    "        </loadproperties>\n"++
+    "    </sequential>\n"++
+    "</macrodef>\n"++
+    "\n"++
+    "<!-- Load version of IDE runtime into ${ide_rt.Bundle-Version} -->\n"++
+    "<getIDERuntimeVersion />\n"++
+    "\n"++
+    "<property name='ide.rt.version' value='${ide_rt.Bundle-Version}'/>\n";
 }
 
 function getIDEFunctionsDcls
@@ -294,7 +325,9 @@ String ::=
     "  <filter token=\"POST_BUILDER_CLASS_QNAME\" value='${ide.function.postbuilder}'/>\n" ++
     "  <filter token=\"DELEGATE_BUILDER_NAME\" value='${ide.delegate.builder.name}'/>\n" ++
     "  <filter token=\"LANG_COMPOSED_PKG\" value='${lang.composed}'/>\n" ++ 
-    "  <filter token=\"START_NONTERMINAL_CLASS\" value='${start.nonterminal.class}'/>\n";
+    "  <filter token=\"START_NONTERMINAL_CLASS\" value='${start.nonterminal.class}'/>\n" ++
+    "  <filter token=\"IDE_RT_VERSION\" value='${ide.rt.version}'/>\n" ++
+    "\n";
 }
 
 function getCreateFoldersTarget
@@ -365,15 +398,18 @@ String ::= delegateBuilderName::String
 
     "  <!-- 8. core plug-in classes -->\n" ++
     "  <mkdir dir='${ide.pkg.path}/'/>\n" ++  
+    "  <!-- An initializer to be called during plugin start-up -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/Initializer.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/${lang.name}Initializer.java\" filtering=\"true\"/>\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/StartupHook.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/StartupHook.java\" filtering=\"true\"/>\n" ++
+    "  <!-- The project properties -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/Properties.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/${lang.name}Properties.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
     "  <mkdir dir='${ide.pkg.path}/imp/'/>\n" ++  
+    "  <!-- Plugin main class (OSGi starter class) -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/plugin.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/imp/${lang.name}Plugin.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
@@ -384,6 +420,7 @@ String ::= delegateBuilderName::String
     "  \n" ++
 
     "  <mkdir dir='${ide.pkg.path}/imp/builders'/>\n" ++
+    "  <!-- Project builder and supporting classes. The class interfacing with Eclipse/IMP build framework is ${lang.name}Builder. -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/nature.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/imp/builders/${lang.name}Nature.java\" filtering=\"true\"/>\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/builder.java.template\"\n" ++
@@ -401,6 +438,7 @@ String ::= delegateBuilderName::String
     "  \n" ++
 
     "  <mkdir dir='${ide.pkg.path}/imp/coloring'/>\n" ++
+    "  <!-- Language syntax highlighting classes, supported by IMP -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/coloring/Colorer.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/imp/coloring/Colorer.java\" filtering=\"true\"/>\n" ++
     "  <copy todir=\"${ide.pkg.path}/imp/coloring/\" overwrite=\"true\" filtering=\"true\">\n" ++
@@ -410,13 +448,14 @@ String ::= delegateBuilderName::String
     "  \n" ++
 
     "  <mkdir dir='${ide.pkg.path}/eclipse/wizard'/>\n" ++
+    "  <!-- A wizard for creating new project. -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/wizard/NewProjectWizard.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/eclipse/wizard/NewProjectWizard.java\" filtering=\"true\"/>\n" ++
     "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/wizard/PropertyGenerator.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/eclipse/wizard/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
-    "  <!-- 9. pom.xml (using tycho) -->\n" ++
+    "  <!-- 9. pom.xml (using tycho) for building plugin, feature and repository -->\n" ++
     "  <!-- parent -->\n" ++
     "  <copy file=\"${res}/pom_templates/parent.pom.xml.template\" tofile=\"${ide.proj.parent.path}/pom.xml\" filtering=\"true\"/>\n" ++
     "  <!-- plugin -->\n" ++
@@ -434,6 +473,7 @@ String ::= delegateBuilderName::String
     "  \n" ++
 
     "  <!-- 10. eclipse project -->\n" ++
+    "  <!-- These files are essential to opening the generated plugin in a local Eclipse application as a Java project. -->\n" ++
     "  <copy file=\"${res}/project.template\" tofile=\"${ide.proj.plugin.path}/.project\" filtering=\"true\"/>\n" ++
     -- commented out to support different build modes
     -- "<copy file=\"${res}/classpath.template\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n" ++
@@ -528,7 +568,7 @@ return
 "<target name=\"copy plugin dependencies\" if=\"is-all-in-one\">\n"++	
 "  <copy file=\"${sh}/jars/CopperRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.copper.jar\"/>\n"++
 "  <copy file=\"${sh}/jars/SilverRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.silver.jar\"/>\n"++
-"  <copy file=\"${sh}/jars/IDEPluginRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.ide.copper-1.0.0.jar\"/>\n"++
+"  <copy file=\"${sh}/jars/IDEPluginRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.ide.copper-${ide.rt.version}.jar\"/>\n"++
 "</target>\n\n";
 }
 
