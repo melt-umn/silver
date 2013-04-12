@@ -1,10 +1,14 @@
 grammar ide;
 
 -- hack
-import silver:definition:core;
+-- import silver:definition:core;
 
 synthesized attribute resPath :: String;
 synthesized attribute systemLevel :: Boolean;
+
+synthesized attribute severity :: Integer; 
+synthesized attribute msg :: String;
+synthesized attribute loc :: Location;
 
 {--
 The nonterminal representing a message to be displayed in generated IDE.  
