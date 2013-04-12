@@ -118,9 +118,9 @@ top::IdeFunction ::= 'builder' builderName::QName ';'
     functionTypeExp(
       nonterminalTypeExp(
         "core:IOVal", 
-        [listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeMessage", []))]
+        [listTypeExp(nonterminalTypeExp("ide:IdeMessage", []))]--silver:modification:impide:IdeMessage
       ),
-      [listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeProperty", [])),
+      [listTypeExp(nonterminalTypeExp("ide:IdeProperty", [])),--silver:modification:impide:IdeProperty
         foreignTypeExp("core:IO", [])], []);
   
   local tc1 :: TypeCheck = check(freshenCompletely(builderName.lookupValue.typerep), builderTypeExpected);
@@ -146,9 +146,9 @@ top::IdeFunction ::= 'postbuilder' postbuilderName::QName ';'
     functionTypeExp(
       nonterminalTypeExp(
         "core:IOVal", 
-        [listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeMessage", []))]
+        [listTypeExp(nonterminalTypeExp("ide:IdeMessage", []))]
       ),
-      [listTypeExp(nonterminalTypeExp("silver:modification:impide:IdeProperty", [])),
+      [listTypeExp(nonterminalTypeExp("ide:IdeProperty", [])),
         foreignTypeExp("core:IO", [])], []);
   
   local tc1 :: TypeCheck = check(freshenCompletely(postbuilderName.lookupValue.typerep), postbuilderTypeExpected);

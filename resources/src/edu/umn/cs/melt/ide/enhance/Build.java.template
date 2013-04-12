@@ -5,8 +5,8 @@
  */
 package @LANG_COMPOSED_PKG@;
 
-import silver.modification.impide.NIdeProperty;
-import silver.modification.impide.NIdeMessage;
+import ide.NIdeProperty;
+import ide.NIdeMessage;
 
 /**
  * This class invokes the builder function defined in Silver code.
@@ -17,7 +17,7 @@ public class Build {
      * Invokes the analyzer function defined in Silver's IDE declaration block.
      * <p>
 	 * @param args		an array of NIdeProperty
-     * (corresponding to silver nonterminal silver:modification:impide:IdeProperty)
+     * (corresponding to silver nonterminal ide:IdeProperty)
 	 * @return          a list of NIdeMessage
      * (corresponding to silver nonterminal silver:modification:impide:IdeMessage)
      */

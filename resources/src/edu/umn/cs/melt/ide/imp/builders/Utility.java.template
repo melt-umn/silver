@@ -6,7 +6,7 @@ package @PKG_NAME@.imp.builders;
 
 import org.eclipse.core.resources.IProject;
 
-import silver.modification.impide.NIdeMessage;
+import ide.NIdeMessage;
 import edu.umn.cs.melt.ide.silver.misc.Problem;
 
 public class Utility {
@@ -16,25 +16,20 @@ public class Utility {
     	common.DecoratedNode ideMsgDecNode = ideMsg.decorate(common.TopNode.singleton, (common.Lazy[])null);
     	
     	common.StringCatter msg = (common.StringCatter) ideMsgDecNode.synthesized(
-        	silver.modification.impide.Init.
-        	silver_definition_core_msg__ON__silver_modification_impide_IdeMessage);
+        	ide.Init.silver_definition_core_msg__ON__ide_IdeMessage);
     	
     	Integer severity = (Integer) ideMsgDecNode.synthesized(
-    		silver.modification.impide.Init.
-    		silver_definition_core_severity__ON__silver_modification_impide_IdeMessage);
+    		ide.Init.silver_definition_core_severity__ON__ide_IdeMessage);
     
     	Boolean isProjMsg = (Boolean) ideMsgDecNode.synthesized(
-        		silver.modification.impide.Init.
-        		silver_modification_impide_systemLevel__ON__silver_modification_impide_IdeMessage);
+    			ide.Init.ide_systemLevel__ON__ide_IdeMessage);
     	
     	if(!isProjMsg){
         	common.StringCatter resPath = (common.StringCatter) ideMsgDecNode.synthesized(
-            		silver.modification.impide.Init.
-            		silver_modification_impide_resPath__ON__silver_modification_impide_IdeMessage);
+            		ide.Init.ide_resPath__ON__ide_IdeMessage);
         	
         	core.NLocation loc = (core.NLocation) ideMsgDecNode.synthesized(
-            	silver.modification.impide.Init.
-            	silver_definition_core_loc__ON__silver_modification_impide_IdeMessage);
+            	ide.Init.silver_definition_core_loc__ON__ide_IdeMessage);
         	  	
         	common.DecoratedNode locDecNode = loc.decorate(common.TopNode.singleton, (common.Lazy[])null);
         	

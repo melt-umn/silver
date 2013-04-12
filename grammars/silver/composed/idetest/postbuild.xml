@@ -13,6 +13,7 @@
     <mkdir dir="${grammars}"/>
     <mkdir dir="${grammars}/core"/>
     <mkdir dir="${grammars}/lib"/>
+    <mkdir dir="${grammars}/ide"/>
     <mkdir dir="${jars}"/>
 
     <!-- 2, grab grammar files -->
@@ -21,6 +22,9 @@
     </copy>
     <copy todir="${grammars}/lib" overwrite="true">
       <fileset dir="${sh}/grammars/lib"/>
+    </copy>
+    <copy todir="${grammars}/ide" overwrite="true">
+      <fileset dir="${sh}/grammars/ide"/>
     </copy>
 
     <!-- 3, grab runtimes -->

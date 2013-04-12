@@ -9,7 +9,9 @@ import silver:util:cmdargs;
 import silver:definition:core;
 import silver:definition:env;
 
-import silver:modification:impide;
+--import silver:modification:impide;
+
+import ide;
 
 -- I just copy and pasted this from BuildProcess for now...
 function ideAnalyze
