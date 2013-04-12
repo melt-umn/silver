@@ -1,4 +1,7 @@
-grammar silver:modification:impide;
+grammar ide;
+
+-- hack
+import silver:definition:core;
 
 synthesized attribute resPath :: String;
 synthesized attribute systemLevel :: Boolean;

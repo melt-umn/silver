@@ -12,9 +12,9 @@ import java.util.Map.Entry;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 
-import silver.modification.impide.NIdeMessage;
-import silver.modification.impide.NIdeProperty;
-import silver.modification.impide.PmakeIdeProperty;
+import ide.NIdeMessage;
+import ide.NIdeProperty;
+import ide.PmakeIdeProperty;
 import silver.composed.idetest.SILVERProperties;
 
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;

@@ -6,7 +6,7 @@
 package @PKG_NAME@.imp.builders;
 
 import java.util.List;
-import silver.modification.impide.NIdeMessage;
+import ide.NIdeMessage;
 
 public interface MessageHandler {
 
