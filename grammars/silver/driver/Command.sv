@@ -110,7 +110,6 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
   
   errors <- 
     if length(a.cmdRemaining) > 1 then ["Unable to interpret arguments: " ++ implode(" ", a.cmdRemaining)]
-    else if null(a.cmdRemaining) then ["No grammar to build was specified.\n\n"]
     else if length(a.outName) > 1 then ["Multiple options given for -o flag: " ++ implode(" ", a.outName)]
     else if length(a.genLocation) > 1 then ["Multiple options given for -G flag: " ++ implode(" ", a.genLocation)]
     else if length(a.silverHomeOption) > 1 then ["Multiple options given for --silver-home flag: " ++ implode(" ", a.silverHomeOption)]
@@ -134,18 +133,19 @@ IOVal<[String]> ::=
   local isGramDir :: IOVal<Boolean> = isDirectory(silverHome ++ "grammars/", isGenDir.io);
 
   local errors :: [String] =
-    if silverHome == "/"
-    then ["Missing SILVER_HOME or --silver-home <path>.\nThis should have been set up at install time, and/or supplied by RunSilver.jar"]
+    if null(a.cmdRemaining) then ["No grammar to build was specified.\n"]
+    else if silverHome == "/"
+    then ["Missing SILVER_HOME or --silver-home <path>.\nThis should have been set up at install time, and/or supplied by RunSilver.jar\n"]
     else if !isGenDir.iovalue
          then if silverGen == silverHome ++ "generated/"
-         then ["Missing SILVER_GEN or -G <path>.\nThis should have been inferable, but " ++ silverGen ++ " is not a directory."]
-         else ["Supplied SILVER_GEN location " ++ silverGen ++ " is not a directory."]
+         then ["Missing SILVER_GEN or -G <path>.\nThis should have been inferable, but " ++ silverGen ++ " is not a directory.\n"]
+         else ["Supplied SILVER_GEN location " ++ silverGen ++ " is not a directory.\n"]
     else if !isGramDir.iovalue
-    then ["Missing standard library grammars: tried " ++ silverHome ++ "grammar/ but failed."]
+    then ["Missing standard library grammars: tried " ++ silverHome ++ "grammar/ but failed.\n"]
     else if indexOf("/", buildGrammar) != -1 -- basic sanity check
-    then ["Build grammar appears to contain slashes: " ++ buildGrammar]
+    then ["Build grammar appears to contain slashes: " ++ buildGrammar ++ "\n"]
     else if indexOf(".", buildGrammar) != -1 -- also, now
-    then ["Build grammar appears to contain dots: " ++ buildGrammar]
+    then ["Build grammar appears to contain dots: " ++ buildGrammar ++ "\n"]
     else [];
 
   return ioval(isGramDir.io, errors);
