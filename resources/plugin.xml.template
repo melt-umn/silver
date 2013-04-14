@@ -77,6 +77,12 @@ Variables used:
                class="@PKG_NAME@.imp.actions.Enable@LANG_NAME@Nature"
                id="@LANG_NAME@.imp.actions.enableNatureAction">
          </action>
+         <action
+               label="Export as @LANG_NAME@ target"
+               tooltip="Export the project as @LANG_NAME@ distributable"
+               class="@PKG_NAME@.imp.actions.Export@LANG_NAME@"
+               id="@LANG_NAME@.imp.actions.exportAction">
+         </action>
       </objectContribution>
    </extension>
    <extension

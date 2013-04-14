@@ -60,9 +60,10 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     "<target name='create-folders'>" ++ getCreateFoldersTarget(delegateBuilderName) ++ "</target>",
     "<target name='customize' if=\"to-customize\">" ++ getCustomizeTarget() ++ "</target>",
     "<target name='postbuild' if=\"to-postbuild\">" ++ getAntPostBuildTarget() ++ "</target>",--this is for ant post-build; not to be confused with IDE post-build
-    "<target name='enhance' depends='enhance-build, enhance-postbuild'></target>",
+    "<target name='enhance' depends='enhance-build, enhance-postbuild, enhance-export'></target>",
     "<target name='enhance-build' depends='arg-check, filters' if=\"ide-function-builder-exists\">" ++ getEnhanceBuildTarget(ide.funcDcls) ++ "</target>",
     "<target name='enhance-postbuild' depends='arg-check, filters' if=\"ide-function-postbuilder-exists\">" ++ getEnhancePostBuildTarget(ide.funcDcls) ++ "</target>",
+    "<target name='enhance-export' depends='arg-check, filters' if=\"ide-function-exporter-exists\">" ++ getEnhanceExportTarget(ide.funcDcls) ++ "</target>", 
     getBuildTargets()
     ];
 
@@ -161,23 +162,35 @@ Pair<Boolean Boolean> ::= funcDcls::[Pair<String String>] pr::Pair<Boolean Boole
                 end;
 }
 
+function getEnhanceExportTarget
+String ::= funcDcls::[Pair<String String>]
+{
+    return if null(funcDcls)
+           then "\n"
+           else let
+                    result :: String = getEnhanceExportAction(head(funcDcls))
+                in 
+                    if result==""
+                    then getEnhanceExportTarget(tail(funcDcls))
+                    else result
+                end;
+
+}
+
+function getEnhanceExportAction
+String ::= funcDcl::Pair<String String>
+{
+    return if "exporter"==funcDcl.fst
+           then 
+                "\n<copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Export.java.template\"\n" ++ --NIdeMessage[] ::= NIdeProperty[] NIdeEnv
+                "        tofile=\"${src}/" ++ grammarToPath(funcDcl.snd) ++ "/Export.java\" filtering=\"true\" overwrite=\"true\"/>"
+           else
+                "";
+}
+
 function getEnhanceBuildTarget
 String ::= funcDcls::[Pair<String String>]
 {
-{--
-    local result0 :: String = if null(funcDcls) then "\n" else "";
-
-    local result1 :: String = if result0=="\n"
-                              then result0                                  --reaching the end
-                              else getEnhanceBuildAction(head(funcDcls));
-
-    local result2 :: String = if result1==""
-                              then getEnhanceBuildTarget(tail(funcDcls))    --not found, recurse
-                              else result1;
-
-    return result2;
---}
-
     return if null(funcDcls)
            then "\n"
            else let
@@ -204,20 +217,6 @@ String ::= funcDcl::Pair<String String>
 function getEnhancePostBuildTarget
 String ::= funcDcls::[Pair<String String>]
 {
-{--
-    local result0 :: String = if null(funcDcls) then "\n" else "";
-
-    local result1 :: String = if result0=="\n"
-                              then result0                                      --reaching the end
-                              else getEnhancePostBuildAction(head(funcDcls));
-
-    local result2 :: String = if result1==""
-                              then getEnhancePostBuildTarget(tail(funcDcls))    --not found, recurse
-                              else result1;
-
-    return result2;
---}
-
     return if null(funcDcls)
            then "\n"
            else let
@@ -292,6 +291,9 @@ String ::=
     "    <available file=\"${grammar.path}/postbuild.xml\" type=\"file\"/>\n"++
     "  </condition>\n"++
     "  \n"++
+    "  <condition property=\"ide-function-exporter-exists\">\n"++
+    "    <isset property=\"ide.function.exporter\"/>\n"++
+    "  </condition>\n"++
     "  <condition property=\"ide-function-builder-exists\">\n"++
     "    <isset property=\"ide.function.builder\"/>\n"++
     "  </condition>\n"++
@@ -323,6 +325,7 @@ String ::=
     "  <filter token=\"FEATURE_LICENSE_TEXT\" value='no license information available'/>\n" ++
     "  <filter token=\"BUILDER_CLASS_QNAME\" value='${ide.function.builder}'/>\n" ++
     "  <filter token=\"POST_BUILDER_CLASS_QNAME\" value='${ide.function.postbuilder}'/>\n" ++
+    "  <filter token=\"EXPORTER_CLASS_QNAME\" value='${ide.function.exporter}'/>\n" ++
     "  <filter token=\"DELEGATE_BUILDER_NAME\" value='${ide.delegate.builder.name}'/>\n" ++
     "  <filter token=\"LANG_COMPOSED_PKG\" value='${lang.composed}'/>\n" ++ 
     "  <filter token=\"START_NONTERMINAL_CLASS\" value='${start.nonterminal.class}'/>\n" ++
@@ -404,8 +407,8 @@ String ::= delegateBuilderName::String
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/StartupHook.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/StartupHook.java\" filtering=\"true\"/>\n" ++
     "  <!-- The project properties -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/Properties.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/${lang.name}Properties.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/Service.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/${lang.name}Service.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
     "  <mkdir dir='${ide.pkg.path}/imp/'/>\n" ++  
@@ -417,6 +420,8 @@ String ::= delegateBuilderName::String
     "  <mkdir dir='${ide.pkg.path}/imp/actions'/>\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/actions/EnableLANGNature.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/imp/actions/Enable${lang.name}Nature.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/actions/ExportLANG.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/imp/actions/Export${lang.name}.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
     "  <mkdir dir='${ide.pkg.path}/imp/builders'/>\n" ++

@@ -5,6 +5,8 @@
  */
 package @PKG_NAME@.imp.actions;
 
+import ide.NIdeEnv;
+
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jface.action.IAction;
@@ -13,13 +15,14 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
-import @PKG_NAME@.imp.builders.@LANG_NAME@Nature;
+import @PKG_NAME@.@LANG_NAME@Service;
+import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 
 
-public class Enable@LANG_NAME@Nature implements IWorkbenchWindowActionDelegate {
+public class Export@LANG_NAME@ implements IWorkbenchWindowActionDelegate {
 	private IProject fProject;
 
-	public Enable@LANG_NAME@Nature() {
+	public Export@LANG_NAME@() {
 	}
 
 	public void dispose() {
@@ -29,7 +32,27 @@ public class Enable@LANG_NAME@Nature implements IWorkbenchWindowActionDelegate {
 	}
 
 	public void run(IAction action) {
-		new @LANG_NAME@Nature().addToProject(fProject);
+		@LANG_NAME@Service service = @LANG_NAME@Service.getInstance();
+		
+		NIdeEnv env = service.getEnvironment(fProject);
+		
+		ProjectProperties props = service.getProperties(fProject);
+		
+//		IPath p = fProject.getLocation();
+//		System.out.println(fProject.getName());
+//		System.out.println(p.toOSString());
+//		System.out.println(p.toOSString() + "/" + SILVERBuilder.GEN_FOLDER);
+//		
+//		try {
+//			Location platform = Platform.getInstallLocation();
+//			File parent = new File(FileLocator.resolve(platform.getURL()).toURI());
+//			System.out.println(parent.getAbsolutePath());
+//		} catch (URISyntaxException e) {
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+		
 	}
 
 	public void selectionChanged(IAction action, ISelection selection) {

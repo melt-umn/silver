@@ -11,11 +11,12 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.resources.IProject;
 
 import ide.NIdeMessage;
 import ide.NIdeProperty;
 import ide.PmakeIdeProperty;
-import @PKG_NAME@.@LANG_NAME@Properties;
+import @PKG_NAME@.@LANG_NAME@Service;
 
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 import edu.umn.cs.melt.ide.silver.property.Property;
@@ -40,20 +41,20 @@ public class @LANG_NAME@BuildInvoker {
 	
 	/**
 	 * 
-	 * @param projectPath	The project path relative to workspace
+	 * @param project
 	 * @param clstream		
 	 * @param monitor
 	 * @param handler
 	 * @return
 	 */
 	public boolean build(
-		String projectPath, 
+		IProject project, 
 		ConsoleLoggingStream clstream, 
 		IProgressMonitor monitor,
 		MessageHandler handler) {
 
 		//Get properties
-		ProjectProperties properties = @LANG_NAME@Properties.getInstance().getByProject(projectPath);
+		ProjectProperties properties = @LANG_NAME@Service.getInstance().getProperties(project);
 
 		try {
 			//Extract properties			

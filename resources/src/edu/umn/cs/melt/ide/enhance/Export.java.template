@@ -1,29 +1,32 @@
 /*
  * Variables used:
  *   LANG_COMPOSED_PKG
- *   BUILDER_CLASS_QNAME
+ *   EXPORTER_CLASS_QNAME
  */
 package @LANG_COMPOSED_PKG@;
 
 import ide.NIdeProperty;
 import ide.NIdeMessage;
+import ide.NIdeEnv;
 
 /**
- * This class invokes the builder function defined in Silver code.
+ * This class invokes the exporter function defined in Silver code.
  */
-public class Build {
+public class Export {
 
 	/**
-     * Invokes the builder function defined in Silver's IDE declaration block.
+     * Invokes the exporter function defined in Silver's IDE declaration block.
      * <p>
 	 * @param args		an array of NIdeProperty
      * (corresponding to list of silver nonterminal [ide:IdeProperty])
+	 * @param env		NIdeEnv
+     * (corresponding to silver nonterminal ide:IdeEnv)
 	 * @return          a list of NIdeMessage
      * (corresponding to list of silver nonterminal [ide:IdeMessage])
      */
-	public static java.util.List<NIdeMessage> build(NIdeProperty[] args) {
+	public static java.util.List<NIdeMessage> export(NIdeProperty[] args, NIdeEnv env) {
 		try {
-            common.Node rv = (common.Node) @BUILDER_CLASS_QNAME@.invoke(cvargs(args), null);
+            common.Node rv = (common.Node) @EXPORTER_CLASS_QNAME@.invoke(cvargs(args), env, null);
 			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
 
             //Demand the IO token

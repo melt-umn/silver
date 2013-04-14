@@ -177,7 +177,6 @@ public class @LANG_NAME@Builder extends BuilderBase implements MessageHandler {
     @SuppressWarnings("unchecked")
     protected IProject[] build(int kind, Map args, IProgressMonitor monitor) {
     	final IProject project = getProject();
-    	final String projectPath = project.getLocation().toString();
 		
     	boolean buildSuccessful = true;
     	//Let's parse files first to see if there is any syntactic errors. 
@@ -194,7 +193,7 @@ public class @LANG_NAME@Builder extends BuilderBase implements MessageHandler {
 		IFolder gen = getGenFolder(project);
 		
 		IProject[] toReturn = delegateBuilder.build(
-			this, getConsoleLoggingStream(), projectPath, kind, args, monitor);
+			this, getConsoleLoggingStream(), project, kind, args, monitor);
 	
 		try {
 			gen.refreshLocal(IResource.DEPTH_INFINITE, null);

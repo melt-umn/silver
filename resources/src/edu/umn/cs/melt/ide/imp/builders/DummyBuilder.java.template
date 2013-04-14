@@ -21,7 +21,7 @@ public class DummyBuilder implements DelegateBuilder {
 	public IProject[] build(
 		@LANG_NAME@Builder builder, 
 		ConsoleLoggingStream cls,
-		String projectPath,
+		IProject project,
 		int kind, Map args, IProgressMonitor monitor) {
 		
         return new IProject[0];
