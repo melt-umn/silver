@@ -65,8 +65,11 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optF
 -- function called when build is triggered
 terminal ImpIde_OptFunc_Builder 'builder';
 
--- function called after builder returns without errors
+-- function called in background thread, if builder returns without errors
 terminal ImpIde_OptFunc_PostBuilder 'postbuilder';
+
+-- function called when exporting is demanded
+terminal ImpIde_OptFunc_Exporter 'exporter';
 
 --funcDcls, propDcls are defined in ./IdeSpec.sv
 nonterminal IdeFunctions with env, location, errors, grammarName, file, funcDcls, propDcls;
@@ -118,9 +121,9 @@ top::IdeFunction ::= 'builder' builderName::QName ';'
     functionTypeExp(
       nonterminalTypeExp(
         "core:IOVal", 
-        [listTypeExp(nonterminalTypeExp("ide:IdeMessage", []))]--silver:modification:impide:IdeMessage
+        [listTypeExp(nonterminalTypeExp("ide:IdeMessage", []))]
       ),
-      [listTypeExp(nonterminalTypeExp("ide:IdeProperty", [])),--silver:modification:impide:IdeProperty
+      [listTypeExp(nonterminalTypeExp("ide:IdeProperty", [])),
         foreignTypeExp("core:IO", [])], []);
   
   local tc1 :: TypeCheck = check(freshenCompletely(builderName.lookupValue.typerep), builderTypeExpected);
@@ -158,6 +161,35 @@ top::IdeFunction ::= 'postbuilder' postbuilderName::QName ';'
   top.errors <-
     if !tc1.typeerror then []
     else [err(postbuilderName.location, "Post-builder function should have type:\n\t" ++ tc1.rightpp 
+        ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
+}  
+
+concrete production makeIdeFunction_Exporter
+top::IdeFunction ::= 'exporter' exporterName::QName ';' 
+{
+  top.funcDcls := [pair("exporter", exporterName.lookupValue.fullName)];
+  top.propDcls := [];
+
+  top.errors := exporterName.lookupValue.errors;
+  
+  -- IOVal<[IdeMessage]> ::= [IdeProperty] IdeEnv IO
+  local exporterTypeExpected :: TypeExp =
+    functionTypeExp(
+      nonterminalTypeExp(
+        "core:IOVal", 
+        [listTypeExp(nonterminalTypeExp("ide:IdeMessage", []))]
+      ),
+      [listTypeExp(nonterminalTypeExp("ide:IdeProperty", [])), 
+        nonterminalTypeExp("ide:IdeEnv", []),
+        foreignTypeExp("core:IO", [])], []);
+  
+  local tc1 :: TypeCheck = check(freshenCompletely(exporterName.lookupValue.typerep), exporterTypeExpected);
+  tc1.downSubst = emptySubst();
+  tc1.finalSubst = tc1.upSubst;
+
+  top.errors <-
+    if !tc1.typeerror then []
+    else [err(exporterName.location, "Exporter function should have type:\n\t" ++ tc1.rightpp 
         ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
 }  
 

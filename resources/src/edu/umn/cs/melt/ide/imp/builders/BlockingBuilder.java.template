@@ -25,7 +25,7 @@ import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
  * <p>
  * The build will be completed after @LANG_NAME@BuildInvoker returns. Before 
  * that, any further action (like save file) initiated by user will be blocked
- * in an event queue by Eclipse.
+ * in an event queue maintained by Eclipse.
  */
 public class BlockingBuilder implements DelegateBuilder {
 
@@ -34,7 +34,7 @@ public class BlockingBuilder implements DelegateBuilder {
 	public IProject[] build(
 		@LANG_NAME@Builder builder, 
 		ConsoleLoggingStream cls,
-		String projectPath,
+		IProject project,
 		int kind, Map args, IProgressMonitor monitor) {
 
     	boolean buildSuccessful = true;
@@ -44,7 +44,7 @@ public class BlockingBuilder implements DelegateBuilder {
 		}
 		
 		//Invoke Build
-		buildSuccessful = buildInvoker.build(projectPath, cls, monitor, builder);
+		buildSuccessful = buildInvoker.build(project, cls, monitor, builder);
 
 		//Cancel the build if failed
 		if(!buildSuccessful){

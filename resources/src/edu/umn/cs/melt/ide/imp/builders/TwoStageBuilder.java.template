@@ -20,14 +20,14 @@ import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
  * the programmer chooses to "Build" a project manually from the Eclipse menu.
  * <p>
  * When the method {@link @LANG_NAME@Builder#build(int, Map, IProgressMonitor)} is 
- * invoked, it first parses all the affected source files to see if there is any 
+ * invoked, it parses all the affected source files to see if there is any 
  * syntactic errors; if not, this builder will be invoked.
  * <p>
- * This builder will first calls build() in @LANG_NAME@BuildInvoker, which 
+ * This builder will first call build() in @LANG_NAME@BuildInvoker, which 
  * returns a message list; if no error is present in the list, postbuild() in
  * @LANG_NAME@PostBuildInvoker will be invoked in a background thread.
  * <p>
- * The build will be completed after @LANG_NAME@PostBuildInvoker returns. If 
+ * The build will be completed after @LANG_NAME@PostBuildInvoker returns. If the
  * user intends to initiate another build when current build is underway (by 
  * editing and saving a file, for example), the new build will not be triggered 
  * until the completion of the active one.
@@ -41,7 +41,7 @@ public class TwoStageBuilder implements DelegateBuilder {
 	public IProject[] build(
 		@LANG_NAME@Builder builder, 
 		ConsoleLoggingStream cls,
-		String projectPath,
+		IProject project,
 		int kind, Map args, IProgressMonitor monitor) {
 		
     	boolean buildSuccessful = false;
@@ -52,7 +52,7 @@ public class TwoStageBuilder implements DelegateBuilder {
 		}
 		
 		//Invoke Build
-		buildSuccessful = buildInvoker.build(projectPath, cls, monitor, builder);
+		buildSuccessful = buildInvoker.build(project, cls, monitor, builder);
 
 		//Cancel the build if stage one failed
 		if(!buildSuccessful){
@@ -71,7 +71,7 @@ public class TwoStageBuilder implements DelegateBuilder {
             //Update arguments. These will be used in the following build, 
             //either deferred or not.
 			pbiThread.setMonitor(monitor);
-			pbiThread.setProjectPath(projectPath);
+			pbiThread.setProject(project);
 			pbiThread.setBuilder(builder);
 			
 			new Thread(pbiThread).start();
@@ -94,7 +94,7 @@ public class TwoStageBuilder implements DelegateBuilder {
 		
 		private IProgressMonitor monitor;
 
-		private String projectPath;
+		private IProject project;
 		
 		private @LANG_NAME@Builder builder;
 		
@@ -106,8 +106,8 @@ public class TwoStageBuilder implements DelegateBuilder {
 			this.monitor = monitor;
 		}
 
-		void setProjectPath(String projectPath){
-			this.projectPath = projectPath;
+		void setProject(IProject project){
+			this.project = project;
 		}
 		
 		void setBuilder(@LANG_NAME@Builder builder){
@@ -131,13 +131,7 @@ public class TwoStageBuilder implements DelegateBuilder {
 			
 			boolean buildSuccessful = true;
 			
-//			try {
-//				Thread.currentThread().sleep(5000);
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-			
-			buildSuccessful = postbuildInvoker.postbuild(projectPath, cls, monitor, builder);
+			buildSuccessful = postbuildInvoker.postbuild(project, cls, monitor, builder);
 			
 			//Failed build without retry
 			if(!buildSuccessful){

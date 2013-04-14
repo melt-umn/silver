@@ -11,11 +11,12 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.resources.IProject;
 
 import ide.NIdeMessage;
 import ide.NIdeProperty;
 import ide.PmakeIdeProperty;
-import silver.composed.idetest.SILVERProperties;
+import silver.composed.idetest.SILVERService;
 
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 import edu.umn.cs.melt.ide.silver.property.Property;
@@ -45,20 +46,20 @@ public class SILVERBuildInvoker {
 	
 	/**
 	 * 
-	 * @param projectPath	The project path relative to workspace
+	 * @param project
 	 * @param clstream		
 	 * @param monitor
 	 * @param handler
 	 * @return
 	 */
 	public boolean build(
-		String projectPath, 
+		IProject project, 
 		ConsoleLoggingStream clstream, 
 		IProgressMonitor monitor,
 		MessageHandler handler) {
 
 		//Get properties
-		ProjectProperties properties = SILVERProperties.getInstance().getByProject(projectPath);
+		ProjectProperties properties = SILVERService.getInstance().getProperties(project);
 
 		try {
 			//Extract properties			

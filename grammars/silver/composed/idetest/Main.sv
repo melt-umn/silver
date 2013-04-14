@@ -62,9 +62,18 @@ IOVal<Integer> ::= args::[String] ioin::IO
 temp_imp_ide_dcl svParse ".sv" { 
   builder analyze;          --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] i::IO"
   postbuilder generate;     --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] i::IO"
+  exporter export;          --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO"
   property grammar_to_compile string;
   property grammar_to_include string;
 };
+
+function export
+IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
+{
+
+  return ioval(i, []);
+
+}
 
 function generate
 IOVal<[IdeMessage]> ::= args::[IdeProperty] i::IO
