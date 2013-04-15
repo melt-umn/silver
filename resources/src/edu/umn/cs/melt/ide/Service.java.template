@@ -6,12 +6,16 @@
 package @PKG_NAME@;
 
 import ide.NIdeEnv;
+import ide.NIdeProperty;
+import ide.PmakeIdeProperty;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.FileLocator;
@@ -20,8 +24,8 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.osgi.service.datalocation.Location;
 
 import @PKG_NAME@.imp.builders.@LANG_NAME@Builder;
-
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
+import edu.umn.cs.melt.ide.silver.property.Property;
 
 /**
  * Services managed for each project of @LANG_NAME@ in the workspace.
@@ -66,6 +70,26 @@ public class @LANG_NAME@Service {
 		}
 		
 		return pp;
+	}
+
+	/**
+	 * Convert ProjectProperties to [NIdeProperty] in Silver
+	 * @param properties
+	 * @return
+	 */
+	public static NIdeProperty[] convertToNIdePropertyList(ProjectProperties properties) {
+		Set<Entry<String, Property>> set = properties.getAll();
+		NIdeProperty[] list = new NIdeProperty[set.size()];
+		int i=0;
+		for(Entry<String, Property> entry: set){
+			list[i] = new PmakeIdeProperty(
+				new common.StringCatter(entry.getKey()), 
+				new common.StringCatter(entry.getValue().getSValue())
+			);
+			i++;
+		}
+		
+		return list;
 	}
 	
 	/**

@@ -430,8 +430,8 @@ String ::= delegateBuilderName::String
     "        tofile=\"${ide.pkg.path}/imp/builders/${lang.name}Nature.java\" filtering=\"true\"/>\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/builder.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/imp/builders/${lang.name}Builder.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/MessageHandler.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/imp/builders/MessageHandler.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/PostActionHandler.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/imp/builders/PostActionHandler.java\" filtering=\"true\"/>\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/Utility.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/imp/builders/Utility.java\" filtering=\"true\"/>\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/DelegateBuilder.java.template\"\n" ++
