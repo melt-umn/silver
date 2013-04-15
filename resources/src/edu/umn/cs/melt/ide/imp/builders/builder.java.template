@@ -36,6 +36,7 @@ import org.eclipse.imp.model.ModelFactory.ModelException;
 import org.eclipse.imp.parser.IParseController;
 import org.eclipse.imp.runtime.PluginBase;
 
+import @PKG_NAME@.eclipse.console.@LANG_NAME@Console;
 import @PKG_NAME@.imp.@LANG_NAME@Plugin;
 import @PKG_NAME@.imp.controller.@LANG_NAME@ParseController;
 
@@ -169,7 +170,7 @@ public class @LANG_NAME@Builder extends BuilderBase implements PostActionHandler
     }
     
     private ConsoleLoggingStream getConsoleLoggingStream(){    	
-    	return ConsoleLoggingStream.getStream(getConsoleStream(), getConsoleStream());
+        return @LANG_NAME@Console.getConsoleLoggingStream();
     }
     
     private DelegateBuilder delegateBuilder = new @DELEGATE_BUILDER_NAME@();

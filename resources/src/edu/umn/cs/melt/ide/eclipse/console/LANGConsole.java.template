@@ -1,0 +1,69 @@
+/*
+ * Variables used:
+ *   PKG_NAME
+ *   LANG_NAME
+ */
+package @PKG_NAME@.eclipse.console;
+
+import org.eclipse.ui.console.ConsolePlugin;
+import org.eclipse.ui.console.IConsole;
+import org.eclipse.ui.console.IConsoleManager;
+import org.eclipse.ui.console.MessageConsole;
+import org.eclipse.ui.console.MessageConsoleStream;
+
+import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
+
+import @PKG_NAME@.imp.@LANG_NAME@Plugin;
+
+public class @LANG_NAME@Console {
+
+	private final static String CONSOLE_NAME = @LANG_NAME@Plugin.kLanguageID + " Console";
+	
+	private static ConsoleLoggingStream clsCache = null;
+	
+	/**
+	 * Get the {@link ConsoleLoggingStream} associated with this IDE.
+	 * 
+	 * @return
+	 */
+	public static ConsoleLoggingStream getConsoleLoggingStream(){
+		if(clsCache==null){
+			clsCache = ConsoleLoggingStream.getStream(getConsoleStream(), getConsoleStream());
+		}
+    	
+		return clsCache;
+    }
+    
+	/**
+	 * Get a raw {@link MessageConsoleStream}. {@link #getConsoleLoggingStream()} provides
+	 * a more convenient wrapper for this stream.
+	 * 
+	 * @return
+	 */
+	public static MessageConsoleStream getConsoleStream() {
+    	MessageConsole console = findConsole(CONSOLE_NAME);
+    	ConsolePlugin.getDefault().getConsoleManager().showConsoleView(console);
+    	return console.newMessageStream();
+    }
+	
+    /*
+     * Code copied from {@link org.eclipse.imp.builder.BuilderBase#findConsole(String consoleName)}.
+     */
+    private static MessageConsole findConsole(String consoleName) {
+        MessageConsole myConsole= null;
+        final IConsoleManager consoleManager= ConsolePlugin.getDefault().getConsoleManager();
+        IConsole[] consoles= consoleManager.getConsoles();
+        for(int i= 0; i < consoles.length; i++) {
+            IConsole console= consoles[i];
+            if (console.getName().equals(consoleName))
+                myConsole= (MessageConsole) console;
+        }
+        if (myConsole == null) {
+            myConsole= new MessageConsole(consoleName, null);
+            consoleManager.addConsoles(new IConsole[] { myConsole });
+        }
+        
+        return myConsole;
+    }
+    
+}

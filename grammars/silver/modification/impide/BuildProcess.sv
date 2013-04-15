@@ -460,6 +460,12 @@ String ::= delegateBuilderName::String
     "        tofile=\"${ide.pkg.path}/eclipse/wizard/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
+    "  <mkdir dir='${ide.pkg.path}/eclipse/console'/>\n" ++
+    "  <!-- An IDE console specific to project of this language. -->\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/console/LANGConsole.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/console/${lang.name}Console.java\" filtering=\"true\"/>\n" ++
+    "  \n" ++
+
     "  <!-- 9. pom.xml (using tycho) for building plugin, feature and repository -->\n" ++
     "  <!-- parent -->\n" ++
     "  <copy file=\"${res}/pom_templates/parent.pom.xml.template\" tofile=\"${ide.proj.parent.path}/pom.xml\" filtering=\"true\"/>\n" ++
