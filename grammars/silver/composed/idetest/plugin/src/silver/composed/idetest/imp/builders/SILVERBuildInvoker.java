@@ -56,23 +56,14 @@ public class SILVERBuildInvoker {
 		IProject project, 
 		ConsoleLoggingStream clstream, 
 		IProgressMonitor monitor,
-		MessageHandler handler) {
+		PostActionHandler handler) {
 
 		//Get properties
 		ProjectProperties properties = SILVERService.getInstance().getProperties(project);
 
 		try {
 			//Extract properties			
-			Set<Entry<String, Property>> set = properties.getAll();
-			NIdeProperty[] args = new NIdeProperty[set.size()];
-			int i=0;
-			for(Entry<String, Property> entry: set){
-				args[i] = new PmakeIdeProperty(
-					new common.StringCatter(entry.getKey()), 
-					new common.StringCatter(entry.getValue().getSValue())
-				);
-				i++;
-			}
+			NIdeProperty[] args = SILVERService.convertToNIdePropertyList(properties);
 			
 			List<NIdeMessage> list = silver.composed.idetest.Build.build(args);
 			return handler.handleBuild(list);

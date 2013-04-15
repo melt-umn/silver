@@ -6,6 +6,9 @@
 package @PKG_NAME@.imp.actions;
 
 import ide.NIdeEnv;
+import ide.NIdeMessage;
+
+import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.IJavaProject;
@@ -16,8 +19,8 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
 import @PKG_NAME@.@LANG_NAME@Service;
+import @PKG_NAME@.imp.builders.Utility;
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
-
 
 public class Export@LANG_NAME@ implements IWorkbenchWindowActionDelegate {
 	private IProject fProject;
@@ -38,20 +41,10 @@ public class Export@LANG_NAME@ implements IWorkbenchWindowActionDelegate {
 		
 		ProjectProperties props = service.getProperties(fProject);
 		
-//		IPath p = fProject.getLocation();
-//		System.out.println(fProject.getName());
-//		System.out.println(p.toOSString());
-//		System.out.println(p.toOSString() + "/" + SILVERBuilder.GEN_FOLDER);
-//		
-//		try {
-//			Location platform = Platform.getInstallLocation();
-//			File parent = new File(FileLocator.resolve(platform.getURL()).toURI());
-//			System.out.println(parent.getAbsolutePath());
-//		} catch (URISyntaxException e) {
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
+		List<NIdeMessage> list = silver.composed.idetest.Export.export(
+			@LANG_NAME@Service.convertToNIdePropertyList(props), env);
+		
+		Utility.renderMessages(list, fProject, null);
 		
 	}
 

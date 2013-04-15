@@ -8,7 +8,7 @@ package @PKG_NAME@.imp.builders;
 import java.util.List;
 import ide.NIdeMessage;
 
-public interface MessageHandler {
+public interface PostActionHandler {
 
 	/**
 	 * Handle the IDE message list returned by Builder.

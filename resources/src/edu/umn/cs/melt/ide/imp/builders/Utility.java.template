@@ -1,15 +1,131 @@
 /*
  * Variables used:
  *   PKG_NAME
+ *   LANG_NAME
  */
 package @PKG_NAME@.imp.builders;
 
+import java.util.List;
+
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
 
 import ide.NIdeMessage;
 import edu.umn.cs.melt.ide.silver.misc.Problem;
 
 public class Utility {
+
+	/**
+	 * Render messages given in a list (in Silver type [IdeMessage]) properly
+	 * in workbench. The concrete processing of each message is delegated to
+	 * handler, which is passed along as a callback function, but which can be
+	 * null as well. 
+	 * <p>
+	 * Return a boolean value representing if any message of ERROR level is 
+	 * present in the list.
+	 *  
+	 * @param list
+	 * @param project
+	 * @param handler a user-provided message handler for processing each message
+	 * in the list. If null, a default handler will be used, which marks location
+	 * of problem for source-level problem, and adds a new entry into problem view
+	 * for project-level problem.
+	 * @return
+	 */
+	public static boolean renderMessages(List<NIdeMessage> list, IProject project, MessageHandler handler){
+		//If no handler is given, use default one
+		if(handler==null){
+			handler = HANDLER;
+		}
+		
+		//Clean markers
+		try {
+			project.deleteMarkers(@LANG_NAME@Builder.PROBLEM_MARKER_ID, false, IResource.DEPTH_INFINITE);
+		} catch (CoreException e) {
+			e.printStackTrace();
+		}
+
+		boolean success = true;
+		
+		//Add markers
+		for(NIdeMessage message:list){
+			Problem p = Utility.extractProblem(project, message);
+			
+			if(!p.isProjectProblem()){
+				handler.handleSourceProblem(p);
+			} else {
+				handler.handleProjectProblem(project, p.getLevel(), p.getMessage());
+			}
+			
+			if(p.getLevel()==Problem.ERROR){
+				success = false;
+			}
+		}
+		
+		return success;
+	}
+	
+	public interface MessageHandler {
+		
+		/**
+		 * Handle a project-level problem.
+		 * 
+		 * @param project
+		 * @param level
+		 * @param message
+		 * @return
+		 */
+		void handleProjectProblem(IProject project, int level, String message);
+		
+		/**
+		 * Handle a source-level problem. The problem is associated with a 
+		 * specific location in a source file.
+		 * 
+		 * @param problem
+		 * @return
+		 */
+		void handleSourceProblem(Problem problem);
+		
+	}
+	
+	public static class DefaultMessageHandler implements MessageHandler {
+		
+		public void handleProjectProblem(IProject project, int level, String message) {
+			try {
+				IMarker marker = project.createMarker(@LANG_NAME@Builder.PROBLEM_MARKER_ID);
+				marker.setAttribute(IMarker.MESSAGE, message);
+				marker.setAttribute(IMarker.SEVERITY, level);
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		public void handleSourceProblem(Problem p) {
+			IFile file = p.getFile();
+			try {
+				//Reuse ErrorMarkerID for whatever kind of problem
+				IMarker marker = file.createMarker(@LANG_NAME@Builder.PROBLEM_MARKER_ID);
+				marker.setAttribute(IMarker.MESSAGE, p.getMessage());
+				marker.setAttribute(IMarker.LINE_NUMBER, p.getLine());
+				int index = p.getStartInd();
+				if(index!=Problem.UNKNOWN){
+					marker.setAttribute(IMarker.CHAR_START, index);
+				}
+				index = p.getEndInd();
+				if(index!=Problem.UNKNOWN){
+					marker.setAttribute(IMarker.CHAR_END, index);
+				}
+				marker.setAttribute(IMarker.SEVERITY, p.getLevel());
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private static DefaultMessageHandler HANDLER = new DefaultMessageHandler();
 
 	static Problem extractProblem(IProject project, NIdeMessage ideMsg) {
 		//Extract values
