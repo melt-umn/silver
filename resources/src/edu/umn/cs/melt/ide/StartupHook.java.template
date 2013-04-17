@@ -7,11 +7,19 @@ package @PKG_NAME@;
 
 import org.eclipse.ui.IStartup;
 
+import edu.umn.cs.melt.ide.util.Util;
+
+import @PKG_NAME@.eclipse.console.@LANG_NAME@Console;
+
 public class StartupHook implements IStartup {
 
 	@Override
 	public void earlyStartup() {
+        //Initialize execution enviroment for @LANG_NAME@ 
 		@LANG_NAME@Initializer.initialize();
+
+        //Set up console logger
+        Util.setConsoleLoggingStream(@LANG_NAME@Console.getConsoleLoggingStream());
 	}
 	
 }
