@@ -22,10 +22,7 @@ public class Utility {
 	 * Render messages given in a list (in Silver type [IdeMessage]) properly
 	 * in workbench. The concrete processing of each message is delegated to
 	 * handler, which is passed along as a callback function, but which can be
-	 * null as well. 
-	 * <p>
-	 * Return a boolean value representing if any message of ERROR level is 
-	 * present in the list.
+	 * null as well.
 	 *  
 	 * @param list
 	 * @param project
@@ -33,7 +30,8 @@ public class Utility {
 	 * in the list. If null, a default handler will be used, which marks location
 	 * of problem for source-level problem, and adds a new entry into problem view
 	 * for project-level problem.
-	 * @return
+	 * @return true if no error-level message is present in the list, indicating
+     * a success of the action.
 	 */
 	public static boolean renderMessages(List<NIdeMessage> list, IProject project, MessageHandler handler){
 		//If no handler is given, use default one

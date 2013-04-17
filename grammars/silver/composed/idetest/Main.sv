@@ -71,8 +71,23 @@ function export
 IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {
 
-  return ioval(pinfo("Export function called in Silver.", i), []);
+  --return ioval(pinfo("Export function called in Silver.", pinfo("Generated path: " ++ env.generatedPath, i)), []);
+  
+  local buildFile::String = env.generatedPath ++ "/build.xml";
 
+  local grammarName::String = head(getGrammarToCompile(args));
+
+  local jarFile::String = env.generatedPath ++ "/" ++ grammarName ++ ".jar";
+
+  local targetFile::String = env.projectPath ++ "/" ++ grammarName ++ ".jar";
+
+  local fileExists::IOVal<Boolean> = isFile(buildFile, i);
+
+  local jarExists::IOVal<Boolean> = isFile(jarFile, ant(buildFile, "", "", fileExists.io));
+
+  return if !fileExists.iovalue then ioval(perror("Export failed.", i), [makeSysIdeMessage(2, "build.xml doesn't exist. Has the project been successfully built before?")])
+    else if !jarExists.iovalue then ioval(perror("Export failed.", i), [makeSysIdeMessage(2, "Ant failed to generated the jar.")])
+    else ioval(copyFile(jarFile, targetFile, jarExists.io), []);
 }
 
 function generate
