@@ -59,15 +59,17 @@ public class Export@LANG_NAME@ implements IWorkbenchWindowActionDelegate {
 				final List<NIdeMessage> list = silver.composed.idetest.Export.export(
 					@LANG_NAME@Service.convertToNIdePropertyList(props), env);
 				
-				Utility.renderMessages(list, fProject, EXPORT_HANDLER);
+				boolean success = Utility.renderMessages(list, fProject, EXPORT_HANDLER);
 				
 				try {
 					fProject.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+					
+					if(success){
+						@LANG_NAME@Console.getConsoleLoggingStream().info("Export done.");
+					}
 				} catch (CoreException e) {
 					e.printStackTrace();
 				}
-				
-				@LANG_NAME@Console.getConsoleLoggingStream().info("Export done.");
 				
 				return Status.OK_STATUS;
 			}

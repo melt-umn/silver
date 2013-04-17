@@ -126,7 +126,12 @@ public class @LANG_NAME@Service {
 			e.printStackTrace();
 		}
 		
-		NIdeEnv env = new ide.PmakeIdeEnv(projectName, projectPath, generatedPath, platformPath);
+		NIdeEnv env = new ide.PmakeIdeEnv(
+            new common.StringCatter(projectName), 
+            new common.StringCatter(projectPath), 
+            new common.StringCatter(generatedPath), 
+            new common.StringCatter(platformPath)
+        );
 		
 		return env;
 	}
