@@ -27,6 +27,8 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
   local delegateBuilderName :: String = getDelegateBuilderName(ide.funcDcls);
   production pkgName :: String = makeName(buildGrammar);
 
+  classpathCompiler <- if !isIde then [] else ["${sh}/jars/IDEPluginRuntime.jar"];
+
   extraTopLevelDecls <- if !isIde then [] else [
     getIDERuntimeVersion(),
     "<property name='grammar.path' value='" ++ head(builtGrammar).grammarSource ++ "'/>", 

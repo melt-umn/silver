@@ -71,7 +71,7 @@ function export
 IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {
 
-  return ioval(i, []);
+  return ioval(pinfo("Export function called in Silver.", i), []);
 
 }
 

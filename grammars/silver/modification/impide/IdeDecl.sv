@@ -59,6 +59,17 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optF
   forwards to emptyAGDcl(location=top.location);
 }
 
+nonterminal IdeProperty with propName, propType;
+
+synthesized attribute propName :: String;
+synthesized attribute propType :: String;
+
+abstract production makeIdeProperty
+top::IdeProperty ::= propName::String propType::String
+{
+  top.propName = propName;
+  top.propType = propType;
+}
 
 -- Functions
 
