@@ -1,12 +1,20 @@
 
 --------------------------------------------------------------------------------
-Silver 0.3.6      Oct ??, 2012
+Silver 0.3.6      May ??, 2013
 
  - New modular well-definedness analysis implemented (currently alpha quality)
+   - Finds duplicated equations by default.
  - 'aspect default production' introduced to allow default equations for attributes
- - 'option' export declarations introduce "optional components" of a host language
+ - 'option' declarations introduce "optional components" of a host language
  - Introduced "closed nonterminals" that forbid new attributes (without a default)
  - Updates to the 'simple' tutorial, cleanups.
+ - Improve build process - won't rebuild parsers unnecessarily.
+ - Slight change to 'core' import semantics, most users shouldn't notice.
+ - Introduce standard library 'Location' type.
+   - Obtainable directly from terminals, now, too.
+ - Introduce alpha-quality 'annotations' language feature
+   - Including core 'location' that the parser can fill in for concrete syntax
+ - 'exports' now also implicity 'imports'
  - Bugs fixes and code quality improvements to the compiler.
 
 --------------------------------------------------------------------------------
