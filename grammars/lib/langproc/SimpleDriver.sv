@@ -2,8 +2,8 @@ grammar lib:langproc ;
 
 function simpleDriver
 IOVal<Integer> ::= filename::String
- the_parser::Function(ParseResult<a> ::= String String) 
- processTree::Function(IOVal<Integer> ::= a IO)
+ the_parser::(ParseResult<a> ::= String String) 
+ processTree::(IOVal<Integer> ::= a IO)
  driverIO::IO
 {
  local attribute fileExists :: IOVal<Boolean>;
@@ -32,7 +32,7 @@ IOVal<Integer> ::= filename::String
 
 function getAndParseFile
 IOVal<Maybe<a>> ::= filename::String 
-                    the_parser::Function(ParseResult<a> ::= String String) getIO::IO
+                    the_parser::(ParseResult<a> ::= String String) getIO::IO
 {
  local attribute fileExists :: IOVal<Boolean>;
  fileExists = isFile(filename, getIO);

@@ -4,6 +4,7 @@ synthesized attribute dominatesXML :: String;
 synthesized attribute submitsXML :: String;
 synthesized attribute lexerclassesXML :: String;
 synthesized attribute ignored :: Boolean;
+synthesized attribute marking :: Boolean;
 synthesized attribute acode :: String;
 synthesized attribute opPrecedence :: Maybe<Integer>;
 synthesized attribute opAssociation :: Maybe<String>; -- TODO type?
@@ -12,7 +13,7 @@ synthesized attribute opAssociation :: Maybe<String>; -- TODO type?
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, dominatesXML, submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, unparses;
+nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, dominatesXML, submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, unparses, marking;
 
 abstract production consTerminalMod
 top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalModifiers
@@ -22,6 +23,7 @@ top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalMod
   top.submitsXML = h.submitsXML ++ t.submitsXML;
   top.lexerclassesXML = h.lexerclassesXML ++ t.lexerclassesXML;
   top.ignored = h.ignored || t.ignored;
+  top.marking = h.marking || t.marking;
   top.acode = h.acode ++ t.acode;
   top.opPrecedence = orElse(h.opPrecedence, t.opPrecedence);
   top.opAssociation = orElse(h.opAssociation, t.opAssociation);
@@ -36,6 +38,7 @@ top::SyntaxTerminalModifiers ::=
   top.submitsXML = "";
   top.lexerclassesXML = "";
   top.ignored = false;
+  top.marking = false;
   top.acode = "";
   top.opPrecedence = nothing();
   top.opAssociation = nothing();
@@ -47,7 +50,7 @@ top::SyntaxTerminalModifiers ::=
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, dominatesXML, submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, unparses;
+nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, dominatesXML, submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, unparses, marking;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
@@ -58,6 +61,7 @@ top::SyntaxTerminalModifier ::=
   top.submitsXML = "";
   top.lexerclassesXML = "";
   top.ignored = false;
+  top.marking = false;
   top.acode = "";
   top.opPrecedence = nothing();
   top.opAssociation = nothing();
@@ -73,6 +77,16 @@ top::SyntaxTerminalModifier ::=
 {
   top.ignored = true;
   top.unparses = ["ignore()"];
+}
+{--
+ - If present, this is a Marking terminal. In the default translation,
+ - this does nothing.
+ -}
+abstract production termMarking
+top::SyntaxTerminalModifier ::=
+{
+  top.marking = true;
+  top.unparses = ["marking()"];
 }
 {--
  - The terminal's precedence. (Resolves shift/reduce conflicts)

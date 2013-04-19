@@ -25,6 +25,7 @@ terminal OperTerm 'oper' lexer classes {C_1};
 terminal AcodeTerm 'acode' lexer classes {C_1};
 terminal LayoutTerm 'layout' lexer classes {C_1};
 terminal IgnoreTerm 'ignore' lexer classes {C_1};
+terminal MarkingTerm 'marking' lexer classes {C_1};
 terminal AssocTerm 'assoc' lexer classes {C_1};
 terminal ClassesTerm 'classes' lexer classes {C_1};
 terminal SubTerm 'sub' lexer classes {C_1};
@@ -209,6 +210,11 @@ concrete production aTerminalModifierIgnore
 top::ITerminalModifier ::= 'ignore' '(' ')'
 {
   top.terminalModifiers = [termIgnore()];
+}
+concrete production aTerminalModifierMarking
+top::ITerminalModifier ::= 'marking' '(' ')'
+{
+  top.terminalModifiers = [termMarking()];
 }
 concrete production aTerminalModifierPrec
 top::ITerminalModifier ::= 'prec' '(' n::Num_t ')'
