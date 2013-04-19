@@ -3,6 +3,7 @@ grammar silver:definition:concrete_syntax;
 import silver:definition:regex;
 
 terminal Ignore_kwd      'ignore'      lexer classes {KEYWORD};
+terminal Marking_kwd     'marking'     ;
 terminal Left_kwd        'left'        lexer classes {KEYWORD};
 terminal Association_kwd 'association' lexer classes {KEYWORD};
 terminal Right_kwd       'right'       lexer classes {KEYWORD};
@@ -73,6 +74,14 @@ top::TerminalKeywordModifier ::= 'ignore'
   top.pp = "ignore ";
 
   top.terminalModifiers = [termIgnore()];
+}
+
+concrete production terminalKeywordModifierMarking
+top::TerminalKeywordModifier ::= 'marking'
+{
+  top.pp = "marking ";
+
+  top.terminalModifiers = [termMarking()];
 }
 
 concrete production terminalKeywordModifierNone
