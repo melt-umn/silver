@@ -25,6 +25,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
   local parserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ ".copper";
   local ideParserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ "_ide.copper";
   local delegateBuilderName :: String = getDelegateBuilderName(ide.funcDcls);
+  local actionExportName :: String = getExportActionName(ide.funcDcls);
   production pkgName :: String = makeName(buildGrammar);
 
   classpathCompiler <- if !isIde then [] else ["${sh}/jars/IDEPluginRuntime.jar"];
@@ -59,7 +60,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     "</target>",
     "<target name='arg-check'>" ++ getArgCheckTarget() ++ "</target>",
     "<target name='filters'>" ++ getFiltersTarget() ++ "</target>",
-    "<target name='create-folders'>" ++ getCreateFoldersTarget(delegateBuilderName) ++ "</target>",
+    "<target name='create-folders'>" ++ getCreateFoldersTarget(delegateBuilderName, actionExportName) ++ "</target>",
     "<target name='customize' if=\"to-customize\">" ++ getCustomizeTarget() ++ "</target>",
     "<target name='postbuild' if=\"to-postbuild\">" ++ getAntPostBuildTarget() ++ "</target>",--this is for ant post-build; not to be confused with IDE post-build
     "<target name='enhance' depends='enhance-build, enhance-postbuild, enhance-export'></target>",
@@ -135,6 +136,19 @@ function getIDEFunctionPropertyKey
 String ::= funcDcl :: Pair<String String>
 {
     return "ide.function." ++ funcDcl.fst;
+}
+
+function getExportActionName
+String ::= funcDcls :: [Pair<String String>]
+{
+    return if null(funcDcls) --length(funcDcls) < 1
+           then "ExportDummy"
+           else let
+                    hd :: Pair<String String> = head(funcDcls)
+                in
+                    if(hd.fst=="exporter") then "ExportLANG"
+                    else getExportActionName(tail(funcDcls))
+                end;
 }
 
 function getDelegateBuilderName
@@ -252,29 +266,6 @@ String ::= grm :: String
     return grammarPart;
 }
 
-{--
-function getEnhanceTarget
-String ::= funcDcls :: [Pair<String String>]
-{
-    return if null(funcDcls)
-           then "\n"
-           else getEnhanceTargetPerFunction(head(funcDcls)) ++ getEnhanceTarget(tail(funcDcls));
-}
-
-function getEnhanceTargetPerFunction
-String ::= funcDcl :: Pair<String String>
-{
-    local attribute lastInd :: Integer = lastIndexOf(":", funcDcl.snd);
-    local attribute grammarPart :: String = substitute(":", "/", substring(0, lastInd, funcDcl.snd));
-
-    return "\n" ++ 
-           "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Build.java.template\"\n" ++ --NIdeMessage[] ::= NIdeProperty[]
-           "        tofile=\"${src}/" ++ grammarPart ++ "/Build.java\" filtering=\"true\" overwrite=\"true\"/>" ++ 
-           "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/PostBuild.java.template\"\n" ++ --NIdeMessage[] ::= NIdeProperty[]
-           "        tofile=\"${src}/" ++ grammarPart ++ "/PostBuild.java\" filtering=\"true\" overwrite=\"true\"/>";
-}
---}
-
 function getArgCheckTarget
 String ::=
 {
@@ -336,7 +327,7 @@ String ::=
 }
 
 function getCreateFoldersTarget
-String ::= delegateBuilderName::String
+String ::= delegateBuilderName::String actionExportName::String
 {
   return 
     "  \n" ++
@@ -422,7 +413,7 @@ String ::= delegateBuilderName::String
     "  <mkdir dir='${ide.pkg.path}/imp/actions'/>\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/actions/EnableLANGNature.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/imp/actions/Enable${lang.name}Nature.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/actions/ExportLANG.java.template\"\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/actions/"++actionExportName++".java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/imp/actions/Export${lang.name}.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
