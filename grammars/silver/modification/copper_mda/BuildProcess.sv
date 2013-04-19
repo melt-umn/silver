@@ -2,7 +2,7 @@ grammar silver:modification:copper_mda;
 
 import silver:driver;
 import silver:translation:java:driver;
-import silver:translation:java:core only makeParserName;
+import silver:translation:java:core only makeParserName, makeName;
 
 import silver:util:cmdargs;
 
@@ -76,13 +76,16 @@ String ::= searchgrams::[MdaSpec]  silverhome::String  silvergen::String
 
   local attribute parserName :: String;
   parserName = makeParserName(p.fullName);
-
-  local attribute copperFile :: String;
-  copperFile = silvergen ++ "src/" ++ grammarToPath(p.sourceGrammar) ++ parserName ++ ".copper";
+  
+  local attribute packagename :: String;
+  packagename = makeName(p.sourceGrammar);
+  
+  local attribute packagepath :: String;
+  packagepath = grammarToPath(p.sourceGrammar);
 
   local target :: String =
-    "<echo>" ++ p.fullName ++ "</echo>" ++
-    "<java jar='${sh}/jars/CopperCompiler.jar' failonerror='true' fork='true' output='" ++ copperFile ++ ".ignore' logError='true'><arg value='-skin'/><arg value='xml'/><arg value='-compose'/><arg value='" ++ copperFile ++ "'/></java>";
+"    <copper useSkin='XML' runMDA='true' warnUselessNTs='false'>\n" ++
+"      <inputs file='${src}/" ++ packagepath ++ parserName ++ ".copper'/>\n    </copper>\n";
 
   return if null(searchgrams) then ""
          else target ++ noReallyMdaBuildTarget(tail(searchgrams), silverhome, silvergen);

@@ -2,7 +2,7 @@ grammar copper_features:mdatests:ext;
 
 import copper_features:mdatests:host;
 
-terminal C 'c';
+marking terminal C 'c';
 
 terminal D 'd';
 
