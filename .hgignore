@@ -1,0 +1,14 @@
+^jars/.*\.jar$
+^build
+^generated/src
+^generated/bin
+^generated/ide
+^JARS-BAK
+^grp$
+~$
+^test/.*test\.output$
+^test/.*test\.jar$
+^test/.*build\.xml$
+^test/silver\.testing\.bin\.jar$
+^runtime/java/bin/
+^sandbox
