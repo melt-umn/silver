@@ -30,33 +30,45 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ++
 
 "<CopperSpec xmlns=\"http://melt.cs.umn.edu/copper/xmlns\">\n" ++
-"  <Parser id=\"" ++ makeCopperName(parsername) ++ "\">\n" ++
+
+"  <ExtendedParser id=\"" ++ makeCopperName(parsername) ++ "\">\n" ++
 "    <PP>" ++ parsername ++ "</PP>\n" ++
-"    <Grammars><GrammarRef id=\"" ++ host.containingGrammar ++ "\"/><GrammarRef id=\"" ++ ext.containingGrammar ++ "\"/></Grammars>\n" ++
+"    <HostGrammar>\n" ++
+"      <GrammarRef id=\"" ++ host.containingGrammar ++ "\"/>\n" ++
+"    </HostGrammar>\n" ++
+"    <ExtensionGrammars>\n" ++
+"      <GrammarRef id=\"" ++ ext.containingGrammar ++ "\"/>\n" ++
+"    </ExtensionGrammars>\n" ++
 "    <StartSymbol>" ++ xmlCopperRef(head(startFound)) ++ "</StartSymbol>\n" ++
 "    <StartLayout>" ++ univLayout ++ "</StartLayout>\n" ++
-"  </Parser>\n\n" ++
+"  </ExtendedParser>\n\n" ++
 
 "  <Grammar id=\"" ++ host.containingGrammar ++ "\">\n\n" ++
 "    <PP>" ++ host.containingGrammar ++ "</PP>\n\n" ++
+-- Default layout for production, unless otherwise specified.
 "    <Layout>" ++ univLayout ++ "</Layout>\n\n" ++
 "    <Declarations>\n" ++
--- TODO: we should reconsider calling this a parser attribute, and maybe use the "put in semantic action container" thingy instead...
 "      <ParserAttribute id=\"context\">\n" ++
 "        <Type><![CDATA[common.DecoratedNode]]></Type>\n" ++
 "        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>\n" ++
 "      </ParserAttribute>\n" ++
        host.xmlCopper ++
 "    </Declarations>\n" ++
-"  </Grammar>\n" ++
+"  </Grammar>\n\n" ++
 
-"  <Grammar id=\"" ++ ext.containingGrammar ++ "\">\n\n" ++
-"    <PP>" ++ ext.containingGrammar ++ "</PP>\n\n" ++
+"  <ExtensionGrammar id=\"" ++ ext.containingGrammar ++ "\">\n" ++
+"    <PP>" ++ host.containingGrammar ++ "</PP>\n\n" ++
 "    <Layout>" ++ univLayout ++ "</Layout>\n\n" ++
+"    <MarkingTerminals>\n" ++
+  implode("", map(xmlCopperRef, ext.markingTokens)) ++
+"    </MarkingTerminals>\n" ++
+"    <BridgeProductions>\n" ++
+  implode("", map(xmlCopperRef, ext.bridgeProductions)) ++
+"    </BridgeProductions>\n" ++
 "    <Declarations>\n" ++
-       ext.xmlCopper ++
+  ext.xmlCopper ++
 "    </Declarations>\n" ++
-"  </Grammar>\n" ++
+"  </ExtensionGrammar>\n\n" ++
 
 "</CopperSpec>\n";
 
