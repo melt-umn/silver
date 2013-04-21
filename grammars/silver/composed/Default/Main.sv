@@ -18,6 +18,7 @@ parser svParse::Root {
   silver:extension:deprecation;
   silver:extension:testing;
   silver:extension:auto_ast;
+  silver:extension:templating;
 --  silver:extension:concreteSyntaxForTrees ;
   -- doc?
 
