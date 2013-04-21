@@ -12,3 +12,12 @@ top::ProductionModifier ::= 'layout' '{' terms::TermPrecList '}'
   top.errors := terms.errors;
 }
 
+concrete production productionModifierLayoutNone
+top::ProductionModifier ::= 'layout' '{' '}'
+{
+  top.pp = "layout {}";
+
+  top.productionModifiers = [prodLayout([])];
+  top.errors := [];
+}
+
