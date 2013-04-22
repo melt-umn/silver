@@ -38,11 +38,32 @@
     </define-regex>
 
     <context id="string" style-ref="string" end-at-line-end="true">
-      <start>"</start>
+      <start>"(?!"")</start>
       <end>"</end>
       <include>
         <context id="escaped-character-str" style-ref="escaped-character">
           <match>\%{escaped-character}</match>
+        </context>
+      </include>
+    </context>
+
+    <context id="multi-string" end-at-line-end="false">
+      <start>"""</start>
+      <end>"""</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="string"/>
+        <context sub-pattern="0" where="end" style-ref="string"/>
+        <context style-ref="string">
+          <match>[^$]+</match>
+        </context>
+        <context>
+          <start>\$\{</start>
+          <end>\}</end>
+          <include>
+            <context sub-pattern="0" where="start" style-ref="escaped-character"/>
+            <context sub-pattern="0" where="end" style-ref="escaped-character"/>
+            <context ref="silver"/>
+          </include>
         </context>
       </include>
     </context>
@@ -209,6 +230,7 @@
     <context id="silver">
       <include>
         <context ref="string"/>
+        <context ref="multi-string"/>
         <context ref="char"/>
         <!--<context ref="regex"/>TODO-->
         <context ref="dollar-ref"/>
