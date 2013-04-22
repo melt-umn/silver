@@ -19,3 +19,11 @@ equalityTest ( template """${toString(1)}a${aStrValue}""", "1a\n\t$", String, si
 -- w-e-w
 equalityTest ( template """a${toString(1)}b""", "a1b", String, silver_tests ) ;
 
+-- layout
+equalityTest ( template """a${   toString(1)   }b""", "a1b", String, silver_tests ) ;
+equalityTest ( template """${   toString(1)   }""", "1", String, silver_tests ) ;
+
+-- escaping
+equalityTest ( template """ " """, " \" ", String, silver_tests ) ;
+equalityTest ( template """ \" """, " \\\" ", String, silver_tests ) ;
+

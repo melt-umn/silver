@@ -1,14 +1,16 @@
 grammar silver:extension:templating:syntax;
 
-import silver:definition:core only Expr, RCurly_t;
+import silver:definition:core only Expr, RCurly_t, LITERAL;
 
-terminal TripleQuote /\"\"\"/;
+terminal TripleQuote /\"\"\"/ lexer classes {LITERAL};
+terminal DoubleDollar '$$' lexer classes {LITERAL};
+terminal QuoteWater /[^$\n\t\"\\]+/ lexer classes {LITERAL};
+terminal LiteralNewline /\n/ lexer classes {LITERAL};
+terminal LiteralTab /\t/ lexer classes {LITERAL};
+terminal LiteralQuote /\"/ lexer classes {LITERAL};
+terminal LiteralBackslash /\\/ lexer classes {LITERAL};
+
 terminal OpenEscape '${';
-terminal DoubleDollar '$$';
-terminal QuoteWater /[^$\n\t\"]+/;
-terminal LiteralNewline /\n/;
-terminal LiteralTab /\t/;
-terminal LiteralQuote /\"/;
 
 {-- A string, with escaped expressions within -}
 nonterminal TemplateString with location;
@@ -16,6 +18,8 @@ nonterminal TemplateString with location;
 nonterminal TemplateStringBody with location;
 {-- Either a String or an Expr -}
 nonterminal TemplateStringBodyItem with location;
+{-- An escape -}
+nonterminal NonWater with location;
 {-- List that yields a string -}
 nonterminal Water with location, waterString;
 {-- Components that yield a string -}
@@ -55,14 +59,20 @@ layout {}
 }
 
 concrete production itemWaterEscape
-top::TemplateStringBodyItem ::= w::Water '${' e::Expr '}'
+top::TemplateStringBodyItem ::= w::Water nw::NonWater
 layout {}
 {
 }
 
 concrete production itemEscape
-top::TemplateStringBodyItem ::= '${' e::Expr '}'
+top::TemplateStringBodyItem ::= nw::NonWater
 layout {}
+{
+}
+
+concrete production nonwater
+top::NonWater ::= '${' e::Expr '}'
+--layout {} -- TODO: need to control layout better... But this should allow it here.
 {
 }
 
@@ -80,11 +90,6 @@ layout {}
   top.waterString = h.waterString;
 }
 
-{- We don't bother to try to capture escaped literals (\n for example)
- - because they *should* be interpreted, and thus, passed untouched to
- - java. TODO: wait, should they??
- -}
-
 concrete production water
 top::WaterItem ::= w::QuoteWater
 layout {}
@@ -97,6 +102,16 @@ top::WaterItem ::= '$$'
 layout {}
 {
   top.waterString = "$";
+}
+
+concrete production waterBackSlash
+top::WaterItem ::= LiteralBackslash
+layout {}
+{
+  -- The reason I decided to make backslashes not "work" is due to
+  -- dealing with \"  Originally, this turned into \\" in the string
+  -- because the quote got escaped... this of course, was disaster.
+  top.waterString = "\\\\";
 }
 
 concrete production waterNewline
