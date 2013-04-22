@@ -46,101 +46,101 @@ String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResu
   local localVar :: String = 
     "count_local__ON__" ++ makeIdName(whatGrammar) ++ "_" ++ whatName;
 
-  return 
-"package " ++ makeName(whatGrammar) ++ ";\n\n" ++
+  return template """
+package ${makeName(whatGrammar)};
 
-"public final class " ++ className ++ " extends common.FunctionNode {\n\n" ++	
+public final class ${className} extends common.FunctionNode {
 
-makeIndexDcls(0, whatSig.inputElements) ++ "\n\n" ++
+${makeIndexDcls(0, whatSig.inputElements)}
 
-"\tpublic static final Class<?> childTypes[] = {" ++ implode(",", map(makeChildTypes, whatSig.inputElements)) ++ "};\n\n" ++
+	public static final Class<?> childTypes[] = { ${implode(",", map(makeChildTypes, whatSig.inputElements))} };
 
-"\tpublic static final int num_local_attrs = Init." ++ localVar ++ ";\n" ++
-"\tpublic static final String[] occurs_local = new String[num_local_attrs];\n\n" ++
+	public static final int num_local_attrs = Init.${localVar};
+	public static final String[] occurs_local = new String[num_local_attrs];
 
-"\tpublic static final common.Lazy[][] childInheritedAttributes = new common.Lazy[" ++ toString(length(whatSig.inputElements)) ++ "][];\n\n" ++	
+	public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[${toString(length(whatSig.inputElements))}][];
 
-"\tpublic static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];\n" ++
-"\tpublic static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];\n\n" ++	
+	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
+	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
 
-"\tstatic{\n" ++
-implode("", map((.childStaticElem), whatSig.inputElements)) ++
-"\t}\n\n" ++ 
+	static{
+${implode("", map((.childStaticElem), whatSig.inputElements))}
+	}
 
-"\tpublic " ++ className ++ "(" ++ whatSig.javaSignature ++ ") {\n" ++
-implode("", map(makeChildAssign, whatSig.inputElements)) ++
-"\t}\n\n" ++
+	public ${className}(${whatSig.javaSignature}) {
+${implode("", map(makeChildAssign, whatSig.inputElements))}
+	}
 
-implode("", map((.childDeclElem), whatSig.inputElements)) ++ "\n" ++
+${implode("", map((.childDeclElem), whatSig.inputElements))}
 
-"\t@Override\n" ++
-"\tpublic Object getChild(final int index) {\n" ++
-"\t\tswitch(index) {\n" ++
-implode("", map(makeChildAccessCase, whatSig.inputElements)) ++
-"\t\t\tdefault: return null;\n" ++ -- TODO: maybe handle this better?
-"\t\t}\n" ++
-"\t}\n\n" ++
+	@Override
+	public Object getChild(final int index) {
+		switch(index) {
+${implode("", map(makeChildAccessCase, whatSig.inputElements))}
+			default: return null;
+		}
+	}
 
-"\t@Override\n" ++
-"\tpublic Object getChildLazy(final int index) {\n" ++
-"\t\tswitch(index) {\n" ++
-implode("", map(makeChildAccessCaseLazy, whatSig.inputElements)) ++
-"\t\t\tdefault: return null;\n" ++ -- TODO: maybe handle this better?
-"\t\t}\n" ++
-"\t}\n\n" ++
+	@Override
+	public Object getChildLazy(final int index) {
+		switch(index) {
+${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
+			default: return null;
+		}
+	}
 
-"\t@Override\n" ++
-"\tpublic final int getNumberOfChildren() {\n" ++
-"\t\treturn " ++ toString(length(whatSig.inputElements)) ++ ";\n" ++
-"\t}\n\n" ++
+	@Override
+	public final int getNumberOfChildren() {
+		return ${toString(length(whatSig.inputElements))};
+	}
 
-"\t@Override\n" ++
-"\tpublic common.Lazy[] getLocalInheritedAttributes(final int key) {\n" ++
-"\t\treturn localInheritedAttributes[key];\n" ++
-"\t}\n\n" ++
+	@Override
+	public common.Lazy[] getLocalInheritedAttributes(final int key) {
+		return localInheritedAttributes[key];
+	}
 
-"\t@Override\n" ++
-"\tpublic common.Lazy[] getChildInheritedAttributes(final int key) {\n" ++
-"\t\treturn childInheritedAttributes[key];\n" ++
-"\t}\n\n" ++
+	@Override
+	public common.Lazy[] getChildInheritedAttributes(final int key) {
+		return childInheritedAttributes[key];
+	}
 
-"\t@Override\n" ++
-"\tpublic common.Lazy getLocal(final int key) {\n" ++
-"\t\treturn localAttributes[key];\n" ++
-"\t}\n\n" ++
+	@Override
+	public common.Lazy getLocal(final int key) {
+		return localAttributes[key];
+	}
 
-"\t@Override\n" ++
-"\tpublic final int getNumberOfLocalAttrs() {\n" ++
-"\t\treturn num_local_attrs;\n" ++
-"\t}\n\n" ++
+	@Override
+	public final int getNumberOfLocalAttrs() {
+		return num_local_attrs;
+	}
 
-"\t@Override\n" ++
-"\tpublic final String getNameOfLocalAttr(final int index) {\n" ++
-"\t\treturn occurs_local[index];\n" ++
-"\t}\n\n" ++
+	@Override
+	public final String getNameOfLocalAttr(final int index) {
+		return occurs_local[index];
+	}
 
-"\t@Override\n" ++
-"\tpublic String getName() {\n" ++
-"\t\treturn \"" ++ whatSig.fullName ++ "\";\n" ++
-"\t}\n\n" ++
+	@Override
+	public String getName() {
+		return "${whatSig.fullName}";
+	}
 
-"\tpublic static " ++ whatSig.outputElement.typerep.transType ++ " invoke(" ++ whatSig.javaSignature ++ ") {\n" ++
-"\t\ttry {\n" ++
-"\t\t" ++ whatResult ++
-"\t\t} catch(Throwable t) { throw new common.exceptions.TraceException(\"Error while evaluating function " ++ whatSig.fullName ++ "\", t); }\n" ++
-"\t}\n" ++ 
+	public static ${whatSig.outputElement.typerep.transType} invoke(${whatSig.javaSignature}) {
+		try {
+		${whatResult}
+		} catch(Throwable t) {
+			throw new common.exceptions.TraceException("Error while evaluating function ${whatSig.fullName}", t);
+		}
+	}
 
-"\tpublic static final common.NodeFactory<" ++ whatSig.outputElement.typerep.transType ++ "> factory = new Factory();\n\n" ++
+	public static final common.NodeFactory<${whatSig.outputElement.typerep.transType}> factory = new Factory();
 
-"\tpublic static final class Factory extends common.NodeFactory<" ++ whatSig.outputElement.typerep.transType ++ "> {\n\n" ++
-
-"\t\t@Override\n" ++
-"\t\tpublic " ++ whatSig.outputElement.typerep.transType ++ " invoke(final Object[] children, final Object[] namedNotApplicable) {\n" ++
-"\t\t\treturn " ++ className ++ ".invoke(" ++ implode(", ", unpackChildren(0, whatSig.inputElements)) ++ ");\n" ++
-"\t\t}\n\n" ++
-"\t};\n" ++
-
-"}\n";
+	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transType}> {
+		@Override
+		public ${whatSig.outputElement.typerep.transType} invoke(final Object[] children, final Object[] namedNotApplicable) {
+			return ${className}.invoke(${implode(", ", unpackChildren(0, whatSig.inputElements))});
+		}
+	};
+}""";
 }
 
 function generateMainClassString
@@ -149,33 +149,33 @@ String ::= whatGrammar::String
   local attribute package :: String;
   package = makeName(whatGrammar);
 
-  return 
-"package " ++ package ++ ";\n\n" ++
+  return template """
+package ${package};
 
-"public class Main {\n" ++
-"\tpublic static void main(String[] args) {\n" ++
-"\t\t" ++ package ++ ".Init.initAllStatics();\n" ++
-"\t\t" ++ package ++ ".Init.init();\n" ++
-"\t\t" ++ package ++ ".Init.postInit();\n" ++
-"\t\ttry {\n" ++
-"\t\t\tcommon.Node rv = (common.Node) " ++ package ++ ".Pmain.invoke(cvargs(args), null);\n" ++
-"\t\t\tcommon.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);\n" ++
-"\t\t\tdrv.synthesized(core.Init.core_io__ON__core_IOVal); // demand the io token\n" ++
-"\t\t\tSystem.exit( (Integer)drv.synthesized(core.Init.core_iovalue__ON__core_IOVal) );\n" ++
-"\t\t} catch(Throwable t) {\n" ++
-"\t\t\tThrowable rt = common.exceptions.SilverException.getRootCause(t);\n" ++
-"\t\t\tif(rt instanceof common.exceptions.SilverExit)\n" ++
-"\t\t\t\tSystem.exit(((common.exceptions.SilverExit)rt).getExitCode());\n" ++
-"\t\t\tcommon.Util.printStackCauses(t);\n" ++
-"\t\t}\n" ++
-"\t}\n" ++
-"\tpublic static common.ConsCell cvargs(String [] args){\n" ++ 
-"\t\tcommon.ConsCell result = common.ConsCell.nil;\n" ++ 
-"\t\tfor(int i = args.length - 1; i >= 0; i --) {\n" ++ 
-"\t\t\tresult = new common.ConsCell(new common.StringCatter(args[i]), result);\n" ++ 
-"\t\t}\n" ++ 
-"\t\treturn result;\n" ++ 
-"\t}\n" ++ 
-"}\n";
+public class Main {
+	public static void main(String[] args) {
+		${package}.Init.initAllStatics();
+		${package}.Init.init();
+		${package}.Init.postInit();
+		try {
+			common.Node rv = (common.Node) ${package}.Pmain.invoke(cvargs(args), null);
+			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
+			drv.synthesized(core.Init.core_io__ON__core_IOVal); // demand the io token
+			System.exit( (Integer)drv.synthesized(core.Init.core_iovalue__ON__core_IOVal) );
+		} catch(Throwable t) {
+			Throwable rt = common.exceptions.SilverException.getRootCause(t);
+			if(rt instanceof common.exceptions.SilverExit)
+				System.exit(((common.exceptions.SilverExit)rt).getExitCode());
+			common.Util.printStackCauses(t);
+		}
+	}
+	public static common.ConsCell cvargs(String[] args) {
+		common.ConsCell result = common.ConsCell.nil;
+		for(int i = args.length - 1; i >= 0; i--) {
+			result = new common.ConsCell(new common.StringCatter(args[i]), result);
+		}
+		return result;
+	}
+}""";
 }
 
