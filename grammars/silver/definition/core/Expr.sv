@@ -260,7 +260,7 @@ top::Expr ::= '(' '.' q::QName ')'
   top.errors <- if null(q.lookupAttribute.dclBoundVars) then []
                 else [err(q.location, "Attribute " ++ q.pp ++ " is parameterized, and attribute sections currently do not work with parameterized attributes, yet.")]; -- TODO The type inference system is too weak, currently.
   
-  top.errors <- if q.lookupAttribute.dcl.isSynthesized then []
+  top.errors <- if !null(q.lookupAttribute.errors) || q.lookupAttribute.dcl.isSynthesized then []
                 else [err(q.location, "Only synthesized attributes are currently supported in attribute sections.")];
   
   -- Only known after the inference pass (uses final subst)

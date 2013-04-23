@@ -51,7 +51,7 @@ top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::St
   production grammarsToTranslate :: [Decorated RootSpec] =
     keepGrammars(grammarsDependedUpon, g.translateGrammars);
 
-  top.postOps := [];
+  top.postOps := []; -- TODO: need to make depend on top.config
 }
 
 nonterminal Grammars with config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarList, recheckGrammars, translateGrammars;
