@@ -133,7 +133,7 @@ top::Unit ::= specs::[Decorated RootSpec]
 
   top.io = if null(specs) then top.ioIn else recurse.io;
 
-  top.code = if null(specs) || (!containsErrors(es, false) && recurse.code == 0)
+  top.code = if null(specs) || (!containsErrors(es, head(specs).config.warnError) && recurse.code == 0)
 	     then 0
 	     else 20;
 
