@@ -1,6 +1,6 @@
 grammar silver:driver;
 
-attribute genLocation, doClean, displayVersion, searchPath, outName, buildGrammar, silverHomeOption, noBindingChecking occurs on CmdArgs;
+attribute genLocation, doClean, displayVersion, warnError, searchPath, outName, buildGrammar, silverHomeOption, noBindingChecking occurs on CmdArgs;
 
 synthesized attribute searchPath :: [String];
 synthesized attribute outName :: [String];
@@ -9,6 +9,7 @@ synthesized attribute silverHomeOption :: [String];
 
 synthesized attribute displayVersion :: Boolean;
 synthesized attribute doClean :: Boolean;
+synthesized attribute warnError :: Boolean;
 
 synthesized attribute buildGrammar :: [String];
 
@@ -19,6 +20,7 @@ top::CmdArgs ::= l::[String]
 {
   top.doClean = false;
   top.displayVersion = false;
+  top.warnError = false;
   top.outName = [];
   top.searchPath = [];
   top.genLocation = [];
@@ -36,6 +38,12 @@ abstract production cleanFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.doClean = true;
+  forwards to rest;
+}
+abstract production warnErrorFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.warnError = true;
   forwards to rest;
 }
 abstract production outFlag
@@ -88,7 +96,8 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
             pair("--silver-home", option(homeFlag)),
             pair("--version", flag(versionFlag)),
             pair("--clean",   flag(cleanFlag)),
-            pair("--dont-analyze", flag(nobindingFlag))
+            pair("--dont-analyze", flag(nobindingFlag)),
+            pair("--warn-error", flag(warnErrorFlag))
            ];
   -- Always start with \t, name options descriptively in <>, do not end with \n!
   flagdescs <- 
@@ -96,7 +105,8 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
            "\t-o <file>  : name of binary file",
            "\t--version  : display version",
            "\t--clean  : overwrite interface files",
-           "\t-G <path>  : Location to store generate files (SILVER_GEN)"
+           "\t-G <path>  : Location to store generate files (SILVER_GEN)",
+           "\t--warn-error  : treat warnings as errors"
           ];
   
   local usage :: String = 
