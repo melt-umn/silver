@@ -44,6 +44,8 @@ top::FontStyles ::=
 {
   top.isBold = false;
   top.isItalic = false;
+  
+  top.pp = "";
 }
 
 nonterminal FontStyle with isBold, isItalic;

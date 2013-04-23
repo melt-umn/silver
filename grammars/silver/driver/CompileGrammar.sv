@@ -1,7 +1,5 @@
 grammar silver:driver;
 
-import silver:util:raw:treemap as rtm;
-
 {--
  - Hunts down a grammar and obtains its symbols, either by building or from an interface file.
  -}

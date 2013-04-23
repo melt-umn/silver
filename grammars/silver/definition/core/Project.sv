@@ -21,7 +21,8 @@ option silver:modification:ffi;
 option silver:modification:typedecl;
 option silver:modification:copper;
 option silver:modification:defaultattr;
---option silver:modification:copper_mda;
+option silver:modification:collection;
+option silver:modification:copper_mda;
 
 option silver:extension:testing; -- TODO this is about that buggy experiment of Eric's...
 
