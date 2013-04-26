@@ -18,126 +18,127 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local fnnt :: String = makeNTClassName(namedSig.outputElement.typerep.typeName);
 
   top.genFiles := [pair(className ++ ".java",
-		
-"package " ++ makeName(top.grammarName) ++ ";\n\n" ++
+template """
+package ${makeName(top.grammarName)};
 
-"// " ++ ns.pp ++ "\n" ++
-"public final class " ++ className ++ " extends " ++ fnnt ++ " {\n\n" ++
+// ${ns.pp}
+public final class ${className} extends ${fnnt} {
 
-makeIndexDcls(0, namedSig.inputElements) ++ "\n\n" ++
+${makeIndexDcls(0, namedSig.inputElements)}
 
-"\tpublic static final Class<?> childTypes[] = {" ++ implode(",", map(makeChildTypes, namedSig.inputElements)) ++ "};\n\n" ++
+	public static final Class<?> childTypes[] = {${implode(",", map(makeChildTypes, namedSig.inputElements))}};
 
-"\tpublic static final int num_local_attrs = Init." ++ localVar ++ ";\n" ++
-"\tpublic static final String[] occurs_local = new String[num_local_attrs];\n\n" ++
+	public static final int num_local_attrs = Init.${localVar};
+	public static final String[] occurs_local = new String[num_local_attrs];
 
-"\tpublic static final common.Lazy[] forwardInheritedAttributes = new common.Lazy[" ++ fnnt ++ ".num_inh_attrs];\n\n" ++
+	public static final common.Lazy[] forwardInheritedAttributes = new common.Lazy[${fnnt}.num_inh_attrs];
 
-"\tpublic static final common.Lazy[] synthesizedAttributes = new common.Lazy[" ++ fnnt ++ ".num_syn_attrs];\n" ++
-"\tpublic static final common.Lazy[][] childInheritedAttributes = new common.Lazy[" ++ toString(length(namedSig.inputElements)) ++ "][];\n\n" ++	
+	public static final common.Lazy[] synthesizedAttributes = new common.Lazy[${fnnt}.num_syn_attrs];
+	public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[${toString(length(namedSig.inputElements))}][];
 
-"\tpublic static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];\n" ++
-"\tpublic static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];\n\n" ++
+	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
+	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
 
-"\tstatic{\n" ++
-implode("", map((.childStaticElem), namedSig.inputElements)) ++
-"\t}\n\n" ++ 
+	static {
+${implode("", map((.childStaticElem), namedSig.inputElements))}
+	}
 
-"\tpublic " ++ className ++ "(" ++ namedSig.javaSignature ++ ") {\n" ++
-"\t\tsuper(" ++ implode(", ", map((.annoRefElem), namedSig.namedInputElements)) ++ ");\n" ++
-implode("", map(makeChildAssign, namedSig.inputElements)) ++
-"\t}\n\n" ++
+	public ${className}(${namedSig.javaSignature}) {
+		super(${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
+${implode("", map(makeChildAssign, namedSig.inputElements))}
+	}
 
-implode("", map((.childDeclElem), namedSig.inputElements)) ++ "\n" ++
+${implode("", map((.childDeclElem), namedSig.inputElements))}
 
-"\t@Override\n" ++
-"\tpublic Object getChild(final int index) {\n" ++
-"\t\tswitch(index) {\n" ++
-implode("", map(makeChildAccessCase, namedSig.inputElements)) ++
-"\t\t\tdefault: return null;\n" ++ -- TODO: maybe handle this better?
-"\t\t}\n" ++
-"\t}\n\n" ++
+	@Override
+	public Object getChild(final int index) {
+		switch(index) {
+${implode("", map(makeChildAccessCase, namedSig.inputElements))}
+			default: return null;
+		}
+	}
 
-"\t@Override\n" ++
-"\tpublic Object getChildLazy(final int index) {\n" ++
-"\t\tswitch(index) {\n" ++
-implode("", map(makeChildAccessCaseLazy, namedSig.inputElements)) ++
-"\t\t\tdefault: return null;\n" ++ -- TODO: maybe handle this better?
-"\t\t}\n" ++
-"\t}\n\n" ++
+	@Override
+	public Object getChildLazy(final int index) {
+		switch(index) {
+${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
+			default: return null;
+		}
+	}
 
-"\t@Override\n" ++
-"\tpublic final int getNumberOfChildren() {\n" ++
-"\t\treturn " ++ toString(length(namedSig.inputElements)) ++ ";\n" ++
-"\t}\n\n" ++
+	@Override
+	public final int getNumberOfChildren() {
+		return ${toString(length(namedSig.inputElements))};
+	}
 
-"\t@Override\n" ++
-"\tpublic common.Lazy getSynthesized(final int index) {\n" ++
-"\t\treturn synthesizedAttributes[index];\n" ++
-"\t}\n\n" ++
+	@Override
+	public common.Lazy getSynthesized(final int index) {
+		return synthesizedAttributes[index];
+	}
 
-"\t@Override\n" ++
-"\tpublic common.Lazy[] getLocalInheritedAttributes(final int key) {\n" ++
-"\t\treturn localInheritedAttributes[key];\n" ++
-"\t}\n\n" ++
+	@Override
+	public common.Lazy[] getLocalInheritedAttributes(final int key) {
+		return localInheritedAttributes[key];
+	}
 
-"\t@Override\n" ++
-"\tpublic common.Lazy[] getChildInheritedAttributes(final int key) {\n" ++
-"\t\treturn childInheritedAttributes[key];\n" ++
-"\t}\n\n" ++
+	@Override
+	public common.Lazy[] getChildInheritedAttributes(final int key) {
+		return childInheritedAttributes[key];
+	}
 
-"\t@Override\n" ++
-"\tpublic boolean hasForward() {\n" ++
-"\t\treturn " ++ (if null(body.uniqueSignificantExpression) then "false" else "true") ++ ";\n" ++
-"\t}\n\n" ++
+	@Override
+	public boolean hasForward() {
+		return ${(if null(body.uniqueSignificantExpression) then "false" else "true")};
+	}
 
-"\t@Override\n" ++
-"\tpublic common.Node evalForward(final common.DecoratedNode context) {\n" ++
-"\t\t" ++ (if null(body.uniqueSignificantExpression) 
-           then "throw new common.exceptions.SilverInternalError(\"Production " ++ fName ++ " erroneously claimed to forward\");\n"
-           else "return " ++ head(body.uniqueSignificantExpression).translation ++ ";\n") ++
-"\t}\n\n" ++
+	@Override
+	public common.Node evalForward(final common.DecoratedNode context) {
+		${if null(body.uniqueSignificantExpression) 
+		  then "throw new common.exceptions.SilverInternalError(\"Production " ++ fName ++ " erroneously claimed to forward\")"
+		  else "return " ++ head(body.uniqueSignificantExpression).translation};
+	}
 
-"\t@Override\n" ++
-"\tpublic common.Lazy getForwardInheritedAttributes(final int index) {\n" ++
-"\t\treturn forwardInheritedAttributes[index];\n" ++
-"\t}\n\n" ++
+	@Override
+	public common.Lazy getForwardInheritedAttributes(final int index) {
+		return forwardInheritedAttributes[index];
+	}
 
-"\t@Override\n" ++
-"\tpublic common.Lazy getLocal(final int key) {\n" ++
-"\t\treturn localAttributes[key];\n" ++
-"\t}\n\n" ++
+	@Override
+	public common.Lazy getLocal(final int key) {
+		return localAttributes[key];
+	}
 
-"\t@Override\n" ++
-"\tpublic final int getNumberOfLocalAttrs() {\n" ++
-"\t\treturn num_local_attrs;\n" ++
-"\t}\n\n" ++
+	@Override
+	public final int getNumberOfLocalAttrs() {
+		return num_local_attrs;
+	}
 
-"\t@Override\n" ++
-"\tpublic final String getNameOfLocalAttr(final int index) {\n" ++
-"\t\treturn occurs_local[index];\n" ++
-"\t}\n\n" ++
+	@Override
+	public final String getNameOfLocalAttr(final int index) {
+		return occurs_local[index];
+	}
 
-"\t@Override\n" ++
-"\tpublic String getName() {\n" ++
-"\t\treturn \"" ++ fName ++ "\";\n" ++
-"\t}\n\n" ++
+	@Override
+	public String getName() {
+		return "${fName}";
+	}
 
-"\tstatic void initProductionAttributeDefinitions() {\n" ++
-  body.translation ++
-"\t}\n\n" ++
+	static void initProductionAttributeDefinitions() {
+${body.translation}
+	}
 
-"\tpublic static final common.NodeFactory<" ++ className ++ "> factory = new Factory();\n\n" ++
+	public static final common.NodeFactory<${className}> factory = new Factory();
 
-"\tpublic static final class Factory extends common.NodeFactory<" ++ className ++ "> {\n\n" ++
+	public static final class Factory extends common.NodeFactory<${className}> {
 
-"\t\t@Override\n" ++
-"\t\tpublic " ++ className ++ " invoke(final Object[] children, final Object[] annotations) {\n" ++
-"\t\t\treturn new " ++ className ++ "(" ++ implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements)) ++ ");\n" ++
-"\t\t}\n\n" ++
-"\t};\n" ++
+		@Override
+		public ${className} invoke(final Object[] children, final Object[] annotations) {
+			return new ${className}(${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+		}
+	};
 
-"}\n")];
+}
+""")];
 
   -- main function signature check TODO: this should probably be elsewhere!
   top.errors <-
