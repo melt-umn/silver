@@ -80,13 +80,13 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
           generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult))];
   
   local attribute parseResult :: String;
-  parseResult = 
-   "try {\n" ++
-"\t\t\treturn new core.PparseSucceeded( new " ++ packageName ++ "." ++ parserName ++ "().parse(new java.io.StringReader(((common.StringCatter)common.Util.demand(c_stringToParse)).toString()), ((common.StringCatter)common.Util.demand(c_filenameToReport)).toString()) );\n" ++
-"\t\t} catch(edu.umn.cs.melt.copper.runtime.logging.CopperParserException e) {\n" ++
-"\t\t\treturn new core.PparseFailed( new common.StringCatter(e.getMessage()) );\n" ++
-"\t\t} catch(Throwable t) {\n" ++
-"\t\t\tthrow new common.exceptions.TraceException(\"An error occured while parsing\", t);\n" ++
-"\t\t}\n";
+  parseResult = template """try {
+			return new core.PparseSucceeded( new ${packageName}.${parserName}().parse(new java.io.StringReader(((common.StringCatter)common.Util.demand(c_stringToParse)).toString()), ((common.StringCatter)common.Util.demand(c_filenameToReport)).toString()) );
+		} catch(edu.umn.cs.melt.copper.runtime.logging.CopperParserException e) {
+			return new core.PparseFailed( new common.StringCatter(e.getMessage()) );
+		} catch(Throwable t) {
+			throw new common.exceptions.TraceException("An error occured while parsing", t);
+		}
+""";
 }
 
