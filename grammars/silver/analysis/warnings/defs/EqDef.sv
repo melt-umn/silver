@@ -39,7 +39,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur e::
   top.errors <-
     if null(attr.errors ++ attr.errors)
     && (top.config.warnAll || top.config.warnEqdef)
-    && !contains(top.grammarName, computeDependencies(exportedBy, top.compiledGrammars))
+    && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
     then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.signature.fullName)]
     else [];
   
@@ -67,7 +67,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors <-
     if null(attr.errors ++ attr.errors ++ dl.errors)
     && (top.config.warnAll || top.config.warnEqdef)
-    && !contains(top.grammarName, computeDependencies(exportedBy, top.compiledGrammars))
+    && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
     then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " on " ++ dl.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.signature.fullName)]
     -- Now, check for duplicate equations!
     else [];
@@ -96,7 +96,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors <-
     if null(attr.errors ++ attr.errors)
     && (top.config.warnAll || top.config.warnEqdef)
-    && !contains(top.grammarName, computeDependencies(exportedBy, top.compiledGrammars))
+    && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
     then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.signature.fullName)]
     else [];
   
@@ -123,7 +123,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors <-
     if null(attr.errors ++ attr.errors ++ dl.errors)
     && (top.config.warnAll || top.config.warnEqdef)
-    && !contains(top.grammarName, computeDependencies(exportedBy, top.compiledGrammars))
+    && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
     then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " on " ++ dl.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.signature.fullName)]
     -- Now, check for duplicate equations!
     else [];

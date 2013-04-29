@@ -7,16 +7,34 @@ Quick guide to graph closure computations:
 exports | triggers | true deps | options | mentioned | USE:
    X         X                                       | computeDependencies
    X         X           X                           | expandAllDeps
-   X         X           X          X                | computeOptionalDeps
-   X         X           X          X         X      | completeDependencyClosure
+   X         X                      X                | computeOptionalDeps (boolean: isExportedBy)
+   X         X           X          X                | completeDependencyClosure
+                                              X      | mentionedGrammars (in RootSpec.sv)
 
 Use cases:
 
 computeDependencies: True exports of a grammar (for parsers, just exports & triggers)
 expandAllDeps: True dependencies of a grammar (for translation, true dependencies of root grammar.)
 computeOptionalDeps: Optional exports of a set (for flow analysis, include options, only triggered triggers.)
-completeDependencyClosure: Any mentioned grammar (for build process, follows options, all triggers.)
+completeDependencyClosure: Used to build flow environment (know all exported + imported info)
+mentionedGrammars: Any mentioned grammar (for build process, what grammars to look for.)
 -}
+
+
+{--
+ - Answers "is exported by" to the satisfaction of the modular
+ - well-definedness analysis.  That is, "is, exported, optioned, or triggered"
+ -
+ - @param target  The grammar we're asking about
+ - @param sources  The grammars to begin with
+ - @param e  All built grammars
+ - @return  Whether the target is exported by the sources.
+ -}
+function isExportedBy
+Boolean ::= target::String  sources::[String]  e::EnvTree<Decorated RootSpec>
+{
+  return contains(target, computeOptionalDeps(sources, e));
+}
 
 
 {--

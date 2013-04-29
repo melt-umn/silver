@@ -91,8 +91,8 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
     else [];
                 
   top.errors <-
-    if !null(nt.lookupType.errors ++ at.lookupType.errors) || !at.lookupAttribute.dcl.isAnnotation || 
-       contains(top.grammarName, computeOptionalDeps([nt.lookupType.dcl.sourceGrammar], top.compiledGrammars)) then []
+    if !null(nt.lookupType.errors ++ at.lookupType.errors) || !at.lookupAttribute.dcl.isAnnotation ||
+       isExportedBy(top.grammarName, [nt.lookupType.dcl.sourceGrammar], top.compiledGrammars) then []
     else [err(top.location, "Annotations for a nonterminal must be in a module exported by the nonterminal's declaring grammar.")];
 }
 
