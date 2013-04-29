@@ -35,7 +35,7 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
     else g.importedDefs ++ head(searchEnvTree("core", top.compiledGrammars)).defs);
   
   -- This grammar, its direct imports, and only transitively close over exports and TRIGGERED conditional imports.
-  -- i.e. these are the things that we really, truly depend upon.
+  -- i.e. these are the things that we really, truly depend upon. (in the sense that we get their symbols)
   local actualDependencies :: [String] =
     makeSet(computeDependencies(grammarName :: top.moduleNames, top.compiledGrammars));
 

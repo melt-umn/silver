@@ -39,7 +39,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     -- AND this is not a closed nonterminal
     && !isClosedNt
     -- AND this production is not exported by the nonterminal definition grammar... even including options
-    && !contains(top.grammarName, computeOptionalDeps([ntDefGram], top.compiledGrammars))
+    && !isExportedBy(top.grammarName, [ntDefGram], top.compiledGrammars)
     then [wrn(top.location, "Orphaned production: " ++ id.pp ++ " on " ++ namedSig.outputElement.typerep.typeName)]
     else [];
 }

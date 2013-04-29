@@ -5,7 +5,7 @@ import silver:modification:defaultattr;
 import silver:modification:collection;
 import silver:modification:copper;
 import silver:util only contains;
-import silver:driver:util only computeOptionalDeps, RootSpec;
+import silver:driver:util only isExportedBy, RootSpec;
 
 attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
 attribute flowEnv occurs on DefLHS;
@@ -61,7 +61,7 @@ top::ProductionStmt ::=
 function isAffectable
 Boolean ::= prodgram::String  ntgram::String  cg::EnvTree<Decorated RootSpec>  d::DclInfo
 {
-  return contains(prodgram, computeOptionalDeps([ntgram, d.sourceGrammar], cg));
+  return isExportedBy(prodgram, [ntgram, d.sourceGrammar], cg);
 }
 
 aspect production forwardsTo
@@ -70,7 +70,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
 
   local mayAffectFlowType :: Boolean =
-    contains(top.grammarName, computeOptionalDeps([ntDefGram], top.compiledGrammars));
+    isExportedBy(top.grammarName, [ntDefGram], top.compiledGrammars);
   
   top.flowDefs = [
     fwdEq(top.signature.fullName, e.flowDeps, mayAffectFlowType),
@@ -136,7 +136,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     else [ntDefGram];
 
   local mayAffectFlowType :: Boolean =
-    contains(top.grammarName, computeOptionalDeps(srcGrams, top.compiledGrammars));
+    isExportedBy(top.grammarName, srcGrams, top.compiledGrammars);
   
   top.flowDefs = 
     case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
@@ -178,7 +178,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
   local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
 
   local mayAffectFlowType :: Boolean =
-    contains(top.grammarName, computeOptionalDeps([ntDefGram, attr.dcl.sourceGrammar], top.compiledGrammars));
+    isExportedBy(top.grammarName, [ntDefGram, attr.dcl.sourceGrammar], top.compiledGrammars);
 
   top.flowDefs = [extraEq(top.signature.fullName, lhsSynVertex(attr.attrDcl.fullName), e.flowDeps, mayAffectFlowType)];
 }
@@ -205,7 +205,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     else [ntDefGram];
 
   local mayAffectFlowType :: Boolean =
-    contains(top.grammarName, computeOptionalDeps(srcGrams, top.compiledGrammars));
+    isExportedBy(top.grammarName, srcGrams, top.compiledGrammars);
   
   top.flowDefs = 
     case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
@@ -232,7 +232,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   local locDefGram :: String = if null(val.lookupValue.dcls) then "" else val.lookupValue.dcl.sourceGrammar;
 
   local mayAffectFlowType :: Boolean =
-    contains(top.grammarName, computeOptionalDeps([locDefGram], top.compiledGrammars));
+    isExportedBy(top.grammarName, [locDefGram], top.compiledGrammars);
 
   -- TODO: So, locals that may affect flow types' suspect edges can NEVER have an effect
   -- so we don't bother to even emit the extra equations in that case.
