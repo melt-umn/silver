@@ -3,7 +3,8 @@ grammar silver:definition:flow:env;
 import silver:definition:type:syntax;
 import silver:definition:type;
 import silver:modification:copper;
-import silver:modification:patternmatching;
+import silver:modification:primitivepattern;
+import silver:extension:patternmatching only Arrow_kwd, Vbar_kwd; -- TODO remove
 import silver:modification:let_fix;
 
 synthesized attribute flowDeps :: [FlowVertex] occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
@@ -37,6 +38,8 @@ top::Expr ::= q::Decorated QName
   
   -- Notes: q should find the actual type listed in the signature. Note that's different
   -- than childReference's reported typerep (which is that either/or type). So that's okay.
+  
+  -- What kind of problem? Damn my comments, maybe that's been fixed.
 
   top.flowDeps =
     if q.lookupValue.typerep.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
@@ -47,7 +50,7 @@ aspect production lhsReference
 top::Expr ::= q::Decorated QName
 {
   top.flowDeps =
-    if {-always decorable-} !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    if {-always decorable, so just check final:-} !performSubstitution(top.typerep, top.finalSubst).isDecorable
     then depsForTakingRef(lhsInhVertex, q.lookupValue.typerep.typeName, top.flowEnv)
     else [];
 }
@@ -63,7 +66,7 @@ aspect production forwardReference
 top::Expr ::= q::Decorated QName
 {
   top.flowDeps = [forwardEqVertex()]++
-    if q.lookupValue.typerep.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    if {-always decorable, so just check final:-} !performSubstitution(top.typerep, top.finalSubst).isDecorable
     then depsForTakingRef(forwardVertex, q.lookupValue.typerep.typeName, top.flowEnv)
     else [];
 }
@@ -296,7 +299,7 @@ top::Expr ::= s::String_t
 aspect production errorPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
-  top.flowDeps = [];
+  top.flowDeps = []; -- error, so who cares?
 }
 aspect production stringPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
@@ -373,9 +376,14 @@ top::AnnoAppExprs ::=
 aspect production exprRef
 top::Expr ::= e::Decorated Expr
 {
-  -- There is a decision to make here.
-  -- We DO refer to flowDeps here. Errors should have been already checked, but
-  -- we shouldn't expect that of flowdeps!
+  -- This production is somewhat special, for example, error is := []
+  -- That's because the errors should have already been appeared wherever it's anchored.
+  
+  -- But, here we DO pass flowDeps through because this affects wherever this expression
+  -- is used, not just where it appears.
+  
+  -- So definitely don't consider making this []!
+  
   top.flowDeps = e.flowDeps;
 }
 
@@ -436,6 +444,8 @@ top::Expr ::= 'terminal' '(' t::Type ',' es::Expr ',' el::Expr ')'
 
 ---- FROM COPPER TODO
 --grammar silver:modification:copper;
+
+-- These are all errors, basically.
 
 aspect production actionChildReference
 top::Expr ::= q::Decorated QName

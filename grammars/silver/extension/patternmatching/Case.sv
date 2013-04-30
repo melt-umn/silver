@@ -1,16 +1,16 @@
-grammar silver:modification:patternmatching;
+grammar silver:extension:patternmatching;
 
-import silver:definition:core;
-import silver:definition:env;
+imports silver:definition:core;
+imports silver:definition:env;
+imports silver:modification:primitivepattern;
 import silver:definition:type;
 import silver:definition:type:syntax only typerepType;
---import silver:analysis:typechecking:core only upSubst, downSubst, finalSubst;
 import silver:modification:let_fix;
 
 terminal Case_kwd 'case' lexer classes {KEYWORD,RESERVED};
 terminal Of_kwd 'of' lexer classes {KEYWORD,RESERVED};
-terminal Arrow_kwd '->' precedence = 7;
-terminal Vbar_kwd '|' precedence = 3;
+terminal Arrow_kwd '->';
+terminal Vbar_kwd '|';
 terminal Opt_Vbar_t /\|?/ ; -- optional Coq-style vbar.
 
 -- The head pattern of a match rule
@@ -47,7 +47,6 @@ nonterminal PatternList with location, config, pp, patternList, env, file, error
 concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
-  -- TODO: causes problems with ring. Investigate!
   top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";
 
   top.errors <- ml.errors;
@@ -268,7 +267,7 @@ function tailNestedPatternTransform
   -- TODO: this is a bit hacky, and potentially unnecessary... what with the redecorating and all.
   local attribute fst :: MatchRule;
   fst = case head(lst) of
-          matchRule(pl,e) -> matchRule(head(pl).patternSubPatternList ++ tail(pl), e, location=head(lst).location)
+        | matchRule(pl,e) -> matchRule(head(pl).patternSubPatternList ++ tail(pl), e, location=head(lst).location)
         end;
   fst.env = head(lst).env;
   fst.file = head(lst).file;
@@ -285,9 +284,9 @@ function allVarCaseTransform
   -- TODO: this is a bit hacky, and potentially unnecessary... what with the redecorating and all.
   local attribute fst :: MatchRule;
   fst = case head(lst) of
-          matchRule(pl, e) -> matchRule(tail(pl), 
+        | matchRule(pl, e) -> matchRule(tail(pl), 
                              case head(pl).patternVariableName of
-                               just(pvn) -> makeLet(head(lst).location, pvn, headType, headExpr, e)
+                             | just(pvn) -> makeLet(head(lst).location, pvn, headType, headExpr, e)
                              | nothing() -> e
                              end, location=head(lst).location)
         end;
