@@ -19,12 +19,13 @@ parser svParse::Root {
   silver:extension:testing;
   silver:extension:auto_ast;
   silver:extension:templating;
+  silver:extension:patternmatching;
 --  silver:extension:concreteSyntaxForTrees ;
   -- doc?
 
   silver:modification:let_fix;
   silver:modification:collection;
-  silver:modification:patternmatching;
+  silver:modification:primitivepattern;
   silver:modification:autocopyattr;
   silver:modification:ffi;
   silver:modification:typedecl;

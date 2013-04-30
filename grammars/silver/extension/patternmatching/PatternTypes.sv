@@ -1,7 +1,5 @@
-grammar silver:modification:patternmatching;
+grammar silver:extension:patternmatching;
 
-import silver:definition:core;
-import silver:definition:env;
 import silver:extension:list only LSqr_t, RSqr_t;
 
 -- See comment in pattern.sv regarding errors #HACK2012

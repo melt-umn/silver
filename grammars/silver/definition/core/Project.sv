@@ -16,7 +16,7 @@ imports silver:util;
 
 option silver:definition:concrete_syntax;
 option silver:modification:let_fix;
-option silver:modification:patternmatching;
+option silver:modification:primitivepattern;
 option silver:modification:ffi;
 option silver:modification:typedecl;
 option silver:modification:copper;
