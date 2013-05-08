@@ -32,6 +32,8 @@ tar -zcvf $SV.tar.gz \
  $SV/grammars/silver/util/deque/ \
  $SV/grammars/silver/util/treemap/ \
  $SV/grammars/silver/util/raw/treemap/ \
+ $SV/grammars/silver/util/raw/treeset/ \
+ $SV/grammars/silver/util/raw/graph/ \
  $SV/grammars/silver/langutil/ \
  $SV/COPYING.LESSER \
  $SV/HISTORY \

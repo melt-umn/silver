@@ -310,14 +310,6 @@ Pair<[Pair<FlowVertex FlowVertex>] EnvTree<FlowVertex>> ::=
   edges::[Pair<FlowVertex FlowVertex>]
   currentGraph::EnvTree<FlowVertex>
 {
-  return transitiveCloseThese(vertexes, edges, currentGraph);
-}
-function transitiveCloseThese
-Pair<[Pair<FlowVertex FlowVertex>] EnvTree<FlowVertex>> ::=
-  vertexes::[FlowVertex]
-  edges::[Pair<FlowVertex FlowVertex>]
-  currentGraph::EnvTree<FlowVertex>
-{
   local allNew :: [Pair<FlowVertex FlowVertex>] =
     foldr(append, [], map(transitiveCloseIteration(_, currentGraph), vertexes));
   
