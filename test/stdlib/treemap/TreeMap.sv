@@ -120,7 +120,7 @@ String ::= s::String
 }
 
 aspect production leaf
-top::TreeMap<a b> ::= CMP :: Function(Integer ::= a a)
+top::TreeMap<a b> ::= CMP :: (Integer ::= a a)
 {
   top.debugIdentity = "leaf" ++ toString(genInt());
   top.debugDot = top.debugIdentity ++ "[color=black, style=filled];\n";
@@ -131,7 +131,7 @@ top::TreeMap<a b> ::= CMP :: Function(Integer ::= a a)
 aspect production node
 top::TreeMap<a b> ::= black::Boolean lefttree::TreeMap<a b> righttree::TreeMap<a b>
                       label::a  values::[b] 
-                      CMP :: Function(Integer ::= a a)
+                      CMP :: (Integer ::= a a)
 {
   top.debugIdentity = "node" ++ toString(genInt());
   top.debugDot = top.debugIdentity ++ "[color=" ++ (if black then "black" else "red") ++ ", label=\"" ++ escape(hackUnparse(label) ++ " -> " ++ hackUnparse(values)) ++ "\"];\n"

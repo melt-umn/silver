@@ -12,8 +12,8 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.typerep = ty;
 
   top.refDispatcher = lexicalLocalReference(_, location=_);
-  top.defDispatcher = errorValueDef(_, _, location=_); -- TODO for better error messages, mention it's a lexical local
-  top.defLHSDispatcher = errorDefLHS(_, location=_);
+  top.defDispatcher = errorValueDef(_, _, location=_); -- should be impossible (never in scope at production level?)
+  top.defLHSDispatcher = errorDefLHS(_, location=_); -- ditto
 }
 
 function lexicalLocalDef
