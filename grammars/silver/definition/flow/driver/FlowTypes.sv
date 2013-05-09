@@ -9,6 +9,8 @@ imports silver:analysis:warnings:defs only isOccursSynthesized, isAutocopy;
 imports silver:modification:autocopyattr;
 
 imports silver:util:raw:treemap as rtm;
+imports silver:util:raw:graph as g;
+imports silver:util:raw:treeset as set;
 
 import silver:util only rem;
 

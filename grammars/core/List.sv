@@ -154,7 +154,7 @@ function removeBy
 }
 
 {--
- - Removes all instances of several elements from a list.
+ - Removes all instances of several elements from a list: xs - ys
  -
  - @param eq  The equality function to use
  - @param ys  The list of elements to remove
