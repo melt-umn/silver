@@ -64,3 +64,26 @@ function toList
   "java" : return "common.rawlib.RawGraph.toList((java.util.TreeMap<Object,java.util.TreeSet<Object>>)%graph%)";
 }
 
+{--
+ - Returns the transitiveClosure of a graph
+ -}
+function transitiveClosure
+Graph<a> ::= graph::Graph<a>
+{
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawGraph.transitiveClosure((java.util.TreeMap<Object,java.util.TreeSet<Object>>)%graph%)";
+}
+
+{--
+ - Assumes graph is already a transitive closure,
+ - adds the new edges, and repair the transitive closure.
+ -}
+function repairClosure
+Graph<a> ::= lst::[Pair<a a>] graph::Graph<a>
+{
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawGraph.repairClosure(%lst%, (java.util.TreeMap<Object,java.util.TreeSet<Object>>)%graph%)";
+}
+
