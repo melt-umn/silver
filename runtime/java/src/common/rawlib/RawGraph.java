@@ -28,23 +28,8 @@ public final class RawGraph {
 		TreeSet<Object> mutated = new TreeSet<Object>(g.comparator());
 		for(core.NPair elem : new ConsCellCollection<core.NPair>(l)) {
 			assert(elem instanceof core.Ppair); // document as an assert why not
-			final Object key = elem.getChild(0);
 			
-			TreeSet<Object> setToModify = ret.get(key);
-			
-			// If we've mutated it before, we're okay to do it again.
-			if(!mutated.contains(key)) {
-				// Otherwise, either create the set or clone it so we can mutate.
-				if(setToModify == null) {
-					setToModify = new TreeSet<Object>(g.comparator());
-				} else {
-					setToModify = (TreeSet<Object>)ret.get(key).clone();
-				}
-				ret.put(key, setToModify);
-				mutated.add(key);
-			}
-
-			setToModify.add(elem.getChild(1));
+			getMutatable(elem.getChild(0), ret, mutated).add(elem.getChild(1));
 		}
 		return ret;
 	}
@@ -84,9 +69,10 @@ public final class RawGraph {
 		final TreeMap<Object,TreeSet<Object>> ret = (TreeMap<Object,TreeSet<Object>>)g.clone();
 
 		// For transitive closure we're going to presume that we mutate everything.
-		for(Object key : ret.keySet()) {
-			final TreeSet<Object> set = (TreeSet<Object>)ret.get(key).clone(); 
-			ret.put(key, set);
+		for(Entry<Object, TreeSet<Object>> entry : ret.entrySet()) {
+			
+			final TreeSet<Object> set = (TreeSet<Object>)entry.getValue().clone();
+			entry.setValue(set);
 			
 			// This is somewhat inefficient because we sort of recompute
 			// the transitive closure of many vertices.
@@ -110,5 +96,81 @@ public final class RawGraph {
 		}
 		
 		return ret;
+	}
+	
+	// repairClosure :: (Graph<a> ::= [Pair<a a>]  Graph<a>)
+	public static TreeMap<Object,TreeSet<Object>> repairClosure(
+			ConsCell l, 
+			TreeMap<Object,TreeSet<Object>> g) {
+		if(l.nil())
+			return g;
+		// Note that this clone only the tree map... it's up to us to clone the sets in the values.
+		TreeMap<Object,TreeSet<Object>> ret = (TreeMap<Object,TreeSet<Object>>)g.clone();
+		TreeSet<Object> mutated = new TreeSet<Object>(g.comparator());
+		
+		for(core.NPair elem : new ConsCellCollection<core.NPair>(l)) {
+			assert(elem instanceof core.Ppair); // document as an assert why not
+			final Object src = elem.getChild(0);
+			final Object dst = elem.getChild(1);
+
+			// So we have a transitively closed graph, currently, and we
+			// suddenly want to add the edge (src, dst), and repair the closure.
+			
+			TreeSet<Object> srcSet = getMutatable(src, ret, mutated);
+			TreeSet<Object> dstSet = ret.get(dst);
+			
+			// Short circuit if edge exists already
+			if(srcSet.contains(dst))
+				continue;
+			
+			// First step: add dst
+			srcSet.add(dst);
+			if(dstSet != null)
+				srcSet.addAll(dstSet);
+			
+			// This completely repairs src's deps to a transitive closure,
+			// now for the rest of the vertexes...
+			
+			// We're choosing to iterate over keys instead of entries, so
+			// we can re-use getMutatable safely...
+			for(Object key : ret.keySet()) {
+				TreeSet<Object> value = ret.get(key);
+				// Skip if it doesn't have src
+				if(!value.contains(src))
+					continue;
+				// If it does, go try to add all of src to it
+				getMutatable(key, ret, mutated).addAll(srcSet);
+			}
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * Get a set that we can mutate, give a key, the graph, 
+	 * and a set of keys that are already mutatable
+	 * 
+	 * @param key  The key (src vertex) we want to mutate
+	 * @param ret  The graph
+	 * @param mutated  The set of keys that have already been cloned
+	 * @return  The set for this key, that we are allowed to mutate
+	 */
+	private static TreeSet<Object> getMutatable(
+			Object key, 
+			TreeMap<Object,TreeSet<Object>> ret, 
+			TreeSet<Object> mutated) {
+		TreeSet<Object> setToModify = ret.get(key);
+		
+		if(mutated.contains(key)) {
+			return setToModify;
+		}
+		if(setToModify == null) {
+			setToModify = new TreeSet<Object>(ret.comparator());
+		} else {
+			setToModify = (TreeSet<Object>)ret.get(key).clone();
+		}
+		ret.put(key, setToModify);
+		mutated.add(key);
+		return setToModify;
 	}
 }
