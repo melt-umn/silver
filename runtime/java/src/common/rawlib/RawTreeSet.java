@@ -1,5 +1,6 @@
 package common.rawlib;
 
+import java.util.Iterator;
 import java.util.TreeSet;
 
 import common.*;
@@ -50,5 +51,17 @@ public final class RawTreeSet {
 	}
 	public static int size(TreeSet<Object> s) {
 		return s.size();
+	}
+	public static TreeSet<Object> filter(NodeFactory<Boolean> cmp, TreeSet<Object> s) {
+		TreeSet<Object> ret = (TreeSet<Object>)s.clone();
+		
+		Iterator<Object> x = ret.iterator();
+		while(x.hasNext()) {
+			if(!cmp.invoke(new Object[]{x.next()}, null)) {
+				x.remove();
+			}
+		}
+		
+		return ret;
 	}
 }
