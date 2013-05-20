@@ -101,7 +101,7 @@ String ::= specs::[ProductionGraph]
 {
   return case specs of
   | [] -> ""
-  | productionGraph(prod, _, _, graph, _, _)::t ->
+  | productionGraph(prod, _, graph, _, _)::t ->
       "subgraph \"cluster:" ++ prod ++ "\" {\n" ++ 
       implode("", map(makeDotArrow(prod, _), g:toList(graph))) ++
       "}\n" ++
