@@ -115,4 +115,36 @@ Boolean ::= l::Set<a> r::Set<a>
   return subset(l,r) && subset(r,l);
 }
 
+{--
+ - Determines if a set is empty.
+ -}
+function isEmpty
+Boolean ::= s::Set<a>
+{
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawTreeSet.isEmpty((java.util.TreeSet<Object>)%s%)";
+}
+
+{--
+ - Determines the size of a set.
+ -}
+function size
+Integer ::= s::Set<a>
+{
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawTreeSet.size((java.util.TreeSet<Object>)%s%)";
+}
+
+{--
+ - Removes elements from a set, whenever 'f' return false.
+ -}
+function filter
+Set<a> ::= f::(Boolean ::= a)  s::Set<a>
+{
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawTreeSet.filter(%f%, (java.util.TreeSet<Object>)%s%)";
+}
 
