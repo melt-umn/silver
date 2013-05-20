@@ -35,4 +35,9 @@ public final class RawTreeMap {
 		Object r = t.get(k);
 		return r == null ? ConsCell.nil : (ConsCell) r;
 	}
+	public static TreeMap<Object,ConsCell> update(Object k, ConsCell v, TreeMap<Object, ConsCell> t) {
+		TreeMap<Object, ConsCell> ret = (TreeMap<Object, ConsCell>) t.clone();
+		ret.put(k, v);
+		return ret;
+	}
 }
