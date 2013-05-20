@@ -6,7 +6,7 @@ import silver:definition:type only isDecorable;
 nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, cullSuspect, flowTypeVertexes;
 
 -- TODO: future me note: this is a good candidate to turn into EnvTree<Graph<String>> perhaps.
-inherited attribute flowTypes :: EnvTree<Pair<String String>>;
+inherited attribute flowTypes :: EnvTree<g:Graph<String>>;
 
 -- TODO: future me note: these are good candidates to be "static attributes" maybe?
 {--
@@ -80,7 +80,7 @@ top::ProductionGraph ::=
     -- this potentially introduces the same edge twice, but that's a nonissue
     let newEdges :: [Pair<FlowVertex FlowVertex>] =
           foldr(append, [], 
-            map(findAdmissibleEdges(_, graph, searchEnvTree(lhsNt, top.flowTypes)), suspectEdges))
+            map(findAdmissibleEdges(_, graph, findFlowType(lhsNt, top.flowTypes)), suspectEdges))
     in let repaired :: g:Graph<FlowVertex> =
              repairClosure(newEdges, graph)
     in if null(newEdges) then top else
@@ -303,9 +303,9 @@ Pair<b b> ::= f::(b ::= a)  x::Pair<a a>
  - @return A set of edges to add to a production graph, for this stich-point, given the flow type.
  -}
 function stitchEdgesFor
-[Pair<FlowVertex FlowVertex>] ::= spec::Pair<(FlowVertex ::= String) NtName>  ntEnv::EnvTree<Pair<String String>>
+[Pair<FlowVertex FlowVertex>] ::= spec::Pair<(FlowVertex ::= String) NtName>  flowTypes::EnvTree<g:Graph<String>>
 {
-  return map(dualApply(spec.fst, _), searchEnvTree(spec.snd, ntEnv));
+  return map(dualApply(spec.fst, _), g:toList(findFlowType(spec.snd, flowTypes)));
 }
 function edgeIsNew
 Boolean ::= edge::Pair<FlowVertex FlowVertex>  e::g:Graph<FlowVertex>
@@ -350,21 +350,22 @@ a ::= v::Pair<a b>
  -          always an lhsInhVertex.
  -}
 function findAdmissibleEdges
-[Pair<FlowVertex FlowVertex>] ::= edge::Pair<FlowVertex FlowVertex>  graph::g:Graph<FlowVertex>  ft::[Pair<String String>]
+[Pair<FlowVertex FlowVertex>] ::= edge::Pair<FlowVertex FlowVertex>  graph::g:Graph<FlowVertex>  ft::g:Graph<String>
 {
   -- The current flow type of the edge's source vertex (which is always a thing in the flow type)
-  local currentDeps :: [String] = lookupAllBy(stringEq, edge.fst.flowTypeName, ft);
+  local currentDeps :: set:Set<String> =
+    g:edgesFrom(edge.fst.flowTypeName, ft);
   
-  -- Those dependencies in the target that are NOT in the source. i.e. potentially new dependencies!
-  local targetNotSource :: [String] = 
-    foldr(collectInhs, [], set:toList(
-      set:difference(
-        g:edgesFrom(edge.snd, graph),
-        g:edgesFrom(edge.fst, graph))));
+  local targetNotSource :: set:Set<FlowVertex> = 
+    set:difference(
+      g:edgesFrom(edge.snd, graph),
+      g:edgesFrom(edge.fst, graph));
+  
   -- ONLY those that ARE in current. i.e. dependencies that do not expand the flow type of this source vertex.
-  local validDeps :: [FlowVertex] = map(lhsInhVertex, filter(contains(_, currentDeps), targetNotSource));
+  local validDeps :: [FlowVertex] = 
+    filter(isLhsInhSet(_, currentDeps), set:toList(targetNotSource));
   
-  return if null(currentDeps) then [] -- just a quick optimization.
+  return if set:isEmpty(currentDeps) then [] -- just a quick optimization.
   else map(pair(edge.fst, _), validDeps);
 }
 
