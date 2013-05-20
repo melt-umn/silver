@@ -82,9 +82,11 @@ public class @LANG_NAME@Service {
 		NIdeProperty[] list = new NIdeProperty[set.size()];
 		int i=0;
 		for(Entry<String, Property> entry: set){
+			Property prop = entry.getValue();
 			list[i] = new PmakeIdeProperty(
-				new common.StringCatter(entry.getKey()), 
-				new common.StringCatter(entry.getValue().getSValue())
+				new common.StringCatter(entry.getKey()), //this is equal to prop.getName()
+				new common.StringCatter(prop.getType().name()),
+				new common.StringCatter(prop.getSValue())
 			);
 			i++;
 		}
