@@ -34,16 +34,16 @@ function computeAllProductionGraphs
  - Iterates until convergence.
  -}
 function fullySolveFlowTypes
-Pair<[ProductionGraph] EnvTree<Pair<String String>>> ::= graphs::[ProductionGraph]
-                                 realEnv::Decorated Env
-                                 ntEnv::EnvTree<Pair<String String>>
+Pair<[ProductionGraph] EnvTree<Pair<String String>>> ::= 
+  graphs::[ProductionGraph]
+  ntEnv::EnvTree<Pair<String String>>
 {
   local iter :: Pair<Boolean Pair<[ProductionGraph] EnvTree<Pair<String String>>>> =
-    solveFlowTypes(graphs, realEnv, ntEnv);
+    solveFlowTypes(graphs, ntEnv);
   
   -- Just iterate until no new edges are added
   return if !iter.fst then iter.snd
-  else fullySolveFlowTypes(iter.snd.fst, realEnv, iter.snd.snd);
+  else fullySolveFlowTypes(iter.snd.fst, iter.snd.snd);
 }
 
 {--
@@ -54,7 +54,6 @@ Pair<Boolean
      Pair<[ProductionGraph]
           EnvTree<Pair<String String>>>> ::=
   graphs::[ProductionGraph]
-  realEnv::Decorated Env
   ntEnv::EnvTree<Pair<String String>>
 {
   local graph :: ProductionGraph = head(graphs);
@@ -63,27 +62,19 @@ Pair<Boolean
   stitchedGraph.flowTypes = ntEnv;
   local updatedGraph :: ProductionGraph = stitchedGraph.cullSuspect;
 
-  -- TODO it'd be nice if we didn't need to look this up every time we're called.
-  -- IN PARTICULAR since it's the only use of realEnv here!
-  local syns :: [String] =
-    map((.attrOccurring),
-      filter(isOccursSynthesized(_, realEnv),
-        getAttrsOn(graph.lhsNt, realEnv)));
-  
   local currentFlowType :: EnvTree<String> =
     directBuildTree(searchEnvTree(graph.lhsNt, ntEnv));
   
   -- The New Improved Flow Type
   local synExpansion :: [Pair<String [String]>] =
-    map(expandVertexFilterTo(_, updatedGraph),
-      forwardEqVertex() :: map(lhsSynVertex, syns));
+    map(expandVertexFilterTo(_, updatedGraph), updatedGraph.flowTypeVertexes);
   
   -- Find what edges are NEW NEW NEW
   local brandNewEdges :: [Pair<NtName Pair<String String>>] =
     map(pair(graph.lhsNt, _), findBrandNewEdges(synExpansion, currentFlowType));
   
   local recurse :: Pair<Boolean Pair<[ProductionGraph] EnvTree<Pair<String String>>>> =
-    solveFlowTypes(tail(graphs), realEnv, rtm:add(brandNewEdges, ntEnv));
+    solveFlowTypes(tail(graphs), rtm:add(brandNewEdges, ntEnv));
     
   return if null(graphs) then pair(false, pair([], ntEnv))
   else pair(!null(brandNewEdges) || recurse.fst, pair(updatedGraph :: recurse.snd.fst, recurse.snd.snd));

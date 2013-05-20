@@ -30,7 +30,7 @@ top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::St
   
   -- Now, solve for flow types!!
   local flowTypes1 :: Pair<[ProductionGraph] EnvTree<Pair<String String>>> =
-    fullySolveFlowTypes(prodGraph, allRealEnv, rtm:empty(compareString));
+    fullySolveFlowTypes(prodGraph, rtm:empty(compareString));
   
   -- Non-host syn patch the flow types! (Composition generates new equations
   -- that requires non-host syn to potentially need to evaluate forwards
@@ -40,7 +40,7 @@ top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::St
     
   -- Iterate once more, to propagate the patch above across flow types!
   local flowTypes3 :: Pair<[ProductionGraph] EnvTree<Pair<String String>>> =
-    fullySolveFlowTypes(flowTypes1.fst, allRealEnv, flowTypes2);
+    fullySolveFlowTypes(flowTypes1.fst, flowTypes2);
   
   production flowTypes :: EnvTree<Pair<String String>> = flowTypes3.snd;
   production finalGraphs :: [ProductionGraph] = flowTypes3.fst;

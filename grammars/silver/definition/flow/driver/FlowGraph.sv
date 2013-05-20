@@ -25,3 +25,19 @@ function searchGraphEnv
 {
   return set:toList(g:edgesFrom(v, g));
 }
+
+function transitiveClose
+g:Graph<FlowVertex> ::=
+  graph::g:Graph<FlowVertex>
+{
+  return g:transitiveClosure(graph);
+}
+
+function repairClosure
+g:Graph<FlowVertex> ::=
+  newEdges::[Pair<FlowVertex FlowVertex>]
+  graph::g:Graph<FlowVertex>
+{
+  return g:repairClosure(newEdges, graph);
+}
+
