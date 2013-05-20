@@ -3,9 +3,12 @@ grammar silver:definition:flow:driver;
 import silver:util only contains;
 import silver:definition:type only isDecorable;
 
-nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, cullSuspect;
+nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, cullSuspect, flowTypeVertexes;
 
+-- TODO: future me note: this is a good candidate to turn into EnvTree<Graph<String>> perhaps.
 inherited attribute flowTypes :: EnvTree<Pair<String String>>;
+
+-- TODO: future me note: these are good candidates to be "static attributes" maybe?
 {--
  - Given a set of flow types, stitches those edges into the graph for
  - all stitch points (i.e. children, locals, forward)
@@ -22,8 +25,12 @@ synthesized attribute edgeMap :: ([FlowVertex] ::= FlowVertex);
 
 synthesized attribute cullSuspect :: ProductionGraph;
 
+-- This is, apparently, only used to look up production by name
 synthesized attribute prod::String;
+-- Only used by solveFlowTypes()
 synthesized attribute lhsNt::String;
+-- Used in solveFlowTypes
+synthesized attribute flowTypeVertexes::[FlowVertex];
 
 {--
  - An object for representing a production's flow graph.
@@ -31,6 +38,7 @@ synthesized attribute lhsNt::String;
  -
  - @param prod  The full name of this production
  - @param lhsNt  The full name of the nonterminal this production constructs
+ - @param flowTypeVertexes  The vertexes that we track the flow types of
  - @param graph  The edges within this production
  - @param suspectEdges  Edges that are not permitted to affect their OWN flow types (but perhaps some unknown other flowtypes)
  - @param stitchPoints  Places where current flow types need grafting to this graph to yield a full flow graph
@@ -41,12 +49,14 @@ abstract production productionGraph
 top::ProductionGraph ::=
   prod::String
   lhsNt::String
+  flowTypeVertexes::[FlowVertex]
   graph::g:Graph<FlowVertex>
   suspectEdges::[Pair<FlowVertex FlowVertex>]
   stitchPoints::[Pair<(FlowVertex ::= String) String>]
 {
   top.prod = prod;
   top.lhsNt = lhsNt;
+  top.flowTypeVertexes = flowTypeVertexes;
   
   top.stitchedGraph = 
     let newEdges :: [Pair<FlowVertex FlowVertex>] =
@@ -55,26 +65,26 @@ top::ProductionGraph ::=
     in let repaired :: g:Graph<FlowVertex> =
              repairClosure(newEdges, graph)
     in if null(newEdges) then top else
-         productionGraph(prod, lhsNt, repaired, suspectEdges, stitchPoints)
+         productionGraph(prod, lhsNt, flowTypeVertexes, repaired, suspectEdges, stitchPoints)
     end end;
   
   top.transitiveClosure =
     let transitiveClosure :: g:Graph<FlowVertex> =
           transitiveClose(graph)
     in
-      productionGraph(prod, lhsNt, transitiveClosure, suspectEdges, stitchPoints) end;
+      productionGraph(prod, lhsNt, flowTypeVertexes, transitiveClosure, suspectEdges, stitchPoints) end;
     
   top.edgeMap = searchGraphEnv(_, graph);
   
   top.cullSuspect = 
-    -- TODO: this potentially introduces the same edge twice?
+    -- this potentially introduces the same edge twice, but that's a nonissue
     let newEdges :: [Pair<FlowVertex FlowVertex>] =
           foldr(append, [], 
-            map(isSuspectEdgeAdmissible(_, graph, searchEnvTree(lhsNt, top.flowTypes)), suspectEdges))
+            map(findAdmissibleEdges(_, graph, searchEnvTree(lhsNt, top.flowTypes)), suspectEdges))
     in let repaired :: g:Graph<FlowVertex> =
              repairClosure(newEdges, graph)
     in if null(newEdges) then top else
-         productionGraph(prod, lhsNt, repaired, suspectEdges, stitchPoints)
+         productionGraph(prod, lhsNt, flowTypeVertexes, repaired, suspectEdges, stitchPoints)
     end end;
 }
 
@@ -115,10 +125,13 @@ ProductionGraph ::= prod::String  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   local normalEdges :: [Pair<FlowVertex FlowVertex>] =
     foldr(append, [], map((.flowEdges), defs));
   
+  local nonForwarding :: Boolean =
+    null(lookupFwd(prod, flowEnv));
+  
   -- Insert implicit equations.
   local fixedEdges :: [Pair<FlowVertex FlowVertex>] =
     normalEdges ++
-    (if null(lookupFwd(prod, flowEnv))
+    (if nonForwarding
      then addDefEqs(prod, nt, syns, flowEnv)
      else addFwdEqs(syns) ++ addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ addFwdInhEqs(prod, inhs, flowEnv)) ++
     fixupAllHOAs(defs, flowEnv, realEnv) ++
@@ -138,10 +151,14 @@ ProductionGraph ::= prod::String  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
     rhsStitchPoints(dcl.namedSignature.inputElements) ++
     localStitchPoints(nt, defs);
   
+  local flowTypeVertexes :: [FlowVertex] =
+    (if nonForwarding then [] else [forwardEqVertex()]) ++
+      map(lhsSynVertex, syns);
+  
   local initialGraph :: g:Graph<FlowVertex> =
     createFlowGraph(fixedEdges);
 
-  return productionGraph(prod, nt, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+  return productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 }
 
 ---- Begin helpers for fixing up graphs ----------------------------------------
@@ -297,28 +314,9 @@ Boolean ::= edge::Pair<FlowVertex FlowVertex>  e::g:Graph<FlowVertex>
 }
 ---- End helpers for graph stitching -------------------------------------------
 
----- Begin transitive closure computation --------------------------------------
-function transitiveClose
-g:Graph<FlowVertex> ::=
-  graph::g:Graph<FlowVertex>
-{
-  return g:transitiveClosure(graph);
-}
-
 function getFst
 a ::= v::Pair<a b>
 { return v.fst; }
-
-function repairClosure
-g:Graph<FlowVertex> ::=
-  newEdges::[Pair<FlowVertex FlowVertex>]
-  graph::g:Graph<FlowVertex>
-{
-  return g:repairClosure(newEdges, graph);
-}
----- End transitive closure repair function ------------------------------------
-
-
 
 ---- Begin Suspect edge handling -----------------------------------------------
 
@@ -344,14 +342,14 @@ g:Graph<FlowVertex> ::=
  - So once valid that edge is valid, it is always valid. No additional edges or
  - flow type updates will change that.
  -
- - @param edge  A suspect edge. INVARIANT: edge.fst is always a syn or fwd.
- -              (or rather, can always be looked up in the flow type.)
+ - @param edge  A suspect edge. INVARIANT: edge.fst can always be looked up in the flow type.
+ -              (currently, a syn or fwd)
  - @param graph  The current graph
  - @param ft  The current flow types for the nonterminal this graph belongs to.
  - @return  Edges to introduce. INVARIANT: .fst is always edge.fst, .snd is
  -          always an lhsInhVertex.
  -}
-function isSuspectEdgeAdmissible
+function findAdmissibleEdges
 [Pair<FlowVertex FlowVertex>] ::= edge::Pair<FlowVertex FlowVertex>  graph::g:Graph<FlowVertex>  ft::[Pair<String String>]
 {
   -- The current flow type of the edge's source vertex (which is always a thing in the flow type)
