@@ -45,5 +45,10 @@ public final class RawTreeSet {
 	public static boolean containsAll(ConsCell l, TreeSet<Object> r) {
 		return r.containsAll(new ConsCellCollection<Object>(l));
 	}
-	
+	public static boolean isEmpty(TreeSet<Object> s) {
+		return s.isEmpty();
+	}
+	public static int size(TreeSet<Object> s) {
+		return s.size();
+	}
 }
