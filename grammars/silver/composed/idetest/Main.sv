@@ -129,7 +129,7 @@ function getArgString
 {
   return
     if arg.propName == "grammar_to_include"
-    then ["-I", arg.propType, "--build-xml-location", arg.propType ++ "/bin/build.xml"]--FIXME: add new attribute propValue; now we just reuse propType (improperly)
+    then ["-I", arg.propValue, "--build-xml-location", arg.propValue ++ "/bin/build.xml"]
     else [];
 }
 
@@ -140,7 +140,7 @@ function getGrammarToCompile
     if(null(args))
     then []
     else if head(args).propName == "grammar_to_compile"
-	    then [head(args).propType]--FIXME: add new attribute propValue; now we just reuse propType (improperly)
+	    then [head(args).propValue]
 	    else getGrammarToCompile(tail(args));
 }
 
