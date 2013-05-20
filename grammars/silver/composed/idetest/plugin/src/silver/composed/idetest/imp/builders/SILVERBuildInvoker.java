@@ -16,6 +16,7 @@ import org.eclipse.core.resources.IProject;
 import ide.NIdeMessage;
 import ide.NIdeProperty;
 import ide.PmakeIdeProperty;
+import ide.NIdeEnv;
 import silver.composed.idetest.SILVERService;
 
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
@@ -58,14 +59,22 @@ public class SILVERBuildInvoker {
 		IProgressMonitor monitor,
 		PostActionHandler handler) {
 
+        //Get IDE Service
+        SILVERService service = SILVERService.getInstance();
+
+        //Get project environment
+		NIdeEnv env = service.getEnvironment(project);
+
 		//Get properties
-		ProjectProperties properties = SILVERService.getInstance().getProperties(project);
+		ProjectProperties properties = service.getProperties(project);
 
 		try {
 			//Extract properties			
 			NIdeProperty[] args = SILVERService.convertToNIdePropertyList(properties);
-			
-			List<NIdeMessage> list = silver.composed.idetest.Build.build(args);
+
+			//Invoke actual build
+			List<NIdeMessage> list = silver.composed.idetest.Build.build(args, env);
+
 			return handler.handleBuild(list);
 		} catch (Exception t) {
 			t.printStackTrace();
