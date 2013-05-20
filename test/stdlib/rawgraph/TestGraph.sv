@@ -10,6 +10,11 @@ Integer ::= a::Integer b::Integer
 {
   return a - b;
 }
+function iset
+set:Set<Integer> ::= l::[Integer]
+{
+  return set:add(l, set:empty(compareInteger));
+}
 
 global e :: g:Graph<Integer> = g:empty(compareInteger);
 
@@ -44,14 +49,40 @@ equalityTest ( g:contains(pair(3,2), g1), false, Boolean, core_tests ) ;
 equalityTest ( g:contains(pair(99,87), g1), false, Boolean, core_tests ) ;
 
 -- set equality on edges from...
-equalityTest ( set:equals(g:edgesFrom(1, g1), set:add([1,2], set:empty(compareInteger))), true, Boolean, core_tests ) ;
-equalityTest ( set:equals(g:edgesFrom(1, g2), set:add([1,2], set:empty(compareInteger))), true, Boolean, core_tests ) ;
-equalityTest ( set:equals(g:edgesFrom(6, g1), set:empty(compareInteger)), true, Boolean, core_tests ) ;
-equalityTest ( set:equals(g:edgesFrom(56, g1), set:empty(compareInteger)), true, Boolean, core_tests ) ;
+equalityTest ( set:equals(g:edgesFrom(1, g1), iset([1,2])), true, Boolean, core_tests ) ;
+equalityTest ( set:equals(g:edgesFrom(1, g2), iset([1,2])), true, Boolean, core_tests ) ;
+equalityTest ( set:equals(g:edgesFrom(6, g1), iset([])), true, Boolean, core_tests ) ;
+equalityTest ( set:equals(g:edgesFrom(56, g1), iset([])), true, Boolean, core_tests ) ;
 
 -- test length as a proxy for correctness...
 equalityTest ( length(g:toList(g1)), 5, Integer, core_tests ) ;
 equalityTest ( length(g:toList(g2)), 7, Integer, core_tests ) ;
 
+-- Line graph
+global g3 :: g:Graph<Integer> =
+  g:add([
+    pair(1,2),
+    pair(2,3),
+    pair(3,4),
+    pair(4,5),
+    pair(5,6)], e);
+
+-- Deps on all later vertexes
+global g4 :: g:Graph<Integer> =
+  g:transitiveClosure(g3);
+
+-- All deps on all
+global g5 :: g:Graph<Integer> =
+  g:transitiveClosure(
+    g:add([pair(6,1)], g3));
+
+-- Should be same as g5
+global g6 :: g:Graph<Integer> =
+  g:repairClosure([pair(6,1)], g4);
+
+equalityTest ( length(g:toList(g3)), 5, Integer, core_tests ) ;
+equalityTest ( length(g:toList(g4)), (0 + 1 + 2 + 3 + 4 + 5), Integer, core_tests ) ;
+equalityTest ( length(g:toList(g5)), (6 * 6), Integer, core_tests ) ;
+equalityTest ( length(g:toList(g6)), (6 * 6), Integer, core_tests ) ;
 
 
