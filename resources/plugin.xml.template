@@ -85,6 +85,8 @@ Variables used:
          </action>
       </objectContribution>
    </extension>
+
+   <!-- Syntax highlighting -->
    <extension
          point="org.eclipse.imp.runtime.tokenColorer">
       <tokenColorer
@@ -92,6 +94,7 @@ Variables used:
             language="@LANG_NAME@">
       </tokenColorer>
    </extension>
+
    <!-- Wizard -->
    <extension
          id="@LANG_NAME@_IDE.wizards"
@@ -102,6 +105,7 @@ Variables used:
             class="@PKG_NAME@.eclipse.wizard.NewProjectWizard"
             id="@LANG_NAME@_IDE.wizard.newProject"
             name="New @LANG_NAME@ Project"
+            finalPerspective="@LANG_NAME@_IDE.perspective"
             project="true">
       </wizard>
       <category
@@ -109,11 +113,22 @@ Variables used:
             name="@LANG_NAME@">
       </category>
    </extension>
+
    <!-- Startup hook (called when the plugin is loaded, mainly used for early initialization) -->
    <extension
          point="org.eclipse.ui.startup">
       <startup
             class="@PKG_NAME@.StartupHook">
       </startup>
+   </extension>
+
+   <!-- Perspective -->
+   <extension
+         point="org.eclipse.ui.perspectives">
+      <perspective
+            class="@PKG_NAME@.eclipse.perspective.@LANG_NAME@Perspective"
+            id="@LANG_NAME@_IDE.perspective"
+            name="@LANG_NAME@">
+      </perspective>
    </extension>
 </plugin>
