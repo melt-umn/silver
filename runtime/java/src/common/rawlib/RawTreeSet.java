@@ -64,4 +64,9 @@ public final class RawTreeSet {
 		
 		return ret;
 	}
+	public static TreeSet<Object> removeAll(ConsCell rm, TreeSet<Object> s) {
+		TreeSet<Object> ret = (TreeSet<Object>)s.clone();
+		ret.removeAll(new ConsCellCollection<Object>(rm));
+		return ret;
+	}
 }

@@ -4,6 +4,7 @@ import silver:definition:flow:driver;
 import silver:definition:flow:ast;
 import silver:definition:flow:env;
 import silver:util:raw:treemap as rtm;
+import silver:util:raw:graph as g;
 
 -- Hide all the flow type computation over here
 
@@ -29,20 +30,20 @@ top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::St
     computeAllProductionGraphs(allProds, prodTree, allFlowEnv, allRealEnv);
   
   -- Now, solve for flow types!!
-  local flowTypes1 :: Pair<[ProductionGraph] EnvTree<Pair<String String>>> =
+  local flowTypes1 :: Pair<[ProductionGraph] EnvTree<g:Graph<String>>> =
     fullySolveFlowTypes(prodGraph, rtm:empty(compareString));
   
   -- Non-host syn patch the flow types! (Composition generates new equations
   -- that requires non-host syn to potentially need to evaluate forwards
-  -- to be able to evaluate on new productions.)
-  local flowTypes2 :: EnvTree<Pair<String String>> =
+  -- to be able to evaluate on new productions.) TODO: could this need to be iterated?? probably yes, so BUG!
+  local flowTypes2 :: EnvTree<g:Graph<String>> =
     patchFlowTypes(flowTypes1.snd, allFlowDefs.nonHostSynAttrs);
     
   -- Iterate once more, to propagate the patch above across flow types!
-  local flowTypes3 :: Pair<[ProductionGraph] EnvTree<Pair<String String>>> =
+  local flowTypes3 :: Pair<[ProductionGraph] EnvTree<g:Graph<String>>> =
     fullySolveFlowTypes(flowTypes1.fst, flowTypes2);
   
-  production flowTypes :: EnvTree<Pair<String String>> = flowTypes3.snd;
+  production flowTypes :: EnvTree<g:Graph<String>> = flowTypes3.snd;
   production finalGraphs :: [ProductionGraph] = flowTypes3.fst;
   
   g.productionFlowGraphs = finalGraphs;
