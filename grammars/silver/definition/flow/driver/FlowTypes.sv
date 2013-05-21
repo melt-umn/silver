@@ -103,7 +103,7 @@ function findBrandNewEdges
 function expandVertexFilterTo
 Pair<String [String]> ::= ver::FlowVertex  graph::ProductionGraph
 {
-  return pair(ver.flowTypeName, foldr(collectInhs, [], graph.edgeMap(ver)));
+  return pair(ver.flowTypeName, foldr(collectInhs, [], set:toList(graph.edgeMap(ver)))); -- TODO: faster? using sets
 }
 
 
@@ -112,13 +112,13 @@ Pair<String [String]> ::= ver::FlowVertex  graph::ProductionGraph
  - 
  - @param f  The flow vertex in question
  - @param l  The current set of inherited attribute dependencies
- - @return  {l} with {f} added to it, IF it's in {inhs} and not already in {l}
+ - @return  {l} with {f} added to it
  -}
 function collectInhs
 [String] ::= f::FlowVertex  l::[String]
 {
   return case f of
-  | lhsInhVertex(a) -> if containsBy(stringEq, a, l) then l else a::l
+  | lhsInhVertex(a) -> a::l
   | _ -> l
   end;
 }

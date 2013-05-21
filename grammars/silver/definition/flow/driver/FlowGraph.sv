@@ -1,11 +1,33 @@
 grammar silver:definition:flow:driver;
 
+type FlowType = g:Graph<String>;
+
 function findFlowType
-g:Graph<String> ::= prod::String  e::EnvTree<g:Graph<String>>
+g:Graph<String> ::= prod::String  e::EnvTree<FlowType>
 {
   local lookup :: [g:Graph<String>] = searchEnvTree(prod, e);
   
   return if null(lookup) then g:empty(compareString) else head(lookup);
+}
+function findProductionGraph
+ProductionGraph ::= n::String  l::EnvTree<ProductionGraph>
+{
+  local lookup :: [ProductionGraph] = searchEnvTree(n, l);
+  
+  -- TODO: so apparently this should never fail?
+  return head(lookup);
+}
+
+function expandGraph
+[FlowVertex] ::= v::[FlowVertex]  e::ProductionGraph
+{
+  -- look up each vertex, uniq it down.
+  return set:toList(set:add(v, foldr(set:union, set:empty(compareFlowVertex), map(e.edgeMap, v))));
+}
+function onlyLhsInh
+set:Set<String> ::= s::[FlowVertex]
+{
+  return set:add(foldr(collectInhs, [], s), set:empty(compareString));
 }
 
 {--
@@ -16,10 +38,11 @@ g:Graph<String> ::= prod::String  e::EnvTree<g:Graph<String>>
  - @return A set of inherited attributes on this nonterminal, needed to compute this synthesized attribute.
  -}
 function inhDepsForSyn
-[String] ::= syn::String  nt::String  flow::EnvTree<FlowType>
+set:Set<String> ::= syn::String  nt::String  flow::EnvTree<FlowType>
 {
-  return set:toList(g:edgesFrom(syn, findFlowType(nt, flow))); -- TODO: return a set!! faster!
+  return g:edgesFrom(syn, findFlowType(nt, flow));
 }
+
 
 
 function isLhsInhSet
@@ -49,12 +72,6 @@ function extendFlowGraph
 g:Graph<FlowVertex> ::= l::[Pair<FlowVertex FlowVertex>]  g::g:Graph<FlowVertex>
 {
   return g:add(l, g);
-}
-
-function searchGraphEnv
-[FlowVertex] ::= v::FlowVertex g::g:Graph<FlowVertex>
-{
-  return set:toList(g:edgesFrom(v, g));
 }
 
 function transitiveClose

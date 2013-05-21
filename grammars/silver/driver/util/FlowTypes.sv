@@ -45,11 +45,12 @@ top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::St
   
   production flowTypes :: EnvTree<g:Graph<String>> = flowTypes3.snd;
   production finalGraphs :: [ProductionGraph] = flowTypes3.fst;
+  production finalGraphEnv :: EnvTree<ProductionGraph> = directBuildTree(map(prodGraphToEnv, finalGraphs));
   
-  g.productionFlowGraphs = finalGraphs;
+  g.productionFlowGraphs = finalGraphEnv;
   g.grammarFlowTypes = flowTypes;
   
-  r.productionFlowGraphs = finalGraphs;
+  r.productionFlowGraphs = finalGraphEnv;
   r.grammarFlowTypes = flowTypes;
 }
 
