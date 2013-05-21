@@ -21,7 +21,7 @@ synthesized attribute transitiveClosure :: ProductionGraph;
 {--
  - Edge mapper
  -}
-synthesized attribute edgeMap :: ([FlowVertex] ::= FlowVertex);
+synthesized attribute edgeMap :: (set:Set<FlowVertex> ::= FlowVertex);
 
 synthesized attribute cullSuspect :: ProductionGraph;
 
@@ -31,6 +31,7 @@ synthesized attribute prod::String;
 synthesized attribute lhsNt::String;
 -- Used in solveFlowTypes
 synthesized attribute flowTypeVertexes::[FlowVertex];
+-- I'd prefer this not exist, but...
 
 {--
  - An object for representing a production's flow graph.
@@ -74,7 +75,7 @@ top::ProductionGraph ::=
     in
       productionGraph(prod, lhsNt, flowTypeVertexes, transitiveClosure, suspectEdges, stitchPoints) end;
     
-  top.edgeMap = searchGraphEnv(_, graph);
+  top.edgeMap = g:edgesFrom(_, graph);
   
   top.cullSuspect = 
     -- this potentially introduces the same edge twice, but that's a nonissue
@@ -317,6 +318,12 @@ Boolean ::= edge::Pair<FlowVertex FlowVertex>  e::g:Graph<FlowVertex>
 function getFst
 a ::= v::Pair<a b>
 { return v.fst; }
+
+function prodGraphToEnv
+Pair<String ProductionGraph> ::= p::ProductionGraph
+{
+  return pair(p.prod, p);
+}
 
 ---- Begin Suspect edge handling -----------------------------------------------
 

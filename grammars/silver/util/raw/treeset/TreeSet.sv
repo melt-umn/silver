@@ -148,3 +148,14 @@ Set<a> ::= f::(Boolean ::= a)  s::Set<a>
   "java" : return "common.rawlib.RawTreeSet.filter(%f%, (java.util.TreeSet<Object>)%s%)";
 }
 
+{--
+ - Remove all elements from the set (returns set - lst)
+ -}
+function removeAll
+Set<a> ::= lst::[a] set::Set<a>
+{
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawTreeSet.removeAll(%lst%, (java.util.TreeSet<Object>)%set%)";
+}
+
