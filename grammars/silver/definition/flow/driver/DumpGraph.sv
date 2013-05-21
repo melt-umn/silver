@@ -52,7 +52,7 @@ function unList
 
 
 abstract production dumpFlowGraphAction
-top::Unit ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph]  flowTypes::[Pair<String [Pair<String String>]>]
+top::Unit ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph]  flowTypes::[Pair<String [g:Graph<String>]>]
 {
   top.io = 
     writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}", 
@@ -66,10 +66,10 @@ top::Unit ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph]  flowT
 
 
 function generateFlowDotGraph
-String ::= flowTypes::[Pair<String [Pair<String String>]>]
+String ::= flowTypes::[Pair<String [g:Graph<String>]>]
 {
   local nt::String = head(flowTypes).fst;
-  local edges::[Pair<String String>] = head(flowTypes).snd;
+  local edges::[Pair<String String>] = g:toList(head(head(flowTypes).snd));
   
   return if null(flowTypes) then ""
   else "subgraph \"cluster:" ++ nt ++ "\" {\nlabel=\"" ++ substring(lastIndexOf(":", nt) + 1, length(nt), nt) ++ "\";\n" ++ 

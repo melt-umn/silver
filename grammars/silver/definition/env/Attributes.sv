@@ -2,7 +2,7 @@ grammar silver:definition:env;
 
 -- TODO: it'd be nice to find a way to rejigger things so these imports can go away.
 import silver:util:cmdargs only CmdArgs;
-import silver:definition:flow:driver only ProductionGraph;
+import silver:definition:flow:driver only ProductionGraph, FlowType;
 import silver:driver:util only RootSpec;
 
 {- This grammar contains common definitions of attributes that
@@ -82,8 +82,8 @@ autocopy attribute config :: Decorated CmdArgs;
 {--
 - Flow information computed for this grammar
 -}
-autocopy attribute productionFlowGraphs :: [ProductionGraph];
-autocopy attribute grammarFlowTypes :: EnvTree<Pair<String String>>;
+autocopy attribute productionFlowGraphs :: EnvTree<ProductionGraph>;
+autocopy attribute grammarFlowTypes :: EnvTree<FlowType>;
 
 {--
  - The path to the origin of this root spec

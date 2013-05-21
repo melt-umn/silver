@@ -34,11 +34,11 @@ function computeAllProductionGraphs
  - Iterates until convergence.
  -}
 function fullySolveFlowTypes
-Pair<[ProductionGraph] EnvTree<Pair<String String>>> ::= 
+Pair<[ProductionGraph] EnvTree<g:Graph<String>>> ::= 
   graphs::[ProductionGraph]
-  ntEnv::EnvTree<Pair<String String>>
+  ntEnv::EnvTree<g:Graph<String>>
 {
-  local iter :: Pair<Boolean Pair<[ProductionGraph] EnvTree<Pair<String String>>>> =
+  local iter :: Pair<Boolean Pair<[ProductionGraph] EnvTree<g:Graph<String>>>> =
     solveFlowTypes(graphs, ntEnv);
   
   -- Just iterate until no new edges are added
@@ -52,9 +52,9 @@ Pair<[ProductionGraph] EnvTree<Pair<String String>>> ::=
 function solveFlowTypes
 Pair<Boolean
      Pair<[ProductionGraph]
-          EnvTree<Pair<String String>>>> ::=
+          EnvTree<g:Graph<String>>>> ::=
   graphs::[ProductionGraph]
-  ntEnv::EnvTree<Pair<String String>>
+  ntEnv::EnvTree<g:Graph<String>>
 {
   local graph :: ProductionGraph = head(graphs);
   graph.flowTypes = ntEnv;
@@ -62,19 +62,21 @@ Pair<Boolean
   stitchedGraph.flowTypes = ntEnv;
   local updatedGraph :: ProductionGraph = stitchedGraph.cullSuspect;
 
-  local currentFlowType :: EnvTree<String> =
-    directBuildTree(searchEnvTree(graph.lhsNt, ntEnv));
+  local currentFlowType :: g:Graph<String> = findFlowType(graph.lhsNt, ntEnv);
   
   -- The New Improved Flow Type
   local synExpansion :: [Pair<String [String]>] =
     map(expandVertexFilterTo(_, updatedGraph), updatedGraph.flowTypeVertexes);
   
   -- Find what edges are NEW NEW NEW
-  local brandNewEdges :: [Pair<NtName Pair<String String>>] =
-    map(pair(graph.lhsNt, _), findBrandNewEdges(synExpansion, currentFlowType));
+  local brandNewEdges :: [Pair<String String>] =
+    findBrandNewEdges(synExpansion, currentFlowType);
+    
+  local newFlowType :: g:Graph<String> =
+    g:add(brandNewEdges, currentFlowType); -- TODO: faster?
   
-  local recurse :: Pair<Boolean Pair<[ProductionGraph] EnvTree<Pair<String String>>>> =
-    solveFlowTypes(tail(graphs), rtm:add(brandNewEdges, ntEnv));
+  local recurse :: Pair<Boolean Pair<[ProductionGraph] EnvTree<g:Graph<String>>>> =
+    solveFlowTypes(tail(graphs), rtm:update(graph.lhsNt, [newFlowType], ntEnv));
     
   return if null(graphs) then pair(false, pair([], ntEnv))
   else pair(!null(brandNewEdges) || recurse.fst, pair(updatedGraph :: recurse.snd.fst, recurse.snd.snd));
@@ -82,12 +84,12 @@ Pair<Boolean
 
 
 function findBrandNewEdges
-[Pair<String String>] ::= candidates::[Pair<String [String]>]  currentFlowType::EnvTree<String>
+[Pair<String String>] ::= candidates::[Pair<String [String]>]  currentFlowType::g:Graph<String>
 {
   local syn :: String = head(candidates).fst;
   local inhs :: [String] = head(candidates).snd;
   
-  local newinhs :: [String] = rem(inhs, searchEnvTree(syn, currentFlowType));
+  local newinhs :: [String] = rem(inhs, set:toList(g:edgesFrom(syn, currentFlowType))); -- TODO faster?
   
   local newEdges :: [Pair<String String>] = map(pair(syn, _), newinhs);
   
@@ -101,7 +103,7 @@ function findBrandNewEdges
 function expandVertexFilterTo
 Pair<String [String]> ::= ver::FlowVertex  graph::ProductionGraph
 {
-  return pair(ver.flowTypeName, foldr(collectInhs, [], graph.edgeMap(ver)));
+  return pair(ver.flowTypeName, foldr(collectInhs, [], set:toList(graph.edgeMap(ver)))); -- TODO: faster? using sets
 }
 
 
@@ -110,13 +112,13 @@ Pair<String [String]> ::= ver::FlowVertex  graph::ProductionGraph
  - 
  - @param f  The flow vertex in question
  - @param l  The current set of inherited attribute dependencies
- - @return  {l} with {f} added to it, IF it's in {inhs} and not already in {l}
+ - @return  {l} with {f} added to it
  -}
 function collectInhs
 [String] ::= f::FlowVertex  l::[String]
 {
   return case f of
-  | lhsInhVertex(a) -> if containsBy(stringEq, a, l) then l else a::l
+  | lhsInhVertex(a) -> a::l
   | _ -> l
   end;
 }
@@ -130,19 +132,24 @@ function collectInhs
  - @return the modified flow types
  -}
 function patchFlowTypes
-EnvTree<Pair<String String>> ::= initial::EnvTree<Pair<String String>>  edits::[FlowDef]
+EnvTree<g:Graph<String>> ::= initial::EnvTree<g:Graph<String>>  edits::[FlowDef]
 {
-  return rtm:add(foldr(append, [], map(patchEditPair(_, initial), edits)), initial);
+  return foldr(patchEditPair, initial, edits);
 }
 function patchEditPair
-[Pair<String Pair<String String>>] ::= edit::FlowDef  current::EnvTree<Pair<String String>>
+EnvTree<g:Graph<String>> ::= edit::FlowDef  current::EnvTree<g:Graph<String>>
 {
   return case edit of
   | nonHostSynDef(attr, nt) -> 
-      let fwdInhs :: [String] = lookupAllBy(stringEq, "forward", searchEnvTree(nt, current)),
-          alreadyInhs :: [String] = lookupAllBy(stringEq, attr, searchEnvTree(nt, current))
+      let ft :: g:Graph<String> = findFlowType(nt, current)
        in
-          map(pair(nt, _), map(pair(attr, _), rem(fwdInhs, alreadyInhs)))
+      let fwdInhs :: set:Set<String> = g:edgesFrom("forward", ft),
+          alreadyInhs :: set:Set<String> = g:edgesFrom(attr, ft)
+       in
+          rtm:update(nt, [
+            g:add(map(pair(attr, _), set:toList(set:difference(fwdInhs, alreadyInhs))), ft)
+            ], current)
+      end
       end
   end; -- for everything found under nt->forward, add something under nt->attr, if it doesn't exist already
 }
