@@ -16,6 +16,7 @@ import org.eclipse.core.resources.IProject;
 import ide.NIdeMessage;
 import ide.NIdeProperty;
 import ide.PmakeIdeProperty;
+import ide.NIdeEnv;
 import @PKG_NAME@.@LANG_NAME@Service;
 
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
@@ -53,14 +54,22 @@ public class @LANG_NAME@PostBuildInvoker {
 		IProgressMonitor monitor,
 		PostActionHandler handler) {
 
+        //Get IDE Service
+        @LANG_NAME@Service service = @LANG_NAME@Service.getInstance();
+
+        //Get project environment
+		NIdeEnv env = service.getEnvironment(project);
+
 		//Get properties
-		ProjectProperties properties = @LANG_NAME@Service.getInstance().getProperties(project);
+		ProjectProperties properties = service.getProperties(project);
 
 		try {
 			//Extract properties			
-			NIdeProperty[] args = SILVERService.convertToNIdePropertyList(properties);
+			NIdeProperty[] args = @LANG_NAME@Service.convertToNIdePropertyList(properties);
 			
-			List<NIdeMessage> list = @PKG_NAME@.PostBuild.postbuild(args);
+			//Invoke actual post-build
+			List<NIdeMessage> list = @PKG_NAME@.PostBuild.postbuild(args, env);
+
 			return handler.handlePostBuild(list);
 		} catch (Exception t) {
 			t.printStackTrace();

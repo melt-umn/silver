@@ -135,6 +135,7 @@ top::IdeFunction ::= 'builder' builderName::QName ';'
         [listTypeExp(nonterminalTypeExp("ide:IdeMessage", []))]
       ),
       [listTypeExp(nonterminalTypeExp("ide:IdeProperty", [])),
+        nonterminalTypeExp("ide:IdeEnv", []),
         foreignTypeExp("core:IO", [])], []);
   
   local tc1 :: TypeCheck = check(freshenCompletely(builderName.lookupValue.typerep), builderTypeExpected);
@@ -163,6 +164,7 @@ top::IdeFunction ::= 'postbuilder' postbuilderName::QName ';'
         [listTypeExp(nonterminalTypeExp("ide:IdeMessage", []))]
       ),
       [listTypeExp(nonterminalTypeExp("ide:IdeProperty", [])),
+        nonterminalTypeExp("ide:IdeEnv", []),
         foreignTypeExp("core:IO", [])], []);
   
   local tc1 :: TypeCheck = check(freshenCompletely(postbuilderName.lookupValue.typerep), postbuilderTypeExpected);

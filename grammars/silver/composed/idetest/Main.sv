@@ -62,8 +62,8 @@ IOVal<Integer> ::= args::[String] ioin::IO
 
 -- IDE declaration block
 temp_imp_ide_dcl svParse ".sv" { 
-  builder analyze;          --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] i::IO"
-  postbuilder generate;     --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] i::IO"
+  builder analyze;          --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO"
+  postbuilder generate;     --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO"
   exporter export;          --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO"
   property grammar_to_compile string;
   property grammar_to_include string;
@@ -93,10 +93,10 @@ IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 }
 
 function generate
-IOVal<[IdeMessage]> ::= args::[IdeProperty] i::IO
+IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {
 
-  local sargs::[String] = getArgStrings(args) ++ getGrammarToCompile(args);
+  local sargs::[String] = getArgStrings(env) ++ getGrammarToCompile(args);
 
   local ru :: IOVal<[IdeMessage]> = ideGenerate(sargs, svParse, sviParse, i);
 
@@ -105,16 +105,24 @@ IOVal<[IdeMessage]> ::= args::[IdeProperty] i::IO
 }
 
 function analyze
-IOVal<[IdeMessage]> ::= args::[IdeProperty] i::IO
+IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {
 
-  local sargs::[String] = getArgStrings(args) ++ getGrammarToCompile(args);
+  local sargs::[String] = getArgStrings(env) ++ getGrammarToCompile(args);
 
   local ru :: IOVal<[IdeMessage]> = ideAnalyze(sargs, svParse, sviParse, i);
 
   return ru;
 }
 
+function getArgStrings
+[String] ::= env::IdeEnv
+{
+  return ["-I", env.projectPath, "--build-xml-location", env.generatedPath ++ "/build.xml"];
+}
+
+
+{--
 function getArgStrings
 [String] ::= args::[IdeProperty]
 {
@@ -132,6 +140,7 @@ function getArgString
     then ["-I", arg.propValue, "--build-xml-location", arg.propValue ++ "/bin/build.xml"]
     else [];
 }
+--}
 
 function getGrammarToCompile
 [String] ::= args::[IdeProperty]
