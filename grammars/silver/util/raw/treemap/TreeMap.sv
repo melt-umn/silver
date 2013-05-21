@@ -51,3 +51,14 @@ function toList
   "java" : return "common.rawlib.RawTreeMap.toList((java.util.TreeMap<Object, common.ConsCell>)%mp%)";
 }
 
+{--
+ - Updates the value returned by a key
+ -}
+function update
+Map<a b> ::= key::a  value::[b]  mp::Map<a b>
+{
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawTreeMap.update(%key%, %value%, (java.util.TreeMap<Object,common.ConsCell>)%mp%)";
+}
+
