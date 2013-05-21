@@ -61,7 +61,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     "<target name='arg-check'>" ++ getArgCheckTarget() ++ "</target>",
     "<target name='filters'>" ++ getFiltersTarget() ++ "</target>",
     "<target name='create-folders'>" ++ getCreateFoldersTarget(delegateBuilderName, actionExportName) ++ "</target>",
-    "<target name='customize' if=\"to-customize\">" ++ getCustomizeTarget() ++ "</target>",
+    "<target name='customize' if=\"to-customize\" depends='arg-check, filters'>" ++ getCustomizeTarget() ++ "</target>",
     "<target name='postbuild' if=\"to-postbuild\">" ++ getAntPostBuildTarget() ++ "</target>",--this is for ant post-build; not to be confused with IDE post-build
     "<target name='enhance' depends='enhance-build, enhance-postbuild, enhance-export'></target>",
     "<target name='enhance-build' depends='arg-check, filters' if=\"ide-function-builder-exists\">" ++ getEnhanceBuildTarget(ide.funcDcls) ++ "</target>",
@@ -453,6 +453,12 @@ String ::= delegateBuilderName::String actionExportName::String
     "        tofile=\"${ide.pkg.path}/eclipse/wizard/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
+    "  <mkdir dir='${ide.pkg.path}/eclipse/perspective'/>\n" ++
+    "  <!-- A perspective for this language. -->\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/perspective/LANGPerspective.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/perspective/${lang.name}Perspective.java\" filtering=\"true\"/>\n" ++
+    "  \n" ++
+
     "  <mkdir dir='${ide.pkg.path}/eclipse/console'/>\n" ++
     "  <!-- An IDE console specific to project of this language. -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/console/LANGConsole.java.template\"\n" ++
@@ -493,7 +499,7 @@ String ::=
 {
     return
     "\n" ++
-    "<copy todir=\"${ide.proj.plugin.path}\" overwrite=\"true\">\n" ++
+    "<copy todir=\"${ide.proj.plugin.path}\" overwrite=\"true\" filtering=\"true\">\n" ++
     "  <fileset dir=\"${grammar.path}/plugin/\"/>\n" ++
     "</copy>\n";
 }
