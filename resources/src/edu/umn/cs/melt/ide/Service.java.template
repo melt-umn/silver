@@ -115,7 +115,7 @@ public class @LANG_NAME@Service {
 		IPath path = fProject.getLocation();
 		
 		String projectPath = path.toOSString();
-		String generatedPath = path.toOSString() + "/" + SILVERBuilder.GEN_FOLDER;
+		String generatedPath = path.toOSString() + "/" + @LANG_NAME@Builder.GEN_FOLDER;
 		String platformPath = null;
 		
 		try {
