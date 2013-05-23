@@ -66,7 +66,6 @@ temp_imp_ide_dcl svParse ".sv" {
   postbuilder generate;     --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO"
   exporter export;          --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO"
   property grammar_to_compile string;
-  property grammar_to_include string;
 };
 
 function export
@@ -120,27 +119,6 @@ function getArgStrings
 {
   return ["-I", env.projectPath, "--build-xml-location", env.generatedPath ++ "/build.xml"];
 }
-
-
-{--
-function getArgStrings
-[String] ::= args::[IdeProperty]
-{
-  return
-    if(null(args))
-    then []
-    else getArgString(head(args)) ++ getArgStrings(tail(args));
-}
-
-function getArgString
-[String] ::= arg::IdeProperty
-{
-  return
-    if arg.propName == "grammar_to_include"
-    then ["-I", arg.propValue, "--build-xml-location", arg.propValue ++ "/bin/build.xml"]
-    else [];
-}
---}
 
 function getGrammarToCompile
 [String] ::= args::[IdeProperty]
