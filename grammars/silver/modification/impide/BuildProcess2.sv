@@ -28,14 +28,97 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::
   local attribute pr::IO;
   pr = print("Generating Parsers and Scanners for IMP-based IDE.\n", top.ioIn);
   
+  local attribute pr2::IO;
+  pr2 = writeFile(getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template", getPropertyProvider(ide.propDcls),
+		mkdir(getIDETempFolder() ++ "eclipse/property", pr).io);
+
   top.io = writeNCSSpec(
 		writeFile(getIDETempFolder() ++ "eclipse/wizard/PropertyGenerator.java.template", getPropertyGenerator(ide.propDcls),
-		mkdir(getIDETempFolder() ++ "eclipse/wizard", pr).io), 
+		mkdir(getIDETempFolder() ++ "eclipse/wizard", pr2).io), 
 		grams, silvergen ++ "src/", specs, pkgName);
 
   --top.io = writeNCSSpec(pr, grams, silvergen ++ "src/", specs);
   top.code = 0;
   top.order = 7;
+}
+
+function getPropertyProvider 
+String ::= propDcls :: [IdeProperty]
+{
+  return 
+	"package @PKG_NAME@.eclipse.property;\n" ++
+	"\n" ++	
+	"import java.util.ArrayList;\n" ++
+	"import java.util.List;\n" ++
+	"\n" ++	
+	"import org.eclipse.swt.widgets.Composite;\n" ++
+	"\n" ++	
+	"import edu.umn.cs.melt.ide.silver.property.ui.*;\n" ++
+	"\n" ++	
+	"public class PropertyControlsProvider implements IPropertyControlsProvider {\n" ++
+	"\n" ++	
+	"    private List<PropertyControl> controls;\n" ++
+	"\n" ++		
+	"    @Override\n" ++
+	"    public List<PropertyControl> getPropertyControls(Composite panel) {\n" ++
+	"	    if(controls==null){\n" ++
+	"		    controls = new ArrayList<PropertyControl>();\n" ++
+	"\n" ++				
+	"		    //Generated based on IDE declaration\n" ++
+
+	            getProperties2(propDcls) ++
+
+	"	    }\n" ++
+	"\n" ++			
+	"	    return controls;\n" ++
+	"    }\n" ++
+	"\n" ++	
+	"    @Override\n" ++
+	"    public boolean validateAll() {\n" ++
+	"	    boolean valid = true;\n" ++
+	"\n" ++			
+	"	    if(controls!=null){\n" ++
+	"		    for(PropertyControl control:controls){\n" ++
+	"			    if(!control.validate()){\n" ++
+	"				    valid = false;\n" ++
+	"			    }\n" ++
+	"		    }	\n" ++		
+	"	    }\n" ++
+	"\n" ++			
+	"	    //TODO\n" ++
+	"	    //IDE developers may add validations here. This is mainly for \n" ++
+	"	    //context-aware check, such as determining the validity of one field \n" ++
+	"	    //based on that of another.\n" ++
+	"\n" ++			
+	"	    return valid;\n" ++
+	"    }\n" ++
+	"\n" ++	
+	"}\n";
+
+}
+
+function getProperties2 
+String ::= propDcls :: [IdeProperty]
+{
+  return if null(propDcls) 
+         then "\n"	
+         else getProperty2(head(propDcls)) ++ getProperties2(tail(propDcls));
+}
+
+function getProperty2
+String ::= propDcl :: IdeProperty
+{
+  return "		    controls.add(new " ++ getConstructorByType(propDcl.propType) ++ "(panel, \"" ++ propDcl.propName ++"\"));\n";
+}
+
+function getConstructorByType
+String ::= propType :: String
+{
+  return if propType == "string" then "TextPropertyControl"
+    else if propType == "path" then "PathPropertyControl"
+    else if propType == "url" then "URLPropertyControl"
+    else -- propType == "integer" 
+    "IntegerPropertyControl";
 }
 
 function getPropertyGenerator 

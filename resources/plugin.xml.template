@@ -131,4 +131,24 @@ Variables used:
             name="@LANG_NAME@">
       </perspective>
    </extension>
+
+   <!-- Property page -->  
+   <extension
+         point="org.eclipse.ui.propertyPages">
+      <page
+            class="@PKG_NAME@.eclipse.property.@LANG_NAME@PropertyPage"
+            id="@LANG_NAME@_IDE.propertyPage"
+            name="@LANG_NAME@">
+          <enabledWhen>
+	         <and>
+	           <instanceof value="org.eclipse.core.resources.IProject"/>
+			   <adapt type="org.eclipse.core.resources.IResource">
+			       <test property="org.eclipse.core.resources.projectNature" 
+			             value="@LANG_NAME@_IDE.imp.nature">
+			       </test>
+			   </adapt>
+			 </and> 
+	      </enabledWhen>
+      </page>
+   </extension>
 </plugin>

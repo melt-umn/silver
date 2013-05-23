@@ -453,8 +453,16 @@ String ::= delegateBuilderName::String actionExportName::String
     "        tofile=\"${ide.pkg.path}/eclipse/wizard/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
+    "  <mkdir dir='${ide.pkg.path}/eclipse/property'/>\n" ++
+    "  <!-- A property page for the project -->\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/LANGPropertyPage.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/property/${lang.name}PropertyPage.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/property/PropertyControlsProvider.java\" filtering=\"true\"/>\n" ++
+    "  \n" ++
+
     "  <mkdir dir='${ide.pkg.path}/eclipse/perspective'/>\n" ++
-    "  <!-- A perspective for this language. -->\n" ++
+    "  <!-- A perspective for development using this language. -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/perspective/LANGPerspective.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/eclipse/perspective/${lang.name}Perspective.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
