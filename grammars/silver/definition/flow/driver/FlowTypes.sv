@@ -38,8 +38,13 @@ Pair<[ProductionGraph] EnvTree<g:Graph<String>>> ::=
   graphs::[ProductionGraph]
   ntEnv::EnvTree<g:Graph<String>>
 {
+  -- Each iteration, we rebuild this... :/
+  -- TODO: consider a 'mapValuesWithMapState' function :: 'k1, v1, map<k1 v1>, map<k2 v2> -> v1, k2, v2'
+  local prodEnv :: EnvTree<ProductionGraph> =
+    directBuildTree(map(prodGraphToEnv, graphs));
+  
   local iter :: Pair<Boolean Pair<[ProductionGraph] EnvTree<g:Graph<String>>>> =
-    solveFlowTypes(graphs, ntEnv);
+    solveFlowTypes(graphs, prodEnv, ntEnv);
   
   -- Just iterate until no new edges are added
   return if !iter.fst then iter.snd
@@ -54,10 +59,12 @@ Pair<Boolean
      Pair<[ProductionGraph]
           EnvTree<g:Graph<String>>>> ::=
   graphs::[ProductionGraph]
+  prodEnv::EnvTree<ProductionGraph>
   ntEnv::EnvTree<g:Graph<String>>
 {
   local graph :: ProductionGraph = head(graphs);
   graph.flowTypes = ntEnv;
+  graph.prodGraphs = prodEnv;
   local stitchedGraph :: ProductionGraph = graph.stitchedGraph;
   stitchedGraph.flowTypes = ntEnv;
   local updatedGraph :: ProductionGraph = stitchedGraph.cullSuspect;
@@ -76,7 +83,7 @@ Pair<Boolean
     g:add(brandNewEdges, currentFlowType); -- TODO: faster?
   
   local recurse :: Pair<Boolean Pair<[ProductionGraph] EnvTree<g:Graph<String>>>> =
-    solveFlowTypes(tail(graphs), rtm:update(graph.lhsNt, [newFlowType], ntEnv));
+    solveFlowTypes(tail(graphs), prodEnv, rtm:update(graph.lhsNt, [newFlowType], ntEnv));
     
   return if null(graphs) then pair(false, pair([], ntEnv))
   else pair(!null(brandNewEdges) || recurse.fst, pair(updatedGraph :: recurse.snd.fst, recurse.snd.snd));

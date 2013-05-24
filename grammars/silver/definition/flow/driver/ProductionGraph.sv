@@ -3,10 +3,10 @@ grammar silver:definition:flow:driver;
 import silver:util only contains;
 import silver:definition:type only isDecorable;
 
-nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, cullSuspect, flowTypeVertexes;
+nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, cullSuspect, flowTypeVertexes, prodGraphs;
 
--- TODO: future me note: this is a good candidate to turn into EnvTree<Graph<String>> perhaps.
 inherited attribute flowTypes :: EnvTree<g:Graph<String>>;
+inherited attribute prodGraphs :: EnvTree<ProductionGraph>;
 
 -- TODO: future me note: these are good candidates to be "static attributes" maybe?
 {--
@@ -53,7 +53,7 @@ top::ProductionGraph ::=
   flowTypeVertexes::[FlowVertex]
   graph::g:Graph<FlowVertex>
   suspectEdges::[Pair<FlowVertex FlowVertex>]
-  stitchPoints::[Pair<(FlowVertex ::= String) String>]
+  stitchPoints::[StitchPoint]
 {
   top.prod = prod;
   top.lhsNt = lhsNt;
@@ -62,7 +62,7 @@ top::ProductionGraph ::=
   top.stitchedGraph = 
     let newEdges :: [Pair<FlowVertex FlowVertex>] =
           filter(edgeIsNew(_, graph),
-            foldr(append, [], map(stitchEdgesFor(_, top.flowTypes), stitchPoints)))
+            foldr(append, [], map(stitchEdgesFor(_, top.flowTypes, top.prodGraphs), stitchPoints)))
     in let repaired :: g:Graph<FlowVertex> =
              repairClosure(newEdges, graph)
     in if null(newEdges) then top else
@@ -148,7 +148,7 @@ ProductionGraph ::= prod::String  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
     if null(lookupFwd(prod, flowEnv)) then [] else addFwdSynEqs(prod, synsBySuspicion.snd, flowEnv);
 
   -- RHS and locals and forward.
-  local stitchPoints :: [Pair<(FlowVertex ::= String) String>] =
+  local stitchPoints :: [StitchPoint] =
     rhsStitchPoints(dcl.namedSignature.inputElements) ++
     localStitchPoints(nt, defs);
   
@@ -264,56 +264,33 @@ function addAutocopyEqs
 ---- Begin helpers for figuring out stitch points ------------------------------
 
 function localStitchPoints
-[Pair<(FlowVertex ::= String) String>] ::= nt::NtName  d::[FlowDef]
+[StitchPoint] ::= nt::NtName  d::[FlowDef]
 {
   return case d of
   | [] -> []
   -- We add the forward stitch point here, too!
-  | fwdEq(_, _, _) :: rest -> pair(forwardVertex, nt) :: localStitchPoints(nt, rest)
+  | fwdEq(_, _, _) :: rest -> nonterminalStitchPoint(nt, forwardVertex) :: localStitchPoints(nt, rest)
   -- Ignore locals that aren't nonterminal types!
   | localEq(_, fN, "", deps) :: rest -> localStitchPoints(nt, rest)
   -- Add locals that are nonterminal types.
-  | localEq(_, fN, tN, deps) :: rest -> pair(localVertex(fN, _), tN) :: localStitchPoints(nt, rest)
+  | localEq(_, fN, tN, deps) :: rest -> nonterminalStitchPoint(tN, localVertex(fN, _)) :: localStitchPoints(nt, rest)
   -- Ignore all other flow def info
   | _ :: rest -> localStitchPoints(nt, rest)
   end;
 }
 function rhsStitchPoints
-[Pair<(FlowVertex ::= String) String>] ::= rhs::[NamedSignatureElement]
+[StitchPoint] ::= rhs::[NamedSignatureElement]
 {
   return if null(rhs) then []
   -- We want only NONTERMINAL stitch points!
   else if head(rhs).typerep.isDecorable
-       then pair(rhsVertex(head(rhs).elementName, _), head(rhs).typerep.typeName) :: rhsStitchPoints(tail(rhs))
+       then nonterminalStitchPoint(
+              head(rhs).typerep.typeName,
+              rhsVertex(head(rhs).elementName, _)) :: rhsStitchPoints(tail(rhs))
        else rhsStitchPoints(tail(rhs));
 }
 
 ---- End helpers for figuring our stitch points --------------------------------
-
----- Begin helpers for graph stitching -----------------------------------------
-function dualApply
-Pair<b b> ::= f::(b ::= a)  x::Pair<a a>
-{
-  return pair(f(x.fst), f(x.snd));
-}
-{--
- - Turns, for example, "(rhs1, Expr) * FlowTypes -> {(rhs1.pp, rhs1.indent), ...}"
- -
- - @param spec A "stitch point." fst is a vertex set in the graph, snd is the nonterminal type for that vertex
- - @param ntEnv is a flow type set to use
- - @return A set of edges to add to a production graph, for this stich-point, given the flow type.
- -}
-function stitchEdgesFor
-[Pair<FlowVertex FlowVertex>] ::= spec::Pair<(FlowVertex ::= String) NtName>  flowTypes::EnvTree<g:Graph<String>>
-{
-  return map(dualApply(spec.fst, _), g:toList(findFlowType(spec.snd, flowTypes)));
-}
-function edgeIsNew
-Boolean ::= edge::Pair<FlowVertex FlowVertex>  e::g:Graph<FlowVertex>
-{
-  return !g:contains(edge, e);
-}
----- End helpers for graph stitching -------------------------------------------
 
 function getFst
 a ::= v::Pair<a b>
