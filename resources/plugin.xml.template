@@ -151,4 +151,13 @@ Variables used:
 	      </enabledWhen>
       </page>
    </extension>
+
+   <!-- Code folding -->    
+   <extension
+         point="org.eclipse.imp.runtime.foldingUpdater">
+      <foldingUpdater
+            class="@PKG_NAME@.imp.folding.@LANG_NAME@FoldingUpdater"
+            language="@LANG_NAME@">
+      </foldingUpdater>
+   </extension>
 </plugin>

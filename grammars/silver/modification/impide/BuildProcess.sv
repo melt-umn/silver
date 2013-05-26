@@ -60,7 +60,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     "</target>",
     "<target name='arg-check'>" ++ getArgCheckTarget() ++ "</target>",
     "<target name='filters'>" ++ getFiltersTarget() ++ "</target>",
-    "<target name='create-folders'>" ++ getCreateFoldersTarget(delegateBuilderName, actionExportName) ++ "</target>",
+    "<target name='create-folders'>" ++ getCreateFoldersTarget(delegateBuilderName, actionExportName, parserClassName) ++ "</target>",
     "<target name='customize' if=\"to-customize\" depends='arg-check, filters'>" ++ getCustomizeTarget() ++ "</target>",
     "<target name='postbuild' if=\"to-postbuild\">" ++ getAntPostBuildTarget() ++ "</target>",--this is for ant post-build; not to be confused with IDE post-build
     "<target name='enhance' depends='enhance-build, enhance-postbuild, enhance-export'></target>",
@@ -266,6 +266,12 @@ String ::= grm :: String
     return grammarPart;
 }
 
+function grammarToPath2
+String ::= grm :: String 
+{
+    return substitute(":", "/", grm) ++ "/";
+}
+
 function getArgCheckTarget
 String ::=
 {
@@ -327,7 +333,7 @@ String ::=
 }
 
 function getCreateFoldersTarget
-String ::= delegateBuilderName::String actionExportName::String
+String ::= delegateBuilderName::String actionExportName::String parserClassName::String
 {
   return 
     "  \n" ++
@@ -352,7 +358,11 @@ String ::= delegateBuilderName::String actionExportName::String
     "    useSkin='XML' warnUselessNTs='false' dumpFormat='HTML' dump='ERROR_ONLY'\n" ++
     "    dumpFile='${ide.parser.classname}.copperdump.html'>\n" ++
     "      <inputs file='${ide.parser.ide_copperfile}'/>\n" ++
-    "  </copper>\n\n" ++
+    "  </copper>\n" ++
+    "  <!-- and the default implementation of AST visitor -->\n" ++
+    "  <copy file=\"" ++ getIDETempFolder() ++ "/copper/parser/" ++ parserClassName ++ "_ASTVisitorAdapter.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/copper/parser/ASTVisitorAdapter.java\" filtering=\"true\"/>\n" ++
+    "\n" ++
 
     "  <!-- 3. build properties -->\n" ++
     -- commented out to support different build modes
@@ -444,6 +454,13 @@ String ::= delegateBuilderName::String actionExportName::String
     "        <globmapper from=\"*.java.template\" to=\"*.java\"/>\n" ++
     "  </copy>\n" ++
     "  \n" ++
+
+    "  <mkdir dir='${ide.pkg.path}/imp/folding'/>\n" ++
+    "  <!-- Language folding classes, supported by IMP -->\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/folding/SILVERFoldingUpdater.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/imp/folding/SILVERFoldingUpdater.java\" filtering=\"true\"/>\n" ++
+    "  \n" ++
+    --TODO: copy SourceFoldingVisitor
 
     "  <mkdir dir='${ide.pkg.path}/eclipse/wizard'/>\n" ++
     "  <!-- A wizard for creating new project. -->\n" ++
