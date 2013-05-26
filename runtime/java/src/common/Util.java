@@ -354,14 +354,21 @@ public final class Util {
 				if(msg == null) // Some exceptions have no message... apparently.
 					msg = t.toString();
 				
-				if(st.length == 0) // Some exceptions don't seem to occur anywhere... somehow.
+				if(st.length == 0) {
+					// Some exceptions don't seem to occur anywhere... somehow.
 					System.err.println("(??): " + msg);
-				else if(st[0].getClassName().startsWith("common."))
+				} else if(st[0].getClassName().startsWith("common.")) {
 					// This will give error messages like (DN.146) corresponding to DecoratedNode.java:146
 					System.err.println("(" + st[0].getFileName().replaceAll("[a-z]", "") + st[0].getLineNumber() + "): " + msg);
-				else
+				} else {
 					// Be more explicit about where when it's not one of ours
 					System.err.println("(" + st[0].getClassName() + " in " + st[0].getFileName() + ":" + st[0].getLineNumber() + "): " + msg);
+					if(t instanceof NullPointerException && st.length > 1) {
+						System.err.println("\t1 up: " + st[1].getClassName() + " in " + st[1].getFileName() + ":" + st[1].getLineNumber());
+						if(st.length > 2)
+							System.err.println("\t2 up: " + st[2].getClassName() + " in " + st[2].getFileName() + ":" + st[2].getLineNumber());
+					}
+				}
 				
 				String lastCause = t.getLocalizedMessage();
 				int repeats = 0;
