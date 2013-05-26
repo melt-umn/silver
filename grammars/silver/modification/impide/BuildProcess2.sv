@@ -193,8 +193,52 @@ IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[Parser
               mkdir(getIDETempFolder() ++ "imp/coloring", writeio).io
             ));
 
+  local attribute ideio2 :: IO;
+  ideio2 = writeFile(
+            getIDETempFolder() ++ "copper/parser/" ++ parserName ++ "_ASTVisitorAdapter.java.template", 
+            getASTVisitorAdapter(ast.ideSymbolInfos, parserName), 
+            mkdir(getIDETempFolder() ++ "copper/parser", ideio).io);
+
   return if null(specs) then i
-         else writeNCSSpec(ideio, grams, silvergen, tail(specs), pkgName);
+         else writeNCSSpec(ideio2, grams, silvergen, tail(specs), pkgName);
+}
+
+-- class <pkgName>.imp.controller.ASTVisitorAdapter
+function getASTVisitorAdapter
+String ::= symInfos::[IDEParserSymbolInfo] parserName::String
+{
+return
+  "package @PKG_NAME@.copper.parser;\n" ++
+  "\n" ++
+  "import edu.umn.cs.melt.ide.copper.IEnhancedParseTreeInnerNode;\n" ++
+  "import edu.umn.cs.melt.ide.copper.IEnhancedParseTreeLeafNode;\n" ++
+  "import @PKG_NAME@.copper.parser." ++ parserName ++".ASTVisitor;\n" ++
+  "\n" ++
+  "public class ASTVisitorAdapter implements ASTVisitor {\n" ++
+  "\n" ++
+    -- Generate code in format of
+	-- public void visit_silver_definition_core_Root(IEnhancedParseTreeInnerNode node) { }
+    generateVisitorDummyImplCode(symInfos) ++
+  "}\n";
+}
+
+function generateVisitorDummyImplCode
+String ::= list::[Pair<String Pair<Boolean Integer>>]
+{
+    return if null(list)
+           then ""
+           else generateVisitorDummyImplMethod(head(list)) ++ generateVisitorDummyImplCode(tail(list));
+}
+	
+--@Override
+--public void visit_silver_definition_core_Root(IEnhancedParseTreeInnerNode node) { }
+function generateVisitorDummyImplMethod
+String ::= name::Pair<String Pair<Boolean Integer>>
+{
+    return "\t@Override\n" ++
+           "\tpublic void visit_" ++ name.fst ++ "(" ++
+           (if (name.snd.fst) then "IEnhancedParseTreeLeafNode" else "IEnhancedParseTreeInnerNode") ++ 
+           " node){ };\n\n";
 }
 
 -- class <pkgName>.imp.coloring.TokenClassifier

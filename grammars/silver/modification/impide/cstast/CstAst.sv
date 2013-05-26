@@ -12,6 +12,10 @@ imports silver:modification:impide;
 -- The attribute into which the copper parser in new XML skin is written
 synthesized attribute nxmlCopper :: String occurs on SyntaxRoot, Syntax, SyntaxDcl;
 
+type IDEParserSymbolInfo = Pair<String Pair<Boolean Integer>>;
+
+synthesized attribute ideSymbolInfos :: [IDEParserSymbolInfo] occurs on SyntaxRoot;
+
 -- The attribute carries the name of IDE plugin packge, which is ultimately 
 -- derived from the name of grammar where IDE declaration block is defined.
 inherited attribute jPkgName :: String occurs on SyntaxRoot;
@@ -24,6 +28,7 @@ top::SyntaxRoot ::=
   top.nxmlCopper = error("This should only ever be demanded from cstRoot.");
   top.fontList = error("This should only ever be demanded from cstRoot.");
   top.termFontPairList = error("This should only ever be demanded from cstRoot.");
+  top.ideSymbolInfos = error("This should only ever be demanded from cstRoot.");
 }
 
 aspect production cstRoot
@@ -33,6 +38,8 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
   -- 1) font information
   top.fontList = s2.fontList;
   top.termFontPairList = s2.termFontPairList;
+
+  top.ideSymbolInfos = getSymbolNameList(s);
 
   -- 2) The copper parser
   top.nxmlCopper =
@@ -47,7 +54,15 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
 -- DIFFERENCES ****************************************************************
 "    <ClassAuxiliaryCode>\n" ++
 "      <Code><![CDATA[\n" ++ 
-  getAuxCode(top.jPkgName ++ ".imp.coloring." ++ top.jParserName ++ "_") ++
+
+"\t//IDE Extension START\n\n" ++
+
+  getParseTreeCode() ++
+  getColorerCode(top.jPkgName ++ ".imp.coloring." ++ top.jParserName ++ "_") ++
+  getVisitorCode(top.ideSymbolInfos) ++
+
+"\n\t//IDE Extension END\n" ++
+
 "      ]]></Code>\n" ++
 "    </ClassAuxiliaryCode>\n" ++
 "    <ParserInitCode>\n" ++
@@ -60,6 +75,8 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
 "import java.util.ArrayList;\n" ++
 "import java.util.Iterator;\n" ++
 "import java.util.List;\n" ++
+"import java.util.HashMap;\n" ++
+"import java.util.Map;\n" ++
 "import edu.umn.cs.melt.copper.runtime.engines.single.scanner.SingleDFAMatchData;\n" ++
 "import edu.umn.cs.melt.ide.copper.*;\n" ++
 "import edu.umn.cs.melt.ide.copper.coloring.*;\n" ++
@@ -96,12 +113,10 @@ Assumptions we make about initial Syntax:
 1. All type parameter lists are the appropriate length. (Silver type checking)
 -}
 
-function getAuxCode
-String ::= classPrefix::String
+function getParseTreeCode
+String ::=
 {
 return 
-"\t//IDE Extension START\n" ++
-"    \n" ++
 "\tprotected AdaptiveEnhancedParseTreeInnerNode createPTNode(final Object obj){\n" ++
 "\t    int production = semantics.getCurrentProduction();\n" ++
 "\t\tnodeBuilder.setLangSpecNode(obj);\n" ++
@@ -165,6 +180,7 @@ return
 
 "\tprivate AdaptiveParseNodeBuilder nodeBuilder = new AdaptiveParseNodeBuilder();\n" ++
 "\t\n" ++
+
 "\t//The following variables are used for building token list\n" ++
 "\tprivate int _totalOffset = 0;\n" ++
 "\tprivate int _startOffset = 0;\n" ++
@@ -172,19 +188,28 @@ return
 "\tprotected List<IToken> tokenList = null;\n" ++
 "\tprivate final Object LOCK = new Object();\n" ++
 "\n" ++
-"    private void addToken(SingleDFAMatchData _terminal){\n" ++
-"    	IToken t = createToken(_terminal);\n" ++
+
+"\tprivate void addToken(SingleDFAMatchData _terminal){\n" ++
+"\t\tIToken t = createToken(_terminal);\n" ++
 "\t\tif(t != null){\n" ++
 "\t\t\tsynchronized(LOCK){\n" ++
 "\t\t\t\ttokenList.add(t);\n" ++
+"\t\t\t\tif(StaticSymbolNames==null){\n" ++
+"\t\t\t\t\t//Initialize symbol names\n" ++
+"\t\t\t\t\tString[] names = getSymbolNames();\n" ++
+"\t\t\t\t\tStaticSymbolNames = new String[names.length];\n" ++
+"\t\t\t\t\tfor(int i=0;i<names.length;i++){\n" ++
+"\t\t\t\t\t\tStaticSymbolNames[i] = names[i];\n" ++
+"\t\t\t\t\t}\n" ++
+"\t\t\t\t}\n" ++
 "\t\t\t}\n" ++
 "\t\t}  	\n" ++
-"    }\n" ++
-"    \n" ++
+"\t}\n" ++
+"\n" ++
 
-"    /**\n" ++
-"     * Called at start of parsing\n" ++
-"     */\n" ++
+"\t/**\n" ++
+"\t * Called at start of parsing\n" ++
+"\t*/\n" ++
 "\tpublic void reset(){\n" ++
 "\t\tsynchronized(LOCK){\n" ++
 "\t\t\ttokenList = new ArrayList<IToken>();\n" ++
@@ -230,9 +255,9 @@ return
 "\t\t\tstartColumn, \n" ++
 "\t\t\tendColumn);\n" ++
 "\t}\n" ++
-"    \n" ++
+"\t\n" ++
 
-"    class EnhancedCopperToken extends CopperToken {\n" ++
+"\tclass EnhancedCopperToken extends CopperToken {\n" ++
 "\t\tprivate String str;\n" ++
 "\t\t\n" ++
 "\t\tpublic EnhancedCopperToken(int kind, int term, int tokenIndex, int startOffset,\n" ++
@@ -249,7 +274,7 @@ return
 "\t\t\t\n" ++
 "\t\t\treturn str;\n" ++
 "\t\t}\n" ++
-"    }\n" ++
+"\t}\n" ++
 "\t\n" ++
 
 "\tpublic void printTokenList(){\n" ++
@@ -282,18 +307,213 @@ return
 "\t\t\n" ++
 "\t\treturn list.iterator();\n" ++
 "\t}\n" ++
-"\t    \n" ++
+"\t\n" ++
 
-"    /**\n" ++
-"     * The parse tree generated during the parsing process.\n" ++
-"     */\n" ++
-"    protected EnhancedParseTree<IEnhancedParseTreeNode> enParseTree = new EnhancedParseTree<IEnhancedParseTreeNode>();\n\n" ++
+"\t/**\n" ++
+"\t * The parse tree generated during the parsing process.\n" ++
+"\t */\n" ++
+"\tprotected EnhancedParseTree<IEnhancedParseTreeNode> enParseTree = new EnhancedParseTree<IEnhancedParseTreeNode>();\n\n" ++
 
 "\tprotected int getKind(SingleDFAMatchData scanResult){\n" ++
 "\t\tString term = getSymbolNames()[scanResult.firstTerm];\n" ++
 "\t\treturn tokenClassifier.getKind(term);\n" ++
-"\t}\n\n" ++
-"\t\n" ++
-"\tprivate ICopperTokenClassifier tokenClassifier = " ++ classPrefix ++ "TokenClassifier.getInstance();\n" ++
-"\t//IDE Extension END\n";
+"\t}\n" ++
+"\t\n";
+}
+
+function getColorerCode
+String ::= classPrefix::String
+{
+return 
+"\tprivate ICopperTokenClassifier tokenClassifier = " ++ classPrefix ++ "TokenClassifier.getInstance();\n"++
+"\t\n";
+}
+
+function getVisitorCode
+String ::= symbolNameList :: [IDEParserSymbolInfo] --syn::Syntax 
+{
+
+--local symbolNameList :: [Pair<String Pair<Boolean Integer>>] = getSymbolNameList(syn);
+
+return 
+"\t//Following is the code for visitor service\n"++
+"\tprivate final static Map<String, Integer> SYMBOL_NAME_INDEX_MAP = new HashMap<String, Integer>();\n"++
+"\n"++
+	
+"\tstatic {\n"++
+  -- Generate code in format of:
+  -- SYMBOL_NAME_INDEX_MAP.put("silver_definition_core_Root", 0);
+  initSymbolNameIndexMap(symbolNameList)++
+"\t}\n"++
+"\n"++
+	
+"\tprivate static String[] StaticSymbolNames;\n"++
+"\n"++
+	
+"\tprivate static String[] getSymbolNamesStatic(){\n"++
+"\t\treturn StaticSymbolNames;\n"++
+"\t}\n"++
+"\n"++
+	
+"\tprivate static int convertSymbolToIndex(int sym){\n"++
+"\t\tString name = getSymbolNamesStatic()[sym];\n"++
+"\t\tInteger i = SYMBOL_NAME_INDEX_MAP.get(name);\n"++
+"\t\treturn i!=null ? i : -1;\n"++
+"\t}\n"++
+"\n"++
+	
+"\t/**\n"++
+"\t * The visitor interface for visiting an AST generated by this parser.\n"++
+"\t * <p>\n"++
+"\t * Use visitASTRoot(...) from the parser class to accept a visitor on target AST root node.\n"++
+"\t */\n"++
+"\tpublic static interface ASTVisitor {\n"++
+  -- Generate code in format of:
+  -- void visit_silver_definition_core_Root(IEnhancedParseTreeInnerNode node);
+  generateVisitorInterfaceCode(symbolNameList)++
+"\t}\n"++
+"\n"++
+	
+"\tpublic static void visitASTRoot(\n"++
+"\t\tAdaptiveEnhancedParseTreeInnerNode<silver.definition.core.NRoot> ast, \n"++
+"\t\tASTVisitor visitor){\n"++
+"\t\tvisitInnerNode(ast, visitor);\n"++
+"\t}\n"++
+"\n"++
+	
+"\tprivate static void visitInnerNode(IEnhancedParseTreeInnerNode innerNode, ASTVisitor visitor){\n"++
+"\t\tint index = convertSymbolToIndex(innerNode.getSymbol());\n"++
+"\t\tdoVisitInnerNode(index, innerNode, visitor);\n"++
+"\t\tIEnhancedParseTreeNode[] children = innerNode.getChildren();\n"++
+"\t\tif(children!=null){\n"++
+"\t\t\tfor(IEnhancedParseTreeNode child:children){\n"++
+"\t\t\t\tif(child instanceof IEnhancedParseTreeInnerNode){\n"++
+"\t\t\t\t\tvisitInnerNode((IEnhancedParseTreeInnerNode)child, visitor);\n"++
+"\t\t\t\t} else {\n"++
+"\t\t\t\t\tvisitLeafNode((IEnhancedParseTreeLeafNode)child, visitor);\n"++
+"\t\t\t\t}\n"++
+"\t\t\t}\n"++
+"\t\t}\n"++
+"\t}\n"++
+"\n"++
+	
+"\tprivate static void visitLeafNode(IEnhancedParseTreeLeafNode leaf, ASTVisitor visitor) {\n"++
+"\t\tint index = convertSymbolToIndex(leaf.getSymbol());\n"++
+"\t\tdoVisitLeafNode(index, leaf, visitor);\n"++
+"\t}\n"++
+"\n"++
+	
+"\tprivate static void doVisitInnerNode(int index, IEnhancedParseTreeInnerNode node, ASTVisitor visitor){\n"++
+"\t\tswitch(index){\n"++
+  --case 0: visitor.visit_silver_definition_core_Root(node);
+  generateVisitingInnerNodeCode(symbolNameList)++
+"\t\t}\n"++
+"\t}\n"++
+"\n"++
+	
+"\tprivate static void doVisitLeafNode(int index, IEnhancedParseTreeLeafNode node, ASTVisitor visitor){\n"++
+"\t\tswitch(index){\n"++
+  --case 1: visitor.visit_silver_definition_core_AbstractKwd(node);
+  generateVisitingLeafNodeCode(symbolNameList)++
+"\t\t}\n"++
+"\t}\n";
+
+}
+
+{--
+ Pair<String Pair<Boolean Integer>>
+      String: symbol's copper name
+                  Boolean: true: terminal; false: nonterminal
+                          Integer: a unique integer id
+--}
+function getSymbolNameList
+[IDEParserSymbolInfo] ::= syn::Syntax
+{
+    return getSymbolNames(syn.cstDcls, 0);
+}
+
+function getSymbolNames
+[Pair<String Pair<Boolean Integer>>] ::= dcls::[Pair<String Decorated SyntaxDcl>] id::Integer
+{
+    return if null(dcls)
+           then []
+           else let
+                    name :: [Pair<String Pair<Boolean Integer>>] = 
+                         case head(dcls).snd of
+                           syntaxNonterminal(typeExp, _) -> [pair(makeCopperName(typeExp.typeName), pair(false, id))]
+                         | syntaxTerminal(n, _, _) -> [pair(makeCopperName(n), pair(true, id))]
+                         | _ -> []
+                         end
+                in
+                    name ++ getSymbolNames(tail(dcls), id+1)
+                end;
+    
+}
+
+function initSymbolNameIndexMap
+String ::= list::[Pair<String Pair<Boolean Integer>>]
+{
+    return if null(list)
+           then ""
+           else initSymbolNameIndex(head(list)) ++ initSymbolNameIndexMap(tail(list));
+}
+
+-- SYMBOL_NAME_INDEX_MAP.put("silver_definition_core_Root", 0);
+function initSymbolNameIndex
+String ::= name::Pair<String Pair<Boolean Integer>>
+{
+    return "\t\tSYMBOL_NAME_INDEX_MAP.put(\"" ++ name.fst ++ "\", " ++ toString(name.snd.snd) ++ ");//" ++ 
+           (if (name.snd.fst) then "T" else "NT") ++ 
+           "\n";
+}
+
+function generateVisitorInterfaceCode
+String ::= list::[Pair<String Pair<Boolean Integer>>]
+{
+    return if null(list)
+           then ""
+           else generateVisitorInterfaceMethod(head(list)) ++ generateVisitorInterfaceCode(tail(list));
+}
+
+--void visit_silver_definition_core_Root(IEnhancedParseTreeInnerNode node);
+function generateVisitorInterfaceMethod
+String ::= name::Pair<String Pair<Boolean Integer>>
+{
+    return "\t\tvoid visit_" ++ name.fst ++ "(" ++
+           (if (name.snd.fst) then "IEnhancedParseTreeLeafNode" else "IEnhancedParseTreeInnerNode") ++ 
+           " node);\n";
+}
+
+function generateVisitingInnerNodeCode
+String ::= list::[Pair<String Pair<Boolean Integer>>]
+{
+    return if null(list)
+           then ""
+           else visitInnerNodeCode(head(list)) ++ generateVisitingInnerNodeCode(tail(list));
+}
+
+--case 0: visitor.visit_silver_definition_core_Root(node);break;
+function visitInnerNodeCode
+String ::= name::Pair<String Pair<Boolean Integer>>
+{
+    return if (!name.snd.fst) -- if nonterminal
+           then "\t\tcase " ++ toString(name.snd.snd) ++ ": visitor.visit_" ++ name.fst ++ "(node);break;\n"
+           else "";
+}
+
+function generateVisitingLeafNodeCode
+String ::= list::[Pair<String Pair<Boolean Integer>>]
+{
+    return if null(list)
+           then ""
+           else visitLeafNodeCode(head(list)) ++ generateVisitingLeafNodeCode(tail(list));
+}
+
+--case 1: visitor.visit_silver_definition_core_AbstractKwd(node);break;
+function visitLeafNodeCode
+String ::= name::Pair<String Pair<Boolean Integer>>
+{
+    return if (name.snd.fst) -- if terminal
+           then "\t\tcase " ++ toString(name.snd.snd) ++ ": visitor.visit_" ++ name.fst ++ "(node);break;\n"
+           else "";
 }
