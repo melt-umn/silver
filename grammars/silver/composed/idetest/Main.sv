@@ -68,6 +68,14 @@ temp_imp_ide_dcl svParse ".sv" {
   property grammar_to_compile string;
 };
 
+function fold
+[Location] ::= cst::c
+{
+
+    return [loc("filename1", 1, 2, 3, 4, 10, 40), loc("filename2", 5, 6, 7, 8, 50, 80)];
+
+}
+
 function export
 IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {

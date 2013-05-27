@@ -457,8 +457,8 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
 
     "  <mkdir dir='${ide.pkg.path}/imp/folding'/>\n" ++
     "  <!-- Language folding classes, supported by IMP -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/folding/SILVERFoldingUpdater.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/imp/folding/SILVERFoldingUpdater.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/folding/LANGFoldingUpdater.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/imp/folding/${lang.name}FoldingUpdater.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
     --TODO: copy SourceFoldingVisitor
 

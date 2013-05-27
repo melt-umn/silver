@@ -21,6 +21,8 @@ synthesized attribute ideSymbolInfos :: [IDEParserSymbolInfo] occurs on SyntaxRo
 inherited attribute jPkgName :: String occurs on SyntaxRoot;
 -- The attribute is the name of generated Java parser.
 inherited attribute jParserName :: String occurs on SyntaxRoot;
+-- The attribute is the full class name of CST's root.
+inherited attribute startNTClassName :: String occurs on SyntaxRoot;
 
 aspect default production
 top::SyntaxRoot ::=
@@ -59,7 +61,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
 
   getParseTreeCode() ++
   getColorerCode(top.jPkgName ++ ".imp.coloring." ++ top.jParserName ++ "_") ++
-  getVisitorCode(top.ideSymbolInfos) ++
+  getVisitorCode(top.ideSymbolInfos, top.startNTClassName) ++
 
 "\n\t//IDE Extension END\n" ++
 
@@ -330,7 +332,7 @@ return
 }
 
 function getVisitorCode
-String ::= symbolNameList :: [IDEParserSymbolInfo] --syn::Syntax 
+String ::= symbolNameList::[IDEParserSymbolInfo] startNTClassName::String 
 {
 
 --local symbolNameList :: [Pair<String Pair<Boolean Integer>>] = getSymbolNameList(syn);
@@ -375,7 +377,7 @@ return
 "\n"++
 	
 "\tpublic static void visitASTRoot(\n"++
-"\t\tAdaptiveEnhancedParseTreeInnerNode<silver.definition.core.NRoot> ast, \n"++
+"\t\tAdaptiveEnhancedParseTreeInnerNode<" ++ startNTClassName ++ "> ast, \n"++
 "\t\tASTVisitor visitor){\n"++
 "\t\tvisitInnerNode(ast, visitor);\n"++
 "\t}\n"++
