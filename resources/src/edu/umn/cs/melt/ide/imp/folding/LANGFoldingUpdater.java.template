@@ -14,8 +14,9 @@ import org.eclipse.imp.services.base.FolderBase;
 import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.source.Annotation;
 
-import @PKG_NAME@.copper.parser.ASTVisitorAdapter;
-import @PKG_NAME@.copper.parser.@PARSER_NAME@;
+//(Used in accordance with NTmodifier foldable)
+//import @PKG_NAME@.copper.parser.ASTVisitorAdapter;
+//import @PKG_NAME@.copper.parser.Parser_silver_composed_idetest_svParse;
 import edu.umn.cs.melt.ide.copper.AdaptiveEnhancedParseTreeInnerNode;
 
 /**
@@ -25,7 +26,8 @@ import edu.umn.cs.melt.ide.copper.AdaptiveEnhancedParseTreeInnerNode;
  */
 public class @LANG_NAME@FoldingUpdater extends FolderBase {
 
-	private ASTVisitorAdapter visitor = null;//new SourceFoldingVisitor(this);
+//(Used in accordance with NTmodifier foldable)
+//	private ASTVisitorAdapter visitor = null;//new SourceFoldingVisitor(this);
 	
 	@SuppressWarnings("unchecked")
 	@Override
@@ -35,10 +37,21 @@ public class @LANG_NAME@FoldingUpdater extends FolderBase {
 		AdaptiveEnhancedParseTreeInnerNode<@START_NONTERMINAL_CLASS@> ast = 
 			(AdaptiveEnhancedParseTreeInnerNode<@START_NONTERMINAL_CLASS@>) _ast;
 		
-		if(visitor!=null && ast!=null){
-			@PARSER_NAME@.visitASTRoot(ast, visitor);		
+		int[][] locations = silver.composed.idetest.Fold.fold(ast.getLangSpecNode());
+		
+		for(int j=0;j<locations.length;j++){
+			int start = locations[j][0];
+			int len = locations[j][1] - start;
+			makeAnnotation(start, len);
+			//System.out.println("[" + start + ", " + locations[j][1] + "] ");
 		}
+		
+//(Used in accordance with NTmodifier foldable)		
+//		if(ast!=null && visitor!=null){
+//			@PARSER_NAME@.visitASTRoot(ast, visitor);		
+//		}
 
 	}
 
 }
+

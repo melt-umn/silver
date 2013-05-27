@@ -1,0 +1,28 @@
+/*
+ * Variables used:
+ *   PKG_NAME
+ *   LANG_NAME
+ */
+package @PKG_NAME@.imp.folding;
+
+import java.util.HashMap;
+import java.util.List;
+
+import org.eclipse.imp.services.base.FolderBase;
+import org.eclipse.jface.text.Position;
+import org.eclipse.jface.text.source.Annotation;
+
+/**
+ * A dummy folding updater that does nothing. This class is used here
+ * when no folder function is declared in the IDE declaration block.
+ */
+public class @LANG_NAME@FoldingUpdater extends FolderBase {
+
+	@Override
+	protected void sendVisitorToAST(
+			HashMap<Annotation, Position> newAnnotations,
+			List<Annotation> annotations, Object _ast) {
+		
+	}
+
+}

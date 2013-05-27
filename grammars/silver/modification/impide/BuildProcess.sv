@@ -25,7 +25,8 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
   local parserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ ".copper";
   local ideParserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ "_ide.copper";
   local delegateBuilderName :: String = getDelegateBuilderName(ide.funcDcls);
-  local actionExportName :: String = getExportActionName(ide.funcDcls);
+  local actionExportName :: String = findFunction(ide.funcDcls, "exporter", "ExportLANG", "ExportDummy"); --getExportActionName(ide.funcDcls);
+  local folderFileName :: String = findFunction(ide.funcDcls, "folder", "LANGFoldingUpdater", "DummyFoldingUpdater");
   production pkgName :: String = makeName(buildGrammar);
 
   classpathCompiler <- if !isIde then [] else ["${sh}/jars/IDEPluginRuntime.jar"];
@@ -60,7 +61,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     "</target>",
     "<target name='arg-check'>" ++ getArgCheckTarget() ++ "</target>",
     "<target name='filters'>" ++ getFiltersTarget() ++ "</target>",
-    "<target name='create-folders'>" ++ getCreateFoldersTarget(delegateBuilderName, actionExportName, parserClassName) ++ "</target>",
+    "<target name='create-folders'>" ++ getCreateFoldersTarget(delegateBuilderName, actionExportName, parserClassName, folderFileName) ++ "</target>",
     "<target name='customize' if=\"to-customize\" depends='arg-check, filters'>" ++ getCustomizeTarget() ++ "</target>",
     "<target name='postbuild' if=\"to-postbuild\">" ++ getAntPostBuildTarget() ++ "</target>",--this is for ant post-build; not to be confused with IDE post-build
     "<target name='enhance' depends='enhance-build, enhance-postbuild, enhance-export, enhance-fold'></target>",
@@ -139,6 +140,21 @@ String ::= funcDcl :: Pair<String String>
     return "ide.function." ++ funcDcl.fst;
 }
 
+-- Find a function from the given function list; if found return the argument found, else notFound
+function findFunction
+String ::= funcDcls :: [Pair<String String>] funcToFind::String found::String notFound::String
+{
+    return if null(funcDcls) --length(funcDcls) < 1
+           then notFound
+           else let
+                    hd :: Pair<String String> = head(funcDcls)
+                in
+                    if(hd.fst==funcToFind) then found
+                    else findFunction(tail(funcDcls), funcToFind, found, notFound)
+                end;
+}
+
+{--findFunction(funcDcls, exporter, "ExportLANG", "ExportDummy")
 function getExportActionName
 String ::= funcDcls :: [Pair<String String>]
 {
@@ -151,6 +167,7 @@ String ::= funcDcls :: [Pair<String String>]
                     else getExportActionName(tail(funcDcls))
                 end;
 }
+--}
 
 function getDelegateBuilderName
 String ::= funcDcls :: [Pair<String String>]
@@ -317,7 +334,7 @@ String ::=
 }
 
 function getCreateFoldersTarget
-String ::= delegateBuilderName::String actionExportName::String parserClassName::String
+String ::= delegateBuilderName::String actionExportName::String parserClassName::String folderFileName::String
 {
   return 
     "  \n" ++
@@ -441,10 +458,9 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
 
     "  <mkdir dir='${ide.pkg.path}/imp/folding'/>\n" ++
     "  <!-- Language folding classes, supported by IMP -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/folding/LANGFoldingUpdater.java.template\"\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/folding/" ++ folderFileName ++ ".java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/imp/folding/${lang.name}FoldingUpdater.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
-    --TODO: copy SourceFoldingVisitor
 
     "  <mkdir dir='${ide.pkg.path}/eclipse/wizard'/>\n" ++
     "  <!-- A wizard for creating new project. -->\n" ++
