@@ -43,7 +43,9 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optF
   -- This looks up the actual specification of the parser in that grammar.
   local attribute spec :: [ParserSpec];
   spec = findSpec(parsername.lookupValue.fullName, parsergrammar.parserSpecs);
-  
+
+  optFunctions.startNTName = makeGrammarName(head(spec).cstAst.startNT);
+
   -- If there were errors looking up the name, do nothing. If we couldn't find the
   -- parser, then raise the error message noting that the name isn't a parser!
   top.errors <- if !null(parsername.lookupValue.errors) || !null(spec) then []
@@ -64,6 +66,8 @@ nonterminal IdeProperty with propName, propType;
 synthesized attribute propName :: String;
 synthesized attribute propType :: String;
 
+autocopy attribute startNTName :: String;
+
 abstract production makeIdeProperty
 top::IdeProperty ::= propName::String propType::String
 {
@@ -82,10 +86,19 @@ terminal ImpIde_OptFunc_PostBuilder 'postbuilder';
 -- function called when exporting is demanded
 terminal ImpIde_OptFunc_Exporter 'exporter';
 
+-- function to mark the foldable ranges on the source file; called after parsing
+terminal ImpIde_OptFunc_Folder 'folder';
+
 --funcDcls, propDcls are defined in ./IdeSpec.sv
-nonterminal IdeFunctions with env, location, errors, grammarName, file, funcDcls, propDcls;
-nonterminal IdeFunction with env, location, errors, grammarName, file, funcDcls, propDcls;
-nonterminal IdeFunctionList with env, location, errors, grammarName, file, funcDcls, propDcls;
+nonterminal IdeFunctions with env, location, errors, grammarName, file, funcDcls, propDcls, startNTName;
+nonterminal IdeFunction with env, location, errors, grammarName, file, funcDcls, propDcls, startNTName;
+nonterminal IdeFunctionList with env, location, errors, grammarName, file, funcDcls, propDcls, startNTName;
+
+function makeGrammarName
+String ::= str::String
+{
+  return substitute(".", ":", str);
+}
 
 concrete production emptyIdeFunctions
 top::IdeFunctions ::=
@@ -203,6 +216,31 @@ top::IdeFunction ::= 'exporter' exporterName::QName ';'
   top.errors <-
     if !tc1.typeerror then []
     else [err(exporterName.location, "Exporter function should have type:\n\t" ++ tc1.rightpp 
+        ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
+}  
+
+concrete production makeIdeFunction_Folder
+top::IdeFunction ::= 'folder' folderName::QName ';' 
+{
+  top.funcDcls := [pair("folder", folderName.lookupValue.fullName)];
+  top.propDcls := [];
+
+  top.errors := folderName.lookupValue.errors;
+  
+  -- [Location] ::= <<CST root's type>>
+  local folderTypeExpected :: TypeExp =
+    functionTypeExp(
+      listTypeExp(nonterminalTypeExp("core:Location", [])),
+      [nonterminalTypeExp(top.startNTName, [])], 
+      []);
+  
+  local tc1 :: TypeCheck = check(freshenCompletely(folderName.lookupValue.typerep), folderTypeExpected);
+  tc1.downSubst = emptySubst();
+  tc1.finalSubst = tc1.upSubst;
+
+  top.errors <-
+    if !tc1.typeerror then []
+    else [err(folderName.location, "Folder function for this language should have type:\n\t" ++ tc1.rightpp 
         ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
 }  
 
