@@ -14,16 +14,18 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
   -- we're going to go with assuming there's just one IDE declaration...
   production isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
 
+  local startNTClassName::String = makeNTClassName(head(allParsers).cstAst.startNT);
+
   -- pkgName is derived in the aspect defined in ./BuildProcess.sv
-  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, allParsers, silverGen, ide, pkgName)];
+  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, allParsers, silverGen, ide, pkgName, startNTClassName)];
 
   extraTopLevelDecls <- if !isIde then [] else [
-    "<property name='start.nonterminal.class' value='" ++ makeNTClassName(head(allParsers).cstAst.startNT) ++ "'/>"]; 
+    "<property name='start.nonterminal.class' value='" ++ startNTClassName ++ "'/>"]; 
   -- FIXME? we now only track the first parser.
 }
 
 abstract production generateNCS
-top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::String ide::IdeSpec pkgName::String
+top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::String ide::IdeSpec pkgName::String startNTClassName::String
 {
   local attribute pr::IO;
   pr = print("Generating Parsers and Scanners for IMP-based IDE.\n", top.ioIn);
@@ -35,9 +37,8 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::
   top.io = writeNCSSpec(
 		writeFile(getIDETempFolder() ++ "eclipse/wizard/PropertyGenerator.java.template", getPropertyGenerator(ide.propDcls),
 		mkdir(getIDETempFolder() ++ "eclipse/wizard", pr2).io), 
-		grams, silvergen ++ "src/", specs, pkgName);
+		grams, silvergen ++ "src/", specs, pkgName, startNTClassName);
 
-  --top.io = writeNCSSpec(pr, grams, silvergen ++ "src/", specs);
   top.code = 0;
   top.order = 7;
 }
@@ -161,7 +162,7 @@ String ::= propDcl :: IdeProperty
 }
 
 function writeNCSSpec
-IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[ParserSpec] pkgName::String
+IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[ParserSpec] pkgName::String startNTClassName::String
 {
   local attribute p :: ParserSpec;
   p = head(specs);
@@ -172,6 +173,7 @@ IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[Parser
 
   ast.jPkgName = pkgName;
   ast.jParserName = parserName;
+  ast.startNTClassName = startNTClassName;
 
   local attribute parserName :: String;
   parserName = makeParserName(p.fullName);
@@ -200,7 +202,7 @@ IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[Parser
             mkdir(getIDETempFolder() ++ "copper/parser", ideio).io);
 
   return if null(specs) then i
-         else writeNCSSpec(ideio2, grams, silvergen, tail(specs), pkgName);
+         else writeNCSSpec(ideio2, grams, silvergen, tail(specs), pkgName, startNTClassName);
 }
 
 -- class <pkgName>.imp.controller.ASTVisitorAdapter
