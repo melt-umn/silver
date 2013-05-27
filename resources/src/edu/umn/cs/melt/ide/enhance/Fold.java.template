@@ -34,7 +34,7 @@ public class Fold {
 		int length = cc.length();		
 		int[][] locations = new int[length][2];
 		
-		//Translate the Silver list into an Java array
+		//Translate the Silver list into a Java array
 		int i = 0;
 		while(!cc.nil()){
 			core.NLocation loc = (core.NLocation) cc.head();

@@ -63,10 +63,11 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     "<target name='create-folders'>" ++ getCreateFoldersTarget(delegateBuilderName, actionExportName, parserClassName) ++ "</target>",
     "<target name='customize' if=\"to-customize\" depends='arg-check, filters'>" ++ getCustomizeTarget() ++ "</target>",
     "<target name='postbuild' if=\"to-postbuild\">" ++ getAntPostBuildTarget() ++ "</target>",--this is for ant post-build; not to be confused with IDE post-build
-    "<target name='enhance' depends='enhance-build, enhance-postbuild, enhance-export'></target>",
-    "<target name='enhance-build' depends='arg-check, filters' if=\"ide-function-builder-exists\">" ++ getEnhanceBuildTarget(ide.funcDcls) ++ "</target>",
-    "<target name='enhance-postbuild' depends='arg-check, filters' if=\"ide-function-postbuilder-exists\">" ++ getEnhancePostBuildTarget(ide.funcDcls) ++ "</target>",
-    "<target name='enhance-export' depends='arg-check, filters' if=\"ide-function-exporter-exists\">" ++ getEnhanceExportTarget(ide.funcDcls) ++ "</target>", 
+    "<target name='enhance' depends='enhance-build, enhance-postbuild, enhance-export, enhance-fold'></target>",
+    "<target name='enhance-build' depends='arg-check, filters' if=\"ide-function-builder-exists\">" ++ getEnhanceTarget(ide.funcDcls, getEnhanceBuildAction) ++ "</target>",--getEnhanceBuildTarget(ide.funcDcls)
+    "<target name='enhance-postbuild' depends='arg-check, filters' if=\"ide-function-postbuilder-exists\">" ++ getEnhanceTarget(ide.funcDcls, getEnhancePostBuildAction) ++ "</target>",--getEnhancePostBuildTarget(ide.funcDcls)
+    "<target name='enhance-export' depends='arg-check, filters' if=\"ide-function-exporter-exists\">" ++ getEnhanceTarget(ide.funcDcls, getEnhanceExportAction) ++ "</target>", --getEnhanceExportTarget(ide.funcDcls)
+    "<target name='enhance-fold' depends='arg-check, filters' if=\"ide-function-folder-exists\">" ++ getEnhanceTarget(ide.funcDcls, getEnhanceFoldAction) ++ "</target>", 
     getBuildTargets()
     ];
 
@@ -163,6 +164,42 @@ String ::= funcDcls :: [Pair<String String>]
          end;
 }
 
+function getEnhanceTarget
+String ::= funcDcls::[Pair<String String>] doAction::(String::=Pair<String String>) 
+{
+    return if null(funcDcls)
+           then "\n"
+           else let
+                    result :: String = doAction(head(funcDcls))
+                in 
+                    if result==""
+                    then getEnhanceTarget(tail(funcDcls), doAction)
+                    else result
+                end;
+}
+
+function getEnhanceFoldAction
+String ::= funcDcl::Pair<String String>
+{
+    return if "folder"==funcDcl.fst
+           then 
+                "\n<copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Fold.java.template\"\n" ++ -- [Location] ::= <<CST root's type>>
+                "        tofile=\"${src}/" ++ grammarToPath(funcDcl.snd) ++ "/Fold.java\" filtering=\"true\" overwrite=\"true\"/>"
+           else
+                "";
+}
+
+function getEnhanceExportAction
+String ::= funcDcl::Pair<String String>
+{
+    return if "exporter"==funcDcl.fst
+           then 
+                "\n<copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Export.java.template\"\n" ++ --NIdeMessage[] ::= NIdeProperty[] NIdeEnv
+                "        tofile=\"${src}/" ++ grammarToPath(funcDcl.snd) ++ "/Export.java\" filtering=\"true\" overwrite=\"true\"/>"
+           else
+                "";
+}
+
 -- the returned pair indicate whether builder (fst) and/or post-builder (snd) exist
 function findAllBuilderFunctions
 Pair<Boolean Boolean> ::= funcDcls::[Pair<String String>] pr::Pair<Boolean Boolean>
@@ -178,47 +215,6 @@ Pair<Boolean Boolean> ::= funcDcls::[Pair<String String>] pr::Pair<Boolean Boole
                 end;
 }
 
-function getEnhanceExportTarget
-String ::= funcDcls::[Pair<String String>]
-{
-    return if null(funcDcls)
-           then "\n"
-           else let
-                    result :: String = getEnhanceExportAction(head(funcDcls))
-                in 
-                    if result==""
-                    then getEnhanceExportTarget(tail(funcDcls))
-                    else result
-                end;
-
-}
-
-function getEnhanceExportAction
-String ::= funcDcl::Pair<String String>
-{
-    return if "exporter"==funcDcl.fst
-           then 
-                "\n<copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Export.java.template\"\n" ++ --NIdeMessage[] ::= NIdeProperty[] NIdeEnv
-                "        tofile=\"${src}/" ++ grammarToPath(funcDcl.snd) ++ "/Export.java\" filtering=\"true\" overwrite=\"true\"/>"
-           else
-                "";
-}
-
-function getEnhanceBuildTarget
-String ::= funcDcls::[Pair<String String>]
-{
-    return if null(funcDcls)
-           then "\n"
-           else let
-                    result :: String = getEnhanceBuildAction(head(funcDcls))
-                in 
-                    if result==""
-                    then getEnhanceBuildTarget(tail(funcDcls))
-                    else result
-                end;
-
-}
-
 function getEnhanceBuildAction
 String ::= funcDcl::Pair<String String>
 {
@@ -228,22 +224,6 @@ String ::= funcDcl::Pair<String String>
                 "        tofile=\"${src}/" ++ grammarToPath(funcDcl.snd) ++ "/Build.java\" filtering=\"true\" overwrite=\"true\"/>"
            else
                 "";
-}
-
-function getEnhancePostBuildTarget
-String ::= funcDcls::[Pair<String String>]
-{
-    return if null(funcDcls)
-           then "\n"
-           else let
-                    result :: String = getEnhancePostBuildAction(head(funcDcls))
-                in 
-                    if result==""
-                    then getEnhancePostBuildTarget(tail(funcDcls))
-                    else result
-                end;
-
-
 }
 
 function getEnhancePostBuildAction
@@ -290,6 +270,9 @@ String ::=
     "    <available file=\"${grammar.path}/postbuild.xml\" type=\"file\"/>\n"++
     "  </condition>\n"++
     "  \n"++
+    "  <condition property=\"ide-function-folder-exists\">\n"++
+    "    <isset property=\"ide.function.folder\"/>\n"++
+    "  </condition>\n"++
     "  <condition property=\"ide-function-exporter-exists\">\n"++
     "    <isset property=\"ide.function.exporter\"/>\n"++
     "  </condition>\n"++
@@ -322,6 +305,7 @@ String ::=
     "  <filter token=\"FEATURE_COPYRIGHT_TEXT\" value='no copyright information available'/>\n" ++
     "  <filter token=\"FEATURE_LICENSE_URL\" value='http://some.user.provided.url'/>\n" ++
     "  <filter token=\"FEATURE_LICENSE_TEXT\" value='no license information available'/>\n" ++
+    "  <filter token=\"FOLDER_CLASS_QNAME\" value='${ide.function.folder}'/>\n" ++
     "  <filter token=\"BUILDER_CLASS_QNAME\" value='${ide.function.builder}'/>\n" ++
     "  <filter token=\"POST_BUILDER_CLASS_QNAME\" value='${ide.function.postbuilder}'/>\n" ++
     "  <filter token=\"EXPORTER_CLASS_QNAME\" value='${ide.function.exporter}'/>\n" ++

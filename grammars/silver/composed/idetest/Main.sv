@@ -65,11 +65,12 @@ temp_imp_ide_dcl svParse ".sv" {
   builder analyze;          --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO"
   postbuilder generate;     --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO"
   exporter export;          --a function whose signature must be "IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO"
+  folder fold;              --a function whose signature must be "[Location] ::= <<CST root's type>>"
   property grammar_to_compile string;
 };
 
 function fold
-[Location] ::= cst::c
+[Location] ::= cst::c--r::Root --cst::c
 {
 
     return [loc("filename1", 1, 2, 3, 4, 10, 40), loc("filename2", 5, 6, 7, 8, 50, 80)];
