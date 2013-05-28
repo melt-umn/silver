@@ -154,21 +154,6 @@ String ::= funcDcls :: [Pair<String String>] funcToFind::String found::String no
                 end;
 }
 
-{--findFunction(funcDcls, exporter, "ExportLANG", "ExportDummy")
-function getExportActionName
-String ::= funcDcls :: [Pair<String String>]
-{
-    return if null(funcDcls) --length(funcDcls) < 1
-           then "ExportDummy"
-           else let
-                    hd :: Pair<String String> = head(funcDcls)
-                in
-                    if(hd.fst=="exporter") then "ExportLANG"
-                    else getExportActionName(tail(funcDcls))
-                end;
-}
---}
-
 function getDelegateBuilderName
 String ::= funcDcls :: [Pair<String String>]
 {
