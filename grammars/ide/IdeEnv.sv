@@ -7,6 +7,11 @@ synthesized attribute generatedPath :: String;
 
 {--
 The nonterminal representing the environment for a project in generated IDE.  
+  projectName: the project name.
+  projectPath: the absolute path of this project's root folder.
+  generatedPath: the absolute path to the folder to which the generated (compiled) 
+                 files go. this folder is labeled as hidden in Eclipse.
+  platformPath: the absolute path to Eclipse platform (that is, the folder of Eclipse).
 --}
 nonterminal IdeEnv with projectName, projectPath, generatedPath, platformPath;
 

@@ -1,6 +1,6 @@
 grammar silver:modification:impide;
 
-nonterminal IdeSpec with ideExtension, ideParserSpec, funcDcls, propDcls;
+nonterminal IdeSpec with ideExtension, ideParserSpec, funcDcls, propDcls, productInfo;
 
 synthesized attribute ideExtension :: String;
 synthesized attribute ideParserSpec :: ParserSpec;
@@ -8,13 +8,16 @@ synthesized attribute ideParserSpec :: ParserSpec;
 synthesized attribute funcDcls :: [Pair<String String>] with ++ ;
 synthesized attribute propDcls :: [IdeProperty] with ++ ;
 
+synthesized attribute productInfo :: IdeProductInfo;
+
 abstract production ideSpec
-top::IdeSpec ::= ext::String ideFuncDcls::[Pair<String String>] idePropDcls::[IdeProperty] pspec::ParserSpec --TODO more?
+top::IdeSpec ::= ext::String ideFuncDcls::[Pair<String String>] idePropDcls::[IdeProperty] pspec::ParserSpec productInfo::IdeProductInfo --TODO more?
 {
   top.ideExtension = ext;
   top.ideParserSpec = pspec;
   top.funcDcls := ideFuncDcls;
   top.propDcls := idePropDcls;
+  top.productInfo = productInfo;
 }
 
 nonterminal Color with r, g, b;
