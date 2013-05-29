@@ -7,6 +7,7 @@ import silver:modification:ffi only foreignTypeExp; -- so we cover foreignTypeEx
  - and freshen the rest.
  - e.g. (?a -> ?b -> F ?a) becomes (?c -> !d -> F ?c)
  - This is done so we can just unify the scrutinee type an go, no hairy details!
+ - (This is used for *non-gadt* productions.)
  -}
 function skolemizeProductionType
 TypeExp ::= te::TypeExp
@@ -23,6 +24,7 @@ TypeExp ::= te::TypeExp
 }
 
 {--
+ - (This is used for *gadt* productions.)
  - wat? why? well, one skolem constant is as good as another, and we're here INTRODUCING
  - new variables, and we need to make them skolem constants.
  -
