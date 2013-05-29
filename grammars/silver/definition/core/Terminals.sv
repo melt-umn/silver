@@ -104,7 +104,7 @@ terminal IdUpper_t /[A-Z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
 
 terminal True_kwd  'true'   lexer classes {LITERAL,RESERVED};
 terminal False_kwd 'false'  lexer classes {LITERAL,RESERVED};
-terminal Int_t     /[0-9]+/ lexer classes {LITERAL};
-terminal Float_t   /[0-9]+[\.][0-9]+/ lexer classes {LITERAL};
+terminal Int_t     /[\-]?[0-9]+/ lexer classes {LITERAL};
+terminal Float_t   /[\-]?[0-9]+[\.][0-9]+/ lexer classes {LITERAL};
 terminal String_t  /[\"]([^\n\"\\]|[\\][\"]|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\"]/ lexer classes {LITERAL};
 
