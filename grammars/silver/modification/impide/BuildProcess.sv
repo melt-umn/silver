@@ -33,11 +33,12 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
 
   extraTopLevelDecls <- if !isIde then [] else [
     getIDERuntimeVersion(),
+    "<property name='ide.prod.name' value='" ++ ide.productInfo.prodName ++ "'/>",
+    "<property name='ide.prod.version' value='" ++ ide.productInfo.prodVersion ++ "'/>",
     "<property name='grammar.path' value='" ++ head(builtGrammar).grammarSource ++ "'/>", 
     "<property name='res' value='${sh}/resources'/>", --TODO: add all templates to here.
-    "<property name='ide.version' value='1.0.0'/>",
-    -- derive the name of language from grammar. TODO: In future we must allow users to define the name themselves.
-    "<property name='lang.name' value='" ++ deriveLangNameFromPackage(pkgName) ++ "'/>",
+    "<property name='ide.version' value='1.0.0'/>",--FIXME: change to ide.productInfo.prodVersion
+    "<property name='lang.name' value='" ++ deriveLangNameFromPackage(pkgName) ++ "'/>",--FIXME: change to ide.productInfo.prodName
     "<property name='lang.composed' value='" ++ pkgName ++ "'/>", 
     "<property name='ide.pkg.name' value='" ++ pkgName ++ "'/>",
     "<property name='ide.proj.name' value='${ide.pkg.name}'/>",

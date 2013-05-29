@@ -19,9 +19,12 @@ terminal ImpIde_PropType_integer_t 'integer' lexer classes {KEYWORD};
 terminal ImpIde_PropType_path_t 'path' lexer classes {KEYWORD};
 terminal ImpIde_PropType_url_t 'url' lexer classes {KEYWORD};
 
+terminal ImpIde_Product_t 'product' lexer classes {KEYWORD};
+terminal ImpIde_ProdInfo_Name_t 'name' lexer classes {KEYWORD};
+terminal ImpIde_ProdInfo_Version_t 'version' lexer classes {KEYWORD};
 
 concrete production ideDcl
-top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optFunctions::IdeFunctions ';'
+top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optFunctions::IdeStmts ';'
 {
   top.pp = "temp_imp_ide_dcl " ++ parsername.pp ++ " " ++ fileextension.lexeme ++ "\n";
 
@@ -54,11 +57,37 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optF
   -- Strip off the quotes AND the initial dot
   local fext :: String = substring(2, length(fileextension.lexeme) - 1, fileextension.lexeme);
   
-  top.ideSpecs = [ideSpec(fext, optFunctions.funcDcls, optFunctions.propDcls, head(spec))];
+  local info :: IdeProductInfo = getIdeProductInfo(optFunctions);
+
+  top.ideSpecs = [ideSpec(fext, optFunctions.funcDcls, optFunctions.propDcls, head(spec), info)];
   
   top.errors <- optFunctions.errors;
 
   forwards to emptyAGDcl(location=top.location);
+}
+
+function getIdeProductInfo
+IdeProductInfo ::= stmts::IdeStmts
+{
+    return   
+      case stmts of
+        listIdeStmts(_, stmtList, _) -> recurGetIdeProductInfo(stmtList)
+        | _ -> makeDefaultIdeProductInfo()
+      end;
+}
+
+function recurGetIdeProductInfo
+IdeProductInfo ::= stmtList::IdeStmtList
+{
+    return  
+     case stmtList of
+       nilIdeStmtList() -> makeDefaultIdeProductInfo()
+     | consIdeStmtList(h, t) ->  
+         case h of
+         makeIdeStmt_Product(_, _, _, _) -> h.productInfo
+         | _ -> recurGetIdeProductInfo(t)
+         end
+     end;
 }
 
 nonterminal IdeProperty with propName, propType;
@@ -90,9 +119,9 @@ terminal ImpIde_OptFunc_Exporter 'exporter';
 terminal ImpIde_OptFunc_Folder 'folder';
 
 --funcDcls, propDcls are defined in ./IdeSpec.sv
-nonterminal IdeFunctions with env, location, errors, grammarName, file, funcDcls, propDcls, startNTName;
-nonterminal IdeFunction with env, location, errors, grammarName, file, funcDcls, propDcls, startNTName;
-nonterminal IdeFunctionList with env, location, errors, grammarName, file, funcDcls, propDcls, startNTName;
+nonterminal IdeStmts with env, location, errors, grammarName, file, funcDcls, propDcls, startNTName;
+nonterminal IdeStmt with env, location, errors, grammarName, file, funcDcls, propDcls, startNTName, productInfo;
+nonterminal IdeStmtList with env, location, errors, grammarName, file, funcDcls, propDcls, startNTName;
 
 function makeGrammarName
 String ::= str::String
@@ -100,40 +129,46 @@ String ::= str::String
   return substitute(".", ":", str);
 }
 
-concrete production emptyIdeFunctions
-top::IdeFunctions ::=
+concrete production emptyIdeStmts
+top::IdeStmts ::=
 {
   top.errors := [];
   top.funcDcls := [];
   top.propDcls := [];
 }
 
-concrete production listIdeFunctions
-top::IdeFunctions ::= '{' funcList::IdeFunctionList '}'
+concrete production listIdeStmts
+top::IdeStmts ::= '{' funcList::IdeStmtList '}'
 {
   top.errors := funcList.errors;
   top.funcDcls := funcList.funcDcls;
   top.propDcls := funcList.propDcls;
 }
 
-concrete production nilIdeFunctionList
-top::IdeFunctionList ::= 
+concrete production nilIdeStmtList
+top::IdeStmtList ::= 
 {
   top.errors := [];
   top.funcDcls := [];
   top.propDcls := [];
 }
 
-concrete production consIdeFunctionList
-top::IdeFunctionList ::= func::IdeFunction funcList::IdeFunctionList
+concrete production consIdeStmtList
+top::IdeStmtList ::= func::IdeStmt funcList::IdeStmtList
 {
   top.errors := func.errors ++ funcList.errors;
   top.funcDcls := func.funcDcls ++ funcList.funcDcls;
   top.propDcls := func.propDcls ++ funcList.propDcls;
 }
 
-concrete production makeIdeFunction_Builder
-top::IdeFunction ::= 'builder' builderName::QName ';' 
+aspect default production
+top::IdeStmt ::=
+{
+  top.productInfo = error("Internal compiler error: should only ever be demanded of Production Info declaration.");
+}
+
+concrete production makeIdeStmt_Builder
+top::IdeStmt ::= 'builder' builderName::QName ';' 
 {
   top.funcDcls := [pair("builder", builderName.lookupValue.fullName)];
   top.propDcls := [];
@@ -161,8 +196,8 @@ top::IdeFunction ::= 'builder' builderName::QName ';'
         ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
 }  
 
-concrete production makeIdeFunction_PostBuilder
-top::IdeFunction ::= 'postbuilder' postbuilderName::QName ';' 
+concrete production makeIdeStmt_PostBuilder
+top::IdeStmt ::= 'postbuilder' postbuilderName::QName ';' 
 {
   top.funcDcls := [pair("postbuilder", postbuilderName.lookupValue.fullName)];
   top.propDcls := [];
@@ -190,8 +225,8 @@ top::IdeFunction ::= 'postbuilder' postbuilderName::QName ';'
         ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
 }  
 
-concrete production makeIdeFunction_Exporter
-top::IdeFunction ::= 'exporter' exporterName::QName ';' 
+concrete production makeIdeStmt_Exporter
+top::IdeStmt ::= 'exporter' exporterName::QName ';' 
 {
   top.funcDcls := [pair("exporter", exporterName.lookupValue.fullName)];
   top.propDcls := [];
@@ -219,8 +254,8 @@ top::IdeFunction ::= 'exporter' exporterName::QName ';'
         ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
 }  
 
-concrete production makeIdeFunction_Folder
-top::IdeFunction ::= 'folder' folderName::QName ';' 
+concrete production makeIdeStmt_Folder
+top::IdeStmt ::= 'folder' folderName::QName ';' 
 {
   top.funcDcls := [pair("folder", folderName.lookupValue.fullName)];
   top.propDcls := [];
@@ -244,8 +279,8 @@ top::IdeFunction ::= 'folder' folderName::QName ';'
         ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
 }  
 
-concrete production makeIdeFunction_Porperty
-top::IdeFunction ::= 'property' pname::IdLower_t ptype::TypeName ';' 
+concrete production makeIdeStmt_Porperty
+top::IdeStmt ::= 'property' pname::IdLower_t ptype::TypeName ';' 
 {
   top.funcDcls := [];
 
@@ -253,6 +288,89 @@ top::IdeFunction ::= 'property' pname::IdLower_t ptype::TypeName ';'
 
   top.errors := [];
 } 
+
+concrete production makeIdeStmt_Product
+top::IdeStmt ::= 'product' '{' dcls::IdeProductInfoDcls '}' 
+{
+  top.funcDcls := [];
+
+  top.propDcls := [];
+
+  top.productInfo = makeIdeProductInfo(dcls.info);
+
+  top.errors := [];
+
+  top.errors <- dcls.errors;
+} 
+
+synthesized attribute info :: [Pair<String String>] with ++;
+
+nonterminal IdeProductInfoDcls with errors, info;
+nonterminal IdeProductInfoDcl with errors, info;
+
+concrete production nilIdeProductInfoDcls
+top::IdeProductInfoDcls ::= 
+{
+  top.info := [];
+  top.errors := [];
+}
+
+concrete production consIdeProductInfoDcls
+top::IdeProductInfoDcls ::= h::IdeProductInfoDcl t::IdeProductInfoDcls
+{
+  top.info := h.info ++ t.info;
+  top.errors := h.errors ++ t.errors;
+}
+
+concrete production ideProductInfoDcl_name
+top::IdeProductInfoDcl ::= 'name' ideName::String_t ';'
+{
+  -- Strip off the quotes
+  local iName :: String = substring(1, length(ideName.lexeme) - 1, ideName.lexeme);
+  
+  top.errors := [];
+  top.errors <- 
+        if (iName=="") then [err(ideName.location, "The name of IDE product cannot be empty. Delete the name declaration you want to the default name.")]
+        else if isDigit(substring(0,1,iName)) then [err(ideName.location, "The name of IDE product cannot be started with digital.")]
+        else [];
+
+  top.info := [pair("name", iName)];
+}
+
+concrete production ideProductInfoDcl_version
+top::IdeProductInfoDcl ::= 'version' v::String_t ';'
+{
+  -- Strip off the quotes
+  local iV :: String = substring(1, length(v.lexeme) - 1, v.lexeme);
+ 
+  top.errors := [];
+  top.errors <- 
+        if (iV=="") then [err(v.location, "The version of IDE product cannot be empty. Delete the name declaration you want to the default name.")]
+        else if !isLegalVersion(iV) then [err(v.location, "The version of IDE product must comply to the format \"N+.N+\" or \"N+.N+.N+\".")]
+        else [];
+
+  top.info := [pair("version", iV)];
+}
+
+function isLegalVersion
+Boolean ::= ver::String
+{
+    local parts::[String] = explode(".", ver);
+
+    return if(length(parts)==2 || length(parts)==3) 
+           then isAllDigital(parts) 
+           else false;
+}
+
+function isAllDigital
+Boolean ::= parts::[String]
+{
+    return if(null(parts))
+           then true
+           else if isDigit(head(parts))
+                then isAllDigital(tail(parts)) 
+                else false;
+}
 
 nonterminal TypeName with propType;
 
