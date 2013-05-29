@@ -10,6 +10,7 @@ import silver:extension:patternmatching only Arrow_kwd, Vbar_kwd, ensureDecorate
 import silver:translation:java:core;
 import silver:translation:java:type;
 
+-- Actually only used for lists, in this file... TODO
 import silver:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef, End_kwd;
 
 import silver:extension:list; -- Oh no, this is a hack! TODO

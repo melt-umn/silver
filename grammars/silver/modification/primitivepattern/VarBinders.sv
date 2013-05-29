@@ -77,36 +77,40 @@ top::VarBinder ::= n::Name
 {
   top.pp = n.pp;
   
-  -- bindingType comes straight from the type in the production signature, so this logic
-  -- should be 100% cool because only statically known nonterminal types are ones that
-  -- become decorated.  So it's impossible for inference to affect this logic:
-  local attribute ty :: TypeExp;
-  ty = if top.bindingType.isDecorable
-       then decoratedTypeExp(top.bindingType)
-       else top.bindingType;
+  -- top.bindingType comes straight from the type in the production signature.
+  -- Consequently, the child is only auto-decorated if
+  -- top.bindingType.isDecorable, and never otherwise.
+  -- (We *DO NOT* want to substitute first... because that will turn the type
+  -- variables into concrete types! and type variables in a production are
+  -- NOT automatically decorated!)
+  local ty :: TypeExp =
+    if top.bindingType.isDecorable
+    then decoratedTypeExp(top.bindingType)
+    else top.bindingType;
 
   top.defs = [lexicalLocalDef(top.grammarName, n.location, n.name, ty)];
 
-  top.translation = makeSpecialLocalBinding(n.name, 
-             "(" ++ ty.transType ++ ")scrutinee." ++ 
-                (if top.bindingType.isDecorable
-                 then "childDecorated("
-                 else "childAsIs(")
-             ++ toString(top.bindingIndex) ++ ")", ty.transType);
+  top.translation = 
+    makeSpecialLocalBinding(n.name, 
+      "(" ++ ty.transType ++ ")scrutinee." ++ 
+        (if top.bindingType.isDecorable
+         then "childDecorated("
+         else "childAsIs(") ++
+        toString(top.bindingIndex) ++ ")",
+      ty.transType);
   
-  --top.errors := []; -- TODO: check for rebinding? or not perhaps...
+  -- We prevent this to prevent newbies from thinking patterns are "typecase"
+  -- (Types have to be upper case)
+  top.errors := 
+    if !isUpper(substring(0,1,n.name)) then []
+    else [err(top.location, "Pattern variable names start with a lower case letter")];
 
-  ---- TODO: Should be here, but does nothing
-  -- MUST start with lower case #HACK2012
-  top.errors := (if isUpper(substring(0,1,n.name))
-                 then [err(top.location, "Pattern variable names start with a lower case letter")]
-                 else [])
-  -- MUST NOT shadow any _production_ names #HACK2012
-  -- TODO: Add function to find all prodDcl in env
-             ++ (case getValueDcl(n.name, top.env) of
-                 | prodDcl(_,_,_) :: _ -> [err(top.location, "Production name can't be used in pattern")]
-                 | _ -> []
-                 end) ;
+  -- We prevent this to avoid people possibly forgetting the parens, e.g. writing 'nothing'
+  top.errors <- 
+    case getValueDcl(n.name, top.env) of
+    | prodDcl(_,_,_) :: _ -> [err(top.location, "Production name can't be used in pattern")]
+    | _ -> []
+    end;
 }
 concrete production ignoreVarBinder
 top::VarBinder ::= '_'
