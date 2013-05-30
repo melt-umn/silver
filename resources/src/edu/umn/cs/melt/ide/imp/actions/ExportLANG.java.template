@@ -2,6 +2,7 @@
  * Variables used:
  *   PKG_NAME
  *   LANG_NAME
+ *   LANG_COMPOSED_PKG
  */
 package @PKG_NAME@.imp.actions;
 
@@ -56,7 +57,7 @@ public class Export@LANG_NAME@ implements IWorkbenchWindowActionDelegate {
 			@Override
 			protected IStatus run(final IProgressMonitor monitor) {
 
-				final List<NIdeMessage> list = silver.composed.idetest.Export.export(
+				final List<NIdeMessage> list = @LANG_COMPOSED_PKG@.Export.export(
 					@LANG_NAME@Service.convertToNIdePropertyList(props), env);
 				
 				boolean success = Utility.renderMessages(list, fProject, EXPORT_HANDLER);
