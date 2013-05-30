@@ -72,7 +72,7 @@ IdeProductInfo ::= stmts::IdeStmts
     return   
       case stmts of
         listIdeStmts(_, stmtList, _) -> recurGetIdeProductInfo(stmtList)
-        | _ -> makeDefaultIdeProductInfo()
+        | _ -> makeEmptyIdeProductInfo()
       end;
 }
 
@@ -81,7 +81,7 @@ IdeProductInfo ::= stmtList::IdeStmtList
 {
     return  
      case stmtList of
-       nilIdeStmtList() -> makeDefaultIdeProductInfo()
+       nilIdeStmtList() -> makeEmptyIdeProductInfo()
      | consIdeStmtList(h, t) ->  
          case h of
          makeIdeStmt_Product(_, _, _, _) -> h.productInfo
@@ -330,7 +330,7 @@ top::IdeProductInfoDcl ::= 'name' ideName::String_t ';'
   
   top.errors := [];
   top.errors <- 
-        if (iName=="") then [err(ideName.location, "The name of IDE product cannot be empty. Delete the name declaration you want to the default name.")]
+        if (iName=="") then [wrn(ideName.location, "The name of IDE product is empty. A default name will be used.")]
         else if isDigit(substring(0,1,iName)) then [err(ideName.location, "The name of IDE product cannot be started with digital.")]
         else [];
 
@@ -345,7 +345,7 @@ top::IdeProductInfoDcl ::= 'version' v::String_t ';'
  
   top.errors := [];
   top.errors <- 
-        if (iV=="") then [err(v.location, "The version of IDE product cannot be empty. Delete the name declaration you want to the default name.")]
+        if (iV=="") then [wrn(v.location, "The version of IDE product is empty. A default version number will be used.")]
         else if !isLegalVersion(iV) then [err(v.location, "The version of IDE product must comply to the format \"N+.N+\" or \"N+.N+.N+\".")]
         else [];
 

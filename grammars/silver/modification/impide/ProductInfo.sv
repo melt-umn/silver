@@ -6,7 +6,7 @@ synthesized attribute prodName :: String;
 synthesized attribute prodVersion :: String;
 
 abstract production ideProductInfo
-top::IdeProductInfo ::= name::String version::String
+top::IdeProductInfo ::= name::String version::String -- add more in future
 {
   top.prodName = name;
   top.prodVersion = version;
@@ -17,14 +17,14 @@ IdeProductInfo ::= kvps::[Pair<String String>]
 {
   local attribute prodInfo :: IdeProductInfo = 
     ideProductInfo(
-        fromMaybe("DEFAULT", lookupBy(stringEq, "name", kvps)),
-        fromMaybe("1.0.0", lookupBy(stringEq, "version", kvps))
+        fromMaybe("", lookupBy(stringEq, "name", kvps)),
+        fromMaybe("", lookupBy(stringEq, "version", kvps))
     );
 
   return prodInfo;
 }
 
-function makeDefaultIdeProductInfo
+function makeEmptyIdeProductInfo
 IdeProductInfo ::= 
 {
   return makeIdeProductInfo([]);
