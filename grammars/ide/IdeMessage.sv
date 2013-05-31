@@ -1,8 +1,5 @@
 grammar ide;
 
--- hack
--- import silver:definition:core;
-
 synthesized attribute resPath :: String;
 synthesized attribute systemLevel :: Boolean;
 
@@ -11,16 +8,22 @@ synthesized attribute msg :: String;
 synthesized attribute loc :: Location;
 
 {--
-The nonterminal representing a message to be displayed in generated IDE.  
+ The nonterminal representing a message to be displayed in generated IDE.  
 --}
 nonterminal IdeMessage with resPath, loc, severity, msg, systemLevel;
+
+{--
+ Level constants used for IdeMessage.severity
+--}
+global ideMsgLvWarning :: Integer = 1;
+global ideMsgLvError :: Integer = 2;
 
 {--
  Make a message which is related to a specific file.
 
  resPath:    the path relative to root of project, in format "path/relative/to/project/root".
  location:   standard core:Location. Note the resource can be located by {path + "/" + location.fileName}
- severity:   warning:1, error:2 
+ severity:   ideMsgLvWarning (warning=1) or ideMsgLvError (eeror=2)
  msg:        the message to be displayed in IDE
 --}
 abstract production makeIdeMessage
@@ -36,7 +39,7 @@ top::IdeMessage ::= resPath::String location::Location severity::Integer msg::St
 {--
  Make a system-level message. Message of this kind is not related to a specific file.
 
- severity:   warning:1, error:2 
+ severity:   ideMsgLvWarning (warning=1) or ideMsgLvError (eeror=2)
  msg:        the message to be displayed in IDE
 --}
 abstract production makeSysIdeMessage
