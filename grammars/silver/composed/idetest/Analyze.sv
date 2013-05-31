@@ -11,7 +11,7 @@ import silver:definition:env;
 
 import ide;
 
--- I just copy and pasted this from BuildProcess for now...
+-- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideAnalyze
 IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
 {
@@ -52,18 +52,19 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
   local reRootStream :: IOVal<[Maybe<RootSpec>]> =
     compileGrammars(svParser, sviParser, grammarPath, silverGen, unit.recheckGrammars, true, rootStream.io);
 
-  --return ioval(rootStream.io, getAllBindingErrors(unit.grammarList));
-
-
   local messages :: [IdeMessage] = getAllBindingErrors(unit.grammarList);
 
-  return if !argResult.parseSuccess then ioval(ioin, [makeSysIdeMessage(2, "Parsing failed during build. Resource changed outside IDE? (Need refresh and rebuild).")])
+  return if !argResult.parseSuccess then ioval(ioin, [makeSysIdeMessage(ideMsgLvError, "Parsing failed during build. If source code/resources are changed outside IDE, refresh and rebuild is needed.")])
     else if !null(check.iovalue) then ioval(check.io, getSysMessages(check.iovalue))
-    else if !head(rootStream.iovalue).isJust then ioval(rootStream.io, [makeSysIdeMessage(2, "The specified grammar (" ++ buildGrammar ++ ") could not be found. Configuration error?")])
+    else if !head(rootStream.iovalue).isJust then ioval(rootStream.io, [makeSysIdeMessage(ideMsgLvError, 
+            (if buildGrammar=="" 
+             then "No grammar is specified for compilation. Check configutation for this project." 
+             else ("The specified grammar \"" ++ buildGrammar ++ "\" could not be found. Check configutation for this project."))
+            )])
     else ioval(rootStream.io, getAllBindingErrors(unit.grammarList));
-
 }
 
+-- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideGenerate
 IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
 {
@@ -115,34 +116,8 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
   -- unit.postOps is a "pure value," here's where we make it go.
   local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), reRootStream.io);
 
---  local messages :: [IdeMessage] = getAllBindingErrors(unit.grammarList);
-
---  local msgStatus :: Pair<Boolean Boolean> = getMsgStatus(messages, pair(false, false));
-
-  return 
-{--
-    if !argResult.parseSuccess then ioval(ioin, [makeSysIdeMessage(2, "Parsing failed during build. Resource changed outside IDE? (Need refresh and rebuild).")])
-    else if !null(check.iovalue) then ioval(check.io, getSysMessages(check.iovalue))
-    else if !head(rootStream.iovalue).isJust then ioval(rootStream.io, [makeSysIdeMessage(2, "The specified grammar (" ++ buildGrammar ++ ") could not be found. Configuration error?")])
-    else if msgStatus.snd then ioval(ioin, messages)    --errors. abort
-    else ioval(actions.io, messages);
---}
-         ioval(actions.io, []);
-}
-
--- status is a pair of boolean values indicating if warning (fst) or error (snd) is present
-function getMsgStatus
-Pair<Boolean Boolean> ::= es::[IdeMessage] status::Pair<Boolean Boolean>
-{
-  return if null(es)
-         then status
-         else let 
-                  hd :: IdeMessage = head(es)
-              in 
-                  if hd.severity == 1 then getMsgStatus(tail(es), pair(true, status.snd))         -- warning present
-                  else if hd.severity == 2 then getMsgStatus(tail(es), pair(status.fst, true))    -- error present
-                  else getMsgStatus(tail(es), status)
-              end;
+  -- no check performed here
+  return ioval(actions.io, []);
 }
 
 function getSysMessages
@@ -153,7 +128,7 @@ function getSysMessages
          else let 
                   head :: String = head(es)
               in 
-                  [makeSysIdeMessage(2, head)] ++ getSysMessages(tail(es))
+                  [makeSysIdeMessage(ideMsgLvError, head)] ++ getSysMessages(tail(es))
               end;
 }
 

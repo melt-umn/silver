@@ -1,16 +1,16 @@
 grammar silver:composed:idetest;
-
--- This grammar is a duplicate of Default, but...
+-- This grammar is a duplicate of silver:idetest:Default, with IDE declaration block added.
 
 import silver:host;
 import silver:host:env;
 import silver:translation:java;
 import silver:driver;
 
---import silver:extension:doc;
 import silver:analysis:warnings:defs;
 import silver:analysis:warnings:exporting;
 
+-- NOTE: this is needed for the correct generation of IDE, 
+-- even if we just use an empty IDE declaration block.
 import ide;
 
 parser svParse::Root {
@@ -25,8 +25,6 @@ parser svParse::Root {
   silver:extension:testing;
   silver:extension:templating;
   silver:extension:patternmatching;
---  silver:extension:concreteSyntaxForTrees ;
-  -- doc?
 
   silver:modification:let_fix;
   silver:modification:collection;
@@ -36,10 +34,6 @@ parser svParse::Root {
   silver:modification:typedecl;
   silver:modification:copper;
   silver:modification:defaultattr;
-  
-  -- slight hacks, for the moment
-  silver:modification:copper_mda;
-  silver:modification:impide;
 }
 
 parser sviParse::IRoot {
@@ -54,6 +48,7 @@ parser sviParse::IRoot {
   silver:extension:list:env_parser;
 }
 
+-- This function is not used by IDE
 function main 
 IOVal<Integer> ::= args::[String] ioin::IO
 {
@@ -74,12 +69,13 @@ temp_imp_ide_dcl svParse ".sv" {
   }
 };
 
+-- Declarations of IDE functions referred in decl block.
 function fold
 [Location] ::= cst::Root
 {
     return   
       case cst of
-        root(_, moduleStmts, importStmts, agDcls) -> [importStmts.location] ++ agDcls.foldableRanges
+        root(_, moduleStmts, importStmts, agDcls) -> [importStmts.location] ++ agDcls.foldableRanges -- see ./Folding.sv
         | _ -> []
       end;
 }
@@ -99,8 +95,8 @@ IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 
   local jarExists::IOVal<Boolean> = isFile(jarFile, ant(buildFile, "", "", fileExists.io));
 
-  return if !fileExists.iovalue then ioval(perror("Export failed.", i), [makeSysIdeMessage(2, "build.xml doesn't exist. Has the project been successfully built before?")])
-    else if !jarExists.iovalue then ioval(perror("Export failed.", i), [makeSysIdeMessage(2, "Ant failed to generated the jar.")])
+  return if !fileExists.iovalue then ioval(perror("Export failed.", i), [makeSysIdeMessage(ideMsgLvError, "build.xml doesn't exist. Has the project been successfully built before?")])
+    else if !jarExists.iovalue then ioval(perror("Export failed.", i), [makeSysIdeMessage(ideMsgLvError, "Ant failed to generated the jar.")])
     else ioval(copyFile(jarFile, targetFile, jarExists.io), []);
 }
 
