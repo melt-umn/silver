@@ -22,6 +22,12 @@ public class DecoratedNode {
 	// So we try to keep the "slow paths" in a separate method, so the hot paths
 	// can be inlined. (Things are designed around 37 bytes of bytecode as the limit.)
 
+	// Error reporting note: we don't attempt to identify and report errors for
+	// mis-generated code.  e.g. asking for synthesized attributes that
+	// don't exist (syn#15 when there's only 10)
+	// We only try to nicely report errors that are the fault of the user writing
+	// broken code. (e.g. "no equation for syn")
+	
 	/**
 	 * The "undecorated" form of this DecoratedNode. (Never null)
 	 * 
@@ -395,13 +401,19 @@ public class DecoratedNode {
 	}
 	private final Object evalInhHere(final int attribute) {
 		try {
-			return this.inheritedAttributes[attribute].eval(this.parent);
+			return inheritedAttributes[attribute].eval(parent);
 		} catch(Throwable t) {
 			throw handleInhHereError(attribute, t);
 		}
 	}
 	private final RuntimeException handleInhHereError(final int attribute, Throwable t) {
-		if(this.inheritedAttributes[attribute] == null) {
+		// We specifically have to check here for inheritedAttributes == null, because
+		// that's what happens when we don't supply any inherited attributes...
+		// That is, unlike the unconditional access earlier for inheritedValues[attribute]
+		// (which could be null if *no inherited attributes occur at all* on this
+		// node), this could be the result of correctly compiled, but wrongly written user
+		// code.
+		if(inheritedAttributes == null || inheritedAttributes[attribute] == null) {
 			return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to '" + self.getName() + "' by '" + parent.self.getName() + "'");
 		}
 		return new TraceException("Error evaluating inherited attribute '" + self.getNameOfInhAttr(attribute) + "' in production '" + self.getName() + "'", t);
