@@ -61,7 +61,7 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
              then "No grammar is specified for compilation. Check configutation for this project." 
              else ("The specified grammar \"" ++ buildGrammar ++ "\" could not be found. Check configutation for this project."))
             )])
-    else ioval(rootStream.io, getAllBindingErrors(unit.grammarList));
+    else ioval(rootStream.io, messages);
 }
 
 -- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
