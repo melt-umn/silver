@@ -3,6 +3,7 @@
  *   PKG_NAME
  *   LANG_NAME
  *   PARSER_NAME
+ *   LANG_COMPOSED_PKG
  *   START_NONTERMINAL_CLASS
  */
 package @PKG_NAME@.imp.folding;
@@ -37,7 +38,7 @@ public class @LANG_NAME@FoldingUpdater extends FolderBase {
 		AdaptiveEnhancedParseTreeInnerNode<@START_NONTERMINAL_CLASS@> ast = 
 			(AdaptiveEnhancedParseTreeInnerNode<@START_NONTERMINAL_CLASS@>) _ast;
 		
-		int[][] locations = silver.composed.idetest.Fold.fold(ast.getLangSpecNode());
+		int[][] locations = @LANG_COMPOSED_PKG@.Fold.fold(ast.getLangSpecNode());
 		
 		for(int j=0;j<locations.length;j++){
 			int start = locations[j][0];
