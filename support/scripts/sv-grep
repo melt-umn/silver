@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# A simple utility to grep all .sv files below the currect directory.
+
+# Ensures the output is colorized, and enables full perl regexs.
+
+# Example: sv-grep '\.env'
+
+grep --color=auto -P "$1" `find . -name "*.sv"`
+

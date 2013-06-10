@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# A simple utility to grep all .sv files below the currect directory
+# for *WHOLE WORDS* only.
+
+# Example: sv-name-grep 'location'
+# will not return matches for 'locations' etc
+
+# Due to the lookaheads, should probably ONLY be used with names.
+# e.g. better use sv-grep if you search for 'error(' with the '('
+
+LOOKBEHIND='(?<![A-Za-z0-9_:])'
+LOOKAHEAD='(?![A-Za-z0-9_:])'
+
+grep --color=auto -P "$LOOKBEHIND$1$LOOKAHEAD" `find . -name "*.sv"`
+
