@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Quick and dirty search and replace in .sv files only.
+
+# Especially useful due to full perl regexes and back-references
+
+# Example: sv-replace '([A-Za-z0-9_]+)\.pp' 'getPPfrom\(\1\)'
+# Changes an attribute access to a function call.
+
+# Be aware the forward slashes also need escaping.
+# Test search regexes with sv-grep first (highlighting will show what matches.)
+
+find . -name "*.sv" | xargs perl -pi -e "s/$1/$2/g"
+

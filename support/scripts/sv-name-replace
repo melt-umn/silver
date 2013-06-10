@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Quick and dirty *whole-word* find and replace in .sv files only.
+
+# That is, replacing 'location' with 'foo' will leaves 'locations' untouched.
+
+# Example: sv-name-replace 'location' 'foo'
+# Before running consider first testing with: sv-name-grep 'location'
+
+# See sv-replace for anything more complicated than a name change
+
+LOOKBEHIND='(?<![A-Za-z0-9_:])'
+LOOKAHEAD='(?![A-Za-z0-9_:])'
+
+find . -name "*.sv" | xargs perl -pi -e "s/$LOOKBEHIND$1$LOOKAHEAD/$2/g"
+
