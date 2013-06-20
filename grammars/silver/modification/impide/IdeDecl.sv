@@ -19,6 +19,10 @@ terminal ImpIde_PropType_integer_t 'integer' lexer classes {KEYWORD};
 terminal ImpIde_PropType_path_t 'path' lexer classes {KEYWORD};
 terminal ImpIde_PropType_url_t 'url' lexer classes {KEYWORD};
 
+terminal ImpIde_PropOption_Required_t 'required' lexer classes {KEYWORD};
+terminal ImpIde_PropOption_Display_t 'display' lexer classes {KEYWORD};
+terminal ImpIde_PropOption_Default_t 'default' lexer classes {KEYWORD};
+
 terminal ImpIde_Product_t 'product' lexer classes {KEYWORD};
 terminal ImpIde_ProdInfo_Name_t 'name' lexer classes {KEYWORD};
 terminal ImpIde_ProdInfo_Version_t 'version' lexer classes {KEYWORD};
@@ -90,18 +94,73 @@ IdeProductInfo ::= stmtList::IdeStmtList
      end;
 }
 
-nonterminal IdeProperty with propName, propType;
+nonterminal IdeProperty with propName, propType, optional, defaultVal, displayName;
+
+nonterminal IdePropertyOption with optionType, optional, defaultVal, displayName;
+nonterminal IdePropertyOptions with optional, defaultVal, displayName;
 
 synthesized attribute propName :: String;
 synthesized attribute propType :: String;
+synthesized attribute optional :: Boolean;
+synthesized attribute defaultVal :: String;
+synthesized attribute displayName :: String;
+
+synthesized attribute optionType :: String;--"optional", "defaultVal"
 
 autocopy attribute startNTName :: String;
 
 abstract production makeIdeProperty
-top::IdeProperty ::= propName::String propType::String
+top::IdeProperty ::= propName::String propType::String options::IdePropertyOptions
 {
   top.propName = propName;
   top.propType = propType;
+  top.optional = options.optional;
+  top.defaultVal = options.defaultVal;
+  top.displayName = if options.displayName == "" then propName else options.displayName;
+}
+
+concrete production nilPropertyOptions
+top::IdePropertyOptions ::= 
+{
+  top.optional = true;--a property is optional by default
+  top.defaultVal = "";--a property's default value is always empty
+  top.displayName = "";--a property's display name is same to its name (propName), see production makeIdeProperty
+}
+
+concrete production consPropertyOptions
+top::IdePropertyOptions ::= opt::IdePropertyOption opts::IdePropertyOptions
+{
+
+  top.optional = if opt.optionType == "optional" then opt.optional else opts.optional;
+  top.defaultVal = if opt.optionType == "default" then opt.defaultVal else opts.defaultVal;
+  top.displayName = if opt.optionType == "display" then opt.displayName else opts.displayName;
+}
+
+concrete production idePropertyOption_optional
+top::IdePropertyOption ::= 'required'
+{
+  top.optionType = "optional";
+  top.optional = false;--a mandatory property
+  top.defaultVal = "";
+  top.displayName = "";
+}
+
+concrete production idePropertyOption_defaultVal
+top::IdePropertyOption ::= 'default' '=' str::String_t
+{
+  top.optionType = "default";
+  top.optional = true;
+  top.defaultVal = substring(1, length(str.lexeme) - 1, str.lexeme);
+  top.displayName = "";
+}
+
+concrete production idePropertyOption_displayName
+top::IdePropertyOption ::= 'display' '=' str::String_t
+{
+  top.optionType = "display";
+  top.optional = true;
+  top.defaultVal = "";
+  top.displayName = substring(1, length(str.lexeme) - 1, str.lexeme);
 }
 
 -- Functions
@@ -280,11 +339,11 @@ top::IdeStmt ::= 'folder' folderName::QName ';'
 }  
 
 concrete production makeIdeStmt_Porperty
-top::IdeStmt ::= 'property' pname::IdLower_t ptype::TypeName ';' 
+top::IdeStmt ::= 'property' pname::IdLower_t ptype::TypeName options::IdePropertyOptions ';' 
 {
   top.funcDcls := [];
 
-  top.propDcls := [makeIdeProperty(pname.lexeme, ptype.propType)];
+  top.propDcls := [makeIdeProperty(pname.lexeme, ptype.propType, options)];
 
   top.errors := [];
 } 

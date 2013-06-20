@@ -8,24 +8,25 @@ import org.eclipse.swt.widgets.Text;
 
 import edu.umn.cs.melt.ide.silver.property.Property;
 
-public class TextPropertyControl implements PropertyControl {
+public class TextPropertyControl extends AbstractPropertyControl {
 
 	private Label info;
 	private Text input;
 	
-	private Composite panel;
-	private String name;
-	
 	public TextPropertyControl(Composite panel, String name){
-		this.panel = panel;
-		this.name = name;
+		super(panel, name);
 	}
 
+	public TextPropertyControl(Composite panel, String name, 
+		String display, String defaultVal, boolean isRequired){
+		super(panel, name, display, defaultVal, isRequired);
+	}
+	
 	@Override
 	public Control getInfoControl() {
 		if(info==null){
 			info = new Label(panel, SWT.NONE);
-			info.setText(name);
+			info.setText(display);
 		}
 		return info;
 	}
@@ -40,12 +41,26 @@ public class TextPropertyControl implements PropertyControl {
 
 	@Override
 	public Property getProperty() {
-		return Property.makeStringProperty(name, input.getText());
+		return Property.makeStringProperty(
+			name, input.getText(), defaultVal, display, isRequired);
 	}
 
 	@Override
 	public boolean validate() {
+		String value = input.getText();
+		if(!isFilled(value)){
+			input.setToolTipText("This field cannot be empty.");
+			input.setBackground(panel.getDisplay().getSystemColor(SWT.COLOR_RED));
+			return false;
+		}
+		
+		reset();
 		return true;
+	}
+
+	private void reset() {
+		input.setToolTipText(null);
+		input.setBackground(panel.getDisplay().getSystemColor(SWT.COLOR_WHITE));
 	}
 
 	@Override
