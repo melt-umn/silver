@@ -110,6 +110,20 @@ public class @LANG_NAME@PropertyPage extends PropertyPage {
 		return true;
 	}
 	
+	@Override
+	public void performDefaults(){
+	    ProjectProperties props = getProperties();
+	    
+		if(controls!=null && props!=null){
+			for(PropertyControl control:controls){
+				Property p = control.getProperty();
+				if(p!=null){
+					control.setValue(p.getDefault());					
+				}
+			}
+		}
+	}
+
 	private ProjectProperties getProperties(){
 		IProject project = getProject();
 	    if (project != null) {

@@ -14,11 +14,20 @@ public class Property {
 	private String name;
 	
 	private Type type;
+
+	private boolean required; //not required by default
+	
+	private String display;
+	
+	private String defaultVal;
 	
 	private String sValue;
 	
 	private int iValue;
 	
+	/**
+	 * Type of property. Mainly determining the behavior of validation.
+	 */
 	public static enum Type {
 		STRING, PATH, URL, INTEGER;
 		
@@ -51,10 +60,19 @@ public class Property {
 	}
 	
 	private Property(String name, Type type, String sValue, int iValue) {
+		this(name, type, sValue, iValue, "", false, "");
+	}
+	
+	private Property(
+		String name, Type type, String sValue, int iValue,
+		String defaultVal, boolean required, String display) {
 		this.name = name;
 		this.type = type;
 		this.sValue = sValue;
 		this.iValue = iValue;
+		this.defaultVal = defaultVal;
+		this.required = required;
+		this.display = display;
 	}
 	
 	/**
@@ -105,14 +123,43 @@ public class Property {
 		return new Property(name, Type.INTEGER, "", val);
 	}
 
+	public static Property makePathProperty(String name, String path, 
+		String defaultVal, String display, boolean required){
+		return new Property(name, Type.PATH, path, 0, defaultVal, required, display);
+	}
+	
+	public static Property makeURLProperty(String name, String url, 
+	String defaultVal, String display, boolean required){
+		return new Property(name, Type.URL, url, 0, defaultVal, required, display);
+	}
+	
+	public static Property makeStringProperty(String name, String str, 
+	String defaultVal, String display, boolean required){
+		return new Property(name, Type.STRING, str, 0, defaultVal, required, display);
+	}
+	
+	public static Property makeIntegerProperty(String name, int val, 
+	String defaultVal, String display, boolean required){
+		return new Property(name, Type.INTEGER, "", val, defaultVal, required, display);
+	}
+	
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * The type of this property, see 
+	 * {@link edu.umn.cs.melt.ide.silver.property.Property.Type Type}.
+	 * @return
+	 */
 	public Type getType() {
 		return type;
 	}
 
+	/**
+	 * Get the value in form of String. Will convert to String if it's not
+	 * string-typed value.
+	 */
 	public String getSValue() {
 		if(type!=Type.INTEGER){
 			return sValue;
@@ -125,6 +172,10 @@ public class Property {
 		this.sValue = sValue;
 	}
 
+	/**
+	 * Get the value in form of integer. Return always 0 if it's not an 
+	 * integer-convertible value.
+	 */
 	public int getIValue() {
 		return iValue;
 	}
@@ -133,5 +184,40 @@ public class Property {
 		this.iValue = iValue;
 	}
 	
-}
+	/**
+	 * Whether this property is required. Used by validation.
+	 * @return true if this property is required, i.e. must be non-empty.
+	 */
+	public boolean isRequired() {
+		return required;
+	}
 
+	/**
+	 * The name of this property to be displayed in UI.
+	 */
+	public String getDisplay() {
+		return display;
+	}
+
+	/**
+	 * The defaultValue of this property. Used also for non-string property.
+	 */
+	public String getDefault() {
+		return defaultVal;
+	}
+	
+	/**
+	 * Reset to default value
+	 */
+	public void reset(){
+		if(type!=Type.INTEGER){
+			setSValue(defaultVal);
+		} else {
+			try {
+				setIValue(Integer.parseInt(defaultVal));
+			} catch (NumberFormatException e) {
+				//Shouldn't happen. Ignored.
+			}
+		}
+	}
+}
