@@ -8,24 +8,25 @@ import org.eclipse.swt.widgets.Text;
 
 import edu.umn.cs.melt.ide.silver.property.Property;
 
-public class IntegerPropertyControl implements PropertyControl {
+public class IntegerPropertyControl extends AbstractPropertyControl {
 
 	private Label info;
 	private Text input;
 	
-	private Composite panel;
-	private String name;
-	
 	public IntegerPropertyControl(Composite panel, String name){
-		this.panel = panel;
-		this.name = name;
+		super(panel, name);
 	}
 
+	public IntegerPropertyControl(Composite panel, String name, 
+		String display, String defaultVal, boolean isRequired){
+		super(panel, name, display, defaultVal, isRequired);
+	}
+	
 	@Override
 	public Control getInfoControl() {
 		if(info==null){
 			info = new Label(panel, SWT.NONE);
-			info.setText(name);
+			info.setText(display);
 			info.setToolTipText("An integer");
 		}
 		return info;
@@ -41,21 +42,17 @@ public class IntegerPropertyControl implements PropertyControl {
 
 	@Override
 	public Property getProperty() {
-		//Always call this after validate()
-		String value = input.getText();
-		if(value==null||"".equals(value)){
-			return null;
-		}
-		
-		return Property.makeIntegerProperty(name, Integer.parseInt(input.getText()));
+		return Property.makeIntegerProperty(
+			name, Integer.parseInt(input.getText()), defaultVal, display, isRequired);
 	}
 	
 	@Override
 	public boolean validate() {
 		String value = input.getText();
-		if(value==null||"".equals(value)){
-			reset();
-			return true;
+		if(!isFilled(value)){
+			input.setToolTipText("This field cannot be empty.");
+			input.setBackground(panel.getDisplay().getSystemColor(SWT.COLOR_RED));
+			return false;
 		}
 		
 		boolean valid = true;

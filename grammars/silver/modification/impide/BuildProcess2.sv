@@ -109,7 +109,13 @@ String ::= propDcls :: [IdeProperty]
 function getProperty2
 String ::= propDcl :: IdeProperty
 {
-  return "		    controls.add(new " ++ getConstructorByType(propDcl.propType) ++ "(panel, \"" ++ propDcl.propName ++"\"));\n";
+  return "            "
+         ++ "controls.add(new " ++ getConstructorByType(propDcl.propType) ++ "(panel, \"" 
+         ++ propDcl.propName ++ "\", \"" 
+         ++ propDcl.displayName ++ "\", \"" 
+         ++ propDcl.defaultVal ++ "\", "
+         ++ (if propDcl.optional then "false" else "true") --translating "optional" to "required" by negating
+         ++ "));\n";
 }
 
 function getConstructorByType
@@ -128,6 +134,9 @@ String ::= propDcls :: [IdeProperty]
   return 
 	"package @PKG_NAME@.eclipse.wizard;\n" ++
 	"\n" ++
+	"import java.util.ArrayList;\n" ++
+	"import java.util.List;\n" ++
+	"\n" ++
 	"public class PropertyGenerator {\n" ++
 	"    \n" ++
 	"    private static String properties = null;\n" ++
@@ -136,14 +145,35 @@ String ::= propDcls :: [IdeProperty]
 	"        if(properties==null){\n" ++
 	"            StringBuilder sb = new StringBuilder();\n" ++
 	"    \n" ++				
-	getProperties(propDcls) ++
+                 getProperties(propDcls) ++
 	"    \n" ++			
 	"            properties = sb.toString();\n" ++
 	"        }\n" ++
 	"    \n" ++		
 	"        return properties;\n" ++
 	"    }\n" ++
-	"\n" ++	
+	"    \n" ++	
+
+	"    private static String escape(String str){\n" ++	
+	"        char[] orig = str.toCharArray();\n" ++	
+	"        List<Character> list = new ArrayList<Character>();\n" ++	
+	"        for(char c:orig){\n" ++	
+	"            if(c=='='||c=='#'||c=='\\\\'||c==':'){\n" ++	
+	"               list.add('\\\\');\n" ++	
+	"            }\n" ++	
+	"            list.add(c);\n" ++	
+	"        }\n" ++	
+	"        \n" ++	      	
+	"        //Convert to a char array\n" ++	
+	"        char[] mod = new char[list.size()];\n" ++	
+	"        for(int i=0;i<mod.length;i++){\n" ++	
+	"            mod[i] = list.get(i);\n" ++	
+	"        }\n" ++	
+	"        \n" ++	    
+	"        return new String(mod);\n" ++	
+	"    }\n" ++	
+	"    \n" ++	
+
 	"}\n";
 }
 
@@ -158,7 +188,10 @@ String ::= propDcls :: [IdeProperty]
 function getProperty
 String ::= propDcl :: IdeProperty
 {
-  return "		sb.append(\"" ++ propDcl.propName ++ "\");sb.append(\"/\");sb.append(\"" ++ propDcl.propType ++ "\");sb.append(\"=\\n\");\n";
+  return "            sb.append(\"" ++ propDcl.propName ++ 
+        "\");sb.append(\"/\");sb.append(\"" ++ propDcl.propType ++ 
+        "=\");sb.append(escape(\"" ++ propDcl.defaultVal ++ 
+        "\"));sb.append(\"\\n\");\n";
 }
 
 function writeNCSSpec
