@@ -86,7 +86,9 @@ IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {
   local buildFile::String = env.generatedPath ++ "/build.xml";
 
-  local grammarName::String = head(getGrammarToCompile(args));
+  local grammarQName::String = head(getGrammarToCompile(args));
+
+  local grammarName::String = substitute(":", ".", grammarQName);
 
   local jarFile::String = env.generatedPath ++ "/" ++ grammarName ++ ".jar";
 
@@ -97,7 +99,7 @@ IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
   local jarExists::IOVal<Boolean> = isFile(jarFile, ant(buildFile, "", "", fileExists.io));
 
   return if !fileExists.iovalue then ioval(perror("Export failed.", i), [makeSysIdeMessage(ideMsgLvError, "build.xml doesn't exist. Has the project been successfully built before?")])
-    else if !jarExists.iovalue then ioval(perror("Export failed.", i), [makeSysIdeMessage(ideMsgLvError, "Ant failed to generated the jar.")])
+    else if !jarExists.iovalue then ioval(perror("Export failed.", i), [makeSysIdeMessage(ideMsgLvError, "Ant failed to generate the jar.")])
     else ioval(copyFile(jarFile, targetFile, jarExists.io), []);
 }
 
