@@ -14,24 +14,25 @@ import org.eclipse.swt.widgets.Text;
 
 import edu.umn.cs.melt.ide.silver.property.Property;
 
-public class PathPropertyControl implements PropertyControl {
+public class PathPropertyControl extends AbstractPropertyControl {
 
 	private Button info;
 	private Text input;
 	
-	private Composite panel;
-	private String name;
-	
 	public PathPropertyControl(Composite panel, String name){
-		this.panel = panel;
-		this.name = name;
+		super(panel, name);
 	}
 
+	public PathPropertyControl(Composite panel, String name, 
+		String display, String defaultVal, boolean isRequired){
+		super(panel, name, display, defaultVal, isRequired);
+	}
+	
 	@Override
 	public Control getInfoControl() {
 		if(info==null){
 			info = new Button(panel, SWT.NONE);
-			info.setText(name);
+			info.setText(display);
 			info.setToolTipText("A local file system path");
 			final Shell shell = panel.getShell();
 			info.addSelectionListener(new SelectionAdapter(){
@@ -57,7 +58,8 @@ public class PathPropertyControl implements PropertyControl {
 
 	@Override
 	public Property getProperty() {
-		return Property.makePathProperty(name, input.getText());
+		return Property.makePathProperty(
+			name, input.getText(), defaultVal, display, isRequired);
 	}
 
 	@Override
@@ -73,9 +75,10 @@ public class PathPropertyControl implements PropertyControl {
 	@Override
 	public boolean validate() {
 		String value = input.getText();
-		if(value==null||"".equals(value)){
-			reset();
-			return true;
+		if(!isFilled(value)){
+			input.setToolTipText("This field cannot be empty.");
+			input.setBackground(panel.getDisplay().getSystemColor(SWT.COLOR_RED));
+			return false;
 		}
 		
 		File f = new File(value);
