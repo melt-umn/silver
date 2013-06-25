@@ -72,7 +72,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, [ntDefGram], top.compiledGrammars);
   
-  top.flowDefs = [
+  top.flowDefs = e.flowDefs ++ [
     fwdEq(top.signature.fullName, e.flowDeps, mayAffectFlowType),
     -- These are attributes that we know, here, occurs on this nonterminal.
     -- The point is, these are the implicit equations we KNOW get generated, so
@@ -102,7 +102,7 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
-  top.flowDefs =
+  top.flowDefs = e.flowDefs ++ 
     case lhs of
     | forwardLhsExpr(q) -> [fwdInhEq(top.signature.fullName, q.attrDcl.fullName, e.flowDeps)]
     end;
@@ -117,13 +117,13 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 aspect production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
-  top.flowDefs = [];
+  top.flowDefs = e.flowDefs;
 }
 
 aspect production errorAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  top.flowDefs = [];
+  top.flowDefs = e.flowDefs;
 }
 
 aspect production synthesizedAttributeDef
@@ -138,7 +138,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, srcGrams, top.compiledGrammars);
   
-  top.flowDefs = 
+  top.flowDefs = e.flowDefs ++
     case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
     | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.attrDcl.fullName, e.flowDeps)]
     | _ -> [synEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
@@ -147,7 +147,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  top.flowDefs = 
+  top.flowDefs = e.flowDefs ++
     case dl of
     | childDefLHS(q) -> [inhEq(top.signature.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
     | localDefLHS(q) -> [localInhEq(top.signature.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
@@ -162,12 +162,13 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   -- TODO: So, I'm just going to assume for the moment that we're always allowed to define the eq for a local...
   -- technically, it's possible to break this if you declare it in one grammar, but define it in another, but
   -- I think we should forbid that syntactically, later on...
-  top.flowDefs = [localEq(top.signature.fullName, val.lookupValue.fullName, val.lookupValue.typerep.typeName, e.flowDeps)];
+  top.flowDefs = e.flowDefs ++
+    [localEq(top.signature.fullName, val.lookupValue.fullName, val.lookupValue.typerep.typeName, e.flowDeps)];
 }
 aspect production errorValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  top.flowDefs = [];
+  top.flowDefs = e.flowDefs;
 }
 
 -- FROM COLLECTIONS TODO
@@ -180,7 +181,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, [ntDefGram, attr.dcl.sourceGrammar], top.compiledGrammars);
 
-  top.flowDefs = [extraEq(top.signature.fullName, lhsSynVertex(attr.attrDcl.fullName), e.flowDeps, mayAffectFlowType)];
+  top.flowDefs = e.flowDefs ++
+    [extraEq(top.signature.fullName, lhsSynVertex(attr.attrDcl.fullName), e.flowDeps, mayAffectFlowType)];
 }
 
 aspect production inhAppendColAttributeDef
@@ -193,7 +195,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
     | forwardDefLHS(q) -> forwardVertex(attr.attrDcl.fullName)
     | _ -> localEqVertex("bogus:value:from:inhcontrib:flow")
     end;
-  top.flowDefs = [extraEq(top.signature.fullName, vertex, e.flowDeps, true)];
+  top.flowDefs = e.flowDefs ++
+    [extraEq(top.signature.fullName, vertex, e.flowDeps, true)];
 }
 aspect production synBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
@@ -207,7 +210,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, srcGrams, top.compiledGrammars);
   
-  top.flowDefs = 
+  top.flowDefs = e.flowDefs ++
     case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
     | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.attrDcl.fullName, e.flowDeps)]
     | _ -> [synEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
@@ -216,7 +219,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  top.flowDefs = 
+  top.flowDefs = e.flowDefs ++
     case dl of
     | childDefLHS(q) -> [inhEq(top.signature.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
     | localDefLHS(q) -> [localInhEq(top.signature.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
@@ -241,7 +244,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   -- If we do, we'll have to come back here to add 'location' info anyway,
   -- so if we do that, uhhh... fix this! Because you're here! Reading this!
 
-  top.flowDefs = 
+  top.flowDefs = e.flowDefs ++
     if mayAffectFlowType
     then [extraEq(top.signature.fullName, localEqVertex(val.lookupValue.fullName), e.flowDeps, true)]
     else [];
@@ -251,25 +254,25 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 aspect production pluckDef
 top::ProductionStmt ::= 'pluck' e::Expr ';'
 {
-  top.flowDefs = [];
+  top.flowDefs = e.flowDefs;
 }
 
 aspect production printStmt
 top::ProductionStmt ::= 'print' e::Expr ';'
 {
-  top.flowDefs = [];
+  top.flowDefs = e.flowDefs;
 }
 
 aspect production parserAttributeValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  top.flowDefs = [];
+  top.flowDefs = e.flowDefs;
 }
 
 aspect production termAttrValueValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  top.flowDefs = [];
+  top.flowDefs = e.flowDefs;
 }
 
 
