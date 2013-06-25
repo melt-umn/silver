@@ -345,8 +345,29 @@ top::IdeStmt ::= 'property' pname::IdLower_t ptype::TypeName options::IdePropert
 
   top.propDcls := [makeIdeProperty(pname.lexeme, ptype.propType, options)];
 
-  top.errors := [];
+  local defaultVal :: String = getDefaultVal(options);
+
+  top.errors := if ptype.propType=="integer"
+                then if (defaultVal=="" || isDigit(defaultVal))
+                     then []
+                     else [err($1.location, "The default value for integer property must be of integer type.\nInstead it is \"" ++ defaultVal ++ "\".")]
+                else [];
 } 
+
+function getDefaultVal
+String ::= options::IdePropertyOptions
+{
+  return
+    case options of
+      nilPropertyOptions() ->
+        ""
+    | consPropertyOptions(ht, tl) ->
+        if ht.optionType == "default"
+        then ht.defaultVal
+        else getDefaultVal(tl)
+ -- | _ -> ""
+    end;
+}
 
 concrete production makeIdeStmt_Product
 top::IdeStmt ::= 'product' '{' dcls::IdeProductInfoDcls '}' 
