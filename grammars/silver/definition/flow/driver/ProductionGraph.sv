@@ -134,7 +134,11 @@ ProductionGraph ::= prod::String  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
     normalEdges ++
     (if nonForwarding
      then addDefEqs(prod, nt, syns, flowEnv)
-     else addFwdEqs(syns) ++ addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ addFwdInhEqs(prod, inhs, flowEnv)) ++
+     else -- This first pair is used sometimes as an alias:
+          pair(lhsSynVertex("forward"), forwardEqVertex()) ::
+          addFwdEqs(syns) ++ 
+          addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ 
+          addFwdInhEqs(prod, inhs, flowEnv)) ++
     fixupAllHOAs(defs, flowEnv, realEnv) ++
     addAllAutoCopyEqs(prod, dcl.namedSignature.inputElements, autos, flowEnv, realEnv);
   
@@ -202,7 +206,7 @@ function addFwdEqs
 }
 {--
  - Introduces implicit 'lhs.syn -> forward.syn' equations.
- - TODO: BUG: these should be suspect only when they're introduced externally!!!
+ - Called twice: once for safe edges, later for SUSPECT edges!
  -}
 function addFwdSynEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String] flowEnv::Decorated FlowEnv
