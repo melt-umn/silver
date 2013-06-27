@@ -97,7 +97,7 @@ terminal Equal_t       '='   lexer classes {SPECOP};
 ignore terminal BlockComments /\{\-([^\-]|\-+[^\}\-])*\-+\}/ lexer classes {COMMENT};
 ignore terminal Comments /([\-][\-].*)/ lexer classes {COMMENT};
 
-ignore terminal WhiteSpace /[\n\t\ ]+/;
+ignore terminal WhiteSpace /[\r\n\t\ ]+/;
 
 terminal IdLower_t /[a-z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
 terminal IdUpper_t /[A-Z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
