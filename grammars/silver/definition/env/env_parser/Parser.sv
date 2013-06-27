@@ -9,7 +9,7 @@ import silver:definition:core only grammarName, env;
 lexer class C_0;
 lexer class C_1 dominates C_0;
 
-ignore terminal WS /[\ \n\t]+/ lexer classes {C_0};
+ignore terminal WS /[\ \r\n\t]+/ lexer classes {C_0};
 
 terminal LB_t    '[';
 terminal RB_t    ']';

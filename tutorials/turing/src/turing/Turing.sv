@@ -60,7 +60,7 @@ terminal LoadTerminal    /load/    lexer classes {KEYWORD};
 
 terminal LeftCurl    /[\{]/;
 terminal RightCurl   /[\}]/;
-terminal Arrow       /[\-][\ \t\n]*[\>]/;
+terminal Arrow       /[\-][\ \t\r\n]*[\>]/;
 terminal Colon       /[\:]/;
 terminal SemiColon   /[\;]/;
 terminal LeftSquare  /[\[]/;
@@ -70,7 +70,7 @@ terminal Comma       /[\,]/;
 terminal IdTerminal /[0-9A-Za-z]+/ lexer classes{IDENTIFIER};
 terminal StringTerminal /[\"]([^\"]|([\\][\"]))*[\"]/;
 
-ignore terminal WhiteSpace /[\n\t\ ]+/;
+ignore terminal WhiteSpace /[\r\n\t\ ]+/;
 ignore terminal LineComment /\/\/[^\r\n]*/;
 
 
