@@ -3,7 +3,7 @@ grammar lambda;
 {- Ignore terminals define the whitespace for the grammar, as a whole.
  - We also typically include comments
  -}
-ignore terminal WhiteSpace /[\t\n\ ]+/;
+ignore terminal WhiteSpace /[\t\r\n\ ]+/;
 
 {- Operator precedence and associativity can be specified directly.
  - Higher values indicate higher precedence operators.

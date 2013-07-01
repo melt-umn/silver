@@ -18,7 +18,7 @@ terminal CommandAlt_t /.*/ submits to {LineComment, BlockComment, WhiteSpace};  
 ignore terminal LineComment  /[\/][\/].*/ ;
 ignore terminal BlockComment 
                 /[\/][\*]([^\*]|[\r\n]|([\*]+([^\*\/]|[\r\n])))*[\*]+[\/]/ ;
-ignore terminal WhiteSpace   /[\n\t\ ]+/ ;
+ignore terminal WhiteSpace   /[\r\n\t\ ]+/ ;
 
 synthesized attribute ioResult :: IOVal<Integer> ;
 inherited attribute ioInput :: IOVal<Integer> ;

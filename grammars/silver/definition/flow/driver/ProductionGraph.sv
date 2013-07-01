@@ -275,9 +275,9 @@ function localStitchPoints
   -- We add the forward stitch point here, too!
   | fwdEq(_, _, _) :: rest -> nonterminalStitchPoint(nt, forwardVertex) :: localStitchPoints(nt, rest)
   -- Ignore locals that aren't nonterminal types!
-  | localEq(_, fN, "", deps) :: rest -> localStitchPoints(nt, rest)
+  | localEq(_, fN, "", _) :: rest -> localStitchPoints(nt, rest)
   -- Add locals that are nonterminal types.
-  | localEq(_, fN, tN, deps) :: rest -> nonterminalStitchPoint(tN, localVertex(fN, _)) :: localStitchPoints(nt, rest)
+  | localEq(_, fN, tN, _) :: rest -> nonterminalStitchPoint(tN, localVertex(fN, _)) :: localStitchPoints(nt, rest)
   -- Ignore all other flow def info
   | _ :: rest -> localStitchPoints(nt, rest)
   end;
