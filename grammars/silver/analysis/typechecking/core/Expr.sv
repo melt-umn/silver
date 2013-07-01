@@ -171,12 +171,12 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production terminalAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.upSubst = e.downSubst;
+  top.upSubst = top.downSubst;
 }
 aspect production annoAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.upSubst = e.downSubst;
+  top.upSubst = top.downSubst;
 }
 
 
