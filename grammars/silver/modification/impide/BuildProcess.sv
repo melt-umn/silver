@@ -478,7 +478,16 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "        tofile=\"${ide.pkg.path}/eclipse/console/${lang.name}Console.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
-    "  <!-- 9. pom.xml (using tycho) for building plugin, feature and repository -->\n" ++
+    "  <!-- 9. IDE runtime/Silver Eclipse API supports -->\n" ++
+    "  <mkdir dir='${ide.pkg.path}/silver/cst'/>\n" ++
+    "  <!-- CST traversal service -->\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/silver/cst/DefinitionFinder.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/silver/cst/DefinitionFinder.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/silver/cst/NonTerminalFinder.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/silver/cst/NonTerminalFinder.java\" filtering=\"true\"/>\n" ++
+    "  \n" ++
+
+    "  <!-- 10. pom.xml (using tycho) for building plugin, feature and repository -->\n" ++
     "  <!-- parent -->\n" ++
     "  <copy file=\"${res}/pom_templates/parent.pom.xml.template\" tofile=\"${ide.proj.parent.path}/pom.xml\" filtering=\"true\"/>\n" ++
     "  <!-- plugin -->\n" ++
@@ -495,7 +504,7 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "  <copy file=\"${res}/pom_templates/updatesite_templates/pom.xml.template\" tofile=\"${ide.proj.updatesite.path}/pom.xml\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
-    "  <!-- 10. eclipse project -->\n" ++
+    "  <!-- 11. eclipse project -->\n" ++
     "  <!-- These files are essential to opening the generated plugin in a local Eclipse application as a Java project. -->\n" ++
     "  <copy file=\"${res}/project.template\" tofile=\"${ide.proj.plugin.path}/.project\" filtering=\"true\"/>\n" ++
     -- commented out to support different build modes

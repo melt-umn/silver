@@ -1,0 +1,105 @@
+/*
+ * Variables used:
+ *   PKG_NAME
+ */
+package @PKG_NAME@.silver.cst;
+
+import common.DecoratedNode;
+import common.Node;
+import common.TerminalRecord;
+
+import core.NLocation;
+import edu.umn.cs.melt.ide.util.cst.CSTNodeFinder;
+
+public class NonTerminalFinder extends CSTNodeFinder {
+
+	private Object visiting;
+	
+	private boolean foundCandidate;
+	
+	public NonTerminalFinder(String[] names, int index, int endIndex){
+		super(names, index, endIndex);
+	}
+	
+	@Override
+	public boolean visitNode(Node node) {
+		if(foundCandidate){
+			//We already found one, so we won't replace it with another at a deeper level of CST
+			return false;
+		}
+		
+		//Is this node what we want?
+		foundCandidate = matches(node.getName());
+		if(foundCandidate){
+			//Yes, cache it
+			visiting = node;
+		}
+		
+		//Always return false. We don't abort traversing from this method.
+		return false;
+	}
+	
+	@Override
+	public boolean visitDecoratedNode(DecoratedNode dn) {
+		if(foundCandidate){
+			//We already found one, so we won't replace it with another at a deeper level of CST
+			return false;
+		}
+		
+		//Is this node what we want?
+		foundCandidate = matches(dn.undecorate().getName());
+		if(foundCandidate){
+			//Yes, cache it
+			visiting = dn;
+		}
+		
+		//Always return false. We don't abort traversing from this method.
+		return false;
+	}
+
+	private boolean matches(String name) {
+		for(String s:names){
+			if(s.equals(name)){
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	@Override
+	public boolean visitTerminal(TerminalRecord term) {
+		if(!foundCandidate){
+			//If we have not yet found a candidate NT, it's pointless to continue
+			return false;
+		}
+		
+		//Now we get the the location of this terminal
+		NLocation loc = term.location;
+		
+    	common.DecoratedNode locDecNode = loc.decorate(common.TopNode.singleton, (common.Lazy[])null);
+    	
+    	Integer startInd = (Integer) locDecNode.synthesized(
+        		core.Init.core_index__ON__core_Location);
+    
+    	Integer endInd = (Integer) locDecNode.synthesized(
+        		core.Init.core_endIndex__ON__core_Location);
+    	
+    	//And check if the expected index falls in between the scope of ths terminal
+    	if(startInd<=index && index <=endInd){
+    		//System.out.println("Found NT spannig over [" + startInd + ", " + endInd + "]");
+    		return true; //We found it! Now abort traversing.
+    	}
+		
+    	//Invalidate what we've identified as candidate
+        foundCandidate = false;
+
+    	//This is not the one we are expecting
+		return false;
+	}
+	
+	public Object getFound(){
+		return visiting;
+	}
+
+}
