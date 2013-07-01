@@ -105,14 +105,16 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
   local attribute ugh_dcl_hack :: DclInfo;
   ugh_dcl_hack = head(getValueDclAll(fName, top.env)); -- TODO
   
-  top.setupInh <- "\t\t" ++ makeName(prod_orig_grammar) ++ ".P" ++ prod_orig_name ++ ".occurs_local[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = \"" ++ fName ++ "\";\n";
   top.valueWeaving := "public static final int " ++ ugh_dcl_hack.attrOccursIndexName ++ " = " ++ makeName(prod_orig_grammar) ++ ".Init.count_local__ON__" ++ makeIdName(top.signature.fullName) ++ "++;\n";
 
-  top.setupInh := if !te.typerep.isDecorable then  "" else
-                 "\t\t//" ++ top.pp ++ "\n" ++
-                 "\t\t" ++ 
-                 makeClassName(top.signature.fullName) ++ ".localInheritedAttributes[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = " ++ 
-                                           "new common.Lazy[" ++ makeNTClassName(te.typerep.typeName) ++ ".num_inh_attrs];\n";
+  top.setupInh := 
+    if !te.typerep.isDecorable then  "" else
+    "\t\t//" ++ top.pp ++ "\n" ++
+    "\t\t" ++ makeClassName(top.signature.fullName) ++ ".localInheritedAttributes[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = " ++ 
+      "new common.Lazy[" ++ makeNTClassName(te.typerep.typeName) ++ ".num_inh_attrs];\n";
+
+  top.setupInh <- "\t\t" ++ makeName(prod_orig_grammar) ++ ".P" ++ prod_orig_name ++ ".occurs_local[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = \"" ++ fName ++ "\";\n";
+
   top.translation = "";
 }
 

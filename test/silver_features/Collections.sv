@@ -13,6 +13,7 @@ top::ColNT ::=
   top.colSyn := "(" ++ top.colInh ++ ")";
 }
 
+-- Actually, this is sorta weird: a inherited collection defined using just '=' a problem?
 equalityTest ( decorate colLeaf() with {colInh = "x";}.colSyn, "(x)", String, silver_tests ) ;
 
 abstract production colNode
@@ -61,6 +62,16 @@ top::ColNT ::=
 
 equalityTest ( colFwdNode(colProdLeaf()).colSyn, " j  k  j  k  b  q ", String, silver_tests ) ;
 equalityTest ( colNode(colProdLeaf(), colLeaf()).colSyn, " j  k ( d  e ) b ", String, silver_tests ) ;
+
+function testLocalInheritedCollections
+String ::=
+{
+  t.colInh := "x";
+  local t :: ColNT = colLeaf();
+  return t.colSyn;
+}
+
+equalityTest ( testLocalInheritedCollections(), "(x)", String, silver_tests ) ;
 
 -- Tests involving collection/noncollection assignments
 --------------------------------------------------------------------------------
