@@ -89,3 +89,4 @@ top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
   -- TODO: We don't seem to use this. Perhaps we should remove it?
   top.applicationDispatcher = functionApplication(_, _, _, location=_);
 }
+
