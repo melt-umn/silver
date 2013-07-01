@@ -21,6 +21,6 @@ terminal RParen_t ')' ;
    comments.  
 -}
 
-ignore terminal WhiteSpace_t /[\t\n\ ]+/  ;
+ignore terminal WhiteSpace_t /[\t\r\n\ ]+/  ;
 ignore terminal LineComment_P  /[\/][\/].*/  ;
 
