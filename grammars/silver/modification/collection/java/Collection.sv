@@ -11,27 +11,29 @@ import silver:translation:java:type;
 import silver:definition:type;
 import silver:definition:type:syntax;
 
-
 {-
-
-  The initialization order is a bit scattered.
+  The initialization order is a bit scattered. There a several problems.
   
-  For locals, the common.CollectionAttribute object is created by the 'prod attr foo...' declaration.
-  For inherited attributes, CA object is created when base is defined.
-  For synthesized attributes, CA object is created conditionally at EVERY := or <- decl.
+  ONE: Grammars can have cyclic dependencies. As a result,
+  we can never rely on the declaration, or the base (:=), appearing before
+  a contribution (<-).
 
-  Why the above difference?  Something to do with initialization order that I forgot.
-  The problem was for synthesized only.  Something about trying to add to the CA object before it was created.
+  TWO: Production bodies are unordered. So even within one block of code,
+  it's quite possible for an assignment to preceed a declaration.
+  Or a contribution to preceed a base.
   
-  	This justification might be wrong. Perhaps I just didn't understand the ordering problem at the time I "fixed" it.
-  	Thought required. This whole thing needs refactoring, anyhow.
-
-  Synthesized and inherited get a CA class file.
-  	Syn will auto look to forward
-  	Inh will not!
-  Production are anonymous as they are never repeated.
+  For LOCALS, it's okay to create the CA object at declaration with setupInh.
+  The array was created a couple of lines up.
   
-
+  For SYN, it might be okay to? I'm not sure. Playing it safe for now.
+  
+  For INH, you can't for sure use setupInh. You might be defining an inherited
+  attribute on a local that hasn't had it's inherited array created yet.
+  e.g.  
+    x.inh := ...
+    local attribute x :: ....
+    N.B. that's an ordinary local, we're talking about inherited collections here,
+      not local collections.
 -}
 
 synthesized attribute frontTrans :: String;
@@ -96,6 +98,12 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
 
   local attribute ugh_dcl_hack :: DclInfo;
   ugh_dcl_hack = head(getValueDclAll(fName, top.env)); -- TODO
+
+  -- Unlike synthesized and inherited attributes, locals can cheat because we know exactly
+  -- when the array we're indexing into was created: a couple of statements up from
+  -- exactly here.
+  
+  -- So we'll create the collection attribute object here, and not worry.
 
   top.setupInh <-
         "\t\t" ++ className ++ ".localAttributes[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = new common.CollectionAttribute(){\n" ++ 
@@ -174,9 +182,9 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te:
 aspect production baseCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  local attribute className :: String;
-  className = makeClassName(top.signature.fullName);
+  local className :: String = makeClassName(top.signature.fullName);
 
+  -- for locals, the CA object was created already
   top.translation =
         "\t\t// " ++ val.pp ++ " := " ++ e.pp ++ "\n" ++
         "\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes[" ++ val.lookupValue.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
@@ -187,6 +195,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   local attribute className :: String;
   className = makeClassName(top.signature.fullName);
 
+  -- for locals, the CA object was created already
   top.translation = 
         "\t\t// " ++ val.pp ++ " <- " ++ e.pp ++ "\n" ++
         "\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes[" ++ val.lookupValue.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";
@@ -213,15 +222,10 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- := -} e::Expr
 {
-  top.setupInh := 
-        "\t\tif(" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] == null)\n" ++
-        "\t\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.attrDcl.fullName) ++"();\n";
-
-
   top.translation =
         "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ "\n" ++
-        --"\t\tif(" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] == null)\n" ++
-        --"\t\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.attrDcl.fullName) ++ "();\n" ++
+        "\t\tif(" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] == null)\n" ++
+        "\t\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.attrDcl.fullName) ++ "();\n" ++
         "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
 }
 aspect production inhAppendColAttributeDef
