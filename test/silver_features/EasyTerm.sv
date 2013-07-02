@@ -14,3 +14,14 @@ wrongCode "Found ambiguous possibilities for 'single'" {
  terminal Dupe2 'single';
  global t :: Single_t = 'single';
 }
+
+-- This isn't easy term, exactly, but this was a bug related to terminal attribute access,
+-- where type information was not properly propagated.
+terminal Term 'term';
+
+global tl :: [Term] = [terminal(Term, "hi"), terminal(Term, "hello")];
+
+-- these should not result in java compiler errors:
+global error23423 :: String = head(tl).lexeme;
+global error23424 :: Location = head(tl).location;
+
