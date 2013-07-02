@@ -61,15 +61,9 @@ public class Export@LANG_NAME@ implements IWorkbenchWindowActionDelegate {
 					@LANG_NAME@Service.convertToNIdePropertyList(props), env);
 				
 				boolean success = Utility.renderMessages(list, fProject, EXPORT_HANDLER);
-				
-				try {
-					fProject.refreshLocal(IResource.DEPTH_INFINITE, monitor);
 					
-					if(success){
-						@LANG_NAME@Console.getConsoleLoggingStream().info("Export done.");
-					}
-				} catch (CoreException e) {
-					e.printStackTrace();
+				if(success){
+					@LANG_NAME@Console.getConsoleLoggingStream().info("Export done.");
 				}
 				
 				return Status.OK_STATUS;

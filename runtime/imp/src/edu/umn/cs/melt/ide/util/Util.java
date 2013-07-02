@@ -1,6 +1,7 @@
 package edu.umn.cs.melt.ide.util;
 
-import org.eclipse.ant.core.AntRunner;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 
 import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
@@ -64,5 +65,55 @@ public final class Util {
 	
 	public static interface IAntRunnable {
 		void ant(String buildFile, String arguments, String target);
+	}
+	
+	/* Project-related operations */
+	
+	/**
+	 * Refresh project with given name. Return false if found. Newly found project
+	 * will be cached.
+	 * 
+	 * @param projectName
+	 * @param depth	the depth down to which to refresh this project. Can only
+	 * use predefined constants from {@link org.eclipse.core.resources.IResource IResource},
+	 * including DEPTH_ZERO, DEPTH_ONE, DEPTH_INFINITE
+	 */
+	public static synchronized Object refresh(String projectName, int depth){
+		if(findProject(projectName)){
+			try {
+				activeProject.refreshLocal(depth, null);
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return null;
+	}
+	
+	private static IProject activeProject;
+	
+	/**
+	 * Find project with given name. Return false if found. Newly found project
+	 * will be cached.
+	 * 
+	 * @param projectName
+	 * @return false if no project is found; true otherwise
+	 */
+	private static boolean findProject(String projectName){
+		if(activeProject!=null && projectName.equals(activeProject.getName())){
+			return true;
+		}
+		
+		IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+		if(projects!=null){
+			for(IProject pr:projects){
+				if(pr.getName().equals(projectName)){
+					activeProject = pr;
+					return true;
+				}
+			}
+		}
+		
+		return false;
 	}
 }
