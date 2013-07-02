@@ -100,7 +100,7 @@ IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 
   return if !fileExists.iovalue then ioval(perror("Export failed.", i), [makeSysIdeMessage(ideMsgLvError, "build.xml doesn't exist. Has the project been successfully built before?")])
     else if !jarExists.iovalue then ioval(perror("Export failed.", i), [makeSysIdeMessage(ideMsgLvError, "Ant failed to generate the jar.")])
-    else ioval(copyFile(jarFile, targetFile, jarExists.io), []);
+    else ioval(refresh(env.projectName, ideDepthOne, copyFile(jarFile, targetFile, jarExists.io)), []);
 }
 
 function generate
