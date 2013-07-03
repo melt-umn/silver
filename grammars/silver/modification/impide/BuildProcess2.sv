@@ -212,7 +212,7 @@ IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[Parser
   parserName = makeParserName(p.fullName);
 
   local attribute copperFile :: String;
-  copperFile = silvergen ++ grammarToPath(p.sourceGrammar) ++ parserName ++ "_ide.copper";
+  copperFile = getIDEParserFile(p.sourceGrammar, parserName, silvergen);
 
   local attribute printio :: IO;
   printio = print("\t[" ++ p.fullName ++ "]\n", i);

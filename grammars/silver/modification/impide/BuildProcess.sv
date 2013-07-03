@@ -21,9 +21,8 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
 
   local parserClassName :: String = makeParserName(ide.ideParserSpec.fullName);
   local parserPackageName :: String = makeName(ide.ideParserSpec.sourceGrammar);
-  local parserPackagePath :: String = grammarToPath(ide.ideParserSpec.sourceGrammar);
-  local parserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ ".copper";
-  local ideParserFullPath :: String = "${src}/" ++ parserPackagePath ++ parserClassName ++ "_ide.copper";
+  local parserPackagePath :: String = grammarToPath2(ide.ideParserSpec.sourceGrammar);
+  local ideParserFullPath :: String = getIDEParserFile(ide.ideParserSpec.sourceGrammar, parserClassName, "${src}/");
   local delegateBuilderName :: String = getDelegateBuilderName(ide.funcDcls);
   local actionExportName :: String = findFunction(ide.funcDcls, "exporter", "ExportLANG", "ExportDummy"); --getExportActionName(ide.funcDcls);
   local folderFileName :: String = findFunction(ide.funcDcls, "folder", "LANGFoldingUpdater", "DummyFoldingUpdater");
@@ -51,7 +50,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     "<property name='ide.pkg.path' location='${ide.proj.plugin.path}/src/" ++ pkgToPath(pkgName) ++ "'/>", 
     "<property name='ide.parser.package' value='" ++ parserPackageName ++ "' />",
     "<property name='ide.parser.classname' value='" ++ parserClassName ++ "' />",
-    "<property name='ide.parser.copperfile' value='" ++ parserFullPath ++ "' />",
+    --"<property name='ide.parser.copperfile' value='" ++ parserFullPath ++ "' />",
     "<property name='ide.parser.ide_copperfile' value='" ++ ideParserFullPath ++ "' />",
     "<property name='ide.delegate.builder.name' value='" ++ delegateBuilderName ++ "' />",
     "<property name='ide.fileextension' value='" ++ ide.ideExtension ++ "' />"] ++ 
@@ -628,5 +627,11 @@ function grammarToExportString
 String ::= g::String
 {
   return makeName(g) ++ ";version=\"${ide.version}\"";
+}
+
+function getIDEParserFile
+String ::= grammarName::String parserClassName::String silverGen::String
+{
+  return silverGen ++ grammarToPath2(grammarName) ++ parserClassName ++ "_ide.copper";
 }
 
