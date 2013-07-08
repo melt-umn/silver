@@ -22,6 +22,10 @@ terminal LocalTerm 	 'local' lexer classes {C_1};
 terminal LocalInhTerm 	 'localInh' lexer classes {C_1};
 terminal FwdInhTerm 	 'fwdInh' lexer classes {C_1};
 terminal ExtraTerm 	 'extra' lexer classes {C_1};
+terminal AnonEqVTerm     'anonEqV' lexer classes {C_1};
+terminal AnonVTerm 	 'anonV' lexer classes {C_1}; 
+terminal AnonTerm 	 'anon' lexer classes {C_1}; 
+terminal AnonInhTerm 	 'anonInh' lexer classes {C_1};
 
 attribute flowDefs occurs on IRoot, IRootPart;
 
@@ -114,6 +118,16 @@ top::IFlowVertex ::= 'localV' '(' fname::IName ',' attr::IName ')'
 {
   top.flowDeps = [localVertex(fname.aname, attr.aname)];
 }
+concrete production aFlowanonEqV_vertex
+top::IFlowVertex ::= 'anonEqV' '(' fname::IName ')'
+{
+  top.flowDeps = [anonEqVertex(fname.aname)];
+}
+concrete production aFlowanonV_vertex
+top::IFlowVertex ::= 'anonV' '(' fname::IName ',' attr::IName ')'
+{
+  top.flowDeps = [anonVertex(fname.aname, attr.aname)];
+}
 
 
 
@@ -199,5 +213,15 @@ concrete production aFlowExtra
 top::IFlow ::= 'extra' '(' prod::IName ',' ifv::IFlowVertex ',' fv::IFlowVertexes ',' a::IBool ')'
 {
   top.flowDefs = [extraEq(prod.aname, head(ifv.flowDeps), fv.flowDeps, a.bval)];
+}
+concrete production aFlowAnonEq
+top::IFlow ::= 'anon' '(' prod::IName ',' fname::IName ',' typeName::IName ',' l::ILocation ',' fv::IFlowVertexes ')'
+{
+  top.flowDefs = [anonEq(prod.aname, fname.aname, typeName.aname, l.alocation, fv.flowDeps)];
+}
+concrete production aFlowAnonInhEq
+top::IFlow ::= 'anonInh' '(' prod::IName ',' fname::IName ',' attr::IName ',' fv::IFlowVertexes ')'
+{
+  top.flowDefs = [anonInhEq(prod.aname, fname.aname, attr.aname, fv.flowDeps)];
 }
 

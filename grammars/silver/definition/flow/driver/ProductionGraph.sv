@@ -179,11 +179,19 @@ function fixupAllHOAs
   | [] -> []
   | localEq(_, fN, "", deps) :: rest -> fixupAllHOAs(rest, flowEnv, realEnv)
   | localEq(_, fN, tN, deps) :: rest -> 
-      addHOASynDeps(
+      let syns :: [String] = 
         map((.attrOccurring),
           filter(isOccursSynthesized(_, realEnv),
-            getAttrsOn(tN, realEnv))), fN) ++
-      fixupAllHOAs(rest, flowEnv, realEnv)
+            getAttrsOn(tN, realEnv)))
+      in addHOASynDeps(syns, fN) ++
+        fixupAllHOAs(rest, flowEnv, realEnv) end
+  | anonEq(_, fN, tN, _, deps) :: rest -> -- exact duplicate of the above. It'd be nice to have multiple patterns with one body...
+      let syns :: [String] = 
+        map((.attrOccurring),
+          filter(isOccursSynthesized(_, realEnv),
+            getAttrsOn(tN, realEnv)))
+      in addAnonSynDeps(syns, fN) ++
+        fixupAllHOAs(rest, flowEnv, realEnv) end
   | _ :: rest -> fixupAllHOAs(rest, flowEnv, realEnv)
   end;
 }
@@ -193,6 +201,12 @@ function addHOASynDeps
 {
   return if null(synattrs) then []
   else pair(localVertex(fName, head(synattrs)), localEqVertex(fName)) :: addHOASynDeps(tail(synattrs), fName);
+}
+function addAnonSynDeps
+[Pair<FlowVertex FlowVertex>] ::= synattrs::[String]  fName::String
+{
+  return if null(synattrs) then []
+  else pair(anonVertex(fName, head(synattrs)), anonEqVertex(fName)) :: addAnonSynDeps(tail(synattrs), fName);
 }
 {--
  - Introduces implicit 'forward.syn -> forward' equations.
@@ -278,6 +292,8 @@ function localStitchPoints
   | localEq(_, fN, "", _) :: rest -> localStitchPoints(nt, rest)
   -- Add locals that are nonterminal types.
   | localEq(_, fN, tN, _) :: rest -> nonterminalStitchPoint(tN, localVertex(fN, _)) :: localStitchPoints(nt, rest)
+  -- Add all anon decoration sites
+  | anonEq(_, fN, tN, _, _) :: rest -> nonterminalStitchPoint(tN, anonVertex(fN, _)) :: localStitchPoints(nt, rest)
   -- Ignore all other flow def info
   | _ :: rest -> localStitchPoints(nt, rest)
   end;

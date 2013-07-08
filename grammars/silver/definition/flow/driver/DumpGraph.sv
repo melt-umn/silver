@@ -147,4 +147,14 @@ top::FlowVertex ::= fName::String  attrName::String
 {
   top.dotName = fName ++ "/" ++ attrName;
 }
+aspect production anonEqVertex
+top::FlowVertex ::= fName::String
+{
+  top.dotName = fName;
+}
+aspect production anonVertex
+top::FlowVertex ::= fName::String  attrName::String
+{
+  top.dotName = fName ++ "/" ++ attrName;
+}
 

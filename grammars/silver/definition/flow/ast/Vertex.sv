@@ -71,7 +71,7 @@ top::FlowVertex ::= fName::String
  - above IS a nonterminal type!
  -
  - @param fName  the full name of the NTA/FWD
- - @param attrName  the fulle name of the attribute on that element
+ - @param attrName  the full name of the attribute on that element
  -}
 abstract production localVertex
 top::FlowVertex ::= fName::String  attrName::String
@@ -117,6 +117,31 @@ FlowVertex ::=
   return localVertex("forward", "forward");
 }
 
+{--
+ - A vertex representing an anonymous equation. i.e. a 'decorate e with..'
+ - expression, this production will represent 'e'.
+ -
+ - @param fName  an anonymous name (typically generated with genInt)
+ -}
+abstract production anonEqVertex
+top::FlowVertex ::= fName::String
+{
+  top.unparse = "anonEqV(" ++ quoteString(fName) ++ ")";
+}
+
+{--
+ - A vertex representing an attribute on an anonymous equation.
+ - e.g. 'decorate e with { a = d }' this represents 'e_nt.a's deps 'd'.
+ -
+ - @param fName  the anonymous name
+ - @param attrName  the full name of the attribute on that element
+ -}
+abstract production anonVertex
+top::FlowVertex ::= fName::String  attrName::String
+{
+  top.unparse = "anonV(" ++ quoteString(fName) ++ ", " ++ quoteString(attrName) ++ ")";
+}
+
 --------------------------------------------------------------------------------
 
 function unparseVertices
@@ -134,6 +159,8 @@ Boolean ::= a::FlowVertex  b::FlowVertex
   | rhsVertex(s1, a1), rhsVertex(s2, a2) -> s1 == s2 && a1 == a2
   | localEqVertex(f1), localEqVertex(f2) -> f1 == f2
   | localVertex(f1, a1), localVertex(f2, a2) -> f1 == f2 && a1 == a2
+  | anonEqVertex(f1), anonEqVertex(f2) -> f1 == f2
+  | anonVertex(f1, a1), anonVertex(f2, a2) -> f1 == f2 && a1 == a2
   | _, _ -> false
   end;
 }

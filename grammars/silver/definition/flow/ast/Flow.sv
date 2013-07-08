@@ -325,6 +325,42 @@ top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]  mayAffectFlo
   top.unparses = ["extra(" ++ implode(", ", [quoteString(prod), src.unparse, unparseVertices(deps), if mayAffectFlowType then "t" else "f"]) ++ ")"];
 }
 
+{--
+ - The definition of an anonymous decoration site e.g. 'decorate with'
+ -
+ - @param prod  the full name of the production
+ - @param fName  the generated anonymous name for this decoration site
+ - @param typeName  the full name of the nonterminal
+ - @param deps  the dependencies of this equation on other flow graph elements
+ - (no contributions are possible)
+ -}
+abstract production anonEq
+top::FlowDef ::= prod::String  fName::String  typeName::String  loc::Location  deps::[FlowVertex]
+{
+  top.localTreeContribs = [pair(crossnames(prod, fName), top)];
+  top.prodGraphContribs = [pair(prod, top)];
+  top.flowEdges = map(pair(anonEqVertex(fName), _), deps);
+  top.unparses = ["anon(" ++ implode(", ", [quoteString(prod), quoteString(fName), quoteString(typeName), loc.unparse, unparseVertices(deps)]) ++ ")"];
+}
+
+{--
+ - The definition of an inherited attribute for an anonymous decoration site.
+ -
+ - @param prod  the full name of the production
+ - @param fName  the generated anonymous name for this decoration site
+ - @param attr  the full name of the attribute
+ - @param deps  the dependencies of this equation on other flow graph elements
+ - (no contributions are possible)
+ -}
+abstract production anonInhEq
+top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
+{
+  top.localInhTreeContribs = [pair(crossnames(prod, crossnames(fName, attr)), top)];
+  top.prodGraphContribs = [pair(prod, top)];
+  top.flowEdges = map(pair(anonVertex(fName, attr), _), deps);
+  top.unparses = ["anonInh(" ++ implode(", ", [quoteString(prod), quoteString(fName), quoteString(attr), unparseVertices(deps)]) ++ ")"];
+}
+
 --
 
 function crossnames
@@ -333,4 +369,19 @@ String ::= a::String b::String
   return a ++ " @ " ++ b;
 }
 
+--
 
+-- Used to get better error messages
+function collectAnonOrigin
+[Pair<String  Location>] ::= f::[FlowDef]
+{
+  return foldr(collectAnonOriginItem, [], f);
+}
+function collectAnonOriginItem
+[Pair<String  Location>] ::= f::FlowDef  rest::[Pair<String  Location>]
+{
+  return case f of
+  | anonEq(_, fN, _, l, _) -> pair(fN, l) :: rest
+  | _ -> rest
+  end;
+}
