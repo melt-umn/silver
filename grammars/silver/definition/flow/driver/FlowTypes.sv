@@ -207,4 +207,14 @@ top::FlowVertex ::= fName::String  attrName::String
 {
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for local inherited attributes?");
 }
+aspect production anonEqVertex
+top::FlowVertex ::= fName::String
+{
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for anon equations?");
+}
+aspect production anonVertex
+top::FlowVertex ::= fName::String  attrName::String
+{
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for anon inherited attributes?");
+}
 

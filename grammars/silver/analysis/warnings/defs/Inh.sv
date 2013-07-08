@@ -114,7 +114,7 @@ Boolean ::= sigName::String  e::Decorated Env
  - @returns  Errors for missing equations
  -}
 function checkEqDeps
-[Message] ::= v::FlowVertex  l::Location  prodName::String  prodNt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+[Message] ::= v::FlowVertex  l::Location  prodName::String  prodNt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  anonResolve::[Pair<String  Location>]
 {
   -- We focus only on things that are "our problem."  Within a production,
   -- we can only check: syn on LHS, inhs on RHS and locals.
@@ -142,12 +142,25 @@ function checkEqDeps
            then []
            else [wrn(l, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
       else [] -- not our problem
+  | anonEqVertex(fName) -> [] -- so these syntactically must be there, nothing to check the existence of
+  | anonVertex(fName, attrName) -> 
+    --[] -- these DO need to be checked, but we defer to decorate checking for it themselves!
+      if isInherited(attrName, realEnv)
+      then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv)) -- no equation
+           then []
+           else let
+             anonl :: Maybe<Location> = lookupBy(stringEq, fName, anonResolve)
+           in if anonl.isJust 
+              then [wrn(anonl.fromJust, "Decoration requires inherited attribute for " ++ attrName ++ ".")]
+              else [] -- If it's not in the list, then it's a transitive dep from a DIFFERENT equation (and thus reported there)
+           end
+      else [] -- not our problem
   end;
 }
 function checkAllEqDeps
-[Message] ::= v::[FlowVertex]  l::Location  prodName::String  prodNt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+[Message] ::= v::[FlowVertex]  l::Location  prodName::String  prodNt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  anonResolve::[Pair<String  Location>]
 {
-  return foldr(append, [], map(checkEqDeps(_, l, prodName, prodNt, flowEnv, realEnv), v));
+  return foldr(append, [], map(checkEqDeps(_, l, prodName, prodNt, flowEnv, realEnv, anonResolve), v));
 }
 
 
@@ -173,7 +186,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors <-
     if null(dl.errors ++ attr.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
-    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env) ++
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
       if null(lhsInhExceedsFlowType) then []
       else [wrn(top.location, "Synthesized equation " ++ attr.pp ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -194,7 +207,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   -- check transitive deps only. Nothing to be done for flow types
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh)
-    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env)
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
     else [];
 }
 
@@ -215,7 +228,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors <-
     if null(dl.errors ++ attr.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
-    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env) ++
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
       if null(lhsInhExceedsFlowType) then []
       else [wrn(top.location, "Synthesized equation " ++ attr.pp ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -236,7 +249,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors <-
     if null(dl.errors ++ attr.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
-    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env) ++
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
       if null(lhsInhExceedsFlowType) then []
       else [wrn(top.location, "Synthesized equation " ++ attr.pp ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -256,7 +269,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   -- check transitive deps only. Nothing to be done for flow types
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh)
-    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env)
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
     else [];
 }
 aspect production inhAppendColAttributeDef
@@ -274,7 +287,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   -- check transitive deps only. Nothing to be done for flow types
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh)
-    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env)
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
     else [];
 }
 ------ END AWFUL COPY & PASTE SESSION
@@ -293,7 +306,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh)
-    then foldr(append, [], map(checkEqDeps(_, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env), transitiveDeps)) ++
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
          if null(lhsInhExceedsFlowType) then []
          else [wrn(top.location, "Forward equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -321,7 +334,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   -- check transitive deps only. No worries about flow types.
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh)
-    then foldr(append, [], map(checkEqDeps(_, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env), transitiveDeps))
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
     else [];
 }
 
@@ -330,23 +343,19 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 {
   -- TODO: lacking a graph, we're going to just do this on immediate deps directly.
   -- This still captures the really necessary case of 'take reference' equations needed
-  -- But it's maybe less safe. At the very least, there should be a comment here
-  -- explaining why more is unnecessary.
+
+  -- without graphs for functions, we don't get any transitive dependencies.
+  -- this means rhs.syn doesn't emit deps on rhs.inh at all. nor for a localEq, any of its deps
 
   -- Note: "::nolhs" is the nonterminal name of the lhs. This *should* only be used by
   -- checkEqDeps for default equations and autocopy info, so giving a bogus value here
   -- should be correct as those are not relevant to functions.
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh)
-    then foldr(append, [], map(checkEqDeps(_, top.location, top.signature.fullName, "::nolhs", top.flowEnv, top.env), e.flowDeps))
+    then checkAllEqDeps(e.flowDeps, top.location, top.signature.fullName, "::nolhs", top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
     else [];
 -- TODO: bug: we don't have graphs for functions, so we have a problem with the above
 -- implementation needing those graphs.
--- However, it's possible those graphs aren't necessary? Or perhaps not for functions?
--- Thought needed. Perhaps a comment explaining why we need the graph propagation
--- (Currently, I think we need to checkEqDeps the immediateDeps to take care of
---  references and such, and the flow through the graph in order to check flow types,
---  but nothing else. I'm not sure that's fully true, though!)
 }
 
 aspect production appendCollectionValueDef
@@ -572,6 +581,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- We could do better by detecting those situations where we immediate access
   -- a synthesized attribute, and only requiring the flow there....
   -- Alternatively, by introducing a full "decoration site" notion...
+  {- Obsoleted by anonymous decoratoin sites
   local blessedSet :: [String] = inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv);
   local diff :: [String] = rem(blessedSet, inh.suppliedInhs);
 
@@ -581,7 +591,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
     then
       if null(diff) then []
       else [wrn(top.location, "Decoration producing a reference does not supply " ++ implode(", ", diff))]
-    else [];
+    else [];-}
 }
 aspect production decorateExprWithIntention
 top::Expr ::= e::Expr  inh::ExprInhs  intention::[String]

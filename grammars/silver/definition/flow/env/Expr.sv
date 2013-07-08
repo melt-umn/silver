@@ -62,7 +62,10 @@ top::Expr ::= q::Decorated QName
     if q.lookupValue.typerep.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
     then depsForTakingRef(rhsVertex(q.lookupValue.fullName, _), q.lookupValue.typerep.typeName, top.flowEnv)
     else [];
-  top.flowVertexInfo = simpleHasVertex(rhsVertex(q.lookupValue.fullName, _));
+  top.flowVertexInfo = 
+    if q.lookupValue.typerep.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    then simpleHasVertex(rhsVertex(q.lookupValue.fullName, _))
+    else noVertex();
   top.flowDefs = [];
 }
 aspect production lhsReference
@@ -73,7 +76,10 @@ top::Expr ::= q::Decorated QName
     if !performSubstitution(top.typerep, top.finalSubst).isDecorable
     then depsForTakingRef(lhsInhVertex, q.lookupValue.typerep.typeName, top.flowEnv)
     else [];
-  top.flowVertexInfo = hasVertex(lhsSynVertex, lhsInhVertex, []);
+  top.flowVertexInfo = 
+    if !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    then hasVertex(lhsSynVertex, lhsInhVertex, [])
+    else noVertex();
   top.flowDefs = [];
 }
 aspect production localReference
@@ -86,10 +92,12 @@ top::Expr ::= q::Decorated QName
     else [];
     
   top.flowVertexInfo =
-    hasVertex(
+    if q.lookupValue.typerep.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    then hasVertex(
       localVertex(q.lookupValue.fullName, _),
       localVertex(q.lookupValue.fullName, _),
-      [localEqVertex(q.lookupValue.fullName)]); -- aw, shucks. not a simpleHasVertex :(
+      [localEqVertex(q.lookupValue.fullName)]) -- aw, shucks. not a simpleHasVertex :(
+    else noVertex();
   top.flowDefs = [];
 }
 aspect production forwardReference
@@ -102,10 +110,12 @@ top::Expr ::= q::Decorated QName
     else [];
     
   top.flowVertexInfo =
-    hasVertex(
+    if !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    then hasVertex(
       forwardVertex,
       forwardVertex,
-      [forwardEqVertex()]); -- aw, shucks. not a simpleHasVertex :(
+      [forwardEqVertex()]) -- aw, shucks. not a simpleHasVertex :(
+    else noVertex();
   top.flowDefs = [];
 }
 aspect production productionReference
@@ -206,24 +216,58 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
-  top.flowDeps = e.flowDeps ++ inh.flowDeps;
-  -- TODO top.flowVertexInfo = simpleHasVertex(rhsVertex(q.lookupValue.fullName, _));
-  -- anon vertex here
-  top.flowDefs = e.flowDefs ++ inh.flowDefs; -- TODO
+  -- The general theory:
+  -- ... some expr ... decorate EXP1 with { ... inhs ... } ...
+  -- is equivalent to:
+  -- local ANON :: EXP1.typerep = EXP1;
+  -- ANON.inhN = inhNexp; -- etc...
+  -- an the expr is now ... ANON ...
+  
+  -- We don't actually do this transform, of course, but that's what we're representing
+  -- this as to the flow analysis, and justifies all the choices below:
+
+  -- First, generate our "anonymous" flow vertex name:
+  inh.decorationVertex = "__decorate" ++ toString(genInt()) ++ ":line" ++ toString(top.location.line);
+
+  -- Next, emit the "local equation" for this anonymous flow vertex.
+  -- This means only the deps in 'e', see above conceptual transformation to see why.
+  -- N.B. 'inh.flowDefs' will emit 'localInhEq's for this anonymous flow vertex.
+  top.flowDefs = e.flowDefs ++ inh.flowDefs ++
+    [anonEq(top.signature.fullName, inh.decorationVertex, performSubstitution(e.typerep, top.finalSubst).typeName, top.location, e.flowDeps)];
+
+  -- Now, we represent ourselves to anoything that might use us specially
+  -- as though we were a reference to this anonymous local
+  top.flowVertexInfo =
+    hasVertex(
+      anonVertex(inh.decorationVertex, _),
+      anonVertex(inh.decorationVertex, _),
+      [anonEqVertex(inh.decorationVertex)]);
+
+  -- Finally, our standard flow deps mimic those of a local: "taking a reference"
+  -- This are of course ignored when treated specially.
+  top.flowDeps = [anonEqVertex(inh.decorationVertex)] ++
+    depsForTakingRef(anonVertex(inh.decorationVertex, _), performSubstitution(e.typerep, top.finalSubst).typeName, top.flowEnv);
 }
 aspect production decorateExprWithIntention
 top::Expr ::= e::Expr  inh::ExprInhs  intention::[String]
 {
-  top.flowDeps = e.flowDeps ++ inh.flowDeps;
   -- TODO decide if keeping this or not?? maybe remove this case now
-  top.flowDefs = e.flowDefs ++ inh.flowDefs;
+  top.flowDeps = e.flowDeps ++ inh.flowDeps;
+  top.flowDefs = e.flowDefs; -- ++ inh.flowDefs; -- TODO these shouldn't be emitted in this case...
 }
+
+autocopy attribute decorationVertex :: String occurs on ExprInhs, ExprInh;
 
 aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
 {
   top.flowDeps = e1.flowDeps;
-  top.flowDefs = e1.flowDefs;
+  top.flowDefs = e1.flowDefs ++ 
+    if !null(lhs.errors) then [] else
+    case lhs of
+    | exprLhsExpr(q) -> [anonInhEq(top.signature.fullName, top.decorationVertex, q.attrDcl.fullName, e1.flowDeps)]
+    end;
+    
 }
 aspect production exprInhsEmpty
 top::ExprInhs ::= 
