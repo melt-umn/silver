@@ -5,9 +5,6 @@ import silver:modification:collection;
 import silver:definition:flow:driver only ProductionGraph, FlowType, flowVertexEq, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh;
 import silver:util:raw:treeset as set;
 
--- TODO: I think this analysis breaks because we don't know about annotations.
--- i.e. I think if it's not a inh, it's assumed to be a syn.
-
 synthesized attribute warnMissingInh :: Boolean occurs on CmdArgs;
 
 aspect production endCmdArgs
@@ -173,7 +170,7 @@ function checkAllEqDeps
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  -- TODO oh no again!
+  -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
@@ -195,7 +192,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  -- TODO oh no again!
+  -- oh no again!
   --local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
@@ -203,6 +200,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     if top.blockContext.hasFullSignature
     then expandGraph(e.flowDeps, findProductionGraph(top.signature.fullName, myGraphs))
     else e.flowDeps; -- patch for functions lacking a graph
+  
+  -- TODO: if LHS is forward, we have to check that we aren't exceeding flow type!! (BUG)
   
   -- check transitive deps only. Nothing to be done for flow types
   top.errors <-
@@ -215,7 +214,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 aspect production synBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  -- TODO oh no again!
+  -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
@@ -236,7 +235,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 aspect production synAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  -- TODO oh no again!
+  -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
@@ -257,7 +256,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  -- TODO oh no again!
+  -- oh no again!
   --local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
@@ -275,7 +274,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  -- TODO oh no again!
+  -- oh no again!
   --local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
@@ -295,7 +294,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
-  -- TODO oh no again!
+  -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
@@ -314,15 +313,36 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
--- TODO: We need to add checks for 'forwarding with' so that it enforces the
--- "fwd flow type + this attribute" deps ONLY. Or rather... raises them as fwd deps?
--- Figure that out, too.
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local transitiveDeps :: [FlowVertex] = expandGraph(e.flowDeps, findProductionGraph(top.signature.fullName, myGraphs));
+  
+  local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
+  -- problem = lhsinh deps - fwd flow type - this inh attribute
+  local lhsInhExceedsFlowType :: [String] = 
+    set:toList(
+      set:removeAll(
+        [case lhs of
+         | forwardLhsExpr(q) -> q.attrDcl.fullName
+         end],
+      set:difference(
+        lhsInhDeps,
+        inhDepsForSyn("forward", top.signature.outputElement.typerep.typeName, myFlow))));
+
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh)
+    then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
+         if null(lhsInhExceedsFlowType) then []
+         else [wrn(top.location, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
+    else [];
 }
 
 aspect production localValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  -- TODO oh no again!
+  -- oh no again!
   --local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
@@ -361,7 +381,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  -- TODO oh no again!
+  -- oh no again!
   --local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
@@ -406,7 +426,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 aspect production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
 {
-  -- TODO oh no again!
+  -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
   
@@ -438,7 +458,7 @@ function raiseImplicitFwdEqFlowTypesForAttr
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
-  -- TODO oh no again!
+  -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
   
@@ -487,7 +507,10 @@ Step 2: Let's go check on expressions. This has two purposes:
 aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  -- TODO oh hell look at that
+-- This aspect is in two parts. First: we *must* check that any accesses
+-- on a unknown decorated tree are in the ref-set.
+
+  -- oh no again
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
   local eTypeName :: String = performSubstitution(e.typerep, e.upSubst).typeName;
@@ -496,13 +519,23 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       inhsForTakingRef(eTypeName, top.flowEnv),  -- blessed inhs for a reference
       inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow))); -- needed inhs
   
-  local refCheck :: [Message] =
-    if null(diff) then []
-    else [wrn(top.location, "Access of " ++ q.pp ++ " from reference requires inherited attributes not known to be supplied to references: " ++ implode(", ", diff))];
+  top.errors <- 
+    if null(e.errors)
+    && (top.config.warnAll || top.config.warnMissingInh)
+    then
+      case e.flowVertexInfo of
+      | hasVertex(_, _, _) -> [] -- no check to make, as it was done transitively
+      -- without a vertex, we're accessing from a reference, and so...
+      | noVertex() ->
+          if null(diff) then []
+          else [wrn(top.location, "Access of " ++ q.pp ++ " from reference requires inherited attributes not known to be supplied to references: " ++ implode(", ", diff))]
+      end
+    else [];
 
-  -- This basically boils down to "it it's a reference, check blessed sets"
-  -- However, if it's NOT a reference, we also do a more specific check and issue
-  -- better errors messages than transitive deps.
+----------------
+-- Okay, so as part 2, we attempt to give better error messages, explaining *where*
+-- some needed dependencies came from. 
+
   top.errors <- 
     if null(e.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
@@ -512,6 +545,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
           if lq.lookupValue.typerep.isDecorable
           then
             let inhs :: [String] = 
+                  -- N.B. we're filtering out autocopies here
                   filter(
                     ignoreIfAutoCopyOnLhs(top.signature.outputElement.typerep.typeName, top.env, _),
                     filter(
@@ -522,8 +556,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
              in if null(inhs) then []
                 else [wrn(top.location, "Access of syn attribute " ++ q.pp ++ " on " ++ e.pp ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
-          else refCheck
-      | lhsReference(lq) -> [] -- actually okay, only affects flow
+          else []
       | localReference(lq) ->
           if lq.lookupValue.typerep.isDecorable
           then
@@ -536,10 +569,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
              in if null(inhs) then []
                 else [wrn(top.location, "Access of syn attribute " ++ q.pp ++ " on " ++ e.pp ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
-          else refCheck
-      | forwardReference(lq) -> [] -- actually okay, only affects flow
-      | _ -> refCheck
-      -- TODO: need special case for 'decorate .... }. attr' others???
+          else []
+      | _ -> []
     end
     else [];
 }
@@ -547,11 +578,6 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  local refCheck :: [Message] =
-    if contains(q.attrDcl.fullName, inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv))
-    then []
-    else [wrn(top.location, "Access of inherited attribute " ++ q.pp ++ " from a reference is not permitted, as references are not known to be decorated with this attribute.")];
-  
   -- In this case, ONLY check for references.
   -- The transitive deps error will be less difficult to figure out when there's
   -- an explicit access to the attributes.
@@ -559,39 +585,21 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     if null(e.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
     then
-      case e of
-      | childReference(lq) ->
-          if lq.lookupValue.typerep.isDecorable then [] -- only affects flow
-          else refCheck
-      | lhsReference(lq) -> [] -- only affects flow
-      | localReference(lq) ->
-          if lq.lookupValue.typerep.isDecorable then [] -- only affects flow
-          else refCheck
-      | forwardReference(lq) -> [] -- actually okay, only affects flow
-      | _ -> refCheck
-    end
+      case e.flowVertexInfo of
+      | hasVertex(_, _, _) -> [] -- no check to make, as it was done transitively
+      -- without a vertex, we're accessing from a reference, and so...
+      | noVertex() ->
+          if contains(q.attrDcl.fullName, inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv))
+          then []
+          else [wrn(top.location, "Access of inherited attribute " ++ q.pp ++ " from a reference is not permitted, as references are not known to be decorated with this attribute.")]
+      end
     else [];      
 }
 
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
-  -- TODO: we are being WAY overly conservative here and requiring 'decorate' expressions
-  -- to ALWAYS provide the full blessed set.
-  -- We could do better by detecting those situations where we immediate access
-  -- a synthesized attribute, and only requiring the flow there....
-  -- Alternatively, by introducing a full "decoration site" notion...
-  {- Obsoleted by anonymous decoratoin sites
-  local blessedSet :: [String] = inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv);
-  local diff :: [String] = rem(blessedSet, inh.suppliedInhs);
-
-  top.errors <- 
-    if null(e.errors)
-    && (top.config.warnAll || top.config.warnMissingInh)
-    then
-      if null(diff) then []
-      else [wrn(top.location, "Decoration producing a reference does not supply " ++ implode(", ", diff))]
-    else [];-}
+  -- Do nothing. Everything gets taken care of with anonResolve and checkEqDeps at the top
 }
 aspect production decorateExprWithIntention
 top::Expr ::= e::Expr  inh::ExprInhs  intention::[String]

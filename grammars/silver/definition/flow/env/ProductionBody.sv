@@ -102,6 +102,8 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
+  -- TODO: we need to figure out how to introduce any new lhsinh deps to the
+  -- forward flow type automatically.
   top.flowDefs = e.flowDefs ++ 
     case lhs of
     | forwardLhsExpr(q) -> [fwdInhEq(top.signature.fullName, q.attrDcl.fullName, e.flowDeps)]
