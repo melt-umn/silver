@@ -371,7 +371,7 @@ top::Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Locati
 function accessBounceDecorate
 Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Decorated Expr  q::Decorated QNameAttrOccur  l::Location
 {
-  return accessBouncer(target, decorateExprWithIntention(exprRef(e, location=l), exprInhsEmpty(location=l), [q.attrDcl.fullName], location=l), q, location=l);
+  return accessBouncer(target, decorateExprWithEmpty('decorate', exprRef(e, location=l), 'with', '{', '}', location=l), q, location=l);
 }
 function accessBounceUndecorate
 Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Decorated Expr  q::Decorated QNameAttrOccur  l::Location
@@ -439,24 +439,6 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' '}'
 concrete production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
-  top.pp = "decorate " ++ e.pp ++ " with {" ++ inh.pp ++ "}";
-
-  top.typerep = decoratedTypeExp(performSubstitution(e.typerep, e.upSubst)); -- .decoratedForm?
-  top.errors := e.errors ++ inh.errors;
-  
-  inh.decoratingnt = performSubstitution(e.typerep, e.upSubst);
-}
-
-abstract production decorateExprWithIntention
-top::Expr ::= e::Expr  inh::ExprInhs  intention::[String]
-{
-  -- TODO: this whole production is a hack to work around some problems computing
-  -- flow types. The idea is the few places where we "auto decorate" in order to
-  -- do something else, we can indicate that using this production, by specifying
-  -- the "intention."
-  
-  -- This production should eventually be eliminated, somehow. It's pure duplication of the above.
-  
   top.pp = "decorate " ++ e.pp ++ " with {" ++ inh.pp ++ "}";
 
   top.typerep = decoratedTypeExp(performSubstitution(e.typerep, e.upSubst)); -- .decoratedForm?
