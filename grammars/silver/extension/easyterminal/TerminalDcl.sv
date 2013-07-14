@@ -24,8 +24,7 @@ top::ProductionRHSElem ::= id::Name '::' reg::RegExpr
 {
   top.pp = id.pp ++ "::" ++ reg.pp;
   
-  local attribute regName :: [DclInfo];
-  regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
+  local regName :: [DclInfo] = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
   top.errors <- if null(regName) 
                 then [err(reg.location, "Could not find terminal declaration for " ++ reg.pp )]
@@ -45,8 +44,7 @@ top::ProductionRHSElem ::= reg::RegExpr
 {
   top.pp = reg.pp;
   
-  local attribute regName :: [DclInfo];
-  regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
+  local regName :: [DclInfo] = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
   top.errors <- if null(regName) 
                 then [err(reg.location, "Could not find terminal declaration for " ++ reg.pp )]
@@ -66,8 +64,7 @@ top::AspectRHSElem ::= reg::RegExpr
 {
   top.pp = reg.pp;
   
-  local attribute regName :: [DclInfo];
-  regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
+  local regName :: [DclInfo] = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
   top.errors <- if null(regName) 
                 then [err(reg.location, "Could not find terminal declaration for " ++ reg.pp )]
@@ -85,8 +82,7 @@ top::AspectRHSElem ::= id::Name '::' reg::RegExpr
 {
   top.pp = id.pp ++ " :: " ++ reg.pp;
   
-  local attribute regName :: [DclInfo];
-  regName = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
+  local regName :: [DclInfo] = getTerminalRegexDclAll(reg.terminalRegExprSpec.regString, top.env);
 
   top.errors <- if null(regName) 
                 then [err(reg.location, "Could not find terminal declaration for " ++ reg.pp )]

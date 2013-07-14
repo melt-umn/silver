@@ -12,6 +12,7 @@ import silver:translation:java:type;
 
 -- Actually only used for lists, in this file... TODO
 import silver:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef, End_kwd;
+import silver:definition:flow:ast only noVertex;
 
 import silver:extension:list; -- Oh no, this is a hack! TODO
 
@@ -393,8 +394,8 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   top.upSubst = errCheck2.upSubst;
   
   local attribute consdefs :: [Def];
-  consdefs = [lexicalLocalDef(top.grammarName, top.location, h.name, elemType), 
-              lexicalLocalDef(top.grammarName, top.location, t.name, top.scrutineeType)];
+  consdefs = [lexicalLocalDef(top.grammarName, top.location, h.name, elemType, noVertex(), []), -- TODO these deps??
+              lexicalLocalDef(top.grammarName, top.location, t.name, top.scrutineeType, noVertex(), [])];
   
   e.env = newScopeEnv(consdefs, top.env);
   

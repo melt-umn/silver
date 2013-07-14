@@ -4,6 +4,7 @@ import silver:translation:java:core;
 import silver:translation:java:type;
 
 import silver:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef;
+import silver:definition:flow:ast only noVertex;
 
 nonterminal VarBinders with 
   config, file, grammarName, env, compiledGrammars, signature, blockContext,
@@ -88,7 +89,7 @@ top::VarBinder ::= n::Name
     then decoratedTypeExp(top.bindingType)
     else top.bindingType;
 
-  top.defs = [lexicalLocalDef(top.grammarName, n.location, n.name, ty)];
+  top.defs = [lexicalLocalDef(top.grammarName, n.location, n.name, ty, noVertex(), [])]; -- TODO: these deps??
 
   top.translation = 
     makeSpecialLocalBinding(n.name, 

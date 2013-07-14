@@ -1,12 +1,16 @@
 grammar silver:modification:let_fix:java;
+
 import silver:modification:let_fix;
-import silver:translation:java:core;
+
 import silver:definition:core;
-import silver:util;
 import silver:definition:env;
-import silver:translation:java:type;
 import silver:definition:type;
 import silver:definition:type:syntax;
+
+import silver:translation:java:core;
+import silver:translation:java:type;
+
+import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
 
 aspect production letp
 top::Expr ::= la::AssignExpr  e::Expr
@@ -15,11 +19,11 @@ top::Expr ::= la::AssignExpr  e::Expr
 
   -- We need to create these nested locals, so we have no choice but to create a thunk object so we can declare these things.
   -- TODO: more specific types here would be nice!
-  local attribute closureExpr::String;
-  closureExpr= "new common.Thunk<Object>(context) { public final Object doEval() { " 
-    ++ la.let_translation
-    ++ "return " ++ e.translation ++ "; } }";
-    
+  local closureExpr :: String =
+    "new common.Thunk<Object>(context) { public final Object doEval() { " ++
+    la.let_translation ++
+    "return " ++ e.translation ++ "; } }";
+  
   top.translation = "((" ++ finTy.transType ++ ")(" ++ closureExpr ++ ").eval())";
 
   top.lazyTranslation = 
@@ -56,7 +60,7 @@ String ::= fn::String  et::String  ty::String
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
   -- To account for a magic case where we generate a let expression with a type
   -- that is, for example, a ntOrDecTypeExp or something,

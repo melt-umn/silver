@@ -617,36 +617,33 @@ top::Expr ::= q::Decorated QName
 
 
 -- FROM LET TODO
-attribute flowDeps, flowDefs, flowEnv occurs on AssignExpr;
+attribute flowDefs, flowEnv occurs on AssignExpr;
 
 aspect production letp
 top::Expr ::= la::AssignExpr  e::Expr
 {
-  top.flowDeps = la.flowDeps ++ e.flowDeps;
+  top.flowDeps = e.flowDeps;
   top.flowDefs = la.flowDefs ++ e.flowDefs;
 }
 
 aspect production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 {
-  top.flowDeps = a1.flowDeps ++ a2.flowDeps;
   top.flowDefs = a1.flowDefs ++ a2.flowDefs;
 }
 
 aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
 {
-  top.flowDeps = e.flowDeps;
-  -- We should be doing something to store e.flowVertexInfo in 'id' in the env
   top.flowDefs = e.flowDefs;
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
-  top.flowDeps = [];
-  -- TODO: should be setting flowVertexInfo to whatever that expr had
+  top.flowDeps = fd;
   top.flowDefs = [];
+  top.flowVertexInfo = fi;
 }
 
 
