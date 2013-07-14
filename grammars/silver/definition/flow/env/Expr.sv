@@ -248,13 +248,6 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.flowDeps = [anonEqVertex(inh.decorationVertex)] ++
     depsForTakingRef(anonVertex(inh.decorationVertex, _), performSubstitution(e.typerep, top.finalSubst).typeName, top.flowEnv);
 }
-aspect production decorateExprWithIntention
-top::Expr ::= e::Expr  inh::ExprInhs  intention::[String]
-{
-  -- TODO decide if keeping this or not?? maybe remove this case now
-  top.flowDeps = e.flowDeps ++ inh.flowDeps;
-  top.flowDefs = e.flowDefs; -- ++ inh.flowDefs; -- TODO these shouldn't be emitted in this case...
-}
 
 autocopy attribute decorationVertex :: String occurs on ExprInhs, ExprInh;
 
@@ -663,9 +656,6 @@ attribute flowDeps, flowDefs, flowEnv occurs on PrimPatterns, PrimPattern;
 aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
 {
-  -- thanks to the decorateWithIntention hack, this works okay for
-  -- matching on undecorated types (because e.flowDeps will be appropriate)
-
   -- Let's make sure for decorated types, we only demand what's necessary for forward
   -- evaluation.
   top.flowDeps = pr.flowDeps ++ f.flowDeps ++

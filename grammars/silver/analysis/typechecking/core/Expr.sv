@@ -623,23 +623,6 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
        then [err(top.location, "Operand to decorate must be a nonterminal.  Instead it is of type " ++ errCheck1.leftpp)]
        else [];
 }
-aspect production decorateExprWithIntention
-top::Expr ::= e::Expr  inh::ExprInhs  intention::[String]
-{
-  -- Pure duplication of the above. See comment in core's Expr.
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  inh.downSubst = errCheck1.upSubst;
-  top.upSubst = inh.upSubst;
-
-  errCheck1 = checkNonterminal(e.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operand to decorate must be a nonterminal.  Instead it is of type " ++ errCheck1.leftpp)]
-       else [];
-}
 
 aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'

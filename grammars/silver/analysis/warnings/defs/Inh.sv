@@ -601,27 +601,6 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   -- Do nothing. Everything gets taken care of with anonResolve and checkEqDeps at the top
 }
-aspect production decorateExprWithIntention
-top::Expr ::= e::Expr  inh::ExprInhs  intention::[String]
-{
-  -- TODO oh hell look at that
-  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
-
-
-  -- Look up each 'intention' in the flow type, and merge that together.
-  local neededSet :: set:Set<String> = 
-    foldr(set:union, set:empty(compareString),
-      map(inhDepsForSyn(_, performSubstitution(e.typerep, e.upSubst).typeName, myFlow), intention));
-  local diff :: [String] = set:toList(set:removeAll(inh.suppliedInhs, neededSet));
-
-  top.errors <- 
-    if null(e.errors)
-    && (top.config.warnAll || top.config.warnMissingInh)
-    then
-      if null(diff) then []
-      else [wrn(top.location, "Decorate expression does not supply needed inherited attributes: " ++ implode(", ", diff))]
-    else [];
-}
 
 -- TODO: pattern variable accesses.
 

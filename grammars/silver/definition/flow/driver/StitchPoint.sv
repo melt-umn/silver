@@ -18,24 +18,30 @@ top::StitchPoint ::= nt::String  vertexType::(FlowVertex ::= String)
 
 {--
  - Given production 'prod :: LHS ::= rhs1::RHS1'
- - with all inherited attributes on 'RHS1' as 'attrs'
- - Turns all edges from 'prodType' (here, rhsVertex("rhs1",_)) (for attrs)
- - to LHS INH in 'prod' into edges from
- - 'sourceType' (e.g. localVertex("patvar23", _)) to 'targetType' (e.g. rhsVertex("e", _))
+ - with all inherited attributes on 'RHS1' as 'attrs'.
  -
- - For example, (patvar23, env) -> (e, env)
+ - Finds all edges for each 'attrs' from 'prodType' (here, rhsVertex("rhs1",_))
+ - to LHS INH in the production 'prod'.
+ -
+ - We emit edges for the local production from
+ - 'sourceType' (e.g. localVertex("patvar23", _)) to 'targetType' (e.g. rhsVertex("e", _))
+ - corresponding to these edges.
+ -
+ - For example, if 'prod' has (rhs1, env) -> (lhs, env),
+ - then here we would emit (patvar23, env) -> (e, env).
  -
  - @param prod  The production we're projecting
+ - @param sourceType  The "vertexType" of this stitchPoint
+ - @param targetType  The "vertexType" of where this stitchPoint should proxy to
+ - @param prodType  The "vertexType" in the other production to use
  - @param attrs  The attributes we want to project to LHS inhs
- - @param prodType  The "vertexType" of these attributes in the production
- - @param sourceType  The "vertexType" of these attributes 
  -}
 abstract production projectionStitchPoint
 top::StitchPoint ::= 
   prod::String -- pattern match on this production
   sourceType::(FlowVertex ::= String) -- the pattern Variable vertex type
   targetType::(FlowVertex ::= String) -- the scruntinee vertex type
-  prodType::(FlowVertex ::= String) -- the rhsVertex
+  prodType::(FlowVertex ::= String) -- a rhsVertex of 'prod'
   attrs::[String] -- all inhs on the NT type of prodType/sourceType
 {
   top.stitchEdges =
