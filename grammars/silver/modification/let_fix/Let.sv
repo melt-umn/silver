@@ -1,5 +1,7 @@
 grammar silver:modification:let_fix;
 
+import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
+
 --- Concrete Syntax for lets
 --------------------------------------------------------------------------------
 
@@ -79,7 +81,7 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
   -- Using finalTy here, so our defs requires we have downSubst...
   -- The reason we're putting the type in the environment AFTER inference is so that
   -- wonky things don't happen with the auto-dedecorate behavior in lexicalLocalReference
-  top.defs = [lexicalLocalDef(top.grammarName, id.location, id.name, finalTy)];
+  top.defs = [lexicalLocalDef(top.grammarName, id.location, id.name, finalTy, e.flowVertexInfo, e.flowDeps)];
   
   top.errors := t.errors ++ e.errors;
   
@@ -106,7 +108,7 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
 }
 
 abstract production lexicalLocalReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
   top.pp = q.pp;
   top.errors := [];
