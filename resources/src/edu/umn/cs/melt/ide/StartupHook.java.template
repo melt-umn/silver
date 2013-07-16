@@ -11,6 +11,8 @@ import org.eclipse.ui.IStartup;
 
 import @PKG_NAME@.eclipse.console.@LANG_NAME@Console;
 import @PKG_NAME@.silver.cst.DefinitionFinder;
+import edu.umn.cs.melt.ide.util.ISilverTypeWrapper;
+import edu.umn.cs.melt.ide.util.ProjectUtil;
 import edu.umn.cs.melt.ide.util.Util;
 import edu.umn.cs.melt.ide.util.Util.IAntRunnable;
 import edu.umn.cs.melt.ide.util.cst.Locator;
@@ -43,6 +45,22 @@ public class StartupHook implements IStartup {
 				}
 			}
         	
+        });
+
+        ProjectUtil.setSilverTypeWrapper(new ISilverTypeWrapper(){
+			@Override
+			public Object wrapInIOVal(Object io, Object arg) {
+				return new core.Pioval(io, arg);
+			}
+
+			@Override
+			public Object wrapInMaybe(Object arg) {
+				if(arg!=null){
+					return new core.Pjust(arg);
+				} else {
+					return new core.Pnothing(); 
+				}
+			}
         });
     
         //Set up definition locator
