@@ -132,7 +132,8 @@ public class @LANG_NAME@Service {
             new common.StringCatter(projectName), 
             new common.StringCatter(projectPath), 
             new common.StringCatter(generatedPath), 
-            new common.StringCatter(platformPath)
+            new common.StringCatter(platformPath),
+            fProject
         );
 		
 		return env;
