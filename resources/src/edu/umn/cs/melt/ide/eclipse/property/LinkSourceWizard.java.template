@@ -1,0 +1,200 @@
+/*
+ * Variables used:
+ *   PKG_NAME
+ *   LANG_NAME
+ */
+
+package @PKG_NAME@.eclipse.property;
+
+import java.io.File;
+
+import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.jface.wizard.Wizard;
+import org.eclipse.jface.wizard.WizardPage;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
+
+/**
+ * This wizard is used to link a source folder to current project.
+ * <p>
+ * Still in its early stage of development, there are several outstanding 
+ * restrictions to this wizard. (1) can only link folder (2) can only link to
+ * a folder directly under project root.
+ */
+public class LinkSourceWizard extends Wizard {
+
+	private IProject project;
+	
+	private @LANG_NAME@BuildConfigPropertyPage pp;
+	
+	/** The only page in this wizard */
+	private LinkSourceWizardPage page1;
+	
+	public LinkSourceWizard(IProject project, @LANG_NAME@BuildConfigPropertyPage pp) {
+		this.project = project;
+		this.pp = pp;
+	}
+	
+	@Override
+	public void addPages() {
+		setWindowTitle("Link Source");
+	    page1 = new LinkSourceWizardPage("LINK_P1");
+	    addPage(page1);
+	}
+	
+	@Override
+	public boolean performFinish() {
+		
+	    IPath path = new Path(page1.linkSrcTxt.getText());
+	    IFolder folder = project.getFolder(page1.linkFolderNameTxt.getText());
+	    try {
+	    	folder.createLink(path, 0, null);
+		} catch (CoreException e1) {			
+			//Failed
+			e1.printStackTrace();
+			page1.setErrorMessage("(internal error) " + e1.getMessage());
+			return false;
+		}
+		
+		//Refresh resource list in the property page
+		if(pp!=null){
+			pp.update();
+		}
+		
+		return true;
+	}
+	
+	private class LinkSourceWizardPage extends WizardPage {
+
+		private Composite panel;
+		private Text linkSrcTxt;
+		private Text linkFolderNameTxt;
+		
+		protected LinkSourceWizardPage(String pageName) {
+			super(pageName);
+			setTitle("Source Folder");
+			setDescription("Link source folder to project");
+		}
+		
+		@Override
+		public Control getControl() {
+			return panel;
+		}
+		
+		@Override
+		public void createControl(Composite parent) {
+			panel = new Composite(parent, SWT.NONE);
+			GridLayout layout = new GridLayout();
+			layout.numColumns = 2;
+			panel.setLayout(layout);
+			
+			Label l1 = new Label(panel, SWT.NONE);
+			GridData gdHSpan2 = new GridData(GridData.FILL_HORIZONTAL);
+			gdHSpan2.horizontalSpan=2;
+			l1.setText("Linked folder location:");
+			l1.setLayoutData(gdHSpan2);
+			
+			linkSrcTxt = new Text(panel, SWT.BORDER);
+			linkSrcTxt.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			linkSrcTxt.addModifyListener(new ModifyListener(){
+				@Override
+				public void modifyText(ModifyEvent e) {
+					updatePageComplete();
+				}
+			});
+			
+			Button linkSrcBtn = new Button(panel, SWT.NONE);
+			linkSrcBtn.setText("   Browse...   ");
+			final Shell shell = panel.getShell();
+			linkSrcBtn.addSelectionListener(new SelectionAdapter(){
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+				    DirectoryDialog dirDialog = new DirectoryDialog(shell);
+				    dirDialog.setText("Select source folder to link");
+				    linkSrcTxt.setText(dirDialog.open());
+				}
+			});
+			linkSrcBtn.setLayoutData(new GridData());
+			
+			linkFolderNameTxt = new Text(panel, SWT.BORDER);
+			linkFolderNameTxt.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			linkFolderNameTxt.addModifyListener(new ModifyListener(){
+				@Override
+				public void modifyText(ModifyEvent e) {
+					updatePageComplete();
+				}
+
+			});
+			
+			setControl(panel);
+			setPageComplete(false);
+		}
+		
+		/** 
+		 * A method used for validation. It calls setPageComplete(true) when 
+		 * everything is ready, thus enabling Perform button in the wizard.
+		 */
+		private void updatePageComplete() {
+			String src = linkSrcTxt.getText();
+			
+			if(src==null || "".equals(src)){
+				setErrorMessage("source folder to link from is not specified");
+				setPageComplete(false);
+				return;
+			} else {
+			    File file = new File(src);
+			    if(!file.exists()){
+					setErrorMessage("the specified source folder to link from does not exist.");
+					setPageComplete(false);
+					return;
+			    }
+			    if(!file.isDirectory()){
+					setErrorMessage("the specified source folder to link from is not a directory.");
+					setPageComplete(false);
+					return;
+			    }
+			}
+			
+			String fldr = linkFolderNameTxt.getText();
+			if(fldr==null || "".equals(fldr)){
+				setErrorMessage("new folder name is not specified");
+				setPageComplete(false);
+				return;
+			} else {
+//				//TODO
+//				if(!isLegalFolderName(fldr)){
+//					setErrorMessage("new folder name is not legal");
+//					setPageComplete(false);
+//					return;
+//				}
+				
+			    IFolder folder = project.getFolder(fldr);
+				if(folder.exists()){
+					setErrorMessage("new folder name has been used");
+					setPageComplete(false);
+					return;
+				}
+			}
+
+			setErrorMessage(null);
+			setPageComplete(true);
+		}
+	}
+	
+}

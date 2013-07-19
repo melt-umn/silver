@@ -68,6 +68,8 @@ temp_imp_ide_dcl svParse ".sv" {
     name "SILVER";
     version "0.1.9";
   }
+
+  --option source linker on;
 };
 
 -- Declarations of IDE functions referred in decl block.

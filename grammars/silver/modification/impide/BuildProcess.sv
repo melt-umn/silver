@@ -63,7 +63,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     "</target>",
     "<target name='arg-check'>" ++ getArgCheckTarget() ++ "</target>",
     "<target name='filters'>" ++ getFiltersTarget() ++ "</target>",
-    "<target name='create-folders'>" ++ getCreateFoldersTarget(delegateBuilderName, actionExportName, parserClassName, folderFileName) ++ "</target>",
+    "<target name='create-folders'>" ++ getCreateFoldersTarget(delegateBuilderName, actionExportName, parserClassName, folderFileName, ide.pluginConfig) ++ "</target>",
     "<target name='customize' if=\"to-customize\" depends='arg-check, filters'>" ++ getCustomizeTarget() ++ "</target>",
     "<target name='postbuild' if=\"to-postbuild\">" ++ getAntPostBuildTarget() ++ "</target>",--this is for ant post-build; not to be confused with IDE post-build
     "<target name='enhance' depends='enhance-build, enhance-postbuild, enhance-export, enhance-fold'></target>",
@@ -321,7 +321,7 @@ String ::=
 }
 
 function getCreateFoldersTarget
-String ::= delegateBuilderName::String actionExportName::String parserClassName::String folderFileName::String
+String ::= delegateBuilderName::String actionExportName::String parserClassName::String folderFileName::String config::PluginConfig
 {
   return 
     "  \n" ++
@@ -467,6 +467,17 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "        tofile=\"${ide.pkg.path}/eclipse/property/PropertyControlsProvider.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
+    (if(config.hasSourceLinker)
+    then
+    "  <!-- A property page for the project's build configuration -->\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/LinkSourceWizard.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/property/LinkSourceWizard.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/LANGBuildConfigPropertyPage.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/property/${lang.name}BuildConfigPropertyPage.java\" filtering=\"true\"/>\n" ++
+    "  \n"
+    else
+    "") ++
+
     "  <mkdir dir='${ide.pkg.path}/eclipse/perspective'/>\n" ++
     "  <!-- A perspective for development using this language. -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/perspective/LANGPerspective.java.template\"\n" ++
@@ -488,7 +499,14 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "        tofile=\"${ide.pkg.path}/silver/cst/NonTerminalFinder.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
-    "  <!-- 10. pom.xml (using tycho) for building plugin, feature and repository -->\n" ++
+    "  <!-- 10. Images and other media resources -->\n" ++
+    "  <mkdir dir='${ide.proj.plugin.path}/icons'/>\n" ++
+    "  <copy todir=\"${ide.proj.plugin.path}/icons/\">\n" ++
+    "        <fileset dir=\"${res}/icons/\"/>\n" ++
+    "  </copy>\n" ++
+    "  \n" ++
+
+    "  <!-- 11. pom.xml (using tycho) for building plugin, feature and repository -->\n" ++
     "  <!-- parent -->\n" ++
     "  <copy file=\"${res}/pom_templates/parent.pom.xml.template\" tofile=\"${ide.proj.parent.path}/pom.xml\" filtering=\"true\"/>\n" ++
     "  <!-- plugin -->\n" ++
@@ -505,7 +523,7 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "  <copy file=\"${res}/pom_templates/updatesite_templates/pom.xml.template\" tofile=\"${ide.proj.updatesite.path}/pom.xml\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
-    "  <!-- 11. eclipse project -->\n" ++
+    "  <!-- 12. eclipse project -->\n" ++
     "  <!-- These files are essential to opening the generated plugin in a local Eclipse application as a Java project. -->\n" ++
     "  <copy file=\"${res}/project.template\" tofile=\"${ide.proj.plugin.path}/.project\" filtering=\"true\"/>\n" ++
     -- commented out to support different build modes
