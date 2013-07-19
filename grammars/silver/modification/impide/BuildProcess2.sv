@@ -27,17 +27,23 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
 abstract production generateNCS
 top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::String ide::IdeSpec pkgName::String startNTClassName::String
 {
-  local attribute pr::IO;
-  pr = print("Generating Parsers and Scanners for IMP-based IDE.\n", top.ioIn);
+  local attribute io1::IO;
+  io1 = print("Generating Parsers and Scanners for IMP-based IDE.\n", top.ioIn);
   
-  local attribute pr2::IO;
-  pr2 = writeFile(getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template", getPropertyProvider(ide.propDcls),
-		mkdir(getIDETempFolder() ++ "eclipse/property", pr).io);
+  local attribute io2::IO;
+  io2 = writeFile(getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template", getPropertyProvider(ide.propDcls),
+		mkdir(getIDETempFolder() ++ "eclipse/property", io1).io);
 
-  top.io = writeNCSSpec(
+  local attribute io3::IO;
+  io3 = writeNCSSpec(
 		writeFile(getIDETempFolder() ++ "eclipse/wizard/PropertyGenerator.java.template", getPropertyGenerator(ide.propDcls),
-		mkdir(getIDETempFolder() ++ "eclipse/wizard", pr2).io), 
+		mkdir(getIDETempFolder() ++ "eclipse/wizard", io2).io), 
 		grams, silvergen ++ "src/", specs, pkgName, startNTClassName);
+
+  local attribute io4::IO;
+  io4 = print("Generating plugin.xml template.\n", io3);
+
+  top.io = writeFile(getIDETempFolder() ++ "plugin.xml.template", makePlugin(ide.pluginConfig).xmlOutput, io4);
 
   top.code = 0;
   top.order = 7;
