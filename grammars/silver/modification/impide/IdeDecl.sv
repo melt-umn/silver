@@ -28,7 +28,7 @@ terminal ImpIde_ProdInfo_Name_t 'name' lexer classes {KEYWORD};
 terminal ImpIde_ProdInfo_Version_t 'version' lexer classes {KEYWORD};
 
 concrete production ideDcl
-top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optFunctions::IdeStmts ';'
+top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmts::IdeStmts ';'
 {
   top.pp = "temp_imp_ide_dcl " ++ parsername.pp ++ " " ++ fileextension.lexeme ++ "\n";
 
@@ -51,7 +51,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optF
   local attribute spec :: [ParserSpec];
   spec = findSpec(parsername.lookupValue.fullName, parsergrammar.parserSpecs);
 
-  optFunctions.startNTName = makeGrammarName(head(spec).cstAst.startNT);
+  stmts.startNTName = makeGrammarName(head(spec).cstAst.startNT);
 
   -- If there were errors looking up the name, do nothing. If we couldn't find the
   -- parser, then raise the error message noting that the name isn't a parser!
@@ -61,20 +61,20 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optF
   -- Strip off the quotes AND the initial dot
   local fext :: String = substring(2, length(fileextension.lexeme) - 1, fileextension.lexeme);
   
-  local info :: IdeProductInfo = getIdeProductInfo(optFunctions);
+  local info :: IdeProductInfo = getIdeProductInfo(stmts);
 
-  top.ideSpecs = [ideSpec(fext, optFunctions.funcDcls, optFunctions.propDcls, head(spec), info, getConfig(optFunctions.funcDcls))];
+  top.ideSpecs = [ideSpec(fext, stmts.funcDcls, stmts.propDcls, head(spec), info, getConfig(stmts.funcDcls, stmts.optDcls))];
   
-  top.errors <- optFunctions.errors;
+  top.errors <- stmts.errors;
 
   forwards to emptyAGDcl(location=top.location);
 }
 
 function getConfig
-PluginConfig ::= funcs::[Pair<String String>]
+PluginConfig ::= funcs::[Pair<String String>] opts::[IdeOption]
 {
     local hasExporter :: Boolean = checkExistence(funcs, "exporter");
-    local hasSourceLinker :: Boolean = false;
+    local hasSourceLinker :: Boolean = checkSwitchedOn(opts, "source linker");
     local hasCodeFolder :: Boolean = checkExistence(funcs, "folder");
 
     return pluginConfig(hasExporter, hasSourceLinker, hasCodeFolder);
@@ -90,6 +90,19 @@ Boolean ::= funcs::[Pair<String String>] name::String
            then true
            else checkExistence(tail(funcs), name);
 }    
+
+function checkSwitchedOn
+Boolean ::= opts::[IdeOption] name::String
+{
+    return 
+      if null(opts)
+      then false
+      else if head(opts).optKey == name
+           then if head(opts).optValue == "on"
+                then true
+                else false
+           else checkSwitchedOn(tail(opts), name);
+}  
 
 function getIdeProductInfo
 IdeProductInfo ::= stmts::IdeStmts
@@ -120,25 +133,9 @@ nonterminal IdeProperty with propName, propType, optional, defaultVal, displayNa
 nonterminal IdePropertyOption with optionType, optional, defaultVal, displayName;
 nonterminal IdePropertyOptions with optional, defaultVal, displayName;
 
-synthesized attribute propName :: String;
-synthesized attribute propType :: String;
-synthesized attribute optional :: Boolean;
-synthesized attribute defaultVal :: String;
-synthesized attribute displayName :: String;
-
 synthesized attribute optionType :: String;--"optional", "defaultVal"
 
 autocopy attribute startNTName :: String;
-
-abstract production makeIdeProperty
-top::IdeProperty ::= propName::String propType::String options::IdePropertyOptions
-{
-  top.propName = propName;
-  top.propType = propType;
-  top.optional = options.optional;
-  top.defaultVal = options.defaultVal;
-  top.displayName = if options.displayName == "" then propName else options.displayName;
-}
 
 concrete production nilPropertyOptions
 top::IdePropertyOptions ::= 
@@ -198,10 +195,10 @@ terminal ImpIde_OptFunc_Exporter 'exporter';
 -- function to mark the foldable ranges on the source file; called after parsing
 terminal ImpIde_OptFunc_Folder 'folder';
 
---funcDcls, propDcls are defined in ./IdeSpec.sv
-nonterminal IdeStmts with env, location, errors, grammarName, file, funcDcls, propDcls, startNTName;
-nonterminal IdeStmt with env, location, errors, grammarName, file, funcDcls, propDcls, startNTName, productInfo;
-nonterminal IdeStmtList with env, location, errors, grammarName, file, funcDcls, propDcls, startNTName;
+-- funcDcls, propDcls and optDcls are defined in ./IdeSpec.sv
+nonterminal IdeStmts with env, location, errors, grammarName, file, funcDcls, propDcls, optDcls, startNTName;
+nonterminal IdeStmt with env, location, errors, grammarName, file, funcDcls, propDcls, optDcls, startNTName, productInfo;
+nonterminal IdeStmtList with env, location, errors, grammarName, file, funcDcls, propDcls, optDcls, startNTName;
 
 function makeGrammarName
 String ::= str::String
@@ -215,6 +212,7 @@ top::IdeStmts ::=
   top.errors := [];
   top.funcDcls := [];
   top.propDcls := [];
+  top.optDcls := [];
 }
 
 concrete production listIdeStmts
@@ -223,6 +221,7 @@ top::IdeStmts ::= '{' funcList::IdeStmtList '}'
   top.errors := funcList.errors;
   top.funcDcls := funcList.funcDcls;
   top.propDcls := funcList.propDcls;
+  top.optDcls := funcList.optDcls;
 }
 
 concrete production nilIdeStmtList
@@ -231,6 +230,7 @@ top::IdeStmtList ::=
   top.errors := [];
   top.funcDcls := [];
   top.propDcls := [];
+  top.optDcls := [];
 }
 
 concrete production consIdeStmtList
@@ -239,6 +239,7 @@ top::IdeStmtList ::= func::IdeStmt funcList::IdeStmtList
   top.errors := func.errors ++ funcList.errors;
   top.funcDcls := func.funcDcls ++ funcList.funcDcls;
   top.propDcls := func.propDcls ++ funcList.propDcls;
+  top.optDcls := func.optDcls ++ funcList.optDcls;
 }
 
 aspect default production
@@ -252,6 +253,7 @@ top::IdeStmt ::= 'builder' builderName::QName ';'
 {
   top.funcDcls := [pair("builder", builderName.lookupValue.fullName)];
   top.propDcls := [];
+  top.optDcls := [];
 
   top.errors := builderName.lookupValue.errors;
   
@@ -281,6 +283,7 @@ top::IdeStmt ::= 'postbuilder' postbuilderName::QName ';'
 {
   top.funcDcls := [pair("postbuilder", postbuilderName.lookupValue.fullName)];
   top.propDcls := [];
+  top.optDcls := [];
 
   top.errors := postbuilderName.lookupValue.errors;
   
@@ -310,6 +313,7 @@ top::IdeStmt ::= 'exporter' exporterName::QName ';'
 {
   top.funcDcls := [pair("exporter", exporterName.lookupValue.fullName)];
   top.propDcls := [];
+  top.optDcls := [];
 
   top.errors := exporterName.lookupValue.errors;
   
@@ -339,6 +343,7 @@ top::IdeStmt ::= 'folder' folderName::QName ';'
 {
   top.funcDcls := [pair("folder", folderName.lookupValue.fullName)];
   top.propDcls := [];
+  top.optDcls := [];
 
   top.errors := folderName.lookupValue.errors;
   
@@ -366,6 +371,8 @@ top::IdeStmt ::= 'property' pname::IdLower_t ptype::TypeName options::IdePropert
 
   top.propDcls := [makeIdeProperty(pname.lexeme, ptype.propType, options)];
 
+  top.optDcls := [];
+
   local defaultVal :: String = getDefaultVal(options);
 
   top.errors := if ptype.propType=="integer"
@@ -374,6 +381,62 @@ top::IdeStmt ::= 'property' pname::IdLower_t ptype::TypeName options::IdePropert
                      else [err($1.location, "The default value for integer property must be of integer type.\nInstead it is \"" ++ defaultVal ++ "\".")]
                 else [];
 } 
+
+-- Options
+
+terminal ImpIde_Option_t 'option' lexer classes {KEYWORD};
+terminal ImpIde_Source_Linker_t 'source linker' lexer classes {KEYWORD};
+terminal ImpIde_Switch_On_t 'on' lexer classes {KEYWORD};
+terminal ImpIde_Switch_Off_t 'off' lexer classes {KEYWORD};
+
+nonterminal IdeOptionPart_c with funcDcls, propDcls, optDcls, errors;
+
+concrete production makeIdeStmt_Option
+top::IdeStmt ::= 'option' op::IdeOptionPart_c ';'
+{
+  top.funcDcls := [];
+
+  top.propDcls := [];
+
+  top.optDcls := op.optDcls;
+
+  top.errors := op.errors;
+} 
+
+concrete production makeIdeOption_SourceLinker
+top::IdeOptionPart_c ::= 'source linker' value::OnOff
+{
+  top.funcDcls := [];
+
+  top.propDcls := [];
+
+  top.optDcls := [makeIdeOption("source linker", switch2Str(value))];
+
+  top.errors := [];
+} 
+
+function switch2Str
+String ::= value::OnOff
+{
+  return case value of
+           switchOn(_) -> "on"
+         | switchOff(_) -> "off"
+         end;
+}
+
+nonterminal OnOff;
+
+concrete production switchOn
+top::OnOff ::= 'on'
+{
+
+}
+
+concrete production switchOff
+top::OnOff ::= 'off'
+{
+
+}
 
 function getDefaultVal
 String ::= options::IdePropertyOptions
@@ -396,6 +459,8 @@ top::IdeStmt ::= 'product' '{' dcls::IdeProductInfoDcls '}'
   top.funcDcls := [];
 
   top.propDcls := [];
+
+  top.optDcls := [];
 
   top.productInfo = makeIdeProductInfo(dcls.info);
 
