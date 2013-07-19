@@ -63,12 +63,33 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t optF
   
   local info :: IdeProductInfo = getIdeProductInfo(optFunctions);
 
-  top.ideSpecs = [ideSpec(fext, optFunctions.funcDcls, optFunctions.propDcls, head(spec), info)];
+  top.ideSpecs = [ideSpec(fext, optFunctions.funcDcls, optFunctions.propDcls, head(spec), info, getConfig(optFunctions.funcDcls))];
   
   top.errors <- optFunctions.errors;
 
   forwards to emptyAGDcl(location=top.location);
 }
+
+function getConfig
+PluginConfig ::= funcs::[Pair<String String>]
+{
+    local hasExporter :: Boolean = checkExistence(funcs, "exporter");
+    local hasSourceLinker :: Boolean = false;
+    local hasCodeFolder :: Boolean = checkExistence(funcs, "folder");
+
+    return pluginConfig(hasExporter, hasSourceLinker, hasCodeFolder);
+}
+
+function checkExistence
+Boolean ::= funcs::[Pair<String String>] name::String
+{
+    return 
+      if null(funcs)
+      then false
+      else if head(funcs).fst == name
+           then true
+           else checkExistence(tail(funcs), name);
+}    
 
 function getIdeProductInfo
 IdeProductInfo ::= stmts::IdeStmts

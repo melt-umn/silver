@@ -1,23 +1,31 @@
 grammar silver:modification:impide;
 
-nonterminal IdeSpec with ideExtension, ideParserSpec, funcDcls, propDcls, productInfo;
+nonterminal IdeSpec with ideExtension, ideParserSpec, funcDcls, propDcls, productInfo, pluginConfig;
 
 synthesized attribute ideExtension :: String;
+
 synthesized attribute ideParserSpec :: ParserSpec;
---fst:the type of function, such as "analyzer"; snd: the full qualified name of function 
+
+--fst:the type of function, such as "builder"; snd: the full qualified name of function 
 synthesized attribute funcDcls :: [Pair<String String>] with ++ ;
+
 synthesized attribute propDcls :: [IdeProperty] with ++ ;
 
 synthesized attribute productInfo :: IdeProductInfo;
 
+synthesized attribute pluginConfig :: PluginConfig;
+
 abstract production ideSpec
-top::IdeSpec ::= ext::String ideFuncDcls::[Pair<String String>] idePropDcls::[IdeProperty] pspec::ParserSpec productInfo::IdeProductInfo --TODO more?
+top::IdeSpec ::= 
+    ext::String ideFuncDcls::[Pair<String String>] idePropDcls::[IdeProperty] 
+    pspec::ParserSpec productInfo::IdeProductInfo pluginConfig::PluginConfig --TODO more?
 {
   top.ideExtension = ext;
   top.ideParserSpec = pspec;
   top.funcDcls := ideFuncDcls;
   top.propDcls := idePropDcls;
   top.productInfo = productInfo;
+  top.pluginConfig = pluginConfig;
 }
 
 nonterminal Color with r, g, b;

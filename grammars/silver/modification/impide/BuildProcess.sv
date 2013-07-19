@@ -360,7 +360,9 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "\n" ++
 
     "  <!-- 4. plugin.xml -->\n" ++
-    "  <copy file=\"${res}/plugin.xml.template\" tofile=\"${ide.proj.plugin.path}/plugin.xml\" filtering=\"true\"/>\n" ++
+    -- the single-file template is no longer used.
+    -- "  <copy file=\"${res}/plugin.xml.template\" tofile=\"${ide.proj.plugin.path}/plugin.xml\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"" ++ getIDETempFolder() ++ "/plugin.xml.template\" tofile=\"${ide.proj.plugin.path}/plugin.xml\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
     "  <!-- 5. plugin dependencies -->\n" ++
