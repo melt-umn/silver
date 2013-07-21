@@ -653,6 +653,18 @@ attribute flowDeps, flowDefs, flowEnv occurs on PrimPatterns, PrimPattern;
 aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
 {
+  -- If we take e.flowDeps ++ f.flowDeps, look them all up in the production
+  -- graph, and take the union, then filter down to just those on our anon vertex
+  -- we can discover what's needed, and use that to raise errors.
+  
+  -- We do have to do the lookups, though: we can't just use those Deps directly.
+  -- consider 'case e of prod(x) -> decorate x.syn with ...'
+  -- that introduces the use of 'x.syn' in a flowDef, and then emits the anonEq in flowDep
+  -- so we DO need to be transitive. Unfortunately.
+  
+  
+
+
   -- Let's make sure for decorated types, we only demand what's necessary for forward
   -- evaluation.
   top.flowDeps = pr.flowDeps ++ f.flowDeps ++

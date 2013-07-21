@@ -2,7 +2,9 @@ grammar silver:extension:patternmatching;
 
 import silver:extension:list only LSqr_t, RSqr_t;
 
--- See comment in pattern.sv regarding errors #HACK2012
+{--
+ - The forms of syntactic patterns that are permissible in (nested) case expresssions.
+ -}
 nonterminal Pattern with location, config, pp, env, file, errors, patternIsVariable, patternVariableName, patternSubPatternList, patternSortKey;
 
 {--
@@ -18,130 +20,143 @@ synthesized attribute patternVariableName :: Maybe<String>;
  -}
 synthesized attribute patternSubPatternList :: [Decorated Pattern];
 {--
- - The sort key of the pattern.
+ - The sort (and grouping) key of the pattern.
  - "~var" if patternIsVariable is true.
  - fullname if it's a production.
  - otherwise, it is type-depedent, but same values should be the same!
  -}
 synthesized attribute patternSortKey :: String;
 
-concrete production prodAppPattern
-p::Pattern ::= prod::QName '(' ps::PatternList ')'
-{
-  p.pp = prod.pp ++ "(" ++ ps.pp ++ ")";
-  p.errors := ps.errors;
 
-  p.patternIsVariable = false;
-  p.patternVariableName = nothing();
-  p.patternSubPatternList = ps.patternList;
-  p.patternSortKey = prod.lookupValue.fullName;
+-- These are the "canonical" patterns:
+
+{--
+ - Match on a production, extracting children as patterns, too.
+ - The production name may be qualified.
+ - TODO: if not qualified filter down to productions on scruntinee type
+ -}
+concrete production prodAppPattern
+top::Pattern ::= prod::QName '(' ps::PatternList ')'
+{
+  top.pp = prod.pp ++ "(" ++ ps.pp ++ ")";
+  top.errors := ps.errors;
+
+  top.patternIsVariable = false;
+  top.patternVariableName = nothing();
+  top.patternSubPatternList = ps.patternList;
+  top.patternSortKey = prod.lookupValue.fullName;
 } 
 
+{--
+ - Match anything, and bind nothing.
+ -}
 concrete production wildcPattern
-p::Pattern ::= '_'
+top::Pattern ::= '_'
 {
-  p.pp = "_";
-  p.errors := [];
+  top.pp = "_";
+  top.errors := [];
 
-  p.patternIsVariable = true;
-  p.patternVariableName = nothing();
-  p.patternSubPatternList = [];
-  p.patternSortKey = "~var";
+  top.patternIsVariable = true;
+  top.patternVariableName = nothing();
+  top.patternSubPatternList = [];
+  top.patternSortKey = "~var";
 }
 
+{--
+ - Match anything, bind it to a name.
+ - Note 1: must be lower case, to avoid newbie confusions "case (e::a) of Expr -> ..."
+ - Note 2: must not shadow a production name, to avoid "forgot parens" confusion
+ -   (e.g. "case maybe of nothing -> ..." vs "nothing()")
+ -}
 concrete production varPattern
-p::Pattern ::= v::Name
+top::Pattern ::= v::Name
 {
-  p.pp = v.name;
-  -- MUST start with lower case #HACK2012
-  p.errors := (if isUpper(substring(0,1,v.name))
+  top.pp = v.name;
+  top.errors := (if isUpper(substring(0,1,v.name))
                  then [err(v.location, "Pattern variable names start with a lower case letter")]
                  else [])
-  -- MUST NOT shadow any _production_ names #HACK2012
   -- TODO: Add function to find all prodDcl in env
-             ++ (case getValueDcl(v.name, p.env) of
+             ++ (case getValueDcl(v.name, top.env) of
                  | prodDcl(_,_,_) :: _ -> [err(v.location, "Production name can't be used in pattern")]
                  | _ -> []
                  end);
 
 
-  p.patternIsVariable = true;
-  p.patternVariableName = just(v.name);
-  p.patternSubPatternList = [];
-  p.patternSortKey = "~var";
+  top.patternIsVariable = true;
+  top.patternVariableName = just(v.name);
+  top.patternSubPatternList = [];
+  top.patternSortKey = "~var";
+}
+
+aspect default production
+top::Pattern ::=
+{
+  -- All other patterns should never set these to anything else, so let's default them.
+  top.patternIsVariable = false;
+  top.patternVariableName = nothing();
 }
 
 --------------------------------------------------------------------------------
 
+-- Below are the non-canonical patterns, i.e. those for other types
+
 concrete production intPattern
-p::Pattern ::= num::Int_t
+top::Pattern ::= num::Int_t
 {
-  p.pp = num.lexeme;
-  p.errors := [];
+  top.pp = num.lexeme;
+  top.errors := [];
   
-  p.patternIsVariable = false;
-  p.patternVariableName = nothing();
-  p.patternSubPatternList = [];
-  p.patternSortKey = num.lexeme;
+  top.patternSubPatternList = [];
+  top.patternSortKey = num.lexeme;
 }
 
 concrete production strPattern
-p::Pattern ::= str::String_t
+top::Pattern ::= str::String_t
 {
-  p.pp = str.lexeme;
-  p.errors := [];
+  top.pp = str.lexeme;
+  top.errors := [];
   
-  p.patternIsVariable = false;
-  p.patternVariableName = nothing();
-  p.patternSubPatternList = [];
-  p.patternSortKey = str.lexeme;
+  top.patternSubPatternList = [];
+  top.patternSortKey = str.lexeme;
 }
 
 concrete production truePattern
-p::Pattern ::= 'true'
+top::Pattern ::= 'true'
 {
-  p.pp = "true";
-  p.errors := [];
+  top.pp = "true";
+  top.errors := [];
   
-  p.patternIsVariable = false;
-  p.patternVariableName = nothing();
-  p.patternSubPatternList = [];
-  p.patternSortKey = "true";
+  top.patternSubPatternList = [];
+  top.patternSortKey = "true";
 }
 
 concrete production falsePattern
-p::Pattern ::= 'false'
+top::Pattern ::= 'false'
 {
-  p.pp = "false";
-  p.errors := [];
+  top.pp = "false";
+  top.errors := [];
   
-  p.patternIsVariable = false;
-  p.patternVariableName = nothing();
-  p.patternSubPatternList = [];
-  p.patternSortKey = "false";
+  top.patternSubPatternList = [];
+  top.patternSortKey = "false";
 }
 
 concrete production nilListPattern
-p::Pattern ::= '[' ']'
+top::Pattern ::= '[' ']'
 {
-  p.pp = "[]";
-  p.errors := [];
+  top.pp = "[]";
+  top.errors := [];
   
-  p.patternIsVariable = false;
-  p.patternVariableName = nothing();
-  p.patternSubPatternList = [];
-  p.patternSortKey = "core:nil";
+  top.patternSubPatternList = [];
+  top.patternSortKey = "core:nil";
 }
 
 concrete production consListPattern
-p::Pattern ::= hp::Pattern '::' tp::Pattern
+top::Pattern ::= hp::Pattern '::' tp::Pattern
 {
-  p.pp = hp.pp ++ "::" ++ tp.pp;
-  p.errors := hp.errors ++ tp.errors;
+  top.pp = hp.pp ++ "::" ++ tp.pp;
+  top.errors := hp.errors ++ tp.errors;
   
-  p.patternIsVariable = false;
-  p.patternVariableName = nothing();
-  p.patternSubPatternList = [hp, tp];
-  p.patternSortKey = "core:cons";
+  top.patternSubPatternList = [hp, tp];
+  top.patternSortKey = "core:cons";
 }
 
