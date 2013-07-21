@@ -19,12 +19,12 @@ import silver:extension:list; -- Oh no, this is a hack! TODO
 terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 
 nonterminal PrimPatterns with 
-  config, file, grammarName, env, compiledGrammars, signature, blockContext,
+  config, grammarName, env, compiledGrammars, signature, blockContext,
   location, pp, errors,
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation;
 nonterminal PrimPattern with 
-  config, file, grammarName, env, compiledGrammars, signature, blockContext,
+  config, grammarName, env, compiledGrammars, signature, blockContext,
   location, pp, errors,
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation;

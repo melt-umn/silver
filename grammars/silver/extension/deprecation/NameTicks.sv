@@ -22,8 +22,8 @@ top::Expr ::= q::NameTickTick
 }
 
 
-nonterminal NameTick with config, grammarName, file, location, pp, name;
-nonterminal NameTickTick with config, grammarName, file, location, pp, name;
+nonterminal NameTick with config, grammarName, location, pp, name;
+nonterminal NameTickTick with config, grammarName, location, pp, name;
 
 concrete production nameIdTick
 top::NameTick ::= id::IdTick_t

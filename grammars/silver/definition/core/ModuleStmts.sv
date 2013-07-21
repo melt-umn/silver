@@ -2,19 +2,19 @@ grammar silver:definition:core;
 
 imports silver:driver:util;
 
-nonterminal ModuleStmts with config, grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
-nonterminal ModuleStmt with config, grammarName, file, location, pp, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
+nonterminal ModuleStmts with config, grammarName, location, pp, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
+nonterminal ModuleStmt with config, grammarName, location, pp, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
 
-nonterminal ImportStmt with config, grammarName, file, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
-nonterminal ImportStmts with config, grammarName, file, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
+nonterminal ImportStmt with config, grammarName, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
+nonterminal ImportStmts with config, grammarName, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
 
-nonterminal ModuleExpr with config, grammarName, file, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
-nonterminal ModuleName with config, grammarName, file, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
+nonterminal ModuleExpr with config, grammarName, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
+nonterminal ModuleName with config, grammarName, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
 
-nonterminal NameList with config, grammarName, file, location, pp, names;
+nonterminal NameList with config, grammarName, location, pp, names;
 
-nonterminal WithElems with config, grammarName, file, location, pp, envMaps;
-nonterminal WithElem with config, grammarName, file, location, pp, envMaps;
+nonterminal WithElems with config, grammarName, location, pp, envMaps;
+nonterminal WithElem with config, grammarName, location, pp, envMaps;
 
 {--
  - A list of QName strings. Used for 'only' and 'hiding'.

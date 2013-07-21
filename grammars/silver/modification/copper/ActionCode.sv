@@ -31,7 +31,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 }
 
 
-nonterminal ActionCode_c with location,config,pp,actionCode,env,defs,grammarName,signature,file,errors,blockContext, compiledGrammars, flowEnv;
+nonterminal ActionCode_c with location,config,pp,actionCode,env,defs,grammarName,signature,errors,blockContext, compiledGrammars, flowEnv;
 
 synthesized attribute actionCode :: String;
 

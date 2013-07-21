@@ -1,7 +1,7 @@
 grammar silver:definition:core;
 
-nonterminal FunctionSignature with config, grammarName, file, env, location, pp, errors, defs, namedSignature, signatureName;
-nonterminal FunctionLHS with config, grammarName, file, env, location, pp, errors, defs, outputElement;
+nonterminal FunctionSignature with config, grammarName, env, location, pp, errors, defs, namedSignature, signatureName;
+nonterminal FunctionLHS with config, grammarName, env, location, pp, errors, defs, outputElement;
 
 concrete production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 

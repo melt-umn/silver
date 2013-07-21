@@ -47,7 +47,7 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
   top.errors := acode.errors;
 }
 
-nonterminal TermPrecList with config, grammarName, pp, location, precTermList, defs, errors, env, file;
+nonterminal TermPrecList with config, grammarName, pp, location, precTermList, defs, errors, env;
 
 synthesized attribute precTermList :: [String];
 
@@ -116,7 +116,7 @@ function addTerminalAttrDefs
 }
 
 
-nonterminal ClassList with location, config, pp, lexerClasses, errors, env, file;
+nonterminal ClassList with location, config, pp, lexerClasses, errors, env;
 
 synthesized attribute lexerClasses :: [String];
 

@@ -29,8 +29,8 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
     foldr(consLexerClassMod, nilLexerClassMod(), modifiers.lexerClassModifiers))];
 }
 
-nonterminal LexerClassModifiers with config, location, file, pp, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
-nonterminal LexerClassModifier with config, location, file, pp, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+nonterminal LexerClassModifiers with config, location, pp, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+nonterminal LexerClassModifier with config, location, pp, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 
 synthesized attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
 

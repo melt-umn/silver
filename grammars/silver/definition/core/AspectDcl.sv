@@ -1,13 +1,13 @@
 grammar silver:definition:core;
 
-nonterminal AspectProductionSignature with config, grammarName, file, env, location, pp, errors, defs, realSignature, namedSignature, signatureName;
-nonterminal AspectProductionLHS with config, grammarName, file, env, location, pp, errors, defs, outputElement, realSignature;
+nonterminal AspectProductionSignature with config, grammarName, env, location, pp, errors, defs, realSignature, namedSignature, signatureName;
+nonterminal AspectProductionLHS with config, grammarName, env, location, pp, errors, defs, outputElement, realSignature;
 
-nonterminal AspectFunctionSignature with config, grammarName, file, env, location, pp, errors, defs, realSignature, namedSignature, signatureName;
-nonterminal AspectFunctionLHS with config, grammarName, file, env, location, pp, errors, defs, realSignature, outputElement;
+nonterminal AspectFunctionSignature with config, grammarName, env, location, pp, errors, defs, realSignature, namedSignature, signatureName;
+nonterminal AspectFunctionLHS with config, grammarName, env, location, pp, errors, defs, realSignature, outputElement;
 
-nonterminal AspectRHS with config, grammarName, file, env, location, pp, errors, defs, inputElements, realSignature;
-nonterminal AspectRHSElem with config, grammarName, file, env, location, pp, errors, defs, realSignature, inputElements, deterministicCount;
+nonterminal AspectRHS with config, grammarName, env, location, pp, errors, defs, inputElements, realSignature;
+nonterminal AspectRHSElem with config, grammarName, env, location, pp, errors, defs, realSignature, inputElements, deterministicCount;
 
 {--
  - The signature elements from the fun/produciton being aspected.
