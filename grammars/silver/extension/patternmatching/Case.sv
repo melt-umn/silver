@@ -2,8 +2,9 @@ grammar silver:extension:patternmatching;
 
 imports silver:definition:core;
 imports silver:definition:env;
+imports silver:definition:type;
 imports silver:modification:primitivepattern;
-import silver:definition:type;
+
 import silver:definition:type:syntax only typerepType;
 import silver:modification:let_fix;
 
@@ -95,41 +96,38 @@ top::Expr ::= es::[Expr] ml::[Decorated MatchRule] failExpr::Expr retType::TypeE
 --  top.errors <- unsafeTrace([], 
 --     print(top.pp ++ "\n\n", unsafeIO()));
 
-  local attribute partMRs :: Pair<[Decorated MatchRule] [Decorated MatchRule]>;
-  partMRs = partition((.isVarMatchRule), ml);
+  local partMRs :: Pair<[Decorated MatchRule] [Decorated MatchRule]> =
+    partition((.isVarMatchRule), ml);
   local varRules :: [Decorated MatchRule] = partMRs.fst;
-  local prodRules ::[Decorated MatchRule] = partMRs.snd;
+  local prodRules :: [Decorated MatchRule] = partMRs.snd;
   
   {--
    - All constructors? Then do a real primitive match.
    -}
-  local attribute allConCase :: Expr;
-  allConCase = matchPrimitive(head(es),
-                              typerepType(retType, location=top.location),
-                              allConCaseTransform(tail(es), failExpr, retType, groupMRules(prodRules)),
-                              failExpr,
-                              location=top.location);
+  local allConCase :: Expr =
+    matchPrimitive(head(es),
+      typerepType(retType, location=top.location),
+      allConCaseTransform(tail(es), failExpr, retType, groupMRules(prodRules)),
+      failExpr, location=top.location);
   
   {--
    - All variables? Just push a let binding inside each branch.
    -}
-  local attribute allVarCase :: Expr;
-  allVarCase = caseExpr(tail(es),
-                        allVarCaseTransform(head(es), freshType(){-whatever the first expression's type is?-}, ml),
-                        failExpr, retType,
-                        location=top.location);
+  local allVarCase :: Expr =
+    caseExpr(tail(es),
+      allVarCaseTransform(head(es), freshType(){-whatever the first expression's type is?-}, ml),
+      failExpr, retType, location=top.location);
   
   {--
    - Mixed con/var? Partition, and push the vars into the "fail" branch.
    - Use a let for it, to avoid code duplication!
    -}
-  local attribute freshFailName :: String;
-  freshFailName = "__fail_" ++ toString(genInt());
-  local attribute mixedCase :: Expr;
-  mixedCase = makeLet(top.location,
-                freshFailName, retType, caseExpr(es, varRules, failExpr, retType, location=top.location),
-                caseExpr(es, prodRules, baseExpr(qName(top.location, freshFailName), location=top.location), retType,
-                  location=top.location));
+  local freshFailName :: String = "__fail_" ++ toString(genInt());
+  local mixedCase :: Expr =
+    makeLet(top.location,
+      freshFailName, retType, caseExpr(es, varRules, failExpr, retType, location=top.location),
+      caseExpr(es, prodRules, baseExpr(qName(top.location, freshFailName), location=top.location),
+        retType, location=top.location));
 }
 
 concrete production mRuleList_one
@@ -227,48 +225,20 @@ function convStringsToExprs
          else baseExpr(qNameId(head(s), location=head(s).location), location=head(s).location) :: convStringsToExprs(tail(s), tl);
 }
 
-function allConCaseTransform
-PrimPatterns ::= restExprs::[Expr]  failCase::Expr  retType::TypeExp  mrs::[[Decorated MatchRule]]
-{
-  -- okay, so we're looking at mrs groups by production.
-  -- So what we want to do is, for each list in mrs,
-  -- generate a PrimPattern on the production that is that group.
-  -- Then, push ALL the match rules into a case underneath that.
-  
-  -- TODO: head(head(mrs)).location is probably not the correct thing to use here??
-  
-  local attribute names :: [Name];
-  names = map(patternListVars, head(head(mrs)).headPattern.patternSubPatternList);
-
-  local attribute subcase :: Expr;
-  subcase =  caseExpr(convStringsToExprs(names, restExprs),
-                      tailNestedPatternTransform(head(mrs)),
-                      failCase, retType,
-                      location=head(head(mrs)).location);
-
-  local attribute fstPat :: PrimPattern;
-  fstPat = case head(head(mrs)).headPattern of
-           | prodAppPattern(qn,_,_,_) -> prodPattern(qn, '(', convStringsToVarBinders(names, head(head(mrs)).location), ')', '->', subcase, location=qn.location)
-           | intPattern(it) -> integerPattern(it, '->', subcase, location=it.location)
-           | strPattern(it) -> stringPattern(it, '->', subcase, location=it.location)
-           | truePattern(l) -> booleanPattern("true", '->', subcase, location=l.location)
-           | falsePattern(l) -> booleanPattern("false", '->', subcase, location=l.location)
-           | nilListPattern(l,_) -> nilPattern(subcase, location=l.location)
-           | consListPattern(h,_,t) -> conslstPattern(head(names), head(tail(names)), subcase, location=h.location)
-           end;
-  
-  return if null(tail(mrs)) then onePattern(fstPat, location=fstPat.location)
-         else consPattern(fstPat, '|', allConCaseTransform(restExprs, failCase, retType, tail(mrs)), location=fstPat.location);
-}
-
+{--
+ - As part of the allCon case transformation, we have to take the first pattern,
+ - remove it, but also insert all its subPatterns directly.
+ - i.e. case e of P0(P1, P2), P3 -> ...
+ -   becomes  P1, P2, P3
+ -}
 function tailNestedPatternTransform
 [Decorated MatchRule] ::= lst::[Decorated MatchRule]
 {
   -- TODO: this is a bit hacky, and potentially unnecessary... what with the redecorating and all.
-  local attribute fst :: MatchRule;
-  fst = case head(lst) of
-        | matchRule(pl,e) -> matchRule(head(pl).patternSubPatternList ++ tail(pl), e, location=head(lst).location)
-        end;
+  local fst :: MatchRule =
+    case head(lst) of
+    | matchRule(pl,e) -> matchRule(head(pl).patternSubPatternList ++ tail(pl), e, location=head(lst).location)
+    end;
   fst.env = head(lst).env;
   fst.file = head(lst).file;
   fst.signature = head(lst).signature;
@@ -278,18 +248,58 @@ function tailNestedPatternTransform
          else fst :: tailNestedPatternTransform(tail(lst));
 }
 
+{--
+ - When all of 'mrs' have first pattern as a concrete constructor,
+ - they are grouped by which constructor and passed here.
+ - and we generate primitive patterns for them
+ -}
+function allConCaseTransform
+PrimPatterns ::= restExprs::[Expr]  failCase::Expr  retType::TypeExp  mrs::[[Decorated MatchRule]]
+{
+  -- TODO: head(head(mrs)).location is probably not the correct thing to use here?? (generally)
+  
+  local names :: [Name] = map(patternListVars, head(head(mrs)).headPattern.patternSubPatternList);
+
+  local subcase :: Expr =
+    caseExpr(
+      convStringsToExprs(names, restExprs),
+      tailNestedPatternTransform(head(mrs)),
+      failCase, retType, location=head(head(mrs)).location);
+
+  local fstPat :: PrimPattern =
+    case head(head(mrs)).headPattern of
+    | prodAppPattern(qn,_,_,_) -> 
+        prodPattern(qn, '(', convStringsToVarBinders(names, head(head(mrs)).location), ')', '->', subcase, location=qn.location)
+    | intPattern(it) -> integerPattern(it, '->', subcase, location=it.location)
+    | strPattern(it) -> stringPattern(it, '->', subcase, location=it.location)
+    | truePattern(l) -> booleanPattern("true", '->', subcase, location=l.location)
+    | falsePattern(l) -> booleanPattern("false", '->', subcase, location=l.location)
+    | nilListPattern(l,_) -> nilPattern(subcase, location=l.location)
+    | consListPattern(h,_,t) -> conslstPattern(head(names), head(tail(names)), subcase, location=h.location)
+    end;
+  
+  return if null(tail(mrs)) then onePattern(fstPat, location=fstPat.location)
+         else consPattern(fstPat, '|', allConCaseTransform(restExprs, failCase, retType, tail(mrs)), location=fstPat.location);
+}
+
+{--
+ - When 'lst' left-most patterns are all 'var's,
+ - Chop off that first pattern, push it inside the expr as a let with the
+ - current scrutinee as value. (headExpr :: headType)
+ -}
 function allVarCaseTransform
 [Decorated MatchRule] ::= headExpr::Expr  headType::TypeExp  lst::[Decorated MatchRule]
 {
   -- TODO: this is a bit hacky, and potentially unnecessary... what with the redecorating and all.
-  local attribute fst :: MatchRule;
-  fst = case head(lst) of
-        | matchRule(pl, e) -> matchRule(tail(pl), 
-                             case head(pl).patternVariableName of
-                             | just(pvn) -> makeLet(head(lst).location, pvn, headType, headExpr, e)
-                             | nothing() -> e
-                             end, location=head(lst).location)
-        end;
+  local fst :: MatchRule =
+    case head(lst) of
+    | matchRule(pl, e) -> 
+        matchRule(tail(pl), 
+          case head(pl).patternVariableName of
+          | just(pvn) -> makeLet(head(lst).location, pvn, headType, headExpr, e)
+          | nothing() -> e
+          end, location=head(lst).location)
+    end;
   fst.env = head(lst).env;
   fst.file = head(lst).file;
   fst.signature = head(lst).signature;
@@ -317,23 +327,13 @@ Expr ::= l::Location s::String t::TypeExp e::Expr o::Expr
 function ensureDecoratedExpr
 Expr ::= e::Decorated Expr
 {
-  local attribute et :: TypeExp;
-  et = performSubstitution(e.typerep, e.upSubst);
+  local et :: TypeExp = performSubstitution(e.typerep, e.upSubst);
 
   return if et.isDecorable
          then decorateExprWithEmpty('decorate', exprRef(e, location=e.location), 'with', '{', '}', location=e.location)
          else exprRef(e, location=e.location);
 }
-function ensureDecoratedType
-TypeExp ::= e::Decorated Expr
-{
-  local attribute et :: TypeExp;
-  et = performSubstitution(e.typerep, e.upSubst);
 
-  return if et.isDecorable
-         then decoratedTypeExp(et)
-         else et;
-}
 function mruleEqForGrouping
 Boolean ::= a::Decorated MatchRule b::Decorated MatchRule
 {
