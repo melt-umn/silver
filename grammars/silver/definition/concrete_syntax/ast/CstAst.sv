@@ -8,14 +8,9 @@ imports silver:translation:java:core only makeIdName, makeClassName, makeNTClass
 imports silver:translation:java:type only transType;
 
 {--
- - The name of the start nonterminal of this parser spec.
- -}
-synthesized attribute startNT :: String;
-
-{--
  - Encapsulates transformations and analysis of Syntax
  -}
-closed nonterminal SyntaxRoot with cstErrors, cstNormal, xmlCopper, {-TODO:debugging-}unparse, startNT;
+closed nonterminal SyntaxRoot with cstErrors, cstNormal, xmlCopper, {-TODO:debugging-}unparse;
 
 {--
  - This attribute exists for debugging purposes only. Nothing should need to extract
@@ -42,7 +37,6 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
   s2.containingGrammar = "host";
   s2.cstNTProds = error("TODO: make this environmnet not be decorated?"); -- TODO
   
-  top.startNT = startnt;
   -- This should be on s1, because the s2 transform assumes everything is well formed.
   -- In particular, it drops productions it can't find an NT for.
   top.cstErrors := s.cstErrors;

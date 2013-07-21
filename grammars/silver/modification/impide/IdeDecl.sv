@@ -51,7 +51,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
   local attribute spec :: [ParserSpec];
   spec = findSpec(parsername.lookupValue.fullName, parsergrammar.parserSpecs);
 
-  stmts.startNTName = makeGrammarName(head(spec).cstAst.startNT);
+  stmts.startNTName = makeGrammarName(head(spec).startNT);
 
   -- If there were errors looking up the name, do nothing. If we couldn't find the
   -- parser, then raise the error message noting that the name isn't a parser!
