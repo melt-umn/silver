@@ -8,12 +8,17 @@ import silver:driver:util only computeDependencies; -- TODO this is a bad depend
 nonterminal ParserSpec with 
   sourceGrammar, sourceLocation, fullName,
   compiledGrammars,
-  cstAst, moduleNames, unparse;
+  cstAst, startNT, moduleNames, unparse;
 
 {--
  - Given compiledGrammars, gives back the SyntaxRoot representing this parser.
  -}
 synthesized attribute cstAst :: SyntaxRoot;
+
+{--
+ - The full name of the start nonterminal of this parser spec.
+ -}
+synthesized attribute startNT :: String;
 
 abstract production parserSpec
 top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[String]
@@ -21,6 +26,7 @@ top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[S
   top.sourceLocation = sl;
   top.sourceGrammar = sg;
   top.fullName = fn;
+  top.startNT = snt;
   top.moduleNames = grams;
 
   -- TODO: consider this: because we're using only the grammar in this parser to compute 

@@ -17,7 +17,6 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   
   top.cstErrors := host.cstErrors ++ ext.cstErrors;
   top.cstNormal = top; -- meh
-  top.startNT = startnt;
   
   local startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, host.cstEnv);
   -- TODO check if this is found!!

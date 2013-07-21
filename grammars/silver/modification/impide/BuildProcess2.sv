@@ -14,7 +14,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
   -- we're going to go with assuming there's just one IDE declaration...
   production isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
 
-  local startNTClassName::String = makeNTClassName(head(allParsers).cstAst.startNT);
+  local startNTClassName::String = makeNTClassName(head(allParsers).startNT);
 
   -- pkgName is derived in the aspect defined in ./BuildProcess.sv
   top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, allParsers, silverGen, ide, pkgName, startNTClassName)];
