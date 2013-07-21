@@ -114,7 +114,7 @@ top::IParser ::= 'parser' '(' l::ILocation ',' g::IName ',' n::IName ',' snt::IN
 --------------------------------------------------------------------------------
 nonterminal ISyntax with syntaxAst, grammarName;
 nonterminal ISyntaxInner with syntaxAst, grammarName;
-nonterminal ISyntaxDcl with syntaxAst, grammarName;
+closed nonterminal ISyntaxDcl with syntaxAst, grammarName;
 
 concrete production aSyntaxNone
 top::ISyntax ::= '[' ']'
@@ -179,7 +179,7 @@ top::ISyntaxDcl ::= 'disambig' '(' n::IName ',' ts::INames ',' s::IString ')'
 --------------------------------------------------------------------------------
 nonterminal ITerminalModifiers with terminalModifiers;
 nonterminal ITerminalModifiersInner with terminalModifiers;
-nonterminal ITerminalModifier with terminalModifiers;
+closed nonterminal ITerminalModifier with terminalModifiers;
 
 synthesized attribute terminalModifiers :: [SyntaxTerminalModifier];
 
@@ -251,7 +251,7 @@ top::ITerminalModifier ::= 'acode' '(' s::IString ')'
 --------------------------------------------------------------------------------
 nonterminal IProductionModifiers with productionModifiers;
 nonterminal IProductionModifiersInner with productionModifiers;
-nonterminal IProductionModifier with productionModifiers;
+closed nonterminal IProductionModifier with productionModifiers;
 
 synthesized attribute productionModifiers :: [SyntaxProductionModifier];
 
@@ -303,7 +303,7 @@ top::IProductionModifier ::= 'layout' '(' n::INames ')'
 
 nonterminal ILexerClassModifiers with lexerClassModifiers;
 nonterminal ILexerClassModifiersInner with lexerClassModifiers;
-nonterminal ILexerClassModifier with lexerClassModifiers;
+closed nonterminal ILexerClassModifier with lexerClassModifiers;
 
 synthesized attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
 
