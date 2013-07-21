@@ -35,8 +35,6 @@ synthesized attribute importedDefs :: [Def];
 abstract production grammarPart
 top::GrammarPart ::= r::Root  fn::String
 {
-  r.file = fn;
-
   top.declaredName = r.declaredName;
   top.moduleNames = r.moduleNames;
   top.exportedGrammars = r.exportedGrammars;

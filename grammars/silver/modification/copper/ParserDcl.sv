@@ -33,7 +33,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
   top.parserSpecs = [spec]; -- Note that this is undecorated.
 }
 
-nonterminal ModuleList with config, location, grammarName, file, moduleNames, compiledGrammars, errors, pp, grammarDependencies;
+nonterminal ModuleList with config, location, grammarName, moduleNames, compiledGrammars, errors, pp, grammarDependencies;
 
 concrete production moduleListOne
 top::ModuleList ::= c1::ModuleName ';'

@@ -196,9 +196,9 @@ terminal ImpIde_OptFunc_Exporter 'exporter';
 terminal ImpIde_OptFunc_Folder 'folder';
 
 -- funcDcls, propDcls and optDcls are defined in ./IdeSpec.sv
-nonterminal IdeStmts with env, location, errors, grammarName, file, funcDcls, propDcls, optDcls, startNTName;
-nonterminal IdeStmt with env, location, errors, grammarName, file, funcDcls, propDcls, optDcls, startNTName, productInfo;
-nonterminal IdeStmtList with env, location, errors, grammarName, file, funcDcls, propDcls, optDcls, startNTName;
+nonterminal IdeStmts with env, location, errors, grammarName, funcDcls, propDcls, optDcls, startNTName;
+nonterminal IdeStmt with env, location, errors, grammarName, funcDcls, propDcls, optDcls, startNTName, productInfo;
+nonterminal IdeStmtList with env, location, errors, grammarName, funcDcls, propDcls, optDcls, startNTName;
 
 function makeGrammarName
 String ::= str::String

@@ -4,18 +4,17 @@ grammar silver:definition:core;
  - Root represents one textual file of Silver source.
  -}
 nonterminal Root with
-  -- Global inherited attributes
+  -- Global-level inherited attributes
   config, compiledGrammars,
-  -- Grammar inherited attributes
+  -- Grammar-level inherited attributes
   grammarName, env, globalImports, grammarDependencies,
-  -- File inherited attributes
-  file,
+  -- File-level inherited attributes
   -- Synthesized attributes
   declaredName, pp, location, errors, defs, moduleNames, importedDefs,
   exportedGrammars, optionalGrammars, condBuild;
 
 nonterminal GrammarDcl with 
-  declaredName, grammarName, file, location, pp, errors;
+  declaredName, grammarName, location, pp, errors;
 
 concrete production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
@@ -23,7 +22,6 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   ims.compiledGrammars = top.compiledGrammars;
   ims.grammarDependencies = top.grammarDependencies;
   ims.grammarName = top.grammarName;
-  ims.file = top.file;
   ims.config = top.config;
 
   top.pp = gdcl.pp ++ "\n\n" ++ ms.pp ++ "\n\n" ++ ims.pp ++ "\n\n" ++ ags.pp;

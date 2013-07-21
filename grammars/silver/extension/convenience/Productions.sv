@@ -2,8 +2,8 @@ grammar silver:extension:convenience;
 
 import silver:modification:copper;
 
-nonterminal ProductionDclStmts with pp, location, proddcls, lhsdcl, file, grammarName;
-nonterminal ProductionDclStmt with pp, location, proddcls, lhsdcl, file, grammarName;
+nonterminal ProductionDclStmts with pp, location, proddcls, lhsdcl, grammarName;
+nonterminal ProductionDclStmt with pp, location, proddcls, lhsdcl, grammarName;
 
 synthesized attribute proddcls :: AGDcl;
 autocopy attribute lhsdcl :: ProductionLHS;
@@ -47,7 +47,7 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
             name(
               "P_"
               ++ substitute(":", "_", top.grammarName)
-              ++ substitute(".", "_", top.file)
+              ++ substitute(".", "_", top.location.filename)
               -- substitute(":", "_", top.lhsdcl.outputElement.typerep.typeName) TODO
               ++ "_" ++ toString(v.line) ++ "_" ++ toString(v.column),
               v.location)

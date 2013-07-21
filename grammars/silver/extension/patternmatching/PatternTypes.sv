@@ -5,7 +5,7 @@ import silver:extension:list only LSqr_t, RSqr_t;
 {--
  - The forms of syntactic patterns that are permissible in (nested) case expresssions.
  -}
-nonterminal Pattern with location, config, pp, env, file, errors, patternIsVariable, patternVariableName, patternSubPatternList, patternSortKey;
+nonterminal Pattern with location, config, pp, env, errors, patternIsVariable, patternVariableName, patternSubPatternList, patternSortKey;
 
 {--
  - False if it actually matches anything specific, true if it's a variable/wildcard.

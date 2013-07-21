@@ -1,9 +1,9 @@
 grammar silver:definition:core;
 
-nonterminal ProductionSignature with config, grammarName, file, env, location, pp, errors, defs, namedSignature, signatureName;
-nonterminal ProductionLHS with config, grammarName, file, env, location, pp, errors, defs, outputElement;
-nonterminal ProductionRHS with config, grammarName, file, env, location, pp, errors, defs, inputElements;
-nonterminal ProductionRHSElem with config, grammarName, file, env, location, pp, errors, defs, inputElements, deterministicCount;
+nonterminal ProductionSignature with config, grammarName, env, location, pp, errors, defs, namedSignature, signatureName;
+nonterminal ProductionLHS with config, grammarName, env, location, pp, errors, defs, outputElement;
+nonterminal ProductionRHS with config, grammarName, env, location, pp, errors, defs, inputElements;
+nonterminal ProductionRHSElem with config, grammarName, env, location, pp, errors, defs, inputElements, deterministicCount;
 
 {--
  - Used to help give names to children, when names are omitted.

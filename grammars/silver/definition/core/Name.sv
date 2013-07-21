@@ -1,6 +1,6 @@
 grammar silver:definition:core;
 
-nonterminal Name with config, grammarName, file, location, pp, name;
+nonterminal Name with config, grammarName, location, pp, name;
 
 {--
  - An identifier's (possibly qualified) name.

@@ -2,8 +2,8 @@ grammar silver:modification:ffi;
 
 terminal FFI_kwd 'foreign' lexer classes {KEYWORD,RESERVED};
 
-nonterminal FFIDefs with config, location, grammarName, file, errors, signature, env, pp;
-nonterminal FFIDef with config, location, grammarName, file, errors, signature, env, pp;
+nonterminal FFIDefs with config, location, grammarName, errors, signature, env, pp;
+nonterminal FFIDef with config, location, grammarName, errors, signature, env, pp;
 
 concrete production functionDclFFI
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'foreign' '{' ffidefs::FFIDefs '}'

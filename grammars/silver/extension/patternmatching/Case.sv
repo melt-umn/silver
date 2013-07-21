@@ -25,12 +25,12 @@ synthesized attribute matchRuleList :: [Decorated MatchRule];
 
 
 -- MR | ...
-nonterminal MRuleList with location, config, pp, signature, env, file, matchRuleList, errors;
+nonterminal MRuleList with location, config, pp, signature, env, matchRuleList, errors;
 -- P -> E
-nonterminal MatchRule with location, config, pp, signature, env, file, headPattern, errors, isVarMatchRule;
+nonterminal MatchRule with location, config, pp, signature, env, headPattern, errors, isVarMatchRule;
 
 -- P , ...
-nonterminal PatternList with location, config, pp, patternList, env, file, errors;
+nonterminal PatternList with location, config, pp, patternList, env, errors;
 
 {- NOTE ON ERRORS: #HACK2012
  -
@@ -240,7 +240,6 @@ function tailNestedPatternTransform
     | matchRule(pl,e) -> matchRule(head(pl).patternSubPatternList ++ tail(pl), e, location=head(lst).location)
     end;
   fst.env = head(lst).env;
-  fst.file = head(lst).file;
   fst.signature = head(lst).signature;
   fst.config = head(lst).config;
   
@@ -301,7 +300,6 @@ function allVarCaseTransform
           end, location=head(lst).location)
     end;
   fst.env = head(lst).env;
-  fst.file = head(lst).file;
   fst.signature = head(lst).signature;
   fst.config = head(lst).config;
 

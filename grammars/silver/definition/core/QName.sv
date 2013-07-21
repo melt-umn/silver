@@ -3,11 +3,11 @@ grammar silver:definition:core;
 {--
  - Qualified names of the form 'a:b:c:d...'
  -}
-nonterminal QName with config, name, location, grammarName, file, env, pp;
+nonterminal QName with config, name, location, grammarName, env, pp;
 {--
  - Qualified names where the LAST name has an upper case first letter.
  -}
-nonterminal QNameType with config, name, location, grammarName, file, env, pp;
+nonterminal QNameType with config, name, location, grammarName, env, pp;
 
 {--
  - The list of declarations resulting from looking up this QName
@@ -107,7 +107,7 @@ top::QNameType ::= id::Name ':' qn::QNameType
 {--
  - Qualified name looked up CONTEXTUALLY
  -}
-nonterminal QNameAttrOccur with config, name, location, grammarName, file, env, pp, attrFor, errors, typerep, dcl, attrDcl;
+nonterminal QNameAttrOccur with config, name, location, grammarName, env, pp, attrFor, errors, typerep, dcl, attrDcl;
 
 {--
  - For QNameAttrOccur, the name of the LHS to look up this attribute on.

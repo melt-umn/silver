@@ -54,7 +54,7 @@ top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr tm::Ter
  - This exists as a catch-all for representing regular expressions for terminals.
  - There's only one option here, but it's an extension point.
  -}
-nonterminal RegExpr with config, location, grammarName, file, pp, terminalRegExprSpec;
+nonterminal RegExpr with config, location, grammarName, pp, terminalRegExprSpec;
 
 synthesized attribute terminalRegExprSpec :: Regex_R;
 
@@ -93,8 +93,8 @@ top::TerminalKeywordModifier ::=
 }
 
 
-nonterminal TerminalModifiers with config, location, file, pp, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
-nonterminal TerminalModifier with config, location, file, pp, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+nonterminal TerminalModifiers with config, location, pp, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+nonterminal TerminalModifier with config, location, pp, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 
 synthesized attribute terminalModifiers :: [SyntaxTerminalModifier];
 

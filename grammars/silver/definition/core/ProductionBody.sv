@@ -1,24 +1,24 @@
 grammar silver:definition:core;
 
 nonterminal ProductionBody with
-  config, grammarName, file, env, location, pp, errors, defs, blockContext, compiledGrammars,
+  config, grammarName, env, location, pp, errors, defs, blockContext, compiledGrammars,
   productionAttributes, signature, uniqueSignificantExpression;
 nonterminal ProductionStmts with 
-  config, grammarName, file, env, location, pp, errors, defs, blockContext, compiledGrammars,
+  config, grammarName, env, location, pp, errors, defs, blockContext, compiledGrammars,
   productionAttributes, signature, uniqueSignificantExpression;
 nonterminal ProductionStmt with
-  config, grammarName, file, env, location, pp, errors, defs, blockContext, compiledGrammars,
+  config, grammarName, env, location, pp, errors, defs, blockContext, compiledGrammars,
   productionAttributes, signature, uniqueSignificantExpression;
 
 nonterminal DefLHS with 
-  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature, typerep, defLHSattr;
+  config, grammarName, env, location, pp, errors, blockContext, compiledGrammars, signature, typerep, defLHSattr;
 
 nonterminal ForwardInhs with 
-  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature;
+  config, grammarName, env, location, pp, errors, blockContext, compiledGrammars, signature;
 nonterminal ForwardInh with 
-  config, grammarName, file, env, location, pp, errors, blockContext, compiledGrammars, signature;
+  config, grammarName, env, location, pp, errors, blockContext, compiledGrammars, signature;
 nonterminal ForwardLHSExpr with 
-  config, grammarName, file, env, location, pp, errors, signature, typerep;
+  config, grammarName, env, location, pp, errors, signature, typerep;
 
 {--
  - The signature of this fun/production, given to the production's body.
