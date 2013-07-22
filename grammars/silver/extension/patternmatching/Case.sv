@@ -14,23 +14,29 @@ terminal Arrow_kwd '->';
 terminal Vbar_kwd '|';
 terminal Opt_Vbar_t /\|?/ ; -- optional Coq-style vbar.
 
+-- MR | ...
+nonterminal MRuleList with location, config, pp, signature, env, errors, matchRuleList;
+
+-- Turns MRuleList (of MatchRules) into [AbstractMatchRule]
+synthesized attribute matchRuleList :: [AbstractMatchRule];
+
+-- P -> E
+nonterminal MatchRule with location, config, pp, signature, env, errors, matchRuleList;
+nonterminal AbstractMatchRule with location, headPattern, isVarMatchRule, expandHeadPattern;
+
 -- The head pattern of a match rule
 synthesized attribute headPattern :: Decorated Pattern;
 -- Whether the head pattern of a match rule is a variable binder or not
 synthesized attribute isVarMatchRule :: Boolean;
--- Turns PatternList into [Pattern]
-synthesized attribute patternList :: [Decorated Pattern];
--- Turns MRuleList into [MatchRule]
-synthesized attribute matchRuleList :: [Decorated MatchRule];
-
-
--- MR | ...
-nonterminal MRuleList with location, config, pp, signature, env, matchRuleList, errors;
--- P -> E
-nonterminal MatchRule with location, config, pp, signature, env, headPattern, errors, isVarMatchRule;
+-- Turns A(B, C), D into B, C, D in the patterns list.
+synthesized attribute expandHeadPattern :: AbstractMatchRule;
 
 -- P , ...
 nonterminal PatternList with location, config, pp, patternList, env, errors;
+
+-- Turns PatternList into [Pattern]
+synthesized attribute patternList :: [Decorated Pattern];
+
 
 {- NOTE ON ERRORS: #HACK2012
  -
@@ -63,7 +69,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 }
 
 abstract production caseExpr
-top::Expr ::= es::[Expr] ml::[Decorated MatchRule] failExpr::Expr retType::TypeExp
+top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::TypeExp
 {
   top.pp = error("Internal error: pretty of intermediate data structure");
 
@@ -96,10 +102,10 @@ top::Expr ::= es::[Expr] ml::[Decorated MatchRule] failExpr::Expr retType::TypeE
 --  top.errors <- unsafeTrace([], 
 --     print(top.pp ++ "\n\n", unsafeIO()));
 
-  local partMRs :: Pair<[Decorated MatchRule] [Decorated MatchRule]> =
+  local partMRs :: Pair<[AbstractMatchRule] [AbstractMatchRule]> =
     partition((.isVarMatchRule), ml);
-  local varRules :: [Decorated MatchRule] = partMRs.fst;
-  local prodRules :: [Decorated MatchRule] = partMRs.snd;
+  local varRules :: [AbstractMatchRule] = partMRs.fst;
+  local prodRules :: [AbstractMatchRule] = partMRs.snd;
   
   {--
    - All constructors? Then do a real primitive match.
@@ -115,8 +121,12 @@ top::Expr ::= es::[Expr] ml::[Decorated MatchRule] failExpr::Expr retType::TypeE
    -}
   local allVarCase :: Expr =
     caseExpr(tail(es),
-      allVarCaseTransform(head(es), freshType(){-whatever the first expression's type is?-}, ml),
+      map(bindHeadPattern(head(es), freshType(){-whatever the first expression's type is?-}, _),
+        ml),
       failExpr, retType, location=top.location);
+      -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
+      -- generated, puching it inside 'bindHeadPattern' would generate multiple fresh types.
+      -- So don't try that!
   
   {--
    - Mixed con/var? Partition, and push the vars into the "fail" branch.
@@ -136,7 +146,7 @@ top::MRuleList ::= m::MatchRule
   top.pp = m.pp;
   top.errors := m.errors;  
 
-  top.matchRuleList = [m];
+  top.matchRuleList = m.matchRuleList;
 }
 
 concrete production mRuleList_cons
@@ -145,29 +155,27 @@ top::MRuleList ::= h::MatchRule '|' t::MRuleList
   top.pp = h.pp ++ " | " ++ t.pp;
   top.errors := h.errors ++ t.errors;
   
-  top.matchRuleList = h :: t.matchRuleList;
+  top.matchRuleList = h.matchRuleList ++ t.matchRuleList;
 }
 
 concrete production matchRule_c
 top::MatchRule ::= pt::PatternList '->' e::Expr
 {
   top.pp = pt.pp ++ " -> " ++ e.pp;
-  -- UNCOMMENT if no longer forwarding to matchRule #HACK2012
-  --top.errors <- pt.errors;
+  top.errors := pt.errors; -- e.errors is examine later, after transformation.
 
-  forwards to matchRule(pt.patternList, e, location=$2.location);
+  top.matchRuleList = [matchRule(pt.patternList, e, location=top.location)];
 }
 
 abstract production matchRule
-top::MatchRule ::= pl::[Decorated Pattern] e::Expr
+top::AbstractMatchRule ::= pl::[Decorated Pattern] e::Expr
 {
-  top.pp = implode(", ", map((.pp), pl)) ++ " -> " ++ e.pp;
-  top.errors := foldr(append, [], map((.errors), pl));
-
   top.headPattern = head(pl);
-  -- Here we return true if we have no patterns: essentially, claim missing
-  -- rules are '_'
+  -- If pl is null, and we're consulted, then we're missing patterns, pretend they're _
   top.isVarMatchRule = null(pl) || head(pl).patternIsVariable;
+  -- For this, we safely know that pl is not null:
+  top.expandHeadPattern = 
+    matchRule(head(pl).patternSubPatternList ++ tail(pl), e, location=top.location);
 }
 
 concrete production patternList_one
@@ -226,34 +234,12 @@ function convStringsToExprs
 }
 
 {--
- - As part of the allCon case transformation, we have to take the first pattern,
- - remove it, but also insert all its subPatterns directly.
- - i.e. case e of P0(P1, P2), P3 -> ...
- -   becomes  P1, P2, P3
- -}
-function tailNestedPatternTransform
-[Decorated MatchRule] ::= lst::[Decorated MatchRule]
-{
-  -- TODO: this is a bit hacky, and potentially unnecessary... what with the redecorating and all.
-  local fst :: MatchRule =
-    case head(lst) of
-    | matchRule(pl,e) -> matchRule(head(pl).patternSubPatternList ++ tail(pl), e, location=head(lst).location)
-    end;
-  fst.env = head(lst).env;
-  fst.signature = head(lst).signature;
-  fst.config = head(lst).config;
-  
-  return if null(lst) then []
-         else fst :: tailNestedPatternTransform(tail(lst));
-}
-
-{--
  - When all of 'mrs' have first pattern as a concrete constructor,
  - they are grouped by which constructor and passed here.
  - and we generate primitive patterns for them
  -}
 function allConCaseTransform
-PrimPatterns ::= restExprs::[Expr]  failCase::Expr  retType::TypeExp  mrs::[[Decorated MatchRule]]
+PrimPatterns ::= restExprs::[Expr]  failCase::Expr  retType::TypeExp  mrs::[[AbstractMatchRule]]
 {
   -- TODO: head(head(mrs)).location is probably not the correct thing to use here?? (generally)
   
@@ -262,7 +248,7 @@ PrimPatterns ::= restExprs::[Expr]  failCase::Expr  retType::TypeExp  mrs::[[Dec
   local subcase :: Expr =
     caseExpr(
       convStringsToExprs(names, restExprs),
-      tailNestedPatternTransform(head(mrs)),
+      map(((.expandHeadPattern), head(mrs))),
       failCase, retType, location=head(head(mrs)).location);
 
   local fstPat :: PrimPattern =
@@ -282,29 +268,26 @@ PrimPatterns ::= restExprs::[Expr]  failCase::Expr  retType::TypeExp  mrs::[[Dec
 }
 
 {--
- - When 'lst' left-most patterns are all 'var's,
- - Chop off that first pattern, push it inside the expr as a let with the
- - current scrutinee as value. (headExpr :: headType)
+ - Remove the first pattern from the rule, and put a let binding of it into
+ - the expression.
+ -
+ - Would like to make this an attribute instead of a function, but
+ - (a) we don't have lambdas yet, and the attr would need to be a function value
+ - (b) we don't have a nice way of applying to all element of a list of functions
+ -     e.g. right now we 'map(this(x, y, _), list)'
  -}
-function allVarCaseTransform
-[Decorated MatchRule] ::= headExpr::Expr  headType::TypeExp  lst::[Decorated MatchRule]
+function bindHeadPattern
+AbstractMatchRule ::= headExpr::Expr  headType::TypeExp  rule::AbstractMatchRule
 {
-  -- TODO: this is a bit hacky, and potentially unnecessary... what with the redecorating and all.
-  local fst :: MatchRule =
-    case head(lst) of
-    | matchRule(pl, e) -> 
-        matchRule(tail(pl), 
-          case head(pl).patternVariableName of
-          | just(pvn) -> makeLet(head(lst).location, pvn, headType, headExpr, e)
-          | nothing() -> e
-          end, location=head(lst).location)
-    end;
-  fst.env = head(lst).env;
-  fst.signature = head(lst).signature;
-  fst.config = head(lst).config;
-
-  return if null(lst) then []
-         else fst :: allVarCaseTransform(headExpr, headType, tail(lst));
+  -- If it's '_' we do nothing, otherwise, bind away!
+  return case rule of
+  | matchRule(pl, e) ->
+      matchRule(tail(pl), 
+        case head(pl).patternVariableName of
+        | just(pvn) -> makeLet(rule.location, pvn, headType, headExpr, e)
+        | nothing() -> e
+        end, location=rule.location)
+  end;
 }
 
 function makeLet
@@ -312,14 +295,8 @@ Expr ::= l::Location s::String t::TypeExp e::Expr o::Expr
 {
   return letp(
     assignExpr(
-      name(s, l),
-      '::', 
-      typerepType(t, location=l), 
-      '=', 
-      e, 
-      location=l),
-    o,
-    location=l);
+      name(s, l), '::', typerepType(t, location=l), '=', e, location=l),
+    o, location=l);
 }
 
 function ensureDecoratedExpr
@@ -333,17 +310,17 @@ Expr ::= e::Decorated Expr
 }
 
 function mruleEqForGrouping
-Boolean ::= a::Decorated MatchRule b::Decorated MatchRule
+Boolean ::= a::AbstractMatchRule b::AbstractMatchRule
 {
   return a.headPattern.patternSortKey == b.headPattern.patternSortKey;
 }
 function mruleLTEForSorting
-Boolean ::= a::Decorated MatchRule b::Decorated MatchRule
+Boolean ::= a::AbstractMatchRule b::AbstractMatchRule
 {
   return a.headPattern.patternSortKey <= b.headPattern.patternSortKey;
 }
 function groupMRules
-[[Decorated MatchRule]] ::= l::[Decorated MatchRule]
+[[AbstractMatchRule]] ::= l::[AbstractMatchRule]
 {
   return groupBy(mruleEqForGrouping, sortBy(mruleLTEForSorting, l));
 }
