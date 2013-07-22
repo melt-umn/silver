@@ -66,10 +66,10 @@ temp_imp_ide_dcl svParse ".sv" {
 
   product {
     name "SILVER";
-    version "0.1.9";
+    version "0.2.0";
   }
 
-  --option source linker on;
+  option source linker on;
 };
 
 -- Declarations of IDE functions referred in decl block.
@@ -108,10 +108,11 @@ IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 function generate
 IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {
+  local argio::IOVal<[String]> = getArgStrings(env, i);
 
-  local sargs::[String] = getArgStrings(env) ++ getGrammarToCompile(args);
+  local sargs::[String] = argio.iovalue ++ getGrammarToCompile(args);
 
-  local ru :: IOVal<[IdeMessage]> = ideGenerate(sargs, svParse, sviParse, i);
+  local ru :: IOVal<[IdeMessage]> = ideGenerate(sargs, svParse, sviParse, argio.io);
 
   return ru;
 
@@ -120,18 +121,43 @@ IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 function analyze
 IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {
+  local argio::IOVal<[String]> = getArgStrings(env, i);
 
-  local sargs::[String] = getArgStrings(env) ++ getGrammarToCompile(args);
+  local sargs::[String] = argio.iovalue ++ getGrammarToCompile(args);
 
-  local ru :: IOVal<[IdeMessage]> = ideAnalyze(sargs, svParse, sviParse, i);
+  local ru :: IOVal<[IdeMessage]> = ideAnalyze(sargs, svParse, sviParse, env.projectPath, argio.io);
 
   return ru;
 }
 
 function getArgStrings
-[String] ::= env::IdeEnv
+IOVal<[String]> ::= env::IdeEnv io::IO
 {
-  return ["-I", env.projectPath, "--build-xml-location", env.generatedPath ++ "/build.xml"];
+  -- get paths of linked source folders
+  local pmembers::IOVal<Maybe<[IdeResource]>> = getProjectMembers(env.project, io);
+  local subres::[IdeResource] = if pmembers.iovalue.isJust then pmembers.iovalue.fromJust else [];
+  local paths::IOVal<[String]> = collectLinkedPaths(subres, ["-I", env.projectPath], pmembers.io);
+
+  return ioval(paths.io, paths.iovalue ++ ["--build-xml-location", env.projectPath ++ "/build.xml"]);
+}
+
+function collectLinkedPaths 
+IOVal<[String]> ::= res::[IdeResource] paths::[String] i::IO
+{
+    local hd :: IdeResource = head(res);
+
+    local absPath::IOVal<String> = getAbsolutePath(hd, i);
+    local isFolder::IOVal<Boolean> = resourceIsFolder(hd, absPath.io);
+    local isLinked::IOVal<Boolean> = resourceIsLinked(hd, isFolder.io);
+
+    local paths2::[String] = paths ++ 
+            if (isFolder.iovalue && isLinked.iovalue) 
+            then ["-I", absPath.iovalue]
+            else [];
+
+    return if null(res) 
+           then ioval(i, paths) 
+           else collectLinkedPaths(tail(res), paths2, isLinked.io);
 }
 
 function getGrammarToCompile

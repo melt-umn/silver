@@ -30,6 +30,9 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import @PKG_NAME@.@LANG_NAME@Service;
+import @PKG_NAME@.eclipse.resource.LinkedResourceTracker;
+
 /**
  * This wizard is used to link a source folder to current project.
  * <p>
@@ -45,10 +48,13 @@ public class LinkSourceWizard extends Wizard {
 	
 	/** The only page in this wizard */
 	private LinkSourceWizardPage page1;
+
+	private LinkedResourceTracker tracker;
 	
 	public LinkSourceWizard(IProject project, @LANG_NAME@BuildConfigPropertyPage pp) {
 		this.project = project;
 		this.pp = pp;
+    	tracker = SILVERService.getInstance().getLinkedResourceTracker(project);
 	}
 	
 	@Override
@@ -60,11 +66,14 @@ public class LinkSourceWizard extends Wizard {
 	
 	@Override
 	public boolean performFinish() {
+		String abs = page1.linkSrcTxt.getText();
 		
-	    IPath path = new Path(page1.linkSrcTxt.getText());
+	    IPath path = new Path(abs);
 	    IFolder folder = project.getFolder(page1.linkFolderNameTxt.getText());
 	    try {
 	    	folder.createLink(path, 0, null);
+	    	//Track the addition of this resource
+	    	tracker.add(LinkedResourceTracker.getAbsPath(abs), LinkedResourceTracker.getRelPath(folder));
 		} catch (CoreException e1) {			
 			//Failed
 			e1.printStackTrace();

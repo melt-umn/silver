@@ -478,6 +478,14 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     else
     "") ++
 
+    "  <mkdir dir='${ide.pkg.path}/eclipse/resource'/>\n" ++
+    "  <!-- Project resource management -->\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/resource/LinkedResourceTracker.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/resource/LinkedResourceTracker.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/resource/ResourceChangeListener.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/resource/ResourceChangeListener.java\" filtering=\"true\"/>\n" ++
+    "  \n" ++
+
     "  <mkdir dir='${ide.pkg.path}/eclipse/perspective'/>\n" ++
     "  <!-- A perspective for development using this language. -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/perspective/LANGPerspective.java.template\"\n" ++

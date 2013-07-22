@@ -23,6 +23,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.osgi.service.datalocation.Location;
 
+import @PKG_NAME@.eclipse.resource.LinkedResourceTracker;
 import @PKG_NAME@.imp.builders.@LANG_NAME@Builder;
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 import edu.umn.cs.melt.ide.silver.property.Property;
@@ -40,6 +41,9 @@ public class @LANG_NAME@Service {
 	
 	private Map<String, NIdeEnv> env = new HashMap<String, NIdeEnv>();
 	
+	private Map<String, LinkedResourceTracker> trackers = 
+        new HashMap<String, LinkedResourceTracker>();
+
 	private @LANG_NAME@Service(){
 		if(map==null){
 			map = new HashMap<String, ProjectProperties>();
@@ -55,6 +59,23 @@ public class @LANG_NAME@Service {
 		return singleton;
 	}
 	
+	/**
+	 * Get resource trackers of project specified by given IProject instance.
+	 * 
+	 * @param project
+	 * @return
+	 */
+	public LinkedResourceTracker getLinkedResourceTracker(IProject project){		
+		String name = project.getName();
+		LinkedResourceTracker tracker = trackers.get(name);
+		if(tracker==null){
+			tracker = new LinkedResourceTracker(project);
+			trackers.put(name, tracker);
+		}
+		
+		return tracker;
+	}
+
 	/**
 	 * Get properties of project specified by given IProject instance.
 	 * 
