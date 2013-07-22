@@ -21,7 +21,7 @@ synthesized attribute patternVariableName :: Maybe<String>;
 synthesized attribute patternSubPatternList :: [Decorated Pattern];
 {--
  - The sort (and grouping) key of the pattern.
- - "~var" if patternIsVariable is true.
+ - "~var" if patternIsVariable is true. (TODO: actually, we should call it undefined! It's not used.)
  - fullname if it's a production.
  - otherwise, it is type-depedent, but same values should be the same!
  -}
