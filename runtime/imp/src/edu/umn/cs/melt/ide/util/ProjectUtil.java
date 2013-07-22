@@ -266,10 +266,20 @@ public final class ProjectUtil {
 		new ResourceService(AbstractResourceService.IOV){
 			@Override
 			public Object execute(IResource resource, Object data) {
-				return new StringCatter(resource.getProjectRelativePath().toOSString());
+				return resource.isLinked()?
+					new StringCatter(resource.getProjectRelativePath().toOSString()):
+					new StringCatter("");
 			}
 		};
-	
+
+	private static final AbstractResourceService RESOURCE_GET_ABS_PATH_SERV = 
+		new ResourceService(AbstractResourceService.IOV){
+			@Override
+			public Object execute(IResource resource, Object data) {
+				return new StringCatter(resource.getLocation().toOSString());
+			}
+		};
+			
 	private static final AbstractResourceService RESOURCE_GET_MEMBERS_SERV = 
 		new ResourceService(AbstractResourceService.IOVMAYBE){
 			@Override
@@ -387,8 +397,14 @@ public final class ProjectUtil {
 	/** Create a new folder. Returns the resource if created successfully. */
 	public static final int RESOURCE_CREATE_FOLDER = SERV_TOTAL++;
 	
-	/** Get the path of given resource, relative to project’s root. */
+	/** 
+	 * Get the path of given resource, relative to project’s root. 
+	 * If the resource is linked, an empty string will be returned.
+	 */
 	public static final int RESOURCE_GET_REL_PATH = SERV_TOTAL++;
+	
+	/** Get the absolute path of given resource. */
+	public static final int RESOURCE_GET_ABS_PATH = SERV_TOTAL++;
 	
 	/** 
 	 * Get members of given resource. Returns an empty list if the resource is 
@@ -458,6 +474,7 @@ public final class ProjectUtil {
 		SERVICES[RESOURCE_CREATE_FILE] = RESOURCE_CREATE_FILE_SERV;
 		SERVICES[RESOURCE_CREATE_FOLDER] = RESOURCE_CREATE_FOLDER_SERV;
 		SERVICES[RESOURCE_GET_REL_PATH] = RESOURCE_GET_REL_PATH_SERV;
+		SERVICES[RESOURCE_GET_ABS_PATH] = RESOURCE_GET_ABS_PATH_SERV;
 		SERVICES[RESOURCE_GET_MEMBERS] = RESOURCE_GET_MEMBERS_SERV;
 		SERVICES[RESOURCE_IS_FOLDER] = RESOURCE_IS_FOLDER_SERV;
 		SERVICES[RESOURCE_IS_FILE] = RESOURCE_IS_FILE_SERV;

@@ -13,7 +13,7 @@ import ide;
 
 -- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideAnalyze
-IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
+IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser projectPath::String ioin::IO
 {
   local argResult :: ParseResult<Decorated CmdArgs> = parseArgs(args);
   local a :: Decorated CmdArgs = argResult.parseTree;
@@ -52,14 +52,14 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
   local reRootStream :: IOVal<[Maybe<RootSpec>]> =
     compileGrammars(svParser, sviParser, grammarPath, silverGen, unit.recheckGrammars, true, rootStream.io);
 
-  local messages :: [IdeMessage] = getAllBindingErrors(unit.grammarList);
+  local messages :: [IdeMessage] = getAllBindingErrors(unit.grammarList, projectPath);
 
   return if !argResult.parseSuccess then ioval(ioin, [makeSysIdeMessage(ideMsgLvError, "Parsing failed during build. If source code/resources are changed outside IDE, refresh and rebuild is needed.")])
     else if !null(check.iovalue) then ioval(check.io, getSysMessages(check.iovalue))
     else if !head(rootStream.iovalue).isJust then ioval(rootStream.io, [makeSysIdeMessage(ideMsgLvError, 
             (if buildGrammar=="" 
-             then "No grammar is specified for compilation. Check configutation for this project." 
-             else ("The specified grammar \"" ++ buildGrammar ++ "\" could not be found. Check configutation for this project."))
+             then "No grammar is specified for compilation. Check configuration for this project." 
+             else ("The specified grammar \"" ++ buildGrammar ++ "\" could not be found. Check configuration for this project."))
             )])
     else ioval(rootStream.io, messages);
 }
@@ -133,11 +133,21 @@ function getSysMessages
 }
 
 function getAllBindingErrors
-[IdeMessage] ::= specs::[Decorated RootSpec]
+[IdeMessage] ::= specs::[Decorated RootSpec] projectPath::String
 {
+
+  local spec :: Decorated RootSpec = head(specs);
+  local grmPath::String = translateToPath(spec.declaredName);
+
   return if null(specs)
          then []
-         else rewriteMessages(translateToPath(head(specs).declaredName), head(specs).errors) ++ getAllBindingErrors(tail(specs));
+         else if startsWith(projectPath, spec.grammarSource) -- check if this spec is physically located under project
+              then rewriteMessages(grmPath, spec.errors) ++ getAllBindingErrors(tail(specs), projectPath)
+                  -- if not, generate message for linked resource
+              else rewriteMessagesLinked(grmPath, getGrammarRoot(spec.grammarSource, grmPath), spec.errors) ++ 
+                   getAllBindingErrors(tail(specs), projectPath);
+
+ --rewriteMessages(translateToPath(head(specs).declaredName), head(specs).errors) ++ getAllBindingErrors(tail(specs));
 }
 
 function rewriteMessages
@@ -152,9 +162,30 @@ function rewriteMessages
               end;
 }
 
+function rewriteMessagesLinked
+[IdeMessage] ::= path::String grmRoot::String es::[Message]
+{
+  return if null(es)
+         then []
+         else let 
+                  head :: Message = head(es)
+              in 
+                  [makeLinkedResourceMessage(path, grmRoot, head.loc, head.severity, head.msg)] ++ rewriteMessagesLinked(path, grmRoot, tail(es))
+              end;
+}
+
 function translateToPath
 String ::= declaredName::String
 {
   return implode("/", explode(":", declaredName));
+}
+
+-- fullPath: /home/melt/test/a/b/c
+-- grmPath: a/b/c
+-- returns: /home/melt/test/
+function getGrammarRoot
+String ::= fullPath::String grmPath::String
+{
+  return substring(0, lastIndexOf(grmPath ++ "/", fullPath), fullPath);
 }
 

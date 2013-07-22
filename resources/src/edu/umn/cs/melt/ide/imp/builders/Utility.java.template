@@ -16,6 +16,9 @@ import org.eclipse.core.runtime.CoreException;
 import ide.NIdeMessage;
 import edu.umn.cs.melt.ide.silver.misc.Problem;
 
+import @PKG_NAME@.SILVERService;
+import @PKG_NAME@.eclipse.resource.LinkedResourceTracker;
+
 public class Utility {
 
 	/**
@@ -104,6 +107,12 @@ public class Utility {
 		public void handleSourceProblem(Problem p) {
 			IFile file = p.getFile();
 			try {
+				if(!file.exists()){
+					System.err.println(
+						"A problem is reported on file \"" + file.getName() + "\", which however doesn't exist");
+					return;
+				}
+
 				//Reuse ErrorMarkerID for whatever kind of problem
 				IMarker marker = file.createMarker(@LANG_NAME@Builder.PROBLEM_MARKER_ID);
 				marker.setAttribute(IMarker.MESSAGE, p.getMessage());
@@ -162,8 +171,28 @@ public class Utility {
         	Integer endInd = (Integer) locDecNode.synthesized(
             		core.Init.core_endIndex__ON__core_Location);
         	
+        	boolean isLinked = (Boolean) ideMsgDecNode.synthesized(
+            		ide.Init.ide_isLinked__ON__ide_IdeMessage);
+
+        	if(isLinked){
+            	common.StringCatter rootPath = (common.StringCatter) ideMsgDecNode.synthesized(
+                		ide.Init.ide_rootPath__ON__ide_IdeMessage);
+            	
+            	LinkedResourceTracker tracker = 
+            		@LANG_NAME@Service.getInstance().getLinkedResourceTracker(project);
+            	
+            	String linkedFolderPath = tracker.get(rootPath.toString());
+            	
+            	//Assemble a problem
+            	//IProject project, String pathRelativeToProjectRoot, String fileName, 
+        		//int line, int column, int startInd, int endInd, int severity, String message, 
+            	return Problem.createFileProblem(
+                		project, linkedFolderPath + resPath.toString(), fileName.toString(), 
+                		lineNo, columnNo, startInd, endInd, severity, msg.toString());
+        	} 
+
         	//Assemble a problem
-        	//IProject project, String declName, String fileName, 
+        	//IProject project, String pathRelativeToProjectRoot, String fileName, 
     		//int line, int column, int startInd, int endInd, int severity, String message, 
         	return Problem.createFileProblem(
         		project, resPath.toString(), fileName.toString(), 

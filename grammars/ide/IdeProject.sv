@@ -37,10 +37,10 @@ IO ::= proj::IdeProject depth::Integer i::IO
 }
 
 -- Get the absoluet path of given project.
-function getAbsolutePath
+function getAbsoluteProjectPath
 IOVal<String> ::= proj::IdeProject i::IO
 {
-  return error("Not Yet Implemented: getAbsolutePath");
+  return error("Not Yet Implemented: getAbsoluteProjectPath");
 } foreign {
   "java" : return 
     "edu.umn.cs.melt.ide.util.ProjectUtil.dispatchService(edu.umn.cs.melt.ide.util.ProjectUtil.PROJECT_GET_ABS_PATH, %i%, %proj%, null)";
@@ -121,14 +121,24 @@ IOVal<Maybe<IdeResource>> ::= proj::IdeProject path::String i::IO
     "edu.umn.cs.melt.ide.util.ProjectUtil.dispatchService(edu.umn.cs.melt.ide.util.ProjectUtil.RESOURCE_CREATE_FOLDER, %i%, %proj%, %path%)";
 }
 
--- Get the path of given resource, relative to project’s root.
-function getRelatovePath
+-- Get the path of given resource, relative to project’s root. An empty string would be returned if the resource is linked.
+function getRelativePath
 IOVal<String> ::= res::IdeResource i::IO
 {
-  return error("Not Yet Implemented: getRelatovePath");
+  return error("Not Yet Implemented: getRelativePath");
 } foreign {
   "java" : return 
     "edu.umn.cs.melt.ide.util.ProjectUtil.dispatchService(edu.umn.cs.melt.ide.util.ProjectUtil.RESOURCE_GET_REL_PATH, %i%, %res%, null)";
+}
+
+-- Get the absolute path of given resource.
+function getAbsolutePath
+IOVal<String> ::= res::IdeResource i::IO
+{
+  return error("Not Yet Implemented: getAbsolutePath");
+} foreign {
+  "java" : return 
+    "edu.umn.cs.melt.ide.util.ProjectUtil.dispatchService(edu.umn.cs.melt.ide.util.ProjectUtil.RESOURCE_GET_ABS_PATH, %i%, %res%, null)";
 }
 	
 -- Get members of given resource. Returns an empty list if the resource is a 
