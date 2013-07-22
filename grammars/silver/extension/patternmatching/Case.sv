@@ -248,7 +248,7 @@ PrimPatterns ::= restExprs::[Expr]  failCase::Expr  retType::TypeExp  mrs::[[Abs
   local subcase :: Expr =
     caseExpr(
       convStringsToExprs(names, restExprs),
-      map(((.expandHeadPattern), head(mrs))),
+      map((.expandHeadPattern), head(mrs)),
       failCase, retType, location=head(head(mrs)).location);
 
   local fstPat :: PrimPattern =
