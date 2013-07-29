@@ -70,7 +70,10 @@ public final class SilverEnv {
 			try {
 				if(!verConf.exists()){
 					//System.out.println("version.conf doesn't exist. Create.");
-					toUpdate = true;				
+					toUpdate = true;			
+					if(!ROOT.exists()){
+						ROOT.mkdir();
+					}	
 					verConf.createNewFile();
 				} else {
 					verProps.load(new FileInputStream(verConf));
