@@ -1,12 +1,14 @@
 package edu.umn.cs.melt.ide.silver.env;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -19,9 +21,9 @@ import org.osgi.framework.Bundle;
  * A class representing the Silver installation embedded in Eclipse.
  * <p>
  * Silver IDE has a minimal version of Silver embedded in Eclipse, which 
- * includes /grammars, /generated, /jars (not done yet), among others. This 
- * class is a programming interface by which one can query and configure 
- * this Silver installation.
+ * includes /grammars, /generated, /jars, among others. This class is a 
+ * programming interface by which one can query and configure the embedded
+ * Silver installation.
  * <p>
  * The Silver IDE plug-in will call {@link #initialize(Bundle _bundle)} when
  * started. The initialization will then install minimal Silver into Eclipse,
@@ -59,9 +61,47 @@ public final class SilverEnv {
 			
 			ROOT = new File(parent, "silver");
 			
+			boolean toUpdate = false;
+			
+			File verConf = new File(ROOT, "version.conf");
+			String ver = ide.PgetVersion.invoke().toString();
+			Properties verProps = new Properties();
+			
+			try {
+				if(!verConf.exists()){
+					//System.out.println("version.conf doesn't exist. Create.");
+					toUpdate = true;				
+					verConf.createNewFile();
+				} else {
+					verProps.load(new FileInputStream(verConf));
+					
+					GrammarVersion localVersion = new GrammarVersion(verProps.getProperty("version"));
+					GrammarVersion pluginVersion = new GrammarVersion(ver);
+					
+					if(pluginVersion.isNewerThan(localVersion)){
+						//System.out.println("version.conf contains a version lower than plugin's. Overwrite.");
+						toUpdate = true;
+					}
+				}
+				
+				if(toUpdate){
+					FileOutputStream fos = new FileOutputStream(verConf);
+					verProps.setProperty("version", ver);
+					verProps.store(fos, "");
+					fos.close();
+				}//else {
+				//	System.out.println("version.conf contains a version higher than or equal to plugin's. Ignore.");
+				//}
+			} catch (FileNotFoundException e) {
+				// Shouldn't arrive here
+			} catch (IOException e) {
+				e.printStackTrace();
+				toUpdate = true;
+			}
+			
 			READY = sanityCheck();
 			
-			if(!READY){
+			if(!READY || toUpdate){
 				//Create /silver
 				ROOT.mkdir();
 				
