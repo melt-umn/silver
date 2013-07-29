@@ -28,7 +28,7 @@ terminal ImpIde_ProdInfo_Name_t 'name' lexer classes {KEYWORD};
 terminal ImpIde_ProdInfo_Version_t 'version' lexer classes {KEYWORD};
 
 concrete production ideDcl
-top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmts::IdeStmts ';'
+top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmts::IdeStmts
 {
   top.pp = "temp_imp_ide_dcl " ++ parsername.pp ++ " " ++ fileextension.lexeme ++ "\n";
 
@@ -207,7 +207,7 @@ String ::= str::String
 }
 
 concrete production emptyIdeStmts
-top::IdeStmts ::=
+top::IdeStmts ::= ';'
 {
   top.errors := [];
   top.funcDcls := [];
@@ -217,6 +217,16 @@ top::IdeStmts ::=
 
 concrete production listIdeStmts
 top::IdeStmts ::= '{' funcList::IdeStmtList '}'
+{
+  top.errors := funcList.errors;
+  top.funcDcls := funcList.funcDcls;
+  top.propDcls := funcList.propDcls;
+  top.optDcls := funcList.optDcls;
+}
+
+-- with optional ending ';'
+concrete production listIdeStmts2
+top::IdeStmts ::= '{' funcList::IdeStmtList '}' ';'
 {
   top.errors := funcList.errors;
   top.funcDcls := funcList.funcDcls;

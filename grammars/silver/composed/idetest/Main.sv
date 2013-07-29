@@ -70,7 +70,7 @@ temp_imp_ide_dcl svParse ".sv" {
   }
 
   option source linker on;
-};
+}
 
 -- Declarations of IDE functions referred in decl block.
 function fold
@@ -86,7 +86,7 @@ function fold
 function export
 IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {
-  local buildFile::String = env.generatedPath ++ "/build.xml";
+  local buildFile::String = getBuildXmlPath(env);
 
   local grammarQName::String = head(getGrammarToCompile(args));
 
@@ -138,7 +138,7 @@ IOVal<[String]> ::= env::IdeEnv io::IO
   local subres::[IdeResource] = if pmembers.iovalue.isJust then pmembers.iovalue.fromJust else [];
   local paths::IOVal<[String]> = collectLinkedPaths(subres, ["-I", env.projectPath], pmembers.io);
 
-  return ioval(paths.io, paths.iovalue ++ ["--build-xml-location", env.projectPath ++ "/build.xml"]);
+  return ioval(paths.io, paths.iovalue ++ ["--build-xml-location", getBuildXmlPath(env)]);
 }
 
 function collectLinkedPaths 
@@ -169,5 +169,11 @@ function getGrammarToCompile
     else if head(args).propName == "grammar_to_compile"
 	    then [head(args).propValue]
 	    else getGrammarToCompile(tail(args));
+}
+
+function getBuildXmlPath
+String ::= env::IdeEnv
+{
+  return env.generatedPath ++ "/build.xml";
 }
 
