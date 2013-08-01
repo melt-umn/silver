@@ -33,7 +33,7 @@ jenkinsAuth = "Basic " + base64.encodestring('%s:%s' % (jenkinsUsername, jenkins
 #############
 
 def silverInvoke(grammar, include="", generated="", output=""):
-	cmdStr = "java -Xmx2000M -Xss4M -jar " + silverSharedWorkspace + "/jars/RunSilver.jar --clean"
+	cmdStr = "java -Xmx2000M -Xss8M -jar " + silverSharedWorkspace + "/jars/RunSilver.jar --clean"
 	if include != "":
 		cmdStr += " -I " + include
 	if generated != "":
