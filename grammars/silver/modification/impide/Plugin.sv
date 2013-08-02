@@ -186,7 +186,7 @@ function makeExtensions
                         )
                     ]
                     ++
-                    if(config.hasExporter) then [
+                    (if(config.hasExporter) then [
                         pluginUnstructuredElement(
                             [
                                 "<action",
@@ -197,7 +197,7 @@ function makeExtensions
                                 "</action>"
                             ]
                         )
-                    ] else []
+                    ] else [])
                 )
             ]
         ),
@@ -255,7 +255,7 @@ function makeExtensions
     ]
 
     ++
-    if(!null(config.propertyTabs)) then [
+    (if(!null(config.propertyTabs)) then [
         pluginUnstructuredElement(
             [
                 "<extension point=\"org.eclipse.ui.propertyPages\">",
@@ -277,10 +277,10 @@ function makeExtensions
                 "</extension>"
             ]
         )
-    ] else []
+    ] else [])
 
     ++
-    if(config.hasCodeFolder) then [
+    (if(config.hasCodeFolder) then [
         pluginUnstructuredElement(
             [
                 "<extension",
@@ -292,7 +292,7 @@ function makeExtensions
                 "</extension>"
             ]
         )
-    ] else []
+    ] else [])
 
     ;
 }
