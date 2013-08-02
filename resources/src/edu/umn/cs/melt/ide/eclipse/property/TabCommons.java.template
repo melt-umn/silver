@@ -3,7 +3,6 @@
  *   PKG_NAME
  *   LANG_NAME
  */
-
 package @PKG_NAME@.eclipse.property;
 
 import java.util.List;
@@ -11,12 +10,10 @@ import java.util.List;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.ui.dialogs.PropertyPage;
 
 import @PKG_NAME@.@LANG_NAME@Service;
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
@@ -24,39 +21,16 @@ import edu.umn.cs.melt.ide.silver.property.Property;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 import edu.umn.cs.melt.ide.silver.property.ui.PropertyControl;
 
-/**
- * The Property Page for @LANG_NAME@ project.
- * <p>
- * In general, this page serves as a user-friendly front-end for the 
- * per-project file <i>project.properties</i>, which the user can edit 
- * manually as well, although such practice is not recommended.
- * <p>
- * The class overrides two methods from {@link org.eclipse.ui.dialogs.
- * PropertyPage PropertyPage}. In {@link org.eclipse.ui.dialogs.
- * PropertyPage#createControl(Composite) createControl(Composite)}, it creates
- * all the widgets according to the properties defined in Silver IDE 
- * declaration block (IDE block). For example, a property entry defined in 
- * IDE block as 
- * <pre> <code>property name path</code></pre>
- * will be rendered in this page as a combination of button and text box, where
- * the button is for selecting the path, and the text box displaying the value.
- * <p>
- * In {@link org.eclipse.ui.dialogs.PropertyPage#performOk() performOk()}, the 
- * contents in each text box will be checked and saved into 
- * <i>project.properties</i>, overwriting the old values.
- * 
- * @see {@link edu.umn.cs.melt.ide.silver.property.ProjectProperties ProjectProperties}
- *  which is the API to access to <i>project.properties</i> 
- */
-public class @LANG_NAME@PropertyPage extends PropertyPage {
+public class TabCommons implements IPropertyPageTab {
 
 	private IPropertyControlsProvider provider = new PropertyControlsProvider();
 	
 	private List<PropertyControl> controls;
 	
+	private MultiTabPropertyPage page;
+	
 	@Override
-	protected Control createContents(Composite parent) {	
-		Composite panel = new Composite(parent, SWT.NONE);
+	public void fillInTabItem(Composite panel) {
 		GridLayout layout = new GridLayout();
 		layout.numColumns = 2;
 		panel.setLayout(layout);
@@ -79,10 +53,9 @@ public class @LANG_NAME@PropertyPage extends PropertyPage {
 				input.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 			}			
 		}
-	    
-		return panel;
+		
 	}
-	
+
 	@Override
 	public boolean performOk(){
 		if(!provider.validateAll()){
@@ -99,7 +72,7 @@ public class @LANG_NAME@PropertyPage extends PropertyPage {
 				}
 			}			
 			
-			IProject project = getProject();
+			IProject project = page.getProject();
 			try {
 				project.refreshLocal(IResource.DEPTH_ONE, null);
 			} catch (CoreException e) {
@@ -124,17 +97,18 @@ public class @LANG_NAME@PropertyPage extends PropertyPage {
 		}
 	}
 
+	@Override
+	public void setPropertyPage(MultiTabPropertyPage page){
+		this.page = page;
+	}
+	
 	private ProjectProperties getProperties(){
-		IProject project = getProject();
+		IProject project = page.getProject();
 	    if (project != null) {
 		    return @LANG_NAME@Service.getInstance().getProperties(project);
 		}
 		
 	    return null;
-	}
-	
-	private IProject getProject(){
-		return (IProject) getElement().getAdapter(IProject.class);
 	}
 
 }

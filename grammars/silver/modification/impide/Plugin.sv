@@ -13,14 +13,16 @@ nonterminal PluginElement with xmlOutput, indentLevel;
 synthesized attribute hasExporter :: Boolean;
 synthesized attribute hasSourceLinker :: Boolean;
 synthesized attribute hasCodeFolder :: Boolean;
-nonterminal PluginConfig with hasExporter, hasSourceLinker, hasCodeFolder;
+synthesized attribute propertyTabs :: [Pair<String String>];--Pair<"tab name" "class name">
+nonterminal PluginConfig with hasExporter, hasSourceLinker, hasCodeFolder, propertyTabs;
 
 abstract production pluginConfig
-top::PluginConfig ::= hasExporter::Boolean hasSourceLinker::Boolean hasCodeFolder::Boolean
+top::PluginConfig ::= hasExporter::Boolean hasSourceLinker::Boolean hasCodeFolder::Boolean propertyTabs :: [Pair<String String>]
 {
     top.hasExporter = hasExporter;
     top.hasSourceLinker = hasSourceLinker;
     top.hasCodeFolder = hasCodeFolder;
+    top.propertyTabs = propertyTabs;
 }
 
 abstract production pluginDefinition
@@ -249,56 +251,33 @@ function makeExtensions
                "   </perspective>",
                "</extension>"
             ]
-        ), 
-        pluginStructuredElement(
-            "<extension point=\"org.eclipse.ui.propertyPages\">",
-            "</extension>",
-            "",
-            [
-                pluginUnstructuredElement(
-                    [
-                        "<page",
-                        "   class=\"@PKG_NAME@.eclipse.property.@LANG_NAME@PropertyPage\"",
-                        "   id=\"@LANG_NAME@_IDE.propertyPage\"",
-                        "   name=\"@LANG_NAME@\">",
-                        "   <enabledWhen>",
-                        "     <and>",
-                        "       <instanceof value=\"org.eclipse.core.resources.IProject\"/>",
-                        "       <adapt type=\"org.eclipse.core.resources.IResource\">",
-                        "         <test property=\"org.eclipse.core.resources.projectNature\"",
-                        "           value=\"@LANG_NAME@_IDE.imp.nature\">",
-                        "         </test>",
-                        "       </adapt>",
-                        "     </and>",
-                        "   </enabledWhen>",
-                        "</page>"
-                    ]
-                )
-            ]
-            ++
-            if(config.hasSourceLinker) then [
-                pluginUnstructuredElement(
-                    [
-                        "<page",
-                        "   class=\"@PKG_NAME@.eclipse.property.@LANG_NAME@BuildConfigPropertyPage\"",
-                        "   id=\"@LANG_NAME@_IDE.buildConfig.propertyPage\"",
-                        "   name=\"@LANG_NAME@ Build\">",
-                        "   <enabledWhen>",
-                        "      <and>",
-                        "        <instanceof value=\"org.eclipse.core.resources.IProject\"/>",
-                        "	     <adapt type=\"org.eclipse.core.resources.IResource\">",
-                        "	       <test property=\"org.eclipse.core.resources.projectNature\"",
-                        "	         value=\"@LANG_NAME@_IDE.imp.nature\">",
-                        "	       </test>",
-                        "	     </adapt>",
-                        "	   </and>", 
-                        "   </enabledWhen>",
-                        "</page>"
-                    ]
-                )
-            ] else []
         )
     ]
+
+    ++
+    if(!null(config.propertyTabs)) then [
+        pluginUnstructuredElement(
+            [
+                "<extension point=\"org.eclipse.ui.propertyPages\">",
+                "  <page",
+                "    class=\"@PKG_NAME@.eclipse.property.MultiTabPropertyPage\"",
+                "    id=\"@LANG_NAME@_IDE.buildConfig.propertyPage\"",
+                "    name=\"@LANG_NAME@\">",
+                "    <enabledWhen>",
+                "      <and>",
+                "        <instanceof value=\"org.eclipse.core.resources.IProject\"/>",
+                "	     <adapt type=\"org.eclipse.core.resources.IResource\">",
+                "	       <test property=\"org.eclipse.core.resources.projectNature\"",
+                "	         value=\"@LANG_NAME@_IDE.imp.nature\">",
+                "	       </test>",
+                "	     </adapt>",
+                "	   </and>", 
+                "    </enabledWhen>",
+                "  </page>",
+                "</extension>"
+            ]
+        )
+    ] else []
 
     ++
     if(config.hasCodeFolder) then [

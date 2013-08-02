@@ -44,17 +44,17 @@ public class LinkSourceWizard extends Wizard {
 
 	private IProject project;
 	
-	private @LANG_NAME@BuildConfigPropertyPage pp;
+	private TabBuildConfig pp;
 	
 	/** The only page in this wizard */
 	private LinkSourceWizardPage page1;
 
 	private LinkedResourceTracker tracker;
 	
-	public LinkSourceWizard(IProject project, @LANG_NAME@BuildConfigPropertyPage pp) {
+	public LinkSourceWizard(IProject project, TabBuildConfig pp) {
 		this.project = project;
 		this.pp = pp;
-    	tracker = SILVERService.getInstance().getLinkedResourceTracker(project);
+    	tracker = @LANG_NAME@Service.getInstance().getLinkedResourceTracker(project);
 	}
 	
 	@Override
@@ -186,12 +186,11 @@ public class LinkSourceWizard extends Wizard {
 				setPageComplete(false);
 				return;
 			} else {
-//				//TODO
-//				if(!isLegalFolderName(fldr)){
-//					setErrorMessage("new folder name is not legal");
-//					setPageComplete(false);
-//					return;
-//				}
+				if(!isLegalFolderName(fldr)){
+					setErrorMessage("new folder name is not legal (must start with letters and contain no special symbol)");
+					setPageComplete(false);
+					return;
+				}
 				
 			    IFolder folder = project.getFolder(fldr);
 				if(folder.exists()){
@@ -203,6 +202,14 @@ public class LinkSourceWizard extends Wizard {
 
 			setErrorMessage(null);
 			setPageComplete(true);
+		}
+		
+		private boolean isLegalFolderName(String name){
+			if(name.matches("[a-zA-Z_][a-zA-Z0-9_]*")){
+				return true;
+			}
+			
+			return false;
 		}
 	}
 	

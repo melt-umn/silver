@@ -3,7 +3,6 @@
  *   PKG_NAME
  *   LANG_NAME
  */
-
 package @PKG_NAME@.eclipse.property;
 
 import java.util.Iterator;
@@ -34,25 +33,19 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.TabFolder;
-import org.eclipse.swt.widgets.TabItem;
-import org.eclipse.ui.dialogs.PropertyPage;
 
 import @PKG_NAME@.imp.@LANG_NAME@Plugin;
 
-/**
- * The Property Page for @LANG_NAME@'s build configuration.
- * <p>
- */
-public class @LANG_NAME@BuildConfigPropertyPage extends PropertyPage {
-	
+public class TabBuildConfig implements IPropertyPageTab {
+
 	private StructuredViewer tv;
 	
+	private MultiTabPropertyPage page;
+	
 	@Override
-	protected Control createContents(Composite parent) {	
+	public void fillInTabItem(Composite panel) {
 		//Prepare some layouts to be used in this page
 		GridLayout gdLayoutC1 = new GridLayout();
 		gdLayoutC1.numColumns = 1;
@@ -64,24 +57,15 @@ public class @LANG_NAME@BuildConfigPropertyPage extends PropertyPage {
 		
 		//Assembling the page
 		
-		//1) The outermost container: a tab folder
-		TabFolder folder = new TabFolder(parent, SWT.NULL); 
-		
-		//2) Tab 1: Source
-		TabItem item_srcs = new TabItem(folder, SWT.NULL);
-		item_srcs.setText("Source");
-		Composite panel_srcs = new Composite(folder, SWT.NONE);
-		item_srcs.setControl(panel_srcs);
-		
-		panel_srcs.setLayout(gdLayoutC1);
-		panel_srcs.setLayoutData(new GridData(GridData.FILL_HORIZONTAL|GridData.FILL_VERTICAL));
+		panel.setLayout(gdLayoutC1);
+		panel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL|GridData.FILL_VERTICAL));
 		
 		//2.1) row 1: a text
-		Label r1_label = new Label(panel_srcs, SWT.NONE);
+		Label r1_label = new Label(panel, SWT.NONE);
 		r1_label.setText("Source folders on project path:");
 	    
 		//2.2) row 2: a sub panel
-		Composite sub_panel_srcs = new Composite(panel_srcs, SWT.NONE);
+		Composite sub_panel_srcs = new Composite(panel, SWT.NONE);
 		sub_panel_srcs.setLayout(gdLayoutC2);
 		sub_panel_srcs.setLayoutData(new GridData(GridData.FILL_HORIZONTAL|GridData.FILL_VERTICAL));
 		
@@ -115,12 +99,12 @@ public class @LANG_NAME@BuildConfigPropertyPage extends PropertyPage {
 		
 		Button b1_link_src = new Button(sub_panel_btns, SWT.NONE);
 		b1_link_src.setText("   Link Source...   ");//
-		final Shell shell = parent.getShell();
+		final Shell shell = panel.getShell();
 		b1_link_src.addSelectionListener(new SelectionAdapter(){
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				LinkSourceWizard wiz = new LinkSourceWizard(
-					getProject(), @LANG_NAME@BuildConfigPropertyPage.this);
+						page.getProject(), TabBuildConfig.this);
 				WizardDialog dialog = new WizardDialog(shell, wiz);
 				
 				dialog.open();
@@ -178,8 +162,6 @@ public class @LANG_NAME@BuildConfigPropertyPage extends PropertyPage {
 				}
 			}
 		});
-		
-		return folder;
 	}
 	
 	/**
@@ -252,12 +234,13 @@ public class @LANG_NAME@BuildConfigPropertyPage extends PropertyPage {
 		//Do nothing
 	}
 	
-	private IProject getProject(){
-		return (IProject) getElement().getAdapter(IProject.class);
+	@Override
+	public void setPropertyPage(MultiTabPropertyPage page){
+		this.page = page;
 	}
 	
 	private IResource[] getProjectResources(){
-		IProject project = getProject();
+		IProject project = page.getProject();
 		try {
 			return project.members();
 		} catch (CoreException e) {
@@ -270,5 +253,4 @@ public class @LANG_NAME@BuildConfigPropertyPage extends PropertyPage {
 	void update(){
 		tv.setInput(getProjectResources());
 	}
-
 }

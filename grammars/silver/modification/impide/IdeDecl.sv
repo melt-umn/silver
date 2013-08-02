@@ -63,7 +63,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
   
   local info :: IdeProductInfo = getIdeProductInfo(stmts);
 
-  top.ideSpecs = [ideSpec(fext, stmts.funcDcls, stmts.propDcls, head(spec), info, getConfig(stmts.funcDcls, stmts.optDcls))];
+  top.ideSpecs = [ideSpec(fext, stmts.funcDcls, stmts.propDcls, head(spec), info, getConfig(stmts.funcDcls, stmts.optDcls, stmts.propDcls))];
   
   top.errors <- stmts.errors;
 
@@ -71,13 +71,17 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
 }
 
 function getConfig
-PluginConfig ::= funcs::[Pair<String String>] opts::[IdeOption]
+PluginConfig ::= funcs::[Pair<String String>] opts::[IdeOption] props::[IdeProperty] 
 {
     local hasExporter :: Boolean = checkExistence(funcs, "exporter");
     local hasSourceLinker :: Boolean = checkSwitchedOn(opts, "source linker");
     local hasCodeFolder :: Boolean = checkExistence(funcs, "folder");
 
-    return pluginConfig(hasExporter, hasSourceLinker, hasCodeFolder);
+    local tabs::[Pair<String String>] = 
+        (if null(props) then [] else [pair("Commons", "TabCommons")]) ++
+        (if hasSourceLinker then [pair("Source", "TabBuildConfig")] else []);
+
+    return pluginConfig(hasExporter, hasSourceLinker, hasCodeFolder, tabs);
 }
 
 function checkExistence

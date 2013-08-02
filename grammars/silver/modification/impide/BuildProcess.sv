@@ -459,6 +459,7 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "        tofile=\"${ide.pkg.path}/eclipse/wizard/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
+{--
     "  <mkdir dir='${ide.pkg.path}/eclipse/property'/>\n" ++
     "  <!-- A property page for the project -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/LANGPropertyPage.java.template\"\n" ++
@@ -477,6 +478,32 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "  \n"
     else
     "") ++
+--}
+
+    (if(!null(config.propertyTabs))
+    then
+    "  <mkdir dir='${ide.pkg.path}/eclipse/property'/>\n" ++
+    "  <!-- A project property page -->\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/IPropertyPageTab.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/property/IPropertyPageTab.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/property/MultiTabPropertyPage.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/property/MultiTabPropertyPage.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/TabCommons.java.template\"\n" ++    -- this file always get copied even if it's not used
+    "        tofile=\"${ide.pkg.path}/eclipse/property/TabCommons.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template\"\n" ++    -- this file always get copied even if it's not used
+    "        tofile=\"${ide.pkg.path}/eclipse/property/PropertyControlsProvider.java\" filtering=\"true\"/>\n" ++
+    "  \n" ++
+        (if(config.hasSourceLinker)
+        then
+        "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/LinkSourceWizard.java.template\"\n" ++
+        "        tofile=\"${ide.pkg.path}/eclipse/property/LinkSourceWizard.java\" filtering=\"true\"/>\n" ++
+        "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/TabBuildConfig.java.template\"\n" ++
+        "        tofile=\"${ide.pkg.path}/eclipse/property/TabBuildConfig.java\" filtering=\"true\"/>\n" ++
+        "  \n"
+        else
+        "")
+    else
+    "") ++    
 
     "  <mkdir dir='${ide.pkg.path}/eclipse/resource'/>\n" ++
     "  <!-- Project resource management -->\n" ++
