@@ -1,3 +1,7 @@
+/*
+ * Variables used:
+ *   IDE_VERSION
+ */
 package edu.umn.cs.melt.ide.silver.env;
 
 import java.io.File;
@@ -70,7 +74,7 @@ public final class SilverEnv {
 			try {
 				if(!verConf.exists()){
 					//System.out.println("version.conf doesn't exist. Create.");
-					toUpdate = true;			
+					toUpdate = true;
 					if(!ROOT.exists()){
 						ROOT.mkdir();
 					}	
@@ -78,18 +82,29 @@ public final class SilverEnv {
 				} else {
 					verProps.load(new FileInputStream(verConf));
 					
-					GrammarVersion localVersion = new GrammarVersion(verProps.getProperty("version"));
-					GrammarVersion pluginVersion = new GrammarVersion(ver);
+					GrammarVersion localGrammarVersion = new GrammarVersion(verProps.getProperty("grammar_version"));
+					GrammarVersion grammarVersion = new GrammarVersion(ver);
 					
-					if(pluginVersion.isNewerThan(localVersion)){
+					if(grammarVersion.isNewerThan(localGrammarVersion)){
 						//System.out.println("version.conf contains a version lower than plugin's. Overwrite.");
 						toUpdate = true;
+					} else {
+						
+						GrammarVersion localIdeVersion = new GrammarVersion(verProps.getProperty("ide_version"));
+						GrammarVersion ideVersion = new GrammarVersion("@IDE_VERSION@");
+						
+						if(ideVersion.isNewerThan(localIdeVersion)){
+							//System.out.println("version.conf contains a version lower than plugin's. Overwrite.");
+							toUpdate = true;
+						}		
+						
 					}
 				}
 				
 				if(toUpdate){
 					FileOutputStream fos = new FileOutputStream(verConf);
-					verProps.setProperty("version", ver);
+					verProps.setProperty("grammar_version", ver);
+					verProps.setProperty("ide_version", "@IDE_VERSION@");
 					verProps.store(fos, "");
 					fos.close();
 				}//else {

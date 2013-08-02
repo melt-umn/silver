@@ -413,8 +413,12 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "  <mkdir dir='${ide.pkg.path}/imp/actions'/>\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/actions/EnableLANGNature.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/imp/actions/Enable${lang.name}Nature.java\" filtering=\"true\"/>\n" ++
+    (if(config.hasExporter)
+    then
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/actions/"++actionExportName++".java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/imp/actions/Export${lang.name}.java\" filtering=\"true\"/>\n" ++
+    "        tofile=\"${ide.pkg.path}/imp/actions/Export${lang.name}.java\" filtering=\"true\"/>\n"
+    else
+    "") ++
     "  \n" ++
 
     "  <mkdir dir='${ide.pkg.path}/imp/builders'/>\n" ++
@@ -445,11 +449,15 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "  </copy>\n" ++
     "  \n" ++
 
+    (if(config.hasCodeFolder)
+    then
     "  <mkdir dir='${ide.pkg.path}/imp/folding'/>\n" ++
     "  <!-- Language folding classes, supported by IMP -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/folding/" ++ folderFileName ++ ".java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/imp/folding/${lang.name}FoldingUpdater.java\" filtering=\"true\"/>\n" ++
-    "  \n" ++
+    "  \n"
+    else
+    "") ++
 
     "  <mkdir dir='${ide.pkg.path}/eclipse/wizard'/>\n" ++
     "  <!-- A wizard for creating new project. -->\n" ++
@@ -458,27 +466,6 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/wizard/PropertyGenerator.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/eclipse/wizard/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
-
-{--
-    "  <mkdir dir='${ide.pkg.path}/eclipse/property'/>\n" ++
-    "  <!-- A property page for the project -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/LANGPropertyPage.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/property/${lang.name}PropertyPage.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/property/PropertyControlsProvider.java\" filtering=\"true\"/>\n" ++
-    "  \n" ++
-
-    (if(config.hasSourceLinker)
-    then
-    "  <!-- A property page for the project's build configuration -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/LinkSourceWizard.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/property/LinkSourceWizard.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/LANGBuildConfigPropertyPage.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/property/${lang.name}BuildConfigPropertyPage.java\" filtering=\"true\"/>\n" ++
-    "  \n"
-    else
-    "") ++
---}
 
     (if(!null(config.propertyTabs))
     then
