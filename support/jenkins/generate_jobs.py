@@ -266,11 +266,15 @@ class SubversionJob(JenkinsJobConfig):
 
 #####
 class MeltsvnGrammarJob(SubversionJob):
+	# pregrammar can be "a.b.c" or "a:b:c". Converted to paths, only the latter form is changed (to a/b/c)
+	# subgrammar should always be "a:b:c"
+	# deps are like pregrammar: either form, same rules
 	def __init__(self, jobname, pregrammar, subgrammar, includepath="grammars", invoke="", deps=[]):
 		self.jobname = "meltsvn-" + jobname
-		self.grammar = pregrammar + ":" + subgrammar
-		self.description = "Build grammar " + self.grammar + " located in meltsvn/" + includepath
+		self.grammar = pregrammar.replace(".", ":") + ":" + subgrammar
 		svnlocal = includepath + "/" + pregrammar.replace(":", "/")
+		self.description = "Build grammar " + self.grammar + " located in meltsvn/" + svnlocal
+		# paths are paths to check from svn
 		self.paths = ''.join([self.grammarToConfig(includepath, g) for g in [pregrammar] + deps])
 		self.command = silverInvoke(grammar=self.grammar, generated=".", include=includepath)
 		if invoke == True:
@@ -281,6 +285,7 @@ class MeltsvnGrammarJob(SubversionJob):
 			self.command += "\n" + invoke
 	
 	def grammarToConfig(self, includepath, g):
+		# note that g can be "a.b.c" but we leave that alone, only change "a:b:c" to "a/b/c"
 		local = includepath + "/" + g.replace(":", "/")
 		remote = "https://www-users.cs.umn.edu/meltsvn/" + local
 		return self.pairToConfig((remote, local))
@@ -355,15 +360,17 @@ MeltsvnGrammarJob("Matlab-host", "edu:umn:cs:melt:MATLAB", "artifacts:MATLAB"),
 #MeltsvnGrammarJob("miniHaskell-host", "edu:umn:cs:melt:miniHaskell", "host:bin"),
 #MeltsvnGrammarJob("miniHaskell-host-tests", "edu:umn:cs:melt:miniHaskell", "host:tests", invoke=True),
 
-MeltsvnGrammarJob("ableP-host",              "edu:umn:cs:melt:ableP", "artifacts:promela", deps=["edu:umn:cs:melt:ableC"]), 
-MeltsvnGrammarJob("ableP-host-tests",        "edu:umn:cs:melt:ableP", "artifacts:promela:tests", deps=["edu:umn:cs:melt:ableC"], invoke=True), 
-MeltsvnGrammarJob("ableP-promelaCore",       "edu:umn:cs:melt:ableP", "artifacts:promelaCore", deps=["edu:umn:cs:melt:ableC"]),
-MeltsvnGrammarJob("ableP-promelaCore-tests", "edu:umn:cs:melt:ableP", "artifacts:promelaCore:tests", deps=["edu:umn:cs:melt:ableC"], invoke=True), 
-MeltsvnGrammarJob("ableP-aviation",          "edu:umn:cs:melt:ableP", "artifacts:aviation", deps=["edu:umn:cs:melt:ableC"]), 
-MeltsvnGrammarJob("ableP-aviation-tests",    "edu:umn:cs:melt:ableP", "artifacts:aviation:tests", deps=["edu:umn:cs:melt:ableC"], invoke=True), 
+MeltsvnGrammarJob("ableP-host",              "edu:umn:cs:melt:ableP", "artifacts:promela", deps=["edu.umn.cs.melt.ableC"]), 
+MeltsvnGrammarJob("ableP-host-tests",        "edu:umn:cs:melt:ableP", "artifacts:promela:tests", deps=["edu.umn.cs.melt.ableC"], invoke=True), 
+MeltsvnGrammarJob("ableP-promelaCore",       "edu:umn:cs:melt:ableP", "artifacts:promelaCore", deps=["edu.umn.cs.melt.ableC"]),
+MeltsvnGrammarJob("ableP-promelaCore-tests", "edu:umn:cs:melt:ableP", "artifacts:promelaCore:tests", deps=["edu.umn.cs.melt.ableC"], invoke=True), 
+MeltsvnGrammarJob("ableP-aviation",          "edu:umn:cs:melt:ableP", "artifacts:aviation", deps=["edu.umn.cs.melt.ableC"]), 
+MeltsvnGrammarJob("ableP-aviation-tests",    "edu:umn:cs:melt:ableP", "artifacts:aviation:tests", deps=["edu.umn.cs.melt.ableC"], invoke=True), 
 
-MeltsvnGrammarJob("ableC-host", "edu:umn:cs:melt:ableC", "host:bin"), 
-MeltsvnGrammarJob("ableC-host-tests", "edu:umn:cs:melt:ableC", "host:tests", invoke=True), 
+# temporarily disabled while it's in flux
+MeltsvnGrammarJob("ableC-host", "edu.umn.cs.melt.ableC", "artifacts:parse_only"), 
+# || true, because we just want this run, not to fail the build or whatever.
+SubversionJob("meltsvn-ableC-host-tests", "Run the ableC test suite.", [("https://www-users.cs.umn.edu/meltsvn/grammars/edu.umn.cs.melt.ableC", "grammars/edu.umn.cs.melt.ableC")], "bash grammars/edu.umn.cs.melt.ableC/testing/runTests || true"),
 
 MeltsvnGrammarJob("ableJ-alone",      "edu:umn:cs:melt:ableJ14", "composed:java_alone:bin"), 
 MeltsvnGrammarJob("ableJ-autoboxing", "edu:umn:cs:melt:ableJ14", "composed:java_autoboxing:bin"), 
