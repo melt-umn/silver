@@ -160,7 +160,7 @@ public class DecoratedNode {
 	/**
 	 * @return The {@link Node} this decorates.
 	 */
-	public final Node undecorate(){
+	public final Node undecorate() {
 		return self;
 	}
 
@@ -245,9 +245,9 @@ public class DecoratedNode {
 	private final RuntimeException handleLocalError(final int attribute, final Throwable t) {
 		// Rather than checking in the fast path, we try to reconstruct what went wrong in the slow path.
 		if(self.getLocal(attribute) == null) {
-			return new MissingDefinitionException("Local attribute '" + self.getNameOfLocalAttr(attribute) + "' is not defined in production '" + self.getName() + "'");
+			return new MissingDefinitionException("Local '" + self.getNameOfLocalAttr(attribute) + "' not defined in " + getDebugID());
 		}
-		return new TraceException("Error while evaluating local attribute '" + self.getNameOfLocalAttr(attribute) + "' in production '" + self.getName() + "'", t);
+		return new TraceException("While evaling local '" + self.getNameOfLocalAttr(attribute) + "' in " + getDebugID(), t);
 	}
 
 	/**
@@ -304,13 +304,13 @@ public class DecoratedNode {
 			try {
 				return l.eval(this);
 			} catch(Throwable t) {
-				throw new TraceException("Error while evaluating synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' in production '" + self.getName() + "'", t);
+				throw new TraceException("While evaling syn '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t);
 			}
 		} else if(self.hasForward()) {
 			try {
 				return forward().synthesized(attribute);
 			} catch(Throwable t) {
-				throw new TraceException("Error attempting to fetch from forward in production " + self.getName() + ".", t);
+				throw new TraceException("While evaling syn via forward in " + getDebugID(), t);
 			}
 		} else {
 			l = self.getDefaultSynthesized(attribute);
@@ -318,10 +318,10 @@ public class DecoratedNode {
 				try {
 					return l.eval(this);
 				} catch(Throwable t) {
-					throw new TraceException("Error evaluating default attribute '" + self.getNameOfSynAttr(attribute) + "' in production '" + self.getName() + "'", t);
+					throw new TraceException("While evaling default for '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t);
 				}
 			} else {
-				throw new MissingDefinitionException("Synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' is not defined in production '" + self.getName() + "'");	
+				throw new MissingDefinitionException("Synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' not defined in " + getDebugID());	
 			}
 		}
 	}
@@ -352,7 +352,7 @@ public class DecoratedNode {
 	}
 	
 	private final RuntimeException handleFwdError(Throwable t) {
-		return new TraceException("Error evaluating forward node in production '" + self.getName() + "'", t);
+		return new TraceException("While evaling forward equation in " + getDebugID(), t);
 	}
 
 	/**
@@ -394,10 +394,11 @@ public class DecoratedNode {
 		}
 	}
 	private final RuntimeException handleInhFwdPError(final int attribute, Throwable t) {
-		if(forwardParent == null) {
-			return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to '" + self.getName() + "' by '" + parent.self.getName() + "'");
-		}
-		return new TraceException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' demanded by forward production'" + self.getName() +"'.", t);
+		//This seems impossible since we're checking if forwardParent==null earlier up there!
+		//if(forwardParent == null) {
+		//	return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
+		//}
+		return new TraceException("While evaling inh via forward in " + getDebugID(), t);
 	}
 	private final Object evalInhHere(final int attribute) {
 		try {
@@ -414,9 +415,9 @@ public class DecoratedNode {
 		// node), this could be the result of correctly compiled, but wrongly written user
 		// code.
 		if(inheritedAttributes == null || inheritedAttributes[attribute] == null) {
-			return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to '" + self.getName() + "' by '" + parent.self.getName() + "'");
+			return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
 		}
-		return new TraceException("Error evaluating inherited attribute '" + self.getNameOfInhAttr(attribute) + "' in production '" + self.getName() + "'", t);
+		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' in " + getDebugID(), t);
 	}
 	
 	/**
@@ -445,7 +446,7 @@ public class DecoratedNode {
 	}
 	
 	private final RuntimeException handleInhFwdError(final int attribute, Throwable t) {
-		return new TraceException("Error evaluating inherited attribute '" + self.getNameOfInhAttr(attribute) + "' for forward production in production '" + self.getName() + "'", t);
+		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' for forward in " + getDebugID(), t);
 	}
 
 	// The following are very common types of thunks.
@@ -540,5 +541,24 @@ public class DecoratedNode {
 				return context.inherited(index);
 			}
 		};
+	}
+	
+	/**
+	 * Debug ID. e.g. "node 'some:prod' (f32ca8, ParseFile.c:328:8)"
+	 * 
+	 * @return an identification string for this node.
+	 */
+	public final String getDebugID() {
+		String qualifier;
+		if(self instanceof core.Alocation) {
+			DecoratedNode loc = ((core.Alocation)self).getAnno_core_location().decorate(TopNode.singleton, (Lazy[])null);
+			String file = loc.synthesized(core.Init.core_filename__ON__core_Location).toString();
+			int line = (Integer)loc.synthesized(core.Init.core_line__ON__core_Location);
+			int col = (Integer)loc.synthesized(core.Init.core_column__ON__core_Location);
+			qualifier = ", " + file + ":" + Integer.toString(line) + ":" + Integer.toString(col);
+		} else {
+			qualifier = "";
+		}
+		return "'" + self.getName() + "' (" + Integer.toHexString(System.identityHashCode(this)) + qualifier + ")";
 	}
 }
