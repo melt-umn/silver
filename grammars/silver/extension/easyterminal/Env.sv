@@ -3,6 +3,11 @@ grammar silver:extension:easyterminal;
 import silver:definition:env;
 import silver:definition:regex;
 
+-- TODO BUG FIXME: This looks up terminals via their regular expressions, but
+-- that confuses single quoted and non-single quoted regexs!
+-- i.e. 'hi' will happily match /hi/ and '(' will match /[\(]/, but this should
+-- probably not be the case! A probable solution would be to change the 
+-- DclInfo for terminals to have a RegExpr instead of a Regex_R?
 
 function getTerminalRegexDclAll
 [DclInfo] ::= search::String e::Decorated Env
