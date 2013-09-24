@@ -1,0 +1,26 @@
+<project 
+    xmlns="http://maven.apache.org/POM/4.0.0" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+>
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>edu.umn.cs.melt</groupId>
+  <artifactId>edu.umn.cs.melt.copper</artifactId>
+  <version>1.0.0</version>
+  <packaging>non-maven-jar</packaging>
+  <name>Copper Runtime for Eclipse Plugin</name>
+  <description>Copper Runtime for Eclipse Plugin</description>
+  
+  <build>
+    <plugins>
+        <plugin>
+            <!-- enable non-maven dependency support -->
+            <groupId>com.github.stephenc.nonmavenjar</groupId>
+            <artifactId>non-maven-jar-maven-plugin</artifactId>
+            <extensions>true</extensions>
+        </plugin>
+    </plugins>
+  </build>
+
+</project>
