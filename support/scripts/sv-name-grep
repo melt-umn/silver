@@ -12,5 +12,5 @@
 LOOKBEHIND='(?<![A-Za-z0-9_:])'
 LOOKAHEAD='(?![A-Za-z0-9_:])'
 
-grep --color=auto -P "$LOOKBEHIND$1$LOOKAHEAD" `find . -name "*.sv"`
+grep --color=auto -P -- "$LOOKBEHIND$1$LOOKAHEAD" `find . -name "*.sv"`
 

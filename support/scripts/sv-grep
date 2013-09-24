@@ -6,5 +6,5 @@
 
 # Example: sv-grep '\.env'
 
-grep --color=auto -P "$1" `find . -name "*.sv"`
+grep --color=auto -P -- "$1" `find . -name "*.sv"`
 
