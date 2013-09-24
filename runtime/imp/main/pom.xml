@@ -1,0 +1,73 @@
+<project 
+    xmlns="http://maven.apache.org/POM/4.0.0" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+>
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>edu.umn.cs.melt</groupId>
+  <artifactId>edu.umn.cs.melt.ide.copper</artifactId><!-- Must be same to symbolic name -->
+  <version>1.0.0</version>
+  <packaging>eclipse-plugin</packaging>
+  <name>Runtime for Silver-based IDE</name>
+  <description>Runtime for Silver-based IDE</description>
+
+<!--
+  <parent>
+    <groupId>edu.umn.cs.melt</groupId>
+    <artifactId>ide.runtime.parent</artifactId>
+    <version>1.0.0</version>
+  </parent>
+-->
+
+  <properties>
+    <tycho-version>0.18.1</tycho-version>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-maven-plugin</artifactId>
+        <version>${tycho-version}</version>
+        <extensions>true</extensions>
+      </plugin>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>target-platform-configuration</artifactId>
+        <version>${tycho-version}</version>
+        <configuration>
+          <pomDependencies>consider</pomDependencies>
+          <resolver>p2</resolver>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  
+  <dependencies>
+    <dependency>
+      <groupId>edu.umn.cs.melt</groupId>
+      <artifactId>edu.umn.cs.melt.silver</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.umn.cs.melt</groupId>
+      <artifactId>edu.umn.cs.melt.copper</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <repository>
+      <id>helios</id>
+      <layout>p2</layout>
+      <url>http://download.eclipse.org/releases/helios/</url>
+    </repository>
+    <repository>
+      <id>imp</id>
+      <layout>p2</layout>
+      <url>http://melt.cs.umn.edu/downloads/imp-mirror/</url>
+    </repository>
+  </repositories>
+  
+</project>

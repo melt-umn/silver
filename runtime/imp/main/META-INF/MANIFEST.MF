@@ -14,8 +14,8 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: .
 Require-Bundle: org.eclipse.core.runtime, org.eclipse.core.resources, 
  org.eclipse.imp.runtime, org.eclipse.ui, org.eclipse.jface.text, org.
- eclipse.imp.smapifier, org.eclipse.jdt.core, edu.umn.cs.melt.copper;b
- undle-version="1.0.0", org.eclipse.ui.editors, org.eclipse.ui.workben
- ch.texteditor, lpg.runtime, org.eclipse.ui.console, org.eclipse.ant.c
- ore, org.eclipse.jdt.core, edu.umn.cs.melt.silver;bundle-version="1.0
- .0"
+ eclipse.imp.smapifier, org.eclipse.jdt.core, org.eclipse.ui.editors, 
+ org.eclipse.ui.workbench.texteditor, lpg.runtime, org.eclipse.ui.cons
+ ole, org.eclipse.ant.core, org.eclipse.jdt.core, edu.umn.cs.melt.silv
+ er;bundle-version="1.0.0", edu.umn.cs.melt.copper;bundle-version="1.0
+ .0" 
