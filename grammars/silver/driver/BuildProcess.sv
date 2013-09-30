@@ -70,7 +70,7 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
   local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), reRootStream.io);
 
   return if !argResult.parseSuccess then ioval(print(argResult.parseErrors, ioin), 1)
-  else if a.displayVersion then ioval(print("Silver Version 0.3.6\n", ioin), 1) -- temp: exit with an error code so 'ant' isnt run.
+  else if a.displayVersion then ioval(print("Silver Version 0.4.0-dev\n", ioin), 1) -- temp: exit with an error code so 'ant' isnt run.
   else if !null(check.iovalue) then ioval(print(implode("\n", check.iovalue), check.io), 1)
   else if !head(rootStream.iovalue).isJust then ioval(print("The specified grammar (" ++ buildGrammar ++ ") could not be found.\n", rootStream.io), 1)
   else actions;
