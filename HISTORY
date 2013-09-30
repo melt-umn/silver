@@ -1,9 +1,13 @@
 
 --------------------------------------------------------------------------------
-Silver 0.3.6      May ??, 2013
+Silver 0.3.6      Sep 30, 2013
 
+ - Future compatibility note:
+   - Make sure your whitespace terminals account for \r. Future versions of
+     Silver will no longer automatically strip these!
  - New modular well-definedness analysis implemented (currently alpha quality)
    - Finds duplicated equations by default.
+   - See wiki for details, full analysis enabled with --warn-all
  - 'aspect default production' introduced to allow default equations for attributes
  - 'option' declarations introduce "optional components" of a host language
  - Introduced "closed nonterminals" that forbid new attributes (without a default)
@@ -16,6 +20,10 @@ Silver 0.3.6      May ??, 2013
    - Including core 'location' that the parser can fill in for concrete syntax
  - 'exports' now also implicity 'imports'
  - Bugs fixes and code quality improvements to the compiler.
+ - 'marking' modifier for tokens for copper modular determinism analysis
+ - Prototype string templating feature (s"""hello ${who}""")
+   - note: syntax subject to change
+ - New library for unweighted directed graphs, silver:util:raw:graph
 
 --------------------------------------------------------------------------------
 Silver 0.3.5      Mar 19, 2012
