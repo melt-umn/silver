@@ -11,4 +11,5 @@
 ^test/.*build\.xml$
 ^test/silver\.testing\.bin\.jar$
 ^runtime/java/bin/
+^runtime/imp/main/target
 ^sandbox

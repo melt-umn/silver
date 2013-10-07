@@ -56,8 +56,8 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
   -- Note that it is pure: it doesn't take any actions.
   local unit :: Compilation =
     compilation(
-      foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], rootStream.iovalue)),
-      foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], reRootStream.iovalue)),
+      foldr(consGrammars, nilGrammars(), catMaybes(rootStream.iovalue)),
+      foldr(consGrammars, nilGrammars(), catMaybes(reRootStream.iovalue)),
       buildGrammar, silverHome, silverGen);
   unit.config = a;
     
@@ -103,14 +103,6 @@ function eatGrammars
     else
       newDeps ++ eatGrammars(n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars));
 }
-
--- TODO: look up a standard name for this, and put in std lib?
-function consMaybe
-[a] ::= h::Maybe<a>  t::[a]
-{
-  return if h.isJust then h.fromJust :: t else t;
-}
-
 
 {--
  - Ensures a string ends with a forward slash. Safe to use if it already has one.
