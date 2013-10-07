@@ -46,3 +46,30 @@ Maybe<a> ::= l::Maybe<a> r::Maybe<a>
 {
   return if l.isJust then l else r;
 }
+
+{--
+ - Maybe cons a value to a list, or not.
+ -
+ - @param h  If a value, the value to cons onto the list.
+ - @param t  The list to amend, if there's a value
+ - @return  The list, possibly with a new value at its head.
+ -}
+function consMaybe
+[a] ::= h::Maybe<a>  t::[a]
+{
+  return if h.isJust then h.fromJust :: t else t;
+}
+
+{--
+ - Turn a list of possible values into a list of values, skipping over
+ - any 'nothing's.
+ -
+ - @param l  A list of optional values
+ - @return  The list with all absent values removed, and present values unwrapped.
+ -}
+function catMaybes
+[a] ::= l::[Maybe<a>]
+{
+  return foldr(consMaybe, [], l);
+}
+

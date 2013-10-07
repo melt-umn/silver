@@ -40,8 +40,8 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
   
   local unit :: Compilation =
     compilation(
-      foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], rootStream.iovalue)),
-      foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], reRootStream.iovalue)),
+      foldr(consGrammars, nilGrammars(), catMaybes(rootStream.iovalue)),
+      foldr(consGrammars, nilGrammars(), catMaybes(reRootStream.iovalue)),
       buildGrammar, silverHome, silverGen);
   unit.config = a;
   
@@ -103,8 +103,8 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
   -- Note that it is pure: it doesn't take any actions.
   local unit :: Compilation =
     compilation(
-      foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], rootStream.iovalue)),
-      foldr(consGrammars, nilGrammars(), foldr(consMaybe, [], reRootStream.iovalue)),
+      foldr(consGrammars, nilGrammars(), catMaybes(rootStream.iovalue)),
+      foldr(consGrammars, nilGrammars(), catMaybes(reRootStream.iovalue)),
       buildGrammar, silverHome, silverGen);
   unit.config = a;
     
