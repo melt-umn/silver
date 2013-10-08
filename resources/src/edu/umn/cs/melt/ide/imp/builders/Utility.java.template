@@ -16,7 +16,7 @@ import org.eclipse.core.runtime.CoreException;
 import ide.NIdeMessage;
 import edu.umn.cs.melt.ide.silver.misc.Problem;
 
-import @PKG_NAME@.SILVERService;
+import @PKG_NAME@.@LANG_NAME@Service;
 import @PKG_NAME@.eclipse.resource.LinkedResourceTracker;
 
 public class Utility {
