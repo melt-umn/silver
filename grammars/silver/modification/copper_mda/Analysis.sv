@@ -18,6 +18,8 @@ top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ModuleList
   
   top.errors := orig.lookupValue.errors ++ m.errors;
   
+  top.moduleNames = m.moduleNames;
+  
   local attribute origgram :: Decorated RootSpec;
   origgram = head(searchEnvTree(orig.lookupValue.dcl.sourceGrammar, top.compiledGrammars));
   
