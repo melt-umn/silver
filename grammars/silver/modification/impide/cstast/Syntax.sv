@@ -91,8 +91,10 @@ top::SyntaxDcl ::= ns::NamedSignature modifiers::SyntaxProductionModifiers
     -- BEGIN DIFFERENCE *******************************************************
     "    <Code><![CDATA[\n" ++ 
     "      RESULT = createPTNode(new " ++ makeClassName(ns.fullName) ++ "(" ++ implode(", ", extractNonterminalsFromChildren(0, map(head, rhsRefs))) ++ insertLocationAnnotationAEPTIN(ns, map(head, rhsRefs)) ++ "));\n" ++
+    -- TODO HACK: accesses to RESULT in production action code need to turn into RESULT.getLangSpecNode()
+    -- because the nodes are wrapped in that instead.
+      substitute("RESULT", "RESULT.getLangSpecNode()", modifiers.acode) ++
     -- END DIFFERENCE *********************************************************
-      modifiers.acode ++
     "]]></Code>\n" ++
     "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++
     "    <RHS>" ++ implode("", map(xmlCopperRef, map(head, rhsRefs))) ++ "</RHS>\n" ++
