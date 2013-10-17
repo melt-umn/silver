@@ -35,7 +35,9 @@ Document ::= sep::Document ds::[Document]
 function terminate
 Document ::= sep::Document ds::[Document]
 {
-  return cat(implode(sep, ds), sep);
+  return if null(ds)
+         then notext()
+         else cat(cat(head(ds), sep), terminate(sep, tail(ds)));
 }
 function nestlines
 Document ::= n::Integer inner::Document
