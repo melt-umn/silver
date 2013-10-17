@@ -232,8 +232,13 @@ public final class Util {
 	public static int system(String sb) {
 		try {
 			String cmdstr[] = {"bash", "-c", sb}; // TODO: platform dependency!
-			Process p = Runtime.getRuntime().exec(cmdstr);
+
+			ProcessBuilder pb = new ProcessBuilder(cmdstr);
+			pb.inheritIO();
+			
+			Process p = pb.start();
 			p.waitFor();
+			
 			return p.exitValue();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
