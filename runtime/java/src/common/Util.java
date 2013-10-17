@@ -1,6 +1,7 @@
 package common;
 
 import java.io.*;
+import java.lang.ProcessBuilder.Redirect;
 import java.nio.channels.FileChannel;
 import java.util.*;
 
@@ -234,7 +235,10 @@ public final class Util {
 			String cmdstr[] = {"bash", "-c", sb}; // TODO: platform dependency!
 
 			ProcessBuilder pb = new ProcessBuilder(cmdstr);
-			pb.inheritIO();
+			//pb.inheritIO(); // Java 1.7
+			pb.redirectInput(Redirect.INHERIT)
+			  .redirectOutput(Redirect.INHERIT)
+			  .redirectError(Redirect.INHERIT);
 			
 			Process p = pb.start();
 			p.waitFor();
