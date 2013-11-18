@@ -20,6 +20,9 @@ jenkinsURL = "bani.cs.umn.edu:8080"
 # User name and API token. Note this is not your password! Check user config page to see it.
 jenkinsUsername = "tedinski"
 
+# mercurial full path for jenkins instance
+mercurialFullpath = "/soft/mercurial/1.8.1/lucid64/bin"
+
 # To avoid committing API tokens ever again...
 f = open(os.path.expanduser("~/.jenkinsapi"), 'r')
 jenkinsAPIToken = f.readline().strip()
@@ -207,6 +210,113 @@ class SilverJob(JenkinsJobConfig):
       <recordBuildArtifacts>true</recordBuildArtifacts>
     </hudson.tasks.Fingerprinter>
   </publishers>
+  <buildWrappers/>
+</project>""").substitute(self.__dict__)
+
+#####
+class CopperJob(JenkinsJobConfig):
+	def __init__(self, triggers):
+		self.jobname = "copper"
+		self.description = "Build Copper 0.7-devel from mercurial"
+		self.command = "export PATH=$PATH:" + mercurialFullpath + "\n" + \
+                               "ant dist\n"
+		self.triggers = ', '.join(triggers)
+
+	def configXml(self):
+		assert self.description != "", "Must provide description"
+		assert self.command != "", "Must provide command"
+		assert self.triggers != "", "Must provide triggers"
+		return string.Template("""<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description>${description}</description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.plugins.mercurial.MercurialSCM" plugin="mercurial@1.49">
+    <installation>Module system mercurial</installation>
+    <source>https://code.google.com/p/copper-cc</source>
+    <modules></modules>
+    <branch>0.7-devel</branch>
+    <clean>true</clean>
+    <browser class="hudson.plugins.mercurial.browser.HgWeb">
+      <url>https://code.google.com/p/copper-cc/</url>
+    </browser>
+    <credentialsId></credentialsId>
+  </scm>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers>
+    <hudson.triggers.SCMTrigger>
+      <spec>@daily</spec>
+      <ignorePostCommitHooks>false</ignorePostCommitHooks>
+    </hudson.triggers.SCMTrigger>
+  </triggers>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>${command}</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <hudson.tasks.ArtifactArchiver>
+      <artifacts>jar/*.jar</artifacts>
+      <latestOnly>true</latestOnly>
+      <allowEmptyArchive>false</allowEmptyArchive>
+    </hudson.tasks.ArtifactArchiver>
+    <hudson.tasks.BuildTrigger>
+      <childProjects>${triggers}</childProjects>
+      <threshold>
+        <name>SUCCESS</name>
+        <ordinal>0</ordinal>
+        <color>BLUE</color>
+        <completeBuild>true</completeBuild>
+      </threshold>
+    </hudson.tasks.BuildTrigger>
+    <hudson.tasks.Fingerprinter>
+      <targets></targets>
+      <recordBuildArtifacts>true</recordBuildArtifacts>
+    </hudson.tasks.Fingerprinter>
+  </publishers>
+  <buildWrappers/>
+</project>""").substitute(self.__dict__)
+
+class CopperIntegrationJob(JenkinsJobConfig):
+	def __init__(self):
+		self.jobname = "copper-integration"
+		self.description = "Builds Silver using the latest Copper artifacts."
+		self.command = "mkdir -p sv\n" + \
+                               "cp -r /export/scratch/melt-jenkins/custom-silver/* sv/\n" + \
+                               "cp /export/scratch/melt-jenkins/jobs/copper/builds/lastSuccessfulBuild/archive/jar/*.jar sv/jars/\n" + \
+                               "cd sv\n" + \
+                               "./deep-rebuild\n" + \
+                               "cd ..\n" + \
+                               "rm -rf sv\n" + \
+                               "cp /export/scratch/melt-jenkins/jobs/copper/builds/lastSuccessfulBuild/archive/jar/*.jar /export/scratch/melt-jenkins/custom-stable-dump/\n"
+
+	def configXml(self):
+		assert self.description != "", "Must provide description"
+		assert self.command != "", "Must provide command"
+		return string.Template("""<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description>${description}</description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>true</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>true</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>${command}</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers/>
   <buildWrappers/>
 </project>""").substitute(self.__dict__)
 
@@ -423,6 +533,13 @@ def main():
 	
 	# After silver builds, and the tests pass, trigger the proxy.
 	SilverJob([x.getJobName() for x in svtestjobs], [svtestproxy.getJobName()]).createOrUpdateJob()
+	
+	# Create the copper build and integration tasks:
+	copperIntegration = CopperIntegrationJob()
+	copperIntegration.createOrUpdateJob()
+	
+	copperBuild = CopperJob([copperIntegration.getJobName()])
+	copperBuild.createOrUpdateJob()
 	
 
 if __name__ == "__main__":
