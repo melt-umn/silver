@@ -66,8 +66,7 @@ Boolean ::= f::String
 function listSilverFiles
 IOVal<[String]> ::= dir::String  ioin::IO
 {
-  local attribute files :: IOVal<[String]>;
-  files = listContents(dir, ioin);
+  local files :: IOVal<[String]> = listContents(dir, ioin);
 
   return ioval(files.io, filter(isValidSilverFile, files.iovalue));
 }
@@ -78,11 +77,8 @@ IOVal<[String]> ::= dir::String  ioin::IO
 function isValidInterface
 IOVal<Maybe<Integer>> ::= file::String  ioin::IO
 {
-  local attribute hasInterface :: IOVal<Boolean>;
-  hasInterface = isFile(file, ioin);
-
-  local attribute modTime :: IOVal<Integer>;
-  modTime = fileTime(file, hasInterface.io);
+  local hasInterface :: IOVal<Boolean> = isFile(file, ioin);
+  local modTime :: IOVal<Integer> = fileTime(file, hasInterface.io);
 
   return if hasInterface.iovalue then ioval(modTime.io, just(modTime.iovalue)) else ioval(hasInterface.io, nothing());
 }
@@ -94,11 +90,8 @@ IOVal<Maybe<Integer>> ::= file::String  ioin::IO
 function fileTimes
 IOVal<Integer> ::= dir::String is::[String] i::IO 
 {
-  local attribute ft :: IOVal<Integer>;
-  ft = fileTime(dir ++ head(is), i);
-
-  local attribute rest :: IOVal<Integer>;
-  rest = fileTimes(dir, tail(is), ft.io);
+  local ft :: IOVal<Integer> = fileTime(dir ++ head(is), i);
+  local rest :: IOVal<Integer> = fileTimes(dir, tail(is), ft.io);
 
   return if null(is)
          then fileTime(dir, i) -- check the directory itself. Catches deleted files.
