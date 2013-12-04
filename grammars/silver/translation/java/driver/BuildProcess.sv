@@ -48,7 +48,7 @@ top::CmdArgs ::= s::String rest::CmdArgs
 }
 
 aspect function parseArgs
-ParseResult<Decorated CmdArgs> ::= args::[String]
+Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--dont-translate", flag(xjFlag)),
             pair("--onejar", flag(onejarFlag)),
