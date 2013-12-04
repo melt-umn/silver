@@ -26,11 +26,11 @@ nonterminal ParseResult<a> with parseSuccess, parseErrors, parseTree<a>;
  - @param e  The error string reported by the parser.
  -}
 abstract production parseFailed
-top::ParseResult<a> ::= e::String
+top::ParseResult<a> ::= e::ParseError
 {
   top.parseSuccess = false;
-  top.parseErrors = e;
-  top.parseTree = error("Demanded parse tree when parsing failed! With errors: " ++ e);
+  top.parseErrors = e.parseErrors;
+  top.parseTree = error("Demanded parse tree when parsing failed! With errors: " ++ e.parseErrors);
 }
 
 {--
@@ -60,5 +60,43 @@ function parseTreeOrDieWithoutStackTrace
 a ::= pr::ParseResult<a>
 {
   return unsafeTrace(pr.parseTree, if pr.parseSuccess then unsafeIO() else exit(-1, print(pr.parseErrors ++ "\n\n", unsafeIO())));
+}
+
+
+{--
+ - Representation of a parser error.
+ -}
+nonterminal ParseError with parseErrors;
+
+{--
+ - This production as currently designed matches up exactly with what copper raises in its syntax error exception.
+ -
+ - @param diagnosticString  An un-pretty but convenient way of printing out this parser error.
+ - @param location  The location (filename, line, column, index, etc) of the parser error
+ - @param expectedNames  The display names of the expected terminals
+ - @param matchedNames  The display names of what the parser matched
+ -}
+abstract production syntaxError
+top::ParseError ::=
+  diagnosticString::String
+  location::Location
+  expectedNames::[String]
+  matchedNames::[String]
+{
+  top.parseErrors = diagnosticString;
+}
+
+{--
+ - This production accomodates an unknown type of parser error.
+ -
+ - @param diagnosticString  A string describing the error
+ - @param file  The filename the error occured on. No other location information is available.
+ -}
+abstract production unknownParseError
+top::ParseError ::=
+  diagnosticString::String
+  file::String
+{
+  top.parseErrors = diagnosticString;
 }
 
