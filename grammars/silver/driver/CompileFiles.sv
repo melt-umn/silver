@@ -14,15 +14,14 @@ IOVal<Grammar> ::= svParser::SVParser  gpath::String  files::[String]  ioin::IO
   local file :: String = head(files);
   
   -- Print the path we're reading, and read the file.
-  local attribute text :: IOVal<String>;
-  text = readFile(gpath ++ file, print("\t[" ++ gpath ++ file ++ "]\n", ioin));
+  local text :: IOVal<String> =
+    readFile(gpath ++ file, print("\t[" ++ gpath ++ file ++ "]\n", ioin));
 
   -- This is where a .sv file actually gets parsed:
   local r :: ParseResult<Root> = svParser(text.iovalue, file);
 
   -- Continue parsing the rest of the files.
-  production attribute recurse :: IOVal<Grammar>;
-  recurse = compileFiles(svParser, gpath, tail(files), text.io);
+  local recurse :: IOVal<Grammar> = compileFiles(svParser, gpath, tail(files), text.io);
 
   return if null(files) then ioval(ioin, nilGrammar())
          -- Using nilGrammar in this case because there seems to be no end to io token demanding issues:

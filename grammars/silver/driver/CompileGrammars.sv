@@ -34,5 +34,12 @@ IOVal<[Maybe<RootSpec>]> ::=
       ioval(ioin, [])
     else
       ioval(recurse.io, unsafeTrace(now.iovalue, now.io) :: recurse.iovalue);
+  -- A short note about that unsafeTrace:
+  -- Unfortunately, Silver lacks any way to indicate strictness in the types, and
+  -- as a consequence, writing 'now.iovalue :: ...' means we can construct this
+  -- list without actually forcing the IO action intended by 'now', since we
+  -- never need to evaluate 'now' at all!
+  -- So we use unsafeTrace to first eval the IO action (on now.io) and then return
+  -- the 'now.iovalue' thunk.
 }
 
