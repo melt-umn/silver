@@ -19,7 +19,7 @@ top::CmdArgs ::= rest::CmdArgs
   forwards to rest;
 }
 aspect function parseArgs
-ParseResult<Decorated CmdArgs> ::= args::[String]
+Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--copperdump", flag(copperdumpFlag))];
   flagdescs <- ["\t--copperdump  : force Copper to dump parse table information"];

@@ -20,7 +20,7 @@ top::CmdArgs ::= rest::CmdArgs
   forwards to rest;
 }
 aspect function parseArgs
-ParseResult<Decorated CmdArgs> ::= args::[String]
+Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--dump-flow-graph", flag(dumpFlowGraphFlag)),
             pair("--dump-flow-graphs", flag(dumpFlowGraphFlag))]; -- I mistype this a lot.
