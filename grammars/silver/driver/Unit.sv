@@ -45,27 +45,25 @@ IO ::= iIn::IO r::[Decorated RootSpec] genPath::String
 function writeInterface
 IO ::= iIn::IO r::Decorated RootSpec genPath::String
 {
-  local attribute pathName :: String;
-  pathName = genPath ++ "src/" ++ grammarToPath(r.declaredName);
+  local pathName :: String =
+    genPath ++ "src/" ++ grammarToPath(r.declaredName);
 
-  local attribute mkiotest :: IOVal<Boolean>;
-  mkiotest = isDirectory(pathName, iIn);
+  local mkiotest :: IOVal<Boolean> =
+    isDirectory(pathName, iIn);
   
-  local attribute mkio :: IOVal<Boolean>;
-  mkio = if mkiotest.iovalue
-         then mkiotest
-         else mkdir(pathName, mkiotest.io);
+  local mkio :: IOVal<Boolean> =
+    if mkiotest.iovalue
+    then mkiotest
+    else mkdir(pathName, mkiotest.io);
   
-  local attribute pr :: IO;
-  pr = if mkio.iovalue
-       then print("\t[" ++ r.declaredName ++ "]\n", mkio.io)
-       else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ pathName ++ "\nWarning: if some interface file writes were successful, but others not, Silver's temporaries are in an inconsistent state. Use the --clean flag next run.\n\n", mkio.io));
+  local pr :: IO =
+    if mkio.iovalue
+    then print("\t[" ++ r.declaredName ++ "]\n", mkio.io)
+    else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ pathName ++ "\nWarning: if some interface file writes were successful, but others not, Silver's temporaries are in an inconsistent state. Use the --clean flag next run.\n\n", mkio.io));
   
-  local attribute rm :: IO;
-  rm = deleteStaleData(pr, genPath, r.declaredName);
+  local rm :: IO = deleteStaleData(pr, genPath, r.declaredName);
   
-  local attribute wr :: IO;
-  wr = writeFile(pathName ++ "Silver.svi", unparseRootSpec(r), rm);
+  local wr :: IO = writeFile(pathName ++ "Silver.svi", unparseRootSpec(r), rm);
   
   return wr;
 }
@@ -81,26 +79,19 @@ top::Unit ::= r::Decorated RootSpec genPath::String
 function deleteStaleData
 IO ::= iIn::IO genPath::String gram::String
 {
-  local attribute srcPath :: String;
-  srcPath = genPath ++ "src/" ++ grammarToPath(gram);
-
-  local attribute binPath :: String;
-  binPath = genPath ++ "bin/" ++ grammarToPath(gram);
+  local srcPath :: String = genPath ++ "src/" ++ grammarToPath(gram);
+  local binPath :: String = genPath ++ "bin/" ++ grammarToPath(gram);
   
-  local attribute srcFiles :: IOVal<[String]>;
-  srcFiles = listContents(srcPath, iIn);
+  local srcFiles :: IOVal<[String]> = listContents(srcPath, iIn);
+  local binFiles :: IOVal<[String]> = listContents(binPath, srcFiles.io);
   
-  local attribute binFiles :: IOVal<[String]>;
-  binFiles = listContents(binPath, srcFiles.io);
-  
-  return deleteStaleDataFiles( deleteStaleDataFiles( binFiles.io, binPath, binFiles.iovalue), srcPath, srcFiles.iovalue);
+  return deleteStaleDataFiles( deleteStaleDataFiles(binFiles.io, binPath, binFiles.iovalue), srcPath, srcFiles.iovalue);
          
 }
 function deleteStaleDataFiles
 IO ::= iIn::IO path::String files::[String]
 {
-  local attribute isf :: IOVal<Boolean>;
-  isf = isFile(path ++ head(files), iIn);
+  local isf :: IOVal<Boolean> = isFile(path ++ head(files), iIn);
   
   return if null(files) then iIn
          else if !isf.iovalue then deleteStaleDataFiles(isf.io, path, tail(files))
@@ -111,33 +102,32 @@ abstract production printAllBindingErrors
 top::Unit ::= specs::[Decorated RootSpec]
 {
   forwards to printAllBindingErrorsHelp(specs)
-	with {
-		ioIn = print("Checking For Errors.\n", top.ioIn);
-	};
+  with {
+    ioIn = print("Checking For Errors.\n", top.ioIn);
+  };
 }
 
 abstract production printAllBindingErrorsHelp
 top::Unit ::= specs::[Decorated RootSpec]
 {
-  local attribute es :: [Message];
-  es = head(specs).errors;
+  local es :: [Message] = head(specs).errors;
 
-  local attribute i :: IO;
-  i = if null(es)
-      then top.ioIn
-      else print("Errors for : " ++ head(specs).declaredName ++ " :\n" ++ foldMessages(es) ++ "\n\n", top.ioIn);
+  local i :: IO =
+    if null(es)
+    then top.ioIn
+    else print("Errors for : " ++ head(specs).declaredName ++ " :\n" ++ foldMessages(es) ++ "\n\n", top.ioIn);
 
-  local attribute recurse :: Unit;
-  recurse = printAllBindingErrorsHelp(tail(specs));
+  local recurse :: Unit = printAllBindingErrorsHelp(tail(specs));
   recurse.ioIn = i;
 
   top.io = if null(specs) then top.ioIn else recurse.io;
 
-  top.code = if null(specs) || (!containsErrors(es, head(specs).config.warnError) && recurse.code == 0)
-	     then 0
-	     else 20;
+  top.code = 
+    if null(specs) || (!containsErrors(es, head(specs).config.warnError) && recurse.code == 0)
+    then 0
+    else 20;
 
-  top.order = 0;
+  top.order = 1;
 }
 
 

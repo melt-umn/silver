@@ -22,3 +22,19 @@ top::Either<a b> ::= value::b
 }
 
 
+{--
+ - Order preserving partitioning of a list of eithers into a pair
+ - of lists of the two different results.
+ -}
+function partitionEithers
+Pair<[a] [b]> ::= l::[Either<a b>]
+{
+  local recurse :: Pair<[a] [b]> = partitionEithers(tail(l));
+  
+  return case l of
+  | [] -> pair([], [])
+  | left(a) :: _ -> pair(a :: recurse.fst, recurse.snd)
+  | right(b) :: _ -> pair(recurse.fst, b :: recurse.snd)
+  end;
+}
+
