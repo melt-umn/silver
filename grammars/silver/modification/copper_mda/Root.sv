@@ -2,7 +2,7 @@ grammar silver:modification:copper_mda;
 
 import silver:driver:util;
 
-synthesized attribute mdaSpecs :: [MdaSpec] occurs on Root, AGDcls, AGDcl, RootSpec, GrammarPart, Grammar;
+synthesized attribute mdaSpecs :: [MdaSpec] occurs on Root, AGDcls, AGDcl, RootSpec, Grammar;
 
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
@@ -43,12 +43,6 @@ top::RootSpec ::= _ _
   top.mdaSpecs = []; -- TODO
 }
 
-aspect production grammarPart
-top::GrammarPart ::= r::Root  fn::String
-{
-  top.mdaSpecs = r.mdaSpecs;
-}
-
 aspect production nilGrammar
 top::Grammar ::=
 {
@@ -56,7 +50,7 @@ top::Grammar ::=
 }
 
 aspect production consGrammar
-top::Grammar ::= h::GrammarPart  t::Grammar
+top::Grammar ::= h::Root  t::Grammar
 {
   top.mdaSpecs = h.mdaSpecs ++ t.mdaSpecs;
 }

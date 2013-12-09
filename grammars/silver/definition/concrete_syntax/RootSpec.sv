@@ -2,7 +2,7 @@ grammar silver:definition:concrete_syntax;
 
 import silver:driver:util;
 
-attribute syntaxAst, parserSpecs occurs on RootSpec, ModuleExportedDefs, Grammar, GrammarPart;
+attribute syntaxAst, parserSpecs occurs on RootSpec, ModuleExportedDefs, Grammar;
 
 aspect function unparseRootSpec
 String ::= r::Decorated RootSpec
@@ -18,13 +18,6 @@ top::RootSpec ::= c1::Grammar  _ _ _
   top.parserSpecs = c1.parserSpecs;
 }
 
-aspect production grammarPart
-top::GrammarPart ::= c1::Root  fn::String
-{
-  top.syntaxAst = c1.syntaxAst;
-  top.parserSpecs = c1.parserSpecs;
-}
-
 aspect production nilGrammar
 top::Grammar ::=
 {
@@ -33,7 +26,7 @@ top::Grammar ::=
 }
 
 aspect production consGrammar
-top::Grammar ::= c1::GrammarPart  c2::Grammar
+top::Grammar ::= c1::Root  c2::Grammar
 {
   top.syntaxAst = c1.syntaxAst ++ c2.syntaxAst;
   top.parserSpecs = c1.parserSpecs ++ c2.parserSpecs;
