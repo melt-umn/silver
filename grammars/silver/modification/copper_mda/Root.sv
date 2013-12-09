@@ -42,6 +42,12 @@ top::RootSpec ::= _ _
 {
   top.mdaSpecs = []; -- TODO
 }
+aspect production errorRootSpec
+top::RootSpec ::= _ _ _ _
+{
+  top.mdaSpecs = [];
+}
+
 
 aspect production nilGrammar
 top::Grammar ::=

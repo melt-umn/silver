@@ -45,6 +45,11 @@ top::RootSpec ::= _ _
 {
   top.ideSpecs = []; -- TODO: This, of course, means we're forgetting ide specs in interfaces
 }
+aspect production errorRootSpec
+top::RootSpec ::= _ _ _ _
+{
+  top.ideSpecs = [];
+}
 
 aspect production nilGrammar
 top::Grammar ::=

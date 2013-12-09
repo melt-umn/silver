@@ -10,8 +10,8 @@ grammar silver:driver;
  -}
 
 {- Orders:
- - 0: errors
- - 1: recheck errors
+ - 0: parsing errors
+ - 1: binding errors
  - 3: interfaces
  - 4: classes
  - 5: copper_mda
@@ -22,6 +22,7 @@ grammar silver:driver;
 aspect production compilation
 top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::String silverGen::String
 {
+  top.postOps <- [printAllParsingErrors(grammars ++ r.grammarList)];
   top.postOps <- [doInterfaces(grammarsToTranslate, silverGen)] ++
     map(touchIface(_, silverGen), r.grammarList);
   top.postOps <- if top.config.noBindingChecking then [] else
@@ -130,4 +131,13 @@ top::Unit ::= specs::[Decorated RootSpec]
   top.order = 1;
 }
 
+abstract production printAllParsingErrors
+top::Unit ::= specs::[Decorated RootSpec]
+{
+  local errs :: [Message] = foldr(append, [], map((.parsingErrors), specs));
+
+  top.io = if null(errs) then top.ioIn else print(foldMessages(errs), top.ioIn);
+  top.order = 0;
+  top.code = if null(errs) then 0 else 21;
+}
 
