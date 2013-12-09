@@ -8,11 +8,6 @@ nonterminal Grammar with
   -- Synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild,
   defs, importedDefs, errors;
-nonterminal GrammarPart with
-  config, compiledGrammars, productionFlowGraphs, grammarFlowTypes,
-  grammarName, env, globalImports, grammarDependencies,
-  declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild,
-  defs, importedDefs, errors;
 
 {--
 - A list of grammars that this grammar depends upon,
@@ -32,20 +27,6 @@ autocopy attribute globalImports :: Decorated Env;
  -}
 synthesized attribute importedDefs :: [Def];
 
-abstract production grammarPart
-top::GrammarPart ::= r::Root  fn::String
-{
-  top.declaredName = r.declaredName;
-  top.moduleNames = r.moduleNames;
-  top.exportedGrammars = r.exportedGrammars;
-  top.optionalGrammars = r.optionalGrammars;
-  top.condBuild = r.condBuild;
-
-  top.importedDefs = r.importedDefs;
-  top.defs = r.defs;
-  top.errors := r.errors;  
-}
-
 abstract production nilGrammar
 top::Grammar ::=
 {
@@ -63,7 +44,7 @@ top::Grammar ::=
 }
 
 abstract production consGrammar
-top::Grammar ::= h::GrammarPart  t::Grammar
+top::Grammar ::= h::Root  t::Grammar
 {
   top.declaredName = if h.declaredName == t.declaredName then h.declaredName else top.grammarName;
   top.moduleNames = h.moduleNames ++ t.moduleNames;

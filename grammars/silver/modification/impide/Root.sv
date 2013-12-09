@@ -5,7 +5,7 @@ import silver:driver;
 {--
  - This attribute will by accumulated up on each 
  -}
-synthesized attribute ideSpecs :: [IdeSpec] occurs on RootSpec, Root, AGDcls, AGDcl, GrammarPart, Grammar;
+synthesized attribute ideSpecs :: [IdeSpec] occurs on RootSpec, Root, AGDcls, AGDcl, Grammar;
 
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
@@ -46,12 +46,6 @@ top::RootSpec ::= _ _
   top.ideSpecs = []; -- TODO: This, of course, means we're forgetting ide specs in interfaces
 }
 
-aspect production grammarPart
-top::GrammarPart ::= r::Root  fn::String
-{
-  top.ideSpecs = r.ideSpecs;
-}
-
 aspect production nilGrammar
 top::Grammar ::=
 {
@@ -59,7 +53,7 @@ top::Grammar ::=
 }
 
 aspect production consGrammar
-top::Grammar ::= h::GrammarPart  t::Grammar
+top::Grammar ::= h::Root  t::Grammar
 {
   top.ideSpecs = h.ideSpecs ++ t.ideSpecs;
 }
