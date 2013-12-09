@@ -28,8 +28,10 @@ IOVal<Maybe<RootSpec>> ::=
 
   local pr :: IO = print("Compiling Grammar: " ++ grammarName ++ "\n", grammarTime.io);
   
-  local gramCompile :: IOVal<Grammar> = compileFiles(svParser, grammarLocation.iovalue.fromJust, files.iovalue, pr);
-  local ifaceCompile :: IOVal<ParseResult<IRoot>> = compileInterface(sviParser, genPath ++ "src/" ++ gramPath, pr);
+  local gramCompile :: IOVal<Pair<[Root] [ParseError]>> =
+    compileFiles(svParser, grammarLocation.iovalue.fromJust, files.iovalue, pr);
+  local ifaceCompile :: IOVal<ParseResult<IRoot>> =
+    compileInterface(sviParser, genPath ++ "src/" ++ gramPath, pr);
   
   -- Not being clean, valid interface file, newer than the grammar source
   local useInterface :: Boolean = !clean && ifaceTime.iovalue.isJust && ifaceTime.iovalue.fromJust > grammarTime.iovalue;
@@ -46,13 +48,21 @@ IOVal<Maybe<RootSpec>> ::=
   local rs :: RootSpec =
     if useInterface && ifaceCompile.iovalue.parseSuccess then
       interfaceRootSpec(ifaceCompile.iovalue.parseTree, ifaceTime.iovalue.fromJust)
+    else if null(gramCompile.iovalue.snd) then
+      grammarRootSpec(foldRoot(gramCompile.iovalue.fst), grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue)
     else
-      grammarRootSpec(gramCompile.iovalue, grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue);
+     errorRootSpec(gramCompile.iovalue.snd, grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue);
   
   return if !grammarLocation.iovalue.isJust || null(files.iovalue) then
     ioval(grammarLocation.io, nothing())
   else
     ioval(join, just(rs));
+}
+
+function foldRoot
+Grammar ::= l::[Root]
+{
+  return foldr(consGrammar, nilGrammar(), l);
 }
 
 {--

@@ -463,13 +463,13 @@ public final class Util {
 	 * @return A silver ParseResult<ROOT> node.
 	 */
 	public static <ROOT> NParseResult callCopperParser(CopperParser<ROOT, CopperParserException> parser, Object string, Object file) {
-		String javaString = ((StringCatter)common.Util.demand(string)).toString();
-		String javaFile = ((StringCatter)common.Util.demand(file)).toString();
+		String javaString = ((StringCatter)demand(string)).toString();
+		String javaFile = ((StringCatter)demand(file)).toString();
 		try {
 			return new core.PparseSucceeded(parser.parse(new StringReader(javaString), javaFile));
 		} catch(CopperSyntaxError e) {
 			// To create a space, we increment the ending columns and indexes by 1.
-			NLocation loc = new Ploc(e.getVirtualFileName(), e.getVirtualLine(), e.getVirtualColumn(), e.getVirtualColumn(), e.getVirtualColumn() + 1, e.getRealCharIndex(), e.getRealCharIndex() + 1);
+			NLocation loc = new Ploc(new StringCatter(e.getVirtualFileName()), e.getVirtualLine(), e.getVirtualColumn(), e.getVirtualColumn(), e.getVirtualColumn() + 1, e.getRealCharIndex(), e.getRealCharIndex() + 1);
 			NParseError err = new PsyntaxError(
 					new common.StringCatter(e.getMessage()),
 					loc,
@@ -478,10 +478,10 @@ public final class Util {
 			return new PparseFailed(err);
 		} catch(CopperParserException e) {
 			// Currently this is dead code, but perhaps in the future we'll see IOException wrapped in here.
-			NParseError err = new PunknownParseError(new common.StringCatter(e.getMessage()), file);
+			NParseError err = new PunknownParseError(new StringCatter(e.getMessage()), file);
 			return new PparseFailed(err);
 		} catch(Throwable t) {
-			throw new common.exceptions.TraceException("An error occured while parsing", t);
+			throw new TraceException("An error occured while parsing", t);
 		}
 	}
 	

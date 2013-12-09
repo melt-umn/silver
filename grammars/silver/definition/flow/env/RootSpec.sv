@@ -12,6 +12,12 @@ String ::= r::Decorated RootSpec
   
 }
 
+aspect production errorRootSpec
+top::RootSpec ::= _ _ _ _
+{
+  top.flowDefs = [];
+}
+
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _
 {

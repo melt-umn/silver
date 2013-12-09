@@ -11,6 +11,13 @@ String ::= r::Decorated RootSpec
   unparses <- ["parsers [" ++ implode(",\n ", map((.unparse), r.parserSpecs)) ++ "]"];
 }
 
+aspect production errorRootSpec
+top::RootSpec ::= _ _ _ _
+{
+  top.syntaxAst = [];
+  top.parserSpecs = [];
+}
+
 aspect production grammarRootSpec
 top::RootSpec ::= c1::Grammar  _ _ _
 {
