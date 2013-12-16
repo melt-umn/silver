@@ -148,12 +148,20 @@ function getAllBindingErrors
   return if null(specs)
          then []
          else if startsWith(projectPath, spec.grammarSource) -- check if this spec is physically located under project
-              then rewriteMessages(grmPath, spec.errors) ++ getAllBindingErrors(tail(specs), projectPath)
+              then getIdeMessages(grmPath, spec) ++ getAllBindingErrors(tail(specs), projectPath)
                   -- if not, generate message for linked resource
-              else rewriteMessagesLinked(grmPath, getGrammarRoot(spec.grammarSource, grmPath), spec.errors) ++ 
+              else getIdeMessagesLinked(grmPath, getGrammarRoot(spec.grammarSource, grmPath), spec) ++ 
                    getAllBindingErrors(tail(specs), projectPath);
+}
 
- --rewriteMessages(translateToPath(head(specs).declaredName), head(specs).errors) ++ getAllBindingErrors(tail(specs));
+-- errorRootSpec(gramCompile.iovalue.snd, grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue);
+
+function getIdeMessages
+[IdeMessage] ::= path::String spec::Decorated RootSpec
+{
+  return if !null(spec.parsingErrors)
+         then rewriteMessages(path, spec.parsingErrors) -- parsing errors (if we have any parsing error, don't bother to further inspect binding errors)
+         else rewriteMessages(path, spec.errors);       -- binding errors
 }
 
 function rewriteMessages
@@ -166,6 +174,14 @@ function rewriteMessages
               in 
                   [makeIdeMessage(path, head.loc, head.severity, head.msg)] ++ rewriteMessages(path, tail(es))
               end;
+}
+
+function getIdeMessagesLinked
+[IdeMessage] ::= path::String grmRoot::String spec::Decorated RootSpec
+{
+  return if null(spec.parsingErrors)
+         then rewriteMessagesLinked(path, grmRoot, spec.errors)
+         else rewriteMessagesLinked(path, grmRoot, spec.parsingErrors);
 }
 
 function rewriteMessagesLinked
