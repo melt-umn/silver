@@ -130,8 +130,7 @@ Message ::= grammarSource::String  e::ParseError
 {
   return case e of
   | syntaxError(str, locat, _, _) ->
-      -- Change the filename to be the full path for this type of error.
-      err(loc(grammarSource ++ locat.filename, locat.line, locat.column, locat.endLine, locat.endColumn, locat.index, locat.endIndex),
+      err(loc(locat.filename, locat.line, locat.column, locat.endLine, locat.endColumn, locat.index, locat.endIndex),
           "Syntax error:\n" ++ str)
   | unknownParseError(str, file) ->
       err(loc(grammarSource ++ file, -1, -1, -1, -1, -1, -1),

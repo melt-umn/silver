@@ -469,7 +469,7 @@ public final class Util {
 			return new core.PparseSucceeded(parser.parse(new StringReader(javaString), javaFile));
 		} catch(CopperSyntaxError e) {
 			// To create a space, we increment the ending columns and indexes by 1.
-			NLocation loc = new Ploc(new StringCatter(e.getVirtualFileName()), e.getVirtualLine(), e.getVirtualColumn(), e.getVirtualColumn(), e.getVirtualColumn() + 1, e.getRealCharIndex(), e.getRealCharIndex() + 1);
+			NLocation loc = new Ploc(new StringCatter(e.getVirtualFileName()), e.getVirtualLine(), e.getVirtualColumn(), e.getVirtualColumn(), e.getVirtualColumn() + 1, (int)(e.getRealCharIndex()), (int)(e.getRealCharIndex()) + 1);
 			NParseError err = new PsyntaxError(
 					new common.StringCatter(e.getMessage()),
 					loc,
