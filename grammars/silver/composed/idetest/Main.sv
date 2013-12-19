@@ -23,6 +23,9 @@ parser svParse::Root {
 
   silver:extension:deprecation;
   silver:extension:testing;
+
+  silver:extension:auto_ast;
+
   silver:extension:templating;
   silver:extension:patternmatching;
 
@@ -34,6 +37,10 @@ parser svParse::Root {
   silver:modification:typedecl;
   silver:modification:copper;
   silver:modification:defaultattr;
+
+  -- slight hacks, for the moment
+  silver:modification:copper_mda;
+  silver:modification:impide;
 }
 
 parser sviParse::IRoot {
