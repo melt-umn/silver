@@ -143,18 +143,16 @@ function getAllBindingErrors
 {
 
   local spec :: Decorated RootSpec = head(specs);
-  local grmPath::String = translateToPath(spec.declaredName);
+  local grmPath::String = translateToPath(spec.grammarSource, projectPath);--spec.declaredName
 
   return if null(specs)
-         then []
-         else if startsWith(projectPath, spec.grammarSource) -- check if this spec is physically located under project
-              then getIdeMessages(grmPath, spec) ++ getAllBindingErrors(tail(specs), projectPath)
-                  -- if not, generate message for linked resource
-              else getIdeMessagesLinked(grmPath, getGrammarRoot(spec.grammarSource, grmPath), spec) ++ 
-                   getAllBindingErrors(tail(specs), projectPath);
+            then []
+            else if startsWith(projectPath, spec.grammarSource) -- check if this spec is physically located under project
+                 then getIdeMessages(grmPath, spec) ++ getAllBindingErrors(tail(specs), projectPath)
+                 -- if not, generate message for linked resource
+                 else getIdeMessagesLinked(grmPath, getGrammarRoot(spec.grammarSource, grmPath), spec) ++ 
+                      getAllBindingErrors(tail(specs), projectPath);
 }
-
--- errorRootSpec(gramCompile.iovalue.snd, grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue);
 
 function getIdeMessages
 [IdeMessage] ::= path::String spec::Decorated RootSpec
@@ -196,10 +194,21 @@ function rewriteMessagesLinked
               end;
 }
 
+{-- This doesn't work when the folder name (a.b.c), rather than folder strucutre (a/b/c), is mapped to grammar,
 function translateToPath
 String ::= declaredName::String
 {
   return implode("/", explode(":", declaredName));
+}
+--}
+
+function translateToPath
+String ::= grammarSource::String projectPath::String 
+{
+  local found :: Boolean = startsWith(projectPath, grammarSource);
+  return if found
+         then substring(length(projectPath), length(grammarSource), grammarSource)
+         else "";-- If not found, the generated message will contain invalid resource path and won't be marked in IDE.
 }
 
 -- fullPath: /home/melt/test/a/b/c
