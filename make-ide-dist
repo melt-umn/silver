@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Set up directory
+mkdir -p  /web/research/melt.cs.umn.edu/downloads/Silver_IDE_v1
+chmod 775 /web/research/melt.cs.umn.edu/downloads/Silver_IDE_v1
+
+rm -Rf /web/research/melt.cs.umn.edu/downloads/Silver_IDE_v1/*
+
+
+# Copy files
+cp generated/ide/silver.composed.idetest/updatesite/target/SILVER_UPDATESITE.zip /web/research/melt.cs.umn.edu/downloads/Silver_IDE_v1/
+
+cd /web/research/melt.cs.umn.edu/downloads/Silver_IDE_v1
+
+unzip SILVER_UPDATESITE.zip
+
+chmod -R go=u *

@@ -14,6 +14,9 @@
     <mkdir dir="${grammars}/core"/>
     <mkdir dir="${grammars}/lib"/>
     <mkdir dir="${grammars}/ide"/>
+    <mkdir dir="${grammars}/silver"/>
+    <mkdir dir="${grammars}/silver/langutil"/>
+    <mkdir dir="${grammars}/silver/util"/>
     <mkdir dir="${jars}"/>
 
     <!-- 2, grab grammar files -->
@@ -25,6 +28,12 @@
     </copy>
     <copy todir="${grammars}/ide" overwrite="true">
       <fileset dir="${sh}/grammars/ide"/>
+    </copy>
+    <copy todir="${grammars}/silver/langutil" overwrite="true">
+      <fileset dir="${sh}/grammars/silver/langutil"/>
+    </copy>
+    <copy todir="${grammars}/silver/util" overwrite="true">
+      <fileset dir="${sh}/grammars/silver/util"/>
     </copy>
 
     <!-- 3, grab runtimes -->
