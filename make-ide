@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 export SILVER_HOME=`pwd`
 echo $SILVER_HOME
 
@@ -22,3 +23,14 @@ cd ../../
 # directory.  To make it public run the make-ide-dist script.
 cd generated/ide/silver.composed.idetest
 mvn package
+
+
+echo "..."
+echo "..."
+echo "..."
+echo "..."
+echo "Be sure to increment IDE version number in silver:composed:idetest:Main.sv"
+echo "..."
+echo "..."
+echo "..."
+echo "..."
