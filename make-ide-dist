@@ -1,5 +1,9 @@
 #!/bin/bash
 
+echo "..."
+echo "Be sure to increment IDE version number in silver:composed:idetest:Main.sv"
+echo "..."
+
 # Set up directory
 mkdir -p  /web/research/melt.cs.umn.edu/downloads/Silver_IDE_v1
 chmod 775 /web/research/melt.cs.umn.edu/downloads/Silver_IDE_v1

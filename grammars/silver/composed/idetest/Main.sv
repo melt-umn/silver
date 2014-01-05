@@ -73,7 +73,7 @@ temp_imp_ide_dcl svParse ".sv" {
 
   product {
     name "SILVER";
-    version "0.2.0";
+    version "0.2.2";
   }
 
   option source linker on;
