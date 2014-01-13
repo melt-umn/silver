@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>@GROUP_ID@</groupId>
   <artifactId>@LANG_NAME@_FEATURE</artifactId>
-  <version>@IDE_VERSION@</version>
+  <version>@IDE_VERSION@.@IDE_BUILD_TIMESTAMP@</version>
   <packaging>eclipse-feature</packaging>
   <name>IDE feature for @LANG_NAME@</name>
   
