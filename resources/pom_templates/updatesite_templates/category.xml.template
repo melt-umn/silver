@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/@LANG_NAME@_FEATURE_@IDE_VERSION@.jar" id="@LANG_NAME@_FEATURE" version="@IDE_VERSION@">
+   <feature url="features/@LANG_NAME@_FEATURE_@IDE_VERSION@.jar" id="@LANG_NAME@_FEATURE" version="@IDE_VERSION@.@IDE_BUILD_TIMESTAMP@">
       <category name="main_category"/>
    </feature>
    <category-def name="main_category" label="Main Category"/>

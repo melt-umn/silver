@@ -61,6 +61,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     "<target name='ide' depends='arg-check, filters, enhance, jars, copper, grammars, create-folders, customize, postbuild'>\n"++
     "    <delete dir='" ++ getIDETempFolder() ++ "'/>\n"++
     "</target>",
+    "<target name='ide-init'>" ++ getIDEInitTarget() ++ "</target>",
     "<target name='arg-check'>" ++ getArgCheckTarget() ++ "</target>",
     "<target name='filters'>" ++ getFiltersTarget() ++ "</target>",
     "<target name='create-folders'>" ++ getCreateFoldersTarget(delegateBuilderName, actionExportName, parserClassName, folderFileName, ide.pluginConfig) ++ "</target>",
@@ -76,7 +77,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
 
   extraDistDeps <- if !isIde then [] else ["ide"]; -- Here's where we demand that target be built ('dist' is a dummy target that just depends on 'jars' initially)
   
-  extraGrammarsDeps <- if !isIde then [] else ["enhance"]; -- enhance the language implementation by adding more source files, for use of IDE. (see target enhance)
+  extraGrammarsDeps <- if !isIde then [] else ["ide-init, enhance"]; -- enhance the language implementation by adding more source files, for use of IDE. (see target enhance)
 
   -- attributes required as an OSGi module
   extraManifestAttributes <- if !isIde then [] else [
@@ -256,6 +257,18 @@ String ::= grm :: String
     return substitute(":", "/", grm) ++ "/";
 }
 
+function getIDEInitTarget
+String ::=
+{
+    return
+    "\n" ++
+
+    "  <tstamp>\n" ++
+    "    <format property='ide.build-timestamp' pattern='yyMMddHHmmss' timezone='UTC'/>\n" ++
+    "  </tstamp>\n";
+}
+
+
 function getArgCheckTarget
 String ::=
 {
@@ -300,6 +313,7 @@ String ::=
     "  <filter token=\"LANG_NAME\" value='${lang.name}'/>\n" ++
     "  <filter token=\"SOURCE_EXT\" value='${ide.fileextension}'/>\n" ++
     "  <filter token=\"IDE_VERSION\" value='${ide.version}'/>\n" ++
+    "  <filter token=\"IDE_BUILD_TIMESTAMP\" value='${ide.build-timestamp}'/>\n" ++
     "  <filter token=\"PROJ_NAME\" value='${lang.name}_IDE_PROJECT'/>\n" ++
     "  <filter token=\"COPPER_RUNTIME_PATH\" value='${sh}/jars/CopperRuntime.jar'/>\n" ++
     "  <filter token=\"LANG_COMPOSED\" value='${lang.composed}'/>\n" ++
