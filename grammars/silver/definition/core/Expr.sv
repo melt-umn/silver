@@ -984,7 +984,16 @@ top::AnnoAppExprs ::=
   top.exprs = [];
 }
 
-
+function reorderedAnnoAppExprs
+[Decorated Expr] ::= d::Decorated AnnoAppExprs
+{
+  -- This is an annoyingly poor quality implementation
+  return map(reorderedGetSnd, sortBy(reorderedLte, zipWith(pair, d.annoIndexSupplied, d.exprs)));
+}
+function reorderedGetSnd
+b ::= p::Pair<a b> { return p.snd; }
+function reorderedLte
+Boolean ::= l::Pair<Integer Decorated Expr>  r::Pair<Integer Decorated Expr> { return l.fst <= r.fst; }
 
 
 

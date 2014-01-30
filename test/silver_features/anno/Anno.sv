@@ -83,3 +83,25 @@ global grabstr :: String = case nt5 of moreAnnoNT(s) -> s end;
 equalityTest ( grabstr, "str", String, silver_tests ) ;
 
 
+
+nonterminal AnnoNT2 with anno1, anno2;
+
+annotation anno1 :: Integer;
+annotation anno2 :: String;
+
+abstract production annoNT2
+top::AnnoNT2 ::=
+{
+}
+
+global annoNT2a :: AnnoNT2 = annoNT2(anno1=1, anno2="2");
+global annoNT2b :: AnnoNT2 = annoNT2(anno2="3", anno1=4);
+
+
+equalityTest ( annoNT2a.anno1, 1, Integer, silver_tests ) ;
+equalityTest ( annoNT2a.anno2, "2", String, silver_tests ) ;
+equalityTest ( annoNT2b.anno1, 4, Integer, silver_tests ) ;
+equalityTest ( annoNT2b.anno2, "3", String, silver_tests ) ;
+
+
+
