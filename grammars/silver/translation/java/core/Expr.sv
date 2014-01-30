@@ -141,7 +141,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
     | functionReference(q) -> -- static method invocation
         "((" ++ finalType(top).transType ++ ")" ++ makeClassName(q.lookupValue.fullName) ++ ".invoke(" ++ argsTranslation(es) ++ "))"
     | productionReference(q) -> -- static constructor invocation
-        "((" ++ finalType(top).transType ++ ")new " ++ makeClassName(q.lookupValue.fullName) ++ "(" ++ implode(", ", map((.lazyTranslation), es.exprs ++ annos.exprs)) ++ "))"
+        "((" ++ finalType(top).transType ++ ")new " ++ makeClassName(q.lookupValue.fullName) ++ "(" ++ implode(", ", map((.lazyTranslation), es.exprs ++ reorderedAnnoAppExprs(annos))) ++ "))"
     | _ -> -- dynamic method invocation
         "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}, " ++ namedargsTranslation(annos) ++ "))" 
     end ;
@@ -160,7 +160,7 @@ String ::= e::Decorated AnnoAppExprs
 {
   -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
   return if null(e.exprs) then "null"
-  else "new Object[]{" ++ implode(", ", map((.lazyTranslation), e.exprs)) ++ "}";
+  else "new Object[]{" ++ implode(", ", map((.lazyTranslation), reorderedAnnoAppExprs(e))) ++ "}";
 }
 
 function int2str String ::= i::Integer { return toString(i); }
