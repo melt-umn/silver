@@ -6,6 +6,7 @@
 package @PKG_NAME@.imp.builders;
 
 import java.util.Map;
+import java.util.Date;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -49,7 +50,8 @@ public class BlockingBuilder implements DelegateBuilder {
 		//Cancel the build if failed
 		if(!buildSuccessful){
 			monitor.setCanceled(true);
-			cls.error("Build failed.");
+			Date d = new Date() ;
+			cls.error("Build failed at " + d.toString() );
 		}
 		
         return new IProject[0];
