@@ -1,0 +1,5 @@
+let 
+  incr : int -> int = lambda x : int . x + 1
+in
+  incr 4
+
