@@ -55,6 +55,8 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     "<property name='ide.delegate.builder.name' value='" ++ delegateBuilderName ++ "' />",
     "<property name='ide.fileextension' value='" ++ ide.ideExtension ++ "' />"] ++ 
 
+    configWizards(ide.wizards) ++ 
+
     getIDEFunctionsDcls(ide.funcDcls) ++
 
     [
@@ -121,6 +123,18 @@ String ::=
     "<getIDERuntimeVersion />\n"++
     "\n"++
     "<property name='ide.rt.version' value='${ide_rt.Bundle-Version}'/>\n";
+}
+
+function configWizards
+[String] ::= wizards :: [IdeWizardDcl]
+{
+    return map(configWizard, wizards);
+}
+
+function configWizard
+String ::= wizard :: IdeWizardDcl
+{
+    return "<property name='ide.function.stubgen." ++ wizard.wizName ++ ".name' value='" ++ makeClassName(wizard.wizFunc) ++ "' />\n";
 }
 
 function getIDEFunctionsDcls
@@ -327,6 +341,7 @@ String ::=
     "  <filter token=\"BUILDER_CLASS_QNAME\" value='${ide.function.builder}'/>\n" ++
     "  <filter token=\"POST_BUILDER_CLASS_QNAME\" value='${ide.function.postbuilder}'/>\n" ++
     "  <filter token=\"EXPORTER_CLASS_QNAME\" value='${ide.function.exporter}'/>\n" ++
+    "  <filter token=\"NEWFILE_STUBGEN_CLASS_QNAME\" value='${ide.function.stubgen.newfile.name}'/>\n" ++
     "  <filter token=\"DELEGATE_BUILDER_NAME\" value='${ide.delegate.builder.name}'/>\n" ++
     "  <filter token=\"LANG_COMPOSED_PKG\" value='${lang.composed}'/>\n" ++ 
     "  <filter token=\"START_NONTERMINAL_CLASS\" value='${start.nonterminal.class}'/>\n" ++
@@ -480,6 +495,22 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/wizard/PropertyGenerator.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/eclipse/wizard/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
+
+    (if(config.hasNewFileWizard)
+    then
+    "  <mkdir dir='${ide.pkg.path}/eclipse/wizard/newfile'/>\n" ++
+    "  <!-- A wizard for creating new source file. -->\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/wizard/newfile/NewSourceFileWizard.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/wizard/newfile/NewSourceFileWizard.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/wizard/newfile/WizardNewSourceFilePage.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/wizard/newfile/WizardNewSourceFilePage.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/wizard/newfile/PropertyControlsProvider.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/wizard/newfile/PropertyControlsProvider.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/wizard/newfile/GenerateNewFileStub.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/wizard/newfile/GenerateNewFileStub.java\" filtering=\"true\"/>\n" ++
+    "  \n"
+    else
+    "") ++
 
     (if(!null(config.propertyTabs))
     then

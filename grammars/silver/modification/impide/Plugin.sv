@@ -14,14 +14,16 @@ synthesized attribute hasExporter :: Boolean;
 synthesized attribute hasSourceLinker :: Boolean;
 synthesized attribute hasCodeFolder :: Boolean;
 synthesized attribute propertyTabs :: [Pair<String String>];--Pair<"tab name" "class name">
-nonterminal PluginConfig with hasExporter, hasSourceLinker, hasCodeFolder, propertyTabs;
+synthesized attribute hasNewFileWizard:: Boolean;
+nonterminal PluginConfig with hasExporter, hasSourceLinker, hasCodeFolder, hasNewFileWizard, propertyTabs;
 
 abstract production pluginConfig
-top::PluginConfig ::= hasExporter::Boolean hasSourceLinker::Boolean hasCodeFolder::Boolean propertyTabs :: [Pair<String String>]
+top::PluginConfig ::= hasExporter::Boolean hasSourceLinker::Boolean hasCodeFolder::Boolean hasNewFileWizard::Boolean propertyTabs :: [Pair<String String>]
 {
     top.hasExporter = hasExporter;
     top.hasSourceLinker = hasSourceLinker;
     top.hasCodeFolder = hasCodeFolder;
+    top.hasNewFileWizard = hasNewFileWizard;
     top.propertyTabs = propertyTabs;
 }
 
@@ -208,28 +210,50 @@ function makeExtensions
                "   </tokenColorer>",
                "</extension>"
             ]
-        ), 
-        pluginUnstructuredElement(
+        ),
+        pluginStructuredElement(
+            "<extension id=\"@LANG_NAME@_IDE.wizards\" name=\"@LANG_NAME@ Project Wizards\" point=\"org.eclipse.ui.newWizards\">",
+            "</extension>",
+            "",
             [
-               "<extension",
-               "   id=\"@LANG_NAME@_IDE.wizards\"",
-               "   name=\"@LANG_NAME@ Project Wizards\"",
-               "   point=\"org.eclipse.ui.newWizards\">",
-               "   <wizard",
-               "      category=\"@LANG_NAME@_IDE.wizards.category/\"",
-               "      class=\"@PKG_NAME@.eclipse.wizard.NewProjectWizard\"",
-               "      id=\"@LANG_NAME@_IDE.wizard.newProject\"",
-               "      name=\"New @LANG_NAME@ Project\"",
-               "      finalPerspective=\"@LANG_NAME@_IDE.perspective\"",
-               "      project=\"true\">",
-               "   </wizard>",
-               "   <category",
-               "      id=\"@LANG_NAME@_IDE.wizards.category\"",
-               "      name=\"@LANG_NAME@\">",
-               "   </category>",
-               "</extension>"
+                pluginUnstructuredElement(
+                    [
+                       "   <wizard",
+                       "      category=\"@LANG_NAME@_IDE.wizards.category/\"",
+                       "      class=\"@PKG_NAME@.eclipse.wizard.NewProjectWizard\"",
+                       "      id=\"@LANG_NAME@_IDE.wizard.newProject\"",
+                       "      name=\"New @LANG_NAME@ Project\"",
+                       "      finalPerspective=\"@LANG_NAME@_IDE.perspective\"",
+                       "      project=\"true\">",
+                       "   </wizard>"
+                    ]
+                )
             ]
-        ), 
+            ++
+            (if(config.hasNewFileWizard) then [
+                pluginUnstructuredElement(
+                    [
+                       "   <wizard",
+                       "      category=\"@LANG_NAME@_IDE.wizards.category/\"",
+                       "      class=\"@PKG_NAME@.eclipse.wizard.newfile.NewSourceFileWizard\"",
+                       "      id=\"@LANG_NAME@.wizard.newSourceFile\"",
+                       "      name=\"New @LANG_NAME@ Source File\">",
+                       "   </wizard>"
+                    ]
+                )
+            ] else [])
+            ++
+            [
+                pluginUnstructuredElement(
+                    [
+                       "   <category",
+                       "      id=\"@LANG_NAME@_IDE.wizards.category\"",
+                       "      name=\"@LANG_NAME@\">",
+                       "   </category>"
+                    ]
+                )
+            ]
+        ),
         pluginUnstructuredElement(
             [
                "<extension",
