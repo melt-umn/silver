@@ -32,19 +32,22 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::
   io00 = print("[IDE plugin] Generating class templates.\n", top.ioIn);
 
   local attribute io01::IO;
-  io01 = writeFile(getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template", getPropertyProvider(ide.propDcls),
+  io01 = writeFile(getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template", getPropertyProvider(ide.propDcls, "property"),
 		mkdir(getIDETempFolder() ++ "eclipse/property", io00).io);
 
   local attribute io02::IO;
-  io02 = writeFile(getIDETempFolder() ++ "eclipse/wizard/PropertyGenerator.java.template", getPropertyGenerator(ide.propDcls),
+  io02 = writeFile(getIDETempFolder() ++ "eclipse/wizard/PropertyGenerator.java.template", getPropertyGenerator(ide.propDcls, ""),
 		mkdir(getIDETempFolder() ++ "eclipse/wizard", io01).io);
 
   local attribute io03::IO;
   io03 = writeFile(getIDETempFolder() ++ "eclipse/property/MultiTabPropertyPage.java.template", getMultiTabPropertyPage(ide.pluginConfig),
 		io02);
 
+  local attribute io04::IO;
+  io04 = createWizardFiles(ide.wizards, io03);
+
   local attribute io10::IO;
-  io10 = print("[IDE plugin] Generating parsers.\n", io03);
+  io10 = print("[IDE plugin] Generating parsers.\n", io04);
   
   local attribute io30::IO;
   io30 = writeNCSSpec(io10, grams, silvergen ++ "src/", specs, pkgName, startNTClassName);
@@ -56,6 +59,28 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::
 
   top.code = 0;
   top.order = 7;
+}
+
+function createWizardFiles
+IO ::= wizards::[IdeWizardDcl] io::IO
+{
+  return
+    if null(wizards)
+    then io
+    else createWizardFiles(tail(wizards), createFilesForOneWizard(head(wizards), io));
+}
+
+function createFilesForOneWizard
+IO ::= wizardDcl::IdeWizardDcl io::IO --wizName, wizDisplay, wizFunc, wizProps :: [IdeProperty]
+{
+  -- property provider
+  local attribute io02::IO;
+  io02 = writeFile(
+            getIDETempFolder() ++ "eclipse/wizard/" ++ wizardDcl.wizName ++ "/PropertyControlsProvider.java.template", 
+            getPropertyProvider(wizardDcl.wizProps, "wizard." ++ wizardDcl.wizName),
+		    mkdir(getIDETempFolder() ++ "eclipse/wizard/" ++ wizardDcl.wizName, io).io);
+
+  return io02;
 }
 
 function getMultiTabPropertyPage 
@@ -175,10 +200,10 @@ String ::= tabs::[Pair<String String>]
 }
 
 function getPropertyProvider 
-String ::= propDcls :: [IdeProperty]
+String ::= propDcls :: [IdeProperty] pkgPart::String
 {
   return 
-	"package @PKG_NAME@.eclipse.property;\n" ++
+	"package @PKG_NAME@.eclipse." ++ pkgPart ++ ";\n" ++
 	"\n" ++	
 	"import java.util.ArrayList;\n" ++
 	"import java.util.List;\n" ++
@@ -260,10 +285,12 @@ String ::= propType :: String
 }
 
 function getPropertyGenerator 
-String ::= propDcls :: [IdeProperty]
+String ::= propDcls::[IdeProperty] pkgName::String
 {
+  local pkgPart :: String = if pkgName == "" then "" else "." ++ pkgName;
+
   return 
-	"package @PKG_NAME@.eclipse.wizard;\n" ++
+	"package @PKG_NAME@.eclipse.wizard" ++ pkgPart ++ ";\n" ++
 	"\n" ++
 	"import java.util.ArrayList;\n" ++
 	"import java.util.List;\n" ++

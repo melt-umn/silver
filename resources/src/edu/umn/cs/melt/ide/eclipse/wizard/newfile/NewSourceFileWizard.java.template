@@ -1,0 +1,121 @@
+/*
+ * Variables used:
+ *   PKG_NAME
+ *   SOURCE_EXT
+ *   LANG_NAME
+ */
+
+package @PKG_NAME@.eclipse.wizard.newfile;
+
+import java.io.ByteArrayInputStream;
+
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IConfigurationElement;
+import org.eclipse.core.runtime.IExecutableExtension;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.wizard.Wizard;
+import org.eclipse.ui.IEditorDescriptor;
+import org.eclipse.ui.INewWizard;
+import org.eclipse.ui.ISelectionService;
+import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.part.FileEditorInput;
+
+import ide.NIdeProperty;
+
+/**
+ * The @LANG_NAME@'s New Source File Wizard is used to create a @LANG_NAME@ source file, 
+ * with extension name being "@SOURCE_EXT@", under a given @LANG_NAME@ project.
+ * <br>
+ * The user can also define properties when creating a new source file. The source file 
+ * stub generator, defined in IDE declaration block, consults with these properties to 
+ * determine how the stub file should be generated.
+ */
+public class NewSourceFileWizard extends Wizard implements INewWizard, IExecutableExtension {
+
+	private static String EXT = ".@SOURCE_EXT@";
+	
+	private WizardNewSourceFilePage page1;
+	
+	public NewSourceFileWizard() {
+		setWindowTitle("@LANG_NAME@");
+	}
+
+	@Override
+	public void init(IWorkbench workbench, IStructuredSelection selection) {
+
+	}
+	
+	@Override
+	public void addPages() {
+	    super.addPages();
+
+	    ISelectionService service = 
+	    	PlatformUI.getWorkbench().getActiveWorkbenchWindow().getSelectionService();
+	    
+	    IStructuredSelection selection = (IStructuredSelection) 
+	    	service.getSelection("org.eclipse.ui.navigator.ProjectExplorer");
+	    						  //org.eclipse.jdt.ui.PackageExplorer
+
+	    page1 = new WizardNewSourceFilePage("New @LANG_NAME@ Source File Wizard", selection);
+	    page1.setTitle("@LANG_NAME@ Source File");
+	    page1.setDescription("Create new @LANG_NAME@ source file");
+
+	    addPage(page1);
+	}
+
+	// Add a new file to specified parent folder
+	@Override
+	public boolean performFinish() {
+		if(!page1.attemptCompletion()){
+			return false;
+		}
+
+		String name = page1.getFileName() + EXT;
+		IResource parent = page1.getParentFolder();
+		IFile file = null;
+		if(parent instanceof IProject){
+			file = ((IProject) parent).getFile(name);
+		} else  {
+			file = ((IFolder) parent).getFile(name);
+		}
+		
+		if(!file.exists()){
+			try {
+				// Generate stub
+				NIdeProperty[] properties = page1.getNIdePerpertyArray();
+				String stub = GenerateNewFileStub.getStub(properties);
+				
+				// Create file
+				file.create(new ByteArrayInputStream(stub.getBytes()), false, null);
+			    
+				// Open file
+				IWorkbench workbench = PlatformUI.getWorkbench();
+				IEditorDescriptor desc = workbench.getEditorRegistry().getDefaultEditor(file.getName());
+				IWorkbenchPage page = workbench.getActiveWorkbenchWindow().getActivePage();
+				page.openEditor(new FileEditorInput(file), desc.getId());
+				
+				return true;
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
+		} else {
+			page1.setErrorMessage("A source file with same name exists already.");
+		}
+
+	    return false;
+	}
+	
+	@Override
+	public void setInitializationData(
+	    IConfigurationElement config, String propertyName, Object data) throws CoreException {
+		
+	}
+
+}
+
