@@ -76,6 +76,8 @@ public class WizardNewSourceFilePage extends WizardPage {
 	
 	private IPropertyControlsProvider provider;
 	
+	private IStructuredSelection initialSelection;
+	
 	/**
 	 * Controls used to input user-defined properties
 	 */
@@ -84,8 +86,8 @@ public class WizardNewSourceFilePage extends WizardPage {
 	public WizardNewSourceFilePage(String pageName,
 			IStructuredSelection selection) {
 		super(pageName);
-		initialize();
 		provider = new PropertyControlsProvider();
+		initialSelection = selection;
 	}
 
 	@Override
@@ -192,14 +194,25 @@ public class WizardNewSourceFilePage extends WizardPage {
 			for(PropertyControl control:propertyControls){
 				Control info = control.getInfoControl();
 				Control input = control.getInputControl();
-				//FIXME: add listener to update state upon change (this requireds changes to IPropertyControl)
 				info.setLayoutData(new GridData());
 				input.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+				if(input instanceof Text){
+					Text text = (Text) input;
+					text.addModifyListener(new ModifyListener() {
+						@Override
+						public void modifyText(ModifyEvent e) {
+							updatePageComplete();
+						}
+					});
+				}
 			}			
 		}
 		
 		setControl(panel);
 		setPageComplete(false);
+		
+        initialize();
 	}
 
 	/**
@@ -402,7 +415,7 @@ public class WizardNewSourceFilePage extends WizardPage {
 
 		setErrorMessage(null);
 		setPageComplete(true);
-		
+
 		return true;
 	}
 
@@ -441,14 +454,8 @@ public class WizardNewSourceFilePage extends WizardPage {
 	}
 	
 	private void initialize() {
-		ISelectionService service = PlatformUI.getWorkbench()
-			.getActiveWorkbenchWindow().getSelectionService();
-
-		IStructuredSelection selection = (IStructuredSelection) service
-			.getSelection("org.eclipse.ui.navigator.ProjectExplorer");
-
-		if (selection != null) {
-			Object element = selection.getFirstElement();
+		if (initialSelection != null) {
+			Object element = initialSelection.getFirstElement();
 
 			if (element instanceof IProject) {
 				parentResource = (IProject) element;
@@ -459,9 +466,9 @@ public class WizardNewSourceFilePage extends WizardPage {
 			}
 		}
 
-//		if (parentResource != null) {
-//			System.out.println("Selected project is " + parentResource.getFullPath());
-//		}
+		if (parentResource != null) {
+			updateParentFolderText();
+		}
 	}
 
 }
