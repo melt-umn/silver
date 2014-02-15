@@ -60,7 +60,10 @@ public class NewSourceFileWizard extends Wizard implements INewWizard, IExecutab
 	    
 	    IStructuredSelection selection = (IStructuredSelection) 
 	    	service.getSelection("org.eclipse.ui.navigator.ProjectExplorer");
-	    						  //org.eclipse.jdt.ui.PackageExplorer
+
+	    // Sometimes users may be (by mistake) using JDT, the perspective of which
+	    // uses a package explorer (id=org.eclipse.jdt.ui.PackageExplorer), instead of project explorer.
+	    // We won't handle this typical misuse here.
 
 	    page1 = new WizardNewSourceFilePage("New @LANG_NAME@ Source File Wizard", selection);
 	    page1.setTitle("@LANG_NAME@ Source File");
@@ -102,6 +105,7 @@ public class NewSourceFileWizard extends Wizard implements INewWizard, IExecutab
 				
 				return true;
 			} catch (CoreException e) {
+				page1.setErrorMessage(e.getMessage());
 				e.printStackTrace();
 			}
 		} else {
