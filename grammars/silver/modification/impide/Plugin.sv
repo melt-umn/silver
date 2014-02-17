@@ -220,7 +220,7 @@ function makeExtensions
                     [
                        "   <wizard",
                        "      category=\"@LANG_NAME@_IDE.wizards.category/\"",
-                       "      class=\"@PKG_NAME@.eclipse.wizard.NewProjectWizard\"",
+                       "      class=\"@PKG_NAME@.eclipse.wizard.newproject.NewProjectWizard\"",
                        "      id=\"@LANG_NAME@_IDE.wizard.newProject\"",
                        "      name=\"New @LANG_NAME@ Project\"",
                        "      finalPerspective=\"@LANG_NAME@_IDE.perspective\"",

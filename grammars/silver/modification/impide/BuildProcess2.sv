@@ -36,8 +36,8 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::
 		mkdir(getIDETempFolder() ++ "eclipse/property", io00).io);
 
   local attribute io02::IO;
-  io02 = writeFile(getIDETempFolder() ++ "eclipse/wizard/PropertyGenerator.java.template", getPropertyGenerator(ide.propDcls, ""),
-		mkdir(getIDETempFolder() ++ "eclipse/wizard", io01).io);
+  io02 = writeFile(getIDETempFolder() ++ "eclipse/wizard/newproject/PropertyGenerator.java.template", getPropertyGenerator(ide.propDcls, "newproject"),
+		mkdir(getIDETempFolder() ++ "eclipse/wizard/newproject", io01).io);
 
   local attribute io03::IO;
   io03 = writeFile(getIDETempFolder() ++ "eclipse/property/MultiTabPropertyPage.java.template", getMultiTabPropertyPage(ide.pluginConfig),
