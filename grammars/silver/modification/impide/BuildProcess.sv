@@ -489,11 +489,12 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "") ++
 
     "  <mkdir dir='${ide.pkg.path}/eclipse/wizard'/>\n" ++
+    "  <mkdir dir='${ide.pkg.path}/eclipse/wizard/newproject'/>\n" ++
     "  <!-- A wizard for creating new project. -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/wizard/NewProjectWizard.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/wizard/NewProjectWizard.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/wizard/PropertyGenerator.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/wizard/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/wizard/newproject/NewProjectWizard.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/wizard/newproject/NewProjectWizard.java\" filtering=\"true\"/>\n" ++
+    "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/wizard/newproject/PropertyGenerator.java.template\"\n" ++
+    "        tofile=\"${ide.pkg.path}/eclipse/wizard/newproject/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
     (if(config.hasNewFileWizard)

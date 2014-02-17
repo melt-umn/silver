@@ -101,7 +101,7 @@ public class WizardNewSourceFilePage extends WizardPage {
 
 		FillLayout fillLayout = new FillLayout();
 
-		// Assembling the page
+		// Assemble the page
 		panel = new Composite(parent, SWT.NONE);
 		panel.setLayout(gdLayoutC1);
 		panel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
@@ -185,7 +185,7 @@ public class WizardNewSourceFilePage extends WizardPage {
 			}
 		});
 
-		// row 5+: a sub panel for custmized property controls
+		// row 5+: a sub panel for customized property controls
 		Composite sub_panel_properties = new Composite(panel, SWT.NONE);
 		sub_panel_properties.setLayout(gdLayoutC2);
 		sub_panel_properties.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
@@ -377,7 +377,7 @@ public class WizardNewSourceFilePage extends WizardPage {
 				return false;
 			} else if(!(hasValidNature((IProject) this.parentResource))){
 				setPageComplete(false);
-				setErrorMessage("the project '" + parentResPath + "' is not a SILVER project");
+				setErrorMessage("the project '" + parentResPath + "' is not a @LANG_NAME@ project");
 				return false;
 			}
 		} else { // It's a folder
@@ -399,7 +399,6 @@ public class WizardNewSourceFilePage extends WizardPage {
 			}
 		}
 		
-		// TODO: check file name legality
 		if (fileNameText.getText() == null || "".equals(fileNameText.getText())) {
 			setPageComplete(false);
 			setErrorMessage("the file name is not set");
