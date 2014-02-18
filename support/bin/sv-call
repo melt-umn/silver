@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+  echo "This script must NOT be sourced. Call it normally."
+  exit 5
+fi
+
+
+if [[ "$SV_NG_MAINCLASS" == "" ]]; then
+  echo "Didn't find Silver-Nailgun env var. The server is not running?"
+  exit 4
+fi
+
+# -a ng works around ubuntu buggy packaging where they renamed the client
+# and broke everything and of course never tested it.
+exec -a ng "$SV_NAILGUN" $SV_NG_MAINCLASS "$@"
+
+
