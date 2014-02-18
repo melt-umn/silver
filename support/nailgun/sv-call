@@ -13,6 +13,6 @@ fi
 
 # -a ng works around ubuntu buggy packaging where they renamed the client
 # and broke everything and of course never tested it.
-exec -a ng "$SV_NAILGUN" $SV_NG_MAINCLASS "$@"
+exec $SV_NAILGUN_WORKAROUND "$SV_NAILGUN" "$SV_NG_MAINCLASS" "$@"
 
 

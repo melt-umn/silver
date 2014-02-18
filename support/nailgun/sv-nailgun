@@ -1,11 +1,11 @@
 #!/bin/bash
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-  echo "Script must be 'sourced'. Run as '. sv-nailgun' not 'sv-nailgun' nor './sv-nailgun'"
+  echo "Script must be 'sourced' in a *bash* shell. Run as '. sv-nailgun' not 'sv-nailgun' nor './sv-nailgun'"
   exit 5
 fi
 
-export SV_NAILGUN_JAR=(/usr/share/java/nailgun-*.jar)
+export SV_NAILGUN_JAR=$(shopt -s nullglob; echo /usr/share/java/nailgun-*.jar /project/melt4/People/ted/nailgun/bin/nailgun-*.jar)
 
 if [[ ! -f "$SV_NAILGUN_JAR" ]]; then
   echo "sv-nailgun: couldn't find nailgun jar under /usr/share/java"
@@ -16,6 +16,18 @@ if [[ -f /usr/bin/ng ]]; then
   export SV_NAILGUN="/usr/bin/ng"
 elif [[ -f /usr/bin/ng-nailgun ]]; then
   export SV_NAILGUN="/usr/bin/ng-nailgun"
+  ng-nailgun > /dev/null 2>&1
+  # return code 230 == connection refused, rather than the help (226),
+  # indicating broken nailgun packaging. (It sees 'ng-client' as an alias
+  # command instead of the binary name of 'ng'.)
+  if [[ $? == 230 ]]; then
+    echo "sv-nailgun: discovered broken nailgun package. workaround applied."
+    export SV_NAILGUN_WORKAROUND="-a ng"
+  fi
+elif [[ -f /project/melt4/People/ted/nailgun/bin/ng ]]; then
+  export SV_NAILGUN="/project/melt4/People/ted/nailgun/bin/ng"
+elif [[ -f `which ng` ]]; then
+  export SV_NAILGUN=`which ng`
 else
   echo "sv-nailgun: couldn't find nailgun client. Looked for /usr/bin/{ng,ng-nailgun}"
   return 2
@@ -46,7 +58,7 @@ function sv-serve {
   # Unfortunately no good way to determine when the server has started, afaik
   sleep 2
 
-  $(exec -a ng "$SV_NAILGUN" "ng-cp" "$1")
+  $(exec $SV_NAILGUN_WORKAROUND "$SV_NAILGUN" "ng-cp" "$1")
 }
 
 function sv-serve-stop {
@@ -57,7 +69,7 @@ function sv-serve-stop {
   
   unset SV_NG_MAINCLASS
 
-  $(exec -a ng "$SV_NAILGUN" "ng-stop")
+  $(exec $SV_NAILGUN_WORKAROUND "$SV_NAILGUN" "ng-stop")
 }
 
 
