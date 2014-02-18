@@ -5,7 +5,10 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   exit 5
 fi
 
-export SV_NAILGUN_JAR=$(shopt -s nullglob; echo /usr/share/java/nailgun-*.jar /project/melt4/People/ted/nailgun/bin/nailgun-*.jar)
+# Try a few possible locations, pick the first
+SV_NAILGUN_CANDIDATES=$(shopt -s nullglob; echo /project/melt4/People/ted/nailgun/bin/nailgun-*.jar /usr/share/java/nailgun-server*.jar /usr/share/java/nailgun-*.jar)
+SV_NAILGUN_ARRAY=($SV_NAILGUN_CANDIDATES)
+export SV_NAILGUN_JAR=${SV_NAILGUN_ARRAY[0]}
 
 if [[ ! -f "$SV_NAILGUN_JAR" ]]; then
   echo "sv-nailgun: couldn't find nailgun jar under /usr/share/java"
