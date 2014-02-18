@@ -120,7 +120,8 @@ public class NonblockingBuilder implements DelegateBuilder {
 			if(!buildSuccessful){
 				monitor.setCanceled(true);
 				if(!needRebuild){
-					cls.error("Build failed.");
+					Date d = new Date() ;
+					cls.error("Build failed at " + d.toString() );
 				}
 				//Release the lock
 				synchronized(TwoStageBuilder.class){
