@@ -16,7 +16,7 @@ silverDeployWorkspace = "/export/scratch/melt-jenkins/custom-deploy"
 # Where to dump the latest tar and jars when all tests and builds succeed.
 silverStableWorkspace = "/export/scratch/melt-jenkins/custom-stable-dump"
 # URL for the jenkins server
-jenkinsURL = "bani.cs.umn.edu:8080"
+jenkinsURL = "coldpress.cs.umn.edu:8080"
 # User name and API token. Note this is not your password! Check user config page to see it.
 jenkinsUsername = "tedinski"
 
@@ -333,7 +333,9 @@ class SubversionJob(JenkinsJobConfig):
       <hudson.scm.SubversionSCM_-ModuleLocation>
         <remote>${r}</remote>
         <local>${l}</local>
+        <credentialsId>69c1ed95-f9e8-4c35-83ad-4bf3b190b9fa</credentialsId>
       </hudson.scm.SubversionSCM_-ModuleLocation>""").substitute(r=r, l=l)
+        # TODO: BUG: We're just using meltsvn credentialsid here for all svn jobs. only kind of svn job right now...
 
 	def configXml(self):
 		assert self.description != "", "Must provide description"
