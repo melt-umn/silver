@@ -68,48 +68,31 @@ public final class SilverEnv {
 			boolean toUpdate = false;
 			
 			File verConf = new File(ROOT, "version.conf");
-			String ver = ide.PgetVersion.invoke().toString();
+			String ver = _bundle.getVersion().toString();
 			Properties verProps = new Properties();
 			
 			try {
-				if(!verConf.exists()){
+				if(!verConf.exists()) {
 					//System.out.println("version.conf doesn't exist. Create.");
 					toUpdate = true;
-					if(!ROOT.exists()){
+					if(!ROOT.exists()) {
 						ROOT.mkdir();
-					}	
+					}
 					verConf.createNewFile();
 				} else {
 					verProps.load(new FileInputStream(verConf));
 					
-					GrammarVersion localGrammarVersion = new GrammarVersion(verProps.getProperty("grammar_version"));
-					GrammarVersion grammarVersion = new GrammarVersion(ver);
+					String confVer = verProps.getProperty("bundle_version");
 					
-					if(grammarVersion.isNewerThan(localGrammarVersion)){
-						//System.out.println("version.conf contains a version lower than plugin's. Overwrite.");
-						toUpdate = true;
-					} else {
-						
-						GrammarVersion localIdeVersion = new GrammarVersion(verProps.getProperty("ide_version"));
-						GrammarVersion ideVersion = new GrammarVersion("@IDE_VERSION@");
-						
-						if(ideVersion.isNewerThan(localIdeVersion)){
-							//System.out.println("version.conf contains a version lower than plugin's. Overwrite.");
-							toUpdate = true;
-						}		
-						
-					}
+					toUpdate = ver.equals(confVer);
 				}
 				
-				if(toUpdate){
+				if(toUpdate) {
 					FileOutputStream fos = new FileOutputStream(verConf);
-					verProps.setProperty("grammar_version", ver);
-					verProps.setProperty("ide_version", "@IDE_VERSION@");
+					verProps.setProperty("bundle_version", ver);
 					verProps.store(fos, "");
 					fos.close();
-				}//else {
-				//	System.out.println("version.conf contains a version higher than or equal to plugin's. Ignore.");
-				//}
+				}
 			} catch (FileNotFoundException e) {
 				// Shouldn't arrive here
 			} catch (IOException e) {
@@ -119,7 +102,7 @@ public final class SilverEnv {
 			
 			READY = sanityCheck();
 			
-			if(!READY || toUpdate){
+			if(!READY || toUpdate) {
 				//Create /silver
 				ROOT.mkdir();
 				
@@ -148,7 +131,7 @@ public final class SilverEnv {
 	 * be compromised and not usable.
 	 * @return
 	 */
-	public static boolean isReady(){
+	public static boolean isReady() {
 		return READY;
 	}
 	
@@ -159,7 +142,7 @@ public final class SilverEnv {
 	 * 
 	 * @return
 	 */
-	public static File getGeneratedFolder(){
+	public static File getGeneratedFolder() {
 		return new File(ROOT, GENERATED);
 	}
 	
@@ -170,7 +153,7 @@ public final class SilverEnv {
 	 * 
 	 * @return
 	 */
-	public static File getGrammarsFolder(){
+	public static File getGrammarsFolder() {
 		return new File(ROOT, GRAMMARS);
 	}
 	
@@ -192,7 +175,7 @@ public final class SilverEnv {
 	 * 
 	 * @return
 	 */
-	public static File getSilverHome(){
+	public static File getSilverHome() {
 		return ROOT;
 	}
 
@@ -237,15 +220,19 @@ public final class SilverEnv {
 	private static Bundle bundle = null;
 
 	private static void setBundle(Bundle _bundle) {
-		if(bundle==null){
+		if(bundle==null) {
 			//Can only be set once
 			bundle = _bundle;
 		}
 	}
 
-	private static InputStream getResource(){
+	private static InputStream getResource() {
 		//Bundle bundle = Platform.getBundle("silver.composed.idetest");//Name of silver plug-in bundle
 		URL fileURL = bundle.getEntry("silver.zip");
+		// TODO: Future note: we could add "unpack=true" to our feature on this plugin,
+		// and include this stuff directly (instead of as a zip) and then
+		// use FileLocation.getFileURL() on the root directories and use that.
+		// instead of unpacking a zip in pretty much the wrong place.
 		InputStream is = null;
 		try {
 			return is = FileLocator.resolve(fileURL).openStream();
