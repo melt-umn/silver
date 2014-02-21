@@ -288,12 +288,12 @@ class CopperIntegrationJob(JenkinsJobConfig):
 		self.description = "Builds Silver using the latest Copper artifacts."
 		self.command = "mkdir -p sv\n" + \
                                "cp -r /export/scratch/melt-jenkins/custom-silver/* sv/\n" + \
-                               "cp /export/scratch/melt-jenkins/jobs/copper/builds/lastSuccessfulBuild/archive/jar/*.jar sv/jars/\n" + \
+                               "cp /export/scratch/melt-jenkins/workspace/copper/builds/lastSuccessfulBuild/archive/jar/*.jar sv/jars/\n" + \
                                "cd sv\n" + \
                                "./deep-rebuild\n" + \
                                "cd ..\n" + \
                                "rm -rf sv\n" + \
-                               "cp /export/scratch/melt-jenkins/jobs/copper/builds/lastSuccessfulBuild/archive/jar/*.jar /export/scratch/melt-jenkins/custom-stable-dump/\n"
+                               "cp /export/scratch/melt-jenkins/workspace/copper/builds/lastSuccessfulBuild/archive/jar/*.jar /export/scratch/melt-jenkins/custom-stable-dump/\n"
 
 	def configXml(self):
 		assert self.description != "", "Must provide description"
