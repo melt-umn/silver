@@ -18,17 +18,18 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 
   top.defs = [];
 
-  production attribute namedSig :: NamedSignature;
-  namedSig = namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName, [], namedSignatureElement(lhs.name, te.typerep),
-    annotationsForNonterminal(te.typerep, top.env));
+  production namedSig :: NamedSignature = 
+    namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName, [],
+      namedSignatureElement(lhs.name, te.typerep),
+      annotationsForNonterminal(te.typerep, top.env));
 
   top.errors := te.errors ++ body.errors;
 
-  local attribute fakedDefs :: [Def];
-  fakedDefs = [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];
+  local fakedDefs :: [Def] =
+    [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];
   
-  local attribute sigDefs :: [Def];
-  sigDefs = addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, te.lexicalTypeVariables);
+  local sigDefs :: [Def] =
+    addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, te.lexicalTypeVariables);
 
   body.env = newScopeEnv(fakedDefs ++ sigDefs, top.env);
   body.signature = namedSig;
@@ -58,10 +59,17 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   
   top.typerep = ty;
   
-  top.refDispatcher = errorReference(_, location=_); -- Technically, we can make this lhsReference, but the semantics of that are stupid... (it would refer to the last (non-forwarding) production)
+  -- TODO: We could make this an LHS reference?
+  top.refDispatcher = makeLhsErrorReference;
   top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: be smarter about the error message
   top.defLHSDispatcher = defaultLhsDefLHS(_, location=_);
 }
+function makeLhsErrorReference
+Expr ::= q::Decorated QName  l::Location
+{
+  return errorReference([err(l, "References to LHS are currently invalid in default production blocks")], q, location=l);
+}
+
 abstract production defaultLhsDefLHS
 top::DefLHS ::= q::Decorated QName
 {

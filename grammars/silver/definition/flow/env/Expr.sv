@@ -48,7 +48,7 @@ top::Expr ::=
 }
 
 aspect production errorReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= msg::[Message]  q::Decorated QName
 {
   top.flowDeps = [];
   top.flowDefs = [];
