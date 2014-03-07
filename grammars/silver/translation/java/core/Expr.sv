@@ -162,6 +162,13 @@ String ::= e::Decorated AnnoAppExprs
   return if null(e.exprs) then "null"
   else "new Object[]{" ++ implode(", ", map((.lazyTranslation), reorderedAnnoAppExprs(e))) ++ "}";
 }
+function namedargsTranslationNOReorder
+String ::= e::Decorated AnnoAppExprs
+{
+  -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
+  return if null(e.exprs) then "null"
+  else "new Object[]{" ++ implode(", ", map((.lazyTranslation), e.exprs)) ++ "}";
+}
 
 function int2str String ::= i::Integer { return toString(i); }
 
@@ -185,7 +192,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
        else "new int[]{" ++ implode(", ", map(int2str, annos.annoIndexConverted)) ++ "}") ++ ", " ++
       (if null(annos.annoIndexSupplied) then "null"
        else "new int[]{" ++ implode(", ", map(int2str, annos.annoIndexSupplied)) ++ "}") ++ ", " ++
-      namedargsTranslation(annos) ++ ")"
+      namedargsTranslationNOReorder(annos) ++ ")"
     else step2;
     
   top.translation = step3;
