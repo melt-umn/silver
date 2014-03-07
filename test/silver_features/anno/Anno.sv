@@ -104,4 +104,23 @@ equalityTest ( annoNT2b.anno1, 4, Integer, silver_tests ) ;
 equalityTest ( annoNT2b.anno2, "3", String, silver_tests ) ;
 
 
+abstract production annoNT2partialAppProd
+top::AnnoNT2 ::= s::String
+{
+}
+
+global partialApp1 :: (AnnoNT2 ::= String) = annoNT2partialAppProd(_, anno1=5, anno2="6");
+global partialApp2 :: (AnnoNT2 ::= String) = annoNT2partialAppProd(_, anno2="7", anno1=8);
+
+global partialApp1val :: AnnoNT2 = partialApp1("doesn't matter");
+global partialApp2val :: AnnoNT2 = partialApp2("doesn't matter");
+
+equalityTest ( partialApp1val.anno1, 5, Integer, silver_tests ) ;
+equalityTest ( partialApp1val.anno2, "6", String, silver_tests ) ;
+equalityTest ( partialApp2val.anno2, "7", String, silver_tests ) ;
+equalityTest ( partialApp2val.anno1, 8, Integer, silver_tests ) ;
+
+
+
+
 
