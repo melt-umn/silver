@@ -28,6 +28,8 @@ String ::= s::String
          else (if ch == ">" then getSingleCharNRegexXML("&gt;")
                else if ch == "<" then getSingleCharNRegexXML("&lt;")
                else if ch == "&" then getSingleCharNRegexXML("&amp;")
+               else if ch == "\"" then getSingleCharNRegexXML("&quot;")
+               -- For completeness, there is "'"  --> &apos; but we do not use single quotes, so we should be okay...
                else getSingleCharNRegexXML(ch))
                ++ literalNRegexToXML(rest);
 }

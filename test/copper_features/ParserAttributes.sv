@@ -3,6 +3,11 @@ parser PAparse :: UseDcls {
   copper_features;
 }
 
+-- Piggy backing a test of escape characters in copper XML here.
+-- These affect this test not at all, as long as copper doesn't report parse errors on its input
+terminal QuoteLiteral '"'; -- Separate test. Ensure it's escaped properly in the XML
+
+
 synthesized attribute unknownsused :: [String];
 nonterminal UseDcl with unknownsused;
 nonterminal UseDcls with unknownsused;
