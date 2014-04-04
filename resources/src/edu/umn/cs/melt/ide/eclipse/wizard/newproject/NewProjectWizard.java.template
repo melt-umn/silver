@@ -4,7 +4,7 @@
  *   LANG_NAME
  */
 
-package @PKG_NAME@.eclipse.wizard;
+package @PKG_NAME@.eclipse.wizard.newproject;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;
@@ -32,7 +32,6 @@ import @PKG_NAME@.imp.builders.@LANG_NAME@Nature;
  * (2) create a project folder with the given name in current workspace <br>
  * (3) create a property file <br>
  * (4) add @LANG_NAME@ nature to the project (note nature is associated with builder) <br>
- *
  */
 public class NewProjectWizard extends Wizard implements INewWizard, IExecutableExtension {
 
@@ -111,23 +110,20 @@ public class NewProjectWizard extends Wizard implements INewWizard, IExecutableE
                 if (!project.isOpen()) {
                     project.open(null);
                 }
+                
+                //Create properties file
+            	project.getFile("project.properties").create(
+            		new ByteArrayInputStream(PropertyGenerator.getAll().getBytes()), true, null);
             } catch (CoreException e) {
-                e.printStackTrace();
+		    	page1.setErrorMessage(e.getMessage());
+		    	e.printStackTrace();
+		    	return;
             }
-            
-            //Create properties file
-            try {
-		project.getFile("project.properties").create(
-		new ByteArrayInputStream(PropertyGenerator.getAll().getBytes()), true, null);
-	    } catch (CoreException e) {
-		e.printStackTrace();
-	    }
-
         }
         
         //Add @LANG_NAME@ nature, if not added yet
         try {
-            if (!project.hasNature(@LANG_NAME@Nature.k_natureID)) {	            
+            if (!project.hasNature(@LANG_NAME@Nature.k_natureID)) {
 	            new @LANG_NAME@Nature().addToProject(project);
             }
         } catch (CoreException e) {

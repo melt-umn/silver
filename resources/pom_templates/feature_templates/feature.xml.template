@@ -2,7 +2,7 @@
 <feature
       id="@LANG_NAME@_FEATURE"
       label="@LANG_NAME@_FEATURE"
-      version="@IDE_VERSION@">
+      version="@IDE_VERSION@.@IDE_BUILD_TIMESTAMP@">
 
    <description url="@FEATURE_DESCRIPTION_URL@">
       @FEATURE_DESCRIPTION_TEXT@

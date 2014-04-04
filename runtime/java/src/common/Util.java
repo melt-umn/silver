@@ -6,6 +6,17 @@ import java.util.*;
 
 import common.exceptions.*;
 
+import core.NLocation;
+import core.NParseError;
+import core.NParseResult;
+import core.Ploc;
+import core.PparseFailed;
+import core.PsyntaxError;
+import core.PunknownParseError;
+import edu.umn.cs.melt.copper.runtime.engines.CopperParser;
+import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
+import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
+
 
 /**
  * Many places in Silver's translation are bits of code that need factoring out, somehow.
@@ -442,4 +453,45 @@ public final class Util {
 		}
 		sb.append("]");
 	}
+	
+	/**
+	 * Calls a Copper parser, and returns a ParseResult<ROOT> object.
+	 * 
+	 * @param parser The Copper parser to call
+	 * @param string The string to parse.
+	 * @param file The filename to report to the parser (filling in location information)
+	 * @return A silver ParseResult<ROOT> node.
+	 */
+	public static <ROOT> NParseResult callCopperParser(CopperParser<ROOT, CopperParserException> parser, Object string, Object file) {
+		String javaString = ((StringCatter)demand(string)).toString();
+		String javaFile = ((StringCatter)demand(file)).toString();
+		try {
+			return new core.PparseSucceeded(parser.parse(new StringReader(javaString), javaFile));
+		} catch(CopperSyntaxError e) {
+			// To create a space, we increment the ending columns and indexes by 1.
+			NLocation loc = new Ploc(new StringCatter(e.getVirtualFileName()), e.getVirtualLine(), e.getVirtualColumn(), e.getVirtualColumn(), e.getVirtualColumn() + 1, (int)(e.getRealCharIndex()), (int)(e.getRealCharIndex()) + 1);
+			NParseError err = new PsyntaxError(
+					new common.StringCatter(e.getMessage()),
+					loc,
+					convertStrings(e.getExpectedTerminalsDisplay().iterator()),
+					convertStrings(e.getMatchedTerminalsDisplay().iterator()));
+			return new PparseFailed(err);
+		} catch(CopperParserException e) {
+			// Currently this is dead code, but perhaps in the future we'll see IOException wrapped in here.
+			NParseError err = new PunknownParseError(new StringCatter(e.getMessage()), file);
+			return new PparseFailed(err);
+		} catch(Throwable t) {
+			throw new TraceException("An error occured while parsing", t);
+		}
+	}
+	
+	/**
+	 * Like javainterop.ConsCellCollection.fromIterator, but also converts String to StringCatter.
+	 */
+	private static ConsCell convertStrings(Iterator<String> i) {
+		if(!i.hasNext())
+			return ConsCell.nil;
+		return new ConsCell(new StringCatter(i.next()), convertStrings(i));
+	}
+
 }

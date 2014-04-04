@@ -17,6 +17,20 @@ synthesized attribute endIndex :: Integer;
 
 {--
  - The sole constructor for location information.
+ -
+ - filename, line and column can be mutated by action blocks during parsing,
+ - but character index cannot.
+ -
+ - @param filename  The "virtual filename". Initially whatever the parser is given.
+ - @param line  (Beginning) line number, inclusive. Lines are numbered starting with 1.
+ - @param column (Beginning) column number, inclusive. Columns are numbered starting with 0. (For now.)
+ - @param endLine (Ending) line number, inclusive.
+ - @param endColumn (Ending) column number, exclusive.
+ - @param index (Beginning) character index, inclusive.
+ - @param endIndex (Ending) character index, exclusive.
+ -
+ - e.g. "Hi" as an entire file contents would have its entire location as:
+ - (_, 1, 0, 1, 2, 0, 2)
  -}
 abstract production loc
 top::Location ::= filename::String  line::Integer  column::Integer

@@ -25,6 +25,7 @@
     <style id="number" _name="Number" map-to="def:decimal"/>
     <style id="reserved" _name="Future Reserved Keywords" map-to="def:error"/>
     <style id="type" _name="Data Type" map-to="def:type"/>
+    <style id="ide" _name="IDE keywords" map-to="def:keyword"/>
   </styles>
 
   <definitions>
@@ -128,6 +129,7 @@
 <keyword>parser</keyword>
 <keyword>parse</keyword>
 <keyword>attribute</keyword>
+<keyword>annotation</keyword>
 <keyword>function</keyword>
 <keyword>local</keyword>
 <keyword>closed</keyword>
@@ -137,6 +139,7 @@
 <keyword>on</keyword>
 <keyword>production</keyword>
 <keyword>terminal</keyword>
+<keyword>marking</keyword>
 <keyword>foreign</keyword>
 <keyword>layout</keyword>
 <keyword>disambiguate</keyword>
@@ -209,6 +212,34 @@
 <keyword>length</keyword>
     </context>
 
+    <context id="ide" style-ref="ide">
+<keyword>temp_imp_ide_dcl</keyword>
+<keyword>builder</keyword>
+<keyword>postbuilder</keyword>
+<keyword>exporter</keyword>
+<keyword>folder</keyword>
+<keyword>property</keyword>
+<keyword>string</keyword>
+<keyword>required</keyword>
+<keyword>display</keyword>
+<keyword>string</keyword>
+<keyword>wizards</keyword>
+<keyword>file</keyword>
+<keyword>stub</keyword>
+<keyword>generator</keyword>
+<keyword>product</keyword>
+<keyword>name</keyword> 
+<keyword>version</keyword> 
+<keyword>option</keyword>
+<keyword>source</keyword>
+<keyword>linker</keyword>
+<keyword>temp_imp_ide_font</keyword>
+<keyword>font</keyword> 
+<keyword>color</keyword>
+<keyword>italic</keyword>
+<keyword>bold</keyword>
+    </context>
+
     <context id="future-reserved-words" style-ref="reserved">
 <keyword>prefix</keyword>
     </context>
@@ -247,6 +278,7 @@
         <context ref="future-reserved-words"/>
         <context ref="boolean"/>
         <context ref="numeric"/>
+        <context ref="ide"/>
       </include>
     </context>
 

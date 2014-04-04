@@ -1,0 +1,36 @@
+#!/bin/bash
+
+
+export SILVER_HOME=`pwd`
+echo $SILVER_HOME
+
+# Get the current version of Silver
+./update
+
+# Rebuild the IDE-specific jars
+cd runtime/imp
+./build.sh
+
+# Create plug-in sources and .class files.
+# this creates a silver.composed.idetest.jar that is not used, but
+# this does create stuff in the generated directory that is used in
+# the next step
+cd ../../
+./self-compile-ide
+
+# Create the Eclipse repository.  
+# The repository is in the generated/ide/silver.composed.idetest
+# directory.  To make it public run the make-ide-dist script.
+cd generated/ide/silver.composed.idetest
+mvn package
+
+
+echo "..."
+echo "..."
+echo "..."
+echo "..."
+echo "Be sure to increment IDE version number in silver:composed:idetest:Main.sv"
+echo "..."
+echo "..."
+echo "..."
+echo "..."

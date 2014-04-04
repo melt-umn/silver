@@ -15,8 +15,8 @@ import ide;
 function ideAnalyze
 IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser projectPath::String ioin::IO
 {
-  local argResult :: ParseResult<Decorated CmdArgs> = parseArgs(args);
-  local a :: Decorated CmdArgs = argResult.parseTree;
+  local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
+  local a :: Decorated CmdArgs = case argResult of right(t) -> t end;
 
   -- Let's locally set up and verify the environment
   local envSH :: IOVal<String> = envVar("SILVER_HOME", ioin);
@@ -54,7 +54,13 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
 
   local messages :: [IdeMessage] = getAllBindingErrors(unit.grammarList, projectPath);
 
-  return if !argResult.parseSuccess then ioval(ioin, [makeSysIdeMessage(ideMsgLvError, "Parsing failed during build. If source code/resources are changed outside IDE, refresh and rebuild is needed.")])
+  local argErrors :: [String] =
+    case argResult of
+    | left(s) -> [s]
+    | _ -> []
+    end;
+
+  return if !null(argErrors) then ioval(ioin, [makeSysIdeMessage(ideMsgLvError, "Parsing failed during build. If source code/resources are changed outside IDE, refresh and rebuild is needed.")])
     else if !null(check.iovalue) then ioval(check.io, getSysMessages(check.iovalue))
     else if !head(rootStream.iovalue).isJust then ioval(rootStream.io, [makeSysIdeMessage(ideMsgLvError, 
             (if buildGrammar=="" 
@@ -68,8 +74,8 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
 function ideGenerate
 IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
 {
-  local argResult :: ParseResult<Decorated CmdArgs> = parseArgs(args);
-  local a :: Decorated CmdArgs = argResult.parseTree;
+  local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
+  local a :: Decorated CmdArgs = case argResult of right(t) -> t end;
 
   -- Let's locally set up and verify the environment
   local envSH :: IOVal<String> = envVar("SILVER_HOME", ioin);
@@ -137,17 +143,23 @@ function getAllBindingErrors
 {
 
   local spec :: Decorated RootSpec = head(specs);
-  local grmPath::String = translateToPath(spec.declaredName);
+  local grmPath::String = translateToPath(spec.grammarSource, projectPath);--spec.declaredName
 
   return if null(specs)
-         then []
-         else if startsWith(projectPath, spec.grammarSource) -- check if this spec is physically located under project
-              then rewriteMessages(grmPath, spec.errors) ++ getAllBindingErrors(tail(specs), projectPath)
-                  -- if not, generate message for linked resource
-              else rewriteMessagesLinked(grmPath, getGrammarRoot(spec.grammarSource, grmPath), spec.errors) ++ 
-                   getAllBindingErrors(tail(specs), projectPath);
+            then []
+            else if startsWith(projectPath, spec.grammarSource) -- check if this spec is physically located under project
+                 then getIdeMessages(grmPath, spec) ++ getAllBindingErrors(tail(specs), projectPath)
+                 -- if not, generate message for linked resource
+                 else getIdeMessagesLinked(grmPath, getGrammarRoot(spec.grammarSource, grmPath), spec) ++ 
+                      getAllBindingErrors(tail(specs), projectPath);
+}
 
- --rewriteMessages(translateToPath(head(specs).declaredName), head(specs).errors) ++ getAllBindingErrors(tail(specs));
+function getIdeMessages
+[IdeMessage] ::= path::String spec::Decorated RootSpec
+{
+  return if !null(spec.parsingErrors)
+         then rewriteMessages(path, spec.parsingErrors) -- parsing errors (if we have any parsing error, don't bother to further inspect binding errors)
+         else rewriteMessages(path, spec.errors);       -- binding errors
 }
 
 function rewriteMessages
@@ -162,6 +174,14 @@ function rewriteMessages
               end;
 }
 
+function getIdeMessagesLinked
+[IdeMessage] ::= path::String grmRoot::String spec::Decorated RootSpec
+{
+  return if null(spec.parsingErrors)
+         then rewriteMessagesLinked(path, grmRoot, spec.errors)
+         else rewriteMessagesLinked(path, grmRoot, spec.parsingErrors);
+}
+
 function rewriteMessagesLinked
 [IdeMessage] ::= path::String grmRoot::String es::[Message]
 {
@@ -174,10 +194,21 @@ function rewriteMessagesLinked
               end;
 }
 
+{-- This doesn't work when the folder name (a.b.c), rather than folder strucutre (a/b/c), is mapped to grammar,
 function translateToPath
 String ::= declaredName::String
 {
   return implode("/", explode(":", declaredName));
+}
+--}
+
+function translateToPath
+String ::= grammarSource::String projectPath::String 
+{
+  local found :: Boolean = startsWith(projectPath, grammarSource);
+  return if found
+         then substring(length(projectPath), length(grammarSource), grammarSource)
+         else "";-- If not found, the generated message will contain invalid resource path and won't be marked in IDE.
 }
 
 -- fullPath: /home/melt/test/a/b/c

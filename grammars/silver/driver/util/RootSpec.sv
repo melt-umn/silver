@@ -1,6 +1,6 @@
 grammar silver:driver:util;
 
-import silver:definition:core only Grammar, errors, grammarName, importedDefs, grammarDependencies, globalImports;
+import silver:definition:core only Grammar, errors, grammarName, importedDefs, grammarDependencies, globalImports, Message, err;
 import silver:definition:env:env_parser only IRoot;
 import silver:definition:flow:env only flowEnv, flowDefs, fromFlowDefs;
 import silver:definition:flow:ast only nilFlow, consFlow, FlowDef;
@@ -13,12 +13,17 @@ nonterminal RootSpec with
   config, compiledGrammars, productionFlowGraphs, grammarFlowTypes,
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
-  defs, errors, grammarSource, grammarTime, interfaceTime, recheckGrammars, translateGrammars;
+  defs, errors, grammarSource, grammarTime, interfaceTime, recheckGrammars, translateGrammars, parsingErrors;
 
 {--
  - Grammars that were read from source.
  -}
 synthesized attribute translateGrammars :: [Decorated RootSpec];
+
+{--
+ - Parse errors present in this grammar (only for errorRootSpec!)
+ -}
+synthesized attribute parsingErrors :: [Message];
 
 {--
  - Create a RootSpec from a real grammar, a set of .sv files.
@@ -64,6 +69,7 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   
   top.defs = g.defs;
   top.errors := g.errors;
+  top.parsingErrors = [];
 }
 
 {--
@@ -91,6 +97,45 @@ top::RootSpec ::= p::IRoot  interfaceTime::Integer
 
   top.defs = p.defs;
   top.errors := []; -- TODO: consider getting grammarName and comparing against declaredName?
+  top.parsingErrors = [];
+}
+
+{--
+ - A RootSpec that represents a failure to parse (part) of a grammar.
+ -}
+abstract production errorRootSpec
+top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  grammarTime::Integer
+{
+  top.grammarSource = grammarSource;
+  top.grammarTime = grammarTime;
+  top.interfaceTime = grammarTime;
+  
+  top.recheckGrammars = [];
+  top.translateGrammars = [];
+
+  top.declaredName = grammarName; 
+  top.moduleNames = [];
+  top.exportedGrammars = [];
+  top.optionalGrammars = [];
+  top.condBuild = [];
+  top.allGrammarDependencies = [];
+
+  top.defs = [];
+  top.errors := [];
+  top.parsingErrors = map(parseErrorToMessage(grammarSource, _), e);
+}
+
+function parseErrorToMessage
+Message ::= grammarSource::String  e::ParseError
+{
+  return case e of
+  | syntaxError(str, locat, _, _) ->
+      err(loc(locat.filename, locat.line, locat.column, locat.endLine, locat.endColumn, locat.index, locat.endIndex),
+          "Syntax error:\n" ++ str)
+  | unknownParseError(str, file) ->
+      err(loc(grammarSource ++ file, -1, -1, -1, -1, -1, -1),
+          "Unknown error while parsing:\n" ++ str)
+  end;
 }
 
 {--

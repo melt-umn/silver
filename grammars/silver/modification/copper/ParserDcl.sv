@@ -80,13 +80,6 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ModuleList '}'
           generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult))];
   
   local attribute parseResult :: String;
-  parseResult = template """try {
-			return new core.PparseSucceeded( new ${packageName}.${parserName}().parse(new java.io.StringReader(((common.StringCatter)common.Util.demand(c_stringToParse)).toString()), ((common.StringCatter)common.Util.demand(c_filenameToReport)).toString()) );
-		} catch(edu.umn.cs.melt.copper.runtime.logging.CopperParserException e) {
-			return new core.PparseFailed( new common.StringCatter(e.getMessage()) );
-		} catch(Throwable t) {
-			throw new common.exceptions.TraceException("An error occured while parsing", t);
-		}
-""";
+  parseResult = template """return common.Util.callCopperParser(new ${packageName}.${parserName}(), c_stringToParse, c_filenameToReport);""";
 }
 

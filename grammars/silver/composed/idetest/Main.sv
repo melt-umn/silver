@@ -23,6 +23,9 @@ parser svParse::Root {
 
   silver:extension:deprecation;
   silver:extension:testing;
+
+  silver:extension:auto_ast;
+
   silver:extension:templating;
   silver:extension:patternmatching;
 
@@ -34,6 +37,10 @@ parser svParse::Root {
   silver:modification:typedecl;
   silver:modification:copper;
   silver:modification:defaultattr;
+
+  -- slight hacks, for the moment
+  silver:modification:copper_mda;
+  silver:modification:impide;
 }
 
 parser sviParse::IRoot {
@@ -64,15 +71,32 @@ temp_imp_ide_dcl svParse ".sv" {
 
   property grammar_to_compile string required display="Grammar";
 
+  wizards {
+    new file {
+      stub generator getStubForNewFile; --a function whose signature must be "String ::= args::[IdeProperty]"
+      property declared_grammar string required display="Grammar";
+    }
+  }
+
   product {
     name "SILVER";
-    version "0.2.0";
+    version "0.2.2";
   }
 
   option source linker on;
 }
 
 -- Declarations of IDE functions referred in decl block.
+
+function getStubForNewFile
+String ::= args::[IdeProperty]
+{
+    local gram :: Maybe<String> = tryGetProperty(args, "declared_grammar");
+    return if gram.isJust
+    then "grammar " ++ gram.fromJust ++ ";"
+    else "";
+}
+
 function fold
 [Location] ::= cst::Root
 {
@@ -169,6 +193,17 @@ function getGrammarToCompile
     else if head(args).propName == "grammar_to_compile"
 	    then [head(args).propValue]
 	    else getGrammarToCompile(tail(args));
+}
+
+function tryGetProperty
+Maybe<String> ::= args::[IdeProperty] prop::String
+{
+  return
+    if(null(args))
+    then nothing()
+    else if head(args).propName == prop
+	    then just(head(args).propValue)
+	    else tryGetProperty(tail(args), prop);
 }
 
 function getBuildXmlPath

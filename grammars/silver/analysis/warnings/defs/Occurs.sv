@@ -27,7 +27,7 @@ top::CmdArgs ::= rest::CmdArgs
   forwards to rest;
 }
 aspect function parseArgs
-ParseResult<Decorated CmdArgs> ::= args::[String]
+Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--warn-orphaned", flag(warnOrphanedFlag))];
 }

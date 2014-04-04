@@ -25,7 +25,7 @@ attribute lazyTranslation occurs on Exprs;
 --       a node, since we know.
 
 aspect production errorReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= msg::[Message]  q::Decorated QName
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
@@ -141,7 +141,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
     | functionReference(q) -> -- static method invocation
         "((" ++ finalType(top).transType ++ ")" ++ makeClassName(q.lookupValue.fullName) ++ ".invoke(" ++ argsTranslation(es) ++ "))"
     | productionReference(q) -> -- static constructor invocation
-        "((" ++ finalType(top).transType ++ ")new " ++ makeClassName(q.lookupValue.fullName) ++ "(" ++ implode(", ", map((.lazyTranslation), es.exprs ++ annos.exprs)) ++ "))"
+        "((" ++ finalType(top).transType ++ ")new " ++ makeClassName(q.lookupValue.fullName) ++ "(" ++ implode(", ", map((.lazyTranslation), es.exprs ++ reorderedAnnoAppExprs(annos))) ++ "))"
     | _ -> -- dynamic method invocation
         "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".invoke(new Object[]{" ++ argsTranslation(es) ++ "}, " ++ namedargsTranslation(annos) ++ "))" 
     end ;
@@ -156,6 +156,13 @@ String ::= e::Decorated AppExprs
   return implode(", ", map((.lazyTranslation), e.exprs));
 }
 function namedargsTranslation
+String ::= e::Decorated AnnoAppExprs
+{
+  -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
+  return if null(e.exprs) then "null"
+  else "new Object[]{" ++ implode(", ", map((.lazyTranslation), reorderedAnnoAppExprs(e))) ++ "}";
+}
+function namedargsTranslationNOReorder
 String ::= e::Decorated AnnoAppExprs
 {
   -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
@@ -185,7 +192,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
        else "new int[]{" ++ implode(", ", map(int2str, annos.annoIndexConverted)) ++ "}") ++ ", " ++
       (if null(annos.annoIndexSupplied) then "null"
        else "new int[]{" ++ implode(", ", map(int2str, annos.annoIndexSupplied)) ++ "}") ++ ", " ++
-      namedargsTranslation(annos) ++ ")"
+      namedargsTranslationNOReorder(annos) ++ ")"
     else step2;
     
   top.translation = step3;

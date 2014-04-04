@@ -5,7 +5,7 @@ imports silver:langutil:pp;
 
 function driver
 IOVal<Integer> ::= args::[String]
-                   parse::Function(ParseResult<Root_c> ::= String String)
+                   parse::(ParseResult<Root_c> ::= String String)
                    driverIO::IO
 {
  production filename::String = head(args) ;
@@ -43,7 +43,7 @@ IOVal<Integer> ::= args::[String]
 
  return
   if   null(args)
-  then ioval (print ("No required command line arguments provided.\n", driverIO), 1)
+  then ioval (print ("Command line arguments required, usage \"java -jar lambda.jar <<filename>>\"\n", driverIO), 1)
   else
   if   ! fileExists.iovalue
   then ioval (print ("File \"" ++ filename ++ "\" not found.\n\n",
@@ -61,11 +61,11 @@ synthesized attribute tioOut :: IO ;
 abstract production printPPTask
 t::Task ::= filename::String r_cst::Decorated Root_c
 { t.tioOut = print("Pretty print of program in \"" ++ filename ++ "\":\n" ++
-                   r_cst.pp.result ++ "\n\n" ++ "CST:\n" ++ r_cst.ast.pp.result ++ "\n\n", t.tioIn) ;
+                   show(80,r_cst.pp) ++ "\n\n" ++ "CST:\n" ++ show(80,r_cst.ast.pp) ++ "\n\n", t.tioIn) ;
 }
 abstract production writePPTask
 t::Task ::= filename::String r_ast::Decorated Root
-{ t.tioOut = writeFile(filenamePP, r_ast.pp.result, t.tioIn) ;
+{ t.tioOut = writeFile(filenamePP, show(80,r_ast.pp), t.tioIn) ;
   local filenamePP::String = substring(0, length(filename)-7, filename) ++ "_pp.lambda" ;
 }
 abstract production printErrorsTask

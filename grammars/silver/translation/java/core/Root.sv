@@ -1,6 +1,6 @@
 grammar silver:translation:java:core;
 
-attribute genFiles,setupInh,initProd,initValues,postInit,initWeaving,valueWeaving occurs on Root, AGDcls, AGDcl, GrammarPart, Grammar;
+attribute genFiles,setupInh,initProd,initValues,postInit,initWeaving,valueWeaving occurs on Root, AGDcls, AGDcl, Grammar;
 
 {--
  - Java classes to generate. (filename, contents)
@@ -95,18 +95,6 @@ top::AGDcl ::= h::AGDcl t::AGDcl
   top.valueWeaving := h.valueWeaving ++ t.valueWeaving;
 }
 
-aspect production grammarPart
-top::GrammarPart ::= c1::Root  fn::String
-{
-  top.genFiles := c1.genFiles;
-  top.setupInh := c1.setupInh;
-  top.initProd := c1.initProd;
-  top.initValues := c1.initValues;
-  top.postInit := c1.postInit;
-  top.initWeaving := c1.initWeaving;
-  top.valueWeaving := c1.valueWeaving;
-}
-
 aspect production nilGrammar
 top::Grammar ::=
 {
@@ -120,7 +108,7 @@ top::Grammar ::=
 }
 
 aspect production consGrammar
-top::Grammar ::= c1::GrammarPart  c2::Grammar
+top::Grammar ::= c1::Root  c2::Grammar
 {
   top.genFiles := c1.genFiles ++ c2.genFiles;
   top.setupInh := c1.setupInh ++ c2.setupInh;  

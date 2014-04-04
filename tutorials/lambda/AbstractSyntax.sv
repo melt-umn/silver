@@ -10,7 +10,7 @@ synthesized attribute type :: Type;
 inherited attribute envi :: [Pair<String Type>];
 synthesized attribute envs :: [Pair<String Type>];
 
-nonterminal Root       with pp, type, envs, errors;
+nonterminal Root       with pp, type, errors;
 nonterminal Expr       with pp, type, envi, errors;
 nonterminal Expr_funct with pp, type, envi, errors;
 nonterminal Expr_arith with pp, type, envi, errors;
@@ -29,7 +29,7 @@ p::Root ::= r::Expr
 
  p.errors = case r.type of
                  int() -> r.errors
-               | _ -> "Final Type:" ++ r.type.pp.result ++ "\n" ++ r.errors
+               | _ -> "Final Type:" ++ show(80,r.type.pp) ++ "\n" ++ r.errors
             end;
 }
 
@@ -49,8 +49,8 @@ e::Expr ::= id::String t::Type e1::Expr e2::Expr
 
  e.errors = if !eqType(e1.type, t)
             then "Declaration type and definition are mismatched\n" 
-              ++ "\tDecl:" ++ t.pp.result ++ "\n"
-              ++ "\tDef :" ++ e1.type.pp.result ++ "\n"
+              ++ "\tDecl:" ++ show(80,t.pp) ++ "\n"
+              ++ "\tDef :" ++ show(80,e1.type.pp) ++ "\n"
               ++ synErrors
             else synErrors;
 }
@@ -71,7 +71,7 @@ e::Expr ::= id::String tl::Type e1::Expr
             | _ -> ""
             end ++ 
             case e1.type of
-              type_err() -> e1.pp.result ++ " is type_err\n"
+              type_err() -> show(80,e1.pp) ++ " is type_err\n"
             | _ -> ""
             end ++ synErrors;
 }
@@ -108,13 +108,13 @@ mp::Expr_funct ::= mp1::Expr_funct e::Expr_arith
  mp.errors = case mp1.type of
                arrow(ta, tb) -> if !eqType(ta, e.type)
                                 then "Incompatible types\n"
-                                  ++ "\tMethod:" ++ mp1.type.pp.result ++ "\n"
-                                  ++ "\tInput :" ++ e.type.pp.result ++ "\n"
+                                  ++ "\tMethod:" ++ show(80,mp1.type.pp) ++ "\n"
+                                  ++ "\tInput :" ++ show(80,e.type.pp) ++ "\n"
                                   ++ synErrors
                                 else synErrors
              | int() -> "Incompatible types\n"
                      ++ "\tMethod:int\n"
-                     ++ "\tInput :" ++ e.type.pp.result ++ "\n"
+                     ++ "\tInput :" ++ show(80,e.type.pp) ++ "\n"
                      ++ synErrors
              | type_err() -> "Error already exists\n" ++ synErrors
              end;
@@ -147,12 +147,12 @@ e::Expr_arith ::= e1::Expr_arith t::Term
 
  e.errors = if !eqType(e1.type, int())
             then "Invalid argument for binary operator:\n"
-              ++ "\t" ++ e1.type.pp.result ++ "\n"
+              ++ "\t" ++ show(80,e1.type.pp) ++ "\n"
               ++ synErrors
             else
               if !eqType(t.type, int())
               then "Invalid argument for binary operator:\n"
-                ++ "\t" ++ t.type.pp.result ++ "\n"
+                ++ "\t" ++ show(80,t.type.pp) ++ "\n"
                 ++ synErrors
               else synErrors;
 }
@@ -193,12 +193,12 @@ t::Term ::= t1::Term f::Factor
 
  t.errors = if !eqType(t1.type, int())
             then "Incompatible parameter for binary operator\n"
-              ++ "\t" ++ t1.type.pp.result ++ "\n"
+              ++ "\t" ++ show(80,t1.type.pp) ++ "\n"
               ++ synErrors
             else
               if !eqType(f.type, int()) 
               then "Incompatible parameter for binary operator\n"
-                ++ "\t" ++ f.type.pp.result ++ "\n"
+                ++ "\t" ++ show(80,f.type.pp) ++ "\n"
                 ++ synErrors
               else synErrors;
 }
