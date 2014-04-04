@@ -2,6 +2,7 @@ grammar silver:modification:copper;
 
 terminal Pluck_kwd 'pluck' lexer classes {KEYWORD,RESERVED};
 terminal Print_kwd 'print' lexer classes {KEYWORD,RESERVED};
+terminal PushToken_kwd 'pushToken' lexer classes {KEYWORD,RESERVED};
 
 concrete production namePrint
 top::Name ::= 'print'
@@ -88,6 +89,51 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
        then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
        else [];
 }
+
+concrete production pushTokenStmt
+top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
+{
+   forwards to pushTokenIfStmt($1, $2, val, $4, lexeme, $6, 'if', trueConst('true', location=$7.location), $7, location=top.location );
+}
+
+
+concrete production pushTokenIfStmt
+top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' 'if' condition::Expr ';'
+{
+  top.pp = "\t" ++ "pushToken(" ++ val.pp ++ ", " ++ lexeme.pp ++ ") if " ++ condition.pp ++ ";";
+
+  top.errors := lexeme.errors ++ condition.errors ++
+               (if !top.blockContext.permitActions
+                then [err(top.location, "Tokens may only be pushed in action blocks")]
+                else []);
+
+  top.translation = "if(" ++ condition.translation ++ "){" ++ " pushToken(Terminals." ++ makeCopperName(val.lookupType.fullName) ++ ", (" ++ lexeme.translation ++ ").toString()" ++ ");}";
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
+
+  lexeme.downSubst = top.downSubst;
+  errCheck1.downSubst = lexeme.upSubst;
+  condition.downSubst = errCheck1.upSubst;
+  errCheck2.downSubst = condition.upSubst;
+  top.upSubst = errCheck2.upSubst;
+
+  errCheck1 = check(lexeme.typerep, stringTypeExp());
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(lexeme.location, "Lexeme parameter has type " ++ errCheck1.leftpp ++ " which is not a String")]
+       else [];
+
+
+  errCheck2 = check(condition.typerep, boolTypeExp());
+  top.errors <-
+       if errCheck2.typeerror
+       then [err(condition.location, "pushToken condition has type " ++ errCheck1.leftpp ++ " which is not a Boolean")]
+       else [];
+}
+
+
+
 
 abstract production parserAttributeDefLHS
 top::DefLHS ::= q::Decorated QName
