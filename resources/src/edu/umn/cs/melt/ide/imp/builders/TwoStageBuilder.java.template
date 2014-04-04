@@ -6,6 +6,7 @@
 package @PKG_NAME@.imp.builders;
 
 import java.util.Map;
+import java.util.Date;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -57,7 +58,8 @@ public class TwoStageBuilder implements DelegateBuilder {
 		//Cancel the build if stage one failed
 		if(!buildSuccessful){
 			monitor.setCanceled(true);
-			cls.error("Build failed.");
+			Date d = new Date() ;
+			cls.error("Build failed at " + d.toString() );
 		} else {
 			//monitor.worked(1);
 			//Otherwise invoke Post-Build 
@@ -137,7 +139,8 @@ public class TwoStageBuilder implements DelegateBuilder {
 			if(!buildSuccessful){
 				monitor.setCanceled(true);
 				if(!needRebuild){
-					cls.error("Build failed.");
+					Date d = new Date() ;
+					cls.error("Build failed at " + d.toString() );
 				}
 				//Release the lock
 				synchronized(TwoStageBuilder.class){

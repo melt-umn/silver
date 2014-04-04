@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>@GROUP_ID@</groupId>
   <artifactId>@LANG_NAME@_UPDATESITE</artifactId>
-  <version>@IDE_VERSION@</version>
+  <version>@IDE_VERSION@.@IDE_BUILD_TIMESTAMP@</version>
   <packaging>eclipse-repository</packaging>
   <name>@LANG_NAME@'s IDE plugin update site</name>
   <description>@LANG_NAME@'s IDE plugin update site</description>

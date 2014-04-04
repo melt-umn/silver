@@ -8,20 +8,22 @@ synthesized attribute ideParserSpec :: ParserSpec;
 synthesized attribute funcDcls :: [Pair<String String>] with ++ ;
 synthesized attribute propDcls :: [IdeProperty] with ++ ;
 synthesized attribute optDcls :: [IdeOption] with ++ ;
+synthesized attribute wizards :: [IdeWizardDcl] with ++;
 synthesized attribute productInfo :: IdeProductInfo;
 synthesized attribute pluginConfig :: PluginConfig;
 
-nonterminal IdeSpec with ideExtension, ideParserSpec, funcDcls, propDcls, productInfo, pluginConfig;
+nonterminal IdeSpec with ideExtension, ideParserSpec, funcDcls, propDcls, wizards, productInfo, pluginConfig;
 
 abstract production ideSpec
 top::IdeSpec ::= 
-    ext::String ideFuncDcls::[Pair<String String>] idePropDcls::[IdeProperty] 
+    ext::String ideFuncDcls::[Pair<String String>] idePropDcls::[IdeProperty] wizards::[IdeWizardDcl]
     pspec::ParserSpec productInfo::IdeProductInfo pluginConfig::PluginConfig --TODO more?
 {
   top.ideExtension = ext;
   top.ideParserSpec = pspec;
   top.funcDcls := ideFuncDcls;
   top.propDcls := idePropDcls;
+  top.wizards := wizards;
   top.productInfo = productInfo;
   top.pluginConfig = pluginConfig;
 }

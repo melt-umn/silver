@@ -19,12 +19,19 @@ String ::= width::Integer d::Document
 
 --------------------------------------------------------------------------------
 
+{--
+ - Concatenates a list of fragments into one fragment.
+ -}
 function concat
 Document ::= ds::[Document]
 {
   return if null(ds) then notext()
          else foldl(cat, head(ds), tail(ds));
 }
+{--
+ - Intersperse a separator fragment between a list of fragments.
+ - e.g. implode(text(", "), list)
+ -}
 function implode
 Document ::= sep::Document ds::[Document]
 {
@@ -32,6 +39,10 @@ Document ::= sep::Document ds::[Document]
          else if null(tail(ds)) then head(ds)
          else cat(cat(head(ds), sep), implode(sep, tail(ds)));
 }
+{--
+ - Introduce a separator fragment after every element of a list of fragments.
+ - Including the last.
+ -}
 function terminate
 Document ::= sep::Document ds::[Document]
 {
@@ -39,6 +50,22 @@ Document ::= sep::Document ds::[Document]
          then notext()
          else cat(cat(head(ds), sep), terminate(sep, tail(ds)));
 }
+{--
+ - Introduce a separator fragment before every element of a list of fragments.
+ - Including the first.
+ -}
+function initiate
+Document ::= sep::Document ds::[Document]
+{
+  return if null(ds)
+         then notext()
+         else cat(cat(sep, head(ds)), initiate(sep, tail(ds)));
+}
+{--
+ - Insert lines before and after the inner fragment, with proper nesting.
+ - (That is, usually you want the first line inside the nest, but the second
+ - OUTSIDE the nest.)
+ -}
 function nestlines
 Document ::= n::Integer inner::Document
 {

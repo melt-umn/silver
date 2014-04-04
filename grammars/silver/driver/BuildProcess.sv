@@ -21,8 +21,8 @@ type SVIParser = (ParseResult<IRoot> ::= String String);
 function cmdLineRun
 IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
 {
-  local argResult :: ParseResult<Decorated CmdArgs> = parseArgs(args);
-  local a :: Decorated CmdArgs = argResult.parseTree;
+  local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
+  local a :: Decorated CmdArgs = case argResult of right(t) -> t end;
 
   -- Let's locally set up and verify the environment
   local envSH :: IOVal<String> = envVar("SILVER_HOME", ioin);
@@ -69,7 +69,13 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
   -- unit.postOps is a "pure value," here's where we make it go.
   local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), reRootStream.io);
 
-  return if !argResult.parseSuccess then ioval(print(argResult.parseErrors, ioin), 1)
+  local argErrors :: [String] =
+    case argResult of
+    | left(s) -> [s]
+    | _ -> []
+    end;
+
+  return if !null(argErrors) then ioval(print(head(argErrors), ioin), 1)
   else if a.displayVersion then ioval(print("Silver Version 0.4.0-dev\n", ioin), 1) -- temp: exit with an error code so 'ant' isnt run.
   else if !null(check.iovalue) then ioval(print(implode("\n", check.iovalue), check.io), 1)
   else if !head(rootStream.iovalue).isJust then ioval(print("The specified grammar (" ++ buildGrammar ++ ") could not be found.\n", rootStream.io), 1)

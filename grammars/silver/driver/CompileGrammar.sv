@@ -28,8 +28,10 @@ IOVal<Maybe<RootSpec>> ::=
 
   local pr :: IO = print("Compiling Grammar: " ++ grammarName ++ "\n", grammarTime.io);
   
-  local gramCompile :: IOVal<Grammar> = compileFiles(svParser, grammarLocation.iovalue.fromJust, files.iovalue, pr);
-  local ifaceCompile :: IOVal<ParseResult<IRoot>> = compileInterface(sviParser, genPath ++ "src/" ++ gramPath, pr);
+  local gramCompile :: IOVal<Pair<[Root] [ParseError]>> =
+    compileFiles(svParser, grammarLocation.iovalue.fromJust, files.iovalue, pr);
+  local ifaceCompile :: IOVal<ParseResult<IRoot>> =
+    compileInterface(sviParser, genPath ++ "src/" ++ gramPath, pr);
   
   -- Not being clean, valid interface file, newer than the grammar source
   local useInterface :: Boolean = !clean && ifaceTime.iovalue.isJust && ifaceTime.iovalue.fromJust > grammarTime.iovalue;
@@ -46,13 +48,21 @@ IOVal<Maybe<RootSpec>> ::=
   local rs :: RootSpec =
     if useInterface && ifaceCompile.iovalue.parseSuccess then
       interfaceRootSpec(ifaceCompile.iovalue.parseTree, ifaceTime.iovalue.fromJust)
+    else if null(gramCompile.iovalue.snd) then
+      grammarRootSpec(foldRoot(gramCompile.iovalue.fst), grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue)
     else
-      grammarRootSpec(gramCompile.iovalue, grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue);
+     errorRootSpec(gramCompile.iovalue.snd, grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue);
   
   return if !grammarLocation.iovalue.isJust || null(files.iovalue) then
     ioval(grammarLocation.io, nothing())
   else
     ioval(join, just(rs));
+}
+
+function foldRoot
+Grammar ::= l::[Root]
+{
+  return foldr(consGrammar, nilGrammar(), l);
 }
 
 {--
@@ -66,8 +76,7 @@ Boolean ::= f::String
 function listSilverFiles
 IOVal<[String]> ::= dir::String  ioin::IO
 {
-  local attribute files :: IOVal<[String]>;
-  files = listContents(dir, ioin);
+  local files :: IOVal<[String]> = listContents(dir, ioin);
 
   return ioval(files.io, filter(isValidSilverFile, files.iovalue));
 }
@@ -78,11 +87,8 @@ IOVal<[String]> ::= dir::String  ioin::IO
 function isValidInterface
 IOVal<Maybe<Integer>> ::= file::String  ioin::IO
 {
-  local attribute hasInterface :: IOVal<Boolean>;
-  hasInterface = isFile(file, ioin);
-
-  local attribute modTime :: IOVal<Integer>;
-  modTime = fileTime(file, hasInterface.io);
+  local hasInterface :: IOVal<Boolean> = isFile(file, ioin);
+  local modTime :: IOVal<Integer> = fileTime(file, hasInterface.io);
 
   return if hasInterface.iovalue then ioval(modTime.io, just(modTime.iovalue)) else ioval(hasInterface.io, nothing());
 }
@@ -94,11 +100,8 @@ IOVal<Maybe<Integer>> ::= file::String  ioin::IO
 function fileTimes
 IOVal<Integer> ::= dir::String is::[String] i::IO 
 {
-  local attribute ft :: IOVal<Integer>;
-  ft = fileTime(dir ++ head(is), i);
-
-  local attribute rest :: IOVal<Integer>;
-  rest = fileTimes(dir, tail(is), ft.io);
+  local ft :: IOVal<Integer> = fileTime(dir ++ head(is), i);
+  local rest :: IOVal<Integer> = fileTimes(dir, tail(is), ft.io);
 
   return if null(is)
          then fileTime(dir, i) -- check the directory itself. Catches deleted files.

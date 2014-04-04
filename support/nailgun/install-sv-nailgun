@@ -1,0 +1,24 @@
+#!/bin/bash
+
+if [ ! -d ~/bin ]; then
+  echo "This script is intended to place the 'sv-nailgun' script in ~/bin."
+  echo "You do no have a ~/bin directory, so this script is aborting."
+  echo "In many distributions, you can simply create it and it will work,"
+  echo "but in some cases you may also have to alter your shell startup"
+  echo "scripts to include it in your PATH."
+  exit 1
+fi
+
+echo "Found ~/bin"
+
+cp sv-nailgun sv-call ~/bin/
+
+if [ ! $? ]; then
+  echo "Install failed!"
+  exit 3
+fi
+
+chmod +x ~/bin/sv-*
+
+echo "Install finished."
+

@@ -114,6 +114,7 @@ ag::AGDcl ::= kwd::'equalityTest'
    empty_CS_env()))))))) , 3 );
 -}
 
+  -- TODO: BUG: FIXME: these names should be mangled. I ran into 't' being shadowed in a test I wrote!
   local tref :: Name = name("t", ag.location);
   local testNameref :: Name = name(testName, ag.location);
   local valueref :: Name = name("value", ag.location);

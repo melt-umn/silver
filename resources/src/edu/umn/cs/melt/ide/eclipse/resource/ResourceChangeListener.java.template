@@ -33,7 +33,7 @@ public class ResourceChangeListener implements IResourceChangeListener {
 				
 				try {
 					//If it's a @LANG_NAME@ project
-					if(proj.hasNature(@LANG_NAME@Nature.k_natureID)){
+					if(proj.isOpen() && proj.hasNature(@LANG_NAME@Nature.k_natureID)){
 						LinkedResourceTracker tracker = @LANG_NAME@Service.getInstance().getLinkedResourceTracker(proj);
 						
 						IResourceDelta ressDelta[] = projDelta.getAffectedChildren(IResourceDelta.REMOVED);		

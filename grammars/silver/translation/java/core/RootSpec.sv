@@ -10,6 +10,12 @@ top::RootSpec ::= _ _
   top.genFiles := [];
 }
 
+aspect production errorRootSpec
+top::RootSpec ::= _ _ _ _
+{
+  top.genFiles := [];
+}
+
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _
 {

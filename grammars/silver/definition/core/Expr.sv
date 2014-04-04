@@ -46,20 +46,17 @@ top::Expr ::= q::QName
 {
   top.pp = q.pp;
   
-  top.errors <- q.lookupValue.errors;
-
   forwards to if null(q.lookupValue.dcls)
-              then errorReference(q, location=top.location)
+              then errorReference(q.lookupValue.errors, q, location=top.location)
               else q.lookupValue.dcl.refDispatcher(q, top.location);
 }
 
 abstract production errorReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= msg::[Message]  q::Decorated QName
 {
   top.pp = q.pp;
   
-  top.errors := []; -- The reason we don't error here: we only forward here
-                    -- if the lookup failed, which already produced an error.
+  top.errors := msg;
   top.typerep = errorType();
 }
 
@@ -984,7 +981,16 @@ top::AnnoAppExprs ::=
   top.exprs = [];
 }
 
-
+function reorderedAnnoAppExprs
+[Decorated Expr] ::= d::Decorated AnnoAppExprs
+{
+  -- This is an annoyingly poor quality implementation
+  return map(reorderedGetSnd, sortBy(reorderedLte, zipWith(pair, d.annoIndexSupplied, d.exprs)));
+}
+function reorderedGetSnd
+b ::= p::Pair<a b> { return p.snd; }
+function reorderedLte
+Boolean ::= l::Pair<Integer Decorated Expr>  r::Pair<Integer Decorated Expr> { return l.fst <= r.fst; }
 
 
 

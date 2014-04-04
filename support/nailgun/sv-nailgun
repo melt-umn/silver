@@ -1,0 +1,80 @@
+#!/bin/bash
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  echo "Script must be 'sourced' in a *bash* shell. Run as '. sv-nailgun' not 'sv-nailgun' nor './sv-nailgun'"
+  exit 5
+fi
+
+# Try a few possible locations, pick the first
+SV_NAILGUN_CANDIDATES=$(shopt -s nullglob; echo /project/melt4/People/ted/nailgun/bin/nailgun-*.jar /usr/share/java/nailgun-server*.jar /usr/share/java/nailgun-*.jar)
+SV_NAILGUN_ARRAY=($SV_NAILGUN_CANDIDATES)
+export SV_NAILGUN_JAR=${SV_NAILGUN_ARRAY[0]}
+
+if [[ ! -f "$SV_NAILGUN_JAR" ]]; then
+  echo "sv-nailgun: couldn't find nailgun jar under /usr/share/java"
+  return 1
+fi
+
+if [[ -f /usr/bin/ng ]]; then
+  export SV_NAILGUN="/usr/bin/ng"
+elif [[ -f /usr/bin/ng-nailgun ]]; then
+  export SV_NAILGUN="/usr/bin/ng-nailgun"
+  ng-nailgun > /dev/null 2>&1
+  # return code 230 == connection refused, rather than the help (226),
+  # indicating broken nailgun packaging. (It sees 'ng-client' as an alias
+  # command instead of the binary name of 'ng'.)
+  if [[ $? == 230 ]]; then
+    echo "sv-nailgun: discovered broken nailgun package. workaround applied."
+    export SV_NAILGUN_WORKAROUND="-a ng"
+  fi
+elif [[ -f /project/melt4/People/ted/nailgun/bin/ng ]]; then
+  export SV_NAILGUN="/project/melt4/People/ted/nailgun/bin/ng"
+elif [[ -f `which ng` ]]; then
+  export SV_NAILGUN=`which ng`
+else
+  echo "sv-nailgun: couldn't find nailgun client. Looked for /usr/bin/{ng,ng-nailgun}"
+  return 2
+fi
+
+function sv-serve {
+  if [[ $# > 1 ]]; then
+    echo "sv-serve: only one argument expected: the name of the jar."
+    return 1
+  elif [[ $# < 1 ]]; then
+    echo "sv-serve: missing argument: the name of the jar."
+    return 2
+  elif [[ ! -f "$1" ]]; then
+    echo "sv-serve: couldn't find jar '$1'"
+    return 3
+  fi
+  
+  # Cat the manifest, find the Main-Class, and don't forget to strip the \r
+  export SV_NG_MAINCLASS=`unzip -c "$1" META-INF/MANIFEST.MF | grep "Main-Class" | cut -d\  -f 2 | sed 's/\r$//'`
+
+  if [[ -z "$SV_NG_MAINCLASS" ]]; then
+    echo "sv-serve: Unable to determine Main-Class of '$1'"
+    return 4
+  fi
+
+  java -Xmx2G -Xms1G -jar "$SV_NAILGUN_JAR" > /dev/null 2> /dev/null &
+  
+  # Unfortunately no good way to determine when the server has started, afaik
+  sleep 2
+
+  $(exec $SV_NAILGUN_WORKAROUND "$SV_NAILGUN" "ng-cp" "$1")
+}
+
+function sv-serve-stop {
+  if [[ -z "$SV_NG_MAINCLASS" ]]; then
+    echo "No sv-nailgun server is running?"
+    return 1
+  fi
+  
+  unset SV_NG_MAINCLASS
+
+  $(exec $SV_NAILGUN_WORKAROUND "$SV_NAILGUN" "ng-stop")
+}
+
+
+echo "sv-nailgun: loaded. 'sv-serve <jarfile>' 'sv-call <args...>' 'sv-serve-stop'"
+

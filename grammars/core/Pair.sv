@@ -3,6 +3,9 @@ grammar core;
 synthesized attribute fst<a> :: a;
 synthesized attribute snd<a> :: a;
 
+{--
+ - The basic product type, counterpart to Either.
+ -}
 nonterminal Pair<a b> with fst<a>, snd<b>;
 
 abstract production pair

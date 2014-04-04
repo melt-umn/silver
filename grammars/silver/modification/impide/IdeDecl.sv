@@ -63,7 +63,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
   
   local info :: IdeProductInfo = getIdeProductInfo(stmts);
 
-  top.ideSpecs = [ideSpec(fext, stmts.funcDcls, stmts.propDcls, head(spec), info, getConfig(stmts.funcDcls, stmts.optDcls, stmts.propDcls))];
+  top.ideSpecs = [ideSpec(fext, stmts.funcDcls, stmts.propDcls, stmts.wizards, head(spec), info, getConfig(stmts.funcDcls, stmts.optDcls, stmts.propDcls, stmts.wizards))];
   
   top.errors <- stmts.errors;
 
@@ -71,17 +71,41 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
 }
 
 function getConfig
-PluginConfig ::= funcs::[Pair<String String>] opts::[IdeOption] props::[IdeProperty] 
+PluginConfig ::= funcs::[Pair<String String>] opts::[IdeOption] props::[IdeProperty] wizards::[IdeWizardDcl]
 {
     local hasExporter :: Boolean = checkExistence(funcs, "exporter");
     local hasSourceLinker :: Boolean = checkSwitchedOn(opts, "source linker");
     local hasCodeFolder :: Boolean = checkExistence(funcs, "folder");
 
+    local hasNewFileWizard :: Boolean = hasWizard(wizards, "newfile");
+
     local tabs::[Pair<String String>] = 
         (if null(props) then [] else [pair("Commons", "TabCommons")]) ++
         (if hasSourceLinker then [pair("Source", "TabBuildConfig")] else []);
 
-    return pluginConfig(hasExporter, hasSourceLinker, hasCodeFolder, tabs);
+    return pluginConfig(hasExporter, hasSourceLinker, hasCodeFolder, hasNewFileWizard, tabs);
+}
+
+{--
+  Iterate over a list of type [a], and for each element of type a, call get to get a result of type b,
+  then check if the result is equivalent to the given elem (which also has type b), by calling eq.
+--}
+function customizedLookupBy
+Boolean ::= eq::(Boolean ::= b b)  get::(b ::= a)  elem::b  lst::[a]
+{
+    return (!null(lst)) && (eq(elem, get(head(lst))) || customizedLookupBy(eq, get, elem, tail(lst)));
+}
+
+function hasWizard
+Boolean ::= wizards::[IdeWizardDcl] name::String
+{
+    return customizedLookupBy(stringEq, getNameFromWizard, name, wizards);
+}    
+
+function getNameFromWizard
+String ::= wizard::IdeWizardDcl
+{
+    return wizard.wizName;
 }
 
 function checkExistence
@@ -200,9 +224,9 @@ terminal ImpIde_OptFunc_Exporter 'exporter';
 terminal ImpIde_OptFunc_Folder 'folder';
 
 -- funcDcls, propDcls and optDcls are defined in ./IdeSpec.sv
-nonterminal IdeStmts with env, location, errors, grammarName, funcDcls, propDcls, optDcls, startNTName;
-nonterminal IdeStmt with env, location, errors, grammarName, funcDcls, propDcls, optDcls, startNTName, productInfo;
-nonterminal IdeStmtList with env, location, errors, grammarName, funcDcls, propDcls, optDcls, startNTName;
+nonterminal IdeStmts with env, location, errors, grammarName, funcDcls, propDcls, optDcls, wizards, startNTName;
+nonterminal IdeStmt with env, location, errors, grammarName, funcDcls, propDcls, optDcls, wizards, startNTName, productInfo;
+nonterminal IdeStmtList with env, location, errors, grammarName, funcDcls, propDcls, optDcls, wizards, startNTName;
 
 function makeGrammarName
 String ::= str::String
@@ -217,25 +241,28 @@ top::IdeStmts ::= ';'
   top.funcDcls := [];
   top.propDcls := [];
   top.optDcls := [];
+  top.wizards := [];
 }
 
 concrete production listIdeStmts
-top::IdeStmts ::= '{' funcList::IdeStmtList '}'
+top::IdeStmts ::= '{' stmtList::IdeStmtList '}'
 {
-  top.errors := funcList.errors;
-  top.funcDcls := funcList.funcDcls;
-  top.propDcls := funcList.propDcls;
-  top.optDcls := funcList.optDcls;
+  top.errors := stmtList.errors;
+  top.funcDcls := stmtList.funcDcls;
+  top.propDcls := stmtList.propDcls;
+  top.optDcls := stmtList.optDcls;
+  top.wizards := stmtList.wizards;
 }
 
 -- with optional ending ';'
 concrete production listIdeStmts2
-top::IdeStmts ::= '{' funcList::IdeStmtList '}' ';'
+top::IdeStmts ::= '{' stmtList::IdeStmtList '}' ';'
 {
-  top.errors := funcList.errors;
-  top.funcDcls := funcList.funcDcls;
-  top.propDcls := funcList.propDcls;
-  top.optDcls := funcList.optDcls;
+  top.errors := stmtList.errors;
+  top.funcDcls := stmtList.funcDcls;
+  top.propDcls := stmtList.propDcls;
+  top.optDcls := stmtList.optDcls;
+  top.wizards := stmtList.wizards;
 }
 
 concrete production nilIdeStmtList
@@ -245,15 +272,17 @@ top::IdeStmtList ::=
   top.funcDcls := [];
   top.propDcls := [];
   top.optDcls := [];
+  top.wizards := [];
 }
 
 concrete production consIdeStmtList
-top::IdeStmtList ::= func::IdeStmt funcList::IdeStmtList
+top::IdeStmtList ::= stmt::IdeStmt stmtList::IdeStmtList
 {
-  top.errors := func.errors ++ funcList.errors;
-  top.funcDcls := func.funcDcls ++ funcList.funcDcls;
-  top.propDcls := func.propDcls ++ funcList.propDcls;
-  top.optDcls := func.optDcls ++ funcList.optDcls;
+  top.errors := stmt.errors ++ stmtList.errors;
+  top.funcDcls := stmt.funcDcls ++ stmtList.funcDcls;
+  top.propDcls := stmt.propDcls ++ stmtList.propDcls;
+  top.optDcls := stmt.optDcls ++ stmtList.optDcls;
+  top.wizards := stmt.wizards ++ stmtList.wizards;
 }
 
 aspect default production
@@ -268,6 +297,7 @@ top::IdeStmt ::= 'builder' builderName::QName ';'
   top.funcDcls := [pair("builder", builderName.lookupValue.fullName)];
   top.propDcls := [];
   top.optDcls := [];
+  top.wizards := [];
 
   top.errors := builderName.lookupValue.errors;
   
@@ -298,6 +328,7 @@ top::IdeStmt ::= 'postbuilder' postbuilderName::QName ';'
   top.funcDcls := [pair("postbuilder", postbuilderName.lookupValue.fullName)];
   top.propDcls := [];
   top.optDcls := [];
+  top.wizards := [];
 
   top.errors := postbuilderName.lookupValue.errors;
   
@@ -328,6 +359,7 @@ top::IdeStmt ::= 'exporter' exporterName::QName ';'
   top.funcDcls := [pair("exporter", exporterName.lookupValue.fullName)];
   top.propDcls := [];
   top.optDcls := [];
+  top.wizards := [];
 
   top.errors := exporterName.lookupValue.errors;
   
@@ -358,6 +390,7 @@ top::IdeStmt ::= 'folder' folderName::QName ';'
   top.funcDcls := [pair("folder", folderName.lookupValue.fullName)];
   top.propDcls := [];
   top.optDcls := [];
+  top.wizards := [];
 
   top.errors := folderName.lookupValue.errors;
   
@@ -387,6 +420,8 @@ top::IdeStmt ::= 'property' pname::IdLower_t ptype::TypeName options::IdePropert
 
   top.optDcls := [];
 
+  top.wizards := [];
+
   local defaultVal :: String = getDefaultVal(options);
 
   top.errors := if ptype.propType=="integer"
@@ -396,6 +431,111 @@ top::IdeStmt ::= 'property' pname::IdLower_t ptype::TypeName options::IdePropert
                 else [];
 } 
 
+-- Wizards
+
+terminal ImpIde_Wizards 'wizards' lexer classes {KEYWORD};
+terminal ImpIde_Wizard_StubGen 'stub generator' lexer classes {KEYWORD};
+
+terminal ImpIde_Wizard_NewFile 'new file';
+
+nonterminal IdeWizardList with env, wizards, errors;
+nonterminal IdeWizard with env, wizards, errors;
+nonterminal StubGenerator with env, funcDcl, errors, wname;
+nonterminal PropertyList with propDcls, errors;
+nonterminal Property with propDcls, errors;
+
+synthesized attribute funcDcl :: String;
+inherited attribute wname :: String;
+
+concrete production makeIdeStmt_Wizards
+top::IdeStmt ::= 'wizards' '{' wlist::IdeWizardList '}' 
+{
+  top.funcDcls := [];
+
+  top.propDcls := [];
+
+  top.optDcls := [];
+
+  top.wizards := wlist.wizards;
+
+  top.errors := wlist.errors;
+} 
+
+concrete production nilIdeWizardList
+top::IdeWizardList ::= 
+{
+  top.wizards := [];
+  top.errors := [];
+}
+
+concrete production consIdeWizardList
+top::IdeWizardList ::= w::IdeWizard wList::IdeWizardList
+{
+  top.wizards := w.wizards ++ wList.wizards;
+  top.errors := w.errors ++ wList.errors;
+}
+
+concrete production makeIdeWizard_NewFile
+top::IdeWizard ::= 'new file' '{' generator::StubGenerator props::PropertyList '}'
+{
+  local diplayName :: String = "new file";
+  generator.wname = diplayName;
+  top.wizards := [makeNewWizardDcl("newfile", diplayName, generator.funcDcl, props.propDcls)];
+
+  top.errors := generator.errors ++ props.errors;
+}
+
+concrete production makeStubGenerator
+top::StubGenerator ::= 'stub generator' genName::QName ';' 
+{
+  top.funcDcl = genName.lookupValue.fullName;
+
+  -- String ::= [IdeProperty]
+  local stubGenTypeExpected :: TypeExp =
+    functionTypeExp(
+      stringTypeExp(),  -- return type
+      [listTypeExp(nonterminalTypeExp("ide:IdeProperty", []))], -- argument type list
+      []);
+  
+  local tc1 :: TypeCheck = check(freshenCompletely(genName.lookupValue.typerep), stubGenTypeExpected);
+  tc1.downSubst = emptySubst();
+  tc1.finalSubst = tc1.upSubst;
+
+  top.errors := [];
+  top.errors <-
+    if !tc1.typeerror then []
+    else [err(genName.location, "Stub generator function for wizard \"" ++ top.wname ++ "\" should have type:\n\t" ++ tc1.rightpp 
+        ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
+}
+
+concrete production nilPropertyList
+top::PropertyList ::= 
+{
+  top.propDcls := [];
+  top.errors := [];
+}
+
+concrete production consPropertyList
+top::PropertyList ::= p::Property pList::PropertyList
+{
+  top.propDcls := p.propDcls ++ pList.propDcls;
+  top.errors := p.errors ++ pList.errors;
+}
+
+concrete production makeProperty
+top::Property ::= 'property' pname::IdLower_t ptype::TypeName options::IdePropertyOptions ';'
+{
+  top.propDcls := [makeIdeProperty(pname.lexeme, ptype.propType, options)];
+
+  local defaultVal :: String = getDefaultVal(options);
+
+  top.errors := if ptype.propType=="integer"
+                then if (defaultVal=="" || isDigit(defaultVal))
+                     then []
+                     else [err($1.location, "The default value for integer property must be of integer type.\nInstead it is \"" ++ defaultVal ++ "\".")]
+                else [];
+}
+
 -- Options
 
 terminal ImpIde_Option_t 'option' lexer classes {KEYWORD};
@@ -403,7 +543,7 @@ terminal ImpIde_Source_Linker_t 'source linker' lexer classes {KEYWORD};
 terminal ImpIde_Switch_On_t 'on' lexer classes {KEYWORD};
 terminal ImpIde_Switch_Off_t 'off' lexer classes {KEYWORD};
 
-nonterminal IdeOptionPart_c with funcDcls, propDcls, optDcls, errors;
+nonterminal IdeOptionPart_c with optDcls, errors;
 
 concrete production makeIdeStmt_Option
 top::IdeStmt ::= 'option' op::IdeOptionPart_c ';'
@@ -415,15 +555,13 @@ top::IdeStmt ::= 'option' op::IdeOptionPart_c ';'
   top.optDcls := op.optDcls;
 
   top.errors := op.errors;
+
+  top.wizards := [];
 } 
 
 concrete production makeIdeOption_SourceLinker
 top::IdeOptionPart_c ::= 'source linker' value::OnOff
 {
-  top.funcDcls := [];
-
-  top.propDcls := [];
-
   top.optDcls := [makeIdeOption("source linker", switch2Str(value))];
 
   top.errors := [];
@@ -477,6 +615,8 @@ top::IdeStmt ::= 'product' '{' dcls::IdeProductInfoDcls '}'
   top.optDcls := [];
 
   top.productInfo = makeIdeProductInfo(dcls.info);
+
+  top.wizards := []; 
 
   top.errors := [];
 

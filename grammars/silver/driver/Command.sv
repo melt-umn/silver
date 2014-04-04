@@ -78,7 +78,7 @@ top::CmdArgs ::= rest::CmdArgs
 }
 
 function parseArgs
-ParseResult<Decorated CmdArgs> ::= args::[String]
+Either<String  Decorated CmdArgs> ::= args::[String]
 {
   production attribute flags::[Pair<String Flag>] with ++;
   flags := [];
@@ -126,8 +126,8 @@ ParseResult<Decorated CmdArgs> ::= args::[String]
     else [];
   
   return if !null(errors)
-         then parseFailed(implode("\n", errors) ++ "\n\n" ++ usage)
-         else parseSucceeded(a);
+         then left(implode("\n", errors) ++ "\n\n" ++ usage)
+         else right(a);
 }
 
 function checkEnvironment

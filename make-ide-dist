@@ -1,0 +1,23 @@
+#!/bin/bash
+
+echo "..."
+echo "Be sure to increment IDE version number in silver:composed:idetest:Main.sv"
+echo "..."
+
+IDEDIR="silver-eclipse-beta"
+
+# Set up directory
+mkdir -p  /web/research/melt.cs.umn.edu/downloads/${IDEDIR}
+chmod 775 /web/research/melt.cs.umn.edu/downloads/${IDEDIR}
+
+rm -Rf /web/research/melt.cs.umn.edu/downloads/${IDEDIR}/*
+
+
+# Copy files
+cp generated/ide/silver.composed.idetest/updatesite/target/SILVER_UPDATESITE.zip /web/research/melt.cs.umn.edu/downloads/${IDEDIR}/
+
+cd /web/research/melt.cs.umn.edu/downloads/${IDEDIR}
+
+unzip SILVER_UPDATESITE.zip
+
+chmod -R go=u *
