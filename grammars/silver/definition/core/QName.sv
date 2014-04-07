@@ -128,6 +128,8 @@ top::QNameAttrOccur ::= at::QName
     map(getOccursDcl(_, top.attrFor.typeName, top.env),
       -- the full names of each candidate
       map((.fullName), at.lookupAttribute.dcls));
+  -- TODO: BUG: this disambiguates, but doesn't find full-named that aren't in scope with short names!
+  -- i.e. 'import somthing as prefixed;  something.a' won't find prefixed:a.
 
   -- Occurs dcls
   local dclsNarrowed :: [DclInfo] = foldr(append, [], narrowed);
