@@ -2,35 +2,47 @@ grammar silver:analysis:typechecking:core;
 
 import silver:util;
 
-attribute upSubst, downSubst, finalSubst occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
+attribute upSubst, downSubst, finalSubst occurs on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
+
+{--
+ - These need an initial state only due to aspects (I think? maybe not. Investigate someday.)
+ - They otherwise confine their contexts to each individual Stmt.
+ -}
+attribute downSubst occurs on ProductionBody, ProductionStmts;
+
 
 aspect production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
   stmts.downSubst = top.downSubst;
-  top.upSubst = stmts.upSubst;
 }
 
 aspect production productionStmtsNil
 top::ProductionStmts ::= 
 {
-  top.upSubst = top.downSubst;
 }
 
 aspect production productionStmtsSnoc
 top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 {
   h.downSubst = top.downSubst;
-  t.downSubst = h.upSubst;
-  top.upSubst = t.upSubst;
+
+  t.downSubst = top.downSubst;
+  t.finalSubst = t.upSubst;
 }
 
 aspect production productionStmtAppend
 top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 {
+  -- We treat this as though each is independent here as well.
   h.downSubst = top.downSubst;
-  t.downSubst = h.upSubst;
-  top.upSubst = t.upSubst;
+  h.finalSubst = h.upSubst;
+
+  t.downSubst = top.downSubst;
+  t.finalSubst = t.upSubst;
+  
+  top.upSubst = error("Shouldn't ever be needed anywhere. (Should only ever be fed back here as top.finalSubst)");
+  -- Of course, this means do not use top.finalSubst here!
 }
 
 aspect production forwardsTo

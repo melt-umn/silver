@@ -36,7 +36,6 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   body.blockContext = defaultAspectContext();
 
   body.downSubst = emptySubst();
-  body.finalSubst = body.upSubst;
 
   top.setupInh := body.setupInh; -- Probably should be empty?
   top.initProd := "\t\t//ASPECT DEFAULT PRODUCTION for " ++ te.pp ++ "\n" ++ body.translation;

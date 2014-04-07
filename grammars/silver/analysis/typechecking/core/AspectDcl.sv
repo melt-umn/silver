@@ -5,7 +5,7 @@ attribute upSubst, downSubst, finalSubst occurs on AspectProductionSignature, As
 aspect production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = body.finalSubst;
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = ns.finalSubst;
 
   errCheck1 = check(id.lookupValue.typerep, namedSig.typerep);
   top.errors <-
@@ -26,15 +26,14 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   errCheck1.downSubst = ns.upSubst;
   body.downSubst = errCheck1.upSubst;
   
-  body.finalSubst = body.upSubst;
-  ns.finalSubst = body.upSubst;
+  ns.finalSubst = errCheck1.upSubst;
 }
 
 
 aspect production aspectFunctionDcl
 top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody 
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = body.finalSubst;
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = ns.finalSubst;
 
   errCheck1 = check(id.lookupValue.typerep, namedSig.typerep);
   top.errors <-
@@ -54,8 +53,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   errCheck1.downSubst = ns.upSubst;
   body.downSubst = errCheck1.upSubst;
   
-  body.finalSubst = body.upSubst;
-  ns.finalSubst = body.upSubst;
+  ns.finalSubst = errCheck1.upSubst;
 }
 
 --

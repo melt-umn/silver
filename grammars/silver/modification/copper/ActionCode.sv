@@ -46,7 +46,6 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
   top.errors := stmts.errors;
   
   stmts.downSubst = emptySubst();
-  stmts.finalSubst = stmts.upSubst;
 }
 
 
