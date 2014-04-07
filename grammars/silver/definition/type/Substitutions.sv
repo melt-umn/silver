@@ -1,5 +1,15 @@
 grammar silver:definition:type;
 
+{--
+ - A representation of: (1) tyvar->type substitutions. (2) success/failure of unification
+ -
+ - History note: This code was written before Silver had polymorphism (it is
+ - what gave Silver polymorphism!) and so is incredibly archaic.
+ -
+ - TODO: Separate success/failure of unification from this type.
+ -       Consider unify returning Maybe<Substitution> or Pair<Boolean Substitution> depending.
+ - TODO: More efficient type representations than a assoc-list, somehow.
+ -}
 nonterminal Substitution with substList, substErrors, failure;
 
 synthesized attribute substList :: [Pair<TyVar TypeExp>];
@@ -42,27 +52,21 @@ Substitution ::= tv::TyVar te::TypeExp
 function composeSubst
 Substitution ::= s1::Substitution s2::Substitution
 {
-  -- TODO: once we have case-lists fix this notation.
-  return case s1 of
-           goodSubst(s1l) -> case s2 of
-                               goodSubst(s2l) -> goodSubst(s1l++s2l)
-                             | badSubst(s2l, s2e) -> badSubst(s1l++s2l, s2e)
-                             end
-         | badSubst(s1l, s1e) -> case s2 of
-                                   goodSubst(s2l) -> badSubst(s1l++s2l,s1e)
-                                 | badSubst(s2l, s2e) -> badSubst(s1l++s2l, s1e++s2e)
-                                 end
-         end;
-           
+  return case s1, s2 of
+  | goodSubst(s1l), goodSubst(s2l) ->  goodSubst(s1l ++ s2l)
+  | goodSubst(s1l), badSubst(s2l, s2e) ->  badSubst(s1l ++ s2l, s2e)
+  | badSubst(s1l, s1e), goodSubst(s2l) ->  badSubst(s1l ++ s2l, s1e)
+  | badSubst(s1l, s1e), badSubst(s2l, s2e) ->  badSubst(s1l ++ s2l, s1e ++ s2e)
+  end;
 }
 
 function ignoreFailure
 Substitution ::= s::Substitution
 {
   return case s of
-           goodSubst(_) -> s
-         | badSubst(sl,_) -> goodSubst(sl)
-         end;
+  | goodSubst(_) -> s
+  | badSubst(sl,_) -> goodSubst(sl)
+  end;
 }
 
 --------------------------------------------------------------------------------
@@ -86,12 +90,11 @@ top::TypeExp ::= tv::TyVar
   -- This also means the substitution list must not be circular!
 
   -- Perform one iteration of substitution
-  local attribute partialsubst :: Maybe<TypeExp>;
-  partialsubst = findSubst(tv, top.substitution);
+  local partialsubst :: Maybe<TypeExp> = findSubst(tv, top.substitution);
   
   -- recursively substitute only if we changed!
   top.substituted = if partialsubst.isJust
-                    then performSubstitution(partialsubst.fromJust , top.substitution )
+                    then performSubstitution(partialsubst.fromJust, top.substitution)
                     else top;
 }
 
@@ -112,12 +115,11 @@ top::TypeExp ::= tv::TyVar
   
   -- (See the only non-unification place where subst(...) is called directly at the bottom of this file.)
   
-  local attribute partialsubst :: Maybe<TypeExp>;
-  partialsubst = findSubst(tv, top.substitution);
+  local partialsubst :: Maybe<TypeExp> = findSubst(tv, top.substitution);
   
   -- recursively substitute only if we changed!
   top.substituted = if partialsubst.isJust
-                    then performSubstitution(partialsubst.fromJust , top.substitution )
+                    then performSubstitution(partialsubst.fromJust, top.substitution)
                     else top;
 }
 
@@ -170,7 +172,7 @@ top::TypeExp ::= nt::TypeExp  hidden::TypeExp
   -- Note: we're matching on hidden.subsituted, not just hidden. Important!
   top.substituted =
     case hidden.substituted of
-      varTypeExp(_) -> ntOrDecTypeExp(nt.substituted, hidden.substituted)
+    | varTypeExp(_) -> ntOrDecTypeExp(nt.substituted, hidden.substituted)
     | _             -> hidden.substituted
     end;
 }
@@ -221,7 +223,8 @@ Substitution ::= original::[TyVar] sub::[TyVar]
 {
   -- once we have "productions are subtypes of functions" then make this just map 'varTypeExp' and call the other one below
   return if null(original) || null(sub) then emptySubst()
-         else composeSubst( subst(head(original), varTypeExp(head(sub))), zipVarsIntoSubstitution(tail(original), tail(sub)));
+         else composeSubst(subst(head(original), varTypeExp(head(sub))),
+                zipVarsIntoSubstitution(tail(original), tail(sub)));
 }
 
 function zipVarsIntoSkolemizedSubstitution
@@ -229,7 +232,8 @@ Substitution ::= original::[TyVar] sub::[TyVar]
 {
   -- once we have "productions are subtypes of functions" then make this just map 'varTypeExp' and call the other one below
   return if null(original) || null(sub) then emptySubst()
-         else composeSubst( subst(head(original), skolemTypeExp(head(sub))), zipVarsIntoSkolemizedSubstitution(tail(original), tail(sub)));
+         else composeSubst(subst(head(original), skolemTypeExp(head(sub))),
+                zipVarsIntoSkolemizedSubstitution(tail(original), tail(sub)));
 }
 
 
@@ -237,7 +241,8 @@ function zipVarsAndTypesIntoSubstitution
 Substitution ::= original::[TyVar] sub::[TypeExp]
 {
   return if null(original) || null(sub) then emptySubst()
-         else composeSubst( subst(head(original), head(sub)), zipVarsAndTypesIntoSubstitution(tail(original), tail(sub)));
+         else composeSubst(subst(head(original), head(sub)),
+                zipVarsAndTypesIntoSubstitution(tail(original), tail(sub)));
 }
 
 function freshenTypeExp

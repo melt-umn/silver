@@ -2,6 +2,10 @@ grammar silver:definition:type;
 
 option silver:modification:ffi; -- foreign types
 
+{--
+ - Misnamed: Silver Type Representations.
+ - (From TypeExp you'd expect this is syntac, not representations.)
+ -}
 nonterminal TypeExp with freeVariables;
 
 synthesized attribute freeVariables :: [TyVar];
