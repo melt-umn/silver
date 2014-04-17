@@ -550,7 +550,9 @@ public class DecoratedNode {
 	 */
 	public final String getDebugID() {
 		String qualifier;
-		if(self instanceof core.Alocation) {
+		if(self == null) {
+			return "<top>";
+		} else if(self instanceof core.Alocation) {
 			DecoratedNode loc = ((core.Alocation)self).getAnno_core_location().decorate(TopNode.singleton, (Lazy[])null);
 			String file = loc.synthesized(core.Init.core_filename__ON__core_Location).toString();
 			int line = (Integer)loc.synthesized(core.Init.core_line__ON__core_Location);
