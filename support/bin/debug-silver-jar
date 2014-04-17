@@ -1,0 +1,32 @@
+#!/bin/bash
+
+
+
+# This script is not installed by default, and is useless for most users.
+# This is intended for debugging the silver compiler / translation itself,
+# not to debug your silver programs.
+
+# Invoke jdb with all the right parameters to make things happen
+
+if [[ $# < 1 ]]; then
+  echo "$0: missing argument: the name of the jar."
+  exit 2
+elif [[ ! -f "$1" ]]; then
+  echo "$0: couldn't find jar '$1'"
+  exit 3
+fi
+
+JAR=$1
+shift
+MAINCLASS=`unzip -c "$JAR" META-INF/MANIFEST.MF | grep "Main-Class" | cut -d\  -f 2 | sed 's/\r$//'`
+
+echo ""
+echo "jdb command reminders: where, bt, locals, dump, up/down, print"
+echo ""
+echo "Run the following the jdb prompt:"
+echo "catch java.lang.NullPointerException"
+echo "catch common.exceptions.SilverException"
+echo "run $MAINCLASS $@"
+echo ""
+
+exec jdb -classpath $JAR
