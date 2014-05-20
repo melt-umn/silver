@@ -1,0 +1,16 @@
+#!/bin/bash
+
+mkdir -p build
+cd build
+
+# These can be fun sometimes:
+# -XX:+PrintCompilation
+# -verbose:gc -XX:+PrintGCTimeStamps -XX:+PrintGCDetails -XX:-PrintGC
+if [ -z "$SVJVM_FLAGS" ]; then
+  SVJVM_FLAGS="-Xmx1800M -Xss6M"
+fi
+
+time java $SVJVM_FLAGS -jar ../jars/RunSilver.jar $@ --onejar silver:composed:extendedorigins && ant
+
+echo -e "\a"
+
