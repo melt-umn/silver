@@ -232,6 +232,68 @@ AGDcl ::= input::[QNameWithTL] t::Location
  - passes down the tree which the attribute is evaluated on.
  -}
 
+autocopy attribute ori::Expr occurs on AGDcls,Expr,ProductionBody,ProductionStmts,ProductionStmt,Exprs,ForwardInhs,ForwardInh,ExprInh,AppExprs,AnnoExpr,AnnoAppExprs,AppExpr;
+
+synthesized attribute lhs::Expr occurs on ProductionSignature, ProductionLHS;
+
+aspect production productionDcl
+top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+{
+  body.ori = ns.lhs;
+}
+
+aspect production productionSignature
+top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
+{
+  top.lhs = lhs.lhs;
+}
+
+aspect production productionLHS
+top::ProductionLHS ::= id::Name '::' t::Type
+{
+  top.lhs = applicationExpr(
+              baseExpr(
+                qNameId(
+                  case t of
+                  | nominalType(qNameTypeId(id),_) ->
+                      nameIdLower(
+                        terminal(IdLower_t,"ntw"++id.lexeme),
+                        location=top.location)
+                  | _ -> error("Origin does not support this type yet")
+                  end,
+                  location=top.location),
+                location=top.location),
+              '(',
+              oneAppExprs(
+                presentAppExpr(
+                  baseExpr(
+                    qNameId(
+                       id,
+                       location=top.location),
+                    location=top.location),
+                  location=top.location),
+                location=top.location),
+              ')',location=top.location);
+}
+
+aspect production functionDcl
+top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
+{
+  body.ori = 
+    applicationExpr(
+      baseExpr(
+        qNameId(
+          nameIdLower(
+            terminal(IdLower_t,"ntwBottom"),
+            location=top.location),
+          location=top.location),
+        location=top.location),
+      '(',
+      emptyAppExprs(
+        location=top.location),
+      ')',
+      location=top.location);
+}
 
 concrete production oChild
 top::Expr ::= '@' q::QName
@@ -251,44 +313,8 @@ top::Expr ::= e::QName '@.' q::QNameAttrOccur
                 location=top.location);
 }
 
-synthesized attribute wrapper::Expr;
-nonterminal Wrapper with wrapper, location;
-
-concrete production wrapperParam
-top::Wrapper ::= q::QName '(' t::QName ')'
-{
-  top.wrapper =
-            applicationExpr(
-              baseExpr(
-                q,
-                location=top.location),
-              '(',
-              oneAppExprs(
-                presentAppExpr(
-                  baseExpr(
-                    t,
-                    location=top.location),
-                  location=top.location),
-                location=top.location),
-              ')',location=top.location);
-}
-
-concrete production wrapperEmpty
-top::Wrapper ::= q::QName '(' ')'
-{
-  top.wrapper =
-            applicationExpr(
-              baseExpr(
-                q,
-                location=top.location),
-              '(',
-              emptyAppExprs(
-                location=top.location),
-              ')',location=top.location);
-}
-
 concrete production oApplication
-top::Expr ::= e::Expr '@(' es::AppExprs ',' anns::AnnoAppExprs ',' 'origins' ':' w::Wrapper ')'
+top::Expr ::= e::Expr '@(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   forwards to
     application(
@@ -304,7 +330,7 @@ top::Expr ::= e::Expr '@(' es::AppExprs ',' anns::AnnoAppExprs ',' 'origins' ':'
             location=top.location),
           '=',
           presentAppExpr(
-            w.wrapper,
+            top.ori,
             location=top.location),
           location=top.location),
         location=top.location),
@@ -313,26 +339,26 @@ top::Expr ::= e::Expr '@(' es::AppExprs ',' anns::AnnoAppExprs ',' 'origins' ':'
 }
 
 concrete production oApplicationAnno
-top::Expr ::= e::Expr '@(' anns::AnnoAppExprs ',' 'origins' ':' w::Wrapper ')'
+top::Expr ::= e::Expr '@(' anns::AnnoAppExprs ')'
 {
   forwards to
-    oApplication(e, $2, emptyAppExprs(location=$2.location), $4, anns, $4,
-                 $5, $6, w, $8, location=top.location);
+    oApplication(e, $2, emptyAppExprs(location=$2.location), ',', anns,
+                 $4, location=top.location);
 }
 
 concrete production oApplicationExpr
-top::Expr ::= e::Expr '@(' es::AppExprs ',' 'origins' ':' w::Wrapper ')'
+top::Expr ::= e::Expr '@(' es::AppExprs ')'
 {
   forwards to
-    oApplication(e, $2, es, $4, emptyAnnoAppExprs(location=$4.location),
-                 $4, $5, $6, w, $8, location=top.location);
+    oApplication(e, $2, es, ',', emptyAnnoAppExprs(location=$4.location),
+                 $4, location=top.location);
 }
 
 concrete production oApplicationEmpty
-top::Expr ::= e::Expr '@(' 'origins' ':' w::Wrapper ')'
+top::Expr ::= e::Expr '@(' ')'
 {
   forwards to
     oApplication(e, $2, emptyAppExprs(location=$2.location), ',',
-                 emptyAnnoAppExprs(location=$2.location), ',', $3, $4, w,
-                 $6, location=top.location);
+                 emptyAnnoAppExprs(location=$2.location),
+                 $3, location=top.location);
 }
