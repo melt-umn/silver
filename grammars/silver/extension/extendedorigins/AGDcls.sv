@@ -4,7 +4,9 @@ imports silver:extension:convenience;
 imports silver:definition:type:syntax;
 
 terminal Origins_kwd   'origins' lexer classes {KEYWORD,RESERVED};
---terminal NTWrapper_kwd 'NTWrapper' lexer classes {KEYWORD,RESERVED};
+terminal At_kwd        '@'       association = left, lexer classes {KEYWORD,RESERVED};
+terminal AtDot_kwd     '@.'      association = left, lexer classes {KEYWORD,RESERVED};
+terminal AtLParen_kwd  '@('      association = left, lexer classes {KEYWORD,RESERVED};
 
 concrete production originAGDcls
 top::AGDcl ::= t::'origins' 'on' qlist::QNames ';'
@@ -231,8 +233,62 @@ AGDcl ::= input::[QNameWithTL] t::Location
  -}
 
 
+concrete production oChild
+top::Expr ::= '@' q::QName
+{
+  forwards to baseExpr(q, location=top.location);
+}
+
+concrete production oAttribute
+top::Expr ::= e::QName '@.' q::QNameAttrOccur
+{
+  forwards to access(
+                baseExpr(
+                  e,
+                  location=top.location),
+                '.',
+                q,
+                location=top.location);
+}
+
+synthesized attribute wrapper::Expr;
+nonterminal Wrapper with wrapper, location;
+
+concrete production wrapperParam
+top::Wrapper ::= q::QName '(' t::QName ')'
+{
+  top.wrapper =
+            applicationExpr(
+              baseExpr(
+                q,
+                location=top.location),
+              '(',
+              oneAppExprs(
+                presentAppExpr(
+                  baseExpr(
+                    t,
+                    location=top.location),
+                  location=top.location),
+                location=top.location),
+              ')',location=top.location);
+}
+
+concrete production wrapperEmpty
+top::Wrapper ::= q::QName '(' ')'
+{
+  top.wrapper =
+            applicationExpr(
+              baseExpr(
+                q,
+                location=top.location),
+              '(',
+              emptyAppExprs(
+                location=top.location),
+              ')',location=top.location);
+}
+
 concrete production oApplication
-top::Expr ::= 'origins' e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ',' 'origins' ':' q::Expr ')'
+top::Expr ::= e::Expr '@(' es::AppExprs ',' anns::AnnoAppExprs ',' 'origins' ':' w::Wrapper ')'
 {
   forwards to
     application(
@@ -248,7 +304,7 @@ top::Expr ::= 'origins' e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ',' 'ori
             location=top.location),
           '=',
           presentAppExpr(
-            q,
+            w.wrapper,
             location=top.location),
           location=top.location),
         location=top.location),
@@ -257,73 +313,26 @@ top::Expr ::= 'origins' e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ',' 'ori
 }
 
 concrete production oApplicationAnno
-top::Expr ::= 'origins' e::Expr '(' anns::AnnoAppExprs ',' 'origins' ':' q::Expr ')'
+top::Expr ::= e::Expr '@(' anns::AnnoAppExprs ',' 'origins' ':' w::Wrapper ')'
 {
   forwards to
-    applicationAnno(
-      e, '(',
-      snocAnnoAppExprs(
-        anns,
-        ',',
-        annoExpr(
-          qNameId(
-            nameIdLower(
-              terminal(IdLower_t,"origin"),
-              location=top.location),
-            location=top.location),
-          '=',
-          presentAppExpr(
-            q,
-            location=top.location),
-          location=top.location),
-        location=top.location),
-      ')',
-      location=top.location);
+    oApplication(e, $2, emptyAppExprs(location=$2.location), $4, anns, $4,
+                 $5, $6, w, $8, location=top.location);
 }
 
 concrete production oApplicationExpr
-top::Expr ::= 'origins' e::Expr '(' es::AppExprs ',' 'origins' ':' q::Expr ')'
+top::Expr ::= e::Expr '@(' es::AppExprs ',' 'origins' ':' w::Wrapper ')'
 {
   forwards to
-    application(
-      e, '(',
-      es, ',',
-      oneAnnoAppExprs(
-        annoExpr(
-          qNameId(
-            nameIdLower(
-              terminal(IdLower_t,"origin"),
-              location=top.location),
-            location=top.location),
-          '=',
-          presentAppExpr(
-            q,
-            location=top.location),
-          location=top.location),
-        location=top.location),
-      ')',
-      location=top.location);
+    oApplication(e, $2, es, $4, emptyAnnoAppExprs(location=$4.location),
+                 $4, $5, $6, w, $8, location=top.location);
 }
 
 concrete production oApplicationEmpty
-top::Expr ::= 'origins' e::Expr '(' 'origins' ':' q::Expr ')'
+top::Expr ::= e::Expr '@(' 'origins' ':' w::Wrapper ')'
 {
-  forwards to 
-    applicationAnno(
-      e, '(',
-      oneAnnoAppExprs(
-        annoExpr(
-          qNameId(
-            nameIdLower(
-              terminal(IdLower_t,"origin"),
-              location=top.location),
-            location=top.location),
-          '=',
-          presentAppExpr(
-            q,
-            location=top.location),
-          location=top.location),
-        location=top.location),
-      ')',
-      location=top.location);
+  forwards to
+    oApplication(e, $2, emptyAppExprs(location=$2.location), ',',
+                 emptyAnnoAppExprs(location=$2.location), ',', $3, $4, w,
+                 $6, location=top.location);
 }
