@@ -11,3 +11,11 @@ concrete productions top::ConcreteProductions
 (moreElem) | ss::ConcreteProductions precedence = 7 { top.fst = ss.fst; }
            | s::ATerm { top.fst = s; }
 
+
+wrongCode "$9" {
+  abstract production dummyDontMatter
+  top::ConcreteProductions ::=
+  {
+    top.fst = $9;
+  }
+}
