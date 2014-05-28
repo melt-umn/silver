@@ -4,7 +4,9 @@ imports silver:extension:convenience;
 imports silver:definition:type:syntax;
 
 terminal Origins_kwd   'origins' lexer classes {KEYWORD,RESERVED};
---terminal NTWrapper_kwd 'NTWrapper' lexer classes {KEYWORD,RESERVED};
+terminal At_kwd        '@'       association = left, lexer classes {KEYWORD,RESERVED};
+terminal AtDot_kwd     '@.'      association = left, lexer classes {KEYWORD,RESERVED};
+terminal AtLParen_kwd  '@('      association = left, lexer classes {KEYWORD,RESERVED};
 
 concrete production originAGDcls
 top::AGDcl ::= t::'origins' 'on' qlist::QNames ';'
@@ -230,9 +232,89 @@ AGDcl ::= input::[QNameWithTL] t::Location
  - passes down the tree which the attribute is evaluated on.
  -}
 
+autocopy attribute ori::Expr occurs on AGDcls,Expr,ProductionBody,ProductionStmts,ProductionStmt,Exprs,ForwardInhs,ForwardInh,ExprInh,AppExprs,AnnoExpr,AnnoAppExprs,AppExpr;
+
+synthesized attribute lhs::Expr occurs on ProductionSignature, ProductionLHS;
+
+aspect production productionDcl
+top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+{
+  body.ori = ns.lhs;
+}
+
+aspect production productionSignature
+top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
+{
+  top.lhs = lhs.lhs;
+}
+
+aspect production productionLHS
+top::ProductionLHS ::= id::Name '::' t::Type
+{
+  top.lhs = applicationExpr(
+              baseExpr(
+                qNameId(
+                  case t of
+                  | nominalType(qNameTypeId(id),_) ->
+                      nameIdLower(
+                        terminal(IdLower_t,"ntw"++id.lexeme),
+                        location=top.location)
+                  | _ -> error("Origin does not support this type yet")
+                  end,
+                  location=top.location),
+                location=top.location),
+              '(',
+              oneAppExprs(
+                presentAppExpr(
+                  baseExpr(
+                    qNameId(
+                       id,
+                       location=top.location),
+                    location=top.location),
+                  location=top.location),
+                location=top.location),
+              ')',location=top.location);
+}
+
+aspect production functionDcl
+top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
+{
+  body.ori = 
+    applicationExpr(
+      baseExpr(
+        qNameId(
+          nameIdLower(
+            terminal(IdLower_t,"ntwBottom"),
+            location=top.location),
+          location=top.location),
+        location=top.location),
+      '(',
+      emptyAppExprs(
+        location=top.location),
+      ')',
+      location=top.location);
+}
+
+concrete production oChild
+top::Expr ::= '@' q::QName
+{
+  forwards to baseExpr(q, location=top.location);
+}
+
+concrete production oAttribute
+top::Expr ::= e::QName '@.' q::QNameAttrOccur
+{
+  forwards to access(
+                baseExpr(
+                  e,
+                  location=top.location),
+                '.',
+                q,
+                location=top.location);
+}
 
 concrete production oApplication
-top::Expr ::= 'origins' e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ',' 'origins' ':' q::Expr ')'
+top::Expr ::= e::Expr '@(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   forwards to
     application(
@@ -248,7 +330,7 @@ top::Expr ::= 'origins' e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ',' 'ori
             location=top.location),
           '=',
           presentAppExpr(
-            q,
+            top.ori,
             location=top.location),
           location=top.location),
         location=top.location),
@@ -257,73 +339,26 @@ top::Expr ::= 'origins' e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ',' 'ori
 }
 
 concrete production oApplicationAnno
-top::Expr ::= 'origins' e::Expr '(' anns::AnnoAppExprs ',' 'origins' ':' q::Expr ')'
+top::Expr ::= e::Expr '@(' anns::AnnoAppExprs ')'
 {
   forwards to
-    applicationAnno(
-      e, '(',
-      snocAnnoAppExprs(
-        anns,
-        ',',
-        annoExpr(
-          qNameId(
-            nameIdLower(
-              terminal(IdLower_t,"origin"),
-              location=top.location),
-            location=top.location),
-          '=',
-          presentAppExpr(
-            q,
-            location=top.location),
-          location=top.location),
-        location=top.location),
-      ')',
-      location=top.location);
+    oApplication(e, $2, emptyAppExprs(location=$2.location), ',', anns,
+                 $4, location=top.location);
 }
 
 concrete production oApplicationExpr
-top::Expr ::= 'origins' e::Expr '(' es::AppExprs ',' 'origins' ':' q::Expr ')'
+top::Expr ::= e::Expr '@(' es::AppExprs ')'
 {
   forwards to
-    application(
-      e, '(',
-      es, ',',
-      oneAnnoAppExprs(
-        annoExpr(
-          qNameId(
-            nameIdLower(
-              terminal(IdLower_t,"origin"),
-              location=top.location),
-            location=top.location),
-          '=',
-          presentAppExpr(
-            q,
-            location=top.location),
-          location=top.location),
-        location=top.location),
-      ')',
-      location=top.location);
+    oApplication(e, $2, es, ',', emptyAnnoAppExprs(location=$4.location),
+                 $4, location=top.location);
 }
 
 concrete production oApplicationEmpty
-top::Expr ::= 'origins' e::Expr '(' 'origins' ':' q::Expr ')'
+top::Expr ::= e::Expr '@(' ')'
 {
-  forwards to 
-    applicationAnno(
-      e, '(',
-      oneAnnoAppExprs(
-        annoExpr(
-          qNameId(
-            nameIdLower(
-              terminal(IdLower_t,"origin"),
-              location=top.location),
-            location=top.location),
-          '=',
-          presentAppExpr(
-            q,
-            location=top.location),
-          location=top.location),
-        location=top.location),
-      ')',
-      location=top.location);
+  forwards to
+    oApplication(e, $2, emptyAppExprs(location=$2.location), ',',
+                 emptyAnnoAppExprs(location=$2.location),
+                 $3, location=top.location);
 }
