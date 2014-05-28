@@ -342,6 +342,18 @@ Integer ::=
 }
 
 {--
+ - Generates a random number between [0, 1)
+ -}
+function genRand
+Float ::=
+{
+  return error("Not Yet Implemented: genRand");
+} foreign {
+  "java" : return "((float)Math.random())";
+}
+
+
+{--
  - Execute an IO action when a value is demanded by the Silver runtime.
  - When this gets executed may be unpredictable.
  -
