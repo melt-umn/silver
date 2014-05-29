@@ -100,3 +100,10 @@ EnvItem ::= ei::EnvItem  renames::[Pair<String String>]
 }
 
 
+function envItemNTFromProdDcl
+EnvItem ::= di::DclInfo
+{
+  -- loooking up the full name of the nonterminal it creates will resolve this prodDcl
+  return onlyRenamedEnvItem(di.namedSignature.outputElement.typerep.typeName, di);
+}
+

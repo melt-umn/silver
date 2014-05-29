@@ -165,6 +165,17 @@ top::Expr ::= '(' '.' q::QName ')'
   top.flowDefs = [];
 }
 
+aspect production forwardAccess
+top::Expr ::= e::Expr '.' 'forward'
+{
+  top.flowDeps = 
+    case e.flowVertexInfo of
+    | hasVertex(sVT, _, r) -> sVT("forward") :: r
+    | noVertex() -> e.flowDeps
+    end;
+  top.flowDefs = [];
+}
+
 aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {

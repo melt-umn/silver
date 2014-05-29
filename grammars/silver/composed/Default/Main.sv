@@ -20,6 +20,7 @@ parser svParse::Root {
   silver:extension:auto_ast;
   silver:extension:templating;
   silver:extension:patternmatching;
+  silver:extension:treegen;
 --  silver:extension:concreteSyntaxForTrees ;
   -- doc?
 

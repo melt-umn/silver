@@ -330,7 +330,7 @@ public class DecoratedNode {
 	 * Get the forwarded-to DecoratedNode.  Cached.  There is no need for an "AsIs" vs "Decorated"
 	 * variant of this function, since we always know it's a Node.
 	 * 
-	 * @return The DecoratedNode this one forwards to, or null if this node does not forward.
+	 * @return The DecoratedNode this one forwards to. (Crash if non-forwarding!)
 	 */
 	public DecoratedNode forward() {
 		if(this.forwardValue == null) {
@@ -338,6 +338,13 @@ public class DecoratedNode {
 			this.forwardValue = evalForward();
 		}
 		return this.forwardValue;
+	}
+
+	/**
+	 * @return Either forward() or this.
+	 */
+	public DecoratedNode forwardOrThis() {
+		return self.hasForward() ? forward() : this;
 	}
 	
 	/**
