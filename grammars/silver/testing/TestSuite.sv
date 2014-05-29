@@ -99,3 +99,13 @@ ts::TestSuite ::= ts1::TestSuite ts2::TestSuite
  ts2.ioIn = ts1.ioOut ;
  ts.ioOut = ts2.ioOut ;
 }
+
+
+function repeatTestTimes
+Boolean ::= f::(Boolean ::=)  times::Integer
+{
+  return if times <= 0 then true else
+    f() && repeatTestTimes(f, times - 1);
+}
+
+

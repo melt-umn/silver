@@ -132,6 +132,22 @@ top::Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Locati
   forward.downSubst = e.upSubst;
 }
 
+aspect production forwardAccess
+top::Expr ::= e::Expr '.' 'forward'
+{
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  errCheck1 = checkDecorated(e.typerep);
+  
+  e.downSubst = top.downSubst;
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst;
+  
+  top.errors <-
+    if errCheck1.typeerror
+    then [err(top.location, "Attribute forward being accessed from an undecorated type.")]
+    else [];
+}
+
 aspect production decoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {

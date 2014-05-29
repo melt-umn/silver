@@ -270,6 +270,16 @@ top::Expr ::= '(' '.' q::QName ')'
   top.errors <- occursCheck.errors;
 }
 
+-- NOTE: this is not intended to be used normally.
+-- Its purpose is for test cases. Essentially all other situations should never care what the forward tree is.
+concrete production forwardAccess
+top::Expr ::= e::Expr '.' 'forward'
+{
+  top.pp = e.pp ++ ".forward";
+  top.errors := e.errors;
+  top.typerep = e.typerep;
+}
+
 concrete production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {

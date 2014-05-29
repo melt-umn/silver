@@ -503,6 +503,11 @@ Step 2: Let's go check on expressions. This has two purposes:
 -}
 
 
+aspect production forwardAccess
+top::Expr ::= e::Expr '.' 'forward'
+{
+  -- TODO?
+}
 
 aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur

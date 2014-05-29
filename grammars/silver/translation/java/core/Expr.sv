@@ -224,6 +224,13 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.lazyTranslation = top.translation;
 }
 
+aspect production forwardAccess
+top::Expr ::= e::Expr '.' 'forward'
+{
+  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".forwardOrThis())";
+  top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
+}
+
 aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {

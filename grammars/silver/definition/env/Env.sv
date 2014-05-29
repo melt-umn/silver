@@ -13,7 +13,7 @@ grammar silver:definition:env;
 
 -- getProdAttrs [DclInfo] ::= prod::String e::Decorated Env
 
-nonterminal Env with typeTree, valueTree, attrTree, prodOccursTree, occursTree;
+nonterminal Env with typeTree, valueTree, attrTree, prodOccursTree, occursTree, prodsForNtTree;
 
 synthesized attribute typeTree      :: [Decorated EnvScope<DclInfo>]; -- Expr is type tau
 synthesized attribute valueTree     :: [Decorated EnvScope<DclInfo>]; -- x has type tau
@@ -21,6 +21,8 @@ synthesized attribute attrTree      :: [Decorated EnvScope<DclInfo>]; -- attr a 
 
 synthesized attribute prodOccursTree :: Decorated EnvScope<DclInfo>; -- value on prod
 synthesized attribute occursTree     :: Decorated EnvScope<DclInfo>; -- attr on NT
+
+synthesized attribute prodsForNtTree :: [Decorated EnvScope<DclInfo>]; -- maps nt fname to prods known to construct it
 
 ----------------------------------------------------------------------------------------------------
 --Environment creation functions--------------------------------------------------------------------
@@ -40,6 +42,8 @@ top::Env ::=
   
   top.prodOccursTree = emptyEnvScope();
   top.occursTree = emptyEnvScope();
+  
+  top.prodsForNtTree = [emptyEnvScope()];
 }
 
 function toEnv
@@ -62,6 +66,8 @@ top::Env ::= e1::Decorated Env  e2::Decorated Env
 
   top.prodOccursTree = appendEnvScope(e1.prodOccursTree, e2.prodOccursTree);
   top.occursTree = appendEnvScope(e1.occursTree, e2.occursTree);
+
+  top.prodsForNtTree = e1.prodsForNtTree ++ e2.prodsForNtTree;
 }
 
 -- Better replacement for appendDefsEnv(x, pushScope(env)) pattern
@@ -79,6 +85,8 @@ top::Env ::= d::Defs  e::Decorated Env
 
   top.prodOccursTree = consEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)), e.prodOccursTree);
   top.occursTree = consEnvScope(buildTree(mapFullnameDcls(d.occursList)), e.occursTree);
+
+  top.prodsForNtTree = oneEnvScope(buildTree(map(envItemNTFromProdDcl, d.prodDclList))) :: e.prodsForNtTree;
 }
 
 ----------------------------------------------------------------------------------------------------
@@ -171,6 +179,15 @@ function getProdAttrs
 [DclInfo] ::= fnprod::String e::Decorated Env
 {
   return searchEnvScope(fnprod, e.prodOccursTree);
+}
+
+-- Do not rely on this just yet, it's wonky.
+-- It'll find all productions known locally to construct a nt.
+-- This ought to be more limited than that... perhaps only those know to the nt declaration, or only those non-forwarding.
+function getProdsForNt
+[DclInfo] ::= fnnt::String e::Decorated Env
+{
+  return searchEnvAll(fnnt, e.prodsForNtTree);
 }
 
 
