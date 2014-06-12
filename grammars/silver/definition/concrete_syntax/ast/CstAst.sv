@@ -10,13 +10,8 @@ imports silver:translation:java:type only transType;
 {--
  - Encapsulates transformations and analysis of Syntax
  -}
-closed nonterminal SyntaxRoot with cstErrors, cstNormal, xmlCopper, {-TODO:debugging-}unparse;
+closed nonterminal SyntaxRoot with cstErrors, xmlCopper, {-TODO:debugging-}unparse;
 
-{--
- - This attribute exists for debugging purposes only. Nothing should need to extract
- - the normalize tree from us. TODO
- -}
-synthesized attribute cstNormal :: SyntaxRoot;
 {--
  - Translation of a CST AST to Copper XML.
  -}
@@ -40,13 +35,11 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
   -- This should be on s1, because the s2 transform assumes everything is well formed.
   -- In particular, it drops productions it can't find an NT for.
   top.cstErrors := s.cstErrors;
-  top.cstNormal = cstRoot(parsername, startnt, s2);
   
   production startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, s2.cstEnv);
   -- TODO check if this is found!!
 
-  production attribute univLayout :: String;
-  univLayout = implode("", map(xmlCopperRef, s2.allIgnoreTerminals));
+  production univLayout :: String = implode("", map(xmlCopperRef, s2.allIgnoreTerminals));
 
   s2.univLayout = univLayout;
   top.xmlCopper =
