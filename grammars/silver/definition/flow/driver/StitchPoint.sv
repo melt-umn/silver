@@ -16,6 +16,11 @@ top::StitchPoint ::= nt::String  vertexType::(FlowVertex ::= String)
       g:toList(findFlowType(nt, top.flowTypes)));
 }
 
+-- TODO: turn the above to use VertexType
+-- TODO: turn the below to use VertexType
+-- TODO: use the below, somehow. it's for pattern matching, right?
+
+
 {--
  - Given production 'prod :: LHS ::= rhs1::RHS1'
  - with all inherited attributes on 'RHS1' as 'attrs'.

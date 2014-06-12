@@ -149,7 +149,8 @@ ProductionGraph ::= prod::String  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   -- No implicit equations here, just keep track.
   local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
     foldr(append, [], map((.suspectFlowEdges), defs)) ++
-    if null(lookupFwd(prod, flowEnv)) then [] else addFwdSynEqs(prod, synsBySuspicion.snd, flowEnv);
+    -- If it's forwarding .snd is attributes known at forwarding time. If it's non, then actually .snd is all attributes. Ignore.
+    if nonForwarding then [] else addFwdSynEqs(prod, synsBySuspicion.snd, flowEnv);
 
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
