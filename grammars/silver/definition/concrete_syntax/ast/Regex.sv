@@ -6,38 +6,45 @@ attribute xmlCopper occurs on Regex_R, Regex_DR, Regex_UR, Regex_RR, Regex_G, Re
  -}
 synthesized attribute unwrappedXML :: String occurs on Regex_DR, Regex_RR;
 
+{-- String to emit to represent the character 'ch' -}
+function xmlEscapeChar
+String ::= ch::String
+{
+  return 
+    if ch == ">" then "&gt;"
+    else if ch == "<" then "&lt;"
+    else if ch == "&" then "&amp;"
+    else if ch == "\"" then "&quot;"
+    -- For completeness, there is "'" --> &apos; 
+    -- but this should only be necessary if we used single quotes for xml-attribute values
+    -- e.g. <tag attr='val'>
+    -- We used double quotes, so we should be okay...
+    else ch;
+}
+
+function literalNRegexToXML
+String ::= s::String
+{
+  return if length(s) == 0 then ""
+    else 
+      getSingleCharNRegexXML(xmlEscapeChar(substring(0, 1, s))) ++
+        literalNRegexToXML(substring(1, length(s), s));
+}
+
+function getSingleCharNRegexXML
+String ::= s::String
+{
+  -- Copper XML doesn't like plain characters for some reason, they have to be wrapped in a characterset.
+  return "<CharacterSet><SingleCharacter char=\"" ++ s ++ "\"/></CharacterSet>";
+}
+
+
 aspect production literalRegex
 r::Regex_R ::= s::String
 {
   r.xmlCopper = if length(s) == 0 then "<EmptyString/>"
                 else if length(s) == 1 then literalNRegexToXML(s)
                 else "<Concatenation>" ++ literalNRegexToXML(s) ++ "</Concatenation>";
-}
-
-function literalNRegexToXML
-String ::= s::String
-{
-  local attribute ch :: String;
-  ch = substring(0, 1, s);
-
-  local attribute rest :: String;
-  rest = substring(1, length(s), s);
-
-  return if length(s) == 0 
-         then ""
-         else (if ch == ">" then getSingleCharNRegexXML("&gt;")
-               else if ch == "<" then getSingleCharNRegexXML("&lt;")
-               else if ch == "&" then getSingleCharNRegexXML("&amp;")
-               else if ch == "\"" then getSingleCharNRegexXML("&quot;")
-               -- For completeness, there is "'"  --> &apos; but we do not use single quotes, so we should be okay...
-               else getSingleCharNRegexXML(ch))
-               ++ literalNRegexToXML(rest);
-}
-
-function getSingleCharNRegexXML
-String ::= s::String
-{
-  return "<CharacterSet><SingleCharacter char=\"" ++ s ++ "\"/></CharacterSet>";
 }
 
 aspect production Rtoeps
@@ -111,6 +118,7 @@ ur::Regex_UR ::= char::Regex_CHAR
 aspect production URtowildcard
 ur::Regex_UR ::= wildcard::RegexWildcard_t
 {
+  -- dot represents everything EXCEPT \n
   ur.xmlCopper = "<CharacterSet invert=\"true\"><SingleCharacter char=\"&#10;\"/></CharacterSet>";
 }
 
@@ -165,23 +173,20 @@ rg::Regex_RG ::=
 aspect production CHARtochar
 top::Regex_CHAR ::= char::RegexChar_t
 {
-  top.xmlCopper = if char.lexeme == "<" then "&lt;"
-                else if char.lexeme == ">" then "&gt;"
-                else if char.lexeme == "&" then "&amp;"
-                else if char.lexeme == "\"" then "&quot;"
-                else char.lexeme;
+  -- recall these are literal characters we need to represent as XML
+  top.xmlCopper = xmlEscapeChar(char.lexeme);
 }
 
 aspect production CHARtoescaped
 top::Regex_CHAR ::= esc::EscapedChar_t
 {
-  top.xmlCopper = if esc.lexeme == "\\<" then "&lt;"
-                else if esc.lexeme == "\\>" then "&gt;"
-                else if esc.lexeme == "\\&" then "&amp;"
-                else if esc.lexeme == "\\r" then "&#13;"
-                else if esc.lexeme == "\\n" then "&#10;"
-                else if esc.lexeme == "\\t" then "&#9;"
-                else if esc.lexeme == "\\\"" then "&quot;"
-                else substring(1,2,esc.lexeme);
+  -- recall these are ESCAPED character (e.g. \n) we need to represent as XML
+  -- current semantics are that escaped anything represents a literal
+  -- except escaped rnt which we translate.
+  top.xmlCopper =
+    if esc.lexeme == "\\r" then "&#13;"
+    else if esc.lexeme == "\\n" then "&#10;"
+    else if esc.lexeme == "\\t" then "&#9;"
+    else xmlEscapeChar(substring(1,2,esc.lexeme));
 }
 
