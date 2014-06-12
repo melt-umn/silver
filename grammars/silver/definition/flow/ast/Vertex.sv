@@ -2,19 +2,10 @@ grammar silver:definition:flow:ast;
 
 {--
  - Data structure representing vertices in the flow graph within a single production.
+ -
+ - See VertexType for some extra information organizing these vertexes somewhat.
  -}
 nonterminal FlowVertex with unparse;
-
-
--- A quick note about the design:
--- For the most part, we don't care about distinguishing what nodes ARE, exactly.
--- To that end, we only have LHS, RHS, localEQ, and local.
--- This are distiguished because they have different requirement for naming them properly.
--- e.g. RHS needs a sigName + attribute, while LHS eqs do not.
---
--- However, we DO care about distinguishing LHS Syn and Inh nodes. Because
--- the inh nodes will be information used in the flow type, for one reason.
-
 
 
 {--
@@ -30,6 +21,9 @@ top::FlowVertex ::= attrName::String
 
 {--
  - A vertex representing an inherited attribute on the nonterminal being constructed by this production.
+ -
+ - Inherited attributes are separate for 'lhs' and not for 'rhs' because we care rather specially about lhsInh,
+ - as that's the bit that contributes to computing a flow type.
  -
  - @param attrName  the full name of an inherited attribute on the lhs.
  -}

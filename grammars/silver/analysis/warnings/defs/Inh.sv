@@ -529,7 +529,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     && (top.config.warnAll || top.config.warnMissingInh)
     then
       case e.flowVertexInfo of
-      | hasVertex(_, _, _) -> [] -- no check to make, as it was done transitively
+      | hasVertex(_) -> [] -- no check to make, as it was done transitively
       -- without a vertex, we're accessing from a reference, and so...
       | noVertex() ->
           if null(diff) then []
@@ -591,7 +591,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     && (top.config.warnAll || top.config.warnMissingInh)
     then
       case e.flowVertexInfo of
-      | hasVertex(_, _, _) -> [] -- no check to make, as it was done transitively
+      | hasVertex(_) -> [] -- no check to make, as it was done transitively
       -- without a vertex, we're accessing from a reference, and so...
       | noVertex() ->
           if contains(q.attrDcl.fullName, inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv))

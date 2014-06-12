@@ -142,6 +142,9 @@ top::FlowDef ::= nt::String  prod::String
 
 {--
  - Declaration of the inherited attributes known from the host language
+ -
+ - @param nt  The full name of a nonterminal declaration
+ - @param inhs  The Blessed Ref Set, to be used for decorated nodes of this type.
  -}
 abstract production ntRefFlowDef
 top::FlowDef ::= nt::String  inhs::[String]
@@ -212,7 +215,7 @@ top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
  - @param attr  the full name of the attribute
  - @param deps  the dependencies of this equation on other flow graph elements
  - CONTRIBUTIONS ARE POSSIBLE
- - TODO: rename defaultEq because this is confusingly named
+ - TODO: rename defaultSynEq because this is confusingly named
  -}
 abstract production defEq
 top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
