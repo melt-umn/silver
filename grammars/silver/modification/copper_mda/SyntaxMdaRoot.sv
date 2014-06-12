@@ -16,7 +16,6 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   ext.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
   
   top.cstErrors := host.cstErrors ++ ext.cstErrors;
-  top.cstNormal = top; -- meh
   
   local startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, host.cstEnv);
   -- TODO check if this is found!!

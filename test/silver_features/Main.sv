@@ -33,7 +33,7 @@ equalityTest( "abc" == "ABC", false, Boolean, silver_tests );
 equalityTest( "abc" != "ABC", true, Boolean, silver_tests );
 
 -- Basic oddball tests, just to have called the functions.
-equalityTest( genInt() > 0, true, Boolean, silver_tests );
+equalityTest( genInt() >= 0, true, Boolean, silver_tests );
 equalityTest( genRand() >= 0.0, true, Boolean, silver_tests );
 
 
