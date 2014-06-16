@@ -6,8 +6,10 @@ import silver:definition:regex;
 -- TODO BUG FIXME: This looks up terminals via their regular expressions, but
 -- that confuses single quoted and non-single quoted regexs!
 -- i.e. 'hi' will happily match /hi/ and '(' will match /[\(]/, but this should
--- probably not be the case! A probable solution would be to change the 
--- DclInfo for terminals to have a RegExpr instead of a Regex_R?
+-- probably not be the case!
+
+-- The correct solution would be to only look up via their "single quotes name"
+-- which for '' terminals is the bit in '', while for // terminals, it can be specified if desired
 
 function getTerminalRegexDclAll
 [DclInfo] ::= search::String e::Decorated Env

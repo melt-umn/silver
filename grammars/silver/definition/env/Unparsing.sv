@@ -53,8 +53,7 @@ String ::= tes::[TypeExp] bv::[TyVar]
 function mapUnparseTypes
 [String] ::= tes::[TypeExp] bv::[TyVar]
 {
-  local attribute fst :: TypeExp;
-  fst = head(tes);
+  local fst :: TypeExp = head(tes);
   fst.boundVariables = bv;
   
   return if null(tes) then []
@@ -95,8 +94,7 @@ String ::= s::[NamedSignatureElement] bv::[TyVar]
 function unparseSignatureElementsHelp
 String ::= s::[NamedSignatureElement] bv::[TyVar]
 {
-  local attribute h :: NamedSignatureElement;
-  h = head(s);
+  local h :: NamedSignatureElement = head(s);
   h.boundVariables = bv;
 
   return if null(s) then "" else h.unparse ++ (if null(tail(s)) then "" else (", " ++ unparseSignatureElementsHelp(tail(s), bv)));
