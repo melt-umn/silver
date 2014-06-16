@@ -102,14 +102,9 @@ top::Expr ::= t::RegExpr
 {
   top.pp = t.pp;
   
-  local attribute regExpPat :: String;
-  regExpPat = t.terminalRegExprSpec.regString;
-
-  local attribute regName :: [DclInfo];
-  regName = getTerminalRegexDclAll(regExpPat, top.env);
-
-  local attribute escapedName :: String;
-  escapedName = makeEscapedName(regExpPat);
+  local regExpPat :: String = t.terminalRegExprSpec.regString;
+  local regName :: [DclInfo] = getTerminalRegexDclAll(regExpPat, top.env);
+  local escapedName :: String = escapeString(regExpPat);
 
   top.errors <- if null(regName) 
                 then [err(t.location, "Could not find terminal declaration for " ++ t.pp )]
@@ -122,21 +117,5 @@ top::Expr ::= t::RegExpr
   forwards to terminalFunction('terminal', '(',
     typerepType(if null(regName) then errorType() else head(regName).typerep, location=t.location),
     ',', stringConst(terminal(String_t, "\"" ++ escapedName ++ "\""), location=t.location), ')', location=top.location);
-}
-
-function makeEscapedName
-String ::= s::String
-{
-  local attribute ch :: String;
-  ch = substring(0, 1, s);
-
-  local attribute rest :: String;
-  rest = substring(1, length(s), s);
-
-  return if length(s) == 0 
-         then ""
-         else if ch == "\\" || ch == "\""
-              then "\\" ++ ch ++ makeEscapedName(rest)
-              else ch ++ makeEscapedName(rest);
 }
 
