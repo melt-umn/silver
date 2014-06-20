@@ -55,7 +55,7 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
   top.nxmlCopper =
     "  <Terminal id=\"" ++ makeCopperName(n) ++ "\">\n" ++
     "    <PP>" ++ n ++ "</PP>\n" ++
-    "    <Regex>" ++ regex.xmlCopper ++ "</Regex>\n" ++ 
+    "    <Regex>" ++ regex_to_use.xmlCopper ++ "</Regex>\n" ++ 
     (if modifiers.opPrecedence.isJust || modifiers.opAssociation.isJust then
     "    <Operator>\n" ++
     "      <Class>main</Class>\n" ++
@@ -65,9 +65,10 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
     else "") ++
     "    <Type>common.TerminalRecord</Type>\n" ++ 
     "    <Code><![CDATA[\n" ++ 
-    "RESULT = new common.TerminalRecord(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
+    "RESULT = new common.TerminalRecord(" ++ lexeme_source ++ ",virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
     -- BEGIN DIFFERENCE FROM NORMAL xmlCopper ATTRIBUTE ************************
     "  addToken(_terminal);\n" ++
+    -- TODO: probable bug just spotted: more terminals than just those marked ignored can be layout and thus inappropriate to shift.
     (if modifiers.ignored then "" else "  shiftPTNode(RESULT, _terminal);\n") ++
     -- END DIFFERENCE FROM NORMAL *********************************************
       modifiers.acode ++

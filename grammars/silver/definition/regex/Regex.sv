@@ -28,6 +28,32 @@ nonterminal Regex_RG with regString;      -- back to g or nothing
 nonterminal Regex_UG with regString;      -- char or range
 nonterminal Regex_CHAR with regString;
 
+function concatenateRegex
+Regex_R ::= l::Regex_R  r::Regex_R
+{
+  return 
+    -- A full regex
+    RtoDR(
+      -- concatenation
+      DRtoUR_RR(
+        -- wrap in parens
+        URtolp_R_rp(
+          terminal(RegexLParen_t, "("),
+          l,
+          terminal(RegexRParen_t, ")")),
+        -- More...
+        RRtoDR(
+          -- like cons
+          DRtoUR_RR(
+            -- wrap in parens
+            URtolp_R_rp(
+              terminal(RegexLParen_t, "("),
+              r,
+              terminal(RegexRParen_t, ")")),
+            -- like nil
+            RRtoeps()))));
+  -- TODO: yeeeesh! These productions and nonterminals need way better names. This whole grammar could use refactoring.
+}
 
 abstract production literalRegex
 r::Regex_R ::= s::String
@@ -38,11 +64,8 @@ r::Regex_R ::= s::String
 function regexPurifyString
 String ::= s::String
 {
-  local attribute ch :: String;
-  ch = substring(0, 1, s);
-
-  local attribute rest :: String;
-  rest = substring(1, length(s), s);
+  local ch :: String = substring(0, 1, s);
+  local rest :: String = substring(1, length(s), s);
 
   return if length(s) == 0 
 	 then ""

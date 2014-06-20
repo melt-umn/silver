@@ -201,6 +201,7 @@
 <keyword>end</keyword>
 <keyword>decorate</keyword>
 <keyword>with</keyword><!-- BUG: TODO: this is decorate. forwards/ing. build/import.  nonterminal/attribute(col).  -->
+<keyword>prefix</keyword><!-- included here to match with coloring -->
 <keyword>else</keyword>
 <keyword>forward</keyword>
 <keyword>if</keyword>
@@ -240,10 +241,6 @@
 <keyword>bold</keyword>
     </context>
 
-    <context id="future-reserved-words" style-ref="reserved">
-<keyword>prefix</keyword>
-    </context>
-
     <context id="boolean" style-ref="boolean">
 <keyword>false</keyword>
 <keyword>true</keyword>
@@ -275,7 +272,6 @@
         <context ref="scope-declarations"/>
         <context ref="flow"/>
         <context ref="flow-other"/>
-        <context ref="future-reserved-words"/>
         <context ref="boolean"/>
         <context ref="numeric"/>
         <context ref="ide"/>

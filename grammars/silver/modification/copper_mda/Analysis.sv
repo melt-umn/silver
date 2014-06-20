@@ -12,7 +12,7 @@ import silver:driver:util only computeDependencies, RootSpec;
 terminal CopperMDA 'copper_mda' lexer classes {KEYWORD};
 
 concrete production copperMdaDcl
-top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ModuleList '}'
+top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ParserComponents '}'
 {
   top.pp = "";
   
@@ -20,18 +20,18 @@ top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ModuleList
   
   top.moduleNames = m.moduleNames;
   
-  local attribute origgram :: Decorated RootSpec;
-  origgram = head(searchEnvTree(orig.lookupValue.dcl.sourceGrammar, top.compiledGrammars));
+  local origgram :: Decorated RootSpec =
+    head(searchEnvTree(orig.lookupValue.dcl.sourceGrammar, top.compiledGrammars));
   
-  local attribute spec :: [ParserSpec];
-  spec = findSpec(orig.lookupValue.fullName, origgram.parserSpecs);
+  local spec :: [ParserSpec] =
+    findSpec(orig.lookupValue.fullName, origgram.parserSpecs);
   
   top.errors <- if !null(orig.lookupValue.errors) || !null(spec) then []
                 else [err(orig.location, orig.name ++ " is not a parser.")];
 
   top.mdaSpecs =
     case spec of
-    | parserSpec(_,_,fn,snt,hg) :: _ -> [mdaSpec(top.grammarName, top.grammarName ++":"++ testname.name, snt, hg, m.moduleNames)]
+    | parserSpec(_,_,fn,snt,hg,pfxs) :: _ -> [mdaSpec(top.grammarName, top.grammarName ++":"++ testname.name, snt, hg, m.moduleNames, pfxs)]
     | _ -> []
     end;
 }
@@ -47,17 +47,24 @@ function findSpec
 nonterminal MdaSpec with sourceGrammar, fullName, compiledGrammars,cstAst;
 
 abstract production mdaSpec
-top::MdaSpec ::= sg::String fn::String  snt::String  hostgrams::[String]  extgrams::[String]
+top::MdaSpec ::= sg::String fn::String  snt::String  hostgrams::[String]  extgrams::[String]  terminalPrefixes::[Pair<String String>]
 {
   top.sourceGrammar = sg;
   top.fullName = fn;
+  
   -- TODO: see TODO s in ParserSpec
-  production attribute hostmed :: ModuleExportedDefs;
-  hostmed = moduleExportedDefs(error("no sl"), top.compiledGrammars, computeDependencies(hostgrams ++ extgrams, top.compiledGrammars), hostgrams, []);
+  production hostmed :: ModuleExportedDefs =
+    moduleExportedDefs(error("no sl"), top.compiledGrammars,
+      computeDependencies(hostgrams ++ extgrams, top.compiledGrammars), hostgrams, []);
 
-  production attribute extmed :: ModuleExportedDefs;
-  extmed = moduleExportedDefs(error("no sl"), top.compiledGrammars, computeDependencies(hostgrams ++ extgrams, top.compiledGrammars), extgrams, []);
+  production extmed :: ModuleExportedDefs =
+    moduleExportedDefs(error("no sl"), top.compiledGrammars,
+      computeDependencies(hostgrams ++ extgrams, top.compiledGrammars), extgrams, []);
 
-  top.cstAst = cstCopperMdaRoot(fn, snt, foldr(consSyntax, nilSyntax(), hostmed.syntaxAst), foldr(consSyntax, nilSyntax(), extmed.syntaxAst));
+  top.cstAst = 
+    cstCopperMdaRoot(fn, snt,
+      foldr(consSyntax, nilSyntax(), hostmed.syntaxAst),
+      foldr(consSyntax, nilSyntax(), extmed.syntaxAst),
+      terminalPrefixes);
 }
 

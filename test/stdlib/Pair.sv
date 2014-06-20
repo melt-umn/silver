@@ -35,3 +35,6 @@ equalityTest(lookupAllBy(stringEq, "4", pairtester), [4,3], [Integer], core_test
 equalityTest(lookupAllBy(stringEq, "3", pairtester), [3,2], [Integer], core_tests);
 equalityTest(lookupAllBy(stringEq, "A", pairtester), [], [Integer], core_tests);
 
+equalityTest(unzipPairs(pairtester).fst, ["1", "2", "3", "99", "4", "4", "3"], [String], core_tests);
+equalityTest(unzipPairs(pairtester).snd, [1, 2, 3, 99, 4, 3, 2], [Integer], core_tests);
+

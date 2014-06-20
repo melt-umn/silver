@@ -41,62 +41,78 @@ top::Module ::= l::Location
 {
   -- TODO: the use of 'seen' below is a not fully fleshed out.
   -- what we really need is some way to eliminate duplicate imports.
-  production attribute med :: ModuleExportedDefs;
-  med = moduleExportedDefs(l, compiledGrammars, grammarDependencies, need, seen);
+  production med :: ModuleExportedDefs =
+    moduleExportedDefs(l, compiledGrammars, grammarDependencies, need, seen);
   
-  local attribute d1 :: [Def];
-  d1 = if null(onlyFilter) then med.defs else filter(filterDefOnEnvItem(envItemInclude(_, onlyFilter), _), med.defs);
+  local defs_after_only :: [Def] =
+    if null(onlyFilter) then med.defs
+    else filter(filterDefOnEnvItem(envItemInclude(_, onlyFilter), _), med.defs);
 
-  local attribute d2 :: [Def];
-  d2 = if null(hidingFilter) then d1 else filter(filterDefOnEnvItem(envItemExclude(_, hidingFilter), _), d1);
+  local defs_after_hiding :: [Def] =
+    if null(hidingFilter) then defs_after_only
+    else filter(filterDefOnEnvItem(envItemExclude(_, hidingFilter), _), defs_after_only);
 
-  local attribute d3 :: [Def];
-  d3 = if null(withRenames) then d2 else map(mapDefOnEnvItem(envItemApplyRenaming(_, withRenames), _), d2);
+  local defs_after_renames :: [Def] =
+    if null(withRenames) then defs_after_hiding
+    else map(mapDefOnEnvItem(envItemApplyRenaming(_, withRenames), _), defs_after_hiding);
 
-  local attribute d4 :: [Def];
-  d4 = if asPrepend == "" then d3 else map(mapDefOnEnvItem(envItemPrepend(_, asPrepend ++ ":"), _), d3);
+  local defs_after_prepend :: [Def] =
+    if asPrepend == "" then defs_after_renames
+    else map(mapDefOnEnvItem(envItemPrepend(_, asPrepend ++ ":"), _), defs_after_renames);
 
-  top.defs = d4;
+  top.defs = defs_after_prepend;
   top.errors := med.errors;
 }
 
 -- recurses through exportedGrammars, grabbing all definitions
 nonterminal ModuleExportedDefs with defs, errors;
 
+{--
+ - Computes the set of defs we get from an import
+ - @param l  The location of the import, to raise an error if a module is missing
+ - @param compiledGrammars  Way to look up modules by name
+ - @param grammarDependencies  All imports of this grammar, closed over exports and triggers already.
+ - @param need  List of grammars we need to find and include in 'defs'.
+ - @param seen  List of grammars we have already emitted as 'defs'.
+ -        (ALWAYS INITIALLY the importing grammar.)
+ -}
 abstract production moduleExportedDefs
 top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated RootSpec> grammarDependencies::[String] need::[String] seen::[String]
 {
-  production attribute recurse :: ModuleExportedDefs;
-  recurse = moduleExportedDefs(l, compiledGrammars, grammarDependencies, new_need, new_seen);
+  production recurse :: ModuleExportedDefs =
+    moduleExportedDefs(l, compiledGrammars, grammarDependencies, new_need, new_seen);
   
-  local attribute gram :: String;
-  gram = head(need);
+  local gram :: String = head(need);
+  production rs :: [Decorated RootSpec] = searchEnvTree(gram, compiledGrammars);
+
+  local new_seen :: [String] = gram :: seen;
+
+  -- We need to find everything the grammars exports and all triggered stuff, too
+  local add_to_need :: [String] =
+    head(rs).exportedGrammars ++ triggeredGrammars(grammarDependencies, head(rs).condBuild);
   
-  local attribute new_seen :: [String];
-  new_seen = gram :: seen;
+  -- ... but only if we haven't already added this.
+  local new_need :: [String] =
+    if null(rs) then tail(need)
+    else rem(makeSet(tail(need) ++ add_to_need), new_seen);
   
-  production attribute rs :: [Decorated RootSpec];
-  rs = searchEnvTree(gram, compiledGrammars);
-  
-  production attribute add_to_need :: [String] with ++;
-  add_to_need := head(rs).exportedGrammars ++ triggeredGrammars(grammarDependencies, head(rs).condBuild);
-  
-  local attribute new_need :: [String];
-  new_need = if null(rs) then tail(need)
-             else rem(makeSet(tail(need) ++ add_to_need), new_seen);
-  
-  top.defs = if null(need) then [] else
-             if null(rs) then recurse.defs else head(rs).defs ++ recurse.defs;
-  top.errors := if null(need) then [] else 
-             if null(rs) then [err(l, "Grammar '" ++ gram ++ "' cannot be found.")] ++ recurse.errors else recurse.errors;
+  top.defs =
+    if null(need) then [] else
+    if null(rs) then recurse.defs else head(rs).defs ++ recurse.defs;
+  top.errors :=
+    if null(need) then [] else 
+    if null(rs) then [err(l, "Grammar '" ++ gram ++ "' cannot be found.")] ++ recurse.errors else recurse.errors;
 }
 
 function triggeredGrammars
 [String] ::= grammarDependencies::[String]  trig::[[String]]
 {
-  return if null(trig) then []
-         else if contains(head(tail(head(trig))), grammarDependencies) then head(head(trig)) :: triggeredGrammars(grammarDependencies, tail(trig))
-         else triggeredGrammars(grammarDependencies, tail(trig));
+  return if null(trig) then
+    []
+  else if contains(head(tail(head(trig))), grammarDependencies) then 
+    head(head(trig)) :: triggeredGrammars(grammarDependencies, tail(trig))
+  else
+    triggeredGrammars(grammarDependencies, tail(trig));
 }
 
 --------------

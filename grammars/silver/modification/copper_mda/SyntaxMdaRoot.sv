@@ -2,7 +2,7 @@ grammar silver:modification:copper_mda;
 
 
 abstract production cstCopperMdaRoot
-top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Syntax
+top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Syntax  terminalPrefixes::[Pair<String String>]
 {
   -- Because there may be references between the grammars, we cannot do the
   -- usualy normalization.
@@ -11,9 +11,11 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   host.cstEnv = directBuildTree(host.cstDcls ++ ext.cstDcls);
   host.containingGrammar = "host";
   host.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
+  host.prefixesForTerminals = directBuildTree(terminalPrefixes);
   ext.cstEnv = host.cstEnv;
   ext.containingGrammar = "ext";
   ext.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
+  ext.prefixesForTerminals = host.prefixesForTerminals;
   
   top.cstErrors := host.cstErrors ++ ext.cstErrors;
   
