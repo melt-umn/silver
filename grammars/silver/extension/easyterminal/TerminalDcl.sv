@@ -32,7 +32,7 @@ top::RegExpr ::= t::Terminal_t
 }
 
 {-- Abstracts away looking up terminals in the environment -}
-nonterminal EasyTerminalRef with config, location, grammarName, pp, errors, typerep, easyString, env;
+nonterminal EasyTerminalRef with config, location, grammarName, pp, errors, typerep, easyString, env, dcls;
 
 {-- String literal between quotes. e.g. 'hi"' is hi" -}
 synthesized attribute easyString :: String;
@@ -45,16 +45,17 @@ top::EasyTerminalRef ::= t::Terminal_t
 
   -- TODO: This is necessary because the environment is still populated using the regex, so we have to look up the corresponding regex.
   local regHack :: Regex_R = literalRegex(top.easyString);
-  local regName :: [DclInfo] = getTerminalRegexDclAll(regHack.regString, top.env);
+
+  top.dcls = getTerminalRegexDclAll(regHack.regString, top.env);
 
   top.errors :=
-    if null(regName) then
+    if null(top.dcls) then
       [err(t.location, "Could not find terminal declaration for " ++ t.lexeme )]
-    else if length(regName) > 1 then
-      [err(t.location, "Found ambiguous possibilities for " ++ t.lexeme ++ "\n" ++ printPossibilities(regName))]
+    else if length(top.dcls) > 1 then
+      [err(t.location, "Found ambiguous possibilities for " ++ t.lexeme ++ "\n" ++ printPossibilities(top.dcls))]
     else [];
   
-  top.typerep = if null(regName) then errorType() else head(regName).typerep;
+  top.typerep = if null(top.dcls) then errorType() else head(top.dcls).typerep;
 }
 
 

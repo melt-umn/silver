@@ -20,8 +20,14 @@ synthesized attribute cstAst :: SyntaxRoot;
  -}
 synthesized attribute startNT :: String;
 
+{--
+ - Prefixes to inject onto marking terminals in the composed parser.
+ -}
+synthesized attribute terminalPrefixes :: [Pair<String String>];
+
+
 abstract production parserSpec
-top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[String]
+top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[String]  terminalPrefixes::[Pair<String String>]
 {
   top.sourceLocation = sl;
   top.sourceGrammar = sg;
@@ -29,14 +35,18 @@ top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[S
   top.startNT = snt;
   top.moduleNames = grams;
 
-  -- TODO: consider this: because we're using only the grammar in this parser to compute 
+  -- TODO: consider this: because we're using only the grammars in this parser to compute 
   -- dependencies, it may be possible that some different triggers are... triggered here
-  -- than in the grammar.  Perhaps this is okay, perhaps this is a bug. Consider?
-  production attribute med :: ModuleExportedDefs;
-  med = moduleExportedDefs(sl, top.compiledGrammars, computeDependencies(grams, top.compiledGrammars), grams, []);
+  -- than is the case for imports in the grammar.  Perhaps this is intended, perhaps this is a bug. Consider?
+  production med :: ModuleExportedDefs =
+    moduleExportedDefs(sl, top.compiledGrammars, computeDependencies(grams, top.compiledGrammars), grams, []);
 
-  top.cstAst = cstRoot(fn, snt, foldr(consSyntax, nilSyntax(), med.syntaxAst));
+  top.cstAst = cstRoot(fn, snt, foldr(consSyntax, nilSyntax(), med.syntaxAst), terminalPrefixes);
   
-  top.unparse = "parser(" ++ sl.unparse ++ "," ++ quoteString(sg) ++ "," ++ quoteString(fn) ++ "," ++ quoteString(snt) ++ "," ++ unparseStrings(grams) ++ ")";
+  local decomposedTerminalPrefixes :: Pair<[String] [String]> =
+    unzipPairs(terminalPrefixes);
+  
+  top.unparse = "parser(" ++ implode(",", [
+    sl.unparse, quoteString(sg), quoteString(fn), quoteString(snt), unparseStrings(grams), unparseStrings(decomposedTerminalPrefixes.fst), unparseStrings(decomposedTerminalPrefixes.snd)]) ++ ")";
 }
 

@@ -34,7 +34,7 @@ top::SyntaxRoot ::=
 }
 
 aspect production cstRoot
-top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
+top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
 {
 
   -- 1) font information

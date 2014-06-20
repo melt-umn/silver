@@ -18,19 +18,21 @@ closed nonterminal SyntaxRoot with cstErrors, xmlCopper, {-TODO:debugging-}unpar
 synthesized attribute xmlCopper :: String;
 
 abstract production cstRoot
-top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax
+top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
 {
   s.cstEnv = directBuildTree(s.cstDcls);
   s.cstNTProds = directBuildTree(s.cstProds);
   s.containingGrammar = "host";
   s.univLayout = error("TODO: make this environment not be decorated?"); -- TODO
+  s.prefixesForTerminals = error("TODO: shouldn't by necessary to normalize"); -- TODO
   
   -- Move productions under their nonterminal, and sort the declarations
-  production attribute s2 :: Syntax;
-  s2 = foldr(consSyntax, nilSyntax(), sortBy(syntaxDclLte, s.cstNormalize));
+  production s2 :: Syntax =
+    foldr(consSyntax, nilSyntax(), sortBy(syntaxDclLte, s.cstNormalize));
   s2.cstEnv = directBuildTree(s.cstDcls);
   s2.containingGrammar = "host";
   s2.cstNTProds = error("TODO: make this environmnet not be decorated?"); -- TODO
+  s2.prefixesForTerminals = directBuildTree(terminalPrefixes);
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.
   -- In particular, it drops productions it can't find an NT for.

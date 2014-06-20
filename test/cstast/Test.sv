@@ -31,7 +31,7 @@ global obj::SyntaxRoot =
         namedSignature("foo", [],
           namedSignatureElement("asdf", nonterminalTypeExp("Foo", [])), []),
         nilProductionMod())
-     ]));
+     ]), []);
 
 equalityTest( obj.cstErrors, [], [String], csttests );
 --equalityTest( substitute("silver:definition:concrete_syntax:ast:", "", hackUnparse(obj)), "", String, csttests );
@@ -43,7 +43,7 @@ equalityTest( obj.unparse, "nt([], nt('Foo', [])),\n term('XTerm', /x/, []),\n p
 global obj_again :: SyntaxRoot =
   cstRoot("lol", "Foo",
     foldr(consSyntax, nilSyntax(), 
-      syntaxInterfaceParser(obj.unparse, "<>").parseTree.syntaxAst));
+      syntaxInterfaceParser(obj.unparse, "<>").parseTree.syntaxAst), []);
 
 equalityTest( obj_again.xmlCopper, obj.xmlCopper, String, csttests );
 equalityTest( obj_again.unparse, obj.unparse, String, csttests );
@@ -58,7 +58,7 @@ global obj2::SyntaxRoot =
         namedSignature("foo", [],
           namedSignatureElement("asdf", nonterminalTypeExp("Oops", [])), []),
         nilProductionMod())
-     ]));
+     ]), []);
 
 equalityTest( obj2.cstErrors, ["Lookup error with LHS nonterminal Oops"], [String], csttests );
 
@@ -96,12 +96,12 @@ global obj3::SyntaxRoot =
       syntaxTerminal("C", literalRegex("y"), nilTerminalMod()),
       syntaxParserAttribute("asdf", stringTypeExp(), "asdf = 'asfd';"),
       syntaxDisambiguationGroup("g23", ["XTerm", "C"], "return C;")
-     ]));
+     ]), []);
 
 global obj3_again :: SyntaxRoot =
   cstRoot("lol", "Foo",
     foldr(consSyntax, nilSyntax(),
-      syntaxInterfaceParser(obj3.unparse, "<>").parseTree.syntaxAst));
+      syntaxInterfaceParser(obj3.unparse, "<>").parseTree.syntaxAst), []);
 
 equalityTest( obj3.cstErrors, [], [String], csttests );
 --equalityTest( obj3.unparse, "", String, csttests );

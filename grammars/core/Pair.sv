@@ -45,3 +45,21 @@ function lookupAllBy
               else lookupAllBy(eqf, elem, tail(lst));
 }
 
+{--
+ - Decomposes a list of pairs into a pair of lists.
+ -
+ - unzipPairs(zipWith(pair, lst)) == lst
+ -
+ - @param lst  A list to decompose into two lists.
+ - @return 
+ -}
+function unzipPairs
+Pair<[a] [b]> ::= lst::[Pair<a b>]
+{
+  local recurse :: Pair<[a] [b]> = unzipPairs(tail(lst));
+  
+  return if null(lst) then pair([], [])
+  else pair(head(lst).fst :: recurse.fst, head(lst).snd :: recurse.snd);
+}
+
+
