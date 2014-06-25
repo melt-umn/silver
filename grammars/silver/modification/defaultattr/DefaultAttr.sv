@@ -58,15 +58,9 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   
   top.typerep = ty;
   
-  -- TODO: We could make this an LHS reference?
-  top.refDispatcher = makeLhsErrorReference;
+  top.refDispatcher = lhsReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: be smarter about the error message
   top.defLHSDispatcher = defaultLhsDefLHS(_, location=_);
-}
-function makeLhsErrorReference
-Expr ::= q::Decorated QName  l::Location
-{
-  return errorReference([err(l, "References to LHS are currently invalid in default production blocks")], q, location=l);
 }
 
 abstract production defaultLhsDefLHS
