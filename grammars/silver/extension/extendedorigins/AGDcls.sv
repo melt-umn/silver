@@ -37,48 +37,115 @@ top::AGDcl ::= t::'origins' 'on' qlist::QNames ';'
           ';',
         location=top.location),
         location=top.location),
+
       appendAGDcl(
-        multipleAttributionDclsSingleMany(  -- attribute origin occurs on ...;
+        constructAnnotationDcls(
+          qlist, top.location),
+
+      appendAGDcl(
+        attributeDclSyn( -- synthesized attribute origin_next:: NTWrapper;
+          'synthesized',
           'attribute',
-          qName(
-            top.location,"origin"),
-          botlNone(location=top.location),
-          'occurs',
-          'on',
-          constructQNames(qlist.qnames),
+          nameIdLower(
+            terminal(IdLower_t,"origin_next"),
+            location=top.location),
+          botlNone(
+            location=top.location),
+          '::',
+          nominalType(
+            qNameTypeId(
+              terminal(IdUpper_t,"NTWrapper"),
+              location=top.location),
+            botlNone(
+              location=top.location),
+            location=top.location),
           ';',
           location=top.location),
         appendAGDcl(
-          constructProductions(qlist.qnames, top.location), -- abstract production ntw...
-          productionDcl( -- abstract production ntwBottom
-            'abstract',
-            'production',
-            nameIdLower(
-              terminal(IdLower_t, "ntwBottom"),
-              location=top.location),
-            productionSignature( -- top::NTWrapper ::=
-              productionLHS( -- top::NTWrapper
-                nameIdLower(
-                  terminal(IdLower_t,"top"),
-                  location=top.location),
-                '::',
-                nominalType(
-                  qNameTypeId(
-                    terminal(IdUpper_t,"NTWrapper"),
-                    location=top.location),
-                  botlNone(location=top.location),
-                  location=top.location),
+          attributionDcl( -- attribute origin_next occurs on NTWrapper;
+            'attribute',
+            qNameId(
+              nameIdLower(
+                terminal(IdLower_t,"origin_next"),
                 location=top.location),
-              '::=',
-              productionRHSNil(location=top.location),
               location=top.location),
-            productionBody( -- {}
-              '{', productionStmtsNil(location=top.location), '}',
+            botlNone(
+              location=top.location),
+            'occurs', 'on',
+            qNameId(
+              nameIdUpper(
+                terminal(IdUpper_t,"NTWrapper"),
+                location=top.location),
+              location=top.location),
+            botlNone(
+              location=top.location),
+            ';',
+            location=top.location),
+          appendAGDcl(
+            constructProductions(qlist.qnames, top.location), -- abstract production ntw...
+            productionDcl( -- abstract production ntwBottom
+              'abstract',
+              'production',
+              nameIdLower(
+                terminal(IdLower_t, "ntwBottom"),
+                location=top.location),
+              productionSignature( -- top::NTWrapper ::=
+                productionLHS( -- top::NTWrapper
+                  nameIdLower(
+                    terminal(IdLower_t,"top"),
+                    location=top.location),
+                  '::',
+                  nominalType(
+                    qNameTypeId(
+                      terminal(IdUpper_t,"NTWrapper"),
+                      location=top.location),
+                    botlNone(location=top.location),
+                    location=top.location),
+                  location=top.location),
+                '::=',
+                productionRHSNil(location=top.location),
+                location=top.location),
+              productionBody( -- {}
+                '{', productionStmtsNil(location=top.location), '}',
+                location=top.location),
               location=top.location),
             location=top.location),
           location=top.location),
         location=top.location),
-      location=top.location);
+      location=top.location), location=top.location);
+}
+
+function constructAnnotationDcls
+AGDcl ::= qlist::QNames l::Location
+{
+  return
+    case qlist of
+      qNamesSingle(qNameWithTL(q,_)) ->
+        annotateDcl(
+          'annotation',
+          qName(
+          l,"origin"),
+          botlNone(location=l),
+          'occurs', 'on',
+          q,
+          botlNone(location=l),
+          ';',
+          location=l)
+    | qNamesCons(qNameWithTL(q,_),_,qnames) ->
+        appendAGDcl(
+          annotateDcl(
+            'annotation',
+            qName(
+            l,"origin"),
+            botlNone(location=l),
+            'occurs', 'on',
+            q,
+            botlNone(location=l),
+            ';',
+            location=l),
+         constructAnnotationDcls(qnames, l),
+         location=l)
+    end;
 }
 
 function constructQNames
@@ -135,8 +202,48 @@ AGDcl ::= input::[QNameWithTL] t::Location
                  productionRHSNil(location=t),
                  location=t),
                location=t),
-             productionBody( -- {}
-               '{', productionStmtsNil(location=t), '}',
+             productionBody( -- { top.origin_next = nt.origin; }
+               '{', 
+               productionStmtsSnoc(
+                 productionStmtsNil(location=t),
+                 attributeDef(
+                   concreteDefLHS(
+                     qNameId(
+                       nameIdLower(
+                         terminal(IdLower_t,"top"),
+                         location=t),
+                       location=t),
+                     location=t),
+                   '.',
+                   qNameAttrOccur(
+                     qNameId(
+                       nameIdLower(
+                         terminal(IdLower_t,"origin_next"),
+                         location=t),
+                       location=t),
+                     location=t),
+                   '=',
+                   access(
+                     baseExpr(
+                       qNameId(
+                         nameIdLower(
+                           terminal(IdLower_t,"nt"),
+                           location=t),
+                         location=t),
+                       location=t),
+                     '.',
+                     qNameAttrOccur(
+                       qNameId(
+                         nameIdLower(
+                           terminal(IdLower_t,"origin"),
+                           location=t),
+                         location=t),
+                       location=t),
+                     location=t),
+                   ';',
+                   location=t),
+                 location=t),
+               '}',
                location=t),
              location=t),
            productionDcl(
@@ -176,7 +283,47 @@ AGDcl ::= input::[QNameWithTL] t::Location
                  location=t),
                location=t),
              productionBody(
-               '{', productionStmtsNil(location=t), '}',
+               '{', 
+               productionStmtsSnoc(
+                 productionStmtsNil(location=t),
+                 attributeDef(
+                   concreteDefLHS(
+                     qNameId(
+                       nameIdLower(
+                         terminal(IdLower_t,"top"),
+                         location=t),
+                       location=t),
+                     location=t),
+                   '.',
+                   qNameAttrOccur(
+                     qNameId(
+                       nameIdLower(
+                         terminal(IdLower_t,"origin_next"),
+                         location=t),
+                       location=t),
+                     location=t),
+                   '=',
+                   access(
+                     baseExpr(
+                       qNameId(
+                         nameIdLower(
+                           terminal(IdLower_t,"nt"),
+                           location=t),
+                         location=t),
+                       location=t),
+                     '.',
+                     qNameAttrOccur(
+                       qNameId(
+                         nameIdLower(
+                           terminal(IdLower_t,"origin"),
+                           location=t),
+                         location=t),
+                       location=t),
+                     location=t),
+                   ';',
+                   location=t),
+                 location=t),
+               '}',
                location=t),
              location=t),
            location=t)
@@ -218,7 +365,47 @@ AGDcl ::= input::[QNameWithTL] t::Location
                            location=t),
                          location=t),
                        productionBody(
-                         '{', productionStmtsNil(location=t), '}',
+                         '{', 
+                         productionStmtsSnoc(
+                           productionStmtsNil(location=t),
+                           attributeDef(
+                             concreteDefLHS(
+                               qNameId(
+                                 nameIdLower(
+                                   terminal(IdLower_t,"top"),
+                                   location=t),
+                                 location=t),
+                               location=t),
+                             '.',
+                             qNameAttrOccur(
+                               qNameId(
+                                 nameIdLower(
+                                   terminal(IdLower_t,"origin_next"),
+                                   location=t),
+                                 location=t),
+                               location=t),
+                             '=',
+                           access(
+                             baseExpr(
+                               qNameId(
+                                 nameIdLower(
+                                   terminal(IdLower_t,"nt"),
+                                   location=t),
+                                 location=t),
+                               location=t),
+                             '.',
+                             qNameAttrOccur(
+                               qNameId(
+                                 nameIdLower(
+                                   terminal(IdLower_t,"origin"),
+                                   location=t),
+                                 location=t),
+                               location=t),
+                             location=t),
+                           ';',
+                           location=t),
+                         location=t),
+                         '}',
                          location=t),
                        location=t),
                      constructProductions(tail(input),t),
