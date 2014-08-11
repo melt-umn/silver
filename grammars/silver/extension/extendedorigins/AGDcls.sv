@@ -11,6 +11,7 @@ terminal AtLParen_kwd  '@('      association = left, lexer classes {KEYWORD,RESE
 concrete production originAGDcls
 top::AGDcl ::= t::'origins' 'on' qlist::QNames ';'
 {
+
   forwards to
     appendAGDcl(
       appendAGDcl(
@@ -23,21 +24,35 @@ top::AGDcl ::= t::'origins' 'on' qlist::QNames ';'
           botlNone(location=top.location),
           ';',
           location=top.location),
-      annotationDcl(  -- annotation origin::NTWrapper;
-        'annotation',
-        qName( 
-          top.location,"origin"),
-        botlNone(location=top.location),
-        '::',
-        nominalType(
-          qNameTypeId(terminal(IdUpper_t,"NTWrapper"),
-            location=top.location),
-          botlNone(location=top.location),
-          location=top.location),
-          ';',
-        location=top.location),
-        location=top.location),
 
+      appendAGDcl(
+        annotationDcl(  -- annotation origin::NTWrapper;
+          'annotation',
+          qName( 
+            top.location,"origin"),
+          botlNone(location=top.location),
+          '::',
+          nominalType(
+            qNameTypeId(terminal(IdUpper_t,"NTWrapper"),
+              location=top.location),
+            botlNone(location=top.location),
+            location=top.location),
+            ';',
+          location=top.location),
+        annotationDcl( -- annotation new::NTWrapper;
+          'annotation',
+          qName(
+            top.location,"isNew"),
+          botlNone(location=top.location),
+          '::',
+          booleanType(
+            'Boolean',
+            location=top.location),
+          ';',
+          location=top.location),
+        location=top.location),
+      location=top.location),
+      
       appendAGDcl(
         constructAnnotationDcls(
           qlist, top.location),
@@ -61,6 +76,7 @@ top::AGDcl ::= t::'origins' 'on' qlist::QNames ';'
             location=top.location),
           ';',
           location=top.location),
+
         appendAGDcl(
           attributionDcl( -- attribute origin_next occurs on NTWrapper;
             'attribute',
@@ -81,8 +97,10 @@ top::AGDcl ::= t::'origins' 'on' qlist::QNames ';'
               location=top.location),
             ';',
             location=top.location),
+
           appendAGDcl(
             constructProductions(qlist.qnames, top.location), -- abstract production ntw...
+
             productionDcl( -- abstract production ntwBottom
               'abstract',
               'production',
@@ -121,30 +139,55 @@ AGDcl ::= qlist::QNames l::Location
   return
     case qlist of
       qNamesSingle(qNameWithTL(q,_)) ->
-        annotateDcl(
-          'annotation',
-          qName(
-          l,"origin"),
-          botlNone(location=l),
-          'occurs', 'on',
-          q,
-          botlNone(location=l),
-          ';',
-          location=l)
-    | qNamesCons(qNameWithTL(q,_),_,qnames) ->
         appendAGDcl(
           annotateDcl(
             'annotation',
             qName(
-            l,"origin"),
+              l,"origin"),
             botlNone(location=l),
             'occurs', 'on',
             q,
             botlNone(location=l),
             ';',
             location=l),
-         constructAnnotationDcls(qnames, l),
-         location=l)
+          annotateDcl(
+            'annotation',
+            qName(
+              l,"isNew"),
+            botlNone(location=l),
+            'occurs', 'on',
+            q,
+            botlNone(location=l),
+            ';',
+            location=l),
+          location=l)
+
+    | qNamesCons(qNameWithTL(q,_),_,qnames) ->
+        appendAGDcl(
+          appendAGDcl(
+            annotateDcl(
+              'annotation',
+              qName(
+                l,"origin"),
+              botlNone(location=l),
+              'occurs', 'on',
+              q,
+              botlNone(location=l),
+              ';',
+              location=l),
+            annotateDcl(
+              'annotation',
+              qName(
+                l,"isNew"),
+              botlNone(location=l),
+              'occurs', 'on',
+              q,
+              botlNone(location=l),
+              ';',
+              location=l),
+            location=l),
+          constructAnnotationDcls(qnames, l),
+          location=l)
     end;
 }
 
@@ -206,7 +249,7 @@ AGDcl ::= input::[QNameWithTL] t::Location
                '{', 
                productionStmtsSnoc(
                  productionStmtsNil(location=t),
-                 attributeDef(
+                 attributeDef( -- top.origin_next = nt.origin;
                    concreteDefLHS(
                      qNameId(
                        nameIdLower(
@@ -246,6 +289,14 @@ AGDcl ::= input::[QNameWithTL] t::Location
                '}',
                location=t),
              location=t),
+
+{-
+abstract production ntw___
+top::NTWrapper ::= nt::___
+{
+  top.origin_next = nt.origin;
+}
+-}
            productionDcl(
              'abstract',
              'production',
@@ -286,7 +337,7 @@ AGDcl ::= input::[QNameWithTL] t::Location
                '{', 
                productionStmtsSnoc(
                  productionStmtsNil(location=t),
-                 attributeDef(
+                 attributeDef( -- top.origin_next = nt.origin;
                    concreteDefLHS(
                      qNameId(
                        nameIdLower(
@@ -328,7 +379,14 @@ AGDcl ::= input::[QNameWithTL] t::Location
              location=t),
            location=t)
               else appendAGDcl(
-                     productionDcl(
+{-
+abstract production ntw___
+top::NTWrapper ::= nt::___
+{
+  top.origin_next = ntw.origin;
+}
+-}
+                     productionDcl( -- abstract production ntw___
                        'abstract',
                        'production',
                        nameIdLower(
@@ -368,7 +426,7 @@ AGDcl ::= input::[QNameWithTL] t::Location
                          '{', 
                          productionStmtsSnoc(
                            productionStmtsNil(location=t),
-                           attributeDef(
+                           attributeDef( -- top.origin_next = ntw.origin;
                              concreteDefLHS(
                                qNameId(
                                  nameIdLower(
@@ -507,7 +565,23 @@ top::Expr ::= e::Expr '@(' es::AppExprs ',' anns::AnnoAppExprs ')'
     application(
       e,'(',es,',',
       snocAnnoAppExprs(
-        anns,
+        snocAnnoAppExprs(
+          anns,
+          ',',
+          annoExpr(
+            qNameId(
+              nameIdLower(
+                terminal(IdLower_t,"isNew"),
+                location=top.location),
+              location=top.location),
+            '=',
+            presentAppExpr(
+              trueConst(
+                'true',
+                location=top.location),
+              location=top.location),
+            location=top.location),
+          location=top.location),
         ',',
         annoExpr(
           qNameId(
