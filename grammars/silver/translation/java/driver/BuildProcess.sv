@@ -141,7 +141,11 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "  </target>\n\n" ++
 
 "  <target name='jars' depends='" ++ implode(", ", extraJarsDeps) ++ "'>\n" ++
-"    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath' />\n" ++
+-- Uncondintionally compute this, but it's included conditionally as a manifest attribute
+"    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath'>\n" ++
+-- Escape spaces as url-encoded spaces. maybe there's a better way?
+"      <filtermapper><replacestring from=' ' to='%20' /></filtermapper>\n" ++
+"    </pathconvert>\n" ++
 "    <jar destfile='" ++ outputFile ++ "' basedir='${bin}'>\n" ++
     implode("", map(includeName(_, "*.class"), grammarsDependedUpon)) ++ 
 "      <manifest>\n" ++
