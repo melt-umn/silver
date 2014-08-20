@@ -1,11 +1,31 @@
 #!/bin/bash
 
-# Set SILVER_HOME to the directory where silver was unpacked.
-# (i.e. the directory where 'jars/RunSilver.jar' exists.
-# The 'install-silver-bin' script will replace this with the correct value:
+# OS-specific crap
+case `uname` in
+*Darwin*)
+  READLINK=greadlink
+  if [ ! -f `which greadlink` ]; then
+    # install should have complained already, but maybe configuration changed
+    echo "Missing greadlink. Please 'brew install coreutils'"
+    exit 1
+  fi
+  ;;
+*)
+  READLINK=readlink
+  ;;
+esac
 
-#SILVER_HOME=
+ME=$("$READLINK" -f "${BASH_SOURCE}")
 
+# The Silver Jar will expect this to be set:
+SILVER_HOME=${ME/support\/bin\/silver//}
+
+if [ ! -f "$SILVER_HOME/jars/RunSilver.jar" ]; then
+  echo "Couldn't find the Silver jars to execute, aborting."
+  exit 2
+fi
+
+# Set flags if not overriden in, say, user shell profile
 if [ -z "$SVJVM_FLAGS" ]; then
   # Stack: 4M should be sufficient for nearly everything. In fact, 2M may be...
   # Heap: 1800M just because most systems should have at least 2gb these days...
@@ -13,37 +33,6 @@ if [ -z "$SVJVM_FLAGS" ]; then
 fi
 
 
-# No futher changes need to be made here. This if block is not important:
-
-if [ -z "$SILVER_HOME" ]; then
-
-  echo -e "\nWarning: SILVER_HOME environment variables was not set. (See installation instructions.) Attempting to determine automatically...\n"
-
-  CANDIDATES=$( find ~ -name RunSilver.jar 2> /dev/null )
-  COUNT=$( echo "$CANDIDATES" | wc -l )
-  
-  if [ $COUNT -gt 1 ]; then
-    echo "Found multiple candidates! SILVER_HOME must be set"
-    echo "$CANDIDATES"
-    exit 1
-  fi
-  
-  if [ -z "$CANDIDATES" ]; then
-    echo "Couldn't find RunSilver.jar!"
-    exit 1
-  fi
-
-  echo "Found: $CANDIDATES"
-
-  # This will find RunSilver.jar, if you don't set it above, or already have it in the environment
-  export SILVER_HOME=$( dirname $( dirname $CANDIDATES ) )
-  
-  echo -e "\nPlease set SILVER_HOME=$SILVER_HOME\n"
-
-fi
-
-
-
-java $SVJVM_FLAGS -jar $SILVER_HOME/jars/RunSilver.jar $@ && ant
+java $SVJVM_FLAGS -jar "$SILVER_HOME/jars/RunSilver.jar" "$@" && ant
 
 

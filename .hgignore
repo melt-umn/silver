@@ -6,6 +6,7 @@
 ^JARS-BAK
 ^grp$
 ~$
+.swp$
 ^test/.*test\.output$
 ^test/.*test\.jar$
 ^test/.*build\.xml$
