@@ -58,7 +58,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   flagdescs <- ["\t--onejar  : include runtime libraries in the jar"];
 }
 aspect production compilation
-top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
   -- This is a little bit of a hack. It's only job is to allow the Eclipse support
   -- for Silver to put this file elsewhere than the local directory.
@@ -68,7 +68,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     else head(top.config.buildXmlLocation);
   
   top.postOps <- if top.config.noJavaGeneration then [] else 
-    [genJava(top.config, grammarsToTranslate, silverGen), 
+    [genJava(top.config, grammarsToTranslate, benv.silverGen), 
      genBuild(buildXmlLocation, buildXml)]; 
 
   -- From here on, it's all build.xml stuff:
@@ -113,8 +113,8 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
 "  <description>Generated build script for the grammar " ++ buildGrammar ++ "</description>\n\n" ++
 
 "  <property environment='env'/>\n" ++
-"  <property name='jg' location='" ++ silverGen ++ "'/>\n" ++
-"  <property name='sh' location='" ++ silverHome ++ "'/>\n" ++ 
+"  <property name='jg' location='" ++ benv.silverGen ++ "'/>\n" ++
+"  <property name='sh' location='" ++ benv.silverHome ++ "'/>\n" ++ 
 "  <property name='bin' location='${jg}/bin'/>\n" ++
 "  <property name='src' location='${jg}/src'/>\n\n" ++
 

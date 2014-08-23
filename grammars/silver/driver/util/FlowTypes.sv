@@ -9,7 +9,7 @@ import silver:util:raw:graph as g;
 -- Hide all the flow type computation over here
 
 aspect production compilation
-top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::BuildEnv
 {
   -- aggregate all flow def information
   local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), grammars)));

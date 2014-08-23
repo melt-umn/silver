@@ -7,9 +7,8 @@ function compileGrammar
 IOVal<Maybe<RootSpec>> ::=
   svParser::SVParser
   sviParser::SVIParser
+  benv::BuildEnv
   grammarName::String
-  grammarPath::[String]
-  genPath::String
   clean::Boolean
   ioin::IO
 {
@@ -17,13 +16,13 @@ IOVal<Maybe<RootSpec>> ::=
   local gramPath :: String = grammarToPath(grammarName);
 
   -- the location (if found) of the grammar
-  local grammarLocation :: IOVal<Maybe<String>> = findGrammarLocation(gramPath, grammarPath, ioin);
+  local grammarLocation :: IOVal<Maybe<String>> = findGrammarLocation(gramPath, benv.grammarPath, ioin);
 
   -- the list of silver files for the grammar
   local files :: IOVal<[String]> = listSilverFiles(grammarLocation.iovalue.fromJust, grammarLocation.io);
 
   -- Modification times of the respective files
-  local ifaceTime :: IOVal<Maybe<Integer>> = isValidInterface(genPath ++ "src/" ++ gramPath ++ "Silver.svi", files.io);
+  local ifaceTime :: IOVal<Maybe<Integer>> = isValidInterface(benv.silverGen ++ "src/" ++ gramPath ++ "Silver.svi", files.io);
   local grammarTime :: IOVal<Integer> = fileTimes(grammarLocation.iovalue.fromJust, files.iovalue, ifaceTime.io);
 
   local pr :: IO = print("Compiling Grammar: " ++ grammarName ++ "\n", grammarTime.io);
@@ -31,7 +30,7 @@ IOVal<Maybe<RootSpec>> ::=
   local gramCompile :: IOVal<Pair<[Root] [ParseError]>> =
     compileFiles(svParser, grammarLocation.iovalue.fromJust, files.iovalue, pr);
   local ifaceCompile :: IOVal<ParseResult<IRoot>> =
-    compileInterface(sviParser, genPath ++ "src/" ++ gramPath, pr);
+    compileInterface(sviParser, benv.silverGen ++ "src/" ++ gramPath, pr);
   
   -- Not being clean, valid interface file, newer than the grammar source
   local useInterface :: Boolean = !clean && ifaceTime.iovalue.isJust && ifaceTime.iovalue.fromJust > grammarTime.iovalue;

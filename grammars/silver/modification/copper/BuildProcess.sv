@@ -25,7 +25,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   flagdescs <- ["\t--copperdump  : force Copper to dump parse table information"];
 }
 aspect production compilation
-top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
   classpathCompiler <- ["${sh}/jars/CopperCompiler.jar"];
   classpathRuntime <- ["${sh}/jars/CopperRuntime.jar"];
@@ -38,7 +38,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
     foldr(append, [], map((.parserSpecs), grammarsRelevant));
   
   top.postOps <-
-    map(parserSpecUnit(_, g.compiledGrammars, silverGen), allParsers);
+    map(parserSpecUnit(_, g.compiledGrammars, benv.silverGen), allParsers);
 }
 
 function buildAntParserPart

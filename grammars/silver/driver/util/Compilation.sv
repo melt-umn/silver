@@ -20,7 +20,7 @@ synthesized attribute recheckGrammars :: [String];
  - @param silverGen  The directory to store generated files
  -}
 abstract production compilation
-top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::BuildEnv
 {
   -- the list of rootspecs coming out of g
   top.grammarList = g.grammarList;

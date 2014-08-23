@@ -130,25 +130,44 @@ Either<String  Decorated CmdArgs> ::= args::[String]
          else right(a);
 }
 
-function checkEnvironment
-IOVal<[String]> ::=
-  silverHome::String
-  silverGen::String
-  grammarPath::[String]
-  ioin::IO
+function determineBuildEnv
+IOVal<Either<BuildEnv [String]>> ::= a::Decorated CmdArgs  ioin::IO
 {
-  local isGenDir :: IOVal<Boolean> = isDirectory(silverGen, ioin);
-  local isGramDir :: IOVal<Boolean> = isDirectory(silverHome ++ "grammars/", isGenDir.io);
+  -- Let's locally set up and verify the environment
+  local envSH :: IOVal<String> = envVar("SILVER_HOME", ioin);
+  local envGP :: IOVal<String> = envVar("GRAMMAR_PATH", envSH.io);
+  local envSG :: IOVal<String> = envVar("SILVER_GEN", envGP.io);
+  
+  local benv :: BuildEnv = 
+    fromArgsAndEnv(
+      -- TODO: maybe we should use the java platform separator here?
+      envSH.iovalue, envSG.iovalue, explode(":", envGP.iovalue),
+      a.silverHomeOption, a.genLocation, a.searchPath);
+
+  -- Let's do some checks on the environment
+  local checkenv :: IOVal<[String]> = checkEnvironment(benv, envSG.io);
+  
+  return if null(checkenv.iovalue) then
+    ioval(checkenv.io, left(benv))
+  else
+    ioval(checkenv.io, right(checkenv.iovalue));
+}
+
+function checkEnvironment
+IOVal<[String]> ::= benv::BuildEnv ioin::IO
+{
+  local isGenDir :: IOVal<Boolean> = isDirectory(benv.silverGen, ioin);
+  local isGramDir :: IOVal<Boolean> = isDirectory(benv.silverHome ++ "grammars/", isGenDir.io);
 
   local errors :: [String] =
-    if silverHome == "/" -- because we called 'endWithSlash' on it
+    if benv.silverHome == "/" -- because we called 'endWithSlash' on empty string
     then ["Missing SILVER_HOME or --silver-home <path>.\nThis should have been set up by the 'silver' script.\n"]
     else if !isGenDir.iovalue
-         then if silverGen == silverHome ++ "generated/" -- if it's our inferred value...
-         then ["Missing SILVER_GEN or -G <path>.\nThis should have been inferable, but " ++ silverGen ++ " is not a directory.\n"]
-         else ["Supplied SILVER_GEN location " ++ silverGen ++ " is not a directory.\n"]
+         then if benv.silverGen == benv.defaultSilverGen
+         then ["Missing SILVER_GEN or -G <path>.\nThis should have been inferable, but " ++ benv.silverGen ++ " is not a directory.\n"]
+         else ["Supplied SILVER_GEN location " ++ benv.silverGen ++ " is not a directory.\n"]
     else if !isGramDir.iovalue
-    then ["Missing standard library grammars: tried " ++ silverHome ++ "grammars/ but failed.\n"]
+    then ["Missing standard library grammars: tried " ++ benv.defaultGrammarPath ++ " but this did not exist.\n"]
     else [];
     -- TODO: We should probably check everything in grammarPath?
     -- TODO: Maybe look for 'core' specifically?
@@ -159,9 +178,7 @@ IOVal<[String]> ::=
 function checkPreBuild
 IOVal<[String]> ::=
   a::Decorated CmdArgs
-  silverHome::String
-  silverGen::String
-  grammarPath::[String]
+  benv::BuildEnv
   buildGrammar::String
   ioin::IO
 {
