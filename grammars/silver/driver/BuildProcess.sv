@@ -21,14 +21,15 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
   -- Figure out arguments
   local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
   local a :: Decorated CmdArgs = case argResult of right(t) -> t end;
+  local argErrors :: [String] = case argResult of | left(s) -> [s] | _ -> [] end;
 
   -- Figure out build env from environment and args
   local benvResult :: IOVal<Either<BuildEnv  [String]>> = determineBuildEnv(a, ioin);
   local benv :: BuildEnv = case benvResult.iovalue of left(t) -> t end;
+  local envErrors :: [String] = case benvResult.iovalue of | right(s) -> s | _ -> [] end;
   
   -- Let's start preparing to build
   local buildGrammar :: String = head(a.buildGrammar);
-
   local checkbuild :: IOVal<[String]> =
     checkPreBuild(a, benv, buildGrammar, benvResult.io);
 
@@ -39,11 +40,6 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
 
   -- Run the resulting build actions
   local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), buildrun.io);
-
-  local argErrors :: [String] =
-    case argResult of | left(s) -> [s] | _ -> [] end;
-  local envErrors :: [String] =
-    case benvResult.iovalue of | right(s) -> s | _ -> [] end;
 
   return if !null(argErrors) then
     ioval(print(head(argErrors), ioin), 1)
