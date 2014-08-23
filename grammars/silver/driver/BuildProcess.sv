@@ -18,55 +18,44 @@ type SVIParser = (ParseResult<IRoot> ::= String String);
 function cmdLineRun
 IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
 {
+  -- Figure out arguments
   local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
   local a :: Decorated CmdArgs = case argResult of right(t) -> t end;
 
-  -- Let's locally set up and verify the environment
-  local envSH :: IOVal<String> = envVar("SILVER_HOME", ioin);
-  local envGP :: IOVal<String> = envVar("GRAMMAR_PATH", envSH.io);
-  local envSG :: IOVal<String> = envVar("SILVER_GEN", envGP.io);
+  -- Figure out build env from environment and args
+  local benvResult :: IOVal<Either<BuildEnv  [String]>> = determineBuildEnv(a, ioin);
+  local benv :: BuildEnv = case benvResult.iovalue of left(t) -> t end;
   
-  local silverHome :: String =
-    endWithSlash(head(a.silverHomeOption ++ [envSH.iovalue]));
-  local silverGen :: String =
-    endWithSlash(head(a.genLocation ++ (if envSG.iovalue == "" then [] else [envSG.iovalue]) ++ [silverHome ++ "generated/"]));
-  local grammarPath :: [String] =
-    map(endWithSlash, a.searchPath ++ [silverHome ++ "grammars/"] ++ explode(":", envGP.iovalue) ++ ["."]);
-
-  -- Let's do some checks on the environment
-  local checkenv :: IOVal<[String]> =
-    checkEnvironment(silverHome, silverGen, grammarPath, envSG.io);
-  
+  -- Let's start preparing to build
   local buildGrammar :: String = head(a.buildGrammar);
 
   local checkbuild :: IOVal<[String]> =
-    checkPreBuild(a, silverHome, silverGen, grammarPath, buildGrammar, checkenv.io);
+    checkPreBuild(a, benv, buildGrammar, benvResult.io);
 
+  -- Build!
   local buildrun :: IOVal<Decorated Compilation> =
-    buildRun(svParser, sviParser, a, silverHome, silverGen, grammarPath, buildGrammar, checkbuild.io);
+    buildRun(svParser, sviParser, a, benv, buildGrammar, checkbuild.io);
   local unit :: Decorated Compilation = buildrun.iovalue;
 
-  -- unit.postOps is a "pure value," here's where we make it go.
+  -- Run the resulting build actions
   local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), buildrun.io);
 
-
   local argErrors :: [String] =
-    case argResult of
-    | left(s) -> [s]
-    | _ -> []
-    end;
+    case argResult of | left(s) -> [s] | _ -> [] end;
+  local envErrors :: [String] =
+    case benvResult.iovalue of | right(s) -> s | _ -> [] end;
 
   return if !null(argErrors) then
     ioval(print(head(argErrors), ioin), 1)
   else if a.displayVersion then
     ioval(print(
       "Silver Version 0.4.0-dev\n" ++
-      "SILVER_HOME = " ++ silverHome ++ "\n" ++
-      "SILVER_GEN = " ++ silverGen ++ "\n" ++
-      "GRAMMAR_PATH:\n" ++ implode("\n", grammarPath) ++ "\n\n" ++
-      implode("\n", checkenv.iovalue), checkenv.io), 1) -- exit with an error code so 'ant' isnt run.
-  else if !null(checkenv.iovalue ++ checkbuild.iovalue) then
-    ioval(print(implode("\n", checkenv.iovalue ++ checkbuild.iovalue), checkbuild.io), 1)
+      "SILVER_HOME = " ++ benv.silverHome ++ "\n" ++
+      "SILVER_GEN = " ++ benv.silverGen ++ "\n" ++
+      "GRAMMAR_PATH:\n" ++ implode("\n", benv.grammarPath) ++ "\n\n" ++
+      implode("\n", envErrors), benvResult.io), 1) -- exit with an error code so 'ant' isnt run.
+  else if !null(envErrors ++ checkbuild.iovalue) then
+    ioval(print(implode("\n", envErrors ++ checkbuild.iovalue), checkbuild.io), 1)
   else if null(unit.grammarList) then
     ioval(print("The specified grammar (" ++ buildGrammar ++ ") could not be found.\n", buildrun.io), 1)
   else
@@ -83,9 +72,7 @@ IOVal<Decorated Compilation> ::=
   svParser::SVParser
   sviParser::SVIParser
   a::Decorated CmdArgs
-  silverHome::String
-  silverGen::String
-  grammarPath::[String]
+  benv::BuildEnv
   buildGrammar::String
   ioin::IO
 {
@@ -93,7 +80,7 @@ IOVal<Decorated Compilation> ::=
   -- This does an "initial grammar stream" composed of 
   -- grammars and interface files that *locally* seem good.
   local rootStream :: IOVal<[Maybe<RootSpec>]> =
-    compileGrammars(svParser, sviParser, grammarPath, silverGen, grammarStream, a.doClean, ioin);
+    compileGrammars(svParser, sviParser, benv, grammarStream, a.doClean, ioin);
 
   -- The list of grammars to build. This is circular with the above, producing
   -- a list that's terminated when the response count is equal to the number of emitted
@@ -107,14 +94,14 @@ IOVal<Decorated Compilation> ::=
     compilation(
       foldr(consGrammars, nilGrammars(), catMaybes(rootStream.iovalue)),
       foldr(consGrammars, nilGrammars(), catMaybes(reRootStream.iovalue)),
-      buildGrammar, silverHome, silverGen);
+      buildGrammar, benv);
   -- This is something we should probably get rid of, someday. Somehow. It's hard.
   unit.config = a;
     
   -- There is a second circularity here where we use unit.recheckGrammars
   -- to supply the second parameter to unit.
   local reRootStream :: IOVal<[Maybe<RootSpec>]> =
-    compileGrammars(svParser, sviParser, grammarPath, silverGen, unit.recheckGrammars, true, rootStream.io);
+    compileGrammars(svParser, sviParser, benv, unit.recheckGrammars, true, rootStream.io);
 
   return ioval(reRootStream.io, unit);
 }
@@ -146,15 +133,6 @@ function eatGrammars
       eatGrammars(n-1, sofar, tail(rootStream), grammars)
     else
       newDeps ++ eatGrammars(n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars));
-}
-
-{--
- - Ensures a string ends with a forward slash. Safe to use if it already has one.
- -}
-function endWithSlash
-String ::= s::String
-{
-  return if endsWith("/", s) then s else s ++ "/";
 }
 
 

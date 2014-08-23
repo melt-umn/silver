@@ -20,11 +20,11 @@ grammar silver:driver;
  -}
 
 aspect production compilation
-top::Compilation ::= g::Grammars r::Grammars buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::BuildEnv
 {
   top.postOps <- [printAllParsingErrors(grammars ++ r.grammarList)];
-  top.postOps <- [doInterfaces(grammarsToTranslate, silverGen)] ++
-    map(touchIface(_, silverGen), r.grammarList);
+  top.postOps <- [doInterfaces(grammarsToTranslate, benv.silverGen)] ++
+    map(touchIface(_, benv.silverGen), r.grammarList);
   top.postOps <- if top.config.noBindingChecking then [] else
     [printAllBindingErrors(grammars ++ r.grammarList)]; 
 }

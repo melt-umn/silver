@@ -9,11 +9,11 @@ import silver:util:cmdargs;
 -- TODO CRIPES this is all bad, bad, bad code.
 
 aspect production compilation
-top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
-  top.postOps <- [generateMdaSpecs(g.compiledGrammars, grammarsToTranslate, silverGen)]; 
+  top.postOps <- [generateMdaSpecs(g.compiledGrammars, grammarsToTranslate, benv.silverGen)]; 
 
-  local targets :: String = mdaBuildTarget(grammarsToTranslate, silverHome, silverGen);
+  local targets :: String = mdaBuildTarget(grammarsToTranslate, benv.silverGen);
   extraTopLevelDecls <- if length(targets) != 0 then ["  <target name='copper_mda'>\n" ++ targets ++ "  </target>\n"] else [];
   extraGrammarsDeps <- if length(targets) != 0 then ["copper_mda"] else [];
 }
@@ -61,15 +61,15 @@ IO ::= grams::EnvTree<Decorated RootSpec>  specs::[MdaSpec]  silvergen::String  
 }
 
 function mdaBuildTarget
-String ::= searchgrams::[Decorated RootSpec]  silverhome::String  silvergen::String
+String ::= searchgrams::[Decorated RootSpec]  silvergen::String
 {
   return if null(searchgrams) then ""
-         else if null(head(searchgrams).mdaSpecs) then mdaBuildTarget(tail(searchgrams), silverhome, silvergen)
-         else noReallyMdaBuildTarget(head(searchgrams).mdaSpecs, silverhome, silvergen) ++ mdaBuildTarget(tail(searchgrams), silverhome, silvergen);
+         else if null(head(searchgrams).mdaSpecs) then mdaBuildTarget(tail(searchgrams), silvergen)
+         else noReallyMdaBuildTarget(head(searchgrams).mdaSpecs, silvergen) ++ mdaBuildTarget(tail(searchgrams), silvergen);
 }
 
 function noReallyMdaBuildTarget
-String ::= searchgrams::[MdaSpec]  silverhome::String  silvergen::String
+String ::= searchgrams::[MdaSpec]  silvergen::String
 {
   local attribute p :: MdaSpec;
   p = head(searchgrams);
@@ -88,6 +88,6 @@ String ::= searchgrams::[MdaSpec]  silverhome::String  silvergen::String
 "      <inputs file='${src}/" ++ packagepath ++ parserName ++ ".copper'/>\n    </copper>\n";
 
   return if null(searchgrams) then ""
-         else target ++ noReallyMdaBuildTarget(tail(searchgrams), silverhome, silvergen);
+         else target ++ noReallyMdaBuildTarget(tail(searchgrams), silvergen);
 }
 

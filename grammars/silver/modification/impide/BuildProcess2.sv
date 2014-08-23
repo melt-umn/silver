@@ -5,7 +5,7 @@ import silver:translation:java;
 import silver:util:cmdargs;
 
 aspect production compilation
-top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silverGen::String
+top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
   -- The RootSpec representing the grammar actually being built (specified on the command line)
   production builtGrammar :: [Decorated RootSpec] = searchEnvTree(buildGrammar, g.compiledGrammars);
@@ -17,7 +17,7 @@ top::Compilation ::= g::Grammars _ buildGrammar::String silverHome::String silve
   local startNTClassName::String = makeNTClassName(head(allParsers).startNT);
 
   -- pkgName is derived in the aspect defined in ./BuildProcess.sv
-  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, allParsers, silverGen, ide, pkgName, startNTClassName)];
+  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, allParsers, benv.silverGen, ide, pkgName, startNTClassName)];
 
   extraTopLevelDecls <- if !isIde then [] else [
     "<property name='start.nonterminal.class' value='" ++ startNTClassName ++ "'/>"]; 

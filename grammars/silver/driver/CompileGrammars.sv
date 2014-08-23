@@ -13,8 +13,7 @@ function compileGrammars
 IOVal<[Maybe<RootSpec>]> ::=
   svParser::SVParser
   sviParser::SVIParser
-  grammarPath::[String]
-  silverGen::String
+  benv::BuildEnv
   need::[String]
   clean::Boolean
   ioin::IO
@@ -23,11 +22,11 @@ IOVal<[Maybe<RootSpec>]> ::=
   
   -- Build the first gramamr in the need list.
   local now :: IOVal<Maybe<RootSpec>> =
-    compileGrammar(svParser, sviParser, grammarName, grammarPath, silverGen, clean, ioin);
+    compileGrammar(svParser, sviParser, benv, grammarName, clean, ioin);
 
   -- Recurse for the rest of the grammars needed.
   local recurse :: IOVal<[Maybe<RootSpec>]> =
-    compileGrammars(svParser, sviParser, grammarPath, silverGen, tail(need), clean, now.io);
+    compileGrammars(svParser, sviParser, benv, tail(need), clean, now.io);
 
   return 
     if null(need) then
