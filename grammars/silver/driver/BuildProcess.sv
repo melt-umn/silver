@@ -9,9 +9,6 @@ imports silver:util:cmdargs;
 
 exports silver:driver:util;
 
-inherited attribute svParser :: SVParser;
-inherited attribute sviParser :: SVIParser;
-
 type SVParser = (ParseResult<Root> ::= String String);
 type SVIParser = (ParseResult<IRoot> ::= String String);
 
@@ -35,16 +32,68 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
     endWithSlash(head(a.genLocation ++ (if envSG.iovalue == "" then [] else [envSG.iovalue]) ++ [silverHome ++ "generated/"]));
   local grammarPath :: [String] =
     map(endWithSlash, a.searchPath ++ [silverHome ++ "grammars/"] ++ explode(":", envGP.iovalue) ++ ["."]);
+
+  -- Let's do some checks on the environment
+  local checkenv :: IOVal<[String]> =
+    checkEnvironment(silverHome, silverGen, grammarPath, envSG.io);
+  
   local buildGrammar :: String = head(a.buildGrammar);
 
-  local check :: IOVal<[String]> =
-    checkEnvironment(a, silverHome, silverGen, grammarPath, buildGrammar, envSG.io);
-  
+  local checkbuild :: IOVal<[String]> =
+    checkPreBuild(a, silverHome, silverGen, grammarPath, buildGrammar, checkenv.io);
+
+  local buildrun :: IOVal<Decorated Compilation> =
+    buildRun(svParser, sviParser, a, silverHome, silverGen, grammarPath, buildGrammar, checkbuild.io);
+  local unit :: Decorated Compilation = buildrun.iovalue;
+
+  -- unit.postOps is a "pure value," here's where we make it go.
+  local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), buildrun.io);
+
+
+  local argErrors :: [String] =
+    case argResult of
+    | left(s) -> [s]
+    | _ -> []
+    end;
+
+  return if !null(argErrors) then
+    ioval(print(head(argErrors), ioin), 1)
+  else if a.displayVersion then
+    ioval(print(
+      "Silver Version 0.4.0-dev\n" ++
+      "SILVER_HOME = " ++ silverHome ++ "\n" ++
+      "SILVER_GEN = " ++ silverGen ++ "\n" ++
+      "GRAMMAR_PATH:\n" ++ implode("\n", grammarPath) ++ "\n\n" ++
+      implode("\n", checkenv.iovalue), checkenv.io), 1) -- exit with an error code so 'ant' isnt run.
+  else if !null(checkenv.iovalue ++ checkbuild.iovalue) then
+    ioval(print(implode("\n", checkenv.iovalue ++ checkbuild.iovalue), checkbuild.io), 1)
+  else if null(unit.grammarList) then
+    ioval(print("The specified grammar (" ++ buildGrammar ++ ") could not be found.\n", buildrun.io), 1)
+  else
+    actions;
+}
+
+{--
+ - Given an environment and a grammar to build, returns a Compilation.
+ - Note that it's the caller's responsibility to actually evaluation that
+ - compilation's actions.
+ -}
+function buildRun
+IOVal<Decorated Compilation> ::=
+  svParser::SVParser
+  sviParser::SVIParser
+  a::Decorated CmdArgs
+  silverHome::String
+  silverGen::String
+  grammarPath::[String]
+  buildGrammar::String
+  ioin::IO
+{
   -- Compile grammars. There's some tricky circular program data flow here.
   -- This does an "initial grammar stream" composed of 
   -- grammars and interface files that *locally* seem good.
   local rootStream :: IOVal<[Maybe<RootSpec>]> =
-    compileGrammars(svParser, sviParser, grammarPath, silverGen, grammarStream, a.doClean, check.io);
+    compileGrammars(svParser, sviParser, grammarPath, silverGen, grammarStream, a.doClean, ioin);
 
   -- The list of grammars to build. This is circular with the above, producing
   -- a list that's terminated when the response count is equal to the number of emitted
@@ -59,6 +108,7 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
       foldr(consGrammars, nilGrammars(), catMaybes(rootStream.iovalue)),
       foldr(consGrammars, nilGrammars(), catMaybes(reRootStream.iovalue)),
       buildGrammar, silverHome, silverGen);
+  -- This is something we should probably get rid of, someday. Somehow. It's hard.
   unit.config = a;
     
   -- There is a second circularity here where we use unit.recheckGrammars
@@ -66,21 +116,9 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
   local reRootStream :: IOVal<[Maybe<RootSpec>]> =
     compileGrammars(svParser, sviParser, grammarPath, silverGen, unit.recheckGrammars, true, rootStream.io);
 
-  -- unit.postOps is a "pure value," here's where we make it go.
-  local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), reRootStream.io);
-
-  local argErrors :: [String] =
-    case argResult of
-    | left(s) -> [s]
-    | _ -> []
-    end;
-
-  return if !null(argErrors) then ioval(print(head(argErrors), ioin), 1)
-  else if a.displayVersion then ioval(print("Silver Version 0.4.0-dev\n", ioin), 1) -- temp: exit with an error code so 'ant' isnt run.
-  else if !null(check.iovalue) then ioval(print(implode("\n", check.iovalue), check.io), 1)
-  else if !head(rootStream.iovalue).isJust then ioval(print("The specified grammar (" ++ buildGrammar ++ ") could not be found.\n", rootStream.io), 1)
-  else actions;
+  return ioval(reRootStream.io, unit);
 }
+
 
 {--
  - Consumes a stream of parses, outputs a stream of new dependencies.

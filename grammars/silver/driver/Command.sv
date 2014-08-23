@@ -132,6 +132,32 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 
 function checkEnvironment
 IOVal<[String]> ::=
+  silverHome::String
+  silverGen::String
+  grammarPath::[String]
+  ioin::IO
+{
+  local isGenDir :: IOVal<Boolean> = isDirectory(silverGen, ioin);
+  local isGramDir :: IOVal<Boolean> = isDirectory(silverHome ++ "grammars/", isGenDir.io);
+
+  local errors :: [String] =
+    if silverHome == "/" -- because we called 'endWithSlash' on it
+    then ["Missing SILVER_HOME or --silver-home <path>.\nThis should have been set up by the 'silver' script.\n"]
+    else if !isGenDir.iovalue
+         then if silverGen == silverHome ++ "generated/" -- if it's our inferred value...
+         then ["Missing SILVER_GEN or -G <path>.\nThis should have been inferable, but " ++ silverGen ++ " is not a directory.\n"]
+         else ["Supplied SILVER_GEN location " ++ silverGen ++ " is not a directory.\n"]
+    else if !isGramDir.iovalue
+    then ["Missing standard library grammars: tried " ++ silverHome ++ "grammars/ but failed.\n"]
+    else [];
+    -- TODO: We should probably check everything in grammarPath?
+    -- TODO: Maybe look for 'core' specifically?
+
+  return ioval(isGramDir.io, errors);
+}
+
+function checkPreBuild
+IOVal<[String]> ::=
   a::Decorated CmdArgs
   silverHome::String
   silverGen::String
@@ -139,25 +165,15 @@ IOVal<[String]> ::=
   buildGrammar::String
   ioin::IO
 {
-  local isGenDir :: IOVal<Boolean> = isDirectory(silverGen, ioin);
-  local isGramDir :: IOVal<Boolean> = isDirectory(silverHome ++ "grammars/", isGenDir.io);
-
   local errors :: [String] =
     if null(a.cmdRemaining) then ["No grammar to build was specified.\n"]
-    else if silverHome == "/"
-    then ["Missing SILVER_HOME or --silver-home <path>.\nThis should have been set up at install time, and/or supplied by RunSilver.jar\n"]
-    else if !isGenDir.iovalue
-         then if silverGen == silverHome ++ "generated/"
-         then ["Missing SILVER_GEN or -G <path>.\nThis should have been inferable, but " ++ silverGen ++ " is not a directory.\n"]
-         else ["Supplied SILVER_GEN location " ++ silverGen ++ " is not a directory.\n"]
-    else if !isGramDir.iovalue
-    then ["Missing standard library grammars: tried " ++ silverHome ++ "grammar/ but failed.\n"]
     else if indexOf("/", buildGrammar) != -1 -- basic sanity check
     then ["Build grammar appears to contain slashes: " ++ buildGrammar ++ "\n"]
     else if indexOf(".", buildGrammar) != -1 -- also, now
     then ["Build grammar appears to contain dots: " ++ buildGrammar ++ "\n"]
     else [];
+  -- TODO: presently, we check whether we find this grammar elsewhere. Maybe it should be here? not sure.
 
-  return ioval(isGramDir.io, errors);
+  return ioval(ioin, errors);
 }
 
