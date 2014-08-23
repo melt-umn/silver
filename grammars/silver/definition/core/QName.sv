@@ -73,13 +73,13 @@ top::QNameLookup ::= kindOfLookup::String dcls::[DclInfo] name::String l::Locati
 function printPossibilities
 String ::= lst::[DclInfo]
 {
-  local attribute dcl :: DclInfo;
-  dcl = head(lst);
-  
+  return implode("\n", map(dclinfo2possibility, lst));
+}
+function dclinfo2possibility
+String ::= dcl::DclInfo
+{
   -- TODO: perhaps some way of including types, when they are relevant (attributes, values)
-  return if null(lst) then ""
-         else ("\t" ++ dcl.fullName ++ " (" ++ dcl.sourceLocation.filename ++ ":" ++ toString(dcl.sourceLocation.line) ++ ")\n")
-              ++ printPossibilities(tail(lst));
+  return "\t" ++ dcl.fullName ++ " (" ++ dcl.sourceLocation.filename ++ ":" ++ toString(dcl.sourceLocation.line) ++ ")\n";
 }
 
 
