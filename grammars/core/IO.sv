@@ -91,8 +91,7 @@ IOVal<Boolean> ::= s::String i::IO
 }
 
 {--
- - Executes a shell command.  ONLY WORKS ON LINUX (or rather, doesn't work on windows.)
- - Specifically executes 'bash -c'.
+ - Executes a shell command.  Specifically executes 'bash -c'.  So, not fully cross-platform.
  -
  - Avoid using this if possible.  If you need an IO action not present, request it, please.
  -
