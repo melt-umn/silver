@@ -58,9 +58,6 @@ public class Compile {
 	 * @throws MalformedURLException 
 	 */
 	public static void main(String[] args) throws MalformedURLException {
-		String java_gen = System.getenv("SILVER_GEN");
-		String grammar_path = System.getenv("GRAMMAR_PATH");
-		
 		// Step 1 : attempt to determine where we are
 		File jarsLocation = find_home();
 		File installRoot = jarsLocation.getParentFile();
@@ -76,35 +73,11 @@ public class Compile {
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
 		cl = new URLClassLoader(urls, cl);
 		
+		// Step 3 : We *no longer* set SILVER_GEN. Silver defaults automatically.
 		
-		// Step 3 : Check and set SILVER_JAVA
+		// Step 4 : We *no longer* set GRAMMAR_PATH. Silver defaults automatically.
 		
-		if(java_gen == null || java_gen.equals("")) {
-			File jgLocation = new File(installRoot, "generated");
-			if(!jgLocation.canWrite()) {
-				// TODO: We should check for any -J on the command line
-				
-				System.err.println("No SILVER_GEN location was supplied in the environment.");
-				System.err.println("In addition, the path inferred (" + jgLocation + ") doesn't exist or is not writable by the user!\n");
-				System.err.println("Either fix the install so the inferred location is writable," +
-						" or specify a location using the SILVER_GEN environment variable.\n");
-				System.exit(-1);
-			}
-			java_gen = jgLocation.getPath();
-		}
-		
-		// Step 4 : Check and set GRAMMAR_PATH
-		
-		File gpLocation = new File(installRoot, "grammars");
-		if(!gpLocation.canRead()) {
-			System.err.println("Couldn't find the silver/grammars location to include in the GRAMMAR_PATH.");
-			System.err.println("(Tried " + gpLocation + ")\n");
-			System.err.println("If you actually intend to run silver without the default path," +
-					" run silver.composed.Default.jar directly instead of RunSilver.jar\n");
-			System.exit(-2);
-		}
-		
-		// Step 5 : Find silver classes
+		// Step 5 : Find silver classes using custom classloader
 		
 		Method svmain;
 		Map<String, String> svutil;
@@ -116,15 +89,8 @@ public class Compile {
 			throw new RuntimeException("Couldn't start silver!", t);
 		}
 		
-		// Step 5.1: amend the environment. (we can't change the actual environment in java
-		// for some reason, so we depend on altering an environment map in the runtime library)
+		// Step 5.1: Amend environment so silver knows where it is located.
 		svutil.put("SILVER_HOME", installRoot.getPath());
-		svutil.put("SILVER_GEN", java_gen);
-		if(grammar_path == null || grammar_path.equals("")) {
-			svutil.put("GRAMMAR_PATH", gpLocation.getPath() + ":./");
-		} else {
-			svutil.put("GRAMMAR_PATH", grammar_path + ":" + gpLocation.getPath() + ":./");
-		}
 		
 		// Step 5.2: GO!
 		try {

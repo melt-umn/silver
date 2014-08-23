@@ -18,9 +18,10 @@ esac
 ME=$("$READLINK" -f "${BASH_SOURCE}")
 
 # The Silver Jar will expect this to be set:
-SILVER_HOME=${ME/support\/bin\/silver//}
+export SILVER_HOME=${ME/support\/bin\/silver//}
+SILVER="$SILVER_HOME/jars/RunSilver.jar"
 
-if [ ! -f "$SILVER_HOME/jars/RunSilver.jar" ]; then
+if [ ! -f "$SILVER" ]; then
   echo "Couldn't find the Silver jars to execute, aborting."
   exit 2
 fi
@@ -33,6 +34,6 @@ if [ -z "$SVJVM_FLAGS" ]; then
 fi
 
 
-java $SVJVM_FLAGS -jar "$SILVER_HOME/jars/RunSilver.jar" "$@" && ant
+java $SVJVM_FLAGS -jar "$SILVER" "$@" && ant
 
 
