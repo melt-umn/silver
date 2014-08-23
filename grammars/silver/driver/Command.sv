@@ -90,24 +90,25 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   --  Unless it's an OPTION, and it's commonly used, and it's obvious from context what it means
   -- e.g. -I my/grammars is obvious because it refers to a location to include.
 
-  flags <- [pair("-I",        option(includeFlag)),
-            pair("-o",        option(outFlag)),
-            pair("-G",        option(genFlag)),
-            pair("--silver-home", option(homeFlag)),
-            pair("--version", flag(versionFlag)),
-            pair("--clean",   flag(cleanFlag)),
-            pair("--dont-analyze", flag(nobindingFlag)),
-            pair("--warn-error", flag(warnErrorFlag))
-           ];
+  flags <-
+    [pair("-I",        option(includeFlag)),
+     pair("-o",        option(outFlag)),
+     pair("-G",        option(genFlag)),
+     pair("--silver-home", option(homeFlag)),
+     pair("--version", flag(versionFlag)),
+     pair("--clean",   flag(cleanFlag)),
+     pair("--dont-analyze", flag(nobindingFlag)),
+     pair("--warn-error", flag(warnErrorFlag))
+    ];
   -- Always start with \t, name options descriptively in <>, do not end with \n!
   flagdescs <- 
-          ["\t-I <path>  : path to grammars (GRAMMAR_PATH)",
-           "\t-o <file>  : name of binary file",
-           "\t--version  : display version",
-           "\t--clean  : overwrite interface files",
-           "\t-G <path>  : Location to store generate files (SILVER_GEN)",
-           "\t--warn-error  : treat warnings as errors"
-          ];
+    ["\t-I <path>  : path to grammars (GRAMMAR_PATH)",
+     "\t-o <file>  : name of binary file",
+     "\t--version  : display version",
+     "\t--clean  : overwrite interface files",
+     "\t-G <path>  : Location to store generate files (SILVER_GEN)",
+     "\t--warn-error  : treat warnings as errors"
+    ];
   
   local usage :: String = 
     "Usage: silver [options] grammar:to:build\n\nFlag options:\n" ++ implode("\n", sortBy(stringLte, flagdescs)) ++ "\n";
@@ -157,7 +158,7 @@ function checkEnvironment
 IOVal<[String]> ::= benv::BuildEnv ioin::IO
 {
   local isGenDir :: IOVal<Boolean> = isDirectory(benv.silverGen, ioin);
-  local isGramDir :: IOVal<Boolean> = isDirectory(benv.silverHome ++ "grammars/", isGenDir.io);
+  local isGramDir :: IOVal<Boolean> = isDirectory(benv.defaultGrammarPath, isGenDir.io);
 
   local errors :: [String] =
     if benv.silverHome == "/" -- because we called 'endWithSlash' on empty string
