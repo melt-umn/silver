@@ -11,6 +11,7 @@ import silver:util:cmdargs;
 
 synthesized attribute noJavaGeneration :: Boolean occurs on CmdArgs;
 synthesized attribute buildSingleJar :: Boolean occurs on CmdArgs;
+synthesized attribute relativeJar :: Boolean occurs on CmdArgs;
 synthesized attribute includeRTJars :: [String] occurs on CmdArgs;
 synthesized attribute buildXmlLocation :: [String] occurs on CmdArgs;
 
@@ -19,6 +20,7 @@ top::CmdArgs ::= _
 {
   top.noJavaGeneration = false;
   top.buildSingleJar = false;
+  top.relativeJar = false;
   top.includeRTJars = [];
   top.buildXmlLocation = [];
 }
@@ -32,6 +34,12 @@ abstract production onejarFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.buildSingleJar = true;
+  forwards to rest;
+}
+abstract production relativejarFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.relativeJar = true;
   forwards to rest;
 }
 abstract production includeRTJarFlag
@@ -52,10 +60,12 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--dont-translate", flag(xjFlag)),
             pair("--onejar", flag(onejarFlag)),
+            pair("--one-jar", flag(onejarFlag)),
+            pair("--relative-jar", flag(relativejarFlag)),
             pair("--XRTjar", option(includeRTJarFlag)),
             pair("--build-xml-location", option(buildXmlFlag))
            ];
-  flagdescs <- ["\t--onejar  : include runtime libraries in the jar"];
+  flagdescs <- ["\t--one-jar  : include runtime libraries in the jar"];
 }
 aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
@@ -143,8 +153,16 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "  <target name='jars' depends='" ++ implode(", ", extraJarsDeps) ++ "'>\n" ++
 -- Uncondintionally compute this, but it's included conditionally as a manifest attribute
 "    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath'>\n" ++
+(
+ if top.config.relativeJar then
+-- Removes all paths from the classpath. This means we expect to find all these
+-- jars in the same directory as this jar.
+"      <flattenmapper />\n"
+ else
 -- Escape spaces as url-encoded spaces. maybe there's a better way?
-"      <filtermapper><replacestring from=' ' to='%20' /></filtermapper>\n" ++
+-- This solves the problem of spaces in paths, where Class-Path in manifests are split on spaces.
+"      <filtermapper><replacestring from=' ' to='%20' /></filtermapper>\n"
+) ++
 "    </pathconvert>\n" ++
 "    <jar destfile='" ++ outputFile ++ "' basedir='${bin}'>\n" ++
     implode("", map(includeName(_, "*.class"), grammarsDependedUpon)) ++ 
