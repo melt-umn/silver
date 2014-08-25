@@ -15,7 +15,7 @@ fi
 # Modifications may have been made to how the translation is done
 
 echo "One full cycle ..."
-time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --clean silver:composed:Default || exit
+time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default || exit
 ant || exit
 mv silver.composed.Default.jar ../jars/ || exit
 
@@ -29,7 +29,7 @@ fi
 echo "Before we start, let's get this thing built ..."
 java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --clean lib:xml:ast || exit
 echo "Start ..."
-time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --clean silver:composed:Default || exit
+time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default || exit
 
 # Modifications may have been made to the runtime
 
@@ -46,7 +46,7 @@ mv silver.composed.Default.jar ../jars/ || exit
 # Finally, we should have a fully working binary on all the new code. Run it again to reach a fixed point:
 
 echo "One more full cycle ..."
-time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --clean silver:composed:Default || exit
+time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default || exit
 ant || exit
 mv silver.composed.Default.jar ../jars/ || exit
 
