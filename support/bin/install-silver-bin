@@ -30,6 +30,7 @@ case `uname` in
   if [ ! -f `which greadlink` ]; then
     echo "Missing greadlink. Please install coreutils:"
     echo -e "\tbrew install coreutils"
+    exit 4
   fi
   ;;
 *)
