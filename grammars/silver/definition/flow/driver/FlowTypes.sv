@@ -200,7 +200,7 @@ top::FlowVertex ::= sigName::String  attrName::String
 aspect production localEqVertex
 top::FlowVertex ::= fName::String
 {
-  top.flowTypeName = fName; -- secretly only ever "forward"
+  top.flowTypeName = fName; -- secretly only ever "forward" when we actually demand flowTypeName
 }
 aspect production localVertex
 top::FlowVertex ::= fName::String  attrName::String

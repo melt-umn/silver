@@ -240,7 +240,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.flowDefs = e.flowDefs ++ inh.flowDefs ++
     [anonEq(top.signature.fullName, inh.decorationVertex, performSubstitution(e.typerep, top.finalSubst).typeName, top.location, e.flowDeps)];
 
-  -- Now, we represent ourselves to anoything that might use us specially
+  -- Now, we represent ourselves to anything that might use us specially
   -- as though we were a reference to this anonymous local
   top.flowVertexInfo = hasVertex(anonVertexType(inh.decorationVertex));
 
