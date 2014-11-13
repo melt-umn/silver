@@ -246,6 +246,9 @@ top::FlowDef ::= prod::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
 
 {--
  - Attributes that are non-suspect.
+ - TODO: presently, these are all knowns syns where the prod is declared.
+ -       should probably be all syns that are not subject to fwd superset rule, right?
+ -       that's different. (i.e. syns exported by nonterminal grammar)
  -}
 abstract production implicitFwdAffects
 top::FlowDef ::= prod::String  attrs::[String]

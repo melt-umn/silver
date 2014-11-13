@@ -39,7 +39,7 @@ synthesized attribute flowTypeVertexes::[FlowVertex];
  -
  - @param prod  The full name of this production
  - @param lhsNt  The full name of the nonterminal this production constructs
- - @param flowTypeVertexes  The vertexes that we track the flow types of
+ - @param flowTypeVertexes  The vertexes that we track the flow types of. (Syns and optionally fwd)
  - @param graph  The edges within this production
  - @param suspectEdges  Edges that are not permitted to affect their OWN flow types (but perhaps some unknown other flowtypes)
  - @param stitchPoints  Places where current flow types need grafting to this graph to yield a full flow graph
