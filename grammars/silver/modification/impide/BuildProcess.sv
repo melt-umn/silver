@@ -289,10 +289,6 @@ String ::=
     return
     "\n" ++
 
-    "  <condition property=\"is-all-in-one\">\n"++
-    "    <not><equals arg1=\"${multiple-plugins}\" arg2=\"true\"/></not>\n"++	--"all-in-one" mode is default
-    "  </condition>\n"++
-    "  \n"++
     "  <condition property=\"to-customize\">\n"++
     "    <available file=\"${grammar.path}/plugin\" type=\"dir\"/>\n"++
     "  </condition>\n"++
@@ -397,7 +393,7 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "  <!-- 5. plugin dependencies -->\n" ++
     "  <!-- (1) language implementation -->\n" ++
     "  <copy file=\"${lang.composed}.jar\" tofile=\"${ide.proj.plugin.path}/${lang.composed}.jar\"/>\n" ++
-    "  <!-- (2) runtimes; copied only in all-in-one mode -->\n" ++
+    "  <!-- (2) runtimes -->\n" ++
     "  <antcall target=\"copy plugin dependencies\"/>\n"++
     "  \n" ++
 
@@ -639,52 +635,35 @@ return
 "</target>\n"++
 
 "<!-- Supporting targets based on the build mode -->\n" ++
-"<target name=\"create build.properties\" unless=\"is-all-in-one\" depends=\"filters\">\n"++
+"<target name=\"create build.properties\" depends=\"filters\">\n"++
 "  <copy file=\"${res}/build.properties.template\" tofile=\"${ide.proj.plugin.path}/build.properties\" filtering=\"true\"/>\n"++
 "</target>\n"++
-"<target name=\"create build.properties (all-on-one)\" if=\"is-all-in-one\" depends=\"filters\">\n"++
-"  <copy file=\"${res}/build.properties.template.all_in_one\" tofile=\"${ide.proj.plugin.path}/build.properties\" filtering=\"true\"/>\n"++
-"</target>\n"++
 "\n"++
 
-"<target name=\"create manifest file\" unless=\"is-all-in-one\" depends=\"filters\">\n"++	
+"</target>\n"++
+"<target name=\"create manifest file\" depends=\"filters\">\n"++	
 "  <copy file=\"${res}/META-INF/MANIFEST.MF.template\" tofile=\"${ide.proj.plugin.path}/META-INF/MANIFEST.MF\" filtering=\"true\"/>\n"++
 "</target>\n"++
-"<target name=\"create manifest file (all-on-one)\" if=\"is-all-in-one\" depends=\"filters\">\n"++	
-"  <copy file=\"${res}/META-INF/MANIFEST.MF.template.all_in_one\" tofile=\"${ide.proj.plugin.path}/META-INF/MANIFEST.MF\" filtering=\"true\"/>\n"++
-"</target>\n"++
 "\n"++
 
-"<target name=\"set classpaths for Eclipse\" unless=\"is-all-in-one\" depends=\"filters\">\n"++	
+"<target name=\"set classpaths for Eclipse\" depends=\"filters\">\n"++	
 "  <copy file=\"${res}/classpath.template\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n"++
 "</target>\n"++
-"<target name=\"set classpaths for Eclipse (all-on-one)\" if=\"is-all-in-one\" depends=\"filters\">\n"++	
-"  <copy file=\"${res}/classpath.template.all_in_one\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n"++
-"</target>\n"++
 "\n"++
 
-"<target name=\"create parser controller\" unless=\"is-all-in-one\" depends=\"filters\">\n"++	
+"<target name=\"create parser controller\" depends=\"filters\">\n"++	
 "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/controller/parseController.java.template\"\n" ++
 "      tofile=\"${ide.pkg.path}/imp/controller/${lang.name}ParseController.java\" filtering=\"true\"/>\n" ++
 "</target>\n"++
-"<target name=\"create parser controller (all-on-one)\" if=\"is-all-in-one\" depends=\"filters\">\n"++	
-"  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/controller/parseController.java.template.all_in_one\"\n" ++
-"      tofile=\"${ide.pkg.path}/imp/controller/${lang.name}ParseController.java\" filtering=\"true\"/>\n" ++
-"</target>\n"++
 "\n"++
 
-"<target name=\"create Eclipse feature\" unless=\"is-all-in-one\" depends=\"filters\">\n"++	
+"<target name=\"create Eclipse feature\" depends=\"filters\">\n"++	
 "  <copy file=\"${res}/pom_templates/feature_templates/feature.xml.template\"\n" ++
 "      tofile=\"${ide.proj.feature.path}/feature.xml\" filtering=\"true\"/>\n" ++
 "</target>\n"++
-"<target name=\"create Eclipse feature (all-on-one)\" if=\"is-all-in-one\" depends=\"filters\">\n"++	
-"  <copy file=\"${res}/pom_templates/feature_templates/feature.xml.template.all_in_one\"\n" ++
-"      tofile=\"${ide.proj.feature.path}/feature.xml\" filtering=\"true\"/>\n" ++
-"</target>\n"++
 "\n"++
 
--- these dependencies are copied to plugin folder only if it's all-in-one mode.
-"<target name=\"copy plugin dependencies\" if=\"is-all-in-one\">\n"++	
+"<target name=\"copy plugin dependencies\">\n"++	
 "  <copy file=\"${sh}/jars/CopperRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.copper.jar\"/>\n"++
 "  <copy file=\"${sh}/jars/SilverRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.silver.jar\"/>\n"++
 "  <copy file=\"${sh}/jars/IDEPluginRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.ide.copper-${ide.rt.version}.jar\"/>\n"++

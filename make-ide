@@ -4,18 +4,16 @@
 export SILVER_HOME=`pwd`
 echo $SILVER_HOME
 
-# Get the current version of Silver
-./update
+# No no, the user should do this.
+#./update
 
 # Rebuild the IDE-specific jars
-cd runtime/imp
-./build.sh
+(cd runtime/imp; ./build.sh)
 
 # Create plug-in sources and .class files.
 # this creates a silver.composed.idetest.jar that is not used, but
 # this does create stuff in the generated directory that is used in
 # the next step
-cd ../../
 ./self-compile-ide
 
 # Create the Eclipse repository.  
@@ -24,13 +22,13 @@ cd ../../
 cd generated/ide/silver.composed.idetest
 mvn package
 
+TARGET=`pwd`/updatesite/target/repository
 
-echo "..."
 echo "..."
 echo "..."
 echo "..."
 echo "Be sure to increment IDE version number in silver:composed:idetest:Main.sv"
 echo "..."
 echo "..."
-echo "..."
+echo "Reminder: add $TARGET as path to find update site in eclipse, if using directly"
 echo "..."

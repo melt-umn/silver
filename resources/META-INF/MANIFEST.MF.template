@@ -5,19 +5,20 @@ Bundle-SymbolicName: @LANG_NAME@_IDE;singleton:=true
 Bundle-Version: @IDE_VERSION@.@IDE_BUILD_TIMESTAMP@
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: .,
- @LANG_COMPOSED@.jar
+ @LANG_COMPOSED@.jar,
+ edu.umn.cs.melt.copper.jar,
+ edu.umn.cs.melt.ide.copper-@IDE_RT_VERSION@.jar,
+ edu.umn.cs.melt.silver.jar
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources,
  org.eclipse.imp.runtime,
  org.eclipse.ui,
  org.eclipse.jface.text,
  org.eclipse.jdt.core,
- edu.umn.cs.melt.copper;bundle-version="1.0.0",
- edu.umn.cs.melt.ide.copper;bundle-version="@IDE_RT_VERSION@",
- edu.umn.cs.melt.silver;bundle-version="1.0.0",
  org.eclipse.ui.editors,
  org.eclipse.ui.workbench.texteditor,
  org.eclipse.ui.console,
- org.eclipse.ui.ide
+ org.eclipse.ui.ide,
+ org.eclipse.ant.core
 Bundle-Activator: @PKG_NAME@.imp.@LANG_NAME@Plugin
 Eclipse-LazyStart: true
