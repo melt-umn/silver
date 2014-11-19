@@ -1,7 +1,6 @@
 /*
  * Variables used:
  *   PKG_NAME
- *   LANG_NAME
  */
 package @PKG_NAME@.imp.builders;
 

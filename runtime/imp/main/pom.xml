@@ -41,22 +41,75 @@
           <resolver>p2</resolver>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-compiler-plugin</artifactId>
+        <version>${tycho-version}</version>
+        <configuration>
+          <encoding>UTF-8</encoding>
+          <!-- see long comment below! -->
+          <extraClasspathElements>
+            <extraClasspathElement>
+              <groupId>edu.umn.cs.melt</groupId>
+              <artifactId>hack_for_generated_core_grammar</artifactId>
+              <version>1.0.0</version>
+              <scope>system</scope>
+              <systemPath>${basedir}/../../../jars/silver.composed.Default.jar</systemPath>
+            </extraClasspathElement>
+            <extraClasspathElement>
+              <groupId>edu.umn.cs.melt</groupId>
+              <artifactId>silver</artifactId>
+              <version>1.0.0</version>
+              <scope>system</scope>
+              <systemPath>${basedir}/../../../jars/SilverRuntime.jar</systemPath>
+            </extraClasspathElement>
+            <extraClasspathElement>
+              <groupId>edu.umn.cs.melt</groupId>
+              <artifactId>copper</artifactId>
+              <version>1.0.0</version>
+              <scope>system</scope>
+              <systemPath>${basedir}/../../../jars/CopperRuntime.jar</systemPath>
+            </extraClasspathElement>
+          </extraClasspathElements>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   
-  <dependencies>
-    <dependency>
-      <groupId>edu.umn.cs.melt</groupId>
-      <artifactId>edu.umn.cs.melt.silver</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-    <dependency>
-      <groupId>edu.umn.cs.melt</groupId>
-      <artifactId>edu.umn.cs.melt.copper</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-  </dependencies>
-
+  <!--
+    Okay. So. Here's a long story about dependencies and why we do the above hack
+    with extraClasspathElements.
+    
+    First: dependency resolution. Maven has its own system with <dependency>
+    blocks in the pom.xml (here). But Tycho has its own system using the 
+    OSGi bundle Require-Bundle field in MANIFEST.MF files. Tycho will normally
+    *ignore* any maven dependencies.
+    
+    Except that above we said <pomDependencies>consider</pomDependencies>.
+    This has the behavior of looking at <dependency>s listed here, but *only*
+    if they are proper OSGi bundles. I think. So if you listed a package installed
+    to the local maven repo (~/.m2) and it's an OSGi bundle, and it's required
+    by the manifest, then it'll be used.
+    
+    However, our build system is messed up because we have dependencies on
+    things in 'core' which we *cannot name* because it'll be in whatever
+    silver grammar jar the user builds. and our runtime is just called 'common',
+    which is a problem too, since it doesn't quite meet maven/etc build style
+    of vendorId/package.
+    
+    So, we use Tycho because we need to depend on OSGi packages for eclipse.
+    But we directly inject custom classpath entires for SilverRuntime,
+    CopperRuntime, and as a hack just use the silver compiler to see core
+    in the classpath at compile time.
+    
+    We won't be using this package as an OSGI bundle anyway. Instead,
+    it'll just be an ordinary jar embedded within the real OSGI bundle: the
+    generated plugin. So we're a-okay. The classloader can find core at runtime
+    because it's right next to this jar and both jars are in the PLUGIN
+    bundle's local classpath.
+    
+    Ugh.
+  -->
   <repositories>
     <repository>
       <id>helios</id>
