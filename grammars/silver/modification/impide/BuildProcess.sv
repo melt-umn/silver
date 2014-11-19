@@ -548,15 +548,6 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "        tofile=\"${ide.pkg.path}/eclipse/console/${lang.name}Console.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
-    "  <!-- 9. IDE runtime/Silver Eclipse API supports -->\n" ++
-    "  <mkdir dir='${ide.pkg.path}/silver/cst'/>\n" ++
-    "  <!-- CST traversal service -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/silver/cst/DefinitionFinder.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/silver/cst/DefinitionFinder.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/silver/cst/NonTerminalFinder.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/silver/cst/NonTerminalFinder.java\" filtering=\"true\"/>\n" ++
-    "  \n" ++
-
     "  <!-- 10. Images and other media resources -->\n" ++
     "  <mkdir dir='${ide.proj.plugin.path}/icons'/>\n" ++
     "  <copy todir=\"${ide.proj.plugin.path}/icons/\">\n" ++

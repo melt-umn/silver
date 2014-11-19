@@ -12,9 +12,9 @@
   <name>Runtime and dependencies for Silver-based IDE</name>
 
   <modules>
-    <module>./edu.umn.cs.melt.copper</module>
-    <module>./edu.umn.cs.melt.silver</module>
-    <module>./main</module>
+    <module>edu.umn.cs.melt.copper</module>
+    <module>edu.umn.cs.melt.silver</module>
+    <module>main</module>
   </modules>
 
 </project>

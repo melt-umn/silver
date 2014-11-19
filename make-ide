@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -e
 
 export SILVER_HOME=`pwd`
 echo $SILVER_HOME
@@ -7,7 +8,7 @@ echo $SILVER_HOME
 # No no, the user should do this.
 #./update
 
-# Rebuild the IDE-specific jars
+# Rebuild the IDE-specific runtime jars
 (cd runtime/imp; ./build.sh)
 
 # Create plug-in sources and .class files.

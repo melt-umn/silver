@@ -1,15 +1,10 @@
-/*
- * Variables used:
- *   PKG_NAME
- */
-package @PKG_NAME@.silver.cst;
+package edu.umn.cs.melt.ide.util.cst;
 
 import common.DecoratedNode;
 import common.Node;
 import common.TerminalRecord;
 
 import core.NLocation;
-import edu.umn.cs.melt.ide.util.cst.CSTNodeFinder;
 
 public class NonTerminalFinder extends CSTNodeFinder {
 

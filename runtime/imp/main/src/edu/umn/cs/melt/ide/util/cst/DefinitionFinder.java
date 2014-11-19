@@ -1,11 +1,4 @@
-/*
- * Variables used:
- *   PKG_NAME
- */
-package @PKG_NAME@.silver.cst;
-
-import edu.umn.cs.melt.ide.util.cst.CSTVisitingService;
-import edu.umn.cs.melt.ide.util.cst.INodeFinder;
+package edu.umn.cs.melt.ide.util.cst;
 
 public class DefinitionFinder implements INodeFinder {
 
