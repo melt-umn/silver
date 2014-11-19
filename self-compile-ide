@@ -10,7 +10,8 @@ if [ -z "$SVJVM_FLAGS" ]; then
   SVJVM_FLAGS="-Xmx1800M -Xss6M"
 fi
 
-time java $SVJVM_FLAGS -jar ../jars/RunSilver.jar $@ silver:composed:idetest && ant
+# must always be a clean build -- ide modification is slightly broken still
+time java $SVJVM_FLAGS -jar ../jars/RunSilver.jar --clean $@ silver:composed:idetest && ant
 
 echo -e "\a"
 

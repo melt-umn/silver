@@ -381,7 +381,6 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     -- commented out to support different build modes
     -- "<copy file=\"${res}/build.properties.template\" tofile=\"${ide.proj.plugin.path}/build.properties\" filtering=\"true\"/>\n" ++
     "  <antcall target=\"create build.properties\" inheritAll=\"true\"/>\n" ++
-    "  <antcall target=\"create build.properties (all-on-one)\" inheritAll=\"true\"/>\n" ++
     "\n" ++
 
     "  <!-- 4. plugin.xml -->\n" ++
@@ -402,7 +401,6 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     -- commented out to support different build modes
     -- "<copy file=\"${res}/META-INF/MANIFEST.MF.template\" tofile=\"${ide.proj.plugin.path}/META-INF/MANIFEST.MF\" filtering=\"true\"/>\n" ++
     "  <antcall target=\"create manifest file\" inheritAll=\"true\"/>\n" ++
-    "  <antcall target=\"create manifest file (all-on-one)\" inheritAll=\"true\"/>\n" ++
     "  \n" ++
 
     "  <!-- 7. customized IDE parser -->\n" ++
@@ -414,7 +412,6 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     --"<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/controller/parseController.java.template\"\n" ++
     --"      tofile=\"${ide.pkg.path}/imp/controller/${lang.name}ParseController.java\" filtering=\"true\"/>\n" ++
     "  <antcall target=\"create parser controller\" inheritAll=\"true\"/>\n" ++
-    "  <antcall target=\"create parser controller (all-on-one)\" inheritAll=\"true\"/>\n" ++
     "  \n" ++
 
     "  <!-- 8. core plug-in classes -->\n" ++
@@ -580,7 +577,6 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     -- commented out to support different build modes
     -- "<copy file=\"${res}/pom_templates/feature_templates/feature.xml.template\" tofile=\"${ide.proj.feature.path}/feature.xml\" filtering=\"true\"/>\n" ++
     "  <antcall target=\"create Eclipse feature\" inheritAll=\"true\"/>\n" ++
-    "  <antcall target=\"create Eclipse feature (all-on-one)\" inheritAll=\"true\"/>\n" ++
     "  <copy file=\"${res}/pom_templates/feature_templates/pom.xml.template\" tofile=\"${ide.proj.feature.path}/pom.xml\" filtering=\"true\"/>\n" ++
     "  <!-- update site (repository) -->\n" ++
     "  <copy file=\"${res}/pom_templates/updatesite_templates/category.xml.template\" tofile=\"${ide.proj.updatesite.path}/category.xml\" filtering=\"true\"/>\n" ++
@@ -593,7 +589,6 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     -- commented out to support different build modes
     -- "<copy file=\"${res}/classpath.template\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n" ++
     "  <antcall target=\"set classpaths for Eclipse\" inheritAll=\"true\"/>\n" ++
-    "  <antcall target=\"set classpaths for Eclipse (all-on-one)\" inheritAll=\"true\"/>\n" ++
 
     "  \n"
   ;
@@ -640,7 +635,6 @@ return
 "</target>\n"++
 "\n"++
 
-"</target>\n"++
 "<target name=\"create manifest file\" depends=\"filters\">\n"++	
 "  <copy file=\"${res}/META-INF/MANIFEST.MF.template\" tofile=\"${ide.proj.plugin.path}/META-INF/MANIFEST.MF\" filtering=\"true\"/>\n"++
 "</target>\n"++
