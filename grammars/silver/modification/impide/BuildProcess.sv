@@ -404,9 +404,6 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "  \n" ++
 
     "  <!-- 7. customized IDE parser -->\n" ++
-    "  <mkdir dir='${ide.pkg.path}/copper/engine/'/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/copper/engine/EnhancedSilverParser.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/copper/engine/EnhancedSilverParser.java\" filtering=\"true\"/>\n" ++
     "  <mkdir dir='${ide.pkg.path}/imp/controller'/>\n" ++
     -- commented out to support different build modes
     --"<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/controller/parseController.java.template\"\n" ++
