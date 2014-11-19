@@ -2,6 +2,7 @@
  * PKG_NAME
  * START_NONTERMINAL_CLASS
  * LANG_NAME
+ * PARSER_NAME
  */
 package @PKG_NAME@.imp.controller;
 
@@ -21,13 +22,13 @@ import org.eclipse.imp.services.IAnnotationTypeInfo;
 import org.eclipse.imp.services.ILanguageSyntaxProperties;
 
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
+import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
 import edu.umn.cs.melt.ide.copper.AdaptiveEnhancedParseTreeInnerNode;
-import edu.umn.cs.melt.ide.copper.EnhancedCopperParserException;
 import edu.umn.cs.melt.ide.copper.IEnhancedParseTreeNode;
 import edu.umn.cs.melt.ide.copper.IToken;
 import edu.umn.cs.melt.ide.copper.SourcePositionLocator;
 
-import @PKG_NAME@.copper.engine.EnhancedSilverParser;
+import @PKG_NAME@.copper.parser.@PARSER_NAME@;
 import @PKG_NAME@.imp.@LANG_NAME@Plugin;
 import @PKG_NAME@.@LANG_NAME@Initializer;
 
@@ -44,7 +45,7 @@ public class @LANG_NAME@ParseController extends ParseControllerBase {
 	private static DateFormat DATE_FORMAT = new SimpleDateFormat();
 	
 	/** Construct an instance of the parser. */
-	private EnhancedSilverParser parser = new EnhancedSilverParser();
+	private @PARSER_NAME@ parser = new @PARSER_NAME@();
 
 	private final SimpleAnnotationTypeInfo fSimpleAnnotationTypeInfo
 		= new SimpleAnnotationTypeInfo();
@@ -89,18 +90,17 @@ public class @LANG_NAME@ParseController extends ParseControllerBase {
 			Reader reader = new StringReader(input);
 			result = parser.parse(reader, getPath().toFile().getName());
 		    parsed = (result==null)?false:true;
-		} catch (EnhancedCopperParserException e) {
-			//System.err.println("ERROR EnhancedCopperParserException");
-			//System.err.println(e);
+		} catch (CopperSyntaxError e) {
+			// We have a point, not an extent, so repeat start/end positions.
 			handler.handleSimpleMessage(
-				e.getMessage(), (int)e.getOffset(), (int)e.getOffset(), e.getColumn(), e.getColumn(), e.getLine(), e.getLine());
+				e.getMessage(), (int)e.getRealCharIndex(), (int)e.getRealCharIndex(),
+				e.getVirtualColumn(), e.getVirtualColumn(),
+				e.getVirtualLine(), e.getVirtualLine());
 		} catch (CopperParserException e) {
-			//System.err.println("ERROR CopperParserException");
-			//e.printStackTrace();
-			handler.handleSimpleMessage(//TODO: S-R error
-				e.getMessage(), 0, 0, 0, 0, 1, 1);
+			// Not sure how else to error here?
+			handler.handleSimpleMessage(e.getMessage(), 0, 0, 0, 0, 1, 1);
 		} catch (IOException e) {
-			//System.err.println("ERROR IOException");
+			// TODO: this is a bit stupid
 			e.printStackTrace();
 		}
 		
