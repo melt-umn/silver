@@ -23,6 +23,7 @@ import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 import edu.umn.cs.melt.ide.silver.property.Property;
 import edu.umn.cs.melt.ide.silver.env.SilverEnv;
 import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
+import edu.umn.cs.melt.ide.imp.builders.PostActionHandler;
 
 /**
  * A helper class used to invoke the method build(NIdeProperty[]) in the language 

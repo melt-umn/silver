@@ -1,8 +1,4 @@
-/*
- * Variables used:
- *   PKG_NAME
- */
-package @PKG_NAME@.imp.builders;
+package edu.umn.cs.melt.ide.imp.builders;
 
 import java.util.List;
 import ide.NIdeMessage;

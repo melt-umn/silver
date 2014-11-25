@@ -22,6 +22,7 @@ import @PKG_NAME@.@LANG_NAME@Service;
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 import edu.umn.cs.melt.ide.silver.property.Property;
 import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
+import edu.umn.cs.melt.ide.imp.builders.PostActionHandler;
 
 /**
  * A helper class used to invoke the method postbuild(NIdeProperty[]) in the language 
