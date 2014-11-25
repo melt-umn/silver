@@ -1,6 +1,7 @@
 /*
  * Variables used:
  *   PKG_NAME
+ * and ref to generated MultiTabPropertyPage
  */
 package @PKG_NAME@.eclipse.property;
 

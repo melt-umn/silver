@@ -23,7 +23,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.osgi.service.datalocation.Location;
 
-import @PKG_NAME@.eclipse.resource.LinkedResourceTracker;
+import edu.umn.cs.melt.ide.eclipse.resource.LinkedResourceTracker;
 import @PKG_NAME@.imp.builders.@LANG_NAME@Builder;
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 import edu.umn.cs.melt.ide.silver.property.Property;

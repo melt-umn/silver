@@ -31,7 +31,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 import @PKG_NAME@.@LANG_NAME@Service;
-import @PKG_NAME@.eclipse.resource.LinkedResourceTracker;
+import edu.umn.cs.melt.ide.eclipse.resource.LinkedResourceTracker;
 
 /**
  * This wizard is used to link a source folder to current project.

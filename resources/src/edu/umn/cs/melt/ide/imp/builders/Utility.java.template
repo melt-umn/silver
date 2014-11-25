@@ -17,7 +17,7 @@ import ide.NIdeMessage;
 import edu.umn.cs.melt.ide.silver.misc.Problem;
 
 import @PKG_NAME@.@LANG_NAME@Service;
-import @PKG_NAME@.eclipse.resource.LinkedResourceTracker;
+import edu.umn.cs.melt.ide.eclipse.resource.LinkedResourceTracker;
 
 public class Utility {
 
