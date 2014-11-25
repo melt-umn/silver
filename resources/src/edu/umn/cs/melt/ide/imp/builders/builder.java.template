@@ -43,6 +43,7 @@ import @PKG_NAME@.imp.controller.@LANG_NAME@ParseController;
 
 import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
 import edu.umn.cs.melt.ide.silver.misc.Problem;
+import edu.umn.cs.melt.ide.imp.builders.PostActionHandler;
 
 import ide.NIdeMessage;
 
