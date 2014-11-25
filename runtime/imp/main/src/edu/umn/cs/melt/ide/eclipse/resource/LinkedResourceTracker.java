@@ -1,8 +1,4 @@
-/*
- * Variables used:
- *   PKG_NAME
- */
-package @PKG_NAME@.eclipse.resource;
+package edu.umn.cs.melt.ide.eclipse.resource;
 
 import java.util.ArrayList;
 import java.util.HashMap;
