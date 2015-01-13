@@ -74,15 +74,7 @@ public class Builder extends IncrementalProjectBuilder {
 		// TODO: we should preserve existing markers that haven't changed as much as possible. oh well.
 		project.deleteMarkers(sv.markerErrorName(), true, IResource.DEPTH_INFINITE);
 		
-		boolean stopBuild = false;
-		for(NIdeMessage msg : new ConsCellCollection<NIdeMessage>(errors)) {
-			// it seems we do not need to worry about batching changes, as a builder gets called
-			// with AVOID_UPDATE. apparently. I'm guessing. from the fact that markers don't appear
-			// until this function returns.
-			Problem p = Problem.extractProblem(project, msg);
-			p.createMarker(project, sv.markerErrorName());
-			stopBuild = stopBuild || p.buildBlocker();
-		}
+		boolean stopBuild = renderMessages(errors, project, sv); 
 		
 		if(stopBuild)
 			return new IProject[0];
@@ -109,16 +101,17 @@ public class Builder extends IncrementalProjectBuilder {
 					
 					final ConsCell post_errors = (ConsCell)post_result.synthesized(core.Init.core_iovalue__ON__core_IOVal);
 	
-					for(NIdeMessage msg : new ConsCellCollection<NIdeMessage>(post_errors)) {
-						Problem p = Problem.extractProblem(project, msg);
-						try {
-							// TODO: it's now possible that we do need to batch these marker creations?
-							// otoh, this should be used very rarely: normal errors are already created
-							// this is just special post build failures only.
-							p.createMarker(project, sv.markerErrorName());
-						} catch (CoreException e) {
-							// TODO: who knows.
-						}
+					// TODO: it's now possible that we do need to batch these marker creations?
+					// because we're outside the (probable?) AVOID_UPDATE of the build function.
+					// (in this separate thread)
+					
+					// otoh, this should be used very rarely: normal errors are already created
+					// this is just special post build failures only.
+					try {
+						renderMessages(post_errors, project, sv);
+					} catch (CoreException e) {
+						// TODO: who knows.
+						e.printStackTrace();
 					}
 				}
 			}
@@ -131,7 +124,20 @@ public class Builder extends IncrementalProjectBuilder {
 		return new IProject[0];
 	}
 
-	private static NIdeEnv computeIdeEnv(IProject fProject) {
+	public static boolean renderMessages(ConsCell errors, IProject project, SVInterface sv) throws CoreException {
+		boolean stopBuild = false;
+		for(NIdeMessage msg : new ConsCellCollection<NIdeMessage>(errors)) {
+			// it seems we do not need to worry about batching changes, as a builder gets called
+			// with AVOID_UPDATE. apparently. I'm guessing. from the fact that markers don't appear
+			// until this function returns.
+			Problem p = Problem.extractProblem(project, msg);
+			p.createMarker(project, sv.markerErrorName());
+			stopBuild = stopBuild || p.buildBlocker();
+		}
+		return stopBuild;
+	}
+	
+	public static NIdeEnv computeIdeEnv(IProject fProject) {
 		IPath path = fProject.getLocation();
 		
 		String projectPath = path.toOSString();

@@ -24,7 +24,6 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.osgi.service.datalocation.Location;
 
 import edu.umn.cs.melt.ide.eclipse.resource.LinkedResourceTracker;
-import @PKG_NAME@.imp.builders.@LANG_NAME@Builder;
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 import edu.umn.cs.melt.ide.silver.property.Property;
 
@@ -136,7 +135,7 @@ public class @LANG_NAME@Service {
 		IPath path = fProject.getLocation();
 		
 		String projectPath = path.toOSString();
-		String generatedPath = path.toOSString() + "/" + @LANG_NAME@Builder.GEN_FOLDER;
+		String generatedPath = path.toOSString() + "/bin"; // whatever, this class is going away before too long (also: not used anymore?)
 		String platformPath = null;
 		
 		try {
