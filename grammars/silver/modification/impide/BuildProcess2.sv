@@ -4,58 +4,38 @@ import silver:driver;
 import silver:translation:java;
 import silver:util:cmdargs;
 
-aspect production compilation
-top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
-{
-  -- The RootSpec representing the grammar actually being built (specified on the command line)
-  production builtGrammar :: [Decorated RootSpec] = searchEnvTree(buildGrammar, g.compiledGrammars);
-  
-  -- Empty if no ide decl in that grammar, otherwise has at least one spec... note that
-  -- we're going to go with assuming there's just one IDE declaration...
-  production isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
-
-  local startNTClassName::String = makeNTClassName(head(allParsers).startNT);
-
-  -- pkgName is derived in the aspect defined in ./BuildProcess.sv
-  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, allParsers, benv.silverGen, ide, pkgName, startNTClassName)];
-
-  extraTopLevelDecls <- if !isIde then [] else [
-    "<property name='start.nonterminal.class' value='" ++ startNTClassName ++ "'/>"]; 
-  -- FIXME? we now only track the first parser.
-}
-
 -- generate Copper Spec and other template files for IDE plugin
 abstract production generateNCS
 top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::String ide::IdeSpec pkgName::String startNTClassName::String
 {
-  local attribute io00::IO;
-  io00 = print("[IDE plugin] Generating class templates.\n", top.ioIn);
+  local io00::IO =
+    print("[IDE plugin] Generating class templates.\n", top.ioIn);
 
-  local attribute io01::IO;
-  io01 = writeFile(getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template", getPropertyProvider(ide.propDcls, "property"),
+  local io01::IO =
+    writeFile(getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template", getPropertyProvider(ide.propDcls, "property"),
 		mkdir(getIDETempFolder() ++ "eclipse/property", io00).io);
 
-  local attribute io02::IO;
-  io02 = writeFile(getIDETempFolder() ++ "eclipse/wizard/newproject/PropertyGenerator.java.template", getPropertyGenerator(ide.propDcls, "newproject"),
+  local io02::IO =
+    writeFile(getIDETempFolder() ++ "eclipse/wizard/newproject/PropertyGenerator.java.template", getPropertyGenerator(ide.propDcls, "newproject"),
 		mkdir(getIDETempFolder() ++ "eclipse/wizard/newproject", io01).io);
 
-  local attribute io03::IO;
-  io03 = writeFile(getIDETempFolder() ++ "eclipse/property/MultiTabPropertyPage.java.template", getMultiTabPropertyPage(ide.pluginConfig),
+  local io03::IO =
+    writeFile(getIDETempFolder() ++ "eclipse/property/MultiTabPropertyPage.java.template", getMultiTabPropertyPage(ide.pluginConfig),
 		io02);
 
-  local attribute io04::IO;
-  io04 = createWizardFiles(ide.wizards, io03);
+  local io04::IO = createWizardFiles(ide.wizards, io03);
 
-  local attribute io10::IO;
-  io10 = print("[IDE plugin] Generating parsers.\n", io04);
+  local io10::IO = print("[IDE plugin] Generating parsers.\n", io04);
   
-  local attribute io30::IO;
-  io30 = writeNCSSpec(io10, grams, silvergen ++ "src/", specs, pkgName, startNTClassName);
+  local io30::IO = writeNCSSpec(io10, grams, silvergen ++ "src/", specs, pkgName, startNTClassName);
 
-  local attribute io40::IO;
-  io40 = print("[IDE plugin] Generating plugin.xml template.\n", io30);
+  local io40::IO = print("[IDE plugin] Generating plugin.xml template.\n", io30);
 
-  top.io = writeFile(getIDETempFolder() ++ "plugin.xml.template", makePlugin(ide.pluginConfig).xmlOutput, io40);
+  local io50::IO = writeFile(getIDETempFolder() ++ "plugin.xml.template", makePlugin(ide.pluginConfig).xmlOutput, io40);
+  
+  local io60::IO = writeFile(getIDETempFolder() ++ "SVIdeInterface.java.template", ide.svIdeInterface, io50);
+
+  top.io = io60;
 
   top.code = 0;
   top.order = 7;

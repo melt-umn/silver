@@ -23,6 +23,7 @@ public class StartupHook implements IStartup {
 	public void earlyStartup() {
         //Initialize execution environment for @LANG_NAME@ 
 		@LANG_NAME@Initializer.initialize();
+		edu.umn.cs.melt.ide.impl.SVRegistry.register(new @PKG_NAME@.SVIdeInterface());
 
         //Set up console logger
         Util.setConsoleLoggingStream(@LANG_NAME@Console.getConsoleLoggingStream());

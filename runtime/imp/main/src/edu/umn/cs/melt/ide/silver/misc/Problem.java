@@ -1,8 +1,18 @@
 package edu.umn.cs.melt.ide.silver.misc;
 
+import ide.NIdeMessage;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.CoreException;
+
+import common.DecoratedNode;
+import common.Lazy;
+import common.StringCatter;
+import common.TopNode;
+import core.NLocation;
+import edu.umn.cs.melt.ide.eclipse.resource.LinkedResourceTracker;
 
 /**
  * A wrapper of problem message returned by compiler.
@@ -172,6 +182,10 @@ public class Problem {
 		return endInd;
 	}
 	
+	public boolean buildBlocker() {
+		return level == ERROR;
+	}
+	
 	private IFile file;
 	
 	private int column;
@@ -188,4 +202,84 @@ public class Problem {
 	
 	private boolean projMsg = false;
 	
+	public static Problem extractProblem(IProject project, NIdeMessage ideMsg) {
+		//Extract values
+    	DecoratedNode ideMsgDecNode = ideMsg.decorate(TopNode.singleton, (Lazy[])null);
+    	
+    	StringCatter msg = (StringCatter)ideMsgDecNode.synthesized(ide.Init.ide_msg__ON__ide_IdeMessage);
+    	Integer severity = (Integer)ideMsgDecNode.synthesized(ide.Init.ide_severity__ON__ide_IdeMessage);
+    	Boolean isProjMsg = (Boolean)ideMsgDecNode.synthesized(ide.Init.ide_systemLevel__ON__ide_IdeMessage);
+    	
+    	if(isProjMsg)
+    		return Problem.createProjectProblem(severity, msg.toString());
+    	
+    	StringCatter resPath = (StringCatter)ideMsgDecNode.synthesized(ide.Init.ide_resPath__ON__ide_IdeMessage);
+    	
+    	NLocation loc = (NLocation)ideMsgDecNode.synthesized(ide.Init.ide_loc__ON__ide_IdeMessage);
+    	DecoratedNode locDecNode = loc.decorate(TopNode.singleton, (Lazy[])null);
+    	
+    	StringCatter fileName = (StringCatter)locDecNode.synthesized(core.Init.core_filename__ON__core_Location);
+    	
+    	Integer lineNo = (Integer)locDecNode.synthesized(core.Init.core_line__ON__core_Location);
+    	Integer columnNo = (Integer)locDecNode.synthesized(core.Init.core_column__ON__core_Location);
+    	Integer startInd = (Integer)locDecNode.synthesized(core.Init.core_index__ON__core_Location);
+    	Integer endInd = (Integer)locDecNode.synthesized(core.Init.core_endIndex__ON__core_Location);
+    	
+    	boolean isLinked = (Boolean)ideMsgDecNode.synthesized(ide.Init.ide_isLinked__ON__ide_IdeMessage);
+
+    	if(isLinked) {
+    		/*StringCatter rootPath = (StringCatter)ideMsgDecNode.synthesized(ide.Init.ide_rootPath__ON__ide_IdeMessage);
+        	
+        	LinkedResourceTracker tracker = 
+        		@LANG_NAME@Service.getInstance().getLinkedResourceTracker(project);
+        	
+        	String linkedFolderPath = tracker.get(rootPath.toString());*/
+        	
+        	//Assemble a problem
+        	//IProject project, String pathRelativeToProjectRoot, String fileName, 
+    		//int line, int column, int startInd, int endInd, int severity, String message,
+        	
+        	// TODO: right now I'm ignoring linked resources and attaching to project instead.
+        	return Problem.createProjectProblem(severity, fileName.toString() + ": " + msg.toString());
+    	} 
+
+    	//Assemble a problem
+    	//IProject project, String pathRelativeToProjectRoot, String fileName, 
+		//int line, int column, int startInd, int endInd, int severity, String message, 
+    	return Problem.createFileProblem(
+    		project, resPath.toString(), fileName.toString(), 
+    		lineNo, columnNo, startInd, endInd, severity, msg.toString());
+    	
+    }
+	
+	public void createMarker(IProject project, String markerType) throws CoreException {
+		if(isProjectProblem()) {
+			IMarker marker = project.createMarker(markerType);
+			marker.setAttribute(IMarker.MESSAGE, message);
+			marker.setAttribute(IMarker.SEVERITY, level);
+		} else {
+			if(!file.exists()){
+				IMarker marker = project.createMarker(markerType);
+				marker.setAttribute(IMarker.MESSAGE, "Unknown file with error message: " + file.getFullPath().toString() + " : " + message);
+				marker.setAttribute(IMarker.SEVERITY, level);
+				return;
+			}
+
+			//Reuse ErrorMarkerID for whatever kind of problem
+			IMarker marker = file.createMarker(markerType);
+			marker.setAttribute(IMarker.MESSAGE, getMessage());
+			marker.setAttribute(IMarker.LINE_NUMBER, getLine());
+			int index = getStartInd();
+			if(index!=Problem.UNKNOWN){
+				marker.setAttribute(IMarker.CHAR_START, index);
+			}
+			index = getEndInd();
+			if(index!=Problem.UNKNOWN){
+				marker.setAttribute(IMarker.CHAR_END, index);
+			}
+			marker.setAttribute(IMarker.SEVERITY, getLevel());
+
+		}
+	}
+
 }

@@ -8,7 +8,7 @@ import common.ConsCell;
 /**
  * Converts Silver lists into Java iterators.
  * 
- * <p>Also provide {@link #fromIterator(Iterator)} to do the opposite.
+ * <p>Also provides {@link #fromIterator(Iterator)} to do the opposite.
  *
  * @param <T>  The type of element in the list we're converting to an iterator.
  * @author tedinski

@@ -63,7 +63,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
   
   local info :: IdeProductInfo = getIdeProductInfo(stmts);
 
-  top.ideSpecs = [ideSpec(fext, stmts.funcDcls, stmts.propDcls, stmts.wizards, head(spec), info, getConfig(stmts.funcDcls, stmts.optDcls, stmts.propDcls, stmts.wizards))];
+  top.ideSpecs = [ideSpec(fext, stmts.ideFunctions, stmts.propDcls, stmts.wizards, head(spec), info, getConfig(foldr(append, [], map((.funcDcls), stmts.ideFunctions)), stmts.optDcls, stmts.propDcls, stmts.wizards))];
   
   top.errors <- stmts.errors;
 
@@ -156,8 +156,6 @@ IdeProductInfo ::= stmtList::IdeStmtList
      end;
 }
 
-nonterminal IdeProperty with propName, propType, optional, defaultVal, displayName;
-
 nonterminal IdePropertyOption with optionType, optional, defaultVal, displayName;
 nonterminal IdePropertyOptions with optional, defaultVal, displayName;
 
@@ -224,9 +222,9 @@ terminal ImpIde_OptFunc_Exporter 'exporter';
 terminal ImpIde_OptFunc_Folder 'folder';
 
 -- funcDcls, propDcls and optDcls are defined in ./IdeSpec.sv
-nonterminal IdeStmts with env, location, errors, grammarName, funcDcls, propDcls, optDcls, wizards, startNTName;
-nonterminal IdeStmt with env, location, errors, grammarName, funcDcls, propDcls, optDcls, wizards, startNTName, productInfo;
-nonterminal IdeStmtList with env, location, errors, grammarName, funcDcls, propDcls, optDcls, wizards, startNTName;
+nonterminal IdeStmts with env, location, errors, grammarName, ideFunctions, propDcls, optDcls, wizards, startNTName;
+nonterminal IdeStmt with env, location, errors, grammarName, ideFunctions, propDcls, optDcls, wizards, startNTName, productInfo;
+nonterminal IdeStmtList with env, location, errors, grammarName, ideFunctions, propDcls, optDcls, wizards, startNTName;
 
 function makeGrammarName
 String ::= str::String
@@ -238,7 +236,7 @@ concrete production emptyIdeStmts
 top::IdeStmts ::= ';'
 {
   top.errors := [];
-  top.funcDcls := [];
+  top.ideFunctions = [];
   top.propDcls := [];
   top.optDcls := [];
   top.wizards := [];
@@ -248,7 +246,7 @@ concrete production listIdeStmts
 top::IdeStmts ::= '{' stmtList::IdeStmtList '}'
 {
   top.errors := stmtList.errors;
-  top.funcDcls := stmtList.funcDcls;
+  top.ideFunctions = stmtList.ideFunctions;
   top.propDcls := stmtList.propDcls;
   top.optDcls := stmtList.optDcls;
   top.wizards := stmtList.wizards;
@@ -259,7 +257,7 @@ concrete production listIdeStmts2
 top::IdeStmts ::= '{' stmtList::IdeStmtList '}' ';'
 {
   top.errors := stmtList.errors;
-  top.funcDcls := stmtList.funcDcls;
+  top.ideFunctions = stmtList.ideFunctions;
   top.propDcls := stmtList.propDcls;
   top.optDcls := stmtList.optDcls;
   top.wizards := stmtList.wizards;
@@ -269,7 +267,7 @@ concrete production nilIdeStmtList
 top::IdeStmtList ::= 
 {
   top.errors := [];
-  top.funcDcls := [];
+  top.ideFunctions = [];
   top.propDcls := [];
   top.optDcls := [];
   top.wizards := [];
@@ -279,7 +277,7 @@ concrete production consIdeStmtList
 top::IdeStmtList ::= stmt::IdeStmt stmtList::IdeStmtList
 {
   top.errors := stmt.errors ++ stmtList.errors;
-  top.funcDcls := stmt.funcDcls ++ stmtList.funcDcls;
+  top.ideFunctions = stmt.ideFunctions ++ stmtList.ideFunctions;
   top.propDcls := stmt.propDcls ++ stmtList.propDcls;
   top.optDcls := stmt.optDcls ++ stmtList.optDcls;
   top.wizards := stmt.wizards ++ stmtList.wizards;
@@ -294,14 +292,14 @@ top::IdeStmt ::=
 concrete production makeIdeStmt_Builder
 top::IdeStmt ::= 'builder' builderName::QName ';' 
 {
-  top.funcDcls := [pair("builder", builderName.lookupValue.fullName)];
+  top.ideFunctions = [builderFunction(builderName.lookupValue.fullName)];
   top.propDcls := [];
   top.optDcls := [];
   top.wizards := [];
 
   top.errors := builderName.lookupValue.errors;
   
-  -- IOVal<[IdeMessage]> ::= [IdeProperty] IO
+  -- IOVal<[IdeMessage]> ::= [IdeProperty] IdeEnv IO
   local builderTypeExpected :: TypeExp =
     functionTypeExp(
       nonterminalTypeExp(
@@ -325,14 +323,14 @@ top::IdeStmt ::= 'builder' builderName::QName ';'
 concrete production makeIdeStmt_PostBuilder
 top::IdeStmt ::= 'postbuilder' postbuilderName::QName ';' 
 {
-  top.funcDcls := [pair("postbuilder", postbuilderName.lookupValue.fullName)];
+  top.ideFunctions = [postbuilderFunction(postbuilderName.lookupValue.fullName)];
   top.propDcls := [];
   top.optDcls := [];
   top.wizards := [];
 
   top.errors := postbuilderName.lookupValue.errors;
   
-  -- IOVal<[IdeMessage]> ::= [IdeProperty] IO
+  -- IOVal<[IdeMessage]> ::= [IdeProperty] IdeEnv IO
   local postbuilderTypeExpected :: TypeExp =
     functionTypeExp(
       nonterminalTypeExp(
@@ -356,7 +354,7 @@ top::IdeStmt ::= 'postbuilder' postbuilderName::QName ';'
 concrete production makeIdeStmt_Exporter
 top::IdeStmt ::= 'exporter' exporterName::QName ';' 
 {
-  top.funcDcls := [pair("exporter", exporterName.lookupValue.fullName)];
+  top.ideFunctions = [exporterFunction(exporterName.lookupValue.fullName)];
   top.propDcls := [];
   top.optDcls := [];
   top.wizards := [];
@@ -387,7 +385,7 @@ top::IdeStmt ::= 'exporter' exporterName::QName ';'
 concrete production makeIdeStmt_Folder
 top::IdeStmt ::= 'folder' folderName::QName ';' 
 {
-  top.funcDcls := [pair("folder", folderName.lookupValue.fullName)];
+  top.ideFunctions = [folderFunction(folderName.lookupValue.fullName)];
   top.propDcls := [];
   top.optDcls := [];
   top.wizards := [];
@@ -414,7 +412,7 @@ top::IdeStmt ::= 'folder' folderName::QName ';'
 concrete production makeIdeStmt_Porperty
 top::IdeStmt ::= 'property' pname::IdLower_t ptype::TypeName options::IdePropertyOptions ';' 
 {
-  top.funcDcls := [];
+  top.ideFunctions = [];
 
   top.propDcls := [makeIdeProperty(pname.lexeme, ptype.propType, options)];
 
@@ -450,7 +448,7 @@ inherited attribute wname :: String;
 concrete production makeIdeStmt_Wizards
 top::IdeStmt ::= 'wizards' '{' wlist::IdeWizardList '}' 
 {
-  top.funcDcls := [];
+  top.ideFunctions = [];
 
   top.propDcls := [];
 
@@ -548,7 +546,7 @@ nonterminal IdeOptionPart_c with optDcls, errors;
 concrete production makeIdeStmt_Option
 top::IdeStmt ::= 'option' op::IdeOptionPart_c ';'
 {
-  top.funcDcls := [];
+  top.ideFunctions = [];
 
   top.propDcls := [];
 
@@ -608,7 +606,7 @@ String ::= options::IdePropertyOptions
 concrete production makeIdeStmt_Product
 top::IdeStmt ::= 'product' '{' dcls::IdeProductInfoDcls '}' 
 {
-  top.funcDcls := [];
+  top.ideFunctions = [];
 
   top.propDcls := [];
 

@@ -2,7 +2,7 @@ grammar silver:modification:impide;
 
 import silver:driver;
 import silver:translation:java:driver;
-import silver:translation:java:core only makeParserName, makeName, makeClassName;
+import silver:translation:java:core only makeParserName, makeName, makeClassName, makeNTClassName;
 
 import silver:util:cmdargs;
 
@@ -15,9 +15,19 @@ import silver:util:cmdargs;
 aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
+  -- The RootSpec representing the grammar actually being built (specified on the command line)
+  production builtGrammar :: [Decorated RootSpec] = searchEnvTree(buildGrammar, g.compiledGrammars);
+  
   -- Empty if no ide decl in that grammar, otherwise has at least one spec... note that
   -- we're going to go with assuming there's just one IDE declaration...
   production ide :: IdeSpec = head(head(builtGrammar).ideSpecs);
+  production isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
+
+  -- TODO only used for the adaptive stuff, so will remove shortly.
+  -- also propagated into Fold. DOH
+  local startNTClassName::String = makeNTClassName(ide.ideParserSpec.startNT);
+  extraTopLevelDecls <- if !isIde then [] else [
+    "<property name='start.nonterminal.class' value='" ++ startNTClassName ++ "'/>"]; 
 
   local parserClassName :: String = makeParserName(ide.ideParserSpec.fullName);
   local parserPackageName :: String = makeName(ide.ideParserSpec.sourceGrammar);
@@ -27,6 +37,8 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   local actionExportName :: String = findFunction(ide.funcDcls, "exporter", "ExportLANG", "ExportDummy"); --getExportActionName(ide.funcDcls);
   local folderFileName :: String = findFunction(ide.funcDcls, "folder", "LANGFoldingUpdater", "DummyFoldingUpdater");
   production pkgName :: String = makeName(buildGrammar);
+
+  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, allParsers, benv.silverGen, ide, pkgName, startNTClassName)];
 
   classpathCompiler <- if !isIde then [] else ["${sh}/jars/IDEPluginRuntime.jar"];
 
@@ -81,7 +93,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   
   extraGrammarsDeps <- if !isIde then [] else ["ide-init, enhance"]; -- enhance the language implementation by adding more source files, for use of IDE. (see target enhance)
 
-  -- attributes required as an OSGi module
+  -- attributes required as an OSGi module TODO: currently we don't actually use the generated jar as an osgi bundle. remove?
   extraManifestAttributes <- if !isIde then [] else [
     "<attribute name='Bundle-ManifestVersion' value='1' />",
     "<attribute name='Bundle-Name' value='${lang.composed}' />",
@@ -148,13 +160,7 @@ function getIDEFunctionsDcls
 function getIDEFunctionDcl
 String ::= funcDcl :: Pair<String String>
 {
-    return "<property name='" ++ getIDEFunctionPropertyKey(funcDcl) ++ "' value='" ++ makeClassName(funcDcl.snd) ++ "' />";
-}
-
-function getIDEFunctionPropertyKey
-String ::= funcDcl :: Pair<String String>
-{
-    return "ide.function." ++ funcDcl.fst;
+    return "<property name='ide.function." ++ funcDcl.fst ++ "' value='" ++ makeClassName(funcDcl.snd) ++ "' />";
 }
 
 -- Find a function from the given function list; if found return the argument found, else notFound
@@ -387,6 +393,8 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     -- the single-file template is no longer used.
     -- "  <copy file=\"${res}/plugin.xml.template\" tofile=\"${ide.proj.plugin.path}/plugin.xml\" filtering=\"true\"/>\n" ++
     "  <copy file=\"" ++ getIDETempFolder() ++ "/plugin.xml.template\" tofile=\"${ide.proj.plugin.path}/plugin.xml\" filtering=\"true\"/>\n" ++
+    "  \n" ++
+    "  <copy file=\"" ++ getIDETempFolder() ++ "/SVIdeInterface.java.template\" tofile=\"${ide.pkg.path}/SVIdeInterface.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
     "  <!-- 5. plugin dependencies -->\n" ++

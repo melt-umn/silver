@@ -13,4 +13,9 @@
 ^test/silver\.testing\.bin\.jar$
 ^runtime/java/bin/
 ^runtime/imp/main/target
-^sandbox
+^runtime/imp/main/src/core
+^runtime/imp/main/src/ide
+^runtime/imp/main/.classpath
+^runtime/imp/main/.project
+^runtime/imp/main/.settings
+?^sandbox

@@ -80,6 +80,7 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
   local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), buildrun.io);
 
   return ioval(actions.io, []); -- TODO: the original code did no error checking here, so I've preserved it. but wtf?
+  -- it seems this is only called if the previous does NOT fail. So there should be no additional errors.
 }
 
 function getSysMessages
@@ -95,6 +96,7 @@ function getAllBindingErrors
 {
 
   local spec :: Decorated RootSpec = head(specs);
+  -- remainder of the path after 'projectPath' prefix.
   local grmPath::String = translateToPath(spec.grammarSource, projectPath);--spec.declaredName
 
   return if null(specs)
@@ -140,7 +142,7 @@ function rewriteMessagesLinked
   return if null(es)
          then []
          else let 
-                  head :: Message = head(es)
+                  head :: Message = unsafeTrace(head(es), print("got linked: " ++ head(es).pp ++ "\n", unsafeIO()))
               in 
                   [makeLinkedResourceMessage(path, grmRoot, head.loc, head.severity, head.msg)] ++ rewriteMessagesLinked(path, grmRoot, tail(es))
               end;

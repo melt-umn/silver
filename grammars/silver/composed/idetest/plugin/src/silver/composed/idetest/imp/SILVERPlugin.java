@@ -41,6 +41,8 @@ public class SILVERPlugin extends PluginBase {
         super.start(context);
         
         SilverEnv.initialize(context.getBundle());
+		common.Util.environment.put("SILVER_HOME", SilverEnv.getSilverHome().getAbsolutePath());
+		common.Util.environment.put("SILVER_GEN", SilverEnv.getGeneratedFolder().getAbsolutePath());
 
         ResourcesPlugin.getWorkspace().addResourceChangeListener(
         	RC_LISTENER, IResourceChangeEvent.POST_CHANGE);
