@@ -132,12 +132,20 @@ function makeExtensions
             [
                "<extension id=\"@LANG_NAME@.imp.builder\" name=\"@LANG_NAME@ builder\" point=\"org.eclipse.core.resources.builders\">",
                "  <builder hasNature=\"true\">",
+               "    <run class=\"edu.umn.cs.melt.ide.imp.builders.Builder\">",
+               "    </run>",
+               "  </builder>",
+               "</extension>"
+{-
+               "<extension id=\"@LANG_NAME@.imp.builder\" name=\"@LANG_NAME@ builder\" point=\"org.eclipse.core.resources.builders\">",
+               "  <builder hasNature=\"true\">",
                "    <run class=\"@PKG_NAME@.imp.builders.@LANG_NAME@Builder\">",
                "      <parameter name=\"foo\" value=\"bar\">",
                "      </parameter>",
                "    </run>",
                "  </builder>",
                "</extension>"
+-}
             ]
         ),
         pluginUnstructuredElement(
@@ -150,14 +158,6 @@ function makeExtensions
                "</extension>"
             ]
         ),    
-        pluginUnstructuredElement(
-            [
-               "<extension id=\"@LANG_NAME@.imp.builder.problem\" name=\"@LANG_NAME@ Error\" point=\"org.eclipse.core.resources.markers\">",
-               "   <super type=\"org.eclipse.core.resources.problemmarker\"></super>",
-               "   <persistent value=\"true\"></persistent>",
-               "</extension>"
-            ]
-        ), 
         pluginUnstructuredElement(
             [
                "<extension id=\"@LANG_NAME@.imp.builder.problem\" name=\"@LANG_NAME@ Error\" point=\"org.eclipse.core.resources.markers\">",

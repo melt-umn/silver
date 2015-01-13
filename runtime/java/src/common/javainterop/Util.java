@@ -4,6 +4,14 @@ import java.util.Arrays;
 
 import common.*;
 
+/**
+ * Accomplish certain common operations (from Java code) on Silver data types.
+ * 
+ * <p>Many operations can be found directly on Node, DecoratedNode, etc. However,
+ * these only include those operations that are actually used by the Silver runtime.
+ * The operations included here are for more general use of arbitrary Java code that
+ * needs to work with Silver values and types.
+ */
 public final class Util {
 
 	public static String productionName(DecoratedNode n) {

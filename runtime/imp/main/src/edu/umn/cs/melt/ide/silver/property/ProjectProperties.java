@@ -1,5 +1,8 @@
 package edu.umn.cs.melt.ide.silver.property;
 
+import ide.NIdeProperty;
+import ide.PmakeIdeProperty;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -10,6 +13,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Map.Entry;
+
+import common.ConsCell;
 
 /**
  * Used to read/write properties from/to project.properties file.
@@ -35,12 +40,16 @@ public class ProjectProperties {
 	/** The signature of property file when last read */
 	private Signature signature;
 	
-	private ProjectProperties(String projectPath){
-		this.projectPath = projectPath;
-	}
+	/** null if not yet computed, otherwise the Silver value of these properties */
+	private ConsCell cachedSilverValue;
 	
+
 	public static ProjectProperties getPropertyPersister(String projectPath){
 		return new ProjectProperties(projectPath);
+	}
+	
+	private ProjectProperties(String projectPath){
+		this.projectPath = projectPath;
 	}
 	
 	/**
@@ -87,12 +96,12 @@ public class ProjectProperties {
 	/**
 	 *  Get property file 
 	 */
-	private File getPropertiesFile(String projectPath){
+	private File getPropertiesFile() {
 		return new File(projectPath, "project.properties");
 	}
 	
 	private void init(){		
-		File configFile = getPropertiesFile(projectPath);
+		File configFile = getPropertiesFile();
 		
 		if(properties!=null){
 			//Check the signature
@@ -104,6 +113,9 @@ public class ProjectProperties {
 				signature = newSig;
 			}
 		}
+
+		// invalidate the cached value
+		cachedSilverValue = null;
 		
 		//Not initiated or file has been changed
 		FileInputStream fis = null;
@@ -141,7 +153,7 @@ public class ProjectProperties {
 	}
 	
 	private void persist(){
-		File configFile = getPropertiesFile(projectPath);
+		File configFile = getPropertiesFile();
 		if(configFile==null){
 			return;
 		}
@@ -194,6 +206,29 @@ public class ProjectProperties {
 	
 	private Signature createSignature(File f){
 		return new Signature(f.length(), f.lastModified());
+	}
+	
+	/**
+	 * Converts this properties list to the silver type.
+	 * 
+	 * @return Value of Silver type [IdeProperty] (java type ConsCell of NIdeProperty)
+	 */
+	public ConsCell serializeToSilverType() {
+		if(cachedSilverValue != null)
+			return cachedSilverValue;
+		
+		Set<Entry<String, Property>> set = this.getAll();
+		ConsCell result = ConsCell.nil;
+		for(Entry<String, Property> entry : set) {
+			final Property prop = entry.getValue();
+			final NIdeProperty h = new PmakeIdeProperty(
+					new common.StringCatter(entry.getKey()), // == prop.getName()
+					new common.StringCatter(prop.getType().name()),
+					new common.StringCatter(prop.getSValue())
+					);
+			result = new ConsCell(h, result);
+		}
+		return result;
 	}
 }
 
