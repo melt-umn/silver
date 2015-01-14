@@ -27,6 +27,11 @@ import edu.umn.cs.melt.ide.impl.SVInterface;
 import edu.umn.cs.melt.ide.impl.SVRegistry;
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 
+/**
+ * Action performed via menu.
+ * 
+ * Gets its configuration via the info from plugin.xml, through setInitializationData
+ */
 public class Exporter implements IObjectActionDelegate, IExecutableExtension {
 
 	private IProject project;
