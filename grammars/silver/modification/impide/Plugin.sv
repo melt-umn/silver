@@ -194,8 +194,11 @@ function makeExtensions
                                 "<action",
                                 "      label=\"Export as @LANG_NAME@ target\"",
                                 "      tooltip=\"Export the project as @LANG_NAME@ distributable\"",
-                                "      class=\"edu.umn.cs.melt.ide.imp.builders.Exporter\"",
+--                                "      class=\"edu.umn.cs.melt.ide.imp.builders.Exporter\"",
                                 "      id=\"@LANG_NAME@.imp.actions.exportAction\">",
+                                "  <class class=\"edu.umn.cs.melt.ide.imp.builders.Exporter\">",
+                                "    <parameter name=\"name\" value=\"@LANG_NAME@\" />",
+                                "  </class>",
                                 "</action>"
                             ]
                         )

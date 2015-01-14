@@ -8,6 +8,10 @@ echo $SILVER_HOME
 # No no, the user should do this.
 #./update
 
+# Do make sure any compiler changes make it before we build do
+./self-compile
+cp build/silver.composed.Default.jar jars/
+
 # Rebuild the IDE-specific runtime jars
 (cd runtime/imp; ./build.sh)
 
