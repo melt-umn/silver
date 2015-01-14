@@ -30,7 +30,7 @@ public class Nature implements IProjectNature, IExecutableExtension {
         String[] natures = description.getNatureIds();
         
         for(int i = 0; i < natures.length; i++) {
-        	if(natures[i] == natureID) {
+        	if(natures[i].equals(natureID)) {
         		System.out.println("nature " + natureID + " already present.");
         		return;
         	}

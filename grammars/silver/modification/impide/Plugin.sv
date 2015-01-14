@@ -183,8 +183,11 @@ function makeExtensions
                                 "<action",
                                 "      label=\"Enable @LANG_NAME@ Builder\"",
                                 "      tooltip=\"Enable the @LANG_NAME@ builder for this project\"",
-                                "      class=\"@PKG_NAME@.imp.actions.Enable@LANG_NAME@Nature\"",
+--                                "      class=\"@PKG_NAME@.imp.actions.Enable@LANG_NAME@Nature\"",
                                 "      id=\"@LANG_NAME@.imp.actions.enableNatureAction\">",
+                                "  <class class=\"edu.umn.cs.melt.ide.imp.builders.EnableNature\">",
+                                "    <parameter name=\"nature\" value=\"@LANG_NAME@_IDE.imp.nature\" />",
+                                "  </class>",
                                 "</action>"
                             ]
                         )
