@@ -22,7 +22,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.dialogs.WizardNewProjectCreationPage;
 import org.eclipse.ui.wizards.newresource.BasicNewProjectResourceWizard;
 
-import @PKG_NAME@.imp.builders.@LANG_NAME@Nature;
+import edu.umn.cs.melt.ide.imp.builders.Nature;
 
 /**
  * The @LANG_NAME@'s New Project Wizard is used to create @LANG_NAME@ project. In general
@@ -123,9 +123,7 @@ public class NewProjectWizard extends Wizard implements INewWizard, IExecutableE
         
         //Add @LANG_NAME@ nature, if not added yet
         try {
-            if (!project.hasNature(@LANG_NAME@Nature.k_natureID)) {
-	            new @LANG_NAME@Nature().addToProject(project);
-            }
+            Nature.addToProject(project, "@LANG_NAME@_IDE.imp.nature");
         } catch (CoreException e) {
             e.printStackTrace();
         }

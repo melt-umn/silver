@@ -153,7 +153,9 @@ function makeExtensions
                "<extension id=\"imp.nature\" name=\"@LANG_NAME@ Nature\" point=\"org.eclipse.core.resources.natures\">",
                "  <builder id=\"@LANG_NAME@_IDE.@LANG_NAME@.imp.builder\"></builder>",
                "  <runtime>",
-               "     <run class=\"@PKG_NAME@.imp.builders.@LANG_NAME@Nature\"></run>",
+               "     <run class=\"edu.umn.cs.melt.ide.imp.builders.Nature\">",
+               "       <parameter name=\"builder\" value=\"@LANG_NAME@_IDE.@LANG_NAME@.imp.builder\" />",
+               "     </run>",
                "  </runtime>",
                "</extension>"
             ]

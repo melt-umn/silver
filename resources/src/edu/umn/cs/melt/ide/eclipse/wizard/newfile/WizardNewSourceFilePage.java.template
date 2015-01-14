@@ -47,7 +47,6 @@ import org.eclipse.ui.ISelectionService;
 import org.eclipse.ui.PlatformUI;
 
 import @PKG_NAME@.imp.@LANG_NAME@Plugin;
-import @PKG_NAME@.imp.builders.@LANG_NAME@Nature;
 import edu.umn.cs.melt.ide.silver.property.Property;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 import edu.umn.cs.melt.ide.silver.property.ui.PropertyControl;
@@ -442,7 +441,7 @@ public class WizardNewSourceFilePage extends WizardPage {
 	
 	private boolean hasValidNature(IProject project){
 		try {
-			if (project.hasNature(@LANG_NAME@Nature.k_natureID)) {
+			if (project.hasNature("@LANG_NAME@_IDE.imp.nature")) {
 				return true;
 			}
 		} catch (CoreException e) {
