@@ -33,8 +33,6 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   local parserPackageName :: String = makeName(ide.ideParserSpec.sourceGrammar);
   local parserPackagePath :: String = grammarToPath2(ide.ideParserSpec.sourceGrammar);
   local ideParserFullPath :: String = getIDEParserFile(ide.ideParserSpec.sourceGrammar, parserClassName, "${src}/");
-  local delegateBuilderName :: String = getDelegateBuilderName(ide.funcDcls);
-  local actionExportName :: String = findFunction(ide.funcDcls, "exporter", "ExportLANG", "ExportDummy"); --getExportActionName(ide.funcDcls);
   local folderFileName :: String = findFunction(ide.funcDcls, "folder", "LANGFoldingUpdater", "DummyFoldingUpdater");
   production pkgName :: String = makeName(buildGrammar);
 
@@ -63,9 +61,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     "<property name='ide.parser.package' value='" ++ parserPackageName ++ "' />",
     "<property name='ide.parser.classname' value='" ++ parserClassName ++ "' />",
     --"<property name='ide.parser.copperfile' value='" ++ parserFullPath ++ "' />",
-    "<property name='ide.parser.ide_copperfile' value='" ++ ideParserFullPath ++ "' />",
-    "<property name='ide.delegate.builder.name' value='" ++ delegateBuilderName ++ "' />",
-    "<property name='ide.fileextension' value='" ++ ide.ideExtension ++ "' />"] ++ 
+    "<property name='ide.parser.ide_copperfile' value='" ++ ideParserFullPath ++ "' />",    "<property name='ide.fileextension' value='" ++ ide.ideExtension ++ "' />"] ++ 
 
     configWizards(ide.wizards) ++ 
 
@@ -78,13 +74,10 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     "<target name='ide-init'>" ++ getIDEInitTarget() ++ "</target>",
     "<target name='arg-check'>" ++ getArgCheckTarget() ++ "</target>",
     "<target name='filters'>" ++ getFiltersTarget() ++ "</target>",
-    "<target name='create-folders'>" ++ getCreateFoldersTarget(delegateBuilderName, actionExportName, parserClassName, folderFileName, ide.pluginConfig) ++ "</target>",
+    "<target name='create-folders'>" ++ getCreateFoldersTarget(parserClassName, folderFileName, ide.pluginConfig) ++ "</target>",
     "<target name='customize' if=\"to-customize\" depends='arg-check, filters'>" ++ getCustomizeTarget() ++ "</target>",
     "<target name='postbuild' if=\"to-postbuild\">" ++ getAntPostBuildTarget() ++ "</target>",--this is for ant post-build; not to be confused with IDE post-build
-    "<target name='enhance' depends='enhance-build, enhance-postbuild, enhance-export, enhance-fold'></target>",
-    "<target name='enhance-build' depends='arg-check, filters' if=\"ide-function-builder-exists\">" ++ getEnhanceTarget(ide.funcDcls, getEnhanceBuildAction) ++ "</target>",--getEnhanceBuildTarget(ide.funcDcls)
-    "<target name='enhance-postbuild' depends='arg-check, filters' if=\"ide-function-postbuilder-exists\">" ++ getEnhanceTarget(ide.funcDcls, getEnhancePostBuildAction) ++ "</target>",--getEnhancePostBuildTarget(ide.funcDcls)
-    "<target name='enhance-export' depends='arg-check, filters' if=\"ide-function-exporter-exists\">" ++ getEnhanceTarget(ide.funcDcls, getEnhanceExportAction) ++ "</target>", --getEnhanceExportTarget(ide.funcDcls)
+    "<target name='enhance' depends='enhance-fold'></target>",
     "<target name='enhance-fold' depends='arg-check, filters' if=\"ide-function-folder-exists\">" ++ getEnhanceTarget(ide.funcDcls, getEnhanceFoldAction) ++ "</target>", 
     getBuildTargets()
     ];
@@ -177,18 +170,6 @@ String ::= funcDcls :: [Pair<String String>] funcToFind::String found::String no
                 end;
 }
 
-function getDelegateBuilderName
-String ::= funcDcls :: [Pair<String String>]
-{
-  local pr :: Pair<Boolean Boolean> = findAllBuilderFunctions(funcDcls, pair(false, false));
-  return case pr of
-           pair(true, false) -> "BlockingBuilder"
-         | pair(false, true) -> "NonblockingBuilder"
-         | pair(true, true) -> "TwoStageBuilder"
-         | _ -> "DummyBuilder"
-         end;
-}
-
 function getEnhanceTarget
 String ::= funcDcls::[Pair<String String>] doAction::(String::=Pair<String String>) 
 {
@@ -212,55 +193,6 @@ String ::= funcDcl::Pair<String String>
                 "        tofile=\"${src}/" ++ grammarToPath(funcDcl.snd) ++ "/Fold.java\" filtering=\"true\" overwrite=\"true\"/>"
            else
                 "";
-}
-
-function getEnhanceExportAction
-String ::= funcDcl::Pair<String String>
-{
-    return if "exporter"==funcDcl.fst
-           then 
-                "\n<copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Export.java.template\"\n" ++ --NIdeMessage[] ::= NIdeProperty[] NIdeEnv
-                "        tofile=\"${src}/" ++ grammarToPath(funcDcl.snd) ++ "/Export.java\" filtering=\"true\" overwrite=\"true\"/>"
-           else
-                "";
-}
-
--- the returned pair indicate whether builder (fst) and/or post-builder (snd) exist
-function findAllBuilderFunctions
-Pair<Boolean Boolean> ::= funcDcls::[Pair<String String>] pr::Pair<Boolean Boolean>
-{
-    return if null(funcDcls) --length(funcDcls) < 1
-           then pr
-           else let
-                    hd :: Pair<String String> = head(funcDcls)
-                in
-                    if(hd.fst=="builder") then findAllBuilderFunctions(tail(funcDcls), pair(true, pr.snd))
-                    else if(hd.fst=="postbuilder") then findAllBuilderFunctions(tail(funcDcls), pair(pr.fst, true))
-                    else findAllBuilderFunctions(tail(funcDcls), pr)
-                end;
-}
-
-function getEnhanceBuildAction
-String ::= funcDcl::Pair<String String>
-{
-    return if "builder"==funcDcl.fst
-           then 
-                "\n<copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Build.java.template\"\n" ++ --NIdeMessage[] ::= NIdeProperty[]
-                "        tofile=\"${src}/" ++ grammarToPath(funcDcl.snd) ++ "/Build.java\" filtering=\"true\" overwrite=\"true\"/>"
-           else
-                "";
-}
-
-function getEnhancePostBuildAction
-String ::= funcDcl::Pair<String String>
-{
-    return if "postbuilder"==funcDcl.fst
-           then 
-                "\n<copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/PostBuild.java.template\"\n" ++ --NIdeMessage[] ::= NIdeProperty[]
-                "        tofile=\"${src}/" ++ grammarToPath(funcDcl.snd) ++ "/PostBuild.java\" filtering=\"true\" overwrite=\"true\"/>"
-           else
-                "";
-
 }
 
 function grammarToPath
@@ -305,15 +237,6 @@ String ::=
     "  \n"++
     "  <condition property=\"ide-function-folder-exists\">\n"++
     "    <isset property=\"ide.function.folder\"/>\n"++
-    "  </condition>\n"++
-    "  <condition property=\"ide-function-exporter-exists\">\n"++
-    "    <isset property=\"ide.function.exporter\"/>\n"++
-    "  </condition>\n"++
-    "  <condition property=\"ide-function-builder-exists\">\n"++
-    "    <isset property=\"ide.function.builder\"/>\n"++
-    "  </condition>\n"++
-    "  <condition property=\"ide-function-postbuilder-exists\">\n"++
-    "    <isset property=\"ide.function.postbuilder\"/>\n"++
     "  </condition>\n";
 }
 
@@ -340,11 +263,7 @@ String ::=
     "  <filter token=\"FEATURE_LICENSE_URL\" value='http://some.user.provided.url'/>\n" ++
     "  <filter token=\"FEATURE_LICENSE_TEXT\" value='no license information available'/>\n" ++
     "  <filter token=\"FOLDER_CLASS_QNAME\" value='${ide.function.folder}'/>\n" ++
-    "  <filter token=\"BUILDER_CLASS_QNAME\" value='${ide.function.builder}'/>\n" ++
-    "  <filter token=\"POST_BUILDER_CLASS_QNAME\" value='${ide.function.postbuilder}'/>\n" ++
-    "  <filter token=\"EXPORTER_CLASS_QNAME\" value='${ide.function.exporter}'/>\n" ++
     "  <filter token=\"NEWFILE_STUBGEN_CLASS_QNAME\" value='${ide.function.stubgen.newfile.name}'/>\n" ++
-    "  <filter token=\"DELEGATE_BUILDER_NAME\" value='${ide.delegate.builder.name}'/>\n" ++
     "  <filter token=\"LANG_COMPOSED_PKG\" value='${lang.composed}'/>\n" ++ 
     "  <filter token=\"START_NONTERMINAL_CLASS\" value='${start.nonterminal.class}'/>\n" ++
     "  <filter token=\"IDE_RT_VERSION\" value='${ide.rt.version}'/>\n" ++
@@ -352,7 +271,7 @@ String ::=
 }
 
 function getCreateFoldersTarget
-String ::= delegateBuilderName::String actionExportName::String parserClassName::String folderFileName::String config::PluginConfig
+String ::= parserClassName::String folderFileName::String config::PluginConfig
 {
   return 
     "  \n" ++
@@ -435,33 +354,6 @@ String ::= delegateBuilderName::String actionExportName::String parserClassName:
     "  <!-- Plugin main class (OSGi starter class) -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/plugin.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/imp/${lang.name}Plugin.java\" filtering=\"true\"/>\n" ++
-    "  \n" ++
-
-    "  <mkdir dir='${ide.pkg.path}/imp/actions'/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/actions/EnableLANGNature.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/imp/actions/Enable${lang.name}Nature.java\" filtering=\"true\"/>\n" ++
-    (if(config.hasExporter)
-    then
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/actions/"++actionExportName++".java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/imp/actions/Export${lang.name}.java\" filtering=\"true\"/>\n"
-    else
-    "") ++
-    "  \n" ++
-
-    "  <mkdir dir='${ide.pkg.path}/imp/builders'/>\n" ++
-    "  <!-- Project builder and supporting classes. The class interfacing with Eclipse/IMP build framework is ${lang.name}Builder. -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/nature.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/imp/builders/${lang.name}Nature.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/builder.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/imp/builders/${lang.name}Builder.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/Utility.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/imp/builders/Utility.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/DelegateBuilder.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/imp/builders/DelegateBuilder.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/"++delegateBuilderName++".java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/imp/builders/"++delegateBuilderName++".java\" filtering=\"true\"/>\n" ++
-    "  <antcall target=\"create-builder\" inheritAll=\"true\"/>\n" ++
-    "  <antcall target=\"create-postbuilder\" inheritAll=\"true\"/>\n" ++
     "  \n" ++
 
     "  <mkdir dir='${ide.pkg.path}/imp/coloring'/>\n" ++
@@ -610,16 +502,6 @@ function getBuildTargets
 String ::=
 {
 return
-
-"<!-- Optional targets depending on whether the corresponding function is defined -->\n" ++
-"<target name='create-builder' if=\"ide-function-builder-exists\" depends=\"filters\">\n"++
-"  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/build_invoker.java.template\"\n"++
-"        tofile=\"${ide.pkg.path}/imp/builders/${lang.name}BuildInvoker.java\" filtering=\"true\"/>\n"++
-"</target>\n"++
-"<target name='create-postbuilder' if=\"ide-function-postbuilder-exists\" depends=\"filters\">\n"++
-"  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/builders/postbuild_invoker.java.template\"\n"++
-"        tofile=\"${ide.pkg.path}/imp/builders/${lang.name}PostBuildInvoker.java\" filtering=\"true\"/>\n"++
-"</target>\n"++
 
 "<!-- Supporting targets based on the build mode -->\n" ++
 "<target name=\"create build.properties\" depends=\"filters\">\n"++
