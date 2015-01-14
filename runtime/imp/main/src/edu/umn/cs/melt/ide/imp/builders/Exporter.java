@@ -4,6 +4,8 @@ import ide.NIdeEnv;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IConfigurationElement;
+import org.eclipse.core.runtime.IExecutableExtension;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -25,9 +27,10 @@ import edu.umn.cs.melt.ide.impl.SVInterface;
 import edu.umn.cs.melt.ide.impl.SVRegistry;
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 
-public class Exporter implements IObjectActionDelegate {
+public class Exporter implements IObjectActionDelegate, IExecutableExtension {
 
 	private IProject project;
+	private String name;
 	
 	@Override
 	public void run(IAction ignored) {
@@ -41,7 +44,7 @@ public class Exporter implements IObjectActionDelegate {
 		// TODO: likewise, this could be cached.
 		final NIdeEnv env = Builder.computeIdeEnv(project);
 
-		Job job = new Job("Exporting @LANG_NAME@ distributable") {
+		Job job = new Job("Exporting " + name + " distributable") {
 			
 			@Override
 			protected IStatus run(final IProgressMonitor monitor) {
@@ -84,6 +87,17 @@ public class Exporter implements IObjectActionDelegate {
 
 	@Override
 	public void setActivePart(IAction arg0, IWorkbenchPart arg1) {
+	}
+
+	@Override
+	public void setInitializationData(IConfigurationElement config, String property,
+			Object data) throws CoreException {
+		if(!(data instanceof java.util.Hashtable))
+			return;
+		
+        java.util.Hashtable<String, String> d = (java.util.Hashtable<String, String>)data;
+
+        name = d.get("name");
 	}
 
 }
