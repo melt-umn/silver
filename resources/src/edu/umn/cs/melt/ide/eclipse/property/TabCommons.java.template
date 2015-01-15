@@ -15,7 +15,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 
-import @PKG_NAME@.@LANG_NAME@Service;
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 import edu.umn.cs.melt.ide.silver.property.Property;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
@@ -105,7 +104,7 @@ public class TabCommons implements IPropertyPageTab {
 	private ProjectProperties getProperties(){
 		IProject project = page.getProject();
 	    if (project != null) {
-		    return @LANG_NAME@Service.getInstance().getProperties(project);
+		    return ProjectProperties.getPropertyPersister(project.getLocation().toString());
 		}
 		
 	    return null;
