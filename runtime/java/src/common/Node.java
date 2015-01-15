@@ -45,6 +45,16 @@ public abstract class Node {
                                  getNumberOfLocalAttrs(),
                                  this, parent, null, fwdParent);
 	}
+	
+	/**
+	 * A convenience method unused by generate Silver code, but useful when working with
+	 * the Silver runtime from Java.
+	 * 
+	 * @return  A node decorated with no inherited attributes, without a parent.
+	 */
+	public DecoratedNode decorate() {
+		return decorate(TopNode.singleton, (Lazy[])null);
+	}
 
 	// These methods are to be provided by the *nonterminal*
 	

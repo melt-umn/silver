@@ -318,7 +318,7 @@ function makeExtensions
                 "<extension",
                 "   point=\"org.eclipse.imp.runtime.foldingUpdater\">",
                 "   <foldingUpdater",
-                "      class=\"@PKG_NAME@.imp.folding.@LANG_NAME@FoldingUpdater\"",
+                "      class=\"edu.umn.cs.melt.ide.imp.services.FoldingProvider\"",
                 "      language=\"@LANG_NAME@\">",
                 "   </foldingUpdater>",
                 "</extension>"
