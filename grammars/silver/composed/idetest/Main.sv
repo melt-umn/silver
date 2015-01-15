@@ -83,7 +83,6 @@ temp_imp_ide_dcl svParse ".sv" {
     version "0.2.2";
   }
 
-  option source linker on;
 }
 
 -- Declarations of IDE functions referred in decl block.

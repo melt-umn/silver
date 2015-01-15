@@ -10,7 +10,6 @@ synthesized attribute ideParserSpec :: ParserSpec;
 synthesized attribute funcDcls :: [Pair<String String>] with ++ ;
 synthesized attribute ideFunctions :: [IdeFunction];
 synthesized attribute propDcls :: [IdeProperty] with ++ ;
-synthesized attribute optDcls :: [IdeOption] with ++ ;
 synthesized attribute wizards :: [IdeWizardDcl] with ++;
 synthesized attribute productInfo :: IdeProductInfo;
 synthesized attribute pluginConfig :: PluginConfig;
@@ -77,20 +76,6 @@ top::IdeProperty ::= propName::String propType::String options::IdePropertyOptio
   top.optional = options.optional;
   top.defaultVal = options.defaultVal;
   top.displayName = if options.displayName == "" then propName else options.displayName;
-}
-
-{-- IdeOption --}
-
-nonterminal IdeOption with optKey, optValue;
-
-synthesized attribute optKey :: String;
-synthesized attribute optValue :: String;
-
-abstract production makeIdeOption
-top::IdeOption ::= k::String v::String
-{
-    top.optKey = k;
-    top.optValue = v;
 }
 
 {-- Color --}
