@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# OS-specific crap
+# OS-specific checks for presence of greadlink
 case `uname` in
 *Darwin*)
   READLINK=greadlink
-  if [ ! -f `which greadlink` ]; then
+  GREADLINKLOCATION=`which greadlink`
+  if [ -z ${GREADLINKLOCATION} ]; then
     # install should have complained already, but maybe configuration changed
     echo "Missing greadlink. Please 'brew install coreutils'"
     exit 1
