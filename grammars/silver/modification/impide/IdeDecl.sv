@@ -63,7 +63,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
   
   local info :: IdeProductInfo = getIdeProductInfo(stmts);
 
-  top.ideSpecs = [ideSpec(fext, stmts.ideFunctions, stmts.propDcls, stmts.wizards, head(spec), info, getConfig(foldr(append, [], map((.funcDcls), stmts.ideFunctions)), stmts.optDcls, stmts.propDcls, stmts.wizards))];
+  top.ideSpecs = [ideSpec(fext, stmts.ideFunctions, stmts.propDcls, stmts.wizards, head(spec), info, getConfig(foldr(append, [], map((.funcDcls), stmts.ideFunctions)), stmts.propDcls, stmts.wizards))];
   
   top.errors <- stmts.errors;
 
@@ -71,19 +71,17 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
 }
 
 function getConfig
-PluginConfig ::= funcs::[Pair<String String>] opts::[IdeOption] props::[IdeProperty] wizards::[IdeWizardDcl]
+PluginConfig ::= funcs::[Pair<String String>] props::[IdeProperty] wizards::[IdeWizardDcl]
 {
     local hasExporter :: Boolean = checkExistence(funcs, "exporter");
-    local hasSourceLinker :: Boolean = checkSwitchedOn(opts, "source linker");
     local hasCodeFolder :: Boolean = checkExistence(funcs, "folder");
 
     local hasNewFileWizard :: Boolean = hasWizard(wizards, "newfile");
 
     local tabs::[Pair<String String>] = 
-        (if null(props) then [] else [pair("Commons", "TabCommons")]) ++
-        (if hasSourceLinker then [pair("Source", "TabBuildConfig")] else []);
+        (if null(props) then [] else [pair("Commons", "TabCommons")]);
 
-    return pluginConfig(hasExporter, hasSourceLinker, hasCodeFolder, hasNewFileWizard, tabs);
+    return pluginConfig(hasExporter, hasCodeFolder, hasNewFileWizard, tabs);
 }
 
 {--
@@ -118,19 +116,6 @@ Boolean ::= funcs::[Pair<String String>] name::String
            then true
            else checkExistence(tail(funcs), name);
 }    
-
-function checkSwitchedOn
-Boolean ::= opts::[IdeOption] name::String
-{
-    return 
-      if null(opts)
-      then false
-      else if head(opts).optKey == name
-           then if head(opts).optValue == "on"
-                then true
-                else false
-           else checkSwitchedOn(tail(opts), name);
-}  
 
 function getIdeProductInfo
 IdeProductInfo ::= stmts::IdeStmts
@@ -222,9 +207,9 @@ terminal ImpIde_OptFunc_Exporter 'exporter';
 terminal ImpIde_OptFunc_Folder 'folder';
 
 -- funcDcls, propDcls and optDcls are defined in ./IdeSpec.sv
-nonterminal IdeStmts with env, location, errors, grammarName, ideFunctions, propDcls, optDcls, wizards, startNTName;
-nonterminal IdeStmt with env, location, errors, grammarName, ideFunctions, propDcls, optDcls, wizards, startNTName, productInfo;
-nonterminal IdeStmtList with env, location, errors, grammarName, ideFunctions, propDcls, optDcls, wizards, startNTName;
+nonterminal IdeStmts with env, location, errors, grammarName, ideFunctions, propDcls, wizards, startNTName;
+nonterminal IdeStmt with env, location, errors, grammarName, ideFunctions, propDcls, wizards, startNTName, productInfo;
+nonterminal IdeStmtList with env, location, errors, grammarName, ideFunctions, propDcls, wizards, startNTName;
 
 function makeGrammarName
 String ::= str::String
@@ -238,7 +223,6 @@ top::IdeStmts ::= ';'
   top.errors := [];
   top.ideFunctions = [];
   top.propDcls := [];
-  top.optDcls := [];
   top.wizards := [];
 }
 
@@ -248,7 +232,6 @@ top::IdeStmts ::= '{' stmtList::IdeStmtList '}'
   top.errors := stmtList.errors;
   top.ideFunctions = stmtList.ideFunctions;
   top.propDcls := stmtList.propDcls;
-  top.optDcls := stmtList.optDcls;
   top.wizards := stmtList.wizards;
 }
 
@@ -259,7 +242,6 @@ top::IdeStmts ::= '{' stmtList::IdeStmtList '}' ';'
   top.errors := stmtList.errors;
   top.ideFunctions = stmtList.ideFunctions;
   top.propDcls := stmtList.propDcls;
-  top.optDcls := stmtList.optDcls;
   top.wizards := stmtList.wizards;
 }
 
@@ -269,7 +251,6 @@ top::IdeStmtList ::=
   top.errors := [];
   top.ideFunctions = [];
   top.propDcls := [];
-  top.optDcls := [];
   top.wizards := [];
 }
 
@@ -279,7 +260,6 @@ top::IdeStmtList ::= stmt::IdeStmt stmtList::IdeStmtList
   top.errors := stmt.errors ++ stmtList.errors;
   top.ideFunctions = stmt.ideFunctions ++ stmtList.ideFunctions;
   top.propDcls := stmt.propDcls ++ stmtList.propDcls;
-  top.optDcls := stmt.optDcls ++ stmtList.optDcls;
   top.wizards := stmt.wizards ++ stmtList.wizards;
 }
 
@@ -294,7 +274,6 @@ top::IdeStmt ::= 'builder' builderName::QName ';'
 {
   top.ideFunctions = [builderFunction(builderName.lookupValue.fullName)];
   top.propDcls := [];
-  top.optDcls := [];
   top.wizards := [];
 
   top.errors := builderName.lookupValue.errors;
@@ -325,7 +304,6 @@ top::IdeStmt ::= 'postbuilder' postbuilderName::QName ';'
 {
   top.ideFunctions = [postbuilderFunction(postbuilderName.lookupValue.fullName)];
   top.propDcls := [];
-  top.optDcls := [];
   top.wizards := [];
 
   top.errors := postbuilderName.lookupValue.errors;
@@ -356,7 +334,6 @@ top::IdeStmt ::= 'exporter' exporterName::QName ';'
 {
   top.ideFunctions = [exporterFunction(exporterName.lookupValue.fullName)];
   top.propDcls := [];
-  top.optDcls := [];
   top.wizards := [];
 
   top.errors := exporterName.lookupValue.errors;
@@ -387,7 +364,6 @@ top::IdeStmt ::= 'folder' folderName::QName ';'
 {
   top.ideFunctions = [folderFunction(folderName.lookupValue.fullName)];
   top.propDcls := [];
-  top.optDcls := [];
   top.wizards := [];
 
   top.errors := folderName.lookupValue.errors;
@@ -415,8 +391,6 @@ top::IdeStmt ::= 'property' pname::IdLower_t ptype::TypeName options::IdePropert
   top.ideFunctions = [];
 
   top.propDcls := [makeIdeProperty(pname.lexeme, ptype.propType, options)];
-
-  top.optDcls := [];
 
   top.wizards := [];
 
@@ -451,8 +425,6 @@ top::IdeStmt ::= 'wizards' '{' wlist::IdeWizardList '}'
   top.ideFunctions = [];
 
   top.propDcls := [];
-
-  top.optDcls := [];
 
   top.wizards := wlist.wizards;
 
@@ -534,60 +506,6 @@ top::Property ::= 'property' pname::IdLower_t ptype::TypeName options::IdeProper
                 else [];
 }
 
--- Options
-
-terminal ImpIde_Option_t 'option' lexer classes {KEYWORD};
-terminal ImpIde_Source_Linker_t 'source linker' lexer classes {KEYWORD};
-terminal ImpIde_Switch_On_t 'on' lexer classes {KEYWORD};
-terminal ImpIde_Switch_Off_t 'off' lexer classes {KEYWORD};
-
-nonterminal IdeOptionPart_c with optDcls, errors;
-
-concrete production makeIdeStmt_Option
-top::IdeStmt ::= 'option' op::IdeOptionPart_c ';'
-{
-  top.ideFunctions = [];
-
-  top.propDcls := [];
-
-  top.optDcls := op.optDcls;
-
-  top.errors := op.errors;
-
-  top.wizards := [];
-} 
-
-concrete production makeIdeOption_SourceLinker
-top::IdeOptionPart_c ::= 'source linker' value::OnOff
-{
-  top.optDcls := [makeIdeOption("source linker", switch2Str(value))];
-
-  top.errors := [];
-} 
-
-function switch2Str
-String ::= value::OnOff
-{
-  return case value of
-           switchOn(_) -> "on"
-         | switchOff(_) -> "off"
-         end;
-}
-
-nonterminal OnOff;
-
-concrete production switchOn
-top::OnOff ::= 'on'
-{
-
-}
-
-concrete production switchOff
-top::OnOff ::= 'off'
-{
-
-}
-
 function getDefaultVal
 String ::= options::IdePropertyOptions
 {
@@ -609,8 +527,6 @@ top::IdeStmt ::= 'product' '{' dcls::IdeProductInfoDcls '}'
   top.ideFunctions = [];
 
   top.propDcls := [];
-
-  top.optDcls := [];
 
   top.productInfo = makeIdeProductInfo(dcls.info);
 

@@ -12,7 +12,6 @@ import common.Lazy;
 import common.StringCatter;
 import common.TopNode;
 import core.NLocation;
-import edu.umn.cs.melt.ide.eclipse.resource.LinkedResourceTracker;
 
 /**
  * A wrapper of problem message returned by compiler.

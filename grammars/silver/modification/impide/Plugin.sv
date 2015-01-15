@@ -11,17 +11,15 @@ nonterminal PluginDefinition with xmlOutput;
 nonterminal PluginElement with xmlOutput, indentLevel;
 
 synthesized attribute hasExporter :: Boolean;
-synthesized attribute hasSourceLinker :: Boolean;
 synthesized attribute hasCodeFolder :: Boolean;
 synthesized attribute propertyTabs :: [Pair<String String>];--Pair<"tab name" "class name">
 synthesized attribute hasNewFileWizard:: Boolean;
-nonterminal PluginConfig with hasExporter, hasSourceLinker, hasCodeFolder, hasNewFileWizard, propertyTabs;
+nonterminal PluginConfig with hasExporter, hasCodeFolder, hasNewFileWizard, propertyTabs;
 
 abstract production pluginConfig
-top::PluginConfig ::= hasExporter::Boolean hasSourceLinker::Boolean hasCodeFolder::Boolean hasNewFileWizard::Boolean propertyTabs :: [Pair<String String>]
+top::PluginConfig ::= hasExporter::Boolean hasCodeFolder::Boolean hasNewFileWizard::Boolean propertyTabs :: [Pair<String String>]
 {
     top.hasExporter = hasExporter;
-    top.hasSourceLinker = hasSourceLinker;
     top.hasCodeFolder = hasCodeFolder;
     top.hasNewFileWizard = hasNewFileWizard;
     top.propertyTabs = propertyTabs;

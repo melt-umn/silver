@@ -5,14 +5,10 @@
  */
 package silver.composed.idetest.imp;
 
-import org.eclipse.core.resources.IResourceChangeEvent;
-import org.eclipse.core.resources.IResourceChangeListener;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.imp.runtime.PluginBase;
 import org.osgi.framework.BundleContext;
 
 import edu.umn.cs.melt.ide.silver.env.SilverEnv;
-import silver.composed.idetest.eclipse.resource.ResourceChangeListener;
 
 public class SILVERPlugin extends PluginBase {
 
@@ -23,8 +19,6 @@ public class SILVERPlugin extends PluginBase {
      * The unique instance of this plugin class
      */
     protected static SILVERPlugin sPlugin;
-
-    private static IResourceChangeListener RC_LISTENER = new ResourceChangeListener();
 
     public static SILVERPlugin getInstance() {
     	if (sPlugin == null)
@@ -43,14 +37,10 @@ public class SILVERPlugin extends PluginBase {
         SilverEnv.initialize(context.getBundle());
 		common.Util.environment.put("SILVER_HOME", SilverEnv.getSilverHome().getAbsolutePath());
 		common.Util.environment.put("SILVER_GEN", SilverEnv.getGeneratedFolder().getAbsolutePath());
-
-        ResourcesPlugin.getWorkspace().addResourceChangeListener(
-        	RC_LISTENER, IResourceChangeEvent.POST_CHANGE);
     }
 
     @Override
     public void shutdown() {        
-        ResourcesPlugin.getWorkspace().removeResourceChangeListener(RC_LISTENER);
     }
 
     @Override

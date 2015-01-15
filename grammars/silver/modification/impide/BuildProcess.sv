@@ -383,24 +383,9 @@ String ::= parserClassName::String config::PluginConfig
     "        tofile=\"${ide.pkg.path}/eclipse/property/TabCommons.java\" filtering=\"true\"/>\n" ++
     "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template\"\n" ++    -- this file always get copied even if it's not used
     "        tofile=\"${ide.pkg.path}/eclipse/property/PropertyControlsProvider.java\" filtering=\"true\"/>\n" ++
-    "  \n" ++
-        (if(config.hasSourceLinker)
-        then
-        "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/LinkSourceWizard.java.template\"\n" ++
-        "        tofile=\"${ide.pkg.path}/eclipse/property/LinkSourceWizard.java\" filtering=\"true\"/>\n" ++
-        "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/TabBuildConfig.java.template\"\n" ++
-        "        tofile=\"${ide.pkg.path}/eclipse/property/TabBuildConfig.java\" filtering=\"true\"/>\n" ++
-        "  \n"
-        else
-        "")
+    "  \n"
     else
     "") ++    
-
-    "  <mkdir dir='${ide.pkg.path}/eclipse/resource'/>\n" ++
-    "  <!-- Project resource management -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/resource/ResourceChangeListener.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/resource/ResourceChangeListener.java\" filtering=\"true\"/>\n" ++
-    "  \n" ++
 
     "  <mkdir dir='${ide.pkg.path}/eclipse/perspective'/>\n" ++
     "  <!-- A perspective for development using this language. -->\n" ++
