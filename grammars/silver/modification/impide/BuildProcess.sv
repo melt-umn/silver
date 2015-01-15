@@ -24,7 +24,6 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   production isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
 
   -- TODO only used for the adaptive stuff, so will remove shortly.
-  -- also propagated into Fold. DOH
   local startNTClassName::String = makeNTClassName(ide.ideParserSpec.startNT);
   extraTopLevelDecls <- if !isIde then [] else [
     "<property name='start.nonterminal.class' value='" ++ startNTClassName ++ "'/>"]; 
@@ -33,7 +32,6 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   local parserPackageName :: String = makeName(ide.ideParserSpec.sourceGrammar);
   local parserPackagePath :: String = grammarToPath2(ide.ideParserSpec.sourceGrammar);
   local ideParserFullPath :: String = getIDEParserFile(ide.ideParserSpec.sourceGrammar, parserClassName, "${src}/");
-  local folderFileName :: String = findFunction(ide.funcDcls, "folder", "LANGFoldingUpdater", "DummyFoldingUpdater");
   production pkgName :: String = makeName(buildGrammar);
 
   top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, allParsers, benv.silverGen, ide, pkgName, startNTClassName)];
@@ -68,23 +66,21 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     getIDEFunctionsDcls(ide.funcDcls) ++
 
     [
-    "<target name='ide' depends='arg-check, filters, enhance, jars, copper, grammars, create-folders, customize, postbuild'>\n"++
+    "<target name='ide' depends='arg-check, filters, jars, copper, grammars, create-folders, customize, postbuild'>\n"++
     "    <delete dir='" ++ getIDETempFolder() ++ "'/>\n"++
     "</target>",
     "<target name='ide-init'>" ++ getIDEInitTarget() ++ "</target>",
     "<target name='arg-check'>" ++ getArgCheckTarget() ++ "</target>",
     "<target name='filters'>" ++ getFiltersTarget() ++ "</target>",
-    "<target name='create-folders'>" ++ getCreateFoldersTarget(parserClassName, folderFileName, ide.pluginConfig) ++ "</target>",
+    "<target name='create-folders'>" ++ getCreateFoldersTarget(parserClassName, ide.pluginConfig) ++ "</target>",
     "<target name='customize' if=\"to-customize\" depends='arg-check, filters'>" ++ getCustomizeTarget() ++ "</target>",
     "<target name='postbuild' if=\"to-postbuild\">" ++ getAntPostBuildTarget() ++ "</target>",--this is for ant post-build; not to be confused with IDE post-build
-    "<target name='enhance' depends='enhance-fold'></target>",
-    "<target name='enhance-fold' depends='arg-check, filters' if=\"ide-function-folder-exists\">" ++ getEnhanceTarget(ide.funcDcls, getEnhanceFoldAction) ++ "</target>", 
     getBuildTargets()
     ];
 
   extraDistDeps <- if !isIde then [] else ["ide"]; -- Here's where we demand that target be built ('dist' is a dummy target that just depends on 'jars' initially)
   
-  extraGrammarsDeps <- if !isIde then [] else ["ide-init, enhance"]; -- enhance the language implementation by adding more source files, for use of IDE. (see target enhance)
+  extraGrammarsDeps <- if !isIde then [] else ["ide-init"]; -- enhance the language implementation by adding more source files, for use of IDE. (see target enhance)
 
   -- attributes required as an OSGi module TODO: currently we don't actually use the generated jar as an osgi bundle. remove?
   extraManifestAttributes <- if !isIde then [] else [
@@ -184,17 +180,6 @@ String ::= funcDcls::[Pair<String String>] doAction::(String::=Pair<String Strin
                 end;
 }
 
-function getEnhanceFoldAction
-String ::= funcDcl::Pair<String String>
-{
-    return if "folder"==funcDcl.fst
-           then 
-                "\n<copy file=\"${res}/src/edu/umn/cs/melt/ide/enhance/Fold.java.template\"\n" ++ -- [Location] ::= <<CST root's type>>
-                "        tofile=\"${src}/" ++ grammarToPath(funcDcl.snd) ++ "/Fold.java\" filtering=\"true\" overwrite=\"true\"/>"
-           else
-                "";
-}
-
 function grammarToPath
 String ::= grm :: String 
 {
@@ -233,10 +218,6 @@ String ::=
     "  \n"++
     "  <condition property=\"to-postbuild\">\n"++
     "    <available file=\"${grammar.path}/postbuild.xml\" type=\"file\"/>\n"++
-    "  </condition>\n"++
-    "  \n"++
-    "  <condition property=\"ide-function-folder-exists\">\n"++
-    "    <isset property=\"ide.function.folder\"/>\n"++
     "  </condition>\n";
 }
 
@@ -262,7 +243,6 @@ String ::=
     "  <filter token=\"FEATURE_COPYRIGHT_TEXT\" value='no copyright information available'/>\n" ++
     "  <filter token=\"FEATURE_LICENSE_URL\" value='http://some.user.provided.url'/>\n" ++
     "  <filter token=\"FEATURE_LICENSE_TEXT\" value='no license information available'/>\n" ++
-    "  <filter token=\"FOLDER_CLASS_QNAME\" value='${ide.function.folder}'/>\n" ++
     "  <filter token=\"NEWFILE_STUBGEN_CLASS_QNAME\" value='${ide.function.stubgen.newfile.name}'/>\n" ++
     "  <filter token=\"LANG_COMPOSED_PKG\" value='${lang.composed}'/>\n" ++ 
     "  <filter token=\"START_NONTERMINAL_CLASS\" value='${start.nonterminal.class}'/>\n" ++
@@ -271,7 +251,7 @@ String ::=
 }
 
 function getCreateFoldersTarget
-String ::= parserClassName::String folderFileName::String config::PluginConfig
+String ::= parserClassName::String config::PluginConfig
 {
   return 
     "  \n" ++
@@ -365,16 +345,6 @@ String ::= parserClassName::String folderFileName::String config::PluginConfig
     "        <globmapper from=\"*.java.template\" to=\"*.java\"/>\n" ++
     "  </copy>\n" ++
     "  \n" ++
-
-    (if(config.hasCodeFolder)
-    then
-    "  <mkdir dir='${ide.pkg.path}/imp/folding'/>\n" ++
-    "  <!-- Language folding classes, supported by IMP -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/folding/" ++ folderFileName ++ ".java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/imp/folding/${lang.name}FoldingUpdater.java\" filtering=\"true\"/>\n" ++
-    "  \n"
-    else
-    "") ++
 
     "  <mkdir dir='${ide.pkg.path}/eclipse/wizard'/>\n" ++
     "  <mkdir dir='${ide.pkg.path}/eclipse/wizard/newproject'/>\n" ++

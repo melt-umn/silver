@@ -15,6 +15,12 @@ package edu.umn.cs.melt.ide.impl;
  * usually pass properties to it. I.e. we could say "use the silver-imp runtime builder class
  * and pass it parameter 'plugin-name-to-look-up-in-registry = whatever' to use to look things
  * up here.
+ * 
+ * <p>Bonus: we can pass parameters to things instantiated by eclipse in plugin.xml.
+ * Downside: the IMP stuff doesn't really let us do that (according to its schema, however
+ * technically we can!) BUT there's still a good way: if our registry is by the same
+ * 'language' key as IMP's language registry, then the imp-instantiated stuff
+ * can just look at the already existing 'language' attribute, and know what to look up here, too! :D
  */
 public class SVRegistry {
 	private static SVInterface plugin = null;
