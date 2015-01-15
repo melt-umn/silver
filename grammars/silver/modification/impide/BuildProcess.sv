@@ -390,12 +390,6 @@ String ::= parserClassName::String config::PluginConfig
     "        tofile=\"${ide.pkg.path}/eclipse/perspective/${lang.name}Perspective.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
-    "  <mkdir dir='${ide.pkg.path}/eclipse/console'/>\n" ++
-    "  <!-- An IDE console specific to project of this language. -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/console/LANGConsole.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/console/${lang.name}Console.java\" filtering=\"true\"/>\n" ++
-    "  \n" ++
-
     "  <!-- 10. Images and other media resources -->\n" ++
     "  <mkdir dir='${ide.proj.plugin.path}/icons'/>\n" ++
     "  <copy todir=\"${ide.proj.plugin.path}/icons/\">\n" ++

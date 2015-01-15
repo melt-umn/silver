@@ -4,6 +4,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 
+import edu.umn.cs.melt.ide.imp.services.Console;
 import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
 
 /**
@@ -14,23 +15,13 @@ public final class Util {
 
 	/* IDE Console */
 	
-	private static ConsoleLoggingStream CONSOLE_LOGGER;
-	
-	public static void setConsoleLoggingStream(ConsoleLoggingStream cls){
-		CONSOLE_LOGGER = cls;
-	}
-	
-	public static Object info(String msg){
-		if(CONSOLE_LOGGER!=null){
-			CONSOLE_LOGGER.info(msg);
-		}
+	public static Object info(String msg) {
+		Console.getConsoleLoggingStream().info(msg);
 		return null;
 	}
 	
 	public static Object error(String msg){
-		if(CONSOLE_LOGGER!=null){
-			CONSOLE_LOGGER.error(msg);
-		}
+		Console.getConsoleLoggingStream().error(msg);
 		return null;
 	}
 	
