@@ -384,12 +384,6 @@ String ::= parserClassName::String config::PluginConfig
     else
     "") ++    
 
-    "  <mkdir dir='${ide.pkg.path}/eclipse/perspective'/>\n" ++
-    "  <!-- A perspective for development using this language. -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/perspective/LANGPerspective.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/perspective/${lang.name}Perspective.java\" filtering=\"true\"/>\n" ++
-    "  \n" ++
-
     "  <!-- 10. Images and other media resources -->\n" ++
     "  <mkdir dir='${ide.proj.plugin.path}/icons'/>\n" ++
     "  <copy todir=\"${ide.proj.plugin.path}/icons/\">\n" ++
