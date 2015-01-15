@@ -1,22 +1,12 @@
-/*
- * Variables used:
- *   PKG_NAME
- *   LANG_NAME
- */
-
-package @PKG_NAME@.eclipse.perspective;
+package edu.umn.cs.melt.ide.eclipse;
 
 import org.eclipse.ui.IFolderLayout;
 import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IPerspectiveFactory;
 import org.eclipse.ui.console.IConsoleConstants;
 
-import @PKG_NAME@.imp.@LANG_NAME@Plugin;
+public class Perspective implements IPerspectiveFactory {
 
-public class @LANG_NAME@Perspective implements IPerspectiveFactory {
-
-	public static final String PERSPECTIVE_ID = @LANG_NAME@Plugin.kPluginID + ".perspective";
-	
 	/**
 	 * The @LANG_NAME@ IDE's development perspective has the following layout:
 	 * <p>

@@ -275,7 +275,7 @@ function makeExtensions
                "<extension",
                "   point=\"org.eclipse.ui.perspectives\">",
                "   <perspective",
-               "      class=\"@PKG_NAME@.eclipse.perspective.@LANG_NAME@Perspective\"",
+               "      class=\"edu.umn.cs.melt.ide.eclipse.Perspective\"",
                "      id=\"@LANG_NAME@_IDE.perspective\"",
                "      name=\"@LANG_NAME@\">",
                "   </perspective>",
