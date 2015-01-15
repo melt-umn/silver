@@ -9,7 +9,6 @@ import org.eclipse.ant.core.AntRunner;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.ui.IStartup;
 
-import @PKG_NAME@.eclipse.console.@LANG_NAME@Console;
 import edu.umn.cs.melt.ide.util.ISilverTypeWrapper;
 import edu.umn.cs.melt.ide.util.ProjectUtil;
 import edu.umn.cs.melt.ide.util.Util;
@@ -24,9 +23,6 @@ public class StartupHook implements IStartup {
         //Initialize execution environment for @LANG_NAME@ 
 		@LANG_NAME@Initializer.initialize();
 		edu.umn.cs.melt.ide.impl.SVRegistry.register(new @PKG_NAME@.SVIdeInterface());
-
-        //Set up console logger
-        Util.setConsoleLoggingStream(@LANG_NAME@Console.getConsoleLoggingStream());
 
         //Set up ant runner
         Util.setAntRunnable(new IAntRunnable(){
