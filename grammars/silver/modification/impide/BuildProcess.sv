@@ -346,8 +346,6 @@ String ::= parserClassName::String config::PluginConfig
     "  <mkdir dir='${ide.pkg.path}/eclipse/wizard'/>\n" ++
     "  <mkdir dir='${ide.pkg.path}/eclipse/wizard/newproject'/>\n" ++
     "  <!-- A wizard for creating new project. -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/wizard/newproject/NewProjectWizard.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/wizard/newproject/NewProjectWizard.java\" filtering=\"true\"/>\n" ++
     "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/wizard/newproject/PropertyGenerator.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/eclipse/wizard/newproject/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
@@ -356,14 +354,8 @@ String ::= parserClassName::String config::PluginConfig
     then
     "  <mkdir dir='${ide.pkg.path}/eclipse/wizard/newfile'/>\n" ++
     "  <!-- A wizard for creating new source file. -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/wizard/newfile/NewSourceFileWizard.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/wizard/newfile/NewSourceFileWizard.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/wizard/newfile/WizardNewSourceFilePage.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/wizard/newfile/WizardNewSourceFilePage.java\" filtering=\"true\"/>\n" ++
     "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/wizard/newfile/PropertyControlsProvider.java.template\"\n" ++
     "        tofile=\"${ide.pkg.path}/eclipse/wizard/newfile/PropertyControlsProvider.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/wizard/newfile/GenerateNewFileStub.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/wizard/newfile/GenerateNewFileStub.java\" filtering=\"true\"/>\n" ++
     "  \n"
     else
     "") ++
@@ -372,12 +364,6 @@ String ::= parserClassName::String config::PluginConfig
     then
     "  <mkdir dir='${ide.pkg.path}/eclipse/property'/>\n" ++
     "  <!-- A project property page -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/IPropertyPageTab.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/property/IPropertyPageTab.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/property/MultiTabPropertyPage.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/property/MultiTabPropertyPage.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/eclipse/property/TabCommons.java.template\"\n" ++    -- this file always get copied even if it's not used
-    "        tofile=\"${ide.pkg.path}/eclipse/property/TabCommons.java\" filtering=\"true\"/>\n" ++
     "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template\"\n" ++    -- this file always get copied even if it's not used
     "        tofile=\"${ide.pkg.path}/eclipse/property/PropertyControlsProvider.java\" filtering=\"true\"/>\n" ++
     "  \n"

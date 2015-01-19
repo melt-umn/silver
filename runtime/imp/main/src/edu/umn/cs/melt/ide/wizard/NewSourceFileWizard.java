@@ -1,11 +1,4 @@
-/*
- * Variables used:
- *   PKG_NAME
- *   SOURCE_EXT
- *   LANG_NAME
- */
-
-package @PKG_NAME@.eclipse.wizard.newfile;
+package edu.umn.cs.melt.ide.wizard;
 
 import java.io.ByteArrayInputStream;
 
@@ -26,11 +19,15 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.FileEditorInput;
 
+import common.ConsCell;
+
+import edu.umn.cs.melt.ide.impl.SVRegistry;
+
 import ide.NIdeProperty;
 
 /**
- * The @LANG_NAME@'s New Source File Wizard is used to create a @LANG_NAME@ source file, 
- * with extension name being "@SOURCE_EXT@", under a given @LANG_NAME@ project.
+ * The New Source File Wizard is used to create a source file, 
+ * with extension name being given by the plugin, under a given project.
  * <br>
  * The user can also define properties when creating a new source file. The source file 
  * stub generator, defined in IDE declaration block, consults with these properties to 
@@ -38,12 +35,12 @@ import ide.NIdeProperty;
  */
 public class NewSourceFileWizard extends Wizard implements INewWizard, IExecutableExtension {
 
-	private static String EXT = ".@SOURCE_EXT@";
+	private String EXT = "." + SVRegistry.get().fileExtension();
 	
-	private WizardNewSourceFilePage page1;
+	private NewSourceFilePage page1;
 	
 	public NewSourceFileWizard() {
-		setWindowTitle("@LANG_NAME@");
+		setWindowTitle(SVRegistry.get().name());
 	}
 
 	@Override
@@ -65,9 +62,11 @@ public class NewSourceFileWizard extends Wizard implements INewWizard, IExecutab
 	    // uses a package explorer (id=org.eclipse.jdt.ui.PackageExplorer), instead of project explorer.
 	    // We won't handle this typical misuse here.
 
-	    page1 = new WizardNewSourceFilePage("New @LANG_NAME@ Source File Wizard", selection);
-	    page1.setTitle("@LANG_NAME@ Source File");
-	    page1.setDescription("Create new @LANG_NAME@ source file");
+	    String name = SVRegistry.get().name();
+	    
+	    page1 = new NewSourceFilePage("New " + name + " Source File Wizard", selection);
+	    page1.setTitle(name + " Source File");
+	    page1.setDescription("Create new " + name + " source file");
 
 	    addPage(page1);
 	}
@@ -91,8 +90,8 @@ public class NewSourceFileWizard extends Wizard implements INewWizard, IExecutab
 		if(!file.exists()){
 			try {
 				// Generate stub
-				NIdeProperty[] properties = page1.getNIdePerpertyArray();
-				String stub = GenerateNewFileStub.getStub(properties);
+				ConsCell properties = page1.getNIdePerpertyArray();
+				String stub = SVRegistry.get().fileStub(properties).toString();
 				
 				// Create file
 				file.create(new ByteArrayInputStream(stub.getBytes()), false, null);

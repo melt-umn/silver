@@ -17,6 +17,7 @@ synthesized attribute svIdeInterface :: String;
 
 nonterminal IdeSpec with ideExtension, ideParserSpec, funcDcls, propDcls, wizards, productInfo, pluginConfig, ideFunctions, svIdeInterface;
 
+
 abstract production ideSpec
 top::IdeSpec ::= 
     ext::String ideFuncDcls::[IdeFunction] idePropDcls::[IdeProperty] wizards::[IdeWizardDcl]
@@ -38,10 +39,13 @@ import ide.NIdeEnv;
 
 import common.ConsCell;
 import common.Node;
+import common.StringCatter;
 
 import core.NIOVal;
 import core.Pioval;
 
+import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
+import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 import edu.umn.cs.melt.ide.impl.SVDefault;
 
 public class SVIdeInterface extends SVDefault {
@@ -50,10 +54,31 @@ public class SVIdeInterface extends SVDefault {
 
 	@Override
 	public String name() { return "@LANG_NAME@"; }
-	
+	@Override
+	public String pluginId() { return "@LANG_NAME@_IDE"; }
 	@Override
 	public String markerErrorName() { return "@LANG_NAME@_IDE.@LANG_NAME@.imp.builder.problem"; }
+	@Override
+	public String getNatureId() { return "@LANG_NAME@_IDE.imp.nature"; }
+	@Override
+	public String fileExtension() { return "${ext}"; }
+	@Override
+	public IPropertyControlsProvider getProjectProperties() {
+		return new @PKG_NAME@.eclipse.property.PropertyControlsProvider();
+	}
+	@Override
+	public String getInitialProjectProperties() {
+		return @PKG_NAME@.eclipse.wizard.newproject.PropertyGenerator.getAll();
+	}
+	@Override
+	public IPropertyPageTab[] getPropertyTabs() {
+		return new IPropertyPageTab[] {
+			${getTabClasses(pluginConfig.propertyTabs)}
+		};
+	}
+
 ${foldr(stringConcat, "", map((.svIdeInterface), ideFuncDcls))}
+${foldr(stringConcat, "", map((.svIdeInterface), wizards))}
 }
 """;
 }

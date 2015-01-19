@@ -1,9 +1,4 @@
-/*
- * Variables used:
- *   PKG_NAME
- *   LANG_NAME
- */
-package @PKG_NAME@.eclipse.property;
+package edu.umn.cs.melt.ide.eclipse.property;
 
 import java.util.List;
 
@@ -14,7 +9,9 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.ui.dialogs.PropertyPage;
 
+import edu.umn.cs.melt.ide.impl.SVRegistry;
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 import edu.umn.cs.melt.ide.silver.property.Property;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
@@ -22,11 +19,11 @@ import edu.umn.cs.melt.ide.silver.property.ui.PropertyControl;
 
 public class TabCommons implements IPropertyPageTab {
 
-	private IPropertyControlsProvider provider = new PropertyControlsProvider();
+	private IPropertyControlsProvider provider = SVRegistry.get().getProjectProperties();
 	
 	private List<PropertyControl> controls;
 	
-	private MultiTabPropertyPage page;
+	private PropertyPage page;
 	
 	@Override
 	public void fillInTabItem(Composite panel) {
@@ -71,7 +68,7 @@ public class TabCommons implements IPropertyPageTab {
 				}
 			}			
 			
-			IProject project = page.getProject();
+			IProject project = (IProject)page.getElement().getAdapter(IProject.class);
 			try {
 				project.refreshLocal(IResource.DEPTH_ONE, null);
 			} catch (CoreException e) {
@@ -97,17 +94,22 @@ public class TabCommons implements IPropertyPageTab {
 	}
 
 	@Override
-	public void setPropertyPage(MultiTabPropertyPage page){
+	public void setPropertyPage(PropertyPage page){
 		this.page = page;
 	}
 	
 	private ProjectProperties getProperties(){
-		IProject project = page.getProject();
+		IProject project = (IProject)page.getElement().getAdapter(IProject.class);
 	    if (project != null) {
 		    return ProjectProperties.getPropertyPersister(project.getLocation().toString());
 		}
 		
 	    return null;
+	}
+
+	@Override
+	public String getName() {
+		return "Common";
 	}
 
 }

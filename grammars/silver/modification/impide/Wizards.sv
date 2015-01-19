@@ -1,5 +1,7 @@
 grammar silver:modification:impide;
 
+import silver:translation:java:core only makeClassName;
+
 -- An IdeWizardDcl includes all the necessary information for generating a Wizard in IDE. 
 
 synthesized attribute wizName :: String;
@@ -7,7 +9,7 @@ synthesized attribute wizDisplay :: String;
 synthesized attribute wizFunc :: String;
 synthesized attribute wizProps :: [IdeProperty];
 
-nonterminal IdeWizardDcl with wizName, wizDisplay, wizFunc, wizProps;
+nonterminal IdeWizardDcl with wizName, wizDisplay, wizFunc, wizProps, svIdeInterface;
 
 {--
   name: name of this wizard. For package/class.
@@ -22,4 +24,16 @@ top::IdeWizardDcl ::= name::String display::String func::String props::[IdePrope
   top.wizDisplay = display;
   top.wizFunc = func;
   top.wizProps = props;
+  top.svIdeInterface = template """
+	@Override
+	public IPropertyControlsProvider getNewFileProperties() {
+		return new @PKG_NAME@.eclipse.wizard.${name}.PropertyControlsProvider();
+	}
+	@Override
+	public StringCatter fileStub(ConsCell properties) {
+		return (StringCatter)${makeClassName(func)}.invoke(properties);
+	}
+""";
+
 }
+

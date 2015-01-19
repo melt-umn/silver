@@ -79,7 +79,7 @@ PluginConfig ::= funcs::[Pair<String String>] props::[IdeProperty] wizards::[Ide
     local hasNewFileWizard :: Boolean = hasWizard(wizards, "newfile");
 
     local tabs::[Pair<String String>] = 
-        (if null(props) then [] else [pair("Commons", "TabCommons")]);
+        (if null(props) then [] else [pair("Commons", "edu.umn.cs.melt.ide.eclipse.property.TabCommons")]);
 
     return pluginConfig(hasExporter, hasCodeFolder, hasNewFileWizard, tabs);
 }

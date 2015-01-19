@@ -1,10 +1,4 @@
-/*
- * Variables used:
- *   PKG_NAME
- *   LANG_NAME
- */
-
-package @PKG_NAME@.eclipse.wizard.newproject;
+package edu.umn.cs.melt.ide.wizard;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;
@@ -23,15 +17,16 @@ import org.eclipse.ui.dialogs.WizardNewProjectCreationPage;
 import org.eclipse.ui.wizards.newresource.BasicNewProjectResourceWizard;
 
 import edu.umn.cs.melt.ide.imp.builders.Nature;
+import edu.umn.cs.melt.ide.impl.SVRegistry;
 
 /**
- * The @LANG_NAME@'s New Project Wizard is used to create @LANG_NAME@ project. In general
+ * The New Project Wizard is used to create a project. In general
  * it follows these steps:
  * <p>
  * (1) show a page for user to name the project <br>
  * (2) create a project folder with the given name in current workspace <br>
  * (3) create a property file <br>
- * (4) add @LANG_NAME@ nature to the project (note nature is associated with builder) <br>
+ * (4) add the nature to the project (note nature is associated with builder) <br>
  */
 public class NewProjectWizard extends Wizard implements INewWizard, IExecutableExtension {
 
@@ -40,7 +35,7 @@ public class NewProjectWizard extends Wizard implements INewWizard, IExecutableE
 	private IConfigurationElement configElement;
 	
 	public NewProjectWizard() {
-		setWindowTitle("@LANG_NAME@");
+		setWindowTitle(SVRegistry.get().name());
 	}
 
 	@Override
@@ -51,10 +46,12 @@ public class NewProjectWizard extends Wizard implements INewWizard, IExecutableE
 	@Override
 	public void addPages() {
 	    super.addPages();
+	    
+	    String name = SVRegistry.get().name();
 
-	    page1 = new WizardNewProjectCreationPage("New @LANG_NAME@ Project Wizard");
-	    page1.setTitle("@LANG_NAME@ Project");
-	    page1.setDescription("Create new @LANG_NAME@ project");
+	    page1 = new WizardNewProjectCreationPage("New " + name + " Project Wizard");
+	    page1.setTitle(name + " Project");
+	    page1.setDescription("Create new " + name + " project");
 
 	    addPage(page1);
 	}
@@ -84,7 +81,7 @@ public class NewProjectWizard extends Wizard implements INewWizard, IExecutableE
 	}
 
     /**
-     * Create a @LANG_NAME@ project and add nature to it.
+     * Create a project and add nature to it.
      *
      * @param location
      * @param projectName
@@ -113,7 +110,7 @@ public class NewProjectWizard extends Wizard implements INewWizard, IExecutableE
                 
                 //Create properties file
             	project.getFile("project.properties").create(
-            		new ByteArrayInputStream(PropertyGenerator.getAll().getBytes()), true, null);
+            		new ByteArrayInputStream(SVRegistry.get().getInitialProjectProperties().getBytes()), true, null);
             } catch (CoreException e) {
 		    	page1.setErrorMessage(e.getMessage());
 		    	e.printStackTrace();
@@ -121,9 +118,9 @@ public class NewProjectWizard extends Wizard implements INewWizard, IExecutableE
             }
         }
         
-        //Add @LANG_NAME@ nature, if not added yet
+        //Add the nature, if not added yet
         try {
-            Nature.addToProject(project, "@LANG_NAME@_IDE.imp.nature");
+            Nature.addToProject(project, SVRegistry.get().getNatureId());
         } catch (CoreException e) {
             e.printStackTrace();
         }

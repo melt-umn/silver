@@ -1,11 +1,7 @@
-/*
- * Variables used:
- *   PKG_NAME
- * and ref to generated MultiTabPropertyPage
- */
-package @PKG_NAME@.eclipse.property;
+package edu.umn.cs.melt.ide.eclipse.property;
 
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.ui.dialogs.PropertyPage;
 
 /**
  * This interface defines the set of behaviors required of a tabular item in 
@@ -18,6 +14,11 @@ import org.eclipse.swt.widgets.Composite;
  * @see MultiTabPropertyPage the container of these tab items.
  */
 public interface IPropertyPageTab {
+	
+	/**
+	 * Get the user-visible name of this tab.
+	 */
+	String getName();
 
 	/**
 	 * Called when OK button is clicked.
@@ -41,6 +42,6 @@ public interface IPropertyPageTab {
      * method (dummy impl.) if it doesn't refer to the container.
 	 * @param pp the property page containing this tab
 	 */
-	void setPropertyPage(MultiTabPropertyPage pp);
+	void setPropertyPage(PropertyPage pp);
 	
 }
