@@ -3,7 +3,10 @@ package edu.umn.cs.melt.ide.impl;
 import ide.NIdeEnv;
 import common.ConsCell;
 import common.Node;
+import common.StringCatter;
 import core.NIOVal;
+import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
+import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 
 /**
  * This interface is implemented by two classes:
@@ -23,9 +26,29 @@ public interface SVInterface {
 	public String name();
 	
 	/**
+	 * Obtain this plugin's id.
+	 * 
+	 * Should *NOT* be used to guess the ids of extension point contibutions
+	 * (e.g. pluginId() + ".nature" or similar) becuase that's crap.
+	 * 
+	 * SHOULD be used for trying to open up resources from inside this bundle's jar.
+	 */
+	public String pluginId();
+	
+	/**
 	 * Gets the name of the problem marker for this extension.
 	 */
 	public String markerErrorName();
+	
+	/**
+	 * Obtain the name of the nature for this plugin.
+	 */
+	public String getNatureId();
+	
+	/**
+	 * Get the file extension associated with this plugin. excluding the dot. e.g. "sv"
+	 */
+	public String fileExtension();
 	
 	/**
 	 * IOVal<[IdeMessage]> ::= [IdeProperty] IO
@@ -76,4 +99,31 @@ public interface SVInterface {
 	 * @return  A list of extents that should fold.
 	 */
 	public ConsCell getFolds(Node root);
+	
+	/**
+	 * Obtains a list of properties to request in order to create a new file via wizard.
+	 */
+	public IPropertyControlsProvider getNewFileProperties();
+	/**
+	 * String ::= [IdeProperty]
+	 * 
+	 * Given the properties from {@link #getNewFileProperties()}, generate the file's contents.
+	 * 
+	 * @param properties  the requested properties
+	 * @return the file's initial contents
+	 */
+	public StringCatter fileStub(ConsCell properties);
+
+	/**
+	 * Obtains a list of properties for the project's configuration.
+	 */
+	public IPropertyControlsProvider getProjectProperties();
+	/**
+	 * Generate the initial project properties configuration file contents.
+	 */
+	public String getInitialProjectProperties();
+	/**
+	 * Get a set of tabs for the project's properties page.
+	 */
+	public IPropertyPageTab[] getPropertyTabs();
 }

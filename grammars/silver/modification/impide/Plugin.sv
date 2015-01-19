@@ -226,7 +226,7 @@ function makeExtensions
                     [
                        "   <wizard",
                        "      category=\"@LANG_NAME@_IDE.wizards.category/\"",
-                       "      class=\"@PKG_NAME@.eclipse.wizard.newproject.NewProjectWizard\"",
+                       "      class=\"edu.umn.cs.melt.ide.wizard.NewProjectWizard\"",
                        "      id=\"@LANG_NAME@_IDE.wizard.newProject\"",
                        "      name=\"New @LANG_NAME@ Project\"",
                        "      finalPerspective=\"@LANG_NAME@_IDE.perspective\"",
@@ -241,7 +241,7 @@ function makeExtensions
                     [
                        "   <wizard",
                        "      category=\"@LANG_NAME@_IDE.wizards.category/\"",
-                       "      class=\"@PKG_NAME@.eclipse.wizard.newfile.NewSourceFileWizard\"",
+                       "      class=\"edu.umn.cs.melt.ide.wizard.NewSourceFileWizard\"",
                        "      id=\"@LANG_NAME@.wizard.newSourceFile\"",
                        "      name=\"New @LANG_NAME@ Source File\">",
                        "   </wizard>"
@@ -290,7 +290,7 @@ function makeExtensions
             [
                 "<extension point=\"org.eclipse.ui.propertyPages\">",
                 "  <page",
-                "    class=\"@PKG_NAME@.eclipse.property.MultiTabPropertyPage\"",
+                "    class=\"edu.umn.cs.melt.ide.eclipse.property.MultiTabPropertyPage\"",
                 "    id=\"@LANG_NAME@_IDE.buildConfig.propertyPage\"",
                 "    name=\"@LANG_NAME@\">",
                 "    <enabledWhen>",

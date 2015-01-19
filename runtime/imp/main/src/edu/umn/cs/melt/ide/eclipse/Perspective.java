@@ -8,7 +8,7 @@ import org.eclipse.ui.console.IConsoleConstants;
 public class Perspective implements IPerspectiveFactory {
 
 	/**
-	 * The @LANG_NAME@ IDE's development perspective has the following layout:
+	 * The IDE's development perspective has the following layout:
 	 * <p>
 	 * <code>
 	 * ____________________________________  	<br>

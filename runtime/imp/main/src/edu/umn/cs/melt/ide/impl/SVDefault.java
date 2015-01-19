@@ -4,9 +4,12 @@ import ide.NIdeEnv;
 
 import common.ConsCell;
 import common.Node;
+import common.StringCatter;
 
 import core.NIOVal;
 import core.Pioval;
+import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
+import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 
 /**
  * This class exists to provide default behaviors for all methods of the interface.
@@ -21,7 +24,19 @@ public abstract class SVDefault implements SVInterface {
 	@Override
 	public abstract String name();
 	@Override
+	public abstract String pluginId();
+	@Override
 	public abstract String markerErrorName();
+	@Override
+	public abstract String getNatureId();
+	@Override
+	public abstract String fileExtension();
+	@Override
+	public abstract IPropertyControlsProvider getProjectProperties();
+	@Override
+	public abstract String getInitialProjectProperties();
+	@Override
+	public abstract IPropertyPageTab[] getPropertyTabs();
 	
 	@Override
 	public NIOVal build(ConsCell properties, NIdeEnv env, Object iotoken) {
@@ -53,5 +68,14 @@ public abstract class SVDefault implements SVInterface {
 		// It should never be the case that this is unimplemented and then called.
 		throw new UnsupportedOperationException("GetFolds should only be called if supplied by the plugin in the silver ide declaration.");
 	}
-
+	@Override
+	public IPropertyControlsProvider getNewFileProperties() {
+		// Should be provided if the wizard ends up in plugin.xml
+		throw new UnsupportedOperationException("new file properties requested by not provided by plugin");
+	}
+	@Override
+	public StringCatter fileStub(ConsCell properties) {
+		// Should be provided if the wizard ends up in plugin.xml
+		throw new UnsupportedOperationException("new file stub generator requested by not provided by plugin");
+	}
 }

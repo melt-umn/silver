@@ -1,9 +1,4 @@
-/*
- * Variables used:
- *   PKG_NAME
- *   LANG_NAME
- */
-package @PKG_NAME@.eclipse.wizard.newfile;
+package edu.umn.cs.melt.ide.wizard;
 
 import ide.NIdeProperty;
 import ide.PmakeIdeProperty;
@@ -46,12 +41,14 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.ISelectionService;
 import org.eclipse.ui.PlatformUI;
 
-import @PKG_NAME@.imp.@LANG_NAME@Plugin;
+import common.ConsCell;
+
+import edu.umn.cs.melt.ide.impl.SVRegistry;
 import edu.umn.cs.melt.ide.silver.property.Property;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 import edu.umn.cs.melt.ide.silver.property.ui.PropertyControl;
 
-public class WizardNewSourceFilePage extends WizardPage {
+public class NewSourceFilePage extends WizardPage {
 
 	/**
 	 * The project or folder under which this file is to be added.
@@ -82,10 +79,10 @@ public class WizardNewSourceFilePage extends WizardPage {
 	 */
 	private List<PropertyControl> propertyControls;
 
-	public WizardNewSourceFilePage(String pageName,
+	public NewSourceFilePage(String pageName,
 			IStructuredSelection selection) {
 		super(pageName);
-		provider = new PropertyControlsProvider();
+		provider = SVRegistry.get().getNewFileProperties();
 		initialSelection = selection;
 	}
 
@@ -136,7 +133,7 @@ public class WizardNewSourceFilePage extends WizardPage {
 		tv.setContentProvider(new ResourceTreeProvider());
 		tv.setInput(ResourcesPlugin.getWorkspace().getRoot().getProjects());
 		tv.addFilter(new ViewerFilter() {
-			// Show only @LANG_NAME@ projects and folders
+			// Show only appropriate projects and folders
 			@Override
 			public boolean select(Viewer viewer, Object parentElement, Object element) {
 				if (element instanceof IProject) {
@@ -158,7 +155,7 @@ public class WizardNewSourceFilePage extends WizardPage {
 			public void selectionChanged(SelectionChangedEvent event) {
 				IStructuredSelection sel = (IStructuredSelection) event.getSelection();
 				IResource resource = (IResource) sel.getFirstElement();
-				WizardNewSourceFilePage.this.parentResource = resource;
+				NewSourceFilePage.this.parentResource = resource;
 				updateParentFolderText();
 			}
 		});
@@ -231,20 +228,19 @@ public class WizardNewSourceFilePage extends WizardPage {
 	}
 	
 	/**
-	 * Get properties in a list of NIdeProperty
-	 * @return
+	 * Get properties in a [NIdeProperty]
 	 */
-	NIdeProperty[] getNIdePerpertyArray() {
-		NIdeProperty[] list = new NIdeProperty[propertyControls.size()];
-		int i=0;
+	ConsCell getNIdePerpertyArray() {
+		ConsCell list = ConsCell.nil;
 		for(PropertyControl control: propertyControls){
+			// this reverses the order, but that's okay I think
 			Property prop = control.getProperty();
-			list[i] = new PmakeIdeProperty(
-				new common.StringCatter(prop.getName()), //this is equal to prop.getName()
+			NIdeProperty item = new PmakeIdeProperty(
+				new common.StringCatter(prop.getName()),
 				new common.StringCatter(prop.getType().name()),
 				new common.StringCatter(prop.getSValue())
 			);
-			i++;
+			list = new ConsCell(item, list);
 		}
 		return list;
 	}
@@ -294,7 +290,7 @@ public class WizardNewSourceFilePage extends WizardPage {
 	private static class ResourceLabelProvider extends LabelProvider {
 
 		private static final ImageDescriptor FLDR = 
-			PluginBase.imageDescriptorFromPlugin(@LANG_NAME@Plugin.kPluginID, "icons/fldr_obj.gif");
+			PluginBase.imageDescriptorFromPlugin(SVRegistry.get().pluginId(), "icons/fldr_obj.gif");
 
 		private static Image FLDR_IMG;
 
@@ -376,7 +372,7 @@ public class WizardNewSourceFilePage extends WizardPage {
 				return false;
 			} else if(!(hasValidNature((IProject) this.parentResource))){
 				setPageComplete(false);
-				setErrorMessage("the project '" + parentResPath + "' is not a @LANG_NAME@ project");
+				setErrorMessage("the project '" + parentResPath + "' is not a " + SVRegistry.get().name() + " project");
 				return false;
 			}
 		} else { // It's a folder
@@ -441,7 +437,7 @@ public class WizardNewSourceFilePage extends WizardPage {
 	
 	private boolean hasValidNature(IProject project){
 		try {
-			if (project.hasNature("@LANG_NAME@_IDE.imp.nature")) {
+			if (project.hasNature(SVRegistry.get().getNatureId())) {
 				return true;
 			}
 		} catch (CoreException e) {
