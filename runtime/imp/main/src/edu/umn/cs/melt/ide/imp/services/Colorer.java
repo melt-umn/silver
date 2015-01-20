@@ -1,9 +1,4 @@
-/*
- * Variables used:
- *   PKG_NAME
- *   PARSER_NAME
- */
-package @PKG_NAME@.imp.coloring;
+package edu.umn.cs.melt.ide.imp.services;
 
 import org.eclipse.imp.parser.IParseController;
 import org.eclipse.imp.services.ITokenColorer;
@@ -14,11 +9,11 @@ import org.eclipse.jface.text.TextAttribute;
 import edu.umn.cs.melt.ide.copper.CopperToken;
 import edu.umn.cs.melt.ide.copper.IToken;
 import edu.umn.cs.melt.ide.copper.coloring.CopperTextAttributeDecider;
+import edu.umn.cs.melt.ide.impl.SVRegistry;
 
 public class Colorer extends TokenColorerBase implements ITokenColorer {
 
-	private CopperTextAttributeDecider decider = 
-		@PARSER_NAME@_TextAttributeDecider.getInstance();
+	private CopperTextAttributeDecider decider = SVRegistry.get().getColorDecider();
 	
 	public Colorer() {
 		super();

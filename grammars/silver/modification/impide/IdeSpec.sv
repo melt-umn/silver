@@ -35,18 +35,26 @@ top::IdeSpec ::=
     template """
 package @PKG_NAME@;
 
-import ide.NIdeEnv;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.Iterator;
 
 import common.ConsCell;
 import common.Node;
 import common.StringCatter;
-
 import core.NIOVal;
 import core.Pioval;
+
+import ide.NIdeEnv;
+
+import org.eclipse.jface.text.IRegion;
 
 import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 import edu.umn.cs.melt.ide.impl.SVDefault;
+import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
+import edu.umn.cs.melt.ide.copper.coloring.CopperTextAttributeDecider;
+import edu.umn.cs.melt.ide.copper.AdaptiveEnhancedParseTreeInnerNode;
 
 public class SVIdeInterface extends SVDefault {
 
@@ -76,6 +84,22 @@ public class SVIdeInterface extends SVDefault {
 			${getTabClasses(pluginConfig.propertyTabs)}
 		};
 	}
+	@Override
+	public CopperTextAttributeDecider getColorDecider() {
+		return @PKG_NAME@.imp.coloring.@PARSER_NAME@_TextAttributeDecider.getInstance();
+	}
+	private @PKG_NAME@.copper.parser.@PARSER_NAME@ parser = new @PKG_NAME@.copper.parser.@PARSER_NAME@();
+	@Override
+	public AdaptiveEnhancedParseTreeInnerNode<Node> parse(Reader input, String filename) throws CopperParserException, IOException {
+		parser.reset();
+		return (AdaptiveEnhancedParseTreeInnerNode<Node>)((Object)parser.parse(input, filename));
+	}
+	@Override
+	public Iterator getTokensForLastParse(IRegion region) {
+		return parser.getTokenIterator(region);
+	}
+
+
 
 ${foldr(stringConcat, "", map((.svIdeInterface), ideFuncDcls))}
 ${foldr(stringConcat, "", map((.svIdeInterface), wizards))}

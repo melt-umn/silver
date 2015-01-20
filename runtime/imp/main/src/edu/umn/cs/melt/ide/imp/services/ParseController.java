@@ -1,10 +1,4 @@
-/**
- * PKG_NAME
- * START_NONTERMINAL_CLASS
- * LANG_NAME
- * PARSER_NAME
- */
-package @PKG_NAME@.imp.controller;
+package edu.umn.cs.melt.ide.imp.services;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -21,16 +15,15 @@ import org.eclipse.imp.parser.SimpleAnnotationTypeInfo;
 import org.eclipse.imp.services.IAnnotationTypeInfo;
 import org.eclipse.imp.services.ILanguageSyntaxProperties;
 
+import common.Node;
+
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
 import edu.umn.cs.melt.ide.copper.AdaptiveEnhancedParseTreeInnerNode;
 import edu.umn.cs.melt.ide.copper.IEnhancedParseTreeNode;
 import edu.umn.cs.melt.ide.copper.IToken;
 import edu.umn.cs.melt.ide.copper.SourcePositionLocator;
-
-import @PKG_NAME@.copper.parser.@PARSER_NAME@;
-import @PKG_NAME@.imp.@LANG_NAME@Plugin;
-import @PKG_NAME@.@LANG_NAME@Initializer;
+import edu.umn.cs.melt.ide.impl.SVRegistry;
 
 /**
  * Extends ParseControllerBase to use the default implementation of several
@@ -40,24 +33,20 @@ import @PKG_NAME@.@LANG_NAME@Initializer;
  * 	 protected IMessageHandler handler;<br>
  * 	 protected Object fCurrentAst;<br>
  */
-public class @LANG_NAME@ParseController extends ParseControllerBase {
+public class ParseController extends ParseControllerBase {
 	
 	private static DateFormat DATE_FORMAT = new SimpleDateFormat();
 	
 	/** Construct an instance of the parser. */
-	private @PARSER_NAME@ parser = new @PARSER_NAME@();
+//	private @PARSER_NAME@ parser = new @PARSER_NAME@();
 
 	private final SimpleAnnotationTypeInfo fSimpleAnnotationTypeInfo
 		= new SimpleAnnotationTypeInfo();
 
 	private SourcePositionLocator<IEnhancedParseTreeNode, IToken> locator;
 	
-	static {
-		@LANG_NAME@Initializer.initialize();
-	}
-	
-	public @LANG_NAME@ParseController() {
-		super(@LANG_NAME@Plugin.kLanguageID);
+	public ParseController() {
+		super(SVRegistry.get().name());
 		locator = new SourcePositionLocator<IEnhancedParseTreeNode, IToken>(this);
 	}
 	
@@ -81,15 +70,16 @@ public class @LANG_NAME@ParseController extends ParseControllerBase {
 	
 	@Override
 	public Object parse(String input, IProgressMonitor monitor) {
-		AdaptiveEnhancedParseTreeInnerNode<@START_NONTERMINAL_CLASS@> result = null;
+		AdaptiveEnhancedParseTreeInnerNode<Node> result = null;
 		boolean parsed = false;
 		handler.clearMessages();
 		
 		try {
-			parser.reset();
 			Reader reader = new StringReader(input);
-			result = parser.parse(reader, getPath().toFile().getName());
+			result = SVRegistry.get().parse(reader, getPath().toFile().getName());
 		    parsed = (result==null)?false:true;
+		    if(!parsed)
+		    	System.out.println("\nI didn't think parse result could be null?! \n");
 		} catch (CopperSyntaxError e) {
 			// We have a point, not an extent, so repeat start/end positions.
 			handler.handleSimpleMessage(
@@ -118,7 +108,7 @@ public class @LANG_NAME@ParseController extends ParseControllerBase {
 	//Delegate to auto-generated (enhanced) parser
 	@Override
 	public Iterator getTokenIterator(org.eclipse.jface.text.IRegion region) {
-		return parser.getTokenIterator(region);
+		return SVRegistry.get().getTokensForLastParse(region);
 	}
 	
 }

@@ -310,14 +310,6 @@ String ::= parserClassName::String config::PluginConfig
     "  <antcall target=\"create manifest file\" inheritAll=\"true\"/>\n" ++
     "  \n" ++
 
-    "  <!-- 7. customized IDE parser -->\n" ++
-    "  <mkdir dir='${ide.pkg.path}/imp/controller'/>\n" ++
-    -- commented out to support different build modes
-    --"<copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/controller/parseController.java.template\"\n" ++
-    --"      tofile=\"${ide.pkg.path}/imp/controller/${lang.name}ParseController.java\" filtering=\"true\"/>\n" ++
-    "  <antcall target=\"create parser controller\" inheritAll=\"true\"/>\n" ++
-    "  \n" ++
-
     "  <!-- 8. core plug-in classes -->\n" ++
     "  <mkdir dir='${ide.pkg.path}/'/>\n" ++  
     "  <!-- An initializer to be called during plugin start-up -->\n" ++
@@ -335,8 +327,6 @@ String ::= parserClassName::String config::PluginConfig
 
     "  <mkdir dir='${ide.pkg.path}/imp/coloring'/>\n" ++
     "  <!-- Language syntax highlighting classes, supported by IMP -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/coloring/Colorer.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/imp/coloring/Colorer.java\" filtering=\"true\"/>\n" ++
     "  <copy todir=\"${ide.pkg.path}/imp/coloring/\" overwrite=\"true\" filtering=\"true\">\n" ++
     "        <fileset dir=\"" ++ getIDETempFolder() ++ "imp/coloring/\"/>\n" ++
     "        <globmapper from=\"*.java.template\" to=\"*.java\"/>\n" ++
@@ -442,12 +432,6 @@ return
 
 "<target name=\"set classpaths for Eclipse\" depends=\"filters\">\n"++	
 "  <copy file=\"${res}/classpath.template\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n"++
-"</target>\n"++
-"\n"++
-
-"<target name=\"create parser controller\" depends=\"filters\">\n"++	
-"  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/controller/parseController.java.template\"\n" ++
-"      tofile=\"${ide.pkg.path}/imp/controller/${lang.name}ParseController.java\" filtering=\"true\"/>\n" ++
 "</target>\n"++
 "\n"++
 
