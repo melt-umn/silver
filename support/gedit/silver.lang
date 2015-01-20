@@ -55,7 +55,8 @@
         <context sub-pattern="0" where="start" style-ref="string"/>
         <context sub-pattern="0" where="end" style-ref="string"/>
         <context style-ref="string">
-          <match>[^$]+</match>
+          <match>([^$"]|"(?!")|""(?!"))+</match>
+          <!-- lone and double-double-quotes are okay, but not triple! -->
         </context>
         <context>
           <start>\$\{</start>
