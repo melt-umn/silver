@@ -121,7 +121,7 @@ function makeExtensions
         pluginUnstructuredElement(
             [
                 "<extension id=\"@LANG_NAME@_IDE.parserWrapper\" name=\"@LANG_NAME@ Parser Wrapper\" point=\"org.eclipse.imp.runtime.parser\">",
-                "  <parserWrapper class=\"@PKG_NAME@.imp.controller.@LANG_NAME@ParseController\" language=\"@LANG_NAME@\">",
+                "  <parserWrapper class=\"edu.umn.cs.melt.ide.imp.services.ParseController\" language=\"@LANG_NAME@\">",
                 "  </parserWrapper>",
                 "</extension>"
             ]
@@ -135,14 +135,8 @@ function makeExtensions
                "  </builder>",
                "</extension>"
 {-
-               "<extension id=\"@LANG_NAME@.imp.builder\" name=\"@LANG_NAME@ builder\" point=\"org.eclipse.core.resources.builders\">",
-               "  <builder hasNature=\"true\">",
-               "    <run class=\"@PKG_NAME@.imp.builders.@LANG_NAME@Builder\">",
                "      <parameter name=\"foo\" value=\"bar\">",
                "      </parameter>",
-               "    </run>",
-               "  </builder>",
-               "</extension>"
 -}
             ]
         ),
@@ -181,7 +175,6 @@ function makeExtensions
                                 "<action",
                                 "      label=\"Enable @LANG_NAME@ Builder\"",
                                 "      tooltip=\"Enable the @LANG_NAME@ builder for this project\"",
---                                "      class=\"@PKG_NAME@.imp.actions.Enable@LANG_NAME@Nature\"",
                                 "      id=\"@LANG_NAME@.imp.actions.enableNatureAction\">",
                                 "  <class class=\"edu.umn.cs.melt.ide.imp.builders.EnableNature\">",
                                 "    <parameter name=\"nature\" value=\"@LANG_NAME@_IDE.imp.nature\" />",
@@ -212,7 +205,7 @@ function makeExtensions
         pluginUnstructuredElement(
             [
                "<extension point=\"org.eclipse.imp.runtime.tokenColorer\">",
-               "   <tokenColorer class=\"@PKG_NAME@.imp.coloring.Colorer\" language=\"@LANG_NAME@\">",
+               "   <tokenColorer class=\"edu.umn.cs.melt.ide.imp.services.Colorer\" language=\"@LANG_NAME@\">",
                "   </tokenColorer>",
                "</extension>"
             ]
