@@ -277,9 +277,6 @@ String ::= parserClassName::String config::PluginConfig
     "    dumpFile='${ide.parser.classname}.copperdump.html'>\n" ++
     "      <inputs file='${ide.parser.ide_copperfile}'/>\n" ++
     "  </copper>\n" ++
-    "  <!-- and the default implementation of AST visitor -->\n" ++
-    "  <copy file=\"" ++ getIDETempFolder() ++ "/copper/parser/" ++ parserClassName ++ "_ASTVisitorAdapter.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/copper/parser/ASTVisitorAdapter.java\" filtering=\"true\"/>\n" ++
     "\n" ++
 
     "  <!-- 3. build properties -->\n" ++
