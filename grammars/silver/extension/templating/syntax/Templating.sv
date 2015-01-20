@@ -14,6 +14,8 @@ terminal OpenEscape '${';
 
 {-- A string, with escaped expressions within -}
 nonterminal TemplateString with location;
+{-- A string without the first triple quote, with escaped expressions within -}
+nonterminal UnquoteTemplateString with location;
 {-- A list of alternating String/Exprs -}
 nonterminal TemplateStringBody with location;
 {-- Either a String or an Expr -}
@@ -36,6 +38,18 @@ layout {}
 
 concrete production templateStringEmpty
 top::TemplateString ::= TripleQuote TripleQuote
+layout {}
+{
+}
+
+concrete production unquoteTemplateString
+top::UnquoteTemplateString ::= b::TemplateStringBody TripleQuote
+layout {}
+{
+}
+
+concrete production unquoteTemplateStringEmpty
+top::UnquoteTemplateString ::= TripleQuote
 layout {}
 {
 }
