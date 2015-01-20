@@ -309,13 +309,6 @@ String ::= parserClassName::String config::PluginConfig
 
     "  <!-- 8. core plug-in classes -->\n" ++
     "  <mkdir dir='${ide.pkg.path}/'/>\n" ++  
-    "  <!-- An initializer to be called during plugin start-up -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/Initializer.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/${lang.name}Initializer.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/StartupHook.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/StartupHook.java\" filtering=\"true\"/>\n" ++
-    "  \n" ++
-
     "  <mkdir dir='${ide.pkg.path}/imp/'/>\n" ++  
     "  <!-- Plugin main class (OSGi starter class) -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/plugin.java.template\"\n" ++

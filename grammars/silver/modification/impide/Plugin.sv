@@ -256,16 +256,6 @@ function makeExtensions
         pluginUnstructuredElement(
             [
                "<extension",
-               "   point=\"org.eclipse.ui.startup\">",
-               "   <startup",
-               "       class=\"@PKG_NAME@.StartupHook\">",
-               "   </startup>",
-               "</extension>"
-            ]
-        ), 
-        pluginUnstructuredElement(
-            [
-               "<extension",
                "   point=\"org.eclipse.ui.perspectives\">",
                "   <perspective",
                "      class=\"edu.umn.cs.melt.ide.eclipse.Perspective\"",
