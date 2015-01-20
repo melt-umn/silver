@@ -277,9 +277,6 @@ String ::= parserClassName::String config::PluginConfig
     "    dumpFile='${ide.parser.classname}.copperdump.html'>\n" ++
     "      <inputs file='${ide.parser.ide_copperfile}'/>\n" ++
     "  </copper>\n" ++
-    "  <!-- and the default implementation of AST visitor -->\n" ++
-    "  <copy file=\"" ++ getIDETempFolder() ++ "/copper/parser/" ++ parserClassName ++ "_ASTVisitorAdapter.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/copper/parser/ASTVisitorAdapter.java\" filtering=\"true\"/>\n" ++
     "\n" ++
 
     "  <!-- 3. build properties -->\n" ++
@@ -312,13 +309,6 @@ String ::= parserClassName::String config::PluginConfig
 
     "  <!-- 8. core plug-in classes -->\n" ++
     "  <mkdir dir='${ide.pkg.path}/'/>\n" ++  
-    "  <!-- An initializer to be called during plugin start-up -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/Initializer.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/${lang.name}Initializer.java\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/StartupHook.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/StartupHook.java\" filtering=\"true\"/>\n" ++
-    "  \n" ++
-
     "  <mkdir dir='${ide.pkg.path}/imp/'/>\n" ++  
     "  <!-- Plugin main class (OSGi starter class) -->\n" ++
     "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/plugin.java.template\"\n" ++

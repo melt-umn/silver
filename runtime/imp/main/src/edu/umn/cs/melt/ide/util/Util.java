@@ -1,11 +1,11 @@
 package edu.umn.cs.melt.ide.util;
 
+import org.eclipse.ant.core.AntRunner;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 
 import edu.umn.cs.melt.ide.imp.services.Console;
-import edu.umn.cs.melt.ide.silver.misc.ConsoleLoggingStream;
 
 /**
  * This utility class is an API collection used mainly by Silver code (through
@@ -29,9 +29,6 @@ public final class Util {
 	
 	public static Object ant(String buildFile, String arguments, String target){
 		
-		ANT_RUNNER.ant(buildFile, arguments, target);
-
-		/*
 		AntRunner runner = new AntRunner();
 		runner.setBuildFileLocation(buildFile);
 		runner.setArguments(arguments);
@@ -43,19 +40,8 @@ public final class Util {
 		} catch (CoreException e) {
 			e.printStackTrace();
 		}
-		*/
 		
 		return null;
-	}
-	
-	private static IAntRunnable ANT_RUNNER;
-	
-	public static void setAntRunnable(IAntRunnable iat){
-		ANT_RUNNER = iat;
-	}
-	
-	public static interface IAntRunnable {
-		void ant(String buildFile, String arguments, String target);
 	}
 	
 	/* Project-related operations */

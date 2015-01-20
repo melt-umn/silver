@@ -48,17 +48,6 @@ import common.StringCatter;
  */
 public final class ProjectUtil {
 
-	private static ISilverTypeWrapper WRAPPER;
-	
-	/**
-	 * This setup method must be called by IDE plug-in before any other methods
-	 * in this class is used.
-	 * @param wrapper
-	 */
-	public static void setSilverTypeWrapper(ISilverTypeWrapper wrapper){
-		WRAPPER = wrapper;
-	}
-	
 	private static abstract class AbstractResourceService {
 		final static int RESOURCE = 1;
 		final static int PROJECT = 3;
@@ -541,9 +530,9 @@ public final class ProjectUtil {
 		case AbstractResourceService.IO:
 			return common.Util.io(io, result);
 		case AbstractResourceService.IOV:
-			return WRAPPER.wrapInIOVal(io, result);
+			return new core.Pioval(io, result);
 		case AbstractResourceService.IOVMAYBE:
-			return WRAPPER.wrapInIOVal(io, WRAPPER.wrapInMaybe(result));
+			return new core.Pioval(io, (result==null)?new core.Pnothing():new core.Pjust(result));
 		}
 		
 		return null;
