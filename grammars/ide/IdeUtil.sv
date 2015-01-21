@@ -34,18 +34,8 @@ IO ::= buildFile::String arguments::String target::String i::IO
 {
   return error("Not Yet Implemented: ant");
 } foreign {
-  "java" : return "common.Util.io(%i%, edu.umn.cs.melt.ide.util.Util.ant(%buildFile%.toString(), %arguments%.toString(), %target%.toString()))";
+  "java" : return "common.Util.io(%i%, edu.umn.cs.melt.ide.util.Util.ant(%buildFile%, %arguments%, %target%))";
 }
-
-{--
- Depth constants used for refresh(IO ::= String Integer)
---}
---the target resource itself, not including any of its members.
-global ideDepthZero :: Integer = 0;
---the target resource and its direct members.
-global ideDepthOne :: Integer = 1;
---the target resource and its direct and indirect members at any depth.
-global ideDepthInfinite :: Integer = 2;
 
 {--
   Refresh a project with a given level:
@@ -54,9 +44,9 @@ global ideDepthInfinite :: Integer = 2;
   depth: the depth down to which to refresh this project. Legal value: ideDepthZero, ideDepthOne, ideDepthInfinite
 --}
 function refresh
-IO ::= projectName::String depth::Integer i::IO
+IO ::= projectName::String  i::IO
 {
   return error("Not Yet Implemented: refresh");
 } foreign {
-  "java" : return "common.Util.io(%i%, edu.umn.cs.melt.ide.util.Util.refresh(%projectName%.toString(), %depth%))";
+  "java" : return "common.Util.io(%i%, edu.umn.cs.melt.ide.util.Util.refresh(%projectName%))";
 }
