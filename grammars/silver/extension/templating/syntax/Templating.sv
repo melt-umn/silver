@@ -12,10 +12,8 @@ terminal LiteralBackslash /\\/ lexer classes {LITERAL};
 
 terminal OpenEscape '${';
 
-{-- A string, with escaped expressions within -}
-nonterminal TemplateString with location;
 {-- A string without the first triple quote, with escaped expressions within -}
-nonterminal UnquoteTemplateString with location;
+nonterminal TemplateString with location;
 {-- A list of alternating String/Exprs -}
 nonterminal TemplateStringBody with location;
 {-- Either a String or an Expr -}
@@ -31,25 +29,13 @@ nonterminal WaterItem with location, waterString;
 synthesized attribute waterString :: String;
 
 concrete production templateString
-top::TemplateString ::= TripleQuote b::TemplateStringBody TripleQuote
+top::TemplateString ::= b::TemplateStringBody TripleQuote
 layout {}
 {
 }
 
 concrete production templateStringEmpty
-top::TemplateString ::= TripleQuote TripleQuote
-layout {}
-{
-}
-
-concrete production unquoteTemplateString
-top::UnquoteTemplateString ::= b::TemplateStringBody TripleQuote
-layout {}
-{
-}
-
-concrete production unquoteTemplateStringEmpty
-top::UnquoteTemplateString ::= TripleQuote
+top::TemplateString ::= TripleQuote
 layout {}
 {
 }
