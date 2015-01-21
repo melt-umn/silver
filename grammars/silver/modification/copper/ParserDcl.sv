@@ -138,6 +138,6 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
           generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult))];
   
   local parseResult :: String =
-    template """return common.Util.callCopperParser(new ${packageName}.${parserName}(), c_stringToParse, c_filenameToReport);""";
+    s"""return common.Util.callCopperParser(new ${packageName}.${parserName}(), c_stringToParse, c_filenameToReport);""";
 }
 

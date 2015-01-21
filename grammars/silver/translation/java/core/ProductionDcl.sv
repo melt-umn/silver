@@ -18,7 +18,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local fnnt :: String = makeNTClassName(namedSig.outputElement.typerep.typeName);
 
   top.genFiles := [pair(className ++ ".java",
-template """
+s"""
 package ${makeName(top.grammarName)};
 
 // ${ns.pp}
