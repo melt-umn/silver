@@ -24,7 +24,7 @@ top::IdeWizardDcl ::= name::String display::String func::String props::[IdePrope
   top.wizDisplay = display;
   top.wizFunc = func;
   top.wizProps = props;
-  top.svIdeInterface = template """
+  top.svIdeInterface = s"""
 	@Override
 	public IPropertyControlsProvider getNewFileProperties() {
 		return new @PKG_NAME@.eclipse.wizard.${name}.PropertyControlsProvider();

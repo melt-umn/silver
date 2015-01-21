@@ -4,7 +4,7 @@ equalityTest ( s"""""", "", String, silver_tests ) ;
 -- water only
 equalityTest ( s"""hello""", "hello", String, silver_tests ) ;
 
-global aStrValue :: String = template """
+global aStrValue :: String = s"""
 	$$""";
 -- escape only
 equalityTest ( s"""${aStrValue}""", "\n\t$", String, silver_tests ) ;
