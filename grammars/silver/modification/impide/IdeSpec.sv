@@ -32,7 +32,7 @@ top::IdeSpec ::=
   top.productInfo = productInfo;
   top.pluginConfig = pluginConfig;
   top.svIdeInterface =
-    template """
+    s"""
 package @PKG_NAME@;
 
 import java.io.IOException;
@@ -169,7 +169,7 @@ top::IdeFunction ::= fName::String
 {
   top.funcDcls := [pair("builder", fName)];
   top.svIdeInterface =
-    template """
+    s"""
 	@Override
 	public NIOVal build(ConsCell properties, NIdeEnv env, Object iotoken) {
 		return (NIOVal)${makeClassName(fName)}.invoke(properties, env, iotoken);
@@ -182,7 +182,7 @@ top::IdeFunction ::= fName::String
 {
   top.funcDcls := [pair("postbuilder", fName)];
   top.svIdeInterface =
-    template """
+    s"""
 	@Override
 	public NIOVal postbuild(ConsCell properties, NIdeEnv env, Object iotoken) {
 		return (NIOVal)${makeClassName(fName)}.invoke(properties, env, iotoken);
@@ -195,7 +195,7 @@ top::IdeFunction ::= fName::String
 {
   top.funcDcls := [pair("exporter", fName)];
   top.svIdeInterface =
-    template """
+    s"""
 	@Override
 	public NIOVal export(ConsCell properties, NIdeEnv env, Object iotoken) {
 		return (NIOVal)${makeClassName(fName)}.invoke(properties, env, iotoken);
@@ -208,7 +208,7 @@ top::IdeFunction ::= fName::String
 {
   top.funcDcls := [pair("folder", fName)];
   top.svIdeInterface =
-    template """
+    s"""
 	@Override
 	public ConsCell getFolds(Node root) {
 		return (ConsCell)${makeClassName(fName)}.invoke(root);

@@ -46,7 +46,7 @@ String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResu
   local localVar :: String = 
     "count_local__ON__" ++ makeIdName(whatGrammar) ++ "_" ++ whatName;
 
-  return template """
+  return s"""
 package ${makeName(whatGrammar)};
 
 public final class ${className} extends common.FunctionNode {
@@ -149,7 +149,7 @@ String ::= whatGrammar::String
   local attribute package :: String;
   package = makeName(whatGrammar);
 
-  return template """
+  return s"""
 package ${package};
 
 public class Main {
