@@ -7,33 +7,19 @@ imports silver:definition:type:syntax;
 
 exports silver:extension:templating:syntax;
 
-terminal Template_kwd  'template' lexer classes {RESERVED, KEYWORD};
-terminal SQuote_kwd    's"""'     lexer classes {RESERVED, KEYWORD};
+terminal Template_kwd 's"""' lexer classes {RESERVED, KEYWORD};
 
 concrete production templateExpr
-top::Expr ::= 'template' t::TemplateString
-{
-  forwards to infold(plusPlus(_, '++', _, location=top.location), t.stringTemplate);
-}
-
-concrete production sExpr
-top::Expr ::= 's"""' t::UnquoteTemplateString
+top::Expr ::= 's"""' t::TemplateString
 layout {}
 {
   forwards to infold(plusPlus(_, '++', _, location=top.location), t.stringTemplate);
 }
 
-terminal PPTemplate_kwd  'pptemplate' lexer classes {RESERVED, KEYWORD};
-terminal PPQuote_kwd     'pp"""'      lexer classes {RESERVED, KEYWORD};
+terminal PPTemplate_kwd 'pp"""' lexer classes {RESERVED, KEYWORD};
 
 concrete production pptemplateExpr
-top::Expr ::= 'pptemplate' t::TemplateString
-{
-  forwards to infold(catcall(_, _, top.location), t.ppTemplate);
-}
-
-concrete production ppExpr
-top::Expr ::= 'pp"""' t::UnquoteTemplateString
+top::Expr ::= 'pp"""' t::TemplateString
 layout {}
 {
   forwards to infold(catcall(_, _, top.location), t.ppTemplate);
@@ -54,32 +40,18 @@ a ::= f::(a ::= a a) l::[a]
   else f(head(l), infold(f, tail(l)));
 }
 
-synthesized attribute stringTemplate :: [Expr] occurs on TemplateString, UnquoteTemplateString, TemplateStringBody, TemplateStringBodyItem, NonWater;
-synthesized attribute ppTemplate :: [Expr] occurs on TemplateString, UnquoteTemplateString, TemplateStringBody, TemplateStringBodyItem, NonWater;
+synthesized attribute stringTemplate :: [Expr] occurs on TemplateString, TemplateStringBody, TemplateStringBodyItem, NonWater;
+synthesized attribute ppTemplate :: [Expr] occurs on TemplateString, TemplateStringBody, TemplateStringBodyItem, NonWater;
 
 aspect production templateString
-top::TemplateString ::= _ b::TemplateStringBody _
-{
-  top.stringTemplate = b.stringTemplate;
-  top.ppTemplate = b.ppTemplate;
-}
-
-aspect production unquoteTemplateString
-top::UnquoteTemplateString ::= b::TemplateStringBody _
+top::TemplateString ::= b::TemplateStringBody _
 {
   top.stringTemplate = b.stringTemplate;
   top.ppTemplate = b.ppTemplate;
 }
 
 aspect production templateStringEmpty
-top::TemplateString ::= _ _
-{
-  top.stringTemplate = [stringConst(terminal(String_t, "\"\"", top.location), location=top.location)];
-  top.ppTemplate = [mkStrFunctionInvocation(top.location, "silver:langutil:pp:notext", [])];
-}
-
-aspect production unquoteTemplateStringEmpty
-top::UnquoteTemplateString ::= _
+top::TemplateString ::= _
 {
   top.stringTemplate = [stringConst(terminal(String_t, "\"\"", top.location), location=top.location)];
   top.ppTemplate = [mkStrFunctionInvocation(top.location, "silver:langutil:pp:notext", [])];
