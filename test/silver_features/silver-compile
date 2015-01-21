@@ -7,7 +7,7 @@
 
 export SILVER_HOME=../..
 
-java -jar $SILVER_HOME/jars/RunSilver.jar $@  -o test.jar \
+java -Xss4M -jar $SILVER_HOME/jars/RunSilver.jar $@  -o test.jar \
      -I .. silver_features \
      && ant
 
