@@ -56,10 +56,9 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     "<property name='ide.proj.feature.path' location='${ide.proj.parent.path}/feature'/>",
     "<property name='ide.proj.updatesite.path' location='${ide.proj.parent.path}/updatesite'/>",
     "<property name='ide.pkg.path' location='${ide.proj.plugin.path}/src/" ++ pkgToPath(pkgName) ++ "'/>", 
-    "<property name='ide.parser.package' value='" ++ parserPackageName ++ "' />",
     "<property name='ide.parser.classname' value='" ++ parserClassName ++ "' />",
-    --"<property name='ide.parser.copperfile' value='" ++ parserFullPath ++ "' />",
-    "<property name='ide.parser.ide_copperfile' value='" ++ ideParserFullPath ++ "' />",    "<property name='ide.fileextension' value='" ++ ide.ideExtension ++ "' />"] ++ 
+    "<property name='ide.parser.ide_copperfile' value='" ++ ideParserFullPath ++ "' />",
+    "<property name='ide.fileextension' value='" ++ ide.ideExtension ++ "' />"] ++ 
 
     configWizards(ide.wizards) ++ 
 
@@ -229,13 +228,11 @@ String ::=
     "  <!-- define variables used in template file -->\n" ++
     "  <filter token=\"GROUP_ID\" value='${ide.pkg.name}'/>\n" ++
     "  <filter token=\"PKG_NAME\" value='${ide.pkg.name}'/>\n" ++
-    "  <filter token=\"PARSER_NAME\" value='${ide.parser.classname}'/>\n" ++
     "  <filter token=\"LANG_NAME\" value='${lang.name}'/>\n" ++
     "  <filter token=\"SOURCE_EXT\" value='${ide.fileextension}'/>\n" ++
     "  <filter token=\"IDE_VERSION\" value='${ide.version}'/>\n" ++
     "  <filter token=\"IDE_BUILD_TIMESTAMP\" value='${ide.build-timestamp}'/>\n" ++
     "  <filter token=\"PROJ_NAME\" value='${lang.name}_IDE_PROJECT'/>\n" ++
-    "  <filter token=\"COPPER_RUNTIME_PATH\" value='${sh}/jars/CopperRuntime.jar'/>\n" ++
     "  <filter token=\"LANG_COMPOSED\" value='${lang.composed}'/>\n" ++
     "  <filter token=\"FEATURE_DESCRIPTION_URL\" value='http://some.user.provided.url'/>\n" ++	-- TODO User-provided variables
     "  <filter token=\"FEATURE_DESCRIPTION_TEXT\" value='no description of the software'/>\n" ++
@@ -243,9 +240,6 @@ String ::=
     "  <filter token=\"FEATURE_COPYRIGHT_TEXT\" value='no copyright information available'/>\n" ++
     "  <filter token=\"FEATURE_LICENSE_URL\" value='http://some.user.provided.url'/>\n" ++
     "  <filter token=\"FEATURE_LICENSE_TEXT\" value='no license information available'/>\n" ++
-    "  <filter token=\"NEWFILE_STUBGEN_CLASS_QNAME\" value='${ide.function.stubgen.newfile.name}'/>\n" ++
-    "  <filter token=\"LANG_COMPOSED_PKG\" value='${lang.composed}'/>\n" ++ 
-    "  <filter token=\"START_NONTERMINAL_CLASS\" value='${start.nonterminal.class}'/>\n" ++
     "  <filter token=\"IDE_RT_VERSION\" value='${ide.rt.version}'/>\n" ++
     "\n";
 }
@@ -371,16 +365,8 @@ String ::= parserClassName::String config::PluginConfig
     "  <!-- update site (repository) -->\n" ++
     "  <copy file=\"${res}/pom_templates/updatesite_templates/category.xml.template\" tofile=\"${ide.proj.updatesite.path}/category.xml\" filtering=\"true\"/>\n" ++
     "  <copy file=\"${res}/pom_templates/updatesite_templates/pom.xml.template\" tofile=\"${ide.proj.updatesite.path}/pom.xml\" filtering=\"true\"/>\n" ++
-    "  \n" ++
-
-    "  <!-- 12. eclipse project -->\n" ++
-    "  <!-- These files are essential to opening the generated plugin in a local Eclipse application as a Java project. -->\n" ++
-    "  <copy file=\"${res}/project.template\" tofile=\"${ide.proj.plugin.path}/.project\" filtering=\"true\"/>\n" ++
-    -- commented out to support different build modes
-    -- "<copy file=\"${res}/classpath.template\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n" ++
-    "  <antcall target=\"set classpaths for Eclipse\" inheritAll=\"true\"/>\n" ++
-
     "  \n"
+
   ;
 }
 
@@ -417,11 +403,6 @@ return
 
 "<target name=\"create manifest file\" depends=\"filters\">\n"++	
 "  <copy file=\"${res}/META-INF/MANIFEST.MF.template\" tofile=\"${ide.proj.plugin.path}/META-INF/MANIFEST.MF\" filtering=\"true\"/>\n"++
-"</target>\n"++
-"\n"++
-
-"<target name=\"set classpaths for Eclipse\" depends=\"filters\">\n"++	
-"  <copy file=\"${res}/classpath.template\" tofile=\"${ide.proj.plugin.path}/.classpath\" filtering=\"true\"/>\n"++
 "</target>\n"++
 "\n"++
 

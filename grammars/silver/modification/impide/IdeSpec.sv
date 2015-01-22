@@ -1,6 +1,6 @@
 grammar silver:modification:impide;
 
-import silver:translation:java:core only makeClassName;
+import silver:translation:java:core only makeClassName, makeParserName;
 
 {-- IdeSpec --}
 
@@ -31,6 +31,10 @@ top::IdeSpec ::=
   top.wizards := wizards;
   top.productInfo = productInfo;
   top.pluginConfig = pluginConfig;
+  
+  local parserClassName :: String = makeParserName(pspec.fullName);
+
+  
   top.svIdeInterface =
     s"""
 package @PKG_NAME@;
@@ -86,9 +90,9 @@ public class SVIdeInterface extends SVDefault {
 	}
 	@Override
 	public CopperTextAttributeDecider getColorDecider() {
-		return @PKG_NAME@.imp.coloring.@PARSER_NAME@_TextAttributeDecider.getInstance();
+		return @PKG_NAME@.imp.coloring.${parserClassName}_TextAttributeDecider.getInstance();
 	}
-	private @PKG_NAME@.copper.parser.@PARSER_NAME@ parser = new @PKG_NAME@.copper.parser.@PARSER_NAME@();
+	private @PKG_NAME@.copper.parser.${parserClassName} parser = new @PKG_NAME@.copper.parser.${parserClassName}();
 	@Override
 	public AdaptiveEnhancedParseTreeInnerNode<Node> parse(Reader input, String filename) throws CopperParserException, IOException {
 		parser.reset();
