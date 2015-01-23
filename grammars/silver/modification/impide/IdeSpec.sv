@@ -1,6 +1,6 @@
 grammar silver:modification:impide;
 
-import silver:translation:java:core only makeClassName;
+import silver:translation:java:core only makeClassName, makeParserName;
 
 {-- IdeSpec --}
 
@@ -31,6 +31,10 @@ top::IdeSpec ::=
   top.wizards := wizards;
   top.productInfo = productInfo;
   top.pluginConfig = pluginConfig;
+  
+  local parserClassName :: String = makeParserName(pspec.fullName);
+
+  
   top.svIdeInterface =
     s"""
 package @PKG_NAME@;
@@ -54,7 +58,6 @@ import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 import edu.umn.cs.melt.ide.impl.SVDefault;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.ide.copper.coloring.CopperTextAttributeDecider;
-import edu.umn.cs.melt.ide.copper.AdaptiveEnhancedParseTreeInnerNode;
 
 public class SVIdeInterface extends SVDefault {
 
@@ -86,13 +89,13 @@ public class SVIdeInterface extends SVDefault {
 	}
 	@Override
 	public CopperTextAttributeDecider getColorDecider() {
-		return @PKG_NAME@.imp.coloring.@PARSER_NAME@_TextAttributeDecider.getInstance();
+		return @PKG_NAME@.imp.coloring.${parserClassName}_TextAttributeDecider.getInstance();
 	}
-	private @PKG_NAME@.copper.parser.@PARSER_NAME@ parser = new @PKG_NAME@.copper.parser.@PARSER_NAME@();
+	private @PKG_NAME@.copper.parser.${parserClassName} parser = new @PKG_NAME@.copper.parser.${parserClassName}();
 	@Override
-	public AdaptiveEnhancedParseTreeInnerNode<Node> parse(Reader input, String filename) throws CopperParserException, IOException {
+	public Node parse(Reader input, String filename) throws CopperParserException, IOException {
 		parser.reset();
-		return (AdaptiveEnhancedParseTreeInnerNode<Node>)((Object)parser.parse(input, filename));
+		return (Node)parser.parse(input, filename);
 	}
 	@Override
 	public Iterator getTokensForLastParse(IRegion region) {

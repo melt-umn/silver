@@ -10,7 +10,6 @@ import org.osgi.framework.BundleContext;
 
 import org.eclipse.core.runtime.CoreException;
 
-import edu.umn.cs.melt.ide.util.ProjectUtil;
 import edu.umn.cs.melt.ide.util.Util;
 import edu.umn.cs.melt.ide.util.cst.Locator;
 import edu.umn.cs.melt.ide.util.cst.DefinitionFinder;

@@ -19,8 +19,6 @@ import common.Node;
 
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
-import edu.umn.cs.melt.ide.copper.AdaptiveEnhancedParseTreeInnerNode;
-import edu.umn.cs.melt.ide.copper.IEnhancedParseTreeNode;
 import edu.umn.cs.melt.ide.copper.IToken;
 import edu.umn.cs.melt.ide.copper.SourcePositionLocator;
 import edu.umn.cs.melt.ide.impl.SVRegistry;
@@ -43,11 +41,11 @@ public class ParseController extends ParseControllerBase {
 	private final SimpleAnnotationTypeInfo fSimpleAnnotationTypeInfo
 		= new SimpleAnnotationTypeInfo();
 
-	private SourcePositionLocator<IEnhancedParseTreeNode, IToken> locator;
+	private SourcePositionLocator<Node, IToken> locator;
 	
 	public ParseController() {
 		super(SVRegistry.get().name());
-		locator = new SourcePositionLocator<IEnhancedParseTreeNode, IToken>(this);
+		locator = new SourcePositionLocator<Node, IToken>(this);
 	}
 	
 	/**
@@ -70,7 +68,7 @@ public class ParseController extends ParseControllerBase {
 	
 	@Override
 	public Object parse(String input, IProgressMonitor monitor) {
-		AdaptiveEnhancedParseTreeInnerNode<Node> result = null;
+		Node result = null;
 		boolean parsed = false;
 		handler.clearMessages();
 		

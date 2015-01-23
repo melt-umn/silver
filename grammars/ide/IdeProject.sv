@@ -9,6 +9,9 @@ type IdeResource foreign;
 --nonterminal IdeProject foreign;
 type IdeProject foreign;
 
+-- TODO: because we don't give Java translation of foreign types, we only pass them around as "Object"
+-- This requires our runtime to accept "Object" and then cast it to IProject or whatever. UGLY!
+
 synthesized attribute project :: IdeProject occurs on IdeEnv;
 
 -- Functions
@@ -138,7 +141,7 @@ IOVal<String> ::= res::IdeResource i::IO
   return error("Not Yet Implemented: getAbsolutePath");
 } foreign {
   "java" : return 
-    "edu.umn.cs.melt.ide.util.ProjectUtil.dispatchService(edu.umn.cs.melt.ide.util.ProjectUtil.RESOURCE_GET_ABS_PATH, %i%, %res%, null)";
+    "edu.umn.cs.melt.ide.util.Util.getAbsolutePath(%res%, %i%)";
 }
 	
 -- Get members of given resource. Returns an empty list if the resource is a 
@@ -149,7 +152,7 @@ IOVal<[IdeResource]> ::= res::IdeResource i::IO
   return error("Not Yet Implemented: getResourceMembers");
 } foreign {
   "java" : return 
-    "edu.umn.cs.melt.ide.util.ProjectUtil.dispatchService(edu.umn.cs.melt.ide.util.ProjectUtil.RESOURCE_GET_MEMBERS, %i%, %res%, null)";
+    "edu.umn.cs.melt.ide.util.Util.getResourceMembers(%res%, %i%)";
 }
 
 -- Check if the resource is a folder
@@ -159,7 +162,7 @@ IOVal<Boolean> ::= res::IdeResource i::IO
   return error("Not Yet Implemented: isFolder");
 } foreign {
   "java" : return 
-    "edu.umn.cs.melt.ide.util.ProjectUtil.dispatchService(edu.umn.cs.melt.ide.util.ProjectUtil.RESOURCE_IS_FOLDER, %i%, %res%, null)";
+    "edu.umn.cs.melt.ide.util.Util.resourceIsFolder(%res%, %i%)";
 }
 	
 -- Check if the resource is a file.
@@ -169,7 +172,7 @@ IOVal<Boolean> ::= res::IdeResource i::IO
   return error("Not Yet Implemented: isFile");
 } foreign {
   "java" : return 
-    "edu.umn.cs.melt.ide.util.ProjectUtil.dispatchService(edu.umn.cs.melt.ide.util.ProjectUtil.RESOURCE_IS_FILE, %i%, %res%, null)";
+    "edu.umn.cs.melt.ide.util.Util.resourceIsFile(%res%, %i%)";
 }
 	
 -- Check whether a resource is linked from outside project’s physical location. 
@@ -180,7 +183,7 @@ IOVal<Boolean> ::= res::IdeResource i::IO
   return error("Not Yet Implemented: isLinked");
 } foreign {
   "java" : return 
-    "edu.umn.cs.melt.ide.util.ProjectUtil.dispatchService(edu.umn.cs.melt.ide.util.ProjectUtil.RESOURCE_IS_LINKED, %i%, %res%, null)";
+    "edu.umn.cs.melt.ide.util.Util.resourceIsLinked(%res%, %i%)";
 }
 
 -- Check whether a resource is hidden in Eclipse. That is, invisible to IDE 
@@ -191,7 +194,7 @@ IOVal<Boolean> ::= res::IdeResource i::IO
   return error("Not Yet Implemented: isHidden");
 } foreign {
   "java" : return 
-    "edu.umn.cs.melt.ide.util.ProjectUtil.dispatchService(edu.umn.cs.melt.ide.util.ProjectUtil.RESOURCE_IS_HIDDEN, %i%, %res%, null)";
+    "edu.umn.cs.melt.ide.util.Util.resourceIsHidden(%res%, %i%)";
 }
 	
 -- Determine if a resource is marked as derived. “Derived”, in Eclipse’s 
@@ -204,7 +207,7 @@ IOVal<Boolean> ::= res::IdeResource i::IO
   return error("Not Yet Implemented: isDerived");
 } foreign {
   "java" : return 
-    "edu.umn.cs.melt.ide.util.ProjectUtil.dispatchService(edu.umn.cs.melt.ide.util.ProjectUtil.RESOURCE_IS_DERIVED, %i%, %res%, null)";
+    "edu.umn.cs.melt.ide.util.Util.resourceIsDerived(%res%, %i%)";
 }
 
 -- Check whether the resource does exist. After deleting a resource 
@@ -215,7 +218,7 @@ IOVal<Boolean> ::= res::IdeResource i::IO
   return error("Not Yet Implemented: exists");
 } foreign {
   "java" : return 
-    "edu.umn.cs.melt.ide.util.ProjectUtil.dispatchService(edu.umn.cs.melt.ide.util.ProjectUtil.RESOURCE_EXISTS, %i%, %res%, null)";
+    "edu.umn.cs.melt.ide.util.Util.resourceExists(%res%, %i%)";
 }
 
 {--

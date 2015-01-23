@@ -12,7 +12,6 @@ import common.Node;
 import common.StringCatter;
 import core.NIOVal;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
-import edu.umn.cs.melt.ide.copper.AdaptiveEnhancedParseTreeInnerNode;
 import edu.umn.cs.melt.ide.copper.coloring.CopperTextAttributeDecider;
 import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
@@ -136,6 +135,6 @@ public interface SVInterface {
 	 */
 	public IPropertyPageTab[] getPropertyTabs();
 	public CopperTextAttributeDecider getColorDecider();
-	public AdaptiveEnhancedParseTreeInnerNode<Node> parse(Reader input, String filename) throws CopperParserException, IOException;
+	public Node parse(Reader input, String filename) throws CopperParserException, IOException;
 	public Iterator getTokensForLastParse(IRegion region);
 }
