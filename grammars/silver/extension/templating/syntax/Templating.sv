@@ -14,16 +14,26 @@ terminal OpenEscape '${';
 
 {-- A string without the first triple quote, with escaped expressions within -}
 nonterminal TemplateString with location;
+{-- A single-line string without the first quote, with escaped expressions within -}
+nonterminal SingleLineTemplateString with location;
 {-- A list of alternating String/Exprs -}
 nonterminal TemplateStringBody with location;
+{-- A single-line list of alternating String/Exprs -}
+nonterminal SingleLineTemplateStringBody with location;
 {-- Either a String or an Expr -}
 nonterminal TemplateStringBodyItem with location;
+{-- Either a single-line String or an Expr -}
+nonterminal SingleLineTemplateStringBodyItem with location;
 {-- An escape -}
 nonterminal NonWater with location;
 {-- List that yields a string -}
 nonterminal Water with location, waterString;
+{-- List that yields a single-line string -}
+nonterminal SingleLineWater with location, waterString;
 {-- Components that yield a string -}
 nonterminal WaterItem with location, waterString;
+{-- Components that yield a single-line string -}
+nonterminal SingleLineWaterItem with location, waterString;
 
 {-- The string corresponding to the water -}
 synthesized attribute waterString :: String;
@@ -36,6 +46,18 @@ layout {}
 
 concrete production templateStringEmpty
 top::TemplateString ::= TripleQuote
+layout {}
+{
+}
+
+concrete production singleLineTemplateString
+top::SingleLineTemplateString ::= b::SingleLineTemplateStringBody LiteralQuote
+layout {}
+{
+}
+
+concrete production singleLineTemplateStringEmpty
+top::SingleLineTemplateString ::= LiteralQuote
 layout {}
 {
 }
@@ -58,6 +80,24 @@ layout {}
 {
 }
 
+concrete production singleLineBodyCons
+top::SingleLineTemplateStringBody ::= h::SingleLineTemplateStringBodyItem  t::SingleLineTemplateStringBody
+layout {}
+{
+}
+
+concrete production singleLineBodyOne
+top::SingleLineTemplateStringBody ::= h::SingleLineTemplateStringBodyItem
+layout {}
+{
+}
+
+concrete production singleLineBodyOneWater
+top::SingleLineTemplateStringBody ::= h::SingleLineWater
+layout {}
+{
+}
+
 concrete production itemWaterEscape
 top::TemplateStringBodyItem ::= w::Water nw::NonWater
 layout {}
@@ -66,6 +106,18 @@ layout {}
 
 concrete production itemEscape
 top::TemplateStringBodyItem ::= nw::NonWater
+layout {}
+{
+}
+
+concrete production singleLineItemWaterEscape
+top::SingleLineTemplateStringBodyItem ::= w::SingleLineWater nw::NonWater
+layout {}
+{
+}
+
+concrete production singleLineItemEscape
+top::SingleLineTemplateStringBodyItem ::= nw::NonWater
 layout {}
 {
 }
@@ -110,7 +162,7 @@ layout {}
 {
   -- The reason I decided to make backslashes not "work" is due to
   -- dealing with \"  Originally, this turned into \\" in the string
-  -- because the quote got escaped... this of course, was disaster.
+  -- because the quote got escaped... this of course, was disaster."
   top.waterString = "\\\\";
 }
 
@@ -135,4 +187,45 @@ layout {}
   top.waterString = "\\\"";
 }
 
+concrete production singleLineWaterCons
+top::SingleLineWater ::= h::SingleLineWater  t::SingleLineWaterItem
+layout {}
+{
+  top.waterString = h.waterString ++ t.waterString;
+}
 
+concrete production singleLineWaterOne
+top::SingleLineWater ::= h::SingleLineWaterItem
+layout {}
+{
+  top.waterString = h.waterString;
+}
+
+concrete production singleLineWater
+top::SingleLineWaterItem ::= w::QuoteWater
+layout {}
+{
+  top.waterString = w.lexeme;
+}
+
+concrete production singleLineWaterDollar
+top::SingleLineWaterItem ::= '$$'
+layout {}
+{
+  top.waterString = "$";
+}
+
+concrete production singleLineWaterBackSlash
+top::SingleLineWaterItem ::= LiteralBackslash
+layout {}
+{
+  -- Same as waterBackSlash
+  top.waterString = "\\\\";
+}
+
+concrete production singleLineWaterTab
+top::SingleLineWaterItem ::= LiteralTab
+layout {}
+{
+  top.waterString = "\\t";
+}
