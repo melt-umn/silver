@@ -58,7 +58,6 @@ import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 import edu.umn.cs.melt.ide.impl.SVDefault;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.ide.copper.coloring.CopperTextAttributeDecider;
-import edu.umn.cs.melt.ide.copper.AdaptiveEnhancedParseTreeInnerNode;
 
 public class SVIdeInterface extends SVDefault {
 
@@ -94,9 +93,9 @@ public class SVIdeInterface extends SVDefault {
 	}
 	private @PKG_NAME@.copper.parser.${parserClassName} parser = new @PKG_NAME@.copper.parser.${parserClassName}();
 	@Override
-	public AdaptiveEnhancedParseTreeInnerNode<Node> parse(Reader input, String filename) throws CopperParserException, IOException {
+	public Node parse(Reader input, String filename) throws CopperParserException, IOException {
 		parser.reset();
-		return (AdaptiveEnhancedParseTreeInnerNode<Node>)((Object)parser.parse(input, filename));
+		return (Node)parser.parse(input, filename);
 	}
 	@Override
 	public Iterator getTokensForLastParse(IRegion region) {

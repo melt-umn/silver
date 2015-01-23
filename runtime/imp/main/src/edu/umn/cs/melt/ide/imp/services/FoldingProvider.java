@@ -16,7 +16,6 @@ import common.Node;
 import common.javainterop.ConsCellCollection;
 import core.NLocation;
 
-import edu.umn.cs.melt.ide.copper.AdaptiveEnhancedParseTreeInnerNode;
 import edu.umn.cs.melt.ide.impl.SVInterface;
 import edu.umn.cs.melt.ide.impl.SVRegistry;
 
@@ -41,10 +40,9 @@ public class FoldingProvider extends FolderBase implements IExecutableExtension 
 		SVInterface sv = SVRegistry.get();
 		
 		// Unfortunately...
-		AdaptiveEnhancedParseTreeInnerNode<Node> ast = 
-				(AdaptiveEnhancedParseTreeInnerNode<Node>) _ast;
+		Node ast = (Node) _ast;
 
-		ConsCell folds = sv.getFolds(ast.getLangSpecNode());
+		ConsCell folds = sv.getFolds(ast);
 		
 		for(NLocation loc : new ConsCellCollection<NLocation>(folds)) {
 			DecoratedNode dloc = loc.decorate();

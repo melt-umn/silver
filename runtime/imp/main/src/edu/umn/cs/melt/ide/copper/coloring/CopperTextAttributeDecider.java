@@ -22,7 +22,9 @@ public abstract class CopperTextAttributeDecider {
 	}
 	
 	public TextAttribute getAddTextAttribute(IToken token){
-		//System.out.println("KIND: " + token.getKind());
+		//if(token.getKind()!=0) {
+			//System.out.println("kind: " + token.getKind() + " from " + token.getStartOffset() + " to " + token.getEndOffset());			
+		//}
 		return attrMap.get(token.getKind());
 	}
 	

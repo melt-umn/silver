@@ -6,9 +6,11 @@ import org.eclipse.imp.model.ICompilationUnit;
 import org.eclipse.imp.parser.IParseController;
 import org.eclipse.imp.parser.ISourcePositionLocator;
 
+import common.Node;
+
 
 public class SourcePositionLocator
-<NODE extends IEnhancedParseTreeNode, TOKEN extends IToken> // PCONTROL extends IEnhancedParseController
+<NODE extends Node, TOKEN extends IToken>
 implements ISourcePositionLocator {
 
     private final IParseController fParseController;
@@ -24,45 +26,44 @@ implements ISourcePositionLocator {
 
 	@Override
 	public Object findNode(Object astRoot, int startOffset, int endOffset) {
-        if (!(astRoot instanceof IEnhancedParseTreeNode))
-            return astRoot;
-
-        NODE astNode= (NODE) astRoot;
         
-        if (astNode instanceof IEnhancedParseTreeInnerNode) {
-        	IEnhancedParseTreeNode[] children = ((IEnhancedParseTreeInnerNode)astNode).getChildren();
-            for(int i= 0; i < children.length; i++) {
-            	NODE maybe= (NODE) findNode(children[i], startOffset, endOffset);
-                if (maybe != null){
-                    return maybe;
-                }
-            }
-        }
-        
-        if (startOffset >= astNode.getStart() && endOffset <= astNode.getEnd()){
-        	return astNode;
-        }
-
+		//System.out.println("\nRequested findNode. Not implemented.\n");
+		// TODO: only possible solution to this problem is to wrap the ast with parameters,
+		// to be consumed by another service.
+		// e.g. imp asks "what's ast at start, end?" and we say
+		// AstPosition(ast, start, end) as the result.
+		// then when imp says, "what's the definition site of this ast node?"
+		// we get an AstPosition, unwrap to ast, then ask ast about definition site
+		// at start, end.
+		
         return null;
 	}
 	
 	@Override
 	public int getStartOffset(Object entity) {
-		if (entity instanceof IEnhancedParseTreeNode) {
-			return ((IEnhancedParseTreeNode) entity).getStart();
-		} else if (entity instanceof IToken) {
+		
+		if (entity instanceof IToken) {
 			return ((IToken) entity).getStartOffset();
-		} 
+		} else {
+			System.out.println("Got asked start for " + entity.getClass().getName());
+		}
+		
 		return 0;
 	}
 
 	@Override
 	public int getEndOffset(Object entity) {
-		if (entity instanceof IEnhancedParseTreeNode) {
-			return ((IEnhancedParseTreeNode) entity).getEnd();
-		} else if (entity instanceof IToken) {
-			return ((IToken) entity).getEndOffset();
-		} 
+		
+		if (entity instanceof IToken) {
+			// Silver uses a position range that is inclusive at the start, and 
+			// exclusive at the end.
+			// IMP / Eclipse want a range that is includive at BOTH ends.
+			// So subtract one.
+			return ((IToken) entity).getEndOffset() - 1;
+		} else {
+			System.out.println("Got asked end for " + entity.getClass().getName());
+		}
+		
 		return 0;
 	}
 
@@ -71,14 +72,15 @@ implements ISourcePositionLocator {
 		return getEndOffset(entity) - getStartOffset(entity);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public IPath getPath(Object entity) {
-		//TEMPLATE
+		
+		System.out.println("GetPath requested of source locator");
+		
+		// ???
+		
         if(fParseController instanceof IParseController){
         	return fParseController.getPath();
-//        	return fParseController.getProject().getRawProject().getFile(
-//        		((PCONTROL)fParseController).getFileName()).getFullPath();
         }
         
         if (entity instanceof ICompilationUnit) {
