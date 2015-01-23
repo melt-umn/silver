@@ -37,7 +37,7 @@ top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModi
   top.nxmlCopper = 
     "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
       "    <PP>" ++ t.typeName ++ "</PP>\n" ++
-      "    <Type><![CDATA[AdaptiveEnhancedParseTreeInnerNode<" ++ makeNTClassName(t.typeName) ++ ">]]></Type>\n" ++
+      "    <Type><![CDATA[" ++ makeNTClassName(t.typeName) ++ "]]></Type>\n" ++
       "  </Nonterminal>\n" ++
     subdcls.nxmlCopper;
 }
@@ -67,9 +67,7 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
     "    <Code><![CDATA[\n" ++ 
     "RESULT = new common.TerminalRecord(" ++ lexeme_source ++ ",virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
     -- BEGIN DIFFERENCE FROM NORMAL xmlCopper ATTRIBUTE ************************
-    "  addToken(_terminal);\n" ++
-    -- TODO: probable bug just spotted: more terminals than just those marked ignored can be layout and thus inappropriate to shift.
-    (if modifiers.ignored then "" else "  shiftPTNode(RESULT, _terminal);\n") ++
+    "  addToken(_terminal, (int)getStartRealLocation().getPos(), (int)getEndRealLocation().getPos());\n" ++
     -- END DIFFERENCE FROM NORMAL *********************************************
       modifiers.acode ++
     "]]></Code>\n" ++ 
@@ -83,55 +81,8 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
 aspect production syntaxProduction
 top::SyntaxDcl ::= ns::NamedSignature modifiers::SyntaxProductionModifiers
 {
-  top.nxmlCopper =
-    "  <Production id=\"" ++ makeCopperName(ns.fullName) ++ "\">\n" ++
-    (if modifiers.productionPrecedence.isJust then
-    "    <Class>main</Class>\n" ++
-    "    <Precedence>" ++ toString(modifiers.productionPrecedence.fromJust) ++ "</Precedence>\n"
-    else "") ++
-    -- BEGIN DIFFERENCE *******************************************************
-    "    <Code><![CDATA[\n" ++ 
-    "      RESULT = createPTNode(new " ++ makeClassName(ns.fullName) ++ "(" ++ implode(", ", extractNonterminalsFromChildren(0, map(head, rhsRefs))) ++ insertLocationAnnotationAEPTIN(ns, map(head, rhsRefs)) ++ "));\n" ++
-    -- TODO HACK: accesses to RESULT in production action code need to turn into RESULT.getLangSpecNode()
-    -- because the nodes are wrapped in that instead.
-      substitute("RESULT", "RESULT.getLangSpecNode()", modifiers.acode) ++
-    -- END DIFFERENCE *********************************************************
-    "]]></Code>\n" ++
-    "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++
-    "    <RHS>" ++ implode("", map(xmlCopperRef, map(head, rhsRefs))) ++ "</RHS>\n" ++
-    (if modifiers.customLayout.isJust then
-    "    <Layout>" ++ modifiers.customLayout.fromJust ++ "</Layout>\n"
-    else "") ++
-    (if modifiers.productionOperator.isJust then
-    "    <Operator>" ++ modifiers.productionOperator.fromJust ++ "</Operator>\n"
-    else "") ++
-    "  </Production>\n";
+  top.nxmlCopper = top.xmlCopper;
 }
--- The idea here seems to be that we have nonterminals wrapped in PTNode thingys,
--- so to construct our nonterminal, we have to unwrap them. Terminals are apparently a-okay though.
-function extractNonterminalsFromChildren
-[String] ::= index::Integer  from::[Decorated SyntaxDcl]
-{
-  local accessor :: String = "_children[" ++ toString(index) ++ "]";
-  
-  return if null(from) then []    -- "null": make the last argument to be null. An emergent fix to location
-  else case head(from) of
-       | syntaxTerminal(n, _, _)   -> [accessor]
-       | syntaxNonterminal(n, _)   -> ["((AdaptiveEnhancedParseTreeInnerNode)" ++ accessor ++ ").getLangSpecNode()"]
-       end ++ extractNonterminalsFromChildren(index + 1, tail(from));
-}
-function insertLocationAnnotationAEPTIN
-String ::= ns::Decorated NamedSignature  from::[Decorated SyntaxDcl]
-{
-  local pfx :: String = if null(ns.inputElements) then "" else ", ";
-  
-  return if null(ns.namedInputElements) then ""
-  else if length(ns.namedInputElements) > 1 then pfx ++ "multiple_annotation_problem" -- TODO
-  else if head(ns.namedInputElements).elementName != "core:location" then pfx ++ "unknown_annotation_type_problem" -- TODO etc
-  -- This code is awful:
-  else pfx ++ "common.TerminalRecord.createSpan(new Object[] {" ++ implode(", ", extractNonterminalsFromChildren(0, from)) ++ "}, virtualLocation, (int)_pos.getPos())";
-}
-
 
 aspect production syntaxLexerClass
 top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
