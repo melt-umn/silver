@@ -94,7 +94,8 @@ terminal Equal_t       '='   lexer classes {SPECOP};
 -- $ is used by convenience.
 
  -- this is a very careful regex. beware:
-ignore terminal BlockComments /\{\-([^\-]|\-+[^\}\-])*\-+\}/ lexer classes {COMMENT};
+--ignore terminal BlockComments /\{\-([^\-]|\-+[^\}\-])*\-+\}/ lexer classes {COMMENT};
+ignore terminal BlockComments /\{\-(\{\-([^\-]|\-+[^\}\-])*\-+\}|[^\-]|\-+[^\}\-])*\-+\}/ lexer classes {COMMENT}; -- Allows (one level of) nested comments.  
 ignore terminal Comments /([\-][\-].*)/ lexer classes {COMMENT};
 
 ignore terminal WhiteSpace /[\r\n\t\ ]+/;
