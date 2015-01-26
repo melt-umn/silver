@@ -80,9 +80,10 @@ top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
   
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   errCheck2 = check(f.typerep, t.typerep);
-  top.errors <- if errCheck2.typeerror
-                then [err(top.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
-                else [];
+  top.errors <-
+    if errCheck2.typeerror
+    then [err(top.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+    else [];
 
   -- ordinary threading: e, pr, f, errCheck2
   e.downSubst = top.downSubst;
@@ -94,23 +95,31 @@ top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
   pr.scrutineeType = scrutineeType;
   pr.returnType = t.typerep;
   
+  local resultTransType :: String = performSubstitution(t.typerep, top.finalSubst).transType;
+  -- It is necessary to subst on scrutineeType here for the horrible reason that the type we're matching on
+  -- may not be determined until we get to the constructor list. e.g. 'case error("lol") of pair(x,_) -> x end'
+  -- which is legal, but if we don't do this will result in java translation errors (as the scrutinee will be
+  -- type 'a' which is Object, which doesn't have .childAsIs for 'x'.)
+  local scrutineeFinalType :: TypeExp = performSubstitution(scrutineeType, top.finalSubst);
+  local scrutineeTransType :: String = scrutineeFinalType.transType;
+  
   top.translation = 
-    "new common.PatternLazy<" ++ scrutineeType.transType ++ ", " ++ performSubstitution(t.typerep, top.finalSubst).transType ++ ">() { " ++
-      "public final " ++ performSubstitution(t.typerep, top.finalSubst).transType ++ " eval(final common.DecoratedNode context, " ++ scrutineeType.transType ++ " scrutineeIter) {" ++
-        (if scrutineeType.isDecorated
+    "new common.PatternLazy<" ++ scrutineeTransType ++ ", " ++ resultTransType ++ ">() { " ++
+      "public final " ++ resultTransType ++ " eval(final common.DecoratedNode context, " ++ scrutineeTransType ++ " scrutineeIter) {" ++
+        (if scrutineeFinalType.isDecorated
          then
           "while(true) {" ++
-           "final " ++ scrutineeType.transType ++ " scrutinee = scrutineeIter; " ++ -- dumb, but to get final to work out for Lazys & shizzle...
+           "final " ++ scrutineeTransType ++ " scrutinee = scrutineeIter; " ++ -- our Lazy needs a final variable
            "final common.Node scrutineeNode = scrutinee.undecorate(); " ++
             pr.translation ++
            "if(!scrutineeIter.undecorate().hasForward()) break;" ++ 
            "scrutineeIter = scrutineeIter.forward();" ++
           "}"
          else
-          "final " ++ scrutineeType.transType ++ " scrutinee = scrutineeIter; " ++ -- dumb, but to get final to work out for Lazys & shizzle...
+          "final " ++ scrutineeTransType ++ " scrutinee = scrutineeIter; " ++ -- ditto
            pr.translation) ++
         "return " ++ f.translation ++ ";" ++ 
-    "}}.eval(context, (" ++ scrutineeType.transType ++")" ++ e.translation ++ ")";
+    "}}.eval(context, (" ++ scrutineeTransType ++")" ++ e.translation ++ ")";
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication); 
   -- TODO there seems to be an opportunity here to avoid an anon class somehow...
@@ -179,6 +188,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   -- Turns the existential variables existential
   local attribute prod_type :: TypeExp;
   prod_type = skolemizeProductionType(qn.lookupValue.typerep);
+  -- Note that we're going to check prod_type against top.scrutineeType shortly.
+  -- This is where the type variables become unified.
   
   ns.bindingTypes = prod_type.inputTypes;
   ns.bindingIndex = 0;

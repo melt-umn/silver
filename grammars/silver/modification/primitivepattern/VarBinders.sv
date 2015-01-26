@@ -9,11 +9,13 @@ import silver:definition:flow:ast only noVertex;
 nonterminal VarBinders with 
   config, grammarName, env, compiledGrammars, signature, blockContext,
   location, pp, errors, defs,
-  bindingTypes, bindingIndex, translation;
+  bindingTypes, bindingIndex, translation,
+  finalSubst;
 nonterminal VarBinder with
   config, grammarName, env, compiledGrammars, signature, blockContext,
   location, pp, errors, defs,
-  bindingType, bindingIndex, translation;
+  bindingType, bindingIndex, translation,
+  finalSubst;
 
 inherited attribute bindingType :: TypeExp;
 inherited attribute bindingIndex :: Integer;
@@ -91,25 +93,35 @@ top::VarBinder ::= n::Name
 
   top.defs = [lexicalLocalDef(top.grammarName, n.location, n.name, ty, noVertex(), [])]; -- TODO: these deps??
 
+  -- finalSubst is not necessary, downSubst would work fine, but is not threaded through here.
+  -- the point is that 'ty' for Pair<String Integer> would currently show Pair<a b>
+  -- since top.bindingType comes straight from the production's type in the environment.
+  -- we need to do some substitution to connect it with the real types.
+  -- (in the env above its okay, since that must always be consulted with the current substitution,
+  -- but here we're rendering the translation. it's the end of the line.)
+  local actualTy :: TypeExp = performSubstitution(ty, top.finalSubst);
+
   top.translation = 
     makeSpecialLocalBinding(n.name, 
-      "(" ++ ty.transType ++ ")scrutinee." ++ 
+      "(" ++ actualTy.transType ++ ")scrutinee." ++ 
         (if top.bindingType.isDecorable
          then "childDecorated("
          else "childAsIs(") ++
         toString(top.bindingIndex) ++ ")",
-      ty.transType);
+      actualTy.transType);
   
   -- We prevent this to prevent newbies from thinking patterns are "typecase"
   -- (Types have to be upper case)
   top.errors := 
     if !isUpper(substring(0,1,n.name)) then []
-    else [err(top.location, "Pattern variable names start with a lower case letter")];
+    else [err(top.location, "Pattern variables must start with a lower case letter")];
 
   -- We prevent this to avoid people possibly forgetting the parens, e.g. writing 'nothing'
+  -- One thing we could do is specifically raise this error, only if it's the production would be the right type.
+  -- this would allow us to match 'left' and 'right' on a Pair, for example, but error on Either
   top.errors <- 
     case getValueDcl(n.name, top.env) of
-    | prodDcl(_,_,_) :: _ -> [err(top.location, "Production name can't be used in pattern")]
+    | prodDcl(_,_,_) :: _ -> [err(top.location, "Pattern variables cannot have the same name as productions (to avoid confusion)")]
     | _ -> []
     end;
 }
