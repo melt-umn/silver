@@ -15,7 +15,7 @@ For detail, see `comment-dwim'."
    '("[\']\\(\\([\\\\].\\)\\|[^\']\\)*[\']". font-lock-string-face)
    '("[\/]\\(\\([\\\\].\\)\\|[^\/]\\)*[\/]". font-lock-string-face)
    '("\\<\\(production\\|productions\\|occurs\\|on\\|nonterminal\\|attribute\\|if\\|then\\|else\\|option\\|exports\\|close\\|closed\\)\\>" . font-lock-keyword-face)
-   '("\\<\\(local\\|terminal\\|concrete\\|abstract\\|ignore\\|start\\|lexer\\|aspect\\|decorate\\|autocopy\\)\\>" . font-lock-keyword-face)
+   '("\\<\\(local\\|terminal\\|concrete\\|abstract\\|ignore\\|start\\|lexer\\|class\\|classes\\|dominates\\|submits\\|aspect\\|decorate\\|autocopy\\)\\>" . font-lock-keyword-face)
    '("\\<\\(import\\|imports\\|grammar\\|association\\|precedence\\|synthesized\\|inherited\\|with\\|as\\|include\\)\\>" . font-lock-keyword-face)
    '("\\<\\(only\\|hiding\\|using\\|forwards\\|to\\|use\\|syntax\\|forwarding\\|function\\|return\\)\\>" . font-lock-keyword-face)
    '("\\<\\(Integer*\\|Boolean\\|String\\|Float\\|Reference\\|Production\\|Decorated\\)\\>" . font-lock-type-face)
