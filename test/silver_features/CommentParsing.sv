@@ -57,8 +57,18 @@ global ch::Integer = 1;
 global ci::Integer = 1;
 
  
-{-{--}
+{-{--}-}
 
 global cj::Integer = 1;
 
+ 
+{- some text
+{- some more text
+-}
+even more text-}
 
+global ck::Integer = 1;
+
+{-{-{--}-}
+
+global cl::Integer = 1;
