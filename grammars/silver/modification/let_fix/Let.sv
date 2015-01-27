@@ -78,33 +78,36 @@ top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
 {
   top.pp = id.pp ++ " :: " ++ t.pp ++ " = " ++ e.pp;
   
-  -- Using finalTy here, so our defs requires we have downSubst...
-  -- The reason we're putting the type in the environment AFTER inference is so that
-  -- wonky things don't happen with the auto-dedecorate behavior in lexicalLocalReference
-  top.defs = [lexicalLocalDef(top.grammarName, id.location, id.name, finalTy, e.flowVertexInfo, e.flowDeps)];
-  
   top.errors := t.errors ++ e.errors;
+  
+  production finalTy :: TypeExp = performSubstitution(t.typerep, errCheck1.upSubst);
+  production fName :: String = toString(genInt()) ++ ":" ++ id.name;
+
+  -- Using finalTy here, so our defs requires we have downSubst...
+  -- references to this def want to know if its decorated, to enable the
+  -- auto-undecorate feature, so that's why we bother substituting.
+  -- (er, except that we're starting with t, which is a Type... must be because we fake these
+  -- in e.g. the pattern matching code, so type variables might appear there?)
+  top.defs = [lexicalLocalDef(top.grammarName, id.location, fName, finalTy, e.flowVertexInfo, e.flowDeps)];
   
   -- TODO: At present, this isn't working properly, because the local scope is
   -- whatever scope encloses the real local scope... hrmm!
-  top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
-                then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
-                else [];
-
-  production attribute finalTy :: TypeExp;
-  finalTy = performSubstitution(t.typerep, errCheck1.upSubst);
-
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  top.errors <- 
+    if length(getValueDclInScope(id.name, top.env)) > 1
+    then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
+    else [];
 
   e.downSubst = top.downSubst;
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
 
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
   errCheck1 = check(e.typerep, t.typerep);
   top.errors <-
-       if errCheck1.typeerror
-       then [err(id.location, "Value " ++ id.name ++ " declared with type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
-       else [];
+    if errCheck1.typeerror
+    then [err(id.location, "Value " ++ id.name ++ " declared with type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
+    else [];
 }
 
 abstract production lexicalLocalReference
@@ -128,9 +131,11 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
   --       will mean "let x = decorated version of someLocal in wantsUndecorated(x.undecorate())"
   --       and not "let x = undecorated someLocal in wantsUndecorated(x)"
   
-  top.typerep = if q.lookupValue.typerep.isDecorated
-                then ntOrDecTypeExp(q.lookupValue.typerep.decoratedType, freshType())
-                else q.lookupValue.typerep;
+  top.typerep = 
+    -- isDecorated should return true if it's a ntOrDecTypeExp.
+    if q.lookupValue.typerep.isDecorated
+    then ntOrDecTypeExp(q.lookupValue.typerep.decoratedType, freshType())
+    else q.lookupValue.typerep;
 
   top.upSubst = top.downSubst;
 }
