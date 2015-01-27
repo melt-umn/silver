@@ -58,6 +58,8 @@ import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 import edu.umn.cs.melt.ide.impl.SVDefault;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.ide.copper.coloring.CopperTextAttributeDecider;
+import edu.umn.cs.melt.ide.imp.services.IdeParseResult;
+import edu.umn.cs.melt.ide.copper.CopperToken;
 
 public class SVIdeInterface extends SVDefault {
 
@@ -93,13 +95,12 @@ public class SVIdeInterface extends SVDefault {
 	}
 	private @PKG_NAME@.copper.parser.${parserClassName} parser = new @PKG_NAME@.copper.parser.${parserClassName}();
 	@Override
-	public Node parse(Reader input, String filename) throws CopperParserException, IOException {
-		parser.reset();
-		return (Node)parser.parse(input, filename);
-	}
-	@Override
-	public Iterator getTokensForLastParse(IRegion region) {
-		return parser.getTokenIterator(region);
+	public IdeParseResult<Node, CopperToken> parse(Reader input, String filename) throws CopperParserException, IOException {
+		// In the long run, maybe we should have a getParser() rather than parse() so things could be concurrent... TODO
+		synchronized(parser) {
+			parser.reset();
+			return new IdeParseResult<Node, CopperToken>((Node)parser.parse(input, filename), parser.getTokens());
+		}
 	}
 
 
