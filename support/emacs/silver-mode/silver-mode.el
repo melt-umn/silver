@@ -15,7 +15,7 @@ For detail, see `comment-dwim'."
    '("[\']\\(\\([\\\\].\\)\\|[^\']\\)*[\']". font-lock-string-face)
    '("[\/]\\(\\([\\\\].\\)\\|[^\/]\\)*[\/]". font-lock-string-face)
    '("\\<\\(production\\|productions\\|occurs\\|on\\|nonterminal\\|attribute\\|if\\|then\\|else\\|option\\|exports\\|close\\|closed\\)\\>" . font-lock-keyword-face)
-   '("\\<\\(local\\|terminal\\|type\\|concrete\\|abstract\\|default\\|ignore\\|start\\|lexer\\|class\\|classes\\|dominates\\|submits\\|aspect\\|decorate\\|autocopy\\)\\>" . font-lock-keyword-face)
+   '("\\<\\(local\\|terminal\\|concrete\\|abstract\\|default\\|ignore\\|start\\|lexer\\|class\\|classes\\|dominates\\|submits\\|aspect\\|decorate\\|autocopy\\)\\>" . font-lock-keyword-face)
    '("\\<\\(import\\|imports\\|grammar\\|association\\|precedence\\|synthesized\\|inherited\\|with\\|as\\|include\\)\\>" . font-lock-keyword-face)
    '("\\<\\(only\\|hiding\\|using\\|forwards\\|to\\|use\\|syntax\\|forwarding\\|function\\|return\\)\\>" . font-lock-keyword-face)
    '("\\<\\(Integer*\\|Boolean\\|String\\|Float\\|Reference\\|Production\\|Decorated\\)\\>" . font-lock-type-face)
@@ -36,6 +36,7 @@ For detail, see `comment-dwim'."
    '("\\<nonterminal\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-function-name-face)
    '("\\<terminal\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-function-name-face)
    '("\\<type\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-type-face)
+   '("\\<\\<\\(type\\)\\>\\ [A-Za-z_0-9:]+" 1 font-lock-keyword-face)
 ;   '("\\<type\\ [A-Za-z_0-9:]+\\ = \\<\\([^;]*\\)\\>" 1 font-lock-type-face)
    '("\\<Reference\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-type-face)
    '("\\<Decorated\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-type-face)
@@ -46,9 +47,9 @@ For detail, see `comment-dwim'."
    '("\\<hiding[\\ \t\r\n]+{\\([A-Za-z_0-9:,\\ \t\r\n]+\\)}[\\ \t\r]*\\(;\\|,\\)" 1 font-lock-function-name-face)
    '("\\<local\\> attribute\\ \\<\\([A-Z0-9a-z_:]+\\)\\>" 1 font-lock-variable-name-face)
    '("\\<attribute\\ \\<\\([A-Z0-9a-z_:]+\\)\\>" 1 font-lock-function-name-face)
-   '("[^:]::[\\ ]*\\<\\(\\([A-za-z_][A-z0-9a-z_]+:\\)*[A-Z][A-Z0-9a-z_]*\\)\\>" 1 font-lock-type-face)
+   '("[^:]::[\\ ]*\\<\\(\\([A-Za-z_][A-Z0-9a-z_]+:\\)*[A-Z][A-Z0-9a-z_]*\\)\\>" 1 font-lock-type-face)
    '("\\<\\([A-Za-z_0-9]+\\)\\>[\\ ]*::=" 1 font-lock-type-face )
-   '("\\<\\([A-Za-z_0-9]+\\)\\>[\\ ]*::[\\ ]*\\([A-za-z_][A-z0-9a-z_]+:\\)*[A-Z][A-Z0-9a-z_]*" 1 font-lock-variable-name-face )
+   '("\\<\\([A-Za-z_0-9]+\\)\\>[\\ ]*::[\\ ]*\\([A-Za-z_][A-Z0-9a-z_]+:\\)*[A-Z][A-Z0-9a-z_]*" 1 font-lock-variable-name-face )
    '("\\<local\\ attribute\\ \\<\\([A-Z0-9a-z_:]+\\)\\>" 1 font-lock-variable-name-face)
 
     ;Haskell comments
