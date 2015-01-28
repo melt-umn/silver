@@ -1,4 +1,8 @@
 
+-- Test a bug where x should in fact refer to the *outer* x.
+-- note: this test may become obsolete when we change let semantics to be recursive.
+equalityTest(let x :: Integer = 1 in let x :: Integer = x in x end end, 1, Integer, silver_tests);
+
 nonterminal Scope;
 
 wrongCode "Value 'top' is already bound." {

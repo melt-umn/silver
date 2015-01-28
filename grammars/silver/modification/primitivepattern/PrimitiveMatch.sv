@@ -384,10 +384,11 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   
   top.errors := e.errors;
 
+  local h_fName :: String = toString(genInt()) ++ ":" ++ h.name;
+  local t_fName :: String = toString(genInt()) ++ ":" ++ t.name;
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
-  local attribute elemType :: TypeExp;
-  elemType = freshType();
+  local elemType :: TypeExp = freshType();
   
   errCheck1 = check(listTypeExp(elemType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
@@ -404,15 +405,15 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   errCheck2.downSubst = e.upSubst;
   top.upSubst = errCheck2.upSubst;
   
-  local attribute consdefs :: [Def];
-  consdefs = [lexicalLocalDef(top.grammarName, top.location, h.name, elemType, noVertex(), []), -- TODO these deps??
-              lexicalLocalDef(top.grammarName, top.location, t.name, top.scrutineeType, noVertex(), [])];
+  local consdefs :: [Def] =
+    [lexicalLocalDef(top.grammarName, top.location, h_fName, elemType, noVertex(), []), -- TODO these deps??
+     lexicalLocalDef(top.grammarName, top.location, t_fName, top.scrutineeType, noVertex(), [])];
   
   e.env = newScopeEnv(consdefs, top.env);
   
   top.translation = "if(!scrutineeIter.nil()) {" ++
-  makeSpecialLocalBinding(h.name, "scrutinee.head()", performSubstitution(elemType, top.finalSubst).transType) ++
-  makeSpecialLocalBinding(t.name, "scrutinee.tail()", performSubstitution(top.scrutineeType, top.finalSubst).transType) ++
+  makeSpecialLocalBinding(h_fName, "scrutinee.head()", performSubstitution(elemType, top.finalSubst).transType) ++
+  makeSpecialLocalBinding(t_fName, "scrutinee.tail()", performSubstitution(top.scrutineeType, top.finalSubst).transType) ++
   "return " ++ e.translation ++ "; }";
 }
 
