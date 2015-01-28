@@ -27,7 +27,7 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::
 
   local io40::IO = print("[IDE plugin] Generating plugin.xml template.\n", io30);
 
-  local io50::IO = writeFile(getIDETempFolder() ++ "plugin.xml.template", makePlugin(ide.pluginConfig).xmlOutput, io40);
+  local io50::IO = writeFile(getIDETempFolder() ++ "plugin.xml.template", ide.pluginXml, io40);
   
   local io60::IO = writeFile(getIDETempFolder() ++ "SVIdeInterface.java.template", ide.svIdeInterface, io50);
 
@@ -57,27 +57,6 @@ IO ::= wizardDcl::IdeWizardDcl io::IO --wizName, wizDisplay, wizFunc, wizProps :
 		    mkdir(getIDETempFolder() ++ "eclipse/wizard/" ++ wizardDcl.wizName, io).io);
 
   return io02;
-}
-
-{- I think this is unused now
-function getTabNames
-String ::= tabs::[Pair<String String>]
-{
-  return
-    if null(tabs)
-    then ""
-    else "\"" ++ head(tabs).fst ++ "\", " ++ getTabNames(tail(tabs));
-}
--}
-
--- TODO: still used, remove eventually.
-function getTabClasses
-String ::= tabs::[Pair<String String>]
-{
-  return
-    if null(tabs)
-    then ""
-    else "new " ++ head(tabs).snd ++ "(), " ++ getTabClasses(tail(tabs));
 }
 
 function getPropertyProvider 

@@ -12,16 +12,19 @@ synthesized attribute ideFunctions :: [IdeFunction];
 synthesized attribute propDcls :: [IdeProperty] with ++ ;
 synthesized attribute wizards :: [IdeWizardDcl] with ++;
 synthesized attribute productInfo :: IdeProductInfo;
-synthesized attribute pluginConfig :: PluginConfig;
 synthesized attribute svIdeInterface :: String;
+synthesized attribute pluginXml :: String;
+synthesized attribute pluginXmlActions :: String;
+synthesized attribute pluginXmlWizards :: String;
+synthesized attribute pluginParserClass :: String;
 
-nonterminal IdeSpec with ideExtension, ideParserSpec, funcDcls, propDcls, wizards, productInfo, pluginConfig, ideFunctions, svIdeInterface;
+nonterminal IdeSpec with ideExtension, ideParserSpec, funcDcls, propDcls, wizards, productInfo, ideFunctions, svIdeInterface, pluginXml, pluginParserClass;
 
 
 abstract production ideSpec
 top::IdeSpec ::= 
     ext::String ideFuncDcls::[IdeFunction] idePropDcls::[IdeProperty] wizards::[IdeWizardDcl]
-    pspec::ParserSpec productInfo::IdeProductInfo pluginConfig::PluginConfig --TODO more?
+    pspec::ParserSpec productInfo::IdeProductInfo --TODO more?
 {
   top.ideExtension = ext;
   top.ideParserSpec = pspec;
@@ -30,13 +33,13 @@ top::IdeSpec ::=
   top.propDcls := idePropDcls;
   top.wizards := wizards;
   top.productInfo = productInfo;
-  top.pluginConfig = pluginConfig;
+  top.pluginParserClass = makeParserName(pspec.fullName);
   
-  local parserClassName :: String = makeParserName(pspec.fullName);
+  local tabs::[String] = 
+    if null(idePropDcls) then [] else ["edu.umn.cs.melt.ide.eclipse.property.TabCommons"];
 
   
-  top.svIdeInterface =
-    s"""
+  top.svIdeInterface = s"""
 package @PKG_NAME@;
 
 import java.io.IOException;
@@ -86,14 +89,14 @@ public class SVIdeInterface extends SVDefault {
 	@Override
 	public IPropertyPageTab[] getPropertyTabs() {
 		return new IPropertyPageTab[] {
-			${getTabClasses(pluginConfig.propertyTabs)}
+			${implode(", ", map(newTabClass, tabs))}
 		};
 	}
 	@Override
 	public CopperTextAttributeDecider getColorDecider() {
-		return @PKG_NAME@.imp.coloring.${parserClassName}_TextAttributeDecider.getInstance();
+		return @PKG_NAME@.imp.coloring.${top.pluginParserClass}_TextAttributeDecider.getInstance();
 	}
-	private @PKG_NAME@.copper.parser.${parserClassName} parser = new @PKG_NAME@.copper.parser.${parserClassName}();
+	private @PKG_NAME@.copper.parser.${top.pluginParserClass} parser = new @PKG_NAME@.copper.parser.${top.pluginParserClass}();
 	@Override
 	public IdeParseResult<Node, CopperToken> parse(Reader input, String filename) throws CopperParserException, IOException {
 		// In the long run, maybe we should have a getParser() rather than parse() so things could be concurrent... TODO
@@ -109,7 +112,120 @@ ${foldr(stringConcat, "", map((.svIdeInterface), ideFuncDcls))}
 ${foldr(stringConcat, "", map((.svIdeInterface), wizards))}
 }
 """;
+  
+  top.pluginXml = s"""<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+
+<extension point="org.eclipse.imp.runtime.languageDescription">
+  <language extensions="@SOURCE_EXT@" description="nothing here" natureID="@LANG_NAME@_IDE.imp.nature" language="@LANG_NAME@">
+  </language>
+</extension>
+
+<extension id="@LANG_NAME@_IDE.parserWrapper" name="@LANG_NAME@ Parser Wrapper" point="org.eclipse.imp.runtime.parser">
+  <parserWrapper class="edu.umn.cs.melt.ide.imp.services.ParseController" language="@LANG_NAME@">
+  </parserWrapper>
+</extension>
+
+<extension id="@LANG_NAME@.imp.builder" name="@LANG_NAME@ builder" point="org.eclipse.core.resources.builders">
+  <builder hasNature="true">
+    <run class="edu.umn.cs.melt.ide.imp.builders.Builder">
+    </run>
+  </builder>
+</extension>
+
+<extension id="imp.nature" name="@LANG_NAME@ Nature" point="org.eclipse.core.resources.natures">
+  <builder id="@LANG_NAME@_IDE.@LANG_NAME@.imp.builder" />
+  <runtime>
+    <run class="edu.umn.cs.melt.ide.imp.builders.Nature">
+      <parameter name="builder" value="@LANG_NAME@_IDE.@LANG_NAME@.imp.builder" />
+    </run>
+  </runtime>
+</extension>
+
+<extension id="@LANG_NAME@.imp.builder.problem" name="@LANG_NAME@ Error" point="org.eclipse.core.resources.markers">
+  <super type="org.eclipse.core.resources.problemmarker" />
+  <persistent value="true" />
+</extension>
+
+<extension point="org.eclipse.ui.popupMenus">
+  <objectContribution objectClass="org.eclipse.core.resources.IProject" adaptable="true" nameFilter="*" id="@LANG_NAME@.imp.projectContextMenu">
+
+    <action
+        label="Enable @LANG_NAME@ Builder"
+        tooltip="Enable the @LANG_NAME@ builder for this project"
+        id="@LANG_NAME@.imp.actions.enableNatureAction">
+      <class class="edu.umn.cs.melt.ide.imp.builders.EnableNature">
+        <parameter name="nature" value="@LANG_NAME@_IDE.imp.nature" />
+      </class>
+    </action>
+
+${foldr(stringConcat, "", map((.pluginXmlActions), ideFuncDcls))}
+
+  </objectContribution>
+</extension>
+
+<extension point="org.eclipse.imp.runtime.tokenColorer">
+  <tokenColorer class="edu.umn.cs.melt.ide.imp.services.Colorer" language="@LANG_NAME@">
+  </tokenColorer>
+</extension>
+
+<extension id="@LANG_NAME@_IDE.wizards" name="@LANG_NAME@ Project Wizards" point="org.eclipse.ui.newWizards">
+  <wizard
+      category="@LANG_NAME@_IDE.wizards.category/"
+      class="edu.umn.cs.melt.ide.wizard.NewProjectWizard"
+      id="@LANG_NAME@_IDE.wizard.newProject"
+      name="New @LANG_NAME@ Project"
+      finalPerspective="@LANG_NAME@_IDE.perspective"
+      project="true">
+  </wizard>
+  
+${foldr(stringConcat, "", map((.pluginXmlWizards), wizards))}
+
+  <category
+      id="@LANG_NAME@_IDE.wizards.category"
+      name="@LANG_NAME@">
+  </category>
+</extension>
+
+<extension
+    point="org.eclipse.ui.perspectives">
+  <perspective
+      class="edu.umn.cs.melt.ide.eclipse.Perspective"
+      id="@LANG_NAME@_IDE.perspective"
+      name="@LANG_NAME@">
+  </perspective>
+</extension>
+
+<extension point="org.eclipse.ui.propertyPages">
+  <page
+      class="edu.umn.cs.melt.ide.eclipse.property.MultiTabPropertyPage"
+      id="@LANG_NAME@_IDE.buildConfig.propertyPage"
+      name="@LANG_NAME@">
+    <enabledWhen>
+      <and>
+        <instanceof value="org.eclipse.core.resources.IProject"/>
+        <adapt type="org.eclipse.core.resources.IResource">
+          <test property="org.eclipse.core.resources.projectNature"
+                value="@LANG_NAME@_IDE.imp.nature">
+          </test>
+        </adapt>
+      </and>
+    </enabledWhen>
+  </page>
+</extension>
+
+</plugin>
+""";
 }
+
+function newTabClass
+String ::= tab::String
+{
+  return "new " ++ tab ++ "()";
+}
+
+
 
 {-- IdeProperty --}
 
@@ -166,7 +282,7 @@ top::Font ::= color::Color isBold::Boolean isItalic::Boolean
 
 {-- IdeFunctions --}
 
-nonterminal IdeFunction with funcDcls, svIdeInterface;
+nonterminal IdeFunction with funcDcls, svIdeInterface, pluginXml, pluginXmlActions;
 
 abstract production builderFunction
 top::IdeFunction ::= fName::String
@@ -179,6 +295,8 @@ top::IdeFunction ::= fName::String
 		return (NIOVal)${makeClassName(fName)}.invoke(properties, env, iotoken);
 	}
 """;
+  top.pluginXml = "";
+  top.pluginXmlActions = "";
 }
 
 abstract production postbuilderFunction
@@ -192,32 +310,54 @@ top::IdeFunction ::= fName::String
 		return (NIOVal)${makeClassName(fName)}.invoke(properties, env, iotoken);
 	}
 """;
+  top.pluginXml = "";
+  top.pluginXmlActions = "";
 }
 
 abstract production exporterFunction
 top::IdeFunction ::= fName::String
 {
   top.funcDcls := [pair("exporter", fName)];
-  top.svIdeInterface =
-    s"""
+  top.svIdeInterface = s"""
 	@Override
 	public NIOVal export(ConsCell properties, NIdeEnv env, Object iotoken) {
 		return (NIOVal)${makeClassName(fName)}.invoke(properties, env, iotoken);
 	}
 """;
+  
+  top.pluginXmlActions = s"""
+    <action
+        label="Export as @LANG_NAME@ target"
+        tooltip="Export the project as @LANG_NAME@ distributable"
+        id="@LANG_NAME@.imp.actions.exportAction">
+      <class class="edu.umn.cs.melt.ide.imp.builders.Exporter">
+        <parameter name="name" value="@LANG_NAME@" />
+      </class>
+    </action>
+""";
+  top.pluginXml = "";
 }
 
 abstract production folderFunction
 top::IdeFunction ::= fName::String
 {
   top.funcDcls := [pair("folder", fName)];
-  top.svIdeInterface =
-    s"""
+  top.svIdeInterface = s"""
 	@Override
 	public ConsCell getFolds(Node root) {
 		return (ConsCell)${makeClassName(fName)}.invoke(root);
 	}
 """;
+
+  top.pluginXml = s"""
+<extension point="org.eclipse.imp.runtime.foldingUpdater">
+  <foldingUpdater
+      class="edu.umn.cs.melt.ide.imp.services.FoldingProvider"
+      language="@LANG_NAME@">
+  </foldingUpdater>
+</extension>
+""";
+  top.pluginXmlActions = "";
 }
 
 
