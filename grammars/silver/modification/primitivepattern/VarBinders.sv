@@ -91,7 +91,9 @@ top::VarBinder ::= n::Name
     then decoratedTypeExp(top.bindingType)
     else top.bindingType;
 
-  top.defs = [lexicalLocalDef(top.grammarName, n.location, n.name, ty, noVertex(), [])]; -- TODO: these deps??
+  local fName :: String = toString(genInt()) ++ ":" ++ n.name;
+
+  top.defs = [lexicalLocalDef(top.grammarName, n.location, fName, ty, noVertex(), [])]; -- TODO: these deps??
 
   -- finalSubst is not necessary, downSubst would work fine, but is not threaded through here.
   -- the point is that 'ty' for Pair<String Integer> would currently show Pair<a b>
@@ -102,7 +104,7 @@ top::VarBinder ::= n::Name
   local actualTy :: TypeExp = performSubstitution(ty, top.finalSubst);
 
   top.translation = 
-    makeSpecialLocalBinding(n.name, 
+    makeSpecialLocalBinding(fName, 
       "(" ++ actualTy.transType ++ ")scrutinee." ++ 
         (if top.bindingType.isDecorable
          then "childDecorated("

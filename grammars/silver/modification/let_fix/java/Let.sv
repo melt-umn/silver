@@ -49,7 +49,7 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
 {
-  top.let_translation = makeSpecialLocalBinding(id.name, e.translation, finalTy.transType);
+  top.let_translation = makeSpecialLocalBinding(fName, e.translation, finalTy.transType);
 }
 
 function makeSpecialLocalBinding
