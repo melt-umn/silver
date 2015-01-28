@@ -2,18 +2,18 @@ package edu.umn.cs.melt.ide.impl;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Iterator;
 
-import org.eclipse.jface.text.IRegion;
-
-import ide.NIdeEnv;
 import common.ConsCell;
 import common.Node;
 import common.StringCatter;
 import core.NIOVal;
+import ide.NIdeEnv;
+
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
+import edu.umn.cs.melt.ide.copper.CopperToken;
 import edu.umn.cs.melt.ide.copper.coloring.CopperTextAttributeDecider;
 import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
+import edu.umn.cs.melt.ide.imp.services.IdeParseResult;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 
 /**
@@ -135,6 +135,5 @@ public interface SVInterface {
 	 */
 	public IPropertyPageTab[] getPropertyTabs();
 	public CopperTextAttributeDecider getColorDecider();
-	public Node parse(Reader input, String filename) throws CopperParserException, IOException;
-	public Iterator getTokensForLastParse(IRegion region);
+	public IdeParseResult<Node, CopperToken> parse(Reader input, String filename) throws CopperParserException, IOException;
 }

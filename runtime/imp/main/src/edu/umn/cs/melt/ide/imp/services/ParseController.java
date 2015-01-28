@@ -14,11 +14,13 @@ import org.eclipse.imp.parser.ParseControllerBase;
 import org.eclipse.imp.parser.SimpleAnnotationTypeInfo;
 import org.eclipse.imp.services.IAnnotationTypeInfo;
 import org.eclipse.imp.services.ILanguageSyntaxProperties;
+import org.eclipse.jface.text.IRegion;
 
 import common.Node;
 
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
+import edu.umn.cs.melt.ide.copper.CopperToken;
 import edu.umn.cs.melt.ide.copper.IToken;
 import edu.umn.cs.melt.ide.copper.SourcePositionLocator;
 import edu.umn.cs.melt.ide.impl.SVRegistry;
@@ -33,18 +35,13 @@ import edu.umn.cs.melt.ide.impl.SVRegistry;
  */
 public class ParseController extends ParseControllerBase {
 	
-	private static DateFormat DATE_FORMAT = new SimpleDateFormat();
-	
-	/** Construct an instance of the parser. */
-//	private @PARSER_NAME@ parser = new @PARSER_NAME@();
-
-	private final SimpleAnnotationTypeInfo fSimpleAnnotationTypeInfo
-		= new SimpleAnnotationTypeInfo();
-
+	private SimpleAnnotationTypeInfo fSimpleAnnotationTypeInfo;
 	private SourcePositionLocator<Node, IToken> locator;
+	private IdeParseResult<Node, CopperToken> lastSuccess;
 	
 	public ParseController() {
 		super(SVRegistry.get().name());
+		fSimpleAnnotationTypeInfo = new SimpleAnnotationTypeInfo();
 		locator = new SourcePositionLocator<Node, IToken>(this);
 	}
 	
@@ -68,16 +65,12 @@ public class ParseController extends ParseControllerBase {
 	
 	@Override
 	public Object parse(String input, IProgressMonitor monitor) {
-		Node result = null;
-		boolean parsed = false;
-		handler.clearMessages();
-		
 		try {
+			handler.clearMessages();
 			Reader reader = new StringReader(input);
-			result = SVRegistry.get().parse(reader, getPath().toFile().getName());
-		    parsed = (result==null)?false:true;
-		    if(!parsed)
-		    	System.out.println("\nI didn't think parse result could be null?! \n");
+			IdeParseResult<Node, CopperToken> result = SVRegistry.get().parse(reader, getPath().toFile().getName());
+			lastSuccess = result;
+			return fCurrentAst = result.getTree();
 		} catch (CopperSyntaxError e) {
 			// We have a point, not an extent, so repeat start/end positions.
 			handler.handleSimpleMessage(
@@ -92,21 +85,16 @@ public class ParseController extends ParseControllerBase {
 			e.printStackTrace();
 		}
 		
-		String date = DATE_FORMAT.format(new Date()).toString();
-		if(parsed){
-			System.out.println(date + ": Parsed correctly.");
-		} else {
-			System.err.println(date + ": Parsing failed.");
-		}
-		
-		fCurrentAst = result;
-		return fCurrentAst;
+		// Failure-only case
+		return null;
 	}
 
 	//Delegate to auto-generated (enhanced) parser
 	@Override
-	public Iterator getTokenIterator(org.eclipse.jface.text.IRegion region) {
-		return SVRegistry.get().getTokensForLastParse(region);
+	public Iterator getTokenIterator(IRegion region) {
+		if(lastSuccess == null)
+			return null;
+		return lastSuccess.getTokenIterator(region);
 	}
 	
 }
