@@ -63,25 +63,11 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
   
   local info :: IdeProductInfo = getIdeProductInfo(stmts);
 
-  top.ideSpecs = [ideSpec(fext, stmts.ideFunctions, stmts.propDcls, stmts.wizards, head(spec), info, getConfig(foldr(append, [], map((.funcDcls), stmts.ideFunctions)), stmts.propDcls, stmts.wizards))];
+  top.ideSpecs = [ideSpec(fext, stmts.ideFunctions, stmts.propDcls, stmts.wizards, head(spec), info)];
   
   top.errors <- stmts.errors;
 
   forwards to emptyAGDcl(location=top.location);
-}
-
-function getConfig
-PluginConfig ::= funcs::[Pair<String String>] props::[IdeProperty] wizards::[IdeWizardDcl]
-{
-    local hasExporter :: Boolean = checkExistence(funcs, "exporter");
-    local hasCodeFolder :: Boolean = checkExistence(funcs, "folder");
-
-    local hasNewFileWizard :: Boolean = hasWizard(wizards, "newfile");
-
-    local tabs::[Pair<String String>] = 
-        (if null(props) then [] else [pair("Commons", "edu.umn.cs.melt.ide.eclipse.property.TabCommons")]);
-
-    return pluginConfig(hasExporter, hasCodeFolder, hasNewFileWizard, tabs);
 }
 
 {--
