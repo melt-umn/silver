@@ -179,10 +179,7 @@ IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[Parser
     writeFile(
       getIDETempFolder() ++ "imp/coloring/" ++ parserName ++ "_TokenClassifier.java.template", 
       getTokenClassifier(ast.fontList, ast.termFontPairList, parserName), 
-      writeFile(
-        getIDETempFolder() ++ "imp/coloring/" ++ parserName ++ "_TextAttributeDecider.java.template", 
-        getTextAttributeDecider(ast.fontList, parserName), 
-        mkdir(getIDETempFolder() ++ "imp/coloring", writeio).io));
+      mkdir(getIDETempFolder() ++ "imp/coloring", writeio).io);
 
   return if null(specs) then i
          else writeNCSSpec(ideio, grams, silvergen, tail(specs), pkgName, startNTClassName);
@@ -192,62 +189,63 @@ IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[Parser
 function getTokenClassifier
 String ::= fontList::[Pair<String Font>] termFontPairList::[Pair<String String>] parserName::String
 {
-return
-  "package @PKG_NAME@.imp.coloring;\n" ++
-  "\n" ++
-  "import java.util.HashMap;\n" ++
-  "import java.util.Map;\n" ++
-  "\n" ++
-  "import edu.umn.cs.melt.ide.copper.coloring.ICopperTokenClassifier;\n" ++
-  "\n" ++
-  "public class " ++ parserName ++ "_TokenClassifier implements ICopperTokenClassifier {\n" ++
-  "\tprivate static Map<String, Integer> map = new HashMap<String, Integer>();\n" ++
-  "\t\n" ++
-  "\tpublic final static class TokenType {\n" ++
-  "\t\t\n" ++ 
-  "\t\tpublic static final int DEFAULT = 0;\n" ++ 
-  "\t\t\n" ++ 
-  getConstantDeclarations(1, fontList) ++
-  "\t\t\n" ++ 
-  "\t\tpublic static final int TOTAL = " ++ toString(length(fontList)+1) ++ ";\n" ++ 
-  "\t}\n" ++
-  "\t\n" ++
-  "\tstatic{\n" ++
-  "\t\t" ++ getPutNameFontPairsIntoMap(termFontPairList) ++ "\n" ++ 
-  "\t}\n" ++
-  "\t\n" ++
-  "\t@Override\n" ++
-  "\tpublic int getKind(String symbolName) {\n" ++
-  "\t\tif(symbolName==null || \"\".equals(symbolName)){\n" ++
-  "\t\t\treturn TokenType.DEFAULT;\n" ++
-  "\t\t}\n" ++
-  "\t\t\n" ++
-  "\t\tInteger kind = map.get(symbolName);\n" ++
-  "\t\t\n" ++
-  "\t\tif(kind==null){\n" ++
-  "\t\t\treturn TokenType.DEFAULT;\n" ++
-  "\t\t}\n" ++
-  "\t\t\n" ++
-  "\t\treturn kind;\n" ++
-  "\t}\n" ++
-  "\t\n" ++
-  "\tprivate static " ++ parserName ++ "_TokenClassifier INSTANCE = new " ++ parserName ++ "_TokenClassifier();\n" ++
-  "\t\n" ++
-  "\tpublic static " ++ parserName ++ "_TokenClassifier getInstance(){\n" ++
-  "\t\treturn INSTANCE;\n" ++
-  "\t}\n" ++
-  "\t\n" ++
-  "\tprivate " ++ parserName ++ "_TokenClassifier(){\n" ++
-  "\t\n" ++
-  "\t}\n" ++
-  "\n" ++
-  "}\n";
+return s"""
+package @PKG_NAME@.imp.coloring;
+
+import java.util.HashMap;
+
+import edu.umn.cs.melt.ide.copper.IToken;
+import edu.umn.cs.melt.ide.copper.coloring.ICopperTokenClassifier;
+import edu.umn.cs.melt.ide.copper.coloring.TextAttributeProvider;
+import org.eclipse.jface.text.TextAttribute;
+import org.eclipse.swt.widgets.Display;
+
+public class ${parserName}_TokenClassifier implements ICopperTokenClassifier {
+	private static final HashMap<String, Integer> map = new HashMap<String, Integer>();
+
+	public final static class TokenType {
+		public static final int DEFAULT = 0; 
+${getConstantDeclarations(1, fontList)}
+		public static final int TOTAL = ${toString(length(fontList)+1)}; 
+	}
+
+	static {
+		${getPutNameFontPairsIntoMap(termFontPairList)}
+	}
+
+	public static int getKind(String symbolName) {
+		if(symbolName == null || "".equals(symbolName)) {
+			return TokenType.DEFAULT;
+		}
+
+		Integer kind = map.get(symbolName);
+
+		if(kind == null) {
+			return TokenType.DEFAULT;
+		}
+
+		return kind;
+	}
+
+	private static final TextAttribute[] attributes = new TextAttribute[TokenType.TOTAL];
+	
+	static {
+		Display display = Display.getDefault();
+		${implode("\n\t\t", map(getTextAttributeInit, fontList))}
+	}
+	
+	@Override
+	public TextAttribute getColoring(IToken token) {
+		return attributes[token.getKind()];
+	}
+}
+""";
 }
 
 function getPutNameFontPairsIntoMap
 String ::= termFontPairList::[Pair<String String>]
 {
-return implode("\n\t\t\t", map(getPutNameFontPairIntoMap, termFontPairList));
+return implode("\n\t\t", map(getPutNameFontPairIntoMap, termFontPairList));
 }
 
 function getPutNameFontPairIntoMap
@@ -262,94 +260,18 @@ return "map.put(\"" ++ tokenNameAndFontName.fst ++ "\", " ++ "TokenType." ++
 function getConstantDeclarations
 String ::= i::Integer fontList::[Pair<String Font>]
 {
-  return if (null(fontList)) 
-         then "" 
-         else ("\t\t\tpublic static final int " ++ 
-              head(fontList).fst ++ 
-              " = " ++ toString(i) ++ ";\n" ++ 
-              getConstantDeclarations(i+1, tail(fontList)));
+  return if null(fontList)
+         then ""
+         else "\t\tpublic static final int " ++ head(fontList).fst ++ " = " ++ toString(i) ++ ";\n" ++ 
+              getConstantDeclarations(i+1, tail(fontList));
 }
 
--- Inner class TextAttributeDecider
-function getTextAttributeDecider
-String ::= fontList::[Pair<String Font>] parserName::String
+function getTextAttributeInit
+String ::= f::Pair<String Font>
 {
-return
-  "package @PKG_NAME@.imp.coloring;\n" ++
-  "\n" ++
-  "import org.eclipse.jface.text.TextAttribute;\n" ++
-  "import org.eclipse.swt.widgets.Display;\n" ++
-  "\n" ++
-  "import edu.umn.cs.melt.ide.copper.coloring.CopperTextAttributeDecider;\n" ++
-  "import edu.umn.cs.melt.ide.copper.coloring.TextAttributeProvider;\n" ++
-  "\n" ++
-  "public class " ++ parserName ++ "_TextAttributeDecider extends CopperTextAttributeDecider {\n" ++
-  "\t\n" ++
-  "\tprivate static " ++ parserName ++ "_TextAttributeDecider INSTANCE = new " ++ parserName ++ "_TextAttributeDecider();\n" ++
-  "\t\n" ++
-  "\tpublic static " ++ parserName ++ "_TextAttributeDecider getInstance(){\n" ++
-  "\t\treturn INSTANCE;\n" ++
-  "\t}\n" ++
-  "\t\n" ++
-  "\tprotected final TextAttribute[] attributes = new TextAttribute[" ++ parserName ++ "_TokenClassifier.TokenType.TOTAL];\n" ++
-  "\t\n" ++
-  "\tprivate " ++ parserName ++ "_TextAttributeDecider(){\n" ++
-  "\t\tDisplay display = Display.getDefault();\n" ++
-  "\t\t\n" ++
-  "\t\t" ++ getAttributeInitializations(fontList, parserName) ++ "\n" ++
-  "\t\t\n" ++
-  "\t\t" ++ getPutAttributesIntoMap(fontList, parserName) ++ "\n" ++
-  "\t}\n" ++
-  "\n" ++
-  "}\n";
-}
-
-function getAttributeInitializations
-String ::= fontList::[Pair<String Font>] parserName::String
-{
-return 
-  if(null(fontList))
-  then ""
-  else "\n\t\t\tattributes[" ++ parserName ++ "_" ++ getAttributeInitialization(head(fontList)) ++ getAttributeInitializations(tail(fontList), parserName);
-
---return implode("\n\t\t\t", map(getAttributeInitialization, fontList));
-}
-
-function getAttributeInitialization
-String ::= namedFont::Pair<String Font>
-{
---attributes[
-return "TokenClassifier.TokenType." ++ namedFont.fst ++ "] = " ++ getAttributeInitializer(namedFont.snd) ++ ";";
-}
-
-function getAttributeInitializer
-String ::= font::Font
-{
-  local attribute color :: Color;
-  color = font.color;
-
-  return "TextAttributeProvider.getAttribute(display, " ++ 
-          toString(color.r) ++ ", " ++ toString(color.g) ++ ", " ++ toString(color.b) ++ ", " ++ 
-          (if(font.isBold) then "true" else "false") ++ ", " ++ 
-          (if(font.isItalic) then "true" else "false") ++ ")";
-}
-
-function getPutAttributesIntoMap
-String ::= fontList::[Pair<String Font>] parserName::String
-{
-return 
-  if(null(fontList))
-  then ""
-  else "\n\t\t\taddTextAttribute(" ++ parserName ++ "_TokenClassifier.TokenType." ++ head(fontList).fst ++ 
-       ", attributes[" ++ parserName ++ "_TokenClassifier.TokenType." ++ head(fontList).fst ++ "]);" ++ getPutAttributesIntoMap(tail(fontList), parserName);
-
---return implode("\n\t\t\t", map(getPutAttributeIntoMap, fontList));
-}
-
-function getPutAttributeIntoMap
-String ::= namedFont::Pair<String Font>
-{
-return "addTextAttribute(TokenClassifier.TokenType." ++ namedFont.fst ++ ", attributes[TokenClassifier.TokenType." ++ namedFont.fst ++ "]);";
+  -- TODO: we might turn this function into an attribute on font, but why is this string not a part of font? we need that to do so...
+  local color :: Color = f.snd.color;
+  return s"""attributes[TokenType.${f.fst}] = TextAttributeProvider.getAttribute(display, ${toString(color.r)}, ${toString(color.g)}, ${toString(color.b)}, ${if f.snd.isBold then "true" else "false"}, ${if f.snd.isItalic then "true" else "false"});""";
 }
 
 function getIDETempFolder

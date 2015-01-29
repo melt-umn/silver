@@ -10,9 +10,9 @@ import silver:modification:let_fix;
 
 terminal Case_kwd 'case' lexer classes {KEYWORD,RESERVED};
 terminal Of_kwd 'of' lexer classes {KEYWORD,RESERVED};
-terminal Arrow_kwd '->';
-terminal Vbar_kwd '|';
-terminal Opt_Vbar_t /\|?/ ; -- optional Coq-style vbar.
+terminal Arrow_kwd '->' lexer classes {SPECOP};
+terminal Vbar_kwd '|' lexer classes {SPECOP};
+terminal Opt_Vbar_t /\|?/ lexer classes {SPECOP}; -- optional Coq-style vbar.
 
 -- MR | ...
 nonterminal MRuleList with location, config, pp, signature, env, errors, matchRuleList;

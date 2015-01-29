@@ -60,7 +60,7 @@ import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 import edu.umn.cs.melt.ide.impl.SVDefault;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
-import edu.umn.cs.melt.ide.copper.coloring.CopperTextAttributeDecider;
+import edu.umn.cs.melt.ide.copper.coloring.ICopperTokenClassifier;
 import edu.umn.cs.melt.ide.imp.services.IdeParseResult;
 import edu.umn.cs.melt.ide.copper.CopperToken;
 
@@ -93,8 +93,8 @@ public class SVIdeInterface extends SVDefault {
 		};
 	}
 	@Override
-	public CopperTextAttributeDecider getColorDecider() {
-		return @PKG_NAME@.imp.coloring.${top.pluginParserClass}_TextAttributeDecider.getInstance();
+	public ICopperTokenClassifier getTokenClassifier() {
+		return new @PKG_NAME@.imp.coloring.${top.pluginParserClass}_TokenClassifier();
 	}
 	private @PKG_NAME@.copper.parser.${top.pluginParserClass} parser = new @PKG_NAME@.copper.parser.${top.pluginParserClass}();
 	@Override
