@@ -17,8 +17,6 @@ synthesized attribute nxmlCopper :: String occurs on SyntaxRoot, Syntax, SyntaxD
 inherited attribute jPkgName :: String occurs on SyntaxRoot;
 -- The attribute is the name of generated Java parser.
 inherited attribute jParserName :: String occurs on SyntaxRoot;
--- The attribute is the full class name of CST's root.
-inherited attribute startNTClassName :: String occurs on SyntaxRoot;
 
 aspect default production
 top::SyntaxRoot ::=
