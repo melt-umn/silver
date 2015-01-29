@@ -23,17 +23,12 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   production ide :: IdeSpec = head(head(builtGrammar).ideSpecs);
   production isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
 
-  -- TODO only used for the adaptive stuff, so will remove shortly.
-  local startNTClassName::String = makeNTClassName(ide.ideParserSpec.startNT);
-  extraTopLevelDecls <- if !isIde then [] else [
-    "<property name='start.nonterminal.class' value='" ++ startNTClassName ++ "'/>"]; 
-
   local parserPackageName :: String = makeName(ide.ideParserSpec.sourceGrammar);
   local parserPackagePath :: String = grammarToPath2(ide.ideParserSpec.sourceGrammar);
   local ideParserFullPath :: String = getIDEParserFile(ide.ideParserSpec.sourceGrammar, ide.pluginParserClass, "${src}/");
   production pkgName :: String = makeName(buildGrammar);
 
-  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, allParsers, benv.silverGen, ide, pkgName, startNTClassName)];
+  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, allParsers, benv.silverGen, ide, pkgName)];
 
   classpathCompiler <- if !isIde then [] else ["${sh}/jars/IDEPluginRuntime.jar"];
 
