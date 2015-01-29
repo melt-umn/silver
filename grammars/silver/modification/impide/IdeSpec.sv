@@ -229,13 +229,15 @@ String ::= tab::String
 
 {-- IdeProperty --}
 
-nonterminal IdeProperty with propName, propType, optional, defaultVal, displayName;
+nonterminal IdeProperty with propName, propType, optional, defaultVal, displayName, controlJavaTranslation, generatorJavaTranslation;
 
 synthesized attribute propName :: String;
 synthesized attribute propType :: String;
 synthesized attribute optional :: Boolean;
 synthesized attribute defaultVal :: String;
 synthesized attribute displayName :: String;
+synthesized attribute controlJavaTranslation :: String;
+synthesized attribute generatorJavaTranslation :: String;
 
 abstract production makeIdeProperty
 top::IdeProperty ::= propName::String propType::String options::IdePropertyOptions
@@ -245,6 +247,23 @@ top::IdeProperty ::= propName::String propType::String options::IdePropertyOptio
   top.optional = options.optional;
   top.defaultVal = options.defaultVal;
   top.displayName = if options.displayName == "" then propName else options.displayName;
+  top.controlJavaTranslation =
+    s"""    controls.add(new ${getConstructorByType(propType)}(panel, "${propName}", "${top.displayName}", "${top.defaultVal}", ${if top.optional then "false" else "true"}));
+""";
+  -- TODO: honestly, we ought to just build this whole string statically, and do escaping here, too.
+  top.generatorJavaTranslation =
+    s"""    sb.append("${propName}/${propType} = ");sb.append(escape("${top.defaultVal}"));sb.append("\n");
+""";
+}
+-- TODO: remove and replace by an actualy PropType nonterminal, with this as a translation
+function getConstructorByType
+String ::= propType :: String
+{
+  return if propType == "string" then "TextPropertyControl"
+    else if propType == "path" then "PathPropertyControl"
+    else if propType == "url" then "URLPropertyControl"
+    else -- propType == "integer" 
+    "IntegerPropertyControl";
 }
 
 {-- Color --}
