@@ -11,7 +11,7 @@ import ide.NIdeEnv;
 
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.ide.copper.CopperToken;
-import edu.umn.cs.melt.ide.copper.coloring.CopperTextAttributeDecider;
+import edu.umn.cs.melt.ide.copper.coloring.ICopperTokenClassifier;
 import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
 import edu.umn.cs.melt.ide.imp.services.IdeParseResult;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
@@ -134,6 +134,6 @@ public interface SVInterface {
 	 * Get a set of tabs for the project's properties page.
 	 */
 	public IPropertyPageTab[] getPropertyTabs();
-	public CopperTextAttributeDecider getColorDecider();
+	public ICopperTokenClassifier getTokenClassifier();
 	public IdeParseResult<Node, CopperToken> parse(Reader input, String filename) throws CopperParserException, IOException;
 }

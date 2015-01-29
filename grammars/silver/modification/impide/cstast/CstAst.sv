@@ -52,8 +52,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
 
 "\t//IDE Extension START\n\n" ++
 
-  getParseTreeCode() ++
-  getColorerCode(top.jPkgName ++ ".imp.coloring." ++ top.jParserName ++ "_") ++
+  getParseTreeCode(top.jPkgName ++ ".imp.coloring." ++ top.jParserName ++ "_TokenClassifier") ++
 
 "\n\t//IDE Extension END\n" ++
 
@@ -103,7 +102,7 @@ Assumptions we make about initial Syntax:
 -}
 
 function getParseTreeCode
-String ::=
+String ::= tokenClassifierClass::String
 {
 return 
 "\tprotected List<CopperToken> tokenList = null;\n" ++
@@ -131,17 +130,9 @@ return
 
 "\tprotected int getKind(SingleDFAMatchData scanResult){\n" ++
 "\t\tString term = getSymbolNames()[scanResult.firstTerm];\n" ++
-"\t\treturn tokenClassifier.getKind(term);\n" ++
+"\t\treturn " ++ tokenClassifierClass ++ ".getKind(term);\n" ++
 "\t}\n" ++
 "\t\n";
 }
 
- 
-function getColorerCode
-String ::= classPrefix::String
-{
-return 
-"\tprivate ICopperTokenClassifier tokenClassifier = " ++ classPrefix ++ "TokenClassifier.getInstance();\n"++
-"\t\n";
-}
 
