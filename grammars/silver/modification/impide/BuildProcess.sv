@@ -56,8 +56,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     "<property name='ide.proj.updatesite.path' location='${ide.proj.parent.path}/updatesite'/>",
     "<property name='ide.pkg.path' location='${ide.proj.plugin.path}/src/" ++ pkgToPath(pkgName) ++ "'/>", 
     "<property name='ide.parser.classname' value='" ++ ide.pluginParserClass ++ "' />",
-    "<property name='ide.parser.ide_copperfile' value='" ++ ideParserFullPath ++ "' />",
-    "<property name='ide.fileextension' value='" ++ ide.ideExtension ++ "' />"] ++ 
+    "<property name='ide.parser.ide_copperfile' value='" ++ ideParserFullPath ++ "' />"] ++ 
 
 
     [
@@ -121,34 +120,6 @@ String ::=
     "<property name='ide.rt.version' value='${ide_rt.Bundle-Version}'/>\n";
 }
 
--- Find a function from the given function list; if found return the argument found, else notFound
-function findFunction
-String ::= funcDcls :: [Pair<String String>] funcToFind::String found::String notFound::String
-{
-    return if null(funcDcls) --length(funcDcls) < 1
-           then notFound
-           else let
-                    hd :: Pair<String String> = head(funcDcls)
-                in
-                    if(hd.fst==funcToFind) then found
-                    else findFunction(tail(funcDcls), funcToFind, found, notFound)
-                end;
-}
-
-function getEnhanceTarget
-String ::= funcDcls::[Pair<String String>] doAction::(String::=Pair<String String>) 
-{
-    return if null(funcDcls)
-           then "\n"
-           else let
-                    result :: String = doAction(head(funcDcls))
-                in 
-                    if result==""
-                    then getEnhanceTarget(tail(funcDcls), doAction)
-                    else result
-                end;
-}
-
 function grammarToPath
 String ::= grm :: String 
 {
@@ -199,7 +170,6 @@ String ::=
     "  <filter token=\"GROUP_ID\" value='${ide.pkg.name}'/>\n" ++
     "  <filter token=\"PKG_NAME\" value='${ide.pkg.name}'/>\n" ++
     "  <filter token=\"LANG_NAME\" value='${lang.name}'/>\n" ++
-    "  <filter token=\"SOURCE_EXT\" value='${ide.fileextension}'/>\n" ++
     "  <filter token=\"IDE_VERSION\" value='${ide.version}'/>\n" ++
     "  <filter token=\"IDE_BUILD_TIMESTAMP\" value='${ide.build-timestamp}'/>\n" ++
     "  <filter token=\"PROJ_NAME\" value='${lang.name}_IDE_PROJECT'/>\n" ++

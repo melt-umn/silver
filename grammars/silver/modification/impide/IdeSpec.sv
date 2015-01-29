@@ -118,7 +118,7 @@ ${foldr(stringConcat, "", map((.svIdeInterface), wizards))}
 <plugin>
 
 <extension point="org.eclipse.imp.runtime.languageDescription">
-  <language extensions="@SOURCE_EXT@" description="nothing here" natureID="@LANG_NAME@_IDE.imp.nature" language="@LANG_NAME@">
+  <language extensions="${ext}" description="nothing here" natureID="@LANG_NAME@_IDE.imp.nature" language="@LANG_NAME@">
   </language>
 </extension>
 
