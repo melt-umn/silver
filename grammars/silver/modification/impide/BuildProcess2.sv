@@ -13,11 +13,11 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::
 
   local io01::IO =
     writeFile(getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template", getPropertyProvider(ide.propDcls, "property"),
-		mkdir(getIDETempFolder() ++ "eclipse/property", io00).io);
+      mkdir(getIDETempFolder() ++ "eclipse/property", io00).io);
 
   local io02::IO =
     writeFile(getIDETempFolder() ++ "eclipse/wizard/newproject/PropertyGenerator.java.template", getPropertyGenerator(ide.propDcls, "newproject"),
-		mkdir(getIDETempFolder() ++ "eclipse/wizard/newproject", io01).io);
+      mkdir(getIDETempFolder() ++ "eclipse/wizard/newproject", io01).io);
 
   local io04::IO = createWizardFiles(ide.wizards, io02);
 
@@ -50,11 +50,11 @@ function createFilesForOneWizard
 IO ::= wizardDcl::IdeWizardDcl io::IO --wizName, wizDisplay, wizFunc, wizProps :: [IdeProperty]
 {
   -- property provider
-  local attribute io02::IO;
-  io02 = writeFile(
-            getIDETempFolder() ++ "eclipse/wizard/" ++ wizardDcl.wizName ++ "/PropertyControlsProvider.java.template", 
-            getPropertyProvider(wizardDcl.wizProps, "wizard." ++ wizardDcl.wizName),
-		    mkdir(getIDETempFolder() ++ "eclipse/wizard/" ++ wizardDcl.wizName, io).io);
+  local io02 :: IO =
+    writeFile(
+      getIDETempFolder() ++ "eclipse/wizard/" ++ wizardDcl.wizName ++ "/PropertyControlsProvider.java.template", 
+      getPropertyProvider(wizardDcl.wizProps, "wizard." ++ wizardDcl.wizName),
+      mkdir(getIDETempFolder() ++ "eclipse/wizard/" ++ wizardDcl.wizName, io).io);
 
   return io02;
 }
@@ -62,86 +62,47 @@ IO ::= wizardDcl::IdeWizardDcl io::IO --wizName, wizDisplay, wizFunc, wizProps :
 function getPropertyProvider 
 String ::= propDcls :: [IdeProperty] pkgPart::String
 {
-  return 
-	"package @PKG_NAME@.eclipse." ++ pkgPart ++ ";\n" ++
-	"\n" ++	
-	"import java.util.ArrayList;\n" ++
-	"import java.util.List;\n" ++
-	"\n" ++	
-	"import org.eclipse.swt.widgets.Composite;\n" ++
-	"\n" ++	
-	"import edu.umn.cs.melt.ide.silver.property.ui.*;\n" ++
-	"\n" ++	
-	"public class PropertyControlsProvider implements IPropertyControlsProvider {\n" ++
-	"\n" ++	
-	"    private List<PropertyControl> controls;\n" ++
-	"\n" ++		
-	"    @Override\n" ++
-	"    public List<PropertyControl> getPropertyControls(Composite panel) {\n" ++
-	"	    if(controls==null){\n" ++
-	"		    controls = new ArrayList<PropertyControl>();\n" ++
-	"\n" ++				
-	"		    //Generated based on IDE declaration\n" ++
+  return s"""
+package @PKG_NAME@.eclipse.${pkgPart};
 
-	            getProperties2(propDcls) ++
+import java.util.ArrayList;
+import java.util.List;
 
-	"	    }\n" ++
-	"\n" ++			
-	"	    return controls;\n" ++
-	"    }\n" ++
-	"\n" ++	
-	"    @Override\n" ++
-	"    public boolean validateAll() {\n" ++
-	"	    boolean valid = true;\n" ++
-	"\n" ++			
-	"	    if(controls!=null){\n" ++
-	"		    for(PropertyControl control:controls){\n" ++
-	"			    if(!control.validate()){\n" ++
-	"				    valid = false;\n" ++
-	"			    }\n" ++
-	"		    }	\n" ++		
-	"	    }\n" ++
-	"\n" ++			
-	"	    //TODO\n" ++
-	"	    //IDE developers may add validations here. This is mainly for \n" ++
-	"	    //context-aware check, such as determining the validity of one field \n" ++
-	"	    //based on that of another.\n" ++
-	"\n" ++			
-	"	    return valid;\n" ++
-	"    }\n" ++
-	"\n" ++	
-	"}\n";
+import org.eclipse.swt.widgets.Composite;
 
+import edu.umn.cs.melt.ide.silver.property.ui.*;
+
+public class PropertyControlsProvider implements IPropertyControlsProvider {
+
+  private List<PropertyControl> controls;
+
+  @Override
+  public List<PropertyControl> getPropertyControls(Composite panel) {
+    if(controls == null) {
+      controls = new ArrayList<PropertyControl>();
+
+${foldr(stringConcat, "", map((.controlJavaTranslation), propDcls))}
+    }
+
+    return controls;
+  }
+
+  @Override
+  public boolean validateAll() {
+    boolean valid = true;
+
+    if(controls != null) {
+      for(PropertyControl control : controls) {
+        if(!control.validate()) {
+          valid = false;
+        }
+      }
+    }
+
+    return valid;
+  }
 }
-
-function getProperties2 
-String ::= propDcls :: [IdeProperty]
-{
-  return if null(propDcls) 
-         then "\n"	
-         else getProperty2(head(propDcls)) ++ getProperties2(tail(propDcls));
-}
-
-function getProperty2
-String ::= propDcl :: IdeProperty
-{
-  return "            "
-         ++ "controls.add(new " ++ getConstructorByType(propDcl.propType) ++ "(panel, \"" 
-         ++ propDcl.propName ++ "\", \"" 
-         ++ propDcl.displayName ++ "\", \"" 
-         ++ propDcl.defaultVal ++ "\", "
-         ++ (if propDcl.optional then "false" else "true") --translating "optional" to "required" by negating
-         ++ "));\n";
-}
-
-function getConstructorByType
-String ::= propType :: String
-{
-  return if propType == "string" then "TextPropertyControl"
-    else if propType == "path" then "PathPropertyControl"
-    else if propType == "url" then "URLPropertyControl"
-    else -- propType == "integer" 
-    "IntegerPropertyControl";
+"""; -- TODO: for validation, we may someday want to expose a silver function where we can write how to validate a property
 }
 
 function getPropertyGenerator 
@@ -149,102 +110,79 @@ String ::= propDcls::[IdeProperty] pkgName::String
 {
   local pkgPart :: String = if pkgName == "" then "" else "." ++ pkgName;
 
-  return 
-	"package @PKG_NAME@.eclipse.wizard" ++ pkgPart ++ ";\n" ++
-	"\n" ++
-	"import java.util.ArrayList;\n" ++
-	"import java.util.List;\n" ++
-	"\n" ++
-	"public class PropertyGenerator {\n" ++
-	"    \n" ++
-	"    private static String properties = null;\n" ++
-	"    \n" ++	
-	"    public static String getAll() {\n" ++
-	"        if(properties==null){\n" ++
-	"            StringBuilder sb = new StringBuilder();\n" ++
-	"    \n" ++				
-                 getProperties(propDcls) ++
-	"    \n" ++			
-	"            properties = sb.toString();\n" ++
-	"        }\n" ++
-	"    \n" ++		
-	"        return properties;\n" ++
-	"    }\n" ++
-	"    \n" ++	
+  return s"""
+package @PKG_NAME@.eclipse.wizard${pkgPart};
 
-	"    private static String escape(String str){\n" ++	
-	"        char[] orig = str.toCharArray();\n" ++	
-	"        List<Character> list = new ArrayList<Character>();\n" ++	
-	"        for(char c:orig){\n" ++	
-	"            if(c=='='||c=='#'||c=='\\\\'||c==':'){\n" ++	
-	"               list.add('\\\\');\n" ++	
-	"            }\n" ++	
-	"            list.add(c);\n" ++	
-	"        }\n" ++	
-	"        \n" ++	      	
-	"        //Convert to a char array\n" ++	
-	"        char[] mod = new char[list.size()];\n" ++	
-	"        for(int i=0;i<mod.length;i++){\n" ++	
-	"            mod[i] = list.get(i);\n" ++	
-	"        }\n" ++	
-	"        \n" ++	    
-	"        return new String(mod);\n" ++	
-	"    }\n" ++	
-	"    \n" ++	
+import java.util.ArrayList;
+import java.util.List;
 
-	"}\n";
+public class PropertyGenerator {
+    
+    private static String properties = null;
+    
+    public static String getAll() {
+        if(properties==null) {
+            StringBuilder sb = new StringBuilder();
+    
+${foldr(stringConcat, "", map((.generatorJavaTranslation), propDcls))}
+    
+            properties = sb.toString();
+        }
+    
+        return properties;
+    }
+    
+
+    private static String escape(String str) {
+        char[] orig = str.toCharArray();
+        List<Character> list = new ArrayList<Character>();
+        for(char c : orig) {
+            if(c == '=' || c == '#' || c == '\\' || c == ':') {
+               list.add('\\');
+            }
+            list.add(c);
+        }
+        
+        //Convert to a char array
+        char[] mod = new char[list.size()];
+        for(int i = 0; i < mod.length; i++) {
+            mod[i] = list.get(i);
+        }
+            
+        return new String(mod);
+    }
 }
-
-function getProperties 
-String ::= propDcls :: [IdeProperty]
-{
-  return if null(propDcls) 
-         then ""	
-         else getProperty(head(propDcls)) ++ getProperties(tail(propDcls));
-}
-
-function getProperty
-String ::= propDcl :: IdeProperty
-{
-  return "            sb.append(\"" ++ propDcl.propName ++ 
-        "\");sb.append(\"/\");sb.append(\"" ++ propDcl.propType ++ 
-        "=\");sb.append(escape(\"" ++ propDcl.defaultVal ++ 
-        "\"));sb.append(\"\\n\");\n";
+""";
 }
 
 function writeNCSSpec
 IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[ParserSpec] pkgName::String startNTClassName::String
 {
-  local attribute p :: ParserSpec;
-  p = head(specs);
+  local p :: ParserSpec = head(specs);
   p.compiledGrammars = grams;
   
-  local attribute ast :: SyntaxRoot;
-  ast = p.cstAst;
+  local ast :: SyntaxRoot = p.cstAst;
 
   ast.jPkgName = pkgName;
   ast.jParserName = parserName;
   ast.startNTClassName = startNTClassName;
 
-  local attribute parserName :: String;
-  parserName = makeParserName(p.fullName);
+  local parserName :: String = makeParserName(p.fullName);
 
-  local attribute copperFile :: String;
-  copperFile = getIDEParserFile(p.sourceGrammar, parserName, silvergen);
+  local copperFile :: String = getIDEParserFile(p.sourceGrammar, parserName, silvergen);
 
-  local attribute printio :: IO;
-  printio = print("\t[" ++ p.fullName ++ "]\n", i);
+  local printio :: IO = print("\t[" ++ p.fullName ++ "]\n", i);
   
-  local attribute writeio :: IO;
-  writeio = writeFile(copperFile, ast.nxmlCopper, printio);
+  local writeio :: IO = writeFile(copperFile, ast.nxmlCopper, printio);
   
-  local attribute ideio :: IO;
-  ideio = writeFile(getIDETempFolder() ++ "imp/coloring/" ++ parserName ++ "_TokenClassifier.java.template", 
-                    getTokenClassifier(ast.fontList, ast.termFontPairList, parserName), 
-	    writeFile(getIDETempFolder() ++ "imp/coloring/" ++ parserName ++ "_TextAttributeDecider.java.template", 
-                      getTextAttributeDecider(ast.fontList, parserName), 
-              mkdir(getIDETempFolder() ++ "imp/coloring", writeio).io
-            ));
+  local ideio :: IO =
+    writeFile(
+      getIDETempFolder() ++ "imp/coloring/" ++ parserName ++ "_TokenClassifier.java.template", 
+      getTokenClassifier(ast.fontList, ast.termFontPairList, parserName), 
+      writeFile(
+        getIDETempFolder() ++ "imp/coloring/" ++ parserName ++ "_TextAttributeDecider.java.template", 
+        getTextAttributeDecider(ast.fontList, parserName), 
+        mkdir(getIDETempFolder() ++ "imp/coloring", writeio).io));
 
   return if null(specs) then i
          else writeNCSSpec(ideio, grams, silvergen, tail(specs), pkgName, startNTClassName);
@@ -263,7 +201,7 @@ return
   "import edu.umn.cs.melt.ide.copper.coloring.ICopperTokenClassifier;\n" ++
   "\n" ++
   "public class " ++ parserName ++ "_TokenClassifier implements ICopperTokenClassifier {\n" ++
-  "\tprivate static Map<String, Integer> map = new HashMap<String, Integer>();\n" ++	
+  "\tprivate static Map<String, Integer> map = new HashMap<String, Integer>();\n" ++
   "\t\n" ++
   "\tpublic final static class TokenType {\n" ++
   "\t\t\n" ++ 
@@ -272,9 +210,9 @@ return
   getConstantDeclarations(1, fontList) ++
   "\t\t\n" ++ 
   "\t\tpublic static final int TOTAL = " ++ toString(length(fontList)+1) ++ ";\n" ++ 
-  "\t}\n" ++	
-  "\t\n" ++	
-  "\tstatic{\n" ++	
+  "\t}\n" ++
+  "\t\n" ++
+  "\tstatic{\n" ++
   "\t\t" ++ getPutNameFontPairsIntoMap(termFontPairList) ++ "\n" ++ 
   "\t}\n" ++
   "\t\n" ++
@@ -283,16 +221,16 @@ return
   "\t\tif(symbolName==null || \"\".equals(symbolName)){\n" ++
   "\t\t\treturn TokenType.DEFAULT;\n" ++
   "\t\t}\n" ++
-  "\t\t\n" ++		
+  "\t\t\n" ++
   "\t\tInteger kind = map.get(symbolName);\n" ++
-  "\t\t\n" ++			
+  "\t\t\n" ++
   "\t\tif(kind==null){\n" ++
   "\t\t\treturn TokenType.DEFAULT;\n" ++
   "\t\t}\n" ++
-  "\t\t\n" ++		
+  "\t\t\n" ++
   "\t\treturn kind;\n" ++
   "\t}\n" ++
-  "\t\n" ++			
+  "\t\n" ++
   "\tprivate static " ++ parserName ++ "_TokenClassifier INSTANCE = new " ++ parserName ++ "_TokenClassifier();\n" ++
   "\t\n" ++
   "\tpublic static " ++ parserName ++ "_TokenClassifier getInstance(){\n" ++
