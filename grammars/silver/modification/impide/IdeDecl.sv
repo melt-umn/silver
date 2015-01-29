@@ -7,6 +7,8 @@ import silver:analysis:typechecking:core;
 import silver:modification:ffi;
 import silver:definition:type;
 
+autocopy attribute startNTName :: String;
+
 -- We're going to make this an especially annoying looking declaration
 -- to emphasize that this is currently a temporary hack just to get things
 -- moving.
@@ -51,7 +53,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
   local attribute spec :: [ParserSpec];
   spec = findSpec(parsername.lookupValue.fullName, parsergrammar.parserSpecs);
 
-  stmts.startNTName = makeGrammarName(head(spec).startNT);
+  stmts.startNTName = head(spec).startNT;
 
   -- If there were errors looking up the name, do nothing. If we couldn't find the
   -- parser, then raise the error message noting that the name isn't a parser!
@@ -69,39 +71,6 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
 
   forwards to emptyAGDcl(location=top.location);
 }
-
-{--
-  Iterate over a list of type [a], and for each element of type a, call get to get a result of type b,
-  then check if the result is equivalent to the given elem (which also has type b), by calling eq.
---}
-function customizedLookupBy
-Boolean ::= eq::(Boolean ::= b b)  get::(b ::= a)  elem::b  lst::[a]
-{
-    return (!null(lst)) && (eq(elem, get(head(lst))) || customizedLookupBy(eq, get, elem, tail(lst)));
-}
-
-function hasWizard
-Boolean ::= wizards::[IdeWizardDcl] name::String
-{
-    return customizedLookupBy(stringEq, getNameFromWizard, name, wizards);
-}    
-
-function getNameFromWizard
-String ::= wizard::IdeWizardDcl
-{
-    return wizard.wizName;
-}
-
-function checkExistence
-Boolean ::= funcs::[Pair<String String>] name::String
-{
-    return 
-      if null(funcs)
-      then false
-      else if head(funcs).fst == name
-           then true
-           else checkExistence(tail(funcs), name);
-}    
 
 function getIdeProductInfo
 IdeProductInfo ::= stmts::IdeStmts
@@ -131,8 +100,6 @@ nonterminal IdePropertyOption with optionType, optional, defaultVal, displayName
 nonterminal IdePropertyOptions with optional, defaultVal, displayName;
 
 synthesized attribute optionType :: String;--"optional", "defaultVal"
-
-autocopy attribute startNTName :: String;
 
 concrete production nilPropertyOptions
 top::IdePropertyOptions ::= 
@@ -196,12 +163,6 @@ terminal ImpIde_OptFunc_Folder 'folder';
 nonterminal IdeStmts with env, location, errors, grammarName, ideFunctions, propDcls, wizards, startNTName;
 nonterminal IdeStmt with env, location, errors, grammarName, ideFunctions, propDcls, wizards, startNTName, productInfo;
 nonterminal IdeStmtList with env, location, errors, grammarName, ideFunctions, propDcls, wizards, startNTName;
-
-function makeGrammarName
-String ::= str::String
-{
-  return substitute(".", ":", str);
-}
 
 concrete production emptyIdeStmts
 top::IdeStmts ::= ';'
