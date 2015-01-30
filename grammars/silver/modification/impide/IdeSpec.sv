@@ -11,28 +11,33 @@ synthesized attribute funcDcls :: [Pair<String String>] with ++ ;
 synthesized attribute ideFunctions :: [IdeFunction];
 synthesized attribute propDcls :: [IdeProperty] with ++ ;
 synthesized attribute wizards :: [IdeWizardDcl] with ++;
-synthesized attribute productInfo :: IdeProductInfo;
 synthesized attribute svIdeInterface :: String;
 synthesized attribute pluginXml :: String;
 synthesized attribute pluginXmlActions :: String;
 synthesized attribute pluginXmlWizards :: String;
 synthesized attribute pluginParserClass :: String;
+synthesized attribute pluginGrammar :: String;
+synthesized attribute ideName :: String;
+synthesized attribute ideVersion :: String;
 
-nonterminal IdeSpec with ideExtension, ideParserSpec, funcDcls, propDcls, wizards, productInfo, ideFunctions, svIdeInterface, pluginXml, pluginParserClass;
+nonterminal IdeSpec with ideExtension, ideParserSpec, funcDcls, propDcls, wizards, ideFunctions, svIdeInterface, pluginXml, pluginParserClass, pluginGrammar, ideName, ideVersion;
 
 
 abstract production ideSpec
 top::IdeSpec ::= 
+    grammarName::String ideName::String ideVersion::String
     ext::String ideFuncDcls::[IdeFunction] idePropDcls::[IdeProperty] wizards::[IdeWizardDcl]
-    pspec::ParserSpec productInfo::IdeProductInfo --TODO more?
+    pspec::ParserSpec
 {
+  top.ideName = ideName;
+  top.ideVersion = ideVersion;
+  top.pluginGrammar = grammarName;
   top.ideExtension = ext;
   top.ideParserSpec = pspec;
   top.funcDcls := foldr(append, [], map((.funcDcls), ideFuncDcls));
   top.ideFunctions = ideFuncDcls;
   top.propDcls := idePropDcls;
   top.wizards := wizards;
-  top.productInfo = productInfo;
   top.pluginParserClass = makeParserName(pspec.fullName);
   
   local tabs::[String] = 
