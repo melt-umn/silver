@@ -10,11 +10,16 @@ attribute fontAttrFromClass occurs on SyntaxTerminalModifier, SyntaxTerminalModi
 
 aspect production consTerminalMod
 top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalModifiers
-{	
-  top.fontAttr = if (h.fontAttr != "") 
-                  then h.fontAttr 
-                  else t.fontAttr;--only the first non-zero font declaration is effective
-  top.fontAttrFromClass = if h.fontAttrFromClass != "" then h.fontAttrFromClass else t.fontAttrFromClass;
+{
+  -- only the first non-zero font declaration is effective
+  top.fontAttr =
+    if h.fontAttr != ""
+    then h.fontAttr 
+    else t.fontAttr;
+  top.fontAttrFromClass =
+    if h.fontAttrFromClass != ""
+    then h.fontAttrFromClass
+    else t.fontAttrFromClass;
 }
 
 aspect production nilTerminalMod

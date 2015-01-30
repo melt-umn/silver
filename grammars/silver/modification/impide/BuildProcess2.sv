@@ -6,7 +6,7 @@ import silver:util:cmdargs;
 
 -- generate Copper Spec and other template files for IDE plugin
 abstract production generateNCS
-top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::String ide::IdeSpec pkgName::String
+top::Unit ::= grams::EnvTree<Decorated RootSpec> silvergen::String ide::IdeSpec pkgName::String
 {
   local io00::IO =
     print("[IDE plugin] Generating class templates.\n", top.ioIn);
@@ -23,7 +23,7 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> specs::[ParserSpec] silvergen::
 
   local io10::IO = print("[IDE plugin] Generating parsers.\n", io04);
   
-  local io30::IO = writeNCSSpec(io10, grams, silvergen ++ "src/", specs, pkgName);
+  local io30::IO = writeNCSSpec(io10, grams, silvergen ++ "src/", ide.ideParserSpec, pkgName);
 
   local io40::IO = print("[IDE plugin] Generating plugin.xml template.\n", io30);
 
@@ -156,9 +156,8 @@ ${foldr(stringConcat, "", map((.generatorJavaTranslation), propDcls))}
 }
 
 function writeNCSSpec
-IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[ParserSpec] pkgName::String 
+IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String p::ParserSpec pkgName::String 
 {
-  local p :: ParserSpec = head(specs);
   p.compiledGrammars = grams;
   
   local ast :: SyntaxRoot = p.cstAst;
@@ -180,8 +179,7 @@ IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String specs::[Parser
       getTokenClassifier(ast.fontList, ast.termFontPairList, parserName), 
       mkdir(getIDETempFolder() ++ "imp/coloring", writeio).io);
 
-  return if null(specs) then i
-         else writeNCSSpec(ideio, grams, silvergen, tail(specs), pkgName);
+  return ideio;
 }
 
 -- class <pkgName>.imp.coloring.TokenClassifier
