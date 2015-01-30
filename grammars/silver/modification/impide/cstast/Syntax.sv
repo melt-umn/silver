@@ -34,12 +34,7 @@ top::SyntaxDcl ::=
 aspect production syntaxNonterminal
 top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModifiers
 {
-  top.nxmlCopper = 
-    "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
-      "    <PP>" ++ t.typeName ++ "</PP>\n" ++
-      "    <Type><![CDATA[" ++ makeNTClassName(t.typeName) ++ "]]></Type>\n" ++
-      "  </Nonterminal>\n" ++
-    subdcls.nxmlCopper;
+  top.nxmlCopper = top.xmlCopper; -- NOTE: this is only safe because subdcls only contains productions, which also say = top.xmlCopper
 }
 
 aspect production syntaxTerminal
@@ -81,7 +76,7 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
 aspect production syntaxProduction
 top::SyntaxDcl ::= ns::NamedSignature modifiers::SyntaxProductionModifiers
 {
-  top.nxmlCopper = top.xmlCopper;
+  top.nxmlCopper = top.xmlCopper; -- see note in syntaxNonterminal, if this changes...
 }
 
 aspect production syntaxLexerClass

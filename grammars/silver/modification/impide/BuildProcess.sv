@@ -28,7 +28,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   local ideParserFullPath :: String = getIDEParserFile(ide.ideParserSpec.sourceGrammar, ide.pluginParserClass, "${src}/");
   production pkgName :: String = makeName(buildGrammar);
 
-  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, allParsers, benv.silverGen, ide, pkgName)];
+  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, benv.silverGen, ide, pkgName)];
 
   classpathCompiler <- if !isIde then [] else ["${sh}/jars/IDEPluginRuntime.jar"];
 
@@ -44,8 +44,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     ++ "'/>",
     "<property name='lang.composed' value='" ++ pkgName ++ "'/>", 
     "<property name='ide.pkg.name' value='" ++ pkgName ++ "'/>",
-    "<property name='ide.proj.name' value='${ide.pkg.name}'/>",
-    "<property name='ide.proj.parent.path' location='${jg}/ide/${ide.proj.name}'/>",
+    "<property name='ide.proj.parent.path' location='${jg}/ide/${ide.pkg.name}'/>",
     "<property name='ide.proj.plugin.path' location='${ide.proj.parent.path}/plugin'/>",
     "<property name='ide.proj.feature.path' location='${ide.proj.parent.path}/feature'/>",
     "<property name='ide.proj.updatesite.path' location='${ide.proj.parent.path}/updatesite'/>",
