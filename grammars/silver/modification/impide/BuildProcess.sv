@@ -16,17 +16,17 @@ aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
   -- The RootSpec representing the grammar actually being built (specified on the command line)
-  production builtGrammar :: [Decorated RootSpec] = searchEnvTree(buildGrammar, g.compiledGrammars);
+  local builtGrammar :: [Decorated RootSpec] = searchEnvTree(buildGrammar, g.compiledGrammars);
   
   -- Empty if no ide decl in that grammar, otherwise has at least one spec... note that
   -- we're going to go with assuming there's just one IDE declaration...
-  production ide :: IdeSpec = head(head(builtGrammar).ideSpecs);
-  production isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
+  local ide :: IdeSpec = head(head(builtGrammar).ideSpecs);
+  local isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
 
   local parserPackageName :: String = makeName(ide.ideParserSpec.sourceGrammar);
   local parserPackagePath :: String = grammarToPath2(ide.ideParserSpec.sourceGrammar);
   local ideParserFullPath :: String = getIDEParserFile(ide.ideParserSpec.sourceGrammar, ide.pluginParserClass, "${src}/");
-  production pkgName :: String = makeName(buildGrammar);
+  local pkgName :: String = makeName(buildGrammar);
 
   top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, benv.silverGen, ide, pkgName)];
 
@@ -36,12 +36,8 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     getIDERuntimeVersion(),
     "<property name='grammar.path' value='" ++ head(builtGrammar).grammarSource ++ "'/>", 
     "<property name='res' value='${sh}/resources'/>", --TODO: add all templates to here.
-    "<property name='ide.version' value='" ++ -- use the default number "1.0.0" if not defined
-        (if(ide.productInfo.prodVersion=="") then "1.0.0" else ide.productInfo.prodVersion) 
-    ++ "'/>",
-    "<property name='lang.name' value='" ++ -- use a derived name if not defined
-        (if(ide.productInfo.prodName=="") then deriveLangNameFromPackage(pkgName) else ide.productInfo.prodName) 
-    ++ "'/>",
+    "<property name='ide.version' value='" ++ ide.ideVersion ++ "'/>",
+    "<property name='lang.name' value='" ++ ide.ideName ++ "'/>",
     "<property name='lang.composed' value='" ++ pkgName ++ "'/>", 
     "<property name='ide.pkg.name' value='" ++ pkgName ++ "'/>",
     "<property name='ide.proj.parent.path' location='${jg}/ide/${ide.pkg.name}'/>",
@@ -359,12 +355,6 @@ String ::= original::String
   return error("Not Yet Implemented: toUpperCase");
 } foreign {
   "java" : return "(new common.StringCatter(%original%.toString().toUpperCase()))";
-}
-
-function deriveLangNameFromPackage
-String ::= pkg::String
-{
-  return toUpperCase(head(explode(".", pkg)));
 }
 
 function pkgToPath
