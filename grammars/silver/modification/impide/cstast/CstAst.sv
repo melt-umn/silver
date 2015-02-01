@@ -17,8 +17,6 @@ synthesized attribute nxmlCopper :: String occurs on SyntaxRoot, Syntax, SyntaxD
 inherited attribute jPkgName :: String occurs on SyntaxRoot;
 -- The attribute is the name of generated Java parser.
 inherited attribute jParserName :: String occurs on SyntaxRoot;
--- The attribute is the full class name of CST's root.
-inherited attribute startNTClassName :: String occurs on SyntaxRoot;
 
 aspect default production
 top::SyntaxRoot ::=
@@ -52,8 +50,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
 
 "\t//IDE Extension START\n\n" ++
 
-  getParseTreeCode() ++
-  getColorerCode(top.jPkgName ++ ".imp.coloring." ++ top.jParserName ++ "_") ++
+  getParseTreeCode(top.jPkgName ++ ".imp.coloring." ++ top.jParserName ++ "_TokenClassifier") ++
 
 "\n\t//IDE Extension END\n" ++
 
@@ -103,15 +100,15 @@ Assumptions we make about initial Syntax:
 -}
 
 function getParseTreeCode
-String ::=
+String ::= tokenClassifierClass::String
 {
 return 
-"\tprotected List<IToken> tokenList = null;\n" ++
+"\tprotected List<CopperToken> tokenList = null;\n" ++
 "\n" ++
 
 "\tprivate void addToken(SingleDFAMatchData _terminal, int start, int end){\n" ++
 "\t\tif(start == end) return;\n" ++
-"\t\tIToken t = new CopperToken(getKind(_terminal), start, end);\n" ++
+"\t\tCopperToken t = new CopperToken(getKind(_terminal), start, end);\n" ++
 "\t\ttokenList.add(t);\n" ++
 "\t}\n" ++
 "\n" ++
@@ -120,42 +117,20 @@ return
 "\t * Called at start of parsing\n" ++
 "\t*/\n" ++
 "\tpublic void reset(){\n" ++
-"\t\t\ttokenList = new ArrayList<IToken>();\n" ++
+"\t\t\ttokenList = new ArrayList<CopperToken>();\n" ++
 "\t}\n" ++
 "\t\n" ++
 
-"\tpublic Iterator<IToken> getTokenIterator(org.eclipse.jface.text.IRegion region) {\n" ++
-"\t\tint startOffset = region.getOffset();\n" ++
-"\t\tint endOffset = startOffset + region.getLength();\n" ++
-"\t\t\n" ++
-"\t\tList<IToken> list = new ArrayList<IToken>();\n" ++
-"\t\t\tIterator<IToken> iter = tokenList.iterator();\n" ++
-"\t\t\twhile(iter.hasNext()){\n" ++
-"\t\t\t\tIToken next = iter.next();\n" ++
-"\t\t\t\tif(next.getStartOffset() < startOffset || next.getEndOffset() > endOffset){\n" ++
-"\t\t\t\t\tcontinue;\n" ++
-"\t\t\t\t} else {\n" ++
-"\t\t\t\t\tlist.add(next);\n" ++
-"\t\t\t\t}\n" ++
-"\t\t\t}\n" ++
-"\t\t\n" ++
-"\t\treturn list.iterator();\n" ++
+"\tpublic List<CopperToken> getTokens() {\n" ++
+"\t\treturn tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable\n" ++
 "\t}\n" ++
 "\t\n" ++
 
 "\tprotected int getKind(SingleDFAMatchData scanResult){\n" ++
 "\t\tString term = getSymbolNames()[scanResult.firstTerm];\n" ++
-"\t\treturn tokenClassifier.getKind(term);\n" ++
+"\t\treturn " ++ tokenClassifierClass ++ ".getKind(term);\n" ++
 "\t}\n" ++
 "\t\n";
 }
 
- 
-function getColorerCode
-String ::= classPrefix::String
-{
-return 
-"\tprivate ICopperTokenClassifier tokenClassifier = " ++ classPrefix ++ "TokenClassifier.getInstance();\n"++
-"\t\n";
-}
 

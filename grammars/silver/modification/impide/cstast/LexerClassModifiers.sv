@@ -7,10 +7,12 @@ attribute fontAttr occurs on SyntaxLexerClassModifier, SyntaxLexerClassModifiers
 
 aspect production consLexerClassMod
 top::SyntaxLexerClassModifiers ::= h::SyntaxLexerClassModifier  t::SyntaxLexerClassModifiers
-{	
-  top.fontAttr = if (h.fontAttr != "") 
-                  then h.fontAttr 
-                  else t.fontAttr;--only the first non-zero font declaration is effective
+{
+  -- only the first non-zero font declaration is effective
+  top.fontAttr = 
+    if h.fontAttr != ""
+    then h.fontAttr 
+    else t.fontAttr;
 }
 
 aspect production nilLexerClassMod

@@ -9,7 +9,7 @@ synthesized attribute wizDisplay :: String;
 synthesized attribute wizFunc :: String;
 synthesized attribute wizProps :: [IdeProperty];
 
-nonterminal IdeWizardDcl with wizName, wizDisplay, wizFunc, wizProps, svIdeInterface;
+nonterminal IdeWizardDcl with wizName, wizDisplay, wizFunc, wizProps, svIdeInterface, pluginXmlWizards;
 
 {--
   name: name of this wizard. For package/class.
@@ -35,5 +35,13 @@ top::IdeWizardDcl ::= name::String display::String func::String props::[IdePrope
 	}
 """;
 
+  top.pluginXmlWizards = s"""
+  <wizard
+      category="@LANG_NAME@_IDE.wizards.category/"
+      class="edu.umn.cs.melt.ide.wizard.NewSourceFileWizard"
+      id="@LANG_NAME@.wizard.newSourceFile"
+      name="New @LANG_NAME@ Source File">
+  </wizard>
+""";
 }
 
