@@ -32,6 +32,12 @@ equalityTest ( s"""${   toString(1)   }""", "1", String, silver_tests ) ;
 -- escaping
 equalityTest ( s""" " """, " \" ", String, silver_tests ) ; --"
 equalityTest ( s""" \" """, " \\\" ", String, silver_tests ) ;
+equalityTest ( s" \" ", " \" ", String, silver_tests ) ;
+equalityTest ( s" \t ", " \t ", String, silver_tests ) ;
+equalityTest ( s" \n ", " \n ", String, silver_tests ) ;
+equalityTest ( s" \r ", " \r ", String, silver_tests ) ;
+equalityTest ( s" \\ ", " \\ ", String, silver_tests ) ;
+equalityTest ( s" \r\"\n\t \t\t\\\\ ", " \r\"\n\t \t\t\\\\ ", String, silver_tests ) ;
 
 -- multiple line
 equalityTest (s"""ab

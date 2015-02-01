@@ -7,8 +7,8 @@ imports silver:definition:type:syntax;
 
 exports silver:extension:templating:syntax;
 
-terminal Template_kwd   's"""' lexer classes {RESERVED, KEYWORD};
-terminal SLTemplate_kwd 's"'   lexer classes {RESERVED, KEYWORD};
+terminal Template_kwd   's"""' lexer classes {LITERAL};
+terminal SLTemplate_kwd 's"'   lexer classes {LITERAL};
 
 concrete production templateExpr
 top::Expr ::= Template_kwd t::TemplateString
@@ -24,8 +24,8 @@ layout {}
   forwards to infold(plusPlus(_, '++', _, location=top.location), t.stringTemplate);
 }
 
-terminal PPTemplate_kwd   'pp"""' lexer classes {RESERVED, KEYWORD};
-terminal SLPPTemplate_kwd 'pp"'   lexer classes {RESERVED, KEYWORD};
+terminal PPTemplate_kwd   'pp"""' lexer classes {LITERAL};
+terminal SLPPTemplate_kwd 'pp"'   lexer classes {LITERAL};
 
 concrete production pptemplateExpr
 top::Expr ::= PPTemplate_kwd t::TemplateString
