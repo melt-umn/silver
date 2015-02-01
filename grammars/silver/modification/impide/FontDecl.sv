@@ -28,8 +28,10 @@ top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',
   forwards to emptyAGDcl(location=top.location);
 }
 
--- isBold etc are from IdeSpec.sv
 nonterminal FontStyles with isBold, isItalic, pp;
+
+synthesized attribute isBold :: Boolean;
+synthesized attribute isItalic :: Boolean;
 
 concrete production consFontStylesDcl
 top::FontStyles ::= fontStyle::FontStyle fontStyles::FontStyles

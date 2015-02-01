@@ -1,15 +1,11 @@
 grammar silver:modification:impide:spec;
 
-import silver:translation:java:core only makeClassName;
-
 -- An IdeWizardDcl includes all the necessary information for generating a Wizard in IDE. 
 
 synthesized attribute wizName :: String;
-synthesized attribute wizDisplay :: String;
-synthesized attribute wizFunc :: String;
 synthesized attribute wizProps :: [IdeProperty];
 
-nonterminal IdeWizardDcl with wizName, wizDisplay, wizFunc, wizProps, svIdeInterface, pluginXmlWizards;
+nonterminal IdeWizardDcl with wizName, wizProps, svIdeInterface, pluginXmlWizards;
 
 {--
   name: name of this wizard. For package/class.
@@ -21,8 +17,6 @@ abstract production makeNewWizardDcl
 top::IdeWizardDcl ::= name::String display::String func::String props::[IdeProperty]
 {
   top.wizName = name;
-  top.wizDisplay = display;
-  top.wizFunc = func;
   top.wizProps = props;
   top.svIdeInterface = s"""
 	@Override

@@ -47,7 +47,7 @@ IO ::= wizards::[IdeWizardDcl] io::IO
 }
 
 function createFilesForOneWizard
-IO ::= wizardDcl::IdeWizardDcl io::IO --wizName, wizDisplay, wizFunc, wizProps :: [IdeProperty]
+IO ::= wizardDcl::IdeWizardDcl io::IO
 {
   -- property provider
   local io02 :: IO =
@@ -266,9 +266,7 @@ String ::= i::Integer fontList::[Pair<String Font>]
 function getTextAttributeInit
 String ::= f::Pair<String Font>
 {
-  -- TODO: we might turn this function into an attribute on font, but why is this string not a part of font? we need that to do so...
-  local color :: Color = f.snd.color;
-  return s"""attributes[TokenType.${f.fst}] = TextAttributeProvider.getAttribute(display, ${toString(color.r)}, ${toString(color.g)}, ${toString(color.b)}, ${if f.snd.isBold then "true" else "false"}, ${if f.snd.isItalic then "true" else "false"});""";
+  return s"""attributes[TokenType.${f.fst}] = ${f.snd.getTextAttribute};""";
 }
 
 function getIDETempFolder
