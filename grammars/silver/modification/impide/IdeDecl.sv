@@ -154,14 +154,15 @@ nonterminal IdeStmtList with env, location, errors, grammarName, ideFunctions, p
 
 synthesized attribute ideNames :: [String];
 synthesized attribute ideVersions :: [String];
+synthesized attribute ideFunctions :: [IdeFunction];
 
 concrete production emptyIdeStmts
 top::IdeStmts ::= ';'
 {
   top.errors := [];
   top.ideFunctions = [];
-  top.propDcls := [];
-  top.wizards := [];
+  top.propDcls = [];
+  top.wizards = [];
   top.ideNames = [];
   top.ideVersions = [];
 }
@@ -171,8 +172,8 @@ top::IdeStmts ::= '{' stmtList::IdeStmtList '}'
 {
   top.errors := stmtList.errors;
   top.ideFunctions = stmtList.ideFunctions;
-  top.propDcls := stmtList.propDcls;
-  top.wizards := stmtList.wizards;
+  top.propDcls = stmtList.propDcls;
+  top.wizards = stmtList.wizards;
   top.ideNames = stmtList.ideNames;
   top.ideVersions = stmtList.ideVersions;
 }
@@ -183,8 +184,8 @@ top::IdeStmts ::= '{' stmtList::IdeStmtList '}' ';'
 {
   top.errors := stmtList.errors;
   top.ideFunctions = stmtList.ideFunctions;
-  top.propDcls := stmtList.propDcls;
-  top.wizards := stmtList.wizards;
+  top.propDcls = stmtList.propDcls;
+  top.wizards = stmtList.wizards;
   top.ideNames = stmtList.ideNames;
   top.ideVersions = stmtList.ideVersions;
 }
@@ -194,8 +195,8 @@ top::IdeStmtList ::=
 {
   top.errors := [];
   top.ideFunctions = [];
-  top.propDcls := [];
-  top.wizards := [];
+  top.propDcls = [];
+  top.wizards = [];
   top.ideNames = [];
   top.ideVersions = [];
 }
@@ -205,8 +206,8 @@ top::IdeStmtList ::= stmt::IdeStmt stmtList::IdeStmtList
 {
   top.errors := stmt.errors ++ stmtList.errors;
   top.ideFunctions = stmt.ideFunctions ++ stmtList.ideFunctions;
-  top.propDcls := stmt.propDcls ++ stmtList.propDcls;
-  top.wizards := stmt.wizards ++ stmtList.wizards;
+  top.propDcls = stmt.propDcls ++ stmtList.propDcls;
+  top.wizards = stmt.wizards ++ stmtList.wizards;
   top.ideNames = stmt.ideNames ++ stmtList.ideNames;
   top.ideVersions = stmt.ideVersions ++ stmtList.ideVersions;
 }
@@ -215,8 +216,8 @@ aspect default production
 top::IdeStmt ::=
 {
   top.ideFunctions = [];
-  top.propDcls := [];
-  top.wizards := [];
+  top.propDcls = [];
+  top.wizards = [];
   top.ideNames = [];
   top.ideVersions = [];
 }
@@ -328,7 +329,7 @@ top::IdeStmt ::= 'folder' folderName::QName ';'
 concrete production makeIdeStmt_Porperty
 top::IdeStmt ::= 'property' pname::IdLower_t ptype::TypeName options::IdePropertyOptions ';' 
 {
-  top.propDcls := [makeIdeProperty(pname.lexeme, ptype.propType, options)];
+  top.propDcls = [makeIdeProperty(pname.lexeme, ptype.propType, options)];
 
   local defaultVal :: String = getDefaultVal(options);
 
@@ -390,21 +391,21 @@ inherited attribute wname :: String;
 concrete production makeIdeStmt_Wizards
 top::IdeStmt ::= 'wizards' '{' wlist::IdeWizardList '}' 
 {
-  top.wizards := wlist.wizards;
+  top.wizards = wlist.wizards;
   top.errors := wlist.errors;
 } 
 
 concrete production nilIdeWizardList
 top::IdeWizardList ::= 
 {
-  top.wizards := [];
+  top.wizards = [];
   top.errors := [];
 }
 
 concrete production consIdeWizardList
 top::IdeWizardList ::= w::IdeWizard wList::IdeWizardList
 {
-  top.wizards := w.wizards ++ wList.wizards;
+  top.wizards = w.wizards ++ wList.wizards;
   top.errors := w.errors ++ wList.errors;
 }
 
@@ -413,7 +414,7 @@ top::IdeWizard ::= 'new file' '{' generator::StubGenerator props::PropertyList '
 {
   local diplayName :: String = "new file";
   generator.wname = diplayName;
-  top.wizards := [makeNewWizardDcl("newfile", diplayName, generator.funcDcl, props.propDcls)];
+  top.wizards = [makeNewWizardDcl("newfile", diplayName, generator.funcDcl, props.propDcls)];
 
   top.errors := generator.errors ++ props.errors;
 }
@@ -444,21 +445,21 @@ top::StubGenerator ::= 'stub generator' genName::QName ';'
 concrete production nilPropertyList
 top::PropertyList ::= 
 {
-  top.propDcls := [];
+  top.propDcls = [];
   top.errors := [];
 }
 
 concrete production consPropertyList
 top::PropertyList ::= p::Property pList::PropertyList
 {
-  top.propDcls := p.propDcls ++ pList.propDcls;
+  top.propDcls = p.propDcls ++ pList.propDcls;
   top.errors := p.errors ++ pList.errors;
 }
 
 concrete production makeProperty
 top::Property ::= 'property' pname::IdLower_t ptype::TypeName options::IdePropertyOptions ';'
 {
-  top.propDcls := [makeIdeProperty(pname.lexeme, ptype.propType, options)];
+  top.propDcls = [makeIdeProperty(pname.lexeme, ptype.propType, options)];
 
   local defaultVal :: String = getDefaultVal(options);
 
