@@ -5,6 +5,7 @@ import silver:definition:core only Expr, RCurly_t, LITERAL;
 terminal TripleQuote /\"\"\"/ lexer classes {LITERAL};
 terminal DoubleDollar '$$' lexer classes {LITERAL};
 terminal QuoteWater /[^$\n\t\"\\]+/ lexer classes {LITERAL};
+terminal SingleLineQuoteWater /([^$\n\t\"\\]|[\\][\"]|[\\][\\]|[\\]n|[\\]r|[\\]t)+/ lexer classes {LITERAL};
 terminal LiteralNewline /\n/ lexer classes {LITERAL};
 terminal LiteralTab /\t/ lexer classes {LITERAL};
 terminal LiteralQuote /\"/ lexer classes {LITERAL};
@@ -202,7 +203,7 @@ layout {}
 }
 
 concrete production singleLineWater
-top::SingleLineWaterItem ::= w::QuoteWater
+top::SingleLineWaterItem ::= w::SingleLineQuoteWater
 layout {}
 {
   top.waterString = w.lexeme;
@@ -221,11 +222,4 @@ layout {}
 {
   -- Same as waterBackSlash
   top.waterString = "\\\\";
-}
-
-concrete production singleLineWaterTab
-top::SingleLineWaterItem ::= LiteralTab
-layout {}
-{
-  top.waterString = "\\t";
 }
