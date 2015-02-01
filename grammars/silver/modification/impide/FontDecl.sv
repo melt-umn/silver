@@ -8,7 +8,7 @@ terminal Italic_kwd 'italic' lexer classes {KEYWORD};
 concrete production fontDecl
 top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',' b::Int_t ')' fontStyles::FontStyles ';'
 {
-  top.pp = "temp_imp_ide_font " ++ id.name ++ " color(" ++ r.lexeme ++ ", " ++ g.lexeme ++ ", " ++ b.lexeme ++ ")" ++ fontStyles.pp ++ "\n";
+  top.pp = "temp_imp_ide_font " ++ id.name ++ " color(" ++ r.lexeme ++ ", " ++ g.lexeme ++ ", " ++ b.lexeme ++ ")" ++ fontStyles.pp ++ ";\n";
   
   production fName :: String = top.grammarName ++ ":" ++ id.name;
 
@@ -25,6 +25,7 @@ top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',
                         fontStyles.isItalic)
 		  )];
 
+  -- TODO: this forward is bs
   forwards to emptyAGDcl(location=top.location);
 }
 
@@ -34,33 +35,33 @@ synthesized attribute isBold :: Boolean;
 synthesized attribute isItalic :: Boolean;
 
 concrete production consFontStylesDcl
-top::FontStyles ::= fontStyle::FontStyle fontStyles::FontStyles
+top::FontStyles ::= h::FontStyle t::FontStyles
 {
-  top.isBold = fontStyle.isBold || fontStyles.isBold;
-  top.isItalic = fontStyle.isItalic || fontStyles.isItalic;
-
-  top.pp = (if top.isBold then "<bold>" else "") ++ (if top.isItalic then "<italic>" else "");
+  top.pp = h.pp ++ t.pp;
+  top.isBold = h.isBold || t.isBold;
+  top.isItalic = h.isItalic || t.isItalic;
 }
 concrete production nilFontStylesDcl
 top::FontStyles ::= 
 {
+  top.pp = "";
   top.isBold = false;
   top.isItalic = false;
-  
-  top.pp = "";
 }
 
-nonterminal FontStyle with isBold, isItalic;
+nonterminal FontStyle with pp, isBold, isItalic;
 
 concrete production fontStyleBoldDcl
 top::FontStyle ::= 'bold'
 {
+  top.pp = " bold";
   top.isBold = true;
   top.isItalic = false;
 }
 concrete production fontStyleItalicDcl
 top::FontStyle ::= 'italic'
 {
+  top.pp = " italic";
   top.isBold = false;
   top.isItalic = true;
 }
