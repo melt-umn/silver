@@ -1,4 +1,4 @@
-grammar silver:modification:impide;
+grammar silver:modification:impide:spec;
 
 import silver:translation:java:core only makeClassName;
 
