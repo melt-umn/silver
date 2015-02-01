@@ -207,7 +207,7 @@ ${getConstantDeclarations(1, fontList)}
 	}
 
 	static {
-		${getPutNameFontPairsIntoMap(termFontPairList)}
+		${implode("\n\t\t", map(getPutNameFontPairIntoMap, termFontPairList))}
 	}
 
 	public static int getKind(String symbolName) {
@@ -237,12 +237,6 @@ ${getConstantDeclarations(1, fontList)}
 	}
 }
 """;
-}
-
-function getPutNameFontPairsIntoMap
-String ::= termFontPairList::[Pair<String String>]
-{
-return implode("\n\t\t", map(getPutNameFontPairIntoMap, termFontPairList));
 }
 
 function getPutNameFontPairIntoMap

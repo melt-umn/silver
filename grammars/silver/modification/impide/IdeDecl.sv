@@ -26,7 +26,7 @@ terminal ImpIde_OptFunc_Folder 'folder' lexer classes {KEYWORD};
 concrete production ideDcl
 top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmts::IdeStmts
 {
-  top.pp = "temp_imp_ide_dcl " ++ parsername.pp ++ " " ++ fileextension.lexeme ++ "\n";
+  top.pp = "temp_imp_ide_dcl " ++ parsername.pp ++ " " ++ fileextension.lexeme ++ "\n"; -- TODO not finished
 
   top.defs = [];
 
