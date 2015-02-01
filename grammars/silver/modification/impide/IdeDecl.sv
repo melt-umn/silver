@@ -299,48 +299,21 @@ top::IdeStmt ::= 'version' v::String_t ';'
 
 -- Wizards
 
-terminal ImpIde_Wizards 'wizards' lexer classes {KEYWORD};
+terminal ImpIde_Wizard 'wizard' lexer classes {KEYWORD};
 terminal ImpIde_Wizard_StubGen 'stub generator' lexer classes {KEYWORD};
-
 terminal ImpIde_Wizard_NewFile 'new file';
 
-nonterminal IdeWizardList with env, wizards, errors;
-nonterminal IdeWizard with env, wizards, errors;
-nonterminal StubGenerator with env, funcDcl, errors, wname;
-
-synthesized attribute funcDcl :: String;
-inherited attribute wname :: String;
-
-concrete production makeIdeStmt_Wizards
-top::IdeStmt ::= 'wizards' '{' wlist::IdeWizardList '}' 
+concrete production newfileWizard
+top::IdeStmt ::= 'wizard' 'new file' '{' generator::StubGenerator props::PropertyList '}'
 {
-  top.wizards = wlist.wizards;
-  top.errors := wlist.errors;
-} 
-
-concrete production nilIdeWizardList
-top::IdeWizardList ::= 
-{
-  top.wizards = [];
-  top.errors := [];
-}
-
-concrete production consIdeWizardList
-top::IdeWizardList ::= w::IdeWizard wList::IdeWizardList
-{
-  top.wizards = w.wizards ++ wList.wizards;
-  top.errors := w.errors ++ wList.errors;
-}
-
-concrete production makeIdeWizard_NewFile
-top::IdeWizard ::= 'new file' '{' generator::StubGenerator props::PropertyList '}'
-{
-  local diplayName :: String = "new file";
-  generator.wname = diplayName;
-  top.wizards = [makeNewWizardDcl("newfile", diplayName, generator.funcDcl, props.propDcls)];
-
+  top.wizards = [makeNewWizardDcl("newfile", "new file", generator.funcDcl, props.propDcls)];
   top.errors := generator.errors ++ props.errors;
 }
+
+
+nonterminal StubGenerator with env, funcDcl, errors;
+
+synthesized attribute funcDcl :: String;
 
 concrete production makeStubGenerator
 top::StubGenerator ::= 'stub generator' genName::QName ';' 
@@ -358,10 +331,9 @@ top::StubGenerator ::= 'stub generator' genName::QName ';'
   tc1.downSubst = emptySubst();
   tc1.finalSubst = tc1.upSubst;
 
-  top.errors := [];
-  top.errors <-
+  top.errors :=
     if !tc1.typeerror then []
-    else [err(genName.location, "Stub generator function for wizard \"" ++ top.wname ++ "\" should have type:\n\t" ++ tc1.rightpp 
+    else [err(genName.location, "Stub generator should have type:\n\t" ++ tc1.rightpp 
         ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
 }
 
