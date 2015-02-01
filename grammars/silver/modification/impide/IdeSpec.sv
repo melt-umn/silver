@@ -4,13 +4,9 @@ import silver:translation:java:core only makeClassName, makeParserName;
 
 {-- IdeSpec --}
 
-synthesized attribute ideExtension :: String;
 synthesized attribute ideParserSpec :: ParserSpec;
---fst:the type of function, such as "builder"; snd: the full qualified name of function 
-synthesized attribute funcDcls :: [Pair<String String>] with ++ ;
-synthesized attribute ideFunctions :: [IdeFunction];
-synthesized attribute propDcls :: [IdeProperty] with ++ ;
-synthesized attribute wizards :: [IdeWizardDcl] with ++;
+synthesized attribute propDcls :: [IdeProperty];
+synthesized attribute wizards :: [IdeWizardDcl];
 synthesized attribute svIdeInterface :: String;
 synthesized attribute pluginXml :: String;
 synthesized attribute pluginXmlActions :: String;
@@ -20,7 +16,7 @@ synthesized attribute pluginGrammar :: String;
 synthesized attribute ideName :: String;
 synthesized attribute ideVersion :: String;
 
-nonterminal IdeSpec with ideExtension, ideParserSpec, funcDcls, propDcls, wizards, ideFunctions, svIdeInterface, pluginXml, pluginParserClass, pluginGrammar, ideName, ideVersion;
+nonterminal IdeSpec with ideParserSpec, propDcls, wizards, svIdeInterface, pluginXml, pluginParserClass, pluginGrammar, ideName, ideVersion;
 
 
 abstract production ideSpec
@@ -32,12 +28,9 @@ top::IdeSpec ::=
   top.ideName = ideName;
   top.ideVersion = ideVersion;
   top.pluginGrammar = grammarName;
-  top.ideExtension = ext;
   top.ideParserSpec = pspec;
-  top.funcDcls := foldr(append, [], map((.funcDcls), ideFuncDcls));
-  top.ideFunctions = ideFuncDcls;
-  top.propDcls := idePropDcls;
-  top.wizards := wizards;
+  top.propDcls = idePropDcls;
+  top.wizards = wizards;
   top.pluginParserClass = makeParserName(pspec.fullName);
   
   local tabs::[String] = 
@@ -306,12 +299,11 @@ top::Font ::= color::Color isBold::Boolean isItalic::Boolean
 
 {-- IdeFunctions --}
 
-nonterminal IdeFunction with funcDcls, svIdeInterface, pluginXml, pluginXmlActions;
+nonterminal IdeFunction with svIdeInterface, pluginXml, pluginXmlActions;
 
 abstract production builderFunction
 top::IdeFunction ::= fName::String
 {
-  top.funcDcls := [pair("builder", fName)];
   top.svIdeInterface =
     s"""
 	@Override
@@ -326,7 +318,6 @@ top::IdeFunction ::= fName::String
 abstract production postbuilderFunction
 top::IdeFunction ::= fName::String
 {
-  top.funcDcls := [pair("postbuilder", fName)];
   top.svIdeInterface =
     s"""
 	@Override
@@ -341,7 +332,6 @@ top::IdeFunction ::= fName::String
 abstract production exporterFunction
 top::IdeFunction ::= fName::String
 {
-  top.funcDcls := [pair("exporter", fName)];
   top.svIdeInterface = s"""
 	@Override
 	public NIOVal export(ConsCell properties, NIdeEnv env, Object iotoken) {
@@ -365,7 +355,6 @@ top::IdeFunction ::= fName::String
 abstract production folderFunction
 top::IdeFunction ::= fName::String
 {
-  top.funcDcls := [pair("folder", fName)];
   top.svIdeInterface = s"""
 	@Override
 	public ConsCell getFolds(Node root) {
