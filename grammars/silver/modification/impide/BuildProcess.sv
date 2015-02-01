@@ -16,25 +16,19 @@ aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
   -- The RootSpec representing the grammar actually being built (specified on the command line)
-  production builtGrammar :: [Decorated RootSpec] = searchEnvTree(buildGrammar, g.compiledGrammars);
+  local builtGrammar :: [Decorated RootSpec] = searchEnvTree(buildGrammar, g.compiledGrammars);
   
   -- Empty if no ide decl in that grammar, otherwise has at least one spec... note that
   -- we're going to go with assuming there's just one IDE declaration...
-  production ide :: IdeSpec = head(head(builtGrammar).ideSpecs);
-  production isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
+  local ide :: IdeSpec = head(head(builtGrammar).ideSpecs);
+  local isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
 
-  -- TODO only used for the adaptive stuff, so will remove shortly.
-  local startNTClassName::String = makeNTClassName(ide.ideParserSpec.startNT);
-  extraTopLevelDecls <- if !isIde then [] else [
-    "<property name='start.nonterminal.class' value='" ++ startNTClassName ++ "'/>"]; 
-
-  local parserClassName :: String = makeParserName(ide.ideParserSpec.fullName);
   local parserPackageName :: String = makeName(ide.ideParserSpec.sourceGrammar);
   local parserPackagePath :: String = grammarToPath2(ide.ideParserSpec.sourceGrammar);
-  local ideParserFullPath :: String = getIDEParserFile(ide.ideParserSpec.sourceGrammar, parserClassName, "${src}/");
-  production pkgName :: String = makeName(buildGrammar);
+  local ideParserFullPath :: String = getIDEParserFile(ide.ideParserSpec.sourceGrammar, ide.pluginParserClass, "${src}/");
+  local pkgName :: String = makeName(buildGrammar);
 
-  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, allParsers, benv.silverGen, ide, pkgName, startNTClassName)];
+  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, benv.silverGen, ide, pkgName)];
 
   classpathCompiler <- if !isIde then [] else ["${sh}/jars/IDEPluginRuntime.jar"];
 
@@ -42,27 +36,18 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     getIDERuntimeVersion(),
     "<property name='grammar.path' value='" ++ head(builtGrammar).grammarSource ++ "'/>", 
     "<property name='res' value='${sh}/resources'/>", --TODO: add all templates to here.
-    "<property name='ide.version' value='" ++ -- use the default number "1.0.0" if not defined
-        (if(ide.productInfo.prodVersion=="") then "1.0.0" else ide.productInfo.prodVersion) 
-    ++ "'/>",
-    "<property name='lang.name' value='" ++ -- use a derived name if not defined
-        (if(ide.productInfo.prodName=="") then deriveLangNameFromPackage(pkgName) else ide.productInfo.prodName) 
-    ++ "'/>",
+    "<property name='ide.version' value='" ++ ide.ideVersion ++ "'/>",
+    "<property name='lang.name' value='" ++ ide.ideName ++ "'/>",
     "<property name='lang.composed' value='" ++ pkgName ++ "'/>", 
     "<property name='ide.pkg.name' value='" ++ pkgName ++ "'/>",
-    "<property name='ide.proj.name' value='${ide.pkg.name}'/>",
-    "<property name='ide.proj.parent.path' location='${jg}/ide/${ide.proj.name}'/>",
+    "<property name='ide.proj.parent.path' location='${jg}/ide/${ide.pkg.name}'/>",
     "<property name='ide.proj.plugin.path' location='${ide.proj.parent.path}/plugin'/>",
     "<property name='ide.proj.feature.path' location='${ide.proj.parent.path}/feature'/>",
     "<property name='ide.proj.updatesite.path' location='${ide.proj.parent.path}/updatesite'/>",
     "<property name='ide.pkg.path' location='${ide.proj.plugin.path}/src/" ++ pkgToPath(pkgName) ++ "'/>", 
-    "<property name='ide.parser.classname' value='" ++ parserClassName ++ "' />",
-    "<property name='ide.parser.ide_copperfile' value='" ++ ideParserFullPath ++ "' />",
-    "<property name='ide.fileextension' value='" ++ ide.ideExtension ++ "' />"] ++ 
+    "<property name='ide.parser.classname' value='" ++ ide.pluginParserClass ++ "' />",
+    "<property name='ide.parser.ide_copperfile' value='" ++ ideParserFullPath ++ "' />"] ++ 
 
-    configWizards(ide.wizards) ++ 
-
-    getIDEFunctionsDcls(ide.funcDcls) ++
 
     [
     "<target name='ide' depends='arg-check, filters, jars, copper, grammars, create-folders, customize, postbuild'>\n"++
@@ -71,7 +56,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     "<target name='ide-init'>" ++ getIDEInitTarget() ++ "</target>",
     "<target name='arg-check'>" ++ getArgCheckTarget() ++ "</target>",
     "<target name='filters'>" ++ getFiltersTarget() ++ "</target>",
-    "<target name='create-folders'>" ++ getCreateFoldersTarget(parserClassName, ide.pluginConfig) ++ "</target>",
+    "<target name='create-folders'>" ++ getCreateFoldersTarget(ide) ++ "</target>",
     "<target name='customize' if=\"to-customize\" depends='arg-check, filters'>" ++ getCustomizeTarget() ++ "</target>",
     "<target name='postbuild' if=\"to-postbuild\">" ++ getAntPostBuildTarget() ++ "</target>",--this is for ant post-build; not to be confused with IDE post-build
     getBuildTargets()
@@ -125,60 +110,6 @@ String ::=
     "<property name='ide.rt.version' value='${ide_rt.Bundle-Version}'/>\n";
 }
 
-function configWizards
-[String] ::= wizards :: [IdeWizardDcl]
-{
-    return map(configWizard, wizards);
-}
-
-function configWizard
-String ::= wizard :: IdeWizardDcl
-{
-    return "<property name='ide.function.stubgen." ++ wizard.wizName ++ ".name' value='" ++ makeClassName(wizard.wizFunc) ++ "' />\n";
-}
-
-function getIDEFunctionsDcls
-[String] ::= funcDcls :: [Pair<String String>]
-{
-    return if null(funcDcls) --length(funcDcls) < 1
-           then []
-           else map(getIDEFunctionDcl, funcDcls);
-}
-
-function getIDEFunctionDcl
-String ::= funcDcl :: Pair<String String>
-{
-    return "<property name='ide.function." ++ funcDcl.fst ++ "' value='" ++ makeClassName(funcDcl.snd) ++ "' />";
-}
-
--- Find a function from the given function list; if found return the argument found, else notFound
-function findFunction
-String ::= funcDcls :: [Pair<String String>] funcToFind::String found::String notFound::String
-{
-    return if null(funcDcls) --length(funcDcls) < 1
-           then notFound
-           else let
-                    hd :: Pair<String String> = head(funcDcls)
-                in
-                    if(hd.fst==funcToFind) then found
-                    else findFunction(tail(funcDcls), funcToFind, found, notFound)
-                end;
-}
-
-function getEnhanceTarget
-String ::= funcDcls::[Pair<String String>] doAction::(String::=Pair<String String>) 
-{
-    return if null(funcDcls)
-           then "\n"
-           else let
-                    result :: String = doAction(head(funcDcls))
-                in 
-                    if result==""
-                    then getEnhanceTarget(tail(funcDcls), doAction)
-                    else result
-                end;
-}
-
 function grammarToPath
 String ::= grm :: String 
 {
@@ -229,7 +160,6 @@ String ::=
     "  <filter token=\"GROUP_ID\" value='${ide.pkg.name}'/>\n" ++
     "  <filter token=\"PKG_NAME\" value='${ide.pkg.name}'/>\n" ++
     "  <filter token=\"LANG_NAME\" value='${lang.name}'/>\n" ++
-    "  <filter token=\"SOURCE_EXT\" value='${ide.fileextension}'/>\n" ++
     "  <filter token=\"IDE_VERSION\" value='${ide.version}'/>\n" ++
     "  <filter token=\"IDE_BUILD_TIMESTAMP\" value='${ide.build-timestamp}'/>\n" ++
     "  <filter token=\"PROJ_NAME\" value='${lang.name}_IDE_PROJECT'/>\n" ++
@@ -245,7 +175,7 @@ String ::=
 }
 
 function getCreateFoldersTarget
-String ::= parserClassName::String config::PluginConfig
+String ::= ide::IdeSpec
 {
   return 
     "  \n" ++
@@ -324,7 +254,7 @@ String ::= parserClassName::String config::PluginConfig
     "        tofile=\"${ide.pkg.path}/eclipse/wizard/newproject/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
     "  \n" ++
 
-    (if(config.hasNewFileWizard)
+    (if !null(ide.wizards) -- This is really about the new file wizard specifically, FIXME
     then
     "  <mkdir dir='${ide.pkg.path}/eclipse/wizard/newfile'/>\n" ++
     "  <!-- A wizard for creating new source file. -->\n" ++
@@ -334,7 +264,7 @@ String ::= parserClassName::String config::PluginConfig
     else
     "") ++
 
-    (if(!null(config.propertyTabs))
+    (if !null(ide.propDcls) -- TODO: I guess this is, in fact, about whether the project has properties, but maybe we shouldn't access them form the outside like this?
     then
     "  <mkdir dir='${ide.pkg.path}/eclipse/property'/>\n" ++
     "  <!-- A project property page -->\n" ++
@@ -425,12 +355,6 @@ String ::= original::String
   return error("Not Yet Implemented: toUpperCase");
 } foreign {
   "java" : return "(new common.StringCatter(%original%.toString().toUpperCase()))";
-}
-
-function deriveLangNameFromPackage
-String ::= pkg::String
-{
-  return toUpperCase(head(explode(".", pkg)));
 }
 
 function pkgToPath

@@ -3,7 +3,7 @@ grammar silver:definition:concrete_syntax;
 import silver:definition:regex;
 
 terminal Ignore_kwd      'ignore'      lexer classes {KEYWORD};
-terminal Marking_kwd     'marking'     ;
+terminal Marking_kwd     'marking'     lexer classes {KEYWORD};
 terminal Left_kwd        'left'        lexer classes {KEYWORD};
 terminal Association_kwd 'association' lexer classes {KEYWORD};
 terminal Right_kwd       'right'       lexer classes {KEYWORD};

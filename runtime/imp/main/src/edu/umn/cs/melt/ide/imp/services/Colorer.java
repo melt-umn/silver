@@ -8,12 +8,12 @@ import org.eclipse.jface.text.TextAttribute;
 
 import edu.umn.cs.melt.ide.copper.CopperToken;
 import edu.umn.cs.melt.ide.copper.IToken;
-import edu.umn.cs.melt.ide.copper.coloring.CopperTextAttributeDecider;
+import edu.umn.cs.melt.ide.copper.coloring.ICopperTokenClassifier;
 import edu.umn.cs.melt.ide.impl.SVRegistry;
 
 public class Colorer extends TokenColorerBase implements ITokenColorer {
 
-	private CopperTextAttributeDecider decider = SVRegistry.get().getColorDecider();
+	private ICopperTokenClassifier decider = SVRegistry.get().getTokenClassifier();
 	
 	public Colorer() {
 		super();
@@ -25,7 +25,7 @@ public class Colorer extends TokenColorerBase implements ITokenColorer {
 		
 		IToken token = (CopperToken) o;
 		
-		TextAttribute attr = decider.getAddTextAttribute(token);
+		TextAttribute attr = decider.getColoring(token);
 		
 		return (attr!=null)?attr:super.getColoring(controller, token);
 

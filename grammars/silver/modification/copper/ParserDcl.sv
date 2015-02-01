@@ -2,7 +2,7 @@ grammar silver:modification:copper;
 
 import silver:extension:easyterminal; -- only Terminal_t, EasyTerminalRef;
 
-terminal Parser_kwd 'parser' lexer classes {KEYWORD};
+terminal Parser_kwd 'parser' lexer classes {KEYWORD}; -- not RESERVED?
 
 -- TODO: You know, maybe parser specs should get moved over here as well.
 
@@ -89,7 +89,7 @@ top::ParserComponentModifiers ::= h::ParserComponentModifier t::ParserComponentM
 
 nonterminal ParserComponentModifier with config, env, grammarName, location, pp, errors, terminalPrefixes;
 
-terminal Prefix_t 'prefix'; 
+terminal Prefix_t 'prefix' lexer classes {KEYWORD}; -- not RESERVED
 
 concrete production prefixParserComponentModifier
 top::ParserComponentModifier ::= 'prefix' t::QName 'with' s::Terminal_t
