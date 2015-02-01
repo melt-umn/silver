@@ -7,7 +7,7 @@ imports silver:definition:env;
 
 imports silver:translation:java:core only makeIdName, makeClassName, makeNTClassName;
 imports silver:translation:java:type only transType;
-imports silver:modification:impide;
+imports silver:modification:impide:spec;
 
 -- The attribute into which the copper parser in new XML skin is written
 synthesized attribute nxmlCopper :: String occurs on SyntaxRoot, Syntax, SyntaxDcl;

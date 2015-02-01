@@ -1,8 +1,4 @@
-grammar silver:modification:impide;
-
-import silver:translation:java:core only makeClassName, makeParserName;
-
-{-- IdeSpec --}
+grammar silver:modification:impide:spec;
 
 synthesized attribute ideParserSpec :: ParserSpec;
 synthesized attribute propDcls :: [IdeProperty];
