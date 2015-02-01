@@ -301,12 +301,12 @@ top::IdeStmt ::= 'version' v::String_t ';'
 
 terminal ImpIde_Wizard 'wizard' lexer classes {KEYWORD};
 terminal ImpIde_Wizard_StubGen 'stub generator' lexer classes {KEYWORD};
-terminal ImpIde_Wizard_NewFile 'new file';
+terminal ImpIde_Wizard_NewFile 'new file' lexer classes {KEYWORD};
 
-concrete production newfileWizard
+concrete production newfileWizard_c
 top::IdeStmt ::= 'wizard' 'new file' '{' generator::StubGenerator props::PropertyList '}'
 {
-  top.wizards = [makeNewWizardDcl("newfile", "new file", generator.funcDcl, props.propDcls)];
+  top.wizards = [newfileWizard(generator.funcDcl, props.propDcls)];
   top.errors := generator.errors ++ props.errors;
 }
 
