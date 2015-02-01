@@ -103,7 +103,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     <target name='customize' if="to-customize" depends='arg-check, filters'>
       <copy todir="$${ide.proj.plugin.path}" overwrite="true" filtering="true">
         <fileset dir="$${grammar.path}/plugin/"/>
-      </copy>;
+      </copy>
     </target>
     <!--this is for ant post-build; not to be confused with IDE postbuilder function-->
     <target name='postbuild' if="to-postbuild">
@@ -119,8 +119,8 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
       <copy file="$${res}/META-INF/MANIFEST.MF.template" tofile="$${ide.proj.plugin.path}/META-INF/MANIFEST.MF" filtering="true"/>
     </target>
     <target name="create Eclipse feature" depends="filters">	
-      <copy file="$${res}/pom_templates/feature_templates/feature.xml.template"\n" ++
-            tofile="$${ide.proj.feature.path}/feature.xml" filtering="true"/>\n" ++
+      <copy file="$${res}/pom_templates/feature_templates/feature.xml.template"
+            tofile="$${ide.proj.feature.path}/feature.xml" filtering="true"/>
     </target>
     <target name="copy plugin dependencies">	
       <copy file="$${sh}/jars/CopperRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.copper.jar"/>
