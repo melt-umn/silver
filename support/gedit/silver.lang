@@ -58,6 +58,9 @@
           <match>([^$"]|"(?!")|""(?!"))+</match>
           <!-- lone and double-double-quotes are okay, but not triple! -->
         </context>
+        <context style-ref="escaped-character">
+          <match>\$\$</match>
+        </context>
         <context>
           <start>\$\{</start>
           <end>\}</end>

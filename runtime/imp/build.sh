@@ -10,10 +10,6 @@ if [ ! -d ../../runtime ]; then
   exit 1
 fi
 
-if [ ! -d ../../jars ]; then
-  mkdir ../../jars
-fi
-
 cd main
 
 ### clean up generated code that's stale
