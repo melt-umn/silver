@@ -33,82 +33,112 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   classpathCompiler <- if !isIde then [] else ["${sh}/jars/IDEPluginRuntime.jar"];
 
   extraTopLevelDecls <- if !isIde then [] else [
-    getIDERuntimeVersion(),
-    "<property name='grammar.path' value='" ++ head(builtGrammar).grammarSource ++ "'/>", 
-    "<property name='res' value='${sh}/resources'/>", --TODO: add all templates to here.
-    "<property name='ide.version' value='" ++ ide.ideVersion ++ "'/>",
-    "<property name='lang.name' value='" ++ ide.ideName ++ "'/>",
-    "<property name='lang.composed' value='" ++ pkgName ++ "'/>", 
-    "<property name='ide.pkg.name' value='" ++ pkgName ++ "'/>",
-    "<property name='ide.proj.parent.path' location='${jg}/ide/${ide.pkg.name}'/>",
-    "<property name='ide.proj.plugin.path' location='${ide.proj.parent.path}/plugin'/>",
-    "<property name='ide.proj.feature.path' location='${ide.proj.parent.path}/feature'/>",
-    "<property name='ide.proj.updatesite.path' location='${ide.proj.parent.path}/updatesite'/>",
-    "<property name='ide.pkg.path' location='${ide.proj.plugin.path}/src/" ++ pkgToPath(pkgName) ++ "'/>", 
-    "<property name='ide.parser.classname' value='" ++ ide.pluginParserClass ++ "' />",
-    "<property name='ide.parser.ide_copperfile' value='" ++ ideParserFullPath ++ "' />"] ++ 
-
-
-    [
-    "<target name='ide' depends='arg-check, filters, jars, copper, grammars, create-folders, customize, postbuild'>\n"++
-    "    <delete dir='" ++ getIDETempFolder() ++ "'/>\n"++
-    "</target>",
-    "<target name='ide-init'>" ++ getIDEInitTarget() ++ "</target>",
-    "<target name='arg-check'>" ++ getArgCheckTarget() ++ "</target>",
-    "<target name='filters'>" ++ getFiltersTarget() ++ "</target>",
+    s"""
+    <macrodef name="getIDERuntimeVersion">
+      <sequential>
+        <loadproperties>
+          <!-- From ZIP entries in runtime jar, -->
+          <zipentry zipfile="$${sh}/jars/IDEPluginRuntime.jar" name="META-INF/MANIFEST.MF"/>
+          <filterchain>
+            <!-- load the line containing "Bundle-Version", -->
+            <linecontains>
+              <contains value="Bundle-Version"/>
+            </linecontains>
+            <!-- as Ant property, with name set to be "ide_rt.Bundle-Version". -->
+            <prefixlines prefix="ide_rt."/>
+          </filterchain>
+        </loadproperties>
+      </sequential>
+    </macrodef>
+    <!-- Load version of IDE runtime into $${ide_rt.Bundle-Version} -->
+    <getIDERuntimeVersion />
+    <property name='ide.rt.version' value='$${ide_rt.Bundle-Version}'/>
+    <property name='grammar.path' value='${head(builtGrammar).grammarSource}'/>
+    <property name='res' value='$${sh}/resources'/>
+    <property name='ide.version' value='${ide.ideVersion}'/>
+    <property name='lang.name' value='${ide.ideName}'/>
+    <property name='lang.composed' value='${pkgName}'/>
+    <property name='ide.pkg.name' value='${pkgName}'/>
+    <property name='ide.proj.parent.path' location='$${jg}/ide/$${ide.pkg.name}'/>
+    <property name='ide.proj.plugin.path' location='$${ide.proj.parent.path}/plugin'/>
+    <property name='ide.proj.feature.path' location='$${ide.proj.parent.path}/feature'/>
+    <property name='ide.proj.updatesite.path' location='$${ide.proj.parent.path}/updatesite'/>
+    <property name='ide.pkg.path' location='$${ide.proj.plugin.path}/src/${pkgToPath(pkgName)}'/>
+    <property name='ide.parser.classname' value='${ide.pluginParserClass}' />
+    <property name='ide.parser.ide_copperfile' value='${ideParserFullPath}' />
+    <target name='ide' depends='arg-check, filters, jars, copper, grammars, create-folders, customize, postbuild'>
+      <delete dir='${getIDETempFolder()}}'/>
+    </target>
+    <target name='ide-init'>
+      <tstamp>
+        <format property='ide.build-timestamp' pattern='yyMMddHHmmss' timezone='UTC'/>
+      </tstamp>
+    </target>
+    <target name='arg-check'>
+      <condition property="to-customize">
+        <available file="$${grammar.path}/plugin" type="dir"/>
+      </condition>
+      <condition property="to-postbuild">
+        <available file="$${grammar.path}/postbuild.xml" type="file"/>
+      </condition>
+    </target>
+    <target name='filters'>
+      <filter token="GROUP_ID" value='$${ide.pkg.name}'/>
+      <filter token="PKG_NAME" value='$${ide.pkg.name}'/>
+      <filter token="LANG_NAME" value='$${lang.name}'/>
+      <filter token="IDE_VERSION" value='$${ide.version}'/>
+      <filter token="IDE_BUILD_TIMESTAMP" value='$${ide.build-timestamp}'/>
+      <filter token="PROJ_NAME" value='$${lang.name}_IDE_PROJECT'/>
+      <filter token="LANG_COMPOSED" value='$${lang.composed}'/>
+      <filter token="FEATURE_DESCRIPTION_URL" value='http://some.user.provided.url'/>
+      <filter token="FEATURE_DESCRIPTION_TEXT" value='no description of the software'/>
+      <filter token="FEATURE_COPYRIGHT_URL" value='http://some.user.provided.url'/>
+      <filter token="FEATURE_COPYRIGHT_TEXT" value='no copyright information available'/>
+      <filter token="FEATURE_LICENSE_URL" value='http://some.user.provided.url'/>
+      <filter token="FEATURE_LICENSE_TEXT" value='no license information available'/>
+      <filter token="IDE_RT_VERSION" value='$${ide.rt.version}'/>
+    </target>""",
     "<target name='create-folders'>" ++ getCreateFoldersTarget(ide) ++ "</target>",
-    "<target name='customize' if=\"to-customize\" depends='arg-check, filters'>" ++ getCustomizeTarget() ++ "</target>",
-    "<target name='postbuild' if=\"to-postbuild\">" ++ getAntPostBuildTarget() ++ "</target>",--this is for ant post-build; not to be confused with IDE post-build
-    getBuildTargets()
+ s"""
+    <target name='customize' if="to-customize" depends='arg-check, filters'>
+      <copy todir="$${ide.proj.plugin.path}" overwrite="true" filtering="true">
+        <fileset dir="$${grammar.path}/plugin/"/>
+      </copy>
+    </target>
+    <!--this is for ant post-build; not to be confused with IDE postbuilder function-->
+    <target name='postbuild' if="to-postbuild">
+      <ant antfile="$${grammar.path}/postbuild.xml">
+        <!-- all the global properties defined in build.xml will be passed along to postbuild.xml -->
+      </ant>
+    </target>
+    <!-- Supporting targets based on the build mode -->
+    <target name="create build.properties" depends="filters">
+      <copy file="$${res}/build.properties.template" tofile="$${ide.proj.plugin.path}/build.properties" filtering="true"/>
+    </target>
+    <target name="create manifest file" depends="filters">	
+      <copy file="$${res}/META-INF/MANIFEST.MF.template" tofile="$${ide.proj.plugin.path}/META-INF/MANIFEST.MF" filtering="true"/>
+    </target>
+    <target name="create Eclipse feature" depends="filters">	
+      <copy file="$${res}/pom_templates/feature_templates/feature.xml.template"
+            tofile="$${ide.proj.feature.path}/feature.xml" filtering="true"/>
+    </target>
+    <target name="copy plugin dependencies">	
+      <copy file="$${sh}/jars/CopperRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.copper.jar"/>
+      <copy file="$${sh}/jars/SilverRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.silver.jar"/>
+      <copy file="$${sh}/jars/IDEPluginRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.ide.copper-$${ide.rt.version}.jar"/>
+    </target>"""
+
     ];
 
   extraDistDeps <- if !isIde then [] else ["ide"]; -- Here's where we demand that target be built ('dist' is a dummy target that just depends on 'jars' initially)
   
   extraGrammarsDeps <- if !isIde then [] else ["ide-init"]; -- enhance the language implementation by adding more source files, for use of IDE. (see target enhance)
 
-  -- attributes required as an OSGi module TODO: currently we don't actually use the generated jar as an osgi bundle. remove?
-  extraManifestAttributes <- if !isIde then [] else [
-    "<attribute name='Bundle-ManifestVersion' value='1' />",
-    "<attribute name='Bundle-Name' value='${lang.composed}' />",
-    "<attribute name='Bundle-SymbolicName' value='${lang.composed}' />", -- according to OSGi recommendation, use reversed domain name
-    "<attribute name='Bundle-Version' value='${ide.version}' />",
-    "<attribute name='Bundle-Vendor' value='${user.name}' />",
-    "<attribute name='Export-Package' value='" ++ implode(", ", map(grammarToExportString, grammarsDependedUpon)) ++ "' />",
-    "<attribute name='Bundle-RequiredExecutionEnvironment' value='J2SE-1.5' />",
-    "<attribute name='Require-Bundle' value='edu.umn.cs.melt.copper;bundle-version=\"1.0.0\", edu.umn.cs.melt.silver;bundle-version=\"1.0.0\"' />" 
-    -- TODO: generate version of silver/copper bundles dynamically
-    ];
+  -- We're not actually using the generated (by silver / ant) jar as an OSGi bundle
+  -- and if we ever do, we should probably put this as part of the normal build process instead.
+  -- extraManifestAttributes <-
 }
 
-{--
-Ant operations to read the version from Manifest file in the IDE Runtime jar, which has been fetched and stored locally.
---}
-function getIDERuntimeVersion
-String ::= 
-{
-  return 
-    "<macrodef name=\"getIDERuntimeVersion\">\n"++
-    "    <sequential>\n"++
-    "        <loadproperties>\n"++
-    "            <!-- From ZIP entries in runtime jar, -->\n"++
-    "            <zipentry zipfile=\"${sh}/jars/IDEPluginRuntime.jar\" name=\"META-INF/MANIFEST.MF\"/>\n"++
-    "            <filterchain>\n"++
-    "                <!-- load the line containing \"Bundle-Version\", -->\n"++
-    "                <linecontains>\n"++
-    "                  <contains value=\"Bundle-Version\"/>\n"++
-    "                </linecontains>\n"++
-    "                <!-- as Ant property, with name set to be \"ide_rt.Bundle-Version\". -->\n"++
-    "                <prefixlines prefix=\"ide_rt.\"/>\n"++
-    "            </filterchain>\n"++
-    "        </loadproperties>\n"++
-    "    </sequential>\n"++
-    "</macrodef>\n"++
-    "\n"++
-    "<!-- Load version of IDE runtime into ${ide_rt.Bundle-Version} -->\n"++
-    "<getIDERuntimeVersion />\n"++
-    "\n"++
-    "<property name='ide.rt.version' value='${ide_rt.Bundle-Version}'/>\n";
-}
 
 function grammarToPath
 String ::= grm :: String 
@@ -124,55 +154,7 @@ String ::= grm :: String
     return substitute(":", "/", grm) ++ "/";
 }
 
-function getIDEInitTarget
-String ::=
-{
-    return
-    "\n" ++
 
-    "  <tstamp>\n" ++
-    "    <format property='ide.build-timestamp' pattern='yyMMddHHmmss' timezone='UTC'/>\n" ++
-    "  </tstamp>\n";
-}
-
-
-function getArgCheckTarget
-String ::=
-{
-    return
-    "\n" ++
-
-    "  <condition property=\"to-customize\">\n"++
-    "    <available file=\"${grammar.path}/plugin\" type=\"dir\"/>\n"++
-    "  </condition>\n"++
-    "  \n"++
-    "  <condition property=\"to-postbuild\">\n"++
-    "    <available file=\"${grammar.path}/postbuild.xml\" type=\"file\"/>\n"++
-    "  </condition>\n";
-}
-
-function getFiltersTarget
-String ::=
-{
-    return
-    "\n" ++
-    "  <!-- define variables used in template file -->\n" ++
-    "  <filter token=\"GROUP_ID\" value='${ide.pkg.name}'/>\n" ++
-    "  <filter token=\"PKG_NAME\" value='${ide.pkg.name}'/>\n" ++
-    "  <filter token=\"LANG_NAME\" value='${lang.name}'/>\n" ++
-    "  <filter token=\"IDE_VERSION\" value='${ide.version}'/>\n" ++
-    "  <filter token=\"IDE_BUILD_TIMESTAMP\" value='${ide.build-timestamp}'/>\n" ++
-    "  <filter token=\"PROJ_NAME\" value='${lang.name}_IDE_PROJECT'/>\n" ++
-    "  <filter token=\"LANG_COMPOSED\" value='${lang.composed}'/>\n" ++
-    "  <filter token=\"FEATURE_DESCRIPTION_URL\" value='http://some.user.provided.url'/>\n" ++	-- TODO User-provided variables
-    "  <filter token=\"FEATURE_DESCRIPTION_TEXT\" value='no description of the software'/>\n" ++
-    "  <filter token=\"FEATURE_COPYRIGHT_URL\" value='http://some.user.provided.url'/>\n" ++
-    "  <filter token=\"FEATURE_COPYRIGHT_TEXT\" value='no copyright information available'/>\n" ++
-    "  <filter token=\"FEATURE_LICENSE_URL\" value='http://some.user.provided.url'/>\n" ++
-    "  <filter token=\"FEATURE_LICENSE_TEXT\" value='no license information available'/>\n" ++
-    "  <filter token=\"IDE_RT_VERSION\" value='${ide.rt.version}'/>\n" ++
-    "\n";
-}
 
 function getCreateFoldersTarget
 String ::= ide::IdeSpec
@@ -298,55 +280,6 @@ String ::= ide::IdeSpec
     "  \n"
 
   ;
-}
-
-function getCustomizeTarget
-String ::=
-{
-    return
-    "\n" ++
-    "<copy todir=\"${ide.proj.plugin.path}\" overwrite=\"true\" filtering=\"true\">\n" ++
-    "  <fileset dir=\"${grammar.path}/plugin/\"/>\n" ++
-    "</copy>\n";
-}
-
-function getAntPostBuildTarget
-String ::=
-{
-    return
-    "\n" ++
-    "<ant antfile=\"${grammar.path}/postbuild.xml\">\n" ++
-    "   <!-- all the global properties defined in build.xml will be passed along to postbuild.xml -->\n" ++
-    "</ant>\n";
-}
-
-function getBuildTargets
-String ::=
-{
-return
-
-"<!-- Supporting targets based on the build mode -->\n" ++
-"<target name=\"create build.properties\" depends=\"filters\">\n"++
-"  <copy file=\"${res}/build.properties.template\" tofile=\"${ide.proj.plugin.path}/build.properties\" filtering=\"true\"/>\n"++
-"</target>\n"++
-"\n"++
-
-"<target name=\"create manifest file\" depends=\"filters\">\n"++	
-"  <copy file=\"${res}/META-INF/MANIFEST.MF.template\" tofile=\"${ide.proj.plugin.path}/META-INF/MANIFEST.MF\" filtering=\"true\"/>\n"++
-"</target>\n"++
-"\n"++
-
-"<target name=\"create Eclipse feature\" depends=\"filters\">\n"++	
-"  <copy file=\"${res}/pom_templates/feature_templates/feature.xml.template\"\n" ++
-"      tofile=\"${ide.proj.feature.path}/feature.xml\" filtering=\"true\"/>\n" ++
-"</target>\n"++
-"\n"++
-
-"<target name=\"copy plugin dependencies\">\n"++	
-"  <copy file=\"${sh}/jars/CopperRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.copper.jar\"/>\n"++
-"  <copy file=\"${sh}/jars/SilverRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.silver.jar\"/>\n"++
-"  <copy file=\"${sh}/jars/IDEPluginRuntime.jar\" tofile=\"${ide.proj.plugin.path}/edu.umn.cs.melt.ide.copper-${ide.rt.version}.jar\"/>\n"++
-"</target>\n\n";
 }
 
 function toUpperCase

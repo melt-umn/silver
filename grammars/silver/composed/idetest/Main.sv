@@ -71,18 +71,13 @@ temp_imp_ide_dcl svParse ".sv" {
 
   property grammar_to_compile string required display="Grammar";
 
-  wizards {
-    new file {
-      stub generator getStubForNewFile; --a function whose signature must be "String ::= args::[IdeProperty]"
-      property declared_grammar string required display="Grammar";
-    }
+  wizard new file {
+    stub generator getStubForNewFile; --a function whose signature must be "String ::= args::[IdeProperty]"
+    property declared_grammar string required display="Grammar";
   }
 
-  product {
-    name "SILVER";
-    version "0.2.2";
-  }
-
+  name "SILVER";
+  version "0.2.2";
 }
 
 -- Declarations of IDE functions referred in decl block.

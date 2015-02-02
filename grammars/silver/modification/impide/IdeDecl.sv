@@ -14,25 +14,19 @@ autocopy attribute startNTName :: String;
 -- moving.
 terminal ImpIde_t 'temp_imp_ide_dcl' lexer classes {KEYWORD,RESERVED};
 
-terminal ImpIde_OptFunc_Property 'property' lexer classes {KEYWORD};
-
-terminal ImpIde_PropType_string_t 'string' lexer classes {KEYWORD};
-terminal ImpIde_PropType_integer_t 'integer' lexer classes {KEYWORD};
-terminal ImpIde_PropType_path_t 'path' lexer classes {KEYWORD};
-terminal ImpIde_PropType_url_t 'url' lexer classes {KEYWORD};
-
-terminal ImpIde_PropOption_Required_t 'required' lexer classes {KEYWORD};
-terminal ImpIde_PropOption_Display_t 'display' lexer classes {KEYWORD};
-terminal ImpIde_PropOption_Default_t 'default' lexer classes {KEYWORD};
-
 terminal ImpIde_Product_t 'product' lexer classes {KEYWORD};
 terminal ImpIde_ProdInfo_Name_t 'name' lexer classes {KEYWORD};
 terminal ImpIde_ProdInfo_Version_t 'version' lexer classes {KEYWORD};
+terminal ImpIde_OptFunc_Builder 'builder' lexer classes {KEYWORD};
+terminal ImpIde_OptFunc_PostBuilder 'postbuilder' lexer classes {KEYWORD};
+terminal ImpIde_OptFunc_Exporter 'exporter' lexer classes {KEYWORD};
+terminal ImpIde_OptFunc_Folder 'folder' lexer classes {KEYWORD};
+
 
 concrete production ideDcl
 top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmts::IdeStmts
 {
-  top.pp = "temp_imp_ide_dcl " ++ parsername.pp ++ " " ++ fileextension.lexeme ++ "\n";
+  top.pp = "temp_imp_ide_dcl " ++ parsername.pp ++ " " ++ fileextension.lexeme ++ "\n"; -- TODO not finished
 
   top.defs = [];
 
@@ -84,69 +78,6 @@ String ::= gram::String
   return toUpperCase(head(explode(":", gram)));
 }
 
-nonterminal IdePropertyOption with optionType, optional, defaultVal, displayName;
-nonterminal IdePropertyOptions with optional, defaultVal, displayName;
-
-synthesized attribute optionType :: String;--"optional", "defaultVal"
-
-concrete production nilPropertyOptions
-top::IdePropertyOptions ::= 
-{
-  top.optional = true;--a property is optional by default
-  top.defaultVal = "";--a property's default value is always empty
-  top.displayName = "";--a property's display name is same to its name (propName), see production makeIdeProperty
-}
-
-concrete production consPropertyOptions
-top::IdePropertyOptions ::= opt::IdePropertyOption opts::IdePropertyOptions
-{
-
-  top.optional = if opt.optionType == "optional" then opt.optional else opts.optional;
-  top.defaultVal = if opt.optionType == "default" then opt.defaultVal else opts.defaultVal;
-  top.displayName = if opt.optionType == "display" then opt.displayName else opts.displayName;
-}
-
-concrete production idePropertyOption_optional
-top::IdePropertyOption ::= 'required'
-{
-  top.optionType = "optional";
-  top.optional = false;--a mandatory property
-  top.defaultVal = "";
-  top.displayName = "";
-}
-
-concrete production idePropertyOption_defaultVal
-top::IdePropertyOption ::= 'default' '=' str::String_t
-{
-  top.optionType = "default";
-  top.optional = true;
-  top.defaultVal = substring(1, length(str.lexeme) - 1, str.lexeme);
-  top.displayName = "";
-}
-
-concrete production idePropertyOption_displayName
-top::IdePropertyOption ::= 'display' '=' str::String_t
-{
-  top.optionType = "display";
-  top.optional = true;
-  top.defaultVal = "";
-  top.displayName = substring(1, length(str.lexeme) - 1, str.lexeme);
-}
-
--- Functions
-
--- function called when build is triggered
-terminal ImpIde_OptFunc_Builder 'builder';
-
--- function called in background thread, if builder returns without errors
-terminal ImpIde_OptFunc_PostBuilder 'postbuilder';
-
--- function called when exporting is demanded
-terminal ImpIde_OptFunc_Exporter 'exporter';
-
--- function to mark the foldable ranges on the source file; called after parsing
-terminal ImpIde_OptFunc_Folder 'folder';
-
 -- funcDcls, propDcls and optDcls are defined in ./IdeSpec.sv
 nonterminal IdeStmts with env, location, errors, grammarName, ideFunctions, propDcls, wizards, startNTName, ideNames, ideVersions;
 nonterminal IdeStmt with env, location, errors, grammarName, ideFunctions, propDcls, wizards, startNTName, ideNames, ideVersions;
@@ -154,14 +85,15 @@ nonterminal IdeStmtList with env, location, errors, grammarName, ideFunctions, p
 
 synthesized attribute ideNames :: [String];
 synthesized attribute ideVersions :: [String];
+synthesized attribute ideFunctions :: [IdeFunction];
 
 concrete production emptyIdeStmts
 top::IdeStmts ::= ';'
 {
   top.errors := [];
   top.ideFunctions = [];
-  top.propDcls := [];
-  top.wizards := [];
+  top.propDcls = [];
+  top.wizards = [];
   top.ideNames = [];
   top.ideVersions = [];
 }
@@ -171,8 +103,8 @@ top::IdeStmts ::= '{' stmtList::IdeStmtList '}'
 {
   top.errors := stmtList.errors;
   top.ideFunctions = stmtList.ideFunctions;
-  top.propDcls := stmtList.propDcls;
-  top.wizards := stmtList.wizards;
+  top.propDcls = stmtList.propDcls;
+  top.wizards = stmtList.wizards;
   top.ideNames = stmtList.ideNames;
   top.ideVersions = stmtList.ideVersions;
 }
@@ -183,8 +115,8 @@ top::IdeStmts ::= '{' stmtList::IdeStmtList '}' ';'
 {
   top.errors := stmtList.errors;
   top.ideFunctions = stmtList.ideFunctions;
-  top.propDcls := stmtList.propDcls;
-  top.wizards := stmtList.wizards;
+  top.propDcls = stmtList.propDcls;
+  top.wizards = stmtList.wizards;
   top.ideNames = stmtList.ideNames;
   top.ideVersions = stmtList.ideVersions;
 }
@@ -194,8 +126,8 @@ top::IdeStmtList ::=
 {
   top.errors := [];
   top.ideFunctions = [];
-  top.propDcls := [];
-  top.wizards := [];
+  top.propDcls = [];
+  top.wizards = [];
   top.ideNames = [];
   top.ideVersions = [];
 }
@@ -205,8 +137,8 @@ top::IdeStmtList ::= stmt::IdeStmt stmtList::IdeStmtList
 {
   top.errors := stmt.errors ++ stmtList.errors;
   top.ideFunctions = stmt.ideFunctions ++ stmtList.ideFunctions;
-  top.propDcls := stmt.propDcls ++ stmtList.propDcls;
-  top.wizards := stmt.wizards ++ stmtList.wizards;
+  top.propDcls = stmt.propDcls ++ stmtList.propDcls;
+  top.wizards = stmt.wizards ++ stmtList.wizards;
   top.ideNames = stmt.ideNames ++ stmtList.ideNames;
   top.ideVersions = stmt.ideVersions ++ stmtList.ideVersions;
 }
@@ -215,8 +147,8 @@ aspect default production
 top::IdeStmt ::=
 {
   top.ideFunctions = [];
-  top.propDcls := [];
-  top.wizards := [];
+  top.propDcls = [];
+  top.wizards = [];
   top.ideNames = [];
   top.ideVersions = [];
 }
@@ -325,18 +257,12 @@ top::IdeStmt ::= 'folder' folderName::QName ';'
         ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
 }  
 
+--- Allows declarations of properties for the project.
 concrete production makeIdeStmt_Porperty
-top::IdeStmt ::= 'property' pname::IdLower_t ptype::TypeName options::IdePropertyOptions ';' 
+top::IdeStmt ::= prop::Property
 {
-  top.propDcls := [makeIdeProperty(pname.lexeme, ptype.propType, options)];
-
-  local defaultVal :: String = getDefaultVal(options);
-
-  top.errors := if ptype.propType=="integer"
-                then if (defaultVal=="" || isDigit(defaultVal))
-                     then []
-                     else [err($1.location, "The default value for integer property must be of integer type.\nInstead it is \"" ++ defaultVal ++ "\".")]
-                else [];
+  top.propDcls = prop.propDcls;
+  top.errors := prop.errors;
 } 
 
 concrete production nameIdeStmt
@@ -373,50 +299,21 @@ top::IdeStmt ::= 'version' v::String_t ';'
 
 -- Wizards
 
-terminal ImpIde_Wizards 'wizards' lexer classes {KEYWORD};
+terminal ImpIde_Wizard 'wizard' lexer classes {KEYWORD};
 terminal ImpIde_Wizard_StubGen 'stub generator' lexer classes {KEYWORD};
+terminal ImpIde_Wizard_NewFile 'new file' lexer classes {KEYWORD};
 
-terminal ImpIde_Wizard_NewFile 'new file';
-
-nonterminal IdeWizardList with env, wizards, errors;
-nonterminal IdeWizard with env, wizards, errors;
-nonterminal StubGenerator with env, funcDcl, errors, wname;
-nonterminal PropertyList with propDcls, errors;
-nonterminal Property with propDcls, errors;
-
-synthesized attribute funcDcl :: String;
-inherited attribute wname :: String;
-
-concrete production makeIdeStmt_Wizards
-top::IdeStmt ::= 'wizards' '{' wlist::IdeWizardList '}' 
+concrete production newfileWizard_c
+top::IdeStmt ::= 'wizard' 'new file' '{' generator::StubGenerator props::PropertyList '}'
 {
-  top.wizards := wlist.wizards;
-  top.errors := wlist.errors;
-} 
-
-concrete production nilIdeWizardList
-top::IdeWizardList ::= 
-{
-  top.wizards := [];
-  top.errors := [];
-}
-
-concrete production consIdeWizardList
-top::IdeWizardList ::= w::IdeWizard wList::IdeWizardList
-{
-  top.wizards := w.wizards ++ wList.wizards;
-  top.errors := w.errors ++ wList.errors;
-}
-
-concrete production makeIdeWizard_NewFile
-top::IdeWizard ::= 'new file' '{' generator::StubGenerator props::PropertyList '}'
-{
-  local diplayName :: String = "new file";
-  generator.wname = diplayName;
-  top.wizards := [makeNewWizardDcl("newfile", diplayName, generator.funcDcl, props.propDcls)];
-
+  top.wizards = [newfileWizard(generator.funcDcl, props.propDcls)];
   top.errors := generator.errors ++ props.errors;
 }
+
+
+nonterminal StubGenerator with env, funcDcl, errors;
+
+synthesized attribute funcDcl :: String;
 
 concrete production makeStubGenerator
 top::StubGenerator ::= 'stub generator' genName::QName ';' 
@@ -434,55 +331,12 @@ top::StubGenerator ::= 'stub generator' genName::QName ';'
   tc1.downSubst = emptySubst();
   tc1.finalSubst = tc1.upSubst;
 
-  top.errors := [];
-  top.errors <-
+  top.errors :=
     if !tc1.typeerror then []
-    else [err(genName.location, "Stub generator function for wizard \"" ++ top.wname ++ "\" should have type:\n\t" ++ tc1.rightpp 
+    else [err(genName.location, "Stub generator should have type:\n\t" ++ tc1.rightpp 
         ++ "\nInstead it has the type:\n\t" ++ tc1.leftpp)];
 }
 
-concrete production nilPropertyList
-top::PropertyList ::= 
-{
-  top.propDcls := [];
-  top.errors := [];
-}
-
-concrete production consPropertyList
-top::PropertyList ::= p::Property pList::PropertyList
-{
-  top.propDcls := p.propDcls ++ pList.propDcls;
-  top.errors := p.errors ++ pList.errors;
-}
-
-concrete production makeProperty
-top::Property ::= 'property' pname::IdLower_t ptype::TypeName options::IdePropertyOptions ';'
-{
-  top.propDcls := [makeIdeProperty(pname.lexeme, ptype.propType, options)];
-
-  local defaultVal :: String = getDefaultVal(options);
-
-  top.errors := if ptype.propType=="integer"
-                then if (defaultVal=="" || isDigit(defaultVal))
-                     then []
-                     else [err($1.location, "The default value for integer property must be of integer type.\nInstead it is \"" ++ defaultVal ++ "\".")]
-                else [];
-}
-
-function getDefaultVal
-String ::= options::IdePropertyOptions
-{
-  return
-    case options of
-      nilPropertyOptions() ->
-        ""
-    | consPropertyOptions(ht, tl) ->
-        if ht.optionType == "default"
-        then ht.defaultVal
-        else getDefaultVal(tl)
- -- | _ -> ""
-    end;
-}
 
 function isLegalVersion
 Boolean ::= ver::String
@@ -496,31 +350,5 @@ function isAllDigital
 Boolean ::= parts::[String]
 {
   return null(parts) || isDigit(head(parts)) && isAllDigital(tail(parts));
-}
-
-nonterminal TypeName with propType;
-
-concrete production propType_String
-top::TypeName ::= 'string'
-{
-  top.propType = "string";
-}
-
-concrete production propType_Integer
-top::TypeName ::= 'integer'
-{
-  top.propType = "integer";
-}
-
-concrete production propType_Path
-top::TypeName ::= 'path'
-{
-  top.propType = "path";
-}
-
-concrete production propType_URL
-top::TypeName ::= 'url'
-{
-  top.propType = "url";
 }
 

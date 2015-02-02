@@ -1,16 +1,8 @@
-grammar silver:modification:impide;
+grammar silver:modification:impide:spec;
 
-import silver:translation:java:core only makeClassName, makeParserName;
-
-{-- IdeSpec --}
-
-synthesized attribute ideExtension :: String;
 synthesized attribute ideParserSpec :: ParserSpec;
---fst:the type of function, such as "builder"; snd: the full qualified name of function 
-synthesized attribute funcDcls :: [Pair<String String>] with ++ ;
-synthesized attribute ideFunctions :: [IdeFunction];
-synthesized attribute propDcls :: [IdeProperty] with ++ ;
-synthesized attribute wizards :: [IdeWizardDcl] with ++;
+synthesized attribute propDcls :: [IdeProperty];
+synthesized attribute wizards :: [IdeWizardDcl];
 synthesized attribute svIdeInterface :: String;
 synthesized attribute pluginXml :: String;
 synthesized attribute pluginXmlActions :: String;
@@ -20,8 +12,7 @@ synthesized attribute pluginGrammar :: String;
 synthesized attribute ideName :: String;
 synthesized attribute ideVersion :: String;
 
-nonterminal IdeSpec with ideExtension, ideParserSpec, funcDcls, propDcls, wizards, ideFunctions, svIdeInterface, pluginXml, pluginParserClass, pluginGrammar, ideName, ideVersion;
-
+nonterminal IdeSpec with ideParserSpec, propDcls, wizards, svIdeInterface, pluginXml, pluginParserClass, pluginGrammar, ideName, ideVersion;
 
 abstract production ideSpec
 top::IdeSpec ::= 
@@ -32,12 +23,9 @@ top::IdeSpec ::=
   top.ideName = ideName;
   top.ideVersion = ideVersion;
   top.pluginGrammar = grammarName;
-  top.ideExtension = ext;
   top.ideParserSpec = pspec;
-  top.funcDcls := foldr(append, [], map((.funcDcls), ideFuncDcls));
-  top.ideFunctions = ideFuncDcls;
-  top.propDcls := idePropDcls;
-  top.wizards := wizards;
+  top.propDcls = idePropDcls;
+  top.wizards = wizards;
   top.pluginParserClass = makeParserName(pspec.fullName);
   
   local tabs::[String] = 
@@ -229,159 +217,4 @@ String ::= tab::String
 {
   return "new " ++ tab ++ "()";
 }
-
-
-
-{-- IdeProperty --}
-
-nonterminal IdeProperty with propName, propType, optional, defaultVal, displayName, controlJavaTranslation, generatorJavaTranslation;
-
-synthesized attribute propName :: String;
-synthesized attribute propType :: String;
-synthesized attribute optional :: Boolean;
-synthesized attribute defaultVal :: String;
-synthesized attribute displayName :: String;
-synthesized attribute controlJavaTranslation :: String;
-synthesized attribute generatorJavaTranslation :: String;
-
-abstract production makeIdeProperty
-top::IdeProperty ::= propName::String propType::String options::IdePropertyOptions
-{
-  top.propName = propName;
-  top.propType = propType;
-  top.optional = options.optional;
-  top.defaultVal = options.defaultVal;
-  top.displayName = if options.displayName == "" then propName else options.displayName;
-  top.controlJavaTranslation =
-    s"""    controls.add(new ${getConstructorByType(propType)}(panel, "${propName}", "${top.displayName}", "${top.defaultVal}", ${if top.optional then "false" else "true"}));
-""";
-  -- TODO: honestly, we ought to just build this whole string statically, and do escaping here, too.
-  top.generatorJavaTranslation =
-    s"""    sb.append("${propName}/${propType} = ");sb.append(escape("${top.defaultVal}"));sb.append("\n");
-""";
-}
--- TODO: remove and replace by an actualy PropType nonterminal, with this as a translation
-function getConstructorByType
-String ::= propType :: String
-{
-  return if propType == "string" then "TextPropertyControl"
-    else if propType == "path" then "PathPropertyControl"
-    else if propType == "url" then "URLPropertyControl"
-    else -- propType == "integer" 
-    "IntegerPropertyControl";
-}
-
-{-- Color --}
-
-nonterminal Color with r, g, b;
-
-synthesized attribute r :: Integer;
-synthesized attribute g :: Integer;
-synthesized attribute b :: Integer;
-
-abstract production makeColor
-top::Color ::= r::Integer g::Integer b::Integer
-{
-  top.r = r;
-  top.g = g;
-  top.b = b;
-}
-
-{-- Font --}
-
-nonterminal Font with color, isBold, isItalic;
-
-synthesized attribute color :: Color;
-synthesized attribute isBold :: Boolean;
-synthesized attribute isItalic :: Boolean;
-
-abstract production font
-top::Font ::= color::Color isBold::Boolean isItalic::Boolean
-{
-  top.color = color;
-  top.isBold = isBold;
-  top.isItalic = isItalic;
-}
-
-
-{-- IdeFunctions --}
-
-nonterminal IdeFunction with funcDcls, svIdeInterface, pluginXml, pluginXmlActions;
-
-abstract production builderFunction
-top::IdeFunction ::= fName::String
-{
-  top.funcDcls := [pair("builder", fName)];
-  top.svIdeInterface =
-    s"""
-	@Override
-	public NIOVal build(ConsCell properties, NIdeEnv env, Object iotoken) {
-		return (NIOVal)${makeClassName(fName)}.invoke(properties, env, iotoken);
-	}
-""";
-  top.pluginXml = "";
-  top.pluginXmlActions = "";
-}
-
-abstract production postbuilderFunction
-top::IdeFunction ::= fName::String
-{
-  top.funcDcls := [pair("postbuilder", fName)];
-  top.svIdeInterface =
-    s"""
-	@Override
-	public NIOVal postbuild(ConsCell properties, NIdeEnv env, Object iotoken) {
-		return (NIOVal)${makeClassName(fName)}.invoke(properties, env, iotoken);
-	}
-""";
-  top.pluginXml = "";
-  top.pluginXmlActions = "";
-}
-
-abstract production exporterFunction
-top::IdeFunction ::= fName::String
-{
-  top.funcDcls := [pair("exporter", fName)];
-  top.svIdeInterface = s"""
-	@Override
-	public NIOVal export(ConsCell properties, NIdeEnv env, Object iotoken) {
-		return (NIOVal)${makeClassName(fName)}.invoke(properties, env, iotoken);
-	}
-""";
-  
-  top.pluginXmlActions = s"""
-    <action
-        label="Export as @LANG_NAME@ target"
-        tooltip="Export the project as @LANG_NAME@ distributable"
-        id="@LANG_NAME@.imp.actions.exportAction">
-      <class class="edu.umn.cs.melt.ide.imp.builders.Exporter">
-        <parameter name="name" value="@LANG_NAME@" />
-      </class>
-    </action>
-""";
-  top.pluginXml = "";
-}
-
-abstract production folderFunction
-top::IdeFunction ::= fName::String
-{
-  top.funcDcls := [pair("folder", fName)];
-  top.svIdeInterface = s"""
-	@Override
-	public ConsCell getFolds(Node root) {
-		return (ConsCell)${makeClassName(fName)}.invoke(root);
-	}
-""";
-
-  top.pluginXml = s"""
-<extension point="org.eclipse.imp.runtime.foldingUpdater">
-  <foldingUpdater
-      class="edu.umn.cs.melt.ide.imp.services.FoldingProvider"
-      language="@LANG_NAME@">
-  </foldingUpdater>
-</extension>
-""";
-  top.pluginXmlActions = "";
-}
-
 
