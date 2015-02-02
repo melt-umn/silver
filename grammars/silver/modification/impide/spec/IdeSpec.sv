@@ -115,19 +115,19 @@ ${foldr(stringConcat, "", map((.svIdeInterface), wizards))}
   </language>
 </extension>
 
-<extension id="@LANG_NAME@_IDE.parserWrapper" name="@LANG_NAME@ Parser Wrapper" point="org.eclipse.imp.runtime.parser">
+<extension point="org.eclipse.imp.runtime.parser">
   <parserWrapper class="edu.umn.cs.melt.ide.imp.services.ParseController" language="@LANG_NAME@">
   </parserWrapper>
 </extension>
 
-<extension id="@LANG_NAME@.imp.builder" name="@LANG_NAME@ builder" point="org.eclipse.core.resources.builders">
+<extension point="org.eclipse.core.resources.builders" id="@LANG_NAME@.imp.builder" name="@LANG_NAME@ builder">
   <builder hasNature="true">
     <run class="edu.umn.cs.melt.ide.imp.builders.Builder">
     </run>
   </builder>
 </extension>
 
-<extension id="imp.nature" name="@LANG_NAME@ Nature" point="org.eclipse.core.resources.natures">
+<extension point="org.eclipse.core.resources.natures" id="imp.nature" name="@LANG_NAME@ Nature">
   <builder id="@LANG_NAME@_IDE.@LANG_NAME@.imp.builder" />
   <runtime>
     <run class="edu.umn.cs.melt.ide.imp.builders.Nature">
@@ -136,7 +136,7 @@ ${foldr(stringConcat, "", map((.svIdeInterface), wizards))}
   </runtime>
 </extension>
 
-<extension id="@LANG_NAME@.imp.builder.problem" name="@LANG_NAME@ Error" point="org.eclipse.core.resources.markers">
+<extension point="org.eclipse.core.resources.markers" id="@LANG_NAME@.imp.builder.problem" name="@LANG_NAME@ Error">
   <super type="org.eclipse.core.resources.problemmarker" />
   <persistent value="true" />
 </extension>
@@ -163,7 +163,7 @@ ${foldr(stringConcat, "", map((.pluginXmlActions), ideFuncDcls))}
   </tokenColorer>
 </extension>
 
-<extension id="@LANG_NAME@_IDE.wizards" name="@LANG_NAME@ Project Wizards" point="org.eclipse.ui.newWizards">
+<extension point="org.eclipse.ui.newWizards" id="@LANG_NAME@_IDE.wizards" name="@LANG_NAME@ Project Wizards">
   <wizard
       category="@LANG_NAME@_IDE.wizards.category/"
       class="edu.umn.cs.melt.ide.wizard.NewProjectWizard"
@@ -181,8 +181,7 @@ ${foldr(stringConcat, "", map((.pluginXmlWizards), wizards))}
   </category>
 </extension>
 
-<extension
-    point="org.eclipse.ui.perspectives">
+<extension point="org.eclipse.ui.perspectives">
   <perspective
       class="edu.umn.cs.melt.ide.eclipse.Perspective"
       id="@LANG_NAME@_IDE.perspective"
@@ -207,6 +206,8 @@ ${foldr(stringConcat, "", map((.pluginXmlWizards), wizards))}
     </enabledWhen>
   </page>
 </extension>
+
+${foldr(stringConcat, "", map((.pluginXml), ideFuncDcls))}
 
 </plugin>
 """;
