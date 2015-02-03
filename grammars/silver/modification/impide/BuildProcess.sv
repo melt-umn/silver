@@ -88,7 +88,6 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
       <filter token="LANG_NAME" value='$${lang.name}'/>
       <filter token="IDE_VERSION" value='$${ide.version}'/>
       <filter token="IDE_BUILD_TIMESTAMP" value='$${ide.build-timestamp}'/>
-      <filter token="PROJ_NAME" value='$${lang.name}_IDE_PROJECT'/>
       <filter token="LANG_COMPOSED" value='$${lang.composed}'/>
       <filter token="FEATURE_DESCRIPTION_URL" value='http://some.user.provided.url'/>
       <filter token="FEATURE_DESCRIPTION_TEXT" value='no description of the software'/>

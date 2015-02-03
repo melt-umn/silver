@@ -27,11 +27,13 @@ top::IdeWizardDcl ::= func::String props::[IdeProperty]
 	}
 """;
 
+  -- TODO: FIXME: "@LANG_NAME@_IDE" should be bundle from above but that's not available here!!
+  local bundle :: String = "@LANG_NAME@_IDE";
   top.pluginXmlWizards = s"""
   <wizard
-      category="@LANG_NAME@_IDE.wizards.category/"
+      category="${bundle}.${extid_wizard_category}"
       class="edu.umn.cs.melt.ide.wizard.NewSourceFileWizard"
-      id="@LANG_NAME@.wizard.newSourceFile"
+      id="${bundle}.${extid_wizard_newfile}"
       name="New @LANG_NAME@ Source File">
   </wizard>
 """;
