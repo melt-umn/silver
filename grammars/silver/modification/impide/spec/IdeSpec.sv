@@ -12,6 +12,30 @@ synthesized attribute pluginGrammar :: String;
 synthesized attribute ideName :: String;
 synthesized attribute ideVersion :: String;
 
+{--
+ - Eclipse extensions have unique IDs.
+ - When these IDs are supplied to an <extension> tag, they are
+ - automatically prefixed with the bundle name.
+ - e.g. "SILVER_IDE.builder" for <extension id="builder"...>
+ - 
+ - BUT, when the IDs are given to sub-tags underneath <extension>, you must
+ - evidently give the fully qualified name right off the bat. *sigh* eclipse.
+ -}
+global extid_nature :: String = "nature";
+global extid_builder :: String = "builder";
+global extid_problem :: String = "builder.problem";
+global extid_perspective :: String = "perspective";
+
+global extid_projectmenu :: String = "actions.projectmenu";
+global extid_action_nature :: String = "actions.nature";
+global extid_action_export :: String = "actions.export";
+
+global extid_wizard_category :: String = "wizards.category";
+global extid_wizard_newproject :: String = "wizards.newproject";
+global extid_wizard_newfile :: String = "wizards.newfile";
+
+global extid_properties :: String = "properties";
+
 nonterminal IdeSpec with ideParserSpec, propDcls, wizards, svIdeInterface, pluginXml, pluginParserClass, pluginGrammar, ideName, ideVersion;
 
 abstract production ideSpec
@@ -31,6 +55,8 @@ top::IdeSpec ::=
   local tabs::[String] = 
     if null(idePropDcls) then [] else ["edu.umn.cs.melt.ide.eclipse.property.TabCommons"];
 
+  -- Right now this is horrible. TODO We need to actually determine this in a sensible way.
+  local bundle :: String = "@LANG_NAME@_IDE";
   
   top.svIdeInterface = s"""
 package @PKG_NAME@;
@@ -64,11 +90,11 @@ public class SVIdeInterface extends SVDefault {
 	@Override
 	public String name() { return "@LANG_NAME@"; }
 	@Override
-	public String pluginId() { return "@LANG_NAME@_IDE"; }
+	public String pluginId() { return "${bundle}"; }
 	@Override
-	public String markerErrorName() { return "@LANG_NAME@_IDE.@LANG_NAME@.imp.builder.problem"; }
+	public String markerErrorName() { return "${bundle}.${extid_problem}"; }
 	@Override
-	public String getNatureId() { return "@LANG_NAME@_IDE.imp.nature"; }
+	public String getNatureId() { return "${bundle}.${extid_nature}"; }
 	@Override
 	public String fileExtension() { return "${ext}"; }
 	@Override
@@ -111,7 +137,7 @@ ${foldr(stringConcat, "", map((.svIdeInterface), wizards))}
 <plugin>
 
 <extension point="org.eclipse.imp.runtime.languageDescription">
-  <language extensions="${ext}" description="nothing here" natureID="@LANG_NAME@_IDE.imp.nature" language="@LANG_NAME@">
+  <language extensions="${ext}" description="nothing here" natureID="${bundle}.${extid_nature}" language="@LANG_NAME@">
   </language>
 </extension>
 
@@ -120,36 +146,49 @@ ${foldr(stringConcat, "", map((.svIdeInterface), wizards))}
   </parserWrapper>
 </extension>
 
-<extension point="org.eclipse.core.resources.builders" id="@LANG_NAME@.imp.builder" name="@LANG_NAME@ builder">
+<extension point="org.eclipse.core.resources.builders" id="${extid_builder}" name="@LANG_NAME@ builder">
   <builder hasNature="true">
     <run class="edu.umn.cs.melt.ide.imp.builders.Builder">
     </run>
   </builder>
 </extension>
 
-<extension point="org.eclipse.core.resources.natures" id="imp.nature" name="@LANG_NAME@ Nature">
-  <builder id="@LANG_NAME@_IDE.@LANG_NAME@.imp.builder" />
+<extension point="org.eclipse.core.resources.natures" id="${extid_nature}" name="@LANG_NAME@ Nature">
+  <builder id="${bundle}.${extid_builder}" />
   <runtime>
     <run class="edu.umn.cs.melt.ide.imp.builders.Nature">
-      <parameter name="builder" value="@LANG_NAME@_IDE.@LANG_NAME@.imp.builder" />
+      <parameter name="builder" value="${bundle}.${extid_builder}" />
     </run>
   </runtime>
 </extension>
 
-<extension point="org.eclipse.core.resources.markers" id="@LANG_NAME@.imp.builder.problem" name="@LANG_NAME@ Error">
+<extension point="org.eclipse.ui.perspectives">
+  <perspective
+      class="edu.umn.cs.melt.ide.eclipse.Perspective"
+      id="${bundle}.${extid_perspective}"
+      name="@LANG_NAME@">
+  </perspective>
+</extension>
+
+<extension point="org.eclipse.core.resources.markers" id="${extid_problem}" name="@LANG_NAME@ Error">
   <super type="org.eclipse.core.resources.problemmarker" />
   <persistent value="true" />
 </extension>
 
+<extension point="org.eclipse.imp.runtime.tokenColorer">
+  <tokenColorer class="edu.umn.cs.melt.ide.imp.services.Colorer" language="@LANG_NAME@">
+  </tokenColorer>
+</extension>
+
 <extension point="org.eclipse.ui.popupMenus">
-  <objectContribution objectClass="org.eclipse.core.resources.IProject" adaptable="true" nameFilter="*" id="@LANG_NAME@.imp.projectContextMenu">
+  <objectContribution objectClass="org.eclipse.core.resources.IProject" adaptable="true" nameFilter="*" id="${bundle}.${extid_projectmenu}">
 
     <action
         label="Enable @LANG_NAME@ Builder"
         tooltip="Enable the @LANG_NAME@ builder for this project"
-        id="@LANG_NAME@.imp.actions.enableNatureAction">
+        id="${bundle}.${extid_action_nature}">
       <class class="edu.umn.cs.melt.ide.imp.builders.EnableNature">
-        <parameter name="nature" value="@LANG_NAME@_IDE.imp.nature" />
+        <parameter name="nature" value="${bundle}.${extid_nature}" />
       </class>
     </action>
 
@@ -158,48 +197,35 @@ ${foldr(stringConcat, "", map((.pluginXmlActions), ideFuncDcls))}
   </objectContribution>
 </extension>
 
-<extension point="org.eclipse.imp.runtime.tokenColorer">
-  <tokenColorer class="edu.umn.cs.melt.ide.imp.services.Colorer" language="@LANG_NAME@">
-  </tokenColorer>
-</extension>
-
-<extension point="org.eclipse.ui.newWizards" id="@LANG_NAME@_IDE.wizards" name="@LANG_NAME@ Project Wizards">
+<extension point="org.eclipse.ui.newWizards">
+  <category
+      id="${bundle}.${extid_wizard_category}"
+      name="@LANG_NAME@">
+  </category>
   <wizard
-      category="@LANG_NAME@_IDE.wizards.category/"
+      category="${bundle}.${extid_wizard_category}"
       class="edu.umn.cs.melt.ide.wizard.NewProjectWizard"
-      id="@LANG_NAME@_IDE.wizard.newProject"
+      id="${bundle}.${extid_wizard_newproject}"
       name="New @LANG_NAME@ Project"
-      finalPerspective="@LANG_NAME@_IDE.perspective"
+      finalPerspective="${bundle}.${extid_perspective}"
       project="true">
   </wizard>
   
 ${foldr(stringConcat, "", map((.pluginXmlWizards), wizards))}
 
-  <category
-      id="@LANG_NAME@_IDE.wizards.category"
-      name="@LANG_NAME@">
-  </category>
-</extension>
-
-<extension point="org.eclipse.ui.perspectives">
-  <perspective
-      class="edu.umn.cs.melt.ide.eclipse.Perspective"
-      id="@LANG_NAME@_IDE.perspective"
-      name="@LANG_NAME@">
-  </perspective>
 </extension>
 
 <extension point="org.eclipse.ui.propertyPages">
   <page
       class="edu.umn.cs.melt.ide.eclipse.property.MultiTabPropertyPage"
-      id="@LANG_NAME@_IDE.buildConfig.propertyPage"
+      id="${bundle}.${extid_properties}"
       name="@LANG_NAME@">
     <enabledWhen>
       <and>
         <instanceof value="org.eclipse.core.resources.IProject"/>
         <adapt type="org.eclipse.core.resources.IResource">
           <test property="org.eclipse.core.resources.projectNature"
-                value="@LANG_NAME@_IDE.imp.nature">
+                value="${bundle}.${extid_nature}">
           </test>
         </adapt>
       </and>

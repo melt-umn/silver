@@ -1,11 +1,13 @@
 #!/bin/bash
 
+set -e
+
 # just run this script, no parameters or options.
 # One new option: --newcore, for when the core FFI stuff has to change in tandem with the runtime
 # Only I should ever have to use this, as once it's done ONCE, fetch-jars will eliminate anyone else's need to do it.
 
-mkdir -p build || exit
-cd build || exit
+mkdir -p build
+cd build
 
 if [ -d ../generated/bin/common ]; then
  # oh man, let's make sure stale runtimes aren't causing us serious problems here
@@ -15,9 +17,9 @@ fi
 # Modifications may have been made to how the translation is done
 
 echo "One full cycle ..."
-time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default || exit
-ant || exit
-mv silver.composed.Default.jar ../jars/ || exit
+time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default
+ant
+mv silver.composed.Default.jar ../jars/
 
 # Modifications may need to be made to how core translates, to accomodate translation/runtime changes
 if [ "$1" == "--newcore" ]; then
@@ -27,32 +29,32 @@ if [ "$1" == "--newcore" ]; then
 fi
 
 echo "Before we start, let's get this thing built ..."
-java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --clean lib:xml:ast || exit
+java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --clean lib:xml:ast
 echo "Start ..."
-time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default || exit
+time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default
 
 # Modifications may have been made to the runtime
 
 echo "No ant yet! Let's go build the runtime! ..."
-cd ../runtime/java || exit
-ant || exit
-mv SilverRuntime.jar ../../jars/ || exit
-mv RunSilver.jar ../../jars/ || exit
-cd ../../build || exit
+cd ../runtime/java
+ant
+mv SilverRuntime.jar ../../jars/
+mv RunSilver.jar ../../jars/
+cd ../../build
 echo "Now finish ..."
-ant || exit
-mv silver.composed.Default.jar ../jars/ || exit
+ant
+mv silver.composed.Default.jar ../jars/
 
 # Finally, we should have a fully working binary on all the new code. Run it again to reach a fixed point:
 
 echo "One more full cycle ..."
-time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default || exit
-ant || exit
-mv silver.composed.Default.jar ../jars/ || exit
+time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default
+ant
+mv silver.composed.Default.jar ../jars/
 
 echo -e "\a"
 
 echo "Cleaning out stale runtime class files..."
-rm -rf ../generated/bin/common || exit
+rm -rf ../generated/bin/common
 
 echo "deep-rebuild success"

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 mkdir -p build
 cd build
 
@@ -10,7 +12,8 @@ if [ -z "$SVJVM_FLAGS" ]; then
   SVJVM_FLAGS="-Xmx1800M -Xss6M"
 fi
 
-time java $SVJVM_FLAGS -jar ../jars/RunSilver.jar --relative-jar $@ silver:composed:Default && ant
+time java $SVJVM_FLAGS -jar ../jars/RunSilver.jar --relative-jar $@ silver:composed:Default
+ant
 
 echo -e "\a"
 

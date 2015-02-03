@@ -40,11 +40,13 @@ top::IdeFunction ::= fName::String
 	}
 """;
   
+  -- TODO FIXME: "@LANG_NAME@_IDE" here should be ${bundle} from above in idespec
+  local bundle :: String = "@LANG_NAME@_IDE";
   top.pluginXmlActions = s"""
     <action
         label="Export as @LANG_NAME@ target"
         tooltip="Export the project as @LANG_NAME@ distributable"
-        id="@LANG_NAME@.imp.actions.exportAction">
+        id="${bundle}.${extid_action_export}">
       <class class="edu.umn.cs.melt.ide.imp.builders.Exporter">
         <parameter name="name" value="@LANG_NAME@" />
       </class>

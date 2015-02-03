@@ -13,7 +13,9 @@ echo $SILVER_HOME
 cp build/silver.composed.Default.jar jars/
 
 # Rebuild the IDE-specific runtime jars
-(cd runtime/imp; ./build.sh)
+cd runtime/imp
+./build.sh
+cd ../..
 
 # Create plug-in sources and .class files.
 # this creates a silver.composed.idetest.jar that is not used, but
