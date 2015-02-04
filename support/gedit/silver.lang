@@ -25,7 +25,7 @@
     <style id="number" _name="Number" map-to="def:decimal"/>
     <style id="reserved" _name="Future Reserved Keywords" map-to="def:error"/>
     <style id="type" _name="Data Type" map-to="def:type"/>
-    <style id="ide" _name="IDE keywords" map-to="def:keyword"/>
+    <style id="ide" _name="IDE keywords" map-to="def:type"/>
   </styles>
 
   <definitions>
@@ -39,17 +39,17 @@
     </define-regex>
 
     <context id="string" style-ref="string" end-at-line-end="true">
-      <start>"(?!"")</start>
+      <start>"</start>
       <end>"</end>
       <include>
-        <context id="escaped-character-str" style-ref="escaped-character">
+        <context style-ref="escaped-character">
           <match>\%{escaped-character}</match>
         </context>
       </include>
     </context>
 
-    <context id="multi-string" end-at-line-end="false">
-      <start>"""</start>
+    <context id="complex-multi-string" end-at-line-end="false">
+      <start>(s|(pp))"""</start>
       <end>"""</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="string"/>
@@ -72,27 +72,62 @@
         </context>
       </include>
     </context>
+    
+    <context id="complex-single-string" end-at-line-end="true">
+      <start>(s|(pp))"</start>
+      <end>"</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="string"/>
+        <context sub-pattern="0" where="end" style-ref="string"/>
+        <context style-ref="escaped-character">
+          <match>(\%{escaped-character})|(\$\$)</match>
+        </context>
+        <context style-ref="string">
+          <match>([^$"\\])+</match>
+        </context>
+        <context>
+          <start>\$\{</start>
+          <end>\}</end>
+          <include>
+            <context sub-pattern="0" where="start" style-ref="escaped-character"/>
+            <context sub-pattern="0" where="end" style-ref="escaped-character"/>
+            <context ref="silver"/>
+          </include>
+        </context>
+      </include>
+    </context>
+    
 
-   <context id="char" style-ref="char" end-at-line-end="true">
+   <context id="terminal" style-ref="char" end-at-line-end="true">
       <start>'</start>
       <end>'</end>
-      <include>
-        <context id="escaped-character-char" style-ref="escaped-character">
-          <match>\%{escaped-character}</match>
-        </context>
-      </include>
    </context>
 
-   <!-- BUG: TODO: this is catching division
-   <context id="regex" style-ref="char" end-at-line-end="true">
-      <start>/</start>
-      <end>/</end>
+   <!-- trick: to recognize regexs, first recognize terminal declarations, but don't color them -->
+   <context id="regex-terminal" end-at-line-end="false">
+      <!-- the lookbehind/ahead here is to ensure we don't match e.g. 'easyterminal;' i.e. its a keyword -->
+      <start>(?&lt;![A-Za-z0-9_])terminal(?![A-Za-z0-9_])</start>
+      <end>;</end>
       <include>
-        <context id="escaped-character-regex" style-ref="escaped-character">
-          <match>\%{escaped-character}</match>
+        <!-- do color 'terminal' as a keyword though. our match above precludes normal hightlighting -->
+        <context sub-pattern="0" where="start" style-ref="declaration"/>
+        <!-- now, look for /regexes/ and highlight them -->
+        <context style-ref="char" end-at-line-end="false">
+          <start>/</start>
+          <end>/</end>
+          <include>
+            <context style-ref="escaped-character">
+              <match>\\.</match>
+            </context>
+            <context style-ref="external">
+              <match>[\(\)\[\]\*\+\.\|\?\-\^]</match>
+            </context>
+          </include>
         </context>
+        <!-- otherwise, continue to higlight normally in here -->
+        <context ref="silver"/>
       </include>
-   </context> -->
+   </context>
    
    <context id="dollar-ref" style-ref="char">
      <match>\$[0-9]*</match>
@@ -219,6 +254,23 @@
 
     <context id="ide" style-ref="ide">
 <keyword>temp_imp_ide_dcl</keyword>
+<keyword>temp_imp_ide_font</keyword>
+<keyword>font</keyword> 
+<keyword>color</keyword>
+<keyword>italic</keyword>
+<keyword>bold</keyword>
+    </context>
+    
+    
+    <context id="ide-decl-inner">
+      <include>
+        <context end-at-line-end="false">
+          <start>\{</start>
+          <end>\}</end>
+          <include><context ref="ide-decl-inner"/></include>
+        </context>
+        <context id="ide-decl-keywords" style-ref="ide">
+        <!-- this way, these are only highlighted within ide declarations -->
 <keyword>builder</keyword>
 <keyword>postbuilder</keyword>
 <keyword>exporter</keyword>
@@ -228,7 +280,8 @@
 <keyword>required</keyword>
 <keyword>display</keyword>
 <keyword>string</keyword>
-<keyword>wizards</keyword>
+<keyword>wizard</keyword>
+<keyword>new</keyword>
 <keyword>file</keyword>
 <keyword>stub</keyword>
 <keyword>generator</keyword>
@@ -236,14 +289,23 @@
 <keyword>name</keyword> 
 <keyword>version</keyword> 
 <keyword>option</keyword>
-<keyword>source</keyword>
-<keyword>linker</keyword>
-<keyword>temp_imp_ide_font</keyword>
-<keyword>font</keyword> 
-<keyword>color</keyword>
-<keyword>italic</keyword>
-<keyword>bold</keyword>
+        </context>
+        <context ref="silver"/>
+      </include>
     </context>
+    
+    <!-- do the same trick for ide decls and we do for terminals and regexs -->
+    <context id="ide-decl" end-at-line-end="false">
+      <start>(?&lt;![A-Za-z0-9_])(temp_imp_ide_dcl)(\ *)([A-Za-z0-9_\ ]+)("[A-Za-z0-9_\.]+")(\ *)(\{)</start>
+      <end>\}</end>
+      <include>
+        <context sub-pattern="1" where="start" style-ref="ide"/>
+        <context sub-pattern="4" where="start" style-ref="string"/>
+        <context ref="ide-decl-inner"/>
+      </include>
+    </context>
+
+
 
     <context id="boolean" style-ref="boolean">
 <keyword>false</keyword>
@@ -261,10 +323,11 @@
 
     <context id="silver">
       <include>
-        <context ref="string"/>
-        <context ref="multi-string"/>
-        <context ref="char"/>
-        <!--<context ref="regex"/>TODO-->
+        <context ref="complex-multi-string"/>
+        <context ref="complex-single-string"/>
+        <context ref="string"/><!--comes after more complex string types-->
+        <context ref="terminal"/>
+        <context ref="regex-terminal"/><!-- comes before 'terminal' keyword -->
         <context ref="dollar-ref"/>
         <context ref="line-comment"/>
         <context ref="block-comment"/>
@@ -278,6 +341,7 @@
         <context ref="flow-other"/>
         <context ref="boolean"/>
         <context ref="numeric"/>
+        <context ref="ide-decl"/><!-- comes before ide keywords -->
         <context ref="ide"/>
       </include>
     </context>
