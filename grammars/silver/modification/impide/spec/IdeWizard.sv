@@ -1,11 +1,27 @@
 grammar silver:modification:impide:spec;
 
+nonterminal IdeWizards with bundle, svIdeInterface, pluginXmlWizards;
+
+abstract production consIdeWizard
+top::IdeWizards ::= h::IdeWizardDcl  t::IdeWizards
+{
+  top.svIdeInterface = h.svIdeInterface ++ t.svIdeInterface;
+  top.pluginXmlWizards = h.pluginXmlWizards ++ t.pluginXmlWizards;
+}
+
+abstract production nilIdeWizard
+top::IdeWizards ::=
+{
+  top.svIdeInterface = "";
+  top.pluginXmlWizards = "";
+}
+
 -- An IdeWizardDcl includes all the necessary information for generating a Wizard in IDE. 
 
 synthesized attribute wizName :: String;
 synthesized attribute wizProps :: [IdeProperty];
 
-nonterminal IdeWizardDcl with wizName, wizProps, svIdeInterface, pluginXmlWizards;
+nonterminal IdeWizardDcl with bundle, wizName, wizProps, svIdeInterface, pluginXmlWizards;
 
 {--
   func: the full name of stub generator, having signature String ::= [IdeProperty]
@@ -27,13 +43,11 @@ top::IdeWizardDcl ::= func::String props::[IdeProperty]
 	}
 """;
 
-  -- TODO: FIXME: "@LANG_NAME@_IDE" should be bundle from above but that's not available here!!
-  local bundle :: String = "@LANG_NAME@_IDE";
   top.pluginXmlWizards = s"""
   <wizard
-      category="${bundle}.${extid_wizard_category}"
+      category="${top.bundle}.${extid_wizard_category}"
       class="edu.umn.cs.melt.ide.wizard.NewSourceFileWizard"
-      id="${bundle}.${extid_wizard_newfile}"
+      id="${top.bundle}.${extid_wizard_newfile}"
       name="New @LANG_NAME@ Source File">
   </wizard>
 """;

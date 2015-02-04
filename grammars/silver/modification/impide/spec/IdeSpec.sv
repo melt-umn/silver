@@ -12,6 +12,8 @@ synthesized attribute pluginGrammar :: String;
 synthesized attribute ideName :: String;
 synthesized attribute ideVersion :: String;
 
+autocopy attribute bundle :: String;
+
 {--
  - Eclipse extensions have unique IDs.
  - When these IDs are supplied to an <extension> tag, they are
@@ -52,11 +54,18 @@ top::IdeSpec ::=
   top.wizards = wizards;
   top.pluginParserClass = makeParserName(pspec.fullName);
   
+  -- Right now this is horrible. TODO We need to actually determine this in a sensible way.
+  local bundle :: String = "@LANG_NAME@_IDE";
+
+  local funcs :: IdeFunctions = foldr(consIdeFunction, nilIdeFunction(), ideFuncDcls);
+  funcs.bundle = bundle;
+  
+  local wizs :: IdeWizards = foldr(consIdeWizard, nilIdeWizard(), wizards);
+  wizs.bundle = bundle;
+
   local tabs::[String] = 
     if null(idePropDcls) then [] else ["edu.umn.cs.melt.ide.eclipse.property.TabCommons"];
 
-  -- Right now this is horrible. TODO We need to actually determine this in a sensible way.
-  local bundle :: String = "@LANG_NAME@_IDE";
   
   top.svIdeInterface = s"""
 package @PKG_NAME@;
@@ -127,8 +136,8 @@ public class SVIdeInterface extends SVDefault {
 
 
 
-${foldr(stringConcat, "", map((.svIdeInterface), ideFuncDcls))}
-${foldr(stringConcat, "", map((.svIdeInterface), wizards))}
+${funcs.svIdeInterface}
+${wizs.svIdeInterface}
 }
 """;
   
@@ -192,7 +201,7 @@ ${foldr(stringConcat, "", map((.svIdeInterface), wizards))}
       </class>
     </action>
 
-${foldr(stringConcat, "", map((.pluginXmlActions), ideFuncDcls))}
+${funcs.pluginXmlActions}
 
   </objectContribution>
 </extension>
@@ -211,7 +220,7 @@ ${foldr(stringConcat, "", map((.pluginXmlActions), ideFuncDcls))}
       project="true">
   </wizard>
   
-${foldr(stringConcat, "", map((.pluginXmlWizards), wizards))}
+${wizs.pluginXmlWizards}
 
 </extension>
 
@@ -233,7 +242,7 @@ ${foldr(stringConcat, "", map((.pluginXmlWizards), wizards))}
   </page>
 </extension>
 
-${foldr(stringConcat, "", map((.pluginXml), ideFuncDcls))}
+${funcs.pluginXml}
 
 </plugin>
 """;
