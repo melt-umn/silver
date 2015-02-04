@@ -1,6 +1,32 @@
 grammar silver:modification:impide:spec;
 
-nonterminal IdeFunction with svIdeInterface, pluginXml, pluginXmlActions;
+nonterminal IdeFunctions with bundle, svIdeInterface, pluginXml, pluginXmlActions;
+
+abstract production consIdeFunction
+top::IdeFunctions ::= h::IdeFunction  t::IdeFunctions
+{
+  top.svIdeInterface = h.svIdeInterface ++ t.svIdeInterface;
+  top.pluginXml = h.pluginXml ++ t.pluginXml;
+  top.pluginXmlActions = h.pluginXmlActions ++ t.pluginXmlActions;
+}
+
+abstract production nilIdeFunction
+top::IdeFunctions ::=
+{
+  top.svIdeInterface = "";
+  top.pluginXml = "";
+  top.pluginXmlActions = "";
+}
+
+nonterminal IdeFunction with bundle, svIdeInterface, pluginXml, pluginXmlActions;
+
+aspect default production
+top::IdeFunction ::=
+{
+  top.svIdeInterface = "";
+  top.pluginXml = "";
+  top.pluginXmlActions = "";
+}
 
 abstract production builderFunction
 top::IdeFunction ::= fName::String
@@ -12,8 +38,6 @@ top::IdeFunction ::= fName::String
 		return (NIOVal)${makeClassName(fName)}.invoke(properties, env, iotoken);
 	}
 """;
-  top.pluginXml = "";
-  top.pluginXmlActions = "";
 }
 
 abstract production postbuilderFunction
@@ -26,8 +50,6 @@ top::IdeFunction ::= fName::String
 		return (NIOVal)${makeClassName(fName)}.invoke(properties, env, iotoken);
 	}
 """;
-  top.pluginXml = "";
-  top.pluginXmlActions = "";
 }
 
 abstract production exporterFunction
@@ -40,19 +62,16 @@ top::IdeFunction ::= fName::String
 	}
 """;
   
-  -- TODO FIXME: "@LANG_NAME@_IDE" here should be ${bundle} from above in idespec
-  local bundle :: String = "@LANG_NAME@_IDE";
   top.pluginXmlActions = s"""
     <action
         label="Export as @LANG_NAME@ target"
         tooltip="Export the project as @LANG_NAME@ distributable"
-        id="${bundle}.${extid_action_export}">
+        id="${top.bundle}.${extid_action_export}">
       <class class="edu.umn.cs.melt.ide.imp.builders.Exporter">
         <parameter name="name" value="@LANG_NAME@" />
       </class>
     </action>
 """;
-  top.pluginXml = "";
 }
 
 abstract production folderFunction
@@ -73,6 +92,5 @@ top::IdeFunction ::= fName::String
   </foldingUpdater>
 </extension>
 """;
-  top.pluginXmlActions = "";
 }
 

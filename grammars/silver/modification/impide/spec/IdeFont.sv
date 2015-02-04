@@ -1,5 +1,6 @@
 grammar silver:modification:impide:spec;
 
+-- TODO: er, this should probably be moved to :cstast. It's not used here!
 nonterminal Font with getTextAttribute;
 
 synthesized attribute getTextAttribute :: String;
