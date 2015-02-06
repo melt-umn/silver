@@ -1,6 +1,6 @@
 grammar silver:modification:impide:spec;
 
-nonterminal IdeWizards with bundle, svIdeInterface, pluginXmlWizards;
+nonterminal IdeWizards with package, visibleName, implang, bundle, svIdeInterface, pluginXmlWizards;
 
 abstract production consIdeWizard
 top::IdeWizards ::= h::IdeWizardDcl  t::IdeWizards
@@ -21,7 +21,7 @@ top::IdeWizards ::=
 synthesized attribute wizName :: String;
 synthesized attribute wizProps :: [IdeProperty];
 
-nonterminal IdeWizardDcl with bundle, wizName, wizProps, svIdeInterface, pluginXmlWizards;
+nonterminal IdeWizardDcl with package, visibleName, implang, bundle, wizName, wizProps, svIdeInterface, pluginXmlWizards;
 
 {--
   func: the full name of stub generator, having signature String ::= [IdeProperty]
@@ -35,7 +35,7 @@ top::IdeWizardDcl ::= func::String props::[IdeProperty]
   top.svIdeInterface = s"""
 	@Override
 	public IPropertyControlsProvider getNewFileProperties() {
-		return new @PKG_NAME@.eclipse.wizard.${top.wizName}.PropertyControlsProvider();
+		return new ${top.package}.eclipse.wizard.${top.wizName}.PropertyControlsProvider();
 	}
 	@Override
 	public StringCatter fileStub(ConsCell properties) {
@@ -48,7 +48,7 @@ top::IdeWizardDcl ::= func::String props::[IdeProperty]
       category="${top.bundle}.${extid_wizard_category}"
       class="edu.umn.cs.melt.ide.wizard.NewSourceFileWizard"
       id="${top.bundle}.${extid_wizard_newfile}"
-      name="New @LANG_NAME@ Source File">
+      name="New ${top.visibleName} Source File">
   </wizard>
 """;
 }
