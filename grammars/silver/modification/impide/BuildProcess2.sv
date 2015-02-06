@@ -29,11 +29,9 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> silvergen::String ide::IdeSpec 
 
   local io40::IO = print("[IDE plugin] Generating plugin.xml template.\n", io30);
 
-  local io50::IO = writeFile(getIDETempFolder() ++ "plugin.xml.template", ide.pluginXml, io40);
-  
-  local io60::IO = writeFile(getIDETempFolder() ++ "SVIdeInterface.java.template", ide.svIdeInterface, io50);
+  local io50::IO = writeFiles(getIDETempFolder(), ide.pluginFiles, io40);
 
-  top.io = io60;
+  top.io = io50;
 
   top.code = 0;
   top.order = 7;
