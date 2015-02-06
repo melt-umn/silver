@@ -1,6 +1,6 @@
 grammar silver:modification:impide:spec;
 
-nonterminal IdeFunctions with bundle, svIdeInterface, pluginXml, pluginXmlActions;
+nonterminal IdeFunctions with package, visibleName, implang, bundle, svIdeInterface, pluginXml, pluginXmlActions;
 
 abstract production consIdeFunction
 top::IdeFunctions ::= h::IdeFunction  t::IdeFunctions
@@ -18,7 +18,7 @@ top::IdeFunctions ::=
   top.pluginXmlActions = "";
 }
 
-nonterminal IdeFunction with bundle, svIdeInterface, pluginXml, pluginXmlActions;
+nonterminal IdeFunction with package, visibleName, implang, bundle, svIdeInterface, pluginXml, pluginXmlActions;
 
 aspect default production
 top::IdeFunction ::=
@@ -64,11 +64,11 @@ top::IdeFunction ::= fName::String
   
   top.pluginXmlActions = s"""
     <action
-        label="Export as @LANG_NAME@ target"
-        tooltip="Export the project as @LANG_NAME@ distributable"
+        label="Export as ${top.visibleName} target"
+        tooltip="Export the project as ${top.visibleName} distributable"
         id="${top.bundle}.${extid_action_export}">
       <class class="edu.umn.cs.melt.ide.imp.builders.Exporter">
-        <parameter name="name" value="@LANG_NAME@" />
+        <parameter name="name" value="${top.visibleName}" />
       </class>
     </action>
 """;
@@ -88,7 +88,7 @@ top::IdeFunction ::= fName::String
 <extension point="org.eclipse.imp.runtime.foldingUpdater">
   <foldingUpdater
       class="edu.umn.cs.melt.ide.imp.services.FoldingProvider"
-      language="@LANG_NAME@">
+      language="${top.implang}">
   </foldingUpdater>
 </extension>
 """;

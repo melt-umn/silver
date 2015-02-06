@@ -13,6 +13,9 @@ synthesized attribute ideName :: String;
 synthesized attribute ideVersion :: String;
 
 autocopy attribute bundle :: String;
+autocopy attribute implang :: String;
+autocopy attribute visibleName :: String;
+autocopy attribute package :: String;
 
 {--
  - Eclipse extensions have unique IDs.
@@ -55,20 +58,28 @@ top::IdeSpec ::=
   top.pluginParserClass = makeParserName(pspec.fullName);
   
   -- Right now this is horrible. TODO We need to actually determine this in a sensible way.
-  local bundle :: String = "@LANG_NAME@_IDE";
+  local implang :: String = "@LANG_NAME@";
+  local package :: String = "@PKG_NAME@";
+  local bundle :: String = s"${implang}_IDE";
 
   local funcs :: IdeFunctions = foldr(consIdeFunction, nilIdeFunction(), ideFuncDcls);
   funcs.bundle = bundle;
+  funcs.implang = implang;
+  funcs.visibleName = ideName;
+  funcs.package = package;
   
   local wizs :: IdeWizards = foldr(consIdeWizard, nilIdeWizard(), wizards);
   wizs.bundle = bundle;
+  wizs.implang = implang;
+  wizs.visibleName = ideName;
+  wizs.package = package;
 
   local tabs::[String] = 
     if null(idePropDcls) then [] else ["edu.umn.cs.melt.ide.eclipse.property.TabCommons"];
 
   
   top.svIdeInterface = s"""
-package @PKG_NAME@;
+package ${package};
 
 import java.io.IOException;
 import java.io.Reader;
@@ -97,7 +108,7 @@ public class SVIdeInterface extends SVDefault {
 	public SVIdeInterface() {}
 
 	@Override
-	public String name() { return "@LANG_NAME@"; }
+	public String name() { return "${implang}"; }
 	@Override
 	public String pluginId() { return "${bundle}"; }
 	@Override
@@ -108,11 +119,11 @@ public class SVIdeInterface extends SVDefault {
 	public String fileExtension() { return "${ext}"; }
 	@Override
 	public IPropertyControlsProvider getProjectProperties() {
-		return new @PKG_NAME@.eclipse.property.PropertyControlsProvider();
+		return new ${package}.eclipse.property.PropertyControlsProvider();
 	}
 	@Override
 	public String getInitialProjectProperties() {
-		return @PKG_NAME@.eclipse.wizard.newproject.PropertyGenerator.getAll();
+		return ${package}.eclipse.wizard.newproject.PropertyGenerator.getAll();
 	}
 	@Override
 	public IPropertyPageTab[] getPropertyTabs() {
@@ -122,9 +133,9 @@ public class SVIdeInterface extends SVDefault {
 	}
 	@Override
 	public ICopperTokenClassifier getTokenClassifier() {
-		return new @PKG_NAME@.imp.coloring.${top.pluginParserClass}_TokenClassifier();
+		return new ${package}.imp.coloring.${top.pluginParserClass}_TokenClassifier();
 	}
-	private @PKG_NAME@.copper.parser.${top.pluginParserClass} parser = new @PKG_NAME@.copper.parser.${top.pluginParserClass}();
+	private ${package}.copper.parser.${top.pluginParserClass} parser = new ${package}.copper.parser.${top.pluginParserClass}();
 	@Override
 	public IdeParseResult<Node, CopperToken> parse(Reader input, String filename) throws CopperParserException, IOException {
 		// In the long run, maybe we should have a getParser() rather than parse() so things could be concurrent... TODO
@@ -146,23 +157,23 @@ ${wizs.svIdeInterface}
 <plugin>
 
 <extension point="org.eclipse.imp.runtime.languageDescription">
-  <language extensions="${ext}" description="nothing here" natureID="${bundle}.${extid_nature}" language="@LANG_NAME@">
+  <language extensions="${ext}" description="nothing here" natureID="${bundle}.${extid_nature}" language="${implang}">
   </language>
 </extension>
 
 <extension point="org.eclipse.imp.runtime.parser">
-  <parserWrapper class="edu.umn.cs.melt.ide.imp.services.ParseController" language="@LANG_NAME@">
+  <parserWrapper class="edu.umn.cs.melt.ide.imp.services.ParseController" language="${implang}">
   </parserWrapper>
 </extension>
 
-<extension point="org.eclipse.core.resources.builders" id="${extid_builder}" name="@LANG_NAME@ builder">
+<extension point="org.eclipse.core.resources.builders" id="${extid_builder}" name="${ideName} builder">
   <builder hasNature="true">
     <run class="edu.umn.cs.melt.ide.imp.builders.Builder">
     </run>
   </builder>
 </extension>
 
-<extension point="org.eclipse.core.resources.natures" id="${extid_nature}" name="@LANG_NAME@ Nature">
+<extension point="org.eclipse.core.resources.natures" id="${extid_nature}" name="${ideName} Nature">
   <builder id="${bundle}.${extid_builder}" />
   <runtime>
     <run class="edu.umn.cs.melt.ide.imp.builders.Nature">
@@ -175,17 +186,17 @@ ${wizs.svIdeInterface}
   <perspective
       class="edu.umn.cs.melt.ide.eclipse.Perspective"
       id="${bundle}.${extid_perspective}"
-      name="@LANG_NAME@">
+      name="${ideName}">
   </perspective>
 </extension>
 
-<extension point="org.eclipse.core.resources.markers" id="${extid_problem}" name="@LANG_NAME@ Error">
+<extension point="org.eclipse.core.resources.markers" id="${extid_problem}" name="${ideName} Error">
   <super type="org.eclipse.core.resources.problemmarker" />
   <persistent value="true" />
 </extension>
 
 <extension point="org.eclipse.imp.runtime.tokenColorer">
-  <tokenColorer class="edu.umn.cs.melt.ide.imp.services.Colorer" language="@LANG_NAME@">
+  <tokenColorer class="edu.umn.cs.melt.ide.imp.services.Colorer" language="${implang}">
   </tokenColorer>
 </extension>
 
@@ -193,8 +204,8 @@ ${wizs.svIdeInterface}
   <objectContribution objectClass="org.eclipse.core.resources.IProject" adaptable="true" nameFilter="*" id="${bundle}.${extid_projectmenu}">
 
     <action
-        label="Enable @LANG_NAME@ Builder"
-        tooltip="Enable the @LANG_NAME@ builder for this project"
+        label="Enable ${ideName} Builder"
+        tooltip="Enable the ${ideName} builder for this project"
         id="${bundle}.${extid_action_nature}">
       <class class="edu.umn.cs.melt.ide.imp.builders.EnableNature">
         <parameter name="nature" value="${bundle}.${extid_nature}" />
@@ -209,13 +220,13 @@ ${funcs.pluginXmlActions}
 <extension point="org.eclipse.ui.newWizards">
   <category
       id="${bundle}.${extid_wizard_category}"
-      name="@LANG_NAME@">
+      name="${ideName}">
   </category>
   <wizard
       category="${bundle}.${extid_wizard_category}"
       class="edu.umn.cs.melt.ide.wizard.NewProjectWizard"
       id="${bundle}.${extid_wizard_newproject}"
-      name="New @LANG_NAME@ Project"
+      name="New ${ideName} Project"
       finalPerspective="${bundle}.${extid_perspective}"
       project="true">
   </wizard>
@@ -228,7 +239,7 @@ ${wizs.pluginXmlWizards}
   <page
       class="edu.umn.cs.melt.ide.eclipse.property.MultiTabPropertyPage"
       id="${bundle}.${extid_properties}"
-      name="@LANG_NAME@">
+      name="${ideName}">
     <enabledWhen>
       <and>
         <instanceof value="org.eclipse.core.resources.IProject"/>
