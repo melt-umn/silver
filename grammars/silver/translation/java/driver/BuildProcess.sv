@@ -187,8 +187,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 abstract production genJava
 top::Unit ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silverGen::String
 {
-  local attribute pr::IO;
-  pr = print("Generating Java Translation.\n", top.ioIn);
+  local pr :: IO = print("Generating Java Translation.\n", top.ioIn);
 
   top.io = writeAll(pr, a, specs, silverGen);
   top.code = 0;
@@ -206,11 +205,8 @@ top::Unit ::= buildFileLocation::String  buildXml::String
 function writeAll
 IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]  silverGen::String
 {
-  local attribute now :: IO;
-  now = writeSpec(i, head(l), silverGen);
-
-  local attribute recurse :: IO;
-  recurse = writeAll(now, a, tail(l), silverGen);
+  local now :: IO = writeSpec(i, head(l), silverGen);
+  local recurse :: IO = writeAll(now, a, tail(l), silverGen);
 
   return if null(l) then i else recurse;
 }
@@ -218,19 +214,20 @@ IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]  silverGen::String
 function writeSpec
 IO ::= i::IO  r::Decorated RootSpec  silverGen::String
 {
-  local attribute printio :: IO;
-  printio = print("\t[" ++ r.declaredName ++ "]\n", i);
+  local printio :: IO = print("\t[" ++ r.declaredName ++ "]\n", i);
+  local path :: String = silverGen ++ "src/" ++ grammarToPath(r.declaredName); 
 
-  production specLocation :: String =
-    silverGen ++ "src/" ++ grammarToPath(r.declaredName); 
-
-  return writeClasses(printio, specLocation, r.genFiles);
+  return writeFiles(printio, path, r.genFiles);
 }
 
-function writeClasses
-IO ::= i::IO l::String s::[Pair<String String>]
+{--
+ - Given a path (with terminating /) and list of (file names relative to that root, contents),
+ - write these out.
+ -}
+function writeFiles
+IO ::= i::IO path::String s::[Pair<String String>]
 {
-  return if null(s) then i else writeFile(l ++ head(s).fst, head(s).snd, writeClasses(i, l, tail(s)));
+  return if null(s) then i else writeFile(path ++ head(s).fst, head(s).snd, writeFiles(i, path, tail(s)));
 }
 
 function zipfileset

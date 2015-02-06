@@ -8,7 +8,7 @@ synthesized attribute pluginXml :: String;
 synthesized attribute pluginXmlActions :: String;
 synthesized attribute pluginXmlWizards :: String;
 synthesized attribute pluginParserClass :: String;
-synthesized attribute pluginGrammar :: String;
+synthesized attribute pluginGrammar :: String; -- TODO: replace with sourceGrammar?
 synthesized attribute ideName :: String;
 synthesized attribute ideVersion :: String;
 
@@ -57,9 +57,10 @@ top::IdeSpec ::=
   top.wizards = wizards;
   top.pluginParserClass = makeParserName(pspec.fullName);
   
-  -- Right now this is horrible. TODO We need to actually determine this in a sensible way.
-  local implang :: String = "@LANG_NAME@";
-  local package :: String = "@PKG_NAME@";
+  -- NOTE: currently, implang = ideName, but we may want to change this
+  -- always use implang as the imp registry language name, and ideName as the user-visible.
+  local implang :: String = ideName;
+  local package :: String = makeName(grammarName);
   local bundle :: String = s"${implang}_IDE";
 
   local funcs :: IdeFunctions = foldr(consIdeFunction, nilIdeFunction(), ideFuncDcls);

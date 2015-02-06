@@ -10,5 +10,5 @@ imports silver:definition:concrete_syntax;
 --imports silver:modification:impide:cstast;
 --imports silver:modification:impide;
 
-imports silver:translation:java:core only makeClassName, makeParserName;
+imports silver:translation:java:core only makeClassName, makeParserName, makeName;
 
