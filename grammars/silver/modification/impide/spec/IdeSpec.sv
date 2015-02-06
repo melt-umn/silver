@@ -3,14 +3,16 @@ grammar silver:modification:impide:spec;
 synthesized attribute ideParserSpec :: ParserSpec;
 synthesized attribute propDcls :: [IdeProperty];
 synthesized attribute wizards :: [IdeWizardDcl];
-synthesized attribute svIdeInterface :: String;
-synthesized attribute pluginXml :: String;
-synthesized attribute pluginXmlActions :: String;
-synthesized attribute pluginXmlWizards :: String;
 synthesized attribute pluginParserClass :: String;
 synthesized attribute pluginGrammar :: String; -- TODO: replace with sourceGrammar?
 synthesized attribute ideName :: String;
 synthesized attribute ideVersion :: String;
+synthesized attribute pluginFiles :: [Pair<String String>];
+
+synthesized attribute svIdeInterface :: String;
+synthesized attribute pluginXml :: String;
+synthesized attribute pluginXmlActions :: String;
+synthesized attribute pluginXmlWizards :: String;
 
 autocopy attribute bundle :: String;
 autocopy attribute implang :: String;
@@ -41,7 +43,7 @@ global extid_wizard_newfile :: String = "wizards.newfile";
 
 global extid_properties :: String = "properties";
 
-nonterminal IdeSpec with ideParserSpec, propDcls, wizards, svIdeInterface, pluginXml, pluginParserClass, pluginGrammar, ideName, ideVersion;
+nonterminal IdeSpec with ideParserSpec, propDcls, wizards, pluginParserClass, pluginGrammar, ideName, ideVersion, pluginFiles;
 
 abstract production ideSpec
 top::IdeSpec ::= 
@@ -79,7 +81,8 @@ top::IdeSpec ::=
     if null(idePropDcls) then [] else ["edu.umn.cs.melt.ide.eclipse.property.TabCommons"];
 
   
-  top.svIdeInterface = s"""
+  top.pluginFiles =
+    [pair("SVIdeInterface.java.template", s"""
 package ${package};
 
 import java.io.IOException;
@@ -151,9 +154,8 @@ public class SVIdeInterface extends SVDefault {
 ${funcs.svIdeInterface}
 ${wizs.svIdeInterface}
 }
-""";
-  
-  top.pluginXml = s"""<?xml version="1.0" encoding="UTF-8"?>
+"""),
+    pair("plugin.xml.template", s"""<?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.0"?>
 <plugin>
 
@@ -257,7 +259,7 @@ ${wizs.pluginXmlWizards}
 ${funcs.pluginXml}
 
 </plugin>
-""";
+""")];
 }
 
 function newTabClass

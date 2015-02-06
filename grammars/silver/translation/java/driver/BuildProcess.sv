@@ -217,7 +217,7 @@ IO ::= i::IO  r::Decorated RootSpec  silverGen::String
   local printio :: IO = print("\t[" ++ r.declaredName ++ "]\n", i);
   local path :: String = silverGen ++ "src/" ++ grammarToPath(r.declaredName); 
 
-  return writeFiles(printio, path, r.genFiles);
+  return writeFiles(path, r.genFiles, printio);
 }
 
 {--
@@ -225,9 +225,9 @@ IO ::= i::IO  r::Decorated RootSpec  silverGen::String
  - write these out.
  -}
 function writeFiles
-IO ::= i::IO path::String s::[Pair<String String>]
+IO ::= path::String s::[Pair<String String>] i::IO
 {
-  return if null(s) then i else writeFile(path ++ head(s).fst, head(s).snd, writeFiles(i, path, tail(s)));
+  return if null(s) then i else writeFile(path ++ head(s).fst, head(s).snd, writeFiles(path, tail(s), i));
 }
 
 function zipfileset
