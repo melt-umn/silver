@@ -1,12 +1,13 @@
 grammar silver:modification:impide:spec;
 
-nonterminal IdeWizards with package, visibleName, implang, bundle, svIdeInterface, pluginXmlWizards;
+nonterminal IdeWizards with pluginFiles, package, visibleName, implang, bundle, svIdeInterface, pluginXmlWizards;
 
 abstract production consIdeWizard
 top::IdeWizards ::= h::IdeWizardDcl  t::IdeWizards
 {
   top.svIdeInterface = h.svIdeInterface ++ t.svIdeInterface;
   top.pluginXmlWizards = h.pluginXmlWizards ++ t.pluginXmlWizards;
+  top.pluginFiles = h.pluginFiles ++ t.pluginFiles;
 }
 
 abstract production nilIdeWizard
@@ -14,6 +15,7 @@ top::IdeWizards ::=
 {
   top.svIdeInterface = "";
   top.pluginXmlWizards = "";
+  top.pluginFiles = [];
 }
 
 -- An IdeWizardDcl includes all the necessary information for generating a Wizard in IDE. 
@@ -21,7 +23,7 @@ top::IdeWizards ::=
 synthesized attribute wizName :: String;
 synthesized attribute wizProps :: [IdeProperty];
 
-nonterminal IdeWizardDcl with package, visibleName, implang, bundle, wizName, wizProps, svIdeInterface, pluginXmlWizards;
+nonterminal IdeWizardDcl with pluginFiles, package, visibleName, implang, bundle, wizName, wizProps, svIdeInterface, pluginXmlWizards;
 
 {--
   func: the full name of stub generator, having signature String ::= [IdeProperty]
@@ -51,5 +53,8 @@ top::IdeWizardDcl ::= func::String props::[IdeProperty]
       name="New ${top.visibleName} Source File">
   </wizard>
 """;
+  top.pluginFiles = [
+    pair(s"eclipse/wizard/${top.wizName}/PropertyControlsProvider.java.template",
+      getPropertyProvider(top.package, top.wizProps, "wizard." ++ top.wizName))];
 }
 
