@@ -12,14 +12,16 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> silvergen::String ide::IdeSpec 
     print("[IDE plugin] Generating class templates.\n", top.ioIn);
 
   local io01::IO =
-    writeFile(getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template", getPropertyProvider(ide.propDcls, "property"),
+    writeFile(getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template",
+      getPropertyProvider(pkgName, ide.propDcls, "property"),
       mkdir(getIDETempFolder() ++ "eclipse/property", io00).io);
 
   local io02::IO =
-    writeFile(getIDETempFolder() ++ "eclipse/wizard/newproject/PropertyGenerator.java.template", getPropertyGenerator(ide.propDcls, "newproject"),
+    writeFile(getIDETempFolder() ++ "eclipse/wizard/newproject/PropertyGenerator.java.template",
+      getPropertyGenerator(pkgName, ide.propDcls, "newproject"),
       mkdir(getIDETempFolder() ++ "eclipse/wizard/newproject", io01).io);
 
-  local io04::IO = createWizardFiles(ide.wizards, io02);
+  local io04::IO = createWizardFiles(pkgName, ide.wizards, io02);
 
   local io10::IO = print("[IDE plugin] Generating parsers.\n", io04);
   
@@ -38,32 +40,32 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> silvergen::String ide::IdeSpec 
 }
 
 function createWizardFiles
-IO ::= wizards::[IdeWizardDcl] io::IO
+IO ::= pkgName::String wizards::[IdeWizardDcl] io::IO
 {
   return
     if null(wizards)
     then io
-    else createWizardFiles(tail(wizards), createFilesForOneWizard(head(wizards), io));
+    else createWizardFiles(pkgName, tail(wizards), createFilesForOneWizard(pkgName, head(wizards), io));
 }
 
 function createFilesForOneWizard
-IO ::= wizardDcl::IdeWizardDcl io::IO
+IO ::= pkgName::String wizardDcl::IdeWizardDcl io::IO
 {
   -- property provider
   local io02 :: IO =
     writeFile(
       getIDETempFolder() ++ "eclipse/wizard/" ++ wizardDcl.wizName ++ "/PropertyControlsProvider.java.template", 
-      getPropertyProvider(wizardDcl.wizProps, "wizard." ++ wizardDcl.wizName),
+      getPropertyProvider(pkgName, wizardDcl.wizProps, "wizard." ++ wizardDcl.wizName),
       mkdir(getIDETempFolder() ++ "eclipse/wizard/" ++ wizardDcl.wizName, io).io);
 
   return io02;
 }
 
 function getPropertyProvider 
-String ::= propDcls :: [IdeProperty] pkgPart::String
+String ::= pkgName::String propDcls :: [IdeProperty] pkgPart::String
 {
   return s"""
-package @PKG_NAME@.eclipse.${pkgPart};
+package ${pkgName}.eclipse.${pkgPart};
 
 import java.util.ArrayList;
 import java.util.List;
@@ -106,12 +108,12 @@ ${foldr(stringConcat, "", map((.controlJavaTranslation), propDcls))}
 }
 
 function getPropertyGenerator 
-String ::= propDcls::[IdeProperty] pkgName::String
+String ::= pkgName::String propDcls::[IdeProperty] pkgFinalPart::String
 {
-  local pkgPart :: String = if pkgName == "" then "" else "." ++ pkgName;
+  local pkgPart :: String = if pkgFinalPart == "" then "" else "." ++ pkgFinalPart;
 
   return s"""
-package @PKG_NAME@.eclipse.wizard${pkgPart};
+package ${pkgName}.eclipse.wizard${pkgPart};
 
 import java.util.ArrayList;
 import java.util.List;
@@ -176,7 +178,7 @@ IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String p::ParserSpec 
   local ideio :: IO =
     writeFile(
       getIDETempFolder() ++ "imp/coloring/" ++ parserName ++ "_TokenClassifier.java.template", 
-      getTokenClassifier(ast.fontList, ast.termFontPairList, parserName), 
+      getTokenClassifier(pkgName, ast.fontList, ast.termFontPairList, parserName), 
       mkdir(getIDETempFolder() ++ "imp/coloring", writeio).io);
 
   return ideio;
@@ -184,10 +186,10 @@ IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String p::ParserSpec 
 
 -- class <pkgName>.imp.coloring.TokenClassifier
 function getTokenClassifier
-String ::= fontList::[Pair<String Font>] termFontPairList::[Pair<String String>] parserName::String
+String ::= pkgName::String fontList::[Pair<String Font>] termFontPairList::[Pair<String String>] parserName::String
 {
 return s"""
-package @PKG_NAME@.imp.coloring;
+package ${pkgName}.imp.coloring;
 
 import java.util.HashMap;
 

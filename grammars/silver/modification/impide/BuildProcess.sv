@@ -26,7 +26,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   local parserPackageName :: String = makeName(ide.ideParserSpec.sourceGrammar);
   local parserPackagePath :: String = grammarToPath2(ide.ideParserSpec.sourceGrammar);
   local ideParserFullPath :: String = getIDEParserFile(ide.ideParserSpec.sourceGrammar, ide.pluginParserClass, "${src}/");
-  local pkgName :: String = makeName(buildGrammar);
+  local pkgName :: String = makeName(ide.pluginGrammar); -- should be equal to buildGrammar
 
   top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, benv.silverGen, ide, pkgName)];
 
@@ -185,14 +185,10 @@ String ::= ide::IdeSpec
     "\n" ++
 
     "  <!-- 3. build properties -->\n" ++
-    -- commented out to support different build modes
-    -- "<copy file=\"${res}/build.properties.template\" tofile=\"${ide.proj.plugin.path}/build.properties\" filtering=\"true\"/>\n" ++
     "  <antcall target=\"create build.properties\" inheritAll=\"true\"/>\n" ++
     "\n" ++
 
     "  <!-- 4. plugin.xml -->\n" ++
-    -- the single-file template is no longer used.
-    -- "  <copy file=\"${res}/plugin.xml.template\" tofile=\"${ide.proj.plugin.path}/plugin.xml\" filtering=\"true\"/>\n" ++
     "  <copy file=\"" ++ getIDETempFolder() ++ "/plugin.xml.template\" tofile=\"${ide.proj.plugin.path}/plugin.xml\" filtering=\"true\"/>\n" ++
     "  \n" ++
     "  <copy file=\"" ++ getIDETempFolder() ++ "/SVIdeInterface.java.template\" tofile=\"${ide.pkg.path}/SVIdeInterface.java\" filtering=\"true\"/>\n" ++
@@ -207,8 +203,6 @@ String ::= ide::IdeSpec
 
     "  <!-- 6. manifest file -->\n" ++
     "  <mkdir dir='${ide.proj.plugin.path}/META-INF/'/>\n" ++
-    -- commented out to support different build modes
-    -- "<copy file=\"${res}/META-INF/MANIFEST.MF.template\" tofile=\"${ide.proj.plugin.path}/META-INF/MANIFEST.MF\" filtering=\"true\"/>\n" ++
     "  <antcall target=\"create manifest file\" inheritAll=\"true\"/>\n" ++
     "  \n" ++
 
@@ -269,8 +263,6 @@ String ::= ide::IdeSpec
     "  <copy file=\"${res}/pom_templates/plugin.pom.xml.template\" tofile=\"${ide.proj.plugin.path}/pom.xml\" filtering=\"true\"/>\n" ++
     "  <!-- feature -->\n" ++
     "  <copy file=\"${res}/pom_templates/feature_templates/build.properties.template\" tofile=\"${ide.proj.feature.path}/build.properties\" filtering=\"true\"/>\n" ++
-    -- commented out to support different build modes
-    -- "<copy file=\"${res}/pom_templates/feature_templates/feature.xml.template\" tofile=\"${ide.proj.feature.path}/feature.xml\" filtering=\"true\"/>\n" ++
     "  <antcall target=\"create Eclipse feature\" inheritAll=\"true\"/>\n" ++
     "  <copy file=\"${res}/pom_templates/feature_templates/pom.xml.template\" tofile=\"${ide.proj.feature.path}/pom.xml\" filtering=\"true\"/>\n" ++
     "  <!-- update site (repository) -->\n" ++
