@@ -12,18 +12,9 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> silvergen::String ide::IdeSpec 
     print("[IDE plugin] Generating class templates.\n", top.ioIn);
 
   local io01::IO =
-    writeFile(getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template",
-      getPropertyProvider(pkgName, ide.propDcls, "property"),
-      mkdir(getIDETempFolder() ++ "eclipse/property", io00).io);
+    mkdirs(getIDETempFolder(), ["eclipse/property", "eclipse/wizard/newproject", "eclipse/wizard/newfile", "imp/coloring"], io00);
 
-  local io02::IO =
-    writeFile(getIDETempFolder() ++ "eclipse/wizard/newproject/PropertyGenerator.java.template",
-      getPropertyGenerator(pkgName, ide.propDcls, "newproject"),
-      mkdir(getIDETempFolder() ++ "eclipse/wizard/newproject", io01).io);
-
-  local io04::IO = createWizardFiles(pkgName, ide.wizards, io02);
-
-  local io10::IO = print("[IDE plugin] Generating parsers.\n", io04);
+  local io10::IO = print("[IDE plugin] Generating parsers.\n", io01);
   
   local io30::IO = writeNCSSpec(io10, grams, silvergen ++ "src/", ide.ideParserSpec, pkgName);
 
@@ -37,26 +28,12 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> silvergen::String ide::IdeSpec 
   top.order = 7;
 }
 
-function createWizardFiles
-IO ::= pkgName::String wizards::[IdeWizardDcl] io::IO
+function mkdirs
+IO ::= path::String  paths::[String]  i::IO
 {
-  return
-    if null(wizards)
-    then io
-    else createWizardFiles(pkgName, tail(wizards), createFilesForOneWizard(pkgName, head(wizards), io));
-}
-
-function createFilesForOneWizard
-IO ::= pkgName::String wizardDcl::IdeWizardDcl io::IO
-{
-  -- property provider
-  local io02 :: IO =
-    writeFile(
-      getIDETempFolder() ++ "eclipse/wizard/" ++ wizardDcl.wizName ++ "/PropertyControlsProvider.java.template", 
-      getPropertyProvider(pkgName, wizardDcl.wizProps, "wizard." ++ wizardDcl.wizName),
-      mkdir(getIDETempFolder() ++ "eclipse/wizard/" ++ wizardDcl.wizName, io).io);
-
-  return io02;
+  return if null(paths) then i
+  else mkdirs(path, tail(paths),
+         mkdir(path ++ head(paths), i).io);
 }
 
 function getPropertyProvider 
@@ -177,7 +154,7 @@ IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String p::ParserSpec 
     writeFile(
       getIDETempFolder() ++ "imp/coloring/" ++ parserName ++ "_TokenClassifier.java.template", 
       getTokenClassifier(pkgName, ast.fontList, ast.termFontPairList, parserName), 
-      mkdir(getIDETempFolder() ++ "imp/coloring", writeio).io);
+      writeio);
 
   return ideio;
 }

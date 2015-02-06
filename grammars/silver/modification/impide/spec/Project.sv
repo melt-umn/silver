@@ -8,7 +8,8 @@ imports silver:definition:concrete_syntax;
 
 --imports silver:definition:concrete_syntax:ast;
 --imports silver:modification:impide:cstast;
---imports silver:modification:impide;
+
+imports silver:modification:impide only getPropertyGenerator, getPropertyProvider;
 
 imports silver:translation:java:core only makeClassName, makeParserName, makeName;
 

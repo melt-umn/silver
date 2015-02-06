@@ -259,7 +259,12 @@ ${wizs.pluginXmlWizards}
 ${funcs.pluginXml}
 
 </plugin>
-""")];
+"""),
+  pair("eclipse/property/PropertyControlsProvider.java.template",
+    getPropertyProvider(package, top.propDcls, "property")),
+  pair("eclipse/wizard/newproject/PropertyGenerator.java.template",
+    getPropertyGenerator(package, top.propDcls, "newproject"))
+  ] ++ wizs.pluginFiles;
 }
 
 function newTabClass
