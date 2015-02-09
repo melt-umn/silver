@@ -25,10 +25,11 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 
   local parserPackageName :: String = makeName(ide.ideParserSpec.sourceGrammar);
   local parserPackagePath :: String = grammarToPath2(ide.ideParserSpec.sourceGrammar);
-  local ideParserFullPath :: String = getIDEParserFile(ide.ideParserSpec.sourceGrammar, ide.pluginParserClass, "${src}/");
   local pkgName :: String = makeName(ide.pluginGrammar); -- should be equal to buildGrammar
 
-  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, benv.silverGen, ide, pkgName)];
+  -- $${jg}/ide/$${ide.pkg.name}/plugin
+  local pluginPath :: String = s"${benv.silverGen}ide/${pkgName}/plugin";
+  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, ide, pluginPath, pkgName)];
 
   classpathCompiler <- if !isIde then [] else ["${sh}/jars/IDEPluginRuntime.jar"];
 
@@ -65,7 +66,6 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     <property name='ide.proj.updatesite.path' location='$${ide.proj.parent.path}/updatesite'/>
     <property name='ide.pkg.path' location='$${ide.proj.plugin.path}/src/${pkgToPath(pkgName)}'/>
     <property name='ide.parser.classname' value='${ide.pluginParserClass}' />
-    <property name='ide.parser.ide_copperfile' value='${ideParserFullPath}' />
     <target name='ide' depends='arg-check, filters, jars, copper, grammars, create-folders, customize, postbuild'>
       <delete dir='${getIDETempFolder()}}'/>
     </target>
@@ -160,10 +160,6 @@ String ::= ide::IdeSpec
 {
   return 
     "  \n" ++
-    "  <!-- 0. clean up -->\n" ++
-    "  <delete dir='${ide.proj.parent.path}'/>\n" ++
-    "\n" ++
-
     "  <!-- 1. create project folder -->\n" ++
     "  <mkdir dir='${ide.proj.plugin.path}'/>\n" ++
     "  <mkdir dir='${ide.proj.plugin.path}/src'/>\n" ++
@@ -180,7 +176,7 @@ String ::= ide::IdeSpec
     "    outputFile='${ide.pkg.path}/copper/parser/${ide.parser.classname}.java'\n" ++
     "    useSkin='XML' warnUselessNTs='false' dumpFormat='HTML' dump='ERROR_ONLY'\n" ++
     "    dumpFile='${ide.parser.classname}.copperdump.html'>\n" ++
-    "      <inputs file='${ide.parser.ide_copperfile}'/>\n" ++
+    "      <inputs file='${ide.pkg.path}/copper/parser/${ide.parser.classname}.copper'/>\n" ++
     "  </copper>\n" ++
     "\n" ++
 
@@ -291,11 +287,5 @@ function grammarToExportString
 String ::= g::String
 {
   return makeName(g) ++ ";version=\"${ide.version}\"";
-}
-
-function getIDEParserFile
-String ::= grammarName::String parserClassName::String silverGen::String
-{
-  return silverGen ++ grammarToPath2(grammarName) ++ parserClassName ++ "_ide.copper";
 }
 

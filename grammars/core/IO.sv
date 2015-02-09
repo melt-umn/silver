@@ -266,6 +266,21 @@ IOVal<Boolean> ::= s::String i::IO
 }
 
 {--
+ - Delete a non-empty directory and all subdirectories and files.
+ -
+ - @param s  The path to the directory to delete
+ - @param i  The "before" world-state token.
+ - @return  The IO token. Errors (other than non-existence of the path) are fatal.
+ -}
+function deleteTree
+IO ::= s::String  i::IO
+{
+  return error("Not Yet Implemented: deleteTree");
+} foreign {
+  "java" : return "common.Util.io(%i%, common.Util.deleteTree(%s%.toString()))";
+}
+
+{--
  - Copy a file from src to dst.
  -
  - @param src  The path to read
