@@ -158,6 +158,29 @@ public final class Util {
 		return new File(sb).delete();
 	}
 	
+	public static void deleteTree(String path) {
+		deleteTreeRecursive(new File(path));
+	}
+	private static void deleteTreeRecursive(File f) {
+		if(!f.exists()) {
+			// Be silent about this "error condition"
+			return;
+		}
+		// Juuuust in case, we should never be trying to delete "/" or "/home" or "c:/users" etc.
+		if(f.getAbsolutePath().length() < 9)
+			throw new RuntimeException("Canary against deleting things we shouldn't. Tried to delete path: " + f);
+		// This approach is bad, but nothing really better for Java 6.
+		// When we can use Java 7, use File.walkFileTree, to handle symlinks properly.
+		if(f.isDirectory()) {
+			for (File child : f.listFiles())
+				deleteTreeRecursive(child);
+		}
+		// Terminate eagerly, just in case we've wandered through a symlink to somewhere important,
+		// and that's how we encountered a file we don't have permissions for.
+		if(!f.delete())
+			throw new RuntimeException("Failed to delete file: " + f);
+	}
+	
     public static StringCatter getStr ( ) {
 	try {
 	    InputStreamReader isr = new InputStreamReader(System.in);
