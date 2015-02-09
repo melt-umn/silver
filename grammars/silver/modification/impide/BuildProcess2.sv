@@ -4,19 +4,29 @@ import silver:driver;
 import silver:translation:java;
 import silver:util:cmdargs;
 
--- generate Copper Spec and other template files for IDE plugin
+{--
+ - @param grams  Compiled grammars (used to generate parser)
+ - @param ide  The ide specification to generate files for.
+ - @param pluginPath  The path to the plugin generation directory
+ -   (e.g. generated/ide/silver.composed.idetest/plugin)
+ -   (contains: src/ plugin.xml etc)
+ -}
 abstract production generateNCS
-top::Unit ::= grams::EnvTree<Decorated RootSpec> silvergen::String ide::IdeSpec pkgName::String
+top::Unit ::= grams::EnvTree<Decorated RootSpec> ide::IdeSpec pluginPath::String pkgName::String
 {
+  local pluginPackagePath :: String = s"${pluginPath}/src/${pkgToPath(pkgName)}";
+
   local io00::IO =
     print("[IDE plugin] Generating class templates.\n", top.ioIn);
 
   local io01::IO =
-    mkdirs(getIDETempFolder(), ["eclipse/property", "eclipse/wizard/newproject", "eclipse/wizard/newfile", "imp/coloring"], io00);
+    mkdirs(getIDETempFolder(), ["eclipse/property", "eclipse/wizard/newproject", "eclipse/wizard/newfile", "imp/coloring"], 
+    mkdirs(pluginPackagePath ++ "/", ["copper/parser"], 
+    deleteTree(pluginPath, io00)));
 
   local io10::IO = print("[IDE plugin] Generating parsers.\n", io01);
   
-  local io30::IO = writeNCSSpec(io10, grams, silvergen ++ "src/", ide.ideParserSpec, pkgName);
+  local io30::IO = writeNCSSpec(io10, grams, ide.ideParserSpec, pluginPackagePath, pkgName);
 
   local io40::IO = print("[IDE plugin] Generating plugin.xml template.\n", io30);
 
@@ -133,7 +143,7 @@ ${foldr(stringConcat, "", map((.generatorJavaTranslation), propDcls))}
 }
 
 function writeNCSSpec
-IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String p::ParserSpec pkgName::String 
+IO ::= i::IO grams::EnvTree<Decorated RootSpec> p::ParserSpec pluginPackagePath::String pkgName::String
 {
   p.compiledGrammars = grams;
   
@@ -144,7 +154,7 @@ IO ::= i::IO grams::EnvTree<Decorated RootSpec> silvergen::String p::ParserSpec 
 
   local parserName :: String = makeParserName(p.fullName);
 
-  local copperFile :: String = getIDEParserFile(p.sourceGrammar, parserName, silvergen);
+  local copperFile :: String = s"${pluginPackagePath}/copper/parser/${parserName}.copper";
 
   local printio :: IO = print("\t[" ++ p.fullName ++ "]\n", i);
   
