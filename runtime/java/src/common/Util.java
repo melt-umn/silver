@@ -158,8 +158,9 @@ public final class Util {
 		return new File(sb).delete();
 	}
 	
-	public static void deleteTree(String path) {
+	public static Object deleteTree(String path) {
 		deleteTreeRecursive(new File(path));
+		return null;
 	}
 	private static void deleteTreeRecursive(File f) {
 		if(!f.exists()) {
