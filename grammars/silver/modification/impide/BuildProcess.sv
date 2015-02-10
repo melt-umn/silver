@@ -33,25 +33,6 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 
   extraTopLevelDecls <- if !isIde then [] else [
     s"""
-    <macrodef name="getIDERuntimeVersion">
-      <sequential>
-        <loadproperties>
-          <!-- From ZIP entries in runtime jar, -->
-          <zipentry zipfile="$${sh}/jars/IDEPluginRuntime.jar" name="META-INF/MANIFEST.MF"/>
-          <filterchain>
-            <!-- load the line containing "Bundle-Version", -->
-            <linecontains>
-              <contains value="Bundle-Version"/>
-            </linecontains>
-            <!-- as Ant property, with name set to be "ide_rt.Bundle-Version". -->
-            <prefixlines prefix="ide_rt."/>
-          </filterchain>
-        </loadproperties>
-      </sequential>
-    </macrodef>
-    <!-- Load version of IDE runtime into $${ide_rt.Bundle-Version} -->
-    <getIDERuntimeVersion />
-    <property name='ide.rt.version' value='$${ide_rt.Bundle-Version}'/>
     <property name='grammar.path' value='${head(builtGrammar).grammarSource}'/>
     <property name='res' value='$${sh}/resources'/>
     <property name='ide.version' value='${ide.ideVersion}'/>
@@ -60,8 +41,6 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     <property name='ide.pkg.name' value='${pkgName}'/>
     <property name='ide.proj.parent.path' location='$${jg}/ide/$${ide.pkg.name}'/>
     <property name='ide.proj.plugin.path' location='$${ide.proj.parent.path}/plugin'/>
-    <property name='ide.proj.feature.path' location='$${ide.proj.parent.path}/feature'/>
-    <property name='ide.proj.updatesite.path' location='$${ide.proj.parent.path}/updatesite'/>
     <property name='ide.pkg.path' location='$${ide.proj.plugin.path}/src/${pkgToPath(pkgName)}'/>
     <property name='ide.parser.classname' value='${ide.pluginParserClass}' />
     <target name='ide' depends='jars'>
@@ -80,7 +59,6 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
       <filter token="FEATURE_COPYRIGHT_TEXT" value='no copyright information available'/>
       <filter token="FEATURE_LICENSE_URL" value='http://some.user.provided.url'/>
       <filter token="FEATURE_LICENSE_TEXT" value='no license information available'/>
-      <filter token="IDE_RT_VERSION" value='$${ide.rt.version}'/>
 
     <!-- 1. create project structure -->
       <mkdir dir='$${ide.proj.plugin.path}/resource/'/>
@@ -100,9 +78,9 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
       </copper>
     <!-- 5. plugin dependencies -->
       <copy file="$${lang.composed}.jar" tofile="$${ide.proj.plugin.path}/$${lang.composed}.jar"/>
-      <copy file="$${sh}/jars/CopperRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.copper.jar"/>
-      <copy file="$${sh}/jars/SilverRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.silver.jar"/>
-      <copy file="$${sh}/jars/IDEPluginRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.ide.copper-$${ide.rt.version}.jar"/>
+      <copy file="$${sh}/jars/CopperRuntime.jar" tofile="$${ide.proj.plugin.path}/CopperRuntime.jar"/>
+      <copy file="$${sh}/jars/SilverRuntime.jar" tofile="$${ide.proj.plugin.path}/SilverRuntime.jar"/>
+      <copy file="$${sh}/jars/IDEPluginRuntime.jar" tofile="$${ide.proj.plugin.path}/IDEPluginRuntime.jar"/>
     <!-- 10. Ide resources -->
 ${implode("", map(copyIdeResource, ide.ideResources))}
     </target>
