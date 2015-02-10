@@ -1,6 +1,8 @@
 package edu.umn.cs.melt.ide.util;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.URL;
 import java.util.Arrays;
 
 import org.eclipse.ant.core.AntRunner;
@@ -10,7 +12,9 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Platform;
 
 import common.ConsCell;
 import common.StringCatter;
@@ -22,6 +26,7 @@ import core.Pjust;
 import core.Pnothing;
 
 import edu.umn.cs.melt.ide.imp.services.Console;
+import edu.umn.cs.melt.ide.impl.SVRegistry;
 
 /**
  * This utility class is an API collection used mainly by Silver code (through
@@ -247,5 +252,19 @@ public final class Util {
 		IResource resource = (IResource)_resource;
 		boolean result = resource.exists();
 		return new Pioval(ioin, result);
+	}
+	
+	public static NIOVal getIdeResource(StringCatter id, Object ioin) {
+		URL url = Platform.getBundle(SVRegistry.get().pluginId()).getEntry("resource/" + id.toString());
+		String fileurl = "";
+		try {
+			// Evidently, when it's a file url, getFile gets the whole path string
+			fileurl = FileLocator.toFileURL(url).getFile().toString();
+		} catch (IOException e) {
+			// TODO Not sure what to do ~
+			e.printStackTrace();
+		}
+		System.out.println("For " + id.toString() + " got " + fileurl);
+		return new Pioval(ioin, new StringCatter(fileurl));
 	}
 }
