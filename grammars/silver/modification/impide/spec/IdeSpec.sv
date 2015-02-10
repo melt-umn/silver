@@ -266,6 +266,31 @@ ${funcs.pluginXml}
 
 </plugin>
 """),
+  pair(s"${pluginPkgPath}Plugin.java",
+    s"""
+package ${package};
+
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleActivator;
+
+import edu.umn.cs.melt.ide.impl.SVRegistry;
+
+public class Plugin implements BundleActivator {
+
+    public void start(BundleContext context) throws Exception {
+
+        Init.initAllStatics();
+        Init.init();
+        Init.postInit();
+
+        SVRegistry.register(new SVIdeInterface());
+    }
+
+    @Override
+    public void stop(BundleContext context) throws Exception {
+    }
+}
+"""),
   pair(s"${pluginPkgPath}eclipse/property/PropertyControlsProvider.java",
     getPropertyProvider(package, idePropDcls, "property")),
   pair(s"${pluginPkgPath}eclipse/wizard/newproject/PropertyGenerator.java",

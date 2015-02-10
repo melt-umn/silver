@@ -20,5 +20,5 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.console,
  org.eclipse.ui.ide,
  org.eclipse.ant.core
-Bundle-Activator: @PKG_NAME@.imp.@LANG_NAME@Plugin
+Bundle-Activator: @PKG_NAME@.Plugin
 Eclipse-LazyStart: true
