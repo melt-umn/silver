@@ -5,8 +5,8 @@
  */
 package @PKG_NAME@.imp;
 
-import org.eclipse.imp.runtime.PluginBase;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleActivator;
 
 import org.eclipse.core.runtime.CoreException;
 
@@ -14,29 +14,9 @@ import edu.umn.cs.melt.ide.util.Util;
 import edu.umn.cs.melt.ide.util.cst.Locator;
 import edu.umn.cs.melt.ide.util.cst.DefinitionFinder;
 
-public class @LANG_NAME@Plugin extends PluginBase {
-
-    public static final String kPluginID = "@LANG_NAME@_IDE";
-    public static final String kLanguageID = "@LANG_NAME@";
-    
-    /**
-     * The unique instance of this plugin class
-     */
-    protected static @LANG_NAME@Plugin sPlugin;
-
-    public static @LANG_NAME@Plugin getInstance() {
-    	if (sPlugin == null)
-    		new @LANG_NAME@Plugin();
-        return sPlugin;
-    }
-
-    public @LANG_NAME@Plugin() {
-    	super();
-    	sPlugin = this;
-    }
+public class @LANG_NAME@Plugin implements BundleActivator {
 
     public void start(BundleContext context) throws Exception {
-        super.start(context);
 
         @PKG_NAME@.Init.initAllStatics();
         @PKG_NAME@.Init.init();
@@ -49,16 +29,6 @@ public class @LANG_NAME@Plugin extends PluginBase {
     }
 
     @Override
-    public void shutdown() {        
-    }
-
-    @Override
-    public String getID() {
-    	return kPluginID;
-    }  
-
-    @Override
-    public String getLanguageID() {
-        return kLanguageID;
+    public void stop(BundleContext context) throws Exception {
     }
 }

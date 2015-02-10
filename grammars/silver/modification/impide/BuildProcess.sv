@@ -64,22 +64,10 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     <property name='ide.proj.updatesite.path' location='$${ide.proj.parent.path}/updatesite'/>
     <property name='ide.pkg.path' location='$${ide.proj.plugin.path}/src/${pkgToPath(pkgName)}'/>
     <property name='ide.parser.classname' value='${ide.pluginParserClass}' />
-    <target name='ide' depends='arg-check, filters, jars, copper, grammars, create-folders, customize, postbuild'>
-    </target>
-    <target name='ide-init'>
+    <target name='ide' depends='jars'>
       <tstamp>
         <format property='ide.build-timestamp' pattern='yyMMddHHmmss' timezone='UTC'/>
       </tstamp>
-    </target>
-    <target name='arg-check'>
-      <condition property="to-customize">
-        <available file="$${grammar.path}/plugin" type="dir"/>
-      </condition>
-      <condition property="to-postbuild">
-        <available file="$${grammar.path}/postbuild.xml" type="file"/>
-      </condition>
-    </target>
-    <target name='filters'>
       <filter token="GROUP_ID" value='$${ide.pkg.name}'/>
       <filter token="PKG_NAME" value='$${ide.pkg.name}'/>
       <filter token="LANG_NAME" value='$${lang.name}'/>
@@ -93,8 +81,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
       <filter token="FEATURE_LICENSE_URL" value='http://some.user.provided.url'/>
       <filter token="FEATURE_LICENSE_TEXT" value='no license information available'/>
       <filter token="IDE_RT_VERSION" value='$${ide.rt.version}'/>
-    </target>
-    <target name='create-folders'>
+
     <!-- 1. create project folder -->
       <mkdir dir='$${ide.proj.feature.path}'/>
       <mkdir dir='$${ide.proj.updatesite.path}'/>
@@ -140,25 +127,11 @@ ${implode("", map(copyIdeResource, ide.ideResources))}
       <copy file="$${res}/pom_templates/updatesite_templates/category.xml.template" tofile="$${ide.proj.updatesite.path}/category.xml" filtering="true"/>
       <copy file="$${res}/pom_templates/updatesite_templates/pom.xml.template" tofile="$${ide.proj.updatesite.path}/pom.xml" filtering="true"/>
     </target>
-    <target name='customize' if="to-customize" depends='arg-check, filters'>
-      <copy todir="$${ide.proj.plugin.path}" overwrite="true" filtering="true">
-        <fileset dir="$${grammar.path}/plugin/"/>
-      </copy>
-    </target>
-    <!--this is for ant post-build; not to be confused with IDE postbuilder function-->
-    <target name='postbuild' if="to-postbuild">
-      <ant antfile="$${grammar.path}/postbuild.xml">
-        <!-- all the global properties defined in build.xml will be passed along to postbuild.xml -->
-      </ant>
-    </target>
 """
-
     ];
 
   extraDistDeps <- if !isIde then [] else ["ide"]; -- Here's where we demand that target be built ('dist' is a dummy target that just depends on 'jars' initially)
   
-  extraGrammarsDeps <- if !isIde then [] else ["ide-init"]; -- enhance the language implementation by adding more source files, for use of IDE. (see target enhance)
-
   -- We're not actually using the generated (by silver / ant) jar as an OSGi bundle
   -- and if we ever do, we should probably put this as part of the normal build process instead.
   -- extraManifestAttributes <-
