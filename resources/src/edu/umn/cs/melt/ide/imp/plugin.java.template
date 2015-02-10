@@ -8,11 +8,7 @@ package @PKG_NAME@.imp;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleActivator;
 
-import org.eclipse.core.runtime.CoreException;
-
-import edu.umn.cs.melt.ide.util.Util;
-import edu.umn.cs.melt.ide.util.cst.Locator;
-import edu.umn.cs.melt.ide.util.cst.DefinitionFinder;
+import edu.umn.cs.melt.ide.impl.SVRegistry;
 
 public class @LANG_NAME@Plugin implements BundleActivator {
 
@@ -22,10 +18,7 @@ public class @LANG_NAME@Plugin implements BundleActivator {
         @PKG_NAME@.Init.init();
         @PKG_NAME@.Init.postInit();
 
-        edu.umn.cs.melt.ide.impl.SVRegistry.register(new @PKG_NAME@.SVIdeInterface());
-
-        //Set up definition locator
-        Locator.setDefinitionFinder(new DefinitionFinder());
+        SVRegistry.register(new @PKG_NAME@.SVIdeInterface());
     }
 
     @Override
