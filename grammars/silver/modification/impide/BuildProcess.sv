@@ -23,8 +23,6 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   local ide :: IdeSpec = head(head(builtGrammar).ideSpecs);
   local isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
 
-  local parserPackageName :: String = makeName(ide.ideParserSpec.sourceGrammar);
-  local parserPackagePath :: String = grammarToPath(ide.ideParserSpec.sourceGrammar);
   local pkgName :: String = makeName(ide.pluginGrammar); -- should be equal to buildGrammar
 
   -- $${jg}/ide/$${ide.pkg.name}/plugin
@@ -67,7 +65,6 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     <property name='ide.pkg.path' location='$${ide.proj.plugin.path}/src/${pkgToPath(pkgName)}'/>
     <property name='ide.parser.classname' value='${ide.pluginParserClass}' />
     <target name='ide' depends='arg-check, filters, jars, copper, grammars, create-folders, customize, postbuild'>
-      <delete dir='${getIDETempFolder()}}'/>
     </target>
     <target name='ide-init'>
       <tstamp>
@@ -96,9 +93,51 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
       <filter token="FEATURE_LICENSE_URL" value='http://some.user.provided.url'/>
       <filter token="FEATURE_LICENSE_TEXT" value='no license information available'/>
       <filter token="IDE_RT_VERSION" value='$${ide.rt.version}'/>
-    </target>""",
-    "<target name='create-folders'>" ++ getCreateFoldersTarget(ide) ++ "</target>",
- s"""
+    </target>
+    <target name='create-folders'>
+    <!-- 1. create project folder -->
+      <mkdir dir='$${ide.proj.feature.path}'/>
+      <mkdir dir='$${ide.proj.updatesite.path}'/>
+    <!-- 2. copper parser -->
+      <copper
+          packageName='$${ide.pkg.name}.copper.parser'
+          parserName='$${ide.parser.classname}'
+          outputFile='$${ide.pkg.path}/copper/parser/$${ide.parser.classname}.java'
+          useSkin='XML' warnUselessNTs='false' dumpFormat='HTML' dump='ERROR_ONLY'
+          dumpFile='$${ide.parser.classname}.copperdump.html'>
+        <inputs file='$${ide.pkg.path}/copper/parser/$${ide.parser.classname}.copper'/>
+      </copper>
+    <!-- 3. build properties -->
+      <copy file="$${res}/build.properties.template" tofile="$${ide.proj.plugin.path}/build.properties" filtering="true"/>
+    <!-- 5. plugin dependencies -->
+      <copy file="$${lang.composed}.jar" tofile="$${ide.proj.plugin.path}/$${lang.composed}.jar"/>
+      <copy file="$${sh}/jars/CopperRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.copper.jar"/>
+      <copy file="$${sh}/jars/SilverRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.silver.jar"/>
+      <copy file="$${sh}/jars/IDEPluginRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.ide.copper-$${ide.rt.version}.jar"/>
+    <!-- 6. manifest file -->
+      <mkdir dir='$${ide.proj.plugin.path}/META-INF/'/>
+      <copy file="$${res}/META-INF/MANIFEST.MF.template" tofile="$${ide.proj.plugin.path}/META-INF/MANIFEST.MF" filtering="true"/>
+    <!-- 8. core plug-in classes -->
+      <mkdir dir='$${ide.pkg.path}/'/>  
+      <mkdir dir='$${ide.pkg.path}/imp/'/>  
+    <!-- Plugin main class (OSGi starter class) -->
+      <copy file="$${res}/src/edu/umn/cs/melt/ide/imp/plugin.java.template"
+            tofile="$${ide.pkg.path}/imp/$${lang.name}Plugin.java" filtering="true"/>
+    <!-- 10. Images and other media resources -->
+      <mkdir dir='$${ide.proj.plugin.path}/icons'/>
+      <copy todir="$${ide.proj.plugin.path}/icons/">
+        <fileset dir="$${res}/icons/"/>
+      </copy>
+    <!-- 11. pom.xml (using tycho) for building plugin, feature and repository -->
+      <copy file="$${res}/pom_templates/parent.pom.xml.template" tofile="$${ide.proj.parent.path}/pom.xml" filtering="true"/>
+      <copy file="$${res}/pom_templates/plugin.pom.xml.template" tofile="$${ide.proj.plugin.path}/pom.xml" filtering="true"/>
+      <copy file="$${res}/pom_templates/feature_templates/build.properties.template" tofile="$${ide.proj.feature.path}/build.properties" filtering="true"/>
+      <copy file="$${res}/pom_templates/feature_templates/feature.xml.template"
+            tofile="$${ide.proj.feature.path}/feature.xml" filtering="true"/>
+      <copy file="$${res}/pom_templates/feature_templates/pom.xml.template" tofile="$${ide.proj.feature.path}/pom.xml" filtering="true"/>
+      <copy file="$${res}/pom_templates/updatesite_templates/category.xml.template" tofile="$${ide.proj.updatesite.path}/category.xml" filtering="true"/>
+      <copy file="$${res}/pom_templates/updatesite_templates/pom.xml.template" tofile="$${ide.proj.updatesite.path}/pom.xml" filtering="true"/>
+    </target>
     <target name='customize' if="to-customize" depends='arg-check, filters'>
       <copy todir="$${ide.proj.plugin.path}" overwrite="true" filtering="true">
         <fileset dir="$${grammar.path}/plugin/"/>
@@ -110,22 +149,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
         <!-- all the global properties defined in build.xml will be passed along to postbuild.xml -->
       </ant>
     </target>
-    <!-- Supporting targets based on the build mode -->
-    <target name="create build.properties" depends="filters">
-      <copy file="$${res}/build.properties.template" tofile="$${ide.proj.plugin.path}/build.properties" filtering="true"/>
-    </target>
-    <target name="create manifest file" depends="filters">	
-      <copy file="$${res}/META-INF/MANIFEST.MF.template" tofile="$${ide.proj.plugin.path}/META-INF/MANIFEST.MF" filtering="true"/>
-    </target>
-    <target name="create Eclipse feature" depends="filters">	
-      <copy file="$${res}/pom_templates/feature_templates/feature.xml.template"
-            tofile="$${ide.proj.feature.path}/feature.xml" filtering="true"/>
-    </target>
-    <target name="copy plugin dependencies">	
-      <copy file="$${sh}/jars/CopperRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.copper.jar"/>
-      <copy file="$${sh}/jars/SilverRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.silver.jar"/>
-      <copy file="$${sh}/jars/IDEPluginRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.ide.copper-$${ide.rt.version}.jar"/>
-    </target>"""
+"""
 
     ];
 
@@ -139,90 +163,6 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 }
 
 
-function getCreateFoldersTarget
-String ::= ide::IdeSpec
-{
-  return 
-    "  \n" ++
-    "  <!-- 1. create project folder -->\n" ++
-    "  <mkdir dir='${ide.proj.plugin.path}'/>\n" ++
-    "  <mkdir dir='${ide.proj.plugin.path}/src'/>\n" ++
-    "  <mkdir dir='${ide.proj.plugin.path}/bin'/>\n" ++
-    "  <mkdir dir='${ide.proj.feature.path}'/>\n" ++
-    "  <mkdir dir='${ide.proj.updatesite.path}'/>\n" ++
-    "\n" ++
-
-    "  <!-- 2. copper parser -->\n" ++
-    "  <mkdir dir='${ide.pkg.path}/copper/parser/'/>\n" ++
-    "  <copper\n" ++
-    "    packageName='${ide.pkg.name}.copper.parser'\n" ++
-    "    parserName='${ide.parser.classname}'\n" ++
-    "    outputFile='${ide.pkg.path}/copper/parser/${ide.parser.classname}.java'\n" ++
-    "    useSkin='XML' warnUselessNTs='false' dumpFormat='HTML' dump='ERROR_ONLY'\n" ++
-    "    dumpFile='${ide.parser.classname}.copperdump.html'>\n" ++
-    "      <inputs file='${ide.pkg.path}/copper/parser/${ide.parser.classname}.copper'/>\n" ++
-    "  </copper>\n" ++
-    "\n" ++
-
-    "  <!-- 3. build properties -->\n" ++
-    "  <antcall target=\"create build.properties\" inheritAll=\"true\"/>\n" ++
-    "\n" ++
-
-    "  <!-- 5. plugin dependencies -->\n" ++
-    "  <!-- (1) language implementation -->\n" ++
-    "  <copy file=\"${lang.composed}.jar\" tofile=\"${ide.proj.plugin.path}/${lang.composed}.jar\"/>\n" ++
-    "  <!-- (2) runtimes -->\n" ++
-    "  <antcall target=\"copy plugin dependencies\"/>\n"++
-    "  \n" ++
-
-    "  <!-- 6. manifest file -->\n" ++
-    "  <mkdir dir='${ide.proj.plugin.path}/META-INF/'/>\n" ++
-    "  <antcall target=\"create manifest file\" inheritAll=\"true\"/>\n" ++
-    "  \n" ++
-
-    "  <!-- 8. core plug-in classes -->\n" ++
-    "  <mkdir dir='${ide.pkg.path}/'/>\n" ++  
-    "  <mkdir dir='${ide.pkg.path}/imp/'/>\n" ++  
-    "  <!-- Plugin main class (OSGi starter class) -->\n" ++
-    "  <copy file=\"${res}/src/edu/umn/cs/melt/ide/imp/plugin.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/imp/${lang.name}Plugin.java\" filtering=\"true\"/>\n" ++
-    "  \n" ++
-
-    "  <mkdir dir='${ide.pkg.path}/imp/coloring'/>\n" ++
-    "  <!-- Language syntax highlighting classes, supported by IMP -->\n" ++
-    "  <copy todir=\"${ide.pkg.path}/imp/coloring/\" overwrite=\"true\" filtering=\"true\">\n" ++
-    "        <fileset dir=\"" ++ getIDETempFolder() ++ "imp/coloring/\"/>\n" ++
-    "        <globmapper from=\"*.java.template\" to=\"*.java\"/>\n" ++
-    "  </copy>\n" ++
-    "  \n" ++
-
-    "  <mkdir dir='${ide.pkg.path}/eclipse/wizard'/>\n" ++
-    "  <mkdir dir='${ide.pkg.path}/eclipse/wizard/newproject'/>\n" ++
-
-    "  <!-- 10. Images and other media resources -->\n" ++
-    "  <mkdir dir='${ide.proj.plugin.path}/icons'/>\n" ++
-    "  <copy todir=\"${ide.proj.plugin.path}/icons/\">\n" ++
-    "        <fileset dir=\"${res}/icons/\"/>\n" ++
-    "  </copy>\n" ++
-    "  \n" ++
-
-    "  <!-- 11. pom.xml (using tycho) for building plugin, feature and repository -->\n" ++
-    "  <!-- parent -->\n" ++
-    "  <copy file=\"${res}/pom_templates/parent.pom.xml.template\" tofile=\"${ide.proj.parent.path}/pom.xml\" filtering=\"true\"/>\n" ++
-    "  <!-- plugin -->\n" ++
-    "  <copy file=\"${res}/pom_templates/plugin.pom.xml.template\" tofile=\"${ide.proj.plugin.path}/pom.xml\" filtering=\"true\"/>\n" ++
-    "  <!-- feature -->\n" ++
-    "  <copy file=\"${res}/pom_templates/feature_templates/build.properties.template\" tofile=\"${ide.proj.feature.path}/build.properties\" filtering=\"true\"/>\n" ++
-    "  <antcall target=\"create Eclipse feature\" inheritAll=\"true\"/>\n" ++
-    "  <copy file=\"${res}/pom_templates/feature_templates/pom.xml.template\" tofile=\"${ide.proj.feature.path}/pom.xml\" filtering=\"true\"/>\n" ++
-    "  <!-- update site (repository) -->\n" ++
-    "  <copy file=\"${res}/pom_templates/updatesite_templates/category.xml.template\" tofile=\"${ide.proj.updatesite.path}/category.xml\" filtering=\"true\"/>\n" ++
-    "  <copy file=\"${res}/pom_templates/updatesite_templates/pom.xml.template\" tofile=\"${ide.proj.updatesite.path}/pom.xml\" filtering=\"true\"/>\n" ++
-    "  \n"
-
-  ;
-}
-
 function toUpperCase
 String ::= original::String
 {
@@ -235,11 +175,5 @@ function pkgToPath
 String ::= pkg::String
 {
   return substitute(".", "/", pkg);
-}
-
-function grammarToExportString
-String ::= g::String
-{
-  return makeName(g) ++ ";version=\"${ide.version}\"";
 }
 
