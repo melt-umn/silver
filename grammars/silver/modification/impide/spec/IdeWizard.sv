@@ -1,6 +1,6 @@
 grammar silver:modification:impide:spec;
 
-nonterminal IdeWizards with pluginFiles, package, visibleName, implang, bundle, svIdeInterface, pluginXmlWizards;
+nonterminal IdeWizards with pluginPkgPath, pluginFiles, package, visibleName, implang, bundle, svIdeInterface, pluginXmlWizards;
 
 abstract production consIdeWizard
 top::IdeWizards ::= h::IdeWizardDcl  t::IdeWizards
@@ -23,7 +23,7 @@ top::IdeWizards ::=
 synthesized attribute wizName :: String;
 synthesized attribute wizProps :: [IdeProperty];
 
-nonterminal IdeWizardDcl with pluginFiles, package, visibleName, implang, bundle, wizName, wizProps, svIdeInterface, pluginXmlWizards;
+nonterminal IdeWizardDcl with pluginPkgPath, pluginFiles, package, visibleName, implang, bundle, wizName, wizProps, svIdeInterface, pluginXmlWizards;
 
 {--
   func: the full name of stub generator, having signature String ::= [IdeProperty]
@@ -54,7 +54,7 @@ top::IdeWizardDcl ::= func::String props::[IdeProperty]
   </wizard>
 """;
   top.pluginFiles = [
-    pair(s"eclipse/wizard/${top.wizName}/PropertyControlsProvider.java.template",
+    pair(s"${top.pluginPkgPath}eclipse/wizard/${top.wizName}/PropertyControlsProvider.java",
       getPropertyProvider(top.package, top.wizProps, "wizard." ++ top.wizName))];
 }
 

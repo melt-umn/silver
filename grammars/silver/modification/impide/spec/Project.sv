@@ -13,3 +13,5 @@ imports silver:modification:impide only getPropertyGenerator, getPropertyProvide
 
 imports silver:translation:java:core only makeClassName, makeParserName, makeName;
 
+imports silver:driver:util only grammarToPath;
+

@@ -10,3 +10,5 @@ imports silver:definition:concrete_syntax:ast;
 imports silver:modification:impide:cstast;
 imports silver:modification:impide:spec;
 
+imports silver:driver:util only grammarToPath;
+
