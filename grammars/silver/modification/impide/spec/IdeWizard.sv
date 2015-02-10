@@ -20,10 +20,7 @@ top::IdeWizards ::=
 
 -- An IdeWizardDcl includes all the necessary information for generating a Wizard in IDE. 
 
-synthesized attribute wizName :: String;
-synthesized attribute wizProps :: [IdeProperty];
-
-nonterminal IdeWizardDcl with pluginPkgPath, pluginFiles, package, visibleName, implang, bundle, wizName, wizProps, svIdeInterface, pluginXmlWizards;
+nonterminal IdeWizardDcl with pluginPkgPath, pluginFiles, package, visibleName, implang, bundle, svIdeInterface, pluginXmlWizards;
 
 {--
   func: the full name of stub generator, having signature String ::= [IdeProperty]
@@ -32,12 +29,10 @@ nonterminal IdeWizardDcl with pluginPkgPath, pluginFiles, package, visibleName, 
 abstract production newfileWizard
 top::IdeWizardDcl ::= func::String props::[IdeProperty]
 {
-  top.wizName = "newfile"; -- newfile  display: new file
-  top.wizProps = props;
   top.svIdeInterface = s"""
 	@Override
 	public IPropertyControlsProvider getNewFileProperties() {
-		return new ${top.package}.eclipse.wizard.${top.wizName}.PropertyControlsProvider();
+		return new ${top.package}.eclipse.wizard.newfile.PropertyControlsProvider();
 	}
 	@Override
 	public StringCatter fileStub(ConsCell properties) {
@@ -54,7 +49,7 @@ top::IdeWizardDcl ::= func::String props::[IdeProperty]
   </wizard>
 """;
   top.pluginFiles = [
-    pair(s"${top.pluginPkgPath}eclipse/wizard/${top.wizName}/PropertyControlsProvider.java",
-      getPropertyProvider(top.package, top.wizProps, "wizard." ++ top.wizName))];
+    pair(s"${top.pluginPkgPath}eclipse/wizard/newfile/PropertyControlsProvider.java",
+      getPropertyProvider(top.package, props, "wizard.newfile"))];
 }
 

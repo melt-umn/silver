@@ -1,14 +1,12 @@
 grammar silver:modification:impide:spec;
 
-synthesized attribute ideParserSpec :: ParserSpec;
-synthesized attribute propDcls :: [IdeProperty];
-synthesized attribute wizards :: [IdeWizardDcl];
 synthesized attribute pluginParserClass :: String;
 synthesized attribute pluginGrammar :: String; -- TODO: replace with sourceGrammar?
 synthesized attribute ideName :: String;
 synthesized attribute ideVersion :: String;
 synthesized attribute pluginFiles :: [Pair<String String>];
 
+-- These are for our spec's children:
 synthesized attribute svIdeInterface :: String;
 synthesized attribute pluginXml :: String;
 synthesized attribute pluginXmlActions :: String;
@@ -44,7 +42,7 @@ global extid_wizard_newfile :: String = "wizards.newfile";
 
 global extid_properties :: String = "properties";
 
-nonterminal IdeSpec with ideParserSpec, propDcls, wizards, pluginParserClass, pluginGrammar, ideName, ideVersion, pluginFiles;
+nonterminal IdeSpec with compiledGrammars, pluginParserClass, pluginGrammar, ideName, ideVersion, pluginFiles;
 
 abstract production ideSpec
 top::IdeSpec ::= 
@@ -55,9 +53,6 @@ top::IdeSpec ::=
   top.ideName = ideName;
   top.ideVersion = ideVersion;
   top.pluginGrammar = grammarName;
-  top.ideParserSpec = pspec;
-  top.propDcls = idePropDcls;
-  top.wizards = wizards;
   top.pluginParserClass = makeParserName(pspec.fullName);
   
   -- NOTE: currently, implang = ideName, but we may want to change this
@@ -67,6 +62,10 @@ top::IdeSpec ::=
   local bundle :: String = s"${implang}_IDE";
   
   local pluginPkgPath :: String = s"src/${grammarToPath(grammarName)}";
+
+  local ast :: SyntaxRoot = pspec.cstAst;
+  ast.jPkgName = package;
+  ast.jParserName = top.pluginParserClass;
 
   local funcs :: IdeFunctions = foldr(consIdeFunction, nilIdeFunction(), ideFuncDcls);
   funcs.bundle = bundle;
@@ -265,9 +264,13 @@ ${funcs.pluginXml}
 </plugin>
 """),
   pair(s"${pluginPkgPath}eclipse/property/PropertyControlsProvider.java",
-    getPropertyProvider(package, top.propDcls, "property")),
+    getPropertyProvider(package, idePropDcls, "property")),
   pair(s"${pluginPkgPath}eclipse/wizard/newproject/PropertyGenerator.java",
-    getPropertyGenerator(package, top.propDcls, "newproject"))
+    getPropertyGenerator(package, idePropDcls, "newproject")),
+  pair(s"${pluginPkgPath}copper/parser/${top.pluginParserClass}.copper",
+    ast.nxmlCopper),
+  pair(s"${pluginPkgPath}imp/coloring/${top.pluginParserClass}_TokenClassifier.java",
+    getTokenClassifier(package, ast.fontList, ast.termFontPairList, top.pluginParserClass))
   ] ++
   wizs.pluginFiles;
 }
@@ -276,5 +279,183 @@ function newTabClass
 String ::= tab::String
 {
   return "new " ++ tab ++ "()";
+}
+
+
+function getPropertyProvider 
+String ::= pkgName::String propDcls :: [IdeProperty] pkgPart::String
+{
+  return s"""
+package ${pkgName}.eclipse.${pkgPart};
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.eclipse.swt.widgets.Composite;
+
+import edu.umn.cs.melt.ide.silver.property.ui.*;
+
+public class PropertyControlsProvider implements IPropertyControlsProvider {
+
+  private List<PropertyControl> controls;
+
+  @Override
+  public List<PropertyControl> getPropertyControls(Composite panel) {
+    if(controls == null) {
+      controls = new ArrayList<PropertyControl>();
+
+${foldr(stringConcat, "", map((.controlJavaTranslation), propDcls))}
+    }
+
+    return controls;
+  }
+
+  @Override
+  public boolean validateAll() {
+    boolean valid = true;
+
+    if(controls != null) {
+      for(PropertyControl control : controls) {
+        if(!control.validate()) {
+          valid = false;
+        }
+      }
+    }
+
+    return valid;
+  }
+}
+"""; -- TODO: for validation, we may someday want to expose a silver function where we can write how to validate a property
+}
+
+function getPropertyGenerator 
+String ::= pkgName::String propDcls::[IdeProperty] pkgFinalPart::String
+{
+  local pkgPart :: String = if pkgFinalPart == "" then "" else "." ++ pkgFinalPart;
+
+  return s"""
+package ${pkgName}.eclipse.wizard${pkgPart};
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class PropertyGenerator {
+    
+    private static String properties = null;
+    
+    public static String getAll() {
+        if(properties==null) {
+            StringBuilder sb = new StringBuilder();
+    
+${foldr(stringConcat, "", map((.generatorJavaTranslation), propDcls))}
+    
+            properties = sb.toString();
+        }
+    
+        return properties;
+    }
+    
+
+    private static String escape(String str) {
+        char[] orig = str.toCharArray();
+        List<Character> list = new ArrayList<Character>();
+        for(char c : orig) {
+            if(c == '=' || c == '#' || c == '\\' || c == ':') {
+               list.add('\\');
+            }
+            list.add(c);
+        }
+        
+        //Convert to a char array
+        char[] mod = new char[list.size()];
+        for(int i = 0; i < mod.length; i++) {
+            mod[i] = list.get(i);
+        }
+            
+        return new String(mod);
+    }
+}
+""";
+}
+
+-- class <pkgName>.imp.coloring.TokenClassifier
+function getTokenClassifier
+String ::= pkgName::String fontList::[Pair<String Font>] termFontPairList::[Pair<String String>] parserName::String
+{
+return s"""
+package ${pkgName}.imp.coloring;
+
+import java.util.HashMap;
+
+import edu.umn.cs.melt.ide.copper.IToken;
+import edu.umn.cs.melt.ide.copper.coloring.ICopperTokenClassifier;
+import edu.umn.cs.melt.ide.copper.coloring.TextAttributeProvider;
+import org.eclipse.jface.text.TextAttribute;
+import org.eclipse.swt.widgets.Display;
+
+public class ${parserName}_TokenClassifier implements ICopperTokenClassifier {
+	private static final HashMap<String, Integer> map = new HashMap<String, Integer>();
+
+	public final static class TokenType {
+		public static final int DEFAULT = 0; 
+${getConstantDeclarations(1, fontList)}
+		public static final int TOTAL = ${toString(length(fontList)+1)}; 
+	}
+
+	static {
+		${implode("\n\t\t", map(getPutNameFontPairIntoMap, termFontPairList))}
+	}
+
+	public static int getKind(String symbolName) {
+		if(symbolName == null || "".equals(symbolName)) {
+			return TokenType.DEFAULT;
+		}
+
+		Integer kind = map.get(symbolName);
+
+		if(kind == null) {
+			return TokenType.DEFAULT;
+		}
+
+		return kind;
+	}
+
+	private static final TextAttribute[] attributes = new TextAttribute[TokenType.TOTAL];
+	
+	static {
+		Display display = Display.getDefault();
+		${implode("\n\t\t", map(getTextAttributeInit, fontList))}
+	}
+	
+	@Override
+	public TextAttribute getColoring(IToken token) {
+		return attributes[token.getKind()];
+	}
+}
+""";
+}
+
+function getPutNameFontPairIntoMap
+String ::= tokenNameAndFontName::Pair<String String>
+{
+return "map.put(\"" ++ tokenNameAndFontName.fst ++ "\", " ++ "TokenType." ++ 
+       (if tokenNameAndFontName.snd != ""
+        then tokenNameAndFontName.snd
+        else "DEFAULT") ++ ");"; 
+}
+
+function getConstantDeclarations
+String ::= i::Integer fontList::[Pair<String Font>]
+{
+  return if null(fontList)
+         then ""
+         else "\t\tpublic static final int " ++ head(fontList).fst ++ " = " ++ toString(i) ++ ";\n" ++ 
+              getConstantDeclarations(i+1, tail(fontList));
+}
+
+function getTextAttributeInit
+String ::= f::Pair<String Font>
+{
+  return s"""attributes[TokenType.${f.fst}] = ${f.snd.getTextAttribute};""";
 }
 

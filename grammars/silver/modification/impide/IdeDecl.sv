@@ -86,6 +86,8 @@ nonterminal IdeStmtList with env, location, errors, grammarName, ideFunctions, p
 synthesized attribute ideNames :: [String];
 synthesized attribute ideVersions :: [String];
 synthesized attribute ideFunctions :: [IdeFunction];
+synthesized attribute wizards :: [IdeWizardDcl];
+synthesized attribute propDcls :: [IdeProperty];
 
 concrete production emptyIdeStmts
 top::IdeStmts ::= ';'
