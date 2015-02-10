@@ -82,12 +82,13 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
       <filter token="FEATURE_LICENSE_TEXT" value='no license information available'/>
       <filter token="IDE_RT_VERSION" value='$${ide.rt.version}'/>
 
-    <!-- 1. create project folder -->
-      <mkdir dir='$${ide.proj.feature.path}'/>
-      <mkdir dir='$${ide.proj.updatesite.path}'/>
-      <mkdir dir='$${ide.proj.plugin.path}/META-INF/'/>
+    <!-- 1. create project structure -->
       <mkdir dir='$${ide.proj.plugin.path}/resource/'/>
-      <mkdir dir='$${ide.pkg.path}/'/>  
+      <mkdir dir='$${ide.pkg.path}/'/>
+      <copy todir="$${ide.proj.parent.path}" overwrite="false" filtering="true">
+        <fileset dir="$${res}/ide_skeleton"/>
+      </copy>
+
     <!-- 2. copper parser -->
       <copper
           packageName='$${ide.pkg.name}.copper.parser'
@@ -97,31 +98,13 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
           dumpFile='$${ide.parser.classname}.copperdump.html'>
         <inputs file='$${ide.pkg.path}/copper/parser/$${ide.parser.classname}.copper'/>
       </copper>
-    <!-- 3. build properties -->
-      <copy file="$${res}/build.properties.template" tofile="$${ide.proj.plugin.path}/build.properties" filtering="true"/>
     <!-- 5. plugin dependencies -->
       <copy file="$${lang.composed}.jar" tofile="$${ide.proj.plugin.path}/$${lang.composed}.jar"/>
       <copy file="$${sh}/jars/CopperRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.copper.jar"/>
       <copy file="$${sh}/jars/SilverRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.silver.jar"/>
       <copy file="$${sh}/jars/IDEPluginRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.ide.copper-$${ide.rt.version}.jar"/>
-    <!-- 6. manifest file -->
-      <copy file="$${res}/META-INF/MANIFEST.MF.template" tofile="$${ide.proj.plugin.path}/META-INF/MANIFEST.MF" filtering="true"/>
-    <!-- 8. core plug-in classes -->
-    <!-- 10. Images and other media resources -->
-      <mkdir dir='$${ide.proj.plugin.path}/icons'/>
-      <copy todir="$${ide.proj.plugin.path}/icons/">
-        <fileset dir="$${res}/icons/"/>
-      </copy>
+    <!-- 10. Ide resources -->
 ${implode("", map(copyIdeResource, ide.ideResources))}
-    <!-- 11. pom.xml (using tycho) for building plugin, feature and repository -->
-      <copy file="$${res}/pom_templates/parent.pom.xml.template" tofile="$${ide.proj.parent.path}/pom.xml" filtering="true"/>
-      <copy file="$${res}/pom_templates/plugin.pom.xml.template" tofile="$${ide.proj.plugin.path}/pom.xml" filtering="true"/>
-      <copy file="$${res}/pom_templates/feature_templates/build.properties.template" tofile="$${ide.proj.feature.path}/build.properties" filtering="true"/>
-      <copy file="$${res}/pom_templates/feature_templates/feature.xml.template"
-            tofile="$${ide.proj.feature.path}/feature.xml" filtering="true"/>
-      <copy file="$${res}/pom_templates/feature_templates/pom.xml.template" tofile="$${ide.proj.feature.path}/pom.xml" filtering="true"/>
-      <copy file="$${res}/pom_templates/updatesite_templates/category.xml.template" tofile="$${ide.proj.updatesite.path}/category.xml" filtering="true"/>
-      <copy file="$${res}/pom_templates/updatesite_templates/pom.xml.template" tofile="$${ide.proj.updatesite.path}/pom.xml" filtering="true"/>
     </target>
 """
     ];
