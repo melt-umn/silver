@@ -107,10 +107,6 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     <!-- 6. manifest file -->
       <copy file="$${res}/META-INF/MANIFEST.MF.template" tofile="$${ide.proj.plugin.path}/META-INF/MANIFEST.MF" filtering="true"/>
     <!-- 8. core plug-in classes -->
-      <mkdir dir='$${ide.pkg.path}/imp/'/>  
-    <!-- Plugin main class (OSGi starter class) -->
-      <copy file="$${res}/src/edu/umn/cs/melt/ide/imp/plugin.java.template"
-            tofile="$${ide.pkg.path}/imp/$${lang.name}Plugin.java" filtering="true"/>
     <!-- 10. Images and other media resources -->
       <mkdir dir='$${ide.proj.plugin.path}/icons'/>
       <copy todir="$${ide.proj.plugin.path}/icons/">
