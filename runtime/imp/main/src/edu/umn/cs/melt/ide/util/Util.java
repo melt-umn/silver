@@ -264,7 +264,6 @@ public final class Util {
 			// TODO Not sure what to do ~
 			e.printStackTrace();
 		}
-		System.out.println("For " + id.toString() + " got " + fileurl);
 		return new Pioval(ioin, new StringCatter(fileurl));
 	}
 }
