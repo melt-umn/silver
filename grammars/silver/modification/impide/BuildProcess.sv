@@ -24,7 +24,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   local isIde :: Boolean = !null(builtGrammar) && !null(head(builtGrammar).ideSpecs);
 
   local parserPackageName :: String = makeName(ide.ideParserSpec.sourceGrammar);
-  local parserPackagePath :: String = grammarToPath2(ide.ideParserSpec.sourceGrammar);
+  local parserPackagePath :: String = grammarToPath(ide.ideParserSpec.sourceGrammar);
   local pkgName :: String = makeName(ide.pluginGrammar); -- should be equal to buildGrammar
 
   -- $${jg}/ide/$${ide.pkg.name}/plugin
@@ -139,22 +139,6 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 }
 
 
-function grammarToPath
-String ::= grm :: String 
-{
-    local attribute lastInd :: Integer = lastIndexOf(":", grm);
-    local attribute grammarPart :: String = substitute(":", "/", substring(0, lastInd, grm));
-    return grammarPart;
-}
-
-function grammarToPath2
-String ::= grm :: String 
-{
-    return substitute(":", "/", grm) ++ "/";
-}
-
-
-
 function getCreateFoldersTarget
 String ::= ide::IdeSpec
 {
@@ -183,12 +167,6 @@ String ::= ide::IdeSpec
     "  <!-- 3. build properties -->\n" ++
     "  <antcall target=\"create build.properties\" inheritAll=\"true\"/>\n" ++
     "\n" ++
-
-    "  <!-- 4. plugin.xml -->\n" ++
-    "  <copy file=\"" ++ getIDETempFolder() ++ "/plugin.xml.template\" tofile=\"${ide.proj.plugin.path}/plugin.xml\" filtering=\"true\"/>\n" ++
-    "  \n" ++
-    "  <copy file=\"" ++ getIDETempFolder() ++ "/SVIdeInterface.java.template\" tofile=\"${ide.pkg.path}/SVIdeInterface.java\" filtering=\"true\"/>\n" ++
-    "  \n" ++
 
     "  <!-- 5. plugin dependencies -->\n" ++
     "  <!-- (1) language implementation -->\n" ++
@@ -220,30 +198,6 @@ String ::= ide::IdeSpec
 
     "  <mkdir dir='${ide.pkg.path}/eclipse/wizard'/>\n" ++
     "  <mkdir dir='${ide.pkg.path}/eclipse/wizard/newproject'/>\n" ++
-    "  <!-- A wizard for creating new project. -->\n" ++
-    "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/wizard/newproject/PropertyGenerator.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/wizard/newproject/PropertyGenerator.java\" filtering=\"true\"/>\n" ++
-    "  \n" ++
-
-    (if !null(ide.wizards) -- This is really about the new file wizard specifically, FIXME
-    then
-    "  <mkdir dir='${ide.pkg.path}/eclipse/wizard/newfile'/>\n" ++
-    "  <!-- A wizard for creating new source file. -->\n" ++
-    "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/wizard/newfile/PropertyControlsProvider.java.template\"\n" ++
-    "        tofile=\"${ide.pkg.path}/eclipse/wizard/newfile/PropertyControlsProvider.java\" filtering=\"true\"/>\n" ++
-    "  \n"
-    else
-    "") ++
-
-    (if !null(ide.propDcls) -- TODO: I guess this is, in fact, about whether the project has properties, but maybe we shouldn't access them form the outside like this?
-    then
-    "  <mkdir dir='${ide.pkg.path}/eclipse/property'/>\n" ++
-    "  <!-- A project property page -->\n" ++
-    "  <copy file=\"" ++ getIDETempFolder() ++ "eclipse/property/PropertyControlsProvider.java.template\"\n" ++    -- this file always get copied even if it's not used
-    "        tofile=\"${ide.pkg.path}/eclipse/property/PropertyControlsProvider.java\" filtering=\"true\"/>\n" ++
-    "  \n"
-    else
-    "") ++    
 
     "  <!-- 10. Images and other media resources -->\n" ++
     "  <mkdir dir='${ide.proj.plugin.path}/icons'/>\n" ++

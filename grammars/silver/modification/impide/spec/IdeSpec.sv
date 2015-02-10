@@ -18,6 +18,7 @@ autocopy attribute bundle :: String;
 autocopy attribute implang :: String;
 autocopy attribute visibleName :: String;
 autocopy attribute package :: String;
+autocopy attribute pluginPkgPath :: String;
 
 {--
  - Eclipse extensions have unique IDs.
@@ -64,6 +65,8 @@ top::IdeSpec ::=
   local implang :: String = ideName;
   local package :: String = makeName(grammarName);
   local bundle :: String = s"${implang}_IDE";
+  
+  local pluginPkgPath :: String = s"src/${grammarToPath(grammarName)}";
 
   local funcs :: IdeFunctions = foldr(consIdeFunction, nilIdeFunction(), ideFuncDcls);
   funcs.bundle = bundle;
@@ -76,13 +79,14 @@ top::IdeSpec ::=
   wizs.implang = implang;
   wizs.visibleName = ideName;
   wizs.package = package;
+  wizs.pluginPkgPath = pluginPkgPath;
 
   local tabs::[String] = 
     if null(idePropDcls) then [] else ["edu.umn.cs.melt.ide.eclipse.property.TabCommons"];
 
   
   top.pluginFiles =
-    [pair("SVIdeInterface.java.template", s"""
+    [pair(s"${pluginPkgPath}SVIdeInterface.java", s"""
 package ${package};
 
 import java.io.IOException;
@@ -155,7 +159,7 @@ ${funcs.svIdeInterface}
 ${wizs.svIdeInterface}
 }
 """),
-    pair("plugin.xml.template", s"""<?xml version="1.0" encoding="UTF-8"?>
+    pair("plugin.xml", s"""<?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.0"?>
 <plugin>
 
@@ -260,11 +264,12 @@ ${funcs.pluginXml}
 
 </plugin>
 """),
-  pair("eclipse/property/PropertyControlsProvider.java.template",
+  pair(s"${pluginPkgPath}eclipse/property/PropertyControlsProvider.java",
     getPropertyProvider(package, top.propDcls, "property")),
-  pair("eclipse/wizard/newproject/PropertyGenerator.java.template",
+  pair(s"${pluginPkgPath}eclipse/wizard/newproject/PropertyGenerator.java",
     getPropertyGenerator(package, top.propDcls, "newproject"))
-  ] ++ wizs.pluginFiles;
+  ] ++
+  wizs.pluginFiles;
 }
 
 function newTabClass

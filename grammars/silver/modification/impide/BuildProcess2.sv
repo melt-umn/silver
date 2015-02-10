@@ -20,8 +20,8 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> ide::IdeSpec pluginPath::String
     print("[IDE plugin] Generating class templates.\n", top.ioIn);
 
   local io01::IO =
-    mkdirs(getIDETempFolder(), ["eclipse/property", "eclipse/wizard/newproject", "eclipse/wizard/newfile", "imp/coloring"], 
-    mkdirs(pluginPackagePath ++ "/", ["copper/parser"], 
+    mkdirs(getIDETempFolder(), ["imp/coloring"], 
+    mkdirs(pluginPackagePath ++ "/", ["eclipse/property", "eclipse/wizard/newproject", "eclipse/wizard/newfile", "copper/parser"], 
     deleteTree(pluginPath, io00)));
 
   local io10::IO = print("[IDE plugin] Generating parsers.\n", io01);
@@ -30,7 +30,7 @@ top::Unit ::= grams::EnvTree<Decorated RootSpec> ide::IdeSpec pluginPath::String
 
   local io40::IO = print("[IDE plugin] Generating plugin.xml template.\n", io30);
 
-  local io50::IO = writeFiles(getIDETempFolder(), ide.pluginFiles, io40);
+  local io50::IO = writeFiles(pluginPath ++ "/", ide.pluginFiles, io40);
 
   top.io = io50;
 
