@@ -14,13 +14,20 @@ autocopy attribute startNTName :: String;
 -- moving.
 terminal ImpIde_t 'temp_imp_ide_dcl' lexer classes {KEYWORD,RESERVED};
 
-terminal ImpIde_Product_t 'product' lexer classes {KEYWORD};
 terminal ImpIde_ProdInfo_Name_t 'name' lexer classes {KEYWORD};
 terminal ImpIde_ProdInfo_Version_t 'version' lexer classes {KEYWORD};
+
 terminal ImpIde_OptFunc_Builder 'builder' lexer classes {KEYWORD};
 terminal ImpIde_OptFunc_PostBuilder 'postbuilder' lexer classes {KEYWORD};
 terminal ImpIde_OptFunc_Exporter 'exporter' lexer classes {KEYWORD};
 terminal ImpIde_OptFunc_Folder 'folder' lexer classes {KEYWORD};
+
+terminal ImpIde_IdeResource 'resource' lexer classes {KEYWORD};
+
+terminal ImpIde_Wizard 'wizard' lexer classes {KEYWORD};
+terminal ImpIde_Wizard_StubGen 'stub generator' lexer classes {KEYWORD};
+terminal ImpIde_Wizard_NewFile 'new file' lexer classes {KEYWORD};
+
 
 
 concrete production ideDcl
@@ -65,7 +72,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
   top.errors <- if length(stmts.ideVersions) > 1 then [err(top.location, "Multiple version declarations")] else [];
   
 
-  top.ideSpecs = [ideSpec(top.grammarName, ideName, ideVersion, fext, stmts.ideFunctions, stmts.propDcls, stmts.wizards, head(spec))];
+  top.ideSpecs = [ideSpec(top.grammarName, ideName, ideVersion, fext, stmts.ideFunctions, stmts.propDcls, stmts.wizards, head(spec), stmts.ideResources)];
   
   top.errors <- stmts.errors;
 
@@ -79,9 +86,9 @@ String ::= gram::String
 }
 
 -- funcDcls, propDcls and optDcls are defined in ./IdeSpec.sv
-nonterminal IdeStmts with env, location, errors, grammarName, ideFunctions, propDcls, wizards, startNTName, ideNames, ideVersions;
-nonterminal IdeStmt with env, location, errors, grammarName, ideFunctions, propDcls, wizards, startNTName, ideNames, ideVersions;
-nonterminal IdeStmtList with env, location, errors, grammarName, ideFunctions, propDcls, wizards, startNTName, ideNames, ideVersions;
+nonterminal IdeStmts with env, location, errors, grammarName, ideFunctions, propDcls, wizards, startNTName, ideNames, ideVersions, ideResources;
+nonterminal IdeStmt with env, location, errors, grammarName, ideFunctions, propDcls, wizards, startNTName, ideNames, ideVersions, ideResources;
+nonterminal IdeStmtList with env, location, errors, grammarName, ideFunctions, propDcls, wizards, startNTName, ideNames, ideVersions, ideResources;
 
 synthesized attribute ideNames :: [String];
 synthesized attribute ideVersions :: [String];
@@ -98,6 +105,7 @@ top::IdeStmts ::= ';'
   top.wizards = [];
   top.ideNames = [];
   top.ideVersions = [];
+  top.ideResources = [];
 }
 
 concrete production listIdeStmts
@@ -109,6 +117,7 @@ top::IdeStmts ::= '{' stmtList::IdeStmtList '}'
   top.wizards = stmtList.wizards;
   top.ideNames = stmtList.ideNames;
   top.ideVersions = stmtList.ideVersions;
+  top.ideResources = stmtList.ideResources;
 }
 
 -- with optional ending ';'
@@ -121,6 +130,7 @@ top::IdeStmts ::= '{' stmtList::IdeStmtList '}' ';'
   top.wizards = stmtList.wizards;
   top.ideNames = stmtList.ideNames;
   top.ideVersions = stmtList.ideVersions;
+  top.ideResources = stmtList.ideResources;
 }
 
 concrete production nilIdeStmtList
@@ -132,6 +142,7 @@ top::IdeStmtList ::=
   top.wizards = [];
   top.ideNames = [];
   top.ideVersions = [];
+  top.ideResources = [];
 }
 
 concrete production consIdeStmtList
@@ -143,6 +154,7 @@ top::IdeStmtList ::= stmt::IdeStmt stmtList::IdeStmtList
   top.wizards = stmt.wizards ++ stmtList.wizards;
   top.ideNames = stmt.ideNames ++ stmtList.ideNames;
   top.ideVersions = stmt.ideVersions ++ stmtList.ideVersions;
+  top.ideResources = stmt.ideResources ++ stmtList.ideResources;
 }
 
 aspect default production
@@ -153,6 +165,7 @@ top::IdeStmt ::=
   top.wizards = [];
   top.ideNames = [];
   top.ideVersions = [];
+  top.ideResources = [];
 }
 
 concrete production makeIdeStmt_Builder
@@ -299,11 +312,14 @@ top::IdeStmt ::= 'version' v::String_t ';'
   top.ideVersions = [iV];
 }
 
--- Wizards
+concrete production resourceIdeStmt
+top::IdeStmt ::= 'resource' id::Name path::String_t ';'
+{
+  top.errors := []; -- TODO: duplicate name check or something?
+  top.ideResources = [pair(id.name, substring(1, length(path.lexeme) - 1, path.lexeme))];
+}
 
-terminal ImpIde_Wizard 'wizard' lexer classes {KEYWORD};
-terminal ImpIde_Wizard_StubGen 'stub generator' lexer classes {KEYWORD};
-terminal ImpIde_Wizard_NewFile 'new file' lexer classes {KEYWORD};
+-- Wizards
 
 concrete production newfileWizard_c
 top::IdeStmt ::= 'wizard' 'new file' '{' generator::StubGenerator props::PropertyList '}'

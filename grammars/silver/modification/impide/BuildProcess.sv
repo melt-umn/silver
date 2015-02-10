@@ -98,6 +98,9 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     <!-- 1. create project folder -->
       <mkdir dir='$${ide.proj.feature.path}'/>
       <mkdir dir='$${ide.proj.updatesite.path}'/>
+      <mkdir dir='$${ide.proj.plugin.path}/META-INF/'/>
+      <mkdir dir='$${ide.proj.plugin.path}/resource/'/>
+      <mkdir dir='$${ide.pkg.path}/'/>  
     <!-- 2. copper parser -->
       <copper
           packageName='$${ide.pkg.name}.copper.parser'
@@ -115,10 +118,8 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
       <copy file="$${sh}/jars/SilverRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.silver.jar"/>
       <copy file="$${sh}/jars/IDEPluginRuntime.jar" tofile="$${ide.proj.plugin.path}/edu.umn.cs.melt.ide.copper-$${ide.rt.version}.jar"/>
     <!-- 6. manifest file -->
-      <mkdir dir='$${ide.proj.plugin.path}/META-INF/'/>
       <copy file="$${res}/META-INF/MANIFEST.MF.template" tofile="$${ide.proj.plugin.path}/META-INF/MANIFEST.MF" filtering="true"/>
     <!-- 8. core plug-in classes -->
-      <mkdir dir='$${ide.pkg.path}/'/>  
       <mkdir dir='$${ide.pkg.path}/imp/'/>  
     <!-- Plugin main class (OSGi starter class) -->
       <copy file="$${res}/src/edu/umn/cs/melt/ide/imp/plugin.java.template"
@@ -128,6 +129,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
       <copy todir="$${ide.proj.plugin.path}/icons/">
         <fileset dir="$${res}/icons/"/>
       </copy>
+${implode("", map(copyIdeResource, ide.ideResources))}
     <!-- 11. pom.xml (using tycho) for building plugin, feature and repository -->
       <copy file="$${res}/pom_templates/parent.pom.xml.template" tofile="$${ide.proj.parent.path}/pom.xml" filtering="true"/>
       <copy file="$${res}/pom_templates/plugin.pom.xml.template" tofile="$${ide.proj.plugin.path}/pom.xml" filtering="true"/>
@@ -177,3 +179,13 @@ String ::= pkg::String
   return substitute(".", "/", pkg);
 }
 
+function copyIdeResource
+String ::= r::Pair<String String>
+{
+  return s"""
+      <mkdir dir='$${ide.proj.plugin.path}/resource/${r.fst}'/>
+      <copy todir="$${ide.proj.plugin.path}/resource/${r.fst}" overwrite="false" filtering="false">
+        <fileset dir="$${grammar.path}/${r.snd}"/>
+      </copy>
+""";
+}

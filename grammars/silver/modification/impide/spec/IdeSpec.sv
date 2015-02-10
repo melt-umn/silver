@@ -1,5 +1,7 @@
 grammar silver:modification:impide:spec;
 
+synthesized attribute ideResources :: [Pair<String String>];
+
 synthesized attribute pluginParserClass :: String;
 synthesized attribute pluginGrammar :: String; -- TODO: replace with sourceGrammar?
 synthesized attribute ideName :: String;
@@ -42,18 +44,19 @@ global extid_wizard_newfile :: String = "wizards.newfile";
 
 global extid_properties :: String = "properties";
 
-nonterminal IdeSpec with compiledGrammars, pluginParserClass, pluginGrammar, ideName, ideVersion, pluginFiles;
+nonterminal IdeSpec with compiledGrammars, pluginParserClass, pluginGrammar, ideName, ideVersion, pluginFiles, ideResources;
 
 abstract production ideSpec
 top::IdeSpec ::= 
     grammarName::String ideName::String ideVersion::String
     ext::String ideFuncDcls::[IdeFunction] idePropDcls::[IdeProperty] wizards::[IdeWizardDcl]
-    pspec::ParserSpec
+    pspec::ParserSpec ideResources::[Pair<String String>]
 {
   top.ideName = ideName;
   top.ideVersion = ideVersion;
   top.pluginGrammar = grammarName;
   top.pluginParserClass = makeParserName(pspec.fullName);
+  top.ideResources = ideResources;
   
   -- NOTE: currently, implang = ideName, but we may want to change this
   -- always use implang as the imp registry language name, and ideName as the user-visible.

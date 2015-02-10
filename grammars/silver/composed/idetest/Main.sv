@@ -78,6 +78,8 @@ temp_imp_ide_dcl svParse ".sv" {
 
   name "SILVER";
   version "0.2.2";
+  resource grammars "../../../../grammars/"; -- I have "../grammars" to be explicit about what's going on here.
+  resource jars "../../../../jars/"; -- ditto
 }
 
 -- Declarations of IDE functions referred in decl block.
@@ -104,7 +106,7 @@ function fold
 function export
 IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {
-  local buildFile::String = getBuildXmlPath(env);
+  local buildFile::String = env.generatedPath ++ "/build.xml";
 
   local grammarQName::String = head(getGrammarToCompile(args));
 
@@ -126,11 +128,9 @@ IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 function generate
 IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {
-  local argio::IOVal<[String]> = getArgStrings(env, i);
+  local argio::IOVal<[String]> = getArgStrings(args, env, i);
 
-  local sargs::[String] = argio.iovalue ++ getGrammarToCompile(args);
-
-  local ru :: IOVal<[IdeMessage]> = ideGenerate(sargs, svParse, sviParse, argio.io);
+  local ru :: IOVal<[IdeMessage]> = ideGenerate(argio.iovalue, svParse, sviParse, argio.io);
 
   return ru;
 
@@ -139,43 +139,29 @@ IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 function analyze
 IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {
-  local argio::IOVal<[String]> = getArgStrings(env, i);
+  local argio::IOVal<[String]> = getArgStrings(args, env, i);
 
-  local sargs::[String] = argio.iovalue ++ getGrammarToCompile(args);
-
-  local ru :: IOVal<[IdeMessage]> = ideAnalyze(sargs, svParse, sviParse, env.projectPath, argio.io);
+  local ru :: IOVal<[IdeMessage]> = ideAnalyze(argio.iovalue, svParse, sviParse, env.projectPath, argio.io);
 
   return ru;
 }
 
 function getArgStrings
-IOVal<[String]> ::= env::IdeEnv io::IO
+IOVal<[String]> ::= args::[IdeProperty] env::IdeEnv io::IO
 {
-  -- get paths of linked source folders
-  local pmembers::IOVal<Maybe<[IdeResource]>> = getProjectMembers(env.project, io);
-  local subres::[IdeResource] = if pmembers.iovalue.isJust then pmembers.iovalue.fromJust else [];
-  local paths::IOVal<[String]> = collectLinkedPaths(subres, ["-I", env.projectPath], pmembers.io);
-
-  return ioval(paths.io, paths.iovalue ++ ["--build-xml-location", getBuildXmlPath(env)]);
-}
-
-function collectLinkedPaths 
-IOVal<[String]> ::= res::[IdeResource] paths::[String] i::IO
-{
-    local hd :: IdeResource = head(res);
-
-    local absPath::IOVal<String> = getAbsolutePath(hd, i);
-    local isFolder::IOVal<Boolean> = resourceIsFolder(hd, absPath.io);
-    local isLinked::IOVal<Boolean> = resourceIsLinked(hd, isFolder.io);
-
-    local paths2::[String] = paths ++ 
-            if (isFolder.iovalue && isLinked.iovalue) 
-            then ["-I", absPath.iovalue]
-            else [];
-
-    return if null(res) 
-           then ioval(i, paths) 
-           else collectLinkedPaths(tail(res), paths2, isLinked.io);
+  local jarsio :: IOVal<String> = getIdeResource("jars", io);
+  local grammarsio :: IOVal<String> = getIdeResource("grammars", jarsio.io);
+  
+  local compile_args :: [String] =
+    [
+     "--silver-home", jarsio.iovalue ++ "..",
+     "-G", env.generatedPath,
+     "-I", env.projectPath,
+     --"-I", grammarsio.iovalue, -- This actually get automatically added, by virtue of silver home finding grammars under it
+     "--build-xml-location", env.generatedPath ++ "/build.xml"] ++
+     getGrammarToCompile(args);
+  
+  return ioval(grammarsio.io, compile_args);
 }
 
 function getGrammarToCompile
@@ -200,9 +186,4 @@ Maybe<String> ::= args::[IdeProperty] prop::String
 	    else tryGetProperty(tail(args), prop);
 }
 
-function getBuildXmlPath
-String ::= env::IdeEnv
-{
-  return env.generatedPath ++ "/build.xml";
-}
 

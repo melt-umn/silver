@@ -50,3 +50,18 @@ IO ::= projectName::String  i::IO
 } foreign {
   "java" : return "common.Util.io(%i%, edu.umn.cs.melt.ide.util.Util.refresh(%projectName%))";
 }
+
+{--
+ - Gets a path to a resource (directory, file) that was included in the IDE bundle via
+ - a 'resource' declaration in the ide spec.
+ - (e.g.  resource grammars "../../../grammars";
+ -   can be obtained via getIdeResource("grammar", io) )
+ -}
+function getIdeResource
+IOVal<String> ::= resourceid::String  i::IO
+{
+  return error("Not Yet Implemented: getIdeResource");
+} foreign {
+  "java" : return "edu.umn.cs.melt.ide.util.Util.getIdeResource(%resourceid%, %i%)";
+}
+

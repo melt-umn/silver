@@ -13,7 +13,8 @@ if [ -z "$SVJVM_FLAGS" ]; then
 fi
 
 # must always be a clean build -- ide modification is slightly broken still
-time java $SVJVM_FLAGS -jar ../jars/RunSilver.jar --clean $@ silver:composed:idetest && ant
+time java $SVJVM_FLAGS -jar ../jars/RunSilver.jar --clean $@ silver:composed:idetest
+ant
 
 echo -e "\a"
 

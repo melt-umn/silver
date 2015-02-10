@@ -2,6 +2,7 @@ source.. = src/
 output.. = bin/
 bin.includes = META-INF/,\
                icons/,\
+               resource/,\
                .,\
                @LANG_COMPOSED@.jar,\
                edu.umn.cs.melt.copper.jar,\
