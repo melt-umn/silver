@@ -62,7 +62,7 @@ top::IdeSpec ::=
   -- always use implang as the imp registry language name, and ideName as the user-visible.
   local implang :: String = ideName;
   local package :: String = makeName(grammarName);
-  local bundle :: String = s"${implang}_IDE";
+  local bundle :: String = package; -- same for now
   
   local pluginPkgPath :: String = s"src/${grammarToPath(grammarName)}";
 

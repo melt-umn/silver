@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: @PKG_NAME@
-Bundle-SymbolicName: @LANG_NAME@_IDE;singleton:=true
+Bundle-Name: @LANG_NAME@
+Bundle-SymbolicName: @GROUP_ID@;singleton:=true
 Bundle-Version: @IDE_VERSION@.@IDE_BUILD_TIMESTAMP@
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: .,

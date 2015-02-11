@@ -25,9 +25,9 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 
   local pkgName :: String = makeName(ide.pluginGrammar); -- should be equal to buildGrammar
 
-  -- $${jg}/ide/$${ide.pkg.name}/plugin
-  local pluginPath :: String = s"${benv.silverGen}ide/${pkgName}/plugin";
-  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, ide, pluginPath, pkgName)];
+  -- $${jg}/ide/$${ide.pkg.name}
+  local ideGenPath :: String = s"${benv.silverGen}ide/${pkgName}";
+  top.postOps <- if !isIde then [] else [generateNCS(g.compiledGrammars, ide, ideGenPath, pkgName)];
 
   classpathCompiler <- if !isIde then [] else ["${sh}/jars/IDEPluginRuntime.jar"];
 

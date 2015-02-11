@@ -76,7 +76,7 @@ temp_imp_ide_dcl svParse ".sv" {
     property declared_grammar string required display="Grammar";
   }
 
-  name "SILVER";
+  name "Silver";
   version "0.2.2";
   resource grammars "../../../../grammars/"; -- I have "../grammars" to be explicit about what's going on here.
   resource jars "../../../../jars/"; -- ditto

@@ -1,10 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>@GROUP_ID@</groupId>
-  <artifactId>@LANG_NAME@_IDE</artifactId>
+  <artifactId>@GROUP_ID@</artifactId>
   <version>@IDE_VERSION@.@IDE_BUILD_TIMESTAMP@</version>
   <packaging>eclipse-plugin</packaging>
-  <name>IDE plug-in for @LANG_NAME@</name>
+  <name>@LANG_NAME@ Eclipse plugin</name>
   
   <parent>
     <groupId>@GROUP_ID@</groupId>
