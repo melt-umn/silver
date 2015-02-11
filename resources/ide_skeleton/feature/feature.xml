@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="@LANG_NAME@_FEATURE"
-      label="@LANG_NAME@_FEATURE"
+      id="@GROUP_ID@.feature"
+      label="@LANG_NAME@ Eclipse feature"
       version="@IDE_VERSION@.@IDE_BUILD_TIMESTAMP@">
 
    <description url="@FEATURE_DESCRIPTION_URL@">
@@ -18,11 +18,11 @@
 
    <!-- The IDE plugin's id is the symbolic name in manifest file -->
    <plugin
-         id="@LANG_NAME@_IDE"
+         id="@GROUP_ID@"
          download-size="0"
          install-size="0"
          version="0.0.0"
-         unpack="false"/>
+         unpack="true"/>
          
    <plugin
          id="org.eclipse.imp.runtime"

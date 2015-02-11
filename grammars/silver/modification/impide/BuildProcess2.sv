@@ -7,21 +7,21 @@ import silver:util:cmdargs;
 {--
  - @param grams  Compiled grammars (used to generate parser)
  - @param ide  The ide specification to generate files for.
- - @param pluginPath  The path to the plugin generation directory
- -   (e.g. generated/ide/silver.composed.idetest/plugin)
- -   (contains: src/ plugin.xml etc)
+ - @param ideGenPath  The path to the ide generation directory
+ -   (e.g. generated/ide/silver.composed.idetest)
+ -   (contains: plugin feature updatesite)
  -}
 abstract production generateNCS
-top::Unit ::= grams::EnvTree<Decorated RootSpec> ide::IdeSpec pluginPath::String pkgName::String
+top::Unit ::= grams::EnvTree<Decorated RootSpec> ide::IdeSpec ideGenPath::String pkgName::String
 {
   ide.compiledGrammars = grams;
   
   local io0::IO = print("[IDE plugin] Generating IDE plugin.\n", top.ioIn);
-  local io1::IO = deleteTree(pluginPath, io0);
+  local io1::IO = deleteTree(ideGenPath, io0);
   local io2::IO =
-    mkdirs(s"${pluginPath}/src/${pkgToPath(pkgName)}/",
+    mkdirs(s"${ideGenPath}/plugin/src/${pkgToPath(pkgName)}/",
       ["imp/coloring", "eclipse/property", "eclipse/wizard/newproject", "eclipse/wizard/newfile", "copper/parser"], io1);
-  local io3::IO = writeFiles(pluginPath ++ "/", ide.pluginFiles, io2);
+  local io3::IO = writeFiles(ideGenPath ++ "/plugin/", ide.pluginFiles, io2);
 
   top.io = io3;
 
