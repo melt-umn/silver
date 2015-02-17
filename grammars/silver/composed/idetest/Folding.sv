@@ -87,3 +87,4 @@ top::AGDcl ::= 'aspect' 'default' 'production' lhs::Name '::' _ '::=' body::Prod
 {
   top.foldableRanges = [body.location];
 }
+

@@ -4,6 +4,7 @@ synthesized attribute projectName :: String;
 synthesized attribute projectPath :: String;
 synthesized attribute platformPath :: String;
 synthesized attribute generatedPath :: String;
+synthesized attribute project :: IdeProject occurs on IdeEnv;
 
 {--
 The nonterminal representing the environment for a project in generated IDE.  
