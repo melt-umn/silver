@@ -1,19 +1,25 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Runtime for Silver-based IDE 
-Bundle-SymbolicName: edu.umn.cs.melt.ide.copper
+Bundle-SymbolicName: edu.umn.cs.melt.ide
 Bundle-Version: 1.0.0
 Bundle-Vendor: zhoux738@umn.edu
-Export-Package: edu.umn.cs.melt.ide.copper;version="1.0.0", edu.umn.cs
- .melt.ide.copper.coloring;version="1.0.0", edu.umn.cs.melt.ide.silver
- .misc;version="1.0.0", edu.umn.cs.melt.ide.silver.property;version="1
- .0.0", edu.umn.cs.melt.ide.util;version="1.0.0", edu.umn.cs.melt.ide.
- silver.property.ui;version="1.0.0", edu.umn.cs.melt.ide.util.cst;vers
- ion="1.0.0"
+Export-Package: edu.umn.cs.melt.ide.copper;version="1.0.0",
+ edu.umn.cs.melt.ide.copper.coloring;version="1.0.0",
+ edu.umn.cs.melt.ide.silver.misc;version="1.0.0",
+ edu.umn.cs.melt.ide.silver.property;version="1.0.0",
+ edu.umn.cs.melt.ide.util;version="1.0.0",
+ edu.umn.cs.melt.ide.silver.property.ui;version="1.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: .
-Require-Bundle: org.eclipse.core.runtime, org.eclipse.core.resources, 
- org.eclipse.imp.runtime, org.eclipse.ui, org.eclipse.jface.text, org
- .eclipse.jdt.core, org.eclipse.ui.editors, org.eclipse.ui.workbench.
- texteditor, org.eclipse.ui.console, org.eclipse.ui.ide, org.eclipse.
- ant.core
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.core.resources, 
+ org.eclipse.imp.runtime,
+ org.eclipse.ui,
+ org.eclipse.jface.text,
+ org.eclipse.jdt.core,
+ org.eclipse.ui.editors,
+ org.eclipse.ui.workbench.texteditor,
+ org.eclipse.ui.console,
+ org.eclipse.ui.ide,
+ org.eclipse.ant.core

@@ -1,10 +1,12 @@
 grammar silver:driver:util;
 
-nonterminal Compilation with config, postOps, grammarList, recheckGrammars;
+nonterminal Compilation with config, postOps, grammarList, recheckGrammars, allGrammars;
 
 synthesized attribute postOps :: [Unit] with ++;
 synthesized attribute grammarList :: [Decorated RootSpec];
 synthesized attribute recheckGrammars :: [String];
+-- This is used on the outside, e.g. the ide functions.
+synthesized attribute allGrammars :: [Decorated RootSpec];
 
 {--
  - This abstractly represents a compilation.
@@ -27,10 +29,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   -- the list of grammars that should be re-checked
   top.recheckGrammars = g.recheckGrammars;
   
-  -- To compute recheckGrammars, we need .compiledGrammars:
-  production grammars :: [Decorated RootSpec] = g.grammarList;
-  
-  g.compiledGrammars = directBuildTree(map(grammarPairing, grammars));
+  g.compiledGrammars = directBuildTree(map(grammarPairing, g.grammarList));
   -- However, we are then forced to use the interface files that we are going to
   -- recheck in the .compiledGrammars for the recheck.
   -- That means they don't see "themselves" but their previous interface file.
@@ -50,6 +49,8 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   -- JUST the grammars read from source, that are relevant, ignoring rechecked grammars
   production grammarsToTranslate :: [Decorated RootSpec] =
     keepGrammars(grammarsDependedUpon, g.translateGrammars);
+  
+  top.allGrammars = g.grammarList ++ r.grammarList;
 
   top.postOps := []; -- TODO: need to make depend on top.config
 }

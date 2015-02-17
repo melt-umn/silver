@@ -30,7 +30,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
-  top.postOps <- if top.config.dumpDepGraph then [dumpDepGraphAction(grammars)] else [];
+  top.postOps <- if top.config.dumpDepGraph then [dumpDepGraphAction(g.grammarList)] else [];
 }
 
 abstract production dumpDepGraphAction

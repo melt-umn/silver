@@ -89,40 +89,34 @@ String ::= args::[IdeProperty]
 {
     local gram :: Maybe<String> = tryGetProperty(args, "declared_grammar");
     return if gram.isJust
-    then "grammar " ++ gram.fromJust ++ ";"
+    then "grammar " ++ gram.fromJust ++ ";\n\n"
     else "";
 }
 
 function fold
 [Location] ::= cst::Root
 {
-    return   
-      case cst of
-        root(_, moduleStmts, importStmts, agDcls) -> [importStmts.location] ++ agDcls.foldableRanges -- see ./Folding.sv
-        | _ -> []
-      end;
+    return cst.foldableRanges; -- see ./Folding.sv
 }
 
 function export
 IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {
+  local grammarName::String = makeName(head(getGrammarToCompile(args)));
   local buildFile::String = env.generatedPath ++ "/build.xml";
-
-  local grammarQName::String = head(getGrammarToCompile(args));
-
-  local grammarName::String = substitute(":", ".", grammarQName);
-
   local jarFile::String = env.generatedPath ++ "/" ++ grammarName ++ ".jar";
-
   local targetFile::String = env.projectPath ++ "/" ++ grammarName ++ ".jar";
 
   local fileExists::IOVal<Boolean> = isFile(buildFile, i);
 
   local jarExists::IOVal<Boolean> = isFile(jarFile, ant(buildFile, "", "", fileExists.io));
 
-  return if !fileExists.iovalue then ioval(perror("Export failed.", i), [makeSysIdeMessage(ideMsgLvError, "build.xml doesn't exist. Has the project been successfully built before?")])
-    else if !jarExists.iovalue then ioval(perror("Export failed.", i), [makeSysIdeMessage(ideMsgLvError, "Ant failed to generate the jar.")])
-    else ioval(refresh(env.projectName, copyFile(jarFile, targetFile, jarExists.io)), []);
+  return if !fileExists.iovalue then
+    ioval(fileExists.io, [makeSysIdeMessage(ideMsgLvError, "build.xml doesn't exist. Has the project been successfully built before?")])
+  else if !jarExists.iovalue then
+    ioval(jarExists.io, [makeSysIdeMessage(ideMsgLvError, "Ant failed to generate the jar.")])
+  else
+    ioval(refresh(env.projectName, copyFile(jarFile, targetFile, jarExists.io)), []);
 }
 
 function generate

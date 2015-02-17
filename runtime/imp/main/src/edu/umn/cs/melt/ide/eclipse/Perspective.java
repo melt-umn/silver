@@ -7,22 +7,6 @@ import org.eclipse.ui.console.IConsoleConstants;
 
 public class Perspective implements IPerspectiveFactory {
 
-	/**
-	 * The IDE's development perspective has the following layout:
-	 * <p>
-	 * <code>
-	 * ____________________________________  	<br>
-	 * |Projec|---------------------------|  	<br>
-	 * |t-Expl|---------------------------|  	<br> 
-	 * |orer--|---------------------------|  	<br>
-	 * |------|---------------------------|  	<br>
-	 * |------|---------------------------| 	<br>
-	 * |------|___________________________| 	<br>
-	 * |------|Console|Progress|Problem|--|  	<br>
-	 * |------|---------------------------|  	<br>
-	 * |______|___________________________| 	<br>
-	 * </code>
-	 */
 	@Override
 	public void createInitialLayout(IPageLayout layout) {
 		//Basic settings
@@ -38,15 +22,15 @@ public class Perspective implements IPerspectiveFactory {
 		//Bottom Folder
 		IFolderLayout bottom = layout.createFolder("bottom", IPageLayout.BOTTOM, 0.66f, editorArea);
 		
+		//Problem
+		bottom.addView(IPageLayout.ID_PROBLEM_VIEW);
+		
 		//Console
 		bottom.addView(IConsoleConstants.ID_CONSOLE_VIEW);
 		
 		//Progress
 		bottom.addView(IPageLayout.ID_PROGRESS_VIEW);
 	
-		//Problem
-		bottom.addView(IPageLayout.ID_PROBLEM_VIEW);
-		
 		//And a place-holder
 		bottom.addPlaceholder("*");
 	}

@@ -27,12 +27,12 @@ rm build.xml
 ### build
 mvn clean package
 
-#cp target/edu.umn.cs.melt.ide.copper-*.jar ../../../jars/IDEPluginRuntime.jar
+#cp target/edu.umn.cs.melt.ide*.jar ../../../jars/IDEPluginRuntime.jar
 
 ### Okay, we cheated to get core and ide in. Now strip them.
 mkdir temp
 cd temp
-jar xf ../target/edu.umn.cs.melt.ide.copper-*.jar
+jar xf ../target/edu.umn.cs.melt.ide*.jar
 rm -r ide core
 jar cmf META-INF/MANIFEST.MF ../IDEPluginRuntime.jar *
 cd ..

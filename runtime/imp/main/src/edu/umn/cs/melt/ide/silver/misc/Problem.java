@@ -1,11 +1,15 @@
 package edu.umn.cs.melt.ide.silver.misc;
 
+import java.io.File;
+
 import ide.NIdeMessage;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
 
 import common.DecoratedNode;
 import common.Lazy;
@@ -29,15 +33,19 @@ public class Problem {
 	 * interpreted literally. 
 	 */
 	public static final int UNKNOWN = -1;
-		
 	public static final int INFO = IMarker.SEVERITY_INFO;
-	
 	public static final int WARNING = IMarker.SEVERITY_WARNING;
-	
 	public static final int ERROR = IMarker.SEVERITY_ERROR;
 
-	public static final String[] LEVELS = new String[]{"info", "warning", "error"};
-
+	private IPath file;
+	private int column;
+	private int line;
+	private int startInd;
+	private int endInd;
+	private String message;
+	private int level;
+	private boolean projMsg = false;
+	
 	/**
 	 * Create a file-related problem from given argument set.
 	 * 
@@ -56,14 +64,10 @@ public class Problem {
 	 * @param message	a human-oriented message that will be shown in IDE.
 	 * @return
 	 */
-	public static Problem createFileProblem(
-		IProject project, 
-		String filePath, String fileName, 
+	private static Problem createFileProblem(
+		IPath file, 
 		int line, int column, int startInd, int endInd, 
 		int severity, String message){
-		
-		String name = filePath + '/' + fileName;
-		IFile file = project.getFile(name);
 		
 		return new Problem(file, column, line, message, severity, startInd, endInd, false);
 	}
@@ -77,129 +81,28 @@ public class Problem {
 	 * @param message	a human-oriented message that will be shown in IDE.
 	 * @return
 	 */
-	public static Problem createProjectProblem(int severity, String message){
+	private static Problem createProjectProblem(int severity, String message){
 		return new Problem(null, UNKNOWN, UNKNOWN, message, severity, UNKNOWN, UNKNOWN, true);
-	}
-	
-	/**
-	 * Create file problem with unknown indices.
-	 */
-	private Problem(IFile file, int column, int line, String message, int level) {
-		this.file = file;
-		this.column = column;
-		this.line = line;
-		this.message = message;
-		this.level = level;
 	}
 	
 	/**
 	 * The most primitive constructor.
 	 */
-	private Problem(IFile file, int column, int line, String message, int level, 
+	private Problem(IPath file, int column, int line, String message, int level, 
 		int startInd, int endInd, boolean projMsg) {
-		this(file, column, line, message, level);
+		this.file = file;
+		this.column = column;
+		this.line = line;
+		this.message = message;
+		this.level = level;
 		this.startInd = startInd;
 		this.endInd = endInd;
 		this.projMsg = projMsg;
 	}
 	
-	@Override
-	public String toString() {
-		return 
-			(projMsg) ?
-				"Project problem [level=" + ((level>=0&&level<LEVELS.length)?LEVELS[level]:"UNKNOWN") + 
-				", message=" + message + "]"
-			:	
-				"Problem [file=" + file + 
-				", line=" + line + ", column=" + column + 
-				", startInd=" + ((startInd!=UNKNOWN)?startInd:"UNKNOWN") +
-				", endInd=" + ((endInd!=UNKNOWN)?endInd:"UNKNOWN") +
-				", level=" + ((level>=0&&level<LEVELS.length)?LEVELS[level]:"UNKNOWN") + 
-				", message=" + message + "]";
-	}
-	
-	/**
-	 * @return	null if it's a project message.
-	 */
-	public IFile getFile() {
-		return file;
-	}
-
-	/**
-	 * 1-based column number.
-	 * 
-	 * @return	{@link #UNKNOWN} if it's a project message.
-	 */
-	public int getColumn() {
-		return column;
-	}
-
-	/**
-	 * 1-based line number.
-	 * 
-	 * @return	{@link #UNKNOWN} if it's a project message.
-	 */
-	public int getLine() {
-		return line;
-	}
-
-	public String getMessage() {
-		return message;
-	}
-
-	/**
-	 * @return {@link #INFO}|{@link #WARNING}|{@link #ERROR}
-	 */
-	public int getLevel() {
-		return level;
-	}
-	
-	/**
-	 * Whether this is a project problem (true) or file problem (false)
-	 * 
-	 * @return true if it's a project problem.
-	 */
-	public boolean isProjectProblem(){
-		return projMsg;
-	}
-	
-	/**
-	 * The starting index of the problem; relative to file start.
-	 * 
-	 * @return	can be {@link #UNKNOWN}.
-	 */
-	public int getStartInd() {
-		return startInd;
-	}
-	
-	/**
-	 * The ending index of the problem; relative to file start.
-	 * 
-	 * @return	can be {@link #UNKNOWN}.
-	 */
-	public int getEndInd() {
-		return endInd;
-	}
-	
 	public boolean buildBlocker() {
 		return level == ERROR;
 	}
-	
-	private IFile file;
-	
-	private int column;
-	
-	private int line;
-	
-	private int startInd = UNKNOWN;
-	
-	private int endInd = UNKNOWN;
-	
-	private String message;
-	
-	private int level;
-	
-	private boolean projMsg = false;
 	
 	public static Problem extractProblem(IProject project, NIdeMessage ideMsg) {
 		//Extract values
@@ -227,18 +130,7 @@ public class Problem {
     	boolean isLinked = (Boolean)ideMsgDecNode.synthesized(ide.Init.ide_isLinked__ON__ide_IdeMessage);
 
     	if(isLinked) {
-    		/*StringCatter rootPath = (StringCatter)ideMsgDecNode.synthesized(ide.Init.ide_rootPath__ON__ide_IdeMessage);
-        	
-        	LinkedResourceTracker tracker = 
-        		@LANG_NAME@Service.getInstance().getLinkedResourceTracker(project);
-        	
-        	String linkedFolderPath = tracker.get(rootPath.toString());*/
-        	
-        	//Assemble a problem
-        	//IProject project, String pathRelativeToProjectRoot, String fileName, 
-    		//int line, int column, int startInd, int endInd, int severity, String message,
-        	
-        	// TODO: right now I'm ignoring linked resources and attaching to project instead.
+        	// TODO: remove linked stuff
         	return Problem.createProjectProblem(severity, fileName.toString() + ": " + msg.toString());
     	} 
 
@@ -246,37 +138,45 @@ public class Problem {
     	//IProject project, String pathRelativeToProjectRoot, String fileName, 
 		//int line, int column, int startInd, int endInd, int severity, String message, 
     	return Problem.createFileProblem(
-    		project, resPath.toString(), fileName.toString(), 
+    		new Path(resPath.toString()).addTrailingSeparator().append(fileName.toString()),
     		lineNo, columnNo, startInd, endInd, severity, msg.toString());
     	
     }
 	
 	public void createMarker(IProject project, String markerType) throws CoreException {
-		if(isProjectProblem()) {
+		if(projMsg) {
 			IMarker marker = project.createMarker(markerType);
 			marker.setAttribute(IMarker.MESSAGE, message);
 			marker.setAttribute(IMarker.SEVERITY, level);
 		} else {
-			if(!file.exists()){
+			IFile f;
+			// If we get an absolute path to the project, strip it off.
+			if(project.getLocation().isPrefixOf(file)) {
+				f = project.getFile(file.makeRelativeTo(project.getLocation()));
+			} else {
+				f = project.getFile(file);				
+			}
+			
+			if(!f.exists()) {
 				IMarker marker = project.createMarker(markerType);
-				marker.setAttribute(IMarker.MESSAGE, "Unknown file with error message: " + file.getFullPath().toString() + " : " + message);
+				marker.setAttribute(IMarker.MESSAGE, "Unknown file with error message: " + f.getFullPath().toString() + " : " + message);
 				marker.setAttribute(IMarker.SEVERITY, level);
 				return;
 			}
 
 			//Reuse ErrorMarkerID for whatever kind of problem
-			IMarker marker = file.createMarker(markerType);
-			marker.setAttribute(IMarker.MESSAGE, getMessage());
-			marker.setAttribute(IMarker.LINE_NUMBER, getLine());
-			int index = getStartInd();
-			if(index!=Problem.UNKNOWN){
+			IMarker marker = f.createMarker(markerType);
+			marker.setAttribute(IMarker.MESSAGE, message);
+			marker.setAttribute(IMarker.LINE_NUMBER, line);
+			int index = startInd;
+			if(index != Problem.UNKNOWN) {
 				marker.setAttribute(IMarker.CHAR_START, index);
 			}
-			index = getEndInd();
-			if(index!=Problem.UNKNOWN){
+			index = endInd;
+			if(index != Problem.UNKNOWN) {
 				marker.setAttribute(IMarker.CHAR_END, index);
 			}
-			marker.setAttribute(IMarker.SEVERITY, getLevel());
+			marker.setAttribute(IMarker.SEVERITY, level);
 
 		}
 	}
