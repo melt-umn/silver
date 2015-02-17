@@ -289,6 +289,7 @@
 <keyword>name</keyword> 
 <keyword>version</keyword> 
 <keyword>option</keyword>
+<keyword>resource</keyword>
         </context>
         <context ref="silver"/>
       </include>

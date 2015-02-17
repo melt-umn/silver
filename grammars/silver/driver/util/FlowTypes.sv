@@ -12,14 +12,14 @@ aspect production compilation
 top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::BuildEnv
 {
   -- aggregate all flow def information
-  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), grammars)));
+  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), g.grammarList)));
   local allFlowEnv :: Decorated FlowEnv = fromFlowDefs(allFlowDefs);
   
   -- Look up tree for production info
   local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlowDefs.prodGraphContribs);
   
   -- hack to allow us to look up certain info... TODO: maybe hack?
-  local allRealDefs :: [Def] = foldr(append, [], map((.defs), grammars));
+  local allRealDefs :: [Def] = foldr(append, [], map((.defs), g.grammarList));
   local allRealEnv :: Decorated Env = toEnv(allRealDefs);
   
   -- List of all productions (is this nub needed? TODO)

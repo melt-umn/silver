@@ -6,7 +6,7 @@
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>edu.umn.cs.melt</groupId>
-  <artifactId>edu.umn.cs.melt.ide.copper</artifactId><!-- Must be same to symbolic name -->
+  <artifactId>edu.umn.cs.melt.ide</artifactId><!-- Must be same to symbolic name -->
   <version>1.0.0</version>
   <packaging>eclipse-plugin</packaging>
   <name>Runtime for Silver-based IDE</name>
@@ -21,7 +21,7 @@
 -->
 
   <properties>
-    <tycho-version>0.18.1</tycho-version>
+    <tycho-version>0.22.0</tycho-version>
   </properties>
 
   <build>

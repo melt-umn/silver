@@ -37,7 +37,7 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
 
   ---- DIFFERENCE: We do *not* run the actions in the functions. Only check for errors.
 
-  local messages :: [IdeMessage] = getAllBindingErrors(unit.grammarList, projectPath);
+  local messages :: [IdeMessage] = getAllBindingErrors(unit.allGrammars, projectPath);
 
   return if !null(argErrors) then
     ioval(ioin, [makeSysIdeMessage(ideMsgLvError, "Parsing failed during build. If source code/resources are changed outside IDE, refresh and rebuild is needed.")])
@@ -94,78 +94,26 @@ function getSysMessages
 function getAllBindingErrors
 [IdeMessage] ::= specs::[Decorated RootSpec] projectPath::String
 {
-
   local spec :: Decorated RootSpec = head(specs);
   -- remainder of the path after 'projectPath' prefix.
-  local grmPath::String = translateToPath(spec.grammarSource, projectPath);--spec.declaredName
+  local grmPath :: String = spec.grammarSource;
 
-  return if null(specs)
-            then []
-            else if startsWith(projectPath, spec.grammarSource) -- check if this spec is physically located under project
-                 then getIdeMessages(grmPath, spec) ++ getAllBindingErrors(tail(specs), projectPath)
-                 -- if not, generate message for linked resource
-                 else getIdeMessagesLinked(grmPath, getGrammarRoot(spec.grammarSource, grmPath), spec) ++ 
-                      getAllBindingErrors(tail(specs), projectPath);
+  return if null(specs) then []
+  else getIdeMessages(grmPath, spec) ++ getAllBindingErrors(tail(specs), projectPath);
 }
 
 function getIdeMessages
 [IdeMessage] ::= path::String spec::Decorated RootSpec
 {
-  return if !null(spec.parsingErrors)
-         then rewriteMessages(path, spec.parsingErrors) -- parsing errors (if we have any parsing error, don't bother to further inspect binding errors)
-         else rewriteMessages(path, spec.errors);       -- binding errors
+  return map(rewriteMessage(path, _), 
+    if !null(spec.parsingErrors)
+    then spec.parsingErrors
+    else spec.errors);
 }
 
-function rewriteMessages
-[IdeMessage] ::= path::String es::[Message]
+function rewriteMessage
+IdeMessage ::= path::String m::Message
 {
-  return if null(es)
-         then []
-         else let 
-                  head :: Message = head(es)
-              in 
-                  [makeIdeMessage(path, head.loc, head.severity, head.msg)] ++ rewriteMessages(path, tail(es))
-              end;
-}
-
-function getIdeMessagesLinked
-[IdeMessage] ::= path::String grmRoot::String spec::Decorated RootSpec
-{
-  return if null(spec.parsingErrors)
-         then rewriteMessagesLinked(path, grmRoot, spec.errors)
-         else rewriteMessagesLinked(path, grmRoot, spec.parsingErrors);
-}
-
-function rewriteMessagesLinked
-[IdeMessage] ::= path::String grmRoot::String es::[Message]
-{
-  return if null(es)
-         then []
-         else let 
-                  head :: Message = unsafeTrace(head(es), print("got linked: " ++ head(es).pp ++ "\n", unsafeIO()))
-              in 
-                  [makeLinkedResourceMessage(path, grmRoot, head.loc, head.severity, head.msg)] ++ rewriteMessagesLinked(path, grmRoot, tail(es))
-              end;
-}
-
-{--
- - Turns a absolute path into a relative one, assuming it's below 'projectPath' as root.
- -}
-function translateToPath
-String ::= grammarSource::String projectPath::String 
-{
-  local found :: Boolean = startsWith(projectPath, grammarSource);
-  return if found
-         then substring(length(projectPath), length(grammarSource), grammarSource)
-         else "";-- If not found, the generated message will contain invalid resource path and won't be marked in IDE.
-}
-
--- fullPath: /home/melt/test/a/b/c
--- grmPath: a/b/c
--- returns: /home/melt/test/
-function getGrammarRoot
-String ::= fullPath::String grmPath::String
-{
-  return substring(0, lastIndexOf(grmPath ++ "/", fullPath), fullPath);
+  return makeIdeMessage(path, m.loc, m.severity, m.msg);
 }
 
