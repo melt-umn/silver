@@ -1,28 +1,6 @@
 grammar ide;
 
 {--
-  Print an info-level message into IDE console.
---}
-function pinfo
-IO ::= s::String i::IO
-{
-  return error("Not Yet Implemented: pinfo");
-} foreign {
-  "java" : return "common.Util.io(%i%, edu.umn.cs.melt.ide.util.Util.info(%s%.toString()))";
-}
-
-{--
-  Print an error-level message into IDE console.
---}
-function perror
-IO ::= s::String i::IO
-{
-  return error("Not Yet Implemented: perror");
-} foreign {
-  "java" : return "common.Util.io(%i%, edu.umn.cs.melt.ide.util.Util.error(%s%.toString()))";
-}
-
-{--
   Call IDE-embedded ant against a build file.
 
   buildFile: the full absolute path and file name (example: /home/username/workspace/proj01/build.xml)
@@ -56,6 +34,7 @@ IO ::= projectName::String  i::IO
  - a 'resource' declaration in the ide spec.
  - (e.g.  resource grammars "../../../grammars";
  -   can be obtained via getIdeResource("grammar", io) )
+ - NOT TO BE CONFUSED WITH IDERESOURCE. (i.e. files in the project)
  -}
 function getIdeResource
 IOVal<String> ::= resourceid::String  i::IO

@@ -84,19 +84,25 @@ temp_imp_ide_dcl svParse ".sv" {
 
 -- Declarations of IDE functions referred in decl block.
 
-function getStubForNewFile
-String ::= args::[IdeProperty]
+function analyze
+IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {
-    local gram :: Maybe<String> = tryGetProperty(args, "declared_grammar");
-    return if gram.isJust
-    then "grammar " ++ gram.fromJust ++ ";\n\n"
-    else "";
+  local argio::IOVal<[String]> = getArgStrings(args, env, i);
+
+  local ru :: IOVal<[IdeMessage]> = ideAnalyze(argio.iovalue, svParse, sviParse, env.projectPath, argio.io);
+
+  return ru;
 }
 
-function fold
-[Location] ::= cst::Root
+function generate
+IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
 {
-    return cst.foldableRanges; -- see ./Folding.sv
+  local argio::IOVal<[String]> = getArgStrings(args, env, i);
+
+  local ru :: IOVal<[IdeMessage]> = ideGenerate(argio.iovalue, svParse, sviParse, argio.io);
+
+  return ru;
+
 }
 
 function export
@@ -119,25 +125,19 @@ IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
     ioval(refresh(env.projectName, copyFile(jarFile, targetFile, jarExists.io)), []);
 }
 
-function generate
-IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
+function fold
+[Location] ::= cst::Root
 {
-  local argio::IOVal<[String]> = getArgStrings(args, env, i);
-
-  local ru :: IOVal<[IdeMessage]> = ideGenerate(argio.iovalue, svParse, sviParse, argio.io);
-
-  return ru;
-
+    return cst.foldableRanges; -- see ./Folding.sv
 }
 
-function analyze
-IOVal<[IdeMessage]> ::= args::[IdeProperty] env::IdeEnv i::IO
+function getStubForNewFile
+String ::= args::[IdeProperty]
 {
-  local argio::IOVal<[String]> = getArgStrings(args, env, i);
-
-  local ru :: IOVal<[IdeMessage]> = ideAnalyze(argio.iovalue, svParse, sviParse, env.projectPath, argio.io);
-
-  return ru;
+    local gram :: Maybe<String> = lookupIdeProperty("declared_grammar", args);
+    return if gram.isJust
+    then "grammar " ++ gram.fromJust ++ ";\n\n"
+    else "";
 }
 
 function getArgStrings
@@ -168,16 +168,4 @@ function getGrammarToCompile
 	    then [head(args).propValue]
 	    else getGrammarToCompile(tail(args));
 }
-
-function tryGetProperty
-Maybe<String> ::= args::[IdeProperty] prop::String
-{
-  return
-    if(null(args))
-    then nothing()
-    else if head(args).propName == prop
-	    then just(head(args).propValue)
-	    else tryGetProperty(tail(args), prop);
-}
-
 
