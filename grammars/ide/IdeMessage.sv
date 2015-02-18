@@ -8,12 +8,11 @@ synthesized attribute msg :: String;
 synthesized attribute loc :: Location;
 
 synthesized attribute rootPath :: String;
-synthesized attribute isLinked :: Boolean;
 
 {--
  The nonterminal representing a message to be displayed in generated IDE.  
 --}
-nonterminal IdeMessage with resPath, loc, severity, msg, systemLevel, rootPath, isLinked;
+nonterminal IdeMessage with resPath, loc, severity, msg, systemLevel, rootPath;
 
 {--
  Level constants used for IdeMessage.severity
@@ -38,7 +37,6 @@ top::IdeMessage ::= resPath::String location::Location severity::Integer msg::St
   top.severity = severity;
   top.msg = msg;
   top.systemLevel = false;
-  top.isLinked = false;
 }
 
 {--
@@ -57,5 +55,4 @@ top::IdeMessage ::= severity::Integer msg::String
   top.systemLevel = true;
 
   top.rootPath = "";
-  top.isLinked = false;
 }

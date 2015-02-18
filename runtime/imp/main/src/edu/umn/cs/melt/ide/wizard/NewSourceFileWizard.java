@@ -23,8 +23,6 @@ import common.ConsCell;
 
 import edu.umn.cs.melt.ide.impl.SVRegistry;
 
-import ide.NIdeProperty;
-
 /**
  * The New Source File Wizard is used to create a source file, 
  * with extension name being given by the plugin, under a given project.

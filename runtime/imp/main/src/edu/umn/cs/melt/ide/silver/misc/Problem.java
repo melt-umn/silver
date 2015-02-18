@@ -1,7 +1,5 @@
 package edu.umn.cs.melt.ide.silver.misc;
 
-import java.io.File;
-
 import ide.NIdeMessage;
 
 import org.eclipse.core.resources.IFile;
@@ -104,9 +102,8 @@ public class Problem {
 		return level == ERROR;
 	}
 	
-	public static Problem extractProblem(IProject project, NIdeMessage ideMsg) {
-		//Extract values
-    	DecoratedNode ideMsgDecNode = ideMsg.decorate(TopNode.singleton, (Lazy[])null);
+	public static Problem extractProblem(NIdeMessage ideMsg) {
+		DecoratedNode ideMsgDecNode = ideMsg.decorate(TopNode.singleton, (Lazy[])null);
     	
     	StringCatter msg = (StringCatter)ideMsgDecNode.synthesized(ide.Init.ide_msg__ON__ide_IdeMessage);
     	Integer severity = (Integer)ideMsgDecNode.synthesized(ide.Init.ide_severity__ON__ide_IdeMessage);
@@ -127,16 +124,6 @@ public class Problem {
     	Integer startInd = (Integer)locDecNode.synthesized(core.Init.core_index__ON__core_Location);
     	Integer endInd = (Integer)locDecNode.synthesized(core.Init.core_endIndex__ON__core_Location);
     	
-    	boolean isLinked = (Boolean)ideMsgDecNode.synthesized(ide.Init.ide_isLinked__ON__ide_IdeMessage);
-
-    	if(isLinked) {
-        	// TODO: remove linked stuff
-        	return Problem.createProjectProblem(severity, fileName.toString() + ": " + msg.toString());
-    	} 
-
-    	//Assemble a problem
-    	//IProject project, String pathRelativeToProjectRoot, String fileName, 
-		//int line, int column, int startInd, int endInd, int severity, String message, 
     	return Problem.createFileProblem(
     		new Path(resPath.toString()).addTrailingSeparator().append(fileName.toString()),
     		lineNo, columnNo, startInd, endInd, severity, msg.toString());
