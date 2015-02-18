@@ -3,9 +3,6 @@ package edu.umn.cs.melt.ide.imp.services;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Iterator;
 
 import org.eclipse.core.runtime.IProgressMonitor;

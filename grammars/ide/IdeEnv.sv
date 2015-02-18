@@ -2,9 +2,7 @@ grammar ide;
 
 synthesized attribute projectName :: String;
 synthesized attribute projectPath :: String;
-synthesized attribute platformPath :: String;
 synthesized attribute generatedPath :: String;
-synthesized attribute project :: IdeProject occurs on IdeEnv;
 
 {--
 The nonterminal representing the environment for a project in generated IDE.  
@@ -14,7 +12,9 @@ The nonterminal representing the environment for a project in generated IDE.
                  files go. this folder is labeled as hidden in Eclipse.
   platformPath: the absolute path to Eclipse platform (that is, the folder of Eclipse).
 --}
-nonterminal IdeEnv with projectName, projectPath, generatedPath, platformPath;
+nonterminal IdeEnv with projectName, projectPath, generatedPath;
+
+-- TODO: eliminate this type.
 
 {--
  Create an environment for target project
@@ -25,7 +25,5 @@ top::IdeEnv ::= projectName::String projectPath::String generatedPath::String pl
   top.projectName = projectName;
   top.projectPath = projectPath;
   top.generatedPath = generatedPath;
-  top.platformPath = platformPath;
-  top.project = project;
 }
 

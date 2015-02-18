@@ -130,7 +130,7 @@ public class Builder extends IncrementalProjectBuilder {
 			// it seems we do not need to worry about batching changes, as a builder gets called
 			// with AVOID_UPDATE. apparently. I'm guessing. from the fact that markers don't appear
 			// until this function returns.
-			Problem p = Problem.extractProblem(project, msg);
+			Problem p = Problem.extractProblem(msg);
 			p.createMarker(project, sv.markerErrorName());
 			stopBuild = stopBuild || p.buildBlocker();
 		}
