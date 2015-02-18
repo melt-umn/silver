@@ -3,7 +3,7 @@ package edu.umn.cs.melt.ide.impl;
 import java.io.IOException;
 import java.io.Reader;
 
-import ide.NIdeEnv;
+import org.eclipse.core.resources.IProject;
 
 import common.ConsCell;
 import common.Node;
@@ -50,7 +50,7 @@ public abstract class SVDefault implements SVInterface {
 	public abstract IdeParseResult<Node, CopperToken> parse(Reader input, String filename) throws CopperParserException, IOException;
 	
 	@Override
-	public NIOVal build(ConsCell properties, NIdeEnv env, Object iotoken) {
+	public NIOVal build(IProject project, ConsCell properties, Object iotoken) {
 		// Introducing the bit to plugin.xml that results in the code being run
 		// that eventually calls this is a result of a 'builder' function being given.
 		// It should never be the case that this is unimplemented and then called.
@@ -58,14 +58,14 @@ public abstract class SVDefault implements SVInterface {
 	}
 
 	@Override
-	public NIOVal postbuild(ConsCell properties, NIdeEnv env, Object iotoken) {
+	public NIOVal postbuild(IProject project, ConsCell properties, Object iotoken) {
 		// An entirely valid course of action is to do nothing. Do so by default.
 		// Seamlessly handles a 'builder' given but not a 'postbuilder'.
 		return new Pioval(iotoken, ConsCell.nil);
 	}
 
 	@Override
-	public NIOVal export(ConsCell properties, NIdeEnv env, Object iotoken) {
+	public NIOVal export(IProject project, ConsCell properties, Object iotoken) {
 		// Introducing the bit to plugin.xml that results in the code being run
 		// that eventually calls this is a result of a 'exporter' function being given.
 		// It should never be the case that this is unimplemented and then called.

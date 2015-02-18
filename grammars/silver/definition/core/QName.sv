@@ -59,6 +59,9 @@ top::QNameLookup ::= kindOfLookup::String dcls::[DclInfo] name::String l::Locati
   top.fullName = if null(top.dcls) then "undeclared:value:" ++ name
                  else top.dcl.fullName;
   
+  -- TODO: We could eliminate a lot of explicit calls to 'freshenCompletely' and make this more correct
+  -- if we pushed into 'dcl' a different kind of TypeExp, which recorded quantifiers.
+  -- e.g. QuantifiedTypeExp. Then when we asked for .typerep of that, it always freshens.
   top.typerep = if null(top.dcls) then errorType()  else top.dcl.typerep;
   top.dclBoundVars = if null(top.dcls) then []      else top.dcl.dclBoundVars;
   

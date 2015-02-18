@@ -1,7 +1,5 @@
 package edu.umn.cs.melt.ide.imp.builders;
 
-import ide.NIdeEnv;
-
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
@@ -46,15 +44,12 @@ public class Exporter implements IObjectActionDelegate, IExecutableExtension {
 		final ProjectProperties properties =
 				ProjectProperties.getPropertyPersister(project.getLocation().toString());
 		
-		// TODO: likewise, this could be cached.
-		final NIdeEnv env = Builder.computeIdeEnv(project);
-
 		Job job = new Job("Exporting " + name + " distributable") {
 			
 			@Override
 			protected IStatus run(final IProgressMonitor monitor) {
 
-				final NIOVal undecorated_export_result = sv.export(properties.serializeToSilverType(), env, null);
+				final NIOVal undecorated_export_result = sv.export(project, properties.serializeToSilverType(), null);
 				final DecoratedNode export_result = undecorated_export_result.decorate(TopNode.singleton, (Lazy[])null);
 				// demand evaluation of io actions
 				export_result.synthesized(core.Init.core_io__ON__core_IOVal);

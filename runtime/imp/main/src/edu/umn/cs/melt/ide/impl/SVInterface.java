@@ -3,11 +3,12 @@ package edu.umn.cs.melt.ide.impl;
 import java.io.IOException;
 import java.io.Reader;
 
+import org.eclipse.core.resources.IProject;
+
 import common.ConsCell;
 import common.Node;
 import common.StringCatter;
 import core.NIOVal;
-import ide.NIdeEnv;
 
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.ide.copper.CopperToken;
@@ -59,18 +60,19 @@ public interface SVInterface {
 	public String fileExtension();
 	
 	/**
-	 * IOVal<[IdeMessage]> ::= [IdeProperty] IO
+	 * IOVal<[IdeMessage]> ::= IdeProject [IdeProperty] IO
 	 * 
 	 * Run when a build action is requested. e.g. a file is saved, if auto-build is on.
 	 * 
+	 * @param project  The project being built
 	 * @param properties  The IDE project properties.
 	 * @param iotoken  An input IO token.
 	 * @return An IO object that contains a list of error messages to raise.
 	 */
-	public NIOVal build(ConsCell properties, NIdeEnv env, Object iotoken); 
+	public NIOVal build(IProject project, ConsCell properties, Object iotoken); 
 
 	/**
-	 * IOVal<[IdeMessage]> ::= [IdeProperty] IO
+	 * IOVal<[IdeMessage]> ::= IdeProject [IdeProperty] IO
 	 * 
 	 * <p>Run when a build action *has succeeded without errors*.
 	 * 
@@ -80,23 +82,24 @@ public interface SVInterface {
 	 * 
 	 * <p>An entirely valid implementation does nothing.
 	 * 
+	 * @param project  The project being built
 	 * @param properties  The IDE project properties.
 	 * @param iotoken  An input IO token.
-	 * @return An IO object that contains a list of error messages to raise.
+	 * @return An IO object that contains a list of *additional* error messages to raise.
 	 */
-	public NIOVal postbuild(ConsCell properties, NIdeEnv env, Object iotoken);
+	public NIOVal postbuild(IProject project, ConsCell properties, Object iotoken);
 	
 	/**
-	 * IOVal<[IdeMessage]> ::= [IdeProperty] IdeEnv IO
+	 * IOVal<[IdeMessage]> ::= IdeProject [IdeProperty] IO
 	 * 
 	 * Run when the user requests an export? (TODO: uh, figure some stuff out here)
 	 * 
+	 * @param project  The project being built
 	 * @param properties  The IDE project properties.
-	 * @param env  ???
 	 * @param iotoken  An input IO token.
-	 * @return  ??? errors exporting? How are they reported?
+	 * @return  Any additional errors to raise (usually sys errors, rather than for files)
 	 */
-	public NIOVal export(ConsCell properties, NIdeEnv env, Object iotoken);
+	public NIOVal export(IProject project, ConsCell properties, Object iotoken);
 	
 	/**
 	 * [Location] ::= <<CST root's type>>
