@@ -101,9 +101,8 @@ import common.StringCatter;
 import core.NIOVal;
 import core.Pioval;
 
-import ide.NIdeEnv;
-
 import org.eclipse.jface.text.IRegion;
+import org.eclipse.core.resources.IProject;
 
 import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;

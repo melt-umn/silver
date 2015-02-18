@@ -1,6 +1,5 @@
 package edu.umn.cs.melt.ide.imp.builders;
 
-import ide.NIdeEnv;
 import ide.NIdeMessage;
 
 import java.io.File;
@@ -59,11 +58,8 @@ public class Builder extends IncrementalProjectBuilder {
 		final ProjectProperties properties =
 				ProjectProperties.getPropertyPersister(project.getLocation().toString());
 		
-		// TODO: likewise, this could be cached.
-		final NIdeEnv env = computeIdeEnv(project);
-		
 		// Run the build
-		final NIOVal undecorated_build_result = sv.build(properties.serializeToSilverType(), env, null);
+		final NIOVal undecorated_build_result = sv.build(project, properties.serializeToSilverType(), null);
 		final DecoratedNode build_result = undecorated_build_result.decorate(TopNode.singleton, (Lazy[])null);
 		// demand evaluation of io actions
 		build_result.synthesized(core.Init.core_io__ON__core_IOVal);
@@ -95,7 +91,7 @@ public class Builder extends IncrementalProjectBuilder {
 			public void run() {
 				// Now, invoke the post-builder.
 				synchronized(lock) {
-					final NIOVal undecorate_post_result = sv.postbuild(properties.serializeToSilverType(), env, null);
+					final NIOVal undecorate_post_result = sv.postbuild(project, properties.serializeToSilverType(), null);
 					final DecoratedNode post_result = undecorate_post_result.decorate(TopNode.singleton, (Lazy[])null);
 					post_result.synthesized(core.Init.core_io__ON__core_IOVal);
 					
@@ -135,33 +131,5 @@ public class Builder extends IncrementalProjectBuilder {
 			stopBuild = stopBuild || p.buildBlocker();
 		}
 		return stopBuild;
-	}
-	
-	public static NIdeEnv computeIdeEnv(IProject fProject) {
-		IPath path = fProject.getLocation();
-		
-		String projectPath = path.toOSString();
-		String generatedPath = path.toOSString() + "/" + "bin";
-		String platformPath = null;
-		
-		try {
-			Location platform = Platform.getInstallLocation();
-			File parent = new File(FileLocator.resolve(platform.getURL()).toURI());
-			platformPath = parent.getAbsolutePath();
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		NIdeEnv env = new ide.PmakeIdeEnv(
-            new common.StringCatter(fProject.getName()), 
-            new common.StringCatter(projectPath), 
-            new common.StringCatter(generatedPath), 
-            new common.StringCatter(platformPath),
-            fProject
-        );
-		
-		return env;
 	}
 }

@@ -13,7 +13,7 @@ import ide;
 
 -- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideAnalyze
-IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser projectPath::String ioin::IO
+IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser ioin::IO
 {
   -- Figure out arguments
   local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
@@ -37,7 +37,7 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
 
   ---- DIFFERENCE: We do *not* run the actions in the functions. Only check for errors.
 
-  local messages :: [IdeMessage] = getAllBindingErrors(unit.allGrammars, projectPath);
+  local messages :: [IdeMessage] = getAllBindingErrors(unit.allGrammars);
 
   return if !null(argErrors) then
     ioval(ioin, [makeSysIdeMessage(ideMsgLvError, "Parsing failed during build. If source code/resources are changed outside IDE, refresh and rebuild is needed.")])
@@ -92,14 +92,13 @@ function getSysMessages
 }
 
 function getAllBindingErrors
-[IdeMessage] ::= specs::[Decorated RootSpec] projectPath::String
+[IdeMessage] ::= specs::[Decorated RootSpec]
 {
   local spec :: Decorated RootSpec = head(specs);
-  -- remainder of the path after 'projectPath' prefix.
   local grmPath :: String = spec.grammarSource;
 
   return if null(specs) then []
-  else getIdeMessages(grmPath, spec) ++ getAllBindingErrors(tail(specs), projectPath);
+  else getIdeMessages(grmPath, spec) ++ getAllBindingErrors(tail(specs));
 }
 
 function getIdeMessages

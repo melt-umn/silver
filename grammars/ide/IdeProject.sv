@@ -27,10 +27,10 @@ IO ::= proj::IdeProject  i::IO
 }
 
 -- Get the absoluet path of given project.
-function getAbsoluteProjectPath
+function getProjectPath
 IOVal<String> ::= proj::IdeProject i::IO
 {
-  return error("Not Yet Implemented: getAbsoluteProjectPath");
+  return error("Not Yet Implemented: getProjectPath");
 } foreign {
   "java" : return 
     "edu.umn.cs.melt.ide.util.Util.getAbsoluteProjectPath(%proj%, %i%)";
