@@ -63,6 +63,7 @@ public class ParseController extends ParseControllerBase {
 	@Override
 	public Object parse(String input, IProgressMonitor monitor) {
 		try {
+			lastSuccess = null;
 			handler.clearMessages();
 			Reader reader = new StringReader(input);
 			IdeParseResult<Node, CopperToken> result = SVRegistry.get().parse(reader, getPath().toFile().getName());

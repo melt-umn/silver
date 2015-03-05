@@ -28,6 +28,6 @@ Maybe<String> ::= prop::String args::[IdeProperty]
     if null(args)
     then nothing()
     else if head(args).propName == prop
-         then just( head( args ).propValue )
-         else lookupIdeProperty( prop, tail(args) );
+         then just(head(args).propValue)
+         else lookupIdeProperty(prop, tail(args));
 }
