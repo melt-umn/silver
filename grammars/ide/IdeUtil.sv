@@ -16,25 +16,11 @@ IO ::= buildFile::String arguments::String target::String i::IO
 }
 
 {--
-  Refresh a project with a given level:
- 
-  projectName: name of the project
-  depth: the depth down to which to refresh this project. Legal value: ideDepthZero, ideDepthOne, ideDepthInfinite
---}
-function refresh
-IO ::= projectName::String  i::IO
-{
-  return error("Not Yet Implemented: refresh");
-} foreign {
-  "java" : return "common.Util.io(%i%, edu.umn.cs.melt.ide.util.Util.refresh(%projectName%))";
-}
-
-{--
  - Gets a path to a resource (directory, file) that was included in the IDE bundle via
  - a 'resource' declaration in the ide spec.
  - (e.g.  resource grammars "../../../grammars";
  -   can be obtained via getIdeResource("grammar", io) )
- - NOT TO BE CONFUSED WITH IDERESOURCE. (i.e. files in the project)
+ - NOT TO BE CONFUSED WITH IdeResource. (i.e. files in the project)
  -}
 function getIdeResource
 IOVal<String> ::= resourceid::String  i::IO
