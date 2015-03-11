@@ -62,7 +62,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
             pair("--onejar", flag(onejarFlag)),
             pair("--one-jar", flag(onejarFlag)),
             pair("--relative-jar", flag(relativejarFlag)),
-            pair("--XRTjar", option(includeRTJarFlag)),
+            pair("--include-jar", option(includeRTJarFlag)),
             pair("--build-xml-location", option(buildXmlFlag))
            ];
   flagdescs <- ["\t--one-jar  : include runtime libraries in the jar"];
