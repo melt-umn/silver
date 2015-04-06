@@ -205,7 +205,14 @@ top::Expr ::= '(' '.' q::QName ')'
 {
   top.translation = if inputType.isDecorated
                     then "new common.AttributeSection(" ++ occursCheck.dcl.attrOccursIndex ++ ")"
-                    else "new common.AttributeSection.Undecorated(" ++ occursCheck.dcl.attrOccursIndex ++ ")";
+                    -- Please note: context is not actually required here, we do so to make runtime error messages
+                    -- more comprehensible. This is a similar situation to the code for 'decorate E with {}'.
+                    -- Rather pin more memory than necessary than make errors bad. For now.
+                    -- TODO: This is a good candidate for removing if we make the well-definedness error check required, though!
+                    -- That error would be more comprehensible! (the trouble with this is that we're reporting as context the
+                    -- function/production we appear within here. The function *may* be applied elsewhere. However, the most common
+                    -- case is something like map((.attr), list) so, that's probably best to report here instead of within map.)
+                    else "new common.AttributeSection.Undecorated(" ++ occursCheck.dcl.attrOccursIndex ++ ", context)";
 
   top.lazyTranslation = top.translation;
 }
@@ -296,11 +303,15 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.translation = e.translation ++ 
     case inh of
-      exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null)" -- TODO: we don't NEED to pass context here, but it's good for error messages!
+    | exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null)"
+      -- Note: we don't NEED to pass context here, but it's good for error messages!
+      -- When the user forgets to provide inherited attributes
+      -- (especially important because we're implicitly inserted when accessing attributes
+      --  from undecorated nodes, and this is a common error for new silverers.)
     | _ -> ".decorate(context, common.Util.populateInh(" ++
-                                      makeNTClassName(finalType(e).typeName) ++ ".num_inh_attrs, " ++
-                                      "new int[]{" ++ implode(", ", inh.nameTrans) ++ "}, " ++ 
-                                      "new common.Lazy[]{" ++ implode(", ", inh.valueTrans) ++ "}))"
+             makeNTClassName(finalType(e).typeName) ++ ".num_inh_attrs, " ++
+             "new int[]{" ++ implode(", ", inh.nameTrans) ++ "}, " ++ 
+             "new common.Lazy[]{" ++ implode(", ", inh.valueTrans) ++ "}))"
     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);

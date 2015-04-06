@@ -21,8 +21,7 @@ top::Unit ::= f::(IOVal<Integer> ::= IO) order::Integer
 function runAll
 IOVal<Integer> ::= l::[Unit] i::IO
 {
-  local attribute now :: Unit;
-  now = head(l);
+  local now :: Unit = head(l);
   now.ioIn = i;
 
   return  if unsafeTrace(null(l), i) -- TODO: this is just to force strictness...
