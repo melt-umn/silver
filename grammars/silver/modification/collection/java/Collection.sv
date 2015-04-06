@@ -179,6 +179,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te:
 
 --- Use semantics translation --------------------------------------------------
 
+---------- LOCALS ---
 aspect production baseCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
@@ -201,6 +202,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
         "\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes[" ++ val.lookupValue.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";
 }
 
+---------- SYNTHESIZED ----
 aspect production synBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- := -} e::Expr
 {
@@ -219,6 +221,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
         "\t\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.attrDcl.fullName) ++"(" ++ attr.dcl.attrOccursIndex ++ ");\n" ++
         "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";
 }
+
+---------- INHERITED ----
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- := -} e::Expr
 {
