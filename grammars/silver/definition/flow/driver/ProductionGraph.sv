@@ -149,7 +149,7 @@ ProductionGraph ::= prod::String  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   -- No implicit equations here, just keep track.
   local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
     foldr(append, [], map((.suspectFlowEdges), defs)) ++
-    -- If it's forwarding .snd is attributes known at forwarding time. If it's non, then actually .snd is all attributes. Ignore.
+    -- If it's forwarding .snd is attributes not known at forwarding time. If it's non, then actually .snd is all attributes. Ignore.
     if nonForwarding then [] else addFwdSynEqs(prod, synsBySuspicion.snd, flowEnv);
 
   -- RHS and locals and forward.
@@ -172,6 +172,7 @@ ProductionGraph ::= prod::String  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
 {--
  - Introduces 'hoa.syn -> hoaeq' edges.
  - These are ALWAYS included in standard edges.
+ - TODO: We actually turn 'x.a' into an access of v.for(a) and v.eq already. So we may not need to add these edges???
  -}
 function fixupAllHOAs
 [Pair<FlowVertex FlowVertex>] ::= d::[FlowDef] flowEnv::Decorated FlowEnv realEnv::Decorated Env
@@ -211,6 +212,7 @@ function addAnonSynDeps
 }
 {--
  - Introduces implicit 'forward.syn -> forward' equations.
+ - TODO: We might be able to fold this into SynEqs. Because those should emit deps on BOTH syn and eq (this is what we emit for attribute access)
  -}
 function addFwdEqs
 [Pair<FlowVertex FlowVertex>] ::= syns::[String]
@@ -222,6 +224,7 @@ function addFwdEqs
 {--
  - Introduces implicit 'lhs.syn -> forward.syn' equations.
  - Called twice: once for safe edges, later for SUSPECT edges!
+ - TODO: to parallel attribute access, this should probably also emit 'lhs.syn -> forward.eq' edges too. Currently covered by addFwdEqs, though!
  -}
 function addFwdSynEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String] flowEnv::Decorated FlowEnv
