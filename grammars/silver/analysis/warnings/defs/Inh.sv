@@ -183,6 +183,9 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors <-
     if null(dl.errors ++ attr.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
+    && (top.blockContext.hasPartialSignature) -- Default synthesized equations have no production graph to use
+                                              -- TODO: shit. is anything looking at default synthesized equations to make sure
+                                              -- their flow types aren't messed up?
     then checkAllEqDeps(transitiveDeps, top.location, top.signature.fullName, top.signature.outputElement.typerep.typeName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
       if null(lhsInhExceedsFlowType) then []
       else [wrn(top.location, "Synthesized equation " ++ attr.pp ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
@@ -490,6 +493,8 @@ function raiseImplicitFwdEqFlowTypesForProd
 -- Perhaps put "namespaces" in errors? (Check from [Message] to ErrorSpace with multiple [Message]?)
 -- Then we could 1. Issue normal errors; If none, 2. Issue syn-completeness errors; If none, 3. Issue inh-completeness errors
 
+
+-- TODO: we check implicit forward equations above, but what about implicit equations from default equations!? TODO
 
 --------------------------------------------------------------------------------
 
