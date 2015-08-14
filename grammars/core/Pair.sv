@@ -15,6 +15,14 @@ top::Pair<a b> ::= f::a  s::b
   top.snd = s;
 }
 
+function fst
+a ::= p::Pair<a b>
+{ return p.fst; }
+
+function snd
+b ::= p::Pair<a b>
+{ return p.snd; }
+
 {--
  - Look up an element in an association list, using the specified equality
  - function.
