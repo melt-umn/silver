@@ -54,6 +54,7 @@ Boolean ::= attr::String  e::Decorated Env
   end;
 }
 -- TODO: why is this a thing I have to write here. Sheesh. FIX THIS.
+-- The real fix is for our vertexes to remember whether they are syn/inh.
 function isInherited
 Boolean ::= a::String  e::Decorated Env
 {

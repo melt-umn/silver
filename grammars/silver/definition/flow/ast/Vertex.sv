@@ -33,6 +33,8 @@ top::FlowVertex ::= attrName::String
   top.unparse = "lhsInhV(" ++ quoteString(attrName) ++ ")";
 }
 
+-- TODO: we should do the above syn/inh separation for everything below too.
+
 {--
  - A vertex representing an attribute on an element of the signature RHS.
  -
@@ -73,6 +75,8 @@ top::FlowVertex ::= fName::String  attrName::String
   top.unparse = "localV(" ++ quoteString(fName) ++ ", " ++ quoteString(attrName) ++ ")";
 }
 
+-- TODO: we should distinguish these!
+
 -- The forward equation for this production. We do not care to distinguish it.
 function forwardEqVertex
 FlowVertex ::=
@@ -85,30 +89,6 @@ function forwardVertex
 FlowVertex ::= attrName::String
 {
   return localVertex("forward", attrName);
-}
-
-
--- This set of vertexes are typically used with pattern matching:
-
--- Demanding the forward equation of a child
-function rhsForwardVertex
-FlowVertex ::= sigName::String
-{
-  return rhsVertex(sigName, "forward");
-}
-
--- Demanding the forward equation of a local
-function localForwardVertex
-FlowVertex ::= fName::String
-{
-  return localVertex(fName, "forward");
-}
-
--- heh. Demanding the forward equation of a forward!
-function forwardForwardVertex
-FlowVertex ::=
-{
-  return localVertex("forward", "forward");
 }
 
 {--
