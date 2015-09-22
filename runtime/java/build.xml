@@ -10,6 +10,7 @@
 
   <path id='compile.classpath'>
     <fileset dir='../../jars' includes='CopperRuntime.jar CopperCompiler.jar' />
+    <fileset dir='lib' includes='*.jar' />
   </path>
 
   <target name='init'>
@@ -28,6 +29,7 @@
     <javac debug='on' classpathref='compile.classpath' srcdir='${src}:${grammars}' destdir='${bin}' includeantruntime='false'>
       <include name='common/**/*.java' />
       <include name='core/*.java' />
+      <include name='monto/*.java' />
       <include name='lib/xml/ast/*.java' />
       <include name='silver/*.java' />
     </javac>
@@ -35,6 +37,8 @@
   
   <target name='dist' depends='build'>
     <jar destfile='${dist}/SilverRuntime.jar' basedir='${bin}' compress='true' level='9'>
+      <zipgroupfileset includes="*.jar" dir="lib"/>
+      <include name='monto/*.class' />
       <include name='common/**/*.class' />
       <manifest>
         <attribute name='Built-By' value='${user.name}'/>
