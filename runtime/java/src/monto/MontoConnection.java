@@ -10,21 +10,43 @@ import common.*;
 
 /*****
  * This class contains all the methods for sending and receiving messages to a Monto broker as a server.
- * It is important that these methods be static so Silver is able to call them through the back door.
+ * It is important that these methods be so Silver is able to call them through the back door.
  * @author Charles Hofer
  * Dependencies: This class must be compiled against the jeromq, json-simple, and core Silver libraries.
  * 				 This was lass tested with jeromq v0.3.4, json-simple v1.1.1.
  *****/
 
 public class MontoConnection {
-	private static boolean isConnected = false;
-	private static String inConnection;
-	private static String outConnection;
-	private static Context context;
-	private static Socket fromMonto;
-	private static Socket toMonto;
+	private boolean isConnected = false;
+	private NodeFactory<ConsCell> eval;
+	private String inConnection;
+	private String outConnection;
+	private Context context;
+	private Socket fromMonto;
+	private Socket toMonto;
 	
-	private MontoConnection() { /* Nobody instantiates me :'( */ }
+	/**
+	 * Creates a new connection
+	 */
+	public MontoConnection(NodeFactory<ConsCell> _eval, String _inConnection, String _outConnection) {
+		eval = _eval;
+		inConnection = _inConnection;
+		outConnection = _outConnection;
+	}
+
+	/**
+	 * Runs the Monto server
+	 */
+	public int run() {
+		if(connect(inConnection, outConnection)) {
+			while(isConnected) {
+				ConsCell message = nextMessage();
+				ConsCell result = eval.invoke(new Object[] { message }, new Object[0]);
+				sendProduct(result);
+			}
+		}
+		return 1;
+	}
 	
 	/*****
 	 * Connects to the Monto broker at the address specified by _inConnection and _outConnection
@@ -35,7 +57,7 @@ public class MontoConnection {
 	 * @param _outConnection
 	 * @return
 	 *****/
-	public static final boolean connect(String _inConnection, String _outConnection) {
+	private final boolean connect(String _inConnection, String _outConnection) {
 		//Connect to monto
 		inConnection = _inConnection;
 		outConnection = _outConnection;
@@ -54,10 +76,10 @@ public class MontoConnection {
 	}
 	
 	/*****
-	 * Terminates the connection
+	 * Terminates the connection. CURRENTLY NOT USED!
 	 * @return
 	 *****/
-	public static final boolean disconnect() {
+	private final boolean disconnect() {
 		fromMonto.close();
 		toMonto.close();
 		context.term();
@@ -72,10 +94,7 @@ public class MontoConnection {
 	 * @param outUrl
 	 * @return
 	 *****/
-	public static ConsCell nextMessage(String inUrl, String outUrl) {
-		if(!isConnected) { //Connect if not connected
-			connect(inUrl.toString(), outUrl.toString());
-		}
+	private ConsCell nextMessage() {
 		String rawMessage = new String(fromMonto.recv());
 		//Decode the raw message and print it out
 		JSONObject message = (JSONObject)JSONValue.parse(rawMessage);
@@ -90,18 +109,18 @@ public class MontoConnection {
 	
 	/*****
 	 * Sends a new product to the Monto broker for distrubution to sinks.
-	 * @param source
-	 * @param product
-	 * @param language
-	 * @param contents
+	 * @param responseCons
 	 * @return
 	 ******/
-	public static Object sendProduct(String source, String product, String language, String contents) {
+	public void sendProduct(ConsCell responseCons) {
+		String source = responseCons.head().toString();
+		String product = responseCons.tail().head().toString();
+		String language = responseCons.tail().tail().head().toString();
+		String contents = responseCons.tail().tail().tail().head().toString();
 		MontoResponse response = new MontoResponse(source, product, language, contents);
 		//Send the response
 		toMonto.send(response.toString().getBytes());
 		//Wait for acknowledgment
 		toMonto.recv();
-		return null;
 	}
 }
