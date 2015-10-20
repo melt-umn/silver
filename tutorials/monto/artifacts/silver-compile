@@ -1,0 +1,8 @@
+#!/bin/bash
+
+export GRAMMAR_PATH="../../"
+
+WHAT_GRAMMAR_TO_BUILD=monto:artifacts
+
+../../../support/bin/silver $@ $WHAT_GRAMMAR_TO_BUILD
+

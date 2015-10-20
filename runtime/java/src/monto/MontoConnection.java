@@ -18,7 +18,7 @@ import common.*;
 
 public class MontoConnection {
 	private boolean isConnected = false;
-	private NodeFactory<ConsCell> eval;
+	private NodeFactory<Object> eval;
 	private String inConnection;
 	private String outConnection;
 	private Context context;
@@ -28,7 +28,7 @@ public class MontoConnection {
 	/**
 	 * Creates a new connection
 	 */
-	public MontoConnection(NodeFactory<ConsCell> _eval, String _inConnection, String _outConnection) {
+	public MontoConnection(NodeFactory<Object> _eval, String _inConnection, String _outConnection) {
 		eval = _eval;
 		inConnection = _inConnection;
 		outConnection = _outConnection;
@@ -40,8 +40,8 @@ public class MontoConnection {
 	public int run() {
 		if(connect(inConnection, outConnection)) {
 			while(isConnected) {
-				ConsCell message = nextMessage();
-				ConsCell result = eval.invoke(new Object[] { message }, new Object[0]);
+				MontoMessage message = nextMessage();
+				MontoProduct result = (MontoProduct)eval.invoke(new Object[] { message }, new Object[0]);
 				sendProduct(result);
 			}
 		}
@@ -65,6 +65,7 @@ public class MontoConnection {
 			context = ZMQ.context(1);
 		} catch(Exception e) {
 			e.printStackTrace();
+			return false;
 		}
 		fromMonto = context.socket(ZMQ.SUB);
 		toMonto = context.socket(ZMQ.REQ);
@@ -94,30 +95,31 @@ public class MontoConnection {
 	 * @param outUrl
 	 * @return
 	 *****/
-	private ConsCell nextMessage() {
+	private MontoMessage nextMessage() {
 		String rawMessage = new String(fromMonto.recv());
 		//Decode the raw message and print it out
 		JSONObject message = (JSONObject)JSONValue.parse(rawMessage);
 		//Put the message into a Silver list
-		ConsCell out = ConsCell.nil;
-		out = new ConsCell(new StringCatter((String)message.get("selections")), out);
-		out = new ConsCell(new StringCatter((String)message.get("contents")), out);
-		out = new ConsCell(new StringCatter((String)message.get("language")), out);
-		out = new ConsCell(new StringCatter((String)message.get("source")), out);
+		MontoMessage out = new MontoMessage(
+                        message.get("source").toString(),
+                        message.get("language").toString(),
+                        message.get("contents").toString(),
+                        message.get("selections").toString()
+                    );
 		return out;
 	}
 	
 	/*****
 	 * Sends a new product to the Monto broker for distrubution to sinks.
-	 * @param responseCons
+	 * @param product
 	 * @return
 	 ******/
-	public void sendProduct(ConsCell responseCons) {
-		String source = responseCons.head().toString();
-		String product = responseCons.tail().head().toString();
-		String language = responseCons.tail().tail().head().toString();
-		String contents = responseCons.tail().tail().tail().head().toString();
-		MontoResponse response = new MontoResponse(source, product, language, contents);
+	public void sendProduct(MontoProduct product) {
+		String source = product.getSource();
+		String products = product.getProduct();
+		String language = product.getLanguage();
+		String contents = product.getContents();
+		MontoResponse response = new MontoResponse(source, products, language, contents);
 		//Send the response
 		toMonto.send(response.toString().getBytes());
 		//Wait for acknowledgment
