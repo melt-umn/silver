@@ -62,7 +62,7 @@ MontoProduct ::= source::String product::String language::String contents::Strin
 type MontoServer foreign;
 
 function create
-MontoServer ::= eval::(MontoProduct ::= MontoMessage) inUrl::String outUrl::String
+MontoServer ::= eval::([MontoProduct] ::= MontoMessage) inUrl::String outUrl::String
 {
   return error("Foreign function");
 } foreign {

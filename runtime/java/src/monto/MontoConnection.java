@@ -18,7 +18,7 @@ import common.*;
 
 public class MontoConnection {
 	private boolean isConnected = false;
-	private NodeFactory<Object> eval;
+	private NodeFactory<ConsCell> eval;
 	private String inConnection;
 	private String outConnection;
 	private Context context;
@@ -28,7 +28,7 @@ public class MontoConnection {
 	/**
 	 * Creates a new connection
 	 */
-	public MontoConnection(NodeFactory<Object> _eval, String _inConnection, String _outConnection) {
+	public MontoConnection(NodeFactory<ConsCell> _eval, String _inConnection, String _outConnection) {
 		eval = _eval;
 		inConnection = _inConnection;
 		outConnection = _outConnection;
@@ -41,8 +41,11 @@ public class MontoConnection {
 		if(connect(inConnection, outConnection)) {
 			while(isConnected) {
 				MontoMessage message = nextMessage();
-				MontoProduct result = (MontoProduct)eval.invoke(new Object[] { message }, new Object[0]);
-				sendProduct(result);
+				ConsCell result = (ConsCell)eval.invoke(new Object[] { message }, new Object[0]);
+				while(!result.nil()) {
+					sendProduct((MontoProduct)result.head());
+					result = result.tail();
+				}
 			}
 		}
 		return 1;

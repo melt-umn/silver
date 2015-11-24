@@ -60,12 +60,12 @@ public class MontoManager {
         
         public final void sendMessage(String contents) {
             System.out.println("Sending " + contents);
-            toMonto.send(
-                    ("{\"source\":\"java-frontend\", "
-                        + "\"language\":\"calc\", "
-                        + "\"contents\":\"" + contents + "\", "
-                        + "\"selections\":\"\"}")
-                    .getBytes());
+            JSONObject obj = new JSONObject();
+            obj.put("source", "java-frontend");
+            obj.put("language", "calc");
+            obj.put("contents", contents);
+            obj.put("selections", "");
+            toMonto.send(obj.toJSONString().getBytes());
             toMonto.recv();
         }
         
