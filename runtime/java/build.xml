@@ -9,8 +9,7 @@
   <property name='version' value='0.0.1'/><!--dummy value for OSGi-->
 
   <path id='compile.classpath'>
-    <fileset dir='../../jars' includes='CopperRuntime.jar CopperCompiler.jar' />
-    <fileset dir='lib' includes='*.jar' />
+    <fileset dir='../../jars' includes='CopperRuntime.jar CopperCompiler.jar jeromq-0.3.4.jar json-simple-1.1.1.jar' />
   </path>
 
   <target name='init'>
@@ -37,7 +36,7 @@
   
   <target name='dist' depends='build'>
     <jar destfile='${dist}/SilverRuntime.jar' basedir='${bin}' compress='true' level='9'>
-      <zipgroupfileset includes="*.jar" dir="lib"/>
+      <zipgroupfileset includes='jeromq-0.3.4.jar json-simple-1.1.1.jar' dir='../../jars'/>
       <include name='monto/*.class' />
       <include name='common/**/*.class' />
       <manifest>
