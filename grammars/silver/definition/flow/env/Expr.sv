@@ -167,7 +167,7 @@ top::Expr ::= e::Expr '.' 'forward'
     | hasVertex(vertex) -> vertex.fwdVertex :: vertex.eqVertex
     | noVertex() -> e.flowDeps
     end;
-  top.flowDefs = [];
+  top.flowDefs = e.flowDefs;
 }
 
 aspect production errorAccessHandler
@@ -516,6 +516,7 @@ top::Expr ::= e::Decorated Expr
   top.flowDeps = e.flowDeps;
   top.flowVertexInfo = e.flowVertexInfo;
   top.flowDefs = e.flowDefs; -- I guess? I haven't thought about this exactly.
+  -- i.e. whether this has already been included. shouldn't hurt to do so though.
 }
 
 
