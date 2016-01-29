@@ -1,0 +1,30 @@
+# Silver generated things
+jars/*.jar
+build
+generated/src
+generated/bin
+generated/ide
+JARS-BAK
+
+# Editor created backup files
+*~
+*.swp
+\#*\#
+.\#*
+
+# Runtime and testing junk
+test/**/test.output
+test/**/test.jar
+test/**/build.xml
+test/silver.testing.bin.jar
+runtime/java/bin/
+runtime/imp/main/target
+runtime/imp/main/src/core
+runtime/imp/main/src/ide
+runtime/imp/main/.classpath
+runtime/imp/main/.project
+runtime/imp/main/.settings
+
+# Useful spot to stash your experiments
+sandbox
+
