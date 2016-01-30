@@ -59,10 +59,26 @@ IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]  silverGen::String
 function writeSpec
 IO ::= i::IO  r::Decorated RootSpec  silverGen::String
 {
-  local printio :: IO = print("\t[" ++ r.declaredName ++ "]\n", i);
-  local path :: String = silverGen ++ "doc/" ++ grammarToPath(r.declaredName); 
+  local path :: String = silverGen ++ "doc/" ++ grammarToPath(r.declaredName);
 
-  return writeFiles(path, r.genFiles, printio);
+  local mkiotest :: IOVal<Boolean> =
+    isDirectory(path, i);
+  
+  local mkio :: IOVal<Boolean> =
+    if mkiotest.iovalue
+    then mkiotest
+    else mkdir(path, mkiotest.io);
+  
+  local pr :: IO =
+    if mkio.iovalue
+    then print("\t[" ++ r.declaredName ++ "]\n", mkio.io)
+    else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ path ++ "\n\n", mkio.io));
+  
+  local rm :: IO = deleteStaleDocs(pr, silverGen, r.declaredName);
+
+  local wr :: IO = writeFiles(path, r.genFiles, rm);
+
+  return wr;
 }
 
 {--
@@ -73,4 +89,15 @@ function writeFiles
 IO ::= path::String s::[Pair<String String>] i::IO
 {
   return if null(s) then i else writeFile(path ++ head(s).fst, head(s).snd, writeFiles(path, tail(s), i));
+}
+
+-- Copied from 
+function deleteStaleDocs
+IO ::= iIn::IO silverGen::String gram::String
+{
+  local docPath :: String = silverGen ++ "doc/" ++ grammarToPath(gram);
+  local docFiles :: IOVal<[String]> = listContents(docPath, iIn);
+  
+  return deleteStaleDataFiles(docFiles.io, docPath, docFiles.iovalue);
+         
 }
