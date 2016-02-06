@@ -4,6 +4,7 @@ build
 generated/src
 generated/bin
 generated/ide
+generated/doc
 JARS-BAK
 
 # Editor created backup files
