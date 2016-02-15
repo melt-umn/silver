@@ -140,7 +140,7 @@ top::Pattern ::= 'false'
   top.patternSortKey = "false";
 }
 
-concrete production nilListPattern
+abstract production nilListPattern
 top::Pattern ::= '[' ']'
 {
   top.pp = "[]";
@@ -160,3 +160,20 @@ top::Pattern ::= hp::Pattern '::' tp::Pattern
   top.patternSortKey = "core:cons";
 }
 
+-- List literal patterns
+concrete production listPattern
+top::Pattern ::= '[' ps::PatternList ']'
+{
+  top.pp = s"[${ps.pp}]";
+  forwards to makeListPattern(ps.patternList, top.location);
+}
+
+function makeListPattern
+Pattern ::= ps::[Decorated Pattern] loc::Location
+{
+  return
+    case ps of
+      [] -> nilListPattern('[', ']', location=loc)
+    | p :: rest -> consListPattern(p, '::', makeListPattern(rest, loc), location=loc)
+    end;
+}
