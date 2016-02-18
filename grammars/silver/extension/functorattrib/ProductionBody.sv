@@ -1,4 +1,4 @@
-
+import silver:langutil:pp;
 
 {--
  - Propagates a list of functor attributes on the current production.  
@@ -7,7 +7,7 @@
 concrete production propagateAttrDcl
 top::ProductionStmt ::= 'propagate' 'functor' ns::NameList ';'
 {
-  --top.errors <- [err(top.location, forward.pp)];
+  top.pp = s"propagate functor ${ns.pp};";
   forwards to
     case ns of
       nameListOne(n) -> 
@@ -85,7 +85,7 @@ top::ProductionStmt ::= a::QName
       qNameAttrOccur(a, location=top.location),
       '=',
       applicationExpr(
-        functionReference(prodName, location=top.location),
+        baseExpr(prodName, location=top.location),
         '(', inputs, ')',
         location=top.location),
       ';',
