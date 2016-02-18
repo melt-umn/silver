@@ -14,9 +14,9 @@ For detail, see `comment-dwim'."
   (list
    '("[\']\\(\\([\\\\].\\)\\|[^\']\\)*[\']". font-lock-string-face)
    '("[\/]\\(\\([\\\\].\\)\\|[^\/]\\)*[\/]". font-lock-string-face)
-   '("\\<\\(production\\|productions\\|occurs\\|on\\|nonterminal\\|attribute\\|if\\|then\\|else\\|option\\|exports\\|close\\|closed\\)\\>" . font-lock-keyword-face)
-   '("\\<\\(local\\|terminal\\|concrete\\|abstract\\|default\\|ignore\\|start\\|lexer\\|class\\|classes\\|dominates\\|submits\\|aspect\\|decorate\\|autocopy\\)\\>" . font-lock-keyword-face)
-   '("\\<\\(import\\|imports\\|grammar\\|association\\|precedence\\|synthesized\\|inherited\\|with\\|as\\|include\\)\\>" . font-lock-keyword-face)
+   '("\\<\\(production\\|productions\\|occurs\\|on\\|nonterminal\\|attribute\\|propagate\\|if\\|then\\|else\\|option\\|exports\\|close\\|closed\\)\\>" . font-lock-keyword-face)
+   '("\\<\\(local\\|global\\|terminal\\|concrete\\|abstract\\|default\\|ignore\\|start\\|lexer\\|class\\|classes\\|dominates\\|submits\\|aspect\\|decorate\\|autocopy\\)\\>" . font-lock-keyword-face)
+   '("\\<\\(import\\|imports\\|grammar\\|association\\|precedence\\|synthesized\\|inherited\\|functor\\|with\\|as\\|include\\)\\>" . font-lock-keyword-face)
    '("\\<\\(only\\|hiding\\|using\\|forwards\\|to\\|use\\|syntax\\|forwarding\\|function\\|return\\)\\>" . font-lock-keyword-face)
    '("\\<\\(Integer*\\|Boolean\\|String\\|Float\\|Reference\\|Production\\|Decorated\\)\\>" . font-lock-type-face)
    '("\\<\\(reference\\|length\\|substring\\|indexof\\|parser\\|error\\|cast\\|toInt\\|toReal\\|toString\\|new\\)\\>" . font-lock-builtin-face)
