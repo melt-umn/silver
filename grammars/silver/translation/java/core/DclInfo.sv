@@ -39,6 +39,9 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp
 aspect production localDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 {
+  -- TODO: BUG: See https://github.com/melt-umn/silver/issues/52
+  -- This is the kind of nasty hack that we might fix with a FullName type, instead of hacking on 'fn'
+  -- Also, this choice of name is actually buggy! Can cause java compiler errors with name collisions.
   local attribute li :: Integer;
   li = lastIndexOf(":local:", fn);
   top.attrOccursIndexName = makeIdName(substring(li+7, length(fn), fn) ++ "__ON__" ++ substring(0,li,fn));

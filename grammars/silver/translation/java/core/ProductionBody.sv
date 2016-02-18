@@ -103,7 +103,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
   local attribute prod_orig_name :: String;
   prod_orig_name = substring(lastIndexOf(":", top.signature.fullName)+1, length(top.signature.fullName), top.signature.fullName);
   local attribute ugh_dcl_hack :: DclInfo;
-  ugh_dcl_hack = head(getValueDclAll(fName, top.env)); -- TODO
+  ugh_dcl_hack = head(getValueDclAll(fName, top.env)); -- TODO really, we should have a DclInfo for ourselves no problem. but out current approach of constructing it via localDef makes this annoyingly difficult. this suggests a probably environment refactoring...
   
   top.valueWeaving := "public static final int " ++ ugh_dcl_hack.attrOccursIndexName ++ " = " ++ makeName(prod_orig_grammar) ++ ".Init.count_local__ON__" ++ makeIdName(top.signature.fullName) ++ "++;\n";
 
