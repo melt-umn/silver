@@ -140,7 +140,7 @@ top::Pattern ::= 'false'
   top.patternSortKey = "false";
 }
 
-concrete production nilListPattern
+abstract production nilListPattern
 top::Pattern ::= '[' ']'
 {
   top.pp = "[]";
@@ -160,3 +160,29 @@ top::Pattern ::= hp::Pattern '::' tp::Pattern
   top.patternSortKey = "core:cons";
 }
 
+-- List literal patterns
+concrete production listPattern
+top::Pattern ::= '[' ps::PatternList ']'
+{
+  top.pp = s"[${ps.pp}]";
+  forwards to ps.asListPattern;
+}
+
+synthesized attribute asListPattern::Pattern occurs on PatternList;
+
+aspect production patternList_one
+top::PatternList ::= p::Pattern
+{
+  top.asListPattern = 
+    consListPattern(p, '::', nilListPattern('[', ']', location=top.location), location=top.location);
+}
+aspect production patternList_more
+top::PatternList ::= p::Pattern ',' ps1::PatternList
+{
+  top.asListPattern = consListPattern(p, '::', ps1.asListPattern, location=top.location);
+}
+aspect production patternList_nil
+top::PatternList ::=
+{
+  top.asListPattern = nilListPattern('[', ']', location=top.location);
+}
