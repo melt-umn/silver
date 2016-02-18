@@ -8,6 +8,9 @@ concrete production propagateAttrDcl
 top::ProductionStmt ::= 'propagate' 'functor' ns::NameList ';'
 {
   top.pp = s"propagate functor ${ns.pp};";
+  
+  -- Forwards to productionStmtAppend of propagating the first element in ns
+  -- and propagateAttrDcl containing the remaining names
   forwards to
     case ns of
       nameListOne(n) -> 
@@ -20,9 +23,13 @@ top::ProductionStmt ::= 'propagate' 'functor' ns::NameList ';'
     end;
 }
 
-
 {--
  - Generates the list of AppExprs used in calling the constructor
+ - @param loc      The parent location to use in construction
+ - @param env      The environment
+ - @param attrName The name of the attribute being propagated
+ - @param inputs   The NamedSignatureElements being propagated
+ - @return A list of AppExprs to be used to build the arguments
  -}
 function makeArgs
 [AppExpr] ::= loc::Location env::Decorated Env attrName::QName inputs::[NamedSignatureElement]
@@ -32,35 +39,34 @@ function makeArgs
   local at::QName = qName(loc, head(inputs).elementName);
   at.env = env;
   
-  -- Occurs dcls
-  local narrowed :: [[DclInfo]] = 
-    -- The occurs dcls on this nonterminal for
-    map(getOccursDcl(_, head(inputs).typerep.typeName, env),
-      -- the full names of each candidate
-      map((.fullName), attrName.lookupAttribute.dcls));
-
-  -- Occurs dcls
-  local dclsNarrowed :: [DclInfo] = foldr(append, [], narrowed);
+  -- Check if the attribute occurs on the first child
+  local attrOccursOnHead :: Boolean = 
+    null(
+      foldr(append, [], 
+        -- The occurs dcls on this nonterminal for
+        map(getOccursDcl(_, head(inputs).typerep.typeName, env),
+          -- the full names of each candidate
+          map((.fullName), attrName.lookupAttribute.dcls))));
   
   return
     case inputs of
       [] -> []
     | h :: rest -> 
-        if null(dclsNarrowed)
-        then presentAppExpr(baseExpr(at, location=loc), location=loc) ::
-             makeArgs(loc, env, attrName, rest)
-        else presentAppExpr(
-               access(
-                 baseExpr(at, location=loc), '.',
-                 qNameAttrOccur(attrName, location=loc),
-                 location=loc),
-               location=loc) :: makeArgs(loc, env, attrName, rest)
+        (if attrOccursOnHead
+         then presentAppExpr(baseExpr(at, location=loc), location=loc)
+         else presentAppExpr(
+                access(
+                  baseExpr(at, location=loc), '.',
+                  qNameAttrOccur(attrName, location=loc),
+                  location=loc),
+                location=loc)) :: makeArgs(loc, env, attrName, rest)
     end;
 }
 
 -- In the future, this should maybe be dispatch for different types of attributes (e.g. monoid)
 {--
- -
+ - Propagate a functor attribute on the enclosing production
+ - @param a  The name of the attribute to propagate
  -}
 abstract production propagateOne
 top::ProductionStmt ::= a::QName
@@ -68,6 +74,7 @@ top::ProductionStmt ::= a::QName
   -- No explicit errors, for now.  The only conceivable issue is the attribute not
   -- occuring on the LHS but this should be caught by the forward errors.  
   
+  -- Generate the arguments for the constructor
   local topName::QName = qName(top.location, top.signature.outputElement.elementName);
   local prodName::QName = qName(top.location, top.signature.fullName);
   prodName.grammarName = top.grammarName;
@@ -78,6 +85,7 @@ top::ProductionStmt ::= a::QName
           emptyAppExprs(location=top.location),
           makeArgs(top.location, top.env, a, top.signature.inputElements));
 
+  -- Construct an attribute def and call with the generated arguments
   forwards to 
     attributeDef(
       concreteDefLHS(topName, location=top.location),
