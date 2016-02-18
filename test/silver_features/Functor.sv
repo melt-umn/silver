@@ -7,13 +7,13 @@ nonterminal FunctorTestNT2 with functorSyn<FunctorTestNT2>;
 abstract production consFTNT
 top::FunctorTestNT ::= h::FunctorTestNT  t::FunctorTestNT
 {
-  --propagate functor functorSyn;
+  propagate functor functorSyn;
 }
 
 abstract production consFTNT2
 top::FunctorTestNT ::= h::FunctorTestNT2  t::FunctorTestNT
 {
-  --propagate functor functorSyn;
+  propagate functor functorSyn;
 }
 
 abstract production nilFTNT
@@ -25,7 +25,7 @@ top::FunctorTestNT ::= i::Integer
 abstract production nilFTNT2
 top::FunctorTestNT2 ::= s::String
 {
-  --propagate functor functorSyn;
+  propagate functor functorSyn;
 }
 
 global functorValue :: FunctorTestNT =
@@ -38,4 +38,4 @@ global functorValue :: FunctorTestNT =
       nilFTNT(2)));
 
 -- Test to ensure it reaches all nils:
---equalityTest(hackUnparse(functorValue), hackUnparse(functorValue.functorSyn), String, silver_tests);
+equalityTest(hackUnparse(functorValue), hackUnparse(functorValue.functorSyn), String, silver_tests);
