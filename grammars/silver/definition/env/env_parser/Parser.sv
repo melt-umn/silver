@@ -137,7 +137,7 @@ top::ILocation ::= filename::IName ',' line::Num_t ',' column::Num_t
 concrete production aString
 top::IString ::= s::EscapedStringTerm
 {
-  top.str = unescapeString(substring(1,length(s.lexeme)-1,s.lexeme)); -- TODO fix unescape and escape!!
+  top.str = unescapeString(substring(1,length(s.lexeme)-1,s.lexeme));
 }
 
 concrete production aName
