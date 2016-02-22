@@ -21,6 +21,7 @@ parser svParse::Root {
   silver:extension:templating;
   silver:extension:patternmatching;
   silver:extension:treegen;
+  silver:extension:doc;
 --  silver:extension:concreteSyntaxForTrees ;
   -- doc?
 

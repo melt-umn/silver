@@ -36,7 +36,7 @@ top::AGDcls ::= h::AGDcl t::AGDcls
 aspect default production
 top::AGDcl ::=
 {
-  top.docs := ["This is some markdown documentation " ++ toString(genInt())]; -- TODO: Testing only, should be []
+  top.docs := [];
 }
 
 aspect production appendAGDcl
