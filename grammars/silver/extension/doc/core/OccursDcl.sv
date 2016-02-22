@@ -14,3 +14,10 @@ top::AGDcl ::= comment::DocComment 'attribute' at::QName attl::BracketedOptTypeL
   forwards to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
 }
 
+concrete production noDocAttributionDcl
+top::AGDcl ::= noDoc::NoDocComment_t 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
+{
+  top.docs := [];
+
+  forwards to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
+}

@@ -8,15 +8,19 @@ terminal NoDocComment_t /{\-\-(\ )*nodoc(\ )*\-\-}/ dominates {DocComment_t, COM
 synthesized attribute body :: String;
 nonterminal DocComment with body, location;
 
-parser docParser::doclang:DocComment
+parser doclangParser::doclang:DocComment
 {
   silver:extension:doc:doclang;
 }
 
+{--
+This production takes a raw DocComment_t terminal and runs it through 
+the doclang parser to generate a DocComment nonterminal.
+--}
 concrete production documentationComments
 top::DocComment ::= rawComment::DocComment_t
 {
-  local parseResult::ParseResult<doclang:DocComment> = docParser(rawComment.lexeme, "documentation");
+  local parseResult::ParseResult<doclang:DocComment> = doclangParser(rawComment.lexeme, "documentation");
   local markdown::String = parseResult.parseTree.doclang:markdown;
 
   top.body = if parseResult.parseSuccess
@@ -24,6 +28,9 @@ top::DocComment ::= rawComment::DocComment_t
   	     else parseResult.parseErrors;
 }
 
+{--
+Takes the information from a declaration with a documentation comment and turns it into markdown.
+--}
 function toMarkdown
 String ::= modifiers::String name::String signiture::String body::DocComment
 {
@@ -31,6 +38,9 @@ String ::= modifiers::String name::String signiture::String body::DocComment
   return "####_" ++ modifiers ++ "_ `" ++ name ++ "`" ++ sig ++ "\n" ++ "> " ++ body.body;
 }
 
+{--
+Take the information from a declaration with no documentation comment and turns it into markdown.
+--}
 function toNoCommentMarkdown
 String ::= modifiers::String name::String signiture::String
 {
@@ -38,10 +48,10 @@ String ::= modifiers::String name::String signiture::String
   return "####_" ++ modifiers ++ "_ `" ++ name ++ "`" ++ sig;
 }
 
---TODO: Add seperate parser for doclang
+-- TODO: Find a way to indent doc information instead of quoting
+-- TODO: Add document comments for parser declarations.
 -- TODO: Add document comments for type declarations.
 -- TODO: Do a tab instead of a quote
--- TODO: Add terminal for nodoc
 --TODO: Use special string for above variables
 
 

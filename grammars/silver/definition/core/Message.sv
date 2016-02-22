@@ -3,7 +3,7 @@ grammar silver:definition:core;
 {-- 
   warning:1, error:2 
   (in line with IDE runtime and Eclipse severity value; see org.eclipse.core.resources.IMarker)
---}
+-}
 synthesized attribute severity :: Integer; 
 synthesized attribute msg :: String;
 synthesized attribute loc :: Location;

@@ -14,6 +14,14 @@ top::AGDcl ::= comment::DocComment cl::ClosedOrNot 'nonterminal' id::Name tl::Br
   forwards to nonterminalDcl(cl, 'nonterminal', id, tl, ';', location=top.location);
 }
 
+concrete production noDocNonterminalDcl
+top::AGDcl ::= noDoc::NoDocComment_t cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList ';'
+{
+  top.docs := [];
+
+  forwards to nonterminalDcl(cl, 'nonterminal', id, tl, ';', location=top.location);
+}
+
 aspect production nonterminalWithDcl
 top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList 'with' attrs::QNames ';'
 {
@@ -24,6 +32,14 @@ concrete production docNonterminalWithDcl
 top::AGDcl ::= comment::DocComment cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList 'with' attrs::QNames ';'
 {
   top.docs := [toMarkdown("nonterminal", id.name ++ tl.pp, "", comment)];
+
+  forwards to nonterminalWithDcl(cl, 'nonterminal', id, tl, 'with', attrs, ';', location=top.location);
+}
+
+concrete production noDocNonterminalWithDcl
+top::AGDcl ::= noDoc::NoDocComment_t cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList 'with' attrs::QNames ';'
+{
+  top.docs := [];
 
   forwards to nonterminalWithDcl(cl, 'nonterminal', id, tl, 'with', attrs, ';', location=top.location);
 }

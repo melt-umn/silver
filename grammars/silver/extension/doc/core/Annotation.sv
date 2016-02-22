@@ -14,3 +14,11 @@ top::AGDcl ::= comment::DocComment 'annotation' a::QName tl::BracketedOptTypeLis
   forwards to annotationDcl('annotation', a, tl, '::', te, ';', location=top.location);
 }
 
+concrete production noDocAnnotationDcl
+top::AGDcl ::= noDoc::NoDocComment_t 'annotation' a::QName tl::BracketedOptTypeList '::' te::Type ';'
+{
+  top.docs := [];
+
+  forwards to annotationDcl('annotation', a, tl, '::', te, ';', location=top.location);
+}
+
