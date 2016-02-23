@@ -34,8 +34,8 @@ Takes the information from a declaration with a documentation comment and turns 
 function toMarkdown
 String ::= modifiers::String name::String signiture::String body::DocComment
 {
-  local sig::String = if 0 == length(signiture) then "" else "\n######`" ++ signiture ++ "`";
-  return "####_" ++ modifiers ++ "_ `" ++ name ++ "`" ++ sig ++ "\n" ++ "> " ++ body.body;
+  local sig::String = if 0 == length(signiture) then "" else "\n ######`" ++ signiture ++ "`";
+  return "#### _" ++ modifiers ++ "_ `" ++ name ++ "`" ++ sig ++ "\n" ++ "> " ++ body.body;
 }
 
 {--
@@ -44,8 +44,8 @@ Take the information from a declaration with no documentation comment and turns 
 function toNoCommentMarkdown
 String ::= modifiers::String name::String signiture::String
 {
-  local sig::String = if 0 == length(signiture) then "" else "\n######`" ++ signiture ++ "`";
-  return "####_" ++ modifiers ++ "_ `" ++ name ++ "`" ++ sig;
+  local sig::String = if 0 == length(signiture) then "" else "\n ######`" ++ signiture ++ "`";
+  return "#### _" ++ modifiers ++ "_ `" ++ name ++ "`" ++ sig;
 }
 
 -- TODO: Find a way to indent doc information instead of quoting
