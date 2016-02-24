@@ -28,6 +28,8 @@ parser svParse::Root {
 
   silver:extension:templating;
   silver:extension:patternmatching;
+  
+  silver:extension:functorattrib;
 
   silver:modification:let_fix;
   silver:modification:collection;
