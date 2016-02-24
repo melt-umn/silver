@@ -5,9 +5,9 @@ import silver:langutil:pp;
  - Actual implementation in propagateOne
  -}
 concrete production propagateAttrDcl
-top::ProductionStmt ::= 'propagate' 'functor' ns::NameList ';'
+top::ProductionStmt ::= 'propagate' ns::NameList ';'
 {
-  top.pp = s"propagate functor ${ns.pp};";
+  top.pp = s"propagate ${ns.pp};";
   
   -- Forwards to productionStmtAppend of propagating the first element in ns
   -- and propagateAttrDcl containing the remaining names
@@ -18,7 +18,7 @@ top::ProductionStmt ::= 'propagate' 'functor' ns::NameList ';'
     | nameListCons(n, _, rest) ->
         productionStmtAppend(
           propagateOne(n, location=top.location),
-          propagateAttrDcl($1, $2, rest, $4, location=top.location),
+          propagateAttrDcl($1, rest, $3, location=top.location),
           location=top.location)
     end;
 }

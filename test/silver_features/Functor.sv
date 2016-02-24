@@ -7,25 +7,25 @@ nonterminal FunctorTestNT2 with functorSyn<FunctorTestNT2>;
 abstract production consFTNT
 top::FunctorTestNT ::= h::FunctorTestNT  t::FunctorTestNT
 {
-  propagate functor functorSyn;
+  propagate functorSyn;
 }
 
 abstract production consFTNT2
 top::FunctorTestNT ::= h::FunctorTestNT2  t::FunctorTestNT
 {
-  propagate functor functorSyn;
+  propagate functorSyn;
 }
 
 abstract production nilFTNT
 top::FunctorTestNT ::= i::Integer
 {
-  propagate functor functorSyn;
+  propagate functorSyn;
 }
 
 abstract production nilFTNT2
 top::FunctorTestNT2 ::= s::String
 {
-  propagate functor functorSyn;
+  propagate functorSyn;
 }
 
 global functorValue :: FunctorTestNT =
