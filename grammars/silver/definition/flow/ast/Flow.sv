@@ -156,13 +156,14 @@ top::FlowDef ::= nt::String  inhs::[String]
 }
 
 {--
- - Declaration that a synthesized attribute occurrence is not in the host
- - and therefore subject to the forward flow type's whims.
- - @param attr  the full name of the synthesized attribute
+ - Declaration that a synthesized attribute *occurrence* is not in the host
+ - and therefore subject to the forward flow type's whims. (i.e. must be ft(syn) >= ft(fwd))
+ -
  - @param nt  the full name of the nonterminal
+ - @param attr  the full name of the synthesized attribute
  -}
-abstract production nonHostSynDef
-top::FlowDef ::= attr::String  nt::String
+abstract production extSynFlowDef
+top::FlowDef ::= nt::String  attr::String
 {
   top.nonHostSynAttrs = [top];
   top.prodGraphContribs = [];

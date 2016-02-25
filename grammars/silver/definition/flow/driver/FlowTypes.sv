@@ -147,7 +147,7 @@ function patchEditPair
 EnvTree<g:Graph<String>> ::= edit::FlowDef  current::EnvTree<g:Graph<String>>
 {
   return case edit of
-  | nonHostSynDef(attr, nt) -> 
+  | extSynFlowDef(nt, attr) -> 
       let ft :: g:Graph<String> = findFlowType(nt, current)
        in
       let fwdInhs :: set:Set<String> = g:edgesFrom("forward", ft),
