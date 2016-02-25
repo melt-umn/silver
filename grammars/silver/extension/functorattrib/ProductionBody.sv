@@ -63,6 +63,36 @@ function makeArgs
     end;
 }
 
+{--
+ - Generates the list of AnnoExprs used in calling the constructor
+ - @param loc      The parent location to use in construction
+ - @param baseName The name of the parent from the signature
+ - @param inputs   The NamedSignatureElements for the annotations
+ - @return A list of AnnoExprs to be used to build the named arguments
+ -}
+function makeAnnoArgs
+[AnnoExpr] ::= loc::Location baseName::QName inputs::[NamedSignatureElement]
+{
+  -- TODO: This is a hacky way of getting the base name, not sure if correct
+  local annoName::QName = qName(loc, last(explode(":", head(inputs).elementName)));
+
+  return
+    case inputs of
+      [] -> []
+    | h :: rest -> 
+      annoExpr(
+        annoName,
+        '=',
+        presentAppExpr(
+          access(
+            baseExpr(baseName, location=loc), '.',
+              qNameAttrOccur(annoName, location=loc),
+              location=loc),
+            location=loc),
+          location=loc) :: makeAnnoArgs(loc, baseName, rest)
+    end;
+}
+
 -- In the future, this should maybe be dispatch for different types of attributes (e.g. monoid)
 {--
  - Propagate a functor attribute on the enclosing production
@@ -84,6 +114,10 @@ top::ProductionStmt ::= a::QName
     foldl(snocAppExprs(_, ',', _, location=top.location),
           emptyAppExprs(location=top.location),
           makeArgs(top.location, top.env, a, top.signature.inputElements));
+  local annotations::AnnoAppExprs = 
+    foldl(snocAnnoAppExprs(_, ',', _, location=top.location),
+          emptyAnnoAppExprs(location=top.location),
+          makeAnnoArgs(top.location, topName, top.signature.namedInputElements));
 
   -- Construct an attribute def and call with the generated arguments
   forwards to 
@@ -92,9 +126,9 @@ top::ProductionStmt ::= a::QName
       '.',
       qNameAttrOccur(a, location=top.location),
       '=',
-      applicationExpr(
+      application(
         baseExpr(prodName, location=top.location),
-        '(', inputs, ')',
+        '(', inputs, ',', annotations, ')',
         location=top.location),
       ';',
       location=top.location);

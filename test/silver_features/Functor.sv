@@ -1,8 +1,9 @@
 
 synthesized attribute functorSyn<a> :: a;
+annotation functorTestAnno::Integer;
 
-nonterminal FunctorTestNT with functorSyn<FunctorTestNT>;
-nonterminal FunctorTestNT2 with functorSyn<FunctorTestNT2>;
+nonterminal FunctorTestNT with functorSyn<FunctorTestNT>, functorTestAnno;
+nonterminal FunctorTestNT2 with functorSyn<FunctorTestNT2>, functorTestAnno;
 
 abstract production consFTNT
 top::FunctorTestNT ::= h::FunctorTestNT  t::FunctorTestNT
@@ -31,11 +32,14 @@ top::FunctorTestNT2 ::= s::String
 global functorValue :: FunctorTestNT =
   consFTNT(
     consFTNT2(
-      nilFTNT2("a"),
-      nilFTNT(1)),
+      nilFTNT2("a", functorTestAnno=1),
+      nilFTNT(1, functorTestAnno=2),
+      functorTestAnno=3),
     consFTNT2(
-      nilFTNT2("b"),
-      nilFTNT(2)));
+      nilFTNT2("b", functorTestAnno=4),
+      nilFTNT(2, functorTestAnno=5),
+      functorTestAnno=6),
+    functorTestAnno=7);
 
 -- Test to ensure it reaches all nils:
 equalityTest(hackUnparse(functorValue), hackUnparse(functorValue.functorSyn), String, silver_tests);
