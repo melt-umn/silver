@@ -107,10 +107,10 @@ top::ProductionGraph ::=
  - @return A fixed up graph.
  -}
 function constructProductionGraph
-ProductionGraph ::= prod::String  defs::[FlowDef]  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
 {
-  -- The dcl for this production
-  local dcl :: DclInfo = head(getValueDclAll(prod, realEnv));
+  -- The name of this production
+  local prod :: String = dcl.fullName;
   -- The LHS nonterminal full name
   local nt :: NtName = dcl.namedSignature.outputElement.typerep.typeName;
   -- All attributes occurrences

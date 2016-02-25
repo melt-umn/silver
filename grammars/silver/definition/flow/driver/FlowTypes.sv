@@ -21,10 +21,10 @@ type NtName = String;
 
 -- construct a production graph for each production
 function computeAllProductionGraphs
-[ProductionGraph] ::= prods::[String]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+[ProductionGraph] ::= prods::[DclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
 {
   return if null(prods) then []
-  else constructProductionGraph(head(prods), searchEnvTree(head(prods), prodTree), flowEnv, realEnv) ::
+  else constructProductionGraph(head(prods), searchEnvTree(head(prods).fullName, prodTree), flowEnv, realEnv) ::
     computeAllProductionGraphs(tail(prods), prodTree, flowEnv, realEnv);
 }
 

@@ -22,8 +22,8 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   local allRealDefs :: [Def] = foldr(append, [], map((.defs), g.grammarList));
   local allRealEnv :: Decorated Env = toEnv(allRealDefs);
   
-  -- List of all productions (is this nub needed? TODO)
-  local allProds :: [String] = nubBy(stringEq, map((.fullName), foldr(consDefs, nilDefs(), allRealDefs).prodDclList));
+  -- List of all productions
+  local allProds :: [DclInfo] = foldr(consDefs, nilDefs(), allRealDefs).prodDclList;
   
   -- Fix the production graph information from the flow defs TODO: some of this maybe should be fixed somehow
   production prodGraph :: [ProductionGraph] = 
