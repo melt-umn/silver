@@ -291,13 +291,13 @@ function localStitchPoints
   return case d of
   | [] -> []
   -- We add the forward stitch point here, too!
-  | fwdEq(_, _, _) :: rest -> nonterminalStitchPoint(nt, forwardVertex) :: localStitchPoints(nt, rest)
+  | fwdEq(_, _, _) :: rest -> nonterminalStitchPoint(nt, forwardVertexType) :: localStitchPoints(nt, rest)
   -- Ignore locals that aren't nonterminal types!
   | localEq(_, fN, "", _) :: rest -> localStitchPoints(nt, rest)
   -- Add locals that are nonterminal types.
-  | localEq(_, fN, tN, _) :: rest -> nonterminalStitchPoint(tN, localVertex(fN, _)) :: localStitchPoints(nt, rest)
+  | localEq(_, fN, tN, _) :: rest -> nonterminalStitchPoint(tN, localVertexType(fN)) :: localStitchPoints(nt, rest)
   -- Add all anon decoration sites
-  | anonEq(_, fN, tN, _, _) :: rest -> nonterminalStitchPoint(tN, anonVertex(fN, _)) :: localStitchPoints(nt, rest)
+  | anonEq(_, fN, tN, _, _) :: rest -> nonterminalStitchPoint(tN, anonVertexType(fN)) :: localStitchPoints(nt, rest)
   -- Ignore all other flow def info
   | _ :: rest -> localStitchPoints(nt, rest)
   end;
@@ -310,7 +310,7 @@ function rhsStitchPoints
   else if head(rhs).typerep.isDecorable
        then nonterminalStitchPoint(
               head(rhs).typerep.typeName,
-              rhsVertex(head(rhs).elementName, _)) :: rhsStitchPoints(tail(rhs))
+              rhsVertexType(head(rhs).elementName)) :: rhsStitchPoints(tail(rhs))
        else rhsStitchPoints(tail(rhs));
 }
 
