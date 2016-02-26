@@ -9,7 +9,7 @@ exports silver:definition:flow:env_parser with silver:definition:env:env_parser;
 autocopy attribute flowEnv :: Decorated FlowEnv;
 synthesized attribute flowDefs :: [FlowDef];
 
-nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree, nonSuspectTree;
+nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree, nonSuspectTree, extSynTree;
 
 inherited attribute synTree :: EnvTree<FlowDef>;
 inherited attribute inhTree :: EnvTree<FlowDef>;
@@ -21,6 +21,7 @@ inherited attribute refTree :: EnvTree<FlowDef>;
 inherited attribute localInhTree ::EnvTree<FlowDef>;
 inherited attribute localTree :: EnvTree<FlowDef>;
 inherited attribute nonSuspectTree :: EnvTree<[String]>;
+inherited attribute extSynTree :: EnvTree<FlowDef>;
 
 abstract production dummyFlowEnv
 top::FlowEnv ::=
@@ -42,6 +43,7 @@ Decorated FlowEnv ::= d::FlowDefs
   e.localInhTree = directBuildTree(d.localInhTreeContribs);
   e.localTree = directBuildTree(d.localTreeContribs);
   e.nonSuspectTree = directBuildTree(d.nonSuspectContribs);
+  e.extSynTree = directBuildTree(d.extSynTreeContribs);
   
   return e;
 }
@@ -109,9 +111,17 @@ function getInhsForNtRef
   return searchEnvTree(nt, e.refTree);
 }
 
+-- implicit forward syn copy equations that are allowed to affect the flow type
 function getNonSuspectAttrsForProd
 [String] ::= prod::String  e::Decorated FlowEnv
 {
   return foldr(append, [], searchEnvTree(prod, e.nonSuspectTree));
+}
+
+-- Ext Syns subject to ft lower bound
+function getExtSynsFor
+[FlowDef] ::= nt::String  e::Decorated FlowEnv
+{
+  return searchEnvTree(nt, e.extSynTree);
 }
 

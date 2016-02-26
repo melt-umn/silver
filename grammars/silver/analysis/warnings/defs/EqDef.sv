@@ -145,26 +145,31 @@ synthesized attribute lookupEqDefLHS :: [FlowDef] occurs on DefLHS;
 aspect production childDefLHS
 top::DefLHS ::= q::Decorated QName
 {
+  -- prod, child, attr
   top.lookupEqDefLHS = lookupInh(top.signature.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
 }
 aspect production lhsDefLHS
 top::DefLHS ::= q::Decorated QName
 {
+  -- prod, attr
   top.lookupEqDefLHS = lookupSyn(top.signature.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
 }
 aspect production localDefLHS
 top::DefLHS ::= q::Decorated QName
 {
+  -- prod, local, attr
   top.lookupEqDefLHS = lookupLocalInh(top.signature.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
 }
 aspect production forwardDefLHS
 top::DefLHS ::= q::Decorated QName
 {
+  -- prod, attr
   top.lookupEqDefLHS = lookupFwdInh(top.signature.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
 }
 aspect production defaultLhsDefLHS
 top::DefLHS ::= q::Decorated QName
 {
+  -- nt, attr
   top.lookupEqDefLHS = lookupDef(top.signature.outputElement.typerep.typeName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
 }
 aspect production errorDefLHS

@@ -9,15 +9,13 @@ synthesized attribute stitchEdges :: [Pair<FlowVertex FlowVertex>];
  - to the specified vertex type.
  -}
 abstract production nonterminalStitchPoint
-top::StitchPoint ::= nt::String  vertexType::(FlowVertex ::= String)
+top::StitchPoint ::= nt::String  vertexType::VertexType
 {
   top.stitchEdges = 
-    map(dualApply(vertexType, _),
+    map(flowTypeEdge(vertexType, _),
       g:toList(findFlowType(nt, top.flowTypes)));
 }
 
--- TODO: turn the above to use VertexType
--- TODO: turn the below to use VertexType
 -- TODO: use the below, somehow. it's for pattern matching, right?
 
 
@@ -44,9 +42,9 @@ top::StitchPoint ::= nt::String  vertexType::(FlowVertex ::= String)
 abstract production projectionStitchPoint
 top::StitchPoint ::= 
   prod::String -- pattern match on this production
-  sourceType::(FlowVertex ::= String) -- the pattern Variable vertex type
-  targetType::(FlowVertex ::= String) -- the scruntinee vertex type
-  prodType::(FlowVertex ::= String) -- a rhsVertex of 'prod'
+  sourceType::VertexType -- the pattern Variable vertex type
+  targetType::VertexType -- the scruntinee vertex type
+  prodType::VertexType -- a rhsVertex of 'prod'
   attrs::[String] -- all inhs on the NT type of prodType/sourceType
 {
   top.stitchEdges =
@@ -56,22 +54,30 @@ top::StitchPoint ::=
 }
 
 
+{--
+ - @param attr  An inherited attribute
+ - @param sourceType  "pattern variable" vertex type
+ - @param targetType  "scrutinee" vertex type
+ - @param prodType  the "child" vertex type...
+ - @param prod  ...of this production (prodType in here, others in original prod graph)
+ - @return edges from 'sourceType.inhVertex(attr)' to 'targetType.inhVertex(??)'
+ -}
 function projectAttribute
 [Pair<FlowVertex FlowVertex>] ::=
   attr::String
-  sourceType::(FlowVertex ::= String)
-  targetType::(FlowVertex ::= String)
-  prodType::(FlowVertex ::= String)
+  sourceType::VertexType
+  targetType::VertexType
+  prodType::VertexType
   prod::ProductionGraph
 {
   -- emit edges from the src vertex of this production
-  return map(pair(sourceType(attr), _),
-    -- Turn into dst vertexes (in this production)
-    map(targetType,
-      -- Filter down to just LHS Inh, (string names)
+  return map(pair(sourceType.inhVertex(attr), _),
+    -- Turn into inh vertexes (in this production) on targetType
+    map(targetType.inhVertex,
+      -- Filter down to just LHS Inh in that production, (string names)
       foldr(collectInhs, [], 
-        -- Deps of this vertex in that production
-        set:toList(prod.edgeMap(prodType(attr))))));
+        -- Deps of this vertex in that other production
+        set:toList(prod.edgeMap(prodType.inhVertex(attr))))));
 }
 
 
@@ -84,15 +90,25 @@ function stitchEdgesFor
   return sp.stitchEdges;
 }
 
-function dualApply
-Pair<b b> ::= f::(b ::= a)  x::Pair<a a>
-{
-  return pair(f(x.fst), f(x.snd));
-}
-
 function edgeIsNew
 Boolean ::= edge::Pair<FlowVertex FlowVertex>  e::g:Graph<FlowVertex>
 {
   return !g:contains(edge, e);
+}
+
+{--
+ - Creates edges from a "flow type" source to a "flow type" sink.
+ - Special case: have to spot forwards and handle them correctly. This stinks.
+ -
+ - @param vt  The vertex type we're creating edges within
+ - @param edge  pair of syn/fwd and inh. The edge.
+ -}
+function flowTypeEdge
+Pair<FlowVertex FlowVertex> ::= vt::VertexType  edge::Pair<String String>
+{
+  return if edge.fst == "forward" then
+    pair(vt.fwdVertex, vt.inhVertex(edge.snd))
+  else
+    pair(vt.synVertex(edge.fst), vt.inhVertex(edge.snd));
 }
 
