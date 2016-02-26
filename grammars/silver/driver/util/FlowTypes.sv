@@ -24,10 +24,13 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   
   -- List of all productions
   local allProds :: [DclInfo] = foldr(consDefs, nilDefs(), allRealDefs).prodDclList;
+  local allNts :: [String] = nubBy(stringEq, map(getProdNt, allProds));
   
   -- Fix the production graph information from the flow defs TODO: some of this maybe should be fixed somehow
   production prodGraph :: [ProductionGraph] = 
-    computeAllProductionGraphs(allProds, prodTree, allFlowEnv, allRealEnv);
+    computeAllProductionGraphs(allProds, prodTree, allFlowEnv, allRealEnv) ++
+      -- Add in phantom graphs
+      map(constructPhantomProductionGraph(_, allFlowEnv, allRealEnv), allNts);
   
   -- Now, solve for flow types!!
   local flowTypes1 :: Pair<[ProductionGraph] EnvTree<g:Graph<String>>> =
@@ -44,3 +47,8 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   r.grammarFlowTypes = flowTypes;
 }
 
+function getProdNt
+String ::= d::DclInfo
+{
+  return d.namedSignature.outputElement.typerep.typeName;
+}

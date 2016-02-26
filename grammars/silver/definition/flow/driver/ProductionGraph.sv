@@ -167,6 +167,45 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   return productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 }
 
+{--
+ - Constructs "phantom graphs" to enforce 'ft(syn) >= ft(fwd)'.
+ -
+ - @param nt  The nonterminal for which we produce a phantom production.
+ - @param flowEnv  A full flow environment (need to find out what syns are ext syns for this NT)
+ - @param realEnv  A full real environment (need to find out what syns occurs on this NT)
+ - @return A fixed up graph.
+ -}
+function constructPhantomProductionGraph
+ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+{
+  -- All attributes occurrences
+  local attrs :: [DclInfo] = getAttrsOn(nt, realEnv);
+  -- Just synthesized attributes.
+  local syns :: [String] = map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), attrs));
+
+  -- The phantom edges: ext syn -> fwd.eq
+  local phantomEdges :: [Pair<FlowVertex FlowVertex>] =
+    map(getPhantomEdge, getExtSynsFor(nt, flowEnv));
+  
+  -- The stitch point: oddball. LHS stitch point. Normally, the LHS is not.
+  local stitchPoints :: [StitchPoint] = [nonterminalStitchPoint(nt, lhsVertexType)];
+    
+  -- TODO: use of lhsSynVertex("forward") here is part of a hack.
+  local flowTypeVertexes :: [FlowVertex] = [lhsSynVertex("forward")] ++ map(lhsSynVertex, syns);
+  local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(phantomEdges);
+  local suspectEdges :: [Pair<FlowVertex FlowVertex>] = [];
+
+  return productionGraph("Phantom for " ++ nt, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+}
+
+function getPhantomEdge
+Pair<FlowVertex FlowVertex> ::= f::FlowDef
+{
+  return case f of
+  | extSynFlowDef(_, at) -> pair(lhsSynVertex(at), lhsSynVertex("forward")) -- TODO: this is a hack and "accidentally" works. Fix is to use VertexTypes more. Basically, what matters here is that both this and forwardEqVertex() will have a flowTypeName of just "forward"
+  end;
+}
+
 ---- Begin helpers for fixing up graphs ----------------------------------------
 
 {--
