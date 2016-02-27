@@ -14,10 +14,5 @@ terminal ConfigValue_t /"[^"]*"/ lexer classes {DOC};
 
 terminal NoDocComment_t /{@(\ )*nodoc(\ )*@}/ dominates {DOC};
 
--- TODO: Find a way to indent doc information instead of quoting in markdown
--- TODO: Add document comments for parser declarations.
--- TODO: Add document comments for type declarations.
--- TODO: Use special string for above variables
-
 
 

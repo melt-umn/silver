@@ -27,7 +27,18 @@ String ::= items::[DocItem]
 {
   local docComments::String = extractDocComments(items);
   local header::String = extractHeader(items);
+  local splitFiles::String = extractSplitFiles(items);
   return header ++ docComments;
+}
+
+function extractSplitFiles
+String ::= items::[DocItem]
+{
+  return case items of
+	 | configDocItem(c) :: rest -> c.splitFiles
+	 | _ :: rest -> extractSplitFiles(rest)
+	 | _ -> ""
+	 end;
 }
 
 function extractHeader

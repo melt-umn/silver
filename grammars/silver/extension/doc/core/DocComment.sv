@@ -16,22 +16,24 @@ top::DocComment ::= '{@' body::DocCommentBody_t '@}'
 abstract production commentItem
 top::CommentItem ::= modifiers::String name::String signature::String body::DocComment
 {
-  local sig::String = if 0 == length(signature) then "" else "\n ######`" ++ signature ++ "`";
   top.modifiers = modifiers;
   top.dclName = name;
-  top.signature = sig;
+  top.signature = if 0 == length(signature) then "" else "\n ######`" ++ signature ++ "`";
   top.body = body.body;
 }
 
 abstract production bodilessCommentItem
 top::CommentItem ::= modifiers::String name::String signature::String
 {
-  local sig::String = if 0 == length(signature) then "" else "\n ######`" ++ signature ++ "`";
   top.modifiers = modifiers;
   top.dclName = name;
-  top.signature = sig;
+  top.signature = if 0 == length(signature) then "" else "\n ######`" ++ signature ++ "`";
   top.body = "";
 }
+
+-- TODO: Find a way to indent doc information instead of quoting in markdown
+-- TODO: Add document comments for parser declarations.
+-- TODO: Add document comments for type declarations.
 
 
 

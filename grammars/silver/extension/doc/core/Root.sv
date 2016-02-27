@@ -1,27 +1,7 @@
 grammar silver:extension:doc:core;
 
-nonterminal DocItem;
-abstract production commentDocItem
-top::DocItem ::= c::CommentItem
-{}
-
-abstract production configDocItem
-top::DocItem ::= c::ConfigItem
-{}
-
-{--
- - Markdown files to generate. (filename, contents)
- -}
 synthesized attribute genFiles :: [Pair<String String>] with ++;
-{--
- - Documentation for a construct or list of constructs
- -}
-synthesized attribute docs :: [DocItem] with ++; -- TODO: Should this be a collection attribute?
-{--
- - Documentation for something below the AGDecl level
- -}
-synthesized attribute doc :: String with ++; -- TODO: Should this be a collection attribute?
-
+synthesized attribute docs :: [DocItem] with ++;
 attribute docs occurs on Grammar, Root, AGDcls, AGDcl;
 
 aspect production root
