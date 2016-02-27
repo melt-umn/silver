@@ -1,57 +1,37 @@
 grammar silver:extension:doc:core;
 
-import silver:extension:doc:doclang as doclang;
-
-terminal DocComment_t /\{\-\-(\{\-([^\-]|\-+[^\}\-])*\-+\}|[^\-]|\-+[^\}\-])*\-\-\}/ dominates {COMMENT};
-terminal NoDocComment_t /{\-\-(\ )*nodoc(\ )*\-\-}/ dominates {DocComment_t, COMMENT};
-
 synthesized attribute body :: String;
+synthesized attribute modifiers :: String;
+synthesized attribute dclName :: String;
+synthesized attribute signature :: String;
 nonterminal DocComment with body, location;
+nonterminal CommentItem with modifiers, dclName, signature, body;
 
-parser doclangParser::doclang:DocComment
+concrete production docComment
+top::DocComment ::= '{@' body::DocCommentBody_t '@}'
 {
-  silver:extension:doc:doclang;
+  top.body = body.lexeme;
 }
 
-{--
-This production takes a raw DocComment_t terminal and runs it through 
-the doclang parser to generate a DocComment nonterminal.
---}
-concrete production documentationComments
-top::DocComment ::= rawComment::DocComment_t
+abstract production commentItem
+top::CommentItem ::= modifiers::String name::String signature::String body::DocComment
 {
-  local parseResult::ParseResult<doclang:DocComment> = doclangParser(rawComment.lexeme, "documentation");
-  local markdown::String = parseResult.parseTree.doclang:markdown;
-
-  top.body = if parseResult.parseSuccess
-  	     then markdown
-  	     else parseResult.parseErrors;
+  local sig::String = if 0 == length(signature) then "" else "\n ######`" ++ signature ++ "`";
+  top.modifiers = modifiers;
+  top.dclName = name;
+  top.signature = sig;
+  top.body = body.body;
 }
 
-{--
-Takes the information from a declaration with a documentation comment and turns it into markdown.
---}
-function toMarkdown
-String ::= modifiers::String name::String signiture::String body::DocComment
+abstract production bodilessCommentItem
+top::CommentItem ::= modifiers::String name::String signature::String
 {
-  local sig::String = if 0 == length(signiture) then "" else "\n ######`" ++ signiture ++ "`";
-  return "#### _" ++ modifiers ++ "_ `" ++ name ++ "`" ++ sig ++ "\n" ++ "> " ++ body.body;
+  local sig::String = if 0 == length(signature) then "" else "\n ######`" ++ signature ++ "`";
+  top.modifiers = modifiers;
+  top.dclName = name;
+  top.signature = sig;
+  top.body = "";
 }
 
-{--
-Take the information from a declaration with no documentation comment and turns it into markdown.
---}
-function toNoCommentMarkdown
-String ::= modifiers::String name::String signiture::String
-{
-  local sig::String = if 0 == length(signiture) then "" else "\n ######`" ++ signiture ++ "`";
-  return "#### _" ++ modifiers ++ "_ `" ++ name ++ "`" ++ sig;
-}
-
--- TODO: Find a way to indent doc information instead of quoting
--- TODO: Add document comments for parser declarations.
--- TODO: Add document comments for type declarations.
--- TODO: Do a tab instead of a quote
---TODO: Use special string for above variables
 
 

@@ -19,5 +19,33 @@ top::RootSpec ::= _ _ _ _
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _
 {
-  top.genFiles := [pair("index.md", implode("\n\n", g.docs))];
+  top.genFiles := [pair("index.md", toFile(g.docs))];
+}
+
+function toFile
+String ::= items::[DocItem]
+{
+  local docComments::String = extractDocComments(items);
+  local header::String = extractHeader(items);
+  return header ++ docComments;
+}
+
+function extractHeader
+String ::= items::[DocItem]
+{
+  return case items of
+	 | configDocItem(c) :: rest -> c.header
+	 | _ :: rest -> extractHeader(rest)
+	 | _ -> ""
+	 end;
+}
+
+function extractDocComments
+String ::= items::[DocItem]
+{
+  return case items of
+	 | commentDocItem(c) :: rest -> "\n\n#### _" ++ c.modifiers ++ "_ `" ++ c.dclName ++ "`" ++ c.signature ++ "\n" ++ "> " ++ c.body ++ extractDocComments(rest)
+	 | _ :: rest -> extractDocComments(rest)
+	 | [] -> ""
+	 end;
 }
