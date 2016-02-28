@@ -22,29 +22,22 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   local allRealDefs :: [Def] = foldr(append, [], map((.defs), g.grammarList));
   local allRealEnv :: Decorated Env = toEnv(allRealDefs);
   
-  -- List of all productions (is this nub needed? TODO)
-  local allProds :: [String] = nubBy(stringEq, map((.fullName), foldr(consDefs, nilDefs(), allRealDefs).prodDclList));
+  -- List of all productions
+  local allProds :: [DclInfo] = foldr(consDefs, nilDefs(), allRealDefs).prodDclList;
+  local allNts :: [String] = nubBy(stringEq, map(getProdNt, allProds));
   
   -- Fix the production graph information from the flow defs TODO: some of this maybe should be fixed somehow
   production prodGraph :: [ProductionGraph] = 
-    computeAllProductionGraphs(allProds, prodTree, allFlowEnv, allRealEnv);
+    computeAllProductionGraphs(allProds, prodTree, allFlowEnv, allRealEnv) ++
+      -- Add in phantom graphs
+      map(constructPhantomProductionGraph(_, allFlowEnv, allRealEnv), allNts);
   
   -- Now, solve for flow types!!
   local flowTypes1 :: Pair<[ProductionGraph] EnvTree<g:Graph<String>>> =
     fullySolveFlowTypes(prodGraph, rtm:empty(compareString));
   
-  -- Non-host syn patch the flow types! (Composition generates new equations
-  -- that requires non-host syn to potentially need to evaluate forwards
-  -- to be able to evaluate on new productions.) TODO: could this need to be iterated?? probably yes, so BUG!
-  local flowTypes2 :: EnvTree<g:Graph<String>> =
-    patchFlowTypes(flowTypes1.snd, allFlowDefs.nonHostSynAttrs);
-    
-  -- Iterate once more, to propagate the patch above across flow types!
-  local flowTypes3 :: Pair<[ProductionGraph] EnvTree<g:Graph<String>>> =
-    fullySolveFlowTypes(flowTypes1.fst, flowTypes2);
-  
-  production flowTypes :: EnvTree<g:Graph<String>> = flowTypes3.snd;
-  production finalGraphs :: [ProductionGraph] = flowTypes3.fst;
+  production flowTypes :: EnvTree<g:Graph<String>> = flowTypes1.snd;
+  production finalGraphs :: [ProductionGraph] = flowTypes1.fst;
   production finalGraphEnv :: EnvTree<ProductionGraph> = directBuildTree(map(prodGraphToEnv, finalGraphs));
   
   g.productionFlowGraphs = finalGraphEnv;
@@ -54,3 +47,8 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   r.grammarFlowTypes = flowTypes;
 }
 
+function getProdNt
+String ::= d::DclInfo
+{
+  return d.namedSignature.outputElement.typerep.typeName;
+}

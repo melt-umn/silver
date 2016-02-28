@@ -187,7 +187,7 @@ top::IFlow ::= 'implicitFwdAffects' '(' prd::IName ',' attrs::INames ')'
 concrete production aFlowNonHostSyn
 top::IFlow ::= 'nonHostSyn' '(' attr::IName ',' nt::IName ')'
 {
-  top.flowDefs = [nonHostSynDef(attr.aname, nt.aname)];
+  top.flowDefs = [extSynFlowDef(nt.aname, attr.aname)];
 }
 concrete production aFlowInh
 top::IFlow ::= 'inh' '(' prod::IName ',' sigName::IName ',' attr::IName ',' fv::IFlowVertexes ')'

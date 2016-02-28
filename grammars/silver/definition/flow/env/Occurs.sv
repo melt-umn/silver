@@ -15,6 +15,6 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
     if !null(at.lookupAttribute.errors ++ nt.lookupType.errors) || isHost || !isSyn then 
       []
     else
-      [nonHostSynDef(at.lookupAttribute.fullName, nt.lookupType.fullName)];
+      [extSynFlowDef(nt.lookupType.fullName, at.lookupAttribute.fullName)];
 }
 

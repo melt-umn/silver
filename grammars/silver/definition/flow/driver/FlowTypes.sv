@@ -21,10 +21,10 @@ type NtName = String;
 
 -- construct a production graph for each production
 function computeAllProductionGraphs
-[ProductionGraph] ::= prods::[String]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+[ProductionGraph] ::= prods::[DclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
 {
   return if null(prods) then []
-  else constructProductionGraph(head(prods), searchEnvTree(head(prods), prodTree), flowEnv, realEnv) ::
+  else constructProductionGraph(head(prods), searchEnvTree(head(prods).fullName, prodTree), flowEnv, realEnv) ::
     computeAllProductionGraphs(tail(prods), prodTree, flowEnv, realEnv);
 }
 
@@ -129,43 +129,6 @@ function collectInhs
   | _ -> l
   end;
 }
-
-{--
- - Used to add the 'minimum' flow type for non-host synthesized attributes.
- - These attributes need to be able to evaluate the forwards of productions
- - to be able to be evaluated.
- - @param initial  the results from fullySolveFlowTypes
- - @param edits  the list of non-host synthesized attribute occurrences
- - @return the modified flow types
- -}
-function patchFlowTypes
-EnvTree<g:Graph<String>> ::= initial::EnvTree<g:Graph<String>>  edits::[FlowDef]
-{
-  return foldr(patchEditPair, initial, edits);
-}
-function patchEditPair
-EnvTree<g:Graph<String>> ::= edit::FlowDef  current::EnvTree<g:Graph<String>>
-{
-  return case edit of
-  | nonHostSynDef(attr, nt) -> 
-      let ft :: g:Graph<String> = findFlowType(nt, current)
-       in
-      let fwdInhs :: set:Set<String> = g:edgesFrom("forward", ft),
-          alreadyInhs :: set:Set<String> = g:edgesFrom(attr, ft)
-       in
-          rtm:update(nt, [
-            g:add(map(pair(attr, _), set:toList(set:difference(fwdInhs, alreadyInhs))), ft)
-            ], current)
-      end
-      end
-  end; -- for everything found under nt->forward, add something under nt->attr, if it doesn't exist already
-}
-
-
-
-
-
-
 
 function flowVertexEq
 Boolean ::= a::FlowVertex  b::FlowVertex

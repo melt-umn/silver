@@ -2,8 +2,8 @@ grammar silver:definition:flow:ast;
 
 imports silver:definition:env only quoteString,unparseStrings, unparse;
 
-nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, nonHostSynAttrs, nonSuspectContribs, localTreeContribs;
-nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, suspectFlowEdges, nonHostSynAttrs, nonSuspectContribs, localTreeContribs;
+nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, extSynTreeContribs, nonSuspectContribs, localTreeContribs;
+nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, suspectFlowEdges, extSynTreeContribs, nonSuspectContribs, localTreeContribs;
 
 {-- lookup (production, attribute) to find synthesized equations
  - Used to ensure a necessary lhs.syn equation exists.
@@ -56,8 +56,8 @@ synthesized attribute flowEdges :: [Pair<FlowVertex FlowVertex>];
  - (e.g.  extsyn = hostsyn; hostsyn = hostinh; need to reflect extsyn's dep on hostinh) -}
 synthesized attribute suspectFlowEdges :: [Pair<FlowVertex FlowVertex>];
 
-{-- A list of non-host synthesized occurrences, to patch up flow types -}
-synthesized attribute nonHostSynAttrs :: [FlowDef];
+{-- A list of extension syn attr occurrences, subject to ft lower bounds. -}
+synthesized attribute extSynTreeContribs :: [Pair<String FlowDef>];
 
 {-- A list of attributes for a production that are non-suspect -}
 synthesized attribute nonSuspectContribs :: [Pair<String [String]>];
@@ -77,7 +77,7 @@ top::FlowDefs ::= h::FlowDef  t::FlowDefs
   top.refTreeContribs = h.refTreeContribs ++ t.refTreeContribs;
   top.localInhTreeContribs = h.localInhTreeContribs ++ t.localInhTreeContribs;
   top.localTreeContribs = h.localTreeContribs ++ t.localTreeContribs;
-  top.nonHostSynAttrs = h.nonHostSynAttrs ++ t.nonHostSynAttrs;
+  top.extSynTreeContribs = h.extSynTreeContribs ++ t.extSynTreeContribs;
   top.nonSuspectContribs = h.nonSuspectContribs ++ t.nonSuspectContribs;
   top.unparses = h.unparses ++ t.unparses;
 }
@@ -95,7 +95,7 @@ top::FlowDefs ::=
   top.refTreeContribs = [];
   top.localInhTreeContribs = [];
   top.localTreeContribs = [];
-  top.nonHostSynAttrs = [];
+  top.extSynTreeContribs = [];
   top.nonSuspectContribs = [];
   top.unparses = [];
 }
@@ -118,7 +118,7 @@ top::FlowDef ::=
   top.refTreeContribs = [];
   top.localInhTreeContribs = [];
   top.localTreeContribs = [];
-  top.nonHostSynAttrs = [];
+  top.extSynTreeContribs = [];
   top.nonSuspectContribs = [];
   top.suspectFlowEdges = []; -- flowEdges is required, but suspect is typically not!
   -- require unparses, prodGraphContibs, flowEdges
@@ -156,15 +156,16 @@ top::FlowDef ::= nt::String  inhs::[String]
 }
 
 {--
- - Declaration that a synthesized attribute occurrence is not in the host
- - and therefore subject to the forward flow type's whims.
- - @param attr  the full name of the synthesized attribute
+ - Declaration that a synthesized attribute *occurrence* is not in the host
+ - and therefore subject to the forward flow type's whims. (i.e. must be ft(syn) >= ft(fwd))
+ -
  - @param nt  the full name of the nonterminal
+ - @param attr  the full name of the synthesized attribute
  -}
-abstract production nonHostSynDef
-top::FlowDef ::= attr::String  nt::String
+abstract production extSynFlowDef
+top::FlowDef ::= nt::String  attr::String
 {
-  top.nonHostSynAttrs = [top];
+  top.extSynTreeContribs = [pair(nt, top)];
   top.prodGraphContribs = [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
   top.unparses = ["nonHostSyn(" ++ quoteString(attr) ++ ", " ++ quoteString(nt) ++ ")"];
@@ -246,9 +247,10 @@ top::FlowDef ::= prod::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
 
 {--
  - Attributes that are non-suspect.
- - TODO: presently, these are all knowns syns where the prod is declared.
- -       should probably be all syns that are not subject to fwd superset rule, right?
- -       that's different. (i.e. syns exported by nonterminal grammar)
+ - 
+ - These are *allowed* to have their *implicit forward copy equations* affect the flow type.
+ -
+ - This is basically a hack to make flow type inference work a little better.
  -}
 abstract production implicitFwdAffects
 top::FlowDef ::= prod::String  attrs::[String]

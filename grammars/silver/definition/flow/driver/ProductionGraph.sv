@@ -107,10 +107,10 @@ top::ProductionGraph ::=
  - @return A fixed up graph.
  -}
 function constructProductionGraph
-ProductionGraph ::= prod::String  defs::[FlowDef]  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
 {
-  -- The dcl for this production
-  local dcl :: DclInfo = head(getValueDclAll(prod, realEnv));
+  -- The name of this production
+  local prod :: String = dcl.fullName;
   -- The LHS nonterminal full name
   local nt :: NtName = dcl.namedSignature.outputElement.typerep.typeName;
   -- All attributes occurrences
@@ -165,6 +165,45 @@ ProductionGraph ::= prod::String  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
     createFlowGraph(fixedEdges);
 
   return productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+}
+
+{--
+ - Constructs "phantom graphs" to enforce 'ft(syn) >= ft(fwd)'.
+ -
+ - @param nt  The nonterminal for which we produce a phantom production.
+ - @param flowEnv  A full flow environment (need to find out what syns are ext syns for this NT)
+ - @param realEnv  A full real environment (need to find out what syns occurs on this NT)
+ - @return A fixed up graph.
+ -}
+function constructPhantomProductionGraph
+ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+{
+  -- All attributes occurrences
+  local attrs :: [DclInfo] = getAttrsOn(nt, realEnv);
+  -- Just synthesized attributes.
+  local syns :: [String] = map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), attrs));
+
+  -- The phantom edges: ext syn -> fwd.eq
+  local phantomEdges :: [Pair<FlowVertex FlowVertex>] =
+    map(getPhantomEdge, getExtSynsFor(nt, flowEnv));
+  
+  -- The stitch point: oddball. LHS stitch point. Normally, the LHS is not.
+  local stitchPoints :: [StitchPoint] = [nonterminalStitchPoint(nt, lhsVertexType)];
+    
+  -- TODO: use of lhsSynVertex("forward") here is part of a hack.
+  local flowTypeVertexes :: [FlowVertex] = [lhsSynVertex("forward")] ++ map(lhsSynVertex, syns);
+  local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(phantomEdges);
+  local suspectEdges :: [Pair<FlowVertex FlowVertex>] = [];
+
+  return productionGraph("Phantom for " ++ nt, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+}
+
+function getPhantomEdge
+Pair<FlowVertex FlowVertex> ::= f::FlowDef
+{
+  return case f of
+  | extSynFlowDef(_, at) -> pair(lhsSynVertex(at), lhsSynVertex("forward")) -- TODO: this is a hack and "accidentally" works. Fix is to use VertexTypes more. Basically, what matters here is that both this and forwardEqVertex() will have a flowTypeName of just "forward"
+  end;
 }
 
 ---- Begin helpers for fixing up graphs ----------------------------------------
@@ -291,13 +330,13 @@ function localStitchPoints
   return case d of
   | [] -> []
   -- We add the forward stitch point here, too!
-  | fwdEq(_, _, _) :: rest -> nonterminalStitchPoint(nt, forwardVertex) :: localStitchPoints(nt, rest)
+  | fwdEq(_, _, _) :: rest -> nonterminalStitchPoint(nt, forwardVertexType) :: localStitchPoints(nt, rest)
   -- Ignore locals that aren't nonterminal types!
   | localEq(_, fN, "", _) :: rest -> localStitchPoints(nt, rest)
   -- Add locals that are nonterminal types.
-  | localEq(_, fN, tN, _) :: rest -> nonterminalStitchPoint(tN, localVertex(fN, _)) :: localStitchPoints(nt, rest)
+  | localEq(_, fN, tN, _) :: rest -> nonterminalStitchPoint(tN, localVertexType(fN)) :: localStitchPoints(nt, rest)
   -- Add all anon decoration sites
-  | anonEq(_, fN, tN, _, _) :: rest -> nonterminalStitchPoint(tN, anonVertex(fN, _)) :: localStitchPoints(nt, rest)
+  | anonEq(_, fN, tN, _, _) :: rest -> nonterminalStitchPoint(tN, anonVertexType(fN)) :: localStitchPoints(nt, rest)
   -- Ignore all other flow def info
   | _ :: rest -> localStitchPoints(nt, rest)
   end;
@@ -310,7 +349,7 @@ function rhsStitchPoints
   else if head(rhs).typerep.isDecorable
        then nonterminalStitchPoint(
               head(rhs).typerep.typeName,
-              rhsVertex(head(rhs).elementName, _)) :: rhsStitchPoints(tail(rhs))
+              rhsVertexType(head(rhs).elementName)) :: rhsStitchPoints(tail(rhs))
        else rhsStitchPoints(tail(rhs));
 }
 
