@@ -1,32 +1,37 @@
 
 synthesized attribute functorSyn<a> :: a;
+synthesized attribute functorTestAnnoSum :: Integer;
 annotation functorTestAnno::Integer;
 
-nonterminal FunctorTestNT with functorSyn<FunctorTestNT>, functorTestAnno;
-nonterminal FunctorTestNT2 with functorSyn<FunctorTestNT2>, functorTestAnno;
+nonterminal FunctorTestNT with functorSyn<FunctorTestNT>, functorTestAnnoSum, functorTestAnno;
+nonterminal FunctorTestNT2 with functorSyn<FunctorTestNT2>, functorTestAnnoSum, functorTestAnno;
 
 abstract production consFTNT
 top::FunctorTestNT ::= h::FunctorTestNT  t::FunctorTestNT
 {
   propagate functorSyn;
+  top.functorTestAnnoSum = h.functorTestAnnoSum + t.functorTestAnnoSum + top.functorTestAnno;
 }
 
 abstract production consFTNT2
 top::FunctorTestNT ::= h::FunctorTestNT2  t::FunctorTestNT
 {
   propagate functorSyn;
+  top.functorTestAnnoSum = h.functorTestAnnoSum + t.functorTestAnnoSum + top.functorTestAnno;
 }
 
 abstract production nilFTNT
 top::FunctorTestNT ::= i::Integer
 {
   top.functorSyn = nilFTNT(10, functorTestAnno=123); -- test non-propagate
+  top.functorTestAnnoSum = top.functorTestAnno;
 }
 
 abstract production nilFTNT2
 top::FunctorTestNT2 ::= s::String
 {
   propagate functorSyn;
+  top.functorTestAnnoSum = top.functorTestAnno;
 }
 
 global functorValue :: FunctorTestNT =
@@ -55,3 +60,5 @@ global functorValueRes :: FunctorTestNT =
 
 -- Test to ensure it reaches all nils:
 equalityTest(hackUnparse(functorValueRes), hackUnparse(functorValue.functorSyn), String, silver_tests);
+-- Test to ensure annotations are copied correctly
+equalityTest(functorValueRes.functorTestAnnoSum, functorValue.functorSyn.functorTestAnnoSum, Integer, silver_tests);
