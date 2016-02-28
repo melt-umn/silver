@@ -5,9 +5,9 @@ import silver:langutil:pp;
  - Actual implementation in propagateOne
  -}
 concrete production propagateAttrDcl
-top::ProductionStmt ::= 'propagate' 'functor' ns::NameList ';'
+top::ProductionStmt ::= 'propagate' ns::NameList ';'
 {
-  top.pp = s"propagate functor ${ns.pp};";
+  top.pp = s"propagate ${ns.pp};";
   
   -- Forwards to productionStmtAppend of propagating the first element in ns
   -- and propagateAttrDcl containing the remaining names
@@ -18,7 +18,7 @@ top::ProductionStmt ::= 'propagate' 'functor' ns::NameList ';'
     | nameListCons(n, _, rest) ->
         productionStmtAppend(
           propagateOne(n, location=top.location),
-          propagateAttrDcl($1, $2, rest, $4, location=top.location),
+          propagateAttrDcl($1, rest, $3, location=top.location),
           location=top.location)
     end;
 }
@@ -41,25 +41,58 @@ function makeArgs
   
   -- Check if the attribute occurs on the first child
   local attrOccursOnHead :: Boolean = 
-    null(
+    !null(
       foldr(append, [], 
         -- The occurs dcls on this nonterminal for
         map(getOccursDcl(_, head(inputs).typerep.typeName, env),
           -- the full names of each candidate
           map((.fullName), attrName.lookupAttribute.dcls))));
+  local validTypeHead :: Boolean = head(inputs).typerep.isDecorable;
   
   return
     case inputs of
       [] -> []
     | h :: rest -> 
-        (if attrOccursOnHead
-         then presentAppExpr(baseExpr(at, location=loc), location=loc)
-         else presentAppExpr(
+        (if validTypeHead && attrOccursOnHead
+         then presentAppExpr(
                 access(
                   baseExpr(at, location=loc), '.',
                   qNameAttrOccur(attrName, location=loc),
                   location=loc),
+                location=loc)
+         else presentAppExpr(
+                baseExpr(at, location=loc),
                 location=loc)) :: makeArgs(loc, env, attrName, rest)
+    end;
+}
+
+{--
+ - Generates the list of AnnoExprs used in calling the constructor
+ - @param loc      The parent location to use in construction
+ - @param baseName The name of the parent from the signature
+ - @param inputs   The NamedSignatureElements for the annotations
+ - @return A list of AnnoExprs to be used to build the named arguments
+ -}
+function makeAnnoArgs
+[AnnoExpr] ::= loc::Location baseName::QName inputs::[NamedSignatureElement]
+{
+  -- TODO: This is a hacky way of getting the base name, not sure if correct
+  local annoName::QName = qName(loc, last(explode(":", head(inputs).elementName)));
+
+  return
+    case inputs of
+      [] -> []
+    | h :: rest -> 
+      annoExpr(
+        annoName,
+        '=',
+        presentAppExpr(
+          access(
+            baseExpr(baseName, location=loc), '.',
+              qNameAttrOccur(annoName, location=loc),
+              location=loc),
+            location=loc),
+          location=loc) :: makeAnnoArgs(loc, baseName, rest)
     end;
 }
 
@@ -84,6 +117,10 @@ top::ProductionStmt ::= a::QName
     foldl(snocAppExprs(_, ',', _, location=top.location),
           emptyAppExprs(location=top.location),
           makeArgs(top.location, top.env, a, top.signature.inputElements));
+  local annotations::AnnoAppExprs = 
+    foldl(snocAnnoAppExprs(_, ',', _, location=top.location),
+          emptyAnnoAppExprs(location=top.location),
+          makeAnnoArgs(top.location, topName, top.signature.namedInputElements));
 
   -- Construct an attribute def and call with the generated arguments
   forwards to 
@@ -92,9 +129,9 @@ top::ProductionStmt ::= a::QName
       '.',
       qNameAttrOccur(a, location=top.location),
       '=',
-      applicationExpr(
+      application(
         baseExpr(prodName, location=top.location),
-        '(', inputs, ')',
+        '(', inputs, ',', annotations, ')',
         location=top.location),
       ';',
       location=top.location);
