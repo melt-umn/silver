@@ -41,24 +41,31 @@ function makeArgs
   
   -- Check if the attribute occurs on the first child
   local attrOccursOnHead :: Boolean = 
-    null(
+    !null(
       foldr(append, [], 
         -- The occurs dcls on this nonterminal for
         map(getOccursDcl(_, head(inputs).typerep.typeName, env),
           -- the full names of each candidate
           map((.fullName), attrName.lookupAttribute.dcls))));
+  local validTypeHead :: Boolean =
+    case head(inputs).typerep of
+      nonterminalTypeExp(_, _) -> true
+    | _ -> false
+    end;
   
   return
     case inputs of
       [] -> []
     | h :: rest -> 
-        (if attrOccursOnHead
-         then presentAppExpr(baseExpr(at, location=loc), location=loc)
-         else presentAppExpr(
+        (if validTypeHead && attrOccursOnHead
+         then presentAppExpr(
                 access(
                   baseExpr(at, location=loc), '.',
                   qNameAttrOccur(attrName, location=loc),
                   location=loc),
+                location=loc)
+         else presentAppExpr(
+                baseExpr(at, location=loc),
                 location=loc)) :: makeArgs(loc, env, attrName, rest)
     end;
 }

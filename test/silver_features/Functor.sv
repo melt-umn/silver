@@ -20,7 +20,7 @@ top::FunctorTestNT ::= h::FunctorTestNT2  t::FunctorTestNT
 abstract production nilFTNT
 top::FunctorTestNT ::= i::Integer
 {
-  propagate functorSyn;
+  top.functorSyn = nilFTNT(10, functorTestAnno=123); -- test non-propagate
 }
 
 abstract production nilFTNT2
@@ -40,6 +40,18 @@ global functorValue :: FunctorTestNT =
       nilFTNT(2, functorTestAnno=5),
       functorTestAnno=6),
     functorTestAnno=7);
+    
+global functorValueRes :: FunctorTestNT =
+  consFTNT(
+    consFTNT2(
+      nilFTNT2("a", functorTestAnno=1),
+      nilFTNT(10, functorTestAnno=123),
+      functorTestAnno=3),
+    consFTNT2(
+      nilFTNT2("b", functorTestAnno=4),
+      nilFTNT(10, functorTestAnno=123),
+      functorTestAnno=6),
+    functorTestAnno=7);
 
 -- Test to ensure it reaches all nils:
-equalityTest(hackUnparse(functorValue), hackUnparse(functorValue.functorSyn), String, silver_tests);
+equalityTest(hackUnparse(functorValueRes), hackUnparse(functorValue.functorSyn), String, silver_tests);
