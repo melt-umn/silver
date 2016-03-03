@@ -121,13 +121,12 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   local inhs :: [String] = map((.attrOccurring), filter(isOccursInherited(_, realEnv), attrs));
   -- Autocopy.
   local autos :: [String] = filter(isAutocopy(_, realEnv), inhs);
-  
+  -- Does this production forward?
+  local nonForwarding :: Boolean = null(lookupFwd(prod, flowEnv));
+    
   -- Normal edges!
   local normalEdges :: [Pair<FlowVertex FlowVertex>] =
     foldr(append, [], map((.flowEdges), defs));
-  
-  local nonForwarding :: Boolean =
-    null(lookupFwd(prod, flowEnv));
   
   -- Insert implicit equations.
   local fixedEdges :: [Pair<FlowVertex FlowVertex>] =
@@ -136,10 +135,8 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
      then addDefEqs(prod, nt, syns, flowEnv)
      else -- This first pair is used sometimes as an alias:
           pair(lhsSynVertex("forward"), forwardEqVertex()) ::
-          addFwdEqs(syns) ++ 
           addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ 
           addFwdInhEqs(prod, inhs, flowEnv)) ++
-    fixupAllHOAs(defs, flowEnv, realEnv) ++
     addAllAutoCopyEqs(prod, dcl.namedSignature.inputElements, autos, flowEnv, realEnv);
   
   -- (safe, suspect)
@@ -209,68 +206,16 @@ Pair<FlowVertex FlowVertex> ::= f::FlowDef
 ---- Begin helpers for fixing up graphs ----------------------------------------
 
 {--
- - Introduces 'hoa.syn -> hoaeq' edges.
- - These are ALWAYS included in standard edges.
- - TODO: We actually turn 'x.a' into an access of v.for(a) and v.eq already. So we may not need to add these edges???
- -}
-function fixupAllHOAs
-[Pair<FlowVertex FlowVertex>] ::= d::[FlowDef] flowEnv::Decorated FlowEnv realEnv::Decorated Env
-{
-  return case d of
-  | [] -> []
-  | localEq(_, fN, "", deps) :: rest -> fixupAllHOAs(rest, flowEnv, realEnv)
-  | localEq(_, fN, tN, deps) :: rest -> 
-      let syns :: [String] = 
-        map((.attrOccurring),
-          filter(isOccursSynthesized(_, realEnv),
-            getAttrsOn(tN, realEnv)))
-      in addHOASynDeps(syns, fN) ++
-        fixupAllHOAs(rest, flowEnv, realEnv) end
-  | anonEq(_, fN, tN, _, deps) :: rest -> -- exact duplicate of the above. It'd be nice to have multiple patterns with one body...
-      let syns :: [String] = 
-        map((.attrOccurring),
-          filter(isOccursSynthesized(_, realEnv),
-            getAttrsOn(tN, realEnv)))
-      in addAnonSynDeps(syns, fN) ++
-        fixupAllHOAs(rest, flowEnv, realEnv) end
-  | _ :: rest -> fixupAllHOAs(rest, flowEnv, realEnv)
-  end;
-}
--- Helper for above
-function addHOASynDeps
-[Pair<FlowVertex FlowVertex>] ::= synattrs::[String]  fName::String
-{
-  return if null(synattrs) then []
-  else pair(localVertex(fName, head(synattrs)), localEqVertex(fName)) :: addHOASynDeps(tail(synattrs), fName);
-}
-function addAnonSynDeps
-[Pair<FlowVertex FlowVertex>] ::= synattrs::[String]  fName::String
-{
-  return if null(synattrs) then []
-  else pair(anonVertex(fName, head(synattrs)), anonEqVertex(fName)) :: addAnonSynDeps(tail(synattrs), fName);
-}
-{--
- - Introduces implicit 'forward.syn -> forward' equations.
- - TODO: We might be able to fold this into SynEqs. Because those should emit deps on BOTH syn and eq (this is what we emit for attribute access)
- -}
-function addFwdEqs
-[Pair<FlowVertex FlowVertex>] ::= syns::[String]
-{
-  return if null(syns) then []
-  else 
-    pair(forwardVertex(head(syns)), forwardEqVertex()) :: addFwdEqs(tail(syns));
-}
-{--
- - Introduces implicit 'lhs.syn -> forward.syn' equations.
+ - Introduces implicit 'lhs.syn -> forward.syn' (& forward.eq) equations.
  - Called twice: once for safe edges, later for SUSPECT edges!
- - TODO: to parallel attribute access, this should probably also emit 'lhs.syn -> forward.eq' edges too. Currently covered by addFwdEqs, though!
  -}
 function addFwdSynEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String] flowEnv::Decorated FlowEnv
 {
   return if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv))
-    then [pair(lhsSynVertex(head(syns)), forwardVertex(head(syns)))] else []) ++
+    then [pair(lhsSynVertex(head(syns)), forwardVertex(head(syns))),
+          pair(lhsSynVertex(head(syns)), forwardEqVertex())] else []) ++
     addFwdSynEqs(prod, tail(syns), flowEnv);
 }
 {--
