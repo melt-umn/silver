@@ -16,10 +16,8 @@ foo('keyword')
 ```
 
 ## Concept
-"Functor attributes" are essentially a method of performing transformations on trees.  They work by copying the
-current tree at every node, except for a few which may be overridden manually.  There are a number of uses for
-functor attrbutes, such as generating the host tree produced after forwarding, or performing a transformation such as
-lifting generated decls to the top level.  
+"Functor attributes" are essentially a method of performing transformations on trees.  They work by copying the current tree at every node, except for a few which may be overridden manually.  There are a number of uses for
+functor attrbutes, such as generating the host tree produced after forwarding, or performing a transformation such as lifting generated decls to the top level.  
 
 ## Syntax
 Currently, the only support for functor attributes is in the form of a propagate production statment, written as
