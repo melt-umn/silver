@@ -10,11 +10,13 @@ import silver:util;
 import silver:util:cmdargs;
 
 synthesized attribute docGeneration :: Boolean occurs on CmdArgs;
+synthesized attribute docOutOption :: [String] occurs on CmdArgs;
 
 aspect production endCmdArgs
 top::CmdArgs ::= _
 {
   top.docGeneration = false;
+  top.docOutOption = [];
 }
 abstract production docFlag
 top::CmdArgs ::= rest::CmdArgs
@@ -22,44 +24,57 @@ top::CmdArgs ::= rest::CmdArgs
   top.docGeneration = true;
   forwards to rest;
 }
+abstract production docOutFlag
+top::CmdArgs ::= loc::String rest::CmdArgs
+{
+  top.docOutOption = loc :: rest.docOutOption;
+  forwards to rest;
+}
 
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--doc", flag(docFlag))];
-  flagdescs <- ["\t--doc  : build the documentation"];
+  flags <- [pair("--doc", flag(docFlag)),
+            pair("--doc-out", option(docOutFlag))];
+  flagdescs <- ["\t--doc     : build the documentation",
+                "\t--doc-out : output location for documentation"];
 }
+
 aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
+  local outputLoc::String =
+    if null(top.config.docOutOption)
+    then benv.silverGen
+    else head(top.config.docOutOption) ++ "/"; -- TODO: check only one item for docOutOption is provided
   top.postOps <- if top.config.docGeneration then 
-                 [genDoc(top.config, grammarsToTranslate, benv.silverGen)]
-                 else []; 
+                 [genDoc(top.config, grammarsToTranslate, outputLoc)]
+                 else [];
 }
 
 abstract production genDoc
-top::Unit ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silverGen::String
+top::Unit ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  outputLoc::String
 {
   local pr :: IO = print("Generating Documentation.\n", top.ioIn);
 
-  top.io = writeAll(pr, a, specs, silverGen);
+  top.io = writeAll(pr, a, specs, outputLoc);
   top.code = 0;
   top.order = 4;
 }
 
 function writeAll
-IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]  silverGen::String
+IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]  outputLoc::String
 {
-  local now :: IO = writeSpec(i, head(l), silverGen);
-  local recurse :: IO = writeAll(now, a, tail(l), silverGen);
+  local now :: IO = writeSpec(i, head(l), outputLoc);
+  local recurse :: IO = writeAll(now, a, tail(l), outputLoc);
 
   return if null(l) then i else recurse;
 }
 
 function writeSpec
-IO ::= i::IO  r::Decorated RootSpec  silverGen::String
+IO ::= i::IO  r::Decorated RootSpec  outputLoc::String
 {
-  local path :: String = silverGen ++ "doc/" ++ grammarToPath(r.declaredName);
+  local path :: String = outputLoc ++ "doc/" ++ grammarToPath(r.declaredName);
 
   local mkiotest :: IOVal<Boolean> =
     isDirectory(path, i);
@@ -74,7 +89,7 @@ IO ::= i::IO  r::Decorated RootSpec  silverGen::String
     then print("\t[" ++ r.declaredName ++ "]\n", mkio.io)
     else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ path ++ "\n\n", mkio.io));
   
-  local rm :: IO = deleteStaleDocs(pr, silverGen, r.declaredName);
+  local rm :: IO = deleteStaleDocs(pr, outputLoc, r.declaredName);
 
   local wr :: IO = writeFiles(path, r.genFiles, rm);
 
@@ -93,9 +108,9 @@ IO ::= path::String s::[Pair<String String>] i::IO
 
 -- Copied from 
 function deleteStaleDocs
-IO ::= iIn::IO silverGen::String gram::String
+IO ::= iIn::IO outputLoc::String gram::String
 {
-  local docPath :: String = silverGen ++ "doc/" ++ grammarToPath(gram);
+  local docPath :: String = outputLoc ++ "doc/" ++ grammarToPath(gram);
   local docFiles :: IOVal<[String]> = listContents(docPath, iIn);
   
   return deleteStaleDataFiles(docFiles.io, docPath, docFiles.iovalue);
