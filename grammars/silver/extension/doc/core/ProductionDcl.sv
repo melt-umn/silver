@@ -6,13 +6,13 @@ import silver:definition:concrete_syntax;
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
-  top.docs := [commentDocItem(bodilessCommentItem("abstract production", id.name, ns.pp))];
+  top.docs := [commentDocItem(bodilessCommentItem("abstract production", id.name, ns.pp, id.location.filename))];
 }
 
 concrete production docProductionDecl
 top::AGDcl ::= comment::DocComment 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
-  top.docs := [commentDocItem(commentItem("abstract production", id.name, ns.pp, comment))];
+  top.docs := [commentDocItem(commentItem("abstract production", id.name, ns.pp, id.location.filename, comment))];
   forwards to productionDcl('abstract', 'production', id, ns, body, location=top.location);
 }
 
@@ -26,13 +26,13 @@ top::AGDcl ::= noDoc::NoDocComment_t 'abstract' 'production' id::Name ns::Produc
 aspect production concreteProductionDcl
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody
 {
-  top.docs := [commentDocItem(bodilessCommentItem("concrete production", id.name, ns.pp))];
+  top.docs := [commentDocItem(bodilessCommentItem("concrete production", id.name, ns.pp, id.location.filename))];
 }
 
 concrete production docConcreteProductionDcl
 top::AGDcl ::= comment::DocComment 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody
 {
-  top.docs := [commentDocItem(commentItem("concrete production", id.name, ns.pp, comment))];
+  top.docs := [commentDocItem(commentItem("concrete production", id.name, ns.pp, id.location.filename, comment))];
   forwards to concreteProductionDcl('concrete', 'production', id, ns, pm, body, location=top.location);
 }
 

@@ -2,50 +2,78 @@ grammar silver:extension:doc:core;
 
 synthesized attribute header :: String;
 synthesized attribute splitFiles :: String;
-nonterminal DocConfigs with header, splitFiles;
-nonterminal DocConfig with header, splitFiles;
-nonterminal ConfigItem with header, splitFiles;
-
-abstract production configItem
-top::ConfigItem ::= c::DocConfigs
-{
-  top.header = c.header;
-  top.splitFiles = c.splitFiles;
-}
+synthesized attribute noDoc :: Boolean;
+synthesized attribute warnings :: String;
+nonterminal DocConfigs with header, splitFiles, noDoc, warnings;
+nonterminal DocConfig with header, splitFiles, noDoc;
 
 concrete production config
-top::AGDcls ::= '{#' items::DocConfigs '#}'
+top::AGDcls ::= '{@config' items::DocConfigs '@}'
 {
-  top.docs := [configDocItem(configItem(items))];
+  top.docs := [];
+  top.docsHeader = items.header;
+  top.docsSplit = items.splitFiles;
+  top.docsNoDoc = items.noDoc;
   forwards to nilAGDcls(location=top.location);
 }
 
-concrete production consConfigItems
+concrete production consConfigs
 top::DocConfigs ::= c::DocConfig rest::DocConfigs
 {
-  top.header = if "" != c.header then c.header else rest.header;
-  top.splitFiles = if "" != c.splitFiles then c.splitFiles else rest.splitFiles;
+  local headerWarnings :: String = if c.header != "" && rest.header != ""
+								   then "Multiple header definitions in documentation configuration."
+								   else "";
+
+  local splitFilesWarnings :: String = if c.header != "" && rest.header != ""
+								   then "Multpile split-files definitions in documentation configuration."
+								   else "";
+
+  top.header = case pair(c.header, rest.header) of
+				| pair("", h) -> h
+				| pair(h, _) -> h
+			   end;
+
+  top.splitFiles = case pair(c.splitFiles, rest.splitFiles) of
+					| pair("", s) -> s
+					| pair(s, _) -> s
+				   end;
+
+  top.noDoc = c.noDoc || rest.noDoc;
+  top.warnings = headerWarnings ++ splitFilesWarnings ++ rest.warnings;
 }
 
-concrete production nilConfigItems
+concrete production nilConfigs
 top::DocConfigs ::=
 {
   top.header = "";
   top.splitFiles = "";
+  top.noDoc = false;
 }
 
-concrete production headerConfigItem
+concrete production headerConfig
 top::DocConfig ::= 'header' ':' value::ConfigValue_t
 {
   top.header = cleanDocValue(value.lexeme);
   top.splitFiles = "";
+  top.noDoc = false;
 }
 
-concrete production splitFilesConfigItem
+concrete production splitFilesConfig
 top::DocConfig ::= 'split-files' ':' value::ConfigValue_t
 {
   top.header = "";
   top.splitFiles = cleanDocValue(value.lexeme);
+  top.noDoc = false;
+}
+
+concrete production noDocConfig
+top::DocConfig ::= 'no-doc' ':' value::ConfigValue_t
+{
+  top.header = "";
+  top.splitFiles = "";
+  top.noDoc = if "true" == value.lexeme
+			  then true
+			  else false;
 }
 
 function cleanDocValue

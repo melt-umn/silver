@@ -3,13 +3,13 @@ grammar silver:extension:doc:core;
 aspect production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
 {
-  top.docs := [commentDocItem(bodilessCommentItem("attribute", at.name, ""))];
+  top.docs := [commentDocItem(bodilessCommentItem("attribute", at.name, "", at.location.filename))];
 }
 
 concrete production docAttributionDcl
 top::AGDcl ::= comment::DocComment 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
 {
-  top.docs := [commentDocItem(commentItem("attribute", at.name, "", comment))];
+  top.docs := [commentDocItem(commentItem("attribute", at.name, "", at.location.filename, comment))];
 
   forwards to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
 }

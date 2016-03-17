@@ -19,44 +19,31 @@ top::RootSpec ::= _ _ _ _
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _
 {
-  top.genFiles := [pair("index.md", toFile(g.docs))];
+  top.genFiles := if g.docsNoDoc 
+				  then []
+				  else if "true" == g.docsSplit
+				  then [] -- TODO: Get doc split to work
+				  else [pair("index.md", toFile(g.docs, g.docsHeader))];
 }
 
 function toFile
-String ::= items::[DocItem]
+String ::= comments::[DocItem] header::String
 {
-  local docComments::String = extractDocComments(items);
-  local header::String = extractHeader(items);
-  local splitFiles::String = extractSplitFiles(items);
-  return header ++ docComments;
+  local commentMarkdown::String = toMarkdown(comments);
+  return header ++ commentMarkdown;
 }
 
-function extractSplitFiles
+function toMarkdown
 String ::= items::[DocItem]
 {
   return case items of
-	 | configDocItem(c) :: rest -> c.splitFiles
-	 | _ :: rest -> extractSplitFiles(rest)
-	 | _ -> ""
-	 end;
-}
-
-function extractHeader
-String ::= items::[DocItem]
-{
-  return case items of
-	 | configDocItem(c) :: rest -> c.header
-	 | _ :: rest -> extractHeader(rest)
-	 | _ -> ""
-	 end;
-}
-
-function extractDocComments
-String ::= items::[DocItem]
-{
-  return case items of
-	 | commentDocItem(c) :: rest -> "\n\n#### _" ++ c.modifiers ++ "_ `" ++ c.dclName ++ "`" ++ c.signature ++ "\n" ++ "> " ++ c.body ++ extractDocComments(rest)
-	 | _ :: rest -> extractDocComments(rest)
+	 | commentDocItem(c) :: rest -> (let signature :: String = 
+										if 0 == length(c.signature)
+										then ""
+										else "\n ######`" ++ c.signature ++ "`"
+									in "\n\n#### _" ++ c.modifiers ++ "_ `" ++ c.dclName ++ "`" ++ signature ++ "\n" ++ "> " ++ c.body ++ toMarkdown(rest)
+									end)
+	 | _ :: rest -> toMarkdown(rest)
 	 | [] -> ""
 	 end;
 }
