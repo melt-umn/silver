@@ -30,6 +30,12 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
     if isLower(substring(0,1,id.name))
     then [err(id.location, "Types must be capitalized. Invalid terminal name " ++ id.name)]
     else [];
+  
+  -- This is a crude check, but effective.
+  top.errors <-
+    if indexOf("\\n", r.terminalRegExprSpec.regString) != -1 && indexOf("\\r", r.terminalRegExprSpec.regString) == -1
+    then [wrn(r.location, "Regex contains '\\n' but not '\\r'. This is your reminder about '\\r\\n' newlines.")]
+    else [];
 
   top.errors := tm.errors;
 

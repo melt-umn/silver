@@ -236,9 +236,7 @@ public final class Util {
 			in.readFully(b); // The only reason we use DataInputStream is this method.
 			in.close();
 			fis.close();
-			// TODO: is there a better way of handling \r\n? (Maybe implicitly in copper specs?)
-			// (We should also probably be more discriminating about charsets)
-			return new StringCatter(new String(b).replace("\r\n","\n"));
+			return new StringCatter(new String(b));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

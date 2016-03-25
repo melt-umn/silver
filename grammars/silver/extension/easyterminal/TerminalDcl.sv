@@ -7,7 +7,7 @@ import silver:definition:type:syntax;
 import silver:definition:concrete_syntax;
 import silver:definition:regex only Regex_R, regString, literalRegex;
 
-terminal Terminal_t /\'[^\'\n]*\'/ lexer classes {LITERAL};
+terminal Terminal_t /\'[^\'\r\n]*\'/ lexer classes {LITERAL};
 
 -- TODO: refactor this to actually create two separate terminal declarations, one regular regex, one single quote.
     -- TODO: alternatively, we keep this as a 'RegExpr', but we introduce "added terminal modifiers" synthesized
