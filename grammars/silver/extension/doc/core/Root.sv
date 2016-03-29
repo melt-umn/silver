@@ -2,7 +2,7 @@ grammar silver:extension:doc:core;
 
 synthesized attribute genFiles :: [Pair<String String>] with ++;
 
-synthesized attribute docs :: [DocItem] with ++;
+synthesized attribute docs :: [CommentItem] with ++;
 attribute docs occurs on Grammar, Root, AGDcls, AGDcl;
 
 synthesized attribute docsHeader :: String;

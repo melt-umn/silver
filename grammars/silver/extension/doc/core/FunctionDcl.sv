@@ -3,13 +3,13 @@ grammar silver:extension:doc:core;
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
-  top.docs := [commentDocItem(bodilessCommentItem("function", id.name, ns.pp, id.location.filename))];
+  top.docs := [bodilessCommentItem("function", id.name, ns.pp, id.location.filename)];
 }
 
 concrete production docFunctionDcl
 top::AGDcl ::= comment::DocComment 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
-  top.docs := [commentDocItem(commentItem("function", id.name, ns.pp, id.location.filename, comment))];
+  top.docs := [commentItem("function", id.name, ns.pp, id.location.filename, comment)];
 
   forwards to functionDcl('function', id, ns, body, location=top.location);
 }
