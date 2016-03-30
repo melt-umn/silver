@@ -11,6 +11,7 @@ synthesized attribute loc :: Location;
 {--
  - Representation of diagnostic outputs of the compiler.
  - e.g. errors, warnings, etc.
+ - TODO: use silver:langutil instead
  -}
 nonterminal Message with loc, pp, severity, msg;
 

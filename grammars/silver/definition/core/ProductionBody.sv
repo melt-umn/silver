@@ -105,6 +105,17 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   top.errors := h.errors ++ t.errors;
 }
 
+aspect production errorProductionStmt
+top::ProductionStmt ::= e::[Message]
+{
+  top.pp = s"{- Errors:\n${foldMessages(e)} -}";
+  top.errors := e;
+  
+  top.productionAttributes = [];
+  top.uniqueSignificantExpression = [];
+  top.defs = [];
+}
+
 --------------------------------------------------------------------------------
 
 aspect default production
