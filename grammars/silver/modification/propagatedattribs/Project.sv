@@ -1,4 +1,4 @@
-grammar silver:extension:functorattrib;
+grammar silver:modification:propagatedattribs;
 
 imports silver:definition:core;
 imports silver:definition:type:syntax;
