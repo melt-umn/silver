@@ -1,27 +1,3 @@
-import silver:langutil:pp;
-
-{--
- - Propagates a list of functor attributes on the current production.  
- - Actual implementation in propagateOne
- -}
-concrete production propagateAttrDcl
-top::ProductionStmt ::= 'propagate' ns::NameList ';'
-{
-  top.pp = s"propagate ${ns.pp};";
-  
-  -- Forwards to productionStmtAppend of propagating the first element in ns
-  -- and propagateAttrDcl containing the remaining names
-  forwards to
-    case ns of
-      nameListOne(n) -> 
-        propagateOne(n, location=top.location)
-    | nameListCons(n, _, rest) ->
-        productionStmtAppend(
-          propagateOne(n, location=top.location),
-          propagateAttrDcl($1, rest, $3, location=top.location),
-          location=top.location)
-    end;
-}
 
 {--
  - Generates the list of AppExprs used in calling the constructor
@@ -101,7 +77,7 @@ function makeAnnoArgs
  - Propagate a functor attribute on the enclosing production
  - @param a  The name of the attribute to propagate
  -}
-abstract production propagateOne
+abstract production propagateFunctor
 top::ProductionStmt ::= a::QName
 {
   -- No explicit errors, for now.  The only conceivable issue is the attribute not

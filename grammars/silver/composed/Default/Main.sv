@@ -21,7 +21,6 @@ parser svParse::Root {
   silver:extension:templating;
   silver:extension:patternmatching;
   silver:extension:treegen;
-  silver:extension:functorattrib;
 --  silver:extension:concreteSyntaxForTrees ;
 
   silver:modification:let_fix;
@@ -32,6 +31,7 @@ parser svParse::Root {
   silver:modification:typedecl;
   silver:modification:copper;
   silver:modification:defaultattr;
+  silver:modification:propagatedattribs;
   
   -- slight hacks, for the moment
   silver:modification:copper_mda;
