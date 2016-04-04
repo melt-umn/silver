@@ -1,6 +1,8 @@
 ---
 layout: sv_wiki
 title: Error FAQ
+menu_title: Error FAQ
+menu_weight: 850.0
 ---
 
 # Compile-time

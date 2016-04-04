@@ -3,19 +3,19 @@ grammar silver:extension:doc:core;
 aspect production annotationDcl
 top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeList '::' te::Type ';'
 {
-  top.docs := [bodilessCommentItem("annotation", a.name ++ tl.pp, te.pp, a.location.filename)];
+  top.docs := [bodilessDclCommentItem("annotation", a.name ++ tl.pp, te.pp, a.location.filename)];
 }
 
 concrete production docAnnotationDcl
-top::AGDcl ::= comment::DocComment 'annotation' a::QName tl::BracketedOptTypeList '::' te::Type ';'
+top::AGDcl ::= comment::DclComment 'annotation' a::QName tl::BracketedOptTypeList '::' te::Type ';'
 {
-  top.docs := [commentItem("annotation ", a.name ++ tl.pp, te.pp, a.location.filename, comment)];
+  top.docs := [dclCommentItem("annotation ", a.name ++ tl.pp, te.pp, a.location.filename, comment)];
 
   forwards to annotationDcl('annotation', a, tl, '::', te, ';', location=top.location);
 }
 
 concrete production noDocAnnotationDcl
-top::AGDcl ::= noDoc::NoDocComment_t 'annotation' a::QName tl::BracketedOptTypeList '::' te::Type ';'
+top::AGDcl ::= noDoc::NoDclComment_t 'annotation' a::QName tl::BracketedOptTypeList '::' te::Type ';'
 {
   top.docs := [];
 

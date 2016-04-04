@@ -1,6 +1,8 @@
 ---
 layout: sv_wiki
 title: Command line reference
+menu_title: Command Line Reference
+menu_weight: 10.0
 ---
 
 # Running Silver
