@@ -1,5 +1,4 @@
 grammar silver:composed:idetest;
--- This grammar is a duplicate of silver:idetest:Default, with IDE declaration block added.
 
 import silver:host;
 import silver:host:env;
@@ -13,49 +12,8 @@ import silver:analysis:warnings:exporting;
 -- even if we just use an empty IDE declaration block.
 import ide;
 
-parser svParse::Root {
-  silver:host;
-
-  silver:extension:convenience;
-
-  silver:extension:list;
-  silver:extension:easyterminal;
-
-  silver:extension:deprecation;
-  silver:extension:testing;
-
-  silver:extension:auto_ast;
-
-  silver:extension:templating;
-  silver:extension:patternmatching;
-  
-  silver:extension:functorattrib;
-
-  silver:modification:let_fix;
-  silver:modification:collection;
-  silver:modification:primitivepattern;
-  silver:modification:autocopyattr;
-  silver:modification:ffi;
-  silver:modification:typedecl;
-  silver:modification:copper;
-  silver:modification:defaultattr;
-
-  -- slight hacks, for the moment
-  silver:modification:copper_mda;
-  silver:modification:impide;
-}
-
-parser sviParse::IRoot {
-  silver:host:env;
-
-  silver:modification:collection:env_parser;
-  silver:modification:autocopyattr:env_parser;
-  silver:modification:ffi:env_parser;
-  silver:modification:typedecl:env_parser;
-  silver:modification:copper:env_parser;
-  
-  silver:extension:list:env_parser;
-}
+-- Just re-use these parser declarations, instead of duplicating them here.
+import silver:composed:Default only svParse, sviParse;
 
 -- This function is not used by IDE
 function main 
