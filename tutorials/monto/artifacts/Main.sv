@@ -29,9 +29,9 @@ IOVal<Integer> ::= args::[String] ioIn::IO
 	getSource and getContents are invoked with a given MontoMessage to extract the source and content fields from the MontoMessage.
 -}
 function evaluate
-MontoProduct ::= input::MontoMessage
+[MontoProduct] ::= input::MontoMessage
 {
-  return createProduct(getSource(input), "DesktopCalculator", "simple-eval", driverEval(getContents(input), parse));
+  return createProduct(getSource(input), "DesktopCalculator", "simple-eval", driverEval(getContents(input), parse)) :: [];
 }
 
 

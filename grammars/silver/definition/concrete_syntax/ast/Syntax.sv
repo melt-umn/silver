@@ -339,7 +339,7 @@ Boolean ::= l::SyntaxDcl r::SyntaxDcl
     | syntaxDisambiguationGroup(_,_,_)  ->  DDD
     | syntaxNonterminal(_,_)            ->  EEE
     | syntaxProduction(_,_,_,_)         ->  FFF
---}
+-}
 }
 
 function xmlCopperRef

@@ -21,10 +21,11 @@ parser svParse::Root {
   silver:extension:templating;
   silver:extension:patternmatching;
   silver:extension:treegen;
+  silver:extension:doc;
 --  silver:extension:concreteSyntaxForTrees ;
 
-  silver:modification:lambda_fn;
   silver:modification:let_fix;
+  silver:modification:lambda_fn;
   silver:modification:collection;
   silver:modification:primitivepattern;
   silver:modification:autocopyattr;

@@ -2,8 +2,8 @@
   <description>Generated build script for the grammar monto:artifacts</description>
 
   <property environment='env'/>
-  <property name='jg' location='/home/charlie/research/fall2015/silver-exp/generated/'/>
-  <property name='sh' location='/home/charlie/research/fall2015/silver-exp/'/>
+  <property name='jg' location='/home/charlie/silver/generated/'/>
+  <property name='sh' location='/home/charlie/silver/'/>
   <property name='bin' location='${jg}/bin'/>
   <property name='src' location='${jg}/src'/>
 
