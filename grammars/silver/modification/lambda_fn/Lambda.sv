@@ -3,15 +3,15 @@ import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
 --- Concrete Syntax for lambdas
 --------------------------------------------------------------------------------
 
-terminal Lambda_kwd 'lambda' lexer classes {KEYWORD,RESERVED};
+terminal Lambda_kwd '\' lexer classes {KEYWORD,RESERVED};
 terminal Arrow_t '->' precedence = 0, lexer classes {SPECOP};
 
 -- Using ProductionRHS here, it is basicly just a list of names with type expressions
 -- It is also used for the parameter definitions in functions, so using it here for consistancy
 concrete production lambda_c
-top::Expr ::= 'lambda' params::ProductionRHS '->' e::Expr
+top::Expr ::= '\' params::ProductionRHS '->' e::Expr
 {
-  top.pp = "lambda " ++ params.pp ++ " -> " ++ e.pp;
+  top.pp = "\\ " ++ params.pp ++ " -> " ++ e.pp;
 
   forwards to lambdap(params, e, location=top.location);
 }
@@ -19,7 +19,7 @@ top::Expr ::= 'lambda' params::ProductionRHS '->' e::Expr
 abstract production lambdap
 top::Expr ::= params::ProductionRHS e::Expr
 {
-  top.pp = "lambda " ++ params.pp ++ " -> " ++ e.pp;
+  top.pp = "\\ " ++ params.pp ++ " -> " ++ e.pp;
   
   top.errors := params.errors ++ e.errors;
   
