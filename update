@@ -32,7 +32,7 @@ if [ -d /export/scratch ] && [ ! -d generated/src ]; then
     ls -la /export/scratch
     exit 1
   fi
-  for dir in bin src ide; do
+  for dir in bin src ide doc; do
     printf "%s\n" ${CACHE}/${dir}
     mkdir -p ${CACHE}/${dir}
     ln -s ${CACHE}/${dir} generated/${dir}
