@@ -45,6 +45,12 @@ top::ProductionStmt ::= h::ProductionStmt  t::ProductionStmt
   top.flowDefs = h.flowDefs ++ t.flowDefs;
 }
 
+aspect production errorProductionStmt
+top::ProductionStmt ::= e::[Message]
+{
+  top.flowDefs = [];
+}
+
 {-
 aspect default production
 top::ProductionStmt ::=

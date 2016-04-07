@@ -32,6 +32,13 @@ synthesized attribute exprs :: [Decorated Expr];
 synthesized attribute rawExprs :: [Expr];
 
 
+abstract production errorExpr
+top::Expr ::= e::[Message]
+{
+  top.pp = s"{- Errors:\n${foldMessages(e)} -}";
+  top.errors := e;
+  top.typerep = errorType();
+}
 
 concrete production nestedExpr
 top::Expr ::= '(' e::Expr ')'
