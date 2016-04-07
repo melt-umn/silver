@@ -42,7 +42,7 @@ top::AGDcl ::=
   top.errors := [];
 }
 
-abstract production errorEAGDcl
+abstract production errorAGDcl
 top::AGDcl ::= e::[Message]
 {
   top.pp = s"{- Errors:\n${foldMessages(e)} -}";
