@@ -45,7 +45,7 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   -- Of course, this means do not use top.finalSubst here!
 }
 
-abstract production errorProductionStmt
+aspect production errorProductionStmt
 top::ProductionStmt ::= e::[Message]
 {
   top.upSubst = top.downSubst;

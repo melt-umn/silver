@@ -1,11 +1,13 @@
 import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
 
---- Concrete Syntax for lets
+--- Concrete Syntax for lambdas
 --------------------------------------------------------------------------------
 
 terminal Lambda_kwd 'lambda' lexer classes {KEYWORD,RESERVED};
 terminal Arrow_t '->' precedence = 0, lexer classes {SPECOP};
 
+-- Using ProductionRHS here, it is basicly just a list of names with type expressions
+-- It is also used for the parameter definitions in functions, so using it here for consistancy
 concrete production lambda_c
 top::Expr ::= 'lambda' params::ProductionRHS '->' e::Expr
 {
@@ -23,11 +25,9 @@ top::Expr ::= params::ProductionRHS e::Expr
   
   top.typerep = functionTypeExp(e.typerep, map((.typerep), params.inputElements), []);
   
-  -- TODO?
   e.downSubst = top.downSubst;
   top.upSubst = e.upSubst;
   
-  -- TODO?
   top.flowDeps = e.flowDeps;
   top.flowDefs = e.flowDefs;
   

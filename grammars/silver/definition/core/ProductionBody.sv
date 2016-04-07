@@ -105,7 +105,7 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   top.errors := h.errors ++ t.errors;
 }
 
-aspect production errorProductionStmt
+abstract production errorProductionStmt
 top::ProductionStmt ::= e::[Message]
 {
   top.pp = s"{- Errors:\n${foldMessages(e)} -}";

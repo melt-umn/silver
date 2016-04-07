@@ -24,7 +24,7 @@ s"""(new common.NodeFactory<${e.typerep.transType}>() {
     return ${e.translation};
   }
 })""";
-  top.lazyTranslation = top.translation; -- TODO: is this correct?
+  top.lazyTranslation = top.translation;
   
   params.accessIndex = 0;
 }
