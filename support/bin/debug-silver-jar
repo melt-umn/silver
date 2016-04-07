@@ -17,8 +17,10 @@ elif [[ ! -f "$1" ]]; then
 fi
 
 JAR=$1
-shift
 MAINCLASS=`unzip -c "$JAR" META-INF/MANIFEST.MF | grep "Main-Class" | cut -d\  -f 2 | sed 's/\r$//'`
+
+# Reminder: consumes an arg. Used so $@ later works as expected.
+shift
 
 echo ""
 echo "jdb command reminders: where, bt, locals, dump, up/down, print"

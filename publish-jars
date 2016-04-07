@@ -1,6 +1,8 @@
 #!/bin/bash
 
-DT=`date +"%Y.%m.%d.%H.%M"`
+set -e
+
+DT=$(date +"%Y.%m.%d.%H.%M")
 JARS_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
 JARS_BACKUP=/project/melt4/People/ted/jars_bak
 

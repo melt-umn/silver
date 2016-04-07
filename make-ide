@@ -2,13 +2,7 @@
 
 set -e
 
-export SILVER_HOME=`pwd`
-echo $SILVER_HOME
-
-# No no, the user should do this.
-#./update
-
-# Do make sure any compiler changes make it before we build do
+# Make sure any compiler changes make it before we build
 ./self-compile
 cp build/silver.composed.Default.jar jars/
 
@@ -29,7 +23,7 @@ cd ../..
 cd generated/ide/silver.composed.idetest
 mvn package
 
-TARGET=`pwd`/updatesite/target/repository
+TARGET=$(pwd)/updatesite/target/repository
 
 echo "..."
 echo "..."
@@ -39,3 +33,4 @@ echo "..."
 echo "..."
 echo "Reminder: add $TARGET as path to find update site in eclipse, if using directly"
 echo "..."
+

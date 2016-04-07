@@ -1,8 +1,15 @@
 #!/bin/bash
 
+set -e
+
 if [ -z "$1" ]; then
   echo "invoke make-dist with a version argument."
   echo "For example:  ./make-dist 0.3.1-rc1"
+  exit 1
+fi
+
+if [ ! -d grammars ] || [ ! -d tutorials ]; then
+  echo "Wrong directory? Run as ./make-dist <version>"
   exit 1
 fi
 
@@ -42,5 +49,8 @@ tar -zcvf $SV.tar.gz \
  
  
 
+# Make sure to leave empty lines above, so the trailing \ is okay.
 
 rm $SV
+
+
