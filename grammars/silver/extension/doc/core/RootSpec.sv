@@ -24,6 +24,8 @@ top::RootSpec ::= g::Grammar  _ _ _
 				  else if "true" == g.docsSplit
 				  then toSplitFiles(g.docs, [], g.docsHeader)
 				  else [toSingleFile(g.docs, g.docsHeader)];
+
+  g.docEnv = treeConvert([], treeNew(compareString));
 }
 
 function toSplitFiles
@@ -78,7 +80,7 @@ String ::= c::CommentItem
 {
   return case c of
 		| dclCommentItem(mod, name, sig, file, body)->
-			 (let signature :: String = 
+			 let signature :: String = 
 				if 0 == length(sig)
 				then ""
 				else "\n ######`" ++ sig ++ "`"
@@ -88,9 +90,9 @@ String ::= c::CommentItem
 				++ "`" ++ signature
 				++ "\n> " ++ body.body
 				++ "\nIn file: " ++ file
-			  end)
+			  end
 		| bodilessDclCommentItem(mod, name, sig, file) ->
-			 (let signature :: String = 
+			 let signature :: String = 
 				if 0 == length(sig)
 				then ""
 				else "\n ######`" ++ sig ++ "`"
@@ -99,12 +101,13 @@ String ::= c::CommentItem
 				++ "_ `" ++ name
 				++ "`" ++ signature
 				++ "\nIn file: " ++ file
-			  end)
+			  end
 		end;
 }
 
 function toMarkdownExtension
 String ::= filename::String
 {
-  return replace(".sv", ".md", filename);
+  return substitute(".sv", ".md", filename);
 }
+

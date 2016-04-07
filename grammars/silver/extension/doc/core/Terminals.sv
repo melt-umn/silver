@@ -5,6 +5,7 @@ lexer class DOC;
 -- For comments on AGDcls
 terminal CommentOpen_t '{@comment' lexer classes {DOC};
 terminal CommentLink_t '@link' lexer classes {DOC};
+terminal CommentId_t /[a-zA-Z0-9]+[a-zA-Z0-9:]*/ lexer classes {DOC};
 terminal CommentOpenSquare_t '[' lexer classes {DOC};
 terminal CommentCloseSquare_t ']' lexer classes {DOC};
 
