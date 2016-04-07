@@ -1,7 +1,7 @@
 grammar core;
 
 {@comment
-  Applies a function to each element of the list. This function link called @link[core:foldr]
+  Applies a function to each element of the list. This function link called
 
   param f  The function to apply
   param l  The list to map over
