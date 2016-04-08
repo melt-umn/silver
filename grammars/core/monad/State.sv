@@ -1,10 +1,10 @@
 grammar core:monad;
 
-nonterminal State<s a>;
+nonterminal State<s a> with stateIn<s>, stateOut<s>, stateVal<a>;
 
-inherited attribute stateIn::s occurs on State<s a>;
-synthesized attribute stateOut::s occurs on State<s a>;
-synthesized attribute stateVal::a occurs on State<s a>;
+inherited attribute stateIn<s>::s;
+synthesized attribute stateOut<s>::s;
+synthesized attribute stateVal<a>::a;
 
 abstract production bindState
 top::State<s b> ::= st::State<s a> fn::(State<s b> ::= a)
@@ -32,8 +32,8 @@ top::State<s s> ::=
 abstract production setState
 top::State<s a> ::= newState::s
 {
-  top.stateOut = s;
-  top.stateVal = error("Unit value"); -- TODO?
+  top.stateOut = newState;
+  top.stateVal = error("Unit value"); -- TODO
 }
 
 function runState
@@ -46,5 +46,5 @@ Pair<s a> ::= st::State<s a> initialState::s
 function evalState
 a ::= st::State<s a> initialState::s
 {
-  return runState(st, s).snd;
+  return runState(st, initialState).snd;
 }
