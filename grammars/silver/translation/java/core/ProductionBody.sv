@@ -43,6 +43,14 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   top.valueWeaving := h.valueWeaving ++ t.valueWeaving;
 }
 
+aspect production errorProductionStmt
+top::ProductionStmt ::= e::[Message]
+{
+  top.setupInh := "";
+  top.translation = "";
+  top.valueWeaving := "";
+}
+
 --------------------------------------------------------------------------------
 
 aspect default production

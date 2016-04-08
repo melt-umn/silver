@@ -24,6 +24,13 @@ attribute lazyTranslation occurs on Exprs;
 --       efficient.  We could even kill the runtime check to see if it's
 --       a node, since we know.
 
+aspect production errorExpr
+top::Expr ::= msg::[Message]
+{
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  top.lazyTranslation = top.translation;
+}
+
 aspect production errorReference
 top::Expr ::= msg::[Message]  q::Decorated QName
 {

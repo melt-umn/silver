@@ -47,6 +47,13 @@ top::Expr ::=
   top.flowVertexInfo = noVertex();
 }
 
+aspect production errorExpr
+top::Expr ::= e::[Message]
+{
+  top.flowDeps = [];
+  top.flowDefs = [];
+}
+
 aspect production errorReference
 top::Expr ::= msg::[Message]  q::Decorated QName
 {

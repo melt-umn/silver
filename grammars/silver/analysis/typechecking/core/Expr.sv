@@ -2,6 +2,12 @@ grammar silver:analysis:typechecking:core;
 
 attribute upSubst, downSubst, finalSubst occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
+aspect production errorExpr
+top::Expr ::= e::[Message]
+{
+  top.upSubst = top.downSubst;
+}
+
 aspect production errorReference
 top::Expr ::= msg::[Message]  q::Decorated QName
 {

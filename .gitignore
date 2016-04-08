@@ -14,7 +14,7 @@ JARS-BAK
 .\#*
 
 # Runtime and testing junk
-test/**/test.output
+test/**/*.test.output
 test/**/test.jar
 test/**/build.xml
 test/silver.testing.bin.jar

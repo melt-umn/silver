@@ -45,6 +45,12 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   -- Of course, this means do not use top.finalSubst here!
 }
 
+aspect production errorProductionStmt
+top::ProductionStmt ::= e::[Message]
+{
+  top.upSubst = top.downSubst;
+}
+
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
