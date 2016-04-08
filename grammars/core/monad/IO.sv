@@ -3,7 +3,7 @@ grammar core:monad;
 type IOMonad<a> = State<IO a>;
 
 abstract production bindIO
-top::IOMonad<a> ::= st::IOMonad<a> fn::(IOMonad<a> ::= a)
+top::IOMonad<b> ::= st::IOMonad<a> fn::(IOMonad<b> ::= a)
 {
   forwards to bindState(st, fn);
 }
