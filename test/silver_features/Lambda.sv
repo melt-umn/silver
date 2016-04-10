@@ -20,3 +20,6 @@ equalityTest(curriedSum(1)(2), 3, Integer, silver_tests);
 global differentTypes::((String ::= String) ::= Integer) = \ x::Integer -> \ x::String -> x;
 
 equalityTest(differentTypes(1)("abcd"), "abcd", String, silver_tests);
+
+global param::Integer = 4;
+equalityTest(addThree(param), 7, Integer, silver_tests);
