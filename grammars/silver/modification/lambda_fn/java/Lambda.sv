@@ -48,7 +48,7 @@ top::ProductionRHS ::=
 aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::Type
 {
-  top.lambdaTranslation = makeLambdaParamBinding(fName, t.typerep, top.accessIndex);
+  top.lambdaTranslation = s"final Object ${makeLambdaParamValueName(fName)} = args[${toString(top.accessIndex)}];\n";
 }
 
 function makeLambdaParamValueName
@@ -57,16 +57,10 @@ String ::= s::String
   return "__SV_LAMBDA_PARAM_" ++ makeIdName(s);
 }
 
-function makeLambdaParamBinding
-String ::= fn::String ty::TypeExp index::Integer
-{
-  return s"final ${ty.transType} ${makeLambdaParamValueName(fn)} = (${ty.transType})args[${toString(index)}];\n";
-}
-
 aspect production lambdaParamReference
 top::Expr ::= q::Decorated QName
 {
-  top.translation = makeLambdaParamValueName(q.lookupValue.fullName);
+  top.translation = s"((${top.typerep.transType})common.Util.demand(${makeLambdaParamValueName(q.lookupValue.fullName)}))";
   top.lazyTranslation = top.translation;
 }
 
