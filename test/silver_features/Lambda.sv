@@ -22,4 +22,4 @@ global differentTypes::((String ::= String) ::= Integer) = \ x::Integer -> \ x::
 equalityTest(differentTypes(1)("abcd"), "abcd", String, silver_tests);
 
 global param::Integer = 4;
-equalityTest(addThree(param), 4, Integer, silver_tests);
+equalityTest(addThree(param), 7, Integer, silver_tests);
