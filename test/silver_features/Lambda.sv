@@ -20,10 +20,4 @@ equalityTest(differentTypes(1)("abcd"), "abcd", String, silver_tests);
 global param::Integer = 4;
 equalityTest(addThree(param), 7, Integer, silver_tests);
 
-function foo
-Integer ::= a::Integer b::Integer
-{
-  return b;
-}
-
-equalityTest(foldr(foo, 0, head(map(\b::Integer -> [b], [4]))), 4, Integer, silver_tests);
+equalityTest(null(tail(head(map(\b::Integer -> [b], [4])))), true, Boolean, silver_tests);
