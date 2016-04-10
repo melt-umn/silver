@@ -29,4 +29,8 @@ equalityTest(map(\x::Integer -> x, [1,2,3]), [1,2,3], [Integer], silver_tests);
 -- its context was null) and thus returning 'data' which was null, since no
 -- evaluation had occurred.
 equalityTest(head(map(\x::Integer -> [x], [4])), [4], [Integer], silver_tests);
+-- Even simpler
+global fn::([Integer] ::=) = \ -> [4];
+equalityTest(null(tail(fn())), true, Boolean, silver_tests);
+-- The essential parts are Thunk -> Nodefactory (which captures context) -> Thunk
 
