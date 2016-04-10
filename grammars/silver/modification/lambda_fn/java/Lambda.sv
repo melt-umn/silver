@@ -48,6 +48,9 @@ top::ProductionRHS ::=
 aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::Type
 {
+  -- Args are unpacked as objects, they can either be an actual value or a Thunk.
+  -- We don't know which staticly, so they are just stored as Objects until use.
+  -- They are then demanded and converted to the correct type where they are needed.
   top.lambdaTranslation = s"final Object ${makeLambdaParamValueName(fName)} = args[${toString(top.accessIndex)}];\n";
 }
 
