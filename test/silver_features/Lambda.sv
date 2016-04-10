@@ -20,4 +20,5 @@ equalityTest(differentTypes(1)("abcd"), "abcd", String, silver_tests);
 global param::Integer = 4;
 equalityTest(addThree(param), 7, Integer, silver_tests);
 
-equalityTest(null(tail(head(map(\b::Integer -> [b], [4])))), true, Boolean, silver_tests);
+global fn::([Integer] ::=) = \ -> [4];
+equalityTest(null(tail(fn())), true, Boolean, silver_tests);
