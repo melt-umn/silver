@@ -30,10 +30,10 @@ top::State<s s> ::=
 }
 
 abstract production setState
-top::State<s a> ::= newState::s
+top::State<s UnitT> ::= newState::s
 {
   top.stateOut = newState;
-  top.stateVal = error("Unit value"); -- TODO
+  top.stateVal = unit();
 }
 
 function runState

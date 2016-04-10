@@ -36,10 +36,10 @@ a ::= st::IOMonad<a>
 -- Monadic IO wrappers
 
 abstract production printM
-top::IOMonad<a> ::= s::String
+top::IOMonad<UnitT> ::= s::String
 {
   top.stateOut = print(s, top.stateIn);
-  top.stateVal = error("Unit value"); -- TODO
+  top.stateVal = unit();
 }
 
 abstract production readLineStdinM
@@ -51,10 +51,10 @@ top::IOMonad<String> ::=
 }
 
 abstract production exitM
-top::IOMonad<a> ::= val::Integer
+top::IOMonad<UnitT> ::= val::Integer
 {
   top.stateOut = exit(val, top.stateIn);
-  top.stateVal = error("Unit value"); -- TODO
+  top.stateVal = unit();
 }
 
 abstract production mkdirM
@@ -74,17 +74,17 @@ top::IOMonad<Integer> ::= s::String
 }
 
 abstract production writeFileM
-top::IOMonad<a> ::= file::String contents::String
+top::IOMonad<UnitT> ::= file::String contents::String
 {
   top.stateOut = writeFile(file, contents, top.stateIn);
-  top.stateVal = error("Unit value"); -- TODO
+  top.stateVal = unit();
 }
 
 abstract production appendFileM
-top::IOMonad<a> ::= file::String contents::String
+top::IOMonad<UnitT> ::= file::String contents::String
 {
   top.stateOut = appendFile(file, contents, top.stateIn);
-  top.stateVal = error("Unit value"); -- TODO
+  top.stateVal = unit();
 }
 
 abstract production fileTimeM
@@ -152,22 +152,22 @@ top::IOMonad<Boolean> ::= s::String
 }
 
 abstract production deleteTreeM
-top::IOMonad<a> ::= s::String
+top::IOMonad<UnitT> ::= s::String
 {
   top.stateOut = deleteTree(s, top.stateIn);
-  top.stateVal = error("Unit value"); -- TODO
+  top.stateVal = unit();
 }
 
 abstract production copyFileM
-top::IOMonad<a> ::= src::String dst::String
+top::IOMonad<UnitT> ::= src::String dst::String
 {
   top.stateOut = copyFile(src, dst, top.stateIn);
-  top.stateVal = error("Unit value"); -- TODO
+  top.stateVal = unit();
 }
 
 abstract production touchFileM
-top::IOMonad<a> ::= file::String
+top::IOMonad<UnitT> ::= file::String
 {
   top.stateOut = touchFile(file, top.stateIn);
-  top.stateVal = error("Unit value"); -- TODO
+  top.stateVal = unit();
 }
