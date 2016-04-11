@@ -20,7 +20,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   -- We need to create these nested locals, so we have no choice but to create a thunk object so we can declare these things.
   -- TODO: more specific types here would be nice!
   local closureExpr :: String =
-    "new common.Thunk<Object>(context) { public final Object doEval() { " ++
+    "new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { " ++
     la.let_translation ++
     "return " ++ e.translation ++ "; } }";
   
