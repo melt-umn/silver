@@ -625,7 +625,7 @@ String ::= exp::String  beLazy::Boolean
 function wrapThunkText
 String ::= ct::String  exp::String  ty::String
 {
-  return "new common.Thunk<" ++ ty ++ ">(" ++ ct ++ ") { public final " ++ ty ++ " doEval() { return " ++ exp ++ "; } }";
+  return "new common.Thunk<" ++ ty ++ ">(" ++ ct ++ ") { public final " ++ ty ++ " doEval(final common.DecoratedNode context) { return " ++ exp ++ "; } }";
 }
 function wrapLazy
 String ::= e::Decorated Expr
