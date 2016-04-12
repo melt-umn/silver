@@ -7,7 +7,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.docs := [commentItem];
 
   local dclInfo::DclInfo = head(getValueDclAll(id.name, top.env));
-  top.docDcls := [pair(dclInfo.fullName, functionDocDclInfoP(id.name, id.location.filename, "regFunctionDcl"{-nameToPath(dclInfo.fullName)-}))];
+  top.docDcls := [pair(dclInfo.fullName, functionDocDclInfoP(id.name, id.location.filename, nameToPath(dclInfo.fullName)))];
 }
 
 concrete production docFunctionDcl
@@ -17,9 +17,7 @@ top::AGDcl ::= comment::DclComment 'function' id::Name ns::FunctionSignature bod
   top.docs := [commentItem];
 
   local dclInfo::DclInfo = head(getValueDclAll(id.name, top.env));
-  top.docDcls := [pair(dclInfo.fullName, functionDocDclInfoP(id.name, id.location.filename, "docFunctionDcl"{-nameToPath(dclInfo.fullName)-}))];
-
-  comment.docEnv = top.docEnv;
+  top.docDcls := [pair(dclInfo.fullName, functionDocDclInfoP(id.name, id.location.filename, nameToPath(dclInfo.fullName)))];
 
   forwards to functionDcl('function', id, ns, body, location=top.location);
 }
@@ -30,11 +28,5 @@ top::AGDcl ::= noDoc::NoDclComment_t 'function' id::Name ns::FunctionSignature b
   top.docs := [];
   top.docDcls := [];
   forwards to functionDcl('function', id, ns, body, location=top.location);
-}
-
-function nameToPath
-String ::= name::String
-{
-  return substitute(":", "/", name);
 }
 

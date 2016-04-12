@@ -19,15 +19,15 @@ synthesized attribute docsNoDoc :: Boolean;
 attribute docsNoDoc occurs on Grammar, Root, AGDcls, AGDcl;
 
 -- Set to the base website if hosting this documentation
---autocopy attribute baseUrl :: String;
---attribute baseUrl occurs on Grammar, AGDcls, AGDcl;
+autocopy attribute baseUrl :: String;
+attribute baseUrl occurs on Grammar, Root, AGDcls, AGDcl;
 
 -- Declarations of documented AGDcls
 synthesized attribute docDcls :: [Pair<String DocDclInfo>] with ++;
 attribute docDcls occurs on Grammar, Root, AGDcls, AGDcl;
 
 -- Environment of all documented AGDcls
-inherited attribute docEnv :: TreeMap<String DocDclInfo>;
+autocopy attribute docEnv :: TreeMap<String DocDclInfo>;
 attribute docEnv occurs on Grammar, Root, AGDcls, AGDcl;
 
 aspect production root
@@ -38,9 +38,6 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.docsSplit = ags.docsSplit;
   top.docsNoDoc = false;
   top.docDcls := ags.docDcls;
-
-  ags.docEnv = top.docEnv;
-  --ags.baseUrl = "http://www.http://melt.cs.umn.edu/docs"; -- TODO: Get this to not be hardcoded and use a @config item
 }
 
 aspect production nilAGDcls
@@ -65,9 +62,6 @@ top::AGDcls ::= h::AGDcl t::AGDcls
 				  else h.docsSplit;
   top.docsNoDoc = h.docsNoDoc || t.docsNoDoc;
   top.docDcls := h.docDcls ++ t.docDcls;
-
-  h.docEnv = top.docEnv;
-  t.docEnv = top.docEnv;
 }
 
 aspect default production
@@ -92,9 +86,6 @@ top::AGDcl ::= h::AGDcl t::AGDcl
 				  else h.docsSplit;
   top.docsNoDoc = h.docsNoDoc || t.docsNoDoc;
   top.docDcls := h.docDcls ++ t.docDcls;
-
-  h.docEnv = top.docEnv;
-  t.docEnv = top.docEnv;
 }
 
 aspect production nilGrammar
@@ -119,8 +110,5 @@ top::Grammar ::= c1::Root  c2::Grammar
 				  else c1.docsSplit;
   top.docsNoDoc = c1.docsNoDoc || c2.docsNoDoc;
   top.docDcls := c1.docDcls ++ c2.docDcls;
-
-  c1.docEnv = top.docEnv;
-  c2.docEnv = top.docEnv;
 }
 

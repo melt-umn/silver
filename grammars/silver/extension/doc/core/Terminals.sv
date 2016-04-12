@@ -26,5 +26,5 @@ terminal NoDclComment_t /{@no\-doc(\ )*@}/ dominates {DOC};
 terminal Close_t '@}' lexer classes {DOC};
 
 -- Captures text inside comments
-terminal CommentText_t /[a-zA-Z0-9][^\@\}]*/ lexer classes {DOC};
+terminal CommentText_t /[a-zA-Z0-9][^\@]*/ lexer classes {DOC};
 

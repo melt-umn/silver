@@ -1,8 +1,8 @@
 grammar silver:extension:doc:core;
 
-nonterminal DclComment with body, env, location;
-nonterminal DclCommentComponent with body, env, location;
-nonterminal DclCommentComponents with body, env, location;
+nonterminal DclComment with body, baseUrl, env, location;
+nonterminal DclCommentComponent with body, baseUrl, env, location;
+nonterminal DclCommentComponents with body, baseUrl, env, location;
 
 attribute docEnv occurs on DclComment, DclCommentComponent, DclCommentComponents;
 
@@ -13,19 +13,16 @@ comments out of Silver code
 
 concrete production dclComment
 top::DclComment ::= '{@comment' components::DclCommentComponents '@}'
+layout {}
 {
   top.body = components.body;
-
-  components.docEnv = treeConvert([pair("core:foldr", functionDocDclInfoP("foldr", "List.sv", "core#foldr"))], treeNew(compareString));
 }
 
 concrete production consCommentComps
 top::DclCommentComponents ::= h::DclCommentComponent t::DclCommentComponents
+layout {}
 {
   top.body = h.body ++ t.body;
-
-  h.docEnv = top.docEnv;
-  t.docEnv = top.docEnv;
 }
 
 concrete production nilCommentComps
@@ -36,15 +33,24 @@ top::DclCommentComponents ::=
 
 concrete production componentLink
 top::DclCommentComponent ::= '@link' '[' id::CommentId_t ']'
+layout {}
 {
   local dclInfo::DocDclInfo = head(treeLookup(id.lexeme, top.docEnv));
-  top.body = "[" ++ dclInfo.id ++ "](http://melt.cs.umn.edu/alpha/silver/doc/ref/generated/" ++ dclInfo.path ++ ")";
+  top.body = "[" ++ dclInfo.id ++ "](" ++ top.baseUrl ++ dclInfo.path ++ ")";
 }
 
 concrete production componentText
 top::DclCommentComponent ::= t::CommentText_t
+layout {}
 {
   top.body = t.lexeme;
+}
+
+concrete production componentWhiteSpace
+top::DclCommentComponent ::= w::WhiteSpace
+layout {}
+{
+  top.body = w.lexeme;
 }
 
 {-
@@ -54,7 +60,7 @@ AGDcl is given
 -}
 
 abstract production dclCommentItem
-top::CommentItem ::= modifiers::String name::String signature::String file::String body::DclComment
+top::CommentItem ::= modifiers::String name::String signature::String file::String body::Decorated DclComment
 {
   top.body = body.body;
   top.file = file;

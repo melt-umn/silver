@@ -7,7 +7,7 @@ menu_weight: 10.0
 
 # Running Silver
 
-If you have followed the [installation guide]({{ "/install-guide/" | prepend: site.sv_wiki_base }}), you have a `silver` script in your `~/bin` which is typically invoked as follows:
+If you have followed the [installation guide]({{ "/silver/doc/install-guide/" | prepend: site.sv_wiki_base }}), you have a `silver` script in your `~/bin` which is typically invoked as follows:
 
 ```
 silver grammar:to:build
@@ -82,7 +82,7 @@ IOVal<Integer> ::= args::[String] ioin::IO
 }
 ```
 
-For an explanation of how IO works in Silver, see [IO Functions]({{ "/lib/io/" | prepend: site.sv_wiki_base }}).  The integer value wrapped inside `IOVal` is the exit status of the program (0 is success.)  And of course, the command line arguments are provided as a list of strings.
+For an explanation of how IO works in Silver, see [IO Functions]({{ "/silver/doc/lib/io/" | prepend: site.sv_wiki_base }}).  The integer value wrapped inside `IOVal` is the exit status of the program (0 is success.)  And of course, the command line arguments are provided as a list of strings.
 
 Simple examples of main functions can be found in every tutorial distributed with Silver.
 
