@@ -34,140 +34,187 @@ a ::= st::IOMonad<a>
 }
 
 -- Monadic IO wrappers
-
-abstract production printM
-top::IOMonad<UnitT> ::= s::String
+-- These could really be functions or productions
+function printM
+IOMonad<UnitT> ::= s::String
 {
-  top.stateOut = print(s, top.stateIn);
-  top.stateVal = unit();
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    setState(print(s, io));
+  };
 }
 
-abstract production readLineStdinM
-top::IOMonad<String> ::=
+function readLineStdinM
+IOMonad<String> ::=
 {
-  local res::IOVal<String> = readLineStdin(top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    result::IOVal<String> = readLineStdin(io);
+    setState(result.io);
+    return result.iovalue;
+  };
 }
 
-abstract production exitM
-top::IOMonad<UnitT> ::= val::Integer
+function exitM
+IOMonad<UnitT> ::= val::Integer
 {
-  top.stateOut = exit(val, top.stateIn);
-  top.stateVal = unit();
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    setState(exit(val, io));
+  };
 }
 
-abstract production mkdirM
-top::IOMonad<Boolean> ::= s::String
+function mkdirM
+IOMonad<Boolean> ::= s::String
 {
-  local res::IOVal<Boolean> = mkdir(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    result::IOVal<Boolean> = mkdir(s, io);
+    setState(result.io);
+    return result.iovalue;
+  };
 }
 
-abstract production systemM
-top::IOMonad<Integer> ::= s::String
+function systemM
+IOMonad<Integer> ::= s::String
 {
-  local res::IOVal<Integer> = system(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    result::IOVal<Integer> = system(s, io);
+    setState(result.io);
+    return result.iovalue;
+  };
 }
 
-abstract production writeFileM
-top::IOMonad<UnitT> ::= file::String contents::String
+function writeFileM
+IOMonad<UnitT> ::= file::String contents::String
 {
-  top.stateOut = writeFile(file, contents, top.stateIn);
-  top.stateVal = unit();
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    setState(writeFile(file, contents, io));
+  };
 }
 
-abstract production appendFileM
-top::IOMonad<UnitT> ::= file::String contents::String
+function appendFileM
+IOMonad<UnitT> ::= file::String contents::String
 {
-  top.stateOut = appendFile(file, contents, top.stateIn);
-  top.stateVal = unit();
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    setState(appendFile(file, contents, io));
+  };
 }
 
-abstract production fileTimeM
-top::IOMonad<Integer> ::= s::String
+function fileTimeM
+IOMonad<Integer> ::= s::String
 {
-  local res::IOVal<Integer> = fileTime(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    result::IOVal<Integer> = fileTime(s, io);
+    setState(result.io);
+    return result.iovalue;
+  };
 }
 
-abstract production isFileM
-top::IOMonad<Boolean> ::= s::String
+function isFileM
+IOMonad<Boolean> ::= s::String
 {
-  local res::IOVal<Boolean> = isFile(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    result::IOVal<Boolean> = isFile(s, io);
+    setState(result.io);
+    return result.iovalue;
+  };
 }
 
-abstract production isDirectoryM
-top::IOMonad<Boolean> ::= s::String
+function isDirectoryM
+IOMonad<Boolean> ::= s::String
 {
-  local res::IOVal<Boolean> = isDirectory(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    result::IOVal<Boolean> = isDirectory(s, io);
+    setState(result.io);
+    return result.iovalue;
+  };
 }
 
-abstract production readFileM
-top::IOMonad<String> ::= s::String
+function readFileM
+IOMonad<String> ::= s::String
 {
-  local res::IOVal<String> = readFile(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    result::IOVal<String> = readFile(s, io);
+    setState(result.io);
+    return result.iovalue;
+  };
 }
 
-abstract production cwdM
-top::IOMonad<String> ::= 
+function cwdM
+IOMonad<String> ::= 
 {
-  local res::IOVal<String> = cwd(top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    result::IOVal<String> = cwd(io);
+    setState(result.io);
+    return result.iovalue;
+  };
 }
 
-abstract production envVarM
-top::IOMonad<String> ::= s::String
+function envVarM
+IOMonad<String> ::= s::String
 {
-  local res::IOVal<String> = envVar(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    result::IOVal<String> = envVar(s, io);
+    setState(result.io);
+    return result.iovalue;
+  };
 }
 
-abstract production listContentsM
-top::IOMonad<[String]> ::= s::String
+function listContentsM
+IOMonad<[String]> ::= s::String
 {
-  local res::IOVal<[String]> = listContents(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    result::IOVal<[String]> = listContents(s, io);
+    setState(result.io);
+    return result.iovalue;
+  };
 }
 
-abstract production deleteFileM
-top::IOMonad<Boolean> ::= s::String
+function deleteFileM
+IOMonad<Boolean> ::= s::String
 {
-  local res::IOVal<Boolean> = deleteFile(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    result::IOVal<Boolean> = deleteFile(s, io);
+    setState(result.io);
+    return result.iovalue;
+  };
 }
 
-abstract production deleteTreeM
-top::IOMonad<UnitT> ::= s::String
+function deleteTreeM
+IOMonad<UnitT> ::= s::String
 {
-  top.stateOut = deleteTree(s, top.stateIn);
-  top.stateVal = unit();
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    setState(deleteTree(s, io));
+  };
 }
 
-abstract production copyFileM
-top::IOMonad<UnitT> ::= src::String dst::String
+function copyFileM
+IOMonad<UnitT> ::= src::String dst::String
 {
-  top.stateOut = copyFile(src, dst, top.stateIn);
-  top.stateVal = unit();
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    setState(copyFile(src, dst, io));
+  };
 }
 
-abstract production touchFileM
-top::IOMonad<UnitT> ::= file::String
+function touchFileM
+IOMonad<UnitT> ::= file::String
 {
-  top.stateOut = touchFile(file, top.stateIn);
-  top.stateVal = unit();
+  return do (bindIO, returnIO) {
+    io::IO <- getState();
+    setState(touchFile(file, io));
+  };
 }
