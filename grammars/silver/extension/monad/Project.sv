@@ -8,5 +8,6 @@ imports silver:definition:type;
 
 imports silver:extension:convenience;
 imports silver:modification:lambda_fn;
+imports silver:modification:let_fix;
 
 --import silver:util;
