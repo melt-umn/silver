@@ -42,6 +42,14 @@ top::AGDcl ::=
   top.errors := [];
 }
 
+abstract production errorAGDcl
+top::AGDcl ::= e::[Message]
+{
+  top.pp = s"{- Errors:\n${foldMessages(e)} -}";
+  top.errors := e;
+  forwards to emptyAGDcl(location=top.location);
+}
+
 {--
  - Permits extensions to expand an AGDcl into a series of AGDcl's.
  -}
