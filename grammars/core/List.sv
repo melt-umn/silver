@@ -4,9 +4,6 @@ grammar core;
   Applies a function to each element of the list.
 
   This is a list of links.
-  @link[core:foldr]
-  @link[core:foldl]
-  @link[core:loc]
 
   param f  The function to apply
   param l  The list to map over
