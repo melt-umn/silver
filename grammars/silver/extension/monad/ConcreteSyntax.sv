@@ -26,31 +26,21 @@ concrete production bindExprDoBodyStmts
 top::DoBodyStmts ::= n::MName '::' t::Type '<-' e::Expr ';' rest::DoBodyStmts
 {
   top.pp = s"${n.pp}::${t.pp} <- ${e.pp}; ${rest.pp}";
-  --top.errors := e.errors ++ rest.errors;
   
   top.transform =
-    applicationExpr(
-      baseExpr(top.bindFn, location=top.location),
-      '(',
-      snocAppExprs(
-        oneAppExprs(
-          presentAppExpr(e, location=top.location),
-          location=top.location),
-        ',',
-        presentAppExpr(
-          lambdap(
-            productionRHSCons(
-              productionRHSElem(
-                nameFromMName(n), '::', t,
-                location=top.location),
-              productionRHSNil(location=top.location),
-              location=top.location),
-            rest.transform,
-            location=top.location),
-          location=top.location),
-        location=top.location),
-      ')',
-      location=top.location);
+    bindExpr(nameFromMName(n), t, e, rest.transform, top.bindFn, location=top.location);
+}
+
+concrete production letExprDoBodyStmts
+top::DoBodyStmts ::= n::MName '::' t::Type '=' e::Expr ';' rest::DoBodyStmts
+{
+  top.pp = s"${n.pp}::${t.pp} = ${e.pp}; ${rest.pp}";
+  
+  top.transform =
+    letp(
+      assignExpr(nameFromMName(n), '::', t, '=', e, location=top.location),
+      rest.transform,
+    location=top.location);
 }
 
 concrete production consDoBodyStmt
