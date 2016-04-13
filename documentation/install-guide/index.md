@@ -1,6 +1,7 @@
 ---
 layout: sv_wiki
 title: Installation guide
+menu_weight: 10.0
 ---
 
 # Prerequisites
