@@ -1,6 +1,7 @@
 ---
 layout: sv_wiki
 title: Style guide and conventions
+menu_weight: 90.0
 ---
 
 Silver is rather distinct from many other programming languages, so some pointers on style are probably useful.
