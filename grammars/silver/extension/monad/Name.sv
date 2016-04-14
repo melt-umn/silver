@@ -1,5 +1,8 @@
 -- Exact copy of Name, but productions have higher precedence.
--- This is needed to avoid a parse conflict with '::' as both the type and cons operator  
+-- This is needed to avoid a parse conflict with '::' as both the type and cons operator
+-- Expr -> QName -> Name which can be followed by ::.  This is a shift-reduce conflict.  
+-- Using MName instead creates a reduce/reduce conflict with QName/Name which is resolved by setting
+-- the production precedence.  
 
 nonterminal MName with config, grammarName, location, pp, name;
 

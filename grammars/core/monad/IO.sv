@@ -34,7 +34,8 @@ a ::= st::IOMonad<a>
 }
 
 -- Monadic IO wrappers
--- These could really be functions or productions
+-- Some of these have no arguments and could be monad actions (i.e. globals instead of functions)
+-- but everything is a function for the sake of consistancy. 
 function printM
 IOMonad<UnitT> ::= s::String
 {
