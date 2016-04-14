@@ -53,13 +53,13 @@ top::Stmt ::= l::Name '=' r::Expr
 
 > _`assignmentStmt`_ must be invoked with an undecorated name and expression. Attempting to pass it an already decorated name will result in a type error. Similarly, _`lcopy`_ must be initialized with a value of undecorated type, though in the example above, _`l`_ is automatically undecorated.
 
-This "automatic undecoration" behavior _only_ applies to names, not expressions.  If you call a function that returns a value of type _`Decorated Foo`_, and you try to assign this to a local of type _`Foo`_, you will receive a type error.  You will need to use the _`new`_ operator to manually un-decorate the type. See the [new operator]({{ "/ref/expr/new/" | prepend: site.sv_wiki_base }}).
+This "automatic undecoration" behavior _only_ applies to names, not expressions.  If you call a function that returns a value of type _`Decorated Foo`_, and you try to assign this to a local of type _`Foo`_, you will receive a type error.  You will need to use the _`new`_ operator to manually un-decorate the type. See the [new operator]({{ "/silver/doc/ref/expr/new/" | prepend: site.sv_wiki_base }}).
 
 ## Automatic decoration
 
 In addition to this automatic undecoration of children and locals, attempting to access an attribute of an undecorated type will automatically decorate it with no inherited attributes, and then access the attribute from that resulting temporary decorated tree.  This behavior is purely for convenience: there are many common synthesized attributes that do not depend on any inherited attributes (consider `fst` and `snd` of the `Pair` type.)
 
-This behavior _only_ applies to attribute accesses (and technically, also pattern matching), and not to any arbitrary expression that wants a decorated type.  If you try to call a function that takes a _`Decorated`_ parameter with an undecorated value, you will receive a type error. See [the decorate operator]({{ "/ref/expr/decorate/" | prepend: site.sv_wiki_base }}) for explicitly creating a decorate value from an undecorated one.
+This behavior _only_ applies to attribute accesses (and technically, also pattern matching), and not to any arbitrary expression that wants a decorated type.  If you try to call a function that takes a _`Decorated`_ parameter with an undecorated value, you will receive a type error. See [the decorate operator]({{ "/silver/doc/ref/expr/decorate/" | prepend: site.sv_wiki_base }}) for explicitly creating a decorate value from an undecorated one.
 
 ## Concrete example
 

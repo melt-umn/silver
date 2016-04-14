@@ -5,7 +5,7 @@ title: Building Silver
 
 ## Prerequisites
 
-Go see the [InstallGuide]({{ "/install-guide/" | prepend: site.sv_wiki_base }}) on getting the latest development version to use.
+Go see the [InstallGuide]({{ "/silver/doc/install-guide/" | prepend: site.sv_wiki_base }}) on getting the latest development version to use.
 
 ## Building
 

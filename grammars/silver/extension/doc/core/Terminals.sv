@@ -1,6 +1,5 @@
 grammar silver:extension:doc:core;
 
-
 temp_imp_ide_font font_doc color(82, 100, 166) italic; -- TODO?
 temp_imp_ide_font font_doc_kwd color(82, 100, 166) italic bold; -- TODO?
 temp_imp_ide_font font_doc_id color(82, 100, 166); -- TODO?

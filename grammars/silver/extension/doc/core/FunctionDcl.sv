@@ -16,6 +16,7 @@ top::AGDcl ::= comment::DclComment 'function' id::Name ns::FunctionSignature bod
   local commentItem::CommentItem = dclCommentItem("function", id.name, ns.pp, id.location.filename, comment);
   top.docs := [commentItem];
 
+  -- Do top.grammarname ++ id.name
   local dclInfo::DclInfo = head(getValueDclAll(id.name, top.env));
   top.docDcls := [pair(dclInfo.fullName, functionDocDclInfoP(id.name, id.location.filename, nameToPath(dclInfo.fullName)))];
 

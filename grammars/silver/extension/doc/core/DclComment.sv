@@ -32,9 +32,10 @@ top::DclCommentComponents ::=
 }
 
 concrete production componentLink
-top::DclCommentComponent ::= '@link' '[' id::CommentId_t ']'
+top::DclCommentComponent ::= '@link' '[' id::CommentId_t {- Should be QName -} ']'
 layout {}
 {
+  --TODO: Use QName 
   local dclInfo::DocDclInfo = head(treeLookup(id.lexeme, top.docEnv));
   top.body = "[" ++ dclInfo.id ++ "](" ++ top.baseUrl ++ dclInfo.path ++ ")";
 }
