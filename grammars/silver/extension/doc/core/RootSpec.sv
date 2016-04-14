@@ -26,7 +26,7 @@ top::RootSpec ::= g::Grammar  _ _ _
 				  else [toSingleFile(g.docs, g.docsHeader)];
 
   g.docEnv = treeConvert(g.docDcls, treeNew(compareString));
-  g.baseUrl = "silver/doc/ref/generated/";
+  g.baseUrl = "silver/doc/generated/";
 }
 
 function toSplitFiles
