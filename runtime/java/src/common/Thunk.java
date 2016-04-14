@@ -9,8 +9,9 @@ package common;
  */
 public abstract class Thunk<T> {
 	
-	protected T data;
-	protected DecoratedNode context;
+	// Explicitly no visibility modifer here. We want the subclasses below to see this, but nothing outside.
+	T data;
+	DecoratedNode ctx;
 	
 	/**
 	 * Construct a thunk, to be evaluated in context.
@@ -19,7 +20,7 @@ public abstract class Thunk<T> {
 	 */
 	public Thunk(final DecoratedNode ctx) {
 		assert(ctx != null);
-		context = ctx;
+		this.ctx = ctx;
 	}
 	
 	/**
@@ -28,9 +29,9 @@ public abstract class Thunk<T> {
 	 * @return The value wrapped by this Thunk.
 	 */
 	public T eval() {
-		if(context != null) {
-			data = doEval();
-			context = null;
+		if(ctx != null) {
+			data = doEval(ctx);
+			ctx = null;
 		}
 		return data;
 	}
@@ -38,7 +39,12 @@ public abstract class Thunk<T> {
 	/**
 	 * Does the real evaluation of the Thunk.
 	 */
-	protected abstract T doEval();
+	protected abstract T doEval(final DecoratedNode context);
+	// N.B. We must explicitly pass 'context' into doEval, instead of allowing it to use
+	// our member variable 'ctx' as a context, because we mutate 'ctx'.
+	// You'd *THINK* Java variable capture rules would mean this doesn't matter, but
+	// apparently everything is happily capturing 'this' as a final variable and then
+	// we run afoul of 'this.context' suddenly becoming null!
 	
 	/**
 	 * Constructs a Thunk from a Lazy and a DecoratedNode context.
@@ -56,7 +62,7 @@ public abstract class Thunk<T> {
 	public static Object transformUndecorate(Object t) {
 		if(t instanceof DecoratedNode)
 			return ((DecoratedNode)t).undecorate();
-		else if(/* instance of Thunk */ ((Thunk)t).context == null) // already evaluated!
+		else if(/* instance of Thunk */ ((Thunk)t).ctx == null) // already evaluated!
 			return ((DecoratedNode)((Thunk)t).data).undecorate();
 		// This second check is important, otherwise doEval needs modifying for this class...
 		
@@ -71,8 +77,8 @@ public abstract class Thunk<T> {
 		}
 		
 		@Override
-		protected Object doEval() {
-			return ((Lazy)data).eval(context);
+		protected Object doEval(final DecoratedNode context) {
+			return ((Lazy)data).eval(ctx);
 		}
 		
 	}
@@ -80,14 +86,14 @@ public abstract class Thunk<T> {
 	private static class TransformUndecorate extends Thunk<Object> {
 
 		public TransformUndecorate(Thunk<DecoratedNode> t) {
-			super(t.context); // We don't need a context, so use a dummy value.
+			super(t.ctx); // We don't need a context, so use a dummy value.
 			// Note that the check for context == null in transformUndecorate
 			// becomes important here, because otherwise doEval won't be called!
 			data = t;
 		}
 
 		@Override
-		protected Object doEval() {
+		protected Object doEval(final DecoratedNode context) {
 			return ((Thunk<DecoratedNode>)data).eval().undecorate();
 		}
 		

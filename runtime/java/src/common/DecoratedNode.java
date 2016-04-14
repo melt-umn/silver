@@ -467,7 +467,7 @@ public class DecoratedNode {
 		
 		return new Thunk<Object>(this) {
 			@Override
-			public final Object doEval() {
+			public final Object doEval(final DecoratedNode context) {
 				return context.childDecorated(child);
 			}
 		};
@@ -483,7 +483,7 @@ public class DecoratedNode {
 		
 		return new Thunk<Object>(this) {
 			@Override
-			public final Object doEval() {
+			public final Object doEval(final DecoratedNode context) {
 				return context.localDecorated(index);
 			}
 		};
@@ -494,7 +494,7 @@ public class DecoratedNode {
 
 		return new Thunk<Object>(this) {
 			@Override
-			public final Object doEval() {
+			public final Object doEval(final DecoratedNode context) {
 				return context.localAsIs(index);
 			}
 		};
@@ -507,7 +507,7 @@ public class DecoratedNode {
 
 		return new Thunk<Object>(this) {
 			@Override
-			public final Object doEval() {
+			public final Object doEval(final DecoratedNode context) {
 				return context.childDecorated(child).synthesized(index);
 			}
 		};
@@ -521,7 +521,7 @@ public class DecoratedNode {
 
 		return new Thunk<Object>(this) {
 			@Override
-			public final Object doEval() {
+			public final Object doEval(final DecoratedNode context) {
 				return ((DecoratedNode)context.childAsIs(child)).synthesized(index);
 			}
 		};
@@ -533,7 +533,7 @@ public class DecoratedNode {
 		
 		return new Thunk<Object>(this) {
 			@Override
-			public final Object doEval() {
+			public final Object doEval(final DecoratedNode context) {
 				return context.synthesized(index);
 			}
 		};
@@ -544,7 +544,7 @@ public class DecoratedNode {
 		
 		return new Thunk<Object>(this) {
 			@Override
-			public final Object doEval() {
+			public final Object doEval(final DecoratedNode context) {
 				return context.inherited(index);
 			}
 		};

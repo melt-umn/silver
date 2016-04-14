@@ -1,8 +1,12 @@
 ---
 layout: sv_wiki
 title: Installation guide
+<<<<<<< HEAD
 menu_title: Installation Guide
 menu_weight: 1.00
+=======
+menu_weight: 10.0
+>>>>>>> develop
 ---
 
 # Prerequisites

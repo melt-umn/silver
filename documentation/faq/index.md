@@ -2,7 +2,7 @@
 layout: sv_wiki
 title: Frequently asked questions
 menu_title: FAQ
-menu_weight: 800.0
+menu_weight: 70.0
 ---
 
 

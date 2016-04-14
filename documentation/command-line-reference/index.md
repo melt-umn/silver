@@ -2,7 +2,7 @@
 layout: sv_wiki
 title: Command line reference
 menu_title: Command Line Reference
-menu_weight: 10.0
+menu_weight: 20.0
 ---
 
 # Running Silver
