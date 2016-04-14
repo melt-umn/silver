@@ -3,22 +3,17 @@ grammar silver:extension:doc:core;
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
-  local commentItem::CommentItem = bodilessDclCommentItem("function", id.name, ns.pp, id.location.filename);
-  top.docs := [commentItem];
+  top.docs := [bodilessDclCommentItem("function", id.name, ns.pp, id.location.filename)];
 
-  local dclInfo::DclInfo = head(getValueDclAll(id.name, top.env));
-  top.docDcls := [pair(dclInfo.fullName, functionDocDclInfoP(id.name, id.location.filename, nameToPath(dclInfo.fullName)))];
+  top.docDcls := [pair(top.grammarName ++ ":" ++ id.name, functionDocDclInfoP(id.name, id.location.filename, nameToPath(top.grammarName ++ ":" ++ id.name)))];
 }
 
 concrete production docFunctionDcl
 top::AGDcl ::= comment::DclComment 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
-  local commentItem::CommentItem = dclCommentItem("function", id.name, ns.pp, id.location.filename, comment);
-  top.docs := [commentItem];
+  top.docs := [dclCommentItem("function", id.name, ns.pp, id.location.filename, comment)];
 
-  -- Do top.grammarname ++ id.name
-  local dclInfo::DclInfo = head(getValueDclAll(id.name, top.env));
-  top.docDcls := [pair(dclInfo.fullName, functionDocDclInfoP(id.name, id.location.filename, nameToPath(dclInfo.fullName)))];
+  top.docDcls := [pair(top.grammarName ++ ":" ++ id.name, functionDocDclInfoP(id.name, id.location.filename, nameToPath(top.grammarName ++ ":" ++ id.name)))];
 
   forwards to functionDcl('function', id, ns, body, location=top.location);
 }
