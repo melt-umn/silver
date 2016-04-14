@@ -30,3 +30,34 @@ top::Expr ::= n::Name t::Type e::Expr rest::Expr bindFn::QName
       ')',
       location=top.location);
 }
+
+abstract production returnExpr
+top::Expr ::= e::Expr isFinalVal::Boolean returnFn::QName
+{
+  -- TODO: This is interfering...
+  top.errors <-
+    if !isFinalVal
+    then case e.typerep of
+        nonterminalTypeExp("UnitT", []) -> []
+      | _ -> [wrn(top.location, "Return is not final value, and does not have type Unit")]
+      end
+    else [];
+
+  forwards to
+    applicationExpr(
+      baseExpr(returnFn, location=top.location), '(',
+      oneAppExprs(presentAppExpr(e, location=top.location), location=top.location),
+      ')',
+      location=top.location);
+}
+
+abstract production returnUnitExpr
+top::Expr ::= returnFn::QName
+{
+  forwards to
+    returnExpr(
+      applicationEmpty(
+        baseExpr(qName(top.location, "unit"), location=top.location), '(', ')',
+        location=top.location),
+      true, returnFn, location=top.location);
+}

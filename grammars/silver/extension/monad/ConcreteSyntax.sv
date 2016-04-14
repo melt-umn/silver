@@ -10,23 +10,24 @@ top::Expr ::= 'do' '(' bindFn::QName ',' returnFn::QName ')' '{' body::DoBodyStm
   
   body.bindFn = bindFn;
   body.returnFn = returnFn;
+  body.isFinalVal = true;
   
   forwards to body.transform;
 }
 
-terminal DoId_t /[a-zA-Z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
-
 autocopy attribute bindFn::QName;
 autocopy attribute returnFn::QName;
+
+autocopy attribute isFinalVal::Boolean;
+
 synthesized attribute transform::Expr;
 
-nonterminal DoBodyStmts with location, pp, transform, bindFn, returnFn;
+nonterminal DoBodyStmts with location, pp, transform, bindFn, returnFn, isFinalVal;
 
 concrete production bindExprDoBodyStmts
 top::DoBodyStmts ::= n::MName '::' t::Type '<-' e::Expr ';' rest::DoBodyStmts
 {
   top.pp = s"${n.pp}::${t.pp} <- ${e.pp}; ${rest.pp}";
-  
   top.transform =
     bindExpr(nameFromMName(n), t, e, rest.transform, top.bindFn, location=top.location);
 }
@@ -35,7 +36,6 @@ concrete production letExprDoBodyStmts
 top::DoBodyStmts ::= n::MName '::' t::Type '=' e::Expr ';' rest::DoBodyStmts
 {
   top.pp = s"${n.pp}::${t.pp} = ${e.pp}; ${rest.pp}";
-  
   top.transform =
     letp(
       assignExpr(nameFromMName(n), '::', t, '=', e, location=top.location),
@@ -50,12 +50,11 @@ top::DoBodyStmts ::= h::DoBodyStmt t::DoBodyStmts
   forwards to
     bindExprDoBodyStmts(
       mName("_", top.location), '::',
-      nominalType(
-        qNameTypeId(terminal(IdUpper_t, "UnitT"), location=top.location),
-        botlNone(location=top.location),
-        location=top.location),
+      typerepType(freshType(), location=top.location),
       '<-', h.transform, ';', t,
       location=top.location);
+  
+  h.isFinalVal = false;
 }
 
 concrete production oneDoBodyStmt
@@ -65,7 +64,7 @@ top::DoBodyStmts ::= h::DoBodyStmt
   top.transform = h.transform;
 }
 
-nonterminal DoBodyStmt with location, pp, transform, bindFn, returnFn;
+nonterminal DoBodyStmt with location, pp, transform, bindFn, returnFn, isFinalVal;
 
 concrete production doBodyBlock
 top::DoBodyStmt ::= '{' body::DoBodyStmts '}'
@@ -86,12 +85,16 @@ concrete production returnDoBody
 top::DoBodyStmt ::= 'return' e::Expr ';'
 {
   top.pp = s"return ${e.pp};";
-  top.transform =
-    applicationExpr(
-      baseExpr(top.returnFn, location=top.location), '(',
-      oneAppExprs(presentAppExpr(e, location=top.location), location=top.location),
-      ')',
-      location=top.location);
+  top.transform = returnExpr(e, top.isFinalVal, top.returnFn, location=top.location);
+}
+
+-- This could forward to returnDoBody, but not doing that so raising a warning on non-unit return
+-- is simpler
+abstract production returnUnitDoBody
+top::DoBodyStmt ::= 
+{
+  top.pp = s"return unit();";
+  top.transform = returnUnitExpr(top.returnFn, location=top.location);
 }
 
 concrete production condDoBody
@@ -102,14 +105,7 @@ top::DoBodyStmt ::= 'if' cond::Expr 'then' th::DoBodyStmt NoElse_t
     condDoBodyElse(
       'if', cond,
       'then', th,
-      'else',
-      returnDoBody(
-        'return',
-        applicationEmpty(
-          baseExpr(qName(top.location, "unit"), location=top.location), '(', ')',
-          location=top.location),
-        ';',
-        location=top.location),
+      'else', returnUnitDoBody(location=top.location),
       location=top.location);
 }
 
