@@ -30,7 +30,7 @@ top::State<s s> ::=
 }
 
 abstract production setState
-top::State<s UnitT> ::= newState::s
+top::State<s Unit> ::= newState::s
 {
   top.stateOut = newState;
   top.stateVal = unit();

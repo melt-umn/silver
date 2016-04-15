@@ -1,13 +1,13 @@
 grammar silver:driver:util;
 
-closed nonterminal Unit with ioIn, io, code, order;
+closed nonterminal DriverAction with ioIn, io, code, order;
 
 synthesized attribute code :: Integer;
 synthesized attribute order :: Integer;
 inherited attribute ioIn :: IO;
 
 abstract production wrapUnit
-top::Unit ::= f::(IOVal<Integer> ::= IO) order::Integer
+top::DriverAction ::= f::(IOVal<Integer> ::= IO) order::Integer
 {
   local call :: IOVal<Integer> = f(top.ioIn);
   top.io = call.io;
@@ -19,9 +19,9 @@ top::Unit ::= f::(IOVal<Integer> ::= IO) order::Integer
  - Run units until a non-zero error code is encountered.
  -}
 function runAll
-IOVal<Integer> ::= l::[Unit] i::IO
+IOVal<Integer> ::= l::[DriverAction] i::IO
 {
-  local now :: Unit = head(l);
+  local now :: DriverAction = head(l);
   now.ioIn = i;
 
   return  if unsafeTrace(null(l), i) -- TODO: this is just to force strictness...
@@ -35,12 +35,12 @@ IOVal<Integer> ::= l::[Unit] i::IO
  - Sorts a list of Units by priority order. (small to large)
  -}
 function sortUnits
-[Unit] ::= c1::[Unit]
+[DriverAction] ::= c1::[DriverAction]
 {
   return sortBy(unitLTE, c1);
 }
 function unitLTE
-Boolean ::= l::Unit r::Unit
+Boolean ::= l::DriverAction r::DriverAction
 {
   return l.order <= r.order;
 }

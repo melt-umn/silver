@@ -30,7 +30,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
 }
 
 abstract production doInterfaces
-top::Unit ::= u::[Decorated RootSpec] genPath::String
+top::DriverAction ::= u::[Decorated RootSpec] genPath::String
 {
   top.order = 3;
   top.io = writeInterfaces(print("Writing updated interface files\n", top.ioIn), u, genPath);
@@ -70,7 +70,7 @@ IO ::= iIn::IO r::Decorated RootSpec genPath::String
 }
 
 abstract production touchIface
-top::Unit ::= r::Decorated RootSpec genPath::String
+top::DriverAction ::= r::Decorated RootSpec genPath::String
 {
   top.io = touchFile(genPath ++ "src/" ++ grammarToPath(r.declaredName) ++ "Silver.svi", top.ioIn);
   top.code = 0;
@@ -100,7 +100,7 @@ IO ::= iIn::IO path::String files::[String]
 }
 
 abstract production printAllBindingErrors
-top::Unit ::= specs::[Decorated RootSpec]
+top::DriverAction ::= specs::[Decorated RootSpec]
 {
   forwards to printAllBindingErrorsHelp(specs)
   with {
@@ -109,7 +109,7 @@ top::Unit ::= specs::[Decorated RootSpec]
 }
 
 abstract production printAllBindingErrorsHelp
-top::Unit ::= specs::[Decorated RootSpec]
+top::DriverAction ::= specs::[Decorated RootSpec]
 {
   local es :: [Message] = head(specs).errors;
 
@@ -118,7 +118,7 @@ top::Unit ::= specs::[Decorated RootSpec]
     then top.ioIn
     else print("Errors for : " ++ head(specs).declaredName ++ " :\n" ++ foldMessages(es) ++ "\n\n", top.ioIn);
 
-  local recurse :: Unit = printAllBindingErrorsHelp(tail(specs));
+  local recurse :: DriverAction = printAllBindingErrorsHelp(tail(specs));
   recurse.ioIn = i;
 
   top.io = if null(specs) then top.ioIn else recurse.io;
@@ -132,7 +132,7 @@ top::Unit ::= specs::[Decorated RootSpec]
 }
 
 abstract production printAllParsingErrors
-top::Unit ::= specs::[Decorated RootSpec]
+top::DriverAction ::= specs::[Decorated RootSpec]
 {
   local errs :: [Message] = foldr(append, [], map((.parsingErrors), specs));
 

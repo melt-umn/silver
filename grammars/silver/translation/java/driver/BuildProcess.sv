@@ -185,7 +185,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 }
 
 abstract production genJava
-top::Unit ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silverGen::String
+top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silverGen::String
 {
   local pr :: IO = print("Generating Java Translation.\n", top.ioIn);
 
@@ -195,7 +195,7 @@ top::Unit ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silverGen::Stri
 }
 
 abstract production genBuild
-top::Unit ::= buildFileLocation::String  buildXml::String
+top::DriverAction ::= buildFileLocation::String  buildXml::String
 {
   top.io = writeFile(buildFileLocation, buildXml, top.ioIn);
   top.code = 0;

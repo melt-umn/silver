@@ -37,10 +37,7 @@ top::Expr ::= e::Expr isFinalVal::Boolean returnFn::QName
   -- TODO: This is interfering...
   top.errors <-
     if !isFinalVal
-    then case e.typerep of
-        nonterminalTypeExp("UnitT", []) -> []
-      | _ -> [wrn(top.location, "Return is not final value, and does not have type Unit")]
-      end
+    then [wrn(top.location, "Return is not final value, and does not have type Unit")]
     else [];
 
   forwards to

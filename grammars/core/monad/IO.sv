@@ -37,7 +37,7 @@ a ::= st::IOMonad<a>
 -- Some of these have no arguments and could be monad actions (i.e. globals instead of functions)
 -- but everything is a function for the sake of consistancy. 
 function printM
-IOMonad<UnitT> ::= s::String
+IOMonad<Unit> ::= s::String
 {
   return do (bindIO, returnIO) {
     io::IO <- getState();
@@ -57,7 +57,7 @@ IOMonad<String> ::=
 }
 
 function exitM
-IOMonad<UnitT> ::= val::Integer
+IOMonad<Unit> ::= val::Integer
 {
   return do (bindIO, returnIO) {
     io::IO <- getState();
@@ -88,7 +88,7 @@ IOMonad<Integer> ::= s::String
 }
 
 function writeFileM
-IOMonad<UnitT> ::= file::String contents::String
+IOMonad<Unit> ::= file::String contents::String
 {
   return do (bindIO, returnIO) {
     io::IO <- getState();
@@ -97,7 +97,7 @@ IOMonad<UnitT> ::= file::String contents::String
 }
 
 function appendFileM
-IOMonad<UnitT> ::= file::String contents::String
+IOMonad<Unit> ::= file::String contents::String
 {
   return do (bindIO, returnIO) {
     io::IO <- getState();
@@ -194,7 +194,7 @@ IOMonad<Boolean> ::= s::String
 }
 
 function deleteTreeM
-IOMonad<UnitT> ::= s::String
+IOMonad<Unit> ::= s::String
 {
   return do (bindIO, returnIO) {
     io::IO <- getState();
@@ -203,7 +203,7 @@ IOMonad<UnitT> ::= s::String
 }
 
 function copyFileM
-IOMonad<UnitT> ::= src::String dst::String
+IOMonad<Unit> ::= src::String dst::String
 {
   return do (bindIO, returnIO) {
     io::IO <- getState();
@@ -212,7 +212,7 @@ IOMonad<UnitT> ::= src::String dst::String
 }
 
 function touchFileM
-IOMonad<UnitT> ::= file::String
+IOMonad<Unit> ::= file::String
 {
   return do (bindIO, returnIO) {
     io::IO <- getState();

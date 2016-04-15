@@ -1,7 +1,7 @@
 grammar core;
 
-nonterminal UnitT;
+nonterminal Unit;
 
 abstract production unit
-top::UnitT ::=
+top::Unit ::=
 {}

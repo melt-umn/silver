@@ -19,7 +19,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 }
 
 abstract production generateMdaSpecs
-top::Unit ::= grams::EnvTree<Decorated RootSpec>  searchgrams::[Decorated RootSpec]  silvergen::String
+top::DriverAction ::= grams::EnvTree<Decorated RootSpec>  searchgrams::[Decorated RootSpec]  silvergen::String
 {
   top.io = generateMdaSpec(grams, searchgrams, silvergen ++ "src/", top.ioIn);
   top.code = 0;
