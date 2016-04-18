@@ -366,7 +366,8 @@ class SubversionJob(JenkinsJobConfig):
         <remote>${r}</remote>
         <local>${l}</local>
         <depthOption>infinity</depthOption>
-        <ignoreExternalsOption>false</ignoreExternalsOption>
+        <ignoreExternalsOption>true</ignoreExternalsOption>
+        <credentialsId>30752d16-90ab-4b4e-b598-dc2a709c40e5</credentialsId>
       </hudson.scm.SubversionSCM_-ModuleLocation>""").substitute(r=r, l=l)
 
 	def configXml(self):
@@ -379,7 +380,7 @@ class SubversionJob(JenkinsJobConfig):
   <description>${description}</description>
   <keepDependencies>false</keepDependencies>
   <properties/>
-  <scm class="hudson.scm.SubversionSCM@1.54">
+  <scm class="hudson.scm.SubversionSCM" plugin="subversion@2.5.7">
     <locations>${paths}
     </locations>
     <excludedRegions></excludedRegions>
