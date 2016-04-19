@@ -3,16 +3,22 @@ concrete production do_c
 top::Expr ::= 'do' '(' bindFn::QName ',' returnFn::QName ')' '{' body::DoBodyStmts '}'
 {
   top.pp = s"do (${bindFn.pp}, ${returnFn.pp}) {${body.pp}}";
+  
+  local bindLookup::Decorated QNameLookup = bindFn.lookupValue;
+  local returnLookup::Decorated QNameLookup = returnFn.lookupValue;
 
-  -- TODO: quit reporting errors about undefined bind and lookup functions repeatedly
-  top.errors <- bindFn.lookupValue.errors ++ returnFn.lookupValue.errors;
-  --top.errors <- body.errors; 
+  -- TODO: Raise errors once if bind/return have the wrong types
+  -- We may need typeclasses for this to be possible?  
+  local localErrors::[Message] = bindLookup.errors ++ returnLookup.errors;
   
   body.bindFn = bindFn;
   body.returnFn = returnFn;
   body.isFinalVal = true;
   
-  forwards to body.transform;
+  forwards to
+    if !null(localErrors)
+    then errorExpr(localErrors, location=top.location)
+    else body.transform;
 }
 
 autocopy attribute bindFn::QName;
@@ -36,6 +42,8 @@ concrete production letExprDoBodyStmts
 top::DoBodyStmts ::= n::MName '::' t::Type '=' e::Expr ';' rest::DoBodyStmts
 {
   top.pp = s"${n.pp}::${t.pp} = ${e.pp}; ${rest.pp}";
+  
+  -- TODO: move this to AbstractSyntax for consistancy?
   top.transform =
     letp(
       assignExpr(nameFromMName(n), '::', t, '=', e, location=top.location),
