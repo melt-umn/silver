@@ -5,6 +5,8 @@ type IOMonad<a> = State<IO a>;
 abstract production bindIO
 top::IOMonad<b> ::= st::IOMonad<a> fn::(IOMonad<b> ::= a)
 {
+  -- Using unsafeTrace here to demand the IO token is evaluated before returning the value 
+  top.stateVal = unsafeTrace(forward.stateVal, top.stateOut);
   forwards to bindState(st, fn);
 }
 
