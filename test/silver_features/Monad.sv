@@ -32,7 +32,7 @@ equalityTest(res3.fst, 3, Integer, silver_tests);
 equalityTest(res3.snd, 4, Integer, silver_tests);
 
 -- Test IO
-global monadRes4::IOMonad<String> = do (bindState, returnState) {
+global monadRes4::IOMonad<String> = do (bindIO, returnIO) {
   writeFileM("test_out.txt", "Hello");
   appendFileM("test_out.txt", ", World!");
   readFileM("test_out.txt");
