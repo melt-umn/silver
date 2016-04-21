@@ -84,7 +84,7 @@ String ::= c::CommentItem
 			 let signature :: String = 
 				if 0 == length(sig)
 				then ""
-				else "\n ######`" ++ sig ++ "`"
+				else "\n ###### `" ++ sig ++ "`"
 			  in
 				"\n\n#### _" ++ mod
 				++ "_ `" ++ name
@@ -96,7 +96,7 @@ String ::= c::CommentItem
 			 let signature :: String = 
 				if 0 == length(sig)
 				then ""
-				else "\n ######`" ++ sig ++ "`"
+				else "\n ###### `" ++ sig ++ "`"
 			  in
 				"\n\n#### _" ++ mod
 				++ "_ `" ++ name
