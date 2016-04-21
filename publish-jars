@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eu
 
 DT=$(date +"%Y.%m.%d.%H.%M")
 JARS_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars

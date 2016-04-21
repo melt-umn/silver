@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eu
+
 LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
 REMOTE_STORE="http://melt.cs.umn.edu/downloads/silver-dev/jars"
 

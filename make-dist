@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eu
 
 if [ -z "$1" ]; then
   echo "invoke make-dist with a version argument."

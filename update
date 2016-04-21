@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eu
 
 if [ ! -d grammars ] || [ ! -d tutorials ]; then
   printf "%s\n" "Wrong directory? Run as ./update"
