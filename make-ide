@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eu
 
 # Make sure any compiler changes make it before we build
 ./self-compile
@@ -15,7 +15,7 @@ cd ../..
 # this creates a silver.composed.idetest.jar that is not used, but
 # this does create stuff in the generated directory that is used in
 # the next step
-./self-compile-ide
+SV_BUILD_TARGET="silver:composed:idetest" ./self-compile --clean
 
 # Create the Eclipse repository.  
 # The repository is in the generated/ide/silver.composed.idetest
