@@ -52,7 +52,7 @@ function unList
 
 
 abstract production dumpFlowGraphAction
-top::Unit ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph]  flowTypes::[Pair<String [g:Graph<String>]>]
+top::DriverAction ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph]  flowTypes::[Pair<String [g:Graph<String>]>]
 {
   top.io = 
     writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}", 

@@ -34,7 +34,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 }
 
 abstract production dumpDepGraphAction
-top::Unit ::= specs::[Decorated RootSpec]
+top::DriverAction ::= specs::[Decorated RootSpec]
 {
   top.io = writeFile("deps.dot", "digraph deps {\n" ++ generateDotGraph(specs) ++ "}",
     print("Generating import graph\n", top.ioIn));

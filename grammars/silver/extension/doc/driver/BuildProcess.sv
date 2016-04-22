@@ -53,7 +53,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 }
 
 abstract production genDoc
-top::Unit ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  outputLoc::String
+top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  outputLoc::String
 {
   local pr :: IO = print("Generating Documentation.\n", top.ioIn);
 

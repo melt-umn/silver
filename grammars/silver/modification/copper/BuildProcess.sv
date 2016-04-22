@@ -63,7 +63,7 @@ String ::= r::[ParserSpec] a::Decorated CmdArgs
 }
 
 abstract production parserSpecUnit
-top::Unit ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverGen::String
+top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverGen::String
 {
   local file :: String =
     silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar) ++ makeParserName(spec.fullName) ++ ".copper";

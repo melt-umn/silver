@@ -2,7 +2,7 @@ grammar silver:driver:util;
 
 nonterminal Compilation with config, postOps, grammarList, recheckGrammars, allGrammars;
 
-synthesized attribute postOps :: [Unit] with ++;
+synthesized attribute postOps :: [DriverAction] with ++;
 synthesized attribute grammarList :: [Decorated RootSpec];
 synthesized attribute recheckGrammars :: [String];
 -- This is used on the outside, e.g. the ide functions.
