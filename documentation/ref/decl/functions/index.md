@@ -21,7 +21,7 @@ TypeExp ::= te::TypeExp s::Substitution
 
 ## Syntax
 
-Functions declarations give a name for the function, and a signature in the same format as [productions]({{ "/ref/decl/productions/" | prepend: site.sv_wiki_base }}), except that the left-hand side is not named. Functions must also contain a [return statement]({{ "/ref/stmt/return/" | prepend: site.sv_wiki_base }}).
+Functions declarations give a name for the function, and a signature in the same format as [productions]({{ "/silver/doc/ref/decl/productions/" | prepend: site.sv_wiki_base }}), except that the left-hand side is not named. Functions must also contain a [return statement]({{ "/silver/doc/ref/stmt/return/" | prepend: site.sv_wiki_base }}).
 
 ## Semantics
 

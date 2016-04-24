@@ -3,19 +3,19 @@ grammar silver:extension:doc:core;
 aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
 {
-  top.docs := [bodilessCommentItem("global", id.name, t.pp, id.location.filename)];
+  top.docs := [bodilessDclCommentItem("global", id.name, t.pp, id.location.filename)];
 }
 
 concrete production docGlobalValueDclConcrete
-top::AGDcl ::= comment::DocComment 'global' id::Name '::' t::Type '=' e::Expr ';'
+top::AGDcl ::= comment::DclComment 'global' id::Name '::' t::Type '=' e::Expr ';'
 {
-  top.docs := [commentItem("global", id.name, t.pp, id.location.filename, comment)];
+  top.docs := [dclCommentItem("global", id.name, t.pp, id.location.filename, comment)];
 
   forwards to globalValueDclConcrete('global', id, '::', t, '=', e, ';', location=top.location);
 }
 
 concrete production noDocGlobalValueDclConcrete
-top::AGDcl ::= noDoc::NoDocComment_t 'global' id::Name '::' t::Type '=' e::Expr ';'
+top::AGDcl ::= noDoc::NoDclComment_t 'global' id::Name '::' t::Type '=' e::Expr ';'
 {
   top.docs := [];
 

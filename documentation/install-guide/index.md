@@ -1,6 +1,7 @@
 ---
 layout: sv_wiki
 title: Installation guide
+menu_title: Installation Guide
 menu_weight: 10.0
 ---
 
@@ -39,7 +40,7 @@ silver/tutorials/hello$ java -jar hello.jar
 Hello, World!
 ```
 
-If you have any issues, first try the [frequently asked question page]({{ "/faq/" | prepend: site.sv_wiki_base }}) to see if there are any questions like yours.
+If you have any issues, first try the [frequently asked question page]({{ "/silver/doc/faq/" | prepend: site.sv_wiki_base }}) to see if there are any questions like yours.
 
 # Installing the 'silver' script
 

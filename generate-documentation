@@ -2,7 +2,17 @@
 
 #Compile with the doc and clean tags
 ./self-compile --doc --clean
+
+#Compile extra documentation that wasn't imported to the regular silver build
+export GRAMMAR_PATH="grammars"
+
+./support/bin/silver --doc --clean silver:extension:doc:extra
+
+rm ./build.xml
+rm ./silver.extension.doc.extra.jar
+
 #Copy the generated documentation into the 
-cp -rf generated/doc/silver documentation/ref/generated
-cp -rf generated/doc/core documentation/ref/generated
+cp -rf generated/doc/silver/* documentation/gen/silver
+cp -rf generated/doc/core documentation/gen
+cp -rf generated/doc/lib/* documentation/gen/lib
 

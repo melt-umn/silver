@@ -1,6 +1,8 @@
 ---
 layout: sv_wiki
 title: Bibliography
+menu_title: Bibliography
+menu_weight: 1000.0
 ---
 
 This page is currently a draft! The bibtex may need massaging, and pdf links need to be filled in!

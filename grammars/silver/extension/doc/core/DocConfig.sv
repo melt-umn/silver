@@ -79,13 +79,7 @@ top::DocConfig ::= 'no-doc' ':' value::ConfigValue_t
 function cleanDocValue
 String ::= s::String
 {
-  return replace("\\n", "\n", replace("\"", "", replace("\\t", "\t", s)));
+  return substitute("\\n", "\n", substitute("\"", "", substitute("\\t", "\t", s)));
 }
 
--- TODO: Find a more efficient way to do string replacement
-function replace
-String ::= needle::String rep::String haystack::String
-{
-  return implode(rep, explode(needle, haystack));
-}
 

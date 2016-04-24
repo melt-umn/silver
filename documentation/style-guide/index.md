@@ -1,6 +1,7 @@
 ---
 layout: sv_wiki
 title: Style guide and conventions
+menu_title: Style Guide
 menu_weight: 90.0
 ---
 

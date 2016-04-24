@@ -1,6 +1,8 @@
 ---
 layout: sv_wiki
 title: Silver
+menu_title: Documentation
+menu_weight: 50.0
 ---
 
 The Silver documentation is currently being migrated from its original
