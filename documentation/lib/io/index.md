@@ -3,7 +3,7 @@ layout: sv_wiki
 title: IO
 ---
 
-
+> _**Note:**_ Silver now has support for Monads, so using these IO functions directly is now depricated.  See <update this with a link> for more details.  
 
 # Input and Output
 
@@ -12,8 +12,6 @@ that is passed around in order to preserve the order of execution of
 imperative IO actions.  You can think of _`IO`_ values as being the entire
 universe, and the _`IO`_ input to a function is the state before the action
 and the _`IO`_ output of a function is the state after the action.
-
-> _**Note:**_ As of version 0.3.1, there is no support for monads in Silver, yet. Monads are a convenient way of hiding the _`IO`_ token itself, ensuring the programmer does not make mistakes with the way it is passed around.
 
 Since many IO functions will want to return more than the resulting _`IO`_
 token, there is a standard type called _`IOVal<a>`_ that IO functions use
