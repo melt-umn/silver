@@ -114,9 +114,16 @@ import silver:util:raw:graph;
 import silver:util:raw:treemap;
 import silver:util:raw:treeset;
 
-{- Dummy main function that does nothing -}
+{@comment Dummy main function that does nothing @link[dummyFunction] @}
 function main
 IOVal<Integer> ::= args::[String] ioIn::IO
 {
   return ioval(ioIn, 0);
 }
+
+function dummyFunction
+Integer ::= 
+{
+  return 1;
+}
+

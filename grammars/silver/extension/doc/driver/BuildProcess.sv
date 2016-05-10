@@ -18,12 +18,14 @@ top::CmdArgs ::= _
   top.docGeneration = false;
   top.docOutOption = [];
 }
+
 abstract production docFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.docGeneration = true;
   forwards to rest;
 }
+
 abstract production docOutFlag
 top::CmdArgs ::= loc::String rest::CmdArgs
 {

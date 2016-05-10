@@ -20,9 +20,6 @@ terminal ConfigSplitFiles_t 'split-files' lexer classes {DOC}, font = font_doc_k
 terminal ConfigNoDoc_t 'no-doc' lexer classes {DOC}, font = font_doc_kwd;
 terminal ConfigValue_t /"[^"]*"/ lexer classes {DOC};
 
--- For compile level documentation configuration
-terminal GConfigOpen_t '{@gconfig' lexer classes {DOC}, font = font_doc_kwd;
-
 -- For tutorials and large bodies of text
 --terminal TutOpen_t '{@tutor' lexer classes {DOC};
 
