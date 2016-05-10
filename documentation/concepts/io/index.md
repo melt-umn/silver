@@ -2,8 +2,9 @@
 layout: sv_wiki
 title: IO
 ---
+> _**Note:**_ Silver now has support for Monads, so using this method of IO directly is now depricated.  See <update this with a link> for more details.  
 
-Silver's IO support is terrible. Let's get that out of the way right from the beginning. Silver programs are largely intended to (1) read a file in its entirety and (2) write a file in its entirety, while (3) maybe printing some messages to the console. If you try to be fancier, you'll be all _smdh_.
+Silver's IO support ~~is~~**was** terrible. Let's get that out of the way right from the beginning. Silver programs are largely intended to (1) read a file in its entirety and (2) write a file in its entirety, while (3) maybe printing some messages to the console. If you try to be fancier, you'll be all _smdh_.
 
 ## How it works
 

@@ -12,7 +12,7 @@ import silver:util:cmdargs;
  -   (contains: plugin feature updatesite)
  -}
 abstract production generateNCS
-top::Unit ::= grams::EnvTree<Decorated RootSpec> ide::IdeSpec ideGenPath::String pkgName::String
+top::DriverAction ::= grams::EnvTree<Decorated RootSpec> ide::IdeSpec ideGenPath::String pkgName::String
 {
   ide.compiledGrammars = grams;
   

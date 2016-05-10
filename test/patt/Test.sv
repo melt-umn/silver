@@ -63,11 +63,10 @@ equalityTest ( tNameAll(d()), "d", String, pat_tests ) ;
 
 --- Part 2: GADTS
 
-nonterminal Unit;
 nonterminal Arrow<a b>;
 
 nonterminal Type<a>;
-abstract production unit   t::Type<Unit> ::= {}
+abstract production unitT   t::Type<Unit> ::= {}
 abstract production arrow  t::Type<Arrow<a b>> ::= Type<a> Type<b> {}
 
 nonterminal Eq<a b>;
@@ -77,8 +76,8 @@ function typeEquals
 Maybe<Eq<a b>> ::= ta::Type<a>  tb::Type<b>
 {
   return match ta return Maybe<Eq<a b>> with
-           unit() -> match tb return Maybe<Eq<a b>> with
-                       unit() -> just(eq())
+           unitT() -> match tb return Maybe<Eq<a b>> with
+                       unitT() -> just(eq())
                        else -> nothing()
                      end
          | arrow(aa, ab) ->
@@ -105,9 +104,9 @@ Maybe<Eq<a b>> ::= ta::Type<a>  tb::Type<b>
          end; 
 }
 
-equalityTest ( typeEquals(unit(),unit()).isJust, true, Boolean, pat_tests ) ;
-equalityTest ( typeEquals(arrow(unit(),unit()),unit()).isJust, false, Boolean, pat_tests ) ;
-equalityTest ( typeEquals(arrow(unit(),unit()),arrow(unit(),unit())).isJust, true, Boolean, pat_tests ) ;
+equalityTest ( typeEquals(unitT(),unitT()).isJust, true, Boolean, pat_tests ) ;
+equalityTest ( typeEquals(arrow(unitT(),unitT()),unitT()).isJust, false, Boolean, pat_tests ) ;
+equalityTest ( typeEquals(arrow(unitT(),unitT()),arrow(unitT(),unitT())).isJust, true, Boolean, pat_tests ) ;
 
 nonterminal Expr<a>;
 abstract production etrue  e::Expr<Boolean> ::= {}
