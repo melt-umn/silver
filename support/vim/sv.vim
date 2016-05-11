@@ -30,8 +30,9 @@ syn keyword boolean false true
 
 syn match comment "\(--.*\)\|\({-\([^-]\|-\+[^-}]\)*-}\)$"
 syn match regex "\/\(\(\\\/\)\|[^/]\)*\/"
-syn match string "\"\(\(\\\"\)\|[^"]\)*\""
-syn match character "\'\\\?.\'"
+syn match string "\"\(\(\\\"\)\|[^"]\)*\"" 		contains=escapedChar
+syn match character "\'\\\?.\'"				contains=escapedChar
+syn match escapedChar "\\[\\\"\'nrbtf]\|\d{1,3}\|u\d{1,4}"
 syn match numeric "\<\(0[xX]\)\?\d\+[lL]\?\>"
 syn match float "\<\(\d\+[eE][-+]\?\d\+\)\|\(\d*\.\d\+\([eE][-+]\?\d\+\)\?[fFdD]\?\)\|\(\d\+[fFdD]\)\>"
 
@@ -49,6 +50,7 @@ hi def link comment		Comment
 hi def link regex		String
 hi def link string		String
 hi def link character		Character
+hi def link escapedChar		SpecialChar
 hi def link numeric		Number
 hi def link float		Float
 
