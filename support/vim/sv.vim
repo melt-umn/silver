@@ -28,7 +28,7 @@ syn keyword svlangKw builder postbuilder exporter folder property string require
 
 syn keyword svlangBoolean false true
 
-syn keyword svlangTodo TODO FIXME XXX
+syn keyword svlangTodo contained TODO FIXME XXX
 
 
 syn region svlangBlock start=/\v\{/ end=/\v\}/		transparent fold
@@ -37,7 +37,7 @@ syn match svlangComment /\v--.*/ 			contains=svlangTodo
 syn match svlangRegex /\v\/((\\\/)|[^/])*\//
 syn match svlangString /\v"((\\")|[^"])*"/ 		contains=svlangEscapedChar
 syn match svlangCharacter /\v\'\\?.\'/			contains=svlangEscapedChar
-syn match svlangEscapedChar /\v\\[\\"\'nrbtf]|\d{1,3}|u\d{1,4}/
+syn match svlangEscapedChar display contained /\v\\[\\"\'nrbtf]|\d{1,3}|u\d{1,4}/
 syn match svlangNumeric /\v<(0[xX])?\d+[lL]?>/
 syn match svlangFloat /\v<(\d+[eE][-+]?\d+)|(\d*\.\d\+([eE][-+]?\d+)?[fFdD]?)|(\d\+[fFdD])>/
 
