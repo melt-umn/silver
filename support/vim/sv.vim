@@ -8,49 +8,62 @@ endif
 
 " keywords and regexes copied from gedit and google-code-prettyify
 
-syn keyword externals grammar import imports exports build hiding as only option
+syn keyword svlangExternals grammar import imports exports build hiding as only option
 
-syn keyword declarations parser parse attribute annotation function local closed nonterminal type occurs on production terminal marking foreign layout disambiguate action global productions lexer class default
+syn keyword svlangDeclarations parser parse attribute annotation function local closed nonterminal type occurs on production terminal marking foreign layout disambiguate action global productions lexer class default
 
-syn keyword primitiveTypes IO Boolean Decorated Float Function Integer Production String
+syn keyword svlangPrimitiveTypes IO Boolean Decorated Float Function Integer Production String
 
-syn keyword storageClass abstract aspect concrete inherited synthesized autocopy ignore
+syn keyword svlangStorageClass abstract aspect concrete inherited synthesized autocopy ignore
 
-syn keyword scopeDeclarations left association right precedence operator dominates submits classes
+syn keyword svlangScopeDeclarations left association right precedence operator dominates submits classes
 
-syn keyword flowOther forwarding forwards to return pluck print
+syn keyword svlangFlowOther forwarding forwards to return pluck print
 
-syn keyword flow case of let in end decorate with prefix else forward if new then toString toInt toFloat length
+syn keyword svlangFlow case of let in end decorate with prefix else forward if new then toString toInt toFloat length
 
-syn keyword ide temp_imp_ide_dcl temp_imp_ide_font font color italic bold
+syn keyword svlangIde temp_imp_ide_dcl temp_imp_ide_font font color italic bold
 
-syn keyword kw builder postbuilder exporter folder property string required string wizard new file stub generator product name version option resource
+syn keyword svlangKw builder postbuilder exporter folder property string required string wizard new file stub generator product name version option resource
 
-syn keyword boolean false true
+syn keyword svlangBoolean false true
 
-syn match comment "\(--.*\)\|\({-\([^-]\|-\+[^-}]\)*-}\)$"
-syn match regex "\/\(\(\\\/\)\|[^/]\)*\/"
-syn match string "\"\(\(\\\"\)\|[^"]\)*\"" 		contains=escapedChar
-syn match character "\'\\\?.\'"				contains=escapedChar
-syn match escapedChar "\\[\\\"\'nrbtf]\|\d{1,3}\|u\d{1,4}"
-syn match numeric "\<\(0[xX]\)\?\d\+[lL]\?\>"
-syn match float "\<\(\d\+[eE][-+]\?\d\+\)\|\(\d*\.\d\+\([eE][-+]\?\d\+\)\?[fFdD]\?\)\|\(\d\+[fFdD]\)\>"
+syn keyword svlangTodo TODO FIXME XXX
 
-hi def link externals		Include
-hi def link declarations	Keyword
-hi def link primitiveTypes	Type
-hi def link storageClass	StorageClass
-hi def link scopeDeclarations	Keyword
-hi def link flowOther		Statement
-hi def link flow		Statement
-hi def link ide			Type
-hi def link kw			Keyword
-hi def link boolean		Boolean
-hi def link comment		Comment
-hi def link regex		String
-hi def link string		String
-hi def link character		Character
-hi def link escapedChar		SpecialChar
-hi def link numeric		Number
-hi def link float		Float
+
+syn region svlangBlock start=/\v\{/ end=/\v\}/		transparent fold
+syn region svlangComment start=/\v\{-/ end=/\v-\}/	contains=svlangTodo,svlangComment fold
+syn match svlangComment /\v--.*/ 			contains=svlangTodo
+syn match svlangRegex /\v\/((\\\/)|[^/])*\//
+syn match svlangString /\v"((\\")|[^"])*"/ 		contains=escapedChar
+syn match svlangCharacter /\v\'\\?.\'/			contains=escapedChar
+syn match svlangEscapedChar /\v\\[\\"\'nrbtf]|\d{1,3}|u\d{1,4}/
+syn match svlangNumeric /\v<(0[xX])?\d+[lL]?>/
+syn match svlangFloat /\v<(\d+[eE][-+]?\d+)|(\d*\.\d\+([eE][-+]?\d+)?[fFdD]?)|(\d\+[fFdD])>/
+
+syntax sync fromstart
+
+hi def link svlangExternals		Include
+hi def link svlangDeclarations		Keyword
+hi def link svlangPrimitiveTypes	Type
+hi def link svlangStorageClass	 	StorageClass
+hi def link svlangScopeDeclarations	Keyword
+hi def link svlangFlowOther		Statement
+hi def link svlangFlow		 	Statement
+hi def link svlangIde			Type
+hi def link svlangKw			Keyword
+hi def link svlangBoolean		Boolean
+hi def link svlangComment		Comment
+hi def link svlangRegex		 	String
+hi def link svlangString		String
+hi def link svlangCharacter		Character
+hi def link svlangEscapedChar		SpecialChar
+hi def link svlangNumeric		Number
+hi def link svlangFloat		 	Float
+hi def link svlangTodo		 	Todo
+
+set autoindent
+set expandtab
+set shiftwidth=2
+set softtabstop=2
 
