@@ -32,7 +32,7 @@ syn keyword svlangTodo TODO FIXME XXX
 
 
 syn region svlangBlock start=/\v\{/ end=/\v\}/		transparent fold
-syn region svlangComment start=/\v\{-/ end=/\v-\}/	contains=svlangTodo,svlangComment fold
+syn region svlangBlockComment start=/\v\{-/ end=/\v-\}/	contains=svlangTodo,svlangBlockComment fold
 syn match svlangComment /\v--.*/ 			contains=svlangTodo
 syn match svlangRegex /\v\/((\\\/)|[^/])*\//
 syn match svlangString /\v"((\\")|[^"])*"/ 		contains=svlangEscapedChar
@@ -54,6 +54,7 @@ hi def link svlangIde			Type
 hi def link svlangKw			Keyword
 hi def link svlangBoolean		Boolean
 hi def link svlangComment		Comment
+hi def link svlangBlockComment		Comment
 hi def link svlangRegex		 	String
 hi def link svlangString		String
 hi def link svlangCharacter		Character
