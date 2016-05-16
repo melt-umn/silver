@@ -35,7 +35,7 @@ syn region svlangBlock start=/\v\{/ end=/\v\}/		transparent fold
 syn region svlangBlockComment start=/\v\{-/ end=/\v-\}/	contains=svlangTodo,svlangBlockComment fold
 syn match svlangComment /\v--.*/ 			contains=svlangTodo
 syn match svlangRegex /\v\/((\\\/)|[^/])*\//
-syn match svlangString /\v"((\\")|[^"])*"/ 		contains=svlangEscapedChar
+syn region svlangString start=/\v"/ skip=/\v\\"/ end=/\v"|$/	contains=svlangEscapedChar
 syn match svlangCharacter /\v\'\\?.\'/			contains=svlangEscapedChar
 syn match svlangEscapedChar display contained /\v\\[\\"\'nrbtf]|\d{1,3}|u\d{1,4}/
 syn match svlangNumeric /\v<(0[xX])?\d+[lL]?>/
