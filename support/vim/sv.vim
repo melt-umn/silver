@@ -22,9 +22,9 @@ syn keyword svlangFlowOther forwarding forwards to return pluck print
 
 syn keyword svlangFlow case of let in end decorate with prefix else forward if new then toString toInt toFloat length
 
-syn keyword svlangIde temp_imp_ide_dcl temp_imp_ide_font font color italic bold
+"syn keyword svlangIde temp_imp_ide_dcl temp_imp_ide_font font color italic bold
 
-syn keyword svlangKw builder postbuilder exporter folder property string required string wizard new file stub generator product name version option resource
+"syn keyword svlangIdeInner contained builder postbuilder exporter folder property string required string wizard new file stub generator product name version option resource
 
 syn keyword svlangBoolean false true
 
@@ -50,8 +50,8 @@ hi def link svlangStorageClass	 	StorageClass
 hi def link svlangScopeDeclarations	Keyword
 hi def link svlangFlowOther		Statement
 hi def link svlangFlow		 	Statement
-hi def link svlangIde			Type
-hi def link svlangKw			Keyword
+"hi def link svlangIde			Type
+"hi def link svlangIdeInner		Keyword
 hi def link svlangBoolean		Boolean
 hi def link svlangComment		Comment
 hi def link svlangBlockComment		Comment
