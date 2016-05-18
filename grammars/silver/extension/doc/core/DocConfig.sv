@@ -8,13 +8,13 @@ nonterminal DocConfigs with header, splitFiles, noDoc, warnings;
 nonterminal DocConfig with header, splitFiles, noDoc;
 
 concrete production config
-top::AGDcls ::= '{@config' items::DocConfigs '@}'
+top::AGDcl ::= '{@config' items::DocConfigs '@}'
 {
   top.docs := [];
   top.docsHeader = items.header;
   top.docsSplit = items.splitFiles;
   top.docsNoDoc = items.noDoc;
-  forwards to nilAGDcls(location=top.location);
+  forwards to emptyAGDcl(location=top.location);
 }
 
 concrete production consConfigs

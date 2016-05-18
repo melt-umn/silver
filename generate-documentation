@@ -1,9 +1,6 @@
 #!/bin/bash
 
-#Compile with the doc and clean tags
-./self-compile --doc --clean
-
-#Compile extra documentation that wasn't imported to the regular silver build
+#Compile documentation
 export GRAMMAR_PATH="grammars"
 
 ./support/bin/silver --doc --clean silver:extension:doc:extra

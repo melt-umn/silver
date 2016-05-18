@@ -1,8 +1,8 @@
 grammar silver:extension:doc:core;
 
-nonterminal DclComment with body, baseUrl, env, location;
-nonterminal DclCommentComponent with body, baseUrl, env, location;
-nonterminal DclCommentComponents with body, baseUrl, env, location;
+nonterminal DclComment with body, env, location;
+nonterminal DclCommentComponent with body, env, location;
+nonterminal DclCommentComponents with body, env, location;
 
 attribute docEnv occurs on DclComment, DclCommentComponent, DclCommentComponents;
 
@@ -36,7 +36,7 @@ top::DclCommentComponent ::= '@link' '[' id::QName ']'
 layout {}
 {
   local dclInfo::DocDclInfo = head(treeLookup(id.lookupValue.fullName, top.docEnv));
-  top.body = "[" ++ dclInfo.id ++ "](" ++ top.baseUrl ++ dclInfo.path ++ ")";
+  top.body = "[" ++ dclInfo.id ++ "](" ++ dclInfo.path ++ ")";
 }
 
 concrete production componentText

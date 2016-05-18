@@ -13,7 +13,7 @@ terminal CommentId_t /[a-zA-Z0-9]+[a-zA-Z0-9:]*/ lexer classes {DOC}, font = fon
 terminal CommentOpenSquare_t '[' lexer classes {DOC};
 terminal CommentCloseSquare_t ']' lexer classes {DOC};
 
--- For documentation configuration
+-- For grammar level documentation configuration
 terminal ConfigOpen_t '{@config' lexer classes {DOC}, font = font_doc_kwd;
 terminal ConfigHeader_t 'header' lexer classes {DOC}, font = font_doc_kwd;
 terminal ConfigSplitFiles_t 'split-files' lexer classes {DOC}, font = font_doc_kwd;
