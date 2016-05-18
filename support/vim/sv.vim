@@ -22,7 +22,7 @@ syn keyword svlangFlowOther forwarding forwards to return pluck
 
 syn keyword svlangFlow case of let in end decorate with prefix else forward if new then
 
-syn keyword svlangFunction print toString toInt toFloat length reference substring indexOf error cast left right
+syn keyword svlangFunction print toString toInt toFloat length reference substring indexOf error cast left right partitionEithers hackUnparse print readLineStdin exit mkdir system writeFile appendFile fileTime isFile isDirectory readFile cwd envVar listContents deleteFile deleteTree copyFile touchFile error unsafeIO genInt genRand unsafeTrace dirNameInFilePath fileNameInFilePath splitFileNameAndExtension map foldr foldl foldr1 foldl1 filter partition containsBy nubBy removeBy removeAllBy last drop take dropWhile takeWhile takeUntil positionOf positionOfHelper repeat zipWith reverse sortBy groupBy intersperse unionBy intersectBy unionsBy nil cons append null listLength head tail locationLte fromMaybe orElse consMaybe catMaybes fst snd lookupBy lookupAllBy unzipPairs parseTreeOrDieWithoutStackTrace implode explode indexOf lastIndexOf substring startsWith endsWith substitute replicate isDigit isAlpha isSpace isLower isUpper toIntSafe compareString stringConcat stringEq stringLte runIO evalIO unsafeEvalIO bindList returnList bindMaybe returnMaybe runState evalState ioval
 
 "syn keyword svlangIde temp_imp_ide_dcl temp_imp_ide_font font color italic bold
 
@@ -32,13 +32,16 @@ syn keyword svlangBoolean false true
 
 syn keyword svlangTodo contained TODO FIXME XXX
 
+syn keyword svlangTermAttr lexeme filename line column
+
 syn region svlangBlock start=/\v\{/ end=/\v\}/		transparent fold
 syn region svlangDocComment start=/\v\{--/ end=/\v-\}/	contains=svlangTodo,svlangBlockComment,svlangDocComment,svlangDocTags,svlangDocSeeTag fold
 syn region svlangBlockComment start=/\v\{-[^-]/ end=/\v-\}/	contains=svlangTodo,svlangBlockComment,svlangDocComment fold
 syn match svlangComment /\v--.*/ 			contains=svlangTodo
 syn match svlangRegex /\v\/((\\\/)|[^/])*\//
 syn region svlangString start=/\v"/ skip=/\v\\"/ end=/\v"|$/	contains=svlangEscapedChar
-syn match svlangCharacter /\v\'\\?.\'/			contains=svlangEscapedChar
+syn region svlangString start=/\v'/ skip=/\v\\"/ end=/\v'|$/	contains=svlangEscapedChar
+"syn match svlangCharacter /\v\'\\?.\'/			contains=svlangEscapedChar
 syn match svlangEscapedChar display contained /\v\\([\\"\'nrbtf]|\d{1,3}|u\d{1,4})/
 syn match svlangNumeric /\v<(0[xX])?\d+[lL]?>/
 syn match svlangFloat /\v<(\d+[eE][-+]?\d+)|(\d*\.\d\+([eE][-+]?\d+)?[fFdD]?)|(\d\+[fFdD])>/
@@ -70,7 +73,7 @@ hi def link svlangDocComment		Comment
 hi def link svlangBlockComment		Comment
 hi def link svlangRegex		 	String
 hi def link svlangString		String
-hi def link svlangCharacter		Character
+"hi def link svlangCharacter		Character
 hi def link svlangEscapedChar		SpecialChar
 hi def link svlangNumeric		Number
 hi def link svlangFloat		 	Float
@@ -80,6 +83,7 @@ hi def link svlangFunction	 	Function
 hi def link svlangDocTags		Special
 hi def link svlangDocParam		Function
 hi def link svlangDocSeeTagParam	Function
+hi def link svlangTermAttr		Keyword
 
 set autoindent
 set expandtab
