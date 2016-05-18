@@ -12,8 +12,8 @@ this is the best source for learning how to use Silver.
 Below are some pointers to help you find your way through the
 documentation. 
 
-* The [installation guide](silver/doc/instal-guide) and [command line
-  reference](silver/doc/command-line-reference) will get you started
+* The [installation guide](instal-guide) and [command line
+  reference](command-line-reference) will get you started
   with Silver.
 
 * The [tutorial (TODO)](silver/doc/tutorial) provides a gentle
