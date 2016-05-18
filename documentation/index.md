@@ -16,7 +16,7 @@ documentation.
   reference](command-line-reference) will get you started
   with Silver.
 
-* The [tutorial (TODO)](silver/doc/tutorial) provides a gentle
+* The [tutorial (TODO)](tutorial) provides a gentle
   introduction to attribute grammars generally and Silver
   specifically.  If you are familiar with the attribute grammar
   formalism you may want to just skim this.
