@@ -201,17 +201,17 @@ public final class Util {
 	}
 	
 	private static BufferedReader our_stdin = null;
-    public static StringCatter getStr() {
+	public static StringCatter getStr() {
 		try {
 			if(our_stdin == null) {
 				// We should persist this, since it's buffered, we might buffer bytes for the NEXT line
 				our_stdin = new BufferedReader(new InputStreamReader(System.in));
 			}
-		    return new StringCatter(our_stdin.readLine()) ;
+			return new StringCatter(our_stdin.readLine()) ;
 		} catch (IOException e) {
-		    throw new RuntimeException(e);
+			throw new RuntimeException(e);
 		}
-    }
+	}
 
 	/**
 	 * Copy a file from 'from' to 'to'.
@@ -468,8 +468,8 @@ public final class Util {
 		} else if(o instanceof StringCatter) {
 			sb.append("\"" + o.toString() + "\"");
 		} else if(o instanceof Integer ||
-				  o instanceof Float ||
-    			  o instanceof Boolean) {
+			  o instanceof Float ||
+ 			  o instanceof Boolean) {
 			sb.append(o.toString());
 		} else if(o instanceof ConsCell) {
 			hackyhackyUnparseList((ConsCell)o, sb);
