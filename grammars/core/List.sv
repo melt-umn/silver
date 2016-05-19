@@ -1,6 +1,6 @@
 grammar core;
 
-{@comment
+{- @comment
   Applies a function to each element of the list.
 
   This is a list of links.
@@ -10,7 +10,7 @@ grammar core;
   param f  The function to apply
   param l  The list to map over
   return  The list containing the results of applying the function to l
-@}
+@ -}
 function map
 [b] ::= f::(b ::= a)  l::[a]
 {
@@ -28,9 +28,9 @@ function map
  - @return  The result of the function applied right-associatively to the list.
  -}
 
-{@comment
+{- @comment
   This is a test comment.
-@}
+@ -}
 function foldr
 b ::= f::(b ::= a b)  i::b  l::[a]
 {
