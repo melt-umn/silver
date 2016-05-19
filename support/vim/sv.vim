@@ -90,3 +90,5 @@ set expandtab
 set shiftwidth=2
 set softtabstop=2
 
+let b:current_syntax = "sv"
+
