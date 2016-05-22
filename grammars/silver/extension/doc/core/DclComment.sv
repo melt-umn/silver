@@ -36,7 +36,7 @@ top::DclCommentComponent ::= '@link' '[' id::QName ']'
 layout {}
 {
   local dclInfo::DocDclInfo = head(treeLookup(id.lookupValue.fullName, top.docEnv));
-  top.body = "X2 " ++ dclInfo.path ++ " [" ++ dclInfo.id ++ "](" ++ dclInfo.path ++ ")";
+  top.body = "[" ++ dclInfo.id ++ "](" ++ dclInfo.path ++ ")";
 }
 
 concrete production componentText
