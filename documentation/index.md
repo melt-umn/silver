@@ -42,12 +42,12 @@ documentation.
   Documentation for these is automatically generated and can be found
   in the [gen](gen) section.
 
-* A general [FAQ](fag) and [FAQ about
-  errors](error-fac) as well as a [style
+* A general [FAQ](faq) and [FAQ about
+  errors](error-faq) as well as a [style
   guide](style-guide) may also be of interest.  
 
 * The academic papers about Silver and Copper, along with their BibTeX
-  entries can be found on the [Bibliography](bibliograph)
+  entries can be found on the [Bibliography](bibliography)
   page.
 
 * Finally there is some information about [developing](dev)
