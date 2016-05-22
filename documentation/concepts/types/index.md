@@ -17,7 +17,7 @@ Float
 IO
 ```
 
-For more information on these primitive types, see the corresponding sections on expressions for [Booleans]({{ "/silver/doc/ref/expr/booleans/" | prepend: site.sv_wiki_base }}), [Numeric Operations]({{ "/silver/doc/ref/expr/numeric/" | prepend: site.sv_wiki_base }}), [Strings]({{ "/silver/doc/lib/string/" | prepend: site.sv_wiki_base }}), and [IO]({{ "/silver/doc/lib/io/" | prepend: site.sv_wiki_base }}).)
+For more information on these primitive types, see the corresponding sections on expressions for [Booleans]({{ "ref/expr/booleans/" | prepend: site.sv_wiki_base }}), [Numeric Operations]({{ "ref/expr/numeric/" | prepend: site.sv_wiki_base }}), [Strings]({{ "lib/string/" | prepend: site.sv_wiki_base }}), and [IO]({{ "lib/io/" | prepend: site.sv_wiki_base }}).)
 
 ## Function and production types
 
@@ -48,7 +48,7 @@ Lists are given a special syntax for types:
 [ <Type> ]
 ```
 
-See [Lists]({{ "/silver/doc/lib/list/" | prepend: site.sv_wiki_base }}) for more information on lists.
+See [Lists]({{ "lib/list/" | prepend: site.sv_wiki_base }}) for more information on lists.
 
 > _**Example:**_ The map function would have the following signature:
 ```
@@ -77,7 +77,7 @@ synthesized attribute transformed :: Expr;
 
 
 Nonterminals additionally have a "decorated" form, whose type is simply prefixed
-with the keyword _`Decorated`_.  See [Decorated vs Undecorated]({{ "/silver/doc/concepts/decorated-vs-undecorated/" | prepend: site.sv_wiki_base }}) for more information.
+with the keyword _`Decorated`_.  See [Decorated vs Undecorated]({{ "concepts/decorated-vs-undecorated/" | prepend: site.sv_wiki_base }}) for more information.
 
 > _**Example:**_
 ```

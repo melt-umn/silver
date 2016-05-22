@@ -21,7 +21,7 @@ documentation.
   specifically.  If you are familiar with the attribute grammar
   formalism you may want to just skim this.
 
-* The [reference guide](silver/doc/ref) describes the different
+* The [reference guide](ref) describes the different
   constructs in the Silver specification language:
 
   * expressions
@@ -31,7 +31,7 @@ documentation.
 
   * declarations
 
-* The [concepts](silver/doc/concepts) section describes some feature
+* The [concepts](concepts) section describes some feature
   and concepts in Silver that are not found in many other AG systems
   or are a bit esoteric.
 
@@ -40,16 +40,16 @@ documentation.
   `silver:langutil` that need explicit imports.
 
   Documentation for these is automatically generated and can be found
-  in the [gen](silver/doc/gen) section.
+  in the [gen](gen) section.
 
-* A general [FAQ](silver/doc/fag) and [FAQ about
-  errors](silver/doc/error-fac) as well as a [style
-  guide](silver/doc/style-guide) may also be of interest.  
+* A general [FAQ](fag) and [FAQ about
+  errors](error-fac) as well as a [style
+  guide](style-guide) may also be of interest.  
 
 * The academic papers about Silver and Copper, along with their BibTeX
-  entries can be found on the [Bibliography](silver/doc/bibliograph)
+  entries can be found on the [Bibliography](bibliograph)
   page.
 
-* Finally there is some information about [developing](silver/doc/dev)
+* Finally there is some information about [developing](dev)
   Silver that is most likely of interest to those writing extensions
   to Silver of working on the core language.
