@@ -11,7 +11,7 @@ annotation origin :: Origin;
 ## What are annotations?
 
 Recall the distinction between [decorated and undecorated
-types](concepts/decorated-vs-undecorated). Typically, attributes are
+types](/concepts/decorated-vs-undecorated). Typically, attributes are
 computed on decorated nodes: to obtain a decorated node, an
 undecorated one is supplied with inherited attributes. This makes the
 synthesized attributes on that node computable. 
