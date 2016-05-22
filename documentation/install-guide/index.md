@@ -7,7 +7,7 @@ menu_weight: 10.0
 
 # Prerequisites
 
-[Java JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html) and [Apache ANT](http://ant.apache.org/bindownload.cgi). For Ubuntu users:
+[Java JDK, version 1.7](http://www.oracle.com/technetwork/java/javase/downloads/index.html) and [Apache ANT](http://ant.apache.org/bindownload.cgi). For Ubuntu users:
 
 ```
 apt-get install default-jdk ant
@@ -22,11 +22,10 @@ brew install coreutils ant
 
 # Getting Silver
 
-The **latest release** can be found [here](http://melt.cs.umn.edu/silver/downloads.html) (mirrored [here](http://code.google.com/p/silver/downloads/list).)
+The best way to get Silver is to grab the sources from
+[GitHub](https://github.com/melt-umn/silver).  Clone this repository
+and then run the `fetch-jars` script in the top directory.
 
-The **latest development build** can be downloaded [here](http://melt.cs.umn.edu/downloads/silver-dev/silver-latest.tar.gz).
-
-To use the bleeding edge from version control, [see below](InstallGuide#Using_the_latest_development_version.md).
 
 # Testing with tutorials
 
@@ -40,7 +39,7 @@ silver/tutorials/hello$ java -jar hello.jar
 Hello, World!
 ```
 
-If you have any issues, first try the [frequently asked question page]({{ "faq/" | prepend: site.sv_wiki_base }}) to see if there are any questions like yours.
+If you have any issues, first try the [FAC](faq) ... [frequently asked question page]({{ "faq/" | prepend: site.sv_wiki_base }}) to see if there are any questions like yours.
 
 # Installing the 'silver' script
 
