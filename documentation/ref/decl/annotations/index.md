@@ -10,7 +10,11 @@ annotation origin :: Origin;
 
 ## What are annotations?
 
-Recall the distinction between [decorated and undecorated types]({{ "/silver/doc/concepts/decorated-vs-undecorated/" | prepend: site.sv_wiki_base }}). Typically, attributes are computed on decorated nodes: to obtain a decorated node, an undecorated one is supplied with inherited attributes. This makes the synthesized attributes on that node computable.
+Recall the distinction between [decorated and undecorated
+types](concepts/decorated-vs-undecorated). Typically, attributes are
+computed on decorated nodes: to obtain a decorated node, an
+undecorated one is supplied with inherited attributes. This makes the
+synthesized attributes on that node computable. 
 
 Annotations are very different from attributes. They are values that are supplied to create undecorated nodes -- they are far more similar to children than attributes.  Unlike children, however, they are not something you would supply inherited attributes to, and they appear uniformly on all productions for a nonterminal.
 
