@@ -1,7 +1,7 @@
 ---
 layout: sv_wiki
-title: Silver
-menu_title: Documentation
+title: Silver Concepts
+menu_title: Concepts
 menu_weight: 50.0
 ---
 
