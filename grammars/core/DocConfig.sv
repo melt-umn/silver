@@ -8,16 +8,6 @@ grammar core;
 
    something
 
-   `head`
-
-```
-asdf 
-asdf
-asdf
-```
-
-+ asdf
-+ qwer
 
 @}
 
