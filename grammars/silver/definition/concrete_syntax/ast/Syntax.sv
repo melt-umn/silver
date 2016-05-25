@@ -112,19 +112,12 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
   top.cstNormalize = [top];
   top.allIgnoreTerminals = if modifiers.ignored then [top] else [];
 
-  local pfx :: [String] = searchEnvTree(n, top.prefixesForTerminals);
-  
-  production lexeme_source :: String =
-    if null(pfx) then "lexeme"
-    else "lexeme.substring(" ++ toString(length(head(pfx))) ++ ")";
-  production regex_to_use :: Regex_R =
-    if null(pfx) then regex
-    else concatenateRegex(literalRegex(head(pfx)), regex);
+  production pfx :: [String] = searchEnvTree(n, top.prefixesForTerminals);
 
   top.xmlCopper =
     "  <Terminal id=\"" ++ makeCopperName(n) ++ "\">\n" ++
     "    <PP>" ++ n ++ "</PP>\n" ++
-    "    <Regex>" ++ regex_to_use.xmlCopper ++ "</Regex>\n" ++ 
+    "    <Regex>" ++ regex.xmlCopper ++ "</Regex>\n" ++ 
     (if modifiers.opPrecedence.isJust || modifiers.opAssociation.isJust then
     "    <Operator>\n" ++
     "      <Class>main</Class>\n" ++
@@ -134,11 +127,12 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
     else "") ++
     "    <Type>common.TerminalRecord</Type>\n" ++ 
     "    <Code><![CDATA[\n" ++ 
-    "RESULT = new common.TerminalRecord(" ++ lexeme_source ++ ",virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
+    "RESULT = new common.TerminalRecord(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++ 
     "    <InClasses>" ++ modifiers.lexerclassesXML ++ "</InClasses>\n" ++ 
-    -- TODO: prefix?
+    (if null(pfx) then ""
+     else "    <Prefix><TerminalRef id=\"" ++ head(pfx) ++ "\"/></Prefix>\n") ++ 
     "    <Submits>" ++ modifiers.submitsXML ++ "</Submits>\n" ++ 
     "    <Dominates>" ++ modifiers.dominatesXML ++ "</Dominates>\n" ++
     "  </Terminal>\n";
