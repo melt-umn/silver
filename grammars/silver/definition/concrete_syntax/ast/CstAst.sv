@@ -54,7 +54,8 @@ s"""<?xml version="1.0" encoding="UTF-8"?>
     <StartSymbol>${xmlCopperRef(head(startFound))}</StartSymbol>
 """ ++
 -- The layout before and after the root nonterminal. For now, universal layout.
-s"""    <StartLayout>${univLayout}</StartLayout>\n""" ++
+s"""    <StartLayout>${univLayout}</StartLayout>
+""" ++
 -- TODO fix: ?
 --"    <Package>parsers</Package>\n" ++
 --"    <ClassName>SingleParser</ClassName>\n" ++
