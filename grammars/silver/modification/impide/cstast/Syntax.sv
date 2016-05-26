@@ -68,7 +68,7 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
     "]]></Code>\n" ++ 
     "    <InClasses>" ++ modifiers.lexerclassesXML ++ "</InClasses>\n" ++ 
     (if null(pfx) then ""
-     else "    <Prefix>" ++ head(pfx) ++ "</Prefix>\n") ++ 
+     else "    <Prefix><TerminalRef id=\"" ++ head(pfx) ++ "\"/></Prefix>\n") ++ 
     "    <Submits>" ++ modifiers.submitsXML ++ "</Submits>\n" ++ 
     "    <Dominates>" ++ modifiers.dominatesXML ++ "</Dominates>\n" ++
     "  </Terminal>\n";
