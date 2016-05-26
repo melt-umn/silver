@@ -28,15 +28,15 @@ top::DocConfigs ::= c::DocConfig rest::DocConfigs
 								   then "Multpile split-files definitions in documentation configuration."
 								   else "";
 
-  top.header = case pair(c.header, rest.header) of
-				| pair("", h) -> h
-				| pair(h, _) -> h
-			   end;
+  top.header = case c.header, rest.header of
+               | "", h -> h
+               | h, _  -> h
+               end;
 
-  top.splitFiles = case pair(c.splitFiles, rest.splitFiles) of
-					| pair("", s) -> s
-					| pair(s, _) -> s
-				   end;
+  top.splitFiles = case c.splitFiles, rest.splitFiles) of
+                   | "", s -> s
+                   | s, _  -> s
+                   end;
 
   top.noDoc = c.noDoc || rest.noDoc;
   top.warnings = headerWarnings ++ splitFilesWarnings ++ rest.warnings;
