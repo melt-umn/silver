@@ -44,7 +44,7 @@ Less common:
   * `--warn-all`
     * Perform some extra analysis. This includes a modularity analysis that will help find, for example, missing equations.
 
-      If you want to see the generated flow-type and dependencies, then add the `--dump-flow-graph` flag.
+      If you want to see the generated flow-types and dependencies, then add the `--dump-flow-graph` flag.
 
       More information on the modular well-definedness analysis can be found [here](../concepts/modular-well-definedness).
 
