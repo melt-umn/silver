@@ -53,9 +53,17 @@ function makeIndexFile
 String ::= sortedComments::[Pair<String String>] header::String
 {
   return case sortedComments of
-	| pair(f, _) :: rest -> makeIndexFile(rest, header) ++ "\n" ++ f ++ "\n"
+	| pair(f, _) :: rest -> makeIndexFile(rest, header) ++ "\n" ++ makeLink(f) ++ "\n"
 	| [] -> header
 	end;
+}
+
+function makeLink
+String ::= mdFileName::String
+{ 
+  local txt::String = substitute( ".md", "", mdFileName );
+  local lnk::String = substitute( ".md", ".html", mdFileName );
+  return "[" ++ txt ++ "](" ++ lnk ++ ")" ;
 }
 
 
