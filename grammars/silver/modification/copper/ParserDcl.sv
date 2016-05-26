@@ -6,10 +6,35 @@ terminal Parser_kwd 'parser' lexer classes {KEYWORD}; -- not RESERVED?
 
 -- TODO: You know, maybe parser specs should get moved over here as well.
 
+-- parserDcl now just gets the list of terminals needed to be declared as prefixes then forwards to
+-- decls using that list with parserDclBase handling what parserDcl did
 concrete production parserDcl
 top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
 {
-  top.pp = "parser " ++ m.pp ++ ";";
+  top.pp = "parser " ++ m.pp ++ ";"; -- TODO, should this be here?
+  
+  top.moduleNames = m.moduleNames;
+  
+  local terminalPrefixNeededDefs :: [String] = nubBy(stringEq, map(snd, m.terminalPrefixes));
+  forwards to parserDclBase(n, t, m, location=top.location);{-
+    foldr(
+      appendAGDcl(_, _, location=top.location),
+      parserDclBase(n, t, m, location=top.location),
+      map(\n::String ->
+        terminalDclDefault(
+          terminalKeywordModifierNone(location=top.location),
+          -- Prefix terminal name isn't based off the prefix since that might not be alphanumeric
+          name("_Prefix" ++ toString(genInt()), top.location),
+          regExprEasyTerm(terminal(Terminal_t, n), location=top.location),
+          terminalModifiersNone(location=top.location),
+          location=top.location),
+        terminalPrefixNeededDefs));-}
+}
+
+abstract production parserDclBase
+top::AGDcl ::= n::Name t::Type m::ParserComponents
+{
+  top.pp = "parser " ++ m.pp ++ ";"; -- TODO?
   
   top.moduleNames = m.moduleNames;
 
@@ -31,11 +56,25 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
   production spec :: ParserSpec =
     parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames, m.terminalPrefixes);
   spec.compiledGrammars = top.compiledGrammars;
+  
+  local terminalPrefixNeededDefs :: [String] = nubBy(stringEq, map(snd, m.terminalPrefixes));
+  local terminalPrefixDecl :: AGDcl =
+    foldr(
+      appendAGDcl(_, _, location=top.location),
+      emptyAGDcl(location=top.location),
+      map(\n::String ->
+        terminalDclDefault(
+          terminalKeywordModifierNone(location=top.location),
+          name("_Prefix" ++ toString(genInt()), top.location), -- Prefix terminal name isn't based off the prefix since that might not be alphanumeric
+          regExprEasyTerm(terminal(Terminal_t, n), location=top.location),
+          terminalModifiersNone(location=top.location),
+          location=top.location),
+        terminalPrefixNeededDefs));
 
   top.parserSpecs = [spec]; -- Note that this is undecorated.
 }
 
-nonterminal ParserComponents with config, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes;
+nonterminal ParserComponents with config, env, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes;
 
 concrete production nilParserComponent
 top::ParserComponents ::=
@@ -55,17 +94,17 @@ top::ParserComponents ::= c1::ParserComponent  c2::ParserComponents
   top.terminalPrefixes = c1.terminalPrefixes ++ c2.terminalPrefixes;
 }
 
-nonterminal ParserComponent with config, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes;
+nonterminal ParserComponent with config, env, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes;
 
 concrete production parserComponent
 top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
 {
   top.pp = m.pp;
   top.moduleNames = m.moduleNames;
-  top.errors := m.errors;
+  top.errors := m.errors ++ mods.errors;
   top.terminalPrefixes = mods.terminalPrefixes;
   
-  mods.env = toEnv(m.defs);
+  mods.env = appendEnv(top.env, toEnv(m.defs));
 }
 
 {-- Have special env built from just this parser component -}
@@ -91,6 +130,7 @@ nonterminal ParserComponentModifier with config, env, grammarName, location, pp,
 
 terminal Prefix_t 'prefix' lexer classes {KEYWORD}; -- not RESERVED
 
+{-
 concrete production prefixParserComponentModifier
 top::ParserComponentModifier ::= 'prefix' t::QName 'with' s::Terminal_t
 {
@@ -112,12 +152,35 @@ top::ParserComponentModifier ::= 'prefix' t::EasyTerminalRef 'with' s::Terminal_
   
   --forwards to prefixParserComponentModifier($1, qName(t.location, if null(t.dcls) then "terminal:not:found" else head(t.dcls).fullName), $3, s, location=top.location);
 }
+-}
 
+concrete production prefixParserComponentModifier
+top::ParserComponentModifier ::= 'prefix' t::QName 'with' s::QName
+{
+  top.pp = "prefix " ++ t.pp ++ " with " ++ s.pp;
+  top.errors := t.lookupType.errors ++ s.lookupType.errors;
+  top.terminalPrefixes = [pair(t.lookupType.fullName, makeCopperName(s.lookupType.fullName))];
+}
+{-
+concrete production prefixQuotedParserComponentModifier
+top::ParserComponentModifier ::= 'prefix' t::EasyTerminalRef 'with' s::EasyTerminalRef
+{
+  top.pp = "prefix " ++ t.pp ++ " with " ++ s.pp;
+  
+  top.errors := t.errors;
+  
+  top.terminalPrefixes =
+    if null(t.dcls) then []
+    else [pair(head(t.dcls).fullName, substring(1, length(s.lexeme)-1, s.lexeme))];
+  
+  --forwards to prefixParserComponentModifier($1, qName(t.location, if null(t.dcls) then "terminal:not:found" else head(t.dcls).fullName), $3, s, location=top.location);
+}
+-}
 
 
 -- Separate bit translating the parser declaration.
-aspect production parserDcl
-top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
+aspect production parserDclBase
+top::AGDcl ::= n::Name t::Type m::ParserComponents
 {
   local className :: String = "P" ++ n.name;
 
