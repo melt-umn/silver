@@ -105,10 +105,13 @@ top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
   top.terminalPrefixes = mods.terminalPrefixes;
   
   mods.env = appendEnv(top.env, toEnv(m.defs));
+  mods.componentGrammarName = head(m.moduleNames);
 }
 
-{-- Have special env built from just this parser component -}
-nonterminal ParserComponentModifiers with config, env, grammarName, location, pp, errors, terminalPrefixes;
+autocopy attribute componentGrammarName::String;
+
+{-- Have special env built from just this parser component and the global env -}
+nonterminal ParserComponentModifiers with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, terminalPrefixes;
 
 concrete production nilParserComponentModifier
 top::ParserComponentModifiers ::=
@@ -126,7 +129,7 @@ top::ParserComponentModifiers ::= h::ParserComponentModifier t::ParserComponentM
   top.terminalPrefixes = h.terminalPrefixes ++ t.terminalPrefixes;
 }
 
-nonterminal ParserComponentModifier with config, env, grammarName, location, pp, errors, terminalPrefixes;
+nonterminal ParserComponentModifier with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, terminalPrefixes;
 
 terminal Prefix_t 'prefix' lexer classes {KEYWORD}; -- not RESERVED
 
@@ -160,6 +163,29 @@ top::ParserComponentModifier ::= 'prefix' t::QName 'with' s::QName
   top.pp = "prefix " ++ t.pp ++ " with " ++ s.pp;
   top.errors := t.lookupType.errors ++ s.lookupType.errors;
   top.terminalPrefixes = [pair(t.lookupType.fullName, makeCopperName(s.lookupType.fullName))];
+}
+
+concrete production prefixAllParserComponentModifier
+top::ParserComponentModifier ::= 'prefix' s::QName
+{
+  local syntax::Syntax = foldr(consSyntax, nilSyntax(), head(searchEnvTree(top.componentGrammarName, top.compiledGrammars)).syntaxAst);
+  syntax.containingGrammar = error("This shouldn't be needed...");
+  syntax.cstEnv = error("This shouldn't be needed...");
+  syntax.cstNTProds = error("This shouldn't be needed...");
+  syntax.prefixesForTerminals = error("This shouldn't be needed...");
+  syntax.univLayout = error("This shouldn't be needed...");
+  local markingTerminals::[Decorated QName] =
+    map(\sd::Decorated SyntaxDcl ->
+          decorate qName(top.location, case sd of syntaxTerminal(n, _, _) -> n end)
+          with {config = top.config;
+                grammarName = top.grammarName;
+                env = top.env;},
+        syntax.allMarkingTerminals);
+
+  top.pp = "prefix " ++ s.pp;
+  top.errors := s.lookupType.errors;
+  top.terminalPrefixes =
+    map(\t::Decorated QName -> pair(t.lookupType.fullName, makeCopperName(s.lookupType.fullName)), markingTerminals);
 }
 {-
 concrete production prefixQuotedParserComponentModifier
