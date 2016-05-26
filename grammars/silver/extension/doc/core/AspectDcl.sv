@@ -3,13 +3,15 @@ grammar silver:extension:doc:core;
 aspect production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody
 {
-  top.docs := [bodilessDclCommentItem("aspect production", id.name, ns.pp, id.location.filename)];
+  top.docs := [ bodilessDclCommentItem("aspect production", id.name, ns.pp, 
+                                       id.location.filename)];
 }
 
 concrete production docAspectProductionDcl
 top::AGDcl ::= comment::DclComment 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody
 {
-  top.docs := [dclCommentItem("aspect production", id.name, ns.pp, id.location.filename, comment)];
+  top.docs := [ dclCommentItem("aspect production", id.name, ns.pp, 
+                               id.location.filename, comment)];
 
   forwards to aspectProductionDcl('aspect', 'production', id, ns, body, location=top.location);
 }
