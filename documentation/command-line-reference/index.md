@@ -7,7 +7,7 @@ menu_weight: 20.0
 
 # Running Silver
 
-If you have followed the [installation guide]({{ "/install-guide/" | prepend: site.sv_wiki_base }}), you have a `silver` script in your `~/bin` which is typically invoked as follows:
+If you have followed the [installation guide]({{ "/silver/doc/install-guide/" | prepend: site.sv_wiki_base }}), you have a `silver` script in your `~/bin` which is typically invoked as follows:
 
 ```
 silver grammar:to:build
@@ -42,7 +42,12 @@ Less common:
   * `--copperdump`
     * By default, a dump file containing information about the parser is generated only when LALR conflicts are detected, to aid in debugging the grammar.  This flag will force a dump to occur even without errors.  This may be useful in debugging parse errors that you think shouldn't be happening: copper reports the parser state, and with the assistance of this information, may reveal what is going wrong.
   * `--warn-all`
-    * Perform some extra analysis. At the time of writing, this includes a modularity analysis that will help find, for example, missing equations.
+    * Perform some extra analysis. This includes a modularity analysis that will help find, for example, missing equations.
+
+      If you want to see the generated flow-type and dependencies, then add the `--dump-flow-graph` flag.
+
+      More information on the modular well-definedness analysis can be found [here](../concepts/modular-well-definedness).
+
   * `-G` _path_
     * Specifies where to store Silver-generated temporary files.  This overrides the value found in `SILVER_GEN`. (And the default is in the `generated` directory where Silver is installed.)
 
@@ -82,7 +87,7 @@ IOVal<Integer> ::= args::[String] ioin::IO
 }
 ```
 
-For an explanation of how IO works in Silver, see [IO Functions]({{ "lib/io/" | prepend: site.sv_wiki_base }}).  The integer value wrapped inside `IOVal` is the exit status of the program (0 is success.)  And of course, the command line arguments are provided as a list of strings.
+For an explanation of how IO works in Silver, see [IO Functions]({{ "/silver/doc/lib/io/" | prepend: site.sv_wiki_base }}).  The integer value wrapped inside `IOVal` is the exit status of the program (0 is success.)  And of course, the command line arguments are provided as a list of strings.
 
 Simple examples of main functions can be found in every tutorial distributed with Silver.
 
