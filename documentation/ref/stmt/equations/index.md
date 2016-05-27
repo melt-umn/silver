@@ -54,7 +54,8 @@ s::Stmt ::= s1::Stmt s2::Stmt
   s.defs = appendEnv (s1.defs, s2.defs) ;
 }
 ```
-> This production defines two statements (which may be compound
+
+This production defines two statements (which may be compound
 statements) in sequence. Here we see that the environment attribute
 `env` on child `s1` is copied down to this child from its parent
 `s`. For `s2`, the environment is computed from the definitions on
@@ -65,9 +66,11 @@ in most imperative languages.
 
 Silver supports many types and operations over those types to write 
 expressions:
+
 + [Numeric expressions](../../expr/numeric)
 + [Boolean expressions](../../expr/booleans), 
 + [comparison expressions](../../expr/comparisons) 
 + [string operations and built-in functions](../../../lib/string)
 + [other built-in functions](../../lib/other/)
+
 are discussed within this Wiki.
