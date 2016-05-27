@@ -1,6 +1,8 @@
 ---
 layout: sv_wiki
-title: Comparison operators
+title: Relational expressions
+menu_title: Relational
+menu_weight: 30
 ---
 
 # Comparison operators
