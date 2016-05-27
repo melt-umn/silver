@@ -1,6 +1,7 @@
 ---
 layout: sv_wiki
 title: Equations
+menu_weight: 10.0
 ---
 
 

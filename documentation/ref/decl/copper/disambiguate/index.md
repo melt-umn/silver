@@ -1,6 +1,8 @@
 ---
 layout: sv_wiki
 title: Disambiguation directives
+menu_title: Disambiguation directives
+menu_weight: 10.0
 ---
 
 
