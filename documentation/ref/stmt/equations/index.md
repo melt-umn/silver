@@ -45,7 +45,7 @@ attribute on the right hand side nonterminals.  Similarly, for
 `value`, which is  computed by adding the values of that same
 attribute on the child nodes. 
 
-> As an example of inherited attributes definitions consider the following example from the file `Stmt.sv` in the `tutorials:simple:abstractsyntax` grammar.
+As an example of inherited attributes definitions consider the following example from the file `Stmt.sv` in the `tutorials:simple:abstractsyntax` grammar.
 ```
 s::Stmt ::= s1::Stmt s2::Stmt 
 {
