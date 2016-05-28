@@ -1,5 +1,7 @@
 grammar silver:modification:copper;
 
+import core:monad;
+
 import silver:extension:easyterminal; -- only Terminal_t, EasyTerminalRef;
 
 terminal Parser_kwd 'parser' lexer classes {KEYWORD}; -- not RESERVED?
@@ -134,42 +136,68 @@ nonterminal ParserComponentModifier with config, env, grammarName, componentGram
 
 terminal Prefix_t 'prefix' lexer classes {KEYWORD}; -- not RESERVED
 
-{-
 concrete production prefixParserComponentModifier
-top::ParserComponentModifier ::= 'prefix' t::QName 'with' s::Terminal_t
+top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::QName
 {
-  top.pp = "prefix " ++ t.pp ++ " with " ++ s.lexeme;
-  top.errors := t.lookupType.errors;
-  top.terminalPrefixes = [pair(t.lookupType.fullName, substring(1, length(s.lexeme)-1, s.lexeme))];
-}
-
-concrete production prefixQuotedParserComponentModifier
-top::ParserComponentModifier ::= 'prefix' t::EasyTerminalRef 'with' s::Terminal_t
-{
-  top.pp = "prefix " ++ t.pp ++ " with " ++ s.lexeme;
-  
-  top.errors := t.errors;
-  
+  top.pp = "prefix " ++ ts.pp ++ " with " ++ s.pp;
+  top.errors := ts.errors ++ s.lookupType.errors;
   top.terminalPrefixes =
-    if null(t.dcls) then []
-    else [pair(head(t.dcls).fullName, substring(1, length(s.lexeme)-1, s.lexeme))];
-  
-  --forwards to prefixParserComponentModifier($1, qName(t.location, if null(t.dcls) then "terminal:not:found" else head(t.dcls).fullName), $3, s, location=top.location);
-}
--}
-
-concrete production prefixParserComponentModifier
-top::ParserComponentModifier ::= 'prefix' t::QName 'with' s::QName
-{
-  top.pp = "prefix " ++ t.pp ++ " with " ++ s.pp;
-  top.errors := t.lookupType.errors ++ s.lookupType.errors;
-  top.terminalPrefixes = [pair(t.lookupType.fullName, makeCopperName(s.lookupType.fullName))];
+    do (bindList, returnList) {
+      t::QName <- ts.prefixNames;
+      td::Decorated QName =
+        decorate t with {
+          config = top.config;
+          grammarName = top.grammarName;
+          env = top.env;
+        };
+      return pair(td.lookupType.fullName, makeCopperName(s.lookupType.fullName));
+    };
   top.liftedAGDcls = emptyAGDcl(location=top.location);
   propagate liftedComponents;
 }
 
-concrete production prefixAllParserComponentModifier
-top::ParserComponentModifier ::= 'prefix' s::QName
+concrete production prefixNewTermModifiersParserComponentModifier
+top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' r::RegExpr tm::TerminalModifiers
+{
+  -- Prefix terminal name isn't based off the prefix right now since that might not be alphanumeric
+  -- TODO make the terminal name based off alphanumeric characters from the regex for easier debugging
+  local terminalName::String = "_Prefix" ++ toString(genInt());
+  top.liftedAGDcls = terminalDclDefault(
+    terminalKeywordModifierNone(location=top.location),
+    name(terminalName, top.location),
+    r, tm,
+    location=top.location);
+  
+  forwards to prefixParserComponentModifier($1, ts, $3, qName(top.location, terminalName), location=top.location);
+}
+
+concrete production prefixNewTermParserComponentModifier
+top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' r::RegExpr
+{
+  forwards to prefixNewTermModifiersParserComponentModifier($1, $2, $3, $4, terminalModifiersNone(location=top.location), location=top.location);
+}
+
+synthesized attribute prefixNames::[QName];
+nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, prefixNames;
+
+concrete production consTerminalPrefixItem
+top::TerminalPrefixItems ::= ts::TerminalPrefixItems ',' t::TerminalPrefixItem
+{
+  top.pp = ts.pp ++ ", " ++ t.pp;
+  top.errors := ts.errors ++ t.errors;
+  top.prefixNames = ts.prefixNames ++ t.prefixNames;
+}
+
+concrete production oneTerminalPrefixItem
+top::TerminalPrefixItems ::= t::TerminalPrefixItem
+{
+  top.pp = t.pp;
+  top.errors := t.errors;
+  top.prefixNames = t.prefixNames;
+}
+
+concrete production allTerminalPrefixItem
+top::TerminalPrefixItems ::=
 {
   local syntax::Syntax = foldr(consSyntax, nilSyntax(), head(searchEnvTree(top.componentGrammarName, top.compiledGrammars)).syntaxAst);
   syntax.containingGrammar = error("This shouldn't be needed...");
@@ -177,58 +205,33 @@ top::ParserComponentModifier ::= 'prefix' s::QName
   syntax.cstNTProds = error("This shouldn't be needed...");
   syntax.prefixesForTerminals = error("This shouldn't be needed...");
   syntax.univLayout = error("This shouldn't be needed...");
-  local markingTerminals::[Decorated QName] =
-    map(\sd::Decorated SyntaxDcl ->
-          decorate qName(top.location, case sd of syntaxTerminal(n, _, _) -> n end)
-          with {config = top.config;
-                grammarName = top.grammarName;
-                env = top.env;},
-        syntax.allMarkingTerminals);
 
-  top.pp = "prefix " ++ s.pp;
-  top.errors := s.lookupType.errors;
-  top.terminalPrefixes =
-    map(\t::Decorated QName -> pair(t.lookupType.fullName, makeCopperName(s.lookupType.fullName)), markingTerminals);
-  top.liftedAGDcls = emptyAGDcl(location=top.location);
-  propagate liftedComponents;
+  top.pp = "";
+  top.errors := [];
+  top.prefixNames =
+    do (bindList, returnList) {
+      sd::Decorated SyntaxDcl <- syntax.allMarkingTerminals;
+      return qName(top.location, case sd of syntaxTerminal(n, _, _) -> n end);
+    };
 }
 
-concrete production prefixAllNewTermParserComponentModifier
-top::ParserComponentModifier ::= 'prefix' r::RegExpr
+nonterminal TerminalPrefixItem with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, prefixNames;
+
+concrete production qNameTerminalPrefixItem
+top::TerminalPrefixItem ::= t::QName
 {
-  forwards to prefixAllNewTermModifiersParserComponentModifier($1, $2, terminalModifiersNone(location=top.location), location=top.location);
+  top.pp = t.pp;
+  top.errors := t.lookupType.errors;
+  top.prefixNames = [t];
 }
 
-concrete production prefixAllNewTermModifiersParserComponentModifier
-top::ParserComponentModifier ::= 'prefix' r::RegExpr tm::TerminalModifiers
+concrete production easyTerminalRefTerminalPrefixItem
+top::TerminalPrefixItem ::= t::EasyTerminalRef
 {
-  -- Prefix terminal name isn't based off the prefix right now since that might not be alphanumeric
-  -- TODO make the terminal name based off alphanumeric characters from the regex for easier debugging
-  local terminalName::String = "_Prefix" ++ toString(genInt());
-  top.liftedAGDcls = terminalDclDefault(
-    terminalKeywordModifierNone(location=top.location),
-    name(terminalName, top.location), 
-    r, tm,
-    location=top.location);
-  
-  forwards to prefixAllParserComponentModifier($1, qName(top.location, terminalName), location=top.location);
-}
-{-
-concrete production prefixQuotedParserComponentModifier
-top::ParserComponentModifier ::= 'prefix' t::EasyTerminalRef 'with' s::EasyTerminalRef
-{
-  top.pp = "prefix " ++ t.pp ++ " with " ++ s.pp;
-  
+  top.pp = t.pp;
   top.errors := t.errors;
-  
-  top.terminalPrefixes =
-    if null(t.dcls) then []
-    else [pair(head(t.dcls).fullName, substring(1, length(s.lexeme)-1, s.lexeme))];
-  
-  --forwards to prefixParserComponentModifier($1, qName(t.location, if null(t.dcls) then "terminal:not:found" else head(t.dcls).fullName), $3, s, location=top.location);
+  top.prefixNames = map(qName(top.location, _), map((.fullName), t.dcls));
 }
--}
-
 
 -- Separate bit translating the parser declaration.
 aspect production parserDclBase
