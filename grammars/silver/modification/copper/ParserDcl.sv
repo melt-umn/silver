@@ -6,8 +6,9 @@ terminal Parser_kwd 'parser' lexer classes {KEYWORD}; -- not RESERVED?
 
 -- TODO: You know, maybe parser specs should get moved over here as well.
 
--- parserDcl now just gets the list of terminals needed to be declared as prefixes then forwards to
+-- parserDcl now just gets the AGDcls needed to be declared for prefixes then forwards to
 -- decls using that list with parserDclBase handling what parserDcl did
+-- Also include the current grammar by default
 concrete production parserDcl
 top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
 {
@@ -15,20 +16,21 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
   
   top.moduleNames = m.moduleNames;
   
-  local terminalPrefixNeededDefs :: [String] = nubBy(stringEq, map(snd, m.terminalPrefixes));
-  forwards to parserDclBase(n, t, m, location=top.location);{-
-    foldr(
-      appendAGDcl(_, _, location=top.location),
-      parserDclBase(n, t, m, location=top.location),
-      map(\n::String ->
-        terminalDclDefault(
-          terminalKeywordModifierNone(location=top.location),
-          -- Prefix terminal name isn't based off the prefix since that might not be alphanumeric
-          name("_Prefix" ++ toString(genInt()), top.location),
-          regExprEasyTerm(terminal(Terminal_t, n), location=top.location),
-          terminalModifiersNone(location=top.location),
+  forwards to
+    appendAGDcl(
+      m.liftedAGDcls,
+      parserDclBase(
+        n, t,
+        consParserComponent(
+          parserComponent(
+            moduleName(qName(top.location, top.grammarName), location=top.location),
+            nilParserComponentModifier(location=top.location),
+            ';',
+            location=top.location),
+          m.liftedComponents,
           location=top.location),
-        terminalPrefixNeededDefs));-}
+        location=top.location),
+      location=top.location);
 }
 
 abstract production parserDclBase
@@ -56,25 +58,14 @@ top::AGDcl ::= n::Name t::Type m::ParserComponents
   production spec :: ParserSpec =
     parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames, m.terminalPrefixes);
   spec.compiledGrammars = top.compiledGrammars;
-  
-  local terminalPrefixNeededDefs :: [String] = nubBy(stringEq, map(snd, m.terminalPrefixes));
-  local terminalPrefixDecl :: AGDcl =
-    foldr(
-      appendAGDcl(_, _, location=top.location),
-      emptyAGDcl(location=top.location),
-      map(\n::String ->
-        terminalDclDefault(
-          terminalKeywordModifierNone(location=top.location),
-          name("_Prefix" ++ toString(genInt()), top.location), -- Prefix terminal name isn't based off the prefix since that might not be alphanumeric
-          regExprEasyTerm(terminal(Terminal_t, n), location=top.location),
-          terminalModifiersNone(location=top.location),
-          location=top.location),
-        terminalPrefixNeededDefs));
 
   top.parserSpecs = [spec]; -- Note that this is undecorated.
 }
 
-nonterminal ParserComponents with config, env, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes;
+synthesized attribute liftedAGDcls::AGDcl;
+synthesized attribute liftedComponents<a>::a;
+
+nonterminal ParserComponents with config, env, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls, liftedComponents<ParserComponents>;
 
 concrete production nilParserComponent
 top::ParserComponents ::=
@@ -83,6 +74,8 @@ top::ParserComponents ::=
   top.moduleNames = [];
   top.errors := [];
   top.terminalPrefixes = [];
+  top.liftedAGDcls = emptyAGDcl(location=top.location);
+  propagate liftedComponents;
 }
 
 concrete production consParserComponent
@@ -92,9 +85,11 @@ top::ParserComponents ::= c1::ParserComponent  c2::ParserComponents
   top.moduleNames = c1.moduleNames ++ c2.moduleNames;
   top.errors := c1.errors ++ c2.errors;
   top.terminalPrefixes = c1.terminalPrefixes ++ c2.terminalPrefixes;
+  top.liftedAGDcls = appendAGDcl(c1.liftedAGDcls, c2.liftedAGDcls, location=top.location);
+  propagate liftedComponents;
 }
 
-nonterminal ParserComponent with config, env, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes;
+nonterminal ParserComponent with config, env, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls, liftedComponents<ParserComponent>;
 
 concrete production parserComponent
 top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
@@ -103,15 +98,17 @@ top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
   top.moduleNames = m.moduleNames;
   top.errors := m.errors ++ mods.errors;
   top.terminalPrefixes = mods.terminalPrefixes;
+  top.liftedAGDcls = mods.liftedAGDcls;
   
   mods.env = appendEnv(top.env, toEnv(m.defs));
   mods.componentGrammarName = head(m.moduleNames);
+  propagate liftedComponents;
 }
 
 autocopy attribute componentGrammarName::String;
 
 {-- Have special env built from just this parser component and the global env -}
-nonterminal ParserComponentModifiers with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, terminalPrefixes;
+nonterminal ParserComponentModifiers with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, terminalPrefixes, liftedAGDcls, liftedComponents<ParserComponentModifiers>;
 
 concrete production nilParserComponentModifier
 top::ParserComponentModifiers ::=
@@ -119,6 +116,8 @@ top::ParserComponentModifiers ::=
   top.pp = "";
   top.errors := [];
   top.terminalPrefixes = [];
+  top.liftedAGDcls = emptyAGDcl(location=top.location);
+  propagate liftedComponents;
 }
 
 concrete production consParserComponentModifier
@@ -127,9 +126,11 @@ top::ParserComponentModifiers ::= h::ParserComponentModifier t::ParserComponentM
   top.pp = h.pp ++ t.pp;
   top.errors := h.errors ++ t.errors;
   top.terminalPrefixes = h.terminalPrefixes ++ t.terminalPrefixes;
+  top.liftedAGDcls = appendAGDcl(h.liftedAGDcls, t.liftedAGDcls, location=top.location);
+  propagate liftedComponents;
 }
 
-nonterminal ParserComponentModifier with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, terminalPrefixes;
+nonterminal ParserComponentModifier with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, terminalPrefixes, liftedAGDcls, liftedComponents<ParserComponentModifier>;
 
 terminal Prefix_t 'prefix' lexer classes {KEYWORD}; -- not RESERVED
 
@@ -163,6 +164,8 @@ top::ParserComponentModifier ::= 'prefix' t::QName 'with' s::QName
   top.pp = "prefix " ++ t.pp ++ " with " ++ s.pp;
   top.errors := t.lookupType.errors ++ s.lookupType.errors;
   top.terminalPrefixes = [pair(t.lookupType.fullName, makeCopperName(s.lookupType.fullName))];
+  top.liftedAGDcls = emptyAGDcl(location=top.location);
+  propagate liftedComponents;
 }
 
 concrete production prefixAllParserComponentModifier
@@ -186,6 +189,29 @@ top::ParserComponentModifier ::= 'prefix' s::QName
   top.errors := s.lookupType.errors;
   top.terminalPrefixes =
     map(\t::Decorated QName -> pair(t.lookupType.fullName, makeCopperName(s.lookupType.fullName)), markingTerminals);
+  top.liftedAGDcls = emptyAGDcl(location=top.location);
+  propagate liftedComponents;
+}
+
+concrete production prefixAllNewTermParserComponentModifier
+top::ParserComponentModifier ::= 'prefix' r::RegExpr
+{
+  forwards to prefixAllNewTermModifiersParserComponentModifier($1, $2, terminalModifiersNone(location=top.location), location=top.location);
+}
+
+concrete production prefixAllNewTermModifiersParserComponentModifier
+top::ParserComponentModifier ::= 'prefix' r::RegExpr tm::TerminalModifiers
+{
+  -- Prefix terminal name isn't based off the prefix right now since that might not be alphanumeric
+  -- TODO make the terminal name based off alphanumeric characters from the regex for easier debugging
+  local terminalName::String = "_Prefix" ++ toString(genInt());
+  top.liftedAGDcls = terminalDclDefault(
+    terminalKeywordModifierNone(location=top.location),
+    name(terminalName, top.location), 
+    r, tm,
+    location=top.location);
+  
+  forwards to prefixAllParserComponentModifier($1, qName(top.location, terminalName), location=top.location);
 }
 {-
 concrete production prefixQuotedParserComponentModifier
