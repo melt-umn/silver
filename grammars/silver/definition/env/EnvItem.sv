@@ -70,7 +70,6 @@ function mapDefaultWrapDcls
   return map(defaultEnvItem, i);
 }
 
-
 function envItemExclude
 Boolean ::= ei::EnvItem  exclude::[String]
 {

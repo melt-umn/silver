@@ -74,6 +74,12 @@ Def ::= sg::String sl::Location fn::String ty::TypeExp
   return valueDef(defaultEnvItem(parserLocalDcl(sg,sl,fn,ty)));
 }
 
+function prefixSeparatorDef
+Def ::= sg::String sl::Location s::String_t
+{
+  return valueDef(defaultEnvItem(prefixSeparatorDcl(sg, sl, s)));
+}
+
 --------------------------------------------------------------------------------
 -- Env.sv
 
