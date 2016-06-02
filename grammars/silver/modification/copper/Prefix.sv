@@ -2,6 +2,7 @@ grammar silver:modification:copper;
 
 import core:monad;
 
+import silver:driver:util only computeDependencies;
 import silver:definition:regex;
 import silver:extension:easyterminal; -- only Terminal_t, EasyTerminalRef;
 
@@ -93,7 +94,16 @@ top::TerminalPrefixItems ::= t::TerminalPrefixItem
 concrete production allTerminalPrefixItem
 top::TerminalPrefixItems ::=
 {
-  local syntax::Syntax = foldr(consSyntax, nilSyntax(), head(searchEnvTree(top.componentGrammarName, top.compiledGrammars)).syntaxAst);
+  -- TODO: We're computing dependencies for MED that are not the correct set
+  -- We *should* be using the dependencies computed for all grammars included in this parser,
+  -- but instead we're just considering the one. This maybe works okay for finding marking tokens
+  -- since conditional exports probably won't introduce new ones, but this is a bug, currently!
+  local med_deps :: [String] = computeDependencies([top.componentGrammarName], top.compiledGrammars);
+
+  production med :: ModuleExportedDefs =
+    moduleExportedDefs(top.location, top.compiledGrammars, med_deps, [top.componentGrammarName], []);
+
+  local syntax::Syntax = foldr(consSyntax, nilSyntax(), med.syntaxAst);
   syntax.containingGrammar = error("This shouldn't be needed...");
   syntax.cstEnv = error("This shouldn't be needed...");
   syntax.cstNTProds = error("This shouldn't be needed...");
