@@ -8,7 +8,7 @@ import silver:modification:copper hiding Disambiguation_kwd, Submits_t, Dominate
 import silver:definition:env;
 import silver:definition:concrete_syntax;
 
-import silver:definition:core only grammarName, location, env, String_t;
+import silver:definition:core only grammarName, location, env;
 
 import silver:util;
 
@@ -31,9 +31,9 @@ top::IDclInfo ::= 'parse_attr' '(' l::ILocation ',' fn::IName ',' t::ITypeRep ')
 }
 
 concrete production aDclInfoPrefixSeparator
-top::IDclInfo ::= 'parse_attr' '(' l::ILocation ',' s::String_t ')'
+top::IDclInfo ::= 'parse_attr' '(' l::ILocation ',' s::IString ')'
 {
-  top.defs = [prefixSeparatorDef(top.grammarName, l.alocation, s)];
+  top.defs = [prefixSeparatorDef(top.grammarName, l.alocation, s.str)];
 }
 
 

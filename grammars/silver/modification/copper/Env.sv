@@ -75,7 +75,7 @@ Def ::= sg::String sl::Location fn::String ty::TypeExp
 }
 
 function prefixSeparatorDef
-Def ::= sg::String sl::Location s::String_t
+Def ::= sg::String sl::Location s::String
 {
   return valueDef(defaultEnvItem(prefixSeparatorDcl(sg, sl, s)));
 }

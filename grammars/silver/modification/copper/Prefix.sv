@@ -57,13 +57,13 @@ top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' t::Stri
   local seperatorLookup::[DclInfo] = getValueDcl("_prefix_seperator", top.env);
   local seperator::String = 
     case seperatorLookup of
-      prefixSeparatorDcl(sg, sl, s) :: _ -> substring(1, length(s.lexeme) - 1, s.lexeme)
+      prefixSeparatorDcl(sg, sl, s) :: _ -> s
     | _ -> ""
     end;
   local prefix::String = substring(1, length(t.lexeme) - 1, t.lexeme);
   local regex::RegExpr =
     regExpr('/', literalRegex(prefix ++ seperator), '/', location=top.location);
-  top.errors <-
+  top.errors <- 
     case seperatorLookup of
       prefixSeparatorDcl(sg, sl, s) :: _ -> []
     | _ -> [wrn(top.location, "Prefix seperator is not defined, using the empty seperator")]
@@ -127,7 +127,7 @@ top::TerminalPrefixItem ::= t::EasyTerminalRef
   top.prefixNames = map(qName(top.location, _), map((.fullName), t.dcls));
 }
 
--- prefix seperator
+-- Prefix seperator
 terminal Separator_kwd 'separator' lexer classes {KEYWORD}; -- not RESERVED?
 
 concrete production prefixSeparatorAGDcl
@@ -135,5 +135,5 @@ top::AGDcl ::= 'prefix' 'separator' s::String_t ';'
 {
   top.pp = s"prefix separator ${s.lexeme};";
   top.errors := []; -- TODO
-  top.defs = [prefixSeparatorDef(top.grammarName, top.location, s)];
+  top.defs = [prefixSeparatorDef(top.grammarName, top.location, substring(1,length(s.lexeme)-1,s.lexeme))];
 }

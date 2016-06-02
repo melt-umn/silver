@@ -112,13 +112,13 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 }
 
 abstract production prefixSeparatorDcl
-top::DclInfo ::= sg::String sl::Location sep::String_t
+top::DclInfo ::= sg::String sl::Location sep::String
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = "_prefix_seperator";
 
-  top.unparse = "_prefix_seperator(" ++ sl.unparse ++ ", " ++ sep.lexeme ++ ")";
+  top.unparse = "_prefix_seperator(" ++ sl.unparse ++ ", \"" ++ escapeString(sep) ++ "\")";
 
   top.typerep = error("_prefix_seperator does not have a type");
 }
