@@ -9,29 +9,40 @@ import silver:extension:easyterminal; -- only Terminal_t, EasyTerminalRef;
 terminal Prefix_t 'prefix' lexer classes {KEYWORD}; -- not RESERVED
 
 concrete production prefixParserComponentModifier
-top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::QName
-{
+top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::TerminalPrefix
+{  
   top.pp = "prefix " ++ ts.pp ++ " with " ++ s.pp;
-  top.errors := ts.errors ++ s.lookupType.errors;
+  top.errors := ts.errors;
   top.terminalPrefixes =
     do (bindList, returnList) {
-      t::QName <- ts.prefixNames;
+      t::QName <- ts.prefixItemNames;
       td::Decorated QName =
         decorate t with {
           config = top.config;
           grammarName = top.grammarName;
           env = top.env;
         };
-      return pair(td.lookupType.fullName, makeCopperName(s.lookupType.fullName));
+      return pair(td.lookupType.fullName, makeCopperName(s.prefixFullName));
     };
-  top.liftedAGDcls = emptyAGDcl(location=top.location);
+  top.liftedAGDcls = s.liftedAGDcls;
 }
 
--- TODO: Move RHS of 'with' to a new nonterminal
-concrete production prefixNewTermModifiersParserComponentModifier
-top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' r::RegExpr tm::TerminalModifiers
+synthesized attribute prefixFullName::String;
+nonterminal TerminalPrefix with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, liftedAGDcls, prefixFullName;
+
+concrete production nameTerminalPrefix
+top::TerminalPrefix ::= s::QName
 {
-  top.pp = "prefix " ++ ts.pp ++ " with " ++ r.pp ++ " " ++ tm.pp;
+  top.pp = s.pp;
+  top.errors := s.lookupType.errors;
+  top.liftedAGDcls = emptyAGDcl(location=top.location);
+  top.prefixFullName = s.lookupType.fullName;
+}
+
+concrete production newTermModifiersTerminalPrefix
+top::TerminalPrefix ::= r::RegExpr tm::TerminalModifiers
+{
+  top.pp = r.pp ++ " " ++ tm.pp;
   -- Prefix terminal name isn't based off the prefix right now since that might not be alphanumeric
   -- TODO make the terminal name based off alphanumeric characters from the regex for easier debugging
   local terminalName::String = "_Prefix" ++ toString(genInt());
@@ -40,20 +51,20 @@ top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' r::RegE
     name(terminalName, top.location),
     r, tm,
     location=top.location);
-  
-  forwards to prefixParserComponentModifier($1, ts, $3, qName(top.location, terminalName), location=top.location);
+  forwards to nameTerminalPrefix(qName(top.location, terminalName), location=top.location);
 }
 
-concrete production prefixNewTermParserComponentModifier
-top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' r::RegExpr
+concrete production newTermTerminalPrefix
+top::TerminalPrefix ::= r::RegExpr
 {
-  forwards to prefixNewTermModifiersParserComponentModifier($1, $2, $3, $4, terminalModifiersNone(location=top.location), location=top.location);
+  top.pp = r.pp;
+  forwards to newTermModifiersTerminalPrefix(r, terminalModifiersNone(location=top.location), location=top.location);
 }
 
-concrete production seperatedPrefixItem
-top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' t::String_t
+concrete production seperatedTerminalPrefix
+top::TerminalPrefix ::= t::String_t
 {
-  top.pp = "prefix " ++ ts.pp ++ " with " ++ t.lexeme;
+  top.pp = t.lexeme;
   local seperatorLookup::[DclInfo] = getValueDcl("_prefix_seperator", top.env);
   local seperator::String = 
     case seperatorLookup of
@@ -68,18 +79,18 @@ top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' t::Stri
       prefixSeparatorDcl(sg, sl, s) :: _ -> []
     | _ -> [wrn(top.location, "Prefix seperator is not defined, using the empty seperator")]
     end;
-  forwards to prefixNewTermParserComponentModifier($1, ts, $3, regex, location=top.location);
+  forwards to newTermTerminalPrefix(regex, location=top.location);
 }
 
-synthesized attribute prefixNames::[QName];
-nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, prefixNames;
+synthesized attribute prefixItemNames::[QName];
+nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, prefixItemNames;
 
 concrete production consTerminalPrefixItem
 top::TerminalPrefixItems ::= t::TerminalPrefixItem ',' ts::TerminalPrefixItems
 {
   top.pp = ts.pp ++ ", " ++ t.pp;
   top.errors := ts.errors ++ t.errors;
-  top.prefixNames = ts.prefixNames ++ t.prefixNames;
+  top.prefixItemNames = ts.prefixItemNames ++ t.prefixItemNames;
 }
 
 concrete production oneTerminalPrefixItem
@@ -87,7 +98,7 @@ top::TerminalPrefixItems ::= t::TerminalPrefixItem
 {
   top.pp = t.pp;
   top.errors := t.errors;
-  top.prefixNames = t.prefixNames;
+  top.prefixItemNames = t.prefixItemNames;
 }
 
 concrete production allTerminalPrefixItem
@@ -111,21 +122,21 @@ top::TerminalPrefixItems ::=
 
   top.pp = "";
   top.errors := [];
-  top.prefixNames =
+  top.prefixItemNames =
     do (bindList, returnList) {
       sd::Decorated SyntaxDcl <- syntax.allMarkingTerminals;
       return qName(top.location, case sd of syntaxTerminal(n, _, _) -> n end);
     };
 }
 
-nonterminal TerminalPrefixItem with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, prefixNames;
+nonterminal TerminalPrefixItem with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, prefixItemNames;
 
 concrete production qNameTerminalPrefixItem
 top::TerminalPrefixItem ::= t::QName
 {
   top.pp = t.pp;
   top.errors := t.lookupType.errors;
-  top.prefixNames = [t];
+  top.prefixItemNames = [t];
 }
 
 concrete production easyTerminalRefTerminalPrefixItem
@@ -133,7 +144,7 @@ top::TerminalPrefixItem ::= t::EasyTerminalRef
 {
   top.pp = t.pp;
   top.errors := t.errors;
-  top.prefixNames = map(qName(top.location, _), map((.fullName), t.dcls));
+  top.prefixItemNames = map(qName(top.location, _), map((.fullName), t.dcls));
 }
 
 -- For now, manually write this to specify priorities between terminals
