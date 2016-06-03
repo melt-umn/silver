@@ -105,9 +105,9 @@ top::IParsersInner ::= l::IParsersInner ',' r::IParser
 }
 
 concrete production aParser
-top::IParser ::= 'parser' '(' l::ILocation ',' g::IName ',' n::IName ',' snt::IName ',' gr::INames ',' fstPfxs::INames ',' sndPfxs::INames ')'
+top::IParser ::= 'parser' '(' l::ILocation ',' g::IName ',' n::IName ',' snt::IName ',' gr::INames ',' fstPfxs::INames ',' sndPfxs::INames ',' addedDcls::ISyntax ')'
 {
-  top.parserSpecs = [parserSpec(l.alocation, g.aname, n.aname, snt.aname, gr.names, zipWith(pair, fstPfxs.names, sndPfxs.names))];
+  top.parserSpecs = [parserSpec(l.alocation, g.aname, n.aname, snt.aname, gr.names, zipWith(pair, fstPfxs.names, sndPfxs.names), addedDcls.syntaxAst)];
 }
 
 

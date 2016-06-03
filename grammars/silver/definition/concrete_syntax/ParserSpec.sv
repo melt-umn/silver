@@ -27,7 +27,7 @@ synthesized attribute terminalPrefixes :: [Pair<String String>];
 
 
 abstract production parserSpec
-top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[String]  terminalPrefixes::[Pair<String String>]
+top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[String]  terminalPrefixes::[Pair<String String>] addedDcls::[SyntaxDcl]
 {
   top.sourceLocation = sl;
   top.sourceGrammar = sg;
@@ -41,12 +41,19 @@ top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[S
   production med :: ModuleExportedDefs =
     moduleExportedDefs(sl, top.compiledGrammars, computeDependencies(grams, top.compiledGrammars), grams, []);
 
-  top.cstAst = cstRoot(fn, snt, foldr(consSyntax, nilSyntax(), med.syntaxAst), terminalPrefixes);
+  top.cstAst = cstRoot(fn, snt, foldr(consSyntax, nilSyntax(), addedDcls ++ med.syntaxAst), terminalPrefixes);
   
   local decomposedTerminalPrefixes :: Pair<[String] [String]> =
     unzipPairs(terminalPrefixes);
   
   top.unparse = "parser(" ++ implode(",", [
-    sl.unparse, quoteString(sg), quoteString(fn), quoteString(snt), unparseStrings(grams), unparseStrings(decomposedTerminalPrefixes.fst), unparseStrings(decomposedTerminalPrefixes.snd)]) ++ ")";
+    sl.unparse,
+    quoteString(sg),
+    quoteString(fn),
+    quoteString(snt),
+    unparseStrings(grams),
+    unparseStrings(decomposedTerminalPrefixes.fst),
+    unparseStrings(decomposedTerminalPrefixes.snd),
+    "[" ++ implode(", ", foldr(consSyntax, nilSyntax(), addedDcls).unparses) ++ "]"]) ++ ")";
 }
 

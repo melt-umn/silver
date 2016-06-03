@@ -25,7 +25,6 @@ top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::QNam
       return pair(td.lookupType.fullName, makeCopperName(s.lookupType.fullName));
     };
   top.liftedAGDcls = emptyAGDcl(location=top.location);
-  propagate liftedComponents;
 }
 
 -- TODO: Move RHS of 'with' to a new nonterminal
@@ -76,7 +75,7 @@ synthesized attribute prefixNames::[QName];
 nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, prefixNames;
 
 concrete production consTerminalPrefixItem
-top::TerminalPrefixItems ::= ts::TerminalPrefixItems ',' t::TerminalPrefixItem
+top::TerminalPrefixItems ::= t::TerminalPrefixItem ',' ts::TerminalPrefixItems
 {
   top.pp = ts.pp ++ ", " ++ t.pp;
   top.errors := ts.errors ++ t.errors;
@@ -137,6 +136,33 @@ top::TerminalPrefixItem ::= t::EasyTerminalRef
   top.prefixNames = map(qName(top.location, _), map((.fullName), t.dcls));
 }
 
+-- For now, manually write this to specify priorities between terminals
+terminal Prefer_t 'prefer' lexer classes {KEYWORD, RESERVED};
+terminal Over_t   'over'   lexer classes {KEYWORD}; -- not RESERVED
+
+concrete production disambiguateParserComponent
+top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermPrecList ';'
+{
+  top.pp = "prefer " ++ t.pp ++ " over " ++ ts.pp;
+  top.moduleNames = [];
+  top.errors := t.lookupType.errors ++ ts.errors;
+  top.terminalPrefixes = [];
+  top.liftedAGDcls =
+    disambiguationGroupDcl(
+      'disambiguate',
+      termPrecListCons(t, ',', ts, location=top.location),
+      actionCode_c(
+        '{',
+        productionStmtsSnoc(
+          productionStmtsNil(location=top.location),
+          pluckDef('pluck', baseExpr(t, location=top.location), ';', location=top.location),
+          location=top.location),
+        '}',
+        location=top.location),
+      location=top.location);
+  top.defs = [];
+}
+
 -- Prefix seperator
 terminal Separator_kwd 'separator' lexer classes {KEYWORD}; -- not RESERVED?
 
@@ -144,6 +170,6 @@ concrete production prefixSeparatorAGDcl
 top::AGDcl ::= 'prefix' 'separator' s::String_t ';'
 {
   top.pp = s"prefix separator ${s.lexeme};";
-  top.errors := []; -- TODO
+  top.errors := []; -- TODO: check for duplicates
   top.defs = [prefixSeparatorDef(top.grammarName, top.location, substring(1,length(s.lexeme)-1,s.lexeme))];
 }
