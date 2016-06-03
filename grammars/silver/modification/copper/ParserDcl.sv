@@ -27,6 +27,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
   liftedAGDcls.env = m.env;
   liftedAGDcls.compiledGrammars = top.compiledGrammars;
   liftedAGDcls.grammarDependencies = top.grammarDependencies;
+  liftedAGDcls.flowEnv = top.flowEnv;
   
   m.env = appendEnv(toEnv(liftedAGDcls.defs ++ m.defs), top.env);
   
