@@ -1,5 +1,7 @@
 grammar silver:modification:copper;
 
+import silver:driver:util only computeDependencies;
+
 terminal Parser_kwd 'parser' lexer classes {KEYWORD}; -- not RESERVED?
 
 -- TODO: You know, maybe parser specs should get moved over here as well.
@@ -29,7 +31,14 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
   liftedAGDcls.grammarDependencies = top.grammarDependencies;
   liftedAGDcls.flowEnv = top.flowEnv;
   
-  m.env = appendEnv(toEnv(liftedAGDcls.defs ++ m.defs), top.env);
+  -- Parser spec grammarDependancies based off grammars included in the parser spec
+  m.grammarDependencies = computeDependencies(m.moduleNames, top.compiledGrammars);
+  
+  -- Compute the module exported defs for all grammars in the parser spec to add to the new environment
+  production med :: ModuleExportedDefs =
+    moduleExportedDefs(top.location, top.compiledGrammars, m.grammarDependencies, m.moduleNames, []);
+  
+  m.env = appendEnv(toEnv(liftedAGDcls.defs ++ med.defs), top.env);
   
   production fName :: String = top.grammarName ++ ":" ++ n.name;
 
@@ -47,12 +56,9 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
   top.parserSpecs = [spec]; -- Note that this is undecorated.
 }
 
--- Just putting these here, for now
-
-
 synthesized attribute liftedAGDcls::AGDcl;
 
-nonterminal ParserComponents with config, env, defs, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls;
+nonterminal ParserComponents with config, env, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls;
 
 concrete production nilParserComponent
 top::ParserComponents ::=
@@ -62,7 +68,6 @@ top::ParserComponents ::=
   top.errors := [];
   top.terminalPrefixes = [];
   top.liftedAGDcls = emptyAGDcl(location=top.location);
-  top.defs = [];
 }
 
 concrete production consParserComponent
@@ -73,10 +78,9 @@ top::ParserComponents ::= c1::ParserComponent  c2::ParserComponents
   top.errors := c1.errors ++ c2.errors;
   top.terminalPrefixes = c1.terminalPrefixes ++ c2.terminalPrefixes;
   top.liftedAGDcls = appendAGDcl(c1.liftedAGDcls, c2.liftedAGDcls, location=top.location);
-  top.defs = c1.defs ++ c2.defs;
 }
 
-nonterminal ParserComponent with config, env, defs, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls;
+nonterminal ParserComponent with config, env, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls;
 
 concrete production parserComponent
 top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
@@ -86,7 +90,6 @@ top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
   top.errors := m.errors ++ mods.errors;
   top.terminalPrefixes = mods.terminalPrefixes;
   top.liftedAGDcls = mods.liftedAGDcls;
-  top.defs = m.defs;
   
   mods.componentGrammarName = head(m.moduleNames);
 }
@@ -94,7 +97,7 @@ top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
 autocopy attribute componentGrammarName::String;
 
 {-- Have special env built from just this parser component and the global env -}
-nonterminal ParserComponentModifiers with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, terminalPrefixes, liftedAGDcls;
+nonterminal ParserComponentModifiers with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, pp, errors, terminalPrefixes, liftedAGDcls;
 
 concrete production nilParserComponentModifier
 top::ParserComponentModifiers ::=
@@ -114,7 +117,7 @@ top::ParserComponentModifiers ::= h::ParserComponentModifier t::ParserComponentM
   top.liftedAGDcls = appendAGDcl(h.liftedAGDcls, t.liftedAGDcls, location=top.location);
 }
 
-nonterminal ParserComponentModifier with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, terminalPrefixes, liftedAGDcls;
+nonterminal ParserComponentModifier with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, pp, errors, terminalPrefixes, liftedAGDcls;
 
 -- Separate bit translating the parser declaration.
 aspect production parserDcl

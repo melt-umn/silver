@@ -2,7 +2,6 @@ grammar silver:modification:copper;
 
 import core:monad;
 
-import silver:driver:util only computeDependencies;
 import silver:definition:regex;
 import silver:extension:easyterminal; -- only Terminal_t, EasyTerminalRef;
 
@@ -83,7 +82,7 @@ top::TerminalPrefix ::= t::String_t
 }
 
 synthesized attribute prefixItemNames::[QName];
-nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, prefixItemNames;
+nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, pp, errors, prefixItemNames;
 
 concrete production consTerminalPrefixItem
 top::TerminalPrefixItems ::= t::TerminalPrefixItem ',' ts::TerminalPrefixItems
@@ -104,14 +103,8 @@ top::TerminalPrefixItems ::= t::TerminalPrefixItem
 concrete production allTerminalPrefixItem
 top::TerminalPrefixItems ::=
 {
-  -- TODO: We're computing dependencies for MED that are not the correct set
-  -- We *should* be using the dependencies computed for all grammars included in this parser,
-  -- but instead we're just considering the one. This maybe works okay for finding marking tokens
-  -- since conditional exports probably won't introduce new ones, but this is a bug, currently!
-  local med_deps :: [String] = computeDependencies([top.componentGrammarName], top.compiledGrammars);
-
   production med :: ModuleExportedDefs =
-    moduleExportedDefs(top.location, top.compiledGrammars, med_deps, [top.componentGrammarName], []);
+    moduleExportedDefs(top.location, top.compiledGrammars, top.grammarDependencies, [top.componentGrammarName], []);
 
   local syntax::Syntax = foldr(consSyntax, nilSyntax(), med.syntaxAst);
   syntax.containingGrammar = error("This shouldn't be needed...");
@@ -171,7 +164,6 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermPrecList ';'
         '}',
         location=top.location),
       location=top.location);
-  top.defs = [];
 }
 
 -- Prefix seperator
