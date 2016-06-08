@@ -5,13 +5,13 @@ import core:monad;
 import silver:definition:regex;
 import silver:extension:easyterminal; -- only Terminal_t, EasyTerminalRef;
 
-terminal Prefix_t 'prefix' lexer classes {KEYWORD}; -- not RESERVED
+terminal Prefix_t 'prefix' lexer classes {KEYWORD, RESERVED};
 
 concrete production prefixParserComponentModifier
 top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::TerminalPrefix
 {  
   top.pp = "prefix " ++ ts.pp ++ " with " ++ s.pp;
-  top.errors := ts.errors;
+  top.errors := ts.errors ++ s.errors;
   top.terminalPrefixes =
     do (bindList, returnList) {
       t::QName <- ts.prefixItemNames;
@@ -43,7 +43,7 @@ top::TerminalPrefix ::= r::RegExpr tm::TerminalModifiers
 {
   top.pp = r.pp ++ " " ++ tm.pp;
   -- Prefix terminal name isn't based off the prefix right now since that might not be alphanumeric
-  -- TODO make the terminal name based off alphanumeric characters from the regex for easier debugging
+  -- TODO make the terminal name based off alphanumeric characters from the regex for easier debugging of parse conflicts
   local terminalName::String = "_Prefix" ++ toString(genInt());
   top.liftedAGDcls = terminalDclDefault(
     terminalKeywordModifierNone(location=top.location),
@@ -70,9 +70,9 @@ top::TerminalPrefix ::= t::String_t
       prefixSeparatorDcl(sg, sl, s) :: _ -> s
     | _ -> ""
     end;
-  local prefix::String = substring(1, length(t.lexeme) - 1, t.lexeme);
+  local givenPrefix::String = substring(1, length(t.lexeme) - 1, t.lexeme);
   local regex::RegExpr =
-    regExpr('/', literalRegex(prefix ++ seperator), '/', location=top.location);
+    regExpr('/', literalRegex(givenPrefix ++ seperator), '/', location=top.location);
   top.errors <- 
     case seperatorLookup of
       prefixSeparatorDcl(sg, sl, s) :: _ -> []
@@ -148,8 +148,8 @@ concrete production disambiguateParserComponent
 top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermPrecList ';'
 {
   top.pp = "prefer " ++ t.pp ++ " over " ++ ts.pp;
-  top.moduleNames = [];
   top.errors := t.lookupType.errors ++ ts.errors;
+  top.moduleNames = [];
   top.terminalPrefixes = [];
   top.liftedAGDcls =
     disambiguationGroupDcl(
@@ -169,10 +169,24 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermPrecList ';'
 -- Prefix seperator
 terminal Separator_kwd 'separator' lexer classes {KEYWORD}; -- not RESERVED?
 
+concrete production prefixSeparatorParserComponent
+top::ParserComponent ::= 'prefix' 'separator' s::String_t ';'
+{
+  top.pp = s"prefix separator ${s.lexeme};";
+  top.errors := [];
+  top.moduleNames = [];
+  top.terminalPrefixes = [];
+  top.liftedAGDcls = prefixSeparatorAGDcl($1, $2, $3, $4, location=top.location);
+}
+
 concrete production prefixSeparatorAGDcl
 top::AGDcl ::= 'prefix' 'separator' s::String_t ';'
 {
   top.pp = s"prefix separator ${s.lexeme};";
-  top.errors := []; -- TODO: check for duplicates
+  top.errors := 
+    case getValueDcl("_prefix_seperator", top.env) of
+      [_] -> []
+    | _ -> [err(top.location, "Duplicate prefix seperator declaration")]
+    end;
   top.defs = [prefixSeparatorDef(top.grammarName, top.location, substring(1,length(s.lexeme)-1,s.lexeme))];
 }
