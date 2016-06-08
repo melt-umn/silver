@@ -8,13 +8,13 @@ nonterminal DocConfigs with header, splitFiles, noDoc, warnings;
 nonterminal DocConfig with header, splitFiles, noDoc;
 
 concrete production config
-top::AGDcls ::= '{@config' items::DocConfigs '@}'
+top::AGDcl ::= '{@config' items::DocConfigs '@}'
 {
   top.docs := [];
   top.docsHeader = items.header;
   top.docsSplit = items.splitFiles;
   top.docsNoDoc = items.noDoc;
-  forwards to nilAGDcls(location=top.location);
+  forwards to emptyAGDcl(location=top.location);
 }
 
 concrete production consConfigs
@@ -79,13 +79,7 @@ top::DocConfig ::= 'no-doc' ':' value::ConfigValue_t
 function cleanDocValue
 String ::= s::String
 {
-  return replace("\\n", "\n", replace("\"", "", replace("\\t", "\t", s)));
+  return substitute("\\n", "\n", substitute("\"", "", substitute("\\t", "\t", s)));
 }
 
--- TODO: Find a more efficient way to do string replacement
-function replace
-String ::= needle::String rep::String haystack::String
-{
-  return implode(rep, explode(needle, haystack));
-}
 

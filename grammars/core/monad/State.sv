@@ -9,12 +9,12 @@ synthesized attribute stateVal<a>::a;
 abstract production bindState
 top::State<s b> ::= st::State<s a> fn::(State<s b> ::= a)
 {
-  local newState::State<s b> = fn(st.stateVal);
-  top.stateVal = newState.stateVal;
-
   st.stateIn = top.stateIn;
+  local newState::State<s b> = fn(st.stateVal);
   newState.stateIn = st.stateOut;
   top.stateOut = newState.stateOut;
+  
+  top.stateVal = newState.stateVal;
 }
 
 abstract production returnState

@@ -1,6 +1,8 @@
 ---
 layout: sv_wiki
 title: Silver
+menu_title: Documentation
+menu_weight: 50.0
 ---
 
 The Silver documentation is currently being migrated from its original
@@ -10,11 +12,11 @@ this is the best source for learning how to use Silver.
 Below are some pointers to help you find your way through the
 documentation. 
 
-* The [installation guide](silver/doc/instal-guide) and [command line
-  reference](silver/doc/command-line-reference) will get you started
+* The [installation guide](install-guide) and [command line
+  reference](command-line-reference) will get you started
   with Silver.
 
-* The [tutorial (TODO)](silver/doc/tutorial) provides a gentle
+* The [tutorial (TODO)](tutorial) provides a gentle
   introduction to attribute grammars generally and Silver
   specifically.  If you are familiar with the attribute grammar
   formalism you may want to just skim this.

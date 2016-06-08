@@ -6,6 +6,18 @@ generated/bin
 generated/ide
 generated/doc
 JARS-BAK
+documentation/gen/core/
+documentation/gen/lib/extcore/
+documentation/gen/silver/analysis/
+documentation/gen/silver/composed/
+documentation/gen/silver/definition/
+documentation/gen/silver/driver/
+documentation/gen/silver/extension/
+documentation/gen/silver/host/
+documentation/gen/silver/langutil/
+documentation/gen/silver/modification/
+documentation/gen/silver/translation/
+documentation/gen/silver/util/
 
 # Editor created backup files
 *~

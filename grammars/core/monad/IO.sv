@@ -1,19 +1,26 @@
 grammar core:monad;
 
-type IOMonad<a> = State<IO a>;
+nonterminal IOMonad<a> with stateIn<IO>, stateOut<IO>, stateVal<a>;
 
 abstract production bindIO
 top::IOMonad<b> ::= st::IOMonad<a> fn::(IOMonad<b> ::= a)
 {
-  -- Using unsafeTrace here to demand the IO token is evaluated before returning the value 
-  top.stateVal = unsafeTrace(forward.stateVal, top.stateOut);
-  forwards to bindState(st, fn);
+  st.stateIn = top.stateIn;
+  local newState::IOMonad<b> = fn(st.stateVal);
+  newState.stateIn = st.stateOut;
+  local stateOut::IO = newState.stateOut;
+  local stateVal::b = newState.stateVal;
+  
+  -- Using unsafeTrace here to demand st is evaluated before evaluating fn
+  top.stateOut = unsafeTrace(stateOut, st.stateOut);
+  top.stateVal = unsafeTrace(stateVal, st.stateOut);
 }
 
 abstract production returnIO
 top::IOMonad<a> ::= x::a
 {
-  forwards to returnState(x);
+  top.stateOut = top.stateIn;
+  top.stateVal = x;
 }
 
 function runIO
@@ -25,8 +32,8 @@ IO ::= st::IOMonad<a> ioIn::IO
 function evalIO
 IOVal<a> ::= st::IOMonad<a> ioIn::IO
 {
-  local res::Pair<IO a> = runState(st, ioIn);
-  return ioval(res.fst, res.snd);
+  st.stateIn = ioIn;
+  return ioval(st.stateOut, st.stateVal);
 }
 
 function unsafeEvalIO
@@ -36,188 +43,139 @@ a ::= st::IOMonad<a>
 }
 
 -- Monadic IO wrappers
--- Some of these have no arguments and could be monad actions (i.e. globals instead of functions)
--- but everything is a function for the sake of consistancy. 
-function printM
-IOMonad<Unit> ::= s::String
+abstract production printM
+top::IOMonad<Unit> ::= s::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    setState(print(s, io));
-  };
+  top.stateOut = print(s, top.stateIn);
+  top.stateVal = unit();
 }
 
-function readLineStdinM
-IOMonad<String> ::=
+abstract production readLineStdinM
+top::IOMonad<String> ::=
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    result::IOVal<String> = readLineStdin(io);
-    setState(result.io);
-    return result.iovalue;
-  };
+  local res::IOVal<String> = readLineStdin(top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
 }
 
-function exitM
-IOMonad<Unit> ::= val::Integer
+abstract production exitM
+top::IOMonad<Unit> ::= val::Integer
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    setState(exit(val, io));
-  };
+  top.stateOut = exit(val, top.stateIn);
+  top.stateVal = unit();
 }
 
-function mkdirM
-IOMonad<Boolean> ::= s::String
+abstract production mkdirM
+top::IOMonad<Boolean> ::= s::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    result::IOVal<Boolean> = mkdir(s, io);
-    setState(result.io);
-    return result.iovalue;
-  };
+  local res::IOVal<Boolean> = mkdir(s, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
 }
 
-function systemM
-IOMonad<Integer> ::= s::String
+abstract production systemM
+top::IOMonad<Integer> ::= s::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    result::IOVal<Integer> = system(s, io);
-    setState(result.io);
-    return result.iovalue;
-  };
+  local res::IOVal<Integer> = system(s, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
 }
 
-function writeFileM
-IOMonad<Unit> ::= file::String contents::String
+abstract production writeFileM
+top::IOMonad<Unit> ::= file::String contents::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    setState(writeFile(file, contents, io));
-  };
+  top.stateOut = writeFile(file, contents, top.stateIn);
+  top.stateVal = unit();
 }
 
-function appendFileM
-IOMonad<Unit> ::= file::String contents::String
+abstract production appendFileM
+top::IOMonad<Unit> ::= file::String contents::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    setState(appendFile(file, contents, io));
-  };
+  top.stateOut = appendFile(file, contents, top.stateIn);
+  top.stateVal = unit();
 }
 
-function fileTimeM
-IOMonad<Integer> ::= s::String
+abstract production fileTimeM
+top::IOMonad<Integer> ::= s::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    result::IOVal<Integer> = fileTime(s, io);
-    setState(result.io);
-    return result.iovalue;
-  };
+  local res::IOVal<Integer> = fileTime(s, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
 }
 
-function isFileM
-IOMonad<Boolean> ::= s::String
+abstract production isFileM
+top::IOMonad<Boolean> ::= s::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    result::IOVal<Boolean> = isFile(s, io);
-    setState(result.io);
-    return result.iovalue;
-  };
+  local res::IOVal<Boolean> = isFile(s, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
 }
 
-function isDirectoryM
-IOMonad<Boolean> ::= s::String
+abstract production isDirectoryM
+top::IOMonad<Boolean> ::= s::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    result::IOVal<Boolean> = isDirectory(s, io);
-    setState(result.io);
-    return result.iovalue;
-  };
+  local res::IOVal<Boolean> = isDirectory(s, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
 }
 
-function readFileM
-IOMonad<String> ::= s::String
+abstract production readFileM
+top::IOMonad<String> ::= s::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    result::IOVal<String> = readFile(s, io);
-    setState(result.io);
-    return result.iovalue;
-  };
+  local res::IOVal<String> = readFile(s, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
 }
 
-function cwdM
-IOMonad<String> ::= 
+abstract production cwdM
+top::IOMonad<String> ::= 
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    result::IOVal<String> = cwd(io);
-    setState(result.io);
-    return result.iovalue;
-  };
+  local res::IOVal<String> = cwd(top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
 }
 
-function envVarM
-IOMonad<String> ::= s::String
+abstract production envVarM
+top::IOMonad<String> ::= s::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    result::IOVal<String> = envVar(s, io);
-    setState(result.io);
-    return result.iovalue;
-  };
+  local res::IOVal<String> = envVar(s, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
 }
 
-function listContentsM
-IOMonad<[String]> ::= s::String
+abstract production listContentsM
+top::IOMonad<[String]> ::= s::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    result::IOVal<[String]> = listContents(s, io);
-    setState(result.io);
-    return result.iovalue;
-  };
+  local res::IOVal<[String]> = listContents(s, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
 }
 
-function deleteFileM
-IOMonad<Boolean> ::= s::String
+abstract production deleteFileM
+top::IOMonad<Boolean> ::= s::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    result::IOVal<Boolean> = deleteFile(s, io);
-    setState(result.io);
-    return result.iovalue;
-  };
+  local res::IOVal<Boolean> = deleteFile(s, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
 }
 
-function deleteTreeM
-IOMonad<Unit> ::= s::String
+abstract production deleteTreeM
+top::IOMonad<Unit> ::= s::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    setState(deleteTree(s, io));
-  };
+  top.stateOut = deleteTree(s, top.stateIn);
+  top.stateVal = unit();
 }
 
-function copyFileM
-IOMonad<Unit> ::= src::String dst::String
+abstract production copyFileM
+top::IOMonad<Unit> ::= src::String dst::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    setState(copyFile(src, dst, io));
-  };
+  top.stateOut = copyFile(src, dst, top.stateIn);
+  top.stateVal = unit();
 }
 
-function touchFileM
-IOMonad<Unit> ::= file::String
+abstract production touchFileM
+top::IOMonad<Unit> ::= file::String
 {
-  return do (bindIO, returnIO) {
-    io::IO <- getState();
-    setState(touchFile(file, io));
-  };
+  top.stateOut = touchFile(file, top.stateIn);
+  top.stateVal = unit();
 }

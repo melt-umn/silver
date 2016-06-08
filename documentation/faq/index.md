@@ -1,6 +1,7 @@
 ---
 layout: sv_wiki
 title: Frequently asked questions
+menu_title: FAQ
 menu_weight: 70.0
 ---
 
