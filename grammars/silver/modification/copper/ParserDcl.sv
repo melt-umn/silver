@@ -6,10 +6,6 @@ terminal Parser_kwd 'parser' lexer classes {KEYWORD}; -- not RESERVED?
 
 -- TODO: You know, maybe parser specs should get moved over here as well.
 
--- TODO: parserDcl now just gets the AGDcls needed to be declared for prefixes then forwards to
--- decls using that list with parserDclBase handling what parserDcl did
--- This means we need to include the current grammar by default
--- These new decls should just get added to the cstAst directly
 concrete production parserDcl
 top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
 {
