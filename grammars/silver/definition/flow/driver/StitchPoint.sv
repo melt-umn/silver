@@ -83,7 +83,7 @@ function projectAttribute
 
 -- Useful for mapping
 function stitchEdgesFor
-[Pair<FlowVertex FlowVertex>] ::= sp::StitchPoint  ntEnv::EnvTree<g:Graph<String>>  prodEnv::EnvTree<ProductionGraph>
+[Pair<FlowVertex FlowVertex>] ::= sp::StitchPoint  ntEnv::EnvTree<FlowType>  prodEnv::EnvTree<ProductionGraph>
 {
   sp.prodGraphs = prodEnv;
   sp.flowTypes = ntEnv;
