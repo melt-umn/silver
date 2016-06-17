@@ -18,6 +18,7 @@ ProductionGraph ::= n::String  l::EnvTree<ProductionGraph>
   return head(lookup);
 }
 
+-- These two functions are used by Inh.sv:
 function expandGraph
 [FlowVertex] ::= v::[FlowVertex]  e::ProductionGraph
 {
@@ -27,7 +28,7 @@ function expandGraph
 function onlyLhsInh
 set:Set<String> ::= s::[FlowVertex]
 {
-  return set:add(foldr(collectInhs, [], s), set:empty(compareString));
+  return set:add(filterLhsInh(s), set:empty(compareString));
 }
 
 {--

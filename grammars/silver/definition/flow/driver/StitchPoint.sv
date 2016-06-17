@@ -75,7 +75,7 @@ function projectAttribute
     -- Turn into inh vertexes (in this production) on targetType
     map(targetType.inhVertex,
       -- Filter down to just LHS Inh in that production, (string names)
-      foldr(collectInhs, [], 
+      filterLhsInh(
         -- Deps of this vertex in that other production
         set:toList(prod.edgeMap(prodType.inhVertex(attr))))));
 }

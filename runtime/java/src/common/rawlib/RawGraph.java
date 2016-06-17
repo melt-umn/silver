@@ -105,6 +105,7 @@ public final class RawGraph {
 			return g;
 		// Note that this clone only the tree map... it's up to us to clone the sets in the values.
 		TreeMap<Object,TreeSet<Object>> ret = (TreeMap<Object,TreeSet<Object>>)g.clone();
+		// This set tracks what elements are safe to mutate in 'ret' (i.e. have been cloned)
 		TreeSet<Object> mutated = new TreeSet<Object>(g.comparator());
 		
 		for(core.NPair elem : new ConsCellCollection<core.NPair>(l)) {
@@ -115,7 +116,9 @@ public final class RawGraph {
 			// So we have a transitively closed graph, currently, and we
 			// suddenly want to add the edge (src, dst), and repair the closure.
 			
+			// Obtain the transitive dependencies of src (which we can change)
 			TreeSet<Object> srcSet = getMutatable(src, ret, mutated);
+			// Transitive dependenceis of dst (need, but won't change)
 			TreeSet<Object> dstSet = ret.get(dst);
 			
 			// Short circuit if edge exists already
@@ -166,7 +169,7 @@ public final class RawGraph {
 		if(setToModify == null) {
 			setToModify = new TreeSet<Object>(ret.comparator());
 		} else {
-			setToModify = (TreeSet<Object>)ret.get(key).clone();
+			setToModify = (TreeSet<Object>)setToModify.clone();
 		}
 		ret.put(key, setToModify);
 		mutated.add(key);

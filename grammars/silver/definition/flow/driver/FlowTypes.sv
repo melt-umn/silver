@@ -110,9 +110,17 @@ function findBrandNewEdges
 function expandVertexFilterTo
 Pair<String [String]> ::= ver::FlowVertex  graph::ProductionGraph
 {
-  return pair(ver.flowTypeName, foldr(collectInhs, [], set:toList(graph.edgeMap(ver)))); -- TODO: faster? using sets
+  return pair(ver.flowTypeName, filterLhsInh(set:toList(graph.edgeMap(ver)))); -- TODO: faster? using sets
 }
 
+{--
+ - Filters vertexes down to just the names of inherited attributes on the LHS
+ -}
+function filterLhsInh
+[String] ::= f::[FlowVertex]
+{
+  return foldr(collectInhs, [], f);
+}
 
 {--
  - Used to filter down to just the inherited attributes
