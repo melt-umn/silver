@@ -24,11 +24,25 @@ public final class RawGraph {
 			return g;
 		// Note that this clone only the tree map... it's up to us to clone the sets in the values.
 		TreeMap<Object,TreeSet<Object>> ret = (TreeMap<Object,TreeSet<Object>>)g.clone();
-		TreeSet<Object> mutated = new TreeSet<Object>(g.comparator());
 		for(core.NPair elem : new ConsCellCollection<core.NPair>(l)) {
 			assert(elem instanceof core.Ppair); // document as an assert why not
+			final Object src = elem.getChild(0);
+			final Object dst = elem.getChild(1);
 			
-			getMutatable(elem.getChild(0), ret, mutated).add(elem.getChild(1));
+			TreeSet<Object> target = ret.get(src);
+			if(target == null) {
+				target = new TreeSet<Object>(g.comparator());
+				ret.put(src, target);
+			} else {
+				// Pointer comparison, essentially
+				if(target == g.get(src)) {
+					// If it's the same object as we started with, clone it.
+					target = (TreeSet<Object>)target.clone();
+					ret.put(src, target);
+				}
+			}
+			
+			target.add(dst);
 		}
 		return ret;
 	}
@@ -103,10 +117,15 @@ public final class RawGraph {
 			TreeMap<Object,TreeSet<Object>> g) {
 		if(l.nil())
 			return g;
-		// Note that this clone only the tree map... it's up to us to clone the sets in the values.
 		TreeMap<Object,TreeSet<Object>> ret = (TreeMap<Object,TreeSet<Object>>)g.clone();
-		// This set tracks what elements are safe to mutate in 'ret' (i.e. have been cloned)
-		TreeSet<Object> mutated = new TreeSet<Object>(g.comparator());
+		// Let's allow every element in the map to be mutated from the start
+		for(Entry<Object, TreeSet<Object>> entry : ret.entrySet()) {
+			entry.setValue((TreeSet<Object>)entry.getValue().clone());
+		}
+		// The above is justified because calling our comparator is actually quite expensive
+		// Anything we can do to reduce the number of calls is good.
+		// Cloning the crap out of graphs way too often is a smaller price to pay than the additional
+		// calls to comparison functions. So, uh, to-do someday: make silver fast. Heh.
 		
 		for(core.NPair elem : new ConsCellCollection<core.NPair>(l)) {
 			assert(elem instanceof core.Ppair); // document as an assert why not
@@ -116,63 +135,36 @@ public final class RawGraph {
 			// So we have a transitively closed graph, currently, and we
 			// suddenly want to add the edge (src, dst), and repair the closure.
 			
-			// Obtain the transitive dependencies of src (which we can change)
-			TreeSet<Object> srcSet = getMutatable(src, ret, mutated);
-			// Transitive dependenceis of dst (need, but won't change)
-			TreeSet<Object> dstSet = ret.get(dst);
+			// Obtain the transitive dependencies of src
+			TreeSet<Object> srcSet = ret.get(src);
 			
-			// Short circuit if edge exists already
-			if(srcSet.contains(dst))
-				continue;
+			if(srcSet == null) {
+				srcSet = new TreeSet<Object>(g.comparator());
+				ret.put(src, srcSet);
+			} else {
+				// Short circuit if edge exists already
+				if(srcSet.contains(dst))
+					continue;				
+			}
+
+			// Transitive dependenceis of dst
+			TreeSet<Object> dstSet = ret.get(dst);
 			
 			// First step: add dst
 			srcSet.add(dst);
 			if(dstSet != null)
 				srcSet.addAll(dstSet);
 			
-			// This completely repairs src's deps to a transitive closure,
+			// This completely repairs srcSet to a transitive closure,
 			// now for the rest of the vertexes...
-			
-			// We're choosing to iterate over keys instead of entries, so
-			// we can re-use getMutatable safely...
-			for(Object key : ret.keySet()) {
-				TreeSet<Object> value = ret.get(key);
-				// Skip if it doesn't have src
-				if(!value.contains(src))
-					continue;
-				// If it does, go try to add all of src to it
-				getMutatable(key, ret, mutated).addAll(srcSet);
+			for(Entry<Object, TreeSet<Object>> entry : ret.entrySet()) {
+				TreeSet<Object> target = entry.getValue();
+				if(target.contains(src)) {
+					target.addAll(srcSet);
+				}
 			}
 		}
 		
 		return ret;
-	}
-	
-	/**
-	 * Get a set that we can mutate, give a key, the graph, 
-	 * and a set of keys that are already mutatable
-	 * 
-	 * @param key  The key (src vertex) we want to mutate
-	 * @param ret  The graph
-	 * @param mutated  The set of keys that have already been cloned
-	 * @return  The set for this key, that we are allowed to mutate
-	 */
-	private static TreeSet<Object> getMutatable(
-			Object key, 
-			TreeMap<Object,TreeSet<Object>> ret, 
-			TreeSet<Object> mutated) {
-		TreeSet<Object> setToModify = ret.get(key);
-		
-		if(mutated.contains(key)) {
-			return setToModify;
-		}
-		if(setToModify == null) {
-			setToModify = new TreeSet<Object>(ret.comparator());
-		} else {
-			setToModify = (TreeSet<Object>)setToModify.clone();
-		}
-		ret.put(key, setToModify);
-		mutated.add(key);
-		return setToModify;
 	}
 }
