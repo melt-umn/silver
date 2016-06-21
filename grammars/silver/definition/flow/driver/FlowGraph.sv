@@ -3,9 +3,9 @@ grammar silver:definition:flow:driver;
 type FlowType = g:Graph<String>;
 
 function findFlowType
-g:Graph<String> ::= prod::String  e::EnvTree<FlowType>
+FlowType ::= prod::String  e::EnvTree<FlowType>
 {
-  local lookup :: [g:Graph<String>] = searchEnvTree(prod, e);
+  local lookup :: [FlowType] = searchEnvTree(prod, e);
   
   return if null(lookup) then g:empty(compareString) else head(lookup);
 }
@@ -18,6 +18,7 @@ ProductionGraph ::= n::String  l::EnvTree<ProductionGraph>
   return head(lookup);
 }
 
+-- These two functions are used by Inh.sv:
 function expandGraph
 [FlowVertex] ::= v::[FlowVertex]  e::ProductionGraph
 {
@@ -27,7 +28,7 @@ function expandGraph
 function onlyLhsInh
 set:Set<String> ::= s::[FlowVertex]
 {
-  return set:add(foldr(collectInhs, [], s), set:empty(compareString));
+  return set:add(filterLhsInh(s), set:empty(compareString));
 }
 
 {--
@@ -57,9 +58,7 @@ Boolean ::= v::FlowVertex  inhSet::set:Set<String>
 function compareFlowVertex
 Integer ::= a::FlowVertex  b::FlowVertex
 {
-  local astr :: String = a.unparse;
-  local bstr :: String = b.unparse;
-  return if astr < bstr then -1 else if astr == bstr then 0 else 1;
+  return if a.unparse < b.unparse then -1 else if a.unparse == b.unparse then 0 else 1;
 }
 
 function createFlowGraph

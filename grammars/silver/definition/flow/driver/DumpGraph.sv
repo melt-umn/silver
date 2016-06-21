@@ -36,6 +36,8 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     else [];
 }
 
+-- Coalesce sequences of pairs with the same key
+-- e.g. "ab,ac,ad,bc,bd -> a[bcd],b[cd]"
 function unList
 [Pair<String [b]>] ::= l::[Pair<String b>]
 {
@@ -52,7 +54,7 @@ function unList
 
 
 abstract production dumpFlowGraphAction
-top::DriverAction ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph]  flowTypes::[Pair<String [g:Graph<String>]>]
+top::DriverAction ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph]  flowTypes::[Pair<String [FlowType]>]
 {
   top.io = 
     writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}", 
@@ -66,7 +68,7 @@ top::DriverAction ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph
 
 
 function generateFlowDotGraph
-String ::= flowTypes::[Pair<String [g:Graph<String>]>]
+String ::= flowTypes::[Pair<String [FlowType]>]
 {
   local nt::String = head(flowTypes).fst;
   local edges::[Pair<String String>] = g:toList(head(head(flowTypes).snd));
@@ -101,18 +103,20 @@ String ::= specs::[ProductionGraph]
 {
   return case specs of
   | [] -> ""
-  | productionGraph(prod, _, _, graph, _, _)::t ->
+  | productionGraph(prod, _, _, graph, suspect, _) :: t ->
       "subgraph \"cluster:" ++ prod ++ "\" {\n" ++ 
-      implode("", map(makeDotArrow(prod, _), g:toList(graph))) ++
+      implode("", map(makeDotArrow(prod, _, ""), g:toList(graph))) ++
+      implode("", map(makeDotArrow(prod, _, " [style=dotted]"), suspect)) ++
       "}\n" ++
       generateDotGraph(t)
   end;
 }
 
+-- "production/flowvertex" -> "production/flowvertex"
 function makeDotArrow
-String ::= p::String e::Pair<FlowVertex FlowVertex>
+String ::= p::String e::Pair<FlowVertex FlowVertex> style::String
 {
-  return "\"" ++ p ++ "/" ++ e.fst.dotName ++ "\" -> \"" ++ p ++ "/" ++ e.snd.dotName ++ "\";\n";
+  return "\"" ++ p ++ "/" ++ e.fst.dotName ++ "\" -> \"" ++ p ++ "/" ++ e.snd.dotName ++ "\"" ++ style ++ ";\n";
 }
 
 
