@@ -68,7 +68,7 @@ public final class Util {
 	 * @param status the exit status code
 	 * @return Does not return.
 	 */
-	public static Object exit(int status) {
+	public static IOToken exit(int status) {
 		throw new SilverExit(status);
 	}
 	
@@ -135,13 +135,13 @@ public final class Util {
 		return (int) ((new File(sb).lastModified()) / 1000);
 	}
 	
-	public static Object touchFile(String sb) {
+	public static IOToken touchFile(String sb) {
 		return setFileTime(sb, currentTime());
 	}
 	
-	public static Object setFileTime(String sb, int time) {
+	public static IOToken setFileTime(String sb, int time) {
 		new File(sb).setLastModified(((long)time) * 1000);
-		return null;
+		return IOToken.singleton;
 	}
 	
 	public static int currentTime() {
@@ -164,10 +164,10 @@ public final class Util {
 		return new File(sb).delete();
 	}
 	
-	public static Object deleteTree(String path) {
+	public static IOToken deleteTree(String path) {
 		// We should consider using walkFileTree, in the future
 		deleteTreeRecursive(Paths.get(path));
-		return null;
+		return IOToken.singleton;
 	}
 	private static void deleteTreeRecursive(Path f) {
 		if(!Files.exists(f, LinkOption.NOFOLLOW_LINKS)) {
@@ -218,9 +218,9 @@ public final class Util {
 	 * 
 	 * @param from A path to the file to copy
 	 * @param to A path to where the file should be copied. May be a directory.
-	 * @return null IO token.
+	 * @return singleton IO token.
 	 */
-	public static Object copyFile(String from, String to) {
+	public static IOToken copyFile(String from, String to) {
 		Path src = Paths.get(from);
 		Path dst = Paths.get(to);
 		try {
@@ -233,7 +233,7 @@ public final class Util {
 			// Unfortunately, we still don't have a better way.
 			throw new RuntimeException(io);
 		}
-		return null;
+		return IOToken.singleton;
 	}
 	
 	/**
@@ -306,9 +306,9 @@ public final class Util {
 	 * 
 	 * @param file The filename
 	 * @param content Either a String or {@link StringCatter} object.
-	 * @return null, the IO object.
+	 * @return singleton IO token.
 	 */
-	public static Object writeFile(String file, Object content) {
+	public static IOToken writeFile(String file, Object content) {
 		try {
 			Writer fout = new FileWriter(file); // already buffered
 			if(content instanceof StringCatter)
@@ -317,7 +317,7 @@ public final class Util {
 				fout.write(content.toString());
 			fout.flush();
 			fout.close();
-			return null;
+			return IOToken.singleton;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -330,9 +330,9 @@ public final class Util {
 	 * 
 	 * @param file The filename
 	 * @param content Either a String or {@link StringCatter} object.
-	 * @return null, the IO object.
+	 * @return singleton IO token.
 	 */
-	public static Object appendFile(String file, Object content) { // TODO: merge with above!
+	public static IOToken appendFile(String file, Object content) { // TODO: merge with above!
 		try {
 			Writer fout = new FileWriter(file, true); // already buffered
 			if(content instanceof StringCatter)
@@ -341,16 +341,16 @@ public final class Util {
 				fout.write(content.toString());
 			fout.flush();
 			fout.close();
-			return null;
+			return IOToken.singleton;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	public static Object print(String sb) {
+	public static IOToken print(String sb) {
 		// TODO: should we avoid demanding stringcatter objects?
 		System.out.print(sb);
-		return null;
+		return IOToken.singleton;
 	}
 
 	/**
@@ -389,10 +389,11 @@ public final class Util {
 	 * 
 	 * @param i First thing to do
 	 * @param o Second thing to do
-	 * @return null, the IO object.
+	 * @return o, the second thing given, which is intended to be the
+	 * IO token.
 	 */
 	public static Object io(Object i, Object o) {
-		return null;
+		return o;
 	}
 
 	private static int i = 0;
