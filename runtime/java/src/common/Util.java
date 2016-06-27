@@ -462,8 +462,8 @@ public final class Util {
 		} else if(o instanceof DecoratedNode) {
 			// For the time being, just undecorate it
 			hackyhackyUnparseNode(((DecoratedNode)o).undecorate(), sb);
-		} else if(o instanceof TerminalRecord) {
-			TerminalRecord t = (TerminalRecord) o;
+		} else if(o instanceof Terminal) {
+			Terminal t = (Terminal) o;
 			sb.append("'" + t.lexeme + "'");
 		} else if(o instanceof StringCatter) {
 			sb.append("\"" + o.toString() + "\"");

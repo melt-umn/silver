@@ -66,8 +66,8 @@ top::TypeExp ::= fn::String params::[TypeExp]
 aspect production terminalTypeExp
 top::TypeExp ::= fn::String
 {
-  top.transType = "common.TerminalRecord";
-  top.transClassType = "common.TerminalRecord";
+  top.transType = "common.Terminal";
+  top.transClassType = "common.Terminal";
 }
 
 aspect production decoratedTypeExp

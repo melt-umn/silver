@@ -130,9 +130,9 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
     "      " ++ convertAssocNXML(modifiers.opAssociation) ++ "\n" ++ -- TODO
     "    </Operator>\n"
     else "") ++
-    "    <Type>common.TerminalRecord</Type>\n" ++ 
+    "    <Type>common.Terminal</Type>\n" ++ 
     "    <Code><![CDATA[\n" ++ 
-    "RESULT = new common.TerminalRecord(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
+    "RESULT = new common.Terminal(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++ 
     "    <InClasses>" ++ modifiers.lexerclassesXML ++ "</InClasses>\n" ++ 
@@ -225,7 +225,7 @@ String ::= ns::Decorated NamedSignature
   return if null(ns.namedInputElements) then ""
   else if length(ns.namedInputElements) > 1 then pfx ++ "multiple_annotation_problem" -- TODO
   else if head(ns.namedInputElements).elementName != "core:location" then pfx ++ "unknown_annotation_type_problem"
-  else pfx ++ "common.TerminalRecord.createSpan(_children, virtualLocation, (int)_pos.getPos())";
+  else pfx ++ "common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos())";
 }
 
 
