@@ -31,6 +31,9 @@ public abstract class Thunk<T> {
 	public T eval() {
 		if(ctx != null) {
 			data = doEval(ctx);
+
+			assert(data != null);
+
 			ctx = null;
 		}
 		return data;
