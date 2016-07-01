@@ -18,8 +18,8 @@ import core.NLocation;
 import core.Ploc;
 import core.Alocation;
 
-class T${className} extends common.Terminal {
-  public T${className}(final String lexeme, final VirtualLocation vl, final int index, final int endIndex) {
+class ${className} extends common.Terminal {
+  public ${className}(final String lexeme, final VirtualLocation vl, final int index, final int endIndex) {
     super(lexeme, vl, index, endIndex);
   }
 }
