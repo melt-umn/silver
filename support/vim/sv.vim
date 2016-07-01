@@ -41,7 +41,8 @@ syn match svlangComment /\v--.*/ 			contains=svlangTodo
 syn match svlangRegex /\v\/((\\\/)|[^/])*\//
 syn region svlangString start=/\v"/ skip=/\v\\"/ end=/\v"|$/	contains=svlangEscapedChar
 syn region svlangString start=/\v'/ skip=/\v\\'/ end=/\v'|$/	contains=svlangEscapedChar
-syn region svlangString start=/\v(s|(pp))"""/ skip=/\v\\"/ end=/\v"""/	contains=svlangEscapedChar
+syn region svlangString start=/\v(s|(pp))"""/ skip=/\v\\"/ end=/\v"""/	contains=svlangEscapedChar,svlangEmbeddedVar
+syn region svlangEmbeddedVar display contained start=/\v\$\{/ skip=/\v\\\}/ end=/\v\}|$/ contains=ALL
 "syn match svlangCharacter /\v\'\\?.\'/			contains=svlangEscapedChar
 syn match svlangEscapedChar display contained /\v\\([\\"\'nrbtf]|\d{1,3}|u\d{1,4})/
 syn match svlangNumeric /\v<(0[xX])?\d+[lL]?>/
