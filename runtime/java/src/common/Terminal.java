@@ -10,7 +10,7 @@ import core.Alocation;
  *
  * @author tedinski
  */
-public final class Terminal {
+public class Terminal {
 	final public StringCatter lexeme;
 	final public NLocation location;
 	
