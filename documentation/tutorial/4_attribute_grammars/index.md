@@ -79,7 +79,136 @@ only to encode the operator precedence and associativity rules. Similarly, there
 versions of the concrete nonterminals `Term_c` and `Factor_c`. There is only one abstract expression
 nonterminal, `Expr`, and an abstract root nonterminal `Root`.
 
-TODO: copy Figures 2, 3, and 4 from the PDF
+Figure 2: Definition of the `pp` attribute on the concrete syntax productions.
+```
+nonterminal Root_c ;
+synthesized attribute pp :: String ;
+attribute pp occurs on Root_c ;
+
+concrete production root_c
+r::Root_c ::= e::Expr_c
+{ r.pp = e.pp;
+}
+
+nonterminal Expr_c with pp ;
+nonterminal Term_c with pp ;
+nonterminal Factor_c with pp ;
+
+concrete production add_c
+sum::Expr_c ::= e::Expr_c '+' t::Term_c
+{ sum.pp = e.pp ++ " + " ++ t.pp ; }
+
+concrete production sub_c
+dff::Expr_c ::= e::Expr_c '-' t::Term_c
+{ dff.pp = e.pp ++ " - " ++ t.pp ; }
+
+concrete production exprTerm_c
+e::Expr_c ::= t::Term_c
+{ e.pp = t.pp ; }
+
+concrete production mul_c
+prd::Term_c ::= t::Term_c '*' f::Factor_c
+{ prd.pp = t.pp ++ " * " ++ f.pp ; }
+
+concrete production div_c
+d::Term_c ::= t::Term_c '/' f::Factor_c
+{ d.pp = t.pp ++ " / " ++ f.pp ; }
+
+concrete production termFactor_c 
+t::Term_c ::= f::Factor_c
+{ t.pp = f.pp ; }
+
+concrete production nested_c
+e::Factor_c ::= '(' inner::Expr_c ')'
+{ e.pp = "(" ++ inner.pp ++ ")" ; }
+
+concrete production integerConstant_c
+ic::Factor_c ::= i::IntLit_t
+{ ic.pp = i.lexeme ; }
+```
+
+Figure 3: Some of the abstract grammar for `tutorial:dc` in file `AbstractSyntax.sv`.
+```
+nonterminal Root with pp;
+
+synthesized attribute value :: Integer occurs on Root;
+
+abstract production root
+r::Root ::= e::Expr
+{ r.pp = e.pp ;
+  r.value = e.value ;
+}
+
+nonterminal Expr with pp, value;
+
+abstract production add
+sum::Expr ::= l::Expr r::Expr
+{ sum.pp = "(" ++ l.pp ++ " + " ++ r.pp ++ ")";
+  sum.value = l.value + r.value ;
+}
+
+abstract production mul
+prd::Expr ::= l::Expr r::Expr
+{ prd.pp = "(" ++ l.pp ++ " * " ++ r.pp ++ ")";
+  prd.value = l.value * r.value ;
+}
+
+abstract production integerConstant
+e::Expr ::= i::IntLit_t
+{ e.pp = i.lexeme ;
+  e.value = toInt(i.lexeme);
+}
+```
+
+Figure 4: Concrete syntax specification of `dc` with higher order attribute generating the abstract
+syntax tree in file `ConcreteSyntax.sv`.
+```
+nonterminal Root_c ;
+synthesized attribute pp :: String ;
+synthesized attribute ast_Root :: Root;
+attribute pp, ast_Root occurs on Root_c ;
+
+concrete production root_c
+r::Root_c ::= e::Expr_c
+{ r.pp = e.pp;
+  r.ast_Root = root(e.ast_Expr);
+}
+
+synthesized attribute ast_Expr :: Expr ;
+nonterminal Expr_c with pp, ast_Expr;
+nonterminal Term_c with pp, ast_Expr;
+nonterminal Factor_c with pp, ast_Expr;
+
+concrete production add_c
+sum::Expr_c ::= e::Expr_c ’+’ t::Term_c
+{ sum.pp = e.pp ++ " + " ++ t.pp ;
+  sum.ast_Expr = add(e.ast_Expr, t.ast_Expr );
+}
+
+concrete production exprTerm_c
+e::Expr_c ::= t::Term_c
+{ e.pp = t.pp ;
+  e.ast_Expr = t.ast_Expr ;
+}
+
+concrete production mul_c
+prd::Term_c ::= t::Term_c ’*’ f::Factor_c
+{ prd.pp = t.pp ++ " * " ++ f.pp ;
+  prd.ast_Expr = mul(t.ast_Expr, f.ast_Expr);
+}
+
+concrete production termFactor_c
+t::Term_c ::= f::Factor_c
+{ t.pp = f.pp ;
+  t.ast_Expr = f.ast_Expr ;
+}
+
+concrete production integerConstant_c
+ic::Factor_c ::= i::IntLit_t
+{ ic.pp = i.lexeme ;
+  ic.ast_Expr = integerConstant(i);
+}
+```
 
 ## Naming conventions
 
