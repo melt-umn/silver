@@ -78,7 +78,39 @@ braces. In Figure 1 these are elided.
 described above. In this case they can be referenced by the quoted string instead of the name
 of the terminal. This sometimes makes for easier reading of the productions.
 
-TODO: copy Figure 1 (Concrete syntax of `dc`) from PDF
+Figure 1: Concrete syntax of `dc`.
+```
+nonterminal Root_c ;
+
+concrete production root_c
+r::Root_c ::= e::Expr_c { }
+
+nonterminal Expr_c, Term_c, Factor_c ;
+
+concrete production add_c 
+sum::Expr_c ::= e::Expr_c ’+’ t::Term_c { }
+
+concrete production sub_c 
+dff::Expr_c ::= e::Expr_c ’-’ t::Term_c { }
+
+concrete production exprTerm_c
+e::Expr_c ::= t::Term_c { }
+
+concrete production mul_c 
+prd::Term_c ::= t::Term_c ’*’ f::Factor_c { }
+
+concrete production div_c
+d::Term_c ::= t::Term_c ’/’ f::Factor_c { }
+
+concrete production termFactor_c
+t::Term_c ::= f::Factor_c { }
+
+concrete production nested_c
+e::Factor_c ::= ’(’ inner::Expr_c ’)’ { }
+
+concrete production integerConstant_c
+ic::Factor_c ::= i::IntLit_t { }
+```
 
 # Parser specification and use
 
