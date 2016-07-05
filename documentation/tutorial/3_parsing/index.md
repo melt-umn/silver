@@ -46,13 +46,13 @@ and the following sequence of tokens, possibly produced by a scanner.
 The following syntax tree is a valid "parse tree" for this sequence of tokens as the tree conforms to
 the restrictions placed on the grammar.
 
-TODO: copy diagram from PDF.
+![diagram1](parse_tree_1.png)
 
 While this tree is a perfectly fine representation of the structure in the sample expression, the
 following tree also conforms to the grammar and can be generated from the same set of sample
 tokens:
 
-TODO: copy diagram from PDF.
+![diagram2](parse_tree_2.png)
 
 The problem is that the grammar given above is *ambiguous*. Such grammars have more than one
 tree for a given input and are thus not suited as grammars from which parsers can be built. The tree
