@@ -15,12 +15,14 @@ package ${makeName(top.grammarName)};
 
 import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;
 import core.NLocation;
-import core.Ploc;
-import core.Alocation;
 
-class ${className} extends common.Terminal {
+public class ${className} extends common.Terminal {
   public ${className}(final String lexeme, final VirtualLocation vl, final int index, final int endIndex) {
     super(lexeme, vl, index, endIndex);
+  }
+
+  public ${className}(final common.StringCatter lexeme, final NLocation location) {
+    super(lexeme, location);
   }
 }
 
