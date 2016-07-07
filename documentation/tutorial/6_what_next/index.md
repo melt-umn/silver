@@ -1,7 +1,8 @@
 ---
 layout: sv_wiki
 title: What next?
-menu_title: What next?
+menu_title: What next
+menu_weight: 60.0
 ---
 
 After reading this tutorial the reader will hopefully have a reasonable first impression of how Silver

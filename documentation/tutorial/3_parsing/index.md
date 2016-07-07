@@ -2,6 +2,7 @@
 layout: sv_wiki
 title: Parsing
 menu_title: Parsing
+menu_weight: 30.0
 ---
 
 Parsing is the process of discovering the syntactic structure of the program in the linear (unstructured)
@@ -79,6 +80,7 @@ described above. In this case they can be referenced by the quoted string instea
 of the terminal. This sometimes makes for easier reading of the productions.
 
 Figure 1: Concrete syntax of `dc`.
+
 ```
 nonterminal Root_c ;
 

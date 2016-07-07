@@ -2,6 +2,7 @@
 layout: sv_wiki
 title: Attribute Grammars
 menu_title: Attribute Grammars
+menu_weight: 40.0
 ---
 
 Attribute grammars are formal specifications that can be used to define the semantics, a *meaning*
@@ -80,6 +81,7 @@ versions of the concrete nonterminals `Term_c` and `Factor_c`. There is only one
 nonterminal, `Expr`, and an abstract root nonterminal `Root`.
 
 Figure 2: Definition of the `pp` attribute on the concrete syntax productions.
+
 ```
 nonterminal Root_c ;
 synthesized attribute pp :: String ;
@@ -128,6 +130,7 @@ ic::Factor_c ::= i::IntLit_t
 ```
 
 Figure 3: Some of the abstract grammar for `tutorial:dc` in file `AbstractSyntax.sv`.
+
 ```
 nonterminal Root with pp;
 
@@ -162,6 +165,7 @@ e::Expr ::= i::IntLit_t
 
 Figure 4: Concrete syntax specification of `dc` with higher order attribute generating the abstract
 syntax tree in file `ConcreteSyntax.sv`.
+
 ```
 nonterminal Root_c ;
 synthesized attribute pp :: String ;

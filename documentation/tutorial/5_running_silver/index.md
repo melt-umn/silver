@@ -2,6 +2,7 @@
 layout: sv_wiki
 title: Running Silver and the generated language translators
 menu_title: Running Silver
+menu_weight: 50.0
 ---
 
 # Running Silver

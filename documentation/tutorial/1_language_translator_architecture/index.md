@@ -2,6 +2,7 @@
 layout: sv_wiki
 title: The architecture and components of a language translator
 menu_title: Language Translator Architecture
+menu_weight: 10.0
 ---
 
 A compiler or source-to-source translator are tools that read in a text file containing a program and
