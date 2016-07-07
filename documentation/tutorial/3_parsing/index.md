@@ -79,6 +79,7 @@ described above. In this case they can be referenced by the quoted string instea
 of the terminal. This sometimes makes for easier reading of the productions.
 
 Figure 1: Concrete syntax of `dc`.
+
 ```
 nonterminal Root_c ;
 
