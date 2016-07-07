@@ -2,6 +2,7 @@
 layout: sv_wiki
 title: Attribute Grammars
 menu_title: Attribute Grammars
+menu_weight: 40.0
 ---
 
 Attribute grammars are formal specifications that can be used to define the semantics, a *meaning*

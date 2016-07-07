@@ -2,6 +2,7 @@
 layout: sv_wiki
 title: Parsing
 menu_title: Parsing
+menu_weight: 30.0
 ---
 
 Parsing is the process of discovering the syntactic structure of the program in the linear (unstructured)

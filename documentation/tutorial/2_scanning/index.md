@@ -2,6 +2,7 @@
 layout: sv_wiki
 title: Scanning
 menu_title: Scanning
+menu_weight: 20.0
 ---
 
 The role of the scanner is to take the program text as input and recognize the keywords, constants,
