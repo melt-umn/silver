@@ -1,5 +1,7 @@
 grammar silver:definition:concrete_syntax:ast;
 
+imports silver:translation:java:core only makeTerminalName;
+
 -- For looking syntax elements up by name.
 synthesized attribute cstDcls :: [Pair<String Decorated SyntaxDcl>];
 autocopy attribute cstEnv :: EnvTree<Decorated SyntaxDcl>;
@@ -130,9 +132,9 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
     "      " ++ convertAssocNXML(modifiers.opAssociation) ++ "\n" ++ -- TODO
     "    </Operator>\n"
     else "") ++
-    "    <Type>common.Terminal</Type>\n" ++ 
+    "    <Type>" ++ makeTerminalName(n) ++ "</Type>\n" ++
     "    <Code><![CDATA[\n" ++ 
-    "RESULT = new common.Terminal(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
+    "RESULT = new " ++ makeTerminalName(n) ++ "(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++ 
     "    <InClasses>" ++ modifiers.lexerclassesXML ++ "</InClasses>\n" ++ 
