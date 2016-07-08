@@ -24,6 +24,20 @@ public class ${className} extends common.Terminal {
   public ${className}(final common.StringCatter lexeme, final NLocation location) {
     super(lexeme, location);
   }
+
+  @Override
+  public String getName() { return "${className}"; }
+
+  private static String[] lexerclasses = null;
+  @Override
+  public String[] getLexerClasses() {
+    // Avoid doing more work at class-load time, in case we don't need this
+    if (lexerclasses == null) {
+      // FIXME: get the real lexerclasses
+      lexerclasses = new String[] {"some:class", "z:another:class"};
+    }
+    return lexerclasses;
+  }
 }
 
 """)];

@@ -10,7 +10,7 @@ import core.Alocation;
  *
  * @author tedinski
  */
-public class Terminal {
+public abstract class Terminal {
 	final public StringCatter lexeme;
 	final public NLocation location;
 	
@@ -89,4 +89,18 @@ public class Terminal {
 		// TODO: a better error, maybe? Eh, it should never happen.
 		throw new RuntimeException("Attempting to extract location from locationless object");
 	}
+
+	/**
+	 * Obtains the type of this terminal.
+	 * @returns The full name of this terminal type (e.g.
+	 *   "silver:definition:core:Id_t")
+	 */
+	public abstract String getName();
+
+	/**
+	 * Obtains the lexer classes this terminal belongs to.
+	 * @returns The classes, as an array of interned strings in sorted
+	 *   order.
+	 */
+	public abstract String[] getLexerClasses();
 }
