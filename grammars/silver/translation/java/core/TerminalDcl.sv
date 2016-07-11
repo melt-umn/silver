@@ -1,6 +1,7 @@
 grammar silver:translation:java:core;
 
 imports silver:definition:concrete_syntax;
+imports silver:modification:copper;
 
 aspect production terminalDclDefault
 top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr
@@ -8,6 +9,9 @@ tm::TerminalModifiers
 {
   local className :: String = "T" ++ id.name;
 
+--  local fName :: String = top.grammarName ++ ":" ++ id.name;
+
+  local lexerClassesStr :: String = implode(", ", map(quote, tm.lexerClasses));
 
   top.genFiles := [pair(className ++ ".java",
 s"""
@@ -26,15 +30,14 @@ public class ${className} extends common.Terminal {
   }
 
   @Override
-  public String getName() { return "${className}"; }
+  public String getName() { return "${fName}"; }
 
   private static String[] lexerclasses = null;
   @Override
   public String[] getLexerClasses() {
     // Avoid doing more work at class-load time, in case we don't need this
     if (lexerclasses == null) {
-      // FIXME: get the real lexerclasses
-      lexerclasses = new String[] {"some:class", "z:another:class"};
+      lexerclasses = new String[] {${lexerClassesStr}};
     }
     return lexerclasses;
   }
