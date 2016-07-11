@@ -1,25 +1,12 @@
 #!/bin/bash
 
-# OS-specific checks for presence of greadlink
-case `uname` in
-*Darwin*)
-  READLINK=greadlink
-  GREADLINKLOCATION=`which greadlink`
-  if [ -z ${GREADLINKLOCATION} ]; then
-    # install should have complained already, but maybe configuration changed
-    echo "Missing greadlink. Please 'brew install coreutils'"
-    exit 1
-  fi
-  ;;
-*)
-  READLINK=readlink
-  ;;
-esac
+# ~/bin/silver should be a link to somewhere, find out where!
+ME=$(readlink "${BASH_SOURCE}")
 
-ME=$("$READLINK" -f "${BASH_SOURCE}")
-
-# The Silver Jar will expect this to be set:
+# Set our home
 export SILVER_HOME=${ME/support\/bin\/silver//}
+
+# Find the silver jar
 SILVER="$SILVER_HOME/jars/RunSilver.jar"
 
 if [ ! -f "$SILVER" ]; then
@@ -27,13 +14,8 @@ if [ ! -f "$SILVER" ]; then
   exit 2
 fi
 
-# Set flags if not overriden in, say, user shell profile
-if [ -z "$SVJVM_FLAGS" ]; then
-  # Stack: 4M should be sufficient for nearly everything. In fact, 2M may be...
-  # Heap: 1800M just because most systems should have at least 2gb these days...
-  SVJVM_FLAGS="-Xmx1800M -Xss4M"
-fi
-
+# Set flags if not overriden in environment
+SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx1800M -Xss6M"}
 
 java $SVJVM_FLAGS -jar "$SILVER" "$@" && ant
 

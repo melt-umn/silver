@@ -80,9 +80,16 @@ global g5 :: g:Graph<Integer> =
 global g6 :: g:Graph<Integer> =
   g:repairClosure([pair(6,1)], g4);
 
+global g7 :: g:Graph<Integer> =
+  g:repairClosure([pair(3,1)], g4);
+
+global g8 :: g:Graph<Integer> =
+  g:repairClosure([pair(3,1), pair(6, 4)], g4);
+
 equalityTest ( length(g:toList(g3)), 5, Integer, core_tests ) ;
 equalityTest ( length(g:toList(g4)), (0 + 1 + 2 + 3 + 4 + 5), Integer, core_tests ) ;
 equalityTest ( length(g:toList(g5)), (6 * 6), Integer, core_tests ) ;
 equalityTest ( length(g:toList(g6)), (6 * 6), Integer, core_tests ) ;
-
+equalityTest ( length(g:toList(g7)), 21, Integer, core_tests ) ;
+equalityTest ( length(g:toList(g8)), 27, Integer, core_tests ) ;
 

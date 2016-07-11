@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eu
 
 # just run this script, no parameters or options.
 # One new option: --newcore, for when the core FFI stuff has to change in tandem with the runtime
