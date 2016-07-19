@@ -103,3 +103,8 @@ silver$ ./update
 ```
 
 This will pull the latest changes, and update your working copy. It will also download the latest jars (which may be necessary! Silver is written in Silver, so there can be bootstrapping issues) and clear out any generated files, which may now be stale with the new version.
+
+## Building it
+
+
+See [here](/silver/doc/dev/building).
