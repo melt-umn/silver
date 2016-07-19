@@ -22,7 +22,7 @@ brew install coreutils ant
 
 # Getting Silver
 
-The **latest release** can be found [here](https://github.com/melt-umn/silver/releases).
+The **latest release** can be found [here](/downloads).
 
 To use the bleeding edge from version control, [see below](InstallGuide#Using_the_latest_development_version.md).
 
