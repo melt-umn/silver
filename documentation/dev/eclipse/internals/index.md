@@ -50,7 +50,7 @@ We contribute a "nature" (a flag, essentially, that manages how building works) 
 
 This code is generated from an `IdeSpec` in grammar `silver:modification:impide:spec`.
 
-You can see the class implementing the Eclipse builder and nature (this does not make use of IMP at all) is from the Silver-Eclipse runtime (e.g. edu.umn.cs.melt.ide.imp.builders.Nature). Note that here we're passing data to this class (in particular, the name of the builder is given as a parameter, `silver.composed.idetest.builder`. You can see that infromation extracted and used in the `Nature` class referenced.)
+You can see the class implementing the Eclipse builder and nature (this does not make use of IMP at all) is from the Silver-Eclipse runtime (e.g. edu.umn.cs.melt.ide.imp.builders.Nature). Note that here we're passing data to this class (in particular, the name of the builder is given as a parameter, `silver.composed.idetest.builder`. You can see that information extracted and used in the `Nature` class referenced.)
 
 If we take a look at the implementation of the referenced `Builder` class from the runtime, we can see how the builder actually gets called (with lots of code omitted):
 
@@ -131,11 +131,11 @@ public ICopperTokenClassifier getTokenClassifier() {
 }
 private silver.composed.idetest.copper.parser.Parser_silver_composed_idetest_svParse parser = new silver.composed.idetest.copper.parser.Parser_silver_composed_idetest_svParse();
 @Override
-public IdeParseResult<Node, CopperToken> parse(Reader input, String filename) throws CopperParserException, IOException {
+public IdeParseResult<Node> parse(Reader input, String filename) throws CopperParserException, IOException {
 	// In the long run, maybe we should have a getParser() rather than parse() so things could be concurrent... TODO
 	synchronized(parser) {
 		parser.reset();
-		return new IdeParseResult<Node, CopperToken>((Node)parser.parse(input, filename), parser.getTokens());
+		return new IdeParseResult<Node>((Node)parser.parse(input, filename), parser.getTokens());
 	}
 }
 ```
