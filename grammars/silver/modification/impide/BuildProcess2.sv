@@ -20,7 +20,7 @@ top::DriverAction ::= grams::EnvTree<Decorated RootSpec> ide::IdeSpec ideGenPath
   local io1::IO = deleteTree(ideGenPath, io0);
   local io2::IO =
     mkdirs(s"${ideGenPath}/plugin/src/${pkgToPath(pkgName)}/",
-      ["imp/coloring", "eclipse/property", "eclipse/wizard/newproject", "eclipse/wizard/newfile", "copper/parser"], io1);
+      ["imp/coloring", "eclipse/property", "eclipse/wizard/newproject", "eclipse/wizard/newfile"], io1);
   local io3::IO = writeFiles(ideGenPath ++ "/plugin/", ide.pluginFiles, io2);
 
   top.io = io3;

@@ -294,8 +294,6 @@ public class Plugin implements BundleActivator {
     getPropertyProvider(package, idePropDcls, "property")),
   pair(s"${pluginPkgPath}eclipse/wizard/newproject/PropertyGenerator.java",
     getPropertyGenerator(package, idePropDcls, "newproject")),
-  pair(s"${pluginPkgPath}copper/parser/${top.pluginParserClass}.copper",
-    ast.nxmlCopper),
   pair(s"${pluginPkgPath}imp/coloring/${top.pluginParserClass}_TokenClassifier.java",
     getTokenClassifier(package, ast.fontList, ast.termFontPairList, top.pluginParserClass))
   ] ++
