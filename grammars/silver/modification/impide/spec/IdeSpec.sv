@@ -67,8 +67,6 @@ top::IdeSpec ::=
   local pluginPkgPath :: String = s"src/${grammarToPath(grammarName)}";
 
   local ast :: SyntaxRoot = pspec.cstAst;
-  ast.jPkgName = package;
-  ast.jParserName = top.pluginParserClass;
 
   local funcs :: IdeFunctions = foldr(consIdeFunction, nilIdeFunction(), ideFuncDcls);
   funcs.bundle = bundle;
