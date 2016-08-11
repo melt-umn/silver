@@ -65,6 +65,10 @@ s"""    <StartLayout>${univLayout}</StartLayout>
 s"""    <ClassAuxiliaryCode><Code><![CDATA[
           protected List<common.Terminal> tokenList = null;
 
+          public void reset() {
+            tokenList = new ArrayList<common.Terminal>();
+          }
+
           public List<common.Terminal> getTokens() {
             return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
           }
@@ -85,7 +89,7 @@ s"""    <ClassAuxiliaryCode><Code><![CDATA[
 
 s"""    <ParserInitCode>
       <Code><![CDATA[
-        tokenList = new ArrayList<common.Terminal>();
+        reset();
       ]]></Code>
     </ParserInitCode>
     <Preamble>

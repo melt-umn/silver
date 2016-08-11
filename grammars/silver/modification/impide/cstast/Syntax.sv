@@ -44,7 +44,7 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
     -- First element: full qualifier name. E.g. host$silver_definition_core_Ident_t
     -- Actually, when isUnitary=true, then we don't need the host$ bit...
     -- Second element: font name. Either from terminal, otherwise from *some* lexer class.
-    pair(makeCopperName(n),
+    pair(n,
       if modifiers.fontAttr == "" then modifiers.fontAttrFromClass else modifiers.fontAttr)];
   
   top.nxmlCopper =

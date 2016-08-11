@@ -14,11 +14,10 @@ import org.eclipse.imp.services.ILanguageSyntaxProperties;
 import org.eclipse.jface.text.IRegion;
 
 import common.Node;
+import common.Terminal;
 
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
-import edu.umn.cs.melt.ide.copper.CopperToken;
-import edu.umn.cs.melt.ide.copper.IToken;
 import edu.umn.cs.melt.ide.copper.SourcePositionLocator;
 import edu.umn.cs.melt.ide.impl.SVRegistry;
 
@@ -33,13 +32,13 @@ import edu.umn.cs.melt.ide.impl.SVRegistry;
 public class ParseController extends ParseControllerBase {
 	
 	private SimpleAnnotationTypeInfo fSimpleAnnotationTypeInfo;
-	private SourcePositionLocator<Node, IToken> locator;
-	private IdeParseResult<Node, CopperToken> lastSuccess;
+	private SourcePositionLocator<Node> locator;
+	private IdeParseResult<Node> lastSuccess;
 	
 	public ParseController() {
 		super(SVRegistry.get().name());
 		fSimpleAnnotationTypeInfo = new SimpleAnnotationTypeInfo();
-		locator = new SourcePositionLocator<Node, IToken>(this);
+		locator = new SourcePositionLocator<Node>(this);
 	}
 	
 	/**
@@ -66,7 +65,7 @@ public class ParseController extends ParseControllerBase {
 			lastSuccess = null;
 			handler.clearMessages();
 			Reader reader = new StringReader(input);
-			IdeParseResult<Node, CopperToken> result = SVRegistry.get().parse(reader, getPath().toFile().getName());
+			IdeParseResult<Node> result = SVRegistry.get().parse(reader, getPath().toFile().getName());
 			lastSuccess = result;
 			return fCurrentAst = result.getTree();
 		} catch (CopperSyntaxError e) {

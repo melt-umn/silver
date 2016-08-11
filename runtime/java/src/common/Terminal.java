@@ -55,6 +55,12 @@ public abstract class Terminal {
 	public StringCatter getFilename() {
 		return (StringCatter)getFromLoc(core.Init.core_filename__ON__core_Location);
 	}
+	public Integer getStartOffset() {
+		return (Integer)getFromLoc(core.Init.core_index__ON__core_Location);
+	}
+	public Integer getEndOffset() {
+		return (Integer)getFromLoc(core.Init.core_endIndex__ON__core_Location);
+	}
 	
 	// This is a utility that I put here because why not. Perhaps it should be moved?
 	public static NLocation span(final NLocation a, final NLocation b) {

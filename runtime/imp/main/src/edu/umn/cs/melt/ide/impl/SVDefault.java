@@ -12,8 +12,7 @@ import common.StringCatter;
 import core.NIOVal;
 import core.Pioval;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
-import edu.umn.cs.melt.ide.copper.CopperToken;
-import edu.umn.cs.melt.ide.copper.coloring.ICopperTokenClassifier;
+import edu.umn.cs.melt.ide.copper.coloring.ITokenClassifier;
 import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
 import edu.umn.cs.melt.ide.imp.services.IdeParseResult;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
@@ -45,9 +44,9 @@ public abstract class SVDefault implements SVInterface {
 	@Override
 	public abstract IPropertyPageTab[] getPropertyTabs();
 	@Override
-	public abstract ICopperTokenClassifier getTokenClassifier();
+	public abstract ITokenClassifier getTokenClassifier();
 	@Override
-	public abstract IdeParseResult<Node, CopperToken> parse(Reader input, String filename) throws CopperParserException, IOException;
+	public abstract IdeParseResult<Node> parse(Reader input, String filename) throws CopperParserException, IOException;
 	
 	@Override
 	public NIOVal build(IProject project, ConsCell properties, Object iotoken) {
