@@ -1,6 +1,7 @@
 ---
 layout: sv_wiki
 title: Eclipse IDE decl
+menu_weight: 20.0
 ---
 
 First, I suggest following the Getting Started guide to make sure you're able to build the Silver plugin for eclipse. That'll shake out any issues with the toolchain (e.g. not having the right version of maven, or having an incompatible eclipse version, if there is such a thing.)

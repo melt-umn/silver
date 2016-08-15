@@ -1,6 +1,7 @@
 ---
 layout: sv_wiki
 title: Eclipse internals
+menu_weight: 30.0
 ---
 
 Understanding the eclipse plugin generation part of Silver requires understanding quite a lot of layers of abstraction and tooling that are an essential part of how eclipse plugins work. This is a rough, short guide.
