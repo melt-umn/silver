@@ -17,6 +17,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Platform;
 
 import common.ConsCell;
+import common.IOToken;
 import common.StringCatter;
 import common.javainterop.ConsCellCollection;
 import core.NIOVal;
@@ -36,19 +37,19 @@ public final class Util {
 
 	/* IDE Console */
 	
-	public static Object info(String msg) {
+	public static IOToken info(String msg) {
 		Console.getConsoleLoggingStream().info(msg);
-		return null;
+		return IOToken.singleton;
 	}
 	
-	public static Object error(String msg){
+	public static IOToken error(String msg){
 		Console.getConsoleLoggingStream().error(msg);
-		return null;
+		return IOToken.singleton;
 	}
 	
 	/* Apache Ant tool */
 	
-	public static Object ant(StringCatter buildFile, StringCatter arguments, StringCatter target){
+	public static IOToken ant(StringCatter buildFile, StringCatter arguments, StringCatter target){
 		
 		AntRunner runner = new AntRunner();
 		runner.setBuildFileLocation(buildFile.toString());
@@ -62,7 +63,7 @@ public final class Util {
 			e.printStackTrace();
 		}
 		
-		return null;
+		return IOToken.singleton;
 	}
 	
 	/* Project-related operations */
@@ -73,7 +74,7 @@ public final class Util {
 	 * 
 	 * @param projectName  The name of the project to refresh
 	 */
-	public static Object refresh(StringCatter projectName) {
+	public static IOToken refresh(StringCatter projectName) {
 		
 		try {
 			ResourcesPlugin.getWorkspace().getRoot().getProject(projectName.toString()).refreshLocal(IResource.DEPTH_INFINITE, null);
@@ -82,7 +83,7 @@ public final class Util {
 			e.printStackTrace();
 		}
 				
-		return null;
+		return IOToken.singleton;
 	}
 	
 	public static NIOVal getProjectName(Object/*IProject*/ _project, Object ioin) {
@@ -90,7 +91,7 @@ public final class Util {
 		return new Pioval(ioin, new StringCatter(project.getName()));
 	}
 	
-	public static Object refreshProject(Object/*IProject*/ _project, Object ioin) {
+	public static IOToken refreshProject(Object/*IProject*/ _project, Object ioin) {
 		IProject project = (IProject)_project;
 		try {
 			project.refreshLocal(IResource.DEPTH_INFINITE, null);
@@ -98,7 +99,7 @@ public final class Util {
 			// who knows
 			e.printStackTrace();
 		}
-		return null;
+		return IOToken.singleton;
 	}
 	
 	public static NIOVal getAbsoluteProjectPath(Object/*IProject*/ _project, Object ioin) {
