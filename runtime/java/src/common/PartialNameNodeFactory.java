@@ -78,9 +78,6 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 
 		// Step 2.3: Now, we just fill in the empty spaces with the values we're being given
 		for(int i = 0, namedArgsIndex = 0; i < fullNamedArgsSize && namedArgsIndex < namedArgsLen; i++) {
-			// TODO: this is a kinda maybe someday bug, since the iotoken is currently a null.
-			// So we could filling in a "missing spot" that's actually not missing, but the iotoken.
-			// The fix is that we should use the proper iotoken already!
 			if(fullNamedArgs[i] == null) {
 				fullNamedArgs[i] = namedArgs[namedArgsIndex++];
 			}

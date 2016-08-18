@@ -16,6 +16,7 @@ import org.eclipse.ui.IWorkbenchPart;
 
 import common.ConsCell;
 import common.DecoratedNode;
+import common.IOToken;
 import common.Lazy;
 import common.TopNode;
 
@@ -49,7 +50,7 @@ public class Exporter implements IObjectActionDelegate, IExecutableExtension {
 			@Override
 			protected IStatus run(final IProgressMonitor monitor) {
 
-				final NIOVal undecorated_export_result = sv.export(project, properties.serializeToSilverType(), null);
+				final NIOVal undecorated_export_result = sv.export(project, properties.serializeToSilverType(), IOToken.singleton);
 				final DecoratedNode export_result = undecorated_export_result.decorate(TopNode.singleton, (Lazy[])null);
 				// demand evaluation of io actions
 				export_result.synthesized(core.Init.core_io__ON__core_IOVal);

@@ -48,7 +48,7 @@ mv silver.composed.Default.jar ../jars/
 # Finally, we should have a fully working binary on all the new code. Run it again to reach a fixed point:
 
 echo "One more full cycle ..."
-time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default
+time java -ea -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default
 ant
 mv silver.composed.Default.jar ../jars/
 
