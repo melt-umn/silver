@@ -1,0 +1,21 @@
+#!/bin/bash
+set -eu
+
+# build SilverRuntime.jar
+(cd ../runtime/java/
+  ant
+  mv SilverRuntime.jar RunSilver.jar ../../jars/
+)
+
+# build IDEPluginRuntime.jar
+(cd ../runtime/imp/
+  ./build.sh
+)
+
+# also need silver.composed.idetest.jar??
+cp ../jars/{CopperRuntime,IDEPluginRuntime,SilverRuntime}.jar plugin/
+
+# TODO: copy jars to plugin/resources/jars/
+
+mvn package
+

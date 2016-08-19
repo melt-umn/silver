@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="silver.composed.idetest.feature"
+      label="Silver Eclipse feature"
+      version="0.2.2.160819181917">
+
+   <description url="http://some.user.provided.url">
+      no description of the software
+   </description>
+
+   <copyright url="http://some.user.provided.url">
+      no copyright information available
+   </copyright>
+
+   <license url="http://some.user.provided.url">
+      no license information available
+   </license>
+
+   <!-- The IDE plugin's id is the symbolic name in manifest file -->
+   <plugin
+         id="silver.composed.idetest"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="true"/>
+         
+   <plugin
+         id="org.eclipse.imp.runtime"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="lpg.runtime"
+         download-size="0"
+         install-size="0"
+         version="2.0.18"
+         unpack="false"/>
+
+   <plugin
+         id="lpg.runtime.java"
+         download-size="0"
+         install-size="0"
+         version="2.0.18"
+         unpack="false"/>
+
+</feature>
