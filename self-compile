@@ -1,19 +1,17 @@
 #!/bin/bash
 
-set -e
+# Exit on error or undefined variable. Good bash hygiene.
+set -eu
+
+# Defaults overridable by setting an environment variable:
+SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx1800M -Xss6M"}
+  # These can be fun sometimes:
+  # -XX:+PrintCompilation -verbose:gc -XX:+PrintGCTimeStamps -XX:+PrintGCDetails -XX:-PrintGC
+SV_BUILD_TARGET=${SV_BUILD_TARGET:-"silver:composed:Default"}
 
 mkdir -p build
 cd build
 
-# These can be fun sometimes:
-# -XX:+PrintCompilation
-# -verbose:gc -XX:+PrintGCTimeStamps -XX:+PrintGCDetails -XX:-PrintGC
-if [ -z "$SVJVM_FLAGS" ]; then
-  SVJVM_FLAGS="-Xmx1800M -Xss6M"
-fi
-
-time java $SVJVM_FLAGS -jar ../jars/RunSilver.jar --relative-jar $@ silver:composed:Default
+time java ${SVJVM_FLAGS} -jar ../jars/RunSilver.jar --relative-jar $@ ${SV_BUILD_TARGET}
 ant
-
-echo -e "\a"
 

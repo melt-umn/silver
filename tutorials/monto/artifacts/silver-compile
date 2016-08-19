@@ -1,8 +1,11 @@
 #!/bin/bash
 
-export GRAMMAR_PATH="../../"
-
+WHERE_IS_SILVER=../../../jars
+WHERE_IS_THE_SOURCE=../..
 WHAT_GRAMMAR_TO_BUILD=monto:artifacts
 
-../../../support/bin/silver $@ $WHAT_GRAMMAR_TO_BUILD
+java -jar $WHERE_IS_SILVER/RunSilver.jar \
+  -I $WHERE_IS_THE_SOURCE $@ $WHAT_GRAMMAR_TO_BUILD && ant
+
+# The $@ helpfully passes along any arguments this script got to silver.
 

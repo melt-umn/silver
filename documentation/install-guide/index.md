@@ -22,9 +22,7 @@ brew install coreutils ant
 
 # Getting Silver
 
-The **latest release** can be found [here](http://melt.cs.umn.edu/silver/downloads.html) (mirrored [here](http://code.google.com/p/silver/downloads/list).)
-
-The **latest development build** can be downloaded [here](http://melt.cs.umn.edu/downloads/silver-dev/silver-latest.tar.gz).
+The **latest release** can be found [here](/downloads).
 
 To use the bleeding edge from version control, [see below](InstallGuide#Using_the_latest_development_version.md).
 
@@ -69,17 +67,17 @@ This section is only for anyone who would like to help develop Silver itself.
 
 ## Additional prerequisites
 
-Mercurial, and wget. For Ubuntu users:
+git and wget. For Ubuntu users:
 
 ```
-apt-get install default-jdk ant mercurial wget
+apt-get install default-jdk ant git wget
 ```
 
 For OSX:
 
 ```
 # Again, install Java separately.
-brew install coreutils ant mercurial wget
+brew install coreutils ant git wget
 ```
 
 ## Checking out Silver
@@ -87,7 +85,7 @@ brew install coreutils ant mercurial wget
 Wherever you wish to checkout the repository, do this:
 
 ```
-$ hg clone https://code.google.com/p/silver
+$ git clone https://github.com/melt-umn/silver.git
 $ cd silver
 silver$ ./fetch-jars
 silver$ cd support/bin
@@ -105,3 +103,8 @@ silver$ ./update
 ```
 
 This will pull the latest changes, and update your working copy. It will also download the latest jars (which may be necessary! Silver is written in Silver, so there can be bootstrapping issues) and clear out any generated files, which may now be stale with the new version.
+
+## Building it
+
+
+See [here](/silver/doc/dev/building).

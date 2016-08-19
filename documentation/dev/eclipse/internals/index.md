@@ -69,12 +69,12 @@ You can go glance at what's on `SVInterface`, but that is implemented by a class
 
 ```
 @Override
-public NIOVal build(IProject project, ConsCell properties, Object iotoken) {
+public NIOVal build(IProject project, ConsCell properties, common.IOToken iotoken) {
         return (NIOVal)silver.composed.idetest.Panalyze.invoke(project, properties, iotoken);
 }
 
 @Override
-public NIOVal postbuild(IProject project, ConsCell properties, Object iotoken) {
+public NIOVal postbuild(IProject project, ConsCell properties, common.IOToken iotoken) {
         return (NIOVal)silver.composed.idetest.Pgenerate.invoke(project, properties, iotoken);
 }
 ```

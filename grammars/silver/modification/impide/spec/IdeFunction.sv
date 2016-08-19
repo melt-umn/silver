@@ -34,7 +34,7 @@ top::IdeFunction ::= fName::String
   top.svIdeInterface =
     s"""
 	@Override
-	public NIOVal build(IProject project, ConsCell properties, Object iotoken) {
+	public NIOVal build(IProject project, ConsCell properties, common.IOToken iotoken) {
 		return (NIOVal)${makeClassName(fName)}.invoke(project, properties, iotoken);
 	}
 """;
@@ -46,7 +46,7 @@ top::IdeFunction ::= fName::String
   top.svIdeInterface =
     s"""
 	@Override
-	public NIOVal postbuild(IProject project, ConsCell properties, Object iotoken) {
+	public NIOVal postbuild(IProject project, ConsCell properties, common.IOToken iotoken) {
 		return (NIOVal)${makeClassName(fName)}.invoke(project, properties, iotoken);
 	}
 """;
@@ -57,7 +57,7 @@ top::IdeFunction ::= fName::String
 {
   top.svIdeInterface = s"""
 	@Override
-	public NIOVal export(IProject project, ConsCell properties, Object iotoken) {
+	public NIOVal export(IProject project, ConsCell properties, common.IOToken iotoken) {
 		return (NIOVal)${makeClassName(fName)}.invoke(project, properties, iotoken);
 	}
 """;
