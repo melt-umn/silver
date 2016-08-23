@@ -94,15 +94,6 @@ function fold
     return cst.foldableRanges; -- see ./Folding.sv
 }
 
-function getStubForNewFile
-String ::= args::[IdeProperty]
-{
-    local gram :: Maybe<String> = lookupIdeProperty("declared_grammar", args);
-    return if gram.isJust
-    then "grammar " ++ gram.fromJust ++ ";\n\n"
-    else "";
-}
-
 function getArgStrings
 IOVal<[String]> ::= args::[IdeProperty] project::IdeProject io::IO
 {

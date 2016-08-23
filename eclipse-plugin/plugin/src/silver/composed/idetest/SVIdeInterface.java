@@ -4,6 +4,7 @@ package silver.composed.idetest;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Iterator;
+import java.util.Map;
 
 import common.ConsCell;
 import common.Node;
@@ -15,6 +16,7 @@ import org.eclipse.jface.text.IRegion;
 import org.eclipse.core.resources.IProject;
 
 import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
+import edu.umn.cs.melt.ide.silver.property.Property;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 import edu.umn.cs.melt.ide.impl.SVDefault;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
@@ -62,9 +64,6 @@ public class SVIdeInterface extends SVDefault {
 		}
 	}
 
-
-
-
 	@Override
 	public NIOVal build(IProject project, ConsCell properties, common.IOToken iotoken) {
 		return (NIOVal)silver.composed.idetest.Panalyze.invoke(project, properties, iotoken);
@@ -85,14 +84,17 @@ public class SVIdeInterface extends SVDefault {
 		return (ConsCell)silver.composed.idetest.Pfold.invoke(root);
 	}
 
-
 	@Override
 	public IPropertyControlsProvider getNewFileProperties() {
 		return new silver.composed.idetest.eclipse.wizard.newfile.PropertyControlsProvider();
 	}
+
 	@Override
-	public StringCatter fileStub(ConsCell properties) {
-		return (StringCatter)silver.composed.idetest.PgetStubForNewFile.invoke(properties);
+	public String fileStub(Map<String, String> properties) {
+		String declared_grammar = properties.get("declared_grammar");
+		return (declared_grammar != null)
+			? "grammar " + declared_grammar + ";\n\n"
+			: "";
 	}
 
 }

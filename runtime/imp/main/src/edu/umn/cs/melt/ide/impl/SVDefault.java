@@ -2,13 +2,13 @@ package edu.umn.cs.melt.ide.impl;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Map;
 
 import org.eclipse.core.resources.IProject;
 
 import common.ConsCell;
 import common.IOToken;
 import common.Node;
-import common.StringCatter;
 
 import core.NIOVal;
 import core.Pioval;
@@ -85,7 +85,7 @@ public abstract class SVDefault implements SVInterface {
 		throw new UnsupportedOperationException("new file properties requested by not provided by plugin");
 	}
 	@Override
-	public StringCatter fileStub(ConsCell properties) {
+	public String fileStub(Map<String, String> properties) {
 		// Should be provided if the wizard ends up in plugin.xml
 		throw new UnsupportedOperationException("new file stub generator requested by not provided by plugin");
 	}

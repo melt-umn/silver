@@ -4,6 +4,8 @@ import ide.NIdeProperty;
 import ide.PmakeIdeProperty;
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
@@ -226,23 +228,17 @@ public class NewSourceFilePage extends WizardPage {
 	}
 	
 	/**
-	 * Get properties in a [NIdeProperty]
+	 * Get properties in a map from property name to value
 	 */
-	ConsCell getNIdePerpertyArray() {
-		ConsCell list = ConsCell.nil;
+	Map<String, String> getProperties() {
+		Map<String, String> properties = new HashMap<String, String>();
 		for(PropertyControl control: propertyControls){
-			// this reverses the order, but that's okay I think
-			Property prop = control.getProperty();
-			NIdeProperty item = new PmakeIdeProperty(
-				new common.StringCatter(prop.getName()),
-				new common.StringCatter(prop.getType().name()),
-				new common.StringCatter(prop.getSValue())
-			);
-			list = new ConsCell(item, list);
+			Property property = control.getProperty();
+			properties.put(property.getName(), property.getSValue());
 		}
-		return list;
+		return properties;
 	}
-	
+
 	private static class ResourceTreeProvider extends ArrayContentProvider implements ITreeContentProvider {
 
 		@Override

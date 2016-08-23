@@ -1,6 +1,7 @@
 package edu.umn.cs.melt.ide.wizard;
 
 import java.io.ByteArrayInputStream;
+import java.util.Map;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -88,8 +89,8 @@ public class NewSourceFileWizard extends Wizard implements INewWizard, IExecutab
 		if(!file.exists()){
 			try {
 				// Generate stub
-				ConsCell properties = page1.getNIdePerpertyArray();
-				String stub = SVRegistry.get().fileStub(properties).toString();
+				Map<String, String> properties = page1.getProperties();
+				String stub = SVRegistry.get().fileStub(properties);
 				
 				// Create file
 				file.create(new ByteArrayInputStream(stub.getBytes()), false, null);

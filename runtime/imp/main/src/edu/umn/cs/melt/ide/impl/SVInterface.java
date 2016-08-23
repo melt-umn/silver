@@ -2,6 +2,7 @@ package edu.umn.cs.melt.ide.impl;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Map;
 
 import org.eclipse.core.resources.IProject;
 
@@ -123,7 +124,7 @@ public interface SVInterface {
 	 * @param properties  the requested properties
 	 * @return the file's initial contents
 	 */
-	public StringCatter fileStub(ConsCell properties);
+	public String fileStub(Map<String, String> properties);
 
 	/**
 	 * Obtains a list of properties for the project's configuration.
