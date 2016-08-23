@@ -1,15 +1,22 @@
 grammar silver:definition:core;
 
+temp_imp_ide_font font_comments color(82, 141, 115) italic; -- Good: same as java
+temp_imp_ide_font font_literal color(50, 50, 250); -- BAD
+temp_imp_ide_font font_keyword color(123, 0, 82) bold; -- Good: same as java
+temp_imp_ide_font font_modword color(41,95,148) bold; -- maybe good? Unusual but looks good
+temp_imp_ide_font font_type color(41,95,148); -- type coloring
+
+
 lexer class IDENTIFIER;
 lexer class RESERVED dominates IDENTIFIER;
 
-lexer class COMMENT;
-lexer class LITERAL;
-lexer class KEYWORD;
-lexer class MODSTMT;
-lexer class SPECOP;
-lexer class BUILTIN;
-lexer class TYPE;
+lexer class COMMENT font = font_comments;
+lexer class LITERAL font = font_literal;
+lexer class KEYWORD font = font_keyword;
+lexer class MODSTMT font = font_modword;
+lexer class SPECOP  font = font_keyword;
+lexer class BUILTIN font = font_keyword;
+lexer class TYPE    font = font_type;
 
 terminal As_kwd       'as'      lexer classes {MODSTMT,RESERVED};
 terminal Exports_kwd  'exports' lexer classes {MODSTMT};

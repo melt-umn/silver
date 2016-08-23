@@ -22,25 +22,25 @@ IOVal<Integer> ::= args::[String] ioin::IO
   return cmdLineRun(args, svParse, sviParse, ioin);
 }
 
----- IDE declaration block
---temp_imp_ide_dcl svParse ".sv" { 
---  builder analyze;
---  postbuilder generate;
---  exporter export;
---  folder fold;
---
---  property grammar_to_compile string required display="Grammar";
---
---  wizard new file {
---    stub generator getStubForNewFile; --a function whose signature must be "String ::= args::[IdeProperty]"
---    property declared_grammar string required display="Grammar";
---  }
---
---  name "Silver";
---  version "0.2.2";
---  resource grammars "../../../../grammars/"; -- I have "../grammars" to be explicit about what's going on here.
---  resource jars     "../../../../jars/";
---}
+-- IDE declaration block
+temp_imp_ide_dcl svParse ".sv" { 
+  builder analyze;
+  postbuilder generate;
+  exporter export;
+  folder fold;
+
+  property grammar_to_compile string required display="Grammar";
+
+  wizard new file {
+    stub generator getStubForNewFile; --a function whose signature must be "String ::= args::[IdeProperty]"
+    property declared_grammar string required display="Grammar";
+  }
+
+  name "Silver";
+  version "0.2.2";
+  resource grammars "../../../../grammars/"; -- I have "../grammars" to be explicit about what's going on here.
+  resource jars     "../../../../jars/";
+}
 
 -- Declarations of IDE functions referred in decl block.
 
