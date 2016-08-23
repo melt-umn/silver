@@ -5,6 +5,7 @@ Bundle-SymbolicName: silver.composed.idetest;singleton:=true
 Bundle-Version: 0.2.2.160819181917
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: .,
+ silver.composed.Default.jar,
  silver.composed.idetest.jar,
  CopperRuntime.jar,
  SilverRuntime.jar,
