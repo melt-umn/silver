@@ -24,22 +24,22 @@ IOVal<Integer> ::= args::[String] ioin::IO
 
 -- IDE declaration block
 temp_imp_ide_dcl svParse ".sv" { 
-  builder analyze;
-  postbuilder generate;
-  exporter export;
-  folder fold;
-
-  property grammar_to_compile string required display="Grammar";
-
-  wizard new file {
-    stub generator getStubForNewFile; --a function whose signature must be "String ::= args::[IdeProperty]"
-    property declared_grammar string required display="Grammar";
-  }
-
-  name "Silver";
-  version "0.2.2";
-  resource grammars "../../../../grammars/"; -- I have "../grammars" to be explicit about what's going on here.
-  resource jars     "../../../../jars/";
+--  builder analyze;
+--  postbuilder generate;
+----  exporter export;
+--  folder fold;
+--
+--  property grammar_to_compile string required display="Grammar";
+--
+--  wizard new file {
+--    stub generator getStubForNewFile; --a function whose signature must be "String ::= args::[IdeProperty]"
+--    property declared_grammar string required display="Grammar";
+--  }
+--
+--  name "Silver";
+--  version "0.2.2";
+--  resource grammars "../../../../grammars/"; -- I have "../grammars" to be explicit about what's going on here.
+--  resource jars     "../../../../jars/";
 }
 
 -- Declarations of IDE functions referred in decl block.
@@ -65,28 +65,28 @@ IOVal<[IdeMessage]> ::= project::IdeProject  args::[IdeProperty]  i::IO
 
 }
 
-function export
-IOVal<[IdeMessage]> ::= project::IdeProject  args::[IdeProperty]  i::IO
-{
-  local proj_path :: IOVal<String> = getProjectPath(project, i);
-  local gen_path :: IOVal<String> = getGeneratedPath(project, proj_path.io);
-
-  local pkgName :: String = makeName(head(getGrammarToCompile(args)));
-  local buildFile :: String = gen_path.iovalue ++ "/build.xml";
-  local jarFile :: String = gen_path.iovalue ++ "/" ++ pkgName ++ ".jar";
-  local targetFile :: String = proj_path.iovalue ++ "/" ++ pkgName ++ ".jar";
-
-  local fileExists :: IOVal<Boolean> = isFile(buildFile, gen_path.io);
-
-  local jarExists :: IOVal<Boolean> = isFile(jarFile, ant(buildFile, "", "", fileExists.io));
-
-  return if !fileExists.iovalue then
-    ioval(fileExists.io, [makeSysIdeMessage(ideMsgLvError, "build.xml doesn't exist. Has the project been successfully built before?")])
-  else if !jarExists.iovalue then
-    ioval(jarExists.io, [makeSysIdeMessage(ideMsgLvError, "Ant failed to generate the jar.")])
-  else
-    ioval(refreshProject(project, copyFile(jarFile, targetFile, jarExists.io)), []);
-}
+--function export
+--IOVal<[IdeMessage]> ::= project::IdeProject  args::[IdeProperty]  i::IO
+--{
+--  local proj_path :: IOVal<String> = getProjectPath(project, i);
+--  local gen_path :: IOVal<String> = getGeneratedPath(project, proj_path.io);
+--
+--  local pkgName :: String = makeName(head(getGrammarToCompile(args)));
+--  local buildFile :: String = gen_path.iovalue ++ "/build.xml";
+--  local jarFile :: String = gen_path.iovalue ++ "/" ++ pkgName ++ ".jar";
+--  local targetFile :: String = proj_path.iovalue ++ "/" ++ pkgName ++ ".jar";
+--
+--  local fileExists :: IOVal<Boolean> = isFile(buildFile, gen_path.io);
+--
+--  local jarExists :: IOVal<Boolean> = isFile(jarFile, ant(buildFile, "", "", fileExists.io));
+--
+--  return if !fileExists.iovalue then
+--    ioval(fileExists.io, [makeSysIdeMessage(ideMsgLvError, "build.xml doesn't exist. Has the project been successfully built before?")])
+--  else if !jarExists.iovalue then
+--    ioval(jarExists.io, [makeSysIdeMessage(ideMsgLvError, "Ant failed to generate the jar.")])
+--  else
+--    ioval(refreshProject(project, copyFile(jarFile, targetFile, jarExists.io)), []);
+--}
 
 function fold
 [Location] ::= cst::Root

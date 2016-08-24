@@ -15,6 +15,8 @@ import common.StringCatter;
 import common.TopNode;
 import core.NLocation;
 
+import edu.umn.cs.melt.ide.IdeMessage;
+
 /**
  * A wrapper of problem message returned by compiler.
  * <p>
@@ -97,11 +99,15 @@ public class Problem {
 		this.endInd = endInd;
 		this.projMsg = projMsg;
 	}
-	
+
 	public boolean buildBlocker() {
 		return level == ERROR;
 	}
-	
+
+	public static Problem extractProblem(IdeMessage ideMsg) {
+		return Problem.createProjectProblem(ideMsg.getSeverity(), ideMsg.getMessage());
+	}
+
 	public static Problem extractProblem(NIdeMessage ideMsg) {
 		DecoratedNode ideMsgDecNode = ideMsg.decorate(TopNode.singleton, (Lazy[])null);
     	

@@ -7,13 +7,13 @@ grammar ide;
   arguments: the arguments in a single String (example: -a -b --lc -d"xxx")
   target: the target to be invoked in build file. For now only one target is supported.
 --}
-function ant
-IO ::= buildFile::String arguments::String target::String i::IO
-{
-  return error("Not Yet Implemented: ant");
-} foreign {
-  "java" : return "common.Util.io(%i%, edu.umn.cs.melt.ide.util.Util.ant(%buildFile%, %arguments%, %target%))";
-}
+--function ant
+--IO ::= buildFile::String arguments::String target::String i::IO
+--{
+--  return error("Not Yet Implemented: ant");
+--} foreign {
+--  "java" : return "common.Util.io(%i%, edu.umn.cs.melt.ide.util.Util.ant(%buildFile%, %arguments%, %target%))";
+--}
 
 {--
  - Gets a path to a resource (directory, file) that was included in the IDE bundle via

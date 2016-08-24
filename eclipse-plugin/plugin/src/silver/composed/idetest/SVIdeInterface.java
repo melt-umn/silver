@@ -2,11 +2,13 @@
 package silver.composed.idetest;
 
 import java.io.IOException;
+import java.io.File;
 import java.io.Reader;
 import java.util.Iterator;
 import java.util.Map;
 
 import common.ConsCell;
+import common.IOToken;
 import common.Node;
 import common.StringCatter;
 import core.NIOVal;
@@ -14,14 +16,22 @@ import core.Pioval;
 
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.CoreException;
 
+import edu.umn.cs.melt.ide.IdeMessage;
 import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
+import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 import edu.umn.cs.melt.ide.silver.property.Property;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 import edu.umn.cs.melt.ide.impl.SVDefault;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.ide.copper.coloring.ITokenClassifier;
 import edu.umn.cs.melt.ide.imp.services.IdeParseResult;
+
+import static common.Util.copyFile;
+import static edu.umn.cs.melt.ide.util.Util.ant;
 
 public class SVIdeInterface extends SVDefault {
 
@@ -65,18 +75,50 @@ public class SVIdeInterface extends SVDefault {
 	}
 
 	@Override
-	public NIOVal build(IProject project, ConsCell properties, common.IOToken iotoken) {
+	public NIOVal build(IProject project, ConsCell properties, IOToken iotoken) {
 		return (NIOVal)silver.composed.idetest.Panalyze.invoke(project, properties, iotoken);
 	}
 
 	@Override
-	public NIOVal postbuild(IProject project, ConsCell properties, common.IOToken iotoken) {
+	public NIOVal postbuild(IProject project, ConsCell properties, IOToken iotoken) {
 		return (NIOVal)silver.composed.idetest.Pgenerate.invoke(project, properties, iotoken);
 	}
 
 	@Override
-	public NIOVal export(IProject project, ConsCell properties, common.IOToken iotoken) {
-		return (NIOVal)silver.composed.idetest.Pexport.invoke(project, properties, iotoken);
+	public IdeMessage export(IProject project, ProjectProperties properties) {
+		final String projPath = project.getLocation().toOSString();
+		final String genPath = projPath + IPath.SEPARATOR + "bin";
+
+		final String pkgName = getGrammarToCompile(properties).replace(":", ".");
+		final String buildFile = genPath + "/build.xml";
+		final String jarFile = genPath + "/" + pkgName + ".jar";
+		final String targetFile = projPath + "/" + pkgName + ".jar";
+
+		final boolean fileExists = new File(buildFile).isFile();
+
+		if (!fileExists) {
+			return new IdeMessage(IdeMessage.Severity.IDE_MSG_LV_ERROR,
+						"build.xml doesn't exist. Has the project been successfully built before?");
+		}
+
+		ant(buildFile, "", "");
+		final boolean jarExists = new File(jarFile).isFile();
+
+		if (!jarExists) {
+			return new IdeMessage(IdeMessage.Severity.IDE_MSG_LV_ERROR,
+						"Ant failed to generate the jar.");
+		}
+
+		copyFile(jarFile, targetFile);
+		try {
+			project.refreshLocal(IResource.DEPTH_INFINITE, null);
+		} catch (CoreException e) {
+			// who knows
+			e.printStackTrace();
+		}
+
+		IdeMessage error = null;
+		return error;
 	}
 
 	@Override
@@ -97,4 +139,12 @@ public class SVIdeInterface extends SVDefault {
 			: "";
 	}
 
+	private String getGrammarToCompile(ProjectProperties properties)
+	{
+		Property grammar_to_compile = properties.get("grammar_to_compile");
+		return grammar_to_compile != null
+			? grammar_to_compile.getSValue()
+			: "";
+	}
 }
+

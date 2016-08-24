@@ -13,9 +13,11 @@ import common.Node;
 import core.NIOVal;
 import core.Pioval;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
+import edu.umn.cs.melt.ide.IdeMessage;
 import edu.umn.cs.melt.ide.copper.coloring.ITokenClassifier;
 import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
 import edu.umn.cs.melt.ide.imp.services.IdeParseResult;
+import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 
 /**
@@ -65,7 +67,7 @@ public abstract class SVDefault implements SVInterface {
 	}
 
 	@Override
-	public NIOVal export(IProject project, ConsCell properties, IOToken iotoken) {
+	public IdeMessage export(IProject project, ProjectProperties properties) {
 		// Introducing the bit to plugin.xml that results in the code being run
 		// that eventually calls this is a result of a 'exporter' function being given.
 		// It should never be the case that this is unimplemented and then called.

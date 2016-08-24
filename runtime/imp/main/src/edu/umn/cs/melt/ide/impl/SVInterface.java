@@ -13,9 +13,11 @@ import common.StringCatter;
 import core.NIOVal;
 
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
+import edu.umn.cs.melt.ide.IdeMessage;
 import edu.umn.cs.melt.ide.copper.coloring.ITokenClassifier;
 import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
 import edu.umn.cs.melt.ide.imp.services.IdeParseResult;
+import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 
 /**
@@ -100,7 +102,7 @@ public interface SVInterface {
 	 * @param iotoken  An input IO token.
 	 * @return  Any additional errors to raise (usually sys errors, rather than for files)
 	 */
-	public NIOVal export(IProject project, ConsCell properties, IOToken iotoken);
+	public IdeMessage export(IProject project, ProjectProperties properties);
 	
 	/**
 	 * [Location] ::= <<CST root's type>>

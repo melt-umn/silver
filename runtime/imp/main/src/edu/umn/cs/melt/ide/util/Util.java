@@ -46,26 +46,24 @@ public final class Util {
 		Console.getConsoleLoggingStream().error(msg);
 		return IOToken.singleton;
 	}
-	
+
 	/* Apache Ant tool */
-	
-	public static IOToken ant(StringCatter buildFile, StringCatter arguments, StringCatter target){
-		
+	public static void ant(String buildFile, String arguments, String target){
 		AntRunner runner = new AntRunner();
-		runner.setBuildFileLocation(buildFile.toString());
-		runner.setArguments(arguments.toString());
-		if(!"".equals(target.toString().trim())) {
-			runner.setExecutionTargets(new String[]{ target.toString() });
+		runner.setBuildFileLocation(buildFile);
+		runner.setArguments(arguments);
+
+		if (!"".equals(target.trim())) {
+			runner.setExecutionTargets(new String[]{ target });
 		}
+
 		try {
 			runner.run();
 		} catch (CoreException e) {
 			e.printStackTrace();
 		}
-		
-		return IOToken.singleton;
 	}
-	
+
 	/* Project-related operations */
 	
 	/**
@@ -89,17 +87,6 @@ public final class Util {
 	public static NIOVal getProjectName(Object/*IProject*/ _project, Object ioin) {
 		IProject project = (IProject)_project;
 		return new Pioval(ioin, new StringCatter(project.getName()));
-	}
-	
-	public static IOToken refreshProject(Object/*IProject*/ _project, Object ioin) {
-		IProject project = (IProject)_project;
-		try {
-			project.refreshLocal(IResource.DEPTH_INFINITE, null);
-		} catch (CoreException e) {
-			// who knows
-			e.printStackTrace();
-		}
-		return IOToken.singleton;
 	}
 	
 	public static NIOVal getAbsoluteProjectPath(Object/*IProject*/ _project, Object ioin) {

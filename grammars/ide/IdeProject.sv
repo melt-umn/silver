@@ -15,17 +15,6 @@ IOVal<String> ::= proj::IdeProject  i::IO
     "edu.umn.cs.melt.ide.util.Util.getProjectName(%proj%, %i%)";
 }
 
--- Refresh the given project down to given depth, for which only pre-defined 
--- constants (0, 1, indefinite) can be used. 
-function refreshProject
-IO ::= proj::IdeProject  i::IO
-{
-  return error("Not Yet Implemented: refresh");
-} foreign {
-  "java" : return 
-    "edu.umn.cs.melt.ide.util.Util.refreshProject(%proj%, %i%)";
-}
-
 -- Get the absoluet path of given project.
 function getProjectPath
 IOVal<String> ::= proj::IdeProject i::IO
