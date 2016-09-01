@@ -9,6 +9,8 @@ imports silver:util:cmdargs;
 
 exports silver:driver:util;
 
+import silver:langutil only message;
+
 type SVParser = (ParseResult<Root> ::= String String);
 type SVIParser = (ParseResult<IRoot> ::= String String);
 
@@ -18,44 +20,101 @@ type SVIParser = (ParseResult<IRoot> ::= String String);
 function cmdLineRun
 IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
 {
+  local unit :: IOErrorable<Decorated Compilation> =
+    cmdLineRunInitial(args, svParser, sviParser, ioin);
+    
+  return performActions(unit);
+}
+
+-- Compute the environment, and then setup and do a build run. No postOps executed, though.
+function cmdLineRunInitial
+IOErrorable<Decorated Compilation> ::=
+  args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
+{
+  return
+    runChainArg(
+      computeEnv,
+      setupBuildRun(svParser, sviParser, _, _),
+      args, ioin);
+}
+
+-- Perform the postOps from a cmdLineRunInitial.
+function performActions
+IOVal<Integer> ::= unitin::IOErrorable<Decorated Compilation>
+{
+  return case unitin.iovalue of
+  | left(re) -> ioval(print(re.message ++ "\n", unitin.io), re.code)
+  | right(comp) -> runAll(sortUnits(comp.postOps), unitin.io)
+  end;
+}
+
+-- Parser args and environment
+function computeEnv
+IOErrorable<Pair<Decorated CmdArgs  BuildEnv>> ::=
+  args::[String]
+  ioin::IO
+{
   -- Figure out arguments
-  local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
-  local a :: Decorated CmdArgs = case argResult of right(t) -> t end;
-  local argErrors :: [String] = case argResult of | left(s) -> [s] | _ -> [] end;
+  local argResult :: Either<String  Decorated CmdArgs> =
+    parseArgs(args);
+  local a :: Decorated CmdArgs =
+    case argResult of right(t) -> t end;
+  local argErrors :: [String] =
+    case argResult of | left(s) -> [s] | _ -> [] end;
 
   -- Figure out build env from environment and args
-  local benvResult :: IOVal<Either<BuildEnv  [String]>> = determineBuildEnv(a, ioin);
-  local benv :: BuildEnv = case benvResult.iovalue of left(t) -> t end;
-  local envErrors :: [String] = case benvResult.iovalue of | right(s) -> s | _ -> [] end;
-  
-  -- Let's start preparing to build
-  local buildGrammar :: String = head(a.buildGrammar);
-  local checkbuild :: IOVal<[String]> =
-    checkPreBuild(a, benv, buildGrammar, benvResult.io);
-
-  -- Build!
-  local buildrun :: IOVal<Decorated Compilation> =
-    buildRun(svParser, sviParser, a, benv, buildGrammar, checkbuild.io);
-  local unit :: Decorated Compilation = buildrun.iovalue;
-
-  -- Run the resulting build actions
-  local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), buildrun.io);
+  local benvResult :: IOVal<Either<BuildEnv  [String]>> =
+    determineBuildEnv(a, ioin);
+  local benv :: BuildEnv =
+    case benvResult.iovalue of left(t) -> t end;
+  local envErrors :: [String] =
+    case benvResult.iovalue of | right(s) -> s | _ -> [] end;
 
   return if !null(argErrors) then
-    ioval(print(head(argErrors), ioin), 1)
+    ioval(ioin, left(runError(1, head(argErrors))))
+  -- Because we want printing the version to work even if the environment is messed up
+  -- we premptively handle that here. This is slightly unfortunate.
+  -- Ideally, version printing would be just another thing we could have the command
+  -- line decide to go do, but currently it's hard to re-use code if we do that.
   else if a.displayVersion then
-    ioval(print(
+    ioval(benvResult.io, left(runError(1, -- error code so 'ant' isnt run
       "Silver Version 0.4.0-dev\n" ++
       "SILVER_HOME = " ++ benv.silverHome ++ "\n" ++
       "SILVER_GEN = " ++ benv.silverGen ++ "\n" ++
       "GRAMMAR_PATH:\n" ++ implode("\n", benv.grammarPath) ++ "\n\n" ++
-      implode("\n", envErrors), benvResult.io), 1) -- exit with an error code so 'ant' isnt run.
-  else if !null(envErrors ++ checkbuild.iovalue) then
-    ioval(print(implode("\n", envErrors ++ checkbuild.iovalue), checkbuild.io), 1)
-  else if null(unit.grammarList) then
-    ioval(print("The specified grammar (" ++ buildGrammar ++ ") could not be found.\n", buildrun.io), 1)
+      implode("\n", envErrors))))
+  else if !null(envErrors) then
+    ioval(benvResult.io, left(runError(1, implode("\n", envErrors))))
   else
-    actions;
+    ioval(benvResult.io, right(pair(a, benv)));
+}
+
+-- Upon deciding that we're to build a single grammar into a jar, we do this
+function setupBuildRun
+IOErrorable<Decorated Compilation> ::=
+  svParser::SVParser
+  sviParser::SVIParser
+  envin::Pair<Decorated CmdArgs  BuildEnv>
+  ioin::IO
+{
+  local a::Decorated CmdArgs = envin.fst;
+  local benv::BuildEnv = envin.snd;
+
+  -- Check environment stuff specific to building a grammar
+  local buildGrammar :: String = head(a.buildGrammar);
+  local checkbuild :: IOVal<[String]> =
+    checkPreBuild(a, benv, buildGrammar, ioin);
+
+  -- Build!
+  local buildrun :: IOVal<Decorated Compilation> =
+    buildRun(svParser, sviParser, a, benv, buildGrammar, checkbuild.io);
+
+  return if !null(checkbuild.iovalue) then
+    ioval(checkbuild.io, left(runError(1, implode("\n", checkbuild.iovalue))))
+  else if null(buildrun.iovalue.grammarList) then
+    ioval(buildrun.io, left(runError(1, "The specified grammar (" ++ buildGrammar ++ ") could not be found.\n")))
+  else
+    ioval(buildrun.io, right(buildrun.iovalue));
 }
 
 {--
@@ -131,4 +190,42 @@ function eatGrammars
       newDeps ++ eatGrammars(n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars));
 }
 
+
+nonterminal RunError with code, message;
+-- from silver:langutil, and silver:driver:util;
+
+abstract production runError
+top::RunError ::= c::Integer  m::String
+{
+  top.code = c;
+  top.message = m;
+}
+
+-- A common return type for IO functions. Does IO and returns error or whatever.
+type IOErrorable<a> = IOVal<Either<RunError a>>;
+-- A function that does IO and either errors or returns a value
+type RunChain<a b> = (IOErrorable<b> ::= a IO);
+
+-- Function composition of RunChains. IO-y Either monad, of sorts.
+function runChain
+RunChain<a c> ::= l::RunChain<a b>  r::RunChain<b c>
+{
+  return runChainArg(l, r, _, _);
+}
+
+function runChainArg
+IOErrorable<c> ::= l::RunChain<a b>  r::RunChain<b c> x::a ioin::IO
+{
+  -- Apply to left.
+  local lcall :: IOErrorable<b> = l(x, ioin);
+  
+  -- apply return value to right, if possible. otherwise, propagate error
+  local rcall :: IOErrorable<c> =
+    case lcall.iovalue of
+    | left(re) -> ioval(lcall.io, left(re))
+    | right(y) -> r(y, lcall.io)
+    end;
+  
+  return rcall;
+}
 
