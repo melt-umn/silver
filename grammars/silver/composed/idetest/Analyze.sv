@@ -11,84 +11,31 @@ import silver:definition:env;
 
 import ide;
 
--- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
+import silver:langutil only message;
+
 function ideAnalyze
 IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser ioin::IO
 {
-  -- Figure out arguments
-  local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
-  local a :: Decorated CmdArgs = case argResult of right(t) -> t end;
-  local argErrors :: [String] = case argResult of | left(s) -> [s] | _ -> [] end;
+  local unit :: IOErrorable<Decorated Compilation> =
+    cmdLineRunInitial(args, svParser, sviParser, ioin);
 
-  -- Figure out build env from environment and args
-  local benvResult :: IOVal<Either<BuildEnv  [String]>> = determineBuildEnv(a, ioin);
-  local benv :: BuildEnv = case benvResult.iovalue of left(t) -> t end;
-  local envErrors :: [String] = case benvResult.iovalue of | right(s) -> s | _ -> [] end;
-  
-  -- Let's start preparing to build
-  local buildGrammar :: String = head(a.buildGrammar);
-  local checkbuild :: IOVal<[String]> =
-    checkPreBuild(a, benv, buildGrammar, benvResult.io);
-
-  -- Build!
-  local buildrun :: IOVal<Decorated Compilation> =
-    buildRun(svParser, sviParser, a, benv, buildGrammar, checkbuild.io);
-  local unit :: Decorated Compilation = buildrun.iovalue;
-
-  ---- DIFFERENCE: We do *not* run the actions in the functions. Only check for errors.
-
-  local messages :: [IdeMessage] = getAllBindingErrors(unit.allGrammars);
-
-  return if !null(argErrors) then
-    ioval(ioin, [makeSysIdeMessage(ideMsgLvError, "Parsing failed during build. If source code/resources are changed outside IDE, refresh and rebuild is needed.")])
-  else if !null(envErrors) then
-    ioval(benvResult.io, getSysMessages(envErrors))
-  else if null(unit.grammarList) then
-    ioval(buildrun.io, [makeSysIdeMessage(ideMsgLvError, 
-            (if buildGrammar=="" 
-             then "No grammar is specified for compilation. Check configuration for this project." 
-             else ("The specified grammar \"" ++ buildGrammar ++ "\" could not be found. Check configuration for this project."))
-            )])
-  else ioval(buildrun.io, messages);
+  return case unit.iovalue of
+  | left(re) -> ioval(unit.io, [makeSysIdeMessage(ideMsgLvError, re.message)])
+  | right(comp) -> ioval(unit.io, getAllBindingErrors(comp.allGrammars))
+  end;
 }
 
--- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideGenerate
 IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
 {
-  -- Figure out arguments
-  local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
-  local a :: Decorated CmdArgs = case argResult of right(t) -> t end;
-  local argErrors :: [String] = case argResult of | left(s) -> [s] | _ -> [] end;
+  local unit :: IOErrorable<Decorated Compilation> =
+    cmdLineRunInitial(args, svParser, sviParser, ioin);
 
-  -- Figure out build env from environment and args
-  local benvResult :: IOVal<Either<BuildEnv  [String]>> = determineBuildEnv(a, ioin);
-  local benv :: BuildEnv = case benvResult.iovalue of left(t) -> t end;
-  local envErrors :: [String] = case benvResult.iovalue of | right(s) -> s | _ -> [] end;
-  
-  -- Let's start preparing to build
-  local buildGrammar :: String = head(a.buildGrammar);
-  local checkbuild :: IOVal<[String]> =
-    checkPreBuild(a, benv, buildGrammar, benvResult.io);
-
-  -- Build!
-  local buildrun :: IOVal<Decorated Compilation> =
-    buildRun(svParser, sviParser, a, benv, buildGrammar, checkbuild.io);
-  local unit :: Decorated Compilation = buildrun.iovalue;
-
-  -- Run the resulting build actions
-  local actions :: IOVal<Integer> = runAll(sortUnits(unit.postOps), buildrun.io);
-
-  return ioval(actions.io, []); -- TODO: the original code did no error checking here, so I've preserved it. but wtf?
-  -- it seems this is only called if the previous does NOT fail. So there should be no additional errors.
-}
-
-function getSysMessages
-[IdeMessage] ::= es::[String]
-{
-  return if null(es)
-         then []
-         else [makeSysIdeMessage(ideMsgLvError, head(es))] ++ getSysMessages(tail(es));
+  return case unit.iovalue of
+  | left(re) -> ioval(unit.io, [makeSysIdeMessage(ideMsgLvError, re.message)])
+  -- this is only called if the previous does NOT fail. So there should be no additional errors.
+  | right(comp) -> ioval(runAll(sortUnits(comp.postOps), unit.io).io, [])
+  end;
 }
 
 function getAllBindingErrors
@@ -104,7 +51,7 @@ function getAllBindingErrors
 function getIdeMessages
 [IdeMessage] ::= path::String spec::Decorated RootSpec
 {
-  return map(rewriteMessage(path, _), 
+  return map(rewriteMessage(path, _),
     if !null(spec.parsingErrors)
     then spec.parsingErrors
     else spec.errors);

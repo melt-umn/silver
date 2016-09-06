@@ -134,9 +134,8 @@ public class SVIdeInterface extends SVDefault {
 	@Override
 	public String fileStub(Map<String, String> properties) {
 		String declared_grammar = properties.get("declared_grammar");
-		return (declared_grammar != null)
-			? "grammar " + declared_grammar + ";\n\n"
-			: "";
+		return (declared_grammar == null) ? ""
+			: "grammar " + declared_grammar + ";\n\n";
 	}
 
 	private String getGrammarToCompile(ProjectProperties properties)

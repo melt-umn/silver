@@ -22,7 +22,7 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
 {
   local unit :: IOErrorable<Decorated Compilation> =
     cmdLineRunInitial(args, svParser, sviParser, ioin);
-    
+
   return performActions(unit);
 }
 
