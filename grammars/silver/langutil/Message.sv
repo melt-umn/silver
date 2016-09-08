@@ -34,7 +34,7 @@ top::Message ::= l::Location m::String
   top.where = l;
   top.message = m;
   top.output = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": error: " ++ m;
-  top.severity = 0;
+  top.severity = 2;
 }
 
 {--
@@ -47,7 +47,7 @@ top::Message ::= l::Location m::String
   top.where = l;
   top.message = m;
   top.output = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": warning: " ++ m;
-  top.severity = 0;
+  top.severity = 1;
 }
 
 -- Users can extend Message with more messages (info, dbg) as they desire
