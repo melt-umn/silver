@@ -88,11 +88,11 @@ IOVal<[IdeMessage]> ::= project::IdeProject  args::[IdeProperty]  i::IO
 --    ioval(refreshProject(project, copyFile(jarFile, targetFile, jarExists.io)), []);
 --}
 
-function fold
-[Location] ::= cst::Root
-{
-    return cst.foldableRanges; -- see ./Folding.sv
-}
+--function fold
+--[Location] ::= cst::Root
+--{
+--    return cst.foldableRanges; -- see ./Folding.sv
+--}
 
 function getArgStrings
 IOVal<[String]> ::= args::[IdeProperty] project::IdeProject io::IO

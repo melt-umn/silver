@@ -30,6 +30,7 @@ import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.ide.copper.coloring.ITokenClassifier;
 import edu.umn.cs.melt.ide.imp.services.IdeParseResult;
 
+import static common.javainterop.Util.indexOfSynOn;
 import static common.Util.copyFile;
 import static edu.umn.cs.melt.ide.util.Util.ant;
 
@@ -123,7 +124,7 @@ public class SVIdeInterface extends SVDefault {
 
 	@Override
 	public ConsCell getFolds(Node root) {
-		return (ConsCell)silver.composed.idetest.Pfold.invoke(root);
+		return (ConsCell)root.decorate().synthesized(indexOfSynOn("foldableRanges", root));
 	}
 
 	@Override
