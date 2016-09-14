@@ -4,7 +4,7 @@ title: Getting started
 menu_weight: 10.0
 ---
 
-First see [Eclipse Plugin](/silver/eclipse).
+First see the [Silver Eclipse Plugin](/silver/eclipse/silver/) documentation.
 
 ## Doing development on the Silver-Eclipse runtime or plugin
 
