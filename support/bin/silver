@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ~/bin/silver should be a link to somewhere, find out where!
-ME=$(readlink "${BASH_SOURCE}")
+ME=$(readlink -f "${BASH_SOURCE}")
 
 # Set our home
 export SILVER_HOME=${ME/support\/bin\/silver//}
