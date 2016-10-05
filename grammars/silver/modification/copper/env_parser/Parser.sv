@@ -17,6 +17,7 @@ import silver:util;
 
 terminal LexerClassTerm 'lexer_class' lexer classes {C_1};
 terminal ParseAttrTerm 'parse_attr' lexer classes {C_1};
+terminal PrefixSeperatorTerm 'prefix_seperator' lexer classes {C_1};
 
 concrete production aDclInfoLexerClass
 top::IDclInfo ::= 'lexer_class' '(' l::ILocation ',' fn::IName ')'
@@ -28,6 +29,12 @@ concrete production aDclInfoParseAttr
 top::IDclInfo ::= 'parse_attr' '(' l::ILocation ',' fn::IName ',' t::ITypeRep ')'
 {
   top.defs = [parserAttrDef(top.grammarName, l.alocation, fn.aname, t.typerep)];
+}
+
+concrete production aDclInfoPrefixSeparator
+top::IDclInfo ::= 'prefix_seperator' '(' l::ILocation ',' s::IString ')'
+{
+  top.defs = [prefixSeparatorDef(top.grammarName, l.alocation, s.str)];
 }
 
 

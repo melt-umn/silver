@@ -192,6 +192,8 @@ public class DecoratedNode {
 		if(o == null) {
 			o = createDecoratedChild(child);
 			
+			assert(o != null);
+
 			// CACHE : probably should not comment out child caching?
 			this.childrenValues[child] = o;
 		}
@@ -220,6 +222,8 @@ public class DecoratedNode {
 		if(o == null) {
 			o = evalLocalAsIs(attribute);
 			
+			assert(o != null);
+
 			// CACHE : comment out to disable caching for local attributes
 			// not recommended due to IO objects (IOString, etc)
 			this.localValues[attribute] = o;
@@ -263,6 +267,8 @@ public class DecoratedNode {
 		if(o == null) {
 			o = evalLocalDecorated(attribute);
 			
+			assert(o != null);
+
 			// CACHE : comment out to disable caching for local attributes
 			// not recommended due to IO objects (IOString, etc)
 			this.localValues[attribute] = o;
@@ -291,6 +297,8 @@ public class DecoratedNode {
 		if(o == null) {
 			o = evalSyn(attribute);
 			
+			assert(o != null);
+
 			// CACHE : comment out to disable caching for synthesized attributes
 			this.synthesizedValues[attribute] = o;
 		}
@@ -336,6 +344,8 @@ public class DecoratedNode {
 		if(this.forwardValue == null) {
 			// CACHE : should not comment out forward caching !
 			this.forwardValue = evalForward();
+
+			assert(this.forwardValue != null);
 		}
 		return this.forwardValue;
 	}
@@ -378,6 +388,8 @@ public class DecoratedNode {
 		if(o == null) {
 			o = evalInhSomehow(attribute);
 			
+			assert(o != null);
+
 			// CACHE : comment out to disable caching of inherited attributes
 			// not recommended because it leads to a combinatoric explosion for environments
 			// due to thunks keeping around references to previously computed environments that

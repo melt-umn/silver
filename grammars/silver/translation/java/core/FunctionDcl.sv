@@ -158,7 +158,7 @@ public class Main {
 		${package}.Init.init();
 		${package}.Init.postInit();
 		try {
-			common.Node rv = (common.Node) ${package}.Pmain.invoke(cvargs(args), null);
+			common.Node rv = (common.Node) ${package}.Pmain.invoke(cvargs(args), common.IOToken.singleton);
 			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
 			drv.synthesized(core.Init.core_io__ON__core_IOVal); // demand the io token
 			System.exit( (Integer)drv.synthesized(core.Init.core_iovalue__ON__core_IOVal) );

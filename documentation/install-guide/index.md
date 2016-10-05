@@ -22,10 +22,9 @@ brew install coreutils ant
 
 # Getting Silver
 
-We are well overdue for a "stable" release of Silver.  The best thing
-to do is get the development version from
-[GitHub](https://github.com/melt-umn/silver/).  See the "Checking out
-Silver" section below for details.
+The **latest release** can be found [here](/downloads).
+
+To use the bleeding edge from version control, [see below](InstallGuide#Using_the_latest_development_version.md).
 
 # Testing with tutorials
 
@@ -84,7 +83,7 @@ For OSX:
 
 ```
 # Again, install Java separately.
-brew install coreutils ant wget
+brew install coreutils ant git wget
 ```
 
 ## Checking out Silver
@@ -115,4 +114,9 @@ silver$ ./update
 This will pull the latest changes, and update your working copy. It
 will also download the latest jars (which may be necessary! Silver is
 written in Silver, so there can be bootstrapping issues) and clear out
-any generated files, which may now be stale with the new version. 
+any generated files, which may now be stale with the new version.
+
+## Building it
+
+
+See [here](/silver/doc/dev/building).

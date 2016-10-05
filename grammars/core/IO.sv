@@ -338,7 +338,7 @@ IO ::=
 {
   return error("Not Yet Implemented: unsafeIO");
 } foreign {
-  "java" : return "null";
+  "java" : return "common.IOToken.singleton";
 }
 
 {--
@@ -381,7 +381,7 @@ a ::= val::a act::IO
 {
   return error("Not Yet Implemented: unsafeTrace");
 } foreign {
-  "java" : return "(%act%==null?%val%:null)"; -- This isn't the best way to do this...
+  "java" : return "common.Util.io(%act%, %val%)";
 }
 
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eu
 
 # just run this script, no parameters or options.
 # One new option: --newcore, for when the core FFI stuff has to change in tandem with the runtime
@@ -22,7 +22,7 @@ ant
 mv silver.composed.Default.jar ../jars/
 
 # Modifications may need to be made to how core translates, to accomodate translation/runtime changes
-if [ "$1" == "--newcore" ]; then
+if [ $# -gt 0 && "$1" == "--newcore" ]; then
   echo -e "\a"
   echo " Updates to core should be made NOW, to accomodate a new runtime... "
   read
@@ -48,7 +48,7 @@ mv silver.composed.Default.jar ../jars/
 # Finally, we should have a fully working binary on all the new code. Run it again to reach a fixed point:
 
 echo "One more full cycle ..."
-time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default
+time java -ea -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default
 ant
 mv silver.composed.Default.jar ../jars/
 

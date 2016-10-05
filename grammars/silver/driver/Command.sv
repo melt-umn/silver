@@ -131,6 +131,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
          else right(a);
 }
 
+-- This uses Either backwards. TODO: flip order? "right is correct" also TODO: use RunError?
 function determineBuildEnv
 IOVal<Either<BuildEnv [String]>> ::= a::Decorated CmdArgs  ioin::IO
 {

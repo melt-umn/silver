@@ -16,7 +16,7 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
 
   -- Give the group a name, deterministically, based on line number
   production attribute fName :: String;
-  fName = top.grammarName ++ ":__disam" ++ toString($1.line);
+  fName = top.grammarName ++ ":__disam" ++ toString(top.location.line);
   
   acode.signature = namedNamedSignature(fName);
   acode.blockContext = disambiguationContext();

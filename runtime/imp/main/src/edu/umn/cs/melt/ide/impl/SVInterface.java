@@ -6,6 +6,7 @@ import java.io.Reader;
 import org.eclipse.core.resources.IProject;
 
 import common.ConsCell;
+import common.IOToken;
 import common.Node;
 import common.StringCatter;
 import core.NIOVal;
@@ -69,7 +70,7 @@ public interface SVInterface {
 	 * @param iotoken  An input IO token.
 	 * @return An IO object that contains a list of error messages to raise.
 	 */
-	public NIOVal build(IProject project, ConsCell properties, Object iotoken); 
+	public NIOVal build(IProject project, ConsCell properties, IOToken iotoken); 
 
 	/**
 	 * IOVal<[IdeMessage]> ::= IdeProject [IdeProperty] IO
@@ -87,7 +88,7 @@ public interface SVInterface {
 	 * @param iotoken  An input IO token.
 	 * @return An IO object that contains a list of *additional* error messages to raise.
 	 */
-	public NIOVal postbuild(IProject project, ConsCell properties, Object iotoken);
+	public NIOVal postbuild(IProject project, ConsCell properties, IOToken iotoken);
 	
 	/**
 	 * IOVal<[IdeMessage]> ::= IdeProject [IdeProperty] IO
@@ -99,7 +100,7 @@ public interface SVInterface {
 	 * @param iotoken  An input IO token.
 	 * @return  Any additional errors to raise (usually sys errors, rather than for files)
 	 */
-	public NIOVal export(IProject project, ConsCell properties, Object iotoken);
+	public NIOVal export(IProject project, ConsCell properties, IOToken iotoken);
 	
 	/**
 	 * [Location] ::= <<CST root's type>>

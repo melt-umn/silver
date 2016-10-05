@@ -1,6 +1,6 @@
 #!/bin/bash
 
-
+set -eu
 
 # This script is not installed by default, and is useless for most users.
 # This is intended for debugging the silver compiler / translation itself,
@@ -17,13 +17,15 @@ elif [[ ! -f "$1" ]]; then
 fi
 
 JAR=$1
-shift
 MAINCLASS=`unzip -c "$JAR" META-INF/MANIFEST.MF | grep "Main-Class" | cut -d\  -f 2 | sed 's/\r$//'`
 
+# Reminder: consumes an arg. Used so $@ later works as expected.
+shift
+
 echo ""
-echo "jdb command reminders: where, bt, locals, dump, up/down, print"
+echo "jdb command reminders: where, up/down, locals, dump, print"
 echo ""
-echo "Run the following the jdb prompt:"
+echo "Run the following the jdb prompt (C&P one line at a time):"
 echo "catch java.lang.NullPointerException"
 echo "catch common.exceptions.SilverException"
 echo "run $MAINCLASS $@"

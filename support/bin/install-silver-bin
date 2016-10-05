@@ -1,22 +1,26 @@
 #!/bin/bash
 
+set -eu
+
 if [ ! -d ~/bin ]; then
-  echo -e "This script's purpose is to place the 'silver' script in ~/bin.\n"
-  echo "You do no have a ~/bin directory, so this script is aborting."
+  echo "~/bin not found. Aborting."
   case `uname` in
   *Darwin*) 
-    echo "There is another script 'osx-create-home-bin' that will create a"
-    echo "~/bin directory and alter your shell's path. Take a look with:"
-    echo -e "\tcat osx-create-home-bin"
-    echo -e "\t./osx-create-home-bin"
-    echo -e "\t./install-silver-bin"
+    echo "On OS X, you can create it and alter you shell to include it in your PATH:"
+    echo -e "\tmkdir ~/bin"
+    if [ -f ~/.bash_profile ]; then
+      CHOICE=~/.bash_profile
+    else
+      CHOICE=~/.profile
+    fi
+    echo "Then edit ${CHOICE} to include:"
+    echo -e "\tPATH=~/bin:\$PATH"
+    echo "And then restart your terminal."
     ;;
   *)
-    echo "In most popular linux distributions, you can simply"
+    echo "On most Linux distributions, all you should need to do is:"
     echo -e "\tmkdir ~/bin"
-    echo "and restart your terminal, and it will work."
-    echo "But in some cases you may also have to alter your shell startup"
-    echo "scripts to include it in your PATH."
+    echo "and restart your terminal."
     ;;
   esac
   exit 1

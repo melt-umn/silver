@@ -3,7 +3,7 @@ layout: sv_wiki
 title: IO
 ---
 
-> _**Note:**_ Silver now has support for Monads, so using these IO functions directly is now depricated.  See <update this with a link> for more details.  
+> _**Note:**_ Silver now has support for Monads, so using these IO functions directly is now depricated.  See [here](/documentation/concepts/monads/index.md) for more details.  
 
 # Input and Output
 

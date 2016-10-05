@@ -1,14 +1,8 @@
 #!/bin/bash
 
-set -e
+set -eu
 
-export SILVER_HOME=`pwd`
-echo $SILVER_HOME
-
-# No no, the user should do this.
-#./update
-
-# Do make sure any compiler changes make it before we build do
+# Make sure any compiler changes make it before we build
 ./self-compile
 cp build/silver.composed.Default.jar jars/
 
@@ -21,7 +15,7 @@ cd ../..
 # this creates a silver.composed.idetest.jar that is not used, but
 # this does create stuff in the generated directory that is used in
 # the next step
-./self-compile-ide
+SV_BUILD_TARGET="silver:composed:idetest" ./self-compile --clean
 
 # Create the Eclipse repository.  
 # The repository is in the generated/ide/silver.composed.idetest
@@ -29,7 +23,7 @@ cd ../..
 cd generated/ide/silver.composed.idetest
 mvn package
 
-TARGET=`pwd`/updatesite/target/repository
+TARGET=$(pwd)/updatesite/target/repository
 
 echo "..."
 echo "..."
@@ -39,3 +33,4 @@ echo "..."
 echo "..."
 echo "Reminder: add $TARGET as path to find update site in eclipse, if using directly"
 echo "..."
+

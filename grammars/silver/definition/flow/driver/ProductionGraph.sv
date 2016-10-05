@@ -5,7 +5,7 @@ import silver:definition:type only isDecorable;
 
 nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, cullSuspect, flowTypeVertexes, prodGraphs;
 
-inherited attribute flowTypes :: EnvTree<g:Graph<String>>;
+inherited attribute flowTypes :: EnvTree<FlowType>;
 inherited attribute prodGraphs :: EnvTree<ProductionGraph>;
 
 -- TODO: future me note: these are good candidates to be "static attributes" maybe?
@@ -342,7 +342,7 @@ Pair<String ProductionGraph> ::= p::ProductionGraph
  -          always an lhsInhVertex.
  -}
 function findAdmissibleEdges
-[Pair<FlowVertex FlowVertex>] ::= edge::Pair<FlowVertex FlowVertex>  graph::g:Graph<FlowVertex>  ft::g:Graph<String>
+[Pair<FlowVertex FlowVertex>] ::= edge::Pair<FlowVertex FlowVertex>  graph::g:Graph<FlowVertex>  ft::FlowType
 {
   -- The current flow type of the edge's source vertex (which is always a thing in the flow type)
   local currentDeps :: set:Set<String> =

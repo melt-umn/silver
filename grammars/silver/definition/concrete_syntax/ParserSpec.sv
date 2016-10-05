@@ -27,7 +27,7 @@ synthesized attribute terminalPrefixes :: [Pair<String String>];
 
 
 abstract production parserSpec
-top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[String]  terminalPrefixes::[Pair<String String>]
+top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[String]  terminalPrefixes::[Pair<String String>] addedDcls::[SyntaxDcl]
 {
   top.sourceLocation = sl;
   top.sourceGrammar = sg;
@@ -35,18 +35,25 @@ top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[S
   top.startNT = snt;
   top.moduleNames = grams;
 
-  -- TODO: consider this: because we're using only the grammars in this parser to compute 
-  -- dependencies, it may be possible that some different triggers are... triggered here
-  -- than is the case for imports in the grammar.  Perhaps this is intended, perhaps this is a bug. Consider?
+  -- We've decided we're using only the grammars in this parser to compute dependencies, as opposed 
+  -- to all grammars imported in the env. 
+  -- This could affect which conditional imports get triggered, and thus what gets included in the parser
   production med :: ModuleExportedDefs =
     moduleExportedDefs(sl, top.compiledGrammars, computeDependencies(grams, top.compiledGrammars), grams, []);
 
-  top.cstAst = cstRoot(fn, snt, foldr(consSyntax, nilSyntax(), med.syntaxAst), terminalPrefixes);
+  top.cstAst = cstRoot(fn, snt, foldr(consSyntax, nilSyntax(), addedDcls ++ med.syntaxAst), terminalPrefixes);
   
   local decomposedTerminalPrefixes :: Pair<[String] [String]> =
     unzipPairs(terminalPrefixes);
   
   top.unparse = "parser(" ++ implode(",", [
-    sl.unparse, quoteString(sg), quoteString(fn), quoteString(snt), unparseStrings(grams), unparseStrings(decomposedTerminalPrefixes.fst), unparseStrings(decomposedTerminalPrefixes.snd)]) ++ ")";
+    sl.unparse,
+    quoteString(sg),
+    quoteString(fn),
+    quoteString(snt),
+    unparseStrings(grams),
+    unparseStrings(decomposedTerminalPrefixes.fst),
+    unparseStrings(decomposedTerminalPrefixes.snd),
+    "[" ++ implode(", ", foldr(consSyntax, nilSyntax(), addedDcls).unparses) ++ "]"]) ++ ")";
 }
 
