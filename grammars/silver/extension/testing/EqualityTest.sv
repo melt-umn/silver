@@ -194,13 +194,13 @@ ag::AGDcl ::= kwd::'equalityTest'
 -- Oh, boy... this whole pile of code is awful
 
 function functionNameForBaseTypesCS
-Maybe<String> ::= valueType::Type prefix::String
+Maybe<String> ::= valueType::Type prefixS::String
 { return
    case valueType of
-   | integerType(_) -> just(prefix ++ "Integer")
-   | floatType(_)   -> just(prefix ++ "Float")
-   | stringType(_)  -> just(prefix ++ "String")
-   | booleanType(_) -> just(prefix ++ "Boolean")
+   | integerType(_) -> just(prefixS ++ "Integer")
+   | floatType(_)   -> just(prefixS ++ "Float")
+   | stringType(_)  -> just(prefixS ++ "String")
+   | booleanType(_) -> just(prefixS ++ "Boolean")
    | _ -> nothing()
    end;
 }

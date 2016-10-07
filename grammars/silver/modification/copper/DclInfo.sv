@@ -111,3 +111,15 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.defLHSDispatcher = parserAttributeDefLHS(_, location=_);
 }
 
+-- TODO: This sort of thing probably ought to be done on the CstAst and not be a part of the Silver environment pretending to be a value.
+abstract production prefixSeparatorDcl
+top::DclInfo ::= sg::String sl::Location sep::String
+{
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = "_prefix_seperator";
+
+  top.unparse = "_prefix_seperator(" ++ sl.unparse ++ ", \"" ++ escapeString(sep) ++ "\")";
+
+  top.typerep = error("_prefix_seperator does not have a type");
+}

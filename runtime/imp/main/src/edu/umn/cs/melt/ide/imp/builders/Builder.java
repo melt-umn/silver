@@ -14,6 +14,7 @@ import org.eclipse.core.runtime.OperationCanceledException;
 
 import common.ConsCell;
 import common.DecoratedNode;
+import common.IOToken;
 import common.Lazy;
 import common.TopNode;
 import common.javainterop.ConsCellCollection;
@@ -52,7 +53,7 @@ public class Builder extends IncrementalProjectBuilder {
 				ProjectProperties.getPropertyPersister(project.getLocation().toString());
 		
 		// Run the build
-		final NIOVal undecorated_build_result = sv.build(project, properties.serializeToSilverType(), null);
+		final NIOVal undecorated_build_result = sv.build(project, properties.serializeToSilverType(), IOToken.singleton);
 		final DecoratedNode build_result = undecorated_build_result.decorate(TopNode.singleton, (Lazy[])null);
 		// demand evaluation of io actions
 		build_result.synthesized(core.Init.core_io__ON__core_IOVal);
@@ -84,7 +85,7 @@ public class Builder extends IncrementalProjectBuilder {
 			public void run() {
 				// Now, invoke the post-builder.
 				synchronized(lock) {
-					final NIOVal undecorate_post_result = sv.postbuild(project, properties.serializeToSilverType(), null);
+					final NIOVal undecorate_post_result = sv.postbuild(project, properties.serializeToSilverType(), IOToken.singleton);
 					final DecoratedNode post_result = undecorate_post_result.decorate(TopNode.singleton, (Lazy[])null);
 					post_result.synthesized(core.Init.core_io__ON__core_IOVal);
 					

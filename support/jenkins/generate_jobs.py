@@ -20,9 +20,6 @@ jenkinsURL = "coldpress.cs.umn.edu:8080"
 # User name and API token. Note this is not your password! Check user config page to see it.
 jenkinsUsername = "tedinski"
 
-# mercurial full path for jenkins instance
-mercurialFullpath = "/soft/mercurial/1.8.1/lucid64/bin"
-
 # To avoid committing API tokens ever again...
 f = open(os.path.expanduser("~/.jenkinsapi"), 'r')
 jenkinsAPIToken = f.readline().strip()
@@ -130,7 +127,7 @@ class SilverTutorialJob(JenkinsJobConfig):
 class SilverJob(JenkinsJobConfig):
 	def __init__(self, testtriggers, othertriggers):
 		self.jobname = "silver"
-		self.description = "The Silver compiler"
+		self.description = "The Silver compiler and runtime"
 		self.command = "./fetch-jars\n" + \
 		               "./deep-rebuild\n" + \
 		               "./deep-clean -delete all\n" + \
@@ -154,30 +151,43 @@ class SilverJob(JenkinsJobConfig):
 <project>
   <actions/>
   <description>${description}</description>
-  <logRotator>
-    <daysToKeep>-1</daysToKeep>
-    <numToKeep>-1</numToKeep>
-    <artifactDaysToKeep>14</artifactDaysToKeep>
-    <artifactNumToKeep>-1</artifactNumToKeep>
-  </logRotator>
   <keepDependencies>false</keepDependencies>
-  <properties/>
-  <scm class="hudson.plugins.mercurial.MercurialSCM">
-    <installation>Module system mercurial</installation>
-    <source>http://code.google.com/p/silver</source>
-    <modules></modules>
-    <clean>true</clean>
-    <browser class="hudson.plugins.mercurial.browser.GoogleCode">
-      <url>http://code.google.com/p/silver/source/</url>
-    </browser>
+  <properties>
+    <jenkins.model.BuildDiscarderProperty>
+      <strategy class="hudson.tasks.LogRotator">
+        <daysToKeep>-1</daysToKeep>
+        <numToKeep>-1</numToKeep>
+        <artifactDaysToKeep>14</artifactDaysToKeep>
+        <artifactNumToKeep>-1</artifactNumToKeep>
+      </strategy>
+    </jenkins.model.BuildDiscarderProperty>
+  </properties>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@2.4.3">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <url>https://github.com/melt-umn/silver.git</url>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>refs/heads/develop</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions>
+      <hudson.plugins.git.extensions.impl.CleanBeforeCheckout/>
+    </extensions>
   </scm>
   <canRoam>true</canRoam>
   <disabled>false</disabled>
   <blockBuildWhenDownstreamBuilding>true</blockBuildWhenDownstreamBuilding>
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
-  <triggers class="vector">
+  <triggers>
     <hudson.triggers.SCMTrigger>
       <spec>@hourly</spec>
+      <ignorePostCommitHooks>false</ignorePostCommitHooks>
     </hudson.triggers.SCMTrigger>
   </triggers>
   <concurrentBuild>false</concurrentBuild>
@@ -190,7 +200,11 @@ class SilverJob(JenkinsJobConfig):
   <publishers>
     <hudson.tasks.ArtifactArchiver>
       <artifacts>jars/*.jar</artifacts>
-      <latestOnly>false</latestOnly>
+      <allowEmptyArchive>false</allowEmptyArchive>
+      <onlyIfSuccessful>false</onlyIfSuccessful>
+      <fingerprint>true</fingerprint>
+      <defaultExcludes>true</defaultExcludes>
+      <caseSensitive>true</caseSensitive>
     </hudson.tasks.ArtifactArchiver>
     <hudson.tasks.BuildTrigger>
       <childProjects>${testtriggers}</childProjects>
@@ -198,16 +212,16 @@ class SilverJob(JenkinsJobConfig):
         <name>SUCCESS</name>
         <ordinal>0</ordinal>
         <color>BLUE</color>
+        <completeBuild>true</completeBuild>
       </threshold>
     </hudson.tasks.BuildTrigger>
-    <join.JoinTrigger>
+    <join.JoinTrigger plugin="join@1.19">
       <joinProjects>${othertriggers}</joinProjects>
       <joinPublishers/>
       <evenIfDownstreamUnstable>false</evenIfDownstreamUnstable>
     </join.JoinTrigger>
     <hudson.tasks.Fingerprinter>
       <targets></targets>
-      <recordBuildArtifacts>true</recordBuildArtifacts>
     </hudson.tasks.Fingerprinter>
   </publishers>
   <buildWrappers/>
@@ -217,9 +231,8 @@ class SilverJob(JenkinsJobConfig):
 class CopperJob(JenkinsJobConfig):
 	def __init__(self, triggers):
 		self.jobname = "copper"
-		self.description = "Build Copper 0.7-devel from mercurial"
-		self.command = "export PATH=$PATH:" + mercurialFullpath + "\n" + \
-                               "ant dist\n"
+		self.description = "The Copper compiler and runtime"
+		self.command = "ant dist\n"
 		self.triggers = ', '.join(triggers)
 
 	def configXml(self):
@@ -229,19 +242,35 @@ class CopperJob(JenkinsJobConfig):
 		return string.Template("""<?xml version='1.0' encoding='UTF-8'?>
 <project>
   <actions/>
-  <description>${description}</description>
+  <description>${description}l</description>
   <keepDependencies>false</keepDependencies>
-  <properties/>
-  <scm class="hudson.plugins.mercurial.MercurialSCM" plugin="mercurial@1.49">
-    <installation>Module system mercurial</installation>
-    <source>https://code.google.com/p/copper-cc</source>
-    <modules></modules>
-    <branch>0.7-devel</branch>
-    <clean>true</clean>
-    <browser class="hudson.plugins.mercurial.browser.HgWeb">
-      <url>https://code.google.com/p/copper-cc/</url>
-    </browser>
-    <credentialsId></credentialsId>
+  <properties>
+    <jenkins.model.BuildDiscarderProperty>
+      <strategy class="hudson.tasks.LogRotator">
+        <daysToKeep>-1</daysToKeep>
+        <numToKeep>-1</numToKeep>
+        <artifactDaysToKeep>-1</artifactDaysToKeep>
+        <artifactNumToKeep>1</artifactNumToKeep>
+      </strategy>
+    </jenkins.model.BuildDiscarderProperty>
+  </properties>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@2.4.3">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <url>https://github.com/melt-umn/copper.git</url>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>refs/heads/develop</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions>
+      <hudson.plugins.git.extensions.impl.CleanBeforeCheckout/>
+    </extensions>
   </scm>
   <canRoam>true</canRoam>
   <disabled>false</disabled>
@@ -262,8 +291,11 @@ class CopperJob(JenkinsJobConfig):
   <publishers>
     <hudson.tasks.ArtifactArchiver>
       <artifacts>jar/*.jar</artifacts>
-      <latestOnly>true</latestOnly>
       <allowEmptyArchive>false</allowEmptyArchive>
+      <onlyIfSuccessful>false</onlyIfSuccessful>
+      <fingerprint>true</fingerprint>
+      <defaultExcludes>true</defaultExcludes>
+      <caseSensitive>true</caseSensitive>
     </hudson.tasks.ArtifactArchiver>
     <hudson.tasks.BuildTrigger>
       <childProjects>${triggers}</childProjects>
@@ -276,7 +308,6 @@ class CopperJob(JenkinsJobConfig):
     </hudson.tasks.BuildTrigger>
     <hudson.tasks.Fingerprinter>
       <targets></targets>
-      <recordBuildArtifacts>true</recordBuildArtifacts>
     </hudson.tasks.Fingerprinter>
   </publishers>
   <buildWrappers/>
@@ -286,14 +317,15 @@ class CopperIntegrationJob(JenkinsJobConfig):
 	def __init__(self):
 		self.jobname = "copper-integration"
 		self.description = "Builds Silver using the latest Copper artifacts."
-		self.command = "mkdir -p sv\n" + \
+		self.command = "if [ -d sv ]; then rm -rf sv ; fi\n" + \
+		               "mkdir -p sv\n" + \
                                "cp -r /export/scratch/melt-jenkins/custom-silver/* sv/\n" + \
-                               "cp /export/scratch/melt-jenkins/workspace/copper/builds/lastSuccessfulBuild/archive/jar/*.jar sv/jars/\n" + \
+                               "cp /var/lib/jenkins/jobs/copper/builds/lastSuccessfulBuild/archive/jar/*.jar sv/jars/\n" + \
                                "cd sv\n" + \
                                "./deep-rebuild\n" + \
                                "cd ..\n" + \
                                "rm -rf sv\n" + \
-                               "cp /export/scratch/melt-jenkins/workspace/copper/builds/lastSuccessfulBuild/archive/jar/*.jar /export/scratch/melt-jenkins/custom-stable-dump/\n"
+                               "cp /var/lib/jenkins/jobs/copper/builds/lastSuccessfulBuild/archive/jar/*.jar /export/scratch/melt-jenkins/custom-stable-dump/\n"
 
 	def configXml(self):
 		assert self.description != "", "Must provide description"
@@ -333,9 +365,10 @@ class SubversionJob(JenkinsJobConfig):
       <hudson.scm.SubversionSCM_-ModuleLocation>
         <remote>${r}</remote>
         <local>${l}</local>
-        <credentialsId>69c1ed95-f9e8-4c35-83ad-4bf3b190b9fa</credentialsId>
+        <depthOption>infinity</depthOption>
+        <ignoreExternalsOption>true</ignoreExternalsOption>
+        <credentialsId>30752d16-90ab-4b4e-b598-dc2a709c40e5</credentialsId>
       </hudson.scm.SubversionSCM_-ModuleLocation>""").substitute(r=r, l=l)
-        # TODO: BUG: We're just using meltsvn credentialsid here for all svn jobs. only kind of svn job right now...
 
 	def configXml(self):
 		assert self.description != "", "Must provide description"
@@ -347,7 +380,7 @@ class SubversionJob(JenkinsJobConfig):
   <description>${description}</description>
   <keepDependencies>false</keepDependencies>
   <properties/>
-  <scm class="hudson.scm.SubversionSCM">
+  <scm class="hudson.scm.SubversionSCM" plugin="subversion@2.5.7">
     <locations>${paths}
     </locations>
     <excludedRegions></excludedRegions>
@@ -356,14 +389,17 @@ class SubversionJob(JenkinsJobConfig):
     <excludedRevprop></excludedRevprop>
     <excludedCommitMessages></excludedCommitMessages>
     <workspaceUpdater class="hudson.scm.subversion.UpdateWithCleanUpdater"/>
+    <ignoreDirPropChanges>false</ignoreDirPropChanges>
+    <filterChangelog>false</filterChangelog>
   </scm>
   <canRoam>true</canRoam>
   <disabled>false</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
   <blockBuildWhenUpstreamBuilding>true</blockBuildWhenUpstreamBuilding>
-  <triggers class="vector">
+  <triggers>
     <hudson.triggers.SCMTrigger>
-      <spec>@midnight</spec>
+      <spec>@daily</spec>
+      <ignorePostCommitHooks>false</ignorePostCommitHooks>
     </hudson.triggers.SCMTrigger>
   </triggers>
   <concurrentBuild>false</concurrentBuild>

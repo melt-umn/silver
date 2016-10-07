@@ -2,6 +2,12 @@ package common;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import common.exceptions.*;
@@ -62,7 +68,7 @@ public final class Util {
 	 * @param status the exit status code
 	 * @return Does not return.
 	 */
-	public static Object exit(int status) {
+	public static IOToken exit(int status) {
 		throw new SilverExit(status);
 	}
 	
@@ -129,13 +135,13 @@ public final class Util {
 		return (int) ((new File(sb).lastModified()) / 1000);
 	}
 	
-	public static Object touchFile(String sb) {
+	public static IOToken touchFile(String sb) {
 		return setFileTime(sb, currentTime());
 	}
 	
-	public static Object setFileTime(String sb, int time) {
+	public static IOToken setFileTime(String sb, int time) {
 		new File(sb).setLastModified(((long)time) * 1000);
-		return null;
+		return IOToken.singleton;
 	}
 	
 	public static int currentTime() {
@@ -158,66 +164,76 @@ public final class Util {
 		return new File(sb).delete();
 	}
 	
-	public static Object deleteTree(String path) {
-		deleteTreeRecursive(new File(path));
-		return null;
+	public static IOToken deleteTree(String path) {
+		// We should consider using walkFileTree, in the future
+		deleteTreeRecursive(Paths.get(path));
+		return IOToken.singleton;
 	}
-	private static void deleteTreeRecursive(File f) {
-		if(!f.exists()) {
-			// Be silent about this "error condition"
+	private static void deleteTreeRecursive(Path f) {
+		if(!Files.exists(f, LinkOption.NOFOLLOW_LINKS)) {
+			// If the file doesn't exist, ignore it silently. Disk changed underneath us or something?
+			// NOFOLLOW because we care if the symlink exists, not what the symlink points to.
 			return;
 		}
 		// Juuuust in case, we should never be trying to delete "/" or "/home" or "c:/users" etc.
-		if(f.getAbsolutePath().length() < 9)
+		if(f.toAbsolutePath().normalize().toString().length() < 9)
 			throw new RuntimeException("Canary against deleting things we shouldn't. Tried to delete path: " + f);
-		// This approach is bad, but nothing really better for Java 6.
-		// When we can use Java 7, use File.walkFileTree, to handle symlinks properly.
-		if(f.isDirectory()) {
-			for (File child : f.listFiles())
-				deleteTreeRecursive(child);
+		try {
+			// Need to handle: symlinks, directories, and normal files.
+			if(Files.isSymbolicLink(f)) {
+				// Deletes symlink, without traversing into it.
+				Files.delete(f);
+			} else if(Files.isDirectory(f)) {
+				// Recursively delete files, then the directory itself.
+				try (DirectoryStream<Path> stream = Files.newDirectoryStream(f)) {
+					for (Path child : stream) {
+						deleteTreeRecursive(child);
+					}
+				}
+			} else {
+				Files.delete(f);
+			}
+		} catch (IOException e) {
+			// If we encounter an IO error anywhere, we immediately stop and raise an exception
+			// Safety valve if we try to delete something we shouldn't.
+			throw new RuntimeException(e);
 		}
-		// Terminate eagerly, just in case we've wandered through a symlink to somewhere important,
-		// and that's how we encountered a file we don't have permissions for.
-		if(!f.delete())
-			throw new RuntimeException("Failed to delete file: " + f);
 	}
 	
-    public static StringCatter getStr ( ) {
-	try {
-	    InputStreamReader isr = new InputStreamReader(System.in);
-	    BufferedReader br = new BufferedReader(isr);
-	    String s = br.readLine();
-	    return new StringCatter (s) ;
+	private static BufferedReader our_stdin = null;
+	public static StringCatter getStr() {
+		try {
+			if(our_stdin == null) {
+				// We should persist this, since it's buffered, we might buffer bytes for the NEXT line
+				our_stdin = new BufferedReader(new InputStreamReader(System.in));
+			}
+			return new StringCatter(our_stdin.readLine()) ;
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
-	catch (IOException e) {
-	    String s = "IO EXCEPTION" ;
-	    return new StringCatter (s) ;
-	}
 
-    }
-
-	public static Object copyFile(String from, String to) {
-		// TODO: When we're good to depend on Java 7, there's Files.copy. This method should work for 4:
-	    FileChannel source = null;
-	    FileChannel destination = null;
-
-	    try {
-			File toFile = new File(to);
-			File fromFile = new File(from);
-		    if(!toFile.exists()) {
-		        toFile.createNewFile();
-		    }
-
-	        source = new FileInputStream(fromFile).getChannel();
-	        destination = new FileOutputStream(toFile).getChannel();
-	        destination.transferFrom(source, 0, source.size());
-	        
-	        source.close();
-	        destination.close();
-	        return null;
-	    } catch(Exception io) {
-	    	throw new RuntimeException(io);
-	    }
+	/**
+	 * Copy a file from 'from' to 'to'.
+	 * 
+	 * @param from A path to the file to copy
+	 * @param to A path to where the file should be copied. May be a directory.
+	 * @return singleton IO token.
+	 */
+	public static IOToken copyFile(String from, String to) {
+		Path src = Paths.get(from);
+		Path dst = Paths.get(to);
+		try {
+			// copy x.java into src. create the file src/x.java. Works even if dst is symlink.
+			if(Files.isDirectory(dst)) {
+				dst = dst.resolve(dst.getFileName());
+			}
+			Files.copy(src, dst);
+		} catch (IOException io) {
+			// Unfortunately, we still don't have a better way.
+			throw new RuntimeException(io);
+		}
+		return IOToken.singleton;
 	}
 	
 	/**
@@ -228,14 +244,7 @@ public final class Util {
 	 */
 	public static StringCatter readFile(String filename) {
 		try {
-			// TODO: Java 7 : Files.readAllBytes(...)
-			File file = new File(filename);
-			FileInputStream fis = new FileInputStream(file);
-			DataInputStream in = new DataInputStream(fis);
-			byte[] b = new byte[(int)file.length()];
-			in.readFully(b); // The only reason we use DataInputStream is this method.
-			in.close();
-			fis.close();
+			byte[] b = Files.readAllBytes(Paths.get(filename));
 			return new StringCatter(new String(b));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -243,6 +252,9 @@ public final class Util {
 	}
 
 	public static StringCatter cwd() {
+		// This is a typical approach because JVMs don't change the working directory.
+		// However, this is an alternative if there's ever a reason to suspect that this no longer works
+		// Paths.get(".").toAbsolutePath().normalize().toString()
 		return new StringCatter(System.getProperty("user.dir"));
 	}
 	
@@ -262,10 +274,24 @@ public final class Util {
 			return new StringCatter(result);
 	}
 
+	/**
+	 * Invokes an external command, channeling all stdin/out/err to the console normally.
+	 * 
+	 * N.B. uses 'bash' to invoke the command. There are two major reasons:
+	 * (1) allows redirects and such, which is useful
+	 * (2) because this command takes just a single string, we must somehow deal with spaces.
+	 * e.g. 'touch "abc 123"' bash take care of interpreting the quotes for us.
+	 * 
+	 * Unfortunately platform dependency though.
+	 * 
+	 * @param sb A string for back to interpret and execute.
+	 * @return The exit status of the process.
+	 */
 	public static int system(String sb) {
 		try {
-			String cmdstr[] = {"bash", "-c", sb}; // TODO: platform dependency!
-			Process p = Runtime.getRuntime().exec(cmdstr);
+			ProcessBuilder pb = new ProcessBuilder("bash", "-c", sb);
+			pb.inheritIO();
+			Process p = pb.start();
 			p.waitFor();
 			return p.exitValue();
 		} catch (Exception e) {
@@ -280,11 +306,10 @@ public final class Util {
 	 * 
 	 * @param file The filename
 	 * @param content Either a String or {@link StringCatter} object.
-	 * @return null, the IO object.
+	 * @return singleton IO token.
 	 */
-	public static Object writeFile(String file, Object content) {
+	public static IOToken writeFile(String file, Object content) {
 		try {
-			// TODO: Java 7 : Files.write
 			Writer fout = new FileWriter(file); // already buffered
 			if(content instanceof StringCatter)
 				((StringCatter)content).write(fout);
@@ -292,7 +317,7 @@ public final class Util {
 				fout.write(content.toString());
 			fout.flush();
 			fout.close();
-			return null;
+			return IOToken.singleton;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -305,9 +330,9 @@ public final class Util {
 	 * 
 	 * @param file The filename
 	 * @param content Either a String or {@link StringCatter} object.
-	 * @return null, the IO object.
+	 * @return singleton IO token.
 	 */
-	public static Object appendFile(String file, Object content) { // TODO: merge with above!
+	public static IOToken appendFile(String file, Object content) { // TODO: merge with above!
 		try {
 			Writer fout = new FileWriter(file, true); // already buffered
 			if(content instanceof StringCatter)
@@ -316,16 +341,16 @@ public final class Util {
 				fout.write(content.toString());
 			fout.flush();
 			fout.close();
-			return null;
+			return IOToken.singleton;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	public static Object print(String sb) {
+	public static IOToken print(String sb) {
 		// TODO: should we avoid demanding stringcatter objects?
 		System.out.print(sb);
-		return null;
+		return IOToken.singleton;
 	}
 
 	/**
@@ -364,10 +389,11 @@ public final class Util {
 	 * 
 	 * @param i First thing to do
 	 * @param o Second thing to do
-	 * @return null, the IO object.
+	 * @return o, the second thing given, which is intended to be the
+	 * IO token.
 	 */
 	public static Object io(Object i, Object o) {
-		return null;
+		return o;
 	}
 
 	private static int i = 0;
@@ -443,8 +469,8 @@ public final class Util {
 		} else if(o instanceof StringCatter) {
 			sb.append("\"" + o.toString() + "\"");
 		} else if(o instanceof Integer ||
-				  o instanceof Float ||
-    			  o instanceof Boolean) {
+			  o instanceof Float ||
+ 			  o instanceof Boolean) {
 			sb.append(o.toString());
 		} else if(o instanceof ConsCell) {
 			hackyhackyUnparseList((ConsCell)o, sb);

@@ -45,15 +45,17 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
 
   s2.univLayout = univLayout;
   top.xmlCopper =
-"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ++
+s"""<?xml version="1.0" encoding="UTF-8"?>
 
-"<CopperSpec xmlns=\"http://melt.cs.umn.edu/copper/xmlns\">\n" ++
-"  <Parser id=\"" ++ makeCopperName(parsername) ++ "\" isUnitary=\"true\">\n" ++
-"    <PP>" ++ parsername ++ "</PP>\n" ++
-"    <Grammars><GrammarRef id=\"" ++ s2.containingGrammar ++ "\"/></Grammars>\n" ++
-"    <StartSymbol>" ++ xmlCopperRef(head(startFound)) ++ "</StartSymbol>\n" ++
+<CopperSpec xmlns="http://melt.cs.umn.edu/copper/xmlns">
+  <Parser id="${makeCopperName(parsername)}" isUnitary="true">
+    <PP>${parsername}</PP>
+    <Grammars><GrammarRef id="${s2.containingGrammar}"/></Grammars>
+    <StartSymbol>${xmlCopperRef(head(startFound))}</StartSymbol>
+""" ++
 -- The layout before and after the root nonterminal. For now, universal layout.
-"    <StartLayout>" ++ univLayout ++ "</StartLayout>\n" ++
+s"""    <StartLayout>${univLayout}</StartLayout>
+""" ++
 -- TODO fix: ?
 --"    <Package>parsers</Package>\n" ++
 --"    <ClassName>SingleParser</ClassName>\n" ++
@@ -71,21 +73,24 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
 --"    <Preamble><Code><![CDATA[  ]]></Code></Preamble>\n" ++
 -- This stuff gets dumped onto the semantic action container class:
 --"    <SemanticActionAuxiliaryCode><Code><![CDATA[  ]]></Code></SemanticActionAuxiliaryCode>\n" ++
-"  </Parser>\n\n" ++
+s"""  </Parser>
 
-"  <Grammar id=\"" ++ s2.containingGrammar ++ "\">\n\n" ++
-"    <PP>" ++ s2.containingGrammar ++ "</PP>\n\n" ++
+  <Grammar id="${s2.containingGrammar}">
+
+    <PP>${s2.containingGrammar}</PP>
+
+""" ++
 -- Default layout for production, unless otherwise specified.
-"    <Layout>" ++ univLayout ++ "</Layout>\n\n" ++
-"    <Declarations>\n" ++
-"      <ParserAttribute id=\"context\">\n" ++
-"        <Type><![CDATA[common.DecoratedNode]]></Type>\n" ++
-"        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>\n" ++
-"      </ParserAttribute>\n" ++
-       s2.xmlCopper ++
-"    </Declarations>\n" ++
-"  </Grammar>\n" ++
-"</CopperSpec>\n";
+s"""    <Layout>${univLayout}</Layout>
+    <Declarations>
+      <ParserAttribute id="context">
+        <Type><![CDATA[common.DecoratedNode]]></Type>
+        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>
+      </ParserAttribute>
+       ${s2.xmlCopper}
+    </Declarations>
+  </Grammar>
+</CopperSpec>""";
 
   top.unparse = implode(",\n ", s.unparses);
 }

@@ -33,10 +33,10 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
       map(constructPhantomProductionGraph(_, allFlowEnv, allRealEnv), allNts);
   
   -- Now, solve for flow types!!
-  local flowTypes1 :: Pair<[ProductionGraph] EnvTree<g:Graph<String>>> =
+  local flowTypes1 :: Pair<[ProductionGraph] EnvTree<FlowType>> =
     fullySolveFlowTypes(prodGraph, rtm:empty(compareString));
   
-  production flowTypes :: EnvTree<g:Graph<String>> = flowTypes1.snd;
+  production flowTypes :: EnvTree<FlowType> = flowTypes1.snd;
   production finalGraphs :: [ProductionGraph] = flowTypes1.fst;
   production finalGraphEnv :: EnvTree<ProductionGraph> = directBuildTree(map(prodGraphToEnv, finalGraphs));
   

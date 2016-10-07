@@ -11,6 +11,7 @@ autocopy attribute cstNTProds :: EnvTree<SyntaxDcl>;
 synthesized attribute cstNormalize :: [SyntaxDcl];
 
 synthesized attribute allIgnoreTerminals :: [Decorated SyntaxDcl];
+synthesized attribute allMarkingTerminals :: [Decorated SyntaxDcl];
 autocopy attribute univLayout :: String;
 synthesized attribute classDomContribs :: String;
 synthesized attribute classSubContribs :: String;
@@ -24,7 +25,7 @@ synthesized attribute unparses :: [String];
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, univLayout, xmlCopper, unparses, containingGrammar, prefixesForTerminals;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, univLayout, xmlCopper, unparses, containingGrammar, prefixesForTerminals;
 
 abstract production nilSyntax
 top::Syntax ::=
@@ -34,6 +35,7 @@ top::Syntax ::=
   top.cstProds = [];
   top.cstNormalize = [];
   top.allIgnoreTerminals = [];
+  top.allMarkingTerminals = [];
   top.xmlCopper = "";
   top.unparses = [];
 }
@@ -45,6 +47,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   top.cstProds = s1.cstProds ++ s2.cstProds;
   top.cstNormalize = s1.cstNormalize ++ s2.cstNormalize;
   top.allIgnoreTerminals = s1.allIgnoreTerminals ++ s2.allIgnoreTerminals;
+  top.allMarkingTerminals = s1.allMarkingTerminals ++ s2.allMarkingTerminals;
   top.xmlCopper = s1.xmlCopper ++ s2.xmlCopper;
   top.unparses = s1.unparses ++ s2.unparses;
 }
@@ -52,7 +55,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, univLayout, xmlCopper, classDomContribs, classSubContribs, unparses, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, univLayout, xmlCopper, classDomContribs, classSubContribs, unparses, containingGrammar, prefixesForTerminals;
 
 synthesized attribute sortKey :: String;
 
@@ -61,6 +64,7 @@ top::SyntaxDcl ::=
 {
   top.cstProds = [];
   top.allIgnoreTerminals = [];
+  top.allMarkingTerminals = [];
   top.classDomContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.classSubContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
 }
@@ -111,20 +115,14 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
 
   top.cstNormalize = [top];
   top.allIgnoreTerminals = if modifiers.ignored then [top] else [];
+  top.allMarkingTerminals = if modifiers.marking then [top] else [];
 
-  local pfx :: [String] = searchEnvTree(n, top.prefixesForTerminals);
-  
-  production lexeme_source :: String =
-    if null(pfx) then "lexeme"
-    else "lexeme.substring(" ++ toString(length(head(pfx))) ++ ")";
-  production regex_to_use :: Regex_R =
-    if null(pfx) then regex
-    else concatenateRegex(literalRegex(head(pfx)), regex);
+  production pfx :: [String] = searchEnvTree(n, top.prefixesForTerminals);
 
   top.xmlCopper =
     "  <Terminal id=\"" ++ makeCopperName(n) ++ "\">\n" ++
     "    <PP>" ++ n ++ "</PP>\n" ++
-    "    <Regex>" ++ regex_to_use.xmlCopper ++ "</Regex>\n" ++ 
+    "    <Regex>" ++ regex.xmlCopper ++ "</Regex>\n" ++ 
     (if modifiers.opPrecedence.isJust || modifiers.opAssociation.isJust then
     "    <Operator>\n" ++
     "      <Class>main</Class>\n" ++
@@ -134,11 +132,12 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
     else "") ++
     "    <Type>common.TerminalRecord</Type>\n" ++ 
     "    <Code><![CDATA[\n" ++ 
-    "RESULT = new common.TerminalRecord(" ++ lexeme_source ++ ",virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
+    "RESULT = new common.TerminalRecord(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++ 
     "    <InClasses>" ++ modifiers.lexerclassesXML ++ "</InClasses>\n" ++ 
-    -- TODO: prefix?
+    (if null(pfx) then ""
+     else "    <Prefix><TerminalRef id=\"" ++ head(pfx) ++ "\"/></Prefix>\n") ++ 
     "    <Submits>" ++ modifiers.submitsXML ++ "</Submits>\n" ++ 
     "    <Dominates>" ++ modifiers.dominatesXML ++ "</Dominates>\n" ++
     "  </Terminal>\n";

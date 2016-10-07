@@ -1,6 +1,6 @@
 grammar silver:modification:copper;
 
-import silver:extension:easyterminal; -- only Terminal_t, EasyTerminalRef;
+import silver:driver:util only computeDependencies;
 
 terminal Parser_kwd 'parser' lexer classes {KEYWORD}; -- not RESERVED?
 
@@ -9,15 +9,32 @@ terminal Parser_kwd 'parser' lexer classes {KEYWORD}; -- not RESERVED?
 concrete production parserDcl
 top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
 {
-  top.pp = "parser " ++ m.pp ++ ";";
+  top.pp = "parser " ++ m.pp ++ ";"; -- TODO?
   
   top.moduleNames = m.moduleNames;
 
-  top.errors := t.errors ++ m.errors;
+  top.errors := t.errors ++ m.errors ++ liftedAGDcls.errors;
 
   -- TODO: dunno, should we keep this separate? For now, masquerade as a function.
   -- Only bug is that you can aspect it, but it's pointless to do so, you can't affect anything.
   top.defs = [funDef(top.grammarName, n.location, namedSig)];
+  
+  production liftedAGDcls :: AGDcl = m.liftedAGDcls;
+  liftedAGDcls.config = top.config;
+  liftedAGDcls.grammarName = top.grammarName;
+  liftedAGDcls.env = m.env;
+  liftedAGDcls.compiledGrammars = top.compiledGrammars;
+  liftedAGDcls.grammarDependencies = top.grammarDependencies;
+  liftedAGDcls.flowEnv = top.flowEnv;
+  
+  -- Parser spec grammarDependancies based off grammars included in the parser spec
+  m.grammarDependencies = computeDependencies(m.moduleNames, top.compiledGrammars);
+  
+  -- Compute the module exported defs for all grammars in the parser spec to add to the new environment
+  production med :: ModuleExportedDefs =
+    moduleExportedDefs(top.location, top.compiledGrammars, m.grammarDependencies, m.moduleNames, []);
+  
+  m.env = appendEnv(toEnv(liftedAGDcls.defs ++ med.defs), top.env);
   
   production fName :: String = top.grammarName ++ ":" ++ n.name;
 
@@ -29,13 +46,15 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
       []);
 
   production spec :: ParserSpec =
-    parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames, m.terminalPrefixes);
+    parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames, m.terminalPrefixes, liftedAGDcls.syntaxAst);
   spec.compiledGrammars = top.compiledGrammars;
 
   top.parserSpecs = [spec]; -- Note that this is undecorated.
 }
 
-nonterminal ParserComponents with config, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes;
+synthesized attribute liftedAGDcls::AGDcl;
+
+nonterminal ParserComponents with config, env, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls;
 
 concrete production nilParserComponent
 top::ParserComponents ::=
@@ -44,6 +63,7 @@ top::ParserComponents ::=
   top.moduleNames = [];
   top.errors := [];
   top.terminalPrefixes = [];
+  top.liftedAGDcls = emptyAGDcl(location=top.location);
 }
 
 concrete production consParserComponent
@@ -53,23 +73,27 @@ top::ParserComponents ::= c1::ParserComponent  c2::ParserComponents
   top.moduleNames = c1.moduleNames ++ c2.moduleNames;
   top.errors := c1.errors ++ c2.errors;
   top.terminalPrefixes = c1.terminalPrefixes ++ c2.terminalPrefixes;
+  top.liftedAGDcls = appendAGDcl(c1.liftedAGDcls, c2.liftedAGDcls, location=top.location);
 }
 
-nonterminal ParserComponent with config, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes;
+nonterminal ParserComponent with config, env, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls;
 
 concrete production parserComponent
 top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
 {
   top.pp = m.pp;
   top.moduleNames = m.moduleNames;
-  top.errors := m.errors;
+  top.errors := m.errors ++ mods.errors;
   top.terminalPrefixes = mods.terminalPrefixes;
+  top.liftedAGDcls = mods.liftedAGDcls;
   
-  mods.env = toEnv(m.defs);
+  mods.componentGrammarName = head(m.moduleNames);
 }
 
-{-- Have special env built from just this parser component -}
-nonterminal ParserComponentModifiers with config, env, grammarName, location, pp, errors, terminalPrefixes;
+autocopy attribute componentGrammarName::String;
+
+{-- Have special env built from just this parser component and the global env -}
+nonterminal ParserComponentModifiers with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, pp, errors, terminalPrefixes, liftedAGDcls;
 
 concrete production nilParserComponentModifier
 top::ParserComponentModifiers ::=
@@ -77,6 +101,7 @@ top::ParserComponentModifiers ::=
   top.pp = "";
   top.errors := [];
   top.terminalPrefixes = [];
+  top.liftedAGDcls = emptyAGDcl(location=top.location);
 }
 
 concrete production consParserComponentModifier
@@ -85,35 +110,10 @@ top::ParserComponentModifiers ::= h::ParserComponentModifier t::ParserComponentM
   top.pp = h.pp ++ t.pp;
   top.errors := h.errors ++ t.errors;
   top.terminalPrefixes = h.terminalPrefixes ++ t.terminalPrefixes;
+  top.liftedAGDcls = appendAGDcl(h.liftedAGDcls, t.liftedAGDcls, location=top.location);
 }
 
-nonterminal ParserComponentModifier with config, env, grammarName, location, pp, errors, terminalPrefixes;
-
-terminal Prefix_t 'prefix' lexer classes {KEYWORD}; -- not RESERVED
-
-concrete production prefixParserComponentModifier
-top::ParserComponentModifier ::= 'prefix' t::QName 'with' s::Terminal_t
-{
-  top.pp = "prefix " ++ t.pp ++ " with " ++ s.lexeme;
-  top.errors := t.lookupType.errors;
-  top.terminalPrefixes = [pair(t.lookupType.fullName, substring(1, length(s.lexeme)-1, s.lexeme))];
-}
-
-concrete production prefixQuotedParserComponentModifier
-top::ParserComponentModifier ::= 'prefix' t::EasyTerminalRef 'with' s::Terminal_t
-{
-  top.pp = "prefix " ++ t.pp ++ " with " ++ s.lexeme;
-  
-  top.errors := t.errors;
-  
-  top.terminalPrefixes =
-    if null(t.dcls) then []
-    else [pair(head(t.dcls).fullName, substring(1, length(s.lexeme)-1, s.lexeme))];
-  
-  --forwards to prefixParserComponentModifier($1, qName(t.location, if null(t.dcls) then "terminal:not:found" else head(t.dcls).fullName), $3, s, location=top.location);
-}
-
-
+nonterminal ParserComponentModifier with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, pp, errors, terminalPrefixes, liftedAGDcls;
 
 -- Separate bit translating the parser declaration.
 aspect production parserDcl
