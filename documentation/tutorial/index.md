@@ -29,3 +29,12 @@ The  primary  goal  of  this  document  is  to  help  new  users  begin  using  
 Section 2 we describe the components in a traditional compiler pipeline:  scanner, parser, semantic
 analyzer, and code generator.  In the following sections we describe how to specify each of these using
 Silver and Copper.
+
+### Contents
+
++ [1_language_translator_architecture |Arch]
++ [2_scanning]
++ [3_parsing]
++ [4_attribute_grammars]
++ [5_running_silver]
++ [6_what_next]
