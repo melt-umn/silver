@@ -74,5 +74,5 @@ This is the final phase in which some translation of the tree representation
 is generated.  This may be byte-code, machine code, or a translation to a language such as C. In
 most compilers this phase is preceded by an optimization phase.
 
-Next Section: [../2_scanning](Scanning)
+Next Section: [Scanning](../2_scanning)
 
