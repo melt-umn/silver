@@ -93,3 +93,4 @@ ignore terminal WhiteSpace_t /[\t\n\ ]+/ ;     -- white space
 ignore terminal LineComment_P /[\/][\/].*/ ;   -- line comments
 ```
 
+Next Section: [../3_scanning](Parsing)

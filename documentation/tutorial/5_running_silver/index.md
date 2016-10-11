@@ -54,3 +54,5 @@ system.
 
 Now that parametric polymorphism has been added to Silver we expect to develop a monadic
 extension to Silver shortly that will bring it inline with the spirit of Haskell’s monadic I/O sytem.
+
+Next Section: [../6_what_next](What Next?)

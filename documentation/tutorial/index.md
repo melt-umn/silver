@@ -32,9 +32,10 @@ Silver and Copper.
 
 ### Contents
 
-+ [1_language_translator_architecture |Arch]
-+ [2_scanning]
-+ [3_parsing]
-+ [4_attribute_grammars]
-+ [5_running_silver]
-+ [6_what_next]
+1. [1_language_translator_architecture](Language Translation Architecture)
+2. [2_scanning]()(Scanning)
+3. [3_parsing]()(Parsing)
+4. [4_attribute_grammars](Attribute Grammars)
+5. [5_running_silver](Running Silver)
+6. [6_what_next](What Next?)
+
