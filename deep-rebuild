@@ -22,7 +22,7 @@ ant
 mv silver.composed.Default.jar ../jars/
 
 # Modifications may need to be made to how core translates, to accomodate translation/runtime changes
-if [ $# -gt 0 && "$1" == "--newcore" ]; then
+if [ $# -gt 0 ] && [ "$1" == "--newcore" ]; then
   echo -e "\a"
   echo " Updates to core should be made NOW, to accomodate a new runtime... "
   read
