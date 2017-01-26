@@ -33,7 +33,7 @@ top::Message ::= l::Location m::String
 {
   top.where = l;
   top.message = m;
-  top.output = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": error: " ++ m;
+  top.output = l.unparse ++ ": error: " ++ m;
   top.severity = 0;
 }
 
@@ -46,7 +46,7 @@ top::Message ::= l::Location m::String
 {
   top.where = l;
   top.message = m;
-  top.output = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": warning: " ++ m;
+  top.output = l.unparse ++ ": warning: " ++ m;
   top.severity = 0;
 }
 
