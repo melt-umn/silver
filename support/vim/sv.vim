@@ -36,13 +36,16 @@ syn keyword svlangTermAttr lexeme filename line column
 
 syn region svlangBlock start=/\v\{/ end=/\v\}/		transparent fold
 syn region svlangDocComment start=/\v\{--/ end=/\v-\}/	contains=svlangTodo,svlangBlockComment,svlangDocComment,svlangDocTags,svlangDocSeeTag fold
-syn region svlangBlockComment start=/\v\{-[^-]/ end=/\v-\}/	contains=svlangTodo,svlangBlockComment,svlangDocComment fold
+syn region svlangBlockComment start=/\v\{-[^-]?/ end=/\v-\}/	contains=svlangTodo,svlangBlockComment,svlangDocComment fold
 syn match svlangComment /\v--.*/ 			contains=svlangTodo
 syn match svlangRegex /\v\/((\\\/)|[^/])*\//
+syn match svlangType /\v[^:]::[\\ ]*\zs(([A-Za-z_][A-Z0-9a-z_]+:\\)*[A-Z][A-Z0-9a-z_]*)/
 syn region svlangString start=/\v"/ skip=/\v\\"/ end=/\v"|$/	contains=svlangEscapedChar
-syn region svlangString start=/\v'/ skip=/\v\\"/ end=/\v'|$/	contains=svlangEscapedChar
+syn region svlangString start=/\v'/ end=/\v'|$/	contains=svlangEscapedChar
+syn region svlangString start=/\v(s|(pp))"""/ skip=/\v\\"/ end=/\v"""/	contains=svlangEscapedChar,svlangEmbeddedCode
+syn region svlangEmbeddedCode display contained start=/\v\$\{/ skip=/\v\\\}/ end=/\v\}|$/ contains=ALL
 "syn match svlangCharacter /\v\'\\?.\'/			contains=svlangEscapedChar
-syn match svlangEscapedChar display contained /\v\\([\\"\'nrbtf]|\d{1,3}|u\d{1,4})/
+syn match svlangEscapedChar display contained /\v\\([\\"nrbtf]|\d{1,3}|u\d{1,4})/
 syn match svlangNumeric /\v<(0[xX])?\d+[lL]?>/
 syn match svlangFloat /\v<(\d+[eE][-+]?\d+)|(\d*\.\d\+([eE][-+]?\d+)?[fFdD]?)|(\d\+[fFdD])>/
 "syn match svlangOperator /\v[+-]|\=|\:|\*|\//
@@ -61,6 +64,7 @@ syntax sync fromstart
 hi def link svlangExternals		Include
 hi def link svlangDeclarations		Keyword
 hi def link svlangPrimitiveTypes	Type
+hi def link svlangType			Type
 hi def link svlangStorageClass	 	StorageClass
 hi def link svlangScopeDeclarations	Keyword
 hi def link svlangFlowOther		Statement

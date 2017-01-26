@@ -5,5 +5,5 @@ set -eu
 
 mkdir -p ~/.vim/syntax/ ~/.vim/ftdetect
 cp -f sv.vim ~/.vim/syntax/
-echo "au BufRead,BufNewFile *.sv setfiletype sv" > ~/.vim/ftdetect/sv.vim
+echo "au BufRead,BufNewFile *.sv set filetype=sv" > ~/.vim/ftdetect/sv.vim
 
