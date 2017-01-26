@@ -1,11 +1,13 @@
 grammar core;
 
+import silver:langutil only unparse;
+
 annotation location :: Location;
 
 {--
  - Data structure storing location information on tree nodes from a parse.
  -}
-nonterminal Location with filename, line, column, endLine, endColumn, index, endIndex;
+nonterminal Location with unparse, filename, line, column, endLine, endColumn, index, endIndex;
 
 synthesized attribute filename :: String;
 synthesized attribute line :: Integer;
@@ -16,7 +18,7 @@ synthesized attribute index :: Integer;
 synthesized attribute endIndex :: Integer;
 
 {--
- - The sole constructor for location information.
+ - The main constructor for location information.
  -
  - filename, line and column can be mutated by action blocks during parsing,
  - but character index cannot.
@@ -37,7 +39,7 @@ top::Location ::= filename::String  line::Integer  column::Integer
                   endLine::Integer  endColumn::Integer
                   index::Integer  endIndex::Integer
 {
-  --top.unparse = filename ++ ":" ++ toString(line) ++ ":" ++ toString(column);
+  top.unparse = filename ++ ":" ++ toString(line) ++ ":" ++ toString(column);
   top.filename = filename;
   top.line = line;
   top.column = column;
@@ -45,6 +47,24 @@ top::Location ::= filename::String  line::Integer  column::Integer
   top.endColumn = endColumn;
   top.index = index;
   top.endIndex = endIndex;
+}
+
+{--
+ - A secondary constructor for location information, for use by extensions.
+ -
+ - @param module The name of the module or extension where this location is defined
+ -}
+abstract production builtinLoc
+top::Location ::= module::String
+{
+  top.unparse = "Built in from " ++ module;
+  top.filename = "builtin";
+  top.line = -1;
+  top.column = -1;
+  top.endLine = -1;
+  top.endColumn = -1;
+  top.index = -1;
+  top.endIndex = -1;
 }
 
 {--
