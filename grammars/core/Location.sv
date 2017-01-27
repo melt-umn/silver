@@ -1,13 +1,11 @@
 grammar core;
 
-import silver:langutil only unparse;
-
 annotation location :: Location;
 
 {--
  - Data structure storing location information on tree nodes from a parse.
  -}
-nonterminal Location with unparse, filename, line, column, endLine, endColumn, index, endIndex;
+nonterminal Location with filename, line, column, endLine, endColumn, index, endIndex;
 
 synthesized attribute filename :: String;
 synthesized attribute line :: Integer;
@@ -39,7 +37,6 @@ top::Location ::= filename::String  line::Integer  column::Integer
                   endLine::Integer  endColumn::Integer
                   index::Integer  endIndex::Integer
 {
-  top.unparse = filename ++ ":" ++ toString(line) ++ ":" ++ toString(column);
   top.filename = filename;
   top.line = line;
   top.column = column;
@@ -57,7 +54,6 @@ top::Location ::= filename::String  line::Integer  column::Integer
 abstract production builtinLoc
 top::Location ::= module::String
 {
-  top.unparse = "Built in from " ++ module;
   top.filename = "builtin";
   top.line = -1;
   top.column = -1;
