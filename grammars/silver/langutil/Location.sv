@@ -10,8 +10,8 @@ top::Location ::= filename::String  line::Integer  column::Integer
   top.unparse = filename ++ ":" ++ toString(line) ++ ":" ++ toString(column);
 }
 
-aspect production builtinLoc
-top::Location ::= module::String
+aspect production txtLoc
+top::Location ::= text::String
 {
-  top.unparse = "Built in from " ++ module;
+  top.unparse = text;
 }

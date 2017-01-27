@@ -47,20 +47,40 @@ top::Location ::= filename::String  line::Integer  column::Integer
 }
 
 {--
- - A secondary constructor for location information, for use by extensions.
+ - A secondary constructor for location information, for locations not from source code
  -
- - @param module The name of the module or extension where this location is defined
+ - @param text The text to return as unparse as defined in langutil
  -}
-abstract production builtinLoc
-top::Location ::= module::String
+abstract production txtLoc
+top::Location ::= text::String
 {
-  top.filename = "builtin";
+  top.filename = "N/A";
   top.line = -1;
   top.column = -1;
   top.endLine = -1;
   top.endColumn = -1;
   top.index = -1;
   top.endIndex = -1;
+}
+
+{--
+ - A helper constructor for location information, for built-in locations
+ -
+ - @param module The name of the extension/modifcation/module defining the location
+ -}
+function builtinLoc
+Location ::= module::String
+{
+  return txtLoc("Built in from " ++ module);
+}
+
+{--
+ - A helper constructor for location information, for invalid or undefined bogus locations
+ -}
+function bogusLoc
+Location ::=
+{
+  return txtLoc("Invalid or undefined bogus location");
 }
 
 {--
