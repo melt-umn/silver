@@ -3,7 +3,11 @@
 # stop on error
 set -eu
 
-mkdir -p ~/.vim/syntax/ ~/.vim/ftdetect
-cp -f sv.vim ~/.vim/syntax/
-echo "au BufRead,BufNewFile *.sv set filetype=sv" > ~/.vim/ftdetect/sv.vim
+if [[ -z ${VIMHOME+dummytext} ]]; then
+	VIMHOME="${HOME}/.vim";
+fi;
+
+mkdir -p ${VIMHOME}/syntax/ ${VIMHOME}/ftdetect
+cp -f sv.vim ${VIMHOME}/syntax/
+echo "au BufRead,BufNewFile *.sv set filetype=sv" > ${VIMHOME}/ftdetect/sv.vim
 
