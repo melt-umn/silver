@@ -36,7 +36,7 @@ syn keyword svlangTermAttr lexeme filename line column
 
 syn region svlangBlock start=/\v\{/ end=/\v\}/		transparent fold
 syn region svlangDocComment start=/\v\{--/ end=/\v-\}/	contains=svlangTodo,svlangBlockComment,svlangDocComment,svlangDocTags,svlangDocSeeTag fold
-syn region svlangBlockComment start=/\v\{-[^-]?/ end=/\v-\}/	contains=svlangTodo,svlangBlockComment,svlangDocComment fold
+syn region svlangBlockComment start=/\v\{-([^-]|$)/ end=/\v-\}/	contains=svlangTodo,svlangBlockComment,svlangDocComment fold
 syn match svlangComment /\v--.*/ 			contains=svlangTodo
 syn match svlangRegex /\v\/((\\\/)|[^/])*\//
 syn match svlangType /\v[^:]::[\\ ]*\zs(([A-Za-z_][A-Z0-9a-z_]+:\\)*[A-Z][A-Z0-9a-z_]*)/
