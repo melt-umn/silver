@@ -44,6 +44,7 @@ aspect production boolTypeExp
 top::TypeExp ::=
 {
   top.instanceEq = true;
+  top.instanceConvertible = true;
 }
 
 aspect production floatTypeExp
