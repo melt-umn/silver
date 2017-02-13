@@ -31,7 +31,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   classpathRuntime <- ["${sh}/jars/CopperRuntime.jar"];
   extraTopLevelDecls <- [
     "  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='compile.classpath'/>",
-    "  <target name='copper'>\n" ++ buildAntParserPart(allParsers, top.config) ++ "  </target>"];
+    "  <target name='copper'>\n" ++ implode("", map(buildAntParserPart(_, top.config), allParsers)) ++ "  </target>"];
   extraGrammarsDeps <- ["copper"];
 
   production allParsers :: [ParserSpec] =
@@ -42,24 +42,23 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 }
 
 function buildAntParserPart
-String ::= r::[ParserSpec] a::Decorated CmdArgs
+String ::= p::ParserSpec  a::Decorated CmdArgs
 {
-  local attribute p :: ParserSpec;
-  p = head(r);
-
-  local attribute parserName :: String;
-  parserName = makeParserName(p.fullName);
+  local parserName :: String = makeParserName(p.fullName);
   
-  local attribute packagename :: String;
-  packagename = makeName(p.sourceGrammar);
+  local packagepath :: String = grammarToPath(p.sourceGrammar);
   
-  local attribute packagepath :: String;
-  packagepath = grammarToPath(p.sourceGrammar);
+  local varyingopts :: String =
+    if a.forceCopperDump then
+      "avoidRecompile='false' dump='ON'"
+    else
+      "avoidRecompile='true' dump='ERROR_ONLY'";
 
-  return if null(r) then "" else( 
-"    <copper packageName='" ++ packagename ++ "' parserName='" ++ parserName ++ "' outputFile='${src}/" ++ packagepath ++ parserName ++ ".java' useSkin='XML' warnUselessNTs='false' avoidRecompile='true' dump='" ++ (if a.forceCopperDump then "ON" else "ERROR_ONLY") ++ "' dumpFormat='HTML' dumpFile='" ++ parserName ++ ".copperdump.html'>\n" ++
-"      <inputs file='${src}/" ++ packagepath ++ parserName ++ ".copper'/>\n    </copper>\n" ++
-  buildAntParserPart(tail(r), a));
+  return s"""
+    <copper packageName='${makeName(p.sourceGrammar)}' parserName='${parserName}' outputFile='$${src}/${packagepath ++ parserName}.java' useSkin='XML' warnUselessNTs='false' ${varyingopts} dumpFormat='HTML' dumpFile='${parserName}.copperdump.html'>
+      <inputs file='$${src}/${packagepath ++ parserName}.copper'/>
+    </copper>
+""";
 }
 
 abstract production parserSpecUnit
