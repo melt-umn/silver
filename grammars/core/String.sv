@@ -289,3 +289,28 @@ Boolean ::= s1::String s2::String
   return s1 <= s2;
 }
 
+{--
+ - Converts a list of code points to a string. Note that due to Java's use of
+ - UCS-2, code points greater than 0xFFFF (i.e. and characters outside the Basic
+ - Multilingual Plane) aren't supported.
+ -}
+function charsToString
+String ::= chars::[Integer]
+{
+  return error("Foreign Function");
+} foreign {
+  "java" : return "common.StringCatter.fromChars(%chars%)";
+}
+
+{--
+ - Converts a string to a list of its UCS-2 characters. Note that this means
+ - that surrogate pairs are (probably?) not supported, and characters outside
+ - the Basic Multilingual Plane aren't as a consequence.
+ -}
+function stringToChars
+[Integer] ::= str::String
+{
+  return error("Foreign Function");
+} foreign {
+  "java" : return "%str%.toChars()";
+}
