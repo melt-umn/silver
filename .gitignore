@@ -1,5 +1,5 @@
 # Silver generated things
-jars/*.jar
+*.jar
 build
 generated/src
 generated/bin
