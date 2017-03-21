@@ -5,6 +5,10 @@ grammar core;
  -}
 synthesized attribute parseSuccess :: Boolean;
 {--
+ - The ParseError which parseErrors is generated from.
+ -}
+synthesized attribute parseError :: ParseError;
+{--
  - A string containing the parse errors reported by copper.  The format is unspecified, yet.
  -}
 synthesized attribute parseErrors :: String;
@@ -18,7 +22,7 @@ synthesized attribute parseTree<a> :: a;
  -
  - @param a  The start nonterminal type.
  -}
-nonterminal ParseResult<a> with parseSuccess, parseErrors, parseTree<a>;
+nonterminal ParseResult<a> with parseSuccess, parseError, parseErrors, parseTree<a>;
 
 {--
  - Parse failure constructor.
@@ -29,6 +33,7 @@ abstract production parseFailed
 top::ParseResult<a> ::= e::ParseError
 {
   top.parseSuccess = false;
+  top.parseError = e;
   top.parseErrors = e.parseErrors;
   top.parseTree = error("Demanded parse tree when parsing failed! With errors: " ++ e.parseErrors);
 }
@@ -42,6 +47,7 @@ abstract production parseSucceeded
 top::ParseResult<a> ::= t::a
 {
   top.parseSuccess = true;
+  top.parseError = error("Demanded parseError, but parsing succeeded!");
   top.parseErrors = error("Demanded parse errors, but parsing succeeded!");
   top.parseTree = t;
 }
