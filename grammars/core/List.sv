@@ -27,10 +27,6 @@ function map
  - @param l  The list to fold
  - @return  The result of the function applied right-associatively to the list.
  -}
-
-{- @comment
-  This is a test comment.
-@ -}
 function foldr
 b ::= f::(b ::= a b)  i::b  l::[a]
 {
