@@ -1,11 +1,7 @@
 # Silver generated things
 *.jar
-build
-generated/src
-generated/bin
-generated/ide
-generated/doc
 JARS-BAK
+build
 documentation/gen/core/
 documentation/gen/lib/extcore/
 documentation/gen/silver/analysis/
@@ -18,25 +14,30 @@ documentation/gen/silver/langutil/
 documentation/gen/silver/modification/
 documentation/gen/silver/translation/
 documentation/gen/silver/util/
+generated/bin
+generated/doc
+generated/ide
+generated/src
 
 # Editor created backup files
-*~
 *.swp
-\#*\#
+*~
 .\#*
+\#*\#
 
 # Runtime and testing junk
-test/**/*.test.output
-test/**/test.jar
-test/**/build.xml
-test/silver.testing.bin.jar
-runtime/java/bin/
-runtime/imp/main/target
-runtime/imp/main/src/core
-runtime/imp/main/src/ide
 runtime/imp/main/.classpath
 runtime/imp/main/.project
 runtime/imp/main/.settings
+runtime/imp/main/src/core
+runtime/imp/main/src/ide
+runtime/imp/main/target
+runtime/java/bin/
+test/**/*.test.output
+test/**/build.xml
+test/**/test.jar
+test/silver.testing.bin.jar
+test/silver_features/test_out.txt
 
 # Useful spot to stash your experiments
 sandbox
