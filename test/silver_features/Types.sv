@@ -84,6 +84,20 @@ wrongCode "Operand to toString must be concrete types String, Integer, Float, or
   equalityTest(toString(m3t), "<this fails>", String, silver_tests);
 }
 
+-------------------------------------- String to/from chars
+
+global stfcTestString :: String = "hello";
+global stfcTestChars :: [Integer] =
+  [ 104
+  , 101
+  , 108
+  , 108
+  , 111
+  ];
+
+equalityTest(charsToString(stfcTestChars), stfcTestString, String, silver_tests);
+equalityTest(stringToChars(stfcTestString), stfcTestChars, [Integer], silver_tests);
+
 ----------------------------------------- Foreign type decls
 
 type FType<a> foreign;
