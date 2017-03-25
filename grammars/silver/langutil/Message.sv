@@ -73,7 +73,7 @@ top::Message ::= l::Location m::String others::[Message]
   top.message = m;
   local header :: String = l.unparse ++ ": " ++ m ++ "\n";
   top.output = header ++ implode("\n", map(nestedOutputHelper(header, _), others));
-  top.severity = foldr1(max, map((.severity), others));
+  top.severity = foldr(max, 0, map((.severity), others));
 }
 
 function nestedOutputHelper
