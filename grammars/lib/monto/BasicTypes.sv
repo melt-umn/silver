@@ -1,14 +1,5 @@
 import lib:json;
 
-nonterminal Config with brokerAddr, dependencies, description, label, products, serviceId;
-nonterminal Dependency with language, product, serviceId;
-nonterminal MontoMessage with json, messageContents, tag;
-nonterminal Product with id, json, language, product, productContents, serviceId, source;
-nonterminal ProductDescription with language, product;
-nonterminal Request with requirements, serviceId, source;
-nonterminal Requirement with contents, language, source, id;
-nonterminal Source with json, logicalName, physicalName;
-
 synthesized attribute brokerAddr :: String;
 synthesized attribute contents :: String;
 synthesized attribute dependencies :: [Dependency];
@@ -28,6 +19,8 @@ synthesized attribute serviceId :: String;
 synthesized attribute source :: Source;
 synthesized attribute tag :: String;
 
+nonterminal Config with brokerAddr, dependencies, description, label, products, serviceId;
+
 abstract production config
 top::Config ::= brokerAddr::String serviceId::String label::String description::String dependencies::[Dependency] products::[ProductDescription]
 {
@@ -38,6 +31,8 @@ top::Config ::= brokerAddr::String serviceId::String label::String description::
   top.products = products;
   top.serviceId = serviceId;
 }
+
+nonterminal Dependency with language, product, serviceId;
 
 abstract production sourceDependency
 top::Dependency ::= language::String
@@ -52,6 +47,21 @@ top::Dependency ::= serviceId::String product::String language::String
   top.product = product;
   top.serviceId = serviceId;
 }
+
+nonterminal MontoMessage with json, messageContents, tag;
+
+abstract production productMessage
+top::MontoMessage ::= contents::Json
+{
+  top.json = jsonObject(
+    [ pair("contents", top.messageContents)
+    , pair("tag", jsonString(top.tag))
+    ]);
+  top.messageContents = contents;
+  top.tag = "product";
+}
+
+nonterminal Product with id, json, language, product, productContents, serviceId, source;
 
 abstract production product
 top::Product ::= id::Integer source::Source serviceId::String product::String language::String productContents::Json
@@ -72,6 +82,8 @@ top::Product ::= id::Integer source::Source serviceId::String product::String la
   top.source = source;
 }
 
+nonterminal ProductDescription with language, product;
+
 abstract production productDescription
 top::ProductDescription ::= language::String product::String
 {
@@ -79,16 +91,7 @@ top::ProductDescription ::= language::String product::String
   top.product = product;
 }
 
-abstract production productMessage
-top::MontoMessage ::= contents::Json
-{
-  top.json = jsonObject(
-    [ pair("contents", top.messageContents)
-    , pair("tag", jsonString(top.tag))
-    ]);
-  top.messageContents = contents;
-  top.tag = "product";
-}
+nonterminal Request with requirements, serviceId, source;
 
 abstract production request
 top::Request ::= serviceId::String source::Source requirements::[Requirement]
@@ -98,6 +101,8 @@ top::Request ::= serviceId::String source::Source requirements::[Requirement]
   top.source = source;
 }
 
+nonterminal Requirement with contents, language, source, id;
+
 abstract production requirement
 top::Requirement ::= id::Integer contents::String language::String source::Source
 {
@@ -106,6 +111,8 @@ top::Requirement ::= id::Integer contents::String language::String source::Sourc
   top.language = language;
   top.source = source;
 }
+
+nonterminal Source with json, logicalName, physicalName;
 
 abstract production source
 top::Source ::= physicalName::String logicalName::Maybe<String>
