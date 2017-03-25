@@ -103,28 +103,28 @@ public class FFI {
 	}
 	private static NRequest NRequestFromRequest(Request req) {
 		return new Prequest(
-			StringFromStringCatter(req.getServiceId()),
+			StringCatterFromString(req.getServiceId()),
 			NSourceFromSource(req.getSource()),
 			ConsCellFromList(FFI::NRequirementFromRequirement, req.getRequirements()));
 	}
 	private static NRequirement NRequirementFromRequirement(Requirement req) {
 		return new Prequirement(
 			new Integer(req.getId()),
-			StringFromStringCatter(req.getContents()),
-			StringFromStringCatter(req.getLanguage()),
+			StringCatterFromString(req.getContents()),
+			StringCatterFromString(req.getLanguage()),
 			NSourceFromSource(req.getSource()));
 	}
 	private static NSource NSourceFromSource(Source src) {
 		NMaybe logicalName;
 		if(src.getLogicalName() != null)
-			logicalName = new Pjust(StringFromStringCatter(src.getLogicalName()));
+			logicalName = new Pjust(StringCatterFromString(src.getLogicalName()));
 		else
 			logicalName = new Pnothing();
 		return new Psource(
-			StringFromStringCatter(src.getPhysicalName()),
+			StringCatterFromString(src.getPhysicalName()),
 			logicalName);
 	}
-	private static StringCatter StringFromStringCatter(String string) {
+	private static StringCatter StringCatterFromString(String string) {
 		return new StringCatter(string);
 	}
 }
