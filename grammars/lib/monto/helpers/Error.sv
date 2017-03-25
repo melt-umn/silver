@@ -31,9 +31,9 @@ top::Json ::= errorOffset::Integer errorLength::Integer level::ErrorLevel catego
 function severityToErrorLevel
 ErrorLevel ::= severity::Integer
 {
-  return if severity < 10
+  return if severity >= 2
          then errorLevelError()
-         else if severity < 20
+         else if severity >= 1
          then errorLevelWarning()
          else errorLevelInfo();
 }
