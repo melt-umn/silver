@@ -5,7 +5,7 @@ set -eu
 LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
 REMOTE_STORE="http://melt.cs.umn.edu/downloads/silver-dev/jars"
 
-FILES="CopperCompiler.jar CopperRuntime.jar RunSilver.jar silver.composed.Default.jar SilverRuntime.jar IDEPluginRuntime.jar jeromq-0.3.4.jar json-simple-1.1.1.jar"
+FILES="CopperCompiler.jar CopperRuntime.jar RunSilver.jar silver.composed.Default.jar SilverRuntime.jar IDEPluginRuntime.jar jeromq-0.3.4.jar gson-2.8.0.jar"
 
 mkdir -p jars
 
