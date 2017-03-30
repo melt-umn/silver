@@ -1,5 +1,6 @@
 package common;
 
+import java.io.CharArrayWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.io.IOException;
@@ -103,4 +104,35 @@ public final class StringCatter {
 		snd.write(fout);
 	}
 	
+	/**
+	 * Creates a StringCatter from a cons-list of code points.
+	 */
+    public static StringCatter fromChars(ConsCell list) {
+		StringBuilder str = new StringBuilder();
+		while(!list.nil()) {
+			str.append((char) ((Integer) list.head()).intValue());
+			list = list.tail();
+		}
+		return new StringCatter(str.toString());
+	}
+	
+	/**
+	 * Creates a list of code points from the string.
+	 */
+    public ConsCell toChars() {
+		CharArrayWriter w = new CharArrayWriter(length());
+		try {
+			write(w);
+		} catch(IOException e) {
+			// This should be impossible.
+			throw new RuntimeException(e);
+		}
+
+		ConsCell out = ConsCell.nil;
+		char[] chars = w.toCharArray();
+		for(int i = chars.length - 1; i >= 0; i--) {
+			out = new ConsCell(Integer.valueOf(chars[i]), out);
+		}
+		return out;
+	}
 }
