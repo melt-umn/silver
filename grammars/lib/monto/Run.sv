@@ -29,6 +29,5 @@ IO ::= config::Config callback::(IOVal<[Json]> ::= Request IO) ioIn::IO
 {
   return error("Foreign function");
 } foreign {
-  "java": return "common.Util.io(%ioIn%, null /* To break bootstrap dependency loop */)";
-  -- "java": return "common.Util.io(%ioIn%, monto.Server.run(%config%, %callback%))";
+  "java": return "common.Util.io(%ioIn%, monto.Server.run(%config%, %callback%))";
 }
