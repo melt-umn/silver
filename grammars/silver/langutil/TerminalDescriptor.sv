@@ -6,7 +6,7 @@ synthesized attribute lexerClasses :: [String];
 synthesized attribute grammarName :: String;
 synthesized attribute terminalName :: String;
 
-nonterminal TerminalDescriptor with startLoc, endLoc, lexeme, lexerClasses, grammarName, terminalName;
+nonterminal TerminalDescriptor with location, lexeme, lexerClasses, grammarName, terminalName;
 
 abstract production terminalDescriptor
 top::TerminalDescriptor ::= location::Location lexeme::String lexerClasses::[String] grammarName::String terminalName::String
