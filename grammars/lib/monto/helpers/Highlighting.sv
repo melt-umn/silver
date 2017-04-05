@@ -6,12 +6,12 @@ synthesized attribute token :: Token;
 attribute token occurs on TerminalDescriptor;
 
 aspect production terminalDescriptor
-top::TerminalDescriptor ::= startLoc::Location endLoc::Location lexeme::String lexerClasses::[String] grammarName::String terminalName::String
+top::TerminalDescriptor ::= location::Location lexeme::String lexerClasses::[String] grammarName::String terminalName::String
 {
   top.token = token(
-    error("TODO"),
-    error("TODO"),
-    error("TODO"));
+    location.index,
+    location.endIndex - location.index,
+    error("TODO font"));
 }
 
 function terminalDescriptorsToHighlightingProduct
