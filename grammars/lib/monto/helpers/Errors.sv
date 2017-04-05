@@ -1,3 +1,5 @@
+grammar lib:monto:helpers;
+
 import lib:json;
 import silver:langutil;
 

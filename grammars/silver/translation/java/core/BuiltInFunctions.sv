@@ -62,4 +62,3 @@ top::Expr ::= 'terminal' '(' t::Type ',' es::Expr ',' el::Expr ')'
 
   top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication);
 }
-
