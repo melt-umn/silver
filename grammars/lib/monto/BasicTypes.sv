@@ -51,14 +51,14 @@ top::Dependency ::= serviceId::String product::String language::String
 nonterminal MontoMessage with json, messageContents, tag;
 
 abstract production productMessage
-top::MontoMessage ::= contents::Json
+top::MontoMessage ::= contents::Product
 {
+  top.messageContents = contents.json;
+  top.tag = "product";
   top.json = jsonObject(
     [ pair("contents", top.messageContents)
     , pair("tag", jsonString(top.tag))
     ]);
-  top.messageContents = contents;
-  top.tag = "product";
 }
 
 nonterminal Product with id, json, language, product, productContents, serviceId, source;

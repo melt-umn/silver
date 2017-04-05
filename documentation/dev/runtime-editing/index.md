@@ -55,7 +55,7 @@ The basic data structures:
 
 Attribute-grammary data structures:
 
-  * **TerminalRecord** - Representation for terminals.
+  * **Terminal** - Representation for terminals.
   * **Node** - represents _undecorated_ nodes. (i.e. given children, but nothing more.)
   * **DecoratedNode** - Given inherited attribute values. Can be examined for attributes, etc.
 
