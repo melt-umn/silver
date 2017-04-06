@@ -11,36 +11,39 @@ function makeHighlightingCallback
 function defaultHighlightingCallback
 Json ::= parse::(ParseResult<a> ::= String String) highlight::(Font ::= TerminalDescriptor) src::String fileName::String
 {
-  local result :: ParseResult<a> = parse(src, fileName);
-  return jsonArray(if result.parseSuccess then
-    map((.json), map(terminalDescriptorToToken(highlight, _), result.parseTerminals))
-  else
-    []); -- TODO What should happen on failure?
+  return jsonArray(
+    map((.json),
+      map(
+        terminalDescriptorToToken(highlight, _),
+        parse(src, fileName).parseTerminals)));
 }
 
 function terminalDescriptorToToken
 Token ::= highlight::(Font ::= TerminalDescriptor) td::TerminalDescriptor
 {
   return token(
+    td.lexerClasses,
     td.terminalLocation.index,
     td.terminalLocation.endIndex - td.terminalLocation.index,
     highlight(td));
 }
 
-nonterminal Token with json, tokenOffset, tokenLength, font;
+nonterminal Token with json, lexerClasses, tokenOffset, tokenLength, font;
 
 synthesized attribute tokenOffset :: Integer;
 synthesized attribute tokenLength :: Integer;
 synthesized attribute font :: Font;
 
 abstract production token
-top::Token ::= tokenOffset::Integer tokenLength::Integer font::Font
+top::Token ::= lexerClasses::[String] tokenOffset::Integer tokenLength::Integer font::Font
 {
+  top.lexerClasses = lexerClasses;
   top.tokenOffset = tokenOffset;
   top.tokenLength = tokenLength;
   top.font = font;
   top.json = jsonObject(
-    [ pair("offset", jsonInteger(top.tokenOffset))
+    [ pair("lexer_classes", jsonArray(map(jsonString, top.lexerClasses)))
+    , pair("offset", jsonInteger(top.tokenOffset))
     , pair("length", jsonInteger(top.tokenLength))
     , pair("font", top.font.json)
     ]);
