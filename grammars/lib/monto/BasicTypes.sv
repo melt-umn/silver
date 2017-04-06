@@ -71,9 +71,10 @@ top::Product ::= id::Integer source::Source serviceId::String product::String la
     [ pair("id", jsonInteger(top.id))
     , pair("language", jsonString(top.language))
     , pair("product", jsonString(top.product))
-    , pair("productContents", top.productContents)
-    , pair("serviceId", jsonString(top.serviceId))
+    , pair("contents", top.productContents)
+    , pair("service_id", jsonString(top.serviceId))
     , pair("source", top.source.json)
+    , pair("time", jsonString("TODO"))
     ]);
   top.language = language;
   top.product = product;

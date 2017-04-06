@@ -563,8 +563,11 @@ public final class Util {
 	 * Converts a common.Terminal to a Silver core:TerminalDescriptor.
 	 */
 	private static NTerminalDescriptor terminalToTerminalDescriptor(Terminal t) {
-		// TODO
-		return null;
+        return new PterminalDescriptor(
+            t.lexeme,
+            convertStrings(Arrays.stream(t.getLexerClasses()).iterator()),
+            new StringCatter(t.getName()),
+            Terminal.extractLocation(t));
 	}
 	
 	/**

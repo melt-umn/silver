@@ -1,6 +1,6 @@
 grammar lib:monto:helpers;
+
 import lib:json;
--- import silver:langutil;
 
 function makeHighlightingCallback
 (Json ::= String String) ::= parse::(ParseResult<a> ::= String String)
@@ -15,19 +15,26 @@ Json ::= parse::(ParseResult<a> ::= String String) src::String fileName::String
   return jsonArray(if result.parseSuccess then
     map((.json), map((.token), result.parseTerminals))
   else
-    []);
+    []); -- TODO What should happen on failure?
 }
 
 synthesized attribute token :: Token;
 attribute token occurs on TerminalDescriptor;
 
 aspect production terminalDescriptor
-top::TerminalDescriptor ::= lexeme::String lexerClasses::[String] terminalGrammarName::String terminalName::String terminalLocation::Location
+top::TerminalDescriptor ::= lexeme::String lexerClasses::[String] terminalName::String terminalLocation::Location
 {
   top.token = token(
     terminalLocation.index,
     terminalLocation.endIndex - terminalLocation.index,
-    error("TODO font"));
+    font(
+      nothing(), --fgColor
+      nothing(), --bgColor
+      nothing(), --family
+      nothing(), --size
+      nothing(), --style
+      nothing(), --variant
+      nothing())); --weight
 }
 
 nonterminal Token with json, tokenOffset, tokenLength, font;
@@ -51,16 +58,16 @@ top::Token ::= tokenOffset::Integer tokenLength::Integer font::Font
 
 nonterminal Font with json, fgColor, bgColor, family, size, style, variant, weight;
 
-synthesized attribute fgColor :: Color;
-synthesized attribute bgColor :: Color;
-synthesized attribute family :: String;
-synthesized attribute size :: Integer;
-synthesized attribute style :: String;
-synthesized attribute variant :: String;
-synthesized attribute weight :: String;
+synthesized attribute fgColor :: Maybe<Color>;
+synthesized attribute bgColor :: Maybe<Color>;
+synthesized attribute family :: Maybe<String>;
+synthesized attribute size :: Maybe<Integer>;
+synthesized attribute style :: Maybe<String>;
+synthesized attribute variant :: Maybe<String>;
+synthesized attribute weight :: Maybe<String>;
 
 abstract production font
-top::Font ::= fgColor::Color bgColor::Color family::String size::Integer style::String variant::String weight::String
+top::Font ::= fgColor::Maybe<Color> bgColor::Maybe<Color> family::Maybe<String> size::Maybe<Integer> style::Maybe<String> variant::Maybe<String> weight::Maybe<String>
 {
   top.fgColor = fgColor;
   top.bgColor = bgColor;
@@ -69,15 +76,15 @@ top::Font ::= fgColor::Color bgColor::Color family::String size::Integer style::
   top.style = style;
   top.variant = variant;
   top.weight = weight;
-  top.json = jsonObject(
-    [ pair("color", top.fgColor.json)
-    , pair("bgcolor", top.bgColor.json)
-    , pair("family", jsonString(top.family))
-    , pair("size", jsonInteger(top.size))
-    , pair("style", jsonString(top.style))
-    , pair("variant", jsonString(top.variant))
-    , pair("weight", jsonString(top.weight))
-    ]);
+  top.json = jsonObject(catMaybes(
+    [ mapMaybe(\c::Color -> pair("color", c.json), top.fgColor)
+    , mapMaybe(\c::Color -> pair("bgcolor", c.json), top.bgColor)
+    , mapMaybe(\f::String -> pair("family", jsonString(f)), top.family)
+    , mapMaybe(\s::Integer -> pair("size", jsonInteger(s)), top.size)
+    , mapMaybe(\s::String -> pair("style", jsonString(s)), top.style)
+    , mapMaybe(\v::String -> pair("variant", jsonString(v)), top.variant)
+    , mapMaybe(\w::String -> pair("weight", jsonString(w)), top.weight)
+    ]));
 }
 
 nonterminal Color with json;
