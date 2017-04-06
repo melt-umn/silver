@@ -19,6 +19,10 @@ generated/doc
 generated/ide
 generated/src
 
+# build.xml files
+build.xml
+!runtime/java/build.xml
+
 # Editor created backup files
 *.swp
 *~
@@ -34,11 +38,9 @@ runtime/imp/main/src/ide
 runtime/imp/main/target
 runtime/java/bin/
 test/**/*.test.output
-test/**/build.xml
 test/**/test.jar
 test/silver.testing.bin.jar
 test/silver_features/test_out.txt
 
 # Useful spot to stash your experiments
 sandbox
-
