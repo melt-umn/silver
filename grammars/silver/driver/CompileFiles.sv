@@ -26,9 +26,9 @@ IOVal<Pair<[Root] [ParseError]>> ::= svParser::SVParser  gpath::String  files::[
   return if null(files) then ioval(ioin, pair([], []))
          -- Using [] in this case because there seems to be no end to io token demanding issues:
          else case r of
-         | parseSucceeded(rtree) ->
+         | parseSucceeded(rtree, _) ->
              ioval(recurse.io, pair(rtree :: recurse.iovalue.fst, recurse.iovalue.snd))
-         | parseFailed(errval) -> 
+         | parseFailed(errval, _) -> 
              ioval(recurse.io, pair(recurse.iovalue.fst, errval :: recurse.iovalue.snd))
          end;
 }

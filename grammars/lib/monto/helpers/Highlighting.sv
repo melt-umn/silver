@@ -1,29 +1,33 @@
 grammar lib:monto:helpers;
 import lib:json;
-import silver:langutil;
+-- import silver:langutil;
+
+function makeHighlightingCallback
+(Json ::= String String) ::= parse::(ParseResult<a> ::= String String)
+{
+  return defaultHighlightingCallback(parse, _, _);
+}
+
+function defaultHighlightingCallback
+Json ::= parse::(ParseResult<a> ::= String String) src::String fileName::String
+{
+  local result :: ParseResult<a> = parse(src, fileName);
+  return jsonArray(if result.parseSuccess then
+    map((.json), map((.token), result.parseTerminals))
+  else
+    []);
+}
 
 synthesized attribute token :: Token;
 attribute token occurs on TerminalDescriptor;
 
 aspect production terminalDescriptor
-top::TerminalDescriptor ::= location::Location lexeme::String lexerClasses::[String] grammarName::String terminalName::String
+top::TerminalDescriptor ::= lexeme::String lexerClasses::[String] terminalGrammarName::String terminalName::String terminalLocation::Location
 {
   top.token = token(
-    location.index,
-    location.endIndex - location.index,
+    terminalLocation.index,
+    terminalLocation.endIndex - terminalLocation.index,
     error("TODO font"));
-}
-
-function terminalDescriptorsToHighlightingProduct
-Json ::= tds::[TerminalDescriptor]
-{
-  return highlightingProduct(map((.token), tds));
-}
-
-abstract production highlightingProduct
-top::Json ::= tokens::[Token]
-{
-  forwards to jsonArray(map((.json), tokens));
 }
 
 nonterminal Token with json, tokenOffset, tokenLength, font;

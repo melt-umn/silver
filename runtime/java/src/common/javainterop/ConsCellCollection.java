@@ -36,7 +36,7 @@ public class ConsCellCollection<T> extends AbstractCollection<T> {
 			return ConsCell.nil;
 		return new ConsCell(i.next(), fromIterator(i));
 	}
-	
+
 	public static class ConsCellIterator<T> implements Iterator<T> {
 
 		private ConsCell elem;
