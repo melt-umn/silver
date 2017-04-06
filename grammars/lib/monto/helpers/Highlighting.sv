@@ -3,38 +3,28 @@ grammar lib:monto:helpers;
 import lib:json;
 
 function makeHighlightingCallback
-(Json ::= String String) ::= parse::(ParseResult<a> ::= String String)
+(Json ::= String String) ::= parse::(ParseResult<a> ::= String String) highlight::(Font ::= TerminalDescriptor)
 {
-  return defaultHighlightingCallback(parse, _, _);
+  return defaultHighlightingCallback(parse, highlight, _, _);
 }
 
 function defaultHighlightingCallback
-Json ::= parse::(ParseResult<a> ::= String String) src::String fileName::String
+Json ::= parse::(ParseResult<a> ::= String String) highlight::(Font ::= TerminalDescriptor) src::String fileName::String
 {
   local result :: ParseResult<a> = parse(src, fileName);
   return jsonArray(if result.parseSuccess then
-    map((.json), map((.token), result.parseTerminals))
+    map((.json), map(terminalDescriptorToToken(highlight, _), result.parseTerminals))
   else
     []); -- TODO What should happen on failure?
 }
 
-synthesized attribute token :: Token;
-attribute token occurs on TerminalDescriptor;
-
-aspect production terminalDescriptor
-top::TerminalDescriptor ::= lexeme::String lexerClasses::[String] terminalName::String terminalLocation::Location
+function terminalDescriptorToToken
+Token ::= highlight::(Font ::= TerminalDescriptor) td::TerminalDescriptor
 {
-  top.token = token(
-    terminalLocation.index,
-    terminalLocation.endIndex - terminalLocation.index,
-    font(
-      nothing(), --fgColor
-      nothing(), --bgColor
-      nothing(), --family
-      nothing(), --size
-      nothing(), --style
-      nothing(), --variant
-      nothing())); --weight
+  return token(
+    td.terminalLocation.index,
+    td.terminalLocation.endIndex - td.terminalLocation.index,
+    highlight(td));
 }
 
 nonterminal Token with json, tokenOffset, tokenLength, font;
