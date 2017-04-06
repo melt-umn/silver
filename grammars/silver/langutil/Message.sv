@@ -101,6 +101,7 @@ Boolean ::= l::[Message] wError::Boolean
          | [] -> false
          | err(_,_) :: _ -> true
          | wrn(_,_) :: t -> if wError then true else containsErrors(t, false)
+         | nested(_, _, e) :: t -> containsErrors(e, wError) || containsErrors(t, wError)
          | _ :: t -> containsErrors(t, wError)
          end;
 }
