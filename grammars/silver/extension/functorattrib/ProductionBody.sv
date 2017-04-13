@@ -42,11 +42,10 @@ function makeArgs
   -- Check if the attribute occurs on the first child
   local attrOccursOnHead :: Boolean = 
     !null(
-      foldr(append, [], 
         -- The occurs dcls on this nonterminal for
-        map(getOccursDcl(_, head(inputs).typerep.typeName, env),
+      flatMap(getOccursDcl(_, head(inputs).typerep.typeName, env),
           -- the full names of each candidate
-          map((.fullName), attrName.lookupAttribute.dcls))));
+          map((.fullName), attrName.lookupAttribute.dcls)));
   local validTypeHead :: Boolean = head(inputs).typerep.isDecorable;
   
   return

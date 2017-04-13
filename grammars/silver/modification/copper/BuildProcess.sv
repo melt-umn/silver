@@ -35,7 +35,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   extraGrammarsDeps <- ["copper"];
 
   production allParsers :: [ParserSpec] =
-    foldr(append, [], map((.parserSpecs), grammarsRelevant));
+    flatMap((.parserSpecs), grammarsRelevant);
   
   top.postOps <-
     map(parserSpecUnit(_, g.compiledGrammars, benv.silverGen), allParsers);

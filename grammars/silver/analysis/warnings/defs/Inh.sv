@@ -158,7 +158,7 @@ function checkEqDeps
 function checkAllEqDeps
 [Message] ::= v::[FlowVertex]  l::Location  prodName::String  prodNt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  anonResolve::[Pair<String  Location>]
 {
-  return foldr(append, [], map(checkEqDeps(_, l, prodName, prodNt, flowEnv, realEnv, anonResolve), v));
+  return flatMap(checkEqDeps(_, l, prodName, prodNt, flowEnv, realEnv, anonResolve), v);
 }
 
 

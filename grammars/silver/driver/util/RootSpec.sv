@@ -155,7 +155,7 @@ String ::= r::Decorated RootSpec
 		"allDeps " ++ unparseStrings(r.allGrammarDependencies),
 	       	"exportedGrammars " ++ unparseStrings(r.exportedGrammars),
 	       	"optionalGrammars " ++ unparseStrings(r.optionalGrammars),
-	       	"condBuild " ++ unparseStrings(foldr(append, [], r.condBuild)),
+	       	"condBuild " ++ unparseStrings(concat(r.condBuild)),
 	       	"defs " ++ unparseDefs(r.defs, [])
 	      ];
 
@@ -168,7 +168,7 @@ String ::= r::Decorated RootSpec
 function mentionedGrammars
 [String] ::= r::Decorated RootSpec
 {
-  return makeSet(r.moduleNames ++ foldr(append, [], r.condBuild) ++ r.optionalGrammars);
+  return makeSet(r.moduleNames ++ concat(r.condBuild) ++ r.optionalGrammars);
 }
 
 function gatherFlowEnv
