@@ -252,6 +252,31 @@ Maybe<Integer> ::= str::String
 }
 
 {--
+ - Concatenates a list of strings.
+ -
+ - @param lst  A list of strings
+ - @return  The flattened string
+ -}
+function sconcat
+String ::= lst::[String]
+{
+  return foldr(stringConcat, "", lst);
+}
+
+{--
+ - Map a function over a list, and then conatenates the results together.
+ -
+ - @param f  A function to apply to each element of a list, returning a string.
+ - @param lst  A list
+ - @return  The concatenated string
+ -}
+function sflatMap
+String ::= f::(String ::= a)  lst::[a]
+{
+  return sconcat(map(f, lst));
+}
+
+{--
  - A comparison function for strings.
  - @return Negative if l<r, 0 if l==r, positive if l>r
  -}
