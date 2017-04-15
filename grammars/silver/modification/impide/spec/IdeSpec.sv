@@ -331,7 +331,7 @@ public class PropertyControlsProvider implements IPropertyControlsProvider {
     if(controls == null) {
       controls = new ArrayList<PropertyControl>();
 
-${foldr(stringConcat, "", map((.controlJavaTranslation), propDcls))}
+${sflatMap((.controlJavaTranslation), propDcls)}
     }
 
     return controls;
@@ -374,7 +374,7 @@ public class PropertyGenerator {
         if(properties==null) {
             StringBuilder sb = new StringBuilder();
     
-${foldr(stringConcat, "", map((.generatorJavaTranslation), propDcls))}
+${sflatMap((.generatorJavaTranslation), propDcls)}
     
             properties = sb.toString();
         }

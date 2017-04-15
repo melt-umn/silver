@@ -135,7 +135,7 @@ top::QNameAttrOccur ::= at::QName
   -- i.e. 'import somthing as prefixed;  something.a' won't find prefixed:a.
 
   -- Occurs dcls
-  local dclsNarrowed :: [DclInfo] = foldr(append, [], narrowed);
+  local dclsNarrowed :: [DclInfo] = concat(narrowed);
   
   -- Attribute dcls
   local attrsNarrowed :: [DclInfo] = zipFilterDcls(at.lookupAttribute.dcls, narrowed);

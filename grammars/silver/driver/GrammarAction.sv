@@ -134,7 +134,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
 abstract production printAllParsingErrors
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
-  local errs :: [Message] = foldr(append, [], map((.parsingErrors), specs));
+  local errs :: [Message] = flatMap((.parsingErrors), specs);
 
   top.io = if null(errs) then top.ioIn else print(foldMessages(errs), top.ioIn);
   top.order = 0;

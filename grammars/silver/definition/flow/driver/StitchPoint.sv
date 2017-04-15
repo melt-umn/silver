@@ -48,9 +48,9 @@ top::StitchPoint ::=
   attrs::[String] -- all inhs on the NT type of prodType/sourceType
 {
   top.stitchEdges =
-    foldr(append, [],
-      map(projectAttribute(_, sourceType, targetType, prodType,
-        findProductionGraph(prod, top.prodGraphs)), attrs));
+    flatMap(
+      projectAttribute(_, sourceType, targetType, prodType, findProductionGraph(prod, top.prodGraphs)),
+      attrs);
 }
 
 

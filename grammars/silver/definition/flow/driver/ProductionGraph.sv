@@ -62,7 +62,7 @@ top::ProductionGraph ::=
   top.stitchedGraph = 
     let newEdges :: [Pair<FlowVertex FlowVertex>] =
           filter(edgeIsNew(_, graph),
-            foldr(append, [], map(stitchEdgesFor(_, top.flowTypes, top.prodGraphs), stitchPoints)))
+            flatMap(stitchEdgesFor(_, top.flowTypes, top.prodGraphs), stitchPoints))
     in let repaired :: g:Graph<FlowVertex> =
              repairClosure(newEdges, graph)
     in if null(newEdges) then top else
@@ -80,8 +80,7 @@ top::ProductionGraph ::=
   top.cullSuspect = 
     -- this potentially introduces the same edge twice, but that's a nonissue
     let newEdges :: [Pair<FlowVertex FlowVertex>] =
-          foldr(append, [], 
-            map(findAdmissibleEdges(_, graph, findFlowType(lhsNt, top.flowTypes)), suspectEdges))
+          flatMap(findAdmissibleEdges(_, graph, findFlowType(lhsNt, top.flowTypes)), suspectEdges)
     in let repaired :: g:Graph<FlowVertex> =
              repairClosure(newEdges, graph)
     in if null(newEdges) then top else
@@ -126,7 +125,7 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
     
   -- Normal edges!
   local normalEdges :: [Pair<FlowVertex FlowVertex>] =
-    foldr(append, [], map((.flowEdges), defs));
+    flatMap((.flowEdges), defs);
   
   -- Insert implicit equations.
   local fixedEdges :: [Pair<FlowVertex FlowVertex>] =
@@ -145,7 +144,7 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   
   -- No implicit equations here, just keep track.
   local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
-    foldr(append, [], map((.suspectFlowEdges), defs)) ++
+    flatMap((.suspectFlowEdges), defs) ++
     -- If it's forwarding .snd is attributes not known at forwarding time. If it's non, then actually .snd is all attributes. Ignore.
     if nonForwarding then [] else addFwdSynEqs(prod, synsBySuspicion.snd, flowEnv);
 

@@ -115,7 +115,7 @@ function getInhsForNtRef
 function getNonSuspectAttrsForProd
 [String] ::= prod::String  e::Decorated FlowEnv
 {
-  return foldr(append, [], searchEnvTree(prod, e.nonSuspectTree));
+  return concat(searchEnvTree(prod, e.nonSuspectTree));
 }
 
 -- Ext Syns subject to ft lower bound
