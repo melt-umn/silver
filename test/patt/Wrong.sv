@@ -45,7 +45,7 @@ wrongCode "aValidProduction has type" {
 }
 
 -- Pattern MUST NOT be a production #HACK2012
-wrongCode "Production name can't be used in pattern" {
+wrongCode "should not share the name of a production" {
  nonterminal TotallyValidNonterminal;
  abstract production empty_TVN
  tvn::TotallyValidNonterminal ::= {}
