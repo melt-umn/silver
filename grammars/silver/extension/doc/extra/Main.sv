@@ -6,11 +6,11 @@ import core;
 
 --import ide;
 
-import lib:monto;
 import lib:errors;
 import lib:extcore;
 import lib:langproc;
 import lib:monto;
+import lib:monto:helpers;
 import lib:system;
 import lib:xml;
 

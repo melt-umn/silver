@@ -3,32 +3,45 @@ grammar silver:composed:monto;
 import silver:composed:Default;
 
 import lib:json;
-import lib:monto;
+import lib:monto; 
+import lib:monto:helpers;
+
+global callbacks :: [Pair<String (Json ::= String String)>] =
+  [ pair("errors", errorCallback)
+  , pair("highlighting", listBasedHighlightingCallback(svParse, styles))
+  ];
+
+function callbackPairToName
+ProductDescription ::= p::Pair<String (Json ::= String String)>
+{
+  return productDescription("silver", p.fst);
+}
 
 function main 
-IOVal<Integer> ::= args::[String] ioin::IO
+IOVal<Integer> ::= args::[String] ioIn::IO
 {
   local cfg :: Config = config(
     "127.0.0.1",
     "edu.umn.cs.melt.silver.monto",
     "Silver",
     "The integration between Silver and Monto.",
-    [ sourceDependency("java")
+    [ sourceDependency("silver")
     ],
-    [ productDescription("java", "errors")
-    ]);
-  local nextIo :: IO = run(cfg, callback, ioin);
-  return ioval(nextIo, 0);
+    map(callbackPairToName, callbacks));
+  return ioval(runMonto(cfg, callback, ioIn), 0);
 }
 
 function callback
-Product ::= req::Request
+[MontoMessage] ::= req::Request
 {
-  return product(
-    0, -- TODO
-    req.source,
-    req.serviceId,
-    "errors",
-    "java",
-    jsonString("TODO")); -- TODO
+  local srcRqmt :: Requirement = head(req.requirements);
+  return map(\p::Pair<String (Json ::= String String)> ->
+    productMessage(product(
+      srcRqmt.id,
+      req.source,
+      req.serviceId,
+      p.fst,
+      "dcv2",
+      p.snd(srcRqmt.contents, srcRqmt.source.physicalName))),
+    callbacks);
 }

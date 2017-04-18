@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -eu
+
+SV_MONTO_JAR=${SV_MONTO_JAR:-build/silver.composed.monto.jar}
+
+if [ ! -f ${SV_MONTO_JAR} ]; then
+	./build-monto
+fi
+
+java -jar build/silver.composed.monto.jar

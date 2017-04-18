@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -eu
+
+export SV_JVM_FLAGS="-Xmx4G -Xss1G"
+export SV_BUILD_TARGET=silver:composed:monto
+./self-compile --one-jar

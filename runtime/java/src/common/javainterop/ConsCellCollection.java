@@ -31,10 +31,16 @@ public class ConsCellCollection<T> extends AbstractCollection<T> {
 		return start.length();
 	}
 
+	/**
+	 * Builds a ConsCell from a Java Iterator.
+	 *
+	 * Implemented iteratively due to Java's lack of tail-call recursion.
+	 */
 	public static ConsCell fromIterator(Iterator<?> i) {
-		if(!i.hasNext())
-			return ConsCell.nil;
-		return new ConsCell(i.next(), fromIterator(i));
+		ConsCell out = ConsCell.nil;
+		while(i.hasNext())
+			out = new ConsCell(i.next(), out);
+		return out;
 	}
 
 	public static class ConsCellIterator<T> implements Iterator<T> {

@@ -548,12 +548,11 @@ public final class Util {
 		Class parserClass = parser.getClass();
 		try {
 			Method getTokens = parserClass.getMethod("getTokens");
-			List<common.Terminal> tokens = (List) getTokens.invoke(parser);
-			List<NTerminalDescriptor> tds = tokens
-				.stream()
-				.map(Util::terminalToTerminalDescriptor)
-				.collect(Collectors.toList());
-			return ConsCellCollection.fromIterator(tds.iterator());
+			List<Terminal> tokens = (List) getTokens.invoke(parser);
+			ConsCell tds = ConsCell.nil;
+			for(Terminal t : tokens)
+				tds = new ConsCell(terminalToTerminalDescriptor(t), tds);
+			return tds;
 		} catch(Throwable t) {
 			throw new TraceException("Failed to reflect to getTokens()", t);
 		}
