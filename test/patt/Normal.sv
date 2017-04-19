@@ -130,7 +130,7 @@ wrongCode "doesnotexist" {
  }
 }
 
-wrongCode "Fewer patterns than expected" {
+wrongCode "pair has 2 parameters but 0 patterns" {
  function fooDontCare
  String ::=
  {
@@ -140,7 +140,7 @@ wrongCode "Fewer patterns than expected" {
  }
 }
 
-wrongCode "More patterns than expected" {
+wrongCode "pair has 2 parameters but 3 patterns" {
  function fooDontCare
  String ::=
  {
@@ -150,7 +150,7 @@ wrongCode "More patterns than expected" {
  }
 }
 
-wrongCode "Fewer patterns than expected" {
+wrongCode "pair has 2 parameters but 1 patterns" {
  function fooDontCare
  String ::=
  {
@@ -160,8 +160,7 @@ wrongCode "Fewer patterns than expected" {
  }
 }
 
-{- TODO
-wrongCode "Fewer patterns than expected" {
+wrongCode "2 values, but this rule has 1" {
  function fooDontCare
  String ::=
  {
@@ -171,7 +170,7 @@ wrongCode "Fewer patterns than expected" {
  }
 }
 
-wrongCode "More patterns than expected" {
+wrongCode "2 values, but this rule has 3" {
  function fooDontCare
  String ::=
  {
@@ -180,7 +179,6 @@ wrongCode "More patterns than expected" {
           end;
  }
 }
--}
 
 -- Silver used to crash because pattern used to rely on signature.
 global signatureTest :: Integer = case just(1) of just(x) -> x end;
@@ -221,8 +219,16 @@ String ::= d::OrdinaryNonterminal
 -------------------
 
 
+wrongCode "Pattern has overlapping cases" {
+  global normalCrashTest223 :: Integer =
+    case pair(1,2) of
+    | pair(_, _) -> 2
+    | pair(_, _) -> 3 -- oops!
+    end;
+}
+
 -- Make sure Silver doesn't crash compiling this:
-wrongCode "error" {
+wrongCode "2 parameters but 1 patterns" {
   global normalCrashTest225 :: Integer =
     case pair(1,2) of
     | pair(_, _) -> 2
@@ -231,7 +237,7 @@ wrongCode "error" {
 }
 
 -- Make sure an error is raised for this:
-wrongCode "Fewer" {
+wrongCode "2 parameters but 1 patterns" {
   global normalErrorTest234 :: Integer =
     case pair(1,2) of
     | pair(2, 3) -> 2
@@ -239,11 +245,26 @@ wrongCode "Fewer" {
     end;
 }
 
-wrongCode "More" {
+wrongCode "2 parameters but 3 patterns" {
   global normalErrorTest243 :: Integer =
     case pair(1,2) of
     | pair(2, 3) -> 2
     | pair(_, _, _) -> 3 -- oops!
+    end;
+}
+
+wrongCode "2 parameters but 3 patterns" {
+  global normalErrorTest257 :: Integer =
+    case pair(1,2) of
+    | pair(_, _, _) -> 3 -- oops!
+    | pair(2, 3) -> 2
+    end;
+}
+
+wrongCode "Undeclared value" {
+  global normalErrorTest265 :: Integer =
+    case pair(1,2) of
+    | skdjhfkljshfkjsdh(_, _, _) -> 3 -- oops!
     end;
 }
 

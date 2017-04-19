@@ -183,7 +183,11 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.pp = qn.pp ++ "(" ++ ns.pp ++ ") -> " ++ e.pp;
   
-  top.errors := qn.lookupValue.errors ++ ns.errors ++ e.errors;
+  local chk :: [Message] =
+    if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
+    else [err(qn.location, qn.pp ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+  
+  top.errors := qn.lookupValue.errors ++ ns.errors ++ chk ++ e.errors;
 
   -- Turns the existential variables existential
   local attribute prod_type :: TypeExp;
@@ -224,7 +228,11 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.pp = qn.pp ++ "(" ++ ns.pp ++ ") -> " ++ e.pp;
   
-  top.errors := qn.lookupValue.errors ++ ns.errors ++ e.errors;
+  local chk :: [Message] =
+    if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
+    else [err(qn.location, qn.pp ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+  
+  top.errors := qn.lookupValue.errors ++ ns.errors ++ chk ++ e.errors;
 
   local attribute prod_type :: TypeExp;
   prod_type = fullySkolemizeProductionType(qn.lookupValue.typerep); -- that says FULLY. See the comments on that function.
@@ -264,6 +272,9 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
     ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
 }
+
+-- TODO: We currently provide the below for ease of translation from complex case exprs, but
+-- we should really translate those to appropriate expressions, and not handle primitive types here
 
 abstract production integerPattern
 top::PrimPattern ::= i::Int_t '->' e::Expr
