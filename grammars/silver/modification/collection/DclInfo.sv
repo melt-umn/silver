@@ -14,8 +14,12 @@ synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated QName
 aspect default production
 top::DclInfo ::=
 {
-  top.attrBaseDefDispatcher = errorCollectionDefDispatcher(_, _, _, location=_);
-  top.attrAppendDefDispatcher = errorCollectionDefDispatcher(_, _, _, location=_);
+  top.attrBaseDefDispatcher =
+    \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
+      errorAttributeDef([err(l, "The ':=' operator can only be used for collections. " ++ attr.pp ++ " is not a collection.")], dl, attr, e, location=l);
+  top.attrAppendDefDispatcher =
+    \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
+      errorAttributeDef([err(l, "The '<-' operator can only be used for collections. " ++ attr.pp ++ " is not a collection.")], dl, attr, e, location=l);
 
   top.baseDefDispatcher = errorCollectionValueDef(_, _, location=_);
   top.appendDefDispatcher = errorCollectionValueDef(_, _, location=_);
@@ -36,7 +40,9 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o
 
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
-  top.attrDefDispatcher = errorColNormalAttributeDef(_, _, _, location=_);
+  top.attrDefDispatcher = 
+    \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
+      errorAttributeDef([err(l, attr.pp ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
 
   top.attrBaseDefDispatcher = synBaseColAttributeDef(_, _, _, location=_);
   top.attrAppendDefDispatcher = synAppendColAttributeDef(_, _, _, location=_);
@@ -57,8 +63,10 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp o
   top.dclBoundVars = bound;
 
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler!
-  top.attrDefDispatcher = errorColNormalAttributeDef(_, _, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: above should probably be an error handler!
+  top.attrDefDispatcher =
+    \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
+      errorAttributeDef([err(l, attr.pp ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
 
   top.attrBaseDefDispatcher = inhBaseColAttributeDef(_, _, _, location=_);
   top.attrAppendDefDispatcher = inhAppendColAttributeDef(_, _, _, location=_);

@@ -107,7 +107,7 @@ aspect production inhDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler!
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: above should probably be an error handler! access inh from undecorated?
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_);
 }
 aspect production annoDcl
@@ -115,7 +115,9 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 {
   top.decoratedAccessHandler = accessBounceUndecorate(annoAccessHandler(_, _, location=_), _, _, _);
   top.undecoratedAccessHandler = annoAccessHandler(_, _, location=_);
-  top.attrDefDispatcher = errorAttributeDef(_, _, _, location=_);
+  top.attrDefDispatcher =
+    \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
+      errorAttributeDef([err(l, "Annotations are not defined as equations within productions")], dl, attr, e, location=l);
 }
 
 -- -- interface Production attr (values)

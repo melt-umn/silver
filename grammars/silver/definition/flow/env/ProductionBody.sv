@@ -129,7 +129,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.flowDefs = e.flowDefs;
 }

@@ -261,8 +261,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
 
-  top.errors := dl.errors ++ attr.errors ++ forward.errors;
-
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = [];
   top.defs = [];
@@ -270,19 +268,20 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  forwards to if !null(attr.errors) then errorAttributeDef(dl, attr, e, location=top.location)
-              else attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location);
+  forwards to
+    if !null(dl.errors ++ attr.errors)
+    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e, location=top.location)
+    else attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location);
 }
 
+{- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
+   Invariant: msg should not be null! -}
 abstract production errorAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
 
-  -- TODO: We need a better way of handling this, really.
-  top.errors := 
-    if !null(attr.errors) then e.errors
-    else [err(top.location, attr.pp ++ " cannot be defined.")];
+  forwards to errorProductionStmt(msg ++ e.errors, location=top.location);
 }
 
 abstract production synthesizedAttributeDef
