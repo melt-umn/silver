@@ -18,7 +18,8 @@ synthesized attribute namedSignature :: NamedSignature;
 -- occurs
 synthesized attribute attrOccurring :: String;
 inherited attribute givenNonterminalType :: TypeExp;
-synthesized attribute isAnnotation :: Boolean;
+
+synthesized attribute isAnnotation :: Boolean; -- also "attrs"
 
 -- attrs
 synthesized attribute isSynthesized :: Boolean;

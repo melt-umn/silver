@@ -267,10 +267,15 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
   
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
+  
+  local problems :: [Message] =
+    if null(attr.errors) && attr.attrDcl.isAnnotation
+    then [err(attr.location, attr.pp ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")]
+    else dl.errors ++ attr.errors;
 
   forwards to
-    if !null(dl.errors ++ attr.errors)
-    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e, location=top.location)
+    if !null(problems)
+    then errorAttributeDef(problems, dl, attr, e, location=top.location)
     else attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location);
 }
 
@@ -311,6 +316,20 @@ top::DefLHS ::= q::QName
               then errorDefLHS(q, location=top.location)
               else q.lookupValue.dcl.defLHSDispatcher(q, top.location);
 }
+
+abstract production errorDefLHS
+top::DefLHS ::= q::Decorated QName
+{
+  top.pp = q.pp;
+  
+  -- Warning: we get here two ways: one is q is lookup error. That errors at the
+  -- dispatcher
+  -- the other is q look up successfully and we need to error here
+  -- TODO we error twice in that case!!
+  top.errors := [err(q.location, "Cannot define attributes on " ++ q.pp)];
+  top.typerep = q.lookupValue.typerep;
+}
+
 concrete production concreteDefLHSfwd
 top::DefLHS ::= q::'forward'
 {
@@ -361,18 +380,7 @@ top::DefLHS ::= q::Decorated QName
   top.typerep = q.lookupValue.typerep;
 }
 
-abstract production errorDefLHS
-top::DefLHS ::= q::Decorated QName
-{
-  top.pp = q.pp;
-  
-  -- Warning: we get here two ways: one is q is lookup error. That errors at the
-  -- dispatcher
-  -- the other is q look up successfully and we need to error here
-  -- TODO we error twice in that case!!
-  top.errors := [err(q.location, "Cannot define attributes on " ++ q.pp)];
-  top.typerep = q.lookupValue.typerep;
-}
+----- done with DefLHS
 
 concrete production valueEq
 top::ProductionStmt ::= val::QName '=' e::Expr ';'
