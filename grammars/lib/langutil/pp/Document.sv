@@ -1,4 +1,4 @@
-grammar silver:langutil:pp;
+grammar lib:langutil:pp;
 
 import core hiding implode;
 import silver:util:deque;

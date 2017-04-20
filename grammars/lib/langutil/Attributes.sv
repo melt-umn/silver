@@ -1,5 +1,5 @@
 {- A Universal set of common attributes for use in language descriptions -}
-grammar silver:langutil;
+grammar lib:langutil;
 
 import silver:langutil:pp;
 

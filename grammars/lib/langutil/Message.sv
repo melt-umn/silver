@@ -1,5 +1,5 @@
 {- A Universal error/warning message data structure -}
-grammar silver:langutil;
+grammar lib:langutil;
 
 {--
  - A Message represents a compiler output message (error/warning)

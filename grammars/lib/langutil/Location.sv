@@ -1,4 +1,4 @@
-grammar silver:langutil;
+grammar lib:langutil;
 
 attribute unparse occurs on Location;
 
