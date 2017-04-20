@@ -9,7 +9,7 @@ if [ ! -d eclipse-plugin ]; then
 fi
 
 cd eclipse-plugin
-exec ./build
+./build
 
 TARGET=$(pwd)/updatesite/target/repository
 
