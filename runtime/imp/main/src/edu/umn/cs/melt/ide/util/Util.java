@@ -256,6 +256,10 @@ public final class Util {
 	}
 	
 	public static NIOVal getIdeResource(StringCatter id, Object ioin) {
+		if(id.toString() == "jars")
+			return new Pioval(ioin, new StringCatter("/home/nathan/Projects/melt/silver/jars"));
+		else if(id.toString() == "grammars")
+			return new Pioval(ioin, new StringCatter("/home/nathan/Projects/melt/silver/grammars"));
 		URL url = Platform.getBundle(SVRegistry.get().pluginId()).getEntry("resource/" + id.toString());
 		String fileurl = "";
 		try {
