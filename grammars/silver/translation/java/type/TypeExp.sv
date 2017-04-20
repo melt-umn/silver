@@ -1,7 +1,7 @@
 grammar silver:translation:java:type;
 
 import silver:definition:type;
-import silver:translation:java:core only makeNTClassName, makeTerminalName;
+import silver:translation:java:core only makeNTClassName;
 
 -- The Java type corresponding to the Silver Type
 synthesized attribute transType :: String;
@@ -66,8 +66,8 @@ top::TypeExp ::= fn::String params::[TypeExp]
 aspect production terminalTypeExp
 top::TypeExp ::= fn::String
 {
-  top.transType = makeTerminalName(fn);
-  top.transClassType = makeTerminalName(fn);
+  top.transType = "common.TerminalRecord";
+  top.transClassType = "common.TerminalRecord";
 }
 
 aspect production decoratedTypeExp

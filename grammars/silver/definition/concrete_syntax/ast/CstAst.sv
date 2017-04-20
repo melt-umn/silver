@@ -61,15 +61,6 @@ s"""    <StartLayout>${univLayout}</StartLayout>
 --"    <ClassName>SingleParser</ClassName>\n" ++
 -- This stuff gets dumped onto the outer class:
 --"    <ClassAuxiliaryCode><Code><![CDATA[  ]]></Code></ClassAuxiliaryCode>\n" ++
-
-s"""    <ClassAuxiliaryCode><Code><![CDATA[
-          protected List<common.Terminal> tokenList = null;
-
-          public List<common.Terminal> getTokens() {
-            return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
-          }
-        ]]></Code></ClassAuxiliaryCode>
-""" ++
 -- If not otherwise specified. We always specify.
 --"    <DefaultProductionCode><Code><![CDATA[  ]]></Code></DefaultProductionCode>\n" ++
 -- If not otherwise specified. We should do this, maybe...
@@ -82,20 +73,6 @@ s"""    <ClassAuxiliaryCode><Code><![CDATA[
 --"    <Preamble><Code><![CDATA[  ]]></Code></Preamble>\n" ++
 -- This stuff gets dumped onto the semantic action container class:
 --"    <SemanticActionAuxiliaryCode><Code><![CDATA[  ]]></Code></SemanticActionAuxiliaryCode>\n" ++
-
-s"""    <ParserInitCode>
-      <Code><![CDATA[
-        tokenList = new ArrayList<common.Terminal>();
-      ]]></Code>
-    </ParserInitCode>
-    <Preamble>
-<Code><![CDATA[
-import java.util.ArrayList;
-import java.util.List;
-]]></Code>
-    </Preamble>
-""" ++
-
 s"""  </Parser>
 
   <Grammar id="${s2.containingGrammar}">

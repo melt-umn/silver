@@ -58,9 +58,9 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
     "      " ++ convertAssocNXML(modifiers.opAssociation) ++ "\n" ++ -- TODO
     "    </Operator>\n"
     else "") ++
-    "    <Type>common.Terminal</Type>\n" ++ 
+    "    <Type>common.TerminalRecord</Type>\n" ++ 
     "    <Code><![CDATA[\n" ++ 
-    "RESULT = new common.Terminal(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
+    "RESULT = new common.TerminalRecord(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
     -- BEGIN DIFFERENCE FROM NORMAL xmlCopper ATTRIBUTE ************************
     "  addToken(_terminal, (int)getStartRealLocation().getPos(), (int)getEndRealLocation().getPos());\n" ++
     -- END DIFFERENCE FROM NORMAL *********************************************
