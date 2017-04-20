@@ -2,14 +2,14 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>silver.composed.idetest</groupId>
   <artifactId>silver.composed.idetest.updatesite</artifactId>
-  <version>0.2.2.160819181917</version>
+  <version>0.3.0.0</version>
   <packaging>eclipse-repository</packaging>
   <name>Silver Eclipse update site</name>
  
   <parent>
     <groupId>silver.composed.idetest</groupId>
     <artifactId>parent</artifactId>
-    <version>0.2.2</version>
+    <version>0.3.0</version>
     <relativePath>../</relativePath>
   </parent>
 

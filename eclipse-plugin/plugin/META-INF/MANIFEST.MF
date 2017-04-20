@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Silver
 Bundle-SymbolicName: silver.composed.idetest;singleton:=true
-Bundle-Version: 0.2.2.160819181917
+Bundle-Version: 0.3.0.0
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: .,
  silver.composed.Default.jar,

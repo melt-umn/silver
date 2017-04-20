@@ -2,7 +2,7 @@
 <feature
       id="silver.composed.idetest.feature"
       label="Silver Eclipse feature"
-      version="0.2.2.160819181917">
+      version="0.3.0.0">
 
    <description url="http://some.user.provided.url">
       no description of the software
