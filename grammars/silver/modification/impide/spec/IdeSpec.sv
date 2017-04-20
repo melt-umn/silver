@@ -67,8 +67,6 @@ top::IdeSpec ::=
   local pluginPkgPath :: String = s"src/${grammarToPath(grammarName)}";
 
   local ast :: SyntaxRoot = pspec.cstAst;
-  ast.jPkgName = package;
-  ast.jParserName = top.pluginParserClass;
 
   local funcs :: IdeFunctions = foldr(consIdeFunction, nilIdeFunction(), ideFuncDcls);
   funcs.bundle = bundle;
@@ -86,6 +84,7 @@ top::IdeSpec ::=
   local tabs::[String] = 
     if null(idePropDcls) then [] else ["edu.umn.cs.melt.ide.eclipse.property.TabCommons"];
 
+  local sourceGrammarName :: String = makeName(pspec.sourceGrammar);
   
   top.pluginFiles =
     [pair(s"${pluginPkgPath}SVIdeInterface.java", s"""
@@ -108,15 +107,13 @@ import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 import edu.umn.cs.melt.ide.impl.SVDefault;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
-import edu.umn.cs.melt.ide.copper.coloring.ICopperTokenClassifier;
+import edu.umn.cs.melt.ide.copper.coloring.ITokenClassifier;
 import edu.umn.cs.melt.ide.imp.services.IdeParseResult;
-import edu.umn.cs.melt.ide.copper.CopperToken;
 
 public class SVIdeInterface extends SVDefault {
 
 	public SVIdeInterface() {}
-
-	@Override
+@Override
 	public String name() { return "${implang}"; }
 	@Override
 	public String pluginId() { return "${bundle}"; }
@@ -141,16 +138,16 @@ public class SVIdeInterface extends SVDefault {
 		};
 	}
 	@Override
-	public ICopperTokenClassifier getTokenClassifier() {
+	public ITokenClassifier getTokenClassifier() {
 		return new ${package}.imp.coloring.${top.pluginParserClass}_TokenClassifier();
 	}
-	private ${package}.copper.parser.${top.pluginParserClass} parser = new ${package}.copper.parser.${top.pluginParserClass}();
+	private ${sourceGrammarName}.${top.pluginParserClass} parser = new ${sourceGrammarName}.${top.pluginParserClass}();
 	@Override
-	public IdeParseResult<Node, CopperToken> parse(Reader input, String filename) throws CopperParserException, IOException {
+	public IdeParseResult<Node> parse(Reader input, String filename) throws CopperParserException, IOException {
 		// In the long run, maybe we should have a getParser() rather than parse() so things could be concurrent... TODO
 		synchronized(parser) {
 			parser.reset();
-			return new IdeParseResult<Node, CopperToken>((Node)parser.parse(input, filename), parser.getTokens());
+			return new IdeParseResult<Node>((Node)parser.parse(input, filename), parser.getTokens());
 		}
 	}
 
@@ -294,8 +291,6 @@ public class Plugin implements BundleActivator {
     getPropertyProvider(package, idePropDcls, "property")),
   pair(s"${pluginPkgPath}eclipse/wizard/newproject/PropertyGenerator.java",
     getPropertyGenerator(package, idePropDcls, "newproject")),
-  pair(s"${pluginPkgPath}copper/parser/${top.pluginParserClass}.copper",
-    ast.nxmlCopper),
   pair(s"${pluginPkgPath}imp/coloring/${top.pluginParserClass}_TokenClassifier.java",
     getTokenClassifier(package, ast.fontList, ast.termFontPairList, top.pluginParserClass))
   ] ++
@@ -405,7 +400,7 @@ ${sflatMap((.generatorJavaTranslation), propDcls)}
 """;
 }
 
--- class <pkgName>.imp.coloring.TokenClassifier
+-- class <pkgName>.imp.coloring.ITokenClassifier
 function getTokenClassifier
 String ::= pkgName::String fontList::[Pair<String Font>] termFontPairList::[Pair<String String>] parserName::String
 {
@@ -414,13 +409,12 @@ package ${pkgName}.imp.coloring;
 
 import java.util.HashMap;
 
-import edu.umn.cs.melt.ide.copper.IToken;
-import edu.umn.cs.melt.ide.copper.coloring.ICopperTokenClassifier;
+import edu.umn.cs.melt.ide.copper.coloring.ITokenClassifier;
 import edu.umn.cs.melt.ide.copper.coloring.TextAttributeProvider;
 import org.eclipse.jface.text.TextAttribute;
 import org.eclipse.swt.widgets.Display;
 
-public class ${parserName}_TokenClassifier implements ICopperTokenClassifier {
+public class ${parserName}_TokenClassifier implements ITokenClassifier {
 	private static final HashMap<String, Integer> map = new HashMap<String, Integer>();
 
 	public final static class TokenType {
@@ -455,8 +449,9 @@ ${getConstantDeclarations(1, fontList)}
 	}
 	
 	@Override
-	public TextAttribute getColoring(IToken token) {
-		return attributes[token.getKind()];
+	public TextAttribute getColoring(common.Terminal token) {
+    // TODO: check kind by getLexerClasses()
+		return attributes[getKind(token.getName())];
 	}
 }
 """;

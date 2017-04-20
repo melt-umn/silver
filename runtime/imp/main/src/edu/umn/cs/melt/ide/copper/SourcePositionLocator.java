@@ -7,10 +7,11 @@ import org.eclipse.imp.parser.IParseController;
 import org.eclipse.imp.parser.ISourcePositionLocator;
 
 import common.Node;
+import common.Terminal;
 
 
 public class SourcePositionLocator
-<NODE extends Node, TOKEN extends IToken>
+<NODE extends Node>
 implements ISourcePositionLocator {
 
     private final IParseController fParseController;
@@ -42,8 +43,8 @@ implements ISourcePositionLocator {
 	@Override
 	public int getStartOffset(Object entity) {
 		
-		if (entity instanceof IToken) {
-			return ((IToken) entity).getStartOffset();
+		if (entity instanceof Terminal) {
+			return ((Terminal) entity).getStartOffset();
 		} else {
 			System.out.println("Got asked start for " + entity.getClass().getName());
 		}
@@ -54,12 +55,12 @@ implements ISourcePositionLocator {
 	@Override
 	public int getEndOffset(Object entity) {
 		
-		if (entity instanceof IToken) {
+		if (entity instanceof Terminal) {
 			// Silver uses a position range that is inclusive at the start, and 
 			// exclusive at the end.
 			// IMP / Eclipse want a range that is includive at BOTH ends.
 			// So subtract one.
-			return ((IToken) entity).getEndOffset() - 1;
+			return ((Terminal) entity).getEndOffset() - 1;
 		} else {
 			System.out.println("Got asked end for " + entity.getClass().getName());
 		}
