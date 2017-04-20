@@ -28,6 +28,7 @@ top::TerminalModifier ::= 'lexer' 'classes' '{' cl::ClassList '}'
   top.pp = "lexer classes { " ++ cl.pp ++ " } " ;
 
   top.terminalModifiers = [termClasses(cl.lexerClasses)];
+  top.lexerClasses = cl.lexerClasses;
   top.errors := cl.errors;
 }
 
@@ -45,6 +46,12 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
   acode.signature = namedNamedSignature(top.grammarName ++ ":__ta" ++ toString($1.line));
   
   top.errors := acode.errors;
+}
+
+aspect default production
+top::TerminalModifier ::=
+{
+  top.lexerClasses = [];
 }
 
 nonterminal TermPrecList with config, grammarName, pp, location, precTermList, defs, errors, env;
@@ -118,7 +125,7 @@ function addTerminalAttrDefs
 
 nonterminal ClassList with location, config, pp, lexerClasses, errors, env;
 
-synthesized attribute lexerClasses :: [String];
+synthesized attribute lexerClasses :: [String] occurs on TerminalModifier, TerminalModifiers;
 
 concrete production lexerClassesOne
 top::ClassList ::= n::QName
@@ -151,5 +158,29 @@ cl::ClassList ::=
   cl.pp = "";
   cl.errors := [];
   cl.lexerClasses = [];
+}
+
+aspect production terminalModifiersNone
+top::TerminalModifiers ::=
+{
+  top.lexerClasses = [];
+}
+
+aspect production terminalModifierSingle
+top::TerminalModifiers ::= tm::TerminalModifier
+{
+  top.lexerClasses = tm.lexerClasses;
+}
+
+aspect production terminalModifiersCons
+top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
+{
+  top.lexerClasses = h.lexerClasses ++ t.lexerClasses;
+}
+
+function quote
+String ::= s::String
+{
+  return "\"" ++ s ++ "\"";
 }
 

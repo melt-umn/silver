@@ -73,3 +73,14 @@ function catMaybes
   return foldr(consMaybe, [], l);
 }
 
+{--
+ - Maps a function over the value inside of a Maybe, if it exists.
+ -}
+function mapMaybe
+Maybe<b> ::= f::(b ::= a) m::Maybe<a>
+{
+  return case m of
+  | just(x)   -> just(f(x))
+  | nothing() -> nothing()
+  end;
+}

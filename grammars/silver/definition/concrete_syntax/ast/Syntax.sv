@@ -1,5 +1,7 @@
 grammar silver:definition:concrete_syntax:ast;
 
+imports silver:translation:java:core only makeTerminalName;
+
 -- For looking syntax elements up by name.
 synthesized attribute cstDcls :: [Pair<String Decorated SyntaxDcl>];
 autocopy attribute cstEnv :: EnvTree<Decorated SyntaxDcl>;
@@ -130,9 +132,10 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
     "      " ++ convertAssocNXML(modifiers.opAssociation) ++ "\n" ++ -- TODO
     "    </Operator>\n"
     else "") ++
-    "    <Type>common.TerminalRecord</Type>\n" ++ 
+    "    <Type>" ++ makeTerminalName(n) ++ "</Type>\n" ++
     "    <Code><![CDATA[\n" ++ 
-    "RESULT = new common.TerminalRecord(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
+    "RESULT = new " ++ makeTerminalName(n) ++ "(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
+    "  tokenList.add(RESULT);\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++ 
     "    <InClasses>" ++ modifiers.lexerclassesXML ++ "</InClasses>\n" ++ 
@@ -225,7 +228,7 @@ String ::= ns::Decorated NamedSignature
   return if null(ns.namedInputElements) then ""
   else if length(ns.namedInputElements) > 1 then pfx ++ "multiple_annotation_problem" -- TODO
   else if head(ns.namedInputElements).elementName != "core:location" then pfx ++ "unknown_annotation_type_problem"
-  else pfx ++ "common.TerminalRecord.createSpan(_children, virtualLocation, (int)_pos.getPos())";
+  else pfx ++ "common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos())";
 }
 
 
