@@ -1,6 +1,7 @@
 package common;
 
 import java.io.*;
+import java.lang.reflect.*;
 import java.nio.channels.FileChannel;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
@@ -9,15 +10,19 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import common.exceptions.*;
+import common.javainterop.ConsCellCollection;
 
 import core.NLocation;
 import core.NParseError;
 import core.NParseResult;
+import core.NTerminalDescriptor;
 import core.Ploc;
 import core.PparseFailed;
 import core.PsyntaxError;
+import core.PterminalDescriptor;
 import core.PunknownParseError;
 import edu.umn.cs.melt.copper.runtime.engines.CopperParser;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
@@ -463,8 +468,8 @@ public final class Util {
 		} else if(o instanceof DecoratedNode) {
 			// For the time being, just undecorate it
 			hackyhackyUnparseNode(((DecoratedNode)o).undecorate(), sb);
-		} else if(o instanceof TerminalRecord) {
-			TerminalRecord t = (TerminalRecord) o;
+		} else if(o instanceof Terminal) {
+			Terminal t = (Terminal) o;
 			sb.append("'" + t.lexeme + "'");
 		} else if(o instanceof StringCatter) {
 			sb.append("\"" + o.toString() + "\"");
@@ -514,7 +519,9 @@ public final class Util {
 		String javaString = ((StringCatter)demand(string)).toString();
 		String javaFile = ((StringCatter)demand(file)).toString();
 		try {
-			return new core.PparseSucceeded(parser.parse(new StringReader(javaString), javaFile));
+			ROOT tree = parser.parse(new StringReader(javaString), javaFile);
+			ConsCell terminals = getTerminals(parser);
+			return new core.PparseSucceeded(tree, terminals);
 		} catch(CopperSyntaxError e) {
 			// To create a space, we increment the ending columns and indexes by 1.
 			NLocation loc = new Ploc(new StringCatter(e.getVirtualFileName()), e.getVirtualLine(), e.getVirtualColumn(), e.getVirtualColumn(), e.getVirtualColumn() + 1, (int)(e.getRealCharIndex()), (int)(e.getRealCharIndex()) + 1);
@@ -523,14 +530,44 @@ public final class Util {
 					loc,
 					convertStrings(e.getExpectedTerminalsDisplay().iterator()),
 					convertStrings(e.getMatchedTerminalsDisplay().iterator()));
-			return new PparseFailed(err);
+			ConsCell terminals = getTerminals(parser);
+			return new PparseFailed(err, terminals);
 		} catch(CopperParserException e) {
 			// Currently this is dead code, but perhaps in the future we'll see IOException wrapped in here.
 			NParseError err = new PunknownParseError(new StringCatter(e.getMessage()), file);
-			return new PparseFailed(err);
+			return new PparseFailed(err, null);
 		} catch(Throwable t) {
 			throw new TraceException("An error occured while parsing", t);
 		}
+	}
+
+	/**
+	 * Returns the terminals from a parser.
+	 */
+	private static <ROOT> ConsCell getTerminals(CopperParser<ROOT, CopperParserException> parser) {
+		Class parserClass = parser.getClass();
+		try {
+			Method getTokens = parserClass.getMethod("getTokens");
+			List<common.Terminal> tokens = (List) getTokens.invoke(parser);
+			List<NTerminalDescriptor> tds = tokens
+				.stream()
+				.map(Util::terminalToTerminalDescriptor)
+				.collect(Collectors.toList());
+			return ConsCellCollection.fromIterator(tds.iterator());
+		} catch(Throwable t) {
+			throw new TraceException("Failed to reflect to getTokens()", t);
+		}
+	}
+
+	/**
+	 * Converts a common.Terminal to a Silver core:TerminalDescriptor.
+	 */
+	private static NTerminalDescriptor terminalToTerminalDescriptor(Terminal t) {
+        return new PterminalDescriptor(
+            t.lexeme,
+            convertStrings(Arrays.stream(t.getLexerClasses()).iterator()),
+            new StringCatter(t.getName()),
+            Terminal.extractLocation(t));
 	}
 	
 	/**
