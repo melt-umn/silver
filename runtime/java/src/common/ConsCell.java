@@ -1,7 +1,5 @@
 package common;
 
-import java.util.List;
-
 import common.exceptions.SilverError;
 
 /**
@@ -32,21 +30,6 @@ public class ConsCell {
 	 */
 	public ConsCell(final Object h, final Object t) {
 		head = h; tail = t;
-	}
-
-	/**
-	 * Creates a cons list from a Java List.
-	 *
-	 * @param l The list.
-	 * @return An equivalent cons list.
-	 */
-	public static <T> ConsCell fromList(List<T> l) {
-		ConsCell cons = nil;
-		while(l.size() > 0) {
-			T val = l.remove(l.size() - 1);
-			cons = new ConsCell(val, cons);
-		}
-		return cons;
 	}
 	
 	/**

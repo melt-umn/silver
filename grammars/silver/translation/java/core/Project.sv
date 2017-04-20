@@ -40,12 +40,6 @@ String ::= s::String
   return substituteLast(".", ".A", makeName(s));
 }
 
-function makeTerminalName
-String ::= s::String
-{
-  return substituteLast(".", ".T", makeName(s));
-}
-
 function makeParserName
 String ::= s::String
 {

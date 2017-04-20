@@ -10,14 +10,14 @@ import core.Alocation;
  *
  * @author tedinski
  */
-public abstract class Terminal {
+public final class TerminalRecord {
 	final public StringCatter lexeme;
 	final public NLocation location;
 	
 	/**
 	 * Construct a terminal from a Copper VirtualLocation, used during parse tree construction.
 	 */
-	public Terminal(final String lexeme, final VirtualLocation vl, final int index, final int endIndex){
+	public TerminalRecord(final String lexeme, final VirtualLocation vl, final int index, final int endIndex){
 		this.lexeme = new StringCatter(lexeme);
 		final int line = vl.getLine();
 		final int column = vl.getColumn();
@@ -35,7 +35,7 @@ public abstract class Terminal {
 	/**
 	 * The standard manual constructor for a terminal object.
 	 */
-	public Terminal(final StringCatter lexeme, final NLocation location) {
+	public TerminalRecord(final StringCatter lexeme, final NLocation location) {
 		this.lexeme = lexeme;
 		this.location = location;
 	}
@@ -81,26 +81,12 @@ public abstract class Terminal {
 		}
 	}
 	public static NLocation extractLocation(Object o) {
-		if(o instanceof Terminal) {
-			return ((Terminal)o).location;
+		if(o instanceof TerminalRecord) {
+			return ((TerminalRecord)o).location;
 		} else if(o instanceof Alocation) {
 			return (NLocation) ((Alocation)o).getAnno_core_location();
 		}
 		// TODO: a better error, maybe? Eh, it should never happen.
 		throw new RuntimeException("Attempting to extract location from locationless object");
 	}
-
-	/**
-	 * Obtains the type of this terminal.
-	 * @returns The full name of this terminal type (e.g.
-	 *   "silver:definition:core:Id_t")
-	 */
-	public abstract String getName();
-
-	/**
-	 * Obtains the lexer classes this terminal belongs to.
-	 * @returns The classes, as an array of interned strings in sorted
-	 *   order.
-	 */
-	public abstract String[] getLexerClasses();
 }
