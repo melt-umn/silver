@@ -10,3 +10,14 @@ fi
 
 cd eclipse-plugin
 exec ./build
+
+TARGET=$(pwd)/updatesite/target/repository
+
+echo "..."
+echo "..."
+echo "..."
+echo "Be sure to increment IDE version number in silver:composed:idetest:Main.sv"
+echo "..."
+echo "..."
+echo "Reminder: add $TARGET as path to find update site in eclipse, if using directly"
+echo "..."
