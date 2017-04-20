@@ -2,35 +2,11 @@
 
 set -eu
 
-# Make sure any compiler changes make it before we build
-./self-compile
-cp build/silver.composed.Default.jar jars/
+# Check that the eclipse-plugin directory exists
+if [ ! -d eclipse-plugin ]; then
+	echo "Make sure you're in the silver directory!" >&2;
+	exit -1;
+fi
 
-# Rebuild the IDE-specific runtime jars
-cd runtime/imp
-./build.sh
-cd ../..
-
-# Create plug-in sources and .class files.
-# this creates a silver.composed.idetest.jar that is not used, but
-# this does create stuff in the generated directory that is used in
-# the next step
-SV_BUILD_TARGET="silver:composed:idetest" ./self-compile --clean
-
-# Create the Eclipse repository.  
-# The repository is in the generated/ide/silver.composed.idetest
-# directory.  To make it public run the make-ide-dist script.
-cd generated/ide/silver.composed.idetest
-mvn package
-
-TARGET=$(pwd)/updatesite/target/repository
-
-echo "..."
-echo "..."
-echo "..."
-echo "Be sure to increment IDE version number in silver:composed:idetest:Main.sv"
-echo "..."
-echo "..."
-echo "Reminder: add $TARGET as path to find update site in eclipse, if using directly"
-echo "..."
-
+cd eclipse-plugin
+exec ./build

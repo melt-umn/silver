@@ -42,5 +42,10 @@ test/**/test.jar
 test/silver.testing.bin.jar
 test/silver_features/test_out.txt
 
+# Eclipse Plugin
+eclipse-plugin/feature/target/
+eclipse-plugin/plugin/target/
+eclipse-plugin/updatesite/target/
+
 # Useful spot to stash your experiments
 sandbox
