@@ -12,6 +12,7 @@ imports silver:definition:type;
 imports silver:definition:env;
 
 -- Utilities
+imports lib:langutil;
 imports silver:util;
 
 option silver:definition:concrete_syntax;

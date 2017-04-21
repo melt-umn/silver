@@ -1,5 +1,7 @@
 grammar silver:modification:impide;
 
+imports lib:langutil;
+
 imports silver:definition:core;
 imports silver:definition:env;
 
