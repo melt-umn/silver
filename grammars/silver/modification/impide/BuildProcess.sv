@@ -67,15 +67,6 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
         <fileset dir="$${res}/ide_skeleton"/>
       </copy>
 
-    <!-- 2. copper parser -->
-      <copper
-          packageName='$${ide.pkg.name}.copper.parser'
-          parserName='$${ide.parser.classname}'
-          outputFile='$${ide.pkg.path}/copper/parser/$${ide.parser.classname}.java'
-          useSkin='XML' warnUselessNTs='false' dumpFormat='HTML' dump='ERROR_ONLY'
-          dumpFile='$${ide.parser.classname}.copperdump.html'>
-        <inputs file='$${ide.pkg.path}/copper/parser/$${ide.parser.classname}.copper'/>
-      </copper>
     <!-- 5. plugin dependencies -->
       <copy file="$${lang.composed}.jar" tofile="$${ide.proj.plugin.path}/$${lang.composed}.jar"/>
       <copy file="$${sh}/jars/CopperRuntime.jar" tofile="$${ide.proj.plugin.path}/CopperRuntime.jar"/>

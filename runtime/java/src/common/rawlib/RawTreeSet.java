@@ -17,7 +17,7 @@ public final class RawTreeSet {
 		return ret;
 	}
 	public static ConsCell toList(TreeSet<Object> t) {
-		return ConsCellCollection.fromIterator(t.iterator());
+		return ConsCellCollection.fromReverseIterator(t.descendingIterator());
 	}
 	public static TreeSet<Object> union(TreeSet<Object> l, TreeSet<Object> r) {
 		TreeSet<Object> ret = (TreeSet<Object>) l.clone();

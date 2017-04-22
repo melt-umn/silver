@@ -1,6 +1,7 @@
 ---
 layout: sv_wiki
 title: Getting started
+menu_weight: 10.0
 ---
 
 ## Prerequisites

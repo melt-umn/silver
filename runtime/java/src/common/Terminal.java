@@ -10,14 +10,14 @@ import core.Alocation;
  *
  * @author tedinski
  */
-public final class TerminalRecord {
+public abstract class Terminal {
 	final public StringCatter lexeme;
 	final public NLocation location;
 	
 	/**
 	 * Construct a terminal from a Copper VirtualLocation, used during parse tree construction.
 	 */
-	public TerminalRecord(final String lexeme, final VirtualLocation vl, final int index, final int endIndex){
+	public Terminal(final String lexeme, final VirtualLocation vl, final int index, final int endIndex){
 		this.lexeme = new StringCatter(lexeme);
 		final int line = vl.getLine();
 		final int column = vl.getColumn();
@@ -35,7 +35,7 @@ public final class TerminalRecord {
 	/**
 	 * The standard manual constructor for a terminal object.
 	 */
-	public TerminalRecord(final StringCatter lexeme, final NLocation location) {
+	public Terminal(final StringCatter lexeme, final NLocation location) {
 		this.lexeme = lexeme;
 		this.location = location;
 	}
@@ -54,6 +54,12 @@ public final class TerminalRecord {
 	}
 	public StringCatter getFilename() {
 		return (StringCatter)getFromLoc(core.Init.core_filename__ON__core_Location);
+	}
+	public Integer getStartOffset() {
+		return (Integer)getFromLoc(core.Init.core_index__ON__core_Location);
+	}
+	public Integer getEndOffset() {
+		return (Integer)getFromLoc(core.Init.core_endIndex__ON__core_Location);
 	}
 	
 	// This is a utility that I put here because why not. Perhaps it should be moved?
@@ -81,12 +87,26 @@ public final class TerminalRecord {
 		}
 	}
 	public static NLocation extractLocation(Object o) {
-		if(o instanceof TerminalRecord) {
-			return ((TerminalRecord)o).location;
+		if(o instanceof Terminal) {
+			return ((Terminal)o).location;
 		} else if(o instanceof Alocation) {
 			return (NLocation) ((Alocation)o).getAnno_core_location();
 		}
 		// TODO: a better error, maybe? Eh, it should never happen.
 		throw new RuntimeException("Attempting to extract location from locationless object");
 	}
+
+	/**
+	 * Obtains the type of this terminal.
+	 * @returns The full name of this terminal type (e.g.
+	 *   "silver:definition:core:Id_t")
+	 */
+	public abstract String getName();
+
+	/**
+	 * Obtains the lexer classes this terminal belongs to.
+	 * @returns The classes, as an array of interned strings in sorted
+	 *   order.
+	 */
+	public abstract String[] getLexerClasses();
 }

@@ -2,6 +2,8 @@ package common.javainterop;
 
 import java.util.AbstractCollection;
 import java.util.Iterator;
+import java.util.ListIterator;
+import java.util.List;
 
 import common.ConsCell;
 
@@ -37,6 +39,24 @@ public class ConsCellCollection<T> extends AbstractCollection<T> {
 		return new ConsCell(i.next(), fromIterator(i));
 	}
 	
+	public static ConsCell fromReverseIterator(Iterator<?> i) {
+		ConsCell ret = ConsCell.nil;
+		while(i.hasNext()) {
+			ret = new ConsCell(i.next(), ret);
+		}
+		return ret;
+	}
+	
+	public static ConsCell fromList(List<?> l) {
+		// Start at the end
+		ListIterator<?> i = l.listIterator(l.size());
+		ConsCell ret = ConsCell.nil;
+		while(i.hasPrevious()) {
+			ret = new ConsCell(i.previous(), ret);
+		}
+		return ret;
+	}
+
 	public static class ConsCellIterator<T> implements Iterator<T> {
 
 		private ConsCell elem;

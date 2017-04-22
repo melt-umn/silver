@@ -7,13 +7,13 @@ import java.util.List;
 import org.eclipse.jface.text.IRegion;
 
 import common.Node;
-import edu.umn.cs.melt.ide.copper.IToken;
+import common.Terminal;
 
-public class IdeParseResult<NODE extends Node, TOKEN extends IToken> {
+public class IdeParseResult<NODE extends Node> {
 	private NODE value;
-	private List<TOKEN> tokens;
+	private List<Terminal> tokens;
 	
-	public IdeParseResult(NODE tree, List<TOKEN> terminals) {
+	public IdeParseResult(NODE tree, List<Terminal> terminals) {
 		value = tree;
 		tokens = terminals;
 	}
@@ -22,14 +22,14 @@ public class IdeParseResult<NODE extends Node, TOKEN extends IToken> {
 		return value;
 	}
 
-	public Iterator<TOKEN> getTokenIterator(IRegion region) {
+	public Iterator<Terminal> getTokenIterator(IRegion region) {
 		int startOffset = region.getOffset();
 		int endOffset = startOffset + region.getLength();
 		
-		List<TOKEN> list = new ArrayList<TOKEN>();
-		Iterator<TOKEN> iter = tokens.iterator();
+		List<Terminal> list = new ArrayList<Terminal>();
+		Iterator<Terminal> iter = tokens.iterator();
 		while(iter.hasNext()){
-			TOKEN next = iter.next();
+			Terminal next = iter.next();
 			if(next.getStartOffset() < startOffset || next.getEndOffset() > endOffset){
 				continue;
 			} else {
