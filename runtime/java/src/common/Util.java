@@ -553,7 +553,7 @@ public final class Util {
 				.stream()
 				.map(Util::terminalToTerminalDescriptor)
 				.collect(Collectors.toList());
-			return ConsCellCollection.fromIterator(tds.iterator());
+			return ConsCellCollection.fromList(tds);
 		} catch(Throwable t) {
 			throw new TraceException("Failed to reflect to getTokens()", t);
 		}
