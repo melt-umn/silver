@@ -520,7 +520,7 @@ public final class Util {
 		String javaFile = ((StringCatter)demand(file)).toString();
 		try {
 			ROOT tree = parser.parse(new StringReader(javaString), javaFile);
-			ConsCell terminals = getTerminals(parser);
+			Object terminals = getTerminals(parser);
 			return new core.PparseSucceeded(tree, terminals);
 		} catch(CopperSyntaxError e) {
 			// To create a space, we increment the ending columns and indexes by 1.
@@ -530,7 +530,7 @@ public final class Util {
 					loc,
 					convertStrings(e.getExpectedTerminalsDisplay().iterator()),
 					convertStrings(e.getMatchedTerminalsDisplay().iterator()));
-			ConsCell terminals = getTerminals(parser);
+			Object terminals = getTerminals(parser);
 			return new PparseFailed(err, terminals);
 		} catch(CopperParserException e) {
 			// Currently this is dead code, but perhaps in the future we'll see IOException wrapped in here.
@@ -544,16 +544,20 @@ public final class Util {
 	/**
 	 * Returns the terminals from a parser.
 	 */
-	private static <ROOT> ConsCell getTerminals(CopperParser<ROOT, CopperParserException> parser) {
+	private static <ROOT> Object getTerminals(CopperParser<ROOT, CopperParserException> parser) {
 		Class parserClass = parser.getClass();
 		try {
 			Method getTokens = parserClass.getMethod("getTokens");
 			List<common.Terminal> tokens = (List) getTokens.invoke(parser);
-			List<NTerminalDescriptor> tds = tokens
-				.stream()
-				.map(Util::terminalToTerminalDescriptor)
-				.collect(Collectors.toList());
-			return ConsCellCollection.fromList(tds);
+			return new Thunk<Object>(TopNode.singleton) {
+				public final Object doEval(final DecoratedNode context) {
+					List<NTerminalDescriptor> tds = tokens
+						.stream()
+						.map(Util::terminalToTerminalDescriptor)
+						.collect(Collectors.toList());
+					return ConsCellCollection.fromList(tds);
+				}
+			};
 		} catch(Throwable t) {
 			throw new TraceException("Failed to reflect to getTokens()", t);
 		}
