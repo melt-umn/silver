@@ -6,14 +6,14 @@ import org.eclipse.imp.services.base.TokenColorerBase;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.TextAttribute;
 
-import edu.umn.cs.melt.ide.copper.CopperToken;
-import edu.umn.cs.melt.ide.copper.IToken;
-import edu.umn.cs.melt.ide.copper.coloring.ICopperTokenClassifier;
+import edu.umn.cs.melt.ide.copper.coloring.ITokenClassifier;
 import edu.umn.cs.melt.ide.impl.SVRegistry;
+
+import common.Terminal;
 
 public class Colorer extends TokenColorerBase implements ITokenColorer {
 
-	private ICopperTokenClassifier decider = SVRegistry.get().getTokenClassifier();
+	private ITokenClassifier decider = SVRegistry.get().getTokenClassifier();
 	
 	public Colorer() {
 		super();
@@ -23,7 +23,7 @@ public class Colorer extends TokenColorerBase implements ITokenColorer {
 		if (o == null)
 			return null;
 		
-		IToken token = (CopperToken) o;
+		Terminal token = (Terminal) o;
 		
 		TextAttribute attr = decider.getColoring(token);
 		
