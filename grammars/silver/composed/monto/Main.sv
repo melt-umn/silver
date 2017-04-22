@@ -6,8 +6,9 @@ import lib:json;
 import lib:monto; 
 import lib:monto:helpers;
 
-global callbacks :: [Pair<String (Json ::= String String)>] =
-  [ pair("errors", errorCallback)
+function callbacks
+[Pair<String (Json ::= String String)>] ::= silverHome::String projectPath::String
+  [ pair("errors", errorCallback(silverHome, projectPath))
   , pair("highlighting", listBasedHighlightingCallback(svParse, styles))
   ];
 
@@ -20,6 +21,11 @@ ProductDescription ::= p::Pair<String (Json ::= String String)>
 function main 
 IOVal<Integer> ::= args::[String] ioIn::IO
 {
+  local paths::Pair<String String> =
+    if length(args) != 2 then
+      error("Usage: java -jar silver.composed.monto.jar <SILVER-HOME> <PROJECT-PATH>")
+    else
+      pair(head(args), head(tail(args)));
   local cfg :: Config = config(
     "127.0.0.1",
     "edu.umn.cs.melt.silver.monto",
@@ -27,12 +33,12 @@ IOVal<Integer> ::= args::[String] ioIn::IO
     "The integration between Silver and Monto.",
     [ sourceDependency("silver")
     ],
-    map(callbackPairToName, callbacks));
-  return ioval(runMonto(cfg, callback, ioIn), 0);
+    map(callbackPairToName, callbacks(paths.fst, paths.snd)));
+  return ioval(runMonto(cfg, callback(paths.fst, paths.snd, _), ioIn), 0);
 }
 
 function callback
-[MontoMessage] ::= req::Request
+[MontoMessage] ::= silverHome::String projectPath::String req::Request
 {
   local srcRqmt :: Requirement = head(req.requirements);
   return map(\p::Pair<String (Json ::= String String)> ->
@@ -43,5 +49,5 @@ function callback
       p.fst,
       "dcv2",
       p.snd(srcRqmt.contents, srcRqmt.source.physicalName))),
-    callbacks);
+    callbacks(silverHome, projectPath));
 }

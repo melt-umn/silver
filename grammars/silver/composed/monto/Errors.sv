@@ -7,7 +7,7 @@ import lib:json;
 import lib:monto:helpers;
 
 function errorCallback
-Json ::= src::String fileName::String
+Json ::= silverHome::String projectPath::String src::String fileName::String
 {
   local result :: ParseResult<Root> = svParse(src, fileName);
   return jsonArray(if !result.parseSuccess
@@ -21,4 +21,15 @@ Json ::= src::String fileName::String
          | _ -> error("TODO")
          end
     else map(messageToErrorHack, result.parseTree.errors));
+}
+
+function messageToErrorHack
+Json ::= msg::Message
+{
+  return errorProduct(
+    msg.loc.index,
+    msg.loc.endIndex - msg.loc.index,
+    severityToErrorLevel(msg.severity),
+    "compilation", -- TODO
+    msg.msg);
 }
