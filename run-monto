@@ -2,10 +2,16 @@
 
 set -eu
 
+# Derived from support/bin/silver.
+ME=$(readlink -f "${BASH_SOURCE}")
+export SILVER_HOME=${SILVER_HOME:-${ME/run-monto//}}
+
+GRAMMAR_ROOT=${1:-${SILVER_HOME}/grammars}
+
 SV_MONTO_JAR=${SV_MONTO_JAR:-build/silver.composed.monto.jar}
 
 if [ ! -f ${SV_MONTO_JAR} ]; then
 	./build-monto
 fi
 
-java -jar build/silver.composed.monto.jar
+java -jar ${SV_MONTO_JAR} ${SILVER_HOME} ${GRAMMAR_ROOT}

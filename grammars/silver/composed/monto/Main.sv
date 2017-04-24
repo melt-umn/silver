@@ -7,13 +7,15 @@ import lib:monto;
 import lib:monto:helpers;
 
 function callbacks
-[Pair<String (Json ::= String String)>] ::= silverHome::String projectPath::String
-  [ pair("errors", errorCallback(silverHome, projectPath))
-  , pair("highlighting", listBasedHighlightingCallback(svParse, styles))
-  ];
+[Pair<String (IOVal<Json> ::= String String IO)>] ::= silverHome::String grammarName::String
+{
+  return [ pair("errors", errorCallback(silverHome, grammarName, _, _, _))
+         , pair("highlighting", ioWrap2(listBasedHighlightingCallback(svParse, styles)))
+         ];
+}
 
 function callbackPairToName
-ProductDescription ::= p::Pair<String (Json ::= String String)>
+ProductDescription ::= p::Pair<String a>
 {
   return productDescription("silver", p.fst);
 }
@@ -21,11 +23,7 @@ ProductDescription ::= p::Pair<String (Json ::= String String)>
 function main 
 IOVal<Integer> ::= args::[String] ioIn::IO
 {
-  local paths::Pair<String String> =
-    if length(args) != 2 then
-      error("Usage: java -jar silver.composed.monto.jar <SILVER-HOME> <PROJECT-PATH>")
-    else
-      pair(head(args), head(tail(args)));
+  local paths::Pair<String String> = pair(mustBeAbsPath(head(args)), mustBeAbsPath(head(tail(args))));
   local cfg :: Config = config(
     "127.0.0.1",
     "edu.umn.cs.melt.silver.monto",
@@ -34,20 +32,29 @@ IOVal<Integer> ::= args::[String] ioIn::IO
     [ sourceDependency("silver")
     ],
     map(callbackPairToName, callbacks(paths.fst, paths.snd)));
-  return ioval(runMonto(cfg, callback(paths.fst, paths.snd, _), ioIn), 0);
+  return if length(args) != 2 then
+    error("Usage: java -jar silver.composed.monto.jar <SILVER-HOME> <GRAMMAR-NAME>")
+  else
+    ioval(runMontoIO(cfg, callback(paths.fst, paths.snd, _, _), ioIn), 0);
 }
 
 function callback
-[MontoMessage] ::= silverHome::String projectPath::String req::Request
+IOVal<[MontoMessage]> ::= silverHome::String grammarName::String req::Request ioin::IO
 {
-  local srcRqmt :: Requirement = head(req.requirements);
-  return map(\p::Pair<String (Json ::= String String)> ->
-    productMessage(product(
-      srcRqmt.id,
-      req.source,
-      req.serviceId,
-      p.fst,
-      "dcv2",
-      p.snd(srcRqmt.contents, srcRqmt.source.physicalName))),
-    callbacks(silverHome, projectPath));
+  return ioMap(callbackHelper(req, head(req.requirements), silverHome, grammarName, _, _),
+    callbacks(silverHome, grammarName),
+    ioin);
+}
+
+function callbackHelper
+IOVal<MontoMessage> ::= req::Request srcRqmt::Requirement silverHome::String grammarName::String p::Pair<String (IOVal<Json> ::= String String IO)> ioin::IO
+{
+  local r :: IOVal<Json> = p.snd(srcRqmt.contents, srcRqmt.source.physicalName, ioin);
+  return ioval(r.io, productMessage(product(
+    srcRqmt.id,
+    req.source,
+    req.serviceId,
+    p.fst,
+    "dcv2",
+    r.iovalue)));
 }
