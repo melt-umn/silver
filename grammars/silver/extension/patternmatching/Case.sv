@@ -67,7 +67,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
     caseExpr(es.rawExprs, ml.matchRuleList, 
       mkStrFunctionInvocation(top.location, "core:error",
         [stringConst(terminal(String_t, 
-          "\"Error: pattern match failed at " ++ top.grammarName ++ " " ++ top.location.unparse ++ "\\n\""), location=$6.location)]),
+          "\"Error: pattern match failed at " ++ top.grammarName ++ " " ++ top.location.unparse ++ "\\n\""), location=top.location)]),
       freshType(), location=top.location);
 }
 
@@ -264,16 +264,19 @@ PrimPattern ::= restExprs::[Expr]  failCase::Expr  retType::TypeExp  mrs::[Abstr
       failCase, retType, location=head(mrs).location);
   -- TODO: head(mrs).location is probably not the correct thing to use here?? (generally)
 
+  -- Maybe this one is more reasonable? We need to test examples and see what happens...
+  local l :: Location = head(mrs).headPattern.location;
+
   return
     case head(mrs).headPattern of
     | prodAppPattern(qn,_,_,_) -> 
-        prodPattern(qn, '(', convStringsToVarBinders(names, head(mrs).location), ')', '->', subcase, location=qn.location)
-    | intPattern(it) -> integerPattern(it, '->', subcase, location=it.location)
-    | strPattern(it) -> stringPattern(it, '->', subcase, location=it.location)
-    | truePattern(l) -> booleanPattern("true", '->', subcase, location=l.location)
-    | falsePattern(l) -> booleanPattern("false", '->', subcase, location=l.location)
-    | nilListPattern(l,_) -> nilPattern(subcase, location=l.location)
-    | consListPattern(h,_,t) -> conslstPattern(head(names), head(tail(names)), subcase, location=h.location)
+        prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->', subcase, location=l)
+    | intPattern(it) -> integerPattern(it, '->', subcase, location=l)
+    | strPattern(it) -> stringPattern(it, '->', subcase, location=l)
+    | truePattern(_) -> booleanPattern("true", '->', subcase, location=l)
+    | falsePattern(_) -> booleanPattern("false", '->', subcase, location=l)
+    | nilListPattern(_,_) -> nilPattern(subcase, location=l)
+    | consListPattern(h,_,t) -> conslstPattern(head(names), head(tail(names)), subcase, location=l)
     end;
 }
 

@@ -1,5 +1,14 @@
 grammar patt;
 
+-- NOTE: LEAVE THIS HERE. Don't change the line it's on.
+wrongCode "7" { -- ensure the line 7 appears.
+global nope55 :: Integer =
+  case 3 of
+  [] -> 1
+  end;
+} -- TODO: We could use a "errors do NOT contain" directive here to be less fragile. no -1 line numbers!
+-- OKAY now you can change anything below without such awful concerns
+
 function mynull
 Boolean ::= s::[a]
 {

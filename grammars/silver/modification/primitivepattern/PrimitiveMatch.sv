@@ -372,7 +372,7 @@ top::PrimPattern ::= e::Expr
   
   errCheck1 = check(listTypeExp(freshType()), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, "nil() constructs type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [err(top.location, "nil matches lists but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
@@ -403,7 +403,7 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   
   errCheck1 = check(listTypeExp(elemType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, "cons() constructs type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [err(top.location, "cons matches lists but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
