@@ -1,4 +1,3 @@
-import silver:langutil:pp;
 
 {--
  - Propagates a list of functor attributes on the current production.  

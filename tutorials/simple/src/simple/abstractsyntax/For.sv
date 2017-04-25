@@ -4,7 +4,7 @@ abstract production for
 s::Stmt ::= i::Name lower::Expr upper::Expr body::Stmt
 {
   -- provide a nicer pretty printing, but nothing else.
-  s.pp = concat([text("for"), parens(concat([i.pp, text(" = "), lower.pp, text(" to "), upper.pp])), ppblock(body)]);
+  s.pp = pp"for(${i.pp} = ${lower.pp} to ${upper.pp})${ppblock(body)}";
 
   forwards to
     {- i = lower ;
