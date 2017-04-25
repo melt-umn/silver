@@ -2,7 +2,6 @@
 import silver:testing;
 import lib:extcore;
 import silver:langutil:pp;
-import stdlib;
 import silver:util:deque;
 
 -- empty
@@ -48,8 +47,8 @@ equalityTest ( s"abc", "abc", String, silver_tests );
 equalityTest ( s"${toString(1)}", "1", String, silver_tests );
 
 -- pp
-equalityTest (show(3, pp"""{${group(concat([line(), nest(3, text("hi")), line()]))}}
+equalityTest (show(3, pp"""{${group(ppConcat([line(), nest(3, text("hi")), line()]))}}
 this is some other text"""), "{\nhi\n}\nthis is some other text", String, silver_tests );
-equalityTest (show(3, pp"{${group(concat([line(), nest(3, text("hi")), line()]))}}this is some other text"), "{\nhi\n}this is some other text", String, silver_tests );
+equalityTest (show(3, pp"{${group(ppConcat([line(), nest(3, text("hi")), line()]))}}this is some other text"), "{\nhi\n}this is some other text", String, silver_tests );
 
 

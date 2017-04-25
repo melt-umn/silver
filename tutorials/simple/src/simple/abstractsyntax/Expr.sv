@@ -81,7 +81,8 @@ e::Expr ::= id::Name
 
 function ppoperator
 Document ::= d1::Document op::String d2::Document
-{ return parens(cat(cat(d1, text(" " ++ op ++ " ")), d2));
+{
+  return pp"(${d1} ${text(op)} ${d2})";
 }
 
 -- Arithmetic Operations

@@ -12,7 +12,7 @@ synthesized attribute type :: Type;
 abstract production rootStmt
 r::Root ::= s::Stmt
 {
-  r.pp = cat(text("main() "), braces(nestlines(3, s.pp)));
+  r.pp = pp"main() {${nestlines(3, s.pp)}}";
   s.env = emptyEnv();
   r.errors := s.errors;
 }

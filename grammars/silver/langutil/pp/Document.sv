@@ -1,6 +1,5 @@
 grammar silver:langutil:pp;
 
-import core hiding implode;
 import silver:util:deque;
 
 function show
@@ -22,7 +21,7 @@ String ::= width::Integer d::Document
 {--
  - Concatenates a list of fragments into one fragment.
  -}
-function concat
+function ppConcat
 Document ::= ds::[Document]
 {
   return if null(ds) then notext()
@@ -32,12 +31,12 @@ Document ::= ds::[Document]
  - Intersperse a separator fragment between a list of fragments.
  - e.g. implode(text(", "), list)
  -}
-function implode
+function ppImplode
 Document ::= sep::Document ds::[Document]
 {
   return if null(ds) then notext()
          else if null(tail(ds)) then head(ds)
-         else cat(cat(head(ds), sep), implode(sep, tail(ds)));
+         else cat(cat(head(ds), sep), ppImplode(sep, tail(ds)));
 }
 {--
  - Introduce a separator fragment after every element of a list of fragments.
@@ -81,15 +80,17 @@ Document ::= n::Integer inner::Document
 {
   return cat(groupnest(n, cat(line(), inner)), line());
 }
-function space
-Document ::=
-{
-  return text(" ");
-}
 function softbreak
 Document ::=
 {
   return group(line());
+}
+
+-- TODO: consider these "helpers" deprecated
+function space
+Document ::=
+{
+  return text(" ");
 }
 function semi
 Document ::=
