@@ -88,6 +88,15 @@ top::ProductionGraph ::=
     end end;
 }
 
+-- construct a production graph for each production
+function computeAllProductionGraphs
+[ProductionGraph] ::= prods::[DclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+{
+  return if null(prods) then []
+  else constructProductionGraph(head(prods), searchEnvTree(head(prods).fullName, prodTree), flowEnv, realEnv) ::
+    computeAllProductionGraphs(tail(prods), prodTree, flowEnv, realEnv);
+}
+
 {--
  - Produces a ProductionGraph in some special way. Fixes up implicit equations,
  - figures out stitch points, and so forth.
@@ -102,7 +111,9 @@ top::ProductionGraph ::=
  - @param prod  The full name of the production
  - @param defs  The set of defs from prodGraphContribs
  - @param flowEnv  A full flow environment
+ -         (used to discover what explicit equations exist, find info on nonterminals)
  - @param realEnv  A full real environment
+ -         (used to discover attribute occurrences, whether inh/syn/auto)
  - @return A fixed up graph.
  -}
 function constructProductionGraph

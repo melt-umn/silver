@@ -148,7 +148,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   
   top.flowDefs = e.flowDefs ++
     case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
-    | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.attrDcl.fullName, e.flowDeps)]
+    | defaultAspectContext() -> [defaultSynEq(top.signature.outputElement.typerep.typeName, attr.attrDcl.fullName, e.flowDeps)]
     | _ -> [synEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
     end;
 }
@@ -220,7 +220,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   
   top.flowDefs = e.flowDefs ++
     case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
-    | defaultAspectContext() -> [defEq(top.signature.outputElement.typerep.typeName, attr.attrDcl.fullName, e.flowDeps)]
+    | defaultAspectContext() -> [defaultSynEq(top.signature.outputElement.typerep.typeName, attr.attrDcl.fullName, e.flowDeps)]
     | _ -> [synEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
     end;
 }

@@ -162,7 +162,7 @@ top::IFlow ::= 'syn' '(' prod::IName ',' attr::IName ',' fv::IFlowVertexes ',' a
 concrete production aFlowDef
 top::IFlow ::= 'def' '(' nt::IName ',' attr::IName ',' fv::IFlowVertexes')'
 {
-  top.flowDefs = [defEq(nt.aname, attr.aname, fv.flowDeps)];
+  top.flowDefs = [defaultSynEq(nt.aname, attr.aname, fv.flowDeps)];
 }
 concrete production aFlowFwd
 top::IFlow ::= 'fwd' '(' prod::IName ',' fv::IFlowVertexes ',' a::IBool')'

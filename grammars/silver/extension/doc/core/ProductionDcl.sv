@@ -1,6 +1,5 @@
 grammar silver:extension:doc:core;
 
-import silver:util;
 import silver:definition:concrete_syntax;
 
 aspect production productionDcl

@@ -216,9 +216,8 @@ top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
  - @param attr  the full name of the attribute
  - @param deps  the dependencies of this equation on other flow graph elements
  - CONTRIBUTIONS ARE POSSIBLE
- - TODO: rename defaultSynEq because this is confusingly named
  -}
-abstract production defEq
+abstract production defaultSynEq
 top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
 {
   top.defTreeContribs = [pair(crossnames(nt, attr), top)];

@@ -18,7 +18,8 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   -- Look up tree for production info
   local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlowDefs.prodGraphContribs);
   
-  -- hack to allow us to look up certain info... TODO: maybe hack?
+  -- We need to know about all attributes and occurences on nonterminals.
+  -- It's possible (likely) we could do better than using the overall env here.
   local allRealDefs :: [Def] = flatMap((.defs), g.grammarList);
   local allRealEnv :: Decorated Env = toEnv(allRealDefs);
   
@@ -26,7 +27,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   local allProds :: [DclInfo] = foldr(consDefs, nilDefs(), allRealDefs).prodDclList;
   local allNts :: [String] = nubBy(stringEq, map(getProdNt, allProds));
   
-  -- Fix the production graph information from the flow defs TODO: some of this maybe should be fixed somehow
+  -- Construct production graphs.
   production prodGraph :: [ProductionGraph] = 
     computeAllProductionGraphs(allProds, prodTree, allFlowEnv, allRealEnv) ++
       -- Add in phantom graphs
