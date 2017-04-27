@@ -4,7 +4,6 @@ imports silver:definition:core;
 imports silver:definition:type;
 imports silver:definition:type:syntax;
 imports silver:definition:env;
-imports silver:util;
 
 terminal Type_t 'type' lexer classes {KEYWORD};
 

@@ -18,6 +18,21 @@ import silver:util only rem;
 type ProdName = String;
 type NtName = String;
 
+-- from explicit specifications
+function computeInitialFlowTypes
+EnvTree<FlowType> ::= flowEnv::Decorated FlowDefs
+{
+  local specs :: [Pair<NtName Pair<String [String]>>] = flowEnv.specContribs;
+  
+  return rtm:add(map(initialFlowType, specs), rtm:empty(compareString));
+}
+function initialFlowType
+Pair<NtName FlowType> ::= x::Pair<NtName Pair<String [String]>>
+{
+  return pair(x.fst, g:add(map(pair(x.snd.fst, _), x.snd.snd), g:empty(compareString)));
+}
+
+
 {--
  - Produces flow types for every nonterminal.
  - Iterates until convergence.

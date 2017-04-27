@@ -26,6 +26,7 @@ terminal AnonEqVTerm     'anonEqV' lexer classes {C_1};
 terminal AnonVTerm 	 'anonV' lexer classes {C_1}; 
 terminal AnonTerm 	 'anon' lexer classes {C_1}; 
 terminal AnonInhTerm 	 'anonInh' lexer classes {C_1};
+terminal SpecFlow        'specFlow' lexer classes {C_1};
 
 attribute flowDefs occurs on IRoot, IRootPart;
 
@@ -178,6 +179,11 @@ concrete production aFlowRefFlowDef
 top::IFlow ::= 'ntRefFlowDef' '(' nt::IName ',' prod::INames ')'
 {
   top.flowDefs = [ntRefFlowDef(nt.aname, prod.names)];
+}
+concrete production aSpecFlowDef
+top::IFlow ::= 'specFlow' '(' nt::IName ',' attr::IName ',' inhs::INames ')'
+{
+  top.flowDefs = [specificationFlowDef(nt.aname, attr.aname, inhs.names)];
 }
 concrete production aFlowImplicitFwdAffects
 top::IFlow ::= 'implicitFwdAffects' '(' prd::IName ',' attrs::INames ')'

@@ -164,9 +164,13 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
     rhsStitchPoints(dcl.namedSignature.inputElements) ++
     localStitchPoints(nt, defs);
   
-  local flowTypeVertexes :: [FlowVertex] =
+  local flowTypeVertexesOverall :: [FlowVertex] =
     (if nonForwarding then [] else [forwardEqVertex()]) ++
       map(lhsSynVertex, syns);
+  local flowTypeSpecs :: [String] = getSpecifiedSynsForNt(nt, flowEnv);
+  
+  local flowTypeVertexes :: [FlowVertex] =
+    filter(\x::FlowVertex -> !contains(x.flowTypeName, flowTypeSpecs), flowTypeVertexesOverall);
   
   local initialGraph :: g:Graph<FlowVertex> =
     createFlowGraph(fixedEdges);

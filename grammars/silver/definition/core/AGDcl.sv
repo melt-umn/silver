@@ -32,7 +32,6 @@ top::AGDcls ::= h::AGDcl t::AGDcls
 {--
  - A semantically meaningless declaration. Does nothing.
  - Used for: (1) 'nil' counterpart to appendAgDcl
- - (2) annotations or other meaningless AGDcls.
  -}
 abstract production emptyAGDcl
 top::AGDcl ::=
@@ -47,7 +46,6 @@ top::AGDcl ::= e::[Message]
 {
   top.pp = s"{- Errors:\n${foldMessages(e)} -}";
   top.errors := e;
-  forwards to emptyAGDcl(location=top.location);
 }
 
 {--
