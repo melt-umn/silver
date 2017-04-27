@@ -195,21 +195,6 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
 
 --- The use semantics ----------------------------------------------------------
 
--- ERROR ON ATTRIBUTE DEFS:
-abstract production errorCollectionDefDispatcher
-top::ProductionStmt ::= dl::Decorated DefLHS  q::Decorated QNameAttrOccur  e::Expr
-{
-  top.errors <- [err(top.location, "The ':=' and '<-' operators can only be used for collections. " ++ q.pp ++ " is not a collection.")];
-
-  forwards to errorAttributeDef(dl, q, e, location=top.location);
-}
-abstract production errorColNormalAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  q::Decorated QNameAttrOccur  e::Expr
-{
-  top.errors <- [err(top.location, q.pp ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")];
-
-  forwards to errorAttributeDef(dl, q, e, location=top.location);
-}
 -- ERROR ON VALUE DEFS:
 abstract production errorCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
@@ -349,8 +334,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
 
-  top.errors := dl.errors ++ attr.errors ++ forward.errors;
-
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = [];
   top.defs = [];
@@ -358,9 +341,10 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  forwards to if !null(attr.errors)
-              then errorAttributeDef(dl, attr, e, location=top.location)
-              else attr.attrDcl.attrAppendDefDispatcher(dl, attr, e, top.location);
+  forwards to
+    if !null(dl.errors ++ attr.errors)
+    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e, location=top.location)
+    else attr.attrDcl.attrAppendDefDispatcher(dl, attr, e, top.location);
 }
 
 concrete production attrContainsBase
@@ -368,8 +352,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
 
-  top.errors := dl.errors ++ attr.errors ++ forward.errors;
-
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = [];
   top.defs = [];
@@ -377,9 +359,10 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  forwards to if !null(attr.errors)
-              then errorAttributeDef(dl, attr, e, location=top.location)
-              else attr.attrDcl.attrBaseDefDispatcher(dl, attr, e, top.location);
+  forwards to
+    if !null(dl.errors ++ attr.errors)
+    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e, location=top.location)
+    else attr.attrDcl.attrBaseDefDispatcher(dl, attr, e, top.location);
 }
 
 concrete production valContainsAppend

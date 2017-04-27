@@ -41,6 +41,12 @@ top::Pattern ::= prod::QName '(' ps::PatternList ')'
   top.pp = prod.pp ++ "(" ++ ps.pp ++ ")";
   top.errors := ps.errors;
 
+  local parms :: Integer = length(prod.lookupValue.typerep.inputTypes);
+
+  top.errors <-
+    if null(prod.lookupValue.dcls) || length(ps.patternList) == parms then []
+    else [err(prod.location, prod.pp ++ " has " ++ toString(parms) ++ " parameters but " ++ toString(length(ps.patternList)) ++ " patterns were provided")];
+
   top.patternIsVariable = false;
   top.patternVariableName = nothing();
   top.patternSubPatternList = ps.patternList;
@@ -72,15 +78,15 @@ concrete production varPattern
 top::Pattern ::= v::Name
 {
   top.pp = v.name;
-  top.errors := (if isUpper(substring(0,1,v.name))
-                 then [err(v.location, "Pattern variable names start with a lower case letter")]
-                 else [])
-  -- TODO: Add function to find all prodDcl in env
-             ++ (case getValueDcl(v.name, top.env) of
-                 | prodDcl(_,_,_) :: _ -> [err(v.location, "Production name can't be used in pattern")]
-                 | _ -> []
-                 end);
-
+  top.errors := 
+    (if isUpper(substring(0,1,v.name))
+     then [err(v.location, "Pattern variable names start with a lower case letter")]
+     else []) ++
+    (case getValueDcl(v.name, top.env) of
+     | prodDcl(_,_,_) :: _ ->
+         [err(v.location, "Pattern variables should not share the name of a production. (Potential confusion between '" ++ v.name ++ "' and '" ++ v.name ++ "()')")]
+     | _ -> []
+     end);
 
   top.patternIsVariable = true;
   top.patternVariableName = just(v.name);

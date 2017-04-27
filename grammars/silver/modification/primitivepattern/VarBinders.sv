@@ -9,7 +9,7 @@ import silver:definition:flow:ast only noVertex;
 nonterminal VarBinders with 
   config, grammarName, env, compiledGrammars, signature, blockContext,
   location, pp, errors, defs,
-  bindingTypes, bindingIndex, translation,
+  bindingTypes, bindingIndex, translation, varBinderCount,
   finalSubst;
 nonterminal VarBinder with
   config, grammarName, env, compiledGrammars, signature, blockContext,
@@ -20,6 +20,8 @@ nonterminal VarBinder with
 inherited attribute bindingType :: TypeExp;
 inherited attribute bindingIndex :: Integer;
 
+synthesized attribute varBinderCount :: Integer;
+
 
 concrete production oneVarBinder
 top::VarBinders ::= v::VarBinder
@@ -29,18 +31,12 @@ top::VarBinders ::= v::VarBinder
   top.errors := v.errors;
 
   top.translation = v.translation;
+  top.varBinderCount = 1;
 
   v.bindingIndex = top.bindingIndex;
   v.bindingType = if null(top.bindingTypes)
                   then errorType()
                   else head(top.bindingTypes);
-  
-  top.errors <- if null(top.bindingTypes)
-                then [err(top.location, "More patterns than expected in pattern list")]
-                else [];
-  top.errors <- if length(top.bindingTypes) > 1
-                then [err(top.location, "Fewer patterns than expected in pattern list")]
-                else [];
 }
 concrete production consVarBinder
 top::VarBinders ::= v::VarBinder ',' vs::VarBinders
@@ -50,6 +46,7 @@ top::VarBinders ::= v::VarBinder ',' vs::VarBinders
   top.errors := v.errors ++ vs.errors;
 
   top.translation = v.translation ++ vs.translation;
+  top.varBinderCount = 1 + vs.varBinderCount;
 
   v.bindingIndex = top.bindingIndex;
   vs.bindingIndex = top.bindingIndex + 1;
@@ -69,10 +66,7 @@ top::VarBinders ::=
   top.errors := [];
   
   top.translation = "";
-
-  top.errors <- if !null(top.bindingTypes)
-                then [err(top.location, "Fewer patterns than expected in pattern list")]
-                else [];
+  top.varBinderCount = 0;
 }
 
 concrete production varVarBinder

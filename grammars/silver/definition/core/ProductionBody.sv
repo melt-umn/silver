@@ -261,28 +261,32 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
 
-  top.errors := dl.errors ++ attr.errors ++ forward.errors;
-
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = [];
   top.defs = [];
   
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
+  
+  local problems :: [Message] =
+    if null(attr.errors) && attr.attrDcl.isAnnotation
+    then [err(attr.location, attr.pp ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")]
+    else dl.errors ++ attr.errors;
 
-  forwards to if !null(attr.errors) then errorAttributeDef(dl, attr, e, location=top.location)
-              else attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location);
+  forwards to
+    if !null(problems)
+    then errorAttributeDef(problems, dl, attr, e, location=top.location)
+    else attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location);
 }
 
+{- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
+   Invariant: msg should not be null! -}
 abstract production errorAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
 
-  -- TODO: We need a better way of handling this, really.
-  top.errors := 
-    if !null(attr.errors) then e.errors
-    else [err(top.location, attr.pp ++ " cannot be defined.")];
+  forwards to errorProductionStmt(msg ++ e.errors, location=top.location);
 }
 
 abstract production synthesizedAttributeDef
@@ -312,6 +316,20 @@ top::DefLHS ::= q::QName
               then errorDefLHS(q, location=top.location)
               else q.lookupValue.dcl.defLHSDispatcher(q, top.location);
 }
+
+abstract production errorDefLHS
+top::DefLHS ::= q::Decorated QName
+{
+  top.pp = q.pp;
+  
+  -- Warning: we get here two ways: one is q is lookup error. That errors at the
+  -- dispatcher
+  -- the other is q look up successfully and we need to error here
+  -- TODO we error twice in that case!!
+  top.errors := [err(q.location, "Cannot define attributes on " ++ q.pp)];
+  top.typerep = q.lookupValue.typerep;
+}
+
 concrete production concreteDefLHSfwd
 top::DefLHS ::= q::'forward'
 {
@@ -362,18 +380,7 @@ top::DefLHS ::= q::Decorated QName
   top.typerep = q.lookupValue.typerep;
 }
 
-abstract production errorDefLHS
-top::DefLHS ::= q::Decorated QName
-{
-  top.pp = q.pp;
-  
-  -- Warning: we get here two ways: one is q is lookup error. That errors at the
-  -- dispatcher
-  -- the other is q look up successfully and we need to error here
-  -- TODO we error twice in that case!!
-  top.errors := [err(q.location, "Cannot define attributes on " ++ q.pp)];
-  top.typerep = q.lookupValue.typerep;
-}
+----- done with DefLHS
 
 concrete production valueEq
 top::ProductionStmt ::= val::QName '=' e::Expr ';'
