@@ -139,9 +139,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 {
   local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
 
-  local srcGrams :: [String] =
-    if null(attr.errors) then [ntDefGram, attr.dcl.sourceGrammar]
-    else [ntDefGram];
+  local srcGrams :: [String] = [ntDefGram, hackGramFromDcl(attr)];
 
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, srcGrams, top.compiledGrammars);
@@ -187,7 +185,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
   local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
 
   local mayAffectFlowType :: Boolean =
-    isExportedBy(top.grammarName, [ntDefGram, attr.dcl.sourceGrammar], top.compiledGrammars);
+    isExportedBy(top.grammarName, [ntDefGram, hackGramFromDcl(attr)], top.compiledGrammars);
 
   top.flowDefs = e.flowDefs ++
     [extraEq(top.signature.fullName, lhsSynVertex(attr.attrDcl.fullName), e.flowDeps, mayAffectFlowType)];
@@ -211,9 +209,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 {
   local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
 
-  local srcGrams :: [String] =
-    if null(attr.errors) then [ntDefGram, attr.dcl.sourceGrammar]
-    else [ntDefGram];
+  local srcGrams :: [String] = [ntDefGram, hackGramFromDcl(attr)];
 
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, srcGrams, top.compiledGrammars);
@@ -240,7 +236,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  local locDefGram :: String = if null(val.lookupValue.dcls) then "" else val.lookupValue.dcl.sourceGrammar;
+  local locDefGram :: String = hackGramFromQName(val.lookupValue);
 
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, [locDefGram], top.compiledGrammars);
@@ -284,15 +280,31 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 }
 
 
+-- We're in the unfortunate position of HAVING to compute values for 'flowDefs'
+-- even if there are errors in the larger grammar, as remote errors in binding
+-- cannot be observed to suppress the analysis of flow.
 
+-- It's not clear how to ideally fix this problem. What we do here is just report
+-- harmless junk if we can't determine a good value.
 
-
---- A few helper functions
-
+-- Source grammar of a nonterminal's fullName
 function hackGramFromFName
 String ::= s::String
 {
-  return substring(0, lastIndexOf(":", s), s);
+  -- As a safety feature, rather than crash in this instance, report no known grammar
+  local i :: Integer = lastIndexOf(":", s);
+  return if i > 0 then substring(0, i, s) else "";
 }
-
+-- Source grammar of a lookup of an attribute occurrence dcl
+function hackGramFromDcl
+String ::= qn::Decorated QNameAttrOccur
+{
+  return if null(qn.errors) then qn.dcl.sourceGrammar else "";
+}
+-- Source grammar of a lookup of a local dcl
+function hackGramFromQName
+String ::= qn::Decorated QNameLookup
+{
+  return if null(qn.errors) then qn.dcl.sourceGrammar else "";
+}
 
