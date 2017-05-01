@@ -141,14 +141,21 @@ public final class Util {
 	}
 	
 	public static IOToken touchFile(String sb) {
-		return setFileTime(sb, currentTime());
-	}
-	
-	public static IOToken setFileTime(String sb, int time) {
-		new File(sb).setLastModified(((long)time) * 1000);
+		setFileTime(sb, currentTime());
 		return IOToken.singleton;
 	}
-	
+
+	public static void setFileTime(String sb, int time) {
+		new File(sb).setLastModified(((long)time) * 1000);
+	}
+
+	public static IOToken touchFiles(ConsCell files) {
+		while(!files.nil()) {
+			setFileTime(files.head().toString(), currentTime());
+		}
+		return IOToken.singleton;
+	}
+
 	public static int currentTime() {
 		return (int)(System.currentTimeMillis() / 1000);
 	}
@@ -167,6 +174,40 @@ public final class Util {
 
 	public static boolean deleteFile(String sb) {
 		return new File(sb).delete();
+	}
+
+	public static boolean deleteFiles(ConsCell files) {
+		boolean result = true;
+		while(!files.nil()) {
+			StringCatter f = (StringCatter)files.head();
+			result = result && new File(f.toString()).delete();
+		}
+		return result;
+	}
+
+	public static boolean deleteDirFiles(String dir) {
+		try {
+			File f = new File(dir);
+			String[] files = f.list();
+
+			boolean result = true;
+			
+			if(files == null) return result;
+			
+			for(String filename : files) {
+				File file = new File(filename);
+				// Only files, no directories
+				if(file.isFile()) {
+					result = result && file.delete();
+				}
+					
+			}
+			
+			return result;
+			
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	public static IOToken deleteTree(String path) {
