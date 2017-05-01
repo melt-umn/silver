@@ -22,14 +22,36 @@ type NtName = String;
 function computeInitialFlowTypes
 EnvTree<FlowType> ::= flowEnv::Decorated FlowDefs
 {
-  local specs :: [Pair<NtName Pair<String [String]>>] = flowEnv.specContribs;
+  local specs :: [Pair<NtName [Pair<String [String]>]>] =
+    ntListCoalesce(groupBy(ntListEq, sortBy(ntListLte, flowEnv.specContribs)));
   
   return rtm:add(map(initialFlowType, specs), rtm:empty(compareString));
 }
 function initialFlowType
-Pair<NtName FlowType> ::= x::Pair<NtName Pair<String [String]>>
+Pair<NtName FlowType> ::= x::Pair<NtName [Pair<String [String]>]>
 {
-  return pair(x.fst, g:add(map(pair(x.snd.fst, _), x.snd.snd), g:empty(compareString)));
+  return pair(x.fst, g:add(flatMap(toFlatEdges, x.snd), g:empty(compareString)));
+}
+function ntListLte
+Boolean ::= a::Pair<NtName a>  b::Pair<NtName b>
+{
+  return a.fst <= b.fst;
+}
+function ntListEq
+Boolean ::= a::Pair<NtName a>  b::Pair<NtName b>
+{
+  return a.fst == b.fst;
+}
+function ntListCoalesce
+[Pair<NtName [Pair<String [String]>]>] ::= l::[[Pair<NtName Pair<String [String]>>]]
+{
+  return if null(l) then []
+  else pair(head(head(l)).fst, map(snd, head(l))) :: ntListCoalesce(tail(l));
+}
+function toFlatEdges
+[Pair<String String>] ::= x::Pair<String [String]>
+{
+  return map(pair(x.fst, _), x.snd);
 }
 
 

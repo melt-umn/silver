@@ -4,6 +4,7 @@ imports silver:definition:core;
 imports silver:definition:flow:ast;
 imports silver:definition:env;
 imports silver:definition:type;
+imports silver:driver:util only isExportedBy;
 
 terminal Flowtype 'flowtype' lexer classes {KEYWORD};
 
@@ -26,13 +27,15 @@ top::AGDcl ::= 'flowtype' nt::QName '=' specs::FlowSpecs ';'
 concrete production flowtypeAttrDcl
 top::AGDcl ::= 'flowtype' attr::FlowSpec 'on' nts::NtList ';'
 {
-  top.pp = "";
-  top.errors := [];
-  top.flowDefs = [];
+  top.pp = "flowtype " ++ attr.pp ++ " on " ++ nts.pp ++ ";";
+  top.errors := nts.errors;
+  top.flowDefs = nts.flowDefs;
+  
+  nts.flowSpecSpec = attr;
 }
 
 
-nonterminal FlowSpecs with config, location, grammarName, errors, env, pp, onNt, flowDefs;
+nonterminal FlowSpecs with config, location, grammarName, errors, env, pp, onNt, flowDefs, compiledGrammars, flowEnv;
 
 concrete production oneFlowSpec
 top::FlowSpecs ::= h::FlowSpec
@@ -49,7 +52,9 @@ top::FlowSpecs ::= h::FlowSpecs  ','  t::FlowSpec
   top.flowDefs = h.flowDefs ++ t.flowDefs;
 }
 
-nonterminal FlowSpec with config, location, grammarName, errors, env, pp, onNt, flowDefs;
+nonterminal FlowSpec with config, location, grammarName, errors, env, pp, onNt, flowDefs, compiledGrammars, flowEnv;
+
+autocopy attribute onNt :: TypeExp;
 
 concrete production flowSpecDcl
 top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
@@ -57,23 +62,39 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
   top.pp = attr.pp ++ " {" ++ inhs.pp ++ "}";
   top.errors := attr.errors ++ inhs.errors;
   
-  -- TODO: check for pre-existing flowtype def
+  top.errors <-
+    if isExportedBy(top.grammarName, [attr.authorityGrammar], top.compiledGrammars)
+    then []
+    else [err(attr.location, "flow spec must be exported by " ++ attr.authorityGrammar)];
+
+  top.errors <-
+    if length(filter(stringEq(attr.synName, _), getSpecifiedSynsForNt(top.onNt.typeName, top.flowEnv))) > 1
+    then [err(attr.location, "duplicate specification of flow type for " ++ attr.pp ++ " on " ++ top.onNt.typeName)]
+    else [];
   
-  top.flowDefs = [specificationFlowDef(top.onNt.typeName, attr.synName, inhs.inhList)];
+  top.flowDefs = 
+    if !null(attr.errors) || !null(inhs.errors) then []
+    else [specificationFlowDef(top.onNt.typeName, attr.synName, inhs.inhList)];
 }
 
-nonterminal FlowSpecId with config, location, grammarName, errors, env, pp, onNt, synName;
+nonterminal FlowSpecId with config, location, grammarName, errors, env, pp, onNt, synName, authorityGrammar;
 
 synthesized attribute synName :: String;
+synthesized attribute authorityGrammar :: String;
 
 concrete production qnameSpecId
 top::FlowSpecId ::= syn::QNameAttrOccur
 {
   top.pp = syn.pp;
   top.errors := syn.errors;
-  top.synName = syn.dcl.fullName;
+  top.synName = syn.attrDcl.fullName;
+  top.authorityGrammar = syn.dcl.sourceGrammar;
   
   syn.attrFor = top.onNt;
+  
+  top.errors <-
+    if !null(syn.errors) || syn.attrDcl.isSynthesized then []
+    else [err(syn.location, syn.pp ++ " is not a synthesized attribute, and so cannot have a flowtype")];
 }
 
 concrete production forwardSpecId
@@ -82,6 +103,7 @@ top::FlowSpecId ::= 'forward'
   top.pp = "forward";
   top.errors := [];
   top.synName = "forward";
+  top.authorityGrammar = hackGramFromFName(top.onNt.typeName);
 }
 
 concrete production decorateSpecId
@@ -90,6 +112,7 @@ top::FlowSpecId ::= 'decorate'
   top.pp = "decorate";
   top.errors := [];
   top.synName = "decorate";
+  top.authorityGrammar = hackGramFromFName(top.onNt.typeName);
 }
 
 
@@ -119,7 +142,6 @@ top::FlowSpecInhs ::= h::FlowSpecInh  ','  t::FlowSpecInhs
 
 nonterminal FlowSpecInh with config, location, grammarName, errors, env, pp, onNt, inhList;
 
-autocopy attribute onNt :: TypeExp;
 synthesized attribute inhList :: [String];
 
 concrete production flowSpecInh
@@ -127,12 +149,16 @@ top::FlowSpecInh ::= inh::QNameAttrOccur
 {
   top.pp = inh.pp;
   top.errors := inh.errors;
-  top.inhList = if null(inh.errors) then [inh.dcl.fullName] else [];
+  top.inhList = if null(inh.errors) then [inh.attrDcl.fullName] else [];
   
   inh.attrFor = top.onNt;
+
+  top.errors <-
+    if !null(inh.errors) || inh.attrDcl.isInherited then []
+    else [err(inh.location, inh.pp ++ " is not an inherited attribute and so cannot be within a flowtype")];
 }
 
-nonterminal NtList with config, location, grammarName, errors, env, pp, flowSpecSpec, flowDefs;
+nonterminal NtList with config, location, grammarName, errors, env, pp, flowSpecSpec, flowDefs, compiledGrammars, flowEnv;
 
 concrete production nilNtList
 top::NtList ::=
@@ -156,7 +182,7 @@ top::NtList ::= h::NtName  ','  t::NtList
   top.flowDefs = h.flowDefs ++ t.flowDefs;
 }
 
-nonterminal NtName with config, location, grammarName, errors, env, pp, flowSpecSpec, flowDefs;
+nonterminal NtName with config, location, grammarName, errors, env, pp, flowSpecSpec, flowDefs, compiledGrammars, flowEnv;
 
 autocopy attribute flowSpecSpec :: FlowSpec;
 
@@ -178,6 +204,8 @@ top::NtName ::= nt::QName
   myCopy.config = top.config;
   myCopy.grammarName = top.grammarName;
   myCopy.env = top.env;
+  myCopy.compiledGrammars = top.compiledGrammars;
+  myCopy.flowEnv = top.flowEnv;
   
   myCopy.onNt = nt.lookupType.typerep;
 }

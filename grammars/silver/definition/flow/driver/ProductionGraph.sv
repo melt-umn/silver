@@ -39,7 +39,8 @@ synthesized attribute flowTypeVertexes::[FlowVertex];
  -
  - @param prod  The full name of this production
  - @param lhsNt  The full name of the nonterminal this production constructs
- - @param flowTypeVertexes  The vertexes that we track the flow types of. (Syns and optionally fwd)
+ - @param flowTypeVertexes  The vertexes that we are inferring the flow types of.
+ -                          (Syns and optionally fwd, minus those that are specified.)
  - @param graph  The edges within this production
  - @param suspectEdges  Edges that are not permitted to affect their OWN flow types (but perhaps some unknown other flowtypes)
  - @param stitchPoints  Places where current flow types need grafting to this graph to yield a full flow graph
@@ -314,14 +315,18 @@ function rhsStitchPoints
 
 ---- End helpers for figuring our stitch points --------------------------------
 
-function getFst
-a ::= v::Pair<a b>
-{ return v.fst; }
-
 function prodGraphToEnv
 Pair<String ProductionGraph> ::= p::ProductionGraph
 {
   return pair(p.prod, p);
+}
+function isOccursInherited
+Boolean ::= occs::DclInfo  e::Decorated Env
+{
+  return case getAttrDcl(occs.attrOccurring, e) of
+         | at :: _ -> at.isInherited
+         | _ -> false
+         end;
 }
 
 ---- Begin Suspect edge handling -----------------------------------------------

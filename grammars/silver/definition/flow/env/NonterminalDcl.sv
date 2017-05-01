@@ -1,28 +1,34 @@
 grammar silver:definition:flow:env;
 
 import silver:definition:type:syntax only BracketedOptTypeList;
+import silver:driver:util only isExportedBy;
 
 aspect production nonterminalDcl
 top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList ';'
 {
-  -- TODO: although this works, because all we really care about is having a *consistent* set of
-  -- attributes that we deem the "blessed reference set" this behavior is slightly bogus.
-  -- We should probably only list inhs *exported* by this grammar, rather than inhs imported
-  -- by this grammar, as this does now. Otherwise we end up "missing" attributes that
-  -- aren't in scope...
-  local inhs :: [String] =
-    map((.attrOccurring),
-      filter(isOccursInherited(_, top.env),
-        getAttrsOn(fName, top.env)));
+  local inferredInhs :: [String] =
+    flatMap(
+      filterOccursForReferences(_, top.env, isExportedBy(_, [top.grammarName], top.compiledGrammars)),
+      getAttrsOn(fName, top.env));
+  
+  local specInhs :: Maybe<[String]> =
+    lookupBy(stringEq, "decorate", getFlowTypeSpecFor(fName, top.flowEnv));
 
-  top.flowDefs = [ntRefFlowDef(fName, inhs)];
+  -- Notice the circularity: flowDefs uses flowEnv. Works fine because only
+  -- the (lazy) parameter of ntRefFlowDef isn't computable until later.
+
+  top.flowDefs = [ntRefFlowDef(fName, fromMaybe(inferredInhs, specInhs))];
 }
 
-function isOccursInherited
-Boolean ::= occs::DclInfo  e::Decorated Env
+-- If it is inherited and exported by this grammar (according to authority)
+function filterOccursForReferences
+[String] ::= occ::DclInfo  e::Decorated Env  authority::(Boolean ::= String)
 {
-  return case getAttrDcl(occs.attrOccurring, e) of
-         | at :: _ -> at.isInherited
-         | _ -> false
-         end;
+  return case getAttrDcl(occ.attrOccurring, e) of
+         | at :: _ ->
+             if at.isInherited && authority(occ.sourceGrammar)
+             then [occ.attrOccurring]
+             else []
+         | _ -> []
+         end; 
 }

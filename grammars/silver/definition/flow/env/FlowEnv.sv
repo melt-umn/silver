@@ -22,7 +22,7 @@ inherited attribute localInhTree ::EnvTree<FlowDef>;
 inherited attribute localTree :: EnvTree<FlowDef>;
 inherited attribute nonSuspectTree :: EnvTree<[String]>;
 inherited attribute extSynTree :: EnvTree<FlowDef>;
-inherited attribute specTree :: EnvTree<String>;
+inherited attribute specTree :: EnvTree<Pair<String [String]>>;
 
 abstract production dummyFlowEnv
 top::FlowEnv ::=
@@ -45,8 +45,7 @@ Decorated FlowEnv ::= d::FlowDefs
   e.localTree = directBuildTree(d.localTreeContribs);
   e.nonSuspectTree = directBuildTree(d.nonSuspectContribs);
   e.extSynTree = directBuildTree(d.extSynTreeContribs);
-  e.specTree = directBuildTree(
-    map(\x::Pair<String Pair<String [String]>> -> pair(x.fst, x.snd.fst), d.specContribs));
+  e.specTree = directBuildTree(d.specContribs);
   
   return e;
 }
@@ -131,6 +130,11 @@ function getExtSynsFor
 -- Get syns (and "forward") that have flow types specified
 function getSpecifiedSynsForNt
 [String] ::= nt::String  e::Decorated FlowEnv
+{
+  return map(fst, searchEnvTree(nt, e.specTree));
+}
+function getFlowTypeSpecFor
+[Pair<String [String]>] ::= nt::String  e::Decorated FlowEnv
 {
   return searchEnvTree(nt, e.specTree);
 }
