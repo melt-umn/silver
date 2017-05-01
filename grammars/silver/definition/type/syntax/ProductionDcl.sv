@@ -2,6 +2,9 @@ grammar silver:definition:type:syntax;
 
 attribute lexicalTypeVariables occurs on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
+flowtype lexicalTypeVariables {env} on ProductionSignature, ProductionLHS, ProductionRHS;
+flowtype lexicalTypeVariables {deterministicCount, env} on ProductionRHSElem;
+
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {

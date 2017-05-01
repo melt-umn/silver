@@ -5,6 +5,9 @@ nonterminal ProductionLHS with config, grammarName, env, location, pp, errors, d
 nonterminal ProductionRHS with config, grammarName, env, location, pp, errors, defs, inputElements;
 nonterminal ProductionRHSElem with config, grammarName, env, location, pp, errors, defs, inputElements, deterministicCount;
 
+flowtype forward {env} on ProductionSignature, ProductionLHS, ProductionRHS;
+flowtype forward {deterministicCount, env} on ProductionRHSElem;
+
 {--
  - Used to help give names to children, when names are omitted.
  -}

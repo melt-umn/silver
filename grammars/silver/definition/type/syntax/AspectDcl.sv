@@ -2,6 +2,9 @@ grammar silver:definition:type:syntax;
 
 attribute lexicalTypeVariables occurs on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectRHSElem, AspectFunctionSignature, AspectFunctionLHS;
 
+flowtype lexicalTypeVariables {realSignature, env} on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectFunctionSignature, AspectFunctionLHS;
+flowtype lexicalTypeVariables {deterministicCount, realSignature, env} on AspectRHSElem;
+
 function addNewLexicalTyVars_ActuallyVariables
 [Def] ::= gn::String sl::Location l::[String]
 {

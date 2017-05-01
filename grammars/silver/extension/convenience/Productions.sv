@@ -15,7 +15,10 @@ concrete production productionDclC
 top::AGDcl ::= 'concrete' 'productions' lhs::ProductionLHS stmts::ProductionDclStmts 
 {
   top.pp = "concrete productions " ++ lhs.pp ++ stmts.pp;
+  top.moduleNames = [];
+  
   stmts.lhsdcl = lhs;
+  
   forwards to stmts.proddcls;
 }
 

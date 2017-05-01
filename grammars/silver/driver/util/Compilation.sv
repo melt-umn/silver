@@ -2,6 +2,8 @@ grammar silver:driver:util;
 
 nonterminal Compilation with config, postOps, grammarList, recheckGrammars, allGrammars;
 
+flowtype postOps {config} on Compilation;
+
 synthesized attribute postOps :: [DriverAction] with ++;
 synthesized attribute grammarList :: [Decorated RootSpec];
 synthesized attribute recheckGrammars :: [String];
@@ -52,7 +54,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   
   top.allGrammars = g.grammarList ++ r.grammarList;
 
-  top.postOps := []; -- TODO: need to make depend on top.config
+  top.postOps := [];
 }
 
 nonterminal Grammars with config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarList, recheckGrammars, translateGrammars;

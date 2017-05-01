@@ -78,9 +78,9 @@ top::IRootPart ::= 'parsers' s::IParsers
   top.parserSpecs = s.parserSpecs;
 }
 
-nonterminal IParsers with parserSpecs;
-nonterminal IParsersInner with parserSpecs;
-nonterminal IParser with parserSpecs;
+nonterminal IParsers with parserSpecs, grammarName;
+nonterminal IParsersInner with parserSpecs, grammarName;
+nonterminal IParser with parserSpecs, grammarName;
 
 concrete production aParsersNone
 top::IParsers ::= '[' ']'

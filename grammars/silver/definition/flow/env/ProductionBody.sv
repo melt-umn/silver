@@ -278,6 +278,11 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.flowDefs = e.flowDefs;
 }
+aspect production pushTokenIfStmt
+top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' 'if' condition::Expr ';'
+{
+  top.flowDefs = lexeme.flowDefs ++ condition.flowDefs;
+}
 
 
 -- We're in the unfortunate position of HAVING to compute values for 'flowDefs'

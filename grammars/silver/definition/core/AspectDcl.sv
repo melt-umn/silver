@@ -9,6 +9,9 @@ nonterminal AspectFunctionLHS with config, grammarName, env, location, pp, error
 nonterminal AspectRHS with config, grammarName, env, location, pp, errors, defs, inputElements, realSignature;
 nonterminal AspectRHSElem with config, grammarName, env, location, pp, errors, defs, realSignature, inputElements, deterministicCount;
 
+flowtype forward {realSignature, env} on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS;
+flowtype forward {deterministicCount, realSignature, env} on AspectRHSElem;
+
 {--
  - The signature elements from the fun/produciton being aspected.
  -}

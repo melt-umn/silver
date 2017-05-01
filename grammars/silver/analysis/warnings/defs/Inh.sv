@@ -410,7 +410,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
        -- We can ignore functions. We're checking LHS inhs here... functions don't have any!
        top.blockContext.hasFullSignature
     then if null(lhsInhExceedsFlowType) then []
-         else [wrn(top.location, "Local contribution (<-) equation exceeds flow dependencies with: " ++ implode(", ", lhsInhExceedsFlowType))]
+         else [wrn(top.location, "Local contribution (" ++ val.pp ++ " <-) equation exceeds flow dependencies with: " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
 }
 
