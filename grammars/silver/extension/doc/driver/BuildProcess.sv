@@ -113,8 +113,6 @@ function deleteStaleDocs
 IO ::= iIn::IO outputLoc::String gram::String
 {
   local docPath :: String = outputLoc ++ "doc/" ++ grammarToPath(gram);
-  local docFiles :: IOVal<[String]> = listContents(docPath, iIn);
   
-  return deleteStaleDataFiles(docFiles.io, docPath, docFiles.iovalue);
-         
+  return deleteDirFiles(docPath, iIn).io;
 }

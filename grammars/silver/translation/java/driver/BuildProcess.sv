@@ -187,7 +187,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 abstract production genJava
 top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silverGen::String
 {
-  local pr :: IO = print("Generating Java Translation.\n", top.ioIn);
+  local pr :: IO = print("Generating Translation.\n", top.ioIn);
 
   top.io = writeAll(pr, a, specs, silverGen);
   top.code = 0;
@@ -214,10 +214,22 @@ IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]  silverGen::String
 function writeSpec
 IO ::= i::IO  r::Decorated RootSpec  silverGen::String
 {
-  local printio :: IO = print("\t[" ++ r.declaredName ++ "]\n", i);
-  local path :: String = silverGen ++ "src/" ++ grammarToPath(r.declaredName); 
+  local srcPath :: String = silverGen ++ "src/" ++ grammarToPath(r.declaredName);
+  local binPath :: String = silverGen ++ "bin/" ++ grammarToPath(r.declaredName);
 
-  return writeFiles(path, r.genFiles, printio);
+  local mkiotest :: IOVal<Boolean> =
+    isDirectory(srcPath, i);
+  local mksrc :: IOVal<Boolean> =
+    if mkiotest.iovalue then mkiotest else mkdir(srcPath, mkiotest.io);
+  local clean :: IO =
+    deleteDirFiles(srcPath, deleteDirFiles(binPath, mksrc.io).io).io;
+  
+  local printio :: IO =
+    if mksrc.iovalue
+    then print("\t[" ++ r.declaredName ++ "]\n", clean)
+    else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ srcPath ++ "\nWarning: if some interface file writes were successful, but others not, Silver's temporaries are in an inconsistent state. Use the --clean flag next run.\n\n", mksrc.io));
+
+  return writeFiles(srcPath, r.genFiles, printio);
 }
 
 {--
