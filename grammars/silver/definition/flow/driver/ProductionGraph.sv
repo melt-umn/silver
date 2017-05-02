@@ -197,13 +197,14 @@ ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated E
 
   -- The phantom edges: ext syn -> fwd.eq
   local phantomEdges :: [Pair<FlowVertex FlowVertex>] =
+    -- apparently this alias may sometimes be used. we should get rid of this by making good use of vertex types
+    pair(lhsSynVertex("forward"), forwardEqVertex()) ::
     map(getPhantomEdge, getExtSynsFor(nt, flowEnv));
   
   -- The stitch point: oddball. LHS stitch point. Normally, the LHS is not.
   local stitchPoints :: [StitchPoint] = [nonterminalStitchPoint(nt, lhsVertexType)];
     
-  -- TODO: use of lhsSynVertex("forward") here is part of a hack.
-  local flowTypeVertexes :: [FlowVertex] = [lhsSynVertex("forward")] ++ map(lhsSynVertex, syns);
+  local flowTypeVertexes :: [FlowVertex] = [forwardEqVertex()] ++ map(lhsSynVertex, syns);
   local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(phantomEdges);
   local suspectEdges :: [Pair<FlowVertex FlowVertex>] = [];
 
@@ -214,7 +215,7 @@ function getPhantomEdge
 Pair<FlowVertex FlowVertex> ::= f::FlowDef
 {
   return case f of
-  | extSynFlowDef(_, at) -> pair(lhsSynVertex(at), lhsSynVertex("forward")) -- TODO: this is a hack and "accidentally" works. Fix is to use VertexTypes more. Basically, what matters here is that both this and forwardEqVertex() will have a flowTypeName of just "forward"
+  | extSynFlowDef(_, at) -> pair(lhsSynVertex(at), forwardEqVertex())
   end;
 }
 
