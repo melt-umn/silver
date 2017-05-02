@@ -58,8 +58,8 @@ String ::= specs::[Decorated RootSpec]
 function makeDotArrow
 String ::= f::String t::String
 {
-  -- A few stupid heuristics to try to make the graphs more readable:
-  return if t == "core" || startsWith("silver:util", t) || startsWith("silver:langutil", t) then "" 
+  -- A heuristic to try to make the graph more readable...
+  return if t == "core" then "" 
   else "\"" ++ f ++ "\" -> \"" ++ t ++ "\";\n";
 }
 

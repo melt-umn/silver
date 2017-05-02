@@ -39,7 +39,8 @@ synthesized attribute flowTypeVertexes::[FlowVertex];
  -
  - @param prod  The full name of this production
  - @param lhsNt  The full name of the nonterminal this production constructs
- - @param flowTypeVertexes  The vertexes that we track the flow types of. (Syns and optionally fwd)
+ - @param flowTypeVertexes  The vertexes that we are inferring the flow types of.
+ -                          (Syns and optionally fwd, minus those that are specified.)
  - @param graph  The edges within this production
  - @param suspectEdges  Edges that are not permitted to affect their OWN flow types (but perhaps some unknown other flowtypes)
  - @param stitchPoints  Places where current flow types need grafting to this graph to yield a full flow graph
@@ -88,6 +89,15 @@ top::ProductionGraph ::=
     end end;
 }
 
+-- construct a production graph for each production
+function computeAllProductionGraphs
+[ProductionGraph] ::= prods::[DclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+{
+  return if null(prods) then []
+  else constructProductionGraph(head(prods), searchEnvTree(head(prods).fullName, prodTree), flowEnv, realEnv) ::
+    computeAllProductionGraphs(tail(prods), prodTree, flowEnv, realEnv);
+}
+
 {--
  - Produces a ProductionGraph in some special way. Fixes up implicit equations,
  - figures out stitch points, and so forth.
@@ -102,7 +112,9 @@ top::ProductionGraph ::=
  - @param prod  The full name of the production
  - @param defs  The set of defs from prodGraphContribs
  - @param flowEnv  A full flow environment
+ -         (used to discover what explicit equations exist, find info on nonterminals)
  - @param realEnv  A full real environment
+ -         (used to discover attribute occurrences, whether inh/syn/auto)
  - @return A fixed up graph.
  -}
 function constructProductionGraph
@@ -153,9 +165,13 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
     rhsStitchPoints(dcl.namedSignature.inputElements) ++
     localStitchPoints(nt, defs);
   
-  local flowTypeVertexes :: [FlowVertex] =
+  local flowTypeVertexesOverall :: [FlowVertex] =
     (if nonForwarding then [] else [forwardEqVertex()]) ++
       map(lhsSynVertex, syns);
+  local flowTypeSpecs :: [String] = getSpecifiedSynsForNt(nt, flowEnv);
+  
+  local flowTypeVertexes :: [FlowVertex] =
+    filter(\x::FlowVertex -> !contains(x.flowTypeName, flowTypeSpecs), flowTypeVertexesOverall);
   
   local initialGraph :: g:Graph<FlowVertex> =
     createFlowGraph(fixedEdges);
@@ -299,14 +315,18 @@ function rhsStitchPoints
 
 ---- End helpers for figuring our stitch points --------------------------------
 
-function getFst
-a ::= v::Pair<a b>
-{ return v.fst; }
-
 function prodGraphToEnv
 Pair<String ProductionGraph> ::= p::ProductionGraph
 {
   return pair(p.prod, p);
+}
+function isOccursInherited
+Boolean ::= occs::DclInfo  e::Decorated Env
+{
+  return case getAttrDcl(occs.attrOccurring, e) of
+         | at :: _ -> at.isInherited
+         | _ -> false
+         end;
 }
 
 ---- Begin Suspect edge handling -----------------------------------------------

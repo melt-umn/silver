@@ -8,7 +8,6 @@ imports silver:definition:type;
 
 imports silver:extension:convenience;
 
-imports silver:util;
 imports silver:util:treemap;
 
 {@config

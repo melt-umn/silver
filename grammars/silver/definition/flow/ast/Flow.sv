@@ -2,8 +2,8 @@ grammar silver:definition:flow:ast;
 
 imports silver:definition:env only quoteString,unparseStrings, unparse;
 
-nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, extSynTreeContribs, nonSuspectContribs, localTreeContribs;
-nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, suspectFlowEdges, extSynTreeContribs, nonSuspectContribs, localTreeContribs;
+nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, extSynTreeContribs, nonSuspectContribs, localTreeContribs, specContribs;
+nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, suspectFlowEdges, extSynTreeContribs, nonSuspectContribs, localTreeContribs, specContribs;
 
 {-- lookup (production, attribute) to find synthesized equations
  - Used to ensure a necessary lhs.syn equation exists.
@@ -62,6 +62,9 @@ synthesized attribute extSynTreeContribs :: [Pair<String FlowDef>];
 {-- A list of attributes for a production that are non-suspect -}
 synthesized attribute nonSuspectContribs :: [Pair<String [String]>];
 
+{-- Explicit flow type specificiations -}
+synthesized attribute specContribs :: [Pair<String Pair<String [String]>>];
+
 synthesized attribute unparses :: [String];
 
 abstract production consFlow
@@ -79,6 +82,7 @@ top::FlowDefs ::= h::FlowDef  t::FlowDefs
   top.localTreeContribs = h.localTreeContribs ++ t.localTreeContribs;
   top.extSynTreeContribs = h.extSynTreeContribs ++ t.extSynTreeContribs;
   top.nonSuspectContribs = h.nonSuspectContribs ++ t.nonSuspectContribs;
+  top.specContribs = h.specContribs ++ t.specContribs;
   top.unparses = h.unparses ++ t.unparses;
 }
 
@@ -97,6 +101,7 @@ top::FlowDefs ::=
   top.localTreeContribs = [];
   top.extSynTreeContribs = [];
   top.nonSuspectContribs = [];
+  top.specContribs = [];
   top.unparses = [];
 }
 
@@ -120,6 +125,7 @@ top::FlowDef ::=
   top.localTreeContribs = [];
   top.extSynTreeContribs = [];
   top.nonSuspectContribs = [];
+  top.specContribs = [];
   top.suspectFlowEdges = []; -- flowEdges is required, but suspect is typically not!
   -- require unparses, prodGraphContibs, flowEdges
 }
@@ -172,6 +178,25 @@ top::FlowDef ::= nt::String  attr::String
 }
 
 {--
+ - Explicit specification of the flow type on a nonterminal for
+ - 1. A synthesized attributes
+ - 2. The forward
+ - 3. The reference set?
+ -
+ - @param nt  the full name of the nonterminal
+ - @param attr  the full name of the synthesized attribute (or "forward", or "decorate")
+ - @param inhs  the full names of inherited attributes to use as the flow type
+ -}
+abstract production specificationFlowDef
+top::FlowDef ::= nt::String  attr::String  inhs::[String]
+{
+  top.specContribs = [pair(nt, pair(attr, inhs))];
+  top.prodGraphContribs = [];
+  top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
+  top.unparses = ["specFlow(" ++ quoteString(nt) ++ ", " ++ quoteString(attr) ++ ", " ++ unparseStrings(inhs) ++ ")"];
+}
+
+{--
  - The definition of a synthesized attribute in a production.
  -
  - @param prod  the full name of the production
@@ -216,9 +241,8 @@ top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
  - @param attr  the full name of the attribute
  - @param deps  the dependencies of this equation on other flow graph elements
  - CONTRIBUTIONS ARE POSSIBLE
- - TODO: rename defaultSynEq because this is confusingly named
  -}
-abstract production defEq
+abstract production defaultSynEq
 top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
 {
   top.defTreeContribs = [pair(crossnames(nt, attr), top)];

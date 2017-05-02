@@ -188,6 +188,7 @@
 <keyword>lexer</keyword>
 <keyword>class</keyword>
 <keyword>default</keyword>
+<keyword>flowtype</keyword>
     </context>
 
     <context id="primitive-types" style-ref="type">

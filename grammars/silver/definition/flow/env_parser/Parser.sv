@@ -26,6 +26,7 @@ terminal AnonEqVTerm     'anonEqV' lexer classes {C_1};
 terminal AnonVTerm 	 'anonV' lexer classes {C_1}; 
 terminal AnonTerm 	 'anon' lexer classes {C_1}; 
 terminal AnonInhTerm 	 'anonInh' lexer classes {C_1};
+terminal SpecFlow        'specFlow' lexer classes {C_1};
 
 attribute flowDefs occurs on IRoot, IRootPart;
 
@@ -162,7 +163,7 @@ top::IFlow ::= 'syn' '(' prod::IName ',' attr::IName ',' fv::IFlowVertexes ',' a
 concrete production aFlowDef
 top::IFlow ::= 'def' '(' nt::IName ',' attr::IName ',' fv::IFlowVertexes')'
 {
-  top.flowDefs = [defEq(nt.aname, attr.aname, fv.flowDeps)];
+  top.flowDefs = [defaultSynEq(nt.aname, attr.aname, fv.flowDeps)];
 }
 concrete production aFlowFwd
 top::IFlow ::= 'fwd' '(' prod::IName ',' fv::IFlowVertexes ',' a::IBool')'
@@ -178,6 +179,11 @@ concrete production aFlowRefFlowDef
 top::IFlow ::= 'ntRefFlowDef' '(' nt::IName ',' prod::INames ')'
 {
   top.flowDefs = [ntRefFlowDef(nt.aname, prod.names)];
+}
+concrete production aSpecFlowDef
+top::IFlow ::= 'specFlow' '(' nt::IName ',' attr::IName ',' inhs::INames ')'
+{
+  top.flowDefs = [specificationFlowDef(nt.aname, attr.aname, inhs.names)];
 }
 concrete production aFlowImplicitFwdAffects
 top::IFlow ::= 'implicitFwdAffects' '(' prd::IName ',' attrs::INames ')'
