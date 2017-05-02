@@ -2,9 +2,11 @@ grammar silver:definition:flow:syntax;
 
 imports silver:definition:core;
 imports silver:definition:flow:ast;
+imports silver:definition:flow:driver only FlowType, inhDepsForSyn;
 imports silver:definition:env;
 imports silver:definition:type;
 imports silver:driver:util only isExportedBy;
+imports silver:util:raw:treeset as set;
 
 terminal Flowtype 'flowtype' lexer classes {KEYWORD};
 
@@ -63,14 +65,28 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
   top.errors := attr.errors ++ inhs.errors;
   
   top.errors <-
-    if isExportedBy(top.grammarName, [attr.authorityGrammar], top.compiledGrammars)
+    if !null(attr.errors) ||
+       isExportedBy(top.grammarName, [attr.authorityGrammar], top.compiledGrammars)
     then []
-    else [err(attr.location, "flow spec must be exported by " ++ attr.authorityGrammar)];
+    else [err(attr.location, "flow type for " ++ attr.pp ++ " must be exported by " ++ attr.authorityGrammar)];
 
   top.errors <-
-    if length(filter(stringEq(attr.synName, _), getSpecifiedSynsForNt(top.onNt.typeName, top.flowEnv))) > 1
+    if null(attr.errors) &&
+       length(filter(stringEq(attr.synName, _), getSpecifiedSynsForNt(top.onNt.typeName, top.flowEnv))) > 1
     then [err(attr.location, "duplicate specification of flow type for " ++ attr.pp ++ " on " ++ top.onNt.typeName)]
     else [];
+
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local missingFt :: [String] =
+    set:toList(set:removeAll(inhs.inhList, inhDepsForSyn("forward", top.onNt.typeName, myFlow)));
+
+  top.errors <-
+    if !null(attr.errors) ||
+       isExportedBy(attr.authorityGrammar, [hackGramFromFName(top.onNt.typeName)], top.compiledGrammars) ||
+       null(missingFt)
+    then []
+    else [err(attr.location, attr.pp ++ " is an extension synthesized attribute, and must contain at least the forward flow type. It is missing " ++ implode(", ", missingFt))];
   
   top.flowDefs = 
     if !null(attr.errors) || !null(inhs.errors) then []
@@ -94,7 +110,7 @@ top::FlowSpecId ::= syn::QNameAttrOccur
   
   top.errors <-
     if !null(syn.errors) || syn.attrDcl.isSynthesized then []
-    else [err(syn.location, syn.pp ++ " is not a synthesized attribute, and so cannot have a flowtype")];
+    else [err(syn.location, syn.pp ++ " is not a synthesized attribute, and so cannot have a flow type")];
 }
 
 concrete production forwardSpecId
@@ -155,7 +171,7 @@ top::FlowSpecInh ::= inh::QNameAttrOccur
 
   top.errors <-
     if !null(inh.errors) || inh.attrDcl.isInherited then []
-    else [err(inh.location, inh.pp ++ " is not an inherited attribute and so cannot be within a flowtype")];
+    else [err(inh.location, inh.pp ++ " is not an inherited attribute and so cannot be within a flow type")];
 }
 
 nonterminal NtList with config, location, grammarName, errors, env, pp, flowSpecSpec, flowDefs, compiledGrammars, flowEnv;
