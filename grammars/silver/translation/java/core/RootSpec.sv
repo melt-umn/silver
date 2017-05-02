@@ -20,7 +20,8 @@ aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _
 {
   top.genFiles := g.genFiles ++
-  [pair("Init.java",
+  [pair("Silver.svi", unparseRootSpec(top)),
+  pair("Init.java",
 "package " ++ makeName(g.declaredName) ++ ";\n\n" ++
 
 "public class Init{\n\n" ++

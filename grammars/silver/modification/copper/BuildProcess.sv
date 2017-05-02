@@ -61,6 +61,19 @@ String ::= p::ParserSpec  a::Decorated CmdArgs
 """;
 }
 
+{--
+ - At first, it might seem that parsers could be generated along with anything else in a grammar.
+ - (i.e. genFiles a .copper file)
+ - Unfortunately, it turns out this is not the case, due to a possibly over-aggressive
+ - build optimization we do: if the grammar was not directly modified, we assume it doesn't need
+ - to be re-translated. (TECHNICALLY, this isn't always the case...)
+ -
+ - So, parsers can change as a result of the grammars they depend on changing, so these
+ - DO need re-translation. So we treat them specially.
+ -
+ - If we ever fix the overall build process to re-translate grammars that depend on changed grammars,
+ - then we might be able to merge this into the normal process, maybe.
+ -}
 abstract production parserSpecUnit
 top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverGen::String
 {

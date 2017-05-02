@@ -152,6 +152,7 @@ public final class Util {
 	public static IOToken touchFiles(ConsCell files) {
 		while(!files.nil()) {
 			setFileTime(files.head().toString(), currentTime());
+			files = files.tail();
 		}
 		return IOToken.singleton;
 	}
@@ -181,6 +182,7 @@ public final class Util {
 		while(!files.nil()) {
 			StringCatter f = (StringCatter)files.head();
 			result = result && new File(f.toString()).delete();
+			files = files.tail();
 		}
 		return result;
 	}
