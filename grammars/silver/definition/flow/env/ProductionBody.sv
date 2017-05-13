@@ -145,10 +145,10 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     isExportedBy(top.grammarName, srcGrams, top.compiledGrammars);
   
   top.flowDefs = e.flowDefs ++
-    case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
-    | defaultAspectContext() -> [defaultSynEq(top.signature.outputElement.typerep.typeName, attr.attrDcl.fullName, e.flowDeps)]
-    | _ -> [synEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
-    end;
+    if top.blockContext.hasPartialSignature then 
+      [synEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
+    else
+      [defaultSynEq(top.signature.outputElement.typerep.typeName, attr.attrDcl.fullName, e.flowDeps)];
 }
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
@@ -215,10 +215,10 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     isExportedBy(top.grammarName, srcGrams, top.compiledGrammars);
   
   top.flowDefs = e.flowDefs ++
-    case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
-    | defaultAspectContext() -> [defaultSynEq(top.signature.outputElement.typerep.typeName, attr.attrDcl.fullName, e.flowDeps)]
-    | _ -> [synEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
-    end;
+    if top.blockContext.hasPartialSignature then 
+      [synEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
+    else
+      [defaultSynEq(top.signature.outputElement.typerep.typeName, attr.attrDcl.fullName, e.flowDeps)];
 }
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
@@ -237,6 +237,7 @@ aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   local locDefGram :: String = hackGramFromQName(val.lookupValue);
+  -- TODO: possible bug? this would include ":local" in the gram wouldn't it?
 
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, [locDefGram], top.compiledGrammars);

@@ -20,9 +20,9 @@ top::BlockContext ::=
 {
   top.lazyApplication = false;
   top.permitActions = true;
-  top.permitProductionAttributes = false;
+  --top.permitProductionAttributes = false; -- denied by default
   top.permitLocalAttributes = true;
-  -- TODO: signature??
+  -- TODO: signature? We DO have such info, but unclear what answer should be given...
 }
 
 abstract production disambiguationContext
