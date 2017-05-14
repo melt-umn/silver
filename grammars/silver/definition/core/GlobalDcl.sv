@@ -16,6 +16,5 @@ top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
         else [];
 
   top.errors := t.errors ++ e.errors;
-  e.blockContext = globalExprContext();
-  e.signature = bogusNamedSignature();
+  e.frame = globalExprContext();
 }

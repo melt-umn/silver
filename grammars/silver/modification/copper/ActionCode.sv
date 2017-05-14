@@ -16,8 +16,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
         prodAction(acode.actionCode) :: pm.productionModifiers))];
 
   ns.signatureName = fName;
-  acode.blockContext = actionContext();
-  acode.signature = namedSig;
+  acode.frame = actionContext(namedSig);
   acode.env = newScopeEnv(
                 addTerminalAttrDefs(
                  acode.defs ++ ns.actionDefs), top.env);
@@ -31,7 +30,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 }
 
 
-nonterminal ActionCode_c with location,config,pp,actionCode,env,defs,grammarName,signature,errors,blockContext, compiledGrammars, flowEnv;
+nonterminal ActionCode_c with location,config,pp,actionCode,env,defs,grammarName,errors,frame, compiledGrammars, flowEnv;
 
 synthesized attribute actionCode :: String;
 

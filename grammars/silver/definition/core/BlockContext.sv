@@ -4,7 +4,7 @@ grammar silver:definition:core;
  - Permissions management information for certain features that can appear in production
  - statements, etc.  i.e. "can forward/return/pluck?"
  -}
-nonterminal BlockContext with permitReturn, permitForward, permitProductionAttributes, permitLocalAttributes, lazyApplication, hasFullSignature, hasPartialSignature;
+nonterminal BlockContext with permitReturn, permitForward, permitProductionAttributes, permitLocalAttributes, lazyApplication, hasFullSignature, hasPartialSignature, fullName, lhsNtName, signature;
 
 
 {-- Are 'return' equations allowed in this context? -}
@@ -27,7 +27,7 @@ synthesized attribute permitProductionAttributes :: Boolean;
 synthesized attribute hasFullSignature :: Boolean;
 {--
  - Whether the signature includes the type of a LHS & name/type pairs for RHS.
- - And the name. e.g. top.signature.fullName.
+ - And the name. e.g. top.frame.fullName.
  - REFACTORING NOTES: Used to:
  - 1. Decide if syn eq should be exported by NT alone (default eq) or OCC/NT (normal syn eq)
  - 2. Decide if we need to look at deps of syn eqs (i.e. default eqs don't get checked locally)
@@ -39,11 +39,22 @@ synthesized attribute hasPartialSignature :: Boolean;
  - (False for action blocks, for example.)
  -}
 synthesized attribute lazyApplication :: Boolean;
+{--
+ - The full name of the LHS nonterminal.
+ - ONLY ACCESSIBLE IF `top.hasFullSignature` is true!
+ -}
+synthesized attribute lhsNtName :: String;
+{--
+ - The signature of the current context.
+ - TODO: rename 'signature' once that attribute has been purged...
+ -}
+synthesized attribute signature :: NamedSignature;
 
 
 aspect default production
 top::BlockContext ::=
 {
+  top.lhsNtName = error("LHS NT accessed for non-production");
   -- most restrictive possible
   top.permitReturn = false;
   top.permitForward = false;
@@ -55,8 +66,11 @@ top::BlockContext ::=
 }
 
 abstract production functionContext
-top::BlockContext ::=
+top::BlockContext ::= sig::NamedSignature
 {
+  top.fullName = sig.fullName;
+  top.signature = sig;
+
   top.permitReturn = true;
   top.hasPartialSignature = true;
   top.permitProductionAttributes = true;
@@ -64,8 +78,12 @@ top::BlockContext ::=
 }
 
 abstract production productionContext
-top::BlockContext ::=
+top::BlockContext ::= sig::NamedSignature
 {
+  top.fullName = sig.fullName;
+  top.lhsNtName = sig.outputElement.typerep.typeName;
+  top.signature = sig;
+
   top.permitForward = true;
   top.hasPartialSignature = true;
   top.hasFullSignature = true;
@@ -74,21 +92,23 @@ top::BlockContext ::=
 }
 
 abstract production aspectFunctionContext
-top::BlockContext ::=
+top::BlockContext ::= sig::NamedSignature
 {
   top.permitReturn = false;
-  forwards to functionContext();
+  forwards to functionContext(sig);
 }
 
 abstract production aspectProductionContext
-top::BlockContext ::=
+top::BlockContext ::= sig::NamedSignature
 {
   top.permitForward = false;
-  forwards to productionContext();
+  forwards to productionContext(sig);
 }
 
 abstract production globalExprContext
 top::BlockContext ::=
 {
+  top.fullName = "_NULL_"; -- maybe we should actually error?
+  top.signature = bogusNamedSignature(); -- TODO: do something about this?
 }
 

@@ -63,10 +63,8 @@ ag::AGDcl ::= kwd::'equalityTest'
 
   -- TODO: one of those type error checks above is redundant
 
-  value.signature = bogusNamedSignature();
-  expected.signature = bogusNamedSignature();
-  value.blockContext = globalExprContext();
-  expected.blockContext = globalExprContext();
+  value.frame = globalExprContext();
+  expected.frame = globalExprContext();
   
 
   ag.errors <- forward.errors;

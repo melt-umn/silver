@@ -16,8 +16,11 @@ top::BlockContext ::=
 }
 
 abstract production actionContext
-top::BlockContext ::=
+top::BlockContext ::= sig::NamedSignature
 {
+  top.fullName = sig.fullName;
+  top.signature = sig;
+
   top.lazyApplication = false;
   top.permitActions = true;
   --top.permitProductionAttributes = false; -- denied by default
@@ -26,9 +29,9 @@ top::BlockContext ::=
 }
 
 abstract production disambiguationContext
-top::BlockContext ::=
+top::BlockContext ::= sig::NamedSignature
 {
   top.permitPluck = true;
-  forwards to actionContext();
+  forwards to actionContext(sig);
 }
 

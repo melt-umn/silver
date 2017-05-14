@@ -19,12 +19,12 @@ import silver:extension:list; -- Oh no, this is a hack! TODO
 terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 
 nonterminal PrimPatterns with 
-  config, grammarName, env, compiledGrammars, signature, blockContext,
+  config, grammarName, env, compiledGrammars, frame,
   location, pp, errors,
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation;
 nonterminal PrimPattern with 
-  config, grammarName, env, compiledGrammars, signature, blockContext,
+  config, grammarName, env, compiledGrammars, frame,
   location, pp, errors,
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation;
@@ -121,7 +121,7 @@ top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
         "return " ++ f.translation ++ ";" ++ 
     "}}.eval(context, (" ++ scrutineeTransType ++")" ++ e.translation ++ ")";
 
-  top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication); 
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication); 
   -- TODO there seems to be an opportunity here to avoid an anon class somehow...
 }
 

@@ -1,43 +1,30 @@
 grammar silver:definition:core;
 
 nonterminal ProductionBody with
-  config, grammarName, env, location, pp, errors, defs, blockContext, compiledGrammars,
-  productionAttributes, signature, uniqueSignificantExpression;
+  config, grammarName, env, location, pp, errors, defs, frame, compiledGrammars,
+  productionAttributes, uniqueSignificantExpression;
 nonterminal ProductionStmts with 
-  config, grammarName, env, location, pp, errors, defs, blockContext, compiledGrammars,
-  productionAttributes, signature, uniqueSignificantExpression;
+  config, grammarName, env, location, pp, errors, defs, frame, compiledGrammars,
+  productionAttributes, uniqueSignificantExpression;
 nonterminal ProductionStmt with
-  config, grammarName, env, location, pp, errors, defs, blockContext, compiledGrammars,
-  productionAttributes, signature, uniqueSignificantExpression;
+  config, grammarName, env, location, pp, errors, defs, frame, compiledGrammars,
+  productionAttributes, uniqueSignificantExpression;
 
 nonterminal DefLHS with 
-  config, grammarName, env, location, pp, errors, blockContext, compiledGrammars, signature, typerep, defLHSattr;
+  config, grammarName, env, location, pp, errors, frame, compiledGrammars, typerep, defLHSattr;
 
 nonterminal ForwardInhs with 
-  config, grammarName, env, location, pp, errors, blockContext, compiledGrammars, signature;
+  config, grammarName, env, location, pp, errors, frame, compiledGrammars;
 nonterminal ForwardInh with 
-  config, grammarName, env, location, pp, errors, blockContext, compiledGrammars, signature;
+  config, grammarName, env, location, pp, errors, frame, compiledGrammars;
 nonterminal ForwardLHSExpr with 
-  config, grammarName, env, location, pp, errors, signature, typerep;
+  config, grammarName, env, location, pp, errors, frame, typerep;
 
 {--
- - The signature of this fun/production, given to the production's body.
- - This is mostly for the use of ProductionStmts, almost exclusively.
- - It DOES however, validly occur on Expr. But, on Expr, all uses should be
- - guarded. (e.g. nearly all uses are in productions that can only be
- - forwarded to by a dispatcher using something in the environment
- - provided by the production. Concretely: child reference dcls are only
- - available when a production added them to the env for its children.)
- - It's decorated because why not? We're always looking at a physical signature
- - anyway, so let's just reuse it, to avoid any recomputation.
+ - Context for ProductionStmt blocks. (Indicates function, production, aspect, etc)
+ - Includes singature for those contexts with a signature.
  -}
-autocopy attribute signature :: NamedSignature;
-{--
- - Context for ProductionStmt blocks. (Function, production, other...)
- - At some future time, we should consider the possibility of eliminating
- - signature, and just using this. Or not.
- -}
-autocopy attribute blockContext :: BlockContext;
+autocopy attribute frame :: BlockContext;
 
 {--
  - Defs of attributes that should be wrapped up as production attributes.
@@ -138,7 +125,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 
   top.errors := e.errors;
   
-  top.errors <- if !top.blockContext.permitReturn
+  top.errors <- if !top.frame.permitReturn
                 then [err(top.location, "Return is not valid in this context. (They are only permitted in function declarations.)")]
                 else [];
 }
@@ -149,7 +136,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
   top.pp = "\tlocal attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";
 
   production attribute fName :: String;
-  fName = top.signature.fullName ++ ":local:" ++ a.name;
+  fName = top.frame.fullName ++ ":local:" ++ a.name;
 
   top.defs = [localDef(top.grammarName, a.location, fName, te.typerep)];
 
@@ -160,7 +147,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
         then [err(a.location, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
-  top.errors <- if !top.blockContext.permitLocalAttributes
+  top.errors <- if !top.frame.permitLocalAttributes
                 then [err(top.location, "Local attributes are not valid in this context.")]
                 else [];
 }
@@ -174,7 +161,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
   top.productionAttributes = forward.defs;
   top.defs = [];
 
-  top.errors <- if !top.blockContext.permitProductionAttributes
+  top.errors <- if !top.frame.permitProductionAttributes
                 then [err(top.location, "Production attributes are not valid in this context.")]
                 else [];
 
@@ -186,12 +173,12 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
   top.pp = "\tforwards to " ++ e.pp;
 
-  top.productionAttributes = [forwardDef(top.grammarName, top.location, top.signature.outputElement.typerep)];
+  top.productionAttributes = [forwardDef(top.grammarName, top.location, top.frame.signature.outputElement.typerep)];
   top.uniqueSignificantExpression = [e];
 
   top.errors := e.errors;
 
-  top.errors <- if !top.blockContext.permitForward
+  top.errors <- if !top.frame.permitForward
                 then [err(top.location, "Forwarding is not permitted in this context. (Only permitted in non-aspect productions.)")]
                 else [];
 }
@@ -253,7 +240,7 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
   top.errors := q.errors;
   top.typerep = q.typerep;
   
-  q.attrFor = top.signature.outputElement.typerep;
+  q.attrFor = top.frame.signature.outputElement.typerep;
 }
 
 concrete production attributeDef

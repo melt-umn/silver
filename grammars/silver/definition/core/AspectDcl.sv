@@ -51,8 +51,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
              else [];
 
   body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
-  body.signature = namedSig;
-  body.blockContext = aspectProductionContext();
+  body.frame = aspectProductionContext(namedSig);
 }
 
 concrete production aspectFunctionDcl
@@ -88,8 +87,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
              else [];
 
   body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
-  body.signature = namedSig;
-  body.blockContext = aspectFunctionContext();
+  body.frame = aspectFunctionContext(namedSig);
 }
 
 concrete production aspectProductionSignature

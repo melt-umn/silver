@@ -23,7 +23,7 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
   -- Perhaps this problem can be resolved by using a proper type in this situation.
   top.translation = "return (Integer)" ++ e.translation ++ ";\n";
 
-  top.errors := (if !top.blockContext.permitPluck
+  top.errors := (if !top.frame.permitPluck
                then [err(top.location, "'pluck' allowed only in disambiguation-group parser actions.")]
                else [])
                ++ e.errors;
@@ -41,7 +41,7 @@ top::ProductionStmt ::= 'print' e::Expr ';'
 
   top.translation = "System.err.println(" ++ e.translation ++ ");\n";
 
-  top.errors := (if !top.blockContext.permitActions
+  top.errors := (if !top.frame.permitActions
                then [err(top.location, "'print' statement allowed only in parser action blocks. You may be looking for print(String,IO) :: IO.")]
                else [])
                ++ e.errors;
@@ -71,7 +71,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
 
   top.errors := e.errors ++
-               (if !top.blockContext.permitActions
+               (if !top.frame.permitActions
                 then [err(top.location, "Assignment to parser attributes only permitted in parser action blocks")]
                 else []);
 
@@ -103,7 +103,7 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' 'if' con
   top.pp = "\t" ++ "pushToken(" ++ val.pp ++ ", " ++ lexeme.pp ++ ") if " ++ condition.pp ++ ";";
 
   top.errors := lexeme.errors ++ condition.errors ++
-               (if !top.blockContext.permitActions
+               (if !top.frame.permitActions
                 then [err(top.location, "Tokens may only be pushed in action blocks")]
                 else []);
 
@@ -141,7 +141,7 @@ top::DefLHS ::= q::Decorated QName
   top.pp = q.pp;
   
   -- Note this is always erroring!
-  top.errors := if !top.blockContext.permitActions
+  top.errors := if !top.frame.permitActions
                 then [err(q.location, "Parser attributes can only be used in action blocks")]
                 else [err(q.location, "Parser action blocks are imperative, not declarative. You cannot modify the attributes of " ++ q.name ++ ". If you are trying to set inherited attributes, you should use 'decorate ... with { ... }' when you create it.")];
 

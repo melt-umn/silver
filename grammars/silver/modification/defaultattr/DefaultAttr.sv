@@ -32,8 +32,7 @@ top::AGDcl ::= 'aspect' 'default' 'production'
     addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, te.lexicalTypeVariables);
 
   body.env = newScopeEnv(fakedDefs ++ sigDefs, top.env);
-  body.signature = namedSig;
-  body.blockContext = defaultAspectContext();
+  body.frame = defaultAspectContext(namedSig);
 
   body.downSubst = emptySubst();
 
@@ -73,11 +72,14 @@ top::DefLHS ::= q::Decorated QName
 
   top.typerep = q.lookupValue.typerep;
 
-  top.translation = makeNTClassName(top.signature.outputElement.typerep.typeName) ++ ".defaultSynthesizedAttributes";
+  top.translation = makeNTClassName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";
 }
 
 abstract production defaultAspectContext
-top::BlockContext ::=
+top::BlockContext ::= sig::NamedSignature  -- okay, sorta has a sig?
 {
+  top.fullName = sig.fullName;
+  top.lhsNtName = sig.outputElement.typerep.typeName;
+  top.signature = sig;
 }
 

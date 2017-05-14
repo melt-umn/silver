@@ -91,7 +91,7 @@ aspect production collectionAttributeDclProd
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
 {
   local attribute className :: String;
-  className = makeClassName(top.signature.fullName);
+  className = makeClassName(top.frame.fullName);
 
   local attribute o :: Operation;
   o = q.operation;
@@ -183,7 +183,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te:
 aspect production baseCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  local className :: String = makeClassName(top.signature.fullName);
+  local className :: String = makeClassName(top.frame.fullName);
 
   -- for locals, the CA object was created already
   top.translation =
@@ -194,7 +194,7 @@ aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   local attribute className :: String;
-  className = makeClassName(top.signature.fullName);
+  className = makeClassName(top.frame.fullName);
 
   -- for locals, the CA object was created already
   top.translation = 

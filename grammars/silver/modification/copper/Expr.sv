@@ -9,7 +9,7 @@ top::Expr ::= q::Decorated QName
 
   top.typerep = q.lookupValue.typerep;
 
-  top.translation = "((" ++ q.lookupValue.typerep.transType ++ ")((common.Node)RESULT).getChild(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName ++ "))";
+  top.translation = "((" ++ q.lookupValue.typerep.transType ++ ")((common.Node)RESULT).getChild(" ++ makeClassName(top.frame.fullName) ++ ".i_" ++ q.lookupValue.fullName ++ "))";
   top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
@@ -51,7 +51,7 @@ top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
 
-  top.errors := if !top.blockContext.permitActions
+  top.errors := if !top.frame.permitActions
                 then [err(top.location, "References to parser attributes can only be made in action blocks")]
                 else [];
 

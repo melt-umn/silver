@@ -28,10 +28,10 @@ aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur e::Expr
 {
   local attribute prodDefGram :: String;
-  prodDefGram = substring(0, lastIndexOf(":", top.signature.fullName), top.signature.fullName);
+  prodDefGram = substring(0, lastIndexOf(":", top.frame.fullName), top.frame.fullName);
 
   local exportedBy :: [String] = 
-    if top.blockContext.hasPartialSignature
+    if top.frame.hasPartialSignature
     then [prodDefGram, attr.dcl.sourceGrammar]
     else [attr.dcl.sourceGrammar]; -- defaults can only be listed together with occurs.
 
@@ -40,13 +40,13 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur e::
     if null(attr.errors ++ attr.errors)
     && (top.config.warnAll || top.config.warnEqdef)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.signature.fullName)]
+    then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     else [];
   
   -- Duplicate equation check
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1
-    then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " in production " ++ top.signature.fullName)]
+    then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 
@@ -54,7 +54,7 @@ aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   local attribute prodDefGram :: String;
-  prodDefGram = substring(0, lastIndexOf(":", top.signature.fullName), top.signature.fullName);
+  prodDefGram = substring(0, lastIndexOf(":", top.frame.fullName), top.frame.fullName);
 
   local exportedBy :: [String] = 
     case dl of
@@ -68,13 +68,13 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     if null(attr.errors ++ attr.errors ++ dl.errors)
     && (top.config.warnAll || top.config.warnEqdef)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " on " ++ dl.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.signature.fullName)]
+    then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " on " ++ dl.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     -- Now, check for duplicate equations!
     else [];
     
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1
-    then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " on " ++ dl.pp ++ " in production " ++ top.signature.fullName)]
+    then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " on " ++ dl.pp ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 
@@ -85,10 +85,10 @@ aspect production synBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   local attribute prodDefGram :: String;
-  prodDefGram = substring(0, lastIndexOf(":", top.signature.fullName), top.signature.fullName);
+  prodDefGram = substring(0, lastIndexOf(":", top.frame.fullName), top.frame.fullName);
 
   local exportedBy :: [String] = 
-    if top.blockContext.hasPartialSignature
+    if top.frame.hasPartialSignature
     then [prodDefGram, attr.dcl.sourceGrammar]
     else [attr.dcl.sourceGrammar]; -- defaults can only be listed together with occurs.
 
@@ -97,20 +97,20 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     if null(attr.errors ++ attr.errors)
     && (top.config.warnAll || top.config.warnEqdef)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.signature.fullName)]
+    then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     else [];
   
   -- Duplicate equation check
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1
-    then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " in production " ++ top.signature.fullName)]
+    then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   local attribute prodDefGram :: String;
-  prodDefGram = substring(0, lastIndexOf(":", top.signature.fullName), top.signature.fullName);
+  prodDefGram = substring(0, lastIndexOf(":", top.frame.fullName), top.frame.fullName);
 
   local exportedBy :: [String] = 
     case dl of
@@ -124,13 +124,13 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     if null(attr.errors ++ attr.errors ++ dl.errors)
     && (top.config.warnAll || top.config.warnEqdef)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " on " ++ dl.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.signature.fullName)]
+    then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " on " ++ dl.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     -- Now, check for duplicate equations!
     else [];
     
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1
-    then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " on " ++ dl.pp ++ " in production " ++ top.signature.fullName)]
+    then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " on " ++ dl.pp ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 
@@ -146,31 +146,31 @@ aspect production childDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   -- prod, child, attr
-  top.lookupEqDefLHS = lookupInh(top.signature.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
+  top.lookupEqDefLHS = lookupInh(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
 }
 aspect production lhsDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   -- prod, attr
-  top.lookupEqDefLHS = lookupSyn(top.signature.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
+  top.lookupEqDefLHS = lookupSyn(top.frame.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
 }
 aspect production localDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   -- prod, local, attr
-  top.lookupEqDefLHS = lookupLocalInh(top.signature.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
+  top.lookupEqDefLHS = lookupLocalInh(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
 }
 aspect production forwardDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   -- prod, attr
-  top.lookupEqDefLHS = lookupFwdInh(top.signature.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
+  top.lookupEqDefLHS = lookupFwdInh(top.frame.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
 }
 aspect production defaultLhsDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   -- nt, attr
-  top.lookupEqDefLHS = lookupDef(top.signature.outputElement.typerep.typeName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
+  top.lookupEqDefLHS = lookupDef(top.frame.lhsNtName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
 }
 aspect production errorDefLHS
 top::DefLHS ::= q::Decorated QName
