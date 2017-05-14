@@ -185,8 +185,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     if null(dl.errors ++ attr.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
     && (top.frame.hasPartialSignature) -- Default synthesized equations have no production graph to use
-                                              -- TODO: shit. is anything looking at default synthesized equations to make sure
-                                              -- their flow types aren't messed up?
+                          -- TODO: shit. is anything looking at default synthesized equations to make sure
+                          -- their flow types aren't messed up?
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
       if null(lhsInhExceedsFlowType) then []
       else [wrn(top.location, "Synthesized equation " ++ attr.pp ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]

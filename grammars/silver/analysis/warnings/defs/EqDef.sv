@@ -27,12 +27,9 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur e::Expr
 {
-  local attribute prodDefGram :: String;
-  prodDefGram = substring(0, lastIndexOf(":", top.frame.fullName), top.frame.fullName);
-
   local exportedBy :: [String] = 
     if top.frame.hasPartialSignature
-    then [prodDefGram, attr.dcl.sourceGrammar]
+    then [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
     else [attr.dcl.sourceGrammar]; -- defaults can only be listed together with occurs.
 
   -- Orphaned equation check
@@ -53,15 +50,12 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur e::
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  local attribute prodDefGram :: String;
-  prodDefGram = substring(0, lastIndexOf(":", top.frame.fullName), top.frame.fullName);
-
   local exportedBy :: [String] = 
     case dl of
     -- Exported by the declaration of the thing we're giving inh to, or to the occurs
     | localDefLHS(q) -> [q.lookupValue.dcl.sourceGrammar, attr.dcl.sourceGrammar]
     -- For rhs or forwards, that's the production.
-    | _ -> [prodDefGram, attr.dcl.sourceGrammar]
+    | _ -> [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
     end;
 
   top.errors <-
@@ -84,12 +78,9 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 aspect production synBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  local attribute prodDefGram :: String;
-  prodDefGram = substring(0, lastIndexOf(":", top.frame.fullName), top.frame.fullName);
-
   local exportedBy :: [String] = 
     if top.frame.hasPartialSignature
-    then [prodDefGram, attr.dcl.sourceGrammar]
+    then [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
     else [attr.dcl.sourceGrammar]; -- defaults can only be listed together with occurs.
 
   -- Orphaned equation check
@@ -109,15 +100,12 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  local attribute prodDefGram :: String;
-  prodDefGram = substring(0, lastIndexOf(":", top.frame.fullName), top.frame.fullName);
-
   local exportedBy :: [String] = 
     case dl of
     -- Exported by the declaration of the thing we're giving inh to, or to the occurs
     | localDefLHS(q) -> [q.lookupValue.dcl.sourceGrammar, attr.dcl.sourceGrammar]
     -- For rhs or forwards, that's the production.
-    | _ -> [prodDefGram, attr.dcl.sourceGrammar]
+    | _ -> [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
     end;
 
   top.errors <-

@@ -90,9 +90,6 @@ top::Operation ::=
 aspect production collectionAttributeDclProd
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
 {
-  local attribute className :: String;
-  className = makeClassName(top.frame.fullName);
-
   local attribute o :: Operation;
   o = q.operation;
 
@@ -106,7 +103,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
   -- So we'll create the collection attribute object here, and not worry.
 
   top.setupInh <-
-        "\t\t" ++ className ++ ".localAttributes[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = new common.CollectionAttribute(){\n" ++ 
+        "\t\t" ++ top.frame.className ++ ".localAttributes[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = new common.CollectionAttribute(){\n" ++ 
         "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
         "\t\t\t\t" ++ te.typerep.transType ++ " result = (" ++ te.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
         "\t\t\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
@@ -183,23 +180,18 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te:
 aspect production baseCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  local className :: String = makeClassName(top.frame.fullName);
-
   -- for locals, the CA object was created already
   top.translation =
         "\t\t// " ++ val.pp ++ " := " ++ e.pp ++ "\n" ++
-        "\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes[" ++ val.lookupValue.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
+        "\t\t((common.CollectionAttribute)" ++ top.frame.className ++ ".localAttributes[" ++ val.lookupValue.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
 }
 aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  local attribute className :: String;
-  className = makeClassName(top.frame.fullName);
-
   -- for locals, the CA object was created already
   top.translation = 
         "\t\t// " ++ val.pp ++ " <- " ++ e.pp ++ "\n" ++
-        "\t\t((common.CollectionAttribute)" ++ className ++ ".localAttributes[" ++ val.lookupValue.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";
+        "\t\t((common.CollectionAttribute)" ++ top.frame.className ++ ".localAttributes[" ++ val.lookupValue.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";
 }
 
 ---------- SYNTHESIZED ----

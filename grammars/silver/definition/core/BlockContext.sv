@@ -4,7 +4,7 @@ grammar silver:definition:core;
  - Permissions management information for certain features that can appear in production
  - statements, etc.  i.e. "can forward/return/pluck?"
  -}
-nonterminal BlockContext with permitReturn, permitForward, permitProductionAttributes, permitLocalAttributes, lazyApplication, hasFullSignature, hasPartialSignature, fullName, lhsNtName, signature;
+nonterminal BlockContext with permitReturn, permitForward, permitProductionAttributes, permitLocalAttributes, lazyApplication, hasFullSignature, hasPartialSignature, fullName, lhsNtName, signature, sourceGrammar;
 
 
 {-- Are 'return' equations allowed in this context? -}
@@ -27,7 +27,7 @@ synthesized attribute permitProductionAttributes :: Boolean;
 synthesized attribute hasFullSignature :: Boolean;
 {--
  - Whether the signature includes the type of a LHS & name/type pairs for RHS.
- - And the name. e.g. top.frame.fullName.
+ - And the name. e.g. top.frame.fullName
  - REFACTORING NOTES: Used to:
  - 1. Decide if syn eq should be exported by NT alone (default eq) or OCC/NT (normal syn eq)
  - 2. Decide if we need to look at deps of syn eqs (i.e. default eqs don't get checked locally)
@@ -46,15 +46,29 @@ synthesized attribute lazyApplication :: Boolean;
 synthesized attribute lhsNtName :: String;
 {--
  - The signature of the current context.
- - TODO: rename 'signature' once that attribute has been purged...
+ - Not always valid/sensible, dpending on context. Needs care in use.
  -}
 synthesized attribute signature :: NamedSignature;
+
+
+{- fullName on BlockContext:
+ - Used to:
+ - 1. Name locals.
+ - 2. Equations to know production name.
+ - 3. Exprs to emit anon equations flowDefs.
+ - 4. Input into makeIdName as a hack for locals
+ -
+ - sourceGrammar on BlockContext:
+ - Used to:
+ - 1. 
+ -}
 
 
 aspect default production
 top::BlockContext ::=
 {
   top.lhsNtName = error("LHS NT accessed for non-production");
+  top.sourceGrammar = error("sourceGrammar accessed for non-production/fuction");
   -- most restrictive possible
   top.permitReturn = false;
   top.permitForward = false;
@@ -70,6 +84,7 @@ top::BlockContext ::= sig::NamedSignature
 {
   top.fullName = sig.fullName;
   top.signature = sig;
+  top.sourceGrammar = substring(0, lastIndexOf(":", top.fullName), top.fullName); -- hack
 
   top.permitReturn = true;
   top.hasPartialSignature = true;
@@ -83,6 +98,7 @@ top::BlockContext ::= sig::NamedSignature
   top.fullName = sig.fullName;
   top.lhsNtName = sig.outputElement.typerep.typeName;
   top.signature = sig;
+  top.sourceGrammar = substring(0, lastIndexOf(":", top.fullName), top.fullName); -- hack
 
   top.permitForward = true;
   top.hasPartialSignature = true;

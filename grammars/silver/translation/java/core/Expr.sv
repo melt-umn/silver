@@ -42,7 +42,7 @@ aspect production childReference
 top::Expr ::= q::Decorated QName
 {
   local attribute childIDref :: String;
-  childIDref = makeClassName(top.frame.fullName) ++ ".i_" ++ q.lookupValue.fullName;
+  childIDref = top.frame.className ++ ".i_" ++ q.lookupValue.fullName;
 
   top.translation =
     if q.lookupValue.typerep.isDecorable
@@ -210,16 +210,18 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
 aspect production attributeSection
 top::Expr ::= '(' '.' q::QName ')'
 {
-  top.translation = if inputType.isDecorated
-                    then "new common.AttributeSection(" ++ occursCheck.dcl.attrOccursIndex ++ ")"
-                    -- Please note: context is not actually required here, we do so to make runtime error messages
-                    -- more comprehensible. This is a similar situation to the code for 'decorate E with {}'.
-                    -- Rather pin more memory than necessary than make errors bad. For now.
-                    -- TODO: This is a good candidate for removing if we make the well-definedness error check required, though!
-                    -- That error would be more comprehensible! (the trouble with this is that we're reporting as context the
-                    -- function/production we appear within here. The function *may* be applied elsewhere. However, the most common
-                    -- case is something like map((.attr), list) so, that's probably best to report here instead of within map.)
-                    else "new common.AttributeSection.Undecorated(" ++ occursCheck.dcl.attrOccursIndex ++ ", context)";
+  top.translation =
+    if inputType.isDecorated then
+      "new common.AttributeSection(" ++ occursCheck.dcl.attrOccursIndex ++ ")"
+    else
+      -- Please note: context is not actually required here, we do so to make runtime error messages
+      -- more comprehensible. This is a similar situation to the code for 'decorate E with {}'.
+      -- Rather pin more memory than necessary than make errors bad. For now.
+      -- TODO: This is a good candidate for removing if we make the well-definedness error check required, though!
+      -- That error would be more comprehensible! (the trouble with this is that we're reporting as context the
+      -- function/production we appear within here. The function *may* be applied elsewhere. However, the most common
+      -- case is something like map((.attr), list) so, that's probably best to report here instead of within map.)
+      "new common.AttributeSection.Undecorated(" ++ occursCheck.dcl.attrOccursIndex ++ ", context)";
 
   top.lazyTranslation = top.translation;
 }
@@ -255,9 +257,9 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     | childReference(cqn), true -> 
         if cqn.lookupValue.typerep.isDecorable
         then
-          "context.childDecoratedSynthesizedLazy(" ++ makeClassName(top.frame.fullName) ++ ".i_" ++ cqn.lookupValue.fullName ++ ", " ++ q.dcl.attrOccursIndex ++ ")"
+          "context.childDecoratedSynthesizedLazy(" ++ top.frame.className ++ ".i_" ++ cqn.lookupValue.fullName ++ ", " ++ q.dcl.attrOccursIndex ++ ")"
         else
-          "context.childAsIsSynthesizedLazy(" ++ makeClassName(top.frame.fullName) ++ ".i_" ++ cqn.lookupValue.fullName ++ ", " ++ q.dcl.attrOccursIndex ++ ")"
+          "context.childAsIsSynthesizedLazy(" ++ top.frame.className ++ ".i_" ++ cqn.lookupValue.fullName ++ ", " ++ q.dcl.attrOccursIndex ++ ")"
     | lhsReference(_), true ->
         "context.contextSynthesizedLazy(" ++ q.dcl.attrOccursIndex ++ ")"
     | _, _ -> wrapThunk(top.translation, top.frame.lazyApplication)

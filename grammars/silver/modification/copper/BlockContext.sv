@@ -19,7 +19,7 @@ abstract production actionContext
 top::BlockContext ::= sig::NamedSignature
 {
   top.fullName = sig.fullName;
-  top.signature = sig;
+  top.signature = sig; -- TODO: figure out if this is ever used for actions?
 
   top.lazyApplication = false;
   top.permitActions = true;

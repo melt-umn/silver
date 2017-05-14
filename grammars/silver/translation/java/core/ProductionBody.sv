@@ -76,12 +76,9 @@ top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
-  local attribute className :: String;
-  className = makeClassName(top.frame.fullName);
-
   top.translation = 
 	"\t\t//" ++ top.pp ++ "\n" ++
-	"\t\t" ++ className ++ ".forwardInheritedAttributes[" ++ lhs.attrName ++ "] = " ++ wrapLazy(e) ++ ";\n";
+	"\t\t" ++ top.frame.className ++ ".forwardInheritedAttributes[" ++ lhs.attrName ++ "] = " ++ wrapLazy(e) ++ ";\n";
 
 }
 
@@ -106,22 +103,18 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
 aspect production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 {
-  local attribute prod_orig_grammar :: String;
-  prod_orig_grammar = substring(0, lastIndexOf(":", top.frame.fullName), top.frame.fullName);
-  local attribute prod_orig_name :: String;
-  prod_orig_name = substring(lastIndexOf(":", top.frame.fullName)+1, length(top.frame.fullName), top.frame.fullName);
   local attribute ugh_dcl_hack :: DclInfo;
   ugh_dcl_hack = head(getValueDclAll(fName, top.env)); -- TODO really, we should have a DclInfo for ourselves no problem. but out current approach of constructing it via localDef makes this annoyingly difficult. this suggests a probably environment refactoring...
   
-  top.valueWeaving := "public static final int " ++ ugh_dcl_hack.attrOccursIndexName ++ " = " ++ makeName(prod_orig_grammar) ++ ".Init.count_local__ON__" ++ makeIdName(top.frame.fullName) ++ "++;\n";
+  top.valueWeaving := "public static final int " ++ ugh_dcl_hack.attrOccursIndexName ++ " = " ++ top.frame.prodLocalCountName ++ "++;\n";
 
   top.setupInh := 
     if !te.typerep.isDecorable then  "" else
     "\t\t//" ++ top.pp ++ "\n" ++
-    "\t\t" ++ makeClassName(top.frame.fullName) ++ ".localInheritedAttributes[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = " ++ 
+    "\t\t" ++ top.frame.className ++ ".localInheritedAttributes[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = " ++ 
       "new common.Lazy[" ++ makeNTClassName(te.typerep.typeName) ++ ".num_inh_attrs];\n";
 
-  top.setupInh <- "\t\t" ++ makeName(prod_orig_grammar) ++ ".P" ++ prod_orig_name ++ ".occurs_local[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = \"" ++ fName ++ "\";\n";
+  top.setupInh <- "\t\t" ++ top.frame.className ++ ".occurs_local[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = \"" ++ fName ++ "\";\n";
 
   top.translation = "";
 }
@@ -129,28 +122,25 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 aspect production childDefLHS
 top::DefLHS ::= q::Decorated QName
 {
-  local attribute className :: String;
-  className = makeClassName(top.frame.fullName);
-
-  top.translation = className ++ ".childInheritedAttributes[" ++ className ++ ".i_" ++ q.lookupValue.fullName ++ "]";
+  top.translation = top.frame.className ++ ".childInheritedAttributes[" ++ top.frame.className ++ ".i_" ++ q.lookupValue.fullName ++ "]";
 }
 
 aspect production lhsDefLHS
 top::DefLHS ::= q::Decorated QName
 {
-  top.translation = makeClassName(top.frame.fullName) ++ ".synthesizedAttributes";
+  top.translation = top.frame.className ++ ".synthesizedAttributes";
 }
 
 aspect production localDefLHS
 top::DefLHS ::= q::Decorated QName
 {
-  top.translation = makeClassName(top.frame.fullName) ++ ".localInheritedAttributes[" ++ q.lookupValue.dcl.attrOccursIndex ++ "]";
+  top.translation = top.frame.className ++ ".localInheritedAttributes[" ++ q.lookupValue.dcl.attrOccursIndex ++ "]";
 }
 
 aspect production forwardDefLHS
 top::DefLHS ::= q::Decorated QName
 {
-  top.translation = makeClassName(top.frame.fullName) ++ ".forwardInheritedAttributes";
+  top.translation = top.frame.className ++ ".forwardInheritedAttributes";
 }
 
 aspect production errorDefLHS
@@ -191,12 +181,9 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 aspect production localValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  local attribute className :: String;
-  className = makeClassName(top.frame.fullName);
-
   top.translation =
 	"\t\t// " ++ val.pp ++ " = " ++ e.pp ++ "\n" ++
-	"\t\t" ++ className ++ ".localAttributes[" ++ val.lookupValue.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
+	"\t\t" ++ top.frame.className ++ ".localAttributes[" ++ val.lookupValue.dcl.attrOccursIndex ++ "] = " ++ wrapLazy(e) ++ ";\n";
 }
 
 aspect production returnDef
