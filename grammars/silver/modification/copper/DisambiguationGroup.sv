@@ -18,7 +18,7 @@ top::AGDcl ::= 'disambiguate' terms::TermPrecList acode::ActionCode_c
   production attribute fName :: String;
   fName = top.grammarName ++ ":__disam" ++ toString(top.location.line);
   
-  acode.frame = disambiguationContext(namedNamedSignature(fName));
+  acode.frame = disambiguationContext();
 
   top.syntaxAst = [syntaxDisambiguationGroup(fName,terms.precTermList,acode.actionCode)];
 }

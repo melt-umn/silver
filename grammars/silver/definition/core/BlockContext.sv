@@ -46,7 +46,8 @@ synthesized attribute lazyApplication :: Boolean;
 synthesized attribute lhsNtName :: String;
 {--
  - The signature of the current context.
- - Not always valid/sensible, dpending on context. Needs care in use.
+ - Not always sensible, depending on context. Needs care in use.
+ - TODO: figure out a way to guard accesses maybe?
  -}
 synthesized attribute signature :: NamedSignature;
 
@@ -54,13 +55,12 @@ synthesized attribute signature :: NamedSignature;
 {- fullName on BlockContext:
  - Used to:
  - 1. Name locals.
- - 2. Equations to know production name.
- - 3. Exprs to emit anon equations flowDefs.
- - 4. Input into makeIdName as a hack for locals
+ - 2. Equations to emit flowDefs
+ - 3. Exprs to emit anon flowDefs.
  -
  - sourceGrammar on BlockContext:
  - Used to:
- - 1. 
+ - 1. Do isExportedBy checks, finding prod origin grammar.
  -}
 
 

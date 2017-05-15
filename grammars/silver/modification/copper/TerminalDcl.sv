@@ -39,8 +39,7 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
 
   top.terminalModifiers = [termAction(acode.actionCode)];
 
-  -- TODO: better name than this dummy one?
-  acode.frame = actionContext(namedNamedSignature(top.grammarName ++ ":__ta" ++ toString($1.line)));
+  acode.frame = actionContext();
   acode.env = newScopeEnv(addTerminalAttrDefs(acode.defs), top.env);
   
   top.errors := acode.errors;

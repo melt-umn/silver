@@ -8,6 +8,7 @@ attribute className, prodLocalCountName occurs on BlockContext;
  -
  - Valid to access only within productions/functions.
  - (used by equations. exprs, but only in flowDefs, which shouldn't be accessed outside productions)
+ - (Also used by production action blocks to access children)
  -}
 synthesized attribute className :: String;
 {--

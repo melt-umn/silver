@@ -8,15 +8,14 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   top.pp = forward.pp ++ "action " ++ acode.pp;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
-  production namedSig :: NamedSignature = ns.namedSignature;
 
   top.syntaxAst = [
-    syntaxProduction(namedSig,
+    syntaxProduction(ns.namedSignature,
       foldr(consProductionMod, nilProductionMod(), 
         prodAction(acode.actionCode) :: pm.productionModifiers))];
 
   ns.signatureName = fName;
-  acode.frame = actionContext(namedSig);
+  acode.frame = reduceActionContext(ns.namedSignature);
   acode.env = newScopeEnv(
                 addTerminalAttrDefs(
                  acode.defs ++ ns.actionDefs), top.env);
@@ -38,9 +37,9 @@ concrete production actionCode_c
 top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 {
   top.pp = "{\n" ++ stmts.pp ++ "}\n";
-  top.defs = hackTransformLocals(stmts.defs);
+  top.defs = flatMap(hackTransformLocals, stmts.defs);
 
-  top.actionCode = hacklocaldeclarations(stmts.defs) ++ stmts.translation;
+  top.actionCode = sflatMap(hacklocaldeclarations, stmts.defs) ++ stmts.translation;
 
   top.errors := stmts.errors;
   
@@ -50,19 +49,18 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 
 -- TODO hacky. ideally we'd do this where local attributes are declared, not here.
 function hacklocaldeclarations
-String ::= l::[Def]
+String ::= d::Def
 {
-  return if null(l) then "" else head(l).dcl.typerep.transType ++ " " ++ makeCopperName(head(l).dcl.fullName) ++ ";\n" ++ hacklocaldeclarations(tail(l));
+  return d.dcl.typerep.transType ++ " " ++ makeCopperName(d.dcl.fullName) ++ ";\n";
 }
 
 function hackTransformLocals
-[Def] ::= l::[Def]
+[Def] ::= d::Def
 {
-  return if null(l) then []
-         else case head(l).dcl of
-              | localDcl(sg,sl,fn,ty) -> parserLocalDef(sg,sl,fn,ty) :: hackTransformLocals(tail(l))
-              | _ -> hackTransformLocals(tail(l)) -- TODO: possibly error??
-              end;
+  return case d.dcl of
+         | localDcl(sg,sl,fn,ty) -> [parserLocalDef(sg,sl,fn,ty)]
+         | _ -> [] -- TODO: possibly error??
+         end;
 }
 
 --------------------------------------------------------------------------------
