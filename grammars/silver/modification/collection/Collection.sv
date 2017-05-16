@@ -177,7 +177,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
   top.productionAttributes = [localColDef(top.grammarName, a.location, fName, te.typerep, q.operation)];
 
   production attribute fName :: String;
-  fName = top.signature.fullName ++ ":local:" ++ a.name;
+  fName = top.frame.fullName ++ ":local:" ++ a.name;
 
   top.defs = [];
 

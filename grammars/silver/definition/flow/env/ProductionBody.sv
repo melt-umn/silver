@@ -73,21 +73,21 @@ Boolean ::= prodgram::String  ntgram::String  cg::EnvTree<Decorated RootSpec>  d
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
-  local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
+  local ntDefGram :: String = hackGramFromFName(top.frame.lhsNtName);
 
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, [ntDefGram], top.compiledGrammars);
   
   top.flowDefs = e.flowDefs ++ [
-    fwdEq(top.signature.fullName, e.flowDeps, mayAffectFlowType),
+    fwdEq(top.frame.fullName, e.flowDeps, mayAffectFlowType),
     -- These are attributes that we know, here, occurs on this nonterminal.
     -- The point is, these are the implicit equations we KNOW get generated, so
     -- we regard these as non-suspect. That is, we implicitly insert these copy
     -- equations here.
     -- Currently, we don't bother to filter this to just synthesized, but we should?
-    implicitFwdAffects(top.signature.fullName, map((.attrOccurring),
+    implicitFwdAffects(top.frame.fullName, map((.attrOccurring),
       filter(isAffectable(top.grammarName, ntDefGram, top.compiledGrammars, _),
-        getAttrsOn(top.signature.outputElement.typerep.typeName, top.env))))];
+        getAttrsOn(top.frame.lhsNtName, top.env))))];
 }
 aspect production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
@@ -112,7 +112,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
   -- forward flow type automatically.
   top.flowDefs = e.flowDefs ++ 
     case lhs of
-    | forwardLhsExpr(q) -> [fwdInhEq(top.signature.fullName, q.attrDcl.fullName, e.flowDeps)]
+    | forwardLhsExpr(q) -> [fwdInhEq(top.frame.fullName, q.attrDcl.fullName, e.flowDeps)]
     end;
 }
 
@@ -137,7 +137,7 @@ top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNa
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
+  local ntDefGram :: String = hackGramFromFName(top.frame.lhsNtName);
 
   local srcGrams :: [String] = [ntDefGram, hackGramFromDcl(attr)];
 
@@ -145,19 +145,19 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     isExportedBy(top.grammarName, srcGrams, top.compiledGrammars);
   
   top.flowDefs = e.flowDefs ++
-    case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
-    | defaultAspectContext() -> [defaultSynEq(top.signature.outputElement.typerep.typeName, attr.attrDcl.fullName, e.flowDeps)]
-    | _ -> [synEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
-    end;
+    if top.frame.hasPartialSignature then 
+      [synEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
+    else
+      [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
 }
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.flowDefs = e.flowDefs ++
     case dl of
-    | childDefLHS(q) -> [inhEq(top.signature.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | localDefLHS(q) -> [localInhEq(top.signature.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | forwardDefLHS(q) -> [fwdInhEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps)]
+    | childDefLHS(q) -> [inhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
+    | localDefLHS(q) -> [localInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
+    | forwardDefLHS(q) -> [fwdInhEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps)]
     | _ -> [] -- TODO : this isn't quite extensible... more better way eventually, plz
     end;
 }
@@ -169,7 +169,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   -- technically, it's possible to break this if you declare it in one grammar, but define it in another, but
   -- I think we should forbid that syntactically, later on...
   top.flowDefs = e.flowDefs ++
-    [localEq(top.signature.fullName, val.lookupValue.fullName, val.lookupValue.typerep.typeName, e.flowDeps)];
+    [localEq(top.frame.fullName, val.lookupValue.fullName, val.lookupValue.typerep.typeName, e.flowDeps)];
 }
 aspect production errorValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
@@ -182,13 +182,13 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 aspect production synAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- <- -} e::Expr
 {
-  local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
+  local ntDefGram :: String = hackGramFromFName(top.frame.lhsNtName);
 
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, [ntDefGram, hackGramFromDcl(attr)], top.compiledGrammars);
 
   top.flowDefs = e.flowDefs ++
-    [extraEq(top.signature.fullName, lhsSynVertex(attr.attrDcl.fullName), e.flowDeps, mayAffectFlowType)];
+    [extraEq(top.frame.fullName, lhsSynVertex(attr.attrDcl.fullName), e.flowDeps, mayAffectFlowType)];
 }
 
 aspect production inhAppendColAttributeDef
@@ -202,12 +202,12 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
     | _ -> localEqVertex("bogus:value:from:inhcontrib:flow")
     end;
   top.flowDefs = e.flowDefs ++
-    [extraEq(top.signature.fullName, vertex, e.flowDeps, true)];
+    [extraEq(top.frame.fullName, vertex, e.flowDeps, true)];
 }
 aspect production synBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  local ntDefGram :: String = hackGramFromFName(top.signature.outputElement.typerep.typeName);
+  local ntDefGram :: String = hackGramFromFName(top.frame.lhsNtName);
 
   local srcGrams :: [String] = [ntDefGram, hackGramFromDcl(attr)];
 
@@ -215,19 +215,19 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     isExportedBy(top.grammarName, srcGrams, top.compiledGrammars);
   
   top.flowDefs = e.flowDefs ++
-    case top.blockContext of -- TODO: this may not be the bestest way to go about doing this....
-    | defaultAspectContext() -> [defaultSynEq(top.signature.outputElement.typerep.typeName, attr.attrDcl.fullName, e.flowDeps)]
-    | _ -> [synEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
-    end;
+    if top.frame.hasPartialSignature then 
+      [synEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
+    else
+      [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
 }
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.flowDefs = e.flowDefs ++
     case dl of
-    | childDefLHS(q) -> [inhEq(top.signature.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | localDefLHS(q) -> [localInhEq(top.signature.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | forwardDefLHS(q) -> [fwdInhEq(top.signature.fullName, attr.attrDcl.fullName, e.flowDeps)]
+    | childDefLHS(q) -> [inhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
+    | localDefLHS(q) -> [localInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
+    | forwardDefLHS(q) -> [fwdInhEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps)]
     | _ -> [] -- TODO : this isn't quite extensible... more better way eventually, plz
     end;
 }
@@ -237,6 +237,7 @@ aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   local locDefGram :: String = hackGramFromQName(val.lookupValue);
+  -- TODO: possible bug? this would include ":local" in the gram wouldn't it?
 
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, [locDefGram], top.compiledGrammars);
@@ -250,7 +251,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 
   top.flowDefs = e.flowDefs ++
     if mayAffectFlowType
-    then [extraEq(top.signature.fullName, localEqVertex(val.lookupValue.fullName), e.flowDeps, true)]
+    then [extraEq(top.frame.fullName, localEqVertex(val.lookupValue.fullName), e.flowDeps, true)]
     else [];
 }
 ------ FROM COPPER TODO

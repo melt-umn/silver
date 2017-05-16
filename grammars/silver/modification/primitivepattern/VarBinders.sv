@@ -7,12 +7,12 @@ import silver:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef
 import silver:definition:flow:ast only noVertex;
 
 nonterminal VarBinders with 
-  config, grammarName, env, compiledGrammars, signature, blockContext,
+  config, grammarName, env, compiledGrammars, frame,
   location, pp, errors, defs,
   bindingTypes, bindingIndex, translation, varBinderCount,
   finalSubst;
 nonterminal VarBinder with
-  config, grammarName, env, compiledGrammars, signature, blockContext,
+  config, grammarName, env, compiledGrammars, frame,
   location, pp, errors, defs,
   bindingType, bindingIndex, translation,
   finalSubst;

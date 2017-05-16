@@ -106,19 +106,19 @@ top::ProductionStmt ::= a::QName
   -- occuring on the LHS but this should be caught by the forward errors.  
   
   -- Generate the arguments for the constructor
-  local topName::QName = qName(top.location, top.signature.outputElement.elementName);
-  local prodName::QName = qName(top.location, top.signature.fullName);
+  local topName::QName = qName(top.location, top.frame.signature.outputElement.elementName);
+  local prodName::QName = qName(top.location, top.frame.fullName);
   prodName.grammarName = top.grammarName;
   prodName.config = top.config;
   prodName.env = top.env;
   local inputs::AppExprs = 
     foldl(snocAppExprs(_, ',', _, location=top.location),
           emptyAppExprs(location=top.location),
-          makeArgs(top.location, top.env, a, top.signature.inputElements));
+          makeArgs(top.location, top.env, a, top.frame.signature.inputElements));
   local annotations::AnnoAppExprs = 
     foldl(snocAnnoAppExprs(_, ',', _, location=top.location),
           emptyAnnoAppExprs(location=top.location),
-          makeAnnoArgs(top.location, topName, top.signature.namedInputElements));
+          makeAnnoArgs(top.location, topName, top.frame.signature.namedInputElements));
 
   -- Construct an attribute def and call with the generated arguments
   forwards to 

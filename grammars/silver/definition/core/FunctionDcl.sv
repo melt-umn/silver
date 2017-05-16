@@ -39,8 +39,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   prodAtts = defsFromPADcls(getProdAttrs(fName, top.env), namedSig);
 
   body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
-  body.signature = namedSig;
-  body.blockContext = functionContext();
+  body.frame = functionContext(namedSig, myFlowGraph); -- graph from flow:env
 }
 
 concrete production functionSignature

@@ -244,7 +244,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- This means only the deps in 'e', see above conceptual transformation to see why.
   -- N.B. 'inh.flowDefs' will emit 'localInhEq's for this anonymous flow vertex.
   top.flowDefs = e.flowDefs ++ inh.flowDefs ++
-    [anonEq(top.signature.fullName, inh.decorationVertex, performSubstitution(e.typerep, top.finalSubst).typeName, top.location, e.flowDeps)];
+    [anonEq(top.frame.fullName, inh.decorationVertex, performSubstitution(e.typerep, top.finalSubst).typeName, top.location, e.flowDeps)];
 
   -- Now, we represent ourselves to anything that might use us specially
   -- as though we were a reference to this anonymous local
@@ -265,7 +265,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
   top.flowDefs = e1.flowDefs ++ 
     if !null(lhs.errors) then [] else
     case lhs of
-    | exprLhsExpr(q) -> [anonInhEq(top.signature.fullName, top.decorationVertex, q.attrDcl.fullName, e1.flowDeps)]
+    | exprLhsExpr(q) -> [anonInhEq(top.frame.fullName, top.decorationVertex, q.attrDcl.fullName, e1.flowDeps)]
     end;
     
 }

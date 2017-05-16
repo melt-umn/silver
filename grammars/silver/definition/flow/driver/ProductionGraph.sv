@@ -109,7 +109,7 @@ function computeAllProductionGraphs
  - 3. All inherited attributes not supplied to forward have copies.
  - 4. All autocopy attributes not supplied to childred have copies.
  -
- - @param prod  The full name of the production
+ - @param dcl  The DclInfo of the production
  - @param defs  The set of defs from prodGraphContribs
  - @param flowEnv  A full flow environment
  -         (used to discover what explicit equations exist, find info on nonterminals)
@@ -179,6 +179,31 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   return productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 }
 
+function constructFunctionGraph
+ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv
+{
+  local defs :: [FlowDef] = getGraphContribsFor(ns.fullName, flowEnv);
+
+  -- Normal edges!
+  local normalEdges :: [Pair<FlowVertex FlowVertex>] =
+    flatMap((.flowEdges), defs);
+  
+  -- Basicaly just <- to local collections...
+  local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
+    flatMap((.suspectFlowEdges), defs);
+    
+  local initialGraph :: g:Graph<FlowVertex> =
+    createFlowGraph(normalEdges);
+
+  -- RHS and locals and forward.
+  local stitchPoints :: [StitchPoint] =
+    rhsStitchPoints(ns.inputElements) ++
+    localStitchPoints(error("functions have no LHS, no forwarding defs"), defs);
+
+  return productionGraph(ns.fullName, "::nolhs", [], initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+}
+
+
 {--
  - Constructs "phantom graphs" to enforce 'ft(syn) >= ft(fwd)'.
  -
@@ -197,13 +222,14 @@ ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated E
 
   -- The phantom edges: ext syn -> fwd.eq
   local phantomEdges :: [Pair<FlowVertex FlowVertex>] =
+    -- apparently this alias may sometimes be used. we should get rid of this by making good use of vertex types
+    pair(lhsSynVertex("forward"), forwardEqVertex()) ::
     map(getPhantomEdge, getExtSynsFor(nt, flowEnv));
   
   -- The stitch point: oddball. LHS stitch point. Normally, the LHS is not.
   local stitchPoints :: [StitchPoint] = [nonterminalStitchPoint(nt, lhsVertexType)];
     
-  -- TODO: use of lhsSynVertex("forward") here is part of a hack.
-  local flowTypeVertexes :: [FlowVertex] = [lhsSynVertex("forward")] ++ map(lhsSynVertex, syns);
+  local flowTypeVertexes :: [FlowVertex] = [forwardEqVertex()] ++ map(lhsSynVertex, syns);
   local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(phantomEdges);
   local suspectEdges :: [Pair<FlowVertex FlowVertex>] = [];
 
@@ -214,7 +240,7 @@ function getPhantomEdge
 Pair<FlowVertex FlowVertex> ::= f::FlowDef
 {
   return case f of
-  | extSynFlowDef(_, at) -> pair(lhsSynVertex(at), lhsSynVertex("forward")) -- TODO: this is a hack and "accidentally" works. Fix is to use VertexTypes more. Basically, what matters here is that both this and forwardEqVertex() will have a flowTypeName of just "forward"
+  | extSynFlowDef(_, at) -> pair(lhsSynVertex(at), forwardEqVertex())
   end;
 }
 

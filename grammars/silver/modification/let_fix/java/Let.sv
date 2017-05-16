@@ -27,7 +27,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   top.translation = "((" ++ finTy.transType ++ ")(" ++ closureExpr ++ ").eval())";
 
   top.lazyTranslation = 
-    if top.blockContext.lazyApplication
+    if top.frame.lazyApplication
     then closureExpr
     else top.translation;
 }
@@ -76,7 +76,7 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
     else "((" ++ finalType(top).transType ++ ")(" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()))";
 
   top.lazyTranslation = 
-    if !top.blockContext.lazyApplication then top.translation
+    if !top.frame.lazyApplication then top.translation
     else if needsUndecorating
     then "common.Thunk.transformUndecorate(" ++ makeLocalValueName(q.lookupValue.fullName) ++ ")"
     else makeLocalValueName(q.lookupValue.fullName);
