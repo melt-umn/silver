@@ -109,7 +109,7 @@ function computeAllProductionGraphs
  - 3. All inherited attributes not supplied to forward have copies.
  - 4. All autocopy attributes not supplied to childred have copies.
  -
- - @param prod  The full name of the production
+ - @param dcl  The DclInfo of the production
  - @param defs  The set of defs from prodGraphContribs
  - @param flowEnv  A full flow environment
  -         (used to discover what explicit equations exist, find info on nonterminals)
@@ -178,6 +178,31 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
 
   return productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 }
+
+function constructFunctionGraph
+ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv
+{
+  local defs :: [FlowDef] = getGraphContribsFor(ns.fullName, flowEnv);
+
+  -- Normal edges!
+  local normalEdges :: [Pair<FlowVertex FlowVertex>] =
+    flatMap((.flowEdges), defs);
+  
+  -- Basicaly just <- to local collections...
+  local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
+    flatMap((.suspectFlowEdges), defs);
+    
+  local initialGraph :: g:Graph<FlowVertex> =
+    createFlowGraph(normalEdges);
+
+  -- RHS and locals and forward.
+  local stitchPoints :: [StitchPoint] =
+    rhsStitchPoints(ns.inputElements) ++
+    localStitchPoints(error("functions have no LHS, no forwarding defs"), defs);
+
+  return productionGraph(ns.fullName, "::nolhs", [], initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+}
+
 
 {--
  - Constructs "phantom graphs" to enforce 'ft(syn) >= ft(fwd)'.

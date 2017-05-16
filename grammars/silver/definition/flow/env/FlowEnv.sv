@@ -9,7 +9,7 @@ exports silver:definition:flow:env_parser with silver:definition:env:env_parser;
 autocopy attribute flowEnv :: Decorated FlowEnv;
 synthesized attribute flowDefs :: [FlowDef];
 
-nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree, nonSuspectTree, extSynTree, specTree;
+nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree, nonSuspectTree, extSynTree, specTree, prodGraphTree;
 
 inherited attribute synTree :: EnvTree<FlowDef>;
 inherited attribute inhTree :: EnvTree<FlowDef>;
@@ -23,6 +23,7 @@ inherited attribute localTree :: EnvTree<FlowDef>;
 inherited attribute nonSuspectTree :: EnvTree<[String]>;
 inherited attribute extSynTree :: EnvTree<FlowDef>;
 inherited attribute specTree :: EnvTree<Pair<String [String]>>;
+inherited attribute prodGraphTree :: EnvTree<FlowDef>;
 
 abstract production dummyFlowEnv
 top::FlowEnv ::=
@@ -46,6 +47,7 @@ Decorated FlowEnv ::= d::FlowDefs
   e.nonSuspectTree = directBuildTree(d.nonSuspectContribs);
   e.extSynTree = directBuildTree(d.extSynTreeContribs);
   e.specTree = directBuildTree(d.specContribs);
+  e.prodGraphTree = directBuildTree(d.prodGraphContribs);
   
   return e;
 }
@@ -137,5 +139,11 @@ function getFlowTypeSpecFor
 [Pair<String [String]>] ::= nt::String  e::Decorated FlowEnv
 {
   return searchEnvTree(nt, e.specTree);
+}
+
+function getGraphContribsFor
+[FlowDef] ::= prod::String  e::Decorated FlowEnv
+{
+  return searchEnvTree(prod, e.prodGraphTree);
 }
 
