@@ -55,6 +55,6 @@ IOVal<MontoMessage> ::= req::Request srcRqmt::Requirement silverHome::String gra
     req.source,
     req.serviceId,
     p.fst,
-    "dcv2",
+    "silver",
     r.iovalue)));
 }
