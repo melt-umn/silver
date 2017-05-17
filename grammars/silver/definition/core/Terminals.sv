@@ -17,6 +17,7 @@ lexer class MODSTMT font = font_modword;
 lexer class SPECOP  font = font_keyword;
 lexer class BUILTIN font = font_keyword;
 lexer class TYPE    font = font_type;
+lexer class OPERATOR;
 
 terminal As_kwd       'as'      lexer classes {MODSTMT,RESERVED};
 terminal Exports_kwd  'exports' lexer classes {MODSTMT};
@@ -26,7 +27,7 @@ terminal Import_kwd   'import'  lexer classes {MODSTMT};
 terminal Imports_kwd  'imports' lexer classes {MODSTMT};
 terminal Only_kwd     'only'    lexer classes {MODSTMT,RESERVED};
 terminal Optional_kwd 'option'  lexer classes {MODSTMT};
--- TODO with 
+-- TODO with
 
 -- TODO A substantial fraction of these don't need to be reserved!
 terminal Abstract_kwd    'abstract'     lexer classes {KEYWORD,RESERVED};
@@ -62,22 +63,22 @@ terminal ToInt_kwd     'toInt'     lexer classes {BUILTIN,RESERVED};
 terminal ToString_kwd  'toString'  lexer classes {BUILTIN,RESERVED};
 
 terminal Comma_t       ','  precedence = 4;
-terminal Or_t          '||' precedence = 5, association = left;
-terminal And_t         '&&' precedence = 6, association = left;
+terminal Or_t          '||' precedence = 5, association = left,   lexer classes {OPERATOR};
+terminal And_t         '&&' precedence = 6, association = left,   lexer classes {OPERATOR};
 terminal Not_t         '!'  precedence = 7;
-terminal GT_t          '>'  precedence = 9, association = left;
-terminal LT_t          '<'  precedence = 9, association = left;
-terminal GTEQ_t        '>=' precedence = 9, association = left;
-terminal LTEQ_t        '<=' precedence = 9, association = left;
-terminal EQEQ_t        '==' precedence = 9, association = left;
-terminal NEQ_t         '!=' precedence = 9, association = left;
-terminal PlusPlus_t    '++' precedence = 10, association = right; -- right because that's generally more efficient.
-terminal Plus_t        '+'  precedence = 11, association = left;
-terminal Minus_t       '-'  precedence = 11, association = left;
-terminal Multiply_t    '*'  precedence = 12, association = left;
-terminal Divide_t      '/'  precedence = 12, association = left;
-terminal Modulus_t     '%'  precedence = 12, association = left;
-terminal ColonColon_t  '::' precedence = 14, association = right; -- HasType AND cons. right due to cons.
+terminal GT_t          '>'  precedence = 9, association = left,   lexer classes {OPERATOR};
+terminal LT_t          '<'  precedence = 9, association = left,   lexer classes {OPERATOR};
+terminal GTEQ_t        '>=' precedence = 9, association = left,   lexer classes {OPERATOR};
+terminal LTEQ_t        '<=' precedence = 9, association = left,   lexer classes {OPERATOR};
+terminal EQEQ_t        '==' precedence = 9, association = left,   lexer classes {OPERATOR};
+terminal NEQ_t         '!=' precedence = 9, association = left,   lexer classes {OPERATOR};
+terminal PlusPlus_t    '++' precedence = 10, association = right, lexer classes {OPERATOR}; -- right because that's generally more efficient.
+terminal Plus_t        '+'  precedence = 11, association = left,  lexer classes {OPERATOR};
+terminal Minus_t       '-'  precedence = 11, association = left,  lexer classes {OPERATOR};
+terminal Multiply_t    '*'  precedence = 12, association = left,  lexer classes {OPERATOR};
+terminal Divide_t      '/'  precedence = 12, association = left,  lexer classes {OPERATOR};
+terminal Modulus_t     '%'  precedence = 12, association = left,  lexer classes {OPERATOR};
+terminal ColonColon_t  '::' precedence = 14, association = right, lexer classes {OPERATOR}; -- HasType AND cons. right due to cons.
 terminal LParen_t      '('  precedence = 24;
 terminal RParen_t      ')'  ;
 terminal LCurly_t      '{'  ;
@@ -87,15 +88,15 @@ terminal Semi_t        ';'  ;
 terminal Colon_t       ':'  ;
 terminal UnderScore_t  '_'  ;
 
-terminal CCEQ_t        '::=' lexer classes {SPECOP};
-terminal Equal_t       '='   lexer classes {SPECOP};
+terminal CCEQ_t        '::=' lexer classes {OPERATOR,SPECOP};
+terminal Equal_t       '='   lexer classes {OPERATOR,SPECOP};
 
 -- Unused infix operators: ~ ` @ # % ^ & | \
 -- $ is used by convenience.
 
  -- this is a very careful regex. beware:
 --ignore terminal BlockComments /\{\-([^\-]|\-+[^\}\-])*\-+\}/ lexer classes {COMMENT};
-ignore terminal BlockComments /\{\-(\{\-([^\-]|\-+[^\}\-])*\-+\}|[^\-]|\-+[^\}\-])*\-+\}/ lexer classes {COMMENT}; -- Allows (one level of) nested comments.  
+ignore terminal BlockComments /\{\-(\{\-([^\-]|\-+[^\}\-])*\-+\}|[^\-]|\-+[^\}\-])*\-+\}/ lexer classes {COMMENT}; -- Allows (one level of) nested comments.
 ignore terminal Comments /([\-][\-].*)/ lexer classes {COMMENT};
 
 ignore terminal WhiteSpace /[\r\n\t\ ]+/;
@@ -108,4 +109,3 @@ terminal False_kwd 'false'  lexer classes {LITERAL,RESERVED};
 terminal Int_t     /[\-]?[0-9]+/ lexer classes {LITERAL};
 terminal Float_t   /[\-]?[0-9]+[\.][0-9]+/ lexer classes {LITERAL};
 terminal String_t  /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\"]/ lexer classes {LITERAL};
-
