@@ -44,6 +44,15 @@ String ::= r::Decorated RootSpec genPath::String
 abstract production printAllBindingErrors
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
+  -- Force printing of status before doing error checks
+  top.code = unsafeTrace(forward.code, forward.ioIn);
+  -- For anyone encountering this hack for the first time,
+  -- IO-token passing can force linearity of actions, but
+  -- interleaves pure computation in annoying ways.
+  -- Without the above, all the error checking work gets done
+  -- (to compute return code) before something tries to do IO,
+  -- so we wouldn't print first.
+
   forwards to printAllBindingErrorsHelp(specs)
   with {
     ioIn = print("Checking For Errors.\n", top.ioIn);
