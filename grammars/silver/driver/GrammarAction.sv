@@ -62,12 +62,12 @@ top::DriverAction ::= specs::[Decorated RootSpec]
 abstract production printAllBindingErrorsHelp
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
-  local es :: [Message] = head(specs).errors;
+  local es :: [Pair<String [Message]>] = head(specs).grammarErrors;
 
   local i :: IO =
     if null(es)
     then top.ioIn
-    else print("Errors for : " ++ head(specs).declaredName ++ " :\n" ++ foldMessages(es) ++ "\n\n", top.ioIn);
+    else print("Errors for " ++ head(specs).declaredName ++ "\n" ++ sflatMap(renderMessages(head(specs).grammarSource, _), es) ++ "\n", top.ioIn);
 
   local recurse :: DriverAction = printAllBindingErrorsHelp(tail(specs));
   recurse.ioIn = i;
@@ -75,7 +75,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
   top.io = if null(specs) then top.ioIn else recurse.io;
 
   top.code = 
-    if null(specs) || (!containsErrors(es, head(specs).config.warnError) && recurse.code == 0)
+    if null(specs) || (!grammarContainsErrors(es, head(specs).config.warnError) && recurse.code == 0)
     then 0
     else 20;
 
@@ -90,5 +90,18 @@ top::DriverAction ::= specs::[Decorated RootSpec]
   top.io = if null(errs) then top.ioIn else print(foldMessages(errs), top.ioIn);
   top.order = 0;
   top.code = if null(errs) then 0 else 21;
+}
+
+function renderMessages
+String ::= grammarSource::String  msg::Pair<String [Message]>
+{
+  return " [" ++ grammarSource ++ msg.fst ++ "]\n" ++ foldMessages(msg.snd);
+}
+
+function grammarContainsErrors
+Boolean ::= es::[Pair<String [Message]>]  werr::Boolean
+{
+  return if null(es) then false
+  else containsErrors(head(es).snd, werr) || grammarContainsErrors(tail(es), werr);
 }
 

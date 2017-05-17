@@ -7,7 +7,7 @@ nonterminal Grammar with
   grammarName, env, globalImports, grammarDependencies,
   -- Synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild,
-  defs, importedDefs, errors;
+  defs, importedDefs, grammarErrors;
 
 {--
 - A list of grammars that this grammar depends upon,
@@ -26,6 +26,10 @@ autocopy attribute globalImports :: Decorated Env;
  - At the top of a grammar, these are echoed down as globalImports
  -}
 synthesized attribute importedDefs :: [Def];
+{--
+ - An overall listing of error messages for a grammar
+ -}
+synthesized attribute grammarErrors :: [Pair<String [Message]>];
 
 abstract production nilGrammar
 top::Grammar ::=
@@ -40,7 +44,7 @@ top::Grammar ::=
   
   top.importedDefs = [];
   top.defs = [];
-  top.errors := [];
+  top.grammarErrors = [];
 }
 
 abstract production consGrammar
@@ -54,6 +58,8 @@ top::Grammar ::= h::Root  t::Grammar
 
   top.importedDefs = h.importedDefs ++ t.importedDefs;
   top.defs = h.defs ++ t.defs;
-  top.errors := h.errors ++ t.errors;
+  top.grammarErrors =
+    if null(h.errors) then t.grammarErrors
+    else pair(h.location.filename, h.errors) :: t.grammarErrors;
 
 }

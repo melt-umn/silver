@@ -1,6 +1,6 @@
 grammar silver:driver:util;
 
-import silver:definition:core only Grammar, errors, grammarName, importedDefs, grammarDependencies, globalImports, Message, err;
+import silver:definition:core only Grammar, grammarErrors, grammarName, importedDefs, grammarDependencies, globalImports, Message, err;
 import silver:definition:env:env_parser only IRoot;
 import silver:definition:flow:env only flowEnv, flowDefs, fromFlowDefs;
 import silver:definition:flow:ast only nilFlow, consFlow, FlowDef;
@@ -13,7 +13,7 @@ nonterminal RootSpec with
   config, compiledGrammars, productionFlowGraphs, grammarFlowTypes,
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
-  defs, errors, grammarSource, grammarTime, interfaceTime, recheckGrammars, translateGrammars, parsingErrors;
+  defs, grammarErrors, grammarSource, grammarTime, interfaceTime, recheckGrammars, translateGrammars, parsingErrors;
 
 {--
  - Grammars that were read from source.
@@ -68,7 +68,7 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   top.allGrammarDependencies = actualDependencies;
   
   top.defs = g.defs;
-  top.errors := g.errors;
+  top.grammarErrors = g.grammarErrors;
   top.parsingErrors = [];
 }
 
@@ -96,7 +96,7 @@ top::RootSpec ::= p::IRoot  interfaceTime::Integer
   top.allGrammarDependencies = p.allGrammarDependencies;
 
   top.defs = p.defs;
-  top.errors := []; -- TODO: consider getting grammarName and comparing against declaredName?
+  top.grammarErrors = []; -- TODO: consider getting grammarName and comparing against declaredName?
   top.parsingErrors = [];
 }
 
@@ -121,7 +121,7 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
   top.allGrammarDependencies = [];
 
   top.defs = [];
-  top.errors := [];
+  top.grammarErrors = [];
   top.parsingErrors = map(parseErrorToMessage(grammarSource, _), e);
 }
 
