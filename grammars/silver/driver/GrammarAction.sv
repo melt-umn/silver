@@ -62,12 +62,12 @@ top::DriverAction ::= specs::[Decorated RootSpec]
 abstract production printAllBindingErrorsHelp
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
-  local es :: [Pair<String [Message]>] = head(specs).grammarErrors;
+  local errs :: [Pair<String [Message]>] = head(specs).grammarErrors;
 
   local i :: IO =
-    if null(es)
+    if null(errs)
     then top.ioIn
-    else print("Errors for " ++ head(specs).declaredName ++ "\n" ++ sflatMap(renderMessages(head(specs).grammarSource, _), es) ++ "\n", top.ioIn);
+    else print("Errors for " ++ head(specs).declaredName ++ "\n" ++ sflatMap(renderMessages(head(specs).grammarSource, _), errs) ++ "\n", top.ioIn);
 
   local recurse :: DriverAction = printAllBindingErrorsHelp(tail(specs));
   recurse.ioIn = i;
@@ -75,7 +75,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
   top.io = if null(specs) then top.ioIn else recurse.io;
 
   top.code = 
-    if null(specs) || (!grammarContainsErrors(es, head(specs).config.warnError) && recurse.code == 0)
+    if null(specs) || (!grammarContainsErrors(errs, head(specs).config.warnError) && recurse.code == 0)
     then 0
     else 20;
 
@@ -85,11 +85,24 @@ top::DriverAction ::= specs::[Decorated RootSpec]
 abstract production printAllParsingErrors
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
-  local errs :: [Message] = flatMap((.parsingErrors), specs);
+  local errs :: [Pair<String [Message]>] = head(specs).parsingErrors;
 
-  top.io = if null(errs) then top.ioIn else print(foldMessages(errs), top.ioIn);
+  local i :: IO =
+    if null(errs)
+    then top.ioIn
+    else print("Errors for " ++ head(specs).declaredName ++ "\n" ++ sflatMap(renderMessages(head(specs).grammarSource, _), errs) ++ "\n", top.ioIn);
+
+  local recurse :: DriverAction = printAllParsingErrors(tail(specs));
+  recurse.ioIn = i;
+
+  top.io = if null(specs) then top.ioIn else recurse.io;
+
+  top.code = 
+    if null(specs) || recurse.code == 0
+    then 0
+    else 21;
+
   top.order = 0;
-  top.code = if null(errs) then 0 else 21;
 }
 
 function renderMessages

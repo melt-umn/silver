@@ -23,7 +23,7 @@ synthesized attribute translateGrammars :: [Decorated RootSpec];
 {--
  - Parse errors present in this grammar (only for errorRootSpec!)
  -}
-synthesized attribute parsingErrors :: [Message];
+synthesized attribute parsingErrors :: [Pair<String [Message]>];
 
 {--
  - Create a RootSpec from a real grammar, a set of .sv files.
@@ -126,15 +126,17 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
 }
 
 function parseErrorToMessage
-Message ::= grammarSource::String  e::ParseError
+Pair<String [Message]> ::= grammarSource::String  e::ParseError
 {
   return case e of
   | syntaxError(str, locat, _, _) ->
-      err(loc(locat.filename, locat.line, locat.column, locat.endLine, locat.endColumn, locat.index, locat.endIndex),
-          "Syntax error:\n" ++ str)
+      pair(locat.filename, 
+        [err(locat,
+          "Syntax error:\n" ++ str)])
   | unknownParseError(str, file) ->
-      err(loc(grammarSource ++ file, -1, -1, -1, -1, -1, -1),
-          "Unknown error while parsing:\n" ++ str)
+      pair(file,
+        [err(loc(grammarSource ++ file, -1, -1, -1, -1, -1, -1),
+          "Unknown error while parsing:\n" ++ str)])
   end;
 }
 
