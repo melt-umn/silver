@@ -44,6 +44,15 @@ String ::= r::Decorated RootSpec genPath::String
 abstract production printAllBindingErrors
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
+  -- Force printing of status before doing error checks
+  top.code = unsafeTrace(forward.code, forward.ioIn);
+  -- For anyone encountering this hack for the first time,
+  -- IO-token passing can force linearity of actions, but
+  -- interleaves pure computation in annoying ways.
+  -- Without the above, all the error checking work gets done
+  -- (to compute return code) before something tries to do IO,
+  -- so we wouldn't print first.
+
   forwards to printAllBindingErrorsHelp(specs)
   with {
     ioIn = print("Checking For Errors.\n", top.ioIn);
@@ -53,12 +62,12 @@ top::DriverAction ::= specs::[Decorated RootSpec]
 abstract production printAllBindingErrorsHelp
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
-  local es :: [Message] = head(specs).errors;
+  local errs :: [Pair<String [Message]>] = head(specs).grammarErrors;
 
   local i :: IO =
-    if null(es)
+    if null(errs)
     then top.ioIn
-    else print("Errors for : " ++ head(specs).declaredName ++ " :\n" ++ foldMessages(es) ++ "\n\n", top.ioIn);
+    else print("Errors for " ++ head(specs).declaredName ++ "\n" ++ sflatMap(renderMessages(head(specs).grammarSource, _), errs) ++ "\n", top.ioIn);
 
   local recurse :: DriverAction = printAllBindingErrorsHelp(tail(specs));
   recurse.ioIn = i;
@@ -66,7 +75,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
   top.io = if null(specs) then top.ioIn else recurse.io;
 
   top.code = 
-    if null(specs) || (!containsErrors(es, head(specs).config.warnError) && recurse.code == 0)
+    if null(specs) || (!grammarContainsErrors(errs, head(specs).config.warnError) && recurse.code == 0)
     then 0
     else 20;
 
@@ -76,10 +85,36 @@ top::DriverAction ::= specs::[Decorated RootSpec]
 abstract production printAllParsingErrors
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
-  local errs :: [Message] = flatMap((.parsingErrors), specs);
+  local errs :: [Pair<String [Message]>] = head(specs).parsingErrors;
 
-  top.io = if null(errs) then top.ioIn else print(foldMessages(errs), top.ioIn);
+  local i :: IO =
+    if null(errs)
+    then top.ioIn
+    else print("Errors for " ++ head(specs).declaredName ++ "\n" ++ sflatMap(renderMessages(head(specs).grammarSource, _), errs) ++ "\n", top.ioIn);
+
+  local recurse :: DriverAction = printAllParsingErrors(tail(specs));
+  recurse.ioIn = i;
+
+  top.io = if null(specs) then top.ioIn else recurse.io;
+
+  top.code = 
+    if null(specs) || recurse.code == 0
+    then 0
+    else 21;
+
   top.order = 0;
-  top.code = if null(errs) then 0 else 21;
+}
+
+function renderMessages
+String ::= grammarSource::String  msg::Pair<String [Message]>
+{
+  return " [" ++ grammarSource ++ msg.fst ++ "]\n" ++ foldMessages(msg.snd);
+}
+
+function grammarContainsErrors
+Boolean ::= es::[Pair<String [Message]>]  werr::Boolean
+{
+  return if null(es) then false
+  else containsErrors(head(es).snd, werr) || grammarContainsErrors(tail(es), werr);
 }
 
