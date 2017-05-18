@@ -55,7 +55,7 @@ Style ::= styles::[Pair<String Style>] td::TerminalDescriptor
   return case filter(\p::Pair<String Style> -> containsBy(stringEq, p.fst, td.lexerClasses), styles) of
   | [] -> unsafeTrace(
             style([], nothing()),
-            print("Unhighlighted TerminalDescriptor: " ++ td.unparse, unsafeIO()))
+            print("Unhighlighted TerminalDescriptor: " ++ td.unparse ++ "\n\n", unsafeIO()))
   | l  -> head(l).snd
   end;
 }
