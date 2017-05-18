@@ -81,8 +81,6 @@ public class Server {
 	}
 
 	public void handle(Message msg) {
-		System.out.print("Got message: " + this.gson.toJson(msg));
-
 		String tag = msg.getTag();
 		switch(tag) {
 		case "request":
@@ -94,9 +92,7 @@ public class Server {
 		}
 	}
 	public void handleRequest(Request req) {
-		for(String message : FFI.runCallback(this.callback, req)) {
-			System.out.println("Sending message: " + message);
+		for(String message : FFI.runCallback(this.callback, req))
 			this.sock.send(message);
-		}
 	}
 }
