@@ -129,9 +129,9 @@ top::IBool ::= 'f'
 }
 
 concrete production aLocationInfo
-top::ILocation ::= filename::IName ',' line::Num_t ',' column::Num_t
+top::ILocation ::= filename::IName ',' line::Num_t ',' column::Num_t ',' endline::Num_t ',' endcolumn::Num_t ',' index::Num_t ',' endindex::Num_t
 {
-  top.alocation = loc(filename.aname, toInt(line.lexeme), toInt(column.lexeme), -1, -1, -1, -1);
+  top.alocation = loc(filename.aname, toInt(line.lexeme), toInt(column.lexeme), toInt(endline.lexeme), toInt(endcolumn.lexeme), toInt(index.lexeme), toInt(endindex.lexeme));
 }
 
 concrete production aString
