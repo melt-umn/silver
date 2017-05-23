@@ -57,9 +57,9 @@ quo::Expr ::= l::Expr r::Expr
 }
 
 abstract production integerConstant
-e::Expr ::= i::IntLit_t
+e::Expr ::= i::Integer
 {
- e.pp = i.lexeme ;
- e.value = toInt(i.lexeme);
+ e.pp = toString(i);
+ e.value = i;
 }
 
