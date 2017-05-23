@@ -108,7 +108,7 @@ quo::Expr ::= l::Expr r::Expr
 }
 
 aspect production integerConstant
-e::Expr ::= i::IntLit_t
+e::Expr ::= i::Integer
 {
- e.bpp = i.lexeme ;
+ e.bpp = toString(i);
 }
