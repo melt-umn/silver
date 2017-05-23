@@ -12,11 +12,11 @@ grammar determinism
 
 import host:grammar;
 
-copper_mda determinismAnalysis(hostParser) {
+copper_mda testGrammar(hostParser) {
    extension:grammmar;
 }
 
-copper_mda determinismAnalysis(hostParser) {
+copper_mda testGrammarTwo(hostParser) {
    extension:grammmar_two;
 }
 
