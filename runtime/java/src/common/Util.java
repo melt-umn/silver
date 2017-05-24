@@ -189,15 +189,15 @@ public final class Util {
 
 	public static boolean deleteDirFiles(String dir) {
 		try {
-			File f = new File(dir);
-			String[] files = f.list();
+			File dirf = new File(dir);
+			String[] files = dirf.list();
 
 			boolean result = true;
 			
 			if(files == null) return result;
 			
 			for(String filename : files) {
-				File file = new File(filename);
+				File file = new File(dirf, filename);
 				// Only files, no directories
 				if(file.isFile()) {
 					result = result && file.delete();
