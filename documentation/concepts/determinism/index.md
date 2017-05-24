@@ -8,7 +8,7 @@ title: Modular determinism
 With a file such as:
 
 ```
-grammar determinism
+grammar example:grammar
 
 import host:grammar;
 
@@ -23,21 +23,23 @@ copper_mda testGrammarTwo(hostParser) {
 ... etc 
 ```
 
-Run ```silver --clean determinism```
+Run ```silver --clean example:grammar```
 
 Unlike in well-definedness, determinism tends to report errors quickly. Determinism will usually stop evaluating errors after the first error it reports, as a lot of errors are reported as bugs or crashes in copper (ideally this will change). Determinism will also not evaluate any grammars following one that fails in a list of ```copper_mda``` definitions, and will evaluate those definitions in order from top to bottom.
+
+Using ```--clean``` is not always necessary, but not using it can result in undefined java definitions.
 
 ---
 
 ### Types of Errors Reported
 
-1. <... a long stack trace> ... Requested head of nil.
+1. <... a long stack trace> ... ```Requested head of nil.```
 
-   This is a bug in copper, where it doesn't check the length of a list before obtaining the first element of the list.
+   This is a bug in silver, where it fails to notice that a necessary grammar was left out of the parser specification.
 
    ##### Potential solutions:
 
-   Consider changing 'imports' to 'exports' on terminals from other grammars.
+   Make sure you've included the right set of grammars that add to concrete syntax (don't forget any terminals or lexer classes, if those are separate).
 
 2. Missing Bridge Productions 
 
@@ -47,7 +49,7 @@ Unlike in well-definedness, determinism tends to report errors quickly. Determin
    ... [grammar ext]: Extension grammar is missing the following required attributes: [bridgeProductions]
    ```  
 
-   This indicates that the automatic scan copper performs to find bridge productions, which are productions that begin with marking terminals, was unsuccessful. Either:  
+   This indicates that the automatic scan silver performs to find bridge productions, which are productions that begin with marking terminals, found none. Either:  
 
    1. The grammar has no productions. Or  
 
@@ -69,7 +71,7 @@ Unlike in well-definedness, determinism tends to report errors quickly. Determin
 
    ##### Potential solutions:
 
-   After isolating the problematic production, change the nonterminals used to be less permissive. Consider   referencing the host language and looking for the production that your production is a subset of. 
+   After isolating the problematic production, change the nonterminals used to be less permissive. Consider referencing the host language and looking for the production that your production is a subset of. 
 
 4. Follow / Lookahead spillage
 
@@ -87,16 +89,8 @@ Unlike in well-definedness, determinism tends to report errors quickly. Determin
 
    Re-work the grammar so that this is no longer the case. 
 
-5. [javac] ... error: cannot find symbol
-
-   This is the result of outdated java definitions holding on to a production or terminal that has been removed. Silver --clean does not automatically do this removal right now. 
+5. ```T, designated as a marking terminal, must be referenced only as the first right-hand-side element in a bridge production.```
 
    ##### Potential solutions:
 
-   Delete the subdirectory your grammars are represented by in silver/generated. 
-
-6. T, designated as a marking terminal, must be referenced only as the first right-hand-side element in a bridge production.
-
-   ##### Potential solutions:
-
-   Re-work the grammar to remove any production that includes a marking terminal not as the first element of a production. One approach could be to try to add a second identical terminal that is not marking, and disambiguate which should appear in which contexts. 
+   Re-work the grammar to remove any production that includes a marking terminal where it is not the first element of that production. One approach could be to try to add a second identical terminal that is not marking, and disambiguate which should appear in which contexts. 
