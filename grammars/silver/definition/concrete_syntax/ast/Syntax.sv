@@ -312,16 +312,27 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
 {
   top.sortKey = "DDD" ++ n;
   top.cstDcls = [];
-  top.cstErrors := [];
-  local attribute trefs :: [[Decorated SyntaxDcl]];
-  trefs = lookupStrings(terms, top.cstEnv);
+  --top.cstErrors := [];
+  --local attribute trefs :: [[Decorated SyntaxDcl]];
+  --trefs = lookupStrings(terms, top.cstEnv);
   -- TODO: check terminal
+
+  local trefs::[[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
+ 
+  local syns::[String] = foldr(\a::[Decorated SyntaxDcl] b::[String] ->
+      if null(a) then b else [xmlCopperRef(head(a))] ++ b, [],
+    trefs);
+
+  top.cstErrors := foldr(\a::[Decorated SyntaxDcl] b::[String] ->
+      if null(a) then ["Undefined Terminal Found"] ++ b else b, [],
+    trefs);
 
   top.cstNormalize = [top];
 
   top.xmlCopper =
     "  <DisambiguationFunction id=\"" ++ makeCopperName(n) ++ "\">\n" ++
-    "    <Members>" ++ implode("", map(xmlCopperRef, map(head, trefs))) ++ "</Members>\n" ++
+    "    <Members>" ++ implode("", syns) ++ "</Members>\n" ++
+--"    <Members>" ++ implode("", map(xmlCopperRef, map(head, trefs))) ++ "</Members>\n" ++
     "    <Code><![CDATA[\n" ++
     acode ++  
     "]]></Code>\n" ++

@@ -5,7 +5,7 @@ abstract production cstCopperMdaRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Syntax  terminalPrefixes::[Pair<String String>]
 {
   -- Because there may be references between the grammars, we cannot do the
-  -- usualy normalization.
+  -- usual normalization.
   
   -- TODO: we could consider making host host-only, and ext have both...
   host.cstEnv = directBuildTree(host.cstDcls ++ ext.cstDcls);
@@ -17,10 +17,17 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   ext.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
   ext.prefixesForTerminals = host.prefixesForTerminals;
   
-  top.cstErrors := host.cstErrors ++ ext.cstErrors;
-  
   local startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, host.cstEnv);
-  -- TODO check if this is found!!
+  local startSymbol::String = if null(startFound) then
+                                "None" else 
+                                xmlCopperRef(head(startFound));
+
+  top.cstErrors := if startSymbol=="None" then 
+                      host.cstErrors ++ ext.cstErrors ++ ["Unable to find start symbol"]
+                   else 
+                      host.cstErrors ++ ext.cstErrors;
+  
+  -- If there is an error, do/can we still define an xmlCopper that makes sense?
 
   local attribute univLayout :: String;
   univLayout = implode("", map(xmlCopperRef, host.allIgnoreTerminals)); -- er, we're ignoring ext here?
@@ -40,7 +47,8 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
 "    <ExtensionGrammars>\n" ++
 "      <GrammarRef id=\"" ++ ext.containingGrammar ++ "\"/>\n" ++
 "    </ExtensionGrammars>\n" ++
-"    <StartSymbol>" ++ xmlCopperRef(head(startFound)) ++ "</StartSymbol>\n" ++
+"    <StartSymbol>" ++ startSymbol ++ "</StartSymbol>\n" ++
+--"    <StartSymbol>" ++ xmlCopperRef(head(startFound)) ++ "</StartSymbol>\n" ++
 "    <StartLayout>" ++ univLayout ++ "</StartLayout>\n" ++
 "  </ExtendedParser>\n\n" ++
 
