@@ -22,10 +22,9 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
                                 "None" else 
                                 xmlCopperRef(head(startFound));
 
-  top.cstErrors := if startSymbol=="None" then 
-                      host.cstErrors ++ ext.cstErrors ++ ["Unable to find start symbol"]
-                   else 
-                      host.cstErrors ++ ext.cstErrors;
+  top.cstErrors := host.cstErrors ++ ext.cstErrors;
+  top.cstErrors <- if null(startFound) then ["Unable to find start symbol"]
+                   else [];
   
   -- If there is an error, do/can we still define an xmlCopper that makes sense?
 

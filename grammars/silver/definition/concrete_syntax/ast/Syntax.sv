@@ -312,10 +312,6 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
 {
   top.sortKey = "DDD" ++ n;
   top.cstDcls = [];
-  --top.cstErrors := [];
-  --local attribute trefs :: [[Decorated SyntaxDcl]];
-  --trefs = lookupStrings(terms, top.cstEnv);
-  -- TODO: check terminal
 
   local trefs::[[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
  
@@ -332,7 +328,6 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
   top.xmlCopper =
     "  <DisambiguationFunction id=\"" ++ makeCopperName(n) ++ "\">\n" ++
     "    <Members>" ++ implode("", syns) ++ "</Members>\n" ++
---"    <Members>" ++ implode("", map(xmlCopperRef, map(head, trefs))) ++ "</Members>\n" ++
     "    <Code><![CDATA[\n" ++
     acode ++  
     "]]></Code>\n" ++
