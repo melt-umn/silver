@@ -315,19 +315,15 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
 
   local trefs::[[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
  
-  local syns::[String] = foldr(\a::[Decorated SyntaxDcl] b::[String] ->
-      if null(a) then b else [xmlCopperRef(head(a))] ++ b, [],
-    trefs);
-
   top.cstErrors := foldr(\a::[Decorated SyntaxDcl] b::[String] ->
-      if null(a) then ["Undefined Terminal Found"] ++ b else b, [],
+      if null(a) then ["Undefined Terminal in Disambiguation " ++ n] ++ b else b, [],
     trefs);
 
   top.cstNormalize = [top];
 
-  top.xmlCopper =
+  top.xmlCopper = if !null(top.cstErrors) then "" else 
     "  <DisambiguationFunction id=\"" ++ makeCopperName(n) ++ "\">\n" ++
-    "    <Members>" ++ implode("", syns) ++ "</Members>\n" ++
+    "    <Members>" ++ implode("", map(xmlCopperRef, map(head, trefs))) ++ "</Members>\n" ++
     "    <Code><![CDATA[\n" ++
     acode ++  
     "]]></Code>\n" ++
