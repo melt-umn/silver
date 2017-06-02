@@ -84,10 +84,18 @@ top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverG
   local newSpec :: String =
     spec.cstAst.xmlCopper;
 
+  local specCst :: SyntaxRoot = spec.cstAst;
+
   local ex :: IOVal<Boolean> = isFile(file, top.ioIn);
   local oldSpec :: IOVal<String> = readFile(file, ex.io);
   
   local join :: IO = if ex.iovalue then oldSpec.io else ex.io;
+
+  local err :: IO = 
+    print("CST Errors while Generating Parser" ++ spec.fullName ++ ":\n" ++
+      foldr(\ a::String b::String -> 
+        a ++ "\n" ++ b, "", specCst.cstErrors) ++
+      "\n", join);
 
   local doUTD :: IO =
     print("Parser " ++ spec.fullName ++ " up to date.\n", join);
@@ -96,8 +104,12 @@ top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverG
     writeFile(file, newSpec,
       print("Generating Parser " ++ spec.fullName ++ ".\n", join));
 
-  top.io = if ex.iovalue && oldSpec.iovalue == newSpec then doUTD else doWR;
-  top.code = 0; -- should always be okay...
+  top.io = if null(specCst.cstErrors) then 
+             if ex.iovalue && oldSpec.iovalue == newSpec then doUTD 
+               else doWR
+             else err;
+             
+  top.code = if null(specCst.cstErrors) then 0 else 1;
   top.order = 7;
 }
 
