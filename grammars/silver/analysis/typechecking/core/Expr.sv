@@ -61,8 +61,6 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
-  
-  --es.downSubst = top.downSubst; -- TODO REMOVE THIS (it's garbage related to bugs in pretty printing, afaict)
 }
 
 aspect production functionApplication

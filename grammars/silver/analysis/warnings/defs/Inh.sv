@@ -571,11 +571,4 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     else [];      
 }
 
-aspect production decorateExprWith
-top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
-{
-  -- Do nothing. Everything gets taken care of with anonResolve and checkEqDeps at the top
-}
-
 -- TODO: pattern variable accesses.
-
