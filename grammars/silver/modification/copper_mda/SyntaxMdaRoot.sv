@@ -18,9 +18,6 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   ext.prefixesForTerminals = host.prefixesForTerminals;
   
   local startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, host.cstEnv);
-  local startSymbol::String = if null(startFound) then
-                                "None" else 
-                                xmlCopperRef(head(startFound));
 
   top.cstErrors := host.cstErrors ++ ext.cstErrors;
   top.cstErrors <- if null(startFound) then ["Unable to find start symbol"]
@@ -33,7 +30,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   host.univLayout = univLayout;
   ext.univLayout = univLayout;
 
-  top.xmlCopper =
+  top.xmlCopper = if !null(top.cstErrors) then "" else 
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ++
 
 "<CopperSpec xmlns=\"http://melt.cs.umn.edu/copper/xmlns\">\n" ++
@@ -46,8 +43,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
 "    <ExtensionGrammars>\n" ++
 "      <GrammarRef id=\"" ++ ext.containingGrammar ++ "\"/>\n" ++
 "    </ExtensionGrammars>\n" ++
-"    <StartSymbol>" ++ startSymbol ++ "</StartSymbol>\n" ++
---"    <StartSymbol>" ++ xmlCopperRef(head(startFound)) ++ "</StartSymbol>\n" ++
+"    <StartSymbol>" ++ xmlCopperRef(head(startFound)) ++ "</StartSymbol>\n" ++
 "    <StartLayout>" ++ univLayout ++ "</StartLayout>\n" ++
 "  </ExtendedParser>\n\n" ++
 

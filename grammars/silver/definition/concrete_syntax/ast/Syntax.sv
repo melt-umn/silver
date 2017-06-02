@@ -188,7 +188,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.cstProds = [pair(ns.outputElement.typerep.typeName, top)];
   top.cstNormalize = [];
   
-  top.xmlCopper =
+  top.xmlCopper = if !null(top.cstErrors) then "" else 
     "  <Production id=\"" ++ makeCopperName(ns.fullName) ++ "\">\n" ++
     (if modifiers.productionPrecedence.isJust then
     "    <Class>main</Class>\n" ++

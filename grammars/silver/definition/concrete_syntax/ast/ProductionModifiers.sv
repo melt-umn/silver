@@ -67,8 +67,15 @@ top::SyntaxProductionModifier ::= term::String
 {
   local termRef :: [Decorated SyntaxDcl] = searchEnvTree(term, top.cstEnv);
   
-  top.cstErrors := []; -- TODO check for errors
-  top.productionOperator = just(xmlCopperRef(head(termRef)));
+  top.cstErrors := if null(termRef) then ["Unknown terminal " ++ term]
+                    else [];  --TODO: more details on this error, 
+                                -- maybe "production with no contents had a conflict"?
+                                -- but shouldn't that just not happen?'
+                                -- need an example case. 
+                                -- are there different potential errors?
+  top.productionOperator = if null(termRef) then nothing()
+                            else just(xmlCopperRef(head(termRef)));
+
   top.unparses = ["oper(" ++ quoteString(term) ++ ")"];
 }
 {--
@@ -88,8 +95,23 @@ top::SyntaxProductionModifier ::= terms::[String]
 {
   local termRefs :: [[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
 
-  top.cstErrors := []; -- TODO: check for errors
   top.customLayout = just(implode("", map(xmlCopperRef, map(head, termRefs))));
+
+  -- TODO: see above, want a util function for this mass head checking, test case
+  top.cstErrors := if null(termRefs) then ["No terminal references found"] -- Todo: is this bad? 
+                     else foldr(\ a::[Decorated SyntaxDcl] b::[String] -> -- aka is this actually an error?
+                            if null(a) then 
+                              b ++ ["Unknown terminal reference"]
+                              else b,
+                           [], termRefs);
+
+  --This causes a concrete syntax error   
+  --top.customLayout = if null(termRefs) then nothing()
+  --                 else just(implode("", 
+  --                        map(xmlCopperRef, 
+  --                          foldr(\ a::[Decorated SyntaxDcl] b::[Decorated SyntaxDcl] ->
+  --                            if null(a) then b else b ++ [head(a)], [], termRefs))));
+                                
   top.unparses = ["layout(" ++ unparseStrings(terms) ++ ")"];
 }
 

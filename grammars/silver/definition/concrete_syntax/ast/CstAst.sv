@@ -38,13 +38,16 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   -- In particular, it drops productions it can't find an NT for.
   top.cstErrors := s.cstErrors;
   
+  -- TODO: better error message, test case 
   production startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, s2.cstEnv);
-  -- TODO check if this is found!!
+
+  top.cstErrors <- if null(startFound) then 
+                   ["Unable to find start symbol"] else [];
 
   production univLayout :: String = implode("", map(xmlCopperRef, s2.allIgnoreTerminals));
 
   s2.univLayout = univLayout;
-  top.xmlCopper =
+  top.xmlCopper = if !null(top.cstErrors) then "" else 
 s"""<?xml version="1.0" encoding="UTF-8"?>
 
 <CopperSpec xmlns="http://melt.cs.umn.edu/copper/xmlns">
