@@ -11,7 +11,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
   top.postOps <-
     foldr(\ a::Decorated RootSpec b::[DriverAction] ->
-      map(generateMdaSpec(g.compiledGrammars, _, benv.silverGen), a.mdaSpecs) ++ b,
+      map(generateMdaSpec(g.compiledGrammars, _, benv.silverGen ++ "src/"), a.mdaSpecs) ++ b,
       [], grammarsToTranslate);
 
   local targets :: String = 
@@ -21,8 +21,10 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
         "", a.mdaSpecs) ++ b,
       "", grammarsToTranslate);
 
-  extraTopLevelDecls <- if length(targets) != 0 then ["  <target name='copper_mda'>\n" ++ targets ++ "  </target>\n"] else [];
-  extraGrammarsDeps <- if length(targets) != 0 then ["copper_mda"] else [];
+  extraTopLevelDecls <- if length(targets) == 0 then []  
+                        else ["  <target name='copper_mda'>\n" ++ targets ++ "  </target>\n"];
+  extraGrammarsDeps <- if length(targets) == 0 then [] 
+                         else ["copper_mda"];
 }
 
 abstract production generateMdaSpec
