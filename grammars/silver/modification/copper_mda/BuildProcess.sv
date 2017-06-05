@@ -17,7 +17,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   local targets :: String = 
     foldr(\ a::Decorated RootSpec b::String ->
       foldr(\ c::MdaSpec d::String -> 
-        mdaBuildSpecTarget(c, benv.silverGen) ++ d,
+        mdaBuildSpecTarget(c) ++ d,
         "", a.mdaSpecs) ++ b,
       "", grammarsToTranslate);
 
@@ -51,7 +51,7 @@ top::DriverAction ::= grams::EnvTree<Decorated RootSpec>  spec::MdaSpec  silverg
 }
 
 function mdaBuildSpecTarget
-String ::= spec::MdaSpec  silvergen::String
+String ::= spec::MdaSpec
 {
   return "    <copper useSkin='XML' runMDA='true' warnUselessNTs='false'>\n" ++
          "      <inputs file='${src}/" ++ grammarToPath(spec.sourceGrammar) ++ 

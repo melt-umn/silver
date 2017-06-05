@@ -290,7 +290,7 @@ top::SyntaxDcl ::= n::String ty::TypeExp acode::String
 
   top.cstNormalize = [top];
 
-  top.xmlCopper =
+  top.xmlCopper = 
     "  <ParserAttribute id=\"" ++ makeCopperName(n) ++ "\">\n" ++
     "    <Type><![CDATA[" ++ ty.transType ++ "]]></Type>\n" ++
     "    <Code><![CDATA[\n" ++
@@ -315,6 +315,13 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
 
   local trefs::[[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
  
+
+  --local refTermPairs::<[Decorated SyntaxDcl] String> = map(
+  --  \a::[Decorated SyntaxDcl] b::String -> pair(a,b), trefs, terms)
+  
+  -- this 'n' here appears to actually hold the line number of the 
+  -- disambiguation, and the grammar. But we arent supposed to know this?
+  -- TODO: use "indexed" terminal string in print here
   top.cstErrors := foldr(\a::[Decorated SyntaxDcl] b::[String] ->
       if null(a) then ["Undefined Terminal in Disambiguation " ++ n] ++ b else b, [],
     trefs);
