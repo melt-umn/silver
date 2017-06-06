@@ -92,7 +92,7 @@ top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverG
   local join :: IO = if ex.iovalue then oldSpec.io else ex.io;
 
   local err :: IO = 
-    print("CST Errors while Generating Parser" ++ spec.fullName ++ ":\n" ++
+    print("CST Errors while Generating Parser " ++ spec.fullName ++ ":\n" ++
       foldr(\ a::String b::String -> 
         a ++ "\n" ++ b, "", specCst.cstErrors) ++
       "\n", join);

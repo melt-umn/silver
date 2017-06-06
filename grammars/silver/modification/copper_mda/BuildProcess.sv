@@ -37,7 +37,7 @@ top::DriverAction ::= grams::EnvTree<Decorated RootSpec>  spec::MdaSpec  silverg
   local copperFile::String = silvergen ++ grammarToPath(spec.sourceGrammar) ++ parserName ++ ".copper";
   
   local err :: IO = 
-    print("CST Errors while Testing MDA" ++ spec.fullName ++ ":\n" ++
+    print("CST Errors while Testing MDA " ++ spec.fullName ++ ":\n" ++
       foldr(\ a::String b::String -> 
         a ++ "\n" ++ b, "", ast.cstErrors) ++
       "\n", top.ioIn);
