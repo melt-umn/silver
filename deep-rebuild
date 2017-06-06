@@ -28,6 +28,8 @@ if [ $# -gt 0 ] && [ "$1" == "--newcore" ]; then
   read
 fi
 
+# Should backup old jars here
+
 echo "Before we start, let's get this thing built ..."
 java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --clean lib:monto
 java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --clean lib:xml:ast
@@ -52,6 +54,8 @@ echo "One more full cycle ..."
 time java -ea -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default
 ant
 mv silver.composed.Default.jar ../jars/
+
+# If the last build failed, should restore backup jars
 
 echo -e "\a"
 

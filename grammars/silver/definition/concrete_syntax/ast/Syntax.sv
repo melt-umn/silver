@@ -174,9 +174,10 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   production rhsRefs :: [[Decorated SyntaxDcl]] =
     lookupStrings(map((.typeName), map((.typerep), ns.inputElements)), top.cstEnv);
 
-  -- TODO modifiers errors
-  top.cstErrors := if length(searchEnvTree(ns.fullName, top.cstEnv)) == 1 then []
+  top.cstErrors := modifiers.cstErrors;
+  top.cstErrors <- if length(searchEnvTree(ns.fullName, top.cstEnv)) == 1 then []
                    else ["Name conflict with production " ++ ns.fullName];
+                   
   top.cstErrors <- if length(lhsRef) == 1 then
                    case head(lhsRef) of 
                    | syntaxNonterminal(_,_) -> []
