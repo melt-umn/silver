@@ -31,14 +31,13 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
     foldr(consSyntax, nilSyntax(), sortBy(syntaxDclLte, s.cstNormalize));
   s2.cstEnv = directBuildTree(s.cstDcls);
   s2.containingGrammar = "host";
-  s2.cstNTProds = error("TODO: make this environmnet not be decorated?"); -- TODO
+  s2.cstNTProds = error("TODO: make this environment not be decorated?"); -- TODO
   s2.prefixesForTerminals = directBuildTree(terminalPrefixes);
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.
   -- In particular, it drops productions it can't find an NT for.
   top.cstErrors := s.cstErrors;
   
-  -- TODO: better error message, test case 
   production startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, s2.cstEnv);
 
   top.cstErrors <- if null(startFound) then 

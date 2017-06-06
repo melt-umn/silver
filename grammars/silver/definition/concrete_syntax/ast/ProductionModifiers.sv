@@ -105,12 +105,15 @@ top::SyntaxProductionModifier ::= terms::[String]
                               else b,
                            [], termRefs);
 
-  --This causes a concrete syntax error   
-  --top.customLayout = if null(termRefs) then nothing()
-  --                 else just(implode("", 
-  --                        map(xmlCopperRef, 
-  --                          foldr(\ a::[Decorated SyntaxDcl] b::[Decorated SyntaxDcl] ->
-  --                            if null(a) then b else b ++ [head(a)], [], termRefs))));
+  --This causes a concrete syntax error in silver itself 
+  --top.customLayout = if null(termRefs) then nothing() else
+  top.customLayout = just(implode("", 
+                       map(xmlCopperRef, 
+                         foldr(\ a::[Decorated SyntaxDcl] b::[Decorated SyntaxDcl] ->
+                           if null(a) 
+                           then b 
+                           else b ++ [head(a)],
+                         [], termRefs))));
                                 
   top.unparses = ["layout(" ++ unparseStrings(terms) ++ ")"];
 }
