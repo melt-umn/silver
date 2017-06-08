@@ -67,14 +67,10 @@ top::SyntaxProductionModifier ::= term::String
 {
   local termRef :: [Decorated SyntaxDcl] = searchEnvTree(term, top.cstEnv);
   
-  top.cstErrors := if null(termRef) then ["Unknown terminal in operator clause " ++ term]
-                    else [];  --TODO: more details on this error, 
-                                -- maybe "production with no contents had a conflict"?
-                                -- but shouldn't that just not happen?'
-                                -- need an example case. 
-                                -- are there different potential errors?
+  top.cstErrors := if !null(termRef) then [] 
+                   else ["Unknown terminal in operator clause " ++ term];
   top.productionOperator = if null(termRef) then nothing()
-                            else just(xmlCopperRef(head(termRef)));
+                           else just(xmlCopperRef(head(termRef)));
 
   top.unparses = ["oper(" ++ quoteString(term) ++ ")"];
 }
@@ -98,19 +94,17 @@ top::SyntaxProductionModifier ::= terms::[String]
 
   -- TODO: see above, want a util function for this mass head checking, test case
   top.cstErrors := if null(termRefs) then [] -- layout{} is valid, so this is not an error. 
-                     else foldr(\ a::Pair<String [Decorated SyntaxDcl]> b::[String] ->
-                            if null(a.snd) then 
-                              b ++ ["Unknown terminal in layout clause " ++ a.fst]
-                              else b,
-                           [], pairTerms);
+                   else foldr(\ a::Pair<String [Decorated SyntaxDcl]> b::[String] ->
+                     if !null(a.snd) then b
+                     else b ++ ["Unknown terminal in layout clause " ++ a.fst],
+                   [], pairTerms);
 
   --This causes a concrete syntax error in silver itself 
   --top.customLayout = if null(termRefs) then nothing() else
   top.customLayout = just(implode("", 
                        map(xmlCopperRef, 
                          foldr(\ a::[Decorated SyntaxDcl] b::[Decorated SyntaxDcl] ->
-                           if null(a) 
-                           then b 
+                           if null(a) then b 
                            else b ++ [head(a)],
                          [], termRefs))));
                                 
@@ -119,6 +113,8 @@ top::SyntaxProductionModifier ::= terms::[String]
 
 -- This function is a little useless because it wont report an error if the input
 -- lengths are not equal
+-- This is a transfomration being used to easily reference erroneous strings
+-- within maps/folds checking SyntaxDcls. 
 function pairTermRefs
 [Pair<String [Decorated SyntaxDcl]>] ::= terms::[String] refs::[[Decorated SyntaxDcl]] {
     return if null(terms) then []

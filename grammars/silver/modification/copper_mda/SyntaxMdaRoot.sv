@@ -20,11 +20,9 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   local startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, host.cstEnv);
 
   top.cstErrors := host.cstErrors ++ ext.cstErrors;
-  top.cstErrors <- if null(startFound) then ["Unable to find start symbol"]
-                   else [];
+  top.cstErrors <- if !null(startFound) then [] 
+                   else ["Missing nonterminal " ++ startnt ++ " for parser in copper_mda" ++ parsername];
   
-  -- If there is an error, do/can we still define an xmlCopper that makes sense?
-
   local attribute univLayout :: String;
   univLayout = implode("", map(xmlCopperRef, host.allIgnoreTerminals)); -- er, we're ignoring ext here?
   host.univLayout = univLayout;
