@@ -6,11 +6,19 @@ imports disamb as dis;
 imports prodMod as pro;
 imports startMissing as sta;
 imports mda as mda;
-exports host;
+imports silver:langutil;
+imports silver:langutil:pp;
+imports core:monad;
 
-mainTestSuite copper_tests;
-
-equalityTest(dis:extendedParser("","").parseSuccess, false, Boolean, copper_tests );
-equalityTest(pro:extendedParser("","").parseSuccess, false, Boolean, copper_tests );
-equalityTest(sta:extendedParser("","").parseSuccess, false, Boolean, copper_tests );
-equalityTest(mda:extendedParser("","").parseSuccess, false, Boolean, copper_tests );
+function main
+IOVal<Integer> ::= args::[String] ioIn::IO
+{
+    local result::IOMonad<Integer> =  do (bindIO, returnIO) {
+       return if null(dis:extendedParser("","").parseErrors) ||
+         null(pro:extendedParser("","").parseErrors) ||
+         null(sta:extendedParser("","").parseErrors) ||
+         null(mda:extendedParser("","").parseErrors) then 1
+       else 0;
+    };
+    return evalIO(result, ioIn);
+}

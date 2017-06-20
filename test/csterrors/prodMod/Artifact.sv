@@ -18,25 +18,6 @@ operator = B_t, layout {B_t}, precedence = 2
 {
 }
 
---Todo: split off
-concrete production missingLHS
-top::B_t ::=
-{
-}
-
---Todo: split off
-concrete production terminalLHS
-top::A_t ::=
-{
-}
-
--- Does not cause CST error. 
---concrete production duplicateProduction
---top::NT3 ::=
---{
---}
-
-
 parser extendedParser :: Root {
     host;
     prodMod;

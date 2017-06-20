@@ -1,4 +1,4 @@
-all: disambTest startMissingTest prodModTest rhsTest mdaTest 
+all: disambTest startMissingTest prodModTest rhsTest mdaTest missingLHSTest terminalLHSTest
 
 rhsTest: 
 	silver --clean --warn-all -o rhs.jar rhs
@@ -14,6 +14,12 @@ prodModTest:
 
 mdaTest:
 	silver --clean -o mda.jar mda
+
+missingLHSTest:
+	silver --clean -o missingLHS.jar missingLHS
+
+terminalLHSTest:
+	silver --clean -o terminalLHS.jar terminalLHS
 
 testfile:
 	silver --clean parsers
