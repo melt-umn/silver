@@ -1,4 +1,4 @@
-all: disambTest startMissingTest prodModTest rhsTest mdaTest noCncTest
+all: disambTest startMissingTest prodModTest rhsTest mdaTest 
 
 rhsTest: 
 	silver --clean --warn-all -o rhs.jar rhs
@@ -14,9 +14,6 @@ prodModTest:
 
 mdaTest:
 	silver --clean -o mda.jar mda
-
-noCncTest:
-	silver --clean -o noCnc.jar noConcrete
 
 testfile:
 	silver --clean parsers
