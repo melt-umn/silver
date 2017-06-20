@@ -9,10 +9,8 @@ import silver:util:cmdargs;
 aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
-  top.postOps <-
-    foldr(\ a::Decorated RootSpec b::[DriverAction] ->
-      map(generateMdaSpec(g.compiledGrammars, _, benv.silverGen ++ "src/"), a.mdaSpecs) ++ b,
-      [], grammarsToTranslate);
+  top.postOps <- map(generateMdaSpec(g.compiledGrammars, _, benv.silverGen ++ "src/"),
+    flatMap((.mdaSpecs), grammarsToTranslate));
 
   local targets :: String = 
     foldr(\ a::Decorated RootSpec b::String ->
