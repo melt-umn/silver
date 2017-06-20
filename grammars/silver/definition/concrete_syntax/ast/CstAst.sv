@@ -46,7 +46,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   production univLayout :: String = implode("", map(xmlCopperRef, s2.allIgnoreTerminals));
 
   s2.univLayout = univLayout;
-  top.xmlCopper = if !null(top.cstErrors) then "" else 
+  top.xmlCopper =
 s"""<?xml version="1.0" encoding="UTF-8"?>
 
 <CopperSpec xmlns="http://melt.cs.umn.edu/copper/xmlns">

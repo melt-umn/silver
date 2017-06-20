@@ -189,7 +189,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.cstProds = [pair(ns.outputElement.typerep.typeName, top)];
   top.cstNormalize = [];
   
-  top.xmlCopper = if !null(top.cstErrors) then "" else 
+  top.xmlCopper =
     "  <Production id=\"" ++ makeCopperName(ns.fullName) ++ "\">\n" ++
     (if modifiers.productionPrecedence.isJust then
     "    <Class>main</Class>\n" ++
@@ -326,7 +326,7 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
 
   top.cstNormalize = [top];
 
-  top.xmlCopper = if !null(top.cstErrors) then "" else 
+  top.xmlCopper =
     "  <DisambiguationFunction id=\"" ++ makeCopperName(n) ++ "\">\n" ++
     "    <Members>" ++ implode("", map(xmlCopperRef, map(head, trefs))) ++ "</Members>\n" ++
     "    <Code><![CDATA[\n" ++

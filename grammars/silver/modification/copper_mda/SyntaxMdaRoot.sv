@@ -28,7 +28,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   host.univLayout = univLayout;
   ext.univLayout = univLayout;
 
-  top.xmlCopper = if !null(top.cstErrors) then "" else 
+  top.xmlCopper = 
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ++
 
 "<CopperSpec xmlns=\"http://melt.cs.umn.edu/copper/xmlns\">\n" ++
