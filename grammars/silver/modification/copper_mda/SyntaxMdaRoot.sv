@@ -21,7 +21,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
 
   top.cstErrors := host.cstErrors ++ ext.cstErrors;
   top.cstErrors <- if !null(startFound) then [] 
-                   else ["Missing nonterminal " ++ startnt ++ " for parser in copper_mda" ++ parsername];
+                   else ["Missing start nonterminal " ++ startnt];
   
   local attribute univLayout :: String;
   univLayout = implode("", map(xmlCopperRef, host.allIgnoreTerminals)); -- er, we're ignoring ext here?
