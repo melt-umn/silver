@@ -320,7 +320,7 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
   -- disambiguation, and the grammar. But we arent supposed to know this?
   top.cstErrors := flatMap(\p ::Pair<String [Decorated SyntaxDcl]> -> 
       if null(p.snd) then 
-      ["Undefined Terminal in Disambiguation " ++ n ++ " " ++ p.fst] 
+      ["Undefined Terminal " ++ p.fst ++ " in Disambiguation " ++ n] 
       else [], 
     zipWith(pair, terms, trefs));
 

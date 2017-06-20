@@ -96,12 +96,6 @@ top::SyntaxProductionModifier ::= terms::[String]
                      else ["Unknown terminal in layout clause " ++ a.fst],
                    zipWith(pair, terms, termRefs));
 
-  top.customLayout = just(implode("", 
-                       map(xmlCopperRef, 
-                         foldr(\ a::[Decorated SyntaxDcl] b::[Decorated SyntaxDcl] ->
-                           if null(a) then b 
-                           else b ++ [head(a)],
-                         [], termRefs))));
-                                
+  top.customLayout = just(implode("", map(xmlCopperRef, map(head, termRefs))));
   top.unparses = ["layout(" ++ unparseStrings(terms) ++ ")"];
 }
