@@ -30,8 +30,6 @@ top::A_t ::=
 {
 }
 
---Todo RHS checks(2)
-
 -- Does not cause CST error. 
 --concrete production duplicateProduction
 --top::NT3 ::=

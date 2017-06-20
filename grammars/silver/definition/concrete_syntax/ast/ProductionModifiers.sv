@@ -69,9 +69,7 @@ top::SyntaxProductionModifier ::= term::String
   
   top.cstErrors := if !null(termRef) then [] 
                    else ["Unknown terminal in operator clause " ++ term];
-  top.productionOperator = if null(termRef) then nothing()
-                           else just(xmlCopperRef(head(termRef)));
-
+  top.productionOperator = just(xmlCopperRef(head(termRef)));
   top.unparses = ["oper(" ++ quoteString(term) ++ ")"];
 }
 {--
@@ -90,17 +88,14 @@ abstract production prodLayout
 top::SyntaxProductionModifier ::= terms::[String]
 {
   local termRefs :: [[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
-  local pairTerms :: [Pair<String [Decorated SyntaxDcl]>] = pairTermRefs(terms, termRefs);
 
-  -- TODO: see above, want a util function for this mass head checking, test case
+  -- TODO: a util function for this list null checking?
   top.cstErrors := if null(termRefs) then [] -- layout{} is valid, so this is not an error. 
                    else foldr(\ a::Pair<String [Decorated SyntaxDcl]> b::[String] ->
                      if !null(a.snd) then b
                      else b ++ ["Unknown terminal in layout clause " ++ a.fst],
-                   [], pairTerms);
+                   [], zipWith(pair, terms, termRefs));
 
-  --This causes a concrete syntax error in silver itself 
-  --top.customLayout = if null(termRefs) then nothing() else
   top.customLayout = just(implode("", 
                        map(xmlCopperRef, 
                          foldr(\ a::[Decorated SyntaxDcl] b::[Decorated SyntaxDcl] ->
@@ -110,14 +105,3 @@ top::SyntaxProductionModifier ::= terms::[String]
                                 
   top.unparses = ["layout(" ++ unparseStrings(terms) ++ ")"];
 }
-
--- This function is a little useless because it wont report an error if the input
--- lengths are not equal
--- This is a transfomration being used to easily reference erroneous strings
--- within maps/folds checking SyntaxDcls. 
-function pairTermRefs
-[Pair<String [Decorated SyntaxDcl]>] ::= terms::[String] refs::[[Decorated SyntaxDcl]] {
-    return if null(terms) then []
-           else pair(head(terms), head(refs)) :: pairTermRefs(tail(terms), tail(refs));
-}
- 
