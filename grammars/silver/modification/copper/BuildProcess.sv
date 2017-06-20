@@ -93,9 +93,7 @@ top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverG
 
   local err :: IO = 
     print("CST Errors while Generating Parser " ++ spec.fullName ++ ":\n" ++
-      foldr(\ a::String b::String -> 
-        a ++ "\n" ++ b, "", specCst.cstErrors) ++
-      "\n", join);
+      implode("\n", specCst.cstErrors) ++ "\n", join);
 
   local doUTD :: IO =
     print("Parser " ++ spec.fullName ++ " up to date.\n", join);
