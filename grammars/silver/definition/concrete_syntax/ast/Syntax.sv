@@ -315,17 +315,14 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
   top.cstDcls = [];
 
   local trefs::[[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
- 
-
-  --local refTermPairs::<[Decorated SyntaxDcl] String> = map(
-  --  \a::[Decorated SyntaxDcl] b::String -> pair(a,b), trefs, terms)
   
   -- this 'n' here appears to actually hold the line number of the 
   -- disambiguation, and the grammar. But we arent supposed to know this?
-  -- TODO: use "indexed" terminal string in print here
-  top.cstErrors := foldr(\a::[Decorated SyntaxDcl] b::[String] ->
-      if null(a) then ["Undefined Terminal in Disambiguation " ++ n] ++ b else b, [],
-    trefs);
+  top.cstErrors := flatMap(\p ::Pair<String [Decorated SyntaxDcl]> -> 
+      if null(p.snd) then 
+      ["Undefined Terminal in Disambiguation " ++ n ++ " " ++ p.fst] 
+      else [], 
+    zipWith(pair, terms, trefs));
 
   top.cstNormalize = [top];
 
