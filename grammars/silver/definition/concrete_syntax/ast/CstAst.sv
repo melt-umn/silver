@@ -41,7 +41,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   production startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, s2.cstEnv);
 
   top.cstErrors <- if null(startFound) then 
-                   ["Missing nonterminal " ++ startnt ++ " for parser "  ++ parsername] else [];
+                   ["Missing nonterminal " ++ startnt] else [];
 
   production univLayout :: String = implode("", map(xmlCopperRef, s2.allIgnoreTerminals));
 
