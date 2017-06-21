@@ -89,9 +89,8 @@ top::SyntaxProductionModifier ::= terms::[String]
 {
   local termRefs :: [[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
 
-  -- TODO: a function for this list null checking?
-  top.cstErrors := if null(termRefs) then [] -- layout{} is valid, so this is not an error. 
-                   else flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
+  -- TODO consider: a function for this list null checking?
+  top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
                      else ["Unknown terminal in layout clause " ++ a.fst],
                    zipWith(pair, terms, termRefs));
