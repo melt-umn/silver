@@ -11,7 +11,7 @@ top::A ::= B_t
 {
 }
 
--- Does not give concrete error
+-- Does not give concrete error?
 --concrete production rhsIsProduction
 --top::A ::= rhsMissing
 --{

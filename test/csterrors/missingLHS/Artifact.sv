@@ -2,10 +2,12 @@ grammar missingLHS;
 
 exports host;
 
-imports test:term_b;
+imports test:nonterm_b;
 
+-- This causes a cstError because this grammar does not
+-- have access to B, but does import B. 
 concrete production missingLHS
-top::B_t ::=
+top::B ::=
 {
 }
 
