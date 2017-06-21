@@ -1,9 +1,0 @@
-silver/definition/concrete_syntax/ast -
-CstAst - 1/1 Done
-ProductionModifiers - 2/2 Done
-                      + maybe an error for precedence?
-Syntax - 4/10 Done (LHS, disambiguation, rhsMissing)
-         6/10 reported other errors instead (duplicate nt, term, prod, lexer, parser, and non-syntax rhs)
-
-silver/modification/copper_mda/
-SyntaxMdaRoot - 1/1 Done

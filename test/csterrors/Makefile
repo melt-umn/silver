@@ -1,28 +1,28 @@
-all: disambTest startMissingTest prodModTest rhsTest mdaTest missingLHSTest terminalLHSTest
+rhsTest.jar: 
+	silver --clean rhs
 
-rhsTest: 
-	silver --clean --warn-all -o rhs.jar rhs
+disambTest.jar: 
+	silver --clean disamb
 
-disambTest: 
-	silver --clean --warn-all -o disamb.jar disamb
+startMissingTest.jar:
+	silver --clean startMissing
 
-startMissingTest:
-	silver --clean --warn-all -o startMissing.jar startMissing
+prodModTest.jar:
+	silver --clean prodMod
 
-prodModTest:
-	silver --clean --warn-all -o prodMod.jar prodMod
+mdaTest.jar:
+	silver --clean mda
 
-mdaTest:
-	silver --clean -o mda.jar mda
+missingLHSTest.jar:
+	silver --clean missingLHS
 
-missingLHSTest:
-	silver --clean -o missingLHS.jar missingLHS
+terminalLHSTest.jar:
+	silver --clean terminalLHS
 
-terminalLHSTest:
-	silver --clean -o terminalLHS.jar terminalLHS
-
-testfile:
-	silver --clean parsers
+testfile.jar:
+	silver --clean testfile
+	java -jar testfile.jar
+	rm -f *.jar *.xml *.html
 	
 clean:
 	rm -f *.jar *.xml *.html
