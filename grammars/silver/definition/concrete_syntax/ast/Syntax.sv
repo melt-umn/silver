@@ -182,7 +182,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
                    case head(lhsRef) of 
                    | syntaxNonterminal(_,_) -> []
                    | _ -> ["LHS of production " ++ ns.fullName ++ " is not a nonterminal"] end
-                   else ["Lookup error with LHS nonterminal " ++ ns.outputElement.typerep.typeName];
+                   else ["Lookup error with LHS nonterminal " ++ ns.outputElement.typerep.typeName ++ " of production " ++ ns.fullName];
                    
   top.cstErrors <- checkRHS(ns.fullName, map((.typerep), ns.inputElements), rhsRefs);
 
