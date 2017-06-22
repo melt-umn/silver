@@ -578,4 +578,3 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 }
 
 -- TODO: pattern variable accesses.
-

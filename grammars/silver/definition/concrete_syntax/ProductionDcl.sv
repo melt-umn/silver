@@ -1,5 +1,7 @@
 grammar silver:definition:concrete_syntax;
 
+autocopy attribute productionName :: String;
+
 concrete production concreteProductionDcl
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody
 {
@@ -8,6 +10,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
   
+  pm.productionName = fName;
   ns.signatureName = fName;
   ns.env = newScopeEnv(ns.defs, top.env);
 
@@ -22,9 +25,9 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   forwards to productionDcl('abstract', $2, id, ns, body, location=top.location);
 }
 
-nonterminal ProductionModifiers with config, location, pp, productionModifiers, errors, env; -- 0 or some
-nonterminal ProductionModifierList with config, location, pp, productionModifiers, errors, env; -- 1 or more
-nonterminal ProductionModifier with config, location, pp, productionModifiers, errors, env; -- 1
+nonterminal ProductionModifiers with config, location, pp, productionModifiers, errors, env, productionName; -- 0 or some
+nonterminal ProductionModifierList with config, location, pp, productionModifiers, errors, env, productionName; -- 1 or more
+nonterminal ProductionModifier with config, location, pp, productionModifiers, errors, env, productionName; -- 1
 
 synthesized attribute productionModifiers :: [SyntaxProductionModifier];
 

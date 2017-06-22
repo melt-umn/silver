@@ -5,7 +5,7 @@ abstract production cstCopperMdaRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Syntax  terminalPrefixes::[Pair<String String>]
 {
   -- Because there may be references between the grammars, we cannot do the
-  -- usualy normalization.
+  -- usual normalization.
   
   -- TODO: we could consider making host host-only, and ext have both...
   host.cstEnv = directBuildTree(host.cstDcls ++ ext.cstDcls);
@@ -17,17 +17,19 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   ext.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
   ext.prefixesForTerminals = host.prefixesForTerminals;
   
-  top.cstErrors := host.cstErrors ++ ext.cstErrors;
-  
   local startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, host.cstEnv);
-  -- TODO check if this is found!!
+
+  top.cstErrors := host.cstErrors ++ ext.cstErrors;
+  top.cstErrors <- if !null(startFound) then []
+                   else ["Nonterminal " ++ startnt ++ " was referenced but " ++
+                         "this grammar was not included in this parser. (Referenced as parser's starting nonterminal)"];
 
   local attribute univLayout :: String;
   univLayout = implode("", map(xmlCopperRef, host.allIgnoreTerminals)); -- er, we're ignoring ext here?
   host.univLayout = univLayout;
   ext.univLayout = univLayout;
 
-  top.xmlCopper =
+  top.xmlCopper = 
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ++
 
 "<CopperSpec xmlns=\"http://melt.cs.umn.edu/copper/xmlns\">\n" ++

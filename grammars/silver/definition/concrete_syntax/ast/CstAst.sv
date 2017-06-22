@@ -31,7 +31,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
     foldr(consSyntax, nilSyntax(), sortBy(syntaxDclLte, s.cstNormalize));
   s2.cstEnv = directBuildTree(s.cstDcls);
   s2.containingGrammar = "host";
-  s2.cstNTProds = error("TODO: make this environmnet not be decorated?"); -- TODO
+  s2.cstNTProds = error("TODO: make this environment not be decorated?"); -- TODO
   s2.prefixesForTerminals = directBuildTree(terminalPrefixes);
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.
@@ -39,7 +39,10 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   top.cstErrors := s.cstErrors;
   
   production startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, s2.cstEnv);
-  -- TODO check if this is found!!
+
+  top.cstErrors <- if !null(startFound) then []
+                   else ["Nonterminal " ++ startnt ++ " was referenced but " ++
+                         "this grammar was not included in this parser. (Referenced as parser's starting nonterminal)"];
 
   production univLayout :: String = implode("", map(xmlCopperRef, s2.allIgnoreTerminals));
 
