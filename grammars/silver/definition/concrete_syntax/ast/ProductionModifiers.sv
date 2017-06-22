@@ -1,5 +1,7 @@
 grammar silver:definition:concrete_syntax:ast;
 
+imports silver:definition:concrete_syntax only productionName;
+
 synthesized attribute productionPrecedence :: Maybe<Integer>;
 -- acode from terminal modifiers
 synthesized attribute customLayout :: Maybe<String>;
@@ -8,7 +10,7 @@ synthesized attribute productionOperator :: Maybe<String>;
 {--
  - Modifiers for productions.
  -}
-nonterminal SyntaxProductionModifiers with cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, unparses;
+nonterminal SyntaxProductionModifiers with cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, unparses, productionName;
 
 abstract production consProductionMod
 top::SyntaxProductionModifiers ::= h::SyntaxProductionModifier  t::SyntaxProductionModifiers
@@ -36,7 +38,7 @@ top::SyntaxProductionModifiers ::=
 {--
  - Modifiers for productions.
  -}
-nonterminal SyntaxProductionModifier with cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, unparses;
+nonterminal SyntaxProductionModifier with cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, unparses, productionName;
 
 aspect default production
 top::SyntaxProductionModifier ::=
@@ -68,7 +70,7 @@ top::SyntaxProductionModifier ::= term::String
   local termRef :: [Decorated SyntaxDcl] = searchEnvTree(term, top.cstEnv);
   
   top.cstErrors := if !null(termRef) then [] 
-                   else ["Unknown terminal in operator clause " ++ term];
+                   else ["Unknown terminal " ++ term ++ " in operator clause on production " ++ top.productionName];
   top.productionOperator = just(xmlCopperRef(head(termRef)));
   top.unparses = ["oper(" ++ quoteString(term) ++ ")"];
 }
@@ -89,10 +91,9 @@ top::SyntaxProductionModifier ::= terms::[String]
 {
   local termRefs :: [[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
 
-  -- TODO consider: a function for this list null checking?
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
-                     else ["Unknown terminal in layout clause " ++ a.fst],
+                     else ["Unknown terminal " ++ a.fst ++ " in layout clause on production " ++ top.productionName],
                    zipWith(pair, terms, termRefs));
 
   top.customLayout = just(implode("", map(xmlCopperRef, map(head, termRefs))));

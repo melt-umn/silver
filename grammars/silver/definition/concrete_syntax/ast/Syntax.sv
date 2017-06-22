@@ -168,6 +168,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 {
   top.sortKey = "FFF" ++ ns.fullName;
   top.cstDcls = [pair(ns.fullName, top)];
+  modifiers.productionName = ns.fullName;
   
   production lhsRef :: [Decorated SyntaxDcl] =
     searchEnvTree(ns.outputElement.typerep.typeName, top.cstEnv);
