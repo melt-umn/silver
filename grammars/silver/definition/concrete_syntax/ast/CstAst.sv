@@ -40,8 +40,9 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   
   production startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, s2.cstEnv);
 
-  top.cstErrors <- if null(startFound) then 
-                   ["Missing start nonterminal " ++ startnt] else [];
+  top.cstErrors <- if !null(startFound) then []
+                   else ["Nonterminal " ++ startnt ++ " was referenced but " ++
+                         "this grammar was not included in this parser. (Referenced as parser's starting nonterminal)"];
 
   production univLayout :: String = implode("", map(xmlCopperRef, s2.allIgnoreTerminals));
 

@@ -20,9 +20,10 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   local startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, host.cstEnv);
 
   top.cstErrors := host.cstErrors ++ ext.cstErrors;
-  top.cstErrors <- if !null(startFound) then [] 
-                   else ["Missing start nonterminal " ++ startnt];
-  
+  top.cstErrors <- if !null(startFound) then []
+                   else ["Nonterminal " ++ startnt ++ " was referenced but " ++
+                         "this grammar was not included in this parser. (Referenced as parser's starting nonterminal)"];
+
   local attribute univLayout :: String;
   univLayout = implode("", map(xmlCopperRef, host.allIgnoreTerminals)); -- er, we're ignoring ext here?
   host.univLayout = univLayout;

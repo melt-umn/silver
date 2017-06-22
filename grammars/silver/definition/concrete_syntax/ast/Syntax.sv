@@ -183,7 +183,8 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
                    case head(lhsRef) of 
                    | syntaxNonterminal(_,_) -> []
                    | _ -> ["LHS of production " ++ ns.fullName ++ " is not a nonterminal"] end
-                   else ["Lookup error with LHS nonterminal " ++ ns.outputElement.typerep.typeName ++ " of production " ++ ns.fullName];
+                   else ["Nonterminal " ++ ns.outputElement.typerep.typeName ++ " was referenced but " ++
+                         "this grammar was not included in this parser. (Referenced from LHS of production " ++ ns.fullName ++ ")"];
                    
   top.cstErrors <- checkRHS(ns.fullName, map((.typerep), ns.inputElements), rhsRefs);
 
@@ -249,8 +250,9 @@ function checkRHS
                 | syntaxTerminal(_,_,_) -> []
                 | _ -> ["parameter " ++ head(rhs).typeName ++ " of production " ++ pn ++ " is not syntax."]
                 end
-              else ["Lookup error with parameter " ++ head(rhs).typeName ++ " of production " ++ pn])
-             ++ checkRHS(pn, tail(rhs), tail(refs));
+              else ["Terminal " ++ head(rhs).typeName ++ " was referenced but " ++
+                    "this grammar was not included in this parser. (Referenced from RHS of " ++ pn ++ ")"])
+              ++ checkRHS(pn, tail(rhs), tail(refs));
 }
 
 {--
@@ -320,9 +322,9 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
   -- this 'n' here appears to actually hold the line number of the 
   -- disambiguation, and the grammar. But we arent supposed to know this?
   top.cstErrors := flatMap(\p ::Pair<String [Decorated SyntaxDcl]> -> 
-      if null(p.snd) then 
-      ["Undefined Terminal " ++ p.fst ++ " in Disambiguation " ++ n] 
-      else [], 
+      if !null(p.snd) then [] 
+      else ["Terminal " ++ p.fst ++ " was referenced but " ++
+            "this grammar was not included in this parser. (Referenced from disambiguation group " ++ n ++ ")"], 
     zipWith(pair, terms, trefs));
 
   top.cstNormalize = [top];

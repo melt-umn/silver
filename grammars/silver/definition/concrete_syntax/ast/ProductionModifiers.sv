@@ -70,7 +70,8 @@ top::SyntaxProductionModifier ::= term::String
   local termRef :: [Decorated SyntaxDcl] = searchEnvTree(term, top.cstEnv);
   
   top.cstErrors := if !null(termRef) then [] 
-                   else ["Unknown terminal " ++ term ++ " in operator clause on production " ++ top.productionName];
+                   else ["Terminal " ++ term ++ " was referenced but " ++
+                         "this grammar was not included in this parser. (Referenced from operator clause on production " ++ top.productionName ++ ")"];
   top.productionOperator = just(xmlCopperRef(head(termRef)));
   top.unparses = ["oper(" ++ quoteString(term) ++ ")"];
 }
@@ -93,7 +94,8 @@ top::SyntaxProductionModifier ::= terms::[String]
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
-                     else ["Unknown terminal " ++ a.fst ++ " in layout clause on production " ++ top.productionName],
+                     else ["Terminal " ++ a.fst ++ " was referenced but " ++
+                           "this grammar was not included in this parser. (Referenced from layout clause on production " ++ top.productionName ++ ")"],
                    zipWith(pair, terms, termRefs));
 
   top.customLayout = just(implode("", map(xmlCopperRef, map(head, termRefs))));
