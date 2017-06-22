@@ -44,22 +44,6 @@ global obj_again :: SyntaxRoot =
 equalityTest( obj_again.xmlCopper, obj.xmlCopper, String, csttests );
 equalityTest( obj_again.unparse, obj.unparse, String, csttests );
 
-
-global obj2::SyntaxRoot =
-  cstRoot("lol", "Foo",
-    foldr(consSyntax, nilSyntax(), 
-     [syntaxNonterminal(nonterminalTypeExp("Foo", []), nilSyntax()),
-      syntaxTerminal("XTerm", literalRegex("x"), nilTerminalMod()),
-      syntaxProduction(
-        namedSignature("foo", [],
-          namedSignatureElement("asdf", nonterminalTypeExp("Oops", [])), []),
-        nilProductionMod())
-     ]), []);
-
-equalityTest( obj2.cstErrors, ["Lookup error with LHS nonterminal Oops"], [String], csttests );
-
-
-
 global obj3::SyntaxRoot =
   cstRoot("lol", "Foo",
     foldr(consSyntax, nilSyntax(), [
