@@ -1,1 +1,1 @@
-run: make clean testfile.jar
+run: ./silver-compile
