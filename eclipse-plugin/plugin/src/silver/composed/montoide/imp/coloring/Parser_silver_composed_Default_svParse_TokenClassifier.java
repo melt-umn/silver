@@ -33,6 +33,7 @@ public class Parser_silver_composed_Default_svParse_TokenClassifier implements I
 		map.put("silver:definition:concrete_syntax:Operator_kwd", TokenType.silver_definition_core_font_keyword);
 		map.put("silver:definition:concrete_syntax:Precedence_kwd", TokenType.silver_definition_core_font_keyword);
 		map.put("silver:definition:concrete_syntax:Right_kwd", TokenType.silver_definition_core_font_keyword);
+		map.put("silver:definition:concrete_syntax:Jason_kwd", TokenType.silver_definition_core_font_keyword);
 		map.put("silver:definition:core:Abstract_kwd", TokenType.silver_definition_core_font_keyword);
 		map.put("silver:definition:core:And_t", TokenType.DEFAULT);
 		map.put("silver:definition:core:Annotation_kwd", TokenType.silver_definition_core_font_keyword);

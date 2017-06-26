@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
       id="silver.composed.montoide.feature"
-      label="Silver Eclipse feature"
+      label="Monto Eclipse feature"
       version="0.2.2.160819181917">
 
    <description url="http://some.user.provided.url">

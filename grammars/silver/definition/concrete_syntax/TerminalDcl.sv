@@ -8,6 +8,9 @@ terminal Left_kwd        'left'        lexer classes {KEYWORD};
 terminal Association_kwd 'association' lexer classes {KEYWORD};
 terminal Right_kwd       'right'       lexer classes {KEYWORD};
 
+-- just for fun
+terminal Jason_kwd       'jason'       lexer classes {KEYWORD};
+
 -- We actually need to reserved this due to its appearance in PRODUCTION modifiers.
 terminal Precedence_kwd  'precedence'  lexer classes {KEYWORD,RESERVED};
 

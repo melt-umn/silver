@@ -3,23 +3,23 @@
 <plugin>
 
 <extension point="org.eclipse.imp.runtime.languageDescription">
-  <language extensions="sv" description="nothing here" natureID="silver.composed.montoide.nature" language="Silver">
+  <language extensions="jmg" description="nothing here" natureID="silver.composed.montoide.nature" language="Jason">
   </language>
 </extension>
 
 <extension point="org.eclipse.imp.runtime.parser">
-  <parserWrapper class="edu.umn.cs.melt.ide.imp.services.ParseController" language="Silver">
+  <parserWrapper class="edu.umn.cs.melt.ide.imp.services.ParseController" language="Jason">
   </parserWrapper>
 </extension>
 
-<extension point="org.eclipse.core.resources.builders" id="builder" name="Silver builder">
+<extension point="org.eclipse.core.resources.builders" id="builder" name="Jason builder">
   <builder hasNature="true">
     <run class="edu.umn.cs.melt.ide.imp.builders.Builder">
     </run>
   </builder>
 </extension>
 
-<extension point="org.eclipse.core.resources.natures" id="nature" name="Silver Nature">
+<extension point="org.eclipse.core.resources.natures" id="nature" name="Jason Nature">
   <builder id="silver.composed.montoide.builder" />
   <runtime>
     <run class="edu.umn.cs.melt.ide.imp.builders.Nature">
@@ -32,17 +32,17 @@
   <perspective
       class="edu.umn.cs.melt.ide.eclipse.Perspective"
       id="silver.composed.montoide.perspective"
-      name="Silver">
+      name="Jason">
   </perspective>
 </extension>
 
-<extension point="org.eclipse.core.resources.markers" id="builder.problem" name="Silver Error">
+<extension point="org.eclipse.core.resources.markers" id="builder.problem" name="Jason Error">
   <super type="org.eclipse.core.resources.problemmarker" />
   <persistent value="true" />
 </extension>
 
 <extension point="org.eclipse.imp.runtime.tokenColorer">
-  <tokenColorer class="edu.umn.cs.melt.ide.imp.services.Colorer" language="Silver">
+  <tokenColorer class="edu.umn.cs.melt.ide.imp.services.Colorer" language="Jason">
   </tokenColorer>
 </extension>
 
@@ -50,8 +50,8 @@
   <objectContribution objectClass="org.eclipse.core.resources.IProject" adaptable="true" nameFilter="*" id="silver.composed.montoide.actions.projectmenu">
 
     <action
-        label="Enable Silver Builder"
-        tooltip="Enable the Silver builder for this project"
+        label="Enable Jason Builder"
+        tooltip="Enable the Jason builder for this project"
         id="silver.composed.montoide.actions.nature">
       <class class="edu.umn.cs.melt.ide.imp.builders.EnableNature">
         <parameter name="nature" value="silver.composed.montoide.nature" />
@@ -60,11 +60,11 @@
 
 
     <action
-        label="Export as Silver target"
-        tooltip="Export the project as Silver distributable"
+        label="Export as Jason target"
+        tooltip="Export the project as Jason distributable"
         id="silver.composed.montoide.actions.export">
       <class class="edu.umn.cs.melt.ide.imp.builders.Exporter">
-        <parameter name="name" value="Silver" />
+        <parameter name="name" value="Jason" />
       </class>
     </action>
 
@@ -75,13 +75,13 @@
 <extension point="org.eclipse.ui.newWizards">
   <category
       id="silver.composed.montoide.wizards.category"
-      name="Silver">
+      name="Jason">
   </category>
   <wizard
       category="silver.composed.montoide.wizards.category"
       class="edu.umn.cs.melt.ide.wizard.NewProjectWizard"
       id="silver.composed.montoide.wizards.newproject"
-      name="New Silver Project"
+      name="New Jason Project"
       finalPerspective="silver.composed.montoide.perspective"
       project="true">
   </wizard>
@@ -91,7 +91,7 @@
       category="silver.composed.montoide.wizards.category"
       class="edu.umn.cs.melt.ide.wizard.NewSourceFileWizard"
       id="silver.composed.montoide.wizards.newfile"
-      name="New Silver Source File">
+      name="New Jason Source File">
   </wizard>
 
 
@@ -101,7 +101,7 @@
   <page
       class="edu.umn.cs.melt.ide.eclipse.property.MultiTabPropertyPage"
       id="silver.composed.montoide.properties"
-      name="Silver">
+      name="Jason">
     <enabledWhen>
       <and>
         <instanceof value="org.eclipse.core.resources.IProject"/>
@@ -119,7 +119,7 @@
 <extension point="org.eclipse.imp.runtime.foldingUpdater">
   <foldingUpdater
       class="edu.umn.cs.melt.ide.imp.services.FoldingProvider"
-      language="Silver">
+      language="Jason">
   </foldingUpdater>
 </extension>
 
