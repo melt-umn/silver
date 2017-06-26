@@ -1,5 +1,5 @@
 
-package silver.composed.idetest.eclipse.wizard.newproject;
+package silver.composed.montoide.eclipse.wizard.newproject;
 
 import java.util.ArrayList;
 import java.util.List;

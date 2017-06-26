@@ -1,5 +1,5 @@
 
-package silver.composed.idetest.eclipse.wizard.newfile;
+package silver.composed.montoide.eclipse.property;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,7 @@ public class PropertyControlsProvider implements IPropertyControlsProvider {
     if(controls == null) {
       controls = new ArrayList<PropertyControl>();
 
-    controls.add(new TextPropertyControl(panel, "declared_grammar", "Grammar", "", true));
+    controls.add(new TextPropertyControl(panel, "grammar_to_compile", "Grammar", "", true));
 
     }
 

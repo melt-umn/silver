@@ -1,0 +1,60 @@
+<project name='silver:util:treemap' default='dist' basedir='.'>
+  <description>Generated build script for the grammar silver:util:treemap</description>
+
+  <property environment='env'/>
+  <property name='jg' location='/Users/jasongruenhagen/proj/silver/generated/'/>
+  <property name='sh' location='/Users/jasongruenhagen/proj/silver/'/>
+  <property name='bin' location='${jg}/bin'/>
+  <property name='src' location='${jg}/src'/>
+
+  <path id='lib.classpath'>
+    <pathelement location='${sh}/jars/SilverRuntime.jar' />
+    <pathelement location='${sh}/jars/CopperRuntime.jar' />
+  </path>
+
+  <path id='compile.classpath'>
+    <pathelement location='${src}' />
+    <path refid='lib.classpath'/>
+    <pathelement location='${sh}/jars/CopperCompiler.jar' />
+  </path>
+
+  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='compile.classpath'/>
+
+  <target name='copper'>
+  </target>
+
+  <target name='init'>
+    <tstamp>
+      <format property='TIME' pattern='yyyy.MM.dd.HH.mm.ss'/>
+    </tstamp>
+    <mkdir dir='${bin}'/>
+  </target>
+
+  <target name='dist' depends='jars'>
+  </target>
+
+  <target name='jars' depends='grammars'>
+    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath'>
+      <filtermapper><replacestring from=' ' to='%20' /></filtermapper>
+    </pathconvert>
+    <jar destfile='silver.util.treemap.jar' basedir='${bin}'>
+      <include name='core/*.class' />
+      <include name='core/monad/*.class' />
+      <include name='silver/util/treemap/*.class' />
+      <manifest>
+        <attribute name='Built-By' value='${user.name}' />
+        <attribute name='Implementation-Version' value='${TIME}' />
+        <attribute name='Main-Class' value='silver.util.treemap.Main' />
+        <attribute name='Class-Path' value='${man.classpath}' />
+      </manifest>
+    </jar>
+  </target>
+
+  <target name='grammars' depends='init, copper'>
+    <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false'>
+      <include name='core/*.java' />
+      <include name='core/monad/*.java' />
+      <include name='silver/util/treemap/*.java' />
+    </javac>
+  </target>
+</project>

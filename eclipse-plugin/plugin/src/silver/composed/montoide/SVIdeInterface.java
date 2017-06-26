@@ -1,5 +1,5 @@
 
-package silver.composed.idetest;
+package silver.composed.montoide;
 
 import java.io.IOException;
 import java.io.File;
@@ -38,22 +38,23 @@ public class SVIdeInterface extends SVDefault {
 
 	public SVIdeInterface() {}
 @Override
-	public String name() { return "Silver"; }
+	public String name() { return "Monto-Deciphered Language"; }
 	@Override
-	public String pluginId() { return "silver.composed.idetest"; }
+	public String pluginId() { return "silver.composed.montoide"; }
 	@Override
-	public String markerErrorName() { return "silver.composed.idetest.builder.problem"; }
+	public String markerErrorName() { return "silver.composed.montoide.builder.problem"; }
 	@Override
-	public String getNatureId() { return "silver.composed.idetest.nature"; }
+	public String getNatureId() { return "silver.composed.montoide.nature"; }
 	@Override
-	public String fileExtension() { return "sv"; }
+	public String fileExtension() { return ""; } //TODO: THIS NEEDS TO BE FIXED RIGHT AWAY
+												 // NEEDS INFORMATION FROM MONTO
 	@Override
 	public IPropertyControlsProvider getProjectProperties() {
-		return new silver.composed.idetest.eclipse.property.PropertyControlsProvider();
+		return new silver.composed.montoide.eclipse.property.PropertyControlsProvider();
 	}
 	@Override
 	public String getInitialProjectProperties() {
-		return silver.composed.idetest.eclipse.wizard.newproject.PropertyGenerator.getAll();
+		return silver.composed.montoide.eclipse.wizard.newproject.PropertyGenerator.getAll();
 	}
 	@Override
 	public IPropertyPageTab[] getPropertyTabs() {
@@ -63,7 +64,7 @@ public class SVIdeInterface extends SVDefault {
 	}
 	@Override
 	public ITokenClassifier getTokenClassifier() {
-		return new silver.composed.idetest.imp.coloring.Parser_silver_composed_Default_svParse_TokenClassifier();
+		return new silver.composed.montoide.imp.coloring.Parser_silver_composed_Default_svParse_TokenClassifier();
 	}
 	private silver.composed.Default.Parser_silver_composed_Default_svParse parser = new silver.composed.Default.Parser_silver_composed_Default_svParse();
 	@Override
@@ -77,12 +78,12 @@ public class SVIdeInterface extends SVDefault {
 
 	@Override
 	public NIOVal build(IProject project, ConsCell properties, IOToken iotoken) {
-		return (NIOVal)silver.composed.idetest.Panalyze.invoke(project, properties, iotoken);
+		return (NIOVal)silver.composed.montoide.Panalyze.invoke(project, properties, iotoken);
 	}
 
 	@Override
 	public NIOVal postbuild(IProject project, ConsCell properties, IOToken iotoken) {
-		return (NIOVal)silver.composed.idetest.Pgenerate.invoke(project, properties, iotoken);
+		return (NIOVal)silver.composed.montoide.Pgenerate.invoke(project, properties, iotoken);
 	}
 
 	@Override
@@ -129,7 +130,7 @@ public class SVIdeInterface extends SVDefault {
 
 	@Override
 	public IPropertyControlsProvider getNewFileProperties() {
-		return new silver.composed.idetest.eclipse.wizard.newfile.PropertyControlsProvider();
+		return new silver.composed.montoide.eclipse.wizard.newfile.PropertyControlsProvider();
 	}
 
 	@Override

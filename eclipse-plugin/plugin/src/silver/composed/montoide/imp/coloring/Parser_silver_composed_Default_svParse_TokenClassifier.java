@@ -1,5 +1,5 @@
 
-package silver.composed.idetest.imp.coloring;
+package silver.composed.montoide.imp.coloring;
 
 import java.util.HashMap;
 

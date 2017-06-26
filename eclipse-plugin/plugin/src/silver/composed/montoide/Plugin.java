@@ -1,5 +1,5 @@
 
-package silver.composed.idetest;
+package silver.composed.montoide;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleActivator;
