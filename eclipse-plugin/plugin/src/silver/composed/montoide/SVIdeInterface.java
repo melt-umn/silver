@@ -46,8 +46,8 @@ public class SVIdeInterface extends SVDefault {
 	@Override
 	public String getNatureId() { return "silver.composed.montoide.nature"; }
 	@Override
-	public String fileExtension() { return ""; } //TODO: THIS NEEDS TO BE FIXED RIGHT AWAY
-												 // NEEDS INFORMATION FROM MONTO
+	public String fileExtension() { return "jmg"; } //TODO: THIS NEEDS TO BE FIXED RIGHT AWAY
+												 //         NEEDS INFORMATION FROM MONTO
 	@Override
 	public IPropertyControlsProvider getProjectProperties() {
 		return new silver.composed.montoide.eclipse.property.PropertyControlsProvider();
