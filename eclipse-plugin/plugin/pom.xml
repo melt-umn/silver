@@ -1,13 +1,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>silver.composed.idetest</groupId>
-  <artifactId>silver.composed.idetest</artifactId>
+  <groupId>silver.composed.montoide</groupId>
+  <artifactId>silver.composed.montoide</artifactId>
   <version>0.2.2.160819181917</version>
   <packaging>eclipse-plugin</packaging>
   <name>Silver Eclipse plugin</name>
   
   <parent>
-    <groupId>silver.composed.idetest</groupId>
+    <groupId>silver.composed.montoide</groupId>
     <artifactId>parent</artifactId>
     <version>0.2.2</version>
     <relativePath>../</relativePath>

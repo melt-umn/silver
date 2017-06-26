@@ -3,7 +3,7 @@
 <plugin>
 
 <extension point="org.eclipse.imp.runtime.languageDescription">
-  <language extensions="sv" description="nothing here" natureID="silver.composed.idetest.nature" language="Silver">
+  <language extensions="sv" description="nothing here" natureID="silver.composed.montoide.nature" language="Silver">
   </language>
 </extension>
 
@@ -20,10 +20,10 @@
 </extension>
 
 <extension point="org.eclipse.core.resources.natures" id="nature" name="Silver Nature">
-  <builder id="silver.composed.idetest.builder" />
+  <builder id="silver.composed.montoide.builder" />
   <runtime>
     <run class="edu.umn.cs.melt.ide.imp.builders.Nature">
-      <parameter name="builder" value="silver.composed.idetest.builder" />
+      <parameter name="builder" value="silver.composed.montoide.builder" />
     </run>
   </runtime>
 </extension>
@@ -31,7 +31,7 @@
 <extension point="org.eclipse.ui.perspectives">
   <perspective
       class="edu.umn.cs.melt.ide.eclipse.Perspective"
-      id="silver.composed.idetest.perspective"
+      id="silver.composed.montoide.perspective"
       name="Silver">
   </perspective>
 </extension>
@@ -47,14 +47,14 @@
 </extension>
 
 <extension point="org.eclipse.ui.popupMenus">
-  <objectContribution objectClass="org.eclipse.core.resources.IProject" adaptable="true" nameFilter="*" id="silver.composed.idetest.actions.projectmenu">
+  <objectContribution objectClass="org.eclipse.core.resources.IProject" adaptable="true" nameFilter="*" id="silver.composed.montoide.actions.projectmenu">
 
     <action
         label="Enable Silver Builder"
         tooltip="Enable the Silver builder for this project"
-        id="silver.composed.idetest.actions.nature">
+        id="silver.composed.montoide.actions.nature">
       <class class="edu.umn.cs.melt.ide.imp.builders.EnableNature">
-        <parameter name="nature" value="silver.composed.idetest.nature" />
+        <parameter name="nature" value="silver.composed.montoide.nature" />
       </class>
     </action>
 
@@ -62,7 +62,7 @@
     <action
         label="Export as Silver target"
         tooltip="Export the project as Silver distributable"
-        id="silver.composed.idetest.actions.export">
+        id="silver.composed.montoide.actions.export">
       <class class="edu.umn.cs.melt.ide.imp.builders.Exporter">
         <parameter name="name" value="Silver" />
       </class>
@@ -74,23 +74,23 @@
 
 <extension point="org.eclipse.ui.newWizards">
   <category
-      id="silver.composed.idetest.wizards.category"
+      id="silver.composed.montoide.wizards.category"
       name="Silver">
   </category>
   <wizard
-      category="silver.composed.idetest.wizards.category"
+      category="silver.composed.montoide.wizards.category"
       class="edu.umn.cs.melt.ide.wizard.NewProjectWizard"
-      id="silver.composed.idetest.wizards.newproject"
+      id="silver.composed.montoide.wizards.newproject"
       name="New Silver Project"
-      finalPerspective="silver.composed.idetest.perspective"
+      finalPerspective="silver.composed.montoide.perspective"
       project="true">
   </wizard>
   
 
   <wizard
-      category="silver.composed.idetest.wizards.category"
+      category="silver.composed.montoide.wizards.category"
       class="edu.umn.cs.melt.ide.wizard.NewSourceFileWizard"
-      id="silver.composed.idetest.wizards.newfile"
+      id="silver.composed.montoide.wizards.newfile"
       name="New Silver Source File">
   </wizard>
 
@@ -100,14 +100,14 @@
 <extension point="org.eclipse.ui.propertyPages">
   <page
       class="edu.umn.cs.melt.ide.eclipse.property.MultiTabPropertyPage"
-      id="silver.composed.idetest.properties"
+      id="silver.composed.montoide.properties"
       name="Silver">
     <enabledWhen>
       <and>
         <instanceof value="org.eclipse.core.resources.IProject"/>
         <adapt type="org.eclipse.core.resources.IResource">
           <test property="org.eclipse.core.resources.projectNature"
-                value="silver.composed.idetest.nature">
+                value="silver.composed.montoide.nature">
           </test>
         </adapt>
       </and>

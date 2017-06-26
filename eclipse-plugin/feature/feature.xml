@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="silver.composed.idetest.feature"
+      id="silver.composed.montoide.feature"
       label="Silver Eclipse feature"
       version="0.2.2.160819181917">
 
@@ -18,7 +18,7 @@
 
    <!-- The IDE plugin's id is the symbolic name in manifest file -->
    <plugin
-         id="silver.composed.idetest"
+         id="silver.composed.montoide"
          download-size="0"
          install-size="0"
          version="0.0.0"

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/silver.composed.idetest.feature_0.2.2.jar" id="silver.composed.idetest.feature" version="0.2.2.160819181917">
+   <feature url="features/silver.composed.montoide.feature_0.2.2.jar" id="silver.composed.montoide.feature" version="0.2.2.160819181917">
       <category name="main_category"/>
    </feature>
    <category-def name="main_category" label="Main Category"/>
