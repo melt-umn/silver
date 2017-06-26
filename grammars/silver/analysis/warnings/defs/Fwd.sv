@@ -32,7 +32,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     end;
 
   top.errors <-
-    if null(body.errors ++ ns.errors{-TODO-})
+    if null(body.errors ++ ns.errors)
     && (top.config.warnAll || top.config.warnFwd)
     -- If this production does not forward
     && null(body.uniqueSignificantExpression)
