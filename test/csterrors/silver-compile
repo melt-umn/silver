@@ -10,6 +10,12 @@ silver --clean mda | grep "nonterm_b:B" > /dev/null || ((count++))
 silver --clean missingLHS | grep "nonterm_b:B" > /dev/null || ((count++))
 # terminalLHS doesn't contain a reference to B_t or B
 silver --clean terminalLHS | grep "terminalLHS:terminalLHS" > /dev/null || ((count++))
+silver --clean terminalSubmit | grep "B_t" > /dev/null || ((count++))
+silver --clean terminalDominate | grep "B_t" > /dev/null || ((count++))
+silver --clean terminalLexer | grep "lexer_b:B" > /dev/null || ((count++))
+silver --clean lexerSubmit | grep "B_t" > /dev/null || ((count++))
+silver --clean lexerDominate | grep "B_t" > /dev/null || ((count++))
+
 
 rm -f build.xml
 
