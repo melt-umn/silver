@@ -77,9 +77,7 @@ top::TermPrecList ::= h::QName t::TermPrecList
              then h.pp
              else h.pp ++ ", " ++ t.pp;
 
-
-  production attribute fName :: String;
-  fName = if null(h.lookupType.dcls) then h.lookupLexerClass.dcl.fullName else h.lookupType.dcl.fullName;
+  production fName::String = if null(h.lookupType.dcls) then h.lookupLexerClass.dcl.fullName else h.lookupType.dcl.fullName;
 
   top.precTermList = [fName] ++ t.precTermList ;
 
