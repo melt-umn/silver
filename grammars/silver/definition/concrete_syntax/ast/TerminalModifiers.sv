@@ -108,7 +108,7 @@ top::SyntaxTerminalModifier ::= direction::String
   top.unparses = ["assoc(" ++ quoteString(direction) ++ ")"];
 }
 {--
- - The terminals lexer classes.
+ - The terminal's lexer classes.
  -}
 abstract production termClasses
 top::SyntaxTerminalModifier ::= cls::[String]

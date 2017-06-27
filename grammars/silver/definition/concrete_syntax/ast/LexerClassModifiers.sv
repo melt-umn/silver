@@ -42,7 +42,7 @@ top::SyntaxLexerClassModifier ::=
   --top.cstErrors := [];
   top.dominatesXML = "";
   top.submitsXML = "";
-  --top.unparses -- do not default unparses
+  --top.unparses -- don't default unparses
 }
 
 {--

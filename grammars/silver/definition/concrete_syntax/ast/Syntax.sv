@@ -115,7 +115,6 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
   top.cstErrors <- if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with terminal " ++ n];
   
-  -- Consider: makeTerminalName(n)?
   modifiers.terminalName = n;
 
   top.cstNormalize = [top];
