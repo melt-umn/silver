@@ -116,7 +116,11 @@ top::SyntaxTerminalModifier ::= cls::[String]
   local clsRefsL :: [[Decorated SyntaxDcl]] = lookupStrings(cls, top.cstEnv);
   production clsRefs :: [Decorated SyntaxDcl] = map(head, clsRefsL);
 
-  top.cstErrors := []; -- TODO error checking!
+  top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
+                     if !null(a.snd) then []
+                     else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
+                           "this grammar was not included in this parser. (Referenced from lexer class on terminal " ++ top.terminalName ++")"], 
+                   zipWith(pair, cls, clsRefsL)); 
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
   top.dominatesXML = implode("", map((.classDomContribs), clsRefs));
   top.submitsXML = implode("", map((.classSubContribs), clsRefs));
