@@ -89,6 +89,11 @@ Location ::=
 function locationLte
 Boolean ::= l1::Location l2::Location
 {
-  return l1.filename < l2.filename || (l1.filename == l2.filename && (l1.index < l2.index));
+  -- TODO: We could probaly just compare based on filename and index
+  -- For the moment, though, use line & column instead.
+  return l1.filename < l2.filename || (l1.filename == l2.filename &&
+    (l1.line < l2.line || (l1.line == l2.line &&
+    (l1.column < l2.column))));
 }
+
 
