@@ -111,9 +111,11 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
 {
   top.sortKey = "CCC" ++ n;
   top.cstDcls = [pair(n, top)];
-  -- TODO get errors from modifiers
-  top.cstErrors := if length(searchEnvTree(n, top.cstEnv)) == 1 then []
+  top.cstErrors := modifiers.cstErrors;
+  top.cstErrors <- if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with terminal " ++ n];
+  
+  modifiers.terminalName = n;
 
   top.cstNormalize = [top];
   top.allIgnoreTerminals = if modifiers.ignored then [top] else [];
