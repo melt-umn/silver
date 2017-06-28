@@ -51,7 +51,7 @@ top::TerminalModifier ::=
   top.lexerClasses = [];
 }
 
-nonterminal TermPrecList with config, grammarName, pp, location, precTermList, defs, errors, env;
+nonterminal TermPrecList with config, grammarName, pp, location, precTermList, errors, env;
 
 synthesized attribute precTermList :: [String];
 
@@ -81,10 +81,6 @@ top::TermPrecList ::= h::QName t::TermPrecList
 
   top.precTermList = [fName] ++ t.precTermList ;
 
-  -- This is just for disambiguation groups. TODO: remove and make it separate concrete syntax!
-  top.defs = if null(h.lookupType.dcls) then t.defs
-             else pluckTermDef(top.grammarName, h.location, h.lookupType.dcl.fullName) :: t.defs;
-
   top.errors := t.errors;
   
   -- Since we're looking it up in two ways, do the errors ourselves
@@ -99,7 +95,6 @@ abstract production termPrecListNull
 top::TermPrecList ::=
 {
   top.precTermList = [];
-  top.defs = [];
   top.pp = "";
   top.errors := [];
 }
