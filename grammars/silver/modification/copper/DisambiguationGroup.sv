@@ -49,7 +49,10 @@ top::TermList ::= h::QName t::TermList
   production fName::String = h.lookupType.dcl.fullName;
 
   top.termList = [fName] ++ t.termList ;
-  top.defs = pluckTermDef(top.grammarName, h.location, fName) :: t.defs;
+  
+  -- Itd be nice if we didnt need this guard
+  top.defs = if null(h.lookupType.dcls) then t.defs 
+             else pluckTermDef(top.grammarName, h.location, fName) :: t.defs;
   top.errors := t.errors;
   
   -- Since were looking it up in two ways, do the errors ourselves
