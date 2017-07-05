@@ -132,7 +132,7 @@ function getTypeDclInScope
 {
   return searchEnvScope(search, head(e.typeTree));
 }
-function getTypeDcl
+function getTypeDcl 
 [DclInfo] ::= search::String e::Decorated Env
 {
   return searchEnv(search, e.typeTree);

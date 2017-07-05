@@ -16,7 +16,7 @@ synthesized attribute types :: [TypeExp];
 synthesized attribute lexicalTypeVariables :: [String];
 -- freeVariables also occurs on TypeList, and should be IN ORDER
 
--- These attributes are used if we're using the TypeList as type variables-only.
+-- These attributes are used if were using the TypeList as type variables-only.
 synthesized attribute errorsTyVars :: [Message] with ++;
 -- A new environment, with the type variables in this list appearing bound
 inherited attribute initialEnv :: Decorated Env;
@@ -113,11 +113,16 @@ top::Type ::= tv::IdLower_t
 {
   top.pp = tv.lexeme;
   
-  local attribute hack::QNameLookup;
-  hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme, top.location);
+  local hack :: QNameLookup = 
+    customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme, top.location);
   
   top.typerep = hack.typerep;
   top.errors := hack.errors;
+
+  top.errors <- case top.typerep of 
+      | terminalTypeExp("recursing") -> [err(top.location, "Recursive type declaration '" ++ tv.lexeme ++ "'.")]
+      | _ -> []
+    end;
 
   top.lexicalTypeVariables = [tv.lexeme];
 }

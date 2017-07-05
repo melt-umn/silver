@@ -2,7 +2,7 @@ grammar silver:modification:typedecl;
 
 imports silver:definition:core;
 imports silver:definition:type;
-imports silver:definition:type:syntax;
+imports silver:definition:type:syntax; 
 imports silver:definition:env;
 
 terminal Type_t 'type' lexer classes {KEYWORD};
@@ -21,8 +21,12 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeList '=' te::Type ';'
   
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
-  te.env = tl.envBindingTyVars;
-  
+  --te.env = tl.envBindingTyVars;
+
+
+  -- Recursive definition check
+  te.env = newScopeEnv([typeAliasDef(top.grammarName, id.location, fName, [], terminalTypeExp("recursing"))],tl.envBindingTyVars);
+
   -- Redefinition check of the name
   top.errors <- 
        if length(getTypeDclAll(fName, top.env)) > 1 

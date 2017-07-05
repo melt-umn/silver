@@ -49,7 +49,7 @@ synthesized attribute lookupValue :: Decorated QNameLookup occurs on QName;
 synthesized attribute lookupType :: Decorated QNameLookup occurs on QName;
 synthesized attribute lookupAttribute :: Decorated QNameLookup occurs on QName;
 
-abstract production customLookup
+abstract production customLookup 
 top::QNameLookup ::= kindOfLookup::String dcls::[DclInfo] name::String l::Location 
 {
   top.dcls = dcls;
