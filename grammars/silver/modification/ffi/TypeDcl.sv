@@ -9,7 +9,7 @@ imports silver:util;
 imports silver:modification:typedecl;
 
 -- TODO: this should provide some sort of translation type
--- but right now, we dont. Phooey.
+-- but right now, we don't. Phooey.
 
 concrete production ffiTypeDcl
 top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeList 'foreign' ';'
@@ -23,7 +23,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeList 'foreign' ';'
 
   top.errors := tl.errors ++ tl.errorsTyVars;
   
-  -- Put the variables listed on the rhs in the environment FOR TL ONLY, so theyre all "declared"
+  -- Put the variables listed on the rhs in the environment FOR TL ONLY, so they're all "declared"
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
   
