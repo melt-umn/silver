@@ -4,12 +4,12 @@ grammar silver:driver:util;
 Quick guide to graph closure computations:
 (in order from smallest set to largest)
 
-exports | triggers | true deps | options | mentioned | USE:
-   X         X                                       | computeDependencies
-   X         X           X                           | expandAllDeps
-   X         X                      X                | computeOptionalDeps (boolean: isExportedBy)
-   X         X           X          X                | completeDependencyClosure
-                                              X      | mentionedGrammars (in RootSpec.sv)
+exports | triggers | imports | options | mentioned | USE:
+   X         X                                     | computeDependencies
+   X         X                    X                | computeOptionalDeps (boolean: isExportedBy)
+   X         X         X                           | expandAllDeps
+   X         X         X          X                | completeDependencyClosure
+                                            X      | mentionedGrammars (in RootSpec.sv)
 
 Use cases:
 
@@ -34,6 +34,14 @@ function isExportedBy
 Boolean ::= target::String  sources::[String]  e::EnvTree<Decorated RootSpec>
 {
   return contains(target, computeOptionalDeps(sources, e));
+}
+{--
+ - Alternate for the "reference set" heuristic: ignore options, but otherwise follow exports
+ -}
+function isStrictlyExportedBy
+Boolean ::= target::String  sources::[String]  e::EnvTree<Decorated RootSpec>
+{
+  return contains(target, computeDependencies(sources, e));
 }
 
 
