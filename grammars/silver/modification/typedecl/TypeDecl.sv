@@ -21,11 +21,15 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeList '=' te::Type ';'
   
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
-  --te.env = tl.envBindingTyVars;
 
 
   -- Recursive definition check
-  te.env = newScopeEnv([typeAliasDef(top.grammarName, id.location, fName, [], terminalTypeExp("recursing"))],tl.envBindingTyVars);
+  -- this is safe, if perhaps in the wrong place, because terminals 
+  -- cannot be lowercase. Having a specific error terminal with a lowercase 
+  -- name then won't cause name clashes.
+  te.env = newScopeEnv(
+    [typeAliasDef(top.grammarName, id.location, fName, [], terminalTypeExp("recursing"))],
+    tl.envBindingTyVars);
 
   -- Redefinition check of the name
   top.errors <- 

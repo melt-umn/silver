@@ -103,7 +103,10 @@ top::Type ::= q::QNameType tl::BracketedOptTypeList
 
   top.errors <- if length(tl.types) != length(q.lookupType.dclBoundVars)
                 then [err(top.location, q.pp ++ " has " ++ toString(length(q.lookupType.dclBoundVars)) ++ " type variables, but there are " ++ toString(length(tl.types)) ++ " supplied here.")]
-                else [];
+                else case q.lookupType.typerep of 
+                  | terminalTypeExp("recursing") -> [err(top.location, "Recursive type declaration '" ++ q.name ++ "'.")]
+                  | _ -> []
+                end;
 
   top.typerep = performSubstitution(q.lookupType.typerep, zipVarsAndTypesIntoSubstitution(q.lookupType.dclBoundVars, tl.types));
 }

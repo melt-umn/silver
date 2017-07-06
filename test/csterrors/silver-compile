@@ -16,6 +16,8 @@ silver --clean terminalLexer | grep "lexer_b:B" > /dev/null || ((count++))
 silver --clean lexerSubmit | grep "B_t" > /dev/null || ((count++))
 silver --clean lexerDominate | grep "B_t" > /dev/null || ((count++))
 
+silver --clean recTy | grep "RecErr" > /dev/null || ((count++))
+
 
 rm -f build.xml
 
