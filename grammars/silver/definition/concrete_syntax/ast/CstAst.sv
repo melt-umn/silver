@@ -31,7 +31,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
     foldr(consSyntax, nilSyntax(), sortBy(syntaxDclLte, s.cstNormalize));
   s2.cstEnv = directBuildTree(s.cstDcls);
   s2.containingGrammar = "host";
-  s2.cstNTProds = error("TODO: make this environmnet not be decorated?"); -- TODO
+  s2.cstNTProds = error("TODO: make this environment not be decorated?"); -- TODO
   s2.prefixesForTerminals = directBuildTree(terminalPrefixes);
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.
@@ -39,7 +39,10 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   top.cstErrors := s.cstErrors;
   
   production startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, s2.cstEnv);
-  -- TODO check if this is found!!
+
+  top.cstErrors <- if !null(startFound) then []
+                   else ["Nonterminal " ++ startnt ++ " was referenced but " ++
+                         "this grammar was not included in this parser. (Referenced as parser's starting nonterminal)"];
 
   production univLayout :: String = implode("", map(xmlCopperRef, s2.allIgnoreTerminals));
 
@@ -61,6 +64,19 @@ s"""    <StartLayout>${univLayout}</StartLayout>
 --"    <ClassName>SingleParser</ClassName>\n" ++
 -- This stuff gets dumped onto the outer class:
 --"    <ClassAuxiliaryCode><Code><![CDATA[  ]]></Code></ClassAuxiliaryCode>\n" ++
+
+s"""    <ClassAuxiliaryCode><Code><![CDATA[
+          protected List<common.Terminal> tokenList = null;
+
+          public void reset() {
+            tokenList = new ArrayList<common.Terminal>();
+          }
+
+          public List<common.Terminal> getTokens() {
+            return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
+          }
+        ]]></Code></ClassAuxiliaryCode>
+""" ++
 -- If not otherwise specified. We always specify.
 --"    <DefaultProductionCode><Code><![CDATA[  ]]></Code></DefaultProductionCode>\n" ++
 -- If not otherwise specified. We should do this, maybe...
@@ -73,6 +89,20 @@ s"""    <StartLayout>${univLayout}</StartLayout>
 --"    <Preamble><Code><![CDATA[  ]]></Code></Preamble>\n" ++
 -- This stuff gets dumped onto the semantic action container class:
 --"    <SemanticActionAuxiliaryCode><Code><![CDATA[  ]]></Code></SemanticActionAuxiliaryCode>\n" ++
+
+s"""    <ParserInitCode>
+      <Code><![CDATA[
+        reset();
+      ]]></Code>
+    </ParserInitCode>
+    <Preamble>
+<Code><![CDATA[
+import java.util.ArrayList;
+import java.util.List;
+]]></Code>
+    </Preamble>
+""" ++
+
 s"""  </Parser>
 
   <Grammar id="${s2.containingGrammar}">

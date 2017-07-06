@@ -39,7 +39,8 @@ synthesized attribute flowTypeVertexes::[FlowVertex];
  -
  - @param prod  The full name of this production
  - @param lhsNt  The full name of the nonterminal this production constructs
- - @param flowTypeVertexes  The vertexes that we track the flow types of. (Syns and optionally fwd)
+ - @param flowTypeVertexes  The vertexes that we are inferring the flow types of.
+ -                          (Syns and optionally fwd, minus those that are specified.)
  - @param graph  The edges within this production
  - @param suspectEdges  Edges that are not permitted to affect their OWN flow types (but perhaps some unknown other flowtypes)
  - @param stitchPoints  Places where current flow types need grafting to this graph to yield a full flow graph
@@ -62,7 +63,7 @@ top::ProductionGraph ::=
   top.stitchedGraph = 
     let newEdges :: [Pair<FlowVertex FlowVertex>] =
           filter(edgeIsNew(_, graph),
-            foldr(append, [], map(stitchEdgesFor(_, top.flowTypes, top.prodGraphs), stitchPoints)))
+            flatMap(stitchEdgesFor(_, top.flowTypes, top.prodGraphs), stitchPoints))
     in let repaired :: g:Graph<FlowVertex> =
              repairClosure(newEdges, graph)
     in if null(newEdges) then top else
@@ -80,13 +81,21 @@ top::ProductionGraph ::=
   top.cullSuspect = 
     -- this potentially introduces the same edge twice, but that's a nonissue
     let newEdges :: [Pair<FlowVertex FlowVertex>] =
-          foldr(append, [], 
-            map(findAdmissibleEdges(_, graph, findFlowType(lhsNt, top.flowTypes)), suspectEdges))
+          flatMap(findAdmissibleEdges(_, graph, findFlowType(lhsNt, top.flowTypes)), suspectEdges)
     in let repaired :: g:Graph<FlowVertex> =
              repairClosure(newEdges, graph)
     in if null(newEdges) then top else
          productionGraph(prod, lhsNt, flowTypeVertexes, repaired, suspectEdges, stitchPoints)
     end end;
+}
+
+-- construct a production graph for each production
+function computeAllProductionGraphs
+[ProductionGraph] ::= prods::[DclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+{
+  return if null(prods) then []
+  else constructProductionGraph(head(prods), searchEnvTree(head(prods).fullName, prodTree), flowEnv, realEnv) ::
+    computeAllProductionGraphs(tail(prods), prodTree, flowEnv, realEnv);
 }
 
 {--
@@ -100,10 +109,12 @@ top::ProductionGraph ::=
  - 3. All inherited attributes not supplied to forward have copies.
  - 4. All autocopy attributes not supplied to childred have copies.
  -
- - @param prod  The full name of the production
+ - @param dcl  The DclInfo of the production
  - @param defs  The set of defs from prodGraphContribs
  - @param flowEnv  A full flow environment
+ -         (used to discover what explicit equations exist, find info on nonterminals)
  - @param realEnv  A full real environment
+ -         (used to discover attribute occurrences, whether inh/syn/auto)
  - @return A fixed up graph.
  -}
 function constructProductionGraph
@@ -126,7 +137,7 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
     
   -- Normal edges!
   local normalEdges :: [Pair<FlowVertex FlowVertex>] =
-    foldr(append, [], map((.flowEdges), defs));
+    flatMap((.flowEdges), defs);
   
   -- Insert implicit equations.
   local fixedEdges :: [Pair<FlowVertex FlowVertex>] =
@@ -145,7 +156,7 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   
   -- No implicit equations here, just keep track.
   local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
-    foldr(append, [], map((.suspectFlowEdges), defs)) ++
+    flatMap((.suspectFlowEdges), defs) ++
     -- If it's forwarding .snd is attributes not known at forwarding time. If it's non, then actually .snd is all attributes. Ignore.
     if nonForwarding then [] else addFwdSynEqs(prod, synsBySuspicion.snd, flowEnv);
 
@@ -154,15 +165,44 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
     rhsStitchPoints(dcl.namedSignature.inputElements) ++
     localStitchPoints(nt, defs);
   
-  local flowTypeVertexes :: [FlowVertex] =
+  local flowTypeVertexesOverall :: [FlowVertex] =
     (if nonForwarding then [] else [forwardEqVertex()]) ++
       map(lhsSynVertex, syns);
+  local flowTypeSpecs :: [String] = getSpecifiedSynsForNt(nt, flowEnv);
+  
+  local flowTypeVertexes :: [FlowVertex] =
+    filter(\x::FlowVertex -> !contains(x.flowTypeName, flowTypeSpecs), flowTypeVertexesOverall);
   
   local initialGraph :: g:Graph<FlowVertex> =
     createFlowGraph(fixedEdges);
 
   return productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 }
+
+function constructFunctionGraph
+ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv
+{
+  local defs :: [FlowDef] = getGraphContribsFor(ns.fullName, flowEnv);
+
+  -- Normal edges!
+  local normalEdges :: [Pair<FlowVertex FlowVertex>] =
+    flatMap((.flowEdges), defs);
+  
+  -- Basicaly just <- to local collections...
+  local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
+    flatMap((.suspectFlowEdges), defs);
+    
+  local initialGraph :: g:Graph<FlowVertex> =
+    createFlowGraph(normalEdges);
+
+  -- RHS and locals and forward.
+  local stitchPoints :: [StitchPoint] =
+    rhsStitchPoints(ns.inputElements) ++
+    localStitchPoints(error("functions have no LHS, no forwarding defs"), defs);
+
+  return productionGraph(ns.fullName, "::nolhs", [], initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+}
+
 
 {--
  - Constructs "phantom graphs" to enforce 'ft(syn) >= ft(fwd)'.
@@ -182,13 +222,14 @@ ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated E
 
   -- The phantom edges: ext syn -> fwd.eq
   local phantomEdges :: [Pair<FlowVertex FlowVertex>] =
+    -- apparently this alias may sometimes be used. we should get rid of this by making good use of vertex types
+    pair(lhsSynVertex("forward"), forwardEqVertex()) ::
     map(getPhantomEdge, getExtSynsFor(nt, flowEnv));
   
   -- The stitch point: oddball. LHS stitch point. Normally, the LHS is not.
   local stitchPoints :: [StitchPoint] = [nonterminalStitchPoint(nt, lhsVertexType)];
     
-  -- TODO: use of lhsSynVertex("forward") here is part of a hack.
-  local flowTypeVertexes :: [FlowVertex] = [lhsSynVertex("forward")] ++ map(lhsSynVertex, syns);
+  local flowTypeVertexes :: [FlowVertex] = [forwardEqVertex()] ++ map(lhsSynVertex, syns);
   local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(phantomEdges);
   local suspectEdges :: [Pair<FlowVertex FlowVertex>] = [];
 
@@ -199,7 +240,7 @@ function getPhantomEdge
 Pair<FlowVertex FlowVertex> ::= f::FlowDef
 {
   return case f of
-  | extSynFlowDef(_, at) -> pair(lhsSynVertex(at), lhsSynVertex("forward")) -- TODO: this is a hack and "accidentally" works. Fix is to use VertexTypes more. Basically, what matters here is that both this and forwardEqVertex() will have a flowTypeName of just "forward"
+  | extSynFlowDef(_, at) -> pair(lhsSynVertex(at), forwardEqVertex())
   end;
 }
 
@@ -300,14 +341,18 @@ function rhsStitchPoints
 
 ---- End helpers for figuring our stitch points --------------------------------
 
-function getFst
-a ::= v::Pair<a b>
-{ return v.fst; }
-
 function prodGraphToEnv
 Pair<String ProductionGraph> ::= p::ProductionGraph
 {
   return pair(p.prod, p);
+}
+function isOccursInherited
+Boolean ::= occs::DclInfo  e::Decorated Env
+{
+  return case getAttrDcl(occs.attrOccurring, e) of
+         | at :: _ -> at.isInherited
+         | _ -> false
+         end;
 }
 
 ---- Begin Suspect edge handling -----------------------------------------------

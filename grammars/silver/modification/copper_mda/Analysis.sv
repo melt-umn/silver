@@ -20,11 +20,15 @@ top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ParserComp
   
   top.moduleNames = m.moduleNames;
   
-  local origgram :: Decorated RootSpec =
-    head(searchEnvTree(orig.lookupValue.dcl.sourceGrammar, top.compiledGrammars));
+  -- It might be unsafe to access this if we have orig.lookupValue errors
+  --local origgram :: Decorated RootSpec = 
+  --  if !null(orig.lookupValue.errors) then decorated errorRootSpec([], "", "", 0) 
+  --  else head(searchEnvTree(orig.lookupValue.dcl.sourceGrammar, top.compiledGrammars));
   
-  local spec :: [ParserSpec] =
-    findSpec(orig.lookupValue.fullName, origgram.parserSpecs);
+  local spec :: [ParserSpec] = 
+    if !null(orig.lookupValue.errors) then []
+    else findSpec(orig.lookupValue.fullName, 
+      head(searchEnvTree(orig.lookupValue.dcl.sourceGrammar, top.compiledGrammars)).parserSpecs);
   
   top.errors <- if !null(orig.lookupValue.errors) || !null(spec) then []
                 else [err(orig.location, orig.name ++ " is not a parser.")];

@@ -6,6 +6,8 @@ grammar silver:definition:core;
 nonterminal AGDcls with config, grammarName, env, location, pp, errors, defs, moduleNames, compiledGrammars, grammarDependencies;
 nonterminal AGDcl  with config, grammarName, env, location, pp, errors, defs, moduleNames, compiledGrammars, grammarDependencies;
 
+flowtype forward {grammarName, env} on AGDcl;
+
 concrete production nilAGDcls
 top::AGDcls ::=
 {
@@ -32,7 +34,6 @@ top::AGDcls ::= h::AGDcl t::AGDcls
 {--
  - A semantically meaningless declaration. Does nothing.
  - Used for: (1) 'nil' counterpart to appendAgDcl
- - (2) annotations or other meaningless AGDcls.
  -}
 abstract production emptyAGDcl
 top::AGDcl ::=
@@ -47,7 +48,6 @@ top::AGDcl ::= e::[Message]
 {
   top.pp = s"{- Errors:\n${foldMessages(e)} -}";
   top.errors := e;
-  forwards to emptyAGDcl(location=top.location);
 }
 
 {--

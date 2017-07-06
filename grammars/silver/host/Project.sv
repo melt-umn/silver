@@ -5,6 +5,7 @@ exports silver:definition:core;
 exports silver:definition:concrete_syntax;
 exports silver:definition:type:syntax;
 exports silver:definition:regex;
+exports silver:definition:flow:syntax;
 
 -- symbols
 exports silver:analysis:typechecking:core;

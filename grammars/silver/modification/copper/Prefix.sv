@@ -145,7 +145,7 @@ terminal Prefer_t 'prefer' lexer classes {KEYWORD, RESERVED};
 terminal Over_t   'over'   lexer classes {KEYWORD}; -- not RESERVED
 
 concrete production disambiguateParserComponent
-top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermPrecList ';'
+top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
 {
   top.pp = "prefer " ++ t.pp ++ " over " ++ ts.pp;
   top.errors := t.lookupType.errors ++ ts.errors;
@@ -154,7 +154,7 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermPrecList ';'
   top.liftedAGDcls =
     disambiguationGroupDcl(
       'disambiguate',
-      termPrecListCons(t, ',', ts, location=top.location),
+      termListCons(t, ',', ts, location=top.location),
       actionCode_c(
         '{',
         productionStmtsSnoc(

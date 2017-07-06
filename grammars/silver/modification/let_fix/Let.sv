@@ -56,9 +56,9 @@ top::Expr ::= la::AssignExpr  e::Expr
   e.env = newScopeEnv(la.defs, top.env);
 }
 
-nonterminal AssignExpr with location, config, grammarName, env, compiledGrammars, signature, 
+nonterminal AssignExpr with location, config, grammarName, env, compiledGrammars, 
                             pp, defs, errors, upSubst, 
-                            downSubst, finalSubst, blockContext;
+                            downSubst, finalSubst, frame;
 
 abstract production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr

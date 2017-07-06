@@ -25,11 +25,10 @@ attribute flowVertexInfo occurs on Expr;
 function inhsForTakingRef
 [String] ::= nt::String  flowEnv::Decorated FlowEnv
 {
-  -- TODO nasty expression
-  local ds :: [FlowDef] = getInhsForNtRef(nt, flowEnv);
-  local inhs :: [String] = if null(ds) then [] else case head(ds) of ntRefFlowDef(nt, inhs) -> inhs end;
-
-  return inhs;
+  return case getInhsForNtRef(nt, flowEnv) of
+         | ntRefFlowDef(_, inhs) :: _ -> inhs
+         | _ -> []
+         end;
 }
 
 function depsForTakingRef
@@ -245,7 +244,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- This means only the deps in 'e', see above conceptual transformation to see why.
   -- N.B. 'inh.flowDefs' will emit 'localInhEq's for this anonymous flow vertex.
   top.flowDefs = e.flowDefs ++ inh.flowDefs ++
-    [anonEq(top.signature.fullName, inh.decorationVertex, performSubstitution(e.typerep, top.finalSubst).typeName, top.location, e.flowDeps)];
+    [anonEq(top.frame.fullName, inh.decorationVertex, performSubstitution(e.typerep, top.finalSubst).typeName, top.location, e.flowDeps)];
 
   -- Now, we represent ourselves to anything that might use us specially
   -- as though we were a reference to this anonymous local
@@ -266,7 +265,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
   top.flowDefs = e1.flowDefs ++ 
     if !null(lhs.errors) then [] else
     case lhs of
-    | exprLhsExpr(q) -> [anonInhEq(top.signature.fullName, top.decorationVertex, q.attrDcl.fullName, e1.flowDeps)]
+    | exprLhsExpr(q) -> [anonInhEq(top.frame.fullName, top.decorationVertex, q.attrDcl.fullName, e1.flowDeps)]
     end;
     
 }
@@ -360,8 +359,6 @@ aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
   top.flowDeps = e1.flowDeps ++ e2.flowDeps ++ e3.flowDeps;
-  -- TODO: it's possible we could create an anon flow vertex type here
-  -- that duplicates all vertexes to both 'then' and 'else'...
   top.flowDefs = e1.flowDefs ++ e2.flowDefs ++ e3.flowDefs;
 }
 aspect production intConst
@@ -682,8 +679,6 @@ top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
     | noVertex() -> e.flowDeps
     end;
 
-  -- TODO: again, like 'if', we could be doing a kind of union flowVertexInfo
-  -- thingy here.
   top.flowDefs = e.flowDefs ++ pr.flowDefs ++ f.flowDefs;
 }
 

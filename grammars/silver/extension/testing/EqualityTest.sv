@@ -37,7 +37,7 @@ ag::AGDcl ::= kwd::'equalityTest'
 
   ag.errors <-
     if !errCheck1.typeerror then []
-    else [err(value.location, "Type of first and second experssions in equalityTest do not match. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
+    else [err(value.location, "Type of first and second expressions in equalityTest do not match. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
 
   ag.errors <-
     if !errCheck1.typeerror then []
@@ -63,10 +63,8 @@ ag::AGDcl ::= kwd::'equalityTest'
 
   -- TODO: one of those type error checks above is redundant
 
-  value.signature = bogusNamedSignature();
-  expected.signature = bogusNamedSignature();
-  value.blockContext = globalExprContext();
-  expected.blockContext = globalExprContext();
+  value.frame = globalExprContext();
+  expected.frame = globalExprContext();
   
 
   ag.errors <- forward.errors;

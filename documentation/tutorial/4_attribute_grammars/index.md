@@ -69,7 +69,7 @@ not used by Copper in generating the parser. The abstract syntax of `dc` can be 
 Abstract productions are indicated by the modifier `abstract`. These productions define values of
 `pp` and an integer valued `value` attribute that computes the value of the expression.
 
-Figure 4 shows some declarations of the higher-order attributes `ast_Exp`r and `ast_Root`,
+Figure 4 shows some declarations of the higher-order attributes `ast_Expr` and `ast_Root`,
 some of the concrete productions with their definitions of these attributes. For example, on `add_c`
 we see that the abstract syntax tree from addition is built using the abstract production `add` and
 the abstract syntax trees of the two expression children; the operator symbol is not present in the

@@ -38,3 +38,27 @@ Pair<[a] [b]> ::= l::[Either<a b>]
   end;
 }
 
+{--
+ - Returns the left value, or the default if there is no left value.
+ -}
+function fromLeft
+a ::= e::Either<a b> o::a
+{
+  return case e of
+  | left(a) -> a
+  | right(_) -> o
+  end;
+}
+
+{--
+ - Returns the right value, or the default if there is no right value.
+ -}
+function fromRight
+b ::= e::Either<a b> o::b
+{
+  return case e of
+  | left(_) -> o
+  | right(b) -> b
+  end;
+}
+

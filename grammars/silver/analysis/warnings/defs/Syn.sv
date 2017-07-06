@@ -31,7 +31,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
       getAttrsOn(namedSig.outputElement.typerep.typeName, top.env));
 
   top.errors <-
-    if null(body.errors ++ ns.errors{-TODO-})
+    if null(body.errors ++ ns.errors)
     && (top.config.warnAll || top.config.warnMissingSyn)
     && null(body.uniqueSignificantExpression) -- no forward
     then raiseMissingAttrs(top.location, fName, attrs, top.flowEnv)

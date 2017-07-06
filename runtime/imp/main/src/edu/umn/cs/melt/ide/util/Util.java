@@ -117,7 +117,7 @@ public final class Util {
 		IProject project = (IProject)_project;
 		NMaybe result;
 		try {
-			result = new Pjust(ConsCellCollection.fromIterator(Arrays.asList(project.members()).iterator()));
+			result = new Pjust(ConsCellCollection.fromList(Arrays.asList(project.members())));
 		} catch (CoreException e) {
 			// TODO dunno?
 			e.printStackTrace();
@@ -212,7 +212,7 @@ public final class Util {
 		try {
 			if(resource instanceof IFolder) {
 				IFolder f = (IFolder) resource;
-				result = ConsCellCollection.fromIterator(Arrays.asList(f.members()).iterator());
+				result = ConsCellCollection.fromList(Arrays.asList(f.members()));
 			} else {
 				result = ConsCell.nil;
 			}

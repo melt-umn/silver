@@ -96,6 +96,16 @@ equalityTest ( toIntSafe("2147483647").fromJust, 2147483647,
 equalityTest ( toIntSafe("2147483648").isJust, false,
                Boolean, core_tests ) ;
 
+-- sconcat
+equalityTest ( sconcat(["12", "34"]), "1234", String, core_tests ) ;
+equalityTest ( sconcat([]), "", String, core_tests ) ;
+
+-- sflatMap
+function dupItemString
+String ::= i::Integer
+{ return toString(i) ++ toString(i); }
+
+equalityTest ( sflatMap(dupItemString, [1, 2]), "1122", String, core_tests ) ;
 
 
 -- from lib:extcore!

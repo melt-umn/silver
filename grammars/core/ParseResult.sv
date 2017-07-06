@@ -4,21 +4,33 @@ grammar core;
  - true if parsing successfully produced a syntax tree. false if a parse error occurred.
  -}
 synthesized attribute parseSuccess :: Boolean;
+
+{--
+ - The ParseError which parseErrors is generated from.
+ -}
+synthesized attribute parseError :: ParseError;
+
 {--
  - A string containing the parse errors reported by copper.  The format is unspecified, yet.
  -}
 synthesized attribute parseErrors :: String;
+
 {--
  - The parse tree, if parsing was successful.
  -}
 synthesized attribute parseTree<a> :: a;
 
 {--
+ - A list of terminals parsed.
+ -}
+synthesized attribute parseTerminals :: [TerminalDescriptor];
+
+{--
  - A container type for the result of calling a parser.
  -
  - @param a  The start nonterminal type.
  -}
-nonterminal ParseResult<a> with parseSuccess, parseErrors, parseTree<a>;
+nonterminal ParseResult<a> with parseSuccess, parseError, parseErrors, parseTree<a>, parseTerminals;
 
 {--
  - Parse failure constructor.
@@ -26,11 +38,13 @@ nonterminal ParseResult<a> with parseSuccess, parseErrors, parseTree<a>;
  - @param e  The error string reported by the parser.
  -}
 abstract production parseFailed
-top::ParseResult<a> ::= e::ParseError
+top::ParseResult<a> ::= e::ParseError terminals::[TerminalDescriptor]
 {
   top.parseSuccess = false;
+  top.parseError = e;
   top.parseErrors = e.parseErrors;
   top.parseTree = error("Demanded parse tree when parsing failed! With errors: " ++ e.parseErrors);
+  top.parseTerminals = terminals;
 }
 
 {--
@@ -39,11 +53,13 @@ top::ParseResult<a> ::= e::ParseError
  - @param t  The syntax tree returned by the parser.
  -}
 abstract production parseSucceeded
-top::ParseResult<a> ::= t::a
+top::ParseResult<a> ::= t::a terminals::[TerminalDescriptor]
 {
   top.parseSuccess = true;
+  top.parseError = error("Demanded parseError, but parsing succeeded!");
   top.parseErrors = error("Demanded parse errors, but parsing succeeded!");
   top.parseTree = t;
+  top.parseTerminals = terminals;
 }
 
 

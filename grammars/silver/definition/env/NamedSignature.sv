@@ -11,8 +11,8 @@ synthesized attribute inputNames :: [String];
 synthesized attribute elementName :: String;
 synthesized attribute toNamedArgType :: NamedArgType;
 
-
 -- inputTypes from the types grammar.
+
 
 -- TODO Make named signatures... not named.
 -- It seems to be largely redundant information.
@@ -41,19 +41,8 @@ top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatur
 }
 
 {--
- - Represents the signature of something without parameters.
- - Used for action code. i.e. Stuff that uses ProductionStmt, but
- - isn't in a production/function.
- -}
-abstract production namedNamedSignature
-top::NamedSignature ::= fn::String
-{
-  top.unparse = error("Bogus signatures should never make it into interface files!");
-  forwards to namedSignature(fn, [], bogusNamedSignatureElement(), []);
-}
-
-{--
- - Used ONLY when an error occurs. e.g. aspecting a non-existant production.
+ - Used when an error occurs. e.g. aspecting a non-existant production.
+ - Or, in contexts that have no valid signature, which maybe we should do something about...
  -}
 abstract production bogusNamedSignature
 top::NamedSignature ::= 

@@ -14,18 +14,44 @@ imports silver:util:raw:treeset as set;
 
 import silver:util only rem;
 
-
 -- Help some type signatures suck a little less
 type ProdName = String;
 type NtName = String;
 
--- construct a production graph for each production
-function computeAllProductionGraphs
-[ProductionGraph] ::= prods::[DclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+-- from explicit specifications
+function computeInitialFlowTypes
+EnvTree<FlowType> ::= flowEnv::Decorated FlowDefs
 {
-  return if null(prods) then []
-  else constructProductionGraph(head(prods), searchEnvTree(head(prods).fullName, prodTree), flowEnv, realEnv) ::
-    computeAllProductionGraphs(tail(prods), prodTree, flowEnv, realEnv);
+  local specs :: [Pair<NtName [Pair<String [String]>]>] =
+    ntListCoalesce(groupBy(ntListEq, sortBy(ntListLte, flowEnv.specContribs)));
+  
+  return rtm:add(map(initialFlowType, specs), rtm:empty(compareString));
+}
+function initialFlowType
+Pair<NtName FlowType> ::= x::Pair<NtName [Pair<String [String]>]>
+{
+  return pair(x.fst, g:add(flatMap(toFlatEdges, x.snd), g:empty(compareString)));
+}
+function ntListLte
+Boolean ::= a::Pair<NtName a>  b::Pair<NtName b>
+{
+  return a.fst <= b.fst;
+}
+function ntListEq
+Boolean ::= a::Pair<NtName a>  b::Pair<NtName b>
+{
+  return a.fst == b.fst;
+}
+function ntListCoalesce
+[Pair<NtName [Pair<String [String]>]>] ::= l::[[Pair<NtName Pair<String [String]>>]]
+{
+  return if null(l) then []
+  else pair(head(head(l)).fst, map(snd, head(l))) :: ntListCoalesce(tail(l));
+}
+function toFlatEdges
+[Pair<String String>] ::= x::Pair<String [String]>
+{
+  return map(pair(x.fst, _), x.snd);
 }
 
 
@@ -80,7 +106,9 @@ Pair<Boolean
     findBrandNewEdges(synExpansion, currentFlowType);
     
   local newFlowType :: FlowType =
-    g:add(brandNewEdges, currentFlowType); -- TODO: faster?
+    g:add(brandNewEdges, currentFlowType);
+  -- TODO: we could just always "add everything unconditionally" but we also need to know if there were
+  -- any new additions... so we'd need something added to graph to support that.
   
   local recurse :: Pair<Boolean Pair<[ProductionGraph] EnvTree<FlowType>>> =
     solveFlowTypes(tail(graphs), prodEnv, rtm:update(graph.lhsNt, [newFlowType], ntEnv));
@@ -96,21 +124,21 @@ function findBrandNewEdges
   local syn :: String = head(candidates).fst;
   local inhs :: [String] = head(candidates).snd;
   
-  local newinhs :: [String] = rem(inhs, set:toList(g:edgesFrom(syn, currentFlowType))); -- TODO faster?
+  -- TODO: we might take '[Pair<String Set<String>>]' insteadof [String] and gain speed?
+  local newinhs :: [String] = rem(inhs, set:toList(g:edgesFrom(syn, currentFlowType)));
   
   local newEdges :: [Pair<String String>] = map(pair(syn, _), newinhs);
   
   return if null(candidates) then [] else newEdges ++ findBrandNewEdges(tail(candidates), currentFlowType);
 }
 
-
-
-
 -- Expand 'ver' using 'graph', then filter down to just those in 'inhs'
 function expandVertexFilterTo
 Pair<String [String]> ::= ver::FlowVertex  graph::ProductionGraph
 {
-  return pair(ver.flowTypeName, filterLhsInh(set:toList(graph.edgeMap(ver)))); -- TODO: faster? using sets
+  -- TODO: we might return 'Pair<String Set<String>>' instead of [String] and gain speed?
+  -- Have set:filter, don't have "set:map" yet... (FlowVertex->String)
+  return pair(ver.flowTypeName, filterLhsInh(set:toList(graph.edgeMap(ver))));
 }
 
 {--
@@ -123,7 +151,7 @@ function filterLhsInh
 }
 
 {--
- - Used to filter down to just the inherited attributes
+ - Used to filter down to just the inherited attributes (on the LHS)
  - 
  - @param f  The flow vertex in question
  - @param l  The current set of inherited attribute dependencies

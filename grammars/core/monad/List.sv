@@ -3,7 +3,7 @@ grammar core:monad;
 function bindList
 [b] ::= l::[a] fn::([b] ::= a)
 {
-  return foldr(append, [], map(fn, l));
+  return flatMap(fn, l);
 }
 
 function returnList

@@ -54,4 +54,4 @@ local result::IOMonad<Integer> = do (bindIO, returnIO) {
 ```
 
 ## TODO
-I'm not including the documentation for spesific functions here, yet.  This seems like it should be generated?  
+I'm not including the documentation for specific functions here, yet.  This seems like it should be generated?  

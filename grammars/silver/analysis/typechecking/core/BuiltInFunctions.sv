@@ -50,7 +50,7 @@ top::Expr ::= 'toString' '(' e1::Expr ')'
   top.errors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceConvertible
        then []
-       else [err(top.location, "Operand to toString must be concrete types String, Integer, or Float.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operand to toString must be concrete types String, Integer, Float, or Boolean.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 aspect production newFunction

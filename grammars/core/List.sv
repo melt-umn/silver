@@ -27,10 +27,6 @@ function map
  - @param l  The list to fold
  - @return  The result of the function applied right-associatively to the list.
  -}
-
-{@comment
-  This is a test comment.
-@}
 function foldr
 b ::= f::(b ::= a b)  i::b  l::[a]
 {
@@ -187,6 +183,31 @@ a ::= lst::[a]
 {
   return if null(tail(lst)) then head(lst)
          else last(tail(lst));
+}
+
+{--
+ - Concatenates a list of lists.
+ -
+ - @param lst  A list containing lists
+ - @return  A flattened list
+ -}
+function concat
+[a] ::= lst::[[a]]
+{
+  return foldr(append, [], lst);
+}
+
+{--
+ - Map a function over a list, and then conatenates the results together.
+ -
+ - @param f  A function to apply to each element of a list, returning a list.
+ - @param lst  A list
+ - @return  The combined list
+ -}
+function flatMap
+[b] ::= f::([b] ::= a)  lst::[a]
+{
+  return concat(map(f, lst));
 }
 
 function drop
@@ -352,7 +373,7 @@ function intersectBy
 function unionsBy
 [a] ::= eq::(Boolean ::= a a) ss::[[a]]
 {
-  return nubBy(eq, foldr(append, [], ss));
+  return nubBy(eq, concat(ss));
 }
 
 --------------------------------------------------------------------------------

@@ -1,3 +1,4 @@
+import silver:testing;
 
 ------------------------------------- Number of parameters to type constructors
 terminal ATerminalType 'doesnotmatter';
@@ -67,6 +68,35 @@ wrongCode "Operands to == must be the same type. Instead they are String and Int
 wrongCode "repeats type variable names" {
  type TypeTwo<a a> = Integer;
 }
+
+----------------------------------------- toString implementations
+
+equalityTest(toString("foo"), "foo",   String, silver_tests);
+equalityTest(toString(0),     "0",     String, silver_tests);
+equalityTest(toString(0.0),   "0.0",   String, silver_tests);
+equalityTest(toString(true),  "true",  String, silver_tests);
+equalityTest(toString(false), "false", String, silver_tests);
+
+type MyType3 = Pair<Integer String>;
+
+wrongCode "Operand to toString must be concrete types String, Integer, Float, or Boolean.  Instead it is of type core:Pair<Integer String>" {
+  global m3t :: MyType3 = pair(0, "");
+  equalityTest(toString(m3t), "<this fails>", String, silver_tests);
+}
+
+-------------------------------------- String to/from chars
+
+global stfcTestString :: String = "hello";
+global stfcTestChars :: [Integer] =
+  [ 104
+  , 101
+  , 108
+  , 108
+  , 111
+  ];
+
+equalityTest(charsToString(stfcTestChars), stfcTestString, String, silver_tests);
+equalityTest(stringToChars(stfcTestString), stfcTestChars, [Integer], silver_tests);
 
 ----------------------------------------- Foreign type decls
 

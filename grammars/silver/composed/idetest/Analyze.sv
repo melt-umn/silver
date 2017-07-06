@@ -106,8 +106,8 @@ function getIdeMessages
 {
   return map(rewriteMessage(path, _), 
     if !null(spec.parsingErrors)
-    then spec.parsingErrors
-    else spec.errors);
+    then flatMap(snd, spec.parsingErrors)
+    else flatMap(snd, spec.grammarErrors));
 }
 
 function rewriteMessage

@@ -8,12 +8,13 @@ synthesized attribute marking :: Boolean;
 synthesized attribute acode :: String;
 synthesized attribute opPrecedence :: Maybe<Integer>;
 synthesized attribute opAssociation :: Maybe<String>; -- TODO type?
+autocopy attribute terminalName :: String;
 
 
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, dominatesXML, submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, unparses, marking;
+nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, dominatesXML, submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, unparses, marking, terminalName;
 
 abstract production consTerminalMod
 top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalModifiers
@@ -50,7 +51,7 @@ top::SyntaxTerminalModifiers ::=
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, dominatesXML, submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, unparses, marking;
+nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, dominatesXML, submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, unparses, marking, terminalName;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
@@ -115,7 +116,11 @@ top::SyntaxTerminalModifier ::= cls::[String]
   local clsRefsL :: [[Decorated SyntaxDcl]] = lookupStrings(cls, top.cstEnv);
   production clsRefs :: [Decorated SyntaxDcl] = map(head, clsRefsL);
 
-  top.cstErrors := []; -- TODO error checking!
+  top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
+                     if !null(a.snd) then []
+                     else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
+                           "this grammar was not included in this parser. (Referenced from lexer class on terminal " ++ top.terminalName ++")"], 
+                   zipWith(pair, cls, clsRefsL)); 
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
   top.dominatesXML = implode("", map((.classDomContribs), clsRefs));
   top.submitsXML = implode("", map((.classSubContribs), clsRefs));
@@ -130,7 +135,11 @@ top::SyntaxTerminalModifier ::= sub::[String]
 {
   production subRefs :: [[Decorated SyntaxDcl]] = lookupStrings(sub, top.cstEnv);
 
-  top.cstErrors := []; -- TODO error checking!
+  top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
+                     if !null(a.snd) then []
+                     else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
+                           "this grammar was not included in this parser. (Referenced from submit clause on terminal " ++ top.terminalName ++")"], 
+                   zipWith(pair, sub, subRefs)); 
   top.submitsXML = implode("", map(xmlCopperRef, map(head, subRefs)));
   top.unparses = ["sub(" ++ unparseStrings(sub) ++ ")"];
 }
@@ -142,7 +151,11 @@ top::SyntaxTerminalModifier ::= dom::[String]
 {
   production domRefs :: [[Decorated SyntaxDcl]] = lookupStrings(dom, top.cstEnv);
 
-  top.cstErrors := []; -- TODO error checking!
+  top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
+                     if !null(a.snd) then []
+                     else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
+                           "this grammar was not included in this parser. (Referenced from dominates clause on terminal " ++ top.terminalName ++")"],
+                   zipWith(pair, dom, domRefs)); 
   top.dominatesXML = implode("", map(xmlCopperRef, map(head, domRefs)));
   top.unparses = ["dom(" ++ unparseStrings(dom) ++ ")"];
 }

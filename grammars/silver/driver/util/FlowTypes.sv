@@ -12,29 +12,33 @@ aspect production compilation
 top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::BuildEnv
 {
   -- aggregate all flow def information
-  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), foldr(append, [], map((.flowDefs), g.grammarList)));
+  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), flatMap((.flowDefs), g.grammarList));
   local allFlowEnv :: Decorated FlowEnv = fromFlowDefs(allFlowDefs);
   
   -- Look up tree for production info
   local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlowDefs.prodGraphContribs);
   
-  -- hack to allow us to look up certain info... TODO: maybe hack?
-  local allRealDefs :: [Def] = foldr(append, [], map((.defs), g.grammarList));
+  -- We need to know about all attributes and occurences on nonterminals.
+  -- It's possible (likely) we could do better than using the overall env here.
+  local allRealDefs :: [Def] = flatMap((.defs), g.grammarList);
   local allRealEnv :: Decorated Env = toEnv(allRealDefs);
   
   -- List of all productions
   local allProds :: [DclInfo] = foldr(consDefs, nilDefs(), allRealDefs).prodDclList;
   local allNts :: [String] = nubBy(stringEq, map(getProdNt, allProds));
   
-  -- Fix the production graph information from the flow defs TODO: some of this maybe should be fixed somehow
+  -- Construct production graphs.
   production prodGraph :: [ProductionGraph] = 
     computeAllProductionGraphs(allProds, prodTree, allFlowEnv, allRealEnv) ++
       -- Add in phantom graphs
       map(constructPhantomProductionGraph(_, allFlowEnv, allRealEnv), allNts);
   
+  local initialFT :: EnvTree<FlowType> =
+    computeInitialFlowTypes(allFlowDefs);
+  
   -- Now, solve for flow types!!
   local flowTypes1 :: Pair<[ProductionGraph] EnvTree<FlowType>> =
-    fullySolveFlowTypes(prodGraph, rtm:empty(compareString));
+    fullySolveFlowTypes(prodGraph, initialFT);
   
   production flowTypes :: EnvTree<FlowType> = flowTypes1.snd;
   production finalGraphs :: [ProductionGraph] = flowTypes1.fst;

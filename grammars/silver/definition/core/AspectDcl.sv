@@ -9,6 +9,9 @@ nonterminal AspectFunctionLHS with config, grammarName, env, location, pp, error
 nonterminal AspectRHS with config, grammarName, env, location, pp, errors, defs, inputElements, realSignature;
 nonterminal AspectRHSElem with config, grammarName, env, location, pp, errors, defs, realSignature, inputElements, deterministicCount;
 
+flowtype forward {realSignature, env} on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS;
+flowtype forward {deterministicCount, realSignature, env} on AspectRHSElem;
+
 {--
  - The signature elements from the fun/produciton being aspected.
  -}
@@ -48,8 +51,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
              else [];
 
   body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
-  body.signature = namedSig;
-  body.blockContext = aspectProductionContext();
+  body.frame = aspectProductionContext(namedSig, myFlowGraph); -- graph from flow:env
 }
 
 concrete production aspectFunctionDcl
@@ -85,8 +87,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
              else [];
 
   body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
-  body.signature = namedSig;
-  body.blockContext = aspectFunctionContext();
+  body.frame = aspectFunctionContext(namedSig, myFlowGraph); -- graph from flow:env
 }
 
 concrete production aspectProductionSignature

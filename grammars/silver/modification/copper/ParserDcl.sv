@@ -15,9 +15,13 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
 
   top.errors := t.errors ++ m.errors ++ liftedAGDcls.errors;
 
-  -- TODO: dunno, should we keep this separate? For now, masquerade as a function.
+  -- Right now parsers masquerade as functions. This is probably fine.
   -- Only bug is that you can aspect it, but it's pointless to do so, you can't affect anything.
   top.defs = [funDef(top.grammarName, n.location, namedSig)];
+  
+  -- TODO: I think it's inappropriate that we don't bubble up these declarations to the top level.
+  -- However, this necessitates a re-design of how we do 'prefix separators' which are a def we
+  -- need to be scoped to this parser only, not to be overheard by other parsers in this grammar.
   
   production liftedAGDcls :: AGDcl = m.liftedAGDcls;
   liftedAGDcls.config = top.config;
@@ -133,7 +137,9 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
   -- We generate the copper files in BuildProcess instead of here, so that they
   -- are regenerated when a dependency changes.
   
-  top.genFiles :=
+  -- TODO: As a hack, even though we don't propogates defs up to the top level, we
+  -- do generate files for the lifted dcl. Needed to generate terminal class files.
+  top.genFiles := liftedAGDcls.genFiles ++
     [pair(className ++ ".java",
           generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult))];
   

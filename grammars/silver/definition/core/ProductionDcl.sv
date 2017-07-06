@@ -5,6 +5,9 @@ nonterminal ProductionLHS with config, grammarName, env, location, pp, errors, d
 nonterminal ProductionRHS with config, grammarName, env, location, pp, errors, defs, inputElements;
 nonterminal ProductionRHSElem with config, grammarName, env, location, pp, errors, defs, inputElements, deterministicCount;
 
+flowtype forward {env} on ProductionSignature, ProductionLHS, ProductionRHS;
+flowtype forward {deterministicCount, env} on ProductionRHSElem;
+
 {--
  - Used to help give names to children, when names are omitted.
  -}
@@ -53,8 +56,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   prodAtts = defsFromPADcls(getProdAttrs(fName, top.env), namedSig);
 
   body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
-  body.signature = namedSig;
-  body.blockContext = productionContext();
+  body.frame = productionContext(namedSig, myFlowGraph); -- graph from flow:env
 }
 
 concrete production productionSignature

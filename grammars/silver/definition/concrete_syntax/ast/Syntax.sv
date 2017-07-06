@@ -1,5 +1,7 @@
 grammar silver:definition:concrete_syntax:ast;
 
+imports silver:translation:java:core only makeTerminalName;
+
 -- For looking syntax elements up by name.
 synthesized attribute cstDcls :: [Pair<String Decorated SyntaxDcl>];
 autocopy attribute cstEnv :: EnvTree<Decorated SyntaxDcl>;
@@ -90,7 +92,7 @@ top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModi
        else [syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), myProds))]
     end;
   
-  top.xmlCopper = 
+  top.xmlCopper =
     "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
       "    <PP>" ++ t.typeName ++ "</PP>\n" ++
       "    <Type><![CDATA[" ++ makeNTClassName(t.typeName) ++ "]]></Type>\n" ++
@@ -109,9 +111,11 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
 {
   top.sortKey = "CCC" ++ n;
   top.cstDcls = [pair(n, top)];
-  -- TODO get errors from modifiers
-  top.cstErrors := if length(searchEnvTree(n, top.cstEnv)) == 1 then []
+  top.cstErrors := modifiers.cstErrors;
+  top.cstErrors <- if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with terminal " ++ n];
+  
+  modifiers.terminalName = n;
 
   top.cstNormalize = [top];
   top.allIgnoreTerminals = if modifiers.ignored then [top] else [];
@@ -130,9 +134,10 @@ top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
     "      " ++ convertAssocNXML(modifiers.opAssociation) ++ "\n" ++ -- TODO
     "    </Operator>\n"
     else "") ++
-    "    <Type>common.TerminalRecord</Type>\n" ++ 
+    "    <Type>" ++ makeTerminalName(n) ++ "</Type>\n" ++
     "    <Code><![CDATA[\n" ++ 
-    "RESULT = new common.TerminalRecord(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
+    "RESULT = new " ++ makeTerminalName(n) ++ "(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
+    "  tokenList.add(RESULT);\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++ 
     "    <InClasses>" ++ modifiers.lexerclassesXML ++ "</InClasses>\n" ++ 
@@ -165,20 +170,23 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 {
   top.sortKey = "FFF" ++ ns.fullName;
   top.cstDcls = [pair(ns.fullName, top)];
+  modifiers.productionName = ns.fullName;
   
   production lhsRef :: [Decorated SyntaxDcl] =
     searchEnvTree(ns.outputElement.typerep.typeName, top.cstEnv);
   production rhsRefs :: [[Decorated SyntaxDcl]] =
     lookupStrings(map((.typeName), map((.typerep), ns.inputElements)), top.cstEnv);
 
-  -- TODO modifiers errors
-  top.cstErrors := if length(searchEnvTree(ns.fullName, top.cstEnv)) == 1 then []
+  top.cstErrors := modifiers.cstErrors;
+  top.cstErrors <- if length(searchEnvTree(ns.fullName, top.cstEnv)) == 1 then []
                    else ["Name conflict with production " ++ ns.fullName];
+                   
   top.cstErrors <- if length(lhsRef) == 1 then
                    case head(lhsRef) of 
                    | syntaxNonterminal(_,_) -> []
                    | _ -> ["LHS of production " ++ ns.fullName ++ " is not a nonterminal"] end
-                   else ["Lookup error with LHS nonterminal " ++ ns.outputElement.typerep.typeName];
+                   else ["Nonterminal " ++ ns.outputElement.typerep.typeName ++ " was referenced but " ++
+                         "this grammar was not included in this parser. (Referenced from LHS of production " ++ ns.fullName ++ ")"];
                    
   top.cstErrors <- checkRHS(ns.fullName, map((.typerep), ns.inputElements), rhsRefs);
 
@@ -225,7 +233,7 @@ String ::= ns::Decorated NamedSignature
   return if null(ns.namedInputElements) then ""
   else if length(ns.namedInputElements) > 1 then pfx ++ "multiple_annotation_problem" -- TODO
   else if head(ns.namedInputElements).elementName != "core:location" then pfx ++ "unknown_annotation_type_problem"
-  else pfx ++ "common.TerminalRecord.createSpan(_children, virtualLocation, (int)_pos.getPos())";
+  else pfx ++ "common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos())";
 }
 
 
@@ -244,8 +252,9 @@ function checkRHS
                 | syntaxTerminal(_,_,_) -> []
                 | _ -> ["parameter " ++ head(rhs).typeName ++ " of production " ++ pn ++ " is not syntax."]
                 end
-              else ["Lookup error with parameter " ++ head(rhs).typeName ++ " of production " ++ pn])
-             ++ checkRHS(pn, tail(rhs), tail(refs));
+              else ["Terminal " ++ head(rhs).typeName ++ " was referenced but " ++
+                    "this grammar was not included in this parser. (Referenced from RHS of " ++ pn ++ ")"])
+              ++ checkRHS(pn, tail(rhs), tail(refs));
 }
 
 {--
@@ -287,7 +296,7 @@ top::SyntaxDcl ::= n::String ty::TypeExp acode::String
 
   top.cstNormalize = [top];
 
-  top.xmlCopper =
+  top.xmlCopper = 
     "  <ParserAttribute id=\"" ++ makeCopperName(n) ++ "\">\n" ++
     "    <Type><![CDATA[" ++ ty.transType ++ "]]></Type>\n" ++
     "    <Code><![CDATA[\n" ++
@@ -309,10 +318,16 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
 {
   top.sortKey = "DDD" ++ n;
   top.cstDcls = [];
-  top.cstErrors := [];
-  local attribute trefs :: [[Decorated SyntaxDcl]];
-  trefs = lookupStrings(terms, top.cstEnv);
-  -- TODO: check terminal
+
+  local trefs::[[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
+  
+  -- this 'n' here appears to actually hold the line number of the 
+  -- disambiguation, and the grammar. But we arent supposed to know this?
+  top.cstErrors := flatMap(\p ::Pair<String [Decorated SyntaxDcl]> -> 
+      if !null(p.snd) then [] 
+      else ["Terminal " ++ p.fst ++ " was referenced but " ++
+            "this grammar was not included in this parser. (Referenced from disambiguation group " ++ n ++ ")"], 
+    zipWith(pair, terms, trefs));
 
   top.cstNormalize = [top];
 

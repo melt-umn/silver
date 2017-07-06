@@ -9,7 +9,6 @@ import core;
 import lib:monto;
 import lib:errors;
 import lib:extcore;
-import lib:langproc;
 import lib:monto;
 import lib:system;
 import lib:xml;

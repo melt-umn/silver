@@ -264,6 +264,34 @@ IOVal<Boolean> ::= s::String i::IO
 } foreign {
   "java" : return "new core.Pioval(%i%, common.Util.deleteFile(%s%.toString()))";
 }
+{--
+ - Delete a set of files.
+ -
+ - @param s  The list of paths to files to delete.
+ - @param i  The "before" world-state token.
+ - @return  true if all files are deleted successfully.  false otherwise.
+ -}
+function deleteFiles
+IOVal<Boolean> ::= s::[String] i::IO
+{
+  return error("Not Yet Implemented: deleteFiles");
+} foreign {
+  "java" : return "new core.Pioval(%i%, common.Util.deleteFiles(%s%))";
+}
+{--
+ - Empty a directory of all normal files (i.e. leaving subdirectories alone)
+ -
+ - @param s  The path to the directory to empty
+ - @param i  The "before" world-state token.
+ - @return  true if contents are deleted successfully.  false otherwise.
+ -}
+function deleteDirFiles
+IOVal<Boolean> ::= s::String i::IO
+{
+  return error("Not Yet Implemented: deleteDirFiles");
+} foreign {
+  "java" : return "new core.Pioval(%i%, common.Util.deleteDirFiles(%s%.toString()))";
+}
 
 {--
  - Delete a non-empty directory and all subdirectories and files.
@@ -308,6 +336,20 @@ IO ::= file::String i::IO
   return error("Not Yet Implemented: touchFile");
 } foreign {
   "java" : return "common.Util.io(%i%, common.Util.touchFile(%file%.toString()))";
+}
+{--
+ - Update a set of files' modification time to the current time.
+ - 
+ - @param files  The list of files to update the modification time of.
+ - @param i  The IO token.
+ - @return The IO token. Errors are suppressed.
+ -}
+function touchFiles
+IO ::= files::[String] i::IO
+{
+  return error("Not Yet Implemented: touchFiles");
+} foreign {
+  "java" : return "common.Util.io(%i%, common.Util.touchFiles(%files%))";
 }
 
 ------ IO Misc.

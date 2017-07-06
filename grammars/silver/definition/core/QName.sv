@@ -82,7 +82,7 @@ function dclinfo2possibility
 String ::= dcl::DclInfo
 {
   -- TODO: perhaps some way of including types, when they are relevant (attributes, values)
-  return "\t" ++ dcl.fullName ++ " (" ++ dcl.sourceLocation.filename ++ ":" ++ toString(dcl.sourceLocation.line) ++ ")\n";
+  return "\t" ++ dcl.fullName ++ " (" ++ dcl.sourceLocation.filename ++ ":" ++ toString(dcl.sourceLocation.line) ++ ")";
 }
 
 
@@ -135,7 +135,7 @@ top::QNameAttrOccur ::= at::QName
   -- i.e. 'import somthing as prefixed;  something.a' won't find prefixed:a.
 
   -- Occurs dcls
-  local dclsNarrowed :: [DclInfo] = foldr(append, [], narrowed);
+  local dclsNarrowed :: [DclInfo] = concat(narrowed);
   
   -- Attribute dcls
   local attrsNarrowed :: [DclInfo] = zipFilterDcls(at.lookupAttribute.dcls, narrowed);

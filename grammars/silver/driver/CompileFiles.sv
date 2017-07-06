@@ -15,7 +15,7 @@ IOVal<Pair<[Root] [ParseError]>> ::= svParser::SVParser  gpath::String  files::[
   
   -- Print the path we're reading, and read the file.
   local text :: IOVal<String> =
-    readFile(gpath ++ file, print("\t[" ++ gpath ++ file ++ "]\n", ioin));
+    readFile(gpath ++ file, ioin);
 
   -- This is where a .sv file actually gets parsed:
   local r :: ParseResult<Root> = svParser(text.iovalue, file);
@@ -26,9 +26,9 @@ IOVal<Pair<[Root] [ParseError]>> ::= svParser::SVParser  gpath::String  files::[
   return if null(files) then ioval(ioin, pair([], []))
          -- Using [] in this case because there seems to be no end to io token demanding issues:
          else case r of
-         | parseSucceeded(rtree) ->
+         | parseSucceeded(rtree, _) ->
              ioval(recurse.io, pair(rtree :: recurse.iovalue.fst, recurse.iovalue.snd))
-         | parseFailed(errval) -> 
+         | parseFailed(errval, _) -> 
              ioval(recurse.io, pair(recurse.iovalue.fst, errval :: recurse.iovalue.snd))
          end;
 }

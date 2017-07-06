@@ -95,6 +95,17 @@ equalityTest ( removeAllBy (equalsInteger, [1,3,5], [5,3,1,3,5]), [],
 -- last
 equalityTest ( last([5,3,1,3,5]), 5, Integer, core_tests ) ;
 
+-- concat
+equalityTest ( concat([[1, 2], [3, 4]]), [1,2,3,4], [Integer], core_tests ) ;
+equalityTest ( concat([]), [], [Integer], core_tests ) ;
+
+-- flatMap
+function dupItem
+[Integer] ::= i::Integer
+{ return [i, i]; }
+
+equalityTest ( flatMap(dupItem, [1, 2]), [1,1,2,2], [Integer], core_tests ) ;
+
 -- drop
 equalityTest ( drop(0, [5,3,1,4,7]), [5,3,1,4,7], [Integer], core_tests ) ;
 equalityTest ( drop(2, [5,3,1,4,7]), [1,4,7], [Integer], core_tests ) ;

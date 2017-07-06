@@ -15,6 +15,7 @@ imports silver:definition:env;
 imports silver:util;
 
 option silver:definition:concrete_syntax;
+option silver:definition:flow:syntax;
 option silver:modification:lambda_fn;
 option silver:modification:let_fix;
 option silver:modification:primitivepattern;

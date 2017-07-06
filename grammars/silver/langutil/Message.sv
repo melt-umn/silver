@@ -33,8 +33,8 @@ top::Message ::= l::Location m::String
 {
   top.where = l;
   top.message = m;
-  top.output = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": error: " ++ m;
-  top.severity = 0;
+  top.output = l.unparse ++ ": error: " ++ m;
+  top.severity = 2;
 }
 
 {--
@@ -46,11 +46,46 @@ top::Message ::= l::Location m::String
 {
   top.where = l;
   top.message = m;
-  top.output = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": warning: " ++ m;
+  top.output = l.unparse ++ ": warning: " ++ m;
+  top.severity = 1;
+}
+
+{--
+ - An informational message that does not halt compilation, but is usually
+ - attached to an error or warning.
+ -}
+abstract production info
+top::Message ::= l::Location m::String
+{
+  top.where = l;
+  top.message = m;
+  top.output = l.unparse ++ ": info: " ++ m;
   top.severity = 0;
 }
 
--- Users can extend Message with more messages (info, dbg) as they desire
+{--
+ - A group of messages.
+ -}
+abstract production nested
+top::Message ::= l::Location m::String others::[Message]
+{
+  top.where = l;
+  top.message = m;
+  local header :: String = l.unparse ++ ": " ++ m ++ "\n";
+  top.output = header ++ implode("\n", map(nestedOutputHelper(header, _), others));
+  top.severity = foldr(max, 0, map((.severity), others));
+}
+
+function nestedOutputHelper
+String ::= header::String msg::Message
+{
+  return case msg of
+    | nested(_, _, _) -> header ++ "\n"
+    | _ -> ""
+    end ++ msg.output;
+}
+
+-- Users can extend Message with more messages (e.g. dbg) as they desire
 -- map, filter, etc should all be quite useful on messages
 
 {--
@@ -66,6 +101,7 @@ Boolean ::= l::[Message] wError::Boolean
          | [] -> false
          | err(_,_) :: _ -> true
          | wrn(_,_) :: t -> if wError then true else containsErrors(t, false)
+         | nested(_, _, e) :: t -> containsErrors(e, wError) || containsErrors(t, wError)
          | _ :: t -> containsErrors(t, wError)
          end;
 }

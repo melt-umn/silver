@@ -3,14 +3,14 @@ grammar silver:definition:core;
 --import silver:analysis:typechecking:core;
 
 nonterminal Expr with
-  config, grammarName, env, location, pp, errors, blockContext, compiledGrammars, signature, typerep;
+  config, grammarName, env, location, pp, errors, frame, compiledGrammars, typerep;
 nonterminal Exprs with
-  config, grammarName, env, location, pp, errors, blockContext, compiledGrammars, signature, exprs, rawExprs;
+  config, grammarName, env, location, pp, errors, frame, compiledGrammars, exprs, rawExprs;
 
 nonterminal ExprInhs with
-  config, grammarName, env, location, pp, errors, blockContext, compiledGrammars, signature, decoratingnt, suppliedInhs;
+  config, grammarName, env, location, pp, errors, frame, compiledGrammars, decoratingnt, suppliedInhs;
 nonterminal ExprInh with
-  config, grammarName, env, location, pp, errors, blockContext, compiledGrammars, signature, decoratingnt, suppliedInhs;
+  config, grammarName, env, location, pp, errors, frame, compiledGrammars, decoratingnt, suppliedInhs;
 nonterminal ExprLHSExpr with
   config, grammarName, env, location, pp, errors, typerep, decoratingnt, suppliedInhs;
 
@@ -767,11 +767,11 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
  - (partial) function application.
  -}
 nonterminal AppExprs with 
-  config, grammarName, env, location, pp, errors, blockContext, compiledGrammars, signature, exprs, rawExprs,
+  config, grammarName, env, location, pp, errors, frame, compiledGrammars, exprs, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied;
 
 nonterminal AppExpr with
-  config, grammarName, env, location, pp, errors, blockContext, compiledGrammars, signature, exprs, rawExprs,
+  config, grammarName, env, location, pp, errors, frame, compiledGrammars, exprs, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied;
 
 synthesized attribute isPartial :: Boolean;
@@ -881,12 +881,12 @@ top::AppExprs ::=
 
 
 nonterminal AnnoAppExprs with
-  config, grammarName, env, location, pp, errors, blockContext, compiledGrammars, signature,
+  config, grammarName, env, location, pp, errors, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
   missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied;
 nonterminal AnnoExpr with
-  config, grammarName, env, location, pp, errors, blockContext, compiledGrammars, signature,
+  config, grammarName, env, location, pp, errors, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
   missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied;

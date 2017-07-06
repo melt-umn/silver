@@ -7,7 +7,8 @@ top::Location ::= filename::String  line::Integer  column::Integer
                   endLine::Integer  endColumn::Integer
                   index::Integer  endIndex::Integer
 {
-  top.unparse = "'" ++ filename ++ "', " ++ toString(line) ++ ", " ++ toString(column);
+  top.unparse = "'" ++ filename ++ "', " ++
+    implode(", ", [toString(line), toString(column), toString(endLine), toString(endColumn), toString(index), toString(endIndex)]);
 }
 
 function bogusLocation

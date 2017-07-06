@@ -12,11 +12,11 @@ top::Expr ::= '$' e::Int_t
     -- Will error with "undefined value $x", which is reasonable.
     fromMaybe("$" ++ e.lexeme, 
       -- TODO: horrible method of detemining whether we're not in an appropriate context for $x 
-      if top.signature.outputElement.elementName == "__SV_BOGUS_ELEM" -- TODO hack!
+      if top.frame.signature.outputElement.elementName == "__SV_BOGUS_ELEM" -- TODO hack!
       then nothing()
       else
         findChild(toInt(e.lexeme), 
-          [top.signature.outputElement.elementName] ++ top.signature.inputNames));
+          [top.frame.signature.outputElement.elementName] ++ top.frame.signature.inputNames));
 
   forwards to baseExpr(qName(top.location, ref), location=top.location);
 }

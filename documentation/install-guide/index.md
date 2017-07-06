@@ -10,21 +10,20 @@ menu_weight: 10.0
 [Java JDK, version 1.7](http://www.oracle.com/technetwork/java/javase/downloads/index.html) and [Apache ANT](http://ant.apache.org/bindownload.cgi). For Ubuntu users:
 
 ```
-apt-get install default-jdk ant
+apt-get install default-jdk-headless ant
 ```
 
-For OSX, using Homebrew:
+For OSX, using Homebrew (install a JDK separately):
 
 ```
-# Install a java JDK separately.
 brew install coreutils ant
 ```
 
 # Getting Silver
 
-The **latest release** can be found [here](/downloads).
+The **latest release** can be [downloaded here](/downloads).
 
-To use the bleeding edge from version control, [see below](InstallGuide#Using_the_latest_development_version.md).
+To clone from GitHub instead, [see below](#using-the-latest-development-version).
 
 # Testing with tutorials
 
@@ -38,14 +37,12 @@ silver/tutorials/hello$ java -jar hello.jar
 Hello, World!
 ```
 
-If you have any issues, first try the [frequently asked question
-page](faq) to see if there are any questions like yours. 
+If you have any issues, first try the [frequently asked question page](/silver/doc/faq/) to see if there are any questions like yours.
 
 # Installing the 'silver' script
 
 ```
-silver$ cd support/bin
-silver/support/bin$ ./install-silver-bin
+silver$ ./support/bin/install-silver-bin
 ```
 
 Note that this assumes you have a ~/bin. In most distributions, if you
@@ -56,7 +53,7 @@ time your shell is started.
 At this point, Silver should be all set. You can test it with: (leaving off from above)
 
 ```
-silver/support/bin$ cd ../../tutorials
+silver$ cd tutorials
 silver/tutorials$ silver hello
  -- SNIPPED --
 silver/tutorials$ java -jar hello.jar
@@ -67,9 +64,10 @@ Note that this differs from previously by using the '`silver`' script
 in `~/bin` instead of the local `silver-compile` script, and it is
 only in the `tutorials` directory, not in `tutorials/hello`. 
 
+
 # Using the latest development version
 
-This section is only for anyone who would like to help develop Silver itself.
+Instead of downloading a relase, Silver can be checked out directly from GitHub instead.
 
 ## Additional prerequisites
 
@@ -93,17 +91,12 @@ Wherever you wish to checkout the repository, do this:
 ```
 $ git clone https://github.com/melt-umn/silver.git
 $ cd silver
-silver$ ./fetch-jars
-silver$ cd support/bin
-silver/support/bin$ ./install-silver-bin
+silver$ ./update
 ```
 
-All this does is get you the latest repository checkout, the latest
-jars (which are not stored in the repository), and puts the `silver`
-shell script in `~/bin` pointing to these things (see
-section above "Installing the Silver script".
+And then proceed with the instructions above (e.g. testing with tutorials, installing `silver` to `~/bin`, etc.)
 
-## Updating it
+## Updating jars
 
 To update the a version cloned from GitHub, run:
 
@@ -116,7 +109,7 @@ will also download the latest jars (which may be necessary! Silver is
 written in Silver, so there can be bootstrapping issues) and clear out
 any generated files, which may now be stale with the new version.
 
-## Building it
-
+## Building Silver
 
 See [here](/silver/doc/dev/building).
+

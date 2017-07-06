@@ -252,6 +252,31 @@ Maybe<Integer> ::= str::String
 }
 
 {--
+ - Concatenates a list of strings.
+ -
+ - @param lst  A list of strings
+ - @return  The flattened string
+ -}
+function sconcat
+String ::= lst::[String]
+{
+  return foldr(stringConcat, "", lst);
+}
+
+{--
+ - Map a function over a list, and then conatenates the results together.
+ -
+ - @param f  A function to apply to each element of a list, returning a string.
+ - @param lst  A list
+ - @return  The concatenated string
+ -}
+function sflatMap
+String ::= f::(String ::= a)  lst::[a]
+{
+  return sconcat(map(f, lst));
+}
+
+{--
  - A comparison function for strings.
  - @return Negative if l<r, 0 if l==r, positive if l>r
  -}
@@ -289,3 +314,28 @@ Boolean ::= s1::String s2::String
   return s1 <= s2;
 }
 
+{--
+ - Converts a list of code points to a string. Note that due to Java's use of
+ - UCS-2, code points greater than 0xFFFF (i.e. and characters outside the Basic
+ - Multilingual Plane) aren't supported.
+ -}
+function charsToString
+String ::= chars::[Integer]
+{
+  return error("Foreign Function");
+} foreign {
+  "java" : return "common.StringCatter.fromChars(%chars%)";
+}
+
+{--
+ - Converts a string to a list of its UCS-2 characters. Note that this means
+ - that surrogate pairs are (probably?) not supported, and characters outside
+ - the Basic Multilingual Plane aren't as a consequence.
+ -}
+function stringToChars
+[Integer] ::= str::String
+{
+  return error("Foreign Function");
+} foreign {
+  "java" : return "%str%.toChars()";
+}

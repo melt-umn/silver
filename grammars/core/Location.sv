@@ -16,7 +16,7 @@ synthesized attribute index :: Integer;
 synthesized attribute endIndex :: Integer;
 
 {--
- - The sole constructor for location information.
+ - The main constructor for location information.
  -
  - filename, line and column can be mutated by action blocks during parsing,
  - but character index cannot.
@@ -37,7 +37,6 @@ top::Location ::= filename::String  line::Integer  column::Integer
                   endLine::Integer  endColumn::Integer
                   index::Integer  endIndex::Integer
 {
-  --top.unparse = filename ++ ":" ++ toString(line) ++ ":" ++ toString(column);
   top.filename = filename;
   top.line = line;
   top.column = column;
@@ -45,6 +44,43 @@ top::Location ::= filename::String  line::Integer  column::Integer
   top.endColumn = endColumn;
   top.index = index;
   top.endIndex = endIndex;
+}
+
+{--
+ - A secondary constructor for location information, for locations not from source code
+ -
+ - @param text The text to return as unparse as defined in langutil
+ -}
+abstract production txtLoc
+top::Location ::= text::String
+{
+  top.filename = "N/A";
+  top.line = -1;
+  top.column = -1;
+  top.endLine = -1;
+  top.endColumn = -1;
+  top.index = -1;
+  top.endIndex = -1;
+}
+
+{--
+ - A helper constructor for location information, for built-in locations
+ -
+ - @param module The name of the extension/modifcation/module defining the location
+ -}
+function builtinLoc
+Location ::= module::String
+{
+  return txtLoc("Built in from " ++ module);
+}
+
+{--
+ - A helper constructor for location information, for invalid or undefined bogus locations
+ -}
+function bogusLoc
+Location ::=
+{
+  return txtLoc("Invalid or undefined bogus location");
 }
 
 {--
@@ -59,4 +95,5 @@ Boolean ::= l1::Location l2::Location
     (l1.line < l2.line || (l1.line == l2.line &&
     (l1.column < l2.column))));
 }
+
 

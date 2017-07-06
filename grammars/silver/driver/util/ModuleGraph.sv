@@ -112,7 +112,7 @@ function expandCondBuilds
 {
   -- Map each grammar name to its triggers, and concat.
   local attribute newtriggers :: [[String]];
-  newtriggers = foldr(append, triggers, map(skipNulls((.condBuild), _), map(searchEnvTree(_, e), need)));
+  newtriggers = flatMap(skipNulls((.condBuild), _), map(searchEnvTree(_, e), need));
 
   local attribute newset :: [String];
   newset = need ++ seen;
@@ -166,7 +166,7 @@ function computeOptionalDeps
 function completeDependencyClosure
 [String] ::= init::[String]  e::EnvTree<Decorated RootSpec>
 {
-  local n :: [String] = rem(makeSet(foldr(append, [], map(skipNulls((.moduleNames), _), map(searchEnvTree(_, e), init)))), init);
+  local n :: [String] = rem(makeSet(flatMap(skipNulls((.moduleNames), _), map(searchEnvTree(_, e), init))), init);
   
   return if null(n) then init
   else completeDependencyClosure(computeOptionalDeps(n ++ init, e), e);

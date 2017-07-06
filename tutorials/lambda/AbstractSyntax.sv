@@ -41,7 +41,7 @@ e::Expr ::= id::String t::Type e1::Expr e2::Expr
  local attribute synErrors :: String;
  synErrors = t.errors ++ e1.errors ++ e2.errors;
 
- e.pp = concat([text("let "), text(id), text(":"), t.pp, text("="), e1.pp, text(" in "), e2.pp]);
+ e.pp = pp"let ${text(id)}:${t.pp}=${e1.pp} in ${e2.pp}";
  e.type = e2.type;
 
  e1.envi = [] ++ e.envi;
@@ -61,7 +61,7 @@ e::Expr ::= id::String tl::Type e1::Expr
  local attribute synErrors :: String;
  synErrors = tl.errors ++ e1.errors;
 
- e.pp = concat([text("lambda "), text(id), text(":"), tl.pp, text("."), e1.pp]);
+ e.pp = pp"lambda ${text(id)}:${tl.pp}.${e1.pp}";
  e.type = arrow(tl, e1.type);
 
  e1.envi = [pair(id, tl)] ++ e.envi;
@@ -95,7 +95,7 @@ mp::Expr_funct ::= mp1::Expr_funct e::Expr_arith
  local attribute synErrors :: String;
  synErrors = mp1.errors ++ e.errors;
 
- mp.pp = concat([mp1.pp, space(), e.pp]);
+ mp.pp = pp"${mp1.pp} ${e.pp}";
  mp.type = case mp1.type of
              arrow(ta, tb) -> tb
            | int() -> type_err()
@@ -139,7 +139,7 @@ e::Expr_arith ::= e1::Expr_arith t::Term
  local attribute synErrors :: String;
  synErrors = e1.errors ++ t.errors;
 
- e.pp = concat([e1.pp, text("+"), t.pp]);
+ e.pp = pp"${e1.pp}+${t.pp}";
  e.type = int();
 
  e1.envi = e.envi;
@@ -160,7 +160,7 @@ e::Expr_arith ::= e1::Expr_arith t::Term
 abstract production expr_sub
 e::Expr_arith ::= e1::Expr_arith t::Term
 {
- e.pp = concat([e1.pp, text("-"), t.pp]);
+ e.pp = pp"${e1.pp}-${t.pp}";
 
  -- All other functionality is identical to expr_add
  forwards to expr_add(e1, t);
@@ -185,7 +185,7 @@ t::Term ::= t1::Term f::Factor
  local attribute synErrors :: String;
  synErrors = t1.errors ++ f.errors;
 
- t.pp = concat([t1.pp, text("*"), f.pp]);
+ t.pp = pp"${t1.pp}*${f.pp}";
  t.type = int();
 
  t1.envi = t.envi;
@@ -206,7 +206,7 @@ t::Term ::= t1::Term f::Factor
 abstract production term_div
 t::Term ::= t1::Term f::Factor
 {
- t.pp = concat([t1.pp, text("/"), f.pp]);
+ t.pp = pp"${t1.pp}/${f.pp}";
 
  -- All other functionality is identical to term_mul
  forwards to term_mul(t1,f);
@@ -250,7 +250,7 @@ f::Factor ::= num::String
 abstract production factor_parens
 f::Factor ::= r::Expr
 {
- f.pp = parens(r.pp);
+ f.pp = pp"(${r.pp})";
  f.type = r.type;
 
  r.envi = f.envi;
@@ -263,7 +263,7 @@ f::Factor ::= r::Expr
 abstract production arrow
 t::Type ::= t1::Type t2::Type
 {
- t.pp = concat([parens(t1.pp), text("->"), parens(t2.pp)]);
+ t.pp = pp"(${t1.pp})->(${t2.pp})";
 
  t.errors = t1.errors ++ t2.errors;
 }
@@ -271,7 +271,7 @@ t::Type ::= t1::Type t2::Type
 abstract production int
 t::Type ::=
 {
- t.pp = text("int");
+ t.pp = pp"int";
 
  t.errors = "";
 }
@@ -279,7 +279,7 @@ t::Type ::=
 abstract production type_err
 t::Type ::=
 {
- t.pp = text("TYPE ERROR");
+ t.pp = pp"TYPE ERROR";
 
  t.errors = "TYPE ERROR";
 }

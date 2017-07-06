@@ -9,7 +9,7 @@ top::Expr ::= q::Decorated QName
 
   top.typerep = q.lookupValue.typerep;
 
-  top.translation = "((" ++ q.lookupValue.typerep.transType ++ ")((common.Node)RESULT).getChild(" ++ makeClassName(top.signature.fullName) ++ ".i_" ++ q.lookupValue.fullName ++ "))";
+  top.translation = "((" ++ q.lookupValue.typerep.transType ++ ")((common.Node)RESULT).getChild(" ++ top.frame.className ++ ".i_" ++ q.lookupValue.fullName ++ "))";
   top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
@@ -51,7 +51,7 @@ top::Expr ::= q::Decorated QName
 {
   top.pp = q.pp;
 
-  top.errors := if !top.blockContext.permitActions
+  top.errors := if !top.frame.permitActions
                 then [err(top.location, "References to parser attributes can only be made in action blocks")]
                 else [];
 
@@ -73,11 +73,12 @@ top::Expr ::= q::Decorated QName
   top.typerep = q.lookupValue.typerep;
 
   -- Yeah, it's a big if/then/else block, but these are all very similar and related.
-  top.translation = if q.name == "lexeme" then "new common.StringCatter(lexeme)" else
-                    if q.name == "line" then "virtualLocation.getLine()" else
-                    if q.name == "column" then "virtualLocation.getColumn()" else
-                    if q.name == "filename" then "new common.StringCatter(virtualLocation.getFileName())" else
-                    error("unknown actionTerminalReference " ++ q.name); -- should never be called, but here for safety
+  top.translation =
+    if q.name == "lexeme" then "new common.StringCatter(lexeme)" else
+    if q.name == "line" then "virtualLocation.getLine()" else
+    if q.name == "column" then "virtualLocation.getColumn()" else
+    if q.name == "filename" then "new common.StringCatter(virtualLocation.getFileName())" else
+    error("unknown actionTerminalReference " ++ q.name); -- should never be called, but here for safety
   top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;

@@ -60,7 +60,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
 
-  errCheck1 = check(e.typerep, top.signature.outputElement.typerep);
+  errCheck1 = check(e.typerep, top.frame.signature.outputElement.typerep);
   top.errors <- if errCheck1.typeerror
                 then [err(e.location, "Forward's expected type is " ++ errCheck1.rightpp ++ ", but the actual type supplied is " ++ errCheck1.leftpp)]
                 else [];
@@ -127,7 +127,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
   
-  errCheck1 = check(e.typerep, top.signature.outputElement.typerep);
+  errCheck1 = check(e.typerep, top.frame.signature.outputElement.typerep);
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Expected return type is " ++ errCheck1.rightpp ++ ", but the expression has actual type " ++ errCheck1.leftpp)]
@@ -135,7 +135,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   e.downSubst = top.downSubst;
   top.upSubst = e.upSubst;

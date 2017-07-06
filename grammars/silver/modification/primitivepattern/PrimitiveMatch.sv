@@ -19,12 +19,12 @@ import silver:extension:list; -- Oh no, this is a hack! TODO
 terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 
 nonterminal PrimPatterns with 
-  config, grammarName, env, compiledGrammars, signature, blockContext,
+  config, grammarName, env, compiledGrammars, frame,
   location, pp, errors,
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation;
 nonterminal PrimPattern with 
-  config, grammarName, env, compiledGrammars, signature, blockContext,
+  config, grammarName, env, compiledGrammars, frame,
   location, pp, errors,
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation;
@@ -121,7 +121,7 @@ top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
         "return " ++ f.translation ++ ";" ++ 
     "}}.eval(context, (" ++ scrutineeTransType ++")" ++ e.translation ++ ")";
 
-  top.lazyTranslation = wrapThunk(top.translation, top.blockContext.lazyApplication); 
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication); 
   -- TODO there seems to be an opportunity here to avoid an anon class somehow...
 }
 
@@ -183,7 +183,11 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.pp = qn.pp ++ "(" ++ ns.pp ++ ") -> " ++ e.pp;
   
-  top.errors := qn.lookupValue.errors ++ ns.errors ++ e.errors;
+  local chk :: [Message] =
+    if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
+    else [err(qn.location, qn.pp ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+  
+  top.errors := qn.lookupValue.errors ++ ns.errors ++ chk ++ e.errors;
 
   -- Turns the existential variables existential
   local attribute prod_type :: TypeExp;
@@ -224,7 +228,11 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.pp = qn.pp ++ "(" ++ ns.pp ++ ") -> " ++ e.pp;
   
-  top.errors := qn.lookupValue.errors ++ ns.errors ++ e.errors;
+  local chk :: [Message] =
+    if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
+    else [err(qn.location, qn.pp ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+  
+  top.errors := qn.lookupValue.errors ++ ns.errors ++ chk ++ e.errors;
 
   local attribute prod_type :: TypeExp;
   prod_type = fullySkolemizeProductionType(qn.lookupValue.typerep); -- that says FULLY. See the comments on that function.
@@ -264,6 +272,9 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
     ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
 }
+
+-- TODO: We currently provide the below for ease of translation from complex case exprs, but
+-- we should really translate those to appropriate expressions, and not handle primitive types here
 
 abstract production integerPattern
 top::PrimPattern ::= i::Int_t '->' e::Expr
@@ -361,7 +372,7 @@ top::PrimPattern ::= e::Expr
   
   errCheck1 = check(listTypeExp(freshType()), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, "nil() constructs type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [err(top.location, "nil matches lists but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
@@ -392,7 +403,7 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   
   errCheck1 = check(listTypeExp(elemType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, "cons() constructs type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [err(top.location, "cons matches lists but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);

@@ -1,6 +1,7 @@
 ---
 layout: sv_wiki
 title: Eclipse internals
+menu_weight: 30.0
 ---
 
 Understanding the eclipse plugin generation part of Silver requires understanding quite a lot of layers of abstraction and tooling that are an essential part of how eclipse plugins work. This is a rough, short guide.
@@ -50,7 +51,7 @@ We contribute a "nature" (a flag, essentially, that manages how building works) 
 
 This code is generated from an `IdeSpec` in grammar `silver:modification:impide:spec`.
 
-You can see the class implementing the Eclipse builder and nature (this does not make use of IMP at all) is from the Silver-Eclipse runtime (e.g. edu.umn.cs.melt.ide.imp.builders.Nature). Note that here we're passing data to this class (in particular, the name of the builder is given as a parameter, `silver.composed.idetest.builder`. You can see that infromation extracted and used in the `Nature` class referenced.)
+You can see the class implementing the Eclipse builder and nature (this does not make use of IMP at all) is from the Silver-Eclipse runtime (e.g. edu.umn.cs.melt.ide.imp.builders.Nature). Note that here we're passing data to this class (in particular, the name of the builder is given as a parameter, `silver.composed.idetest.builder`. You can see that information extracted and used in the `Nature` class referenced.)
 
 If we take a look at the implementation of the referenced `Builder` class from the runtime, we can see how the builder actually gets called (with lots of code omitted):
 
@@ -126,16 +127,16 @@ Before we even look at these classes in the runtime, if you're paying attention,
 
 ```
 @Override
-public ICopperTokenClassifier getTokenClassifier() {
+public ITokenClassifier getTokenClassifier() {
 	return new silver.composed.idetest.imp.coloring.Parser_silver_composed_idetest_svParse_TokenClassifier();
 }
 private silver.composed.idetest.copper.parser.Parser_silver_composed_idetest_svParse parser = new silver.composed.idetest.copper.parser.Parser_silver_composed_idetest_svParse();
 @Override
-public IdeParseResult<Node, CopperToken> parse(Reader input, String filename) throws CopperParserException, IOException {
+public IdeParseResult<Node> parse(Reader input, String filename) throws CopperParserException, IOException {
 	// In the long run, maybe we should have a getParser() rather than parse() so things could be concurrent... TODO
 	synchronized(parser) {
 		parser.reset();
-		return new IdeParseResult<Node, CopperToken>((Node)parser.parse(input, filename), parser.getTokens());
+		return new IdeParseResult<Node>((Node)parser.parse(input, filename), parser.getTokens());
 	}
 }
 ```
@@ -144,12 +145,12 @@ So right now we have:
 
   1. A ParseController implementing some IMP interface
   1. A Colorer implementing some IMP interface
-  1. Something called a ICopperTokenClassifier that we implement for our plugin
+  1. Something called a ITokenClassifier that we implement for our plugin
   1. A result type called IdeParseResult that our parser returns to the silver-eclipse runtime. (Or it throws a CopperParserException.)
   1. A custom-generated parser with a `getTokens` method on it (see grammar `silver:modification:impide:cstast` for the implementation of this.)
 
 If we investigate the parse controller, we find the `getTokenIterator` method. It calls a corresponding method on IdeParseResult, which we discover just stores a list of tokens (as well as the parse tree).
 
-By implication, we must assume the imp framework will get this list, and interate over it, and for each token, it consults the Colorer we gave IMP. This Colorer does nothing but use the `ICopperTokenClassifier` we gave the `SVInterface` to figure out what color to use.
+By implication, we must assume the imp framework will get this list, and interate over it, and for each token, it consults the Colorer we gave IMP. This Colorer does nothing but use the `ITokenClassifier` we gave the `SVInterface` to figure out what color to use.
 
 The implementation of this interface is generated in `silver:modification:impide:spec` from an `IdeSpec` and the `ParserSpec` it contains. It works by translating copper token numbers to string names, and looking up in a map what font/color that terminal name was given by font modifiers in the silver source.

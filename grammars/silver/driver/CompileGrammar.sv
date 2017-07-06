@@ -12,7 +12,7 @@ IOVal<Maybe<RootSpec>> ::=
   clean::Boolean
   ioin::IO
 {
-  --the grammar path ':' replaced by '/'
+  -- the grammar path ':' replaced by '/'
   local gramPath :: String = grammarToPath(grammarName);
 
   -- the location (if found) of the grammar
@@ -25,12 +25,13 @@ IOVal<Maybe<RootSpec>> ::=
   local ifaceTime :: IOVal<Maybe<Integer>> = isValidInterface(benv.silverGen ++ "src/" ++ gramPath ++ "Silver.svi", files.io);
   local grammarTime :: IOVal<Integer> = fileTimes(grammarLocation.iovalue.fromJust, files.iovalue, ifaceTime.io);
 
-  local pr :: IO = print("Compiling Grammar: " ++ grammarName ++ "\n", grammarTime.io);
-  
+  -- Decide to compile a grammar or find an interface file
+  local pr :: IO = print("Compiling " ++ grammarName ++ "\n\t[" ++ grammarLocation.iovalue.fromJust ++ "]\n\t[" ++ renderFileNames(files.iovalue, 0) ++ "]\n", grammarTime.io);
   local gramCompile :: IOVal<Pair<[Root] [ParseError]>> =
     compileFiles(svParser, grammarLocation.iovalue.fromJust, files.iovalue, pr);
+
   local ifaceCompile :: IOVal<ParseResult<IRoot>> =
-    compileInterface(sviParser, benv.silverGen ++ "src/" ++ gramPath, pr);
+    compileInterface(sviParser, grammarName, benv.silverGen ++ "src/" ++ gramPath, grammarTime.io);
   
   -- Not being clean, valid interface file, newer than the grammar source
   local useInterface :: Boolean = !clean && ifaceTime.iovalue.isJust && ifaceTime.iovalue.fromJust > grammarTime.iovalue;
@@ -40,8 +41,11 @@ IOVal<Maybe<RootSpec>> ::=
       if ifaceCompile.iovalue.parseSuccess then
         ifaceCompile.io
       else
-        print("\n\tFailed to parse interface file!\n" ++ ifaceCompile.iovalue.parseErrors ++
-                 "\n\tRecovering by parsing grammar....\n", gramCompile.io)
+        -- Do something weird. Demand interface parser finishes, print.
+        -- Then return the normal compile io token branch... Hey, works!
+        unsafeTrace(gramCompile.io,
+          print("\n\tFailed to parse interface file!\n" ++ ifaceCompile.iovalue.parseErrors ++
+                "\n\tRecovering by parsing grammar....\n", ifaceCompile.io))
     else gramCompile.io;
   
   local rs :: RootSpec =
@@ -107,5 +111,16 @@ IOVal<Integer> ::= dir::String is::[String] i::IO
          else if ft.iovalue > rest.iovalue
               then ioval(rest.io, ft.iovalue)
               else rest;
+}
+
+-- A crude approximation of line wrapping
+function renderFileNames
+String ::= files::[String]  depth::Integer
+{
+  return
+    if null(files) then "" else
+    if depth >= 9 then "\n\t " ++ renderFileNames(files, 0) else
+    head(files) ++
+    if null(tail(files)) then "" else " " ++ renderFileNames(tail(files), depth + 1);
 }
 

@@ -7,7 +7,7 @@ function ppblock
 Document ::= s::Stmt
 {
   return case s of
-           block(_) -> cat(text(" "), s.pp) -- the block will do it itself.
+         | block(_) -> pp" ${s.pp}" -- the block will do it itself.
          | _ -> nestlines(3, s.pp)
          end;
 }
@@ -23,7 +23,7 @@ s::Stmt ::= d::Decl
 abstract production block
 s::Stmt ::= body::Stmt 
 {
-  s.pp = braces(nestlines(3, body.pp));
+  s.pp = pp"{${nestlines(3, body.pp)}}";
   s.defs = [];
   s.errors := body.errors;
 }
@@ -31,7 +31,7 @@ s::Stmt ::= body::Stmt
 abstract production seq
 s::Stmt ::= s1::Stmt s2::Stmt 
 {
-  s.pp = cat(cat(s1.pp, line()), s2.pp);
+  s.pp = pp"${s1.pp}${line()}${s2.pp}";
   s.defs = s1.defs ++ s2.defs;
   s.errors := s1.errors ++ s2.errors;
 
@@ -41,7 +41,7 @@ s::Stmt ::= s1::Stmt s2::Stmt
 abstract production printStmt
 s::Stmt ::= e::Expr 
 {
-  s.pp = concat([text("print"), parens(e.pp), semi()]);
+  s.pp = pp"print(${e.pp});";
   s.defs = [];
   s.errors := e.errors;
 }
@@ -49,7 +49,7 @@ s::Stmt ::= e::Expr
 abstract production skip
 s::Stmt ::= 
 {
-  s.pp = semi();
+  s.pp = pp";";
   s.defs = [];
   s.errors := [];
 }
@@ -57,7 +57,7 @@ s::Stmt ::=
 abstract production while
 s::Stmt ::= c::Expr b::Stmt 
 {
-  s.pp = concat([text("while"), parens(c.pp), ppblock(b)]);
+  s.pp = pp"while(${c.pp})${ppblock(b)}";
   s.defs = [];
   s.errors := c.errors ++ b.errors;
 }
@@ -65,7 +65,7 @@ s::Stmt ::= c::Expr b::Stmt
 abstract production ifthen
 s::Stmt ::= c::Expr t::Stmt 
 {
-  s.pp = concat([text("if"), parens(c.pp), ppblock(t)]);
+  s.pp = pp"if(${c.pp})${ppblock(t)}";
   s.defs = [];
   s.errors := c.errors ++ t.errors;
 }
@@ -73,8 +73,7 @@ s::Stmt ::= c::Expr t::Stmt
 abstract production ifelse
 s::Stmt ::= c::Expr t::Stmt e::Stmt 
 {
-  s.pp = concat([text("if"), parens(c.pp), ppblock(t),
-                 text("else"), ppblock(e)]);
+  s.pp = pp"if(${c.pp})${ppblock(t)}else${ppblock(e)}";
   s.defs = [];
   s.errors := c.errors ++ t.errors ++ e.errors;
 }
@@ -82,7 +81,7 @@ s::Stmt ::= c::Expr t::Stmt e::Stmt
 abstract production assignment
 s::Stmt ::= id::Name e::Expr 
 {
-  s.pp = concat([id.pp, text(" = "), e.pp, semi()]);
+  s.pp = pp"${id.pp} = ${e.pp};";
   s.defs = [];
   s.errors := case id.lookup of
                 just(_)   -> []

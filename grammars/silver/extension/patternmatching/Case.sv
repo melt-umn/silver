@@ -15,13 +15,15 @@ terminal Vbar_kwd '|' lexer classes {SPECOP};
 terminal Opt_Vbar_t /\|?/ lexer classes {SPECOP}; -- optional Coq-style vbar.
 
 -- MR | ...
-nonterminal MRuleList with location, config, pp, signature, env, errors, matchRuleList;
+nonterminal MRuleList with location, config, pp, env, errors, matchRuleList, matchRulePatternSize;
 
 -- Turns MRuleList (of MatchRules) into [AbstractMatchRule]
 synthesized attribute matchRuleList :: [AbstractMatchRule];
+-- Notification of the number of expressions being matched upon
+autocopy attribute matchRulePatternSize :: Integer;
 
 -- P -> E
-nonterminal MatchRule with location, config, pp, signature, env, errors, matchRuleList;
+nonterminal MatchRule with location, config, pp, env, errors, matchRuleList, matchRulePatternSize;
 nonterminal AbstractMatchRule with location, headPattern, isVarMatchRule, expandHeadPattern;
 
 -- The head pattern of a match rule
@@ -56,6 +58,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";
 
+  ml.matchRulePatternSize = length(es.rawExprs);
   top.errors <- ml.errors;
   
   -- TODO: this is the only use of .rawExprs. FIXME
@@ -64,7 +67,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
     caseExpr(es.rawExprs, ml.matchRuleList, 
       mkStrFunctionInvocation(top.location, "core:error",
         [stringConst(terminal(String_t, 
-          "\"Error: pattern match failed at " ++ top.grammarName ++ " " ++ top.location.unparse ++ "\\n\""), location=$6.location)]),
+          "\"Error: pattern match failed at " ++ top.grammarName ++ " " ++ top.location.unparse ++ "\\n\""), location=top.location)]),
       freshType(), location=top.location);
 }
 
@@ -90,14 +93,10 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::TypeExp
   
   top.errors <-
     case ml of
-    -- are there multiple match rules, with no patterns left to distinguish between them?
+    -- are there multiple match rules, with no patterns left in them to distinguish between them?
     | matchRule([], e) :: _ :: _ -> [err(top.location, "Pattern has overlapping cases!")]
-    -- Is there just one rule but uhhh, we've got multiple expressions!?
-    | matchRule([], _) :: [] -> if null(es) then [] else [err(top.location, "Fewer that expected patterns in pattern list")]
-    | _ -> if null(es) then [err(top.location, "More than expected patterns in pattern list")] else []
+    | _ -> []
     end;
-    
-  -- TODO: problem: check patternlist size and size of 'es'!
        
 --  top.errors <- unsafeTrace([], 
 --     print(top.pp ++ "\n\n", unsafeIO()));
@@ -113,7 +112,9 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::TypeExp
   local allConCase :: Expr =
     matchPrimitive(head(es),
       typerepType(retType, location=top.location),
-      allConCaseTransform(tail(es), failExpr, retType, groupMRules(prodRules)),
+      foldPrimPatterns(
+        map(allConCaseTransform(tail(es), failExpr, retType, _),
+          groupMRules(prodRules))),
       failExpr, location=top.location);
   
   {--
@@ -163,6 +164,10 @@ top::MatchRule ::= pt::PatternList '->' e::Expr
 {
   top.pp = pt.pp ++ " -> " ++ e.pp;
   top.errors := pt.errors; -- e.errors is examine later, after transformation.
+  
+  top.errors <-
+    if length(pt.patternList) == top.matchRulePatternSize then []
+    else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
 
   top.matchRuleList = [matchRule(pt.patternList, e, location=top.location)];
 }
@@ -226,45 +231,60 @@ VarBinders ::= s::[Name] l::Location
          else if null(tail(s)) then oneVarBinder(varVarBinder(head(s), location=head(s).location), location=l)
          else consVarBinder(varVarBinder(head(s), location=head(s).location), ',', convStringsToVarBinders(tail(s), l), location=l);
 }
-function convStringsToExprs
-[Expr] ::= s::[Name] tl::[Expr]
+function exprFromName
+Expr ::= n::Name
 {
-  return if null(s) then tl
-         else baseExpr(qNameId(head(s), location=head(s).location), location=head(s).location) :: convStringsToExprs(tail(s), tl);
+  return baseExpr(qNameId(n, location=n.location), location=n.location);
 }
 
 {--
- - When all of 'mrs' have first pattern as a concrete constructor,
- - they are grouped by which constructor and passed here.
- - and we generate primitive patterns for them
+ - Takes a set of matchrules that all match against the SAME CONSTRUCTOR and pushes
+ - a complex case-expr within a primitive pattern that matches this constructor.
+ -
+ - @param restExprs  (The remaining expressions to match against in the overall complex case-expr)
+ - @param failCase  (The failure expression)
+ - @param retType  (The return type of the overall case-expr, and thus this)
+ - @param mrs  (Match rules that all share the same head-pattern)
+ -
+ - @return  A primitive pattern matching the constructor, with the overall case-expr pushed down into it
  -}
 function allConCaseTransform
-PrimPatterns ::= restExprs::[Expr]  failCase::Expr  retType::TypeExp  mrs::[[AbstractMatchRule]]
+PrimPattern ::= restExprs::[Expr]  failCase::Expr  retType::TypeExp  mrs::[AbstractMatchRule]
 {
-  -- TODO: head(head(mrs)).location is probably not the correct thing to use here?? (generally)
-  
-  local names :: [Name] = map(patternListVars, head(head(mrs)).headPattern.patternSubPatternList);
+  -- TODO: potential source of buggy error messages. We're using head(mrs) as the source of
+  -- authority for the length of pattern variables to match against. But each match rule may
+  -- actually have a different length (and .expandHeadPattern just applies whatever is there)
+  -- This is an erroneous condition, but it means we transform into a maybe-more erroneous condition.
+  local names :: [Name] = map(patternListVars, head(mrs).headPattern.patternSubPatternList);
 
   local subcase :: Expr =
     caseExpr(
-      convStringsToExprs(names, restExprs),
-      map((.expandHeadPattern), head(mrs)),
-      failCase, retType, location=head(head(mrs)).location);
+      map(exprFromName, names) ++ restExprs,
+      map((.expandHeadPattern), mrs),
+      failCase, retType, location=head(mrs).location);
+  -- TODO: head(mrs).location is probably not the correct thing to use here?? (generally)
 
-  local fstPat :: PrimPattern =
-    case head(head(mrs)).headPattern of
+  -- Maybe this one is more reasonable? We need to test examples and see what happens...
+  local l :: Location = head(mrs).headPattern.location;
+
+  return
+    case head(mrs).headPattern of
     | prodAppPattern(qn,_,_,_) -> 
-        prodPattern(qn, '(', convStringsToVarBinders(names, head(head(mrs)).location), ')', '->', subcase, location=qn.location)
-    | intPattern(it) -> integerPattern(it, '->', subcase, location=it.location)
-    | strPattern(it) -> stringPattern(it, '->', subcase, location=it.location)
-    | truePattern(l) -> booleanPattern("true", '->', subcase, location=l.location)
-    | falsePattern(l) -> booleanPattern("false", '->', subcase, location=l.location)
-    | nilListPattern(l,_) -> nilPattern(subcase, location=l.location)
-    | consListPattern(h,_,t) -> conslstPattern(head(names), head(tail(names)), subcase, location=h.location)
+        prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->', subcase, location=l)
+    | intPattern(it) -> integerPattern(it, '->', subcase, location=l)
+    | strPattern(it) -> stringPattern(it, '->', subcase, location=l)
+    | truePattern(_) -> booleanPattern("true", '->', subcase, location=l)
+    | falsePattern(_) -> booleanPattern("false", '->', subcase, location=l)
+    | nilListPattern(_,_) -> nilPattern(subcase, location=l)
+    | consListPattern(h,_,t) -> conslstPattern(head(names), head(tail(names)), subcase, location=l)
     end;
-  
-  return if null(tail(mrs)) then onePattern(fstPat, location=fstPat.location)
-         else consPattern(fstPat, '|', allConCaseTransform(restExprs, failCase, retType, tail(mrs)), location=fstPat.location);
+}
+
+function foldPrimPatterns
+PrimPatterns ::= l::[PrimPattern]
+{
+  return if null(tail(l)) then onePattern(head(l), location=head(l).location)
+         else consPattern(head(l), '|', foldPrimPatterns(tail(l)), location=head(l).location);
 }
 
 {--
@@ -281,9 +301,9 @@ AbstractMatchRule ::= headExpr::Expr  headType::TypeExp  rule::AbstractMatchRule
 {
   -- If it's '_' we do nothing, otherwise, bind away!
   return case rule of
-  | matchRule(pl, e) ->
-      matchRule(tail(pl), 
-        case head(pl).patternVariableName of
+  | matchRule(headPat :: restPat, e) ->
+      matchRule(restPat, 
+        case headPat.patternVariableName of
         | just(pvn) -> makeLet(rule.location, pvn, headType, headExpr, e)
         | nothing() -> e
         end, location=rule.location)
@@ -319,6 +339,12 @@ Boolean ::= a::AbstractMatchRule b::AbstractMatchRule
 {
   return a.headPattern.patternSortKey <= b.headPattern.patternSortKey;
 }
+{--
+ - Given a list of match rules, examine the "head pattern" of each.
+ - Sort and group by the key of this head pattern.
+ -
+ - i.e. [cons, nil, cons] becomes [[cons, cons], [nil]] (where 'cons' is the key of the head pattern)
+ -}
 function groupMRules
 [[AbstractMatchRule]] ::= l::[AbstractMatchRule]
 {
