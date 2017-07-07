@@ -29,7 +29,9 @@ tar -zcvf $SV.tar.gz \
  $SV/jars/*.jar \
  $SV/support/bin \
  $SV/support/emacs \
+ $SV/support/vim \
  $SV/support/gedit \
+ $SV/support/nailgun \
  $SV/tutorials/ \
  $SV/grammars/core/ \
  $SV/grammars/lib/extcore/ \
