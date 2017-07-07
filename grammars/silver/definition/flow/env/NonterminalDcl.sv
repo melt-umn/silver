@@ -1,14 +1,17 @@
 grammar silver:definition:flow:env;
 
 import silver:definition:type:syntax only BracketedOptTypeList;
-import silver:driver:util only isExportedBy;
+import silver:driver:util only isStrictlyExportedBy;
 
 aspect production nonterminalDcl
 top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList ';'
 {
+  -- Normally the flow analysis consider options to be the same as exports.
+  -- Here, to avoid creating a hard dependency on options, we ignore options when
+  -- deciding the include things in the *inferred* ref set. (Thus, isStrictlyExportedBy.)
   local inferredInhs :: [String] =
     flatMap(
-      filterOccursForReferences(_, top.env, isExportedBy(_, [top.grammarName], top.compiledGrammars)),
+      filterOccursForReferences(_, top.env, isStrictlyExportedBy(_, [top.grammarName], top.compiledGrammars)),
       getAttrsOn(fName, top.env));
   
   local specInhs :: Maybe<[String]> =
