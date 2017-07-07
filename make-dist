@@ -47,7 +47,7 @@ tar -zcvf $SV.tar.gz \
  $SV/grammars/silver/langutil/ \
  $SV/COPYING.LESSER \
  $SV/HISTORY \
- $SV/README \
+ $SV/README.md \
  
  
 
