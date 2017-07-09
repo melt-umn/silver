@@ -119,7 +119,7 @@ String ::= files::[String]  depth::Integer
 {
   return
     if null(files) then "" else
-    if depth >= 9 then "\n\t " ++ renderFileNames(files, 0) else
+    if depth >= 7 then "\n\t " ++ renderFileNames(files, 0) else
     head(files) ++
     if null(tail(files)) then "" else " " ++ renderFileNames(tail(files), depth + 1);
 }
