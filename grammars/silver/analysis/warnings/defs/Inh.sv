@@ -578,3 +578,30 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 }
 
 -- TODO: pattern variable accesses.
+
+aspect production attributeSection
+top::Expr ::= '(' '.' q::QName ')'
+{
+  -- oh no again
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+
+  -- We need to check that the flow sets are acceptable to what we're doing
+  -- undecorated accesses: flow type for attribute has to be empty
+  -- decorated accesses: FT has to be subset of refset
+  local acceptable :: [String] =
+    if inputType.isDecorated then inhsForTakingRef(inputType.typeName, top.flowEnv) else [];
+
+  top.errors <- 
+    if null(q.lookupAttribute.errors)
+    && (top.config.warnAll || top.config.warnMissingInh)
+    then
+      let inhs :: [String] = 
+            filter(
+              \ x::String -> !contains(x, acceptable),
+              set:toList(inhDepsForSyn(q.lookupAttribute.fullName, inputType.typeName, myFlow)))
+       in if null(inhs) then []
+          else [wrn(top.location, s"Attribute section (.${q.pp}) requires attributes not know to be on '${prettyType(inputType)}': ${implode(", ", inhs)}")]
+      end
+    else [];
+}
+
