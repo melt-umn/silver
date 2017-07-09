@@ -44,18 +44,17 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
 {
   top.pp = "| " ++ rhs.pp ++ mods.pp ++ body.pp; -- TODO missing some here...
   -- Either we have a name, or we generate an appropriate one.
-  local attribute nme :: Name;
-  nme = case optn of
-        | noOptionalName() ->
-            name(
-              "P_"
-              ++ substitute(":", "_", top.grammarName)
-              ++ substitute(".", "_", top.location.filename)
-              -- substitute(":", "_", top.lhsdcl.outputElement.typerep.typeName) TODO
-              ++ "_" ++ toString(v.line) ++ "_" ++ toString(v.column),
-              v.location)
-        | anOptionalName(_, n, _) -> n
-        end;
+  local nme :: Name =
+    case optn of
+    | noOptionalName() ->
+        name(
+          "p_"
+           ++ substitute(":", "_", top.grammarName)
+           ++ "_" ++ substitute(".", "_", top.location.filename)
+           ++ "_" ++ toString(v.line) ++ "_" ++ toString(v.column),
+           v.location)
+    | anOptionalName(_, n, _) -> n
+    end;
 
   local newSig :: ProductionSignature =
     productionSignature(top.lhsdcl, '::=', rhs, location=rhs.location);
