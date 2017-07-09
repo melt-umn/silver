@@ -62,10 +62,10 @@ top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr tm::Ter
  -}
 nonterminal RegExpr with config, location, grammarName, pp, terminalRegExprSpec;
 
-synthesized attribute terminalRegExprSpec :: Regex_R;
+synthesized attribute terminalRegExprSpec :: Regex;
 
 concrete production regExpr
-top::RegExpr ::= '/' r::Regex_R '/'
+top::RegExpr ::= '/' r::Regex '/'
 {
   top.pp = "/" ++ r.regString ++ "/";
   top.terminalRegExprSpec = r;

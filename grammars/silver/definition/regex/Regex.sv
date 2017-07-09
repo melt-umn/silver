@@ -19,202 +19,216 @@ terminal RegexWildcard_t '.' lexer classes { REGEX_OPER };
 terminal RegexChar_t     /./ lexer classes { REGEX_ESC };
 terminal EscapedChar_t /\\./ submits to { REGEX_ESC };
 
-nonterminal Regex_R with regString;       -- full regex, removes choice |
-nonterminal Regex_DR with regString;      -- concat possibly with * + or ?
-nonterminal Regex_UR with regString;      -- characters or sequences/sets
-nonterminal Regex_RR with regString;      -- back up to dr or nothing
-nonterminal Regex_G with regString;       -- Inside charset
-nonterminal Regex_RG with regString;      -- back to g or nothing
-nonterminal Regex_UG with regString;      -- char or range
-nonterminal Regex_CHAR with regString;
+-- TODO: It might be wise to someday do a CST/AST split on this.
 
-function concatenateRegex
-Regex_R ::= l::Regex_R  r::Regex_R
+
+{--
+ - A basic regular expression.
+ -
+ - At lowest precedence, a regex consists of a series of choices (a|b|c)
+ -}
+nonterminal Regex with regString;
+
+concrete production regexEpsilon
+top::Regex ::=
 {
-  return 
-    -- A full regex
-    RtoDR(
-      -- concatenation
-      DRtoUR_RR(
-        -- wrap in parens
-        URtolp_R_rp(
-          terminal(RegexLParen_t, "("),
-          l,
-          terminal(RegexRParen_t, ")")),
-        -- More...
-        RRtoDR(
-          -- like cons
-          DRtoUR_RR(
-            -- wrap in parens
-            URtolp_R_rp(
-              terminal(RegexLParen_t, "("),
-              r,
-              terminal(RegexRParen_t, ")")),
-            -- like nil
-            RRtoeps()))));
-  -- TODO: yeeeesh! These productions and nonterminals need way better names. This whole grammar could use refactoring.
+  top.regString = "";
 }
 
-abstract production literalRegex
-r::Regex_R ::= s::String
+concrete production regexSeq
+top::Regex ::= h::RegexSeq
 {
-  r.regString = regexPurifyString(s);
+  top.regString = h.regString;
 }
 
-function regexPurifyString
-String ::= s::String
+concrete production regexChoice
+top::Regex ::= h::RegexSeq '|' t::Regex
 {
-  local ch :: String = substring(0, 1, s);
-  local rest :: String = substring(1, length(s), s);
-
-  return if length(s) == 0 
-	 then ""
-	 else if isAlpha(ch) || isDigit(ch)
-	      then ch ++ regexPurifyString(rest)
-	      else "[\\" ++ ch ++ "]" ++ regexPurifyString(rest);
+  top.regString = h.regString ++ "|" ++ t.regString;
 }
 
-concrete production Rtoeps
-r::Regex_R ::=
+
+{--
+ - A sequence of regular expressions.
+ -}
+nonterminal RegexSeq with regString;
+
+concrete production regexSeqSnoc
+top::RegexSeq ::= h::RegexSeq t::RegexRepetition
 {
-  r.regString = "";
+  top.regString = h.regString ++ t.regString;
 }
 
-concrete production RtoDR
-r::Regex_R ::= dr::Regex_DR
+concrete production regexSeqOne
+top::RegexSeq ::= t::RegexRepetition
 {
-  r.regString = dr.regString;
+  top.regString = t.regString;
 }
 
-concrete production RtoDR_bar_R
-r::Regex_R ::= first::Regex_DR sep::Choice_t rest::Regex_R
+
+{--
+ - A RegexItem with an optional repetition operator (*+?)
+ -}
+nonterminal RegexRepetition with regString;
+
+concrete production regexKleene
+top::RegexRepetition ::= i::RegexItem '*'
 {
-  r.regString = first.regString ++ "|" ++ rest.regString;
+  top.regString = i.regString ++ "*";
 }
 
-concrete production DRtoUR_RR
-dr::Regex_DR ::= first::Regex_UR rest::Regex_RR
+concrete production regexPlus
+top::RegexRepetition ::= i::RegexItem '+'
 {
-  dr.regString = first.regString ++ rest.regString;
+  top.regString = i.regString ++ "+";
 }
 
-concrete production DRtoUR_star_RR
-dr::Regex_DR ::= first::Regex_UR sep::Kleene_t rest::Regex_RR
+concrete production regexOptional
+top::RegexRepetition ::= i::RegexItem '?'
 {
-  forwards to DRtoUR_RR(regex_kleene_of(first), rest);
+  top.regString = i.regString ++ "?";
 }
 
-abstract production regex_kleene_of
-dr::Regex_UR ::= r::Regex_UR
+concrete production regexOnce
+top::RegexRepetition ::= i::RegexItem
 {
-  dr.regString = r.regString ++ "*";
+  top.regString = i.regString;
 }
 
-concrete production DRtoUR_plus_RR
-dr::Regex_DR ::= first::Regex_UR sep::Plus_t rest::Regex_RR
+
+{--
+ - A single matched entity (char, wildcard, set, group)
+ -}
+nonterminal RegexItem with regString;      -- characters or sequences/sets
+
+concrete production regexCharItem
+top::RegexItem ::= char::RegexChar
 {
-  forwards to DRtoUR_RR(regex_plus_of(first), rest);
+  top.regString = char.regString;
 }
 
-abstract production regex_plus_of
-dr::Regex_UR ::= r::Regex_UR
+concrete production regexWildcard
+top::RegexItem ::= '.'
 {
-  dr.regString = r.regString ++ "+";
+  top.regString = ".";
 }
 
-concrete production DRtoUR_question_RR
-dr::Regex_DR ::= first::Regex_UR sep::Optional_t rest::Regex_RR
+concrete production regexSet
+top::RegexItem ::= '[' g::RegexCharSet ']'
 {
-  forwards to DRtoUR_RR(regex_opt_of(first), rest);
+  top.regString = "[" ++ g.regString ++ "]";
 }
 
-abstract production regex_opt_of
-dr::Regex_UR ::= r::Regex_UR
+concrete production regexSetInverted
+top::RegexItem ::= '[' '^' g::RegexCharSet ']'
 {
-  dr.regString = r.regString ++ "?";
+  top.regString = "[^" ++ g.regString ++ "]";
 }
 
-concrete production RRtoDR
-rr::Regex_RR ::= dr::Regex_DR
+concrete production regexGroup
+top::RegexItem ::= '(' r::Regex ')'
 {
-  rr.regString = dr.regString;
+  top.regString = "(" ++ r.regString ++ ")";
 }
 
-concrete production RRtoeps
-rr::Regex_RR ::=
+
+{--
+ - A list of options or ranges within a regexSet.
+ -}
+nonterminal RegexCharSet with regString;
+
+concrete production regexCharSetSnoc
+top::RegexCharSet ::= h::RegexCharSet  t::RegexCharSetItem
 {
-  rr.regString = "";
+  top.regString = h.regString ++ t.regString;
 }
 
-concrete production URtoCHAR
-ur::Regex_UR ::= char::Regex_CHAR
+concrete production regexCharSetOne
+top::RegexCharSet ::= t::RegexCharSetItem
 {
-  ur.regString = char.regString;
+  top.regString = t.regString;
 }
 
-concrete production URtowildcard
-ur::Regex_UR ::= wildcard::RegexWildcard_t
+
+{--
+ - An option or range within a regexSet.
+ -}
+nonterminal RegexCharSetItem with regString;
+
+concrete production regexSetChar
+top::RegexCharSetItem ::= char::RegexChar
 {
-  ur.regString = ".";
+  top.regString = char.regString;
 }
 
-concrete production URtolb_G_rb
-ur::Regex_UR ::= lb::RegexLBrack_t g::Regex_G rb::RegexRBrack_t
+concrete production regexSetRange
+top::RegexCharSetItem ::= l::RegexChar '-' u::RegexChar
 {
-  ur.regString = "[" ++ g.regString ++ "]";
+  top.regString = l.regString ++ "-" ++ u.regString;
 }
 
-concrete production URtolb_not_G_rb
-ur::Regex_UR ::= lb::RegexLBrack_t sep::RegexNot_t g::Regex_G rb::RegexRBrack_t
-{
-  ur.regString = "[^" ++ g.regString ++ "]";
-}
 
-concrete production URtolp_R_rp
-ur::Regex_UR ::= lp::RegexLParen_t r::Regex_R rp::RegexRParen_t
-{
-  ur.regString = "(" ++ r.regString ++ ")";
-}
+{--
+ - A character, escaped or otherwise.
+ -}
+nonterminal RegexChar with regString;
 
-concrete production GtoUG_RG
-g::Regex_G ::= ug::Regex_UG rg::Regex_RG
-{
-  g.regString = ug.regString ++ rg.regString;
-}
-
-concrete production UGtoCHAR
-ug::Regex_UG ::= char::Regex_CHAR
-{
-  ug.regString = char.regString;
-}
-
-concrete production UGtoCHAR_dash_CHAR
-ug::Regex_UG ::= leastchar::Regex_CHAR sep::Range_t greatestchar::Regex_CHAR
-{
-  ug.regString = leastchar.regString ++ "-" ++ greatestchar.regString;
-}
-
-concrete production RGtoG
-rg::Regex_RG ::= g::Regex_G
-{
-  rg.regString = g.regString;
-}
-
-concrete production RGtoeps
-rg::Regex_RG ::=
-{
-  rg.regString = "";
-}
-
-concrete production CHARtochar
-top::Regex_CHAR ::= char::RegexChar_t
+concrete production regexChar
+top::RegexChar ::= char::RegexChar_t
 {
   top.regString = char.lexeme;
 }
 
-concrete production CHARtoescaped
-top::Regex_CHAR ::= esc::EscapedChar_t
+concrete production regexEscapedChar
+top::RegexChar ::= esc::EscapedChar_t
 {
   top.regString = esc.lexeme;
 }
+
+
+---- Helper functions
+
+
+{--
+ - Concatenates two regular expressions.
+ -}
+function regexConcatenate
+Regex ::= l::Regex  r::Regex
+{
+  return regexSeq(concatRegexItems([regexGroup('(', l, ')'), regexGroup('(', r, ')')]));
+}
+
+{--
+ - Concatenates a list of RegexItems, must be non-empty.
+ -}
+function concatRegexItems
+RegexSeq ::= l::[RegexItem]
+{
+  return foldl(regexSeqSnoc, regexSeqOne(regexOnce(head(l))), map(regexOnce, tail(l)));
+}
+
+{--
+ - Converts a character to a RegexItem, escaping if necessary.
+ -}
+function regexCharToItem
+RegexItem ::= ch::String
+{
+  return regexCharItem(
+    if isAlpha(ch) || isDigit(ch)
+    then regexChar(terminal(RegexChar_t, ch))
+    else regexEscapedChar(terminal(EscapedChar_t, "\\" ++ ch)));
+}
+
+{--
+ - Returns a regex that matches a string literal.
+ - (i.e. no interpretation of special characters.)
+ -}
+function regexLiteral
+Regex ::= s::String
+{
+  return if length(s) == 0
+  then regexEpsilon()
+  else regexSeq(concatRegexItems(map(regexCharToItem, explode("", s))));
+}
+
 

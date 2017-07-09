@@ -107,7 +107,7 @@ top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModi
  - A terminal, and regular expression.
  -}
 abstract production syntaxTerminal
-top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
+top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 {
   top.sortKey = "CCC" ++ n;
   top.cstDcls = [pair(n, top)];

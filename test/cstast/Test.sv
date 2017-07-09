@@ -26,7 +26,7 @@ global obj::SyntaxRoot =
   cstRoot("lol", "Foo",
     foldr(consSyntax, nilSyntax(), 
      [syntaxNonterminal(nonterminalTypeExp("Foo", []), nilSyntax()),
-      syntaxTerminal("XTerm", literalRegex("x"), nilTerminalMod()),
+      syntaxTerminal("XTerm", regexLiteral("x"), nilTerminalMod()),
       syntaxProduction(
         namedSignature("foo", [],
           namedSignatureElement("asdf", nonterminalTypeExp("Foo", [])), []),
@@ -48,7 +48,7 @@ global obj3::SyntaxRoot =
   cstRoot("lol", "Foo",
     foldr(consSyntax, nilSyntax(), [
       syntaxNonterminal(nonterminalTypeExp("Foo", []), nilSyntax()),
-      syntaxTerminal("XTerm", literalRegex("x"), 
+      syntaxTerminal("XTerm", regexLiteral("x"), 
         foldr(consTerminalMod, nilTerminalMod(), [
           termIgnore(),
           termPrecedence(3),
@@ -73,7 +73,7 @@ global obj3::SyntaxRoot =
           lexerClassSubmits(["C"])
         ])),
       syntaxLexerClass("B", nilLexerClassMod()),
-      syntaxTerminal("C", literalRegex("y"), nilTerminalMod()),
+      syntaxTerminal("C", regexLiteral("y"), nilTerminalMod()),
       syntaxParserAttribute("asdf", stringTypeExp(), "asdf = 'asfd';"),
       syntaxDisambiguationGroup("g23", ["XTerm", "C"], "return C;")
      ]), []);
