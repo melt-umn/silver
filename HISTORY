@@ -2,11 +2,28 @@
 --------------------------------------------------------------------------------
 Silver 0.4.0      ?? ??, ??
 
- - TODO: improve MWDA
- - TODO: remove \r stripping
+ - Future compatibility note:
+   - Production names should start with a lower-case letter.
+ - We've moved to GitHub! https://github.com/melt-umn/silver
+ - Now requires Java 7.
+ - Carriage returns are no longer stripped. Use \r with \n in terminals!
+ - Improved and reliable Modular Well-Definedness Analysis
+   - Include flowtype declarations (flowtype Expr = forward {env};)
+ - 'silver:langutil' is now recommended.
+ - String interpolation introduce. (s"${var}")
+   - 'silver:langutil:pp' variant, too: pp"text ${doc}"
+ - Functor attributes introduced.
+ - Lambdas introduced. (\ x::String -> x ++ "!")
  - New 'Either' type in standard library prelude.
  - 'ParseResult' now includes information about syntax errors
+ - Prototype of "terminal prefixes"...
+ - Prototype IO monads library...
+ - Prototype documentation generator...
+ - Improvements to Eclipse IDE support for Silver.
+ - Added a vim mode for Silver.
  - Silver compiler now reports syntax errors in all files, not just the first.
+ - A number of improved error messages.
+ - Performance improvement, misc bug fixes.
 
 --------------------------------------------------------------------------------
 Silver 0.3.6      Sep 30, 2013
