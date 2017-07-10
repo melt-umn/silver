@@ -140,7 +140,7 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::TypeExp
   return typeDef(defaultEnvItem(ntDcl(sg,sl,fn,bound,ty,true)));
 }
 function termDef
-Def ::= sg::String  sl::Location  fn::String  regex::Regex_R
+Def ::= sg::String  sl::Location  fn::String  regex::Regex
 {
   return typeDef(defaultEnvItem(termDcl(sg,sl,fn,regex)));
 }

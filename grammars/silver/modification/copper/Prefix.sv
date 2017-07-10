@@ -72,7 +72,7 @@ top::TerminalPrefix ::= t::String_t
     end;
   local givenPrefix::String = substring(1, length(t.lexeme) - 1, t.lexeme);
   local regex::RegExpr =
-    regExpr('/', literalRegex(givenPrefix ++ seperator), '/', location=top.location);
+    regExpr('/', regexLiteral(givenPrefix ++ seperator), '/', location=top.location);
   top.errors <- 
     case seperatorLookup of
       prefixSeparatorDcl(sg, sl, s) :: _ -> []

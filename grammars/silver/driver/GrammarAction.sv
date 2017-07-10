@@ -98,7 +98,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
   top.io = if null(specs) then top.ioIn else recurse.io;
 
   top.code = 
-    if null(specs) || recurse.code == 0
+    if null(specs) || (null(errs) && recurse.code == 0)
     then 0
     else 21;
 

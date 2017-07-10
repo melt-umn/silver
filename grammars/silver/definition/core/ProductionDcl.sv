@@ -31,18 +31,22 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
   top.errors <-
-        if length(getValueDclAll(fName, top.env)) > 1
-        then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
+    if length(getValueDclAll(fName, top.env)) > 1
+    then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
 
-        -- TODO: Narrow this down to just a list of productions of the same nonterminal before deciding to error.
-        else if length(getValueDclAll(id.name, top.env)) > 1
-        then [err(top.location, "Production " ++ id.pp ++ " shares a name with another production from an imported grammar. Either this production is meant to be an aspect, or you should use 'import ... with " ++ id.pp ++ " as ...' to change the other production's apparent name.")]
-        else [];
+    -- TODO: Narrow this down to just a list of productions of the same nonterminal before deciding to error.
+    else if length(getValueDclAll(id.name, top.env)) > 1
+    then [err(top.location, "Production " ++ id.pp ++ " shares a name with another production from an imported grammar. Either this production is meant to be an aspect, or you should use 'import ... with " ++ id.pp ++ " as ...' to change the other production's apparent name.")]
+    else [];
   
   top.errors <-
-        if length(body.uniqueSignificantExpression) > 1
-        then [err(top.location, "Production '" ++ id.name ++ "' has more than one forward declaration.")]
-        else [];
+    if length(body.uniqueSignificantExpression) > 1
+    then [err(top.location, "Production '" ++ id.name ++ "' has more than one forward declaration.")]
+    else [];
+
+  top.errors <-
+    if isLower(substring(0,1,id.name)) then []
+    else [wrn(id.location, s"(future) ${id.name}: productions may be required to begin with a lower-case letter.")];
 
   top.errors := ns.errors ++ body.errors;
 

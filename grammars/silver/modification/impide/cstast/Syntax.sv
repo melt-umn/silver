@@ -35,7 +35,7 @@ top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModi
 }
 
 aspect production syntaxTerminal
-top::SyntaxDcl ::= n::String regex::Regex_R modifiers::SyntaxTerminalModifiers
+top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 {
   top.termFontPairList = [
     -- First element: full qualifier name. E.g. host$silver_definition_core_Ident_t

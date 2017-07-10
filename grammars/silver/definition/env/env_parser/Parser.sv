@@ -422,7 +422,7 @@ top::IDclInfo ::= 'nt' '(' l::ILocation ',' s::IName ',' td::ITyVarDcls ',' t::I
 }
 
 concrete production aDclInfoTerminal
-top::IDclInfo ::= 'term' '(' l::ILocation ',' n::IName ',' '/' r::Regex_R '/' ')'
+top::IDclInfo ::= 'term' '(' l::ILocation ',' n::IName ',' '/' r::Regex '/' ')'
 {
   top.defs = [termDef(top.grammarName, l.alocation, n.aname, r)];
 }

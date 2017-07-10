@@ -147,7 +147,7 @@ top::ISyntaxDcl ::= 'nt' '(' td::ITyVarDcls ',' t::ITypeRep ')'
   top.syntaxAst = [syntaxNonterminal(t.typerep, nilSyntax())];
 }
 concrete production aSyntaxTerm
-top::ISyntaxDcl ::= 'term' '(' n::IName ',' '/' r::Regex_R '/' ',' tm::ITerminalModifiers ')'
+top::ISyntaxDcl ::= 'term' '(' n::IName ',' '/' r::Regex '/' ',' tm::ITerminalModifiers ')'
 {
   top.syntaxAst = [syntaxTerminal(n.aname, r, foldr(consTerminalMod, nilTerminalMod(), tm.terminalModifiers))];
 }

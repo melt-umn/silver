@@ -209,7 +209,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp c
   top.dclBoundVars = bound;
 }
 abstract production termDcl
-top::DclInfo ::= sg::String sl::Location fn::String regex::Regex_R
+top::DclInfo ::= sg::String sl::Location fn::String regex::Regex
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
