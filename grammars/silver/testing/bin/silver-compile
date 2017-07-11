@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# This script will use Silver to build an AG evaluator for the
+# tutorials grammar and run ant to compile the resulting Java code.
+
+# invoke as               ./silver-compile
+# or add arguments, like  ./silver-compile --clean
+
+##export GRAMMAR_PATH="../../../../../../grammars"
+export  SILVER_HOME="../../../.."
+
+java -Xss8M -Xmx1000M -jar $SILVER_HOME/jars/RunSilver.jar \
+     $@ \
+     silver:testing:bin \
+     && ant
+
+#export SILVER_HOME=../../../../../../../Melt_SVN_http/silver/trunk/jars
+#java -jar $SILVER_HOME/RunSilver.jar $@ \
+#  edu:umn:cs:melt:testing && ant
+
+
+
+
