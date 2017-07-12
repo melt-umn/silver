@@ -600,7 +600,7 @@ top::Expr ::= '(' '.' q::QName ')'
               \ x::String -> !contains(x, acceptable),
               set:toList(inhDepsForSyn(q.lookupAttribute.fullName, inputType.typeName, myFlow)))
        in if null(inhs) then []
-          else [wrn(top.location, s"Attribute section (.${q.pp}) requires attributes not know to be on '${prettyType(inputType)}': ${implode(", ", inhs)}")]
+          else [wrn(top.location, s"Attribute section (.${q.pp}) requires attributes not known to be on '${prettyType(inputType)}': ${implode(", ", inhs)}")]
       end
     else [];
 }
