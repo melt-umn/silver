@@ -116,14 +116,14 @@ top::AspectProductionLHS ::= id::Name
 {
   top.pp = id.pp;
 
-  production attribute rType :: TypeExp;
+  production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
   forwards to aspectProductionLHSFull(id, rType, location=top.location);
 }
 
 concrete production aspectProductionLHSTyped
-top::AspectProductionLHS ::= id::Name '::' t::Type
+top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 {
   top.pp = id.pp;
 
@@ -133,13 +133,13 @@ top::AspectProductionLHS ::= id::Name '::' t::Type
 }
 
 abstract production aspectProductionLHSFull
-top::AspectProductionLHS ::= id::Name t::TypeExp
+top::AspectProductionLHS ::= id::Name t::Type
 {
   top.pp = id.pp ++ "::" ++ prettyType(t);
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
-  production attribute rType :: TypeExp;
+  production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
   top.outputElement = namedSignatureElement(id.name, t);
@@ -181,7 +181,7 @@ top::AspectRHSElem ::= '_'
 {
   top.pp = "_";
 
-  production attribute rType :: TypeExp;
+  production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
   forwards to aspectRHSElemFull(
@@ -195,7 +195,7 @@ top::AspectRHSElem ::= id::Name
 {
   top.pp = id.pp;
 
-  production attribute rType :: TypeExp;
+  production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
   top.errors <- [wrn(top.location, "Giving just a name '" ++ id.name ++ "' is deprecated in aspect signature. Please explicitly use a name and type.")];
@@ -204,7 +204,7 @@ top::AspectRHSElem ::= id::Name
 }
 
 concrete production aspectRHSElemTyped
-top::AspectRHSElem ::= id::Name '::' t::Type
+top::AspectRHSElem ::= id::Name '::' t::TypeExpr
 {
   top.pp = id.pp ++ "::" ++ t.pp;
   
@@ -214,13 +214,13 @@ top::AspectRHSElem ::= id::Name '::' t::Type
 }
 
 abstract production aspectRHSElemFull
-top::AspectRHSElem ::= id::Name t::TypeExp
+top::AspectRHSElem ::= id::Name t::Type
 {
   top.pp = id.pp ++ "::" ++ prettyType(t);
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
-  production attribute rType :: TypeExp;
+  production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
   top.inputElements = [namedSignatureElement(id.name, t)];
@@ -248,13 +248,13 @@ top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS
 }
 
 concrete production functionLHSType
-top::AspectFunctionLHS ::= t::Type
+top::AspectFunctionLHS ::= t::TypeExpr
 {
   top.pp = t.pp;
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then "_NULL_" else head(top.realSignature).elementName;
-  production attribute rType :: TypeExp;
+  production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
   top.outputElement = namedSignatureElement(fName, t.typerep);

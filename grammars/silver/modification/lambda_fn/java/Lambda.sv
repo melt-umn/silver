@@ -15,7 +15,7 @@ import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
 aspect production lambdap
 top::Expr ::= params::ProductionRHS e::Expr
 {
-  local finTy :: TypeExp = finalType(top);
+  local finTy :: Type = finalType(top);
   
   top.translation = 
 s"""(new common.NodeFactory<${e.typerep.transType}>() {
@@ -46,7 +46,7 @@ top::ProductionRHS ::=
 }
 
 aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::Type
+top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   -- Args are unpacked as objects, they can either be an actual value or a Thunk.
   -- We don't know which staticly, so they are just stored as Objects until use.

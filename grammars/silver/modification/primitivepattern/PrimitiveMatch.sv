@@ -4,7 +4,7 @@ imports silver:definition:core;
 imports silver:definition:env;
 imports silver:definition:type;
 
-import silver:definition:type:syntax only typerepType, Type;
+import silver:definition:type:syntax only typerepType, TypeExpr;
 import silver:extension:patternmatching only Arrow_kwd, Vbar_kwd, ensureDecoratedExpr; -- TODO remove
 
 import silver:translation:java:core;
@@ -29,20 +29,20 @@ nonterminal PrimPattern with
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation;
 
-autocopy attribute scrutineeType :: TypeExp;
-autocopy attribute returnType :: TypeExp;
-inherited attribute bindingTypes :: [TypeExp];
+autocopy attribute scrutineeType :: Type;
+autocopy attribute returnType :: Type;
+inherited attribute bindingTypes :: [Type];
 
 
 concrete production matchPrimitiveConcrete
-top::Expr ::= 'match' e::Expr 'return' t::Type 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
+top::Expr ::= 'match' e::Expr 'return' t::TypeExpr 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
 {
   top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
 
   forwards to matchPrimitive(e, t, pr, f, location=top.location);
 }
 abstract production matchPrimitive
-top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
+top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
 
@@ -62,7 +62,7 @@ top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
  - @param f  The failure expression. (if the patterns don't match, evaluate to this.)
  -}
 abstract production matchPrimitiveReal
-top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
+top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
   
@@ -75,7 +75,7 @@ top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
    - decorated by matchPrimitive before we got here, so we should either
    - have a decorated expr, or some other type.
    -}
-  local attribute scrutineeType :: TypeExp;
+  local attribute scrutineeType :: Type;
   scrutineeType = performSubstitution(e.typerep, e.upSubst);
   
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
@@ -100,7 +100,7 @@ top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
   -- may not be determined until we get to the constructor list. e.g. 'case error("lol") of pair(x,_) -> x end'
   -- which is legal, but if we don't do this will result in java translation errors (as the scrutinee will be
   -- type 'a' which is Object, which doesn't have .childAsIs for 'x'.)
-  local scrutineeFinalType :: TypeExp = performSubstitution(scrutineeType, top.finalSubst);
+  local scrutineeFinalType :: Type = performSubstitution(scrutineeType, top.finalSubst);
   local scrutineeTransType :: String = scrutineeFinalType.transType;
   
   top.translation = 
@@ -166,7 +166,7 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
     --  1. has a non-type-variable parameter (e.g. Expr<Boolean>)
     --  2. has fewer free variables than parameters (e.g. Eq<a a>)
     -- THEN it's a gadt.
-    | nonterminalTypeExp(_, tvs) -> !isOnlyTyVars(tvs) || length(tvs) != length(setUnionTyVarsAll(map((.freeVariables), tvs)))
+    | nonterminalType(_, tvs) -> !isOnlyTyVars(tvs) || length(tvs) != length(setUnionTyVarsAll(map((.freeVariables), tvs)))
     | _ -> false
     end;
   
@@ -190,7 +190,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.errors := qn.lookupValue.errors ++ ns.errors ++ chk ++ e.errors;
 
   -- Turns the existential variables existential
-  local attribute prod_type :: TypeExp;
+  local attribute prod_type :: Type;
   prod_type = skolemizeProductionType(qn.lookupValue.typerep);
   -- Note that we're going to check prod_type against top.scrutineeType shortly.
   -- This is where the type variables become unified.
@@ -201,7 +201,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
-  errCheck1 = check(decoratedTypeExp(prod_type.outputType), top.scrutineeType);
+  errCheck1 = check(decoratedType(prod_type.outputType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, qn.pp ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -234,7 +234,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   top.errors := qn.lookupValue.errors ++ ns.errors ++ chk ++ e.errors;
 
-  local attribute prod_type :: TypeExp;
+  local attribute prod_type :: Type;
   prod_type = fullySkolemizeProductionType(qn.lookupValue.typerep); -- that says FULLY. See the comments on that function.
   
   ns.bindingTypes = prod_type.inputTypes;
@@ -243,7 +243,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- part of the
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- threading hack
   
-  errCheck1 = check(decoratedTypeExp(prod_type.outputType), top.scrutineeType);
+  errCheck1 = check(decoratedType(prod_type.outputType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, qn.pp ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -260,7 +260,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.upSubst = top.downSubst;
   
   -- AFTER everything is done elsewhere, we come back with finalSubst, and we produce the refinement, and thread THAT through everything.
-  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, decoratedTypeExp(prod_type.outputType)));
+  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, decoratedType(prod_type.outputType)));
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   -- Okay, now update the finalSubst....
@@ -286,7 +286,7 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
-  errCheck1 = check(intTypeExp(), top.scrutineeType);
+  errCheck1 = check(intType(), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, i.lexeme ++ " is an " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -314,7 +314,7 @@ top::PrimPattern ::= i::String_t '->' e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
-  errCheck1 = check(stringTypeExp(), top.scrutineeType);
+  errCheck1 = check(stringType(), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, i.lexeme ++ " is a " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -342,7 +342,7 @@ top::PrimPattern ::= i::String '->' e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
-  errCheck1 = check(boolTypeExp(), top.scrutineeType);
+  errCheck1 = check(boolType(), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, i ++ " is a " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -370,7 +370,7 @@ top::PrimPattern ::= e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
-  errCheck1 = check(listTypeExp(freshType()), top.scrutineeType);
+  errCheck1 = check(listType(freshType()), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, "nil matches lists but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -399,9 +399,9 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   local t_fName :: String = toString(genInt()) ++ ":" ++ t.name;
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
-  local elemType :: TypeExp = freshType();
+  local elemType :: Type = freshType();
   
-  errCheck1 = check(listTypeExp(elemType), top.scrutineeType);
+  errCheck1 = check(listType(elemType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, "cons matches lists but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];

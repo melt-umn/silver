@@ -56,10 +56,10 @@ AGDcl ::= id::QName  env::Decorated Env
   
   local sig :: FunctionSignature =
     functionSignature(
-      functionLHS(typerepType(id.lookupType.typerep, location=l), location=l),
+      functionLHS(typerepTypeExpr(id.lookupType.typerep, location=l), location=l),
       '::=',
       productionRHSCons(
-        productionRHSElem(name("current__depth", l), '::', typerepType(intTypeExp(), location=l), location=l),
+        productionRHSElem(name("current__depth", l), '::', typerepTypeExpr(intType(), location=l), location=l),
         productionRHSNil(location=l), location=l),
       location=l);
   
@@ -68,7 +68,7 @@ AGDcl ::= id::QName  env::Decorated Env
   
   local stmts :: [ProductionStmt] =
     [
-      shortLocalDecl('local', name("pval", l), '::', typerepType(floatTypeExp(), location=l), '=', 
+      shortLocalDecl('local', name("pval", l), '::', typerepTypeExpr(floatType(), location=l), '=', 
         ifThenElse(
           'if', gt(baseExpr(qName(l, "current__depth"), location=l), '>', intConst(terminal(Int_t, "12"), location=l), location=l),
           'then', multiply(
@@ -130,14 +130,14 @@ Expr ::= id::DclInfo  l::Location
 
 -- Call generateArbitraryID
 function callGenArb
-Expr ::= te::TypeExp  l::Location
+Expr ::= te::Type  l::Location
 {
   return mkStrFunctionInvocation(l, getGenArbName(te), [plus(baseExpr(qName(l, "current__depth"), location=l), '+', intConst(terminal(Int_t, "1"), location=l), location=l)]);
 }
 
 -- Map a type to its ID name for use in 'generateArbitraryID'
 function getGenArbName
-String ::= te::TypeExp
+String ::= te::Type
 {
   return "generateArbitrary" ++ te.idNameForGenArb;
 }

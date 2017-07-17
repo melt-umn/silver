@@ -1,16 +1,16 @@
 grammar silver:definition:core;
 
 concrete production nonterminalDcl
-top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList ';'
+top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs ';'
 {
   top.pp = "nonterminal " ++ id.pp ++ tl.pp ++ ";";
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   
   -- tl.freeVariables is our order list of the bound types for this nonterminal.
-  top.defs = [cl.whichDcl(top.grammarName, id.location, fName, tl.freeVariables, nonterminalTypeExp(fName, tl.types))];
+  top.defs = [cl.whichDcl(top.grammarName, id.location, fName, tl.freeVariables, nonterminalType(fName, tl.types))];
   -- TODO: It's probably reasonable to skip listing
-  -- tl.freeVariables, and the TypeExp. Assuming we have a proper ntDcl.
+  -- tl.freeVariables, and the Type. Assuming we have a proper ntDcl.
   -- And we should consider recording the exact concrete names used... might be nice documentation to use
   
 
@@ -36,7 +36,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList '
 -- This feels a bit hackish.
 nonterminal ClosedOrNot with location, whichDcl;
 
-synthesized attribute whichDcl :: (Def ::= String Location String [TyVar] TypeExp);
+synthesized attribute whichDcl :: (Def ::= String Location String [TyVar] Type);
 
 concrete production openNt
 top::ClosedOrNot ::=

@@ -5,7 +5,7 @@ import silver:util;
 terminal AutoCopy_kwd 'autocopy' lexer classes {KEYWORD};
 
 concrete production attributeDclAuto
-top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type ';'
+top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.pp = "autocopy attribute " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
 

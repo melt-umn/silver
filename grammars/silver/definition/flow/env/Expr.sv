@@ -573,7 +573,7 @@ top::Expr ::= 'new' '(' e1::Expr ')'
 }
 
 aspect production terminalConstructor
-top::Expr ::= 'terminal' '(' t::Type ',' es::Expr ',' el::Expr ')'
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
   top.flowDeps = es.flowDeps ++ el.flowDeps;
   top.flowDefs = es.flowDefs ++ el.flowDefs;
@@ -639,7 +639,7 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 }
 
 aspect production assignExpr
-top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
+top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
   top.flowDefs = e.flowDefs;
 }
@@ -657,7 +657,7 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 attribute flowDeps, flowDefs, flowEnv occurs on PrimPatterns, PrimPattern;
 
 aspect production matchPrimitiveReal
-top::Expr ::= e::Expr t::Type pr::PrimPatterns f::Expr
+top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   -- If we take e.flowDeps ++ f.flowDeps, look them all up in the production
   -- graph, and take the union, then filter down to just those on our anon vertex

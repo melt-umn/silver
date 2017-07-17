@@ -17,7 +17,7 @@ terminal EqualityTest_t 'equalityTest' lexer classes {KEYWORD};
 concrete production equalityTest2_p
 ag::AGDcl ::= kwd::'equalityTest' 
               '(' value::Expr ',' expected::Expr ',' 
-                  valueType::Type ',' testSuite::Name ')' ';'
+                  valueType::TypeExpr ',' testSuite::Name ')' ';'
 {
   ag.pp = "equalityTest (" ++ value.pp ++ "," ++ expected.pp ++ ",\n" ++ 
           "              " ++ valueType.pp ++ ", " ++ testSuite.pp ++ ");\n";
@@ -124,7 +124,7 @@ ag::AGDcl ::= kwd::'equalityTest'
     productionDcl('abstract', 'production', testNameref,
       productionSignature(
         productionLHS(tref, '::',
-          nominalType(qNameTypeId(terminal(IdUpper_t, "Test", ag.location), location=ag.location), botlNone(location=ag.location), location=ag.location), location=ag.location),
+          nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test", ag.location), location=ag.location), botlNone(location=ag.location), location=ag.location), location=ag.location),
         '::=', productionRHSNil(location=ag.location), location=ag.location),
       productionBody('{', foldl(productionStmtsSnoc(_, _, location=ag.location), productionStmtsNil(location=ag.location), [
         localAttributeDcl('local', 'attribute', valueref, '::', valueType, ';', location=ag.location),
@@ -192,26 +192,26 @@ ag::AGDcl ::= kwd::'equalityTest'
 -- Oh, boy... this whole pile of code is awful
 
 function functionNameForBaseTypesCS
-Maybe<String> ::= valueType::Type prefixS::String
+Maybe<String> ::= valueType::TypeExpr prefixS::String
 { return
    case valueType of
-   | integerType(_) -> just(prefixS ++ "Integer")
-   | floatType(_)   -> just(prefixS ++ "Float")
-   | stringType(_)  -> just(prefixS ++ "String")
-   | booleanType(_) -> just(prefixS ++ "Boolean")
+   | integerTypeExpr(_) -> just(prefixS ++ "Integer")
+   | floatTypeExpr(_)   -> just(prefixS ++ "Float")
+   | stringTypeExpr(_)  -> just(prefixS ++ "String")
+   | booleanTypeExpr(_) -> just(prefixS ++ "Boolean")
    | _ -> nothing()
    end;
 }
 
 function mkToStringExprCS
-Maybe<Expr> ::= valueType::Type  exprName::String  l::Location
+Maybe<Expr> ::= valueType::TypeExpr  exprName::String  l::Location
 {
   return
     case functionNameForBaseTypesCS(valueType, "toStringFrom") of
     | just(btt) -> just(mkStrFunctionInvocation(l, btt, [mkNameExpr(exprName, l)]))
     | nothing() -> 
         case valueType of
-        | listType(_,elemType,_) ->
+        | listTypeExpr(_,elemType,_) ->
             case functionNameForBaseTypesCS(elemType,"toStringFrom") of
             | just(btt) ->
                 just(mkStrFunctionInvocation(l, "toStringFromList", [mkNameExpr(btt, l), mkNameExpr(exprName, l)]))
@@ -223,14 +223,14 @@ Maybe<Expr> ::= valueType::Type  exprName::String  l::Location
 }
 
 function mkEqualityTestExprCS
-Maybe<Expr> ::= valueType::Type  l::Location
+Maybe<Expr> ::= valueType::TypeExpr  l::Location
 {
   return
     case functionNameForBaseTypesCS(valueType, "equals") of
     | just(btt) -> just(mkStrFunctionInvocation(l, btt, [mkNameExpr("value", l), mkNameExpr("expected", l)]))
     | nothing() -> 
         case valueType of
-        | listType(_,elemType,_) ->
+        | listTypeExpr(_,elemType,_) ->
             case functionNameForBaseTypesCS(elemType, "equals") of
             | just(btt) ->
                 just(mkStrFunctionInvocation(l, "equalsList", [mkNameExpr(btt, l), mkNameExpr("value", l), mkNameExpr("expected", l)]))

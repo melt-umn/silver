@@ -52,7 +52,7 @@ top::ProductionStmt ::= 'print' e::Expr ';'
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
   
-  errCheck1 = check(e.typerep, stringTypeExp());
+  errCheck1 = check(e.typerep, stringType());
   top.errors <-
        if errCheck1.typeerror
        then [err(e.location, "print expects a string, instead it recieved a " ++ errCheck1.leftpp)]
@@ -60,7 +60,7 @@ top::ProductionStmt ::= 'print' e::Expr ';'
 }
 
 aspect production localAttributeDcl
-top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
+top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 {
   -- TODO see ugly hack in ActionCode.sv
 }
@@ -118,14 +118,14 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' 'if' con
   errCheck2.downSubst = condition.upSubst;
   top.upSubst = errCheck2.upSubst;
 
-  errCheck1 = check(lexeme.typerep, stringTypeExp());
+  errCheck1 = check(lexeme.typerep, stringType());
   top.errors <-
        if errCheck1.typeerror
        then [err(lexeme.location, "Lexeme parameter has type " ++ errCheck1.leftpp ++ " which is not a String")]
        else [];
 
 
-  errCheck2 = check(condition.typerep, boolTypeExp());
+  errCheck2 = check(condition.typerep, boolType());
   top.errors <-
        if errCheck2.typeerror
        then [err(condition.location, "pushToken condition has type " ++ errCheck1.leftpp ++ " which is not a Boolean")]

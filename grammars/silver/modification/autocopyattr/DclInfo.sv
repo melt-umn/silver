@@ -9,7 +9,7 @@ top::DclInfo ::=
 }
 
 abstract production autocopyDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -35,7 +35,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 -- Defs:
 
 function autocopyDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
+Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   return attrDef(defaultEnvItem(autocopyDcl(sg,sl,fn,bound,ty)));
 }

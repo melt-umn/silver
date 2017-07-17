@@ -18,7 +18,7 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
 }
 
 aspect production functionLHS
-top::FunctionLHS ::= t::Type
+top::FunctionLHS ::= t::TypeExpr
 {
   top.lexicalTypeVariables = t.lexicalTypeVariables;
 }

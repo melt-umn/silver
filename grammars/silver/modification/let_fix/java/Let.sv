@@ -15,7 +15,7 @@ import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
 aspect production letp
 top::Expr ::= la::AssignExpr  e::Expr
 {
-  local finTy :: TypeExp = finalType(top);
+  local finTy :: Type = finalType(top);
 
   -- We need to create these nested locals, so we have no choice but to create a thunk object so we can declare these things.
   -- TODO: more specific types here would be nice!
@@ -47,7 +47,7 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 }
 
 aspect production assignExpr
-top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
+top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
   top.let_translation = makeSpecialLocalBinding(fName, e.translation, finalTy.transType);
 }
@@ -63,9 +63,9 @@ aspect production lexicalLocalReference
 top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
   -- To account for a magic case where we generate a let expression with a type
-  -- that is, for example, a ntOrDecTypeExp or something,
+  -- that is, for example, a ntOrDecType or something,
   -- we do final subst on q.lookupValue ALSO here...
-  -- it could be isDecorated (ntOrDecTypeExp) that later gets specialized to undecorated
+  -- it could be isDecorated (ntOrDecType) that later gets specialized to undecorated
   -- and therefore we must be careful not to try to undecorate it again!
   local needsUndecorating :: Boolean =
     performSubstitution(q.lookupValue.typerep, top.finalSubst).isDecorated && !finalType(top).isDecorated;

@@ -1,7 +1,7 @@
 grammar silver:definition:core;
 
 concrete production globalValueDclConcrete
-top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
+top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
   top.pp = "global " ++ id.pp ++ " :: " ++ t.pp ++ " = " ++ e.pp ++ "\n"; 
   top.errors := t.errors ++ e.errors;

@@ -5,18 +5,18 @@ imports silver:definition:type;
 imports silver:definition:env;
 imports silver:util;
 
-nonterminal Type      with config, location, grammarName, errors, env, pp, typerep, lexicalTypeVariables;
+nonterminal TypeExpr with config, location, grammarName, errors, env, pp, typerep, lexicalTypeVariables;
 nonterminal Signature with config, location, grammarName, errors, env, pp, types,   lexicalTypeVariables;
-nonterminal TypeList  with config, location, grammarName, errors, env, pp, types,   lexicalTypeVariables, errorsTyVars, freeVariables;
-nonterminal BracketedOptTypeList with config, location, grammarName, errors, env, pp, types, lexicalTypeVariables, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal TypeExprs  with config, location, grammarName, errors, env, pp, types,   lexicalTypeVariables, errorsTyVars, freeVariables;
+nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, pp, types, lexicalTypeVariables, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 
-synthesized attribute types :: [TypeExp];
+synthesized attribute types :: [Type];
 
 -- Important: These should be IN-ORDER and include ALL type variables that appear, including duplicates!
 synthesized attribute lexicalTypeVariables :: [String];
--- freeVariables also occurs on TypeList, and should be IN ORDER
+-- freeVariables also occurs on TypeExprs, and should be IN ORDER
 
--- These attributes are used if we're using the TypeList as type variables-only.
+-- These attributes are used if we're using the TypeExprs as type variables-only.
 synthesized attribute errorsTyVars :: [Message] with ++;
 -- A new environment, with the type variables in this list appearing bound
 inherited attribute initialEnv :: Decorated Env;
@@ -29,12 +29,12 @@ function addNewLexicalTyVars
 [Def] ::= gn::String sl::Location l::[String]
 {
   return if null(l) then []
-         else lexTyVarDef(gn, sl, head(l), skolemTypeExp(freshTyVar())) ::
+         else lexTyVarDef(gn, sl, head(l), skolemType(freshTyVar())) ::
                   addNewLexicalTyVars(gn, sl, tail(l));
 }
 
-abstract production typerepType
-top::Type ::= t::TypeExp
+abstract production typerepTypeExpr
+top::TypeExpr ::= t::Type
 {
   top.pp = prettyType(t);
 
@@ -45,56 +45,56 @@ top::Type ::= t::TypeExp
   top.lexicalTypeVariables = [];
 }
 
-concrete production integerType
-top::Type ::= 'Integer'
+concrete production integerTypeExpr
+top::TypeExpr ::= 'Integer'
 {
   top.pp = "Integer";
 
-  top.typerep = intTypeExp();
+  top.typerep = intType();
 
   top.errors := [];
 
   top.lexicalTypeVariables = [];
 }
 
-concrete production floatType
-top::Type ::= 'Float'
+concrete production floatTypeExpr
+top::TypeExpr ::= 'Float'
 {
   top.pp = "Float";
 
-  top.typerep = floatTypeExp();
+  top.typerep = floatType();
 
   top.errors := [];
 
   top.lexicalTypeVariables = [];
 }
 
-concrete production stringType
-top::Type ::= 'String'
+concrete production stringTypeExpr
+top::TypeExpr ::= 'String'
 {
   top.pp = "String";
 
-  top.typerep = stringTypeExp();
+  top.typerep = stringType();
 
   top.errors := [];
 
   top.lexicalTypeVariables = [];
 }
 
-concrete production booleanType
-top::Type ::= 'Boolean'
+concrete production booleanTypeExpr
+top::TypeExpr ::= 'Boolean'
 {
   top.pp = "Boolean";
 
-  top.typerep = boolTypeExp();
+  top.typerep = boolType();
 
   top.errors := [];
 
   top.lexicalTypeVariables = [];
 }
 
-concrete production nominalType
-top::Type ::= q::QNameType tl::BracketedOptTypeList
+concrete production nominalTypeExpr
+top::TypeExpr ::= q::QNameType tl::BracketedOptTypeExprs
 {
   top.pp = q.pp ++ tl.pp;
 
@@ -108,8 +108,8 @@ top::Type ::= q::QNameType tl::BracketedOptTypeList
   top.typerep = performSubstitution(q.lookupType.typerep, zipVarsAndTypesIntoSubstitution(q.lookupType.dclBoundVars, tl.types));
 }
 
-concrete production typeVariableType
-top::Type ::= tv::IdLower_t
+concrete production typeVariableTypeExpr
+top::TypeExpr ::= tv::IdLower_t
 {
   top.pp = tv.lexeme;
   
@@ -122,37 +122,37 @@ top::Type ::= tv::IdLower_t
   top.lexicalTypeVariables = [tv.lexeme];
 }
 
-concrete production refType
-top::Type ::= 'Decorated' t::Type
+concrete production refTypeExpr
+top::TypeExpr ::= 'Decorated' t::TypeExpr
 {
   top.pp = "Decorated " ++ t.pp;
 
-  top.typerep = decoratedTypeExp(t.typerep);
+  top.typerep = decoratedType(t.typerep);
 
   top.errors := t.errors;
   
   top.errors <- case t.typerep of
-                  nonterminalTypeExp(_,_) -> []
+                  nonterminalType(_,_) -> []
                 | _ -> [err(t.location, t.pp ++ " is not a nonterminal, and cannot be Decorated.")]
                 end;
 
   top.lexicalTypeVariables = t.lexicalTypeVariables;
 }
 
-concrete production funType
-top::Type ::= '(' sig::Signature ')'
+concrete production funTypeExpr
+top::TypeExpr ::= '(' sig::Signature ')'
 {
   top.pp = "(" ++ sig.pp ++ ")";
 
   top.errors := sig.errors;
 
-  top.typerep = functionTypeExp(head(sig.types), tail(sig.types), []);
+  top.typerep = functionType(head(sig.types), tail(sig.types), []);
 
   top.lexicalTypeVariables = sig.lexicalTypeVariables;
 }
 
 concrete production signatureEmptyRhs
-top::Signature ::= t::Type '::='
+top::Signature ::= t::TypeExpr '::='
 {
   top.pp = t.pp ++ " ::=";
 
@@ -164,7 +164,7 @@ top::Signature ::= t::Type '::='
 }
 
 concrete production psignature
-top::Signature ::= t::Type '::=' list::TypeList 
+top::Signature ::= t::TypeExpr '::=' list::TypeExprs 
 {
   top.pp = t.pp ++ " ::= " ++ list.pp;
 
@@ -178,14 +178,14 @@ top::Signature ::= t::Type '::=' list::TypeList
 -- Bracketed Optional Type Lists -----------------------------------------------
 
 concrete production botlNone
-top::BracketedOptTypeList ::=
+top::BracketedOptTypeExprs ::=
 {
   top.pp = "";
   forwards to botlSome('<', typeListNone(location=top.location), '>', location=top.location);
 }
 
 concrete production botlSome
-top::BracketedOptTypeList ::= '<' tl::TypeList '>'
+top::BracketedOptTypeExprs ::= '<' tl::TypeExprs '>'
 {
   top.pp = "<" ++ tl.pp ++ ">";
 
@@ -206,10 +206,10 @@ top::BracketedOptTypeList ::= '<' tl::TypeList '>'
       top.initialEnv);
 }
 
--- TypeLists -------------------------------------------------------------------
+-- TypeExprss -------------------------------------------------------------------
 
 abstract production typeListNone
-top::TypeList ::=
+top::TypeExprs ::=
 {
   top.pp = "";
   top.errors := [];
@@ -219,7 +219,7 @@ top::TypeList ::=
 
 
 concrete production typeListSingle
-top::TypeList ::= t::Type
+top::TypeExprs ::= t::TypeExpr
 {
   top.pp = t.pp;
 
@@ -231,7 +231,7 @@ top::TypeList ::= t::Type
 }
 
 concrete production typeListCons
-top::TypeList ::= t::Type list::TypeList
+top::TypeExprs ::= t::TypeExpr list::TypeExprs
 {
   top.pp = t.pp ++ " " ++ list.pp;
 
@@ -249,27 +249,27 @@ top::TypeList ::= t::Type list::TypeList
 -- "semantic" errors, rather than parse errors for this.
 
 aspect production typeListNone
-top::TypeList ::=
+top::TypeExprs ::=
 {
   top.errorsTyVars := [];
   top.freeVariables = [];
 }
 
 aspect production typeListSingle
-top::TypeList ::= t::Type
+top::TypeExprs ::= t::TypeExpr
 {
   top.errorsTyVars := case t of
-                        typeVariableType(_) -> []
+                        typeVariableTypeExpr(_) -> []
                       | _ -> [err(t.location, t.pp ++ " is not permitted here, only type variables are")]
                       end;
   top.freeVariables = t.typerep.freeVariables;
 }
 
 aspect production typeListCons
-top::TypeList ::= t::Type list::TypeList
+top::TypeExprs ::= t::TypeExpr list::TypeExprs
 {
   top.errorsTyVars := case t of
-                        typeVariableType(_) -> []
+                        typeVariableTypeExpr(_) -> []
                       | _ -> [err(t.location, t.pp ++ " is not permitted here, only type variables are")]
                       end ++ list.errorsTyVars;
   top.freeVariables = t.typerep.freeVariables ++ list.freeVariables;

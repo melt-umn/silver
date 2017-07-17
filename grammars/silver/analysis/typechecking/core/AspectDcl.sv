@@ -67,7 +67,7 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 }
 
 aspect production aspectProductionLHSFull
-top::AspectProductionLHS ::= id::Name t::TypeExp
+top::AspectProductionLHS ::= id::Name t::Type
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
@@ -96,7 +96,7 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 }
 
 aspect production aspectRHSElemFull
-top::AspectRHSElem ::= id::Name t::TypeExp
+top::AspectRHSElem ::= id::Name t::Type
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
@@ -119,7 +119,7 @@ top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS
 }
 
 aspect production functionLHSType
-top::AspectFunctionLHS ::= t::Type
+top::AspectFunctionLHS ::= t::TypeExpr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 

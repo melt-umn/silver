@@ -9,7 +9,7 @@ synthesized attribute sourceLocation :: Location;
 synthesized attribute fullName :: String;
 
 -- types
-synthesized attribute typerep :: TypeExp;
+synthesized attribute typerep :: Type;
 synthesized attribute dclBoundVars :: [TyVar];
 
 -- values
@@ -17,7 +17,7 @@ synthesized attribute namedSignature :: NamedSignature;
 
 -- occurs
 synthesized attribute attrOccurring :: String;
-inherited attribute givenNonterminalType :: TypeExp;
+inherited attribute givenNonterminalType :: Type;
 
 synthesized attribute isAnnotation :: Boolean; -- also "attrs"
 
@@ -95,7 +95,7 @@ top::DclInfo ::=
 
 -- ValueDclInfos that can NEVER appear in interface files:
 abstract production childDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -106,7 +106,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.typerep = ty;
 }
 abstract production lhsDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -119,7 +119,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 
 -- ValueDclInfos that CAN appear in interface files, but only via "production attributes:"
 abstract production localDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -133,7 +133,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
   top.substitutedDclInfo = localDcl(sg,sl, fn, performSubstitution(ty, top.givenSubstitution));
 }
 abstract production forwardDcl
-top::DclInfo ::= sg::String sl::Location ty::TypeExp
+top::DclInfo ::= sg::String sl::Location ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -181,7 +181,7 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature
   top.typerep = ns.typerep;
 }
 abstract production globalValueDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -195,7 +195,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 
 -- TypeDclInfos
 abstract production ntDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp closed::Boolean
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type closed::Boolean
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -217,11 +217,11 @@ top::DclInfo ::= sg::String sl::Location fn::String regex::Regex
 
   top.unparse = "term(" ++ sl.unparse ++ ", '" ++ fn ++ "', /" ++ regex.regString ++ "/)";
   
-  top.typerep = terminalTypeExp(fn);
+  top.typerep = terminalType(fn);
   top.dclBoundVars = [];
 }
 abstract production lexTyVarDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -235,7 +235,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 
 -- AttributeDclInfos
 abstract production synDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -249,7 +249,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
   top.isSynthesized = true;
 }
 abstract production inhDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -263,7 +263,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
   top.isInherited = true;
 }
 abstract production annoDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -279,7 +279,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
 
 -- ProductionAttrDclInfo
 abstract production paDcl
-top::DclInfo ::= sg::String sl::Location ns::NamedSignature{-fn::String outty::TypeExp intys::[TypeExp]-} dcls::[Def]
+top::DclInfo ::= sg::String sl::Location ns::NamedSignature{-fn::String outty::Type intys::[Type]-} dcls::[Def]
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -301,7 +301,7 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature{-fn::String outty::T
 
 -- OccursDclInfo
 abstract production occursDcl
-top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
+top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type atty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -332,7 +332,7 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp
 }
 
 abstract production annoInstanceDcl
-top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp atty::TypeExp
+top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type atty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -367,7 +367,7 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::TypeExp
 
 -- TODO: this should probably go elsewhere?
 function determineAttributeType
-TypeExp ::= occursDclInfo::DclInfo ntty::TypeExp
+Type ::= occursDclInfo::DclInfo ntty::Type
 {
   occursDclInfo.givenNonterminalType = ntty;
   return occursDclInfo.typerep;

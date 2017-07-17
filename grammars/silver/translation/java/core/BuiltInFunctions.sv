@@ -19,9 +19,9 @@ aspect production toIntFunction
 top::Expr ::= 'toInt' '(' e::Expr ')'
 {
   top.translation = case finalType(e) of
-                    | intTypeExp() -> e.translation
-                    | floatTypeExp() -> "Integer.valueOf(((Float)" ++ e.translation ++ ").intValue())"
-                    | stringTypeExp() -> "Integer.valueOf(" ++ e.translation ++ ".toString())"
+                    | intType() -> e.translation
+                    | floatType() -> "Integer.valueOf(((Float)" ++ e.translation ++ ").intValue())"
+                    | stringType() -> "Integer.valueOf(" ++ e.translation ++ ".toString())"
                     | t -> error("INTERNAL ERROR: no toInt translation for type " ++ prettyType(t))
                     end;
 
@@ -31,9 +31,9 @@ aspect production toFloatFunction
 top::Expr ::= 'toFloat' '(' e::Expr ')'
 {
   top.translation = case finalType(e) of
-                    | intTypeExp() -> "Float.valueOf(((Integer)" ++ e.translation ++ ").floatValue())"
-                    | floatTypeExp() -> e.translation
-                    | stringTypeExp() -> "Float.valueOf(" ++ e.translation ++ ".toString())"
+                    | intType() -> "Float.valueOf(((Integer)" ++ e.translation ++ ").floatValue())"
+                    | floatType() -> e.translation
+                    | stringType() -> "Float.valueOf(" ++ e.translation ++ ".toString())"
                     | t -> error("INTERNAL ERROR: no toFloat translation for type " ++ prettyType(t))
                     end;
 
@@ -56,7 +56,7 @@ top::Expr ::= 'new' '(' e::Expr ')'
 }
 
 aspect production terminalConstructor
-top::Expr ::= 'terminal' '(' t::Type ',' es::Expr ',' el::Expr ')'
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
   top.translation = "new " ++ makeTerminalName(t.typerep.typeName) ++ "(" ++ es.translation ++ ", (core.NLocation)" ++ el.translation ++ ")";
 

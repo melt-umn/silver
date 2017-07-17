@@ -13,73 +13,73 @@ imports silver:modification:collection;
 
 
 
-synthesized attribute idNameForGenArb :: String occurs on TypeExp;
+synthesized attribute idNameForGenArb :: String occurs on Type;
 
-aspect production varTypeExp
-top::TypeExp ::= tv::TyVar
+aspect production varType
+top::Type ::= tv::TyVar
 {
   top.idNameForGenArb = "VAR";
 }
-aspect production skolemTypeExp
-top::TypeExp ::= tv::TyVar
+aspect production skolemType
+top::Type ::= tv::TyVar
 {
   top.idNameForGenArb = "SKOLEM";
 }
-aspect production intTypeExp
-top::TypeExp ::=
+aspect production intType
+top::Type ::=
 {
   top.idNameForGenArb = "Integer";
 }
-aspect production boolTypeExp
-top::TypeExp ::=
+aspect production boolType
+top::Type ::=
 {
   top.idNameForGenArb = "Boolean";
 }
-aspect production floatTypeExp
-top::TypeExp ::=
+aspect production floatType
+top::Type ::=
 {
   top.idNameForGenArb = "Float";
 }
-aspect production stringTypeExp
-top::TypeExp ::=
+aspect production stringType
+top::Type ::=
 {
   top.idNameForGenArb = "String";
 }
-aspect production nonterminalTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+aspect production nonterminalType
+top::Type ::= fn::String params::[Type]
 {
   -- ignore parameters, we don't support them for now
   top.idNameForGenArb = substring(lastIndexOf(":", fn) + 1, length(fn), fn);
 }
-aspect production terminalTypeExp
-top::TypeExp ::= fn::String
+aspect production terminalType
+top::Type ::= fn::String
 {
   top.idNameForGenArb = substring(lastIndexOf(":", fn) + 1, length(fn), fn);
 }
-aspect production decoratedTypeExp
-top::TypeExp ::= te::TypeExp
+aspect production decoratedType
+top::Type ::= te::Type
 {
   top.idNameForGenArb = "Decorated" ++ te.idNameForGenArb;
 }
-aspect production ntOrDecTypeExp
-top::TypeExp ::= nt::TypeExp  hidden::TypeExp
+aspect production ntOrDecType
+top::Type ::= nt::Type  hidden::Type
 {
   -- err, shouldn't happen?
   top.idNameForGenArb = "WTFnrOrDecTypeExpr";
 }
-aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
+aspect production functionType
+top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
   -- err, shouldn't happen?
   top.idNameForGenArb = "FUNCTION";
 }
-aspect production listTypeExp
-top::TypeExp ::= el::TypeExp
+aspect production listType
+top::Type ::= el::Type
 {
   top.idNameForGenArb = "List" ++ el.idNameForGenArb;
 }
-aspect production foreignTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+aspect production foreignType
+top::Type ::= fn::String params::[Type]
 {
   -- err, shouldn't happen?
   top.idNameForGenArb = "FOREIGN";

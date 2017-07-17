@@ -33,7 +33,7 @@ top::Def ::= d::EnvItem
 -- TODO: we don't do any renaming of lexer classes BUG
 
 function parserAttrDef
-Def ::= sg::String sl::Location fn::String ty::TypeExp
+Def ::= sg::String sl::Location fn::String ty::Type
 {
   return valueDef(defaultEnvItem(parserAttrDcl(sg,sl,fn,ty)));
 }
@@ -57,19 +57,19 @@ Def ::= sg::String sl::Location fn::String
 }
 
 function termAttrValueDef
-Def ::= sg::String sl::Location fn::String ty::TypeExp
+Def ::= sg::String sl::Location fn::String ty::Type
 {
   return valueDef(defaultEnvItem(termAttrValueDcl(sg,sl,fn,ty)));
 }
 
 function actionChildDef
-Def ::= sg::String sl::Location fn::String ty::TypeExp
+Def ::= sg::String sl::Location fn::String ty::Type
 {
   return valueDef(defaultEnvItem(actionChildDcl(sg,sl,fn,ty)));
 }
 
 function parserLocalDef
-Def ::= sg::String sl::Location fn::String ty::TypeExp
+Def ::= sg::String sl::Location fn::String ty::Type
 {
   return valueDef(defaultEnvItem(parserLocalDcl(sg,sl,fn,ty)));
 }

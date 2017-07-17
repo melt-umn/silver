@@ -42,12 +42,12 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 }
 
 aspect production aspectProductionLHSTyped
-top::AspectProductionLHS ::= id::Name '::' t::Type
+top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 {
   top.lexicalTypeVariables = t.lexicalTypeVariables;
 }
 aspect production aspectProductionLHSFull
-top::AspectProductionLHS ::= id::Name t::TypeExp
+top::AspectProductionLHS ::= id::Name t::Type
 {
   top.lexicalTypeVariables = []; -- The above overrides this
 }
@@ -65,12 +65,12 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 }
 
 aspect production aspectRHSElemTyped
-top::AspectRHSElem ::= id::Name '::' t::Type
+top::AspectRHSElem ::= id::Name '::' t::TypeExpr
 {
   top.lexicalTypeVariables = t.lexicalTypeVariables;
 }
 aspect production aspectRHSElemFull
-top::AspectRHSElem ::= id::Name t::TypeExp
+top::AspectRHSElem ::= id::Name t::Type
 {
   top.lexicalTypeVariables = []; -- The above overrides this
 }
@@ -82,7 +82,7 @@ top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS
 }
 
 aspect production functionLHSType
-top::AspectFunctionLHS ::= t::Type
+top::AspectFunctionLHS ::= t::TypeExpr
 {
   top.lexicalTypeVariables = t.lexicalTypeVariables;
 }

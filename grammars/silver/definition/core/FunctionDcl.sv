@@ -55,7 +55,7 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
 }
 
 concrete production functionLHS
-top::FunctionLHS ::= t::Type
+top::FunctionLHS ::= t::TypeExpr
 {
   top.pp = t.pp;
 

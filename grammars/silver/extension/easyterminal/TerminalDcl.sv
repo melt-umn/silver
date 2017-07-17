@@ -65,7 +65,7 @@ top::ProductionRHSElem ::= id::Name '::' reg::EasyTerminalRef
   top.pp = id.pp ++ "::" ++ reg.pp;
   top.errors <- reg.errors;
 
-  forwards to productionRHSElem(id, $2, typerepType(reg.typerep, location=reg.location), location=top.location);
+  forwards to productionRHSElem(id, $2, typerepTypeExpr(reg.typerep, location=reg.location), location=top.location);
 }
 
 concrete production productionRhsElemTypeEasyReg
@@ -74,7 +74,7 @@ top::ProductionRHSElem ::= reg::EasyTerminalRef
   top.pp = reg.pp;
   top.errors <- reg.errors;
 
-  forwards to productionRHSElemType(typerepType(reg.typerep, location=top.location), location=top.location);
+  forwards to productionRHSElemType(typerepTypeExpr(reg.typerep, location=top.location), location=top.location);
 }
 
 concrete production aspectRHSElemEasyReg
@@ -92,7 +92,7 @@ top::AspectRHSElem ::= id::Name '::' reg::EasyTerminalRef
   top.pp = id.pp ++ " :: " ++ reg.pp;
   top.errors <- reg.errors;
 
-  forwards to aspectRHSElemTyped(id, $2, typerepType(reg.typerep, location=reg.location), location=top.location);
+  forwards to aspectRHSElemTyped(id, $2, typerepTypeExpr(reg.typerep, location=reg.location), location=top.location);
 }
 
 {-- Introduce single quoted terminal literals in expressions -}
@@ -105,7 +105,7 @@ top::Expr ::= reg::EasyTerminalRef
   local escapedName :: String = escapeString(reg.easyString);
 
   forwards to terminalFunction('terminal', '(',
-    typerepType(reg.typerep, location=reg.location),
+    typerepTypeExpr(reg.typerep, location=reg.location),
     ',', stringConst(terminal(String_t, "\"" ++ escapedName ++ "\""), location=reg.location), ')', location=top.location);
 }
 

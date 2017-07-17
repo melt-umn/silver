@@ -101,7 +101,7 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
 }
 
 aspect production localAttributeDcl
-top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
+top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 {
   local attribute ugh_dcl_hack :: DclInfo;
   ugh_dcl_hack = head(getValueDclAll(fName, top.env)); -- TODO really, we should have a DclInfo for ourselves no problem. but out current approach of constructing it via localDef makes this annoyingly difficult. this suggests a probably environment refactoring...

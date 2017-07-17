@@ -30,7 +30,7 @@ top::SyntaxDcl ::=
 }
 
 aspect production syntaxNonterminal
-top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModifiers
+top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifiers
 {
 }
 
@@ -56,7 +56,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 }
 
 aspect production syntaxParserAttribute
-top::SyntaxDcl ::= n::String ty::TypeExp acode::String
+top::SyntaxDcl ::= n::String ty::Type acode::String
 {
 }
 

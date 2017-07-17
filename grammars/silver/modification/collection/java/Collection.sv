@@ -88,7 +88,7 @@ top::Operation ::=
 --- Declarations ---------------------------------------------------------------
 
 aspect production collectionAttributeDclProd
-top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
+top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with' q::NameOrBOperator ';'
 {
   local attribute o :: Operation;
   o = q.operation;
@@ -115,7 +115,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q:
 }
 
 aspect production collectionAttributeDclSyn
-top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type 'with' q::NameOrBOperator ';'
+top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator ';'
 {
   local attribute className :: String;
   className = "CA" ++ a.name;
@@ -145,7 +145,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeList '::' t
 }
 
 aspect production collectionAttributeDclInh
-top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type 'with' q::NameOrBOperator ';'
+top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator ';'
 {
   local attribute className :: String;
   className = "CA" ++ a.name;

@@ -6,7 +6,7 @@ grammar lib:extcore ;
    the computation followed by the name of the type of the values
    involved.
 
-   For printing, toStringTYPE - toStringInteger, toStringTypeExpr, etc.
+   For printing, toStringTYPE - toStringInteger, toStringType, etc.
 
    We need functions for many of the built-in types. These are included below.
 -}

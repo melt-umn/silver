@@ -37,12 +37,12 @@ AGDcl ::= id::QName  env::Decorated Env  fenv::Decorated FlowEnv  l::Location
 
   local sig :: FunctionSignature =
     functionSignature(
-      functionLHS(typerepType(boolTypeExp(), location=l), location=l),
+      functionLHS(typerepTypeExpr(boolType(), location=l), location=l),
       '::=',
       productionRHSCons(
-        productionRHSElem(name("l", l), '::', typerepType(id.lookupType.typerep, location=l), location=l),
+        productionRHSElem(name("l", l), '::', typerepTypeExpr(id.lookupType.typerep, location=l), location=l),
         productionRHSCons(
-          productionRHSElem(name("r", l), '::', typerepType(id.lookupType.typerep, location=l), location=l),
+          productionRHSElem(name("r", l), '::', typerepTypeExpr(id.lookupType.typerep, location=l), location=l),
           productionRHSNil(location=l), location=l), location=l),
       location=l);
 
@@ -85,7 +85,7 @@ PatternList ::= l::[Pattern]
 function generateCheckEqMRuleList
 MatchRule ::= prod::DclInfo  l::Location
 {
-  local children :: [TypeExp] = prod.typerep.inputTypes;
+  local children :: [Type] = prod.typerep.inputTypes;
   
   local lchildren :: [Name] = genIds("l", 0, length(children), l);
   local rchildren :: [Name] = genIds("r", 0, length(children), l);
@@ -106,7 +106,7 @@ MatchRule ::= prod::DclInfo  l::Location
 }
 
 function zipCheckEqCalls
-Expr ::= t::[TypeExp]  l::[Name]  r::[Name]
+Expr ::= t::[Type]  l::[Name]  r::[Name]
 {
   local c :: Expr = callCheckEq(head(t), head(l).location, [baseExpr(qNameId(head(l), location=head(l).location), location=head(l).location), baseExpr(qNameId(head(r), location=head(l).location), location=head(r).location)]);
   
@@ -128,13 +128,13 @@ function genIds
 
 
 function callCheckEq
-Expr ::= te::TypeExp  l::Location  es::[Expr]
+Expr ::= te::Type  l::Location  es::[Expr]
 {
   return mkStrFunctionInvocation(l, getCheckEqName(te), es);
 }
 
 function getCheckEqName
-String ::= te::TypeExp
+String ::= te::Type
 {
   return "checkEq" ++ te.idNameForGenArb;
 }

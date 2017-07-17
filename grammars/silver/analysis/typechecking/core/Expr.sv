@@ -225,8 +225,8 @@ top::Expr ::= e1::Expr '&&' e2::Expr
   errCheck2.downSubst = errCheck1.upSubst;
   top.upSubst = errCheck2.upSubst;
   
-  errCheck1 = check(e1.typerep, boolTypeExp());
-  errCheck2 = check(e2.typerep, boolTypeExp());
+  errCheck1 = check(e1.typerep, boolType());
+  errCheck2 = check(e2.typerep, boolType());
   top.errors <-
        if errCheck1.typeerror
        then [err(e1.location, "First operand to && must be type bool. Got instead type " ++ errCheck1.leftpp)]
@@ -249,8 +249,8 @@ top::Expr ::= e1::Expr '||' e2::Expr
   errCheck2.downSubst = errCheck1.upSubst;
   top.upSubst = errCheck2.upSubst;
   
-  errCheck1 = check(e1.typerep, boolTypeExp());
-  errCheck2 = check(e2.typerep, boolTypeExp());
+  errCheck1 = check(e1.typerep, boolType());
+  errCheck2 = check(e2.typerep, boolType());
   top.errors <-
        if errCheck1.typeerror
        then [err(e1.location, "First operand to || must be type bool. Got instead type " ++ errCheck1.leftpp)]
@@ -270,7 +270,7 @@ top::Expr ::= '!' e1::Expr
   errCheck1.downSubst = e1.upSubst;
   top.upSubst = errCheck1.upSubst;
   
-  errCheck1 = check(e1.typerep, boolTypeExp());
+  errCheck1 = check(e1.typerep, boolType());
   top.errors <-
        if errCheck1.typeerror
        then [err(e1.location, "Operand to ! must be type bool. Got instead type " ++ errCheck1.leftpp)]
@@ -428,7 +428,7 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
   top.upSubst = errCheck2.upSubst;
   
   errCheck1 = check(e2.typerep, e3.typerep);
-  errCheck2 = check(e1.typerep, boolTypeExp());
+  errCheck2 = check(e1.typerep, boolType());
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Then and else branch must have the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]

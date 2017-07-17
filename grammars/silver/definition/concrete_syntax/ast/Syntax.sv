@@ -73,12 +73,12 @@ top::SyntaxDcl ::=
 
 
 {--
- - A nonterminal. Using TypeExp instead of String, because we'll be doing parameterization later.
+ - A nonterminal. Using Type instead of String, because we'll be doing parameterization later.
  - subdcls is empty to start. A transformed version of the tree will move all 
  - productions for this nonterminal under subdcls.
  -}
 abstract production syntaxNonterminal
-top::SyntaxDcl ::= t::TypeExp subdcls::Syntax --modifiers::SyntaxNonterminalModifiers
+top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifiers
 {
   top.sortKey = "EEE" ++ t.typeName;
   top.cstDcls = [pair(t.typeName, top)] ++ subdcls.cstDcls;
@@ -243,7 +243,7 @@ function lookupStrings
   return map(searchEnvTree(_, e), t);
 }
 function checkRHS
-[String] ::= pn::String rhs::[TypeExp] refs::[[Decorated SyntaxDcl]]
+[String] ::= pn::String rhs::[Type] refs::[[Decorated SyntaxDcl]]
 {
   return if null(rhs) then []
          else (if length(head(refs)) == 1 then 
@@ -287,7 +287,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
  - A parser attribute. The acode initializes it.
  -}
 abstract production syntaxParserAttribute
-top::SyntaxDcl ::= n::String ty::TypeExp acode::String
+top::SyntaxDcl ::= n::String ty::Type acode::String
 {
   top.sortKey = "BBB" ++ n;
   top.cstDcls = [pair(n, top)];

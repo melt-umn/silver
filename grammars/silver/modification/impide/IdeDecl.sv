@@ -169,11 +169,11 @@ top::IdeStmt ::=
 }
 
 -- Helpers for writing expected types
-global t_iomsgs :: TypeExp = nonterminalTypeExp("core:IOVal", [listTypeExp(nonterminalTypeExp("ide:IdeMessage", []))]);
-global t_props :: TypeExp = listTypeExp(nonterminalTypeExp("ide:IdeProperty", []));
-global t_io :: TypeExp = foreignTypeExp("core:IO", []);
-global t_proj :: TypeExp = foreignTypeExp("ide:IdeProject", []);
-global t_loc :: TypeExp = nonterminalTypeExp("core:Location", []);
+global t_iomsgs :: Type = nonterminalType("core:IOVal", [listType(nonterminalType("ide:IdeMessage", []))]);
+global t_props :: Type = listType(nonterminalType("ide:IdeProperty", []));
+global t_io :: Type = foreignType("core:IO", []);
+global t_proj :: Type = foreignType("ide:IdeProject", []);
+global t_loc :: Type = nonterminalType("core:Location", []);
 
 concrete production makeIdeStmt_Builder
 top::IdeStmt ::= 'builder' builderName::QName ';' 
@@ -182,8 +182,8 @@ top::IdeStmt ::= 'builder' builderName::QName ';'
   top.errors := builderName.lookupValue.errors;
   
   -- IOVal<[IdeMessage]> ::= IdeProject  [IdeProperty]  IO
-  local expectedType :: TypeExp =
-    functionTypeExp(t_iomsgs, [t_proj, t_props, t_io], []);
+  local expectedType :: Type =
+    functionType(t_iomsgs, [t_proj, t_props, t_io], []);
   
   local tc1 :: TypeCheck = check(freshenCompletely(builderName.lookupValue.typerep), expectedType);
   tc1.downSubst = emptySubst();
@@ -202,8 +202,8 @@ top::IdeStmt ::= 'postbuilder' postbuilderName::QName ';'
   top.errors := postbuilderName.lookupValue.errors;
   
   -- IOVal<[IdeMessage]> ::= IdeProject  [IdeProperty]  IO
-  local expectedType :: TypeExp =
-    functionTypeExp(t_iomsgs, [t_proj, t_props, t_io], []);
+  local expectedType :: Type =
+    functionType(t_iomsgs, [t_proj, t_props, t_io], []);
   
   local tc1 :: TypeCheck = check(freshenCompletely(postbuilderName.lookupValue.typerep), expectedType);
   tc1.downSubst = emptySubst();
@@ -222,8 +222,8 @@ top::IdeStmt ::= 'exporter' exporterName::QName ';'
   top.errors := exporterName.lookupValue.errors;
   
   -- IOVal<[IdeMessage]> ::= IdeProject  [IdeProperty]  IO
-  local expectedType :: TypeExp =
-    functionTypeExp(t_iomsgs, [t_proj, t_props, t_io], []);
+  local expectedType :: Type =
+    functionType(t_iomsgs, [t_proj, t_props, t_io], []);
   
   local tc1 :: TypeCheck = check(freshenCompletely(exporterName.lookupValue.typerep), expectedType);
   tc1.downSubst = emptySubst();
@@ -242,8 +242,8 @@ top::IdeStmt ::= 'folder' folderName::QName ';'
   top.errors := folderName.lookupValue.errors;
   
   -- [Location] ::= <<CST root's type>>
-  local expectedType :: TypeExp =
-    functionTypeExp(listTypeExp(t_loc), [nonterminalTypeExp(top.startNTName, [])], []);
+  local expectedType :: Type =
+    functionType(listType(t_loc), [nonterminalType(top.startNTName, [])], []);
   
   local tc1 :: TypeCheck = check(freshenCompletely(folderName.lookupValue.typerep), expectedType);
   tc1.downSubst = emptySubst();
@@ -322,10 +322,10 @@ top::StubGenerator ::= 'stub generator' genName::QName ';'
   top.funcDcl = genName.lookupValue.fullName;
 
   -- String ::= [IdeProperty]
-  local stubGenTypeExpected :: TypeExp =
-    functionTypeExp(
-      stringTypeExp(),  -- return type
-      [listTypeExp(nonterminalTypeExp("ide:IdeProperty", []))], -- argument type list
+  local stubGenTypeExpected :: Type =
+    functionType(
+      stringType(),  -- return type
+      [listType(nonterminalType("ide:IdeProperty", []))], -- argument type list
       []);
   
   local tc1 :: TypeCheck = check(freshenCompletely(genName.lookupValue.typerep), stubGenTypeExpected);

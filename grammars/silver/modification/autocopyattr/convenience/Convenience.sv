@@ -9,7 +9,7 @@ import silver:definition:type;
 import silver:definition:env;
 
 concrete production attributeDclAutoMultiple
-top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type 'occurs' 'on' qs::QNames ';'
+top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'occurs' 'on' qs::QNames ';'
 {
   top.pp = "autocopy attribute " ++ a.name ++ tl.pp ++ " :: " ++ te.pp ++ " occurs on " ++ qs.pp ++ ";" ;
   forwards to appendAGDcl(attributeDclAuto($1, $2, a, tl, $5, te, $10, location=a.location),

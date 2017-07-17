@@ -11,7 +11,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
 {
   top.pp = "abstract " ++ v.pp ++ ";";
 
-  local vty :: TypeExp =
+  local vty :: Type =
     freshenCompletely(v.lookupValue.typerep);
   
   local hasLoc :: Boolean =
@@ -20,12 +20,12 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
   local elems :: [NamedSignatureElement] =
     filter(hasAst(_, top.env), top.frame.signature.inputElements);
     
-  local inferredType :: TypeExp =
-    functionTypeExp(
+  local inferredType :: Type =
+    functionType(
       astType(top.frame.signature.outputElement, top.env),
       map(astType(_, top.env), elems),
       (if hasLoc
-       then [namedArgType("location", nonterminalTypeExp("core:Location", []))]
+       then [namedArgType("location", nonterminalType("core:Location", []))]
        else []));
   
   top.errors <-
@@ -95,7 +95,7 @@ Boolean ::= ns::NamedSignatureElement  env::Decorated Env
     !null(getOccursDcl("silver:langutil:ast", ns.typerep.typeName, env));
 }
 function astType
-TypeExp ::= ns::NamedSignatureElement  env::Decorated Env
+Type ::= ns::NamedSignatureElement  env::Decorated Env
 {
   local occursCheck :: [DclInfo] =
     getOccursDcl("silver:langutil:ast", ns.typerep.typeName, env);

@@ -5,75 +5,75 @@ grammar silver:definition:env;
 -- get typeName to find out what nonterminal a NT or DNT is
 -- call unparseType to put something into an interface file
 
-attribute unparse, typeName occurs on TypeExp;
+attribute unparse, typeName occurs on Type;
 
 synthesized attribute typeName :: String;
 
 aspect default production
-top::TypeExp ::=
+top::Type ::=
 {
   top.typeName = ""; -- We actually put a value here, since it's possible for us to request typeName of nonsensical things.
 }
 
-aspect production varTypeExp
-top::TypeExp ::= tv::TyVar
+aspect production varType
+top::Type ::= tv::TyVar
 {
   top.unparse = findAbbrevFor(tv, top.boundVariables);
 }
 
-aspect production skolemTypeExp
-top::TypeExp ::= tv::TyVar
+aspect production skolemType
+top::Type ::= tv::TyVar
 {
   top.unparse = findAbbrevFor(tv, top.boundVariables);
 }
 
-aspect production intTypeExp
-top::TypeExp ::=
+aspect production intType
+top::Type ::=
 {
   top.unparse = "int";
 }
 
-aspect production boolTypeExp
-top::TypeExp ::=
+aspect production boolType
+top::Type ::=
 {
   top.unparse = "bool" ;
 }
 
-aspect production floatTypeExp
-top::TypeExp ::=
+aspect production floatType
+top::Type ::=
 {
   top.unparse = "float" ;
 }
 
-aspect production stringTypeExp
-top::TypeExp ::=
+aspect production stringType
+top::Type ::=
 {
   top.unparse = "string" ;
 }
 
-aspect production nonterminalTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+aspect production nonterminalType
+top::Type ::= fn::String params::[Type]
 {
   top.unparse = "nt('" ++ fn ++ "', " ++ unparseTypes(params, top.boundVariables) ++ ")"; -- TODO todo WHAT?! why must my comments suck
   top.typeName = fn;
 }
 
-aspect production terminalTypeExp
-top::TypeExp ::= fn::String
+aspect production terminalType
+top::Type ::= fn::String
 {
   top.unparse = "term('" ++ fn ++ "')";
   top.typeName = fn;
 }
 
-aspect production decoratedTypeExp
-top::TypeExp ::= te::TypeExp
+aspect production decoratedType
+top::Type ::= te::Type
 {
   top.unparse = "decorated(" ++ te.unparse ++ ")" ;
   top.typeName = te.typeName;
 }
 
-aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
+aspect production functionType
+top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
   top.unparse = "fun(" ++ unparseTypes(params, top.boundVariables) ++ ", " ++ out.unparse ++ unparseNameArgTypes(namedParams, top.boundVariables) ++ ")"  ;
 }

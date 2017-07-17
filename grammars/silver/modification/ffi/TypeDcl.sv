@@ -12,14 +12,14 @@ imports silver:modification:typedecl;
 -- but right now, we don't. Phooey.
 
 concrete production ffiTypeDcl
-top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeList 'foreign' ';'
+top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' ';'
 {
   top.pp = "type " ++ id.pp ++ tl.pp ++ " foreign ;";
   
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs = [typeAliasDef(top.grammarName, id.location, fName, tl.freeVariables, foreignTypeExp(fName, tl.types))];
+  top.defs = [typeAliasDef(top.grammarName, id.location, fName, tl.freeVariables, foreignType(fName, tl.types))];
 
   top.errors := tl.errors ++ tl.errorsTyVars;
   

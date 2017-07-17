@@ -494,7 +494,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
 }
 
 aspect production productionLHS
-top::ProductionLHS ::= id::Name '::' t::Type
+top::ProductionLHS ::= id::Name '::' t::TypeExpr
 {
   top.lhs = applicationExpr(
               baseExpr(

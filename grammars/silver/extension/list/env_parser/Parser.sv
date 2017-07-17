@@ -9,6 +9,6 @@ import silver:definition:core only grammarName, location, env;
 concrete production aTypeRepList
 top::ITypeRep ::= '[' tr::ITypeRep ']'
 {
-  top.typerep = listTypeExp(tr.typerep);
+  top.typerep = listType(tr.typerep);
 }
 

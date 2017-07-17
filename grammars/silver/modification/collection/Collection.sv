@@ -10,7 +10,7 @@ nonterminal NameOrBOperator with config, location, grammarName, errors, env, pp,
 nonterminal Operation with unparse;
 
 synthesized attribute operation :: Operation;
-inherited attribute operatorForType :: TypeExp;
+inherited attribute operatorForType :: Type;
 
 concrete production nameOperator
 top::NameOrBOperator ::= q::QName
@@ -27,7 +27,7 @@ top::NameOrBOperator ::= q::QName
   
   local checkOperationType :: TypeCheck =
     check(freshenCompletely(q.lookupValue.typerep),
-      functionTypeExp(top.operatorForType, [top.operatorForType, top.operatorForType], []));
+      functionType(top.operatorForType, [top.operatorForType, top.operatorForType], []));
   checkOperationType.downSubst = emptySubst();
   checkOperationType.finalSubst = checkOperationType.upSubst;
   
@@ -50,13 +50,13 @@ top::NameOrBOperator ::= '++'
   top.pp = "++";
 
   top.operation = case top.operatorForType of
-                  | stringTypeExp() -> plusPlusOperationString()
-                  | listTypeExp(_) -> plusPlusOperationList()
+                  | stringType() -> plusPlusOperationString()
+                  | listType(_) -> plusPlusOperationList()
                   | _ -> error("INTERNAL ERROR: operation attribute demanded for ++ that isn't string or list.")
                   end;
   top.errors := case top.operatorForType of
-                | stringTypeExp() -> []
-                | listTypeExp(_) -> []
+                | stringType() -> []
+                | listType(_) -> []
                 | _ -> [err(top.location, "++ operator will only work for collections of type list or String")]
                 end;
 }
@@ -68,7 +68,7 @@ top::NameOrBOperator ::= '||'
 
   top.operation = borOperation();
   top.errors := case top.operatorForType of
-                | boolTypeExp() -> []
+                | boolType() -> []
                 | _ -> [err(top.location, "|| operator will only work for collections of type Boolean")]
                 end;
 }
@@ -79,7 +79,7 @@ top::NameOrBOperator ::= '&&'
 
   top.operation = bandOperation();
   top.errors := case top.operatorForType of
-                | boolTypeExp() -> []
+                | boolType() -> []
                 | _ -> [err(top.location, "&& operator will only work for collections of type Boolean")]
                 end;
 }
@@ -117,7 +117,7 @@ top::Operation ::=
 
 --- Declarations ---------------------------------------------------------------
 concrete production collectionAttributeDclSyn
-top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type 'with' q::NameOrBOperator ';'
+top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator ';'
 {
   top.pp = "synthesized attribute " ++ a.name ++ tl.pp ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
 
@@ -143,7 +143,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeList '::' t
 }
 
 concrete production collectionAttributeDclInh
-top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type 'with' q::NameOrBOperator ';'
+top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator ';'
 {
   top.pp = "inherited attribute " ++ a.name ++ tl.pp ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
 
@@ -170,7 +170,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te:
 
 
 concrete production collectionAttributeDclProd
-top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type 'with' q::NameOrBOperator ';'
+top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with' q::NameOrBOperator ';'
 {
   top.pp = "production attribute " ++ a.name ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
 

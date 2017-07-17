@@ -38,7 +38,7 @@ top::Expr ::= q::Decorated QName
 
   top.errors := []; -- Should only ever be in scope when valid
 
-  top.typerep = stringTypeExp();
+  top.typerep = stringType();
   
   top.translation = "new common.StringCatter(lexeme)";
   top.lazyTranslation = top.translation; -- never, but okay!

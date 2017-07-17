@@ -34,7 +34,7 @@ top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatur
   top.namedInputElements = np;
   top.inputNames = map((.elementName), ie);
   top.inputTypes = map((.typerep), ie); -- Does anything actually use this? TODO: eliminate?
-  top.typerep = functionTypeExp(oe.typerep, top.inputTypes, map((.toNamedArgType), np));
+  top.typerep = functionType(oe.typerep, top.inputTypes, map((.toNamedArgType), np));
   
   oe.boundVariables = top.boundVariables;
   top.unparse = "signature('" ++ fn ++ "', " ++ unparseSignatureElements(ie, top.boundVariables) ++ ", " ++ oe.unparse ++ ", " ++ unparseSignatureElements(np, top.boundVariables) ++ ")";
@@ -58,7 +58,7 @@ top::NamedSignature ::=
  - Represents an element of the function/production signature.
  -}
 abstract production namedSignatureElement
-top::NamedSignatureElement ::= n::String ty::TypeExp
+top::NamedSignatureElement ::= n::String ty::Type
 {
   top.unparse = "element('" ++ n ++ "', " ++ ty.unparse ++ ")";
   top.elementName = n;

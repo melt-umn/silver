@@ -12,14 +12,14 @@ grammar silver:definition:type;
  -}
 nonterminal Substitution with substList, substErrors, failure;
 
-synthesized attribute substList :: [Pair<TyVar TypeExp>];
+synthesized attribute substList :: [Pair<TyVar Type>];
 synthesized attribute substErrors :: [String];
 synthesized attribute failure :: Boolean; -- this is a bad hack to work around unify being unable to return a pair
 
 --------------------------------------------------------------------------------
 
 abstract production goodSubst
-top::Substitution ::= sublst::[Pair<TyVar TypeExp>]
+top::Substitution ::= sublst::[Pair<TyVar Type>]
 {
   top.substList = sublst;
   top.substErrors = [];
@@ -27,7 +27,7 @@ top::Substitution ::= sublst::[Pair<TyVar TypeExp>]
 }
 
 abstract production badSubst
-top::Substitution ::= sublst::[Pair<TyVar TypeExp>] errs::[String]
+top::Substitution ::= sublst::[Pair<TyVar Type>] errs::[String]
 {
   top.substList = sublst;
   top.substErrors = errs;
@@ -45,7 +45,7 @@ Substitution ::= e::String
   return badSubst([], [e]);
 }
 function subst
-Substitution ::= tv::TyVar te::TypeExp
+Substitution ::= tv::TyVar te::Type
 {
   return goodSubst([pair(tv,te)]);
 }
@@ -72,7 +72,7 @@ Substitution ::= s::Substitution
 --------------------------------------------------------------------------------
 
 function findSubst
-Maybe<TypeExp> ::= tv::TyVar s::Substitution
+Maybe<Type> ::= tv::TyVar s::Substitution
 {
   return lookupBy(tyVarEqual, tv, s.substList);
 }
@@ -80,17 +80,17 @@ Maybe<TypeExp> ::= tv::TyVar s::Substitution
 --------------------------------------------------------------------------------
 
 -- These are for ordinary tyvar substitutions.
-autocopy attribute substitution :: Substitution occurs on TypeExp;
-synthesized attribute substituted :: TypeExp occurs on TypeExp;
+autocopy attribute substitution :: Substitution occurs on Type;
+synthesized attribute substituted :: Type occurs on Type;
 
-aspect production varTypeExp
-top::TypeExp ::= tv::TyVar
+aspect production varType
+top::Type ::= tv::TyVar
 {
   -- Important: we recursively substitute, until no more substitutions happen!
   -- This also means the substitution list must not be circular!
 
   -- Perform one iteration of substitution
-  local partialsubst :: Maybe<TypeExp> = findSubst(tv, top.substitution);
+  local partialsubst :: Maybe<Type> = findSubst(tv, top.substitution);
   
   -- recursively substitute only if we changed!
   top.substituted = if partialsubst.isJust
@@ -98,8 +98,8 @@ top::TypeExp ::= tv::TyVar
                     else top;
 }
 
-aspect production skolemTypeExp
-top::TypeExp ::= tv::TyVar
+aspect production skolemType
+top::Type ::= tv::TyVar
 {
   -- This may be counter intuitive! I don't know!
   
@@ -115,7 +115,7 @@ top::TypeExp ::= tv::TyVar
   
   -- (See the only non-unification place where subst(...) is called directly at the bottom of this file.)
   
-  local partialsubst :: Maybe<TypeExp> = findSubst(tv, top.substitution);
+  local partialsubst :: Maybe<Type> = findSubst(tv, top.substitution);
   
   -- recursively substitute only if we changed!
   top.substituted = if partialsubst.isJust
@@ -123,77 +123,77 @@ top::TypeExp ::= tv::TyVar
                     else top;
 }
 
-aspect production intTypeExp
-top::TypeExp ::=
+aspect production intType
+top::Type ::=
 {
   top.substituted = top;
 }
 
-aspect production boolTypeExp
-top::TypeExp ::=
+aspect production boolType
+top::Type ::=
 {
   top.substituted = top;
 }
 
-aspect production floatTypeExp
-top::TypeExp ::=
+aspect production floatType
+top::Type ::=
 {
   top.substituted = top;
 }
 
-aspect production stringTypeExp
-top::TypeExp ::=
+aspect production stringType
+top::Type ::=
 {
   top.substituted = top;
 }
 
-aspect production nonterminalTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+aspect production nonterminalType
+top::Type ::= fn::String params::[Type]
 {
-  top.substituted = nonterminalTypeExp(fn, mapSubst(params, top.substitution));
+  top.substituted = nonterminalType(fn, mapSubst(params, top.substitution));
 }
 
-aspect production terminalTypeExp
-top::TypeExp ::= fn::String
+aspect production terminalType
+top::Type ::= fn::String
 {
   top.substituted = top;
 }
 
-aspect production decoratedTypeExp
-top::TypeExp ::= te::TypeExp
+aspect production decoratedType
+top::Type ::= te::Type
 {
-  top.substituted = decoratedTypeExp(te.substituted);
+  top.substituted = decoratedType(te.substituted);
 }
 
-aspect production ntOrDecTypeExp
-top::TypeExp ::= nt::TypeExp  hidden::TypeExp
+aspect production ntOrDecType
+top::Type ::= nt::Type  hidden::Type
 {
   -- We rely very carefully on eliminating ourselves once we've specialized!
   -- Note: we're matching on hidden.subsituted, not just hidden. Important!
   top.substituted =
     case hidden.substituted of
-    | varTypeExp(_) -> ntOrDecTypeExp(nt.substituted, hidden.substituted)
+    | varType(_) -> ntOrDecType(nt.substituted, hidden.substituted)
     | _             -> hidden.substituted
     end;
 }
 
-aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
+aspect production functionType
+top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
-  top.substituted = functionTypeExp(out.substituted, mapSubst(params, top.substitution), mapNamedSubst(namedParams, top.substitution));
+  top.substituted = functionType(out.substituted, mapSubst(params, top.substitution), mapNamedSubst(namedParams, top.substitution));
 }
 
 --------------------------------------------------------------------------------
 
 function performSubstitution
-TypeExp ::= te::TypeExp s::Substitution
+Type ::= te::Type s::Substitution
 {
   te.substitution = s;
   return te.substituted;
 }
 
 function mapSubst
-[TypeExp] ::= tes::[TypeExp] s::Substitution
+[Type] ::= tes::[Type] s::Substitution
 {
   return if null(tes) then []
          else performSubstitution(head(tes), s) :: mapSubst(tail(tes), s);
@@ -221,46 +221,46 @@ function freshTyVars
 function zipVarsIntoSubstitution
 Substitution ::= original::[TyVar] sub::[TyVar]
 {
-  -- once we have "productions are subtypes of functions" then make this just map 'varTypeExp' and call the other one below
+  -- once we have "productions are subtypes of functions" then make this just map 'varType' and call the other one below
   return if null(original) || null(sub) then emptySubst()
-         else composeSubst(subst(head(original), varTypeExp(head(sub))),
+         else composeSubst(subst(head(original), varType(head(sub))),
                 zipVarsIntoSubstitution(tail(original), tail(sub)));
 }
 
 function zipVarsIntoSkolemizedSubstitution
 Substitution ::= original::[TyVar] sub::[TyVar]
 {
-  -- once we have "productions are subtypes of functions" then make this just map 'varTypeExp' and call the other one below
+  -- once we have "productions are subtypes of functions" then make this just map 'varType' and call the other one below
   return if null(original) || null(sub) then emptySubst()
-         else composeSubst(subst(head(original), skolemTypeExp(head(sub))),
+         else composeSubst(subst(head(original), skolemType(head(sub))),
                 zipVarsIntoSkolemizedSubstitution(tail(original), tail(sub)));
 }
 
 
 function zipVarsAndTypesIntoSubstitution
-Substitution ::= original::[TyVar] sub::[TypeExp]
+Substitution ::= original::[TyVar] sub::[Type]
 {
   return if null(original) || null(sub) then emptySubst()
          else composeSubst(subst(head(original), head(sub)),
                 zipVarsAndTypesIntoSubstitution(tail(original), tail(sub)));
 }
 
-function freshenTypeExp
-TypeExp ::= te::TypeExp tvs::[TyVar]
+function freshenType
+Type ::= te::Type tvs::[TyVar]
 {
-  return freshenTypeExpWith(te, tvs, freshTyVars(length(tvs)));
+  return freshenTypeWith(te, tvs, freshTyVars(length(tvs)));
 }
 
-function freshenTypeExpWith
-TypeExp ::= te::TypeExp tvs::[TyVar] ntvs::[TyVar]
+function freshenTypeWith
+Type ::= te::Type tvs::[TyVar] ntvs::[TyVar]
 {
   return performSubstitution(te, zipVarsIntoSubstitution(tvs, ntvs));
 }
 
 -- This function is an artifact of the fact that we ONLY do generalization at the top level, so we don't have (un)bound variables.
 function freshenCompletely
-TypeExp ::= te::TypeExp
+Type ::= te::Type
 {
-  return freshenTypeExp(te, te.freeVariables);
+  return freshenType(te, te.freeVariables);
 }
 

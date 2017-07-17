@@ -1,7 +1,7 @@
 grammar silver:analysis:typechecking:core;
 
 aspect production globalValueDclConcrete
-top::AGDcl ::= 'global' id::Name '::' t::Type '=' e::Expr ';'
+top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
   local attribute errCheck1 :: TypeCheck;
 

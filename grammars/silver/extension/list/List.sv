@@ -6,15 +6,15 @@ terminal LSqr_t '[' ;
 terminal RSqr_t ']' ;
 
 -- The TYPE --------------------------------------------------------------------
-concrete production listType
-top::Type ::= '[' te::Type ']'
+concrete production listTypeExpr
+top::TypeExpr ::= '[' te::TypeExpr ']'
 {
   top.pp = "[" ++ te.pp ++ "]";
 
-  top.typerep = listTypeExp(te.typerep);
+  top.typerep = listType(te.typerep);
 
-  forwards to refType('Decorated', 
-    nominalType(qNameTypeId(terminal(IdUpper_t, "core:List"), location=top.location),
+  forwards to refTypeExpr('Decorated', 
+    nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "core:List"), location=top.location),
       botlSome('<', typeListSingle(te, location=te.location), '>', location=top.location), location=top.location), location=top.location);
 }
 

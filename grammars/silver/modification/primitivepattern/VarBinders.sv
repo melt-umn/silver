@@ -17,7 +17,7 @@ nonterminal VarBinder with
   bindingType, bindingIndex, translation,
   finalSubst;
 
-inherited attribute bindingType :: TypeExp;
+inherited attribute bindingType :: Type;
 inherited attribute bindingIndex :: Integer;
 
 synthesized attribute varBinderCount :: Integer;
@@ -80,9 +80,9 @@ top::VarBinder ::= n::Name
   -- (We *DO NOT* want to substitute first... because that will turn the type
   -- variables into concrete types! and type variables in a production are
   -- NOT automatically decorated!)
-  local ty :: TypeExp =
+  local ty :: Type =
     if top.bindingType.isDecorable
-    then decoratedTypeExp(top.bindingType)
+    then decoratedType(top.bindingType)
     else top.bindingType;
 
   local fName :: String = toString(genInt()) ++ ":" ++ n.name;
@@ -95,7 +95,7 @@ top::VarBinder ::= n::Name
   -- we need to do some substitution to connect it with the real types.
   -- (in the env above its okay, since that must always be consulted with the current substitution,
   -- but here we're rendering the translation. it's the end of the line.)
-  local actualTy :: TypeExp = performSubstitution(ty, top.finalSubst);
+  local actualTy :: Type = performSubstitution(ty, top.finalSubst);
 
   top.translation = 
     makeSpecialLocalBinding(fName, 

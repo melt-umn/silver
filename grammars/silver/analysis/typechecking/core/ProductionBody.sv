@@ -113,7 +113,7 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
 }
 
 aspect production localAttributeDcl
-top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
+top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 {
   top.upSubst = top.downSubst;
 }

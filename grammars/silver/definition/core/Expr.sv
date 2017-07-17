@@ -17,7 +17,7 @@ nonterminal ExprLHSExpr with
 {--
  - The nonterminal being decorated. (Used for 'decorate with {}')
  -}
-autocopy attribute decoratingnt :: TypeExp;
+autocopy attribute decoratingnt :: Type;
 {--
  - The inherited attributes being supplied in a decorate expression
  -}
@@ -75,7 +75,7 @@ top::Expr ::= q::Decorated QName
   
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable
-                then ntOrDecTypeExp(q.lookupValue.typerep, freshType())
+                then ntOrDecType(q.lookupValue.typerep, freshType())
                 else q.lookupValue.typerep;
 }
 
@@ -86,7 +86,7 @@ top::Expr ::= q::Decorated QName
   
   top.errors := [];
   -- An LHS is *always* a decorable (nonterminal) type.
-  top.typerep = ntOrDecTypeExp(q.lookupValue.typerep, freshType());
+  top.typerep = ntOrDecType(q.lookupValue.typerep, freshType());
 }
 
 abstract production localReference
@@ -96,7 +96,7 @@ top::Expr ::= q::Decorated QName
   
   top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable
-                then ntOrDecTypeExp(q.lookupValue.typerep, freshType())
+                then ntOrDecType(q.lookupValue.typerep, freshType())
                 else q.lookupValue.typerep;
 }
 
@@ -107,7 +107,7 @@ top::Expr ::= q::Decorated QName
   
   top.errors := [];
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
-  top.typerep = ntOrDecTypeExp(q.lookupValue.typerep, freshType());
+  top.typerep = ntOrDecType(q.lookupValue.typerep, freshType());
 }
 
 -- Note here that production and function *references* are distinguished.
@@ -210,7 +210,7 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
   
   -- NOTE: REVERSED ORDER
   -- We may need to resolve e's type to get at the actual 'function type'
-  local t :: TypeExp = performSubstitution(e.typerep, e.upSubst);
+  local t :: Type = performSubstitution(e.typerep, e.upSubst);
   es.appExprTypereps = reverse(t.inputTypes);
   es.appExprApplied = e.pp;
   anns.appExprApplied = e.pp;
@@ -244,7 +244,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   
   top.errors := e.errors ++ es.errors ++ anns.errors;
 
-  top.typerep = functionTypeExp(e.typerep.outputType, es.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
+  top.typerep = functionType(e.typerep.outputType, es.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
 }
 
 concrete production attributeSection
@@ -256,8 +256,8 @@ top::Expr ::= '(' '.' q::QName ')'
   
   -- Also, freshen the attribute type, because even though there currently should NOT be any type variables
   -- there, there could be if the code will raise an error.
-  local rawInputType :: TypeExp = freshType();
-  top.typerep = functionTypeExp(freshenCompletely(q.lookupAttribute.typerep), [rawInputType], []);
+  local rawInputType :: Type = freshType();
+  top.typerep = functionType(freshenCompletely(q.lookupAttribute.typerep), [rawInputType], []);
   
   top.errors := q.lookupAttribute.errors;
   
@@ -268,7 +268,7 @@ top::Expr ::= '(' '.' q::QName ')'
                 else [err(q.location, "Only synthesized attributes are currently supported in attribute sections.")];
   
   -- Only known after the inference pass (uses final subst)
-  production attribute inputType :: TypeExp;
+  production attribute inputType :: Type;
   inputType = performSubstitution(rawInputType, top.finalSubst);
   
   production attribute occursCheck :: OccursCheck;
@@ -345,11 +345,11 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   -- TODO: this is a hacky way of dealing with terminal attributes
   top.typerep =
     if q.name == "lexeme" || q.name == "filename"
-    then stringTypeExp()
+    then stringType()
     else if q.name == "line" || q.name == "column"
-    then intTypeExp()
+    then intType()
     else if q.name == "location"
-    then nonterminalTypeExp("core:Location", [])
+    then nonterminalType("core:Location", [])
     else errorType();
 }
 
@@ -455,7 +455,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.pp = "decorate " ++ e.pp ++ " with {" ++ inh.pp ++ "}";
 
-  top.typerep = decoratedTypeExp(performSubstitution(e.typerep, e.upSubst)); -- .decoratedForm?
+  top.typerep = decoratedType(performSubstitution(e.typerep, e.upSubst)); -- .decoratedForm?
   top.errors := e.errors ++ inh.errors;
   
   inh.decoratingnt = performSubstitution(e.typerep, e.upSubst);
@@ -515,7 +515,7 @@ top::Expr ::= 'true'
   top.pp = "true";
   
   top.errors := [];
-  top.typerep = boolTypeExp();
+  top.typerep = boolType();
 }
 
 concrete production falseConst
@@ -524,7 +524,7 @@ top::Expr ::= 'false'
   top.pp = "false";
   
   top.errors := [];
-  top.typerep = boolTypeExp();
+  top.typerep = boolType();
 }
 
 concrete production and
@@ -533,7 +533,7 @@ top::Expr ::= e1::Expr '&&' e2::Expr
   top.pp = e1.pp ++ " && " ++ e2.pp;
 
   top.errors := e1.errors ++ e2.errors;
-  top.typerep = boolTypeExp();
+  top.typerep = boolType();
 }
 
 concrete production or
@@ -542,7 +542,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
   top.pp = e1.pp ++ " || " ++ e2.pp;
 
   top.errors := e1.errors ++ e2.errors;
-  top.typerep = boolTypeExp();
+  top.typerep = boolType();
 }
 
 concrete production not
@@ -550,7 +550,7 @@ top::Expr ::= '!' e::Expr
 {
   top.pp = "! " ++ e.pp;
 
-  top.typerep = boolTypeExp();
+  top.typerep = boolType();
   top.errors := e.errors;
 }
 
@@ -560,7 +560,7 @@ top::Expr ::= e1::Expr '>' e2::Expr
   top.pp = e1.pp ++ " > " ++ e2.pp;
 
   top.errors := e1.errors ++ e2.errors;
-  top.typerep = boolTypeExp();
+  top.typerep = boolType();
 }
 
 concrete production lt
@@ -569,7 +569,7 @@ top::Expr ::= e1::Expr '<' e2::Expr
   top.pp = e1.pp ++ " < " ++ e2.pp;
 
   top.errors := e1.errors ++ e2.errors;
-  top.typerep = boolTypeExp();
+  top.typerep = boolType();
 }
 
 concrete production gteq
@@ -578,7 +578,7 @@ top::Expr ::= e1::Expr '>=' e2::Expr
   top.pp = e1.pp ++ " >= " ++ e2.pp;
 
   top.errors := e1.errors ++ e2.errors;
-  top.typerep = boolTypeExp();
+  top.typerep = boolType();
 }
 
 concrete production lteq
@@ -587,7 +587,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
   top.pp = e1.pp ++ " <= " ++ e2.pp;
 
   top.errors := e1.errors ++ e2.errors;
-  top.typerep = boolTypeExp();
+  top.typerep = boolType();
 }
 
 concrete production eqeq
@@ -596,7 +596,7 @@ top::Expr ::= e1::Expr '==' e2::Expr
   top.pp = e1.pp ++ " == " ++ e2.pp;
 
   top.errors := e1.errors ++ e2.errors;
-  top.typerep = boolTypeExp();
+  top.typerep = boolType();
 }
 
 concrete production neq
@@ -605,7 +605,7 @@ top::Expr ::= e1::Expr '!=' e2::Expr
   top.pp = e1.pp ++ " != " ++ e2.pp;
 
   top.errors := e1.errors ++ e2.errors;
-  top.typerep = boolTypeExp();
+  top.typerep = boolType();
 }
 
 concrete production ifThenElse
@@ -624,7 +624,7 @@ top::Expr ::= i::Int_t
   top.pp = i.lexeme;
 
   top.errors := [];
-  top.typerep = intTypeExp();
+  top.typerep = intType();
 }
 
 concrete production floatConst
@@ -633,7 +633,7 @@ top::Expr ::= f::Float_t
   top.pp = f.lexeme;
 
   top.errors := [];
-  top.typerep = floatTypeExp();
+  top.typerep = floatType();
 } 
 
 concrete production plus
@@ -697,7 +697,7 @@ top::Expr ::= s::String_t
   top.pp = s.lexeme;
 
   top.errors := [];
-  top.typerep = stringTypeExp();
+  top.typerep = stringType();
 }
 
 concrete production plusPlus
@@ -718,7 +718,7 @@ top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
   top.pp = e1.pp ++ " ++ " ++ e2.pp;
 
   top.errors := [];
-  top.typerep = stringTypeExp();
+  top.typerep = stringType();
 }
 
 abstract production errorPlusPlus
@@ -775,12 +775,12 @@ nonterminal AppExpr with
   isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied;
 
 synthesized attribute isPartial :: Boolean;
-synthesized attribute missingTypereps :: [TypeExp];
+synthesized attribute missingTypereps :: [Type];
 synthesized attribute appExprIndicies :: [Integer];
 synthesized attribute appExprSize :: Integer;
 inherited attribute appExprIndex :: Integer;
-inherited attribute appExprTypereps :: [TypeExp];
-inherited attribute appExprTyperep :: TypeExp;
+inherited attribute appExprTypereps :: [Type];
+inherited attribute appExprTyperep :: Type;
 autocopy attribute appExprApplied :: String;
 
 -- These are the "new" Exprs syntax. This allows missing (_) arguments, to indicate partial application.
@@ -906,7 +906,7 @@ synthesized attribute missingAnnotations :: [NamedArgType];
 {--
  - Typereps of those annotations that are partial (_)
  -}
-synthesized attribute partialAnnoTypereps :: [TypeExp];
+synthesized attribute partialAnnoTypereps :: [Type];
 
 synthesized attribute annoIndexConverted :: [Integer];
 synthesized attribute annoIndexSupplied :: [Integer];

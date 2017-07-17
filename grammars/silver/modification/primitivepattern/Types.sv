@@ -1,6 +1,6 @@
 grammar silver:modification:primitivepattern;
 
-import silver:modification:ffi only foreignTypeExp; -- so we cover foreignTypeExp with the 'refine' hack below. TODO
+import silver:modification:ffi only foreignType; -- so we cover foreignType with the 'refine' hack below. TODO
 
 {--
  - Turns the existential variables of a production type into skolem constants,
@@ -10,7 +10,7 @@ import silver:modification:ffi only foreignTypeExp; -- so we cover foreignTypeEx
  - (This is used for *non-gadt* productions.)
  -}
 function skolemizeProductionType
-TypeExp ::= te::TypeExp
+Type ::= te::Type
 {
   local attribute existentialVars :: [TyVar];
   existentialVars = removeTyVars(te.freeVariables, te.outputType.freeVariables);
@@ -29,7 +29,7 @@ TypeExp ::= te::TypeExp
  - new variables, and we need to make them skolem constants.
  -
  - Here's the example, suppose we have 'arrow :: T<a> -> T<b> -> T<A<a b>>'
- - and we do 'case (::Type<c>) of arrow(...)' we're going to refine 
+ - and we do 'case (::TypeExpr<c>) of arrow(...)' we're going to refine 
  - the c to A<a b>, but there's a HUGE HUGE PROBLEM THERE because we can't
  - allow a and b to be unified together later on, because we have no idea what
  - types they are!  So a and b MUST wind up as different skolem constants,
@@ -53,7 +53,7 @@ TypeExp ::= te::TypeExp
  - is as good as another, as far as correctness goes, anyway...
  -}
 function fullySkolemizeProductionType
-TypeExp ::= te::TypeExp
+Type ::= te::Type
 {
   local attribute skolemize :: Substitution;
   skolemize = zipVarsIntoSkolemizedSubstitution(te.freeVariables, freshTyVars(length(te.freeVariables)));
@@ -65,15 +65,15 @@ TypeExp ::= te::TypeExp
 
 --- This is unification, EXCEPT that skolem constants behave like type variables!
 
-inherited attribute refineWith :: TypeExp occurs on TypeExp;
-synthesized attribute refine :: Substitution occurs on TypeExp;
+inherited attribute refineWith :: Type occurs on Type;
+synthesized attribute refine :: Substitution occurs on Type;
 
-aspect production varTypeExp
-top::TypeExp ::= tv::TyVar
+aspect production varType
+top::Type ::= tv::TyVar
 {
   top.refine = 
     case top.refineWith of
-    | varTypeExp(j) ->
+    | varType(j) ->
         if tyVarEqual(tv, j)
         then emptySubst()
         else subst(tv, top.refineWith)
@@ -83,12 +83,12 @@ top::TypeExp ::= tv::TyVar
     end;
 }
 
-aspect production skolemTypeExp
-top::TypeExp ::= tv::TyVar
+aspect production skolemType
+top::Type ::= tv::TyVar
 {
   top.refine = 
     case top.refineWith of
-    | skolemTypeExp(j) -> 
+    | skolemType(j) -> 
         if tyVarEqual(tv, j)
         then emptySubst()
         else subst(tv, top.refineWith)
@@ -98,52 +98,52 @@ top::TypeExp ::= tv::TyVar
     end;
 }
  
-aspect production intTypeExp
-top::TypeExp ::=
+aspect production intType
+top::Type ::=
 {
   top.refine = 
     case top.refineWith of
-    | intTypeExp() -> emptySubst()
+    | intType() -> emptySubst()
     | _ -> errorSubst("Tried to refine Integer with " ++ prettyType(top.refineWith))
     end;
 }
 
-aspect production boolTypeExp
-top::TypeExp ::=
+aspect production boolType
+top::Type ::=
 {
   top.refine = 
     case top.refineWith of
-    | boolTypeExp() -> emptySubst()
+    | boolType() -> emptySubst()
     | _ -> errorSubst("Tried to refine Boolean with " ++ prettyType(top.refineWith))
     end;
 }
 
-aspect production floatTypeExp
-top::TypeExp ::=
+aspect production floatType
+top::Type ::=
 {
   top.refine = 
     case top.refineWith of
-    | floatTypeExp() -> emptySubst()
+    | floatType() -> emptySubst()
     | _ -> errorSubst("Tried to refine Float with " ++ prettyType(top.refineWith))
     end;
 }
 
-aspect production stringTypeExp
-top::TypeExp ::=
+aspect production stringType
+top::Type ::=
 {
   top.refine = 
     case top.refineWith of
-    | stringTypeExp() -> emptySubst()
+    | stringType() -> emptySubst()
     | _ -> errorSubst("Tried to refine Boolean with " ++ prettyType(top.refineWith))
     end;
 }
 
-aspect production nonterminalTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+aspect production nonterminalType
+top::Type ::= fn::String params::[Type]
 {
   top.refine = 
     case top.refineWith of
-    | nonterminalTypeExp(ofn, op) ->
+    | nonterminalType(ofn, op) ->
         if fn == ofn
         then refineAll( params, op )
         else errorSubst("Tried to refine conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
@@ -151,12 +151,12 @@ top::TypeExp ::= fn::String params::[TypeExp]
     end;
 }
 
-aspect production terminalTypeExp
-top::TypeExp ::= fn::String
+aspect production terminalType
+top::Type ::= fn::String
 {
   top.refine = 
     case top.refineWith of
-    | terminalTypeExp(ofn) ->
+    | terminalType(ofn) ->
         if fn == ofn
         then emptySubst()
         else errorSubst("Tried to refine conflicting terminal types " ++ fn ++ " and " ++ ofn)
@@ -164,32 +164,32 @@ top::TypeExp ::= fn::String
     end;
 }
 
-aspect production decoratedTypeExp
-top::TypeExp ::= te::TypeExp
+aspect production decoratedType
+top::Type ::= te::Type
 {
   top.refine = 
     case top.refineWith of
-    | decoratedTypeExp(ote) -> refine(te, ote)
+    | decoratedType(ote) -> refine(te, ote)
     | _ -> errorSubst("Tried to refine decorated type with " ++ prettyType(top.refineWith))
     end;
 }
 
-aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
+aspect production functionType
+top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
   top.refine = 
     case top.refineWith of
-    | functionTypeExp(oo, op, onp) -> refineAll(out :: params ++ map((.argType), namedParams), oo :: op ++ map((.argType), onp))
+    | functionType(oo, op, onp) -> refineAll(out :: params ++ map((.argType), namedParams), oo :: op ++ map((.argType), onp))
     | _ -> errorSubst("Tried to refine function type with " ++ prettyType(top.refineWith))
     end;
 }
 
-aspect production foreignTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+aspect production foreignType
+top::Type ::= fn::String params::[Type]
 {
   top.refine = 
     case top.refineWith of
-    | foreignTypeExp(ofn, op) -> 
+    | foreignType(ofn, op) -> 
         if fn == ofn
         then refineAll( params, op )
         else errorSubst("Tried to refine conflicting foreign types " ++ fn ++ " and " ++ ofn)
@@ -205,20 +205,20 @@ top::TypeExp ::= fn::String params::[TypeExp]
  - @param constructorType  The decorated type of the production's product (i.e. the type it constructs)
  -}
 function produceRefinement
-Substitution ::= scrutineeType::TypeExp  constructorType::TypeExp
+Substitution ::= scrutineeType::Type  constructorType::Type
 {
   -- only do refinement if they're the same type constructor.
   -- If you look at the type rules, you'll notice they're requiring "T" be the same,
   -- and this refinement only happens on the parameters (i.e. fmgu(T p = T a))
   return case scrutineeType, constructorType of
-         | decoratedTypeExp(nonterminalTypeExp(n1, p1)), decoratedTypeExp(nonterminalTypeExp(n2,p2))
+         | decoratedType(nonterminalType(n1, p1)), decoratedType(nonterminalType(n2,p2))
             -> if n1 == n2 then refineAll(p1,p2) else emptySubst()
          | _, _ -> emptySubst()
          end;
 }
 
 function refine
-Substitution ::= te1::TypeExp te2::TypeExp
+Substitution ::= te1::Type te2::Type
 {
   local attribute leftward :: Substitution;
   leftward = te1.refine;
@@ -233,7 +233,7 @@ Substitution ::= te1::TypeExp te2::TypeExp
          else rightward; -- arbitrary choice of errors. Non-confluent!!
 }
 function refineAll
-Substitution ::= te1::[TypeExp] te2::[TypeExp]
+Substitution ::= te1::[Type] te2::[Type]
 {
   local attribute first :: Substitution;
   first = refine(head(te1), head(te2));
@@ -249,12 +249,12 @@ Substitution ::= te1::[TypeExp] te2::[TypeExp]
 
 --------
 function isOnlyTyVars
-Boolean ::= ls::[TypeExp]
+Boolean ::= ls::[Type]
 {
   return case ls of
          | [] -> true
-         | varTypeExp(_) :: t -> isOnlyTyVars(t)
-         | skolemTypeExp(_) :: t -> isOnlyTyVars(t)
+         | varType(_) :: t -> isOnlyTyVars(t)
+         | skolemType(_) :: t -> isOnlyTyVars(t)
          | _ -> false
          end;
 }
