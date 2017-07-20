@@ -3,8 +3,7 @@ grammar silver:definition:type;
 option silver:modification:ffi; -- foreign types
 
 {--
- - Misnamed: Silver Type Representations.
- - (From Type you'd expect this is syntax, not representations.)
+ - Silver Type Representations.
  -}
 nonterminal Type with freeVariables;
 
