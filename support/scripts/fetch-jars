@@ -2,6 +2,13 @@
 
 set -eu
 
+if [ -d ../../grammars ]; then cd ../..; fi
+
+if [ ! -d grammars ]; then
+  echo "Couldn't find Silver root. Run as ./support/scripts/fetch-jars"
+  exit 1
+fi
+
 LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
 REMOTE_STORE="http://melt.cs.umn.edu/downloads/silver-dev/jars"
 

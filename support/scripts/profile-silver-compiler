@@ -1,7 +1,11 @@
 #!/bin/bash
 
-if [ ! -d jars ]; then
-  echo "Run from silver root as './support/profile/run.sh'"
+set -eu
+
+if [ -d ../../grammars ]; then cd ../..; fi
+
+if [ ! -d grammars ]; then
+  echo "Couldn't find Silver root. Run as ./support/scripts/profile-silver-compiler"
   exit 1
 fi
 

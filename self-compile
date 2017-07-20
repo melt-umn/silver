@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# Exit on error or undefined variable. Good bash hygiene.
 set -eu
+
+if [ ! -d grammars ]; then
+  echo "Couldn't find Silver root. Run as ./self-compile"
+  exit 1
+fi
 
 # Defaults overridable by setting an environment variable:
 SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx1800M -Xss6M"}

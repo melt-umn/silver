@@ -2,6 +2,13 @@
 
 set -eu
 
+if [ -d ../../grammars ]; then cd ../..; fi
+
+if [ ! -d grammars ]; then
+  echo "Couldn't find Silver root. Run as ./support/scripts/publish-jars"
+  exit 2
+fi
+
 DT=$(date +"%Y.%m.%d.%H.%M")
 JARS_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
 JARS_BACKUP=/project/melt4/People/ted/jars_bak
@@ -9,11 +16,6 @@ JARS_BACKUP=/project/melt4/People/ted/jars_bak
 if [ ! -d $JARS_STORE ]; then
   echo "Must be running on a umn machine in the melt group."
   exit 1
-fi
-
-if [ ! -d jars ]; then
-  echo "Should be run from root of silver tree."
-  exit 2
 fi
 
 # I like to keep a backup series of our jars...

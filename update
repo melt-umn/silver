@@ -2,47 +2,47 @@
 
 set -eu
 
-if [ ! -d grammars ] || [ ! -d tutorials ]; then
-  printf "%s\n" "Wrong directory? Run as ./update"
+if [ ! -d grammars ] ; then
+  echo "Wrong directory? Run as ./update"
   exit 1
 fi
 
-printf "%s\n" "-- Updating git checkout"
+echo " -- Updating git checkout"
 git pull
 
-printf "%s\n" "-- Updating jar files"
-./fetch-jars
+echo " -- Updating jar files"
+./support/scripts/fetch-jars
 
 mkdir -p generated
 
 if [ -d generated/src ]; then
-  printf "%s\n" "-- Deleting old generated file cache"
+  echo " -- Deleting old generated file cache"
   for file in generated/*/*; do
-    printf "%s\n" $file
+    echo $file
     rm -rf $file
   done
 fi
 
 if [ -d /export/scratch ] && [ ! -d generated/src ]; then
-  printf "%s\n" "-- Creating initial generated cache symlinks to local disk"
+  echo " -- Creating initial generated cache symlinks to local disk"
   CACHE=/export/scratch/${USER}-deletable-cache
   mkdir -p ${CACHE}
   if [ ! -O ${CACHE} ]; then
-    printf "%s\n" "ERROR: You do not own your own generated cache!"
+    echo "ERROR: You do not own your own generated cache!"
     ls -la /export/scratch
     exit 1
   fi
   for dir in bin src ide doc; do
-    printf "%s\n" ${CACHE}/${dir}
+    echo ${CACHE}/${dir}
     mkdir -p ${CACHE}/${dir}
     ln -s ${CACHE}/${dir} generated/${dir}
   done
 fi
 
-printf "%s\n" "-- Done"
+echo " -- Done"
 
 if [ $(git symbolic-ref -q HEAD) != "refs/heads/develop" ]; then
-  printf "%s\n" "-- REMINDER: You do not currently have 'develop' checked out."
+  echo " -- REMINDER: You do not currently have 'develop' checked out. git branch:"
   git branch
 fi
 

@@ -1,0 +1,91 @@
+#!/bin/bash
+
+set -eu
+
+# Find our project root
+
+if [ ! -d grammars ]; then
+  echo "Couldn't find Silver root. Run as ./install"
+  exit 1
+fi
+
+echo "Installing Silver scripts..."
+
+# Make sure we have ~/bin
+
+if [ ! -d ~/bin ]; then
+  echo "~/bin not found. Aborting."
+  case `uname` in
+  *Darwin*) 
+    echo "On OS X, you can create it and alter you shell to include it in your PATH:"
+    echo -e "\tmkdir ~/bin"
+    if [ -f ~/.bash_profile ]; then
+      CHOICE=~/.bash_profile
+    else
+      CHOICE=~/.profile
+    fi
+    echo "Then edit ${CHOICE} to include:"
+    echo -e "\tPATH=~/bin:\$PATH"
+    echo "And then restart your terminal."
+    ;;
+  *)
+    echo "On most Linux distributions, all you should need to do is:"
+    echo -e "\tmkdir ~/bin"
+    echo "and restart your terminal."
+    ;;
+  esac
+  exit 1
+fi
+
+echo "Found ~/bin"
+
+# Find readlink on macs
+
+case `uname` in
+*Darwin*)
+  READLINK=greadlink
+  if [ ! -f `which greadlink` ]; then
+    echo "Missing greadlink. Please install coreutils:"
+    echo -e "\tbrew install coreutils"
+    exit 4
+  fi
+  ;;
+*)
+  READLINK=readlink
+  ;;
+esac
+
+echo "Found $READLINK"
+
+REPO=$("$READLINK" -f .)
+
+if [ ! -f "$REPO/jars/RunSilver.jar" ]; then
+  echo "Failed to find Silver jars."
+  echo "(If this is a fresh checkout, run ./update first)"
+  exit 2
+fi
+
+echo "Found $REPO"
+
+for file in support/bin/*; do
+  filename=$(basename "$file")
+  if [ -f ~/bin/$filename ]; then
+    rm ~/bin/$filename
+  fi
+  if ln -s "$("$READLINK" -f "$file")" ~/bin/ ; then
+    echo "Installed ~/bin/$filename"
+  else
+    echo "Failed to install ~/bin/$filename"
+    exit 1
+  fi
+done
+
+echo "Install finished."
+
+echo "Consider optional pieces:"
+echo " - Run ./support/nailgun/install-sv-nailgun"
+echo " - Run ./support/gedit/install.sh"
+echo " - Run ./support/vim/install.sh"
+echo " - Run ./support/vim/install-neovim.sh"
+echo " - Use ./support/emacs/silver-mode/silver-mode.el"
+
