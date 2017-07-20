@@ -7,7 +7,7 @@ terminal Parser_kwd 'parser' lexer classes {KEYWORD}; -- not RESERVED?
 -- TODO: You know, maybe parser specs should get moved over here as well.
 
 concrete production parserDcl
-top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
+top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
 {
   top.pp = "parser " ++ m.pp ++ ";"; -- TODO?
   
@@ -44,9 +44,9 @@ top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
 
   production namedSig :: NamedSignature =
     namedSignature(fName,
-      [namedSignatureElement("stringToParse", stringTypeExp()),
-       namedSignatureElement("filenameToReport", stringTypeExp())],
-      namedSignatureElement("__func__lhs", nonterminalTypeExp("core:ParseResult", [t.typerep])),
+      [namedSignatureElement("stringToParse", stringType()),
+       namedSignatureElement("filenameToReport", stringType())],
+      namedSignatureElement("__func__lhs", nonterminalType("core:ParseResult", [t.typerep])),
       []);
 
   production spec :: ParserSpec =
@@ -121,7 +121,7 @@ nonterminal ParserComponentModifier with config, env, grammarName, componentGram
 
 -- Separate bit translating the parser declaration.
 aspect production parserDcl
-top::AGDcl ::= 'parser' n::Name '::' t::Type '{' m::ParserComponents '}'
+top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
 {
   local className :: String = "P" ++ n.name;
 

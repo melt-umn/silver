@@ -1,7 +1,7 @@
 grammar silver:translation:java:core;
 
 aspect production nonterminalDcl
-top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList ';'
+top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs ';'
 {
   local className :: String = "N" ++ id.name;
   
@@ -9,7 +9,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList '
   local synVar :: String = "count_syn__ON__" ++ id.name;
   
   local myAnnos :: [NamedSignatureElement] =
-    annotationsForNonterminal(nonterminalTypeExp(fName, tl.types), top.env);
+    annotationsForNonterminal(nonterminalType(fName, tl.types), top.env);
   
   top.initWeaving := "\tpublic static int " ++ inhVar ++ " = 0;\n"
                   ++ "\tpublic static int " ++ synVar ++ " = 0;\n";

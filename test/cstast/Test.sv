@@ -25,11 +25,11 @@ parser syntaxInterfaceParser :: ISyntaxInner {
 global obj::SyntaxRoot =
   cstRoot("lol", "Foo",
     foldr(consSyntax, nilSyntax(), 
-     [syntaxNonterminal(nonterminalTypeExp("Foo", []), nilSyntax()),
+     [syntaxNonterminal(nonterminalType("Foo", []), nilSyntax()),
       syntaxTerminal("XTerm", regexLiteral("x"), nilTerminalMod()),
       syntaxProduction(
         namedSignature("foo", [],
-          namedSignatureElement("asdf", nonterminalTypeExp("Foo", [])), []),
+          namedSignatureElement("asdf", nonterminalType("Foo", [])), []),
         nilProductionMod())
      ]), []);
 
@@ -47,7 +47,7 @@ equalityTest( obj_again.unparse, obj.unparse, String, csttests );
 global obj3::SyntaxRoot =
   cstRoot("lol", "Foo",
     foldr(consSyntax, nilSyntax(), [
-      syntaxNonterminal(nonterminalTypeExp("Foo", []), nilSyntax()),
+      syntaxNonterminal(nonterminalType("Foo", []), nilSyntax()),
       syntaxTerminal("XTerm", regexLiteral("x"), 
         foldr(consTerminalMod, nilTerminalMod(), [
           termIgnore(),
@@ -60,7 +60,7 @@ global obj3::SyntaxRoot =
         ])),
       syntaxProduction(
         namedSignature("foo", [],
-          namedSignatureElement("asdf", nonterminalTypeExp("Foo", [])), []),
+          namedSignatureElement("asdf", nonterminalType("Foo", [])), []),
         foldr(consProductionMod, nilProductionMod(), [
           prodPrecedence(2),
           prodOperator("XTerm"),
@@ -74,7 +74,7 @@ global obj3::SyntaxRoot =
         ])),
       syntaxLexerClass("B", nilLexerClassMod()),
       syntaxTerminal("C", regexLiteral("y"), nilTerminalMod()),
-      syntaxParserAttribute("asdf", stringTypeExp(), "asdf = 'asfd';"),
+      syntaxParserAttribute("asdf", stringType(), "asdf = 'asfd';"),
       syntaxDisambiguationGroup("g23", ["XTerm", "C"], "return C;")
      ]), []);
 

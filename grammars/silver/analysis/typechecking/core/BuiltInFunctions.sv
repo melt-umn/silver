@@ -70,7 +70,7 @@ top::Expr ::= 'new' '(' e1::Expr ')'
 }
 
 aspect production terminalConstructor
-top::Expr ::= 'terminal' '(' t::Type ',' es::Expr ',' el::Expr ')'
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
@@ -81,8 +81,8 @@ top::Expr ::= 'terminal' '(' t::Type ',' es::Expr ',' el::Expr ')'
   errCheck2.downSubst = errCheck1.upSubst;
   top.upSubst = errCheck2.upSubst;
   
-  errCheck1 = check(es.typerep, stringTypeExp());
-  errCheck2 = check(el.typerep, nonterminalTypeExp("core:Location", []));
+  errCheck1 = check(es.typerep, stringType());
+  errCheck2 = check(el.typerep, nonterminalType("core:Location", []));
   top.errors <-
        if errCheck1.typeerror
        then [err(es.location, "Second operand to 'terminal(type,lexeme,location)' must be a String, instead it is " ++ errCheck1.leftpp)]

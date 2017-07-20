@@ -5,7 +5,7 @@ import silver:util;
 import silver:analysis:typechecking:core only finalSubst;
 
 function finalType
-TypeExp ::= e::Decorated Expr
+Type ::= e::Decorated Expr
 {
   return performSubstitution(e.typerep, e.finalSubst);
 }
@@ -416,9 +416,9 @@ aspect production gt
 top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.translation = case finalType(e1) of
-                    | intTypeExp() -> "(" ++ e1.translation ++ " > " ++ e2.translation ++ ")"
-                    | floatTypeExp() -> "(" ++ e1.translation ++ " > " ++ e2.translation ++ ")"
-                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString()) > 0)"
+                    | intType() -> "(" ++ e1.translation ++ " > " ++ e2.translation ++ ")"
+                    | floatType() -> "(" ++ e1.translation ++ " > " ++ e2.translation ++ ")"
+                    | stringType() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString()) > 0)"
                     | t -> error("INTERNAL ERROR: no > trans for type " ++ prettyType(t))
                     end;
 
@@ -429,9 +429,9 @@ aspect production lt
 top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.translation = case finalType(e1) of
-                    | intTypeExp() -> "(" ++ e1.translation ++ " < " ++ e2.translation ++ ")"
-                    | floatTypeExp() -> "(" ++ e1.translation ++ " < " ++ e2.translation ++ ")"
-                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString()) < 0)"
+                    | intType() -> "(" ++ e1.translation ++ " < " ++ e2.translation ++ ")"
+                    | floatType() -> "(" ++ e1.translation ++ " < " ++ e2.translation ++ ")"
+                    | stringType() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString()) < 0)"
                     | t -> error("INTERNAL ERROR: no < trans for type " ++ prettyType(t))
                     end;
 
@@ -442,9 +442,9 @@ aspect production gteq
 top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.translation = case finalType(e1) of
-                    | intTypeExp() -> "(" ++ e1.translation ++ " >= " ++ e2.translation ++ ")"
-                    | floatTypeExp() -> "(" ++ e1.translation ++ " >= " ++ e2.translation ++ ")"
-                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString()) >= 0)"
+                    | intType() -> "(" ++ e1.translation ++ " >= " ++ e2.translation ++ ")"
+                    | floatType() -> "(" ++ e1.translation ++ " >= " ++ e2.translation ++ ")"
+                    | stringType() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString()) >= 0)"
                     | t -> error("INTERNAL ERROR: no >= trans for type " ++ prettyType(t))
                     end;
 
@@ -455,9 +455,9 @@ aspect production lteq
 top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.translation = case finalType(e1) of
-                    | intTypeExp() -> "(" ++ e1.translation ++ " <= " ++ e2.translation ++ ")"
-                    | floatTypeExp() -> "(" ++ e1.translation ++ " <= " ++ e2.translation ++ ")"
-                    | stringTypeExp() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString()) <= 0)"
+                    | intType() -> "(" ++ e1.translation ++ " <= " ++ e2.translation ++ ")"
+                    | floatType() -> "(" ++ e1.translation ++ " <= " ++ e2.translation ++ ")"
+                    | stringType() -> "(" ++ e1.translation ++ ".toString().compareTo(" ++ e2.translation ++ ".toString()) <= 0)"
                     | t -> error("INTERNAL ERROR: no <= trans for type " ++ prettyType(t))
                     end;
 
@@ -506,8 +506,8 @@ aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
   top.translation = case finalType(top) of
-                    | intTypeExp() -> "Integer.valueOf(" ++ e1.translation ++ " + " ++ e2.translation ++ ")"
-                    | floatTypeExp() -> "Float.valueOf(" ++ e1.translation ++ " + " ++ e2.translation ++ ")"
+                    | intType() -> "Integer.valueOf(" ++ e1.translation ++ " + " ++ e2.translation ++ ")"
+                    | floatType() -> "Float.valueOf(" ++ e1.translation ++ " + " ++ e2.translation ++ ")"
                     | t -> error("INTERNAL ERROR: no + trans for type " ++ prettyType(t))
                     end;
 
@@ -517,8 +517,8 @@ aspect production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
   top.translation = case finalType(top) of
-                    | intTypeExp() -> "Integer.valueOf(" ++ e1.translation ++ " - " ++ e2.translation ++ ")"
-                    | floatTypeExp() -> "Float.valueOf(" ++ e1.translation ++ " - " ++ e2.translation ++ ")"
+                    | intType() -> "Integer.valueOf(" ++ e1.translation ++ " - " ++ e2.translation ++ ")"
+                    | floatType() -> "Float.valueOf(" ++ e1.translation ++ " - " ++ e2.translation ++ ")"
                     | t -> error("INTERNAL ERROR: no - trans for type " ++ prettyType(t))
                     end;
 
@@ -528,8 +528,8 @@ aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
   top.translation = case finalType(top) of
-                    | intTypeExp() -> "Integer.valueOf(" ++ e1.translation ++ " * " ++ e2.translation ++ ")"
-                    | floatTypeExp() -> "Float.valueOf(" ++ e1.translation ++ " * " ++ e2.translation ++ ")"
+                    | intType() -> "Integer.valueOf(" ++ e1.translation ++ " * " ++ e2.translation ++ ")"
+                    | floatType() -> "Float.valueOf(" ++ e1.translation ++ " * " ++ e2.translation ++ ")"
                     | t -> error("INTERNAL ERROR: no * trans for type " ++ prettyType(t))
                     end;
 
@@ -539,8 +539,8 @@ aspect production divide
 top::Expr ::= e1::Expr '/' e2::Expr
 {
   top.translation = case finalType(top) of
-                    | intTypeExp() -> "Integer.valueOf(" ++ e1.translation ++ " / " ++ e2.translation ++ ")"
-                    | floatTypeExp() -> "Float.valueOf(" ++ e1.translation ++ " / " ++ e2.translation ++ ")"
+                    | intType() -> "Integer.valueOf(" ++ e1.translation ++ " / " ++ e2.translation ++ ")"
+                    | floatType() -> "Float.valueOf(" ++ e1.translation ++ " / " ++ e2.translation ++ ")"
                     | t -> error("INTERNAL ERROR: no / trans for type " ++ prettyType(t))
                     end;
 
@@ -550,8 +550,8 @@ aspect production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
 {
   top.translation = case finalType(top) of
-                    | intTypeExp() -> "Integer.valueOf(" ++ e1.translation ++ " % " ++ e2.translation ++ ")"
-                    | floatTypeExp() -> "Float.valueOf(" ++ e1.translation ++ " % " ++ e2.translation ++ ")"
+                    | intType() -> "Integer.valueOf(" ++ e1.translation ++ " % " ++ e2.translation ++ ")"
+                    | floatType() -> "Float.valueOf(" ++ e1.translation ++ " % " ++ e2.translation ++ ")"
                     | t -> error("INTERNAL ERROR: no % trans for type " ++ prettyType(t))
                     end;
 
@@ -561,8 +561,8 @@ aspect production neg
 top::Expr ::= '-' e::Expr
 {
   top.translation = case finalType(top) of
-                    | intTypeExp() -> "Integer.valueOf(-" ++ e.translation ++ ")"
-                    | floatTypeExp() -> "Float.valueOf(-" ++ e.translation ++ ")"
+                    | intType() -> "Integer.valueOf(-" ++ e.translation ++ ")"
+                    | floatType() -> "Float.valueOf(-" ++ e.translation ++ ")"
                     | t -> error("INTERNAL ERROR: no unary - trans for type " ++ prettyType(t))
                     end;
 

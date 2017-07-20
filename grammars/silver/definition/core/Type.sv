@@ -16,10 +16,10 @@ synthesized attribute instanceNum :: Boolean;
 synthesized attribute instanceConvertible :: Boolean;
 
 attribute applicationDispatcher, accessHandler, lengthDispatcher, appendDispatcher,
-          instanceEq, instanceOrd, instanceNum, instanceConvertible occurs on TypeExp;
+          instanceEq, instanceOrd, instanceNum, instanceConvertible occurs on Type;
 
 aspect default production
-top::TypeExp ::=
+top::Type ::=
 {
   top.applicationDispatcher = errorApplication(_, _, _, location=_);
   top.accessHandler = errorAccessHandler(_, _, location=_);
@@ -31,8 +31,8 @@ top::TypeExp ::=
   top.appendDispatcher = errorPlusPlus(_, _, location=_);
 }
 
-aspect production intTypeExp
-top::TypeExp ::=
+aspect production intType
+top::Type ::=
 {
   top.instanceEq = true;
   top.instanceOrd = true;
@@ -40,15 +40,15 @@ top::TypeExp ::=
   top.instanceConvertible = true;
 }
 
-aspect production boolTypeExp
-top::TypeExp ::=
+aspect production boolType
+top::Type ::=
 {
   top.instanceEq = true;
   top.instanceConvertible = true;
 }
 
-aspect production floatTypeExp
-top::TypeExp ::=
+aspect production floatType
+top::Type ::=
 {
   top.instanceEq = true;
   top.instanceOrd = true;
@@ -56,8 +56,8 @@ top::TypeExp ::=
   top.instanceConvertible = true;
 }
 
-aspect production stringTypeExp
-top::TypeExp ::=
+aspect production stringType
+top::Type ::=
 {
   top.instanceEq = true;
   top.instanceOrd = true;
@@ -66,26 +66,26 @@ top::TypeExp ::=
   top.appendDispatcher = stringPlusPlus(_, _, location=_);
 }
 
-aspect production nonterminalTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+aspect production nonterminalType
+top::Type ::= fn::String params::[Type]
 {
   top.accessHandler = undecoratedAccessHandler(_, _, location=_);
 }
 
-aspect production terminalTypeExp
-top::TypeExp ::= fn::String
+aspect production terminalType
+top::Type ::= fn::String
 {
   top.accessHandler = terminalAccessHandler(_, _, location=_);
 }
 
-aspect production decoratedTypeExp
-top::TypeExp ::= te::TypeExp
+aspect production decoratedType
+top::Type ::= te::Type
 {
   top.accessHandler = decoratedAccessHandler(_, _, location=_);
 }
 
-aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
+aspect production functionType
+top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
   -- TODO: We don't seem to use this. Perhaps we should remove it?
   top.applicationDispatcher = functionApplication(_, _, _, location=_);

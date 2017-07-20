@@ -11,7 +11,7 @@ grammar lib:extcore ;
    Thus, for equality testing functions we have names of the form
       equalsTYPE
    where TYPE is the actual name of the type of the values being tested.
-   Thus, equalsInteger, equalsString, equalsTypeExpr, etc.
+   Thus, equalsInteger, equalsString, equalsType, etc.
 
    Note that the function stringEq in core/String.sv does not follow
    this convention.  EVW thinks we should change it.

@@ -1,7 +1,7 @@
 grammar silver:modification:copper;
 
 abstract production parserAttrDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -43,7 +43,7 @@ top::DclInfo ::= sg::String sl::Location
 
   top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
   
-  top.typerep = stringTypeExp();
+  top.typerep = stringType();
   
   top.refDispatcher = disambigLexemeReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
@@ -63,7 +63,7 @@ top::DclInfo ::= sg::String sl::Location fn::String
 }
 
 abstract production termAttrValueDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -79,7 +79,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 }
 
 abstract production actionChildDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -95,7 +95,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
 }
 
 abstract production parserLocalDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;

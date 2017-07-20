@@ -89,7 +89,7 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 }
 
 aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::Type
+top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   top.actionDefs = [actionChildDef(top.grammarName, t.location, id.name, t.typerep)];
 }

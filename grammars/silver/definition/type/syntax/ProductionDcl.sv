@@ -21,7 +21,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
 }
 
 aspect production productionLHS
-top::ProductionLHS ::= id::Name '::' t::Type
+top::ProductionLHS ::= id::Name '::' t::TypeExpr
 {
   top.lexicalTypeVariables = t.lexicalTypeVariables;
 }
@@ -39,7 +39,7 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 }
 
 aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::Type
+top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   top.lexicalTypeVariables = t.lexicalTypeVariables;
 }

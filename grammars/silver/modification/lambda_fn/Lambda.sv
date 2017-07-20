@@ -28,7 +28,7 @@ top::Expr ::= params::ProductionRHS e::Expr
   
   top.errors := params.errors ++ e.errors;
   
-  top.typerep = functionTypeExp(e.typerep, map((.typerep), params.inputElements), []);
+  top.typerep = functionType(e.typerep, map((.typerep), params.inputElements), []);
   
   e.downSubst = top.downSubst;
   top.upSubst = e.upSubst;
@@ -53,7 +53,7 @@ top::ProductionRHS ::=
 }
 
 aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::Type
+top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   production fName :: String = toString(genInt()) ++ ":" ++ id.name;
 --  production transName :: String = "lambda_param" ++ id.name ++ toString(genInt());

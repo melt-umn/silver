@@ -6,8 +6,8 @@ import silver:definition:env;
 import silver:definition:core;
 import silver:translation:java:type;
 
-aspect production listTypeExp
-top::TypeExp ::= el::TypeExp
+aspect production listType
+top::Type ::= el::Type
 {
   top.transType = "common.ConsCell";
 }

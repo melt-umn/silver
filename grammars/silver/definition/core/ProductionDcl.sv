@@ -75,7 +75,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
 }
 
 concrete production productionLHS
-top::ProductionLHS ::= id::Name '::' t::Type
+top::ProductionLHS ::= id::Name '::' t::TypeExpr
 {
   top.pp = id.pp ++ "::" ++ t.pp;
 
@@ -115,7 +115,7 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 }
 
 concrete production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::Type
+top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   top.pp = id.pp ++ "::" ++ t.pp;
 
@@ -132,7 +132,7 @@ top::ProductionRHSElem ::= id::Name '::' t::Type
 }
 
 concrete production productionRHSElemType
-top::ProductionRHSElem ::= t::Type
+top::ProductionRHSElem ::= t::TypeExpr
 {
   top.pp = t.pp;
 

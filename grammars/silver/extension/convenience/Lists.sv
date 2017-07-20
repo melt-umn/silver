@@ -2,10 +2,10 @@ grammar silver:extension:convenience;
 
 nonterminal QNameWithTL with pp,qnwtQN, qnwtTL;
 synthesized attribute qnwtQN :: QName;
-synthesized attribute qnwtTL :: BracketedOptTypeList;
+synthesized attribute qnwtTL :: BracketedOptTypeExprs;
 
 concrete production qNameWithTL
-top::QNameWithTL ::= qn::QName tl::BracketedOptTypeList
+top::QNameWithTL ::= qn::QName tl::BracketedOptTypeExprs
 {
   top.pp = qn.pp ++ tl.pp;
   top.qnwtQN = qn;

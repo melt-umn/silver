@@ -56,7 +56,7 @@ top::FlowSpecs ::= h::FlowSpecs  ','  t::FlowSpec
 
 nonterminal FlowSpec with config, location, grammarName, errors, env, pp, onNt, flowDefs, compiledGrammars, flowEnv;
 
-autocopy attribute onNt :: TypeExp;
+autocopy attribute onNt :: Type;
 
 concrete production flowSpecDcl
 top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'

@@ -62,7 +62,7 @@ function raiseMissingAttrs
 }
 
 aspect production attributionDcl
-top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
+top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   -- ensure we're looking at a syn attribute
   -- Lookup all productions for this nonterminal

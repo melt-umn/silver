@@ -105,10 +105,10 @@ function addTerminalAttrDefs
 [Def] ::= moredefs::[Def]
 {
   -- TODO: no grammar or location? how to deal with this?
-  return [termAttrValueDef("DBGtav", bogusLocation(), "lexeme", stringTypeExp()),
-          termAttrValueDef("DBGtav", bogusLocation(), "filename", stringTypeExp()),
-          termAttrValueDef("DBGtav", bogusLocation(), "line", intTypeExp()),
-          termAttrValueDef("DBGtav", bogusLocation(), "column", intTypeExp())] ++
+  return [termAttrValueDef("DBGtav", bogusLocation(), "lexeme", stringType()),
+          termAttrValueDef("DBGtav", bogusLocation(), "filename", stringType()),
+          termAttrValueDef("DBGtav", bogusLocation(), "line", intType()),
+          termAttrValueDef("DBGtav", bogusLocation(), "column", intType())] ++
            moredefs;
 }
 

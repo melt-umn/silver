@@ -1,15 +1,15 @@
 grammar silver:definition:type;
 
-inherited attribute unifyWith :: TypeExp occurs on TypeExp;
-synthesized attribute unify :: Substitution occurs on TypeExp;
+inherited attribute unifyWith :: Type occurs on Type;
+synthesized attribute unify :: Substitution occurs on Type;
 
 --------------------------------------------------------------------------------
-aspect production varTypeExp
-top::TypeExp ::= tv::TyVar
+aspect production varType
+top::Type ::= tv::TyVar
 {
   top.unify = 
     case top.unifyWith of
-    | varTypeExp(j) ->
+    | varType(j) ->
         if tyVarEqual(tv, j)
         then emptySubst()
         else subst(tv, top.unifyWith)
@@ -19,12 +19,12 @@ top::TypeExp ::= tv::TyVar
     end;
 }
 
-aspect production skolemTypeExp
-top::TypeExp ::= tv::TyVar
+aspect production skolemType
+top::Type ::= tv::TyVar
 {
   top.unify = 
     case top.unifyWith of
-    | skolemTypeExp(otv) ->
+    | skolemType(otv) ->
         if tyVarEqual(tv, otv)
         then emptySubst()
         else errorSubst("Tried to unify skolem constant with incompatible skolem constant")
@@ -32,66 +32,66 @@ top::TypeExp ::= tv::TyVar
     end;
 }
 
-aspect production intTypeExp
-top::TypeExp ::=
+aspect production intType
+top::Type ::=
 {
   top.unify = 
     case top.unifyWith of
-    | intTypeExp() -> emptySubst()
+    | intType() -> emptySubst()
     | _ -> errorSubst("Tried to unify Integer with " ++ prettyType(top.unifyWith))
     end;
 }
 
-aspect production boolTypeExp
-top::TypeExp ::=
+aspect production boolType
+top::Type ::=
 {
   top.unify = 
     case top.unifyWith of
-    | boolTypeExp() -> emptySubst()
+    | boolType() -> emptySubst()
     | _ -> errorSubst("Tried to unify Boolean with " ++ prettyType(top.unifyWith))
     end;
 }
 
-aspect production floatTypeExp
-top::TypeExp ::=
+aspect production floatType
+top::Type ::=
 {
   top.unify = 
     case top.unifyWith of
-    | floatTypeExp() -> emptySubst()
+    | floatType() -> emptySubst()
     | _ -> errorSubst("Tried to unify Float with " ++ prettyType(top.unifyWith))
     end;
 }
 
-aspect production stringTypeExp
-top::TypeExp ::=
+aspect production stringType
+top::Type ::=
 {
   top.unify = 
     case top.unifyWith of
-    | stringTypeExp() -> emptySubst()
+    | stringType() -> emptySubst()
     | _ -> errorSubst("Tried to unify Boolean with " ++ prettyType(top.unifyWith))
     end;
 }
 
-aspect production nonterminalTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+aspect production nonterminalType
+top::Type ::= fn::String params::[Type]
 {
   top.unify = 
     case top.unifyWith of
-    | nonterminalTypeExp(ofn, op) -> 
+    | nonterminalType(ofn, op) -> 
         if fn == ofn
         then unifyAll(params, op)
         else errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
-    | ntOrDecTypeExp(_, _) -> errorSubst("nte-nodte: try again")
+    | ntOrDecType(_, _) -> errorSubst("nte-nodte: try again")
     | _ -> errorSubst("Tried to unify nonterminal type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
     end;
 }
 
-aspect production terminalTypeExp
-top::TypeExp ::= fn::String
+aspect production terminalType
+top::Type ::= fn::String
 {
   top.unify = 
     case top.unifyWith of
-    | terminalTypeExp(ofn) ->
+    | terminalType(ofn) ->
         if fn == ofn
         then emptySubst()
         else errorSubst("Tried to unify conflicting terminal types " ++ fn ++ " and " ++ ofn)
@@ -99,34 +99,34 @@ top::TypeExp ::= fn::String
     end;
 }
 
-aspect production decoratedTypeExp
-top::TypeExp ::= te::TypeExp
+aspect production decoratedType
+top::Type ::= te::Type
 {
   top.unify = 
     case top.unifyWith of
-    | decoratedTypeExp(ote) -> unify(te, ote)
-    | ntOrDecTypeExp(_,_) -> errorSubst("dte-nodte: try again")
+    | decoratedType(ote) -> unify(te, ote)
+    | ntOrDecType(_,_) -> errorSubst("dte-nodte: try again")
     | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
     end;
 }
 
-aspect production ntOrDecTypeExp
-top::TypeExp ::= nt::TypeExp  hidden::TypeExp
+aspect production ntOrDecType
+top::Type ::= nt::Type  hidden::Type
 {
   -- If were being asked to unify, then we know hidden is still a type variable,
   -- since we shouldn't be unifying with anything but fully-substituted types.
   -- And we kill off this type once hidden is specialized.
   top.unify =
     case top.unifyWith of
-    | decoratedTypeExp(ote) ->
+    | decoratedType(ote) ->
         -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
         unifyAllShortCircuit([ote, top.unifyWith],
                              [nt,  hidden])
-    | nonterminalTypeExp(_, _) ->
+    | nonterminalType(_, _) ->
         -- Ensure compatibility between nonterminal types, then specialize ourselves
         unifyAllShortCircuit([top.unifyWith, top.unifyWith],
                              [nt,            hidden])
-    | ntOrDecTypeExp(ont1, ohidden1) ->
+    | ntOrDecType(ont1, ohidden1) ->
         -- Ensure compatibility between nonterminal types, then merge our specializations
         unifyAllShortCircuit([ont1, ohidden1],
                              [nt,   hidden])
@@ -134,12 +134,12 @@ top::TypeExp ::= nt::TypeExp  hidden::TypeExp
     end;
 }
 
-aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
+aspect production functionType
+top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
   top.unify = 
     case top.unifyWith of
-    | functionTypeExp(oo, op, onp) -> unifyFunctions(out :: params, oo :: op, namedParams, onp)
+    | functionType(oo, op, onp) -> unifyFunctions(out :: params, oo :: op, namedParams, onp)
     | _ -> errorSubst("Tried to unify function type with " ++ prettyType(top.unifyWith))
     end;
 }
@@ -147,7 +147,7 @@ top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
 --------------------------------------------------------------------------------
 
 function unify
-Substitution ::= te1::TypeExp te2::TypeExp
+Substitution ::= te1::Type te2::Type
 {
   local leftward :: Substitution = te1.unify;
   te1.unifyWith = te2;
@@ -161,13 +161,13 @@ Substitution ::= te1::TypeExp te2::TypeExp
 }
 
 function unifyCheck
-Substitution ::= te1::TypeExp te2::TypeExp s::Substitution
+Substitution ::= te1::Type te2::Type s::Substitution
 {
   return composeSubst(ignoreFailure(s), unify(performSubstitution(te1, s), performSubstitution(te2, s)));
 }
 
 function unifyDirectional
-Substitution ::= fromte::TypeExp tote::TypeExp
+Substitution ::= fromte::Type tote::Type
 {
   -- Currently, this is built on the assumption that the unification will not fail.
   -- Therefore, for now we will FRAGILEY just call unify 
@@ -176,7 +176,7 @@ Substitution ::= fromte::TypeExp tote::TypeExp
 }
 
 function unifyAll
-Substitution ::= te1::[TypeExp] te2::[TypeExp]
+Substitution ::= te1::[Type] te2::[Type]
 {
   local first :: Substitution = unify(head(te1), head(te2));
   
@@ -189,7 +189,7 @@ Substitution ::= te1::[TypeExp] te2::[TypeExp]
 }
 
 function unifyAllShortCircuit
-Substitution ::= te1::[TypeExp] te2::[TypeExp]
+Substitution ::= te1::[Type] te2::[Type]
 {
   local first :: Substitution = unify(head(te1), head(te2));
   
@@ -219,7 +219,7 @@ Substitution ::= te1::[NamedArgType]  te2::[NamedArgType]
 }
 
 function unifyFunctions
-Substitution ::= te1::[TypeExp]  te2::[TypeExp]  n1::[NamedArgType]  n2::[NamedArgType]
+Substitution ::= te1::[Type]  te2::[Type]  n1::[NamedArgType]  n2::[NamedArgType]
 {
   local first :: Substitution = unifyAll(te1, te2);
   local second :: Substitution = unifyAllNamed(mapNamedSubst(n1, first), mapNamedSubst(n2, first));

@@ -31,7 +31,7 @@ synthesized attribute transform::Expr;
 nonterminal DoBodyStmts with location, pp, transform, bindFn, returnFn, isFinalVal;
 
 concrete production bindExprDoBodyStmts
-top::DoBodyStmts ::= n::MName '::' t::Type '<-' e::Expr ';' rest::DoBodyStmts
+top::DoBodyStmts ::= n::MName '::' t::TypeExpr '<-' e::Expr ';' rest::DoBodyStmts
 {
   top.pp = s"${n.pp}::${t.pp} <- ${e.pp}; ${rest.pp}";
   top.transform =
@@ -39,7 +39,7 @@ top::DoBodyStmts ::= n::MName '::' t::Type '<-' e::Expr ';' rest::DoBodyStmts
 }
 
 concrete production letExprDoBodyStmts
-top::DoBodyStmts ::= n::MName '::' t::Type '=' e::Expr ';' rest::DoBodyStmts
+top::DoBodyStmts ::= n::MName '::' t::TypeExpr '=' e::Expr ';' rest::DoBodyStmts
 {
   top.pp = s"${n.pp}::${t.pp} = ${e.pp}; ${rest.pp}";
   
@@ -58,7 +58,7 @@ top::DoBodyStmts ::= h::DoBodyStmt t::DoBodyStmts
   forwards to
     bindExprDoBodyStmts(
       mName("_", top.location), '::',
-      typerepType(freshType(), location=top.location),
+      typerepTypeExpr(freshType(), location=top.location),
       '<-', h.transform, ';', t,
       location=top.location);
   

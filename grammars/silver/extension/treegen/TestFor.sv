@@ -30,10 +30,10 @@ top::AGDcl ::= 'testFor' testSuite::Name ':' n::Name '::' id::QName ',' e::Expr 
 
   local sig :: FunctionSignature =
     functionSignature(
-      functionLHS(typerepType(boolTypeExp(), location=l), location=l),
+      functionLHS(typerepTypeExpr(boolType(), location=l), location=l),
       '::=',
       productionRHSCons(
-        productionRHSElem(n, '::', typerepType(id.lookupType.typerep, location=l), location=l),
+        productionRHSElem(n, '::', typerepTypeExpr(id.lookupType.typerep, location=l), location=l),
         productionRHSNil(location=l), location=l),
       location=l);
   
@@ -64,7 +64,7 @@ AGDcl ::= d::DclInfo  testfunname::String  l::Location  testSuite::Name
   local sig :: FunctionSignature =
     -- id ::= 
     functionSignature(
-      functionLHS(typerepType(boolTypeExp(), location=l), location=l),
+      functionLHS(typerepTypeExpr(boolType(), location=l), location=l),
       '::=',
       productionRHSNil(location=l),
       location=l);
@@ -74,7 +74,7 @@ AGDcl ::= d::DclInfo  testfunname::String  l::Location  testSuite::Name
   
   local stmts :: [ProductionStmt] =
     [
-      shortLocalDecl('local', name("current__depth", l), '::', typerepType(intTypeExp(), location=l), '=', intConst(terminal(Int_t, "1"), location=l), ';', location=l),
+      shortLocalDecl('local', name("current__depth", l), '::', typerepTypeExpr(intType(), location=l), '=', intConst(terminal(Int_t, "1"), location=l), ';', location=l),
       returnDef('return', mkStrFunctionInvocation(l, testfunname, [deriveGenerateOn(d, l)]), ';', location=l)
     ];
 
@@ -94,7 +94,7 @@ AGDcl ::= d::DclInfo  testfunname::String  l::Location  testSuite::Name
           terminal(EqualityTest_t, "equalityTest", l), '(',
           mkStrFunctionInvocation(l, "repeatTestTimes", [baseExpr(qName(l, generatedName), location=l), intConst(terminal(Int_t, "10"), location=l)]), ',',
           trueConst('true', location=l), ',',
-          booleanType('Boolean', location=l), ',',
+          booleanTypeExpr('Boolean', location=l), ',',
           testSuite, ')', ';', location=l
         )
       ]

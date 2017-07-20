@@ -2,86 +2,86 @@ grammar silver:definition:type;
 
 import silver:util;
 
-synthesized attribute typepp :: String occurs on TypeExp;
-autocopy attribute boundVariables :: [TyVar] occurs on TypeExp;
+synthesized attribute typepp :: String occurs on Type;
+autocopy attribute boundVariables :: [TyVar] occurs on Type;
 
 function prettyType
-String ::= te::TypeExp
+String ::= te::Type
 {
   te.boundVariables = te.freeVariables;
   return te.typepp;
 }
 
 function prettyTypeWith
-String ::= te::TypeExp tvs::[TyVar]
+String ::= te::Type tvs::[TyVar]
 {
   te.boundVariables = tvs;
   return te.typepp;
 }
 --------------------------------------------------------------------------------
-aspect production varTypeExp
-top::TypeExp ::= tv::TyVar
+aspect production varType
+top::Type ::= tv::TyVar
 {
   top.typepp = findAbbrevFor(tv, top.boundVariables);
 }
 
-aspect production skolemTypeExp
-top::TypeExp ::= tv::TyVar
+aspect production skolemType
+top::Type ::= tv::TyVar
 {
   top.typepp = findAbbrevFor(tv, top.boundVariables);
 }
 
-aspect production intTypeExp
-top::TypeExp ::=
+aspect production intType
+top::Type ::=
 {
   top.typepp = "Integer";
 }
 
-aspect production boolTypeExp
-top::TypeExp ::=
+aspect production boolType
+top::Type ::=
 {
   top.typepp = "Boolean";
 }
 
-aspect production floatTypeExp
-top::TypeExp ::=
+aspect production floatType
+top::Type ::=
 {
   top.typepp = "Float";
 }
 
-aspect production stringTypeExp
-top::TypeExp ::=
+aspect production stringType
+top::Type ::=
 {
   top.typepp = "String";
 }
 
-aspect production nonterminalTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+aspect production nonterminalType
+top::Type ::= fn::String params::[Type]
 {
   top.typepp = fn ++ if !null(params) then "<" ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ">" else "";
 }
 
-aspect production terminalTypeExp
-top::TypeExp ::= fn::String
+aspect production terminalType
+top::Type ::= fn::String
 {
   top.typepp = fn;
 }
 
-aspect production decoratedTypeExp
-top::TypeExp ::= te::TypeExp
+aspect production decoratedType
+top::Type ::= te::Type
 {
   top.typepp = "Decorated " ++ te.typepp;
 }
 
-aspect production ntOrDecTypeExp
-top::TypeExp ::= nt::TypeExp  hidden::TypeExp
+aspect production ntOrDecType
+top::Type ::= nt::Type  hidden::Type
 {
 -- Sometimes useful for debugging.
 --  top.typepp = "Undecorable " ++ nt.typepp ++ "{" ++ prettyTypeWith(hidden, []) ++ "}";
 }
 
-aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
+aspect production functionType
+top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
   top.typepp = "(" ++ out.typepp ++ " ::= " ++ implode(" ", mapTypePP(params, top.boundVariables)) ++
     (if null(namedParams) then ")" else mapNamedPP(namedParams, top.boundVariables) ++ ")");
@@ -108,9 +108,9 @@ String ::= tv::TyVar  bv::[TyVar]  vn::[String]
 
 -- TODO: oh crap is this stupid
 function mapTypePP
-[String] ::= tes::[TypeExp] bv::[TyVar]
+[String] ::= tes::[Type] bv::[TyVar]
 {
-  local fst :: TypeExp = head(tes);
+  local fst :: Type = head(tes);
   fst.boundVariables = bv;
   
   return if null(tes) then []

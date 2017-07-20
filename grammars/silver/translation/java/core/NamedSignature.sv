@@ -24,7 +24,7 @@ top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatur
 
 -- TODO: It'd be nice to maybe split these into the ordered parameters and the annotations
 aspect production namedSignatureElement
-top::NamedSignatureElement ::= n::String ty::TypeExp
+top::NamedSignatureElement ::= n::String ty::Type
 {
   top.childSigElem = "final Object c_" ++ n;
   top.childRefElem = "c_" ++ n;

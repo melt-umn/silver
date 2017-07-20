@@ -3,7 +3,7 @@ grammar silver:definition:core;
 terminal Annotation_kwd 'annotation' lexer classes {KEYWORD};
 
 concrete production annotationDcl
-top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeList '::' te::Type ';'
+top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.pp = "annotation " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
 

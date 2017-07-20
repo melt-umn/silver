@@ -1,7 +1,7 @@
 grammar silver:definition:core;
 
 concrete production attributionDcl
-top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
+top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   top.pp = "attribute " ++ at.pp ++ attl.pp ++ " occurs on " ++ nt.pp ++ nttl.pp ++ ";";
 
@@ -71,8 +71,8 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
       -- local skolem types -> fresh ty vars (non-skolem)
       zipVarsIntoSubstitution(nttl.freeVariables, freshTyVars(length(nttl.freeVariables))));
   
-  production attribute protontty :: TypeExp;
-  production attribute protoatty :: TypeExp;
+  production attribute protontty :: Type;
+  production attribute protoatty :: Type;
   protontty = performSubstitution(nt.lookupType.typerep, rewriteAndFreshenSubst);
   protoatty = performSubstitution(at.lookupAttribute.typerep, rewriteAndFreshenSubst);
   
@@ -97,7 +97,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt
 }
 
 concrete production annotateDcl
-top::AGDcl ::= 'annotation' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
+top::AGDcl ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   forwards to attributionDcl('attribute', at, attl, $4, $5, nt, nttl, $8, location=top.location);
 }

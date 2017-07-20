@@ -1,7 +1,7 @@
 grammar silver:definition:core;
 
 concrete production attributeDclInh
-top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type ';'
+top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.pp = "inherited attribute " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
 
@@ -23,7 +23,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeList '::' te:
 }
 
 concrete production attributeDclSyn
-top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type ';'
+top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.pp = "synthesized attribute " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
 

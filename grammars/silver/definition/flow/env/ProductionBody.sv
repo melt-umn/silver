@@ -117,7 +117,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 }
 
 aspect production localAttributeDcl
-top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
+top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 {
   top.flowDefs = [];
   -- This is basically taken care of by the definition equation, rather than here.

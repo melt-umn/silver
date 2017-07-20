@@ -1,10 +1,10 @@
 grammar silver:definition:flow:env;
 
-import silver:definition:type:syntax only BracketedOptTypeList;
+import silver:definition:type:syntax only BracketedOptTypeExprs;
 import silver:driver:util only isStrictlyExportedBy;
 
 aspect production nonterminalDcl
-top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeList ';'
+top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs ';'
 {
   -- Normally the flow analysis consider options to be the same as exports.
   -- Here, to avoid creating a hard dependency on options, we ignore options when

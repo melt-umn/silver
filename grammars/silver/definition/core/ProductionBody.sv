@@ -131,7 +131,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 }
 
 concrete production localAttributeDcl
-top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
+top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 {
   top.pp = "\tlocal attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";
 
@@ -153,7 +153,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::Type ';'
 }
 
 concrete production productionAttributeDcl
-top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::Type ';'
+top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
 {
   -- TODO: we should pp the production keyword, not local here!!
   --top.pp = "\tproduction attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";

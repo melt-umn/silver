@@ -11,6 +11,6 @@ terminal FTTerm          'foreigntype'        lexer classes {C_1};
 concrete production aTypeRepForeign
 top::ITypeRep ::= 'foreigntype' '(' n::IName ',' ty::ITypeReps ')'
 {
-  top.typerep = foreignTypeExp(n.aname, ty.typereps);
+  top.typerep = foreignType(n.aname, ty.typereps);
 }
 

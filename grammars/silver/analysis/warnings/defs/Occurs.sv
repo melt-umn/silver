@@ -33,7 +33,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 }
 
 aspect production attributionDcl
-top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
+top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   local isClosedNt :: Boolean =
     case nt.lookupType.dcls of

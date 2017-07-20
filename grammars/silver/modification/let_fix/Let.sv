@@ -74,13 +74,13 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 
 -- TODO: Well, okay, so this isn't really abstract syntax...
 concrete production assignExpr
-top::AssignExpr ::= id::Name '::' t::Type '=' e::Expr
+top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
   top.pp = id.pp ++ " :: " ++ t.pp ++ " = " ++ e.pp;
   
   top.errors := t.errors ++ e.errors;
   
-  production finalTy :: TypeExp = performSubstitution(t.typerep, errCheck1.upSubst);
+  production finalTy :: Type = performSubstitution(t.typerep, errCheck1.upSubst);
   production fName :: String = toString(genInt()) ++ ":" ++ id.name;
 
   -- Using finalTy here, so our defs requires we have downSubst...
@@ -123,8 +123,8 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
   --  be used either way.)
   
   -- A note about possible unexpected behavior here: if q.lookupValue.typerep
-  -- is itself a ntOrDecTypeExp, which is only possible if for generated 'let'
-  -- expressions that use a type variable as their type, then this ntOrDecTypeExp
+  -- is itself a ntOrDecType, which is only possible if for generated 'let'
+  -- expressions that use a type variable as their type, then this ntOrDecType
   -- we're generating here means we're NOT propagating the information about the
   -- "actual usage" backwards to expression.
   -- i.e.  "let x :: a = someLocal in wantsUndecorated(x) end"
@@ -132,9 +132,9 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
   --       and not "let x = undecorated someLocal in wantsUndecorated(x)"
   
   top.typerep = 
-    -- isDecorated should return true if it's a ntOrDecTypeExp.
+    -- isDecorated should return true if it's a ntOrDecType.
     if q.lookupValue.typerep.isDecorated
-    then ntOrDecTypeExp(q.lookupValue.typerep.decoratedType, freshType())
+    then ntOrDecType(q.lookupValue.typerep.decoratedType, freshType())
     else q.lookupValue.typerep;
 
   top.upSubst = top.downSubst;

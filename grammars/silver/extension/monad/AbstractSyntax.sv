@@ -1,6 +1,6 @@
 
 abstract production bindExpr
-top::Expr ::= n::Name t::Type e::Expr rest::Expr bindFn::QName
+top::Expr ::= n::Name t::TypeExpr e::Expr rest::Expr bindFn::QName
 {
   {-e.downSubst = top.downSubst;
   rest.downSubst = e.upSubst;

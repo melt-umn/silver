@@ -100,17 +100,17 @@ top::Def ::= d::DclInfo
 
 
 function childDef
-Def ::= sg::String  sl::Location  fn::String  ty::TypeExp
+Def ::= sg::String  sl::Location  fn::String  ty::Type
 {
   return valueDef(defaultEnvItem(childDcl(sg,sl,fn,ty)));
 }
 function lhsDef
-Def ::= sg::String  sl::Location  fn::String  ty::TypeExp
+Def ::= sg::String  sl::Location  fn::String  ty::Type
 {
   return valueDef(defaultEnvItem(lhsDcl(sg,sl,fn,ty)));
 }
 function localDef
-Def ::= sg::String  sl::Location  fn::String  ty::TypeExp
+Def ::= sg::String  sl::Location  fn::String  ty::Type
 {
   return valueDef(defaultEnvItem(localDcl(sg,sl,fn,ty)));
 }
@@ -125,17 +125,17 @@ Def ::= sg::String  sl::Location  ns::NamedSignature
   return valueDef(defaultEnvItem(funDcl(sg,sl,ns)));
 }
 function globalDef
-Def ::= sg::String  sl::Location  fn::String  ty::TypeExp
+Def ::= sg::String  sl::Location  fn::String  ty::Type
 {
   return valueDef(defaultEnvItem(globalValueDcl(sg,sl,fn,ty)));
 }
 function ntDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::TypeExp
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {
   return typeDef(defaultEnvItem(ntDcl(sg,sl,fn,bound,ty,false)));
 }
 function closedNtDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::TypeExp
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {
   return typeDef(defaultEnvItem(ntDcl(sg,sl,fn,bound,ty,true)));
 }
@@ -145,17 +145,17 @@ Def ::= sg::String  sl::Location  fn::String  regex::Regex
   return typeDef(defaultEnvItem(termDcl(sg,sl,fn,regex)));
 }
 function lexTyVarDef
-Def ::= sg::String  sl::Location  fn::String  ty::TypeExp
+Def ::= sg::String  sl::Location  fn::String  ty::Type
 {
   return typeDef(defaultEnvItem(lexTyVarDcl(sg,sl,fn,ty)));
 }
 function synDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::TypeExp
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {
   return attrDef(defaultEnvItem(synDcl(sg,sl,fn,bound,ty)));
 }
 function inhDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::TypeExp
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {
   return attrDef(defaultEnvItem(inhDcl(sg,sl,fn,bound,ty)));
 }
@@ -165,28 +165,28 @@ Def ::= sg::String  sl::Location  ns::NamedSignature  dcls::[Def]
   return paDef(paDcl(sg,sl,ns,dcls));
 }
 function forwardDef
-Def ::= sg::String  sl::Location  ty::TypeExp
+Def ::= sg::String  sl::Location  ty::Type
 {
   return valueDef(defaultEnvItem(forwardDcl(sg,sl,ty)));
 }
 -- These aliased functions are used for aspects.
 function aliasedLhsDef
-Def ::= sg::String  sl::Location  fn::String  ty::TypeExp  alias::String
+Def ::= sg::String  sl::Location  fn::String  ty::Type  alias::String
 {
   return valueDef(onlyRenamedEnvItem(alias, lhsDcl(sg,sl,fn,ty)));
 }
 function aliasedChildDef
-Def ::= sg::String  sl::Location  fn::String  ty::TypeExp  alias::String
+Def ::= sg::String  sl::Location  fn::String  ty::Type  alias::String
 {
   return valueDef(onlyRenamedEnvItem(alias, childDcl(sg,sl,fn,ty)));
 }
 function annoDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::TypeExp
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {
   return attrDef(defaultEnvItem(annoDcl(sg,sl,fn,bound,ty)));
 }
 function annoInstanceDef
-Def ::= sg::String  sl::Location  fnnt::String  fnat::String  ntty::TypeExp  atty::TypeExp
+Def ::= sg::String  sl::Location  fnnt::String  fnat::String  ntty::Type  atty::Type
 {
   return oDef(annoInstanceDcl(sg,sl,fnnt,fnat,ntty,atty));
 }

@@ -1,15 +1,15 @@
 grammar silver:extension:list;
 
-abstract production listTypeExp
-top::TypeExp ::= el::TypeExp
+abstract production listType
+top::Type ::= el::Type
 {
   top.freeVariables = el.freeVariables; -- TypeExp.sv
-  top.substituted = listTypeExp(el.substituted);
+  top.substituted = listType(el.substituted);
   top.typepp = "[" ++ el.typepp ++ "]";
 
   top.unify = case top.unifyWith of
-               listTypeExp(fel) -> unify(el,fel)
-             | decoratedTypeExp(nonterminalTypeExp("core:List", ftes)) -> unify(el, head(ftes))
+               listType(fel) -> unify(el,fel)
+             | decoratedType(nonterminalType("core:List", ftes)) -> unify(el, head(ftes))
              | _ -> errorSubst("Tried to unify list with " ++ prettyType(top.unifyWith))
               end;
   
@@ -23,6 +23,6 @@ top::TypeExp ::= el::TypeExp
   top.unparse = "[" ++ el.unparse ++ "]";
   --top.transType -- for translation.
   
-  forwards to decoratedTypeExp(nonterminalTypeExp("core:List", [el]));
+  forwards to decoratedType(nonterminalType("core:List", [el]));
 }
 

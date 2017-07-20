@@ -74,7 +74,7 @@ terminal GrammarSourceTerm    'grammarSource'    lexer classes {C_1};
 synthesized attribute signature :: NamedSignature;
 synthesized attribute elements :: [NamedSignatureElement];
 synthesized attribute element :: NamedSignatureElement;
-synthesized attribute typereps :: [TypeExp];
+synthesized attribute typereps :: [Type];
 synthesized attribute tyvars :: [TyVar];
 
 {- The "uninteresting" plumbing of interface files: -}
@@ -91,7 +91,7 @@ nonterminal ITypeRepsInner with env, typereps, grammarName; -- inside square bra
 closed nonterminal IRootPart with defs, exportedGrammars, optionalGrammars, condBuild, declaredName, grammarSource, moduleNames, grammarName, allGrammarDependencies, grammarTime;
 {- A DclInfo record -}
 closed nonterminal IDclInfo with defs, env, grammarName;
-{- A TypeExp record -}
+{- A Type record -}
 closed nonterminal ITypeRep with env, typerep, grammarName;
 
 {- Utilities -}
@@ -367,7 +367,7 @@ top::ITyVarDclsInner ::= t1::ITyVar
   local attribute tv :: TyVar;
   tv = freshTyVar();
   
-  top.defs = [lexTyVarDef("IFACE", bogusLocation(), t1.lexeme, skolemTypeExp(tv))];
+  top.defs = [lexTyVarDef("IFACE", bogusLocation(), t1.lexeme, skolemType(tv))];
   top.tyvars = [tv];
 }
 
@@ -377,7 +377,7 @@ top::ITyVarDclsInner ::= t1::ITyVar ',' t2::ITyVarDclsInner
   local attribute tv :: TyVar;
   tv = freshTyVar();
   
-  top.defs = lexTyVarDef("IFACE", bogusLocation(), t1.lexeme, skolemTypeExp(tv)) :: t2.defs;
+  top.defs = lexTyVarDef("IFACE", bogusLocation(), t1.lexeme, skolemType(tv)) :: t2.defs;
   top.tyvars = [tv] ++ t2.tyvars;
 }
 
@@ -469,8 +469,8 @@ top::IDclInfo ::= '@' '(' l::ILocation ',' fnnt::IName ',' fnat::IName ',' td::I
   -- Recall that constraint on occurs DclInfos: the types need to be tyvars, not skolem constants.
   
   top.defs = [oDef(occursDcl(top.grammarName, l.alocation, fnnt.aname, fnat.aname, 
-                        freshenTypeExpWith(ntt.typerep, td.tyvars, fresh),
-                        freshenTypeExpWith(att.typerep, td.tyvars, fresh)))];
+                        freshenTypeWith(ntt.typerep, td.tyvars, fresh),
+                        freshenTypeWith(att.typerep, td.tyvars, fresh)))];
 }
 
 concrete production aDclInfoAnno
@@ -494,57 +494,57 @@ top::IDclInfo ::= 'anno@' '(' l::ILocation ',' fnnt::IName ',' fnat::IName ',' t
   
   top.defs = [
     annoInstanceDef(top.grammarName, l.alocation, fnnt.aname, fnat.aname, 
-      freshenTypeExpWith(ntt.typerep, td.tyvars, fresh),
-      freshenTypeExpWith(att.typerep, td.tyvars, fresh))];
+      freshenTypeWith(ntt.typerep, td.tyvars, fresh),
+      freshenTypeWith(att.typerep, td.tyvars, fresh))];
 }
 
 --The TypeReps
 concrete production aTypeRepInteger
 top::ITypeRep ::= 'int'
 {
-  top.typerep = intTypeExp();
+  top.typerep = intType();
 }
 
 concrete production aTypeRepFloat
 top::ITypeRep ::= 'float'
 {
-  top.typerep = floatTypeExp();
+  top.typerep = floatType();
 }
 
 concrete production aTypeRepString
 top::ITypeRep ::= 'string'
 {
-  top.typerep = stringTypeExp();
+  top.typerep = stringType();
 }
 
 concrete production aTypeRepBoolean
 top::ITypeRep ::= 'bool'
 {
-  top.typerep = boolTypeExp();
+  top.typerep = boolType();
 }
 
 concrete production aTypeRepTerminal
 top::ITypeRep ::= 'term' '(' n::IName ')'
 {
-  top.typerep = terminalTypeExp(n.aname);
+  top.typerep = terminalType(n.aname);
 }
 
 concrete production aTypeRepNonterminal
 top::ITypeRep ::= 'nt' '(' n::IName ',' ty::ITypeReps ')'
 {
-  top.typerep = nonterminalTypeExp(n.aname, ty.typereps);
+  top.typerep = nonterminalType(n.aname, ty.typereps);
 }
 
 concrete production aTypeRepDecorated
 top::ITypeRep ::= 'decorated' '(' t::ITypeRep ')'
 {
-  top.typerep = decoratedTypeExp(t.typerep);
+  top.typerep = decoratedType(t.typerep);
 }
 
 concrete production aTypeRepFunction
 top::ITypeRep ::= 'fun' '(' it::ITypeReps ','  ot::ITypeRep na::INamedArgTypes ')'
 {
-  top.typerep = functionTypeExp(ot.typerep, it.typereps, na.aNamedArgs);
+  top.typerep = functionType(ot.typerep, it.typereps, na.aNamedArgs);
 }
 
 terminal Semi ';';

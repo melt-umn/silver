@@ -102,8 +102,8 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
   -- lhs is safe
   top.concreteSyntaxTypeErrors := rhs.concreteSyntaxTypeErrors;
   
-  local fstType :: TypeExp = head(top.namedSignature.inputElements).typerep;
-  local lstType :: TypeExp = last(top.namedSignature.inputElements).typerep;
+  local fstType :: Type = head(top.namedSignature.inputElements).typerep;
+  local lstType :: Type = last(top.namedSignature.inputElements).typerep;
   
   local checkFirst :: Boolean =
     fstType.isTerminal || !null(getOccursDcl("core:location", fstType.typeName, top.env));
@@ -144,29 +144,29 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 }
 
 aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::Type
+top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   top.concreteSyntaxTypeErrors :=
     if t.typerep.permittedInConcreteSyntax then []
     else [err(t.location, t.pp ++ " is not permitted on concrete productions.  Only terminals and nonterminals (without type variables) can appear here")];
 }
 
-synthesized attribute permittedInConcreteSyntax :: Boolean occurs on TypeExp;
+synthesized attribute permittedInConcreteSyntax :: Boolean occurs on Type;
 
 aspect default production
-top::TypeExp ::=
+top::Type ::=
 {
   top.permittedInConcreteSyntax = false;
 }
 
-aspect production nonterminalTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+aspect production nonterminalType
+top::Type ::= fn::String params::[Type]
 {
   top.permittedInConcreteSyntax = null(params);
 }
 
-aspect production terminalTypeExp
-top::TypeExp ::= fn::String
+aspect production terminalType
+top::Type ::= fn::String
 {
   top.permittedInConcreteSyntax = true;
 }

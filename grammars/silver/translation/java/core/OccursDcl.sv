@@ -1,7 +1,7 @@
 grammar silver:translation:java:core;
 
 aspect production attributionDcl
-top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
+top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   local ntfn :: String = nt.lookupType.fullName;
   local occursType :: String = if at.lookupAttribute.dcl.isSynthesized then "syn" else "inh";

@@ -12,7 +12,7 @@ terminal Default_kwd 'default' lexer classes {KEYWORD, RESERVED};
 
 concrete production aspectDefaultProduction
 top::AGDcl ::= 'aspect' 'default' 'production' 
-               lhs::Name '::' te::Type '::=' body::ProductionBody 
+               lhs::Name '::' te::TypeExpr '::=' body::ProductionBody 
 {
   top.pp = "aspect default production\n" ++ lhs.pp ++ "::" ++ te.pp ++ " ::=\n" ++ body.pp;
 
@@ -42,12 +42,12 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 }
 
 function defaultLhsDef
-Def ::= sg::String sl::Location fn::String ty::TypeExp
+Def ::= sg::String sl::Location fn::String ty::Type
 {
   return valueDef(defaultEnvItem(defaultLhsDcl(sg,sl,fn,ty)));
 }
 abstract production defaultLhsDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;

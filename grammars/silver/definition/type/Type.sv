@@ -3,18 +3,17 @@ grammar silver:definition:type;
 option silver:modification:ffi; -- foreign types
 
 {--
- - Misnamed: Silver Type Representations.
- - (From TypeExp you'd expect this is syntac, not representations.)
+ - Silver Type Representations.
  -}
-nonterminal TypeExp with freeVariables;
+nonterminal Type with freeVariables;
 
 synthesized attribute freeVariables :: [TyVar];
 
 {--
  - This is a (universally quantified) type variable.
  -}
-abstract production varTypeExp
-top::TypeExp ::= tv::TyVar
+abstract production varType
+top::Type ::= tv::TyVar
 {
   top.freeVariables = [tv];
 }
@@ -23,8 +22,8 @@ top::TypeExp ::= tv::TyVar
  - This is an (existentially quantified) type variable, i.e. skolem constant.
  - Type are pretty much (exists sks. forall tys. type)
  -}
-abstract production skolemTypeExp
-top::TypeExp ::= tv::TyVar
+abstract production skolemType
+top::Type ::= tv::TyVar
 {
   top.freeVariables = [tv];
 }
@@ -32,8 +31,8 @@ top::TypeExp ::= tv::TyVar
 {--
  - Integer type.
  -}
-abstract production intTypeExp
-top::TypeExp ::=
+abstract production intType
+top::Type ::=
 {
   top.freeVariables = [];
 }
@@ -41,8 +40,8 @@ top::TypeExp ::=
 {--
  - Boolean type.
  -}
-abstract production boolTypeExp
-top::TypeExp ::=
+abstract production boolType
+top::Type ::=
 {
   top.freeVariables = [];
 }
@@ -50,8 +49,8 @@ top::TypeExp ::=
 {--
  - Float type.
  -}
-abstract production floatTypeExp
-top::TypeExp ::=
+abstract production floatType
+top::Type ::=
 {
   top.freeVariables = [];
 }
@@ -59,8 +58,8 @@ top::TypeExp ::=
 {--
  - String type.
  -}
-abstract production stringTypeExp
-top::TypeExp ::=
+abstract production stringType
+top::Type ::=
 {
   top.freeVariables = [];
 }
@@ -70,8 +69,8 @@ top::TypeExp ::=
  - @param fn  The fully qualified name of the nonterminal.
  - @param params  The type parameters for that nonterminal.
  -}
-abstract production nonterminalTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+abstract production nonterminalType
+top::Type ::= fn::String params::[Type]
 {
   top.freeVariables = setUnionTyVarsAll(map((.freeVariables), params));
 }
@@ -80,18 +79,18 @@ top::TypeExp ::= fn::String params::[TypeExp]
  - A terminal type.
  - @param fn  The fully qualified name of the terminal.
  -}
-abstract production terminalTypeExp
-top::TypeExp ::= fn::String
+abstract production terminalType
+top::Type ::= fn::String
 {
   top.freeVariables = [];
 }
 
 {--
  - A *decorated* nonterminal type.
- - @param te  MUST be a 'nonterminalTypeExp' (TODO: should probably just put that here)
+ - @param te  MUST be a 'nonterminalType' (TODO: should probably just put that here)
  -}
-abstract production decoratedTypeExp
-top::TypeExp ::= te::TypeExp
+abstract production decoratedType
+top::Type ::= te::Type
 {
   top.freeVariables = te.freeVariables;
 }
@@ -102,22 +101,22 @@ top::TypeExp ::= te::TypeExp
  -
  - It represents a nonterminal that is *either* decorated or undecorated
  - (e.g. when referencing a child) but has not yet been specialized.
- - @param nt  MUST be a 'nonterminalTypeExp'
- - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedTypeExp(nt)'
+ - @param nt  MUST be a 'nonterminalType'
+ - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(nt)'
  -                representing state: unspecialized, undecorated, or decorated.
  -}
 
 -- This will ONLY appear in the types of expressions, nowhere else!
-abstract production ntOrDecTypeExp
-top::TypeExp ::= nt::TypeExp  hidden::TypeExp
+abstract production ntOrDecType
+top::Type ::= nt::Type  hidden::Type
 {
   top.freeVariables = case hidden of
-                      | varTypeExp(_) -> nt.freeVariables
+                      | varType(_) -> nt.freeVariables
                       | _ -> hidden.freeVariables
                       end;
   
   -- If we never specialize, we're decorated.
-  forwards to decoratedTypeExp(nt);
+  forwards to decoratedType(nt);
 }
 
 {--
@@ -127,8 +126,8 @@ top::TypeExp ::= nt::TypeExp  hidden::TypeExp
  - @param namedParams  Named parameters for this nonterminal.
  -        NOTE: These must always be *IN SORTED ORDER*
  -}
-abstract production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
+abstract production functionType
+top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
   top.freeVariables = setUnionTyVarsAll(map((.freeVariables), 
     out :: params ++ map((.argType), namedParams)));
@@ -139,10 +138,10 @@ top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
 nonterminal NamedArgType with argName, argType, typepp, boundVariables;
 
 synthesized attribute argName :: String;
-synthesized attribute argType :: TypeExp;
+synthesized attribute argType :: Type;
 
 abstract production namedArgType
-top::NamedArgType ::= s::String  ty::TypeExp
+top::NamedArgType ::= s::String  ty::Type
 {
   top.typepp = "; " ++ s ++ "::" ++ ty.typepp;
   top.argName = s;
@@ -200,20 +199,20 @@ Boolean ::= tv1::TyVar tv2::TyVar
 }
 
 function errorType
-TypeExp ::=
+Type ::=
 {
-  return varTypeExp(freshTyVar());
+  return varType(freshTyVar());
 }
 
 function freshType
-TypeExp ::=
+Type ::=
 {
-  return varTypeExp(freshTyVar());
+  return varType(freshTyVar());
 }
 
 function newSkolemConstant
-TypeExp ::=
+Type ::=
 {
-  return skolemTypeExp(freshTyVar());
+  return skolemType(freshTyVar());
 }
 

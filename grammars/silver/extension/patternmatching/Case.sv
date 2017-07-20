@@ -5,7 +5,7 @@ imports silver:definition:env;
 imports silver:definition:type;
 imports silver:modification:primitivepattern;
 
-import silver:definition:type:syntax only typerepType;
+import silver:definition:type:syntax only typerepTypeExpr;
 import silver:modification:let_fix;
 
 terminal Case_kwd 'case' lexer classes {KEYWORD,RESERVED};
@@ -72,7 +72,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 }
 
 abstract production caseExpr
-top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::TypeExp
+top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
 {
   top.pp = error("Internal error: pretty of intermediate data structure");
 
@@ -111,7 +111,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::TypeExp
    -}
   local allConCase :: Expr =
     matchPrimitive(head(es),
-      typerepType(retType, location=top.location),
+      typerepTypeExpr(retType, location=top.location),
       foldPrimPatterns(
         map(allConCaseTransform(tail(es), failExpr, retType, _),
           groupMRules(prodRules))),
@@ -249,7 +249,7 @@ Expr ::= n::Name
  - @return  A primitive pattern matching the constructor, with the overall case-expr pushed down into it
  -}
 function allConCaseTransform
-PrimPattern ::= restExprs::[Expr]  failCase::Expr  retType::TypeExp  mrs::[AbstractMatchRule]
+PrimPattern ::= restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule]
 {
   -- TODO: potential source of buggy error messages. We're using head(mrs) as the source of
   -- authority for the length of pattern variables to match against. But each match rule may
@@ -297,7 +297,7 @@ PrimPatterns ::= l::[PrimPattern]
  -     e.g. right now we 'map(this(x, y, _), list)'
  -}
 function bindHeadPattern
-AbstractMatchRule ::= headExpr::Expr  headType::TypeExp  rule::AbstractMatchRule
+AbstractMatchRule ::= headExpr::Expr  headType::Type  rule::AbstractMatchRule
 {
   -- If it's '_' we do nothing, otherwise, bind away!
   return case rule of
@@ -311,18 +311,18 @@ AbstractMatchRule ::= headExpr::Expr  headType::TypeExp  rule::AbstractMatchRule
 }
 
 function makeLet
-Expr ::= l::Location s::String t::TypeExp e::Expr o::Expr
+Expr ::= l::Location s::String t::Type e::Expr o::Expr
 {
   return letp(
     assignExpr(
-      name(s, l), '::', typerepType(t, location=l), '=', e, location=l),
+      name(s, l), '::', typerepTypeExpr(t, location=l), '=', e, location=l),
     o, location=l);
 }
 
 function ensureDecoratedExpr
 Expr ::= e::Decorated Expr
 {
-  local et :: TypeExp = performSubstitution(e.typerep, e.upSubst);
+  local et :: Type = performSubstitution(e.typerep, e.upSubst);
 
   return if et.isDecorable
          then decorateExprWithEmpty('decorate', exprRef(e, location=e.location), 'with', '{', '}', location=e.location)

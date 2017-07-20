@@ -42,7 +42,7 @@ String ::= s::[String]
  - Turn a list of types into a string that can be parsed with ITypeReps.
  -}
 function unparseTypes
-String ::= tes::[TypeExp] bv::[TyVar]
+String ::= tes::[Type] bv::[TyVar]
 {
   return "[" ++ implode(", ", mapUnparseTypes(tes, bv)) ++ "]";
 }
@@ -51,9 +51,9 @@ String ::= tes::[TypeExp] bv::[TyVar]
  - HELPER: must exist because of the bv parameter. Can't map until partial application is here.
  -}
 function mapUnparseTypes
-[String] ::= tes::[TypeExp] bv::[TyVar]
+[String] ::= tes::[Type] bv::[TyVar]
 {
-  local fst :: TypeExp = head(tes);
+  local fst :: Type = head(tes);
   fst.boundVariables = bv;
   
   return if null(tes) then []

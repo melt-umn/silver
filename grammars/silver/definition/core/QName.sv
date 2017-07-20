@@ -60,8 +60,8 @@ top::QNameLookup ::= kindOfLookup::String dcls::[DclInfo] name::String l::Locati
                  else top.dcl.fullName;
   
   -- TODO: We could eliminate a lot of explicit calls to 'freshenCompletely' and make this more correct
-  -- if we pushed into 'dcl' a different kind of TypeExp, which recorded quantifiers.
-  -- e.g. QuantifiedTypeExp. Then when we asked for .typerep of that, it always freshens.
+  -- if we pushed into 'dcl' a different kind of Type, which recorded quantifiers.
+  -- e.g. QuantifiedType. Then when we asked for .typerep of that, it always freshens.
   top.typerep = if null(top.dcls) then errorType()  else top.dcl.typerep;
   top.dclBoundVars = if null(top.dcls) then []      else top.dcl.dclBoundVars;
   
@@ -116,7 +116,7 @@ nonterminal QNameAttrOccur with config, name, location, grammarName, env, pp, at
  - For QNameAttrOccur, the name of the LHS to look up this attribute on.
  - i.e. 
  -}
-inherited attribute attrFor :: TypeExp;
+inherited attribute attrFor :: Type;
 synthesized attribute attrDcl :: DclInfo;
 
 concrete production qNameAttrOccur
@@ -178,7 +178,7 @@ nonterminal OccursCheck with errors, typerep, dcl;
 
 -- Doc note: be sure you've included at.errors, as well as this production's errors!
 abstract production occursCheckQName
-top::OccursCheck ::= at::Decorated QName  ntty::TypeExp
+top::OccursCheck ::= at::Decorated QName  ntty::Type
 {
   local occursCheck :: [DclInfo] =
     getOccursDcl(at.lookupAttribute.fullName, ntty.typeName, at.env); -- cheating to get env! :) Must be decorated!

@@ -13,7 +13,7 @@ import silver:util;
 
 
 aspect production attributeDclAuto
-top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeList '::' te::Type ';'
+top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   local attribute className :: String;
   className = "D" ++ a.name;
@@ -35,7 +35,7 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeList '::' te::
 }
 
 aspect production attributionDcl
-top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeList 'occurs' 'on' nt::QName nttl::BracketedOptTypeList ';'
+top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   top.setupInh <- 
     if at.lookupAttribute.dcl.isAutocopy then

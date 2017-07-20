@@ -204,7 +204,7 @@ function getAttrsOn
 
 -- This ensure the annotation list is in the properly sorted order!
 function annotationsForNonterminal
-[NamedSignatureElement] ::= nt::TypeExp  env::Decorated Env
+[NamedSignatureElement] ::= nt::Type  env::Decorated Env
 {
   local annos :: [DclInfo] =
     filter((.isAnnotation), getAttrsOn(nt.typeName, env));
@@ -213,7 +213,7 @@ function annotationsForNonterminal
 }
 -- only used by the above
 function annoInstanceToNamed
-NamedSignatureElement ::= nt::TypeExp  anno::DclInfo
+NamedSignatureElement ::= nt::Type  anno::DclInfo
 {
   -- Used to compute the local typerep for this nonterminal
   anno.givenNonterminalType = nt;

@@ -8,7 +8,7 @@ imports silver:definition:env;
 terminal Type_t 'type' lexer classes {KEYWORD};
 
 concrete production typeDecl
-top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeList '=' te::Type ';'
+top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
 {
   top.pp = "type " ++ id.pp ++ tl.pp ++ "=" ++ te.pp ++ ";";
 
@@ -38,12 +38,12 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeList '=' te::Type ';'
 
 
 function typeAliasDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
+Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   return typeDef(defaultEnvItem(typeDcl(sg,sl,fn,bound,ty)));
 }
 abstract production typeDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::TypeExp
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;

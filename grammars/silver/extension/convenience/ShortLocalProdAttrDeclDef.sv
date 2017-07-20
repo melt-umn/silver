@@ -1,7 +1,7 @@
 grammar silver:extension:convenience;
 
 concrete production shortLocalDecl
-top::ProductionStmt ::= lk::'local' a::Name ht::'::' te::Type 
+top::ProductionStmt ::= lk::'local' a::Name ht::'::' te::TypeExpr 
                         eq::'=' v::Expr sm::';'
 {
   forwards to
@@ -12,7 +12,7 @@ top::ProductionStmt ::= lk::'local' a::Name ht::'::' te::Type
 }
 
 concrete production shortLocalDeclwKwds
-top::ProductionStmt ::= lk::'local' ak::'attribute' a::Name ht::'::' te::Type 
+top::ProductionStmt ::= lk::'local' ak::'attribute' a::Name ht::'::' te::TypeExpr 
                         eq::'=' v::Expr sm::';'
 {
   forwards to
@@ -23,7 +23,7 @@ top::ProductionStmt ::= lk::'local' ak::'attribute' a::Name ht::'::' te::Type
 }
 
 concrete production shortProductionDecl
-top::ProductionStmt ::= pk::'production' a::Name ht::'::' te::Type 
+top::ProductionStmt ::= pk::'production' a::Name ht::'::' te::TypeExpr 
                         eq::'=' v::Expr sm::';'
 {
   forwards to
@@ -35,7 +35,7 @@ top::ProductionStmt ::= pk::'production' a::Name ht::'::' te::Type
 
 concrete production shortProductionDeclwKwds
 top::ProductionStmt ::= pk::'production' ak::'attribute' 
-                        a::Name ht::'::' te::Type eq::'=' v::Expr sm::';'
+                        a::Name ht::'::' te::TypeExpr eq::'=' v::Expr sm::';'
 {
   forwards to
     productionStmtAppend(

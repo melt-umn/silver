@@ -10,52 +10,52 @@ synthesized attribute transType :: String;
 -- the <> part of the type!! e.g. "Foo<Bar>.class" is illegal, should be "Foo.class"
 synthesized attribute transClassType :: String;
 
-attribute transType, transClassType occurs on TypeExp;
+attribute transType, transClassType occurs on Type;
 
-aspect production varTypeExp
-top::TypeExp ::= tv::TyVar
+aspect production varType
+top::Type ::= tv::TyVar
 {
   top.transType = "Object";
   top.transClassType = "Object";
 }
 
-aspect production skolemTypeExp
-top::TypeExp ::= tv::TyVar
+aspect production skolemType
+top::Type ::= tv::TyVar
 {
   top.transType = "Object";
   top.transClassType = "Object";
 }
 
-aspect production intTypeExp
-top::TypeExp ::=
+aspect production intType
+top::Type ::=
 {
   top.transType = "Integer";
   top.transClassType = "Integer";
 }
 
-aspect production boolTypeExp
-top::TypeExp ::=
+aspect production boolType
+top::Type ::=
 {
   top.transType = "Boolean";
   top.transClassType = "Boolean";
 }
 
-aspect production floatTypeExp
-top::TypeExp ::=
+aspect production floatType
+top::Type ::=
 {
   top.transType = "Float";
   top.transClassType = "Float";
 }
 
-aspect production stringTypeExp
-top::TypeExp ::=
+aspect production stringType
+top::Type ::=
 {
   top.transType = "common.StringCatter";
   top.transClassType = "common.StringCatter";
 }
 
-aspect production nonterminalTypeExp
-top::TypeExp ::= fn::String params::[TypeExp]
+aspect production nonterminalType
+top::Type ::= fn::String params::[Type]
 {
   -- untightened version would be "common.Node", but we prefer the generated
   -- class, e.g. silver.definition.core.NExpr
@@ -63,23 +63,23 @@ top::TypeExp ::= fn::String params::[TypeExp]
   top.transClassType = top.transType;
 }
 
-aspect production terminalTypeExp
-top::TypeExp ::= fn::String
+aspect production terminalType
+top::Type ::= fn::String
 {
   top.transType = makeTerminalName(fn);
   top.transClassType = makeTerminalName(fn);
 }
 
-aspect production decoratedTypeExp
-top::TypeExp ::= te::TypeExp
+aspect production decoratedType
+top::Type ::= te::Type
 {
   -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"
   top.transType = "common.DecoratedNode";
   top.transClassType = "common.DecoratedNode";
 }
 
-aspect production functionTypeExp
-top::TypeExp ::= out::TypeExp params::[TypeExp] namedParams::[NamedArgType]
+aspect production functionType
+top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
   top.transType = "common.NodeFactory<" ++ out.transType ++ ">";
   top.transClassType = "common.NodeFactory";

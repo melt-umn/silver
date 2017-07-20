@@ -1,13 +1,13 @@
 grammar silver:extension:doc:core;
 
 aspect production annotationDcl
-top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeList '::' te::Type ';'
+top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.docs := [bodilessDclCommentItem("annotation", a.name ++ tl.pp, te.pp, a.location.filename)];
 }
 
 concrete production docAnnotationDcl
-top::AGDcl ::= comment::DclComment 'annotation' a::QName tl::BracketedOptTypeList '::' te::Type ';'
+top::AGDcl ::= comment::DclComment 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.docs := [dclCommentItem("annotation ", a.name ++ tl.pp, te.pp, a.location.filename, comment)];
 
@@ -15,7 +15,7 @@ top::AGDcl ::= comment::DclComment 'annotation' a::QName tl::BracketedOptTypeLis
 }
 
 concrete production noDocAnnotationDcl
-top::AGDcl ::= noDoc::NoDclComment_t 'annotation' a::QName tl::BracketedOptTypeList '::' te::Type ';'
+top::AGDcl ::= noDoc::NoDclComment_t 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.docs := [];
 
