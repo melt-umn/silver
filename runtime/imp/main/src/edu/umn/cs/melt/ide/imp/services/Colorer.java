@@ -13,8 +13,9 @@ import common.Terminal;
 
 public class Colorer extends TokenColorerBase implements ITokenColorer {
 
-	private ITokenClassifier decider = SVRegistry.get().getTokenClassifier();
-	
+	//private ITokenClassifier decider = SVRegistry.get().getTokenClassifier();
+	private ITokenClassifier decider = new JasonTokenClassifier();	
+
 	public Colorer() {
 		super();
 	}
