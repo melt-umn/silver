@@ -88,8 +88,10 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
     then []
     else [err(attr.location, attr.pp ++ " is an extension synthesized attribute, and must contain at least the forward flow type. It is missing " ++ implode(", ", missingFt))];
   
+  -- We want to put the spec in even if there are errors in 'inhs' so that
+  -- we can look up specs from inhs.
   top.flowDefs = 
-    if !null(attr.errors) || !null(inhs.errors) then []
+    if !null(attr.errors) then []
     else [specificationFlowDef(top.onNt.typeName, attr.synName, inhs.inhList)];
 }
 
@@ -132,7 +134,7 @@ top::FlowSpecId ::= 'decorate'
 }
 
 
-nonterminal FlowSpecInhs with config, location, grammarName, errors, env, pp, onNt, inhList;
+nonterminal FlowSpecInhs with config, location, grammarName, errors, env, pp, onNt, inhList, flowEnv;
 
 concrete production nilFlowSpecInhs
 top::FlowSpecInhs ::=
@@ -156,7 +158,7 @@ top::FlowSpecInhs ::= h::FlowSpecInh  ','  t::FlowSpecInhs
   top.inhList = h.inhList ++ t.inhList;
 }
 
-nonterminal FlowSpecInh with config, location, grammarName, errors, env, pp, onNt, inhList;
+nonterminal FlowSpecInh with config, location, grammarName, errors, env, pp, onNt, inhList, flowEnv;
 
 synthesized attribute inhList :: [String];
 
@@ -173,6 +175,37 @@ top::FlowSpecInh ::= inh::QNameAttrOccur
     if !null(inh.errors) || inh.attrDcl.isInherited then []
     else [err(inh.location, inh.pp ++ " is not an inherited attribute and so cannot be within a flow type")];
 }
+
+{--
+ - Inherit a flow spec from another flow spec.
+ -
+ - 1. This is exclusively for other things given explicit specifications:
+ -    (a) by design: we want things documented in the code.
+ -    (b) because it dramatically simplifies the implementation.
+ -        We can do everything here, and not have to worry about having
+ -        to somehow make this work in the inference process. (Which would
+ -        be kinda tricky: probably we'd need to remove this attribute
+ -        from the normal 'infer' process EXCEPT on the phantom production,
+ -        where we'd stash the info given here as edges...)
+ - 2. I'm only implementing 'decorate' and not 'forward'/syns.
+ -    It's the only version demanded so far, let's wait until there's
+ -    motivation to consider that extension.
+ -}
+concrete production flowSpecDec
+top::FlowSpecInh ::= 'decorate'
+{
+  top.pp = "decorate";
+  
+  local specs :: [Pair<String [String]>] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
+  local decSpec :: Maybe<[String]> = lookupBy(stringEq, "decorate", specs);
+  
+  top.errors :=
+    if decSpec.isJust then []
+    else [err(top.location, "to use 'decorate' in a flow type, it must also have an explicit flow type")];
+  
+  top.inhList = fromMaybe([], decSpec);
+}
+
 
 nonterminal NtList with config, location, grammarName, errors, env, pp, flowSpecSpec, flowDefs, compiledGrammars, flowEnv;
 
