@@ -201,7 +201,7 @@ top::FlowSpecInh ::= 'decorate'
   
   top.errors :=
     if decSpec.isJust then []
-    else [err(top.location, "to use 'decorate' in a flow type, it must also have an explicit flow type")];
+    else [err(top.location, s"to use 'decorate' in a flow type for nonterminal ${top.onNt.typeName}, 'decorate' must also have an explicit flow type")];
   
   top.inhList = fromMaybe([], decSpec);
 }
