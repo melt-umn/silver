@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# A simple utility to generate a skeleton flowtype declaration for an attribute.
+
+# Searches all .sv files below the currect directory for nonterminals declared
+# with the given attribute, and outputs a declaration of the form
+#
+# flowtype $attribute {} on ...;
+#
+# where ... is a list of nonterminals sorted into lines by file.
+# If the attribute is not given, then all nonterminals are included
+# Note that this does NOT find 'occurs on' declarations, so for now this script
+# is mostly just useful for adding flowtypes to host languages.
+#
+# This script will eventually be replaced with something more reliable and built-
+# in to silver, see https://github.com/melt-umn/silver/issues/188
+
+# Examples:
+# sv-make-flowtype-decl
+# sv-make-flowtype-decl errors
+
+attribute=$1
+result=
+for file in $(find . -name "*.sv")
+do
+    if [ -z attribute ]
+    then
+        result+='  '$(sed -n "N;s/.*nonterminal\\s*\([_a-zA-Z][_a-zA-Z0-9]*\).*/\1, /p;D" < $file | tr -d '\n')$'\n'
+    else
+        result+='  '$(sed -n "N;s/.*nonterminal\\s*\([_a-zA-Z][_a-zA-Z0-9]*\)\\s*with.*[^_a-zA-Z0-9]$attribute[^_a-zA-Z0-9].*/\1, /p;D" < $file | tr -d '\n')$'\n'
+    fi
+done
+
+echo "flowtype $attribute {} on"
+echo "$result" | sed '/^  $/d' | sed 's/ $//' | head -c-3
+echo ";"
