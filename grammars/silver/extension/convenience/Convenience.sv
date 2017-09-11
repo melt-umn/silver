@@ -6,6 +6,7 @@ imports silver:definition:concrete_syntax;
 imports silver:definition:type;
 imports silver:definition:type:syntax;
 
+-- Multiple attribute occurs on statements
 concrete production multipleAttributionDclsManyMany
 top::AGDcl ::= 'attribute' a::QNames2 'occurs' 'on' nts::QNames2 ';'
 {
@@ -24,6 +25,27 @@ top::AGDcl ::= 'attribute' a::QNames2 'occurs' 'on' nts::QNameWithTL ';'
   top.pp = "attribute " ++ a.pp ++ " occurs on " ++ nts.pp ++ " ;" ;
   forwards to makeOccursDcls(top.location, a.qnames, [nts]);
 }
+
+-- Multiple annotation occurs on statements
+concrete production multipleAnnotationDclsManyMany
+top::AGDcl ::= 'annotation' a::QNames2 'occurs' 'on' nts::QNames2 ';'
+{
+  top.pp = "annotation " ++ a.pp ++ " occurs on " ++ nts.pp ++ " ;" ;
+  forwards to makeOccursDcls(top.location, a.qnames, nts.qnames);
+}
+concrete production multipleAnnotationDclsSingleMany
+top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs 'occurs' 'on' nts::QNames2 ';' 
+{
+  top.pp = "annotation " ++ a.pp ++ " occurs on " ++ nts.pp ++ " ;" ;
+  forwards to makeOccursDcls(top.location, [qNameWithTL(a, tl)], nts.qnames);
+}
+concrete production multipleAnnotationDclsManySingle
+top::AGDcl ::= 'annotation' a::QNames2 'occurs' 'on' nts::QNameWithTL ';'
+{
+  top.pp = "annotation " ++ a.pp ++ " occurs on " ++ nts.pp ++ " ;" ;
+  forwards to makeOccursDcls(top.location, a.qnames, [nts]);
+}
+
 
 
 concrete production nonterminalWithDcl
