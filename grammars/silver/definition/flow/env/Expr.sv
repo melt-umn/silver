@@ -654,7 +654,9 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 
 
 -- FROM PATTERN TODO
-attribute flowDeps, flowDefs, flowEnv occurs on PrimPatterns, PrimPattern;
+attribute flowDeps, flowDefs, flowEnv, scrutineeVertexType occurs on PrimPatterns, PrimPattern;
+
+autocopy attribute scrutineeVertexType :: VertexType;
 
 aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
@@ -668,8 +670,13 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- that introduces the use of 'x.syn' in a flowDef, and then emits the anonEq in flowDep
   -- so we DO need to be transitive. Unfortunately.
   
-  
+  local anonName :: String = "__scrutinee" ++ toString(genInt()) ++ ":line" ++ toString(e.location.line);
 
+  pr.scrutineeVertexType =
+    case e.flowVertexInfo of
+    | hasVertex(vertex) -> vertex
+    | noVertex() -> anonVertexType(anonName)
+    end;
 
   -- Let's make sure for decorated types, we only demand what's necessary for forward
   -- evaluation.
@@ -680,6 +687,12 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     end;
 
   top.flowDefs = e.flowDefs ++ pr.flowDefs ++ f.flowDefs;
+  -- Not clear the below needs adding here. We're already emitting deps on e.flowDeps in this case, so...!
+  --  case e.flowVertexInfo of
+  --  | hasVertex(vertex) -> []
+  --  | noVertex() -> [anonEq(top.frame.fullName, anonName, performSubstitution(e.typerep, top.finalSubst).typeName, top.location, e.flowDeps)]
+  --  end;
+  -- so that's a not-quite-error-because-it's-not-wrong-just-unnecessary in my thesis, heh.
 }
 
 aspect production onePattern
@@ -699,13 +712,15 @@ aspect production prodPatternNormal
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.flowDeps = e.flowDeps;
-  top.flowDefs = e.flowDefs;
+  top.flowDefs = e.flowDefs ++
+    [patternRuleEq(top.frame.fullName, qn.lookupValue.fullName, top.scrutineeVertexType, ns.flowProjections)];
 }
 aspect production prodPatternGadt
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.flowDeps = e.flowDeps;
-  top.flowDefs = e.flowDefs;
+  top.flowDefs = e.flowDefs ++
+    [patternRuleEq(top.frame.fullName, qn.lookupValue.fullName, top.scrutineeVertexType, ns.flowProjections)];
 }
 aspect production integerPattern
 top::PrimPattern ::= i::Int_t '->' e::Expr
