@@ -234,8 +234,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   top.errors := qn.lookupValue.errors ++ ns.errors ++ chk ++ e.errors;
 
-  local attribute prod_type :: Type;
-  prod_type = fullySkolemizeProductionType(qn.lookupValue.typerep); -- that says FULLY. See the comments on that function.
+  local prod_type :: Type =
+    fullySkolemizeProductionType(qn.lookupValue.typerep); -- that says FULLY. See the comments on that function.
   
   ns.bindingTypes = prod_type.inputTypes;
   ns.bindingIndex = 0;

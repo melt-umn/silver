@@ -10,12 +10,12 @@ nonterminal VarBinders with
   config, grammarName, env, compiledGrammars, frame,
   location, pp, errors, defs,
   bindingTypes, bindingIndex, translation, varBinderCount,
-  finalSubst;
+  finalSubst, flowProjections;
 nonterminal VarBinder with
   config, grammarName, env, compiledGrammars, frame,
   location, pp, errors, defs,
   bindingType, bindingIndex, translation,
-  finalSubst;
+  finalSubst, flowProjections;
 
 inherited attribute bindingType :: Type;
 inherited attribute bindingIndex :: Integer;
@@ -32,6 +32,7 @@ top::VarBinders ::= v::VarBinder
 
   top.translation = v.translation;
   top.varBinderCount = 1;
+  top.flowProjections = v.flowProjections;
 
   v.bindingIndex = top.bindingIndex;
   v.bindingType = if null(top.bindingTypes)
@@ -47,6 +48,7 @@ top::VarBinders ::= v::VarBinder ',' vs::VarBinders
 
   top.translation = v.translation ++ vs.translation;
   top.varBinderCount = 1 + vs.varBinderCount;
+  top.flowProjections = v.flowProjections ++ vs.flowProjections;
 
   v.bindingIndex = top.bindingIndex;
   vs.bindingIndex = top.bindingIndex + 1;
@@ -67,6 +69,7 @@ top::VarBinders ::=
   
   top.translation = "";
   top.varBinderCount = 0;
+  top.flowProjections = [];
 }
 
 concrete production varVarBinder
@@ -85,7 +88,9 @@ top::VarBinder ::= n::Name
     then decoratedType(top.bindingType)
     else top.bindingType;
 
-  local fName :: String = toString(genInt()) ++ ":" ++ n.name;
+  local fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;
+  
+  top.flowProjections = [patternVarProjection()];
 
   top.defs = [lexicalLocalDef(top.grammarName, n.location, fName, ty, noVertex(), [])]; -- TODO: these deps??
 
