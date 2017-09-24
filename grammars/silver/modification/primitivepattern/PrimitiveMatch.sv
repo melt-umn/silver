@@ -31,7 +31,6 @@ nonterminal PrimPattern with
 
 autocopy attribute scrutineeType :: Type;
 autocopy attribute returnType :: Type;
-inherited attribute bindingTypes :: [Type];
 
 
 concrete production matchPrimitiveConcrete
@@ -190,13 +189,14 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.errors := qn.lookupValue.errors ++ ns.errors ++ chk ++ e.errors;
 
   -- Turns the existential variables existential
-  local attribute prod_type :: Type;
-  prod_type = skolemizeProductionType(qn.lookupValue.typerep);
+  local prod_type :: Type =
+    skolemizeProductionType(qn.lookupValue.typerep);
   -- Note that we're going to check prod_type against top.scrutineeType shortly.
   -- This is where the type variables become unified.
   
   ns.bindingTypes = prod_type.inputTypes;
   ns.bindingIndex = 0;
+  ns.bindingNames = if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.inputNames;
   
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
@@ -239,6 +239,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   ns.bindingTypes = prod_type.inputTypes;
   ns.bindingIndex = 0;
+  ns.bindingNames = if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.inputNames;
   
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- part of the
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- threading hack

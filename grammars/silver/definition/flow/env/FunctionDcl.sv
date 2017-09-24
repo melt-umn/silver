@@ -7,7 +7,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
   {-- Used by core to send down with .frame -}
   production myFlowGraph :: ProductionGraph = 
-    constructFunctionGraph(namedSig, top.flowEnv);
+    constructFunctionGraph(namedSig, top.flowEnv, top.env);
 
   top.flowDefs = body.flowDefs;
 }
@@ -17,7 +17,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 {
   {-- Used by core to send down with .frame -}
   production myFlowGraph :: ProductionGraph = 
-    constructFunctionGraph(namedSig, top.flowEnv);
+    constructFunctionGraph(namedSig, top.flowEnv, top.env);
 
   top.flowDefs = body.flowDefs;
 }

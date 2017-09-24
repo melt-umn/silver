@@ -163,7 +163,8 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
     rhsStitchPoints(dcl.namedSignature.inputElements) ++
-    localStitchPoints(nt, defs);
+    localStitchPoints(nt, defs) ++
+    patternStitchPoints(realEnv, defs);
   
   local flowTypeVertexesOverall :: [FlowVertex] =
     (if nonForwarding then [] else [forwardEqVertex()]) ++
@@ -180,7 +181,7 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
 }
 
 function constructFunctionGraph
-ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv
+ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
 {
   local defs :: [FlowDef] = getGraphContribsFor(ns.fullName, flowEnv);
 
@@ -198,7 +199,8 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
     rhsStitchPoints(ns.inputElements) ++
-    localStitchPoints(error("functions have no LHS, no forwarding defs"), defs);
+    localStitchPoints(error("functions have no LHS, no forwarding defs"), defs) ++
+    patternStitchPoints(realEnv, defs);
 
   return productionGraph(ns.fullName, "::nolhs", [], initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 }
@@ -337,6 +339,35 @@ function rhsStitchPoints
               head(rhs).typerep.typeName,
               rhsVertexType(head(rhs).elementName)) :: rhsStitchPoints(tail(rhs))
        else rhsStitchPoints(tail(rhs));
+}
+function patternStitchPoints
+[StitchPoint] ::= realEnv::Decorated Env  defs::[FlowDef]
+{
+  return case defs of
+  | [] -> []
+  | patternRuleEq(_, matchProd, scrutinee, vars) :: rest ->
+      flatMap(patVarStitchPoints(matchProd, scrutinee, realEnv, _), vars) ++
+      patternStitchPoints(realEnv, rest)
+  | _ :: rest -> patternStitchPoints(realEnv, rest)
+  end;
+}
+function patVarStitchPoints
+[StitchPoint] ::= matchProd::String  scrutinee::VertexType  realEnv::Decorated Env  var::PatternVarProjection
+{
+  return case var of
+  | patternVarProjection(child, typeName, patternVar) -> 
+      [nonterminalStitchPoint(typeName, anonVertexType(patternVar)),
+       projectionStitchPoint(matchProd, anonVertexType(patternVar), scrutinee, rhsVertexType(child), getInhsForNtForPatternVars(typeName, realEnv))]
+  end;
+}
+
+-- fudge :(
+-- This is an annoying thing to have to write here.
+-- I wish for a better way to discover this info.
+function getInhsForNtForPatternVars
+[String] ::= nt::String  realEnv::Decorated Env
+{
+  return map((.attrOccurring), filter(isOccursInherited(_, realEnv), getAttrsOn(nt, realEnv)));
 }
 
 ---- End helpers for figuring our stitch points --------------------------------

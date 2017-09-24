@@ -422,7 +422,7 @@ nonterminal PatternVarProjection with unparse;
 abstract production patternVarProjection
 top::PatternVarProjection ::= child::String  typeName::String  patternVar::String
 {
-  top.unparse = s"(${child}, ${typeName}, ${patternVar})";
+  top.unparse = s"('${child}', '${typeName}', '${patternVar}')";
 }
 
 --
