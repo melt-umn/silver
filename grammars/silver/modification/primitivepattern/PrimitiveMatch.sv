@@ -418,7 +418,7 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   top.upSubst = errCheck2.upSubst;
   
   local consdefs :: [Def] =
-    [lexicalLocalDef(top.grammarName, top.location, h_fName, elemType, noVertex(), []), -- TODO these deps??
+    [lexicalLocalDef(top.grammarName, top.location, h_fName, elemType, noVertex(), []),
      lexicalLocalDef(top.grammarName, top.location, t_fName, top.scrutineeType, noVertex(), [])];
   
   e.env = newScopeEnv(consdefs, top.env);

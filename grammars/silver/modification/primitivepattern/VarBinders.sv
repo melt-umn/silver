@@ -5,18 +5,19 @@ import silver:translation:java:type;
 
 import silver:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef;
 
-import silver:definition:flow:ast only hasVertex, noVertex, PatternVarProjection, patternVarProjection, anonVertexType, ExprVertexInfo;
+import silver:definition:flow:ast only hasVertex, noVertex, PatternVarProjection, patternVarProjection, anonVertexType, ExprVertexInfo, FlowVertex;
+-- also unfortunately placed references to flowEnv
 
 nonterminal VarBinders with 
   config, grammarName, env, compiledGrammars, frame,
   location, pp, errors, defs,
   bindingTypes, bindingIndex, translation, varBinderCount,
-  finalSubst, flowProjections, bindingNames;
+  finalSubst, flowProjections, bindingNames, flowEnv;
 nonterminal VarBinder with
   config, grammarName, env, compiledGrammars, frame,
   location, pp, errors, defs,
   bindingType, bindingIndex, translation,
-  finalSubst, flowProjections, bindingName;
+  finalSubst, flowProjections, bindingName, flowEnv;
 
 --- Types of each child
 inherited attribute bindingTypes :: [Type];
@@ -120,12 +121,19 @@ top::VarBinder ::= n::Name
     if top.bindingType.isDecorable
     then [patternVarProjection(top.bindingName, top.bindingType.typeName, fName)]
     else [];
+  -- Recall that we emit (vertex, [reference set]) for expressions with a vertex.
+  -- and the correct value is computed based on how this gets used.
+  -- (e.g. if 'new'
   local vt :: ExprVertexInfo =
     if top.bindingType.isDecorable
     then hasVertex(anonVertexType(fName))
     else noVertex();
+  local deps :: [FlowVertex] =
+    if top.bindingType.isDecorable
+    then depsForTakingRef(anonVertexType(fName), ty.typeName, top.flowEnv)
+    else [];
 
-  top.defs = [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, [])];
+  top.defs = [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps)];
 
   -- finalSubst is not necessary, downSubst would work fine, but is not threaded through here.
   -- the point is that 'ty' for Pair<String Integer> would currently show Pair<a b>
