@@ -202,7 +202,7 @@ function getAttrsOn
   return searchEnvScope(fnnt, e.occursTree);
 }
 
--- This ensure the annotation list is in the properly sorted order!
+-- This ensures the annotation list is in the properly sorted order!
 function annotationsForNonterminal
 [NamedSignatureElement] ::= nt::Type  env::Decorated Env
 {

@@ -20,6 +20,7 @@ synthesized attribute attrOccurring :: String;
 inherited attribute givenNonterminalType :: Type;
 
 synthesized attribute isAnnotation :: Boolean; -- also "attrs"
+synthesized attribute defaultValue :: Maybe<Expr>;
 
 -- attrs
 synthesized attribute isSynthesized :: Boolean;
@@ -263,7 +264,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.isInherited = true;
 }
 abstract production annoDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type def::Maybe<Expr>
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -275,6 +276,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.typerep = ty;
   top.dclBoundVars = bound;
   top.isAnnotation = true;
+  top.defaultValue = def;
 }
 
 -- ProductionAttrDclInfo

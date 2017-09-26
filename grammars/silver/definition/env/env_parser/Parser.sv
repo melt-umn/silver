@@ -478,7 +478,7 @@ top::IDclInfo ::= 'anno' '(' l::ILocation ',' fn::IName ',' td::ITyVarDcls ',' t
 {
   t.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = [annoDef(top.grammarName, l.alocation, fn.aname, td.tyvars, t.typerep)];
+  top.defs = [annoDef(top.grammarName, l.alocation, fn.aname, td.tyvars, t.typerep, nothing())];
 }
 
 concrete production aDclInfoAnnoInstance
