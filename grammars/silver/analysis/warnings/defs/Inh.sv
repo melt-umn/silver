@@ -2,6 +2,8 @@ grammar silver:analysis:warnings:defs;
 
 import silver:modification:autocopyattr only isAutocopy;
 import silver:modification:collection;
+import silver:modification:primitivepattern;
+
 import silver:definition:flow:driver only ProductionGraph, FlowType, flowVertexEq, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh;
 import silver:util:raw:treeset as set;
 
@@ -603,5 +605,66 @@ top::Expr ::= '(' '.' q::QName ')'
           else [wrn(top.location, s"Attribute section (.${q.pp}) requires attributes not known to be on '${prettyType(inputType)}': ${implode(", ", inhs)}")]
       end
     else [];
+}
+
+
+{--
+ - For pattern matching, we have an obligation to check:
+ - 1. If we invented an anon vertex type for the scrutinee, then it's a sink, and
+ -    we need to check that nothing more than the ref set was depended upon.
+ -}
+aspect production matchPrimitiveReal
+top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
+{
+  -- slightly awkward way to recover the name and whether/not it was invented
+  local sinkVertexName :: Maybe<String> =
+    case e.flowVertexInfo, pr.scrutineeVertexType of
+    | noVertex(), anonVertexType(n) -> just(n)
+    | _, _ -> nothing()
+    end;
+
+  -- TODO bug: expressions in globals don't have flow graphs. That's a mistake.
+  -- We need to add edges due to flow types and 'flowDefs' from subexpressions
+  -- to accurately raise errors. We need to fix this by ensuring ALL contexts get
+  -- flow graphs built for them.
+
+  -- These should be the only ones that can reference our anon sink
+  local transitiveDeps :: [FlowVertex] =
+    if top.frame.prodFlowGraph.isJust
+    then expandGraph(top.flowDeps, top.frame.prodFlowGraph.fromJust)
+    else top.flowDeps;
+
+  -- just the deps on inhs of our sink
+  local inhDeps :: [String] =
+    toAnonInhs(transitiveDeps, sinkVertexName.fromJust, top.env);
+
+  -- Subtract the ref set from our deps
+  local diff :: [String] =
+    set:toList(set:removeAll(
+      inhsForTakingRef(e.typerep.typeName, top.flowEnv),
+      set:add(inhDeps, set:empty(compareString))));
+
+  top.errors <-
+    if null(e.errors)
+    && (top.config.warnAll || top.config.warnMissingInh)
+    && sinkVertexName.isJust
+    && !null(diff)
+    then [wrn(e.location, "Pattern match on reference has transitive dependencies on " ++ implode(", ", diff) ++ " which are not known to be supplied to references")]
+    else [];
+
+}
+
+function toAnonInhs
+[String] ::= v::[FlowVertex]  scrutineeVertex::String  env::Decorated Env
+{
+  return
+    case v of
+    | anonVertex(n, inh) :: tl ->
+        if scrutineeVertex == n && isInherited(inh, env)
+        then inh :: toAnonInhs(tl, scrutineeVertex, env)
+        else toAnonInhs(tl, scrutineeVertex, env)
+    | _ :: tl -> toAnonInhs(tl, scrutineeVertex, env)
+    | [] -> []
+    end;
 }
 

@@ -445,7 +445,11 @@ function collectAnonOriginItem
 [Pair<String  Location>] ::= f::FlowDef  rest::[Pair<String  Location>]
 {
   return case f of
-  | anonEq(_, fN, _, l, _) -> pair(fN, l) :: rest
+  | anonEq(_, fN, _, l, _) ->
+      -- Small hack to improve error messages. Ignore anonEq's that come from patterns
+      if startsWith("__scrutinee", fN)
+      then rest
+      else pair(fN, l) :: rest
   | _ -> rest
   end;
 }

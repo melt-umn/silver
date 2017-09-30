@@ -687,6 +687,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- that introduces the use of 'x.syn' in a flowDef, and then emits the anonEq in flowDep
   -- so we DO need to be transitive. Unfortunately.
   
+  -- hack note: there's a test that depends on this name starting with __scrutinee. grep for it if you have to change this
   local anonName :: String = "__scrutinee" ++ toString(genInt()) ++ ":line" ++ toString(e.location.line);
 
   pr.scrutineeVertexType =
@@ -698,18 +699,14 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- Let's make sure for decorated types, we only demand what's necessary for forward
   -- evaluation.
   top.flowDeps = pr.flowDeps ++ f.flowDeps ++
-    case e.flowVertexInfo of
-    | hasVertex(vertex) -> vertex.fwdVertex :: vertex.eqVertex
-    | noVertex() -> e.flowDeps
-    end;
+    (pr.scrutineeVertexType.fwdVertex :: pr.scrutineeVertexType.eqVertex);
 
-  top.flowDefs = e.flowDefs ++ pr.flowDefs ++ f.flowDefs;
-  -- Not clear the below needs adding here. We're already emitting deps on e.flowDeps in this case, so...!
-  --  case e.flowVertexInfo of
-  --  | hasVertex(vertex) -> []
-  --  | noVertex() -> [anonEq(top.frame.fullName, anonName, performSubstitution(e.typerep, top.finalSubst).typeName, top.location, e.flowDeps)]
-  --  end;
-  -- so that's a not-quite-error-because-it's-not-wrong-just-unnecessary in my thesis, heh.
+  top.flowDefs = e.flowDefs ++ pr.flowDefs ++ f.flowDefs ++
+    case e.flowVertexInfo of
+    | hasVertex(vertex) -> []
+    | noVertex() -> [anonEq(top.frame.fullName, anonName, performSubstitution(e.typerep, top.finalSubst).typeName, top.location, e.flowDeps)]
+    end;
+  -- We want to use anonEq here because that introduces the nonterminal stitch point for our vertex.
 }
 
 aspect production onePattern
