@@ -12,12 +12,12 @@ nonterminal VarBinders with
   config, grammarName, env, compiledGrammars, frame,
   location, pp, errors, defs,
   bindingTypes, bindingIndex, translation, varBinderCount,
-  finalSubst, flowProjections, bindingNames, flowEnv;
+  finalSubst, flowProjections, bindingNames, flowEnv, matchingAgainst;
 nonterminal VarBinder with
   config, grammarName, env, compiledGrammars, frame,
   location, pp, errors, defs,
   bindingType, bindingIndex, translation,
-  finalSubst, flowProjections, bindingName, flowEnv;
+  finalSubst, flowProjections, bindingName, flowEnv, matchingAgainst;
 
 --- Types of each child
 inherited attribute bindingTypes :: [Type];
@@ -29,6 +29,9 @@ inherited attribute bindingNames :: [String];
 inherited attribute bindingName :: String;
 --- Extractions of decoration sites from children
 synthesized attribute flowProjections :: [PatternVarProjection];
+
+-- The name of the production we're matching against
+autocopy attribute matchingAgainst :: Maybe<DclInfo>;
 
 synthesized attribute varBinderCount :: Integer;
 
@@ -113,7 +116,7 @@ top::VarBinder ::= n::Name
     then decoratedType(top.bindingType)
     else top.bindingType;
 
-  local fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;
+  production fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;
   
   -- If it's decorable, then we do projections through the production
   -- if it's not, then we treat it like a generic reference.
@@ -121,6 +124,8 @@ top::VarBinder ::= n::Name
     if top.bindingType.isDecorable
     then [patternVarProjection(top.bindingName, top.bindingType.typeName, fName)]
     else [];
+  -- because we don't have an 'anonEq' (the nonterminal stitch point gets generated for us by the above contribution) we won't be reported as missing in this production. Checks for presence in remote productions have to be done explicitly
+
   -- Recall that we emit (vertex, [reference set]) for expressions with a vertex.
   -- and the correct value is computed based on how this gets used.
   -- (e.g. if 'new'

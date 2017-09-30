@@ -197,6 +197,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   ns.bindingTypes = prod_type.inputTypes;
   ns.bindingIndex = 0;
   ns.bindingNames = if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.inputNames;
+  ns.matchingAgainst = if null(qn.lookupValue.dcls) then nothing() else just(qn.lookupValue.dcl);
   
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
@@ -240,6 +241,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   ns.bindingTypes = prod_type.inputTypes;
   ns.bindingIndex = 0;
   ns.bindingNames = if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.inputNames;
+  ns.matchingAgainst = if null(qn.lookupValue.dcls) then nothing() else just(qn.lookupValue.dcl);
   
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- part of the
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- threading hack

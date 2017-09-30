@@ -633,6 +633,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     if top.frame.prodFlowGraph.isJust
     then expandGraph(top.flowDeps, top.frame.prodFlowGraph.fromJust)
     else top.flowDeps;
+  
+  pr.receivedDeps = transitiveDeps;
 
   -- just the deps on inhs of our sink
   local inhDeps :: [String] =
@@ -655,16 +657,51 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 }
 
 function toAnonInhs
-[String] ::= v::[FlowVertex]  scrutineeVertex::String  env::Decorated Env
+[String] ::= v::[FlowVertex]  vertex::String  env::Decorated Env
 {
   return
     case v of
     | anonVertex(n, inh) :: tl ->
-        if scrutineeVertex == n && isInherited(inh, env)
-        then inh :: toAnonInhs(tl, scrutineeVertex, env)
-        else toAnonInhs(tl, scrutineeVertex, env)
-    | _ :: tl -> toAnonInhs(tl, scrutineeVertex, env)
+        if vertex == n && isInherited(inh, env)
+        then inh :: toAnonInhs(tl, vertex, env)
+        else toAnonInhs(tl, vertex, env)
+    | _ :: tl -> toAnonInhs(tl, vertex, env)
     | [] -> []
     end;
 }
+
+autocopy attribute receivedDeps :: [FlowVertex] occurs on VarBinders, VarBinder, PrimPatterns, PrimPattern;
+
+aspect production varVarBinder
+top::VarBinder ::= n::Name
+{
+  -- fName is our invented vertex name for the pattern variable
+  local requiredInhs :: [String] =
+    toAnonInhs(top.receivedDeps, fName, top.env);
+
+  -- Check for equation's existence:
+  -- Prod: top.matchingAgainst.fromJust.fullName
+  -- Child: top.bindingName
+  -- Inh: each of requiredInhs
+  local missingInhs :: [String] =
+    filter(remoteProdMissingEq(top.matchingAgainst.fromJust, top.bindingName, _, top.env, top.flowEnv), requiredInhs);
+
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh)
+    && top.bindingType.isDecorable
+    && top.matchingAgainst.isJust
+    && !null(missingInhs)
+    then [wrn(top.location, s"Pattern variable '${n.name}' has transitive dependencies with missing remote equations.\n\tRemote production: ${top.matchingAgainst.fromJust.fullName}\n\tChild: ${top.bindingName}\n\tMissing inherited equations for: ${implode(", ", missingInhs)}")]
+    else [];
+}
+
+function remoteProdMissingEq
+Boolean ::= prod::DclInfo  sigName::String  attrName::String  realEnv::Decorated Env  flowEnv::Decorated FlowEnv
+{
+  return
+    null(lookupInh(prod.fullName, sigName, attrName, flowEnv)) && -- no equation
+    ignoreIfAutoCopyOnLhs(prod.namedSignature.outputElement.typerep.typeName, realEnv, attrName); -- not autocopy (and on lhs)
+}
+
+
 
