@@ -89,6 +89,21 @@ top::ProductionGraph ::=
     end end;
 }
 
+function updateGraph
+ProductionGraph ::=
+  graph::ProductionGraph
+  prodEnv::EnvTree<ProductionGraph>
+  ntEnv::EnvTree<FlowType>
+{
+  graph.flowTypes = ntEnv;
+  graph.prodGraphs = prodEnv;
+
+  local stitchedGraph :: ProductionGraph = graph.stitchedGraph;
+  stitchedGraph.flowTypes = ntEnv;
+
+  return stitchedGraph.cullSuspect;
+}
+
 -- construct a production graph for each production
 function computeAllProductionGraphs
 [ProductionGraph] ::= prods::[DclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
@@ -180,8 +195,17 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   return productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 }
 
+{--
+ - Constructs a function flow graph. NOTE: Not used as part of inference.
+ - Instead, only used as part of error checking.
+ - @param ns  The function signature
+ - @param flowEnv  The LOCAL flow env where the function is. (n.b. for productions involved in inference, we get a global flow env)
+ - @param realEnv  The LOCAL environment
+ - @param prodEnv  The production flow graphs we've previously computed
+ - @param ntEnv  The flow types we've previously computed
+ -}
 function constructFunctionGraph
-ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
 {
   local defs :: [FlowDef] = getGraphContribsFor(ns.fullName, flowEnv);
 
@@ -202,7 +226,10 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv  realEnv::Dec
     localStitchPoints(error("functions have no LHS, no forwarding defs"), defs) ++
     patternStitchPoints(realEnv, defs);
 
-  return productionGraph(ns.fullName, "::nolhs", [], initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+  local g :: ProductionGraph =
+    productionGraph(ns.fullName, "::nolhs", [], initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+
+  return updateGraph(g, prodEnv, ntEnv);
 }
 
 
