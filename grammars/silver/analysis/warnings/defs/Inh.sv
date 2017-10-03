@@ -2,6 +2,8 @@ grammar silver:analysis:warnings:defs;
 
 import silver:modification:autocopyattr only isAutocopy;
 import silver:modification:collection;
+import silver:modification:primitivepattern;
+
 import silver:definition:flow:driver only ProductionGraph, FlowType, flowVertexEq, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh;
 import silver:util:raw:treeset as set;
 
@@ -604,4 +606,102 @@ top::Expr ::= '(' '.' q::QName ')'
       end
     else [];
 }
+
+
+{--
+ - For pattern matching, we have an obligation to check:
+ - 1. If we invented an anon vertex type for the scrutinee, then it's a sink, and
+ -    we need to check that nothing more than the ref set was depended upon.
+ -}
+aspect production matchPrimitiveReal
+top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
+{
+  -- slightly awkward way to recover the name and whether/not it was invented
+  local sinkVertexName :: Maybe<String> =
+    case e.flowVertexInfo, pr.scrutineeVertexType of
+    | noVertex(), anonVertexType(n) -> just(n)
+    | _, _ -> nothing()
+    end;
+
+  -- TODO bug: expressions in globals don't have flow graphs. That's a mistake.
+  -- We need to add edges due to flow types and 'flowDefs' from subexpressions
+  -- to accurately raise errors. We need to fix this by ensuring ALL contexts get
+  -- flow graphs built for them.
+
+  -- These should be the only ones that can reference our anon sink
+  local transitiveDeps :: [FlowVertex] =
+    if top.frame.prodFlowGraph.isJust
+    then expandGraph(top.flowDeps, top.frame.prodFlowGraph.fromJust)
+    else top.flowDeps;
+  
+  pr.receivedDeps = transitiveDeps;
+
+  -- just the deps on inhs of our sink
+  local inhDeps :: [String] =
+    toAnonInhs(transitiveDeps, sinkVertexName.fromJust, top.env);
+
+  -- Subtract the ref set from our deps
+  local diff :: [String] =
+    set:toList(set:removeAll(
+      inhsForTakingRef(e.typerep.typeName, top.flowEnv),
+      set:add(inhDeps, set:empty(compareString))));
+
+  top.errors <-
+    if null(e.errors)
+    && (top.config.warnAll || top.config.warnMissingInh)
+    && sinkVertexName.isJust
+    && !null(diff)
+    then [wrn(e.location, "Pattern match on reference has transitive dependencies on " ++ implode(", ", diff) ++ " which are not known to be supplied to references")]
+    else [];
+
+}
+
+function toAnonInhs
+[String] ::= v::[FlowVertex]  vertex::String  env::Decorated Env
+{
+  return
+    case v of
+    | anonVertex(n, inh) :: tl ->
+        if vertex == n && isInherited(inh, env)
+        then inh :: toAnonInhs(tl, vertex, env)
+        else toAnonInhs(tl, vertex, env)
+    | _ :: tl -> toAnonInhs(tl, vertex, env)
+    | [] -> []
+    end;
+}
+
+autocopy attribute receivedDeps :: [FlowVertex] occurs on VarBinders, VarBinder, PrimPatterns, PrimPattern;
+
+aspect production varVarBinder
+top::VarBinder ::= n::Name
+{
+  -- fName is our invented vertex name for the pattern variable
+  local requiredInhs :: [String] =
+    toAnonInhs(top.receivedDeps, fName, top.env);
+
+  -- Check for equation's existence:
+  -- Prod: top.matchingAgainst.fromJust.fullName
+  -- Child: top.bindingName
+  -- Inh: each of requiredInhs
+  local missingInhs :: [String] =
+    filter(remoteProdMissingEq(top.matchingAgainst.fromJust, top.bindingName, _, top.env, top.flowEnv), requiredInhs);
+
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh)
+    && top.bindingType.isDecorable
+    && top.matchingAgainst.isJust
+    && !null(missingInhs)
+    then [wrn(top.location, s"Pattern variable '${n.name}' has transitive dependencies with missing remote equations.\n\tRemote production: ${top.matchingAgainst.fromJust.fullName}\n\tChild: ${top.bindingName}\n\tMissing inherited equations for: ${implode(", ", missingInhs)}")]
+    else [];
+}
+
+function remoteProdMissingEq
+Boolean ::= prod::DclInfo  sigName::String  attrName::String  realEnv::Decorated Env  flowEnv::Decorated FlowEnv
+{
+  return
+    null(lookupInh(prod.fullName, sigName, attrName, flowEnv)) && -- no equation
+    ignoreIfAutoCopyOnLhs(prod.namedSignature.outputElement.typerep.typeName, realEnv, attrName); -- not autocopy (and on lhs)
+}
+
+
 

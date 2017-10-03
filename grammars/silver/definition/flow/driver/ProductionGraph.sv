@@ -89,6 +89,21 @@ top::ProductionGraph ::=
     end end;
 }
 
+function updateGraph
+ProductionGraph ::=
+  graph::ProductionGraph
+  prodEnv::EnvTree<ProductionGraph>
+  ntEnv::EnvTree<FlowType>
+{
+  graph.flowTypes = ntEnv;
+  graph.prodGraphs = prodEnv;
+
+  local stitchedGraph :: ProductionGraph = graph.stitchedGraph;
+  stitchedGraph.flowTypes = ntEnv;
+
+  return stitchedGraph.cullSuspect;
+}
+
 -- construct a production graph for each production
 function computeAllProductionGraphs
 [ProductionGraph] ::= prods::[DclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
@@ -163,7 +178,8 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
     rhsStitchPoints(dcl.namedSignature.inputElements) ++
-    localStitchPoints(nt, defs);
+    localStitchPoints(nt, defs) ++
+    patternStitchPoints(realEnv, defs);
   
   local flowTypeVertexesOverall :: [FlowVertex] =
     (if nonForwarding then [] else [forwardEqVertex()]) ++
@@ -179,8 +195,17 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   return productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 }
 
+{--
+ - Constructs a function flow graph. NOTE: Not used as part of inference.
+ - Instead, only used as part of error checking.
+ - @param ns  The function signature
+ - @param flowEnv  The LOCAL flow env where the function is. (n.b. for productions involved in inference, we get a global flow env)
+ - @param realEnv  The LOCAL environment
+ - @param prodEnv  The production flow graphs we've previously computed
+ - @param ntEnv  The flow types we've previously computed
+ -}
 function constructFunctionGraph
-ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv
+ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
 {
   local defs :: [FlowDef] = getGraphContribsFor(ns.fullName, flowEnv);
 
@@ -198,9 +223,13 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
     rhsStitchPoints(ns.inputElements) ++
-    localStitchPoints(error("functions have no LHS, no forwarding defs"), defs);
+    localStitchPoints(error("functions have no LHS, no forwarding defs"), defs) ++
+    patternStitchPoints(realEnv, defs);
 
-  return productionGraph(ns.fullName, "::nolhs", [], initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+  local g :: ProductionGraph =
+    productionGraph(ns.fullName, "::nolhs", [], initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+
+  return updateGraph(g, prodEnv, ntEnv);
 }
 
 
@@ -337,6 +366,35 @@ function rhsStitchPoints
               head(rhs).typerep.typeName,
               rhsVertexType(head(rhs).elementName)) :: rhsStitchPoints(tail(rhs))
        else rhsStitchPoints(tail(rhs));
+}
+function patternStitchPoints
+[StitchPoint] ::= realEnv::Decorated Env  defs::[FlowDef]
+{
+  return case defs of
+  | [] -> []
+  | patternRuleEq(_, matchProd, scrutinee, vars) :: rest ->
+      flatMap(patVarStitchPoints(matchProd, scrutinee, realEnv, _), vars) ++
+      patternStitchPoints(realEnv, rest)
+  | _ :: rest -> patternStitchPoints(realEnv, rest)
+  end;
+}
+function patVarStitchPoints
+[StitchPoint] ::= matchProd::String  scrutinee::VertexType  realEnv::Decorated Env  var::PatternVarProjection
+{
+  return case var of
+  | patternVarProjection(child, typeName, patternVar) -> 
+      [nonterminalStitchPoint(typeName, anonVertexType(patternVar)),
+       projectionStitchPoint(matchProd, anonVertexType(patternVar), scrutinee, rhsVertexType(child), getInhsForNtForPatternVars(typeName, realEnv))]
+  end;
+}
+
+-- fudge :(
+-- This is an annoying thing to have to write here.
+-- I wish for a better way to discover this info.
+function getInhsForNtForPatternVars
+[String] ::= nt::String  realEnv::Decorated Env
+{
+  return map((.attrOccurring), filter(isOccursInherited(_, realEnv), getAttrsOn(nt, realEnv)));
 }
 
 ---- End helpers for figuring our stitch points --------------------------------

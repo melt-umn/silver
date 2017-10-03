@@ -16,8 +16,6 @@ top::StitchPoint ::= nt::String  vertexType::VertexType
       g:toList(findFlowType(nt, top.flowTypes)));
 }
 
--- TODO: use the below, somehow. it's for pattern matching, right?
-
 
 {--
  - Given production 'prod :: LHS ::= rhs1::RHS1'

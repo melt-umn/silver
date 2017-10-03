@@ -647,14 +647,33 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 aspect production lexicalLocalReference
 top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
-  top.flowDeps = fd;
+  -- Because of the auto-undecorate behavior, we need to check for the case
+  -- where `t` should be equivalent to `new(t)` and report accoringly.
+  
+  -- If we:
+  -- 1. Have a flow vertex
+  -- 2. Are a decorated type
+  -- 3. Used as undecorated type
+  -- Then: Suppress `fd` and report just `fi.eq`
+
+  top.flowDeps = 
+    case fi of
+    | hasVertex(vertex) ->
+        if performSubstitution(q.lookupValue.typerep, top.finalSubst).isDecorated &&
+           !performSubstitution(top.typerep, top.finalSubst).isDecorated
+        then vertex.eqVertex -- we're a `t` emulating `new(t)`
+        else fd -- we're passing along our vertex-ness to the outer expression
+    | noVertex() -> fd -- we're actually being used as a ref-set-taking decorated var
+    end;
   top.flowDefs = [];
   top.flowVertexInfo = fi;
 }
 
 
 -- FROM PATTERN TODO
-attribute flowDeps, flowDefs, flowEnv occurs on PrimPatterns, PrimPattern;
+attribute flowDeps, flowDefs, flowEnv, scrutineeVertexType occurs on PrimPatterns, PrimPattern;
+
+autocopy attribute scrutineeVertexType :: VertexType;
 
 aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
@@ -668,18 +687,26 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- that introduces the use of 'x.syn' in a flowDef, and then emits the anonEq in flowDep
   -- so we DO need to be transitive. Unfortunately.
   
-  
+  -- hack note: there's a test that depends on this name starting with __scrutinee. grep for it if you have to change this
+  local anonName :: String = "__scrutinee" ++ toString(genInt()) ++ ":line" ++ toString(e.location.line);
 
+  pr.scrutineeVertexType =
+    case e.flowVertexInfo of
+    | hasVertex(vertex) -> vertex
+    | noVertex() -> anonVertexType(anonName)
+    end;
 
   -- Let's make sure for decorated types, we only demand what's necessary for forward
   -- evaluation.
   top.flowDeps = pr.flowDeps ++ f.flowDeps ++
-    case e.flowVertexInfo of
-    | hasVertex(vertex) -> vertex.fwdVertex :: vertex.eqVertex
-    | noVertex() -> e.flowDeps
-    end;
+    (pr.scrutineeVertexType.fwdVertex :: pr.scrutineeVertexType.eqVertex);
 
-  top.flowDefs = e.flowDefs ++ pr.flowDefs ++ f.flowDefs;
+  top.flowDefs = e.flowDefs ++ pr.flowDefs ++ f.flowDefs ++
+    case e.flowVertexInfo of
+    | hasVertex(vertex) -> []
+    | noVertex() -> [anonEq(top.frame.fullName, anonName, performSubstitution(e.typerep, top.finalSubst).typeName, top.location, e.flowDeps)]
+    end;
+  -- We want to use anonEq here because that introduces the nonterminal stitch point for our vertex.
 }
 
 aspect production onePattern
@@ -699,13 +726,15 @@ aspect production prodPatternNormal
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.flowDeps = e.flowDeps;
-  top.flowDefs = e.flowDefs;
+  top.flowDefs = e.flowDefs ++
+    [patternRuleEq(top.frame.fullName, qn.lookupValue.fullName, top.scrutineeVertexType, ns.flowProjections)];
 }
 aspect production prodPatternGadt
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.flowDeps = e.flowDeps;
-  top.flowDefs = e.flowDefs;
+  top.flowDefs = e.flowDefs ++
+    [patternRuleEq(top.frame.fullName, qn.lookupValue.fullName, top.scrutineeVertexType, ns.flowProjections)];
 }
 aspect production integerPattern
 top::PrimPattern ::= i::Int_t '->' e::Expr
