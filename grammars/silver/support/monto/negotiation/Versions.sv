@@ -2,15 +2,22 @@ grammar silver:support:monto:negotiation;
 
 import lib:json;
 
-nonterminal ProtocolVersion with json;
+synthesized attribute major :: Integer;
+synthesized attribute minor :: Integer;
+synthesized attribute patch :: Integer;
+
+nonterminal ProtocolVersion with major, minor, patch, json;
 
 abstract production protocolVersion
 top::ProtocolVersion ::= major::Integer minor::Integer patch::Integer
 {
+  top.major = major;
+  top.minor = minor;
+  top.patch = patch;
   top.json = jsonObject(
-    [ pair("major", jsonInteger(major))
-    , pair("minor", jsonInteger(minor))
-    , pair("patch", jsonInteger(patch))
+    [ pair("major", jsonInteger(top.major))
+    , pair("minor", jsonInteger(top.minor))
+    , pair("patch", jsonInteger(top.patch))
     ]);
 }
 

@@ -16,12 +16,9 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMQ;
 
-/**
- * The HTTP server for a Monto3 service.
- */
 public class Server {
+	private Config config;
 	private Gson gson;
-	private HttpServer server;
 	private NodeFactory<NIOVal> callback;
 	private Socket registerSock;
 	private Socket sock;
