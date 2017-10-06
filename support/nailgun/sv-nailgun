@@ -56,7 +56,7 @@ function sv-serve {
     return 4
   fi
 
-  java -Xmx2G -Xms1G -jar "$SV_NAILGUN_JAR" > /dev/null 2> /dev/null &
+  java -Xmx2G -Xms1G -Xss8M -jar "$SV_NAILGUN_JAR" > /dev/null 2> /dev/null &
   
   # Unfortunately no good way to determine when the server has started, afaik
   sleep 2
