@@ -1,4 +1,4 @@
-grammar lib:monto;
+grammar silver:support:monto;
 
 function runService
 IO ::= service::Service port::Integer ioIn::IO
