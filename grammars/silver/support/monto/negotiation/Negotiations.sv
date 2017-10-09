@@ -8,7 +8,7 @@ synthesized attribute montoVersion :: ProtocolVersion;
 nonterminal ServiceBrokerNegotiation with montoVersion, json;
 
 abstract production serviceBrokerNegotiation
-top::ServiceNegotiation ::= monto::ProtocolVersion broker::SoftwareVersion extensions::[String]
+top::ServiceBrokerNegotiation ::= monto::ProtocolVersion broker::SoftwareVersion extensions::[String]
 {
   top.montoVersion = monto;
   top.json = jsonObject(

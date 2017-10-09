@@ -5,7 +5,7 @@ import lib:json;
 abstract production directoryProduct
 top::ProductValue ::= entries::[DirectoryEntry]
 {
-  top.json = jsonArray(map((.json), entries));
+  forwards to productValue("directory", jsonArray(map((.json), entries)));
 }
 
 nonterminal DirectoryEntry with json;

@@ -6,15 +6,15 @@ import silver:support:monto:products;
 
 -- These are "stringly typed" to minimize the effort to FFI to them; you should
 -- always use the strongly typed service production.
-synthesized attribute negotiation :: (Pair<String Boolean> ::= ServiceBrokerNegotiation);
+synthesized attribute doNegotiation :: (Pair<String Boolean> ::= ServiceBrokerNegotiation);
 synthesized attribute onRequest :: (Pair<String Integer> ::= ProductIdentifier [Product]);
 
-nonterminal Service with negotiation, onRequest;
+nonterminal Service with doNegotiation, onRequest;
 
 abstract production service
 top::Service ::= negotiation::ServiceNegotiation providers::[ServiceProvider]
 {
-  top.negotiation = \sbn::ServiceBrokerNegotiation ->
+  top.doNegotiation = \sbn::ServiceBrokerNegotiation ->
     pair(negotiation.json.jsonString, negotiationsCompatible(negotiation, sbn));
   top.onRequest = \pi::ProductIdentifier deps::[Product] ->
     case find(\p::ServiceProvider -> productDescriptorEq(p.descriptor, asDescriptor(pi)), providers) of

@@ -34,6 +34,14 @@ public class Server {
 		this.service = service;
 	}
 
+	public static void run(NService service, int port) {
+		try {
+			new Server(service, port).start();
+		} catch(IOException ioex) {
+			throw new RuntimeException(ioex);
+		}
+	}
+
 	public void start() {
 		this.server.start();
 	}
@@ -42,7 +50,7 @@ public class Server {
 		public void handle(HttpExchange t) throws IOException {
 			InputStreamReader isr = new InputStreamReader(t.getRequestBody());
 			ServiceBrokerNegotiation sbn = gson.fromJson(isr, ServiceBrokerNegotiation.class);
-			Pair<String, Boolean> p = FFI.getNegotiation(service);
+			Pair<String, Boolean> p = FFI.doNegotiation(service, sbn);
 			int responseCode = 200;
 			if(!p.second) responseCode = 409;
 			String response = p.first;

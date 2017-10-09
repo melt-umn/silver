@@ -5,7 +5,7 @@ import lib:json;
 abstract production errorsProduct
 top::ProductValue ::= errs::[Error]
 {
-  top.json = jsonArray(map((.json), errs));
+  forwards to productValue("errors", jsonArray(map((.json), errs)));
 }
 
 nonterminal Error with json;
