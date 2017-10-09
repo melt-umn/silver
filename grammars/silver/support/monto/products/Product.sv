@@ -5,6 +5,13 @@ import lib:json;
 synthesized attribute productName :: String;
 nonterminal ProductValue with json, productName;
 
+abstract production productValue
+top::ProductValue ::= name::String json::Json
+{
+  top.json = json;
+  top.productName = name;
+}
+
 synthesized attribute productLang :: String;
 synthesized attribute productPath :: String;
 synthesized attribute productValue :: ProductValue;

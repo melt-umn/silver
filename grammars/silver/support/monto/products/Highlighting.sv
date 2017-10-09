@@ -5,7 +5,7 @@ import lib:json;
 abstract production highlightingProduct
 top::ProductValue ::= tokens::[HighlightToken]
 {
-  top.json = jsonArray(map((.json), tokens));
+  forwards to productValue("highlighting", jsonArray(map((.json), tokens)));
 }
 
 nonterminal HighlightToken with json;
