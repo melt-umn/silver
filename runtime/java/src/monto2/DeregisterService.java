@@ -1,4 +1,4 @@
-package monto;
+package monto2;
 
 public class DeregisterService {
 	private String deregister_service_id;
