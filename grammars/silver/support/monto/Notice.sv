@@ -1,6 +1,6 @@
 grammar silver:support:monto;
 
-import lib:json;
+import silver:json;
 import silver:support:monto:products;
 
 nonterminal ServiceNotice with json;

@@ -1,6 +1,6 @@
 grammar silver:support:monto:negotiation;
 
-import lib:json;
+import silver:json;
 import silver:support:monto:products;
 
 synthesized attribute montoVersion :: ProtocolVersion;

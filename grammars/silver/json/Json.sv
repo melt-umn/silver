@@ -1,7 +1,7 @@
 -- Should this be under the silver:... grammar tree?
 -- If we do the refactor mentioned in #152, #175, this should probably end up
 -- as silver:json, with proper concrete syntax and everything.
-grammar lib:json;
+grammar silver:json;
 
 nonterminal Json with jsonString;
 synthesized attribute json :: Json;

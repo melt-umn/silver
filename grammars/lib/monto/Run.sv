@@ -1,6 +1,6 @@
 grammar lib:monto;
 
-import lib:json;
+import silver:json;
 
 function runMonto
 IO ::= config::Config callback::([MontoMessage] ::= Request) ioIn::IO

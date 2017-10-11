@@ -1,6 +1,6 @@
 grammar lib:monto:helpers;
 
-import lib:json;
+import silver:json;
 
 function makeHighlightingCallback
 (Json ::= String String) ::= parse::(ParseResult<a> ::= String String) highlight::(Font ::= TerminalDescriptor)

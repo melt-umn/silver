@@ -1,6 +1,6 @@
 grammar silver:support:monto:products;
 
-import lib:json;
+import silver:json;
 
 abstract production errorsProduct
 top::ProductValue ::= errs::[Error]

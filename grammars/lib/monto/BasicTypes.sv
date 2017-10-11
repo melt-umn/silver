@@ -1,4 +1,4 @@
-import lib:json;
+import silver:json;
 
 synthesized attribute brokerAddr :: String;
 synthesized attribute contents :: String;
