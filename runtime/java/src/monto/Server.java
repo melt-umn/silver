@@ -34,11 +34,16 @@ public class Server {
 		this.service = service;
 	}
 
-	public static void run(NService service, int port) {
+	public static int run(NService service, int port) {
 		try {
 			new Server(service, port).start();
 		} catch(IOException ioex) {
 			throw new RuntimeException(ioex);
+		}
+		while(true) {
+			try {
+				Thread.sleep(Long.MAX_VALUE);
+			} catch(InterruptedException iex) {}
 		}
 	}
 
