@@ -1,6 +1,6 @@
 grammar silver:support:monto:products;
 
-import lib:json;
+import silver:json;
 
 synthesized attribute productName :: String;
 nonterminal ProductValue with json, productName;

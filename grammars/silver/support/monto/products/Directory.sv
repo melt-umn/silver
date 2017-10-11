@@ -1,6 +1,6 @@
 grammar silver:support:monto:products;
 
-import lib:json;
+import silver:json;
 
 abstract production directoryProduct
 top::ProductValue ::= entries::[DirectoryEntry]

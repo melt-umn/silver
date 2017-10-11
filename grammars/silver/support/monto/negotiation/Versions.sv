@@ -1,6 +1,6 @@
 grammar silver:support:monto:negotiation;
 
-import lib:json;
+import silver:json;
 
 synthesized attribute major :: Integer;
 synthesized attribute minor :: Integer;

@@ -1,6 +1,6 @@
 grammar lib:monto:helpers;
 
-import lib:json;
+import silver:json;
 import silver:langutil;
 
 nonterminal ErrorLevel with errorLevel;
