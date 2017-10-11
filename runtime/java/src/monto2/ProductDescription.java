@@ -1,4 +1,4 @@
-package monto;
+package monto2;
 
 public class ProductDescription {
 	private String product;

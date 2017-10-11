@@ -1,4 +1,4 @@
-package monto;
+package monto2;
 
 @SuppressWarnings("serial")
 public class RegistrationFailedException extends RuntimeException {
