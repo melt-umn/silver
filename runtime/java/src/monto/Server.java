@@ -29,8 +29,8 @@ public class Server {
 
 	public Server(NService service, int port) throws IOException {
 		this.server = HttpServer.create(new InetSocketAddress(port), 0);
-		this.server.createContext("/monto/version", new NegotiationHandler());
-		this.server.createContext("/monto/service", new RequestHandler());
+		this.server.createContext("/monto/version", new LoggingHandler(new NegotiationHandler()));
+		this.server.createContext("/monto/service", new LoggingHandler(new RequestHandler()));
 		this.service = service;
 	}
 
@@ -51,14 +51,30 @@ public class Server {
 		this.server.start();
 	}
 
+	private class LoggingHandler implements HttpHandler {
+		private HttpHandler inner;
+		public LoggingHandler(HttpHandler inner) {
+			this.inner = inner;
+		}
+		public void handle(HttpExchange t) throws IOException {
+			System.out.println(t);
+			try {
+				inner.handle(t);
+			} catch(Exception ex) {
+				ex.printStackTrace();
+				throw ex;
+			}
+		}
+	}
+
 	private class NegotiationHandler implements HttpHandler {
 		public void handle(HttpExchange t) throws IOException {
 			InputStreamReader isr = new InputStreamReader(t.getRequestBody());
 			ServiceBrokerNegotiation sbn = gson.fromJson(isr, ServiceBrokerNegotiation.class);
-			Pair<String, Boolean> p = FFI.doNegotiation(service, sbn);
+			Pair<StringCatter, Boolean> p = FFI.doNegotiation(service, sbn);
 			int responseCode = 200;
 			if(!p.second) responseCode = 409;
-			String response = p.first;
+			String response = p.first.toString();
 			t.sendResponseHeaders(responseCode, response.length());
 			OutputStream out = t.getResponseBody();
 			out.write(response.getBytes());
@@ -71,10 +87,11 @@ public class Server {
 		public void handle(HttpExchange t) throws IOException {
 			InputStreamReader isr = new InputStreamReader(t.getRequestBody());
 			BrokerRequest br = gson.fromJson(isr, BrokerRequest.class);
-			Pair<String, Integer> p = FFI.onRequest(service, br.request, br.products);
-			t.sendResponseHeaders(p.second, p.first.length());
+			Pair<StringCatter, Integer> p = FFI.onRequest(service, br.request, br.products);
+			String res = p.first.toString();
+			t.sendResponseHeaders(p.second, res.length());
 			OutputStream out = t.getResponseBody();
-			out.write(p.first.getBytes());
+			out.write(res.getBytes());
 			out.close();
 			t.close();
 		}

@@ -16,13 +16,13 @@ import core.Ppair;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import lib.json.NJson;
-import lib.json.PjsonArray;
-import lib.json.PjsonBoolean;
-import lib.json.PjsonFloat;
-import lib.json.PjsonNull;
-import lib.json.PjsonObject;
-import lib.json.PjsonString;
+import silver.json.NJson;
+import silver.json.PjsonArray;
+import silver.json.PjsonBoolean;
+import silver.json.PjsonFloat;
+import silver.json.PjsonNull;
+import silver.json.PjsonObject;
+import silver.json.PjsonString;
 import silver.support.monto.Init;
 import silver.support.monto.NService;
 import silver.support.monto.negotiation.NProtocolVersion;
@@ -41,7 +41,7 @@ import silver.support.monto.products.PproductValue;
  * FFI Helpers.
  */
 public class FFI {
-	public static Pair<String, Integer> onRequest(NService service, ProductIdentifier ident, List<Product> depList) {
+	public static Pair<StringCatter, Integer> onRequest(NService service, ProductIdentifier ident, List<Product> depList) {
 		DecoratedNode dn = service.decorate();
 		NodeFactory<NPair> onRequest = (NodeFactory<NPair>) dn.synthesized(Init.silver_support_monto_onRequest__ON__silver_support_monto_Service);
 		return PairFromNPair(onRequest.invoke(new Object[] {
@@ -53,7 +53,7 @@ public class FFI {
 		}, new Object[] {}));
 	}
 
-	public static Pair<String, Boolean> doNegotiation(NService service, ServiceBrokerNegotiation sbn) {
+	public static Pair<StringCatter, Boolean> doNegotiation(NService service, ServiceBrokerNegotiation sbn) {
 		DecoratedNode dn = service.decorate();
 		NodeFactory<NPair> doNegotiation = (NodeFactory<NPair>) dn.synthesized(Init.silver_support_monto_doNegotiation__ON__silver_support_monto_Service);
 		NServiceBrokerNegotiation sbn2 = NServiceBrokerNegotiationFromServiceBrokerNegotiation(sbn);
@@ -75,7 +75,10 @@ public class FFI {
 	private static Pproduct PproductFromProduct(Product product) {
 		NJson json = NJsonFromJsonElement(product.contents);
 		PproductValue value = new PproductValue(new StringCatter(product.name), json);
-		ConsCell metas = ConsCellFromList(FFI::NMetaItemFromMetaItem, product.meta);
+		List<MetaItem> metaList = product.meta;
+		if(metaList == null)
+			metaList = new ArrayList<>();
+		ConsCell metas = ConsCellFromList(FFI::NMetaItemFromMetaItem, metaList);
 		return new Pproduct(value, metas,
 			new StringCatter(product.language),
 			new StringCatter(product.path));
@@ -129,10 +132,13 @@ public class FFI {
 			MaybeFromNullable(x -> x, v.patch));
 	}
 	private static NServiceBrokerNegotiation NServiceBrokerNegotiationFromServiceBrokerNegotiation(ServiceBrokerNegotiation sbn) {
+		List<String> extensions = sbn.extensions;
+		if(extensions == null)
+			extensions = new ArrayList<>();
 		return new PserviceBrokerNegotiation(
 			NProtocolVersionFromProtocolVersion(sbn.monto),
 			NSoftwareVersionFromSoftwareVersion(sbn.broker),
-			ConsCellFromList(StringCatter::new, sbn.extensions));
+			ConsCellFromList(StringCatter::new, extensions));
 	}
 	private static <T, U> NMaybe MaybeFromNullable(Function<T, U> f, T t) {
 		if(t == null)
