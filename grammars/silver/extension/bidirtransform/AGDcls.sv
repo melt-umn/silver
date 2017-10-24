@@ -4,38 +4,44 @@ imports silver:definition:core;
 imports silver:extension:convenience;
 imports silver:definition:type:syntax;
 
-terminal Rewrite_kwd   'rewrite'   lexer classes {KEYWORD,RESERVED};
-terminal As_kwd        'as'        lexer classes {KEYWORD,RESERVED};
 terminal Transform_kwd 'transform' lexer classes {KEYWORD,RESERVED};
-terminal Into_kwd      'into'      lexer classes {KEYWORD,RESERVED};
 
--- Syntax example
--- 
--- rewrite mul(const(1), X) as X;
--- rewrite neg(X) as sub(0, X);
---
--- transform add(l,r) into add_c(l,'+',r);
--- transform sub(l,r) into sub_c(l,'-',r);
--- transform mul(l,r) into mul_c(l,'*',r);
--- transform neg(e) into neg_c('-', e);
--- transform const(i) into const_c(terminal(IntLit_t, toString(i)));
---
--- -- maybe?
---
--- obtain Expr_c from t::Term_c with exprTerm(t);
--- obtain Term_c from f::Factor_c with termFactor(f);
--- obtain Factor_c from e::Expr_c with nested_c('(',e,')');
+inherited attribute nonterminals NameList;
 
-
-concrete production rewriteAGDcl
-ag::AGDcl ::= 'rewrite' prd::nestedAbstractProductionWithArgs 'as' rwrt::nestedAbstractProductionWithArgs
-{
-
-}
+nonterminal TransformRuleList with nonterminals;
+nonterminal TransformRule with nonterminals;
+nonterminal ProductionDef;
 
 concrete production transformAGDcl
-ag::AGDcl ::= 'transform' prd::singleAbstractProduction 'into' rwrt::nestedConcreteProductionWithArgs
+ag::AGDcl ::= 'transform' name::QName '{' rules::TransformRuleList '}' '{' nts::NameList '}'
+{
+    rules.nonterminals = nts;
+}
+
+concrete production transformRuleCons
+trl::TransformRuleList ::= l::TransformRule ',' r::TransformRuleList
+{
+    l.nonterminals = trl.nonterminals;
+    r.nonterminals = trl.nonterminals;
+}
+
+concrete production transformRuleSingle
+trl::TransformRuleList ::= rule::TransformRule 
+{
+    rule.nonterminals = trl.nonterminals;
+}
+
+concrete production transformRule
+tr::TransformRule ::= l::ProductionDef "->" r::ProductionDef
+{
+    -- forward to aspect production for each type needed
+}
+
+concrete production productionDef
+pd::ProductionDef ::= prd::QName '(' e::Expr ')'
 {
 
 }
+
+
 
