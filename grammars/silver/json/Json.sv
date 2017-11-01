@@ -51,10 +51,10 @@ top::Json ::= str::String
   top.jsonString = "\"" ++ implode("", map(escapeChar, stringToChars(str))) ++ "\"";
 }
 
-abstract production jsonInteger
-top::Json ::= int::Integer
+function jsonInteger
+Json ::= int::Integer
 {
-  top.jsonString = toString(int);
+  return jsonFloat(toFloat(int));
 }
 
 abstract production jsonFloat
