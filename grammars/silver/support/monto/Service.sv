@@ -38,15 +38,3 @@ ProductDescriptor ::= pi::ProductIdentifier
 {
   return productDescriptor(pi.productName, pi.productLang);
 }
-
--- TODO: Move this to core.
-function find
-Maybe<a> ::= f::(Boolean ::= a) l::[a]
-{
-  return if null(l) then
-    nothing()
-  else if f(head(l)) then
-    just(head(l))
-  else
-    find(f, tail(l));
-}
