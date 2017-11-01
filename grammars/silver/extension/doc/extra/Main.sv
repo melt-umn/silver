@@ -6,10 +6,8 @@ import core;
 
 --import ide;
 
-import lib:monto;
 import lib:errors;
 import lib:extcore;
-import lib:monto;
 import lib:system;
 import lib:xml;
 
@@ -95,6 +93,8 @@ import silver:modification:primitivepattern;
 import silver:modification:typedecl;
 import silver:modification:typedecl:env_parser;
 
+import silver:support:monto;
+
 import silver:testing;
 --import silver:testing:bin; --Do we want this?
 
@@ -121,7 +121,7 @@ IOVal<Integer> ::= args::[String] ioIn::IO
 }
 
 function dummyFunction
-Integer ::= 
+Integer ::=
 {
   return 1;
 }
