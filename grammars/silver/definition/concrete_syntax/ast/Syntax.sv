@@ -74,7 +74,7 @@ top::SyntaxDcl ::=
 
 {--
  - A nonterminal. Using Type instead of String, because we'll be doing parameterization later.
- - subdcls is empty to start. A transformed version of the tree will move all 
+ - subdcls is empty to start. A transformed version of the tree will move all
  - productions for this nonterminal under subdcls.
  -}
 abstract production syntaxNonterminal
@@ -86,12 +86,12 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifie
                    else ["Name conflict with nonterminal " ++ t.typeName];
   top.cstErrors <- subdcls.cstErrors;
   top.cstProds = subdcls.cstProds;
-  top.cstNormalize = 
+  top.cstNormalize =
     let myProds :: [SyntaxDcl] = searchEnvTree(t.typeName, top.cstNTProds)
     in if null(myProds) then [] -- Eliminate "Useless nonterminals" as these are expected in Silver code (non-syntax)
        else [syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), myProds))]
     end;
-  
+
   top.xmlCopper =
     "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
       "    <PP>" ++ t.typeName ++ "</PP>\n" ++
@@ -114,7 +114,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.cstErrors := modifiers.cstErrors;
   top.cstErrors <- if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with terminal " ++ n];
-  
+
   modifiers.terminalName = n;
 
   top.cstNormalize = [top];
@@ -123,10 +123,12 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 
   production pfx :: [String] = searchEnvTree(n, top.prefixesForTerminals);
 
+  local prettyName :: String = fromMaybe(n, asPrettyName(regex));
+
   top.xmlCopper =
     "  <Terminal id=\"" ++ makeCopperName(n) ++ "\">\n" ++
-    "    <PP>" ++ n ++ "</PP>\n" ++
-    "    <Regex>" ++ regex.xmlCopper ++ "</Regex>\n" ++ 
+    "    <PP>" ++ prettyName ++ "</PP>\n" ++
+    "    <Regex>" ++ regex.xmlCopper ++ "</Regex>\n" ++
     (if modifiers.opPrecedence.isJust || modifiers.opAssociation.isJust then
     "    <Operator>\n" ++
     "      <Class>main</Class>\n" ++
@@ -135,29 +137,29 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     "    </Operator>\n"
     else "") ++
     "    <Type>" ++ makeTerminalName(n) ++ "</Type>\n" ++
-    "    <Code><![CDATA[\n" ++ 
+    "    <Code><![CDATA[\n" ++
     "RESULT = new " ++ makeTerminalName(n) ++ "(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());\n" ++
     "  tokenList.add(RESULT);\n" ++
       modifiers.acode ++
-    "]]></Code>\n" ++ 
-    "    <InClasses>" ++ modifiers.lexerclassesXML ++ "</InClasses>\n" ++ 
+    "]]></Code>\n" ++
+    "    <InClasses>" ++ modifiers.lexerclassesXML ++ "</InClasses>\n" ++
     (if null(pfx) then ""
-     else "    <Prefix><TerminalRef id=\"" ++ head(pfx) ++ "\"/></Prefix>\n") ++ 
-    "    <Submits>" ++ modifiers.submitsXML ++ "</Submits>\n" ++ 
+     else "    <Prefix><TerminalRef id=\"" ++ head(pfx) ++ "\"/></Prefix>\n") ++
+    "    <Submits>" ++ modifiers.submitsXML ++ "</Submits>\n" ++
     "    <Dominates>" ++ modifiers.dominatesXML ++ "</Dominates>\n" ++
     "  </Terminal>\n";
 
   top.unparses = ["term('" ++ n ++ "', /" ++ regex.regString ++ "/, " ++ unparseNonStrings(modifiers.unparses) ++ ")"];
 }
 
--- New XML Skin START	
+-- New XML Skin START
 function convertAssocNXML -- TODO remove, make attribute
 String ::= opassoc::Maybe<String>
-{ 
+{
   local attribute assoc::String;
   assoc = fromMaybe("", opassoc);
-  return if assoc=="left" then "<LeftAssociative/>" 
-          else if assoc=="right" then "<RightAssociative/>" 
+  return if assoc=="left" then "<LeftAssociative/>"
+          else if assoc=="right" then "<RightAssociative/>"
           else "<NonAssociative/>";
 }
 -- New XML Skin END
@@ -171,7 +173,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.sortKey = "FFF" ++ ns.fullName;
   top.cstDcls = [pair(ns.fullName, top)];
   modifiers.productionName = ns.fullName;
-  
+
   production lhsRef :: [Decorated SyntaxDcl] =
     searchEnvTree(ns.outputElement.typerep.typeName, top.cstEnv);
   production rhsRefs :: [[Decorated SyntaxDcl]] =
@@ -180,26 +182,26 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.cstErrors := modifiers.cstErrors;
   top.cstErrors <- if length(searchEnvTree(ns.fullName, top.cstEnv)) == 1 then []
                    else ["Name conflict with production " ++ ns.fullName];
-                   
+
   top.cstErrors <- if length(lhsRef) == 1 then
-                   case head(lhsRef) of 
+                   case head(lhsRef) of
                    | syntaxNonterminal(_,_) -> []
                    | _ -> ["LHS of production " ++ ns.fullName ++ " is not a nonterminal"] end
                    else ["Nonterminal " ++ ns.outputElement.typerep.typeName ++ " was referenced but " ++
                          "this grammar was not included in this parser. (Referenced from LHS of production " ++ ns.fullName ++ ")"];
-                   
+
   top.cstErrors <- checkRHS(ns.fullName, map((.typerep), ns.inputElements), rhsRefs);
 
   top.cstProds = [pair(ns.outputElement.typerep.typeName, top)];
   top.cstNormalize = [];
-  
+
   top.xmlCopper =
     "  <Production id=\"" ++ makeCopperName(ns.fullName) ++ "\">\n" ++
     (if modifiers.productionPrecedence.isJust then
     "    <Class>main</Class>\n" ++
     "    <Precedence>" ++ toString(modifiers.productionPrecedence.fromJust) ++ "</Precedence>\n"
     else "") ++
-    "    <Code><![CDATA[\n" ++ 
+    "    <Code><![CDATA[\n" ++
     "RESULT = new " ++ makeClassName(ns.fullName) ++ "(" ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++
@@ -229,7 +231,7 @@ function insertLocationAnnotation
 String ::= ns::Decorated NamedSignature
 {
   local pfx :: String = if null(ns.inputElements) then "" else ", ";
-  
+
   return if null(ns.namedInputElements) then ""
   else if length(ns.namedInputElements) > 1 then pfx ++ "multiple_annotation_problem" -- TODO
   else if head(ns.namedInputElements).elementName != "core:location" then pfx ++ "unknown_annotation_type_problem"
@@ -246,7 +248,7 @@ function checkRHS
 [String] ::= pn::String rhs::[Type] refs::[[Decorated SyntaxDcl]]
 {
   return if null(rhs) then []
-         else (if length(head(refs)) == 1 then 
+         else (if length(head(refs)) == 1 then
                 case head(head(refs)) of
                 | syntaxNonterminal(_,_) -> []
                 | syntaxTerminal(_,_,_) -> []
@@ -266,7 +268,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
   top.sortKey = "AAA" ++ n;
   top.cstDcls = [pair(n, top)];
-  top.cstErrors := modifiers.cstErrors ++ 
+  top.cstErrors := modifiers.cstErrors ++
     if length(searchEnvTree(n, top.cstEnv)) == 1 then []
     else ["Name conflict with lexer class " ++ n];
 
@@ -276,8 +278,8 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.classSubContribs = modifiers.submitsXML;
 
   top.cstNormalize = [top];
-  
-  top.xmlCopper = 
+
+  top.xmlCopper =
     "  <TerminalClass id=\"" ++ makeCopperName(n) ++ "\" />\n";
 
   top.unparses = ["lclass('" ++ n ++ "', " ++ unparseNonStrings(modifiers.unparses) ++ ")"];
@@ -296,7 +298,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
 
   top.cstNormalize = [top];
 
-  top.xmlCopper = 
+  top.xmlCopper =
     "  <ParserAttribute id=\"" ++ makeCopperName(n) ++ "\">\n" ++
     "    <Type><![CDATA[" ++ ty.transType ++ "]]></Type>\n" ++
     "    <Code><![CDATA[\n" ++
@@ -320,13 +322,13 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
   top.cstDcls = [];
 
   local trefs::[[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
-  
-  -- this 'n' here appears to actually hold the line number of the 
+
+  -- this 'n' here appears to actually hold the line number of the
   -- disambiguation, and the grammar. But we arent supposed to know this?
-  top.cstErrors := flatMap(\p ::Pair<String [Decorated SyntaxDcl]> -> 
-      if !null(p.snd) then [] 
+  top.cstErrors := flatMap(\p ::Pair<String [Decorated SyntaxDcl]> ->
+      if !null(p.snd) then []
       else ["Terminal " ++ p.fst ++ " was referenced but " ++
-            "this grammar was not included in this parser. (Referenced from disambiguation group " ++ n ++ ")"], 
+            "this grammar was not included in this parser. (Referenced from disambiguation group " ++ n ++ ")"],
     zipWith(pair, terms, trefs));
 
   top.cstNormalize = [top];
@@ -335,7 +337,7 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
     "  <DisambiguationFunction id=\"" ++ makeCopperName(n) ++ "\">\n" ++
     "    <Members>" ++ implode("", map(xmlCopperRef, map(head, trefs))) ++ "</Members>\n" ++
     "    <Code><![CDATA[\n" ++
-    acode ++  
+    acode ++
     "]]></Code>\n" ++
     "  </DisambiguationFunction>\n";
 
@@ -346,7 +348,7 @@ function syntaxDclLte
 Boolean ::= l::SyntaxDcl r::SyntaxDcl
 {
   return l.sortKey <= r.sortKey;
-{-- Sort key PREFIXES are as follows:  
+{-- Sort key PREFIXES are as follows:
     | syntaxLexerClass(_,_,_)           ->  AAA
     | syntaxParserAttribute(_,_,_)      ->  BBB
     | syntaxTerminal(_,_,_)             ->  CCC
