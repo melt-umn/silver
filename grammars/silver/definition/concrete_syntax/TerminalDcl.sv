@@ -1,9 +1,11 @@
 grammar silver:definition:concrete_syntax;
 
 import silver:definition:regex;
+import silver:modification:ffi:util;
 
 terminal Ignore_kwd      'ignore'      lexer classes {KEYWORD};
 terminal Marking_kwd     'marking'     lexer classes {KEYWORD};
+terminal Named_kwd       'named'       lexer classes {KEYWORD};
 terminal Left_kwd        'left'        lexer classes {KEYWORD};
 terminal Association_kwd 'association' lexer classes {KEYWORD};
 terminal Right_kwd       'right'       lexer classes {KEYWORD};
@@ -155,3 +157,11 @@ top::TerminalModifier ::= 'precedence' '=' i::Int_t
   top.errors := [];
 }
 
+concrete production terminalModifierNamed
+top::TerminalModifier ::= 'named' name::String_t
+{
+  top.pp = "named " ++ name.lexeme;
+
+  top.terminalModifiers = [termPrettyName(cleanStringLexeme(name.lexeme))];
+  top.errors := [];
+}

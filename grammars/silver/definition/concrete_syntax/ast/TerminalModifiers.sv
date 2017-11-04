@@ -8,13 +8,15 @@ synthesized attribute marking :: Boolean;
 synthesized attribute acode :: String;
 synthesized attribute opPrecedence :: Maybe<Integer>;
 synthesized attribute opAssociation :: Maybe<String>; -- TODO type?
+synthesized attribute prettyName :: Maybe<String>;
 autocopy attribute terminalName :: String;
-
 
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, dominatesXML, submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, unparses, marking, terminalName;
+nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, dominatesXML,
+  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation,
+  unparses, marking, terminalName, prettyName;
 
 abstract production consTerminalMod
 top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalModifiers
@@ -29,6 +31,7 @@ top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalMod
   top.opPrecedence = orElse(h.opPrecedence, t.opPrecedence);
   top.opAssociation = orElse(h.opAssociation, t.opAssociation);
   top.unparses = h.unparses ++ t.unparses;
+  top.prettyName = orElse(h.prettyName, t.prettyName);
 }
 
 abstract production nilTerminalMod
@@ -44,6 +47,7 @@ top::SyntaxTerminalModifiers ::=
   top.opPrecedence = nothing();
   top.opAssociation = nothing();
   top.unparses = [];
+  top.prettyName = nothing();
 }
 
 
@@ -51,7 +55,9 @@ top::SyntaxTerminalModifiers ::=
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, dominatesXML, submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, unparses, marking, terminalName;
+nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, dominatesXML,
+  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation,
+  unparses, marking, terminalName, prettyName;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
@@ -67,6 +73,7 @@ top::SyntaxTerminalModifier ::=
   top.opPrecedence = nothing();
   top.opAssociation = nothing();
   --top.unparses -- don't default unparses
+  top.prettyName = nothing();
 }
 
 {--
@@ -106,6 +113,15 @@ top::SyntaxTerminalModifier ::= direction::String
 {
   top.opAssociation = just(direction);
   top.unparses = ["assoc(" ++ quoteString(direction) ++ ")"];
+}
+{--
+ - The terminal's "pretty name". Used for error messages.
+ -}
+abstract production termPrettyName
+top::SyntaxTerminalModifier ::= prettyName::String
+{
+  top.prettyName = just(prettyName);
+  top.unparses = ["named(" ++ quoteString(prettyName) ++ ")"];
 }
 {--
  - The terminal's lexer classes.

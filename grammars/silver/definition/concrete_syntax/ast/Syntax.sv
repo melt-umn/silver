@@ -123,7 +123,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 
   production pfx :: [String] = searchEnvTree(n, top.prefixesForTerminals);
 
-  local prettyName :: String = fromMaybe(n, asPrettyName(regex));
+  local prettyName :: String = fromMaybe(fromMaybe(n, asPrettyName(regex)), modifiers.prettyName);
 
   top.xmlCopper =
     "  <Terminal id=\"" ++ makeCopperName(n) ++ "\">\n" ++
