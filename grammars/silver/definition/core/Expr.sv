@@ -157,16 +157,12 @@ top::Expr ::= q::'forward'
 concrete production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  top.pp = e.pp ++ if es.pp == "" && anns.pp == "" then "()"
-    else if es.pp == "" then "(" ++ anns.pp ++ ")"
-    else if anns.pp == "" then "(" ++ es.pp ++ ")"
-    else "(" ++ es.pp ++ "," ++ anns.pp ++ ")";
-
-  local annsWithDefaults::AnnoAppExprs = fillMissingAnnos(anns, top.defaultInheritedAnnos);
+  -- TODO: fix comma when one or the other is empty
+  top.pp = e.pp ++ "(" ++ es.pp ++ "," ++ anns.pp ++ ")";
   
   -- TODO: You know, since the rule is we can't access .typerep without "first" supplying
   -- .downSubst, perhaps we should just... report .typerep after substitution in the first place!
-  forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es, annsWithDefaults, top.location);
+  forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es, anns, top.location);
 }
 
 concrete production applicationAnno
