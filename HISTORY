@@ -1,6 +1,11 @@
 
 --------------------------------------------------------------------------------
-Silver 0.4.0      ?? ??, ??
+Silver 0.4.1      ?? ??, ??
+
+ - Let's not take so long this time. :)
+
+--------------------------------------------------------------------------------
+Silver 0.4.0      Oct 20, 2017
 
  - Future compatibility note:
    - Production names should start with a lower-case letter.
@@ -9,6 +14,7 @@ Silver 0.4.0      ?? ??, ??
  - Carriage returns are no longer stripped. Use \r with \n in terminals!
  - Improved and reliable Modular Well-Definedness Analysis
    - Include flowtype declarations (flowtype Expr = forward {env};)
+   - More accurate analysis of pattern matching expressions
  - 'silver:langutil' is now recommended.
  - String interpolation introduce. (s"${var}")
    - 'silver:langutil:pp' variant, too: pp"text ${doc}"

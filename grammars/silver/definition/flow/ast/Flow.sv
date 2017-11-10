@@ -2,8 +2,18 @@ grammar silver:definition:flow:ast;
 
 imports silver:definition:env only quoteString,unparseStrings, unparse;
 
-nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, extSynTreeContribs, nonSuspectContribs, localTreeContribs, specContribs;
+
+{--
+ - Info for constructing production flow graphs.
+ - Follows Figure 5.12 (p138, pdf p154 of Kaminski's PhD)
+ - with notable additions of:
+ -  - ntRef, specification (for dealing with 'flowtype' decls and the ref set)
+ -  - implicitFwdAffects (for improving accuracy of inference)
+ -  - extraEq (handling collections '<-')
+ - which the thesis does not address.
+ -}
 nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, suspectFlowEdges, extSynTreeContribs, nonSuspectContribs, localTreeContribs, specContribs;
+nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, unparses, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, extSynTreeContribs, nonSuspectContribs, localTreeContribs, specContribs;
 
 {-- lookup (production, attribute) to find synthesized equations
  - Used to ensure a necessary lhs.syn equation exists.
@@ -147,21 +157,6 @@ top::FlowDef ::= nt::String  prod::String
 }
 
 {--
- - Declaration of the inherited attributes known from the host language
- -
- - @param nt  The full name of a nonterminal declaration
- - @param inhs  The Blessed Ref Set, to be used for decorated nodes of this type.
- -}
-abstract production ntRefFlowDef
-top::FlowDef ::= nt::String  inhs::[String]
-{
-  top.refTreeContribs = [pair(nt, top)];
-  top.prodGraphContribs = [];
-  top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
-  top.unparses = ["ntRefFlowDef(" ++ quoteString(nt)++ ", " ++ unparseStrings(inhs) ++ ")"];
-}
-
-{--
  - Declaration that a synthesized attribute *occurrence* is not in the host
  - and therefore subject to the forward flow type's whims. (i.e. must be ft(syn) >= ft(fwd))
  -
@@ -175,6 +170,38 @@ top::FlowDef ::= nt::String  attr::String
   top.prodGraphContribs = [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
   top.unparses = ["nonHostSyn(" ++ quoteString(attr) ++ ", " ++ quoteString(nt) ++ ")"];
+}
+
+{--
+ - The definition of a default equation for a synthesized attribute on a nonterminal.
+ -
+ - @param nt  the full name of the *nonterminal*
+ - @param attr  the full name of the attribute
+ - @param deps  the dependencies of this equation on other flow graph elements
+ - CONTRIBUTIONS ARE POSSIBLE
+ -}
+abstract production defaultSynEq
+top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
+{
+  top.defTreeContribs = [pair(crossnames(nt, attr), top)];
+  top.prodGraphContribs = []; -- defaults don't show up in the prod graph!!
+  top.flowEdges = map(pair(lhsSynVertex(attr), _), deps); -- but their edges WILL end up added to graphs in fixup-phase!!
+  top.unparses = ["def(" ++ implode(", ", [quoteString(nt), quoteString(attr), unparseVertices(deps)]) ++ ")"];
+}
+
+{--
+ - Declaration of the inherited attributes known from the host language
+ -
+ - @param nt  The full name of a nonterminal declaration
+ - @param inhs  The Blessed Ref Set, to be used for decorated nodes of this type.
+ -}
+abstract production ntRefFlowDef
+top::FlowDef ::= nt::String  inhs::[String]
+{
+  top.refTreeContribs = [pair(nt, top)];
+  top.prodGraphContribs = [];
+  top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
+  top.unparses = ["ntRefFlowDef(" ++ quoteString(nt)++ ", " ++ unparseStrings(inhs) ++ ")"];
 }
 
 {--
@@ -232,23 +259,6 @@ top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(rhsVertex(sigName, attr), _), deps);
   top.unparses = ["inh(" ++ implode(", ", [quoteString(prod), quoteString(sigName), quoteString(attr), unparseVertices(deps)]) ++ ")"];
-}
-
-{--
- - The definition of a default equation for a synthesized attribute on a nonterminal.
- -
- - @param nt  the full name of the *nonterminal*
- - @param attr  the full name of the attribute
- - @param deps  the dependencies of this equation on other flow graph elements
- - CONTRIBUTIONS ARE POSSIBLE
- -}
-abstract production defaultSynEq
-top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
-{
-  top.defTreeContribs = [pair(crossnames(nt, attr), top)];
-  top.prodGraphContribs = []; -- defaults don't show up in the prod graph!!
-  top.flowEdges = map(pair(lhsSynVertex(attr), _), deps); -- but their edges WILL end up added to graphs in fixup-phase!!
-  top.unparses = ["def(" ++ implode(", ", [quoteString(nt), quoteString(attr), unparseVertices(deps)]) ++ ")"];
 }
 
 {--
@@ -393,6 +403,28 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
   top.unparses = ["anonInh(" ++ implode(", ", [quoteString(prod), quoteString(fName), quoteString(attr), unparseVertices(deps)]) ++ ")"];
 }
 
+{--
+ - A match rule from a pattern matching equation.
+ - Matching against 'scrutinee' this rule matches 'matchProd'. It extracts the pattern variables in 'vars'.
+ - This info is used, not to directly create edges, but to inform which stitch points are needed.
+ -}
+abstract production patternRuleEq
+top::FlowDef ::= prod::String  matchProd::String  scrutinee::VertexType  vars::[PatternVarProjection]
+{
+  top.prodGraphContribs = [pair(prod, top)];
+  top.flowEdges = [];
+  top.unparses = ["patternRuleEq(" ++ implode(", ", [quoteString(prod), quoteString(matchProd), scrutinee.unparse, "[" ++ implode(", ", map((.unparse), vars)) ++ "]"]) ++ ")"];
+}
+
+
+nonterminal PatternVarProjection with unparse;
+
+abstract production patternVarProjection
+top::PatternVarProjection ::= child::String  typeName::String  patternVar::String
+{
+  top.unparse = s"('${child}', '${typeName}', '${patternVar}')";
+}
+
 --
 
 function crossnames
@@ -413,7 +445,11 @@ function collectAnonOriginItem
 [Pair<String  Location>] ::= f::FlowDef  rest::[Pair<String  Location>]
 {
   return case f of
-  | anonEq(_, fN, _, l, _) -> pair(fN, l) :: rest
+  | anonEq(_, fN, _, l, _) ->
+      -- Small hack to improve error messages. Ignore anonEq's that come from patterns
+      if startsWith("__scrutinee", fN)
+      then rest
+      else pair(fN, l) :: rest
   | _ -> rest
   end;
 }

@@ -88,14 +88,9 @@ Pair<Boolean
   prodEnv::EnvTree<ProductionGraph>
   ntEnv::EnvTree<FlowType>
 {
-  local graph :: ProductionGraph = head(graphs);
-  graph.flowTypes = ntEnv;
-  graph.prodGraphs = prodEnv;
-  local stitchedGraph :: ProductionGraph = graph.stitchedGraph;
-  stitchedGraph.flowTypes = ntEnv;
-  local updatedGraph :: ProductionGraph = stitchedGraph.cullSuspect;
+  local updatedGraph :: ProductionGraph = updateGraph(head(graphs), prodEnv, ntEnv);
 
-  local currentFlowType :: FlowType = findFlowType(graph.lhsNt, ntEnv);
+  local currentFlowType :: FlowType = findFlowType(updatedGraph.lhsNt, ntEnv);
   
   -- The New Improved Flow Type
   local synExpansion :: [Pair<String [String]>] =
@@ -111,7 +106,7 @@ Pair<Boolean
   -- any new additions... so we'd need something added to graph to support that.
   
   local recurse :: Pair<Boolean Pair<[ProductionGraph] EnvTree<FlowType>>> =
-    solveFlowTypes(tail(graphs), prodEnv, rtm:update(graph.lhsNt, [newFlowType], ntEnv));
+    solveFlowTypes(tail(graphs), prodEnv, rtm:update(updatedGraph.lhsNt, [newFlowType], ntEnv));
     
   return if null(graphs) then pair(false, pair([], ntEnv))
   else pair(!null(brandNewEdges) || recurse.fst, pair(updatedGraph :: recurse.snd.fst, recurse.snd.snd));

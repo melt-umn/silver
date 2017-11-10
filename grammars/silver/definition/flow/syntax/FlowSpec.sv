@@ -8,6 +8,10 @@ imports silver:definition:type;
 imports silver:driver:util only isExportedBy;
 imports silver:util:raw:treeset as set;
 
+-- unfortunate...
+import silver:analysis:warnings only warnAll;
+import silver:analysis:warnings:defs only warnMissingInh;
+
 terminal Flowtype 'flowtype' lexer classes {KEYWORD};
 
 concrete production flowtypeDcl
@@ -83,6 +87,7 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
 
   top.errors <-
     if !null(attr.errors) ||
+       !(top.config.warnAll || top.config.warnMissingInh) || -- we don't want to compute flow graphs unless told to
        isExportedBy(attr.authorityGrammar, [hackGramFromFName(top.onNt.typeName)], top.compiledGrammars) ||
        null(missingFt)
     then []

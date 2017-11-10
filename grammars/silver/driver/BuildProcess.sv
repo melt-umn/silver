@@ -78,7 +78,7 @@ IOErrorable<Pair<Decorated CmdArgs  BuildEnv>> ::=
   -- line decide to go do, but currently it's hard to re-use code if we do that.
   else if a.displayVersion then
     ioval(benvResult.io, left(runError(1, -- error code so 'ant' isnt run
-      "Silver Version 0.4.0-dev\n" ++
+      "Silver Version 0.4.1-dev\n" ++
       "SILVER_HOME = " ++ benv.silverHome ++ "\n" ++
       "SILVER_GEN = " ++ benv.silverGen ++ "\n" ++
       "GRAMMAR_PATH:\n" ++ implode("\n", benv.grammarPath) ++ "\n\n" ++

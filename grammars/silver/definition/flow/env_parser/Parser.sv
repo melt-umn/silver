@@ -27,6 +27,9 @@ terminal AnonVTerm 	 'anonV' lexer classes {C_1};
 terminal AnonTerm 	 'anon' lexer classes {C_1}; 
 terminal AnonInhTerm 	 'anonInh' lexer classes {C_1};
 terminal SpecFlow        'specFlow' lexer classes {C_1};
+terminal RhsFlow         'rhs' lexer classes {C_1};
+terminal LhsFlow         'lhs' lexer classes {C_1};
+terminal PatRulEqTerm    'patternRuleEq' lexer classes {C_1};
 
 attribute flowDefs occurs on IRoot, IRootPart;
 
@@ -229,5 +232,76 @@ concrete production aFlowAnonInhEq
 top::IFlow ::= 'anonInh' '(' prod::IName ',' fname::IName ',' attr::IName ',' fv::IFlowVertexes ')'
 {
   top.flowDefs = [anonInhEq(prod.aname, fname.aname, attr.aname, fv.flowDeps)];
+}
+concrete production aPatternRuleEq
+top::IFlow ::= 'patternRuleEq' '(' prod::IName ',' matchProd::IName ',' scrutinee::IVertexType ',' vars::IPatternVarProjections ')'
+{
+  top.flowDefs = [patternRuleEq(prod.aname, matchProd.aname, scrutinee.aVertexType, vars.aPatternVarProjection)];
+}
+
+
+synthesized attribute aVertexType :: VertexType;
+
+nonterminal IVertexType with aVertexType;
+
+concrete production alhsVertexType
+top::IVertexType ::= 'lhs'
+{
+  top.aVertexType = lhsVertexType;
+}
+concrete production arhsVertexType
+top::IVertexType ::= 'rhs' '(' child::IName ')'
+{
+  top.aVertexType = rhsVertexType(child.aname);
+}
+concrete production alocalVertexType
+top::IVertexType ::= 'local' '(' child::IName ')'
+{
+  top.aVertexType = localVertexType(child.aname);
+}
+concrete production aanonVertexType
+top::IVertexType ::= 'anon' '(' child::IName ')'
+{
+  top.aVertexType = anonVertexType(child.aname);
+}
+concrete production aforwardVertexType
+top::IVertexType ::= 'fwd'
+{
+  top.aVertexType = forwardVertexType;
+}
+
+
+synthesized attribute aPatternVarProjection :: [PatternVarProjection];
+
+nonterminal IPatternVarProjections with aPatternVarProjection;
+nonterminal IPatternVarProjectionsInner with aPatternVarProjection;
+
+concrete production aFlowsNone_proj
+top::IPatternVarProjections ::= '[' ']'
+{
+  top.aPatternVarProjection = [];
+}
+concrete production aFlowsSome_proj
+top::IPatternVarProjections ::= '[' l::IPatternVarProjectionsInner ']'
+{
+  top.aPatternVarProjection = l.aPatternVarProjection;
+}
+concrete production aFlowsOne_proj
+top::IPatternVarProjectionsInner ::= l::IPatternVarProjection
+{
+  top.aPatternVarProjection = l.aPatternVarProjection;
+}
+concrete production aFlowsCons_proj
+top::IPatternVarProjectionsInner ::= l::IPatternVarProjectionsInner ',' r::IPatternVarProjection
+{
+  top.aPatternVarProjection = l.aPatternVarProjection ++ r.aPatternVarProjection;
+}
+
+nonterminal IPatternVarProjection with aPatternVarProjection;
+
+concrete production aPatternVarProjection
+top::IPatternVarProjection ::= '(' child::IName ',' typeName::IName ',' patternVar::IName ')'
+{
+  top.aPatternVarProjection = [patternVarProjection(child.aname, typeName.aname, patternVar.aname)];
 }
 

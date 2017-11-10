@@ -1,7 +1,11 @@
-grammar lib:json;
+-- Should this be under the silver:... grammar tree?
+-- If we do the refactor mentioned in #152, #175, this should probably end up
+-- as silver:json, with proper concrete syntax and everything.
+grammar silver:json;
 
-nonterminal Json with json;
-synthesized attribute json :: String;
+nonterminal Json with jsonString;
+synthesized attribute json :: Json;
+synthesized attribute jsonString :: String;
 
 abstract production jsonString
 top::Json ::= str::String
@@ -44,45 +48,45 @@ top::Json ::= str::String
     | 92 -> "\\\\"
     | ch -> charsToString([ch])
     end;
-  top.json = "\"" ++ implode("", map(escapeChar, stringToChars(str))) ++ "\"";
+  top.jsonString = "\"" ++ implode("", map(escapeChar, stringToChars(str))) ++ "\"";
 }
 
-abstract production jsonInteger
-top::Json ::= int::Integer
+function jsonInteger
+Json ::= int::Integer
 {
-  top.json = toString(int);
+  return jsonFloat(toFloat(int));
 }
 
 abstract production jsonFloat
 top::Json ::= float::Float
 {
-  top.json = toString(float);
+  top.jsonString = toString(float);
 }
 
 abstract production jsonArray
 top::Json ::= vals::[Json]
 {
-  local strs :: [String] = map(\j::Json -> j.json, vals);
-  top.json = "[" ++ implode(",", strs) ++ "]";
+  local strs :: [String] = map(\j::Json -> j.jsonString, vals);
+  top.jsonString = "[" ++ implode(",", strs) ++ "]";
 }
 
 abstract production jsonObject
 top::Json ::= vals::[Pair<String Json>]
 {
   local strs :: [String] = map(
-    \p::Pair<String Json> -> jsonString(p.fst).json ++ ":" ++ p.snd.json,
+    \p::Pair<String Json> -> jsonString(p.fst).jsonString ++ ":" ++ p.snd.jsonString,
     vals);
-  top.json = "{" ++ implode(",", strs) ++ "}";
+  top.jsonString = "{" ++ implode(",", strs) ++ "}";
 }
 
 abstract production jsonBoolean
 top::Json ::= boolean::Boolean
 {
-  top.json = toString(boolean);
+  top.jsonString = toString(boolean);
 }
 
 abstract production jsonNull
 top::Json ::=
 {
-  top.json = "null";
+  top.jsonString = "null";
 }

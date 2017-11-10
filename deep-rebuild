@@ -31,7 +31,7 @@ fi
 # Should backup old jars here
 
 echo "Before we start, let's get this thing built ..."
-java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --clean lib:monto
+java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --clean silver:support:monto
 java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --clean lib:xml:ast
 echo "Start ..."
 time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default
