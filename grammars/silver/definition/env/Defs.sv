@@ -181,9 +181,9 @@ Def ::= sg::String  sl::Location  fn::String  ty::Type  alias::String
   return valueDef(onlyRenamedEnvItem(alias, childDcl(sg,sl,fn,ty)));
 }
 function annoDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type def::Maybe<Expr>
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {
-  return attrDef(defaultEnvItem(annoDcl(sg,sl,fn,bound,ty, def)));
+  return attrDef(defaultEnvItem(annoDcl(sg,sl,fn,bound,ty)));
 }
 function annoInstanceDef
 Def ::= sg::String  sl::Location  fnnt::String  fnat::String  ntty::Type  atty::Type
