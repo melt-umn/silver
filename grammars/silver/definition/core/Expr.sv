@@ -162,11 +162,9 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
     else if anns.pp == "" then "(" ++ es.pp ++ ")"
     else "(" ++ es.pp ++ "," ++ anns.pp ++ ")";
 
-  local annsWithDefaults::AnnoAppExprs = fillMissingAnnos(anns, top.defaultInheritedAnnos);
-  
   -- TODO: You know, since the rule is we can't access .typerep without "first" supplying
   -- .downSubst, perhaps we should just... report .typerep after substitution in the first place!
-  forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es, annsWithDefaults, top.location);
+  forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es, anns, top.location);
 }
 
 concrete production applicationAnno
@@ -220,6 +218,8 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
   anns.appExprApplied = e.pp;
   anns.remainingFuncAnnotations = t.namedTypes;
   anns.funcAnnotations = anns.remainingFuncAnnotations;
+
+  local annsWithDefaults::Decorated AnnoAppExprs = fillMissingAnnos(anns, top.defaultInheritedAnnos);
   
   -- TODO: we have an ambiguity here in the longer term.
   -- How to distinguish between
@@ -227,8 +227,8 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
   -- Is this partial application, give (Foo ::= ;a::Something) or (Foo) + error.
   -- Possibly this can be solved by having somehting like "foo(x,a=?)"
   forwards to if es.isPartial || anns.isPartial
-              then partialApplication(e, es, anns, location=top.location)
-              else functionInvocation(e, es, anns, location=top.location);
+              then partialApplication(e, es, annsWithDefaults, location=top.location)
+              else functionInvocation(e, es, annsWithDefaults, location=top.location);
 }
 
 abstract production functionInvocation
