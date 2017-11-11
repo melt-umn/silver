@@ -219,8 +219,19 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
   anns.remainingFuncAnnotations = t.namedTypes;
   anns.funcAnnotations = anns.remainingFuncAnnotations;
 
-  local annsWithDefaults::Decorated AnnoAppExprs = fillMissingAnnos(anns, top.defaultInheritedAnnos);
-  
+  production attribute annsWithDefaults::AnnoAppExprs = fillMissingAnnos(anns, t.namedTypes, top.defaultInheritedAnnos);
+
+  annsWithDefaults.appExprApplied = e.pp;
+  annsWithDefaults.remainingFuncAnnotations = t.namedTypes;
+  annsWithDefaults.funcAnnotations = annsWithDefaults.remainingFuncAnnotations;
+  annsWithDefaults.env = anns.env;
+  annsWithDefaults.downSubst = anns.downSubst;
+  annsWithDefaults.finalSubst = anns.finalSubst;
+  annsWithDefaults.frame = anns.frame;
+  annsWithDefaults.defaultInheritedAnnos = top.defaultInheritedAnnos;
+  annsWithDefaults.flowEnv = anns.flowEnv;
+  annsWithDefaults.config = anns.config;
+
   -- TODO: we have an ambiguity here in the longer term.
   -- How to distinguish between
   -- foo(x) where there is an annotation 'a'?

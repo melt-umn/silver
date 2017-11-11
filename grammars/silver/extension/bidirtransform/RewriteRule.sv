@@ -150,3 +150,23 @@ AppExprs ::= lhs::String loc::Location inputNames::[String] inputTypes::[String]
             else presentName(loc, head(inputNames)),   
         location=loc);
 }
+
+function rwContainsID
+Boolean ::= rwrs::[RewriteRule] name::String 
+{
+    return if null(rwrs) then false 
+        else if head(rwrs).typerep.typeName == head(rwrs).inputType.typeName && head(rwrs).typerep.typeName == name
+        then true
+        else rwContainsID(tail(rwrs), name);
+}
+
+-- sort of awkwardly using [] as Maybe here
+-- todo: combine this and above, return maybe<rewriteRule>
+function rwID
+[RewriteRule] ::= rwrs::[RewriteRule] name::String 
+{
+    return if null(rwrs) then []
+        else if head(rwrs).typerep.typeName == head(rwrs).inputType.typeName
+        then [head(rwrs)]
+        else rwID(tail(rwrs), name);
+}

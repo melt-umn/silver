@@ -1,18 +1,19 @@
 grammar silver:extension:bidirtransform;
 
-nonterminal ProductionDef with env, errors, patternList, matchProd, typerep, inputNames, location;
+nonterminal ProductionDef with env, errors, namedSig, patternList, matchProd, typerep, inputNames, location;
 
 synthesized attribute patternList::PatternList;
 synthesized attribute matchProd::Expr;
+synthesized attribute namedSig::NamedSignature;
 
 concrete production productionDef
-pd::ProductionDef ::=   qn::QName '(' args::PatternList ')'
+pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
 {
     pd.errors := args.errors;
     args.env = pd.env;
     
     local prd::[DclInfo] = getProdsForNt(qn.name, pd.env);
-    local ns::NamedSignature = case head(prd) of prodDcl(_,_,ns) -> ns end;
+    pd.namedSig = case head(prd) of prodDcl(_,_,ns) -> ns end;
     
     -- When we looked up a production, were we given a production?
     -- todo: aspect this?
@@ -27,18 +28,18 @@ pd::ProductionDef ::=   qn::QName '(' args::PatternList ')'
                  else [];
     
     -- Is the pattern as long as the production's expected input arguments?
-    pd.errors <- if length(ns.inputElements) != length(args.rawPatternList) 
+    pd.errors <- if length(pd.namedSig.inputElements) != length(args.rawPatternList) 
         then [err(pd.location, "Transformation Production does not match size with Production Signature")]
         else [];
 
     -- Are variables in pattern the appropriate type for where they are used?
-    pd.errors <- tyCheckProd(pd.location, args.rawPatternList, ns.inputElements);
+    pd.errors <- tyCheckProd(pd.location, args.rawPatternList, pd.namedSig.inputElements);
 
     -- Are there any duplicate anonymous variable names defined?
     -- TODO
         
-    pd.matchProd = matchProd(pd.location, args.rawPatternList, ns.inputElements);
-    pd.typerep = ns.outputElement.typerep;
+    pd.matchProd = matchProd(pd.location, args.rawPatternList, pd.namedSig.inputElements);
+    pd.typerep = pd.namedSig.outputElement.typerep;
     
 }
 

@@ -65,73 +65,55 @@ top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 }
 
 function fillMissingAnnos
-Decorated AnnoAppExprs ::= toFill::Decorated AnnoAppExprs annos::[Pair<String AppExpr>]
+AnnoAppExprs ::= toFill::AnnoAppExprs namedTypes::[NamedArgType] annos::[Pair<String AppExpr>]
 { 
-    local missing::Boolean = if null(toFill.missingAnnotations) || null(annos) then false
-        else missingContainsAnno(toFill.missingAnnotations, head(annos));    
+    local invalid::Boolean = null(annos) || null(namedTypes);
 
-    local recAnns::Decorated AnnoAppExprs = if null(annos) then toFill 
-        else fillMissingAnnos(toFill, tail(annos));
+    local needed::Boolean = if invalid then false
+        else neededAnno(namedTypes, head(annos).fst);
 
-    local thisAnno::AnnoExpr = annoExpr(qName(recAnns.location, head(annos).fst), '=', 
-        head(annos).snd, location=recAnns.location);
+    local missing::Boolean = if invalid || !needed then false
+        else !annoAppExprsContainsAnno(toFill, head(annos).fst);    
 
-    local annsWithDefaults::Decorated AnnoAppExprs = if missing
+    local recAnns::AnnoAppExprs = if invalid then toFill 
+        else fillMissingAnnos(toFill, namedTypes, tail(annos));
+
+    local thisAnno::AnnoExpr = annoExpr(qName(toFill.location, head(annos).fst), '=', 
+        head(annos).snd, location=toFill.location);
+
+    return if missing 
         then case recAnns of 
-            | emptyAnnoAppExprs() -> decorate oneAnnoAppExprs(thisAnno, location=recAnns.location) with {
-                env = toFill.env;
-                config = toFill.config;
-                grammarName = toFill.grammarName;
-                frame = toFill.frame;
-                compiledGrammars = toFill.compiledGrammars;
-                appExprApplied = toFill.appExprApplied;
-                funcAnnotations = recAnns.funcAnnotations;
-                remainingFuncAnnotations = recAnns.remainingFuncAnnotations;
-                downSubst = toFill.downSubst;
-                finalSubst = toFill.finalSubst;
-                defaultInheritedAnnos = annos;
-                flowDefs = toFill.flowDefs;
-            }
-            | _ -> decorate snocAnnoAppExprs(new(recAnns), ',', thisAnno, location=recAnns.location) with {
-                env = toFill.env;
-                config = toFill.config;
-                grammarName = toFill.grammarName;
-                frame = toFill.frame;
-                compiledGrammars = toFill.compiledGrammars;
-                appExprApplied = toFill.appExprApplied;
-                funcAnnotations = recAnns.funcAnnotations;
-                remainingFuncAnnotations = recAnns.remainingFuncAnnotations;
-                downSubst = toFill.downSubst;
-                finalSubst = toFill.finalSubst;
-                defaultInheritedAnnos = annos;
-                flowDefs = toFill.flowDefs;                
-            }
+            | emptyAnnoAppExprs() -> oneAnnoAppExprs(thisAnno, location=toFill.location)
+            | _ -> snocAnnoAppExprs(recAnns, ',', thisAnno, location=toFill.location)
         end
-        else recAnns; 
-    
-    return annsWithDefaults;
+        else recAnns;
 }
 
-function missingContainsAnno
-Boolean ::= missing::[NamedArgType] anno::Pair<String AppExpr> 
+function neededAnno
+Boolean ::= namedTypes::[NamedArgType] anno::String
 {
-    return if null(missing) then false 
-        else if head(missing).argName == anno.fst then true
-        else missingContainsAnno(tail(missing), anno);
+    return if null(namedTypes) then false
+        else if head(namedTypes).argName == anno then true
+        else neededAnno(tail(namedTypes), anno);
 }
 
-function stripMissingAnnos
-[NamedArgType] ::= missing::[NamedArgType] annos::[Pair<String AppExpr>]
+function annoAppExprsContainsAnno
+Boolean ::= toFill::AnnoAppExprs anno::String 
 {
-    return if null(annos) then missing 
-        else stripMissingAnnos(stripMissingAnnosOne(missing, head(annos)), tail(annos));   
+    -- We explicitly aren't using attributes here
+    -- because we don't want to decorate the AnnoAppExprs
+    return case toFill of 
+        | emptyAnnoAppExprs() -> false
+        | snocAnnoAppExprs(xs,_,x) -> annoExprContainsAnno(x, anno) || annoAppExprsContainsAnno(xs, anno)
+        | oneAnnoAppExprs(x) -> annoExprContainsAnno(x, anno)
+    end;
 }
 
-function stripMissingAnnosOne
-[NamedArgType] ::= missing::[NamedArgType] anno::Pair<String AppExpr>
+function annoExprContainsAnno
+Boolean ::= aexpr::AnnoExpr anno::String
 {
-    return if null(missing) then missing
-        -- We assume here that missing has no duplicates
-        else if head(missing).argName == anno.fst then tail(missing)
-        else [head(missing)] ++ stripMissingAnnosOne(tail(missing), anno);
+    return case aexpr of 
+        | annoExpr(qn, _, _) -> qn.name == anno
+        | _ -> false -- I don't think this is possible right now
+    end;
 }

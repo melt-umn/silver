@@ -3,32 +3,32 @@ grammar silver:extension:bidirtransform;
 autocopy attribute attrName :: QName;
 
 synthesized attribute transformRules :: [TransformRule];
-synthesized attribute cncTypeDcls :: [DclInfo];
 synthesized attribute rwrules :: RewriteRuleList;
 
-nonterminal TransformRuleList with matchProd, attrName, transformRules, rwrules, env, errors;
-nonterminal TransformRule with attrName, env, errors;
+nonterminal TransformRuleList with attrName, transformRules, rwrules, env, errors, location;
+nonterminal TransformRule with matchProd, namedSig, outputStmt, attrName, env, errors, location;
 
 concrete production transformRuleCons
-trl::TransformRuleList ::= '|' l::TransformRule r::TransformRuleList
+trl::TransformRuleList ::= Vbar_kwd l::TransformRule r::TransformRuleList
 {
     l.env = trl.env;
     r.env = trl.env;
 
     trl.errors := l.errors ++ r.errors;
+    trl.transformRules = [l] ++ r.transformRules;
     
     -- error check: is the exact transformation l found in r?
-    trl.errors <- if !contains(r.transformRules, l) then []
-                  else [err(trl.location, "Duplicate transformation rule definition")];
+    -- equality checking is non trivial so we aren't doing this
+    -- trl.errors <- if !contains(r.transformRules, l) then []
+    --               else [err(trl.location, "Duplicate transformation rule definition")];
 }
 
 concrete production transformRuleSingle
-trl::TransformRuleList ::= '|' rule::TransformRule 
+trl::TransformRuleList ::= Vbar_kwd rule::TransformRule 
 {
     rule.env = trl.env;
-
-    trl.cncTypeDcls = rule.cncTypeDcls;
     trl.errors := rule.errors;
+    trl.transformRules = [rule];
 }
 
 concrete production transformRule
@@ -36,6 +36,7 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
 {
     l.env = tr.env;
 
+    tr.namedSig = l.namedSig;
     tr.matchProd = l.matchProd;    
     tr.errors := l.errors ++ r.errors;
     tr.outputStmt = (\ e::Expr ->
@@ -49,14 +50,6 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
                  else [err(tr.location, "Transformation rule type mismatch")];
 }
 
-nonterminal TransformRuleRHS with typerep, env, errors;
-
-concrete production transformRuleRHS
-trr::TransformRuleRHS ::= e::Expr
-{
-    trr.errors := e.errors;
-    trr.typerep = e.typerep;
-    
     -- -- b: are there anonymous variables referred to in the rhs that are not defined in the lhs?
     -- --    (error rhs)
     -- local anonVarsMatch :: Boolean = containsAll(prd.definedAnonVars, trr.providedVars); 
@@ -72,4 +65,15 @@ trr::TransformRuleRHS ::= e::Expr
     -- trr.errors <- if !anonVarsMatch then []
     --               else if typesMatch(prd.definedAnonVars, trr.providedVars) then []
     --               else err(trr.location, "Type mismatch in transformation rule")
+
+function getTrans
+Maybe<TransformRule> ::= rules::[TransformRule] dcl::[DclInfo]
+{
+    return if null(rules) then nothing()
+        else case head(dcl) of 
+            | prodDcl(_,_,ns) -> if ns.fullName == head(rules).namedSig.fullName 
+                then just(head(rules))
+                else getTrans(tail(rules), dcl)
+            | _ -> getTrans(tail(rules), dcl)
+        end;
 }
