@@ -51,6 +51,12 @@ top::ProductionStmt ::= e::[Message]
   top.flowDefs = [];
 }
 
+aspect production defaultProdAnno
+top::ProductionStmt ::= 'default' 'annotation' qn::QName '=' aexpr::AppExpr ';'
+{
+  top.flowDefs = [];
+}
+
 {-
 aspect default production
 top::ProductionStmt ::=

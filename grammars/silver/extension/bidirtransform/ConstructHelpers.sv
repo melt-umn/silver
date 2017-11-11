@@ -32,6 +32,12 @@ AGDcl ::= loc::Location nme::String tyexpr::TypeExpr
         botlNone(location=loc), '::', tyexpr, ';', location=loc);
 }
 
+function lhsDef
+DefLHS ::= loc::Location s::String 
+{
+    return concreteDefLHS(qName(loc, s), location=loc);
+}
+
 function autocAttr
 AGDcl ::= loc::Location nme::String tyexpr::TypeExpr
 {
@@ -59,6 +65,16 @@ AGDcls ::= loc::Location name::String onNames::[QName]
                 'occurs', 'on', head(onNames), botlNone(location=loc), ';', location=loc),
             attrOn(loc, name, tail(onNames)), location=loc);
 }
+
+abstract production joinAGDcls
+top::AGDcls ::= l::AGDcls r::AGDcls
+{
+    forwards to 
+        case l of 
+            | consAGDcls(dcl,dcls) -> joinAGDcls(dcls, consAGDcls(dcl,r,location=top.location), location=top.location)
+            | nilAGDcls() -> r
+        end;
+} 
 
 function dclQName
 (QName ::= [DclInfo]) ::= loc::Location
@@ -126,12 +142,36 @@ ProductionStmts ::= loc::Location stmts::[ProductionStmt]
         else productionStmtsSnoc(prdStmtList(loc, tail(stmts)), head(stmts), location=loc);
 }
 
+function attribDef
+ProductionStmt ::= loc::Location lhs::String att::String eqs::Expr
+{
+    return attributeDef(
+        lhsDef(loc, lhs), 
+        '.',
+        qAttr(loc, att), 
+        '=', 
+        eqs, 
+        ';', 
+        location=loc);
+}
+
+function qnTyId
+QNameType ::= loc::Location s::String 
+{
+    return qNameTypeId(terminal(IdUpper_t, s), location=loc);
+}
+
+function sTyExpr
+TypeExpr ::= loc::Location s::String 
+{
+    return nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, s), location=loc),
+        botlNone(location=loc), location=loc);
+}
+
 function qTyExpr
 TypeExpr ::= loc::Location q::QName 
 {
-    --Todo: get a IdUpper_t from a string
-    return nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, q.name), location=loc),
-        botlNone(location=loc), location=loc);
+    return sTyExpr(loc, q.name);
 }
 
 function lhsAccess
@@ -218,6 +258,15 @@ AppExpr ::= loc::Location name::String
     return presentAppExpr(baseName(loc,name), location=loc);
 }
 
+function appExprList
+AppExprs ::= aExprs::[AppExpr] loc::Location
+{
+    return if length(aExprs) == 1 
+        then oneAppExprs(head(aExprs), location=loc)
+        else snocAppExprs(
+            appExprList(tail(aExprs), loc), ',', head(aExprs), location=loc);
+}
+
 function annoAppExprList
 AnnoAppExprs ::= aaExprs::[AnnoExpr] loc::Location
 {  
@@ -281,4 +330,21 @@ function allHead
 [a] ::= ls::[a]
 {
     return if length(ls) == 1 then [] else head(ls) :: allHead(tail(ls));
+}
+
+function hasLocDcl
+Boolean ::= dcl::[DclInfo]
+{
+    return if null(dcl) then false 
+        else if head(dcl).isAnnotation && head(dcl).fullName == "location"
+        then true
+        else hasLocDcl(tail(dcl));
+}
+
+function botlOneString
+BracketedOptTypeExprs ::= loc::Location s::String
+{
+    return botlSome('<', 
+        typeListSingle(sTyExpr(loc,s),location=loc),
+        '>', location=loc);
 }
