@@ -173,6 +173,20 @@ function removeAllBy
 }
 
 {--
+ - Returns the initial elements of a list.
+ -
+ - @param lst  The list to examine
+ - @return  The initial elements of 'lst'. If 'lst' is empty, crash.
+ -}
+function allButLast
+[a] ::= lst::[a]
+{
+  return if null(tail(lst))
+         then []
+         else head(lst)::allButLast(tail(lst));
+}
+
+{--
  - Returns the last element of a list.
  -
  - @param lst  The list to examine

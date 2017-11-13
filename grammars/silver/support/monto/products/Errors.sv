@@ -9,6 +9,28 @@ top::ProductValue ::= errs::[Error]
   forwards to productValue("errors", jsonArray(map((.json), errs)));
 }
 
+function syntaxErrorMessage
+String ::= exp::[String] got::[String]
+{
+  local expMsg :: String
+    = orList(exp, "or");
+  local gotMsg :: String
+    = case got of
+    | [s] -> s
+    | _ -> orList(got, "and")
+    end;
+  return "Expecting " ++ expMsg ++ ", got " ++ gotMsg;
+}
+
+function orList
+String ::= list::[String] word::String
+{
+  return case list of
+  | [] -> "nothing"
+  | _ -> sflatMap(\s::String -> s ++ ", ", allButLast(list)) ++ word ++ " " ++ last(list)
+  end;
+}
+
 nonterminal Error with json;
 
 abstract production byteRangeError
