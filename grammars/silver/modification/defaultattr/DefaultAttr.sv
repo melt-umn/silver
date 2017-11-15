@@ -7,6 +7,8 @@ import silver:definition:type:syntax;
 --import silver:analysis:typechecking:core;
 import silver:translation:java;
 
+terminal Default_kwd 'default' lexer classes {KEYWORD, RESERVED};
+
 concrete production aspectDefaultProduction
 top::AGDcl ::= 'aspect' 'default' 'production' 
                lhs::Name '::' te::TypeExpr '::=' body::ProductionBody 

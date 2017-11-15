@@ -68,8 +68,7 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
   es.downSubst = top.downSubst;
   anns.downSubst = es.upSubst;
-  --forward.downSubst = anns.upSubst;
-  forward.downSubst = annsWithDefaults.upSubst;
+  forward.downSubst = anns.upSubst;
 }
 
 aspect production functionInvocation
