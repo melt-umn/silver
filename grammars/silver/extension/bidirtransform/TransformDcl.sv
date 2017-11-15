@@ -115,47 +115,47 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
     -- autocopy attribute inRedex_$tName :: Maybe<Origin>; 
     local agDcls::AGDcls = consAGDcls(autocAttr(ag.location, inhRedexName,
         nominalTypeExpr(qnTyId(ag.location, "Maybe"), 
-        botlOneString(ag.location, "Origin"))
-        ), nilAGDcls());
+        botlOneString(ag.location, "Origin"), location=ag.location)
+        ), nilAGDcls(location=ag.location), location=ag.location);
 
     -- for $cncType in cncTypes
     -- synthesized attribute restored$cncType :: $cncType;
     agDcls = foldl(\ agDcls::AGDcls name::QName-> 
-            consAGDcls(synAttr(ag.location, "restored"++name.name, sTyExpr(ag.location, name.name)), agDcls),
+            consAGDcls(synAttr(ag.location, "restored"++name.name, sTyExpr(ag.location, name.name)), agDcls, location=ag.location),
         agDcls, cncQNames);
 
     -- synthesized attribute $tName :: $tType;
-    agDcls = consAGDcls(synAttr(ag.location, tName.name, transType), agDcls);
+    agDcls = consAGDcls(synAttr(ag.location, tName.name, transType), agDcls, location=ag.location);
 
     -- Occurances of attributes, annotations
 
     -- for $type in allTypes
     -- attribute inhRedex_$tName occurs on $type;
-    agDcls = joinAGDcls(attrOn(ag.location, inhRedexName, allQNames), agDcls);
+    agDcls = joinAGDcls(attrOn(ag.location, inhRedexName, allQNames), agDcls, location=ag.location);
     
     -- attribute suppliedOrigin occurs on $cncType;
-    agDcls = joinAGDcls(attrOn(ag.location, "suppliedOrigin", cncQNames), agDcls);
+    agDcls = joinAGDcls(attrOn(ag.location, "suppliedOrigin", cncQNames), agDcls, location=ag.location);
 
     -- for $absType in absTypes
     -- attribute restored$cncType occurs on Origin, $absType;
     agDcls = foldl(\ agDcls::AGDcls name::QName->
-            joinAGDcls(attrOn(ag.location, "restored"++name.name, absQNames ++ [qName(ag.location, "Origin")]), agDcls),
+            joinAGDcls(attrOn(ag.location, "restored"++name.name, absQNames ++ [qName(ag.location, "Origin")]), agDcls, location=ag.location),
         agDcls, cncQNames);
 
     -- annotation redex occurs on $absType;
-    agDcls = joinAGDcls(annoOn(ag.location, "redex", absQNames), agDcls);
+    agDcls = joinAGDcls(annoOn(ag.location, "redex", absQNames), agDcls, location=ag.location);
     
     -- annotation labels occurs on $absType;
-    agDcls = joinAGDcls(annoOn(ag.location, "labels", absQNames), agDcls);
+    agDcls = joinAGDcls(annoOn(ag.location, "labels", absQNames), agDcls, location=ag.location);
     
     -- annotation origin occurs on $absType;
-    agDcls = joinAGDcls(annoOn(ag.location, "origin", absQNames), agDcls);
+    agDcls = joinAGDcls(annoOn(ag.location, "origin", absQNames), agDcls, location=ag.location);
     
     -- attribute wasTransformed occurs on $absType;
-    agDcls = joinAGDcls(attrOn(ag.location, "wasTransformed", absQNames), agDcls);  
+    agDcls = joinAGDcls(attrOn(ag.location, "wasTransformed", absQNames), agDcls, location=ag.location);  
 
     -- attribute $tName occurs on $absType;
-    agDcls = joinAGDcls(attrOn(ag.location, tName.name, absQNames), agDcls);      
+    agDcls = joinAGDcls(attrOn(ag.location, tName.name, absQNames), agDcls, location=ag.location);      
 
     -- Rewrite rule manipulation
     --
@@ -166,8 +166,8 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
                 | just(_) -> rwRules
                 | nothing() -> rewriteRuleCons(terminal(Vbar_kwd, "|"), 
                     rewriteRuleType(qName(ag.location, "a"), '::', qTyExpr(ag.location, name), '->',
-                        newFunction('new', '(', baseName(ag.location, "a"), ')')), 
-                        rwRules)
+                        newFunction('new', '(', baseName(ag.location, "a"), ')', location=ag.location), location=ag.location), 
+                        rwRules, location=ag.location)
             end,
         rwRules, cncQNames);
 
@@ -183,10 +183,10 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
          consAGDcls(productionDcl('abstract', 'production', 
             name(mkOriginName(qn.name),ag.location), mkProdSig(ag.location, "o", "Origin", "e", "Decorated" ++ qn.name),
                 productionBody('{', prdStmtList(ag.location, [
-                    attribDef(ag.location, "o", "isBottomOrigin", falseConst('false'))
-                ]), '}')),
-            agDcls),
-        nilAGDcls(), allQNames), agDcls);
+                    attribDef(ag.location, "o", "isBottomOrigin", falseConst('false', location=ag.location))
+                ]), '}', location=ag.location), location=ag.location),
+            agDcls, location=ag.location),
+        nilAGDcls(location=ag.location), allQNames), agDcls, location=ag.location);
     
     -- Aspecting origin productions
 
@@ -198,10 +198,9 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
         consAGDcls(aspectProductionDcl('aspect', 'production', 
             qName(ag.location, mkOriginName(name.name)), mkAspectProdSig(ag.location, "o", "Origin", "e", "Decorated" ++ name.name),
                 prdBody(ag.location, [
-                    attribDef(ag.location, "o", "wasTransformed", falseConst('false')),
+                    attribDef(ag.location, "o", "wasTransformed", falseConst('false', location=ag.location)),
                     attribDef(ag.location, "o", "concreteOrigin", baseName(ag.location, "o"))
-                ])
-            ), agDcls),
+                ]), location=ag.location), agDcls, location=ag.location),
         agDcls, cncQNames);
 
     -- restored$cncType attributes
@@ -217,8 +216,7 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
                                 applyRw(rule, rhs.name, lhs.name, ag.location, "e"))
                         ])
                     end,
-                productionStmtsNil(), cncQNames), '}', location=ag.location)
-            ), agDcls),
+                productionStmtsNil(location=ag.location), cncQNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
         agDcls, cncQNames);
 
     -- aspect all abstract origins with:
@@ -237,10 +235,9 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
                 attribDef(ag.location, "o", "concreteOrigin", 
                     argFunc(ag.location, "getConcreteOrigin", appExprList([
                         namedAccess(ag.location, "origin", "e"), 
-                        presentAppExpr(baseName(ag.location, "o"))
+                        presentAppExpr(baseName(ag.location, "o"), location=ag.location)
                     ], ag.location)))
-                ])
-            ), agDcls),
+                ]), location=ag.location), agDcls, location=ag.location),
         agDcls, absQNames);
 
     -- Non-origin aspecting
@@ -252,15 +249,14 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
             attribDef(ag.location, ns.outputElement.elementName, "wasTransformed",
                 foldl(\ e::Expr ie::NamedSignatureElement -> 
                     if hasNamedAttr(ie.typerep.typeName, ag.env, "wasTransformed")
-                    then or(e, '||', exprAccess(ag.location, "wasTransformed", ie.elementName))
+                    then or(e, '||', exprAccess(ag.location, "wasTransformed", ie.elementName), location=ag.location)
                     else e,
                 argFunc(ag.location, "wasTransformed",
                     appExprList([
                             lhsAccess(ag.location, "origin", ns),
                             lhsAccess(ag.location, "redex", ns) 
                         ], ag.location)
-                    ), ns.inputElements))
-            ), agDcls),
+                    ), ns.inputElements))), agDcls, location=ag.location),
         agDcls, absProdDcls);
 
     -- top.restored$cncType = < rewrite + transformation rules ...>
@@ -279,14 +275,13 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
                             'then', applyRwProd(rule, rhs.name, ag.location, ns),
                             -- refer to the concrete origin's restored element
                             'else', access(access(
-                                lhsExprAccess(ag.location, "origin", ns), '.', qNameAttrOccur(qName(ag.location, "concreteOrigin"))),
-                                '.', qNameAttrOccur(qName(ag.location, "restored"++rhs.name))) 
-                        )
+                                lhsExprAccess(ag.location, "origin", ns), '.', qNameAttrOccur(qName(ag.location, "concreteOrigin"), location=ag.location), location=ag.location),
+                                '.', qNameAttrOccur(qName(ag.location, "restored"++rhs.name), location=ag.location), location=ag.location), 
+                        location=ag.location)
                         else applyRw(rule, rhs.name, ns.typerep.typeName, ag.location, ns.outputElement.elementName)    
-                    ))
+                    ), location=ag.location)
                 end,
-            productionStmtsNil(), cncQNames)
-            ), agDcls),
+            productionStmtsNil(location=ag.location), cncQNames)), agDcls, location=ag.location),
         agDcls, absProdDcls);
 
     -- top.$tName = ...
@@ -301,7 +296,7 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
     agDcls = foldl(\ agDcls::AGDcls dcl::[DclInfo] ->
         consAGDcls(aspectProdStmts(ag.location,dcl,\ sg::String l::Location ns::NamedSignature ->
             if !getTrans(trRules.transformRules, dcl).isJust && ns.outputElement.typerep.typeName != transType.typerep.typeName
-            then productionStmtsNil()
+            then productionStmtsNil(location=ag.location)
             else prdStmtList(ag.location, 
                 [attribDef(ag.location, ns.outputElement.elementName, tName.name,
                 case getTrans(trRules.transformRules, dcl) of 
@@ -311,11 +306,11 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
                         -- todo: add annotations to anything here that is one of 
                         -- our abstract productions
                         'then', rule.outputStmt(nsApply(ag.location, ns)),
-                        'else', prdRecurse(ag.location, ns, tName.name)
-                    )
+                        'else', prdRecurse(ag.location, ns, tName.name),
+                    location=ag.location)
                 end
             )])
-            ), agDcls),
+            ), agDcls, location=ag.location),
         agDcls, absProdDcls);
 
     -- top.transformed_$tName = ...
@@ -331,7 +326,7 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
                 attribDef(ag.location, ns.outputElement.elementName, "transformed_"++tName.name,
                     getTrans(trRules.transformRules, dcl).fromJust.matchProd)
             ])
-            ), agDcls),
+            ), agDcls, location=ag.location),
         agDcls, absProdDcls);
 
     -- <rhs>.inhRedex_$tName = ...
@@ -350,11 +345,10 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
                             else ifThenElse(
                                 'if', lhsExprAccess(ag.location, "transformed_"++tName.name, ns),
                                 'then', argFunc(ag.location, "just", oneApp(ag.location, mkOrigin(ag.location, ns))),
-                                'else', emptyFunc(ag.location, "nothing")
-                            )
-                    )),
-            productionStmtsNil(), ns.inputElements)
-            ), agDcls),
+                                'else', emptyFunc(ag.location, "nothing"),
+                            location=ag.location)
+                    ), location=ag.location),
+            productionStmtsNil(location=ag.location), ns.inputElements)), agDcls, location=ag.location),
         agDcls, absProdDcls);
     
     -- for each concrete type, if it has location, aspect all of its creating
@@ -367,7 +361,7 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
                 argFunc(ag.location, "locationOrigin", appExprList([
                     lhsAccess(ag.location, "location", ns)
                 ], ag.location))
-            )), agDcls),
+            )), agDcls, location=ag.location),
         agDcls, locCncProdDcls);
 
     -- or if they don't have location:
@@ -376,10 +370,9 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
     agDcls = foldl(\ agDcls::AGDcls dcl::[DclInfo] ->
         consAGDcls(aspectProdStmt(ag.location,dcl,\ sg::String l::Location ns::NamedSignature ->
             attribDef(ag.location, ns.outputElement.elementName, "suppliedOrigin", 
-                        emptyFunc(ag.location, "bottomOrigin"))
-        ), agDcls), agDcls, nonLocCncProdDcls);
+                        emptyFunc(ag.location, "bottomOrigin"))), agDcls, location=ag.location), agDcls, nonLocCncProdDcls);
 
-    default annotation location = ag.location;
+    -- default annotation location = ag.location;
 
     forwards to agDcls;
 }
