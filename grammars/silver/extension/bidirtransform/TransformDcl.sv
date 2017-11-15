@@ -14,11 +14,11 @@ imports silver:extension:patternmatching;
 imports silver:util;
 imports silver:modification:let_fix; 
 
-terminal Transform_kwd 'transform' lexer classes {KEYWORD,RESERVED};
+terminal Transform_kwd 'transmute' lexer classes {KEYWORD,RESERVED};
 terminal Rewrite_kwd 'rewrite' lexer classes {KEYWORD,RESERVED};
 
 concrete production transformAGDcl
-ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr 
+ag::AGDcls ::= 'transmute' tName::QName '::' transType::TypeExpr 
     '{' trRules::TransformRuleList '}' 
     'rewrite' '{' rwRules::RewriteRuleList '}'
     -- todo: find these elements through inspecting the environment
@@ -53,10 +53,10 @@ ag::AGDcls ::= 'transform' tName::QName '::' transType::TypeExpr
     
     -- We need to know everything's qname
 
-    local cncQNames :: [QName] = map(dclQName(ag.location), cncTypeDcls);
-    local absQNames :: [QName] = map(dclQName(ag.location), absTypeDcls);
-    local locCncQNames :: [QName] = map(dclQName(ag.location), locCncTypeDcls);
-    local nonLocCncQNames :: [QName] = map(dclQName(ag.location), nonLocCncTypeDcls);
+    local cncQNames :: [QName] = map(dclQName(ag.location), cncNames.names);
+    local absQNames :: [QName] = map(dclQName(ag.location), absNames.names);
+    local locCncQNames :: [QName] = map(dclQName(ag.location), locCncNames);
+    local nonLocCncQNames :: [QName] = map(dclQName(ag.location), nonLocCncNames);
     local allQNames :: [QName] = cncQNames ++ absQNames;
 
     -- We need to know all the productions on all of the known types

@@ -77,14 +77,9 @@ top::AGDcls ::= l::AGDcls r::AGDcls
 } 
 
 function dclQName
-(QName ::= [DclInfo]) ::= loc::Location
+(QName ::= String) ::= loc::Location
 {
-    return (\ dcl::[DclInfo] -> 
-        case head(dcl) of 
-          | ntDcl(_,_,s,_,_,_) -> qName(loc, s)
-          | _ -> qName(loc, "") -- also error
-        end
-    );
+    return (\ s::String -> qName(loc, s));
 }
 
 function consAnnoAppExprs
