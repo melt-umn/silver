@@ -24,7 +24,6 @@ parser svParse::Root {
   silver:extension:doc;
   silver:extension:functorattrib;
   silver:extension:monad;
-  silver:extension:bidirtransform;
 -- silver:extension:concreteSyntaxForTrees ;
 
   silver:modification:let_fix;
