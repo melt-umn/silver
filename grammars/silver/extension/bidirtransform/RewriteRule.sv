@@ -151,22 +151,55 @@ AppExprs ::= lhs::String loc::Location inputNames::[String] inputTypes::[String]
         location=loc);
 }
 
-function rwContainsID
-Boolean ::= rwrs::[RewriteRule] name::String 
+
+
+-- todo: these assume there is only one rewrite 
+-- rule for any given rewrite output type, or at
+-- least ignores any others that exist after head().
+-- 
+-- Changing this in a meaningful way would involve
+-- no longer requiring that every type has all
+-- restored$type variants defined, then doing
+-- a search to find a pair of defined rewrite rules
+-- that produce the expected rhs output while 
+-- using a defined restored type on the lhs, and 
+-- if that fails not attempting to define that
+-- rhs type on this lhs type. 
+
+-- Return either rwProd or rwID, preferring the former, or nothing.
+function rwMatch
+Maybe<RewriteRule> ::= rwrs::[RewriteRule] outType::String ns::NamedSignature
 {
-    return if null(rwrs) then false 
-        else if head(rwrs).typerep.typeName == head(rwrs).inputType.typeName && head(rwrs).typerep.typeName == name
-        then true
-        else rwContainsID(tail(rwrs), name);
+    return case rwProd(rwrs, outType, ns) of
+        | nothing() -> rwID(rwrs, ns.typerep.typeName, outType)
+        | just(rule) -> just(rule)
+    end;
 }
 
--- sort of awkwardly using [] as Maybe here
--- todo: combine this and above, return maybe<rewriteRule>
-function rwID
-[RewriteRule] ::= rwrs::[RewriteRule] name::String 
+
+-- Return a rule which operates on the arguments of the production defined
+-- by ns and returns outType
+function rwProd
+Maybe<RewriteRule> ::= rwrs::[RewriteRule] outType::String ns::NamedSignature
 {
-    return if null(rwrs) then []
-        else if head(rwrs).typerep.typeName == head(rwrs).inputType.typeName
-        then [head(rwrs)]
-        else rwID(tail(rwrs), name);
+    local hd::RewriteRule = head(rwrs);
+
+    return if null(rwrs) then nothing()
+        else if hd.inputProduction.isJust &&
+                hd.inputProduction.fromJust.name == ns.fullName &&
+                hd.typerep.typeName == outType
+        then just(hd)
+        else rwProd(tail(rwrs), outType, ns);
+}
+
+-- Return a rule which takes in tyName and returns outType
+function rwID
+Maybe<RewriteRule> ::= rwrs::[RewriteRule] inType::String outType::String 
+{
+    local hd::RewriteRule = head(rwrs);
+
+    return if null(rwrs) then nothing()
+        else if hd.typerep.typeName == outType &&  hd.inputType.typeName == inType 
+        then just(hd)
+        else rwID(tail(rwrs), inType, outType);
 }

@@ -1,12 +1,10 @@
 grammar silver:extension:bidirtransform;
 
-autocopy attribute attrName :: QName;
-
 synthesized attribute transformRules :: [TransformRule];
 synthesized attribute rwrules :: RewriteRuleList;
 
-nonterminal TransformRuleList with attrName, transformRules, rwrules, env, errors, location;
-nonterminal TransformRule with matchProd, namedSig, outputStmt, attrName, env, errors, location;
+nonterminal TransformRuleList with transformRules, rwrules, env, errors, location;
+nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location;
 
 concrete production transformRuleCons
 trl::TransformRuleList ::= Vbar_kwd l::TransformRule r::TransformRuleList

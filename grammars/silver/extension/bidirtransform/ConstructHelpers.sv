@@ -124,12 +124,20 @@ AspectRHS ::= loc::Location inElements::[NamedSignatureElement]
 function aspectProdStmt
 AGDcl ::= loc::Location dcl::[DclInfo] fn::(ProductionStmt ::= String Location NamedSignature)
 {
+    return aspectProdStmts(loc,dcl,\ sg::String l::Location ns::NamedSignature ->
+        productionStmtsSnoc(productionStmtsNil(location=loc), fn(sg,l,ns), location=loc)
+    );
+}
+
+function aspectProdStmts
+AGDcl ::= loc::Location dcl::[DclInfo] fn::(ProductionStmts ::= String Location NamedSignature)
+{
     return if null(dcl) then emptyAGDcl(location=loc) else 
         case head(dcl) of 
             | prodDcl(sg,l,ns) -> aspectProductionDcl('aspect', 'production', 
                 qName(loc, ns.fullName), emptyAspectProdSig(loc, ns), 
                 productionBody('{', 
-                    productionStmtsSnoc(productionStmtsNil(location=loc), fn(sg,l,ns), location=loc),
+                    fn(sg,l,ns),
                 '}', location=loc), location=loc)
             | _ -> emptyAGDcl(location=loc)
         end;
@@ -140,6 +148,12 @@ ProductionStmts ::= loc::Location stmts::[ProductionStmt]
 {
     return if null(stmts) then productionStmtsNil(location=loc)
         else productionStmtsSnoc(prdStmtList(loc, tail(stmts)), head(stmts), location=loc);
+}
+
+function prdBody
+ProductionBody ::= loc::Location stmts::[ProductionStmt]
+{
+    return productionBody('{', prdStmtList(loc, stmts), '}', location=loc);
 }
 
 function attribDef
@@ -185,6 +199,12 @@ AppExpr ::= loc::Location name::String accessOn::String
 {
     return presentAppExpr(exprAccess(loc,name,accessOn), location=loc);
 } 
+
+function lhsExprAccess
+Expr ::= loc::Location name::String ns::NamedSignature
+{
+    return exprAccess(loc, name, ns.outputElement.elementName);
+}
 
 function exprAccess
 Expr ::= loc::Location name::String accessOn::String 
@@ -341,10 +361,47 @@ Boolean ::= dcl::[DclInfo]
         else hasLocDcl(tail(dcl));
 }
 
+function hasNamedAttr
+Boolean ::= tyName::String env::Decorated Env hasAttr::String
+{
+    return containsAttr(getAttrsOn(tyName, env), hasAttr);
+}
+
+function containsAttr
+Boolean ::= dcl::[DclInfo] hasAttr::String
+{   
+    return if null(dcl) then false
+        else if head(dcl).fullName == hasAttr
+        then true
+        else containsAttr(tail(dcl), hasAttr); 
+}
+
 function botlOneString
 BracketedOptTypeExprs ::= loc::Location s::String
 {
     return botlSome('<', 
         typeListSingle(sTyExpr(loc,s),location=loc),
         '>', location=loc);
+}
+
+function mkProdSig
+ProductionSignature ::= loc::Location lhsName::String lhsType::String rhsName::String rhsType::String
+{
+    return productionSignature(
+        productionLHS(name(lhsName, loc), '::', sTyExpr(loc, lhsType), location=loc),
+        '::=',
+        productionRHSCons(
+            productionRHSElem(name(rhsName, loc), '::', sTyExpr(loc, rhsType), location=loc),
+            productionRHSNil(location=loc), location=loc), location=loc);
+}
+
+function mkAspectProdSig
+AspectProductionSignature ::= loc::Location lhsName::String lhsType::String rhsName::String rhsType::String
+{
+    return aspectProductionSignature(
+        aspectProductionLHSTyped(name(lhsName, loc), '::', sTyExpr(loc, lhsType), location=loc),
+        '::=',
+        aspectRHSElemCons(
+            aspectRHSElemTyped(name(rhsName, loc), '::', sTyExpr(loc, rhsType), location=loc),
+            aspectRHSElemNil(location=loc), location=loc), location=loc);
 }
