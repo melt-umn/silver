@@ -5,9 +5,11 @@ synthesized attribute outputStmt::(Expr ::= Expr);
 synthesized attribute inputType::Type;
 synthesized attribute inputProduction::Maybe<RewriteProduction>;
 synthesized attribute shouldRestore::Boolean;
+synthesized attribute absStrings::[String];
+synthesized attribute cncStrings::[String];
 
-nonterminal RewriteRuleList with rewriteRules, env, errors, location;
-nonterminal RewriteRule with inputType, inputProduction, typerep, outputStmt, shouldRestore, env, errors, location;
+nonterminal RewriteRuleList with rewriteRules, env, errors, location, absStrings, cncStrings;
+nonterminal RewriteRule with inputType, inputProduction, typerep, outputStmt, shouldRestore, env, errors, location, absStrings, cncStrings;
 nonterminal RewriteProduction with name, inputNames, typerep, env, errors, location;
 nonterminal RewriteProductionArgs with inputNames, errors;
 
@@ -21,6 +23,9 @@ rrl::RewriteRuleList ::= Vbar_kwd l::RewriteRule r::RewriteRuleList
 
     rrl.errors := l.errors ++ r.errors;
     rrl.rewriteRules = r.rewriteRules ++ [l];
+
+    rrl.absStrings = l.absStrings ++ r.absStrings;
+    rrl.cncStrings = l.cncStrings ++ r.cncStrings;
     
     -- error check: is the exact rule l found in r?
     -- equality checking is non trivial so we aren't doing this
@@ -36,6 +41,8 @@ rrl::RewriteRuleList ::= Vbar_kwd rule::RewriteRule
 
     rrl.rewriteRules = [rule];
     rrl.errors := rule.errors;
+    rrl.absStrings = rule.absStrings;
+    rrl.cncStrings = rule.cncStrings;
 }
 
 -- rewrite an abstract production as a concrete production
@@ -83,6 +90,11 @@ rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd
             end
         )
     end;
+
+    -- todo
+    -- problem is we can't differentiate between cnc and abs
+    rule.absStrings = [];
+    rule.cncStrings = [];
 }
 
 concrete production rewriteProduction

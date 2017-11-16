@@ -1,6 +1,6 @@
 grammar silver:extension:bidirtransform;
 
-nonterminal ProductionDef with env, errors, namedSig, patternList, matchProd, typerep, inputNames, location;
+nonterminal ProductionDef with env, errors, namedSig, patternList, matchProd, typerep, inputNames, location, absStrings, cncStrings;
 
 synthesized attribute patternList::PatternList;
 synthesized attribute matchProd::Expr;
@@ -14,6 +14,11 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
     
     local prd::[DclInfo] = getProdsForNt(qn.name, pd.env);
     pd.namedSig = case head(prd) of prodDcl(_,_,ns) -> ns end;
+
+    pd.absStrings = if pd.namedSig.isConcrete then [] 
+        else [qn.name];
+    pd.cncStrings = if !pd.namedSig.isConcrete then []
+        else [qn.name];
     
     -- When we looked up a production, were we given a production?
     -- todo: aspect this?

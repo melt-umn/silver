@@ -18,14 +18,33 @@ imports silver:modification:primitivepattern;
 terminal Transform_kwd 'transmute' lexer classes {KEYWORD,RESERVED};
 terminal Rewrite_kwd 'rewrite' lexer classes {KEYWORD,RESERVED};
 
-concrete production transformAGDcl
+concrete production transformAGDclFull
 ag::AGDcl ::= 'transmute' tName::QName '::' transType::TypeExpr 
     '{' trRules::TransformRuleList '}' 
     'rewrite' '{' rwRules::RewriteRuleList '}'
-    -- todo: find these elements through inspecting the environment
-    -- given the transform and rewrite rules
     'abstract' '{' absNames::NameList '}' 
-    'concrete' '{' cncNames::NameList '}'
+    'concrete' '{' cncNames::NameList '}' ';'
+{
+    forwards to transformRewrite(tName.name, transType, trRules, rwRules, 
+        absNames.names ++ trRules.absStrings ++ rwRules.absStrings, 
+        cncNames.names ++ trRules.cncStrings ++ rwRules.cncStrings, location=ag.location);
+}
+
+concrete production transformAGDclNoNames
+ag::AGDcl ::= 'transmute' tName::QName '::' transType::TypeExpr 
+    '{' trRules::TransformRuleList '}' 
+    'rewrite' '{' rwRules::RewriteRuleList '}' ';'
+{
+    forwards to transformRewrite(tName.name, transType, trRules, rwRules,
+        trRules.absStrings ++ rwRules.absStrings, trRules.cncStrings ++ rwRules.cncStrings, location=ag.location);
+}
+
+abstract production transformRewrite 
+ag::AGDcl ::= tName::String transType::TypeExpr 
+    trRules::TransformRuleList 
+    rwRules::RewriteRuleList
+    absStrings::[String]  
+    cncStrings::[String] 
 {
 
     ----------------
@@ -35,32 +54,32 @@ ag::AGDcl ::= 'transmute' tName::QName '::' transType::TypeExpr
 
     trRules.env = ag.env;
 
-    local env::Decorated Env = ag.env;
+    local env::Decorated Env = newScopeEnv([], ag.env);
 
     -----------------
     -- Initialization of lists of things we need to know
 
     -- local locCncNamesPair :: Pair<[String] [String]> = partition(\ s::String -> 
     --     hasLocDcl(getAttrsOn(s,ag.env)),
-    -- cncNames.names);
+    -- cncStrings);
     -- local locCncNames :: [String] = locCncNamesPair.fst;
     -- local nonLocCncNames :: [String] = locCncNamesPair.snd;
 
     local locCncNames :: [String] = [];
-    local nonLocCncNames :: [String] = cncNames.names;
+    local nonLocCncNames :: [String] = cncStrings;
 
     -- We need to know everything's type
 
-    local absTypeDcls :: [[DclInfo]] = map(\ s::String -> getTypeDclAll(s,env), absNames.names);
-    local cncTypeDcls :: [[DclInfo]] = map(\ s::String -> getTypeDclAll(s,env), cncNames.names);
+    local absTypeDcls :: [[DclInfo]] = map(\ s::String -> getTypeDclAll(s,env), absStrings);
+    local cncTypeDcls :: [[DclInfo]] = map(\ s::String -> getTypeDclAll(s,env), cncStrings);
     local locCncTypeDcls :: [[DclInfo]] = map(\ s::String -> getTypeDclAll(s,env), locCncNames);
     local nonLocCncTypeDcls :: [[DclInfo]] = map(\ s::String -> getTypeDclAll(s,env), nonLocCncNames);
     local allTypeDcls :: [[DclInfo]] = absTypeDcls ++ cncTypeDcls;
     
     -- We need to know everything's qname
 
-    local cncQNames :: [QName] = map(dclQName(ag.location), cncNames.names);
-    local absQNames :: [QName] = map(dclQName(ag.location), absNames.names);
+    local cncQNames :: [QName] = map(dclQName(ag.location), cncStrings);
+    local absQNames :: [QName] = map(dclQName(ag.location), absStrings);
     local locCncQNames :: [QName] = map(dclQName(ag.location), locCncNames);
     local nonLocCncQNames :: [QName] = map(dclQName(ag.location), nonLocCncNames);
     local allQNames :: [QName] = cncQNames ++ absQNames;
@@ -116,7 +135,7 @@ ag::AGDcl ::= 'transmute' tName::QName '::' transType::TypeExpr
 
     -- New attributes and annotations
 
-    local inhRedexName::String = "inhRedex_" ++ tName.name;
+    local inhRedexName::String = "inhRedex_" ++ tName;
 
     -- autocopy attribute inRedex_$tName :: Maybe<Origin>; 
     local agDcls::AGDcl = autocAttr(ag.location, inhRedexName,
@@ -130,7 +149,7 @@ ag::AGDcl ::= 'transmute' tName::QName '::' transType::TypeExpr
         agDcls, cncQNames);
 
     -- synthesized attribute $tName :: $tType;
-    local agDcls3::AGDcl = appendAGDcl(synAttr(ag.location, tName.name, transType), agDcls2, location=ag.location);
+    local agDcls3::AGDcl = appendAGDcl(synAttr(ag.location, tName, transType), agDcls2, location=ag.location);
 
     -- Occurances of attributes, annotations
 
@@ -164,7 +183,7 @@ ag::AGDcl ::= 'transmute' tName::QName '::' transType::TypeExpr
     local agDcls10::AGDcl = appendAGDcl(attrOn(ag.location, "wasTransformed", absQNames), agDcls9, location=ag.location);  
 
     -- attribute $tName occurs on $absType;
-    local agDcls11::AGDcl = appendAGDcl(attrOn(ag.location, tName.name, absQNames), agDcls10, location=ag.location);      
+    local agDcls11::AGDcl = appendAGDcl(attrOn(ag.location, tName, absQNames), agDcls10, location=ag.location);      
 
     -- Rewrite rule manipulation
     --
@@ -259,7 +278,7 @@ ag::AGDcl ::= 'transmute' tName::QName '::' transType::TypeExpr
                 foldl(\ e::Expr ie::NamedSignatureElement -> 
                     -- Can't do this? 
                     --if hasNamedAttr(ie.typerep.typeName, env, "wasTransformed")
-                    if contains(ie.typerep.typeName, absNames.names)
+                    if contains(ie.typerep.typeName, absStrings)
                     then or(e, '||', exprAccess(ag.location, "wasTransformed", ie.elementName), location=ag.location)
                     else e,
                 argFunc("wasTransformed",
@@ -309,15 +328,15 @@ ag::AGDcl ::= 'transmute' tName::QName '::' transType::TypeExpr
             if !getTrans(trRules.transformRules, dcl).isJust && ns.outputElement.typerep.typeName != transType.typerep.typeName
             then productionStmtsNil(location=ag.location)
             else prdStmtList(ag.location, 
-                [attribDef(ag.location, ns.outputElement.elementName, tName.name,
+                [attribDef(ag.location, ns.outputElement.elementName, tName,
                 case getTrans(trRules.transformRules, dcl) of 
-                    | nothing() -> prdRecurse(ag.location, ns, tName.name)
+                    | nothing() -> prdRecurse(ag.location, ns, tName)
                     | just(rule) -> ifThenElse(
-                        'if', lhsExprAccess(ag.location, "transformed"++tName.name, ns),
+                        'if', lhsExprAccess(ag.location, "transformed" ++ tName, ns),
                         -- todo: add annotations to anything here that is one of 
                         -- our abstract productions
                         'then', rule.outputStmt(nsApply(ag.location, ns)),
-                        'else', prdRecurse(ag.location, ns, tName.name),
+                        'else', prdRecurse(ag.location, ns, tName),
                     location=ag.location)
                 end
             )])
@@ -334,7 +353,7 @@ ag::AGDcl ::= 'transmute' tName::QName '::' transType::TypeExpr
         if !getTrans(trRules.transformRules, dcl).isJust then agDcls 
         else appendAGDcl(aspectProdStmts(ag.location,dcl,\ sg::String l::Location ns::NamedSignature ->
             prdStmtList(ag.location, [
-                attribDef(ag.location, ns.outputElement.elementName, "transformed_"++tName.name,
+                attribDef(ag.location, ns.outputElement.elementName, "transformed_" ++ tName,
                     getTrans(trRules.transformRules, dcl).fromJust.matchProd)
             ])
             ), agDcls, location=ag.location),
@@ -354,7 +373,7 @@ ag::AGDcl ::= 'transmute' tName::QName '::' transType::TypeExpr
                             if !getTrans(trRules.transformRules, dcl).isJust
                             then emptyFunc("nothing", ag.location) -- this might error because it has to be a production
                             else ifThenElse(
-                                'if', lhsExprAccess(ag.location, "transformed_"++tName.name, ns),
+                                'if', lhsExprAccess(ag.location, "transformed_"++tName, ns),
                                 'then', argFunc("just", oneApp(ag.location, mkOrigin(ag.location, ns)), ag.location),
                                 'else', emptyFunc("nothing", ag.location),
                             location=ag.location)

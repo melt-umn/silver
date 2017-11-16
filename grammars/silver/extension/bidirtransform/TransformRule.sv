@@ -3,8 +3,8 @@ grammar silver:extension:bidirtransform;
 synthesized attribute transformRules :: [TransformRule];
 synthesized attribute rwrules :: RewriteRuleList;
 
-nonterminal TransformRuleList with transformRules, rwrules, env, errors, location;
-nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location;
+nonterminal TransformRuleList with transformRules, rwrules, env, errors, location, absStrings, cncStrings;
+nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absStrings, cncStrings;
 
 concrete production transformRuleCons
 trl::TransformRuleList ::= Vbar_kwd l::TransformRule r::TransformRuleList
@@ -14,6 +14,8 @@ trl::TransformRuleList ::= Vbar_kwd l::TransformRule r::TransformRuleList
 
     trl.errors := l.errors ++ r.errors;
     trl.transformRules = [l] ++ r.transformRules;
+    trl.absStrings = l.absStrings ++ r.absStrings;
+    trl.cncStrings = l.cncStrings ++ r.cncStrings;
     
     -- error check: is the exact transformation l found in r?
     -- equality checking is non trivial so we aren't doing this
@@ -27,6 +29,8 @@ trl::TransformRuleList ::= Vbar_kwd rule::TransformRule
     rule.env = trl.env;
     trl.errors := rule.errors;
     trl.transformRules = [rule];
+    trl.absStrings = rule.absStrings;
+    trl.cncStrings = rule.cncStrings;
 }
 
 concrete production transformRule
@@ -42,6 +46,9 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
             fillExprPattern(r, aexpr, l.patternList)
         end
     );
+
+    tr.absStrings = l.absStrings;
+    tr.cncStrings = l.cncStrings;
 
     -- Do the productions in both the lhs and rhs result in the same type?
     tr.errors <- if !check(l.typerep, r.typerep).typeerror then []
