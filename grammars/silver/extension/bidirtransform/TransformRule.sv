@@ -3,14 +3,16 @@ grammar silver:extension:bidirtransform;
 synthesized attribute transformRules :: [TransformRule];
 synthesized attribute rwrules :: RewriteRuleList;
 
-nonterminal TransformRuleList with transformRules, rwrules, env, errors, location, absStrings, cncStrings;
-nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absStrings, cncStrings;
+nonterminal TransformRuleList with transformRules, rwrules, env, errors, location, absStrings, cncStrings, pp;
+nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absStrings, cncStrings, pp;
 
 concrete production transformRuleCons
 trl::TransformRuleList ::= Vbar_kwd l::TransformRule r::TransformRuleList
 {
     l.env = trl.env;
     r.env = trl.env;
+
+    trl.pp = "|" ++ l.pp ++ r.pp;
 
     trl.errors := l.errors ++ r.errors;
     trl.transformRules = [l] ++ r.transformRules;
@@ -27,6 +29,9 @@ concrete production transformRuleSingle
 trl::TransformRuleList ::= Vbar_kwd rule::TransformRule 
 {
     rule.env = trl.env;
+
+    trl.pp = "|" ++ rule.pp;
+
     trl.errors := rule.errors;
     trl.transformRules = [rule];
     trl.absStrings = rule.absStrings;
@@ -37,6 +42,8 @@ concrete production transformRule
 tr::TransformRule ::= l::ProductionDef '->' r::Expr
 {
     l.env = tr.env;
+
+    tr.pp = l.pp ++ "->" ++ r.pp;
 
     tr.namedSig = l.namedSig;
     tr.matchProd = l.matchProd;    

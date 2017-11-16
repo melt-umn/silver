@@ -8,10 +8,10 @@ synthesized attribute shouldRestore::Boolean;
 synthesized attribute absStrings::[String];
 synthesized attribute cncStrings::[String];
 
-nonterminal RewriteRuleList with rewriteRules, env, errors, location, absStrings, cncStrings;
-nonterminal RewriteRule with inputType, inputProduction, typerep, outputStmt, shouldRestore, env, errors, location, absStrings, cncStrings;
-nonterminal RewriteProduction with name, inputNames, typerep, env, errors, location;
-nonterminal RewriteProductionArgs with inputNames, errors;
+nonterminal RewriteRuleList with rewriteRules, env, errors, location, absStrings, cncStrings, pp;
+nonterminal RewriteRule with inputType, inputProduction, typerep, outputStmt, shouldRestore, env, errors, location, absStrings, cncStrings, pp;
+nonterminal RewriteProduction with name, inputNames, typerep, env, errors, location, pp;
+nonterminal RewriteProductionArgs with inputNames, errors, pp;
 
 terminal RestoreArrow_t '~~>' lexer classes {SPECOP};
 
@@ -20,6 +20,8 @@ rrl::RewriteRuleList ::= Vbar_kwd l::RewriteRule r::RewriteRuleList
 {
     l.env = rrl.env;
     r.env = rrl.env;
+
+    rrl.pp = "| " ++ l.pp ++ r.pp;
 
     rrl.errors := l.errors ++ r.errors;
     rrl.rewriteRules = r.rewriteRules ++ [l];
@@ -39,6 +41,8 @@ rrl::RewriteRuleList ::= Vbar_kwd rule::RewriteRule
 {
     rule.env = rrl.env;
 
+    rrl.pp = "| " ++ rule.pp;
+
     rrl.rewriteRules = [rule];
     rrl.errors := rule.errors;
     rrl.absStrings = rule.absStrings;
@@ -49,6 +53,8 @@ rrl::RewriteRuleList ::= Vbar_kwd rule::RewriteRule
 concrete production rewriteRuleProd
 rule::RewriteRule ::= prd::RewriteProduction '->' e::Expr
 {
+    rule.pp = prd.pp ++ "->" ++ e.pp;
+
     forwards to rewriteRule(e, "", prd.typerep, e.typerep, just(prd), false, location=rule.location);
 }
 
@@ -56,6 +62,8 @@ rule::RewriteRule ::= prd::RewriteProduction '->' e::Expr
 concrete production rewriteRuleRestoreProd
 rule::RewriteRule ::= prd::RewriteProduction '~~>' e::Expr
 {
+    rule.pp = prd.pp ++ "~~>" ++ e.pp;
+    
     forwards to rewriteRule(e, "", prd.typerep, e.typerep, just(prd), true, location=rule.location);
 }
 
@@ -64,6 +72,8 @@ rule::RewriteRule ::= prd::RewriteProduction '~~>' e::Expr
 concrete production rewriteRuleType
 rule::RewriteRule ::= name::QName '::' t::TypeExpr '->' e::Expr 
 {
+    rule.pp = name.pp ++ "::" ++ t.pp ++ "->" ++ e.pp;
+
     forwards to rewriteRule(e, name.name, t.typerep, e.typerep, nothing(), false, location=rule.location);    
 }
 
@@ -72,6 +82,8 @@ rule::RewriteRule ::= name::QName '::' t::TypeExpr '->' e::Expr
 concrete production rewriteRuleRestoreType
 rule::RewriteRule ::= name::QName '::' t::TypeExpr '~~>' e::Expr
 {
+    rule.pp = name.pp ++ "::" ++ t.pp ++ "~~>" ++ e.pp;
+
     forwards to rewriteRule(e, name.name, t.typerep, e.typerep, nothing(), true, location=rule.location);
 }
 
@@ -100,6 +112,8 @@ rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd
 concrete production rewriteProduction
 prd::RewriteProduction ::= name::QName '(' args::RewriteProductionArgs ')'
 {
+    prd.pp = name.pp ++ "(" ++ args.pp ++ ")";
+
     prd.inputNames = args.inputNames;
     prd.name = name.name;
     -- I don't know, but am guessing that productions fall under
@@ -113,12 +127,14 @@ prd::RewriteProduction ::= name::QName '(' args::RewriteProductionArgs ')'
 concrete production rewriteProductionArgSingle
 arg::RewriteProductionArgs ::= name::QName
 {
+    arg.pp = name.pp;
     arg.inputNames = [name.name];
 } 
 
 concrete production rewriteProductionArgMany
-arg::RewriteProductionArgs ::= arg2::RewriteProductionArgs ',' name::QName {
-    arg.inputNames = arg2.inputNames ++ [name.name];
+arg::RewriteProductionArgs ::= args::RewriteProductionArgs ',' name::QName {
+    arg.pp = args.pp ++ "," ++ name.pp;
+    arg.inputNames = args.inputNames ++ [name.name];
 }
 -- todo: right now this means all elements of a rewrite rule need to be 
 -- anonymous variables. This should change, so some variables can be skipped

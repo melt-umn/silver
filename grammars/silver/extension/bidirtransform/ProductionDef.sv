@@ -1,6 +1,6 @@
 grammar silver:extension:bidirtransform;
 
-nonterminal ProductionDef with env, errors, namedSig, patternList, matchProd, typerep, inputNames, location, absStrings, cncStrings;
+nonterminal ProductionDef with env, errors, namedSig, patternList, matchProd, typerep, inputNames, location, absStrings, cncStrings, pp;
 
 synthesized attribute patternList::PatternList;
 synthesized attribute matchProd::Expr;
@@ -10,6 +10,9 @@ concrete production productionDef
 pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
 {
     pd.errors := args.errors;
+
+    pd.pp = qn.pp ++ "(" ++ args.pp ++ ")";
+
     args.env = pd.env;
     
     local prd::[DclInfo] = getProdsForNt(qn.name, pd.env);
@@ -19,7 +22,11 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
         else [qn.name];
     pd.cncStrings = if !pd.namedSig.isConcrete then []
         else [qn.name];
+        
+    pd.matchProd = matchProd(pd.location, args.rawPatternList, pd.namedSig.inputElements);
+    pd.typerep = pd.namedSig.outputElement.typerep;
     
+
     -- When we looked up a production, were we given a production?
     -- todo: aspect this?
     pd.errors <- case head(prd) of 
@@ -42,10 +49,6 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
 
     -- Are there any duplicate anonymous variable names defined?
     -- TODO
-        
-    pd.matchProd = matchProd(pd.location, args.rawPatternList, pd.namedSig.inputElements);
-    pd.typerep = pd.namedSig.outputElement.typerep;
-    
 }
 
 function matchProd

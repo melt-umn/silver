@@ -14,6 +14,7 @@ imports silver:extension:patternmatching;
 imports silver:util;
 imports silver:modification:let_fix;
 imports silver:modification:primitivepattern; 
+imports silver:modification:copper; 
 
 terminal Transform_kwd 'transmute' lexer classes {KEYWORD,RESERVED};
 terminal Rewrite_kwd 'rewrite' lexer classes {KEYWORD,RESERVED};
@@ -25,6 +26,10 @@ ag::AGDcl ::= 'transmute' tName::QName '::' transType::TypeExpr
     'abstract' '{' absNames::NameList '}' 
     'concrete' '{' cncNames::NameList '}' ';'
 {
+    ag.pp = "transmute " ++ tName.pp ++ "::" ++ transType.pp ++
+        "{" ++ trRules.pp ++ "} rewrite {" ++ rwRules.pp ++ 
+        "} abstract {" ++ absNames.pp ++ "} concrete {" ++ cncNames.pp ++ "};";
+
     forwards to transformRewrite(tName.name, transType, trRules, rwRules, 
         absNames.names ++ trRules.absStrings ++ rwRules.absStrings, 
         cncNames.names ++ trRules.cncStrings ++ rwRules.cncStrings, location=ag.location);
@@ -35,6 +40,9 @@ ag::AGDcl ::= 'transmute' tName::QName '::' transType::TypeExpr
     '{' trRules::TransformRuleList '}' 
     'rewrite' '{' rwRules::RewriteRuleList '}' ';'
 {
+    ag.pp = "transmute " ++ tName.pp ++ "::" ++ transType.pp ++
+        "{" ++ trRules.pp ++ "} rewrite {" ++ rwRules.pp ++ "};";
+
     forwards to transformRewrite(tName.name, transType, trRules, rwRules,
         trRules.absStrings ++ rwRules.absStrings, trRules.cncStrings ++ rwRules.cncStrings, location=ag.location);
 }
@@ -53,6 +61,9 @@ ag::AGDcl ::= tName::String transType::TypeExpr
     ag.errors := trRules.errors ++ rwRules.errors;
 
     trRules.env = ag.env;
+
+    -- ag.moduleNames = [];
+    -- ag.terminalPrefixes = [];
 
     local env::Decorated Env = newScopeEnv([], ag.env);
 
@@ -404,5 +415,6 @@ ag::AGDcl ::= tName::String transType::TypeExpr
 
     -- default annotation location = ag.location;
 
+    --ag.liftedAGDcls = agDcls22; 
     forwards to agDcls22;
 }
