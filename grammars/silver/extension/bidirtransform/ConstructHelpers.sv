@@ -2,25 +2,25 @@ grammar silver:extension:bidirtransform;
 
 
 function qAttr
-QNameAttrOccur ::= loc::Location name::String
+QNameAttrOccur ::= name::String loc::Location
 {
     return qNameAttrOccur(qName(loc, name), location=loc);
 }
 
 function emptyFunc
-Expr ::= loc::Location name::String 
+Expr ::= name::String loc::Location
 {
     return applicationEmpty(baseName(loc,name),'(',')', location=loc);
 }
 
 function argFunc
-Expr ::= loc::Location name::String args::AppExprs
+Expr ::= name::String args::AppExprs loc::Location
 {
     return applicationExpr(baseName(loc,name), '(',args,')', location=loc);
 }
 
 function fullFunc
-Expr ::= loc::Location name::String args::AppExprs annos::AnnoAppExprs
+Expr ::= name::String args::AppExprs annos::AnnoAppExprs loc::Location
 {
     return application(baseName(loc,name), '(',args,',',annos,')', location=loc);
 }
@@ -46,10 +46,10 @@ AGDcl ::= loc::Location nme::String tyexpr::TypeExpr
 }
 
 function annoOn
-AGDcls ::= loc::Location name::String onNames::[QName]
+AGDcl ::= loc::Location name::String onNames::[QName]
 {
-    return if null(onNames) then nilAGDcls(location=loc)
-        else consAGDcls(
+    return if null(onNames) then emptyAGDcl(location=loc)
+        else appendAGDcl(
             annotateDcl('annotation', qName(loc, name), botlNone(location=loc),
                 'occurs', 'on', head(onNames), botlNone(location=loc), ';', location=loc),
             annoOn(loc, name, tail(onNames)), location=loc);
@@ -57,10 +57,10 @@ AGDcls ::= loc::Location name::String onNames::[QName]
 }
 
 function attrOn
-AGDcls ::= loc::Location name::String onNames::[QName]
+AGDcl ::= loc::Location name::String onNames::[QName]
 {
-    return if null(onNames) then nilAGDcls(location=loc)
-        else consAGDcls(
+    return if null(onNames) then emptyAGDcl(location=loc)
+        else appendAGDcl(
             attributionDcl('attribute', qName(loc, name), botlNone(location=loc), 
                 'occurs', 'on', head(onNames), botlNone(location=loc), ';', location=loc),
             attrOn(loc, name, tail(onNames)), location=loc);
@@ -157,7 +157,7 @@ ProductionStmt ::= loc::Location lhs::String att::String eqs::Expr
     return attributeDef(
         lhsDef(loc, lhs), 
         '.',
-        qAttr(loc, att), 
+        qAttr(att, loc), 
         '=', 
         eqs, 
         ';', 
@@ -213,9 +213,9 @@ Expr ::= loc::Location name::String accessOn::String
 function mkOrigin
 Expr ::= loc::Location ns::NamedSignature
 {
-    return argFunc(loc,
+    return argFunc(
         mkOriginName(ns.outputElement.typerep.typeName), 
-        oneApp(loc, baseName(loc, ns.outputElement.elementName)));
+        oneApp(loc, baseName(loc, ns.outputElement.elementName)), loc);
 }
 
 -- This isn't here because this is difficult,
@@ -320,8 +320,8 @@ function nsApply
 Expr ::= loc::Location ns::NamedSignature
 {
     return if null(ns.inputElements) 
-        then emptyFunc(loc, ns.fullName)
-        else argFunc(loc, ns.fullName, nsElemsToAppExprs(loc, ns.inputElements));
+        then emptyFunc(ns.fullName, loc)
+        else argFunc(ns.fullName, nsElemsToAppExprs(loc, ns.inputElements), loc);
 }
 
 function nsElemsToAppExprs

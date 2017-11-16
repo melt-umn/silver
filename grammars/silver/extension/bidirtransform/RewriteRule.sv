@@ -130,10 +130,10 @@ function applyRwProd
 Expr ::= rwr::RewriteRule lhs::String loc::Location ns::NamedSignature
 {   
     return rwr.outputStmt(
-        fullFunc(loc, 
+        fullFunc(
             rwr.inputProduction.fromJust.name, 
             lhsRestoredTypesAppExprs(lhs, loc, ns.inputNames, map((.typeName), ns.inputTypes), rwr.shouldRestore),
-            emptyAnnoAppExprs(location=loc)));
+            emptyAnnoAppExprs(location=loc), loc));
 }
 
 function lhsRestoredTypesAppExprs
