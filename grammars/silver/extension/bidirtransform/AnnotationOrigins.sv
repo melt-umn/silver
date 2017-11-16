@@ -3,44 +3,27 @@ grammar silver:extension:bidirtransform;
 terminal Origins_kwd 'origins' lexer classes {KEYWORD,RESERVED};
 
 concrete production originEq
-top::ProductionStmt ::= val::QName '=' 'origins' e::Expr ';'
+top::Expr ::= 'origins' '{' e::Expr '}'
 {
     local newAnnos::AnnoAppExprs = annoAppExprList([
         annExpr(top.location, "labels", emptyList('[',']', location=top.location)),
-        annExpr(top.location, "redex", emptyFunc(top.location, "nothing")),
-        annExpr(top.location, "origin", emptyFunc(top.location, mkOriginName(top.prodOutput.typeName)))
+        annExpr(top.location, "redex", emptyFunc("nothing", top.location)),
+        annExpr(top.location, "origin", emptyFunc(mkOriginName(top.prodOutput.typeName), top.location))
     ], top.location);
     
-    forwards to valueEq(val, '=', 
+    forwards to 
         case e of 
             | applicationExpr(e2,_,es,_) -> application(e2,'(',es,',',newAnnos,')', location=e.location)
             | applicationAnno(e2,_,anns,_) -> applicationAnno(e2,'(',consAnnoAppExprs(top.location, anns,newAnnos),')', location=e.location)
             | application(e2,_,es,_,anns,_) -> application(e2,'(',es,',',consAnnoAppExprs(top.location, anns,newAnnos), ')', location=e.location)
             | applicationEmpty(e2,_,_) -> applicationAnno(e2,'(',newAnnos,')', location=e.location)
             | _ -> e -- we can't add annotations to non-applications
-        end, ';', location=top.location);
+        end;
 }
 
-concrete production originAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' 'origins' e::Expr ';'
-{
-    local newAnnos::AnnoAppExprs = annoAppExprList([
-        annExpr(top.location, "labels", emptyList('[',']', location=top.location)),
-        annExpr(top.location, "redex", emptyFunc(top.location, "nothing")),
-        annExpr(top.location, "origin", emptyFunc(top.location, mkOriginName(top.prodOutput.typeName)))
-    ], top.location);
-
-    forwards to attributeDef(dl,'.',attr,'=',
-        case e of 
-            | applicationExpr(e2,_,es,_) -> application(e2,'(',es,',',newAnnos,')', location=e.location)
-            | applicationAnno(e2,_,anns,_) -> applicationAnno(e2,'(',consAnnoAppExprs(top.location, anns,newAnnos),')', location=e.location)
-            | application(e2,_,es,_,anns,_) -> application(e2,'(',es,',',consAnnoAppExprs(top.location, anns,newAnnos), ')', location=e.location)
-            | applicationEmpty(e2,_,_) -> applicationAnno(e2,'(',newAnnos,')', location=e.location)
-            | _ -> e -- we can't add annotations to non-applications
-        end,';',location=top.location);
-}
-
-autocopy attribute prodOutput::Type occurs on ProductionStmt, ProductionStmts, ProductionBody, AGDcl, ProductionDclStmt;
+autocopy attribute prodOutput::Type occurs on ProductionStmt, ProductionStmts, Expr, AppExpr, AppExprs, 
+    AnnoExpr, AnnoAppExprs, ForwardInh, ForwardInhs, ExprInh, ExprInhs, AssignExpr, PrimPattern, PrimPatterns, 
+    ProductionBody, AGDcl, ProductionDclStmt;
 
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody 
