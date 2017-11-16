@@ -66,16 +66,6 @@ AGDcl ::= loc::Location name::String onNames::[QName]
             attrOn(loc, name, tail(onNames)), location=loc);
 }
 
-abstract production joinAGDcls
-top::AGDcls ::= l::AGDcls r::AGDcls
-{
-    forwards to 
-        case l of 
-            | consAGDcls(dcl,dcls) -> joinAGDcls(dcls, consAGDcls(dcl,r,location=top.location), location=top.location)
-            | nilAGDcls() -> r
-        end;
-} 
-
 function dclQName
 (QName ::= String) ::= loc::Location
 {
@@ -92,7 +82,7 @@ AnnoAppExprs ::= loc::Location a::AnnoAppExprs b::AnnoAppExprs
     end;
 }
 
-function emptyAspectProdSig
+function nsAspectProdSig
 AspectProductionSignature ::= loc::Location ns::NamedSignature 
 {
     return aspectProductionSignature(
@@ -100,20 +90,18 @@ AspectProductionSignature ::= loc::Location ns::NamedSignature
             name(ns.outputElement.elementName, loc), 
             ns.outputElement.typerep, location=loc),
         '::=',
-        emptyAspectProdRHS(loc, ns.inputElements), location=loc);
+        nsAspectProdRHS(loc, ns.inputElements), location=loc);
 }
 
--- I've never seen this used before, but it looks like we can just use empty
--- underscores in aspect productions where we don't use a given LHS element
--- so that's what this is trying to do
---
--- Todo: we actually use rhs values sometimes so lets not do that even if we can
-function emptyAspectProdRHS
+function nsAspectProdRHS
 AspectRHS ::= loc::Location inElements::[NamedSignatureElement]
 {
+    local hd::NamedSignatureElement = head(inElements);
+
     return if null(inElements) then aspectRHSElemNil(location=loc)
-        else aspectRHSElemCons(aspectRHSElemNone('_', location=loc), 
-            emptyAspectProdRHS(loc, tail(inElements)), location=loc);
+        else aspectRHSElemCons(
+            aspectRHSElemTyped(name(hd.elementName, loc), '::', typerepTypeExpr(hd.typerep, location=loc), location=loc), 
+            nsAspectProdRHS(loc, tail(inElements)), location=loc);
 }
 
 function aspectProdStmt
@@ -130,7 +118,7 @@ AGDcl ::= loc::Location dcl::[DclInfo] fn::(ProductionStmts ::= String Location 
     return if null(dcl) then emptyAGDcl(location=loc) else 
         case head(dcl) of 
             | prodDcl(sg,l,ns) -> aspectProductionDcl('aspect', 'production', 
-                qName(loc, ns.fullName), emptyAspectProdSig(loc, ns), 
+                qName(loc, ns.fullName), nsAspectProdSig(loc, ns), 
                 productionBody('{', 
                     fn(sg,l,ns),
                 '}', location=loc), location=loc)
