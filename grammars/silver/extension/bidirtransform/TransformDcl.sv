@@ -6,53 +6,50 @@ imports silver:definition:concrete_syntax;
 imports silver:definition:type;
 imports silver:definition:type:syntax;
 imports silver:extension:convenience;
-imports silver:modification:defaultattr;
-imports silver:modification:ffi;
 imports silver:extension:list;
-imports silver:modification:autocopyattr;
 imports silver:extension:patternmatching;
 imports silver:util;
 imports silver:modification:let_fix;
 imports silver:modification:primitivepattern; 
 imports silver:modification:copper; 
+imports silver:modification:defaultattr;
+imports silver:modification:ffi;
+imports silver:modification:autocopyattr;
+imports silver:extension:ntgroup;
 
 terminal Transform_kwd 'transmute' lexer classes {KEYWORD,RESERVED};
 terminal Rewrite_kwd 'rewrite' lexer classes {KEYWORD,RESERVED};
+terminal From_kwd 'from' lexer classes{KEYWORD,RESERVED};
 
 concrete production transformAGDclFull
 ag::AGDcl ::= 'transmute' tName::QName '::' transType::TypeExpr 
     '{' trRules::TransformRuleList '}' 
-    'rewrite' '{' rwRules::RewriteRuleList '}'
-    'abstract' '{' absNames::NameList '}' 
-    'concrete' '{' cncNames::NameList '}' ';'
-{
-    ag.pp = "transmute " ++ tName.pp ++ "::" ++ transType.pp ++
-        "{" ++ trRules.pp ++ "} rewrite {" ++ rwRules.pp ++ 
-        "} abstract {" ++ absNames.pp ++ "} concrete {" ++ cncNames.pp ++ "};";
-
-    forwards to transformRewrite(tName.name, transType, trRules, rwRules, 
-        absNames.names ++ trRules.absStrings ++ rwRules.absStrings, 
-        cncNames.names ++ trRules.cncStrings ++ rwRules.cncStrings, location=ag.location);
-}
-
-concrete production transformAGDclNoNames
-ag::AGDcl ::= 'transmute' tName::QName '::' transType::TypeExpr 
-    '{' trRules::TransformRuleList '}' 
-    'rewrite' '{' rwRules::RewriteRuleList '}' ';'
+    'rewrite' '{' rwRules::RewriteRuleList '}' 
+    'from' cncGroupName::QName 'to' absGroupName::QName ';'
 {
     ag.pp = "transmute " ++ tName.pp ++ "::" ++ transType.pp ++
         "{" ++ trRules.pp ++ "} rewrite {" ++ rwRules.pp ++ "};";
+        --"} abstract {" ++ absNames.pp ++ "} concrete {" ++ cncNames.pp ++ "};";
 
-    forwards to transformRewrite(tName.name, transType, trRules, rwRules,
-        trRules.absStrings ++ rwRules.absStrings, trRules.cncStrings ++ rwRules.cncStrings, location=ag.location);
+    local absGroup::[NonterminalList] = searchNtGroup(absGroupName.name, ag.env);
+    local cncGroup::[NonterminalList] = searchNtGroup(cncGroupName.name, ag.env);
+
+    ag.errors := if length(absGroup) != 0 then []
+        else [err(ag.location, "Unknown nonterminal group " ++ absGroupName.name)];
+
+    ag.errors <- if length(cncGroup) != 0 then []
+        else [err(ag.location, "Unknown nonterminal group " ++ cncGroupName.name)];
+
+    forwards to transformRewrite(tName.name, transType, trRules, rwRules, 
+        head(absGroup), head(cncGroup), location=ag.location);
 }
 
 abstract production transformRewrite 
 ag::AGDcl ::= tName::String transType::TypeExpr 
     trRules::TransformRuleList 
     rwRules::RewriteRuleList
-    absStrings::[String]  
-    cncStrings::[String] 
+    absGroup::NonterminalList  
+    cncGroup::NonterminalList
 {
 
     ----------------
@@ -60,12 +57,13 @@ ag::AGDcl ::= tName::String transType::TypeExpr
 
     ag.errors := trRules.errors ++ rwRules.errors;
 
+    trRules.absGroup = absGroup;
+    trRules.cncGroup = cncGroup;
+
     trRules.env = ag.env;
 
     -- ag.moduleNames = [];
     -- ag.terminalPrefixes = [];
-
-    local env::Decorated Env = newScopeEnv([], ag.env);
 
     -----------------
     -- Initialization of lists of things we need to know
@@ -75,71 +73,22 @@ ag::AGDcl ::= tName::String transType::TypeExpr
     -- cncStrings);
     -- local locCncNames :: [String] = locCncNamesPair.fst;
     -- local nonLocCncNames :: [String] = locCncNamesPair.snd;
-
-    local locCncNames :: [String] = [];
-    local nonLocCncNames :: [String] = cncStrings;
-
-    -- We need to know everything's type
-
-    local absTypeDcls :: [[DclInfo]] = map(\ s::String -> getTypeDclAll(s,env), absStrings);
-    local cncTypeDcls :: [[DclInfo]] = map(\ s::String -> getTypeDclAll(s,env), cncStrings);
-    local locCncTypeDcls :: [[DclInfo]] = map(\ s::String -> getTypeDclAll(s,env), locCncNames);
-    local nonLocCncTypeDcls :: [[DclInfo]] = map(\ s::String -> getTypeDclAll(s,env), nonLocCncNames);
-    local allTypeDcls :: [[DclInfo]] = absTypeDcls ++ cncTypeDcls;
     
-    -- We need to know everything's qname
+    -- We need to know everything's name
 
-    local cncQNames :: [QName] = map(dclQName(ag.location), cncStrings);
-    local absQNames :: [QName] = map(dclQName(ag.location), absStrings);
-    local locCncQNames :: [QName] = map(dclQName(ag.location), locCncNames);
-    local nonLocCncQNames :: [QName] = map(dclQName(ag.location), nonLocCncNames);
-    local allQNames :: [QName] = cncQNames ++ absQNames;
+    local absNames :: [String] = map((.name), absGroup.ntList);    
+    local cncNames :: [String] = map((.name), cncGroup.ntList);
+    local locCncNames :: [String] = [];
+    local nonLocCncNames :: [String] = cncNames;
+    local allNames :: [String] = cncNames ++ absNames;
 
     -- We need to know all the productions on all of the known types
 
-    local absProdDcls :: [[DclInfo]] = map(\ qn::QName -> getProdsForNt(qn.name,env), absQNames);
-    local cncProdDcls :: [[DclInfo]] = map(\ qn::QName -> getProdsForNt(qn.name,env), cncQNames);
-    local locCncProdDcls :: [[DclInfo]] = map(\ qn::QName -> getProdsForNt(qn.name,env), locCncQNames);
-    local nonLocCncProdDcls :: [[DclInfo]] = map(\ qn::QName -> getProdsForNt(qn.name,env), nonLocCncQNames);
-    local allProdDcls :: [[DclInfo]] = absProdDcls ++ cncProdDcls;
-
-    ---------------
-    -- Error checking
-
-    -- If any [DclInfo] has multiple elements (that shouldn't),
-    -- that should be caught as an error somewhere else.
-    -- If any is size zero, that might not be caught somewhere else.
-
-    ag.errors <- foldl(\ errs::[Message] dcl::[DclInfo] -> 
-        if !null(dcl) then errs
-        else errs ++ [err(ag.location, "Unknown Nonterminal Type")], -- not worrying about pretty errors yet
-        [],
-        allTypeDcls);
-
-    -- If there are no productions for a given nonterminal, we don't care,
-    -- so we don't need to check that the other lists are non-empty
-
-    -- We expect all [DclInfo] to be specific productions, that may change if I misunderstood
-    -- something but for now here are checks for that
-
-    ag.errors <- foldl(\ errs::[Message] dcl::[DclInfo] -> 
-        case head(dcl) of 
-            |  ntDcl(_,_,_,_,_,_) -> errs
-            |  _ -> errs ++ [err(ag.location, "Non-Nonterminal Type")]
-        end,
-        [],
-        allTypeDcls);
-
-    ag.errors <- foldl(\ errs::[Message] dcl::[DclInfo] -> 
-        case head(dcl) of 
-            |  prodDcl(_,_,_) -> errs
-            |  _ -> errs ++ [err(ag.location, "Non-Production Type")]
-        end,
-        [],
-        allProdDcls);
-
-    -- If there's a concrete type pair we don't have a rewrite rule to create
-    -- ag.errors
+    local absProdDcls :: [[NamedSignature]] = map((.ntProds), absGroup.ntList);
+    local cncProdDcls :: [[NamedSignature]] = map((.ntProds), cncGroup.ntList);
+    local locCncProdDcls :: [[NamedSignature]] = [];
+    local nonLocCncProdDcls :: [[NamedSignature]] = cncProdDcls;
+    local allProdDcls :: [[NamedSignature]] = absProdDcls ++ cncProdDcls;
 
     -----------------------
     -- Generating code
@@ -155,12 +104,12 @@ ag::AGDcl ::= tName::String transType::TypeExpr
 
     -- for $cncType in cncTypes
     -- synthesized attribute restored$cncType :: $cncType;
-    local agDcls2::AGDcl = foldl(\ agDcls::AGDcl name::QName-> 
-            appendAGDcl(synAttr(ag.location, "restored"++name.name, sTyExpr(ag.location, name.name)), agDcls, location=ag.location),
-        agDcls, cncQNames);
+    local agDcls2::AGDcl = foldl(\ agDcls::AGDcl name::String-> 
+            lockAGDcls(synAttr(ag.location, "restored"++name, sTyExpr(ag.location, name)), agDcls, location=ag.location),
+        agDcls, cncNames);
 
     -- synthesized attribute $tName :: $tType;
-    local agDcls3::AGDcl = appendAGDcl(synAttr(ag.location, tName, transType), agDcls2, location=ag.location);
+    local agDcls3::AGDcl = lockAGDcls(synAttr(ag.location, tName, transType), agDcls2, location=ag.location);
 
     -- Occurances of attributes, annotations
 
@@ -170,45 +119,45 @@ ag::AGDcl ::= tName::String transType::TypeExpr
 
     -- for $type in allTypes
     -- attribute inhRedex_$tName occurs on $type;
-    local agDcls4::AGDcl = appendAGDcl(attrOn(ag.location, inhRedexName, allQNames), agDcls3, location=ag.location);
+    local agDcls4::AGDcl = lockAGDcls(attrOn(ag.location, inhRedexName, allNames), agDcls3, location=ag.location);
     
     -- attribute suppliedOrigin occurs on $cncType;
-    local agDcls5::AGDcl = appendAGDcl(attrOn(ag.location, "suppliedOrigin", cncQNames), agDcls4, location=ag.location);
+    local agDcls5::AGDcl = lockAGDcls(attrOn(ag.location, "suppliedOrigin", cncNames), agDcls4, location=ag.location);
 
     -- for $absType in absTypes
     -- attribute restored$cncType occurs on Origin, $absType;
-    local agDcls6::AGDcl = foldl(\ agDcls::AGDcl name::QName->
-            appendAGDcl(attrOn(ag.location, "restored"++name.name, absQNames ++ [qName(ag.location, "Origin")]), agDcls, location=ag.location),
-        agDcls5, cncQNames);
+    local agDcls6::AGDcl = foldl(\ agDcls::AGDcl name::String->
+            lockAGDcls(attrOn(ag.location, "restored"++name, absNames ++ ["Origin"]), agDcls, location=ag.location),
+        agDcls5, cncNames);
 
     -- annotation redex occurs on $absType;
-    local agDcls7::AGDcl = appendAGDcl(annoOn(ag.location, "redex", absQNames), agDcls6, location=ag.location);
+    local agDcls7::AGDcl = lockAGDcls(annoOn(ag.location, "redex", absNames), agDcls6, location=ag.location);
     
     -- annotation labels occurs on $absType;
-    local agDcls8::AGDcl = appendAGDcl(annoOn(ag.location, "labels", absQNames), agDcls7, location=ag.location);
+    local agDcls8::AGDcl = lockAGDcls(annoOn(ag.location, "labels", absNames), agDcls7, location=ag.location);
     
     -- annotation origin occurs on $absType;
-    local agDcls9::AGDcl = appendAGDcl(annoOn(ag.location, "origin", absQNames), agDcls8, location=ag.location);
+    local agDcls9::AGDcl = lockAGDcls(annoOn(ag.location, "origin", absNames), agDcls8, location=ag.location);
     
     -- attribute wasTransformed occurs on $absType;
-    local agDcls10::AGDcl = appendAGDcl(attrOn(ag.location, "wasTransformed", absQNames), agDcls9, location=ag.location);  
+    local agDcls10::AGDcl = lockAGDcls(attrOn(ag.location, "wasTransformed", absNames), agDcls9, location=ag.location);  
 
     -- attribute $tName occurs on $absType;
-    local agDcls11::AGDcl = appendAGDcl(attrOn(ag.location, tName, absQNames), agDcls10, location=ag.location);      
+    local agDcls11::AGDcl = lockAGDcls(attrOn(ag.location, tName, absNames), agDcls10, location=ag.location);      
 
     -- Rewrite rule manipulation
     --
     -- add the identity rule for each type, if an identity rule doesn't already exist
     -- (x -> new(x)) 
-    local newRwRules::RewriteRuleList = foldl(\ rwRules::RewriteRuleList name::QName ->
-            case rwID(rwRules.rewriteRules, name.name, name.name) of
+    local newRwRules::RewriteRuleList = foldl(\ rwRules::RewriteRuleList name::String ->
+            case rwID(rwRules.rewriteRules, name, name) of
                 | just(_) -> rwRules
                 | nothing() -> rewriteRuleCons(terminal(Vbar_kwd, "|"), 
-                    rewriteRuleType(qName(ag.location, "a"), '::', qTyExpr(ag.location, name), '->',
+                    rewriteRuleType(qName(ag.location, "a"), '::', qTyExpr(ag.location, qName(ag.location, name)), '->',
                         newFunction('new', '(', baseName(ag.location, "a"), ')', location=ag.location), location=ag.location), 
                         rwRules, location=ag.location)
             end,
-        rwRules, cncQNames);
+        rwRules, cncNames);
 
     -- Generating origin productions
     --
@@ -218,53 +167,54 @@ ag::AGDcl ::= tName::String transType::TypeExpr
     --      o.isBottomOrigin = false;
     -- }
     --
-    local agDcls12::AGDcl = appendAGDcl(foldl(\ agDcls::AGDcl qn::QName->
-         appendAGDcl(productionDcl('abstract', 'production', 
-            name(mkOriginName(qn.name),ag.location), mkProdSig(ag.location, "o", "Origin", "e", "Decorated" ++ qn.name),
+
+    local agDcls12::AGDcl = lockAGDcls(foldl(\ agDcls::AGDcl qn::String->
+         lockAGDcls(productionDcl('abstract', 'production', 
+            name(mkOriginName(qn),ag.location), mkProdSig(ag.location, "o", "Origin", "e", "Decorated" ++ qn),
                 productionBody('{', prdStmtList(ag.location, [
                     attribDef(ag.location, "o", "isBottomOrigin", falseConst('false', location=ag.location))
                 ]), '}', location=ag.location), location=ag.location),
             agDcls, location=ag.location),
-        emptyAGDcl(location=ag.location), allQNames), agDcls11, location=ag.location);
-    
+        emptyAGDcl(location=ag.location), allNames), agDcls11, location=ag.location);
+
     -- Aspecting origin productions
 
     -- aspect all cnc origins with:
     --
     -- o.wasTransformed = false;
     -- o.concreteOrigin = o;
-    local agDcls13::AGDcl = foldl(\ agDcls::AGDcl name::QName->
-        appendAGDcl(aspectProductionDcl('aspect', 'production', 
-            qName(ag.location, mkOriginName(name.name)), mkAspectProdSig(ag.location, "o", "Origin", "e", "Decorated" ++ name.name),
+    local agDcls13::AGDcl = foldl(\ agDcls::AGDcl name::String->
+        lockAGDcls(aspectProductionDcl('aspect', 'production', 
+            qName(ag.location, mkOriginName(name)), mkAspectProdSig(ag.location, "o", "Origin", "e", "Decorated" ++ name),
                 prdBody(ag.location, [
                     attribDef(ag.location, "o", "wasTransformed", falseConst('false', location=ag.location)),
                     attribDef(ag.location, "o", "concreteOrigin", baseName(ag.location, "o"))
                 ]), location=ag.location), agDcls, location=ag.location),
-        agDcls12, cncQNames);
+        agDcls12, cncNames);
 
     -- restored$cncType attributes
     --
-    local agDcls14::AGDcl = foldl(\ agDcls::AGDcl lhs::QName->
-        appendAGDcl(aspectProductionDcl('aspect', 'production', 
-            qName(ag.location, mkOriginName(lhs.name)), mkAspectProdSig(ag.location, "o", "Origin", "e", "Decorated" ++ lhs.name),
-                productionBody('{', foldl(\ stmts::ProductionStmts rhs::QName ->
-                    case rwID(newRwRules.rewriteRules, lhs.name, rhs.name) of 
+    local agDcls14::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
+        lockAGDcls(aspectProductionDcl('aspect', 'production', 
+            qName(ag.location, mkOriginName(lhs)), mkAspectProdSig(ag.location, "o", "Origin", "e", "Decorated" ++ lhs),
+                productionBody('{', foldl(\ stmts::ProductionStmts rhs::String ->
+                    case rwID(newRwRules.rewriteRules, lhs, rhs) of 
                         | nothing() -> stmts -- this is also probably an error 
                         | just(rule) -> prdStmtList(ag.location, [
-                            attribDef(ag.location, "o", "restored"++rhs.name,  
-                                applyRw(rule, rhs.name, lhs.name, ag.location, "e"))
+                            attribDef(ag.location, "o", "restored"++rhs,  
+                                applyRw(rule, rhs, lhs, ag.location, "e"))
                         ])
                     end,
-                productionStmtsNil(location=ag.location), cncQNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
-        agDcls13, cncQNames);
+                productionStmtsNil(location=ag.location), cncNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
+        agDcls13, cncNames);
 
     -- aspect all abstract origins with:
     --
     -- o.wasTransformed = wasTransformed(e.origin, e.redex);
     -- o.concreteOrigin = getConcreteOrigin(e.origin, o);
-    local agDcls15::AGDcl = foldl(\ agDcls::AGDcl name::QName->
-        appendAGDcl(aspectProductionDcl('aspect', 'production', 
-            qName(ag.location, mkOriginName(name.name)), mkAspectProdSig(ag.location, "o", "Origin", "e", "Decorated" ++ name.name),
+    local agDcls15::AGDcl = foldl(\ agDcls::AGDcl name::String->
+        lockAGDcls(aspectProductionDcl('aspect', 'production', 
+            qName(ag.location, mkOriginName(name)), mkAspectProdSig(ag.location, "o", "Origin", "e", "Decorated" ++ name),
                 prdBody(ag.location, [
                 attribDef(ag.location, "o", "wasTransformed",
                     argFunc("wasTransformed", appExprList([
@@ -277,19 +227,17 @@ ag::AGDcl ::= tName::String transType::TypeExpr
                         presentAppExpr(baseName(ag.location, "o"), location=ag.location)
                     ], ag.location), ag.location))
                 ]), location=ag.location), agDcls, location=ag.location),
-        agDcls14, absQNames);
+        agDcls14, absNames);
 
     -- Non-origin aspecting
 
     -- for each abstract production
     -- top.wasTransformed = wasTransformed(top.origin, top.redex) || <rhs>.wasTransformed;
-    local agDcls16::AGDcl = foldl(\ agDcls::AGDcl dcl::[DclInfo] ->
-        appendAGDcl(aspectProdStmt(ag.location,dcl,\ sg::String l::Location ns::NamedSignature ->
+    local agDcls16::AGDcl = foldl(\ agDcls::AGDcl dcl::[NamedSignature] ->
+        lockAGDcls(aspectProdStmt(ag.location, dcl,\ ns::NamedSignature ->
             attribDef(ag.location, ns.outputElement.elementName, "wasTransformed",
                 foldl(\ e::Expr ie::NamedSignatureElement -> 
-                    -- Can't do this? 
-                    --if hasNamedAttr(ie.typerep.typeName, env, "wasTransformed")
-                    if contains(ie.typerep.typeName, absStrings)
+                    if contains(ie.typerep.typeName, absNames)
                     then or(e, '||', exprAccess(ag.location, "wasTransformed", ie.elementName), location=ag.location)
                     else e,
                 argFunc("wasTransformed",
@@ -301,28 +249,28 @@ ag::AGDcl ::= tName::String transType::TypeExpr
         agDcls15, absProdDcls);
 
     -- top.restored$cncType = < rewrite + transformation rules ...>
-    local agDcls17::AGDcl = foldl(\ agDcls::AGDcl dcl::[DclInfo] ->
-        appendAGDcl(aspectProdStmts(ag.location, dcl, \ sg::String l::Location ns::NamedSignature ->
-            foldl(\ stmts::ProductionStmts rhs::QName ->
+    local agDcls17::AGDcl = foldl(\ agDcls::AGDcl dcl::[NamedSignature] ->
+        lockAGDcls(aspectProdStmts(ag.location, dcl,\ ns::NamedSignature ->
+            foldl(\ stmts::ProductionStmts rhs::String ->
                 -- if there is a rewrite rule from this production to this lhs then use that
-                case rwMatch(newRwRules.rewriteRules, rhs.name, ns) of 
+                case rwMatch(newRwRules.rewriteRules, rhs, ns) of 
                     | nothing() -> stmts
                     | just(rule) -> productionStmtsSnoc(stmts, 
-                        attribDef(ag.location, ns.outputElement.elementName, "restored"++rhs.name,
+                        attribDef(ag.location, ns.outputElement.elementName, "restored"++rhs,
                         if rule.inputProduction.isJust 
                         then ifThenElse(
                             'if', lhsExprAccess(ag.location, "wasTransformed", ns),
                             -- use the rewrite production
-                            'then', applyRwProd(rule, rhs.name, ag.location, ns),
+                            'then', applyRwProd(rule, rhs, ag.location, ns),
                             -- refer to the concrete origin's restored element
                             'else', access(access(
                                 lhsExprAccess(ag.location, "origin", ns), '.', qNameAttrOccur(qName(ag.location, "concreteOrigin"), location=ag.location), location=ag.location),
-                                '.', qNameAttrOccur(qName(ag.location, "restored"++rhs.name), location=ag.location), location=ag.location), 
+                                '.', qNameAttrOccur(qName(ag.location, "restored"++rhs), location=ag.location), location=ag.location), 
                         location=ag.location)
-                        else applyRw(rule, rhs.name, ns.typerep.typeName, ag.location, ns.outputElement.elementName)    
+                        else applyRw(rule, rhs, ns.typerep.typeName, ag.location, ns.outputElement.elementName)    
                     ), location=ag.location)
                 end,
-            productionStmtsNil(location=ag.location), cncQNames)), agDcls, location=ag.location),
+            productionStmtsNil(location=ag.location), cncNames)), agDcls, location=ag.location),
         agDcls16, absProdDcls);
 
     -- top.$tName = ...
@@ -334,8 +282,8 @@ ag::AGDcl ::= tName::String transType::TypeExpr
     --  else if transformed_$tName   |
     --    then apply transformation  |
     --    else see ------------------/
-    local agDcls18::AGDcl = foldl(\ agDcls::AGDcl dcl::[DclInfo] ->
-        appendAGDcl(aspectProdStmts(ag.location,dcl,\ sg::String l::Location ns::NamedSignature ->
+    local agDcls18::AGDcl = foldl(\ agDcls::AGDcl dcl::[NamedSignature] ->
+        lockAGDcls(aspectProdStmts(ag.location, dcl,\ ns::NamedSignature ->
             if !getTrans(trRules.transformRules, dcl).isJust && ns.outputElement.typerep.typeName != transType.typerep.typeName
             then productionStmtsNil(location=ag.location)
             else prdStmtList(ag.location, 
@@ -360,9 +308,9 @@ ag::AGDcl ::= tName::String transType::TypeExpr
     --  else if the rhs matches this transformation, 
     --    then true
     --    else false
-    local agDcls19::AGDcl = foldl(\ agDcls::AGDcl dcl::[DclInfo] ->
+    local agDcls19::AGDcl = foldl(\ agDcls::AGDcl dcl::[NamedSignature] ->
         if !getTrans(trRules.transformRules, dcl).isJust then agDcls 
-        else appendAGDcl(aspectProdStmts(ag.location,dcl,\ sg::String l::Location ns::NamedSignature ->
+        else lockAGDcls(aspectProdStmts(ag.location, dcl,\ ns::NamedSignature ->
             prdStmtList(ag.location, [
                 attribDef(ag.location, ns.outputElement.elementName, "transformed_" ++ tName,
                     getTrans(trRules.transformRules, dcl).fromJust.matchProd)
@@ -376,8 +324,8 @@ ag::AGDcl ::= tName::String transType::TypeExpr
     --  else if transformed$tName
     --    then just($thisType_Origin(top))
     --    else nothing()
-    local agDcls20::AGDcl = foldl(\ agDcls::AGDcl dcl::[DclInfo] ->
-        appendAGDcl(aspectProdStmts(ag.location,dcl,\ sg::String l::Location ns::NamedSignature ->
+    local agDcls20::AGDcl = foldl(\ agDcls::AGDcl dcl::[NamedSignature] ->
+        lockAGDcls(aspectProdStmts(ag.location, dcl,\ ns::NamedSignature ->
             foldl(\ stmts::ProductionStmts rhs::NamedSignatureElement ->
                 productionStmtsSnoc(stmts, 
                     attribDef(ag.location, rhs.elementName, inhRedexName,
@@ -396,8 +344,8 @@ ag::AGDcl ::= tName::String transType::TypeExpr
     -- productions with 
     --
     -- top.suppliedOrigin = locationOrigin(top.location);
-    local agDcls21::AGDcl = foldl(\ agDcls::AGDcl dcl::[DclInfo] ->
-        appendAGDcl(aspectProdStmt(ag.location,dcl,\ sg::String l::Location ns::NamedSignature ->
+    local agDcls21::AGDcl = foldl(\ agDcls::AGDcl dcl::[NamedSignature] ->
+        lockAGDcls(aspectProdStmt(ag.location, dcl,\ ns::NamedSignature ->
             attribDef(ag.location, ns.outputElement.elementName, "suppliedOrigin", 
                 argFunc("locationOrigin", appExprList([
                     lhsAccess(ag.location, "location", ns)
@@ -408,8 +356,8 @@ ag::AGDcl ::= tName::String transType::TypeExpr
     -- or if they don't have location:
     --
     -- top.suppliedOrigin = bottomOrigin();
-    local agDcls22::AGDcl = foldl(\ agDcls::AGDcl dcl::[DclInfo] ->
-        appendAGDcl(aspectProdStmt(ag.location,dcl,\ sg::String l::Location ns::NamedSignature ->
+    local agDcls22::AGDcl = foldl(\ agDcls::AGDcl dcl::[NamedSignature] ->
+        lockAGDcls(aspectProdStmt(ag.location, dcl,\ ns::NamedSignature ->
             attribDef(ag.location, ns.outputElement.elementName, "suppliedOrigin", 
                         emptyFunc("bottomOrigin", ag.location))), agDcls, location=ag.location), agDcls21, nonLocCncProdDcls);
 

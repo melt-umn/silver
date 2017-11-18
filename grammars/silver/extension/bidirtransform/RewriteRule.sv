@@ -9,8 +9,8 @@ synthesized attribute absStrings::[String];
 synthesized attribute cncStrings::[String];
 
 nonterminal RewriteRuleList with rewriteRules, env, errors, location, absStrings, cncStrings, pp;
-nonterminal RewriteRule with inputType, inputProduction, typerep, outputStmt, shouldRestore, env, errors, location, absStrings, cncStrings, pp;
-nonterminal RewriteProduction with name, inputNames, typerep, env, errors, location, pp;
+nonterminal RewriteRule with inputType, inputProduction, typerep, outputStmt, shouldRestore, env, errors, location, absGroup, cncGroup, pp;
+nonterminal RewriteProduction with name, inputNames, typerep, env, errors, location, absGroup, cncGroup, pp;
 nonterminal RewriteProductionArgs with inputNames, errors, pp;
 
 terminal RestoreArrow_t '~~>' lexer classes {SPECOP};
@@ -25,9 +25,6 @@ rrl::RewriteRuleList ::= Vbar_kwd l::RewriteRule r::RewriteRuleList
 
     rrl.errors := l.errors ++ r.errors;
     rrl.rewriteRules = r.rewriteRules ++ [l];
-
-    rrl.absStrings = l.absStrings ++ r.absStrings;
-    rrl.cncStrings = l.cncStrings ++ r.cncStrings;
     
     -- error check: is the exact rule l found in r?
     -- equality checking is non trivial so we aren't doing this
@@ -45,8 +42,6 @@ rrl::RewriteRuleList ::= Vbar_kwd rule::RewriteRule
 
     rrl.rewriteRules = [rule];
     rrl.errors := rule.errors;
-    rrl.absStrings = rule.absStrings;
-    rrl.cncStrings = rule.cncStrings;
 }
 
 -- rewrite an abstract production as a concrete production
@@ -102,26 +97,24 @@ rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd
             end
         )
     end;
-
-    -- todo
-    -- problem is we can't differentiate between cnc and abs
-    rule.absStrings = [];
-    rule.cncStrings = [];
 }
 
 concrete production rewriteProduction
-prd::RewriteProduction ::= name::QName '(' args::RewriteProductionArgs ')'
+prd::RewriteProduction ::= qn::QName '(' args::RewriteProductionArgs ')'
 {
-    prd.pp = name.pp ++ "(" ++ args.pp ++ ")";
+    prd.pp = qn.pp ++ "(" ++ args.pp ++ ")";
 
     prd.inputNames = args.inputNames;
-    prd.name = name.name;
-    -- I don't know, but am guessing that productions fall under
-    -- 'values' as opposed to types or attributes
-    prd.typerep = case head(getValueDcl(name.name, prd.env)) of 
-        | prodDcl(_,_,ns) -> ns.typerep
-        -- todo: errors
-    end;
+    prd.name = qn.name;
+
+    local absSig::[NamedSignature] = getProdFromGroup(qn.name, prd.absGroup);
+    local cncSig::[NamedSignature] = getProdFromGroup(qn.name, prd.cncGroup);
+
+    -- prd.namedSig = if length(absSig) != 0 then head(absSig)
+    --     else head(cncSig);
+
+    prd.typerep = if length(absSig) != 0 then head(absSig).typerep
+        else head(cncSig).typerep;
 }
 
 concrete production rewriteProductionArgSingle

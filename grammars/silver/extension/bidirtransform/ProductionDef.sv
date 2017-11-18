@@ -1,43 +1,35 @@
 grammar silver:extension:bidirtransform;
 
-nonterminal ProductionDef with env, errors, namedSig, patternList, matchProd, typerep, inputNames, location, absStrings, cncStrings, pp;
+nonterminal ProductionDef with env, errors, namedSig, patternList, matchProd, typerep, inputNames, location, absGroup, cncGroup, pp, grammarName;
 
 synthesized attribute patternList::PatternList;
 synthesized attribute matchProd::Expr;
 synthesized attribute namedSig::NamedSignature;
 
+autocopy attribute absGroup::NonterminalList;
+autocopy attribute cncGroup::NonterminalList;
+
 concrete production productionDef
 pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
 {
     pd.errors := args.errors;
-
+    
     pd.pp = qn.pp ++ "(" ++ args.pp ++ ")";
 
     args.env = pd.env;
     
-    local prd::[DclInfo] = getProdsForNt(qn.name, pd.env);
-    pd.namedSig = case head(prd) of prodDcl(_,_,ns) -> ns end;
+    local absSig::[NamedSignature] = getProdFromGroup(qn.name, pd.absGroup);
+    local cncSig::[NamedSignature] = getProdFromGroup(qn.name, pd.cncGroup);
 
-    pd.absStrings = if pd.namedSig.isConcrete then [] 
-        else [qn.name];
-    pd.cncStrings = if !pd.namedSig.isConcrete then []
-        else [qn.name];
+    pd.namedSig = if length(absSig) != 0 then head(absSig)
+        else head(cncSig);
         
     pd.matchProd = matchProd(pd.location, args.rawPatternList, pd.namedSig.inputElements);
     pd.typerep = pd.namedSig.outputElement.typerep;
-    
-
-    -- When we looked up a production, were we given a production?
-    -- todo: aspect this?
-    pd.errors <- case head(prd) of 
-        | prodDcl(_,_,_) -> []
-        | _ -> [err(pd.location, "Non-production name given to Transformation Rule")]
-    end;
 
     -- When we looked up a production, was exactly one production found?
-    pd.errors <- if length(prd) > 0 then [err(pd.location, "Ambiguous Production")]
-                 else if length(prd) == 0 then [err(pd.location, "Unknown Production")]
-                 else [];
+    pd.errors <- if length(absSig) != 0 || length(cncSig) != 0 then []
+                 else [err(pd.location, "Unknown Production")];
     
     -- Is the pattern as long as the production's expected input arguments?
     pd.errors <- if length(pd.namedSig.inputElements) != length(args.rawPatternList) 

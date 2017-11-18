@@ -10,10 +10,11 @@ synthesized attribute groupList::[DclInfo];
 nonterminal FullNonterminal with name, ntProds, location, errors, env;
 nonterminal NonterminalList with location, ntList, errors, env;
 
+terminal Nonterminals_kwd 'nonterminals' lexer classes{KEYWORD,RESERVED};
 terminal From_kwd 'group' lexer classes{KEYWORD,RESERVED};
 
 concrete production nonterminalGroup 
-top::AGDcl ::= 'nonterminal' 'group' nts::NonterminalList ';' 
+top::AGDcl ::= 'group' 'nonterminals' nts::NonterminalList ';' 
 {
     top.errors := nts.errors;
 

@@ -3,8 +3,8 @@ grammar silver:extension:bidirtransform;
 synthesized attribute transformRules :: [TransformRule];
 synthesized attribute rwrules :: RewriteRuleList;
 
-nonterminal TransformRuleList with transformRules, rwrules, env, errors, location, absStrings, cncStrings, pp;
-nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absStrings, cncStrings, pp;
+nonterminal TransformRuleList with transformRules, rwrules, env, errors, location, absGroup, cncGroup, pp;
+nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp;
 
 concrete production transformRuleCons
 trl::TransformRuleList ::= Vbar_kwd l::TransformRule r::TransformRuleList
@@ -16,8 +16,6 @@ trl::TransformRuleList ::= Vbar_kwd l::TransformRule r::TransformRuleList
 
     trl.errors := l.errors ++ r.errors;
     trl.transformRules = [l] ++ r.transformRules;
-    trl.absStrings = l.absStrings ++ r.absStrings;
-    trl.cncStrings = l.cncStrings ++ r.cncStrings;
     
     -- error check: is the exact transformation l found in r?
     -- equality checking is non trivial so we aren't doing this
@@ -29,20 +27,18 @@ concrete production transformRuleSingle
 trl::TransformRuleList ::= Vbar_kwd rule::TransformRule 
 {
     rule.env = trl.env;
-
+    
     trl.pp = "|" ++ rule.pp;
 
     trl.errors := rule.errors;
     trl.transformRules = [rule];
-    trl.absStrings = rule.absStrings;
-    trl.cncStrings = rule.cncStrings;
 }
 
 concrete production transformRule
 tr::TransformRule ::= l::ProductionDef '->' r::Expr
 {
     l.env = tr.env;
-
+    
     tr.pp = l.pp ++ "->" ++ r.pp;
 
     tr.namedSig = l.namedSig;
@@ -53,9 +49,6 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
             fillExprPattern(r, aexpr, l.patternList)
         end
     );
-
-    tr.absStrings = l.absStrings;
-    tr.cncStrings = l.cncStrings;
 
     -- Do the productions in both the lhs and rhs result in the same type?
     tr.errors <- if !check(l.typerep, r.typerep).typeerror then []
@@ -79,13 +72,11 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
     --               else err(trr.location, "Type mismatch in transformation rule")
 
 function getTrans
-Maybe<TransformRule> ::= rules::[TransformRule] dcl::[DclInfo]
+Maybe<TransformRule> ::= rules::[TransformRule] dcl::[NamedSignature]
 {
     return if null(rules) then nothing()
-        else case head(dcl) of 
-            | prodDcl(_,_,ns) -> if ns.fullName == head(rules).namedSig.fullName 
-                then just(head(rules))
-                else getTrans(tail(rules), dcl)
-            | _ -> getTrans(tail(rules), dcl)
-        end;
+        else if null(dcl) then nothing()
+        else if head(dcl).fullName == head(rules).namedSig.fullName 
+            then just(head(rules))
+            else getTrans(tail(rules), dcl);
 }
