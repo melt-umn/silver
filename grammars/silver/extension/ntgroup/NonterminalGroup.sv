@@ -1,19 +1,25 @@
 grammar silver:extension:ntgroup;
 
+imports silver:definition:env;
+imports silver:definition:core;
+
 synthesized attribute ntList::[FullNonterminal];
 synthesized attribute ntProds::[NamedSignature];
+synthesized attribute groupList::[DclInfo];
 
 nonterminal FullNonterminal with name, ntProds, location, errors, env;
 nonterminal NonterminalList with location, ntList, errors, env;
-nonterminal NonterminalGroup with location, errors, env;
+
+terminal From_kwd 'group' lexer classes{KEYWORD,RESERVED};
 
 concrete production nonterminalGroup 
-top::NonterminalGroup ::= 'nonterminal' 'group' nts::NonterminalList ';' 
+top::AGDcl ::= 'nonterminal' 'group' nts::NonterminalList ';' 
 {
-    top.errors := names.errors ++ nts.errors;
-    top.ntList = nts.ntList;
+    top.errors := nts.errors;
+
+    top.defs = [ntGroupDef(ntGroupDcl(top.grammarName, top.location, nts))];
     
-    nts.env = top.env;
+    nts.env = newScopeEnv(top.defs, top.env);
 }
 
 concrete production singleNt 
@@ -38,11 +44,11 @@ top::NonterminalList ::= fnt::FullNonterminal ',' lst::NonterminalList
 concrete production fullNt 
 top::FullNonterminal ::= qn::QName
 {
-    top.ntName = qn.name;
-    top.ntProds = prodsFromDcls(getProdsForNt(top.ntName, top.env));
+    top.name = qn.name;
+    top.ntProds = prodsFromDcls(getProdsForNt(top.name, top.env));
 
-    top.errors = if length(getTypeDcl(top.ntName) != 0 then []
-        else [err(top.location, "Name " ++ top.ntName ++ " doesn't match any known nonterminal")];
+    top.errors := if length(getTypeDcl(top.name, top.env)) != 0 then []
+        else [err(top.location, "Name " ++ top.name ++ " doesn't match any known nonterminal")];
 }
 
 function prodsFromDcls
@@ -53,7 +59,7 @@ function prodsFromDcls
 }
 
 function prodFromDcl 
-[NamedSignature] :: = dcl::DclInfo
+[NamedSignature] ::= dcl::DclInfo
 {
     return case dcl of 
         | prodDcl(_,_,ns) -> [ns]
