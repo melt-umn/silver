@@ -4,7 +4,7 @@ nonterminal ProductionDef with env, errors, namedSig, patternList, matchProd, ty
 
 synthesized attribute patternList::PatternList;
 synthesized attribute matchProd::Expr;
-synthesized attribute namedSig::NamedSignature;
+synthesized attribute namedSig::Decorated NamedSignature;
 
 autocopy attribute absGroup::NonterminalList;
 autocopy attribute cncGroup::NonterminalList;
@@ -18,8 +18,8 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
 
     args.env = pd.env;
     
-    local absSig::[NamedSignature] = getProdFromGroup(qn.name, pd.absGroup);
-    local cncSig::[NamedSignature] = getProdFromGroup(qn.name, pd.cncGroup);
+    local absSig::[Decorated NamedSignature] = getProdFromGroup(qn.name, pd.absGroup);
+    local cncSig::[Decorated NamedSignature] = getProdFromGroup(qn.name, pd.cncGroup);
 
     pd.namedSig = if length(absSig) != 0 then head(absSig)
         else head(cncSig);
@@ -29,10 +29,11 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
 
     -- When we looked up a production, was exactly one production found?
     pd.errors <- if length(absSig) != 0 || length(cncSig) != 0 then []
-                 else [err(pd.location, "Unknown Production")];
+                 else [err(pd.location, "Unknown Production " ++ qn.name)];
     
     -- Is the pattern as long as the production's expected input arguments?
-    pd.errors <- if length(pd.namedSig.inputElements) != length(args.rawPatternList) 
+    pd.errors <- if length(absSig) == 0 && length(cncSig) == 0 then []
+        else if length(pd.namedSig.inputElements) != length(args.rawPatternList) 
         then [err(pd.location, "Transformation Production does not match size with Production Signature")]
         else [];
 

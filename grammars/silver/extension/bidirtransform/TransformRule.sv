@@ -51,8 +51,8 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
     );
 
     -- Do the productions in both the lhs and rhs result in the same type?
-    tr.errors <- if !check(l.typerep, r.typerep).typeerror then []
-                 else [err(tr.location, "Transformation rule type mismatch")];
+    -- tr.errors <- if !check(l.typerep, r.typerep).typeerror then []
+    --              else [err(tr.location, "Transformation rule type mismatch")];
 }
 
     -- -- b: are there anonymous variables referred to in the rhs that are not defined in the lhs?
@@ -72,7 +72,7 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
     --               else err(trr.location, "Type mismatch in transformation rule")
 
 function getTrans
-Maybe<TransformRule> ::= rules::[TransformRule] dcl::[NamedSignature]
+Maybe<TransformRule> ::= rules::[TransformRule] dcl::[Decorated NamedSignature]
 {
     return if null(rules) then nothing()
         else if null(dcl) then nothing()

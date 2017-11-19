@@ -1,4 +1,4 @@
-grammar silver:extension:ntgroup;
+grammar silver:extension:bidirtransform;
 
 abstract production ntGroupDef 
 top::Def ::= d::DclInfo
@@ -7,10 +7,10 @@ top::Def ::= d::DclInfo
 }
 
 abstract production ntGroupDcl
-top::DclInfo ::= sg::String sl::Location nts::NonterminalList
+top::DclInfo ::= sg::String sl::Location name::String nts::NonterminalList
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
-  top.fullName = ""; --todo?
+  top.fullName = name; --todo?
   top.unparse = ""; --todo?
 }

@@ -107,8 +107,8 @@ prd::RewriteProduction ::= qn::QName '(' args::RewriteProductionArgs ')'
     prd.inputNames = args.inputNames;
     prd.name = qn.name;
 
-    local absSig::[NamedSignature] = getProdFromGroup(qn.name, prd.absGroup);
-    local cncSig::[NamedSignature] = getProdFromGroup(qn.name, prd.cncGroup);
+    local absSig::[Decorated NamedSignature] = getProdFromGroup(qn.name, prd.absGroup);
+    local cncSig::[Decorated NamedSignature] = getProdFromGroup(qn.name, prd.cncGroup);
 
     -- prd.namedSig = if length(absSig) != 0 then head(absSig)
     --     else head(cncSig);
@@ -148,7 +148,7 @@ Expr ::= rwr::RewriteRule rhsTy::String lhsTy::String loc::Location elemName::St
 } 
 
 function applyRwProd
-Expr ::= rwr::RewriteRule lhs::String loc::Location ns::NamedSignature
+Expr ::= rwr::RewriteRule lhs::String loc::Location ns::Decorated NamedSignature
 {   
     return rwr.outputStmt(
         fullFunc(
@@ -189,7 +189,7 @@ AppExprs ::= lhs::String loc::Location inputNames::[String] inputTypes::[String]
 
 -- Return either rwProd or rwID, preferring the former, or nothing.
 function rwMatch
-Maybe<RewriteRule> ::= rwrs::[RewriteRule] outType::String ns::NamedSignature
+Maybe<RewriteRule> ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSignature
 {
     return case rwProd(rwrs, outType, ns) of
         | nothing() -> rwID(rwrs, ns.typerep.typeName, outType)
@@ -201,7 +201,7 @@ Maybe<RewriteRule> ::= rwrs::[RewriteRule] outType::String ns::NamedSignature
 -- Return a rule which operates on the arguments of the production defined
 -- by ns and returns outType
 function rwProd
-Maybe<RewriteRule> ::= rwrs::[RewriteRule] outType::String ns::NamedSignature
+Maybe<RewriteRule> ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSignature
 {
     local hd::RewriteRule = head(rwrs);
 
