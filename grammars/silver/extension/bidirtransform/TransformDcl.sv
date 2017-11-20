@@ -384,6 +384,8 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
 
     -- default annotation location = ag.location;
 
+    agDcls.grammarName = ag.grammarName;
+
     ag.defs = [lockDef()] ++ agDcls11.defs ++ [lockDef()];
     ag.moduleNames = [];
     ag.mdaSpecs = [];
@@ -405,5 +407,5 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
     ag.valueWeaving := "";
 
     --ag.liftedAGDcls = agDcls22; 
-    forwards to agDcls22;
+    forwards to agDcls11;
 }

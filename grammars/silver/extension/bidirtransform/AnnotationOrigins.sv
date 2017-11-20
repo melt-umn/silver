@@ -1,6 +1,7 @@
 grammar silver:extension:bidirtransform;
 
 terminal Origins_kwd 'origins' lexer classes {KEYWORD,RESERVED};
+terminal Apply_kwd 'apply' lexer classes {KEYWORD,RESERVED};
 
 concrete production originEq
 top::Expr ::= 'origins' '{' e::Expr '}'
@@ -19,6 +20,19 @@ top::Expr ::= 'origins' '{' e::Expr '}'
             | applicationEmpty(e2,_,_) -> applicationAnno(e2,'(',newAnnos,')', location=e.location)
             | _ -> e -- we can't add annotations to non-applications
         end;
+}
+
+concrete production originPrdStmt
+top::ProductionStmt ::= 'apply' 'origins' ';'
+{
+    forwards to productionStmtAppend(productionStmtAppend(
+        mkDefaultProdAnno(qName(top.location, "labels"), 
+          presentAppExpr(emptyList('[',']', location=top.location), location=top.location), location=top.location), 
+        mkDefaultProdAnno(qName(top.location, "redex"),  
+          presentAppExpr(emptyFunc("nothing", location=top.location), location=top.location), location=top.location), location=top.location),
+        mkDefaultProdAnno(qName(top.location, "origin"), 
+          presentAppExpr(emptyFunc(mkOriginName(unFull(top.prodOutput.typeName)), location=top.location), 
+        location=top.location), location=top.location), location=top.location);
 }
 
 autocopy attribute prodOutput::Type occurs on ProductionStmt, ProductionStmts, Expr, AppExpr, AppExprs, 

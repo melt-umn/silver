@@ -65,6 +65,14 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   -- TODO see ugly hack in ActionCode.sv
 }
 
+aspect production defaultProdAnno
+top::ProductionStmt ::= 'default' 'annotation' qn::QName '=' aexpr::AppExpr ';'
+{
+  top.translation = "\n"; -- This doesn't translate to anything, its effect
+    -- takes place before translation
+    -- problem here, though, is that this needs to be the last line?
+}
+
 abstract production parserAttributeValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {

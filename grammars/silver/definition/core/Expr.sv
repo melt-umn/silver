@@ -219,14 +219,27 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
   anns.remainingFuncAnnotations = t.namedTypes;
   anns.funcAnnotations = anns.remainingFuncAnnotations;
 
+  production attribute annsWithDefaults::AnnoAppExprs = fillMissingAnnos(anns, t.namedTypes, top.defaultInheritedAnnos);
+
+  annsWithDefaults.appExprApplied = e.pp;
+  annsWithDefaults.remainingFuncAnnotations = t.namedTypes;
+  annsWithDefaults.funcAnnotations = annsWithDefaults.remainingFuncAnnotations;
+  annsWithDefaults.env = anns.env;
+  annsWithDefaults.downSubst = anns.downSubst;
+  annsWithDefaults.finalSubst = anns.finalSubst;
+  annsWithDefaults.frame = anns.frame;
+  annsWithDefaults.defaultInheritedAnnos = top.defaultInheritedAnnos;
+  annsWithDefaults.flowEnv = anns.flowEnv;
+  annsWithDefaults.config = anns.config;
+
   -- TODO: we have an ambiguity here in the longer term.
   -- How to distinguish between
   -- foo(x) where there is an annotation 'a'?
   -- Is this partial application, give (Foo ::= ;a::Something) or (Foo) + error.
   -- Possibly this can be solved by having somehting like "foo(x,a=?)"
   forwards to if es.isPartial || anns.isPartial
-              then partialApplication(e, es, anns, location=top.location)
-              else functionInvocation(e, es, anns, location=top.location);
+              then partialApplication(e, es, annsWithDefaults, location=top.location)
+              else functionInvocation(e, es, annsWithDefaults, location=top.location);
 }
 
 abstract production functionInvocation
