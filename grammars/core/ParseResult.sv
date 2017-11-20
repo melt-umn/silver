@@ -99,7 +99,20 @@ top::ParseError ::=
   expectedNames::[String]
   matchedNames::[String]
 {
-  top.parseErrors = diagnosticString;
+  local expectedMsg :: String = orList(expectedNames, "or");
+  local matchedMsg :: String
+    = case matchedNames of
+    | [s] -> s
+    | _ -> orList(matchedNames, "and")
+    end;
+  top.parseErrors = "Expecting " ++ expectedMsg ++ ", got " ++ matchedMsg;
+
+  local orList :: (String ::= [String] String) =
+    \list::[String] word::String ->
+    case list of
+    | [] -> "nothing"
+    | _ -> sflatMap(\s::String -> s ++ ", ", allButLast(list)) ++ word ++ " " ++ last(list)
+    end;
 }
 
 {--

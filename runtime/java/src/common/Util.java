@@ -31,10 +31,10 @@ import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
 
 /**
  * Many places in Silver's translation are bits of code that need factoring out, somehow.
- * 
+ *
  * <p>The most common justification is the need to do several statements, while being in the middle
  * of an expression.
- * 
+ *
  * @author tedinski, bodin
  */
 public final class Util {
@@ -54,7 +54,7 @@ public final class Util {
 
 	/**
 	 * Turns a list of names and values into a map.
-	 * 
+	 *
 	 * <p>Used by the 'decorate ... with { THIS PART }' syntax.
 	 */
 	public static Lazy[] populateInh(final int size, final int[] idx, final Lazy[] val) {
@@ -67,19 +67,19 @@ public final class Util {
 
 	/**
 	 * Exit, of course!
-	 * 
+	 *
 	 * <p>This is here because it has to return Object to be used in expressions.
-	 * 
+	 *
 	 * @param status the exit status code
 	 * @return Does not return.
 	 */
 	public static IOToken exit(int status) {
 		throw new SilverExit(status);
 	}
-	
+
 	/**
 	 * Used by the 'error("wat")' syntax in Silver.
-	 * 
+	 *
 	 * @param o the "wat"
 	 * @return Does not return.
 	 */
@@ -87,7 +87,7 @@ public final class Util {
 		System.err.print(o);
 		throw new SilverError(o.toString());
 	}
-	
+
 	public static core.NMaybe safetoInt(String s) {
 		try {
 			return new core.Pjust( Integer.valueOf(s) );
@@ -139,7 +139,7 @@ public final class Util {
 	public static int fileTime(String sb) {
 		return (int) ((new File(sb).lastModified()) / 1000);
 	}
-	
+
 	public static IOToken touchFile(String sb) {
 		setFileTime(sb, currentTime());
 		return IOToken.singleton;
@@ -168,7 +168,7 @@ public final class Util {
 	public static boolean isDirectory(String sb) {
 		return new File(sb).isDirectory();
 	}
-	
+
 	public static boolean mkdir(String sb) {
 		return new File(sb).mkdirs();
 	}
@@ -193,25 +193,25 @@ public final class Util {
 			String[] files = dirf.list();
 
 			boolean result = true;
-			
+
 			if(files == null) return result;
-			
+
 			for(String filename : files) {
 				File file = new File(dirf, filename);
 				// Only files, no directories
 				if(file.isFile()) {
 					result = result && file.delete();
 				}
-					
+
 			}
-			
+
 			return result;
-			
+
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public static IOToken deleteTree(String path) {
 		// We should consider using walkFileTree, in the future
 		deleteTreeRecursive(Paths.get(path));
@@ -247,7 +247,7 @@ public final class Util {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	private static BufferedReader our_stdin = null;
 	public static StringCatter getStr() {
 		try {
@@ -263,7 +263,7 @@ public final class Util {
 
 	/**
 	 * Copy a file from 'from' to 'to'.
-	 * 
+	 *
 	 * @param from A path to the file to copy
 	 * @param to A path to where the file should be copied. May be a directory.
 	 * @return singleton IO token.
@@ -283,10 +283,10 @@ public final class Util {
 		}
 		return IOToken.singleton;
 	}
-	
+
 	/**
 	 * Slurps the contents of a file into a string.  May cause IO exceptions.
-	 * 
+	 *
 	 * @param sb  The filename
 	 * @return  The file contents.
 	 */
@@ -305,10 +305,10 @@ public final class Util {
 		// Paths.get(".").toAbsolutePath().normalize().toString()
 		return new StringCatter(System.getProperty("user.dir"));
 	}
-	
+
 	/**
 	 * We have a (public) copy of the environment because RunSilver may need to modify it.
-	 * 
+	 *
 	 * Sadly, there does not appear to be any way to do with without making our own copy
 	 * of the entire environment.
 	 */
@@ -324,14 +324,14 @@ public final class Util {
 
 	/**
 	 * Invokes an external command, channeling all stdin/out/err to the console normally.
-	 * 
+	 *
 	 * N.B. uses 'bash' to invoke the command. There are two major reasons:
 	 * (1) allows redirects and such, which is useful
 	 * (2) because this command takes just a single string, we must somehow deal with spaces.
 	 * e.g. 'touch "abc 123"' bash take care of interpreting the quotes for us.
-	 * 
+	 *
 	 * Unfortunately platform dependency though.
-	 * 
+	 *
 	 * @param sb A string for back to interpret and execute.
 	 * @return The exit status of the process.
 	 */
@@ -349,9 +349,9 @@ public final class Util {
 
 	/**
 	 * Write to a file, truncating anything there already. Used by 'writeFile' in silver.
-	 * 
+	 *
 	 * <p>Avoids demanding a StringCatter.
-	 * 
+	 *
 	 * @param file The filename
 	 * @param content Either a String or {@link StringCatter} object.
 	 * @return singleton IO token.
@@ -373,9 +373,9 @@ public final class Util {
 
 	/**
 	 * Write to a file, appending onto the end of anything there already. Used by 'appendFile' in silver.
-	 * 
+	 *
 	 * <p>Avoids demanding a StringCatter.
-	 * 
+	 *
 	 * @param file The filename
 	 * @param content Either a String or {@link StringCatter} object.
 	 * @return singleton IO token.
@@ -403,7 +403,7 @@ public final class Util {
 
 	/**
 	 * Lists the contents of a directory.
-	 * 
+	 *
 	 * @param sb The directory to list the contents of.
 	 * @return A list of Strings
 	 */
@@ -413,16 +413,16 @@ public final class Util {
 			String[] files = f.list();
 
 			ConsCell result = ConsCell.nil;
-			
+
 			if(files == null)
 				return result;
-			
+
 			for (String file : files) {
 				result = new ConsCell(new StringCatter(file), result);
 			}
-			
+
 			return result;
-			
+
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -431,10 +431,10 @@ public final class Util {
 	/**
 	 * This exists only because some things like {@link Util#writeFile} don't take an IO object, so
 	 * we use this to demand the io object, then call writeFile.
-	 * 
+	 *
 	 * <p>In other cases, we're actually returning something, like system, and the call to the IOInteger
 	 * nonterminal constructor takes care of demanding the old IO object.
-	 * 
+	 *
 	 * @param i First thing to do
 	 * @param o Second thing to do
 	 * @return o, the second thing given, which is intended to be the
@@ -448,19 +448,19 @@ public final class Util {
 	public static int genInt() {
 		return i++;
 	}
-	
+
 	public static void printStackCauses(Throwable e) {
 		System.err.println("\nAn error occured.  Silver stack trace follows. (To see full traces including java elements, SILVERTRACE=1)\n");
-		
+
 		if(! "1".equals(System.getenv("SILVERTRACE"))) {
 			Throwable t = e;
 			while(t != null) {
 				StackTraceElement st[] = t.getStackTrace();
-				
+
 				String msg = t.getLocalizedMessage();
 				if(msg == null) // Some exceptions have no message... apparently.
 					msg = t.toString();
-				
+
 				if(st.length == 0) {
 					// Some exceptions don't seem to occur anywhere... somehow.
 					System.err.println("(??): " + msg);
@@ -476,7 +476,7 @@ public final class Util {
 							System.err.println("\t2 up: " + st[2].getClassName() + " in " + st[2].getFileName() + ":" + st[2].getLineNumber());
 					}
 				}
-				
+
 				String lastCause = t.getLocalizedMessage();
 				int repeats = 0;
 				t = t.getCause();
@@ -488,14 +488,14 @@ public final class Util {
 					System.err.println("\t(last line repeats " + repeats + " more times)");
 				}
 			}
-			
-			System.exit(-2);		
+
+			System.exit(-2);
 		} else {
 			// Displaying it by rethrowing it.
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public static String namesToString(final String[] names, final String none) {
 		String result = names.length > 0? names[0] : none;
 		for (int i = 1; i < names.length; i++) {
@@ -503,7 +503,7 @@ public final class Util {
 		}
 		return result;
 	}
-	
+
 	public static StringCatter escapeString(final StringCatter s) {
 		return new StringCatter(escapeString(s.toString()));
 	}
@@ -539,7 +539,7 @@ public final class Util {
 		}
 		return sb.toString();
 	}
-	
+
 	public static StringCatter unescapeString(final StringCatter s) {
 		return new StringCatter(unescapeString(s.toString()));
 	}
@@ -583,16 +583,16 @@ public final class Util {
 		}
 		return sb.toString();
 	}
-	
+
 	// These are written un-ideally so that they're all confined in one place.
 	public static StringCatter hackyhackyUnparse(Object o) {
 		StringBuilder sb = new StringBuilder();
-		
+
 		hackyhackyUnparseObject(o, sb);
-		
+
 		return new StringCatter(sb.toString());
 	}
-	
+
 	private static void hackyhackyUnparseObject(Object o, StringBuilder sb) {
 		if(o instanceof Node) {
 			hackyhackyUnparseNode((Node)o, sb);
@@ -637,10 +637,10 @@ public final class Util {
 		}
 		sb.append("]");
 	}
-	
+
 	/**
 	 * Calls a Copper parser, and returns a ParseResult<ROOT> object.
-	 * 
+	 *
 	 * @param parser The Copper parser to call
 	 * @param string The string to parse.
 	 * @param file The filename to report to the parser (filling in location information)
@@ -655,7 +655,14 @@ public final class Util {
 			return new core.PparseSucceeded(tree, terminals);
 		} catch(CopperSyntaxError e) {
 			// To create a space, we increment the ending columns and indexes by 1.
-			NLocation loc = new Ploc(new StringCatter(e.getVirtualFileName()), e.getVirtualLine(), e.getVirtualColumn(), e.getVirtualColumn(), e.getVirtualColumn() + 1, (int)(e.getRealCharIndex()), (int)(e.getRealCharIndex()) + 1);
+			NLocation loc = new Ploc(
+				new StringCatter(e.getVirtualFileName()),
+				e.getVirtualLine(),
+				e.getVirtualColumn(),
+				e.getVirtualLine(),
+				e.getVirtualColumn() + 1,
+				(int)(e.getRealCharIndex()),
+				(int)(e.getRealCharIndex()) + 1);
 			NParseError err = new PsyntaxError(
 					new common.StringCatter(e.getMessage()),
 					loc,
@@ -704,7 +711,7 @@ public final class Util {
             new StringCatter(t.getName()),
             Terminal.extractLocation(t));
 	}
-	
+
 	/**
 	 * Like javainterop.ConsCellCollection.fromIterator, but also converts String to StringCatter.
 	 */
