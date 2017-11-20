@@ -171,7 +171,7 @@ top::Expr ::= rwr::RewriteRule rhsTy::String lhsTy::String elemName::String
         if rhsTy == lhsTy || !rwr.shouldRestore then baseName(elemName, location=top.location) 
         -- Otherwise pass the appropriate restored type from
         -- this origin into the rule
-        else exprAccess(elemName, "restored"++unFull(rwr.inputType.typeName), location=top.location));
+        else exprAccess(elemName, restoreNm(unFull(rwr.inputType.typeName)), location=top.location));
 } 
 
 abstract production applyRwProd
@@ -190,12 +190,12 @@ top::AppExprs ::= lhs::String inputNames::[String] inputTypes::[String] shouldRe
     forwards to if length(inputTypes) == 1 
     then oneAppExprs(
         if shouldRestore 
-        then namedAccess("restored"++head(inputTypes), lhs, location=top.location)
+        then namedAccess(restoreNm(head(inputTypes)), lhs, location=top.location)
         else presentName(head(inputNames), location=top.location), location=top.location)
     else snocAppExprs(lhsRestoredTypesAppExprs(lhs, tail(inputNames), tail(inputTypes), shouldRestore, location=top.location),
             ',',
             if shouldRestore 
-            then namedAccess("restored"++head(inputTypes), lhs, location=top.location)
+            then namedAccess(restoreNm(head(inputTypes)), lhs, location=top.location)
             else presentName(head(inputNames), location=top.location),   
         location=top.location);
 }
@@ -215,40 +215,69 @@ top::AppExprs ::= lhs::String inputNames::[String] inputTypes::[String] shouldRe
 -- if that fails not attempting to define that
 -- rhs type on this lhs type. 
 
--- Return either rwProd or rwID, preferring the former, or nothing.
-function rwMatch
-Maybe<RewriteRule> ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSignature
+function hasRwMatch
+Boolean ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSignature
 {
-    return case rwProd(rwrs, outType, ns) of
-        | nothing() -> rwID(rwrs, unFull(ns.typerep.typeName), outType)
-        | just(rule) -> just(rule)
-    end;
+    return if hasRwProd(rwrs, outType, ns) 
+      then true 
+      else hasRwID(rwrs, unFull(ns.typerep.typeName), outType);
 }
 
+-- Return either rwProd or rwID, preferring the former, or nothing.
+abstract production rwMatch
+top::RewriteRule ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSignature
+{
+    forwards to if hasRwProd(rwrs, outType, ns) then rwProd(rwrs, outType, ns, location=top.location)
+        else rwID(rwrs, unFull(ns.typerep.typeName), outType, location=top.location);
+}
 
--- Return a rule which operates on the arguments of the production defined
--- by ns and returns outType
-function rwProd
-Maybe<RewriteRule> ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSignature
+function hasRwProd
+Boolean ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSignature
 {
     local hd::RewriteRule = head(rwrs);
 
-    return if null(rwrs) then nothing()
+    return if null(rwrs) then false
         else if hd.inputProduction.isJust &&
                 hd.inputProduction.fromJust.name == ns.fullName &&
                 unFull(hd.typerep.typeName) == outType
-        then just(hd)
-        else rwProd(tail(rwrs), outType, ns);
+        then true
+        else hasRwProd(tail(rwrs), outType, ns);
 }
 
--- Return a rule which takes in tyName and returns outType
-function rwID
-Maybe<RewriteRule> ::= rwrs::[RewriteRule] inType::String outType::String 
+-- Return a rule which operates on the arguments of the production defined
+-- by ns and returns outType
+abstract production rwProd
+top::RewriteRule ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSignature
 {
     local hd::RewriteRule = head(rwrs);
 
-    return if null(rwrs) then nothing()
-        else if unFull(hd.typerep.typeName) == outType &&  unFull(hd.inputType.typeName) == inType 
-        then just(hd)
-        else rwID(tail(rwrs), inType, outType);
+    forwards to -- if null(rwrs) then nothing() else
+        if hd.inputProduction.isJust &&
+                hd.inputProduction.fromJust.name == ns.fullName &&
+                unFull(hd.typerep.typeName) == outType
+        then hd
+        else rwProd(tail(rwrs), outType, ns, location=top.location);
+}
+
+function hasRwID
+Boolean ::= rwrs::[RewriteRule] inType::String outType::String 
+{
+    local hd::RewriteRule = head(rwrs);
+
+    return if null(rwrs) then false
+        else if unFull(hd.typerep.typeName) == outType && unFull(hd.inputType.typeName) == inType 
+        then true
+        else hasRwID(tail(rwrs), inType, outType);
+}
+
+-- Return a rule which takes in tyName and returns outType
+abstract production rwID
+top::RewriteRule ::= rwrs::[RewriteRule] inType::String outType::String 
+{
+    local hd::RewriteRule = head(rwrs);
+
+    forwards to -- if null(rwrs) then nothing() else
+        if unFull(hd.typerep.typeName) == outType && unFull(hd.inputType.typeName) == inType 
+        then hd
+        else rwID(tail(rwrs), inType, outType, location=top.location);
 }

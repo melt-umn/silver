@@ -124,7 +124,7 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
     -- for $cncType in cncTypes
     -- synthesized attribute restored$cncType :: $cncType;
     local agDcls2::AGDcl = foldl(\ agDcls::AGDcl name::String-> 
-            lockAGDcls(synAttr("restored"++name, sTyExpr(name, location=ag.location), location=ag.location), agDcls, location=ag.location),
+            lockAGDcls(synAttr(restoreNm(name), sTyExpr(name, location=ag.location), location=ag.location), agDcls, location=ag.location),
         agDcls, cncNames);
 
     -- synthesized attribute $tName :: $tType;
@@ -149,7 +149,7 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
     -- for $absType in absTypes
     -- attribute restored$cncType occurs on Origin, $absType;
     local agDcls6::AGDcl = foldl(\ agDcls::AGDcl name::String->
-            lockAGDcls(attrOn("restored"++name, absNames ++ ["Origin"], location=ag.location), agDcls, location=ag.location),
+            lockAGDcls(attrOn(restoreNm(name), absNames ++ ["Origin"], location=ag.location), agDcls, location=ag.location),
         agDcls5, cncNames);
 
     -- annotation redex occurs on $absType;
@@ -175,13 +175,11 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
     -- add the identity rule for each type, if an identity rule doesn't already exist
     -- (x -> new(x)) 
     local newRwRules::RewriteRuleList = foldl(\ rwRules::RewriteRuleList name::String ->
-            case rwID(rwRules.rewriteRules, name, name) of
-                | just(_) -> rwRules
-                | nothing() -> rewriteRuleCons(terminal(Vbar_kwd, "|"), 
-                    rewriteRuleType(qName(ag.location, "a"), '::', qTyExpr(qName(ag.location, name), location=ag.location), '->',
-                        newFunction('new', '(', baseName("a", location=ag.location), ')', location=ag.location), location=ag.location), 
-                        rwRules, location=ag.location)
-            end,
+            if hasRwID(rwRules.rewriteRules, name, name) then rwRules
+            else rewriteRuleCons(terminal(Vbar_kwd, "|"), 
+                rewriteRuleType(qName(ag.location, "a"), '::', qTyExpr(qName(ag.location, name), location=ag.location), '->',
+                    newFunction('new', '(', baseName("a", location=ag.location), ')', location=ag.location), location=ag.location), 
+                    rwRules, location=ag.location),
         rwRules, cncNames);
 
     -- Generating origin productions
@@ -223,13 +221,12 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
         lockAGDcls(aspectProductionDcl('aspect', 'production', 
             qName(ag.location, mkOriginName(lhs)), mkAspectProdSig("o", "Origin", "e", "Decorated" ++ lhs, location=ag.location),
                 productionBody('{', foldl(\ stmts::ProductionStmts rhs::String ->
-                    case rwID(newRwRules.rewriteRules, lhs, rhs) of 
-                        | nothing() -> stmts -- this is also probably an error 
-                        | just(rule) -> prdStmtList([
-                            attribDef( "o", "restored"++rhs,  
-                                applyRw(rule, rhs, lhs, "e", location=ag.location), location=ag.location)
-                        ], location=ag.location)
-                    end,
+                    if !hasRwID(newRwRules.rewriteRules, lhs, rhs) 
+                    then stmts -- this is also probably an error 
+                    else prdStmtList([
+                            attribDef( "o", restoreNm(rhs),  
+                                applyRw(rwID(newRwRules.rewriteRules, lhs, rhs, location=ag.location), rhs, lhs, "e", location=ag.location), location=ag.location)
+                        ], location=ag.location),
                 productionStmtsNil(location=ag.location), cncNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
         agDcls13, cncNames);
 
@@ -278,23 +275,21 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
         lockAGDcls(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             foldl(\ stmts::ProductionStmts rhs::String ->
                 -- if there is a rewrite rule from this production to this lhs then use that
-                case rwMatch(newRwRules.rewriteRules, rhs, ns) of 
-                    | nothing() -> stmts
-                    | just(rule) -> productionStmtsSnoc(stmts, 
-                        attribDef( ns.outputElement.elementName, "restored"++rhs,
-                        if rule.inputProduction.isJust 
+                if !hasRwMatch(newRwRules.rewriteRules, rhs, ns) then stmts 
+                else productionStmtsSnoc(stmts, 
+                        attribDef(ns.outputElement.elementName, restoreNm(rhs),
+                        if rwMatch(newRwRules.rewriteRules, rhs, ns, location=ag.location).inputProduction.isJust 
                         then ifThenElse(
                             'if', lhsExprAccess("wasTransformed", ns, location=ag.location),
                             -- use the rewrite production
-                            'then', applyRwProd(rule, rhs, ns, location=ag.location),
+                            'then', applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns, location=ag.location), rhs, ns, location=ag.location),
                             -- refer to the concrete origin's restored element
                             'else', access(access(
                                 lhsExprAccess("origin", ns, location=ag.location), '.', qNameAttrOccur(qName(ag.location, "concreteOrigin"), location=ag.location), location=ag.location),
-                                '.', qNameAttrOccur(qName(ag.location, "restored"++rhs), location=ag.location), location=ag.location), 
+                                '.', qNameAttrOccur(qName(ag.location, restoreNm(rhs)), location=ag.location), location=ag.location), 
                         location=ag.location)
-                        else applyRw(rule, rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
-                    location=ag.location), location=ag.location)
-                end,
+                        else applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns, location=ag.location), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
+                    location=ag.location), location=ag.location),
             productionStmtsNil(location=ag.location), cncNames), location=ag.location), agDcls, location=ag.location),
         agDcls16, absProdDcls);
 
@@ -309,11 +304,11 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
     --    else see ------------------/
     local agDcls18::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
         lockAGDcls(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-            if !hasTrans(trRules.transformRules, dcl) && ns.outputElement.typerep.typeName != transType.typerep.typeName
+            if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) && ns.outputElement.typerep.typeName != transType.typerep.typeName
             then productionStmtsNil(location=ag.location)
             else prdStmtList( 
                 [attribDef(ns.outputElement.elementName, tName,
-                if !hasTrans(trRules.transformRules, dcl) 
+                if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) 
                   then prdRecurse(ns, tName, location=ag.location)
                   else ifThenElse(
                         'if', lhsExprAccess(transformNm(tName), ns, location=ag.location),
@@ -333,7 +328,7 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
     --    then true
     --    else false
     local agDcls19::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
-        if !hasTrans(trRules.transformRules, dcl) then agDcls 
+        if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) then agDcls 
         else lockAGDcls(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             prdStmtList([
                 attribDef( ns.outputElement.elementName, transformNm(tName),
@@ -353,7 +348,7 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
             foldl(\ stmts::ProductionStmts rhs::NamedSignatureElement ->
                 productionStmtsSnoc(stmts, 
                     attribDef( rhs.elementName, inhRedexName,
-                            if !hasTrans(trRules.transformRules, dcl)
+                            if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup)
                             then emptyFunc("nothing", location=ag.location) -- this might error because it has to be a production
                             else ifThenElse(
                                 'if', lhsExprAccess(transformNm(tName), ns, location=ag.location),

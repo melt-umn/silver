@@ -46,24 +46,6 @@ trl::TransformRuleList ::= Vbar_kwd rule::TransformRule
     trl.transformRules = [rule];
 }
 
-function hasTrans
-Boolean ::= rules::[TransformRule] dcl::[Decorated NamedSignature]
-{
-    return if null(rules) || null(dcl) then false
-        else if head(dcl).fullName == head(rules).namedSig.fullName then true
-        else hasTrans(tail(rules), dcl);
-}
-
-abstract production getTrans
-top::TransformRule ::= rules::[TransformRule] dcl::[Decorated NamedSignature]
-{
-    forwards to --if null(rules) then nothing()
-        --else if null(dcl) then nothing() else
-        if head(dcl).fullName == head(rules).namedSig.fullName 
-            then head(rules)
-            else getTrans(tail(rules), dcl, location=top.location);
-}
-
 concrete production transformRule
 tr::TransformRule ::= l::ProductionDef '->' r::Expr
 {
@@ -107,3 +89,26 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
     -- trr.errors <- if !anonVarsMatch then []
     --               else if typesMatch(prd.definedAnonVars, trr.providedVars) then []
     --               else err(trr.location, "Type mismatch in transformation rule")
+
+function hasTrans
+Boolean ::= rules::[TransformRule] dcl::[Decorated NamedSignature] absGroup::NonterminalList cncGroup::NonterminalList
+{
+    local hd::TransformRule = head(rules);
+
+    hd.absGroup = absGroup;
+    hd.cncGroup = cncGroup;
+
+    return if null(rules) || null(dcl) then false
+        else if head(dcl).fullName == hd.namedSig.fullName then true
+        else hasTrans(tail(rules), dcl, absGroup, cncGroup);
+}
+
+abstract production getTrans
+top::TransformRule ::= rules::[TransformRule] dcl::[Decorated NamedSignature]
+{
+    forwards to --if null(rules) then nothing()
+        --else if null(dcl) then nothing() else
+        if head(dcl).fullName == head(rules).namedSig.fullName 
+            then head(rules)
+            else getTrans(tail(rules), dcl, location=top.location);
+}

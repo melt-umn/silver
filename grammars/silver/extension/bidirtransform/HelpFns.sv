@@ -68,6 +68,12 @@ String ::= tName::String
     return "transformed_" ++ tName;
 }
 
+function restoreNm
+String ::= rName::String
+{
+    return "restored_" ++ rName;
+}
+
 -- take a full name i.e. "grammar:name" and produce "name"
 function unFull
 String ::= s::String 
