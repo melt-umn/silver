@@ -3,14 +3,17 @@ grammar silver:extension:bidirtransform;
 synthesized attribute transformRules :: [TransformRule];
 synthesized attribute rwrules :: RewriteRuleList;
 
-nonterminal TransformRuleList with transformRules, rwrules, env, errors, location, absGroup, cncGroup, pp;
-nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp;
+nonterminal TransformRuleList with transformRules, rwrules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst;
+nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst;
 
 concrete production transformRuleCons
 trl::TransformRuleList ::= Vbar_kwd l::TransformRule r::TransformRuleList
 {
     l.env = trl.env;
     r.env = trl.env;
+
+    l.downSubst = trl.downSubst;
+    r.downSubst = l.upSubst;
 
     trl.pp = "|" ++ l.pp ++ r.pp;
 
@@ -27,7 +30,9 @@ concrete production transformRuleSingle
 trl::TransformRuleList ::= Vbar_kwd rule::TransformRule 
 {
     rule.env = trl.env;
-    
+    rule.downSubst = trl.downSubst;
+    trl.upSubst = rule.upSubst;
+
     trl.pp = "|" ++ rule.pp;
 
     trl.errors := rule.errors;
@@ -44,3 +49,44 @@ Maybe<TransformRule> ::= rules::[TransformRule] dcl::[Decorated NamedSignature]
             then just(head(rules))
             else getTrans(tail(rules), dcl);
 }
+
+concrete production transformRule
+tr::TransformRule ::= l::ProductionDef '->' r::Expr
+{
+    l.env = tr.env;
+    r.downSubst = tr.downSubst;
+    tr.upSubst = r.upSubst;
+    
+    tr.pp = l.pp ++ "->" ++ r.pp;
+
+    tr.namedSig = l.namedSig;
+    tr.matchProd = l.matchProd;    
+    tr.errors := l.errors ++ r.errors;
+    tr.outputStmt = (\ e::Expr ->
+        case e of application(_,_,aexpr,_,_,_) ->
+            -- need to pass in e here and supply all of e's inherited attributes
+            -- aka this needs to be a production
+            fillExprPattern(r, aexpr, l.patternList, location=e.location)
+        end
+    );
+
+    -- Do the productions in both the lhs and rhs result in the same type?
+    -- tr.errors <- if !check(l.typerep, r.typerep).typeerror then []
+    --              else [err(tr.location, "Transformation rule type mismatch")];
+}
+
+    -- -- b: are there anonymous variables referred to in the rhs that are not defined in the lhs?
+    -- --    (error rhs)
+    -- local anonVarsMatch :: Boolean = containsAll(prd.definedAnonVars, trr.providedVars); 
+    -- trr.errors <- if anonVarsMatch then [] 
+    --               else err(trr.location, "Undefined anonymous variables in transformation rule")
+    -- -- c: are there anonymous variables defined in the lhs that are not used in the rhs? 
+    -- --    (message: replace these with _)
+    -- --    (error rhs)
+    -- trr.errors <- if containsAll(trr.providedVars, prd.definedAnonVars) then [] 
+    --               else err(trr.location, "Unused anonymous variables in transformation rule")
+    -- -- d: are anonymous variables taken from the lhs used as the same type in the rhs?
+    -- --    (error rhs)
+    -- trr.errors <- if !anonVarsMatch then []
+    --               else if typesMatch(prd.definedAnonVars, trr.providedVars) then []
+    --               else err(trr.location, "Type mismatch in transformation rule")

@@ -61,3 +61,9 @@ Boolean ::= dcl::[DclInfo] hasAttr::String
         then true
         else containsAttr(tail(dcl), hasAttr); 
 }
+
+function transformNm 
+String ::= tName::String 
+{
+    return "transformed_" ++ tName;
+}

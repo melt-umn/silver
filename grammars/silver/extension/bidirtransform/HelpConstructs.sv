@@ -336,3 +336,9 @@ top::Expr ::=
 {
     forwards to trueConst('true', location=top.location);
 }
+
+abstract production mkBoolTypeExpr
+top::TypeExpr ::=
+{
+    forwards to booleanTypeExpr('Boolean', location=top.location);
+}

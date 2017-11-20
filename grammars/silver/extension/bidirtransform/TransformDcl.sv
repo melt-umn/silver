@@ -15,7 +15,6 @@ imports silver:modification:copper;
 imports silver:modification:defaultattr;
 imports silver:modification:ffi;
 imports silver:modification:autocopyattr;
-imports silver:analysis:typechecking:core;
 
 terminal Transform_kwd 'transmute' lexer classes {KEYWORD,RESERVED};
 terminal Rewrite_kwd 'rewrite' lexer classes {KEYWORD,RESERVED};
@@ -46,6 +45,10 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
     local tName::String = qn.name;
     local absGroup::NonterminalList = head(absGroups);
     local cncGroup::NonterminalList = head(cncGroups);
+
+    -- todo?
+    trRules.downSubst = emptySubst();
+    rwRules.downSubst = emptySubst();
 
 --     ag.defs = [lockDef()] ++ toForward.defs;
 
@@ -122,6 +125,9 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
     -- synthesized attribute $tName :: $tType;
     local agDcls3::AGDcl = lockAGDcls(synAttr(tName, transType, location=ag.location), agDcls2, location=ag.location);
 
+    -- synthesized attribute transformed_$tName :: Boolean;
+    local agDcls3_1::AGDcl = lockAGDcls(synAttr(transformNm(tName), mkBoolTypeExpr(location=ag.location), location=ag.location), agDcls2, location=ag.location);    
+
     -- Occurances of attributes, annotations
 
     -- Problem in future: only apply this on attributes that they are not 
@@ -130,7 +136,7 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
 
     -- for $type in allTypes
     -- attribute inhRedex_$tName occurs on $type;
-    local agDcls4::AGDcl = lockAGDcls(attrOn(inhRedexName, allNames, location=ag.location), agDcls3, location=ag.location);
+    local agDcls4::AGDcl = lockAGDcls(attrOn(inhRedexName, allNames, location=ag.location), agDcls3_1, location=ag.location);
     
     -- attribute suppliedOrigin occurs on $cncType;
     local agDcls5::AGDcl = lockAGDcls(attrOn("suppliedOrigin", cncNames, location=ag.location), agDcls4, location=ag.location);
@@ -151,10 +157,13 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
     local agDcls9::AGDcl = lockAGDcls(annoOn("origin", absNames, location=ag.location), agDcls8, location=ag.location);
     
     -- attribute wasTransformed occurs on $absType;
-    local agDcls10::AGDcl = lockAGDcls(attrOn("wasTransformed", absNames, location=ag.location), agDcls9, location=ag.location);  
+    local agDcls10::AGDcl = lockAGDcls(attrOn("wasTransformed", absNames, location=ag.location), agDcls9, location=ag.location);
+
+    -- attribute transformed_$tName occurs on $absType;
+    local agDcls10_1::AGDcl = lockAGDcls(attrOn(transformNm(tName), absNames, location=ag.location), agDcls9, location=ag.location);  
 
     -- attribute $tName occurs on $absType;
-    local agDcls11::AGDcl = lockAGDcls(attrOn(tName, absNames, location=ag.location), agDcls10, location=ag.location);      
+    local agDcls11::AGDcl = lockAGDcls(attrOn(tName, absNames, location=ag.location), agDcls10_1, location=ag.location);      
 
     -- Rewrite rule manipulation
     --
@@ -302,7 +311,7 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
                 case getTrans(trRules.transformRules, dcl) of 
                     | nothing() -> prdRecurse(ns, tName, location=ag.location)
                     | just(rule) -> ifThenElse(
-                        'if', lhsExprAccess("transformed" ++ tName, ns, location=ag.location),
+                        'if', lhsExprAccess(transformNm(tName), ns, location=ag.location),
                         -- todo: add annotations to anything here that is one of 
                         -- our abstract productions
                         'then', rule.outputStmt(nsApply(ns, location=ag.location)),
@@ -323,7 +332,7 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
         if !getTrans(trRules.transformRules, dcl).isJust then agDcls 
         else lockAGDcls(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             prdStmtList([
-                attribDef( ns.outputElement.elementName, "transformed_" ++ tName,
+                attribDef( ns.outputElement.elementName, transformNm(tName),
                     getTrans(trRules.transformRules, dcl).fromJust.matchProd, location=ag.location)
             ], location=ag.location),
             location=ag.location), agDcls, location=ag.location),
@@ -343,7 +352,7 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
                             if !getTrans(trRules.transformRules, dcl).isJust
                             then emptyFunc("nothing", location=ag.location) -- this might error because it has to be a production
                             else ifThenElse(
-                                'if', lhsExprAccess("transformed_"++tName, ns, location=ag.location),
+                                'if', lhsExprAccess(transformNm(tName), ns, location=ag.location),
                                 'then', argFunc("just", oneApp(mkOrigin(ns, location=ag.location), location=ag.location), location=ag.location),
                                 'else', emptyFunc("nothing", location=ag.location),
                             location=ag.location),

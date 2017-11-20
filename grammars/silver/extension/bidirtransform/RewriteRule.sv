@@ -8,8 +8,8 @@ synthesized attribute shouldRestore::Boolean;
 synthesized attribute absStrings::[String];
 synthesized attribute cncStrings::[String];
 
-nonterminal RewriteRuleList with rewriteRules, env, errors, location, absStrings, cncStrings, pp;
-nonterminal RewriteRule with inputType, inputProduction, typerep, outputStmt, shouldRestore, env, errors, location, absGroup, cncGroup, pp;
+nonterminal RewriteRuleList with rewriteRules, env, errors, location, absStrings, cncStrings, pp, downSubst, upSubst;
+nonterminal RewriteRule with inputType, inputProduction, typerep, outputStmt, shouldRestore, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst;
 nonterminal RewriteProduction with name, inputNames, typerep, env, errors, location, absGroup, cncGroup, pp;
 nonterminal RewriteProductionArgs with inputNames, errors, pp;
 
@@ -20,6 +20,10 @@ rrl::RewriteRuleList ::= Vbar_kwd l::RewriteRule r::RewriteRuleList
 {
     l.env = rrl.env;
     r.env = rrl.env;
+
+    l.downSubst = rrl.downSubst;
+    r.downSubst = l.upSubst;
+    rrl.upSubst = r.upSubst;
 
     rrl.pp = "| " ++ l.pp ++ r.pp;
 
@@ -37,6 +41,9 @@ concrete production rewriteRuleSingle
 rrl::RewriteRuleList ::= Vbar_kwd rule::RewriteRule 
 {
     rule.env = rrl.env;
+    
+    rule.downSubst = rrl.downSubst;
+    rrl.upSubst = rule.upSubst;
 
     rrl.pp = "| " ++ rule.pp;
 
@@ -85,13 +92,19 @@ rule::RewriteRule ::= name::QName '::' t::TypeExpr '~~>' e::Expr
 abstract production rewriteRule
 rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd::Maybe<RewriteProduction> restore::Boolean
 {
+    lhs.downSubst = rule.downSubst;
+    rule.upSubst = lhs.upSubst;
+
+    rule.errors := lhs.errors;
+    rule.errors <- if inProd.isJust then inProd.fromJust.errors else [];
+
     rule.typerep = outType;
     rule.inputType = inType;
     rule.inputProduction = inProd;
     rule.shouldRestore = restore;
     rule.outputStmt = case inProd of 
-        | nothing() -> (\ e::Decorated Expr -> fillExpr(lhs, [e], [inName], location=e.location))
-        | just(prd) -> (\ e::Decorated Expr ->
+        | nothing() -> (\ e::Expr -> fillExpr(lhs, [e], [inName], location=e.location))
+        | just(prd) -> (\ e::Expr ->
             case e of application(_, _, aexpr, _, _, _) -> 
                 fillExpr(lhs, pullOutAppExprs(aexpr), prd.inputNames, location=e.location)
             end
@@ -106,6 +119,8 @@ prd::RewriteProduction ::= qn::QName '(' args::RewriteProductionArgs ')'
 
     prd.inputNames = args.inputNames;
     prd.name = qn.name;
+
+    prd.errors := args.errors;
 
     local absSig::[Decorated NamedSignature] = getProdFromGroup(qn.name, prd.absGroup);
     local cncSig::[Decorated NamedSignature] = getProdFromGroup(qn.name, prd.cncGroup);
@@ -122,12 +137,14 @@ arg::RewriteProductionArgs ::= name::QName
 {
     arg.pp = name.pp;
     arg.inputNames = [name.name];
+    arg.errors := [];
 } 
 
 concrete production rewriteProductionArgMany
 arg::RewriteProductionArgs ::= args::RewriteProductionArgs ',' name::QName {
     arg.pp = args.pp ++ "," ++ name.pp;
     arg.inputNames = args.inputNames ++ [name.name];
+    arg.errors := args.errors;
 }
 -- todo: right now this means all elements of a rewrite rule need to be 
 -- anonymous variables. This should change, so some variables can be skipped
