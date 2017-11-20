@@ -18,8 +18,8 @@ top::Expr ::= params::ProductionRHS e::Expr
   local finTy :: Type = finalType(top);
   
   top.translation = 
-s"""(new common.NodeFactory<${e.typerep.transType}>() {
-  public final ${e.typerep.transType} invoke(final Object[] args, final Object[] namedArgs) {
+s"""(new common.NodeFactory<${finTy.outputType.transType}>() {
+  public final ${finTy.outputType.transType} invoke(final Object[] args, final Object[] namedArgs) {
     ${params.lambdaTranslation}
     return ${e.translation};
   }
