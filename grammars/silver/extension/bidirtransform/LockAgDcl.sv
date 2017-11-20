@@ -19,7 +19,6 @@ top::AGDcl ::= h::AGDcl t::AGDcl
     top.errors := h.errors ++ t.errors;
     top.moduleNames = [];--h.moduleNames ++ t.moduleNames;
 
-    --top.foldableRanges = h.foldableRanges ++ t.foldableRanges;
     -- top.syntaxAst = h.syntaxAst ++ t.syntaxAst;
     -- top.parserSpecs = h.parserSpecs ++ t.parserSpecs;
     -- top.flowDefs = h.flowDefs ++ t.flowDefs;
@@ -35,7 +34,7 @@ top::AGDcl ::= h::AGDcl t::AGDcl
     -- top.docsNoDoc = h.docsNoDoc || t.docsNoDoc;
     -- top.docDcls := h.docDcls ++ t.docDcls;
     -- top.mdaSpecs = h.mdaSpecs ++ t.mdaSpecs;
-    --top.ideSpecs = h.ideSpecs ++ t.ideSpecs;
+    -- top.ideSpecs = h.ideSpecs ++ t.ideSpecs;
     -- top.genFiles := h.genFiles ++ t.genFiles;
     -- top.setupInh := h.setupInh ++ t.setupInh;
     -- top.initProd := h.initProd ++ t.initProd;

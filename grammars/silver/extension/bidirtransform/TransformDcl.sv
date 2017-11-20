@@ -15,6 +15,7 @@ imports silver:modification:copper;
 imports silver:modification:defaultattr;
 imports silver:modification:ffi;
 imports silver:modification:autocopyattr;
+imports silver:modification:impide;
 
 terminal Transform_kwd 'transmute' lexer classes {KEYWORD,RESERVED};
 terminal Rewrite_kwd 'rewrite' lexer classes {KEYWORD,RESERVED};
@@ -383,9 +384,26 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
 
     -- default annotation location = ag.location;
 
-    --ag.defs = [lockDef()] ++ agDcls22.defs;
+    --ag.defs = [lockDef()] ++ agDcls22.defs ++ [lockDef()];
     ag.defs = [];
     ag.moduleNames = [];
+    ag.mdaSpecs = [];
+    ag.ideSpecs = [];
+    ag.syntaxAst = [];
+    ag.parserSpecs = [];
+    ag.flowDefs = [];
+    ag.docs := [];
+    ag.docsHeader = "";
+    ag.docsSplit = "";
+    ag.docsNoDoc = false;
+    ag.docDcls := [];
+    ag.genFiles := [];
+    ag.setupInh := "";
+    ag.initProd := "";
+    ag.initValues := "";
+    ag.postInit := "";
+    ag.initWeaving := "";
+    ag.valueWeaving := "";
 
     --ag.liftedAGDcls = agDcls22; 
     forwards to agDcls22;

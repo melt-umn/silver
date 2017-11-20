@@ -56,7 +56,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
 }
 
 aspect production aspectDefaultProduction
-top::AGDcl ::= 'aspect' 'default' 'production' 
+top::AGDcl ::= 'aspect' Default_kwd 'production' 
                lhs::Name '::' te::TypeExpr '::=' body::ProductionBody 
 {
     body.prodOutput = te.typerep;    
