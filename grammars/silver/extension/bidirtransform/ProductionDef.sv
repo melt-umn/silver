@@ -1,6 +1,6 @@
 grammar silver:extension:bidirtransform;
 
-nonterminal ProductionDef with env, errors, namedSig, patternList, matchProd, typerep, inputNames, location, absGroup, cncGroup, pp, grammarName;
+nonterminal ProductionDef with env, errors, namedSig, patternList, matchProd, typerep, inputNames, location, absGroup, cncGroup, pp, grammarName, config;
 
 synthesized attribute patternList::PatternList;
 synthesized attribute matchProd::Expr;
@@ -16,6 +16,7 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
     
     pd.pp = qn.pp ++ "(" ++ args.pp ++ ")";
 
+    args.config = pd.config;
     args.env = pd.env;
     
     local absSig::[Decorated NamedSignature] = getProdFromGroup(qn.name, pd.absGroup);

@@ -46,9 +46,14 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
     local absGroup::NonterminalList = head(absGroups);
     local cncGroup::NonterminalList = head(cncGroups);
 
+    trRules.config = ag.config;
+    rwRules.config = ag.config;
+
     -- todo?
     trRules.downSubst = emptySubst();
     rwRules.downSubst = emptySubst();
+    trRules.finalSubst = rwRules.upSubst;
+    rwRules.finalSubst = trRules.finalSubst;
 
 --     ag.defs = [lockDef()] ++ toForward.defs;
 

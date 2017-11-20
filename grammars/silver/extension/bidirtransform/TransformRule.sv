@@ -3,17 +3,22 @@ grammar silver:extension:bidirtransform;
 synthesized attribute transformRules :: [TransformRule];
 synthesized attribute rwrules :: RewriteRuleList;
 
-nonterminal TransformRuleList with transformRules, rwrules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst;
-nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst;
+nonterminal TransformRuleList with transformRules, rwrules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
+nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
 
 concrete production transformRuleCons
 trl::TransformRuleList ::= Vbar_kwd l::TransformRule r::TransformRuleList
 {
+    l.config = trl.config;
+    r.config = trl.config;
+
     l.env = trl.env;
     r.env = trl.env;
 
     l.downSubst = trl.downSubst;
     r.downSubst = l.upSubst;
+    l.finalSubst = r.upSubst;
+    r.finalSubst = l.finalSubst;
 
     trl.pp = "|" ++ l.pp ++ r.pp;
 
@@ -29,9 +34,11 @@ trl::TransformRuleList ::= Vbar_kwd l::TransformRule r::TransformRuleList
 concrete production transformRuleSingle
 trl::TransformRuleList ::= Vbar_kwd rule::TransformRule 
 {
+    rule.config = trl.config;
     rule.env = trl.env;
     rule.downSubst = trl.downSubst;
     trl.upSubst = rule.upSubst;
+    rule.finalSubst = trl.upSubst;
 
     trl.pp = "|" ++ rule.pp;
 
@@ -53,9 +60,12 @@ Maybe<TransformRule> ::= rules::[TransformRule] dcl::[Decorated NamedSignature]
 concrete production transformRule
 tr::TransformRule ::= l::ProductionDef '->' r::Expr
 {
+    l.config = tr.config;
+    r.config = tr.config;
     l.env = tr.env;
     r.downSubst = tr.downSubst;
     tr.upSubst = r.upSubst;
+    r.finalSubst = tr.upSubst;
     
     tr.pp = l.pp ++ "->" ++ r.pp;
 

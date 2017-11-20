@@ -8,22 +8,27 @@ synthesized attribute shouldRestore::Boolean;
 synthesized attribute absStrings::[String];
 synthesized attribute cncStrings::[String];
 
-nonterminal RewriteRuleList with rewriteRules, env, errors, location, absStrings, cncStrings, pp, downSubst, upSubst;
-nonterminal RewriteRule with inputType, inputProduction, typerep, outputStmt, shouldRestore, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst;
-nonterminal RewriteProduction with name, inputNames, typerep, env, errors, location, absGroup, cncGroup, pp;
-nonterminal RewriteProductionArgs with inputNames, errors, pp;
+nonterminal RewriteRuleList with rewriteRules, env, errors, location, absStrings, cncStrings, pp, downSubst, upSubst, finalSubst, config;
+nonterminal RewriteRule with inputType, inputProduction, typerep, outputStmt, shouldRestore, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
+nonterminal RewriteProduction with name, inputNames, typerep, env, errors, location, absGroup, cncGroup, pp, config;
+nonterminal RewriteProductionArgs with inputNames, errors, pp, config;
 
 terminal RestoreArrow_t '~~>' lexer classes {SPECOP};
 
 concrete production rewriteRuleCons
 rrl::RewriteRuleList ::= Vbar_kwd l::RewriteRule r::RewriteRuleList
 {
+    l.config = rrl.config;
+    r.config = rrl.config;
+
     l.env = rrl.env;
     r.env = rrl.env;
 
     l.downSubst = rrl.downSubst;
     r.downSubst = l.upSubst;
     rrl.upSubst = r.upSubst;
+    l.finalSubst = r.upSubst;
+    r.finalSubst = l.finalSubst;
 
     rrl.pp = "| " ++ l.pp ++ r.pp;
 
@@ -40,10 +45,12 @@ rrl::RewriteRuleList ::= Vbar_kwd l::RewriteRule r::RewriteRuleList
 concrete production rewriteRuleSingle
 rrl::RewriteRuleList ::= Vbar_kwd rule::RewriteRule 
 {
+    rule.config = rrl.config;
     rule.env = rrl.env;
     
     rule.downSubst = rrl.downSubst;
     rrl.upSubst = rule.upSubst;
+    rule.finalSubst = rrl.upSubst;
 
     rrl.pp = "| " ++ rule.pp;
 
@@ -92,8 +99,11 @@ rule::RewriteRule ::= name::QName '::' t::TypeExpr '~~>' e::Expr
 abstract production rewriteRule
 rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd::Maybe<RewriteProduction> restore::Boolean
 {
+    lhs.config = rule.config;
+
     lhs.downSubst = rule.downSubst;
     rule.upSubst = lhs.upSubst;
+    lhs.finalSubst = rule.upSubst;
 
     rule.errors := lhs.errors;
     rule.errors <- if inProd.isJust then inProd.fromJust.errors else [];
