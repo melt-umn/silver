@@ -171,7 +171,7 @@ top::Expr ::= rwr::RewriteRule rhsTy::String lhsTy::String elemName::String
         if rhsTy == lhsTy || !rwr.shouldRestore then baseName(elemName, location=top.location) 
         -- Otherwise pass the appropriate restored type from
         -- this origin into the rule
-        else exprAccess(elemName, "restored"++rwr.inputType.typeName, location=top.location));
+        else exprAccess(elemName, "restored"++unFull(rwr.inputType.typeName), location=top.location));
 } 
 
 abstract production applyRwProd
@@ -220,7 +220,7 @@ function rwMatch
 Maybe<RewriteRule> ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSignature
 {
     return case rwProd(rwrs, outType, ns) of
-        | nothing() -> rwID(rwrs, ns.typerep.typeName, outType)
+        | nothing() -> rwID(rwrs, unFull(ns.typerep.typeName), outType)
         | just(rule) -> just(rule)
     end;
 }
@@ -236,7 +236,7 @@ Maybe<RewriteRule> ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSi
     return if null(rwrs) then nothing()
         else if hd.inputProduction.isJust &&
                 hd.inputProduction.fromJust.name == ns.fullName &&
-                hd.typerep.typeName == outType
+                unFull(hd.typerep.typeName) == outType
         then just(hd)
         else rwProd(tail(rwrs), outType, ns);
 }
@@ -248,7 +248,7 @@ Maybe<RewriteRule> ::= rwrs::[RewriteRule] inType::String outType::String
     local hd::RewriteRule = head(rwrs);
 
     return if null(rwrs) then nothing()
-        else if hd.typerep.typeName == outType &&  hd.inputType.typeName == inType 
+        else if unFull(hd.typerep.typeName) == outType &&  unFull(hd.inputType.typeName) == inType 
         then just(hd)
         else rwID(tail(rwrs), inType, outType);
 }

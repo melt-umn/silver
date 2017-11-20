@@ -67,3 +67,10 @@ String ::= tName::String
 {
     return "transformed_" ++ tName;
 }
+
+-- take a full name i.e. "grammar:name" and produce "name"
+function unFull
+String ::= s::String 
+{
+    return substring(lastIndexOf(":", s)+1, length(s), s);
+}

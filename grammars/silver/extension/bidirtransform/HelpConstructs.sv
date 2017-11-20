@@ -192,7 +192,7 @@ abstract production mkOrigin
 top::Expr ::= ns::Decorated NamedSignature
 {
     forwards to argFunc(
-        mkOriginName(ns.outputElement.typerep.typeName), 
+        mkOriginName(unFull(ns.outputElement.typerep.typeName)), 
         oneApp(baseName(ns.outputElement.elementName, location=top.location), location=top.location),
         location=top.location);
 }

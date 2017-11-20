@@ -8,7 +8,7 @@ top::Expr ::= 'origins' '{' e::Expr '}'
     local newAnnos::AnnoAppExprs = annoAppExprList([
         annExpr("labels", emptyList('[',']', location=top.location), location=top.location),
         annExpr("redex", emptyFunc("nothing", location=top.location), location=top.location),
-        annExpr("origin", emptyFunc(mkOriginName(top.prodOutput.typeName), location=top.location), location=top.location)
+        annExpr("origin", emptyFunc(mkOriginName(unFull(top.prodOutput.typeName)), location=top.location), location=top.location)
     ], location=top.location);
     
     forwards to 

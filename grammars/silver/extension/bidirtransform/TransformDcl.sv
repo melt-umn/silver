@@ -262,7 +262,7 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
         lockAGDcls(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
             attribDef( ns.outputElement.elementName, "wasTransformed",
                 foldl(\ e::Expr ie::NamedSignatureElement -> 
-                    if contains(ie.typerep.typeName, absNames)
+                    if contains(unFull(ie.typerep.typeName), absNames)
                     then or(e, '||', exprAccess("wasTransformed", ie.elementName, location=ag.location), location=ag.location)
                     else e,
                 argFunc("wasTransformed",
@@ -292,7 +292,7 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
                                 lhsExprAccess("origin", ns, location=ag.location), '.', qNameAttrOccur(qName(ag.location, "concreteOrigin"), location=ag.location), location=ag.location),
                                 '.', qNameAttrOccur(qName(ag.location, "restored"++rhs), location=ag.location), location=ag.location), 
                         location=ag.location)
-                        else applyRw(rule, rhs, ns.typerep.typeName, ns.outputElement.elementName, location=ag.location),    
+                        else applyRw(rule, rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
                     location=ag.location), location=ag.location)
                 end,
             productionStmtsNil(location=ag.location), cncNames), location=ag.location), agDcls, location=ag.location),

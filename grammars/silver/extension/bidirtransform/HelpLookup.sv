@@ -141,7 +141,7 @@ function nsMatchesStr
 Boolean ::= ns::Decorated NamedSignature fnnt::String 
 {
     -- want this
-    return ns.outputElement.typerep.typeName == fnnt;
+    return unFull(ns.outputElement.typerep.typeName) == fnnt;
     -- but, accessing attributes is bad
     -- return case ns of 
     --     | namedSignature(_, _, oe, _) -> nsMatchesStr2(oe, fnnt)
@@ -162,7 +162,7 @@ function nsMatchesStr3
 Boolean ::= ty::Type fnnt::String
 {
     return case ty of 
-        | nonterminalType(s, _) -> s == fnnt
+        | nonterminalType(s, _) -> unFull(s) == fnnt
         | _ -> false
     end;
 }
