@@ -1,387 +1,338 @@
 grammar silver:extension:bidirtransform;
 
 
-function qAttr
-QNameAttrOccur ::= name::String loc::Location
+abstract production qAttr
+top::QNameAttrOccur ::= name::String 
 {
-    return qNameAttrOccur(qName(loc, name), location=loc);
+    forwards to qNameAttrOccur(qName(top.location, name), location=top.location);
 }
 
-function emptyFunc
-Expr ::= name::String loc::Location
+abstract production emptyFunc
+top::Expr ::= name::String 
 {
-    return applicationEmpty(baseName(loc,name),'(',')', location=loc);
+    forwards to applicationEmpty(baseName(name, location=top.location),'(',')', location=top.location);
 }
 
-function argFunc
-Expr ::= name::String args::AppExprs loc::Location
+abstract production argFunc
+top::Expr ::= name::String args::AppExprs 
 {
-    return applicationExpr(baseName(loc,name), '(',args,')', location=loc);
+    forwards to applicationExpr(baseName(name, location=top.location), '(',args,')', location=top.location);
 }
 
-function fullFunc
-Expr ::= name::String args::AppExprs annos::AnnoAppExprs loc::Location
+abstract production fullFunc
+top::Expr ::= name::String args::AppExprs annos::AnnoAppExprs 
 {
-    return application(baseName(loc,name), '(',args,',',annos,')', location=loc);
+    forwards to application(baseName(name, location=top.location), '(',args,',',annos,')', location=top.location);
 }
 
-function synAttr
-AGDcl ::= loc::Location nme::String tyexpr::TypeExpr
+abstract production synAttr
+top::AGDcl ::= nme::String tyexpr::TypeExpr
 {
-    return attributeDclSyn('synthesized', 'attribute', name(nme, loc),
-        botlNone(location=loc), '::', tyexpr, ';', location=loc);
+    forwards to attributeDclSyn('synthesized', 'attribute', name(nme, top.location),
+        botlNone(location=top.location), '::', tyexpr, ';', location=top.location);
 }
 
-function lhsDef
-DefLHS ::= loc::Location s::String 
+abstract production mkLhsDef
+top::DefLHS ::= s::String 
 {
-    return concreteDefLHS(qName(loc, s), location=loc);
+    forwards to concreteDefLHS(qName(top.location, s), location=top.location);
 }
 
-function autocAttr
-AGDcl ::= loc::Location nme::String tyexpr::TypeExpr
+abstract production autocAttr
+top::AGDcl ::= nme::String tyexpr::TypeExpr
 {
-    return attributeDclAuto('autocopy', 'attribute', name(nme, loc),
-        botlNone(location=loc), '::', tyexpr, ';', location=loc);
+    forwards to attributeDclAuto('autocopy', 'attribute', name(nme, top.location),
+        botlNone(location=top.location), '::', tyexpr, ';', location=top.location);
 }
 
-function annoOn
-AGDcl ::= loc::Location name::String onNames::[String]
+abstract production annoOn
+top::AGDcl ::= name::String onNames::[String]
 {
-    return if null(onNames) then emptyAGDcl(location=loc)
+    forwards to if null(onNames) then emptyAGDcl(location=top.location)
         else lockAGDcls(
-            annotateDcl('annotation', qName(loc, name), botlNone(location=loc),
-                'occurs', 'on', qName(loc, head(onNames)), botlNone(location=loc), ';', location=loc),
-            annoOn(loc, name, tail(onNames)), location=loc);
+            annotateDcl('annotation', qName(top.location, name), botlNone(location=top.location),
+                'occurs', 'on', qName(top.location, head(onNames)), botlNone(location=top.location), ';', location=top.location),
+            annoOn(name, tail(onNames), location=top.location), location=top.location);
 
 }
 
-function attrOn
-AGDcl ::= loc::Location name::String onNames::[String]
+abstract production attrOn
+top::AGDcl ::= name::String onNames::[String]
 {
-    return if null(onNames) then emptyAGDcl(location=loc)
+    forwards to if null(onNames) then emptyAGDcl(location=top.location)
         else lockAGDcls(
-            attributionDcl('attribute', qName(loc, name), botlNone(location=loc), 
-                'occurs', 'on', qName(loc, head(onNames)), botlNone(location=loc), ';', location=loc),
-            attrOn(loc, name, tail(onNames)), location=loc);
+            attributionDcl('attribute', qName(top.location, name), botlNone(location=top.location), 
+                'occurs', 'on', qName(top.location, head(onNames)), botlNone(location=top.location), ';', location=top.location),
+            attrOn(name, tail(onNames), location=top.location), location=top.location);
 }
 
-function dclQName
-(QName ::= String) ::= loc::Location
+abstract production consAnnoAppExprs
+top::AnnoAppExprs ::= a::AnnoAppExprs b::AnnoAppExprs
 {
-    return (\ s::String -> qName(loc, s));
-}
-
-function consAnnoAppExprs
-AnnoAppExprs ::= loc::Location a::AnnoAppExprs b::AnnoAppExprs
-{
-    return case b of 
-        | snocAnnoAppExprs(c,_,expr) -> consAnnoAppExprs(loc, snocAnnoAppExprs(a, ',', expr, location=loc), c)
-        | oneAnnoAppExprs(expr) -> snocAnnoAppExprs(a, ',', expr, location=loc)
+    forwards to case b of 
+        | snocAnnoAppExprs(c,_,expr) -> consAnnoAppExprs(snocAnnoAppExprs(a, ',', expr, location=top.location), c, location=top.location)
+        | oneAnnoAppExprs(expr) -> snocAnnoAppExprs(a, ',', expr, location=top.location)
         | _ -> a
     end;
 }
 
-function nsAspectProdSig
-AspectProductionSignature ::= loc::Location ns::Decorated NamedSignature 
+abstract production nsAspectProdSig
+top::AspectProductionSignature ::= ns::Decorated NamedSignature 
 {
-    return aspectProductionSignature(
+    forwards to aspectProductionSignature(
         aspectProductionLHSFull(
-            name(ns.outputElement.elementName, loc), 
-            ns.outputElement.typerep, location=loc),
+            name(ns.outputElement.elementName, top.location), 
+            ns.outputElement.typerep, location=top.location),
         '::=',
-        nsAspectProdRHS(loc, ns.inputElements), location=loc);
+        nsAspectProdRHS(ns.inputElements, location=top.location), location=top.location);
 }
 
-function nsAspectProdRHS
-AspectRHS ::= loc::Location inElements::[NamedSignatureElement]
+abstract production nsAspectProdRHS
+top::AspectRHS ::= inElements::[NamedSignatureElement]
 {
     local hd::NamedSignatureElement = head(inElements);
 
-    return if null(inElements) then aspectRHSElemNil(location=loc)
+    forwards to if null(inElements) then aspectRHSElemNil(location=top.location)
         else aspectRHSElemCons(
-            aspectRHSElemTyped(name(hd.elementName, loc), '::', typerepTypeExpr(hd.typerep, location=loc), location=loc), 
-            nsAspectProdRHS(loc, tail(inElements)), location=loc);
+            aspectRHSElemTyped(name(hd.elementName, top.location), '::', typerepTypeExpr(hd.typerep, location=top.location), location=top.location), 
+            nsAspectProdRHS(tail(inElements), location=top.location), location=top.location);
 }
 
-function aspectProdStmt
-AGDcl ::= loc::Location dcl::[Decorated NamedSignature] fn::(ProductionStmt ::= Decorated NamedSignature)
+abstract production aspectProdStmt
+top::AGDcl ::= dcl::[Decorated NamedSignature] fn::(ProductionStmt ::= Decorated NamedSignature)
 {
-    return aspectProdStmts(loc,dcl,\ ns::Decorated NamedSignature ->
-        productionStmtsSnoc(productionStmtsNil(location=loc), fn(ns), location=loc)
-    );
+    forwards to aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+        productionStmtsSnoc(productionStmtsNil(location=top.location), fn(ns), location=top.location),
+      location=top.location);
 }
 
-function aspectProdStmts
-AGDcl ::= loc::Location dcl::[Decorated NamedSignature] fn::(ProductionStmts ::= Decorated NamedSignature)
+abstract production aspectProdStmts
+top::AGDcl ::= dcl::[Decorated NamedSignature] fn::(ProductionStmts ::= Decorated NamedSignature)
 {
-    return if null(dcl) then emptyAGDcl(location=loc) else 
+    forwards to if null(dcl) then emptyAGDcl(location=top.location) else 
         aspectProductionDcl('aspect', 'production', 
-            qName(loc, head(dcl).fullName), nsAspectProdSig(loc, head(dcl)), 
-            productionBody('{', fn(head(dcl)), '}', location=loc), location=loc);
+            qName(top.location, head(dcl).fullName), nsAspectProdSig(head(dcl), location=top.location), 
+            productionBody('{', fn(head(dcl)), '}', location=top.location), location=top.location);
 
 }
 
-function prdStmtList
-ProductionStmts ::= loc::Location stmts::[ProductionStmt]
+abstract production prdStmtList
+top::ProductionStmts ::= stmts::[ProductionStmt]
 {
-    return if null(stmts) then productionStmtsNil(location=loc)
-        else productionStmtsSnoc(prdStmtList(loc, tail(stmts)), head(stmts), location=loc);
+    forwards to if null(stmts) then productionStmtsNil(location=top.location)
+        else productionStmtsSnoc(prdStmtList(tail(stmts), location=top.location), head(stmts), location=top.location);
 }
 
-function prdBody
-ProductionBody ::= loc::Location stmts::[ProductionStmt]
+abstract production prdBody
+top::ProductionBody ::= stmts::[ProductionStmt]
 {
-    return productionBody('{', prdStmtList(loc, stmts), '}', location=loc);
+    forwards to productionBody('{', prdStmtList(stmts, location=top.location), '}', location=top.location);
 }
 
-function attribDef
-ProductionStmt ::= loc::Location lhs::String att::String eqs::Expr
+abstract production attribDef
+top::ProductionStmt ::= lhs::String att::String eqs::Expr
 {
-    return attributeDef(
-        lhsDef(loc, lhs), 
+    forwards to attributeDef(
+        mkLhsDef(lhs, location=top.location), 
         '.',
-        qAttr(att, loc), 
+        qAttr(att, location=top.location), 
         '=', 
         eqs, 
         ';', 
-        location=loc);
+        location=top.location);
 }
 
-function qnTyId
-QNameType ::= loc::Location s::String 
+abstract production qnTyId
+top::QNameType ::= s::String 
 {
-    return qNameTypeId(terminal(IdUpper_t, s), location=loc);
+    forwards to qNameTypeId(terminal(IdUpper_t, s), location=top.location);
 }
 
-function sTyExpr
-TypeExpr ::= loc::Location s::String 
+abstract production sTyExpr
+top::TypeExpr ::= s::String 
 {
-    return nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, s), location=loc),
-        botlNone(location=loc), location=loc);
+    forwards to nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, s), location=top.location),
+        botlNone(location=top.location), location=top.location);
 }
 
-function qTyExpr
-TypeExpr ::= loc::Location q::QName 
+abstract production qTyExpr
+top::TypeExpr ::= q::QName 
 {
-    return sTyExpr(loc, q.name);
+    forwards to sTyExpr(q.name, location=top.location);
 }
 
-function lhsAccess
-AppExpr ::= loc::Location name::String ns::Decorated NamedSignature 
+abstract production lhsAccess
+top::AppExpr ::= name::String ns::Decorated NamedSignature 
 {
-    return namedAccess(loc, name, ns.outputElement.elementName);
+    forwards to namedAccess(name, ns.outputElement.elementName, location=top.location);
 }  
 
-function namedAccess
-AppExpr ::= loc::Location name::String accessOn::String 
+abstract production namedAccess
+top::AppExpr ::= name::String accessOn::String 
 {
-    return presentAppExpr(exprAccess(loc,name,accessOn), location=loc);
+    forwards to presentAppExpr(exprAccess(name,accessOn, location=top.location), location=top.location);
 } 
 
-function lhsExprAccess
-Expr ::= loc::Location name::String ns::Decorated NamedSignature
+abstract production lhsExprAccess
+top::Expr ::= name::String ns::Decorated NamedSignature
 {
-    return exprAccess(loc, name, ns.outputElement.elementName);
+    forwards to exprAccess(name, ns.outputElement.elementName, location=top.location);
 }
 
-function exprAccess
-Expr ::= loc::Location name::String accessOn::String 
+abstract production exprAccess
+top::Expr ::= name::String accessOn::String 
 {
-    return access(baseName(loc, accessOn),'.', 
-        qNameAttrOccur(qName(loc, name), 
-        location=loc), location=loc);
+    forwards to access(baseName(accessOn, location=top.location),'.', 
+        qNameAttrOccur(qName(top.location, name), 
+        location=top.location), location=top.location);
 } 
 
 
-function mkOrigin
-Expr ::= loc::Location ns::Decorated NamedSignature
+abstract production mkOrigin
+top::Expr ::= ns::Decorated NamedSignature
 {
-    return argFunc(
+    forwards to argFunc(
         mkOriginName(ns.outputElement.typerep.typeName), 
-        oneApp(loc, baseName(loc, ns.outputElement.elementName)), loc);
+        oneApp(baseName(ns.outputElement.elementName, location=top.location), location=top.location),
+        location=top.location);
 }
 
--- This isn't here because this is difficult,
--- but so we are consistent whenver we create this name
-function mkOriginName
-String ::= typeName::String
+abstract production oneApp
+top::AppExprs ::= e::Expr
 {
-    return "origin_" ++ typeName;
+    forwards to oneAppExprs(presentAppExpr(e, location=top.location), location=top.location);
 }
 
-function oneApp
-AppExprs ::= loc::Location e::Expr
-{
-    return oneAppExprs(presentAppExpr(e, location=loc), location=loc);
-}
-
-function argTransAttrs
-AppExprs ::= loc::Location nsElems::[NamedSignatureElement] attr::String
+abstract production argTransAttrs
+top::AppExprs ::= nsElems::[NamedSignatureElement] attr::String
 {   
     -- Todo: (here and other places) what about elements without
     -- this attribute, esp. builtins?
-    return if length(nsElems) == 1 
-        then oneApp(loc, exprAccess(loc, attr, head(nsElems).elementName))
-        else snocAppExprs(argTransAttrs(loc,tail(nsElems), attr), ',',
-            presentAppExpr(exprAccess(loc, attr, head(nsElems).elementName),
-        location=loc), location=loc);
+    forwards to if length(nsElems) == 1 
+        then oneApp(exprAccess(attr, head(nsElems).elementName, location=top.location), location=top.location)
+        else snocAppExprs(argTransAttrs(tail(nsElems), attr, location=top.location), ',',
+            presentAppExpr(exprAccess(attr, head(nsElems).elementName, location=top.location),
+        location=top.location), location=top.location);
 }
 
-function prdRecurse
-Expr ::= loc::Location ns::Decorated NamedSignature tName::String
+abstract production prdRecurse
+top::Expr ::= ns::Decorated NamedSignature tName::String
 {
-    return application(baseName(loc, ns.fullName), '(',
-        argTransAttrs(loc, ns.inputElements, tName),
+    forwards to application(baseName(ns.fullName, location=top.location), '(',
+        argTransAttrs(ns.inputElements, tName, location=top.location),
         ',',
         annoAppExprList([
-            annExpr(loc, "labels", emptyList('[',']', location=loc)),
+            annExpr("labels", emptyList('[',']', location=top.location), location=top.location),
             -- This is not worked out completely
             -- We want to access the inhOrigin of the leftmost rhs element, if it has
             -- an inhOrigin, and otherwise top.inhOrigin
-            annExpr(loc, "redex", exprAccess(loc, "inhOrigin_"++tName, inhOriginName(ns))),
-            annExpr(loc, "origin", mkOrigin(loc, ns))
-        ], loc),
-        ')', location=loc);
+            annExpr("redex", exprAccess("inhOrigin_"++tName, inhOriginName(ns), location=top.location), location=top.location),
+            annExpr("origin", mkOrigin(ns, location=top.location), location=top.location)
+        ], location=top.location),
+        ')', location=top.location);
 }
 
-function baseName
-Expr ::= loc::Location name::String 
+abstract production baseName
+top::Expr ::= name::String 
 {
-    return baseExpr(qName(loc,name), location=loc);
+    forwards to baseExpr(qName(top.location, name), location=top.location);
 }
 
-function presentName
-AppExpr ::= loc::Location name::String
+abstract production presentName
+top::AppExpr ::= name::String
 {
-    return presentAppExpr(baseName(loc,name), location=loc);
+    forwards to presentAppExpr(baseName(name, location=top.location), location=top.location);
 }
 
-function appExprList
-AppExprs ::= aExprs::[AppExpr] loc::Location
+abstract production appExprList
+top::AppExprs ::= aExprs::[AppExpr] 
 {
-    return if length(aExprs) == 1 
-        then oneAppExprs(head(aExprs), location=loc)
+    forwards to if length(aExprs) == 1 
+        then oneAppExprs(head(aExprs), location=top.location)
         else snocAppExprs(
-            appExprList(tail(aExprs), loc), ',', head(aExprs), location=loc);
+            appExprList(tail(aExprs), location=top.location), ',', head(aExprs), location=top.location);
 }
 
-function annoAppExprList
-AnnoAppExprs ::= aaExprs::[AnnoExpr] loc::Location
+abstract production annoAppExprList
+top::AnnoAppExprs ::= aaExprs::[AnnoExpr] 
 {  
-    return if length(aaExprs) == 1 
-        then oneAnnoAppExprs(head(aaExprs), location=loc)
+    forwards to if length(aaExprs) == 1 
+        then oneAnnoAppExprs(head(aaExprs), location=top.location)
         else snocAnnoAppExprs(
-            annoAppExprList(tail(aaExprs), loc), ',', head(aaExprs), location=loc);
+            annoAppExprList(tail(aaExprs), location=top.location), ',', head(aaExprs), location=top.location);
 }
 
-function annExpr
-AnnoExpr ::= loc::Location annoName::String e::Expr
+abstract production annExpr
+top::AnnoExpr ::= annoName::String e::Expr
 {
-    return annoExpr(qName(loc, annoName), '=', presentAppExpr(e,
-        location=loc),location=loc);
+    forwards to annoExpr(qName(top.location, annoName), '=', presentAppExpr(e,
+        location=top.location),location=top.location);
 }
 
-function inhOriginName
-String ::= ns::Decorated NamedSignature
+abstract production nsApply
+top::Expr ::= ns::Decorated NamedSignature
 {
-    return if !null(ns.inputElements)
-        then validInhOrigin(head(ns.inputNames), ns.outputElement.elementName)
-        else ns.outputElement.elementName;
+    forwards to if null(ns.inputElements) 
+        then emptyFunc(ns.fullName, location=top.location)
+        else argFunc(ns.fullName, nsElemsToAppExprs(ns.inputElements, location=top.location),
+            location=top.location);
 }
 
-function validInhOrigin
-String ::= test::String def::String
+abstract production nsElemsToAppExprs
+top::AppExprs ::= nsElems::[NamedSignatureElement]
 {
-    -- For now just check against built ins
-    return if test == "Integer" then def
-        else if test == "String" then def
-        -- else etc.
-        else test;
-}
-
-function nsApply
-Expr ::= loc::Location ns::Decorated NamedSignature
-{
-    return if null(ns.inputElements) 
-        then emptyFunc(ns.fullName, loc)
-        else argFunc(ns.fullName, nsElemsToAppExprs(loc, ns.inputElements), loc);
-}
-
-function nsElemsToAppExprs
-AppExprs ::= loc::Location nsElems::[NamedSignatureElement]
-{
-    return if null(nsElems) then emptyAppExprs(location=loc)
+    forwards to if null(nsElems) then emptyAppExprs(location=top.location)
         else snocAppExprs(
-            nsElemsToAppExprs(loc, allHead(nsElems)),
+            nsElemsToAppExprs(allHead(nsElems), location=top.location),
             ',',
-            nsElemToAppExpr(loc, last(nsElems)),
-            location=loc); 
+            nsElemToAppExpr(last(nsElems), location=top.location),
+            location=top.location); 
 }
 
-function nsElemToAppExpr
-AppExpr ::= loc::Location nsElem::NamedSignatureElement
+abstract production nsElemToAppExpr
+top::AppExpr ::= nsElem::NamedSignatureElement
 {
-    return presentName(loc, nsElem.elementName);
+    forwards to presentName(nsElem.elementName, location=top.location);
 }
 
-function allHead
-[a] ::= ls::[a]
+abstract production botlOneString
+top::BracketedOptTypeExprs ::= s::String
 {
-    return if length(ls) == 1 then [] else head(ls) :: allHead(tail(ls));
+    forwards to botlSome('<', 
+        typeListSingle(sTyExpr(s, location=top.location),location=top.location),
+        '>', location=top.location);
 }
 
-function hasLocDcl
-Boolean ::= dcl::[DclInfo]
+abstract production mkProdSig
+top::ProductionSignature ::= lhsName::String lhsType::String rhsName::String rhsType::String
 {
-    return if null(dcl) then false 
-        else if head(dcl).isAnnotation && head(dcl).fullName == "location"
-        then true
-        else hasLocDcl(tail(dcl));
-}
-
-function hasNamedAttr
-Boolean ::= tyName::String env::Decorated Env hasAttr::String
-{
-    return containsAttr(getAttrsOn(tyName, env), hasAttr);
-}
-
-function containsAttr
-Boolean ::= dcl::[DclInfo] hasAttr::String
-{   
-    return if null(dcl) then false
-        else if head(dcl).fullName == hasAttr
-        then true
-        else containsAttr(tail(dcl), hasAttr); 
-}
-
-function botlOneString
-BracketedOptTypeExprs ::= loc::Location s::String
-{
-    return botlSome('<', 
-        typeListSingle(sTyExpr(loc,s),location=loc),
-        '>', location=loc);
-}
-
-function mkProdSig
-ProductionSignature ::= loc::Location lhsName::String lhsType::String rhsName::String rhsType::String
-{
-    return productionSignature(
-        productionLHS(name(lhsName, loc), '::', sTyExpr(loc, lhsType), location=loc),
+    forwards to productionSignature(
+        productionLHS(name(lhsName, top.location), '::', sTyExpr(lhsType, location=top.location), location=top.location),
         '::=',
         productionRHSCons(
-            productionRHSElem(name(rhsName, loc), '::', sTyExpr(loc, rhsType), location=loc),
-            productionRHSNil(location=loc), location=loc), location=loc);
+            productionRHSElem(name(rhsName, top.location), '::', sTyExpr(rhsType, location=top.location), location=top.location),
+            productionRHSNil(location=top.location), location=top.location), location=top.location);
 }
 
-function mkAspectProdSig
-AspectProductionSignature ::= loc::Location lhsName::String lhsType::String rhsName::String rhsType::String
+abstract production mkAspectProdSig
+top::AspectProductionSignature ::= lhsName::String lhsType::String rhsName::String rhsType::String
 {
-    return aspectProductionSignature(
-        aspectProductionLHSTyped(name(lhsName, loc), '::', sTyExpr(loc, lhsType), location=loc),
+    forwards to aspectProductionSignature(
+        aspectProductionLHSTyped(name(lhsName, top.location), '::', sTyExpr(lhsType, location=top.location), location=top.location),
         '::=',
         aspectRHSElemCons(
-            aspectRHSElemTyped(name(rhsName, loc), '::', sTyExpr(loc, rhsType), location=loc),
-            aspectRHSElemNil(location=loc), location=loc), location=loc);
+            aspectRHSElemTyped(name(rhsName, top.location), '::', sTyExpr(rhsType, location=top.location), location=top.location),
+            aspectRHSElemNil(location=top.location), location=top.location), location=top.location);
 }
 
+abstract production mkFalse
+top::Expr ::= 
+{
+    forwards to falseConst('false', location=top.location);
+}
+
+abstract production mkTrue
+top::Expr ::= 
+{
+    forwards to trueConst('true', location=top.location);
+}

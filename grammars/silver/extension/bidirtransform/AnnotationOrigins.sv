@@ -6,16 +6,16 @@ concrete production originEq
 top::Expr ::= 'origins' '{' e::Expr '}'
 {
     local newAnnos::AnnoAppExprs = annoAppExprList([
-        annExpr(top.location, "labels", emptyList('[',']', location=top.location)),
-        annExpr(top.location, "redex", emptyFunc("nothing", top.location)),
-        annExpr(top.location, "origin", emptyFunc(mkOriginName(top.prodOutput.typeName), top.location))
-    ], top.location);
+        annExpr("labels", emptyList('[',']', location=top.location), location=top.location),
+        annExpr("redex", emptyFunc("nothing", location=top.location), location=top.location),
+        annExpr("origin", emptyFunc(mkOriginName(top.prodOutput.typeName), location=top.location), location=top.location)
+    ], location=top.location);
     
     forwards to 
         case e of 
             | applicationExpr(e2,_,es,_) -> application(e2,'(',es,',',newAnnos,')', location=e.location)
-            | applicationAnno(e2,_,anns,_) -> applicationAnno(e2,'(',consAnnoAppExprs(top.location, anns,newAnnos),')', location=e.location)
-            | application(e2,_,es,_,anns,_) -> application(e2,'(',es,',',consAnnoAppExprs(top.location, anns,newAnnos), ')', location=e.location)
+            | applicationAnno(e2,_,anns,_) -> applicationAnno(e2,'(',consAnnoAppExprs(anns,newAnnos, location=top.location),')', location=e.location)
+            | application(e2,_,es,_,anns,_) -> application(e2,'(',es,',',consAnnoAppExprs(anns,newAnnos, location=top.location), ')', location=e.location)
             | applicationEmpty(e2,_,_) -> applicationAnno(e2,'(',newAnnos,')', location=e.location)
             | _ -> e -- we can't add annotations to non-applications
         end;

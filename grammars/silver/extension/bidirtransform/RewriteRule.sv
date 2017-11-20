@@ -90,10 +90,10 @@ rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd
     rule.inputProduction = inProd;
     rule.shouldRestore = restore;
     rule.outputStmt = case inProd of 
-        | nothing() -> (\ e::Expr -> fillExpr(lhs, [e], [inName]))
-        | just(prd) -> (\ e::Expr ->
+        | nothing() -> (\ e::Decorated Expr -> fillExpr(lhs, [e], [inName], location=e.location))
+        | just(prd) -> (\ e::Decorated Expr ->
             case e of application(_, _, aexpr, _, _, _) -> 
-                    fillExpr(lhs, pullOutAppExprs(aexpr), prd.inputNames)
+                fillExpr(lhs, pullOutAppExprs(aexpr), prd.inputNames, location=e.location)
             end
         )
     end;
@@ -133,43 +133,44 @@ arg::RewriteProductionArgs ::= args::RewriteProductionArgs ',' name::QName {
 -- anonymous variables. This should change, so some variables can be skipped
 -- or provided explicitly like integer values
 
-function applyRw
-Expr ::= rwr::RewriteRule rhsTy::String lhsTy::String loc::Location elemName::String
+abstract production applyRw
+top::Expr ::= rwr::RewriteRule rhsTy::String lhsTy::String elemName::String
 {
-    return rwr.outputStmt(
+    forwards to rwr.outputStmt(
         -- Pass the rhs of an origin into
         -- rewrite rules that want that type
         -- We can't use restored$typeName here because 
         -- that would infinitely recurse. 
-        if rhsTy == lhsTy || !rwr.shouldRestore then baseName(loc, elemName) 
+        if rhsTy == lhsTy || !rwr.shouldRestore then baseName(elemName, location=top.location) 
         -- Otherwise pass the appropriate restored type from
         -- this origin into the rule
-        else exprAccess(loc, elemName, "restored"++rwr.inputType.typeName));
+        else exprAccess(elemName, "restored"++rwr.inputType.typeName, location=top.location));
 } 
 
-function applyRwProd
-Expr ::= rwr::RewriteRule lhs::String loc::Location ns::Decorated NamedSignature
+abstract production applyRwProd
+top::Expr ::= rwr::RewriteRule lhs::String ns::Decorated NamedSignature
 {   
-    return rwr.outputStmt(
+    forwards to rwr.outputStmt(
         fullFunc(
             rwr.inputProduction.fromJust.name, 
-            lhsRestoredTypesAppExprs(lhs, loc, ns.inputNames, map((.typeName), ns.inputTypes), rwr.shouldRestore),
-            emptyAnnoAppExprs(location=loc), loc));
+            lhsRestoredTypesAppExprs(lhs, ns.inputNames, map((.typeName), ns.inputTypes), rwr.shouldRestore, location=top.location),
+            emptyAnnoAppExprs(location=top.location), location=top.location));
 }
 
-function lhsRestoredTypesAppExprs
-AppExprs ::= lhs::String loc::Location inputNames::[String] inputTypes::[String] shouldRestore::Boolean
+abstract production lhsRestoredTypesAppExprs
+top::AppExprs ::= lhs::String inputNames::[String] inputTypes::[String] shouldRestore::Boolean
 {
-    return if length(inputTypes) == 1 
+    forwards to if length(inputTypes) == 1 
     then oneAppExprs(
         if shouldRestore 
-        then namedAccess(loc, "restored"++head(inputTypes), lhs)
-        else presentName(loc, head(inputNames)), location=loc)
-    else snocAppExprs(lhsRestoredTypesAppExprs(lhs, loc, tail(inputNames), tail(inputTypes), shouldRestore), ',',
+        then namedAccess("restored"++head(inputTypes), lhs, location=top.location)
+        else presentName(head(inputNames), location=top.location), location=top.location)
+    else snocAppExprs(lhsRestoredTypesAppExprs(lhs, tail(inputNames), tail(inputTypes), shouldRestore, location=top.location),
+            ',',
             if shouldRestore 
-            then namedAccess(loc, "restored"++head(inputTypes), lhs)
-            else presentName(loc, head(inputNames)),   
-        location=loc);
+            then namedAccess("restored"++head(inputTypes), lhs, location=top.location)
+            else presentName(head(inputNames), location=top.location),   
+        location=top.location);
 }
 
 

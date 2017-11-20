@@ -24,7 +24,7 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
     pd.namedSig = if length(absSig) != 0 then head(absSig)
         else head(cncSig);
         
-    pd.matchProd = matchProd(pd.location, args.rawPatternList, pd.namedSig.inputElements);
+    pd.matchProd = matchProd(args.rawPatternList, pd.namedSig.inputElements, location=pd.location);
     pd.typerep = pd.namedSig.outputElement.typerep;
 
     -- When we looked up a production, was exactly one production found?
@@ -44,27 +44,27 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
     -- TODO
 }
 
-function matchProd
-Expr ::= loc::Location args::[Pattern] nsElems::[NamedSignatureElement]
+abstract production matchProd
+top::Expr ::= args::[Pattern] nsElems::[NamedSignatureElement]
 {
-    return if length(args) == 1 
-        then matchSingle(loc, head(args), head(nsElems), trueConst('true', location=loc)) 
-        else matchSingle(loc, head(args), head(nsElems), matchProd(loc, tail(args), tail(nsElems)));
+    forwards to if length(args) == 1 
+        then matchSingle(head(args), head(nsElems), mkTrue(location=top.location), location=top.location) 
+        else matchSingle(head(args), head(nsElems), matchProd(tail(args), tail(nsElems), location=top.location), location=top.location);
 }
                      
-function matchSingle
-Expr ::= loc::Location arg::Pattern nsElem::NamedSignatureElement ifTrue::Expr
+abstract production matchSingle
+top::Expr ::= arg::Pattern nsElem::NamedSignatureElement ifTrue::Expr
 {   
     -- This is unreadable so long as we don't have default annotations
-    return case arg of 
+    forwards to case arg of 
         | wildcPattern(_) -> ifTrue
-        | _ -> caseExpr_c('case', exprsSingle(baseName(loc, nsElem.elementName), location=loc),
-            'of', terminal(Opt_Vbar_t, "|"), mRuleList_cons(matchRule_c(patternList_one(arg, location=loc),
-                '->', ifTrue, location=loc),
-                    terminal(Vbar_kwd, "|"), mRuleList_one(matchRule_c(patternList_one(wildcPattern('_',location=loc),
-                        location=loc),
-                    '->',falseConst('false',location=loc),location=loc),location=loc),location=loc),
-            'end', location=loc)
+        | _ -> caseExpr_c('case', exprsSingle(baseName(nsElem.elementName, location=top.location), location=top.location),
+            'of', terminal(Opt_Vbar_t, "|"), mRuleList_cons(matchRule_c(patternList_one(arg, location=top.location),
+                '->', ifTrue, location=top.location),
+                    terminal(Vbar_kwd, "|"), mRuleList_one(matchRule_c(patternList_one(wildcPattern('_',location=top.location),
+                        location=top.location),
+                    '->',mkFalse(location=top.location),location=top.location),location=top.location),location=top.location),
+            'end', location=top.location)
     end;
 }        
 
