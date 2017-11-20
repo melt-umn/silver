@@ -7,7 +7,7 @@ top::Def ::= d::DclInfo
 }
 
 abstract production ntGroupDcl
-top::DclInfo ::= sg::String sl::Location name::String nts::NonterminalList
+top::DclInfo ::= sg::String sl::Location name::String nts::Decorated NonterminalList
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;

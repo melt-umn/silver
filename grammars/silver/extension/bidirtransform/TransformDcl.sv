@@ -31,8 +31,8 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
         "{" ++ trRules.pp ++ "} rewrite {" ++ rwRules.pp ++ "};";
         --"} abstract {" ++ absNames.pp ++ "} concrete {" ++ cncNames.pp ++ "};";
 
-    local absGroups::[NonterminalList] = searchNtGroup(absGroupName.name, ag.env);
-    local cncGroups::[NonterminalList] = searchNtGroup(cncGroupName.name, ag.env);
+    local absGroups::[Decorated NonterminalList] = searchNtGroup(absGroupName.name, ag.env);
+    local cncGroups::[Decorated NonterminalList] = searchNtGroup(cncGroupName.name, ag.env);
 
     ag.errors := if length(absGroups) != 0 then []
         else [err(ag.location, "Unknown nonterminal group " ++ absGroupName.name)];
@@ -44,8 +44,8 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
     --     head(absGroup), head(cncGroup), location=ag.location);
 
     local tName::String = qn.name;
-    local absGroup::NonterminalList = head(absGroups);
-    local cncGroup::NonterminalList = head(cncGroups);
+    local absGroup::Decorated NonterminalList = head(absGroups);
+    local cncGroup::Decorated NonterminalList = head(cncGroups);
 
     trRules.config = ag.config;
     rwRules.config = ag.config;
@@ -79,8 +79,8 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
 
     trRules.env = ag.env;
 
-    absGroup.env = ag.env;
-    cncGroup.env = ag.env;
+    -- absGroup.env = ag.env;
+    -- cncGroup.env = ag.env;
 
     -- ag.moduleNames = [];
     -- ag.terminalPrefixes = [];
@@ -179,7 +179,7 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
             if hasRwID(rwRules.rewriteRules, name, name) then rwRules
             else rewriteRuleCons(terminal(Vbar_kwd, "|"), 
                 rewriteRuleType(qName(ag.location, "a"), '::', qTyExpr(qName(ag.location, name), location=ag.location), '->',
-                    newFunction('new', '(', baseName("a", location=ag.location), ')', location=ag.location), location=ag.location), 
+                    mkNew("a", location=ag.location), location=ag.location), 
                     rwRules, location=ag.location),
         rwRules, cncNames);
 
@@ -247,7 +247,7 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
                 attribDef("o", "concreteOrigin", 
                     argFunc("getConcreteOrigin", appExprList([
                         namedAccess("origin", "e", location=ag.location), 
-                        presentAppExpr(baseName("o", location=ag.location), location=ag.location)
+                        presentName("o", location=ag.location)
                     ], location=ag.location), location=ag.location), location=ag.location)
                 ], location=ag.location), location=ag.location), agDcls, location=ag.location),
         agDcls14, absNames);
@@ -280,14 +280,15 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
                 else productionStmtsSnoc(stmts, 
                         attribDef(ns.outputElement.elementName, restoreNm(rhs),
                         if rwMatch(newRwRules.rewriteRules, rhs, ns, location=ag.location).inputProduction.isJust 
-                        then ifThenElse(
-                            'if', lhsExprAccess("wasTransformed", ns, location=ag.location),
+                        then mkCond(
+                            lhsExprAccess("wasTransformed", ns, location=ag.location),
                             -- use the rewrite production
-                            'then', applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns, location=ag.location), rhs, ns, location=ag.location),
+                            applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns, location=ag.location), rhs, ns, location=ag.location),
                             -- refer to the concrete origin's restored element
-                            'else', access(access(
-                                lhsExprAccess("origin", ns, location=ag.location), '.', qNameAttrOccur(qName(ag.location, "concreteOrigin"), location=ag.location), location=ag.location),
-                                '.', qNameAttrOccur(qName(ag.location, restoreNm(rhs)), location=ag.location), location=ag.location), 
+                            qAccess(qAccess(
+                                lhsExprAccess("origin", ns, location=ag.location), 
+                                  "concreteOrigin", location=ag.location),
+                                  restoreNm(rhs), location=ag.location), 
                         location=ag.location)
                         else applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns, location=ag.location), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
                     location=ag.location), location=ag.location),
@@ -311,12 +312,13 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
                 [attribDef(ns.outputElement.elementName, tName,
                 if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) 
                   then prdRecurse(ns, tName, location=ag.location)
-                  else ifThenElse(
-                        'if', lhsExprAccess(transformNm(tName), ns, location=ag.location),
+                  else mkCond(
+                        lhsExprAccess(transformNm(tName), ns, location=ag.location),
+                        -- todo: what did I mean by the todo below this? Have I done that already?
                         -- todo: add annotations to anything here that is one of 
                         -- our abstract productions
-                        'then', getTrans(trRules.transformRules, dcl, location=ag.location).outputStmt(nsApply(ns, location=ag.location)),
-                        'else', prdRecurse(ns, tName, location=ag.location),
+                        getTrans(trRules.transformRules, dcl, location=ag.location).outputStmt(nsApply(ns, location=ag.location)),
+                        prdRecurse(ns, tName, location=ag.location),
                     location=ag.location),
             location=ag.location)], location=ag.location),
             location=ag.location), agDcls, location=ag.location),
@@ -351,10 +353,10 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
                     attribDef( rhs.elementName, inhRedexName,
                             if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup)
                             then emptyFunc("nothing", location=ag.location) -- this might error because it has to be a production
-                            else ifThenElse(
-                                'if', lhsExprAccess(transformNm(tName), ns, location=ag.location),
-                                'then', argFunc("just", oneApp(mkOrigin(ns, location=ag.location), location=ag.location), location=ag.location),
-                                'else', emptyFunc("nothing", location=ag.location),
+                            else mkCond(
+                                lhsExprAccess(transformNm(tName), ns, location=ag.location),
+                                argFunc("just", oneApp(mkOrigin(ns, location=ag.location), location=ag.location), location=ag.location),
+                                emptyFunc("nothing", location=ag.location),
                             location=ag.location),
                     location=ag.location), location=ag.location),
             productionStmtsNil(location=ag.location), ns.inputElements), location=ag.location), agDcls, location=ag.location),

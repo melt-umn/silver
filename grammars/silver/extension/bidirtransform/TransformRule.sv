@@ -93,7 +93,8 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
     --               else err(trr.location, "Type mismatch in transformation rule")
 
 function hasTrans
-Boolean ::= rules::[TransformRule] dcl::[Decorated NamedSignature] absGroup::NonterminalList cncGroup::NonterminalList
+Boolean ::= rules::[TransformRule] dcl::[Decorated NamedSignature] 
+            absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
 {
     local hd::TransformRule = head(rules);
 

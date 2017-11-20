@@ -179,12 +179,16 @@ top::Expr ::= name::String ns::Decorated NamedSignature
     forwards to exprAccess(name, ns.outputElement.elementName, location=top.location);
 }
 
+abstract production qAccess
+top::Expr ::= accessOn::Expr q::String
+{
+    forwards to access(accessOn, '.', qNameAttrOccur(qName(top.location, q), location=top.location), location=top.location);
+}
+
 abstract production exprAccess
 top::Expr ::= name::String accessOn::String 
 {
-    forwards to access(baseName(accessOn, location=top.location),'.', 
-        qNameAttrOccur(qName(top.location, name), 
-        location=top.location), location=top.location);
+    forwards to qAccess(baseName(accessOn, location=top.location), name, location=top.location); 
 } 
 
 
@@ -341,4 +345,20 @@ abstract production mkBoolTypeExpr
 top::TypeExpr ::=
 {
     forwards to booleanTypeExpr('Boolean', location=top.location);
+}
+
+abstract production mkCond
+top::Expr ::= if_e::Expr then_e::Expr else_e::Expr
+{
+    forwards to ifThenElse(
+        'if', if_e,
+        'then', then_e,
+        'else', else_e, 
+        location=top.location);
+}
+
+abstract production mkNew
+top::Expr ::= nme::String
+{
+    forwards to newFunction('new', '(', baseName(nme, location=top.location), ')', location=top.location);
 }

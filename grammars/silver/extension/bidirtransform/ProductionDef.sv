@@ -6,8 +6,8 @@ synthesized attribute patternList::PatternList;
 synthesized attribute matchProd::Expr;
 synthesized attribute namedSig::Decorated NamedSignature;
 
-autocopy attribute absGroup::NonterminalList;
-autocopy attribute cncGroup::NonterminalList;
+autocopy attribute absGroup::Decorated NonterminalList;
+autocopy attribute cncGroup::Decorated NonterminalList;
 
 concrete production productionDef
 pd::ProductionDef ::= qn::QName '(' args::PatternList ')'

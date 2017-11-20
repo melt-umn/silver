@@ -17,7 +17,7 @@ grammar silver:extension:bidirtransform;
 --    split off are so in order to ease debugging until it works
 
 function searchNtGroup
-[NonterminalList] ::= fnnt::String e::Decorated Env
+[Decorated NonterminalList] ::= fnnt::String e::Decorated Env
 {
     return case e of 
         | i_emptyEnv() -> []
@@ -27,11 +27,11 @@ function searchNtGroup
 }
 
 function defsNtGroup
-[NonterminalList] ::= fnnt::String dfs::Defs
+[Decorated NonterminalList] ::= fnnt::String dfs::Defs
 {
     return case dfs of 
         | nilDefs() -> []
-        | consDefs(d, dfs2) -> if d.isLock then [] 
+        | consDefs(d, dfs2) -> if d.isLock then skipNtToNextLock(fnnt, dfs2)
             else defsNtGroup(fnnt, dfs2) ++
             case d of
                 | ntGroupDef(dcl) -> if dcl.fullName == fnnt then case dcl of 
@@ -44,8 +44,23 @@ function defsNtGroup
     end;
 }
 
+function skipNtToNextLock
+[Decorated NonterminalList] ::= fnnt::String dfs::Defs 
+{
+    -- just kidding, this doesn't work?
+    return [];
+    -- return case dfs of 
+    --     | nilDefs() -> []
+    --     | consDefs(d, dfs2) -> 
+    --         if d.isLock 
+    --         then defsNtGroup(fnnt, dfs2)
+    --         else skipNtToNextLock(fnnt, dfs2)
+    -- end;
+}
+
+-- is is a production name we are trying to find the named signature of
 function getProdFromGroup
-[Decorated NamedSignature] ::= s::String ntlst::NonterminalList 
+[Decorated NamedSignature] ::= s::String ntlst::Decorated NonterminalList 
 {
     return getProdFromList(s, ntlst.ntList);
 }
@@ -54,15 +69,14 @@ function getProdFromList
 [Decorated NamedSignature] ::= s::String nts::[Decorated FullNonterminal]
 {
     return if length(nts) == 0 then []
-        else if head(nts).name == s then getProdFromSig(s, head(nts).ntProds)
-        else getProdFromList(s, tail(nts));
+        else getProdFromSig(s, head(nts).ntProds) ++ getProdFromList(s, tail(nts));
 }
 
 function getProdFromSig
 [Decorated NamedSignature] ::= s::String prds::[Decorated NamedSignature]
 {
     return if length(prds) == 0 then []
-        else if head(prds).fullName == s then [head(prds)]
+        else if unFull(head(prds).fullName) == s then [head(prds)]
         else getProdFromSig(s, tail(prds));
 }
 
@@ -74,11 +88,7 @@ function getProdsFromNtHack
     return case e of 
         | i_emptyEnv() -> []
         | i_appendEnv(e2, e3) -> getProdsFromNtHack(fnnt, new(e2), skipGrammar) ++ getProdsFromNtHack(fnnt, new(e3), skipGrammar)
-        | i_newScopeEnv(dfs, e2) -> case dfs of 
-            | nilDefs() -> getProdsFromNtHack(fnnt, new(e2), skipGrammar)
-            | consDefs(d, dfs2) -> if d.isLock then []
-                else getProdsFromConsDefs(fnnt, d, dfs2, skipGrammar) ++ getProdsFromNtHack(fnnt, new(e2), skipGrammar)
-            end
+        | i_newScopeEnv(dfs, e2) -> getProdsFromDefs(fnnt, dfs, skipGrammar) ++ getProdsFromNtHack(fnnt, new(e2), skipGrammar)
     end;
 }
 
@@ -94,8 +104,21 @@ function getProdsFromDefs
 function getProdsFromConsDefs
 [DclInfo] ::= fnnt::String d::Def dfs::Defs skipGrammar::String
 {
-    return if d.isLock then []
+    return if d.isLock then skipToNextLock(fnnt, dfs, skipGrammar)
         else getProdsFromConsDefs2(fnnt, d, dfs, skipGrammar);
+}
+
+
+function skipToNextLock
+[DclInfo] ::= fnnt::String dfs::Defs skipGrammar::String
+{
+    return case dfs of 
+        | nilDefs() -> []
+        | consDefs(d, dfs2) -> 
+            if d.isLock 
+            then getProdsFromDefs(fnnt, dfs2, skipGrammar)
+            else skipToNextLock(fnnt, dfs2, skipGrammar)
+    end;
 }
 
 function getProdsFromConsDefs2
@@ -119,7 +142,7 @@ function getProdsFromConsDefs3
 function getProdsFromProdDcl
 [DclInfo] ::= fnnt::String d::Def dfs::Defs sg::String ns::Decorated NamedSignature skipGrammar::String
 {
-    return if sg == skipGrammar then []
+    return if sg == skipGrammar then getProdsFromDefs2(fnnt, dfs, skipGrammar)
         else getProdsFromProdDcl2(fnnt,d,dfs,ns,skipGrammar);
 }
 
