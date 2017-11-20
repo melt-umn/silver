@@ -384,27 +384,27 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
 
     -- default annotation location = ag.location;
 
-    agDcls.grammarName = ag.grammarName;
+    agDcls11.grammarName = ag.grammarName;
 
     ag.defs = [lockDef()] ++ agDcls11.defs ++ [lockDef()];
-    ag.moduleNames = [];
-    ag.mdaSpecs = [];
-    ag.ideSpecs = [];
-    ag.syntaxAst = [];
-    ag.parserSpecs = [];
-    ag.flowDefs = [];
-    ag.docs := [];
-    ag.docsHeader = "";
-    ag.docsSplit = "";
-    ag.docsNoDoc = false;
-    ag.docDcls := [];
-    ag.genFiles := [];
-    ag.setupInh := "";
-    ag.initProd := "";
-    ag.initValues := "";
-    ag.postInit := "";
-    ag.initWeaving := "";
-    ag.valueWeaving := "";
+    ag.moduleNames = agDcls11.moduleNames;
+    ag.mdaSpecs = agDcls11.mdaSpecs;
+    ag.ideSpecs = agDcls11.ideSpecs;
+    ag.syntaxAst = agDcls11.syntaxAst;
+    ag.parserSpecs = agDcls11.parserSpecs;
+    ag.flowDefs = agDcls11.flowDefs;
+    ag.docs := agDcls11.docs;
+    ag.docsHeader = agDcls11.docsHeader;
+    ag.docsSplit = agDcls11.docsSplit;
+    ag.docsNoDoc = agDcls11.docsNoDoc;
+    ag.docDcls := agDcls11.docDcls;
+    ag.genFiles := agDcls11.genFiles;
+    ag.setupInh := agDcls11.setupInh;
+    ag.initProd := agDcls11.initProd;
+    ag.initValues := agDcls11.initValues;
+    ag.postInit := agDcls11.postInit;
+    ag.initWeaving := agDcls11.initWeaving;
+    ag.valueWeaving := agDcls11.valueWeaving;
 
     --ag.liftedAGDcls = agDcls22; 
     forwards to agDcls11;

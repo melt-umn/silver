@@ -56,11 +56,13 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
     tr.upSubst = r.upSubst;
     r.finalSubst = tr.upSubst;
     
+    r.defaultInheritedAnnos = [];
+    
     tr.pp = l.pp ++ "->" ++ r.pp;
 
     tr.namedSig = l.namedSig;
     tr.matchProd = l.matchProd;    
-    tr.errors := l.errors ++ r.errors;
+    tr.errors := l.errors; -- We ignore r.errors intentionally, it isn't a well-formed expression
     tr.outputStmt = (\ e::Expr ->
         case e of application(_,_,aexpr,_,_,_) ->
             -- need to pass in e here and supply all of e's inherited attributes

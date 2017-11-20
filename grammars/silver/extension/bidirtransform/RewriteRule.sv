@@ -105,7 +105,9 @@ rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd
     rule.upSubst = lhs.upSubst;
     lhs.finalSubst = rule.upSubst;
 
-    rule.errors := lhs.errors;
+    lhs.defaultInheritedAnnos = [];
+
+    rule.errors := []; -- We explicitly ignore lhs errors here
     rule.errors <- if inProd.isJust then inProd.fromJust.errors else [];
 
     rule.typerep = outType;
