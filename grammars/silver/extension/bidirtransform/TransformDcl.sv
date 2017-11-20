@@ -309,20 +309,19 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
     --    else see ------------------/
     local agDcls18::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
         lockAGDcls(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-            if !getTrans(trRules.transformRules, dcl).isJust && ns.outputElement.typerep.typeName != transType.typerep.typeName
+            if !hasTrans(trRules.transformRules, dcl) && ns.outputElement.typerep.typeName != transType.typerep.typeName
             then productionStmtsNil(location=ag.location)
             else prdStmtList( 
-                [attribDef( ns.outputElement.elementName, tName,
-                case getTrans(trRules.transformRules, dcl) of 
-                    | nothing() -> prdRecurse(ns, tName, location=ag.location)
-                    | just(rule) -> ifThenElse(
+                [attribDef(ns.outputElement.elementName, tName,
+                if !hasTrans(trRules.transformRules, dcl) 
+                  then prdRecurse(ns, tName, location=ag.location)
+                  else ifThenElse(
                         'if', lhsExprAccess(transformNm(tName), ns, location=ag.location),
                         -- todo: add annotations to anything here that is one of 
                         -- our abstract productions
-                        'then', rule.outputStmt(nsApply(ns, location=ag.location)),
+                        'then', getTrans(trRules.transformRules, dcl, location=ag.location).outputStmt(nsApply(ns, location=ag.location)),
                         'else', prdRecurse(ns, tName, location=ag.location),
-                    location=ag.location)
-                end,
+                    location=ag.location),
             location=ag.location)], location=ag.location),
             location=ag.location), agDcls, location=ag.location),
         agDcls17, absProdDcls);
@@ -334,11 +333,11 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
     --    then true
     --    else false
     local agDcls19::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
-        if !getTrans(trRules.transformRules, dcl).isJust then agDcls 
+        if !hasTrans(trRules.transformRules, dcl) then agDcls 
         else lockAGDcls(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             prdStmtList([
                 attribDef( ns.outputElement.elementName, transformNm(tName),
-                    getTrans(trRules.transformRules, dcl).fromJust.matchProd, location=ag.location)
+                    getTrans(trRules.transformRules, dcl, location=ag.location).matchProd, location=ag.location)
             ], location=ag.location),
             location=ag.location), agDcls, location=ag.location),
         agDcls18, absProdDcls);
@@ -354,7 +353,7 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
             foldl(\ stmts::ProductionStmts rhs::NamedSignatureElement ->
                 productionStmtsSnoc(stmts, 
                     attribDef( rhs.elementName, inhRedexName,
-                            if !getTrans(trRules.transformRules, dcl).isJust
+                            if !hasTrans(trRules.transformRules, dcl)
                             then emptyFunc("nothing", location=ag.location) -- this might error because it has to be a production
                             else ifThenElse(
                                 'if', lhsExprAccess(transformNm(tName), ns, location=ag.location),

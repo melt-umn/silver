@@ -46,15 +46,22 @@ trl::TransformRuleList ::= Vbar_kwd rule::TransformRule
     trl.transformRules = [rule];
 }
 
-
-function getTrans
-Maybe<TransformRule> ::= rules::[TransformRule] dcl::[Decorated NamedSignature]
+function hasTrans
+Boolean ::= rules::[TransformRule] dcl::[Decorated NamedSignature]
 {
-    return if null(rules) then nothing()
-        else if null(dcl) then nothing()
-        else if head(dcl).fullName == head(rules).namedSig.fullName 
-            then just(head(rules))
-            else getTrans(tail(rules), dcl);
+    return if null(rules) || null(dcl) then false
+        else if head(dcl).fullName == head(rules).namedSig.fullName then true
+        else hasTrans(tail(rules), dcl);
+}
+
+abstract production getTrans
+top::TransformRule ::= rules::[TransformRule] dcl::[Decorated NamedSignature]
+{
+    forwards to --if null(rules) then nothing()
+        --else if null(dcl) then nothing() else
+        if head(dcl).fullName == head(rules).namedSig.fullName 
+            then head(rules)
+            else getTrans(tail(rules), dcl, location=top.location);
 }
 
 concrete production transformRule
