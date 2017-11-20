@@ -61,6 +61,9 @@ ag::AGDcl ::= kwd::'equalityTest'
   errCheck2.finalSubst = errCheck3.upSubst;
   errCheck3.finalSubst = errCheck3.upSubst;
 
+  value.defaultInheritedAnnos = [];
+  expected.defaultInheritedAnnos = [];
+
   -- TODO: one of those type error checks above is redundant
 
   value.frame = globalExprContext();
