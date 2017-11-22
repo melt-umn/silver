@@ -1,6 +1,13 @@
 #!/bin/bash
 
-set -e
+set -eu
+
+if [ -d ../../grammars ]; then cd ../..; fi
+
+if [ ! -d grammars ]; then
+  echo "Couldn't find Silver root. Run as ./support/scripts/publish-ide"
+  exit 1
+fi
 
 IDEDIR="/web/research/melt.cs.umn.edu/downloads/silver-eclipse-beta"
 ZIPFILE="generated/ide/silver.composed.idetest/updatesite/target/SILVER_UPDATESITE.zip"

@@ -2,6 +2,13 @@
 
 set -eu
 
+if [ -d ../../grammars ]; then cd ../..; fi
+
+if [ ! -d grammars ]; then
+  echo "Couldn't find Silver root. Run as ./support/scripts/make-ide"
+  exit 1
+fi
+
 # Make sure any compiler changes make it before we build
 ./self-compile
 cp build/silver.composed.Default.jar jars/

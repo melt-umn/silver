@@ -2,6 +2,13 @@
 
 set -eu
 
+if [ -d ../../grammars ]; then cd ../..; fi
+
+if [ ! -d grammars ]; then
+  echo "Couldn't find Silver root. Run as ./support/scripts/build-all-grammars"
+  exit 1
+fi
+
 for grammar in $(find grammars -name '*.sv' | sed 's#grammars/\(.*\)/.*\.sv#\1#' | sort | uniq | sed 's#/#:#g'); do
 	java -Xss8M -Xmx2000M -jar jars/RunSilver.jar --clean $grammar
 done

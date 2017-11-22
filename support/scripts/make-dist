@@ -2,14 +2,16 @@
 
 set -eu
 
-if [ -z "$1" ]; then
-  echo "invoke make-dist with a version argument."
-  echo "For example:  ./make-dist 0.3.1-rc1"
+if [ -d ../../grammars ]; then cd ../..; fi
+
+if [ ! -d grammars ]; then
+  echo "Couldn't find Silver root. Run as ./support/scripts/make-dist <version>"
   exit 1
 fi
 
-if [ ! -d grammars ] || [ ! -d tutorials ]; then
-  echo "Wrong directory? Run as ./make-dist <version>"
+if [ ! $# -gt 0 ]; then
+  echo "invoke make-dist with a version argument."
+  echo "For example:  $0 0.3.1-rc1"
   exit 1
 fi
 
@@ -48,6 +50,7 @@ tar -zcvf $SV.tar.gz \
  $SV/COPYING.LESSER \
  $SV/HISTORY \
  $SV/README.md \
+ $SV/install \
  
  
 

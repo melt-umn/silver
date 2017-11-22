@@ -1,24 +1,47 @@
 #!/bin/bash
 
+set -eu
+
+if [ -x support/nailgun/sv-nailgun ]; then cd support/nailgun; fi
+
+if [ ! -x sv-nailgun ]; then
+  echo "Couldn't find Silver root. Run as ./support/nailgun/install-sv-nailgun"
+  exit 1
+fi
+
 if [ ! -d ~/bin ]; then
-  echo "This script is intended to place the 'sv-nailgun' script in ~/bin."
-  echo "You do no have a ~/bin directory, so this script is aborting."
-  echo "In many distributions, you can simply create it and it will work,"
-  echo "but in some cases you may also have to alter your shell startup"
-  echo "scripts to include it in your PATH."
+  echo "Silver's installer uses ~/bin, but this directory was not found."
   exit 1
 fi
 
 echo "Found ~/bin"
 
-cp sv-nailgun sv-call ~/bin/
+case `uname` in
+*Darwin*)
+  READLINK=greadlink
+  if [ ! -f `which greadlink` ]; then
+    echo "Missing greadlink. Please install coreutils:"
+    echo -e "\tbrew install coreutils"
+    exit 4
+  fi
+  ;;
+*)
+  READLINK=readlink
+  ;;
+esac
 
-if [ ! $? ]; then
-  echo "Install failed!"
-  exit 3
-fi
-
-chmod +x ~/bin/sv-*
-
-echo "Install finished."
+for file in sv-nailgun sv-call; do
+  filename=$(basename "$file")
+  if [ -f ~/bin/$filename ]; then
+    rm ~/bin/$filename
+  fi
+  if ln -s "$("$READLINK" -f "$file")" ~/bin/ ; then
+    echo "Installed ~/bin/$filename"
+  else
+    echo "Failed to install ~/bin/$filename"
+    exit 1
+  fi
+done
+  
+echo "Nailgun scripts installed successfully."
 
