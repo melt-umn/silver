@@ -44,7 +44,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     -- local toForward::AGDcl = transformRewrite(tName.name, transType, trRules, rwRules, 
     --     head(absGroup), head(cncGroup), location=ag.location);
 
-    local tName::String = qn.name;
+    local tName::String = unFull(qn.name);
     -- local absGroup::Decorated NonterminalList = head(absGroups);
     -- local cncGroup::Decorated NonterminalList = head(cncGroups);
     local absGroup::Decorated NonterminalList = decorate absGroupIn with { env=ag.env; };
@@ -135,7 +135,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     local agDcls3::AGDcl = appendAGDcl(synAttr(tName, transType, location=ag.location), agDcls2, location=ag.location);
 
     -- synthesized attribute transformed_$tName :: Boolean;
-    local agDcls3_1::AGDcl = appendAGDcl(synAttr(transformNm(tName), mkBoolTypeExpr(location=ag.location), location=ag.location), agDcls2, location=ag.location);    
+    local agDcls3_1::AGDcl = appendAGDcl(synAttr(transformNm(tName), mkBoolTypeExpr(location=ag.location), location=ag.location), agDcls3, location=ag.location);    
 
     -- Occurances of attributes, annotations
 
@@ -410,8 +410,11 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     ag.initWeaving := agDcls11.initWeaving;
     ag.valueWeaving := agDcls11.valueWeaving;
 
-    subAg.env = newScopeEnv(agDcls11.defs, ag.env); -- did not work
-    --subAg.env = ag.env;
+    subAg.env = appendEnv(ag.env, toEnv(agDcls11.defs));
+    --subAg.env = newScopeEnv(agDcls11.defs, ag.env); -- did not work
+    --subAg.env = ag.env; -- did not work
+
+    agDcls11.env = subAg.env
 
     ag.defs = agDcls11.defs ++ subAg.defs;
 
