@@ -389,35 +389,35 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
 
     -- default annotation location = ag.location;
 
-    agDcls11.grammarName = ag.grammarName;
+    agDcls12.grammarName = ag.grammarName;
 
-    ag.moduleNames = agDcls11.moduleNames;
-    ag.mdaSpecs = agDcls11.mdaSpecs;
-    ag.ideSpecs = agDcls11.ideSpecs;
-    ag.syntaxAst = agDcls11.syntaxAst;
-    ag.parserSpecs = agDcls11.parserSpecs;
-    ag.flowDefs = agDcls11.flowDefs;
-    ag.docs := agDcls11.docs;
-    ag.docsHeader = agDcls11.docsHeader;
-    ag.docsSplit = agDcls11.docsSplit;
-    ag.docsNoDoc = agDcls11.docsNoDoc;
-    ag.docDcls := agDcls11.docDcls;
-    ag.genFiles := agDcls11.genFiles;
-    ag.setupInh := agDcls11.setupInh;
-    ag.initProd := agDcls11.initProd;
-    ag.initValues := agDcls11.initValues;
-    ag.postInit := agDcls11.postInit;
-    ag.initWeaving := agDcls11.initWeaving;
-    ag.valueWeaving := agDcls11.valueWeaving;
+    ag.moduleNames = agDcls12.moduleNames;
+    ag.mdaSpecs = agDcls12.mdaSpecs;
+    ag.ideSpecs = agDcls12.ideSpecs;
+    ag.syntaxAst = agDcls12.syntaxAst;
+    ag.parserSpecs = agDcls12.parserSpecs;
+    ag.flowDefs = agDcls12.flowDefs;
+    ag.docs := agDcls12.docs;
+    ag.docsHeader = agDcls12.docsHeader;
+    ag.docsSplit = agDcls12.docsSplit;
+    ag.docsNoDoc = agDcls12.docsNoDoc;
+    ag.docDcls := agDcls12.docDcls;
+    ag.genFiles := agDcls12.genFiles;
+    ag.setupInh := agDcls12.setupInh;
+    ag.initProd := agDcls12.initProd;
+    ag.initValues := agDcls12.initValues;
+    ag.postInit := agDcls12.postInit;
+    ag.initWeaving := agDcls12.initWeaving;
+    ag.valueWeaving := agDcls12.valueWeaving;
 
-    subAg.env = appendEnv(ag.env, toEnv(agDcls11.defs));
-    --subAg.env = newScopeEnv(agDcls11.defs, ag.env); -- did not work
+    subAg.env = appendEnv(ag.env, toEnv(agDcls12.defs));
+    --subAg.env = newScopeEnv(agDcls12.defs, ag.env); -- did not work
     --subAg.env = ag.env; -- did not work
 
-    agDcls11.env = subAg.env
+    agDcls12.env = subAg.env;
 
-    ag.defs = agDcls11.defs ++ subAg.defs;
+    ag.defs = agDcls12.defs ++ subAg.defs;
 
     --ag.liftedAGDcls = agDcls22; 
-    forwards to consAGDcls(agDcls11, subAg, location=ag.location);
+    forwards to consAGDcls(agDcls12, subAg, location=ag.location);
 }
