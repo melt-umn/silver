@@ -16,6 +16,7 @@ grammar silver:extension:bidirtransform;
 --    Functions that could be in the same function declaration but are 
 --    split off are so in order to ease debugging until it works
 
+
 function searchNtGroup
 [Decorated NonterminalList] ::= fnnt::String e::Decorated Env
 {
@@ -34,7 +35,7 @@ function defsNtGroup
         | consDefs(d, dfs2) -> if d.isLock then skipNtToNextLock(fnnt, dfs2)
             else defsNtGroup(fnnt, dfs2) ++
             case d of
-                | ntGroupDef(dcl) -> if dcl.fullName == fnnt then case dcl of 
+                | ntGroupDef(dcl) -> if unFull(dcl.fullName) == fnnt then case dcl of 
                         | ntGroupDcl(_,_,_,ntlst) -> [ntlst] 
                         | _ -> []
                     end

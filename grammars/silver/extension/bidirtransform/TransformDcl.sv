@@ -22,30 +22,33 @@ terminal Rewrite_kwd 'rewrite' lexer classes {KEYWORD,RESERVED};
 terminal From_kwd 'from' lexer classes{KEYWORD,RESERVED};
 
 concrete production transformAGDclFull
-ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr 
+ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeExpr 
     '{' trRules::TransformRuleList '}' 
     'rewrite' '{' rwRules::RewriteRuleList '}' 
-    'from' cncGroupName::QName 'to' absGroupName::QName ';'
+    -- 'from' cncGroupName::QName 'to' absGroupName::QName ';'
+    'from' cncGroupIn::NonterminalList 'to' absGroupIn::NonterminalList ';'
 {
     ag.pp = "transmute " ++ qn.pp ++ "::" ++ transType.pp ++
         "{" ++ trRules.pp ++ "} rewrite {" ++ rwRules.pp ++ "};";
         --"} abstract {" ++ absNames.pp ++ "} concrete {" ++ cncNames.pp ++ "};";
 
-    local absGroups::[Decorated NonterminalList] = searchNtGroup(absGroupName.name, ag.env);
-    local cncGroups::[Decorated NonterminalList] = searchNtGroup(cncGroupName.name, ag.env);
+    -- local absGroups::[Decorated NonterminalList] = searchNtGroup(absGroupName.name, ag.env);
+    -- local cncGroups::[Decorated NonterminalList] = searchNtGroup(cncGroupName.name, ag.env);
 
-    ag.errors := if length(absGroups) != 0 then []
-        else [err(ag.location, "Unknown nonterminal group " ++ absGroupName.name)];
+    -- ag.errors := if length(absGroups) != 0 then []
+    --     else [err(ag.location, "Unknown nonterminal group " ++ absGroupName.name)];
 
-    ag.errors <- if length(cncGroups) != 0 then []
-        else [err(ag.location, "Unknown nonterminal group " ++ cncGroupName.name)];
+    -- ag.errors <- if length(cncGroups) != 0 then []
+    --     else [err(ag.location, "Unknown nonterminal group " ++ cncGroupName.name)];
 
     -- local toForward::AGDcl = transformRewrite(tName.name, transType, trRules, rwRules, 
     --     head(absGroup), head(cncGroup), location=ag.location);
 
     local tName::String = qn.name;
-    local absGroup::Decorated NonterminalList = head(absGroups);
-    local cncGroup::Decorated NonterminalList = head(cncGroups);
+    -- local absGroup::Decorated NonterminalList = head(absGroups);
+    -- local cncGroup::Decorated NonterminalList = head(cncGroups);
+    local absGroup::Decorated NonterminalList = decorate absGroupIn with { env=ag.env; };
+    local cncGroup::Decorated NonterminalList = decorate cncGroupIn with { env=ag.env; };
 
     trRules.config = ag.config;
     rwRules.config = ag.config;
@@ -388,7 +391,6 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
 
     agDcls11.grammarName = ag.grammarName;
 
-    ag.defs = [lockDef()] ++ agDcls11.defs ++ [lockDef()];
     ag.moduleNames = agDcls11.moduleNames;
     ag.mdaSpecs = agDcls11.mdaSpecs;
     ag.ideSpecs = agDcls11.ideSpecs;
@@ -408,6 +410,11 @@ ag::AGDcl ::= 'transmute' qn::QName '::' transType::TypeExpr
     ag.initWeaving := agDcls11.initWeaving;
     ag.valueWeaving := agDcls11.valueWeaving;
 
+    subAg.env = newScopeEnv(agDcls11.defs, ag.env); -- did not work
+    --subAg.env = ag.env;
+
+    ag.defs = agDcls11.defs ++ subAg.defs;
+
     --ag.liftedAGDcls = agDcls22; 
-    forwards to agDcls11;
+    forwards to consAGDcls(agDcls11, subAg, location=ag.location);
 }
