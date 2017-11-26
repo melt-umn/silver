@@ -382,35 +382,39 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
 
     -- default annotation location = ag.location;
 
-    agDcls12.grammarName = ag.grammarName;
+    ag.moduleNames = agDclsP3.moduleNames;
+    ag.mdaSpecs = agDclsP3.mdaSpecs;
+    ag.ideSpecs = agDclsP3.ideSpecs;
+    ag.syntaxAst = agDclsP3.syntaxAst;
+    ag.parserSpecs = agDclsP3.parserSpecs;
+    ag.flowDefs = agDclsP3.flowDefs;
+    ag.docs := agDclsP3.docs;
+    ag.docsHeader = agDclsP3.docsHeader;
+    ag.docsSplit = agDclsP3.docsSplit;
+    ag.docsNoDoc = agDclsP3.docsNoDoc;
+    ag.docDcls := agDclsP3.docDcls;
+    ag.genFiles := agDclsP3.genFiles;
+    ag.setupInh := agDclsP3.setupInh;
+    ag.initProd := agDclsP3.initProd;
+    ag.initValues := agDclsP3.initValues;
+    ag.postInit := agDclsP3.postInit;
+    ag.initWeaving := agDclsP3.initWeaving;
+    ag.valueWeaving := agDclsP3.valueWeaving;
 
-    ag.moduleNames = agDcls12.moduleNames;
-    ag.mdaSpecs = agDcls12.mdaSpecs;
-    ag.ideSpecs = agDcls12.ideSpecs;
-    ag.syntaxAst = agDcls12.syntaxAst;
-    ag.parserSpecs = agDcls12.parserSpecs;
-    ag.flowDefs = agDcls12.flowDefs;
-    ag.docs := agDcls12.docs;
-    ag.docsHeader = agDcls12.docsHeader;
-    ag.docsSplit = agDcls12.docsSplit;
-    ag.docsNoDoc = agDcls12.docsNoDoc;
-    ag.docDcls := agDcls12.docDcls;
-    ag.genFiles := agDcls12.genFiles;
-    ag.setupInh := agDcls12.setupInh;
-    ag.initProd := agDcls12.initProd;
-    ag.initValues := agDcls12.initValues;
-    ag.postInit := agDcls12.postInit;
-    ag.initWeaving := agDcls12.initWeaving;
-    ag.valueWeaving := agDcls12.valueWeaving;
-
-    subAg.env = appendEnv(ag.env, toEnv(agDcls12.defs));
-    --subAg.env = newScopeEnv(agDcls12.defs, ag.env); -- did not work
-    --subAg.env = ag.env; -- did not work
-
+    agDclsP3.compiledGrammars = ag.compiledGrammars;
     agDcls12.compiledGrammars = ag.compiledGrammars;
     subAg.compiledGrammars = ag.compiledGrammars;
 
+    agDclsP3.grammarName = ag.grammarName;
+    agDcls12.grammarName = ag.grammarName;
+    subAg.grammarName = ag.grammarName;
+
+    agDclsP3.env = subAg.env;
     agDcls12.env = subAg.env;
+
+    subAg.env = appendEnv(ag.env, toEnv(agDclsP3.defs));
+    --subAg.env = newScopeEnv(agDcls12.defs, ag.env); -- did not work
+    --subAg.env = ag.env; -- did not work
 
     ag.defs = agDcls12.defs ++ subAg.defs;
 
