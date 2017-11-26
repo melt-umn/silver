@@ -156,15 +156,8 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
             appendAGDcl(attrOn(restoreNm(name), absNames ++ ["Origin"], location=ag.location), agDcls, location=ag.location),
         agDcls5, cncNames);
 
-    -- annotation redex occurs on $absType;
-    local agDcls7::AGDcl = appendAGDcl(annoOn("redex", absNames, location=ag.location), agDcls6, location=ag.location);
-    
-    -- annotation labels occurs on $absType;
-    local agDcls8::AGDcl = appendAGDcl(annoOn("labels", absNames, location=ag.location), agDcls7, location=ag.location);
-    
-    -- annotation origin occurs on $absType;
-    local agDcls9::AGDcl = appendAGDcl(annoOn("origin", absNames, location=ag.location), agDcls8, location=ag.location);
-    
+    local agDcls9::AGDcl = agDcls6;
+
     -- attribute wasTransformed occurs on $absType;
     local agDcls10::AGDcl = appendAGDcl(attrOn("wasTransformed", absNames, location=ag.location), agDcls9, location=ag.location);
 
@@ -414,12 +407,24 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     --subAg.env = newScopeEnv(agDcls12.defs, ag.env); -- did not work
     --subAg.env = ag.env; -- did not work
 
-    -- next: supply compiledGrammars
+    agDcls12.compiledGrammars = ag.compiledGrammars;
+    subAg.compiledGrammars = ag.compiledGrammars;
 
     agDcls12.env = subAg.env;
 
     ag.defs = agDcls12.defs ++ subAg.defs;
 
+    -- BUG: these get declared twice! Move them here to avoid this?
+
+    -- annotation redex occurs on $absType;
+    local agDclsP1::AGDcl = appendAGDcl(annoOn("redex", absNames, location=ag.location), agDcls12, location=ag.location);
+    
+    -- annotation labels occurs on $absType;
+    local agDclsP2::AGDcl = appendAGDcl(annoOn("labels", absNames, location=ag.location), agDclsP1, location=ag.location);
+    
+    -- annotation origin occurs on $absType;
+    local agDclsP3::AGDcl = appendAGDcl(annoOn("origin", absNames, location=ag.location), agDclsP2, location=ag.location);
+
     --ag.liftedAGDcls = agDcls22; 
-    forwards to consAGDcls(agDcls12, subAg, location=ag.location);
+    forwards to consAGDcls(agDclsP3, subAg, location=ag.location);
 }

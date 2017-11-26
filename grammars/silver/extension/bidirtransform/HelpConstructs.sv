@@ -54,12 +54,19 @@ top::AGDcl ::= nme::String tyexpr::TypeExpr
 abstract production annoOn
 top::AGDcl ::= name::String onNames::[String]
 {
-    forwards to if null(onNames) then emptyAGDcl(location=top.location)
-        else appendAGDcl(
-            annotateDcl('annotation', qName(top.location, name), botlNone(location=top.location),
-                'occurs', 'on', qName(top.location, head(onNames)), botlNone(location=top.location), ';', location=top.location),
-            annoOn(name, tail(onNames), location=top.location), location=top.location);
+    local qntlName::QNameWithTL = qNameWithTL(qName(top.location, name), botlNone(location=top.location));
 
+    local qntOnNames::[QNameWithTL] = map(\ s::String -> 
+            qNameWithTL(qName(top.location, s), botlNone(location=top.location)), 
+        onNames);
+
+    forwards to makeOccursDclsHelp(top.location, qntlName, qntOnNames);
+
+    -- forwards to if null(onNames) then emptyAGDcl(location=top.location)
+    --     else appendAGDcl(
+    --         annotateDcl('annotation', qName(top.location, name), botlNone(location=top.location),
+    --             'occurs', 'on', qName(top.location, head(onNames)), botlNone(location=top.location), ';', location=top.location),
+    --         annoOn(name, tail(onNames), location=top.location), location=top.location);
 }
 
 abstract production attrOn
