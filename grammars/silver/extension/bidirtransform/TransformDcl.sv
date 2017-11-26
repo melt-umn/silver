@@ -197,7 +197,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
 
     local agDcls12::AGDcl = appendAGDcl(foldl(\ agDcls::AGDcl qn::String->
          appendAGDcl(productionDcl('abstract', 'production', 
-            name(mkOriginName(qn),ag.location), mkProdSig("o", "Origin", "e", "Decorated" ++ qn, location=ag.location),
+            name(mkOriginName(qn),ag.location), mkProdSigDec("o", "Origin", "e", qn, location=ag.location),
                 prdBody([
                     attribDef("o", "isBottomOrigin", mkFalse(location=ag.location), location=ag.location)
                 ], location=ag.location), location=ag.location),
@@ -212,7 +212,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     -- o.concreteOrigin = o;
     local agDcls13::AGDcl = foldl(\ agDcls::AGDcl name::String->
         appendAGDcl(aspectProductionDcl('aspect', 'production', 
-            qName(ag.location, mkOriginName(name)), mkAspectProdSig("o", "Origin", "e", "Decorated" ++ name, location=ag.location),
+            qName(ag.location, mkOriginName(name)), mkAspectProdSigDec("o", "Origin", "e", name, location=ag.location),
                 prdBody([
                     attribDef("o", "wasTransformed", mkFalse(location=ag.location), location=ag.location),
                     attribDef("o", "concreteOrigin", baseName("o", location=ag.location), location=ag.location)
@@ -223,7 +223,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     --
     local agDcls14::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
         appendAGDcl(aspectProductionDcl('aspect', 'production', 
-            qName(ag.location, mkOriginName(lhs)), mkAspectProdSig("o", "Origin", "e", "Decorated" ++ lhs, location=ag.location),
+            qName(ag.location, mkOriginName(lhs)), mkAspectProdSigDec("o", "Origin", "e", lhs, location=ag.location),
                 productionBody('{', foldl(\ stmts::ProductionStmts rhs::String ->
                     if !hasRwID(newRwRules.rewriteRules, lhs, rhs) 
                     then stmts -- this is also probably an error 
@@ -240,7 +240,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     -- o.concreteOrigin = getConcreteOrigin(e.origin, o);
     local agDcls15::AGDcl = foldl(\ agDcls::AGDcl name::String->
         appendAGDcl(aspectProductionDcl('aspect', 'production', 
-            qName(ag.location, mkOriginName(name)), mkAspectProdSig("o", "Origin", "e", "Decorated" ++ name, location=ag.location),
+            qName(ag.location, mkOriginName(name)), mkAspectProdSigDec("o", "Origin", "e", name, location=ag.location),
                 prdBody([
                 attribDef("o", "wasTransformed",
                     argFunc("wasTransformed", appExprList([
@@ -413,6 +413,8 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     subAg.env = appendEnv(ag.env, toEnv(agDcls12.defs));
     --subAg.env = newScopeEnv(agDcls12.defs, ag.env); -- did not work
     --subAg.env = ag.env; -- did not work
+
+    -- next: supply compiledGrammars
 
     agDcls12.env = subAg.env;
 

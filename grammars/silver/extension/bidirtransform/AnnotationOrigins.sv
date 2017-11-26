@@ -9,7 +9,10 @@ top::Expr ::= 'origins' '{' e::Expr '}'
     local newAnnos::AnnoAppExprs = annoAppExprList([
         annExpr("labels", emptyList('[',']', location=top.location), location=top.location),
         annExpr("redex", emptyFunc("nothing", location=top.location), location=top.location),
-        annExpr("origin", emptyFunc(mkOriginName(unFull(top.prodOutput.typeName)), location=top.location), location=top.location)
+        annExpr("origin", oneArgFunc(
+              mkOriginName(unFull(top.prodOutput.typerep.typeName)), 
+              presentName(top.prodOutput.elementName, location=top.location), 
+              location=top.location), location=top.location)
     ], location=top.location);
     
     forwards to 
@@ -31,49 +34,52 @@ top::ProductionStmt ::= 'apply' 'origins' ';'
         mkDefaultProdAnno(qName(top.location, "redex"),  
           presentAppExpr(emptyFunc("nothing", location=top.location), location=top.location), location=top.location), location=top.location),
         mkDefaultProdAnno(qName(top.location, "origin"), 
-          presentAppExpr(emptyFunc(mkOriginName(unFull(top.prodOutput.typeName)), location=top.location), 
+          presentAppExpr(oneArgFunc(
+              mkOriginName(unFull(top.prodOutput.typerep.typeName)), 
+              presentName(top.prodOutput.elementName, location=top.location), 
+              location=top.location), 
         location=top.location), location=top.location), location=top.location);
 }
 
-autocopy attribute prodOutput::Type occurs on ProductionStmt, ProductionStmts, Expr, AppExpr, AppExprs, 
+autocopy attribute prodOutput::NamedSignatureElement occurs on ProductionStmt, ProductionStmts, Expr, AppExpr, AppExprs, 
     AnnoExpr, AnnoAppExprs, ForwardInh, ForwardInhs, ExprInh, ExprInhs, AssignExpr, PrimPattern, PrimPatterns, 
     ProductionBody, AGDcl, ProductionDclStmt;
 
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody 
 {
-    body.prodOutput = ns.namedSignature.outputElement.typerep;
+    body.prodOutput = ns.namedSignature.outputElement;
 }
 
 aspect production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 {
-    body.prodOutput = ns.namedSignature.outputElement.typerep;
+    body.prodOutput = ns.namedSignature.outputElement;
 }
 
 aspect production aspectFunctionDcl
 top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody 
 {
-    body.prodOutput = ns.namedSignature.outputElement.typerep;    
+    body.prodOutput = ns.namedSignature.outputElement;    
 }
 
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 
 {
-    body.prodOutput = ns.namedSignature.outputElement.typerep;    
+    body.prodOutput = ns.namedSignature.outputElement;    
 }
 
 aspect production functionDclFFI
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'foreign' '{' ffidefs::FFIDefs '}'
 {
-    body.prodOutput = ns.namedSignature.outputElement.typerep;
+    body.prodOutput = ns.namedSignature.outputElement;
 }
 
 aspect production aspectDefaultProduction
 top::AGDcl ::= 'aspect' d::Default_kwd 'production' 
                lhs::Name '::' te::TypeExpr '::=' body::ProductionBody 
 {
-    body.prodOutput = te.typerep;    
+    body.prodOutput = namedSignatureElement(lhs.name, te.typerep);    
 }
 
 aspect production productionDclStmt
@@ -83,5 +89,5 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
                            body::ProductionBody
                            opta::OptionalAction
 {
-    body.prodOutput = top.lhsdcl.outputElement.typerep;
+    body.prodOutput = top.lhsdcl.outputElement;
 }

@@ -19,6 +19,12 @@ top::Expr ::= name::String args::AppExprs
     forwards to applicationExpr(baseName(name, location=top.location), '(',args,')', location=top.location);
 }
 
+abstract production oneArgFunc
+top::Expr ::= name::String arg::AppExpr
+{
+    forwards to argFunc(name, appExprList([arg], location=top.location), location=top.location);
+}
+
 abstract production fullFunc
 top::Expr ::= name::String args::AppExprs annos::AnnoAppExprs 
 {
@@ -49,7 +55,7 @@ abstract production annoOn
 top::AGDcl ::= name::String onNames::[String]
 {
     forwards to if null(onNames) then emptyAGDcl(location=top.location)
-        else lockAGDcls(
+        else appendAGDcl(
             annotateDcl('annotation', qName(top.location, name), botlNone(location=top.location),
                 'occurs', 'on', qName(top.location, head(onNames)), botlNone(location=top.location), ';', location=top.location),
             annoOn(name, tail(onNames), location=top.location), location=top.location);
@@ -60,7 +66,7 @@ abstract production attrOn
 top::AGDcl ::= name::String onNames::[String]
 {
     forwards to if null(onNames) then emptyAGDcl(location=top.location)
-        else lockAGDcls(
+        else appendAGDcl(
             attributionDcl('attribute', qName(top.location, name), botlNone(location=top.location), 
                 'occurs', 'on', qName(top.location, head(onNames)), botlNone(location=top.location), ';', location=top.location),
             attrOn(name, tail(onNames), location=top.location), location=top.location);
@@ -153,6 +159,12 @@ top::TypeExpr ::= s::String
 {
     forwards to nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, s), location=top.location),
         botlNone(location=top.location), location=top.location);
+}
+
+abstract production decTyExpr
+top::TypeExpr ::= s::String 
+{
+    forwards to refTypeExpr('Decorated', sTyExpr(s, location=top.location), location=top.location);
 }
 
 abstract production qTyExpr
@@ -318,6 +330,17 @@ top::ProductionSignature ::= lhsName::String lhsType::String rhsName::String rhs
             productionRHSNil(location=top.location), location=top.location), location=top.location);
 }
 
+abstract production mkProdSigDec
+top::ProductionSignature ::= lhsName::String lhsType::String rhsName::String rhsType::String
+{
+    forwards to productionSignature(
+        productionLHS(name(lhsName, top.location), '::', sTyExpr(lhsType, location=top.location), location=top.location),
+        '::=',
+        productionRHSCons(
+            productionRHSElem(name(rhsName, top.location), '::', decTyExpr(rhsType, location=top.location), location=top.location),
+            productionRHSNil(location=top.location), location=top.location), location=top.location);
+}
+
 abstract production mkAspectProdSig
 top::AspectProductionSignature ::= lhsName::String lhsType::String rhsName::String rhsType::String
 {
@@ -326,6 +349,17 @@ top::AspectProductionSignature ::= lhsName::String lhsType::String rhsName::Stri
         '::=',
         aspectRHSElemCons(
             aspectRHSElemTyped(name(rhsName, top.location), '::', sTyExpr(rhsType, location=top.location), location=top.location),
+            aspectRHSElemNil(location=top.location), location=top.location), location=top.location);
+}
+
+abstract production mkAspectProdSigDec
+top::AspectProductionSignature ::= lhsName::String lhsType::String rhsName::String rhsType::String
+{
+    forwards to aspectProductionSignature(
+        aspectProductionLHSTyped(name(lhsName, top.location), '::', sTyExpr(lhsType, location=top.location), location=top.location),
+        '::=',
+        aspectRHSElemCons(
+            aspectRHSElemTyped(name(rhsName, top.location), '::', decTyExpr(rhsType, location=top.location), location=top.location),
             aspectRHSElemNil(location=top.location), location=top.location), location=top.location);
 }
 
