@@ -12,7 +12,11 @@ autocopy attribute cncGroup::Decorated NonterminalList;
 concrete production productionDef
 pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
 {
-    pd.errors := args.errors;
+    -- Somewhere, apparently not here, errors are being added 
+    -- from expressions or appExprs or patterns that shouldn't
+    -- be looked at as they only exist to be filled in with 
+    -- correct data at a later state.
+    pd.errors := [];--args.errors;
     
     pd.pp = qn.pp ++ "(" ++ args.pp ++ ")";
 

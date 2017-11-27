@@ -195,6 +195,7 @@ top::Expr ::= rwr::Decorated RewriteRule rhsTy::String lhsTy::String elemName::S
         else exprAccess(restoreNm(unFull(rwr.inputType.typeName)), "o", location=top.location));
 } 
 
+-- LHS is a concrete syntax type name
 abstract production applyRwProd
 top::Expr ::= rwr::Decorated RewriteRule lhs::String ns::Decorated NamedSignature
 {   
@@ -205,18 +206,21 @@ top::Expr ::= rwr::Decorated RewriteRule lhs::String ns::Decorated NamedSignatur
             emptyAnnoAppExprs(location=top.location), location=top.location));
 }
 
+-- LHS is a concrete syntax type name
 abstract production lhsRestoredTypesAppExprs
 top::AppExprs ::= lhs::String inputNames::[String] inputTypes::[String] shouldRestore::Boolean
 {
     forwards to if length(inputTypes) == 1 
     then oneAppExprs(
         if shouldRestore 
-        then namedAccess(restoreNm(unFull(head(inputTypes))), lhs, location=top.location)
+        -- We don't, at this point, know what type we need to restore to,
+        --          this v---------------------------------v needs to be moved down the line
+        then namedAccess(restoreNm(unFull(head(inputTypes))), head(inputNames), location=top.location)
         else presentName(head(inputNames), location=top.location), location=top.location)
     else snocAppExprs(lhsRestoredTypesAppExprs(lhs, tail(inputNames), tail(inputTypes), shouldRestore, location=top.location),
             ',',
             if shouldRestore 
-            then namedAccess(restoreNm(unFull(head(inputTypes))), lhs, location=top.location)
+            then namedAccess(restoreNm(unFull(head(inputTypes))), head(inputNames), location=top.location)
             else presentName(head(inputNames), location=top.location),   
         location=top.location);
 }
