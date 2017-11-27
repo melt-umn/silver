@@ -221,18 +221,19 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
 
     -- restored$cncType attributes
     --
-    local agDcls14::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
-        appendAGDcl(aspectProductionDcl('aspect', 'production', 
-            qName(ag.location, mkOriginName(lhs)), mkAspectProdSigDec("o", "Origin", "e", lhs, location=ag.location),
-                productionBody('{', foldl(\ stmts::ProductionStmts rhs::String ->
-                    if !hasRwID(newRwRules.rewriteRules, lhs, rhs) 
-                    then stmts -- this is also probably an error 
-                    else prdStmtList([
-                            attribDef( "o", restoreNm(rhs),  
-                                applyRw(rwID(newRwRules.rewriteRules, lhs, rhs), rhs, lhs, "e", location=ag.location), location=ag.location)
-                        ], location=ag.location),
-                productionStmtsNil(location=ag.location), cncNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
-        agDcls13, cncNames);
+    -- local agDcls14::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
+    --     appendAGDcl(aspectProductionDcl('aspect', 'production', 
+    --         qName(ag.location, mkOriginName(lhs)), mkAspectProdSigDec("o", "Origin", "e", lhs, location=ag.location),
+    --             productionBody('{', foldl(\ stmts::ProductionStmts rhs::String ->
+    --                 if !hasRwID(newRwRules.rewriteRules, lhs, rhs) 
+    --                 then stmts -- this is also probably an error 
+    --                 else prdStmtList([
+    --                         attribDef( "o", restoreNm(rhs),  
+    --                             applyRw(rwID(newRwRules.rewriteRules, lhs, rhs), rhs, lhs, "e", location=ag.location), location=ag.location)
+    --                     ], location=ag.location),
+    --             productionStmtsNil(location=ag.location), cncNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
+    --     agDcls13, cncNames);
+    local agDcls14::AGDcl = agDcls13;
 
     -- aspect all abstract origins with:
     --
@@ -244,13 +245,13 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
                 prdBody([
                 attribDef("o", "wasTransformed",
                     argFunc("wasTransformed", appExprList([
-                        namedAccess("origin", "e", location=ag.location),
-                        namedAccess("redex", "e", location=ag.location)
+                        namedAccess("redex", "e", location=ag.location),
+                        namedAccess("origin", "e", location=ag.location)
                     ], location=ag.location), location=ag.location), location=ag.location),
                 attribDef("o", "concreteOrigin", 
                     argFunc("getConcreteOrigin", appExprList([
-                        namedAccess("origin", "e", location=ag.location), 
-                        presentName("o", location=ag.location)
+                        presentName("o", location=ag.location),
+                        namedAccess("origin", "e", location=ag.location)
                     ], location=ag.location), location=ag.location), location=ag.location)
                 ], location=ag.location), location=ag.location), agDcls, location=ag.location),
         agDcls14, absNames);
@@ -268,8 +269,8 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
                     else e,
                 argFunc("wasTransformed",
                     appExprList([
-                            lhsAccess("origin", ns, location=ag.location),
-                            lhsAccess("redex", ns, location=ag.location) 
+                            lhsAccess("redex", ns, location=ag.location),
+                            lhsAccess("origin", ns, location=ag.location)
                         ], location=ag.location),
                     location=ag.location), ns.inputElements), location=ag.location), location=ag.location), agDcls, location=ag.location),
         agDcls15, absProdDcls);
@@ -411,24 +412,27 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
 
     agDclsP3.compiledGrammars = ag.compiledGrammars;
     agDcls15.compiledGrammars = ag.compiledGrammars;
+    --agDcls2.compiledGrammars = ag.compiledGrammars;
     subAg.compiledGrammars = ag.compiledGrammars;
 
     agDclsP3.config = ag.config;    
     agDcls15.config = ag.config;
+    --agDcls2.config = ag.config;
     subAg.config = ag.config;
 
     agDclsP3.grammarName = ag.grammarName;
     agDcls15.grammarName = ag.grammarName;
+    --agDcls2.grammarName = ag.grammarName;
     subAg.grammarName = ag.grammarName;
 
     agDclsP3.env = subAg.env;
     agDcls15.env = subAg.env;
+    --agDcls2.env = subAg.env;
 
     agDclsP3.flowEnv = ag.flowEnv;
     agDcls15.flowEnv = ag.flowEnv;
+    --agDcls2.flowEnv = ag.flowEnv;
     subAg.flowEnv = ag.flowEnv;
-
-    -- next: flowEnv
 
     subAg.env = appendEnv(ag.env, toEnv(agDclsP3.defs));
     --subAg.env = newScopeEnv(agDcls15.defs, ag.env); -- did not work
@@ -436,7 +440,8 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
 
     -- ag.defs = agDclsP3.defs ++ subAg.defs;  <- double annotations
     -- ag.defs = agDcls15.defs ++ subAg.defs; -- <- duplicate attributes
-    ag.defs = subAg.defs;
+    ag.defs = subAg.defs; -- <- unknown restored names
+    -- ag.defs = agDcls2.defs ++ subAg.defs;
 
     -- BUG: these get declared twice! Move them here to avoid this?
 
