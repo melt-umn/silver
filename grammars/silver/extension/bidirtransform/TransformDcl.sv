@@ -50,17 +50,6 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     local absGroup::Decorated NonterminalList = decorate absGroupIn with { env=ag.env; };
     local cncGroup::Decorated NonterminalList = decorate cncGroupIn with { env=ag.env; };
 
-    trRules.config = ag.config;
-    rwRules.config = ag.config;
-
-    -- todo?
-    trRules.downSubst = emptySubst();
-    rwRules.downSubst = emptySubst();
-    trRules.finalSubst = rwRules.upSubst;
-    rwRules.finalSubst = trRules.finalSubst;
-
---     ag.defs = [lockDef()] ++ toForward.defs;
-
 --     forwards to toForward;
 -- }
 
@@ -79,23 +68,22 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
 
     trRules.absGroup = absGroup;
     trRules.cncGroup = cncGroup;
-
     trRules.env = ag.env;
+    trRules.config = ag.config;
+    trRules.downSubst = emptySubst();
+    trRules.finalSubst = rwRules.upSubst;
 
-    -- absGroup.env = ag.env;
-    -- cncGroup.env = ag.env;
+    rwRules.absGroup = absGroup;
+    rwRules.cncGroup = cncGroup;
+    rwRules.downSubst = emptySubst();    
+    rwRules.env = ag.env;
+    rwRules.finalSubst = trRules.finalSubst;
+    rwRules.config = ag.config;    
 
-    -- ag.moduleNames = [];
-    -- ag.terminalPrefixes = [];
+    -- todo: think about the env we're providing to the transform/rewrite rules
 
     -----------------
     -- Initialization of lists of things we need to know
-
-    -- local locCncNamesPair :: Pair<[String] [String]> = partition(\ s::String -> 
-    --     hasLocDcl(getAttrsOn(s,ag.env)),
-    -- cncStrings);
-    -- local locCncNames :: [String] = locCncNamesPair.fst;
-    -- local nonLocCncNames :: [String] = locCncNamesPair.snd;
     
     -- We need to know everything's name
 
@@ -171,13 +159,32 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     --
     -- add the identity rule for each type, if an identity rule doesn't already exist
     -- (x -> new(x)) 
-    local newRwRules::RewriteRuleList = foldl(\ rwRules::RewriteRuleList name::String ->
-            if hasRwID(rwRules.rewriteRules, name, name) then rwRules
-            else rewriteRuleCons(terminal(Vbar_kwd, "|"), 
+    local newRwRules::Decorated RewriteRuleList = foldl(\ rules::Decorated RewriteRuleList name::String ->
+            if hasRwID(rules.rewriteRules, name, name) then rules
+            else decorate rewriteRuleCons(terminal(Vbar_kwd, "|"), 
                 rewriteRuleType(qName(ag.location, "a"), '::', qTyExpr(qName(ag.location, name), location=ag.location), '->',
                     mkNew("a", location=ag.location), location=ag.location), 
-                    rwRules, location=ag.location),
-        rwRules, cncNames);
+                    new(rules), location=ag.location) with {
+                        absGroup=rules.absGroup;
+                        cncGroup=rules.cncGroup;
+                        env=rules.env;
+                        downSubst=rules.downSubst;
+                        finalSubst=rules.finalSubst;
+                        config=rules.config;
+                    },
+        decorate rwRules with {
+            absGroup=absGroup;
+            cncGroup=cncGroup;
+            env=ag.env;
+            downSubst=emptySubst();
+            finalSubst=trRules.finalSubst;
+            config=ag.config;
+        }, cncNames);
+
+    -- newRwRules.downSubst = emptySubst();    
+    -- newRwRules.env = ag.env;
+    -- newRwRules.finalSubst = trRules.finalSubst;
+    -- newRwRules.config = ag.config;    
 
     -- Generating origin productions
     --

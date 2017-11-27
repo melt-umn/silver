@@ -5,10 +5,8 @@ synthesized attribute outputStmt::(Expr ::= Expr);
 synthesized attribute inputType::Type;
 synthesized attribute inputProduction::Maybe<RewriteProduction>;
 synthesized attribute shouldRestore::Boolean;
-synthesized attribute absStrings::[String];
-synthesized attribute cncStrings::[String];
 
-nonterminal RewriteRuleList with rewriteRules, env, errors, location, absStrings, cncStrings, pp, downSubst, upSubst, finalSubst, config;
+nonterminal RewriteRuleList with rewriteRules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
 nonterminal RewriteRule with inputType, inputProduction, typerep, outputStmt, shouldRestore, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
 nonterminal RewriteProduction with name, inputNames, typerep, env, errors, location, absGroup, cncGroup, pp, config;
 nonterminal RewriteProductionArgs with inputNames, errors, pp, config;
@@ -33,7 +31,7 @@ rrl::RewriteRuleList ::= Vbar_kwd l::RewriteRule r::RewriteRuleList
     rrl.pp = "| " ++ l.pp ++ r.pp;
 
     rrl.errors := l.errors ++ r.errors;
-    rrl.rewriteRules = r.rewriteRules ++ [decorate l with {}];
+    rrl.rewriteRules = r.rewriteRules ++ [l];
     
     -- error check: is the exact rule l found in r?
     -- equality checking is non trivial so we aren't doing this
@@ -54,7 +52,7 @@ rrl::RewriteRuleList ::= Vbar_kwd rule::RewriteRule
 
     rrl.pp = "| " ++ rule.pp;
 
-    rrl.rewriteRules = [decorate rule with {}];
+    rrl.rewriteRules = [rule];
     rrl.errors := rule.errors;
 }
 
@@ -64,6 +62,11 @@ rule::RewriteRule ::= prd::RewriteProduction '->' e::Expr
 {
     rule.pp = prd.pp ++ "->" ++ e.pp;
 
+    e.downSubst = rule.downSubst;
+    rule.upSubst = e.upSubst;
+    e.finalSubst = rule.upSubst;
+    e.defaultInheritedAnnos = [];      
+
     forwards to rewriteRule(e, "", prd.typerep, e.typerep, just(prd), false, location=rule.location);
 }
 
@@ -72,6 +75,11 @@ concrete production rewriteRuleRestoreProd
 rule::RewriteRule ::= prd::RewriteProduction '~~>' e::Expr
 {
     rule.pp = prd.pp ++ "~~>" ++ e.pp;
+
+    e.downSubst = rule.downSubst;
+    rule.upSubst = e.upSubst;
+    e.finalSubst = rule.upSubst;
+    e.defaultInheritedAnnos = [];      
     
     forwards to rewriteRule(e, "", prd.typerep, e.typerep, just(prd), true, location=rule.location);
 }
@@ -83,6 +91,11 @@ rule::RewriteRule ::= name::QName '::' t::TypeExpr '->' e::Expr
 {
     rule.pp = name.pp ++ "::" ++ t.pp ++ "->" ++ e.pp;
 
+    e.downSubst = rule.downSubst;
+    rule.upSubst = e.upSubst;
+    e.finalSubst = rule.upSubst;    
+    e.defaultInheritedAnnos = [];      
+
     forwards to rewriteRule(e, name.name, t.typerep, e.typerep, nothing(), false, location=rule.location);    
 }
 
@@ -93,6 +106,12 @@ rule::RewriteRule ::= name::QName '::' t::TypeExpr '~~>' e::Expr
 {
     rule.pp = name.pp ++ "::" ++ t.pp ++ "~~>" ++ e.pp;
 
+    -- I shouldn't need to have to redefine this, as the forward defines this, but I do.
+    e.downSubst = rule.downSubst;
+    rule.upSubst = e.upSubst;
+    e.finalSubst = rule.upSubst;
+    e.defaultInheritedAnnos = [];  
+    
     forwards to rewriteRule(e, name.name, t.typerep, e.typerep, nothing(), true, location=rule.location);
 }
 
