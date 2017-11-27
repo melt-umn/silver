@@ -106,7 +106,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
 
     -- New attributes and annotations
 
-    local inhRedexName::String = "inhRedex_" ++ tName;
+    local inhRedexName::String = inhRedexNm(tName);
 
     -- autocopy attribute inRedex_$tName :: Maybe<Origin>; 
     local agDcls::AGDcl = autocAttr(inhRedexName,
@@ -150,7 +150,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     local agDcls10::AGDcl = appendAGDcl(attrOn("wasTransformed", absNames, location=ag.location), agDcls9, location=ag.location);
 
     -- attribute transformed_$tName occurs on $absType;
-    local agDcls10_1::AGDcl = appendAGDcl(attrOn(transformNm(tName), absNames, location=ag.location), agDcls9, location=ag.location);  
+    local agDcls10_1::AGDcl = appendAGDcl(attrOn(transformNm(tName), absNames, location=ag.location), agDcls10, location=ag.location);  
 
     -- attribute $tName occurs on $absType;
     local agDcls11::AGDcl = appendAGDcl(attrOn(tName, absNames, location=ag.location), agDcls10_1, location=ag.location);      
@@ -221,19 +221,19 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
 
     -- restored$cncType attributes
     --
-    -- local agDcls14::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
-    --     appendAGDcl(aspectProductionDcl('aspect', 'production', 
-    --         qName(ag.location, mkOriginName(lhs)), mkAspectProdSigDec("o", "Origin", "e", lhs, location=ag.location),
-    --             productionBody('{', foldl(\ stmts::ProductionStmts rhs::String ->
-    --                 if !hasRwID(newRwRules.rewriteRules, lhs, rhs) 
-    --                 then stmts -- this is also probably an error 
-    --                 else prdStmtList([
-    --                         attribDef( "o", restoreNm(rhs),  
-    --                             applyRw(rwID(newRwRules.rewriteRules, lhs, rhs), rhs, lhs, "e", location=ag.location), location=ag.location)
-    --                     ], location=ag.location),
-    --             productionStmtsNil(location=ag.location), cncNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
-    --     agDcls13, cncNames);
-    local agDcls14::AGDcl = agDcls13;
+    local agDcls14::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
+        appendAGDcl(aspectProductionDcl('aspect', 'production', 
+            qName(ag.location, mkOriginName(lhs)), mkAspectProdSigDec("o", "Origin", "e", lhs, location=ag.location),
+                productionBody('{', foldl(\ stmts::ProductionStmts rhs::String ->
+                    if !hasRwID(newRwRules.rewriteRules, lhs, rhs) 
+                    then stmts -- this is also probably an error 
+                    else prdStmtList([
+                            attribDef( "o", restoreNm(rhs),  
+                                applyRw(rwID(newRwRules.rewriteRules, lhs, rhs), rhs, lhs, "e", location=ag.location), location=ag.location)
+                        ], location=ag.location),
+                productionStmtsNil(location=ag.location), cncNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
+        agDcls13, cncNames);
+    -- local agDcls14::AGDcl = agDcls13;
 
     -- aspect all abstract origins with:
     --
@@ -303,7 +303,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     --  if this abstract production has no transformations defined for it,
     --  then,
     --    if top is the same type as the transformation
-    --    then $thisProd($arg.$tName, origin=$thisType_Origin(top), redex=(..).inhOrigin_$tName, labels=[])
+    --    then $thisProd($arg.$tName, origin=$thisType_Origin(top), redex=(..).inhRedex_$tName, labels=[])
     --    else don't define this?    ^
     --  else if transformed_$tName   |
     --    then apply transformation  |
@@ -442,8 +442,6 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     -- ag.defs = agDcls18.defs ++ subAg.defs; -- <- duplicate attributes
     ag.defs = subAg.defs; 
     -- ag.defs = agDcls2.defs ++ subAg.defs;
-
-    -- BUG: these get declared twice! Move them here to avoid this?
 
     -- annotation redex occurs on $absType;
     local agDclsP1::AGDcl = appendAGDcl(annoOn("redex", absNames, location=ag.location), agDcls18, location=ag.location);

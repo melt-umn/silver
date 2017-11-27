@@ -37,7 +37,7 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String] qn::Decorated QName
 
     forwards to 
         if !contains(qn.name, names) then toFill -- Error
-        else if idx == -1 then toFill -- Error 
+        else if idx == -1 || idx >= length(exps) then toFill -- Error 
         else idxOf(exps, idx, location=toFill.location);
 }
 

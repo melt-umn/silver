@@ -14,15 +14,15 @@ String ::= typeName::String
     return "origin_" ++ typeName;
 }
 
-function inhOriginName
+function inhRedexNameSig
 String ::= ns::Decorated NamedSignature
 {
     return if !null(ns.inputElements)
-        then validInhOrigin(head(ns.inputNames), ns.outputElement.elementName)
+        then validInhRedex(head(ns.inputNames), ns.outputElement.elementName)
         else ns.outputElement.elementName;
 }
 
-function validInhOrigin
+function validInhRedex
 String ::= test::String def::String
 {
     -- For now just check against built ins
@@ -79,4 +79,10 @@ function unFull
 String ::= s::String 
 {
     return substring(lastIndexOf(":", s)+1, length(s), s);
+}
+
+function inhRedexNm
+String ::= tName::String 
+{
+    return "inhRedex_" ++ tName;
 }

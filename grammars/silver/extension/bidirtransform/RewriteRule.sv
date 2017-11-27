@@ -192,7 +192,7 @@ top::Expr ::= rwr::Decorated RewriteRule rhsTy::String lhsTy::String elemName::S
         if rhsTy == lhsTy || !rwr.shouldRestore then baseName(elemName, location=top.location) 
         -- Otherwise pass the appropriate restored type from
         -- this origin into the rule
-        else exprAccess(elemName, restoreNm(unFull(rwr.inputType.typeName)), location=top.location));
+        else exprAccess(restoreNm(unFull(rwr.inputType.typeName)), elemName, location=top.location));
 } 
 
 abstract production applyRwProd

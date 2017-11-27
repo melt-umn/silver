@@ -247,9 +247,9 @@ top::Expr ::= ns::Decorated NamedSignature tName::String
         annoAppExprList([
             annExpr("labels", emptyList('[',']', location=top.location), location=top.location),
             -- This is not worked out completely
-            -- We want to access the inhOrigin of the leftmost rhs element, if it has
-            -- an inhOrigin, and otherwise top.inhOrigin
-            annExpr("redex", exprAccess("inhOrigin_"++tName, inhOriginName(ns), location=top.location), location=top.location),
+            -- We want to access the inhRedex of the leftmost rhs element, if it has
+            -- an inhRedex, and otherwise top.inhRedex
+            annExpr("redex", exprAccess(inhRedexNm(tName), inhRedexNameSig(ns), location=top.location), location=top.location),
             annExpr("origin", mkOrigin(ns, location=top.location), location=top.location)
         ], location=top.location),
         ')', location=top.location);
