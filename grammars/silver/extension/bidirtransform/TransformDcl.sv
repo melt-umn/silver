@@ -413,40 +413,40 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     ag.errors <- agDclsP3.errors ++ subAg.errors;
 
     agDclsP3.compiledGrammars = ag.compiledGrammars;
-    agDcls18.compiledGrammars = ag.compiledGrammars;
+    agDcls22.compiledGrammars = ag.compiledGrammars;
     --agDcls2.compiledGrammars = ag.compiledGrammars;
     subAg.compiledGrammars = ag.compiledGrammars;
 
     agDclsP3.config = ag.config;    
-    agDcls18.config = ag.config;
+    agDcls22.config = ag.config;
     --agDcls2.config = ag.config;
     subAg.config = ag.config;
 
     agDclsP3.grammarName = ag.grammarName;
-    agDcls18.grammarName = ag.grammarName;
+    agDcls22.grammarName = ag.grammarName;
     --agDcls2.grammarName = ag.grammarName;
     subAg.grammarName = ag.grammarName;
 
     agDclsP3.env = subAg.env;
-    agDcls18.env = subAg.env;
+    agDcls22.env = subAg.env;
     --agDcls2.env = subAg.env;
 
     agDclsP3.flowEnv = ag.flowEnv;
-    agDcls18.flowEnv = ag.flowEnv;
+    agDcls22.flowEnv = ag.flowEnv;
     --agDcls2.flowEnv = ag.flowEnv;
     subAg.flowEnv = ag.flowEnv;
 
     subAg.env = appendEnv(ag.env, toEnv(agDclsP3.defs));
-    --subAg.env = newScopeEnv(agDcls18.defs, ag.env); -- did not work
+    --subAg.env = newScopeEnv(agDcls22.defs, ag.env); -- did not work
     --subAg.env = ag.env; -- did not work
 
     -- ag.defs = agDclsP3.defs ++ subAg.defs;  <- double annotations
-    -- ag.defs = agDcls18.defs ++ subAg.defs; -- <- duplicate attributes
+    -- ag.defs = agDcls22.defs ++ subAg.defs; -- <- duplicate attributes
     ag.defs = subAg.defs; 
     -- ag.defs = agDcls2.defs ++ subAg.defs;
 
     -- annotation redex occurs on $absType;
-    local agDclsP1::AGDcl = appendAGDcl(annoOn("redex", absNames, location=ag.location), agDcls18, location=ag.location);
+    local agDclsP1::AGDcl = appendAGDcl(annoOn("redex", absNames, location=ag.location), agDcls22, location=ag.location);
     
     -- annotation labels occurs on $absType;
     local agDclsP2::AGDcl = appendAGDcl(annoOn("labels", absNames, location=ag.location), agDclsP1, location=ag.location);
