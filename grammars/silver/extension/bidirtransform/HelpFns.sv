@@ -48,9 +48,9 @@ Boolean ::= dcl::[DclInfo]
 }
 
 function hasNamedAttr
-Boolean ::= tyName::String env::Decorated Env hasAttr::String
+Boolean ::= tyName::String env::Decorated Env attr::String
 {
-    return containsAttr(getAttrsOn(tyName, env), hasAttr);
+    return containsAttr(getAttrsOn(tyName, env), attr);
 }
 
 function containsAttr

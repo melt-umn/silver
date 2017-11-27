@@ -116,7 +116,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     -- for $cncType in cncTypes
     -- synthesized attribute restored$cncType :: $cncType;
     local agDcls2::AGDcl = foldl(\ agDcls::AGDcl name::String-> 
-            appendAGDcl(synAttr(restoreNm(name), sTyExpr(name, location=ag.location), location=ag.location), agDcls, location=ag.location),
+            appendAGDcl(synAttr(restoreNm(unFull(name)), sTyExpr(name, location=ag.location), location=ag.location), agDcls, location=ag.location),
         agDcls, cncNames);
 
     -- synthesized attribute $tName :: $tType;
@@ -141,7 +141,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     -- for $absType in absTypes
     -- attribute restored$cncType occurs on Origin, $absType;
     local agDcls6::AGDcl = foldl(\ agDcls::AGDcl name::String->
-            appendAGDcl(attrOn(restoreNm(name), absNames ++ ["Origin"], location=ag.location), agDcls, location=ag.location),
+            appendAGDcl(attrOn(restoreNm(unFull(name)), absNames ++ ["Origin"], location=ag.location), agDcls, location=ag.location),
         agDcls5, cncNames);
 
     local agDcls9::AGDcl = agDcls6;
@@ -228,7 +228,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
                     if !hasRwID(newRwRules.rewriteRules, lhs, rhs) 
                     then stmts -- this is also probably an error 
                     else prdStmtList([
-                            attribDef( "o", restoreNm(rhs),  
+                            attribDef( "o", restoreNm(unFull(rhs)),  
                                 applyRw(rwID(newRwRules.rewriteRules, lhs, rhs), rhs, lhs, "e", location=ag.location), location=ag.location)
                         ], location=ag.location),
                 productionStmtsNil(location=ag.location), cncNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
@@ -276,28 +276,30 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
         agDcls15, absProdDcls);
 
     -- top.restored$cncType = < rewrite + transformation rules ...>
-    local agDcls17::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
-        appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-            foldl(\ stmts::ProductionStmts rhs::String ->
-                -- if there is a rewrite rule from this production to this lhs then use that
-                if !hasRwMatch(newRwRules.rewriteRules, rhs, ns) then stmts 
-                else productionStmtsSnoc(stmts, 
-                        attribDef(ns.outputElement.elementName, restoreNm(rhs),
-                        if rwMatch(newRwRules.rewriteRules, rhs, ns).inputProduction.isJust 
-                        then mkCond(
-                            lhsExprAccess("wasTransformed", ns, location=ag.location),
-                            -- use the rewrite production
-                            applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, ns, location=ag.location),
-                            -- refer to the concrete origin's restored element
-                            qAccess(qAccess(
-                                lhsExprAccess("origin", ns, location=ag.location), 
-                                  "concreteOrigin", location=ag.location),
-                                  restoreNm(rhs), location=ag.location), 
-                        location=ag.location)
-                        else applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
-                    location=ag.location), location=ag.location),
-            productionStmtsNil(location=ag.location), cncNames), location=ag.location), agDcls, location=ag.location),
-        agDcls16, absProdDcls);
+    -- local agDcls17::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+    --     appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+    --         foldl(\ stmts::ProductionStmts rhs::String ->
+    --             -- if there is a rewrite rule from this production to this lhs then use that
+    --             if !hasRwMatch(newRwRules.rewriteRules, rhs, ns) then stmts 
+    --             else productionStmtsSnoc(stmts, 
+    --                     attribDef(ns.outputElement.elementName, restoreNm(unFull(rhs)),
+    --                     if rwMatch(newRwRules.rewriteRules, rhs, ns).inputProduction.isJust 
+    --                     then mkCond(
+    --                         lhsExprAccess("wasTransformed", ns, location=ag.location),
+    --                         -- use the rewrite production
+    --                         applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, ns, location=ag.location),
+    --                         -- refer to the concrete origin's restored element
+    --                         qAccess(restoreNm(unFull(rhs)),
+    --                             qAccess("concreteOrigin",
+    --                                 lhsExprAccess("origin", ns, location=ag.location), 
+    --                                 location=ag.location),
+    --                             location=ag.location),
+    --                         location=ag.location)
+    --                     else applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
+    --                 location=ag.location), location=ag.location),
+    --         productionStmtsNil(location=ag.location), cncNames), location=ag.location), agDcls, location=ag.location),
+    --     agDcls16, absProdDcls);
+    local agDcls17::AGDcl = agDcls16;
 
     -- top.$tName = ...
     --  if this abstract production has no transformations defined for it,

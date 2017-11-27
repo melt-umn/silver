@@ -189,7 +189,7 @@ top::AppExpr ::= name::String ns::Decorated NamedSignature
 abstract production namedAccess
 top::AppExpr ::= name::String accessOn::String 
 {
-    forwards to presentAppExpr(exprAccess(name,accessOn, location=top.location), location=top.location);
+    forwards to presentAppExpr(exprAccess(name, accessOn, location=top.location), location=top.location);
 } 
 
 abstract production lhsExprAccess
@@ -199,7 +199,7 @@ top::Expr ::= name::String ns::Decorated NamedSignature
 }
 
 abstract production qAccess
-top::Expr ::= accessOn::Expr q::String
+top::Expr ::= q::String accessOn::Expr 
 {
     forwards to access(accessOn, '.', qNameAttrOccur(qName(top.location, q), location=top.location), location=top.location);
 }
@@ -207,7 +207,7 @@ top::Expr ::= accessOn::Expr q::String
 abstract production exprAccess
 top::Expr ::= name::String accessOn::String 
 {
-    forwards to qAccess(baseName(accessOn, location=top.location), name, location=top.location); 
+    forwards to qAccess(name, baseName(accessOn, location=top.location), location=top.location); 
 } 
 
 
