@@ -222,7 +222,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
                     then stmts -- this is also probably an error 
                     else prdStmtList([
                             attribDef( "o", restoreNm(rhs),  
-                                applyRw(rwID(newRwRules.rewriteRules, lhs, rhs, location=ag.location), rhs, lhs, "e", location=ag.location), location=ag.location)
+                                applyRw(rwID(newRwRules.rewriteRules, lhs, rhs), rhs, lhs, "e", location=ag.location), location=ag.location)
                         ], location=ag.location),
                 productionStmtsNil(location=ag.location), cncNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
         agDcls13, cncNames);
@@ -275,18 +275,18 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
                 if !hasRwMatch(newRwRules.rewriteRules, rhs, ns) then stmts 
                 else productionStmtsSnoc(stmts, 
                         attribDef(ns.outputElement.elementName, restoreNm(rhs),
-                        if rwMatch(newRwRules.rewriteRules, rhs, ns, location=ag.location).inputProduction.isJust 
+                        if rwMatch(newRwRules.rewriteRules, rhs, ns).inputProduction.isJust 
                         then mkCond(
                             lhsExprAccess("wasTransformed", ns, location=ag.location),
                             -- use the rewrite production
-                            applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns, location=ag.location), rhs, ns, location=ag.location),
+                            applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, ns, location=ag.location),
                             -- refer to the concrete origin's restored element
                             qAccess(qAccess(
                                 lhsExprAccess("origin", ns, location=ag.location), 
                                   "concreteOrigin", location=ag.location),
                                   restoreNm(rhs), location=ag.location), 
                         location=ag.location)
-                        else applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns, location=ag.location), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
+                        else applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
                     location=ag.location), location=ag.location),
             productionStmtsNil(location=ag.location), cncNames), location=ag.location), agDcls, location=ag.location),
         agDcls16, absProdDcls);
@@ -403,38 +403,38 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     ag.errors <- agDclsP3.errors ++ subAg.errors;
 
     agDclsP3.compiledGrammars = ag.compiledGrammars;
-    agDcls12.compiledGrammars = ag.compiledGrammars;
+    agDcls15.compiledGrammars = ag.compiledGrammars;
     subAg.compiledGrammars = ag.compiledGrammars;
 
     agDclsP3.config = ag.config;    
-    agDcls12.config = ag.config;
+    agDcls15.config = ag.config;
     subAg.config = ag.config;
 
     agDclsP3.grammarName = ag.grammarName;
-    agDcls12.grammarName = ag.grammarName;
+    agDcls15.grammarName = ag.grammarName;
     subAg.grammarName = ag.grammarName;
 
     agDclsP3.env = subAg.env;
-    agDcls12.env = subAg.env;
+    agDcls15.env = subAg.env;
 
     agDclsP3.flowEnv = ag.flowEnv;
-    agDcls12.flowEnv = ag.flowEnv;
+    agDcls15.flowEnv = ag.flowEnv;
     subAg.flowEnv = ag.flowEnv;
 
     -- next: flowEnv
 
     subAg.env = appendEnv(ag.env, toEnv(agDclsP3.defs));
-    --subAg.env = newScopeEnv(agDcls12.defs, ag.env); -- did not work
+    --subAg.env = newScopeEnv(agDcls15.defs, ag.env); -- did not work
     --subAg.env = ag.env; -- did not work
 
     -- ag.defs = agDclsP3.defs ++ subAg.defs;  <- double annotations
-    -- ag.defs = agDcls12.defs ++ subAg.defs; -- <- duplicate attributes
+    -- ag.defs = agDcls15.defs ++ subAg.defs; -- <- duplicate attributes
     ag.defs = subAg.defs;
 
     -- BUG: these get declared twice! Move them here to avoid this?
 
     -- annotation redex occurs on $absType;
-    local agDclsP1::AGDcl = appendAGDcl(annoOn("redex", absNames, location=ag.location), agDcls12, location=ag.location);
+    local agDclsP1::AGDcl = appendAGDcl(annoOn("redex", absNames, location=ag.location), agDcls15, location=ag.location);
     
     -- annotation labels occurs on $absType;
     local agDclsP2::AGDcl = appendAGDcl(annoOn("labels", absNames, location=ag.location), agDclsP1, location=ag.location);

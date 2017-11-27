@@ -1,6 +1,6 @@
 grammar silver:extension:bidirtransform;
 
-synthesized attribute rewriteRules::[RewriteRule];
+synthesized attribute rewriteRules::[Decorated RewriteRule];
 synthesized attribute outputStmt::(Expr ::= Expr);
 synthesized attribute inputType::Type;
 synthesized attribute inputProduction::Maybe<RewriteProduction>;
@@ -33,7 +33,7 @@ rrl::RewriteRuleList ::= Vbar_kwd l::RewriteRule r::RewriteRuleList
     rrl.pp = "| " ++ l.pp ++ r.pp;
 
     rrl.errors := l.errors ++ r.errors;
-    rrl.rewriteRules = r.rewriteRules ++ [l];
+    rrl.rewriteRules = r.rewriteRules ++ [decorate l with {}];
     
     -- error check: is the exact rule l found in r?
     -- equality checking is non trivial so we aren't doing this
@@ -54,7 +54,7 @@ rrl::RewriteRuleList ::= Vbar_kwd rule::RewriteRule
 
     rrl.pp = "| " ++ rule.pp;
 
-    rrl.rewriteRules = [rule];
+    rrl.rewriteRules = [decorate rule with {}];
     rrl.errors := rule.errors;
 }
 
@@ -163,7 +163,7 @@ arg::RewriteProductionArgs ::= args::RewriteProductionArgs ',' name::QName {
 -- or provided explicitly like integer values
 
 abstract production applyRw
-top::Expr ::= rwr::RewriteRule rhsTy::String lhsTy::String elemName::String
+top::Expr ::= rwr::Decorated RewriteRule rhsTy::String lhsTy::String elemName::String
 {
     forwards to rwr.outputStmt(
         -- Pass the rhs of an origin into
@@ -177,7 +177,7 @@ top::Expr ::= rwr::RewriteRule rhsTy::String lhsTy::String elemName::String
 } 
 
 abstract production applyRwProd
-top::Expr ::= rwr::RewriteRule lhs::String ns::Decorated NamedSignature
+top::Expr ::= rwr::Decorated RewriteRule lhs::String ns::Decorated NamedSignature
 {   
     forwards to rwr.outputStmt(
         fullFunc(
@@ -218,25 +218,25 @@ top::AppExprs ::= lhs::String inputNames::[String] inputTypes::[String] shouldRe
 -- rhs type on this lhs type. 
 
 function hasRwMatch
-Boolean ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSignature
+Boolean ::= rwrs::[Decorated RewriteRule] outType::String ns::Decorated NamedSignature
 {
     return if hasRwProd(rwrs, outType, ns) 
       then true 
       else hasRwID(rwrs, unFull(ns.typerep.typeName), outType);
 }
 
--- Return either rwProd or rwID, preferring the former, or nothing.
-abstract production rwMatch
-top::RewriteRule ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSignature
+-- Return either rwProd or rwID, preferring the former.
+function rwMatch
+Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] outType::String ns::Decorated NamedSignature
 {
-    forwards to if hasRwProd(rwrs, outType, ns) then rwProd(rwrs, outType, ns, location=top.location)
-        else rwID(rwrs, unFull(ns.typerep.typeName), outType, location=top.location);
+    return if hasRwProd(rwrs, outType, ns) then rwProd(rwrs, outType, ns)
+        else rwID(rwrs, unFull(ns.typerep.typeName), outType);
 }
 
 function hasRwProd
-Boolean ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSignature
+Boolean ::= rwrs::[Decorated RewriteRule] outType::String ns::Decorated NamedSignature
 {
-    local hd::RewriteRule = head(rwrs);
+    local hd::Decorated RewriteRule = head(rwrs);
 
     return if null(rwrs) then false
         else if hd.inputProduction.isJust &&
@@ -248,23 +248,23 @@ Boolean ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSignature
 
 -- Return a rule which operates on the arguments of the production defined
 -- by ns and returns outType
-abstract production rwProd
-top::RewriteRule ::= rwrs::[RewriteRule] outType::String ns::Decorated NamedSignature
+function rwProd
+Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] outType::String ns::Decorated NamedSignature
 {
-    local hd::RewriteRule = head(rwrs);
+    local hd::Decorated RewriteRule = head(rwrs);
 
-    forwards to -- if null(rwrs) then nothing() else
+    return -- if null(rwrs) then nothing() else
         if hd.inputProduction.isJust &&
                 hd.inputProduction.fromJust.name == ns.fullName &&
                 unFull(hd.typerep.typeName) == outType
         then hd
-        else rwProd(tail(rwrs), outType, ns, location=top.location);
+        else rwProd(tail(rwrs), outType, ns);
 }
 
 function hasRwID
-Boolean ::= rwrs::[RewriteRule] inType::String outType::String 
+Boolean ::= rwrs::[Decorated RewriteRule] inType::String outType::String 
 {
-    local hd::RewriteRule = head(rwrs);
+    local hd::Decorated RewriteRule = head(rwrs);
 
     return if null(rwrs) then false
         else if unFull(hd.typerep.typeName) == outType && unFull(hd.inputType.typeName) == inType 
@@ -272,14 +272,14 @@ Boolean ::= rwrs::[RewriteRule] inType::String outType::String
         else hasRwID(tail(rwrs), inType, outType);
 }
 
--- Return a rule which takes in tyName and returns outType
-abstract production rwID
-top::RewriteRule ::= rwrs::[RewriteRule] inType::String outType::String 
+-- Return a rule which takes in inType and returns outType
+function rwID
+Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] inType::String outType::String 
 {
-    local hd::RewriteRule = head(rwrs);
+    local hd::Decorated RewriteRule = head(rwrs);
 
-    forwards to -- if null(rwrs) then nothing() else
+    return -- if null(rwrs) then nothing() else
         if unFull(hd.typerep.typeName) == outType && unFull(hd.inputType.typeName) == inType 
         then hd
-        else rwID(tail(rwrs), inType, outType, location=top.location);
+        else rwID(tail(rwrs), inType, outType);
 }
