@@ -19,8 +19,7 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String]
     -- todo also: convert all of this nonsense into attributes with aspect productions
     forwards to case toFill of 
         | nestedExpr(_, e, _) -> fillExpr(e,exps,names, location=toFill.location)
-        | baseExpr(qn) -> if !contains(qn.name, names) then toFill
-            else idxOf(exps, findIdx(names,qn.name), location=toFill.location)
+        | baseExpr(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location) 
         | application(e, _, appexps, _, annexps, _) ->
             application(fillExpr(e, exps, names, location=toFill.location), 
             '(', fillAppExprs(appexps, exps, names, location=toFill.location), 
@@ -29,6 +28,17 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String]
             ')', location=toFill.location)
         | _ -> toFill
     end;
+}
+
+abstract production fillExprEnd
+top::Expr ::= toFill::Expr exps::[Expr] names::[String] qn::Decorated QName
+{
+    local idx::Integer = findIdx(names,qn.name);
+
+    forwards to 
+        if !contains(qn.name, names) then toFill -- Error
+        else if idx == -1 then toFill -- Error 
+        else idxOf(exps, idx, location=toFill.location);
 }
 
 abstract production idxOf

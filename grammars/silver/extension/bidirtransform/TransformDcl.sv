@@ -390,7 +390,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
 
     -- default annotation location = ag.location;
 
-    ag.moduleNames = agDclsP3.moduleNames ++ subAg.moduleNames;
+    ag.moduleNames = [];--agDclsP3.moduleNames ++ subAg.moduleNames;
     ag.mdaSpecs = agDclsP3.mdaSpecs ++ subAg.mdaSpecs;
     ag.ideSpecs = agDclsP3.ideSpecs ++ subAg.ideSpecs;
     ag.syntaxAst = agDclsP3.syntaxAst ++ subAg.syntaxAst;
@@ -411,42 +411,42 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     ag.errors <- agDclsP3.errors ++ subAg.errors;
 
     agDclsP3.compiledGrammars = ag.compiledGrammars;
-    agDcls15.compiledGrammars = ag.compiledGrammars;
+    agDcls18.compiledGrammars = ag.compiledGrammars;
     --agDcls2.compiledGrammars = ag.compiledGrammars;
     subAg.compiledGrammars = ag.compiledGrammars;
 
     agDclsP3.config = ag.config;    
-    agDcls15.config = ag.config;
+    agDcls18.config = ag.config;
     --agDcls2.config = ag.config;
     subAg.config = ag.config;
 
     agDclsP3.grammarName = ag.grammarName;
-    agDcls15.grammarName = ag.grammarName;
+    agDcls18.grammarName = ag.grammarName;
     --agDcls2.grammarName = ag.grammarName;
     subAg.grammarName = ag.grammarName;
 
     agDclsP3.env = subAg.env;
-    agDcls15.env = subAg.env;
+    agDcls18.env = subAg.env;
     --agDcls2.env = subAg.env;
 
     agDclsP3.flowEnv = ag.flowEnv;
-    agDcls15.flowEnv = ag.flowEnv;
+    agDcls18.flowEnv = ag.flowEnv;
     --agDcls2.flowEnv = ag.flowEnv;
     subAg.flowEnv = ag.flowEnv;
 
     subAg.env = appendEnv(ag.env, toEnv(agDclsP3.defs));
-    --subAg.env = newScopeEnv(agDcls15.defs, ag.env); -- did not work
+    --subAg.env = newScopeEnv(agDcls18.defs, ag.env); -- did not work
     --subAg.env = ag.env; -- did not work
 
     -- ag.defs = agDclsP3.defs ++ subAg.defs;  <- double annotations
-    -- ag.defs = agDcls15.defs ++ subAg.defs; -- <- duplicate attributes
-    ag.defs = subAg.defs; -- <- unknown restored names
+    -- ag.defs = agDcls18.defs ++ subAg.defs; -- <- duplicate attributes
+    ag.defs = subAg.defs; 
     -- ag.defs = agDcls2.defs ++ subAg.defs;
 
     -- BUG: these get declared twice! Move them here to avoid this?
 
     -- annotation redex occurs on $absType;
-    local agDclsP1::AGDcl = appendAGDcl(annoOn("redex", absNames, location=ag.location), agDcls15, location=ag.location);
+    local agDclsP1::AGDcl = appendAGDcl(annoOn("redex", absNames, location=ag.location), agDcls18, location=ag.location);
     
     -- annotation labels occurs on $absType;
     local agDclsP2::AGDcl = appendAGDcl(annoOn("labels", absNames, location=ag.location), agDclsP1, location=ag.location);
