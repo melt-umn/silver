@@ -75,7 +75,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     ----------------
     -- Propagation of attributes
 
-    ag.errors <- trRules.errors ++ rwRules.errors;
+    ag.errors := trRules.errors ++ rwRules.errors;
 
     trRules.absGroup = absGroup;
     trRules.cncGroup = cncGroup;
@@ -382,28 +382,33 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
 
     -- default annotation location = ag.location;
 
-    ag.moduleNames = agDclsP3.moduleNames;
-    ag.mdaSpecs = agDclsP3.mdaSpecs;
-    ag.ideSpecs = agDclsP3.ideSpecs;
-    ag.syntaxAst = agDclsP3.syntaxAst;
-    ag.parserSpecs = agDclsP3.parserSpecs;
-    ag.flowDefs = agDclsP3.flowDefs;
-    ag.docs := agDclsP3.docs;
-    ag.docsHeader = agDclsP3.docsHeader;
-    ag.docsSplit = agDclsP3.docsSplit;
-    ag.docsNoDoc = agDclsP3.docsNoDoc;
-    ag.docDcls := agDclsP3.docDcls;
-    ag.genFiles := agDclsP3.genFiles;
-    ag.setupInh := agDclsP3.setupInh;
-    ag.initProd := agDclsP3.initProd;
-    ag.initValues := agDclsP3.initValues;
-    ag.postInit := agDclsP3.postInit;
-    ag.initWeaving := agDclsP3.initWeaving;
-    ag.valueWeaving := agDclsP3.valueWeaving;
+    ag.moduleNames = agDclsP3.moduleNames ++ subAg.moduleNames;
+    ag.mdaSpecs = agDclsP3.mdaSpecs ++ subAg.mdaSpecs;
+    ag.ideSpecs = agDclsP3.ideSpecs ++ subAg.ideSpecs;
+    ag.syntaxAst = agDclsP3.syntaxAst ++ subAg.syntaxAst;
+    ag.parserSpecs = agDclsP3.parserSpecs ++ subAg.parserSpecs;
+    ag.flowDefs = agDclsP3.flowDefs ++ subAg.flowDefs;
+    ag.docs := agDclsP3.docs ++ subAg.docs;
+    ag.docsHeader = agDclsP3.docsHeader ++ subAg.docsHeader;
+    ag.docsSplit = agDclsP3.docsSplit ++ subAg.docsSplit;
+    ag.docsNoDoc = agDclsP3.docsNoDoc || subAg.docsNoDoc;
+    ag.docDcls := agDclsP3.docDcls ++ subAg.docDcls;
+    ag.genFiles := agDclsP3.genFiles ++ subAg.genFiles;
+    ag.setupInh := agDclsP3.setupInh ++ subAg.setupInh;
+    ag.initProd := agDclsP3.initProd ++ subAg.initProd;
+    ag.initValues := agDclsP3.initValues ++ subAg.initValues;
+    ag.postInit := agDclsP3.postInit ++ subAg.postInit;
+    ag.initWeaving := agDclsP3.initWeaving ++ subAg.initWeaving;
+    ag.valueWeaving := agDclsP3.valueWeaving ++ subAg.valueWeaving;
+    ag.errors <- agDclsP3.errors ++ subAg.errors;
 
     agDclsP3.compiledGrammars = ag.compiledGrammars;
     agDcls12.compiledGrammars = ag.compiledGrammars;
     subAg.compiledGrammars = ag.compiledGrammars;
+
+    agDclsP3.config = ag.config;    
+    agDcls12.config = ag.config;
+    subAg.config = ag.config;
 
     agDclsP3.grammarName = ag.grammarName;
     agDcls12.grammarName = ag.grammarName;
@@ -412,11 +417,19 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     agDclsP3.env = subAg.env;
     agDcls12.env = subAg.env;
 
+    agDclsP3.flowEnv = ag.flowEnv;
+    agDcls12.flowEnv = ag.flowEnv;
+    subAg.flowEnv = ag.flowEnv;
+
+    -- next: flowEnv
+
     subAg.env = appendEnv(ag.env, toEnv(agDclsP3.defs));
     --subAg.env = newScopeEnv(agDcls12.defs, ag.env); -- did not work
     --subAg.env = ag.env; -- did not work
 
-    ag.defs = agDcls12.defs ++ subAg.defs;
+    -- ag.defs = agDclsP3.defs ++ subAg.defs;  <- double annotations
+    -- ag.defs = agDcls12.defs ++ subAg.defs; -- <- duplicate attributes
+    ag.defs = subAg.defs;
 
     -- BUG: these get declared twice! Move them here to avoid this?
 
@@ -430,5 +443,5 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     local agDclsP3::AGDcl = appendAGDcl(annoOn("origin", absNames, location=ag.location), agDclsP2, location=ag.location);
 
     --ag.liftedAGDcls = agDcls22; 
-    forwards to consAGDcls(agDclsP3, subAg, location=ag.location);
+    --forwards to consAGDcls(agDclsP3, subAg, location=ag.location);
 }
