@@ -3,35 +3,54 @@ grammar silver:extension:bidirtransform;
 concrete production originDcl
 top::AGDcl ::= 'apply' 'origins' 'on' nts::NonterminalList ';'
 {
-    forwards to applyOrigins(nts.ntList);
+    forwards to applyOrigins(nts.ntList, location=top.location);
 }
 
 concrete production cncOriginDcl
 top::AGDcl ::= 'apply' 'concrete' 'origins' 'on' nts::NonterminalList ';'
 {
-    forwards to cncApplyOrigins(nts.ntList);
+    forwards to cncApplyOrigins(nts.ntList, location=top.location);
 }
 
 abstract production cncApplyOrigins
 top::AGDcl ::= ntList::[Decorated FullNonterminal]
 {
+    local cncNames :: [String] = map((.name), ntList);
+
     -- attribute suppliedOrigin occurs on $cncType;
-    local agDcls::AGDcl = appendAGDcl(attrOn("suppliedOrigin", cncNames, location=ag.location), agDcls4, location=ag.location);
+    local agDcls::AGDcl = attrOn("suppliedOrigin", cncNames);
+
+    -- abstract production origin_$type
+    -- o::Origin ::= e::Decorated $type
+    -- {
+    --      o.isBottomOrigin = false;
+    -- }
+    --
+    local agDcls2::AGDcl = appendAGDcl(foldl(\ agDcls::AGDcl qn::String->
+         appendAGDcl(productionDcl('abstract', 'production', 
+            name(mkOriginName(qn),top.location), mkProdSigDec("o", "Origin", "e", qn),
+                prdBody([
+                    attribDef("o", "isBottomOrigin", mkFalse())
+                ])),
+            agDcls),
+        emptyAGDcl(), cncNames), agDcls);
 
     -- aspect all cnc origins with:
     --
     -- o.wasTransformed = false;
     -- o.concreteOrigin = o;
-    local agDcls2::AGDcl = foldl(\ agDcls::AGDcl name::String->
+    local agDcls3::AGDcl = foldl(\ agDcls::AGDcl name::String->
         appendAGDcl(aspectProductionDcl('aspect', 'production', 
-            qName(ag.location, mkOriginName(name)), mkAspectProdSigDec("o", "Origin", "e", name, location=ag.location),
+            qName(top.location, mkOriginName(name)), mkAspectProdSigDec("o", "Origin", "e", name),
                 prdBody([
-                    attribDef("o", "wasTransformed", mkFalse(location=ag.location), location=ag.location),
-                    attribDef("o", "concreteOrigin", baseName("o", location=ag.location), location=ag.location)
-                ], location=ag.location), location=ag.location), agDcls, location=ag.location),
-        agDcls, cncNames);
+                    attribDef("o", "wasTransformed", mkFalse()),
+                    attribDef("o", "concreteOrigin", baseName("o"))
+                ])), agDcls),
+        agDcls2, cncNames);
+
+    default annotation location = top.location;    
     
-    forwards to agDcls2;
+    forwards to agDcls3;
 }
 
 abstract production applyOrigins 
@@ -46,7 +65,7 @@ top::AGDcl ::= ntList::[Decorated FullNonterminal]
     -- occurs on an element we're working with causes a loop.
 
     -- attribute wasTransformed occurs on $absType;
-    local agDcls::AGDcl = appendAGDcl(attrOn("wasTransformed", absNames, location=ag.location), agDcls9, location=ag.location);
+    local agDcls::AGDcl = attrOn("wasTransformed", absNames);
 
     -- abstract production origin_$type
     -- o::Origin ::= e::Decorated $type
@@ -56,39 +75,41 @@ top::AGDcl ::= ntList::[Decorated FullNonterminal]
     --
     local agDcls2::AGDcl = appendAGDcl(foldl(\ agDcls::AGDcl qn::String->
          appendAGDcl(productionDcl('abstract', 'production', 
-            name(mkOriginName(qn),ag.location), mkProdSigDec("o", "Origin", "e", qn, location=ag.location),
+            name(mkOriginName(qn),top.location), mkProdSigDec("o", "Origin", "e", qn),
                 prdBody([
-                    attribDef("o", "isBottomOrigin", mkFalse(location=ag.location), location=ag.location)
-                ], location=ag.location), location=ag.location),
-            agDcls, location=ag.location),
-        emptyAGDcl(location=ag.location), allNames), agDcls11, location=ag.location);
+                    attribDef("o", "isBottomOrigin", mkFalse())
+                ])),
+            agDcls),
+        emptyAGDcl(), absNames), agDcls);
 
     local agDcls3::AGDcl = foldl(\ agDcls::AGDcl name::String->
         appendAGDcl(aspectProductionDcl('aspect', 'production', 
-            qName(ag.location, mkOriginName(name)), mkAspectProdSigDec("o", "Origin", "e", name, location=ag.location),
+            qName(top.location, mkOriginName(name)), mkAspectProdSigDec("o", "Origin", "e", name),
                 prdBody([
                 attribDef("o", "wasTransformed",
                     argFunc("wasTransformed", appExprList([
-                        namedAccess("redex", "e", location=ag.location),
-                        namedAccess("origin", "e", location=ag.location)
-                    ], location=ag.location), location=ag.location), location=ag.location),
+                        namedAccess("redex", "e"),
+                        namedAccess("origin", "e")
+                    ]))),
                 attribDef("o", "concreteOrigin", 
                     argFunc("getConcreteOrigin", appExprList([
-                        presentName("o", location=ag.location),
-                        namedAccess("origin", "e", location=ag.location)
-                    ], location=ag.location), location=ag.location), location=ag.location)
-                ], location=ag.location), location=ag.location), agDcls, location=ag.location),
+                        presentName("o"),
+                        namedAccess("origin", "e")
+                    ])))
+                ])), agDcls),
         agDcls2, absNames);
 
     -- annotation redex occurs on $absType;
-    local agDcls4::AGDcl = appendAGDcl(annoOn("redex", absNames, location=ag.location), agDcls3, location=ag.location);
+    local agDcls4::AGDcl = appendAGDcl(annoOn("redex", absNames), agDcls3);
     
     -- annotation labels occurs on $absType;
-    local agDcls5::AGDcl = appendAGDcl(annoOn("labels", absNames, location=ag.location), agDcls4, location=ag.location);
+    local agDcls5::AGDcl = appendAGDcl(annoOn("labels", absNames), agDcls4);
     
     -- annotation origin occurs on $absType;
-    local agDcls6::AGDcl = appendAGDcl(annoOn("origin", absNames, location=ag.location), agDcls5, location=ag.location);
+    local agDcls6::AGDcl = appendAGDcl(annoOn("origin", absNames), agDcls5);
     
+    default annotation location = top.location;
+
     forwards to agDcls6;
 }
 
@@ -97,39 +118,43 @@ top::AGDcl ::= ntList::[Decorated FullNonterminal]
 -- copy attributes from origin's RHS elements to their LHS for all RHS that can. 
 -- example usage: pp. 
 concrete production originAttributeDcl
-top::AGDcl ::= 'origin' 'attributes' qns::QNames 
+top::AGDcl ::= 'origins' 'attribute' qns::QNameList 
 {
-    forwards to originAttributes(qns.qnames);
+    forwards to originAttributes(qns, location=top.location);
 }
 
 abstract production originAttributes
-top::AGDcl ::= qns::[QNameWithTL]
+top::AGDcl ::= qns::QNameList
 {
-    forwards to if null(qns) then emptyAGDcl(location=top.location)
-      else appendAGDcl(originAttribute(head(qns)), originAttributes(tail(qns)), location=top.location);
+    local qnsTail::QNameList = case qns of qNamesCons(_,_,tl) -> tl end;
+
+    default annotation location = top.location;
+
+    forwards to if null(qns.qnames) then emptyAGDcl()
+      else appendAGDcl(originAttribute(head(qns.qList)), originAttributes(qnsTail));
 }
 
 abstract production originAttribute
-top::AGDcl ::= qn::QNameWithTL
+top::AGDcl ::= qn::QName
 {      
-    local oProds::[Decorated NamedSignature] = prodsFromDcls(getProdsFromNtHack("Origin", new(top.env), "silver:extension:bidirtransform"));
+    local oProds::[Decorated NamedSignature] = 
+      prodsFromDcls(getProdsFromNtHack("Origin", new(top.env), "silver:extension:bidirtransform"));
 
     default annotation location = top.location;
 
     forwards to appendAGDcl(
         attrOn(qn.name, ["Origin"]),
         -- find all origin productions and give them this attribute if it's defined on their RHS
-        foldl(\ agDcls::AGDcl ns::Decorated NamedSignature -> , 
+        foldl(\ agDcls::AGDcl ns::Decorated NamedSignature ->
             appendAGDcl(
                     if null(ns.inputTypes) then emptyAGDcl()
                     else if hasNamedAttr(head(ns.inputTypes).typeName, top.env, qn.name)
                     then aspectProdStmt([ns],\ ns::Decorated NamedSignature ->
                             attribDef(ns.outputElement.elementName, qn.name, 
-                                namedAccess(qn.name, head(ns.inputNames)), 
-                            ))
+                                exprAccess(qn.name, head(ns.inputNames))))
                     else emptyAGDcl(),
-                agDcls)
-          emptyAGDcl(), oProds))
+                agDcls),
+          emptyAGDcl(), oProds));
 }
 
 -- todo: this should act like the above, but defines a Maybe<T>, new attribute
