@@ -34,3 +34,16 @@ global fn::([Integer] ::=) = \ -> [4];
 equalityTest(null(tail(fn())), true, Boolean, silver_tests);
 -- The essential parts are Thunk -> Nodefactory (which captures context) -> Thunk
 
+-- Issue #209 - code gen bug involving casts
+nonterminal LambdaType;
+
+abstract production lambdaType
+f::LambdaType ::=
+{}
+
+function failsLambdaType
+(String ::= LambdaType) ::=
+{
+    return (\ f::LambdaType -> case f of lambdaType() -> "str" end);
+}
+-- End Issue #209
