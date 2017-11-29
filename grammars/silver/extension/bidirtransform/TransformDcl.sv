@@ -109,9 +109,7 @@ ag::AGDcls ::= 'transmute' '{' subAg::AGDcls '}' qn::QName '::' transType::TypeE
     local inhRedexName::String = inhRedexNm(tName);
 
     -- autocopy attribute inRedex_$tName :: Maybe<Origin>; 
-    local agDcls::AGDcl = autocAttr(inhRedexName,
-        nominalTypeExpr(qnTyId("Maybe", location=ag.location), 
-        botlOneString("Origin", location=ag.location), location=ag.location), location=ag.location);
+    local agDcls::AGDcl = autocAttr(inhRedexName, mkMaybeTypeExpr("Origin", location=ag.location), location=ag.location);
 
     -- for $cncType in cncTypes
     -- synthesized attribute restored$cncType :: $cncType;

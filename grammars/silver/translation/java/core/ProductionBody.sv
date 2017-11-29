@@ -53,6 +53,14 @@ top::ProductionStmt ::= e::[Message]
 
 --------------------------------------------------------------------------------
 
+aspect production mkDefaultProdAnno
+top::ProductionStmt ::= qn::QName aexpr::AppExpr 
+{
+  top.translation = "";
+}
+
+--------------------------------------------------------------------------------
+
 aspect default production
 top::ProductionStmt ::=
 {

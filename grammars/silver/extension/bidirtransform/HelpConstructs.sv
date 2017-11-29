@@ -388,6 +388,13 @@ top::TypeExpr ::=
     forwards to booleanTypeExpr('Boolean', location=top.location);
 }
 
+abstract production mkMaybeTypeExpr
+top::TypeExpr ::= inner::String
+{
+    forwards to nominalTypeExpr(qnTyId("Maybe", location=top.location), 
+        botlOneString(inner, location = top.location), location=top.location);
+}
+
 abstract production mkCond
 top::Expr ::= if_e::Expr then_e::Expr else_e::Expr
 {

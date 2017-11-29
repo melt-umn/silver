@@ -20,6 +20,8 @@ top::ProductionStmt ::= qn::QName aexpr::AppExpr
 {
     top.defaultSuppliedAnnos := [];
     top.defaultSuppliedAnnos <- [pair(qn.name, aexpr)];
+    
+    top.flowDefs = [];
 
     top.errors := aexpr.errors;
 

@@ -2,6 +2,7 @@ grammar silver:extension:bidirtransform;
 
 terminal Origins_kwd 'origins' lexer classes {KEYWORD,RESERVED};
 terminal Apply_kwd 'apply' lexer classes {KEYWORD,RESERVED};
+terminal Optional_kws 'optional' lexer classes {KEYWORD};
 
 concrete production originEq
 top::Expr ::= 'origins' '{' e::Expr '}'
