@@ -82,6 +82,10 @@ top::AGDcl ::= ntList::[Decorated FullNonterminal]
             agDcls),
         emptyAGDcl(), absNames), agDcls);
 
+    -- aspect all abstract origins with:
+    --
+    -- o.wasTransformed = wasTransformed(e.origin, e.redex);
+    -- o.concreteOrigin = getConcreteOrigin(e.origin, o);
     local agDcls3::AGDcl = foldl(\ agDcls::AGDcl name::String->
         appendAGDcl(aspectProductionDcl('aspect', 'production', 
             qName(top.location, mkOriginName(name)), mkAspectProdSigDec("o", "Origin", "e", name),
@@ -118,15 +122,33 @@ top::AGDcl ::= ntList::[Decorated FullNonterminal]
 -- copy attributes from origin's RHS elements to their LHS for all RHS that can. 
 -- example usage: pp. 
 concrete production originAttributeDcl
-top::AGDcl ::= 'origins' 'attribute' qns::QNameList ';'
+top::AGDcls ::= 'origins' 'attribute' qns::QNameList '->>' subAg::AGDcls
 {
-    forwards to originAttributes(qns, location=top.location);
+    local addAttrs::AGDcl = originAttributes(qns);
+
+    default annotation location = top.location;
+
+    top.moduleNames = [];
+    top.mdaSpecs = [];
+    
+    subAg.compiledGrammars = top.compiledGrammars;
+    subAg.config = top.config;
+    subAg.grammarName = top.grammarName;
+    subAg.flowEnv = top.flowEnv;
+    subAg.env = appendEnv(top.env, toEnv(addAttrs.defs));
+
+    top.defs = subAg.defs; 
+
+    forwards to consAGDcls(addAttrs, subAg);
 }
 
 abstract production originAttributes
 top::AGDcl ::= qns::QNameList
 {
-    local qnsTail::QNameList = case qns of qNameListCons(_,_,tl) -> tl end;
+    local qnsTail::QNameList = case qns of
+        | qNameListCons(_,_,tl) -> tl
+        | _ -> qns
+    end;
 
     default annotation location = top.location;
 
