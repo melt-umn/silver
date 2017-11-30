@@ -1,40 +1,50 @@
 grammar silver:extension:bidirtransform;
 
-
+-- mkQAttr converts a string name into a QNameAttrOccur on a QName named that string
 abstract production qAttr
 top::QNameAttrOccur ::= name::String 
 {
     forwards to qNameAttrOccur(qName(top.location, name), location=top.location);
 }
 
+-- mkEmptyFunc converts a string name into an Expr representing that name called 
+-- as an empty function or production call.
 abstract production emptyFunc
 top::Expr ::= name::String 
 {
     forwards to applicationEmpty(baseName(name, location=top.location),'(',')', location=top.location);
 }
 
+-- mkArgFunc converts a string name and a set of arguments into an Expr representing
+-- that name called as a production or function call with those arguments.
 abstract production argFunc
 top::Expr ::= name::String args::AppExprs 
 {
     forwards to applicationExpr(baseName(name, location=top.location), '(',args,')', location=top.location);
 }
 
+-- mkOneArgFunc converts a string and a single argument into an Expr representing
+-- that name called as a production or function call with that single argument.
 abstract production oneArgFunc
 top::Expr ::= name::String arg::AppExpr
 {
     forwards to argFunc(name, appExprList([arg], location=top.location), location=top.location);
 }
 
+-- mkFullFunc converts a string, arguments, and named arguments into an Expr representing
+-- that name called as a production or function call with those arguments.
 abstract production fullFunc
 top::Expr ::= name::String args::AppExprs annos::AnnoAppExprs 
 {
     forwards to application(baseName(name, location=top.location), '(',args,',',annos,')', location=top.location);
 }
 
+-- mkSynAttr declares the attribute attr as a synthesized attribute with the 
+-- passed in type.
 abstract production synAttr
-top::AGDcl ::= nme::String tyexpr::TypeExpr
+top::AGDcl ::= attr::String tyexpr::TypeExpr
 {
-    forwards to attributeDclSyn('synthesized', 'attribute', name(nme, top.location),
+    forwards to attributeDclSyn('synthesized', 'attribute', name(attr, top.location),
         botlNone(location=top.location), '::', tyexpr, ';', location=top.location);
 }
 

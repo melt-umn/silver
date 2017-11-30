@@ -1,17 +1,5 @@
 grammar silver:extension:bidirtransform;
 
-function pullOutAppExprs
-[Expr] ::= aexprs::AppExprs
-{
-    return case aexprs of 
-        | snocAppExprs(es,_,e) -> 
-            pullOutAppExprs(es) ++ case e of presentAppExpr(e2) -> [e2] end
-        | oneAppExprs(e) -> 
-            case e of presentAppExpr(e2) -> [e2] end
-        | _ -> []
-    end;
-}
-
 abstract production fillExpr
 top::Expr ::= toFill::Expr exps::[Expr] names::[String]
 {
@@ -41,6 +29,65 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String] qn::Decorated QName
         else idxOf(exps, idx, location=toFill.location);
 }
 
+-- We're doing this recursive structure because the official silver docs say that
+-- let expressions are deprecated
+abstract production fillExprPattern
+top::Expr ::= toFill::Expr appexps::AppExprs pattern::PatternList
+{
+    forwards to fillExprPatternHelper(toFill, matchAppExpsToPattern(appexps, pattern), location=toFill.location);
+}
+
+abstract production fillExprPatternHelper
+top::Expr ::= toFill::Expr inputs::Pair<[Expr] [String]>
+{
+    forwards to fillExpr(toFill, inputs.fst, inputs.snd, location=toFill.location);
+}
+
+abstract production fillAppExprs
+top::AppExprs ::= toFill::AppExprs exps::[Expr] names::[String]
+{
+    forwards to case toFill of 
+        | snocAppExprs(es,_,e) -> snocAppExprs(fillAppExprs(es,exps,names, location=toFill.location),
+          ',',
+          fillAppExpr(e,exps,names, location=toFill.location), location=toFill.location)
+        | oneAppExprs(e) -> oneAppExprs(fillAppExpr(e,exps,names, location=toFill.location), location=toFill.location)
+        | _ -> toFill
+    end;
+}
+
+abstract production fillAppExpr
+top::AppExpr ::= toFill::AppExpr exps::[Expr] names::[String]
+{
+    forwards to case toFill of 
+        | presentAppExpr(e) -> presentAppExpr(
+            fillExpr(e,exps,names, location=toFill.location),location=toFill.location)
+    end;
+}
+
+abstract production fillAnnoExprs
+top::AnnoAppExprs ::= toFill::AnnoAppExprs exps::[Expr] names::[String]
+{
+    forwards to case toFill of 
+        | snocAnnoAppExprs(es,_,e) -> 
+          snocAnnoAppExprs(fillAnnoExprs(es,exps,names, location=toFill.location),
+            ',',
+            fillAnnoAppExpr(e,exps,names,location=toFill.location),location=toFill.location)
+        | oneAnnoAppExprs(e) -> 
+          oneAnnoAppExprs(fillAnnoAppExpr(e,exps,names,location=toFill.location),
+            location=toFill.location)
+        | _ -> toFill
+    end;
+}
+
+abstract production fillAnnoAppExpr
+top::AnnoExpr ::= toFill::AnnoExpr exps::[Expr] names::[String]
+{
+    forwards to case toFill of 
+        | annoExpr(qn,_,ae) -> annoExpr(qn,'=',fillAppExpr(ae,exps,names, location=toFill.location),
+            location=toFill.location)
+    end;
+}
+
 abstract production idxOf
 top::Expr ::= ls::[Expr] idx::Integer
 {
@@ -59,20 +106,6 @@ Integer ::= ls::[String] item::String idx::Integer
     return if null(ls) then -1
         else if head(ls) == item then idx
         else findIdxHelper(tail(ls), item, idx+1);
-}
-
--- We're doing this recursive structure because the official silver docs say that
--- let expressions are deprecated
-abstract production fillExprPattern
-top::Expr ::= toFill::Expr appexps::AppExprs pattern::PatternList
-{
-    forwards to fillExprPatternHelper(toFill, matchAppExpsToPattern(appexps, pattern), location=toFill.location);
-}
-
-abstract production fillExprPatternHelper
-top::Expr ::= toFill::Expr inputs::Pair<[Expr] [String]>
-{
-    forwards to fillExpr(toFill, inputs.fst, inputs.snd, location=toFill.location);
 }
 
 function matchAppExpsToPattern
@@ -147,47 +180,14 @@ Pair<[Expr] [String]> ::= e::Expr pattern::Pattern
     end;
 }
 
-abstract production fillAppExprs
-top::AppExprs ::= toFill::AppExprs exps::[Expr] names::[String]
+function pullOutAppExprs
+[Expr] ::= aexprs::AppExprs
 {
-    forwards to case toFill of 
-        | snocAppExprs(es,_,e) -> snocAppExprs(fillAppExprs(es,exps,names, location=toFill.location),
-          ',',
-          fillAppExpr(e,exps,names, location=toFill.location), location=toFill.location)
-        | oneAppExprs(e) -> oneAppExprs(fillAppExpr(e,exps,names, location=toFill.location), location=toFill.location)
-        | _ -> toFill
-    end;
-}
-
-abstract production fillAppExpr
-top::AppExpr ::= toFill::AppExpr exps::[Expr] names::[String]
-{
-    forwards to case toFill of 
-        | presentAppExpr(e) -> presentAppExpr(
-            fillExpr(e,exps,names, location=toFill.location),location=toFill.location)
-    end;
-}
-
-abstract production fillAnnoExprs
-top::AnnoAppExprs ::= toFill::AnnoAppExprs exps::[Expr] names::[String]
-{
-    forwards to case toFill of 
-        | snocAnnoAppExprs(es,_,e) -> 
-          snocAnnoAppExprs(fillAnnoExprs(es,exps,names, location=toFill.location),
-            ',',
-            fillAnnoAppExpr(e,exps,names,location=toFill.location),location=toFill.location)
-        | oneAnnoAppExprs(e) -> 
-          oneAnnoAppExprs(fillAnnoAppExpr(e,exps,names,location=toFill.location),
-            location=toFill.location)
-        | _ -> toFill
-    end;
-}
-
-abstract production fillAnnoAppExpr
-top::AnnoExpr ::= toFill::AnnoExpr exps::[Expr] names::[String]
-{
-    forwards to case toFill of 
-        | annoExpr(qn,_,ae) -> annoExpr(qn,'=',fillAppExpr(ae,exps,names, location=toFill.location),
-            location=toFill.location)
+    return case aexprs of 
+        | snocAppExprs(es,_,e) -> 
+            pullOutAppExprs(es) ++ case e of presentAppExpr(e2) -> [e2] end
+        | oneAppExprs(e) -> 
+            case e of presentAppExpr(e2) -> [e2] end
+        | _ -> []
     end;
 }

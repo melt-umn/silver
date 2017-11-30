@@ -1,0 +1,200 @@
+grammar silver:extension:bidirtransform;
+
+
+-- restored$cncType attributes
+abstract production restoredCncAttributes
+top::AGDcl ::= cncNames::[String] rwRules::Decorated RewriteRuleList
+{
+    default annotation location = top.location;
+
+    forwards to foldl(\ agDcls::AGDcl lhs::String->
+        appendAGDcl(aspectProductionDcl('aspect', 'production', 
+            mkQName(mkOriginName(lhs)), mkAspectProdSigDec("o", "Origin", "e", lhs),
+                productionBody('{', foldl(\ stmts::ProductionStmts rhs::String ->
+                    if !hasRwID(rwRules.rewriteRules, lhs, rhs) 
+                    then stmts -- this is also probably an error 
+                    else prdStmtList([
+                            attribDef( "o", restoreNm(unFull(rhs)),  
+                                applyRw(rwID(rwRules.rewriteRules, lhs, rhs), rhs, lhs, "e"))
+                        ]),
+                productionStmtsNil(), cncNames), '}')), agDcls),
+        emptyAGDcl(), cncNames);
+}
+
+
+-- for each abstract production
+-- top.wasTransformed = wasTransformed(top.origin, top.redex) || <rhs>.wasTransformed;
+abstract production absWasTransformed
+top::AGDcl ::= absProdDcls::[[Decorated NamedSignature]]
+{
+    default annotation location = top.location;
+
+    forwards to foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+        appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
+            attribDef( ns.outputElement.elementName, "wasTransformed",
+                foldl(\ e::Expr ie::NamedSignatureElement -> 
+                    if contains(unFull(ie.typerep.typeName), absNames)
+                    then or(e, '||', exprAccess("wasTransformed", ie.elementName))
+                    else e,
+                argFunc("wasTransformed",
+                    appExprList([
+                            lhsAccess("redex", ns),
+                            lhsAccess("origin", ns)
+                        ])
+                    ), ns.inputElements))), agDcls),
+        emptyAGDcl(), absProdDcls);
+}
+
+-- top.restored$cncType = < rewrite + transformation rules ...>
+abstract production restoredCncDefinition
+top::AGDcl ::= absProdDcls::[[Decorated NamedSignature]] cncNames::[String] rwRules::Decorated RewriteRuleList
+{
+    default annotation location = top.location;    
+
+    forwards to foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+        appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+            foldl(\ stmts::ProductionStmts rhs::String ->
+                -- if there isn't a rewrite rule from this production to this lhs then don't define this
+                if !hasRwMatch(rwRules.rewriteRules, rhs, ns) then stmts 
+                else productionStmtsSnoc(stmts, 
+                        attribDef(ns.outputElement.elementName, restoreNm(unFull(rhs)),
+                        if rwMatch(rwRules.rewriteRules, rhs, ns).inputProduction.isJust 
+                        then mkCond(
+                            lhsExprAccess("wasTransformed", ns),
+                            -- use the rewrite production
+                            applyRwProd(rwMatch(rwRules.rewriteRules, rhs, ns), rhs, ns),
+                            -- refer to the concrete origin's restored element
+                            qAccess(restoreNm(unFull(rhs)),
+                                qAccess("concreteOrigin",
+                                    lhsExprAccess("origin", ns), 
+                                    )
+                                )
+                            )
+                        else applyRw(rwMatch(rwRules.rewriteRules, rhs, ns), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName)  
+                    )),
+            productionStmtsNil(), cncNames)), agDcls),
+        emptyAGDcl(), absProdDcls);
+}
+
+-- top.$tName = ...
+--  if this abstract production has no transformations defined for it,
+--  then,
+--    if top is the same type as the transformation
+--    then $thisProd($arg.$tName, origin=$thisType_Origin(top), redex=(..).inhRedex_$tName, labels=[])
+--    else don't define this?    ^
+--  else if transformed_$tName   |
+--    then apply transformation  |
+--    else see ------------------/
+abstract production tNameDefinition
+top::AGDcl ::= absProdDcls::[[Decorated NamedSignature]] trRules::TransformRuleList
+    absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
+{
+    default annotation location = top.location;
+
+    forwards to foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+        appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+            if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) && ns.outputElement.typerep.typeName != transType.typerep.typeName
+            then productionStmtsNil()
+            else prdStmtList( 
+                [attribDef(ns.outputElement.elementName, tName,
+                if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) 
+                  then prdRecurse(ns, tName)
+                  else mkCond(
+                        lhsExprAccess(transformNm(tName), ns),
+                        -- todo: what did I mean by the todo below this? Have I done that already?
+                        -- todo: add annotations to anything here that is one of 
+                        -- our abstract productions
+                        getTrans(trRules.transformRules, dcl).outputStmt(nsApply(ns)),
+                        prdRecurse(ns, tName)
+                    )
+            )])
+            ), agDcls),
+        emptyAGDcl(), absProdDcls);
+}
+
+-- top.transformed_$tName = ...
+--  if this abstract production has no transformation defined for it,
+--  then don't define this
+--  else if the rhs matches this transformation, 
+--    then true
+--    else false
+abstract production transformNameDefinition
+top::AGDcl ::= absProdDcls::[[Decorated NamedSignature]] trRules::TransformRuleList
+    absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
+{
+    default annotation location = top.location;
+
+    forwards to foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+        if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) then agDcls 
+        else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+            prdStmtList([
+                attribDef(ns.outputElement.elementName, transformNm(tName),
+                    getTrans(trRules.transformRules, dcl).matchProd)
+            ])
+            ), agDcls),
+        emptyAGDcl(), absProdDcls);
+}
+
+-- <rhs>.inhRedex_$tName = ...
+--  if this abstract production has no transformation defined for it,
+--  then nothing()
+--  else if transformed$tName
+--    then just($thisType_Origin(top))
+--    else nothing()
+abstract production inhRedexDefinition
+top::AGDcl ::= absProdDcls::[[Decorated NamedSignature]] trRules::TransformRuleList
+    absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
+{
+    default annotation location = top.location;    
+
+    forwards to foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+        appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+            foldl(\ stmts::ProductionStmts rhs::NamedSignatureElement ->
+                productionStmtsSnoc(stmts, 
+                    attribDef( rhs.elementName, inhRedexName,
+                            if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup)
+                            then emptyFunc("nothing") -- this might error because it has to be a production
+                            else mkCond(
+                                lhsExprAccess(transformNm(tName), ns),
+                                argFunc("just", oneApp(mkOrigin(ns))),
+                                emptyFunc("nothing")
+                            )
+                    )),
+            productionStmtsNil(), ns.inputElements)), agDcls),
+        emptyAGDcl(), absProdDcls);
+}
+    
+-- for each concrete type, if it has location, aspect all of its creating
+-- productions with 
+--
+-- top.suppliedOrigin = locationOrigin(ag.location);
+abstract production locationOriginDefinition
+top::AGDcl ::= locCncProdDcls::[[Decorated NamedSignature]]
+{
+    default annotation location = top.location;    
+
+    forwards to foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+        appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
+            attribDef(ns.outputElement.elementName, "suppliedOrigin", 
+                argFunc("locationOrigin", appExprList([
+                    lhsAccess("location", ns)
+                ]))
+            )), agDcls),
+        emptyAGDcl(), locCncProdDcls);
+}
+
+-- or if they don't have location:
+--
+-- top.suppliedOrigin = bottomOrigin();
+abstract production bottomOriginDefinition
+top::AGDcl ::= nonLocCncProdDcls::[[Decorated NamedSignature]]
+{
+    default annotation location = top.location;    
+    
+    forwards to foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+        appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
+            attribDef(ns.outputElement.elementName, "suppliedOrigin", 
+                        emptyFunc("bottomOrigin"))
+            ), agDcls), 
+        emptyAGDcl(), nonLocCncProdDcls);
+}

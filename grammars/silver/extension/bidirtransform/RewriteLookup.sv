@@ -35,8 +35,8 @@ Boolean ::= rwrs::[Decorated RewriteRule] outType::String ns::Decorated NamedSig
     local hd::Decorated RewriteRule = head(rwrs);
 
     return if null(rwrs) then false
-        else if hd.inputProduction.isJust &&
-                hd.inputProduction.fromJust.name == ns.fullName &&
+        else if hd.hasProduction &&
+                hd.inputProduction.name == ns.fullName &&
                 unFull(hd.typerep.typeName) == outType
         then true
         else hasRwProd(tail(rwrs), outType, ns);
@@ -50,9 +50,9 @@ Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] outType::String ns::Deco
     local hd::Decorated RewriteRule = head(rwrs);
 
     return -- if null(rwrs) then nothing() else
-        if hd.inputProduction.isJust &&
-                hd.inputProduction.fromJust.name == ns.fullName &&
-                unFull(hd.typerep.typeName) == outType
+        if hd.hasProduction &&
+            hd.inputProduction.name == ns.fullName &&
+            unFull(hd.typerep.typeName) == outType
         then hd
         else rwProd(tail(rwrs), outType, ns);
 }

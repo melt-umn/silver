@@ -124,9 +124,11 @@ top::AGDcl ::= ntList::[Decorated FullNonterminal]
 concrete production originAttributeDcl
 top::AGDcls ::= 'origins' 'attribute' qns::QNameList '->>' subAg::AGDcls
 {
+    default annotation location = top.location;
+
     local addAttrs::AGDcl = originAttributes(qns);
 
-    default annotation location = top.location;
+    addAttrs.env = subAg.env;
 
     top.moduleNames = [];
     top.mdaSpecs = [];
@@ -139,7 +141,25 @@ top::AGDcls ::= 'origins' 'attribute' qns::QNameList '->>' subAg::AGDcls
 
     top.defs = subAg.defs; 
 
-    forwards to consAGDcls(addAttrs, subAg);
+    --forwards to consAGDcls(addAttrs, subAg);
+
+    top.ideSpecs = addAttrs.ideSpecs ++ subAg.ideSpecs;
+    top.syntaxAst = addAttrs.syntaxAst ++ subAg.syntaxAst;
+    top.parserSpecs = addAttrs.parserSpecs ++ subAg.parserSpecs;
+    top.flowDefs = addAttrs.flowDefs ++ subAg.flowDefs;
+    top.docs := addAttrs.docs ++ subAg.docs;
+    top.docsHeader = addAttrs.docsHeader ++ subAg.docsHeader;
+    top.docsSplit = addAttrs.docsSplit ++ subAg.docsSplit;
+    top.docsNoDoc = addAttrs.docsNoDoc || subAg.docsNoDoc;
+    top.docDcls := addAttrs.docDcls ++ subAg.docDcls;
+    top.genFiles := addAttrs.genFiles ++ subAg.genFiles;
+    top.setupInh := addAttrs.setupInh ++ subAg.setupInh;
+    top.initProd := addAttrs.initProd ++ subAg.initProd;
+    top.initValues := addAttrs.initValues ++ subAg.initValues;
+    top.postInit := addAttrs.postInit ++ subAg.postInit;
+    top.initWeaving := addAttrs.initWeaving ++ subAg.initWeaving;
+    top.valueWeaving := addAttrs.valueWeaving ++ subAg.valueWeaving;
+    top.errors := addAttrs.errors ++ subAg.errors;
 }
 
 abstract production originAttributes
@@ -147,7 +167,7 @@ top::AGDcl ::= qns::QNameList
 {
     local qnsTail::QNameList = case qns of
         | qNameListCons(_,_,tl) -> tl
-        | _ -> qns
+        | _ -> qNameListEmpty()
     end;
 
     default annotation location = top.location;
@@ -160,7 +180,8 @@ abstract production originAttribute
 top::AGDcl ::= qn::QName
 {      
     local oProds::[Decorated NamedSignature] = 
-      prodsFromDcls(getProdsFromNtHack("Origin", new(top.env), "silver:extension:bidirtransform"));
+      prodsFromDcls(getProdsForNt("Origin", top.env));
+    --prodsFromDcls(getProdsFromNtHack("Origin", new(top.env), "silver:extension:bidirtransform"));
 
     default annotation location = top.location;
 

@@ -193,15 +193,15 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local agDcls11::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             foldl(\ stmts::ProductionStmts rhs::String ->
-                -- if there is a rewrite rule from this production to this lhs then use that
+                -- if there isn't a rewrite rule from this production to this lhs then don't define this
                 if !hasRwMatch(newRwRules.rewriteRules, rhs, ns) then stmts 
                 else productionStmtsSnoc(stmts, 
                         attribDef(ns.outputElement.elementName, restoreNm(unFull(rhs)),
-                        if rwMatch(newRwRules.rewriteRules, rhs, ns).inputProduction.isJust 
+                        if rwMatch(newRwRules.rewriteRules, rhs, ns).hasProduction 
                         then mkCond(
                             lhsExprAccess("wasTransformed", ns, location=ag.location),
                             -- use the rewrite production
-                            applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, ns, location=ag.location),
+                            applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns), ns, location=ag.location),
                             -- refer to the concrete origin's restored element
                             qAccess(restoreNm(unFull(rhs)),
                                 qAccess("concreteOrigin",
@@ -311,7 +311,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
         applyOrigins(absGroup.ntList, location=ag.location), 
         appendAGDcl(
             cncApplyOrigins(cncGroup.ntList, location=ag.location),
-            agDcls15, location=ag.location), location=ag.location);
+            agDcls16, location=ag.location), location=ag.location);
 
 
     ag.moduleNames = [];--agDclsP3.moduleNames ++ subAg.moduleNames;

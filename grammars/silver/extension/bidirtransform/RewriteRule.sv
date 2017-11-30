@@ -2,13 +2,16 @@ grammar silver:extension:bidirtransform;
 
 synthesized attribute rewriteRules::[Decorated RewriteRule];
 synthesized attribute outputStmt::(Expr ::= Expr);
+synthesized attribute restoreStmt::(Expr ::= Expr);
 synthesized attribute inputType::Type;
-synthesized attribute inputProduction::Maybe<RewriteProduction>;
+synthesized attribute inputProduction::RewriteProduction;
+synthesized attribute hasProduction::Boolean;
 synthesized attribute shouldRestore::Boolean;
+synthesized attribute decSig::Decorated NamedSignature;
 
 nonterminal RewriteRuleList with rewriteRules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
-nonterminal RewriteRule with inputType, inputProduction, typerep, outputStmt, shouldRestore, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
-nonterminal RewriteProduction with name, inputNames, typerep, env, errors, location, absGroup, cncGroup, pp, config;
+nonterminal RewriteRule with inputType, inputProduction, hasProduction, typerep, outputStmt, restoreStmt, shouldRestore, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
+nonterminal RewriteProduction with name, inputNames, typerep, env, errors, location, absGroup, cncGroup, pp, config, decSig;
 nonterminal RewriteProductionArgs with inputNames, errors, pp, config;
 
 terminal RestoreArrow_t '~~>' lexer classes {SPECOP};
@@ -67,7 +70,7 @@ rule::RewriteRule ::= prd::RewriteProduction '->' e::Expr
     e.finalSubst = rule.upSubst;
     e.defaultInheritedAnnos = [];      
 
-    forwards to rewriteRule(e, "", prd.typerep, e.typerep, just(prd), false, location=rule.location);
+    forwards to rewriteRule(e, "", prd.typerep, e.typerep, prd, true, false, location=rule.location);
 }
 
 -- rewrite an abstract production as a concrete production
@@ -81,7 +84,7 @@ rule::RewriteRule ::= prd::RewriteProduction '~~>' e::Expr
     e.finalSubst = rule.upSubst;
     e.defaultInheritedAnnos = [];      
     
-    forwards to rewriteRule(e, "", prd.typerep, e.typerep, just(prd), true, location=rule.location);
+    forwards to rewriteRule(e, "", prd.typerep, e.typerep, prd, true, true, location=rule.location);
 }
 
 -- rewrite a concrete type as another concrete type through plugging it into
@@ -96,7 +99,8 @@ rule::RewriteRule ::= name::QName '::' t::TypeExpr '->' e::Expr
     e.finalSubst = rule.upSubst;    
     e.defaultInheritedAnnos = [];      
 
-    forwards to rewriteRule(e, name.name, t.typerep, e.typerep, nothing(), false, location=rule.location);    
+    forwards to rewriteRule(e, name.name, t.typerep, e.typerep, 
+      emptyRewriteProduction(location=rule.location), false, false, location=rule.location);    
 }
 
 -- rewrite a concrete type as another concrete type through plugging it into
@@ -112,11 +116,12 @@ rule::RewriteRule ::= name::QName '::' t::TypeExpr '~~>' e::Expr
     e.finalSubst = rule.upSubst;
     e.defaultInheritedAnnos = [];  
     
-    forwards to rewriteRule(e, name.name, t.typerep, e.typerep, nothing(), true, location=rule.location);
+    forwards to rewriteRule(e, name.name, t.typerep, e.typerep, 
+      emptyRewriteProduction(location=rule.location), false, true, location=rule.location);
 }
 
 abstract production rewriteRule
-rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd::Maybe<RewriteProduction> restore::Boolean
+rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd::RewriteProduction hasProd::Boolean restore::Boolean
 {
     lhs.config = rule.config;
 
@@ -127,20 +132,26 @@ rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd
     lhs.defaultInheritedAnnos = [];
 
     rule.errors := []; -- We explicitly ignore lhs errors here
-    rule.errors <- if inProd.isJust then inProd.fromJust.errors else [];
+    rule.errors <- inProd.errors;
 
+    rule.hasProduction = hasProd;
     rule.typerep = outType;
     rule.inputType = inType;
     rule.inputProduction = inProd;
     rule.shouldRestore = restore;
-    rule.outputStmt = case inProd of 
-        | nothing() -> (\ e::Expr -> fillExpr(lhs, [e], [inName], location=e.location))
-        | just(prd) -> (\ e::Expr ->
+    rule.outputStmt = if !hasProd
+        then (\ e::Expr -> fillExpr(lhs, [e], [inName], location=e.location))
+        else (\ e::Expr ->
             case e of application(_, _, aexpr, _, _, _) -> 
-                fillExpr(lhs, pullOutAppExprs(aexpr), prd.inputNames, location=e.location)
+                fillExpr(lhs, pullOutAppExprs(aexpr), inProd.inputNames, location=e.location)
             end
-        )
-    end;
+        );
+
+    rule.restoreStmt = (\ e::Expr ->
+            case e of application(_, _, aexpr, _, _, _) -> 
+                restoreExpr(lhs, pullOutAppExprs(aexpr), inProd.inputNames, inProd.decSig, location=e.location)
+            end
+        );
 }
 
 concrete production rewriteProduction
@@ -156,11 +167,17 @@ prd::RewriteProduction ::= qn::QName '(' args::RewriteProductionArgs ')'
     local absSig::[Decorated NamedSignature] = getProdFromGroup(qn.name, prd.absGroup);
     local cncSig::[Decorated NamedSignature] = getProdFromGroup(qn.name, prd.cncGroup);
 
-    -- prd.namedSig = if length(absSig) != 0 then head(absSig)
-    --     else head(cncSig);
+    prd.decSig = if length(absSig) != 0 then head(absSig)
+        else head(cncSig); 
 
-    prd.typerep = if length(absSig) != 0 then head(absSig).typerep
-        else head(cncSig).typerep;
+    prd.typerep = prd.decSig.typerep;
+}
+
+abstract production emptyRewriteProduction
+prd::RewriteProduction ::= 
+{
+    prd.pp = "";
+    prd.errors := [];
 }
 
 concrete production rewriteProductionArgSingle
@@ -197,30 +214,25 @@ top::Expr ::= rwr::Decorated RewriteRule rhsTy::String lhsTy::String elemName::S
 
 -- LHS is a concrete syntax type name
 abstract production applyRwProd
-top::Expr ::= rwr::Decorated RewriteRule lhs::String ns::Decorated NamedSignature
+top::Expr ::= rwr::Decorated RewriteRule ns::Decorated NamedSignature
 {   
-    forwards to rwr.outputStmt(
+    local fwdFunc::(Expr ::= Expr) = if rwr.shouldRestore then rwr.restoreStmt
+        else rwr.outputStmt;
+
+    forwards to fwdFunc(
         fullFunc(
-            rwr.inputProduction.fromJust.name, 
-            lhsRestoredTypesAppExprs(lhs, ns.inputNames, map((.typeName), ns.inputTypes), rwr.shouldRestore, location=top.location),
+            rwr.inputProduction.name, 
+            strAppExprs(ns.inputNames, location=top.location),
             emptyAnnoAppExprs(location=top.location), location=top.location));
 }
 
 -- LHS is a concrete syntax type name
-abstract production lhsRestoredTypesAppExprs
-top::AppExprs ::= lhs::String inputNames::[String] inputTypes::[String] shouldRestore::Boolean
+abstract production strAppExprs
+top::AppExprs ::= inputNames::[String] 
 {
-    forwards to if length(inputTypes) == 1 
-    then oneAppExprs(
-        if shouldRestore 
-        -- We don't, at this point, know what type we need to restore to,
-        --          this v---------------------------------v needs to be moved down the line
-        then namedAccess(restoreNm(unFull(head(inputTypes))), head(inputNames), location=top.location)
-        else presentName(head(inputNames), location=top.location), location=top.location)
-    else snocAppExprs(lhsRestoredTypesAppExprs(lhs, tail(inputNames), tail(inputTypes), shouldRestore, location=top.location),
-            ',',
-            if shouldRestore 
-            then namedAccess(restoreNm(unFull(head(inputTypes))), head(inputNames), location=top.location)
-            else presentName(head(inputNames), location=top.location),   
+    forwards to if length(inputNames) == 1
+    then oneAppExprs(presentName(head(inputNames), location=top.location), location=top.location)
+    else snocAppExprs(strAppExprs(tail(inputNames), location=top.location),
+            ',', presentName(head(inputNames), location=top.location),   
         location=top.location);
 }
