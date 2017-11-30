@@ -77,8 +77,9 @@ String ::= rName::String
 -- take a full name i.e. "grammar:name" and produce "name"
 function unFull
 String ::= s::String 
-{
-    return substring(lastIndexOf(":", s)+1, length(s), s);
+{   
+    return if length(s) == 0 then s else 
+      substring(lastIndexOf(":", s)+1, length(s), s);
 }
 
 function inhRedexNm

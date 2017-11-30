@@ -17,13 +17,14 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String] ns::Decorated NamedSigna
 abstract production restoreAppExprs
 top::AppExprs ::= toFill::AppExprs inputTypes::[String]
 {
-    forwards to case toFill of 
-        | snocAppExprs(es,_,e) -> snocAppExprs(restoreAppExprs(es, tail(inputTypes), location=toFill.location),
-          ',',
-          restoreAppExpr(e, head(inputTypes), location=toFill.location), location=toFill.location)
-        | oneAppExprs(e) -> oneAppExprs(restoreAppExpr(e, head(inputTypes), location=toFill.location), location=toFill.location)
-        --| _ -> toFill
-    end;
+    forwards to if null(inputTypes) then toFill else 
+        case toFill of 
+            | snocAppExprs(es,_,e) -> snocAppExprs(restoreAppExprs(es, tail(inputTypes), location=toFill.location),
+            ',',
+            restoreAppExpr(e, head(inputTypes), location=toFill.location), location=toFill.location)
+            | oneAppExprs(e) -> oneAppExprs(restoreAppExpr(e, head(inputTypes), location=toFill.location), location=toFill.location)
+            --| _ -> toFill
+        end;
 }
 
 abstract production restoreAppExpr
