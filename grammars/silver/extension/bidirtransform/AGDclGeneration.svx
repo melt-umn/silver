@@ -86,30 +86,32 @@ top::AGDcl ::= absProdDcls::[[Decorated NamedSignature]] cncNames::[String] rwRu
 --    then apply transformation  |
 --    else see ------------------/
 abstract production tNameDefinition
-top::AGDcl ::= absProdDcls::[[Decorated NamedSignature]] trRules::TransformRuleList
+top::AGDcl ::= absProdDcls::[[Decorated NamedSignature]] trDcls::[TransformDcl]
     absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
 {
     default annotation location = top.location;
 
-    forwards to foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
-        appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-            if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) && ns.outputElement.typerep.typeName != transType.typerep.typeName
-            then productionStmtsNil()
-            else prdStmtList( 
-                [attribDef(ns.outputElement.elementName, tName,
-                if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) 
-                  then prdRecurse(ns, tName)
-                  else mkCond(
-                        lhsExprAccess(transformNm(tName), ns),
-                        -- todo: what did I mean by the todo below this? Have I done that already?
-                        -- todo: add annotations to anything here that is one of 
-                        -- our abstract productions
-                        getTrans(trRules.transformRules, dcl).outputStmt(nsApply(ns)),
-                        prdRecurse(ns, tName)
-                    )
-            )])
-            ), agDcls),
-        emptyAGDcl(), absProdDcls);
+    forwards to foldl(\ agDcls::AGDcl trDcl::TransformDcl ->
+        foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+            appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+                if !hasTrans(trDcl.transformRules, dcl, absGroup, cncGroup) && ns.outputElement.typerep.typeName != transType.typerep.typeName
+                then productionStmtsNil()
+                else prdStmtList( 
+                    [attribDef(ns.outputElement.elementName, trDcl.name,
+                    if !hasTrans(trDcl.transformRules, dcl, absGroup, cncGroup) 
+                    then prdRecurse(ns, trDcl.name)
+                    else mkCond(
+                            lhsExprAccess(transformNm(trDcl.name), ns),
+                            -- todo: what did I mean by the todo below this? Have I done that already?
+                            -- todo: add annotations to anything here that is one of 
+                            -- our abstract productions
+                            getTrans(trDcl.transformRules, dcl).outputStmt(nsApply(ns)),
+                            prdRecurse(ns, trDcl.name)
+                        )
+                )])
+                ), agDcls),
+            agDcls, absProdDcls),
+        emptyAGDcl(), trDcls);
 }
 
 -- top.transformed_$tName = ...
@@ -119,20 +121,22 @@ top::AGDcl ::= absProdDcls::[[Decorated NamedSignature]] trRules::TransformRuleL
 --    then true
 --    else false
 abstract production transformNameDefinition
-top::AGDcl ::= absProdDcls::[[Decorated NamedSignature]] trRules::TransformRuleList
+top::AGDcl ::= absProdDcls::[[Decorated NamedSignature]] trDcls::[TransformDcl]
     absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
 {
     default annotation location = top.location;
 
-    forwards to foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
-        if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) then agDcls 
-        else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-            prdStmtList([
-                attribDef(ns.outputElement.elementName, transformNm(tName),
-                    getTrans(trRules.transformRules, dcl).matchProd)
-            ])
-            ), agDcls),
-        emptyAGDcl(), absProdDcls);
+    forwards to foldl(\ agDcls::AGDcl trDcl::TransformDcl ->
+        foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+            if !hasTrans(trDcl.transformRules, dcl, absGroup, cncGroup) then agDcls 
+            else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+                prdStmtList([
+                    attribDef(ns.outputElement.elementName, transformNm(trDcl.name),
+                        getTrans(trDcl.transformRules, dcl).matchProd)
+                ])
+                ), agDcls),
+            agDcls, absProdDcls),
+        emptyAGDcl(), trDcls);
 }
 
 -- <rhs>.inhRedex_$tName = ...
@@ -142,26 +146,28 @@ top::AGDcl ::= absProdDcls::[[Decorated NamedSignature]] trRules::TransformRuleL
 --    then just($thisType_Origin(top))
 --    else nothing()
 abstract production inhRedexDefinition
-top::AGDcl ::= absProdDcls::[[Decorated NamedSignature]] trRules::TransformRuleList
+top::AGDcl ::= absProdDcls::[[Decorated NamedSignature]] trDcls::[TransformDcl]
     absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
 {
     default annotation location = top.location;    
 
-    forwards to foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
-        appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-            foldl(\ stmts::ProductionStmts rhs::NamedSignatureElement ->
-                productionStmtsSnoc(stmts, 
-                    attribDef( rhs.elementName, inhRedexName,
-                            if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup)
-                            then emptyFunc("nothing") -- this might error because it has to be a production
-                            else mkCond(
-                                lhsExprAccess(transformNm(tName), ns),
-                                argFunc("just", oneApp(mkOrigin(ns))),
-                                emptyFunc("nothing")
-                            )
-                    )),
-            productionStmtsNil(), ns.inputElements)), agDcls),
-        emptyAGDcl(), absProdDcls);
+    forwards to foldl(\ agDcls::AGDcl trDcl::TransformDcl ->
+        foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+            appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+                foldl(\ stmts::ProductionStmts rhs::NamedSignatureElement ->
+                    productionStmtsSnoc(stmts, 
+                        attribDef( rhs.elementName, inhRedexName,
+                                if !hasTrans(trDcl.transformRules, dcl, absGroup, cncGroup)
+                                then emptyFunc("nothing") -- this might error because it has to be a production
+                                else mkCond(
+                                    lhsExprAccess(transformNm(trDcl.name), ns),
+                                    argFunc("just", oneApp(mkOrigin(ns))),
+                                    emptyFunc("nothing")
+                                )
+                        )),
+                productionStmtsNil(), ns.inputElements)), agDcls),
+            agDcls, absProdDcls),
+        emptyAGDcl(), trDcls);
 }
     
 -- for each concrete type, if it has location, aspect all of its creating

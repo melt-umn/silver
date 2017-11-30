@@ -136,8 +136,7 @@ rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd
 
     local rhsNs::Maybe<Decorated NamedSignature> = case lhs of 
         | application(e,_,_,_,_,_) -> case e of
-            | baseExpr(qn) -> just(head(
-                prodsFromDcls(getProdsFromNtHack(unFull(qn.name), new(rule.env), "silver:extension:bidirtransform"))))
+            | baseExpr(qn) -> just(head(getProdFromGroups(qn.name, rule.absGroup, rule.cncGroup)))
             | _ -> nothing()
         end
         | _ -> nothing()
@@ -180,6 +179,17 @@ prd::RewriteProduction ::= qn::QName '(' args::RewriteProductionArgs ')'
         else head(cncSig); 
 
     prd.typerep = prd.decSig.typerep;
+}
+
+function getProdFromGroups
+[Decorated NamedSignature] ::= s::String absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
+{
+    local absSig::[Decorated NamedSignature] = getProdFromGroup(s, absGroup);
+    local cncSig::[Decorated NamedSignature] = getProdFromGroup(s, cncGroup);
+
+    return if length(absSig) != 0 then [head(absSig)]
+        else if length(cncSig) != 0 then [head(cncSig)]
+        else []; 
 }
 
 abstract production emptyRewriteProduction

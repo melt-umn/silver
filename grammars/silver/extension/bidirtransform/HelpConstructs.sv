@@ -416,3 +416,10 @@ top::Expr ::= nme::String
 {
     forwards to newFunction('new', '(', baseName(nme, location=top.location), ')', location=top.location);
 }
+
+abstract production joinAGDcls
+top::AGDcl ::= dcls::[AGDcl]
+{
+    forwards to if null(dcls) then emptyAGDcl(location=top.location)
+        else appendAGDcl(head(dcls), joinAGDcls(tail(dcls), location=top.location), location=top.location);
+}

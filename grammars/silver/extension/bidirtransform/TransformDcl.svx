@@ -23,16 +23,14 @@ terminal From_kwd 'from' lexer classes{KEYWORD,RESERVED};
 terminal DblArrow_kwd '->>' lexer classes{KEYWORD, RESERVED};
 
 concrete production transformAGDclFull
-ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr 
-    '{' trRules::TransformRuleList '}' 
+ag::AGDcls ::= 'transform' trList::TransformList 
     'rewrite' '{' rwRules::RewriteRuleList '}' 
     -- 'from' cncGroupName::QName 'to' absGroupName::QName ';'
     'from' cncGroupIn::NonterminalList 'to' absGroupIn::NonterminalList '->>' subAg::AGDcls
 {
-    ag.pp = "transmute " ++ qn.pp ++ "::" ++ transType.pp ++
-        "{" ++ trRules.pp ++ "} rewrite {" ++ rwRules.pp ++ "};";
+    ag.pp = "transmute " ++ trList.pp ++ " rewrite {" ++ rwRules.pp ++ "}" ++ "->>" ++ subAg.pp;
 
-    local tName::String = unFull(qn.name);
+    default annotation location = ag.location;
 
     local absGroup::Decorated NonterminalList = decorate absGroupIn with { env=ag.env; };
     local cncGroup::Decorated NonterminalList = decorate cncGroupIn with { env=ag.env; };
@@ -40,21 +38,13 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     ----------------
     -- Propagation of attributes
 
-    ag.errors := trRules.errors ++ rwRules.errors;
+    ag.errors := trList.errors ++ rwRules.errors;
 
-    trRules.absGroup = absGroup;
-    trRules.cncGroup = cncGroup;
-    trRules.env = ag.env;
-    trRules.config = ag.config;
-    trRules.downSubst = emptySubst();
-    trRules.finalSubst = rwRules.upSubst;
+    trList.downSubst = emptySubst();
+    trList.finalSubst = rwRules.upSubst;
 
-    rwRules.absGroup = absGroup;
-    rwRules.cncGroup = cncGroup;
     rwRules.downSubst = emptySubst();    
-    rwRules.env = ag.env;
-    rwRules.finalSubst = trRules.finalSubst;
-    rwRules.config = ag.config;    
+    rwRules.finalSubst = trList.finalSubst;
 
     -- todo: think about the env we're providing to the transform/rewrite rules
 
@@ -82,44 +72,9 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     -- New attributes and annotations
 
-    local inhRedexName::String = inhRedexNm(tName);
-
-    -- autocopy attribute inRedex_$tName :: Maybe<Origin>; 
-    local agDcls::AGDcl = autocAttr(inhRedexName, mkMaybeTypeExpr("Origin", location=ag.location), location=ag.location);
-
-    -- for $cncType in cncTypes
-    -- synthesized attribute restored$cncType :: $cncType;
-    local agDcls2::AGDcl = foldl(\ agDcls::AGDcl name::String-> 
-            appendAGDcl(synAttr(restoreNm(unFull(name)), sTyExpr(name, location=ag.location), location=ag.location), agDcls, location=ag.location),
-        agDcls, cncNames);
-
-    -- synthesized attribute $tName :: $tType;
-    local agDcls3::AGDcl = appendAGDcl(synAttr(tName, transType, location=ag.location), agDcls2, location=ag.location);
-
-    -- synthesized attribute transformed_$tName :: Boolean;
-    local agDcls4::AGDcl = appendAGDcl(synAttr(transformNm(tName), mkBoolTypeExpr(location=ag.location), location=ag.location), agDcls3, location=ag.location);    
-
-    -- Occurances of attributes, annotations
-
-    -- Problem in future: only apply this on attributes that they are not 
-    -- already defined on. This doesn't work because checking if an attribute
-    -- occurs on an element we're working with causes a loop.
-
-    -- for $type in allTypes
-    -- attribute inhRedex_$tName occurs on $type;
-    local agDcls5::AGDcl = appendAGDcl(attrOn(inhRedexName, allNames, location=ag.location), agDcls4, location=ag.location);
-    
-    -- for $absType in absTypes
-    -- attribute restored$cncType occurs on Origin, $absType;
-    local agDcls6::AGDcl = foldl(\ agDcls::AGDcl name::String->
-            appendAGDcl(attrOn(restoreNm(unFull(name)), absNames ++ ["Origin"], location=ag.location), agDcls, location=ag.location),
-        agDcls5, cncNames);
-
-    -- attribute transformed_$tName occurs on $absType;
-    local agDcls7::AGDcl = appendAGDcl(attrOn(transformNm(tName), absNames, location=ag.location), agDcls6, location=ag.location);  
-
-    -- attribute $tName occurs on $absType;
-    local agDcls8::AGDcl = appendAGDcl(attrOn(tName, absNames, location=ag.location), agDcls7, location=ag.location);      
+    local agDcls::AGDcl = foldl(\ agDcl::AGDcl trDcl::TransformDcl ->
+            appendAGDcl(declareTNameAttributes(trDcl.name), agDcl)
+        emptyAGDcl(), trList.transformDcls)
 
     -- Rewrite rule manipulation
     --
@@ -128,9 +83,9 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local newRwRules::Decorated RewriteRuleList = foldl(\ rules::Decorated RewriteRuleList name::String ->
             if hasRwID(rules.rewriteRules, name, name) then rules
             else decorate rewriteRuleCons(terminal(Vbar_kwd, "|"), 
-                rewriteRuleType(qName(ag.location, "a"), '::', qTyExpr(qName(ag.location, name), location=ag.location), '->',
-                    mkNew("a", location=ag.location), location=ag.location), 
-                    new(rules), location=ag.location) with {
+                rewriteRuleType(qName(ag.location, "a"), '::', qTyExpr(qName(ag.location, name)), '->',
+                    mkNew("a")), 
+                    new(rules)) with {
                         absGroup=rules.absGroup;
                         cncGroup=rules.cncGroup;
                         env=rules.env;
@@ -143,41 +98,25 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
             cncGroup=cncGroup;
             env=ag.env;
             downSubst=emptySubst();
-            finalSubst=trRules.finalSubst;
+            finalSubst=trList.finalSubst;
             config=ag.config;
         }, cncNames);
 
-    -- Aspecting origin productions
-    local agDcls9::AGDcl = appendAGDcl(restoredCncAttributes(cncNames, newRwRules), agDcls8, location=ag.location);
-
-    -- Non-origin aspecting
-    local agDcls10::AGDcl = appendAGDcl(absWasTransformed(
-        absProdDcls, location=ag.location), agDcls9, location=ag.location);
-        
-    local agDcls11::AGDcl = appendAGDcl(restoredCncDefinition(
-        absProdDcls, cncNames, newRwRules, location=ag.location), agDcls10, location=ag.location);
-
-    local agDcls12::AGDcl = appendAGDcl(tNameDefinition(
-        absProdDcls, trRules, absGroup, cncGroup, location=ag.location), agDcls11, location=ag.location);
-
-    local agDcls13::AGDcl = appendAGDcl(transformNameDefinition(
-        absProdDcls, trRules, absGroup, cncGroup, location=ag.location), agDcls12, location=ag.location);
-
-    local agDcls14::AGDcl = appendAGDcl(inhRedexDefinition(
-        absProdDcls, trRules, absGroup, cncGroup, location=ag.location), agDcls13, location=ag.location);
-
-    local agDcls15::AGDcl = appendAGDcl(locationOriginDefinition(
-        locCncProdDcls, location=ag.location), agDcls14, location=ag.location);
-
-    local agDcls16::AGDcl = appendAGDcl(bottomOriginDefinition(
-        nonLocCncProdDcls, location=ag.location), agDcls15, location=ag.location);
-
-    local toForward::AGDcl = appendAGDcl(
-        applyOrigins(absGroup.ntList, location=ag.location), 
-        appendAGDcl(
-            cncApplyOrigins(cncGroup.ntList, location=ag.location),
-            agDcls16, location=ag.location), location=ag.location);
-
+    local toForward::AGDcl = joinAGDcls([
+        -- Aspecting origin productions
+        restoredCncAttributes(cncNames, newRwRules),
+        -- Non-origin aspecting
+        absWasTransformed(absProdDcls),
+        restoredCncDefinition(absProdDcls, cncNames, newRwRules),
+        tNameDefinition(absProdDcls, trList.transformDcl, absGroup, cncGroup),
+        transformNameDefinition(absProdDcls, trList.transformDcl, absGroup, cncGroup),
+        inhRedexDefinition(absProdDcls, trList.transformDcl, absGroup, cncGroup),
+        locationOriginDefinition(locCncProdDcls),
+        bottomOriginDefinition(nonLocCncProdDcls),
+        -- Origin definitions
+        applyOrigins(absGroup.ntList),
+        cncApplyOrigins(cncGroup.ntList),
+    ]);
 
     ag.moduleNames = [];--agDclsP3.moduleNames ++ subAg.moduleNames;
     ag.mdaSpecs = toForward.mdaSpecs ++ subAg.mdaSpecs;
@@ -200,25 +139,12 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     ag.errors <- toForward.errors ++ subAg.errors;
 
     toForward.compiledGrammars = ag.compiledGrammars;
-    subAg.compiledGrammars = ag.compiledGrammars;
-
     toForward.config = ag.config;    
-    subAg.config = ag.config;
-
     toForward.grammarName = ag.grammarName;
-    subAg.grammarName = ag.grammarName;
-
     toForward.flowEnv = ag.flowEnv;
-    subAg.flowEnv = ag.flowEnv;
 
     toForward.env = subAg.env;
     subAg.env = appendEnv(ag.env, toEnv(toForward.defs));
-    --subAg.env = newScopeEnv(toForward.defs, ag.env); -- did not work
-    --subAg.env = ag.env; -- did not work
 
-    -- ag.defs = toForward.defs ++ subAg.defs; -- <- duplicate attributes
     ag.defs = subAg.defs; 
-
-    --ag.liftedAGDcls = agDcls22; 
-    --forwards to consAGDcls(agDclsP3, subAg, location=ag.location);
 }

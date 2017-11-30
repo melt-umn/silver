@@ -1,9 +1,8 @@
 grammar silver:extension:bidirtransform;
 
 synthesized attribute transformRules :: [TransformRule];
-synthesized attribute rwrules :: RewriteRuleList;
 
-nonterminal TransformRuleList with transformRules, rwrules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
+nonterminal TransformRuleList with transformRules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
 nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
 
 concrete production transformRuleCons
