@@ -134,6 +134,15 @@ rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd
     rule.errors := []; -- We explicitly ignore lhs errors here
     rule.errors <- inProd.errors;
 
+    local rhsNs::Maybe<Decorated NamedSignature> = case lhs of 
+        | application(e,_,_,_,_,_) -> case e of
+            | baseExpr(qn) -> just(head(
+                prodsFromDcls(getProdsFromNtHack(unFull(qn.name), new(rule.env), "silver:extension:bidirtransform"))))
+            | _ -> nothing()
+        end
+        | _ -> nothing()
+    end;
+
     rule.hasProduction = hasProd;
     rule.typerep = outType;
     rule.inputType = inType;
@@ -149,7 +158,7 @@ rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd
 
     rule.restoreStmt = (\ e::Expr ->
             case e of application(_, _, aexpr, _, _, _) -> 
-                restoreExpr(lhs, pullOutAppExprs(aexpr), inProd.inputNames, inProd.decSig, location=e.location)
+                restoreExpr(lhs, pullOutAppExprs(aexpr), inProd.inputNames, rhsNs.fromJust, location=e.location)
             end
         );
 }
