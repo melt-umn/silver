@@ -10,7 +10,7 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String] ns::Decorated NamedSigna
     -- have to be converted into. If this is not true, this breaks right now,
     -- and nothing prevents the user from writing mul(x,y) ~~~> y 
     forwards to case fillExpr(toFill, exps, names, location=toFill.location) of application(e, x, appexps, y, annexps, z) ->
-        application(e, x, restoreAppExprs(appexps, map((.typeName), ns.inputTypes), location=toFill.location), y, annexps, z, location=toFill.location)
+        application(e, x, restoreAppExprs(appexps, reverse(map((.typeName), ns.inputTypes)), location=toFill.location), y, annexps, z, location=toFill.location)
     end;
 }
 
@@ -30,7 +30,10 @@ top::AppExprs ::= toFill::AppExprs inputTypes::[String]
 abstract production restoreAppExpr
 top::AppExpr ::= toFill::AppExpr inType::String
 {
-    forwards to case toFill of presentAppExpr(e) -> presentAppExpr(
-        qAccess(restoreNm(unFull(inType)), e, location=toFill.location), location=toFill.location)
+    forwards to case toFill of presentAppExpr(e) -> presentAppExpr( 
+        case e.typerep of 
+            | terminalType(_) -> e
+            | _ -> qAccess(restoreNm(unFull(inType)), e, location=toFill.location)
+        end, location=toFill.location)
     end;
 }

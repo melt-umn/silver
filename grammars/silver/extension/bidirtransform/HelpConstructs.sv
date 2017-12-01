@@ -423,3 +423,19 @@ top::AGDcl ::= dcls::[AGDcl]
     forwards to if null(dcls) then emptyAGDcl(location=top.location)
         else appendAGDcl(head(dcls), joinAGDcls(tail(dcls), location=top.location), location=top.location);
 }
+
+-- abstract production strAppExprs
+-- top::AppExprs ::= inputNames::[String] 
+-- {
+--     forwards to strAppExprsHelp(reverse(inputNames), location=top.location);
+-- }
+
+abstract production strAppExprs
+top::AppExprs ::= inputNames::[String]
+{
+    forwards to if length(inputNames) == 1
+    then oneAppExprs(presentName(head(inputNames), location=top.location), location=top.location)
+    else snocAppExprs(strAppExprs(tail(inputNames), location=top.location),
+            ',', presentName(head(inputNames), location=top.location),   
+        location=top.location);
+}
