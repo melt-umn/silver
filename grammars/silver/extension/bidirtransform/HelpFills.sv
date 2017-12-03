@@ -15,7 +15,7 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String]
         | productionReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)
         | functionReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)                
         | globalValueReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)
-        | stringConst(s) -> fillStringConst(toFill, exps, names, s, location=toFill.location)             
+        | stringConst(s) -> fillStringConst(toFill, exps, names, s.lexeme, location=toFill.location)             
         | applicationEmpty(e, _, _) -> 
             applicationEmpty(fillExpr(e, exps, names, location=toFill.location), '(', ')', location=toFill.location) 
         | applicationExpr(e, _, appexps, _) ->
@@ -64,7 +64,7 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String] s::String
 abstract production fillExprEnd
 top::Expr ::= toFill::Expr exps::[Expr] names::[String] qn::Decorated QName
 {   
-    forwards to fillStringConst(toFill, exps, names, qn.name);
+    forwards to fillStringConst(toFill, exps, names, qn.name, location=toFill.location);
 }
 
 -- We're doing this recursive structure because the official silver docs say that
