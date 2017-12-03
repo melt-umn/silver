@@ -14,7 +14,7 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String]
             ',', 
             fillAnnoExprs(annexps, exps, names, location=toFill.location), 
             ')', location=toFill.location)
-        | terminalConstructor(a, b, c, d, e1, f, e2, g) -> 
+        | terminalConstructor(a, b, c, d, e1, f, e2, g) ->  
             terminalConstructor(a,b,c,d, 
                 fillExpr(e1, exps, names, location=toFill.location),
                 f,
@@ -28,7 +28,8 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String]
                 x,
                 fillExpr(e, exps, names, location=toFill.location),
                 y, location=toFill.location)
-        | _ -> toFill
+        -- | _ -> toFill
+        | _ -> errorExpr([err("Unexpected expr type", toFill.location)])
     end;
 }
 
