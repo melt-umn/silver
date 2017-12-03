@@ -9,7 +9,7 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String]
         | nestedExpr(_, e, _) -> fillExpr(e,exps,names, location=toFill.location)
         | baseExpr(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)
         | applicationEmpty(e, _, _) -> 
-            applicationEmpty(fillExpr(e, exps, names, location=toFill.location), '(', ')') 
+            applicationEmpty(fillExpr(e, exps, names, location=toFill.location), '(', ')', location=toFill.location) 
         | applicationExpr(e, _, appexps, _) ->
             applicationExpr(fillExpr(e, exps, names, location=toFill.location), 
             '(', fillAppExprs(appexps, exps, names, location=toFill.location), 
