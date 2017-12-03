@@ -29,7 +29,7 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String]
                 fillExpr(e, exps, names, location=toFill.location),
                 y, location=toFill.location)
         -- | _ -> toFill
-        | _ -> errorExpr([err("Unexpected expr type", toFill.location)])
+        | _ -> errorExpr([err(toFill.location, "Unexpected expr type")], location=toFill.location)
     end;
 }
 
