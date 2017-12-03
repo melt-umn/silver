@@ -121,20 +121,20 @@ rule::RewriteRule ::= name::QName '::' t::TypeExpr '~~>' e::Expr
 }
 
 abstract production rewriteRule
-rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd::RewriteProduction hasProd::Boolean restore::Boolean
+rule::RewriteRule ::= rhs::Expr inName::String inType::Type outType::Type inProd::RewriteProduction hasProd::Boolean restore::Boolean
 {
-    lhs.config = rule.config;
+    rhs.config = rule.config;
 
-    lhs.downSubst = rule.downSubst;
-    rule.upSubst = lhs.upSubst;
-    lhs.finalSubst = rule.upSubst;
+    rhs.downSubst = rule.downSubst;
+    rule.upSubst = rhs.upSubst;
+    rhs.finalSubst = rule.upSubst;
 
-    lhs.defaultInheritedAnnos = [];
+    rhs.defaultInheritedAnnos = [];
 
-    rule.errors := []; -- We explicitly ignore lhs errors here
+    rule.errors := []; -- We explicitly ignore rhs errors here
     rule.errors <- inProd.errors;
 
-    local rhsNs::Maybe<Decorated NamedSignature> = case lhs of 
+    local rhsNs::Maybe<Decorated NamedSignature> = case rhs of 
         | application(e,_,_,_,_,_) -> case e of
             | baseExpr(qn) -> just(head(getProdFromGroups(qn.name, rule.absGroup, rule.cncGroup)))
             | _ -> nothing()
@@ -148,37 +148,18 @@ rule::RewriteRule ::= lhs::Expr inName::String inType::Type outType::Type inProd
     rule.inputProduction = inProd;
     rule.shouldRestore = restore;
     rule.outputStmt = if !hasProd
-        then (\ e::Expr -> fillExpr(lhs, [e], [inName], location=e.location))
+        then (\ e::Expr -> fillExpr(rhs, [e], [inName], location=e.location))
         else (\ e::Expr ->
             case e of application(_, _, aexpr, _, _, _) -> 
-                fillExpr(lhs, pullOutAppExprs(aexpr), inProd.inputNames, location=e.location)
+                fillExpr(rhs, pullOutAppExprs(aexpr), inProd.inputNames, location=e.location)
             end
         );
 
     rule.restoreStmt = (\ e::Expr ->
             case e of application(_, _, aexpr, _, _, _) -> 
-                restoreExpr(lhs, pullOutAppExprs(aexpr), inProd.inputNames, rhsNs.fromJust, location=e.location)
+                restoreExpr(rhs, pullOutAppExprs(aexpr), inProd.inputNames, rhsNs.fromJust, location=e.location)
             end
         );
-}
-
-concrete production rewriteProduction
-prd::RewriteProduction ::= qn::QName '(' args::RewriteProductionArgs ')'
-{
-    prd.pp = qn.pp ++ "(" ++ args.pp ++ ")";
-
-    prd.inputNames = args.inputNames;
-    prd.name = qn.name;
-
-    prd.errors := args.errors;
-
-    local absSig::[Decorated NamedSignature] = getProdFromGroup(qn.name, prd.absGroup);
-    local cncSig::[Decorated NamedSignature] = getProdFromGroup(qn.name, prd.cncGroup);
-
-    prd.decSig = if length(absSig) != 0 then head(absSig)
-        else head(cncSig); 
-
-    prd.typerep = prd.decSig.typerep;
 }
 
 function getProdFromGroups
@@ -190,26 +171,4 @@ function getProdFromGroups
     return if length(absSig) != 0 then [head(absSig)]
         else if length(cncSig) != 0 then [head(cncSig)]
         else []; 
-}
-
-abstract production emptyRewriteProduction
-prd::RewriteProduction ::= 
-{
-    prd.pp = "";
-    prd.errors := [];
-}
-
-concrete production rewriteProductionArgSingle
-arg::RewriteProductionArgs ::= name::QName
-{
-    arg.pp = name.pp;
-    arg.inputNames = [name.name];
-    arg.errors := [];
-} 
-
-concrete production rewriteProductionArgMany
-arg::RewriteProductionArgs ::= args::RewriteProductionArgs ',' name::QName {
-    arg.pp = args.pp ++ "," ++ name.pp;
-    arg.inputNames = args.inputNames ++ [name.name];
-    arg.errors := args.errors;
 }

@@ -14,6 +14,20 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String]
             ',', 
             fillAnnoExprs(annexps, exps, names, location=toFill.location), 
             ')', location=toFill.location)
+        | terminalConstructor(a, b, c, d, e1, f, e2, g) -> 
+            terminalConstructor(a,b,c,d, 
+                fillExpr(e1, exps, names, location=toFill.location),
+                f,
+                fillExpr(e2, exps, names, location=toFill.location),
+                g, location=toFill.location)
+        | terminalFunction(a,b,c,d,ex,f) ->
+            terminalFunction(a,b,c,d,fillExpr(ex, exps, names, location=toFill.location), f, location=toFill.location)
+        | caseExpr(es, x, e, y) ->
+            caseExpr(
+                map(\ e2::Expr -> fillExpr(e2, exps, names, location=toFill.location), es),
+                x,
+                fillExpr(e, exps, names, location=toFill.location),
+                y, location=toFill.location)
         | _ -> toFill
     end;
 }
