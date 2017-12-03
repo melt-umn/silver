@@ -8,6 +8,13 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String]
     forwards to case toFill of 
         | nestedExpr(_, e, _) -> fillExpr(e,exps,names, location=toFill.location)
         | baseExpr(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)
+        | childReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)
+        | lhsReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)
+        | localReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)
+        | forwardReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)
+        | productionReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)
+        | functionReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)                
+        | globalValueReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)                
         | applicationEmpty(e, _, _) -> 
             applicationEmpty(fillExpr(e, exps, names, location=toFill.location), '(', ')', location=toFill.location) 
         | applicationExpr(e, _, appexps, _) ->
