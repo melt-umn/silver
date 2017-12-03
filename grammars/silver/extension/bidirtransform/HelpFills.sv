@@ -7,7 +7,13 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String]
     -- todo also: convert all of this nonsense into attributes with aspect productions
     forwards to case toFill of 
         | nestedExpr(_, e, _) -> fillExpr(e,exps,names, location=toFill.location)
-        | baseExpr(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location) 
+        | baseExpr(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)
+        | applicationEmpty(e, _, _) -> 
+            applicationEmpty(fillExpr(e, exps, names, location=toFill.location), '(', ')') 
+        | applicationExpr(e, _, appexps, _) ->
+            applicationExpr(fillExpr(e, exps, names, location=toFill.location), 
+            '(', fillAppExprs(appexps, exps, names, location=toFill.location), 
+            ')', location=toFill.location)
         | application(e, _, appexps, _, annexps, _) ->
             application(fillExpr(e, exps, names, location=toFill.location), 
             '(', fillAppExprs(appexps, exps, names, location=toFill.location), 
