@@ -407,7 +407,6 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
  top.ppDebug = "terminalConstructorTemporaryDispatcher";
 }
 
-
 aspect production terminalFunction
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' e::Expr ')'
 {

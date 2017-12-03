@@ -14,7 +14,8 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String]
         | forwardReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)
         | productionReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)
         | functionReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)                
-        | globalValueReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)                
+        | globalValueReference(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)
+        | stringConst(s) -> fillStringConst(toFill, exps, names, s, location=toFill.location)             
         | applicationEmpty(e, _, _) -> 
             applicationEmpty(fillExpr(e, exps, names, location=toFill.location), '(', ')', location=toFill.location) 
         | applicationExpr(e, _, appexps, _) ->
@@ -42,21 +43,28 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String]
                 fillExpr(e, exps, names, location=toFill.location),
                 y, location=toFill.location)
         -- | _ -> toFill
+        -- ???
         | toStringFunction(a,b,e,c) -> toStringFunction(a,b,
             fillExpr(e,exps,names,location=toFill.location), c, location=toFill.location)
         | _ -> errorExpr([err(toFill.location, "Unexpected expr type: " ++ toFill.ppDebug)], location=toFill.location)
     end;
 }
 
-abstract production fillExprEnd
-top::Expr ::= toFill::Expr exps::[Expr] names::[String] qn::Decorated QName
+abstract production fillStringConst
+top::Expr ::= toFill::Expr exps::[Expr] names::[String] s::String
 {
-    local idx::Integer = findIdx(names,qn.name);
+    local idx::Integer = findIdx(names,s);
 
     forwards to 
-        if !contains(qn.name, names) then toFill -- Error
+        if !contains(s, names) then toFill -- Error
         else if idx == -1 || idx >= length(exps) then toFill -- Error 
         else idxOf(exps, idx, location=toFill.location);
+}
+
+abstract production fillExprEnd
+top::Expr ::= toFill::Expr exps::[Expr] names::[String] qn::Decorated QName
+{   
+    forwards to fillStringConst(toFill, exps, names, qn.name);
 }
 
 -- We're doing this recursive structure because the official silver docs say that
