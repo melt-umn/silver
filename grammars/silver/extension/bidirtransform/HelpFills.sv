@@ -42,6 +42,8 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String]
                 fillExpr(e, exps, names, location=toFill.location),
                 y, location=toFill.location)
         -- | _ -> toFill
+        | toStringFunction(a,b,e,c) -> toStringFunction(a,b,
+            fillExpr(e,exps,names,location=toFill.location), c, location=toFill.location)
         | _ -> errorExpr([err(toFill.location, "Unexpected expr type: " ++ toFill.ppDebug)], location=toFill.location)
     end;
 }

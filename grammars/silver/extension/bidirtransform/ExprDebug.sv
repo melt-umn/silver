@@ -352,3 +352,76 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
  top.ppDebug = "errorPlusPlus";
 }
+
+aspect production lengthFunction
+top::Expr ::= 'length' '(' e::Expr ')'
+{
+ top.ppDebug = "lengthFunction";
+}
+
+aspect production errorLength
+top::Expr ::= e::Decorated Expr
+{
+ top.ppDebug = "errorLength";
+}
+
+aspect production stringLength
+top::Expr ::= e::Decorated Expr
+{
+ top.ppDebug = "stringLength";
+}
+
+aspect production toIntFunction
+top::Expr ::= 'toInt' '(' e::Expr ')'
+{
+ top.ppDebug = "toIntFunction";
+}
+
+aspect production toFloatFunction
+top::Expr ::= 'toFloat' '(' e::Expr ')'
+{
+ top.ppDebug = "toFloatFunction";
+}
+
+aspect production toStringFunction
+top::Expr ::= 'toString' '(' e::Expr ')'
+{
+ top.ppDebug = "toStringFunction";
+}
+
+aspect production newFunction
+top::Expr ::= 'new' '(' e::Expr ')'
+{
+ top.ppDebug = "newFunction";
+}
+
+aspect production terminalConstructor
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
+{
+ top.ppDebug = "terminalConstructor";
+}
+
+aspect production terminalConstructorTemporaryDispatcher
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
+{
+ top.ppDebug = "terminalConstructorTemporaryDispatcher";
+}
+
+
+aspect production terminalFunction
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' e::Expr ')'
+{
+ top.ppDebug = "terminalFunction";
+}
+
+aspect production terminalFunctionLineCol
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
+{
+ top.ppDebug = "terminalFunctionLineCol";
+}
+
+aspect production terminalFunctionInherited
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' e1::Expr ',' e2::Expr ')'
+{
+ top.ppDebug = "terminalFunctionInherited";
+}
