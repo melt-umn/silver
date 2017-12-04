@@ -148,10 +148,13 @@ rule::RewriteRule ::= rhs::Expr inName::String inType::Type outType::Type inProd
     rule.inputProduction = inProd;
     rule.shouldRestore = restore;
     rule.outputStmt = if !hasProd
-        then (\ e::Expr -> fillExpr(rhs, [e], [inName], location=e.location))
+        then (\ e::Expr -> 
+            fillExpr(rhs, [e], [inName], location=e.location))
         else (\ e::Expr ->
             case e of application(_, _, aexpr, _, _, _) -> 
-                fillExpr(rhs, pullOutAppExprs(aexpr), inProd.inputNames, location=e.location)
+                --decorate
+                    fillExpr(rhs, pullOutAppExprs(aexpr), inProd.inputNames, location=e.location)
+                --with {env=rule.env; config=rule.config;}
             end
         );
 

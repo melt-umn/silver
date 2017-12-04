@@ -23,11 +23,11 @@ terminal From_kwd 'from' lexer classes{KEYWORD,RESERVED};
 terminal DblArrow_kwd '->>' lexer classes{KEYWORD, RESERVED};
 
 concrete production transformAGDclFull
-ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr 
+ag::AGDcl ::= 'transform' qn::QName '::' transType::TypeExpr 
     '{' trRules::TransformRuleList '}' 
     'rewrite' '{' rwRules::RewriteRuleList '}' 
     -- 'from' cncGroupName::QName 'to' absGroupName::QName ';'
-    'from' cncGroupIn::NonterminalList 'to' absGroupIn::NonterminalList '->>' nestedAgs::AGDcls
+    'from' cncGroupIn::NonterminalList 'to' absGroupIn::NonterminalList --'->>' nestedAgs::AGDcls
 {
     ag.pp = "transmute " ++ qn.pp ++ "::" ++ transType.pp ++
         "{" ++ trRules.pp ++ "} rewrite {" ++ rwRules.pp ++ "};";
@@ -162,7 +162,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                                 applyRw(rwID(newRwRules.rewriteRules, lhs, rhs), rhs, lhs, "e", location=ag.location), location=ag.location)
                         ], location=ag.location),
                 productionStmtsNil(location=ag.location), cncNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
-        agDcls8, cncNames);
+        emptyAGDcl(location=ag.location), cncNames);
     -- local agDcls14::AGDcl = agDcls13;
 
     -- Non-origin aspecting
@@ -306,49 +306,50 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
         applyOrigins(absGroup.ntList, location=ag.location), 
         appendAGDcl(
             cncApplyOrigins(cncGroup.ntList, location=ag.location),
-            agDcls16, location=ag.location), location=ag.location);
+            agDcls8, location=ag.location), location=ag.location);
 
 
     ag.moduleNames = [];--agDclsP3.moduleNames ++ nestedAgs.moduleNames;
-    ag.mdaSpecs = toForward.mdaSpecs ++ nestedAgs.mdaSpecs;
-    ag.ideSpecs = toForward.ideSpecs ++ nestedAgs.ideSpecs;
-    ag.syntaxAst = toForward.syntaxAst ++ nestedAgs.syntaxAst;
-    ag.parserSpecs = toForward.parserSpecs ++ nestedAgs.parserSpecs;
-    ag.flowDefs = toForward.flowDefs ++ nestedAgs.flowDefs;
-    ag.docs := toForward.docs ++ nestedAgs.docs;
-    ag.docsHeader = toForward.docsHeader ++ nestedAgs.docsHeader;
-    ag.docsSplit = toForward.docsSplit ++ nestedAgs.docsSplit;
-    ag.docsNoDoc = toForward.docsNoDoc || nestedAgs.docsNoDoc;
-    ag.docDcls := toForward.docDcls ++ nestedAgs.docDcls;
-    ag.genFiles := toForward.genFiles ++ nestedAgs.genFiles;
-    ag.setupInh := toForward.setupInh ++ nestedAgs.setupInh;
-    ag.initProd := toForward.initProd ++ nestedAgs.initProd;
-    ag.initValues := toForward.initValues ++ nestedAgs.initValues;
-    ag.postInit := toForward.postInit ++ nestedAgs.postInit;
-    ag.initWeaving := toForward.initWeaving ++ nestedAgs.initWeaving;
-    ag.valueWeaving := toForward.valueWeaving ++ nestedAgs.valueWeaving;
-    ag.errors <- toForward.errors ++ nestedAgs.errors;
+    -- ag.mdaSpecs = toForward.mdaSpecs ++ nestedAgs.mdaSpecs;
+    -- ag.ideSpecs = toForward.ideSpecs ++ nestedAgs.ideSpecs;
+    -- ag.syntaxAst = toForward.syntaxAst ++ nestedAgs.syntaxAst;
+    -- ag.parserSpecs = toForward.parserSpecs ++ nestedAgs.parserSpecs;
+    -- ag.flowDefs = toForward.flowDefs ++ nestedAgs.flowDefs;
+    -- ag.docs := toForward.docs ++ nestedAgs.docs;
+    -- ag.docsHeader = toForward.docsHeader ++ nestedAgs.docsHeader;
+    -- ag.docsSplit = toForward.docsSplit ++ nestedAgs.docsSplit;
+    -- ag.docsNoDoc = toForward.docsNoDoc || nestedAgs.docsNoDoc;
+    -- ag.docDcls := toForward.docDcls ++ nestedAgs.docDcls;
+    -- ag.genFiles := toForward.genFiles ++ nestedAgs.genFiles;
+    -- ag.setupInh := toForward.setupInh ++ nestedAgs.setupInh;
+    -- ag.initProd := toForward.initProd ++ nestedAgs.initProd;
+    -- ag.initValues := toForward.initValues ++ nestedAgs.initValues;
+    -- ag.postInit := toForward.postInit ++ nestedAgs.postInit;
+    -- ag.initWeaving := toForward.initWeaving ++ nestedAgs.initWeaving;
+    -- ag.valueWeaving := toForward.valueWeaving ++ nestedAgs.valueWeaving;
+    -- ag.errors <- toForward.errors ++ nestedAgs.errors;
 
     toForward.compiledGrammars = ag.compiledGrammars;
-    nestedAgs.compiledGrammars = ag.compiledGrammars;
+    -- nestedAgs.compiledGrammars = ag.compiledGrammars;
 
     toForward.config = ag.config;    
-    nestedAgs.config = ag.config;
+    -- nestedAgs.config = ag.config;
 
     toForward.grammarName = ag.grammarName;
-    nestedAgs.grammarName = ag.grammarName;
+    -- nestedAgs.grammarName = ag.grammarName;
 
     toForward.flowEnv = ag.flowEnv;
-    nestedAgs.flowEnv = ag.flowEnv;
+    -- nestedAgs.flowEnv = ag.flowEnv;
 
-    toForward.env = nestedAgs.env;
-    nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
+    toForward.env = ag.env;
+    -- nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
     --nestedAgs.env = newScopeEnv(toForward.defs, ag.env); -- did not work
     --nestedAgs.env = ag.env; -- did not work
 
     -- ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
-    ag.defs = nestedAgs.defs; 
+    -- ag.defs = nestedAgs.defs; 
 
     --ag.liftedAGDcls = agDcls22; 
     --forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
+    forwards to toForward;
 }
