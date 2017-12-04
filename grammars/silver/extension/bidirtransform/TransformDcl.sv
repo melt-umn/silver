@@ -23,7 +23,7 @@ terminal From_kwd 'from' lexer classes{KEYWORD,RESERVED};
 terminal DblArrow_kwd '->>' lexer classes{KEYWORD, RESERVED};
 
 concrete production transformAGDclFull
-ag::AGDcl ::= 'transform' qn::QName '::' transType::TypeExpr 
+ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr 
     '{' trRules::TransformRuleList '}' 
     'rewrite' '{' rwRules::RewriteRuleList '}' 
     -- 'from' cncGroupName::QName 'to' absGroupName::QName ';'
