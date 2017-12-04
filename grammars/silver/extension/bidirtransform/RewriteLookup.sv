@@ -25,8 +25,9 @@ Boolean ::= rwrs::[Decorated RewriteRule] outType::String ns::Decorated NamedSig
 function rwMatch
 Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] outType::String ns::Decorated NamedSignature
 {
-    return if hasRwProd(rwrs, outType, ns) then rwProd(rwrs, outType, ns)
-        else rwID(rwrs, unFull(ns.typerep.typeName), outType);
+    return --if hasRwProd(rwrs, outType, ns) then rwProd(rwrs, outType, ns)
+        --else 
+        rwID(rwrs, unFull(ns.typerep.typeName), outType);
 }
 
 function hasRwProd
