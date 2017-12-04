@@ -70,9 +70,6 @@ rule::RewriteRule ::= prd::RewriteProduction '->' e::Expr
     e.finalSubst = rule.upSubst;
     e.defaultInheritedAnnos = [];      
 
-    -- to check
-    rule.errors <- [err(rule.location, "Check type: " ++ e.typerep.typeName)];
-
     forwards to rewriteRule(e, "", prd.typerep, e.typerep, prd, true, false, location=rule.location);
 }
 
@@ -87,8 +84,6 @@ rule::RewriteRule ::= prd::RewriteProduction '~~>' e::Expr
     e.finalSubst = rule.upSubst;
     e.defaultInheritedAnnos = [];      
 
-    rule.errors <- [err(rule.location, "Check type: " ++ e.typerep.typeName)];    
-    
     forwards to rewriteRule(e, "", prd.typerep, e.typerep, prd, true, true, location=rule.location);
 }
 
@@ -102,9 +97,7 @@ rule::RewriteRule ::= name::QName '::' t::TypeExpr '->' e::Expr
     e.downSubst = rule.downSubst;
     rule.upSubst = e.upSubst;
     e.finalSubst = rule.upSubst;    
-    e.defaultInheritedAnnos = [];      
-
-    rule.errors <- [err(rule.location, "Check type: " ++ e.typerep.typeName)];    
+    e.defaultInheritedAnnos = [];        
 
     forwards to rewriteRule(e, name.name, t.typerep, e.typerep, 
       emptyRewriteProduction(location=rule.location), false, false, location=rule.location);    
@@ -121,9 +114,7 @@ rule::RewriteRule ::= name::QName '::' t::TypeExpr '~~>' e::Expr
     e.downSubst = rule.downSubst;
     rule.upSubst = e.upSubst;
     e.finalSubst = rule.upSubst;
-    e.defaultInheritedAnnos = [];  
-
-    rule.errors <- [err(rule.location, "Check type: " ++ e.typerep.typeName)];    
+    e.defaultInheritedAnnos = [];     
     
     forwards to rewriteRule(e, name.name, t.typerep, e.typerep, 
       emptyRewriteProduction(location=rule.location), false, true, location=rule.location);
