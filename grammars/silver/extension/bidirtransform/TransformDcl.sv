@@ -349,18 +349,3 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     --ag.liftedAGDcls = agDcls22; 
     --forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
 }
-
-function filterDefs 
-[Def] ::= in::[Def]
-{
-    local hd::Def = head(in);
-    local tl::[Def] = filterDefs(tail(in));
-
-    return if null(in) then []
-        else case hd of 
-            | aliasedLhsDef(_,_,_) -> tl
-            | lhsDef(_,_,_,_) -> tl
-            | forwardDef(_,_,_) -> tl
-            | _ -> [hd] ++ tl
-        end;
-}
