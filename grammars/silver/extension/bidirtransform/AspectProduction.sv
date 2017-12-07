@@ -1,5 +1,8 @@
 grammar silver:extension:bidirtransform;
 
+imports silver:flow:env;
+imports silver:extension:doc:core;
+
 abstract production fakeAspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 {
@@ -29,9 +32,6 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   prodAtts = if null(id.lookupValue.errors)
              then defsFromPADcls(getProdAttrs(id.lookupValue.fullName, top.env), namedSig)
              else [];
-
-  production myFlowGraph :: ProductionGraph = 
-  findProductionGraph(id.lookupValue.fullName, myGraphs);
 
   body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
   body.frame = aspectProductionContext(namedSig, myFlowGraph); -- graph from flow:env
