@@ -11,36 +11,36 @@ top::Def ::=
 aspect production typeDef
 top::Def ::= d::EnvItem
 {
-top.ppDebug = "typeDef";
+top.ppDebug = "typeDef: " ++ d.ppDebug;
 }
 
 aspect production valueDef
 top::Def ::= d::EnvItem
 {
-top.ppDebug = "valueDef";
+top.ppDebug = "valueDef: " ++ d.ppDebug;
 }
 
 aspect production attrDef
 top::Def ::= d::EnvItem
 {
-top.ppDebug = "attrDef";
+top.ppDebug = "attrDef: " ++ d.ppDebug;
 }
 
 aspect production prodDclDef
 top::Def ::= d::EnvItem
 {
-top.ppDebug = "prodDclDef";
+top.ppDebug = "prodDclDef: " ++ d.ppDebug;
 }
 
 aspect production paDef
 top::Def ::= d::DclInfo
 {
-top.ppDebug = "paDef";
+top.ppDebug = "paDef: " ++ d.ppDebug;
 }
 
 aspect production oDef
 top::Def ::= d::DclInfo
 {
-top.ppDebug = "oDef";
+top.ppDebug = "oDef: " ++ d.ppDebug;
 }
 
