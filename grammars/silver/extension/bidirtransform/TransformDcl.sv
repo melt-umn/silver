@@ -305,7 +305,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
         applyOrigins(absGroup.ntList, location=ag.location), 
         appendAGDcl(
             cncApplyOrigins(cncGroup.ntList, location=ag.location),
-            agDcls8, location=ag.location), location=ag.location);
+            agDcls16, location=ag.location), location=ag.location);
 
 
     ag.moduleNames = [];--agDclsP3.moduleNames ++ nestedAgs.moduleNames;
@@ -343,11 +343,11 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- nestedAgs.env = ag.env; -- did not work
 
     -- ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
-    ag.defs = nestedAgs.defs; 
+    ag.defs = toForward.defs; 
     --ag.defs = filterDefs(toForward.defs) ++ nestedAgs.defs;
-    ag.errors <- map(\ d::Def -> 
-        err(ag.location, "Def pp: " ++ d.ppDebug),
-    filterDefs(toForward.defs));
+    -- ag.errors <- map(\ d::Def -> 
+    --     err(ag.location, "Def pp: " ++ d.ppDebug),
+    -- filterDefs(toForward.defs));
 
     --ag.liftedAGDcls = agDcls22; 
     --forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
