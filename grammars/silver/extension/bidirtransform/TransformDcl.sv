@@ -343,7 +343,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- nestedAgs.env = ag.env; -- did not work
 
     -- ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
-    ag.defs = nestedAgs.defs; 
+    ag.defs = toForward.defs; 
     --ag.defs = filterDefs(toForward.defs) ++ nestedAgs.defs;
     ag.errors <- map(\ d::Def -> 
         err(ag.location, "Def pp: " ++ d.ppDebug),
