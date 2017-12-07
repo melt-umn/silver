@@ -2,6 +2,12 @@ grammar silver:extension:bidirtransform;
 
 attribute ppDebug occurs on Def;
 
+aspect default production 
+top::Def ::= 
+{
+    top.ppDebug = "defaultDef";
+}
+
 aspect production typeDef
 top::Def ::= d::EnvItem
 {
