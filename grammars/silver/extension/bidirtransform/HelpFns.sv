@@ -99,7 +99,7 @@ function filterDefs
             | aliasedLhsDef(_,_,_,_,_) -> tl
             | lhsDef(_,_,_,_) -> tl
             | forwardDef(_,_,_) -> tl
-            | prodDcl(_,_,_) -> tl
+            | prodDclDef(_) -> tl
             -- also try oDef, attrDef
             | _ -> [hd] ++ tl
         end;
