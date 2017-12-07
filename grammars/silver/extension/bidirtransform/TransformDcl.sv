@@ -346,7 +346,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- ag.defs = nestedAgs.defs; 
     ag.defs = filterDefs(toForward.defs) ++ nestedAgs.defs;
     ag.errors <- map(\ d::Def -> 
-        [err(ag.location, "Def pp: " ++ d.ppDebug)],
+        err(ag.location, "Def pp: " ++ d.ppDebug),
     filterDefs(toForward.defs));
 
     --ag.liftedAGDcls = agDcls22; 
