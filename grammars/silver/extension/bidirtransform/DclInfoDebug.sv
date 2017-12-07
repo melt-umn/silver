@@ -1,5 +1,7 @@
 grammar silver:extension:bidirtransform;
 
+import silver:definition:regex;
+
 attribute ppDebug occurs on DclInfo;
 
 aspect default production 
