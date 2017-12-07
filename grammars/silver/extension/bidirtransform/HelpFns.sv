@@ -89,12 +89,12 @@ String ::= tName::String
 }
 
 function filterDefs 
-[Def] ::= in::[Def]
+[Def] ::= input::[Def]
 {
-    local hd::Def = head(in);
-    local tl::[Def] = filterDefs(tail(in));
+    local hd::Def = head(input);
+    local tl::[Def] = filterDefs(tail(input));
 
-    return if null(in) then []
+    return if null(input) then []
         else case hd of 
             | aliasedLhsDef(_,_,_) -> tl
             | lhsDef(_,_,_,_) -> tl
