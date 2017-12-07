@@ -163,7 +163,6 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                         ], location=ag.location),
                 productionStmtsNil(location=ag.location), cncNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
         agDcls8, cncNames);
-    -- local agDcls14::AGDcl = agDcls13;
 
     -- Non-origin aspecting
 
@@ -330,25 +329,38 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     ag.errors <- toForward.errors ++ nestedAgs.errors;
 
     toForward.compiledGrammars = ag.compiledGrammars;
-    nestedAgs.compiledGrammars = ag.compiledGrammars;
-
     toForward.config = ag.config;    
-    nestedAgs.config = ag.config;
-
     toForward.grammarName = ag.grammarName;
-    nestedAgs.grammarName = ag.grammarName;
-
     toForward.flowEnv = ag.flowEnv;
-    nestedAgs.flowEnv = ag.flowEnv;
-
     toForward.env = nestedAgs.env;
+
     nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
-    --nestedAgs.env = newScopeEnv(toForward.defs, ag.env); -- did not work
-    --nestedAgs.env = ag.env; -- did not work
+    nestedAgs.flowEnv = ag.flowEnv;
+    nestedAgs.grammarName = ag.grammarName;
+    nestedAgs.config = ag.config;
+    nestedAgs.compiledGrammars = ag.compiledGrammars;
+    nestedAgs.env = newScopeEnv(toForward.defs, ag.env); -- did not work
+    nestedAgs.env = ag.env; -- did not work
 
     -- ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
-    ag.defs = nestedAgs.defs; 
+    -- ag.defs = nestedAgs.defs; 
+    ag.defs = filterDefs(toForward.defs) ++ nestedAgs.defs;
 
     --ag.liftedAGDcls = agDcls22; 
     --forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
+}
+
+function filterDefs 
+[Def] ::= in::[Def]
+{
+    local hd::Def = head(in);
+    local tl::[Def] = filterDefs(tail(in));
+
+    return if null(in) then []
+        else case hd of 
+            | aliasedLhsDef(_,_,_) -> tl
+            | lhsDef(_,_,_,_) -> tl
+            | forwardDef(_,_,_) -> tl
+            | _ -> [hd] ++ tl
+        end;
 }
