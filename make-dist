@@ -36,7 +36,6 @@ tar -zcvf $SV.tar.gz \
  $SV/grammars/core/ \
  $SV/grammars/lib/extcore/ \
  $SV/grammars/lib/xml/ \
- $SV/grammars/lib/monto/ \
  $SV/grammars/silver/testing/ \
  $SV/grammars/silver/util/cmdargs/ \
  $SV/grammars/silver/util/deque/ \
