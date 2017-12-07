@@ -96,7 +96,7 @@ function filterDefs
 
     return if null(input) then []
         else case hd of 
-            | aliasedLhsDef(_,_,_) -> tl
+            | aliasedLhsDef(_,_,_,_,_) -> tl
             | lhsDef(_,_,_,_) -> tl
             | forwardDef(_,_,_) -> tl
             | _ -> [hd] ++ tl

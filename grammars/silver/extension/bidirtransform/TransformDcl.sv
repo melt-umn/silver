@@ -339,8 +339,8 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     nestedAgs.grammarName = ag.grammarName;
     nestedAgs.config = ag.config;
     nestedAgs.compiledGrammars = ag.compiledGrammars;
-    nestedAgs.env = newScopeEnv(toForward.defs, ag.env); -- did not work
-    nestedAgs.env = ag.env; -- did not work
+    -- nestedAgs.env = newScopeEnv(toForward.defs, ag.env); -- did not work
+    -- nestedAgs.env = ag.env; -- did not work
 
     -- ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
     -- ag.defs = nestedAgs.defs; 
