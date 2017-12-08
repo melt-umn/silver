@@ -11,7 +11,7 @@ top::EnvItem ::=
 aspect production renamedEnvItem
 ei::EnvItem ::= newname::String di::DclInfo
 {
-    ei.ppDebug = "(" ++ newname ++ ")" ++ di.ppDebug;
+    ei.ppDebug = "(" ++ newname ++ ") " ++ di.ppDebug;
 } 
 
 aspect production fullNameEnvItem
@@ -23,5 +23,5 @@ ei::EnvItem ::= di::DclInfo
 aspect production onlyRenamedEnvItem
 ei::EnvItem ::= newname::String di::DclInfo
 {
-    ei.ppDebug = "(" ++ newname ++ ")" ++ di.ppDebug;    
+    ei.ppDebug = "(" ++ newname ++ ") " ++ di.ppDebug;    
 }
