@@ -248,15 +248,16 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     --  else if the rhs matches this transformation, 
     --    then true
     --    else false
-    local agDcls13::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
-        if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) then agDcls 
-        else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-            prdStmtList([
-                attribDef( ns.outputElement.elementName, transformNm(tName),
-                    getTrans(trRules.transformRules, dcl, location=ag.location).matchProd, location=ag.location)
-            ], location=ag.location),
-            location=ag.location), agDcls, location=ag.location),
-        agDcls12, absProdDcls);
+    -- local agDcls13::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+    --     if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) then agDcls 
+    --     else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+    --         prdStmtList([
+    --             attribDef( ns.outputElement.elementName, transformNm(tName),
+    --                 getTrans(trRules.transformRules, dcl, location=ag.location).matchProd, location=ag.location)
+    --         ], location=ag.location),
+    --         location=ag.location), agDcls, location=ag.location),
+    --     agDcls12, absProdDcls);
+    local agDcls13::AGDcl = agDcls12;
 
     -- <rhs>.inhRedex_$tName = ...
     --  if this abstract production has no transformation defined for it,
