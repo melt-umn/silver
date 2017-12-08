@@ -349,7 +349,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- nestedAgs.env = ag.env; -- did not work
 
     --ag.defs = toForward.defs;
-    ag.defs = toForward.defs ++ nestedAgs.defs;
+    --ag.defs = toForward.defs ++ nestedAgs.defs;
     --ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
     --ag.defs = agDcls8.defs;--headN(toForward.defs, 1); 
     --ag.defs = filterDefs(toForward.defs) ++ nestedAgs.defs;
