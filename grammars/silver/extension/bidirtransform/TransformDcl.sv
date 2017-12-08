@@ -344,7 +344,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     toForward.config = ag.config;    
     toForward.grammarName = ag.grammarName;
     toForward.flowEnv = ag.flowEnv;
-    toForward.env = newScopeEnv(nestedAgs.defs, ag.env);
+    toForward.env = toEnv(nestedAgs.defs);
     -- toForward.defs.typeList = [];
 
     --nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
@@ -352,12 +352,12 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     nestedAgs.grammarName = ag.grammarName;
     nestedAgs.config = ag.config;
     nestedAgs.compiledGrammars = ag.compiledGrammars;
-    nestedAgs.env = newScopeEnv(toForward.defs, ag.env); -- did not work
+    nestedAgs.env = toEnv(toForward.defs); -- did not work
     -- nestedAgs.env = ag.env; -- did not work
 
     --ag.defs = toForward.defs;
-    ag.defs = nestedAgs.defs;
-    --ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
+    --ag.defs = nestedAgs.defs;
+    ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
     --ag.defs = agDcls8.defs;--headN(toForward.defs, 1); 
     --ag.defs = filterDefs(toForward.defs) ++ nestedAgs.defs;
     -- ag.errors <- [err(ag.location, "ag.env: " ++ ag.env.ppDebug)];
