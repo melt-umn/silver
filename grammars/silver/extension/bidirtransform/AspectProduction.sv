@@ -21,8 +21,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 
   top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
 
-  local attribute sigDefs :: [Def] with ++;
-  sigDefs := ns.defs;
+  local sigDefs :: [Def] = ns.defs ++ addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, allLexicalTyVars);
 
   ns.signatureName = id.lookupValue.fullName;
   ns.env = newScopeEnv(sigDefs, top.env);  
@@ -44,8 +43,6 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   body.prodOutput = ns.namedSignature.outputElement;
 
   local allLexicalTyVars :: [String] = makeSet(ns.lexicalTypeVariables);
-  
-  sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, allLexicalTyVars);
 
   -- TODO: bit of a hack, isn't it?
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
