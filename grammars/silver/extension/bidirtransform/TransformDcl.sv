@@ -39,8 +39,12 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     local tName::String = unFull(qn.name);
 
-    local absGroup::Decorated NonterminalList = decorate absGroupIn with { env=toForward.env; };
-    local cncGroup::Decorated NonterminalList = decorate cncGroupIn with { env=toForward.env; };
+    local groupEnv::Decorated Env = toEnv(toForward.defs);
+
+    local absGroup::Decorated NonterminalList = decorate absGroupIn with { env=groupEnv; };
+    local cncGroup::Decorated NonterminalList = decorate cncGroupIn with { env=groupEnv; };
+
+
 
     ----------------
     -- Propagation of attributes
@@ -349,13 +353,13 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- nestedAgs.env = ag.env; -- did not work
 
     --ag.defs = toForward.defs;
-    --ag.defs = toForward.defs ++ nestedAgs.defs;
+    ag.defs = toForward.defs ++ nestedAgs.defs;
     --ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
     --ag.defs = agDcls8.defs;--headN(toForward.defs, 1); 
     --ag.defs = filterDefs(toForward.defs) ++ nestedAgs.defs;
-    ag.errors <- [err(ag.location, "ag.env: " ++ ag.env.ppDebug)];
-    ag.errors <- [err(ag.location, "forward.env: " ++ toForward.env.ppDebug)];
-    ag.errors <- [err(ag.location, "nested.env: " ++ nestedAgs.env.ppDebug)];
+    -- ag.errors <- [err(ag.location, "ag.env: " ++ ag.env.ppDebug)];
+    -- ag.errors <- [err(ag.location, "forward.env: " ++ toForward.env.ppDebug)];
+    -- ag.errors <- [err(ag.location, "nested.env: " ++ nestedAgs.env.ppDebug)];
     -- ag.errors <- map(\ d::Def -> 
     --     err(ag.location, "toForward Def pp: " ++ d.ppDebug),
     -- toForward.defs);
