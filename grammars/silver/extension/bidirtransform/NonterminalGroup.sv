@@ -42,7 +42,7 @@ concrete production fullNt
 top::FullNonterminal ::= qn::QName
 {
     top.name = qn.name;
-    top.ntProds = prodsFromDcls(getProdsForNt(top.name, top.env));
+    top.ntProds = prodsFromDcls(getProdsFromNtHack(top.name, new(top.env), "silver:extension:bidirtransform"));
 
     top.errors := if length(getTypeDcl(top.name, top.env)) != 0 then []
         else [err(top.location, "Name " ++ top.name ++ " doesn't match any known nonterminal")];
@@ -51,7 +51,7 @@ top::FullNonterminal ::= qn::QName
 function prodsFromDcls
 [Decorated NamedSignature] ::= dcls::[DclInfo]
 {
-    return if null(dcls) then []
+    return if length(dcls) == 0 then []
         else prodFromDcl(head(dcls)) ++ prodsFromDcls(tail(dcls));
 }
 
