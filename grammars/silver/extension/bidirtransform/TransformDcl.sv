@@ -362,7 +362,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     --ag.defs = filterDefs(toForward.defs) ++ nestedAgs.defs;
     --ag.errors <- [err(ag.location, "ag.env: " ++ ag.env.ppDebug)];
     --ag.errors <- [err(ag.location, "forward.env: " ++ toForward.env.ppDebug)];
-    ag.errors <- [err(ag.location, "nested.env: " ++ nestedAgs.env.ppDebug)];
+    --ag.errors <- [err(ag.location, "nested.env: " ++ nestedAgs.env.ppDebug)];
     -- ag.errors <- map(\ d::Def -> 
     --     err(ag.location, "toForward Def pp: " ++ d.ppDebug),
     -- toForward.defs);
