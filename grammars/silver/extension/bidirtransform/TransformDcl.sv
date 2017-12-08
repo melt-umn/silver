@@ -347,12 +347,13 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- nestedAgs.env = newScopeEnv(toForward.defs, ag.env); -- did not work
     -- nestedAgs.env = ag.env; -- did not work
 
-    ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
+    ag.Defs = nestedAgs.defs;
+    --ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
     --ag.defs = toForward.defs; 
     --ag.defs = filterDefs(toForward.defs) ++ nestedAgs.defs;
-    -- ag.errors <- map(\ d::Def -> 
-    --     err(ag.location, "Def pp: " ++ d.ppDebug),
-    -- filterDefs(toForward.defs));
+    ag.errors <- map(\ d::Def -> 
+        err(ag.location, "Def pp: " ++ d.ppDebug),
+    toForward.defs);
 
     --ag.liftedAGDcls = agDcls22; 
     --forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
