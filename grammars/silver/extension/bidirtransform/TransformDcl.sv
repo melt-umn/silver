@@ -307,13 +307,11 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     -- add origin specific generation
 
-    --local toForward::AGDcl = appendAGDcl(
-    --    applyOrigins(absGroup.ntList, location=ag.location), 
-    --    appendAGDcl(
-    --        cncApplyOrigins(cncGroup.ntList, location=ag.location),
-    --        agDcls16, location=ag.location), location=ag.location);
-
-    local toForward::AGDcl = agDcls9;
+    local toForward::AGDcl = appendAGDcl(
+       applyOrigins(absGroup.ntList, location=ag.location), 
+       appendAGDcl(
+           cncApplyOrigins(cncGroup.ntList, location=ag.location),
+           agDcls9, location=ag.location), location=ag.location);
 
     ag.moduleNames = [];--agDclsP3.moduleNames ++ nestedAgs.moduleNames;
     ag.mdaSpecs = toForward.mdaSpecs ++ nestedAgs.mdaSpecs;
@@ -341,16 +339,16 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     toForward.flowEnv = ag.flowEnv;
     toForward.env = nestedAgs.env;
 
-    nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
+    --nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
     nestedAgs.flowEnv = ag.flowEnv;
     nestedAgs.grammarName = ag.grammarName;
     nestedAgs.config = ag.config;
     nestedAgs.compiledGrammars = ag.compiledGrammars;
-    -- nestedAgs.env = newScopeEnv(toForward.defs, ag.env); -- did not work
+    nestedAgs.env = newScopeEnv(toForward.defs, ag.env); -- did not work
     -- nestedAgs.env = ag.env; -- did not work
 
     --ag.defs = toForward.defs;
-    ag.defs = nestedAgs.defs;
+    ag.defs = toForward.defs ++ nestedAgs.defs;
     --ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
     --ag.defs = agDcls8.defs;--headN(toForward.defs, 1); 
     --ag.defs = filterDefs(toForward.defs) ++ nestedAgs.defs;
