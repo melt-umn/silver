@@ -82,12 +82,6 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 aspect production fakeAspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 {
-  top.foldableRanges = [body.location];
-}
-
-aspect production fakeAspectProductionDcl
-top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
-{
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = ns.finalSubst;
 
   errCheck1 = check(id.lookupValue.typerep, namedSig.typerep);
