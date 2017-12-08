@@ -1,10 +1,5 @@
 grammar silver:extension:bidirtransform;
 
-imports silver:translation:java:core only genFiles, setupInh, initProd, initValues, postInit, initWeaving, valueWeaving;
---imports silver:modification:impide only ideSpecs;
-imports silver:modification:copper_mda only mdaSpecs;
---imports silver:composed:idetest only foldableRanges;
-
 synthesized attribute isLock::Boolean occurs on Def;
 
 abstract production lockAGDcls
