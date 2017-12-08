@@ -23,5 +23,5 @@ top::Env ::= e1::Decorated Env  e2::Decorated Env
 aspect production i_newScopeEnv
 top::Env ::= d::Defs  e::Decorated Env
 {
-  top.ppDebug = "<" ++ d.ppDebug ++ ',' ++ e.ppDebug ++ ">"; 
+  top.ppDebug = "<" ++ d.ppDebug ++ "," ++ e.ppDebug ++ ">"; 
 }
