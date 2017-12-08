@@ -39,8 +39,8 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     local tName::String = unFull(qn.name);
 
-    local absGroup::Decorated NonterminalList = decorate absGroupIn with { env=ag.env; };
-    local cncGroup::Decorated NonterminalList = decorate cncGroupIn with { env=ag.env; };
+    local absGroup::Decorated NonterminalList = decorate absGroupIn with { env=toForward.env; };
+    local cncGroup::Decorated NonterminalList = decorate cncGroupIn with { env=toForward.env; };
 
     ----------------
     -- Propagation of attributes
