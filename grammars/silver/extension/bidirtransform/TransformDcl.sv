@@ -337,7 +337,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     toForward.config = ag.config;    
     toForward.grammarName = ag.grammarName;
     toForward.flowEnv = ag.flowEnv;
-    toForward.env = nestedAgs.env;
+    toForward.env = newScopeEnv(nestedAgs.defs, ag.env);
 
     --nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
     nestedAgs.flowEnv = ag.flowEnv;
