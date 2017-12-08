@@ -157,7 +157,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- restored$cncType attributes
     --
     local agDcls9::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
-        appendAGDcl(aspectProductionDcl('aspect', 'production', 
+        appendAGDcl(fakeAspectProductionDcl('aspect', 'production', 
             qName(ag.location, mkOriginName(lhs)), mkAspectProdSigDec("o", "Origin", "e", lhs, location=ag.location),
                 productionBody('{', foldl(\ stmts::ProductionStmts rhs::String ->
                     if !hasRwID(newRwRules.rewriteRules, lhs, rhs) 
@@ -347,13 +347,13 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- nestedAgs.env = newScopeEnv(toForward.defs, ag.env); -- did not work
     -- nestedAgs.env = ag.env; -- did not work
 
-    ag.defs = nestedAgs.defs;
-    --ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
+    --ag.defs = nestedAgs.defs;
+    ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
     --ag.defs = toForward.defs; 
     --ag.defs = filterDefs(toForward.defs) ++ nestedAgs.defs;
-    ag.errors <- map(\ d::Def -> 
-        err(ag.location, "Def pp: " ++ d.ppDebug),
-    toForward.defs);
+    -- ag.errors <- map(\ d::Def -> 
+    --     err(ag.location, "Def pp: " ++ d.ppDebug),
+    -- toForward.defs);
 
     --ag.liftedAGDcls = agDcls22; 
     --forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
