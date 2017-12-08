@@ -1,6 +1,7 @@
 grammar silver:extension:bidirtransform;
 
-imports silver:extension:doc:core only bodilessDclCommentItem, docs;
+imports silver:translation:java:core;
+imports silver:extension:doc:core only bodilessDclCommentItem, docs, docsHeader, docsSplit, docsNoDoc, docDcls;
 imports silver:definition:env;
 imports silver:definition:core;
 imports silver:definition:concrete_syntax;
