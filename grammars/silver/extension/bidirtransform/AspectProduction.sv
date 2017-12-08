@@ -1,7 +1,6 @@
 grammar silver:extension:bidirtransform;
 
 import silver:definition:flow:env;
-imports silver:extension:doc:core;
 
 abstract production fakeAspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
