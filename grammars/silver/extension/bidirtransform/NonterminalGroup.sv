@@ -51,7 +51,7 @@ top::FullNonterminal ::= qn::QName
 function prodsFromDcls
 [Decorated NamedSignature] ::= dcls::[DclInfo]
 {
-    return if length(dcls) == 0 then []
+    return if null(dcls) then []
         else prodFromDcl(head(dcls)) ++ prodsFromDcls(tail(dcls));
 }
 

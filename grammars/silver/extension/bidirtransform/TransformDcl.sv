@@ -350,7 +350,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     --ag.defs = nestedAgs.defs;
     --ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
-    ag.defs = toForward.defs; 
+    ag.defs = headN(toForward.defs, 1); 
     --ag.defs = filterDefs(toForward.defs) ++ nestedAgs.defs;
     -- ag.errors <- map(\ d::Def -> 
     --     err(ag.location, "Def pp: " ++ d.ppDebug),

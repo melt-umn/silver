@@ -104,3 +104,11 @@ function filterDefs
             | _ -> [hd] ++ tl
         end;
 }
+
+function headN
+[a] ::= input::[a] n::Integer
+{
+    return if n == 0 then [] 
+        else if null(input) then []
+        else [head(input)] ++ headN(tail(input), n+1);
+}
