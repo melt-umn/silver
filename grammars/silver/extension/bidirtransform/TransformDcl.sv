@@ -388,8 +388,8 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     --toForward.env = toEnv(nestedAgs.defs);
     --nestedAgs.env = toEnv(toForward.defs);
     
-    --ag.defs = nestedAgs.defs; 
-    ag.defs = toForward.defs ++ nestedAgs.defs;
+    ag.defs = nestedAgs.defs; 
+    --ag.defs = toForward.defs ++ nestedAgs.defs;
 
     --forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
 }
