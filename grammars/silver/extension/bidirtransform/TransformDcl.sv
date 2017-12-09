@@ -157,7 +157,9 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- restored$cncType attributes
     --
     local agDcls9::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
-        appendAGDcl(aspectProductionDcl('aspect', 'production', 
+        appendAGDcl(
+            fakeAspectProductionDcl('aspect', 'production',
+            --aspectProductionDcl('aspect', 'production', 
             qName(ag.location, mkOriginName(lhs)), mkAspectProdSigDec("o", "Origin", "e", lhs, location=ag.location),
                 productionBody('{', foldl(\ stmts::ProductionStmts rhs::String ->
                     if !hasRwID(newRwRules.rewriteRules, lhs, rhs) 
