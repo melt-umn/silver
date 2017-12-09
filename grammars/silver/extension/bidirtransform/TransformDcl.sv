@@ -39,7 +39,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     local tName::String = unFull(qn.name);
 
-    local groupEnv::Decorated env = toEnv(nestedAgs.defs);
+    local groupEnv::Decorated Env = toEnv(nestedAgs.defs);
 
     local absGroup::Decorated NonterminalList = decorate absGroupIn with { env=ag.env; };
     local cncGroup::Decorated NonterminalList = decorate cncGroupIn with { env=ag.env; };
