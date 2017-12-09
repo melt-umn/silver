@@ -21,12 +21,12 @@ aspect production i_appendEnv
 top::Env ::= e1::Decorated Env  e2::Decorated Env
 {
   top.ppDebug = "<<" ++ e1.ppDebug ++ ">\n<" ++ e2.ppDebug ++ ">>"; 
-  top.filteredProds = i_appendEnv(e1.filteredProds, e2.filteredProds);  
+  top.filteredProds = decorate i_appendEnv(e1.filteredProds, e2.filteredProds) with {};  
 }
 
 aspect production i_newScopeEnv
 top::Env ::= d::Defs  e::Decorated Env
 {
   top.ppDebug = "<" ++ d.ppDebug ++ "," ++ e.ppDebug ++ ">"; 
-  top.filteredProds = i_newScopeEnv(d.filteredProdDefs, e.filteredProds);
+  top.filteredProds = decorate i_newScopeEnv(d.filteredProdDefs, e.filteredProds) with {};
 }
