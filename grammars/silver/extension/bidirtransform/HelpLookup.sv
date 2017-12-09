@@ -143,7 +143,7 @@ function getProdsFromConsDefs3
 function getProdsFromProdDcl
 [DclInfo] ::= fnnt::String d::Def dfs::Defs sg::String ns::Decorated NamedSignature skipGrammar::String
 {
-    return if sg == skipGrammar then getProdsFromDefs2(fnnt, dfs, skipGrammar)
+    return if endsWith(skipGrammar,sg) then getProdsFromDefs2(fnnt, dfs, skipGrammar)
         else getProdsFromProdDcl2(fnnt,d,dfs,ns,skipGrammar);
 }
 
