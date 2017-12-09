@@ -258,7 +258,7 @@ abstract production optOriginAttribute
 top::AGDcl ::= qn::QName pfix::String
 {      
     local oProds::[Decorated NamedSignature] = 
-      prodsFromDcls(getProdsFromNtHack("Origin", new(top.env), "silver:extension:bidirtransform"));
+      prodsFromDcls(getProdsFromNtHack("Origin", top.env, "transformed"));
 
     local lhsAttr::String = pfix ++ qn.name;
 

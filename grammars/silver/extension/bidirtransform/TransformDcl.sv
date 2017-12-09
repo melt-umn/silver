@@ -377,7 +377,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
 
     -- At 'silver X'
-
+ 
     -- by undefined values
 
     -- toForward.env = appendEnv(ag.env, toEnv(nestedAgs.defs));
