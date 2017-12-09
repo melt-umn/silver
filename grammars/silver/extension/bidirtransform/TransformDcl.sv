@@ -318,25 +318,25 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
             agDcls16, location=ag.location), location=ag.location);
 
 
-    ag.moduleNames = [];--agDclsP3.moduleNames ++ nestedAgs.moduleNames;
-    ag.mdaSpecs = toForward.mdaSpecs ++ nestedAgs.mdaSpecs;
-    ag.ideSpecs = toForward.ideSpecs ++ nestedAgs.ideSpecs;
-    ag.syntaxAst = toForward.syntaxAst ++ nestedAgs.syntaxAst;
-    ag.parserSpecs = toForward.parserSpecs ++ nestedAgs.parserSpecs;
-    ag.flowDefs = toForward.flowDefs ++ nestedAgs.flowDefs;
-    ag.docs := toForward.docs ++ nestedAgs.docs;
-    ag.docsHeader = toForward.docsHeader ++ nestedAgs.docsHeader;
-    ag.docsSplit = toForward.docsSplit ++ nestedAgs.docsSplit;
-    ag.docsNoDoc = toForward.docsNoDoc || nestedAgs.docsNoDoc;
-    ag.docDcls := toForward.docDcls ++ nestedAgs.docDcls;
-    ag.genFiles := toForward.genFiles ++ nestedAgs.genFiles;
-    ag.setupInh := toForward.setupInh ++ nestedAgs.setupInh;
-    ag.initProd := toForward.initProd ++ nestedAgs.initProd;
-    ag.initValues := toForward.initValues ++ nestedAgs.initValues;
-    ag.postInit := toForward.postInit ++ nestedAgs.postInit;
-    ag.initWeaving := toForward.initWeaving ++ nestedAgs.initWeaving;
-    ag.valueWeaving := toForward.valueWeaving ++ nestedAgs.valueWeaving;
-    ag.errors <- toForward.errors ++ nestedAgs.errors;
+    -- ag.moduleNames = [];--agDclsP3.moduleNames ++ nestedAgs.moduleNames;
+    -- ag.mdaSpecs = toForward.mdaSpecs ++ nestedAgs.mdaSpecs;
+    -- ag.ideSpecs = toForward.ideSpecs ++ nestedAgs.ideSpecs;
+    -- ag.syntaxAst = toForward.syntaxAst ++ nestedAgs.syntaxAst;
+    -- ag.parserSpecs = toForward.parserSpecs ++ nestedAgs.parserSpecs;
+    -- ag.flowDefs = toForward.flowDefs ++ nestedAgs.flowDefs;
+    -- ag.docs := toForward.docs ++ nestedAgs.docs;
+    -- ag.docsHeader = toForward.docsHeader ++ nestedAgs.docsHeader;
+    -- ag.docsSplit = toForward.docsSplit ++ nestedAgs.docsSplit;
+    -- ag.docsNoDoc = toForward.docsNoDoc || nestedAgs.docsNoDoc;
+    -- ag.docDcls := toForward.docDcls ++ nestedAgs.docDcls;
+    -- ag.genFiles := toForward.genFiles ++ nestedAgs.genFiles;
+    -- ag.setupInh := toForward.setupInh ++ nestedAgs.setupInh;
+    -- ag.initProd := toForward.initProd ++ nestedAgs.initProd;
+    -- ag.initValues := toForward.initValues ++ nestedAgs.initValues;
+    -- ag.postInit := toForward.postInit ++ nestedAgs.postInit;
+    -- ag.initWeaving := toForward.initWeaving ++ nestedAgs.initWeaving;
+    -- ag.valueWeaving := toForward.valueWeaving ++ nestedAgs.valueWeaving;
+    -- ag.errors <- toForward.errors ++ nestedAgs.errors;
 
     toForward.compiledGrammars = ag.compiledGrammars;
     nestedAgs.compiledGrammars = ag.compiledGrammars;
@@ -389,11 +389,11 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     --nestedAgs.env = toEnv(toForward.defs);
     
     --ag.defs = nestedAgs.defs; 
-    ag.defs = toForward.defs ++ nestedAgs.defs;
+    --ag.defs = toForward.defs ++ nestedAgs.defs;
 
     -- ag.errors <- map(\ d::Def -> 
     --     err(ag.location, d.ppDebug),
     -- ag.defs);
 
-    --forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
+    forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
 }
