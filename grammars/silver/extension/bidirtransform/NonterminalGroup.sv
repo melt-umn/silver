@@ -16,7 +16,7 @@ top::AGDcl ::= 'nonterminals' qn::QName '=' nts::NonterminalList ';'
 
     top.defs = [ntGroupDef(ntGroupDcl(top.grammarName, top.location, qn.name, nts))];
     
-    nts.env = top.env;
+    nts.env = newScopeEnv(top.defs, top.env);
 }
 
 concrete production singleNt 
