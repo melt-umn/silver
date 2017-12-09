@@ -350,14 +350,10 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     toForward.flowEnv = ag.flowEnv;
     nestedAgs.flowEnv = ag.flowEnv;
 
-    toForward.env = nestedAgs.env;
-    nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
-    --nestedAgs.env = newScopeEnv(toForward.defs, ag.env); -- did not work
-    --nestedAgs.env = ag.env; -- did not work
+    toForward.env = toEnv(nestedAgs.defs);
+    nestedAgs.env = toEnv(toForward.defs);
 
-    -- ag.defs = toForward.defs ++ nestedAgs.defs; -- <- duplicate attributes
     ag.defs = nestedAgs.defs; 
 
-    --ag.liftedAGDcls = agDcls22; 
     --forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
 }
