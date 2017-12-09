@@ -392,7 +392,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     --ag.defs = toForward.defs ++ nestedAgs.defs;
 
     ag.errors <- map(\ d::Def -> 
-        err(ag.location, d.ppDebug)
+        err(ag.location, d.ppDebug),
     ag.defs);
 
     --forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
