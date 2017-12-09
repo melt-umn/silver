@@ -350,8 +350,8 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     toForward.flowEnv = ag.flowEnv;
     nestedAgs.flowEnv = ag.flowEnv;
 
-    toForward.env = appendEnv(ag.env, toEnv(nestedAgs.defs));
-    nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
+    --toForward.env = appendEnv(ag.env, toEnv(nestedAgs.defs));
+    --nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
 
     -- FAILURES
 
