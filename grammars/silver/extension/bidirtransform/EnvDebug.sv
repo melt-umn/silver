@@ -1,7 +1,7 @@
 grammar silver:extension:bidirtransform;
 
 attribute ppDebug occurs on Env;
-synthesized attribute filteredProds::Env occurs on Env;
+synthesized attribute filteredProds::Decorated Env occurs on Env;
 
 aspect default production 
 top::Env ::=
