@@ -47,7 +47,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     ----------------
     -- Propagation of attributes
 
-    ag.errors := trRules.errors ++ rwRules.errors;
+    ag.errors := trRules.errors ++ rwRules.errors ++ absGroup.errors ++ cncGroup.errors;
 
     trRules.absGroup = absGroup;
     trRules.cncGroup = cncGroup;
@@ -390,9 +390,6 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     
     ag.defs = nestedAgs.defs; 
     --ag.defs = toForward.defs ++ nestedAgs.defs;
-
-    ag.errors <- [err(ag.location, toForward.grammarName)];
-    ag.errors <- [err(ag.location, agDcls16.grammarName)];
 
     --forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
 }
