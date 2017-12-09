@@ -41,8 +41,8 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     local groupEnv::Decorated Env = toEnv(nestedAgs.defs);
 
-    local absGroup::Decorated NonterminalList = decorate absGroupIn with { env=ag.env; };
-    local cncGroup::Decorated NonterminalList = decorate cncGroupIn with { env=ag.env; };
+    local absGroup::Decorated NonterminalList = decorate absGroupIn with { env=groupEnv; };
+    local cncGroup::Decorated NonterminalList = decorate cncGroupIn with { env=groupEnv; };
 
     ----------------
     -- Propagation of attributes
@@ -354,6 +354,21 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
 
     -- FAILURES
+
+    -- At 'java -jar X.jar ""'
+
+    toForward.env = nestedAgs.env;
+    nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
+
+    -- At 'silver X'
+
+    -- by undefined values
+
+    -- toForward.env = appendEnv(ag.env, toEnv(nestedAgs.defs));
+    -- nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
+
+    -- by env/defs circularity
+
     --toForward.env = toEnv(nestedAgs.defs);
     --nestedAgs.env = toEnv(toForward.defs);
     
