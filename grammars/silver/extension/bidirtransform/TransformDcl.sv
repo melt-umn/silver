@@ -344,7 +344,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     toForward.config = ag.config;    
     nestedAgs.config = ag.config;
 
-    toForward.grammarName = ag.grammarName;
+    toForward.grammarName = ag.grammarName ++ ":transformed";
     nestedAgs.grammarName = ag.grammarName;
 
     toForward.flowEnv = ag.flowEnv;
