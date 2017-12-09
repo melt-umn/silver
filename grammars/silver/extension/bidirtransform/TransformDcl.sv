@@ -40,11 +40,8 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local tName::String = unFull(qn.name);
 
     local groupEnv::Decorated Env = toEnv(nestedAgs.defs);
-
     local absGroup::Decorated NonterminalList = decorate absGroupIn with { env=ag.env; };
     local cncGroup::Decorated NonterminalList = decorate cncGroupIn with { env=ag.env; };
-
-
 
     ----------------
     -- Propagation of attributes
@@ -161,7 +158,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- restored$cncType attributes
     --
     local agDcls9::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
-        appendAGDcl(fakeAspectProductionDcl('aspect', 'production', 
+        appendAGDcl(aspectProductionDcl('aspect', 'production', 
             qName(ag.location, mkOriginName(lhs)), mkAspectProdSigDec("o", "Origin", "e", lhs, location=ag.location),
                 productionBody('{', foldl(\ stmts::ProductionStmts rhs::String ->
                     if !hasRwID(newRwRules.rewriteRules, lhs, rhs) 
@@ -252,16 +249,15 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     --  else if the rhs matches this transformation, 
     --    then true
     --    else false
-    -- local agDcls13::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
-    --     if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) then agDcls 
-    --     else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-    --         prdStmtList([
-    --             attribDef( ns.outputElement.elementName, transformNm(tName),
-    --                 getTrans(trRules.transformRules, dcl, location=ag.location).matchProd, location=ag.location)
-    --         ], location=ag.location),
-    --         location=ag.location), agDcls, location=ag.location),
-    --     agDcls12, absProdDcls);
-    local agDcls13::AGDcl = agDcls12;
+    local agDcls13::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+        if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) then agDcls 
+        else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+            prdStmtList([
+                attribDef( ns.outputElement.elementName, transformNm(tName),
+                    getTrans(trRules.transformRules, dcl, location=ag.location).matchProd, location=ag.location)
+            ], location=ag.location),
+            location=ag.location), agDcls, location=ag.location),
+        agDcls12, absProdDcls);
 
     -- <rhs>.inhRedex_$tName = ...
     --  if this abstract production has no transformation defined for it,
@@ -317,6 +313,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
            cncApplyOrigins(cncGroup.ntList, location=ag.location),
            agDcls16, location=ag.location), location=ag.location);
 
+
     ag.moduleNames = [];--agDclsP3.moduleNames ++ nestedAgs.moduleNames;
     ag.mdaSpecs = toForward.mdaSpecs ++ nestedAgs.mdaSpecs;
     ag.ideSpecs = toForward.ideSpecs ++ nestedAgs.ideSpecs;
@@ -351,21 +348,11 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     nestedAgs.env = toEnv(toForward.defs); -- did not work
     -- nestedAgs.env = ag.env; -- did not work
 
-    --ag.defs = toForward.defs;
-    --ag.defs = nestedAgs.defs;
-    ag.defs = nestedAgs.defs; -- <- duplicate attributes
-    --ag.defs = agDcls8.defs;--headN(toForward.defs, 1); 
-    --ag.defs = filterDefs(toForward.defs) ++ nestedAgs.defs;
-    --ag.errors <- [err(ag.location, "ag.env: " ++ ag.env.ppDebug)];
-    --ag.errors <- [err(ag.location, "forward.env: " ++ toForward.env.ppDebug)];
-    --ag.errors <- [err(ag.location, "nested.env: " ++ nestedAgs.env.ppDebug)];
-    -- ag.errors <- map(\ d::Def -> 
-    --     err(ag.location, "toForward Def pp: " ++ d.ppDebug),
-    -- toForward.defs);
 
-    -- ag.errors <- map(\ d::Def -> 
-    --     err(ag.location, "nested Def pp: " ++ d.ppDebug),
-    -- nestedAgs.defs);
+    ag.defs = nestedAgs.defs; -- <- duplicate attributes
+
+
+
 
     --ag.liftedAGDcls = agDcls22; 
     --forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
