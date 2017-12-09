@@ -42,12 +42,12 @@ concrete production fullNt
 top::FullNonterminal ::= qn::QName
 {
     top.name = qn.name;
-    top.ntProds = prodsFromDcls(getProdsFromNtHack(top.name, new(top.env), "transformed"));
+    top.ntProds = prodsFromDcls(getProdsFromNtHack(top.name, top.env.filteredProds, "transformed"));
 
     top.errors := if length(getTypeDcl(top.name, top.env)) != 0 then []
         else [err(top.location, "Name " ++ top.name ++ " doesn't match any known nonterminal")];
 
-    top.errors <- [err(top.location, top.env.filteredProds.ppDebug)];
+    -- top.errors <- [err(top.location, top.env.filteredProds.ppDebug)];
 }
 
 function prodsFromDcls

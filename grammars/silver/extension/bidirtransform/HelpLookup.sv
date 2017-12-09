@@ -82,14 +82,14 @@ function getProdFromSig
 }
 
 function getProdsFromNtHack
-[DclInfo] ::= fnnt::String e::Env skipGrammar::String
+[DclInfo] ::= fnnt::String e::Decorated Env skipGrammar::String
 {
     -- original:
     -- return searchEnvAll(fnnt, e.prodsForNtTree)
     return case e of 
         | i_emptyEnv() -> []
-        | i_appendEnv(e2, e3) -> getProdsFromNtHack(fnnt, new(e2), skipGrammar) ++ getProdsFromNtHack(fnnt, new(e3), skipGrammar)
-        | i_newScopeEnv(dfs, e2) -> getProdsFromDefs(fnnt, dfs, skipGrammar) ++ getProdsFromNtHack(fnnt, new(e2), skipGrammar)
+        | i_appendEnv(e2, e3) -> getProdsFromNtHack(fnnt, e2, skipGrammar) ++ getProdsFromNtHack(fnnt, e3, skipGrammar)
+        | i_newScopeEnv(dfs, e2) -> getProdsFromDefs(fnnt, dfs, skipGrammar) ++ getProdsFromNtHack(fnnt, e2, skipGrammar)
     end;
 }
 
