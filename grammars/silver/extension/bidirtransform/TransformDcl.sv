@@ -92,13 +92,13 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local inhRedexName::String = inhRedexNm(tName);
 
     -- autocopy attribute inRedex_$tName :: Maybe<Origin>; 
-    local agDcls::AGDcl = autocAttr(inhRedexName, mkMaybeTypeExpr("Origin", location=ag.location), location=ag.location);
+    local agDcls1::AGDcl = autocAttr(inhRedexName, mkMaybeTypeExpr("Origin", location=ag.location), location=ag.location);
 
     -- for $cncType in cncTypes
     -- synthesized attribute restored$cncType :: $cncType;
     local agDcls2::AGDcl = foldl(\ agDcls::AGDcl name::String-> 
             appendAGDcl(synAttr(restoreNm(unFull(name)), sTyExpr(name, location=ag.location), location=ag.location), agDcls, location=ag.location),
-        agDcls, cncNames);
+        agDcls1, cncNames);
 
     -- synthesized attribute $tName :: $tType;
     local agDcls3::AGDcl = appendAGDcl(synAttr(tName, transType, location=ag.location), agDcls2, location=ag.location);
@@ -345,6 +345,22 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     nestedAgs.config = ag.config;
 
     toForward.grammarName = ag.grammarName ++ ":transformed";
+    agDcls16.grammarName = ag.grammarName ++ ":transformed";
+    agDcls15.grammarName = ag.grammarName ++ ":transformed";
+    agDcls14.grammarName = ag.grammarName ++ ":transformed";
+    agDcls13.grammarName = ag.grammarName ++ ":transformed";
+    agDcls12.grammarName = ag.grammarName ++ ":transformed";
+    agDcls11.grammarName = ag.grammarName ++ ":transformed";
+    agDcls10.grammarName = ag.grammarName ++ ":transformed";
+    agDcls9.grammarName = ag.grammarName ++ ":transformed";
+    agDcls8.grammarName = ag.grammarName ++ ":transformed";
+    agDcls7.grammarName = ag.grammarName ++ ":transformed";
+    agDcls6.grammarName = ag.grammarName ++ ":transformed";
+    agDcls5.grammarName = ag.grammarName ++ ":transformed";
+    agDcls4.grammarName = ag.grammarName ++ ":transformed";
+    agDcls3.grammarName = ag.grammarName ++ ":transformed";
+    agDcls2.grammarName = ag.grammarName ++ ":transformed";
+    agDcls1.grammarName = ag.grammarName ++ ":transformed";
     nestedAgs.grammarName = ag.grammarName;
 
     toForward.flowEnv = ag.flowEnv;
