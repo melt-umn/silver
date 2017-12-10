@@ -91,14 +91,26 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local allProdDcls :: [[Decorated NamedSignature]] = absProdDcls ++ cncProdDcls;
 
 
+    ag.errors <- map(\ fnt::FullNonterminal ->
+        err(ag.location, "Abs nt: " fnt.name),
+    absGroup.ntList);
+
+    ag.errors <- map(\ fnt::FullNonterminal ->
+        err(ag.location, "Cnc nt: " fnt.name),
+    cncGroup.ntList);
+
     ag.errors <- foldl(\ errs::[Message] d::[Decorated NamedSignature] ->
         if null(d) then errs else 
-            errs ++ [err(ag.location, "Abs head fullname: " ++ head(d).fullName)],
+            errs ++ map(\ dec::Decorated NamedSignature -> 
+                err(ag.location, "Abs prod: " ++ dec.fullName),
+            d),
     [], absProdDcls);
 
     ag.errors <- foldl(\ errs::[Message] d::[Decorated NamedSignature] ->
         if null(d) then errs else 
-            errs ++ [err(ag.location, "Cnc head fullname: " ++ head(d).fullName)],
+            errs ++ map(\ dec::Decorated NamedSignature -> 
+                err(ag.location, "Cnc prod: " ++ dec.fullName),
+            d),
     [], cncProdDcls);
 
     -----------------------
