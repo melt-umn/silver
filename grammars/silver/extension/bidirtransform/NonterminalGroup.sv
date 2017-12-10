@@ -61,7 +61,8 @@ function prodsFromDefs
 function prodFromDef
 [Decorated NamedSignature] ::= def::Def
 {
-    return decorate def.prodNamedSig with {};
+    return if null(def.prodNamedSig) then [] 
+        else [decorate head(def.prodNamedSig) with {}];
 }
 
 function prodsFromDcls
