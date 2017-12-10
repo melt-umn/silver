@@ -23,15 +23,21 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 {
   top.pp = "abstract production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp; 
 
+  production fName :: String = top.grammarName ++ ":" ++ id.name;
+  production namedSig :: NamedSignature = ns.namedSignature;
+
+  production attribute sigDefs :: [Def] with ++;
+  sigDefs := ns.defs;
+
+  ns.signatureName = fName;
+  ns.env = newScopeEnv(sigDefs, top.env);
+
   forwards to mkProductionDcl(id, ns, body, true, location=top.location);
 }
 
 abstract production mkProductionDcl
 top::AGDcl ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract::Boolean
 {
-  production fName :: String = top.grammarName ++ ":" ++ id.name;
-  production namedSig :: NamedSignature = ns.namedSignature;
-
   top.defs = prodDef(top.grammarName, id.location, namedSig) ::
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
@@ -55,12 +61,6 @@ top::AGDcl ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract:
     else [wrn(id.location, s"(future) ${id.name}: productions may be required to begin with a lower-case letter.")];
 
   top.errors := ns.errors ++ body.errors;
-
-  production attribute sigDefs :: [Def] with ++;
-  sigDefs := ns.defs;
-
-  ns.signatureName = fName;
-  ns.env = newScopeEnv(sigDefs, top.env);
 
   local attribute prodAtts :: [Def];
   prodAtts = defsFromPADcls(getProdAttrs(fName, top.env), namedSig);
