@@ -57,8 +57,8 @@ function filterSigs
     local hd::Decorated NamedSignature = head(toFilter);
 
     return if null(toFilter) then []
-       else if unFull(hd.outputElement.typeName) == nm then [hd] ++ filterSigs(nm, tail(toFilter))
-       else filterSigs(tail(toFilter)); 
+       else if unFull(hd.outputElement.typerep.typeName) == nm then [hd] ++ filterSigs(nm, tail(toFilter))
+       else filterSigs(nm, tail(toFilter)); 
 }
 
 function prodsFromDefs
