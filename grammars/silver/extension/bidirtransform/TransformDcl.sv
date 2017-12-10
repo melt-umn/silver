@@ -90,6 +90,17 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local nonLocCncProdDcls :: [[Decorated NamedSignature]] = cncProdDcls;
     local allProdDcls :: [[Decorated NamedSignature]] = absProdDcls ++ cncProdDcls;
 
+
+    ag.errors <- foldl(\ errs::[Message] d::[Decorated NamedSignature] ->
+        if null(d) then errs else 
+            errs ++ [err(ag.location, "Abs head fullname: " head(d).fullName)],
+    [], absProdDcls)
+
+    ag.errors <- foldl(\ errs::[Message] d::[Decorated NamedSignature] ->
+        if null(d) then errs else 
+            errs ++ [err(ag.location, "Cnc head fullname: " head(d).fullName)],
+    [], cncProdDcls)
+
     -----------------------
     -- Generating code
 
