@@ -1,6 +1,6 @@
 grammar silver:extension:bidirtransform;
 
-synthesized attribute transformRules :: [Decorated TransformRule];
+synthesized attribute transformRules :: [TransformRule];
 
 nonterminal TransformRuleList with transformRules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
 nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
@@ -92,10 +92,10 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
     --               else err(trr.location, "Type mismatch in transformation rule")
 
 function hasTrans
-Boolean ::= rules::[Decorated TransformRule] dcl::Decorated NamedSignature
+Boolean ::= rules::[TransformRule] dcl::Decorated NamedSignature
             absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
 {
-    local hd::Decorated TransformRule = head(rules);
+    local hd::TransformRule = head(rules);
 
     hd.absGroup = absGroup;
     hd.cncGroup = cncGroup;
@@ -106,11 +106,16 @@ Boolean ::= rules::[Decorated TransformRule] dcl::Decorated NamedSignature
 }
 
 abstract production getTrans
-top::Decorated TransformRule ::= rules::[Decorated TransformRule] dcl::Decorated NamedSignature
+top::TransformRule ::= rules::[TransformRule] dcl::Decorated NamedSignature
 {
+    local hd::TransformRule = head(rules);
+
+    hd.absGroup = absGroup;
+    hd.cncGroup = cncGroup;
+
     forwards to --if null(rules) then nothing()
-        --else
-        if dcl.fullName == head(rules).namedSig.fullName 
-            then head(rules)
+        --else if null(dcl) then nothing() else
+        if dcl.fullName == hd.namedSig.fullName 
+            then hd
             else getTrans(tail(rules), dcl, location=top.location);
 }
