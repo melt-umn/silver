@@ -98,13 +98,13 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
         err(ag.location, "Cnc nt: " ++ fnt.name),
     cncGroup.ntList);
 
-    ag.errors <- map(\ d::Decorated NamedSignature ->
+    ag.errors <- map(\ dec::Decorated NamedSignature ->
         err(ag.location, "Abs prod: " ++ dec.fullName),
-    [], absProdDcls);
+    absProdDcls);
 
-    ag.errors <- map(\ d::Decorated NamedSignature ->
+    ag.errors <- map(\ dec::Decorated NamedSignature ->
         err(ag.location, "Cnc prod: " ++ dec.fullName),
-    [], cncProdDcls);
+    cncProdDcls);
 
     -----------------------
     -- Generating code

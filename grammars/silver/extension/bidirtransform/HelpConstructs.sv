@@ -112,7 +112,7 @@ top::AspectRHS ::= inElements::[NamedSignatureElement]
 }
 
 abstract production aspectProdStmt
-top::AGDcl ::= dcl::[Decorated NamedSignature] fn::(ProductionStmt ::= Decorated NamedSignature)
+top::AGDcl ::= dcl::Decorated NamedSignature fn::(ProductionStmt ::= Decorated NamedSignature)
 {
     forwards to aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
         productionStmtsSnoc(productionStmtsNil(location=top.location), fn(ns), location=top.location),
@@ -120,9 +120,9 @@ top::AGDcl ::= dcl::[Decorated NamedSignature] fn::(ProductionStmt ::= Decorated
 }
 
 abstract production aspectProdStmts
-top::AGDcl ::= dcl::[Decorated NamedSignature] fn::(ProductionStmts ::= Decorated NamedSignature)
+top::AGDcl ::= dcl::Decorated NamedSignature fn::(ProductionStmts ::= Decorated NamedSignature)
 {
-    forwards to if null(dcl) then emptyAGDcl(location=top.location) else 
+    forwards to
         fakeAspectProductionDcl('aspect', 'production', 
         --aspectProductionDcl('aspect', 'production', 
             qName(top.location, head(dcl).fullName), nsAspectProdSig(head(dcl), location=top.location), 

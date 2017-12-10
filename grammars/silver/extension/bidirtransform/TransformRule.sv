@@ -92,7 +92,7 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
     --               else err(trr.location, "Type mismatch in transformation rule")
 
 function hasTrans
-Boolean ::= rules::[TransformRule] dcl::[Decorated NamedSignature] 
+Boolean ::= rules::[TransformRule] dcl::Decorated NamedSignature
             absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
 {
     local hd::TransformRule = head(rules);
@@ -100,17 +100,17 @@ Boolean ::= rules::[TransformRule] dcl::[Decorated NamedSignature]
     hd.absGroup = absGroup;
     hd.cncGroup = cncGroup;
 
-    return if null(rules) || null(dcl) then false
-        else if head(dcl).fullName == hd.namedSig.fullName then true
+    return if null(rules) then false
+        else if dcl.fullName == hd.namedSig.fullName then true
         else hasTrans(tail(rules), dcl, absGroup, cncGroup);
 }
 
 abstract production getTrans
-top::TransformRule ::= rules::[TransformRule] dcl::[Decorated NamedSignature]
+top::TransformRule ::= rules::[TransformRule] dcl::Decorated NamedSignature
 {
     forwards to --if null(rules) then nothing()
-        --else if null(dcl) then nothing() else
-        if head(dcl).fullName == head(rules).namedSig.fullName 
+        --else
+        if dcl.fullName == head(rules).namedSig.fullName 
             then head(rules)
             else getTrans(tail(rules), dcl, location=top.location);
 }
