@@ -92,11 +92,11 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
 
     ag.errors <- map(\ fnt::FullNonterminal ->
-        err(ag.location, "Abs nt: " fnt.name),
+        err(ag.location, "Abs nt: " ++ fnt.name),
     absGroup.ntList);
 
     ag.errors <- map(\ fnt::FullNonterminal ->
-        err(ag.location, "Cnc nt: " fnt.name),
+        err(ag.location, "Cnc nt: " ++ fnt.name),
     cncGroup.ntList);
 
     ag.errors <- foldl(\ errs::[Message] d::[Decorated NamedSignature] ->
