@@ -94,12 +94,12 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     ag.errors <- foldl(\ errs::[Message] d::[Decorated NamedSignature] ->
         if null(d) then errs else 
             errs ++ [err(ag.location, "Abs head fullname: " ++ head(d).fullName)],
-    [], absProdDcls)
+    [], absProdDcls);
 
     ag.errors <- foldl(\ errs::[Message] d::[Decorated NamedSignature] ->
         if null(d) then errs else 
             errs ++ [err(ag.location, "Cnc head fullname: " ++ head(d).fullName)],
-    [], cncProdDcls)
+    [], cncProdDcls);
 
     -----------------------
     -- Generating code
