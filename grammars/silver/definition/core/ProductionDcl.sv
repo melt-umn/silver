@@ -23,6 +23,12 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 {
   top.pp = "abstract production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp; 
 
+  forwards to mkProductionDcl(id, ns, body, true, location=top.location);
+}
+
+abstract production mkProductionDcl
+top::AGDcl ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract::Boolean
+{
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
 
@@ -32,12 +38,6 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   ns.signatureName = fName;
   ns.env = newScopeEnv(sigDefs, top.env);
 
-  forwards to mkProductionDcl(id, ns, body, true, location=top.location);
-}
-
-abstract production mkProductionDcl
-top::AGDcl ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract::Boolean
-{
   top.defs = prodDef(top.grammarName, id.location, namedSig) ::
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
