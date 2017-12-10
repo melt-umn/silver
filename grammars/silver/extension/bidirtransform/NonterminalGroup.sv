@@ -79,7 +79,7 @@ function absProdsFromDefs
 [Decorated NamedSignature] ::= defs::[Def]
 {
     return if length(defs) == 0 then []
-        else prodFromDef(head(defs)) ++ prodsFromDefs(tail(defs));
+        else absProdFromDef(head(defs)) ++ absProdsFromDefs(tail(defs));
 }
 
 function absProdFromDef
@@ -93,7 +93,7 @@ function cncProdsFromDefs
 [Decorated NamedSignature] ::= defs::[Def]
 {
     return if length(defs) == 0 then []
-        else prodFromDef(head(defs)) ++ prodsFromDefs(tail(defs));
+        else cncProdFromDef(head(defs)) ++ cncProdsFromDefs(tail(defs));
 }
 
 function cncProdFromDef
