@@ -163,7 +163,7 @@ top::ProductionStmt ::= lhs::String att::String eqs::Expr
         childDefLHS(),
         qAttr(att, location=top.location),
         eqs,
-        location=top.location,
+        location=top.location
     );
 }
 
@@ -174,7 +174,7 @@ top::ProductionStmt ::= lhs::String att::String eqs::Expr
         childDefLHS(),
         qAttr(att, location=top.location),
         eqs,
-        location=top.location,
+        location=top.location
     );
 }
 
@@ -185,7 +185,7 @@ top::ProductionStmt ::= lhs::String att::String eqs::Expr
         lhsDefLHS(),
         qAttr(att, location=top.location),
         eqs,
-        location=top.location,
+        location=top.location
     );
 }
 
