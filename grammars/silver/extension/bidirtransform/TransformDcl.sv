@@ -302,24 +302,24 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     --  else if transformed$tName
     --    then just($thisType_Origin(top))
     --    else nothing()
-    -- local agDcls14::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
-    --     appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-    --         foldl(\ stmts::ProductionStmts rhs::NamedSignatureElement ->
-    --             productionStmtsSnoc(stmts, 
-    --                 attribDef(rhs.elementName, inhRedexName,
-    --                 --inhChdAttrDef(rhs.elementName, inhRedexName,
-    --                         if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup)
-    --                         then emptyFunc("nothing", location=ag.location) -- this might error because it has to be a production
-    --                         else mkCond(
-    --                             lhsExprAccess(transformNm(tName), ns, location=ag.location),
-    --                             argFunc("just", oneApp(mkOrigin(ns, location=ag.location), location=ag.location), location=ag.location),
-    --                             emptyFunc("nothing", location=ag.location),
-    --                         location=ag.location),
-    --                 location=ag.location), location=ag.location),
-    --         productionStmtsNil(location=ag.location), ns.inputElements), location=ag.location), agDcls, location=ag.location),
-    --     agDcls13, absProdDcls);
+    local agDcls14::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+        appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+            foldl(\ stmts::ProductionStmts rhs::NamedSignatureElement ->
+                productionStmtsSnoc(stmts, 
+                    attribDef(rhs.elementName, inhRedexName,
+                    --inhChdAttrDef(rhs.elementName, inhRedexName,
+                            if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup)
+                            then emptyFunc("nothing", location=ag.location) -- this might error because it has to be a production
+                            else mkCond(
+                                lhsExprAccess(transformNm(tName), ns, location=ag.location),
+                                argFunc("just", oneApp(mkOrigin(ns, location=ag.location), location=ag.location), location=ag.location),
+                                emptyFunc("nothing", location=ag.location),
+                            location=ag.location),
+                    location=ag.location), location=ag.location),
+            productionStmtsNil(location=ag.location), ns.inputElements), location=ag.location), agDcls, location=ag.location),
+        agDcls13, absProdDcls);
 
-    local agDcls14::AGDcl = agDcls11;
+    local agDcls13::AGDcl = agDcls11;
     
     -- for each concrete type, if it has location, aspect all of its creating
     -- productions with 
