@@ -44,6 +44,9 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local absGroup::Decorated NonterminalList = decorate absGroupIn with { env=groupEnv; };
     local cncGroup::Decorated NonterminalList = decorate cncGroupIn with { env=groupEnv; };
 
+    absGroup.grantedDefs = nestedAgs.defs;
+    cncGroup.grantedDefs = nestedAgs.defs;
+
     ----------------
     -- Propagation of attributes
 
@@ -167,7 +170,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                     if !hasRwID(newRwRules.rewriteRules, lhs, rhs) 
                     then stmts -- this is also probably an error 
                     else prdStmtList([
-                            attribDef( "o", restoreNm(unFull(rhs)),  
+                            synAttrDef( "o", restoreNm(unFull(rhs)),  
                                 applyRw(rwID(newRwRules.rewriteRules, lhs, rhs), rhs, lhs, "e", location=ag.location), location=ag.location)
                         ], location=ag.location),
                 productionStmtsNil(location=ag.location), cncNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
@@ -180,7 +183,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- top.wasTransformed = wasTransformed(top.origin, top.redex) || <rhs>.wasTransformed;
     local agDcls10::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
-            attribDef( ns.outputElement.elementName, "wasTransformed",
+            synAttrDef(ns.outputElement.elementName, "wasTransformed",
                 foldl(\ e::Expr ie::NamedSignatureElement -> 
                     if contains(unFull(ie.typerep.typeName), absNames)
                     then or(e, '||', exprAccess("wasTransformed", ie.elementName, location=ag.location), location=ag.location)
@@ -200,7 +203,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                 -- if there isn't a rewrite rule from this production to this lhs then don't define this
                 if !hasRwMatch(newRwRules.rewriteRules, rhs, ns) then stmts -- not happening in error case
                 else productionStmtsSnoc(stmts, 
-                        attribDef(ns.outputElement.elementName, restoreNm(unFull(rhs)),
+                        synAttrDef(ns.outputElement.elementName, restoreNm(unFull(rhs)),
                         if rwMatch(newRwRules.rewriteRules, rhs, ns).hasProduction 
                         then mkCond(
                             lhsExprAccess("wasTransformed", ns, location=ag.location), 
@@ -232,7 +235,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
             if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) && ns.outputElement.typerep.typeName != transType.typerep.typeName
             then productionStmtsNil(location=ag.location)
             else prdStmtList( 
-                [attribDef(ns.outputElement.elementName, tName,
+                [synAttrDef(ns.outputElement.elementName, tName,
                 if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) 
                   then prdRecurse(ns, tName, location=ag.location)
                   else mkCond(
@@ -257,7 +260,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
         if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) then agDcls 
         else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             prdStmtList([
-                attribDef( ns.outputElement.elementName, transformNm(tName),
+                synAttrDef( ns.outputElement.elementName, transformNm(tName),
                     getTrans(trRules.transformRules, dcl, location=ag.location).matchProd, location=ag.location)
             ], location=ag.location),
             location=ag.location), agDcls, location=ag.location),
@@ -273,7 +276,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             foldl(\ stmts::ProductionStmts rhs::NamedSignatureElement ->
                 productionStmtsSnoc(stmts, 
-                    attribDef( rhs.elementName, inhRedexName,
+                    inhChdAttrDef(rhs.elementName, inhRedexName,
                             if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup)
                             then emptyFunc("nothing", location=ag.location) -- this might error because it has to be a production
                             else mkCond(
@@ -291,7 +294,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- top.suppliedOrigin = locationOrigin(ag.location);
     local agDcls15::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
-            attribDef(ns.outputElement.elementName, "suppliedOrigin", 
+            synAttrDef(ns.outputElement.elementName, "suppliedOrigin", 
                 argFunc("locationOrigin", appExprList([
                     lhsAccess("location", ns, location=ag.location)
                 ], location=ag.location), location=ag.location),
@@ -303,7 +306,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- top.suppliedOrigin = bottomOrigin();
     local agDcls16::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
-            attribDef(ns.outputElement.elementName, "suppliedOrigin", 
+            synAttrDef(ns.outputElement.elementName, "suppliedOrigin", 
                         emptyFunc("bottomOrigin", location=ag.location), location=ag.location),
             location=ag.location), agDcls, location=ag.location), 
         agDcls15, nonLocCncProdDcls);

@@ -2,6 +2,7 @@ grammar silver:extension:bidirtransform;
 
 attribute ppDebug occurs on Def, Defs;
 synthesized attribute filteredProdDefs::Defs occurs on Defs;
+synthesized attribute prodNamedSig::[NamedSignature] occurs on Def;
 synthesized attribute isProdDef::Boolean occurs on Def;
 
 aspect default production 
@@ -9,6 +10,7 @@ top::Def ::=
 {
   top.ppDebug = "defaultDef";
   top.isProdDef = false;
+  top.prodNamedSig = [];
 }
 
 aspect production typeDef
@@ -34,6 +36,7 @@ top::Def ::= d::EnvItem
 {
   top.ppDebug = "prodDclDef: " ++ d.ppDebug;
   top.isProdDef = true;
+  top.prodNamedSig = d.prodNamedSig;
 }
 
 aspect production paDef

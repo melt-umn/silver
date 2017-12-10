@@ -3,11 +3,13 @@ grammar silver:extension:bidirtransform;
 import silver:definition:regex;
 
 attribute ppDebug occurs on DclInfo;
+attribute prodNamedSig occurs on DclInfo;
 
 aspect default production 
 top::DclInfo ::= 
 {
     top.ppDebug = "defaultDclInfo";
+    top.prodNamedSig = [];
 }
 
 aspect production childDcl
@@ -34,6 +36,7 @@ aspect production prodDcl
 top::DclInfo ::= sg::String sl::Location ns::NamedSignature
 {
   top.ppDebug = "prodDcl";
+  top.prodNamedSig = [ns];
 }
 aspect production funDcl
 top::DclInfo ::= sg::String sl::Location ns::NamedSignature

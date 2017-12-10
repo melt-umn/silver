@@ -3,9 +3,12 @@ grammar silver:extension:bidirtransform;
 synthesized attribute ntList::[Decorated FullNonterminal];
 synthesized attribute ntProds::[Decorated NamedSignature];
 synthesized attribute groupList::[DclInfo];
+inherited attribute grantedDefs::[Def];
 
-nonterminal FullNonterminal with name, ntProds, location, errors, env;
-nonterminal NonterminalList with location, ntList, errors, env;
+attribute grantedDefs occurs on AGDcl;
+
+nonterminal FullNonterminal with name, ntProds, location, errors, env, grantedDefs;
+nonterminal NonterminalList with location, ntList, errors, env, grantedDefs;
 
 terminal Nonterminals_kwd 'nonterminals' lexer classes{KEYWORD,RESERVED};
 
@@ -42,12 +45,17 @@ concrete production fullNt
 top::FullNonterminal ::= qn::QName
 {
     top.name = qn.name;
-    top.ntProds = prodsFromDcls(getProdsFromNtHack(top.name, top.env.filteredProds, "transformed"));
+    top.ntProds = prodsFromDefs(top.grantedDefs);
 
     top.errors := if length(getTypeDcl(top.name, top.env)) != 0 then []
         else [err(top.location, "Name " ++ top.name ++ " doesn't match any known nonterminal")];
+}
 
-    top.errors <- [err(top.location, top.env.filteredProds.ppDebug)];
+function prodsFromDefs
+[Decorated NamedSignature] ::= defs::[Def]
+{
+    return if length(defs) == 0 then []
+        else head(defs).prodNamedSig ++ prodsFromDefs(tail(defs));
 }
 
 function prodsFromDcls

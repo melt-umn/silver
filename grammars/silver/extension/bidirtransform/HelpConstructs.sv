@@ -156,6 +156,39 @@ top::ProductionStmt ::= lhs::String att::String eqs::Expr
         location=top.location);
 }
 
+abstract production synChdAttrDef
+top::ProductionStmt ::= lhs::String att::String eqs::Expr
+{
+    forwards to synthesizedAttributeDef(
+        childDefLHS(),
+        qAttr(att, location=top.location),
+        eqs,
+        location=top.location,
+    );
+}
+
+abstract production inhChdAttrDef
+top::ProductionStmt ::= lhs::String att::String eqs::Expr
+{
+    forwards to inheritedAttributeDef(
+        childDefLHS(),
+        qAttr(att, location=top.location),
+        eqs,
+        location=top.location,
+    );
+}
+
+abstract production synAttrDef
+top::ProductionStmt ::= lhs::String att::String eqs::Expr
+{
+    forwards to synthesizedAttributeDef(
+        lhsDefLHS(),
+        qAttr(att, location=top.location),
+        eqs,
+        location=top.location,
+    );
+}
+
 abstract production qnTyId
 top::QNameType ::= s::String 
 {
