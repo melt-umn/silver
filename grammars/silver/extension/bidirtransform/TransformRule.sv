@@ -107,6 +107,7 @@ Boolean ::= rules::[TransformRule] dcl::Decorated NamedSignature
 
 abstract production getTrans
 top::TransformRule ::= rules::[TransformRule] dcl::Decorated NamedSignature
+            absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
 {
     local hd::TransformRule = head(rules);
 
