@@ -85,14 +85,14 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- We need to know all the productions on all of the known types
 
     local absProdDcls :: [[Decorated NamedSignature]] = foldl(\ out::[[Decorated NamedSignature]] input::[Decorated NamedSignature] ->
-        if null(in) then out
+        if null(input) then out
             else [foldl(\ out::[Decorated NamedSignature] input::Decorated NamedSignature ->
                 if input.isConcrete then out 
                 else out ++ [input],
             [], input)] ++ out,
         [], prodsFromDefs(nestedAgs.defs));
     local cncProdDcls :: [[Decorated NamedSignature]] = foldl(\ out::[[Decorated NamedSignature]] input::[Decorated NamedSignature] ->
-        if null(in) then out
+        if null(input) then out
             else [foldl(\ out::[Decorated NamedSignature] input::Decorated NamedSignature ->
                 if !input.isConcrete then out 
                 else out ++ [input],
