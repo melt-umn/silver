@@ -1,6 +1,6 @@
 grammar silver:extension:bidirtransform;
 
-inherited attribute isConcrete::Boolean occurs on NamedSignature;
+inherited attribute isConcrete::Boolean occurs on NamedSignature, Def;
 
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody

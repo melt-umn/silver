@@ -23,6 +23,12 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 {
   top.pp = "abstract production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp; 
 
+  forwards to mkProductionDcl(id, ns, body, true, location=top.location);
+}
+
+abstract production mkProductionDcl
+top::AGDcl ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract::Boolean
+{
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
 

@@ -22,7 +22,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
     syntaxProduction(namedSig,
       foldr(consProductionMod, nilProductionMod(), pm.productionModifiers))];
   
-  forwards to productionDcl('abstract', $2, id, ns, body, location=top.location);
+  forwards to mkProductionDcl(id, ns, body, false, location=top.location);
 }
 
 nonterminal ProductionModifiers with config, location, pp, productionModifiers, errors, env, productionName; -- 0 or some
