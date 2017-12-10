@@ -55,7 +55,13 @@ function prodsFromDefs
 [Decorated NamedSignature] ::= defs::[Def]
 {
     return if length(defs) == 0 then []
-        else head(defs).prodNamedSig ++ prodsFromDefs(tail(defs));
+        else prodFromDef(head(defs)) ++ prodsFromDefs(tail(defs));
+}
+
+function prodFromDef
+[Decorated NamedSignature] ::= def::Def
+{
+    return def.prodNamedSig
 }
 
 function prodsFromDcls
