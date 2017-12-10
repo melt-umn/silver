@@ -41,6 +41,8 @@ top::Def ::= d::EnvItem
   top.ppDebug = "prodDclDef: " ++ d.ppDebug;
   top.isProdDef = true;
   top.prodNamedSig = d.prodNamedSig;
+  top.absProdNamedSig = d.absProdNamedSig;
+  top.cncProdNamedSig = d.cncProdNamedSig;
 }
 
 aspect production paDef
