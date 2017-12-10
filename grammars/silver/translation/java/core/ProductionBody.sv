@@ -160,7 +160,8 @@ top::DefLHS ::= q::Decorated QName
 aspect production errorAttributeDef
 top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors: " 
+    ++ foldl(\ s::String m::Message -> s ++ "\n" ++ m.msg, "", msg));
 }
 
 aspect production synthesizedAttributeDef
