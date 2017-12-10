@@ -267,7 +267,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
         if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) then agDcls 
         else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             prdStmtList([
-                attribDef(ns.outputElement.elementName, transformName(tName),
+                attribDef(ns.outputElement.elementName, transformNm(tName),
                 --synAttrDef( ns.outputElement.elementName, transformNm(tName),
                     getTrans(trRules.transformRules, dcl, location=ag.location).matchProd, location=ag.location)
             ], location=ag.location),
