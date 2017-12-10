@@ -1,0 +1,13 @@
+declaredName 'silver_features:cond:c'
+grammarTime 1508471626
+grammarSource "../silver_features/cond/c/"
+moduleNames ['silver_features:cond:d', 'core']
+allDeps ['silver_features:cond:e', 'core:monad', 'core', 'silver_features:cond:d', 'silver_features:cond:c']
+exportedGrammars ['silver_features:cond:d']
+optionalGrammars []
+condBuild []
+defs [
+ glob('Test.sv', 5, 7, 5, 11, 73, 77, 'silver_features:cond:c:aVal', int)]
+syntax []
+parsers []
+flow []

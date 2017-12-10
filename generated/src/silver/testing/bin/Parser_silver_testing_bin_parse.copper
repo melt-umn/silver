@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<CopperSpec xmlns="http://melt.cs.umn.edu/copper/xmlns">
+  <Parser id="silver_testing_bin_parse" isUnitary="true">
+    <PP>silver:testing:bin:parse</PP>
+    <Grammars><GrammarRef id="host"/></Grammars>
+    <StartSymbol><NonterminalRef id="silver_testing_bin_Run" grammar="host" /></StartSymbol>
+    <StartLayout><TerminalRef id="silver_testing_bin_BlockComment" grammar="host" /><TerminalRef id="silver_testing_bin_LineComment" grammar="host" /><TerminalRef id="silver_testing_bin_WhiteSpace" grammar="host" /></StartLayout>
+    <ClassAuxiliaryCode><Code><![CDATA[
+          protected List<common.Terminal> tokenList = null;
+
+          public void reset() {
+            tokenList = new ArrayList<common.Terminal>();
+          }
+
+          public List<common.Terminal> getTokens() {
+            return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
+          }
+        ]]></Code></ClassAuxiliaryCode>
+    <ParserInitCode>
+      <Code><![CDATA[
+        reset();
+      ]]></Code>
+    </ParserInitCode>
+    <Preamble>
+<Code><![CDATA[
+import java.util.ArrayList;
+import java.util.List;
+]]></Code>
+    </Preamble>
+  </Parser>
+
+  <Grammar id="host">
+
+    <PP>host</PP>
+
+    <Layout><TerminalRef id="silver_testing_bin_BlockComment" grammar="host" /><TerminalRef id="silver_testing_bin_LineComment" grammar="host" /><TerminalRef id="silver_testing_bin_WhiteSpace" grammar="host" /></Layout>
+    <Declarations>
+      <ParserAttribute id="context">
+        <Type><![CDATA[common.DecoratedNode]]></Type>
+        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>
+      </ParserAttribute>
+         <Terminal id="silver_testing_bin_BlockComment">
+    <PP>silver:testing:bin:BlockComment</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="/"/></CharacterSet><CharacterSet><SingleCharacter char="*"/></CharacterSet><KleeneStar><Choice><CharacterSet invert="true"><SingleCharacter char="*"/></CharacterSet><CharacterSet><SingleCharacter char="&#13;"/><SingleCharacter char="&#10;"/></CharacterSet><Concatenation><Concatenation><CharacterSet><SingleCharacter char="*"/></CharacterSet><KleeneStar><CharacterSet><SingleCharacter char="*"/></CharacterSet></KleeneStar></Concatenation><Choice><CharacterSet invert="true"><SingleCharacter char="*"/><SingleCharacter char="/"/></CharacterSet><CharacterSet><SingleCharacter char="&#13;"/><SingleCharacter char="&#10;"/></CharacterSet></Choice></Concatenation></Choice></KleeneStar><Concatenation><CharacterSet><SingleCharacter char="*"/></CharacterSet><KleeneStar><CharacterSet><SingleCharacter char="*"/></CharacterSet></KleeneStar></Concatenation><CharacterSet><SingleCharacter char="/"/></CharacterSet></Concatenation></Regex>
+    <Type>silver.testing.bin.TBlockComment</Type>
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.TBlockComment(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="silver_testing_bin_Colon_t">
+    <PP>silver:testing:bin:Colon_t</PP>
+    <Regex><CharacterSet><SingleCharacter char=":"/></CharacterSet></Regex>
+    <Type>silver.testing.bin.TColon_t</Type>
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.TColon_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="silver_testing_bin_CommandAlt_t">
+    <PP>silver:testing:bin:CommandAlt_t</PP>
+    <Regex><KleeneStar><CharacterSet invert="true"><SingleCharacter char="&#10;"/></CharacterSet></KleeneStar></Regex>
+    <Type>silver.testing.bin.TCommandAlt_t</Type>
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.TCommandAlt_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits><TerminalRef id="silver_testing_bin_LineComment" grammar="host" /><TerminalRef id="silver_testing_bin_BlockComment" grammar="host" /><TerminalRef id="silver_testing_bin_WhiteSpace" grammar="host" /></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="silver_testing_bin_Command_t">
+    <PP>silver:testing:bin:Command_t</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="&quot;"/></CharacterSet><KleeneStar><Choice><CharacterSet invert="true"><SingleCharacter char="&quot;"/></CharacterSet><Concatenation><CharacterSet><SingleCharacter char="\"/></CharacterSet><CharacterSet><SingleCharacter char="&quot;"/></CharacterSet></Concatenation></Choice></KleeneStar><CharacterSet><SingleCharacter char="&quot;"/></CharacterSet></Concatenation></Regex>
+    <Type>silver.testing.bin.TCommand_t</Type>
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.TCommand_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="silver_testing_bin_Fail_t">
+    <PP>silver:testing:bin:Fail_t</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="f"/></CharacterSet><CharacterSet><SingleCharacter char="a"/></CharacterSet><CharacterSet><SingleCharacter char="i"/></CharacterSet><CharacterSet><SingleCharacter char="l"/></CharacterSet></Concatenation></Regex>
+    <Type>silver.testing.bin.TFail_t</Type>
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.TFail_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="silver_testing_bin_Jar_t">
+    <PP>silver:testing:bin:Jar_t</PP>
+    <Regex><Concatenation><Concatenation><CharacterSet><CharacterRange lower="a" upper="z"/><CharacterRange lower="A" upper="Z"/><SingleCharacter char="_"/><SingleCharacter char="-"/><SingleCharacter char="."/></CharacterSet><KleeneStar><CharacterSet><CharacterRange lower="a" upper="z"/><CharacterRange lower="A" upper="Z"/><SingleCharacter char="_"/><SingleCharacter char="-"/><SingleCharacter char="."/></CharacterSet></KleeneStar></Concatenation><CharacterSet><SingleCharacter char="."/></CharacterSet><CharacterSet><SingleCharacter char="j"/></CharacterSet><CharacterSet><SingleCharacter char="a"/></CharacterSet><CharacterSet><SingleCharacter char="r"/></CharacterSet></Concatenation></Regex>
+    <Type>silver.testing.bin.TJar_t</Type>
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.TJar_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="silver_testing_bin_LineComment">
+    <PP>silver:testing:bin:LineComment</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="/"/></CharacterSet><CharacterSet><SingleCharacter char="/"/></CharacterSet><KleeneStar><CharacterSet invert="true"><SingleCharacter char="&#10;"/></CharacterSet></KleeneStar></Concatenation></Regex>
+    <Type>silver.testing.bin.TLineComment</Type>
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.TLineComment(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="silver_testing_bin_Run_t">
+    <PP>silver:testing:bin:Run_t</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="r"/></CharacterSet><CharacterSet><SingleCharacter char="u"/></CharacterSet><CharacterSet><SingleCharacter char="n"/></CharacterSet></Concatenation></Regex>
+    <Type>silver.testing.bin.TRun_t</Type>
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.TRun_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="silver_testing_bin_Skip_t">
+    <PP>silver:testing:bin:Skip_t</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="s"/></CharacterSet><CharacterSet><SingleCharacter char="k"/></CharacterSet><CharacterSet><SingleCharacter char="i"/></CharacterSet><CharacterSet><SingleCharacter char="p"/></CharacterSet></Concatenation></Regex>
+    <Type>silver.testing.bin.TSkip_t</Type>
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.TSkip_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="silver_testing_bin_Suite_t">
+    <PP>silver:testing:bin:Suite_t</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="s"/></CharacterSet><CharacterSet><SingleCharacter char="u"/></CharacterSet><CharacterSet><SingleCharacter char="i"/></CharacterSet><CharacterSet><SingleCharacter char="t"/></CharacterSet><CharacterSet><SingleCharacter char="e"/></CharacterSet></Concatenation></Regex>
+    <Type>silver.testing.bin.TSuite_t</Type>
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.TSuite_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="silver_testing_bin_Test_t">
+    <PP>silver:testing:bin:Test_t</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="t"/></CharacterSet><CharacterSet><SingleCharacter char="e"/></CharacterSet><CharacterSet><SingleCharacter char="s"/></CharacterSet><CharacterSet><SingleCharacter char="t"/></CharacterSet></Concatenation></Regex>
+    <Type>silver.testing.bin.TTest_t</Type>
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.TTest_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="silver_testing_bin_WhiteSpace">
+    <PP>silver:testing:bin:WhiteSpace</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="&#13;"/><SingleCharacter char="&#10;"/><SingleCharacter char="&#9;"/><SingleCharacter char=" "/></CharacterSet><KleeneStar><CharacterSet><SingleCharacter char="&#13;"/><SingleCharacter char="&#10;"/><SingleCharacter char="&#9;"/><SingleCharacter char=" "/></CharacterSet></KleeneStar></Concatenation></Regex>
+    <Type>silver.testing.bin.TWhiteSpace</Type>
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.TWhiteSpace(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+
+  <Nonterminal id="silver_testing_bin_OptionalFail">
+    <PP>silver:testing:bin:OptionalFail</PP>
+    <Type><![CDATA[silver.testing.bin.NOptionalFail]]></Type>
+  </Nonterminal>
+  <Production id="silver_testing_bin_doFail">
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.PdoFail(_children[0]);
+]]></Code>
+    <LHS><NonterminalRef id="silver_testing_bin_OptionalFail" grammar="host" /></LHS>
+    <RHS><TerminalRef id="silver_testing_bin_Fail_t" grammar="host" /></RHS>
+  </Production>
+  <Production id="silver_testing_bin_noFail">
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.PnoFail();
+]]></Code>
+    <LHS><NonterminalRef id="silver_testing_bin_OptionalFail" grammar="host" /></LHS>
+    <RHS></RHS>
+  </Production>
+
+  <Nonterminal id="silver_testing_bin_Run">
+    <PP>silver:testing:bin:Run</PP>
+    <Type><![CDATA[silver.testing.bin.NRun]]></Type>
+  </Nonterminal>
+  <Production id="silver_testing_bin_runTestSuite">
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.PrunTestSuite(_children[0], _children[1], _children[2]);
+]]></Code>
+    <LHS><NonterminalRef id="silver_testing_bin_Run" grammar="host" /></LHS>
+    <RHS><TerminalRef id="silver_testing_bin_Test_t" grammar="host" /><TerminalRef id="silver_testing_bin_Suite_t" grammar="host" /><TerminalRef id="silver_testing_bin_Jar_t" grammar="host" /></RHS>
+  </Production>
+  <Production id="silver_testing_bin_run">
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.Prun(_children[0], _children[1], _children[2]);
+]]></Code>
+    <LHS><NonterminalRef id="silver_testing_bin_Run" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="silver_testing_bin_OptionalFail" grammar="host" /><TerminalRef id="silver_testing_bin_Run_t" grammar="host" /><TerminalRef id="silver_testing_bin_Command_t" grammar="host" /></RHS>
+  </Production>
+  <Production id="silver_testing_bin_run_alternate">
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.Prun_alternate(_children[0], _children[1], _children[2], _children[3]);
+]]></Code>
+    <LHS><NonterminalRef id="silver_testing_bin_Run" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="silver_testing_bin_OptionalFail" grammar="host" /><TerminalRef id="silver_testing_bin_Run_t" grammar="host" /><TerminalRef id="silver_testing_bin_Colon_t" grammar="host" /><TerminalRef id="silver_testing_bin_CommandAlt_t" grammar="host" /></RHS>
+  </Production>
+  <Production id="silver_testing_bin_skipRun">
+    <Code><![CDATA[
+RESULT = new silver.testing.bin.PskipRun(_children[0], _children[1]);
+]]></Code>
+    <LHS><NonterminalRef id="silver_testing_bin_Run" grammar="host" /></LHS>
+    <RHS><TerminalRef id="silver_testing_bin_Skip_t" grammar="host" /><NonterminalRef id="silver_testing_bin_Run" grammar="host" /></RHS>
+  </Production>
+
+    </Declarations>
+  </Grammar>
+</CopperSpec>

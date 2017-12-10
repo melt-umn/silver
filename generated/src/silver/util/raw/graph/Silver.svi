@@ -1,0 +1,20 @@
+declaredName 'silver:util:raw:graph'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/util/raw/graph/"
+moduleNames ['silver:util:raw:treeset', 'core']
+allDeps ['core:monad', 'core', 'silver:util:raw:treeset', 'silver:util:raw:graph']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ type('Graph.sv', 9, 5, 9, 10, 181, 186, 'silver:util:raw:graph:Graph', [a], foreigntype('silver:util:raw:graph:Graph', [a])),
+ fun('Graph.sv', 15, 9, 15, 14, 283, 288, [a], signature('silver:util:raw:graph:empty', [element('comparator', fun([a, a], int))], element('__func__lhs', foreigntype('silver:util:raw:graph:Graph', [a])), [])),
+ fun('Graph.sv', 26, 9, 26, 12, 488, 491, [a], signature('silver:util:raw:graph:add', [element('lst', [nt('core:Pair', [a, a])]), element('graph', foreigntype('silver:util:raw:graph:Graph', [a]))], element('__func__lhs', foreigntype('silver:util:raw:graph:Graph', [a])), [])),
+ fun('Graph.sv', 37, 9, 37, 18, 763, 772, [a], signature('silver:util:raw:graph:edgesFrom', [element('vertex', a), element('graph', foreigntype('silver:util:raw:graph:Graph', [a]))], element('__func__lhs', foreigntype('silver:util:raw:treeset:Set', [a])), [])),
+ fun('Graph.sv', 48, 9, 48, 17, 1056, 1064, [a], signature('silver:util:raw:graph:contains', [element('edge', nt('core:Pair', [a, a])), element('graph', foreigntype('silver:util:raw:graph:Graph', [a]))], element('__func__lhs', bool), [])),
+ fun('Graph.sv', 59, 9, 59, 15, 1342, 1348, [a], signature('silver:util:raw:graph:toList', [element('graph', foreigntype('silver:util:raw:graph:Graph', [a]))], element('__func__lhs', [nt('core:Pair', [a, a])]), [])),
+ fun('Graph.sv', 70, 9, 70, 26, 1595, 1612, [a], signature('silver:util:raw:graph:transitiveClosure', [element('graph', foreigntype('silver:util:raw:graph:Graph', [a]))], element('__func__lhs', foreigntype('silver:util:raw:graph:Graph', [a])), [])),
+ fun('Graph.sv', 82, 9, 82, 22, 1931, 1944, [a], signature('silver:util:raw:graph:repairClosure', [element('lst', [nt('core:Pair', [a, a])]), element('graph', foreigntype('silver:util:raw:graph:Graph', [a]))], element('__func__lhs', foreigntype('silver:util:raw:graph:Graph', [a])), []))]
+syntax []
+parsers []
+flow []

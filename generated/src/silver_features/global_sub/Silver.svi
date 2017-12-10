@@ -1,0 +1,22 @@
+declaredName 'silver_features:global_sub'
+grammarTime 1508471626
+grammarSource "../silver_features/global_sub/"
+moduleNames ['silver_features', 'silver:testing', 'lib:extcore', 'core']
+allDeps ['core:monad', 'core', 'lib:extcore', 'silver:testing', 'silver_features', 'silver_features:global_sub']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ glob('MoreGlobals.sv', 6, 7, 6, 17, 76, 86, 'silver_features:global_sub:globalint1', int),
+ glob('MoreGlobals.sv', 9, 7, 9, 18, 150, 161, 'silver_features:global_sub:globalbool2', bool),
+ prod('MoreGlobals.sv', 11, 0, 11, 60, 204, 264, [], signature('silver_features:global_sub:generatedTest_MoreGlobals_sv_11_143', [], element('t', nt('silver:testing:Test', [])), [])),
+ p@('MoreGlobals.sv', 11, 0, 11, 60, 204, 264, [], signature('silver_features:global_sub:generatedTest_MoreGlobals_sv_11_143', [], element('t', nt('silver:testing:Test', [])), []), [
+ fwd('MoreGlobals.sv', 11, 0, 11, 60, 204, 264, nt('silver:testing:Test', []))])]
+syntax []
+parsers []
+flow [local('silver_features:global_sub:generatedTest_MoreGlobals_sv_11_143', 'silver_features:global_sub:generatedTest_MoreGlobals_sv_11_143:local:value', '', []),
+ local('silver_features:global_sub:generatedTest_MoreGlobals_sv_11_143', 'silver_features:global_sub:generatedTest_MoreGlobals_sv_11_143:local:expected', '', []),
+ syn('silver_features:global_sub:generatedTest_MoreGlobals_sv_11_143', 'silver:testing:msg', [localEqV('silver_features:global_sub:generatedTest_MoreGlobals_sv_11_143:local:value'), localEqV('silver_features:global_sub:generatedTest_MoreGlobals_sv_11_143:local:expected')], f),
+ syn('silver_features:global_sub:generatedTest_MoreGlobals_sv_11_143', 'silver:testing:pass', [localEqV('silver_features:global_sub:generatedTest_MoreGlobals_sv_11_143:local:value'), localEqV('silver_features:global_sub:generatedTest_MoreGlobals_sv_11_143:local:expected')], f),
+ fwd('silver_features:global_sub:generatedTest_MoreGlobals_sv_11_143', [], f),
+ implicitFwdAffects('silver_features:global_sub:generatedTest_MoreGlobals_sv_11_143', [])]

@@ -1,0 +1,24 @@
+declaredName 'edu:umn:cs:melt:ableC:concretesyntax:lexerHack'
+grammarTime 1508471666
+grammarSource "../../../ableC/edu.umn.cs.melt.ableC/concretesyntax/lexerHack/"
+moduleNames ['edu:umn:cs:melt:ableC:abstractsyntax:host', 'core']
+allDeps ['core:monad', 'core', 'edu:umn:cs:melt:ableC:abstractsyntax:host', 'edu:umn:cs:melt:ableC:concretesyntax:lexerHack']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ nt('LexerHack.sv', 5, 12, 5, 21, 128, 137, 'edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [], nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', []), f),
+ prod('LexerHack.sv', 6, 20, 6, 31, 159, 170, [], signature('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:identType_c', [], element('top', nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [])), [])),
+ prod('LexerHack.sv', 7, 20, 7, 34, 217, 231, [], signature('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:typenameType_c', [], element('top', nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [])), [])),
+ glob('LexerHack.sv', 10, 7, 10, 16, 339, 348, 'edu:umn:cs:melt:ableC:concretesyntax:lexerHack:identType', nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [])),
+ glob('LexerHack.sv', 11, 7, 11, 19, 386, 398, 'edu:umn:cs:melt:ableC:concretesyntax:lexerHack:typenameType', nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [])),
+ fun('LexerHack.sv', 22, 9, 22, 18, 690, 699, [], signature('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:openScope', [element('l', [[nt('core:Pair', [string, nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [])])]])], element('__func__lhs', [[nt('core:Pair', [string, nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [])])]]), [])),
+ fun('LexerHack.sv', 28, 9, 28, 19, 798, 808, [], signature('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:closeScope', [element('l', [[nt('core:Pair', [string, nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [])])]])], element('__func__lhs', [[nt('core:Pair', [string, nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [])])]]), [])),
+ fun('LexerHack.sv', 34, 9, 34, 25, 902, 918, [], signature('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:addIdentsToScope', [element('l', [nt('edu:umn:cs:melt:ableC:abstractsyntax:host:Name', [])]), element('context', [[nt('core:Pair', [string, nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [])])]])], element('__func__lhs', [[nt('core:Pair', [string, nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [])])]]), [])),
+ fun('LexerHack.sv', 40, 9, 40, 28, 1106, 1125, [], signature('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:addTypenamesToScope', [element('l', [nt('edu:umn:cs:melt:ableC:abstractsyntax:host:Name', [])]), element('context', [[nt('core:Pair', [string, nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [])])]])], element('__func__lhs', [[nt('core:Pair', [string, nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [])])]]), [])),
+ fun('LexerHack.sv', 46, 9, 46, 27, 1316, 1334, [], signature('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:beginFunctionScope', [element('funName', nt('edu:umn:cs:melt:ableC:abstractsyntax:host:Name', [])), element('paramNames', nt('core:Maybe', [[nt('edu:umn:cs:melt:ableC:abstractsyntax:host:Name', [])]])), element('context', [[nt('core:Pair', [string, nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [])])]])], element('__func__lhs', [[nt('core:Pair', [string, nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', [])])]]), []))]
+syntax [nt([], nt('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', []))]
+parsers []
+flow [ntRefFlowDef('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', []),
+ prod('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', 'edu:umn:cs:melt:ableC:concretesyntax:lexerHack:identType_c'),
+ prod('edu:umn:cs:melt:ableC:concretesyntax:lexerHack:IdentType', 'edu:umn:cs:melt:ableC:concretesyntax:lexerHack:typenameType_c')]

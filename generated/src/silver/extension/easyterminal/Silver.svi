@@ -1,0 +1,95 @@
+declaredName 'silver:extension:easyterminal'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/extension/easyterminal/"
+moduleNames ['silver:definition:core', 'silver:definition:env', 'silver:definition:type', 'silver:definition:type:syntax', 'silver:definition:concrete_syntax', 'silver:definition:regex', 'core']
+allDeps ['core:monad', 'silver:definition:flow:env', 'silver:analysis:typechecking:core', 'core', 'silver:definition:regex', 'silver:definition:concrete_syntax', 'silver:definition:type:syntax', 'silver:definition:type', 'silver:definition:env', 'silver:definition:core', 'silver:extension:easyterminal']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ fun('Env.sv', 14, 9, 14, 31, 541, 563, [], signature('silver:extension:easyterminal:getTerminalRegexDclAll', [element('search', string), element('e', decorated(nt('silver:definition:env:Env', [])))], element('__func__lhs', [nt('silver:definition:env:DclInfo', [])]), [])),
+ syn('Env.sv', 22, 22, 22, 34, 683, 695, 'silver:extension:easyterminal:terminalTree', [], [decorated(nt('silver:definition:env:EnvScope', [nt('silver:definition:env:DclInfo', [])]))]),
+ @('Env.sv', 22, 22, 22, 34, 683, 695, 'silver:definition:env:Env', 'silver:extension:easyterminal:terminalTree', [], nt('silver:definition:env:Env', []), [decorated(nt('silver:definition:env:EnvScope', [nt('silver:definition:env:DclInfo', [])]))]),
+ fun('Env.sv', 24, 9, 24, 33, 827, 851, [], signature('silver:extension:easyterminal:filterAndConvertTermDcls', [element('ei', nt('silver:definition:env:EnvItem', [])), element('sofar', [nt('core:Pair', [string, nt('silver:definition:env:DclInfo', [])])])], element('__func__lhs', [nt('core:Pair', [string, nt('silver:definition:env:DclInfo', [])])]), [])),
+ fun('Env.sv', 33, 9, 33, 26, 1073, 1090, [], signature('silver:extension:easyterminal:buildTerminalTree', [element('eis', [nt('silver:definition:env:EnvItem', [])])], element('__func__lhs', foreigntype('silver:util:raw:treemap:Map', [string, nt('silver:definition:env:DclInfo', [])])), [])),
+ term('TerminalDcl.sv', 10, 9, 10, 19, 290, 300, 'silver:extension:easyterminal:Terminal_t', /\'[^\'\r\n]*\'/),
+ prod('TerminalDcl.sv', 24, 20, 24, 35, 1249, 1264, [], signature('silver:extension:easyterminal:regExprEasyTerm', [element('t', term('silver:extension:easyterminal:Terminal_t'))], element('top', nt('silver:definition:concrete_syntax:RegExpr', [])), [element('core:location', nt('core:Location', []))])),
+ p@('TerminalDcl.sv', 24, 20, 24, 35, 1249, 1264, [], signature('silver:extension:easyterminal:regExprEasyTerm', [element('t', term('silver:extension:easyterminal:Terminal_t'))], element('top', nt('silver:definition:concrete_syntax:RegExpr', [])), [element('core:location', nt('core:Location', []))]), [
+ fwd('TerminalDcl.sv', 31, 2, 31, 80, 1415, 1493, nt('silver:definition:concrete_syntax:RegExpr', []))]),
+ nt('TerminalDcl.sv', 35, 12, 35, 27, 1571, 1586, 'silver:extension:easyterminal:EasyTerminalRef', [], nt('silver:extension:easyterminal:EasyTerminalRef', []), f),
+ @('TerminalDcl.sv', 35, 33, 35, 39, 1592, 1598, 'silver:extension:easyterminal:EasyTerminalRef', 'silver:definition:env:config', [], nt('silver:extension:easyterminal:EasyTerminalRef', []), decorated(nt('silver:util:cmdargs:CmdArgs', []))),
+ anno@('TerminalDcl.sv', 35, 41, 35, 49, 1600, 1608, 'silver:extension:easyterminal:EasyTerminalRef', 'core:location', [], nt('silver:extension:easyterminal:EasyTerminalRef', []), nt('core:Location', [])),
+ @('TerminalDcl.sv', 35, 51, 35, 62, 1610, 1621, 'silver:extension:easyterminal:EasyTerminalRef', 'silver:definition:core:grammarName', [], nt('silver:extension:easyterminal:EasyTerminalRef', []), string),
+ @('TerminalDcl.sv', 35, 64, 35, 66, 1623, 1625, 'silver:extension:easyterminal:EasyTerminalRef', 'silver:definition:env:pp', [], nt('silver:extension:easyterminal:EasyTerminalRef', []), string),
+ @('TerminalDcl.sv', 35, 68, 35, 74, 1627, 1633, 'silver:extension:easyterminal:EasyTerminalRef', 'silver:definition:core:errors', [], nt('silver:extension:easyterminal:EasyTerminalRef', []), [nt('silver:definition:core:Message', [])]),
+ @('TerminalDcl.sv', 35, 76, 35, 83, 1635, 1642, 'silver:extension:easyterminal:EasyTerminalRef', 'silver:definition:env:typerep', [], nt('silver:extension:easyterminal:EasyTerminalRef', []), nt('silver:definition:type:Type', [])),
+ @('TerminalDcl.sv', 35, 85, 35, 95, 1644, 1654, 'silver:extension:easyterminal:EasyTerminalRef', 'silver:extension:easyterminal:easyString', [], nt('silver:extension:easyterminal:EasyTerminalRef', []), string),
+ @('TerminalDcl.sv', 35, 97, 35, 100, 1656, 1659, 'silver:extension:easyterminal:EasyTerminalRef', 'silver:definition:env:env', [], nt('silver:extension:easyterminal:EasyTerminalRef', []), decorated(nt('silver:definition:env:Env', []))),
+ @('TerminalDcl.sv', 35, 102, 35, 106, 1661, 1665, 'silver:extension:easyterminal:EasyTerminalRef', 'silver:definition:core:dcls', [], nt('silver:extension:easyterminal:EasyTerminalRef', []), [nt('silver:definition:env:DclInfo', [])]),
+ syn('TerminalDcl.sv', 38, 22, 38, 32, 1746, 1756, 'silver:extension:easyterminal:easyString', [], string),
+ prod('TerminalDcl.sv', 40, 20, 40, 35, 1789, 1804, [], signature('silver:extension:easyterminal:easyTerminalRef', [element('t', term('silver:extension:easyterminal:Terminal_t'))], element('top', nt('silver:extension:easyterminal:EasyTerminalRef', [])), [element('core:location', nt('core:Location', []))])),
+ prod('TerminalDcl.sv', 62, 20, 62, 44, 2589, 2613, [], signature('silver:extension:easyterminal:productionRhsElemEasyReg', [element('id', nt('silver:definition:core:Name', [])), element('_G_1', term('silver:definition:core:ColonColon_t')), element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:ProductionRHSElem', [])), [element('core:location', nt('core:Location', []))])),
+ p@('TerminalDcl.sv', 62, 20, 62, 44, 2589, 2613, [], signature('silver:extension:easyterminal:productionRhsElemEasyReg', [element('id', nt('silver:definition:core:Name', [])), element('_G_1', term('silver:definition:core:ColonColon_t')), element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:ProductionRHSElem', [])), [element('core:location', nt('core:Location', []))]), [
+ fwd('TerminalDcl.sv', 68, 2, 68, 116, 2745, 2859, nt('silver:definition:core:ProductionRHSElem', []))]),
+ prod('TerminalDcl.sv', 71, 20, 71, 48, 2883, 2911, [], signature('silver:extension:easyterminal:productionRhsElemTypeEasyReg', [element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:ProductionRHSElem', [])), [element('core:location', nt('core:Location', []))])),
+ p@('TerminalDcl.sv', 71, 20, 71, 48, 2883, 2911, [], signature('silver:extension:easyterminal:productionRhsElemTypeEasyReg', [element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:ProductionRHSElem', [])), [element('core:location', nt('core:Location', []))]), [
+ fwd('TerminalDcl.sv', 77, 2, 77, 112, 3012, 3122, nt('silver:definition:core:ProductionRHSElem', []))]),
+ prod('TerminalDcl.sv', 80, 20, 80, 40, 3146, 3166, [], signature('silver:extension:easyterminal:aspectRHSElemEasyReg', [element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:AspectRHSElem', [])), [element('core:location', nt('core:Location', []))])),
+ p@('TerminalDcl.sv', 80, 20, 80, 40, 3146, 3166, [], signature('silver:extension:easyterminal:aspectRHSElemEasyReg', [element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:AspectRHSElem', [])), [element('core:location', nt('core:Location', []))]), [
+ fwd('TerminalDcl.sv', 86, 2, 86, 60, 3263, 3321, nt('silver:definition:core:AspectRHSElem', []))]),
+ prod('TerminalDcl.sv', 89, 20, 89, 45, 3396, 3421, [], signature('silver:extension:easyterminal:aspectRHSElemTypedEasyReg', [element('id', nt('silver:definition:core:Name', [])), element('_G_1', term('silver:definition:core:ColonColon_t')), element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:AspectRHSElem', [])), [element('core:location', nt('core:Location', []))])),
+ p@('TerminalDcl.sv', 89, 20, 89, 45, 3396, 3421, [], signature('silver:extension:easyterminal:aspectRHSElemTypedEasyReg', [element('id', nt('silver:definition:core:Name', [])), element('_G_1', term('silver:definition:core:ColonColon_t')), element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:AspectRHSElem', [])), [element('core:location', nt('core:Location', []))]), [
+ fwd('TerminalDcl.sv', 95, 2, 95, 117, 3551, 3666, nt('silver:definition:core:AspectRHSElem', []))]),
+ prod('TerminalDcl.sv', 99, 20, 99, 35, 3754, 3769, [], signature('silver:extension:easyterminal:terminalExprReg', [element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))])),
+ p@('TerminalDcl.sv', 99, 20, 99, 35, 3754, 3769, [], signature('silver:extension:easyterminal:terminalExprReg', [element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))]), [
+ fwd('TerminalDcl.sv', 107, 2, 109, 122, 3922, 4147, nt('silver:definition:core:Expr', []))])]
+syntax [term('silver:extension:easyterminal:Terminal_t', /\'[^\'\r\n]*\'/, [classes(['silver:definition:core:LITERAL'])]),
+ prod([], signature('silver:extension:easyterminal:regExprEasyTerm', [element('t', term('silver:extension:easyterminal:Terminal_t'))], element('top', nt('silver:definition:concrete_syntax:RegExpr', [])), [element('core:location', nt('core:Location', []))]), []),
+ nt([], nt('silver:extension:easyterminal:EasyTerminalRef', [])),
+ prod([], signature('silver:extension:easyterminal:easyTerminalRef', [element('t', term('silver:extension:easyterminal:Terminal_t'))], element('top', nt('silver:extension:easyterminal:EasyTerminalRef', [])), [element('core:location', nt('core:Location', []))]), []),
+ prod([], signature('silver:extension:easyterminal:productionRhsElemEasyReg', [element('id', nt('silver:definition:core:Name', [])), element('_G_1', term('silver:definition:core:ColonColon_t')), element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:ProductionRHSElem', [])), [element('core:location', nt('core:Location', []))]), []),
+ prod([], signature('silver:extension:easyterminal:productionRhsElemTypeEasyReg', [element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:ProductionRHSElem', [])), [element('core:location', nt('core:Location', []))]), []),
+ prod([], signature('silver:extension:easyterminal:aspectRHSElemEasyReg', [element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:AspectRHSElem', [])), [element('core:location', nt('core:Location', []))]), []),
+ prod([], signature('silver:extension:easyterminal:aspectRHSElemTypedEasyReg', [element('id', nt('silver:definition:core:Name', [])), element('_G_1', term('silver:definition:core:ColonColon_t')), element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:AspectRHSElem', [])), [element('core:location', nt('core:Location', []))]), []),
+ prod([], signature('silver:extension:easyterminal:terminalExprReg', [element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))]), [])]
+parsers []
+flow [nonHostSyn('silver:extension:easyterminal:terminalTree', 'silver:definition:env:Env'),
+ anon('silver:extension:easyterminal:filterAndConvertTermDcls', '__decorate19658:line27', 'silver:definition:env:DclInfo', 'Env.sv', 27, 14, 27, 20, 937, 943, [rhsV('ei', 'silver:definition:env:dcl')]),
+ patternRuleEq('silver:extension:easyterminal:filterAndConvertTermDcls', 'silver:definition:env:termDcl', anon('__decorate19658:line27'), [('sl', 'core:Location', '__pv382:__sv_tmp_pv_383'), ('regex', 'silver:definition:regex:Regex', '__pv386:__sv_pv_379_regex')]),
+ syn('silver:definition:env:i_emptyEnv', 'silver:extension:easyterminal:terminalTree', [], t),
+ syn('silver:definition:env:i_appendEnv', 'silver:extension:easyterminal:terminalTree', [], t),
+ syn('silver:definition:env:i_newScopeEnv', 'silver:extension:easyterminal:terminalTree', [rhsV('d', 'silver:definition:env:typeList')], t),
+ syn('silver:extension:easyterminal:regExprEasyTerm', 'silver:definition:env:pp', [], f),
+ syn('silver:extension:easyterminal:regExprEasyTerm', 'silver:definition:concrete_syntax:terminalRegExprSpec', [], f),
+ fwd('silver:extension:easyterminal:regExprEasyTerm', [lhsSynV('silver:definition:concrete_syntax:terminalRegExprSpec')], f),
+ implicitFwdAffects('silver:extension:easyterminal:regExprEasyTerm', []),
+ ntRefFlowDef('silver:extension:easyterminal:EasyTerminalRef', ['silver:definition:env:env', 'silver:definition:core:grammarName', 'silver:definition:env:config']),
+ syn('silver:extension:easyterminal:easyTerminalRef', 'silver:definition:env:pp', [], t),
+ syn('silver:extension:easyterminal:easyTerminalRef', 'silver:extension:easyterminal:easyString', [], t),
+ local('silver:extension:easyterminal:easyTerminalRef', 'silver:extension:easyterminal:easyTerminalRef:local:regHack', 'silver:definition:regex:Regex', [lhsSynV('silver:extension:easyterminal:easyString')]),
+ syn('silver:extension:easyterminal:easyTerminalRef', 'silver:definition:core:dcls', [localV('silver:extension:easyterminal:easyTerminalRef:local:regHack', 'silver:definition:regex:regString'), localEqV('silver:extension:easyterminal:easyTerminalRef:local:regHack'), lhsInhV('silver:definition:env:env')], t),
+ syn('silver:extension:easyterminal:easyTerminalRef', 'silver:definition:core:errors', [lhsSynV('silver:definition:core:dcls'), lhsSynV('silver:definition:core:dcls'), lhsSynV('silver:definition:core:dcls')], t),
+ anon('silver:extension:easyterminal:easyTerminalRef', '__decorate19660:line58', 'silver:definition:env:DclInfo', 'TerminalDcl.sv', 58, 56, 58, 78, 2541, 2563, [lhsSynV('silver:definition:core:dcls')]),
+ syn('silver:extension:easyterminal:easyTerminalRef', 'silver:definition:env:typerep', [lhsSynV('silver:definition:core:dcls'), anonV('__decorate19660:line58', 'silver:definition:env:typerep'), anonEqV('__decorate19660:line58')], t),
+ prod('silver:extension:easyterminal:EasyTerminalRef', 'silver:extension:easyterminal:easyTerminalRef'),
+ syn('silver:extension:easyterminal:productionRhsElemEasyReg', 'silver:definition:env:pp', [rhsV('id', 'silver:definition:env:pp'), rhsV('reg', 'silver:definition:env:pp')], f),
+ extra('silver:extension:easyterminal:productionRhsElemEasyReg', lhsSynV('silver:definition:core:errors'), [rhsV('reg', 'silver:definition:core:errors')], f),
+ fwd('silver:extension:easyterminal:productionRhsElemEasyReg', [rhsV('reg', 'silver:definition:env:typerep')], f),
+ implicitFwdAffects('silver:extension:easyterminal:productionRhsElemEasyReg', []),
+ syn('silver:extension:easyterminal:productionRhsElemTypeEasyReg', 'silver:definition:env:pp', [rhsV('reg', 'silver:definition:env:pp')], f),
+ extra('silver:extension:easyterminal:productionRhsElemTypeEasyReg', lhsSynV('silver:definition:core:errors'), [rhsV('reg', 'silver:definition:core:errors')], f),
+ fwd('silver:extension:easyterminal:productionRhsElemTypeEasyReg', [rhsV('reg', 'silver:definition:env:typerep')], f),
+ implicitFwdAffects('silver:extension:easyterminal:productionRhsElemTypeEasyReg', []),
+ syn('silver:extension:easyterminal:aspectRHSElemEasyReg', 'silver:definition:env:pp', [rhsV('reg', 'silver:definition:env:pp')], f),
+ extra('silver:extension:easyterminal:aspectRHSElemEasyReg', lhsSynV('silver:definition:core:errors'), [rhsV('reg', 'silver:definition:core:errors')], f),
+ fwd('silver:extension:easyterminal:aspectRHSElemEasyReg', [], f),
+ implicitFwdAffects('silver:extension:easyterminal:aspectRHSElemEasyReg', []),
+ syn('silver:extension:easyterminal:aspectRHSElemTypedEasyReg', 'silver:definition:env:pp', [rhsV('id', 'silver:definition:env:pp'), rhsV('reg', 'silver:definition:env:pp')], f),
+ extra('silver:extension:easyterminal:aspectRHSElemTypedEasyReg', lhsSynV('silver:definition:core:errors'), [rhsV('reg', 'silver:definition:core:errors')], f),
+ fwd('silver:extension:easyterminal:aspectRHSElemTypedEasyReg', [rhsV('reg', 'silver:definition:env:typerep')], f),
+ implicitFwdAffects('silver:extension:easyterminal:aspectRHSElemTypedEasyReg', []),
+ syn('silver:extension:easyterminal:terminalExprReg', 'silver:definition:env:pp', [rhsV('reg', 'silver:definition:env:pp')], f),
+ extra('silver:extension:easyterminal:terminalExprReg', lhsSynV('silver:definition:core:errors'), [rhsV('reg', 'silver:definition:core:errors')], f),
+ local('silver:extension:easyterminal:terminalExprReg', 'silver:extension:easyterminal:terminalExprReg:local:escapedName', '', [rhsV('reg', 'silver:extension:easyterminal:easyString')]),
+ fwd('silver:extension:easyterminal:terminalExprReg', [rhsV('reg', 'silver:definition:env:typerep'), localEqV('silver:extension:easyterminal:terminalExprReg:local:escapedName')], f),
+ implicitFwdAffects('silver:extension:easyterminal:terminalExprReg', [])]

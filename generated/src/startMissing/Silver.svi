@@ -1,0 +1,15 @@
+declaredName 'startMissing'
+grammarTime 1508471626
+grammarSource "./startMissing/"
+moduleNames ['test:term_b', 'test:nonterm_b', 'host', 'startMissing', 'core']
+allDeps ['core:monad', 'core', 'host', 'test:nonterm_b', 'test:term_b', 'startMissing']
+exportedGrammars ['host']
+optionalGrammars []
+condBuild []
+defs [
+ fun('Artifact.sv', 13, 7, 13, 9, 212, 214, [], signature('startMissing:p2', [element('stringToParse', string), element('filenameToReport', string)], element('__func__lhs', nt('core:ParseResult', [nt('test:nonterm_b:B', [])])), [])),
+ fun('Artifact.sv', 31, 7, 31, 21, 621, 635, [], signature('startMissing:extendedParser', [element('stringToParse', string), element('filenameToReport', string)], element('__func__lhs', nt('core:ParseResult', [nt('host:Root', [])])), []))]
+syntax []
+parsers [parser('Artifact.sv', 13, 0, 14, 1, 205, 223,'startMissing','startMissing:p2','test:nonterm_b:B',[],[],[],[]),
+ parser('Artifact.sv', 31, 0, 34, 1, 614, 675,'startMissing','startMissing:extendedParser','host:Root',['host', 'startMissing'],[],[],[])]
+flow []

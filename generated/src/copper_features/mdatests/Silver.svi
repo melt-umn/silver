@@ -1,0 +1,33 @@
+declaredName 'copper_features:mdatests'
+grammarTime 1508471626
+grammarSource "../copper_features/mdatests/"
+moduleNames ['silver:testing', 'lib:extcore', 'copper_features', 'copper_features:mdatests:host', 'copper_features:mdatests:ext', 'copper_features:mdatests:ext2', 'core']
+allDeps ['core:monad', 'core', 'copper_features:mdatests:ext2', 'copper_features:mdatests:ext', 'copper_features:mdatests:host', 'copper_features', 'lib:extcore', 'silver:testing', 'copper_features:mdatests']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ fun('Test.sv', 15, 7, 15, 20, 254, 267, [], signature('copper_features:mdatests:shouldSucceed', [element('stringToParse', string), element('filenameToReport', string)], element('__func__lhs', nt('core:ParseResult', [nt('copper_features:mdatests:host:Root', [])])), [])),
+ prod('Test.sv', 23, 0, 23, 91, 581, 672, [], signature('copper_features:mdatests:generatedTest_Test_sv_23_0', [], element('t', nt('silver:testing:Test', [])), [])),
+ p@('Test.sv', 23, 0, 23, 91, 581, 672, [], signature('copper_features:mdatests:generatedTest_Test_sv_23_0', [], element('t', nt('silver:testing:Test', [])), []), [
+ fwd('Test.sv', 23, 0, 23, 91, 581, 672, nt('silver:testing:Test', []))]),
+ prod('Test.sv', 24, 0, 24, 84, 673, 757, [], signature('copper_features:mdatests:generatedTest_Test_sv_24_1', [], element('t', nt('silver:testing:Test', [])), [])),
+ p@('Test.sv', 24, 0, 24, 84, 673, 757, [], signature('copper_features:mdatests:generatedTest_Test_sv_24_1', [], element('t', nt('silver:testing:Test', [])), []), [
+ fwd('Test.sv', 24, 0, 24, 84, 673, 757, nt('silver:testing:Test', []))])]
+syntax []
+parsers [parser('Test.sv', 15, 0, 21, 1, 247, 579,'copper_features:mdatests','copper_features:mdatests:shouldSucceed','copper_features:mdatests:host:Root',['copper_features:mdatests:host', 'copper_features:mdatests:ext', 'copper_features:mdatests:ext2'],['copper_features:mdatests:ext:C', 'copper_features:mdatests:ext2:C'],['copper_features_mdatests__Prefix499', 'copper_features_mdatests__Prefix500'],[term('copper_features:mdatests:_Prefix499', /1\:/, []), term('copper_features:mdatests:_Prefix500', /2\:/, []), disambig('copper_features:mdatests:__disam20', ['copper_features:mdatests:ext:C', 'copper_features:mdatests:ext2:C'], "return (Integer)copper_features_mdatests_ext_C;
+")])]
+flow [anon('copper_features:mdatests:generatedTest_Test_sv_23_0', '__decorate1153:line23', 'core:ParseResult', 'Test.sv', 23, 15, 23, 59, 596, 640, []),
+ local('copper_features:mdatests:generatedTest_Test_sv_23_0', 'copper_features:mdatests:generatedTest_Test_sv_23_0:local:value', '', [anonV('__decorate1153:line23', 'core:parseSuccess'), anonEqV('__decorate1153:line23')]),
+ local('copper_features:mdatests:generatedTest_Test_sv_23_0', 'copper_features:mdatests:generatedTest_Test_sv_23_0:local:expected', '', []),
+ syn('copper_features:mdatests:generatedTest_Test_sv_23_0', 'silver:testing:msg', [localEqV('copper_features:mdatests:generatedTest_Test_sv_23_0:local:value'), localEqV('copper_features:mdatests:generatedTest_Test_sv_23_0:local:expected')], f),
+ syn('copper_features:mdatests:generatedTest_Test_sv_23_0', 'silver:testing:pass', [localEqV('copper_features:mdatests:generatedTest_Test_sv_23_0:local:value'), localEqV('copper_features:mdatests:generatedTest_Test_sv_23_0:local:expected')], f),
+ fwd('copper_features:mdatests:generatedTest_Test_sv_23_0', [], f),
+ implicitFwdAffects('copper_features:mdatests:generatedTest_Test_sv_23_0', []),
+ anon('copper_features:mdatests:generatedTest_Test_sv_24_1', '__decorate1154:line24', 'core:ParseResult', 'Test.sv', 24, 15, 24, 52, 688, 725, []),
+ local('copper_features:mdatests:generatedTest_Test_sv_24_1', 'copper_features:mdatests:generatedTest_Test_sv_24_1:local:value', '', [anonV('__decorate1154:line24', 'core:parseSuccess'), anonEqV('__decorate1154:line24')]),
+ local('copper_features:mdatests:generatedTest_Test_sv_24_1', 'copper_features:mdatests:generatedTest_Test_sv_24_1:local:expected', '', []),
+ syn('copper_features:mdatests:generatedTest_Test_sv_24_1', 'silver:testing:msg', [localEqV('copper_features:mdatests:generatedTest_Test_sv_24_1:local:value'), localEqV('copper_features:mdatests:generatedTest_Test_sv_24_1:local:expected')], f),
+ syn('copper_features:mdatests:generatedTest_Test_sv_24_1', 'silver:testing:pass', [localEqV('copper_features:mdatests:generatedTest_Test_sv_24_1:local:value'), localEqV('copper_features:mdatests:generatedTest_Test_sv_24_1:local:expected')], f),
+ fwd('copper_features:mdatests:generatedTest_Test_sv_24_1', [], f),
+ implicitFwdAffects('copper_features:mdatests:generatedTest_Test_sv_24_1', [])]

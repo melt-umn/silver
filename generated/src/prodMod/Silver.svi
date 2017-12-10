@@ -1,0 +1,19 @@
+declaredName 'prodMod'
+grammarTime 1508471626
+grammarSource "./prodMod/"
+moduleNames ['test:term_b', 'host', 'prodMod', 'core']
+allDeps ['core:monad', 'core', 'host', 'test:term_b', 'prodMod']
+exportedGrammars ['host']
+optionalGrammars []
+condBuild []
+defs [
+ nt('Artifact.sv', 7, 12, 7, 14, 67, 69, 'prodMod:NT', [], nt('prodMod:NT', []), f),
+ term('Artifact.sv', 8, 9, 8, 12, 80, 83, 'prodMod:A_t', /A/),
+ prod('Artifact.sv', 18, 20, 18, 36, 513, 529, [], signature('prodMod:missingModifiers', [element('_G_1', term('prodMod:A_t')), element('_G_0', term('prodMod:A_t'))], element('top', nt('prodMod:NT', [])), [])),
+ fun('Artifact.sv', 24, 7, 24, 21, 607, 621, [], signature('prodMod:extendedParser', [element('stringToParse', string), element('filenameToReport', string)], element('__func__lhs', nt('core:ParseResult', [nt('host:Root', [])])), []))]
+syntax [nt([], nt('prodMod:NT', [])),
+ term('prodMod:A_t', /A/, []),
+ prod([], signature('prodMod:missingModifiers', [element('_G_1', term('prodMod:A_t')), element('_G_0', term('prodMod:A_t'))], element('top', nt('prodMod:NT', [])), []), [oper('test:term_b:B_t'),layout(['test:term_b:B_t']),prec(2)])]
+parsers [parser('Artifact.sv', 24, 0, 27, 1, 600, 656,'prodMod','prodMod:extendedParser','host:Root',['host', 'prodMod'],[],[],[])]
+flow [ntRefFlowDef('prodMod:NT', []),
+ prod('prodMod:NT', 'prodMod:missingModifiers')]

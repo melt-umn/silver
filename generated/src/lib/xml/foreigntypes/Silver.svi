@@ -1,0 +1,31 @@
+declaredName 'lib:xml:foreigntypes'
+grammarTime 1508471626
+grammarSource "../../grammars/lib/xml/foreigntypes/"
+moduleNames ['lib:xml:ast', 'core']
+allDeps ['core:monad', 'core', 'lib:xml:ast', 'lib:xml:foreigntypes']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ type('Types.sv', 5, 5, 5, 17, 57, 69, 'lib:xml:foreigntypes:XML_Document', [], foreigntype('lib:xml:foreigntypes:XML_Document', [])),
+ type('Types.sv', 6, 5, 6, 17, 84, 96, 'lib:xml:foreigntypes:XML_NodeList', [], foreigntype('lib:xml:foreigntypes:XML_NodeList', [])),
+ type('Types.sv', 7, 5, 7, 13, 111, 119, 'lib:xml:foreigntypes:XML_Node', [], foreigntype('lib:xml:foreigntypes:XML_Node', [])),
+ fun('Types.sv', 14, 9, 14, 22, 258, 271, [], signature('lib:xml:foreigntypes:parseXMLFileF', [element('filename', string)], element('__func__lhs', nt('core:ParseResult', [foreigntype('lib:xml:foreigntypes:XML_Document', [])])), [])),
+ fun('Types.sv', 23, 9, 23, 28, 517, 536, [], signature('lib:xml:foreigntypes:nodeListXPathQueryN', [element('query', string), element('doc', foreigntype('lib:xml:foreigntypes:XML_Document', []))], element('__func__lhs', nt('lib:xml:ast:XMLNodeList', [])), [])),
+ fun('Types.sv', 30, 9, 30, 28, 681, 700, [], signature('lib:xml:foreigntypes:nodeListXPathQueryF', [element('query', string), element('doc', foreigntype('lib:xml:foreigntypes:XML_Document', []))], element('__func__lhs', foreigntype('lib:xml:foreigntypes:XML_NodeList', [])), [])),
+ fun('Types.sv', 38, 9, 38, 25, 928, 944, [], signature('lib:xml:foreigntypes:stringXPathQuery', [element('query', string), element('doc', foreigntype('lib:xml:foreigntypes:XML_Document', []))], element('__func__lhs', string), [])),
+ fun('Types.sv', 47, 9, 47, 30, 1203, 1224, [], signature('lib:xml:foreigntypes:nodeListXPathReQueryF', [element('query', string), element('doc', foreigntype('lib:xml:foreigntypes:XML_Node', []))], element('__func__lhs', foreigntype('lib:xml:foreigntypes:XML_NodeList', [])), [])),
+ fun('Types.sv', 54, 9, 54, 27, 1449, 1467, [], signature('lib:xml:foreigntypes:stringXPathReQuery', [element('query', string), element('doc', foreigntype('lib:xml:foreigntypes:XML_Node', []))], element('__func__lhs', string), [])),
+ fun('Types.sv', 65, 9, 65, 30, 1788, 1809, [], signature('lib:xml:foreigntypes:nodeListXPathQueryFns', [element('query', string), element('ns', [nt('core:Pair', [string, string])]), element('doc', foreigntype('lib:xml:foreigntypes:XML_Document', []))], element('__func__lhs', foreigntype('lib:xml:foreigntypes:XML_NodeList', [])), [])),
+ fun('Types.sv', 73, 9, 73, 27, 2063, 2081, [], signature('lib:xml:foreigntypes:stringXPathQueryns', [element('query', string), element('ns', [nt('core:Pair', [string, string])]), element('doc', foreigntype('lib:xml:foreigntypes:XML_Document', []))], element('__func__lhs', string), [])),
+ fun('Types.sv', 82, 9, 82, 32, 2366, 2389, [], signature('lib:xml:foreigntypes:nodeListXPathReQueryFns', [element('query', string), element('ns', [nt('core:Pair', [string, string])]), element('doc', foreigntype('lib:xml:foreigntypes:XML_Node', []))], element('__func__lhs', foreigntype('lib:xml:foreigntypes:XML_NodeList', [])), [])),
+ fun('Types.sv', 89, 9, 89, 29, 2640, 2660, [], signature('lib:xml:foreigntypes:stringXPathReQueryns', [element('query', string), element('ns', [nt('core:Pair', [string, string])]), element('doc', foreigntype('lib:xml:foreigntypes:XML_Node', []))], element('__func__lhs', string), [])),
+ fun('Types.sv', 100, 9, 100, 23, 2984, 2998, [], signature('lib:xml:foreigntypes:xmlNodeListF2N', [element('nl', foreigntype('lib:xml:foreigntypes:XML_NodeList', []))], element('__func__lhs', nt('lib:xml:ast:XMLNodeList', [])), [])),
+ fun('Types.sv', 108, 9, 108, 27, 3194, 3212, [], signature('lib:xml:foreigntypes:nodeListF2NPartial', [element('nl', foreigntype('lib:xml:foreigntypes:XML_NodeList', []))], element('__func__lhs', [foreigntype('lib:xml:foreigntypes:XML_Node', [])]), [])),
+ fun('Types.sv', 119, 9, 119, 23, 3530, 3544, [], signature('lib:xml:foreigntypes:xmlDocumentF2N', [element('doc', foreigntype('lib:xml:foreigntypes:XML_Document', []))], element('__func__lhs', nt('lib:xml:ast:XMLDocument', [])), [])),
+ fun('Types.sv', 127, 9, 127, 23, 3742, 3756, [], signature('lib:xml:foreigntypes:xmlDocumentN2F', [element('doc', nt('lib:xml:ast:XMLDocument', []))], element('__func__lhs', foreigntype('lib:xml:foreigntypes:XML_Document', [])), [])),
+ fun('Types.sv', 135, 9, 135, 28, 3958, 3977, [], signature('lib:xml:foreigntypes:xmlDocumentF2String', [element('doc', foreigntype('lib:xml:foreigntypes:XML_Document', []))], element('__func__lhs', string), [])),
+ fun('Types.sv', 143, 9, 143, 28, 4180, 4199, [], signature('lib:xml:foreigntypes:xmlDocumentN2String', [element('doc', nt('lib:xml:ast:XMLDocument', []))], element('__func__lhs', string), []))]
+syntax []
+parsers []
+flow []

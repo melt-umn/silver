@@ -1,0 +1,13 @@
+declaredName 'silver:translation:java'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/translation/java/"
+moduleNames ['silver:translation:java:core', 'silver:translation:java:type', 'silver:translation:java:driver', 'core']
+allDeps ['core:monad', 'core', 'silver:translation:java:driver', 'silver:translation:java:type', 'silver:translation:java:core', 'silver:translation:java']
+exportedGrammars ['silver:translation:java:core', 'silver:translation:java:type', 'silver:translation:java:driver']
+optionalGrammars []
+condBuild []
+defs [
+ ]
+syntax []
+parsers []
+flow []

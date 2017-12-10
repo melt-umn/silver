@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<CopperSpec xmlns="http://melt.cs.umn.edu/copper/xmlns">
+  <Parser id="copper_features_mdatests_shouldSucceed" isUnitary="true">
+    <PP>copper_features:mdatests:shouldSucceed</PP>
+    <Grammars><GrammarRef id="host"/></Grammars>
+    <StartSymbol><NonterminalRef id="copper_features_mdatests_host_Root" grammar="host" /></StartSymbol>
+    <StartLayout></StartLayout>
+    <ClassAuxiliaryCode><Code><![CDATA[
+          protected List<common.Terminal> tokenList = null;
+
+          public void reset() {
+            tokenList = new ArrayList<common.Terminal>();
+          }
+
+          public List<common.Terminal> getTokens() {
+            return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
+          }
+        ]]></Code></ClassAuxiliaryCode>
+    <ParserInitCode>
+      <Code><![CDATA[
+        reset();
+      ]]></Code>
+    </ParserInitCode>
+    <Preamble>
+<Code><![CDATA[
+import java.util.ArrayList;
+import java.util.List;
+]]></Code>
+    </Preamble>
+  </Parser>
+
+  <Grammar id="host">
+
+    <PP>host</PP>
+
+    <Layout></Layout>
+    <Declarations>
+      <ParserAttribute id="context">
+        <Type><![CDATA[common.DecoratedNode]]></Type>
+        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>
+      </ParserAttribute>
+         <Terminal id="copper_features_mdatests__Prefix499">
+    <PP>copper_features:mdatests:_Prefix499</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="1"/></CharacterSet><CharacterSet><SingleCharacter char=":"/></CharacterSet></Concatenation></Regex>
+    <Type>copper_features.mdatests.T_Prefix499</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.mdatests.T_Prefix499(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="copper_features_mdatests__Prefix500">
+    <PP>copper_features:mdatests:_Prefix500</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="2"/></CharacterSet><CharacterSet><SingleCharacter char=":"/></CharacterSet></Concatenation></Regex>
+    <Type>copper_features.mdatests.T_Prefix500</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.mdatests.T_Prefix500(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="copper_features_mdatests_ext2_C">
+    <PP>copper_features:mdatests:ext2:C</PP>
+    <Regex><CharacterSet><SingleCharacter char="c"/></CharacterSet></Regex>
+    <Type>copper_features.mdatests.ext2.TC</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.mdatests.ext2.TC(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Prefix><TerminalRef id="copper_features_mdatests__Prefix500"/></Prefix>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="copper_features_mdatests_ext2_E">
+    <PP>copper_features:mdatests:ext2:E</PP>
+    <Regex><CharacterSet><SingleCharacter char="e"/></CharacterSet></Regex>
+    <Type>copper_features.mdatests.ext2.TE</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.mdatests.ext2.TE(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="copper_features_mdatests_ext_C">
+    <PP>copper_features:mdatests:ext:C</PP>
+    <Regex><CharacterSet><SingleCharacter char="c"/></CharacterSet></Regex>
+    <Type>copper_features.mdatests.ext.TC</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.mdatests.ext.TC(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Prefix><TerminalRef id="copper_features_mdatests__Prefix499"/></Prefix>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="copper_features_mdatests_ext_D">
+    <PP>copper_features:mdatests:ext:D</PP>
+    <Regex><CharacterSet><SingleCharacter char="d"/></CharacterSet></Regex>
+    <Type>copper_features.mdatests.ext.TD</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.mdatests.ext.TD(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="copper_features_mdatests_host_A">
+    <PP>copper_features:mdatests:host:A</PP>
+    <Regex><CharacterSet><SingleCharacter char="a"/></CharacterSet></Regex>
+    <Type>copper_features.mdatests.host.TA</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.mdatests.host.TA(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="copper_features_mdatests_host_B">
+    <PP>copper_features:mdatests:host:B</PP>
+    <Regex><CharacterSet><SingleCharacter char="b"/></CharacterSet></Regex>
+    <Type>copper_features.mdatests.host.TB</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.mdatests.host.TB(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <DisambiguationFunction id="copper_features_mdatests___disam20">
+    <Members><TerminalRef id="copper_features_mdatests_ext_C" grammar="host" /><TerminalRef id="copper_features_mdatests_ext2_C" grammar="host" /></Members>
+    <Code><![CDATA[
+return (Integer)copper_features_mdatests_ext_C;
+]]></Code>
+  </DisambiguationFunction>
+
+  <Nonterminal id="copper_features_mdatests_host_Root">
+    <PP>copper_features:mdatests:host:Root</PP>
+    <Type><![CDATA[copper_features.mdatests.host.NRoot]]></Type>
+  </Nonterminal>
+  <Production id="copper_features_mdatests_ext2_ccc222">
+    <Code><![CDATA[
+RESULT = new copper_features.mdatests.ext2.Pccc222(_children[0], _children[1]);
+]]></Code>
+    <LHS><NonterminalRef id="copper_features_mdatests_host_Root" grammar="host" /></LHS>
+    <RHS><TerminalRef id="copper_features_mdatests_ext2_C" grammar="host" /><NonterminalRef id="copper_features_mdatests_host_Root" grammar="host" /></RHS>
+  </Production>
+  <Production id="copper_features_mdatests_ext_ccc">
+    <Code><![CDATA[
+RESULT = new copper_features.mdatests.ext.Pccc(_children[0], _children[1]);
+]]></Code>
+    <LHS><NonterminalRef id="copper_features_mdatests_host_Root" grammar="host" /></LHS>
+    <RHS><TerminalRef id="copper_features_mdatests_ext_C" grammar="host" /><NonterminalRef id="copper_features_mdatests_host_Root" grammar="host" /></RHS>
+  </Production>
+  <Production id="copper_features_mdatests_host_noroot">
+    <Code><![CDATA[
+RESULT = new copper_features.mdatests.host.Pnoroot();
+]]></Code>
+    <LHS><NonterminalRef id="copper_features_mdatests_host_Root" grammar="host" /></LHS>
+    <RHS></RHS>
+  </Production>
+  <Production id="copper_features_mdatests_host_bbb">
+    <Code><![CDATA[
+RESULT = new copper_features.mdatests.host.Pbbb(_children[0], _children[1]);
+]]></Code>
+    <LHS><NonterminalRef id="copper_features_mdatests_host_Root" grammar="host" /></LHS>
+    <RHS><TerminalRef id="copper_features_mdatests_host_B" grammar="host" /><NonterminalRef id="copper_features_mdatests_host_Root" grammar="host" /></RHS>
+  </Production>
+  <Production id="copper_features_mdatests_host_aaa">
+    <Code><![CDATA[
+RESULT = new copper_features.mdatests.host.Paaa(_children[0], _children[1]);
+]]></Code>
+    <LHS><NonterminalRef id="copper_features_mdatests_host_Root" grammar="host" /></LHS>
+    <RHS><TerminalRef id="copper_features_mdatests_host_A" grammar="host" /><NonterminalRef id="copper_features_mdatests_host_Root" grammar="host" /></RHS>
+  </Production>
+
+    </Declarations>
+  </Grammar>
+</CopperSpec>

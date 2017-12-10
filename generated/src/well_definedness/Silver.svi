@@ -1,0 +1,13 @@
+declaredName 'well_definedness'
+grammarTime 1508472159
+grammarSource "./well_definedness/"
+moduleNames ['edu:umn:cs:melt:ableC:host', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes', 'core']
+allDeps ['edu:umn:cs:melt:exts:ableC:algebraicDataTypes:patternmatching:concretesyntax', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:patternmatching:abstractsyntax', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:datatype:concretesyntax', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:datatype:abstractsyntax', 'core:monad', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:patternmatching', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:datatype', 'core', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes', 'edu:umn:cs:melt:ableC:host', 'well_definedness']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ ]
+syntax []
+parsers []
+flow []

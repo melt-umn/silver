@@ -1,0 +1,17 @@
+declaredName 'rhs'
+grammarTime 1508471626
+grammarSource "./rhs/"
+moduleNames ['test:term_b', 'host', 'rhs', 'core']
+allDeps ['core:monad', 'core', 'host', 'test:term_b', 'rhs']
+exportedGrammars ['host']
+optionalGrammars []
+condBuild []
+defs [
+ nt('Artifact.sv', 7, 12, 7, 13, 63, 64, 'rhs:A', [], nt('rhs:A', []), f),
+ prod('Artifact.sv', 9, 20, 9, 30, 87, 97, [], signature('rhs:rhsMissing', [element('_G_0', term('test:term_b:B_t'))], element('top', nt('rhs:A', [])), [])),
+ fun('Artifact.sv', 20, 7, 20, 21, 229, 243, [], signature('rhs:extendedParser', [element('stringToParse', string), element('filenameToReport', string)], element('__func__lhs', nt('core:ParseResult', [nt('host:Root', [])])), []))]
+syntax [nt([], nt('rhs:A', [])),
+ prod([], signature('rhs:rhsMissing', [element('_G_0', term('test:term_b:B_t'))], element('top', nt('rhs:A', [])), []), [])]
+parsers [parser('Artifact.sv', 20, 0, 23, 1, 222, 274,'rhs','rhs:extendedParser','host:Root',['host', 'rhs'],[],[],[])]
+flow [ntRefFlowDef('rhs:A', []),
+ prod('rhs:A', 'rhs:rhsMissing')]

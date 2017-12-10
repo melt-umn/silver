@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<CopperSpec xmlns="http://melt.cs.umn.edu/copper/xmlns">
+  <Parser id="copper_features_token_pushing_parse" isUnitary="true">
+    <PP>copper_features:token_pushing:parse</PP>
+    <Grammars><GrammarRef id="host"/></Grammars>
+    <StartSymbol><NonterminalRef id="copper_features_token_pushing_PushTokenRoot" grammar="host" /></StartSymbol>
+    <StartLayout><TerminalRef id="copper_features_token_pushing_Whitespace" grammar="host" /></StartLayout>
+    <ClassAuxiliaryCode><Code><![CDATA[
+          protected List<common.Terminal> tokenList = null;
+
+          public void reset() {
+            tokenList = new ArrayList<common.Terminal>();
+          }
+
+          public List<common.Terminal> getTokens() {
+            return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
+          }
+        ]]></Code></ClassAuxiliaryCode>
+    <ParserInitCode>
+      <Code><![CDATA[
+        reset();
+      ]]></Code>
+    </ParserInitCode>
+    <Preamble>
+<Code><![CDATA[
+import java.util.ArrayList;
+import java.util.List;
+]]></Code>
+    </Preamble>
+  </Parser>
+
+  <Grammar id="host">
+
+    <PP>host</PP>
+
+    <Layout><TerminalRef id="copper_features_token_pushing_Whitespace" grammar="host" /></Layout>
+    <Declarations>
+      <ParserAttribute id="context">
+        <Type><![CDATA[common.DecoratedNode]]></Type>
+        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>
+      </ParserAttribute>
+         <Terminal id="copper_features_token_pushing_A">
+    <PP>copper_features:token_pushing:A</PP>
+    <Regex><CharacterSet><SingleCharacter char="A"/></CharacterSet></Regex>
+    <Type>copper_features.token_pushing.TA</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.token_pushing.TA(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="copper_features_token_pushing_B">
+    <PP>copper_features:token_pushing:B</PP>
+    <Regex><CharacterSet><SingleCharacter char="B"/></CharacterSet></Regex>
+    <Type>copper_features.token_pushing.TB</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.token_pushing.TB(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+if(Integer.valueOf((int)1).equals(Integer.valueOf((int)1))){ pushToken(Terminals.copper_features_token_pushing_C, ((new common.StringCatter("C"))).toString());}]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="copper_features_token_pushing_C">
+    <PP>copper_features:token_pushing:C</PP>
+    <Regex><CharacterSet><SingleCharacter char="C"/></CharacterSet></Regex>
+    <Type>copper_features.token_pushing.TC</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.token_pushing.TC(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="copper_features_token_pushing_Whitespace">
+    <PP>copper_features:token_pushing:Whitespace</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char=" "/><SingleCharacter char="&#9;"/><SingleCharacter char="&#13;"/><SingleCharacter char="&#10;"/></CharacterSet><KleeneStar><CharacterSet><SingleCharacter char=" "/><SingleCharacter char="&#9;"/><SingleCharacter char="&#13;"/><SingleCharacter char="&#10;"/></CharacterSet></KleeneStar></Concatenation></Regex>
+    <Type>copper_features.token_pushing.TWhitespace</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.token_pushing.TWhitespace(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="copper_features_token_pushing_X">
+    <PP>copper_features:token_pushing:X</PP>
+    <Regex><CharacterSet><SingleCharacter char="X"/></CharacterSet></Regex>
+    <Type>copper_features.token_pushing.TX</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.token_pushing.TX(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="copper_features_token_pushing_Y">
+    <PP>copper_features:token_pushing:Y</PP>
+    <Regex><CharacterSet><SingleCharacter char="Y"/></CharacterSet></Regex>
+    <Type>copper_features.token_pushing.TY</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.token_pushing.TY(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+if(true){ pushToken(Terminals.copper_features_token_pushing_Z, ((new common.StringCatter("Z"))).toString());}]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="copper_features_token_pushing_Z">
+    <PP>copper_features:token_pushing:Z</PP>
+    <Regex><CharacterSet><SingleCharacter char="Z"/></CharacterSet></Regex>
+    <Type>copper_features.token_pushing.TZ</Type>
+    <Code><![CDATA[
+RESULT = new copper_features.token_pushing.TZ(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+
+  <Nonterminal id="copper_features_token_pushing_Contents">
+    <PP>copper_features:token_pushing:Contents</PP>
+    <Type><![CDATA[copper_features.token_pushing.NContents]]></Type>
+  </Nonterminal>
+  <Production id="copper_features_token_pushing_p_copper_features_token_pushing_TokenPush_sv_33_0">
+    <Code><![CDATA[
+RESULT = new copper_features.token_pushing.Pp_copper_features_token_pushing_TokenPush_sv_33_0(_children[0], _children[1], _children[2]);
+]]></Code>
+    <LHS><NonterminalRef id="copper_features_token_pushing_Contents" grammar="host" /></LHS>
+    <RHS><TerminalRef id="copper_features_token_pushing_X" grammar="host" /><TerminalRef id="copper_features_token_pushing_Y" grammar="host" /><TerminalRef id="copper_features_token_pushing_Z" grammar="host" /></RHS>
+  </Production>
+  <Production id="copper_features_token_pushing_p_copper_features_token_pushing_TokenPush_sv_32_0">
+    <Code><![CDATA[
+RESULT = new copper_features.token_pushing.Pp_copper_features_token_pushing_TokenPush_sv_32_0(_children[0], _children[1], _children[2]);
+]]></Code>
+    <LHS><NonterminalRef id="copper_features_token_pushing_Contents" grammar="host" /></LHS>
+    <RHS><TerminalRef id="copper_features_token_pushing_A" grammar="host" /><TerminalRef id="copper_features_token_pushing_B" grammar="host" /><TerminalRef id="copper_features_token_pushing_C" grammar="host" /></RHS>
+  </Production>
+
+  <Nonterminal id="copper_features_token_pushing_PushTokenRoot">
+    <PP>copper_features:token_pushing:PushTokenRoot</PP>
+    <Type><![CDATA[copper_features.token_pushing.NPushTokenRoot]]></Type>
+  </Nonterminal>
+  <Production id="copper_features_token_pushing_pushTokenRoot">
+    <Code><![CDATA[
+RESULT = new copper_features.token_pushing.PpushTokenRoot(_children[0]);
+]]></Code>
+    <LHS><NonterminalRef id="copper_features_token_pushing_PushTokenRoot" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="copper_features_token_pushing_Contents" grammar="host" /></RHS>
+  </Production>
+
+    </Declarations>
+  </Grammar>
+</CopperSpec>

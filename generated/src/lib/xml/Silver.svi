@@ -1,0 +1,13 @@
+declaredName 'lib:xml'
+grammarTime 1508471626
+grammarSource "../../grammars/lib/xml/"
+moduleNames ['lib:xml:ast', 'core']
+allDeps ['core:monad', 'core', 'lib:xml:ast', 'lib:xml']
+exportedGrammars ['lib:xml:ast']
+optionalGrammars []
+condBuild []
+defs [
+ fun('XMLTools.sv', 11, 9, 11, 22, 241, 254, [], signature('lib:xml:parseXMLFileN', [element('filename', string)], element('__func__lhs', nt('core:ParseResult', [nt('lib:xml:ast:XMLDocument', [])])), []))]
+syntax []
+parsers []
+flow []

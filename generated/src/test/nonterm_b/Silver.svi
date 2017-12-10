@@ -1,0 +1,18 @@
+declaredName 'test:nonterm_b'
+grammarTime 1508471626
+grammarSource "./test/nonterm_b/"
+moduleNames ['core']
+allDeps ['core:monad', 'core', 'test:nonterm_b']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ nt('b.sv', 3, 12, 3, 13, 37, 38, 'test:nonterm_b:B', [], nt('test:nonterm_b:B', []), f),
+ term('b.sv', 5, 9, 5, 17, 50, 58, 'test:nonterm_b:Mangle_t', /nonterm\_b\_mangle/),
+ prod('b.sv', 7, 20, 7, 33, 100, 113, [], signature('test:nonterm_b:nonterm_b_cnc', [element('_G_0', term('test:nonterm_b:Mangle_t'))], element('top', nt('test:nonterm_b:B', [])), []))]
+syntax [nt([], nt('test:nonterm_b:B', [])),
+ term('test:nonterm_b:Mangle_t', /nonterm\_b\_mangle/, []),
+ prod([], signature('test:nonterm_b:nonterm_b_cnc', [element('_G_0', term('test:nonterm_b:Mangle_t'))], element('top', nt('test:nonterm_b:B', [])), []), [])]
+parsers []
+flow [ntRefFlowDef('test:nonterm_b:B', []),
+ prod('test:nonterm_b:B', 'test:nonterm_b:nonterm_b_cnc')]

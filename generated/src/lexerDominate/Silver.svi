@@ -1,0 +1,14 @@
+declaredName 'lexerDominate'
+grammarTime 1508471626
+grammarSource "./lexerDominate/"
+moduleNames ['test:term_b', 'host', 'lexerDominate', 'core']
+allDeps ['core:monad', 'core', 'host', 'test:term_b', 'lexerDominate']
+exportedGrammars ['host']
+optionalGrammars []
+condBuild []
+defs [
+ fun('Artifact.sv', 7, 7, 7, 21, 68, 82, [], signature('lexerDominate:extendedParser', [element('stringToParse', string), element('filenameToReport', string)], element('__func__lhs', nt('core:ParseResult', [nt('host:Root', [])])), [])),
+ lexer_class('Artifact.sv', 12, 12, 12, 13, 138, 139, 'lexerDominate:A')]
+syntax [lclass('lexerDominate:A', [dom(['test:term_b:B_t'])])]
+parsers [parser('Artifact.sv', 7, 0, 10, 1, 61, 123,'lexerDominate','lexerDominate:extendedParser','host:Root',['host', 'lexerDominate'],[],[],[])]
+flow []

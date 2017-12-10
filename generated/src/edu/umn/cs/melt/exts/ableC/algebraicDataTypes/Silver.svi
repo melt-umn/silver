@@ -1,0 +1,13 @@
+declaredName 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes'
+grammarTime 1508471668
+grammarSource "../../../extensions/ableC-algebraic-data-types/grammars/edu.umn.cs.melt.exts.ableC.algebraicDataTypes/"
+moduleNames ['edu:umn:cs:melt:exts:ableC:algebraicDataTypes:datatype', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:patternmatching', 'core']
+allDeps ['core:monad', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:patternmatching:concretesyntax', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:patternmatching:abstractsyntax', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:datatype:concretesyntax', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:datatype:abstractsyntax', 'core', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:patternmatching', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:datatype', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes']
+exportedGrammars ['edu:umn:cs:melt:exts:ableC:algebraicDataTypes:datatype', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:patternmatching']
+optionalGrammars []
+condBuild []
+defs [
+ ]
+syntax []
+parsers []
+flow []

@@ -1,0 +1,24 @@
+declaredName 'edu:umn:cs:melt:ableC:concretesyntax:cppTags'
+grammarTime 1508471666
+grammarSource "../../../ableC/edu.umn.cs.melt.ableC/concretesyntax/cppTags/"
+moduleNames ['edu:umn:cs:melt:ableC:concretesyntax', 'core']
+allDeps ['core:monad', 'edu:umn:cs:melt:ableC:concretesyntax:gcc_exts', 'edu:umn:cs:melt:ableC:concretesyntax:c11', 'core', 'edu:umn:cs:melt:ableC:concretesyntax', 'edu:umn:cs:melt:ableC:concretesyntax:cppTags']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ syn('CPPTags.sv', 9, 22, 9, 35, 301, 314, 'edu:umn:cs:melt:ableC:concretesyntax:cppTags:tagIsNewStart', [], bool),
+ syn('CPPTags.sv', 14, 22, 14, 33, 443, 454, 'edu:umn:cs:melt:ableC:concretesyntax:cppTags:tagIsReturn', [], bool),
+ syn('CPPTags.sv', 19, 22, 19, 33, 624, 635, 'edu:umn:cs:melt:ableC:concretesyntax:cppTags:tagIsSystem', [], bool),
+ syn('CPPTags.sv', 24, 22, 24, 34, 800, 812, 'edu:umn:cs:melt:ableC:concretesyntax:cppTags:tagIsExternC', [], bool),
+ term('CPPTags.sv', 26, 9, 26, 16, 835, 842, 'edu:umn:cs:melt:ableC:concretesyntax:cppTags:Space_t', /[\ ]+/),
+ term('CPPTags.sv', 27, 9, 27, 15, 861, 867, 'edu:umn:cs:melt:ableC:concretesyntax:cppTags:Hash_t', /\#/),
+ term('CPPTags.sv', 31, 16, 31, 34, 905, 923, 'edu:umn:cs:melt:ableC:concretesyntax:cppTags:CPP_Location_Tag_t', /\#\ [0-9]+\ \"[^\"]+\"[\ 0-9]*([\n\r]+)/)]
+syntax [term('edu:umn:cs:melt:ableC:concretesyntax:cppTags:Space_t', /[\ ]+/, []),
+ term('edu:umn:cs:melt:ableC:concretesyntax:cppTags:Hash_t', /\#/, []),
+ term('edu:umn:cs:melt:ableC:concretesyntax:cppTags:CPP_Location_Tag_t', /\#\ [0-9]+\ \"[^\"]+\"[\ 0-9]*([\n\r]+)/, [ignore(),acode("virtualLocation.setFileName(((common.StringCatter)core.Psubstring.invoke(Integer.valueOf(((Integer)core.PindexOf.invoke((new common.StringCatter(\"\\\"\")), new common.StringCatter(lexeme))) + Integer.valueOf((int)1)), ((Integer)core.PlastIndexOf.invoke((new common.StringCatter(\"\\\"\")), new common.StringCatter(lexeme))), new common.StringCatter(lexeme))).toString());
+virtualLocation.setLine(Integer.valueOf(((common.StringCatter)core.Psubstring.invoke(Integer.valueOf((int)2), Integer.valueOf(((Integer)core.PindexOf.invoke((new common.StringCatter(\"\\\"\")), new common.StringCatter(lexeme))) - Integer.valueOf((int)1)), new common.StringCatter(lexeme))).toString()));
+virtualLocation.setColumn(Integer.valueOf((int)0));
+")])]
+parsers []
+flow []

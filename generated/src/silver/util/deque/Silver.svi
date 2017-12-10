@@ -1,0 +1,45 @@
+declaredName 'silver:util:deque'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/util/deque/"
+moduleNames ['core']
+allDeps ['core:monad', 'core', 'silver:util:deque']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ nt('Deque.sv', 5, 12, 5, 17, 79, 84, 'silver:util:deque:Deque', [a], nt('silver:util:deque:Deque', [a]), f),
+ prod('Deque.sv', 7, 20, 7, 25, 110, 115, [a], signature('silver:util:deque:deque', [element('ln', int), element('l', [a]), element('rn', int), element('r', [a])], element('top', nt('silver:util:deque:Deque', [a])), [])),
+ fun('Deque.sv', 11, 9, 11, 16, 185, 192, [a], signature('silver:util:deque:dqEmpty', [], element('__func__lhs', nt('silver:util:deque:Deque', [a])), [])),
+ fun('Deque.sv', 17, 9, 17, 15, 250, 256, [a], signature('silver:util:deque:dqCons', [element('e', a), element('q', nt('silver:util:deque:Deque', [a]))], element('__func__lhs', nt('silver:util:deque:Deque', [a])), [])),
+ fun('Deque.sv', 22, 9, 22, 15, 368, 374, [a], signature('silver:util:deque:dqHead', [element('q', nt('silver:util:deque:Deque', [a]))], element('__func__lhs', a), [])),
+ fun('Deque.sv', 30, 9, 30, 15, 506, 512, [a], signature('silver:util:deque:dqTail', [element('q', nt('silver:util:deque:Deque', [a]))], element('__func__lhs', nt('silver:util:deque:Deque', [a])), [])),
+ fun('Deque.sv', 38, 9, 38, 15, 686, 692, [a], signature('silver:util:deque:dqSnoc', [element('q', nt('silver:util:deque:Deque', [a])), element('e', a)], element('__func__lhs', nt('silver:util:deque:Deque', [a])), [])),
+ fun('Deque.sv', 43, 9, 43, 15, 804, 810, [a], signature('silver:util:deque:dqLast', [element('q', nt('silver:util:deque:Deque', [a]))], element('__func__lhs', a), [])),
+ fun('Deque.sv', 51, 9, 51, 15, 942, 948, [a], signature('silver:util:deque:dqInit', [element('q', nt('silver:util:deque:Deque', [a]))], element('__func__lhs', nt('silver:util:deque:Deque', [a])), [])),
+ fun('Deque.sv', 59, 9, 59, 18, 1122, 1131, [a], signature('silver:util:deque:dqIsEmpty', [element('q', nt('silver:util:deque:Deque', [a]))], element('__func__lhs', bool), [])),
+ fun('Deque.sv', 64, 9, 64, 18, 1232, 1241, [a], signature('silver:util:deque:dqReverse', [element('q', nt('silver:util:deque:Deque', [a]))], element('__func__lhs', nt('silver:util:deque:Deque', [a])), [])),
+ fun('Deque.sv', 70, 9, 70, 16, 1343, 1350, [a], signature('silver:util:deque:dqCheck', [element('lenf', int), element('f', [a]), element('lenr', int), element('r', [a])], element('__func__lhs', nt('silver:util:deque:Deque', [a])), []))]
+syntax [nt([a], nt('silver:util:deque:Deque', [a]))]
+parsers []
+flow [ntRefFlowDef('silver:util:deque:Deque', []),
+ prod('silver:util:deque:Deque', 'silver:util:deque:deque'),
+ patternRuleEq('silver:util:deque:dqCons', 'silver:util:deque:deque', rhs('q'), []),
+ anon('silver:util:deque:dqHead', '__scrutinee22304:line26', 'core:List', 'Deque.sv', 26, 4, 26, 27, 419, 442, []),
+ anon('silver:util:deque:dqHead', '__scrutinee22305:line26', 'core:List', 'Deque.sv', 26, 4, 26, 27, 419, 442, []),
+ patternRuleEq('silver:util:deque:dqHead', 'silver:util:deque:deque', rhs('q'), []),
+ anon('silver:util:deque:dqTail', '__scrutinee22306:line34', 'core:List', 'Deque.sv', 34, 4, 34, 35, 564, 595, []),
+ anon('silver:util:deque:dqTail', '__scrutinee22307:line34', 'core:List', 'Deque.sv', 34, 4, 34, 35, 564, 595, []),
+ patternRuleEq('silver:util:deque:dqTail', 'silver:util:deque:deque', rhs('q'), []),
+ patternRuleEq('silver:util:deque:dqSnoc', 'silver:util:deque:deque', rhs('q'), []),
+ anon('silver:util:deque:dqLast', '__scrutinee22308:line47', 'core:List', 'Deque.sv', 47, 4, 47, 27, 855, 878, []),
+ anon('silver:util:deque:dqLast', '__scrutinee22309:line47', 'core:List', 'Deque.sv', 47, 4, 47, 27, 855, 878, []),
+ anon('silver:util:deque:dqLast', '__scrutinee22310:line47', 'core:List', 'Deque.sv', 47, 4, 47, 27, 855, 878, []),
+ patternRuleEq('silver:util:deque:dqLast', 'silver:util:deque:deque', rhs('q'), []),
+ anon('silver:util:deque:dqInit', '__scrutinee22311:line55', 'core:List', 'Deque.sv', 55, 4, 55, 35, 1000, 1031, []),
+ anon('silver:util:deque:dqInit', '__scrutinee22312:line55', 'core:List', 'Deque.sv', 55, 4, 55, 35, 1000, 1031, []),
+ anon('silver:util:deque:dqInit', '__scrutinee22313:line55', 'core:List', 'Deque.sv', 55, 4, 55, 35, 1000, 1031, []),
+ patternRuleEq('silver:util:deque:dqInit', 'silver:util:deque:deque', rhs('q'), []),
+ patternRuleEq('silver:util:deque:dqIsEmpty', 'silver:util:deque:deque', rhs('q'), []),
+ patternRuleEq('silver:util:deque:dqReverse', 'silver:util:deque:deque', rhs('q'), []),
+ local('silver:util:deque:dqCheck', 'silver:util:deque:dqCheck:local:mid', '', []),
+ local('silver:util:deque:dqCheck', 'silver:util:deque:dqCheck:local:rest', '', [localEqV('silver:util:deque:dqCheck:local:mid')])]

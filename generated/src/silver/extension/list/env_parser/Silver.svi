@@ -1,0 +1,14 @@
+declaredName 'silver:extension:list:env_parser'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/extension/list/env_parser/"
+moduleNames ['silver:extension:list', 'silver:definition:env', 'silver:definition:env:env_parser', 'silver:definition:core', 'core']
+allDeps ['silver:definition:flow:env_parser', 'core:monad', 'silver:definition:flow:env', 'silver:analysis:typechecking:core', 'core', 'silver:definition:core', 'silver:definition:env:env_parser', 'silver:definition:env', 'silver:extension:list', 'silver:extension:list:env_parser']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ prod('Parser.sv', 9, 20, 9, 32, 251, 263, [], signature('silver:extension:list:env_parser:aTypeRepList', [element('_G_2', term('silver:definition:env:env_parser:LB_t')), element('tr', nt('silver:definition:env:env_parser:ITypeRep', [])), element('_G_0', term('silver:definition:env:env_parser:RB_t'))], element('top', nt('silver:definition:env:env_parser:ITypeRep', [])), []))]
+syntax [prod([], signature('silver:extension:list:env_parser:aTypeRepList', [element('_G_2', term('silver:definition:env:env_parser:LB_t')), element('tr', nt('silver:definition:env:env_parser:ITypeRep', [])), element('_G_0', term('silver:definition:env:env_parser:RB_t'))], element('top', nt('silver:definition:env:env_parser:ITypeRep', [])), []), [])]
+parsers []
+flow [syn('silver:extension:list:env_parser:aTypeRepList', 'silver:definition:env:typerep', [rhsV('tr', 'silver:definition:env:typerep')], f),
+ prod('silver:definition:env:env_parser:ITypeRep', 'silver:extension:list:env_parser:aTypeRepList')]

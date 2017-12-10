@@ -1,0 +1,14 @@
+declaredName 'artifact'
+grammarTime 1508472232
+grammarSource "./artifact/"
+moduleNames ['edu:umn:cs:melt:ableC:drivers:compile', 'edu:umn:cs:melt:ableC:concretesyntax', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes', 'core']
+allDeps ['edu:umn:cs:melt:exts:ableC:algebraicDataTypes:patternmatching:concretesyntax', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:patternmatching:abstractsyntax', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:datatype:concretesyntax', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:datatype:abstractsyntax', 'core:monad', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:patternmatching', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes:datatype', 'edu:umn:cs:melt:ableC:concretesyntax:gcc_exts', 'edu:umn:cs:melt:ableC:concretesyntax:c11', 'edu:umn:cs:melt:ableC:concretesyntax:cppTags', 'core', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes', 'edu:umn:cs:melt:ableC:concretesyntax', 'edu:umn:cs:melt:ableC:drivers:compile', 'artifact']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ fun('Artifact.sv', 14, 7, 14, 21, 355, 369, [], signature('artifact:extendedParser', [element('stringToParse', string), element('filenameToReport', string)], element('__func__lhs', nt('core:ParseResult', [nt('edu:umn:cs:melt:ableC:concretesyntax:Root', [])])), [])),
+ fun('Artifact.sv', 19, 9, 19, 13, 486, 490, [], signature('artifact:main', [element('args', [string]), element('io_in', foreigntype('core:IO', []))], element('__func__lhs', nt('core:IOVal', [int])), []))]
+syntax []
+parsers [parser('Artifact.sv', 14, 0, 17, 1, 348, 474,'artifact','artifact:extendedParser','edu:umn:cs:melt:ableC:concretesyntax:Root',['edu:umn:cs:melt:ableC:concretesyntax', 'edu:umn:cs:melt:exts:ableC:algebraicDataTypes'],[],[],[])]
+flow []

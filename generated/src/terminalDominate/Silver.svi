@@ -1,0 +1,14 @@
+declaredName 'terminalDominate'
+grammarTime 1508471626
+grammarSource "./terminalDominate/"
+moduleNames ['test:term_b', 'host', 'terminalDominate', 'core']
+allDeps ['core:monad', 'core', 'host', 'test:term_b', 'terminalDominate']
+exportedGrammars ['host']
+optionalGrammars []
+condBuild []
+defs [
+ fun('Artifact.sv', 6, 7, 6, 21, 70, 84, [], signature('terminalDominate:extendedParser', [element('stringToParse', string), element('filenameToReport', string)], element('__func__lhs', nt('core:ParseResult', [nt('host:Root', [])])), [])),
+ term('Artifact.sv', 11, 9, 11, 12, 140, 143, 'terminalDominate:A_t', /A/)]
+syntax [term('terminalDominate:A_t', /A/, [dom(['test:term_b:B_t'])])]
+parsers [parser('Artifact.sv', 6, 0, 9, 1, 63, 128,'terminalDominate','terminalDominate:extendedParser','host:Root',['host', 'terminalDominate'],[],[],[])]
+flow []

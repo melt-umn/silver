@@ -1,0 +1,83 @@
+declaredName 'silver:testing'
+grammarTime 1508471626
+grammarSource "../../grammars/silver/testing/"
+moduleNames ['core']
+allDeps ['core:monad', 'core', 'silver:testing']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ nt('TestSuite.sv', 3, 12, 3, 16, 38, 42, 'silver:testing:Test', [], nt('silver:testing:Test', []), f),
+ @('TestSuite.sv', 4, 7, 4, 10, 51, 54, 'silver:testing:Test', 'silver:testing:msg', [], nt('silver:testing:Test', []), string),
+ @('TestSuite.sv', 4, 12, 4, 16, 56, 60, 'silver:testing:Test', 'silver:testing:pass', [], nt('silver:testing:Test', []), bool),
+ @('TestSuite.sv', 4, 18, 4, 22, 62, 66, 'silver:testing:Test', 'silver:testing:ioIn', [], nt('silver:testing:Test', []), foreigntype('core:IO', [])),
+ @('TestSuite.sv', 4, 24, 4, 29, 68, 73, 'silver:testing:Test', 'silver:testing:ioOut', [], nt('silver:testing:Test', []), foreigntype('core:IO', [])),
+ nt('TestSuite.sv', 6, 12, 6, 21, 89, 98, 'silver:testing:TestSuite', [], nt('silver:testing:TestSuite', []), f),
+ @('TestSuite.sv', 7, 7, 7, 10, 107, 110, 'silver:testing:TestSuite', 'silver:testing:msg', [], nt('silver:testing:TestSuite', []), string),
+ @('TestSuite.sv', 7, 12, 7, 20, 112, 120, 'silver:testing:TestSuite', 'silver:testing:numTests', [], nt('silver:testing:TestSuite', []), int),
+ @('TestSuite.sv', 7, 22, 7, 31, 122, 131, 'silver:testing:TestSuite', 'silver:testing:numPassed', [], nt('silver:testing:TestSuite', []), int),
+ @('TestSuite.sv', 7, 33, 7, 42, 133, 142, 'silver:testing:TestSuite', 'silver:testing:numFailed', [], nt('silver:testing:TestSuite', []), int),
+ @('TestSuite.sv', 7, 44, 7, 48, 144, 148, 'silver:testing:TestSuite', 'silver:testing:ioIn', [], nt('silver:testing:TestSuite', []), foreigntype('core:IO', [])),
+ @('TestSuite.sv', 7, 50, 7, 55, 150, 155, 'silver:testing:TestSuite', 'silver:testing:ioOut', [], nt('silver:testing:TestSuite', []), foreigntype('core:IO', [])),
+ syn('TestSuite.sv', 9, 22, 9, 26, 181, 185, 'silver:testing:pass', [], bool),
+ syn('TestSuite.sv', 10, 22, 10, 25, 221, 224, 'silver:testing:msg', [], string),
+ syn('TestSuite.sv', 11, 22, 11, 30, 259, 267, 'silver:testing:numTests', [], int),
+ syn('TestSuite.sv', 12, 22, 12, 31, 303, 312, 'silver:testing:numPassed', [], int),
+ syn('TestSuite.sv', 13, 22, 13, 31, 348, 357, 'silver:testing:numFailed', [], int),
+ syn('TestSuite.sv', 15, 22, 15, 27, 394, 399, 'silver:testing:ioOut', [], foreigntype('core:IO', [])),
+ inh('TestSuite.sv', 16, 20, 16, 24, 428, 432, 'silver:testing:ioIn', [], foreigntype('core:IO', [])),
+ prod('TestSuite.sv', 18, 20, 18, 27, 462, 469, [], signature('silver:testing:defTest', [], element('t', nt('silver:testing:Test', [])), [])),
+ prod('TestSuite.sv', 25, 20, 25, 32, 560, 572, [], signature('silver:testing:testsCollect', [element('tss', [nt('silver:testing:TestSuite', [])])], element('t', nt('silver:testing:TestSuite', [])), [])),
+ p@('TestSuite.sv', 25, 20, 25, 32, 560, 572, [], signature('silver:testing:testsCollect', [element('tss', [nt('silver:testing:TestSuite', [])])], element('t', nt('silver:testing:TestSuite', [])), []), [
+ fwd('TestSuite.sv', 27, 2, 27, 44, 611, 653, nt('silver:testing:TestSuite', []))]),
+ prod('TestSuite.sv', 29, 20, 29, 25, 678, 683, [], signature('silver:testing:tests', [element('ts', [nt('silver:testing:Test', [])])], element('t', nt('silver:testing:TestSuite', [])), [])),
+ p@('TestSuite.sv', 29, 20, 29, 25, 678, 683, [], signature('silver:testing:tests', [element('ts', [nt('silver:testing:Test', [])])], element('t', nt('silver:testing:TestSuite', [])), []), [
+ fwd('TestSuite.sv', 31, 2, 31, 32, 714, 744, nt('silver:testing:TestSuite', []))]),
+ fun('TestSuite.sv', 34, 9, 34, 18, 759, 768, [], signature('silver:testing:testsAsNT', [element('ts', [nt('silver:testing:Test', [])])], element('__func__lhs', nt('silver:testing:TestSuite', [])), [])),
+ fun('TestSuite.sv', 42, 9, 42, 29, 913, 933, [], signature('silver:testing:consolidateTestSuite', [element('ts', [nt('silver:testing:TestSuite', [])])], element('__func__lhs', nt('silver:testing:TestSuite', [])), [])),
+ prod('TestSuite.sv', 50, 20, 50, 28, 1114, 1122, [], signature('silver:testing:testNone', [], element('ts', nt('silver:testing:TestSuite', [])), [])),
+ prod('TestSuite.sv', 60, 20, 60, 28, 1287, 1295, [], signature('silver:testing:testCons', [element('t', nt('silver:testing:Test', [])), element('rest', nt('silver:testing:TestSuite', []))], element('ts', nt('silver:testing:TestSuite', [])), [])),
+ prod('TestSuite.sv', 81, 20, 81, 33, 1823, 1836, [], signature('silver:testing:testSuiteNone', [], element('ts', nt('silver:testing:TestSuite', [])), [])),
+ prod('TestSuite.sv', 91, 20, 91, 32, 2001, 2013, [], signature('silver:testing:testSuiteSeq', [element('ts1', nt('silver:testing:TestSuite', [])), element('ts2', nt('silver:testing:TestSuite', []))], element('ts', nt('silver:testing:TestSuite', [])), [])),
+ fun('TestSuite.sv', 104, 9, 104, 24, 2316, 2331, [], signature('silver:testing:repeatTestTimes', [element('f', fun([], bool)), element('times', int)], element('__func__lhs', bool), []))]
+syntax [nt([], nt('silver:testing:Test', [])),
+ nt([], nt('silver:testing:TestSuite', []))]
+parsers []
+flow [ntRefFlowDef('silver:testing:Test', ['silver:testing:ioIn']),
+ ntRefFlowDef('silver:testing:TestSuite', ['silver:testing:ioIn']),
+ syn('silver:testing:defTest', 'silver:testing:pass', [], t),
+ syn('silver:testing:defTest', 'silver:testing:msg', [], t),
+ syn('silver:testing:defTest', 'silver:testing:ioOut', [lhsInhV('silver:testing:ioIn')], t),
+ prod('silver:testing:Test', 'silver:testing:defTest'),
+ fwd('silver:testing:testsCollect', [], t),
+ implicitFwdAffects('silver:testing:testsCollect', ['silver:testing:ioOut', 'silver:testing:ioIn', 'silver:testing:numFailed', 'silver:testing:numPassed', 'silver:testing:numTests', 'silver:testing:msg']),
+ fwd('silver:testing:tests', [], t),
+ implicitFwdAffects('silver:testing:tests', ['silver:testing:ioOut', 'silver:testing:ioIn', 'silver:testing:numFailed', 'silver:testing:numPassed', 'silver:testing:numTests', 'silver:testing:msg']),
+ syn('silver:testing:testNone', 'silver:testing:msg', [], t),
+ syn('silver:testing:testNone', 'silver:testing:numTests', [], t),
+ syn('silver:testing:testNone', 'silver:testing:numPassed', [], t),
+ syn('silver:testing:testNone', 'silver:testing:numFailed', [lhsSynV('silver:testing:numTests'), lhsSynV('silver:testing:numPassed')], t),
+ syn('silver:testing:testNone', 'silver:testing:ioOut', [lhsInhV('silver:testing:ioIn')], t),
+ prod('silver:testing:TestSuite', 'silver:testing:testNone'),
+ syn('silver:testing:testCons', 'silver:testing:msg', [rhsV('t', 'silver:testing:pass'), rhsV('t', 'silver:testing:msg'), rhsV('rest', 'silver:testing:msg')], t),
+ syn('silver:testing:testCons', 'silver:testing:numTests', [rhsV('rest', 'silver:testing:numTests')], t),
+ syn('silver:testing:testCons', 'silver:testing:numPassed', [rhsV('t', 'silver:testing:pass'), rhsV('rest', 'silver:testing:numPassed')], t),
+ syn('silver:testing:testCons', 'silver:testing:numFailed', [lhsSynV('silver:testing:numTests'), lhsSynV('silver:testing:numPassed')], t),
+ inh('silver:testing:testCons', 'rest', 'silver:testing:ioIn', [lhsInhV('silver:testing:ioIn')]),
+ inh('silver:testing:testCons', 't', 'silver:testing:ioIn', [rhsV('rest', 'silver:testing:ioOut')]),
+ syn('silver:testing:testCons', 'silver:testing:ioOut', [rhsV('t', 'silver:testing:ioOut')], t),
+ prod('silver:testing:TestSuite', 'silver:testing:testCons'),
+ syn('silver:testing:testSuiteNone', 'silver:testing:msg', [], t),
+ syn('silver:testing:testSuiteNone', 'silver:testing:numTests', [], t),
+ syn('silver:testing:testSuiteNone', 'silver:testing:numPassed', [], t),
+ syn('silver:testing:testSuiteNone', 'silver:testing:numFailed', [lhsSynV('silver:testing:numTests'), lhsSynV('silver:testing:numPassed')], t),
+ syn('silver:testing:testSuiteNone', 'silver:testing:ioOut', [lhsInhV('silver:testing:ioIn')], t),
+ prod('silver:testing:TestSuite', 'silver:testing:testSuiteNone'),
+ syn('silver:testing:testSuiteSeq', 'silver:testing:msg', [rhsV('ts1', 'silver:testing:msg'), rhsV('ts2', 'silver:testing:msg')], t),
+ syn('silver:testing:testSuiteSeq', 'silver:testing:numTests', [rhsV('ts1', 'silver:testing:numTests'), rhsV('ts2', 'silver:testing:numTests')], t),
+ syn('silver:testing:testSuiteSeq', 'silver:testing:numPassed', [rhsV('ts1', 'silver:testing:numPassed'), rhsV('ts2', 'silver:testing:numPassed')], t),
+ syn('silver:testing:testSuiteSeq', 'silver:testing:numFailed', [lhsSynV('silver:testing:numTests'), lhsSynV('silver:testing:numPassed')], t),
+ inh('silver:testing:testSuiteSeq', 'ts1', 'silver:testing:ioIn', [lhsInhV('silver:testing:ioIn')]),
+ inh('silver:testing:testSuiteSeq', 'ts2', 'silver:testing:ioIn', [rhsV('ts1', 'silver:testing:ioOut')]),
+ syn('silver:testing:testSuiteSeq', 'silver:testing:ioOut', [rhsV('ts2', 'silver:testing:ioOut')], t),
+ prod('silver:testing:TestSuite', 'silver:testing:testSuiteSeq')]

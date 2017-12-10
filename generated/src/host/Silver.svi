@@ -1,0 +1,17 @@
+declaredName 'host'
+grammarTime 1508471626
+grammarSource "./host/"
+moduleNames ['host', 'core']
+allDeps ['core:monad', 'core', 'host']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ nt('Artifact.sv', 7, 12, 7, 16, 152, 156, 'host:Root', [], nt('host:Root', []), f),
+ prod('Artifact.sv', 9, 20, 9, 26, 179, 185, [], signature('host:root_c', [], element('top', nt('host:Root', [])), [])),
+ fun('Artifact.sv', 13, 7, 13, 8, 211, 212, [], signature('host:p', [element('stringToParse', string), element('filenameToReport', string)], element('__func__lhs', nt('core:ParseResult', [nt('host:Root', [])])), []))]
+syntax [nt([], nt('host:Root', [])),
+ prod([], signature('host:root_c', [], element('top', nt('host:Root', [])), []), [])]
+parsers [parser('Artifact.sv', 13, 0, 15, 1, 204, 234,'host','host:p','host:Root',['host'],[],[],[])]
+flow [ntRefFlowDef('host:Root', []),
+ prod('host:Root', 'host:root_c')]

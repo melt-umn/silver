@@ -1,0 +1,13 @@
+declaredName 'test:term_b'
+grammarTime 1508471626
+grammarSource "./test/term_b/"
+moduleNames ['core']
+allDeps ['core:monad', 'core', 'test:term_b']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ term('b.sv', 3, 9, 3, 12, 31, 34, 'test:term_b:B_t', /AA/)]
+syntax [term('test:term_b:B_t', /AA/, [])]
+parsers []
+flow []

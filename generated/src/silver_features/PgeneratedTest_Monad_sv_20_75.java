@@ -1,0 +1,133 @@
+
+package silver_features;
+
+// t::Test ::= 
+public final class PgeneratedTest_Monad_sv_20_75 extends silver.testing.NTest {
+
+
+
+	public static final Class<?> childTypes[] = {};
+
+	public static final int num_local_attrs = Init.count_local__ON__silver_features_generatedTest_Monad_sv_20_75;
+	public static final String[] occurs_local = new String[num_local_attrs];
+
+	public static final common.Lazy[] forwardInheritedAttributes = new common.Lazy[silver.testing.NTest.num_inh_attrs];
+
+	public static final common.Lazy[] synthesizedAttributes = new common.Lazy[silver.testing.NTest.num_syn_attrs];
+	public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[0][];
+
+	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
+	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
+
+	static {
+
+	}
+
+	public PgeneratedTest_Monad_sv_20_75() {
+		super();
+
+	}
+
+
+
+	@Override
+	public Object getChild(final int index) {
+		switch(index) {
+
+			default: return null;
+		}
+	}
+
+	@Override
+	public Object getChildLazy(final int index) {
+		switch(index) {
+
+			default: return null;
+		}
+	}
+
+	@Override
+	public final int getNumberOfChildren() {
+		return 0;
+	}
+
+	@Override
+	public common.Lazy getSynthesized(final int index) {
+		return synthesizedAttributes[index];
+	}
+
+	@Override
+	public common.Lazy[] getLocalInheritedAttributes(final int key) {
+		return localInheritedAttributes[key];
+	}
+
+	@Override
+	public common.Lazy[] getChildInheritedAttributes(final int key) {
+		return childInheritedAttributes[key];
+	}
+
+	@Override
+	public boolean hasForward() {
+		return true;
+	}
+
+	@Override
+	public common.Node evalForward(final common.DecoratedNode context) {
+		return ((silver.testing.NTest)new silver.testing.PdefTest());
+	}
+
+	@Override
+	public common.Lazy getForwardInheritedAttributes(final int index) {
+		return forwardInheritedAttributes[index];
+	}
+
+	@Override
+	public common.Lazy getLocal(final int key) {
+		return localAttributes[key];
+	}
+
+	@Override
+	public final int getNumberOfLocalAttrs() {
+		return num_local_attrs;
+	}
+
+	@Override
+	public final String getNameOfLocalAttr(final int index) {
+		return occurs_local[index];
+	}
+
+	@Override
+	public String getName() {
+		return "silver_features:generatedTest_Monad_sv_20_75";
+	}
+
+	static void initProductionAttributeDefinitions() {
+		// value = foldr(\ a::Integer b::Integer  -> a + b, 0, monadRes2,)
+		silver_features.PgeneratedTest_Monad_sv_20_75.localAttributes[silver_features.Init.value__ON__silver_features_generatedTest_Monad_sv_20_75] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((Integer)core.Pfoldr.invoke((new common.NodeFactory<Integer>() {
+  public final Integer invoke(final Object[] args, final Object[] namedArgs) {
+    final Object __SV_LAMBDA_PARAM_167_a = args[0];
+final Object __SV_LAMBDA_PARAM_168_b = args[1];
+
+    return Integer.valueOf(((Integer)common.Util.demand(__SV_LAMBDA_PARAM_167_a)) + ((Integer)common.Util.demand(__SV_LAMBDA_PARAM_168_b)));
+  }
+}), Integer.valueOf((int)0), silver_features.Init.monadRes2)); } };
+		// expected = 90
+		silver_features.PgeneratedTest_Monad_sv_20_75.localAttributes[silver_features.Init.expected__ON__silver_features_generatedTest_Monad_sv_20_75] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return Integer.valueOf((int)90); } };
+		// t.msg = "Test at 'Monad.sv', 20, 0, 20, 94, 381, 475 failed.\nChecking that expression\n   foldr(\\\\ a::Integer b::Integer  -> a + b, 0, monadRes2,)\nshould be same as expression\n   90\nActual value:\n   " ++ toStringFromInteger(value,) ++ "\nExpected value: \n   " ++ toStringFromInteger(expected,) ++ "\n" ++ ""
+		silver_features.PgeneratedTest_Monad_sv_20_75.synthesizedAttributes[silver.testing.Init.silver_testing_msg__ON__silver_testing_Test] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return new common.StringCatter((common.StringCatter)(new common.StringCatter("Test at 'Monad.sv', 20, 0, 20, 94, 381, 475 failed.\nChecking that expression\n   foldr(\\\\ a::Integer b::Integer  -> a + b, 0, monadRes2,)\nshould be same as expression\n   90\nActual value:\n   ")), (common.StringCatter)new common.StringCatter((common.StringCatter)((common.StringCatter)lib.extcore.PtoStringFromInteger.invoke(context.localAsIsLazy(silver_features.Init.value__ON__silver_features_generatedTest_Monad_sv_20_75))), (common.StringCatter)new common.StringCatter((common.StringCatter)(new common.StringCatter("\nExpected value: \n   ")), (common.StringCatter)new common.StringCatter((common.StringCatter)((common.StringCatter)lib.extcore.PtoStringFromInteger.invoke(context.localAsIsLazy(silver_features.Init.expected__ON__silver_features_generatedTest_Monad_sv_20_75))), (common.StringCatter)new common.StringCatter((common.StringCatter)(new common.StringCatter("\n")), (common.StringCatter)(new common.StringCatter(""))))))); } };
+		// t.pass = equalsInteger(value, expected,)
+		silver_features.PgeneratedTest_Monad_sv_20_75.synthesizedAttributes[silver.testing.Init.silver_testing_pass__ON__silver_testing_Test] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((Boolean)lib.extcore.PequalsInteger.invoke(context.localAsIsLazy(silver_features.Init.value__ON__silver_features_generatedTest_Monad_sv_20_75), context.localAsIsLazy(silver_features.Init.expected__ON__silver_features_generatedTest_Monad_sv_20_75))); } };
+
+	}
+
+	public static final common.NodeFactory<PgeneratedTest_Monad_sv_20_75> factory = new Factory();
+
+	public static final class Factory extends common.NodeFactory<PgeneratedTest_Monad_sv_20_75> {
+
+		@Override
+		public PgeneratedTest_Monad_sv_20_75 invoke(final Object[] children, final Object[] annotations) {
+			return new PgeneratedTest_Monad_sv_20_75();
+		}
+	};
+
+}

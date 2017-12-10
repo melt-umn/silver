@@ -1,0 +1,30 @@
+declaredName 'silver:analysis:warnings:exporting'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/analysis/warnings/exporting/"
+moduleNames ['silver:driver', 'silver:util:cmdargs', 'silver:definition:core', 'silver:definition:env', 'core']
+allDeps ['core:monad', 'silver:definition:flow:env', 'silver:analysis:typechecking:core', 'silver:driver:util', 'core', 'silver:definition:env', 'silver:definition:core', 'silver:util:cmdargs', 'silver:driver', 'silver:analysis:warnings:exporting']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ syn('Graph.sv', 11, 22, 11, 34, 246, 258, 'silver:analysis:warnings:exporting:dumpDepGraph', [], bool),
+ @('Graph.sv', 11, 22, 11, 34, 246, 258, 'silver:util:cmdargs:CmdArgs', 'silver:analysis:warnings:exporting:dumpDepGraph', [], nt('silver:util:cmdargs:CmdArgs', []), bool),
+ prod('Graph.sv', 18, 20, 18, 36, 390, 406, [], signature('silver:analysis:warnings:exporting:dumpDepGraphFlag', [element('rest', nt('silver:util:cmdargs:CmdArgs', []))], element('top', nt('silver:util:cmdargs:CmdArgs', [])), [])),
+ p@('Graph.sv', 18, 20, 18, 36, 390, 406, [], signature('silver:analysis:warnings:exporting:dumpDepGraphFlag', [element('rest', nt('silver:util:cmdargs:CmdArgs', []))], element('top', nt('silver:util:cmdargs:CmdArgs', [])), []), [
+ fwd('Graph.sv', 22, 2, 22, 19, 469, 486, nt('silver:util:cmdargs:CmdArgs', []))]),
+ prod('Graph.sv', 36, 20, 36, 38, 907, 925, [], signature('silver:analysis:warnings:exporting:dumpDepGraphAction', [element('specs', [decorated(nt('silver:driver:util:RootSpec', []))])], element('top', nt('silver:driver:util:DriverAction', [])), [])),
+ fun('Graph.sv', 46, 9, 46, 25, 1162, 1178, [], signature('silver:analysis:warnings:exporting:generateDotGraph', [element('specs', [decorated(nt('silver:driver:util:RootSpec', []))])], element('__func__lhs', string), [])),
+ fun('Graph.sv', 58, 9, 58, 21, 1466, 1478, [], signature('silver:analysis:warnings:exporting:makeDotArrow', [element('f', string), element('t', string)], element('__func__lhs', string), []))]
+syntax []
+parsers []
+flow [nonHostSyn('silver:analysis:warnings:exporting:dumpDepGraph', 'silver:util:cmdargs:CmdArgs'),
+ syn('silver:util:cmdargs:endCmdArgs', 'silver:analysis:warnings:exporting:dumpDepGraph', [], t),
+ syn('silver:analysis:warnings:exporting:dumpDepGraphFlag', 'silver:analysis:warnings:exporting:dumpDepGraph', [], t),
+ fwd('silver:analysis:warnings:exporting:dumpDepGraphFlag', [], f),
+ implicitFwdAffects('silver:analysis:warnings:exporting:dumpDepGraphFlag', ['silver:analysis:warnings:exporting:dumpDepGraph']),
+ extra('silver:driver:util:compilation', lhsSynV('silver:driver:util:postOps'), [lhsInhV('silver:definition:env:config'), rhsV('g', 'silver:driver:util:grammarList')], f),
+ syn('silver:analysis:warnings:exporting:dumpDepGraphAction', 'core:io', [lhsInhV('silver:driver:util:ioIn')], f),
+ syn('silver:analysis:warnings:exporting:dumpDepGraphAction', 'silver:driver:util:code', [], f),
+ syn('silver:analysis:warnings:exporting:dumpDepGraphAction', 'silver:driver:util:order', [], f),
+ prod('silver:driver:util:DriverAction', 'silver:analysis:warnings:exporting:dumpDepGraphAction'),
+ anon('silver:analysis:warnings:exporting:generateDotGraph', '__scrutinee19625:line49', 'core:List', 'Graph.sv', 49, 9, 55, 5, 1229, 1452, [])]
