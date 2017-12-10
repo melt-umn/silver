@@ -45,10 +45,20 @@ concrete production fullNt
 top::FullNonterminal ::= qn::QName
 {
     top.name = qn.name;
-    top.ntProds = prodsFromDefs(top.grantedDefs);
+    top.ntProds = filterSigs(qn.name, prodsFromDefs(top.grantedDefs));
 
     top.errors := if length(getTypeDcl(top.name, top.env)) != 0 then []
         else [err(top.location, "Name " ++ top.name ++ " doesn't match any known nonterminal")];
+}
+
+function filterSigs
+[Decorated NamedSignature] ::= nm::String toFilter::[Decorated NamedSignature]
+{
+    local hd::Decorated NamedSignature = head(toFilter);
+
+    if null(toFilter) then []
+       else if unFull(hd.outputElement.typeName) == nm then [hd] ++ filterSigs(nm, tail(toFilter))
+       else filterSigs(tail(toFilter)); 
 }
 
 function prodsFromDefs
