@@ -125,8 +125,8 @@ top::AGDcl ::= dcl::Decorated NamedSignature fn::(ProductionStmts ::= Decorated 
     forwards to
         fakeAspectProductionDcl('aspect', 'production', 
         --aspectProductionDcl('aspect', 'production', 
-            qName(top.location, head(dcl).fullName), nsAspectProdSig(head(dcl), location=top.location), 
-            productionBody('{', fn(head(dcl)), '}', location=top.location), location=top.location);
+            qName(top.location, dcl.fullName), nsAspectProdSig(dcl, location=top.location), 
+            productionBody('{', fn(dcl), '}', location=top.location), location=top.location);
 
 }
 
