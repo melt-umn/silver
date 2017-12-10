@@ -1,15 +1,16 @@
 
 package silver.definition.env;
 
-// top::DclInfo ::= sg::String sl::Location ns::NamedSignature 
+// top::DclInfo ::= sg::String sl::Location ns::NamedSignature isAbstract::Boolean 
 public final class PprodDcl extends silver.definition.env.NDclInfo {
 
 	public static final int i_sg = 0;
 	public static final int i_sl = 1;
 	public static final int i_ns = 2;
+	public static final int i_isAbstract = 3;
 
 
-	public static final Class<?> childTypes[] = {common.StringCatter.class,core.NLocation.class,silver.definition.env.NNamedSignature.class};
+	public static final Class<?> childTypes[] = {common.StringCatter.class,core.NLocation.class,silver.definition.env.NNamedSignature.class,Boolean.class};
 
 	public static final int num_local_attrs = Init.count_local__ON__silver_definition_env_prodDcl;
 	public static final String[] occurs_local = new String[num_local_attrs];
@@ -17,7 +18,7 @@ public final class PprodDcl extends silver.definition.env.NDclInfo {
 	public static final common.Lazy[] forwardInheritedAttributes = new common.Lazy[silver.definition.env.NDclInfo.num_inh_attrs];
 
 	public static final common.Lazy[] synthesizedAttributes = new common.Lazy[silver.definition.env.NDclInfo.num_syn_attrs];
-	public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[3][];
+	public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[4][];
 
 	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
 	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
@@ -28,11 +29,12 @@ public final class PprodDcl extends silver.definition.env.NDclInfo {
 
 	}
 
-	public PprodDcl(final Object c_sg, final Object c_sl, final Object c_ns) {
+	public PprodDcl(final Object c_sg, final Object c_sl, final Object c_ns, final Object c_isAbstract) {
 		super();
 		this.child_sg = c_sg;
 		this.child_sl = c_sl;
 		this.child_ns = c_ns;
+		this.child_isAbstract = c_isAbstract;
 
 	}
 
@@ -51,6 +53,11 @@ public final class PprodDcl extends silver.definition.env.NDclInfo {
 		return (silver.definition.env.NNamedSignature) (child_ns = common.Util.demand(child_ns));
 	}
 
+	private Object child_isAbstract;
+	public final Boolean getChild_isAbstract() {
+		return (Boolean) (child_isAbstract = common.Util.demand(child_isAbstract));
+	}
+
 
 
 	@Override
@@ -59,6 +66,7 @@ public final class PprodDcl extends silver.definition.env.NDclInfo {
 			case i_sg: return getChild_sg();
 			case i_sl: return getChild_sl();
 			case i_ns: return getChild_ns();
+			case i_isAbstract: return getChild_isAbstract();
 
 			default: return null;
 		}
@@ -70,6 +78,7 @@ public final class PprodDcl extends silver.definition.env.NDclInfo {
 			case i_sg: return child_sg;
 			case i_sl: return child_sl;
 			case i_ns: return child_ns;
+			case i_isAbstract: return child_isAbstract;
 
 			default: return null;
 		}
@@ -77,7 +86,7 @@ public final class PprodDcl extends silver.definition.env.NDclInfo {
 
 	@Override
 	public final int getNumberOfChildren() {
-		return 3;
+		return 4;
 	}
 
 	@Override
@@ -156,7 +165,7 @@ public final class PprodDcl extends silver.definition.env.NDclInfo {
 
 		@Override
 		public PprodDcl invoke(final Object[] children, final Object[] annotations) {
-			return new PprodDcl(children[0], children[1], children[2]);
+			return new PprodDcl(children[0], children[1], children[2], children[3]);
 		}
 	};
 

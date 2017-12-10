@@ -102,6 +102,7 @@ public class Init{
 		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PterminalFunctionLineCol.class);
 		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PterminalFunctionInherited.class);
 		common.Decorator.applyDecorators(silver.definition.core.NAGDcl.decorators, PproductionDcl.class);
+		common.Decorator.applyDecorators(silver.definition.core.NAGDcl.decorators, PmkProductionDcl.class);
 		common.Decorator.applyDecorators(silver.definition.core.NProductionSignature.decorators, PproductionSignature.class);
 		common.Decorator.applyDecorators(silver.definition.core.NProductionLHS.decorators, PproductionLHS.class);
 		common.Decorator.applyDecorators(silver.definition.core.NProductionRHS.decorators, PproductionRHSNil.class);
@@ -498,12 +499,12 @@ public class Init{
 		silver.definition.core.NProductionRHSElem.occurs_syn[silver.definition.core.Init.silver_definition_env_defs__ON__silver_definition_core_ProductionRHSElem] = "silver:definition:env:defs";
 		silver.definition.core.NProductionRHSElem.occurs_syn[silver.definition.core.Init.silver_definition_env_inputElements__ON__silver_definition_core_ProductionRHSElem] = "silver:definition:env:inputElements";
 		silver.definition.core.NProductionRHSElem.occurs_inh[silver.definition.core.Init.silver_definition_core_deterministicCount__ON__silver_definition_core_ProductionRHSElem] = "silver:definition:core:deterministicCount";
-		silver.definition.core.PproductionDcl.occurs_local[silver.definition.core.Init.fName__ON__silver_definition_core_productionDcl] = "silver:definition:core:productionDcl:local:fName";
+		silver.definition.core.PmkProductionDcl.occurs_local[silver.definition.core.Init.fName__ON__silver_definition_core_mkProductionDcl] = "silver:definition:core:mkProductionDcl:local:fName";
 		//	local attribute namedSig::NamedSignature;
-		silver.definition.core.PproductionDcl.localInheritedAttributes[silver.definition.core.Init.namedSig__ON__silver_definition_core_productionDcl] = new common.Lazy[silver.definition.env.NNamedSignature.num_inh_attrs];
-		silver.definition.core.PproductionDcl.occurs_local[silver.definition.core.Init.namedSig__ON__silver_definition_core_productionDcl] = "silver:definition:core:productionDcl:local:namedSig";
-		silver.definition.core.PproductionDcl.occurs_local[silver.definition.core.Init.sigDefs__ON__silver_definition_core_productionDcl] = "silver:definition:core:productionDcl:local:sigDefs";
-		silver.definition.core.PproductionDcl.localAttributes[silver.definition.core.Init.sigDefs__ON__silver_definition_core_productionDcl] = new common.CollectionAttribute(){
+		silver.definition.core.PmkProductionDcl.localInheritedAttributes[silver.definition.core.Init.namedSig__ON__silver_definition_core_mkProductionDcl] = new common.Lazy[silver.definition.env.NNamedSignature.num_inh_attrs];
+		silver.definition.core.PmkProductionDcl.occurs_local[silver.definition.core.Init.namedSig__ON__silver_definition_core_mkProductionDcl] = "silver:definition:core:mkProductionDcl:local:namedSig";
+		silver.definition.core.PmkProductionDcl.occurs_local[silver.definition.core.Init.sigDefs__ON__silver_definition_core_mkProductionDcl] = "silver:definition:core:mkProductionDcl:local:sigDefs";
+		silver.definition.core.PmkProductionDcl.localAttributes[silver.definition.core.Init.sigDefs__ON__silver_definition_core_mkProductionDcl] = new common.CollectionAttribute(){
 			public Object eval(common.DecoratedNode context) {
 				common.ConsCell result = (common.ConsCell)this.getBase().eval(context);
 				for(int i = 0; i < this.getPieces().size(); i++){
@@ -512,7 +513,7 @@ public class Init{
 				return result;
 			}
 		};
-		silver.definition.core.PproductionDcl.occurs_local[silver.definition.core.Init.prodAtts__ON__silver_definition_core_productionDcl] = "silver:definition:core:productionDcl:local:prodAtts";
+		silver.definition.core.PmkProductionDcl.occurs_local[silver.definition.core.Init.prodAtts__ON__silver_definition_core_mkProductionDcl] = "silver:definition:core:mkProductionDcl:local:prodAtts";
 		silver.definition.core.NQName.occurs_inh[silver.definition.core.Init.silver_definition_env_config__ON__silver_definition_core_QName] = "silver:definition:env:config";
 		silver.definition.core.NQName.decorators.add(silver.definition.env.Dconfig.singleton);
 		silver.definition.core.NQName.occurs_syn[silver.definition.core.Init.silver_definition_core_name__ON__silver_definition_core_QName] = "silver:definition:core:name";
@@ -1163,6 +1164,7 @@ public class Init{
 		silver.definition.core.PterminalFunctionLineCol.initProductionAttributeDefinitions();
 		silver.definition.core.PterminalFunctionInherited.initProductionAttributeDefinitions();
 		silver.definition.core.PproductionDcl.initProductionAttributeDefinitions();
+		silver.definition.core.PmkProductionDcl.initProductionAttributeDefinitions();
 		silver.definition.core.PproductionSignature.initProductionAttributeDefinitions();
 		silver.definition.core.PproductionLHS.initProductionAttributeDefinitions();
 		silver.definition.core.PproductionRHSNil.initProductionAttributeDefinitions();
@@ -1322,7 +1324,7 @@ public class Init{
 		silver.definition.env.PlocalDcl.synthesizedAttributes[silver.definition.core.Init.silver_definition_core_defDispatcher__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return silver.definition.core.PlocalValueDef.factory.invokeNamedPartial(new int[]{0}, null, null); } };
 		// top.defLHSDispatcher = localDefLHS(_,location=_)
 		silver.definition.env.PlocalDcl.synthesizedAttributes[silver.definition.core.Init.silver_definition_core_defLHSDispatcher__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return silver.definition.core.PlocalDefLHS.factory.invokeNamedPartial(new int[]{0}, null, null); } };
-		//ASPECT PRODUCTION prodDcl top ::= sg::String sl::Location ns::NamedSignature 
+		//ASPECT PRODUCTION prodDcl top ::= sg::String sl::Location ns::NamedSignature isAbstract::Boolean 
 		// top.refDispatcher = productionReference(_,location=_)
 		silver.definition.env.PprodDcl.synthesizedAttributes[silver.definition.core.Init.silver_definition_core_refDispatcher__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return silver.definition.core.PproductionReference.factory.invokeNamedPartial(new int[]{0}, null, null); } };
 		// top.defDispatcher = errorValueDef(_, _,location=_)
@@ -1365,12 +1367,12 @@ public class Init{
 		// top.attrDefDispatcher = \ dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr l::Location  -> errorAttributeDef([ err(l, "Annotations are not defined as equations within productions") ], dl, attr, e,location=l)
 		silver.definition.env.PannoDcl.synthesizedAttributes[silver.definition.core.Init.silver_definition_core_attrDefDispatcher__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return (new common.NodeFactory<silver.definition.core.NProductionStmt>() {
   public final silver.definition.core.NProductionStmt invoke(final Object[] args, final Object[] namedArgs) {
-    final Object __SV_LAMBDA_PARAM_3078_dl = args[0];
-final Object __SV_LAMBDA_PARAM_3079_attr = args[1];
-final Object __SV_LAMBDA_PARAM_3080_e = args[2];
-final Object __SV_LAMBDA_PARAM_3081_l = args[3];
+    final Object __SV_LAMBDA_PARAM_3082_dl = args[0];
+final Object __SV_LAMBDA_PARAM_3083_attr = args[1];
+final Object __SV_LAMBDA_PARAM_3084_e = args[2];
+final Object __SV_LAMBDA_PARAM_3085_l = args[3];
 
-    return ((silver.definition.core.NProductionStmt)new silver.definition.core.PerrorAttributeDef(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pcons.invoke(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((silver.definition.core.NMessage)new silver.definition.core.Perr(((core.NLocation)common.Util.demand(__SV_LAMBDA_PARAM_3081_l)), (new common.StringCatter("Annotations are not defined as equations within productions")))); } }, new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } })); } }, ((common.DecoratedNode)common.Util.demand(__SV_LAMBDA_PARAM_3078_dl)), ((common.DecoratedNode)common.Util.demand(__SV_LAMBDA_PARAM_3079_attr)), ((silver.definition.core.NExpr)common.Util.demand(__SV_LAMBDA_PARAM_3080_e)), ((core.NLocation)common.Util.demand(__SV_LAMBDA_PARAM_3081_l))));
+    return ((silver.definition.core.NProductionStmt)new silver.definition.core.PerrorAttributeDef(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pcons.invoke(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((silver.definition.core.NMessage)new silver.definition.core.Perr(((core.NLocation)common.Util.demand(__SV_LAMBDA_PARAM_3085_l)), (new common.StringCatter("Annotations are not defined as equations within productions")))); } }, new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } })); } }, ((common.DecoratedNode)common.Util.demand(__SV_LAMBDA_PARAM_3082_dl)), ((common.DecoratedNode)common.Util.demand(__SV_LAMBDA_PARAM_3083_attr)), ((silver.definition.core.NExpr)common.Util.demand(__SV_LAMBDA_PARAM_3084_e)), ((core.NLocation)common.Util.demand(__SV_LAMBDA_PARAM_3085_l))));
   }
 }); } };
 		//ASPECT PRODUCTION forwardDcl top ::= sg::String sl::Location ty::Type 
@@ -1637,6 +1639,7 @@ final Object __SV_LAMBDA_PARAM_3081_l = args[3];
 	public static int count_inh__ON__ProductionRHSElem = 0;
 	public static int count_syn__ON__ProductionRHSElem = 0;
 	public static int count_local__ON__silver_definition_core_productionDcl = 0;
+	public static int count_local__ON__silver_definition_core_mkProductionDcl = 0;
 	public static int count_local__ON__silver_definition_core_productionSignature = 0;
 	public static int count_local__ON__silver_definition_core_productionLHS = 0;
 	public static int count_local__ON__silver_definition_core_productionRHSNil = 0;
@@ -2041,10 +2044,10 @@ public static final int silver_definition_core_errors__ON__silver_definition_cor
 public static final int silver_definition_env_defs__ON__silver_definition_core_ProductionRHSElem = silver.definition.core.Init.count_syn__ON__ProductionRHSElem++;
 public static final int silver_definition_env_inputElements__ON__silver_definition_core_ProductionRHSElem = silver.definition.core.Init.count_syn__ON__ProductionRHSElem++;
 public static final int silver_definition_core_deterministicCount__ON__silver_definition_core_ProductionRHSElem = silver.definition.core.Init.count_inh__ON__ProductionRHSElem++;
-public static final int fName__ON__silver_definition_core_productionDcl = silver.definition.core.Init.count_local__ON__silver_definition_core_productionDcl++;
-public static final int namedSig__ON__silver_definition_core_productionDcl = silver.definition.core.Init.count_local__ON__silver_definition_core_productionDcl++;
-public static final int sigDefs__ON__silver_definition_core_productionDcl = silver.definition.core.Init.count_local__ON__silver_definition_core_productionDcl++;
-public static final int prodAtts__ON__silver_definition_core_productionDcl = silver.definition.core.Init.count_local__ON__silver_definition_core_productionDcl++;
+public static final int fName__ON__silver_definition_core_mkProductionDcl = silver.definition.core.Init.count_local__ON__silver_definition_core_mkProductionDcl++;
+public static final int namedSig__ON__silver_definition_core_mkProductionDcl = silver.definition.core.Init.count_local__ON__silver_definition_core_mkProductionDcl++;
+public static final int sigDefs__ON__silver_definition_core_mkProductionDcl = silver.definition.core.Init.count_local__ON__silver_definition_core_mkProductionDcl++;
+public static final int prodAtts__ON__silver_definition_core_mkProductionDcl = silver.definition.core.Init.count_local__ON__silver_definition_core_mkProductionDcl++;
 public static final int silver_definition_env_config__ON__silver_definition_core_QName = silver.definition.core.Init.count_inh__ON__QName++;
 public static final int silver_definition_core_name__ON__silver_definition_core_QName = silver.definition.core.Init.count_syn__ON__QName++;
 public static final int silver_definition_core_grammarName__ON__silver_definition_core_QName = silver.definition.core.Init.count_inh__ON__QName++;

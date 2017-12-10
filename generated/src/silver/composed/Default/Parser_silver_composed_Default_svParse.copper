@@ -3446,20 +3446,6 @@ RESULT = new silver.modification.collection.PcollectionAttributeDclSyn(_children
     <LHS><NonterminalRef id="silver_definition_core_AGDcl" grammar="host" /></LHS>
     <RHS><TerminalRef id="silver_definition_core_Synthesized_kwd" grammar="host" /><TerminalRef id="silver_definition_core_Attribute_kwd" grammar="host" /><NonterminalRef id="silver_definition_core_Name" grammar="host" /><NonterminalRef id="silver_definition_type_syntax_BracketedOptTypeExprs" grammar="host" /><TerminalRef id="silver_definition_core_ColonColon_t" grammar="host" /><NonterminalRef id="silver_definition_type_syntax_TypeExpr" grammar="host" /><TerminalRef id="silver_definition_core_With_kwd" grammar="host" /><NonterminalRef id="silver_modification_collection_NameOrBOperator" grammar="host" /><TerminalRef id="silver_definition_core_Semi_t" grammar="host" /></RHS>
   </Production>
-  <Production id="silver_extension_bidirtransform_optOriginAttributeDclPrefix">
-    <Code><![CDATA[
-RESULT = new silver.extension.bidirtransform.PoptOriginAttributeDclPrefix(_children[0], _children[1], _children[2], _children[3], _children[4], _children[5], _children[6], _children[7], common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos()));
-]]></Code>
-    <LHS><NonterminalRef id="silver_definition_core_AGDcl" grammar="host" /></LHS>
-    <RHS><TerminalRef id="silver_extension_bidirtransform_Optional_kws" grammar="host" /><TerminalRef id="silver_extension_bidirtransform_Origins_kwd" grammar="host" /><TerminalRef id="silver_definition_core_Attribute_kwd" grammar="host" /><NonterminalRef id="silver_extension_bidirtransform_QNameList" grammar="host" /><TerminalRef id="silver_definition_core_With_kwd" grammar="host" /><TerminalRef id="silver_modification_copper_Prefix_t" grammar="host" /><NonterminalRef id="silver_definition_core_QName" grammar="host" /><TerminalRef id="silver_definition_core_Semi_t" grammar="host" /></RHS>
-  </Production>
-  <Production id="silver_extension_bidirtransform_optOriginAttributeDcl">
-    <Code><![CDATA[
-RESULT = new silver.extension.bidirtransform.PoptOriginAttributeDcl(_children[0], _children[1], _children[2], _children[3], _children[4], common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos()));
-]]></Code>
-    <LHS><NonterminalRef id="silver_definition_core_AGDcl" grammar="host" /></LHS>
-    <RHS><TerminalRef id="silver_extension_bidirtransform_Optional_kws" grammar="host" /><TerminalRef id="silver_extension_bidirtransform_Origins_kwd" grammar="host" /><TerminalRef id="silver_definition_core_Attribute_kwd" grammar="host" /><NonterminalRef id="silver_extension_bidirtransform_QNameList" grammar="host" /><TerminalRef id="silver_definition_core_Semi_t" grammar="host" /></RHS>
-  </Production>
   <Production id="silver_extension_bidirtransform_cncOriginDcl">
     <Code><![CDATA[
 RESULT = new silver.extension.bidirtransform.PcncOriginDcl(_children[0], _children[1], _children[2], _children[3], _children[4], _children[5], common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos()));
@@ -3639,13 +3625,6 @@ RESULT = new silver.extension.bidirtransform.PtransformAGDclFull(_children[0], _
 ]]></Code>
     <LHS><NonterminalRef id="silver_definition_core_AGDcls" grammar="host" /></LHS>
     <RHS><TerminalRef id="silver_extension_bidirtransform_Transform_kwd" grammar="host" /><NonterminalRef id="silver_definition_core_QName" grammar="host" /><TerminalRef id="silver_definition_core_ColonColon_t" grammar="host" /><NonterminalRef id="silver_definition_type_syntax_TypeExpr" grammar="host" /><TerminalRef id="silver_definition_core_LCurly_t" grammar="host" /><NonterminalRef id="silver_extension_bidirtransform_TransformRuleList" grammar="host" /><TerminalRef id="silver_definition_core_RCurly_t" grammar="host" /><TerminalRef id="silver_extension_bidirtransform_Rewrite_kwd" grammar="host" /><TerminalRef id="silver_definition_core_LCurly_t" grammar="host" /><NonterminalRef id="silver_extension_bidirtransform_RewriteRuleList" grammar="host" /><TerminalRef id="silver_definition_core_RCurly_t" grammar="host" /><TerminalRef id="silver_extension_bidirtransform_From_kwd" grammar="host" /><NonterminalRef id="silver_extension_bidirtransform_NonterminalList" grammar="host" /><TerminalRef id="silver_definition_core_To_kwd" grammar="host" /><NonterminalRef id="silver_extension_bidirtransform_NonterminalList" grammar="host" /><TerminalRef id="silver_extension_bidirtransform_DblArrow_kwd" grammar="host" /><NonterminalRef id="silver_definition_core_AGDcls" grammar="host" /></RHS>
-  </Production>
-  <Production id="silver_extension_bidirtransform_originAttributeDcl">
-    <Code><![CDATA[
-RESULT = new silver.extension.bidirtransform.PoriginAttributeDcl(_children[0], _children[1], _children[2], _children[3], _children[4], common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos()));
-]]></Code>
-    <LHS><NonterminalRef id="silver_definition_core_AGDcls" grammar="host" /></LHS>
-    <RHS><TerminalRef id="silver_extension_bidirtransform_Origins_kwd" grammar="host" /><TerminalRef id="silver_definition_core_Attribute_kwd" grammar="host" /><NonterminalRef id="silver_extension_bidirtransform_QNameList" grammar="host" /><TerminalRef id="silver_extension_bidirtransform_DblArrow_kwd" grammar="host" /><NonterminalRef id="silver_definition_core_AGDcls" grammar="host" /></RHS>
   </Production>
 
   <Nonterminal id="silver_definition_core_AnnoAppExprs">

@@ -379,7 +379,7 @@ public class Init{
 		//FUNCTION childDef Def ::= sg::String sl::Location fn::String ty::Type 
 		//FUNCTION lhsDef Def ::= sg::String sl::Location fn::String ty::Type 
 		//FUNCTION localDef Def ::= sg::String sl::Location fn::String ty::Type 
-		//FUNCTION prodDef Def ::= sg::String sl::Location ns::NamedSignature 
+		//FUNCTION prodDef Def ::= sg::String sl::Location ns::NamedSignature isAbstract::Boolean 
 		//FUNCTION funDef Def ::= sg::String sl::Location ns::NamedSignature 
 		//FUNCTION globalDef Def ::= sg::String sl::Location fn::String ty::Type 
 		//FUNCTION ntDef Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type 

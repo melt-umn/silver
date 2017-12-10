@@ -1,7 +1,7 @@
 
 package silver.extension.bidirtransform;
 
-// top::TransformRule ::= rules::[TransformRule] dcl::[Decorated NamedSignature] 
+// top::TransformRule ::= rules::[TransformRule] dcl::Decorated NamedSignature 
 public final class PgetTrans extends silver.extension.bidirtransform.NTransformRule {
 
 	public static final int i_rules = 0;
@@ -38,8 +38,8 @@ public final class PgetTrans extends silver.extension.bidirtransform.NTransformR
 	}
 
 	private Object child_dcl;
-	public final common.ConsCell getChild_dcl() {
-		return (common.ConsCell) (child_dcl = common.Util.demand(child_dcl));
+	public final common.DecoratedNode getChild_dcl() {
+		return (common.DecoratedNode) (child_dcl = common.Util.demand(child_dcl));
 	}
 
 
@@ -91,7 +91,7 @@ public final class PgetTrans extends silver.extension.bidirtransform.NTransformR
 
 	@Override
 	public common.Node evalForward(final common.DecoratedNode context) {
-		return (((common.StringCatter)((common.DecoratedNode)core.Phead.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PgetTrans.i_dcl))).synthesized(silver.definition.env.Init.silver_definition_env_fullName__ON__silver_definition_env_NamedSignature)).equals(((common.StringCatter)((common.DecoratedNode)((silver.extension.bidirtransform.NTransformRule)core.Phead.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PgetTrans.i_rules))).decorate(context, (common.Lazy[])null).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_namedSig__ON__silver_extension_bidirtransform_TransformRule)).synthesized(silver.definition.env.Init.silver_definition_env_fullName__ON__silver_definition_env_NamedSignature))) ? ((silver.extension.bidirtransform.NTransformRule)core.Phead.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PgetTrans.i_rules))) : ((silver.extension.bidirtransform.NTransformRule)new silver.extension.bidirtransform.PgetTrans(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Ptail.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PgetTrans.i_rules))); } }, context.childAsIsLazy(silver.extension.bidirtransform.PgetTrans.i_dcl), new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((core.NLocation)((silver.extension.bidirtransform.NTransformRule)context.undecorate()).getAnno_core_location()); } })));
+		return (((common.StringCatter)((common.DecoratedNode)context.childAsIs(silver.extension.bidirtransform.PgetTrans.i_dcl)).synthesized(silver.definition.env.Init.silver_definition_env_fullName__ON__silver_definition_env_NamedSignature)).equals(((common.StringCatter)((common.DecoratedNode)((silver.extension.bidirtransform.NTransformRule)core.Phead.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PgetTrans.i_rules))).decorate(context, (common.Lazy[])null).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_namedSig__ON__silver_extension_bidirtransform_TransformRule)).synthesized(silver.definition.env.Init.silver_definition_env_fullName__ON__silver_definition_env_NamedSignature))) ? ((silver.extension.bidirtransform.NTransformRule)core.Phead.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PgetTrans.i_rules))) : ((silver.extension.bidirtransform.NTransformRule)new silver.extension.bidirtransform.PgetTrans(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Ptail.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PgetTrans.i_rules))); } }, context.childAsIsLazy(silver.extension.bidirtransform.PgetTrans.i_dcl), new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((core.NLocation)((silver.extension.bidirtransform.NTransformRule)context.undecorate()).getAnno_core_location()); } })));
 	}
 
 	@Override

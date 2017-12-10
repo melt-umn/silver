@@ -37,8 +37,8 @@ public final class PhasTrans extends common.FunctionNode {
 	}
 
 	private Object child_dcl;
-	public final common.ConsCell getChild_dcl() {
-		return (common.ConsCell) (child_dcl = common.Util.demand(child_dcl));
+	public final common.DecoratedNode getChild_dcl() {
+		return (common.DecoratedNode) (child_dcl = common.Util.demand(child_dcl));
 	}
 
 	private Object child_absGroup;
@@ -115,8 +115,8 @@ public final class PhasTrans extends common.FunctionNode {
 	public static Boolean invoke(final Object c_rules, final Object c_dcl, final Object c_absGroup, final Object c_cncGroup) {
 		try {
 		final common.DecoratedNode context = new PhasTrans(c_rules, c_dcl, c_absGroup, c_cncGroup).decorate();
-		//if null(rules) || null(dcl) then false else if head(dcl).fullName == hd.namedSig.fullName then true else hasTrans(tail(rules), dcl, absGroup, cncGroup)
-		return (Boolean)(((((Boolean)core.Pnull.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PhasTrans.i_rules))) || ((Boolean)core.Pnull.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PhasTrans.i_dcl)))) ? false : (((common.StringCatter)((common.DecoratedNode)core.Phead.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PhasTrans.i_dcl))).synthesized(silver.definition.env.Init.silver_definition_env_fullName__ON__silver_definition_env_NamedSignature)).equals(((common.StringCatter)((common.DecoratedNode)context.localDecorated(silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_hasTrans).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_namedSig__ON__silver_extension_bidirtransform_TransformRule)).synthesized(silver.definition.env.Init.silver_definition_env_fullName__ON__silver_definition_env_NamedSignature))) ? true : ((Boolean)silver.extension.bidirtransform.PhasTrans.invoke(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Ptail.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PhasTrans.i_rules))); } }, context.childAsIsLazy(silver.extension.bidirtransform.PhasTrans.i_dcl), context.childAsIsLazy(silver.extension.bidirtransform.PhasTrans.i_absGroup), context.childAsIsLazy(silver.extension.bidirtransform.PhasTrans.i_cncGroup))))));
+		//if null(rules) then false else if dcl.fullName == hd.namedSig.fullName then true else hasTrans(tail(rules), dcl, absGroup, cncGroup)
+		return (Boolean)((((Boolean)core.Pnull.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PhasTrans.i_rules))) ? false : (((common.StringCatter)((common.DecoratedNode)context.childAsIs(silver.extension.bidirtransform.PhasTrans.i_dcl)).synthesized(silver.definition.env.Init.silver_definition_env_fullName__ON__silver_definition_env_NamedSignature)).equals(((common.StringCatter)((common.DecoratedNode)context.localDecorated(silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_hasTrans).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_namedSig__ON__silver_extension_bidirtransform_TransformRule)).synthesized(silver.definition.env.Init.silver_definition_env_fullName__ON__silver_definition_env_NamedSignature))) ? true : ((Boolean)silver.extension.bidirtransform.PhasTrans.invoke(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Ptail.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PhasTrans.i_rules))); } }, context.childAsIsLazy(silver.extension.bidirtransform.PhasTrans.i_dcl), context.childAsIsLazy(silver.extension.bidirtransform.PhasTrans.i_absGroup), context.childAsIsLazy(silver.extension.bidirtransform.PhasTrans.i_cncGroup))))));
 
 		} catch(Throwable t) {
 			throw new common.exceptions.TraceException("Error while evaluating function silver:extension:bidirtransform:hasTrans", t);

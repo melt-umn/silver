@@ -1,7 +1,7 @@
 
 package silver.extension.bidirtransform;
 
-// top::AGDcl ::= dcl::[Decorated NamedSignature] fn::(ProductionStmt ::= Decorated NamedSignature) 
+// top::AGDcl ::= dcl::Decorated NamedSignature fn::(ProductionStmt ::= Decorated NamedSignature) 
 public final class PaspectProdStmt extends silver.definition.core.NAGDcl {
 
 	public static final int i_dcl = 0;
@@ -33,8 +33,8 @@ public final class PaspectProdStmt extends silver.definition.core.NAGDcl {
 	}
 
 	private Object child_dcl;
-	public final common.ConsCell getChild_dcl() {
-		return (common.ConsCell) (child_dcl = common.Util.demand(child_dcl));
+	public final common.DecoratedNode getChild_dcl() {
+		return (common.DecoratedNode) (child_dcl = common.Util.demand(child_dcl));
 	}
 
 	private Object child_fn;
@@ -93,9 +93,9 @@ public final class PaspectProdStmt extends silver.definition.core.NAGDcl {
 	public common.Node evalForward(final common.DecoratedNode context) {
 		return ((silver.definition.core.NAGDcl)new silver.extension.bidirtransform.PaspectProdStmts(context.childAsIsLazy(silver.extension.bidirtransform.PaspectProdStmt.i_dcl), (new common.NodeFactory<silver.definition.core.NProductionStmts>() {
   public final silver.definition.core.NProductionStmts invoke(final Object[] args, final Object[] namedArgs) {
-    final Object __SV_LAMBDA_PARAM_10509_ns = args[0];
+    final Object __SV_LAMBDA_PARAM_10525_ns = args[0];
 
-    return ((silver.definition.core.NProductionStmts)new silver.definition.core.PproductionStmtsSnoc(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((silver.definition.core.NProductionStmts)new silver.definition.core.PproductionStmtsNil(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((core.NLocation)((silver.definition.core.NAGDcl)context.undecorate()).getAnno_core_location()); } })); } }, new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((silver.definition.core.NProductionStmt)((common.NodeFactory<silver.definition.core.NProductionStmt>)context.childAsIs(silver.extension.bidirtransform.PaspectProdStmt.i_fn)).invoke(new Object[]{((common.DecoratedNode)common.Util.demand(__SV_LAMBDA_PARAM_10509_ns))}, null)); } }, new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((core.NLocation)((silver.definition.core.NAGDcl)context.undecorate()).getAnno_core_location()); } }));
+    return ((silver.definition.core.NProductionStmts)new silver.definition.core.PproductionStmtsSnoc(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((silver.definition.core.NProductionStmts)new silver.definition.core.PproductionStmtsNil(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((core.NLocation)((silver.definition.core.NAGDcl)context.undecorate()).getAnno_core_location()); } })); } }, new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((silver.definition.core.NProductionStmt)((common.NodeFactory<silver.definition.core.NProductionStmt>)context.childAsIs(silver.extension.bidirtransform.PaspectProdStmt.i_fn)).invoke(new Object[]{((common.DecoratedNode)common.Util.demand(__SV_LAMBDA_PARAM_10525_ns))}, null)); } }, new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((core.NLocation)((silver.definition.core.NAGDcl)context.undecorate()).getAnno_core_location()); } }));
   }
 }), new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((core.NLocation)((silver.definition.core.NAGDcl)context.undecorate()).getAnno_core_location()); } }));
 	}

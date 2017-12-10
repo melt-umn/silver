@@ -6,14 +6,15 @@ public final class PprodDef extends common.FunctionNode {
 	public static final int i_sg = 0;
 	public static final int i_sl = 1;
 	public static final int i_ns = 2;
+	public static final int i_isAbstract = 3;
 
 
-	public static final Class<?> childTypes[] = { common.StringCatter.class,core.NLocation.class,silver.definition.env.NNamedSignature.class };
+	public static final Class<?> childTypes[] = { common.StringCatter.class,core.NLocation.class,silver.definition.env.NNamedSignature.class,Boolean.class };
 
 	public static final int num_local_attrs = Init.count_local__ON__silver_definition_env_prodDef;
 	public static final String[] occurs_local = new String[num_local_attrs];
 
-	public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[3][];
+	public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[4][];
 
 	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
 	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
@@ -24,10 +25,11 @@ public final class PprodDef extends common.FunctionNode {
 
 	}
 
-	public PprodDef(final Object c_sg, final Object c_sl, final Object c_ns) {
+	public PprodDef(final Object c_sg, final Object c_sl, final Object c_ns, final Object c_isAbstract) {
 		this.child_sg = c_sg;
 		this.child_sl = c_sl;
 		this.child_ns = c_ns;
+		this.child_isAbstract = c_isAbstract;
 
 	}
 
@@ -46,6 +48,11 @@ public final class PprodDef extends common.FunctionNode {
 		return (silver.definition.env.NNamedSignature) (child_ns = common.Util.demand(child_ns));
 	}
 
+	private Object child_isAbstract;
+	public final Boolean getChild_isAbstract() {
+		return (Boolean) (child_isAbstract = common.Util.demand(child_isAbstract));
+	}
+
 
 
 	@Override
@@ -54,6 +61,7 @@ public final class PprodDef extends common.FunctionNode {
 			case i_sg: return getChild_sg();
 			case i_sl: return getChild_sl();
 			case i_ns: return getChild_ns();
+			case i_isAbstract: return getChild_isAbstract();
 
 			default: return null;
 		}
@@ -65,6 +73,7 @@ public final class PprodDef extends common.FunctionNode {
 			case i_sg: return child_sg;
 			case i_sl: return child_sl;
 			case i_ns: return child_ns;
+			case i_isAbstract: return child_isAbstract;
 
 			default: return null;
 		}
@@ -72,7 +81,7 @@ public final class PprodDef extends common.FunctionNode {
 
 	@Override
 	public final int getNumberOfChildren() {
-		return 3;
+		return 4;
 	}
 
 	@Override
@@ -105,11 +114,11 @@ public final class PprodDef extends common.FunctionNode {
 		return "silver:definition:env:prodDef";
 	}
 
-	public static silver.definition.env.NDef invoke(final Object c_sg, final Object c_sl, final Object c_ns) {
+	public static silver.definition.env.NDef invoke(final Object c_sg, final Object c_sl, final Object c_ns, final Object c_isAbstract) {
 		try {
-		final common.DecoratedNode context = new PprodDef(c_sg, c_sl, c_ns).decorate();
-		//prodDclDef(defaultEnvItem(prodDcl(sg, sl, ns)))
-		return (silver.definition.env.NDef)(((silver.definition.env.NDef)new silver.definition.env.PprodDclDef(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((silver.definition.env.NEnvItem)silver.definition.env.PdefaultEnvItem.invoke(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((silver.definition.env.NDclInfo)new silver.definition.env.PprodDcl(context.childAsIsLazy(silver.definition.env.PprodDef.i_sg), common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.definition.env.PprodDef.i_sl)), common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.definition.env.PprodDef.i_ns)))); } })); } })));
+		final common.DecoratedNode context = new PprodDef(c_sg, c_sl, c_ns, c_isAbstract).decorate();
+		//prodDclDef(defaultEnvItem(prodDcl(sg, sl, ns, isAbstract)))
+		return (silver.definition.env.NDef)(((silver.definition.env.NDef)new silver.definition.env.PprodDclDef(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((silver.definition.env.NEnvItem)silver.definition.env.PdefaultEnvItem.invoke(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((silver.definition.env.NDclInfo)new silver.definition.env.PprodDcl(context.childAsIsLazy(silver.definition.env.PprodDef.i_sg), common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.definition.env.PprodDef.i_sl)), common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.definition.env.PprodDef.i_ns)), context.childAsIsLazy(silver.definition.env.PprodDef.i_isAbstract))); } })); } })));
 
 		} catch(Throwable t) {
 			throw new common.exceptions.TraceException("Error while evaluating function silver:definition:env:prodDef", t);
@@ -121,7 +130,7 @@ public final class PprodDef extends common.FunctionNode {
 	public static final class Factory extends common.NodeFactory<silver.definition.env.NDef> {
 		@Override
 		public silver.definition.env.NDef invoke(final Object[] children, final Object[] namedNotApplicable) {
-			return PprodDef.invoke(children[0], children[1], children[2]);
+			return PprodDef.invoke(children[0], children[1], children[2], children[3]);
 		}
 	};
 }

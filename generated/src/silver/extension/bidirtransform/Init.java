@@ -223,14 +223,6 @@ public class Init{
 		common.Decorator.applyDecorators(silver.definition.core.NAGDcl.decorators, PcncOriginDcl.class);
 		common.Decorator.applyDecorators(silver.definition.core.NAGDcl.decorators, PcncApplyOrigins.class);
 		common.Decorator.applyDecorators(silver.definition.core.NAGDcl.decorators, PapplyOrigins.class);
-		common.Decorator.applyDecorators(silver.definition.core.NAGDcls.decorators, PoriginAttributeDcl.class);
-		common.Decorator.applyDecorators(silver.definition.core.NAGDcl.decorators, PoriginAttributes.class);
-		common.Decorator.applyDecorators(silver.definition.core.NAGDcl.decorators, PoriginAttribute.class);
-		common.Decorator.applyDecorators(silver.definition.core.NAGDcl.decorators, PoptOriginAttributeDcl.class);
-		common.Decorator.applyDecorators(silver.definition.core.NAGDcl.decorators, PoptOriginAttributeDclPrefix.class);
-		common.Decorator.applyDecorators(silver.definition.core.NAGDcl.decorators, PwriteOptAttributes.class);
-		common.Decorator.applyDecorators(silver.definition.core.NAGDcl.decorators, PoptOriginAttributes.class);
-		common.Decorator.applyDecorators(silver.definition.core.NAGDcl.decorators, PoptOriginAttribute.class);
 		common.Decorator.applyDecorators(silver.extension.bidirtransform.NRewriteProduction.decorators, PrewriteProduction.class);
 		common.Decorator.applyDecorators(silver.extension.bidirtransform.NRewriteProduction.decorators, PemptyRewriteProduction.class);
 		common.Decorator.applyDecorators(silver.extension.bidirtransform.NRewriteProductionArgs.decorators, PrewriteProductionArgSingle.class);
@@ -420,6 +412,7 @@ public class Init{
 		silver.extension.bidirtransform.NNonterminalList.decorators.add(silver.definition.env.Denv.singleton);
 		silver.extension.bidirtransform.NNonterminalList.occurs_inh[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_grantedDefs__ON__silver_extension_bidirtransform_NonterminalList] = "silver:extension:bidirtransform:grantedDefs";
 		silver.extension.bidirtransform.NNonterminalList.decorators.add(silver.extension.bidirtransform.DgrantedDefs.singleton);
+		silver.extension.bidirtransform.PfilterSigs.occurs_local[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_filterSigs] = "silver:extension:bidirtransform:filterSigs:local:hd";
 		silver.extension.bidirtransform.PhasRwProd.occurs_local[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_hasRwProd] = "silver:extension:bidirtransform:hasRwProd:local:hd";
 		silver.extension.bidirtransform.PrwProd.occurs_local[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_rwProd] = "silver:extension:bidirtransform:rwProd:local:hd";
 		silver.extension.bidirtransform.PhasRwID.occurs_local[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_hasRwID] = "silver:extension:bidirtransform:hasRwID:local:hd";
@@ -473,20 +466,6 @@ public class Init{
 		//	local attribute agDcls6::AGDcl;
 		silver.extension.bidirtransform.PapplyOrigins.localInheritedAttributes[silver.extension.bidirtransform.Init.agDcls6__ON__silver_extension_bidirtransform_applyOrigins] = new common.Lazy[silver.definition.core.NAGDcl.num_inh_attrs];
 		silver.extension.bidirtransform.PapplyOrigins.occurs_local[silver.extension.bidirtransform.Init.agDcls6__ON__silver_extension_bidirtransform_applyOrigins] = "silver:extension:bidirtransform:applyOrigins:local:agDcls6";
-		//	local attribute addAttrs::AGDcl;
-		silver.extension.bidirtransform.PoriginAttributeDcl.localInheritedAttributes[silver.extension.bidirtransform.Init.addAttrs__ON__silver_extension_bidirtransform_originAttributeDcl] = new common.Lazy[silver.definition.core.NAGDcl.num_inh_attrs];
-		silver.extension.bidirtransform.PoriginAttributeDcl.occurs_local[silver.extension.bidirtransform.Init.addAttrs__ON__silver_extension_bidirtransform_originAttributeDcl] = "silver:extension:bidirtransform:originAttributeDcl:local:addAttrs";
-		//	local attribute qnsTail::QNameList;
-		silver.extension.bidirtransform.PoriginAttributes.localInheritedAttributes[silver.extension.bidirtransform.Init.qnsTail__ON__silver_extension_bidirtransform_originAttributes] = new common.Lazy[silver.extension.bidirtransform.NQNameList.num_inh_attrs];
-		silver.extension.bidirtransform.PoriginAttributes.occurs_local[silver.extension.bidirtransform.Init.qnsTail__ON__silver_extension_bidirtransform_originAttributes] = "silver:extension:bidirtransform:originAttributes:local:qnsTail";
-		silver.extension.bidirtransform.PoriginAttribute.occurs_local[silver.extension.bidirtransform.Init.oProds__ON__silver_extension_bidirtransform_originAttribute] = "silver:extension:bidirtransform:originAttribute:local:oProds";
-		silver.extension.bidirtransform.PwriteOptAttributes.occurs_local[silver.extension.bidirtransform.Init.prefixedNames__ON__silver_extension_bidirtransform_writeOptAttributes] = "silver:extension:bidirtransform:writeOptAttributes:local:prefixedNames";
-		silver.extension.bidirtransform.PwriteOptAttributes.occurs_local[silver.extension.bidirtransform.Init.tyExprs__ON__silver_extension_bidirtransform_writeOptAttributes] = "silver:extension:bidirtransform:writeOptAttributes:local:tyExprs";
-		//	local attribute qnsTail::QNameList;
-		silver.extension.bidirtransform.PoptOriginAttributes.localInheritedAttributes[silver.extension.bidirtransform.Init.qnsTail__ON__silver_extension_bidirtransform_optOriginAttributes] = new common.Lazy[silver.extension.bidirtransform.NQNameList.num_inh_attrs];
-		silver.extension.bidirtransform.PoptOriginAttributes.occurs_local[silver.extension.bidirtransform.Init.qnsTail__ON__silver_extension_bidirtransform_optOriginAttributes] = "silver:extension:bidirtransform:optOriginAttributes:local:qnsTail";
-		silver.extension.bidirtransform.PoptOriginAttribute.occurs_local[silver.extension.bidirtransform.Init.oProds__ON__silver_extension_bidirtransform_optOriginAttribute] = "silver:extension:bidirtransform:optOriginAttribute:local:oProds";
-		silver.extension.bidirtransform.PoptOriginAttribute.occurs_local[silver.extension.bidirtransform.Init.lhsAttr__ON__silver_extension_bidirtransform_optOriginAttribute] = "silver:extension:bidirtransform:optOriginAttribute:local:lhsAttr";
 		silver.extension.bidirtransform.PrewriteProduction.occurs_local[silver.extension.bidirtransform.Init.absSig__ON__silver_extension_bidirtransform_rewriteProduction] = "silver:extension:bidirtransform:rewriteProduction:local:absSig";
 		silver.extension.bidirtransform.PrewriteProduction.occurs_local[silver.extension.bidirtransform.Init.cncSig__ON__silver_extension_bidirtransform_rewriteProduction] = "silver:extension:bidirtransform:rewriteProduction:local:cncSig";
 		silver.definition.env.NDef.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_isLock__ON__silver_definition_env_Def] = "silver:extension:bidirtransform:isLock";
@@ -504,6 +483,7 @@ public class Init{
 		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.locCncProdDcls__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:locCncProdDcls";
 		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.nonLocCncProdDcls__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:nonLocCncProdDcls";
 		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.allProdDcls__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:allProdDcls";
+		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.logStuff__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:logStuff";
 		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.inhRedexName__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:inhRedexName";
 		//	local attribute agDcls1::AGDcl;
 		silver.extension.bidirtransform.PtransformAGDclFull.localInheritedAttributes[silver.extension.bidirtransform.Init.agDcls1__ON__silver_extension_bidirtransform_transformAGDclFull] = new common.Lazy[silver.definition.core.NAGDcl.num_inh_attrs];
@@ -561,18 +541,24 @@ public class Init{
 		silver.definition.env.NDefs.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_Defs] = "silver:extension:bidirtransform:ppDebug";
 		silver.definition.env.NDefs.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_filteredProdDefs__ON__silver_definition_env_Defs] = "silver:extension:bidirtransform:filteredProdDefs";
 		silver.definition.env.NDef.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_Def] = "silver:extension:bidirtransform:prodNamedSig";
+		silver.definition.env.NDef.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_Def] = "silver:extension:bidirtransform:absProdNamedSig";
+		silver.definition.env.NDef.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_Def] = "silver:extension:bidirtransform:cncProdNamedSig";
 		silver.definition.env.NDef.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_isProdDef__ON__silver_definition_env_Def] = "silver:extension:bidirtransform:isProdDef";
 		silver.extension.bidirtransform.NOrigin.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_wasTransformed__ON__silver_extension_bidirtransform_Origin] = "silver:extension:bidirtransform:wasTransformed";
 		silver.extension.bidirtransform.NOrigin.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_concreteOrigin__ON__silver_extension_bidirtransform_Origin] = "silver:extension:bidirtransform:concreteOrigin";
 		silver.extension.bidirtransform.NOrigin.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_isBottomOrigin__ON__silver_extension_bidirtransform_Origin] = "silver:extension:bidirtransform:isBottomOrigin";
 		silver.definition.env.NDclInfo.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_DclInfo] = "silver:extension:bidirtransform:ppDebug";
 		silver.definition.env.NDclInfo.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_DclInfo] = "silver:extension:bidirtransform:prodNamedSig";
+		silver.definition.env.NDclInfo.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_DclInfo] = "silver:extension:bidirtransform:absProdNamedSig";
+		silver.definition.env.NDclInfo.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_DclInfo] = "silver:extension:bidirtransform:cncProdNamedSig";
 		//	local attribute hd::Def;
 		silver.extension.bidirtransform.PfilterDefs.localInheritedAttributes[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_filterDefs] = new common.Lazy[silver.definition.env.NDef.num_inh_attrs];
 		silver.extension.bidirtransform.PfilterDefs.occurs_local[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_filterDefs] = "silver:extension:bidirtransform:filterDefs:local:hd";
 		silver.extension.bidirtransform.PfilterDefs.occurs_local[silver.extension.bidirtransform.Init.tl__ON__silver_extension_bidirtransform_filterDefs] = "silver:extension:bidirtransform:filterDefs:local:tl";
 		silver.definition.env.NEnvItem.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_EnvItem] = "silver:extension:bidirtransform:ppDebug";
 		silver.definition.env.NEnvItem.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_EnvItem] = "silver:extension:bidirtransform:prodNamedSig";
+		silver.definition.env.NEnvItem.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_EnvItem] = "silver:extension:bidirtransform:absProdNamedSig";
+		silver.definition.env.NEnvItem.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_EnvItem] = "silver:extension:bidirtransform:cncProdNamedSig";
 		silver.extension.patternmatching.NPatternList.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_rawPatternList__ON__silver_extension_patternmatching_PatternList] = "silver:extension:bidirtransform:rawPatternList";
 	}
 
@@ -849,7 +835,7 @@ public class Init{
 		silver.extension.bidirtransform.PtransformRuleCons.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PtransformRuleSingle.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PtransformRule.initProductionAttributeDefinitions();
-		//FUNCTION hasTrans Boolean ::= rules::[TransformRule] dcl::[Decorated NamedSignature] absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList 
+		//FUNCTION hasTrans Boolean ::= rules::[TransformRule] dcl::Decorated NamedSignature absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList 
 		// hd = head(rules)
 		silver.extension.bidirtransform.PhasTrans.localAttributes[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_hasTrans] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((silver.extension.bidirtransform.NTransformRule)core.Phead.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PhasTrans.i_rules))); } };
 		// hd.absGroup = absGroup
@@ -914,9 +900,9 @@ public class Init{
 		silver.extension.bidirtransform.PgetProdFromGroups.localAttributes[silver.extension.bidirtransform.Init.cncSig__ON__silver_extension_bidirtransform_getProdFromGroups] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)silver.extension.bidirtransform.PgetProdFromGroup.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PgetProdFromGroups.i_s), context.childAsIsLazy(silver.extension.bidirtransform.PgetProdFromGroups.i_cncGroup))); } };
 		silver.extension.bidirtransform.PoriginEq.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PoriginPrdStmt.initProductionAttributeDefinitions();
-		//ASPECT PRODUCTION productionDcl top ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody 
+		//ASPECT PRODUCTION mkProductionDcl top ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract::Boolean 
 		// body.prodOutput = ns.namedSignature.outputElement
-		silver.definition.core.PproductionDcl.childInheritedAttributes[silver.definition.core.PproductionDcl.i_body][silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodOutput__ON__silver_definition_core_ProductionBody] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((silver.definition.env.NNamedSignatureElement)((silver.definition.env.NNamedSignature)context.childDecorated(silver.definition.core.PproductionDcl.i_ns).synthesized(silver.definition.core.Init.silver_definition_env_namedSignature__ON__silver_definition_core_ProductionSignature)).decorate(context, (common.Lazy[])null).synthesized(silver.definition.env.Init.silver_definition_env_outputElement__ON__silver_definition_env_NamedSignature)); } };
+		silver.definition.core.PmkProductionDcl.childInheritedAttributes[silver.definition.core.PmkProductionDcl.i_body][silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodOutput__ON__silver_definition_core_ProductionBody] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((silver.definition.env.NNamedSignatureElement)((silver.definition.env.NNamedSignature)context.childDecorated(silver.definition.core.PmkProductionDcl.i_ns).synthesized(silver.definition.core.Init.silver_definition_env_namedSignature__ON__silver_definition_core_ProductionSignature)).decorate(context, (common.Lazy[])null).synthesized(silver.definition.env.Init.silver_definition_env_outputElement__ON__silver_definition_env_NamedSignature)); } };
 		//ASPECT PRODUCTION aspectProductionDcl top ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 		// body.prodOutput = ns.namedSignature.outputElement
 		silver.definition.core.PaspectProductionDcl.childInheritedAttributes[silver.definition.core.PaspectProductionDcl.i_body][silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodOutput__ON__silver_definition_core_ProductionBody] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((silver.definition.env.NNamedSignatureElement)((silver.definition.env.NNamedSignature)context.childDecorated(silver.definition.core.PaspectProductionDcl.i_ns).synthesized(silver.definition.core.Init.silver_definition_env_namedSignature__ON__silver_definition_core_AspectProductionSignature)).decorate(context, (common.Lazy[])null).synthesized(silver.definition.env.Init.silver_definition_env_outputElement__ON__silver_definition_env_NamedSignature)); } };
@@ -939,8 +925,19 @@ public class Init{
 		silver.extension.bidirtransform.PsingleNt.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PconsNt.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PfullNt.initProductionAttributeDefinitions();
+		//FUNCTION filterSigs [Decorated NamedSignature] ::= nm::String toFilter::[Decorated NamedSignature] 
+		// hd = head(toFilter)
+		silver.extension.bidirtransform.PfilterSigs.localAttributes[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_filterSigs] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.DecoratedNode)core.Phead.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PfilterSigs.i_toFilter))); } };
 		//FUNCTION prodsFromDefs [Decorated NamedSignature] ::= defs::[Def] 
 		//FUNCTION prodFromDef [Decorated NamedSignature] ::= def::Def 
+		//FUNCTION absProdsFromDefs [Decorated NamedSignature] ::= defs::[Def] 
+		//FUNCTION absProdFromDef [Decorated NamedSignature] ::= def::Def 
+		//FUNCTION cncProdsFromDefs [Decorated NamedSignature] ::= defs::[Def] 
+		//FUNCTION cncProdFromDef [Decorated NamedSignature] ::= def::Def 
+		//FUNCTION absProdsFromDcls [Decorated NamedSignature] ::= dcls::[DclInfo] 
+		//FUNCTION cncProdsFromDcls [Decorated NamedSignature] ::= dcls::[DclInfo] 
+		//FUNCTION absProdFromDcl [Decorated NamedSignature] ::= dcl::DclInfo 
+		//FUNCTION cncProdFromDcl [Decorated NamedSignature] ::= dcl::DclInfo 
 		//FUNCTION prodsFromDcls [Decorated NamedSignature] ::= dcls::[DclInfo] 
 		//FUNCTION prodFromDcl [Decorated NamedSignature] ::= dcl::DclInfo 
 		//FUNCTION hasRwMatch Boolean ::= rwrs::[Decorated RewriteRule] outType::String ns::Decorated NamedSignature 
@@ -969,14 +966,6 @@ public class Init{
 		silver.extension.bidirtransform.PcncOriginDcl.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PcncApplyOrigins.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PapplyOrigins.initProductionAttributeDefinitions();
-		silver.extension.bidirtransform.PoriginAttributeDcl.initProductionAttributeDefinitions();
-		silver.extension.bidirtransform.PoriginAttributes.initProductionAttributeDefinitions();
-		silver.extension.bidirtransform.PoriginAttribute.initProductionAttributeDefinitions();
-		silver.extension.bidirtransform.PoptOriginAttributeDcl.initProductionAttributeDefinitions();
-		silver.extension.bidirtransform.PoptOriginAttributeDclPrefix.initProductionAttributeDefinitions();
-		silver.extension.bidirtransform.PwriteOptAttributes.initProductionAttributeDefinitions();
-		silver.extension.bidirtransform.PoptOriginAttributes.initProductionAttributeDefinitions();
-		silver.extension.bidirtransform.PoptOriginAttribute.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PrewriteProduction.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PemptyRewriteProduction.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PrewriteProductionArgSingle.initProductionAttributeDefinitions();
@@ -994,6 +983,10 @@ public class Init{
 		silver.definition.env.NDef.defaultSynthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_isProdDef__ON__silver_definition_env_Def] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return false; } };
 		// top.prodNamedSig = []
 		silver.definition.env.NDef.defaultSynthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_Def] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } };
+		// top.absProdNamedSig = []
+		silver.definition.env.NDef.defaultSynthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_Def] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } };
+		// top.cncProdNamedSig = []
+		silver.definition.env.NDef.defaultSynthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_Def] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } };
 		//ASPECT PRODUCTION typeDef top ::= d::EnvItem 
 		// top.ppDebug = "typeDef: " ++ d.ppDebug
 		silver.definition.env.PtypeDef.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_Def] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return new common.StringCatter((common.StringCatter)(new common.StringCatter("typeDef: ")), (common.StringCatter)((common.StringCatter)context.childDecorated(silver.definition.env.PtypeDef.i_d).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_EnvItem))); } };
@@ -1010,6 +1003,10 @@ public class Init{
 		silver.definition.env.PprodDclDef.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_isProdDef__ON__silver_definition_env_Def] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return true; } };
 		// top.prodNamedSig = d.prodNamedSig
 		silver.definition.env.PprodDclDef.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_Def] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)context.childDecorated(silver.definition.env.PprodDclDef.i_d).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_EnvItem)); } };
+		// top.absProdNamedSig = d.absProdNamedSig
+		silver.definition.env.PprodDclDef.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_Def] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)context.childDecorated(silver.definition.env.PprodDclDef.i_d).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_EnvItem)); } };
+		// top.cncProdNamedSig = d.cncProdNamedSig
+		silver.definition.env.PprodDclDef.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_Def] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)context.childDecorated(silver.definition.env.PprodDclDef.i_d).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_EnvItem)); } };
 		//ASPECT PRODUCTION paDef top ::= d::DclInfo 
 		// top.ppDebug = "paDef: " ++ d.ppDebug
 		silver.definition.env.PpaDef.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_Def] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return new common.StringCatter((common.StringCatter)(new common.StringCatter("paDef: ")), (common.StringCatter)((common.StringCatter)context.childDecorated(silver.definition.env.PpaDef.i_d).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_DclInfo))); } };
@@ -1036,6 +1033,10 @@ public class Init{
 		silver.definition.env.NDclInfo.defaultSynthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return (new common.StringCatter("defaultDclInfo")); } };
 		// top.prodNamedSig = []
 		silver.definition.env.NDclInfo.defaultSynthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } };
+		// top.absProdNamedSig = []
+		silver.definition.env.NDclInfo.defaultSynthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } };
+		// top.cncProdNamedSig = []
+		silver.definition.env.NDclInfo.defaultSynthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } };
 		//ASPECT PRODUCTION childDcl top ::= sg::String sl::Location fn::String ty::Type 
 		// top.ppDebug = "childDcl " ++ fn
 		silver.definition.env.PchildDcl.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return new common.StringCatter((common.StringCatter)(new common.StringCatter("childDcl ")), (common.StringCatter)((common.StringCatter)context.childAsIs(silver.definition.env.PchildDcl.i_fn))); } };
@@ -1048,11 +1049,15 @@ public class Init{
 		//ASPECT PRODUCTION forwardDcl top ::= sg::String sl::Location ty::Type 
 		// top.ppDebug = "forwardDcl"
 		silver.definition.env.PforwardDcl.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return (new common.StringCatter("forwardDcl")); } };
-		//ASPECT PRODUCTION prodDcl top ::= sg::String sl::Location ns::NamedSignature 
-		// top.ppDebug = "prodDcl"
-		silver.definition.env.PprodDcl.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return (new common.StringCatter("prodDcl")); } };
+		//ASPECT PRODUCTION prodDcl top ::= sg::String sl::Location ns::NamedSignature isAbstract::Boolean 
+		// top.ppDebug = "prodDcl, abs:" ++ if isAbstract then "Y" else "N"
+		silver.definition.env.PprodDcl.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return new common.StringCatter((common.StringCatter)(new common.StringCatter("prodDcl, abs:")), (common.StringCatter)(((Boolean)context.childAsIs(silver.definition.env.PprodDcl.i_isAbstract)) ? (new common.StringCatter("Y")) : (new common.StringCatter("N")))); } };
 		// top.prodNamedSig = [ ns ]
 		silver.definition.env.PprodDcl.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pcons.invoke(common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.definition.env.PprodDcl.i_ns)), new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } })); } };
+		// top.absProdNamedSig = if isAbstract then [ ns ] else []
+		silver.definition.env.PprodDcl.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return (((Boolean)context.childAsIs(silver.definition.env.PprodDcl.i_isAbstract)) ? ((common.ConsCell)core.Pcons.invoke(common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.definition.env.PprodDcl.i_ns)), new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } })) : ((common.ConsCell)core.Pnil.invoke())); } };
+		// top.cncProdNamedSig = if ! isAbstract then [ ns ] else []
+		silver.definition.env.PprodDcl.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((!((Boolean)context.childAsIs(silver.definition.env.PprodDcl.i_isAbstract))) ? ((common.ConsCell)core.Pcons.invoke(common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.definition.env.PprodDcl.i_ns)), new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } })) : ((common.ConsCell)core.Pnil.invoke())); } };
 		//ASPECT PRODUCTION funDcl top ::= sg::String sl::Location ns::NamedSignature 
 		// top.ppDebug = "funDcl"
 		silver.definition.env.PfunDcl.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return (new common.StringCatter("funDcl")); } };
@@ -1109,21 +1114,37 @@ public class Init{
 		silver.definition.env.NEnvItem.defaultSynthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return (new common.StringCatter("defaultEnvItem")); } };
 		// top.prodNamedSig = []
 		silver.definition.env.NEnvItem.defaultSynthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } };
+		// top.absProdNamedSig = []
+		silver.definition.env.NEnvItem.defaultSynthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } };
+		// top.cncProdNamedSig = []
+		silver.definition.env.NEnvItem.defaultSynthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } };
 		//ASPECT PRODUCTION renamedEnvItem ei ::= newname::String di::DclInfo 
 		// ei.ppDebug = "(" ++ newname ++ ") " ++ di.ppDebug
 		silver.definition.env.PrenamedEnvItem.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return new common.StringCatter((common.StringCatter)(new common.StringCatter("(")), (common.StringCatter)new common.StringCatter((common.StringCatter)((common.StringCatter)context.childAsIs(silver.definition.env.PrenamedEnvItem.i_newname)), (common.StringCatter)new common.StringCatter((common.StringCatter)(new common.StringCatter(") ")), (common.StringCatter)((common.StringCatter)context.childDecorated(silver.definition.env.PrenamedEnvItem.i_di).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_DclInfo))))); } };
 		// ei.prodNamedSig = di.prodNamedSig
 		silver.definition.env.PrenamedEnvItem.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)context.childDecorated(silver.definition.env.PrenamedEnvItem.i_di).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_DclInfo)); } };
+		// ei.absProdNamedSig = di.absProdNamedSig
+		silver.definition.env.PrenamedEnvItem.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)context.childDecorated(silver.definition.env.PrenamedEnvItem.i_di).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_DclInfo)); } };
+		// ei.cncProdNamedSig = di.cncProdNamedSig
+		silver.definition.env.PrenamedEnvItem.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)context.childDecorated(silver.definition.env.PrenamedEnvItem.i_di).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_DclInfo)); } };
 		//ASPECT PRODUCTION fullNameEnvItem ei ::= di::DclInfo 
 		// ei.ppDebug = di.ppDebug
 		silver.definition.env.PfullNameEnvItem.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.StringCatter)context.childDecorated(silver.definition.env.PfullNameEnvItem.i_di).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_DclInfo)); } };
 		// ei.prodNamedSig = di.prodNamedSig
 		silver.definition.env.PfullNameEnvItem.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)context.childDecorated(silver.definition.env.PfullNameEnvItem.i_di).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_DclInfo)); } };
+		// ei.absProdNamedSig = di.absProdNamedSig
+		silver.definition.env.PfullNameEnvItem.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)context.childDecorated(silver.definition.env.PfullNameEnvItem.i_di).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_DclInfo)); } };
+		// ei.cncProdNamedSig = di.cncProdNamedSig
+		silver.definition.env.PfullNameEnvItem.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)context.childDecorated(silver.definition.env.PfullNameEnvItem.i_di).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_DclInfo)); } };
 		//ASPECT PRODUCTION onlyRenamedEnvItem ei ::= newname::String di::DclInfo 
 		// ei.ppDebug = "(" ++ newname ++ ") " ++ di.ppDebug
 		silver.definition.env.PonlyRenamedEnvItem.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return new common.StringCatter((common.StringCatter)(new common.StringCatter("(")), (common.StringCatter)new common.StringCatter((common.StringCatter)((common.StringCatter)context.childAsIs(silver.definition.env.PonlyRenamedEnvItem.i_newname)), (common.StringCatter)new common.StringCatter((common.StringCatter)(new common.StringCatter(") ")), (common.StringCatter)((common.StringCatter)context.childDecorated(silver.definition.env.PonlyRenamedEnvItem.i_di).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_DclInfo))))); } };
 		// ei.prodNamedSig = di.prodNamedSig
 		silver.definition.env.PonlyRenamedEnvItem.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)context.childDecorated(silver.definition.env.PonlyRenamedEnvItem.i_di).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_DclInfo)); } };
+		// ei.absProdNamedSig = di.absProdNamedSig
+		silver.definition.env.PonlyRenamedEnvItem.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)context.childDecorated(silver.definition.env.PonlyRenamedEnvItem.i_di).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_DclInfo)); } };
+		// ei.cncProdNamedSig = di.cncProdNamedSig
+		silver.definition.env.PonlyRenamedEnvItem.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_EnvItem] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)context.childDecorated(silver.definition.env.PonlyRenamedEnvItem.i_di).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_DclInfo)); } };
 		//ASPECT PRODUCTION patternList_one top ::= p::Pattern 
 		// top.rawPatternList = [ p ]
 		silver.extension.patternmatching.PpatternList_one.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_rawPatternList__ON__silver_extension_patternmatching_PatternList] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pcons.invoke(common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.extension.patternmatching.PpatternList_one.i_p)), new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } })); } };
@@ -1272,8 +1293,17 @@ public class Init{
 	public static int count_local__ON__silver_extension_bidirtransform_singleNt = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_consNt = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_fullNt = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_filterSigs = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_prodsFromDefs = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_prodFromDef = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_absProdsFromDefs = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_absProdFromDef = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_cncProdsFromDefs = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_cncProdFromDef = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_absProdsFromDcls = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_cncProdsFromDcls = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_absProdFromDcl = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_cncProdFromDcl = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_prodsFromDcls = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_prodFromDcl = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_hasRwMatch = 0;
@@ -1296,14 +1326,6 @@ public class Init{
 	public static int count_local__ON__silver_extension_bidirtransform_cncOriginDcl = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_cncApplyOrigins = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_applyOrigins = 0;
-	public static int count_local__ON__silver_extension_bidirtransform_originAttributeDcl = 0;
-	public static int count_local__ON__silver_extension_bidirtransform_originAttributes = 0;
-	public static int count_local__ON__silver_extension_bidirtransform_originAttribute = 0;
-	public static int count_local__ON__silver_extension_bidirtransform_optOriginAttributeDcl = 0;
-	public static int count_local__ON__silver_extension_bidirtransform_optOriginAttributeDclPrefix = 0;
-	public static int count_local__ON__silver_extension_bidirtransform_writeOptAttributes = 0;
-	public static int count_local__ON__silver_extension_bidirtransform_optOriginAttributes = 0;
-	public static int count_local__ON__silver_extension_bidirtransform_optOriginAttribute = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_rewriteProduction = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_emptyRewriteProduction = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_rewriteProductionArgSingle = 0;
@@ -1461,6 +1483,7 @@ public static final int silver_extension_bidirtransform_ntList__ON__silver_exten
 public static final int silver_definition_core_errors__ON__silver_extension_bidirtransform_NonterminalList = silver.extension.bidirtransform.Init.count_syn__ON__NonterminalList++;
 public static final int silver_definition_env_env__ON__silver_extension_bidirtransform_NonterminalList = silver.extension.bidirtransform.Init.count_inh__ON__NonterminalList++;
 public static final int silver_extension_bidirtransform_grantedDefs__ON__silver_extension_bidirtransform_NonterminalList = silver.extension.bidirtransform.Init.count_inh__ON__NonterminalList++;
+public static final int hd__ON__silver_extension_bidirtransform_filterSigs = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_filterSigs++;
 public static final int hd__ON__silver_extension_bidirtransform_hasRwProd = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_hasRwProd++;
 public static final int hd__ON__silver_extension_bidirtransform_rwProd = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_rwProd++;
 public static final int hd__ON__silver_extension_bidirtransform_hasRwID = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_hasRwID++;
@@ -1491,14 +1514,6 @@ public static final int agDcls3__ON__silver_extension_bidirtransform_applyOrigin
 public static final int agDcls4__ON__silver_extension_bidirtransform_applyOrigins = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_applyOrigins++;
 public static final int agDcls5__ON__silver_extension_bidirtransform_applyOrigins = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_applyOrigins++;
 public static final int agDcls6__ON__silver_extension_bidirtransform_applyOrigins = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_applyOrigins++;
-public static final int addAttrs__ON__silver_extension_bidirtransform_originAttributeDcl = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_originAttributeDcl++;
-public static final int qnsTail__ON__silver_extension_bidirtransform_originAttributes = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_originAttributes++;
-public static final int oProds__ON__silver_extension_bidirtransform_originAttribute = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_originAttribute++;
-public static final int prefixedNames__ON__silver_extension_bidirtransform_writeOptAttributes = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_writeOptAttributes++;
-public static final int tyExprs__ON__silver_extension_bidirtransform_writeOptAttributes = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_writeOptAttributes++;
-public static final int qnsTail__ON__silver_extension_bidirtransform_optOriginAttributes = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_optOriginAttributes++;
-public static final int oProds__ON__silver_extension_bidirtransform_optOriginAttribute = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_optOriginAttribute++;
-public static final int lhsAttr__ON__silver_extension_bidirtransform_optOriginAttribute = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_optOriginAttribute++;
 public static final int absSig__ON__silver_extension_bidirtransform_rewriteProduction = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_rewriteProduction++;
 public static final int cncSig__ON__silver_extension_bidirtransform_rewriteProduction = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_rewriteProduction++;
 public static final int silver_extension_bidirtransform_isLock__ON__silver_definition_env_Def = silver.definition.env.Init.count_syn__ON__Def++;
@@ -1516,6 +1531,7 @@ public static final int cncProdDcls__ON__silver_extension_bidirtransform_transfo
 public static final int locCncProdDcls__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int nonLocCncProdDcls__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int allProdDcls__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
+public static final int logStuff__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int inhRedexName__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int agDcls1__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int agDcls2__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
@@ -1539,15 +1555,21 @@ public static final int silver_extension_bidirtransform_ppDebug__ON__silver_defi
 public static final int silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_Defs = silver.definition.env.Init.count_syn__ON__Defs++;
 public static final int silver_extension_bidirtransform_filteredProdDefs__ON__silver_definition_env_Defs = silver.definition.env.Init.count_syn__ON__Defs++;
 public static final int silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_Def = silver.definition.env.Init.count_syn__ON__Def++;
+public static final int silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_Def = silver.definition.env.Init.count_syn__ON__Def++;
+public static final int silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_Def = silver.definition.env.Init.count_syn__ON__Def++;
 public static final int silver_extension_bidirtransform_isProdDef__ON__silver_definition_env_Def = silver.definition.env.Init.count_syn__ON__Def++;
 public static final int silver_extension_bidirtransform_wasTransformed__ON__silver_extension_bidirtransform_Origin = silver.extension.bidirtransform.Init.count_syn__ON__Origin++;
 public static final int silver_extension_bidirtransform_concreteOrigin__ON__silver_extension_bidirtransform_Origin = silver.extension.bidirtransform.Init.count_syn__ON__Origin++;
 public static final int silver_extension_bidirtransform_isBottomOrigin__ON__silver_extension_bidirtransform_Origin = silver.extension.bidirtransform.Init.count_syn__ON__Origin++;
 public static final int silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_DclInfo = silver.definition.env.Init.count_syn__ON__DclInfo++;
 public static final int silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_DclInfo = silver.definition.env.Init.count_syn__ON__DclInfo++;
+public static final int silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_DclInfo = silver.definition.env.Init.count_syn__ON__DclInfo++;
+public static final int silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_DclInfo = silver.definition.env.Init.count_syn__ON__DclInfo++;
 public static final int hd__ON__silver_extension_bidirtransform_filterDefs = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_filterDefs++;
 public static final int tl__ON__silver_extension_bidirtransform_filterDefs = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_filterDefs++;
 public static final int silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_EnvItem = silver.definition.env.Init.count_syn__ON__EnvItem++;
 public static final int silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_EnvItem = silver.definition.env.Init.count_syn__ON__EnvItem++;
+public static final int silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_EnvItem = silver.definition.env.Init.count_syn__ON__EnvItem++;
+public static final int silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_EnvItem = silver.definition.env.Init.count_syn__ON__EnvItem++;
 public static final int silver_extension_bidirtransform_rawPatternList__ON__silver_extension_patternmatching_PatternList = silver.extension.patternmatching.Init.count_syn__ON__PatternList++;
 }

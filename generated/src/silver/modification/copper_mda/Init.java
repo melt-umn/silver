@@ -155,17 +155,17 @@ public class Init{
 		// targets = foldr(\ a::Decorated RootSpec b::String  -> foldr(\ c::MdaSpec d::String  -> mdaBuildSpecTarget(c) ++ d, "", a.mdaSpecs) ++ b, "", grammarsToTranslate)
 		silver.driver.util.Pcompilation.localAttributes[silver.modification.copper_mda.Init.targets__ON__silver_driver_util_compilation] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.StringCatter)core.Pfoldr.invoke((new common.NodeFactory<common.StringCatter>() {
   public final common.StringCatter invoke(final Object[] args, final Object[] namedArgs) {
-    final Object __SV_LAMBDA_PARAM_8223_a = args[0];
-final Object __SV_LAMBDA_PARAM_8224_b = args[1];
+    final Object __SV_LAMBDA_PARAM_8239_a = args[0];
+final Object __SV_LAMBDA_PARAM_8240_b = args[1];
 
     return new common.StringCatter((common.StringCatter)((common.StringCatter)core.Pfoldr.invoke((new common.NodeFactory<common.StringCatter>() {
   public final common.StringCatter invoke(final Object[] args, final Object[] namedArgs) {
-    final Object __SV_LAMBDA_PARAM_8226_c = args[0];
-final Object __SV_LAMBDA_PARAM_8227_d = args[1];
+    final Object __SV_LAMBDA_PARAM_8242_c = args[0];
+final Object __SV_LAMBDA_PARAM_8243_d = args[1];
 
-    return new common.StringCatter((common.StringCatter)((common.StringCatter)silver.modification.copper_mda.PmdaBuildSpecTarget.invoke(((silver.modification.copper_mda.NMdaSpec)common.Util.demand(__SV_LAMBDA_PARAM_8226_c)))), (common.StringCatter)((common.StringCatter)common.Util.demand(__SV_LAMBDA_PARAM_8227_d)));
+    return new common.StringCatter((common.StringCatter)((common.StringCatter)silver.modification.copper_mda.PmdaBuildSpecTarget.invoke(((silver.modification.copper_mda.NMdaSpec)common.Util.demand(__SV_LAMBDA_PARAM_8242_c)))), (common.StringCatter)((common.StringCatter)common.Util.demand(__SV_LAMBDA_PARAM_8243_d)));
   }
-}), (new common.StringCatter("")), new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)((common.DecoratedNode)common.Util.demand(__SV_LAMBDA_PARAM_8223_a)).synthesized(silver.modification.copper_mda.Init.silver_modification_copper_mda_mdaSpecs__ON__silver_driver_util_RootSpec)); } })), (common.StringCatter)((common.StringCatter)common.Util.demand(__SV_LAMBDA_PARAM_8224_b)));
+}), (new common.StringCatter("")), new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)((common.DecoratedNode)common.Util.demand(__SV_LAMBDA_PARAM_8239_a)).synthesized(silver.modification.copper_mda.Init.silver_modification_copper_mda_mdaSpecs__ON__silver_driver_util_RootSpec)); } })), (common.StringCatter)((common.StringCatter)common.Util.demand(__SV_LAMBDA_PARAM_8240_b)));
   }
 }), (new common.StringCatter("")), context.localAsIsLazy(silver.driver.util.Init.grammarsToTranslate__ON__silver_driver_util_compilation))); } };
 		// extraTopLevelDecls <- if length(targets) == 0 then [] else [ "  <target name='copper_mda'>\n" ++ targets ++ "  </target>\n" ]
