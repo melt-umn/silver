@@ -351,7 +351,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
         applyOrigins(absGroup.ntList, location=ag.location), 
         appendAGDcl(
             cncApplyOrigins(cncGroup.ntList, location=ag.location),
-            agDcls11, location=ag.location), location=ag.location);
+            agDcls12, location=ag.location), location=ag.location);
 
 
     -- ag.moduleNames = [];--agDclsP3.moduleNames ++ nestedAgs.moduleNames;
