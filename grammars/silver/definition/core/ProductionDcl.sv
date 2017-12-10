@@ -38,7 +38,7 @@ top::AGDcl ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract:
   ns.signatureName = fName;
   ns.env = newScopeEnv(sigDefs, top.env);
 
-  top.defs = prodDef(top.grammarName, id.location, namedSig) ::
+  top.defs = prodDef(top.grammarName, id.location, namedSig, isAbstract) ::
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 

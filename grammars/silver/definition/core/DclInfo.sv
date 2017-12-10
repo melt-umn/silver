@@ -73,7 +73,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 
 -- -- interface values
 aspect production prodDcl
-top::DclInfo ::= sg::String sl::Location ns::NamedSignature
+top::DclInfo ::= sg::String sl::Location ns::NamedSignature isAbstract::Boolean
 {
   top.refDispatcher = productionReference(_, location=_);
    -- Note that we still need production references, even though bug #16 removes the production type.

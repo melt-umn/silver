@@ -75,6 +75,66 @@ function prodFromDef
         else [decorate head(def.prodNamedSig) with {}];
 }
 
+function absProdsFromDefs
+[Decorated NamedSignature] ::= defs::[Def]
+{
+    return if length(defs) == 0 then []
+        else prodFromDef(head(defs)) ++ prodsFromDefs(tail(defs));
+}
+
+function absProdFromDef
+[Decorated NamedSignature] ::= def::Def
+{
+    return if null(def.absProdNamedSig) then [] 
+        else [decorate head(def.absProdNamedSig) with {}];
+}
+
+function cncProdsFromDefs
+[Decorated NamedSignature] ::= defs::[Def]
+{
+    return if length(defs) == 0 then []
+        else prodFromDef(head(defs)) ++ prodsFromDefs(tail(defs));
+}
+
+function cncProdFromDef
+[Decorated NamedSignature] ::= def::Def
+{
+    return if null(def.cncProdNamedSig) then [] 
+        else [decorate head(def.cncProdNamedSig) with {}];
+}
+
+function absProdsFromDcls
+[Decorated NamedSignature] ::= dcls::[DclInfo]
+{
+    return if length(dcls) == 0 then []
+        else absProdFromDcl(head(dcls)) ++ absProdsFromDcls(tail(dcls));
+}
+
+function cncProdsFromDcls
+[Decorated NamedSignature] ::= dcls::[DclInfo]
+{
+    return if length(dcls) == 0 then []
+        else cncProdFromDcl(head(dcls)) ++ cncProdsFromDcls(tail(dcls));
+}
+
+function absProdFromDcl
+[Decorated NamedSignature] ::= dcl::DclInfo
+{
+    return case dcl of 
+        | prodDcl(_,_,ns, x) -> if x then [ns] else []
+        | _ -> []
+    end;
+}
+
+function cncProdFromDcl
+[Decorated NamedSignature] ::= dcl::DclInfo
+{
+    return case dcl of 
+        | prodDcl(_,_,ns, x) -> if x then [] else [ns]
+        | _ -> []
+    end;
+}
+
 function prodsFromDcls
 [Decorated NamedSignature] ::= dcls::[DclInfo]
 {
@@ -86,7 +146,7 @@ function prodFromDcl
 [Decorated NamedSignature] ::= dcl::DclInfo
 {
     return case dcl of 
-        | prodDcl(_,_,ns) -> [ns]
+        | prodDcl(_,_,ns, _) -> [ns]
         | _ -> []
     end;
 }

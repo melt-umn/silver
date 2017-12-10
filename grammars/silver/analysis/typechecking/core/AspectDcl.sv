@@ -17,7 +17,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
         -- dcl is potentially not found, accessing it can crash.
         -- so check on dcls for this.
         case id.lookupValue.dcls of
-        | prodDcl (_, _, _) :: _ -> [ ]
+        | prodDcl (_, _, _, _) :: _ -> [ ]
         | funDcl  (_, _, _) :: _ -> [err(top.location, "Production aspect for '" ++ id.name ++ "' should be a 'function' aspect instead.") ]
         | _ -> [ ] 
         end ;
@@ -45,7 +45,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
         -- must be on dcls because lookup may have failed.
         case id.lookupValue.dcls of
         | funDcl (_, _, _) :: _ -> [ ]
-        | prodDcl  (_, _, _) :: _ -> [err(top.location, "Function aspect for '" ++ id.name ++ "' should be a 'production' aspect instead.") ]
+        | prodDcl  (_, _, _, _) :: _ -> [err(top.location, "Function aspect for '" ++ id.name ++ "' should be a 'production' aspect instead.") ]
         | _ -> [ ] 
         end ;
 

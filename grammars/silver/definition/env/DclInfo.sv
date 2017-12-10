@@ -149,7 +149,7 @@ top::DclInfo ::= sg::String sl::Location ty::Type
 
 -- ValueDclInfos that DO appear in interface files:
 abstract production prodDcl
-top::DclInfo ::= sg::String sl::Location ns::NamedSignature
+top::DclInfo ::= sg::String sl::Location ns::NamedSignature isAbstract::Boolean
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;

@@ -4,6 +4,8 @@ import silver:definition:regex;
 
 attribute ppDebug occurs on DclInfo;
 attribute prodNamedSig occurs on DclInfo;
+attribute absProdNamedSig occurs on DclInfo;
+attribute cncProdNamedSig occurs on DclInfo;
 
 aspect default production 
 top::DclInfo ::= 
@@ -11,7 +13,6 @@ top::DclInfo ::=
     top.ppDebug = "defaultDclInfo";
     top.prodNamedSig = [];
 }
-
 aspect production childDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
@@ -33,10 +34,12 @@ top::DclInfo ::= sg::String sl::Location ty::Type
   top.ppDebug = "forwardDcl";
 }
 aspect production prodDcl
-top::DclInfo ::= sg::String sl::Location ns::NamedSignature
+top::DclInfo ::= sg::String sl::Location ns::NamedSignature isAbstract::Boolean
 {
   top.ppDebug = "prodDcl";
   top.prodNamedSig = [ns];
+  top.absProdNamedSig = if isAbstract then [ns] else [];
+  top.cncProdNamedSig = if !isAbstract then [ns] else [];
 }
 aspect production funDcl
 top::DclInfo ::= sg::String sl::Location ns::NamedSignature

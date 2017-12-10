@@ -83,7 +83,7 @@ top::Pattern ::= v::Name
      then [err(v.location, "Pattern variable names start with a lower case letter")]
      else []) ++
     (case getValueDcl(v.name, top.env) of
-     | prodDcl(_,_,_) :: _ ->
+     | prodDcl(_,_,_,_) :: _ ->
          [err(v.location, "Pattern variables should not share the name of a production. (Potential confusion between '" ++ v.name ++ "' and '" ++ v.name ++ "()')")]
      | _ -> []
      end);

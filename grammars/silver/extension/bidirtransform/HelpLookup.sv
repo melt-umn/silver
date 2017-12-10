@@ -135,7 +135,7 @@ function getProdsFromConsDefs3
 [DclInfo] ::= fnnt::String d::Def dfs::Defs skipGrammar::String
 {
     return case d.dcl of
-        | prodDcl(sg,fn,ns) -> getProdsFromProdDcl(fnnt,d,dfs,sg,ns,skipGrammar)
+        | prodDcl(sg,fn,ns, _) -> getProdsFromProdDcl(fnnt,d,dfs,sg,ns,skipGrammar)
         | _ -> getProdsFromDefs2(fnnt, dfs, skipGrammar)
     end;
 }

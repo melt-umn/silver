@@ -394,7 +394,7 @@ top::IDclInfo ::= 'prod' '(' l::ILocation ',' td::ITyVarDcls ',' s::INamedSignat
 {
   s.env = newScopeEnv(td.defs, top.env);
   
-  top.defs = [prodDef(top.grammarName, l.alocation, s.signature)];
+  top.defs = [prodDef(top.grammarName, l.alocation, s.signature, true)];
 }
 
 concrete production aDclInfoFunction
