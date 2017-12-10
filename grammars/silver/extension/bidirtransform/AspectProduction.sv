@@ -34,9 +34,9 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 
   top.pp = "aspect production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
   top.setupInh := body.setupInh;
-  top.initProd := "\t\t//ASPECT PRODUCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
+  top.initProd := "\t\t//FAKE ASPECT PRODUCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
   top.valueWeaving := body.valueWeaving;
-  top.docs := [bodilessDclCommentItem("aspect production", id.name, ns.pp, id.location.filename)];
+  top.docs := [];
   top.flowDefs = body.flowDefs;
   top.defs = [];
 
