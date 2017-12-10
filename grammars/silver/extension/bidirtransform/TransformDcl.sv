@@ -305,6 +305,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local agDcls14::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             foldl(\ stmts::ProductionStmts rhs::NamedSignatureElement ->
+                if !contains(unFull(rhs.typerep.typeName), allNames) then stmts else
                 productionStmtsSnoc(stmts, 
                     attribDef(rhs.elementName, inhRedexName,
                     --inhChdAttrDef(rhs.elementName, inhRedexName,
