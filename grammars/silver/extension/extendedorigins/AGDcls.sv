@@ -481,8 +481,8 @@ autocopy attribute ori::Expr occurs on AGDcls,Expr,ProductionBody,ProductionStmt
 
 synthesized attribute lhs::Expr occurs on ProductionSignature, ProductionLHS;
 
-aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+aspect production mkProductionDcl
+top::AGDcl ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract::Boolean
 {
   body.ori = ns.lhs;
 }

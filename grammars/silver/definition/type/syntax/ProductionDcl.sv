@@ -5,8 +5,8 @@ attribute lexicalTypeVariables occurs on ProductionSignature, ProductionLHS, Pro
 flowtype lexicalTypeVariables {env} on ProductionSignature, ProductionLHS, ProductionRHS;
 flowtype lexicalTypeVariables {deterministicCount, env} on ProductionRHSElem;
 
-aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+aspect production mkProductionDcl
+top::AGDcl ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract::Boolean
 {
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = makeSet(ns.lexicalTypeVariables);

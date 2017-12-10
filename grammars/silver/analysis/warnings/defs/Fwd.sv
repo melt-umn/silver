@@ -19,8 +19,8 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   flags <- [pair("--warn-fwd", flag(warnFwdFlag))];
 }
 
-aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+aspect production mkProductionDcl
+top::AGDcl ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract::Boolean
 {
   local ntDefGram :: String =
     substring(0, lastIndexOf(":", namedSig.outputElement.typerep.typeName), namedSig.outputElement.typerep.typeName);

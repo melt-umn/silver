@@ -19,8 +19,8 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   flags <- [pair("--warn-missing-syn", flag(warnMissingSynFlag))];
 }
 
-aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+aspect production mkProductionDcl
+top::AGDcl ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract::Boolean
 {
   -- stop if this production forwards
   -- Lookup all attribute that occurs on our LHS (filter to SYN!)

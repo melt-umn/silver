@@ -2,8 +2,8 @@ grammar silver:translation:java:core;
 
 import silver:util;
 
-aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+aspect production mkProductionDcl
+top::AGDcl ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract::Boolean
 {
   local className :: String = "P" ++ id.name;
 

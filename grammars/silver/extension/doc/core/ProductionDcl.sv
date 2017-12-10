@@ -2,8 +2,8 @@ grammar silver:extension:doc:core;
 
 import silver:definition:concrete_syntax;
 
-aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+aspect production mkProductionDcl
+top::AGDcl ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract::Boolean
 {
   top.docs := [bodilessDclCommentItem("abstract production", id.name, ns.pp, id.location.filename)];
 

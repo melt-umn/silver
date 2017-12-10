@@ -58,8 +58,8 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.foldableRanges = [body.location];
 }
 
-aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+aspect production mkProductionDcl
+top::AGDcl ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract::Boolean
 {
   top.foldableRanges = [body.location];
 }

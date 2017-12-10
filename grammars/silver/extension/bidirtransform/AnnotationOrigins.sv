@@ -46,8 +46,8 @@ autocopy attribute prodOutput::NamedSignatureElement occurs on ProductionStmt, P
     AnnoExpr, AnnoAppExprs, ForwardInh, ForwardInhs, ExprInh, ExprInhs, AssignExpr, PrimPattern, PrimPatterns, 
     ProductionBody, AGDcl, ProductionDclStmt;
 
-aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody 
+aspect production mkProductionDcl
+top::AGDcl ::= id::Name ns::ProductionSignature body::ProductionBody isAbstract::Boolean
 {
     body.prodOutput = ns.namedSignature.outputElement;
 }
