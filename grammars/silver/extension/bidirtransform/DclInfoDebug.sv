@@ -38,7 +38,7 @@ top::DclInfo ::= sg::String sl::Location ty::Type
 aspect production prodDcl
 top::DclInfo ::= sg::String sl::Location ns::NamedSignature isAbstract::Boolean
 {
-  top.ppDebug = "prodDcl";
+  top.ppDebug = "prodDcl, abs:" ++ if isAbstract then "Y" else "N";
   top.prodNamedSig = [ns];
   top.absProdNamedSig = if isAbstract then [ns] else [];
   top.cncProdNamedSig = if !isAbstract then [ns] else [];
