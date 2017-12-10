@@ -160,7 +160,7 @@ abstract production synChdAttrDef
 top::ProductionStmt ::= lhs::String att::String eqs::Expr
 {
     forwards to synthesizedAttributeDef(
-w        decorate childDefLHS(decorate qName(top.location, lhs) with {}, location=top.location) with {},
+        decorate childDefLHS(decorate qName(top.location, lhs) with {}, location=top.location) with {},
         decorate qAttr(att, location=top.location) with {},
         eqs,
         location=top.location
