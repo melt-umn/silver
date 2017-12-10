@@ -3,7 +3,7 @@ grammar silver:extension:bidirtransform;
 synthesized attribute ntList::[Decorated FullNonterminal];
 synthesized attribute ntProds::[Decorated NamedSignature];
 synthesized attribute groupList::[DclInfo];
-inherited attribute grantedDefs::[Def];
+autocopy attribute grantedDefs::[Def];
 
 attribute grantedDefs occurs on AGDcl;
 
