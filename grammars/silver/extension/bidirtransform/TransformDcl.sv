@@ -91,11 +91,11 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local allProdDcls :: [[Decorated NamedSignature]] = absProdDcls ++ cncProdDcls;
 
 
-    ag.errors <- map(\ fnt::FullNonterminal ->
+    ag.errors <- map(\ fnt::Decorated FullNonterminal ->
         err(ag.location, "Abs nt: " ++ fnt.name),
     absGroup.ntList);
 
-    ag.errors <- map(\ fnt::FullNonterminal ->
+    ag.errors <- map(\ fnt::Decorated FullNonterminal ->
         err(ag.location, "Cnc nt: " ++ fnt.name),
     cncGroup.ntList);
 
