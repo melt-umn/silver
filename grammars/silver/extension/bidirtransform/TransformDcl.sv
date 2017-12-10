@@ -49,7 +49,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
         env = groupEnv; 
         grantedDefs = nestedAgs.defs;        
     };
-    
+
     ----------------
     -- Propagation of attributes
 
@@ -350,23 +350,23 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     toForward.config = ag.config;    
     nestedAgs.config = ag.config;
 
-    toForward.grammarName = ag.grammarName ++ ":transformed";
-    agDcls16.grammarName = ag.grammarName ++ ":transformed";
-    agDcls15.grammarName = ag.grammarName ++ ":transformed";
-    agDcls14.grammarName = ag.grammarName ++ ":transformed";
-    agDcls13.grammarName = ag.grammarName ++ ":transformed";
-    agDcls12.grammarName = ag.grammarName ++ ":transformed";
-    agDcls11.grammarName = ag.grammarName ++ ":transformed";
-    agDcls10.grammarName = ag.grammarName ++ ":transformed";
-    agDcls9.grammarName = ag.grammarName ++ ":transformed";
-    agDcls8.grammarName = ag.grammarName ++ ":transformed";
-    agDcls7.grammarName = ag.grammarName ++ ":transformed";
-    agDcls6.grammarName = ag.grammarName ++ ":transformed";
-    agDcls5.grammarName = ag.grammarName ++ ":transformed";
-    agDcls4.grammarName = ag.grammarName ++ ":transformed";
-    agDcls3.grammarName = ag.grammarName ++ ":transformed";
-    agDcls2.grammarName = ag.grammarName ++ ":transformed";
-    agDcls1.grammarName = ag.grammarName ++ ":transformed";
+    toForward.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls16.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls15.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls14.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls13.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls12.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls11.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls10.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls9.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls8.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls7.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls6.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls5.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls4.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls3.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls2.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    agDcls1.grammarName = ag.grammarName;-- \+\+ ":transformed";
     nestedAgs.grammarName = ag.grammarName;
 
     toForward.flowEnv = ag.flowEnv;
