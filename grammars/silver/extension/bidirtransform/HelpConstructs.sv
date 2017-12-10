@@ -160,8 +160,8 @@ abstract production synChdAttrDef
 top::ProductionStmt ::= lhs::String att::String eqs::Expr
 {
     forwards to synthesizedAttributeDef(
-        childDefLHS(qName(top.location, lhs), location=top.location),
-        qAttr(att, location=top.location),
+        decorate childDefLHS(decorate qName(top.location, lhs) with {}, location=top.location) with {},
+        decorate qAttr(att, location=top.location) with {},
         eqs,
         location=top.location
     );
@@ -171,8 +171,8 @@ abstract production inhChdAttrDef
 top::ProductionStmt ::= lhs::String att::String eqs::Expr
 {
     forwards to inheritedAttributeDef(
-        childDefLHS(qName(top.location, lhs), location=top.location),
-        qAttr(att, location=top.location),
+        decorate childDefLHS(decorate qName(top.location, lhs) with {}, location=top.location) with {},
+        decorate qAttr(att, location=top.location) with {},
         eqs,
         location=top.location
     );
@@ -182,8 +182,8 @@ abstract production synAttrDef
 top::ProductionStmt ::= lhs::String att::String eqs::Expr
 {
     forwards to synthesizedAttributeDef(
-        lhsDefLHS(qName(top.location, lhs), location=top.location),
-        qAttr(att, location=top.location),
+        decorate lhsDefLHS(decorate qName(top.location, lhs) with {}, location=top.location) with {},
+        decorate qAttr(att, location=top.location) with {},
         eqs,
         location=top.location
     );
