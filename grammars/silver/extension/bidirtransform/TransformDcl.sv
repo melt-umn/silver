@@ -90,25 +90,27 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local nonLocCncProdDcls :: [Decorated NamedSignature] = cncProdDcls;
     local allProdDcls :: [Decorated NamedSignature] = absProdDcls ++ cncProdDcls;
 
-    ag.errors <- map(\ fnt::Decorated FullNonterminal ->
+    local logStuff :: Boolean = false;
+
+    ag.errors <- if logStuff then map(\ fnt::Decorated FullNonterminal ->
         err(ag.location, "Abs nt: " ++ fnt.name),
-    absGroup.ntList);
+    absGroup.ntList) else [];
 
-    ag.errors <- map(\ fnt::Decorated FullNonterminal ->
+    ag.errors <- if logStuff then map(\ fnt::Decorated FullNonterminal ->
         err(ag.location, "Cnc nt: " ++ fnt.name),
-    cncGroup.ntList);
+    cncGroup.ntList) else [];
 
-    ag.errors <- map(\ d::Def -> 
+    ag.errors <- if logStuff then map(\ d::Def -> 
         err(ag.location, "Nested Def: " ++ d.ppDebug),
-    nestedAgs.defs);
+    nestedAgs.defs) else [];
 
-    ag.errors <- map(\ dec::Decorated NamedSignature ->
+    ag.errors <- if logStuff then map(\ dec::Decorated NamedSignature ->
         err(ag.location, "Abs prod: " ++ dec.fullName),
-    absProdDcls);
+    absProdDcls) else [];
 
-    ag.errors <- map(\ dec::Decorated NamedSignature ->
+    ag.errors <- if logStuff then map(\ dec::Decorated NamedSignature ->
         err(ag.location, "Cnc prod: " ++ dec.fullName),
-    cncProdDcls);
+    cncProdDcls) else [];
 
     -----------------------
     -- Generating code
