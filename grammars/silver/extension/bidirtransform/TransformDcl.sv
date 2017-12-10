@@ -100,7 +100,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     ag.errors <- map(\ d::Def -> 
         err(ag.location, "Nested Def: " ++ d.ppDebug),
-    nestedAgs.defs)
+    nestedAgs.defs);
 
     ag.errors <- map(\ dec::Decorated NamedSignature ->
         err(ag.location, "Abs prod: " ++ dec.fullName),
