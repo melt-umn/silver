@@ -84,8 +84,20 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     -- We need to know all the productions on all of the known types
 
-    local absProdDcls :: [[Decorated NamedSignature]] = map((.ntProds), absGroup.ntList);
-    local cncProdDcls :: [[Decorated NamedSignature]] = map((.ntProds), cncGroup.ntList);
+    local absProdDcls :: [[Decorated NamedSignature]] = foldl(\ out::[[Decorated NamedSignature]], in::[Decorated NamedSignature] ->
+        if null(in) then out
+            else [foldl(\ out::[Decorated NamedSignature] in::Decorated NamedSignature ->
+                if in.isConcrete then out 
+                else out ++ [in],
+            [], in)] ++ out,
+        [], prodsFromDefs(nestedAgs.defs));
+    local cncProdDcls :: [[Decorated NamedSignature]] = foldl(\ out::[[Decorated NamedSignature]], in::[Decorated NamedSignature] ->
+        if null(in) then out
+            else [foldl(\ out::[Decorated NamedSignature] in::Decorated NamedSignature ->
+                if !in.isConcrete then out 
+                else out ++ [in],
+            [], in)] ++ out,
+        [], prodsFromDefs(nestedAgs.defs));
     local locCncProdDcls :: [[Decorated NamedSignature]] = [];
     local nonLocCncProdDcls :: [[Decorated NamedSignature]] = cncProdDcls;
     local allProdDcls :: [[Decorated NamedSignature]] = absProdDcls ++ cncProdDcls;
