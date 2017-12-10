@@ -61,7 +61,7 @@ function prodsFromDefs
 function prodFromDef
 [Decorated NamedSignature] ::= def::Def
 {
-    return def.prodNamedSig
+    return def.prodNamedSig;
 }
 
 function prodsFromDcls
