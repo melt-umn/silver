@@ -118,5 +118,5 @@ top::TransformRule ::= rules::[TransformRule] dcl::Decorated NamedSignature
         --else if null(dcl) then nothing() else
         if dcl.fullName == hd.namedSig.fullName 
             then hd
-            else getTrans(tail(rules), dcl, location=top.location);
+            else getTrans(tail(rules), dcl, absGroup, cncGroup, location=top.location);
 }
