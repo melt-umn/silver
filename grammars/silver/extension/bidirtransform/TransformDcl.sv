@@ -84,12 +84,11 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     -- We need to know all the productions on all of the known types
 
-    local absProdDcls :: [[Decorated NamedSignature]] = absProdsFromDefs(nestedAgs.defs);
-    local cncProdDcls :: [[Decorated NamedSignature]] = cncProdsFromDefs(nestedAgs.defs);
-    local locCncProdDcls :: [[Decorated NamedSignature]] = [];
-    local nonLocCncProdDcls :: [[Decorated NamedSignature]] = cncProdDcls;
-    local allProdDcls :: [[Decorated NamedSignature]] = absProdDcls ++ cncProdDcls;
-
+    local absProdDcls :: [Decorated NamedSignature] = absProdsFromDefs(nestedAgs.defs);
+    local cncProdDcls :: [Decorated NamedSignature] = cncProdsFromDefs(nestedAgs.defs);
+    local locCncProdDcls :: [Decorated NamedSignature] = [];
+    local nonLocCncProdDcls :: [Decorated NamedSignature] = cncProdDcls;
+    local allProdDcls :: [Decorated NamedSignature] = absProdDcls ++ cncProdDcls;
 
     ag.errors <- map(\ fnt::Decorated FullNonterminal ->
         err(ag.location, "Abs nt: " ++ fnt.name),
