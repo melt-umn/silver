@@ -95,7 +95,7 @@ function hasTrans
 Boolean ::= rules::[Decorated TransformRule] dcl::Decorated NamedSignature
             absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
 {
-    local hd::TransformRule = head(rules);
+    local hd::Decorated TransformRule = head(rules);
 
     hd.absGroup = absGroup;
     hd.cncGroup = cncGroup;
