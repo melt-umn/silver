@@ -98,18 +98,12 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
         err(ag.location, "Cnc nt: " ++ fnt.name),
     cncGroup.ntList);
 
-    ag.errors <- foldl(\ errs::[Message] d::[Decorated NamedSignature] ->
-        if null(d) then errs else 
-            errs ++ map(\ dec::Decorated NamedSignature -> 
-                err(ag.location, "Abs prod: " ++ dec.fullName),
-            d),
+    ag.errors <- map(\ d::Decorated NamedSignature ->
+        err(ag.location, "Abs prod: " ++ dec.fullName),
     [], absProdDcls);
 
-    ag.errors <- foldl(\ errs::[Message] d::[Decorated NamedSignature] ->
-        if null(d) then errs else 
-            errs ++ map(\ dec::Decorated NamedSignature -> 
-                err(ag.location, "Cnc prod: " ++ dec.fullName),
-            d),
+    ag.errors <- map(\ d::Decorated NamedSignature ->
+        err(ag.location, "Cnc prod: " ++ dec.fullName),
     [], cncProdDcls);
 
     -----------------------
@@ -207,7 +201,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     -- for each abstract production
     -- top.wasTransformed = wasTransformed(top.origin, top.redex) || <rhs>.wasTransformed;
-    local agDcls10::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+    local agDcls10::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
             attribDef(ns.outputElement.elementName, "wasTransformed",
             --synAttrDef(ns.outputElement.elementName, "wasTransformed",
@@ -224,7 +218,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
         agDcls9, absProdDcls);
 
     -- top.restored$cncType = < rewrite + transformation rules ...>
-    local agDcls11::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+    local agDcls11::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             foldl(\ stmts::ProductionStmts rhs::String ->
                 -- if there isn't a rewrite rule from this production to this lhs then don't define this
@@ -258,7 +252,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     --  else if transformed_$tName   |
     --    then apply transformation  |
     --    else see ------------------/
-    local agDcls12::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+    local agDcls12::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) && ns.outputElement.typerep.typeName != transType.typerep.typeName
             then productionStmtsNil(location=ag.location)
@@ -285,7 +279,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     --  else if the rhs matches this transformation, 
     --    then true
     --    else false
-    local agDcls13::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+    local agDcls13::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) then agDcls 
         else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             prdStmtList([
@@ -302,7 +296,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     --  else if transformed$tName
     --    then just($thisType_Origin(top))
     --    else nothing()
-    local agDcls14::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+    local agDcls14::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             foldl(\ stmts::ProductionStmts rhs::NamedSignatureElement ->
                 productionStmtsSnoc(stmts, 
@@ -323,7 +317,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- productions with 
     --
     -- top.suppliedOrigin = locationOrigin(ag.location);
-    local agDcls15::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+    local agDcls15::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
             attribDef(ns.outputElement.elementName, "suppliedOrigin",
             --synAttrDef(ns.outputElement.elementName, "suppliedOrigin", 
@@ -336,7 +330,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- or if they don't have location:
     --
     -- top.suppliedOrigin = bottomOrigin();
-    local agDcls16::AGDcl = foldl(\ agDcls::AGDcl dcl::[Decorated NamedSignature] ->
+    local agDcls16::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
             attribDef(ns.outputElement.elementName, "suppliedOrigin",
             --synAttrDef(ns.outputElement.elementName, "suppliedOrigin", 

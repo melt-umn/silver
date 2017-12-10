@@ -12,6 +12,8 @@ top::DclInfo ::=
 {
     top.ppDebug = "defaultDclInfo";
     top.prodNamedSig = [];
+    top.absProdNamedSig = [];
+    top.cncProdNamedSig = [];
 }
 aspect production childDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::Type
