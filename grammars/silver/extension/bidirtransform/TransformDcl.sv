@@ -41,12 +41,15 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     local groupEnv::Decorated Env = toEnv(nestedAgs.defs);
 
-    local absGroup::Decorated NonterminalList = decorate absGroupIn with { env=groupEnv; };
-    local cncGroup::Decorated NonterminalList = decorate cncGroupIn with { env=groupEnv; };
-
-    absGroup.grantedDefs = nestedAgs.defs;
-    cncGroup.grantedDefs = nestedAgs.defs;
-
+    local absGroup::Decorated NonterminalList = decorate absGroupIn with {
+         env = groupEnv;
+         grantedDefs = nestedAgs.defs;
+    };
+    local cncGroup::Decorated NonterminalList = decorate cncGroupIn with { 
+        env = groupEnv; 
+        grantedDefs = nestedAgs.defs;        
+    };
+    
     ----------------
     -- Propagation of attributes
 
