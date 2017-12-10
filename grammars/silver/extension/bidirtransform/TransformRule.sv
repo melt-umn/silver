@@ -1,6 +1,6 @@
 grammar silver:extension:bidirtransform;
 
-synthesized attribute transformRules :: [TransformRule];
+synthesized attribute transformRules :: [Decorated TransformRule];
 
 nonterminal TransformRuleList with transformRules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
 nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
@@ -92,7 +92,7 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
     --               else err(trr.location, "Type mismatch in transformation rule")
 
 function hasTrans
-Boolean ::= rules::[TransformRule] dcl::Decorated NamedSignature
+Boolean ::= rules::[Decorated TransformRule] dcl::Decorated NamedSignature
             absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
 {
     local hd::TransformRule = head(rules);
@@ -106,7 +106,7 @@ Boolean ::= rules::[TransformRule] dcl::Decorated NamedSignature
 }
 
 abstract production getTrans
-top::TransformRule ::= rules::[TransformRule] dcl::Decorated NamedSignature
+top::Decorated TransformRule ::= rules::[Decorated TransformRule] dcl::Decorated NamedSignature
 {
     forwards to --if null(rules) then nothing()
         --else
