@@ -1,5 +1,5 @@
 
-package paper_dc_3.transformed;
+package paper_dc_3;
 
 // o::Origin ::= e::Decorated Term_c 
 public final class Porigin_Term_c extends silver.extension.bidirtransform.NOrigin {
@@ -9,7 +9,7 @@ public final class Porigin_Term_c extends silver.extension.bidirtransform.NOrigi
 
 	public static final Class<?> childTypes[] = {common.DecoratedNode.class};
 
-	public static final int num_local_attrs = Init.count_local__ON__paper_dc_3_transformed_origin_Term_c;
+	public static final int num_local_attrs = Init.count_local__ON__paper_dc_3_origin_Term_c;
 	public static final String[] occurs_local = new String[num_local_attrs];
 
 	public static final common.Lazy[] forwardInheritedAttributes = new common.Lazy[silver.extension.bidirtransform.NOrigin.num_inh_attrs];
@@ -82,7 +82,7 @@ public final class Porigin_Term_c extends silver.extension.bidirtransform.NOrigi
 
 	@Override
 	public common.Node evalForward(final common.DecoratedNode context) {
-		throw new common.exceptions.SilverInternalError("Production paper_dc_3:transformed:origin_Term_c erroneously claimed to forward");
+		throw new common.exceptions.SilverInternalError("Production paper_dc_3:origin_Term_c erroneously claimed to forward");
 	}
 
 	@Override
@@ -107,12 +107,12 @@ public final class Porigin_Term_c extends silver.extension.bidirtransform.NOrigi
 
 	@Override
 	public String getName() {
-		return "paper_dc_3:transformed:origin_Term_c";
+		return "paper_dc_3:origin_Term_c";
 	}
 
 	static void initProductionAttributeDefinitions() {
 		// o.isBottomOrigin = false
-		paper_dc_3.transformed.Porigin_Term_c.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_isBottomOrigin__ON__silver_extension_bidirtransform_Origin] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return false; } };
+		paper_dc_3.Porigin_Term_c.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_isBottomOrigin__ON__silver_extension_bidirtransform_Origin] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return false; } };
 
 	}
 

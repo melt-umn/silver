@@ -115,7 +115,7 @@ public final class Proot extends paper_dc_3.NRoot_a {
 		// r.value = e.value
 		paper_dc_3.Proot.synthesizedAttributes[paper_dc_3.Init.paper_dc_3_value__ON__paper_dc_3_Root_a] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((Integer)context.childDecorated(paper_dc_3.Proot.i_e).synthesized(paper_dc_3.Init.paper_dc_3_value__ON__paper_dc_3_Expr_a)); } };
 		// r.expd = e.expd
-		paper_dc_3.Proot.synthesizedAttributes[paper_dc_3.transformed.Init.paper_dc_3_transformed_expd__ON__paper_dc_3_Root_a] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((paper_dc_3.NExpr_a)context.childDecorated(paper_dc_3.Proot.i_e).synthesized(paper_dc_3.transformed.Init.paper_dc_3_transformed_expd__ON__paper_dc_3_Expr_a)); } };
+		paper_dc_3.Proot.synthesizedAttributes[paper_dc_3.Init.paper_dc_3_expd__ON__paper_dc_3_Root_a] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((paper_dc_3.NExpr_a)context.childDecorated(paper_dc_3.Proot.i_e).synthesized(paper_dc_3.Init.paper_dc_3_expd__ON__paper_dc_3_Expr_a)); } };
 
 	}
 
