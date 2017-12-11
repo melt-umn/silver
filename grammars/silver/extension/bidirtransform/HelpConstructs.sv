@@ -202,6 +202,12 @@ top::TypeExpr ::= s::String
         botlNone(location=top.location), location=top.location);
 }
 
+function sTyExprDec
+Decorated TypeExpr ::= s::String loc::Location env::Decorated Env
+{
+    return decorate sTyExpr(s, location=loc) with {env=env;};
+}
+
 abstract production decTyExpr
 top::TypeExpr ::= s::String 
 {
