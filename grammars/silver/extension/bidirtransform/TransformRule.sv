@@ -1,6 +1,6 @@
 grammar silver:extension:bidirtransform;
 
-synthesized attribute transformRules :: [TransformRule];
+synthesized attribute transformRules :: [Decorated TransformRule];
 
 nonterminal TransformRuleList with transformRules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config, inhProds;
 nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config, asExpr, inhProds;
@@ -98,13 +98,9 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
     --               else err(trr.location, "Type mismatch in transformation rule")
 
 function hasTrans
-Boolean ::= rules::[TransformRule] dcl::Decorated NamedSignature
-            absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
+Boolean ::= rules::[Decorated TransformRule] dcl::Decorated NamedSignature
 {
-    local hd::TransformRule = head(rules);
-
-    hd.absGroup = absGroup;
-    hd.cncGroup = cncGroup;
+    local hd::Decorated TransformRule = head(rules);
 
     return if null(rules) then false
         else if dcl.fullName == hd.namedSig.fullName then true
@@ -112,13 +108,10 @@ Boolean ::= rules::[TransformRule] dcl::Decorated NamedSignature
 }
 
 abstract production getTrans
-top::TransformRule ::= rules::[TransformRule] dcl::Decorated NamedSignature
+top::Decorated TransformRule ::= rules::[Decorated TransformRule] dcl::Decorated NamedSignature
             absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
 {
-    local hd::TransformRule = head(rules);
-
-    hd.absGroup = absGroup;
-    hd.cncGroup = cncGroup;
+    local hd::Decorated TransformRule = head(rules);
 
     forwards to --if null(rules) then nothing()
         --else if null(dcl) then nothing() else
@@ -128,13 +121,9 @@ top::TransformRule ::= rules::[TransformRule] dcl::Decorated NamedSignature
 }
 
 abstract production applyTrans 
-top::Expr ::= rules::[TransformRule] ns::Decorated NamedSignature absGroup::Decorated NonterminalList
-              cncGroup::Decorated NonterminalList 
+top::Expr ::= rules::[Decorated TransformRule] ns::Decorated NamedSignature
 {
-    local trans::TransformRule = getTrans(rules, ns, absGroup, cncGroup, location=top.location);
-
-    trans.absGroup = absGroup;
-    trans.cncGroup = cncGroup;
+    local trans::Decorated TransformRule = getTrans(rules, ns, absGroup, cncGroup, location=top.location);
 
     forwards to trans.outputStmt(nsApply(trans.namedSig, location=top.location));
 }
