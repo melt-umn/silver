@@ -2,8 +2,8 @@ grammar silver:extension:bidirtransform;
 
 synthesized attribute transformRules :: [TransformRule];
 
-nonterminal TransformRuleList with transformRules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
-nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config, asExpr;
+nonterminal TransformRuleList with transformRules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config, inhProds;
+nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config, asExpr, inhProds;
 
 synthesized attribute asExpr::Expr;
 
