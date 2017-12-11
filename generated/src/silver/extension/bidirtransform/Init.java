@@ -231,6 +231,12 @@ public class Init{
 		common.Decorator.applyDecorators(silver.definition.core.NAGDcl.decorators, PlockAGDcls.class);
 		common.Decorator.applyDecorators(silver.definition.env.NDef.decorators, PlockDef.class);
 		common.Decorator.applyDecorators(silver.definition.core.NAGDcls.decorators, PtransformAGDclFull.class);
+		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PinjectAnnos.class);
+		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PinjectApplication.class);
+		common.Decorator.applyDecorators(silver.definition.core.NAppExprs.decorators, PinjectAppExprs.class);
+		common.Decorator.applyDecorators(silver.definition.core.NAppExpr.decorators, PinjectAppExpr.class);
+		common.Decorator.applyDecorators(silver.definition.core.NAnnoAppExprs.decorators, PinjectAnnoExprs.class);
+		common.Decorator.applyDecorators(silver.definition.core.NAnnoExpr.decorators, PinjectAnnoExpr.class);
 		common.Decorator.applyDecorators(silver.extension.bidirtransform.NOrigin.decorators, PlocOrigin.class);
 		common.Decorator.applyDecorators(silver.extension.bidirtransform.NOrigin.decorators, PtxtOrigin.class);
 		common.Decorator.applyDecorators(silver.extension.bidirtransform.NOrigin.decorators, PbottomOrigin.class);
@@ -495,6 +501,8 @@ public class Init{
 		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.locCncProdDcls__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:locCncProdDcls";
 		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.nonLocCncProdDcls__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:nonLocCncProdDcls";
 		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.allProdDcls__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:allProdDcls";
+		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.allProdNames__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:allProdNames";
+		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.absProdNames__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:absProdNames";
 		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.logStuff__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:logStuff";
 		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.inhRedexName__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:inhRedexName";
 		//	local attribute agDcls1::AGDcl;
@@ -556,6 +564,12 @@ public class Init{
 		silver.definition.env.NDef.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_Def] = "silver:extension:bidirtransform:absProdNamedSig";
 		silver.definition.env.NDef.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_Def] = "silver:extension:bidirtransform:cncProdNamedSig";
 		silver.definition.env.NDef.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_isProdDef__ON__silver_definition_env_Def] = "silver:extension:bidirtransform:isProdDef";
+		//	local attribute baseAppExprs::AppExprs;
+		silver.extension.bidirtransform.PinjectApplication.localInheritedAttributes[silver.extension.bidirtransform.Init.baseAppExprs__ON__silver_extension_bidirtransform_injectApplication] = new common.Lazy[silver.definition.core.NAppExprs.num_inh_attrs];
+		silver.extension.bidirtransform.PinjectApplication.occurs_local[silver.extension.bidirtransform.Init.baseAppExprs__ON__silver_extension_bidirtransform_injectApplication] = "silver:extension:bidirtransform:injectApplication:local:baseAppExprs";
+		//	local attribute baseAnnoExprs::AnnoAppExprs;
+		silver.extension.bidirtransform.PinjectApplication.localInheritedAttributes[silver.extension.bidirtransform.Init.baseAnnoExprs__ON__silver_extension_bidirtransform_injectApplication] = new common.Lazy[silver.definition.core.NAnnoAppExprs.num_inh_attrs];
+		silver.extension.bidirtransform.PinjectApplication.occurs_local[silver.extension.bidirtransform.Init.baseAnnoExprs__ON__silver_extension_bidirtransform_injectApplication] = "silver:extension:bidirtransform:injectApplication:local:baseAnnoExprs";
 		silver.extension.bidirtransform.NOrigin.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_wasTransformed__ON__silver_extension_bidirtransform_Origin] = "silver:extension:bidirtransform:wasTransformed";
 		silver.extension.bidirtransform.NOrigin.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_concreteOrigin__ON__silver_extension_bidirtransform_Origin] = "silver:extension:bidirtransform:concreteOrigin";
 		silver.extension.bidirtransform.NOrigin.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_isBottomOrigin__ON__silver_extension_bidirtransform_Origin] = "silver:extension:bidirtransform:isBottomOrigin";
@@ -1040,6 +1054,12 @@ public class Init{
 		silver.definition.env.PconsDefs.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_Defs] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return new common.StringCatter((common.StringCatter)(new common.StringCatter("consDefs(")), (common.StringCatter)new common.StringCatter((common.StringCatter)((common.StringCatter)context.childDecorated(silver.definition.env.PconsDefs.i_e1).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_Def)), (common.StringCatter)new common.StringCatter((common.StringCatter)(new common.StringCatter(",")), (common.StringCatter)new common.StringCatter((common.StringCatter)((common.StringCatter)context.childDecorated(silver.definition.env.PconsDefs.i_e2).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_Defs)), (common.StringCatter)(new common.StringCatter(")")))))); } };
 		// top.filteredProdDefs = if e1.isProdDef then consDefs(e1, e2.filteredProdDefs) else e2.filteredProdDefs
 		silver.definition.env.PconsDefs.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_filteredProdDefs__ON__silver_definition_env_Defs] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return (((Boolean)context.childDecorated(silver.definition.env.PconsDefs.i_e1).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_isProdDef__ON__silver_definition_env_Def)) ? ((silver.definition.env.NDefs)new silver.definition.env.PconsDefs(common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.definition.env.PconsDefs.i_e1)), context.childDecoratedSynthesizedLazy(silver.definition.env.PconsDefs.i_e2, silver.extension.bidirtransform.Init.silver_extension_bidirtransform_filteredProdDefs__ON__silver_definition_env_Defs))) : ((silver.definition.env.NDefs)context.childDecorated(silver.definition.env.PconsDefs.i_e2).synthesized(silver.extension.bidirtransform.Init.silver_extension_bidirtransform_filteredProdDefs__ON__silver_definition_env_Defs))); } };
+		silver.extension.bidirtransform.PinjectAnnos.initProductionAttributeDefinitions();
+		silver.extension.bidirtransform.PinjectApplication.initProductionAttributeDefinitions();
+		silver.extension.bidirtransform.PinjectAppExprs.initProductionAttributeDefinitions();
+		silver.extension.bidirtransform.PinjectAppExpr.initProductionAttributeDefinitions();
+		silver.extension.bidirtransform.PinjectAnnoExprs.initProductionAttributeDefinitions();
+		silver.extension.bidirtransform.PinjectAnnoExpr.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PlocOrigin.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PtxtOrigin.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PbottomOrigin.initProductionAttributeDefinitions();
@@ -1354,6 +1374,12 @@ public class Init{
 	public static int count_local__ON__silver_extension_bidirtransform_lockAGDcls = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_lockDef = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_transformAGDclFull = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_injectAnnos = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_injectApplication = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_injectAppExprs = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_injectAppExpr = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_injectAnnoExprs = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_injectAnnoExpr = 0;
 	public static int count_inh__ON__Origin = 0;
 	public static int count_syn__ON__Origin = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_locOrigin = 0;
@@ -1556,6 +1582,8 @@ public static final int cncProdDcls__ON__silver_extension_bidirtransform_transfo
 public static final int locCncProdDcls__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int nonLocCncProdDcls__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int allProdDcls__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
+public static final int allProdNames__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
+public static final int absProdNames__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int logStuff__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int inhRedexName__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int agDcls1__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
@@ -1583,6 +1611,8 @@ public static final int silver_extension_bidirtransform_prodNamedSig__ON__silver
 public static final int silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_Def = silver.definition.env.Init.count_syn__ON__Def++;
 public static final int silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_Def = silver.definition.env.Init.count_syn__ON__Def++;
 public static final int silver_extension_bidirtransform_isProdDef__ON__silver_definition_env_Def = silver.definition.env.Init.count_syn__ON__Def++;
+public static final int baseAppExprs__ON__silver_extension_bidirtransform_injectApplication = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_injectApplication++;
+public static final int baseAnnoExprs__ON__silver_extension_bidirtransform_injectApplication = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_injectApplication++;
 public static final int silver_extension_bidirtransform_wasTransformed__ON__silver_extension_bidirtransform_Origin = silver.extension.bidirtransform.Init.count_syn__ON__Origin++;
 public static final int silver_extension_bidirtransform_concreteOrigin__ON__silver_extension_bidirtransform_Origin = silver.extension.bidirtransform.Init.count_syn__ON__Origin++;
 public static final int silver_extension_bidirtransform_isBottomOrigin__ON__silver_extension_bidirtransform_Origin = silver.extension.bidirtransform.Init.count_syn__ON__Origin++;

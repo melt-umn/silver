@@ -92,9 +92,9 @@ public final class PdclQName extends common.FunctionNode {
 		//(\ s::String  -> qName(loc, s))
 		return (common.NodeFactory<silver.definition.core.NQName>)((new common.NodeFactory<silver.definition.core.NQName>() {
   public final silver.definition.core.NQName invoke(final Object[] args, final Object[] namedArgs) {
-    final Object __SV_LAMBDA_PARAM_13145_s = args[0];
+    final Object __SV_LAMBDA_PARAM_13536_s = args[0];
 
-    return ((silver.definition.core.NQName)silver.definition.core.PqName.invoke(common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.extension.bidirtransform.PdclQName.i_loc)), ((common.StringCatter)common.Util.demand(__SV_LAMBDA_PARAM_13145_s))));
+    return ((silver.definition.core.NQName)silver.definition.core.PqName.invoke(common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.extension.bidirtransform.PdclQName.i_loc)), ((common.StringCatter)common.Util.demand(__SV_LAMBDA_PARAM_13536_s))));
   }
 }));
 
