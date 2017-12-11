@@ -133,7 +133,7 @@ rule::RewriteRule ::= rhs::Expr inName::String inType::Type outType::Type inProd
 
     rule.errors := []; -- We explicitly ignore rhs errors here
     rule.errors <- inProd.errors;
-    rule.errors <- [err(rule.location, "rwRule:" ++ rule.pp ++ "in,out: " ++ inType.typeName ++ ", " ++ outType.typeName)];
+    rule.errors <- [err(rule.location, "rwRule:" ++ rhs.pp ++ "in,out: " ++ inType.typeName ++ ", " ++ outType.typeName)];
 
     local rhsNs::Maybe<Decorated NamedSignature> = case rhs of 
         | application(e,_,_,_,_,_) -> case e of
