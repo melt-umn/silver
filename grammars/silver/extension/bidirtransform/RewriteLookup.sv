@@ -65,8 +65,7 @@ Boolean ::= rwrs::[Decorated RewriteRule] inType::String outType::String
 
     return if null(rwrs) then false
         else if !hd.hasProduction && 
-            unFull(hd.typerep.typeName) == unFull(outType) &&
-            unFull(hd.inputType.typeName) == unFull(inType) 
+            unFull(hd.typerep.typeName) == unFull(outType)
         then true
         else hasRwID(tail(rwrs), inType, outType);
 }
@@ -79,8 +78,7 @@ Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] inType::String outType::
 
     return -- if null(rwrs) then nothing() else
         if !hd.hasProduction &&
-            unFull(hd.typerep.typeName) == unFull(outType) &&
-            unFull(hd.inputType.typeName) == unFull(inType) 
+            unFull(hd.typerep.typeName) == unFull(outType)
         then hd
         else rwID(tail(rwrs), inType, outType);
 }
