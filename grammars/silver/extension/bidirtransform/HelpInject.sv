@@ -64,8 +64,8 @@ top::Expr ::= toFill::Expr appExps::AppExprs annoExps::AnnoAppExprs
         -- We assume here that none are already provided
         if contains(toFill.typerep.typeName, needAnnos) then consAnnoAppExprs(baseAnnoExprs, toInject, location=toFill.location)
         else baseAnnoExprs,
-        ')',
-        );
+        ')'
+    );
 }
 
 abstract production injectAppExprs
