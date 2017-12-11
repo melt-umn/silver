@@ -103,8 +103,8 @@ flow [syn('silver:modification:let_fix:lexicalLocalDcl', 'silver:definition:env:
  prod('silver:modification:let_fix:AssignExpr', 'silver:modification:let_fix:assignExpr'),
  syn('silver:modification:let_fix:lexicalLocalReference', 'silver:definition:env:pp', [], t),
  syn('silver:modification:let_fix:lexicalLocalReference', 'silver:definition:core:errors', [], t),
- anon('silver:modification:let_fix:lexicalLocalReference', '__decorate20403:line136', 'silver:definition:type:Type', 'Let.sv', 136, 7, 136, 40, 4946, 4979, []),
- anon('silver:modification:let_fix:lexicalLocalReference', '__decorate20404:line137', 'silver:definition:type:Type', 'Let.sv', 137, 21, 137, 56, 5001, 5036, []),
- syn('silver:modification:let_fix:lexicalLocalReference', 'silver:definition:env:typerep', [anonV('__decorate20403:line136', 'silver:definition:type:isDecorated'), anonEqV('__decorate20403:line136'), anonV('__decorate20404:line137', 'silver:definition:type:decoratedType'), anonEqV('__decorate20404:line137')], t),
+ anon('silver:modification:let_fix:lexicalLocalReference', '__decorate20406:line136', 'silver:definition:type:Type', 'Let.sv', 136, 7, 136, 40, 4946, 4979, []),
+ anon('silver:modification:let_fix:lexicalLocalReference', '__decorate20407:line137', 'silver:definition:type:Type', 'Let.sv', 137, 21, 137, 56, 5001, 5036, []),
+ syn('silver:modification:let_fix:lexicalLocalReference', 'silver:definition:env:typerep', [anonV('__decorate20406:line136', 'silver:definition:type:isDecorated'), anonEqV('__decorate20406:line136'), anonV('__decorate20407:line137', 'silver:definition:type:decoratedType'), anonEqV('__decorate20407:line137')], t),
  syn('silver:modification:let_fix:lexicalLocalReference', 'silver:analysis:typechecking:core:upSubst', [lhsInhV('silver:analysis:typechecking:core:downSubst')], t),
  prod('silver:definition:core:Expr', 'silver:modification:let_fix:lexicalLocalReference')]
