@@ -53,7 +53,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     ----------------
     -- Propagation of attributes
 
-    ag.errors := trRules.errors ++ rwRules.errors ++ absGroup.errors ++ cncGroup.errors;
+    ag.errors := trRules.errors ++ newRwRules.errors ++ absGroup.errors ++ cncGroup.errors;
 
     trRules.absGroup = absGroup;
     trRules.cncGroup = cncGroup;
