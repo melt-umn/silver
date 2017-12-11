@@ -153,9 +153,11 @@ Pair<[Expr] [String]> ::= appexps::AppExprs pattern::PatternList
         | snocAppExprs(es, _, e) -> case pattern of patternList_more(p, _, pl) ->
             joinPair(matchAppExpsToPattern(es, patternList_more(p, ',', leftTailPattern(pl), location=pattern.location)),
                 matchAppExpToPattern(e, lastElemPattern(pl)))
+            | _ -> pair([],[]) -- need to error out here
         end
         | oneAppExprs(e) -> case pattern of patternList_one(p) ->
             matchAppExpToPattern(e, p)
+            _ -> pair([],[])
         end
         | _ -> pair([],[])
     end;
@@ -174,6 +176,7 @@ Pattern ::= pl::PatternList
         | patternList_one(p) -> p
         | patternList_more(p,_,patternList_nil()) -> p      
         | patternList_more(_,_,pl) -> lastElemPattern(pl)
+        | _ -> wildcPattern('_') -- error out here
     end;
 }
 
