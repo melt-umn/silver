@@ -231,7 +231,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             foldl(\ stmts::ProductionStmts rhs::String ->
                 -- if there isn't a rewrite rule from this production to this lhs then don't define this
-                if !hasRwMatch(newRwRules.rewriteRules, rhs, ns) then stmts -- not happening in error case
+                if !hasRwMatch(newRwRules.rewriteRules, rhs, ns) then stmts --  error case
                 else productionStmtsSnoc(stmts, 
                         attribDef(ns.outputElement.elementName, restoreNm(unFull(rhs)),
                         --synAttrDef(ns.outputElement.elementName, restoreNm(unFull(rhs)),

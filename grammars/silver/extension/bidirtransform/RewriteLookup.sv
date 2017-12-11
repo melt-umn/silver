@@ -18,7 +18,7 @@ Boolean ::= rwrs::[Decorated RewriteRule] outType::String ns::Decorated NamedSig
 {
     return if hasRwProd(rwrs, outType, ns) 
       then true 
-      else hasRwID(rwrs, unFull(ns.typerep.typeName), outType);
+      else hasRwID(rwrs, unFull(ns.typerep.typeName), unFull(outType));
 }
 
 -- Return either rwProd or rwID, preferring the former.
