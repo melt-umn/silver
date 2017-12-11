@@ -90,7 +90,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local nonLocCncProdDcls :: [Decorated NamedSignature] = cncProdDcls;
     local allProdDcls :: [Decorated NamedSignature] = absProdDcls ++ cncProdDcls;
 
-    local allProdNames :: [String] = map(unFull, map((.fullName), allProdDcls))
+    local allProdNames :: [String] = map(unFull, map((.fullName), allProdDcls));
     local absProdNames :: [String] = map(unFull, map((.fullName), absProdDcls));
 
     local logStuff :: Boolean = false;
