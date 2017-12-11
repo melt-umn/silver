@@ -34,7 +34,6 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
     pd.namedSig = idxOf(pd.inhProds, idx);
         
     pd.matchProd = matchProd(args.rawPatternList, pd.namedSig.inputElements, location=pd.location);
-    --pd.asExpr = prodAsExpr(qn, args.rawPatternList, pd.namedSig.inputElements, location=pd.location);
     pd.typerep = pd.namedSig.outputElement.typerep;
 
     -- When we looked up a production, was exactly one production found?
@@ -49,9 +48,6 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
 
     -- Are variables in pattern the appropriate type for where they are used?
     pd.errors <- tyCheckProd(pd.location, args.rawPatternList, pd.namedSig.inputElements);
-
-    -- Are there any duplicate anonymous variable names defined?
-    -- TODO
 }
 
 abstract production matchProd
@@ -68,6 +64,7 @@ top::Expr ::= arg::Pattern nsElem::NamedSignatureElement ifTrue::Expr
     -- This is unreadable so long as we don't have default annotations
     forwards to case arg of 
         | wildcPattern(_) -> ifTrue
+        | varPattern(_) -> ifTrue
         | _ -> caseExpr_c('case', exprsSingle(baseName(nsElem.elementName, location=top.location), location=top.location),
             'of', terminal(Opt_Vbar_t, "|"), mRuleList_cons(matchRule_c(patternList_one(arg, location=top.location),
                 '->', ifTrue, location=top.location),
