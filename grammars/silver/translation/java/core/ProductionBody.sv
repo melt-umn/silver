@@ -186,7 +186,7 @@ aspect production errorValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors: " 
-    ++ "val: " ++ val.name ++ " expr: " ++ e.pp));
+    ++ "val: " ++ val.name ++ " expr: " ++ e.pp);
 }
 
 aspect production localValueDef
