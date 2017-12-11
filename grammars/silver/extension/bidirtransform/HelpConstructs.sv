@@ -270,7 +270,7 @@ top::AppExprs ::= nsElems::[NamedSignatureElement] attr::String allowedTypes::[S
         location=top.location), location=top.location);
 }
 
-abstract builtinAccess
+abstract production builtinAccess
 top::Expr ::= attr::String ne::NamedSignatureElement allowedTypes::[String]
 {
     return if contains(unFull(ne.typerep.typeName), allowedTypes) then
