@@ -258,28 +258,28 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     --  else if transformed_$tName   |
     --    then apply transformation  |
     --    else see ------------------/
-    -- local agDcls12::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
-    --     appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-    --         if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) && ns.outputElement.typerep.typeName != transType.typerep.typeName
-    --         then productionStmtsNil(location=ag.location)
-    --         else prdStmtList( 
-    --             [attribDef(ns.outputElement.elementName, tName,
-    --                 --synAttrDef(ns.outputElement.elementName, tName,
-    --             if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) 
-    --               then prdRecurse(ns, tName, location=ag.location)
-    --               else mkCond(
-    --                     lhsExprAccess(transformNm(tName), ns, location=ag.location),
-    --                     -- todo: what did I mean by the todo below this? Have I done that already?
-    --                     -- todo: add annotations to anything here that is one of 
-    --                     -- our abstract productions
-    --                     getTrans(trRules.transformRules, dcl, absGroup, cncGroup, location=ag.location).outputStmt(nsApply(ns, location=ag.location)),
-    --                     prdRecurse(ns, tName, location=ag.location),
-    --                 location=ag.location),
-    --         location=ag.location)], location=ag.location),
-    --         location=ag.location), agDcls, location=ag.location),
-    --     agDcls11, absProdDcls);
+    local agDcls12::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+        appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+            if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) && ns.outputElement.typerep.typeName != transType.typerep.typeName
+            then productionStmtsNil(location=ag.location)
+            else prdStmtList( 
+                [attribDef(ns.outputElement.elementName, tName,
+                    --synAttrDef(ns.outputElement.elementName, tName,
+                if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) 
+                  then prdRecurse(ns, tName, location=ag.location)
+                  else mkCond(
+                        lhsExprAccess(transformNm(tName), ns, location=ag.location),
+                        -- todo: what did I mean by the todo below this? Have I done that already?
+                        -- todo: add annotations to anything here that is one of 
+                        -- our abstract productions
+                        getTrans(trRules.transformRules, dcl, absGroup, cncGroup, location=ag.location).outputStmt(nsApply(ns, location=ag.location)),
+                        prdRecurse(ns, tName, location=ag.location),
+                    location=ag.location),
+            location=ag.location)], location=ag.location),
+            location=ag.location), agDcls, location=ag.location),
+        agDcls11, absProdDcls);
 
-    local agDcls12::AGDcl = agDcls11;
+    local agDcls13::AGDcl = agDcls12;
 
     -- top.transformed_$tName = ...
     --  if this abstract production has no transformation defined for it,
@@ -287,16 +287,16 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     --  else if the rhs matches this transformation, 
     --    then true
     --    else false
-    local agDcls13::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
-        if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) then agDcls 
-        else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-            prdStmtList([
-                attribDef(ns.outputElement.elementName, transformNm(tName),
-                --synAttrDef( ns.outputElement.elementName, transformNm(tName),
-                    getTrans(trRules.transformRules, dcl, absGroup, cncGroup, location=ag.location).matchProd, location=ag.location)
-            ], location=ag.location),
-            location=ag.location), agDcls, location=ag.location),
-        agDcls12, absProdDcls);
+    -- local agDcls13::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+    --     if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) then agDcls 
+    --     else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+    --         prdStmtList([
+    --             attribDef(ns.outputElement.elementName, transformNm(tName),
+    --             --synAttrDef( ns.outputElement.elementName, transformNm(tName),
+    --                 getTrans(trRules.transformRules, dcl, absGroup, cncGroup, location=ag.location).matchProd, location=ag.location)
+    --         ], location=ag.location),
+    --         location=ag.location), agDcls, location=ag.location),
+    --     agDcls12, absProdDcls);
 
     -- <rhs>.inhRedex_$tName = ...
     --  if this abstract production has no transformation defined for it,
