@@ -289,7 +289,7 @@ top::Expr ::= ns::Decorated NamedSignature tName::String allowedTypes::[String]
             -- This is not worked out completely
             -- We want to access the inhRedex of the leftmost rhs element, if it has
             -- an inhRedex, and otherwise top.inhRedex
-            annExpr("redex", exprAccess(inhRedexNm(tName), inhRedexNameSig(ns), location=top.location), location=top.location),
+            annExpr("redex", exprAccess(inhRedexNm(tName), inhRedexNameSig(ns, allowedTypes), location=top.location), location=top.location),
             annExpr("origin", mkOrigin(ns, location=top.location), location=top.location)
         ], location=top.location),
         ')', location=top.location);

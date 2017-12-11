@@ -15,21 +15,14 @@ String ::= typeName::String
 }
 
 function inhRedexNameSig
-String ::= ns::Decorated NamedSignature
+String ::= ns::Decorated NamedSignature allowedTypes::[String]
 {
-    return if !null(ns.inputElements)
-        then validInhRedex(head(ns.inputNames), ns.outputElement.elementName)
-        else ns.outputElement.elementName;
-}
+    local hd::NamedSignatureElement = head(ns.inputElements);
+    local def::String = ns.outputElement.elementName;
 
-function validInhRedex
-String ::= test::String def::String
-{
-    -- For now just check against built ins
-    return if test == "Integer" then def
-        else if test == "String" then def
-        -- else etc.
-        else test;
+    return if null(ns.inputElements) then def
+        else if contains(hd.typerep.typeName, allowedTypes)
+        then hd.elementName else def;
 }
 
 function allHead
