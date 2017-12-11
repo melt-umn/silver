@@ -137,7 +137,7 @@ Integer ::= ls::[String] item::String idx::Integer
 abstract production fillExprPattern
 top::Expr ::= toFill::Expr appexps::AppExprs pattern::PatternList
 {
-    local inputs::Pair<[Expr String]> = matchAppExpsToPattern(appexps, pattern);
+    local inputs::Pair<[Expr] [String]> = matchAppExpsToPattern(appexps, pattern);
 
     forwards to fillExpr(toFill, inputs.fst, inputs.snd, location=toFill.location);
 }
