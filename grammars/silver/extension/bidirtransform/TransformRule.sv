@@ -73,7 +73,7 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
         end
     );
     
-    tr.errors <- [err(tr.location, "AppExps: " ++ nsApply(tr.namedSig).pp)];
+    tr.errors <- [err(tr.location, "AppExps: " ++ nsApply(tr.namedSig, location=tr.location).pp)];
     tr.errors <- [err(tr.location, "Pattern: " ++ l.patternList.pp)];
 
     -- Do the productions in both the lhs and rhs result in the same type?
@@ -131,7 +131,7 @@ abstract production applyTrans
 top::Expr ::= rules::[TransformRule] ns::Decorated NamedSignature absGroup::Decorated NonterminalList
               cncGroup::Decorated NonterminalList 
 {
-    local trans::TransformRule = getTrans(rules, ns, absGroup, cncGroup, location=ag.location);
+    local trans::TransformRule = getTrans(rules, ns, absGroup, cncGroup, location=top.location);
 
     forwards to trans.outputStmt(nsApply(ns, location=top.location));
 }
