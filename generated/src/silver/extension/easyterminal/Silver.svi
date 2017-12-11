@@ -54,8 +54,8 @@ syntax [term('silver:extension:easyterminal:Terminal_t', /\'[^\'\r\n]*\'/, [clas
  prod([], signature('silver:extension:easyterminal:terminalExprReg', [element('reg', nt('silver:extension:easyterminal:EasyTerminalRef', []))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))]), [])]
 parsers []
 flow [nonHostSyn('silver:extension:easyterminal:terminalTree', 'silver:definition:env:Env'),
- anon('silver:extension:easyterminal:filterAndConvertTermDcls', '__decorate19975:line27', 'silver:definition:env:DclInfo', 'Env.sv', 27, 14, 27, 20, 937, 943, [rhsV('ei', 'silver:definition:env:dcl')]),
- patternRuleEq('silver:extension:easyterminal:filterAndConvertTermDcls', 'silver:definition:env:termDcl', anon('__decorate19975:line27'), [('sl', 'core:Location', '__pv382:__sv_tmp_pv_383'), ('regex', 'silver:definition:regex:Regex', '__pv386:__sv_pv_379_regex')]),
+ anon('silver:extension:easyterminal:filterAndConvertTermDcls', '__decorate19980:line27', 'silver:definition:env:DclInfo', 'Env.sv', 27, 14, 27, 20, 937, 943, [rhsV('ei', 'silver:definition:env:dcl')]),
+ patternRuleEq('silver:extension:easyterminal:filterAndConvertTermDcls', 'silver:definition:env:termDcl', anon('__decorate19980:line27'), [('sl', 'core:Location', '__pv382:__sv_tmp_pv_383'), ('regex', 'silver:definition:regex:Regex', '__pv386:__sv_pv_379_regex')]),
  syn('silver:definition:env:i_emptyEnv', 'silver:extension:easyterminal:terminalTree', [], t),
  syn('silver:definition:env:i_appendEnv', 'silver:extension:easyterminal:terminalTree', [], t),
  syn('silver:definition:env:i_newScopeEnv', 'silver:extension:easyterminal:terminalTree', [rhsV('d', 'silver:definition:env:typeList')], t),
@@ -69,8 +69,8 @@ flow [nonHostSyn('silver:extension:easyterminal:terminalTree', 'silver:definitio
  local('silver:extension:easyterminal:easyTerminalRef', 'silver:extension:easyterminal:easyTerminalRef:local:regHack', 'silver:definition:regex:Regex', [lhsSynV('silver:extension:easyterminal:easyString')]),
  syn('silver:extension:easyterminal:easyTerminalRef', 'silver:definition:core:dcls', [localV('silver:extension:easyterminal:easyTerminalRef:local:regHack', 'silver:definition:regex:regString'), localEqV('silver:extension:easyterminal:easyTerminalRef:local:regHack'), lhsInhV('silver:definition:env:env')], t),
  syn('silver:extension:easyterminal:easyTerminalRef', 'silver:definition:core:errors', [lhsSynV('silver:definition:core:dcls'), lhsSynV('silver:definition:core:dcls'), lhsSynV('silver:definition:core:dcls')], t),
- anon('silver:extension:easyterminal:easyTerminalRef', '__decorate19977:line58', 'silver:definition:env:DclInfo', 'TerminalDcl.sv', 58, 56, 58, 78, 2541, 2563, [lhsSynV('silver:definition:core:dcls')]),
- syn('silver:extension:easyterminal:easyTerminalRef', 'silver:definition:env:typerep', [lhsSynV('silver:definition:core:dcls'), anonV('__decorate19977:line58', 'silver:definition:env:typerep'), anonEqV('__decorate19977:line58')], t),
+ anon('silver:extension:easyterminal:easyTerminalRef', '__decorate19982:line58', 'silver:definition:env:DclInfo', 'TerminalDcl.sv', 58, 56, 58, 78, 2541, 2563, [lhsSynV('silver:definition:core:dcls')]),
+ syn('silver:extension:easyterminal:easyTerminalRef', 'silver:definition:env:typerep', [lhsSynV('silver:definition:core:dcls'), anonV('__decorate19982:line58', 'silver:definition:env:typerep'), anonEqV('__decorate19982:line58')], t),
  prod('silver:extension:easyterminal:EasyTerminalRef', 'silver:extension:easyterminal:easyTerminalRef'),
  syn('silver:extension:easyterminal:productionRhsElemEasyReg', 'silver:definition:env:pp', [rhsV('id', 'silver:definition:env:pp'), rhsV('reg', 'silver:definition:env:pp')], f),
  extra('silver:extension:easyterminal:productionRhsElemEasyReg', lhsSynV('silver:definition:core:errors'), [rhsV('reg', 'silver:definition:core:errors')], f),
