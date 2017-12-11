@@ -1,32 +1,27 @@
 
 package silver.extension.bidirtransform;
 
-// top::Expr ::= ls::[Expr] idx::Integer 
-public final class PidxOf extends silver.definition.core.NExpr {
+public final class PidxOf extends common.FunctionNode {
 
 	public static final int i_ls = 0;
 	public static final int i_idx = 1;
 
 
-	public static final Class<?> childTypes[] = {common.DecoratedNode.class,Integer.class};
+	public static final Class<?> childTypes[] = { common.DecoratedNode.class,Integer.class };
 
 	public static final int num_local_attrs = Init.count_local__ON__silver_extension_bidirtransform_idxOf;
 	public static final String[] occurs_local = new String[num_local_attrs];
 
-	public static final common.Lazy[] forwardInheritedAttributes = new common.Lazy[silver.definition.core.NExpr.num_inh_attrs];
-
-	public static final common.Lazy[] synthesizedAttributes = new common.Lazy[silver.definition.core.NExpr.num_syn_attrs];
 	public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[2][];
 
 	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
 	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
 
-	static {
+	static{
 
 	}
 
-	public PidxOf(final Object c_ls, final Object c_idx, final Object a_core_location) {
-		super(a_core_location);
+	public PidxOf(final Object c_ls, final Object c_idx) {
 		this.child_ls = c_ls;
 		this.child_idx = c_idx;
 
@@ -70,11 +65,6 @@ public final class PidxOf extends silver.definition.core.NExpr {
 	}
 
 	@Override
-	public common.Lazy getSynthesized(final int index) {
-		return synthesizedAttributes[index];
-	}
-
-	@Override
 	public common.Lazy[] getLocalInheritedAttributes(final int key) {
 		return localInheritedAttributes[key];
 	}
@@ -82,21 +72,6 @@ public final class PidxOf extends silver.definition.core.NExpr {
 	@Override
 	public common.Lazy[] getChildInheritedAttributes(final int key) {
 		return childInheritedAttributes[key];
-	}
-
-	@Override
-	public boolean hasForward() {
-		return true;
-	}
-
-	@Override
-	public common.Node evalForward(final common.DecoratedNode context) {
-		return (((Integer)context.childAsIs(silver.extension.bidirtransform.PidxOf.i_idx)).equals(Integer.valueOf((int)0)) ? ((silver.definition.core.NExpr)core.Phead.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PidxOf.i_ls))) : ((silver.definition.core.NExpr)new silver.extension.bidirtransform.PidxOf(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Ptail.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PidxOf.i_ls))); } }, new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return Integer.valueOf(((Integer)context.childAsIs(silver.extension.bidirtransform.PidxOf.i_idx)) - Integer.valueOf((int)1)); } }, new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((core.NLocation)((silver.definition.core.NExpr)context.undecorate()).getAnno_core_location()); } })));
-	}
-
-	@Override
-	public common.Lazy getForwardInheritedAttributes(final int index) {
-		return forwardInheritedAttributes[index];
 	}
 
 	@Override
@@ -119,18 +94,23 @@ public final class PidxOf extends silver.definition.core.NExpr {
 		return "silver:extension:bidirtransform:idxOf";
 	}
 
-	static void initProductionAttributeDefinitions() {
+	public static Object invoke(final Object c_ls, final Object c_idx) {
+		try {
+		final common.DecoratedNode context = new PidxOf(c_ls, c_idx).decorate();
+		//if idx == 0 then head(ls) else idxOf(tail(ls), idx - 1)
+		return (Object)((((Integer)context.childAsIs(silver.extension.bidirtransform.PidxOf.i_idx)).equals(Integer.valueOf((int)0)) ? ((Object)core.Phead.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PidxOf.i_ls))) : ((Object)silver.extension.bidirtransform.PidxOf.invoke(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Ptail.invoke(context.childAsIsLazy(silver.extension.bidirtransform.PidxOf.i_ls))); } }, new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return Integer.valueOf(((Integer)context.childAsIs(silver.extension.bidirtransform.PidxOf.i_idx)) - Integer.valueOf((int)1)); } }))));
 
+		} catch(Throwable t) {
+			throw new common.exceptions.TraceException("Error while evaluating function silver:extension:bidirtransform:idxOf", t);
+		}
 	}
 
-	public static final common.NodeFactory<PidxOf> factory = new Factory();
+	public static final common.NodeFactory<Object> factory = new Factory();
 
-	public static final class Factory extends common.NodeFactory<PidxOf> {
-
+	public static final class Factory extends common.NodeFactory<Object> {
 		@Override
-		public PidxOf invoke(final Object[] children, final Object[] annotations) {
-			return new PidxOf(children[0], children[1], annotations[0]);
+		public Object invoke(final Object[] children, final Object[] namedNotApplicable) {
+			return PidxOf.invoke(children[0], children[1]);
 		}
 	};
-
 }
