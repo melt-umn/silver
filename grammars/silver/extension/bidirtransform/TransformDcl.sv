@@ -168,9 +168,14 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local newRwRules::Decorated RewriteRuleList = foldl(\ rules::Decorated RewriteRuleList name::String ->
             if hasRwEq(rules.rewriteRules, name, name) then rules
             else decorate rewriteRuleCons(terminal(Vbar_kwd, "|"), 
-                rewriteRuleType(qName(ag.location, "a"), '::', qTyExpr(qName(ag.location, name), location=ag.location), '->',
-                    mkNew("a", location=ag.location), location=ag.location), 
-                    new(rules), location=ag.location) with {
+                rewriteRule(mkNew("a", location=ag.location),
+                    "a",
+                    qTyExpr(qName(ag.location, name)).typerep,
+                    qTyExpr(qName(ag.location, name)).typerep,
+                    emptyRewriteProduction(location=rule.location),
+                    false,
+                    false,
+                    location=ag.location) with {
                         absGroup=rules.absGroup;
                         cncGroup=rules.cncGroup;
                         env=rules.env;
