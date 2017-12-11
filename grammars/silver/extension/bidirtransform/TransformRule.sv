@@ -73,8 +73,8 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
         end
     );
     
-    tr.errors <- [err(tr.location, "AppExps: ", appexps.pp)]
-    tr.errors <- [err(tr.location, "Pattern: ", pattern.pp)]
+    tr.errors <- [err(tr.location, "AppExps: ", appexps.pp)];
+    tr.errors <- [err(tr.location, "Pattern: ", pattern.pp)];
 
     -- Do the productions in both the lhs and rhs result in the same type?
     -- tr.errors <- if !check(l.typerep, r.typerep).typeerror then []
