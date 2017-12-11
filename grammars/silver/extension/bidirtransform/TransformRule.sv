@@ -104,12 +104,11 @@ Boolean ::= rules::[Decorated TransformRule] dcl::Decorated NamedSignature
 
     return if null(rules) then false
         else if dcl.fullName == hd.namedSig.fullName then true
-        else hasTrans(tail(rules), dcl, absGroup, cncGroup);
+        else hasTrans(tail(rules), dcl);
 }
 
 abstract production getTrans
 top::Decorated TransformRule ::= rules::[Decorated TransformRule] dcl::Decorated NamedSignature
-            absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
 {
     local hd::Decorated TransformRule = head(rules);
 
