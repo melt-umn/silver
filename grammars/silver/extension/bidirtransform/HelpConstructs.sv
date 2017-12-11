@@ -273,9 +273,9 @@ top::AppExprs ::= nsElems::[NamedSignatureElement] attr::String allowedTypes::[S
 abstract production builtinAccess
 top::Expr ::= attr::String ne::NamedSignatureElement allowedTypes::[String]
 {
-    return if contains(unFull(ne.typerep.typeName), allowedTypes) then
+    forwards to if contains(unFull(ne.typerep.typeName), allowedTypes) then
         exprAccess(attr, ne.elementName, location=top.location)
-        else baseName(ne.elementName);
+        else baseName(ne.elementName, location=top.location);
 }
 
 abstract production prdRecurse
