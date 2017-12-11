@@ -261,22 +261,28 @@ top::AppExprs ::= e::Expr
 }
 
 abstract production argTransAttrs
-top::AppExprs ::= nsElems::[NamedSignatureElement] attr::String
+top::AppExprs ::= nsElems::[NamedSignatureElement] attr::String allowedTypes::[String]
 {   
-    -- Todo: (here and other places) what about elements without
-    -- this attribute, esp. builtins?
     forwards to if length(nsElems) == 1 
-        then oneApp(exprAccess(attr, head(nsElems).elementName, location=top.location), location=top.location)
-        else snocAppExprs(argTransAttrs(tail(nsElems), attr, location=top.location), ',',
-            presentAppExpr(exprAccess(attr, head(nsElems).elementName, location=top.location),
+        then oneApp(builtinAccess(attr, head(nsElems), allowedTypes, location=top.location), location=top.location)
+        else snocAppExprs(argTransAttrs(tail(nsElems), attr, allowedTypes, location=top.location), ',',
+            presentAppExpr(builtinAccess(attr, head(nsElems), allowedTypes, location=top.location),
         location=top.location), location=top.location);
 }
 
+abstract builtinAccess
+top::Expr ::= attr::String ne::NamedSignatureElement allowedTypes::[String]
+{
+    return if contains(unFull(ne.typerep.typeName), allowedTypes) then
+        exprAccess(attr, ne.elementName, location=top.location)
+        else baseName(ne.elementName);
+}
+
 abstract production prdRecurse
-top::Expr ::= ns::Decorated NamedSignature tName::String
+top::Expr ::= ns::Decorated NamedSignature tName::String allowedTypes::[String]
 {
     forwards to application(baseName(ns.fullName, location=top.location), '(',
-        argTransAttrs(ns.inputElements, tName, location=top.location),
+        argTransAttrs(ns.inputElements, tName, allowedTypes, location=top.location),
         ',',
         annoAppExprList([
             annExpr("labels", emptyList('[',']', location=top.location), location=top.location),

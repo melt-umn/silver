@@ -266,7 +266,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                 [attribDef(ns.outputElement.elementName, tName,
                     --synAttrDef(ns.outputElement.elementName, tName,
                 if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) 
-                  then prdRecurse(ns, tName, location=ag.location)
+                  then prdRecurse(ns, tName, allNames, location=ag.location)
                   else mkCond(
                         lhsExprAccess(transformNm(tName), ns, location=ag.location),
                         -- todo: what did I mean by the todo below this? Have I done that already?
@@ -274,7 +274,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                         -- our abstract productions
                         applyTrans(trRules.transformRules, dcl, absGroup, cncGroup, location=ag.location),
                         --getTrans(trRules.transformRules, dcl, absGroup, cncGroup, location=ag.location).outputStmt(nsApply(ns, location=ag.location)),
-                        prdRecurse(ns, tName, location=ag.location),
+                        prdRecurse(ns, tName, allNames, location=ag.location),
                     location=ag.location),
             location=ag.location)], location=ag.location),
             location=ag.location), agDcls, location=ag.location),
