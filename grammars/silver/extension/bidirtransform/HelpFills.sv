@@ -135,7 +135,7 @@ Integer ::= ls::[String] item::String idx::Integer
 
 
 abstract production fillExprPattern
-top::Expr ::= toFill::Expr appexps::AppExprs pattern::PatternList
+top::Expr ::= toFill::Expr appexps::AppExprs pattern::[Pattern]
 {
     local inputs::Pair<[Expr] [String]> = matchAppExpsToPattern(appexps, pattern);
 
@@ -143,18 +143,14 @@ top::Expr ::= toFill::Expr appexps::AppExprs pattern::PatternList
 }
 
 function matchAppExpsToPattern
-Pair<[Expr] [String]> ::= appexps::AppExprs pattern::PatternList
+Pair<[Expr] [String]> ::= appexps::AppExprs pattern::[Pattern]
 {
     return case appexps of
-        | snocAppExprs(es, _, e) -> case pattern of patternList_more(p, _, pl) ->
-            joinPair(matchAppExpsToPattern(es, patternList_more(p, ',', leftTailPattern(pl), location=pattern.location)),
-                matchAppExpToPattern(e, lastElemPattern(pl)))
-            | _ -> pair([],[]) -- need to error out here
-        end
-        | oneAppExprs(e) -> case pattern of patternList_one(p) ->
-            matchAppExpToPattern(e, p)
-            | _ -> pair([],[])
-        end
+        | snocAppExprs(es, _, e) -> joinPair(
+            matchAppExpsToPattern(es, allHead(pattern)),
+            matchAppExpToPattern(e, last(pattern))
+        )
+        | oneAppExprs(e) -> matchAppExpToPattern(e, head(pattern))
         | _ -> pair([],[])
     end;
 }
@@ -164,10 +160,7 @@ Pair<[Expr] [String]> ::= appexp::AppExpr pattern::Pattern
 {
     return case appexp of 
         | missingAppExpr(_) -> pair([],[])
-        | presentAppExpr(e) -> case pattern of 
-            | wildcPattern(_) -> pair([],[])
-            | _ -> matchExpToPattern(e, pattern)
-        end
+        | presentAppExpr(e) -> matchExpToPattern(e, pattern)
     end;
 }
 
@@ -181,6 +174,9 @@ Pair<[Expr] [String]> ::= e::Expr pattern::Pattern
     -- todo also: convert all of this into attributes with aspect productions
     return case pattern of 
         | prodAppPattern(_,_,pl,_) -> case e of 
+            -- todo: this is never going to be an application,
+            -- this is always going to be a single string const 
+            -- or name 
             | application(e2, _, appexprs, _, _, _) -> 
                 matchAppExpsToPattern(appexprs, pl)
             | _ -> pair([],[])

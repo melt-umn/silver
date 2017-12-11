@@ -69,12 +69,12 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
         case e of application(_,_,aexpr,_,_,_) ->
             -- need to pass in e here and supply all of e's inherited attributes
             -- aka this needs to be a production
-            fillExprPattern(r, aexpr, l.patternList, location=e.location)
+            fillExprPattern(r, aexpr, l.patternList.rawPatternList, location=e.location)
         end
     );
     
-    tr.errors <- [err(tr.location, "AppExps: " ++ nsApply(tr.namedSig, location=tr.location).pp)];
-    tr.errors <- [err(tr.location, "Pattern: " ++ l.patternList.pp)];
+    -- tr.errors <- [err(tr.location, "AppExps: " ++ nsApply(tr.namedSig, location=tr.location).pp)];
+    -- tr.errors <- [err(tr.location, "Pattern: " ++ l.patternList.pp)];
 
     -- Do the productions in both the lhs and rhs result in the same type?
     -- tr.errors <- if !check(l.typerep, r.typerep).typeerror then []
@@ -133,5 +133,5 @@ top::Expr ::= rules::[TransformRule] ns::Decorated NamedSignature absGroup::Deco
 {
     local trans::TransformRule = getTrans(rules, ns, absGroup, cncGroup, location=top.location);
 
-    forwards to trans.outputStmt(nsApply(ns, location=top.location));
+    forwards to trans.outputStmt(nsApply(trans.namedSig, location=top.location));
 }
