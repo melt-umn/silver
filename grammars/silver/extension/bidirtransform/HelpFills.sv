@@ -176,7 +176,7 @@ Pattern ::= pl::PatternList
         | patternList_one(p) -> p
         | patternList_more(p,_,patternList_nil()) -> p      
         | patternList_more(_,_,pl) -> lastElemPattern(pl)
-        | _ -> wildcPattern('_') -- error out here
+        | _ -> wildcPattern('_', location=pl.location) -- error out here
     end;
 }
 
