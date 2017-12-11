@@ -79,8 +79,7 @@ Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] outType::String ns::Deco
 {
     local hd::Decorated RewriteRule = head(rwrs);
 
-    return -- if null(rwrs) then nothing() else
-        if hd.hasProduction &&
+    return if hd.hasProduction &&
             unFull(hd.inputProduction.name) == unFull(ns.fullName) &&
             unFull(hd.typerep.typeName) == unFull(outType)
         then hd
@@ -100,8 +99,7 @@ Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] inType::String outType::
 {
     local hd::Decorated RewriteRule = head(rwrs);
 
-    return if null(rwrs) then false
-        else if !hd.hasProduction && 
+    return if !hd.hasProduction && 
             unFull(hd.typerep.typeName) == unFull(outType) &&
             unFull(hd.inputType.typeName) == unFull(inType)
         then hd
@@ -114,8 +112,7 @@ Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] outType::String
 {
     local hd::Decorated RewriteRule = head(rwrs);
 
-    return -- if null(rwrs) then nothing() else
-        if !hd.hasProduction &&
+    return if !hd.hasProduction &&
             unFull(hd.typerep.typeName) == unFull(outType)
         then hd
         else rwOut(tail(rwrs), outType);
