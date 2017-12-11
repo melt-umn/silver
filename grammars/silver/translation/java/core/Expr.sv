@@ -231,14 +231,16 @@ top::Expr ::= '(' '.' q::QName ')'
 aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors: "
+    ++ "e.qName: " ++ e.pp ++ "." ++ q.pp ++ foldl(\ s::String m::Message -> s ++ "\n" ++ m.msg, "", top.errors));
   top.lazyTranslation = top.translation;
 }
 
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors: "
+    ++ "e.qName: " ++ e.pp ++ "." ++ q.pp ++ foldl(\ s::String m::Message -> s ++ "\n" ++ m.msg, "", top.errors));
   top.lazyTranslation = top.translation;
 }
 
