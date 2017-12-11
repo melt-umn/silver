@@ -114,7 +114,7 @@ top::AnnoExpr ::= toFill::AnnoExpr exps::[Expr] names::[String]
 }
 
 abstract production idxOf
-top::Expr ::= ls::[Expr] idx::Integer
+top::a ::= ls::[a] idx::Integer
 {
     forwards to if idx == 0 then head(ls) else idxOf(tail(ls), idx-1, location=top.location);
 }

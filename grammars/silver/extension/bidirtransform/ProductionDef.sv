@@ -1,6 +1,6 @@
 grammar silver:extension:bidirtransform;
 
-nonterminal ProductionDef with env, errors, namedSig, patternList, matchProd, typerep, inputNames, location, absGroup, cncGroup, pp, grammarName, config, asExpr;
+nonterminal ProductionDef with env, errors, namedSig, patternList, matchProd, typerep, inputNames, location, absGroup, cncGroup, pp, grammarName, config, asExpr, inhProds;
 
 synthesized attribute patternList::PatternList;
 synthesized attribute matchProd::Expr;
@@ -8,6 +8,7 @@ synthesized attribute namedSig::Decorated NamedSignature;
 
 autocopy attribute absGroup::Decorated NonterminalList;
 autocopy attribute cncGroup::Decorated NonterminalList;
+autocopy attribute inhProds::[Decorated NamedSignature];
 
 concrete production productionDef
 pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
@@ -24,12 +25,13 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
 
     args.config = pd.config;
     args.env = pd.env;
-    
-    local absSig::[Decorated NamedSignature] = getProdFromGroup(qn.name, pd.absGroup);
-    local cncSig::[Decorated NamedSignature] = getProdFromGroup(qn.name, pd.cncGroup);
 
-    pd.namedSig = if length(absSig) != 0 then head(absSig)
-        else head(cncSig);
+
+
+    local prodNames::[String] = map(unFull, map((.fullName), pd.inhProds));
+    local idx::Integer = findIdx(prodNames, qn.name);
+
+    pd.namedSig = idxOf(pd.inhProds, idx);
         
     pd.matchProd = matchProd(args.rawPatternList, pd.namedSig.inputElements, location=pd.location);
     --pd.asExpr = prodAsExpr(qn, args.rawPatternList, pd.namedSig.inputElements, location=pd.location);
