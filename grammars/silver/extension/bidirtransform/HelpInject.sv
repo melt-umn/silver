@@ -105,7 +105,7 @@ top::AnnoAppExprs ::= toFill::AnnoAppExprs toInject::AnnoAppExprs needAnnos::[St
 }
 
 abstract production injectAnnoExpr
-top::AnnoExpr ::= toFill:AnnoExpr toInject::AnnoAppExprs needAnnos::[String]
+top::AnnoExpr ::= toFill::AnnoExpr toInject::AnnoAppExprs needAnnos::[String]
 {
     forwards to case toFill of 
         | annoExpr(qn,_,ae) -> annoExpr(qn,'=',injectAppExpr(ae,toInject,needAnnos, location=toFill.location),

@@ -277,10 +277,10 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                             applyTrans(trRules.transformRules, dcl, absGroup, cncGroup, location=ag.location),
                             annoAppExprList([
                                 annExpr("labels", emptyList('[',']', location=ag.location), location=ag.location),
-                                annExpr("redex", exprAccess(inhRedexNm(tName), inhRedexNameSig(ns, allowedTypes), location=ag.location), location=ag.location),
+                                annExpr("redex", exprAccess(inhRedexNm(tName), inhRedexNameSig(ns, allNames), location=ag.location), location=ag.location),
                                 annExpr("origin", mkOrigin(ns, location=ag.location), location=ag.location)
                                 ], location=ag.location), 
-                            allProdNames),
+                            allProdNames, location=ag.location),
                         prdRecurse(ns, tName, allNames, location=ag.location),
                     location=ag.location),
             location=ag.location)], location=ag.location),
