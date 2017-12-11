@@ -133,5 +133,8 @@ top::Expr ::= rules::[TransformRule] ns::Decorated NamedSignature absGroup::Deco
 {
     local trans::TransformRule = getTrans(rules, ns, absGroup, cncGroup, location=top.location);
 
+    trans.absGroup = absGroup;
+    trans.cncGroup = cncGroup;
+
     forwards to trans.outputStmt(nsApply(trans.namedSig, location=top.location));
 }

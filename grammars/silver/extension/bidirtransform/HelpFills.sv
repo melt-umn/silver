@@ -177,6 +177,9 @@ Pair<[Expr] [String]> ::= e::Expr pattern::Pattern
             -- todo: this is never going to be an application,
             -- this is always going to be a single string const 
             -- or name 
+            -- This means we need to take the function at the lhs 
+            -- of the prod app pattern and recurse on ITS named
+            -- signature?
             | application(e2, _, appexprs, _, _, _) -> 
                 matchAppExpsToPattern(appexprs, pl.rawPatternList)
             | _ -> pair([],[])
