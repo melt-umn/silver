@@ -157,7 +157,7 @@ Pair<[Expr] [String]> ::= appexps::AppExprs pattern::PatternList
         end
         | oneAppExprs(e) -> case pattern of patternList_one(p) ->
             matchAppExpToPattern(e, p)
-            _ -> pair([],[])
+            | _ -> pair([],[])
         end
         | _ -> pair([],[])
     end;
