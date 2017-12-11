@@ -120,7 +120,7 @@ top::Expr ::= ls::[Expr] idx::Integer
 }
 
 function idxOf
-top::a ::= ls::[a] idx::Integer
+a ::= ls::[a] idx::Integer
 {
     return if idx == 0 then head(ls) else idxOf(tail(ls), idx-1);
 }
