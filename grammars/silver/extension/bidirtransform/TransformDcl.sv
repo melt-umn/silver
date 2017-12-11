@@ -166,7 +166,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     -- add the identity rule for each type, if an identity rule doesn't already exist
     -- (x -> new(x)) 
     local newRwRules::Decorated RewriteRuleList = foldl(\ rules::Decorated RewriteRuleList name::String ->
-            if hasRwID(rules.rewriteRules, name, name) then rules
+            if hasRwEq(rules.rewriteRules, name, name) then rules
             else decorate rewriteRuleCons(terminal(Vbar_kwd, "|"), 
                 rewriteRuleType(qName(ag.location, "a"), '::', qTyExpr(qName(ag.location, name), location=ag.location), '->',
                     mkNew("a", location=ag.location), location=ag.location), 
