@@ -234,31 +234,31 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
         agDcls9, absProdDcls);
 
     -- top.restored$cncType = < rewrite + transformation rules ...>
-    -- local agDcls11::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
-    --     appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-    --         foldl(\ stmts::ProductionStmts rhs::String ->
-    --             -- if there isn't a rewrite rule from this production to this lhs then don't define this
-    --             if !hasRwMatch(newRwRules.rewriteRules, rhs, ns) then stmts --  error case
-    --             else productionStmtsSnoc(stmts, 
-    --                     attribDef(ns.outputElement.elementName, restoreNm(unFull(rhs)),
-    --                     --synAttrDef(ns.outputElement.elementName, restoreNm(unFull(rhs)),
-    --                     if rwMatch(newRwRules.rewriteRules, rhs, ns).hasProduction 
-    --                     then mkCond(
-    --                         lhsExprAccess("wasTransformed", ns, location=ag.location), 
-    --                         -- use the rewrite production
-    --                         applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns), ns, location=ag.location),
-    --                         -- refer to the concrete origin's restored element
-    --                         qAccess(restoreNm(unFull(rhs)),
-    --                             qAccess("concreteOrigin",
-    --                                 lhsExprAccess("origin", ns, location=ag.location), 
-    --                                 location=ag.location),
-    --                             location=ag.location),
-    --                         location=ag.location)
-    --                     else applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
-    --                 location=ag.location), location=ag.location),
-    --         productionStmtsNil(location=ag.location), cncNames), location=ag.location), agDcls, location=ag.location),
-    --     agDcls10, absProdDcls);
-    local agDcls11::AGDcl = agDcls10;
+    local agDcls11::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+        appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+            foldl(\ stmts::ProductionStmts rhs::String ->
+                -- if there isn't a rewrite rule from this production to this lhs then don't define this
+                if !hasRwMatch(newRwRules.rewriteRules, rhs, ns) then stmts --  error case
+                else productionStmtsSnoc(stmts, 
+                        attribDef(ns.outputElement.elementName, restoreNm(unFull(rhs)),
+                        --synAttrDef(ns.outputElement.elementName, restoreNm(unFull(rhs)),
+                        if rwMatch(newRwRules.rewriteRules, rhs, ns).hasProduction 
+                        then mkCond(
+                            lhsExprAccess("wasTransformed", ns, location=ag.location), 
+                            -- use the rewrite production
+                            applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns), ns, location=ag.location),
+                            -- refer to the concrete origin's restored element
+                            qAccess(restoreNm(unFull(rhs)),
+                                qAccess("concreteOrigin",
+                                    lhsExprAccess("origin", ns, location=ag.location), 
+                                    location=ag.location),
+                                location=ag.location),
+                            location=ag.location)
+                        else applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
+                    location=ag.location), location=ag.location),
+            productionStmtsNil(location=ag.location), cncNames), location=ag.location), agDcls, location=ag.location),
+        agDcls10, absProdDcls);
+    --local agDcls11::AGDcl = agDcls10;
 
     -- top.$tName = ...
     --  if this abstract production has no transformations defined for it,
