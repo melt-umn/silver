@@ -303,7 +303,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
             prdStmtList([
                 attribDef(ns.outputElement.elementName, transformNm(tName),
                 --synAttrDef( ns.outputElement.elementName, transformNm(tName),
-                    getTrans(trRules.transformRules, dcl, absGroup, cncGroup, location=ag.location).matchProd, location=ag.location)
+                    getTrans(trRules.transformRules, dcl, location=ag.location).matchProd, location=ag.location)
             ], location=ag.location),
             location=ag.location), agDcls, location=ag.location),
         agDcls12, absProdDcls);
