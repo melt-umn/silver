@@ -35,7 +35,8 @@ top::Expr ::= msg::[Message]
 aspect production errorReference
 top::Expr ::= msg::[Message]  q::Decorated QName
 {
-  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors: " 
+    ++ foldl(\ s::String m::Message -> s ++ "\n" ++ m.msg, "", msg));
   top.lazyTranslation = top.translation;
 }
 

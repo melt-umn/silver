@@ -154,7 +154,8 @@ top::DefLHS ::= q::Decorated QName
 aspect production errorDefLHS
 top::DefLHS ::= q::Decorated QName
 {
-  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors: " 
+    ++ q.name);
 }
 
 aspect production errorAttributeDef
@@ -184,7 +185,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 aspect production errorValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors: " 
+    ++ "val: " ++ val.name ++ " expr: " ++ e.pp));
 }
 
 aspect production localValueDef
