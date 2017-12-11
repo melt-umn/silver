@@ -68,20 +68,6 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String] qn::Decorated QName
     forwards to fillStringConst(toFill, exps, names, qn.name, location=toFill.location);
 }
 
--- We're doing this recursive structure because the official silver docs say that
--- let expressions are deprecated
-abstract production fillExprPattern
-top::Expr ::= toFill::Expr appexps::AppExprs pattern::PatternList
-{
-    forwards to fillExprPatternHelper(toFill, matchAppExpsToPattern(appexps, pattern), location=toFill.location);
-}
-
-abstract production fillExprPatternHelper
-top::Expr ::= toFill::Expr inputs::Pair<[Expr] [String]>
-{
-    forwards to fillExpr(toFill, inputs.fst, inputs.snd, location=toFill.location);
-}
-
 abstract production fillAppExprs
 top::AppExprs ::= toFill::AppExprs exps::[Expr] names::[String]
 {
@@ -147,6 +133,15 @@ Integer ::= ls::[String] item::String idx::Integer
         else findIdxHelper(tail(ls), item, idx+1);
 }
 
+
+abstract production fillExprPattern
+top::Expr ::= toFill::Expr appexps::AppExprs pattern::PatternList
+{
+    local inputs::Pair<[Expr String]> = matchAppExpsToPattern(appexps, pattern);
+
+    forwards to fillExpr(toFill, inputs.fst, inputs.snd, location=toFill.location);
+}
+
 function matchAppExpsToPattern
 Pair<[Expr] [String]> ::= appexps::AppExprs pattern::PatternList
 {
@@ -161,33 +156,6 @@ Pair<[Expr] [String]> ::= appexps::AppExprs pattern::PatternList
             | _ -> pair([],[])
         end
         | _ -> pair([],[])
-    end;
-}
-
-function joinPair
-Pair<[c] [d]> ::= a::Pair<[c] [d]> b::Pair<[c] [d]>
-{
-    return pair(a.fst ++ b.fst, a.snd ++ b.snd);
-}
-
-function lastElemPattern
-Pattern ::= pl::PatternList
-{
-    return case pl of 
-        | patternList_one(p) -> p
-        | patternList_more(p,_,patternList_nil()) -> p      
-        | patternList_more(_,_,pl) -> lastElemPattern(pl)
-        | _ -> wildcPattern('_', location=pl.location) -- error out here
-    end;
-}
-
-function leftTailPattern
-PatternList ::= pl::PatternList 
-{
-    return case pl of 
-        | patternList_more(p, _, patternList_one(_)) -> patternList_one(p, location=pl.location)
-        | patternList_more(p, _, pl) -> patternList_more(p, ',', leftTailPattern(pl), location=pl.location)
-        | _ -> patternList_nil(location=pl.location)
     end;
 }
 
@@ -231,5 +199,32 @@ function pullOutAppExprs
         | oneAppExprs(e) -> 
             case e of presentAppExpr(e2) -> [e2] end
         | _ -> []
+    end;
+}
+
+function joinPair
+Pair<[c] [d]> ::= a::Pair<[c] [d]> b::Pair<[c] [d]>
+{
+    return pair(a.fst ++ b.fst, a.snd ++ b.snd);
+}
+
+function lastElemPattern
+Pattern ::= pl::PatternList
+{
+    return case pl of 
+        | patternList_one(p) -> p
+        | patternList_more(p,_,patternList_nil()) -> p      
+        | patternList_more(_,_,pl) -> lastElemPattern(pl)
+        | _ -> wildcPattern('_', location=pl.location) -- error out here
+    end;
+}
+
+function leftTailPattern
+PatternList ::= pl::PatternList 
+{
+    return case pl of 
+        | patternList_more(p, _, patternList_one(_)) -> patternList_one(p, location=pl.location)
+        | patternList_more(p, _, pl) -> patternList_more(p, ',', leftTailPattern(pl), location=pl.location)
+        | _ -> patternList_nil(location=pl.location)
     end;
 }

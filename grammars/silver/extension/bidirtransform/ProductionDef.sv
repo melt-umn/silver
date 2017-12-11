@@ -1,6 +1,6 @@
 grammar silver:extension:bidirtransform;
 
-nonterminal ProductionDef with env, errors, namedSig, patternList, matchProd, typerep, inputNames, location, absGroup, cncGroup, pp, grammarName, config;
+nonterminal ProductionDef with env, errors, namedSig, patternList, matchProd, typerep, inputNames, location, absGroup, cncGroup, pp, grammarName, config, asExpr;
 
 synthesized attribute patternList::PatternList;
 synthesized attribute matchProd::Expr;
@@ -32,6 +32,7 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
         else head(cncSig);
         
     pd.matchProd = matchProd(args.rawPatternList, pd.namedSig.inputElements, location=pd.location);
+    --pd.asExpr = prodAsExpr(qn, args.rawPatternList, pd.namedSig.inputElements, location=pd.location);
     pd.typerep = pd.namedSig.outputElement.typerep;
 
     -- When we looked up a production, was exactly one production found?
@@ -73,7 +74,33 @@ top::Expr ::= arg::Pattern nsElem::NamedSignatureElement ifTrue::Expr
                     '->',mkFalse(location=top.location),location=top.location),location=top.location),location=top.location),
             'end', location=top.location)
     end;
-}        
+}
+
+-- given appName(a,b,c) and the named signature elements d::T e::U f::V,
+-- return appName(a::T, e::U, f::V as needed)
+-- abstract production prodAsExpr 
+-- top::Expr ::= appName::QName args::[Pattern] nsElems::[NamedSignatureElement]
+-- {
+--     forwards to if null(args) then emptyFunc(appName.name, location=top.location) 
+--         else argFunc(appName.name, patternArgs(args, location=top.location)); 
+-- }       
+
+-- abstract production patternArgs
+-- top::AppExprs ::= args::[Pattern]
+-- {
+--     forwards to if length(args) == 1 then patternArg(head(args), location=top.location)
+--         else snocAppExprs(patternArgs(allHead(args), location=top.location),
+--         ','
+--         patternArg(last(args), location=top.location),
+--         location=top.location);
+-- } 
+
+
+-- abstract production patternArg
+-- top::AppExpr ::= arg::Pattern
+-- {
+--     return oneApp(arg.asExpr, location=top.location);
+-- }
 
 function tyCheckProd
 [Message] ::= loc::Location args::[Pattern] nsElems::[NamedSignatureElement]

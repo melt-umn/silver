@@ -272,7 +272,8 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                         -- todo: what did I mean by the todo below this? Have I done that already?
                         -- todo: add annotations to anything here that is one of 
                         -- our abstract productions
-                        getTrans(trRules.transformRules, dcl, absGroup, cncGroup, location=ag.location).outputStmt(nsApply(ns, location=ag.location)),
+                        applyTrans(trRules.transformRules, dcl, absGroup, cncGroup, location=ag.location),
+                        --getTrans(trRules.transformRules, dcl, absGroup, cncGroup, location=ag.location).outputStmt(nsApply(ns, location=ag.location)),
                         prdRecurse(ns, tName, location=ag.location),
                     location=ag.location),
             location=ag.location)], location=ag.location),

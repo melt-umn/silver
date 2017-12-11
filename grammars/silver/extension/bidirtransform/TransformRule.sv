@@ -3,7 +3,9 @@ grammar silver:extension:bidirtransform;
 synthesized attribute transformRules :: [TransformRule];
 
 nonterminal TransformRuleList with transformRules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
-nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
+nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config, asExpr;
+
+synthesized attribute asExpr::Expr;
 
 concrete production transformRuleCons
 trl::TransformRuleList ::= Vbar_kwd l::TransformRule r::TransformRuleList
@@ -60,7 +62,8 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
     tr.pp = l.pp ++ "->" ++ r.pp;
 
     tr.namedSig = l.namedSig;
-    tr.matchProd = l.matchProd;    
+    tr.matchProd = l.matchProd;
+    tr.asExpr = l.asExpr;    
     tr.errors := l.errors; -- We ignore r.errors intentionally, it isn't a well-formed expression
     tr.outputStmt = (\ e::Expr ->
         case e of application(_,_,aexpr,_,_,_) ->
@@ -69,6 +72,9 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
             fillExprPattern(r, aexpr, l.patternList, location=e.location)
         end
     );
+    
+    tr.errors <- [err(tr.location, "AppExps: ", appexps.pp)]
+    tr.errors <- [err(tr.location, "Pattern: ", pattern.pp)]
 
     -- Do the productions in both the lhs and rhs result in the same type?
     -- tr.errors <- if !check(l.typerep, r.typerep).typeerror then []
@@ -117,6 +123,15 @@ top::TransformRule ::= rules::[TransformRule] dcl::Decorated NamedSignature
     forwards to --if null(rules) then nothing()
         --else if null(dcl) then nothing() else
         if dcl.fullName == hd.namedSig.fullName 
-            then hd
-            else getTrans(tail(rules), dcl, absGroup, cncGroup, location=top.location);
+        then hd
+        else getTrans(tail(rules), dcl, absGroup, cncGroup, location=top.location);
+}
+
+abstract production applyTrans 
+top::Expr rules::[TransformRule] ns::Decorated NamedSignature absGroup::Decorated NonterminalList
+          cncGroup::Decorated NonterminalList 
+{
+    local trans::TransformRule = getTrans(rules, ns, absGroup, cncGroup, location=ag.location);
+
+    forwards to trans.outputStmt(nsApply(ns, location=top.location));
 }
