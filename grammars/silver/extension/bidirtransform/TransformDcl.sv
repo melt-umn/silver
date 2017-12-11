@@ -280,7 +280,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                                 annExpr("redex", exprAccess(inhRedexNm(tName), inhRedexNameSig(ns, allNames), location=ag.location), location=ag.location),
                                 annExpr("origin", mkOrigin(ns, location=ag.location), location=ag.location)
                                 ], location=ag.location), 
-                            absNames, location=ag.location),
+                            allProdNames, location=ag.location),
                         prdRecurse(ns, tName, absNames, location=ag.location),
                     location=ag.location),
             location=ag.location)], location=ag.location),

@@ -65,7 +65,7 @@ top::Expr ::= toFill::Expr appExps::AppExprs annoExps::AnnoAppExprs
         baseAppExprs,
         ',',
         -- We assume here that none are already provided
-        if contains(toFill.typerep.typeName, needAnnos) then consAnnoAppExprs(baseAnnoExprs, toInject, location=toFill.location)
+        if contains(toFill.pp, needAnnos) then consAnnoAppExprs(baseAnnoExprs, toInject, location=toFill.location)
         else baseAnnoExprs,
         ')', location=toFill.location
     );
