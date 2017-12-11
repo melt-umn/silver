@@ -128,8 +128,8 @@ top::TransformRule ::= rules::[TransformRule] dcl::Decorated NamedSignature
 }
 
 abstract production applyTrans 
-top::Expr rules::[TransformRule] ns::Decorated NamedSignature absGroup::Decorated NonterminalList
-          cncGroup::Decorated NonterminalList 
+top::Expr ::= rules::[TransformRule] ns::Decorated NamedSignature absGroup::Decorated NonterminalList
+              cncGroup::Decorated NonterminalList 
 {
     local trans::TransformRule = getTrans(rules, ns, absGroup, cncGroup, location=ag.location);
 
