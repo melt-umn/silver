@@ -195,21 +195,21 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     -- Aspecting origin productions
 
+    -- next step: log hasRwID, prod, Eq, for all cncName paris
+
     -- restored$cncType attributes
     --
     local agDcls9::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
         appendAGDcl(
-            fakeAspectProductionDcl('aspect', 'production',
-            --aspectProductionDcl('aspect', 'production', 
+            fakeAspectProductionDcl('aspect', 'production',\
             qName(ag.location, mkOriginName(lhs)), mkAspectProdSigDec("o", "Origin", "e", lhs, location=ag.location),
                 productionBody('{', foldl(\ stmts::ProductionStmts rhs::String ->
                     if !hasRwID(newRwRules.rewriteRules, lhs, rhs) 
                     then stmts -- this is also probably an error 
-                    else prdStmtList([
+                    else productionStmtsSnoc(stmts, 
                             attribDef("o", restoreNm(unFull(rhs)),
-                            --synAttrDef( "o", restoreNm(unFull(rhs)),  
                                 applyRw(rwID(newRwRules.rewriteRules, lhs, rhs), rhs, lhs, "e", location=ag.location), location=ag.location)
-                        ], location=ag.location),
+                        , location=ag.location),
                 productionStmtsNil(location=ag.location), cncNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
         agDcls8, cncNames);
 
