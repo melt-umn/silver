@@ -617,6 +617,7 @@ public class Init{
 		silver.extension.bidirtransform.PsynAttrDef.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PqnTyId.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PsTyExpr.initProductionAttributeDefinitions();
+		//FUNCTION sTyExprDec Decorated TypeExpr ::= s::String loc::Location env::Decorated Env 
 		silver.extension.bidirtransform.PdecTyExpr.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PqTyExpr.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PlhsAccess.initProductionAttributeDefinitions();
@@ -1245,6 +1246,7 @@ public class Init{
 	public static int count_local__ON__silver_extension_bidirtransform_synAttrDef = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_qnTyId = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_sTyExpr = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_sTyExprDec = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_decTyExpr = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_qTyExpr = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_lhsAccess = 0;
