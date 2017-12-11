@@ -27,7 +27,8 @@ attribute lazyTranslation occurs on Exprs;
 aspect production errorExpr
 top::Expr ::= msg::[Message]
 {
-  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors: " 
+    ++ foldl(\ s::String m::Message -> s ++ "\n" ++ m.msg, "", msg));
   top.lazyTranslation = top.translation;
 }
 
