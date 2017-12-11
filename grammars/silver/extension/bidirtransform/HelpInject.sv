@@ -56,7 +56,7 @@ top::Expr ::= toFill::Expr appExps::AppExprs annoExps::AnnoAppExprs
     local baseAppExprs::AppExprs = injectAppExprs(appExps, toInject, needAnnos, location=toFill.location);
     local baseAnnoExprs::AnnoAppExprs = injectAnnoExprs(annoExps, toInject, needAnnos, location=toFill.location);
 
-    top.errors := [err(top.location, toFill.pp ++ foldl(\ s1::String s::String -> s1++"-"++s, needAnnos))];
+    top.errors := [err(top.location, toFill.pp ++ foldl(\ s1::String s::String -> s1++"-"++s, "", needAnnos))];
 
     forwards to application(
         toFill, 
