@@ -59,7 +59,7 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String] s::String
     forwards to 
         if !contains(s, names) then toFill -- Error
         else if idx == -1 || idx >= length(exps) then toFill -- Error 
-        else idxOf(exps, idx, location=toFill.location);
+        else idxOfExprs(exps, idx, location=toFill.location);
 }
 
 abstract production fillExprEnd
@@ -113,10 +113,16 @@ top::AnnoExpr ::= toFill::AnnoExpr exps::[Expr] names::[String]
     end;
 }
 
+abstract production idxOfExprs
+top::Expr ::= ls::[Expr] idx::Integer
+{
+    forwards to if idx == 0 then head(ls) else idxOfExprs(tail(ls), idx-1, location=top.location);
+}
+
 abstract production idxOf
 top::a ::= ls::[a] idx::Integer
 {
-    forwards to if idx == 0 then head(ls) else idxOf(tail(ls), idx-1, location=top.location);
+    forwards to if idx == 0 then head(ls) else idxOf(tail(ls), idx-1);
 }
 
 function findIdx
