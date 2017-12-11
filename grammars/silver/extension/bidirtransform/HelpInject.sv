@@ -7,9 +7,11 @@ top::Expr ::= toFill::Expr toInject::AnnoAppExprs needAnnos::[String]
     -- if they need these annotations, give them the annotations
     forwards to case toFill of        
         | applicationEmpty(e, _, _) -> 
-            injectApplication(e, ?, ?, toInject, needAnnos, location=toFill.location)
+            injectApplication(e, emptyAppExprs(location=toFill.location), emptyAnnoAppExprs(location=toFill.location),
+                toInject, needAnnos, location=toFill.location)
         | applicationExpr(e, _, appexps, _) -> 
-            injectApplication(e, appexps, ?, toInject, needAnnos, location=toFill.location)
+            injectApplication(e, appexps, emptyAnnoAppExprs(location=toFill.location), 
+                toInject, needAnnos, location=toFill.location)
         | application(e, _, appexps, _, annexps, _) ->
             injectApplication(e, appexps, annexps, toInject, needAnnos, location=toFill.location)
         --
