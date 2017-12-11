@@ -90,7 +90,8 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local nonLocCncProdDcls :: [Decorated NamedSignature] = cncProdDcls;
     local allProdDcls :: [Decorated NamedSignature] = absProdDcls ++ cncProdDcls;
 
-    local allProdNames :: [String] = map((.fullName), allProdDcls);
+    local allProdNames :: [String] = map(unFull, map((.fullName), allProdDcls))
+    local absProdNames :: [String] = map(unFull, map((.fullName), absProdDcls));
 
     local logStuff :: Boolean = false;
 
@@ -280,7 +281,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                                 annExpr("redex", exprAccess(inhRedexNm(tName), inhRedexNameSig(ns, allNames), location=ag.location), location=ag.location),
                                 annExpr("origin", mkOrigin(ns, location=ag.location), location=ag.location)
                                 ], location=ag.location), 
-                            allProdNames, location=ag.location),
+                            absProdNames, location=ag.location),
                         prdRecurse(ns, tName, absNames, location=ag.location),
                     location=ag.location),
             location=ag.location)], location=ag.location),
