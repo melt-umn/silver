@@ -155,6 +155,7 @@ public class Init{
 		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PmkOrigin.class);
 		common.Decorator.applyDecorators(silver.definition.core.NAppExprs.decorators, PoneApp.class);
 		common.Decorator.applyDecorators(silver.definition.core.NAppExprs.decorators, PargTransAttrs.class);
+		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PbuiltinAccess.class);
 		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PprdRecurse.class);
 		common.Decorator.applyDecorators(silver.definition.core.NQName.decorators, PmkQName.class);
 		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PbaseName.class);
@@ -185,19 +186,19 @@ public class Init{
 		common.Decorator.applyDecorators(silver.extension.bidirtransform.NTransformRuleList.decorators, PtransformRuleSingle.class);
 		common.Decorator.applyDecorators(silver.extension.bidirtransform.NTransformRule.decorators, PtransformRule.class);
 		common.Decorator.applyDecorators(silver.extension.bidirtransform.NTransformRule.decorators, PgetTrans.class);
+		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PapplyTrans.class);
 		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PrestoreExpr.class);
 		common.Decorator.applyDecorators(silver.definition.core.NAppExprs.decorators, PrestoreAppExprs.class);
 		common.Decorator.applyDecorators(silver.definition.core.NAppExpr.decorators, PrestoreAppExpr.class);
 		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PfillExpr.class);
 		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PfillStringConst.class);
 		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PfillExprEnd.class);
-		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PfillExprPattern.class);
-		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PfillExprPatternHelper.class);
 		common.Decorator.applyDecorators(silver.definition.core.NAppExprs.decorators, PfillAppExprs.class);
 		common.Decorator.applyDecorators(silver.definition.core.NAppExpr.decorators, PfillAppExpr.class);
 		common.Decorator.applyDecorators(silver.definition.core.NAnnoAppExprs.decorators, PfillAnnoExprs.class);
 		common.Decorator.applyDecorators(silver.definition.core.NAnnoExpr.decorators, PfillAnnoAppExpr.class);
 		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PidxOf.class);
+		common.Decorator.applyDecorators(silver.definition.core.NExpr.decorators, PfillExprPattern.class);
 		common.Decorator.applyDecorators(silver.definition.core.NAGDcl.decorators, PfakeAspectProductionDcl.class);
 		common.Decorator.applyDecorators(silver.extension.bidirtransform.NRewriteRuleList.decorators, PrewriteRuleCons.class);
 		common.Decorator.applyDecorators(silver.extension.bidirtransform.NRewriteRuleList.decorators, PrewriteRuleSingle.class);
@@ -278,13 +279,20 @@ public class Init{
 		silver.extension.bidirtransform.NTransformRule.decorators.add(silver.analysis.typechecking.core.DfinalSubst.singleton);
 		silver.extension.bidirtransform.NTransformRule.occurs_inh[silver.extension.bidirtransform.Init.silver_definition_env_config__ON__silver_extension_bidirtransform_TransformRule] = "silver:definition:env:config";
 		silver.extension.bidirtransform.NTransformRule.decorators.add(silver.definition.env.Dconfig.singleton);
+		silver.extension.bidirtransform.NTransformRule.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_asExpr__ON__silver_extension_bidirtransform_TransformRule] = "silver:extension:bidirtransform:asExpr";
 		//	local attribute hd::TransformRule;
 		silver.extension.bidirtransform.PhasTrans.localInheritedAttributes[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_hasTrans] = new common.Lazy[silver.extension.bidirtransform.NTransformRule.num_inh_attrs];
 		silver.extension.bidirtransform.PhasTrans.occurs_local[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_hasTrans] = "silver:extension:bidirtransform:hasTrans:local:hd";
 		//	local attribute hd::TransformRule;
 		silver.extension.bidirtransform.PgetTrans.localInheritedAttributes[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_getTrans] = new common.Lazy[silver.extension.bidirtransform.NTransformRule.num_inh_attrs];
 		silver.extension.bidirtransform.PgetTrans.occurs_local[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_getTrans] = "silver:extension:bidirtransform:getTrans:local:hd";
+		//	local attribute trans::TransformRule;
+		silver.extension.bidirtransform.PapplyTrans.localInheritedAttributes[silver.extension.bidirtransform.Init.trans__ON__silver_extension_bidirtransform_applyTrans] = new common.Lazy[silver.extension.bidirtransform.NTransformRule.num_inh_attrs];
+		silver.extension.bidirtransform.PapplyTrans.occurs_local[silver.extension.bidirtransform.Init.trans__ON__silver_extension_bidirtransform_applyTrans] = "silver:extension:bidirtransform:applyTrans:local:trans";
 		silver.extension.bidirtransform.PfillStringConst.occurs_local[silver.extension.bidirtransform.Init.idx__ON__silver_extension_bidirtransform_fillStringConst] = "silver:extension:bidirtransform:fillStringConst:local:idx";
+		//	local attribute inputs::Pair<[Expr] [String]>;
+		silver.extension.bidirtransform.PfillExprPattern.localInheritedAttributes[silver.extension.bidirtransform.Init.inputs__ON__silver_extension_bidirtransform_fillExprPattern] = new common.Lazy[core.NPair.num_inh_attrs];
+		silver.extension.bidirtransform.PfillExprPattern.occurs_local[silver.extension.bidirtransform.Init.inputs__ON__silver_extension_bidirtransform_fillExprPattern] = "silver:extension:bidirtransform:fillExprPattern:local:inputs";
 		//	local attribute namedSig::NamedSignature;
 		silver.extension.bidirtransform.PfakeAspectProductionDcl.localInheritedAttributes[silver.extension.bidirtransform.Init.namedSig__ON__silver_extension_bidirtransform_fakeAspectProductionDcl] = new common.Lazy[silver.definition.env.NNamedSignature.num_inh_attrs];
 		silver.extension.bidirtransform.PfakeAspectProductionDcl.occurs_local[silver.extension.bidirtransform.Init.namedSig__ON__silver_extension_bidirtransform_fakeAspectProductionDcl] = "silver:extension:bidirtransform:fakeAspectProductionDcl:local:namedSig";
@@ -437,6 +445,7 @@ public class Init{
 		silver.extension.bidirtransform.NProductionDef.decorators.add(silver.definition.core.DgrammarName.singleton);
 		silver.extension.bidirtransform.NProductionDef.occurs_inh[silver.extension.bidirtransform.Init.silver_definition_env_config__ON__silver_extension_bidirtransform_ProductionDef] = "silver:definition:env:config";
 		silver.extension.bidirtransform.NProductionDef.decorators.add(silver.definition.env.Dconfig.singleton);
+		silver.extension.bidirtransform.NProductionDef.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_asExpr__ON__silver_extension_bidirtransform_ProductionDef] = "silver:extension:bidirtransform:asExpr";
 		silver.extension.bidirtransform.PproductionDef.occurs_local[silver.extension.bidirtransform.Init.absSig__ON__silver_extension_bidirtransform_productionDef] = "silver:extension:bidirtransform:productionDef:local:absSig";
 		silver.extension.bidirtransform.PproductionDef.occurs_local[silver.extension.bidirtransform.Init.cncSig__ON__silver_extension_bidirtransform_productionDef] = "silver:extension:bidirtransform:productionDef:local:cncSig";
 		silver.extension.bidirtransform.PapplyRwProd.occurs_local[silver.extension.bidirtransform.Init.fwdFunc__ON__silver_extension_bidirtransform_applyRwProd] = "silver:extension:bidirtransform:applyRwProd:local:fwdFunc";
@@ -522,12 +531,15 @@ public class Init{
 		//	local attribute agDcls11::AGDcl;
 		silver.extension.bidirtransform.PtransformAGDclFull.localInheritedAttributes[silver.extension.bidirtransform.Init.agDcls11__ON__silver_extension_bidirtransform_transformAGDclFull] = new common.Lazy[silver.definition.core.NAGDcl.num_inh_attrs];
 		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.agDcls11__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:agDcls11";
-		//	local attribute agDcls14::AGDcl;
-		silver.extension.bidirtransform.PtransformAGDclFull.localInheritedAttributes[silver.extension.bidirtransform.Init.agDcls14__ON__silver_extension_bidirtransform_transformAGDclFull] = new common.Lazy[silver.definition.core.NAGDcl.num_inh_attrs];
-		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.agDcls14__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:agDcls14";
+		//	local attribute agDcls12::AGDcl;
+		silver.extension.bidirtransform.PtransformAGDclFull.localInheritedAttributes[silver.extension.bidirtransform.Init.agDcls12__ON__silver_extension_bidirtransform_transformAGDclFull] = new common.Lazy[silver.definition.core.NAGDcl.num_inh_attrs];
+		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.agDcls12__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:agDcls12";
 		//	local attribute agDcls13::AGDcl;
 		silver.extension.bidirtransform.PtransformAGDclFull.localInheritedAttributes[silver.extension.bidirtransform.Init.agDcls13__ON__silver_extension_bidirtransform_transformAGDclFull] = new common.Lazy[silver.definition.core.NAGDcl.num_inh_attrs];
 		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.agDcls13__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:agDcls13";
+		//	local attribute agDcls14::AGDcl;
+		silver.extension.bidirtransform.PtransformAGDclFull.localInheritedAttributes[silver.extension.bidirtransform.Init.agDcls14__ON__silver_extension_bidirtransform_transformAGDclFull] = new common.Lazy[silver.definition.core.NAGDcl.num_inh_attrs];
+		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.agDcls14__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:agDcls14";
 		//	local attribute agDcls15::AGDcl;
 		silver.extension.bidirtransform.PtransformAGDclFull.localInheritedAttributes[silver.extension.bidirtransform.Init.agDcls15__ON__silver_extension_bidirtransform_transformAGDclFull] = new common.Lazy[silver.definition.core.NAGDcl.num_inh_attrs];
 		silver.extension.bidirtransform.PtransformAGDclFull.occurs_local[silver.extension.bidirtransform.Init.agDcls15__ON__silver_extension_bidirtransform_transformAGDclFull] = "silver:extension:bidirtransform:transformAGDclFull:local:agDcls15";
@@ -551,6 +563,10 @@ public class Init{
 		silver.definition.env.NDclInfo.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_DclInfo] = "silver:extension:bidirtransform:prodNamedSig";
 		silver.definition.env.NDclInfo.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_DclInfo] = "silver:extension:bidirtransform:absProdNamedSig";
 		silver.definition.env.NDclInfo.occurs_syn[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_DclInfo] = "silver:extension:bidirtransform:cncProdNamedSig";
+		//	local attribute hd::NamedSignatureElement;
+		silver.extension.bidirtransform.PinhRedexNameSig.localInheritedAttributes[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_inhRedexNameSig] = new common.Lazy[silver.definition.env.NNamedSignatureElement.num_inh_attrs];
+		silver.extension.bidirtransform.PinhRedexNameSig.occurs_local[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_inhRedexNameSig] = "silver:extension:bidirtransform:inhRedexNameSig:local:hd";
+		silver.extension.bidirtransform.PinhRedexNameSig.occurs_local[silver.extension.bidirtransform.Init.def__ON__silver_extension_bidirtransform_inhRedexNameSig] = "silver:extension:bidirtransform:inhRedexNameSig:local:def";
 		//	local attribute hd::Def;
 		silver.extension.bidirtransform.PfilterDefs.localInheritedAttributes[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_filterDefs] = new common.Lazy[silver.definition.env.NDef.num_inh_attrs];
 		silver.extension.bidirtransform.PfilterDefs.occurs_local[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_filterDefs] = "silver:extension:bidirtransform:filterDefs:local:hd";
@@ -596,6 +612,7 @@ public class Init{
 		silver.extension.bidirtransform.PmkOrigin.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PoneApp.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PargTransAttrs.initProductionAttributeDefinitions();
+		silver.extension.bidirtransform.PbuiltinAccess.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PprdRecurse.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PmkQName.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PbaseName.initProductionAttributeDefinitions();
@@ -843,14 +860,13 @@ public class Init{
 		// hd.cncGroup = cncGroup
 		silver.extension.bidirtransform.PhasTrans.localInheritedAttributes[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_hasTrans][silver.extension.bidirtransform.Init.silver_extension_bidirtransform_cncGroup__ON__silver_extension_bidirtransform_TransformRule] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.DecoratedNode)context.childAsIs(silver.extension.bidirtransform.PhasTrans.i_cncGroup)); } };
 		silver.extension.bidirtransform.PgetTrans.initProductionAttributeDefinitions();
+		silver.extension.bidirtransform.PapplyTrans.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PrestoreExpr.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PrestoreAppExprs.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PrestoreAppExpr.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PfillExpr.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PfillStringConst.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PfillExprEnd.initProductionAttributeDefinitions();
-		silver.extension.bidirtransform.PfillExprPattern.initProductionAttributeDefinitions();
-		silver.extension.bidirtransform.PfillExprPatternHelper.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PfillAppExprs.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PfillAppExpr.initProductionAttributeDefinitions();
 		silver.extension.bidirtransform.PfillAnnoExprs.initProductionAttributeDefinitions();
@@ -858,13 +874,14 @@ public class Init{
 		silver.extension.bidirtransform.PidxOf.initProductionAttributeDefinitions();
 		//FUNCTION findIdx Integer ::= ls::[String] item::String 
 		//FUNCTION findIdxHelper Integer ::= ls::[String] item::String idx::Integer 
-		//FUNCTION matchAppExpsToPattern Pair<[Expr] [String]> ::= appexps::AppExprs pattern::PatternList 
-		//FUNCTION joinPair Pair<[c] [d]> ::= a::Pair<[c] [d]> b::Pair<[c] [d]> 
-		//FUNCTION lastElemPattern Pattern ::= pl::PatternList 
-		//FUNCTION leftTailPattern PatternList ::= pl::PatternList 
+		silver.extension.bidirtransform.PfillExprPattern.initProductionAttributeDefinitions();
+		//FUNCTION matchAppExpsToPattern Pair<[Expr] [String]> ::= appexps::AppExprs pattern::[Pattern] 
 		//FUNCTION matchAppExpToPattern Pair<[Expr] [String]> ::= appexp::AppExpr pattern::Pattern 
 		//FUNCTION matchExpToPattern Pair<[Expr] [String]> ::= e::Expr pattern::Pattern 
 		//FUNCTION pullOutAppExprs [Expr] ::= aexprs::AppExprs 
+		//FUNCTION joinPair Pair<[c] [d]> ::= a::Pair<[c] [d]> b::Pair<[c] [d]> 
+		//FUNCTION lastElemPattern Pattern ::= pl::PatternList 
+		//FUNCTION leftTailPattern PatternList ::= pl::PatternList 
 		silver.extension.bidirtransform.PfakeAspectProductionDcl.initProductionAttributeDefinitions();
 		//ASPECT DEFAULT PRODUCTION for Env
 		// top.ppDebug = "default Env"
@@ -1093,8 +1110,11 @@ public class Init{
 		silver.definition.env.PannoInstanceDcl.synthesizedAttributes[silver.extension.bidirtransform.Init.silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return new common.StringCatter((common.StringCatter)(new common.StringCatter("annoInstanceDcl ")), (common.StringCatter)new common.StringCatter((common.StringCatter)((common.StringCatter)context.childAsIs(silver.definition.env.PannoInstanceDcl.i_fnnt)), (common.StringCatter)new common.StringCatter((common.StringCatter)(new common.StringCatter(" ")), (common.StringCatter)((common.StringCatter)context.childAsIs(silver.definition.env.PannoInstanceDcl.i_fnat))))); } };
 		//FUNCTION dclQName (QName ::= String) ::= loc::Location 
 		//FUNCTION mkOriginName String ::= typeName::String 
-		//FUNCTION inhRedexNameSig String ::= ns::Decorated NamedSignature 
-		//FUNCTION validInhRedex String ::= test::String def::String 
+		//FUNCTION inhRedexNameSig String ::= ns::Decorated NamedSignature allowedTypes::[String] 
+		// hd = head(ns.inputElements)
+		silver.extension.bidirtransform.PinhRedexNameSig.localAttributes[silver.extension.bidirtransform.Init.hd__ON__silver_extension_bidirtransform_inhRedexNameSig] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((silver.definition.env.NNamedSignatureElement)core.Phead.invoke(context.childAsIsSynthesizedLazy(silver.extension.bidirtransform.PinhRedexNameSig.i_ns, silver.definition.env.Init.silver_definition_env_inputElements__ON__silver_definition_env_NamedSignature))); } };
+		// def = ns.outputElement.elementName
+		silver.extension.bidirtransform.PinhRedexNameSig.localAttributes[silver.extension.bidirtransform.Init.def__ON__silver_extension_bidirtransform_inhRedexNameSig] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((common.StringCatter)((silver.definition.env.NNamedSignatureElement)((common.DecoratedNode)context.childAsIs(silver.extension.bidirtransform.PinhRedexNameSig.i_ns)).synthesized(silver.definition.env.Init.silver_definition_env_outputElement__ON__silver_definition_env_NamedSignature)).decorate(context, (common.Lazy[])null).synthesized(silver.definition.env.Init.silver_definition_env_elementName__ON__silver_definition_env_NamedSignatureElement)); } };
 		//FUNCTION allHead [a] ::= ls::[a] 
 		//FUNCTION hasLocDcl Boolean ::= dcl::[DclInfo] 
 		//FUNCTION hasNamedAttr Boolean ::= tyName::String env::Decorated Env attr::String 
@@ -1207,6 +1227,7 @@ public class Init{
 	public static int count_local__ON__silver_extension_bidirtransform_mkOrigin = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_oneApp = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_argTransAttrs = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_builtinAccess = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_prdRecurse = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_mkQName = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_baseName = 0;
@@ -1244,14 +1265,13 @@ public class Init{
 	public static int count_local__ON__silver_extension_bidirtransform_transformRule = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_hasTrans = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_getTrans = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_applyTrans = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_restoreExpr = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_restoreAppExprs = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_restoreAppExpr = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_fillExpr = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_fillStringConst = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_fillExprEnd = 0;
-	public static int count_local__ON__silver_extension_bidirtransform_fillExprPattern = 0;
-	public static int count_local__ON__silver_extension_bidirtransform_fillExprPatternHelper = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_fillAppExprs = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_fillAppExpr = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_fillAnnoExprs = 0;
@@ -1259,13 +1279,14 @@ public class Init{
 	public static int count_local__ON__silver_extension_bidirtransform_idxOf = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_findIdx = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_findIdxHelper = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_fillExprPattern = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_matchAppExpsToPattern = 0;
-	public static int count_local__ON__silver_extension_bidirtransform_joinPair = 0;
-	public static int count_local__ON__silver_extension_bidirtransform_lastElemPattern = 0;
-	public static int count_local__ON__silver_extension_bidirtransform_leftTailPattern = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_matchAppExpToPattern = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_matchExpToPattern = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_pullOutAppExprs = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_joinPair = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_lastElemPattern = 0;
+	public static int count_local__ON__silver_extension_bidirtransform_leftTailPattern = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_fakeAspectProductionDcl = 0;
 	public static int count_inh__ON__RewriteRuleList = 0;
 	public static int count_syn__ON__RewriteRuleList = 0;
@@ -1343,7 +1364,6 @@ public class Init{
 	public static int count_local__ON__silver_extension_bidirtransform_dclQName = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_mkOriginName = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_inhRedexNameSig = 0;
-	public static int count_local__ON__silver_extension_bidirtransform_validInhRedex = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_allHead = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_hasLocDcl = 0;
 	public static int count_local__ON__silver_extension_bidirtransform_hasNamedAttr = 0;
@@ -1400,9 +1420,12 @@ public static final int silver_analysis_typechecking_core_downSubst__ON__silver_
 public static final int silver_analysis_typechecking_core_upSubst__ON__silver_extension_bidirtransform_TransformRule = silver.extension.bidirtransform.Init.count_syn__ON__TransformRule++;
 public static final int silver_analysis_typechecking_core_finalSubst__ON__silver_extension_bidirtransform_TransformRule = silver.extension.bidirtransform.Init.count_inh__ON__TransformRule++;
 public static final int silver_definition_env_config__ON__silver_extension_bidirtransform_TransformRule = silver.extension.bidirtransform.Init.count_inh__ON__TransformRule++;
+public static final int silver_extension_bidirtransform_asExpr__ON__silver_extension_bidirtransform_TransformRule = silver.extension.bidirtransform.Init.count_syn__ON__TransformRule++;
 public static final int hd__ON__silver_extension_bidirtransform_hasTrans = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_hasTrans++;
 public static final int hd__ON__silver_extension_bidirtransform_getTrans = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_getTrans++;
+public static final int trans__ON__silver_extension_bidirtransform_applyTrans = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_applyTrans++;
 public static final int idx__ON__silver_extension_bidirtransform_fillStringConst = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_fillStringConst++;
+public static final int inputs__ON__silver_extension_bidirtransform_fillExprPattern = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_fillExprPattern++;
 public static final int namedSig__ON__silver_extension_bidirtransform_fakeAspectProductionDcl = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_fakeAspectProductionDcl++;
 public static final int realSig__ON__silver_extension_bidirtransform_fakeAspectProductionDcl = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_fakeAspectProductionDcl++;
 public static final int sigDefs__ON__silver_extension_bidirtransform_fakeAspectProductionDcl = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_fakeAspectProductionDcl++;
@@ -1501,6 +1524,7 @@ public static final int silver_extension_bidirtransform_cncGroup__ON__silver_ext
 public static final int silver_definition_env_pp__ON__silver_extension_bidirtransform_ProductionDef = silver.extension.bidirtransform.Init.count_syn__ON__ProductionDef++;
 public static final int silver_definition_core_grammarName__ON__silver_extension_bidirtransform_ProductionDef = silver.extension.bidirtransform.Init.count_inh__ON__ProductionDef++;
 public static final int silver_definition_env_config__ON__silver_extension_bidirtransform_ProductionDef = silver.extension.bidirtransform.Init.count_inh__ON__ProductionDef++;
+public static final int silver_extension_bidirtransform_asExpr__ON__silver_extension_bidirtransform_ProductionDef = silver.extension.bidirtransform.Init.count_syn__ON__ProductionDef++;
 public static final int absSig__ON__silver_extension_bidirtransform_productionDef = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_productionDef++;
 public static final int cncSig__ON__silver_extension_bidirtransform_productionDef = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_productionDef++;
 public static final int fwdFunc__ON__silver_extension_bidirtransform_applyRwProd = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_applyRwProd++;
@@ -1546,8 +1570,9 @@ public static final int newRwRules__ON__silver_extension_bidirtransform_transfor
 public static final int agDcls9__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int agDcls10__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int agDcls11__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
-public static final int agDcls14__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
+public static final int agDcls12__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int agDcls13__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
+public static final int agDcls14__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int agDcls15__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int agDcls16__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
 public static final int toForward__ON__silver_extension_bidirtransform_transformAGDclFull = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_transformAGDclFull++;
@@ -1565,6 +1590,8 @@ public static final int silver_extension_bidirtransform_ppDebug__ON__silver_defi
 public static final int silver_extension_bidirtransform_prodNamedSig__ON__silver_definition_env_DclInfo = silver.definition.env.Init.count_syn__ON__DclInfo++;
 public static final int silver_extension_bidirtransform_absProdNamedSig__ON__silver_definition_env_DclInfo = silver.definition.env.Init.count_syn__ON__DclInfo++;
 public static final int silver_extension_bidirtransform_cncProdNamedSig__ON__silver_definition_env_DclInfo = silver.definition.env.Init.count_syn__ON__DclInfo++;
+public static final int hd__ON__silver_extension_bidirtransform_inhRedexNameSig = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_inhRedexNameSig++;
+public static final int def__ON__silver_extension_bidirtransform_inhRedexNameSig = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_inhRedexNameSig++;
 public static final int hd__ON__silver_extension_bidirtransform_filterDefs = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_filterDefs++;
 public static final int tl__ON__silver_extension_bidirtransform_filterDefs = silver.extension.bidirtransform.Init.count_local__ON__silver_extension_bidirtransform_filterDefs++;
 public static final int silver_extension_bidirtransform_ppDebug__ON__silver_definition_env_EnvItem = silver.definition.env.Init.count_syn__ON__EnvItem++;

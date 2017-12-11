@@ -1,7 +1,7 @@
 
 package silver.extension.bidirtransform;
 
-// top::Expr ::= toFill::Expr appexps::AppExprs pattern::PatternList 
+// top::Expr ::= toFill::Expr appexps::AppExprs pattern::[Pattern] 
 public final class PfillExprPattern extends silver.definition.core.NExpr {
 
 	public static final int i_toFill = 0;
@@ -9,7 +9,7 @@ public final class PfillExprPattern extends silver.definition.core.NExpr {
 	public static final int i_pattern = 2;
 
 
-	public static final Class<?> childTypes[] = {silver.definition.core.NExpr.class,silver.definition.core.NAppExprs.class,silver.extension.patternmatching.NPatternList.class};
+	public static final Class<?> childTypes[] = {silver.definition.core.NExpr.class,silver.definition.core.NAppExprs.class,common.DecoratedNode.class};
 
 	public static final int num_local_attrs = Init.count_local__ON__silver_extension_bidirtransform_fillExprPattern;
 	public static final String[] occurs_local = new String[num_local_attrs];
@@ -25,7 +25,6 @@ public final class PfillExprPattern extends silver.definition.core.NExpr {
 	static {
 	childInheritedAttributes[i_toFill] = new common.Lazy[silver.definition.core.NExpr.num_inh_attrs];
 	childInheritedAttributes[i_appexps] = new common.Lazy[silver.definition.core.NAppExprs.num_inh_attrs];
-	childInheritedAttributes[i_pattern] = new common.Lazy[silver.extension.patternmatching.NPatternList.num_inh_attrs];
 
 	}
 
@@ -48,8 +47,8 @@ public final class PfillExprPattern extends silver.definition.core.NExpr {
 	}
 
 	private Object child_pattern;
-	public final silver.extension.patternmatching.NPatternList getChild_pattern() {
-		return (silver.extension.patternmatching.NPatternList) (child_pattern = common.Util.demand(child_pattern));
+	public final common.ConsCell getChild_pattern() {
+		return (common.ConsCell) (child_pattern = common.Util.demand(child_pattern));
 	}
 
 
@@ -103,7 +102,7 @@ public final class PfillExprPattern extends silver.definition.core.NExpr {
 
 	@Override
 	public common.Node evalForward(final common.DecoratedNode context) {
-		return ((silver.definition.core.NExpr)new silver.extension.bidirtransform.PfillExprPatternHelper(common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.extension.bidirtransform.PfillExprPattern.i_toFill)), new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((core.NPair)silver.extension.bidirtransform.PmatchAppExpsToPattern.invoke(common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.extension.bidirtransform.PfillExprPattern.i_appexps)), common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.extension.bidirtransform.PfillExprPattern.i_pattern)))); } }, new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((core.NLocation)((silver.definition.core.NExpr)context.childDecorated(silver.extension.bidirtransform.PfillExprPattern.i_toFill).undecorate()).getAnno_core_location()); } }));
+		return ((silver.definition.core.NExpr)new silver.extension.bidirtransform.PfillExpr(common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.extension.bidirtransform.PfillExprPattern.i_toFill)), new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)context.localDecorated(silver.extension.bidirtransform.Init.inputs__ON__silver_extension_bidirtransform_fillExprPattern).synthesized(core.Init.core_fst__ON__core_Pair)); } }, new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)context.localDecorated(silver.extension.bidirtransform.Init.inputs__ON__silver_extension_bidirtransform_fillExprPattern).synthesized(core.Init.core_snd__ON__core_Pair)); } }, new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((core.NLocation)((silver.definition.core.NExpr)context.childDecorated(silver.extension.bidirtransform.PfillExprPattern.i_toFill).undecorate()).getAnno_core_location()); } }));
 	}
 
 	@Override
@@ -132,6 +131,8 @@ public final class PfillExprPattern extends silver.definition.core.NExpr {
 	}
 
 	static void initProductionAttributeDefinitions() {
+		// inputs = matchAppExpsToPattern(appexps, pattern)
+		silver.extension.bidirtransform.PfillExprPattern.localAttributes[silver.extension.bidirtransform.Init.inputs__ON__silver_extension_bidirtransform_fillExprPattern] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ((core.NPair)silver.extension.bidirtransform.PmatchAppExpsToPattern.invoke(common.Thunk.transformUndecorate(context.childDecoratedLazy(silver.extension.bidirtransform.PfillExprPattern.i_appexps)), context.childAsIsLazy(silver.extension.bidirtransform.PfillExprPattern.i_pattern))); } };
 
 	}
 

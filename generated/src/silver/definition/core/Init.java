@@ -1367,12 +1367,12 @@ public class Init{
 		// top.attrDefDispatcher = \ dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr l::Location  -> errorAttributeDef([ err(l, "Annotations are not defined as equations within productions") ], dl, attr, e,location=l)
 		silver.definition.env.PannoDcl.synthesizedAttributes[silver.definition.core.Init.silver_definition_core_attrDefDispatcher__ON__silver_definition_env_DclInfo] = new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return (new common.NodeFactory<silver.definition.core.NProductionStmt>() {
   public final silver.definition.core.NProductionStmt invoke(final Object[] args, final Object[] namedArgs) {
-    final Object __SV_LAMBDA_PARAM_3084_dl = args[0];
-final Object __SV_LAMBDA_PARAM_3085_attr = args[1];
-final Object __SV_LAMBDA_PARAM_3086_e = args[2];
-final Object __SV_LAMBDA_PARAM_3087_l = args[3];
+    final Object __SV_LAMBDA_PARAM_3100_dl = args[0];
+final Object __SV_LAMBDA_PARAM_3101_attr = args[1];
+final Object __SV_LAMBDA_PARAM_3102_e = args[2];
+final Object __SV_LAMBDA_PARAM_3103_l = args[3];
 
-    return ((silver.definition.core.NProductionStmt)new silver.definition.core.PerrorAttributeDef(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pcons.invoke(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((silver.definition.core.NMessage)new silver.definition.core.Perr(((core.NLocation)common.Util.demand(__SV_LAMBDA_PARAM_3087_l)), (new common.StringCatter("Annotations are not defined as equations within productions")))); } }, new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } })); } }, ((common.DecoratedNode)common.Util.demand(__SV_LAMBDA_PARAM_3084_dl)), ((common.DecoratedNode)common.Util.demand(__SV_LAMBDA_PARAM_3085_attr)), ((silver.definition.core.NExpr)common.Util.demand(__SV_LAMBDA_PARAM_3086_e)), ((core.NLocation)common.Util.demand(__SV_LAMBDA_PARAM_3087_l))));
+    return ((silver.definition.core.NProductionStmt)new silver.definition.core.PerrorAttributeDef(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pcons.invoke(new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((silver.definition.core.NMessage)new silver.definition.core.Perr(((core.NLocation)common.Util.demand(__SV_LAMBDA_PARAM_3103_l)), (new common.StringCatter("Annotations are not defined as equations within productions")))); } }, new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { return ((common.ConsCell)core.Pnil.invoke()); } })); } }, ((common.DecoratedNode)common.Util.demand(__SV_LAMBDA_PARAM_3100_dl)), ((common.DecoratedNode)common.Util.demand(__SV_LAMBDA_PARAM_3101_attr)), ((silver.definition.core.NExpr)common.Util.demand(__SV_LAMBDA_PARAM_3102_e)), ((core.NLocation)common.Util.demand(__SV_LAMBDA_PARAM_3103_l))));
   }
 }); } };
 		//ASPECT PRODUCTION forwardDcl top ::= sg::String sl::Location ty::Type 
