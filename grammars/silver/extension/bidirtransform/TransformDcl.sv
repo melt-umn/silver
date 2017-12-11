@@ -90,6 +90,8 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local nonLocCncProdDcls :: [Decorated NamedSignature] = cncProdDcls;
     local allProdDcls :: [Decorated NamedSignature] = absProdDcls ++ cncProdDcls;
 
+    local allProdNames :: [String] = map((.fullName), allProdDcls);
+
     local logStuff :: Boolean = false;
 
     ag.errors <- if logStuff then map(\ fnt::Decorated FullNonterminal ->
@@ -269,11 +271,16 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                   then prdRecurse(ns, tName, allNames, location=ag.location)
                   else mkCond(
                         lhsExprAccess(transformNm(tName), ns, location=ag.location),
-                        -- todo: what did I mean by the todo below this? Have I done that already?
                         -- todo: add annotations to anything here that is one of 
                         -- our abstract productions
-                        applyTrans(trRules.transformRules, dcl, absGroup, cncGroup, location=ag.location),
-                        --getTrans(trRules.transformRules, dcl, absGroup, cncGroup, location=ag.location).outputStmt(nsApply(ns, location=ag.location)),
+                        injectAnnos(
+                            applyTrans(trRules.transformRules, dcl, absGroup, cncGroup, location=ag.location),
+                            annoAppExprList([
+                                annExpr("labels", emptyList('[',']', location=top.location), location=top.location),
+                                annExpr("redex", exprAccess(inhRedexNm(tName), inhRedexNameSig(ns, allowedTypes), location=top.location), location=top.location),
+                                annExpr("origin", mkOrigin(ns, location=top.location), location=top.location)
+                                ], location=top.location), 
+                            allProdNames),
                         prdRecurse(ns, tName, allNames, location=ag.location),
                     location=ag.location),
             location=ag.location)], location=ag.location),
