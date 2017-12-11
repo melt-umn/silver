@@ -107,16 +107,16 @@ Boolean ::= rules::[Decorated TransformRule] dcl::Decorated NamedSignature
         else hasTrans(tail(rules), dcl);
 }
 
-abstract production getTrans
-top::Decorated TransformRule ::= rules::[Decorated TransformRule] dcl::Decorated NamedSignature
+function getTrans
+Decorated TransformRule ::= rules::[Decorated TransformRule] dcl::Decorated NamedSignature
 {
     local hd::Decorated TransformRule = head(rules);
 
-    forwards to --if null(rules) then nothing()
+    return --if null(rules) then nothing()
         --else if null(dcl) then nothing() else
         if dcl.fullName == hd.namedSig.fullName 
         then hd
-        else getTrans(tail(rules), dcl, location=top.location);
+        else getTrans(tail(rules), dcl);
 }
 
 abstract production applyTrans 
