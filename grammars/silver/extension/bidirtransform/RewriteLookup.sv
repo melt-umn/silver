@@ -16,9 +16,7 @@ grammar silver:extension:bidirtransform;
 function hasRwMatch
 Boolean ::= rwrs::[Decorated RewriteRule] outType::String ns::Decorated NamedSignature
 {
-    return if hasRwProd(rwrs, outType, ns) 
-      then true 
-      else hasRwID(rwrs, unFull(ns.typerep.typeName), unFull(outType));
+    return hasRwProd(rwrs, outType, ns) || hasRwID(rwrs, unFull(ns.typerep.typeName), unFull(outType));
 }
 
 -- Return either rwProd or rwID, preferring the former.
@@ -43,6 +41,37 @@ Boolean ::= rwrs::[Decorated RewriteRule] outType::String ns::Decorated NamedSig
         else hasRwProd(tail(rwrs), outType, ns);
 }
 
+function hasRwID
+Boolean ::= rwrs::[Decorated RewriteRule] inType::String outType::String 
+{
+    return hasRwEq(rwrs, inType, outType) || hasRwOut(rwrs, outType);
+}
+
+function hasRwEq
+Boolean ::= rwrs::[Decorated RewriteRule] inType::String outType::String 
+{
+    local hd::Decorated RewriteRule = head(rwrs);
+
+    return if null(rwrs) then false
+        else if !hd.hasProduction && 
+            unFull(hd.typerep.typeName) == unFull(outType)
+            unFull(hd.inputType.typeName) == unFull(inType)
+        then true
+        else hasRwEq(tail(rwrs), inType, outType);
+}
+
+function hasRwOut
+Boolean ::= rwrs::[Decorated RewriteRule] outType::String
+{
+    local hd::Decorated RewriteRule = head(rwrs);    
+
+    return if null(rwrs) then false
+        else if !hd.hasProduction && 
+            unFull(hd.typerep.typeName) == unFull(outType)
+        then true
+        else hasRwOut(tail(rwrs), outType);
+}   
+
 -- Return a rule which operates on the arguments of the production defined
 -- by ns and returns outType
 function rwProd
@@ -58,21 +87,30 @@ Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] outType::String ns::Deco
         else rwProd(tail(rwrs), outType, ns);
 }
 
-function hasRwID
-Boolean ::= rwrs::[Decorated RewriteRule] inType::String outType::String 
+function rwID
+Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] inType::String outType::String 
+{
+    return if hasRwEq(rwrs, inType, outType) 
+        then rwEq(rwrs, inType, outType)
+        else rwOut(rwrs, outType);
+}
+
+function rwEq
+Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] inType::String outType::String 
 {
     local hd::Decorated RewriteRule = head(rwrs);
 
     return if null(rwrs) then false
         else if !hd.hasProduction && 
             unFull(hd.typerep.typeName) == unFull(outType)
-        then true
-        else hasRwID(tail(rwrs), inType, outType);
+            unFull(hd.inputType.typeName) == unFull(inType)
+        then hd
+        else rwEq(tail(rwrs), inType, outType);
 }
 
--- Return a rule which takes in inType and returns outType
-function rwID
-Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] inType::String outType::String 
+-- Return a rule which returns outType
+function rwOut
+Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] outType::String 
 {
     local hd::Decorated RewriteRule = head(rwrs);
 
@@ -80,5 +118,6 @@ Decorated RewriteRule ::= rwrs::[Decorated RewriteRule] inType::String outType::
         if !hd.hasProduction &&
             unFull(hd.typerep.typeName) == unFull(outType)
         then hd
-        else rwID(tail(rwrs), inType, outType);
+        else rwOut(tail(rwrs), outType);
 }
+
