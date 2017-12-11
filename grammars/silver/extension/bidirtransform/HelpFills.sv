@@ -119,10 +119,10 @@ top::Expr ::= ls::[Expr] idx::Integer
     forwards to if idx == 0 then head(ls) else idxOfExprs(tail(ls), idx-1, location=top.location);
 }
 
-abstract production idxOf
+function idxOf
 top::a ::= ls::[a] idx::Integer
 {
-    forwards to if idx == 0 then head(ls) else idxOf(tail(ls), idx-1);
+    return if idx == 0 then head(ls) else idxOf(tail(ls), idx-1);
 }
 
 function findIdx
