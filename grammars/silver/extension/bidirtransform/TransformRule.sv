@@ -117,13 +117,13 @@ top::Decorated TransformRule ::= rules::[Decorated TransformRule] dcl::Decorated
         --else if null(dcl) then nothing() else
         if dcl.fullName == hd.namedSig.fullName 
         then hd
-        else getTrans(tail(rules), dcl, absGroup, cncGroup, location=top.location);
+        else getTrans(tail(rules), dcl, location=top.location);
 }
 
 abstract production applyTrans 
 top::Expr ::= rules::[Decorated TransformRule] ns::Decorated NamedSignature
 {
-    local trans::Decorated TransformRule = getTrans(rules, ns, absGroup, cncGroup, location=top.location);
+    local trans::Decorated TransformRule = getTrans(rules, ns, location=top.location);
 
     forwards to trans.outputStmt(nsApply(trans.namedSig, location=top.location));
 }
