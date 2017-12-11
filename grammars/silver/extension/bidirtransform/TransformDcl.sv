@@ -268,7 +268,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                 [attribDef(ns.outputElement.elementName, tName,
                     --synAttrDef(ns.outputElement.elementName, tName,
                 if !hasTrans(trRules.transformRules, dcl, absGroup, cncGroup) 
-                  then prdRecurse(ns, tName, allNames, location=ag.location)
+                  then prdRecurse(ns, tName, absNames, location=ag.location)
                   else mkCond(
                         lhsExprAccess(transformNm(tName), ns, location=ag.location),
                         -- todo: add annotations to anything here that is one of 
@@ -280,8 +280,8 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                                 annExpr("redex", exprAccess(inhRedexNm(tName), inhRedexNameSig(ns, allNames), location=ag.location), location=ag.location),
                                 annExpr("origin", mkOrigin(ns, location=ag.location), location=ag.location)
                                 ], location=ag.location), 
-                            allProdNames, location=ag.location),
-                        prdRecurse(ns, tName, allNames, location=ag.location),
+                            absNames, location=ag.location),
+                        prdRecurse(ns, tName, absNames, location=ag.location),
                     location=ag.location),
             location=ag.location)], location=ag.location),
             location=ag.location), agDcls, location=ag.location),

@@ -57,7 +57,10 @@ top::Expr ::= toFill::Expr appExps::AppExprs annoExps::AnnoAppExprs
     local baseAnnoExprs::AnnoAppExprs = injectAnnoExprs(annoExps, toInject, needAnnos, location=toFill.location);
 
     forwards to application(
-        injectAnnos(toFill, toInject, needAnnos, location=toFill.location),
+        toFill, 
+        -- note disallowing production names that are generated from other productions
+        -- or functions for now
+        --injectAnnos(toFill, toInject, needAnnos, location=toFill.location),
         '(',
         baseAppExprs,
         ',',
