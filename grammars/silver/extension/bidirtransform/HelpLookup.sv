@@ -66,6 +66,17 @@ function getProdFromGroup
     return getProdFromList(s, ntlst.ntList);
 }
 
+function getProdFromGroups
+[Decorated NamedSignature] ::= s::String absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
+{
+    local absSig::[Decorated NamedSignature] = getProdFromGroup(s, absGroup);
+    local cncSig::[Decorated NamedSignature] = getProdFromGroup(s, cncGroup);
+
+    return if length(absSig) != 0 then [head(absSig)]
+        else if length(cncSig) != 0 then [head(cncSig)]
+        else []; 
+}
+
 function getProdFromList
 [Decorated NamedSignature] ::= s::String nts::[Decorated FullNonterminal]
 {

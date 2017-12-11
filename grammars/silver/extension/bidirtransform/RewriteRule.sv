@@ -8,11 +8,14 @@ synthesized attribute inputProduction::RewriteProduction;
 synthesized attribute hasProduction::Boolean;
 synthesized attribute shouldRestore::Boolean;
 synthesized attribute decSig::Decorated NamedSignature;
+synthesized attribute rhsType::Maybe<TypeExpr>;
 
 nonterminal RewriteRuleList with rewriteRules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
 nonterminal RewriteRule with inputType, inputProduction, hasProduction, typerep, outputStmt, restoreStmt, shouldRestore, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config;
 nonterminal RewriteProduction with name, inputNames, typerep, env, errors, location, absGroup, cncGroup, pp, config, decSig;
 nonterminal RewriteProductionArgs with inputNames, errors, pp, config;
+nonterminal RewriteArrow with shouldRestore, rhsType;
+nonterminal OptRHSType with rhsType;
 
 terminal RestoreArrow_t '~~>' lexer classes {SPECOP};
 
@@ -59,54 +62,31 @@ rrl::RewriteRuleList ::= Vbar_kwd rule::RewriteRule
     rrl.errors := rule.errors;
 }
 
--- rewrite an abstract production as a concrete production
+-- rewrite a production as another production,
+-- recursing on restored elements
 concrete production rewriteRuleProd
-rule::RewriteRule ::= prd::RewriteProduction '->' e::Expr
-{
-    rule.pp = prd.pp ++ "->" ++ e.pp;
-
-    e.downSubst = rule.downSubst;
-    rule.upSubst = e.upSubst;
-    e.finalSubst = rule.upSubst;
-    e.defaultInheritedAnnos = [];      
-
-    forwards to rewriteRule(e, "", prd.typerep, e.typerep, prd, true, false, location=rule.location);
-}
-
--- rewrite an abstract production as a concrete production
-concrete production rewriteRuleRestoreProd
-rule::RewriteRule ::= prd::RewriteProduction '~~>' e::Expr
+rule::RewriteRule ::= prd::RewriteProduction arr::RewriteArrow e::Expr
 {
     rule.pp = prd.pp ++ "~~>" ++ e.pp;
 
     e.downSubst = rule.downSubst;
     rule.upSubst = e.upSubst;
     e.finalSubst = rule.upSubst;
-    e.defaultInheritedAnnos = [];      
+    e.defaultInheritedAnnos = [];
 
-    forwards to rewriteRule(e, "", prd.typerep, e.typerep, prd, true, true, location=rule.location);
+    local rhsType::Type = case arr.rhsType of 
+        | just(t) -> t.typerep
+        | nothing() -> e.typerep
+    end;      
+
+    forwards to rewriteRule(e, "", prd.typerep, rhsType, 
+        prd, true, arr.shouldRestore, location=rule.location);
 }
 
--- rewrite a concrete type as another concrete type through plugging it into
+-- rewrite a  type as another type through plugging it into
 -- an expression
 concrete production rewriteRuleType
-rule::RewriteRule ::= name::QName '::' t::TypeExpr '->' e::Expr 
-{
-    rule.pp = name.pp ++ "::" ++ t.pp ++ "->" ++ e.pp;
-
-    e.downSubst = rule.downSubst;
-    rule.upSubst = e.upSubst;
-    e.finalSubst = rule.upSubst;    
-    e.defaultInheritedAnnos = [];        
-
-    forwards to rewriteRule(e, name.name, t.typerep, e.typerep, 
-      emptyRewriteProduction(location=rule.location), false, false, location=rule.location);    
-}
-
--- rewrite a concrete type as another concrete type through plugging it into
--- an expression, and referring to its own restored$t element
-concrete production rewriteRuleRestoreType
-rule::RewriteRule ::= name::QName '::' t::TypeExpr '~~>' e::Expr
+rule::RewriteRule ::= name::QName '::' t::TypeExpr arr::RewriteArrow  e::Expr
 {
     rule.pp = name.pp ++ "::" ++ t.pp ++ "~~>" ++ e.pp;
 
@@ -115,9 +95,40 @@ rule::RewriteRule ::= name::QName '::' t::TypeExpr '~~>' e::Expr
     rule.upSubst = e.upSubst;
     e.finalSubst = rule.upSubst;
     e.defaultInheritedAnnos = [];     
+
+    local rhsType::Type = case arr.rhsType of 
+        | just(t) -> t.typerep
+        | nothing() -> e.typerep
+    end;
     
-    forwards to rewriteRule(e, name.name, t.typerep, e.typerep, 
-      emptyRewriteProduction(location=rule.location), false, true, location=rule.location);
+    forwards to rewriteRule(e, name.name, t.typerep, rhsType, 
+      emptyRewriteProduction(location=rule.location), false, arr.shouldRestore, location=rule.location);
+}
+
+concrete production shortRewriteArrow
+arr::RewriteArrow ::= '->' opt::OptRHSType 
+{
+    arr.shouldRestore = false;
+    arr.rhsType = opt.rhsType;
+}
+
+concrete production longRewriteArrow
+arr::RewriteArrow ::= '~~>' opt::OptRHSType 
+{
+    arr.shouldRestore = true;
+    arr.rhsType = opt.rhsType;
+}
+
+concrete production oneRHSType
+opt::OptRHSType ::= Vbar_kwd t::TypeExpr Vbar_kwd
+{
+    opt.rhsType = just(t);
+}
+
+concrete production noRHSType
+opt::OptRHSType ::= 
+{
+    opt.rhsType = nothing();
 }
 
 abstract production rewriteRule
@@ -153,9 +164,7 @@ rule::RewriteRule ::= rhs::Expr inName::String inType::Type outType::Type inProd
             fillExpr(rhs, [e], [inName], location=e.location))
         else (\ e::Expr ->
             case e of application(_, _, aexpr, _, _, _) -> 
-                --decorate
-                    fillExpr(rhs, pullOutAppExprs(aexpr), inProd.inputNames, location=e.location)
-                --with {env=rule.env; config=rule.config;}
+                fillExpr(rhs, pullOutAppExprs(aexpr), inProd.inputNames, location=e.location)
             end
         );
 
@@ -164,15 +173,4 @@ rule::RewriteRule ::= rhs::Expr inName::String inType::Type outType::Type inProd
                 restoreExpr(rhs, pullOutAppExprs(aexpr), inProd.inputNames, rhsNs.fromJust, location=e.location)
             end
         );
-}
-
-function getProdFromGroups
-[Decorated NamedSignature] ::= s::String absGroup::Decorated NonterminalList cncGroup::Decorated NonterminalList
-{
-    local absSig::[Decorated NamedSignature] = getProdFromGroup(s, absGroup);
-    local cncSig::[Decorated NamedSignature] = getProdFromGroup(s, cncGroup);
-
-    return if length(absSig) != 0 then [head(absSig)]
-        else if length(cncSig) != 0 then [head(cncSig)]
-        else []; 
 }
