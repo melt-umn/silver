@@ -178,7 +178,7 @@ Pair<[Expr] [String]> ::= e::Expr pattern::Pattern
             -- this is always going to be a single string const 
             -- or name 
             | application(e2, _, appexprs, _, _, _) -> 
-                matchAppExpsToPattern(appexprs, pl)
+                matchAppExpsToPattern(appexprs, pl.rawPatternList)
             | _ -> pair([],[])
         end
         | varPattern(v) -> pair([e],[v.name])
