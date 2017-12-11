@@ -57,14 +57,14 @@ top::Expr ::= toFill::Expr appExps::AppExprs annoExps::AnnoAppExprs
     local baseAnnoExprs::AnnoAppExprs = injectAnnoExprs(annoExps, toInject, needAnnos, location=toFill.location);
 
     forwards to application(
-        injectAnnos(toFill, toInject, needAnnos),
+        injectAnnos(toFill, toInject, needAnnos, location=toFill.location),
         '(',
         baseAppExprs,
         ',',
         -- We assume here that none are already provided
         if contains(toFill.typerep.typeName, needAnnos) then consAnnoAppExprs(baseAnnoExprs, toInject, location=toFill.location)
         else baseAnnoExprs,
-        ')'
+        ')', location=toFill.location
     );
 }
 
@@ -74,7 +74,7 @@ top::AppExprs ::= toFill::AppExprs toInject::AnnoAppExprs needAnnos::[String]
     forwards to case toFill of 
         | snocAppExprs(es,_,e) -> snocAppExprs(injectAppExprs(es,toInject,needAnnos, location=toFill.location),
           ',',
-          fillAppExpr(e,toInject,needAnnos, location=toFill.location), location=toFill.location)
+          injectAppExpr(e,toInject,needAnnos, location=toFill.location), location=toFill.location)
         | oneAppExprs(e) -> oneAppExprs(injectAppExpr(e,toInject,needAnnos, location=toFill.location), location=toFill.location)
         | _ -> toFill
     end;
@@ -90,7 +90,7 @@ top::AppExpr ::= toFill::AppExpr toInject::AnnoAppExprs needAnnos::[String]
 }
 
 abstract production injectAnnoExprs
-top::AnnoAppExprs ::= toFill:AnnoAppExprs toInject::AnnoAppExprs needAnnos::[String]
+top::AnnoAppExprs ::= toFill::AnnoAppExprs toInject::AnnoAppExprs needAnnos::[String]
 {
     forwards to case toFill of 
         | snocAnnoAppExprs(es,_,e) -> 
