@@ -175,7 +175,8 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                     emptyRewriteProduction(location=rule.location),
                     false,
                     false,
-                    location=ag.location) with {
+                    location=ag.location),
+                    new(rules), location=ag.location) with {
                         absGroup=rules.absGroup;
                         cncGroup=rules.cncGroup;
                         env=rules.env;
