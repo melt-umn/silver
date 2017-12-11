@@ -38,11 +38,11 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
     pd.typerep = pd.namedSig.outputElement.typerep;
 
     -- When we looked up a production, was exactly one production found?
-    pd.errors <- if length(absSig) != 0 || length(cncSig) != 0 then []
+    pd.errors <- if idx != -1 then []
                  else [err(pd.location, "Unknown Production " ++ qn.name)];
     
     -- Is the pattern as long as the production's expected input arguments?
-    pd.errors <- if length(absSig) == 0 && length(cncSig) == 0 then []
+    pd.errors <- if idx == -1 then []
         else if length(pd.namedSig.inputElements) != length(args.rawPatternList) 
         then [err(pd.location, "Transformation Production does not match size with Production Signature")]
         else [];
