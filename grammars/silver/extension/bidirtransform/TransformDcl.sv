@@ -227,7 +227,7 @@ ag::AGDcls ::= 'transform' trsl::TransformList
     --local agDcls11::AGDcl = agDcls10;
 
     local agDcls12::AGDcl = foldl(\ agDcls::AGDcl tdcl::Decorated TransformDcl -> 
-        appendAGDcl(agDcls, joinAGDcls([
+        joinAGDcls([
         -- top.$tName = ...
         --  if this abstract production has no transformations defined for it,
         --  then,
@@ -298,7 +298,7 @@ ag::AGDcls ::= 'transform' trsl::TransformList
                                 location=ag.location),
                         location=ag.location), location=ag.location),
                 productionStmtsNil(location=ag.location), ns.inputElements), location=ag.location), agDcls, location=ag.location),
-            emptyAGDcl(location=ag.location), absProdDcls)]), location=ag.location),
+            emptyAGDcl(location=ag.location), absProdDcls), agDcls], location=ag.location),
     agDcls11, trsl.transformDcls);
     
     -- for each concrete type, if it has location, aspect all of its creating
