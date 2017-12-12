@@ -25,9 +25,6 @@ rrl::RewriteRuleList ::= Vbar_kwd l::RewriteRule r::RewriteRuleList
     l.config = rrl.config;
     r.config = rrl.config;
 
-    l.env = rrl.env;
-    r.env = rrl.env;
-
     l.downSubst = rrl.downSubst;
     r.downSubst = l.upSubst;
     rrl.upSubst = r.upSubst;
@@ -50,7 +47,6 @@ concrete production rewriteRuleSingle
 rrl::RewriteRuleList ::= Vbar_kwd rule::RewriteRule 
 {
     rule.config = rrl.config;
-    rule.env = rrl.env;
     
     rule.downSubst = rrl.downSubst;
     rrl.upSubst = rule.upSubst;

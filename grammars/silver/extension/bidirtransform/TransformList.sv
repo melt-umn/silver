@@ -24,10 +24,7 @@ top::TransformDcl ::= s::String transType::TypeExpr trRules::TransformRuleList
     top.typeName = transType.typerep.typeName;
 
     trRules.config = top.config;
-    trRules.env = top.env;
     
-    transType.env = top.env;
-
     trRules.downSubst = top.downSubst;
     top.upSubst = trRules.upSubst;
     trRules.finalSubst = top.upSubst;
@@ -40,7 +37,6 @@ top::TransformList ::= dcl::TransformDcl
     top.errors := dcl.errors;
 
     dcl.config = top.config;
-    dcl.env = top.env;
 
     dcl.downSubst = top.downSubst;
     top.upSubst = dcl.upSubst;
@@ -57,8 +53,6 @@ top::TransformList ::= dcl::TransformDcl lst::TransformList
 
     dcl.config = top.config;
     lst.config = top.config;
-    dcl.env = top.env;
-    lst.env = top.env;
 
     lst.downSubst = top.downSubst;
     top.upSubst = lst.upSubst;
@@ -115,96 +109,6 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] cncNames::[String
     agDcls8.config = top.config;    
     agDcls8.grammarName = top.grammarName;
     agDcls8.flowEnv = top.flowEnv;
-    agDcls8.env = top.env;
 
     forwards to agDcls8;
 }
-
--- abstract production defineTNameAttributes
--- top::AGDcl ::= tdcl::Decorated TransformDcl absProdDcls::[Decorated NamedSignature] absNames::[String] allNames::[String] 
--- {   
---     local tName::String = tdcl.name;
---     local inhRedexName::String = inhRedexNm(tName);
-
---     local absProdNames :: [String] = map(unFull, map((.fullName), absProdDcls));
-
---     -- top.$tName = ...
---     --  if this abstract production has no transformations defined for it,
---     --  then,
---     --    if top is the same type as the transformation
---     --    then $thisProd($arg.$tName, origin=$thisType_Origin(top), redex=(..).inhRedex_$tName, labels=[])
---     --    else don't define this?    ^
---     --  else if transformed_$tName   |
---     --    then apply transformation  |
---     --    else see ------------------/
---     local agDcls1::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
---         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
---             if !hasTrans(tdcl.transformRules, dcl) && ns.outputElement.typerep.typeName != tdcl.transType.typerep.typeName
---             then productionStmtsNil(location=top.location)
---             else prdStmtList( 
---                 [attribDef(ns.outputElement.elementName, tName,
---                 if !hasTrans(tdcl.transformRules, dcl) 
---                   then prdRecurse(ns, tName, absNames, location=top.location)
---                   else mkCond(
---                         lhsExprAccess(transformNm(tName), ns, location=top.location),
---                         injectAnnos(
---                             applyTrans(tdcl.transformRules, dcl, location=top.location),
---                             annoAppExprList([
---                                 annExpr("labels", emptyList('[',']', location=top.location), location=top.location),
---                                 annExpr("redex", exprAccess(inhRedexName, inhRedexNameSig(ns, allNames), location=top.location), location=top.location),
---                                 annExpr("origin", mkOrigin(ns, location=top.location), location=top.location)
---                                 ], location=top.location), 
---                             absProdNames, location=top.location),
---                         prdRecurse(ns, tName, absNames, location=top.location),
---                     location=top.location),
---             location=top.location)], location=top.location),
---             location=top.location), agDcls, location=top.location),
---         emptyAGDcl(location=top.location), absProdDcls);
-
---     -- top.transformed_$tName = ...
---     --  if this abstract production has no transformation defined for it,
---     --  then don't define this
---     --  else if the rhs matches this transformation, 
---     --    then true
---     --    else false
---     local agDcls2::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
---         if !hasTrans(tdcl.transformRules, dcl) then agDcls 
---         else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
---             prdStmtList([
---                 attribDef(ns.outputElement.elementName, transformNm(tName),
---                     getTrans(tdcl.transformRules, dcl).matchProd, location=top.location)
---             ], location=top.location),
---             location=top.location), agDcls, location=top.location),
---         agDcls1, absProdDcls);
-
---     -- <rhs>.inhRedex_$tName = ...
---     --  if this abstract production has no transformation defined for it,
---     --  then nothing()
---     --  else if transformed$tName
---     --    then just($thisType_Origin(top))
---     --    else nothing()
---     local agDcls3::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
---         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
---             foldl(\ stmts::ProductionStmts rhs::NamedSignatureElement ->
---                 if !contains(unFull(rhs.typerep.typeName), allNames) then stmts else
---                 productionStmtsSnoc(stmts, 
---                     attribDef(rhs.elementName, inhRedexName,
---                             if !hasTrans(tdcl.transformRules, dcl)
---                             then emptyFunc("nothing", location=top.location) -- this might error because it has to be a production
---                             else mkCond(
---                                 lhsExprAccess(transformNm(tName), ns, location=top.location),
---                                 argFunc("just", oneApp(mkOrigin(ns, location=top.location), location=top.location), location=top.location),
---                                 emptyFunc("nothing", location=top.location),
---                             location=top.location),
---                     location=top.location), location=top.location),
---             productionStmtsNil(location=top.location), ns.inputElements), location=top.location), agDcls, location=top.location),
---         agDcls2, absProdDcls);
-
---     agDcls3.compiledGrammars = top.compiledGrammars;
---     agDcls3.config = top.config;    
---     agDcls3.grammarName = top.grammarName;
---     agDcls3.flowEnv = top.flowEnv;
---     agDcls3.env = top.env;
-
---     forwards to agDcls3;
--- }

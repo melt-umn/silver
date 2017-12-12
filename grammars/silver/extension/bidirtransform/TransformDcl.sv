@@ -52,7 +52,6 @@ ag::AGDcls ::= 'transform' trsl::TransformList
 
     trsl.absGroup = absGroup;
     trsl.cncGroup = cncGroup;
-    trsl.env = ag.env;
     trsl.config = ag.config;
     trsl.downSubst = emptySubst();
     trsl.finalSubst = rwRules.upSubst;
@@ -60,7 +59,6 @@ ag::AGDcls ::= 'transform' trsl::TransformList
     rwRules.absGroup = absGroup;
     rwRules.cncGroup = cncGroup;
     rwRules.downSubst = emptySubst();    
-    rwRules.env = ag.env;
     rwRules.finalSubst = trsl.finalSubst;
     rwRules.config = ag.config;    
 
@@ -226,6 +224,7 @@ ag::AGDcls ::= 'transform' trsl::TransformList
         agDcls10, absProdDcls);
     --local agDcls11::AGDcl = agDcls10;
 
+    -- define transformation attributes (those dependent on each transformation declared)
     local agDcls12::AGDcl = foldl(\ agDcls::AGDcl tdcl::Decorated TransformDcl -> 
         joinAGDcls([
         -- top.$tName = ...

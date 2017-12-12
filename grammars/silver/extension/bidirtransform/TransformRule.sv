@@ -13,9 +13,6 @@ trl::TransformRuleList ::= Vbar_kwd l::TransformRule r::TransformRuleList
     l.config = trl.config;
     r.config = trl.config;
 
-    l.env = trl.env;
-    r.env = trl.env;
-
     l.downSubst = trl.downSubst;
     r.downSubst = l.upSubst;
     l.finalSubst = r.upSubst;
@@ -36,7 +33,6 @@ concrete production transformRuleSingle
 trl::TransformRuleList ::= Vbar_kwd rule::TransformRule 
 {
     rule.config = trl.config;
-    rule.env = trl.env;
     rule.downSubst = trl.downSubst;
     trl.upSubst = rule.upSubst;
     rule.finalSubst = trl.upSubst;
@@ -52,7 +48,6 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
 {
     l.config = tr.config;
     r.config = tr.config;
-    l.env = tr.env;
     r.downSubst = tr.downSubst;
     tr.upSubst = r.upSubst;
     r.finalSubst = tr.upSubst;

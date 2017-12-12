@@ -24,7 +24,6 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
     pd.patternList = args;
 
     args.config = pd.config;
-    args.env = pd.env;
 
 
 

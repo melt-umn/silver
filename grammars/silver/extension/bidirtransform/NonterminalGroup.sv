@@ -27,8 +27,6 @@ top::NonterminalList ::= fnt::FullNonterminal
 {
     top.errors := fnt.errors;
     top.ntList = [fnt];
-
-    fnt.env = top.env;
 }
 
 concrete production consNt 
@@ -36,9 +34,6 @@ top::NonterminalList ::= fnt::FullNonterminal ',' lst::NonterminalList
 {
     top.errors := fnt.errors ++ lst.errors;
     top.ntList = [fnt] ++ lst.ntList;
-
-    fnt.env = top.env;
-    lst.env = top.env;
 }
 
 concrete production fullNt 
