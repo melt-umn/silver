@@ -31,7 +31,6 @@ concrete production transformAGDclFull
 ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr 
     '{' trRules::TransformRuleList '}' 
     'rewrite' '{' rwRules::RewriteRuleList '}' 
-    -- 'from' cncGroupName::QName 'to' absGroupName::QName ';'
     'from' cncGroupIn::NonterminalList 'to' absGroupIn::NonterminalList '->>' nestedAgs::AGDcls
 {
     ag.pp = "transmute " ++ qn.pp ++ "::" ++ transType.pp ++
@@ -92,7 +91,6 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     trRules.inhProds = allProdDcls;
 
-    local allProdNames :: [String] = map(unFull, map((.fullName), allProdDcls));
     local absProdNames :: [String] = map(unFull, map((.fullName), absProdDcls));
 
     local logStuff :: Boolean = false;
@@ -143,7 +141,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     -- Problem in future: only apply this on attributes that they are not 
     -- already defined on. This doesn't work because checking if an attribute
-    -- occurs on an element we're working with causes a loop.
+    -- occurs on an element we're working with causes a circularity.
 
     -- for $type in allTypes
     -- attribute inhRedex_$tName occurs on $type;
@@ -195,8 +193,6 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     -- Aspecting origin productions
 
-    -- next step: log hasRwID, prod, Eq, for all cncName paris
-
     -- restored$cncType attributes
     --
     local agDcls9::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
@@ -204,8 +200,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
             fakeAspectProductionDcl('aspect', 'production',
             qName(ag.location, mkOriginName(lhs)), mkAspectProdSigDec("o", "Origin", "e", lhs, location=ag.location),
                 productionBody('{', foldl(\ stmts::ProductionStmts rhs::String ->
-                    if !hasRwID(newRwRules.rewriteRules, lhs, rhs) 
-                    then stmts -- this is also probably an error 
+                    if !hasRwID(newRwRules.rewriteRules, lhs, rhs) then stmts -- this is also probably an error 
                     else productionStmtsSnoc(stmts, 
                             attribDef("o", restoreNm(unFull(rhs)),
                                 applyRw(rwID(newRwRules.rewriteRules, lhs, rhs), rhs, lhs, "e", location=ag.location), location=ag.location)
@@ -220,7 +215,6 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local agDcls10::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
             attribDef(ns.outputElement.elementName, "wasTransformed",
-            --synAttrDef(ns.outputElement.elementName, "wasTransformed",
                 foldl(\ e::Expr ie::NamedSignatureElement -> 
                     if contains(unFull(ie.typerep.typeName), absNames)
                     then or(e, '||', exprAccess("wasTransformed", ie.elementName, location=ag.location), location=ag.location)
@@ -241,20 +235,20 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                 if !hasRwMatch(newRwRules.rewriteRules, rhs, ns) then stmts --  error case
                 else productionStmtsSnoc(stmts, 
                         attribDef(ns.outputElement.elementName, restoreNm(unFull(rhs)),
-                        --synAttrDef(ns.outputElement.elementName, restoreNm(unFull(rhs)),
-                        if rwMatch(newRwRules.rewriteRules, rhs, ns).hasProduction 
-                        then mkCond(
-                            lhsExprAccess("wasTransformed", ns, location=ag.location), 
-                            -- use the rewrite production
-                            applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns), ns, location=ag.location),
-                            -- refer to the concrete origin's restored element
-                            qAccess(restoreNm(unFull(rhs)),
-                                qAccess("concreteOrigin",
-                                    lhsExprAccess("origin", ns, location=ag.location), 
-                                    location=ag.location),
-                                location=ag.location),
-                            location=ag.location)
-                        else applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
+                        -- if rwMatch(newRwRules.rewriteRules, rhs, ns).hasProduction 
+                        -- then mkCond(
+                        --     lhsExprAccess("wasTransformed", ns, location=ag.location), 
+                        --     -- use the rewrite production
+                        --     applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns), ns, location=ag.location),
+                        --     -- refer to the concrete origin's restored element
+                        --     qAccess(restoreNm(unFull(rhs)),
+                        --         qAccess("concreteOrigin",
+                        --             lhsExprAccess("origin", ns, location=ag.location), 
+                        --             location=ag.location),
+                        --         location=ag.location),
+                        --     location=ag.location)
+                        -- else 
+                        applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
                     location=ag.location), location=ag.location),
             productionStmtsNil(location=ag.location), cncNames), location=ag.location), agDcls, location=ag.location),
         agDcls10, absProdDcls);
@@ -275,13 +269,10 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
             then productionStmtsNil(location=ag.location)
             else prdStmtList( 
                 [attribDef(ns.outputElement.elementName, tName,
-                    --synAttrDef(ns.outputElement.elementName, tName,
                 if !hasTrans(trRules.transformRules, dcl) 
                   then prdRecurse(ns, tName, absNames, location=ag.location)
                   else mkCond(
                         lhsExprAccess(transformNm(tName), ns, location=ag.location),
-                        -- todo: add annotations to anything here that is one of 
-                        -- our abstract productions
                         injectAnnos(
                             applyTrans(trRules.transformRules, dcl, location=ag.location),
                             annoAppExprList([
@@ -307,7 +298,6 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
         else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             prdStmtList([
                 attribDef(ns.outputElement.elementName, transformNm(tName),
-                --synAttrDef( ns.outputElement.elementName, transformNm(tName),
                     getTrans(trRules.transformRules, dcl).matchProd, location=ag.location)
             ], location=ag.location),
             location=ag.location), agDcls, location=ag.location),
@@ -325,7 +315,6 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                 if !contains(unFull(rhs.typerep.typeName), allNames) then stmts else
                 productionStmtsSnoc(stmts, 
                     attribDef(rhs.elementName, inhRedexName,
-                    --inhChdAttrDef(rhs.elementName, inhRedexName,
                             if !hasTrans(trRules.transformRules, dcl)
                             then emptyFunc("nothing", location=ag.location) -- this might error because it has to be a production
                             else mkCond(
@@ -344,7 +333,6 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local agDcls15::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
             attribDef(ns.outputElement.elementName, "suppliedOrigin",
-            --synAttrDef(ns.outputElement.elementName, "suppliedOrigin", 
                 argFunc("locationOrigin", appExprList([
                     lhsAccess("location", ns, location=ag.location)
                 ], location=ag.location), location=ag.location),
@@ -357,13 +345,12 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     local agDcls16::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
             attribDef(ns.outputElement.elementName, "suppliedOrigin",
-            --synAttrDef(ns.outputElement.elementName, "suppliedOrigin", 
-                        emptyFunc("bottomOrigin", location=ag.location), location=ag.location),
+                emptyFunc("bottomOrigin", location=ag.location), location=ag.location),
             location=ag.location), agDcls, location=ag.location), 
         agDcls15, nonLocCncProdDcls);
 
 
-    -- add origin specific generation
+    -- add origins generation
 
     local toForward::AGDcl = appendAGDcl(
         applyOrigins(absGroup.ntList, location=ag.location), 
@@ -371,83 +358,20 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
             cncApplyOrigins(cncGroup.ntList, location=ag.location),
             agDcls16, location=ag.location), location=ag.location);
 
-
-    -- ag.moduleNames = [];--agDclsP3.moduleNames ++ nestedAgs.moduleNames;
-    -- ag.mdaSpecs = toForward.mdaSpecs ++ nestedAgs.mdaSpecs;
-    -- ag.ideSpecs = toForward.ideSpecs ++ nestedAgs.ideSpecs;
-    -- ag.syntaxAst = toForward.syntaxAst ++ nestedAgs.syntaxAst;
-    -- ag.parserSpecs = toForward.parserSpecs ++ nestedAgs.parserSpecs;
-    -- ag.flowDefs = toForward.flowDefs ++ nestedAgs.flowDefs;
-    -- ag.docs := toForward.docs ++ nestedAgs.docs;
-    -- ag.docsHeader = toForward.docsHeader ++ nestedAgs.docsHeader;
-    -- ag.docsSplit = toForward.docsSplit ++ nestedAgs.docsSplit;
-    -- ag.docsNoDoc = toForward.docsNoDoc || nestedAgs.docsNoDoc;
-    -- ag.docDcls := toForward.docDcls ++ nestedAgs.docDcls;
-    -- ag.genFiles := toForward.genFiles ++ nestedAgs.genFiles;
-    -- ag.setupInh := toForward.setupInh ++ nestedAgs.setupInh;
-    -- ag.initProd := toForward.initProd ++ nestedAgs.initProd;
-    -- ag.initValues := toForward.initValues ++ nestedAgs.initValues;
-    -- ag.postInit := toForward.postInit ++ nestedAgs.postInit;
-    -- ag.initWeaving := toForward.initWeaving ++ nestedAgs.initWeaving;
-    -- ag.valueWeaving := toForward.valueWeaving ++ nestedAgs.valueWeaving;
-    -- ag.errors <- toForward.errors ++ nestedAgs.errors;
-
     toForward.compiledGrammars = ag.compiledGrammars;
     nestedAgs.compiledGrammars = ag.compiledGrammars;
 
     toForward.config = ag.config;    
     nestedAgs.config = ag.config;
 
-    toForward.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls16.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls15.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls14.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls13.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls12.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls11.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls10.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls9.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls8.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls7.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls6.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls5.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls4.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls3.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls2.grammarName = ag.grammarName;-- \+\+ ":transformed";
-    -- agDcls1.grammarName = ag.grammarName;-- \+\+ ":transformed";
+    toForward.grammarName = ag.grammarName;
     nestedAgs.grammarName = ag.grammarName;
 
     toForward.flowEnv = ag.flowEnv;
     nestedAgs.flowEnv = ag.flowEnv;
 
-    --toForward.env = appendEnv(ag.env, toEnv(nestedAgs.defs));
-    --nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
-
-    -- FAILURES
-
-    -- At 'java -jar X.jar ""'
-
     toForward.env = nestedAgs.env;
     nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
-
-    -- At 'silver X'
- 
-    -- by undefined values
-
-    -- toForward.env = appendEnv(ag.env, toEnv(nestedAgs.defs));
-    -- nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
-
-    -- by env/defs circularity
-
-    --toForward.env = toEnv(nestedAgs.defs);
-    --nestedAgs.env = toEnv(toForward.defs);
-    
-    --ag.defs = nestedAgs.defs; 
-    --ag.defs = toForward.defs ++ nestedAgs.defs;
-
-    -- ag.errors <- map(\ d::Def -> 
-    --     err(ag.location, d.ppDebug),
-    -- ag.defs);
 
     forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
 }
