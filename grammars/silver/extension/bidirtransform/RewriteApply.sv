@@ -3,7 +3,7 @@ grammar silver:extension:bidirtransform;
 abstract production applyRw
 top::Expr ::= rwr::Decorated RewriteRule rhsTy::String lhsTy::String elemName::String 
 {   
-    forwards to applyRwOrigin(rwr,rhsTy,lhsTy,elemName,elemName);
+    forwards to applyRwOrigin(rwr,rhsTy,lhsTy,elemName,elemName, location=top.location);
 } 
 
 abstract production applyRwOrigin
