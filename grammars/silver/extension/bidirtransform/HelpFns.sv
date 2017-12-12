@@ -21,7 +21,7 @@ String ::= ns::Decorated NamedSignature allowedTypes::[String]
     local def::String = ns.outputElement.elementName;
 
     return if null(ns.inputElements) then def
-        else if contains(hd.typerep.typeName, allowedTypes)
+        else if contains(unFull(hd.typerep.typeName), allowedTypes)
         then hd.elementName else def;
 }
 
