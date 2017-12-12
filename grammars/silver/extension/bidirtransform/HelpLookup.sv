@@ -32,8 +32,7 @@ function defsNtGroup
 {
     return case dfs of 
         | nilDefs() -> []
-        | consDefs(d, dfs2) -> if d.isLock then skipNtToNextLock(fnnt, dfs2)
-            else defsNtGroup(fnnt, dfs2) ++
+        | consDefs(d, dfs2) -> defsNtGroup(fnnt, dfs2) ++
             case d of
                 | ntGroupDef(dcl) -> if unFull(dcl.fullName) == fnnt then case dcl of 
                         | ntGroupDcl(_,_,_,ntlst) -> [ntlst] 
@@ -43,20 +42,6 @@ function defsNtGroup
                 | _ -> []
             end 
     end;
-}
-
-function skipNtToNextLock
-[Decorated NonterminalList] ::= fnnt::String dfs::Defs 
-{
-    -- just kidding, this doesn't work?
-    return [];
-    -- return case dfs of 
-    --     | nilDefs() -> []
-    --     | consDefs(d, dfs2) -> 
-    --         if d.isLock 
-    --         then defsNtGroup(fnnt, dfs2)
-    --         else skipNtToNextLock(fnnt, dfs2)
-    -- end;
 }
 
 -- is is a production name we are trying to find the named signature of
@@ -116,22 +101,9 @@ function getProdsFromDefs
 function getProdsFromConsDefs
 [DclInfo] ::= fnnt::String d::Def dfs::Defs skipGrammar::String
 {
-    return if d.isLock then skipToNextLock(fnnt, dfs, skipGrammar)
-        else getProdsFromConsDefs2(fnnt, d, dfs, skipGrammar);
+    return getProdsFromConsDefs2(fnnt, d, dfs, skipGrammar);
 }
 
-
-function skipToNextLock
-[DclInfo] ::= fnnt::String dfs::Defs skipGrammar::String
-{
-    return case dfs of 
-        | nilDefs() -> []
-        | consDefs(d, dfs2) -> 
-            if d.isLock 
-            then getProdsFromDefs(fnnt, dfs2, skipGrammar)
-            else skipToNextLock(fnnt, dfs2, skipGrammar)
-    end;
-}
 
 function getProdsFromConsDefs2
 [DclInfo] ::= fnnt::String d::Def dfs::Defs skipGrammar::String
