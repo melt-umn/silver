@@ -3,8 +3,9 @@ grammar silver:extension:bidirtransform;
 abstract production fillExpr
 top::Expr ::= toFill::Expr exps::[Expr] names::[String]
 {
-    -- todo: fill out more cases
-    -- todo also: convert all of this nonsense into attributes with aspect productions
+    -- todo: fill out more cases?
+    -- todo also: convert all of this nonsense into attributes with aspect productions?
+    --            this is a non-trivial attribute because it's a lambda
     forwards to case toFill of 
         | nestedExpr(_, e, _) -> fillExpr(e,exps,names, location=toFill.location)
         | baseExpr(qn) -> fillExprEnd(toFill, exps, names, qn, location=toFill.location)

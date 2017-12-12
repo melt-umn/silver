@@ -85,40 +85,6 @@ ag::AGDcls ::= 'transform' trsl::TransformList
 
     local absProdNames :: [String] = map(unFull, map((.fullName), absProdDcls));
 
-    local log :: Boolean = false;
-
-    ag.errors <- if log then map(\ fnt::Decorated FullNonterminal ->
-        err(ag.location, "Abs nt: " ++ fnt.name),
-    absGroup.ntList) else [];
-
-    ag.errors <- if log then map(\ fnt::Decorated FullNonterminal ->
-        err(ag.location, "Cnc nt: " ++ fnt.name),
-    cncGroup.ntList) else [];
-
-    ag.errors <- if log then map(\ d::Def -> 
-        err(ag.location, "Nested Def: " ++ d.ppDebug),
-    nestedAgs.defs) else [];
-
-    ag.errors <- if log then map(\ dec::Decorated NamedSignature ->
-        err(ag.location, "Abs prod: " ++ dec.fullName),
-    absProdDcls) else [];
-
-    ag.errors <- if log then map(\ dec::Decorated NamedSignature ->
-        err(ag.location, "Cnc prod: " ++ dec.fullName),
-    cncProdDcls) else [];
-
-    ag.errors <- if log then map(\ dec::Decorated NamedSignature ->
-        err(ag.location, "Abs output: " ++ dec.outputElement.elementName),
-    absProdDcls) else [];
-
-    ag.errors <- if log then map(\ dec::Decorated NamedSignature ->
-        err(ag.location, "Abs typerep: " ++ dec.typerep.typeName),
-    absProdDcls) else [];
-    
-    ag.errors <- if log then map(\ s::String ->
-        err(ag.location, "Cnc name: " ++ s),
-    cncNames) else [];
-
     -----------------------
     -- Generating code
 
@@ -341,6 +307,44 @@ ag::AGDcls ::= 'transform' trsl::TransformList
 
     toForward.env = nestedAgs.env;
     nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
+
+    -- LOGS
+    local log :: Boolean = false;
+
+    ag.errors <- if log then map(\ fnt::Decorated FullNonterminal ->
+        err(ag.location, "Abs nt: " ++ fnt.name),
+    absGroup.ntList) else [];
+
+    ag.errors <- if log then map(\ fnt::Decorated FullNonterminal ->
+        err(ag.location, "Cnc nt: " ++ fnt.name),
+    cncGroup.ntList) else [];
+
+    ag.errors <- if log then map(\ d::Def -> 
+        err(ag.location, "Nested Def: " ++ d.ppDebug),
+    nestedAgs.defs) else [];
+
+    ag.errors <- if log then map(\ dec::Decorated NamedSignature ->
+        err(ag.location, "Abs prod: " ++ dec.fullName),
+    absProdDcls) else [];
+
+    ag.errors <- if log then map(\ dec::Decorated NamedSignature ->
+        err(ag.location, "Cnc prod: " ++ dec.fullName),
+    cncProdDcls) else [];
+
+    ag.errors <- if log then map(\ dec::Decorated NamedSignature ->
+        err(ag.location, "Abs output: " ++ dec.outputElement.elementName),
+    absProdDcls) else [];
+
+    ag.errors <- if log then map(\ dec::Decorated NamedSignature ->
+        err(ag.location, "Abs typerep: " ++ dec.typerep.typeName),
+    absProdDcls) else [];
+    
+    ag.errors <- if log then map(\ s::String ->
+        err(ag.location, "Cnc name: " ++ s),
+    cncNames) else [];
+
+
+    --
 
     forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
 }

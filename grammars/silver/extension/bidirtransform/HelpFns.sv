@@ -105,3 +105,9 @@ function headN
         else if null(input) then []
         else [head(input)] ++ headN(tail(input), n+1);
 }
+
+function sTyExprDec
+Decorated TypeExpr ::= s::String loc::Location env::Decorated Env
+{
+    return decorate sTyExpr(s, location=loc) with {env=env;};
+}
