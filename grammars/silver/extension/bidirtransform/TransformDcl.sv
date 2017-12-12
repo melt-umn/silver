@@ -32,8 +32,7 @@ ag::AGDcls ::= 'transform' trsl::TransformList
     'rewrite' '{' rwRules::RewriteRuleList '}' 
     'from' cncGroupIn::NonterminalList 'to' absGroupIn::NonterminalList '->>' nestedAgs::AGDcls
 {
-    ag.pp = "transmute " ++ qn.pp ++ "::" ++ transType.pp ++
-         trsl.pp ++ " rewrite {" ++ rwRules.pp ++ "};";
+    ag.pp = "transform " ++ trsl.pp ++ " rewrite {" ++ rwRules.pp ++ "};";
 
     local groupEnv::Decorated Env = toEnv(nestedAgs.defs);
 

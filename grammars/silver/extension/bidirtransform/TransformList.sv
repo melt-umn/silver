@@ -70,19 +70,19 @@ top::AGDcl ::= tName::String absNames::[String] cncNames::[String]
     local inhRedexName::String = inhRedexNm(tName);
 
     -- autocopy attribute inRedex_$tName :: Maybe<Origin>; 
-    local agDcls::AGDcl = autocAttr(inhRedexName, mkMaybeTypeExpr("Origin", location=ag.location), location=ag.location);
+    local agDcls::AGDcl = autocAttr(inhRedexName, mkMaybeTypeExpr("Origin", location=top.location), location=top.location);
 
     -- for $cncType in cncTypes
     -- synthesized attribute restored$cncType :: $cncType;
     local agDcls2::AGDcl = foldl(\ agDcls::AGDcl name::String-> 
-            appendAGDcl(synAttr(restoreNm(unFull(name)), sTyExpr(name, location=ag.location), location=ag.location), agDcls, location=ag.location),
+            appendAGDcl(synAttr(restoreNm(unFull(name)), sTyExpr(name, location=top.location), location=top.location), agDcls, location=top.location),
         agDcls, cncNames);
 
     -- synthesized attribute $tName :: $tType;
-    local agDcls3::AGDcl = appendAGDcl(synAttr(tName, transType, location=ag.location), agDcls2, location=ag.location);
+    local agDcls3::AGDcl = appendAGDcl(synAttr(tName, transType, location=top.location), agDcls2, location=top.location);
 
     -- synthesized attribute transformed_$tName :: Boolean;
-    local agDcls4::AGDcl = appendAGDcl(synAttr(transformNm(tName), mkBoolTypeExpr(location=ag.location), location=ag.location), agDcls3, location=ag.location);    
+    local agDcls4::AGDcl = appendAGDcl(synAttr(transformNm(tName), mkBoolTypeExpr(location=top.location), location=top.location), agDcls3, location=top.location);    
 
     -- Occurances of attributes, annotations
 
@@ -92,19 +92,21 @@ top::AGDcl ::= tName::String absNames::[String] cncNames::[String]
 
     -- for $type in allTypes
     -- attribute inhRedex_$tName occurs on $type;
-    local agDcls5::AGDcl = appendAGDcl(attrOn(inhRedexName, absNames++cncNames, location=ag.location), agDcls4, location=ag.location);
+    local agDcls5::AGDcl = appendAGDcl(attrOn(inhRedexName, absNames++cncNames, location=top.location), agDcls4, location=top.location);
     
     -- for $absType in absTypes
     -- attribute restored$cncType occurs on Origin, $absType;
     local agDcls6::AGDcl = foldl(\ agDcls::AGDcl name::String->
-            appendAGDcl(attrOn(restoreNm(unFull(name)), absNames ++ ["Origin"], location=ag.location), agDcls, location=ag.location),
+            appendAGDcl(attrOn(restoreNm(unFull(name)), absNames ++ ["Origin"], location=top.location), agDcls, location=top.location),
         agDcls5, cncNames);
 
     -- attribute transformed_$tName occurs on $absType;
-    local agDcls7::AGDcl = appendAGDcl(attrOn(transformNm(tName), absNames, location=ag.location), agDcls6, location=ag.location);  
+    local agDcls7::AGDcl = appendAGDcl(attrOn(transformNm(tName), absNames, location=top.location), agDcls6, location=top.location);  
 
     -- attribute $tName occurs on $absType;
-    local agDcls8::AGDcl = appendAGDcl(attrOn(tName, absNames, location=ag.location), agDcls7, location=ag.location);      
+    local agDcls8::AGDcl = appendAGDcl(attrOn(tName, absNames, location=top.location), agDcls7, location=top.location);      
+    
+    forwards to agDlcs8;
 }
 
 abstract production defineTNameAttributes
@@ -125,25 +127,25 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absProdDcls::[Decorated NamedSignatu
     local agDcls1::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             if !hasTrans(tdcl.transformRules, dcl) && ns.outputElement.typerep.typeName != transType.typerep.typeName
-            then productionStmtsNil(location=ag.location)
+            then productionStmtsNil(location=top.location)
             else prdStmtList( 
                 [attribDef(ns.outputElement.elementName, tName,
                 if !hasTrans(tdcl.transformRules, dcl) 
-                  then prdRecurse(ns, tName, absNames, location=ag.location)
+                  then prdRecurse(ns, tName, absNames, location=top.location)
                   else mkCond(
-                        lhsExprAccess(transformNm(tName), ns, location=ag.location),
+                        lhsExprAccess(transformNm(tName), ns, location=top.location),
                         injectAnnos(
-                            applyTrans(tdcl.transformRules, dcl, location=ag.location),
+                            applyTrans(tdcl.transformRules, dcl, location=top.location),
                             annoAppExprList([
-                                annExpr("labels", emptyList('[',']', location=ag.location), location=ag.location),
-                                annExpr("redex", exprAccess(inhRedexName, inhRedexNameSig(ns, allNames), location=ag.location), location=ag.location),
-                                annExpr("origin", mkOrigin(ns, location=ag.location), location=ag.location)
-                                ], location=ag.location), 
-                            absProdNames, location=ag.location),
-                        prdRecurse(ns, tName, absNames, location=ag.location),
-                    location=ag.location),
-            location=ag.location)], location=ag.location),
-            location=ag.location), agDcls, location=ag.location),
+                                annExpr("labels", emptyList('[',']', location=top.location), location=top.location),
+                                annExpr("redex", exprAccess(inhRedexName, inhRedexNameSig(ns, allNames), location=top.location), location=top.location),
+                                annExpr("origin", mkOrigin(ns, location=top.location), location=top.location)
+                                ], location=top.location), 
+                            absProdNames, location=top.location),
+                        prdRecurse(ns, tName, absNames, location=top.location),
+                    location=top.location),
+            location=top.location)], location=top.location),
+            location=top.location), agDcls, location=top.location),
         emptyAGDcl(location=top.location), absProdDcls);
 
     -- top.transformed_$tName = ...
@@ -157,9 +159,9 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absProdDcls::[Decorated NamedSignatu
         else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             prdStmtList([
                 attribDef(ns.outputElement.elementName, transformNm(tName),
-                    getTrans(tdcl.transformRules, dcl).matchProd, location=ag.location)
-            ], location=ag.location),
-            location=ag.location), agDcls, location=ag.location),
+                    getTrans(tdcl.transformRules, dcl).matchProd, location=top.location)
+            ], location=top.location),
+            location=top.location), agDcls, location=top.location),
         agDcls1, absProdDcls);
 
     -- <rhs>.inhRedex_$tName = ...
@@ -175,14 +177,14 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absProdDcls::[Decorated NamedSignatu
                 productionStmtsSnoc(stmts, 
                     attribDef(rhs.elementName, inhRedexName,
                             if !hasTrans(tdcl.transformRules, dcl)
-                            then emptyFunc("nothing", location=ag.location) -- this might error because it has to be a production
+                            then emptyFunc("nothing", location=top.location) -- this might error because it has to be a production
                             else mkCond(
-                                lhsExprAccess(transformNm(tName), ns, location=ag.location),
-                                argFunc("just", oneApp(mkOrigin(ns, location=ag.location), location=ag.location), location=ag.location),
-                                emptyFunc("nothing", location=ag.location),
-                            location=ag.location),
-                    location=ag.location), location=ag.location),
-            productionStmtsNil(location=ag.location), ns.inputElements), location=ag.location), agDcls, location=ag.location),
+                                lhsExprAccess(transformNm(tName), ns, location=top.location),
+                                argFunc("just", oneApp(mkOrigin(ns, location=top.location), location=top.location), location=top.location),
+                                emptyFunc("nothing", location=top.location),
+                            location=top.location),
+                    location=top.location), location=top.location),
+            productionStmtsNil(location=top.location), ns.inputElements), location=top.location), agDcls, location=top.location),
         agDcls2, absProdDcls);
 
     forwards to agDcls3;
