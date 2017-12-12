@@ -1,7 +1,7 @@
 grammar silver:extension:bidirtransform;
 
 synthesized attribute transformDcls::[Decorated TransformDcl];
-synthesized attribute transType::TypeExpr;
+synthesized attribute transType::Decorated TypeExpr;
 
 nonterminal TransformDcl with transformRules, name, transType, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config, inhProds;
 nonterminal TransformList with transformDcls, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config, inhProds;
