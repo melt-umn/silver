@@ -288,7 +288,7 @@ abstract production prdRecurse
 top::Expr ::= ns::Decorated NamedSignature tName::String allowedTypes::[String]
 {
     forwards to application(baseName(ns.fullName, location=top.location), '(',
-        argTransAttrs(ns.inputElements, tName, allowedTypes, location=top.location),
+        argTransAttrs(reverse(ns.inputElements), tName, allowedTypes, location=top.location),
         ',',
         annoAppExprList([
             annExpr("labels", emptyList('[',']', location=top.location), location=top.location),
