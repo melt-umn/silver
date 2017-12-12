@@ -93,7 +93,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     local absProdNames :: [String] = map(unFull, map((.fullName), absProdDcls));
 
-    local logStuff :: Boolean = false;
+    local logStuff :: Boolean = true;
 
     ag.errors <- if logStuff then map(\ fnt::Decorated FullNonterminal ->
         err(ag.location, "Abs nt: " ++ fnt.name),
@@ -114,6 +114,18 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
     ag.errors <- if logStuff then map(\ dec::Decorated NamedSignature ->
         err(ag.location, "Cnc prod: " ++ dec.fullName),
     cncProdDcls) else [];
+
+    ag.errors <- if logStuff then map(\ dec::Decorated NamedSignature ->
+        err(ag.location, "Abs output: " ++ dec.outputElement.elementName),
+    absProdDcls) else [];
+
+    ag.errors <- if logStuff then map(\ dec::Decorated NamedSignature ->
+        err(ag.location, "Abs typerep: " ++ dec.typerep.typeName),
+    absProdDcls) else [];
+    
+    ag.errors <- if logStuff then map(\ s::String ->
+        err(ag.location, "Cnc name: " ++ s),
+    cncNames) else [];
 
     -----------------------
     -- Generating code
@@ -235,20 +247,19 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                 if !hasRwMatch(newRwRules.rewriteRules, rhs, ns) then stmts --  error case
                 else productionStmtsSnoc(stmts, 
                         attribDef(ns.outputElement.elementName, restoreNm(unFull(rhs)),
-                        -- if rwMatch(newRwRules.rewriteRules, rhs, ns).hasProduction 
-                        -- then mkCond(
-                        --     lhsExprAccess("wasTransformed", ns, location=ag.location), 
-                        --     -- use the rewrite production
-                        --     applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns), ns, location=ag.location),
-                        --     -- refer to the concrete origin's restored element
-                        --     qAccess(restoreNm(unFull(rhs)),
-                        --         qAccess("concreteOrigin",
-                        --             lhsExprAccess("origin", ns, location=ag.location), 
-                        --             location=ag.location),
-                        --         location=ag.location),
-                        --     location=ag.location)
-                        -- else 
-                        applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
+                        if rwMatch(newRwRules.rewriteRules, rhs, ns).hasProduction 
+                        then mkCond(
+                            lhsExprAccess("wasTransformed", ns, location=ag.location), 
+                            -- use the rewrite production
+                            applyRwProd(rwMatch(newRwRules.rewriteRules, rhs, ns), ns, location=ag.location),
+                            -- refer to the concrete origin's restored element
+                            qAccess(restoreNm(unFull(rhs)),
+                                qAccess("concreteOrigin",
+                                    lhsExprAccess("origin", ns, location=ag.location), 
+                                    location=ag.location),
+                                location=ag.location),
+                            location=ag.location)
+                        else applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
                     location=ag.location), location=ag.location),
             productionStmtsNil(location=ag.location), cncNames), location=ag.location), agDcls, location=ag.location),
         agDcls10, absProdDcls);
