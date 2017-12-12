@@ -55,7 +55,7 @@ top::TransformList ::= dcl::TransformDcl lst::TransformList
     dcl.config = top.config;
     lst.config = top.config;
     dcl.env = tr.env;
-    lst.env   top.env;
+    lst.env = top.env;
 
     lst.downSubst = top.downSubst;
     top.upSubst = lst.upSubst;
