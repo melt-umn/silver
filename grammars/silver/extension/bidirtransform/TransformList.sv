@@ -24,6 +24,8 @@ top::TransformDcl ::= s::String transType::TypeExpr trRules::TransformRuleList
 
     trRules.config = top.config;
     trRules.env = top.env;
+    
+    transType.env = top.env;
 
     trRules.downSubst = top.downSubst;
     top.upSubst = trRules.upSubst;
