@@ -2,7 +2,7 @@ grammar silver:extension:bidirtransform;
 
 -- todo: these assume there is only one rewrite 
 -- rule for any given rewrite output type, or at
--- least ignores any others that exist after head().
+-- least ignores any others that exist after the first match.
 -- 
 -- Changing this in a meaningful way would involve
 -- no longer requiring that every type has all

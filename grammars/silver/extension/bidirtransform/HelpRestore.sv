@@ -8,7 +8,7 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String] ns::Decorated NamedSigna
     -- only writes recursive restoration rules on things that make sense,
     -- i.e. applications where a type can be inferred for what the arguments
     -- have to be converted into. If this is not true, this breaks right now,
-    -- and nothing prevents the user from writing mul(x,y) ~~~> y 
+    -- and nothing prevents the user from writing mul(x,y) ~~~> y
     forwards to case fillExpr(toFill, exps, names, location=toFill.location) of application(e, x, appexps, y, annexps, z) ->
         application(e, x, restoreAppExprs(appexps, reverse(map((.typeName), ns.inputTypes)), location=toFill.location), y, annexps, z, location=toFill.location)
     end;

@@ -13,11 +13,8 @@ autocopy attribute inhProds::[Decorated NamedSignature];
 concrete production productionDef
 pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
 {
-    -- Somewhere, apparently not here, errors are being added 
-    -- from expressions or appExprs or patterns that shouldn't
-    -- be looked at as they only exist to be filled in with 
-    -- correct data at a later state.
-    pd.errors := [];--args.errors;
+
+    pd.errors := [];
     
     pd.pp = qn.pp ++ "(" ++ args.pp ++ ")";
 
@@ -69,32 +66,6 @@ top::Expr ::= arg::Pattern nsElem::NamedSignatureElement ifTrue::Expr
             'end', location=top.location)
     end;
 }
-
--- given appName(a,b,c) and the named signature elements d::T e::U f::V,
--- return appName(a::T, e::U, f::V as needed)
--- abstract production prodAsExpr 
--- top::Expr ::= appName::QName args::[Pattern] nsElems::[NamedSignatureElement]
--- {
---     forwards to if null(args) then emptyFunc(appName.name, location=top.location) 
---         else argFunc(appName.name, patternArgs(args, location=top.location)); 
--- }       
-
--- abstract production patternArgs
--- top::AppExprs ::= args::[Pattern]
--- {
---     forwards to if length(args) == 1 then patternArg(head(args), location=top.location)
---         else snocAppExprs(patternArgs(allHead(args), location=top.location),
---         ','
---         patternArg(last(args), location=top.location),
---         location=top.location);
--- } 
-
-
--- abstract production patternArg
--- top::AppExpr ::= arg::Pattern
--- {
---     return oneApp(arg.asExpr, location=top.location);
--- }
 
 function tyCheckProd
 [Message] ::= loc::Location args::[Pattern] nsElems::[NamedSignatureElement]

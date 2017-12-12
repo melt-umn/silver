@@ -85,15 +85,6 @@ ag::AGDcls ::= 'transform' trsl::TransformList
 
     local absProdNames :: [String] = map(unFull, map((.fullName), absProdDcls));
 
-    -----------------------
-    -- Generating code
-
-    local agDcls1::AGDcl = foldl(\ agDcls::AGDcl tdcl::Decorated TransformDcl ->
-        appendAGDcl(
-            declareTNameAttributes(tdcl, absNames, cncNames, location=ag.location),
-            agDcls, location=ag.location),
-    emptyAGDcl(location=ag.location), trsl.transformDcls);
-
     -- Rewrite rule manipulation
     --
     -- add the identity rule for each type, if an identity rule doesn't already exist
@@ -126,11 +117,21 @@ ag::AGDcls ::= 'transform' trsl::TransformList
             config=ag.config;
         }, cncNames);
 
+
+    -----------------------
+    -- Generating code
+
+    local agDcls1::AGDcl = foldl(\ agDcls::AGDcl tdcl::Decorated TransformDcl ->
+        appendAGDcl(
+            declareTNameAttributes(tdcl, absNames, cncNames, location=ag.location),
+            agDcls, location=ag.location),
+    emptyAGDcl(location=ag.location), trsl.transformDcls);
+
     -- Aspecting origin productions
 
     -- restored$cncType attributes
     --
-    local agDcls9::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
+    local agDcls2::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
         appendAGDcl(
             fakeAspectProductionDcl('aspect', 'production',
             qName(ag.location, mkOriginName(lhs)), mkAspectProdSigDec("o", "Origin", "e", lhs, location=ag.location),
@@ -147,7 +148,7 @@ ag::AGDcls ::= 'transform' trsl::TransformList
 
     -- for each abstract production
     -- top.wasTransformed = wasTransformed(top.origin, top.redex) || <rhs>.wasTransformed;
-    local agDcls10::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+    local agDcls3::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
             attribDef(ns.outputElement.elementName, "wasTransformed",
                 foldl(\ e::Expr ie::NamedSignatureElement -> 
@@ -160,10 +161,10 @@ ag::AGDcls ::= 'transform' trsl::TransformList
                             lhsAccess("origin", ns, location=ag.location)
                         ], location=ag.location),
                     location=ag.location), ns.inputElements), location=ag.location), location=ag.location), agDcls, location=ag.location),
-        agDcls9, absProdDcls);
+        agDcls2, absProdDcls);
 
     -- top.restored$cncType = < rewrite + transformation rules ...>
-    local agDcls11::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+    local agDcls4::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             foldl(\ stmts::ProductionStmts rhs::String ->
                 -- if there isn't a rewrite rule from this production to this lhs then don't define this
@@ -185,11 +186,11 @@ ag::AGDcls ::= 'transform' trsl::TransformList
                         else applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
                     location=ag.location), location=ag.location),
             productionStmtsNil(location=ag.location), cncNames), location=ag.location), agDcls, location=ag.location),
-        agDcls10, absProdDcls);
+        agDcls3, absProdDcls);
     --local agDcls11::AGDcl = agDcls10;
 
     -- define transformation attributes (those dependent on each transformation declared)
-    local agDcls12::AGDcl = foldl(\ agDcls::AGDcl tdcl::Decorated TransformDcl -> 
+    local agDcls5::AGDcl = foldl(\ agDcls::AGDcl tdcl::Decorated TransformDcl -> 
         joinAGDcls([
         -- top.$tName = ...
         --  if this abstract production has no transformations defined for it,
@@ -262,52 +263,43 @@ ag::AGDcls ::= 'transform' trsl::TransformList
                         location=ag.location), location=ag.location),
                 productionStmtsNil(location=ag.location), ns.inputElements), location=ag.location), agDcls, location=ag.location),
             emptyAGDcl(location=ag.location), absProdDcls), agDcls], location=ag.location),
-    agDcls11, trsl.transformDcls);
+    agDcls4, trsl.transformDcls);
     
     -- for each concrete type, if it has location, aspect all of its creating
     -- productions with 
     --
     -- top.suppliedOrigin = locationOrigin(ag.location);
-    local agDcls15::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+    local agDcls6::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
             attribDef(ns.outputElement.elementName, "suppliedOrigin",
                 argFunc("locationOrigin", appExprList([
                     lhsAccess("location", ns, location=ag.location)
                 ], location=ag.location), location=ag.location),
             location=ag.location), location=ag.location), agDcls, location=ag.location),
-        agDcls12, locCncProdDcls);
+        agDcls5, locCncProdDcls);
 
     -- or if they don't have location:
     --
     -- top.suppliedOrigin = bottomOrigin();
-    local agDcls16::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+    local agDcls7::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
             attribDef(ns.outputElement.elementName, "suppliedOrigin",
                 emptyFunc("bottomOrigin", location=ag.location), location=ag.location),
             location=ag.location), agDcls, location=ag.location), 
-        agDcls15, nonLocCncProdDcls);
+        agDcls6, nonLocCncProdDcls);
 
 
-    -- add origins generation
-
+    -- origin generation
     local toForward::AGDcl = appendAGDcl(
         applyOrigins(absGroup.ntList, location=ag.location), 
         appendAGDcl(
             cncApplyOrigins(cncGroup.ntList, location=ag.location),
-            agDcls16, location=ag.location), location=ag.location);
-
-    toForward.compiledGrammars = ag.compiledGrammars;
-    nestedAgs.compiledGrammars = ag.compiledGrammars;
-
-    toForward.grammarName = ag.grammarName;
-    nestedAgs.grammarName = ag.grammarName;
-
-    toForward.flowEnv = ag.flowEnv;
-    nestedAgs.flowEnv = ag.flowEnv;
+            agDcls7, location=ag.location), location=ag.location);
 
     toForward.env = nestedAgs.env;
     nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
 
+    ----- 
     -- LOGS
     local log :: Boolean = false;
 
@@ -342,9 +334,7 @@ ag::AGDcls ::= 'transform' trsl::TransformList
     ag.errors <- if log then map(\ s::String ->
         err(ag.location, "Cnc name: " ++ s),
     cncNames) else [];
-
-
-    --
+    -----
 
     forwards to consAGDcls(toForward, nestedAgs, location=ag.location);
 }
