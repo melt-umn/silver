@@ -215,7 +215,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                     if !hasRwID(newRwRules.rewriteRules, lhs, rhs) then stmts -- this is also probably an error 
                     else productionStmtsSnoc(stmts, 
                             attribDef("o", restoreNm(unFull(rhs)),
-                                applyRw(rwID(newRwRules.rewriteRules, lhs, rhs), rhs, lhs, "o", "e", location=ag.location), location=ag.location)
+                                applyRwOrigin(rwID(newRwRules.rewriteRules, lhs, rhs), rhs, lhs, "o", "e", location=ag.location), location=ag.location)
                         , location=ag.location),
                 productionStmtsNil(location=ag.location), cncNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
         agDcls8, cncNames);
@@ -259,7 +259,7 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
                                     location=ag.location),
                                 location=ag.location),
                             location=ag.location)
-                        else applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, "?", location=ag.location),    
+                        else applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
                     location=ag.location), location=ag.location),
             productionStmtsNil(location=ag.location), cncNames), location=ag.location), agDcls, location=ag.location),
         agDcls10, absProdDcls);

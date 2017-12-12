@@ -1,6 +1,20 @@
 grammar silver:extension:bidirtransform;
 
 abstract production applyRw
+top::Expr ::= rwr::Decorated RewriteRule rhsTy::String lhsTy::String elemName::String 
+{
+    forwards to rwr.outputStmt(
+        -- Pass ? into
+        -- rewrite rules that want that type
+        -- We can't use restored$typeName here because 
+        -- that would infinitely recurse. 
+        if rhsTy == lhsTy || !rwr.shouldRestore then baseName(elemName, location=top.location) 
+        -- Otherwise pass the appropriate restored type from
+        -- the lhs of this production into the rule
+        else exprAccess(restoreNm(unFull(rwr.inputType.typeName)), elemName, location=top.location));
+} 
+
+abstract production applyRwOrigin
 top::Expr ::= rwr::Decorated RewriteRule rhsTy::String lhsTy::String elemName::String rhsName::String
 {
     forwards to rwr.outputStmt(
@@ -13,6 +27,7 @@ top::Expr ::= rwr::Decorated RewriteRule rhsTy::String lhsTy::String elemName::S
         -- the lhs of this production into the rule
         else exprAccess(restoreNm(unFull(rwr.inputType.typeName)), elemName, location=top.location));
 } 
+
 
 -- LHS is a concrete syntax type name
 abstract production applyRwProd
