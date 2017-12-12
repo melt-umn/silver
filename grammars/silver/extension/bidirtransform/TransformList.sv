@@ -9,7 +9,7 @@ nonterminal TransformList with transformDcls, env, errors, location, absGroup, c
 concrete production transformDcl
 top::TransformDcl ::= qn::QName '::' transType::TypeExpr '{' trRules::TransformRuleList '}'
 {
-    forwards to mkTransformDcl(qn.name, transType, trRules);
+    forwards to mkTransformDcl(qn.name, transType, trRules, location=top.location);
 }
 
 abstract production mkTransformDcl
@@ -54,7 +54,7 @@ top::TransformList ::= dcl::TransformDcl lst::TransformList
 
     dcl.config = top.config;
     lst.config = top.config;
-    dcl.env = tr.env;
+    dcl.env = top.env;
     lst.env = top.env;
 
     lst.downSubst = top.downSubst;
@@ -65,8 +65,11 @@ top::TransformList ::= dcl::TransformDcl lst::TransformList
 }
 
 abstract production declareTNameAttributes
-top::AGDcl ::= tName::String absNames::[String] cncNames::[String]
+top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] cncNames::[String]
 {
+
+    local tName::String = tdcl.name;
+    local transType::TypeExpr = tdcl.transType;
     local inhRedexName::String = inhRedexNm(tName);
 
     -- autocopy attribute inRedex_$tName :: Maybe<Origin>; 
@@ -106,13 +109,14 @@ top::AGDcl ::= tName::String absNames::[String] cncNames::[String]
     -- attribute $tName occurs on $absType;
     local agDcls8::AGDcl = appendAGDcl(attrOn(tName, absNames, location=top.location), agDcls7, location=top.location);      
     
-    forwards to agDlcs8;
+    forwards to agDcls8;
 }
 
 abstract production defineTNameAttributes
-top::AGDcl ::= tdcl::Decorated TransformDcl absProdDcls::[Decorated NamedSignature]
+top::AGDcl ::= tdcl::Decorated TransformDcl absProdDcls::[Decorated NamedSignature] absNames::[String] allNames::[String]
 {   
     local tName::String = tdcl.name;
+    local transType::TypeExpr = tdcl.transType;
     local inhRedexName::String = inhRedexNm(tName);
 
     -- top.$tName = ...

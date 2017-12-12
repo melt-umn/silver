@@ -126,11 +126,11 @@ ag::AGDcls ::= 'transform' trsl::TransformList
     -----------------------
     -- Generating code
 
-    local agDcls1::AGDcl = foldl(\ agDcls::AGDcl tdcl::TransformDcl ->
+    local agDcls1::AGDcl = foldl(\ agDcls::AGDcl tdcl::Decorated TransformDcl ->
         appendAGDcl(
-            declareTNameAttributes(tdcl.name, absNames, cncNames, location=ag.location),
+            declareTNameAttributes(tdcl, absNames, cncNames, location=ag.location),
             agDcls, location=ag.location),
-    emptyAGDcl(location=ag.location), tl.transformDcls);
+    emptyAGDcl(location=ag.location), trsl.transformDcls);
 
     -- Rewrite rule manipulation
     --
@@ -226,11 +226,11 @@ ag::AGDcls ::= 'transform' trsl::TransformList
         agDcls10, absProdDcls);
     --local agDcls11::AGDcl = agDcls10;
 
-    local agDcls12::AGDcl = foldl(\ agDcls::AGDcl tdcl::TransformDcl -> 
+    local agDcls12::AGDcl = foldl(\ agDcls::AGDcl tdcl::Decorated TransformDcl -> 
         appendAGDcl(
-            defineTNameAttributes(tdcl, absProdDcls, location=ag.location),
+            defineTNameAttributes(tdcl, absProdDcls, absNames, allNames, location=ag.location),
             agDcls, location=ag.location),
-    agDcls11, tl.transformDcls);
+    agDcls11, trsl.transformDcls);
     
     -- for each concrete type, if it has location, aspect all of its creating
     -- productions with 
