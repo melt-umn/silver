@@ -93,37 +93,37 @@ ag::AGDcls ::= 'transform' qn::QName '::' transType::TypeExpr
 
     local absProdNames :: [String] = map(unFull, map((.fullName), absProdDcls));
 
-    local logStuff :: Boolean = true;
+    local log :: Boolean = false;
 
-    ag.errors <- if logStuff then map(\ fnt::Decorated FullNonterminal ->
+    ag.errors <- if log then map(\ fnt::Decorated FullNonterminal ->
         err(ag.location, "Abs nt: " ++ fnt.name),
     absGroup.ntList) else [];
 
-    ag.errors <- if logStuff then map(\ fnt::Decorated FullNonterminal ->
+    ag.errors <- if log then map(\ fnt::Decorated FullNonterminal ->
         err(ag.location, "Cnc nt: " ++ fnt.name),
     cncGroup.ntList) else [];
 
-    ag.errors <- if logStuff then map(\ d::Def -> 
+    ag.errors <- if log then map(\ d::Def -> 
         err(ag.location, "Nested Def: " ++ d.ppDebug),
     nestedAgs.defs) else [];
 
-    ag.errors <- if logStuff then map(\ dec::Decorated NamedSignature ->
+    ag.errors <- if log then map(\ dec::Decorated NamedSignature ->
         err(ag.location, "Abs prod: " ++ dec.fullName),
     absProdDcls) else [];
 
-    ag.errors <- if logStuff then map(\ dec::Decorated NamedSignature ->
+    ag.errors <- if log then map(\ dec::Decorated NamedSignature ->
         err(ag.location, "Cnc prod: " ++ dec.fullName),
     cncProdDcls) else [];
 
-    ag.errors <- if logStuff then map(\ dec::Decorated NamedSignature ->
+    ag.errors <- if log then map(\ dec::Decorated NamedSignature ->
         err(ag.location, "Abs output: " ++ dec.outputElement.elementName),
     absProdDcls) else [];
 
-    ag.errors <- if logStuff then map(\ dec::Decorated NamedSignature ->
+    ag.errors <- if log then map(\ dec::Decorated NamedSignature ->
         err(ag.location, "Abs typerep: " ++ dec.typerep.typeName),
     absProdDcls) else [];
     
-    ag.errors <- if logStuff then map(\ s::String ->
+    ag.errors <- if log then map(\ s::String ->
         err(ag.location, "Cnc name: " ++ s),
     cncNames) else [];
 
