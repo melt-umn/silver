@@ -22,8 +22,6 @@ top::TransformDcl ::= s::String transType::TypeExpr trRules::TransformRuleList
     top.transType = transType;
     top.name = s;
     top.typeName = transType.typerep.typeName;
-
-    trRules.config = top.config;
     
     trRules.downSubst = top.downSubst;
     top.upSubst = trRules.upSubst;
@@ -35,8 +33,6 @@ top::TransformList ::= dcl::TransformDcl
 {
     top.pp = dcl.pp;
     top.errors := dcl.errors;
-
-    dcl.config = top.config;
 
     dcl.downSubst = top.downSubst;
     top.upSubst = dcl.upSubst;
@@ -50,9 +46,6 @@ top::TransformList ::= dcl::TransformDcl lst::TransformList
 {
     top.pp = dcl.pp ++ lst.pp;
     top.errors := dcl.errors ++ lst.errors;
-
-    dcl.config = top.config;
-    lst.config = top.config;
 
     lst.downSubst = top.downSubst;
     top.upSubst = lst.upSubst;
@@ -106,7 +99,6 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] cncNames::[String
     local agDcls8::AGDcl = appendAGDcl(attrOn(tName, absNames, location=top.location), agDcls7, location=top.location);      
     
     agDcls8.compiledGrammars = top.compiledGrammars;
-    agDcls8.config = top.config;    
     agDcls8.grammarName = top.grammarName;
     agDcls8.flowEnv = top.flowEnv;
 

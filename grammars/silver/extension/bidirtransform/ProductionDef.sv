@@ -22,11 +22,7 @@ pd::ProductionDef ::= qn::QName '(' args::PatternList ')'
     pd.pp = qn.pp ++ "(" ++ args.pp ++ ")";
 
     pd.patternList = args;
-
-    args.config = pd.config;
-
-
-
+    
     local prodNames::[String] = map(unFull, map((.fullName), pd.inhProds));
     local idx::Integer = findIdx(prodNames, qn.name);
 

@@ -52,7 +52,6 @@ ag::AGDcls ::= 'transform' trsl::TransformList
 
     trsl.absGroup = absGroup;
     trsl.cncGroup = cncGroup;
-    trsl.config = ag.config;
     trsl.downSubst = emptySubst();
     trsl.finalSubst = rwRules.upSubst;
 
@@ -60,7 +59,6 @@ ag::AGDcls ::= 'transform' trsl::TransformList
     rwRules.cncGroup = cncGroup;
     rwRules.downSubst = emptySubst();    
     rwRules.finalSubst = trsl.finalSubst;
-    rwRules.config = ag.config;    
 
     -- todo: think about the env we're providing to the transform/rewrite rules
 
@@ -334,9 +332,6 @@ ag::AGDcls ::= 'transform' trsl::TransformList
 
     toForward.compiledGrammars = ag.compiledGrammars;
     nestedAgs.compiledGrammars = ag.compiledGrammars;
-
-    toForward.config = ag.config;    
-    nestedAgs.config = ag.config;
 
     toForward.grammarName = ag.grammarName;
     nestedAgs.grammarName = ag.grammarName;

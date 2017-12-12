@@ -134,7 +134,6 @@ top::AGDcl ::= ntList::[Decorated FullNonterminal]
 --     top.mdaSpecs = [];
     
 --     subAg.compiledGrammars = top.compiledGrammars;
---     subAg.config = top.config;
 --     subAg.grammarName = top.grammarName;
 --     subAg.flowEnv = top.flowEnv;
 --     subAg.env = appendEnv(top.env, toEnv(addAttrs.defs));

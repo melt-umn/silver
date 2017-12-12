@@ -22,9 +22,6 @@ terminal RestoreArrow_t '~~>' lexer classes {SPECOP};
 concrete production rewriteRuleCons
 rrl::RewriteRuleList ::= Vbar_kwd l::RewriteRule r::RewriteRuleList
 {
-    l.config = rrl.config;
-    r.config = rrl.config;
-
     l.downSubst = rrl.downSubst;
     r.downSubst = l.upSubst;
     rrl.upSubst = r.upSubst;
@@ -46,8 +43,6 @@ rrl::RewriteRuleList ::= Vbar_kwd l::RewriteRule r::RewriteRuleList
 concrete production rewriteRuleSingle
 rrl::RewriteRuleList ::= Vbar_kwd rule::RewriteRule 
 {
-    rule.config = rrl.config;
-    
     rule.downSubst = rrl.downSubst;
     rrl.upSubst = rule.upSubst;
     rule.finalSubst = rrl.upSubst;
@@ -130,8 +125,6 @@ opt::OptRHSType ::=
 abstract production rewriteRule
 rule::RewriteRule ::= rhs::Expr inName::String inType::Type outType::Type inProd::RewriteProduction hasProd::Boolean restore::Boolean
 {
-    rhs.config = rule.config;
-
     rhs.downSubst = rule.downSubst;
     rule.upSubst = rhs.upSubst;
     rhs.finalSubst = rule.upSubst;

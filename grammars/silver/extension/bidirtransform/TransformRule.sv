@@ -10,9 +10,6 @@ synthesized attribute asExpr::Expr;
 concrete production transformRuleCons
 trl::TransformRuleList ::= Vbar_kwd l::TransformRule r::TransformRuleList
 {
-    l.config = trl.config;
-    r.config = trl.config;
-
     l.downSubst = trl.downSubst;
     r.downSubst = l.upSubst;
     l.finalSubst = r.upSubst;
@@ -32,7 +29,6 @@ trl::TransformRuleList ::= Vbar_kwd l::TransformRule r::TransformRuleList
 concrete production transformRuleSingle
 trl::TransformRuleList ::= Vbar_kwd rule::TransformRule 
 {
-    rule.config = trl.config;
     rule.downSubst = trl.downSubst;
     trl.upSubst = rule.upSubst;
     rule.finalSubst = trl.upSubst;
@@ -46,8 +42,6 @@ trl::TransformRuleList ::= Vbar_kwd rule::TransformRule
 concrete production transformRule
 tr::TransformRule ::= l::ProductionDef '->' r::Expr
 {
-    l.config = tr.config;
-    r.config = tr.config;
     r.downSubst = tr.downSubst;
     tr.upSubst = r.upSubst;
     r.finalSubst = tr.upSubst;
