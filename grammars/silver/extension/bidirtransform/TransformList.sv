@@ -69,7 +69,6 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] cncNames::[String
 {
 
     local tName::String = tdcl.name;
-    local transType::TypeExpr = tdcl.transType;
     local inhRedexName::String = inhRedexNm(tName);
 
     -- autocopy attribute inRedex_$tName :: Maybe<Origin>; 
@@ -82,7 +81,7 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] cncNames::[String
         agDcls, cncNames);
 
     -- synthesized attribute $tName :: $tType;
-    local agDcls3::AGDcl = appendAGDcl(synAttr(tName, transType, location=top.location), agDcls2, location=top.location);
+    local agDcls3::AGDcl = appendAGDcl(synAttr(tName, tdcl.transType, location=top.location), agDcls2, location=top.location);
 
     -- synthesized attribute transformed_$tName :: Boolean;
     local agDcls4::AGDcl = appendAGDcl(synAttr(transformNm(tName), mkBoolTypeExpr(location=top.location), location=top.location), agDcls3, location=top.location);    
@@ -109,6 +108,12 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] cncNames::[String
     -- attribute $tName occurs on $absType;
     local agDcls8::AGDcl = appendAGDcl(attrOn(tName, absNames, location=top.location), agDcls7, location=top.location);      
     
+    agDcls8.compiledGrammars = top.compiledGrammars;
+    agDcls8.config = top.config;    
+    agDcls8.grammarName = top.grammarName;
+    agDcls8.flowEnv = top.flowEnv;
+    agDcls8.env = top.env;
+
     forwards to agDcls8;
 }
 
@@ -116,7 +121,6 @@ abstract production defineTNameAttributes
 top::AGDcl ::= tdcl::Decorated TransformDcl absProdDcls::[Decorated NamedSignature] absNames::[String] allNames::[String] 
 {   
     local tName::String = tdcl.name;
-    local transType::TypeExpr = tdcl.transType;
     local inhRedexName::String = inhRedexNm(tName);
 
     local absProdNames :: [String] = map(unFull, map((.fullName), absProdDcls));
@@ -132,7 +136,7 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absProdDcls::[Decorated NamedSignatu
     --    else see ------------------/
     local agDcls1::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-            if !hasTrans(tdcl.transformRules, dcl) && ns.outputElement.typerep.typeName != transType.typerep.typeName
+            if !hasTrans(tdcl.transformRules, dcl) && ns.outputElement.typerep.typeName != tdcl.transType.typerep.typeName
             then productionStmtsNil(location=top.location)
             else prdStmtList( 
                 [attribDef(ns.outputElement.elementName, tName,
@@ -192,6 +196,12 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absProdDcls::[Decorated NamedSignatu
                     location=top.location), location=top.location),
             productionStmtsNil(location=top.location), ns.inputElements), location=top.location), agDcls, location=top.location),
         agDcls2, absProdDcls);
+
+    agDcls3.compiledGrammars = top.compiledGrammars;
+    agDcls3.config = top.config;    
+    agDcls3.grammarName = top.grammarName;
+    agDcls3.flowEnv = top.flowEnv;
+    agDcls3.env = top.env;
 
     forwards to agDcls3;
 }
