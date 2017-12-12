@@ -1,21 +1,17 @@
 grammar silver:extension:bidirtransform;
 
--- todo: right now this means all elements of a rewrite rule need to be 
--- anonymous variables. This should change, so some variables can be skipped
--- or provided explicitly like integer values
-
 abstract production applyRw
-top::Expr ::= rwr::Decorated RewriteRule rhsTy::String lhsTy::String elemName::String
+top::Expr ::= rwr::Decorated RewriteRule rhsTy::String lhsTy::String elemName::String rhsName::String
 {
     forwards to rwr.outputStmt(
-        -- Pass the rhs of an origin into
+        -- Pass the rhs into
         -- rewrite rules that want that type
         -- We can't use restored$typeName here because 
         -- that would infinitely recurse. 
-        if rhsTy == lhsTy || !rwr.shouldRestore then baseName(elemName, location=top.location) 
+        if rhsTy == lhsTy || !rwr.shouldRestore then baseName(rhsName, location=top.location) 
         -- Otherwise pass the appropriate restored type from
-        -- this origin into the rule
-        else exprAccess(restoreNm(unFull(rwr.inputType.typeName)), "o", location=top.location));
+        -- the lhs of this production into the rule
+        else exprAccess(restoreNm(unFull(rwr.inputType.typeName)), elemName, location=top.location));
 } 
 
 -- LHS is a concrete syntax type name
