@@ -231,7 +231,7 @@ ag::AGDcls ::= 'transform' trsl::TransformList
         appendAGDcl(
             defineTNameAttributes(tdcl, absProdDcls, location=ag.location),
             agDcls, location=ag.location),
-    agDcls11, tl.transformDcls)
+    agDcls11, tl.transformDcls);
     
     -- for each concrete type, if it has location, aspect all of its creating
     -- productions with 
