@@ -239,7 +239,7 @@ ag::AGDcls ::= 'transform' trsl::TransformList
         --    else see ------------------/
         foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
             appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-                if !hasTrans(tdcl.transformRules, dcl) && ns.outputElement.typerep.typeName != tdcl.transType.typerep.typeName
+                if !hasTrans(tdcl.transformRules, dcl) && ns.outputElement.typerep.typeName != tdcl.typeName
                 then productionStmtsNil(location=ag.location)
                 else prdStmtList( 
                     [attribDef(ns.outputElement.elementName, tdcl.name,

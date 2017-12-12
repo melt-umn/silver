@@ -1,9 +1,9 @@
 grammar silver:extension:bidirtransform;
 
 synthesized attribute transformDcls::[Decorated TransformDcl];
-synthesized attribute transType::Decorated TypeExpr;
+synthesized attribute transType::TypeExpr;
 
-nonterminal TransformDcl with transformRules, name, transType, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config, inhProds;
+nonterminal TransformDcl with transformRules, name, transType, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config, inhProds, typeName;
 nonterminal TransformList with transformDcls, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config, inhProds;
 
 concrete production transformDcl
@@ -21,6 +21,7 @@ top::TransformDcl ::= s::String transType::TypeExpr trRules::TransformRuleList
     top.transformRules = trRules.transformRules;
     top.transType = transType;
     top.name = s;
+    top.typeName = transType.typerep.typeName;
 
     trRules.config = top.config;
     trRules.env = top.env;
