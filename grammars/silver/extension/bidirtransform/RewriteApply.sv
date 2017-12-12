@@ -39,6 +39,6 @@ top::Expr ::= rwr::Decorated RewriteRule ns::Decorated NamedSignature
     forwards to fwdFunc(
         fullFunc(
             rwr.inputProduction.name, 
-            strAppExprs(ns.inputNames, location=top.location),
+            strAppExprs(reverse(ns.inputNames), location=top.location),
             emptyAnnoAppExprs(location=top.location), location=top.location));
 }
