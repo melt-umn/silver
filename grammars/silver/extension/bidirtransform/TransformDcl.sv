@@ -87,8 +87,6 @@ ag::AGDcls ::= 'transform' trsl::TransformList
 
     trsl.inhProds = allProdDcls;
 
-    local absProdNames :: [String] = map(unFull, map((.fullName), absProdDcls));
-
     local log :: Boolean = false;
 
     ag.errors <- if log then map(\ fnt::Decorated FullNonterminal ->

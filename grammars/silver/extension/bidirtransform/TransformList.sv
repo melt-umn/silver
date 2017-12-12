@@ -113,11 +113,13 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] cncNames::[String
 }
 
 abstract production defineTNameAttributes
-top::AGDcl ::= tdcl::Decorated TransformDcl absProdDcls::[Decorated NamedSignature] absNames::[String] allNames::[String]
+top::AGDcl ::= tdcl::Decorated TransformDcl absProdDcls::[Decorated NamedSignature] absNames::[String] allNames::[String] 
 {   
     local tName::String = tdcl.name;
     local transType::TypeExpr = tdcl.transType;
     local inhRedexName::String = inhRedexNm(tName);
+
+    local absProdNames :: [String] = map(unFull, map((.fullName), absProdDcls));
 
     -- top.$tName = ...
     --  if this abstract production has no transformations defined for it,
