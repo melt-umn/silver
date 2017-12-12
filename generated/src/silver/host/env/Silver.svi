@@ -1,0 +1,16 @@
+declaredName 'silver:host:env'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/host/env/"
+moduleNames ['silver:definition:env:env_parser', 'silver:definition:concrete_syntax:ast:env_parser', 'silver:definition:regex', 'silver:definition:flow:env_parser', 'silver:definition:env', 'core']
+allDeps ['core:monad', 'core', 'silver:definition:env', 'silver:definition:flow:env_parser', 'silver:definition:regex', 'silver:definition:concrete_syntax:ast:env_parser', 'silver:definition:env:env_parser', 'silver:host:env']
+exportedGrammars ['silver:definition:env:env_parser', 'silver:definition:concrete_syntax:ast:env_parser', 'silver:definition:regex', 'silver:definition:flow:env_parser', 'silver:definition:env']
+optionalGrammars []
+condBuild []
+defs [
+ ]
+syntax [disambig('silver:host:env:__disam17', ['silver:definition:regex:RegexChar_t', 'silver:definition:env:env_parser:RegExprDelim'], "return (Integer)silver_definition_env_env_parser_RegExprDelim;
+"),
+ disambig('silver:host:env:__disam23', ['silver:definition:regex:RegexChar_t', 'silver:definition:env:env_parser:WS'], "return (Integer)silver_definition_env_env_parser_WS;
+")]
+parsers []
+flow []

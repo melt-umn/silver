@@ -1,0 +1,50 @@
+declaredName 'silver:modification:autocopyattr'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/modification/autocopyattr/"
+moduleNames ['silver:util', 'silver:definition:env', 'silver:definition:core', 'silver:definition:type', 'silver:definition:type:syntax', 'core']
+allDeps ['core:monad', 'silver:definition:flow:env', 'silver:analysis:typechecking:core', 'core', 'silver:definition:type:syntax', 'silver:definition:type', 'silver:definition:core', 'silver:definition:env', 'silver:util', 'silver:modification:autocopyattr']
+exportedGrammars []
+optionalGrammars []
+condBuild ['silver:modification:autocopyattr:java', 'silver:translation:java:core', 'silver:modification:autocopyattr:convenience', 'silver:extension:convenience']
+defs [
+ term('AutoCopy.sv', 5, 9, 5, 21, 73, 85, 'silver:modification:autocopyattr:AutoCopy_kwd', /autocopy/),
+ prod('AutoCopy.sv', 7, 20, 7, 36, 143, 159, [], signature('silver:modification:autocopyattr:attributeDclAuto', [element('_G_6', term('silver:modification:autocopyattr:AutoCopy_kwd')), element('_G_5', term('silver:definition:core:Attribute_kwd')), element('a', nt('silver:definition:core:Name', [])), element('tl', nt('silver:definition:type:syntax:BracketedOptTypeExprs', [])), element('_G_2', term('silver:definition:core:ColonColon_t')), element('te', nt('silver:definition:type:syntax:TypeExpr', [])), element('_G_0', term('silver:definition:core:Semi_t'))], element('top', nt('silver:definition:core:AGDcl', [])), [element('core:location', nt('core:Location', []))])),
+ p@('AutoCopy.sv', 7, 20, 7, 36, 143, 159, [], signature('silver:modification:autocopyattr:attributeDclAuto', [element('_G_6', term('silver:modification:autocopyattr:AutoCopy_kwd')), element('_G_5', term('silver:definition:core:Attribute_kwd')), element('a', nt('silver:definition:core:Name', [])), element('tl', nt('silver:definition:type:syntax:BracketedOptTypeExprs', [])), element('_G_2', term('silver:definition:core:ColonColon_t')), element('te', nt('silver:definition:type:syntax:TypeExpr', [])), element('_G_0', term('silver:definition:core:Semi_t'))], element('top', nt('silver:definition:core:AGDcl', [])), [element('core:location', nt('core:Location', []))]), [
+ loc('AutoCopy.sv', 12, 23, 12, 28, 357, 362, 'silver:modification:autocopyattr:attributeDclAuto:local:fName', string),
+ fwd('AutoCopy.sv', 35, 2, 35, 89, 1145, 1232, nt('silver:definition:core:AGDcl', []))]),
+ syn('DclInfo.sv', 3, 22, 3, 32, 65, 75, 'silver:modification:autocopyattr:isAutocopy', [], bool),
+ @('DclInfo.sv', 3, 22, 3, 32, 65, 75, 'silver:definition:env:DclInfo', 'silver:modification:autocopyattr:isAutocopy', [], nt('silver:definition:env:DclInfo', []), bool),
+ prod('DclInfo.sv', 11, 20, 11, 31, 201, 212, [], signature('silver:modification:autocopyattr:autocopyDcl', [element('sg', string), element('sl', nt('core:Location', [])), element('fn', string), element('bound', [nt('silver:definition:type:TyVar', [])]), element('ty', nt('silver:definition:type:Type', []))], element('top', nt('silver:definition:env:DclInfo', [])), [])),
+ p@('DclInfo.sv', 11, 20, 11, 31, 201, 212, [], signature('silver:modification:autocopyattr:autocopyDcl', [element('sg', string), element('sl', nt('core:Location', [])), element('fn', string), element('bound', [nt('silver:definition:type:TyVar', [])]), element('ty', nt('silver:definition:type:Type', []))], element('top', nt('silver:definition:env:DclInfo', [])), []), [
+ fwd('DclInfo.sv', 32, 2, 32, 40, 1041, 1079, nt('silver:definition:env:DclInfo', []))]),
+ fun('DclInfo.sv', 37, 9, 37, 20, 1102, 1113, [], signature('silver:modification:autocopyattr:autocopyDef', [element('sg', string), element('sl', nt('core:Location', [])), element('fn', string), element('bound', [nt('silver:definition:type:TyVar', [])]), element('ty', nt('silver:definition:type:Type', []))], element('__func__lhs', nt('silver:definition:env:Def', [])), []))]
+syntax [term('silver:modification:autocopyattr:AutoCopy_kwd', /autocopy/, [classes(['silver:definition:core:KEYWORD'])]),
+ prod([], signature('silver:modification:autocopyattr:attributeDclAuto', [element('_G_6', term('silver:modification:autocopyattr:AutoCopy_kwd')), element('_G_5', term('silver:definition:core:Attribute_kwd')), element('a', nt('silver:definition:core:Name', [])), element('tl', nt('silver:definition:type:syntax:BracketedOptTypeExprs', [])), element('_G_2', term('silver:definition:core:ColonColon_t')), element('te', nt('silver:definition:type:syntax:TypeExpr', [])), element('_G_0', term('silver:definition:core:Semi_t'))], element('top', nt('silver:definition:core:AGDcl', [])), [element('core:location', nt('core:Location', []))]), [])]
+parsers []
+flow [syn('silver:modification:autocopyattr:attributeDclAuto', 'silver:definition:env:pp', [rhsV('a', 'silver:definition:env:pp'), rhsV('tl', 'silver:definition:env:pp'), rhsV('te', 'silver:definition:env:pp')], f),
+ local('silver:modification:autocopyattr:attributeDclAuto', 'silver:modification:autocopyattr:attributeDclAuto:local:fName', '', [lhsInhV('silver:definition:core:grammarName'), rhsV('a', 'silver:definition:core:name')]),
+ syn('silver:modification:autocopyattr:attributeDclAuto', 'silver:definition:env:defs', [lhsInhV('silver:definition:core:grammarName'), localEqV('silver:modification:autocopyattr:attributeDclAuto:local:fName'), rhsV('tl', 'silver:definition:type:freeVariables'), rhsV('te', 'silver:definition:env:typerep')], f),
+ inh('silver:modification:autocopyattr:attributeDclAuto', 'tl', 'silver:definition:type:syntax:initialEnv', [lhsInhV('silver:definition:env:env')]),
+ inh('silver:modification:autocopyattr:attributeDclAuto', 'tl', 'silver:definition:env:env', [rhsV('tl', 'silver:definition:type:syntax:envBindingTyVars')]),
+ inh('silver:modification:autocopyattr:attributeDclAuto', 'te', 'silver:definition:env:env', [rhsV('tl', 'silver:definition:type:syntax:envBindingTyVars')]),
+ syn('silver:modification:autocopyattr:attributeDclAuto', 'silver:definition:core:errors', [rhsV('tl', 'silver:definition:core:errors'), rhsV('te', 'silver:definition:core:errors'), rhsV('tl', 'silver:definition:type:syntax:errorsTyVars')], f),
+ extra('silver:modification:autocopyattr:attributeDclAuto', lhsSynV('silver:definition:core:errors'), [localEqV('silver:modification:autocopyattr:attributeDclAuto:local:fName'), lhsInhV('silver:definition:env:env'), localEqV('silver:modification:autocopyattr:attributeDclAuto:local:fName')], f),
+ extra('silver:modification:autocopyattr:attributeDclAuto', lhsSynV('silver:definition:core:errors'), [rhsV('tl', 'silver:definition:type:syntax:types')], f),
+ fwd('silver:modification:autocopyattr:attributeDclAuto', [], f),
+ implicitFwdAffects('silver:modification:autocopyattr:attributeDclAuto', []),
+ nonHostSyn('silver:modification:autocopyattr:isAutocopy', 'silver:definition:env:DclInfo'),
+ def('silver:definition:env:DclInfo', 'silver:modification:autocopyattr:isAutocopy', []),
+ syn('silver:modification:autocopyattr:autocopyDcl', 'silver:definition:env:sourceGrammar', [], f),
+ syn('silver:modification:autocopyattr:autocopyDcl', 'silver:definition:env:sourceLocation', [], f),
+ syn('silver:modification:autocopyattr:autocopyDcl', 'silver:definition:env:fullName', [], f),
+ inh('silver:modification:autocopyattr:autocopyDcl', 'ty', 'silver:definition:type:boundVariables', [lhsInhV('silver:definition:type:boundVariables')]),
+ syn('silver:modification:autocopyattr:autocopyDcl', 'silver:definition:env:unparse', [rhsV('sl', 'silver:definition:env:unparse'), rhsV('ty', 'silver:definition:type:boundVariables'), rhsV('ty', 'silver:definition:env:unparse')], f),
+ syn('silver:modification:autocopyattr:autocopyDcl', 'silver:definition:env:typerep', [], f),
+ syn('silver:modification:autocopyattr:autocopyDcl', 'silver:definition:env:dclBoundVars', [], f),
+ syn('silver:modification:autocopyattr:autocopyDcl', 'silver:definition:env:isInherited', [], f),
+ syn('silver:modification:autocopyattr:autocopyDcl', 'silver:modification:autocopyattr:isAutocopy', [], t),
+ syn('silver:modification:autocopyattr:autocopyDcl', 'silver:definition:core:decoratedAccessHandler', [], f),
+ syn('silver:modification:autocopyattr:autocopyDcl', 'silver:definition:core:undecoratedAccessHandler', [], f),
+ syn('silver:modification:autocopyattr:autocopyDcl', 'silver:definition:core:attrDefDispatcher', [], f),
+ fwd('silver:modification:autocopyattr:autocopyDcl', [], f),
+ implicitFwdAffects('silver:modification:autocopyattr:autocopyDcl', ['silver:modification:autocopyattr:isAutocopy'])]

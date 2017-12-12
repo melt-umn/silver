@@ -1,0 +1,13 @@
+declaredName 'silver:extension:list:java'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/extension/list/java/"
+moduleNames ['silver:extension:list', 'silver:definition:type', 'silver:definition:env', 'silver:definition:core', 'silver:translation:java:type', 'core']
+allDeps ['core:monad', 'silver:definition:flow:env', 'silver:analysis:typechecking:core', 'core', 'silver:translation:java:type', 'silver:definition:core', 'silver:definition:env', 'silver:definition:type', 'silver:extension:list', 'silver:extension:list:java']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ ]
+syntax []
+parsers []
+flow [syn('silver:extension:list:listType', 'silver:translation:java:type:transType', [], f)]

@@ -1,0 +1,17 @@
+declaredName 'silver:modification:autocopyattr:env_parser'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/modification/autocopyattr/env_parser/"
+moduleNames ['silver:modification:autocopyattr', 'silver:definition:env', 'silver:definition:env:env_parser', 'silver:definition:core', 'core']
+allDeps ['silver:definition:flow:env_parser', 'core:monad', 'silver:definition:flow:env', 'silver:analysis:typechecking:core', 'core', 'silver:definition:core', 'silver:definition:env:env_parser', 'silver:definition:env', 'silver:modification:autocopyattr', 'silver:modification:autocopyattr:env_parser']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ term('Parser.sv', 8, 9, 8, 21, 293, 305, 'silver:modification:autocopyattr:env_parser:AutoCopyTerm', /autocopy/),
+ prod('Parser.sv', 10, 20, 10, 36, 359, 375, [], signature('silver:modification:autocopyattr:env_parser:aDclInfoAutoCopy', [element('_G_9', term('silver:modification:autocopyattr:env_parser:AutoCopyTerm')), element('_G_8', term('silver:definition:env:env_parser:LParent_t')), element('l', nt('silver:definition:env:env_parser:ILocation', [])), element('_G_6', term('silver:definition:env:env_parser:Comma_t')), element('fn', nt('silver:definition:env:env_parser:IName', [])), element('_G_4', term('silver:definition:env:env_parser:Comma_t')), element('td', nt('silver:definition:env:env_parser:ITyVarDcls', [])), element('_G_2', term('silver:definition:env:env_parser:Comma_t')), element('t', nt('silver:definition:env:env_parser:ITypeRep', [])), element('_G_0', term('silver:definition:env:env_parser:RParent_t'))], element('top', nt('silver:definition:env:env_parser:IDclInfo', [])), []))]
+syntax [term('silver:modification:autocopyattr:env_parser:AutoCopyTerm', /autocopy/, [classes(['silver:definition:env:env_parser:C_1'])]),
+ prod([], signature('silver:modification:autocopyattr:env_parser:aDclInfoAutoCopy', [element('_G_9', term('silver:modification:autocopyattr:env_parser:AutoCopyTerm')), element('_G_8', term('silver:definition:env:env_parser:LParent_t')), element('l', nt('silver:definition:env:env_parser:ILocation', [])), element('_G_6', term('silver:definition:env:env_parser:Comma_t')), element('fn', nt('silver:definition:env:env_parser:IName', [])), element('_G_4', term('silver:definition:env:env_parser:Comma_t')), element('td', nt('silver:definition:env:env_parser:ITyVarDcls', [])), element('_G_2', term('silver:definition:env:env_parser:Comma_t')), element('t', nt('silver:definition:env:env_parser:ITypeRep', [])), element('_G_0', term('silver:definition:env:env_parser:RParent_t'))], element('top', nt('silver:definition:env:env_parser:IDclInfo', [])), []), [])]
+parsers []
+flow [inh('silver:modification:autocopyattr:env_parser:aDclInfoAutoCopy', 't', 'silver:definition:env:env', [rhsV('td', 'silver:definition:env:defs'), lhsInhV('silver:definition:env:env')]),
+ syn('silver:modification:autocopyattr:env_parser:aDclInfoAutoCopy', 'silver:definition:env:defs', [lhsInhV('silver:definition:core:grammarName'), rhsV('l', 'silver:definition:env:env_parser:alocation'), rhsV('fn', 'silver:definition:env:env_parser:aname'), rhsV('td', 'silver:definition:env:env_parser:tyvars'), rhsV('t', 'silver:definition:env:typerep')], f),
+ prod('silver:definition:env:env_parser:IDclInfo', 'silver:modification:autocopyattr:env_parser:aDclInfoAutoCopy')]

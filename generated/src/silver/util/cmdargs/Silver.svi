@@ -1,0 +1,56 @@
+declaredName 'silver:util:cmdargs'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/util/cmdargs/"
+moduleNames ['core']
+allDeps ['core:monad', 'core', 'silver:util:cmdargs']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ nt('CmdArgs.sv', 3, 12, 3, 19, 42, 49, 'silver:util:cmdargs:CmdArgs', [], nt('silver:util:cmdargs:CmdArgs', []), f),
+ @('CmdArgs.sv', 3, 25, 3, 37, 55, 67, 'silver:util:cmdargs:CmdArgs', 'silver:util:cmdargs:cmdRemaining', [], nt('silver:util:cmdargs:CmdArgs', []), [string]),
+ @('CmdArgs.sv', 3, 39, 3, 47, 69, 77, 'silver:util:cmdargs:CmdArgs', 'silver:util:cmdargs:cmdError', [], nt('silver:util:cmdargs:CmdArgs', []), nt('core:Maybe', [string])),
+ syn('CmdArgs.sv', 5, 22, 5, 34, 102, 114, 'silver:util:cmdargs:cmdRemaining', [], [string]),
+ syn('CmdArgs.sv', 6, 22, 6, 30, 150, 158, 'silver:util:cmdargs:cmdError', [], nt('core:Maybe', [string])),
+ fun('CmdArgs.sv', 8, 9, 8, 25, 187, 203, [], signature('silver:util:cmdargs:interpretCmdArgs', [element('flags', [nt('core:Pair', [string, nt('silver:util:cmdargs:Flag', [])])]), element('input', [string])], element('__func__lhs', nt('silver:util:cmdargs:CmdArgs', [])), [])),
+ prod('CmdArgs.sv', 30, 20, 30, 30, 848, 858, [], signature('silver:util:cmdargs:endCmdArgs', [element('remaining', [string])], element('top', nt('silver:util:cmdargs:CmdArgs', [])), [])),
+ prod('CmdArgs.sv', 41, 20, 41, 32, 1149, 1161, [], signature('silver:util:cmdargs:errorCmdArgs', [element('errmsg', string)], element('top', nt('silver:util:cmdargs:CmdArgs', [])), [])),
+ p@('CmdArgs.sv', 41, 20, 41, 32, 1149, 1161, [], signature('silver:util:cmdargs:errorCmdArgs', [element('errmsg', string)], element('top', nt('silver:util:cmdargs:CmdArgs', [])), []), [
+ fwd('CmdArgs.sv', 46, 2, 46, 29, 1254, 1281, nt('silver:util:cmdargs:CmdArgs', []))]),
+ nt('CmdArgs.sv', 53, 12, 53, 16, 1506, 1510, 'silver:util:cmdargs:Flag', [], nt('silver:util:cmdargs:Flag', []), f),
+ @('CmdArgs.sv', 53, 22, 53, 31, 1516, 1525, 'silver:util:cmdargs:Flag', 'silver:util:cmdargs:flagInput', [], nt('silver:util:cmdargs:Flag', []), [string]),
+ @('CmdArgs.sv', 53, 33, 53, 43, 1527, 1537, 'silver:util:cmdargs:Flag', 'silver:util:cmdargs:flagOutput', [], nt('silver:util:cmdargs:Flag', []), [string]),
+ @('CmdArgs.sv', 53, 45, 53, 57, 1539, 1551, 'silver:util:cmdargs:Flag', 'silver:util:cmdargs:flagOriginal', [], nt('silver:util:cmdargs:Flag', []), nt('silver:util:cmdargs:CmdArgs', [])),
+ @('CmdArgs.sv', 53, 59, 53, 71, 1553, 1565, 'silver:util:cmdargs:Flag', 'silver:util:cmdargs:flagModified', [], nt('silver:util:cmdargs:Flag', []), nt('silver:util:cmdargs:CmdArgs', [])),
+ inh('CmdArgs.sv', 55, 20, 55, 29, 1588, 1597, 'silver:util:cmdargs:flagInput', [], [string]),
+ syn('CmdArgs.sv', 56, 22, 56, 32, 1631, 1641, 'silver:util:cmdargs:flagOutput', [], [string]),
+ inh('CmdArgs.sv', 57, 20, 57, 32, 1673, 1685, 'silver:util:cmdargs:flagOriginal', [], nt('silver:util:cmdargs:CmdArgs', [])),
+ syn('CmdArgs.sv', 58, 22, 58, 34, 1718, 1730, 'silver:util:cmdargs:flagModified', [], nt('silver:util:cmdargs:CmdArgs', [])),
+ prod('CmdArgs.sv', 64, 20, 64, 24, 1864, 1868, [], signature('silver:util:cmdargs:flag', [element('ast', fun([nt('silver:util:cmdargs:CmdArgs', [])], nt('silver:util:cmdargs:CmdArgs', [])))], element('top', nt('silver:util:cmdargs:Flag', [])), [])),
+ prod('CmdArgs.sv', 75, 20, 75, 26, 2132, 2138, [], signature('silver:util:cmdargs:option', [element('ast', fun([string, nt('silver:util:cmdargs:CmdArgs', [])], nt('silver:util:cmdargs:CmdArgs', [])))], element('top', nt('silver:util:cmdargs:Flag', [])), [])),
+ prod('CmdArgs.sv', 88, 20, 88, 28, 2621, 2629, [], signature('silver:util:cmdargs:nOptions', [element('n', int), element('ast', fun([[string], nt('silver:util:cmdargs:CmdArgs', [])], nt('silver:util:cmdargs:CmdArgs', [])))], element('top', nt('silver:util:cmdargs:Flag', [])), []))]
+syntax [nt([], nt('silver:util:cmdargs:CmdArgs', [])),
+ nt([], nt('silver:util:cmdargs:Flag', []))]
+parsers []
+flow [ntRefFlowDef('silver:util:cmdargs:CmdArgs', []),
+ local('silver:util:cmdargs:interpretCmdArgs', 'silver:util:cmdargs:interpretCmdArgs:local:l', 'core:Maybe', []),
+ local('silver:util:cmdargs:interpretCmdArgs', 'silver:util:cmdargs:interpretCmdArgs:local:here', 'silver:util:cmdargs:Flag', [localV('silver:util:cmdargs:interpretCmdArgs:local:l', 'core:fromJust'), localEqV('silver:util:cmdargs:interpretCmdArgs:local:l')]),
+ localInh('silver:util:cmdargs:interpretCmdArgs', 'silver:util:cmdargs:interpretCmdArgs:local:here', 'silver:util:cmdargs:flagInput', []),
+ localInh('silver:util:cmdargs:interpretCmdArgs', 'silver:util:cmdargs:interpretCmdArgs:local:here', 'silver:util:cmdargs:flagOriginal', [localV('silver:util:cmdargs:interpretCmdArgs:local:here', 'silver:util:cmdargs:flagOutput'), localEqV('silver:util:cmdargs:interpretCmdArgs:local:here')]),
+ syn('silver:util:cmdargs:endCmdArgs', 'silver:util:cmdargs:cmdRemaining', [], t),
+ syn('silver:util:cmdargs:endCmdArgs', 'silver:util:cmdargs:cmdError', [], t),
+ prod('silver:util:cmdargs:CmdArgs', 'silver:util:cmdargs:endCmdArgs'),
+ syn('silver:util:cmdargs:errorCmdArgs', 'silver:util:cmdargs:cmdRemaining', [], t),
+ syn('silver:util:cmdargs:errorCmdArgs', 'silver:util:cmdargs:cmdError', [], t),
+ fwd('silver:util:cmdargs:errorCmdArgs', [], t),
+ implicitFwdAffects('silver:util:cmdargs:errorCmdArgs', ['silver:util:cmdargs:cmdError', 'silver:util:cmdargs:cmdRemaining']),
+ ntRefFlowDef('silver:util:cmdargs:Flag', ['silver:util:cmdargs:flagOriginal', 'silver:util:cmdargs:flagInput']),
+ syn('silver:util:cmdargs:flag', 'silver:util:cmdargs:flagOutput', [lhsInhV('silver:util:cmdargs:flagInput')], t),
+ syn('silver:util:cmdargs:flag', 'silver:util:cmdargs:flagModified', [lhsInhV('silver:util:cmdargs:flagOriginal')], t),
+ prod('silver:util:cmdargs:Flag', 'silver:util:cmdargs:flag'),
+ syn('silver:util:cmdargs:option', 'silver:util:cmdargs:flagOutput', [lhsInhV('silver:util:cmdargs:flagInput'), lhsInhV('silver:util:cmdargs:flagInput')], t),
+ syn('silver:util:cmdargs:option', 'silver:util:cmdargs:flagModified', [lhsInhV('silver:util:cmdargs:flagInput'), lhsInhV('silver:util:cmdargs:flagInput'), lhsInhV('silver:util:cmdargs:flagInput'), lhsInhV('silver:util:cmdargs:flagOriginal')], t),
+ prod('silver:util:cmdargs:Flag', 'silver:util:cmdargs:option'),
+ syn('silver:util:cmdargs:nOptions', 'silver:util:cmdargs:flagOutput', [lhsInhV('silver:util:cmdargs:flagInput'), lhsInhV('silver:util:cmdargs:flagInput')], t),
+ syn('silver:util:cmdargs:nOptions', 'silver:util:cmdargs:flagModified', [lhsInhV('silver:util:cmdargs:flagInput'), lhsInhV('silver:util:cmdargs:flagInput'), lhsInhV('silver:util:cmdargs:flagInput'), lhsInhV('silver:util:cmdargs:flagInput'), lhsInhV('silver:util:cmdargs:flagOriginal')], t),
+ prod('silver:util:cmdargs:Flag', 'silver:util:cmdargs:nOptions')]
