@@ -46,6 +46,12 @@ Boolean ::= tyName::String env::Decorated Env attr::String
     return containsAttr(getAttrsOn(tyName, env), attr);
 }
 
+function attrStrings
+[String] ::= tyName::String env::Decorated Env
+{
+    return map((.ppDebug), getAttrsOn(tyName, env));
+}
+
 function containsAttr
 Boolean ::= dcl::[DclInfo] hasAttr::String
 {   
