@@ -29,6 +29,7 @@ top::AGDcl ::= qn::QName
       --prodsFromDcls(getProdsFromNtHack("Origin", new(top.env), "silver:extension:bidirtransform"));
 
     default annotation location = top.location;
+    top.defs = [];
 
     forwards to appendAGDcl(
         attrOn(qn.name, ["Origin"]),
