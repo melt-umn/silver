@@ -34,7 +34,7 @@ top::AGDcl ::= qn::QName
 }
 
 abstract production originAttrDef
-top::AGDcl ::= qn::QName oProds::[Decorated NamedSignature]
+top::AGDcl ::= qn::QName
 {
     default annotation location = top.location;    
 
