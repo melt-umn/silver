@@ -29,7 +29,7 @@ top::AGDcl ::= qn::QName
     forwards to appendAGDcl(
         attrOn(qn.name, ["Origin"]),
         -- find all origin productions and give them this attribute if it's defined on their RHS
-        originAttrDef(qn)));
+        originAttrDef(qn));
         
 }
 
