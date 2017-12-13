@@ -19,8 +19,6 @@ top::Expr ::= rwr::Decorated RewriteRule rhsTy::String lhsTy::String elemName::S
         else exprAccess(restoreNm(unFull(rwr.inputType.typeName)), elemName, location=top.location));
 } 
 
-
--- LHS is a concrete syntax type name
 abstract production applyRwProd
 top::Expr ::= rwr::Decorated RewriteRule ns::Decorated NamedSignature
 {   

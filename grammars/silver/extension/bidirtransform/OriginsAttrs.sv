@@ -37,7 +37,7 @@ top::AGDcl ::= qn::QName
             appendAGDcl(
                     if null(ns.inputTypes) then emptyAGDcl()
                     else if hasNamedAttr(head(ns.inputTypes).typeName, top.env, qn.name)
-                    then aspectProdStmt([ns],\ ns::Decorated NamedSignature ->
+                    then aspectProdStmt(ns,\ ns::Decorated NamedSignature ->
                             attribDef(ns.outputElement.elementName, qn.name, 
                                 exprAccess(qn.name, head(ns.inputNames))))
                     else emptyAGDcl(),
