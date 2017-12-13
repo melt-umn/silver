@@ -25,8 +25,8 @@ abstract production originAttribute
 top::AGDcl ::= qn::QName
 {      
     local oProds::[Decorated NamedSignature] = 
-      prodsFromDcls(getProdsForNt("Origin", top.env));
-    --prodsFromDcls(getProdsFromNtHack("Origin", new(top.env), "silver:extension:bidirtransform"));
+      filterSigs("Origin", prodsFromDefs(top.env.allDefs));
+      --prodsFromDcls(getProdsFromNtHack("Origin", new(top.env), "silver:extension:bidirtransform"));
 
     default annotation location = top.location;
 
