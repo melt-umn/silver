@@ -56,7 +56,7 @@ function containsAttr
 Boolean ::= dcl::[DclInfo] hasAttr::String
 {   
     return if null(dcl) then false
-        else if unFull(head(dcl).fullName) == unFull(hasAttr)
+        else if unFull(head(dcl).attrOccurring) == unFull(hasAttr)
         then true
         else containsAttr(tail(dcl), hasAttr); 
 }
