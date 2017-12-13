@@ -72,6 +72,10 @@ top::AGDcl ::= 'optional' 'origins' 'attribute' qns::QNameList 'with' 'prefix' p
 
     top.moduleNames = [];
     top.mdaSpecs = [];
+    
+    top.errors := map(\ q::QName ->
+        err(top.location, "Input qName: " ++ q.name),
+    qns.qList);
 
     forwards to appendAGDcl(writeOptAttributes(qns, pfix.name), optOriginAttributes(qns.qList, pfix.name));
 }
