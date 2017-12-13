@@ -45,7 +45,7 @@ top::AGDcl ::= qn::QName
     
     top.errors <- map(\ ns::Decorated NamedSignature ->
         if null(ns.inputTypes) then err(top.location, ns.fullName ++ " has no rhs")
-        else "attrs for " ++ head(ns.inputTypes).typeName ++ ": " ++ implode(",", attrStrings(head(ns.inputTypes).typeName, top.env)),
+        else err(top.location, "attrs for " ++ head(ns.inputTypes).typeName ++ ": " ++ implode(",", attrStrings(head(ns.inputTypes).typeName, top.env))),
         -- else if hasNamedAttr(head(ns.inputTypes).typeName, top.env, qn.name)
         -- then err(top.location, head(ns.inputTypes).typeName ++ " has attr " ++ qn.name)
         -- else err(top.location, head(ns.inputTypes).typeName ++ " doesn't have attr " ++ qn.name),
