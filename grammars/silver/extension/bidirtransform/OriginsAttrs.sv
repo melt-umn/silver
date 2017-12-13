@@ -40,6 +40,12 @@ top::AGDcl ::= qn::QName
 
     top.defs = [];
     
+    top.errors <- map(\ ns::Decorated NamedSignature ->
+        if hasNamedAttr(head(ns.inputTypes).typeName, top.env, qn.name)
+        then err(top.location, head(ns.inputTypes).typeName ++ " has attr " ++ qn.name)
+        else err(top.location, head(ns.inputTypes).typeName ++ " doesn't have attr " ++ qn.name),
+    filterSigs("Origin", prodsFromDefs(top.env.allDefs)));
+    
     forwards to foldl(\ agDcls::AGDcl ns::Decorated NamedSignature ->
         appendAGDcl(
                 if null(ns.inputTypes) then emptyAGDcl()
