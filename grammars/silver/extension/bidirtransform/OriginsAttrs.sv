@@ -47,7 +47,7 @@ top::AGDcl ::= qn::QName oProds::[Decorated NamedSignature]
                             exprAccess(qn.name, head(ns.inputNames))))
                 else emptyAGDcl(),
             agDcls),
-        emptyAGDcl(), filterSigs("Origin", prodsFromDefs(top.env.allDefs))));
+        emptyAGDcl(), filterSigs("Origin", prodsFromDefs(top.env.allDefs)));
 }
 
 -- todo: this should act like the above, but defines a Maybe<T>, new attribute
