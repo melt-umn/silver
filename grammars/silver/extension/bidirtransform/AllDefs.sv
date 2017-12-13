@@ -1,6 +1,6 @@
 grammar silver:extension:bidirtransform;
 
-synthesized attribute allDefs::[Def] occurs on Env;
+synthesized attribute allDefs::[Def] occurs on Env, Defs;
 
 aspect default production 
 top::Env ::= 
@@ -23,5 +23,24 @@ top::Env ::= e1::Decorated Env  e2::Decorated Env
 aspect production i_newScopeEnv
 top::Env ::= d::Defs  e::Decorated Env
 {
-    top.allDefs = [d] ++ e.allDefs;
+    top.allDefs = d.allDefs ++ e.allDefs;
+}
+
+
+aspect default production 
+top::Defs ::= 
+{
+    top.allDefs = [];
+}
+
+aspect production nilDefs 
+top::Defs ::= 
+{
+    top.allDefs = [];
+}
+
+aspect production consDefs 
+top::Defs ::= e1::Def e2::Defs
+{
+    top.allDefs = [e1] ++ e2.allDefs;
 }
