@@ -117,7 +117,7 @@ top::AGDcl ::= qn::QName pfix::String
         attrOn(lhsAttr, ["Origin"]),
         -- find all origin productions and give them just(this attribute) if it's defined on their RHS,
         -- otherwise nothing().
-        optOriginAttrDef(lhsAttr)));
+        optOriginAttrDef(lhsAttr));
 }
 
 abstract production optOriginAttrDef
