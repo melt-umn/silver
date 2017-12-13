@@ -59,7 +59,7 @@ top::AGDcl ::= 'optional' 'origins' 'attribute' qns::QNameList ';'
 {
     default annotation location = top.location;    
 
-    forwards to appendAGDcl(writeOptAttributes(qns, ""), optOriginAttributes(qns, ""));
+    forwards to appendAGDcl(writeOptAttributes(qns, ""), optOriginAttributes(qns.qList, ""));
 }
 
 concrete production optOriginAttributeDclPrefix
@@ -67,7 +67,7 @@ top::AGDcl ::= 'optional' 'origins' 'attribute' qns::QNameList 'with' 'prefix' p
 {
     default annotation location = top.location;
     
-    forwards to appendAGDcl(writeOptAttributes(qns, pfix.name), optOriginAttributes(qns, pfix.name));
+    forwards to appendAGDcl(writeOptAttributes(qns, pfix.name), optOriginAttributes(qns.qList, pfix.name));
 }
 
 
@@ -96,14 +96,12 @@ top::AGDcl ::= qns::QNameList pfix::String
 }
 
 abstract production optOriginAttributes
-top::AGDcl ::= qns::QNameList pfix::String
+top::AGDcl ::= qns::[QName] pfix::String
 {
-    local qnsTail::QNameList = case qns of qNameListCons(_,_,tl) -> tl end;
-
     default annotation location = top.location;
 
-    forwards to if null(qns.qList) then emptyAGDcl()
-      else appendAGDcl(optOriginAttribute(head(qns.qList), pfix), optOriginAttributes(qnsTail, pfix));
+    forwards to if null(qns) then emptyAGDcl()
+      else appendAGDcl(optOriginAttribute(head(qns), pfix), optOriginAttributes(tail(qns), pfix));
 }
 
 abstract production optOriginAttribute
