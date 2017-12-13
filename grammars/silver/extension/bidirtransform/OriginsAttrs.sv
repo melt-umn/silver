@@ -36,6 +36,8 @@ top::AGDcl ::= qn::QName
 abstract production originAttrDef
 top::AGDcl ::= qn::QName oProds::[Decorated NamedSignature]
 {
+    default annotation location = top.location;    
+
     top.defs = [];
     
     forwards to foldl(\ agDcls::AGDcl ns::Decorated NamedSignature ->
