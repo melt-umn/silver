@@ -60,8 +60,6 @@ ag::AGDcls ::= 'transform' trsl::TransformList
     rwRules.downSubst = emptySubst();    
     rwRules.finalSubst = trsl.finalSubst;
 
-    -- todo: think about the env we're providing to the transform/rewrite rules
-
     -----------------
     -- Initialization of lists of things we need to know
     
@@ -69,7 +67,7 @@ ag::AGDcls ::= 'transform' trsl::TransformList
 
     local absNames :: [String] = map((.name), absGroup.ntList);    
     local cncNames :: [String] = map((.name), cncGroup.ntList);
-    local locCncNames :: [String] = [];
+    local locCncNames :: [String] = []; --todo
     local nonLocCncNames :: [String] = cncNames;
     local allNames :: [String] = cncNames ++ absNames;
 
