@@ -4,7 +4,7 @@ grammar silver:extension:bidirtransform;
 -- -- copy attributes from origin's RHS elements to their LHS for all RHS that can. 
 -- -- example usage: pp. 
 concrete production originAttributeDcl
-top::AGDcls ::= 'origins' 'attribute' qns::QNameList ';'
+top::AGDcl ::= 'origins' 'attribute' qns::QNameList ';'
 {
     top.moduleNames = [];
     top.mdaSpecs = [];
@@ -117,10 +117,10 @@ top::AGDcl ::= qn::QName pfix::String
             appendAGDcl(
                     if null(ns.inputTypes) then emptyAGDcl()
                     else if hasNamedAttr(head(ns.inputTypes).typeName, top.env, qn.name)
-                    then aspectProdStmt([ns],\ ns::Decorated NamedSignature ->
+                    then aspectProdStmt(ns,\ ns::Decorated NamedSignature ->
                             attribDef(ns.outputElement.elementName, lhsAttr, 
                                 oneArgFunc("just", namedAccess(qn.name, head(ns.inputNames)))))
-                    else aspectProdStmt([ns],\ ns::Decorated NamedSignature ->
+                    else aspectProdStmt(ns,\ ns::Decorated NamedSignature ->
                             attribDef(ns.outputElement.elementName, lhsAttr, emptyFunc("nothing"))),
                 agDcls),
           emptyAGDcl(), oProds));
