@@ -457,6 +457,8 @@ top::TypeExpr ::=
 }
 
 -- mkMaybeTypeExpr returns a TypeExpr which is "Maybe<inner>".
+-- todo: this (or a different production) needs to be able to 
+-- recognize built in types. 
 abstract production mkMaybeTypeExpr
 top::TypeExpr ::= inner::String
 {

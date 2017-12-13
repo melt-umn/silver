@@ -83,11 +83,11 @@ top::AGDcl ::= qns::[QName] pfix::String
 {
     local prefixedNames::[String] = map(\ qn::QName -> 
         pfix ++ qn.name, 
-        qns);
+    qns);
 
     local tyExprs::[TypeExpr] = map(\ qn::QName ->
         mkMaybeTypeExpr(prettyType(head(getAttrDcl(qn.name, top.env)).typerep)),
-        qns);
+    qns);
 
     top.errors <- foldl(\ errs::[Message] qn::QName ->
         if null(getAttrDcl(qn.name, top.env)) 
