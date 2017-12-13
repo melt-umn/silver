@@ -9,6 +9,8 @@ top::AGDcl ::= 'origins' 'attribute' qns::QNameList ';'
     top.moduleNames = [];
     top.mdaSpecs = [];
 
+    top.errors := qns.errors;
+
     forwards to originAttributes(qns.qList, location=top.location);
 }
 
@@ -62,6 +64,8 @@ top::AGDcl ::= 'optional' 'origins' 'attribute' qns::QNameList ';'
     top.moduleNames = [];
     top.mdaSpecs = [];
 
+    top.errors := qns.errors;
+
     forwards to appendAGDcl(writeOptAttributes(qns, ""), optOriginAttributes(qns.qList, ""));
 }
 
@@ -72,6 +76,8 @@ top::AGDcl ::= 'optional' 'origins' 'attribute' qns::QNameList 'with' 'prefix' p
 
     top.moduleNames = [];
     top.mdaSpecs = [];
+
+    top.errors := qns.errors;
     
     forwards to appendAGDcl(writeOptAttributes(qns, pfix.name), optOriginAttributes(qns.qList, pfix.name));
 }
