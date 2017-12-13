@@ -59,6 +59,9 @@ top::AGDcl ::= 'optional' 'origins' 'attribute' qns::QNameList ';'
 {
     default annotation location = top.location;    
 
+    top.moduleNames = [];
+    top.mdaSpecs = [];
+
     forwards to appendAGDcl(writeOptAttributes(qns, ""), optOriginAttributes(qns.qList, ""));
 }
 
@@ -66,6 +69,9 @@ concrete production optOriginAttributeDclPrefix
 top::AGDcl ::= 'optional' 'origins' 'attribute' qns::QNameList 'with' 'prefix' pfix::QName ';'
 {
     default annotation location = top.location;
+
+    top.moduleNames = [];
+    top.mdaSpecs = [];
     
     forwards to appendAGDcl(writeOptAttributes(qns, pfix.name), optOriginAttributes(qns.qList, pfix.name));
 }
