@@ -85,10 +85,6 @@ top::AGDcl ::= qns::[QName] pfix::String
         pfix ++ qn.name, 
         qns);
 
-    top.errors := map(\ qn::QName ->
-        err(qn.location, "qn " ++ qn.name ++ " type " ++ prettyType(head(getAttrDcl(qn.name, top.env)).typerep)),
-    qns);
-
     local tyExprs::[TypeExpr] = map(\ qn::QName ->
         mkMaybeTypeExpr(prettyType(head(getAttrDcl(qn.name, top.env)).typerep)),
         qns);
