@@ -79,7 +79,7 @@ top::AGDcl ::= 'optional' 'origins' 'attribute' qns::QNameList 'with' 'prefix' p
 
 
 abstract production writeOptAttributes
-top::AGDcl ::= qns::QNameList pfix::String 
+top::AGDcl ::= qns::[QName] pfix::String 
 {
     local prefixedNames::[String] = map(\ qn::QName -> 
         pfix ++ qn.name, 
