@@ -73,11 +73,8 @@ top::AGDcl ::= 'optional' 'origins' 'attribute' qns::QNameList 'with' 'prefix' p
     top.moduleNames = [];
     top.mdaSpecs = [];
     
-    top.errors := map(\ q::QName ->
-        err(top.location, "Input qName: " ++ q.name),
-    qns.qList);
 
-    forwards to appendAGDcl(writeOptAttributes(qns, pfix.name), optOriginAttributes(qns.qList, pfix.name));
+    forwards to appendAGDcl(writeOptAttributes(qns.qList, pfix.name), optOriginAttributes(qns.qList, pfix.name));
 }
 
 
@@ -86,17 +83,21 @@ top::AGDcl ::= qns::QNameList pfix::String
 {
     local prefixedNames::[String] = map(\ qn::QName -> 
         pfix ++ qn.name, 
-        qns.qList);
+        qns);
 
+    top.errors := map(\ qn::QName ->
+        err(qn.location, "qn " ++ qn.name ++ " type " ++ head(getAttrDcl(qn.name, top.env)).typerep.typeName)
+    qns);
+    
     local tyExprs::[TypeExpr] = map(\ qn::QName ->
         mkMaybeTypeExpr(head(getAttrDcl(qn.name, top.env)).typerep.typeName),
-        qns.qList);
+        qns);
 
     top.errors <- foldl(\ errs::[Message] qn::QName ->
         if null(getAttrDcl(qn.name, top.env)) 
         then [err(qn.location, "Unknown attribute " ++ qn.name)] ++ errs
         else errs,
-        [], qns.qList);
+        [], qns);
 
     default annotation location = top.location;
 
