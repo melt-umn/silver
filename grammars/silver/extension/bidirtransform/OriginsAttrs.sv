@@ -24,26 +24,30 @@ top::AGDcl ::= qns::[QName]
 abstract production originAttribute
 top::AGDcl ::= qn::QName
 {      
-    local oProds::[Decorated NamedSignature] = 
-      filterSigs("Origin", prodsFromDefs(top.env.allDefs));
-      --prodsFromDcls(getProdsFromNtHack("Origin", new(top.env), "silver:extension:bidirtransform"));
-
     default annotation location = top.location;
-    top.defs = [];
 
     forwards to appendAGDcl(
         attrOn(qn.name, ["Origin"]),
         -- find all origin productions and give them this attribute if it's defined on their RHS
-        foldl(\ agDcls::AGDcl ns::Decorated NamedSignature ->
-            appendAGDcl(
-                    if null(ns.inputTypes) then emptyAGDcl()
-                    else if hasNamedAttr(head(ns.inputTypes).typeName, top.env, qn.name)
-                    then aspectProdStmt(ns,\ ns::Decorated NamedSignature ->
-                            attribDef(ns.outputElement.elementName, qn.name, 
-                                exprAccess(qn.name, head(ns.inputNames))))
-                    else emptyAGDcl(),
-                agDcls),
-          emptyAGDcl(), oProds));
+        originAttrDef(qn)));
+        
+}
+
+abstract production originAttrDef
+top::AGDcl ::= qn::QName oProds::[Decorated NamedSignature]
+{
+    top.defs = [];
+    
+    forwards to foldl(\ agDcls::AGDcl ns::Decorated NamedSignature ->
+        appendAGDcl(
+                if null(ns.inputTypes) then emptyAGDcl()
+                else if hasNamedAttr(head(ns.inputTypes).typeName, top.env, qn.name)
+                then aspectProdStmt(ns,\ ns::Decorated NamedSignature ->
+                        attribDef(ns.outputElement.elementName, qn.name, 
+                            exprAccess(qn.name, head(ns.inputNames))))
+                else emptyAGDcl(),
+            agDcls),
+        emptyAGDcl(), filterSigs("Origin", prodsFromDefs(top.env.allDefs))));
 }
 
 -- todo: this should act like the above, but defines a Maybe<T>, new attribute
