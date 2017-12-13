@@ -117,12 +117,14 @@ top::AGDcl ::= qn::QName pfix::String
         attrOn(lhsAttr, ["Origin"]),
         -- find all origin productions and give them just(this attribute) if it's defined on their RHS,
         -- otherwise nothing().
-        optOriginAttrDef(lhsAttr));
+        optOriginAttrDef(qn, pfix));
 }
 
 abstract production optOriginAttrDef
 top::AGDcl ::= qn::QName pfix::String
 {
+    local lhsAttr::String = pfix ++ qn.name;
+    
     default annotation location = top.location;    
 
     top.defs = [];
