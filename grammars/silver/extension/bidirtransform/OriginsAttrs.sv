@@ -62,7 +62,7 @@ top::AGDcl ::= 'optional' 'origins' 'attribute' qns::QNameList ';'
     top.moduleNames = [];
     top.mdaSpecs = [];
 
-    forwards to appendAGDcl(writeOptAttributes(qns, ""), optOriginAttributes(qns.qList, ""));
+    forwards to appendAGDcl(writeOptAttributes(qns.qList, ""), optOriginAttributes(qns.qList, ""));
 }
 
 concrete production optOriginAttributeDclPrefix
