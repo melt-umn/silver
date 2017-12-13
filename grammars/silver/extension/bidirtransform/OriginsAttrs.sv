@@ -109,26 +109,33 @@ top::AGDcl ::= qns::QNameList pfix::String
 abstract production optOriginAttribute
 top::AGDcl ::= qn::QName pfix::String
 {      
-    local oProds::[Decorated NamedSignature] = 
-      prodsFromDcls(getProdsFromNtHack("Origin", top.env, "transformed"));
-
     local lhsAttr::String = pfix ++ qn.name;
 
     default annotation location = top.location;
 
     forwards to appendAGDcl(
-        attrOn(qn.name, ["Origin"]),
+        attrOn(lhsAttr, ["Origin"]),
         -- find all origin productions and give them just(this attribute) if it's defined on their RHS,
         -- otherwise nothing().
-        foldl(\ agDcls::AGDcl ns::Decorated NamedSignature ->
-            appendAGDcl(
-                    if null(ns.inputTypes) then emptyAGDcl()
-                    else if hasNamedAttr(head(ns.inputTypes).typeName, top.env, qn.name)
-                    then aspectProdStmt(ns,\ ns::Decorated NamedSignature ->
-                            attribDef(ns.outputElement.elementName, lhsAttr, 
-                                oneArgFunc("just", namedAccess(qn.name, head(ns.inputNames)))))
-                    else aspectProdStmt(ns,\ ns::Decorated NamedSignature ->
-                            attribDef(ns.outputElement.elementName, lhsAttr, emptyFunc("nothing"))),
-                agDcls),
-          emptyAGDcl(), oProds));
+        optOriginAttrDef(lhsAttr)));
+}
+
+abstract production optOriginAttrDef
+top::AGDcl ::= qn::QName pfix::String
+{
+    default annotation location = top.location;    
+
+    top.defs = [];
+    
+    forwards to foldl(\ agDcls::AGDcl ns::Decorated NamedSignature ->
+        appendAGDcl(
+                if null(ns.inputTypes) then emptyAGDcl()
+                else if hasNamedAttr(head(ns.inputTypes).typeName, top.env, qn.name)
+                then aspectProdStmt(ns,\ ns::Decorated NamedSignature ->
+                        attribDef(ns.outputElement.elementName, lhsAttr, 
+                            oneArgFunc("just", namedAccess(qn.name, head(ns.inputNames)))))
+                else aspectProdStmt(ns,\ ns::Decorated NamedSignature ->
+                        attribDef(ns.outputElement.elementName, lhsAttr, emptyFunc("nothing"))),
+            agDcls),
+        emptyAGDcl(), filterSigs("Origin", prodsFromDefs(top.env.allDefs)));
 }
