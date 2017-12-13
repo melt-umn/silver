@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<CopperSpec xmlns="http://melt.cs.umn.edu/copper/xmlns">
+  <Parser id="origins_test_1_parse" isUnitary="true">
+    <PP>origins_test_1:parse</PP>
+    <Grammars><GrammarRef id="host"/></Grammars>
+    <StartSymbol><NonterminalRef id="origins_test_1_Root_c" grammar="host" /></StartSymbol>
+    <StartLayout><TerminalRef id="origins_test_1_LineComment_P" grammar="host" /><TerminalRef id="origins_test_1_WhiteSpace_t" grammar="host" /></StartLayout>
+    <ClassAuxiliaryCode><Code><![CDATA[
+          protected List<common.Terminal> tokenList = null;
+
+          public void reset() {
+            tokenList = new ArrayList<common.Terminal>();
+          }
+
+          public List<common.Terminal> getTokens() {
+            return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
+          }
+        ]]></Code></ClassAuxiliaryCode>
+    <ParserInitCode>
+      <Code><![CDATA[
+        reset();
+      ]]></Code>
+    </ParserInitCode>
+    <Preamble>
+<Code><![CDATA[
+import java.util.ArrayList;
+import java.util.List;
+]]></Code>
+    </Preamble>
+  </Parser>
+
+  <Grammar id="host">
+
+    <PP>host</PP>
+
+    <Layout><TerminalRef id="origins_test_1_LineComment_P" grammar="host" /><TerminalRef id="origins_test_1_WhiteSpace_t" grammar="host" /></Layout>
+    <Declarations>
+      <ParserAttribute id="context">
+        <Type><![CDATA[common.DecoratedNode]]></Type>
+        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>
+      </ParserAttribute>
+         <Terminal id="origins_test_1_Dash_t">
+    <PP>origins_test_1:Dash_t</PP>
+    <Regex><CharacterSet><SingleCharacter char="-"/></CharacterSet></Regex>
+    <Type>origins_test_1.TDash_t</Type>
+    <Code><![CDATA[
+RESULT = new origins_test_1.TDash_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="origins_test_1_Hat_t">
+    <PP>origins_test_1:Hat_t</PP>
+    <Regex><CharacterSet><SingleCharacter char="^"/></CharacterSet></Regex>
+    <Type>origins_test_1.THat_t</Type>
+    <Code><![CDATA[
+RESULT = new origins_test_1.THat_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="origins_test_1_IntLit_t">
+    <PP>origins_test_1:IntLit_t</PP>
+    <Regex><Concatenation><CharacterSet><CharacterRange lower="0" upper="9"/></CharacterSet><KleeneStar><CharacterSet><CharacterRange lower="0" upper="9"/></CharacterSet></KleeneStar></Concatenation></Regex>
+    <Type>origins_test_1.TIntLit_t</Type>
+    <Code><![CDATA[
+RESULT = new origins_test_1.TIntLit_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="origins_test_1_LParen_t">
+    <PP>origins_test_1:LParen_t</PP>
+    <Regex><CharacterSet><SingleCharacter char="("/></CharacterSet></Regex>
+    <Type>origins_test_1.TLParen_t</Type>
+    <Code><![CDATA[
+RESULT = new origins_test_1.TLParen_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="origins_test_1_LineComment_P">
+    <PP>origins_test_1:LineComment_P</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="/"/></CharacterSet><CharacterSet><SingleCharacter char="/"/></CharacterSet><KleeneStar><CharacterSet invert="true"><SingleCharacter char="&#10;"/></CharacterSet></KleeneStar></Concatenation></Regex>
+    <Type>origins_test_1.TLineComment_P</Type>
+    <Code><![CDATA[
+RESULT = new origins_test_1.TLineComment_P(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="origins_test_1_Plus_t">
+    <PP>origins_test_1:Plus_t</PP>
+    <Regex><CharacterSet><SingleCharacter char="+"/></CharacterSet></Regex>
+    <Type>origins_test_1.TPlus_t</Type>
+    <Code><![CDATA[
+RESULT = new origins_test_1.TPlus_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="origins_test_1_RParen_t">
+    <PP>origins_test_1:RParen_t</PP>
+    <Regex><CharacterSet><SingleCharacter char=")"/></CharacterSet></Regex>
+    <Type>origins_test_1.TRParen_t</Type>
+    <Code><![CDATA[
+RESULT = new origins_test_1.TRParen_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="origins_test_1_Slash_t">
+    <PP>origins_test_1:Slash_t</PP>
+    <Regex><CharacterSet><SingleCharacter char="/"/></CharacterSet></Regex>
+    <Type>origins_test_1.TSlash_t</Type>
+    <Code><![CDATA[
+RESULT = new origins_test_1.TSlash_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="origins_test_1_Star_t">
+    <PP>origins_test_1:Star_t</PP>
+    <Regex><CharacterSet><SingleCharacter char="*"/></CharacterSet></Regex>
+    <Type>origins_test_1.TStar_t</Type>
+    <Code><![CDATA[
+RESULT = new origins_test_1.TStar_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="origins_test_1_WhiteSpace_t">
+    <PP>origins_test_1:WhiteSpace_t</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="&#9;"/><SingleCharacter char="&#13;"/><SingleCharacter char="&#10;"/><SingleCharacter char=" "/></CharacterSet><KleeneStar><CharacterSet><SingleCharacter char="&#9;"/><SingleCharacter char="&#13;"/><SingleCharacter char="&#10;"/><SingleCharacter char=" "/></CharacterSet></KleeneStar></Concatenation></Regex>
+    <Type>origins_test_1.TWhiteSpace_t</Type>
+    <Code><![CDATA[
+RESULT = new origins_test_1.TWhiteSpace_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+
+  <Nonterminal id="origins_test_1_Expr_c">
+    <PP>origins_test_1:Expr_c</PP>
+    <Type><![CDATA[origins_test_1.NExpr_c]]></Type>
+  </Nonterminal>
+  <Production id="origins_test_1_exprTerm_c">
+    <Code><![CDATA[
+RESULT = new origins_test_1.PexprTerm_c(_children[0]);
+]]></Code>
+    <LHS><NonterminalRef id="origins_test_1_Expr_c" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="origins_test_1_Term_c" grammar="host" /></RHS>
+  </Production>
+  <Production id="origins_test_1_sub_c">
+    <Code><![CDATA[
+RESULT = new origins_test_1.Psub_c(_children[0], _children[1], _children[2]);
+]]></Code>
+    <LHS><NonterminalRef id="origins_test_1_Expr_c" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="origins_test_1_Expr_c" grammar="host" /><TerminalRef id="origins_test_1_Dash_t" grammar="host" /><NonterminalRef id="origins_test_1_Term_c" grammar="host" /></RHS>
+  </Production>
+  <Production id="origins_test_1_add_c">
+    <Code><![CDATA[
+RESULT = new origins_test_1.Padd_c(_children[0], _children[1], _children[2]);
+]]></Code>
+    <LHS><NonterminalRef id="origins_test_1_Expr_c" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="origins_test_1_Expr_c" grammar="host" /><TerminalRef id="origins_test_1_Plus_t" grammar="host" /><NonterminalRef id="origins_test_1_Term_c" grammar="host" /></RHS>
+  </Production>
+
+  <Nonterminal id="origins_test_1_Factor_c">
+    <PP>origins_test_1:Factor_c</PP>
+    <Type><![CDATA[origins_test_1.NFactor_c]]></Type>
+  </Nonterminal>
+  <Production id="origins_test_1_const_c">
+    <Code><![CDATA[
+RESULT = new origins_test_1.Pconst_c(_children[0]);
+]]></Code>
+    <LHS><NonterminalRef id="origins_test_1_Factor_c" grammar="host" /></LHS>
+    <RHS><TerminalRef id="origins_test_1_IntLit_t" grammar="host" /></RHS>
+  </Production>
+  <Production id="origins_test_1_nested_c">
+    <Code><![CDATA[
+RESULT = new origins_test_1.Pnested_c(_children[0], _children[1], _children[2]);
+]]></Code>
+    <LHS><NonterminalRef id="origins_test_1_Factor_c" grammar="host" /></LHS>
+    <RHS><TerminalRef id="origins_test_1_LParen_t" grammar="host" /><NonterminalRef id="origins_test_1_Expr_c" grammar="host" /><TerminalRef id="origins_test_1_RParen_t" grammar="host" /></RHS>
+  </Production>
+
+  <Nonterminal id="origins_test_1_Root_c">
+    <PP>origins_test_1:Root_c</PP>
+    <Type><![CDATA[origins_test_1.NRoot_c]]></Type>
+  </Nonterminal>
+  <Production id="origins_test_1_root_c">
+    <Code><![CDATA[
+RESULT = new origins_test_1.Proot_c(_children[0]);
+]]></Code>
+    <LHS><NonterminalRef id="origins_test_1_Root_c" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="origins_test_1_Expr_c" grammar="host" /></RHS>
+  </Production>
+
+  <Nonterminal id="origins_test_1_Term_c">
+    <PP>origins_test_1:Term_c</PP>
+    <Type><![CDATA[origins_test_1.NTerm_c]]></Type>
+  </Nonterminal>
+  <Production id="origins_test_1_termFactor_c">
+    <Code><![CDATA[
+RESULT = new origins_test_1.PtermFactor_c(_children[0]);
+]]></Code>
+    <LHS><NonterminalRef id="origins_test_1_Term_c" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="origins_test_1_Factor_c" grammar="host" /></RHS>
+  </Production>
+  <Production id="origins_test_1_mul_c">
+    <Code><![CDATA[
+RESULT = new origins_test_1.Pmul_c(_children[0], _children[1], _children[2]);
+]]></Code>
+    <LHS><NonterminalRef id="origins_test_1_Term_c" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="origins_test_1_Term_c" grammar="host" /><TerminalRef id="origins_test_1_Star_t" grammar="host" /><NonterminalRef id="origins_test_1_Factor_c" grammar="host" /></RHS>
+  </Production>
+
+    </Declarations>
+  </Grammar>
+</CopperSpec>

@@ -1,0 +1,27 @@
+declaredName 'silver:util:raw:treeset'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/util/raw/treeset/"
+moduleNames ['core']
+allDeps ['core:monad', 'core', 'silver:util:raw:treeset']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ type('TreeSet.sv', 6, 5, 6, 8, 157, 160, 'silver:util:raw:treeset:Set', [a], foreigntype('silver:util:raw:treeset:Set', [a])),
+ fun('TreeSet.sv', 11, 9, 11, 14, 252, 257, [a], signature('silver:util:raw:treeset:empty', [element('comparator', fun([a, a], int))], element('__func__lhs', foreigntype('silver:util:raw:treeset:Set', [a])), [])),
+ fun('TreeSet.sv', 24, 9, 24, 12, 550, 553, [a], signature('silver:util:raw:treeset:add', [element('lst', [a]), element('set', foreigntype('silver:util:raw:treeset:Set', [a]))], element('__func__lhs', foreigntype('silver:util:raw:treeset:Set', [a])), [])),
+ fun('TreeSet.sv', 35, 9, 35, 15, 789, 795, [a], signature('silver:util:raw:treeset:toList', [element('set', foreigntype('silver:util:raw:treeset:Set', [a]))], element('__func__lhs', [a]), [])),
+ fun('TreeSet.sv', 46, 9, 46, 14, 999, 1004, [a], signature('silver:util:raw:treeset:union', [element('l', foreigntype('silver:util:raw:treeset:Set', [a])), element('r', foreigntype('silver:util:raw:treeset:Set', [a]))], element('__func__lhs', foreigntype('silver:util:raw:treeset:Set', [a])), [])),
+ fun('TreeSet.sv', 57, 9, 57, 18, 1254, 1263, [a], signature('silver:util:raw:treeset:intersect', [element('l', foreigntype('silver:util:raw:treeset:Set', [a])), element('r', foreigntype('silver:util:raw:treeset:Set', [a]))], element('__func__lhs', foreigntype('silver:util:raw:treeset:Set', [a])), [])),
+ fun('TreeSet.sv', 68, 9, 68, 19, 1523, 1533, [a], signature('silver:util:raw:treeset:difference', [element('l', foreigntype('silver:util:raw:treeset:Set', [a])), element('r', foreigntype('silver:util:raw:treeset:Set', [a]))], element('__func__lhs', foreigntype('silver:util:raw:treeset:Set', [a])), [])),
+ fun('TreeSet.sv', 79, 9, 79, 17, 1788, 1796, [a], signature('silver:util:raw:treeset:contains', [element('e', a), element('set', foreigntype('silver:util:raw:treeset:Set', [a]))], element('__func__lhs', bool), [])),
+ fun('TreeSet.sv', 90, 9, 90, 20, 2034, 2045, [a], signature('silver:util:raw:treeset:containsAll', [element('e', [a]), element('set', foreigntype('silver:util:raw:treeset:Set', [a]))], element('__func__lhs', bool), [])),
+ fun('TreeSet.sv', 101, 9, 101, 15, 2267, 2273, [a], signature('silver:util:raw:treeset:subset', [element('l', foreigntype('silver:util:raw:treeset:Set', [a])), element('r', foreigntype('silver:util:raw:treeset:Set', [a]))], element('__func__lhs', bool), [])),
+ fun('TreeSet.sv', 112, 9, 112, 15, 2516, 2522, [a], signature('silver:util:raw:treeset:equals', [element('l', foreigntype('silver:util:raw:treeset:Set', [a])), element('r', foreigntype('silver:util:raw:treeset:Set', [a]))], element('__func__lhs', bool), [])),
+ fun('TreeSet.sv', 121, 9, 121, 16, 2647, 2654, [a], signature('silver:util:raw:treeset:isEmpty', [element('s', foreigntype('silver:util:raw:treeset:Set', [a]))], element('__func__lhs', bool), [])),
+ fun('TreeSet.sv', 132, 9, 132, 13, 2853, 2857, [a], signature('silver:util:raw:treeset:size', [element('s', foreigntype('silver:util:raw:treeset:Set', [a]))], element('__func__lhs', int), [])),
+ fun('TreeSet.sv', 143, 9, 143, 15, 3079, 3085, [a], signature('silver:util:raw:treeset:filter', [element('f', fun([a], bool)), element('s', foreigntype('silver:util:raw:treeset:Set', [a]))], element('__func__lhs', foreigntype('silver:util:raw:treeset:Set', [a])), [])),
+ fun('TreeSet.sv', 154, 9, 154, 18, 3330, 3339, [a], signature('silver:util:raw:treeset:removeAll', [element('lst', [a]), element('set', foreigntype('silver:util:raw:treeset:Set', [a]))], element('__func__lhs', foreigntype('silver:util:raw:treeset:Set', [a])), []))]
+syntax []
+parsers []
+flow []

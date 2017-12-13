@@ -1,0 +1,18 @@
+declaredName 'silver:modification:ffi:util'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/modification/ffi/util/"
+moduleNames ['silver:definition:core', 'silver:definition:env', 'silver:definition:type', 'silver:modification:ffi', 'silver:util', 'core']
+allDeps ['core:monad', 'silver:definition:flow:env', 'silver:analysis:typechecking:core', 'core', 'silver:util', 'silver:modification:ffi', 'silver:definition:type', 'silver:definition:env', 'silver:definition:core', 'silver:modification:ffi:util']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ fun('FFIUtil.sv', 9, 9, 9, 22, 193, 206, [], signature('silver:modification:ffi:util:substituteAll', [element('s', string), element('names', [string]), element('results', [string])], element('__func__lhs', string), [])),
+ fun('FFIUtil.sv', 16, 9, 16, 27, 407, 425, [], signature('silver:modification:ffi:util:wrapStrictNotation', [element('s', string)], element('__func__lhs', string), [])),
+ fun('FFIUtil.sv', 21, 9, 21, 25, 486, 502, [], signature('silver:modification:ffi:util:wrapLazyNotation', [element('s', string)], element('__func__lhs', string), [])),
+ fun('FFIUtil.sv', 27, 9, 27, 26, 566, 583, [], signature('silver:modification:ffi:util:cleanStringLexeme', [element('s', string)], element('__func__lhs', string), [])),
+ fun('FFIUtil.sv', 35, 9, 35, 27, 754, 772, [], signature('silver:modification:ffi:util:cleanStringEscapes', [element('s', string)], element('__func__lhs', string), []))]
+syntax []
+parsers []
+flow [local('silver:modification:ffi:util:cleanStringEscapes', 'silver:modification:ffi:util:cleanStringEscapes:local:i', '', []),
+ local('silver:modification:ffi:util:cleanStringEscapes', 'silver:modification:ffi:util:cleanStringEscapes:local:c', '', [localEqV('silver:modification:ffi:util:cleanStringEscapes:local:i'), localEqV('silver:modification:ffi:util:cleanStringEscapes:local:i')])]
