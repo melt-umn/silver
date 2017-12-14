@@ -69,7 +69,8 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] allNames::[String
                 attribDef(ns.outputElement.elementName, tdcl.name, 
                     transAccess(tdcl.name, tdcl.transformRules, ns.outputElement.elementName, location=top.location),
                 location=top.location)
-            ], location=top.location)
+            ], location=top.location),
+            location=top.location), agDcls, location=top.location),
         emptyAGDcl(location=top.location), absProdDcls);
 
     agDcls1.compiledGrammars = top.compiledGrammars;

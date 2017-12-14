@@ -66,6 +66,3 @@ top::Expr ::= tName::String rules::[Decorated TransformRule] lhs::String
         then exprAccess(tName ++ toString(hd.trIndex), lhs, location=top.location) 
         else qAccess(tName++toString(snd.trIndex),transAccess(tName, tail(rules), lhs, location=top.location), location=top.location);
 }
-
-abstract production transAccessHelp
-top::String ::= 
