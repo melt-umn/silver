@@ -1,7 +1,7 @@
 grammar silver:extension:bidirtransform;
 
 abstract production fillExpr
-top::Decorated Expr ::= toFill::Expr exps::[Decorated Expr] names::[String]
+top::Expr ::= toFill::Expr exps::[Decorated Expr] names::[String]
 {
     -- todo: fill out more cases?
     -- todo also: convert all of this nonsense into attributes with aspect productions?
@@ -55,7 +55,7 @@ top::Decorated Expr ::= toFill::Expr exps::[Decorated Expr] names::[String]
 }
 
 abstract production fillStringConst
-top::Decorated Expr ::= toFill::Expr exps::[Decorated Expr] names::[String] s::String
+top::Expr ::= toFill::Expr exps::[Decorated Expr] names::[String] s::String
 {
     local idx::Integer = findIdx(names,s);
 
@@ -66,7 +66,7 @@ top::Decorated Expr ::= toFill::Expr exps::[Decorated Expr] names::[String] s::S
 }
 
 abstract production fillExprEnd
-top::Decorated Expr ::= toFill::Expr exps::[Decorated Expr] names::[String] qn::Decorated QName
+top::Expr ::= toFill::Expr exps::[Decorated Expr] names::[String] qn::Decorated QName
 {   
     forwards to fillStringConst(toFill, exps, names, qn.name, location=toFill.location);
 }
@@ -88,7 +88,7 @@ top::AppExpr ::= toFill::AppExpr exps::[Decorated Expr] names::[String]
 {
     forwards to case toFill of 
         | presentAppExpr(e) -> presentAppExpr(
-            fillExpr(e,exps,names, location=toFill.location),location=toFill.location)
+            new(fillExpr(e,exps,names, location=toFill.location)),location=toFill.location)
     end;
 }
 
@@ -117,7 +117,7 @@ top::AnnoExpr ::= toFill::AnnoExpr exps::[Decorated Expr] names::[String]
 }
 
 abstract production idxOfExprs
-top::Decorated Expr ::= ls::[Decorated Expr] idx::Integer
+top::Expr ::= ls::[Decorated Expr] idx::Integer
 {
     forwards to if idx == 0 then head(ls) else idxOfExprs(tail(ls), idx-1, location=top.location);
 }
