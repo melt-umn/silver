@@ -1,7 +1,7 @@
 grammar silver:extension:bidirtransform;
 
 abstract production restoreExpr
-top::Expr ::= toFill::Expr exps::[Expr] names::[String] ns::Decorated NamedSignature
+top::Expr ::= toFill::Expr exps::[Decorated Expr] names::[String] ns::Decorated NamedSignature
 {
     -- access .restored_$cncType on all elements of the filled expr
     -- todo: error check, this right now assumes the user

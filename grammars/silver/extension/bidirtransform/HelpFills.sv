@@ -55,7 +55,7 @@ top::Expr ::= toFill::Expr exps::[Decorated Expr] names::[String]
 }
 
 abstract production fillStringConst
-top::Expr ::= toFill::Expr exps::[Decorated Expr] names::[String] s::String
+top::Decorated Expr ::= toFill::Expr exps::[Decorated Expr] names::[String] s::String
 {
     local idx::Integer = findIdx(names,s);
 
@@ -174,7 +174,7 @@ Pair<[Decorated Expr] [String]> ::= appexp::AppExpr pattern::Pattern env::Decora
 }
 
 function matchExpToPattern
-Pair<[Decorated Expr] [String]> ::= e::Decorated Expr pattern::Pattern env::Decorated Env
+Pair<[Decorated Expr] [String]> ::= e::Expr pattern::Pattern env::Decorated Env
 {
     -- todo: fill out more cases (lists)
     -- otherwise I'm 75% confident that, because you can't define patterns that 
@@ -203,7 +203,7 @@ function pullOutAppExprs
 {
     return case aexprs of 
         | snocAppExprs(es,_,e) -> 
-            pullOutAppExprs(es) ++ case e of presentAppExpr(e2) -> [decorate e2 with {env = env;}] end
+            pullOutAppExprs(es, env) ++ case e of presentAppExpr(e2) -> [decorate e2 with {env = env;}] end
         | oneAppExprs(e) -> 
             case e of presentAppExpr(e2) -> [decorate e2 with {env = env;}] end
         | _ -> []

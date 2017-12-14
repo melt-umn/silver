@@ -153,13 +153,13 @@ rule::RewriteRule ::= rhs::Expr inName::String inType::Type outType::Type inProd
             fillExpr(rhs, [e], [inName], location=e.location))
         else (\ e::Expr ->
             case e of application(_, _, aexpr, _, _, _) -> 
-                fillExpr(rhs, pullOutAppExprs(aexpr), inProd.inputNames, location=e.location)
+                fillExpr(rhs, pullOutAppExprs(aexpr, top.env), inProd.inputNames, location=e.location)
             end
         );
 
     rule.restoreStmt = (\ e::Expr ->
             case e of application(_, _, aexpr, _, _, _) -> 
-                restoreExpr(rhs, pullOutAppExprs(aexpr), inProd.inputNames, rhsNs.fromJust, location=e.location)
+                restoreExpr(rhs, pullOutAppExprs(aexpr, top.env), inProd.inputNames, rhsNs.fromJust, location=e.location)
             end
         );
 }
