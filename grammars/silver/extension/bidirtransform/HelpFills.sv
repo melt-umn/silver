@@ -1,7 +1,7 @@
 grammar silver:extension:bidirtransform;
 
 abstract production fillExpr
-top::Expr ::= toFill::Expr exps::[Expr] names::[String]
+top::Expr ::= toFill::Expr exps::[Decorated Expr] names::[String]
 {
     -- todo: fill out more cases?
     -- todo also: convert all of this nonsense into attributes with aspect productions?
@@ -55,7 +55,7 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String]
 }
 
 abstract production fillStringConst
-top::Expr ::= toFill::Expr exps::[Expr] names::[String] s::String
+top::Expr ::= toFill::Expr exps::[Decorated Expr] names::[String] s::String
 {
     local idx::Integer = findIdx(names,s);
 
@@ -66,13 +66,13 @@ top::Expr ::= toFill::Expr exps::[Expr] names::[String] s::String
 }
 
 abstract production fillExprEnd
-top::Expr ::= toFill::Expr exps::[Expr] names::[String] qn::Decorated QName
+top::Expr ::= toFill::Expr exps::[Decorated Expr] names::[String] qn::Decorated QName
 {   
     forwards to fillStringConst(toFill, exps, names, qn.name, location=toFill.location);
 }
 
 abstract production fillAppExprs
-top::AppExprs ::= toFill::AppExprs exps::[Expr] names::[String]
+top::AppExprs ::= toFill::AppExprs exps::[Decorated Expr] names::[String]
 {
     forwards to case toFill of 
         | snocAppExprs(es,_,e) -> snocAppExprs(fillAppExprs(es,exps,names, location=toFill.location),
@@ -84,7 +84,7 @@ top::AppExprs ::= toFill::AppExprs exps::[Expr] names::[String]
 }
 
 abstract production fillAppExpr
-top::AppExpr ::= toFill::AppExpr exps::[Expr] names::[String]
+top::AppExpr ::= toFill::AppExpr exps::[Decorated Expr] names::[String]
 {
     forwards to case toFill of 
         | presentAppExpr(e) -> presentAppExpr(
@@ -93,7 +93,7 @@ top::AppExpr ::= toFill::AppExpr exps::[Expr] names::[String]
 }
 
 abstract production fillAnnoExprs
-top::AnnoAppExprs ::= toFill::AnnoAppExprs exps::[Expr] names::[String]
+top::AnnoAppExprs ::= toFill::AnnoAppExprs exps::[Decorated Expr] names::[String]
 {
     forwards to case toFill of 
         | snocAnnoAppExprs(es,_,e) -> 
@@ -108,7 +108,7 @@ top::AnnoAppExprs ::= toFill::AnnoAppExprs exps::[Expr] names::[String]
 }
 
 abstract production fillAnnoAppExpr
-top::AnnoExpr ::= toFill::AnnoExpr exps::[Expr] names::[String]
+top::AnnoExpr ::= toFill::AnnoExpr exps::[Decorated Expr] names::[String]
 {
     forwards to case toFill of 
         | annoExpr(qn,_,ae) -> annoExpr(qn,'=',fillAppExpr(ae,exps,names, location=toFill.location),
@@ -117,7 +117,7 @@ top::AnnoExpr ::= toFill::AnnoExpr exps::[Expr] names::[String]
 }
 
 abstract production idxOfExprs
-top::Expr ::= ls::[Expr] idx::Integer
+top::Decorated Expr ::= ls::[Decorated Expr] idx::Integer
 {
     forwards to if idx == 0 then head(ls) else idxOfExprs(tail(ls), idx-1, location=top.location);
 }
@@ -146,35 +146,35 @@ Integer ::= ls::[String] item::String idx::Integer
 abstract production fillExprPattern
 top::Expr ::= toFill::Expr appexps::AppExprs pattern::[Pattern]
 {
-    local inputs::Pair<[Expr] [String]> = matchAppExpsToPattern(appexps, pattern);
+    local inputs::Pair<[Decorated Expr] [String]> = matchAppExpsToPattern(appexps, pattern, top.env);
 
     forwards to fillExpr(toFill, inputs.fst, inputs.snd, location=toFill.location);
 }
 
 function matchAppExpsToPattern
-Pair<[Expr] [String]> ::= appexps::AppExprs pattern::[Pattern]
+Pair<[Decorated Expr] [String]> ::= appexps::AppExprs pattern::[Pattern] env::Decorated Env
 {
     return case appexps of
         | snocAppExprs(es, _, e) -> joinPair(
-            matchAppExpsToPattern(es, allHead(pattern)),
-            matchAppExpToPattern(e, last(pattern))
+            matchAppExpsToPattern(es, allHead(pattern), env),
+            matchAppExpToPattern(e, last(pattern), env)
         )
-        | oneAppExprs(e) -> matchAppExpToPattern(e, head(pattern))
+        | oneAppExprs(e) -> matchAppExpToPattern(e, head(pattern), env)
         | _ -> pair([],[])
     end;
 }
 
 function matchAppExpToPattern
-Pair<[Expr] [String]> ::= appexp::AppExpr pattern::Pattern
+Pair<[Decorated Expr] [String]> ::= appexp::AppExpr pattern::Pattern env::Decorated Env
 {
     return case appexp of 
         | missingAppExpr(_) -> pair([],[])
-        | presentAppExpr(e) -> matchExpToPattern(e, pattern)
+        | presentAppExpr(e) -> matchExpToPattern(e, pattern, env)
     end;
 }
 
 function matchExpToPattern
-Pair<[Expr] [String]> ::= e::Expr pattern::Pattern
+Pair<[Decorated Expr] [String]> ::= e::Decorated Expr pattern::Pattern env::Decorated Env
 {
     -- todo: fill out more cases (lists)
     -- otherwise I'm 75% confident that, because you can't define patterns that 
@@ -190,11 +190,11 @@ Pair<[Expr] [String]> ::= e::Expr pattern::Pattern
             -- of the prod app pattern and recurse on ITS named
             -- signature?
             | application(e2, _, appexprs, _, _, _) -> 
-                matchAppExpsToPattern(appexprs, pl.rawPatternList)
+                matchAppExpsToPattern(appexprs, pl.rawPatternList, env )
             | _ -> pair([],[])
         end
-        | varPattern(v) -> pair([e],[v.name])
-        | _ -> pair([],[]) -- we covered wildcard elsewhere, and others are constants
+        | varPattern(v) -> pair([decorate e with {env = env;}],[v.name])
+        | _ -> pair([],[]) -- others are constants
     end;
 }
 
