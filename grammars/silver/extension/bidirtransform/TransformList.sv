@@ -60,9 +60,8 @@ top::Expr ::= tName::String rules::[Decorated TransformRule] lhs::String
     -- We don't anticipate having zero rules.
     -- todo: fix that
     local hd::Decorated TransformRule = head(rules); 
-    local snd::Decorated TransformRule = head(tail(rules));
 
     forwards to if length(rules) == 1 
         then exprAccess(tName ++ toString(hd.trIndex), lhs, location=top.location) 
-        else qAccess(tName++toString(snd.trIndex),transAccess(tName, tail(rules), lhs, location=top.location), location=top.location);
+        else qAccess(tName++toString(hd.trIndex),transAccess(tName, tail(rules), lhs, location=top.location), location=top.location);
 }

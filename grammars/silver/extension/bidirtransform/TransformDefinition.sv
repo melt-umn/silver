@@ -156,7 +156,7 @@ top::AGDcl ::= tr::Decorated TransformRule nm::String typeName::String absNames:
                 productionStmtsSnoc(stmts, 
                     attribDef(rhs.elementName, inhRedexName,
                             if !hasTrans([tr], dcl)
-                            then emptyFunc("nothing", location=top.location) -- this might error because it has to be a production
+                            then emptyFunc("nothing", location=top.location)
                             else mkCond(
                                 lhsExprAccess(transformName, ns, location=top.location),
                                 argFunc("just", oneApp(mkOrigin(ns, location=top.location), location=top.location), location=top.location),
