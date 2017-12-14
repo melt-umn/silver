@@ -169,12 +169,12 @@ Pair<[Decorated Expr] [String]> ::= appexp::AppExpr pattern::Pattern env::Decora
 {
     return case appexp of 
         | missingAppExpr(_) -> pair([],[])
-        | presentAppExpr(e) -> matchExpToPattern(e, pattern, env)
+        | presentAppExpr(e) -> matchExpToPattern(decorate e with {env=env;}, pattern, env)
     end;
 }
 
 function matchExpToPattern
-Pair<[Decorated Expr] [String]> ::= e::Expr pattern::Pattern env::Decorated Env
+Pair<[Decorated Expr] [String]> ::= e::Decorated Expr pattern::Pattern env::Decorated Env
 {
     -- todo: fill out more cases (lists)
     -- otherwise I'm 75% confident that, because you can't define patterns that 
@@ -190,10 +190,10 @@ Pair<[Decorated Expr] [String]> ::= e::Expr pattern::Pattern env::Decorated Env
             -- of the prod app pattern and recurse on ITS named
             -- signature?
             | application(e2, _, appexprs, _, _, _) -> 
-                matchAppExpsToPattern(appexprs, pl.rawPatternList, env )
+                matchAppExpsToPattern(appexprs, pl.rawPatternList, env)
             | _ -> pair([],[])
         end
-        | varPattern(v) -> pair([decorate e with {env = env;}],[v.name])
+        | varPattern(v) -> pair([e],[v.name])
         | _ -> pair([],[]) -- others are constants
     end;
 }
