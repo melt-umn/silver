@@ -13,8 +13,8 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] cncNames::[String
     agDcls1.flowEnv = top.flowEnv;
 
     forwards to foldl(\ agDcls::AGDcl tr::Decorated TransformRule ->
-        appendAGDcl(declareTRuleAttributes(tr, tdcl.name, tdcl.transType, absNames, cncNames),
-            agDlcs, location=top.location),
+        appendAGDcl(declareTRuleAttributes(tr, tdcl.name, tdcl.transType, absNames, cncNames, location=top.location),
+            agDcls, location=top.location),
     agDcls1, tdcl.transformRules);
 }
     
@@ -78,8 +78,8 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] allNames::[String
     agDcls1.flowEnv = top.flowEnv;
 
     forwards to foldl(\ agDcls::AGDcl tr::Decorated TransformRule ->
-        appendAGDcl(defineTRuleAttributes(tr, tdcl.name, tdcl.transType, absNames, allNames, absProdDcls),
-            agDlcs, location=top.location),
+        appendAGDcl(defineTRuleAttributes(tr, tdcl.name, tdcl.transType, absNames, allNames, absProdDcls, location=top.location),
+            agDcls, location=top.location),
     agDcls1, tdcl.transformRules);
 }
 
@@ -102,7 +102,7 @@ top::AGDcl ::= tr::Decorated TransformRule nm::String ty::TypeExpr absNames::[St
     --    else see ------------------/
     local agDcls1::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-            if !hasTrans([tr], dcl) && ns.outputElement.typerep.typeName != ty
+            if !hasTrans([tr], dcl) && ns.outputElement.typerep.typeName != ty.typeName
             then productionStmtsNil(location=top.location)
             else prdStmtList( 
                 [attribDef(ns.outputElement.elementName, tName,
