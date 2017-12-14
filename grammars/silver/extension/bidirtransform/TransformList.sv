@@ -92,9 +92,9 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] cncNames::[String
     -- attribute $tName occurs on $absType;
     local agDcls7::AGDcl = appendAGDcl(attrOn(tName, absNames, location=top.location), agDcls6, location=top.location);      
     
-    agDcls8.compiledGrammars = top.compiledGrammars;
-    agDcls8.grammarName = top.grammarName;
-    agDcls8.flowEnv = top.flowEnv;
+    agDcls7.compiledGrammars = top.compiledGrammars;
+    agDcls7.grammarName = top.grammarName;
+    agDcls7.flowEnv = top.flowEnv;
 
     forwards to agDcls7;
 }

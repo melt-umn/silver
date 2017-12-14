@@ -128,7 +128,7 @@ ag::AGDcls ::= 'transform' trsl::TransformList
     -- for $cncType in cncTypes
     -- synthesized attribute restored$cncType :: $cncType;
     local agDcls1::AGDcl = foldl(\ agDcls::AGDcl name::String-> 
-            appendAGDcl(synAttr(restoreNm(unFull(name)), sTyExpr(name, location=top.location), location=top.location), agDcls, location=top.location),
+            appendAGDcl(synAttr(restoreNm(unFull(name)), sTyExpr(name, location=ag.location), location=ag.location), agDcls, location=ag.location),
         agDcls0, cncNames);
 
     -- Aspecting origin productions
