@@ -382,9 +382,15 @@ top::AppExpr ::= nsElem::NamedSignatureElement
 abstract production botlOneString
 top::BracketedOptTypeExprs ::= s::String
 {
-    forwards to botlSome('<', 
-        typeListSingle(sTyExpr(s, location=top.location),location=top.location),
-        '>', location=top.location);
+    forwards to botlOneTyExpr(sTyExpr(s, location=top.location), location=top.location);
+}
+
+abstract production botlOneTyExpr
+top::BracketedOptTypeExprs ::= te::TypeExpr 
+{
+    forwards to botlSome('<',
+        typeListSingle(te, location=top.location),
+    '>', loation=top.location);
 }
 
 -- mkProdSig returns a production signature of "lhsName::lhsType ::= rhsName::rhsType"
@@ -456,14 +462,20 @@ top::TypeExpr ::=
     forwards to booleanTypeExpr('Boolean', location=top.location);
 }
 
--- mkMaybeTypeExpr returns a TypeExpr which is "Maybe<inner>".
--- todo: this (or a different production) needs to be able to 
--- recognize built in types. 
-abstract production mkMaybeTypeExpr
+-- mkMaybeTypeExpr returns a TypeExpr which is "Maybe<inner>" for the string inner.
+abstract production mkMaybeString
 top::TypeExpr ::= inner::String
 {
     forwards to nominalTypeExpr(qnTyId("Maybe", location=top.location), 
         botlOneString(inner, location = top.location), location=top.location);
+}
+
+-- mkMaybeTypeExpr returns a TypeExpr which is "Maybe<inner>" for the type expr inner.
+abstract production mkMaybeTypeExpr
+top::TypeExpr ::= inner::TypeExpr
+{
+    forwards to nominalTypeExpr(qnTyId("Maybe", location=top.location), 
+        botlOneTyExpr(inner, location = top.location), location=top.location);
 }
 
 -- mkCond creates an if,then,else statement on the input expressions.

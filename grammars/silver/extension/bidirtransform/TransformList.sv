@@ -62,7 +62,7 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] cncNames::[String
     local inhRedexName::String = inhRedexNm(tName);
 
     -- autocopy attribute inRedex_$tName :: Maybe<Origin>; 
-    local agDcls1::AGDcl = autocAttr(inhRedexName, mkMaybeTypeExpr("Origin", location=top.location), location=top.location);
+    local agDcls1::AGDcl = autocAttr(inhRedexName, mkMaybeString("Origin", location=top.location), location=top.location);
 
     -- synthesized attribute $tName :: $tType;
     local agDcls2::AGDcl = appendAGDcl(synAttr(tName, tdcl.transType, location=top.location), agDcls1, location=top.location);
