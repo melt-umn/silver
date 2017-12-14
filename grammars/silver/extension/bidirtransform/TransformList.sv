@@ -108,7 +108,7 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] allNames::[String
     --  else if transformed_$tName   |
     --    then apply transformation  |
     --    else see ------------------/
-    agDcls1::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+    local agDcls1::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             if !hasTrans(tdcl.transformRules, dcl) && ns.outputElement.typerep.typeName != tdcl.typeName
             then productionStmtsNil(location=top.location)
@@ -138,7 +138,7 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] allNames::[String
     --  else if the rhs matches this transformation, 
     --    then true
     --    else false
-    agDcls2::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+    local agDcls2::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         if !hasTrans(tdcl.transformRules, dcl) then agDcls 
         else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             prdStmtList([
@@ -154,7 +154,7 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] allNames::[String
     --  else if transformed$tName
     --    then just($thisType_Origin(top))
     --    else nothing()
-    agDcls3::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+    local agDcls3::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             foldl(\ stmts::ProductionStmts rhs::NamedSignatureElement ->
                 if !contains(unFull(rhs.typerep.typeName), allNames) then stmts else
