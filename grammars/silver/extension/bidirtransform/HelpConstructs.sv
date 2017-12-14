@@ -224,7 +224,7 @@ top::Expr ::= name::String ns::Decorated NamedSignature
     forwards to exprAccess(name, ns.outputElement.elementName, location=top.location);
 }
 
--- qAccess creates an expression of the accessOn Expr accessing name.
+-- qAccess creates an expression of the accessOn Expr accessing q.
 abstract production qAccess
 top::Expr ::= q::String accessOn::Expr 
 {

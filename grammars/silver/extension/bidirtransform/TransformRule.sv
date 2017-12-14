@@ -1,9 +1,10 @@
 grammar silver:extension:bidirtransform;
 
 synthesized attribute transformRules :: [Decorated TransformRule];
+synthesized attribute trIndex :: Integer;
 
 nonterminal TransformRuleList with transformRules, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config, inhProds;
-nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config, asExpr, inhProds;
+nonterminal TransformRule with matchProd, namedSig, outputStmt, env, errors, location, absGroup, cncGroup, pp, downSubst, upSubst, finalSubst, config, asExpr, inhProds, trIndex;
 
 synthesized attribute asExpr::Expr;
 
@@ -49,6 +50,7 @@ tr::TransformRule ::= l::ProductionDef '->' r::Expr
     r.defaultInheritedAnnos = [];
     
     tr.pp = l.pp ++ "->" ++ r.pp;
+    tr.trIndex = genInt();
 
     tr.namedSig = l.namedSig;
     tr.matchProd = l.matchProd;
