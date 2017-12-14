@@ -88,7 +88,7 @@ top::AppExpr ::= toFill::AppExpr exps::[Decorated Expr] names::[String]
 {
     forwards to case toFill of 
         | presentAppExpr(e) -> presentAppExpr(
-            new(fillExpr(e,exps,names, location=toFill.location)),location=toFill.location)
+            fillExpr(e,exps,names, location=toFill.location),location=toFill.location)
     end;
 }
 
@@ -119,7 +119,7 @@ top::AnnoExpr ::= toFill::AnnoExpr exps::[Decorated Expr] names::[String]
 abstract production idxOfExprs
 top::Expr ::= ls::[Decorated Expr] idx::Integer
 {
-    forwards to if idx == 0 then head(ls) else idxOfExprs(tail(ls), idx-1, location=top.location);
+    forwards to if idx == 0 then new(head(ls)) else idxOfExprs(tail(ls), idx-1, location=top.location);
 }
 
 function idxOf
