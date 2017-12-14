@@ -81,8 +81,6 @@ ag::AGDcls ::= 'transform' trsl::TransformList
 
     trsl.inhProds = allProdDcls;
 
-    local absProdNames :: [String] = map(unFull, map((.fullName), absProdDcls));
-
     -- Rewrite rule manipulation
     --
     -- add the identity rule for each type, if an identity rule doesn't already exist
@@ -199,79 +197,10 @@ ag::AGDcls ::= 'transform' trsl::TransformList
         agDcls4, absProdDcls);
 
     -- define transformation attributes (those dependent on each transformation declared)
-    local agDcls6::AGDcl = foldl(\ agDcls::AGDcl tdcl::Decorated TransformDcl -> 
-        joinAGDcls([
-        -- top.$tName = ...
-        --  if this abstract production has no transformations defined for it,
-        --  then,
-        --    if top is the same type as the transformation
-        --    then $thisProd($arg.$tName, origin=$thisType_Origin(top), redex=(..).inhRedex_$tName, labels=[])
-        --    else don't define this?    ^
-        --  else if transformed_$tName   |
-        --    then apply transformation  |
-        --    else see ------------------/
-        foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
-            appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-                if !hasTrans(tdcl.transformRules, dcl) && ns.outputElement.typerep.typeName != tdcl.typeName
-                then productionStmtsNil(location=ag.location)
-                else prdStmtList( 
-                    [attribDef(ns.outputElement.elementName, tdcl.name,
-                    if !hasTrans(tdcl.transformRules, dcl) 
-                    then prdRecurse(ns, tdcl.name, absNames, location=ag.location)
-                    else mkCond(
-                            lhsExprAccess(transformNm(tdcl.name), ns, location=ag.location),
-                            injectAnnos(
-                                applyTrans(tdcl.transformRules, dcl, location=ag.location),
-                                annoAppExprList([
-                                    annExpr("labels", emptyList('[',']', location=ag.location), location=ag.location),
-                                    annExpr("redex", exprAccess(inhRedexNm(tdcl.name), inhRedexNameSig(ns, allNames), location=ag.location), location=ag.location),
-                                    annExpr("origin", mkOrigin(ns, location=ag.location), location=ag.location)
-                                    ], location=ag.location), 
-                                absProdNames, location=ag.location),
-                            prdRecurse(ns, tdcl.name, absNames, location=ag.location),
-                        location=ag.location),
-                location=ag.location)], location=ag.location),
-                location=ag.location), agDcls, location=ag.location),
-            emptyAGDcl(location=ag.location), absProdDcls),
-
-        -- top.transformed_$tName = ...
-        --  if this abstract production has no transformation defined for it,
-        --  then don't define this
-        --  else if the rhs matches this transformation, 
-        --    then true
-        --    else false
-        foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
-            if !hasTrans(tdcl.transformRules, dcl) then agDcls 
-            else appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-                prdStmtList([
-                    attribDef(ns.outputElement.elementName, transformNm(tdcl.name),
-                        getTrans(tdcl.transformRules, dcl).matchProd, location=ag.location)
-                ], location=ag.location),
-                location=ag.location), agDcls, location=ag.location),
-            emptyAGDcl(location=ag.location), absProdDcls),
-
-        -- <rhs>.inhRedex_$tName = ...
-        --  if this abstract production has no transformation defined for it,
-        --  then nothing()
-        --  else if transformed$tName
-        --    then just($thisType_Origin(top))
-        --    else nothing()
-        foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
-            appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
-                foldl(\ stmts::ProductionStmts rhs::NamedSignatureElement ->
-                    if !contains(unFull(rhs.typerep.typeName), allNames) then stmts else
-                    productionStmtsSnoc(stmts, 
-                        attribDef(rhs.elementName, inhRedexNm(tdcl.name),
-                                if !hasTrans(tdcl.transformRules, dcl)
-                                then emptyFunc("nothing", location=ag.location) -- this might error because it has to be a production
-                                else mkCond(
-                                    lhsExprAccess(transformNm(tdcl.name), ns, location=ag.location),
-                                    argFunc("just", oneApp(mkOrigin(ns, location=ag.location), location=ag.location), location=ag.location),
-                                    emptyFunc("nothing", location=ag.location),
-                                location=ag.location),
-                        location=ag.location), location=ag.location),
-                productionStmtsNil(location=ag.location), ns.inputElements), location=ag.location), agDcls, location=ag.location),
-            emptyAGDcl(location=ag.location), absProdDcls), agDcls], location=ag.location),
+    local agDcls6::AGDcl = foldl(\ agDcls::AGDcl tdcl::Decorated TransformDcl ->
+        appendAGDcl(
+            defineTNameAttributes(tdcl, absNames, allNames, absProdDcls, location=ag.location),
+            agDcls, location=ag.location),
     agDcls5, trsl.transformDcls);
     
     -- for each concrete type, if it has location, aspect all of its creating
