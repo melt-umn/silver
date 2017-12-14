@@ -8,14 +8,17 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] cncNames::[String
     -- synthesized attribute $tName :: $tType;
     local agDcls1::AGDcl = synAttr(tdcl.name, tdcl.transType, location=top.location);
 
-    agDcls1.compiledGrammars = top.compiledGrammars;
-    agDcls1.grammarName = top.grammarName;
-    agDcls1.flowEnv = top.flowEnv;
+    -- attribute $tName occurs on $absType;
+    local agDcls2::AGDcl = appendAGDcl(attrOn(tdcl.name, absNames, location=top.location), agDcls1, location=top.location);    
+
+    agDcls2.compiledGrammars = top.compiledGrammars;
+    agDcls2.grammarName = top.grammarName;
+    agDcls2.flowEnv = top.flowEnv;
 
     forwards to foldl(\ agDcls::AGDcl tr::Decorated TransformRule ->
         appendAGDcl(declareTRuleAttributes(tr, tdcl.name, tdcl.transType, absNames, cncNames, location=top.location),
             agDcls, location=top.location),
-    agDcls1, tdcl.transformRules);
+    agDcls2, tdcl.transformRules);
 }
     
 abstract production declareTRuleAttributes
