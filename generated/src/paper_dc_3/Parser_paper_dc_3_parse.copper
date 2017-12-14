@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<CopperSpec xmlns="http://melt.cs.umn.edu/copper/xmlns">
+  <Parser id="paper_dc_3_parse" isUnitary="true">
+    <PP>paper_dc_3:parse</PP>
+    <Grammars><GrammarRef id="host"/></Grammars>
+    <StartSymbol><NonterminalRef id="paper_dc_3_Root_c" grammar="host" /></StartSymbol>
+    <StartLayout><TerminalRef id="paper_dc_3_LineComment_P" grammar="host" /><TerminalRef id="paper_dc_3_WhiteSpace_t" grammar="host" /></StartLayout>
+    <ClassAuxiliaryCode><Code><![CDATA[
+          protected List<common.Terminal> tokenList = null;
+
+          public void reset() {
+            tokenList = new ArrayList<common.Terminal>();
+          }
+
+          public List<common.Terminal> getTokens() {
+            return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
+          }
+        ]]></Code></ClassAuxiliaryCode>
+    <ParserInitCode>
+      <Code><![CDATA[
+        reset();
+      ]]></Code>
+    </ParserInitCode>
+    <Preamble>
+<Code><![CDATA[
+import java.util.ArrayList;
+import java.util.List;
+]]></Code>
+    </Preamble>
+  </Parser>
+
+  <Grammar id="host">
+
+    <PP>host</PP>
+
+    <Layout><TerminalRef id="paper_dc_3_LineComment_P" grammar="host" /><TerminalRef id="paper_dc_3_WhiteSpace_t" grammar="host" /></Layout>
+    <Declarations>
+      <ParserAttribute id="context">
+        <Type><![CDATA[common.DecoratedNode]]></Type>
+        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>
+      </ParserAttribute>
+         <Terminal id="paper_dc_3_Dash_t">
+    <PP>paper_dc_3:Dash_t</PP>
+    <Regex><CharacterSet><SingleCharacter char="-"/></CharacterSet></Regex>
+    <Type>paper_dc_3.TDash_t</Type>
+    <Code><![CDATA[
+RESULT = new paper_dc_3.TDash_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="paper_dc_3_Hat_t">
+    <PP>paper_dc_3:Hat_t</PP>
+    <Regex><CharacterSet><SingleCharacter char="^"/></CharacterSet></Regex>
+    <Type>paper_dc_3.THat_t</Type>
+    <Code><![CDATA[
+RESULT = new paper_dc_3.THat_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="paper_dc_3_IntLit_t">
+    <PP>paper_dc_3:IntLit_t</PP>
+    <Regex><Concatenation><CharacterSet><CharacterRange lower="0" upper="9"/></CharacterSet><KleeneStar><CharacterSet><CharacterRange lower="0" upper="9"/></CharacterSet></KleeneStar></Concatenation></Regex>
+    <Type>paper_dc_3.TIntLit_t</Type>
+    <Code><![CDATA[
+RESULT = new paper_dc_3.TIntLit_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="paper_dc_3_LParen_t">
+    <PP>paper_dc_3:LParen_t</PP>
+    <Regex><CharacterSet><SingleCharacter char="("/></CharacterSet></Regex>
+    <Type>paper_dc_3.TLParen_t</Type>
+    <Code><![CDATA[
+RESULT = new paper_dc_3.TLParen_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="paper_dc_3_LineComment_P">
+    <PP>paper_dc_3:LineComment_P</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="/"/></CharacterSet><CharacterSet><SingleCharacter char="/"/></CharacterSet><KleeneStar><CharacterSet invert="true"><SingleCharacter char="&#10;"/></CharacterSet></KleeneStar></Concatenation></Regex>
+    <Type>paper_dc_3.TLineComment_P</Type>
+    <Code><![CDATA[
+RESULT = new paper_dc_3.TLineComment_P(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="paper_dc_3_Plus_t">
+    <PP>paper_dc_3:Plus_t</PP>
+    <Regex><CharacterSet><SingleCharacter char="+"/></CharacterSet></Regex>
+    <Type>paper_dc_3.TPlus_t</Type>
+    <Code><![CDATA[
+RESULT = new paper_dc_3.TPlus_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="paper_dc_3_RParen_t">
+    <PP>paper_dc_3:RParen_t</PP>
+    <Regex><CharacterSet><SingleCharacter char=")"/></CharacterSet></Regex>
+    <Type>paper_dc_3.TRParen_t</Type>
+    <Code><![CDATA[
+RESULT = new paper_dc_3.TRParen_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="paper_dc_3_Slash_t">
+    <PP>paper_dc_3:Slash_t</PP>
+    <Regex><CharacterSet><SingleCharacter char="/"/></CharacterSet></Regex>
+    <Type>paper_dc_3.TSlash_t</Type>
+    <Code><![CDATA[
+RESULT = new paper_dc_3.TSlash_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="paper_dc_3_Square_t">
+    <PP>paper_dc_3:Square_t</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="s"/></CharacterSet><CharacterSet><SingleCharacter char="q"/></CharacterSet></Concatenation></Regex>
+    <Type>paper_dc_3.TSquare_t</Type>
+    <Code><![CDATA[
+RESULT = new paper_dc_3.TSquare_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="paper_dc_3_Star_t">
+    <PP>paper_dc_3:Star_t</PP>
+    <Regex><CharacterSet><SingleCharacter char="*"/></CharacterSet></Regex>
+    <Type>paper_dc_3.TStar_t</Type>
+    <Code><![CDATA[
+RESULT = new paper_dc_3.TStar_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+  <Terminal id="paper_dc_3_WhiteSpace_t">
+    <PP>paper_dc_3:WhiteSpace_t</PP>
+    <Regex><Concatenation><CharacterSet><SingleCharacter char="&#9;"/><SingleCharacter char="&#13;"/><SingleCharacter char="&#10;"/><SingleCharacter char=" "/></CharacterSet><KleeneStar><CharacterSet><SingleCharacter char="&#9;"/><SingleCharacter char="&#13;"/><SingleCharacter char="&#10;"/><SingleCharacter char=" "/></CharacterSet></KleeneStar></Concatenation></Regex>
+    <Type>paper_dc_3.TWhiteSpace_t</Type>
+    <Code><![CDATA[
+RESULT = new paper_dc_3.TWhiteSpace_t(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());
+  tokenList.add(RESULT);
+]]></Code>
+    <InClasses></InClasses>
+    <Submits></Submits>
+    <Dominates></Dominates>
+  </Terminal>
+
+  <Nonterminal id="paper_dc_3_Expr_c">
+    <PP>paper_dc_3:Expr_c</PP>
+    <Type><![CDATA[paper_dc_3.NExpr_c]]></Type>
+  </Nonterminal>
+  <Production id="paper_dc_3_exprTerm_c">
+    <Code><![CDATA[
+RESULT = new paper_dc_3.PexprTerm_c(_children[0]);
+]]></Code>
+    <LHS><NonterminalRef id="paper_dc_3_Expr_c" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="paper_dc_3_Term_c" grammar="host" /></RHS>
+  </Production>
+  <Production id="paper_dc_3_sub_c">
+    <Code><![CDATA[
+RESULT = new paper_dc_3.Psub_c(_children[0], _children[1], _children[2]);
+]]></Code>
+    <LHS><NonterminalRef id="paper_dc_3_Expr_c" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="paper_dc_3_Expr_c" grammar="host" /><TerminalRef id="paper_dc_3_Dash_t" grammar="host" /><NonterminalRef id="paper_dc_3_Term_c" grammar="host" /></RHS>
+  </Production>
+  <Production id="paper_dc_3_add_c">
+    <Code><![CDATA[
+RESULT = new paper_dc_3.Padd_c(_children[0], _children[1], _children[2]);
+]]></Code>
+    <LHS><NonterminalRef id="paper_dc_3_Expr_c" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="paper_dc_3_Expr_c" grammar="host" /><TerminalRef id="paper_dc_3_Plus_t" grammar="host" /><NonterminalRef id="paper_dc_3_Term_c" grammar="host" /></RHS>
+  </Production>
+
+  <Nonterminal id="paper_dc_3_Factor_c">
+    <PP>paper_dc_3:Factor_c</PP>
+    <Type><![CDATA[paper_dc_3.NFactor_c]]></Type>
+  </Nonterminal>
+  <Production id="paper_dc_3_const_c">
+    <Code><![CDATA[
+RESULT = new paper_dc_3.Pconst_c(_children[0]);
+]]></Code>
+    <LHS><NonterminalRef id="paper_dc_3_Factor_c" grammar="host" /></LHS>
+    <RHS><TerminalRef id="paper_dc_3_IntLit_t" grammar="host" /></RHS>
+  </Production>
+  <Production id="paper_dc_3_nested_c">
+    <Code><![CDATA[
+RESULT = new paper_dc_3.Pnested_c(_children[0], _children[1], _children[2]);
+]]></Code>
+    <LHS><NonterminalRef id="paper_dc_3_Factor_c" grammar="host" /></LHS>
+    <RHS><TerminalRef id="paper_dc_3_LParen_t" grammar="host" /><NonterminalRef id="paper_dc_3_Expr_c" grammar="host" /><TerminalRef id="paper_dc_3_RParen_t" grammar="host" /></RHS>
+  </Production>
+  <Production id="paper_dc_3_square_c">
+    <Code><![CDATA[
+RESULT = new paper_dc_3.Psquare_c(_children[0], _children[1], _children[2], _children[3]);
+]]></Code>
+    <LHS><NonterminalRef id="paper_dc_3_Factor_c" grammar="host" /></LHS>
+    <RHS><TerminalRef id="paper_dc_3_Square_t" grammar="host" /><TerminalRef id="paper_dc_3_LParen_t" grammar="host" /><NonterminalRef id="paper_dc_3_Expr_c" grammar="host" /><TerminalRef id="paper_dc_3_RParen_t" grammar="host" /></RHS>
+  </Production>
+
+  <Nonterminal id="paper_dc_3_Root_c">
+    <PP>paper_dc_3:Root_c</PP>
+    <Type><![CDATA[paper_dc_3.NRoot_c]]></Type>
+  </Nonterminal>
+  <Production id="paper_dc_3_root_c">
+    <Code><![CDATA[
+RESULT = new paper_dc_3.Proot_c(_children[0]);
+]]></Code>
+    <LHS><NonterminalRef id="paper_dc_3_Root_c" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="paper_dc_3_Expr_c" grammar="host" /></RHS>
+  </Production>
+
+  <Nonterminal id="paper_dc_3_Term_c">
+    <PP>paper_dc_3:Term_c</PP>
+    <Type><![CDATA[paper_dc_3.NTerm_c]]></Type>
+  </Nonterminal>
+  <Production id="paper_dc_3_termFactor_c">
+    <Code><![CDATA[
+RESULT = new paper_dc_3.PtermFactor_c(_children[0]);
+]]></Code>
+    <LHS><NonterminalRef id="paper_dc_3_Term_c" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="paper_dc_3_Factor_c" grammar="host" /></RHS>
+  </Production>
+  <Production id="paper_dc_3_neg_c">
+    <Code><![CDATA[
+RESULT = new paper_dc_3.Pneg_c(_children[0], _children[1]);
+]]></Code>
+    <LHS><NonterminalRef id="paper_dc_3_Term_c" grammar="host" /></LHS>
+    <RHS><TerminalRef id="paper_dc_3_Dash_t" grammar="host" /><NonterminalRef id="paper_dc_3_Factor_c" grammar="host" /></RHS>
+  </Production>
+  <Production id="paper_dc_3_mul_c">
+    <Code><![CDATA[
+RESULT = new paper_dc_3.Pmul_c(_children[0], _children[1], _children[2]);
+]]></Code>
+    <LHS><NonterminalRef id="paper_dc_3_Term_c" grammar="host" /></LHS>
+    <RHS><NonterminalRef id="paper_dc_3_Term_c" grammar="host" /><TerminalRef id="paper_dc_3_Star_t" grammar="host" /><NonterminalRef id="paper_dc_3_Factor_c" grammar="host" /></RHS>
+  </Production>
+
+    </Declarations>
+  </Grammar>
+</CopperSpec>

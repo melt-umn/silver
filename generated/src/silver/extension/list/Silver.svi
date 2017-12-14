@@ -1,0 +1,82 @@
+declaredName 'silver:extension:list'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/extension/list/"
+moduleNames ['silver:definition:type:syntax', 'silver:definition:type', 'silver:definition:env', 'silver:definition:core', 'core']
+allDeps ['core:monad', 'silver:definition:flow:env', 'silver:analysis:typechecking:core', 'core', 'silver:definition:core', 'silver:definition:env', 'silver:definition:type', 'silver:definition:type:syntax', 'silver:extension:list']
+exportedGrammars []
+optionalGrammars []
+condBuild ['silver:extension:list:java', 'silver:translation:java:type']
+defs [
+ term('List.sv', 5, 9, 5, 15, 80, 86, 'silver:extension:list:LSqr_t', /\[/),
+ term('List.sv', 6, 9, 6, 15, 102, 108, 'silver:extension:list:RSqr_t', /\]/),
+ prod('List.sv', 9, 20, 9, 32, 217, 229, [], signature('silver:extension:list:listTypeExpr', [element('_G_2', term('silver:extension:list:LSqr_t')), element('te', nt('silver:definition:type:syntax:TypeExpr', [])), element('_G_0', term('silver:extension:list:RSqr_t'))], element('top', nt('silver:definition:type:syntax:TypeExpr', [])), [element('core:location', nt('core:Location', []))])),
+ p@('List.sv', 9, 20, 9, 32, 217, 229, [], signature('silver:extension:list:listTypeExpr', [element('_G_2', term('silver:extension:list:LSqr_t')), element('te', nt('silver:definition:type:syntax:TypeExpr', [])), element('_G_0', term('silver:extension:list:RSqr_t'))], element('top', nt('silver:definition:type:syntax:TypeExpr', [])), [element('core:location', nt('core:Location', []))]), [
+ fwd('List.sv', 16, 2, 18, 138, 345, 611, nt('silver:definition:type:syntax:TypeExpr', []))]),
+ prod('List.sv', 23, 20, 23, 29, 717, 726, [], signature('silver:extension:list:emptyList', [element('_G_1', term('silver:extension:list:LSqr_t')), element('_G_0', term('silver:extension:list:RSqr_t'))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))])),
+ p@('List.sv', 23, 20, 23, 29, 717, 726, [], signature('silver:extension:list:emptyList', [element('_G_1', term('silver:extension:list:LSqr_t')), element('_G_0', term('silver:extension:list:RSqr_t'))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))]), [
+ fwd('List.sv', 28, 2, 28, 68, 771, 837, nt('silver:definition:core:Expr', []))]),
+ prod('List.sv', 34, 20, 34, 30, 978, 988, [], signature('silver:extension:list:consListOp', [element('h', nt('silver:definition:core:Expr', [])), element('_G_1', term('silver:definition:core:ColonColon_t')), element('t', nt('silver:definition:core:Expr', []))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))])),
+ p@('List.sv', 34, 20, 34, 30, 978, 988, [], signature('silver:extension:list:consListOp', [element('h', nt('silver:definition:core:Expr', [])), element('_G_1', term('silver:definition:core:ColonColon_t')), element('t', nt('silver:definition:core:Expr', []))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))]), [
+ fwd('List.sv', 41, 2, 41, 73, 1207, 1278, nt('silver:definition:core:Expr', []))]),
+ prod('List.sv', 44, 20, 44, 28, 1302, 1310, [], signature('silver:extension:list:fullList', [element('_G_2', term('silver:extension:list:LSqr_t')), element('es', nt('silver:definition:core:Exprs', [])), element('_G_0', term('silver:extension:list:RSqr_t'))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))])),
+ p@('List.sv', 44, 20, 44, 28, 1302, 1310, [], signature('silver:extension:list:fullList', [element('_G_2', term('silver:extension:list:LSqr_t')), element('es', nt('silver:definition:core:Exprs', [])), element('_G_0', term('silver:extension:list:RSqr_t'))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))]), [
+ fwd('List.sv', 51, 2, 51, 27, 1458, 1483, nt('silver:definition:core:Expr', []))]),
+ syn('List.sv', 54, 22, 54, 31, 1509, 1518, 'silver:extension:list:listtrans', [], nt('silver:definition:core:Expr', [])),
+ @('List.sv', 54, 22, 54, 31, 1509, 1518, 'silver:definition:core:Exprs', 'silver:extension:list:listtrans', [], nt('silver:definition:core:Exprs', []), nt('silver:definition:core:Expr', [])),
+ prod('List.sv', 76, 20, 76, 32, 2091, 2103, [], signature('silver:extension:list:listPlusPlus', [element('e1', decorated(nt('silver:definition:core:Expr', []))), element('e2', decorated(nt('silver:definition:core:Expr', [])))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))])),
+ p@('List.sv', 76, 20, 76, 32, 2091, 2103, [], signature('silver:extension:list:listPlusPlus', [element('e1', decorated(nt('silver:definition:core:Expr', []))), element('e2', decorated(nt('silver:definition:core:Expr', [])))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))]), [
+ fwd('List.sv', 79, 2, 79, 84, 2160, 2242, nt('silver:definition:core:Expr', []))]),
+ prod('List.sv', 81, 20, 81, 37, 2265, 2282, [], signature('silver:extension:list:listLengthBouncer', [element('e', decorated(nt('silver:definition:core:Expr', [])))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))])),
+ p@('List.sv', 81, 20, 81, 37, 2265, 2282, [], signature('silver:extension:list:listLengthBouncer', [element('e', decorated(nt('silver:definition:core:Expr', [])))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))]), [
+ fwd('List.sv', 85, 2, 85, 83, 2345, 2426, nt('silver:definition:core:Expr', []))]),
+ prod('Type.sv', 3, 20, 3, 28, 52, 60, [], signature('silver:extension:list:listType', [element('el', nt('silver:definition:type:Type', []))], element('top', nt('silver:definition:type:Type', [])), [])),
+ p@('Type.sv', 3, 20, 3, 28, 52, 60, [], signature('silver:extension:list:listType', [element('el', nt('silver:definition:type:Type', []))], element('top', nt('silver:definition:type:Type', [])), []), [
+ fwd('Type.sv', 26, 2, 26, 64, 923, 985, nt('silver:definition:type:Type', []))])]
+syntax [term('silver:extension:list:LSqr_t', /\[/, []),
+ term('silver:extension:list:RSqr_t', /\]/, []),
+ prod([], signature('silver:extension:list:listTypeExpr', [element('_G_2', term('silver:extension:list:LSqr_t')), element('te', nt('silver:definition:type:syntax:TypeExpr', [])), element('_G_0', term('silver:extension:list:RSqr_t'))], element('top', nt('silver:definition:type:syntax:TypeExpr', [])), [element('core:location', nt('core:Location', []))]), []),
+ prod([], signature('silver:extension:list:emptyList', [element('_G_1', term('silver:extension:list:LSqr_t')), element('_G_0', term('silver:extension:list:RSqr_t'))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))]), []),
+ prod([], signature('silver:extension:list:consListOp', [element('h', nt('silver:definition:core:Expr', [])), element('_G_1', term('silver:definition:core:ColonColon_t')), element('t', nt('silver:definition:core:Expr', []))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))]), []),
+ prod([], signature('silver:extension:list:fullList', [element('_G_2', term('silver:extension:list:LSqr_t')), element('es', nt('silver:definition:core:Exprs', [])), element('_G_0', term('silver:extension:list:RSqr_t'))], element('top', nt('silver:definition:core:Expr', [])), [element('core:location', nt('core:Location', []))]), [])]
+parsers []
+flow [syn('silver:extension:list:listTypeExpr', 'silver:definition:env:pp', [rhsV('te', 'silver:definition:env:pp')], f),
+ syn('silver:extension:list:listTypeExpr', 'silver:definition:env:typerep', [rhsV('te', 'silver:definition:env:typerep')], f),
+ fwd('silver:extension:list:listTypeExpr', [], f),
+ implicitFwdAffects('silver:extension:list:listTypeExpr', []),
+ syn('silver:extension:list:emptyList', 'silver:definition:env:pp', [], f),
+ fwd('silver:extension:list:emptyList', [], f),
+ implicitFwdAffects('silver:extension:list:emptyList', []),
+ syn('silver:extension:list:consListOp', 'silver:definition:env:pp', [rhsV('h', 'silver:definition:env:pp'), rhsV('t', 'silver:definition:env:pp')], f),
+ inh('silver:extension:list:consListOp', 'h', 'silver:analysis:typechecking:core:downSubst', [lhsInhV('silver:analysis:typechecking:core:downSubst')]),
+ inh('silver:extension:list:consListOp', 't', 'silver:analysis:typechecking:core:downSubst', [lhsInhV('silver:analysis:typechecking:core:downSubst')]),
+ fwd('silver:extension:list:consListOp', [], f),
+ implicitFwdAffects('silver:extension:list:consListOp', []),
+ syn('silver:extension:list:fullList', 'silver:definition:env:pp', [rhsV('es', 'silver:definition:env:pp')], f),
+ inh('silver:extension:list:fullList', 'es', 'silver:analysis:typechecking:core:downSubst', [lhsInhV('silver:analysis:typechecking:core:downSubst')]),
+ fwd('silver:extension:list:fullList', [rhsV('es', 'silver:extension:list:listtrans')], f),
+ implicitFwdAffects('silver:extension:list:fullList', []),
+ nonHostSyn('silver:extension:list:listtrans', 'silver:definition:core:Exprs'),
+ syn('silver:definition:core:exprsEmpty', 'silver:extension:list:listtrans', [], t),
+ syn('silver:definition:core:exprsSingle', 'silver:extension:list:listtrans', [], t),
+ syn('silver:definition:core:exprsCons', 'silver:extension:list:listtrans', [rhsV('e2', 'silver:extension:list:listtrans')], t),
+ fwd('silver:extension:list:listPlusPlus', [], f),
+ implicitFwdAffects('silver:extension:list:listPlusPlus', []),
+ extra('silver:extension:list:listLengthBouncer', lhsSynV('silver:definition:core:errors'), [], f),
+ fwd('silver:extension:list:listLengthBouncer', [], f),
+ implicitFwdAffects('silver:extension:list:listLengthBouncer', []),
+ syn('silver:extension:list:listType', 'silver:definition:type:freeVariables', [rhsV('el', 'silver:definition:type:freeVariables')], f),
+ syn('silver:extension:list:listType', 'silver:definition:type:substituted', [rhsV('el', 'silver:definition:type:substituted')], f),
+ syn('silver:extension:list:listType', 'silver:definition:type:typepp', [rhsV('el', 'silver:definition:type:typepp')], f),
+ anon('silver:extension:list:listType', '__decorate20298:line10', 'silver:definition:type:Type', 'Type.sv', 10, 19, 10, 32, 246, 259, [lhsInhV('silver:definition:type:unifyWith')]),
+ anon('silver:extension:list:listType', '__scrutinee20299:line12', '', 'Type.sv', 12, 15, 12, 89, 324, 398, []),
+ patternRuleEq('silver:extension:list:listType', 'silver:definition:type:nonterminalType', anon('__pv2112:__sv_tmp_pv_2111'), []),
+ patternRuleEq('silver:extension:list:listType', 'silver:definition:type:decoratedType', anon('__decorate20298:line10'), [('te', 'silver:definition:type:Type', '__pv2112:__sv_tmp_pv_2111')]),
+ patternRuleEq('silver:extension:list:listType', 'silver:extension:list:listType', anon('__decorate20298:line10'), [('el', 'silver:definition:type:Type', '__pv2120:__sv_pv_2119_fel')]),
+ syn('silver:extension:list:listType', 'silver:definition:type:unify', [lhsInhV('silver:definition:type:unifyWith'), anonV('__scrutinee20299:line12', 'forward'), anonEqV('__scrutinee20299:line12'), lhsInhV('silver:definition:type:unifyWith'), anonV('__pv2112:__sv_tmp_pv_2111', 'forward'), anonEqV('__pv2112:__sv_tmp_pv_2111'), anonEqV('__pv2120:__sv_pv_2119_fel'), lhsInhV('silver:definition:type:unifyWith'), anonV('__decorate20298:line10', 'forward'), anonEqV('__decorate20298:line10')], f),
+ syn('silver:extension:list:listType', 'silver:definition:type:isDecorable', [], f),
+ syn('silver:extension:list:listType', 'silver:definition:type:isDecorated', [], f),
+ syn('silver:extension:list:listType', 'silver:definition:core:lengthDispatcher', [], f),
+ syn('silver:extension:list:listType', 'silver:definition:core:appendDispatcher', [], f),
+ syn('silver:extension:list:listType', 'silver:definition:env:unparse', [rhsV('el', 'silver:definition:env:unparse')], f),
+ fwd('silver:extension:list:listType', [], f),
+ implicitFwdAffects('silver:extension:list:listType', [])]

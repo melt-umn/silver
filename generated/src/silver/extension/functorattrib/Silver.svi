@@ -1,0 +1,59 @@
+declaredName 'silver:extension:functorattrib'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/extension/functorattrib/"
+moduleNames ['silver:util', 'silver:definition:core', 'silver:definition:type:syntax', 'silver:definition:env', 'silver:definition:type', 'core']
+allDeps ['core:monad', 'silver:definition:flow:env', 'silver:analysis:typechecking:core', 'core', 'silver:definition:type', 'silver:definition:env', 'silver:definition:type:syntax', 'silver:definition:core', 'silver:util', 'silver:extension:functorattrib']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ prod('ProductionBody.sv', 6, 20, 6, 36, 142, 158, [], signature('silver:extension:functorattrib:propagateAttrDcl', [element('_G_2', term('silver:extension:functorattrib:Propagate_kwd')), element('ns', nt('silver:definition:core:NameList', [])), element('_G_0', term('silver:definition:core:Semi_t'))], element('top', nt('silver:definition:core:ProductionStmt', [])), [element('core:location', nt('core:Location', []))])),
+ p@('ProductionBody.sv', 6, 20, 6, 36, 142, 158, [], signature('silver:extension:functorattrib:propagateAttrDcl', [element('_G_2', term('silver:extension:functorattrib:Propagate_kwd')), element('ns', nt('silver:definition:core:NameList', [])), element('_G_0', term('silver:definition:core:Semi_t'))], element('top', nt('silver:definition:core:ProductionStmt', [])), [element('core:location', nt('core:Location', []))]), [
+ fwd('ProductionBody.sv', 13, 2, 22, 8, 388, 707, nt('silver:definition:core:ProductionStmt', []))]),
+ fun('ProductionBody.sv', 33, 9, 33, 17, 1080, 1088, [], signature('silver:extension:functorattrib:makeArgs', [element('loc', nt('core:Location', [])), element('env', decorated(nt('silver:definition:env:Env', []))), element('attrName', nt('silver:definition:core:QName', [])), element('inputs', [nt('silver:definition:env:NamedSignatureElement', [])])], element('__func__lhs', [nt('silver:definition:core:AppExpr', [])]), [])),
+ fun('ProductionBody.sv', 74, 9, 74, 21, 2523, 2535, [], signature('silver:extension:functorattrib:makeAnnoArgs', [element('loc', nt('core:Location', [])), element('baseName', nt('silver:definition:core:QName', [])), element('inputs', [nt('silver:definition:env:NamedSignatureElement', [])])], element('__func__lhs', [nt('silver:definition:core:AnnoExpr', [])]), [])),
+ prod('ProductionBody.sv', 102, 20, 102, 32, 3400, 3412, [], signature('silver:extension:functorattrib:propagateOne', [element('a', nt('silver:definition:core:QName', []))], element('top', nt('silver:definition:core:ProductionStmt', [])), [element('core:location', nt('core:Location', []))])),
+ p@('ProductionBody.sv', 102, 20, 102, 32, 3400, 3412, [], signature('silver:extension:functorattrib:propagateOne', [element('a', nt('silver:definition:core:QName', []))], element('top', nt('silver:definition:core:ProductionStmt', [])), [element('core:location', nt('core:Location', []))]), [
+ fwd('ProductionBody.sv', 124, 2, 135, 29, 4446, 4787, nt('silver:definition:core:ProductionStmt', []))]),
+ term('Terminals.sv', 2, 9, 2, 22, 10, 23, 'silver:extension:functorattrib:Propagate_kwd', /propagate/),
+ term('Terminals.sv', 3, 9, 3, 20, 79, 90, 'silver:extension:functorattrib:Functor_kwd', /functor/)]
+syntax [prod([], signature('silver:extension:functorattrib:propagateAttrDcl', [element('_G_2', term('silver:extension:functorattrib:Propagate_kwd')), element('ns', nt('silver:definition:core:NameList', [])), element('_G_0', term('silver:definition:core:Semi_t'))], element('top', nt('silver:definition:core:ProductionStmt', [])), [element('core:location', nt('core:Location', []))]), []),
+ term('silver:extension:functorattrib:Propagate_kwd', /propagate/, [classes(['silver:definition:core:KEYWORD', 'silver:definition:core:RESERVED'])]),
+ term('silver:extension:functorattrib:Functor_kwd', /functor/, [classes(['silver:definition:core:KEYWORD', 'silver:definition:core:RESERVED'])])]
+parsers []
+flow [syn('silver:extension:functorattrib:propagateAttrDcl', 'silver:definition:env:pp', [rhsV('ns', 'silver:definition:env:pp')], f),
+ patternRuleEq('silver:extension:functorattrib:propagateAttrDcl', 'silver:definition:core:nameListCons', rhs('ns'), [('h', 'silver:definition:core:QName', '__pv10249:__sv_pv_10250_n'), ('t', 'silver:definition:core:NameList', '__pv10253:__sv_pv_10248_rest')]),
+ patternRuleEq('silver:extension:functorattrib:propagateAttrDcl', 'silver:definition:core:nameListOne', rhs('ns'), [('n', 'silver:definition:core:QName', '__pv10267:__sv_pv_10266_n')]),
+ fwd('silver:extension:functorattrib:propagateAttrDcl', [anonEqV('__pv10249:__sv_pv_10250_n'), anonEqV('__pv10253:__sv_pv_10248_rest'), anonEqV('__pv10267:__sv_pv_10266_n'), rhsV('ns', 'forward')], f),
+ implicitFwdAffects('silver:extension:functorattrib:propagateAttrDcl', []),
+ inh('silver:extension:functorattrib:makeArgs', 'attrName', 'silver:definition:env:env', []),
+ anon('silver:extension:functorattrib:makeArgs', '__decorate20427:line38', 'silver:definition:env:NamedSignatureElement', 'ProductionBody.sv', 38, 31, 38, 55, 1242, 1266, []),
+ local('silver:extension:functorattrib:makeArgs', 'silver:extension:functorattrib:makeArgs:local:at', 'silver:definition:core:QName', [anonV('__decorate20427:line38', 'silver:definition:env:elementName'), anonEqV('__decorate20427:line38')]),
+ localInh('silver:extension:functorattrib:makeArgs', 'silver:extension:functorattrib:makeArgs:local:at', 'silver:definition:env:env', []),
+ anon('silver:extension:functorattrib:makeArgs', '__decorate20428:line45', 'silver:definition:env:NamedSignatureElement', 'ProductionBody.sv', 45, 30, 45, 50, 1473, 1493, []),
+ anon('silver:extension:functorattrib:makeArgs', '__decorate20429:line45', 'silver:definition:type:Type', 'ProductionBody.sv', 45, 30, 45, 59, 1473, 1502, [anonV('__decorate20428:line45', 'silver:definition:env:typerep'), anonEqV('__decorate20428:line45')]),
+ local('silver:extension:functorattrib:makeArgs', 'silver:extension:functorattrib:makeArgs:local:attrOccursOnHead', '', [anonV('__decorate20429:line45', 'silver:definition:env:typeName'), anonEqV('__decorate20429:line45'), rhsV('attrName', 'silver:definition:core:lookupAttribute')]),
+ anon('silver:extension:functorattrib:makeArgs', '__decorate20430:line48', 'silver:definition:env:NamedSignatureElement', 'ProductionBody.sv', 48, 35, 48, 55, 1652, 1672, []),
+ anon('silver:extension:functorattrib:makeArgs', '__decorate20431:line48', 'silver:definition:type:Type', 'ProductionBody.sv', 48, 35, 48, 67, 1652, 1684, [anonV('__decorate20430:line48', 'silver:definition:env:typerep'), anonEqV('__decorate20430:line48')]),
+ local('silver:extension:functorattrib:makeArgs', 'silver:extension:functorattrib:makeArgs:local:validTypeHead', '', [anonV('__decorate20431:line48', 'silver:definition:type:isDecorable'), anonEqV('__decorate20431:line48')]),
+ anon('silver:extension:functorattrib:makeArgs', '__scrutinee20432:line51', 'core:List', 'ProductionBody.sv', 51, 4, 64, 7, 1702, 2174, []),
+ anon('silver:extension:functorattrib:makeAnnoArgs', '__decorate20433:line78', 'silver:definition:env:NamedSignatureElement', 'ProductionBody.sv', 78, 55, 78, 79, 2747, 2771, []),
+ local('silver:extension:functorattrib:makeAnnoArgs', 'silver:extension:functorattrib:makeAnnoArgs:local:annoName', 'silver:definition:core:QName', [anonV('__decorate20433:line78', 'silver:definition:env:elementName'), anonEqV('__decorate20433:line78')]),
+ anon('silver:extension:functorattrib:makeAnnoArgs', '__scrutinee20434:line81', 'core:List', 'ProductionBody.sv', 81, 4, 94, 7, 2790, 3158, []),
+ anon('silver:extension:functorattrib:propagateOne', '__decorate20435:line109', 'silver:definition:core:BlockContext', 'ProductionBody.sv', 109, 45, 109, 64, 3703, 3722, [lhsInhV('silver:definition:core:frame')]),
+ anon('silver:extension:functorattrib:propagateOne', '__decorate20436:line109', 'silver:definition:env:NamedSignature', 'ProductionBody.sv', 109, 45, 109, 78, 3703, 3736, [anonV('__decorate20435:line109', 'silver:definition:core:signature'), anonEqV('__decorate20435:line109')]),
+ anon('silver:extension:functorattrib:propagateOne', '__decorate20437:line109', 'silver:definition:env:NamedSignatureElement', 'ProductionBody.sv', 109, 45, 109, 90, 3703, 3748, [anonV('__decorate20436:line109', 'silver:definition:env:outputElement'), anonEqV('__decorate20436:line109')]),
+ local('silver:extension:functorattrib:propagateOne', 'silver:extension:functorattrib:propagateOne:local:topName', 'silver:definition:core:QName', [anonV('__decorate20437:line109', 'silver:definition:env:elementName'), anonEqV('__decorate20437:line109')]),
+ anon('silver:extension:functorattrib:propagateOne', '__decorate20438:line110', 'silver:definition:core:BlockContext', 'ProductionBody.sv', 110, 46, 110, 64, 3797, 3815, [lhsInhV('silver:definition:core:frame')]),
+ local('silver:extension:functorattrib:propagateOne', 'silver:extension:functorattrib:propagateOne:local:prodName', 'silver:definition:core:QName', [anonV('__decorate20438:line110', 'silver:definition:env:fullName'), anonEqV('__decorate20438:line110')]),
+ localInh('silver:extension:functorattrib:propagateOne', 'silver:extension:functorattrib:propagateOne:local:prodName', 'silver:definition:core:grammarName', [lhsInhV('silver:definition:core:grammarName')]),
+ localInh('silver:extension:functorattrib:propagateOne', 'silver:extension:functorattrib:propagateOne:local:prodName', 'silver:definition:env:config', [lhsInhV('silver:definition:env:config')]),
+ localInh('silver:extension:functorattrib:propagateOne', 'silver:extension:functorattrib:propagateOne:local:prodName', 'silver:definition:env:env', [lhsInhV('silver:definition:env:env')]),
+ anon('silver:extension:functorattrib:propagateOne', '__decorate20442:line117', 'silver:definition:core:BlockContext', 'ProductionBody.sv', 117, 45, 117, 64, 4097, 4116, [lhsInhV('silver:definition:core:frame')]),
+ anon('silver:extension:functorattrib:propagateOne', '__decorate20443:line117', 'silver:definition:env:NamedSignature', 'ProductionBody.sv', 117, 45, 117, 78, 4097, 4130, [anonV('__decorate20442:line117', 'silver:definition:core:signature'), anonEqV('__decorate20442:line117')]),
+ local('silver:extension:functorattrib:propagateOne', 'silver:extension:functorattrib:propagateOne:local:inputs', 'silver:definition:core:AppExprs', [lhsInhV('silver:definition:env:env'), anonV('__decorate20443:line117', 'silver:definition:env:inputElements'), anonEqV('__decorate20443:line117')]),
+ anon('silver:extension:functorattrib:propagateOne', '__decorate20444:line121', 'silver:definition:core:BlockContext', 'ProductionBody.sv', 121, 46, 121, 65, 4331, 4350, [lhsInhV('silver:definition:core:frame')]),
+ anon('silver:extension:functorattrib:propagateOne', '__decorate20445:line121', 'silver:definition:env:NamedSignature', 'ProductionBody.sv', 121, 46, 121, 84, 4331, 4369, [anonV('__decorate20444:line121', 'silver:definition:core:signature'), anonEqV('__decorate20444:line121')]),
+ local('silver:extension:functorattrib:propagateOne', 'silver:extension:functorattrib:propagateOne:local:annotations', 'silver:definition:core:AnnoAppExprs', [localEqV('silver:extension:functorattrib:propagateOne:local:topName'), anonV('__decorate20445:line121', 'silver:definition:env:namedInputElements'), anonEqV('__decorate20445:line121')]),
+ fwd('silver:extension:functorattrib:propagateOne', [localEqV('silver:extension:functorattrib:propagateOne:local:topName'), localEqV('silver:extension:functorattrib:propagateOne:local:prodName'), localEqV('silver:extension:functorattrib:propagateOne:local:inputs'), localEqV('silver:extension:functorattrib:propagateOne:local:annotations')], f),
+ implicitFwdAffects('silver:extension:functorattrib:propagateOne', [])]

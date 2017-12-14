@@ -1,0 +1,21 @@
+declaredName 'silver:analysis:warnings'
+grammarTime 1508471626
+grammarSource "/home/ubuntu/ableC-bundle/silver/grammars/silver/analysis/warnings/"
+moduleNames ['silver:util:cmdargs', 'silver:driver', 'core']
+allDeps ['core:monad', 'silver:driver:util', 'core', 'silver:driver', 'silver:util:cmdargs', 'silver:analysis:warnings']
+exportedGrammars []
+optionalGrammars []
+condBuild []
+defs [
+ syn('Project.sv', 6, 22, 6, 29, 125, 132, 'silver:analysis:warnings:warnAll', [], bool),
+ @('Project.sv', 6, 22, 6, 29, 125, 132, 'silver:util:cmdargs:CmdArgs', 'silver:analysis:warnings:warnAll', [], nt('silver:util:cmdargs:CmdArgs', []), bool),
+ prod('Project.sv', 13, 20, 13, 31, 269, 280, [], signature('silver:analysis:warnings:warnAllFlag', [element('rest', nt('silver:util:cmdargs:CmdArgs', []))], element('top', nt('silver:util:cmdargs:CmdArgs', [])), [])),
+ p@('Project.sv', 13, 20, 13, 31, 269, 280, [], signature('silver:analysis:warnings:warnAllFlag', [element('rest', nt('silver:util:cmdargs:CmdArgs', []))], element('top', nt('silver:util:cmdargs:CmdArgs', [])), []), [
+ fwd('Project.sv', 17, 2, 17, 19, 338, 355, nt('silver:util:cmdargs:CmdArgs', []))])]
+syntax []
+parsers []
+flow [nonHostSyn('silver:analysis:warnings:warnAll', 'silver:util:cmdargs:CmdArgs'),
+ syn('silver:util:cmdargs:endCmdArgs', 'silver:analysis:warnings:warnAll', [], t),
+ syn('silver:analysis:warnings:warnAllFlag', 'silver:analysis:warnings:warnAll', [], t),
+ fwd('silver:analysis:warnings:warnAllFlag', [], f),
+ implicitFwdAffects('silver:analysis:warnings:warnAllFlag', ['silver:analysis:warnings:warnAll'])]
