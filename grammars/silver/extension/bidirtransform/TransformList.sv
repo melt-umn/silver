@@ -79,22 +79,16 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] cncNames::[String
     -- for $type in allTypes
     -- attribute inhRedex_$tName occurs on $type;
     local agDcls4::AGDcl = appendAGDcl(attrOn(inhRedexName, absNames++cncNames, location=top.location), agDcls3, location=top.location);
-    
-    -- for $absType in absTypes
-    -- attribute restored$cncType occurs on Origin, $absType;
-    local agDcls5::AGDcl = foldl(\ agDcls::AGDcl name::String->
-            appendAGDcl(attrOn(restoreNm(unFull(name)), absNames ++ ["Origin"], location=top.location), agDcls, location=top.location),
-        agDcls4, cncNames);
 
     -- attribute transformed_$tName occurs on $absType;
-    local agDcls6::AGDcl = appendAGDcl(attrOn(transformNm(tName), absNames, location=top.location), agDcls5, location=top.location);  
+    local agDcls5::AGDcl = appendAGDcl(attrOn(transformNm(tName), absNames, location=top.location), agDcls4, location=top.location);  
 
     -- attribute $tName occurs on $absType;
-    local agDcls7::AGDcl = appendAGDcl(attrOn(tName, absNames, location=top.location), agDcls6, location=top.location);      
+    local agDcls6::AGDcl = appendAGDcl(attrOn(tName, absNames, location=top.location), agDcls5, location=top.location);      
     
-    agDcls7.compiledGrammars = top.compiledGrammars;
-    agDcls7.grammarName = top.grammarName;
-    agDcls7.flowEnv = top.flowEnv;
+    agDcls6.compiledGrammars = top.compiledGrammars;
+    agDcls6.grammarName = top.grammarName;
+    agDcls6.flowEnv = top.flowEnv;
 
-    forwards to agDcls7;
+    forwards to agDcls6;
 }

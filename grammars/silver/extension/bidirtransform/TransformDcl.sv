@@ -131,11 +131,17 @@ ag::AGDcls ::= 'transform' trsl::TransformList
             appendAGDcl(synAttr(restoreNm(unFull(name)), sTyExpr(name, location=ag.location), location=ag.location), agDcls, location=ag.location),
         agDcls0, cncNames);
 
+    -- for $absType in absTypes
+    -- attribute restored$cncType occurs on Origin, $absType;
+    local agDcls2::AGDcl = foldl(\ agDcls::AGDcl name::String->
+            appendAGDcl(attrOn(restoreNm(unFull(name)), absNames ++ ["Origin"], location=ag.location), agDcls, location=ag.location),
+        agDcls1, cncNames);
+
     -- Aspecting origin productions
 
     -- restored$cncType attributes
     --
-    local agDcls2::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
+    local agDcls3::AGDcl = foldl(\ agDcls::AGDcl lhs::String->
         appendAGDcl(
             fakeAspectProductionDcl('aspect', 'production',
             qName(ag.location, mkOriginName(lhs)), mkAspectProdSigDec("o", "Origin", "e", lhs, location=ag.location),
@@ -146,13 +152,13 @@ ag::AGDcls ::= 'transform' trsl::TransformList
                                 applyRwOrigin(rwID(newRwRules.rewriteRules, lhs, rhs), rhs, lhs, "o", "e", location=ag.location), location=ag.location)
                         , location=ag.location),
                 productionStmtsNil(location=ag.location), cncNames), '}', location=ag.location), location=ag.location), agDcls, location=ag.location),
-        agDcls1, cncNames);
+        agDcls2, cncNames);
 
     -- Non-origin aspecting
 
     -- for each abstract production
     -- top.wasTransformed = wasTransformed(top.origin, top.redex) || <rhs>.wasTransformed;
-    local agDcls3::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+    local agDcls4::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
             attribDef(ns.outputElement.elementName, "wasTransformed",
                 foldl(\ e::Expr ie::NamedSignatureElement -> 
@@ -165,10 +171,10 @@ ag::AGDcls ::= 'transform' trsl::TransformList
                             lhsAccess("origin", ns, location=ag.location)
                         ], location=ag.location),
                     location=ag.location), ns.inputElements), location=ag.location), location=ag.location), agDcls, location=ag.location),
-        agDcls2, absProdDcls);
+        agDcls3, absProdDcls);
 
     -- top.restored$cncType = < rewrite + transformation rules ...>
-    local agDcls4::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+    local agDcls5::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
             foldl(\ stmts::ProductionStmts rhs::String ->
                 -- if there isn't a rewrite rule from this production to this lhs then don't define this
@@ -190,11 +196,10 @@ ag::AGDcls ::= 'transform' trsl::TransformList
                         else applyRw(rwMatch(newRwRules.rewriteRules, rhs, ns), rhs, unFull(ns.typerep.typeName), ns.outputElement.elementName, location=ag.location),    
                     location=ag.location), location=ag.location),
             productionStmtsNil(location=ag.location), cncNames), location=ag.location), agDcls, location=ag.location),
-        agDcls3, absProdDcls);
-    --local agDcls11::AGDcl = agDcls10;
+        agDcls4, absProdDcls);
 
     -- define transformation attributes (those dependent on each transformation declared)
-    local agDcls5::AGDcl = foldl(\ agDcls::AGDcl tdcl::Decorated TransformDcl -> 
+    local agDcls6::AGDcl = foldl(\ agDcls::AGDcl tdcl::Decorated TransformDcl -> 
         joinAGDcls([
         -- top.$tName = ...
         --  if this abstract production has no transformations defined for it,
@@ -267,30 +272,30 @@ ag::AGDcls ::= 'transform' trsl::TransformList
                         location=ag.location), location=ag.location),
                 productionStmtsNil(location=ag.location), ns.inputElements), location=ag.location), agDcls, location=ag.location),
             emptyAGDcl(location=ag.location), absProdDcls), agDcls], location=ag.location),
-    agDcls4, trsl.transformDcls);
+    agDcls5, trsl.transformDcls);
     
     -- for each concrete type, if it has location, aspect all of its creating
     -- productions with 
     --
     -- top.suppliedOrigin = locationOrigin(ag.location);
-    local agDcls6::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+    local agDcls7::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
             attribDef(ns.outputElement.elementName, "suppliedOrigin",
                 argFunc("locationOrigin", appExprList([
                     lhsAccess("location", ns, location=ag.location)
                 ], location=ag.location), location=ag.location),
             location=ag.location), location=ag.location), agDcls, location=ag.location),
-        agDcls5, locCncProdDcls);
+        agDcls6, locCncProdDcls);
 
     -- or if they don't have location:
     --
     -- top.suppliedOrigin = bottomOrigin();
-    local agDcls7::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+    local agDcls8::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
         appendAGDcl(aspectProdStmt(dcl,\ ns::Decorated NamedSignature ->
             attribDef(ns.outputElement.elementName, "suppliedOrigin",
                 emptyFunc("bottomOrigin", location=ag.location), location=ag.location),
             location=ag.location), agDcls, location=ag.location), 
-        agDcls6, nonLocCncProdDcls);
+        agDcls7, nonLocCncProdDcls);
 
 
     -- origin generation
@@ -298,7 +303,7 @@ ag::AGDcls ::= 'transform' trsl::TransformList
         applyOrigins(absGroup.ntList, location=ag.location), 
         appendAGDcl(
             cncApplyOrigins(cncGroup.ntList, location=ag.location),
-            agDcls7, location=ag.location), location=ag.location);
+            agDcls8, location=ag.location), location=ag.location);
 
     toForward.env = nestedAgs.env;
     nestedAgs.env = appendEnv(ag.env, toEnv(toForward.defs));
