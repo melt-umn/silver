@@ -62,19 +62,13 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] cncNames::[String
     local inhRedexName::String = inhRedexNm(tName);
 
     -- autocopy attribute inRedex_$tName :: Maybe<Origin>; 
-    local agDcls::AGDcl = autocAttr(inhRedexName, mkMaybeTypeExpr("Origin", location=top.location), location=top.location);
-
-    -- for $cncType in cncTypes
-    -- synthesized attribute restored$cncType :: $cncType;
-    local agDcls2::AGDcl = foldl(\ agDcls::AGDcl name::String-> 
-            appendAGDcl(synAttr(restoreNm(unFull(name)), sTyExpr(name, location=top.location), location=top.location), agDcls, location=top.location),
-        agDcls, cncNames);
+    local agDcls1::AGDcl = autocAttr(inhRedexName, mkMaybeTypeExpr("Origin", location=top.location), location=top.location);
 
     -- synthesized attribute $tName :: $tType;
-    local agDcls3::AGDcl = appendAGDcl(synAttr(tName, tdcl.transType, location=top.location), agDcls2, location=top.location);
+    local agDcls2::AGDcl = appendAGDcl(synAttr(tName, tdcl.transType, location=top.location), agDcls1, location=top.location);
 
     -- synthesized attribute transformed_$tName :: Boolean;
-    local agDcls4::AGDcl = appendAGDcl(synAttr(transformNm(tName), mkBoolTypeExpr(location=top.location), location=top.location), agDcls3, location=top.location);    
+    local agDcls3::AGDcl = appendAGDcl(synAttr(transformNm(tName), mkBoolTypeExpr(location=top.location), location=top.location), agDcls2, location=top.location);    
 
     -- Occurances of attributes, annotations
 
@@ -84,23 +78,23 @@ top::AGDcl ::= tdcl::Decorated TransformDcl absNames::[String] cncNames::[String
 
     -- for $type in allTypes
     -- attribute inhRedex_$tName occurs on $type;
-    local agDcls5::AGDcl = appendAGDcl(attrOn(inhRedexName, absNames++cncNames, location=top.location), agDcls4, location=top.location);
+    local agDcls4::AGDcl = appendAGDcl(attrOn(inhRedexName, absNames++cncNames, location=top.location), agDcls3, location=top.location);
     
     -- for $absType in absTypes
     -- attribute restored$cncType occurs on Origin, $absType;
-    local agDcls6::AGDcl = foldl(\ agDcls::AGDcl name::String->
+    local agDcls5::AGDcl = foldl(\ agDcls::AGDcl name::String->
             appendAGDcl(attrOn(restoreNm(unFull(name)), absNames ++ ["Origin"], location=top.location), agDcls, location=top.location),
-        agDcls5, cncNames);
+        agDcls4, cncNames);
 
     -- attribute transformed_$tName occurs on $absType;
-    local agDcls7::AGDcl = appendAGDcl(attrOn(transformNm(tName), absNames, location=top.location), agDcls6, location=top.location);  
+    local agDcls6::AGDcl = appendAGDcl(attrOn(transformNm(tName), absNames, location=top.location), agDcls5, location=top.location);  
 
     -- attribute $tName occurs on $absType;
-    local agDcls8::AGDcl = appendAGDcl(attrOn(tName, absNames, location=top.location), agDcls7, location=top.location);      
+    local agDcls7::AGDcl = appendAGDcl(attrOn(tName, absNames, location=top.location), agDcls6, location=top.location);      
     
     agDcls8.compiledGrammars = top.compiledGrammars;
     agDcls8.grammarName = top.grammarName;
     agDcls8.flowEnv = top.flowEnv;
 
-    forwards to agDcls8;
+    forwards to agDcls7;
 }

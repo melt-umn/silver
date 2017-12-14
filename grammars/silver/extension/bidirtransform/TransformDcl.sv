@@ -119,11 +119,17 @@ ag::AGDcls ::= 'transform' trsl::TransformList
     -----------------------
     -- Generating code
 
-    local agDcls1::AGDcl = foldl(\ agDcls::AGDcl tdcl::Decorated TransformDcl ->
+    local agDcls0::AGDcl = foldl(\ agDcls::AGDcl tdcl::Decorated TransformDcl ->
         appendAGDcl(
             declareTNameAttributes(tdcl, absNames, cncNames, location=ag.location),
             agDcls, location=ag.location),
     emptyAGDcl(location=ag.location), trsl.transformDcls);
+
+    -- for $cncType in cncTypes
+    -- synthesized attribute restored$cncType :: $cncType;
+    local agDcls1::AGDcl = foldl(\ agDcls::AGDcl name::String-> 
+            appendAGDcl(synAttr(restoreNm(unFull(name)), sTyExpr(name, location=top.location), location=top.location), agDcls, location=top.location),
+        agDcls0, cncNames);
 
     -- Aspecting origin productions
 
