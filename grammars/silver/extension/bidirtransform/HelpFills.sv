@@ -199,13 +199,13 @@ Pair<[Decorated Expr] [String]> ::= e::Decorated Expr pattern::Pattern env::Deco
 }
 
 function pullOutAppExprs
-[Expr] ::= aexprs::AppExprs
+[Decorated Expr] ::= aexprs::AppExprs env::Decorated Env
 {
     return case aexprs of 
         | snocAppExprs(es,_,e) -> 
-            pullOutAppExprs(es) ++ case e of presentAppExpr(e2) -> [e2] end
+            pullOutAppExprs(es) ++ case e of presentAppExpr(e2) -> [decorate e2 with {env = env;}] end
         | oneAppExprs(e) -> 
-            case e of presentAppExpr(e2) -> [e2] end
+            case e of presentAppExpr(e2) -> [decorate e2 with {env = env;}] end
         | _ -> []
     end;
 }
