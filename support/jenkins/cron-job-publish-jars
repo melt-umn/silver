@@ -27,7 +27,7 @@ cp -u --remove-destination $JENKINS_DUMP/*.jar $WEB_STORE/jars
 cp -u --remove-destination $JENKINS_DUMP/silver-latest.tar.gz $WEB_STORE
 
 # fix permissions
-chgrp -R melt $WEB_STORE/jars $WEB_STORE/silver*
+chgrp -R cs-melt $WEB_STORE/jars $WEB_STORE/silver*
 chmod -R 775 $WEB_STORE/jars $WEB_STORE/silver*
 
 # indicate the last successful time in which this script ran
