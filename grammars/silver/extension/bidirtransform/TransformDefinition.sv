@@ -166,6 +166,24 @@ top::AGDcl ::= tr::Decorated TransformRule nm::String typeName::String absNames:
             productionStmtsNil(location=top.location), ns.inputElements), location=top.location), agDcls, location=top.location),
         agDcls2, absProdDcls);
 
+    -- apply the above inhRedex logic to 
+    -- the tName without the index as well
+    -- in progress
+    -- local agDcls4::AGDcl = foldl(\ agDcls::AGDcl dcl::Decorated NamedSignature ->
+    --     appendAGDcl(aspectProdStmts(dcl,\ ns::Decorated NamedSignature ->
+    --             prdStmtList([
+    --                 attribDef(nm, inhRedexName,
+    --                         if !hasTrans([tr], dcl)
+    --                         then emptyFunc("nothing", location=top.location)
+    --                         else mkCond(
+    --                             lhsExprAccess(transformName, ns, location=top.location),
+    --                             argFunc("just", oneApp(mkOrigin(ns, location=top.location), location=top.location), location=top.location),
+    --                             emptyFunc("nothing", location=top.location),
+    --                         location=top.location),
+    --                 location=top.location)], location=top.location),
+    --             location=top.location), agDcls, location=top.location),
+    --     agDcls3, absProdDcls);
+
     agDcls3.compiledGrammars = top.compiledGrammars;
     agDcls3.grammarName = top.grammarName;
     agDcls3.flowEnv = top.flowEnv;
