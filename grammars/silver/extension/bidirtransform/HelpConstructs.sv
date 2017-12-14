@@ -390,7 +390,7 @@ top::BracketedOptTypeExprs ::= te::TypeExpr
 {
     forwards to botlSome('<',
         typeListSingle(te, location=top.location),
-    '>', loation=top.location);
+    '>', location=top.location);
 }
 
 -- mkProdSig returns a production signature of "lhsName::lhsType ::= rhsName::rhsType"

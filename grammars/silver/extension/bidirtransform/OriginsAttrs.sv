@@ -86,7 +86,8 @@ top::AGDcl ::= qns::[QName] pfix::String
     qns);
 
     local tyExprs::[TypeExpr] = map(\ qn::QName ->
-        mkMaybeTypeExpr(head(getAttrDcl(qn.name, top.env)).typerep),
+        mkMaybeTypeExpr(typerepTypeExpr(
+            head(getAttrDcl(qn.name, top.env)).typerep)),
     qns);
 
     top.errors <- foldl(\ errs::[Message] qn::QName ->
