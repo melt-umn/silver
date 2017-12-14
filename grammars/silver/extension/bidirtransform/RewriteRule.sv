@@ -150,16 +150,16 @@ rule::RewriteRule ::= rhs::Expr inName::String inType::Type outType::Type inProd
     rule.shouldRestore = restore;
     rule.outputStmt = if !hasProd
         then (\ e::Expr -> 
-            fillExpr(rhs, [e], [inName], location=e.location))
+            fillExpr(rhs, [decorate e with {env = rule.env;}], [inName], location=e.location))
         else (\ e::Expr ->
             case e of application(_, _, aexpr, _, _, _) -> 
-                fillExpr(rhs, pullOutAppExprs(aexpr, top.env), inProd.inputNames, location=e.location)
+                fillExpr(rhs, pullOutAppExprs(aexpr, rule.env), inProd.inputNames, location=e.location)
             end
         );
 
     rule.restoreStmt = (\ e::Expr ->
             case e of application(_, _, aexpr, _, _, _) -> 
-                restoreExpr(rhs, pullOutAppExprs(aexpr, top.env), inProd.inputNames, rhsNs.fromJust, location=e.location)
+                restoreExpr(rhs, pullOutAppExprs(aexpr, rule.env), inProd.inputNames, rhsNs.fromJust, location=e.location)
             end
         );
 }

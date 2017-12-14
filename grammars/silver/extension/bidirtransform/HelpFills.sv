@@ -1,7 +1,7 @@
 grammar silver:extension:bidirtransform;
 
 abstract production fillExpr
-top::Expr ::= toFill::Expr exps::[Decorated Expr] names::[String]
+top::Decorated Expr ::= toFill::Expr exps::[Decorated Expr] names::[String]
 {
     -- todo: fill out more cases?
     -- todo also: convert all of this nonsense into attributes with aspect productions?
@@ -66,7 +66,7 @@ top::Decorated Expr ::= toFill::Expr exps::[Decorated Expr] names::[String] s::S
 }
 
 abstract production fillExprEnd
-top::Expr ::= toFill::Expr exps::[Decorated Expr] names::[String] qn::Decorated QName
+top::Decorated Expr ::= toFill::Expr exps::[Decorated Expr] names::[String] qn::Decorated QName
 {   
     forwards to fillStringConst(toFill, exps, names, qn.name, location=toFill.location);
 }
