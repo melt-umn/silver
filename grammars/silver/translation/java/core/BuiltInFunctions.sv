@@ -10,7 +10,7 @@ top::Expr ::= e::Decorated Expr
 aspect production stringLength
 top::Expr ::= e::Decorated Expr
 {
-  top.translation = "Integer.valueOf(((common.StringCatter)" ++ e.translation ++ ").length())";
+  top.translation = s"Integer.valueOf(((common.StringCatter)${e.translation}).length())";
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
@@ -20,8 +20,8 @@ top::Expr ::= 'toInt' '(' e::Expr ')'
 {
   top.translation = case finalType(e) of
                     | intType() -> e.translation
-                    | floatType() -> "Integer.valueOf(((Float)" ++ e.translation ++ ").intValue())"
-                    | stringType() -> "Integer.valueOf(" ++ e.translation ++ ".toString())"
+                    | floatType() -> s"Integer.valueOf(((Float)${e.translation}).intValue())"
+                    | stringType() -> s"Integer.valueOf(${e.translation}.toString())"
                     | t -> error("INTERNAL ERROR: no toInt translation for type " ++ prettyType(t))
                     end;
 
@@ -31,9 +31,9 @@ aspect production toFloatFunction
 top::Expr ::= 'toFloat' '(' e::Expr ')'
 {
   top.translation = case finalType(e) of
-                    | intType() -> "Float.valueOf(((Integer)" ++ e.translation ++ ").floatValue())"
+                    | intType() -> s"Float.valueOf(((Integer)${e.translation}).floatValue())"
                     | floatType() -> e.translation
-                    | stringType() -> "Float.valueOf(" ++ e.translation ++ ".toString())"
+                    | stringType() -> s"Float.valueOf(${e.translation}.toString())"
                     | t -> error("INTERNAL ERROR: no toFloat translation for type " ++ prettyType(t))
                     end;
 
@@ -42,7 +42,7 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
 aspect production toStringFunction
 top::Expr ::= 'toString' '(' e::Expr ')'
 {
-  top.translation = "new common.StringCatter(String.valueOf(" ++ e.translation ++ "))";
+  top.translation = s"new common.StringCatter(String.valueOf(${e.translation}))";
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
@@ -50,7 +50,7 @@ top::Expr ::= 'toString' '(' e::Expr ')'
 aspect production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {
-  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".undecorate())";
+  top.translation = s"((${finalType(top).transType})${e.translation}.undecorate())";
   
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
@@ -58,7 +58,7 @@ top::Expr ::= 'new' '(' e::Expr ')'
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
-  top.translation = "new " ++ makeTerminalName(t.typerep.typeName) ++ "(" ++ es.translation ++ ", (core.NLocation)" ++ el.translation ++ ")";
+  top.translation = s"new ${makeTerminalName(t.typerep.typeName)}(${es.translation}, (core.NLocation)${el.translation})";
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
