@@ -1,6 +1,6 @@
 grammar core:reflect;
 
-function reflectAST
+function reflect
 AST ::= x::a
 {
   return error("Foreign function");
