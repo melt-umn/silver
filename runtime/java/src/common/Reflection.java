@@ -2,31 +2,11 @@ package common;
 
 import java.io.*;
 import java.lang.reflect.*;
-import java.nio.channels.FileChannel;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import common.exceptions.*;
-import common.javainterop.ConsCellCollection;
 
-import core.NLocation;
-import core.NParseError;
-import core.NParseResult;
-import core.NTerminalDescriptor;
-import core.Ploc;
-import core.PparseFailed;
-import core.PsyntaxError;
-import core.PterminalDescriptor;
-import core.PunknownParseError;
-import edu.umn.cs.melt.copper.runtime.engines.CopperParser;
-import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
-import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
+import core.reflect.*;
 
 
 /**
@@ -35,28 +15,41 @@ import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
  * @author krame505
  */
 public final class Reflection {
-	public static core.reflect.NAST reflect(Object o) {
+	public static NAST reflect(Object o) {
 		if(o instanceof Node) {
-			return null;// TODO
+			Node n = (Node)o;
+			NASTs children = new PnilAST();
+			for (int i = n.getNumberOfChildren() - 1; i >= 0; i--) {
+				Object value = reflect(n.getChild(i));
+				children = new PconsAST(value, children);
+			}
+			String[] annotationNames = n.getAnnoNames();
+			NNamedASTs annotations = new PnilNamedAST();
+			for (int i = annotationNames.length - 1; i >= 0; i--) {
+				String name = annotationNames[i];
+				Object value = reflect(n.getAnno(name));
+				annotations = new PconsNamedAST(new PnamedAST(new StringCatter(name), value), annotations);
+			}
+			return new PnonterminalAST(new StringCatter(n.getName()), children, annotations);
 		} else if(o instanceof ConsCell) {
-			return new core.reflect.PlistAST(reflectList((ConsCell)o));
+			return new PlistAST(reflectList((ConsCell)o));
 		} else if(o instanceof StringCatter) {
-			return new core.reflect.PstringAST((StringCatter)o);
+			return new PstringAST((StringCatter)o);
 		} else if(o instanceof Integer) {
-			return new core.reflect.PintegerAST((Integer)o);
+			return new PintegerAST((Integer)o);
 		} else if(o instanceof Float) {
-			return new core.reflect.PfloatAST((Float)o);
+			return new PfloatAST((Float)o);
 		} else if(o instanceof Boolean) {
-			return new core.reflect.PbooleanAST((Boolean)o);
+			return new PbooleanAST((Boolean)o);
 		} else {
-			return new core.reflect.PforeignAST(o);
+			return new PforeignAST(o);
 		}
 	}
-	private static core.reflect.NASTs reflectList(ConsCell l) {
+	private static NASTs reflectList(ConsCell l) {
 		if (!l.nil()) {
-			return new core.reflect.PconsAST(l.head(), l.tail());
+			return new PconsAST(reflect(l.head()), reflectList(l.tail()));
 		} else {
-			return new core.reflect.PnilAST();
+			return new PnilAST();
 		}
 	}
 }
