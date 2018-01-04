@@ -8,10 +8,10 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local className :: String = "P" ++ id.name;
 
   top.setupInh := body.setupInh;
-  top.initProd := "\t\t" ++ makeName(top.grammarName) ++ "." ++ className ++ ".initProductionAttributeDefinitions();\n";
-  top.postInit := "\t\tcommon.Decorator.applyDecorators(" ++ fnnt ++ ".decorators, " ++ className ++ ".class);\n";
+  top.initProd := s"\t\t${makeName(top.grammarName)}.${className}.initProductionAttributeDefinitions();\n";
+  top.postInit := s"\t\tcommon.Decorator.applyDecorators(${fnnt}.decorators, ${className}.class);\n";
 
-  top.initWeaving := "\tpublic static int " ++ localVar ++ " = 0;\n";
+  top.initWeaving := s"\tpublic static int ${localVar} = 0;\n";
   top.valueWeaving := body.valueWeaving;
 
   local localVar :: String = "count_local__ON__" ++ makeIdName(fName);
@@ -93,7 +93,7 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 	@Override
 	public common.Node evalForward(final common.DecoratedNode context) {
 		${if null(body.uniqueSignificantExpression) 
-		  then "throw new common.exceptions.SilverInternalError(\"Production " ++ fName ++ " erroneously claimed to forward\")"
+		  then s"throw new common.exceptions.SilverInternalError(\"Production ${fName} erroneously claimed to forward\")"
 		  else "return " ++ head(body.uniqueSignificantExpression).translation};
 	}
 

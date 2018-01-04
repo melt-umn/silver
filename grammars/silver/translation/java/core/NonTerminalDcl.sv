@@ -64,6 +64,18 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 	public final String getNameOfSynAttr(final int index) {
 		return occurs_syn[index];
 	}
+
+	@Override
+	public final String[] getAnnoNames() {
+		return new String[]{${implode(", ", map((.annoNameElem), myAnnos))}};
+	}
+	
+	@Override
+	public final Object getAnno(final String name) {
+		${sconcat(map((.annoLookupElem), myAnnos))}{
+			throw new common.exceptions.SilverInternalError("Invalid annotation " + name);
+		}
+	}
 }
 """)];
 

@@ -72,4 +72,13 @@ public abstract class FunctionNode extends Node {
 		throw new SilverInternalError("Functions do not possess synthesized attributes! (Requested name of index " + index + ")");
 	}
 
+	@Override
+	public final String[] getAnnoNames() {
+		throw new SilverInternalError("Functions do not possess annotations!");
+	}
+	
+	@Override
+	public final Object getAnno(final String name) {
+		throw new SilverInternalError("Functions do not possess annotations! (Requested name " + name + ")");
+	}
 }

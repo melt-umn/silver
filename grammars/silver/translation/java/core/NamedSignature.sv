@@ -15,6 +15,10 @@ synthesized attribute childStaticElem :: String occurs on NamedSignatureElement;
 -- "private Object child_signame..."
 synthesized attribute childDeclElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoDeclElem :: String occurs on NamedSignatureElement;
+-- "signame"
+synthesized attribute annoNameElem :: String occurs on NamedSignatureElement;
+-- "if (name.equals("signame")) { return getAnno_signame(); }"
+synthesized attribute annoLookupElem :: String occurs on NamedSignatureElement;
 
 aspect production namedSignature
 top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
@@ -54,6 +58,12 @@ s"""	private Object anno_${fn};
 	}
 
 """;
+
+  top.annoNameElem = s"\"${n}\"";
+  top.annoLookupElem =
+s"""if (name.equals("${n}")) {
+			return getAnno_${fn}();
+		} else """;
 }
 
 function makeIndexDcls
