@@ -15,7 +15,8 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   top.valueWeaving := body.valueWeaving;
 
   local localVar :: String = "count_local__ON__" ++ makeIdName(fName);
-  local fnnt :: String = makeNTClassName(namedSig.outputElement.typerep.typeName);
+  local ntName :: String = namedSig.outputElement.typerep.typeName;
+  local fnnt :: String = makeNTClassName(ntName);
 
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
@@ -124,6 +125,31 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 
 	static void initProductionAttributeDefinitions() {
 ${body.translation}
+	}
+	
+	static ${className} reify(final common.TypeRep resultType, final java.util.List<core.reflect.NAST> childASTs, final java.util.Map<String, core.reflect.NAST> annotationASTs) {
+		if (resultType.baseName != "${ntName}") {
+			throw new common.exceptions.SilverError("reify is constructing " + resultType.toString() + ", but found ${ntName} AST (production ${fName}).");
+		}
+		
+		if (childASTs.size() != ${toString(length(namedSig.inputElements))}) {
+			throw new common.exceptions.SilverError("reification of production ${fName} expected ${toString(length(namedSig.inputElements))} children, but got " + childASTs.size() + ".");
+		}
+		
+		final java.util.Set<String> expectedAnnotations =
+			new java.util.HashSet<>(java.util.Arrays.asList(${implode(", ", map((.annoNameElem), annotationsForNonterminal(namedSig.outputElement.typerep, top.env)))}));
+		for (String name : expectedAnnotations) {
+			if (!annotationASTs.containsKey(name)) {
+				throw new common.exceptions.SilverError("reification of production ${fName} missing annotation " + name + ".");
+			}
+		}
+		for (String name : annotationASTs.keySet()) {
+			if (!expectedAnnotations.contains(name)) {
+				throw new common.exceptions.SilverError("reification of production ${fName} got unexpected annotation " + name + ".");
+			}
+		}
+		
+		return new ${className}(${namedSig.reifyTrans});
 	}
 
 	public static final common.NodeFactory<${className}> factory = new Factory();

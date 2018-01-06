@@ -4,6 +4,7 @@ grammar silver:translation:java:core;
  - The java translation of the *input parameters* signature.
  -}
 synthesized attribute javaSignature :: String occurs on NamedSignature;
+synthesized attribute reifyTrans :: String occurs on NamedSignature;
 -- "final Object c_signame"
 synthesized attribute childSigElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoSigElem :: String occurs on NamedSignatureElement;
@@ -19,11 +20,16 @@ synthesized attribute annoDeclElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoNameElem :: String occurs on NamedSignatureElement;
 -- "if (name.equals("signame")) { return getAnno_signame(); }"
 synthesized attribute annoLookupElem :: String occurs on NamedSignatureElement;
+-- "common.ReifyFn.reify(child_transTypeRep, childASTs.get(i_child));"
+synthesized attribute childReifyElem :: String occurs on NamedSignatureElement;
+-- "common.ReifyFn.reify(anno_transTypeRep, annotationASTs.get("signame"));"
+synthesized attribute annoReifyElem :: String occurs on NamedSignatureElement;
 
 aspect production namedSignature
 top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
 {
   top.javaSignature = implode(", ", map((.childSigElem), ie) ++ map((.annoSigElem), np));
+  top.reifyTrans = implode(", ", map((.childReifyElem), ie) ++ map((.annoReifyElem), np));
 }
 
 -- TODO: It'd be nice to maybe split these into the ordered parameters and the annotations
@@ -43,6 +49,8 @@ s"""	private Object child_${n};
   top.childStaticElem =
     if !ty.isDecorable then ""
     else s"\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTClassName(ty.typeName)}.num_inh_attrs];\n";
+  
+  top.childReifyElem = s"common.ReifyFn.reify(${ty.transTypeRep}, childASTs.get(i_${n}))";
   
   -- annos are full names:
   
@@ -64,6 +72,8 @@ s"""	private Object anno_${fn};
 s"""if (name.equals("${n}")) {
 			return getAnno_${fn}();
 		} else """;
+  
+  top.annoReifyElem = s"common.ReifyFn.reify(${ty.transTypeRep}, annotationASTs.get(\"${n}\"))";
 }
 
 function makeIndexDcls

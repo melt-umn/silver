@@ -1,7 +1,6 @@
 package common;
 
 import java.io.*;
-import java.lang.reflect.*;
 import java.util.*;
 
 import common.exceptions.*;
@@ -15,7 +14,7 @@ import core.reflect.*;
  * @author krame505
  */
 public final class Reflection {
-	public static NAST reflect(Object o) {
+	public static NAST reflect(final Object o) {
 		if(o instanceof Node) {
 			Node n = (Node)o;
 			NASTs children = new PnilAST();
@@ -45,7 +44,7 @@ public final class Reflection {
 			return new PforeignAST(o);
 		}
 	}
-	private static NASTs reflectList(ConsCell l) {
+	private static NASTs reflectList(final ConsCell l) {
 		if (!l.nil()) {
 			return new PconsAST(reflect(l.head()), reflectList(l.tail()));
 		} else {
