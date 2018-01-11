@@ -61,6 +61,16 @@ top::Expr ::= 'toString' '(' e::Expr ')'
   top.typerep = stringType();
 }
 
+concrete production reifyFunctionLiteral
+top::Expr ::= 'reify'
+{
+  top.pp = "reify";
+
+  top.errors := [];
+  top.typerep =
+    functionType(skolemType(freshTyVar()), [nonterminalType("core:reflect:AST", [])], []);
+}
+
 concrete production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {

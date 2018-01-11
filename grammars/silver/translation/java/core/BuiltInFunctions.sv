@@ -47,6 +47,14 @@ top::Expr ::= 'toString' '(' e::Expr ')'
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
+aspect production reifyFunctionLiteral
+top::Expr ::= 'reify'
+{
+  top.translation = s"new common.ReifyFn(???)"; -- TODO
+  
+  top.lazyTranslation = top.translation;
+}
+
 aspect production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {

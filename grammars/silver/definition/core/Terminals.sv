@@ -60,6 +60,7 @@ terminal Length_kwd    'length'    lexer classes {BUILTIN,RESERVED};
 terminal ToFloat_kwd   'toFloat'   lexer classes {BUILTIN,RESERVED};
 terminal ToInt_kwd     'toInt'     lexer classes {BUILTIN,RESERVED};
 terminal ToString_kwd  'toString'  lexer classes {BUILTIN,RESERVED};
+terminal Reify_kwd     'reify'     lexer classes {BUILTIN,RESERVED};
 
 terminal Comma_t       ','  precedence = 4;
 terminal Or_t          '||' precedence = 5, association = left;
