@@ -104,7 +104,7 @@ public abstract class Node {
 	public abstract String[] getAnnoNames();
 
 	/**
-	 * Used for debugging, stack traces especially.
+	 * Used for reflection.
 	 * 
 	 * @param name The name of any annotation returned by <code>getAnnoNames()</code>
 	 * @return The annotation object. (Thunk already evaluated)
