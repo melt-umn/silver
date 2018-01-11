@@ -7,23 +7,24 @@ aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
   top.setupInh := body.setupInh;
-  top.initProd := "\t\t//FUNCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
+  top.initProd := s"\t\t//FUNCTION ${id.name} ${ns.pp}\n" ++ body.translation;
 
   local localVar :: String = "count_local__ON__" ++ makeIdName(fName);
 
-  top.initWeaving := "\tpublic static int " ++ localVar ++ " = 0;\n";
+  top.initWeaving := s"\tpublic static int ${localVar} = 0;\n";
   top.valueWeaving := body.valueWeaving;
 
   local argsAccess :: String =
     implode(", ", map((.childRefElem), namedSig.inputElements));
 
   local funBody :: String =
-    "final common.DecoratedNode context = new P" ++ id.name ++ "(" ++ argsAccess ++ ").decorate();\n" ++
-    "\t\t//" ++ head(body.uniqueSignificantExpression).pp ++ "\n" ++
-    "\t\treturn (" ++ namedSig.outputElement.typerep.transType ++ ")(" ++ head(body.uniqueSignificantExpression).translation ++ ");\n";
+s"""final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate();
+		//${head(body.uniqueSignificantExpression).pp}
+		return (${namedSig.outputElement.typerep.transType})(${head(body.uniqueSignificantExpression).translation});
+""";
 
   top.genFiles :=
-    [pair("P" ++ id.name ++ ".java", generateFunctionClassString(top.grammarName, id.name, namedSig, funBody))] ++
+    [pair(s"P${id.name}.java", generateFunctionClassString(top.grammarName, id.name, namedSig, funBody))] ++
     if id.name == "main" then [pair("Main.java", generateMainClassString(top.grammarName))]
     else [];
 
@@ -44,7 +45,7 @@ String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResu
   local className :: String = "P" ++ whatName;
 
   local localVar :: String = 
-    "count_local__ON__" ++ makeIdName(whatGrammar) ++ "_" ++ whatName;
+    s"count_local__ON__${makeIdName(whatGrammar)}_${whatName}";
 
   return s"""
 package ${makeName(whatGrammar)};
@@ -63,7 +64,7 @@ ${makeIndexDcls(0, whatSig.inputElements)}
 	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
 	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
 
-	static{
+	static {
 ${implode("", map((.childStaticElem), whatSig.inputElements))}
 	}
 

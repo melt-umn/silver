@@ -9,14 +9,15 @@ top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr
 -- It should be fine, though. If we're a tv, then it's 'Object' and anything
 -- else will be a subtype...
 
-  top.genFiles := [pair(className ++ ".java",
+  top.genFiles := [pair(className ++ ".java", s"""
 
-"package " ++ makeName(top.grammarName) ++ ";\n\n" ++
+package ${makeName(top.grammarName)};
 
-"public interface " ++ className ++ " {\n\n" ++
+public interface ${className} {
 
-"\tpublic " ++ te.typerep.transType ++ " getAnno_" ++ makeIdName(fName) ++ "();\n\n" ++
+	public ${te.typerep.transType} getAnno_${makeIdName(fName)}();
 
-"}\n")];
+}
+""")];
 }
 

@@ -96,6 +96,21 @@ public abstract class Node {
 	 */
 	public abstract String getNameOfInhAttr(final int index);
 	
+	/**
+	 * Used for reflection.
+	 * 
+	 * @return An array of the names of all annotations.
+	 */
+	public abstract String[] getAnnoNames();
+
+	/**
+	 * Used for reflection.
+	 * 
+	 * @param name The name of any annotation returned by <code>getAnnoNames()</code>
+	 * @return The annotation object. (Thunk already evaluated)
+	 */
+	public abstract Object getAnno(final String name);
+	
 	
 	// These methods are to be provided by the *production*
 	
