@@ -127,8 +127,11 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 ${body.translation}
 	}
 	
-	static ${className} reify(final common.TypeRep resultType, final java.util.List<core.reflect.NAST> childASTs, final java.util.Map<String, core.reflect.NAST> annotationASTs) {
-		if (resultType.baseName != "${ntName}") {
+	/*
+	static ${className} reify(final common.BaseTypeRep resultType, final java.util.List<core.reflect.NAST> childASTs, final java.util.Map<String, core.reflect.NAST> annotationASTs) {
+		// TODO: Unpack type variables
+		
+		if (!resultType.check(${namedSig.outputElement.typerep.transTypeRep})) {
 			throw new common.exceptions.SilverError("reify is constructing " + resultType.toString() + ", but found ${ntName} AST (production ${fName}).");
 		}
 		
@@ -150,7 +153,7 @@ ${body.translation}
 		}
 		
 		return new ${className}(${namedSig.reifyTrans});
-	}
+	}*/
 
 	public static final common.NodeFactory<${className}> factory = new Factory();
 

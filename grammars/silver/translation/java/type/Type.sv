@@ -17,7 +17,7 @@ attribute transType, transClassType, transTypeRep occurs on Type;
 aspect default production
 top::Type ::=
 {
-  top.transTypeRep = "new common.TypeRep(\"foreign\")";
+--  top.transTypeRep = "new common.TypeRep(\"foreign\")";
 }
 
 aspect production varType
@@ -41,7 +41,7 @@ top::Type ::=
 {
   top.transType = "Integer";
   top.transClassType = "Integer";
-  top.transTypeRep = "new common.TypeRep(\"Integer\")";
+  top.transTypeRep = "new common.BaseTypeRep(\"Integer\")";
 }
 
 aspect production boolType
@@ -49,7 +49,7 @@ top::Type ::=
 {
   top.transType = "Boolean";
   top.transClassType = "Boolean";
-  top.transTypeRep = "new common.TypeRep(\"Boolean\")";
+  top.transTypeRep = "new common.BaseTypeRep(\"Boolean\")";
 }
 
 aspect production floatType
@@ -57,7 +57,7 @@ top::Type ::=
 {
   top.transType = "Float";
   top.transClassType = "Float";
-  top.transTypeRep = "new common.TypeRep(\"Float\")";
+  top.transTypeRep = "new common.BaseTypeRep(\"Float\")";
 }
 
 aspect production stringType
@@ -65,7 +65,7 @@ top::Type ::=
 {
   top.transType = "common.StringCatter";
   top.transClassType = "common.StringCatter";
-  top.transTypeRep = "new common.TypeRep(\"String\")";
+  top.transTypeRep = "new common.BaseTypeRep(\"String\")";
 }
 
 aspect production nonterminalType
@@ -76,7 +76,7 @@ top::Type ::= fn::String params::[Type]
   top.transType = makeNTClassName(fn);
   top.transClassType = top.transType;
   top.transTypeRep =
-    s"new common.TypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})";
+    s"new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})";
 }
 
 aspect production terminalType
@@ -84,6 +84,7 @@ top::Type ::= fn::String
 {
   top.transType = makeTerminalName(fn);
   top.transClassType = makeTerminalName(fn);
+  top.transTypeRep = s"new common.BaseTypeRep(\"${fn}\")";
 }
 
 aspect production decoratedType
@@ -92,6 +93,7 @@ top::Type ::= te::Type
   -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"
   top.transType = "common.DecoratedNode";
   top.transClassType = "common.DecoratedNode";
+  --top.transTypeRep = s"new common.BaseTypeRep(\"${fn}\")";
 }
 
 aspect production functionType

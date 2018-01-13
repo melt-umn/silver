@@ -1,69 +1,36 @@
 package common;
 
 /**
- * Representation of a (possibly parametric) Silver type, used for run-time type checking in reifiction.  
+ * Representation of a Silver type, used for run-time type checking in reification.  
  * 
  * @author krame505
  */
-public class TypeRep {
+public abstract class TypeRep {
 	/**
-	 * The name of the type, minus any type parameters - e.g. "Integer", "Decorated core:Pair", or "[]".
-	 */
-	public final String baseName;
-	
-	/**
-	 * The type parameters given to the base type.
-	 */
-	public final TypeRep[] params;
-	
-	/**
-	 * Create a TypeRep
+	 * Resolve substituted type variables to get the actual object representing the type.
 	 * 
-	 * @param baseName The base name of the type.
-	 * @param params The type parameters given to the base type.
+	 * @return The actual type without any wrapping VarTypeRep objects.
 	 */
-	public TypeRep(final String baseName, final TypeRep[] params) {
-		this.baseName = baseName;
-		this.params = params;
-	}
-	
-	/**
-	 * Create a TypeRep without type parameters
-	 * 
-	 * @param baseName The base name of the type.
-	 */
-	public TypeRep(final String baseName) {
-		this(baseName, new TypeRep[0]);
-	}
-	
-	/*
-	@Override
-	public boolean equals(final TypeRep other) {
-		if (!baseName.equals(other.baseName)) {
-			return false;
-		}
-		assert params.length == other.params.length;
-		for (int i = 0; i < params.length; i++) {
-			if (!params[i].equals(other.params[i])) {
-				return false;
-			}
-		}
-		return true;
+	/*public TypeRep getSubstitution() {
+		return this;
 	}*/
+	
+	/**
+	 * Verify that this TypeRep is compatible with other, performing substitutions as needed.
+	 * 
+	 * @param other The TypeRep with which to check.
+	 * @return true if the types are valid.
+	 */
+	public abstract boolean check(final TypeRep other);
 
+	/**
+	 * Verify that this TypeRep is equal to other.
+	 * 
+	 * @param other The TypeRep with which to compare.
+	 * @return true if the types are equal.
+	 */
+//	public abstract boolean equals(final TypeRep other);
+	
 	@Override
-	public String toString() {
-		if (baseName == "[]") {
-			assert params.length == 1;
-			return "[" + params[0] + "]";
-		} else if (params.length == 0) {
-			return baseName;
-		} else {
-			String paramsToString = params[0].toString();
-			for (int i = 1; i < params.length; i++) {
-				paramsToString += " " + params[i].toString();
-			}
-			return baseName + "<" + paramsToString + ">";
-		}
-	}
+	public abstract String toString();
 }

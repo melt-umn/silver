@@ -45,6 +45,10 @@ public abstract class ReifyFn<T> extends NodeFactory<T> {
 	 */
 	public static Object reify(final TypeRep resultType, final NAST ast) {
 		if (ast.getName().equals("core:reflect:nonterminalAST")) {
+			if (!(resultType instanceof BaseTypeRep)) {
+				throw new SilverError("reify is constructing " + resultType.toString() + ", but found nonterminal AST.");
+			}
+			
 			final String prodName = ((StringCatter)ast.getChild(0)).toString();
 			final List<NAST> childASTs = new ArrayList<>(5);
 			for (NASTs current = (NASTs)ast.getChild(1); !current.getName().equals("core:reflect:nilAST"); current = (NASTs)current.getChild(1)) {
@@ -61,7 +65,7 @@ public abstract class ReifyFn<T> extends NodeFactory<T> {
 			path[path.length - 1] = "P" + path[path.length - 1];
 			final String className = String.join(".", path);
 			try {
-				return Class.forName(className).getMethod("reify", TypeRep.class, NAST.class).invoke(resultType, childASTs, annotationASTs);
+				return Class.forName(className).getMethod("reify", TypeRep.class, NAST.class).invoke((BaseTypeRep)resultType, childASTs, annotationASTs);
 			} catch (ClassNotFoundException e) {
 				throw new SilverError("Undefined production " + prodName);
 			} catch (NoSuchMethodException | IllegalAccessException e) {
@@ -74,34 +78,35 @@ public abstract class ReifyFn<T> extends NodeFactory<T> {
 				}
 			}
 		} else if (ast.getName().equals("core:reflect:listAST")) {
-			if (!resultType.baseName.equals("[]")) {
+			final TypeRep paramType = new VarTypeRep();
+			if (!resultType.check(new ListTypeRep(paramType))) {
 				throw new SilverError("reify is constructing " + resultType.toString() + ", but found list AST.");
 			}
-			return reifyList(resultType, (NASTs)ast.getChild(0));
+			return reifyList(paramType, (NASTs)ast.getChild(0));
 		} else {
-			String givenTypeName;
+			TypeRep givenType;
 			if (ast.getName().equals("core:reflect:stringAST")) {
-				givenTypeName = "String";
+				givenType = new BaseTypeRep("String");
 			} else if (ast.getName().equals("core:reflect:integerAST")) {
-				givenTypeName = "Integer";
+				givenType = new BaseTypeRep("Integer");
 			} else if (ast.getName().equals("core:reflect:floatAST")) {
-				givenTypeName = "Float";
+				givenType = new BaseTypeRep("Float");
 			} else if (ast.getName().equals("core:reflect:booleanAST")) {
-				givenTypeName = "Boolean";
+				givenType = new BaseTypeRep("Boolean");
 			} else if (ast.getName().equals("core:reflect:foreignAST")) {
-				givenTypeName = "foreign";
+				givenType = null; // TODO
 			} else {
 				throw new SilverInternalError("Unexpected AST production " + ast.getName());
 			}
-			if (!givenTypeName.equals(resultType.baseName)) {
-				throw new SilverError("reify is constructing " + resultType.toString() + ", but found " + givenTypeName + " AST.");
+			if (!resultType.check(givenType)) {
+				throw new SilverError("reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " AST.");
 			}
 			return ast.getChild(0);
 		}
 	}
-	private static ConsCell reifyList(final TypeRep resultType, final NASTs asts) {
+	private static ConsCell reifyList(final TypeRep resultParamType, final NASTs asts) {
 		if (asts.getName().equals("core:reflect:consAST")) {
-			return new ConsCell(reify(resultType.params[0], (NAST)asts.getChild(0)), reifyList(resultType, (NASTs)asts.getChild(1)));
+			return new ConsCell(reify(resultParamType, (NAST)asts.getChild(0)), reifyList(resultParamType, (NASTs)asts.getChild(1)));
 		} else if (asts.getName().equals("core:reflect:nilAST")) {
 			return ConsCell.nil;
 		} else {
