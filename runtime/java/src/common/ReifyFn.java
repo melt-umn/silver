@@ -79,11 +79,12 @@ public abstract class ReifyFn<T> extends NodeFactory<T> {
 			}
 		} else if (ast.getName().equals("core:reflect:listAST")) {
 			final TypeRep paramType = new VarTypeRep();
-			if (!resultType.check(new ListTypeRep(paramType))) {
+			if (!resultType.unify(new ListTypeRep(paramType), true)) {
 				throw new SilverError("reify is constructing " + resultType.toString() + ", but found list AST.");
 			}
 			return reifyList(paramType, (NASTs)ast.getChild(0));
 		} else {
+			// Construct the TypeRep correpsonding to the given object
 			TypeRep givenType;
 			if (ast.getName().equals("core:reflect:stringAST")) {
 				givenType = new BaseTypeRep("String");
@@ -98,12 +99,14 @@ public abstract class ReifyFn<T> extends NodeFactory<T> {
 			} else {
 				throw new SilverInternalError("Unexpected AST production " + ast.getName());
 			}
-			if (!resultType.check(givenType)) {
+			// Perform unification with type vars as skolems
+			if (!resultType.unify(givenType, false)) {
 				throw new SilverError("reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " AST.");
 			}
 			return ast.getChild(0);
 		}
 	}
+	// Recursive helper to walk the ASTs tree and build a list
 	private static ConsCell reifyList(final TypeRep resultParamType, final NASTs asts) {
 		if (asts.getName().equals("core:reflect:consAST")) {
 			return new ConsCell(reify(resultParamType, (NAST)asts.getChild(0)), reifyList(resultParamType, (NASTs)asts.getChild(1)));

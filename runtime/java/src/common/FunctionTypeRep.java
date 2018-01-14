@@ -28,27 +28,14 @@ public class FunctionTypeRep extends TypeRep {
 	}
 	
 	@Override
-	public boolean check(final TypeRep other) {
-		if (other instanceof VarTypeRep) {
-			return other.check(this);
-		} else if (!(other instanceof FunctionTypeRep) || !this.result.check(((FunctionTypeRep)other).result)) {
+	protected boolean unifyDirect(final TypeRep other, final boolean flexible) {
+		if (flexible && other instanceof VarTypeRep) {
+			return other.unifyDirect(this, false);
+		} else if (!(other instanceof FunctionTypeRep) || !this.result.unify(((FunctionTypeRep)other).result, flexible)) {
 			return false;
 		}
 		for (int i = 0; i < params.length; i++) {
-			if (!params[i].check(((BaseTypeRep)other).params[i])) {
-				return false;
-			}
-		}
-		return true;
-	}
-	
-	@Override
-	public boolean equals(final TypeRep other) {
-		if (!(other instanceof FunctionTypeRep) || !this.result.equals(((FunctionTypeRep)other).result)) {
-			return false;
-		}
-		for (int i = 0; i < params.length; i++) {
-			if (!params[i].equals(((FunctionTypeRep)other).params[i])) {
+			if (!params[i].unify(((FunctionTypeRep)other).params[i], flexible)) {
 				return false;
 			}
 		}

@@ -37,27 +37,14 @@ public class BaseTypeRep extends TypeRep {
 	}
 	
 	@Override
-	public boolean check(final TypeRep other) {
-		if (other instanceof VarTypeRep) {
-			return other.check(this);
+	protected boolean unifyDirect(final TypeRep other, final boolean flexible) {
+		if (flexible && other instanceof VarTypeRep) {
+			return other.unifyDirect(this, false);
 		} else if (!(other instanceof BaseTypeRep) || !this.baseName.equals(((BaseTypeRep)other).baseName)) {
 			return false;
 		}
 		for (int i = 0; i < params.length; i++) {
-			if (!params[i].check(((BaseTypeRep)other).params[i])) {
-				return false;
-			}
-		}
-		return true;
-	}
-	
-	@Override
-	public boolean equals(final TypeRep other) {
-		if (!(other instanceof BaseTypeRep) || !this.baseName.equals(((BaseTypeRep)other).baseName)) {
-			return false;
-		}
-		for (int i = 0; i < params.length; i++) {
-			if (!params[i].equals(((BaseTypeRep)other).params[i])) {
+			if (!params[i].unify(((BaseTypeRep)other).params[i], flexible)) {
 				return false;
 			}
 		}
