@@ -31,7 +31,7 @@ public class VarTypeRep extends TypeRep {
 	}
 	
 	@Override
-	public TypeRep getSubstitution() {
+	public final TypeRep getSubstitution() {
 		if (substitution != null) {
 			return substitution.getSubstitution();
 		} else {
@@ -40,7 +40,7 @@ public class VarTypeRep extends TypeRep {
 	}
 	
 	@Override
-	protected boolean unifyDirect(final TypeRep other, final boolean flexible) {
+	protected final boolean unifyDirect(final TypeRep other, final boolean flexible) {
 		if (substitution != null) {
 			// If this var has been substituted, unify with the substitution
 			return substitution.unify(other, flexible);
@@ -55,7 +55,7 @@ public class VarTypeRep extends TypeRep {
 	}
 	
 	@Override
-	public String toString() {
+	public final String toString() {
 		if (this.substitution != null) {
 			return substitution.toString();
 		} else {

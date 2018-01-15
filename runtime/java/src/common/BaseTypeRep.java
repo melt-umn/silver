@@ -37,7 +37,7 @@ public class BaseTypeRep extends TypeRep {
 	}
 	
 	@Override
-	protected boolean unifyDirect(final TypeRep other, final boolean flexible) {
+	protected final boolean unifyDirect(final TypeRep other, final boolean flexible) {
 		if (flexible && other instanceof VarTypeRep) {
 			return other.unifyDirect(this, false);
 		} else if (!(other instanceof BaseTypeRep) || !this.baseName.equals(((BaseTypeRep)other).baseName)) {
@@ -54,7 +54,7 @@ public class BaseTypeRep extends TypeRep {
 	}
 	
 	@Override
-	public String toString() {
+	public final String toString() {
 		if (params.length == 0) {
 			return baseName;
 		} else {

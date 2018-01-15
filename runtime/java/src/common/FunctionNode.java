@@ -81,4 +81,9 @@ public abstract class FunctionNode extends Node {
 	public final Object getAnno(final String name) {
 		throw new SilverInternalError("Functions do not possess annotations! (Requested name " + name + ")");
 	}
+	
+	@Override
+	public final common.BaseTypeRep getType() {
+		throw new SilverInternalError("Function nodes do not have a type!");
+	}
 }

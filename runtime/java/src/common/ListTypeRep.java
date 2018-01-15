@@ -30,7 +30,7 @@ public class ListTypeRep extends TypeRep {
 	}
 	
 	@Override
-	public String toString() {
+	public final String toString() {
 		return "[" + param.toString() + "]";
 	}
 }

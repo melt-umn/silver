@@ -44,7 +44,7 @@ public class FunctionTypeRep extends TypeRep {
 	}
 	
 	@Override
-	protected boolean unifyDirect(final TypeRep other, final boolean flexible) {
+	protected final boolean unifyDirect(final TypeRep other, final boolean flexible) {
 		if (flexible && other instanceof VarTypeRep) {
 			return other.unifyDirect(this, false);
 		} else if (!(other instanceof FunctionTypeRep) || !this.result.unify(((FunctionTypeRep)other).result, flexible)) {
@@ -75,11 +75,15 @@ public class FunctionTypeRep extends TypeRep {
 	}
 	
 	@Override
-	public String toString() {
+	public final String toString() {
 		String paramsToString = params[0].toString();
 		for (int i = 1; i < params.length; i++) {
 			paramsToString += " " + params[i].toString();
 		}
-		return "(" + result.toString() + " ::= " + paramsToString + ")";
+		String namedParamsToString = "";
+		for (Map.Entry entry : namedParams.entrySet()) {
+			namedParamsToString += " " + entry.getKey() + "::" + entry.getValue().toString();
+		}
+		return "(" + result.toString() + " ::= " + paramsToString + "; " + namedParamsToString + ")";
 	}
 }

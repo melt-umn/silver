@@ -122,6 +122,12 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 	public String getName() {
 		return "${fName}";
 	}
+	
+	@Override
+	public final common.BaseTypeRep getType() {
+		${makeTyVarDecls(namedSig.outputElement.typerep.freeVariables)}
+		return ${namedSig.outputElement.typerep.transTypeRep};
+	}
 
 	static void initProductionAttributeDefinitions() {
 ${body.translation}
@@ -186,5 +192,3 @@ String ::= vars::[TyVar]
           vars));
     
 }
-
-

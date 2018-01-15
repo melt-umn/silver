@@ -24,7 +24,7 @@ public abstract class TypeRep {
 	 * @param flexible true if type variables in other should be allowed to unify with other types.
 	 * @return true if the types are valid.
 	 */
-	public boolean unify(final TypeRep other, final boolean flexible) {
+	public final boolean unify(final TypeRep other, final boolean flexible) {
 		return unifyDirect(other.getSubstitution(), flexible);
 	}
 	

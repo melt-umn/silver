@@ -11,7 +11,7 @@ import common.exceptions.TraceException;
  * @author tedinski
  * @see Node
  */
-public class DecoratedNode {
+public class DecoratedNode implements Typed {
 	// TODO list:
 	// - Delete parent / forwardParent. Or coalesce them (only NEED for debugging purposes, if inh become thunks!)
 	// - Delete forwardValue (make it a local/production attribute)
@@ -560,6 +560,12 @@ public class DecoratedNode {
 				return context.inherited(index);
 			}
 		};
+	}
+	
+	@Override
+	public final BaseTypeRep getType() {
+		final BaseTypeRep selfTypeRep = self.getType();
+		return new BaseTypeRep("Decorated " + selfTypeRep.baseName, selfTypeRep.params);
 	}
 	
 	/**

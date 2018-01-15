@@ -11,6 +11,7 @@ top::Type ::= fn::String params::[Type]
 {
   top.transType = "Object";
   top.transClassType = "Object";
-  top.transTypeRep = "new common.BaseTypeRep(\"foreign\")";
+  top.transTypeRep =
+    s"new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})";
 }
 

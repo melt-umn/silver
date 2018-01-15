@@ -102,6 +102,8 @@ public final class Reflection {
 			}
 			return reifyList(paramType, (NASTs)ast.getChild(0));
 		} else {
+			Object givenObject = ast.getChild(0);
+			
 			// Construct the TypeRep correpsonding to the given object
 			TypeRep givenType;
 			if (ast.getName().equals("core:reflect:stringAST")) {
@@ -113,8 +115,12 @@ public final class Reflection {
 			} else if (ast.getName().equals("core:reflect:booleanAST")) {
 				givenType = new BaseTypeRep("Boolean");
 			} else if (ast.getName().equals("core:reflect:anyAST")) {
-				givenType = null; // TODO
-				throw new UnsupportedOperationException("Not yet implemented");
+				if (givenObject instanceof Typed) {
+					givenType = ((Typed)givenObject).getType();
+				} else {
+					// Not an internal error, since foreign types not implementing Typed will trigger this
+					throw new SilverError("reify expected anyAST object to be Typed, but found class " + givenObject.getClass().getName() + ".");
+				}
 			} else {
 				throw new SilverInternalError("Unexpected AST production " + ast.getName());
 			}
@@ -122,7 +128,7 @@ public final class Reflection {
 			if (!resultType.unify(givenType, false)) {
 				throw new SilverError("reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " AST.");
 			}
-			return ast.getChild(0);
+			return givenObject;
 		}
 	}
 	// Recursive helper to walk the ASTs tree and build a list

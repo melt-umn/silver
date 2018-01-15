@@ -31,8 +31,8 @@ equalityTest(
   String, silver_tests);
 
 equalityTest(
-  hackUnparse(reify(reflect([testExpr, intConstExpr(5, lineNum=4){-, decExpr(decorate testExpr with {}, lineNum=4)-}]))),
-  hackUnparse([testExpr, intConstExpr(5, lineNum=4){-, decExpr(decorate testExpr with {}, lineNum=4)-}]),
+  hackUnparse(reify(reflect([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]))),
+  hackUnparse([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]),
   String, silver_tests);
 
 equalityTest(
