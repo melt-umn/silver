@@ -35,3 +35,18 @@ equalityTest(
   hackUnparse([testExpr, intConstExpr(5, lineNum=4){-, decExpr(decorate testExpr with {}, lineNum=4)-}]),
   String, silver_tests);
 
+equalityTest(
+  hackUnparse(reify(reflect(pair(pair(1, 2), pair(3, 4))))),
+  hackUnparse(pair(pair(1, 2), pair(3, 4))),
+  String, silver_tests);
+  
+nonterminal Foo;
+
+abstract production existentialFoo
+top::Foo ::= a
+{}
+
+equalityTest(
+  hackUnparse(reify(reflect(existentialFoo(existentialFoo(42))))),
+  hackUnparse(existentialFoo(existentialFoo(42))),
+  String, silver_tests);
