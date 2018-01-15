@@ -20,9 +20,9 @@ synthesized attribute annoDeclElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoNameElem :: String occurs on NamedSignatureElement;
 -- "if (name.equals("signame")) { return getAnno_signame(); }"
 synthesized attribute annoLookupElem :: String occurs on NamedSignatureElement;
--- "common.ReifyFn.reify(child_transTypeRep, childASTs.get(i_child));"
+-- "common.Reflection.reify(child_transTypeRep, childASTs.get(i_child));"
 synthesized attribute childReifyElem :: String occurs on NamedSignatureElement;
--- "common.ReifyFn.reify(anno_transTypeRep, annotationASTs.get("signame"));"
+-- "common.Reflection.reify(anno_transTypeRep, annotationASTs.get("signame"));"
 synthesized attribute annoReifyElem :: String occurs on NamedSignatureElement;
 
 aspect production namedSignature
@@ -50,7 +50,7 @@ s"""	private Object child_${n};
     if !ty.isDecorable then ""
     else s"\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTClassName(ty.typeName)}.num_inh_attrs];\n";
   
-  top.childReifyElem = s"common.ReifyFn.reify(${ty.transTypeRep}, childASTs.get(i_${n}))";
+  top.childReifyElem = s"common.Reflection.reify(${ty.transTypeRep}, childASTs.get(i_${n}))";
   
   -- annos are full names:
   
@@ -73,7 +73,7 @@ s"""if (name.equals("${n}")) {
 			return getAnno_${fn}();
 		} else """;
   
-  top.annoReifyElem = s"common.ReifyFn.reify(${ty.transTypeRep}, annotationASTs.get(\"${n}\"))";
+  top.annoReifyElem = s"common.Reflection.reify(${ty.transTypeRep}, annotationASTs.get(\"${n}\"))";
 }
 
 function makeIndexDcls

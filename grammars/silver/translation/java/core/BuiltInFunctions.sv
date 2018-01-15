@@ -50,7 +50,20 @@ top::Expr ::= 'toString' '(' e::Expr ')'
 aspect production reifyFunctionLiteral
 top::Expr ::= 'reify'
 {
-  top.translation = s"new common.ReifyFn(???)"; -- TODO
+  local resultType::Type = finalType(top).outputType;
+  
+  top.translation =
+s"""(new common.NodeFactory<${resultType.transType}>() {
+	public final ${resultType.transType} invoke(final Object[] args, final Object[] namedArgs) {
+		assert args.length == 1;
+		assert namedArgs.length == 0;
+		
+		${makeTyVarDecls(resultType.freeVariables)}
+		common.TypeRep resultType = ${resultType.transTypeRep};
+		
+		return (${resultType.transType})common.Reflection.reify(resultType, (core.reflect.NAST)common.Util.demand(args[0]));
+	}
+})""";
   
   top.lazyTranslation = top.translation;
 }
