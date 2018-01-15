@@ -1,5 +1,7 @@
 package common;
 
+import java.util.*;
+
 /**
  * Representation of a (possibly parametric) basic Silver type, used for run-time type checking in reification.  
  * 
@@ -17,14 +19,28 @@ public class FunctionTypeRep extends TypeRep {
 	public final TypeRep[] params;
 	
 	/**
+	 * The names and types of the named parameters to the function
+	 */
+	public final Map<String, TypeRep> namedParams;
+	
+	/**
 	 * Create a FunctionTypeRep.
 	 * 
 	 * @param result The result type of the function.
 	 * @param params The parameter types of the function.
+	 * @param namedParamNames The names of the named parameters to the function.
+	 * @param namedParamTypes The types of the named parameters to the function.
 	 */
-	public FunctionTypeRep(final TypeRep result, final TypeRep[] params) {
+	public FunctionTypeRep(final TypeRep result, final TypeRep[] params, final String[] namedParamNames, final TypeRep[] namedParamTypes) {
 		this.result = result;
 		this.params = params;
+		
+		Map<String, TypeRep> namedParams = new TreeMap<>();
+		assert namedParamNames.length == namedParamTypes.length;
+		for (int i = 0; i < namedParamNames.length; i++) {
+			namedParams.put(namedParamNames[i], namedParamTypes[i]);
+		}
+		this.namedParams = Collections.unmodifiableMap(namedParams);
 	}
 	
 	@Override
@@ -39,6 +55,22 @@ public class FunctionTypeRep extends TypeRep {
 				return false;
 			}
 		}
+		for (String paramName : namedParams.keySet()) {
+			if (!((FunctionTypeRep)other).namedParams.containsKey(paramName)) {
+				return false;
+			}
+		}
+		for (String paramName : ((FunctionTypeRep)other).namedParams.keySet()) {
+			if (!namedParams.containsKey(paramName)) {
+				return false;
+			}
+		}
+		for (String paramName : namedParams.keySet()) {
+			if (!namedParams.get(paramName).unify(((FunctionTypeRep)other).namedParams.get(paramName), flexible)) {
+				return false;
+			}
+		}
+		
 		return true;
 	}
 	

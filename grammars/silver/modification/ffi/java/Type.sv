@@ -11,5 +11,6 @@ top::Type ::= fn::String params::[Type]
 {
   top.transType = "Object";
   top.transClassType = "Object";
+  top.transTypeRep = "new common.BaseTypeRep(\"foreign\")";
 }
 

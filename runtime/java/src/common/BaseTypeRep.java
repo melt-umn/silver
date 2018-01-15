@@ -43,6 +43,8 @@ public class BaseTypeRep extends TypeRep {
 		} else if (!(other instanceof BaseTypeRep) || !this.baseName.equals(((BaseTypeRep)other).baseName)) {
 			return false;
 		}
+		// Any types with the same name should have the same number of type parameters
+		assert params.length == ((BaseTypeRep)other).params.length;
 		for (int i = 0; i < params.length; i++) {
 			if (!params[i].unify(((BaseTypeRep)other).params[i], flexible)) {
 				return false;

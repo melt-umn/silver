@@ -14,12 +14,6 @@ synthesized attribute transTypeRep :: String;
 
 attribute transType, transClassType, transTypeRep occurs on Type;
 
-aspect default production
-top::Type ::=
-{
---  top.transTypeRep = "new common.TypeRep(\"foreign\")";
-}
-
 aspect production varType
 top::Type ::= tv::TyVar
 {
@@ -33,7 +27,7 @@ top::Type ::= tv::TyVar
 {
   top.transType = "Object";
   top.transClassType = "Object";
-  top.transTypeRep = s"resultType.params[${toString(tv.extractTyVarRep)}]";
+  top.transTypeRep = s"typeVar_${toString(tv.extractTyVarRep)}";
 }
 
 aspect production intType
@@ -93,7 +87,12 @@ top::Type ::= te::Type
   -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"
   top.transType = "common.DecoratedNode";
   top.transClassType = "common.DecoratedNode";
-  --top.transTypeRep = s"new common.BaseTypeRep(\"${fn}\")";
+  top.transTypeRep =
+    case te of
+      nonterminalType(fn, params) ->
+        s"new common.BaseTypeRep(\"Decorated ${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})"
+    | _ -> error("Found decoratedType that does not wrap nonterminalType!")
+    end;
 }
 
 aspect production functionType
@@ -101,5 +100,10 @@ top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
   top.transType = "common.NodeFactory<" ++ out.transType ++ ">";
   top.transClassType = "common.NodeFactory";
+  top.transTypeRep =
+    s"new common.FunctionTypeRep(${out.transTypeRep}, " ++
+      s"new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}}, " ++
+      s"new String[] {${implode(", ", map((.argName), namedParams))}}, " ++
+      s"new common.TypeRep[] {${implode(", ", map((.transTypeRep), map((.argType), namedParams)))}})";
 }
 
