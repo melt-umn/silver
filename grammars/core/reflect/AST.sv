@@ -43,10 +43,10 @@ top::AST ::= b::Boolean
   top.pp = text(toString(b));
 }
 
-abstract production foreignAST
+abstract production anyAST
 top::AST ::= x::a
 {
-  top.pp = pp"<FOREIGN>";
+  top.pp = pp"<OBJECT>";
 }
 
 nonterminal ASTs with pps;

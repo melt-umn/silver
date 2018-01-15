@@ -47,7 +47,7 @@ public final class Reflection {
 		} else if(o instanceof Boolean) {
 			return new PbooleanAST((Boolean)o);
 		} else {
-			return new PforeignAST(o);
+			return new PanyAST(o);
 		}
 	}
 	private static NASTs reflectList(final ConsCell l) {
@@ -112,7 +112,7 @@ public final class Reflection {
 				givenType = new BaseTypeRep("Float");
 			} else if (ast.getName().equals("core:reflect:booleanAST")) {
 				givenType = new BaseTypeRep("Boolean");
-			} else if (ast.getName().equals("core:reflect:foreignAST")) {
+			} else if (ast.getName().equals("core:reflect:anyAST")) {
 				givenType = null; // TODO
 				throw new UnsupportedOperationException("Not yet implemented");
 			} else {
