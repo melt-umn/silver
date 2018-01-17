@@ -68,7 +68,7 @@ top::Expr ::= 'reify'
 
   top.errors := [];
   top.typerep =
-    functionType(skolemType(freshTyVar()), [nonterminalType("core:reflect:AST", [])], []);
+    functionType(varType(freshTyVar()), [nonterminalType("core:reflect:AST", [])], []);
 }
 
 concrete production newFunction
