@@ -19,10 +19,17 @@ top::Expr ::= params::ProductionRHS e::Expr
   
   top.translation = 
 s"""(new common.NodeFactory<${finTy.outputType.transType}>() {
-  public final ${finTy.outputType.transType} invoke(final Object[] args, final Object[] namedArgs) {
-    ${params.lambdaTranslation}
-    return ${e.translation};
-  }
+	@Override
+	public final ${finTy.outputType.transType} invoke(final Object[] args, final Object[] namedArgs) {
+		${params.lambdaTranslation}
+		return ${e.translation};
+	}
+	
+	@Override
+	public final common.FunctionTypeRep getType() {
+		${makeTyVarDecls(finTy.freeVariables)}
+		return ${finTy.transTypeRep};
+	}
 })""";
   top.lazyTranslation = top.translation;
   

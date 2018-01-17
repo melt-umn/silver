@@ -19,9 +19,14 @@ public class FunctionTypeRep extends TypeRep {
 	public final TypeRep[] params;
 	
 	/**
-	 * The names and types of the named parameters to the function
+	 * The names of the named parameters to the function.
 	 */
-	public final Map<String, TypeRep> namedParams;
+	public final String[] namedParamNames;
+	
+	/**
+	 * The types of the named parameters to the function.
+	 */
+	public final TypeRep[] namedParamTypes;
 	
 	/**
 	 * Create a FunctionTypeRep.
@@ -34,39 +39,37 @@ public class FunctionTypeRep extends TypeRep {
 	public FunctionTypeRep(final TypeRep result, final TypeRep[] params, final String[] namedParamNames, final TypeRep[] namedParamTypes) {
 		this.result = result;
 		this.params = params;
+		this.namedParamNames = namedParamNames;
+		this.namedParamTypes = namedParamTypes;
 		
-		Map<String, TypeRep> namedParams = new TreeMap<>();
 		assert namedParamNames.length == namedParamTypes.length;
-		for (int i = 0; i < namedParamNames.length; i++) {
-			namedParams.put(namedParamNames[i], namedParamTypes[i]);
-		}
-		this.namedParams = Collections.unmodifiableMap(namedParams);
 	}
 	
 	@Override
 	protected final boolean unifyDirect(final TypeRep other, final boolean flexible) {
 		if (flexible && other instanceof VarTypeRep) {
 			return other.unifyDirect(this, false);
-		} else if (!(other instanceof FunctionTypeRep) || !this.result.unify(((FunctionTypeRep)other).result, flexible)) {
+		} else if (!(other instanceof FunctionTypeRep) ||
+				!result.unify(((FunctionTypeRep)other).result, flexible) ||
+				params.length != ((FunctionTypeRep)other).params.length ||
+				namedParamNames.length != ((FunctionTypeRep)other).namedParamNames.length) {
 			return false;
 		}
+		
 		for (int i = 0; i < params.length; i++) {
 			if (!params[i].unify(((FunctionTypeRep)other).params[i], flexible)) {
 				return false;
 			}
 		}
-		for (String paramName : namedParams.keySet()) {
-			if (!((FunctionTypeRep)other).namedParams.containsKey(paramName)) {
-				return false;
-			}
+		
+		Map<String, TypeRep> namedParams = new HashMap<>();
+		for (int i = 0; i < namedParamNames.length; i++) {
+			namedParams.put(namedParamNames[i], namedParamTypes[i]);
 		}
-		for (String paramName : ((FunctionTypeRep)other).namedParams.keySet()) {
-			if (!namedParams.containsKey(paramName)) {
-				return false;
-			}
-		}
-		for (String paramName : namedParams.keySet()) {
-			if (!namedParams.get(paramName).unify(((FunctionTypeRep)other).namedParams.get(paramName), flexible)) {
+		for (int i = 0; i < namedParamNames.length; i++) {
+			String paramName = ((FunctionTypeRep)other).namedParamNames[i];
+			if (!namedParams.containsKey(paramName) ||
+					!namedParams.get(paramName).unify(((FunctionTypeRep)other).namedParamTypes[i], flexible)) {
 				return false;
 			}
 		}
@@ -80,10 +83,12 @@ public class FunctionTypeRep extends TypeRep {
 		for (int i = 1; i < params.length; i++) {
 			paramsToString += " " + params[i].toString();
 		}
-		String namedParamsToString = "";
-		for (Map.Entry entry : namedParams.entrySet()) {
-			namedParamsToString += " " + entry.getKey() + "::" + entry.getValue().toString();
+		if (namedParamNames.length > 0) {
+			paramsToString += ";";
 		}
-		return "(" + result.toString() + " ::= " + paramsToString + "; " + namedParamsToString + ")";
+		for (int i = 0; i < namedParamNames.length; i++) {
+			paramsToString += " " + namedParamNames[i] + "::" + namedParamTypes[i].toString();
+		}
+		return "(" + result.toString() + " ::= " + paramsToString + ")";
 	}
 }

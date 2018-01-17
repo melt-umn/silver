@@ -54,6 +54,7 @@ top::Expr ::= 'reify'
   
   top.translation =
 s"""(new common.NodeFactory<${resultType.transType}>() {
+	@Override
 	public final ${resultType.transType} invoke(final Object[] args, final Object[] namedArgs) {
 		assert args.length == 1;
 		assert namedArgs.length == 0;
@@ -62,6 +63,12 @@ s"""(new common.NodeFactory<${resultType.transType}>() {
 		common.TypeRep resultType = ${resultType.transTypeRep};
 		
 		return (${resultType.transType})common.Reflection.reify(resultType, (core.reflect.NAST)common.Util.demand(args[0]));
+	}
+	
+	@Override
+	public final common.FunctionTypeRep getType() {
+		${makeTyVarDecls(resultType.freeVariables)}
+		return new common.FunctionTypeRep(${resultType.transTypeRep}, new common.TypeRep[] {new common.VarTypeRep()}, new String[0], new common.TypeRep[0]);
 	}
 })""";
   

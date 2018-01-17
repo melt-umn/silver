@@ -19,7 +19,7 @@ top::Type ::= tv::TyVar
 {
   top.transType = "Object";
   top.transClassType = "Object";
-  top.transTypeRep = error("varType doesn't have a runtime representation");
+  top.transTypeRep = s"typeVar_${toString(tv.extractTyVarRep)}";
 }
 
 aspect production skolemType
@@ -103,7 +103,7 @@ top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
   top.transTypeRep =
     s"new common.FunctionTypeRep(${out.transTypeRep}, " ++
       s"new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}}, " ++
-      s"new String[] {${implode(", ", map((.argName), namedParams))}}, " ++
+      s"new String[] {${implode(", ", map(\ nat::NamedArgType -> s"\"${nat.argName}\"", namedParams))}}, " ++
       s"new common.TypeRep[] {${implode(", ", map((.transTypeRep), map((.argType), namedParams)))}})";
 }
 

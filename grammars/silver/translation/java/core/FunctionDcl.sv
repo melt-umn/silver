@@ -137,8 +137,14 @@ ${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
 
 	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transType}> {
 		@Override
-		public ${whatSig.outputElement.typerep.transType} invoke(final Object[] children, final Object[] namedNotApplicable) {
+		public final ${whatSig.outputElement.typerep.transType} invoke(final Object[] children, final Object[] namedNotApplicable) {
 			return ${className}.invoke(${implode(", ", unpackChildren(0, whatSig.inputElements))});
+		}
+		
+		@Override
+		public final common.FunctionTypeRep getType() {
+			${makeTyVarDecls(whatSig.typerep.freeVariables)}
+			return ${whatSig.typerep.transTypeRep};
 		}
 	};
 }""";

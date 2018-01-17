@@ -2,6 +2,8 @@ package common;
 
 /**
  * Representation of a type variable in Silver, used for run-time type checking in reification.
+ * Note that this includes both regular type variables as well as skolems, since we want to
+ * treat skolems on the LHS of a production signature as flexible during runtime unification, etc.
  * Any VarTypeRep object corresponds to a unique instantiation of a type variable, and may be
  * referenced in multiple places.
  * 

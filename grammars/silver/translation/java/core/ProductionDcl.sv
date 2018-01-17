@@ -125,14 +125,17 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 	
 	@Override
 	public final common.BaseTypeRep getType() {
-		${makeTyVarDecls(namedSig.outputElement.typerep.freeVariables)}
+		${makeTyVarDecls(namedSig.typerep.freeVariables)}
+		
+		${implode("\n\t\t", map(makeChildUnify(fName, _), namedSig.inputElements))}
+		
 		return ${namedSig.outputElement.typerep.transTypeRep};
 	}
 
 	static void initProductionAttributeDefinitions() {
 ${body.translation}
 	}
-	
+
 	public static ${className} reify(final common.TypeRep resultType, final java.util.List<core.reflect.NAST> childASTs, final java.util.Map<String, core.reflect.NAST> annotationASTs) {
 		${makeTyVarDecls(namedSig.typerep.freeVariables)}
 		
@@ -163,10 +166,15 @@ ${body.translation}
 	public static final common.NodeFactory<${className}> factory = new Factory();
 
 	public static final class Factory extends common.NodeFactory<${className}> {
-
 		@Override
-		public ${className} invoke(final Object[] children, final Object[] annotations) {
+		public final ${className} invoke(final Object[] children, final Object[] annotations) {
 			return new ${className}(${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+		}
+		
+		@Override
+		public final common.FunctionTypeRep getType() {
+			${makeTyVarDecls(namedSig.typerep.freeVariables)}
+			return ${namedSig.typerep.transTypeRep};
 		}
 	};
 

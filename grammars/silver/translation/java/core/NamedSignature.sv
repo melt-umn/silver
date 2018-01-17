@@ -124,4 +124,18 @@ String ::= n::NamedSignatureElement
 {
   return s"\t\tthis.child_${n.elementName} = c_${n.elementName};\n";
 }
+function makeChildUnify
+String ::= fn::String n::NamedSignatureElement
+{
+  return
+s"""if (((Object)getChild_${n.elementName}()) instanceof common.Typed) {
+			if (!${n.typerep.transTypeRep}.unify(((common.Typed)child_${n.elementName}).getType(), false)) {
+				throw new common.exceptions.SilverInternalError("Unification failed while constructing type for production ${fn} child ${n.elementName}");
+			}
+		} else {
+			throw new common.exceptions.SilverError("Runtime type checking of production ${fn} expected child ${n.elementName} to be Typed, but found class " + child_${n.elementName}.getClass().getName() + ".");
+		}
+""";
+}
+
 

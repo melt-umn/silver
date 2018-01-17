@@ -50,3 +50,10 @@ equalityTest(
   hackUnparse(reify(reflect(existentialFoo(existentialFoo(42))))),
   hackUnparse(existentialFoo(existentialFoo(42))),
   String, silver_tests);
+
+global reifyRes1::Pair<Pair<Integer Integer> Pair<Integer Integer>> = reify(anyAST(pair(pair(1, 2), pair(3, 4))));
+{-
+equalityTest(
+  hackUnparse(reifyRes1),
+  hackUnparse(pair(pair(1, 2), pair(3, 4))),
+  String, silver_tests);-}
