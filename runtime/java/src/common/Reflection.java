@@ -15,6 +15,29 @@ import core.reflect.*;
  */
 public final class Reflection {
 	/**
+	 * Extract a runtime type representation of any object.
+	 * 
+	 * @param o The object to extract the type. 
+	 * @return The type of the object.
+	 */
+	public static TypeRep getType(final Object o) {
+		if(o instanceof Integer) {
+			return new BaseTypeRep("Integer");
+		} else if(o instanceof Float) {
+			return new BaseTypeRep("Float");
+		} else if(o instanceof Boolean) {
+			return new BaseTypeRep("Boolean");
+		} else if(o instanceof Typed){
+			return ((Typed)o).getType();
+		} else if(o instanceof Thunk) {
+			throw new SilverInternalError("Runtime type of an unevaluated Thunk should never be demanded.");
+		} else {
+			// Not an internal error, since foreign types not implementing Typed will trigger this
+			throw new SilverError("Runtime type checking of object requires class " + o.getClass().getName() + " to implement Typed.");
+		}
+	}
+	
+	/**
 	 * Implementation of the reflect operation for an arbitrary type.
 	 * 
 	 * @param o The object to reflect.
@@ -115,16 +138,11 @@ public final class Reflection {
 			} else if (ast.getName().equals("core:reflect:booleanAST")) {
 				givenType = new BaseTypeRep("Boolean");
 			} else if (ast.getName().equals("core:reflect:anyAST")) {
-				if (givenObject instanceof Typed) {
-					givenType = ((Typed)givenObject).getType();
-				} else {
-					// Not an internal error, since foreign types not implementing Typed will trigger this
-					throw new SilverError("reify expected anyAST object to be Typed, but found class " + givenObject.getClass().getName() + ".");
-				}
+				givenType = getType(givenObject);
 			} else {
 				throw new SilverInternalError("Unexpected AST production " + ast.getName());
 			}
-			// Perform unification with type vars as skolems
+			// Perform unification with type vars treated as skolems
 			if (!resultType.unify(givenType, false)) {
 				throw new SilverError("reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " AST.");
 			}
@@ -133,12 +151,16 @@ public final class Reflection {
 	}
 	// Recursive helper to walk the ASTs tree and build a list
 	private static ConsCell reifyList(final TypeRep resultParamType, final NASTs asts) {
-		if (asts.getName().equals("core:reflect:consAST")) {
-			return new ConsCell(reify(resultParamType, (NAST)asts.getChild(0)), reifyList(resultParamType, (NASTs)asts.getChild(1)));
-		} else if (asts.getName().equals("core:reflect:nilAST")) {
-			return ConsCell.nil;
-		} else {
-			throw new SilverInternalError("Unexpected ASTs production" + asts.getName());
+		try {
+			if (asts.getName().equals("core:reflect:consAST")) {
+				return new ConsCell(reify(resultParamType, (NAST)asts.getChild(0)), reifyList(resultParamType, (NASTs)asts.getChild(1)));
+			} else if (asts.getName().equals("core:reflect:nilAST")) {
+				return ConsCell.nil;
+			} else {
+				throw new SilverInternalError("Unexpected ASTs production " + asts.getName());
+			}
+		} catch (SilverException e) {
+			throw new TraceException("While reifying list", e);
 		}
 	}
 }

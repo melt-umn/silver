@@ -4,7 +4,7 @@ grammar silver:translation:java:core;
  - The java translation of the *input parameters* signature.
  -}
 synthesized attribute javaSignature :: String occurs on NamedSignature;
-synthesized attribute reifyTrans :: String occurs on NamedSignature;
+synthesized attribute refInvokeTrans :: String occurs on NamedSignature;
 -- "final Object c_signame"
 synthesized attribute childSigElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoSigElem :: String occurs on NamedSignatureElement;
@@ -20,16 +20,12 @@ synthesized attribute annoDeclElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoNameElem :: String occurs on NamedSignatureElement;
 -- "if (name.equals("signame")) { return getAnno_signame(); }"
 synthesized attribute annoLookupElem :: String occurs on NamedSignatureElement;
--- "common.Reflection.reify(child_transTypeRep, childASTs.get(i_child));"
-synthesized attribute childReifyElem :: String occurs on NamedSignatureElement;
--- "common.Reflection.reify(anno_transTypeRep, annotationASTs.get("signame"));"
-synthesized attribute annoReifyElem :: String occurs on NamedSignatureElement;
 
 aspect production namedSignature
 top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
 {
   top.javaSignature = implode(", ", map((.childSigElem), ie) ++ map((.annoSigElem), np));
-  top.reifyTrans = implode(", ", map((.childReifyElem), ie) ++ map((.annoReifyElem), np));
+  top.refInvokeTrans = implode(", ", map((.childRefElem), ie) ++ map((.annoRefElem), np));
 }
 
 -- TODO: It'd be nice to maybe split these into the ordered parameters and the annotations
@@ -49,8 +45,6 @@ s"""	private Object child_${n};
   top.childStaticElem =
     if !ty.isDecorable then ""
     else s"\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTClassName(ty.typeName)}.num_inh_attrs];\n";
-  
-  top.childReifyElem = s"common.Reflection.reify(${ty.transTypeRep}, childASTs.get(i_${n}))";
   
   -- annos are full names:
   
@@ -72,8 +66,6 @@ s"""	private Object anno_${fn};
 s"""if (name.equals("${n}")) {
 			return getAnno_${fn}();
 		} else """;
-  
-  top.annoReifyElem = s"common.Reflection.reify(${ty.transTypeRep}, annotationASTs.get(\"${n}\"))";
 }
 
 function makeIndexDcls
@@ -128,12 +120,36 @@ function makeChildUnify
 String ::= fn::String n::NamedSignatureElement
 {
   return
-s"""if (((Object)getChild_${n.elementName}()) instanceof common.Typed) {
-			if (!${n.typerep.transTypeRep}.unify(((common.Typed)child_${n.elementName}).getType(), false)) {
-				throw new common.exceptions.SilverInternalError("Unification failed while constructing type for production ${fn} child ${n.elementName}");
+s"""try {
+			if (!${n.typerep.transTypeRep}.unify(common.Reflection.getType(getChild_${n.elementName}()), false)) {
+				throw new common.exceptions.SilverInternalError("Unification failed.");
 			}
-		} else {
-			throw new common.exceptions.SilverError("Runtime type checking of production ${fn} expected child ${n.elementName} to be Typed, but found class " + child_${n.elementName}.getClass().getName() + ".");
+		} catch (common.exceptions.SilverException e) {
+			throw new common.exceptions.TraceException("While constructing type of child '${n.elementName}' of production '${fn}'", e);
+		}
+""";
+}
+function makeChildReify
+String ::= fn::String n::NamedSignatureElement
+{
+  return
+s"""Object ${n.childRefElem} = null;
+		try {
+			${n.childRefElem} = common.Reflection.reify(${n.typerep.transTypeRep}, childASTs.get(i_${n.elementName}));
+		} catch (common.exceptions.SilverException e) {
+			throw new common.exceptions.TraceException("While reifying child '${n.elementName}' of production '${fn}'", e);
+		}
+""";
+}
+function makeAnnoReify
+String ::= fn::String n::NamedSignatureElement
+{
+  return
+s"""Object ${n.annoRefElem} = null;
+		try {
+			${n.annoRefElem} = common.Reflection.reify(${n.typerep.transTypeRep}, annotationASTs.get("${n.elementName}"));
+		} catch (common.exceptions.SilverException e) {
+			throw new common.exceptions.TraceException("While reifying annotation '${n.elementName}' on production '${fn}'", e);
 		}
 """;
 }

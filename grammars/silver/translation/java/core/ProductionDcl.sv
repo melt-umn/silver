@@ -139,28 +139,35 @@ ${body.translation}
 	public static ${className} reify(final common.TypeRep resultType, final java.util.List<core.reflect.NAST> childASTs, final java.util.Map<String, core.reflect.NAST> annotationASTs) {
 		${makeTyVarDecls(namedSig.typerep.freeVariables)}
 		
-		if (!resultType.unify(${namedSig.outputElement.typerep.transTypeRep}, true)) {
-			throw new common.exceptions.SilverError("reify is constructing " + resultType.toString() + ", but found ${ntName} AST (production ${fName}).");
-		}
-		
-		if (childASTs.size() != ${toString(length(namedSig.inputElements))}) {
-			throw new common.exceptions.SilverError("reification of production ${fName} expected ${toString(length(namedSig.inputElements))} children, but got " + childASTs.size() + ".");
-		}
-		
-		final java.util.Set<String> expectedAnnotations =
-			new java.util.HashSet<>(java.util.Arrays.asList(${implode(", ", map((.annoNameElem), annotationsForNonterminal(namedSig.outputElement.typerep, top.env)))}));
-		for (String name : expectedAnnotations) {
-			if (!annotationASTs.containsKey(name)) {
-				throw new common.exceptions.SilverError("reification of production ${fName} missing annotation " + name + ".");
+		try {
+			if (!resultType.unify(${namedSig.outputElement.typerep.transTypeRep}, true)) {
+				throw new common.exceptions.SilverError("reify is constructing " + resultType.toString() + ", but found ${ntName} AST.");
 			}
-		}
-		for (String name : annotationASTs.keySet()) {
-			if (!expectedAnnotations.contains(name)) {
-				throw new common.exceptions.SilverError("reification of production ${fName} got unexpected annotation " + name + ".");
+			
+			if (childASTs.size() != ${toString(length(namedSig.inputElements))}) {
+				throw new common.exceptions.SilverError("Expected ${toString(length(namedSig.inputElements))} children, but got " + childASTs.size() + ".");
 			}
+			
+			final java.util.Set<String> expectedAnnotations =
+				new java.util.HashSet<>(java.util.Arrays.asList(${implode(", ", map((.annoNameElem), annotationsForNonterminal(namedSig.outputElement.typerep, top.env)))}));
+			for (String name : expectedAnnotations) {
+				if (!annotationASTs.containsKey(name)) {
+					throw new common.exceptions.SilverError("Missing annotation " + name + ".");
+				}
+			}
+			for (String name : annotationASTs.keySet()) {
+				if (!expectedAnnotations.contains(name)) {
+					throw new common.exceptions.SilverError("Got unexpected annotation " + name + ".");
+				}
+			}
+		} catch (common.exceptions.SilverException e) {
+			throw new common.exceptions.TraceException("While reifying production ${fName}", e);
 		}
 		
-		return new ${className}(${namedSig.reifyTrans});
+		${implode("\n\t\t", map(makeChildReify(fName, _), namedSig.inputElements))}
+		${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
+		
+		return new ${className}(${namedSig.refInvokeTrans});
 	}
 
 	public static final common.NodeFactory<${className}> factory = new Factory();

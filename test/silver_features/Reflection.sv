@@ -51,9 +51,20 @@ equalityTest(
   hackUnparse(existentialFoo(existentialFoo(42))),
   String, silver_tests);
 
-global reifyRes1::Pair<Pair<Integer Integer> Pair<Integer Integer>> = reify(anyAST(pair(pair(1, 2), pair(3, 4))));
-{-
+global testVal::Pair<Pair<Integer (String ::= Float)> Pair<String Unit>> = pair(pair(1, \ f::Float -> toString(f)), pair("a", unit()));
+
+global reifyRes1::Pair<Pair<Integer (String ::= Float)> Pair<String Unit>> = reify(anyAST(testVal));
+
 equalityTest(
   hackUnparse(reifyRes1),
-  hackUnparse(pair(pair(1, 2), pair(3, 4))),
-  String, silver_tests);-}
+  hackUnparse(testVal),
+  String, silver_tests);
+
+global reifyRes2::Pair<Pair<Integer (String ::= Float)> Pair<String Unit>> = reify(reflect(testVal));
+
+equalityTest(
+  hackUnparse(reifyRes2),
+  hackUnparse(testVal),
+  String, silver_tests);
+  
+-- TODO: Tests for partial application of functions
