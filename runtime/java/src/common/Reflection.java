@@ -100,7 +100,7 @@ public final class Reflection {
 				NNamedAST item = (NNamedAST)current.getChild(0);
 				annotationASTs.put(item.getChild(0).toString(), (NAST)item.getChild(1));
 			}
-
+			
 			// Invoke the reify function for the appropriate nonterminal class
 			final String[] path = prodName.split(":");
 			path[path.length - 1] = "P" + path[path.length - 1];
