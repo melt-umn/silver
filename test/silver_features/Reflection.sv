@@ -42,7 +42,7 @@ equalityTest(
   
 nonterminal Foo;
 
-abstract production existentialFoo
+abstract production foo
 top::Foo ::= a
 {}
 
@@ -66,5 +66,14 @@ equalityTest(
   hackUnparse(reifyRes2),
   hackUnparse(testVal),
   String, silver_tests);
+
+
+nonterminal Bar<a>;
+
+abstract production generalBar
+top::Bar<(a ::= a)> ::= x::a
+{}
+
+global asdf::Bar<(Integer ::= Integer)> = generalBar(1);
   
 -- TODO: Tests for partial application of functions
