@@ -42,7 +42,7 @@ equalityTest(
   
 nonterminal Foo;
 
-abstract production foo
+abstract production existentialFoo
 top::Foo ::= a
 {}
 
