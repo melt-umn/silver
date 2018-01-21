@@ -29,6 +29,15 @@ equalityTest(
   show(80, reflect([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]).pp),
   s"""[silver_features:addExpr(silver_features:intConstExpr(2, silver_features:lineNum=1), silver_features:idExpr("asdf", silver_features:lineNum=2), silver_features:lineNum=3), silver_features:intConstExpr(5, silver_features:lineNum=4), silver_features:decExpr(<OBJECT>, silver_features:lineNum=4)]""",
   String, silver_tests);
+  
+global reifyRes1::Expr = reify(nonterminalAST("silver_features:intConstExpr", consAST(integerAST(1), nilAST()), consNamedAST(namedAST("silver_features:lineNum", integerAST(2)), nilNamedAST())));
+
+equalityTest(
+  hackUnparse(reifyRes1),
+  "silver_features:intConstExpr(1)",
+  String, silver_tests);
+  
+equalityTest(reifyRes1.lineNum, 2, Integer, silver_tests);
 
 equalityTest(
   hackUnparse(reify(reflect([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]))),
@@ -53,17 +62,17 @@ equalityTest(
 
 global testVal::Pair<Pair<Integer (String ::= Float)> Pair<String Unit>> = pair(pair(1, \ f::Float -> toString(f)), pair("a", unit()));
 
-global reifyRes1::Pair<Pair<Integer (String ::= Float)> Pair<String Unit>> = reify(anyAST(testVal));
-
-equalityTest(
-  hackUnparse(reifyRes1),
-  hackUnparse(testVal),
-  String, silver_tests);
-
-global reifyRes2::Pair<Pair<Integer (String ::= Float)> Pair<String Unit>> = reify(reflect(testVal));
+global reifyRes2::Pair<Pair<Integer (String ::= Float)> Pair<String Unit>> = reify(anyAST(testVal));
 
 equalityTest(
   hackUnparse(reifyRes2),
+  hackUnparse(testVal),
+  String, silver_tests);
+
+global reifyRes3::Pair<Pair<Integer (String ::= Float)> Pair<String Unit>> = reify(reflect(testVal));
+
+equalityTest(
+  hackUnparse(reifyRes3),
   hackUnparse(testVal),
   String, silver_tests);
 
@@ -75,5 +84,19 @@ top::Bar<(a ::= a)> ::= x::a
 {}
 
 global asdf::Bar<(Integer ::= Integer)> = generalBar(1);
-  
+
+annotation anno1::Integer;
+annotation anno2::Integer;
+
+nonterminal Baz with anno1, anno2;
+
+abstract production baz
+top::Baz ::=
+{}
+
+global reifyRes4::Baz = reify(nonterminalAST("silver_features:baz", nilAST(), consNamedAST(namedAST("silver_features:anno1", integerAST(1)), consNamedAST(namedAST("silver_features:anno2", integerAST(2)), nilNamedAST()))));
+
+equalityTest(reifyRes4.anno1, 1, Integer, silver_tests);
+equalityTest(reifyRes4.anno2, 2, Integer, silver_tests);
+
 -- TODO: Tests for partial application of functions
