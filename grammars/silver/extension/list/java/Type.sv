@@ -10,5 +10,6 @@ aspect production listType
 top::Type ::= el::Type
 {
   top.transType = "common.ConsCell";
+  top.transTypeRep = s"new common.ListTypeRep(${el.transTypeRep})";
 }
 
