@@ -136,30 +136,26 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 ${body.translation}
 	}
 
-	public static ${className} reify(final common.TypeRep resultType, final java.util.List<core.reflect.NAST> childASTs, final java.util.Map<String, core.reflect.NAST> annotationASTs) {
-		${makeTyVarDecls(namedSig.typerep.freeVariables)}
+	public static ${className} reify(
+		final common.TypeRep resultType,
+		final core.reflect.NAST[] childASTs,
+		final String[] annotationNames,
+		final core.reflect.NAST[] annotationASTs) {
+		assert annotationNames.length == annotationASTs.length;
+${makeAnnoIndexDcls(0, namedSig.namedInputElements)}
+${makeTyVarDecls(namedSig.typerep.freeVariables)}
 		
 		try {
 			if (!resultType.unify(${namedSig.outputElement.typerep.transTypeRep}, true)) {
 				throw new common.exceptions.SilverError("reify is constructing " + resultType.toString() + ", but found ${ntName} AST.");
 			}
 			
-			if (childASTs.size() != ${toString(length(namedSig.inputElements))}) {
-				throw new common.exceptions.SilverError("Expected ${toString(length(namedSig.inputElements))} children, but got " + childASTs.size() + ".");
+			if (childASTs.length != ${toString(length(namedSig.inputElements))}) {
+				throw new common.exceptions.SilverError("Expected ${toString(length(namedSig.inputElements))} children, but got " + childASTs.length + ".");
 			}
 			
-			final java.util.Set<String> expectedAnnotations =
-				new java.util.HashSet<>(java.util.Arrays.asList(${implode(", ", map((.annoNameElem), annotationsForNonterminal(namedSig.outputElement.typerep, top.env)))}));
-			for (String name : expectedAnnotations) {
-				if (!annotationASTs.containsKey(name)) {
-					throw new common.exceptions.SilverError("Missing annotation " + name + ".");
-				}
-			}
-			for (String name : annotationASTs.keySet()) {
-				if (!expectedAnnotations.contains(name)) {
-					throw new common.exceptions.SilverError("Got unexpected annotation " + name + ".");
-				}
-			}
+			String[] expectedAnnotationNames = new String[] {${implode(", ", map((.annoNameElem), annotationsForNonterminal(namedSig.outputElement.typerep, top.env)))}};
+			common.Reflection.checkAnnotations(expectedAnnotationNames, annotationNames);
 		} catch (common.exceptions.SilverException e) {
 			throw new common.exceptions.TraceException("While reifying production ${fName}", e);
 		}
@@ -200,10 +196,10 @@ String ::= vars::[TyVar]
 {
   return
     implode(
-      "\n\t\t",
+      "\n",
       map(
         \ tv::TyVar ->
-          s"common.VarTypeRep typeVar_${toString(tv.extractTyVarRep)} = new common.VarTypeRep();",
+          s"\t\tcommon.VarTypeRep typeVar_${toString(tv.extractTyVarRep)} = new common.VarTypeRep();",
           vars));
     
 }

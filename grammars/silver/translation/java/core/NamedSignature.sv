@@ -116,6 +116,13 @@ String ::= n::NamedSignatureElement
 {
   return s"\t\tthis.child_${n.elementName} = c_${n.elementName};\n";
 }
+
+function makeAnnoIndexDcls
+String ::= i::Integer s::[NamedSignatureElement]
+{
+  return if null(s) then ""
+  else s"\t\tfinal int i${head(s).annoRefElem} = ${toString(i)};\n" ++ makeAnnoIndexDcls(i+1, tail(s));
+}
 function makeChildUnify
 String ::= fn::String n::NamedSignatureElement
 {
@@ -135,7 +142,7 @@ String ::= fn::String n::NamedSignatureElement
   return
 s"""Object ${n.childRefElem} = null;
 		try {
-			${n.childRefElem} = common.Reflection.reify(${n.typerep.transTypeRep}, childASTs.get(i_${n.elementName}));
+			${n.childRefElem} = common.Reflection.reify(${n.typerep.transTypeRep}, childASTs[i_${n.elementName}]);
 		} catch (common.exceptions.SilverException e) {
 			throw new common.exceptions.TraceException("While reifying child '${n.elementName}' of production '${fn}'", e);
 		}
@@ -147,7 +154,7 @@ String ::= fn::String n::NamedSignatureElement
   return
 s"""Object ${n.annoRefElem} = null;
 		try {
-			${n.annoRefElem} = common.Reflection.reify(${n.typerep.transTypeRep}, annotationASTs.get("${n.elementName}"));
+			${n.annoRefElem} = common.Reflection.reify(${n.typerep.transTypeRep}, annotationASTs[i${n.annoRefElem}]);
 		} catch (common.exceptions.SilverException e) {
 			throw new common.exceptions.TraceException("While reifying annotation '${n.elementName}' on production '${fn}'", e);
 		}

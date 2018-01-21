@@ -90,23 +90,50 @@ public final class Reflection {
 	 */
 	public static Object reify(final TypeRep resultType, final NAST ast) {
 		if (ast.getName().equals("core:reflect:nonterminalAST")) {
+			// Unpack production name
 			final String prodName = ((StringCatter)ast.getChild(0)).toString();
-			final List<NAST> childASTs = new ArrayList<>(5);
+			
+			// Unpack children
+			final List<NAST> childASTList = new ArrayList<>(5);
 			for (NASTs current = (NASTs)ast.getChild(1); !current.getName().equals("core:reflect:nilAST"); current = (NASTs)current.getChild(1)) {
-				childASTs.add((NAST)current.getChild(0));
+				childASTList.add((NAST)current.getChild(0));
 			}
-			final Map<String, NAST> annotationASTs = new TreeMap<>();
+			final NAST[] childASTs = childASTList.toArray(new NAST[childASTList.size()]);
+			
+			// Unpack annotations
+			class AnnotationEntry implements Comparable<AnnotationEntry> {
+			    public final String name;
+			    public final NAST ast;
+
+			    public AnnotationEntry(String name, NAST ast) {
+			        this.name = name;
+			        this.ast = ast;
+			    }
+
+			    public int compareTo(AnnotationEntry other) {
+			        return name.compareTo(other.name);
+			    }
+			}
+			final List<AnnotationEntry> annotationASTList = new ArrayList<>();
 			for (NNamedASTs current = (NNamedASTs)ast.getChild(2); !current.getName().equals("core:reflect:nilNamedAST"); current = (NNamedASTs)current.getChild(1)) {
 				NNamedAST item = (NNamedAST)current.getChild(0);
-				annotationASTs.put(item.getChild(0).toString(), (NAST)item.getChild(1));
+				annotationASTList.add(new AnnotationEntry(item.getChild(0).toString(), (NAST)item.getChild(1)));
+			}
+			Collections.sort(annotationASTList);
+			final String[] annotationNames = new String[annotationASTList.size()];
+			final NAST[] annotationASTs = new NAST[annotationASTList.size()];
+			for (int i = 0; i < annotationASTList.size(); i++) {
+				annotationNames[i] = annotationASTList.get(i).name;
+				annotationASTs[i] = annotationASTList.get(i).ast;
 			}
 			
-			// Invoke the reify function for the appropriate nonterminal class
+			// Invoke the reify function for the appropriate production class
 			final String[] path = prodName.split(":");
 			path[path.length - 1] = "P" + path[path.length - 1];
 			final String className = String.join(".", path);
 			try {
-				return Class.forName(className).getMethod("reify", TypeRep.class, List.class, Map.class).invoke(null, resultType, childASTs, annotationASTs);
+				Method prodReify = Class.forName(className).getMethod("reify", TypeRep.class, NAST[].class, String[].class, NAST[].class);
+				return prodReify.invoke(null, resultType, childASTs, annotationNames, annotationASTs);
 			} catch (ClassNotFoundException e) {
 				throw new SilverError("Undefined production " + prodName);
 			} catch (NoSuchMethodException | IllegalAccessException e) {
@@ -162,5 +189,18 @@ public final class Reflection {
 		} catch (SilverException e) {
 			throw new TraceException("While reifying list", e);
 		}
+	}
+	
+	public static void checkAnnotations(final String[] expectedAnnotationNames, final String[] annotationNames) {
+		if (!Arrays.equals(annotationNames, expectedAnnotationNames)) {
+			throw new SilverError("Unexpected annotations: expected " + namesToString(expectedAnnotationNames) + ", but got " + namesToString(annotationNames) + ".");
+		}
+	}
+	private static String namesToString(final String[] names) {
+		String result = names.length > 0? names[0] : "none";
+		for (int i = 1; i < names.length; i++) {
+			result += ", " + names[i];
+		}
+		return result;
 	}
 }
