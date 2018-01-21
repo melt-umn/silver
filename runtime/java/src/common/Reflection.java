@@ -6,6 +6,7 @@ import java.util.*;
 
 import common.exceptions.*;
 
+import core.*;
 import core.reflect.*;
 
 /**
@@ -78,6 +79,26 @@ public final class Reflection {
 			return new PconsAST(reflect(l.head()), reflectList(l.tail()));
 		} else {
 			return new PnilAST();
+		}
+	}
+	
+	/**
+	 * Implementation of reification with error checking.
+	 * 
+	 * @param resultType The type of tree to be constructed.
+	 * @param ast The AST to reify.
+	 * @return An Either<String a> object containing either an error message or a constructed object. 
+	 */
+	public static NEither reifyChecked(final TypeRep resultType, final NAST ast) {
+		try {
+			return new Pright(reify(resultType, ast));
+		} catch (SilverException e) {
+			Throwable rootCause = SilverException.getRootCause(e);
+			if (rootCause instanceof SilverError) {
+				return new Pleft(new StringCatter("Reification error at " + ReifyTraceException.getASTRepr(e) + ":\n" + rootCause.getMessage()));
+			} else {
+				throw e;
+			}
 		}
 	}
 	
@@ -178,16 +199,24 @@ public final class Reflection {
 	}
 	// Recursive helper to walk the ASTs tree and build a list
 	private static ConsCell reifyList(final TypeRep resultParamType, final NASTs asts) {
-		try {
-			if (asts.getName().equals("core:reflect:consAST")) {
-				return new ConsCell(reify(resultParamType, (NAST)asts.getChild(0)), reifyList(resultParamType, (NASTs)asts.getChild(1)));
-			} else if (asts.getName().equals("core:reflect:nilAST")) {
-				return ConsCell.nil;
-			} else {
-				throw new SilverInternalError("Unexpected ASTs production " + asts.getName());
+		if (asts.getName().equals("core:reflect:consAST")) {
+			Object head;
+			try {
+				head = reify(resultParamType, (NAST)asts.getChild(0));
+			} catch (SilverException e) {
+				throw new ConsReifyTraceException(true, e);
 			}
-		} catch (SilverException e) {
-			throw new TraceException("While reifying list", e);
+			ConsCell tail;
+			try {
+				tail = reifyList(resultParamType, (NASTs)asts.getChild(1));
+			} catch (SilverException e) {
+				throw new ConsReifyTraceException(false, e);
+			}
+			return new ConsCell(head, tail);
+		} else if (asts.getName().equals("core:reflect:nilAST")) {
+			return ConsCell.nil;
+		} else {
+			throw new SilverInternalError("Unexpected ASTs production " + asts.getName());
 		}
 	}
 	

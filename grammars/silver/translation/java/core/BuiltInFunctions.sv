@@ -50,25 +50,29 @@ top::Expr ::= 'toString' '(' e::Expr ')'
 aspect production reifyFunctionLiteral
 top::Expr ::= 'reify'
 {
-  local resultType::Type = finalType(top).outputType;
+  local resultType::Type =
+    case finalType(top).outputType of
+      nonterminalType("core:Either", [stringType(), a]) -> a
+    | _ -> error("Unexpected final type for reify!")
+    end;
   
   top.translation =
-s"""(new common.NodeFactory<${resultType.transType}>() {
+s"""(new common.NodeFactory<core.NEither>() {
 	@Override
-	public final ${resultType.transType} invoke(final Object[] args, final Object[] namedArgs) {
+	public final core.NEither invoke(final Object[] args, final Object[] namedArgs) {
 		assert args.length == 1;
 		assert namedArgs.length == 0;
 		
 		${makeTyVarDecls(resultType.freeVariables)}
 		common.TypeRep resultType = ${resultType.transTypeRep};
 		
-		return (${resultType.transType})common.Reflection.reify(resultType, (core.reflect.NAST)common.Util.demand(args[0]));
+		return common.Reflection.reifyChecked(resultType, (core.reflect.NAST)common.Util.demand(args[0]));
 	}
 	
 	@Override
 	public final common.FunctionTypeRep getType() {
-		${makeTyVarDecls(resultType.freeVariables)}
-		return new common.FunctionTypeRep(${resultType.transTypeRep}, new common.TypeRep[] {new common.VarTypeRep()}, new String[0], new common.TypeRep[0]);
+		${makeTyVarDecls(finalType(top).freeVariables)}
+		return ${finalType(top).transTypeRep};
 	}
 })""";
   

@@ -146,8 +146,9 @@ ${makeAnnoIndexDcls(0, namedSig.namedInputElements)}
 ${makeTyVarDecls(namedSig.typerep.freeVariables)}
 		
 		try {
-			if (!resultType.unify(${namedSig.outputElement.typerep.transTypeRep}, true)) {
-				throw new common.exceptions.SilverError("reify is constructing " + resultType.toString() + ", but found ${ntName} AST.");
+			common.TypeRep givenType = ${namedSig.outputElement.typerep.transTypeRep};
+			if (!resultType.unify(givenType, true)) {
+				throw new common.exceptions.SilverError("reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " AST.");
 			}
 			
 			if (childASTs.length != ${toString(length(namedSig.inputElements))}) {
@@ -160,7 +161,7 @@ ${makeTyVarDecls(namedSig.typerep.freeVariables)}
 			throw new common.exceptions.TraceException("While reifying production ${fName}", e);
 		}
 		
-		${implode("\n\t\t", map(makeChildReify(fName, _), namedSig.inputElements))}
+		${implode("\n\t\t", map(makeChildReify(fName, length(namedSig.inputElements), _), namedSig.inputElements))}
 		${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
 		
 		return new ${className}(${namedSig.refInvokeTrans});

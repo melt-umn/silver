@@ -137,14 +137,14 @@ s"""try {
 """;
 }
 function makeChildReify
-String ::= fn::String n::NamedSignatureElement
+String ::= fn::String numChildren::Integer n::NamedSignatureElement
 {
   return
 s"""Object ${n.childRefElem} = null;
 		try {
 			${n.childRefElem} = common.Reflection.reify(${n.typerep.transTypeRep}, childASTs[i_${n.elementName}]);
 		} catch (common.exceptions.SilverException e) {
-			throw new common.exceptions.TraceException("While reifying child '${n.elementName}' of production '${fn}'", e);
+			throw new common.exceptions.ChildReifyTraceException("${fn}", "${n.elementName}", ${toString(numChildren)}, i_${n.elementName}, e);
 		}
 """;
 }
@@ -156,7 +156,7 @@ s"""Object ${n.annoRefElem} = null;
 		try {
 			${n.annoRefElem} = common.Reflection.reify(${n.typerep.transTypeRep}, annotationASTs[i${n.annoRefElem}]);
 		} catch (common.exceptions.SilverException e) {
-			throw new common.exceptions.TraceException("While reifying annotation '${n.elementName}' on production '${fn}'", e);
+			throw new common.exceptions.AnnotationReifyTraceException("${fn}", "${n.elementName}", e);
 		}
 """;
 }
