@@ -136,7 +136,7 @@ equalityTest(
 
 equalityTest(
   reifyResToString(reify(listAST(foldAST([listAST(nilAST()), listAST(foldAST([listAST(foldAST([floatAST(3.4)]))])), listAST(foldAST([listAST(foldAST([integerAST(4)]))]))])))),
-  "Reification error at ... :: ... :: ((? :: ...) :: ...) :: ...:\nreify is constructing Float, but found Integer AST.",
+  "Reification error at [_, _, [[?, ...], ...], ...]:\nreify is constructing Float, but found Integer AST.",
   String, silver_tests);
 
 -- TODO: Tests for partial application of functions

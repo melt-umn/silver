@@ -15,14 +15,19 @@ public class ConsReifyTraceException extends ReifyTraceException {
 	
 	@Override
 	protected final String getASTRepr() {
-		if (isHead) {
-			if (getCause() instanceof ConsReifyTraceException) {
-				return "(" + getASTRepr(getCause()) + ") :: _";
-			} else {
-				return getASTRepr(getCause()) + " :: _";
+		String result = "[";
+		ConsReifyTraceException current;
+		try {
+			for (current = this; !current.isHead; current = (ConsReifyTraceException)current.getCause()) {
+				result += "_, ";
 			}
-		} else {
-			return "_ :: " + getASTRepr(getCause());
+		} catch (ClassCastException e) {
+			// If we read the end of the ConsReifyTraceException chain without finding an element
+			// with isHead set to true, then an internal error must have occured and we shouldn't
+			// be reconstructing the AST representation in the first place.
+			throw new SilverInternalError("Final cause of ConsReifyTraceException chain must be head, to reconstruct AST representation.");
 		}
+		result += getASTRepr(current.getCause()) + ", ...]";
+		return result;
 	}
 }
