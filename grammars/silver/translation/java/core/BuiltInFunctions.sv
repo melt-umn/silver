@@ -63,7 +63,7 @@ s"""(new common.NodeFactory<core.NEither>() {
 		assert args.length == 1;
 		assert namedArgs.length == 0;
 		
-		${makeTyVarDecls(resultType.freeVariables)}
+		${makeTyVarDecls(2, resultType.freeVariables)}
 		common.TypeRep resultType = ${resultType.transTypeRep};
 		
 		return common.Reflection.reifyChecked(resultType, (core.reflect.NAST)common.Util.demand(args[0]));
@@ -71,7 +71,7 @@ s"""(new common.NodeFactory<core.NEither>() {
 	
 	@Override
 	public final common.FunctionTypeRep getType() {
-		${makeTyVarDecls(finalType(top).freeVariables)}
+		${makeTyVarDecls(2, finalType(top).freeVariables)}
 		return ${finalType(top).transTypeRep};
 	}
 })""";

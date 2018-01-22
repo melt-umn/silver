@@ -143,7 +143,7 @@ ${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
 		
 		@Override
 		public final common.FunctionTypeRep getType() {
-			${makeTyVarDecls(whatSig.typerep.freeVariables)}
+			${makeTyVarDecls(2, whatSig.typerep.freeVariables)}
 			return ${whatSig.typerep.transTypeRep};
 		}
 	};

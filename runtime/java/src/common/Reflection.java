@@ -219,17 +219,4 @@ public final class Reflection {
 			throw new SilverInternalError("Unexpected ASTs production " + asts.getName());
 		}
 	}
-	
-	public static void checkAnnotations(final String[] expectedAnnotationNames, final String[] annotationNames) {
-		if (!Arrays.equals(annotationNames, expectedAnnotationNames)) {
-			throw new SilverError("Unexpected annotations: expected " + namesToString(expectedAnnotationNames) + ", but got " + namesToString(annotationNames) + ".");
-		}
-	}
-	private static String namesToString(final String[] names) {
-		String result = names.length > 0? names[0] : "none";
-		for (int i = 1; i < names.length; i++) {
-			result += ", " + names[i];
-		}
-		return result;
-	}
 }

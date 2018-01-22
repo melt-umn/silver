@@ -125,7 +125,7 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 	
 	@Override
 	public final common.BaseTypeRep getType() {
-		${makeTyVarDecls(namedSig.typerep.freeVariables)}
+${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 		
 		${implode("\n\t\t", map(makeChildUnify(fName, _), namedSig.inputElements))}
 		
@@ -143,22 +143,20 @@ ${body.translation}
 		final core.reflect.NAST[] annotationASTs) {
 		assert annotationNames.length == annotationASTs.length;
 ${makeAnnoIndexDcls(0, namedSig.namedInputElements)}
-${makeTyVarDecls(namedSig.typerep.freeVariables)}
+${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 		
-		try {
-			common.TypeRep givenType = ${namedSig.outputElement.typerep.transTypeRep};
-			if (!resultType.unify(givenType, true)) {
-				throw new common.exceptions.SilverError("reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " AST.");
-			}
-			
-			if (childASTs.length != ${toString(length(namedSig.inputElements))}) {
-				throw new common.exceptions.SilverError("Expected ${toString(length(namedSig.inputElements))} children, but got " + childASTs.length + ".");
-			}
-			
-			String[] expectedAnnotationNames = new String[] {${implode(", ", map((.annoNameElem), annotationsForNonterminal(namedSig.outputElement.typerep, top.env)))}};
-			common.Reflection.checkAnnotations(expectedAnnotationNames, annotationNames);
-		} catch (common.exceptions.SilverException e) {
-			throw new common.exceptions.TraceException("While reifying production ${fName}", e);
+		common.TypeRep givenType = ${namedSig.outputElement.typerep.transTypeRep};
+		if (!resultType.unify(givenType, true)) {
+			throw new common.exceptions.SilverError("reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " production ${fName} AST.");
+		}
+		
+		if (childASTs.length != ${toString(length(namedSig.inputElements))}) {
+			throw new common.exceptions.SilverError("Production ${fName} expected ${toString(length(namedSig.inputElements))} child(ren), but got " + childASTs.length + ".");
+		}
+		
+		String[] expectedAnnotationNames = new String[] {${implode(", ", map((.annoNameElem), annotationsForNonterminal(namedSig.outputElement.typerep, top.env)))}};
+		if (!java.util.Arrays.equals(annotationNames, expectedAnnotationNames)) {
+			throw new common.exceptions.SilverError("Production ${fName} expected " + common.Util.namesToString(expectedAnnotationNames, "no") + " annotation(s), but got " + common.Util.namesToString(annotationNames, "none") + ".");
 		}
 		
 		${implode("\n\t\t", map(makeChildReify(fName, length(namedSig.inputElements), _), namedSig.inputElements))}
@@ -177,7 +175,7 @@ ${makeTyVarDecls(namedSig.typerep.freeVariables)}
 		
 		@Override
 		public final common.FunctionTypeRep getType() {
-			${makeTyVarDecls(namedSig.typerep.freeVariables)}
+${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
 			return ${namedSig.typerep.transTypeRep};
 		}
 	};
@@ -190,17 +188,4 @@ ${makeTyVarDecls(namedSig.typerep.freeVariables)}
     if id.name == "main"
     then [err(top.location, "main should be a function!")]
     else [];
-}
-
-function makeTyVarDecls
-String ::= vars::[TyVar]
-{
-  return
-    implode(
-      "\n",
-      map(
-        \ tv::TyVar ->
-          s"\t\tcommon.VarTypeRep typeVar_${toString(tv.extractTyVarRep)} = new common.VarTypeRep();",
-          vars));
-    
 }

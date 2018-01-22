@@ -27,7 +27,7 @@ s"""(new common.NodeFactory<${finTy.outputType.transType}>() {
 	
 	@Override
 	public final common.FunctionTypeRep getType() {
-		${makeTyVarDecls(finTy.freeVariables)}
+		${makeTyVarDecls(2, finTy.freeVariables)}
 		return ${finTy.transTypeRep};
 	}
 })""";

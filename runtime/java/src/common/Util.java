@@ -496,6 +496,14 @@ public final class Util {
 		}
 	}
 	
+	public static String namesToString(final String[] names, final String none) {
+		String result = names.length > 0? names[0] : none;
+		for (int i = 1; i < names.length; i++) {
+			result += ", " + names[i];
+		}
+		return result;
+	}
+	
 	// These are written un-ideally so that they're all confined in one place.
 	public static StringCatter hackyhackyUnparse(Object o) {
 		StringBuilder sb = new StringBuilder();

@@ -117,6 +117,18 @@ String ::= n::NamedSignatureElement
   return s"\t\tthis.child_${n.elementName} = c_${n.elementName};\n";
 }
 
+function makeTyVarDecls
+String ::= indent::Integer vars::[TyVar]
+{
+  return
+    implode(
+      "\n",
+      map(
+        \ tv::TyVar ->
+          s"${sconcat(repeat("\t", indent))}common.VarTypeRep typeVar_${toString(tv.extractTyVarRep)} = new common.VarTypeRep();",
+          vars));
+    
+}
 function makeAnnoIndexDcls
 String ::= i::Integer s::[NamedSignatureElement]
 {
