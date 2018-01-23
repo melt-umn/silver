@@ -21,12 +21,8 @@ public class ListTypeRep extends TypeRep {
 	}
 	
 	@Override
-	protected boolean unifyDirect(final TypeRep other, final boolean flexible) {
-		if (flexible && other instanceof VarTypeRep) {
-			return other.unifyDirect(this, false);
-		} else {
-			return other instanceof ListTypeRep && param.unify(((ListTypeRep)other).param, flexible);
-		}
+	protected boolean unifyPartial(final TypeRep other) {
+		return other instanceof ListTypeRep && TypeRep.unify(param, ((ListTypeRep)other).param);
 	}
 	
 	@Override

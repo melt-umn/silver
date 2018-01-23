@@ -11,15 +11,18 @@ synthesized attribute transType :: String;
 synthesized attribute transClassType :: String;
 -- The runtime representation of a type, used for reification
 synthesized attribute transTypeRep :: String;
+-- The runtime representation of a type, where all skolems arereplaced with flexible vars, used for reification
+synthesized attribute transFreshTypeRep :: String;
 
-attribute transType, transClassType, transTypeRep occurs on Type;
+attribute transType, transClassType, transTypeRep, transFreshTypeRep occurs on Type;
 
 aspect production varType
 top::Type ::= tv::TyVar
 {
   top.transType = "Object";
   top.transClassType = "Object";
-  top.transTypeRep = s"typeVar_${toString(tv.extractTyVarRep)}";
+  top.transTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
+  top.transFreshTypeRep = top.transTypeRep;
 }
 
 aspect production skolemType
@@ -27,7 +30,8 @@ top::Type ::= tv::TyVar
 {
   top.transType = "Object";
   top.transClassType = "Object";
-  top.transTypeRep = s"typeVar_${toString(tv.extractTyVarRep)}";
+  top.transTypeRep = s"new common.BaseTypeRep(\"b${toString(tv.extractTyVarRep)}\")";
+  top.transFreshTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
 }
 
 aspect production intType
@@ -36,6 +40,7 @@ top::Type ::=
   top.transType = "Integer";
   top.transClassType = "Integer";
   top.transTypeRep = "new common.BaseTypeRep(\"Integer\")";
+  top.transFreshTypeRep = top.transTypeRep;
 }
 
 aspect production boolType
@@ -44,6 +49,7 @@ top::Type ::=
   top.transType = "Boolean";
   top.transClassType = "Boolean";
   top.transTypeRep = "new common.BaseTypeRep(\"Boolean\")";
+  top.transFreshTypeRep = top.transTypeRep;
 }
 
 aspect production floatType
@@ -52,6 +58,7 @@ top::Type ::=
   top.transType = "Float";
   top.transClassType = "Float";
   top.transTypeRep = "new common.BaseTypeRep(\"Float\")";
+  top.transFreshTypeRep = top.transTypeRep;
 }
 
 aspect production stringType
@@ -60,6 +67,7 @@ top::Type ::=
   top.transType = "common.StringCatter";
   top.transClassType = "common.StringCatter";
   top.transTypeRep = "new common.BaseTypeRep(\"String\")";
+  top.transFreshTypeRep = top.transTypeRep;
 }
 
 aspect production nonterminalType
@@ -71,6 +79,8 @@ top::Type ::= fn::String params::[Type]
   top.transClassType = top.transType;
   top.transTypeRep =
     s"new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})";
+  top.transFreshTypeRep =
+    s"new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), params))}})";
 }
 
 aspect production terminalType
@@ -79,6 +89,7 @@ top::Type ::= fn::String
   top.transType = makeTerminalName(fn);
   top.transClassType = makeTerminalName(fn);
   top.transTypeRep = s"new common.BaseTypeRep(\"${fn}\")";
+  top.transFreshTypeRep = top.transTypeRep;
 }
 
 aspect production decoratedType
@@ -93,6 +104,12 @@ top::Type ::= te::Type
         s"new common.BaseTypeRep(\"Decorated ${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})"
     | _ -> error("Found decoratedType that does not wrap nonterminalType!")
     end;
+  top.transFreshTypeRep =
+    case te of
+      nonterminalType(fn, params) ->
+        s"new common.BaseTypeRep(\"Decorated ${fn}\", new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), params))}})"
+    | _ -> error("Found decoratedType that does not wrap nonterminalType!")
+    end;
 }
 
 aspect production functionType
@@ -105,5 +122,10 @@ top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
       s"new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}}, " ++
       s"new String[] {${implode(", ", map(\ nat::NamedArgType -> s"\"${nat.argName}\"", namedParams))}}, " ++
       s"new common.TypeRep[] {${implode(", ", map((.transTypeRep), map((.argType), namedParams)))}})";
+  top.transFreshTypeRep =
+    s"new common.FunctionTypeRep(${out.transFreshTypeRep}, " ++
+      s"new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), params))}}, " ++
+      s"new String[] {${implode(", ", map(\ nat::NamedArgType -> s"\"${nat.argName}\"", namedParams))}}, " ++
+      s"new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), map((.argType), namedParams)))}})";
 }
 

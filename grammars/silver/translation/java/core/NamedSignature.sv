@@ -125,7 +125,7 @@ String ::= indent::Integer vars::[TyVar]
       "\n",
       map(
         \ tv::TyVar ->
-          s"${sconcat(repeat("\t", indent))}common.VarTypeRep typeVar_${toString(tv.extractTyVarRep)} = new common.VarTypeRep();",
+          s"${sconcat(repeat("\t", indent))}common.VarTypeRep freshTypeVar_${toString(tv.extractTyVarRep)} = new common.VarTypeRep();",
           vars));
     
 }
@@ -140,7 +140,7 @@ String ::= fn::String n::NamedSignatureElement
 {
   return
 s"""try {
-			if (!${n.typerep.transTypeRep}.unify(common.Reflection.getType(getChild_${n.elementName}()), false)) {
+			if (!common.TypeRep.unify(${n.typerep.transFreshTypeRep}, common.Reflection.getType(getChild_${n.elementName}()))) {
 				throw new common.exceptions.SilverInternalError("Unification failed.");
 			}
 		} catch (common.exceptions.SilverException e) {
@@ -154,7 +154,7 @@ String ::= fn::String numChildren::Integer n::NamedSignatureElement
   return
 s"""Object ${n.childRefElem} = null;
 		try {
-			${n.childRefElem} = common.Reflection.reify(${n.typerep.transTypeRep}, childASTs[i_${n.elementName}]);
+			${n.childRefElem} = common.Reflection.reify(${n.typerep.transFreshTypeRep}, childASTs[i_${n.elementName}]);
 		} catch (common.exceptions.SilverException e) {
 			throw new common.exceptions.ChildReifyTraceException("${fn}", "${n.elementName}", ${toString(numChildren)}, i_${n.elementName}, e);
 		}
@@ -166,7 +166,7 @@ String ::= fn::String n::NamedSignatureElement
   return
 s"""Object ${n.annoRefElem} = null;
 		try {
-			${n.annoRefElem} = common.Reflection.reify(${n.typerep.transTypeRep}, annotationASTs[i${n.annoRefElem}]);
+			${n.annoRefElem} = common.Reflection.reify(${n.typerep.transFreshTypeRep}, annotationASTs[i${n.annoRefElem}]);
 		} catch (common.exceptions.SilverException e) {
 			throw new common.exceptions.AnnotationReifyTraceException("${fn}", "${n.elementName}", e);
 		}

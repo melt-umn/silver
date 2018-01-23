@@ -18,25 +18,24 @@ public abstract class TypeRep {
 	}
 	
 	/**
-	 * Unify this TypeRep with other, updating contained variables with the substitutions performed.
-	 * 
-	 * @param other The TypeRep with which to unify.
-	 * @param flexible true if type variables in other should be allowed to unify with other types.
-	 * @return true if the types are valid.
-	 */
-	public final boolean unify(final TypeRep other, final boolean flexible) {
-		return unifyDirect(other.getSubstitution(), flexible);
-	}
-	
-	/**
-	 * Unify this TypeRep with other, updating contained variables with the substitutions performed.
+	 * Perform unification in one direction, only performing immediate substitions on this.
 	 * Here other is not allowed to contain substituted VarTypeRep types.
 	 * 
 	 * @param other The TypeRep with which to unify.
-	 * @param flexible true if type variables in other should be allowed to unify with other types.
 	 * @return true if the types are valid.
 	 */
-	protected abstract boolean unifyDirect(final TypeRep other, final boolean flexible);
+	protected abstract boolean unifyPartial(final TypeRep other);
+	
+	/**
+	 * Unify two TypeReps with each other, updating contained variables with the substitutions
+	 * performed.
+	 * 
+	 * @param other The TypeRep with which to unify.
+	 * @return true if the types are valid.
+	 */
+	public static boolean unify(final TypeRep t1, final TypeRep t2) {
+		return t1.unifyPartial(t2.getSubstitution()) || t2.unifyPartial(t1.getSubstitution());
+	}
 	
 	@Override
 	public abstract String toString();

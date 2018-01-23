@@ -100,7 +100,7 @@ public class ConsCell implements Typed {
 			// The type of a list is the type of its tail, but the type of its tail may be [a].
 			// Unify the parameter with the type of the head to constrain this type variable.
 			ListTypeRep tailType = tail().getType();
-			if (!tailType.param.unify(Reflection.getType(head()), true)) {
+			if (!TypeRep.unify(tailType.param, Reflection.getType(head()))) {
 				throw new SilverInternalError("Unification failed.");
 			} else {
 				return tailType;

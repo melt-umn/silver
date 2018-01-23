@@ -168,7 +168,7 @@ public final class Reflection {
 			}
 		} else if (ast.getName().equals("core:reflect:listAST")) {
 			final TypeRep paramType = new VarTypeRep();
-			if (!resultType.unify(new ListTypeRep(paramType), true)) {
+			if (!TypeRep.unify(resultType, new ListTypeRep(paramType))) {
 				throw new SilverError("reify is constructing " + resultType.toString() + ", but found list AST.");
 			}
 			return reifyList(paramType, (NASTs)ast.getChild(0));
@@ -190,8 +190,8 @@ public final class Reflection {
 			} else {
 				throw new SilverInternalError("Unexpected AST production " + ast.getName());
 			}
-			// Perform unification with type vars treated as skolems
-			if (!resultType.unify(givenType, false)) {
+			// Perform unification with the expected type
+			if (!TypeRep.unify(resultType, givenType)) {
 				throw new SilverError("reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " AST.");
 			}
 			return givenObject;

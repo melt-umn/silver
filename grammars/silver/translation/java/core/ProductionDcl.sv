@@ -129,7 +129,7 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 		
 		${implode("\n\t\t", map(makeChildUnify(fName, _), namedSig.inputElements))}
 		
-		return ${namedSig.outputElement.typerep.transTypeRep};
+		return ${namedSig.outputElement.typerep.transFreshTypeRep};
 	}
 
 	static void initProductionAttributeDefinitions() {
@@ -145,8 +145,8 @@ ${body.translation}
 ${makeAnnoIndexDcls(0, namedSig.namedInputElements)}
 ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 		
-		common.TypeRep givenType = ${namedSig.outputElement.typerep.transTypeRep};
-		if (!resultType.unify(givenType, true)) {
+		common.TypeRep givenType = ${namedSig.outputElement.typerep.transFreshTypeRep};
+		if (!common.TypeRep.unify(resultType, givenType)) {
 			throw new common.exceptions.SilverError("reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " production ${fName} AST.");
 		}
 		
@@ -176,7 +176,7 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 		@Override
 		public final common.FunctionTypeRep getType() {
 ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
-			return ${namedSig.typerep.transTypeRep};
+			return ${namedSig.typerep.transFreshTypeRep};
 		}
 	};
 

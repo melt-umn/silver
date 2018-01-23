@@ -56,25 +56,28 @@ top::Expr ::= 'reify'
     | _ -> error("Unexpected final type for reify!")
     end;
   
+  -- In the unusual case that we have a skolems in the result type, we can't generalize them, but
+  -- we also can't do any better, so leave the runtime result TypeRep unfreshened.
+  -- There is a similar problem with lambdas.
   top.translation =
 s"""(new common.NodeFactory<core.NEither>() {
-	@Override
-	public final core.NEither invoke(final Object[] args, final Object[] namedArgs) {
-		assert args.length == 1;
-		assert namedArgs.length == 0;
-		
-		${makeTyVarDecls(2, resultType.freeVariables)}
-		common.TypeRep resultType = ${resultType.transTypeRep};
-		
-		return common.Reflection.reifyChecked(resultType, (core.reflect.NAST)common.Util.demand(args[0]));
-	}
-	
-	@Override
-	public final common.FunctionTypeRep getType() {
-		${makeTyVarDecls(2, finalType(top).freeVariables)}
-		return ${finalType(top).transTypeRep};
-	}
-})""";
+				@Override
+				public final core.NEither invoke(final Object[] args, final Object[] namedArgs) {
+					assert args.length == 1;
+					assert namedArgs.length == 0;
+					
+${makeTyVarDecls(5, resultType.freeVariables)}
+					common.TypeRep resultType = ${resultType.transTypeRep};
+					
+					return common.Reflection.reifyChecked(resultType, (core.reflect.NAST)common.Util.demand(args[0]));
+				}
+				
+				@Override
+				public final common.FunctionTypeRep getType() {
+${makeTyVarDecls(5, finalType(top).freeVariables)}
+					return ${finalType(top).transTypeRep};
+				}
+			})""";
   
   top.lazyTranslation = top.translation;
 }

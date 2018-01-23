@@ -79,17 +79,11 @@ global testVal::Pair<Pair<Integer (String ::= Float)> Pair<String Unit>> = pair(
 
 global reifyRes2::Either<String Pair<Pair<Integer (String ::= Float)> Pair<String Unit>>> = reify(anyAST(testVal));
 
-equalityTest(
-  reifyResToString(reifyRes2),
-  lessHackyUnparse(testVal),
-  String, silver_tests);
+equalityTest(reifyResToString(reifyRes2), lessHackyUnparse(testVal), String, silver_tests);
 
 global reifyRes3::Either<String Pair<Pair<Integer (String ::= Float)> Pair<String Unit>>> = reify(reflect(testVal));
 
-equalityTest(
-  reifyResToString(reifyRes3),
-  lessHackyUnparse(testVal),
-  String, silver_tests);
+equalityTest(reifyResToString(reifyRes3), lessHackyUnparse(testVal), String, silver_tests);
 
 
 nonterminal Bar<a>;
@@ -123,17 +117,11 @@ global foldAST::(ASTs ::= [AST]) = foldr(consAST, nilAST(), _);
 
 global reifyRes6::Either<String [[[Integer]]]> = reify(listAST(foldAST([])));
 
-equalityTest(
-  reifyResToString(reifyRes6),
-  "[]",
-  String, silver_tests);
+equalityTest(reifyResToString(reifyRes6), "[]", String, silver_tests);
 
 global reifyRes7::Either<String [[[Integer]]]> = reify(listAST(foldAST([listAST(nilAST()), listAST(foldAST([listAST(foldAST([]))])), listAST(foldAST([listAST(foldAST([integerAST(4)]))]))])));
 
-equalityTest(
-  reifyResToString(reifyRes7),
-  "[[], [[]], [[4]]]",
-  String, silver_tests);
+equalityTest(reifyResToString(reifyRes7), "[[], [[]], [[4]]]", String, silver_tests);
 
 equalityTest(
   reifyResToString(reify(listAST(foldAST([listAST(nilAST()), listAST(foldAST([listAST(foldAST([]))])), listAST(foldAST([listAST(foldAST([integerAST(4)]))]))])))),
@@ -160,26 +148,22 @@ equalityTest(
   "Reification error at silver_features:addExpr(_, ?):\nProduction silver_features:idExpr expected 1 child(ren), but got 2.",
   String, silver_tests);
 
-function foo
-a ::= x::AST
+function reifySkolem
+Either<String a> ::= x::AST
 {
-  local result::Either<String a> = reify(x);
-  return case result of
-    left(msg) -> error(msg)
-  | right(y) -> y
-  end;
+  return reify(x);
 }
 
-global res::Integer = foo(floatAST(4.0));
+-- This will have some sort of runtime type error involving skolems, but we can't test for it exactly since the exact message may vary.
+equalityTest(true, case reifySkolem(floatAST(4.0)) of left(_) -> true | right(_) -> false end, Boolean, silver_tests);
 
---equalityTest(res, 4, Integer, silver_tests);
-
-{-
-function asdfasdf
-a ::= x::b
+function reifySkolem2
+Either<String (a ::= Integer)> ::= 
 {
-  local result::Either<String a> = reify(integerAST(0));
-  return error(lessHackyUnparse(result));
-}-}
+  local fn::(a ::= Integer) = \ i::Integer -> error(toString(i));
+  return reify(anyAST(fn));
+}
+
+equalityTest(reifyResToString(reifySkolem2()), "<OBJECT>", String, silver_tests);
 
 -- TODO: Tests for partial application of functions

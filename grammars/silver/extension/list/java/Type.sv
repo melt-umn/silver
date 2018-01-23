@@ -11,5 +11,6 @@ top::Type ::= el::Type
 {
   top.transType = "common.ConsCell";
   top.transTypeRep = s"new common.ListTypeRep(${el.transTypeRep})";
+  top.transFreshTypeRep = s"new common.ListTypeRep(${el.transFreshTypeRep})";
 }
 

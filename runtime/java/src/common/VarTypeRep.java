@@ -2,8 +2,6 @@ package common;
 
 /**
  * Representation of a type variable in Silver, used for run-time type checking in reification.
- * Note that this includes both regular type variables as well as skolems, since we want to
- * treat skolems on the LHS of a production signature as flexible during runtime unification, etc.
  * Any VarTypeRep object corresponds to a unique instantiation of a type variable, and may be
  * referenced in multiple places.
  * 
@@ -12,6 +10,7 @@ package common;
 public class VarTypeRep extends TypeRep {
 	/**
 	 * A unique identifier for the type.
+	 * Invariant: Only one VarTypeRep object may exist for any id.
 	 */
 	public final int id;
 	
@@ -42,13 +41,14 @@ public class VarTypeRep extends TypeRep {
 	}
 	
 	@Override
-	protected final boolean unifyDirect(final TypeRep other, final boolean flexible) {
+	protected final boolean unifyPartial(final TypeRep other) {
 		if (substitution != null) {
 			// If this var has been substituted, unify with the substitution
-			return substitution.unify(other, flexible);
-		} else if (flexible && other instanceof VarTypeRep) {
+			return substitution.unifyPartial(other);
+		} else if (other instanceof VarTypeRep) {
 			// Substitute this into other
-			return other.unifyDirect(this, false);
+			((VarTypeRep)other).substitution = this;
+			return true;
 		} else {
 			// Substitute other into this
 			substitution = other;

@@ -9,7 +9,8 @@ package common;
 public interface Typed {
 	/**
 	 * Construct the type representation of the object.
-	 * Note that all type variables used here should be fresh.
+	 * Note that this returns the <i>freshened</i> type, containing all new type variables, with
+	 * skolems replaced by flexible type vars.
 	 * 
 	 * @return The type of the object
 	 */

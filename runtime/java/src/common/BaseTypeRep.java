@@ -37,16 +37,14 @@ public class BaseTypeRep extends TypeRep {
 	}
 	
 	@Override
-	protected final boolean unifyDirect(final TypeRep other, final boolean flexible) {
-		if (flexible && other instanceof VarTypeRep) {
-			return other.unifyDirect(this, false);
-		} else if (!(other instanceof BaseTypeRep) || !this.baseName.equals(((BaseTypeRep)other).baseName)) {
+	protected final boolean unifyPartial(final TypeRep other) {
+		if (!(other instanceof BaseTypeRep) || !baseName.equals(((BaseTypeRep)other).baseName)) {
 			return false;
 		}
 		// Any types with the same name should have the same number of type parameters
 		assert params.length == ((BaseTypeRep)other).params.length;
 		for (int i = 0; i < params.length; i++) {
-			if (!params[i].unify(((BaseTypeRep)other).params[i], flexible)) {
+			if (!TypeRep.unify(params[i], ((BaseTypeRep)other).params[i])) {
 				return false;
 			}
 		}
