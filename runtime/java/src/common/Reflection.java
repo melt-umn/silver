@@ -39,6 +39,31 @@ public final class Reflection {
 	}
 	
 	/**
+	 * Create a Silver Maybe<String> object containing an extracted string representation of the
+	 * runtime type of an object, if available.
+	 * 
+	 * @param o The object to extract the type. 
+	 * @return just the extracted type representation, if the object is typed, or else nothing().
+	 */
+	public static NMaybe reflectTypeName(final Object o) {
+		String result;
+		if(o instanceof Integer) {
+			result = "Integer";
+		} else if(o instanceof Float) {
+			result = "Float";
+		} else if(o instanceof Boolean) {
+			result = "Boolean";
+		} else if(o instanceof Typed){
+			result = ((Typed)o).getType().toString();
+		} else if(o instanceof Thunk) {
+			throw new SilverInternalError("Runtime type of an unevaluated Thunk should never be demanded.");
+		} else {
+			return new Pnothing();
+		}
+		return new Pjust(new StringCatter(result));
+	}
+	
+	/**
 	 * Implementation of the reflect operation for an arbitrary type.
 	 * 
 	 * @param o The object to reflect.
