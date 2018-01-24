@@ -46,7 +46,11 @@ top::AST ::= b::Boolean
 abstract production anyAST
 top::AST ::= x::a
 {
-  top.pp = pp"<OBJECT>";
+  top.pp =
+    case reflectTypeName(x) of
+      just(n) -> pp"<OBJECT :: ${text(n)}>"
+    | nothing() -> pp"<OBJECT>"
+    end;
 }
 
 nonterminal ASTs with pps;
