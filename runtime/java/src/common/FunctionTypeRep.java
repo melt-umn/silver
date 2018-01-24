@@ -76,11 +76,8 @@ public class FunctionTypeRep extends TypeRep {
 		for (int i = 1; i < params.length; i++) {
 			paramsToString += " " + params[i].toString();
 		}
-		if (namedParamNames.length > 0) {
-			paramsToString += ";";
-		}
 		for (int i = 0; i < namedParamNames.length; i++) {
-			paramsToString += " " + namedParamNames[i] + "::" + namedParamTypes[i].toString();
+			paramsToString += "; " + namedParamNames[i] + "::" + namedParamTypes[i].toString();
 		}
 		return "(" + result.toString() + " ::= " + paramsToString + ")";
 	}
