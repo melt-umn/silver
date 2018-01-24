@@ -148,11 +148,16 @@ equalityTest(
   "Reification error at silver_features:addExpr(_, ?):\nProduction silver_features:idExpr expected 1 child(ren), but got 2.",
   String, silver_tests);
 
+global reifyRes8::Either<String (String ::= Integer Boolean)> = reify(anyAST((\ i::Integer f::Float b::Boolean -> toString(i) ++ toString(f) ++ toString(b))(_, 3.14, _)));
+
+equalityTest(reifyResToString(reifyRes8), "<OBJECT> :: (String ::= Integer Boolean)", String, silver_tests);
+
 function reifySkolem
 Either<String a> ::= x::AST
 {
   return reify(x);
 }
+
 
 -- This will have some sort of runtime type error involving skolems, but we can't test for it exactly since the exact message may vary.
 equalityTest(true, case reifySkolem(floatAST(4.0)) of left(_) -> true | right(_) -> false end, Boolean, silver_tests);
@@ -166,4 +171,4 @@ Either<String (a ::= Integer)> ::=
 
 equalityTest(true, case reifySkolem2() of left(_) -> false | right(_) -> true end, Boolean, silver_tests);
 
--- TODO: Tests for partial application of functions
+-- TODO: Tests for partial application of functions with named params

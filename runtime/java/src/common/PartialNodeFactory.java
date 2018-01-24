@@ -66,12 +66,12 @@ public class PartialNodeFactory<T> extends NodeFactory<T> {
 		
 		final TypeRep[] newParams = new TypeRep[baseType.params.length - indices.length];
 		int i = 0, j = 0;
-		for (int k = 0; k < baseType.params.length; k++) {
-			if (k == indices[j]) {
-				j++;
-			} else {
-				newParams[i] = baseType.params[k];
+		while (j < newParams.length) {
+			if (i < indices.length && indices[i] == i + j) {
 				i++;
+			} else {
+				newParams[j] = baseType.params[i + j];
+				j++;
 			}
 		}
 		// We pass through namedParams unchanged here.
