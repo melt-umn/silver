@@ -45,12 +45,8 @@ public class VarTypeRep extends TypeRep {
 		if (substitution != null) {
 			// If this var has been substituted, unify with the substitution
 			return substitution.unifyPartial(other);
-		} else if (other instanceof VarTypeRep) {
-			// Substitute this into other
-			((VarTypeRep)other).substitution = this;
-			return true;
 		} else {
-			// Substitute other into this
+			// Perform a new substitution
 			substitution = other;
 			return true;
 		}
