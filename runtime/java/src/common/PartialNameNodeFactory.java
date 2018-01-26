@@ -44,7 +44,7 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 			                      final Object[] args) {
 		this.ref = ref;
 		this.iConvertedToOrdered = (iConvertedToOrdered == null) ? new int[0] : iConvertedToOrdered;
-		this.iSuppliedHere = iSuppliedHere;
+		this.iSuppliedHere = (iSuppliedHere == null) ? new int[0] : iSuppliedHere;
 		this.args = args;
 	}
 	
@@ -105,14 +105,16 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 	    // Construct new named parameter arrays by copying items not supplied or converted
 		final String[] newNamedParamNames = new String[baseType.namedParamNames.length - (iConvertedToOrdered.length + iSuppliedHere.length)];
 		final TypeRep[] newNamedParamTypes = new TypeRep[newNamedParamNames.length];
-		int i = 0, j = 0;
-		for (int k = 0; k < baseType.namedParamNames.length; k++) {
-			if (k == iSuppliedHere[j]) {
-				j++;
-			} else if (!iConvertedToOrderedSet.contains(k)) {
-				newNamedParamNames[i] = baseType.namedParamNames[k];
-				newNamedParamTypes[i] = baseType.namedParamTypes[k];
+		int i = 0, j = 0, k = 0;
+		while (k < newNamedParamNames.length) {
+			if (i < iSuppliedHere.length && i + j + k == iSuppliedHere[i]) {
 				i++;
+			} else if (iConvertedToOrderedSet.contains(j)) {
+				j++;
+			} else {
+				newNamedParamNames[k] = baseType.namedParamNames[i + j + k];
+				newNamedParamTypes[k] = baseType.namedParamTypes[i + j + k];
+				k++;
 			}
 		}
 		

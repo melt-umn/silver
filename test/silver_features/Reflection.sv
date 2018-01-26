@@ -100,7 +100,7 @@ equalityTest(
   String, silver_tests);
 
 annotation anno1::Integer;
-annotation anno2::Integer;
+annotation anno2::Float;
 
 nonterminal Baz with anno1, anno2;
 
@@ -108,10 +108,10 @@ abstract production baz
 top::Baz ::=
 {}
 
-global reifyRes5::Either<String Baz> = reify(nonterminalAST("silver_features:baz", nilAST(), consNamedAST(namedAST("silver_features:anno1", integerAST(1)), consNamedAST(namedAST("silver_features:anno2", integerAST(2)), nilNamedAST()))));
+global reifyRes5::Either<String Baz> = reify(nonterminalAST("silver_features:baz", nilAST(), consNamedAST(namedAST("silver_features:anno1", integerAST(1)), consNamedAST(namedAST("silver_features:anno2", floatAST(2.0)), nilNamedAST()))));
 
-equalityTest(fromRight(reifyRes5, baz(anno1=-1, anno2=-2)).anno1, 1, Integer, silver_tests);
-equalityTest(fromRight(reifyRes5, baz(anno1=-1, anno2=-2)).anno2, 2, Integer, silver_tests);
+equalityTest(fromRight(reifyRes5, baz(anno1=-1, anno2=-2.0)).anno1, 1, Integer, silver_tests);
+equalityTest(fromRight(reifyRes5, baz(anno1=-1, anno2=-2.0)).anno2, 2.0, Float, silver_tests);
 
 global foldAST::(ASTs ::= [AST]) = foldr(consAST, nilAST(), _);
 
@@ -150,7 +150,12 @@ equalityTest(
 
 global reifyRes8::Either<String (String ::= Integer Boolean)> = reify(anyAST((\ i::Integer f::Float b::Boolean -> toString(i) ++ toString(f) ++ toString(b))(_, 3.14, _)));
 
-equalityTest(reifyResToString(reifyRes8), "<OBJECT> :: (String ::= Integer Boolean)", String, silver_tests);
+equalityTest(reifyResToString(reifyRes8), "<OBJECT :: (String ::= Integer Boolean)>", String, silver_tests);
+
+equalityTest(reifyResToString(reify(anyAST(baz))), "<OBJECT :: (silver_features:Baz ::= ; anno1::Integer; anno2::Float)>", String, silver_tests);
+equalityTest(reifyResToString(reify(anyAST(baz(anno2=_, anno1=_)))), "<OBJECT :: (silver_features:Baz ::= Float Integer)>", String, silver_tests);
+equalityTest(reifyResToString(reify(anyAST(baz(anno1=1, anno2=_)))), "<OBJECT :: (silver_features:Baz ::= Float)>", String, silver_tests);
+equalityTest(reifyResToString(reify(anyAST(baz(anno1=_, anno2=2.0)))), "<OBJECT :: (silver_features:Baz ::= Integer)>", String, silver_tests);
 
 function reifySkolem
 Either<String a> ::= x::AST
@@ -170,5 +175,3 @@ Either<String (a ::= Integer)> ::=
 }
 
 equalityTest(true, case reifySkolem2() of left(_) -> false | right(_) -> true end, Boolean, silver_tests);
-
--- TODO: Tests for partial application of functions with named params
