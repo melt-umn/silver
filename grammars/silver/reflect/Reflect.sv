@@ -1,4 +1,4 @@
-grammar core:reflect;
+grammar silver:reflect;
 
 function reflect
 AST ::= x::a
@@ -12,6 +12,6 @@ function reflectTypeName
 Maybe<String> ::= x::a
 {
   return error("Foreign function");
-}{- foreign {
+} foreign {
   "java" : return "(common.Reflection.reflectTypeName(%x%))";
-}-}
+}
