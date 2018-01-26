@@ -12,6 +12,6 @@ function reflectTypeName
 Maybe<String> ::= x::a
 {
   return error("Foreign function");
-} foreign {
+}{- foreign {
   "java" : return "(common.Reflection.reflectTypeName(%x%))";
-}
+}-}
