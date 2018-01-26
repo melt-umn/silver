@@ -72,7 +72,10 @@ public class FunctionTypeRep extends TypeRep {
 	
 	@Override
 	public final String toString() {
-		String paramsToString = params[0].toString();
+		String paramsToString = "";
+		if (params.length > 0) {
+			paramsToString += params[0].toString();
+		}
 		for (int i = 1; i < params.length; i++) {
 			paramsToString += " " + params[i].toString();
 		}
