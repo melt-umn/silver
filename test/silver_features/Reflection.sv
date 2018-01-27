@@ -164,7 +164,7 @@ Either<String a> ::= x::AST
 }
 
 -- This will have some sort of runtime type error involving skolems, but we can't test for it exactly since the exact message may vary.
-equalityTest(true, case reifySkolem(floatAST(4.0)) of left(_) -> true | right(_) -> false end, Boolean, silver_tests);
+equalityTest(case reifySkolem(floatAST(4.0)) of left(_) -> true | right(_) -> false end, true, Boolean, silver_tests);
 
 function reifySkolem2
 Either<String (a ::= Integer)> ::= 
@@ -173,4 +173,13 @@ Either<String (a ::= Integer)> ::=
   return reify(anyAST(fn));
 }
 
-equalityTest(true, case reifySkolem2() of left(_) -> false | right(_) -> true end, Boolean, silver_tests);
+equalityTest(case reifySkolem2() of left(_) -> false | right(_) -> true end, true, Boolean, silver_tests);
+
+global testValue::Pair<[Expr] Baz> = pair([testExpr, intConstExpr(5, lineNum=4)], baz(anno1=1, anno2=2.0));
+global parseRes::Either<String AST> = parseAST("test", reflect(testValue).unparse);
+
+equalityTest(case parseRes of left(msg) -> msg | right(a) -> show(80, a.pp) end, lessHackyUnparse(testValue), String, silver_tests);
+
+global reifyRes9::Either<String Pair<[Expr] Baz>> = reify(fromRight(parseRes, integerAST(0)));
+
+equalityTest(reifyResToString(reifyRes9), lessHackyUnparse(testValue), String, silver_tests);
