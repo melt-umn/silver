@@ -10,7 +10,7 @@ package common;
  * @author tedinski
  * @see DecoratedNode
  */
-public abstract class Node {
+public abstract class Node implements Typed {
 	
 	// Common manipulators of Node objects.
 	
@@ -207,4 +207,8 @@ public abstract class Node {
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of the attribute
 	 */
 	public abstract Lazy getSynthesized(final int index);
+	
+	// Override with a more specific return type
+	@Override
+	public abstract BaseTypeRep getType();
 }

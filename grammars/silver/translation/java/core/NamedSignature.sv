@@ -4,6 +4,7 @@ grammar silver:translation:java:core;
  - The java translation of the *input parameters* signature.
  -}
 synthesized attribute javaSignature :: String occurs on NamedSignature;
+synthesized attribute refInvokeTrans :: String occurs on NamedSignature;
 -- "final Object c_signame"
 synthesized attribute childSigElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoSigElem :: String occurs on NamedSignatureElement;
@@ -24,6 +25,7 @@ aspect production namedSignature
 top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
 {
   top.javaSignature = implode(", ", map((.childSigElem), ie) ++ map((.annoSigElem), np));
+  top.refInvokeTrans = implode(", ", map((.childRefElem), ie) ++ map((.annoRefElem), np));
 }
 
 -- TODO: It'd be nice to maybe split these into the ordered parameters and the annotations
@@ -114,4 +116,61 @@ String ::= n::NamedSignatureElement
 {
   return s"\t\tthis.child_${n.elementName} = c_${n.elementName};\n";
 }
+
+function makeTyVarDecls
+String ::= indent::Integer vars::[TyVar]
+{
+  return
+    implode(
+      "\n",
+      map(
+        \ tv::TyVar ->
+          s"${sconcat(repeat("\t", indent))}common.VarTypeRep freshTypeVar_${toString(tv.extractTyVarRep)} = new common.VarTypeRep();",
+          vars));
+    
+}
+function makeAnnoIndexDcls
+String ::= i::Integer s::[NamedSignatureElement]
+{
+  return if null(s) then ""
+  else s"\t\tfinal int i${head(s).annoRefElem} = ${toString(i)};\n" ++ makeAnnoIndexDcls(i+1, tail(s));
+}
+function makeChildUnify
+String ::= fn::String n::NamedSignatureElement
+{
+  return
+s"""try {
+			if (!common.TypeRep.unify(${n.typerep.transFreshTypeRep}, common.Reflection.getType(getChild_${n.elementName}()))) {
+				throw new common.exceptions.SilverInternalError("Unification failed.");
+			}
+		} catch (common.exceptions.SilverException e) {
+			throw new common.exceptions.TraceException("While constructing type of child '${n.elementName}' of production '${fn}'", e);
+		}
+""";
+}
+function makeChildReify
+String ::= fn::String numChildren::Integer n::NamedSignatureElement
+{
+  return
+s"""Object ${n.childRefElem} = null;
+		try {
+			${n.childRefElem} = common.Reflection.reify(${n.typerep.transFreshTypeRep}, childASTs[i_${n.elementName}]);
+		} catch (common.exceptions.SilverException e) {
+			throw new common.exceptions.ChildReifyTraceException("${fn}", "${n.elementName}", ${toString(numChildren)}, i_${n.elementName}, e);
+		}
+""";
+}
+function makeAnnoReify
+String ::= fn::String n::NamedSignatureElement
+{
+  return
+s"""Object ${n.annoRefElem} = null;
+		try {
+			${n.annoRefElem} = common.Reflection.reify(${n.typerep.transFreshTypeRep}, annotationASTs[i${n.annoRefElem}]);
+		} catch (common.exceptions.SilverException e) {
+			throw new common.exceptions.AnnotationReifyTraceException("${fn}", "${n.elementName}", e);
+		}
+""";
+}
+
 

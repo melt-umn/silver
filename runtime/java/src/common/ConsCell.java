@@ -2,7 +2,7 @@ package common;
 
 import java.util.List;
 
-import common.exceptions.SilverError;
+import common.exceptions.*;
 
 /**
  * Special Java translation for Silver lists.  The main purpose is to reduce memory consumption
@@ -13,7 +13,7 @@ import common.exceptions.SilverError;
  * @author tedinski
  * @see AppendCell
  */
-public class ConsCell {
+public class ConsCell implements Typed {
 	/**
 	 * A shared, singleton nil object.
 	 */
@@ -94,6 +94,22 @@ public class ConsCell {
 		return 1 + tail().length();
 	}
 	
+	@Override
+	public ListTypeRep getType() {
+		try {
+			// The type of a list is the type of its tail, but the type of its tail may be [a].
+			// Unify the parameter with the type of the head to constrain this type variable.
+			ListTypeRep tailType = tail().getType();
+			if (!TypeRep.unify(tailType.param, Reflection.getType(head()))) {
+				throw new SilverInternalError("Unification failed.");
+			} else {
+				return tailType;
+			}
+		} catch (SilverException e) {
+			throw new TraceException("While constructing type of list", e);
+		}
+	}
+	
 	protected static class NilConsCell extends ConsCell {
 		public NilConsCell() {
 			super(null,null);
@@ -114,6 +130,10 @@ public class ConsCell {
 		@Override
 		public int length() {
 			return 0;
+		}
+		@Override
+		public ListTypeRep getType() {
+			return new ListTypeRep(new VarTypeRep());
 		}
 	}
 	

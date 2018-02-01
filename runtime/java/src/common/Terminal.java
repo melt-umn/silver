@@ -10,7 +10,7 @@ import core.Alocation;
  *
  * @author tedinski
  */
-public abstract class Terminal {
+public abstract class Terminal implements Typed {
 	final public StringCatter lexeme;
 	final public NLocation location;
 	
@@ -109,4 +109,9 @@ public abstract class Terminal {
 	 *   order.
 	 */
 	public abstract String[] getLexerClasses();
+	
+	@Override
+	public final BaseTypeRep getType() {
+		return new BaseTypeRep(getName());
+	}
 }

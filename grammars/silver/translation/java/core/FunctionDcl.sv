@@ -18,9 +18,9 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
     implode(", ", map((.childRefElem), namedSig.inputElements));
 
   local funBody :: String =
-s"""final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate();
-		//${head(body.uniqueSignificantExpression).pp}
-		return (${namedSig.outputElement.typerep.transType})(${head(body.uniqueSignificantExpression).translation});
+s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate();
+			//${head(body.uniqueSignificantExpression).pp}
+			return (${namedSig.outputElement.typerep.transType})(${head(body.uniqueSignificantExpression).translation});
 """;
 
   top.genFiles :=
@@ -127,7 +127,7 @@ ${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
 
 	public static ${whatSig.outputElement.typerep.transType} invoke(${whatSig.javaSignature}) {
 		try {
-		${whatResult}
+${whatResult}
 		} catch(Throwable t) {
 			throw new common.exceptions.TraceException("Error while evaluating function ${whatSig.fullName}", t);
 		}
@@ -137,8 +137,14 @@ ${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
 
 	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transType}> {
 		@Override
-		public ${whatSig.outputElement.typerep.transType} invoke(final Object[] children, final Object[] namedNotApplicable) {
+		public final ${whatSig.outputElement.typerep.transType} invoke(final Object[] children, final Object[] namedNotApplicable) {
 			return ${className}.invoke(${implode(", ", unpackChildren(0, whatSig.inputElements))});
+		}
+		
+		@Override
+		public final common.FunctionTypeRep getType() {
+${makeTyVarDecls(3, whatSig.typerep.freeVariables)}
+			return ${whatSig.typerep.transFreshTypeRep};
 		}
 	};
 }""";
