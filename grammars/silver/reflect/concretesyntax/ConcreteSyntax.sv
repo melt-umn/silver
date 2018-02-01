@@ -3,21 +3,34 @@ grammar silver:reflect:concretesyntax;
 imports silver:langutil;
 imports silver:reflect;
 
--- Re-use Silver's concrete syntax where useful
-imports silver:definition:core;
-imports silver:extension:list;
+terminal Comma_t       ',';
+terminal Equal_t       '=';
+terminal Colon_t       ':';
+terminal LParen_t      '(';
+terminal RParen_t      ')';
+terminal LSqr_t        '[';
+terminal RSqr_t        ']';
+
+terminal Id_t /[A-Za-z][A-Za-z0-9\_]*/;
+terminal True_kwd  'true' dominates {Id_t};
+terminal False_kwd 'false' dominates {Id_t};
+terminal Int_t     /[\-]?[0-9]+/;
+terminal Float_t   /[\-]?[0-9]+[\.][0-9]+/;
+terminal String_t  /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\"]/;
+
+ignore terminal WhiteSpace /[\r\n\t\ ]+/;
 
 nonterminal AST_c with ast<AST>;
 
 concrete productions top::AST_c
-| prodName::QName '(' children::ASTs_c ',' annotations::NamedASTs_c ')'
-  { top.ast = nonterminalAST(prodName.name, foldr(consAST, nilAST(), children.ast), foldr(consNamedAST, nilNamedAST(), annotations.ast)); }
-| prodName::QName '(' children::ASTs_c ')'
-  { top.ast = nonterminalAST(prodName.name, foldr(consAST, nilAST(), children.ast), nilNamedAST()); }
-| prodName::QName '(' annotations::NamedASTs_c ')'
-  { top.ast = nonterminalAST(prodName.name, nilAST(), foldr(consNamedAST, nilNamedAST(), annotations.ast)); }
-| prodName::QName '(' ')'
-  { top.ast = nonterminalAST(prodName.name, nilAST(), nilNamedAST()); }
+| prodName::QName_c '(' children::ASTs_c ',' annotations::NamedASTs_c ')'
+  { top.ast = nonterminalAST(prodName.ast, foldr(consAST, nilAST(), children.ast), foldr(consNamedAST, nilNamedAST(), annotations.ast)); }
+| prodName::QName_c '(' children::ASTs_c ')'
+  { top.ast = nonterminalAST(prodName.ast, foldr(consAST, nilAST(), children.ast), nilNamedAST()); }
+| prodName::QName_c '(' annotations::NamedASTs_c ')'
+  { top.ast = nonterminalAST(prodName.ast, nilAST(), foldr(consNamedAST, nilNamedAST(), annotations.ast)); }
+| prodName::QName_c '(' ')'
+  { top.ast = nonterminalAST(prodName.ast, nilAST(), nilNamedAST()); }
 | '[' vals::ASTs_c ']'
   { top.ast = listAST(foldr(consAST, nilAST(), vals.ast)); }
 | s::String_t
@@ -51,5 +64,13 @@ concrete productions top::NamedASTs_c
 nonterminal NamedAST_c with ast<NamedAST>;
 
 concrete productions top::NamedAST_c
-| n::QName '=' v::AST_c
-  { top.ast = namedAST(n.name, v.ast); }
+| n::QName_c '=' v::AST_c
+  { top.ast = namedAST(n.ast, v.ast); }
+
+nonterminal QName_c with ast<String>;
+
+concrete productions top::QName_c
+| id::Id_t
+  { top.ast = id.lexeme; }
+| id::Id_t ':' qn::QName_c
+  { top.ast = id.lexeme ++ ":" ++ qn.ast; }

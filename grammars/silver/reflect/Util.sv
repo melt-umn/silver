@@ -19,9 +19,6 @@ Maybe<String> ::= x::a
 }
 
 parser astParser :: AST_c {
-  silver:host;
-  silver:extension:list;
-  
   silver:reflect:concretesyntax;
 }
 
