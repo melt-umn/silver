@@ -16,7 +16,7 @@ terminal True_kwd  'true' dominates {Id_t};
 terminal False_kwd 'false' dominates {Id_t};
 terminal Int_t     /[\-]?[0-9]+/;
 terminal Float_t   /[\-]?[0-9]+[\.][0-9]+/;
-terminal String_t  /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\"]/;
+terminal String_t  /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]n|[\\]r|[\\]f|[\\]t)*[\"]/;
 
 ignore terminal WhiteSpace /[\r\n\t\ ]+/;
 
@@ -34,8 +34,7 @@ concrete productions top::AST_c
 | '[' vals::ASTs_c ']'
   { top.ast = listAST(foldr(consAST, nilAST(), vals.ast)); }
 | s::String_t
-{ -- TODO: De-escape string properly
-  top.ast = stringAST(substring(1, length(s.lexeme) - 1, s.lexeme)); }
+{ top.ast = stringAST(unescapeString(substring(1, length(s.lexeme) - 1, s.lexeme))); }
 | i::Int_t
   { top.ast = integerAST(toInt(i.lexeme)); }
 | f::Float_t

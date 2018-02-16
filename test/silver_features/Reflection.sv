@@ -185,17 +185,26 @@ Either<String (a ::= Integer)> ::=
 equalityTest(case reifySkolem2() of left(_) -> false | right(_) -> true end, true, Boolean, silver_tests);
 
 global testValue::Pair<[Expr] Baz> = pair([testExpr, intConstExpr(5, lineNum=4)], baz(anno1=1, anno2=2.0));
-global unparseRes::Either<String String> = reflect(testValue).serialize;
-global parseRes::Either<String AST> = deserializeAST(lessHackyUnparse(testValue), case unparseRes of left(msg) -> msg | right(a) -> a end);
+global deserializeRes::Either<String String> = reflect(testValue).serialize;
+global serializeRes::Either<String AST> = deserializeAST(lessHackyUnparse(testValue), case deserializeRes of left(msg) -> msg | right(a) -> a end);
 
-equalityTest(case unparseRes of left(msg) -> msg | right(a) -> a end, lessHackyUnparse(testValue), String, silver_tests);
-equalityTest(case parseRes of left(msg) -> msg | right(a) -> show(80, a.pp) end, lessHackyUnparse(testValue), String, silver_tests);
+equalityTest(case deserializeRes of left(msg) -> msg | right(a) -> a end, lessHackyUnparse(testValue), String, silver_tests);
+equalityTest(case serializeRes of left(msg) -> msg | right(a) -> show(80, a.pp) end, lessHackyUnparse(testValue), String, silver_tests);
 
 equalityTest(
   case anyAST(\ i::Integer -> i).serialize of left(msg) -> msg | right(a) -> a end,
   "Can't serialize anyAST (type (Integer ::= Integer))",
   String, silver_tests);
 
-global reifyRes9::Either<String Pair<[Expr] Baz>> = reify(fromRight(parseRes, reflect(pair([], baz(anno1=-3, anno2=-4.3242)))));
+global reifyRes9::Either<String Pair<[Expr] Baz>> = reify(fromRight(serializeRes, reflect(pair([], baz(anno1=-3, anno2=-4.3242)))));
 
 equalityTest(reifyResToString(reifyRes9), lessHackyUnparse(testValue), String, silver_tests);
+
+equalityTest(
+  case stringAST("\n\r\t	2as\bd1'\f\\\\\"\\").serialize of left(msg) -> msg | right(a) -> a end,
+  "\"\\n\\r\\t\\t2as\\bd1'\\f\\\\\\\\\\\"\\\\\"",
+  String, silver_tests);
+equalityTest(
+  case deserializeAST("test", "\"\\n\\r\\t\\t2as\\bd1'\\f\\\\\\\\\\\"\\\\\"") of left(msg) -> msg | right(stringAST(s)) -> s | _ -> "Unexpected case" end,
+  "\n\r\t	2as\bd1'\f\\\\\"\\",
+  String, silver_tests);

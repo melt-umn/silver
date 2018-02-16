@@ -504,6 +504,86 @@ public final class Util {
 		return result;
 	}
 	
+	public static StringCatter escapeString(final StringCatter s) {
+		return new StringCatter(escapeString(s.toString()));
+	}
+	public static String escapeString(final String s) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+			switch (c) {
+			case '\t':
+				sb.append("\\t");
+				break;
+			case '\b':
+				sb.append("\\b");
+				break;
+			case '\n':
+				sb.append("\\n");
+				break;
+			case '\r':
+				sb.append("\\r");
+				break;
+			case '\f':
+				sb.append("\\f");
+				break;
+			case '\"':
+				sb.append("\\\"");
+				break;
+			case '\\':
+				sb.append("\\\\");
+				break;
+			default:
+				sb.append(c);
+			}
+		}
+		return sb.toString();
+	}
+	
+	public static StringCatter unescapeString(final StringCatter s) {
+		return new StringCatter(unescapeString(s.toString()));
+	}
+	public static String unescapeString(final String s) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+			if (c == '\\') {
+				i++;
+				if (i < s.length()) {
+					char c1 = s.charAt(i);
+					switch (c1) {
+					case 't':
+						sb.append("\t");
+						break;
+					case 'b':
+						sb.append("\b");
+						break;
+					case 'n':
+						sb.append("\n");
+						break;
+					case 'r':
+						sb.append("\r");
+						break;
+					case 'f':
+						sb.append("\f");
+						break;
+					case '\"':
+						sb.append("\"");
+						break;
+					case '\\':
+						sb.append("\\");
+						break;
+					default:
+						sb.append(c1);
+					}
+				}
+			} else {
+				sb.append(c);
+			}
+		}
+		return sb.toString();
+	}
+	
 	// These are written un-ideally so that they're all confined in one place.
 	public static StringCatter hackyhackyUnparse(Object o) {
 		StringBuilder sb = new StringBuilder();
