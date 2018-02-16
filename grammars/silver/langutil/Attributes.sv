@@ -1,7 +1,7 @@
 {- A Universal set of common attributes for use in language descriptions -}
 grammar silver:langutil;
 
-option silver:reflect; -- Contains unparse and pp definitions for AST
+exports silver:langutil:reflect with silver:reflect; -- Contains pp definitions for AST
 
 import silver:langutil:pp;
 
