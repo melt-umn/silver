@@ -6,7 +6,16 @@ import silver:langutil:pp;
 function lessHackyUnparse
 String ::= x::a
 {
-  return show(80, reflect(x).pp);
+  -- The toString of an object may vary due to changes in memory address, etc.
+  -- So as a workaround replace all these in the pp with just OBJECT.
+  local chunks::[String] = explode("<", show(80, reflect(x).pp));
+  return
+    implode(
+      "<",
+      head(chunks) ::
+      map(
+        \ s::String -> s"OBJECT :: ${head(tail(explode(" :: ", s)))}",
+        tail(chunks)));
 }
 
 annotation lineNum::Integer;
@@ -32,7 +41,7 @@ top::Expr ::= d::Decorated Expr
 global testExpr::Expr = addExpr(intConstExpr(2, lineNum=1), idExpr("asdf", lineNum=2), lineNum=3);
 
 equalityTest(
-  show(80, reflect([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]).pp),
+  lessHackyUnparse([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]),
   s"""[silver_features:addExpr(silver_features:intConstExpr(2, silver_features:lineNum=1), silver_features:idExpr("asdf", silver_features:lineNum=2), silver_features:lineNum=3), silver_features:intConstExpr(5, silver_features:lineNum=4), silver_features:decExpr(<OBJECT :: Decorated silver_features:Expr>, silver_features:lineNum=4)]""",
   String, silver_tests);
 

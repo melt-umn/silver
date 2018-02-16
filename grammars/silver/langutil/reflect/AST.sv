@@ -48,8 +48,8 @@ top::AST ::= x::a
 {
   top.pp =
     case reflectTypeName(x) of
-      just(n) -> pp"<OBJECT :: ${text(n)}>"
-    | nothing() -> pp"<OBJECT>"
+      just(n) -> pp"<${text(nativeToString(x))} :: ${text(n)}>"
+    | nothing() -> pp"<${text(nativeToString(x))}>"
     end;
 }
 

@@ -19,6 +19,14 @@ Maybe<String> ::= x::a
   "java" : return "(common.Reflection.reflectTypeName(%x%))";
 }
 
+function nativeToString
+String ::= x::a
+{
+  return error("Foreign function");
+} foreign {
+  "java" : return "(new common.StringCatter(%x%.toString()))";
+}
+
 parser astParser :: AST_c {
   silver:reflect:concretesyntax;
 }
