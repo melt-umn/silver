@@ -176,9 +176,16 @@ Either<String (a ::= Integer)> ::=
 equalityTest(case reifySkolem2() of left(_) -> false | right(_) -> true end, true, Boolean, silver_tests);
 
 global testValue::Pair<[Expr] Baz> = pair([testExpr, intConstExpr(5, lineNum=4)], baz(anno1=1, anno2=2.0));
-global parseRes::Either<String AST> = parseAST(lessHackyUnparse(testValue), reflect(testValue).unparse);
+global unparseRes::Either<String String> = reflect(testValue).serialize;
+global parseRes::Either<String AST> = deserializeAST(lessHackyUnparse(testValue), case unparseRes of left(msg) -> msg | right(a) -> a end);
 
+equalityTest(case unparseRes of left(msg) -> msg | right(a) -> a end, lessHackyUnparse(testValue), String, silver_tests);
 equalityTest(case parseRes of left(msg) -> msg | right(a) -> show(80, a.pp) end, lessHackyUnparse(testValue), String, silver_tests);
+
+equalityTest(
+  case anyAST(\ i::Integer -> i).serialize of left(msg) -> msg | right(a) -> a end,
+  "Can't serialize anyAST (type (Integer ::= Integer))",
+  String, silver_tests);
 
 global reifyRes9::Either<String Pair<[Expr] Baz>> = reify(fromRight(parseRes, reflect(pair([], baz(anno1=-3, anno2=-4.3242)))));
 
