@@ -99,18 +99,3 @@ String ::= s::[NamedSignatureElement] bv::[TyVar]
 
   return if null(s) then "" else h.unparse ++ (if null(tail(s)) then "" else (", " ++ unparseSignatureElementsHelp(tail(s), bv)));
 }
-
-{--
- - Escape all back-slashes, then the quotes.
- -}
-function escapeString
-String ::= s::String
-{
-  return substitute("\"", "\\\"", substitute("\\", "\\\\", s));
-}
-function unescapeString
-String ::= s::String
-{
-  return substitute("\\\\", "\\", substitute("\\\"", "\"", s));
-}
-
