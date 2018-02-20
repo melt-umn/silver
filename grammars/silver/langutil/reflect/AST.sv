@@ -21,8 +21,7 @@ top::AST ::= vals::ASTs
 aspect production stringAST
 top::AST ::= s::String
 {
-  -- TODO: Handle escaping properly
-  top.pp = pp"\"${text(s)}\"";
+  top.pp = pp"\"${text(escapeString(s))}\"";
 }
 
 aspect production integerAST
