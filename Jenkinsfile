@@ -2,7 +2,7 @@
 
 library "github.com/melt-umn/jenkins-lib"
 
-melt.setProperties()
+melt.setProperties(overrideJars: true)
 
 node {
 try {
@@ -13,7 +13,11 @@ try {
     checkout scm
 
     // Bootstrap
-    sh "./fetch-jars"
+    if (params.OVERRIDE_JARS == 'no') {
+      sh "./fetch-jars"
+    } else {
+      sh "cp ${params.OVERRIDE_JARS}/* jars/"
+    }
     // Build
     sh "./deep-rebuild"
     // Clean
