@@ -1,60 +1,26 @@
-// An excellent resource is Maven's own Jenkinsfile: https://github.com/apache/maven/blob/master/Jenkinsfile
-// This is also helpful: https://github.com/jenkinsci/pipeline-plugin/blob/master/TUTORIAL.md
+#!groovy
 
-properties([
-  /* If we don't set this, everything is preserved forever.
-     We don't bother discarding build logs (because they're small),
-     but if this job keeps artifacts, we ask them to only stick around
-     for awhile. */
-  [ $class: 'BuildDiscarderProperty',
-    strategy:
-      [ $class: 'LogRotator',
-        artifactDaysToKeepStr: '120',
-        artifactNumToKeepStr: '20'
-      ]
-  ]
-])
+library "github.com/melt-umn/jenkins-lib"
 
-// Location where we dump stable artifacts: jars, tarballs
-MELT_ARTIFACTS = '/export/scratch/melt-jenkins/custom-stable-dump'
-// Location of a Silver checkout (w/ jars)
-MELT_SILVER_WORKSPACE = '/export/scratch/melt-jenkins/custom-silver'
-// N.B. these declarations must not have 'def' or a type because then they're
-// invisible to functions because ??? Groovy never heard of lexical scope?
+melt.setProperties()
 
 node {
-
-def WS = pwd()
-if (env.BRANCH_NAME == 'develop') {
-  WS = MELT_SILVER_WORKSPACE
-}
-
-ws(WS) {
-// If we use 'ws' we re-allocate our own workspace in branches and thus end up in @2
-// instead of the original workspace.
-// But if we use 'dir' then we potentially stomp on a concurrent build in the special
-// workspace for 'develop'.
-// Possibly we should just stop having a special *workspace* for develop and instead
-// copy our workspace there when it builds ok, SOMEDAY. TODO
-// For now, re-discover where we ended up:
-WS = pwd()
-
-
 try {
+  def WS = pwd()
 
   stage("Build") {
 
-    // Checks out this repo and branch
     checkout scm
 
+    // Bootstrap
     sh "./fetch-jars"
+    // Build
     sh "./deep-rebuild"
+    // Clean
     sh "./deep-clean -delete all"
+    // Package
     sh "rm -rf silver-latest* || true" // Robustness to past failures
     sh "./make-dist latest"
-
-    // An "installation" of what gets distributed in the tarball under ./silver-latest/
-    sh "tar zxf silver-latest.tar.gz"
   }
 
   stage("Test") {
@@ -65,9 +31,11 @@ try {
     for (t in tests) { tasks[t] = task_test(t, WS) }
     for (t in tuts) { tasks[t] = task_tutorial(t, WS) }
 
+    // Unpack tarball (into ./silver-latest/) (for tutorial testing)
+    sh "tar zxf silver-latest.tar.gz"
+    // Run tests
     parallel tasks
-
-    // Done with tarbal contents
+    // Clean
     sh "rm -rf silver-latest"
   }
 
@@ -84,35 +52,40 @@ try {
     for (t in public_github) { tasks[t] = task_job("/melt-umn/" + t + "/develop", WS) }
     for (t in legacy_internal) { tasks[t] = task_job("/" + t, WS) }
 
+    // Early deploy
+    if (env.BRANCH_NAME == 'develop') {
+      // Legacy builds don't know about SILVER_BASE,
+      // So we copy ourselves early into the default workspace, now
+      // instead of as a final deploy task later.
+      
+      // NOTE: This means some builds may fail in develop that don't fail in branch.
+      // So, uh, let's try to get rid of those legacy builds, huh?
+      
+      sh "rsync -a --exclude .git --exclude generated --exclude silver-latest.tar.gz --delete --delete-excluded ./ ${melt.SILVER_WORKSPACE}/"
+      // -a is archive mode: rlptgoD (recurse, links, perms, time, group, owner, devices)
+      // --delete  Remove files from destination not in src
+      // --delete-excluded  Remove files from dest that we're excluding
+      
+      // NOTE: we exclude generated, which means there's no generated dir in the custom
+      // location, which means if you don't set it, things should blow up.
+    }
+    // Do downstream integration testing
     parallel tasks
   }
 
   if (env.BRANCH_NAME == 'develop') {
     stage("Deploy") {
-      sh "cp ${WS}/silver-latest.tar.gz ${MELT_ARTIFACTS}/"
-      sh "cp ${WS}/jars/*.jar ${MELT_ARTIFACTS}/"
+      sh "cp silver-latest.tar.gz ${melt.ARTIFACTS}/"
+      sh "cp jars/*.jar ${melt.ARTIFACTS}/"
     }
   }
 
 } catch(e) {
-
-  // JENKINS-28822. Not sure if this works exactly as intended or not
-  if(currentBuild.result == null) {
-    echo "Setting failure flag"
-    currentBuild.result = 'FAILURE'
-  }
-
-  throw e
-
+  melt.handle(e)
 } finally {
-
-  // No notifications yet
-
+  melt.notify(job: "silver")
 }
-
-} // end ws
-
-} // end node
+} // node
 
 
 def task_test(String testname, String WS) {
@@ -151,8 +124,7 @@ def task_tutorial(String tutorialpath, String WS) {
 
 def task_job(String jobname, String WS) {
   return {
-    build job: jobname, parameters:
-      [[$class: 'StringParameterValue', name: 'SILVER_BASE', value: WS]]
+    melt.buildJob(jobname, [SILVER_BASE: WS])
   }
 }
 
