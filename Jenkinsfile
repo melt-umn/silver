@@ -2,7 +2,7 @@
 
 library "github.com/melt-umn/jenkins-lib"
 
-melt.setProperties()
+melt.setProperties(overrideJars: true)
 
 node {
 try {
@@ -13,7 +13,27 @@ try {
     checkout scm
 
     // Bootstrap
-    sh "./fetch-jars"
+    if (params.OVERRIDE_JARS != 'no') {
+      // Obtain jars from specified location
+      sh "cp ${params.OVERRIDE_JARS}/* jars/"
+    } else {
+      // We start by obtaining normal jars, but we potentially overwrite them:
+      // (This is the least annoying way to go about this...)
+      sh "./fetch-jars"
+      if (env.BRANCH_NAME == 'develop') {
+        // Detect pull request merges, and grab jars from the merged branch
+        String commit_msg = sh(script: "git log --format=%B -n 1 HEAD", returnStdout: true)
+        java.util.regex.Matcher merge_branch = commit_msg =~ /^Merge pull.*from (.*)/
+        if (merge_branch.find()) {
+          String branch = hudson.Util.rawEncode(merge_branch.group(1))
+
+          copyArtifacts(projectName: "/melt-umn/silver/${branch}", selector: lastSuccessful(), optional: true)
+        }
+      } else if (env.BRANCH_NAME != 'master') {
+        // Try to obtain jars from the last build of this branch
+        copyArtifacts(projectName: env.JOB_NAME, selector: lastSuccessful(), optional: true)
+      }
+    }
     // Build
     sh "./deep-rebuild"
     // Clean
@@ -37,6 +57,8 @@ try {
     parallel tasks
     // Clean
     sh "rm -rf silver-latest"
+    // Upon succeeding at tests, archive
+    archiveArtifacts(artifacts: "jars/*.jar", fingerprint: true, onlyIfSuccessful: true)
   }
 
   stage("Integration") {
