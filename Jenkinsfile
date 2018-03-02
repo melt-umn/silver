@@ -144,16 +144,17 @@ def task_tutorial(String tutorialpath, String WS) {
   }
 }
 def task_project(String reponame, String WS) {
-  sh "echo ${reponame}"
-  def jobname = "${reponame}/${env.BRANCH_NAME}"
-  if (env.BRANCH_NAME != 'develop' && !melt.doesJobExist(jobname)) {
-    jobname = "${reponame}/develop"
+  return {
+    sh "echo ${env.BRANCH_NAME}"
+    def jobname = "${reponame}/${env.BRANCH_NAME}"
+    if (env.BRANCH_NAME != 'develop' && !melt.doesJobExist(jobname)) {
+      jobname = "${reponame}/develop"
+    }
+    melt.buildJob(jobname, [SILVER_BASE: WS])
   }
-  task_job(jobname, WS)
 }
 
 def task_job(String jobname, String WS) {
-  sh "echo ${jobname}"
   return {
     melt.buildJob(jobname, [SILVER_BASE: WS])
   }
