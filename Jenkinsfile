@@ -149,12 +149,14 @@ def task_project(String reponame, String WS) {
     if (env.BRANCH_NAME != 'develop' && !melt.doesJobExist(jobname)) {
       jobname = "${reponame}/develop"
     }
+    sh "echo ${reponame}"
     task_job(jobname, WS)
   }
 }
 
 def task_job(String jobname, String WS) {
   return {
+    sh "echo ${jobname}"
     melt.buildJob(jobname, [SILVER_BASE: WS])
   }
 }
