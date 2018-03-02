@@ -145,13 +145,11 @@ def task_tutorial(String tutorialpath, String WS) {
 }
 def task_project(String reponame, String WS) {
   sh "echo ${reponame}"
-  return {
-    def jobname = "${reponame}/${env.BRANCH_NAME}"
-    if (env.BRANCH_NAME != 'develop' && !melt.doesJobExist(jobname)) {
-      jobname = "${reponame}/develop"
-    }
-    task_job(jobname, WS)
+  def jobname = "${reponame}/${env.BRANCH_NAME}"
+  if (env.BRANCH_NAME != 'develop' && !melt.doesJobExist(jobname)) {
+    jobname = "${reponame}/develop"
   }
+  task_job(jobname, WS)
 }
 
 def task_job(String jobname, String WS) {
