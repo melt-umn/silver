@@ -71,7 +71,7 @@ try {
     // two that are especially interesting: ring and the metaII code we wish to keep working.
 
     def tasks = [:]
-    for (t in public_github) { tasks[t] = task_job("/melt-umn/" + t + "/develop", WS) }
+    for (t in public_github) { tasks[t] = task_project("/melt-umn/" + t, WS) }
     for (t in legacy_internal) { tasks[t] = task_job("/" + t, WS) }
 
     // Early deploy
@@ -141,6 +141,15 @@ def task_tutorial(String tutorialpath, String WS) {
       // Blow away these generated files in our private workspace
       deleteDir()
     }
+  }
+}
+def task_project(String reponame, String WS) {
+  return {
+    def jobname = "${reponame}/${env.BRANCH_NAME}"
+    if (env.BRANCH_NAME != 'develop' && !melt.doesJobExist(jobname)) {
+      jobname = "${reponame}/develop"
+    }
+    melt.buildJob(jobname, [SILVER_BASE: WS])
   }
 }
 
