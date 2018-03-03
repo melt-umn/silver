@@ -22,12 +22,9 @@ try {
       sh "./fetch-jars"
       if (env.BRANCH_NAME == 'develop') {
         // Detect pull request merges, and grab jars from the merged branch
-        String commit_msg = sh(script: "git log --format=%B -n 1 HEAD", returnStdout: true)
-        java.util.regex.Matcher merge_branch = commit_msg =~ /^Merge pull.*from (.*)/
-        if (merge_branch.find()) {
-          String branch = hudson.Util.rawEncode(merge_branch.group(1))
-
-          copyArtifacts(projectName: "/melt-umn/silver/${branch}", selector: lastSuccessful(), optional: true)
+        String branch = getMergedBranch()
+        if (branch) {
+          copyArtifacts(projectName: "/melt-umn/silver/${hudson.Util.rawEncode(branch)}", selector: lastSuccessful(), optional: true)
         }
       } else if (env.BRANCH_NAME != 'master') {
         // Try to obtain jars from the last build of this branch
@@ -113,7 +110,14 @@ try {
 }
 } // node
 
-
+// If the last commit was a pull request merge, get the name of the merged branch
+def getMergedBranch() {
+  String commit_msg = sh(script: "git log --format=%B -n 1 HEAD", returnStdout: true)
+  java.util.regex.Matcher merge_branch = commit_msg =~ /^Merge pull.*from (.*)/
+  if (merge_branch.find()) {
+    return merge_branch.group(1)
+  }
+}
 // Test in local workspace
 def task_test(String testname, String WS) {
   return {
