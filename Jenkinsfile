@@ -114,7 +114,7 @@ try {
 // If the last commit was a pull request merge, get the name of the merged branch
 def getMergedBranch() {
   String commit_msg = sh(script: "git log --format=%B -n 1 HEAD", returnStdout: true)
-  java.util.regex.Matcher merge_branch = commit_msg =~ /^Merge pull.*from (.*)/
+  java.util.regex.Matcher merge_branch = commit_msg =~ /^Merge pull.*from melt-umn\/(.*)/
   if (merge_branch.find()) {
     return merge_branch.group(1)
   }
