@@ -24,6 +24,7 @@ try {
         // Detect pull request merges, and grab jars from the merged branch
         String branch = getMergedBranch()
         if (branch) {
+          echo "Using jars from merged branch ${branch}"
           copyArtifacts(projectName: "/melt-umn/silver/${hudson.Util.rawEncode(branch)}", selector: lastSuccessful(), optional: true)
         }
       } else if (env.BRANCH_NAME != 'master') {
