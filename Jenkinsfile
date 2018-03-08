@@ -22,12 +22,10 @@ try {
       sh "./fetch-jars"
       if (env.BRANCH_NAME == 'develop') {
         // Detect pull request merges, and grab jars from the merged branch
-        String commit_msg = sh(script: "git log --format=%B -n 1 HEAD", returnStdout: true)
-        java.util.regex.Matcher merge_branch = commit_msg =~ /^Merge pull.*from (.*)/
-        if (merge_branch.find()) {
-          String branch = hudson.Util.rawEncode(merge_branch.group(1))
-
-          copyArtifacts(projectName: "/melt-umn/silver/${branch}", selector: lastSuccessful(), optional: true)
+        String branch = getMergedBranch()
+        if (branch) {
+          echo "Using jars from merged branch ${branch}"
+          copyArtifacts(projectName: "/melt-umn/silver/${hudson.Util.rawEncode(branch)}", selector: lastSuccessful(), optional: true)
         }
       } else if (env.BRANCH_NAME != 'master') {
         // Try to obtain jars from the last build of this branch
@@ -62,16 +60,20 @@ try {
   }
 
   stage("Integration") {
-    def public_github = ["ableC"]
+    // Projects with 'develop' as main branch, we'll try to build specific branch names if they exist
+    def public_github_projects = ["ableC"]
+    // Specific other jobs to build
+    def specific_jobs = ["/melt-umn/Oberon0/master"]
     // TODO: anything to build here?
     //def private_github = []
     // TODO: move these, port them over to new locations, migrate them to pipeline
-    def legacy_internal = ["x-metaII-artifacts", "meltsvn-Oberon0-A1", "meltsvn-Oberon0-A2a", "meltsvn-Oberon0-A2b", "meltsvn-Oberon0-A3", "meltsvn-Oberon0-A4", "meltsvn-Oberon0-A5", "meltsvn-Matlab-host", "meltsvn-ableP-host", "meltsvn-ableP-host-tests", "meltsvn-ableP-promelaCore", "meltsvn-ableP-promelaCore-tests", "meltsvn-ableP-aviation", "meltsvn-ableP-aviation-tests", "meltsvn-ableJ-alone", "meltsvn-ableJ-autoboxing", "meltsvn-ableJ-sql", "meltsvn-ableJ-complex", "meltsvn-ableJ-foreach", "meltsvn-ableJ-tables", "meltsvn-ableJ-pizza", "meltsvn-ableJ-rlp", "meltsvn-simple-core", "meltsvn-simple-host", "meltsvn-simple-matrix", "meltsvn-simple-all", "meltsvn-ring-host", "meltsvn-ring-host-tests"]
-    // Notes: The above consists of: Oberon0, Matlab, ableP, ableJ, simple, and
+    def legacy_internal = ["x-metaII-artifacts", "meltsvn-Matlab-host", "meltsvn-ableP-host", "meltsvn-ableP-host-tests", "meltsvn-ableP-promelaCore", "meltsvn-ableP-promelaCore-tests", "meltsvn-ableP-aviation", "meltsvn-ableP-aviation-tests", "meltsvn-ableJ-alone", "meltsvn-ableJ-autoboxing", "meltsvn-ableJ-sql", "meltsvn-ableJ-complex", "meltsvn-ableJ-foreach", "meltsvn-ableJ-tables", "meltsvn-ableJ-pizza", "meltsvn-ableJ-rlp", "meltsvn-simple-core", "meltsvn-simple-host", "meltsvn-simple-matrix", "meltsvn-simple-all", "meltsvn-ring-host", "meltsvn-ring-host-tests"]
+    // Notes: The above consists of: Matlab, ableP, ableJ, simple, and
     // two that are especially interesting: ring and the metaII code we wish to keep working.
 
     def tasks = [:]
-    for (t in public_github) { tasks[t] = task_job("/melt-umn/" + t + "/develop", WS) }
+    for (t in public_github_projects) { tasks[t] = task_project(t, WS) }
+    for (t in specific_jobs) { tasks[t] = task_job(t, WS) }
     for (t in legacy_internal) { tasks[t] = task_job("/" + t, WS) }
 
     // Early deploy
@@ -109,7 +111,15 @@ try {
 }
 } // node
 
-
+// If the last commit was a pull request merge, get the name of the merged branch
+def getMergedBranch() {
+  String commit_msg = sh(script: "git log --format=%B -n 1 HEAD", returnStdout: true)
+  java.util.regex.Matcher merge_branch = commit_msg =~ /^Merge pull.*from melt-umn\/(.*)/
+  if (merge_branch.find()) {
+    return merge_branch.group(1)
+  }
+}
+// Test in local workspace
 def task_test(String testname, String WS) {
   return {
     node {
@@ -128,12 +138,13 @@ def task_test(String testname, String WS) {
     }
   }
 }
+// Tutorial, in silver-latest
 def task_tutorial(String tutorialpath, String WS) {
   return {
     node {
       sh "touch ensure_workspace" // convince jenkins to create our workspace
       def GEN = pwd() // This node's workspace
-      // For tutorials we use what's distributed in the tarball:
+      echo "\nRemember that tutorials are built in 'silver-latest'.\nThis only includes files distributed with the tarball according to 'make-dist'.\n"
       dir(WS + '/silver-latest/tutorials/' + tutorialpath) {
         sh "./silver-compile --clean -G ${GEN}"
         sh "rm *.jar"
@@ -143,7 +154,17 @@ def task_tutorial(String tutorialpath, String WS) {
     }
   }
 }
-
+// Build project (from /melt-umn/${repo}/develop OR current branch, if it exists
+def task_project(String reponame, String WS) {
+  return {
+    def jobname = "/melt-umn/${reponame}/${hudson.Util.rawEncode(env.BRANCH_NAME)}"
+    if (env.BRANCH_NAME != 'develop' && !melt.doesJobExist(jobname)) {
+      jobname = "/melt-umn/${reponame}/develop"
+    }
+    melt.buildJob(jobname, [SILVER_BASE: WS])
+  }
+}
+// Build generic job
 def task_job(String jobname, String WS) {
   return {
     melt.buildJob(jobname, [SILVER_BASE: WS])

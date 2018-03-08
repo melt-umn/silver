@@ -29,6 +29,21 @@ if [ ${LSLINE:7:1} != "r" ]; then
   FAIL=1
 fi
 
+# Also check for readability of those files
+FILEFAIL=0
+for file in $TARGET/*; do
+  LSLINE=$(ls -l $file)
+  if [ ${LSLINE:7:1} != "r" ]; then
+    FAIL=1
+    FILEFAIL=1
+  fi
+done
+
+if [ $FILEFAIL = "1" ]; then
+  echo "chmod a+r jars/*.jar"
+fi
+
+# Conclude
 if [ $FAIL = "1" ]; then
   echo "Permissions problems! Jenkins won't be able to read your jars."
   echo "The above commands will fix minimally."
