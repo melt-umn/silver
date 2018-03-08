@@ -119,14 +119,13 @@ try {
 } // node
 
 // If the last commit was a pull request merge, get the name of the merged branch
-@NonCPS // 'java.util.regex.Matcher' cannot be serialized, I guess
+//@NonCPS // 'java.util.regex.Matcher' cannot be serialized, I guess BUT DOING THAT HAS BIZARRE EFFECTS
 def getMergedBranch() {
   String commit_msg = sh(script: "git log --format=%B -n 1 HEAD", returnStdout: true)
   java.util.regex.Matcher merge_branch = commit_msg =~ /^Merge pull.*from melt-umn\/(.*)/
   if (merge_branch.find()) {
     return merge_branch.group(1)
   }
-  return null
 }
 // Test in local workspace
 def task_test(String testname, String WS) {
