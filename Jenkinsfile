@@ -126,6 +126,7 @@ def getMergedBranch() {
   if (merge_branch.find()) {
     return merge_branch.group(1)
   }
+  return null
 }
 // Test in local workspace
 def task_test(String testname, String WS) {
