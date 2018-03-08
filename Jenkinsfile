@@ -21,15 +21,22 @@ try {
       // (This is the least annoying way to go about this...)
       sh "./fetch-jars"
       if (env.BRANCH_NAME == 'develop') {
-        // Detect pull request merges, and grab jars from the merged branch
+        // For 'develop', detect pull request merges, and grab jars from the merged branch
         String branch = getMergedBranch()
         if (branch) {
           echo "Using jars from merged branch ${branch}"
-          copyArtifacts(projectName: "/melt-umn/silver/${hudson.Util.rawEncode(branch)}", selector: lastSuccessful(), optional: true)
+          String branchJob = "/melt-umn/silver/${hudson.Util.rawEncode(branch)}"
+          copyArtifacts(projectName: branchJob, selector: lastSuccessful(), optional: true)
         }
       } else if (env.BRANCH_NAME != 'master') {
-        // Try to obtain jars from the last build of this branch
+        // For branches, try to obtain jars from previous builds.
         copyArtifacts(projectName: env.JOB_NAME, selector: lastSuccessful(), optional: true)
+        copyArtifacts(projectName: env.JOB_NAME, selector: lastCompleted(), optional: true)
+        // The above is our attempt to emulate "lastest build that has artifacts."
+        // It's not perfect. Essentially we're selecting jars in this priority order:
+        // 1. Last build, if it got as far as having artifacts
+        // 2. Last successful build, if it exists for this branch
+        // 3. Normal `fetch-jars`
       }
     }
     // Build
@@ -39,6 +46,8 @@ try {
     // Package
     sh "rm -rf silver-latest* || true" // Robustness to past failures
     sh "./make-dist latest"
+    // Upon succeeding at initial build, archive for future builds
+    archiveArtifacts(artifacts: "jars/*.jar", fingerprint: true)
   }
 
   stage("Test") {
@@ -55,8 +64,6 @@ try {
     parallel tasks
     // Clean
     sh "rm -rf silver-latest"
-    // Upon succeeding at tests, archive
-    archiveArtifacts(artifacts: "jars/*.jar", fingerprint: true, onlyIfSuccessful: true)
   }
 
   stage("Integration") {
@@ -112,6 +119,7 @@ try {
 } // node
 
 // If the last commit was a pull request merge, get the name of the merged branch
+@NonCPS // 'java.util.regex.Matcher' cannot be serialized, I guess
 def getMergedBranch() {
   String commit_msg = sh(script: "git log --format=%B -n 1 HEAD", returnStdout: true)
   java.util.regex.Matcher merge_branch = commit_msg =~ /^Merge pull.*from melt-umn\/(.*)/
