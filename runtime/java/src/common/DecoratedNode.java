@@ -588,4 +588,8 @@ public class DecoratedNode implements Typed {
 		}
 		return "'" + self.getName() + "' (" + Integer.toHexString(System.identityHashCode(this)) + qualifier + ")";
 	}
+	
+	public final String toString() {
+		return getDebugID();
+	}
 }

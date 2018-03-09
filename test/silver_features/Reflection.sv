@@ -1,12 +1,21 @@
 
-import core:reflect;
+import silver:reflect;
 import silver:langutil;
 import silver:langutil:pp;
 
 function lessHackyUnparse
 String ::= x::a
 {
-  return show(80, reflect(x).pp);
+  -- The toString of an object may vary due to changes in memory address, etc.
+  -- So as a workaround replace all these in the pp with just OBJECT.
+  local chunks::[String] = explode("<", show(80, reflect(x).pp));
+  return
+    implode(
+      "<",
+      head(chunks) ::
+      map(
+        \ s::String -> s"OBJECT :: ${head(tail(explode(" :: ", s)))}",
+        tail(chunks)));
 }
 
 annotation lineNum::Integer;
@@ -31,13 +40,9 @@ top::Expr ::= d::Decorated Expr
 
 global testExpr::Expr = addExpr(intConstExpr(2, lineNum=1), idExpr("asdf", lineNum=2), lineNum=3);
 
-{-equalityTest(
-  show(80, reflect([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]).pp),
-  s"""[silver_features:addExpr(silver_features:intConstExpr(2, silver_features:lineNum=1), silver_features:idExpr("asdf", silver_features:lineNum=2), silver_features:lineNum=3), silver_features:intConstExpr(5, silver_features:lineNum=4), silver_features:decExpr(<OBJECT :: Decorated silver_features:Expr>, silver_features:lineNum=4)]""",
-  String, silver_tests);-}
 equalityTest(
-  show(80, reflect([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]).pp),
-  s"""[silver_features:addExpr(silver_features:intConstExpr(2, silver_features:lineNum=1), silver_features:idExpr("asdf", silver_features:lineNum=2), silver_features:lineNum=3), silver_features:intConstExpr(5, silver_features:lineNum=4), silver_features:decExpr(<OBJECT>, silver_features:lineNum=4)]""",
+  lessHackyUnparse([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]),
+  s"""[silver_features:addExpr(silver_features:intConstExpr(2, silver_features:lineNum=1), silver_features:idExpr("asdf", silver_features:lineNum=2), silver_features:lineNum=3), silver_features:intConstExpr(5, silver_features:lineNum=4), silver_features:decExpr(<OBJECT :: Decorated silver_features:Expr>, silver_features:lineNum=4)]""",
   String, silver_tests);
 
 function reifyResToString
@@ -154,17 +159,12 @@ equalityTest(
 
 global reifyRes8::Either<String (String ::= Integer Boolean)> = reify(anyAST((\ i::Integer f::Float b::Boolean -> toString(i) ++ toString(f) ++ toString(b))(_, 3.14, _)));
 
---equalityTest(reifyResToString(reifyRes8), "<OBJECT :: (String ::= Integer Boolean)>", String, silver_tests);
-equalityTest(reifyResToString(reifyRes8), "<OBJECT>", String, silver_tests);
+equalityTest(reifyResToString(reifyRes8), "<OBJECT :: (String ::= Integer Boolean)>", String, silver_tests);
 
-{-equalityTest(reifyResToString(reify(anyAST(baz))), "<OBJECT :: (silver_features:Baz ::= ; anno1::Integer; anno2::Float)>", String, silver_tests);
+equalityTest(reifyResToString(reify(anyAST(baz))), "<OBJECT :: (silver_features:Baz ::= ; anno1::Integer; anno2::Float)>", String, silver_tests);
 equalityTest(reifyResToString(reify(anyAST(baz(anno2=_, anno1=_)))), "<OBJECT :: (silver_features:Baz ::= Float Integer)>", String, silver_tests);
 equalityTest(reifyResToString(reify(anyAST(baz(anno1=1, anno2=_)))), "<OBJECT :: (silver_features:Baz ::= Float)>", String, silver_tests);
-equalityTest(reifyResToString(reify(anyAST(baz(anno1=_, anno2=2.0)))), "<OBJECT :: (silver_features:Baz ::= Integer)>", String, silver_tests);-}
-equalityTest(reifyResToString(reify(anyAST(baz))), "<OBJECT>", String, silver_tests);
-equalityTest(reifyResToString(reify(anyAST(baz(anno2=_, anno1=_)))), "<OBJECT>", String, silver_tests);
-equalityTest(reifyResToString(reify(anyAST(baz(anno1=1, anno2=_)))), "<OBJECT>", String, silver_tests);
-equalityTest(reifyResToString(reify(anyAST(baz(anno1=_, anno2=2.0)))), "<OBJECT>", String, silver_tests);
+equalityTest(reifyResToString(reify(anyAST(baz(anno1=_, anno2=2.0)))), "<OBJECT :: (silver_features:Baz ::= Integer)>", String, silver_tests);
 
 function reifySkolem
 Either<String a> ::= x::AST
@@ -172,9 +172,8 @@ Either<String a> ::= x::AST
   return reify(x);
 }
 
-
 -- This will have some sort of runtime type error involving skolems, but we can't test for it exactly since the exact message may vary.
-equalityTest(true, case reifySkolem(floatAST(4.0)) of left(_) -> true | right(_) -> false end, Boolean, silver_tests);
+equalityTest(case reifySkolem(floatAST(4.0)) of left(_) -> true | right(_) -> false end, true, Boolean, silver_tests);
 
 function reifySkolem2
 Either<String (a ::= Integer)> ::= 
@@ -183,4 +182,29 @@ Either<String (a ::= Integer)> ::=
   return reify(anyAST(fn));
 }
 
-equalityTest(true, case reifySkolem2() of left(_) -> false | right(_) -> true end, Boolean, silver_tests);
+equalityTest(case reifySkolem2() of left(_) -> false | right(_) -> true end, true, Boolean, silver_tests);
+
+global testValue::Pair<[Expr] Baz> = pair([testExpr, intConstExpr(5, lineNum=4)], baz(anno1=1, anno2=2.0));
+global deserializeRes::Either<String String> = reflect(testValue).serialize;
+global serializeRes::Either<String AST> = deserializeAST(lessHackyUnparse(testValue), case deserializeRes of left(msg) -> msg | right(a) -> a end);
+
+equalityTest(case deserializeRes of left(msg) -> msg | right(a) -> a end, lessHackyUnparse(testValue), String, silver_tests);
+equalityTest(case serializeRes of left(msg) -> msg | right(a) -> show(80, a.pp) end, lessHackyUnparse(testValue), String, silver_tests);
+
+equalityTest(
+  case anyAST(\ i::Integer -> i).serialize of left(msg) -> msg | right(a) -> a end,
+  "Can't serialize anyAST (type (Integer ::= Integer))",
+  String, silver_tests);
+
+global reifyRes9::Either<String Pair<[Expr] Baz>> = reify(fromRight(serializeRes, reflect(pair([], baz(anno1=-3, anno2=-4.3242)))));
+
+equalityTest(reifyResToString(reifyRes9), lessHackyUnparse(testValue), String, silver_tests);
+
+equalityTest(
+  case stringAST("\n\r\t	2as\bd1'\f\\\\\"\\").serialize of left(msg) -> msg | right(a) -> a end,
+  "\"\\n\\r\\t\\t2as\\bd1'\\f\\\\\\\\\\\"\\\\\"",
+  String, silver_tests);
+equalityTest(
+  case deserializeAST("test", "\"\\n\\r\\t\\t2as\\bd1'\\f\\\\\\\\\\\"\\\\\"") of left(msg) -> msg | right(stringAST(s)) -> s | _ -> "Unexpected case" end,
+  "\n\r\t	2as\bd1'\f\\\\\"\\",
+  String, silver_tests);

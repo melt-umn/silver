@@ -44,6 +44,7 @@ tar -zcvf $SV.tar.gz \
  $SV/grammars/silver/util/raw/treeset/ \
  $SV/grammars/silver/util/raw/graph/ \
  $SV/grammars/silver/langutil/ \
+ $SV/grammars/silver/reflect/ \
  $SV/COPYING.LESSER \
  $SV/HISTORY \
  $SV/README.md \
