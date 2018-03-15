@@ -70,12 +70,12 @@ try {
     // Projects with 'develop' as main branch, we'll try to build specific branch names if they exist
     def public_github_projects = ["ableC"]
     // Specific other jobs to build
-    def specific_jobs = ["/melt-umn/Oberon0/master"]
+    def specific_jobs = ["/melt-umn/Oberon0/master", "/melt-umn/ableJ14/master", "/melt-umn/ableP/master"]
     // TODO: anything to build here?
     //def private_github = []
     // TODO: move these, port them over to new locations, migrate them to pipeline
-    def legacy_internal = ["x-metaII-artifacts", "meltsvn-Matlab-host", "meltsvn-ableP-host", "meltsvn-ableP-host-tests", "meltsvn-ableP-promelaCore", "meltsvn-ableP-promelaCore-tests", "meltsvn-ableP-aviation", "meltsvn-ableP-aviation-tests", "meltsvn-ableJ-alone", "meltsvn-ableJ-autoboxing", "meltsvn-ableJ-sql", "meltsvn-ableJ-complex", "meltsvn-ableJ-foreach", "meltsvn-ableJ-tables", "meltsvn-ableJ-pizza", "meltsvn-ableJ-rlp", "meltsvn-simple-core", "meltsvn-simple-host", "meltsvn-simple-matrix", "meltsvn-simple-all", "meltsvn-ring-host", "meltsvn-ring-host-tests"]
-    // Notes: The above consists of: Matlab, ableP, ableJ, simple, and
+    def legacy_internal = ["x-metaII-artifacts", "meltsvn-Matlab-host", "meltsvn-simple-core", "meltsvn-simple-host", "meltsvn-simple-matrix", "meltsvn-simple-all", "meltsvn-ring-host", "meltsvn-ring-host-tests"]
+    // Notes: The above consists of: Matlab, simple, and
     // two that are especially interesting: ring and the metaII code we wish to keep working.
 
     def tasks = [:]
