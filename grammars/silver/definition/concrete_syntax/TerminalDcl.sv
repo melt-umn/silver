@@ -1,7 +1,6 @@
 grammar silver:definition:concrete_syntax;
 
 import silver:definition:regex;
-import silver:modification:ffi:util;
 
 terminal Ignore_kwd      'ignore'      lexer classes {KEYWORD};
 terminal Marking_kwd     'marking'     lexer classes {KEYWORD};
@@ -22,17 +21,17 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
   fName = top.grammarName ++ ":" ++ id.name;
 
   top.defs = [termDef(top.grammarName, id.location, fName, r.terminalRegExprSpec)];
-  
+
   top.errors <-
     if length(getTypeDclAll(fName, top.env)) > 1
     then [err(id.location, "Type '" ++ fName ++ "' is already bound.")]
     else [];
-  
+
   top.errors <-
     if isLower(substring(0,1,id.name))
     then [err(id.location, "Types must be capitalized. Invalid terminal name " ++ id.name)]
     else [];
-  
+
   -- This is a crude check, but effective.
   top.errors <-
     if indexOf("\\n", r.terminalRegExprSpec.regString) != -1 && indexOf("\\r", r.terminalRegExprSpec.regString) == -1
@@ -42,7 +41,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
   top.errors := tm.errors;
 
   top.syntaxAst = [
-    syntaxTerminal(fName, r.terminalRegExprSpec, 
+    syntaxTerminal(fName, r.terminalRegExprSpec,
       foldr(consTerminalMod, nilTerminalMod(), t.terminalModifiers ++ tm.terminalModifiers))];
 }
 
@@ -93,7 +92,7 @@ top::TerminalKeywordModifier ::= 'marking'
 }
 
 concrete production terminalKeywordModifierNone
-top::TerminalKeywordModifier ::= 
+top::TerminalKeywordModifier ::=
 {
   top.pp = "";
 
@@ -107,7 +106,7 @@ nonterminal TerminalModifier with config, location, pp, terminalModifiers, error
 synthesized attribute terminalModifiers :: [SyntaxTerminalModifier];
 
 abstract production terminalModifiersNone
-top::TerminalModifiers ::= 
+top::TerminalModifiers ::=
 {
   top.pp = "";
 
@@ -120,7 +119,7 @@ top::TerminalModifiers ::= tm::TerminalModifier
   top.pp = tm.pp;
 
   top.terminalModifiers = tm.terminalModifiers;
-  top.errors := tm.errors; 
+  top.errors := tm.errors;
 }
 concrete production terminalModifiersCons
 top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
@@ -162,6 +161,6 @@ top::TerminalModifier ::= 'named' name::String_t
 {
   top.pp = "named " ++ name.lexeme;
 
-  top.terminalModifiers = [termPrettyName(cleanStringLexeme(name.lexeme))];
+  top.terminalModifiers = [termPrettyName(substring(1, length(name.lexeme) - 1, name.lexeme))];
   top.errors := [];
 }
