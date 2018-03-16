@@ -43,6 +43,15 @@ top::Expr ::= 'toInt' '(' e::Expr ')'
   top.typerep = intType();
 }
 
+concrete production toBooleanFunction
+top::Expr ::= 'toBoolean' '(' e::Expr ')'
+{
+  top.pp = "toBoolean(" ++ e.pp ++ ")";
+
+  top.errors := e.errors;
+  top.typerep = intType();
+}
+
 concrete production toFloatFunction
 top::Expr ::= 'toFloat' '(' e::Expr ')'
 {
