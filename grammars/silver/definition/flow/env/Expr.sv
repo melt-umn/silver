@@ -539,8 +539,15 @@ top::Expr ::= e::Decorated Expr
   top.flowDefs = e.flowDefs;
 }
 
-aspect production toIntFunction
-top::Expr ::= 'toInt' '(' e1::Expr ')'
+aspect production toBooleanFunction
+top::Expr ::= 'toBoolean' '(' e1::Expr ')'
+{
+  top.flowDeps = e1.flowDeps;
+  top.flowDefs = e1.flowDefs;
+}
+
+aspect production toIntegerFunction
+top::Expr ::= 'toInteger' '(' e1::Expr ')'
 {
   top.flowDeps = e1.flowDeps;
   top.flowDefs = e1.flowDefs;
