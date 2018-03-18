@@ -45,7 +45,7 @@ aspect production toFloatFunction
 top::Expr ::= 'toFloat' '(' e::Expr ')'
 {
   top.translation = case finalType(e) of
-                    | boolType() -> s"Float.valueOf(${e.translation}? 1.0 : 0.0)"
+                    | boolType() -> s"Float.valueOf(${e.translation}? 1.0f : 0.0f)"
                     | intType() -> s"Float.valueOf(((Integer)${e.translation}).floatValue())"
                     | floatType() -> e.translation
                     | stringType() -> s"Float.valueOf(${e.translation}.toString())"

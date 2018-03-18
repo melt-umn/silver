@@ -57,7 +57,7 @@ top::Expr ::= 'toBoolean' '(' e::Expr ')'
   top.pp = "toBoolean(" ++ e.pp ++ ")";
 
   top.errors := e.errors;
-  top.typerep = intType();
+  top.typerep = boolType();
 }
 
 concrete production toFloatFunction
