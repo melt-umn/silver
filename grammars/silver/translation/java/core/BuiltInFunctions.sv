@@ -28,8 +28,8 @@ top::Expr ::= 'toBoolean' '(' e::Expr ')'
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
-aspect production toIntFunction
-top::Expr ::= 'toInt' '(' e::Expr ')'
+aspect production toIntegerFunction
+top::Expr ::= 'toInteger' '(' e::Expr ')'
 {
   top.translation = case finalType(e) of
                     | boolType() -> s"Integer.valueOf(${e.translation}? 1 : 0)"

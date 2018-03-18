@@ -57,9 +57,10 @@ terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED};
 terminal Global_kwd      'global'       lexer classes {KEYWORD,RESERVED};
 
 terminal Length_kwd    'length'    lexer classes {BUILTIN,RESERVED};
-terminal ToBOolean_kwd 'toBoolean' lexer classes {BUILTIN,RESERVED};
+terminal ToBoolean_kwd 'toBoolean' lexer classes {BUILTIN,RESERVED};
 terminal ToFloat_kwd   'toFloat'   lexer classes {BUILTIN,RESERVED};
-terminal ToInt_kwd     'toInt'     lexer classes {BUILTIN,RESERVED};
+terminal ToInt_kwd     'toInt'     lexer classes {BUILTIN,RESERVED}; -- Legacy
+terminal ToInteger_kwd 'toInteger' lexer classes {BUILTIN,RESERVED};
 terminal ToString_kwd  'toString'  lexer classes {BUILTIN,RESERVED};
 terminal Reify_kwd     'reify'     lexer classes {BUILTIN,RESERVED};
 

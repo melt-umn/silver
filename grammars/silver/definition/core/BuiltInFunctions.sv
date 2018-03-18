@@ -34,10 +34,18 @@ top::Expr ::= e::Decorated Expr
   top.errors := [];
 }
 
+-- Legacy, TODO: deprecate this eventually
 concrete production toIntFunction
 top::Expr ::= 'toInt' '(' e::Expr ')'
 {
   top.pp = "toInt(" ++ e.pp ++ ")";
+  forwards to toIntegerFunction('toInteger', '(', e, ')', location=top.location);
+}
+
+concrete production toIntegerFunction
+top::Expr ::= 'toInteger' '(' e::Expr ')'
+{
+  top.pp = "toInteger(" ++ e.pp ++ ")";
 
   top.errors := e.errors;
   top.typerep = intType();
