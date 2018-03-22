@@ -2,6 +2,7 @@
 
 set -eu
 
+export SILVER_HOME=$(pwd)
 JVM_ARGS="-Xss8M -Xmx2000M -jar ../jars/silver.composed.Default.jar"
 
 # just run this script, no parameters or options.
