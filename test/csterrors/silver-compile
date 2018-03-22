@@ -1,6 +1,8 @@
 #!/bin/bash
 
-alias silver="$SILVER_HOME/support/bin/silver"
+export SILVER_HOME=../..
+
+silver() { "$SILVER_HOME/support/bin/silver" "$@"; }
 
 # Always clean build
 ARGS="$@ --clean"
