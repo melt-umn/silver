@@ -1,11 +1,10 @@
 #!/bin/bash
 
-WHERE_IS_SILVER=../../jars
-WHERE_IS_THE_SOURCE=..  # cheating a bit. Current directory should be 'lambda'
-WHAT_GRAMMAR_TO_BUILD=lambda
+set -eu
+alias silver="../../support/bin/silver"
 
-java -jar $WHERE_IS_SILVER/RunSilver.jar \
-  -I $WHERE_IS_THE_SOURCE $@ $WHAT_GRAMMAR_TO_BUILD && ant
+SRC=..  # cheating a bit. Current directory should be 'lambda'
+GRAMMAR=lambda
 
-# The $@ helpfully passes along any arguments this script got to silver.
+silver -I $SRC $@ $GRAMMAR
 

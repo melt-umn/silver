@@ -1,11 +1,6 @@
 #!/bin/bash
 
-export SILVER_HOME=../..
-
-# Don't depend on having 'silver' in PATH from a test
-function silver {
-   java -Xss4M -Xmx1500M -jar $SILVER_HOME/jars/RunSilver.jar $@
-}
+alias silver="$SILVER_HOME/support/bin/silver"
 
 # Always clean build
 ARGS="$@ --clean"

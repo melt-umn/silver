@@ -2,6 +2,8 @@
 
 set -eu
 
+JVM_ARGS="-Xss8M -Xmx2000M -jar ../jars/silver.composed.Default.jar"
+
 # just run this script, no parameters or options.
 # One new option: --newcore, for when the core FFI stuff has to change in tandem with the runtime
 # Only I should ever have to use this, as once it's done ONCE, fetch-jars will eliminate anyone else's need to do it.
@@ -17,7 +19,7 @@ fi
 # Modifications may have been made to how the translation is done
 
 echo "One full cycle ..."
-time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default
+time java $JVM_ARGS --relative-jar --clean silver:composed:Default
 ant
 mv silver.composed.Default.jar ../jars/
 
@@ -31,10 +33,10 @@ fi
 # Should backup old jars here
 
 echo "Before we start, let's get this thing built ..."
-java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --clean silver:support:monto
-java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --clean lib:xml:ast
+java $JVM_ARGS --clean silver:support:monto
+java $JVM_ARGS --clean lib:xml:ast
 echo "Start ..."
-time java -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default
+time java $JVM_ARGS --relative-jar --clean silver:composed:Default
 
 # Modifications may have been made to the runtime
 
@@ -42,7 +44,6 @@ echo "No ant yet! Let's go build the runtime! ..."
 cd ../runtime/java
 ant
 mv SilverRuntime.jar ../../jars/
-mv RunSilver.jar ../../jars/
 cd ../../build
 echo "Now finish ..."
 ant
@@ -51,7 +52,7 @@ mv silver.composed.Default.jar ../jars/
 # Finally, we should have a fully working binary on all the new code. Run it again to reach a fixed point:
 
 echo "One more full cycle ..."
-time java -ea -Xss8M -Xmx2000M -jar ../jars/RunSilver.jar --relative-jar --clean silver:composed:Default
+time java -ea $JVM_ARGS --relative-jar --clean silver:composed:Default
 ant
 mv silver.composed.Default.jar ../jars/
 

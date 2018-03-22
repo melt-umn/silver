@@ -8,4 +8,4 @@ fi
 mkdir -p build
 cd build
 
-java -Xss8M -Xmx3000M -Xrunhprof:heap=sites,cpu=samples -jar ../jars/RunSilver.jar --clean silver:composed:Default
+java -Xss8M -Xmx3000M -Xrunhprof:heap=sites,cpu=samples -jar ../jars/silver.composed.Default.jar --clean silver:composed:Default
