@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.net.URI;
 
 import common.exceptions.*;
 import common.javainterop.ConsCellCollection;
@@ -714,4 +715,19 @@ public final class Util {
 		return new ConsCell(new StringCatter(i.next()), convertStrings(i));
 	}
 
+	/**
+	 * This is a "private" method for the Silver compiler to use to determine
+	 * where it is installed. We can figure out how to generalize this later.
+	 */
+	public static StringCatter determineSilverHomePath(Class clazz) {
+		URI jarLocation;
+		try {
+			jarLocation = clazz.getProtectionDomain().getCodeSource().getLocation().toURI();
+		} catch(Throwable t) {
+			throw new RuntimeException("Failed to find install location of Silver runtime.", t);
+		}
+		// HOME/jars/file.jar to HOME
+		File home = new File(jarLocation).getParentFile().getParentFile();
+		return new StringCatter(home.getPath());
+	}
 }
