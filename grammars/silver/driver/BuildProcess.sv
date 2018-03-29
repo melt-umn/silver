@@ -76,6 +76,8 @@ IOErrorable<Pair<Decorated CmdArgs  BuildEnv>> ::=
   -- we premptively handle that here. This is slightly unfortunate.
   -- Ideally, version printing would be just another thing we could have the command
   -- line decide to go do, but currently it's hard to re-use code if we do that.
+  else if !null(envErrors) then
+    ioval(benvResult.io, left(runError(1, implode("\n", envErrors))))
   else if a.displayVersion then
     ioval(benvResult.io, left(runError(1, -- error code so 'ant' isnt run
       "Silver Version 0.4.1-dev\n" ++
@@ -83,8 +85,6 @@ IOErrorable<Pair<Decorated CmdArgs  BuildEnv>> ::=
       "SILVER_GEN = " ++ benv.silverGen ++ "\n" ++
       "GRAMMAR_PATH:\n" ++ implode("\n", benv.grammarPath) ++ "\n\n" ++
       implode("\n", envErrors))))
-  else if !null(envErrors) then
-    ioval(benvResult.io, left(runError(1, implode("\n", envErrors))))
   else
     ioval(benvResult.io, right(pair(a, benv)));
 }

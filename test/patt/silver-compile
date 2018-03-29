@@ -1,13 +1,10 @@
 #!/bin/bash
 
-# This silver-compile script is just like all the others.
-# There is not specific here to deal with testing
-# (other than ensuring that the testing extension has been
-#  compiled into Silver).
+set -eu
+silver() { "../../support/bin/silver" "$@"; }
 
-export SILVER_HOME=../..
+SRC=..
+GRAMMAR=patt
 
-java -Xss4M -jar $SILVER_HOME/jars/RunSilver.jar $@  -o test.jar \
-     -I .. patt \
-     && ant
+silver -I $SRC $@ -o test.jar $GRAMMAR
 

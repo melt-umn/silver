@@ -16,7 +16,7 @@ silver grammar:to:build
 If you do not want to use the `silver` script, or are on a platform other than linux, you will likely want to write a build script that looks something like the following:
 
 ```
-java -Xss4M -Xmx1800M -jar $SILVER_HOME/jars/RunSilver.jar  grammar:to:build
+java -Xss4M -Xmx1800M -jar $SILVER_HOME/jars/silver.composed.Default.jar  grammar:to:build
 ```
 
 In both cases _grammar:to:build_ is the name of the grammar to compile. By default, the Silver compiler will look for the directory `./grammar/to/build` from where you run the silver script.

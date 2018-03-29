@@ -137,7 +137,7 @@ def task_test(String testname, String WS) {
       dir(WS + '/test/' + testname) {
         sh "./silver-compile --clean -G ${GEN}"
         if (fileExists("test.jar")) {
-          sh "java -jar test.jar"
+          sh "java -Xss2M -jar test.jar"
           sh "rm test.jar"
         }
       }
