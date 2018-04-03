@@ -35,7 +35,7 @@ import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
  * <p>The most common justification is the need to do several statements, while being in the middle
  * of an expression.
  * 
- * @author tedinski, bodin
+ * @author tedinski, bodin, krame505
  */
 public final class Util {
 	/**
