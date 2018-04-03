@@ -12,6 +12,6 @@ SV_BUILD_TARGET=${SV_BUILD_TARGET:-"silver:composed:Default"}
 mkdir -p build
 cd build
 
-time java ${SVJVM_FLAGS} -jar ../jars/RunSilver.jar --relative-jar $@ ${SV_BUILD_TARGET}
+time java ${SVJVM_FLAGS} -jar ../jars/silver.composed.Default.jar --relative-jar $@ ${SV_BUILD_TARGET}
 ant
 
