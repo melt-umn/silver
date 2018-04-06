@@ -57,13 +57,17 @@ public class Server {
 			this.inner = inner;
 		}
 		public void handle(HttpExchange t) throws IOException {
-			System.out.println(t);
+			System.out.println("Starting to handle " + t.getRequestURI() + "...");
+			long startTime = System.nanoTime();
 			try {
 				inner.handle(t);
 			} catch(Exception ex) {
 				ex.printStackTrace();
 				throw ex;
 			}
+			long requestTimeTaken = (System.nanoTime() - startTime) / 1000000;
+			System.out.println("Handled " + t.getRequestURI() + " in " +
+					requestTimeTaken + "ms.");
 		}
 	}
 
