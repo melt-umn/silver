@@ -70,18 +70,11 @@ try {
     // Projects with 'develop' as main branch, we'll try to build specific branch names if they exist
     def public_github_projects = ["ableC"]
     // Specific other jobs to build
-    def specific_jobs = ["/melt-umn/Oberon0/master", "/melt-umn/ableJ14/master", "/melt-umn/ableP/master", "/melt-umn/ring/master"]
-    // TODO: anything to build here?
-    //def private_github = []
-    // TODO: move these, port them over to new locations, migrate them to pipeline
-    def legacy_internal = ["x-metaII-artifacts", "meltsvn-Matlab-host", "meltsvn-simple-core", "meltsvn-simple-host", "meltsvn-simple-matrix", "meltsvn-simple-all"]
-    // Notes: The above consists of: Matlab, simple, and
-    // two that are especially interesting: ring and the metaII code we wish to keep working.
+    def specific_jobs = ["/melt-umn/Oberon0/master", "/melt-umn/ableJ14/master", "/melt-umn/ableP/master", "/internal/ring/master", "/internal/matlab/master", "/internal/metaII/master", "/internal/simple/master"]
 
     def tasks = [:]
     for (t in public_github_projects) { tasks[t] = task_project(t, WS) }
     for (t in specific_jobs) { tasks[t] = task_job(t, WS) }
-    for (t in legacy_internal) { tasks[t] = task_job("/" + t, WS) }
 
     // Early deploy
     if (env.BRANCH_NAME == 'develop') {
