@@ -19,10 +19,12 @@ synthesized attribute lazyTranslation :: String;
 attribute lazyTranslation, translation occurs on Expr;
 attribute lazyTranslation occurs on Exprs;
 
--- TODO: these go through the process of decorating them, just to undecorate.
---       we should maybe pass information to the runtime here to make it more
---       efficient.  We could even kill the runtime check to see if it's
---       a node, since we know.
+-- `translation` should yield an expression of the appropriate Java type.
+--   e.g. `NodeFactory<StringCatter>` for a (String ::= ...)
+-- At the moment, this requires a lot of casts. Oh well.
+
+-- `lazyTranslation` can yield any type, since it's only ever immediately used
+--   to put values in a `new Object[]{...}`
 
 aspect production errorExpr
 top::Expr ::= msg::[Message]
@@ -41,8 +43,8 @@ top::Expr ::= msg::[Message]  q::Decorated QName
 aspect production childReference
 top::Expr ::= q::Decorated QName
 {
-  local attribute childIDref :: String;
-  childIDref = top.frame.className ++ ".i_" ++ q.lookupValue.fullName;
+  local childIDref :: String =
+    top.frame.className ++ ".i_" ++ q.lookupValue.fullName;
 
   top.translation =
     if q.lookupValue.typerep.isDecorable
@@ -50,7 +52,8 @@ top::Expr ::= q::Decorated QName
          then s"((${finalType(top).transType})context.childDecorated(${childIDref}).undecorate())"
          else s"((${finalType(top).transType})context.childDecorated(${childIDref}))"
     else s"((${finalType(top).transType})context.childAsIs(${childIDref}))";
-  -- reminder: the reason we do .childDecorated().undecorate() is that it's not safe to mix asis/decorated accesses.
+  -- the reason we do .childDecorated().undecorate() is that it's not safe to mix as-is/decorated accesses to the same child.
+  -- this is a potential source of minor inefficiency for functions that do not decorate.
 
   top.lazyTranslation =
     if !top.frame.lazyApplication then top.translation else
@@ -59,19 +62,6 @@ top::Expr ::= q::Decorated QName
          then s"common.Thunk.transformUndecorate(context.childDecoratedLazy(${childIDref}))"
          else s"context.childDecoratedLazy(${childIDref})"
     else s"context.childAsIsLazy(${childIDref})";
-}
-
-aspect production lhsReference
-top::Expr ::= q::Decorated QName
-{
-  -- always a node/decoratednode, so there's no asis case to consider.
-
-  top.translation =
-    if finalType(top).isDecorable
-    then s"((${finalType(top).transType})context.undecorate())"
-    else "context";
-
-  top.lazyTranslation = top.translation;
 }
 
 aspect production localReference
@@ -83,7 +73,7 @@ top::Expr ::= q::Decorated QName
          then s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
          else s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}))"
     else s"((${finalType(top).transType})context.localAsIs(${q.lookupValue.dcl.attrOccursIndex}))";
-  -- reminder: the reason we do .localDecorated().undecorate() is that it's not safe to mix asis/decorated accesses.
+  -- reminder: look at comments for childReference
 
   top.lazyTranslation =
     if !top.frame.lazyApplication then top.translation else
@@ -92,6 +82,29 @@ top::Expr ::= q::Decorated QName
          then s"common.Thunk.transformUndecorate(context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex}))"
          else s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})"
     else s"context.localAsIsLazy(${q.lookupValue.dcl.attrOccursIndex})";
+}
+
+aspect production lhsReference
+top::Expr ::= q::Decorated QName
+{
+  top.translation =
+    if finalType(top).isDecorable
+    then s"((${finalType(top).transType})context.undecorate())"
+    else "context";
+
+  top.lazyTranslation = top.translation;
+}
+
+aspect production forwardReference
+top::Expr ::= q::Decorated QName
+{
+  top.translation =
+    if finalType(top).isDecorable
+    then s"((${finalType(top).transType})context.forward().undecorate())"
+    else "context.forward()";
+
+  -- this might evaluate the forward equation, so suspend it as a thunk
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production productionReference
@@ -104,33 +117,23 @@ top::Expr ::= q::Decorated QName
 aspect production functionReference
 top::Expr ::= q::Decorated QName
 {
-  top.translation = makeClassName(q.lookupValue.fullName) ++ ".factory";
-  top.lazyTranslation = top.translation;
-}
-
-aspect production forwardReference
-top::Expr ::= q::Decorated QName
-{
-  -- always a node/decoratednode, so there's no asis case to consider.
-
-  top.translation =
-    if finalType(top).isDecorable
-    then s"((${finalType(top).transType})context.forward().undecorate())"
-    else "context.forward()";
-
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  -- functions, unlike productions, can return a type variable.
+  -- as such, we have to cast it to the real inferred final type.
+  top.translation = s"((${finalType(top).transType})${top.lazyTranslation})";
+  top.lazyTranslation = makeClassName(q.lookupValue.fullName) ++ ".factory";
 }
 
 aspect production globalValueReference
 top::Expr ::= q::Decorated QName
 {
-  top.translation = s"((${finalType(top).transType})${
-                      makeName(q.lookupValue.dcl.sourceGrammar)}.Init.${fullNameToShort(q.lookupValue.fullName)}.eval())";
+  local directThunk :: String =
+    s"${makeName(q.lookupValue.dcl.sourceGrammar)}.Init.${fullNameToShort(q.lookupValue.fullName)}";
 
+  top.translation = s"((${finalType(top).transType})${directThunk}.eval())";
   top.lazyTranslation = 
-       if top.frame.lazyApplication
-       then s"${makeName(q.lookupValue.dcl.sourceGrammar)}.Init.${fullNameToShort(q.lookupValue.fullName)}"
-       else top.translation;
+    if top.frame.lazyApplication
+    then directThunk
+    else top.translation;
 }
 
 aspect production errorApplication
@@ -201,7 +204,8 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
        else s"new int[]{${implode(", ", map(int2str, annos.annoIndexSupplied))}}") ++ ", " ++
       namedargsTranslationNOReorder(annos) ++ ")"
     else step2;
-    
+
+  -- The theory is the `e.translation` we started with has the right type, so we don't need a cast here. In theory.
   top.translation = step3;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
@@ -210,9 +214,11 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
 aspect production attributeSection
 top::Expr ::= '(' '.' q::QName ')'
 {
+  local outTy :: String = finalType(top).outputType.transType;
+
   top.translation =
     if inputType.isDecorated then
-      s"new common.AttributeSection(${occursCheck.dcl.attrOccursIndex})"
+      s"new common.AttributeSection<${outTy}>(${occursCheck.dcl.attrOccursIndex})"
     else
       -- Please note: context is not actually required here, we do so to make runtime error messages
       -- more comprehensible. This is a similar situation to the code for 'decorate E with {}'.
@@ -221,7 +227,7 @@ top::Expr ::= '(' '.' q::QName ')'
       -- That error would be more comprehensible! (the trouble with this is that we're reporting as context the
       -- function/production we appear within here. The function *may* be applied elsewhere. However, the most common
       -- case is something like map((.attr), list) so, that's probably best to report here instead of within map.)
-      s"new common.AttributeSection.Undecorated(${occursCheck.dcl.attrOccursIndex}, context)";
+      s"new common.AttributeSection.Undecorated<${outTy}>(${occursCheck.dcl.attrOccursIndex}, context)";
 
   top.lazyTranslation = top.translation;
 }
@@ -411,7 +417,6 @@ top::Expr ::= '!' e::Expr
 -- .intValue (et al) (and .valueOf) are done by autoboxing. (e.g. a < b  equiv to  a.intValue() < b.intValue() )
 -- Let Java's autoboxing do the heavy lifting for us, why not? It's smarter.
 
--- TODO: again, here we're dispatching on type. Should we do this polymorphically?
 aspect production gt
 top::Expr ::= e1::Expr '>' e2::Expr
 {
@@ -586,9 +591,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 aspect production stringPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
-  -- cast, rather than toString. Otherwise we don't gain anything with StringCatter
-  -- literal here, rather than transType.  why not? Catch bugs, just in case.
-  top.translation = s"new common.StringCatter((common.StringCatter)${e1.translation}, (common.StringCatter)${e2.translation})";
+  top.translation = s"new common.StringCatter(${e1.translation}, ${e2.translation})";
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
