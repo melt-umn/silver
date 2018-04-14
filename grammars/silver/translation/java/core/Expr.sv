@@ -392,7 +392,6 @@ aspect production and
 top::Expr ::= e1::Expr '&&' e2::Expr
 {
   top.translation = s"(${e1.translation} && ${e2.translation})";
-
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
@@ -400,7 +399,6 @@ aspect production or
 top::Expr ::= e1::Expr '||' e2::Expr
 {
   top.translation = s"(${e1.translation} || ${e2.translation})";
-
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
@@ -408,80 +406,64 @@ aspect production not
 top::Expr ::= '!' e::Expr
 {
   top.translation = s"(!${e.translation})";
-
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 -- Some notes on numbers:
--- Use Integer.valueOf (et al) instead of new Integer. It's more efficient.
--- .intValue (et al) (and .valueOf) are done by autoboxing. (e.g. a < b  equiv to  a.intValue() < b.intValue() )
+-- Use `Integer.valueOf` (et al) instead of `new Integer`. It's more efficient.
 -- Let Java's autoboxing do the heavy lifting for us, why not? It's smarter.
+-- Primitive casts ensure `Integer == Integer` will be value-eq, not reference-eq
+function comparisonTranslation
+String ::= e1::Decorated Expr  op::String  e2::Decorated Expr
+{
+  return case finalType(e1) of
+  | intType() -> s"(${e1.translation} ${op} (int)${e2.translation})"
+  | floatType() -> s"(${e1.translation} ${op} (float)${e2.translation})"
+  | boolType() -> s"(${e1.translation} ${op} (boolean)${e2.translation})"
+  | stringType() -> s"(${e1.translation}.toString().compareTo(${e2.translation}.toString()) ${op} 0)"
+  | t -> error(s"INTERNAL ERROR: no ${op} trans for type ${prettyType(t)}")
+  end;
+}
 
 aspect production gt
 top::Expr ::= e1::Expr '>' e2::Expr
 {
-  top.translation = case finalType(e1) of
-                    | intType() -> s"(${e1.translation} > ${e2.translation})"
-                    | floatType() -> s"(${e1.translation} > ${e2.translation})"
-                    | stringType() -> s"(${e1.translation}.toString().compareTo(${e2.translation}.toString()) > 0)"
-                    | t -> error("INTERNAL ERROR: no > trans for type " ++ prettyType(t))
-                    end;
-
+  top.translation = comparisonTranslation(e1, ">", e2);
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production lt
 top::Expr ::= e1::Expr '<' e2::Expr
 {
-  top.translation = case finalType(e1) of
-                    | intType() -> s"(${e1.translation} < ${e2.translation})"
-                    | floatType() -> s"(${e1.translation} < ${e2.translation})"
-                    | stringType() -> s"(${e1.translation}.toString().compareTo(${e2.translation}.toString()) < 0)"
-                    | t -> error("INTERNAL ERROR: no < trans for type " ++ prettyType(t))
-                    end;
-
+  top.translation = comparisonTranslation(e1, "<", e2);
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production gteq
 top::Expr ::= e1::Expr '>=' e2::Expr
 {
-  top.translation = case finalType(e1) of
-                    | intType() -> s"(${e1.translation} >= ${e2.translation})"
-                    | floatType() -> s"(${e1.translation} >= ${e2.translation})"
-                    | stringType() -> s"(${e1.translation}.toString().compareTo(${e2.translation}.toString()) >= 0)"
-                    | t -> error("INTERNAL ERROR: no >= trans for type " ++ prettyType(t))
-                    end;
-
+  top.translation = comparisonTranslation(e1, ">=", e2);
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production lteq
 top::Expr ::= e1::Expr '<=' e2::Expr
 {
-  top.translation = case finalType(e1) of
-                    | intType() -> s"(${e1.translation} <= ${e2.translation})"
-                    | floatType() -> s"(${e1.translation} <= ${e2.translation})"
-                    | stringType() -> s"(${e1.translation}.toString().compareTo(${e2.translation}.toString()) <= 0)"
-                    | t -> error("INTERNAL ERROR: no <= trans for type " ++ prettyType(t))
-                    end;
-
+  top.translation = comparisonTranslation(e1, "<=", e2);
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production eqeq
 top::Expr ::= e1::Expr '==' e2::Expr
 {
-  top.translation = s"${e1.translation}.equals(${e2.translation})";
-
+  top.translation = comparisonTranslation(e1, "==", e2);
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production neq
 top::Expr ::= e1::Expr '!=' e2::Expr
 {
-  top.translation = s"!${e1.translation}.equals(${e2.translation})";
-
+  top.translation = comparisonTranslation(e1, "!=", e2);
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
@@ -496,81 +478,51 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 aspect production intConst
 top::Expr ::= i::Int_t
 {
-  top.translation = s"Integer.valueOf((int)${i.lexeme})";
+  top.translation = s"((int)${i.lexeme})";
   top.lazyTranslation = top.translation;
 }
 
 aspect production floatConst
 top::Expr ::= f::Float_t
 {
-  top.translation = s"Float.valueOf((float)${f.lexeme})";
+  top.translation = s"((float)${f.lexeme})";
   top.lazyTranslation = top.translation;
 }
 
 aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
-  top.translation = case finalType(top) of
-                    | intType() -> s"Integer.valueOf(${e1.translation} + ${e2.translation})"
-                    | floatType() -> s"Float.valueOf(${e1.translation} + ${e2.translation})"
-                    | t -> error("INTERNAL ERROR: no + trans for type " ++ prettyType(t))
-                    end;
-
+  top.translation = s"(${e1.translation} + ${e2.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
-  top.translation = case finalType(top) of
-                    | intType() -> s"Integer.valueOf(${e1.translation} - ${e2.translation})"
-                    | floatType() -> s"Float.valueOf(${e1.translation} - ${e2.translation})"
-                    | t -> error("INTERNAL ERROR: no - trans for type " ++ prettyType(t))
-                    end;
-
+  top.translation = s"(${e1.translation} - ${e2.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
-  top.translation = case finalType(top) of
-                    | intType() -> s"Integer.valueOf(${e1.translation} * ${e2.translation})"
-                    | floatType() -> s"Float.valueOf(${e1.translation} * ${e2.translation})"
-                    | t -> error("INTERNAL ERROR: no * trans for type " ++ prettyType(t))
-                    end;
-
+  top.translation = s"(${e1.translation} * ${e2.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production divide
 top::Expr ::= e1::Expr '/' e2::Expr
 {
-  top.translation = case finalType(top) of
-                    | intType() -> s"Integer.valueOf(${e1.translation} / ${e2.translation})"
-                    | floatType() -> s"Float.valueOf(${e1.translation} / ${e2.translation})"
-                    | t -> error("INTERNAL ERROR: no / trans for type " ++ prettyType(t))
-                    end;
-
+  top.translation = s"(${e1.translation} / ${e2.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
 {
-  top.translation = case finalType(top) of
-                    | intType() -> s"Integer.valueOf(${e1.translation} % ${e2.translation})"
-                    | floatType() -> s"Float.valueOf(${e1.translation} % ${e2.translation})"
-                    | t -> error("INTERNAL ERROR: no % trans for type " ++ prettyType(t))
-                    end;
-
+  top.translation = s"(${e1.translation} % ${e2.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production neg
 top::Expr ::= '-' e::Expr
 {
-  top.translation = case finalType(top) of
-                    | intType() -> s"Integer.valueOf(-${e.translation})"
-                    | floatType() -> s"Float.valueOf(-${e.translation})"
-                    | t -> error("INTERNAL ERROR: no unary - trans for type " ++ prettyType(t))
-                    end;
-
+  top.translation = s"(-${e.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
