@@ -80,7 +80,12 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   
   top.errors := t.errors ++ e.errors;
   
-  production finalTy :: Type = performSubstitution(t.typerep, errCheck1.upSubst);
+  -- Right now some things (pattern matching) abuse us by giving type variables
+  -- for `t`. So we want to do a little inference before we stuff this into
+  -- our DclInfo in `defs` because we expect variables in the env to have
+  -- explicit types. We can't use `finalSubst` here because that requires
+  -- having completed type inference which requires `defs` which we're defining.
+  local semiTy :: Type = performSubstitution(t.typerep, top.upSubst);
   production fName :: String = toString(genInt()) ++ ":" ++ id.name;
 
   -- Using finalTy here, so our defs requires we have downSubst...
@@ -88,7 +93,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- auto-undecorate feature, so that's why we bother substituting.
   -- (er, except that we're starting with t, which is a Type... must be because we fake these
   -- in e.g. the pattern matching code, so type variables might appear there?)
-  top.defs = [lexicalLocalDef(top.grammarName, id.location, fName, finalTy, e.flowVertexInfo, e.flowDeps)];
+  top.defs = [lexicalLocalDef(top.grammarName, id.location, fName, semiTy, e.flowVertexInfo, e.flowDeps)];
   
   -- TODO: At present, this isn't working properly, because the local scope is
   -- whatever scope encloses the real local scope... hrmm!

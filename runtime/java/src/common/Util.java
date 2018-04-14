@@ -688,15 +688,13 @@ public final class Util {
 		try {
 			Method getTokens = parserClass.getMethod("getTokens");
 			List<common.Terminal> tokens = (List) getTokens.invoke(parser);
-			return new Thunk<Object>(TopNode.singleton) {
-				public final Object doEval(final DecoratedNode context) {
-					List<NTerminalDescriptor> tds = tokens
-						.stream()
-						.map(Util::terminalToTerminalDescriptor)
-						.collect(Collectors.toList());
-					return ConsCellCollection.fromList(tds);
-				}
-			};
+			return new Thunk(() -> {
+				List<NTerminalDescriptor> tds = tokens
+					.stream()
+					.map(Util::terminalToTerminalDescriptor)
+					.collect(Collectors.toList());
+				return ConsCellCollection.fromList(tds);
+			});
 		} catch(Throwable t) {
 			throw new TraceException("Failed to reflect to getTokens()", t);
 		}

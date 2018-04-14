@@ -47,8 +47,8 @@ top::Expr ::= q::Decorated QName
   top.translation =
     if q.lookupValue.typerep.isDecorable
     then if finalType(top).isDecorable
-         then {- type Node -} s"context.childDecorated(${childIDref}).undecorate()"
-         else {- type DecoratedNode -} s"context.childDecorated(${childIDref})"
+         then s"((${finalType(top).transType})context.childDecorated(${childIDref}).undecorate())"
+         else s"((${finalType(top).transType})context.childDecorated(${childIDref}))"
     else s"((${finalType(top).transType})context.childAsIs(${childIDref}))";
   -- reminder: the reason we do .childDecorated().undecorate() is that it's not safe to mix asis/decorated accesses.
 
@@ -68,7 +68,7 @@ top::Expr ::= q::Decorated QName
 
   top.translation =
     if finalType(top).isDecorable
-    then "context.undecorate()"
+    then s"((${finalType(top).transType})context.undecorate())"
     else "context";
 
   top.lazyTranslation = top.translation;
@@ -80,8 +80,8 @@ top::Expr ::= q::Decorated QName
   top.translation =
     if q.lookupValue.typerep.isDecorable
     then if finalType(top).isDecorable
-         then {- type Node -} s"context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate()"
-         else {- type DecoratedNode -} s"context.localDecorated(${q.lookupValue.dcl.attrOccursIndex})"
+         then s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
+         else s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}))"
     else s"((${finalType(top).transType})context.localAsIs(${q.lookupValue.dcl.attrOccursIndex}))";
   -- reminder: the reason we do .localDecorated().undecorate() is that it's not safe to mix asis/decorated accesses.
 
@@ -115,7 +115,7 @@ top::Expr ::= q::Decorated QName
 
   top.translation =
     if finalType(top).isDecorable
-    then "context.forward().undecorate()"
+    then s"((${finalType(top).transType})context.forward().undecorate())"
     else "context.forward()";
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
@@ -622,16 +622,24 @@ top::Expr ::= e::Decorated Expr
 function wrapThunk
 String ::= exp::String  beLazy::Boolean
 {
-  return if beLazy then wrapThunkText("context", exp, "Object") else exp;
+  return if beLazy then wrapThunkText(exp, "Object") else exp;
 }
 function wrapThunkText
-String ::= ct::String  exp::String  ty::String
+String ::= exp::String  ty::String
 {
-  return s"new common.Thunk<${ty}>(${ct}) { public final ${ty} doEval(final common.DecoratedNode context) { return ${exp}; } }";
+  return s"new common.Thunk<${ty}>(new common.Thunk.Evaluable() { public final ${ty} eval() { return ${exp}; } })";
+  --TODO: java lambdas are bugged
+  --return s"new common.Thunk<${ty}>(() -> ${exp})";
 }
 function wrapLazy
 String ::= e::Decorated Expr
 {
+  -- It *may* be wise to leave `Lazy`s as anon classes, rather than lambdas.
+  -- This splits all the Thunk methods across each `Lazy` instead of concentrating
+  -- them all on the top-level class, like `Init`
+  -- We're *unlikely* to be close to hitting the 64K method limit, but
+  -- we have hit the 64K bytecode limit in the past, which is why `Init` farms
+  -- initialization code out across each production. So who knows.
   return s"new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ${e.translation}; } }";
 }
 
