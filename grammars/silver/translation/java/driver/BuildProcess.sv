@@ -164,7 +164,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "      <filtermapper><replacestring from=' ' to='%20' /></filtermapper>\n"
 ) ++
 "    </pathconvert>\n" ++
-"    <jar destfile='" ++ outputFile ++ "' basedir='${bin}'>\n" ++
+"    <jar destfile='" ++ outputFile ++ "' basedir='${bin}' zip64Mode='as-needed'>\n" ++
     implode("", map(includeName(_, "*.class"), grammarsDependedUpon)) ++ 
 "      <manifest>\n" ++
 "        " ++ implode("\n        ", extraManifestAttributes) ++ "\n" ++
