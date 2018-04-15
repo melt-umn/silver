@@ -60,6 +60,7 @@ ${g.initProd}
 
 ${g.initWeaving}
 ${g.valueWeaving}
+	final static common.DecoratedNode context = common.TopNode.singleton; // For globals
 ${g.initValues}
 }
 """)];

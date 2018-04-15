@@ -425,10 +425,16 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   
   e.env = newScopeEnv(consdefs, top.env);
   
-  top.translation = "if(!scrutineeIter.nil()) {" ++
-  makeSpecialLocalBinding(h_fName, "scrutinee.head()", performSubstitution(elemType, top.finalSubst).transType) ++
-  makeSpecialLocalBinding(t_fName, "scrutinee.tail()", performSubstitution(top.scrutineeType, top.finalSubst).transType) ++
-  "return " ++ e.translation ++ "; }";
+  top.translation =
+    let
+      elemTrans :: String = performSubstitution(elemType, top.finalSubst).transType,
+      listTrans :: String = performSubstitution(top.scrutineeType, top.finalSubst).transType
+    in
+      "if(!scrutineeIter.nil()) {" ++
+      makeSpecialLocalBinding(h_fName, s"(${elemTrans})scrutinee.head()", elemTrans) ++
+      makeSpecialLocalBinding(t_fName, s"(${listTrans})scrutinee.tail()", listTrans) ++
+      "return " ++ e.translation ++ "; }"
+    end;
 }
 
 

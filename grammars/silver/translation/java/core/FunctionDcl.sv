@@ -133,7 +133,8 @@ ${whatResult}
 		}
 	}
 
-	public static final common.NodeFactory<${whatSig.outputElement.typerep.transType}> factory = new Factory();
+	// Use of ? to permit casting to more specific types
+	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transType}> factory = new Factory();
 
 	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transType}> {
 		@Override

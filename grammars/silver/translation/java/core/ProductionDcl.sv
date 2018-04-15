@@ -165,11 +165,11 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 		return new ${className}(${namedSig.refInvokeTrans});
 	}
 
-	public static final common.NodeFactory<${className}> factory = new Factory();
+	public static final common.NodeFactory<${fnnt}> factory = new Factory();
 
-	public static final class Factory extends common.NodeFactory<${className}> {
+	public static final class Factory extends common.NodeFactory<${fnnt}> {
 		@Override
-		public final ${className} invoke(final Object[] children, final Object[] annotations) {
+		public final ${fnnt} invoke(final Object[] children, final Object[] annotations) {
 			return new ${className}(${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
 		}
 		
