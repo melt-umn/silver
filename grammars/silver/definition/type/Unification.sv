@@ -32,6 +32,12 @@ top::Type ::= tv::TyVar
     end;
 }
 
+aspect production errorType
+top::Type ::=
+{
+  top.unify = emptySubst(); -- report no additional errors
+}
+
 aspect production intType
 top::Type ::=
 {

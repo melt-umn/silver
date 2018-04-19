@@ -26,8 +26,7 @@ top::DclInfo ::= sg::String sl::Location fn::String
 
   top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
   
-  --top.typerep = errorType();
-  top.typerep = freshType(); -- #HACK2012 Issue 4
+  top.typerep = freshType(); -- no appropriate type to use...
   
   top.refDispatcher = pluckTerminalReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);

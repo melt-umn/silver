@@ -186,9 +186,11 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
   top.pp = e.pp ++ "(" ++ es.pp ++ "," ++ anns.pp ++ ")";
   
-  top.errors := e.errors ++ 
+  top.errors := e.errors ++
+    (if e.typerep.isError then [] else  
     [err(top.location, e.pp ++ " has type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++
-      " and cannot be invoked as a function.")] ++ es.errors ++ anns.errors;
+      " and cannot be invoked as a function.")]) ++
+    es.errors ++ anns.errors;
         -- TODO This error message is cumbersomely generated...
 
   top.typerep = errorType();
@@ -234,7 +236,9 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   
   top.errors := e.errors ++ es.errors ++ anns.errors;
 
-  top.typerep = e.typerep.outputType;
+  local ety :: Type = performSubstitution(e.typerep, e.upSubst);
+
+  top.typerep = ety.outputType;
 }
 
 abstract production partialApplication
@@ -244,7 +248,9 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   
   top.errors := e.errors ++ es.errors ++ anns.errors;
 
-  top.typerep = functionType(e.typerep.outputType, es.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
+  local ety :: Type = performSubstitution(e.typerep, e.upSubst);
+
+  top.typerep = functionType(ety.outputType, es.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
 }
 
 concrete production attributeSection
@@ -264,13 +270,16 @@ top::Expr ::= '(' '.' q::QName ')'
   top.errors <- if null(q.lookupAttribute.dclBoundVars) then []
                 else [err(q.location, "Attribute " ++ q.pp ++ " is parameterized, and attribute sections currently do not work with parameterized attributes, yet.")]; -- TODO The type inference system is too weak, currently.
   
-  top.errors <- if !null(q.lookupAttribute.errors) || q.lookupAttribute.dcl.isSynthesized then []
+  top.errors <- if !q.lookupAttribute.found || q.lookupAttribute.dcl.isSynthesized then []
                 else [err(q.location, "Only synthesized attributes are currently supported in attribute sections.")];
   
   -- Only known after the inference pass (uses final subst)
   production attribute inputType :: Type;
   inputType = performSubstitution(rawInputType, top.finalSubst);
   
+  -- We're not using QNameAttrOccur right now because that assumes we know the nonterminal
+  -- so we can filter down to just attributes occurring on that. We could probably fix this
+  -- to make it work either way.
   production attribute occursCheck :: OccursCheck;
   occursCheck = occursCheckQName(q, if inputType.isDecorated then inputType.decoratedType else inputType);
 
@@ -313,7 +322,14 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.pp = e.pp ++ "." ++ q.pp;
   
   top.typerep = errorType();
-  top.errors := [err(top.location, "LHS of '.' is type " ++ prettyType(q.attrFor) ++ " and cannot have attributes.")] ++ q.errors;
+  top.errors := accessError ++ q.errors;
+  
+  local accessError :: [Message] =
+    if e.typerep.isError then [] else
+      let ref :: String =
+            if length(e.pp) < 12 then "'" ++ e.pp ++ "' has" else "LHS of '.' is"
+       in [err(top.location, ref ++ " type " ++ prettyType(q.attrFor) ++ " and cannot have attributes.")]
+      end;
 }
 
 abstract production annoAccessHandler
@@ -334,15 +350,14 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.pp = e.pp ++ "." ++ q.pp;
   
-  -- NO q.errors!!
+  -- NO use of q.errors, as that become nonsensical here.
+  
   top.errors :=
     if q.name == "lexeme" || q.name == "location" || 
-       -- Temporary backwards compatibility bits:
        q.name == "filename" || q.name == "line" || q.name == "column"
     then []
     else [err(q.location, q.name ++ " is not a terminal attribute")];
 
-  -- TODO: this is a hacky way of dealing with terminal attributes
   top.typerep =
     if q.name == "lexeme" || q.name == "filename"
     then stringType()
@@ -364,7 +379,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   -- occur on the LHS here.
   
   -- Note: LHS is UNdecorated, here we dispatch based on the kind of attribute.
-  forwards to if !null(q.errors) then errorDecoratedAccessHandler(e, q, location=top.location)
+  forwards to if !q.found then errorDecoratedAccessHandler(e, q, location=top.location)
               else q.attrDcl.undecoratedAccessHandler(e, q, top.location);
   -- annoAccessHandler
   -- accessBouncer
@@ -404,7 +419,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   -- occur on the LHS here.
   
   -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
-  forwards to if !null(q.errors) then errorDecoratedAccessHandler(e, q, location=top.location)
+  forwards to if !q.found then errorDecoratedAccessHandler(e, q, location=top.location)
               else q.attrDcl.decoratedAccessHandler(e, q, top.location);
   -- From here we go to:
   -- synDecoratedAccessHandler
@@ -726,6 +741,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
   top.pp = e1.pp ++ " ++ " ++ e2.pp;
 
+  -- TODO perhaps suppress this error is isError
   top.errors := [err(e1.location, prettyType(performSubstitution(e1.typerep, e1.upSubst)) ++ " is not a concatenable type.")];
   top.typerep = errorType();
 }

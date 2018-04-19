@@ -139,6 +139,7 @@ abstract production parserAttributeDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   top.pp = q.pp;
+  top.found = false;
   
   -- Note this is always erroring!
   top.errors := if !top.frame.permitActions

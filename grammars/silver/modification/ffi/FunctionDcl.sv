@@ -13,10 +13,20 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
 
-  ns.signatureName = fName;
-
   top.errors <- ffidefs.errors;
 
+  -- Quick copy & paste to make signatures look right. Otherwise they contain errorTypes for
+  -- type parameters
+  production attribute sigDefs :: [Def] with ++;
+  sigDefs := ns.defs;
+  ns.signatureName = fName;
+  ns.env = newScopeEnv(sigDefs, top.env);
+  production attribute allLexicalTyVars :: [String];
+  allLexicalTyVars = makeSet(ns.lexicalTypeVariables);
+  sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, allLexicalTyVars);
+
+  -- TODO this is a BS use of forwarding and should be eliminated. body.env and .frame are all wrong locally...
+  
   forwards to functionDcl($1, id, ns, body, location=top.location);
 }
 

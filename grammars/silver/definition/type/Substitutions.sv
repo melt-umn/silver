@@ -123,6 +123,12 @@ top::Type ::= tv::TyVar
                     else top;
 }
 
+aspect production errorType
+top::Type ::=
+{
+  top.substituted = top;
+}
+
 aspect production intType
 top::Type ::=
 {
@@ -264,3 +270,8 @@ Type ::= te::Type
   return freshenType(te, te.freeVariables);
 }
 
+function errorSubstitution
+Substitution ::= t::Type
+{
+  return zipVarsAndTypesIntoSubstitution(t.freeVariables, repeat(errorType(), length(t.freeVariables)));
+}

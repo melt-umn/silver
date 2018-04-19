@@ -305,12 +305,12 @@ String ::= s::String
 function hackGramFromDcl
 String ::= qn::Decorated QNameAttrOccur
 {
-  return if null(qn.errors) then qn.dcl.sourceGrammar else "";
+  return if qn.found then qn.dcl.sourceGrammar else "";
 }
 -- Source grammar of a lookup of a local dcl
 function hackGramFromQName
 String ::= qn::Decorated QNameLookup
 {
-  return if null(qn.errors) then qn.dcl.sourceGrammar else "";
+  return if qn.found then qn.dcl.sourceGrammar else "";
 }
 

@@ -58,7 +58,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
 
   -- If there were errors looking up the name, do nothing. If we couldn't find the
   -- parser, then raise the error message noting that the name isn't a parser!
-  top.errors <- if !null(parsername.lookupValue.errors) || !null(spec) then []
+  top.errors <- if !parsername.lookupValue.found || !null(spec) then []
                 else [err(parsername.location, parsername.name ++ " is not a parser.")];
   
   -- Strip off the quotes AND the initial dot

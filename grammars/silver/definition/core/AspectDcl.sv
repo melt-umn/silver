@@ -30,7 +30,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   production namedSig :: NamedSignature = ns.namedSignature;
 
   production attribute realSig :: NamedSignature;
-  realSig = if null(id.lookupValue.errors)
+  realSig = if id.lookupValue.found
             then id.lookupValue.dcl.namedSignature
             else bogusNamedSignature();
 
@@ -46,7 +46,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   ns.realSignature = if null(id.lookupValue.dcls) then [] else [realSig.outputElement] ++ realSig.inputElements;
 
   local attribute prodAtts :: [Def];
-  prodAtts = if null(id.lookupValue.errors)
+  prodAtts = if id.lookupValue.found
              then defsFromPADcls(getProdAttrs(id.lookupValue.fullName, top.env), namedSig)
              else [];
 
@@ -66,7 +66,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   production namedSig :: NamedSignature = ns.namedSignature;
 
   production attribute realSig :: NamedSignature;
-  realSig = if null(id.lookupValue.errors)
+  realSig = if id.lookupValue.found
             then id.lookupValue.dcl.namedSignature
             else bogusNamedSignature();
 
@@ -82,7 +82,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   ns.realSignature = if null(id.lookupValue.dcls) then [] else [realSig.outputElement] ++ realSig.inputElements;
 
   local attribute prodAtts :: [Def];
-  prodAtts = if null(id.lookupValue.errors)
+  prodAtts = if id.lookupValue.found
              then defsFromPADcls(getProdAttrs(id.lookupValue.fullName, top.env), namedSig)
              else [];
 

@@ -12,7 +12,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
 
   -- Rule: non-host synthesized attributes' flow type must be a super set of that for the forward.
   top.flowDefs = 
-    if !null(at.lookupAttribute.errors ++ nt.lookupType.errors) || isHost || !isSyn then 
+    if !at.lookupAttribute.found || !nt.lookupType.found || isHost || !isSyn then 
       []
     else
       [extSynFlowDef(nt.lookupType.fullName, at.lookupAttribute.fullName)];

@@ -98,6 +98,12 @@ top::Type ::= tv::TyVar
     end;
 }
  
+aspect production errorType
+top::Type ::=
+{
+  top.refine = emptySubst();
+}
+
 aspect production intType
 top::Type ::=
 {

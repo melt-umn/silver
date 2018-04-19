@@ -34,7 +34,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur e::
 
   -- Orphaned equation check
   top.errors <-
-    if null(attr.errors ++ attr.errors)
+    if dl.found && attr.found
     && (top.config.warnAll || top.config.warnEqdef)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
     then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
@@ -59,7 +59,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     end;
 
   top.errors <-
-    if null(attr.errors ++ attr.errors ++ dl.errors)
+    if dl.found && attr.found
     && (top.config.warnAll || top.config.warnEqdef)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
     then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " on " ++ dl.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
@@ -85,7 +85,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
   -- Orphaned equation check
   top.errors <-
-    if null(attr.errors ++ attr.errors)
+    if dl.found && attr.found
     && (top.config.warnAll || top.config.warnEqdef)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
     then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
@@ -109,7 +109,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     end;
 
   top.errors <-
-    if null(attr.errors ++ attr.errors ++ dl.errors)
+    if dl.found && attr.found
     && (top.config.warnAll || top.config.warnEqdef)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
     then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " on " ++ dl.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
