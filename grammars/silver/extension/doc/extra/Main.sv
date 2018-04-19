@@ -19,7 +19,7 @@ import silver:analysis:warnings:exporting;
 
 import silver:composed;
 import silver:composed:Default;
-import silver:composed:extendedorigins;
+--import silver:composed:extendedorigins;
 --import silver:composed:idetest;
 
 import silver:definition;
@@ -48,7 +48,7 @@ import silver:extension:doc;
 import silver:extension:doc:core;
 import silver:extension:doc:driver;
 import silver:extension:easyterminal;
-import silver:extension:extendedorigins;
+--import silver:extension:extendedorigins;
 import silver:extension:functorattrib;
 import silver:extension:list;
 import silver:extension:list:env_parser;
