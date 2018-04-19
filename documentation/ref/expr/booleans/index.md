@@ -1,6 +1,8 @@
 ---
 layout: sv_wiki
-title: Boolean
+title: Boolean expressions
+menu_title: Boolean
+menu_weight: 20
 ---
 
 

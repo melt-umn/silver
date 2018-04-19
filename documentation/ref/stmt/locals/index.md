@@ -1,6 +1,7 @@
 ---
 layout: sv_wiki
 title: Local equations
+menu_weight: 30.0
 ---
 
 

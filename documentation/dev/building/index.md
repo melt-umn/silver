@@ -5,11 +5,14 @@ title: Building Silver
 
 ## Prerequisites
 
-Go see the [InstallGuide]({{ "/silver/doc/install-guide/" | prepend: site.sv_wiki_base }}) on getting the latest development version to use.
+Go see the [installation guide](install-guide) on getting the latest
+development version to use. 
 
 ## Building
 
-Silver is written in Silver, which causes no end of terrific and fun bootstrapping entertainment. But, in most cases it's a total non-issue.
+Silver is written in Silver, which causes no end of terrific and fun
+bootstrapping entertainment. But, in most cases it's a total
+non-issue. 
 
 Building Silver should be this easy:
 

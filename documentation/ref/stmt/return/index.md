@@ -1,6 +1,7 @@
 ---
 layout: sv_wiki
 title: Return
+menu_weight: 40.0
 ---
 
 Be sure to see [function]({{ "/ref/decl/functions/" | prepend: site.sv_wiki_base }}) declarations.

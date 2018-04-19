@@ -10,11 +10,11 @@ function nameToPathHelp
 String ::= s::[String]
 {
   return case s of
-			| [] -> ""
-			| x :: [] -> "#" ++ x
-			| x1 :: x2 :: [] -> x1 ++ "#" ++ x2
-			| x :: xs -> x ++ "/" ++ nameToPathHelp(xs)
-		 end;
+         | [] -> ""
+         | x :: [] -> "#" ++ x
+         | x1 :: x2 :: [] -> x1 ++ "#" ++ x2
+         | x :: xs -> x ++ "/" ++ nameToPathHelp(xs)
+         end;
 }
 
 

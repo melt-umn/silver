@@ -1,6 +1,8 @@
 ---
 layout: sv_wiki
-title: Numeric
+title: Numeric expressions
+menu_title: Numeric
+menu_weight: 10
 ---
 
 

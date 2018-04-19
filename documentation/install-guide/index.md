@@ -7,7 +7,7 @@ menu_weight: 10.0
 
 # Prerequisites
 
-[Java JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html) and [Apache ANT](http://ant.apache.org/bindownload.cgi). For Ubuntu users:
+[Java JDK, version 1.7](http://www.oracle.com/technetwork/java/javase/downloads/index.html) and [Apache ANT](http://ant.apache.org/bindownload.cgi). For Ubuntu users:
 
 ```
 apt-get install default-jdk-headless ant
@@ -45,7 +45,10 @@ If you have any issues, first try the [frequently asked question page](/silver/d
 silver$ ./support/bin/install-silver-bin
 ```
 
-Note that this assumes you have a ~/bin. In most distributions, if you don't have a ~/bin, all you have to do is `mkdir ~/bin`, and the default shell scripts will notice it and add it to your `PATH` next time your shell is started.
+Note that this assumes you have a ~/bin. In most distributions, if you
+don't have a ~/bin, all you have to do is `mkdir ~/bin`, and the
+default shell scripts will notice it and add it to your `PATH` next
+time your shell is started. 
 
 At this point, Silver should be all set. You can test it with: (leaving off from above)
 
@@ -57,7 +60,9 @@ silver/tutorials$ java -jar hello.jar
 Hello World!
 ```
 
-Note that this differs from previously by using the '`silver`' script in `~/bin` instead of the local `silver-compile` script, and it is only in the `tutorials` directory, not in `tutorials/hello`.
+Note that this differs from previously by using the '`silver`' script
+in `~/bin` instead of the local `silver-compile` script, and it is
+only in the `tutorials` directory, not in `tutorials/hello`. 
 
 
 # Using the latest development version
@@ -66,7 +71,7 @@ Instead of downloading a relase, Silver can be checked out directly from GitHub 
 
 ## Additional prerequisites
 
-git and wget. For Ubuntu users:
+Git and wget. For Ubuntu users:
 
 ```
 apt-get install default-jdk ant git wget
@@ -93,13 +98,16 @@ And then proceed with the instructions above (e.g. testing with tutorials, insta
 
 ## Updating jars
 
-To update the development version, run:
+To update the a version cloned from GitHub, run:
 
 ```
 silver$ ./update
 ```
 
-This will pull the latest changes, and update your working copy. It will also download the latest jars (which may be necessary! Silver is written in Silver, so there can be bootstrapping issues) and clear out any generated files, which may now be stale with the new version.
+This will pull the latest changes, and update your working copy. It
+will also download the latest jars (which may be necessary! Silver is
+written in Silver, so there can be bootstrapping issues) and clear out
+any generated files, which may now be stale with the new version.
 
 ## Building Silver
 

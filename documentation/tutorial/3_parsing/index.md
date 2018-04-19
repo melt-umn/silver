@@ -156,3 +156,5 @@ is because the grammar is not LALR(1) and needs to be refactored to be in this c
 
 Readers that are serious about designing scanner and parsers need to read about LR parsing
 (which include LR(1) and LALR(1) parsing) to understand the underlying parsing algorithms.
+
+Next Section: [Attribute Grammars](../4_attribute_grammars)

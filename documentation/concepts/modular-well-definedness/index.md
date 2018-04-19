@@ -74,7 +74,7 @@ Productions that do not forward must have equations specifying the value of ever
 
 This is slightly trickier.  Silver will not require that all inherited attributes be supplied, as this is not possible in a modular way.  Instead, it requires inherited equations be present that it suspects are necessary to evaluated (for example) synthesized attributes that are demanded.
 
-Generally, the solution to these warnings is to add an equation for the inherited attribute.  However, in some cases, the real solution may be to determine why Silver believes it needs an inherited attribute that you are certain it does not. This can be somewhat tricky, as the culprit could be anywhere.  There does exist a `--dump-flow-deps` flag that produces a dot file, however this is typically too large to actually visualize.  It might be useful to grep, however.
+Generally, the solution to these warnings is to add an equation for the inherited attribute.  However, in some cases, the real solution may be to determine why Silver believes it needs an inherited attribute that you are certain it does not. This can be somewhat tricky, as the culprit could be anywhere.  There does exist a `--dump-flow-graph` flag that produces a dot file, however this is typically too large to actually visualize.  It might be useful to grep, however.
 
 ## Tracking down flow problems
 
