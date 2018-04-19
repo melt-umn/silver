@@ -236,7 +236,9 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   
   top.errors := e.errors ++ es.errors ++ anns.errors;
 
-  top.typerep = e.typerep.outputType;
+  local ety :: Type = performSubstitution(e.typerep, e.upSubst);
+
+  top.typerep = ety.outputType;
 }
 
 abstract production partialApplication
@@ -246,7 +248,9 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   
   top.errors := e.errors ++ es.errors ++ anns.errors;
 
-  top.typerep = functionType(e.typerep.outputType, es.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
+  local ety :: Type = performSubstitution(e.typerep, e.upSubst);
+
+  top.typerep = functionType(ety.outputType, es.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
 }
 
 concrete production attributeSection
