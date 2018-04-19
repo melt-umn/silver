@@ -42,7 +42,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
     end;
 
   top.errors <-
-    if null(nt.lookupType.errors ++ at.lookupAttribute.errors)
+    if nt.lookupType.found && at.lookupAttribute.found
     && (top.config.warnAll || top.config.warnOrphaned)
     && !isExportedBy(top.grammarName, [nt.lookupType.dcl.sourceGrammar, at.lookupAttribute.dcl.sourceGrammar], top.compiledGrammars)
     then [wrn(top.location, "Orphaned occurs declaration: " ++ at.lookupAttribute.fullName ++ " on " ++ nt.lookupType.fullName)]
@@ -50,7 +50,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
     else [];
   
   top.errors <-
-    if !null(nt.lookupType.errors ++ at.lookupAttribute.errors) || !isClosedNt || !at.lookupAttribute.dcl.isSynthesized then []
+    if !nt.lookupType.found || !at.lookupAttribute.found || !isClosedNt || !at.lookupAttribute.dcl.isSynthesized then []
     -- For closed nt, either we're exported by only the nt, OR there MUST be a default!
     else if !isExportedBy(top.grammarName, [nt.lookupType.dcl.sourceGrammar], top.compiledGrammars)
          && null(lookupDef(nt.lookupType.fullName, at.lookupAttribute.fullName, top.flowEnv))

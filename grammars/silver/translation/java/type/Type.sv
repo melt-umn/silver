@@ -34,6 +34,16 @@ top::Type ::= tv::TyVar
   top.transFreshTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
 }
 
+aspect production errorType
+top::Type ::=
+{
+  local oops :: String = error("Attempting to translate in presence of errors");
+  top.transType = oops;
+  top.transClassType = oops;
+  top.transTypeRep = oops;
+  top.transFreshTypeRep = oops;
+}
+
 aspect production intType
 top::Type ::=
 {

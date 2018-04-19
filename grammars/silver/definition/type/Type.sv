@@ -29,6 +29,16 @@ top::Type ::= tv::TyVar
 }
 
 {--
+ - When an error message has **already** been reported, and we must supply a type,
+ - and we wish to suppress further error messages, use errorType.
+ -}
+abstract production errorType
+top::Type ::=
+{
+  top.freeVariables = [];
+}
+
+{--
  - Integer type.
  -}
 abstract production intType
@@ -196,12 +206,6 @@ function tyVarEqual
 Boolean ::= tv1::TyVar tv2::TyVar
 {
   return tv1.extractTyVarRep == tv2.extractTyVarRep;
-}
-
-function errorType
-Type ::=
-{
-  return varType(freshTyVar());
 }
 
 function freshType

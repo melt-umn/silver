@@ -27,6 +27,12 @@ top::Type ::= tv::TyVar
   top.unparse = findAbbrevFor(tv, top.boundVariables);
 }
 
+aspect production errorType
+top::Type ::=
+{
+  top.unparse = error("Attempting to generate interface in presence of errors");
+}
+
 aspect production intType
 top::Type ::=
 {

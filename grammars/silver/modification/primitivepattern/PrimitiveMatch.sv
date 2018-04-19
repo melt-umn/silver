@@ -50,7 +50,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   
   -- ensureDecoratedExpr is currently wrapping 'e' in 'exprRef' which suppresses errors
   -- TODO: the use of 'exprRef' should be reviewed, given that this error slipped through...
-  top.errors <- e.errors;
+  top.errors := e.errors ++ forward.errors;
   
   forwards to matchPrimitiveReal(ensureDecoratedExpr(e), t, pr, f, location=top.location);
 }

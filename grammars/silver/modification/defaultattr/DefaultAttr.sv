@@ -66,10 +66,14 @@ abstract production defaultLhsDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   top.pp = q.pp;
+  top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;
   
-  top.errors := if !null(top.defLHSattr.errors) || top.defLHSattr.attrDcl.isSynthesized then []
-                else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.pp ++ "' on the lhs '" ++ q.pp ++ "'")];
-
+  local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;
+  
+  top.errors :=
+    if existingProblems || top.found then []
+    else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.pp ++ "' on the lhs '" ++ q.pp ++ "'")];
+  
   top.typerep = q.lookupValue.typerep;
 
   top.translation = makeNTClassName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";

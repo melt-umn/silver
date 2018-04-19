@@ -36,7 +36,7 @@ top::NameOrBOperator ::= q::QName
     else [err(top.location, q.pp ++ " must be of type " ++ checkOperationType.rightpp ++
             " instead it is of type " ++ checkOperationType.leftpp)];
   
-  top.errors <- if !null(q.lookupValue.errors) then [] else
+  top.errors <- if !q.lookupValue.found then [] else
     case q.lookupValue.dcl of
     | funDcl(_,_,_) -> operationErrors
     | prodDcl(_,_,_) -> operationErrors
@@ -342,7 +342,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
   attr.attrFor = dl.typerep;
 
   forwards to
-    if !null(dl.errors ++ attr.errors)
+    if !dl.found || !attr.found
     then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e, location=top.location)
     else attr.attrDcl.attrAppendDefDispatcher(dl, attr, e, top.location);
 }
@@ -360,7 +360,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
   attr.attrFor = dl.typerep;
 
   forwards to
-    if !null(dl.errors ++ attr.errors)
+    if !dl.found || !attr.found
     then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e, location=top.location)
     else attr.attrDcl.attrBaseDefDispatcher(dl, attr, e, top.location);
 }

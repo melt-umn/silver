@@ -19,11 +19,11 @@ top::AGDcl ::= 'flowtype' nt::QName '=' specs::FlowSpecs ';'
 {
   top.pp = "flowtype " ++ nt.pp ++ " = " ++ specs.pp ++ ";";
   top.errors :=
-    if null(nt.lookupType.errors)
+    if nt.lookupType.found
     then specs.errors
     else nt.lookupType.errors;
   top.flowDefs =
-    if null(nt.lookupType.errors)
+    if nt.lookupType.found
     then specs.flowDefs
     else [];
 
@@ -69,13 +69,13 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
   top.errors := attr.errors ++ inhs.errors;
   
   top.errors <-
-    if !null(attr.errors) ||
+    if !attr.found ||
        isExportedBy(top.grammarName, [attr.authorityGrammar], top.compiledGrammars)
     then []
     else [err(attr.location, "flow type for " ++ attr.pp ++ " must be exported by " ++ attr.authorityGrammar)];
 
   top.errors <-
-    if null(attr.errors) &&
+    if attr.found &&
        length(filter(stringEq(attr.synName, _), getSpecifiedSynsForNt(top.onNt.typeName, top.flowEnv))) > 1
     then [err(attr.location, "duplicate specification of flow type for " ++ attr.pp ++ " on " ++ top.onNt.typeName)]
     else [];
@@ -86,7 +86,7 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
     set:toList(set:removeAll(inhs.inhList, inhDepsForSyn("forward", top.onNt.typeName, myFlow)));
 
   top.errors <-
-    if !null(attr.errors) ||
+    if !attr.found ||
        !(top.config.warnAll || top.config.warnMissingInh) || -- we don't want to compute flow graphs unless told to
        isExportedBy(attr.authorityGrammar, [hackGramFromFName(top.onNt.typeName)], top.compiledGrammars) ||
        null(missingFt)
@@ -96,11 +96,11 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
   -- We want to put the spec in even if there are errors in 'inhs' so that
   -- we can look up specs from inhs.
   top.flowDefs = 
-    if !null(attr.errors) then []
+    if !attr.found then []
     else [specificationFlowDef(top.onNt.typeName, attr.synName, inhs.inhList)];
 }
 
-nonterminal FlowSpecId with config, location, grammarName, errors, env, pp, onNt, synName, authorityGrammar;
+nonterminal FlowSpecId with config, location, grammarName, errors, env, pp, onNt, synName, authorityGrammar, found;
 
 synthesized attribute synName :: String;
 synthesized attribute authorityGrammar :: String;
@@ -112,11 +112,12 @@ top::FlowSpecId ::= syn::QNameAttrOccur
   top.errors := syn.errors;
   top.synName = syn.attrDcl.fullName;
   top.authorityGrammar = syn.dcl.sourceGrammar;
+  top.found = syn.found && syn.attrDcl.isSynthesized;
   
   syn.attrFor = top.onNt;
   
   top.errors <-
-    if !null(syn.errors) || syn.attrDcl.isSynthesized then []
+    if !syn.found || syn.attrDcl.isSynthesized then []
     else [err(syn.location, syn.pp ++ " is not a synthesized attribute, and so cannot have a flow type")];
 }
 
@@ -127,6 +128,7 @@ top::FlowSpecId ::= 'forward'
   top.errors := [];
   top.synName = "forward";
   top.authorityGrammar = hackGramFromFName(top.onNt.typeName);
+  top.found = true;
 }
 
 concrete production decorateSpecId
@@ -136,6 +138,7 @@ top::FlowSpecId ::= 'decorate'
   top.errors := [];
   top.synName = "decorate";
   top.authorityGrammar = hackGramFromFName(top.onNt.typeName);
+  top.found = true;
 }
 
 
@@ -172,12 +175,12 @@ top::FlowSpecInh ::= inh::QNameAttrOccur
 {
   top.pp = inh.pp;
   top.errors := inh.errors;
-  top.inhList = if null(inh.errors) then [inh.attrDcl.fullName] else [];
+  top.inhList = if inh.found then [inh.attrDcl.fullName] else [];
   
   inh.attrFor = top.onNt;
 
   top.errors <-
-    if !null(inh.errors) || inh.attrDcl.isInherited then []
+    if !inh.found || inh.attrDcl.isInherited then []
     else [err(inh.location, inh.pp ++ " is not an inherited attribute and so cannot be within a flow type")];
 }
 
@@ -245,12 +248,12 @@ top::NtName ::= nt::QName
 {
   top.pp = nt.pp;
   top.errors :=
-    if null(nt.lookupType.errors)
+    if nt.lookupType.found
     then myCopy.errors
     else nt.lookupType.errors;
   
   top.flowDefs =
-    if null(nt.lookupType.errors)
+    if nt.lookupType.found
     then myCopy.flowDefs
     else [];
   

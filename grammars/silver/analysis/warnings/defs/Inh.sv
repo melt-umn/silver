@@ -183,7 +183,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   local lhsInhExceedsFlowType :: [String] = set:toList(set:difference(lhsInhDeps, inhDepsForSyn(attr.attrDcl.fullName, top.frame.lhsNtName, myFlow)));
 
   top.errors <-
-    if null(dl.errors ++ attr.errors)
+    if dl.found && attr.found
     && (top.config.warnAll || top.config.warnMissingInh)
     && top.frame.prodFlowGraph.isJust -- Default synthesized equations have no production graph to use
                           -- TODO: shit. is anything looking at default synthesized equations to make sure
@@ -223,7 +223,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   local lhsInhExceedsFlowType :: [String] = set:toList(set:difference(lhsInhDeps, inhDepsForSyn(attr.attrDcl.fullName, top.frame.lhsNtName, myFlow)));
 
   top.errors <-
-    if null(dl.errors ++ attr.errors)
+    if dl.found && attr.found
     && (top.config.warnAll || top.config.warnMissingInh)
     && top.frame.prodFlowGraph.isJust
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
@@ -244,7 +244,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   local lhsInhExceedsFlowType :: [String] = set:toList(set:difference(lhsInhDeps, inhDepsForSyn(attr.attrDcl.fullName, top.frame.lhsNtName, myFlow)));
 
   top.errors <-
-    if null(dl.errors ++ attr.errors)
+    if dl.found && attr.found
     && (top.config.warnAll || top.config.warnMissingInh)
     && top.frame.prodFlowGraph.isJust
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
@@ -403,7 +403,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   local depsForThisAttr :: set:Set<String> = inhDepsForSyn(at.lookupAttribute.fullName, nt.lookupType.fullName, myFlow);
 
   top.errors <-
-    if null(nt.lookupType.errors ++ at.lookupAttribute.errors)
+    if nt.lookupType.found && at.lookupAttribute.found
     && (top.config.warnAll || top.config.warnMissingInh)
     && at.lookupAttribute.dcl.isSynthesized
     then raiseImplicitFwdEqFlowTypesForAttr(top.location, at.lookupAttribute.fullName, prods, top.flowEnv, depsForThisAttr, myGraphs)
@@ -594,7 +594,7 @@ top::Expr ::= '(' '.' q::QName ')'
     if inputType.isDecorated then inhsForTakingRef(inputType.typeName, top.flowEnv) else [];
 
   top.errors <- 
-    if null(q.lookupAttribute.errors)
+    if q.lookupAttribute.found
     && (top.config.warnAll || top.config.warnMissingInh)
     then
       let inhs :: [String] = 

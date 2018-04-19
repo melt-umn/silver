@@ -386,12 +386,14 @@ function defsFromPADcls
 [Def] ::= valueDclInfos::[DclInfo] s::NamedSignature
 {
   -- We want to rewrite FROM the sig these PAs were declared with, TO the given sig
-  local attribute subst :: Substitution;
-  subst = unifyDirectional(head(valueDclInfos).typerep, s.typerep);
+  local subst :: Substitution =
+    unifyDirectional(head(valueDclInfos).typerep, s.typerep);
+  
+  local useSubst :: Substitution =
+    if !subst.failure then subst
+    else errorSubstitution(head(valueDclInfos).typerep);
   
   return if null(valueDclInfos) then []
-         else if subst.failure
-              then defsFromPADcls(tail(valueDclInfos), s) -- this can happen if the aspect sig is wrong. Error already reported. error("INTERNAL ERROR: PA subst unify error")
-              else map(performSubstitutionDef(_, subst), head(valueDclInfos).prodDefs) ++ defsFromPADcls(tail(valueDclInfos), s);
+         else map(performSubstitutionDef(_, useSubst), head(valueDclInfos).prodDefs) ++ defsFromPADcls(tail(valueDclInfos), s);
 }
 

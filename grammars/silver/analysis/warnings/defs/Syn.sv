@@ -71,7 +71,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   production prods :: [FlowDef] = getProdsOn(nt.lookupType.typerep.typeName, top.flowEnv);
 
   top.errors <-
-    if null(nt.lookupType.errors ++ at.lookupAttribute.errors)
+    if nt.lookupType.found && at.lookupAttribute.found
     && (top.config.warnAll || top.config.warnMissingSyn)
     && at.lookupAttribute.dcl.isSynthesized
     && null(lookupDef(nt.lookupType.fullName, at.lookupAttribute.fullName, top.flowEnv)) -- no default eq!
