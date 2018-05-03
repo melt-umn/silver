@@ -32,7 +32,7 @@ Within the action block must be a `pluck` statement, indicating which terminal i
 
 ### C
 
-See [Reference\_ParserAttribute]({{ "/silver/doc/ref/decl/copper/parser-attribute/" | prepend: site.sv_wiki_base }}).
+See [Reference\_ParserAttribute]({{ "/ref/decl/copper/parser-attribute/" | prepend: site.silver_base }}).
 
 ### Non-reserved words
 

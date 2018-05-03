@@ -37,7 +37,7 @@ silver/tutorials/hello$ java -jar hello.jar
 Hello, World!
 ```
 
-If you have any issues, first try the [frequently asked question page](/silver/doc/faq/) to see if there are any questions like yours.
+If you have any issues, first try the [frequently asked question page]({{ "/faq/" | prepend: site.silver_base }}) to see if there are any questions like yours.
 
 # Installing the 'silver' script
 
@@ -111,5 +111,5 @@ any generated files, which may now be stale with the new version.
 
 ## Building Silver
 
-See [here](/silver/doc/dev/building).
+See [here]({{ "/dev/building" | prepend: site.silver_base }}).
 

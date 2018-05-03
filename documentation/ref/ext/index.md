@@ -1,8 +1,9 @@
 ---
 layout: sv_wiki
 title: Silver Extensions
-menu_title: Additional Features
+menu_title: Extensions
 menu_weight: 80.0
+menu_nolink: true
 ---
 
-Various extensions to Silver.
+See navigation.

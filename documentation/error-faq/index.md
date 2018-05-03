@@ -1,6 +1,7 @@
 ---
 layout: sv_wiki
 title: Error FAQ
+menu_title: Understanding Errors
 menu_weight: 80.0
 ---
 
