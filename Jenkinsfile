@@ -4,18 +4,22 @@ library "github.com/melt-umn/jenkins-lib"
 
 melt.setProperties(overrideJars: true)
 
-node {
-try {
+melt.trynode('silver') {
   def WS = pwd()
 
   stage("Build") {
 
     checkout scm
 
-    // Bootstrap
+    // Bootstrap logic to obtain jars
     if (params.OVERRIDE_JARS != 'no') {
+      def source = params.OVERRIDE_JARS
+      if (source == 'develop') {
+        source = "${melt.SILVER_WORKSPACE}/jars"
+      }
       // Obtain jars from specified location
       sh "cp ${params.OVERRIDE_JARS}/* jars/"
+      melt.annotate("Jars overridden.")
     } else {
       // We start by obtaining normal jars, but we potentially overwrite them:
       // (This is the least annoying way to go about this...)
@@ -24,19 +28,33 @@ try {
         // For 'develop', detect pull request merges, and grab jars from the merged branch
         String branch = getMergedBranch()
         if (branch) {
-          echo "Using jars from merged branch ${branch}"
+          echo "Trying to get jars from merged branch ${branch}"
           String branchJob = "/melt-umn/silver/${hudson.Util.rawEncode(branch)}"
-          copyArtifacts(projectName: branchJob, selector: lastSuccessful(), optional: true)
+          if(melt.doesJobExist(branchJob)) {
+            try {
+              copyArtifacts(projectName: branchJob, selector: lastSuccessful())
+              melt.annotate("Jars from merged branch.")
+            } catch (hudson.AbortException exc1) {
+              // That's okay. We prefer this approach to using 'optional: true' because it
+              // lets us know whether it happened or not. The annotation only gets set when it does.
+            }
+          }
         }
       } else if (env.BRANCH_NAME != 'master') {
         // For branches, try to obtain jars from previous builds.
-        copyArtifacts(projectName: env.JOB_NAME, selector: lastSuccessful(), optional: true)
-        copyArtifacts(projectName: env.JOB_NAME, selector: lastCompleted(), optional: true)
-        // The above is our attempt to emulate "lastest build that has artifacts."
-        // It's not perfect. Essentially we're selecting jars in this priority order:
-        // 1. Last build, if it got as far as having artifacts
-        // 2. Last successful build, if it exists for this branch
-        // 3. Normal `fetch-jars`
+        try {
+          // If the last build has artifacts, use those.
+          copyArtifacts(projectName: env.JOB_NAME, selector: lastCompleted())
+          melt.annotate("Jars from branch (prev).")
+        } catch (hudson.AbortException exc2) {
+          try {
+            // If there is a last successful build, use those.
+            copyArtifacts(projectName: env.JOB_NAME, selector: lastSuccessful())
+            melt.annotate("Jars from branch (successful).")
+          } catch (hudson.AbortException exc3) {
+            // That's okay. We tried. We'll stick with fetch-jars
+          }
+        }
       }
     }
     // Build
@@ -70,56 +88,48 @@ try {
     // Projects with 'develop' as main branch, we'll try to build specific branch names if they exist
     def public_github_projects = ["ableC"]
     // Specific other jobs to build
-    def specific_jobs = ["/melt-umn/Oberon0/master", "/melt-umn/ableJ14/master", "/melt-umn/ableP/master", "/internal/ring/master", "/internal/matlab/master", "/internal/metaII/master", "/internal/simple/master"]
+    def specific_jobs = ["/melt-umn/Oberon0/master", "/melt-umn/ableJ14/master", "/internal/ring/master", "/internal/matlab/master", "/internal/metaII/master", "/internal/simple/master"]
+    // AbleP is now downstream from AbleC, so we don't need to build it here: "/melt-umn/ableP/master"
 
     def tasks = [:]
-    for (t in public_github_projects) { tasks[t] = task_project(t, WS) }
-    for (t in specific_jobs) { tasks[t] = task_job(t, WS) }
-
-    // Early deploy
-    if (env.BRANCH_NAME == 'develop') {
-      // Legacy builds don't know about SILVER_BASE,
-      // So we copy ourselves early into the default workspace, now
-      // instead of as a final deploy task later.
-      
-      // NOTE: This means some builds may fail in develop that don't fail in branch.
-      // So, uh, let's try to get rid of those legacy builds, huh?
-      
-      sh "rsync -a --exclude .git --exclude generated --exclude silver-latest.tar.gz --delete --delete-excluded ./ ${melt.SILVER_WORKSPACE}/"
-      // -a is archive mode: rlptgoD (recurse, links, perms, time, group, owner, devices)
-      // --delete  Remove files from destination not in src
-      // --delete-excluded  Remove files from dest that we're excluding
-      
-      // NOTE: we exclude generated, which means there's no generated dir in the custom
-      // location, which means if you don't set it, things should blow up.
+    for (t in public_github_projects) {
+      tasks[t] = { melt.buildProject("/melt-umn/${t}", [SILVER_BASE: WS]) }
     }
+    for (t in specific_jobs) {
+      tasks[t] = { melt.buildJob(t, [SILVER_BASE: WS]) }
+    }
+
     // Do downstream integration testing
     parallel tasks
   }
 
   if (env.BRANCH_NAME == 'develop') {
     stage("Deploy") {
+      sh "rsync -a --exclude .git --exclude generated --exclude silver-latest.tar.gz --delete --delete-excluded ./ ${melt.SILVER_WORKSPACE}/"
+      // -a is archive mode: rlptgoD (recurse, links, perms, time, group, owner, devices)
+      // --delete  Remove files from destination not in src
+      // --delete-excluded  Remove files from dest that we're excluding
+      // NOTE: we exclude generated, which means there's no generated dir in the custom
+      // location, which means if you don't set it, things should blow up.
+
       sh "cp silver-latest.tar.gz ${melt.ARTIFACTS}/"
       sh "cp jars/*.jar ${melt.ARTIFACTS}/"
     }
   }
 
-} catch(e) {
-  melt.handle(e)
-} finally {
-  melt.notify(job: "silver")
 }
-} // node
 
 // If the last commit was a pull request merge, get the name of the merged branch
-//@NonCPS // 'java.util.regex.Matcher' cannot be serialized, I guess BUT DOING THAT HAS BIZARRE EFFECTS
 def getMergedBranch() {
   String commit_msg = sh(script: "git log --format=%B -n 1 HEAD", returnStdout: true)
+  // Matcher cannot be serialized, but we can't mark this function @NonCPS because above we use 'sh'
+  // So, YOLO, we probably won't get paused before we return!
   java.util.regex.Matcher merge_branch = commit_msg =~ /^Merge pull.*from melt-umn\/(.*)/
   if (merge_branch.find()) {
     return merge_branch.group(1)
   }
 }
+
 // Test in local workspace
 def task_test(String testname, String WS) {
   return {
@@ -153,22 +163,6 @@ def task_tutorial(String tutorialpath, String WS) {
       // Blow away these generated files in our private workspace
       deleteDir()
     }
-  }
-}
-// Build project (from /melt-umn/${repo}/develop OR current branch, if it exists
-def task_project(String reponame, String WS) {
-  return {
-    def jobname = "/melt-umn/${reponame}/${hudson.Util.rawEncode(env.BRANCH_NAME)}"
-    if (env.BRANCH_NAME != 'develop' && !melt.doesJobExist(jobname)) {
-      jobname = "/melt-umn/${reponame}/develop"
-    }
-    melt.buildJob(jobname, [SILVER_BASE: WS])
-  }
-}
-// Build generic job
-def task_job(String jobname, String WS) {
-  return {
-    melt.buildJob(jobname, [SILVER_BASE: WS])
   }
 }
 
