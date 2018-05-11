@@ -24,5 +24,3 @@ export SILVER_HOME=${ME/support\/bin\/silver/}
 SILVER="$SILVER_HOME/jars/silver.composed.Default.jar"
 
 silver-custom "$SILVER" "$@"
-
-
