@@ -23,4 +23,5 @@ export SILVER_HOME=${ME/support\/bin\/silver/}
 # Find the silver jar
 SILVER="$SILVER_HOME/jars/silver.composed.Default.jar"
 
-silver-custom "$SILVER" "$@"
+# Invoke silver-custom with the found jar
+"$ME-custom" "$SILVER" "$@"
