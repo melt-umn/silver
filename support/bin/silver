@@ -23,14 +23,5 @@ export SILVER_HOME=${ME/support\/bin\/silver/}
 # Find the silver jar
 SILVER="$SILVER_HOME/jars/silver.composed.Default.jar"
 
-if [ ! -f "$SILVER" ]; then
-  echo "Couldn't find the Silver jars to execute, aborting."
-  exit 2
-fi
-
-# Set flags if not overriden in environment
-SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx2500M -Xss10M"}
-
-java $SVJVM_FLAGS -jar "$SILVER" "$@" && ant
-
-
+# Invoke silver-custom with the found jar
+"$ME-custom" "$SILVER" "$@"
