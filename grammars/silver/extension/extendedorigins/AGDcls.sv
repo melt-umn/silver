@@ -32,7 +32,7 @@ top::AGDcl ::= t::'origins' 'on' qlist::QNames ';'
             top.location,"origin"),
           botlNone(location=top.location),
           '::',
-          nominalType(
+          nominalTypeExpr(
             qNameTypeId(terminal(IdUpper_t,"NTWrapper"),
               location=top.location),
             botlNone(location=top.location),
@@ -45,7 +45,7 @@ top::AGDcl ::= t::'origins' 'on' qlist::QNames ';'
             top.location,"isNew"),
           botlNone(location=top.location),
           '::',
-          booleanType(
+          booleanTypeExpr(
             'Boolean',
             location=top.location),
           ';',
@@ -67,7 +67,7 @@ top::AGDcl ::= t::'origins' 'on' qlist::QNames ';'
           botlNone(
             location=top.location),
           '::',
-          nominalType(
+          nominalTypeExpr(
             qNameTypeId(
               terminal(IdUpper_t,"NTWrapper"),
               location=top.location),
@@ -113,7 +113,7 @@ top::AGDcl ::= t::'origins' 'on' qlist::QNames ';'
                     terminal(IdLower_t,"top"),
                     location=top.location),
                   '::',
-                  nominalType(
+                  nominalTypeExpr(
                     qNameTypeId(
                       terminal(IdUpper_t,"NTWrapper"),
                       location=top.location),
@@ -221,7 +221,7 @@ AGDcl ::= input::[QNameWithTL] t::Location
                    terminal(IdLower_t,"top"),
                    location=t),
                  '::',
-                 nominalType(
+                 nominalTypeExpr(
                    qNameTypeId(
                      terminal(IdUpper_t,"NTWrapper"),
                      location=t),
@@ -235,7 +235,7 @@ AGDcl ::= input::[QNameWithTL] t::Location
                      terminal(IdLower_t,"nt"),
                      location=t),
                    '::',
-                   nominalType(
+                   nominalTypeExpr(
                      qNameTypeId(
                        terminal(IdUpper_t,head(input).qnwtQN.name), --TODO
                        location=t),
@@ -309,7 +309,7 @@ top::NTWrapper ::= nt::___
                    terminal(IdLower_t,"top"),
                    location=t),
                  '::',
-                 nominalType(
+                 nominalTypeExpr(
                    qNameTypeId(
                      terminal(IdUpper_t,"NTWrapper"),
                      location=t),
@@ -323,7 +323,7 @@ top::NTWrapper ::= nt::___
                      terminal(IdLower_t,"nt"),
                      location=t),
                    '::',
-                   nominalType(
+                   nominalTypeExpr(
                      qNameTypeId(
                        terminal(IdUpper_t,head(tail(input)).qnwtQN.name),
                        location=t),
@@ -398,7 +398,7 @@ top::NTWrapper ::= nt::___
                              terminal(IdLower_t,"top"),
                              location=t),
                            '::',
-                           nominalType(
+                           nominalTypeExpr(
                              qNameTypeId(
                                terminal(IdUpper_t,"NTWrapper"),
                                location=t),
@@ -412,7 +412,7 @@ top::NTWrapper ::= nt::___
                                terminal(IdLower_t,"nt"),
                                location=t),
                              '::',
-                             nominalType(
+                             nominalTypeExpr(
                                qNameTypeId(
                                  terminal(IdUpper_t,head(tail(input)).qnwtQN.name),
                                  location=t),
@@ -500,7 +500,7 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
               baseExpr(
                 qNameId(
                   case t of
-                  | nominalType(qNameTypeId(id),_) ->
+                  | nominalTypeExpr(qNameTypeId(id),_) ->
                       nameIdLower(
                         terminal(IdLower_t,"ntw"++id.lexeme),
                         location=top.location)
