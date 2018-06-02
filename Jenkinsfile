@@ -73,8 +73,8 @@ melt.trynode('silver') {
     def tuts = ["simple/with_all", "simple/with_do_while", "simple/with_repeat_until", "simple/with_implication", "simple/host", "dc", "lambda", "turing", "hello"]
 
     def tasks = [:]
-    for (t in tests) { tasks[t] = task_test(t, WS) }
-    for (t in tuts) { tasks[t] = task_tutorial(t, WS) }
+    tasks << tests.collectEntries { t -> [(t): task_test(t, WS)] }
+    tasks << tuts.collectEntries { t -> [(t): task_tutorial(t, WS)] }
 
     // Unpack tarball (into ./silver-latest/) (for tutorial testing)
     sh "tar zxf silver-latest.tar.gz"
@@ -92,11 +92,11 @@ melt.trynode('silver') {
     // AbleP is now downstream from AbleC, so we don't need to build it here: "/melt-umn/ableP/master"
 
     def tasks = [:]
-    for (t in public_github_projects) {
-      tasks[t] = { melt.buildProject("/melt-umn/${t}", [SILVER_BASE: WS]) }
+    tasks << public_github_projects.collectEntries { t ->
+      [(t): { melt.buildProject("/melt-umn/${t}", [SILVER_BASE: WS]) }]
     }
-    for (t in specific_jobs) {
-      tasks[t] = { melt.buildJob(t, [SILVER_BASE: WS]) }
+    tasks << specific_jobs.collectEntries { t ->
+      [(t): { melt.buildJob(t, [SILVER_BASE: WS]) }]
     }
 
     // Do downstream integration testing
