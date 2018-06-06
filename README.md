@@ -62,6 +62,7 @@ http://melt.cs.umn.edu
 Silver is currently developed and maintained by
 
 * Ted Kaminski  (tedinski@cs.umn.edu)
+* Lucas Kramer  (krame505@cs.umn.edu)
 * Eric Van Wyk  (evw@cs.umn.edu)
 
 Past contributors include Derek Bodin, Lijesh Krishnan, and Jimin Gao.
