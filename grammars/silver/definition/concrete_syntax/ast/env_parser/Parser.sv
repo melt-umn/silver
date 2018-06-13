@@ -34,15 +34,6 @@ terminal DomTerm 'dom' lexer classes {C_1};
 
 attribute syntaxAst, parserSpecs occurs on IRoot, IRootPart;
 
---------------- i don't know yet ------------------------
-aspect production interfaceRootSpec
-top::RootSpec ::= p::IRoot _
-{
-  top.syntaxAst = p.syntaxAst;
-  top.parserSpecs = p.parserSpecs;
-}
----------------------------------------------------------
-
 aspect production aRoot1
 top::IRoot ::= r::IRootPart
 {

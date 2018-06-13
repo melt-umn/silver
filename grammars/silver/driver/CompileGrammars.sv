@@ -12,7 +12,6 @@ grammar silver:driver;
 function compileGrammars
 IOVal<[Maybe<RootSpec>]> ::=
   svParser::SVParser
-  sviParser::SVIParser
   benv::BuildEnv
   need::[String]
   clean::Boolean
@@ -22,11 +21,11 @@ IOVal<[Maybe<RootSpec>]> ::=
   
   -- Build the first gramamr in the need list.
   local now :: IOVal<Maybe<RootSpec>> =
-    compileGrammar(svParser, sviParser, benv, grammarName, clean, ioin);
+    compileGrammar(svParser, benv, grammarName, clean, ioin);
 
   -- Recurse for the rest of the grammars needed.
   local recurse :: IOVal<[Maybe<RootSpec>]> =
-    compileGrammars(svParser, sviParser, benv, tail(need), clean, now.io);
+    compileGrammars(svParser, benv, tail(need), clean, now.io);
 
   return 
     if null(need) then

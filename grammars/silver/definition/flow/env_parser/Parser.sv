@@ -33,14 +33,6 @@ terminal PatRulEqTerm    'patternRuleEq' lexer classes {C_1};
 
 attribute flowDefs occurs on IRoot, IRootPart;
 
---------------- i don't know yet ------------------------
-aspect production interfaceRootSpec
-top::RootSpec ::= p::IRoot _
-{
-  top.flowDefs = p.flowDefs;
-}
----------------------------------------------------------
-
 aspect production aRoot1
 top::IRoot ::= r::IRootPart
 {

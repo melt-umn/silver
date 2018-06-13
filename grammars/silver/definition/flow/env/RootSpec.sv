@@ -2,14 +2,38 @@ grammar silver:definition:flow:env;
 
 import silver:driver:util;
 
-attribute flowDefs occurs on RootSpec;
+attribute flowDefs occurs on RootSpec, GrammarProperties;
+
+aspect production consGrammarProperties
+top::GrammarProperties ::= h::GrammarProperty t::GrammarProperties
+{
+  top.flowDefs = fromMaybe(t.flowDefs, h.maybeFlowDefs);
+}
+
+aspect production nilGrammarProperties
+top::GrammarProperties ::=
+{
+  top.flowDefs = error("Grammar property flowDefs missing from interface file");
+}
+
+synthesized attribute maybeFlowDefs::Maybe<[FlowDef]> occurs on GrammarProperty;
+
+aspect default production
+top::GrammarProperty ::=
+{
+  top.maybeFlowDefs = nothing();
+}
+
+abstract production flowDefsGrammarProperty
+top::GrammarProperty ::= val::[FlowDef]
+{
+  top.maybeFlowDefs = just(val);
+}
 
 aspect function unparseRootSpec
 String ::= r::Decorated RootSpec
 {
-  
-  unparses <- ["flow [" ++ implode(",\n ", foldr(consFlow, nilFlow(), r.flowDefs).unparses) ++ "]"];
-  
+  grammarProperties <- [flowDefsGrammarProperty(r.flowDefs)];
 }
 
 aspect production errorRootSpec
