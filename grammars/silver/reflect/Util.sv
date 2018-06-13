@@ -35,9 +35,12 @@ function deserializeAST
 Either<String AST> ::= fileName::String text::String
 {
   local result::ParseResult<AST_c> = astParser(text, fileName);
+  local parseTree::AST_c = result.parseTree;
 
   return
-    if result.parseSuccess
-    then right(result.parseTree.ast)
-    else left(result.parseErrors);
+    if !result.parseSuccess
+    then left(result.parseErrors)
+    else if !null(parseTree.errors)
+    then left(messagesToString(parseTree.errors))
+    else right(parseTree.ast);
 }

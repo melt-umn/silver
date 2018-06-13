@@ -9,6 +9,10 @@ abstract production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {}
 
+abstract production terminalAST
+top::AST ::= terminalName::String lexeme::String location::Location
+{}
+
 abstract production listAST
 top::AST ::= vals::ASTs
 {}

@@ -20,6 +20,16 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     };
 }
 
+aspect production terminalAST
+top::AST ::= terminalName::String lexeme::String location::Location
+{
+  top.serialize =
+    do (bindEither, returnEither) {
+      locationSerialize::String <- reflect(new(location)).serialize;
+      return s"terminal(${terminalName}, \"${escapeString(lexeme)}\", ${locationSerialize})";
+    }; 
+}
+
 aspect production listAST
 top::AST ::= vals::ASTs
 {
