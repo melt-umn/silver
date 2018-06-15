@@ -201,6 +201,11 @@ public final class Reflection {
 			final StringCatter lexeme = (StringCatter)ast.getChild(1);
 			final NLocation location = (NLocation)ast.getChild(2);
 			
+			// Perform unification with the expected type
+			if (!TypeRep.unify(resultType, new BaseTypeRep(terminalName))) {
+				throw new SilverError("reify is constructing " + resultType.toString() + ", but found terminal " + terminalName + " AST.");
+			}
+			
 			// Invoke the reify function for the appropriate terminal class
 			final String[] path = terminalName.split(":");
 			path[path.length - 1] = "T" + path[path.length - 1];
