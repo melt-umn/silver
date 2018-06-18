@@ -78,8 +78,8 @@ top::Expr ::= 'reify'
 s"""(new common.NodeFactory<core.NEither>() {
 				@Override
 				public final core.NEither invoke(final Object[] args, final Object[] namedArgs) {
-					assert args.length == 1;
-					assert namedArgs.length == 0;
+					assert args != null && args.length == 1;
+					assert namedArgs == null || namedArgs.length == 0;
 					
 ${makeTyVarDecls(5, resultType.freeVariables)}
 					common.TypeRep resultType = ${resultType.transTypeRep};
