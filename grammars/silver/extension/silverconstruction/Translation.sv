@@ -25,7 +25,10 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     if
       containsBy(
         stringEq, prodName,
-        ["silver:extension:silverconstruction:escapeExpr"])
+        ["silver:extension:silverconstruction:escapeExpr",
+         "silver:extension:silverconstruction:escapeTypeExpr",
+         "silver:extension:silverconstruction:escapeQName",
+         "silver:extension:silverconstruction:escapeName"])
     then
       case children of
       | consAST(_, consAST(_, consAST(a, consAST(_, nilAST())))) ->
@@ -35,17 +38,50 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
           end
       | _ -> error(s"Unexpected escape production arguments: ${show(80, top.pp)}")
       end
-    else 
-      application(
-        baseExpr(makeQName(prodName, givenLocation), location=givenLocation),
-        '(',
-        foldAppExprs(givenLocation, reverse(children.translation)),
-        ',',
-        foldl(
-          snocAnnoAppExprs(_, ',', _, location=givenLocation),
-          emptyAnnoAppExprs(location=givenLocation),
-          reverse(annotations.translation)),
-        ')', location=givenLocation);
+    -- "Indirect" escape productions
+    else case prodName, children, annotations of
+    | "silver:extension:silverconstruction:escape_qName",
+      consAST(a, nilAST()), consNamedAST(namedAST("core:location", locAST), nilNamedAST()) ->
+        case reify(a) of
+        | right(e) ->
+            applicationExpr(
+              baseExpr(
+                makeQName("silver:extension:silverconstruction:makeQName", givenLocation),
+                location=givenLocation),
+              '(',
+              foldAppExprs(givenLocation, [e, locAST.translation]),
+              ')', location=givenLocation)
+        | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
+        end
+    | "silver:extension:silverconstruction:escape_qName", _, _ ->
+        error(s"Unexpected escape production arguments: ${show(80, top.pp)}")
+    | "silver:extension:silverconstruction:escape_name",
+      consAST(a, nilAST()), consNamedAST(namedAST("core:location", locAST), nilNamedAST()) ->
+        case reify(a) of
+        | right(e) ->
+            applicationExpr(
+              baseExpr(
+                makeQName("silver:extension:silverconstruction:makeName", givenLocation),
+                location=givenLocation),
+              '(',
+              foldAppExprs(givenLocation, [e, locAST.translation]),
+              ')', location=givenLocation)
+        | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
+        end
+    | "silver:extension:silverconstruction:escape_name", _, _ ->
+        error(s"Unexpected escape production arguments: ${show(80, top.pp)}")
+    | _, _, _ ->
+        application(
+          baseExpr(makeQName(prodName, givenLocation), location=givenLocation),
+          '(',
+          foldAppExprs(givenLocation, reverse(children.translation)),
+          ',',
+          foldl(
+            snocAnnoAppExprs(_, ',', _, location=givenLocation),
+            emptyAnnoAppExprs(location=givenLocation),
+            reverse(annotations.translation)),
+          ')', location=givenLocation)
+    end;
     
     children.givenLocation = givenLocation;
     annotations.givenLocation = givenLocation;
