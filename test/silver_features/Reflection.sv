@@ -231,7 +231,22 @@ equalityTest(reifyResToString(terminalReifyRes), lessHackyUnparse(terminalTestVa
 global reifyRes10::Either<String Baz> = reify(terminalAST("silver_features:Foo_t", "foo", txtLoc("test")));
 equalityTest(reifyResToString(reifyRes10), "Reification error at ?:\nreify is constructing silver_features:Baz, but found terminal silver_features:Foo_t AST.", String, silver_tests);
 
+global reifyRes11::Either<String Pair<String Location>> = reify(reflect(pair("asdf", 'foo')));
+equalityTest(reifyResToString(reifyRes11), "Reification error at core:pair(_, ?):\nreify is constructing core:Location, but found terminal silver_features:Foo_t AST.", String, silver_tests);
+
 equalityTest(
   case deserializeAST("test", "terminal(asdf, \"a\", core:loc(\"a\", 2, 3.14, 4, 5, 6, 7))") of left(msg) -> msg | right(a) -> show(80, a.pp) end,
   "test:1:20: error: Reification error at core:loc(_, _, ?, _, _, _, _):\nreify is constructing Integer, but found Float AST.",
+  String, silver_tests);
+
+global serializeRes1::Either<String String> = serialize(pair("hello", [1, 2, 3, 4]));
+global reifyRes12::Either<String Pair<String [Integer]>> = deserialize("test", fromRight(serializeRes1, ""));
+
+equalityTest(
+  case serializeRes1 of left(msg) -> msg | right(a) -> a end,
+  s"""core:pair("hello", [1, 2, 3, 4])""",
+  String, silver_tests);
+equalityTest(
+  reifyResToString(reifyRes12),
+  s"""core:pair("hello", [1, 2, 3, 4])""",
   String, silver_tests);

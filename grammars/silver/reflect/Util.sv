@@ -27,6 +27,12 @@ String ::= x::a
   "java" : return "(new common.StringCatter(%x%.toString()))";
 }
 
+function serialize
+Either<String String> ::= x::a
+{
+  return reflect(x).serialize;
+}
+
 parser astParser :: AST_c {
   silver:reflect:concretesyntax;
 }
