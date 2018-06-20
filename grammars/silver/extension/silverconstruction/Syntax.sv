@@ -18,6 +18,7 @@ top::Expr ::= 'Silver_Expr' LCurly_t ast::Expr RCurly_t
 concrete production escapeExpr
 top::Expr ::= '$Expr' silver:definition:core:LCurly_t e::Expr silver:definition:core:RCurly_t
 {
+  top.pp = s"$$Expr{${e.pp}}";
   forwards to
     errorExpr(
       [err(top.location, "$Expr should not occur outside of Silver_Expr")],
@@ -27,6 +28,7 @@ top::Expr ::= '$Expr' silver:definition:core:LCurly_t e::Expr silver:definition:
 concrete production escapeTypeExpr
 top::TypeExpr ::= '$TypeExpr' silver:definition:core:LCurly_t e::Expr silver:definition:core:RCurly_t
 {
+  top.pp = s"$$TypeExpr{${e.pp}}";
   forwards to
     errorTypeExpr(
       [err(top.location, "$TypeExpr should not occur outside of Silver_Expr")],
@@ -36,6 +38,7 @@ top::TypeExpr ::= '$TypeExpr' silver:definition:core:LCurly_t e::Expr silver:def
 concrete production escapeQName
 top::QName ::= '$QName' silver:definition:core:LCurly_t e::Expr silver:definition:core:RCurly_t
 {
+  top.pp = s"$$QName{${e.pp}}";
   forwards to
     qNameError(
       [err(top.location, "$QName should not occur outside of Silver_Expr")],
@@ -45,6 +48,7 @@ top::QName ::= '$QName' silver:definition:core:LCurly_t e::Expr silver:definitio
 concrete production escapeName
 top::Name ::= '$Name' silver:definition:core:LCurly_t e::Expr silver:definition:core:RCurly_t
 {
+  top.pp = s"$$Name{${e.pp}}";
   -- TODO: [err(top.location, "$Name should not occur outside of Silver_Expr")]
   forwards to name("err", top.location);
 }
@@ -52,6 +56,7 @@ top::Name ::= '$Name' silver:definition:core:LCurly_t e::Expr silver:definition:
 concrete production escape_qName
 top::QName ::= '$qName' silver:definition:core:LCurly_t e::Expr silver:definition:core:RCurly_t
 {
+  top.pp = s"$$qName{${e.pp}}";
   forwards to
     qNameError(
       [err(top.location, "$qName should not occur outside of Silver_Expr")],
@@ -61,6 +66,7 @@ top::QName ::= '$qName' silver:definition:core:LCurly_t e::Expr silver:definitio
 concrete production escape_name
 top::Name ::= '$name' silver:definition:core:LCurly_t e::Expr silver:definition:core:RCurly_t
 {
+  top.pp = s"$$name{${e.pp}}";
   -- TODO: [err(top.location, "$Name should not occur outside of Silver_Expr")]
   forwards to name("err", top.location);
 }
