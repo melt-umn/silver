@@ -185,6 +185,7 @@ synthesized attribute maybeOptionalGrammars::Maybe<[String]>;
 synthesized attribute maybeCondBuild::Maybe<[[String]]>;
 synthesized attribute maybeAllGrammarDependencies::Maybe<[String]>;
 synthesized attribute maybeDefs::Maybe<[Def]>;
+
 closed nonterminal GrammarProperty with maybeGrammarSource, maybeGrammarTime, maybeDeclaredName, maybeModuleNames, maybeExportedGrammars, maybeOptionalGrammars, maybeCondBuild, maybeAllGrammarDependencies, maybeDefs;
 
 aspect default production
@@ -277,7 +278,7 @@ String ::= r::Decorated RootSpec
   ];
   
   return
-    case reflect(foldr(consGrammarProperties, nilGrammarProperties(), grammarProperties)).serialize of
+    case serialize(foldr(consGrammarProperties, nilGrammarProperties(), grammarProperties)) of
     | left(msg) -> error("Fatal internal error generating interface file: \n" ++ show(80, reflect(foldr(consGrammarProperties, nilGrammarProperties(), grammarProperties)).pp) ++ "\n" ++ msg)
     | right(txt) -> txt
     end;

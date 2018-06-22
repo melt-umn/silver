@@ -1,7 +1,6 @@
 grammar silver:driver;
 
 import silver:reflect;
-import core:monad;
 
 function compileInterface
 IOVal<Either<String GrammarProperties>> ::= grammarName::String  genPath::String  ioin::IO
@@ -14,11 +13,7 @@ IOVal<Either<String GrammarProperties>> ::= grammarName::String  genPath::String
   local text :: IOVal<String> =
     readFile(genPath ++ file, pr);
 
-  local ir :: Either<String GrammarProperties> =
-    do (bindEither, returnEither) {
-      ast::AST <- deserializeAST(file, text.iovalue);
-      reify(ast);
-    };
+  local ir :: Either<String GrammarProperties> = deserialize(file, text.iovalue);
 
   return ioval(text.io, ir);
 }
