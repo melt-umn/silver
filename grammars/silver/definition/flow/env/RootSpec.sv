@@ -48,6 +48,12 @@ top::RootSpec ::= g::Grammar  _ _ _
   top.flowDefs = g.flowDefs;
 }
 
+aspect production interfaceRootSpec
+top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer
+{
+  top.flowDefs = p.flowDefs;
+}
+
 aspect production nilGrammar
 top::Grammar ::=
 {

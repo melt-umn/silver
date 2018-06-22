@@ -61,6 +61,13 @@ top::RootSpec ::= c1::Grammar  _ _ _
   top.parserSpecs = c1.parserSpecs;
 }
 
+aspect production interfaceRootSpec
+top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer
+{
+  top.syntaxAst = p.syntaxAst;
+  top.parserSpecs = p.parserSpecs;
+}
+
 aspect production nilGrammar
 top::Grammar ::=
 {
