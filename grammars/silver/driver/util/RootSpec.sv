@@ -5,7 +5,6 @@ import silver:langutil only pp, show;
 import silver:langutil:pp only pp, show;
 
 import silver:definition:core only Grammar, grammarErrors, grammarName, importedDefs, grammarDependencies, globalImports, Message, err;
-import silver:definition:env:env_parser only IRoot;
 import silver:definition:flow:env only flowEnv, flowDefs, fromFlowDefs;
 import silver:definition:flow:ast only nilFlow, consFlow, FlowDef;
 

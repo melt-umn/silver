@@ -1,7 +1,6 @@
 grammar silver:composed:Default;
 
 import silver:host;
-import silver:host:env;
 import silver:translation:java;
 import silver:driver;
 

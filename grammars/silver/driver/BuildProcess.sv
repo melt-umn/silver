@@ -2,7 +2,6 @@ grammar silver:driver;
 
 imports silver:definition:core;
 imports silver:definition:env;
-imports silver:definition:env:env_parser;
 
 imports silver:util;
 imports silver:util:cmdargs;

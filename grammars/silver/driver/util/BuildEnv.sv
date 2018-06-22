@@ -12,7 +12,7 @@ synthesized attribute defaultGrammarPath :: String; -- Just the stdlib, so not a
 {--
  - Build environment information.
  - Note: each of these paths always terminates with /
- - TODO: consider moving svParser, sviParser, args to this structure too?
+ - TODO: consider moving svParser, args to this structure too?
  - maybe also buildGrammar?
  -}
 abstract production buildEnv

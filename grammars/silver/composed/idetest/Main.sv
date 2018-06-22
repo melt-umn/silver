@@ -1,7 +1,6 @@
 grammar silver:composed:idetest;
 
 import silver:host;
-import silver:host:env;
 import silver:translation:java;
 import silver:driver;
 
@@ -13,13 +12,13 @@ import silver:analysis:warnings:exporting;
 import ide;
 
 -- Just re-use these parser declarations, instead of duplicating them here.
-import silver:composed:Default only svParse, sviParse;
+import silver:composed:Default only svParse;
 
 -- This function is not used by IDE
 function main 
 IOVal<Integer> ::= args::[String] ioin::IO
 {
-  return cmdLineRun(args, svParse, sviParse, ioin);
+  return cmdLineRun(args, svParse, ioin);
 }
 
 -- IDE declaration block
@@ -49,7 +48,7 @@ IOVal<[IdeMessage]> ::= project::IdeProject  args::[IdeProperty]  i::IO
 {
   local argio :: IOVal<[String]> = getArgStrings(args, project, i);
 
-  local ru :: IOVal<[IdeMessage]> = ideAnalyze(argio.iovalue, svParse, sviParse, argio.io);
+  local ru :: IOVal<[IdeMessage]> = ideAnalyze(argio.iovalue, svParse, argio.io);
 
   return ru;
 }
@@ -59,7 +58,7 @@ IOVal<[IdeMessage]> ::= project::IdeProject  args::[IdeProperty]  i::IO
 {
   local argio :: IOVal<[String]> = getArgStrings(args, project, i);
 
-  local ru :: IOVal<[IdeMessage]> = ideGenerate(argio.iovalue, svParse, sviParse, argio.io);
+  local ru :: IOVal<[IdeMessage]> = ideGenerate(argio.iovalue, svParse, argio.io);
 
   return ru;
 
