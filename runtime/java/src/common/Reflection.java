@@ -85,6 +85,9 @@ public final class Reflection {
 				annotations = new PconsNamedAST(new PnamedAST(new StringCatter(name), value), annotations);
 			}
 			return new PnonterminalAST(new StringCatter(n.getName()), children, annotations);
+		} else if(o instanceof Terminal) {
+			Terminal t = (Terminal)o;
+			return new PterminalAST(new StringCatter(t.getName()), t.lexeme, t.location);
 		} else if(o instanceof ConsCell) {
 			return new PlistAST(reflectList((ConsCell)o));
 		} else if(o instanceof StringCatter) {
@@ -178,7 +181,8 @@ public final class Reflection {
 			path[path.length - 1] = "P" + path[path.length - 1];
 			final String className = String.join(".", path);
 			try {
-				Method prodReify = Class.forName(className).getMethod("reify", TypeRep.class, NAST[].class, String[].class, NAST[].class);
+				Method prodReify =
+						((Class<Node>)Class.forName(className)).getMethod("reify", TypeRep.class, NAST[].class, String[].class, NAST[].class);
 				return prodReify.invoke(null, resultType, childASTs, annotationNames, annotationASTs);
 			} catch (ClassNotFoundException e) {
 				throw new SilverError("Undefined production " + prodName);
@@ -189,6 +193,36 @@ public final class Reflection {
 					throw (SilverException)e.getTargetException();
 				} else {
 					throw new SilverInternalError("Error invoking reify for class " + className, e.getTargetException());
+				}
+			}
+		} else if (ast.getName().equals("core:reflect:terminalAST")) {
+			// Unpack components
+			final String terminalName = ((StringCatter)ast.getChild(0)).toString();
+			final StringCatter lexeme = (StringCatter)ast.getChild(1);
+			final NLocation location = (NLocation)ast.getChild(2);
+			
+			// Perform unification with the expected type
+			if (!TypeRep.unify(resultType, new BaseTypeRep(terminalName))) {
+				throw new SilverError("reify is constructing " + resultType.toString() + ", but found terminal " + terminalName + " AST.");
+			}
+			
+			// Invoke the reify function for the appropriate terminal class
+			final String[] path = terminalName.split(":");
+			path[path.length - 1] = "T" + path[path.length - 1];
+			final String className = String.join(".", path);
+			try {
+				Constructor<Terminal> terminalConstructor =
+						((Class<Terminal>)Class.forName(className)).getConstructor(StringCatter.class, NLocation.class);
+				return terminalConstructor.newInstance(lexeme, location);
+			} catch (ClassNotFoundException e) {
+				throw new SilverError("Undefined terminal " + terminalName);
+			} catch (NoSuchMethodException | InstantiationException | IllegalAccessException e) {
+				throw new SilverInternalError("Error constructing class " + className, e);
+			} catch (InvocationTargetException e) {
+				if (e.getTargetException() instanceof SilverException) {
+					throw (SilverException)e.getTargetException();
+				} else {
+					throw new SilverInternalError("Error constructing class " + className, e.getTargetException());
 				}
 			}
 		} else if (ast.getName().equals("core:reflect:listAST")) {

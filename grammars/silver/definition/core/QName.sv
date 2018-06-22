@@ -43,6 +43,17 @@ top::QName ::= id::Name ':' qn::QName
   top.lookupAttribute = decorate customLookup("attribute", getAttrDcl(top.name, top.env), top.name, top.location) with {};
 }
 
+abstract production qNameError
+top::QName ::= msg::[Message]
+{
+  top.name = "err";
+  top.pp = "<err>";
+  
+  top.lookupValue = decorate errorLookup(msg) with {};
+  top.lookupType = decorate errorLookup(msg) with {};
+  top.lookupAttribute = decorate errorLookup(msg) with {};
+}
+
 nonterminal QNameLookup with fullName, typerep, errors, dcls, dcl, dclBoundVars, found;
 
 synthesized attribute lookupValue :: Decorated QNameLookup occurs on QName;
@@ -71,6 +82,17 @@ top::QNameLookup ::= kindOfLookup::String dcls::[DclInfo] name::String l::Locati
      else [err(l, "Undeclared " ++ kindOfLookup ++ " '" ++ name ++ "'.")]) ++
     (if length(top.dcls) <= 1 then []
      else [err(l, "Ambiguous reference to " ++ kindOfLookup ++ " '" ++ name ++ "'. Possibilities are:\n" ++ printPossibilities(top.dcls))]);
+}
+
+abstract production errorLookup
+top::QNameLookup ::= msg::[Message]
+{
+  top.dcls = [];
+  top.found = true;
+  top.fullName = "err";
+  top.typerep = errorType();
+  top.dclBoundVars = [];
+  top.errors := msg;
 }
 
 function printPossibilities

@@ -12,6 +12,12 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   top.pp = cat(text(prodName), parens(ppImplode(pp", ", children.pps ++ annotations.pps)));
 }
 
+aspect production terminalAST
+top::AST ::= terminalName::String lexeme::String location::Location
+{
+  top.pp = pp"terminal(${text(terminalName)}, \"${text(escapeString(lexeme))}\", ${text(location.unparse)})";
+}
+
 aspect production listAST
 top::AST ::= vals::ASTs
 {
