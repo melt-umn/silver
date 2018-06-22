@@ -66,6 +66,11 @@ concrete productions top::AST_c
     top.ast = listAST(foldr(consAST, nilAST(), vals.ast));
     top.errors := vals.errors;
   }
+| '[' ']'
+  {
+    top.ast = listAST(nilAST());
+    top.errors := [];
+  }
 | s::String_t
   {
     top.ast = stringAST(unescapeString(substring(1, length(s.lexeme) - 1, s.lexeme)));
