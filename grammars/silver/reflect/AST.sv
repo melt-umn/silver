@@ -25,7 +25,7 @@ top::AST ::= terminalName::String lexeme::String location::Location
 {
   top.serialize =
     do (bindEither, returnEither) {
-      locationSerialize::String <- reflect(new(location)).serialize;
+      locationSerialize::String <- serialize(new(location));
       return s"terminal(${terminalName}, \"${escapeString(lexeme)}\", ${locationSerialize})";
     }; 
 }
