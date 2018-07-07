@@ -119,14 +119,9 @@ public final class Reflection {
 	 */
 	public static NEither reifyChecked(final TypeRep resultType, final NAST ast) {
 		try {
-			return new Pright(reify(resultType, ast));
-		} catch (SilverException e) {
-			Throwable rootCause = SilverException.getRootCause(e);
-			if (rootCause instanceof SilverError) {
-				return new Pleft(new StringCatter("Reification error at " + ReifyTraceException.getASTRepr(e) + ":\n" + rootCause.getMessage()));
-			} else {
-				throw e;
-			}
+			return new Pright(reify(resultType, ast, new RootReifyTrace()));
+		} catch (ReifyException e) {
+			return new Pleft(new StringCatter(e.getMessage()));
 		}
 	}
 	
@@ -137,7 +132,7 @@ public final class Reflection {
 	 * @param ast The AST to reify.
 	 * @return The constructed object.
 	 */
-	public static Object reify(final TypeRep resultType, final NAST ast) {
+	public static Object reify(final TypeRep resultType, final NAST ast, final ReifyTrace trace) {
 		if (ast.getName().equals("core:reflect:nonterminalAST")) {
 			// Unpack production name
 			final String prodName = ((StringCatter)ast.getChild(0)).toString();
@@ -182,10 +177,10 @@ public final class Reflection {
 			final String className = String.join(".", path);
 			try {
 				Method prodReify =
-						((Class<Node>)Class.forName(className)).getMethod("reify", TypeRep.class, NAST[].class, String[].class, NAST[].class);
-				return prodReify.invoke(null, resultType, childASTs, annotationNames, annotationASTs);
+						((Class<Node>)Class.forName(className)).getMethod("reify", TypeRep.class, NAST[].class, String[].class, NAST[].class, ReifyTrace.class);
+				return prodReify.invoke(null, resultType, childASTs, annotationNames, annotationASTs, trace);
 			} catch (ClassNotFoundException e) {
-				throw new SilverError("Undefined production " + prodName);
+				throw new ReifyException(trace, "Undefined production " + prodName);
 			} catch (NoSuchMethodException | IllegalAccessException e) {
 				throw new SilverInternalError("Error invoking reify for class " + className, e);
 			} catch (InvocationTargetException e) {
@@ -203,7 +198,7 @@ public final class Reflection {
 			
 			// Perform unification with the expected type
 			if (!TypeRep.unify(resultType, new BaseTypeRep(terminalName))) {
-				throw new SilverError("reify is constructing " + resultType.toString() + ", but found terminal " + terminalName + " AST.");
+				throw new ReifyException(trace, "reify is constructing " + resultType.toString() + ", but found terminal " + terminalName + " AST.");
 			}
 			
 			// Invoke the reify function for the appropriate terminal class
@@ -215,7 +210,7 @@ public final class Reflection {
 						((Class<Terminal>)Class.forName(className)).getConstructor(StringCatter.class, NLocation.class);
 				return terminalConstructor.newInstance(lexeme, location);
 			} catch (ClassNotFoundException e) {
-				throw new SilverError("Undefined terminal " + terminalName);
+				throw new ReifyException(trace, "Undefined terminal " + terminalName);
 			} catch (NoSuchMethodException | InstantiationException | IllegalAccessException e) {
 				throw new SilverInternalError("Error constructing class " + className, e);
 			} catch (InvocationTargetException e) {
@@ -228,9 +223,9 @@ public final class Reflection {
 		} else if (ast.getName().equals("core:reflect:listAST")) {
 			final TypeRep paramType = new VarTypeRep();
 			if (!TypeRep.unify(resultType, new ListTypeRep(paramType))) {
-				throw new SilverError("reify is constructing " + resultType.toString() + ", but found list AST.");
+				throw new ReifyException(trace, "reify is constructing " + resultType.toString() + ", but found list AST.");
 			}
-			return reifyList(paramType, (NASTs)ast.getChild(0));
+			return reifyList(paramType, (NASTs)ast.getChild(0), trace);
 		} else {
 			Object givenObject = ast.getChild(0);
 			
@@ -251,26 +246,16 @@ public final class Reflection {
 			}
 			// Perform unification with the expected type
 			if (!TypeRep.unify(resultType, givenType)) {
-				throw new SilverError("reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " AST.");
+				throw new ReifyException(trace, "reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " AST.");
 			}
 			return givenObject;
 		}
 	}
 	// Recursive helper to walk the ASTs tree and build a list
-	private static ConsCell reifyList(final TypeRep resultParamType, final NASTs asts) {
+	private static ConsCell reifyList(final TypeRep resultParamType, final NASTs asts, final ReifyTrace trace) {
 		if (asts.getName().equals("core:reflect:consAST")) {
-			Object head;
-			try {
-				head = reify(resultParamType, (NAST)asts.getChild(0));
-			} catch (SilverException e) {
-				throw new ConsReifyTraceException(true, e);
-			}
-			ConsCell tail;
-			try {
-				tail = reifyList(resultParamType, (NASTs)asts.getChild(1));
-			} catch (SilverException e) {
-				throw new ConsReifyTraceException(false, e);
-			}
+			Object head = reify(resultParamType, (NAST)asts.getChild(0), new ConsReifyTrace(true, trace));
+			ConsCell tail = reifyList(resultParamType, (NASTs)asts.getChild(1), new ConsReifyTrace(false, trace));
 			return new ConsCell(head, tail);
 		} else if (asts.getName().equals("core:reflect:nilAST")) {
 			return ConsCell.nil;

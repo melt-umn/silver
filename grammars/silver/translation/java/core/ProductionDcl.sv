@@ -140,23 +140,24 @@ ${body.translation}
 		final common.TypeRep resultType,
 		final core.reflect.NAST[] childASTs,
 		final String[] annotationNames,
-		final core.reflect.NAST[] annotationASTs) {
+		final core.reflect.NAST[] annotationASTs,
+		final common.ReifyTrace trace) {
 		assert annotationNames.length == annotationASTs.length;
 ${makeAnnoIndexDcls(0, namedSig.namedInputElements)}
 ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 		
 		common.TypeRep givenType = ${namedSig.outputElement.typerep.transFreshTypeRep};
 		if (!common.TypeRep.unify(resultType, givenType)) {
-			throw new common.exceptions.SilverError("reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " production ${fName} AST.");
+			throw new common.exceptions.ReifyException(trace, "reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " production ${fName} AST.");
 		}
 		
 		if (childASTs.length != ${toString(length(namedSig.inputElements))}) {
-			throw new common.exceptions.SilverError("Production ${fName} expected ${toString(length(namedSig.inputElements))} child(ren), but got " + childASTs.length + ".");
+			throw new common.exceptions.ReifyException(trace, "Production ${fName} expected ${toString(length(namedSig.inputElements))} child(ren), but got " + childASTs.length + ".");
 		}
 		
 		String[] expectedAnnotationNames = new String[] {${implode(", ", map((.annoNameElem), annotationsForNonterminal(namedSig.outputElement.typerep, top.env)))}};
 		if (!java.util.Arrays.equals(annotationNames, expectedAnnotationNames)) {
-			throw new common.exceptions.SilverError("Production ${fName} expected " + common.Util.namesToString(expectedAnnotationNames, "no") + " annotation(s), but got " + common.Util.namesToString(annotationNames, "none") + ".");
+			throw new common.exceptions.ReifyException(trace, "Production ${fName} expected " + common.Util.namesToString(expectedAnnotationNames, "no") + " annotation(s), but got " + common.Util.namesToString(annotationNames, "none") + ".");
 		}
 		
 		${implode("\n\t\t", map(makeChildReify(fName, length(namedSig.inputElements), _), namedSig.inputElements))}

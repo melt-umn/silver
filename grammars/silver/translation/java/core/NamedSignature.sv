@@ -152,24 +152,14 @@ function makeChildReify
 String ::= fn::String numChildren::Integer n::NamedSignatureElement
 {
   return
-s"""Object ${n.childRefElem} = null;
-		try {
-			${n.childRefElem} = common.Reflection.reify(${n.typerep.transFreshTypeRep}, childASTs[i_${n.elementName}]);
-		} catch (common.exceptions.SilverException e) {
-			throw new common.exceptions.ChildReifyTraceException("${fn}", "${n.elementName}", ${toString(numChildren)}, i_${n.elementName}, e);
-		}
+s"""Object ${n.childRefElem} = common.Reflection.reify(${n.typerep.transFreshTypeRep}, childASTs[i_${n.elementName}], new common.ChildReifyTrace("${fn}", "${n.elementName}", ${toString(numChildren)}, i_${n.elementName}, trace));
 """;
 }
 function makeAnnoReify
 String ::= fn::String n::NamedSignatureElement
 {
   return
-s"""Object ${n.annoRefElem} = null;
-		try {
-			${n.annoRefElem} = common.Reflection.reify(${n.typerep.transFreshTypeRep}, annotationASTs[i${n.annoRefElem}]);
-		} catch (common.exceptions.SilverException e) {
-			throw new common.exceptions.AnnotationReifyTraceException("${fn}", "${n.elementName}", e);
-		}
+s"""Object ${n.annoRefElem} = common.Reflection.reify(${n.typerep.transFreshTypeRep}, annotationASTs[i${n.annoRefElem}], new common.AnnotationReifyTrace("${fn}", "${n.elementName}", trace));
 """;
 }
 

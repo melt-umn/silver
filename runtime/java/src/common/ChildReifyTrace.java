@@ -1,18 +1,18 @@
-package common.exceptions;
+package common;
 
 /**
- * Reify trace exception for tracing an error caused by a child.  
+ * Reify trace for representing a child.  
  * 
  * @author krame505
  */
-public class ChildReifyTraceException extends ReifyTraceException {
+public class ChildReifyTrace extends ReifyTrace {
 	public final String prodName;
 	public final String childName;
 	public final int numChildren;
 	public final int childIndex;
 	
-	public ChildReifyTraceException(final String prodName, final String childName, final int numChildren, final int childIndex, Throwable t) {
-		super("While reifying child '" + childName + "' of production '" + prodName + "'", t);
+	public ChildReifyTrace(final String prodName, final String childName, final int numChildren, final int childIndex, final ReifyTrace parent) {
+		super(parent);
 		this.prodName = prodName;
 		this.childName = childName;
 		this.numChildren = numChildren;
@@ -20,18 +20,18 @@ public class ChildReifyTraceException extends ReifyTraceException {
 	}
 	
 	@Override
-	protected final String getASTRepr() {
+	protected final String toString(final String childToString) {
 		String result = prodName + "(";
 		int i = 0;
 		for (; i < childIndex; i++) {
 			result += "_, ";
 		}
-		result += getASTRepr(getCause());
+		result += childToString;
 		i++;
 		for (; i < numChildren; i++) {
 			result += ", _";
 		}
 		result += ")";
-		return result;
+		return parent.toString(result);
 	}
 }
