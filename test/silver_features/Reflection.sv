@@ -250,13 +250,18 @@ equalityTest(
   String, silver_tests);
 
 global serializeRes1::Either<String String> = serialize(pair("hello", [1, 2, 3, 4]));
-global reifyRes12::Either<String Pair<String [Integer]>> = deserialize("test", fromRight(serializeRes1, ""));
+global deserializeRes1::Either<String Pair<String [Integer]>> = deserialize("test", fromRight(serializeRes1, ""));
+global deserializeRes2::Either<String Pair<String [Integer]>> = deserializeLazy("test", fromRight(serializeRes1, ""));
 
 equalityTest(
   case serializeRes1 of left(msg) -> msg | right(a) -> a end,
   s"""core:pair("hello", [1, 2, 3, 4])""",
   String, silver_tests);
 equalityTest(
-  reifyResToString(reifyRes12),
+  reifyResToString(deserializeRes1),
+  s"""core:pair("hello", [1, 2, 3, 4])""",
+  String, silver_tests);
+equalityTest(
+  reifyResToString(deserializeRes2),
   s"""core:pair("hello", [1, 2, 3, 4])""",
   String, silver_tests);
