@@ -67,9 +67,19 @@ equalityTest(
   reifyResToString(reify(reflect([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]))),
   lessHackyUnparse([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]),
   String, silver_tests);
+  
+equalityTest(
+  lessHackyUnparse(reifyLazy(reflect([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]))),
+  lessHackyUnparse([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]),
+  String, silver_tests);
 
 equalityTest(
   reifyResToString(reify(reflect(pair(pair(1, 2), pair(3, 4))))),
+  lessHackyUnparse(pair(pair(1, 2), pair(3, 4))),
+  String, silver_tests);
+
+equalityTest(
+  lessHackyUnparse(reifyLazy(reflect(pair(pair(1, 2), pair(3, 4))))),
   lessHackyUnparse(pair(pair(1, 2), pair(3, 4))),
   String, silver_tests);
 

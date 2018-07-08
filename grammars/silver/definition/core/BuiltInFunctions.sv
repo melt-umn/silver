@@ -78,6 +78,15 @@ top::Expr ::= 'toString' '(' e::Expr ')'
   top.typerep = stringType();
 }
 
+concrete production reifyLazyFunctionLiteral
+top::Expr ::= 'reifyLazy'
+{
+  top.pp = "reifyLazy";
+
+  top.errors := [];
+  top.typerep = functionType(varType(freshTyVar()), [nonterminalType("core:reflect:AST", [])], []);
+}
+
 concrete production reifyFunctionLiteral
 top::Expr ::= 'reify'
 {

@@ -62,6 +62,7 @@ terminal ToFloat_kwd   'toFloat'   lexer classes {BUILTIN,RESERVED};
 terminal ToInt_kwd     'toInt'     lexer classes {BUILTIN,RESERVED}; -- Legacy
 terminal ToInteger_kwd 'toInteger' lexer classes {BUILTIN,RESERVED};
 terminal ToString_kwd  'toString'  lexer classes {BUILTIN,RESERVED};
+terminal ReifyLazy_kwd 'reifyLazy' lexer classes {BUILTIN,RESERVED};
 terminal Reify_kwd     'reify'     lexer classes {BUILTIN,RESERVED};
 
 terminal Comma_t       ','  precedence = 4;

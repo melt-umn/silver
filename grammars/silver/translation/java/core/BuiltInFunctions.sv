@@ -62,6 +62,37 @@ top::Expr ::= 'toString' '(' e::Expr ')'
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
+aspect production reifyLazyFunctionLiteral
+top::Expr ::= 'reifyLazy'
+{
+  local resultType::Type = finalType(top).outputType;
+  
+  -- In the unusual case that we have a skolems in the result type, we can't generalize them, but
+  -- we also can't do any better, so leave the runtime result TypeRep unfreshened.
+  -- There is a similar problem with lambdas.
+  top.translation =
+s"""(new common.NodeFactory() {
+				@Override
+				public final Object invoke(final Object[] args, final Object[] namedArgs) {
+					assert args != null && args.length == 1;
+					assert namedArgs == null || namedArgs.length == 0;
+					
+${makeTyVarDecls(5, resultType.freeVariables)}
+					common.TypeRep resultType = ${resultType.transTypeRep};
+					
+					return common.Reflection.reifyLazy(resultType, (core.reflect.NAST)common.Util.demand(args[0]));
+				}
+				
+				@Override
+				public final common.FunctionTypeRep getType() {
+${makeTyVarDecls(5, finalType(top).freeVariables)}
+					return ${finalType(top).transTypeRep};
+				}
+			})""";
+  
+  top.lazyTranslation = top.translation;
+}
+
 aspect production reifyFunctionLiteral
 top::Expr ::= 'reify'
 {
@@ -84,7 +115,7 @@ s"""(new common.NodeFactory<core.NEither>() {
 ${makeTyVarDecls(5, resultType.freeVariables)}
 					common.TypeRep resultType = ${resultType.transTypeRep};
 					
-					return common.Reflection.reifyChecked(resultType, (core.reflect.NAST)common.Util.demand(args[0]));
+					return common.Reflection.reify(resultType, (core.reflect.NAST)common.Util.demand(args[0]));
 				}
 				
 				@Override

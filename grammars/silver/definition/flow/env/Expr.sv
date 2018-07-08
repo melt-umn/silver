@@ -567,6 +567,13 @@ top::Expr ::= 'toString' '(' e1::Expr ')'
   top.flowDefs = e1.flowDefs;
 }
 
+aspect production reifyLazyFunctionLiteral
+top::Expr ::= 'reifyLazy'
+{
+  top.flowDeps = [];
+  top.flowDefs = [];
+}
+
 aspect production reifyFunctionLiteral
 top::Expr ::= 'reify'
 {

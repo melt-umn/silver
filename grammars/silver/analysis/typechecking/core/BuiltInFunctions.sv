@@ -65,6 +65,12 @@ top::Expr ::= 'toString' '(' e1::Expr ')'
        else [err(top.location, "Operand to toString must be concrete types String, Integer, Float, or Boolean.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
+aspect production reifyLazyFunctionLiteral
+top::Expr ::= 'reifyLazy'
+{
+  top.upSubst = top.downSubst;
+}
+
 aspect production reifyFunctionLiteral
 top::Expr ::= 'reify'
 {

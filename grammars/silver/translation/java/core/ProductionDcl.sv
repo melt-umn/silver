@@ -141,7 +141,8 @@ ${body.translation}
 		final core.reflect.NAST[] childASTs,
 		final String[] annotationNames,
 		final core.reflect.NAST[] annotationASTs,
-		final common.ReifyTrace trace) {
+		final common.ReifyTrace trace,
+		final boolean lazy) {
 		assert annotationNames.length == annotationASTs.length;
 ${makeAnnoIndexDcls(0, namedSig.namedInputElements)}
 ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
