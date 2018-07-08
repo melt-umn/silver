@@ -120,7 +120,8 @@ public final class Reflection {
 	 * @return An Either<String a> object containing either an error message or a constructed object. 
 	 */
 	public static Object reifyLazy(final TypeRep resultType, final NAST ast) {
-		return reify(resultType, ast, new RootReifyTrace(), true);
+		// We know we are always getting back a Thunk, do the first step of evaluation
+		return ((Thunk)reify(resultType, ast, new RootReifyTrace(), true)).eval();
 	}
 	
 	/**
