@@ -22,16 +22,16 @@ public final class Reflection {
 	 * @return The type of the object.
 	 */
 	public static TypeRep getType(final Object o) {
-		if(o instanceof Typed){
-			return ((Typed)o).getType();
-		} else if(o instanceof Integer) {
+		if(o instanceof Integer) {
 			return new BaseTypeRep("Integer");
 		} else if(o instanceof Float) {
 			return new BaseTypeRep("Float");
 		} else if(o instanceof Boolean) {
 			return new BaseTypeRep("Boolean");
+		} else if(o instanceof Typed){
+			return ((Typed)o).getType();
 		} else if(o instanceof Thunk) {
-			return getType(((Thunk)o).eval());
+			throw new SilverInternalError("Runtime type of an unevaluated Thunk should never be demanded.");
 		} else {
 			// Not an internal error, since foreign types not implementing Typed will trigger this
 			throw new SilverError("Runtime type checking of object requires class " + o.getClass().getName() + " to implement Typed.");
@@ -47,16 +47,16 @@ public final class Reflection {
 	 */
 	public static NMaybe reflectTypeName(final Object o) {
 		String result;
-		if(o instanceof Typed){
-			result = ((Typed)o).getType().toString();
-		} else if(o instanceof Integer) {
+		if(o instanceof Integer) {
 			result = "Integer";
 		} else if(o instanceof Float) {
 			result = "Float";
 		} else if(o instanceof Boolean) {
 			result = "Boolean";
+		} else if(o instanceof Typed){
+			result = ((Typed)o).getType().toString();
 		} else if(o instanceof Thunk) {
-			return reflectTypeName(((Thunk)o).eval());
+			throw new SilverInternalError("Runtime type of an unevaluated Thunk should never be demanded.");
 		} else {
 			return new Pnothing();
 		}
@@ -99,7 +99,7 @@ public final class Reflection {
 		} else if(o instanceof Boolean) {
 			return new PbooleanAST((Boolean)o);
 		} else if(o instanceof Thunk) {
-			return reflect(((Thunk)o).eval());
+			throw new SilverInternalError("Thunks should never be reflected.");
 		} else {
 			return new PanyAST(o);
 		}
@@ -120,8 +120,7 @@ public final class Reflection {
 	 * @return An Either<String a> object containing either an error message or a constructed object. 
 	 */
 	public static Object reifyLazy(final TypeRep resultType, final NAST ast) {
-		// We know we are always getting back a Thunk, do the first step of evaluation
-		return ((Thunk)reify(resultType, ast, new RootReifyTrace(), true)).eval();
+		return reify(resultType, ast, new RootReifyTrace(), true);
 	}
 	
 	/**
@@ -149,143 +148,137 @@ public final class Reflection {
 	 * @return The constructed object.
 	 */
 	public static Object reify(final TypeRep resultType, final NAST ast, final ReifyTrace trace, final boolean lazy) {
-		Thunk.Evaluable cont = () -> {
-			if (ast.getName().equals("core:reflect:nonterminalAST")) {
-				// Unpack production name
-				final String prodName = ((StringCatter)ast.getChild(0)).toString();
-				
-				// Unpack children
-				final List<NAST> childASTList = new ArrayList<>(5);
-				for (NASTs current = (NASTs)ast.getChild(1); !current.getName().equals("core:reflect:nilAST"); current = (NASTs)current.getChild(1)) {
-					childASTList.add((NAST)current.getChild(0));
-				}
-				final NAST[] childASTs = childASTList.toArray(new NAST[childASTList.size()]);
-				
-				// Unpack annotations
-				class AnnotationEntry implements Comparable<AnnotationEntry> {
-				    public final String name;
-				    public final NAST ast;
-	
-				    public AnnotationEntry(String name, NAST ast) {
-				        this.name = name;
-				        this.ast = ast;
-				    }
-	
-				    public int compareTo(AnnotationEntry other) {
-				        return name.compareTo(other.name);
-				    }
-				}
-				final List<AnnotationEntry> annotationASTList = new ArrayList<>();
-				for (NNamedASTs current = (NNamedASTs)ast.getChild(2); !current.getName().equals("core:reflect:nilNamedAST"); current = (NNamedASTs)current.getChild(1)) {
-					NNamedAST item = (NNamedAST)current.getChild(0);
-					annotationASTList.add(new AnnotationEntry(item.getChild(0).toString(), (NAST)item.getChild(1)));
-				}
-				Collections.sort(annotationASTList);
-				final String[] annotationNames = new String[annotationASTList.size()];
-				final NAST[] annotationASTs = new NAST[annotationASTList.size()];
-				for (int i = 0; i < annotationASTList.size(); i++) {
-					annotationNames[i] = annotationASTList.get(i).name;
-					annotationASTs[i] = annotationASTList.get(i).ast;
-				}
-				
-				// Invoke the reify function for the appropriate production class
-				final String[] path = prodName.split(":");
-				path[path.length - 1] = "P" + path[path.length - 1];
-				final String className = String.join(".", path);
-				try {
-					Method prodReify = ((Class<Node>)Class.forName(className)).getMethod(
-							"reify",
-							TypeRep.class,
-							NAST[].class, String[].class, NAST[].class,
-							ReifyTrace.class, boolean.class);
-					return prodReify.invoke(null, resultType, childASTs, annotationNames, annotationASTs, trace, lazy);
-				} catch (ClassNotFoundException e) {
-					throw new ReifyException(trace, "Undefined production " + prodName);
-				} catch (NoSuchMethodException | IllegalAccessException e) {
-					throw new SilverInternalError("Error invoking reify for class " + className, e);
-				} catch (InvocationTargetException e) {
-					if (e.getTargetException() instanceof SilverException) {
-						throw (SilverException)e.getTargetException();
-					} else {
-						throw new SilverInternalError("Error invoking reify for class " + className, e.getTargetException());
-					}
-				}
-			} else if (ast.getName().equals("core:reflect:terminalAST")) {
-				// Unpack components
-				final String terminalName = ((StringCatter)ast.getChild(0)).toString();
-				final StringCatter lexeme = (StringCatter)ast.getChild(1);
-				final NLocation location = (NLocation)ast.getChild(2);
-				
-				// Perform unification with the expected type
-				if (!TypeRep.unify(resultType, new BaseTypeRep(terminalName))) {
-					throw new ReifyException(trace, "reify is constructing " + resultType.toString() + ", but found terminal " + terminalName + " AST.");
-				}
-				
-				// Invoke the reify function for the appropriate terminal class
-				final String[] path = terminalName.split(":");
-				path[path.length - 1] = "T" + path[path.length - 1];
-				final String className = String.join(".", path);
-				try {
-					Constructor<Terminal> terminalConstructor =
-							((Class<Terminal>)Class.forName(className)).getConstructor(StringCatter.class, NLocation.class);
-					return terminalConstructor.newInstance(lexeme, location);
-				} catch (ClassNotFoundException e) {
-					throw new ReifyException(trace, "Undefined terminal " + terminalName);
-				} catch (NoSuchMethodException | InstantiationException | IllegalAccessException e) {
-					throw new SilverInternalError("Error constructing class " + className, e);
-				} catch (InvocationTargetException e) {
-					if (e.getTargetException() instanceof SilverException) {
-						throw (SilverException)e.getTargetException();
-					} else {
-						throw new SilverInternalError("Error constructing class " + className, e.getTargetException());
-					}
-				}
-			} else if (ast.getName().equals("core:reflect:listAST")) {
-				final TypeRep paramType = new VarTypeRep();
-				if (!TypeRep.unify(resultType, new ListTypeRep(paramType))) {
-					throw new ReifyException(trace, "reify is constructing " + resultType.toString() + ", but found list AST.");
-				}
-				return reifyList(paramType, (NASTs)ast.getChild(0), trace, lazy);
-			} else {
-				Object givenObject = ast.getChild(0);
-				
-				// Construct the TypeRep correpsonding to the given object
-				TypeRep givenType;
-				if (ast.getName().equals("core:reflect:stringAST")) {
-					givenType = new BaseTypeRep("String");
-				} else if (ast.getName().equals("core:reflect:integerAST")) {
-					givenType = new BaseTypeRep("Integer");
-				} else if (ast.getName().equals("core:reflect:floatAST")) {
-					givenType = new BaseTypeRep("Float");
-				} else if (ast.getName().equals("core:reflect:booleanAST")) {
-					givenType = new BaseTypeRep("Boolean");
-				} else if (ast.getName().equals("core:reflect:anyAST")) {
-					givenType = getType(givenObject);
-				} else {
-					throw new SilverInternalError("Unexpected AST production " + ast.getName());
-				}
-				// Perform unification with the expected type
-				if (!TypeRep.unify(resultType, givenType)) {
-					throw new ReifyException(trace, "reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " AST.");
-				}
-				return givenObject;
+		if (ast.getName().equals("core:reflect:nonterminalAST")) {
+			// Unpack production name
+			final String prodName = ((StringCatter)ast.getChild(0)).toString();
+			
+			// Unpack children
+			final List<NAST> childASTList = new ArrayList<>(5);
+			for (NASTs current = (NASTs)ast.getChild(1); !current.getName().equals("core:reflect:nilAST"); current = (NASTs)current.getChild(1)) {
+				childASTList.add((NAST)current.getChild(0));
 			}
-		};
-		return lazy? new Thunk(cont) : cont.eval();
+			final NAST[] childASTs = childASTList.toArray(new NAST[childASTList.size()]);
+			
+			// Unpack annotations
+			class AnnotationEntry implements Comparable<AnnotationEntry> {
+			    public final String name;
+			    public final NAST ast;
+
+			    public AnnotationEntry(String name, NAST ast) {
+			        this.name = name;
+			        this.ast = ast;
+			    }
+
+			    public int compareTo(AnnotationEntry other) {
+			        return name.compareTo(other.name);
+			    }
+			}
+			final List<AnnotationEntry> annotationASTList = new ArrayList<>();
+			for (NNamedASTs current = (NNamedASTs)ast.getChild(2); !current.getName().equals("core:reflect:nilNamedAST"); current = (NNamedASTs)current.getChild(1)) {
+				NNamedAST item = (NNamedAST)current.getChild(0);
+				annotationASTList.add(new AnnotationEntry(item.getChild(0).toString(), (NAST)item.getChild(1)));
+			}
+			Collections.sort(annotationASTList);
+			final String[] annotationNames = new String[annotationASTList.size()];
+			final NAST[] annotationASTs = new NAST[annotationASTList.size()];
+			for (int i = 0; i < annotationASTList.size(); i++) {
+				annotationNames[i] = annotationASTList.get(i).name;
+				annotationASTs[i] = annotationASTList.get(i).ast;
+			}
+			
+			// Invoke the reify function for the appropriate production class
+			final String[] path = prodName.split(":");
+			path[path.length - 1] = "P" + path[path.length - 1];
+			final String className = String.join(".", path);
+			try {
+				Method prodReify = ((Class<Node>)Class.forName(className)).getMethod(
+						"reify",
+						TypeRep.class,
+						NAST[].class, String[].class, NAST[].class,
+						ReifyTrace.class, boolean.class);
+				return prodReify.invoke(null, resultType, childASTs, annotationNames, annotationASTs, trace, lazy);
+			} catch (ClassNotFoundException e) {
+				throw new ReifyException(trace, "Undefined production " + prodName);
+			} catch (NoSuchMethodException | IllegalAccessException e) {
+				throw new SilverInternalError("Error invoking reify for class " + className, e);
+			} catch (InvocationTargetException e) {
+				if (e.getTargetException() instanceof SilverException) {
+					throw (SilverException)e.getTargetException();
+				} else {
+					throw new SilverInternalError("Error invoking reify for class " + className, e.getTargetException());
+				}
+			}
+		} else if (ast.getName().equals("core:reflect:terminalAST")) {
+			// Unpack components
+			final String terminalName = ((StringCatter)ast.getChild(0)).toString();
+			final StringCatter lexeme = (StringCatter)ast.getChild(1);
+			final NLocation location = (NLocation)ast.getChild(2);
+			
+			// Perform unification with the expected type
+			if (!TypeRep.unify(resultType, new BaseTypeRep(terminalName))) {
+				throw new ReifyException(trace, "reify is constructing " + resultType.toString() + ", but found terminal " + terminalName + " AST.");
+			}
+			
+			// Invoke the reify function for the appropriate terminal class
+			final String[] path = terminalName.split(":");
+			path[path.length - 1] = "T" + path[path.length - 1];
+			final String className = String.join(".", path);
+			try {
+				Constructor<Terminal> terminalConstructor =
+						((Class<Terminal>)Class.forName(className)).getConstructor(StringCatter.class, NLocation.class);
+				return terminalConstructor.newInstance(lexeme, location);
+			} catch (ClassNotFoundException e) {
+				throw new ReifyException(trace, "Undefined terminal " + terminalName);
+			} catch (NoSuchMethodException | InstantiationException | IllegalAccessException e) {
+				throw new SilverInternalError("Error constructing class " + className, e);
+			} catch (InvocationTargetException e) {
+				if (e.getTargetException() instanceof SilverException) {
+					throw (SilverException)e.getTargetException();
+				} else {
+					throw new SilverInternalError("Error constructing class " + className, e.getTargetException());
+				}
+			}
+		} else if (ast.getName().equals("core:reflect:listAST")) {
+			final TypeRep paramType = new VarTypeRep();
+			if (!TypeRep.unify(resultType, new ListTypeRep(paramType))) {
+				throw new ReifyException(trace, "reify is constructing " + resultType.toString() + ", but found list AST.");
+			}
+			return reifyList(paramType, (NASTs)ast.getChild(0), trace, lazy);
+		} else {
+			Object givenObject = ast.getChild(0);
+			
+			// Construct the TypeRep correpsonding to the given object
+			TypeRep givenType;
+			if (ast.getName().equals("core:reflect:stringAST")) {
+				givenType = new BaseTypeRep("String");
+			} else if (ast.getName().equals("core:reflect:integerAST")) {
+				givenType = new BaseTypeRep("Integer");
+			} else if (ast.getName().equals("core:reflect:floatAST")) {
+				givenType = new BaseTypeRep("Float");
+			} else if (ast.getName().equals("core:reflect:booleanAST")) {
+				givenType = new BaseTypeRep("Boolean");
+			} else if (ast.getName().equals("core:reflect:anyAST")) {
+				givenType = getType(givenObject);
+			} else {
+				throw new SilverInternalError("Unexpected AST production " + ast.getName());
+			}
+			// Perform unification with the expected type
+			if (!TypeRep.unify(resultType, givenType)) {
+				throw new ReifyException(trace, "reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " AST.");
+			}
+			return givenObject;
+		}
 	}
 	// Recursive helper to walk the ASTs tree and build a list
-	private static Object reifyList(final TypeRep resultParamType, final NASTs asts, final ReifyTrace trace, boolean lazy) {
-		Thunk.Evaluable<ConsCell> cont = () -> {
-			if (asts.getName().equals("core:reflect:consAST")) {
-				Object head = reify(resultParamType, (NAST)asts.getChild(0), new ConsReifyTrace(true, trace), lazy);
-				Object tail = reifyList(resultParamType, (NASTs)asts.getChild(1), new ConsReifyTrace(false, trace), lazy);
-				return new ConsCell(head, tail);
-			} else if (asts.getName().equals("core:reflect:nilAST")) {
-				return ConsCell.nil;
-			} else {
-				throw new SilverInternalError("Unexpected ASTs production " + asts.getName());
-			}
-		};
-		return lazy? new Thunk(cont) : cont.eval();
+	private static ConsCell reifyList(final TypeRep resultParamType, final NASTs asts, final ReifyTrace trace, boolean lazy) {
+		if (asts.getName().equals("core:reflect:consAST")) {
+			Thunk.Evaluable<Object> head = () -> reify(resultParamType, (NAST)asts.getChild(0), new ConsReifyTrace(true, trace), lazy);
+			Thunk.Evaluable<ConsCell> tail = () -> reifyList(resultParamType, (NASTs)asts.getChild(1), new ConsReifyTrace(false, trace), lazy);
+			return new ConsCell(Thunk.maybeLazy(head, lazy), Thunk.maybeLazy(tail, lazy));
+		} else if (asts.getName().equals("core:reflect:nilAST")) {
+			return ConsCell.nil;
+		} else {
+			throw new SilverInternalError("Unexpected ASTs production " + asts.getName());
+		}
 	}
 }

@@ -152,14 +152,14 @@ function makeChildReify
 String ::= fn::String numChildren::Integer n::NamedSignatureElement
 {
   return
-s"""Object ${n.childRefElem} = common.Reflection.reify(${n.typerep.transFreshTypeRep}, childASTs[i_${n.elementName}], new common.ChildReifyTrace("${fn}", "${n.elementName}", ${toString(numChildren)}, i_${n.elementName}, trace), lazy);
+s"""Object ${n.childRefElem} = common.Thunk.maybeLazy(() -> common.Reflection.reify(${n.typerep.transFreshTypeRep}, childASTs[i_${n.elementName}], new common.ChildReifyTrace("${fn}", "${n.elementName}", ${toString(numChildren)}, i_${n.elementName}, trace), lazy), lazy);
 """;
 }
 function makeAnnoReify
 String ::= fn::String n::NamedSignatureElement
 {
   return
-s"""Object ${n.annoRefElem} = common.Reflection.reify(${n.typerep.transFreshTypeRep}, annotationASTs[i${n.annoRefElem}], new common.AnnotationReifyTrace("${fn}", "${n.elementName}", trace), lazy);
+s"""Object ${n.annoRefElem} = common.Thunk.maybeLazy(() -> common.Reflection.reify(${n.typerep.transFreshTypeRep}, annotationASTs[i${n.annoRefElem}], new common.AnnotationReifyTrace("${fn}", "${n.elementName}", trace), lazy), lazy);
 """;
 }
 

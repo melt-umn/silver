@@ -35,6 +35,18 @@ public class Thunk<T> {
 	}
 	
 	/**
+	 * Either evaluate e, or wrap it in a Thunk.  Common idiom when whether we want to be
+	 * lazy is determined by a boolean flag.
+	 * 
+	 * @param e  An Evaluable to evaluate or wrap in a Thunk
+	 * @param lazy  True if e should be wrapped in a Thunk
+	 * @return Either a Thunk wrapping e or the result of evaluating e
+	 */
+	public static Object maybeLazy(final Evaluable<?> e, final boolean lazy) {
+		return lazy? new Thunk(e) : e.eval();
+	}
+	
+	/**
 	 * Take a Thunk evaluating to a DecoratedNode, and undecorates it.
 	 * 
 	 * @param t  Either a DecoratedNode or a Thunk<DecoratedNode>
