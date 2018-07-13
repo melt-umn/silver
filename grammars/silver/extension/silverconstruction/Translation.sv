@@ -9,7 +9,14 @@ Expr ::= loc::Location ast::AST
   return ast.translation;
 }
 
+{--
+ - This attribute transforms an AST representing a piece of Silver code into a Silver
+ - Expr constructing the abstract syntax of that code.  Escape productions wrapping
+ - Silver Exprs that should be included directly in the translation are handled
+ - specially by reifying their contents.
+ -}
 synthesized attribute translation<a>::a;
+
 synthesized attribute foundLocation::Maybe<Location>;
 autocopy attribute givenLocation::Location;
 
