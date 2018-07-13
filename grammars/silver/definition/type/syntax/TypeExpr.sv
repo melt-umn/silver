@@ -33,6 +33,18 @@ function addNewLexicalTyVars
                   addNewLexicalTyVars(gn, sl, tail(l));
 }
 
+abstract production errorTypeExpr
+top::TypeExpr ::= e::[Message]
+{
+  top.pp = s"{- Errors:\n${foldMessages(e)} -}";
+  
+  top.typerep = errorType();
+  
+  top.errors := e;
+  
+  top.lexicalTypeVariables = [];
+}
+
 abstract production typerepTypeExpr
 top::TypeExpr ::= t::Type
 {
