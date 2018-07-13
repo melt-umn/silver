@@ -8,6 +8,16 @@ imports silver:modification:let_fix;
 
 terminal Deserialize_kwd 'deserialize' lexer classes {BUILTIN,RESERVED};
 
+{--
+ - This production deserializes a string to what it represents, in contrast to
+ - `reify` which "deserializes" an `AST` to what it represents, and in contrast to
+ - `deserializeAST` which deserializes a string to an `AST`.
+ - i.e. this function is `reify . deserializeAST` so to speak.
+ -
+ - This also has to be a built-in function because reification requires an
+ - explicit concrete type at its call site, which makes it difficult to write ordinary
+ - functions for. Something we might someday be able to solve with a typeclass?
+-}
 concrete production deserializeFunction
 top::Expr ::= 'deserialize' '(' fileName::Expr ',' text::Expr ')'
 {

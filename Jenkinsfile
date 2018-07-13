@@ -15,7 +15,7 @@ melt.trynode('silver') {
     if (params.OVERRIDE_JARS != 'no') {
       def source = params.OVERRIDE_JARS
       if (source == 'develop') {
-        source = "${melt.SILVER_WORKSPACE}/jars"
+        source = "${silver.SILVER_WORKSPACE}/jars"
       }
       // Obtain jars from specified location
       sh "cp ${params.OVERRIDE_JARS}/* jars/"
@@ -105,7 +105,7 @@ melt.trynode('silver') {
 
   if (env.BRANCH_NAME == 'develop') {
     stage("Deploy") {
-      sh "rsync -a --exclude .git --exclude generated --exclude silver-latest.tar.gz --delete --delete-excluded ./ ${melt.SILVER_WORKSPACE}/"
+      sh "rsync -a --exclude .git --exclude generated --exclude silver-latest.tar.gz --delete --delete-excluded ./ ${silver.SILVER_WORKSPACE}/"
       // -a is archive mode: rlptgoD (recurse, links, perms, time, group, owner, devices)
       // --delete  Remove files from destination not in src
       // --delete-excluded  Remove files from dest that we're excluding
