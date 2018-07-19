@@ -20,7 +20,7 @@ Type ::= te::Type
     zipVarsIntoSkolemizedSubstitution(existentialVars, freshTyVars(length(existentialVars))),
     zipVarsIntoSubstitution(te.outputType.freeVariables, freshTyVars(length(te.outputType.freeVariables))));
   
-  return performSubstitution(te, skolemize);
+  return performRenaming(te, skolemize);
 }
 
 {--
@@ -58,7 +58,7 @@ Type ::= te::Type
   local attribute skolemize :: Substitution;
   skolemize = zipVarsIntoSkolemizedSubstitution(te.freeVariables, freshTyVars(length(te.freeVariables)));
   
-  return performSubstitution(te, skolemize);
+  return performRenaming(te, skolemize);
 }
 
 

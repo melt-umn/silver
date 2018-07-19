@@ -130,7 +130,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   
   top.typerep = ty;
   
-  top.substitutedDclInfo = localDcl(sg,sl, fn, performSubstitution(ty, top.givenSubstitution));
+  top.substitutedDclInfo = localDcl(sg,sl, fn, performRenaming(ty, top.givenSubstitution));
 }
 abstract production forwardDcl
 top::DclInfo ::= sg::String sl::Location ty::Type
@@ -144,7 +144,7 @@ top::DclInfo ::= sg::String sl::Location ty::Type
   
   top.typerep = ty;
   
-  top.substitutedDclInfo = forwardDcl(sg,sl, performSubstitution(ty, top.givenSubstitution));
+  top.substitutedDclInfo = forwardDcl(sg,sl, performRenaming(ty, top.givenSubstitution));
 }
 
 -- ValueDclInfos that DO appear in interface files:
@@ -326,7 +326,7 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type at
   top.typerep = if subst.failure
                 then -- We didn't get a sensible type for givenNonterminalType. Let's do our best? (This error should already be caught!)
                      freshenCompletely(atty)
-                else performSubstitution(atty, subst);
+                else performRenaming(atty, subst);
   
   top.attrOccurring = fnat;
 }
@@ -357,7 +357,7 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type at
   top.typerep = if subst.failure
                 then -- We didn't get a sensible type for givenNonterminalType. Let's do our best? (This error should already be caught!)
                      freshenCompletely(atty)
-                else performSubstitution(atty, subst);
+                else performRenaming(atty, subst);
   
   top.attrOccurring = fnat;
 

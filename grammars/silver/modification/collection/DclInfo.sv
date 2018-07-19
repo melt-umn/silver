@@ -95,7 +95,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type o::Operation
 
   forwards to localDcl(sg,sl,fn,ty);
   
-  top.substitutedDclInfo = localCollectionDcl(sg,sl,fn, performSubstitution(ty, top.givenSubstitution), o);
+  top.substitutedDclInfo = localCollectionDcl(sg,sl,fn, performRenaming(ty, top.givenSubstitution), o);
 }
 
 

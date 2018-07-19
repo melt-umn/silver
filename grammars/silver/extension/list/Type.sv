@@ -5,6 +5,7 @@ top::Type ::= el::Type
 {
   top.freeVariables = el.freeVariables; -- TypeExp.sv
   top.substituted = listType(el.substituted);
+  top.flatRenamed = listType(el.flatRenamed);
   top.typepp = "[" ++ el.typepp ++ "]";
 
   top.unify = case top.unifyWith of

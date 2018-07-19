@@ -53,7 +53,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
 
   -- So we generate three substitutions:
   -- 1: Rewrite the tyvars of type #1 to the types of type #2.
-  -- 2: Rewrite the tyvars of type #4 to the types of type #4.
+  -- 2: Rewrite the tyvars of type #3 to the types of type #4.
   -- 3: Rewrite our local tyvars to fresh variables.
   
   -- Thus, we apply this to type #2 and #4, and get our goal.
@@ -61,20 +61,22 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   -- This is perfectly correct, but it can probably be simplified with some invariants
   -- on what appears in the environment.
   
-  production attribute rewriteAndFreshenSubst :: Substitution;
-  rewriteAndFreshenSubst = 
-    composeSubst(composeSubst(
+  -- This renames the vars from the environment
+  local rewrite_from :: Substitution =
+    composeSubst(
       -- nt's env types -> local skolem types  (vars -> vars)
       zipVarsIntoSubstitution(nt.lookupType.dclBoundVars, nttl.freeVariables),
       -- at's env types -> local skolem types  (vars -> types)
-      zipVarsAndTypesIntoSubstitution(at.lookupAttribute.dclBoundVars, attl.types)),
-      -- local skolem types -> fresh ty vars (non-skolem)
-      zipVarsIntoSubstitution(nttl.freeVariables, freshTyVars(length(nttl.freeVariables))));
+      zipVarsAndTypesIntoSubstitution(at.lookupAttribute.dclBoundVars, attl.types));
   
+  local rewrite_to :: Substitution =
+    zipVarsIntoSubstitution(nttl.freeVariables, freshTyVars(length(nttl.freeVariables)));
+  
+  -- These have to be two separate renamings, because the second renaming replaces names getting substituted in by the first renaming.
   production attribute protontty :: Type;
   production attribute protoatty :: Type;
-  protontty = performSubstitution(nt.lookupType.typerep, rewriteAndFreshenSubst);
-  protoatty = performSubstitution(at.lookupAttribute.typerep, rewriteAndFreshenSubst);
+  protontty = performRenaming(performRenaming(nt.lookupType.typerep, rewrite_from), rewrite_to);
+  protoatty = performRenaming(performRenaming(at.lookupAttribute.typerep, rewrite_from), rewrite_to);
   
   -- Now, finally, make sure we're not "redefining" the occurs.
   production attribute occursCheck :: [DclInfo];
