@@ -101,3 +101,35 @@ Integer ::= s::String l::[NamedSignatureElement] z::Integer
   else findNamedSigElem(s, tail(l), z+1);
 }
 
+--------------
+
+-- Applies function to constituent types
+function mapNamedSignature
+NamedSignature ::= f::(Type ::= Type)  ns::NamedSignature
+{
+  return case ns of
+  | namedSignature(fn, ie, oe, np) ->
+      namedSignature(fn, map(mapNamedSignatureElement(f, _), ie), mapNamedSignatureElement(f, oe), map(mapNamedSignatureElement(f, _), np))
+  end;
+}
+-- Ditto, for elements
+function mapNamedSignatureElement
+NamedSignatureElement ::= f::(Type ::= Type)  nse::NamedSignatureElement
+{
+  return case nse of
+  | namedSignatureElement(n, ty) ->
+      namedSignatureElement(n, f(ty))
+  end;
+}
+
+-- Freshens all the signature's types
+function freshenNamedSignature
+NamedSignature ::= ns::NamedSignature
+{
+  local fvs :: [TyVar] = ns.typerep.freeVariables;
+  local s :: Substitution = zipVarsIntoSubstitution(fvs, freshTyVars(length(fvs)));
+
+  -- Apply the freshening within the signature's types
+  return mapNamedSignature(performRenaming(_, s), ns);
+}
+

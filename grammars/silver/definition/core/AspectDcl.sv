@@ -31,7 +31,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 
   production attribute realSig :: NamedSignature;
   realSig = if id.lookupValue.found
-            then id.lookupValue.dcl.namedSignature
+            then freshenNamedSignature(id.lookupValue.dcl.namedSignature)
             else bogusNamedSignature();
 
   -- Making sure we're aspecting a production is taken care of by type checking.
@@ -67,7 +67,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 
   production attribute realSig :: NamedSignature;
   realSig = if id.lookupValue.found
-            then id.lookupValue.dcl.namedSignature
+            then freshenNamedSignature(id.lookupValue.dcl.namedSignature)
             else bogusNamedSignature();
 
   -- Making sure we're aspecting a function is taken care of by type checking.
