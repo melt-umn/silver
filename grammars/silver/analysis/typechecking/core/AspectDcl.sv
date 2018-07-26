@@ -18,7 +18,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
       case id.lookupValue.dcls of
       | prodDcl (_, _, _) :: _ -> []
       | funDcl  (_, _, _) :: _ -> [err(top.location, "Production aspect for '" ++ id.name ++ "' should be a 'function' aspect instead.")]
-      | _ -> []
+      | _ -> [err(id.location, id.name ++ " is not a production.")]
       end;
 
   ns.downSubst = emptySubst();
@@ -44,7 +44,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
       case id.lookupValue.dcls of
       | funDcl (_, _, _) :: _ -> []
       | prodDcl  (_, _, _) :: _ -> [err(top.location, "Function aspect for '" ++ id.name ++ "' should be a 'production' aspect instead.")]
-      | _ -> []
+      | _ -> [err(id.location, id.name ++ " is not a function.")]
       end;
 
   ns.downSubst = emptySubst();
