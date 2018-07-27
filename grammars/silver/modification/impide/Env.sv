@@ -58,7 +58,7 @@ Def ::= sg::String sl::Location fn::String
 --------------------------------------------------------------------------------
 -- Env.sv
 
-synthesized attribute fontDefTree :: Decorated EnvScope<DclInfo> occurs on Env;
+synthesized attribute fontDefTree :: EnvScope<DclInfo> occurs on Env;
 
 aspect production i_emptyEnv
 top::Env ::=

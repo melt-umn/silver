@@ -117,7 +117,9 @@ top::TypeExpr ::= q::QNameType tl::BracketedOptTypeExprs
                 then [err(top.location, q.pp ++ " has " ++ toString(length(q.lookupType.dclBoundVars)) ++ " type variables, but there are " ++ toString(length(tl.types)) ++ " supplied here.")]
                 else [];
 
-  top.typerep = performSubstitution(q.lookupType.typerep, zipVarsAndTypesIntoSubstitution(q.lookupType.dclBoundVars, tl.types));
+  -- Not necessarily a nonterminalType, so we should take original type and substitution
+  -- e.g. consider `type Blah<a> = Foo<String a>`
+  top.typerep = performRenaming(q.lookupType.typerep, zipVarsAndTypesIntoSubstitution(q.lookupType.dclBoundVars, tl.types));
 }
 
 concrete production typeVariableTypeExpr

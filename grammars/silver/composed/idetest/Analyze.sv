@@ -13,7 +13,7 @@ import ide;
 
 -- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideAnalyze
-IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser ioin::IO
+IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser ioin::IO
 {
   -- Figure out arguments
   local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
@@ -32,7 +32,7 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
 
   -- Build!
   local buildrun :: IOVal<Decorated Compilation> =
-    buildRun(svParser, sviParser, a, benv, buildGrammar, checkbuild.io);
+    buildRun(svParser, a, benv, buildGrammar, checkbuild.io);
   local unit :: Decorated Compilation = buildrun.iovalue;
 
   ---- DIFFERENCE: We do *not* run the actions in the functions. Only check for errors.
@@ -54,7 +54,7 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
 
 -- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideGenerate
-IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
+IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  ioin::IO
 {
   -- Figure out arguments
   local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
@@ -73,7 +73,7 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser
 
   -- Build!
   local buildrun :: IOVal<Decorated Compilation> =
-    buildRun(svParser, sviParser, a, benv, buildGrammar, checkbuild.io);
+    buildRun(svParser, a, benv, buildGrammar, checkbuild.io);
   local unit :: Decorated Compilation = buildrun.iovalue;
 
   -- Run the resulting build actions

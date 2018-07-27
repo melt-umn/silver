@@ -27,6 +27,7 @@ top::AGDcl ::= 'flowtype' nt::QName '=' specs::FlowSpecs ';'
     then specs.flowDefs
     else [];
 
+  -- This is only ever used for its name, really, so no need to freshen
   specs.onNt = nt.lookupType.typerep;
 }
 
@@ -264,6 +265,7 @@ top::NtName ::= nt::QName
   myCopy.compiledGrammars = top.compiledGrammars;
   myCopy.flowEnv = top.flowEnv;
   
+  -- This is only ever used for its name, really, so no need to freshen
   myCopy.onNt = nt.lookupType.typerep;
 }
 

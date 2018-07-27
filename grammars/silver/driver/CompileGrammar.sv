@@ -6,7 +6,6 @@ grammar silver:driver;
 function compileGrammar
 IOVal<Maybe<RootSpec>> ::=
   svParser::SVParser
-  sviParser::SVIParser
   benv::BuildEnv
   grammarName::String
   clean::Boolean
@@ -30,27 +29,28 @@ IOVal<Maybe<RootSpec>> ::=
   local gramCompile :: IOVal<Pair<[Root] [ParseError]>> =
     compileFiles(svParser, grammarLocation.iovalue.fromJust, files.iovalue, pr);
 
-  local ifaceCompile :: IOVal<ParseResult<IRoot>> =
-    compileInterface(sviParser, grammarName, benv.silverGen ++ "src/" ++ gramPath, grammarTime.io);
+  local ifaceCompile :: IOVal<Either<String GrammarProperties>> =
+    compileInterface(grammarName, benv.silverGen ++ "src/" ++ gramPath, grammarTime.io);
   
   -- Not being clean, valid interface file, newer than the grammar source
   local useInterface :: Boolean = !clean && ifaceTime.iovalue.isJust && ifaceTime.iovalue.fromJust > grammarTime.iovalue;
   
   local join :: IO =
     if useInterface then
-      if ifaceCompile.iovalue.parseSuccess then
-        ifaceCompile.io
-      else
+      case ifaceCompile.iovalue of
+      | right(_) -> ifaceCompile.io
+      | left(msg) ->
         -- Do something weird. Demand interface parser finishes, print.
         -- Then return the normal compile io token branch... Hey, works!
         unsafeTrace(gramCompile.io,
-          print("\n\tFailed to parse interface file!\n" ++ ifaceCompile.iovalue.parseErrors ++
+          print("\n\tFailed to deserialize interface file!\n" ++ msg ++
                 "\n\tRecovering by parsing grammar....\n", ifaceCompile.io))
+      end
     else gramCompile.io;
   
   local rs :: RootSpec =
-    if useInterface && ifaceCompile.iovalue.parseSuccess then
-      interfaceRootSpec(ifaceCompile.iovalue.parseTree, ifaceTime.iovalue.fromJust)
+    if useInterface && ifaceCompile.iovalue.isRight then
+      interfaceRootSpec(ifaceCompile.iovalue.fromRight, ifaceTime.iovalue.fromJust)
     else if null(gramCompile.iovalue.snd) then
       grammarRootSpec(foldRoot(gramCompile.iovalue.fst), grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue)
     else

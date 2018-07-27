@@ -83,7 +83,7 @@ Def ::= sg::String sl::Location s::String
 --------------------------------------------------------------------------------
 -- Env.sv
 
-synthesized attribute lexerClassTree :: Decorated EnvScope<DclInfo> occurs on Env;
+synthesized attribute lexerClassTree :: EnvScope<DclInfo> occurs on Env;
 
 aspect production i_emptyEnv
 top::Env ::=

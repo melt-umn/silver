@@ -69,7 +69,7 @@ melt.trynode('silver') {
   }
 
   stage("Test") {
-    def tests = ["silver_features", "copper_features", "patt", "stdlib", "performance", "cstast", "csterrors"]
+    def tests = ["silver_features", "copper_features", "patt", "stdlib", "performance", "csterrors"]
     def tuts = ["simple/with_all", "simple/with_do_while", "simple/with_repeat_until", "simple/with_implication", "simple/host", "dc", "lambda", "turing", "hello"]
 
     def tasks = [:]
