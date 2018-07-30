@@ -56,7 +56,6 @@ import silver:extension:testing;
 import silver:extension:treegen;
 
 import silver:host;
-import silver:host:env;
 
 import silver:langutil;
 import silver:langutil:pp;
