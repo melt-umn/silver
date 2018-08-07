@@ -8,6 +8,8 @@ imports silver:modification:primitivepattern;
 import silver:definition:type:syntax only typerepTypeExpr;
 import silver:modification:let_fix;
 
+import silver:langutil only unparse;
+
 terminal Case_kwd 'case' lexer classes {KEYWORD,RESERVED};
 terminal Of_kwd 'of' lexer classes {KEYWORD,RESERVED};
 terminal Arrow_kwd '->' lexer classes {SPECOP};

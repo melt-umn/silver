@@ -1,5 +1,7 @@
 grammar silver:definition:core;
 
+import silver:langutil only unparse;
+
 {--
  - Qualified names of the form 'a:b:c:d...'
  -}
