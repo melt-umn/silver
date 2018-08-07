@@ -19,8 +19,5 @@ top::Type ::= fn::String params::[Type]
         else errorSubst("Tried to unify conflicting foreign types " ++ fn ++ " and " ++ ofn)
     | _ -> errorSubst("Tried to unify foreign type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
     end;
-
-  -- env
-  top.unparse = "foreigntype('" ++ fn ++ "', " ++ unparseTypes(params, top.boundVariables) ++ ")";
 }
 

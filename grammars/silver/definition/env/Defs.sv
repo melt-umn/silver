@@ -198,23 +198,6 @@ Def ::= sg::String  sl::Location  fnnt::String  fnat::String  ntty::Type  atty::
 --Defsironment creation functions--------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
 
-function unparseDefs
-String ::= d::[Def] bv::[TyVar]
-{
-  return "[\n " ++ implode(",\n ", mapUnparseDcls(map((.dcl), d), bv)) ++ "]";
-}
-
-function mapUnparseDcls
-[String] ::= d::[DclInfo] bv::[TyVar]
-{
-  local h :: DclInfo = head(d);
-  h.boundVariables = bv;
-
-  return if null(d) then [] else h.unparse :: mapUnparseDcls(tail(d), bv);
-}
-
---
-
 {--
  - Used only to substitute defs from paDcls...
  - And so we screw up a few things:
@@ -227,7 +210,6 @@ Def ::= d::Def  s::Substitution
   return valueDef(defaultEnvItem(performSubstitutionDclInfo(d.dcl, s)));
 }
 
--- TODO: these are non-extensible. Fixme.
 function filterDefOnEnvItem
 Boolean ::= fn::(Boolean ::= EnvItem)  d::Def
 {
@@ -250,49 +232,4 @@ Def ::= fn::(EnvItem ::= EnvItem)  d::Def
   | _ -> d -- ditto
   end;
 }
-
-
-{- TODO
-abstract production filterDefsInclude
-top::Defs ::= d::Defs incl::[String]
-{
-  top.typeList = filterEnvItemsInclude(forward.typeList, incl);
-  top.attrList = filterEnvItemsInclude(forward.attrList, incl);
-  top.valueList = filterEnvItemsInclude(forward.valueList, incl);
-  
-  forwards to d;
-}
-abstract production filterDefsExclude
-top::Defs ::= d::Defs excl::[String]
-{
-  top.typeList = filterEnvItemsExclude(forward.typeList, excl);
-  top.attrList = filterEnvItemsExclude(forward.attrList, excl);
-  top.valueList = filterEnvItemsExclude(forward.valueList, excl);
-  
-  forwards to d;
-}
-abstract production mapPrependDefs
-top::Defs ::= d::Defs pfx::String
-{
-  top.typeList = mapPrependEnvItems(forward.typeList, pfx);
-  top.attrList = mapPrependEnvItems(forward.attrList, pfx);
-  top.valueList = mapPrependEnvItems(forward.valueList, pfx);
-  
-  forwards to d;
-}
-abstract production mapRenameDefs
-top::Defs ::= d::Defs rns::[Pair<String String>]
-{
-  top.typeList = mapRenameEnvItems(forward.typeList, rns);
-  top.attrList = mapRenameEnvItems(forward.attrList, rns);
-  top.valueList = mapRenameEnvItems(forward.valueList, rns);
-  
-  forwards to d;
-}
--}
-
-----------------------------------------------------------------------------------------------------
---Defs Helper Functions------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
-
 

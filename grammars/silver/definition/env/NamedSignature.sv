@@ -1,7 +1,7 @@
 grammar silver:definition:env;
 
-nonterminal NamedSignature with inputElements, outputElement, fullName, unparse, boundVariables, inputNames, inputTypes, typerep, namedInputElements;
-nonterminal NamedSignatureElement with typerep, elementName, unparse, boundVariables, toNamedArgType;
+nonterminal NamedSignature with inputElements, outputElement, fullName, inputNames, inputTypes, typerep, namedInputElements;
+nonterminal NamedSignatureElement with typerep, elementName, toNamedArgType;
 
 synthesized attribute inputElements :: [NamedSignatureElement];
 synthesized attribute outputElement :: NamedSignatureElement;
@@ -35,9 +35,6 @@ top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatur
   top.inputNames = map((.elementName), ie);
   top.inputTypes = map((.typerep), ie); -- Does anything actually use this? TODO: eliminate?
   top.typerep = functionType(oe.typerep, top.inputTypes, map((.toNamedArgType), np));
-  
-  oe.boundVariables = top.boundVariables;
-  top.unparse = "signature('" ++ fn ++ "', " ++ unparseSignatureElements(ie, top.boundVariables) ++ ", " ++ oe.unparse ++ ", " ++ unparseSignatureElements(np, top.boundVariables) ++ ")";
 }
 
 {--
@@ -47,7 +44,6 @@ top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatur
 abstract production bogusNamedSignature
 top::NamedSignature ::= 
 {
-  top.unparse = error("Bogus signatures should never make it into interface files!");
   forwards to namedSignature("_NULL_", [], bogusNamedSignatureElement(), []);
 }
 
@@ -60,7 +56,6 @@ top::NamedSignature ::=
 abstract production namedSignatureElement
 top::NamedSignatureElement ::= n::String ty::Type
 {
-  top.unparse = "element('" ++ n ++ "', " ++ ty.unparse ++ ")";
   top.elementName = n;
   top.typerep = ty;
 
@@ -69,8 +64,6 @@ top::NamedSignatureElement ::= n::String ty::Type
     substring(lastIndexOf(":", n) + 1, length(n), n);
   
   top.toNamedArgType = namedArgType(annoShortName, ty);
-
-  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't  
 }
 
 {--
@@ -80,7 +73,6 @@ top::NamedSignatureElement ::= n::String ty::Type
 abstract production bogusNamedSignatureElement
 top::NamedSignatureElement ::=
 {
-  top.unparse = error("Bogus signature elements should never make it into interface files!");
   forwards to namedSignatureElement("__SV_BOGUS_ELEM", errorType());
 }
 

@@ -7,9 +7,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't
-  top.unparse = "parse_attr(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
-  
   top.typerep = ty;
   
   top.refDispatcher = parserAttributeReference(_, location=_);
@@ -24,8 +21,6 @@ top::DclInfo ::= sg::String sl::Location fn::String
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
-  
   top.typerep = freshType(); -- no appropriate type to use...
   
   top.refDispatcher = pluckTerminalReference(_, location=_);
@@ -40,8 +35,6 @@ top::DclInfo ::= sg::String sl::Location
   top.sourceLocation = sl;
   top.fullName = "lexeme";
 
-  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
-  
   top.typerep = stringType();
   
   top.refDispatcher = disambigLexemeReference(_, location=_);
@@ -57,8 +50,6 @@ top::DclInfo ::= sg::String sl::Location fn::String
   top.fullName = fn;
   
   top.typerep = error("Internal compiler error: lexer classes do not have types");
-
-  top.unparse = "lexer_class(" ++ sl.unparse ++ ", '" ++ fn ++ "')";
 }
 
 abstract production termAttrValueDcl
@@ -68,8 +59,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
-  
   top.typerep = ty;
   
   top.refDispatcher = termAttrValueReference(_, location=_);
@@ -84,8 +73,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
-  
   top.typerep = ty;
   
   top.refDispatcher = actionChildReference(_, location=_);
@@ -100,8 +87,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
-  
   top.typerep = ty;
   
   -- TODO: use specialized ones that give better errors messages!
@@ -117,8 +102,6 @@ top::DclInfo ::= sg::String sl::Location sep::String
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = "_prefix_seperator";
-
-  top.unparse = "prefix_seperator(" ++ sl.unparse ++ ", \"" ++ escapeString(sep) ++ "\")";
 
   top.typerep = error("_prefix_seperator does not have a type");
 }

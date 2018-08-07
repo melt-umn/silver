@@ -7,7 +7,7 @@ import silver:util;
 --import silver:analysis:typechecking:core;
 
 nonterminal NameOrBOperator with config, location, grammarName, errors, env, pp, operation, operatorForType;
-nonterminal Operation with unparse;
+nonterminal Operation;
 
 synthesized attribute operation :: Operation;
 inherited attribute operatorForType :: Type;
@@ -87,32 +87,26 @@ top::NameOrBOperator ::= '&&'
 abstract production functionOperation
 top::Operation ::= s::String
 {
-  top.unparse = "fun('" ++ s ++ "')";
 }
 abstract production productionOperation
 top::Operation ::= s::String
 {
-  top.unparse = "prod('" ++ s ++ "')";
 }
 abstract production plusPlusOperationString
 top::Operation ::= 
 {
-  top.unparse = "++string";
 }
 abstract production plusPlusOperationList
 top::Operation ::= 
 {
-  top.unparse = "++list";
 }
 abstract production borOperation
 top::Operation ::= 
 {
-  top.unparse = "||";
 }
 abstract production bandOperation
 top::Operation ::= 
 {
-  top.unparse = "&&";
 }
 
 --- Declarations ---------------------------------------------------------------

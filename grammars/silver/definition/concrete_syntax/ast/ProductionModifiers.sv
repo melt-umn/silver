@@ -10,7 +10,7 @@ synthesized attribute productionOperator :: Maybe<String>;
 {--
  - Modifiers for productions.
  -}
-nonterminal SyntaxProductionModifiers with cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, unparses, productionName;
+nonterminal SyntaxProductionModifiers with cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, productionName;
 
 abstract production consProductionMod
 top::SyntaxProductionModifiers ::= h::SyntaxProductionModifier  t::SyntaxProductionModifiers
@@ -20,7 +20,6 @@ top::SyntaxProductionModifiers ::= h::SyntaxProductionModifier  t::SyntaxProduct
   top.customLayout = orElse(h.customLayout, t.customLayout);
   top.productionOperator = orElse(h.productionOperator, t.productionOperator);
   top.productionPrecedence = orElse(h.productionPrecedence, t.productionPrecedence);
-  top.unparses = h.unparses ++ t.unparses;
 }
 
 abstract production nilProductionMod
@@ -31,14 +30,13 @@ top::SyntaxProductionModifiers ::=
   top.customLayout = nothing();
   top.productionOperator = nothing();
   top.productionPrecedence = nothing();
-  top.unparses = [];
 }
 
 
 {--
  - Modifiers for productions.
  -}
-nonterminal SyntaxProductionModifier with cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, unparses, productionName;
+nonterminal SyntaxProductionModifier with cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, productionName;
 
 aspect default production
 top::SyntaxProductionModifier ::=
@@ -48,7 +46,6 @@ top::SyntaxProductionModifier ::=
   top.customLayout = nothing();
   top.productionOperator = nothing();
   top.productionPrecedence = nothing();
-  --top.unparses -- do not default this. always provide it.
 }
 
 {--
@@ -58,7 +55,6 @@ abstract production prodPrecedence
 top::SyntaxProductionModifier ::= lvl::Integer
 {
   top.productionPrecedence = just(lvl);
-  top.unparses = ["prec(" ++ toString(lvl) ++ ")"];
 }
 {--
  - The terminal this production uses for shift/reduce conflict resolution.
@@ -73,7 +69,6 @@ top::SyntaxProductionModifier ::= term::String
                    else ["Terminal " ++ term ++ " was referenced but " ++
                          "this grammar was not included in this parser. (Referenced from operator clause on production " ++ top.productionName ++ ")"];
   top.productionOperator = just(xmlCopperRef(head(termRef)));
-  top.unparses = ["oper(" ++ quoteString(term) ++ ")"];
 }
 {--
  - The action to perform when this production is REDUCEd.
@@ -82,7 +77,6 @@ abstract production prodAction
 top::SyntaxProductionModifier ::= acode::String
 {
   top.acode = acode;
-  top.unparses = ["acode(\"" ++ escapeString(acode) ++ "\")"];
 }
 {--
  - The layout for this production.
@@ -99,5 +93,4 @@ top::SyntaxProductionModifier ::= terms::[String]
                    zipWith(pair, terms, termRefs));
 
   top.customLayout = just(implode("", map(xmlCopperRef, map(head, termRefs))));
-  top.unparses = ["layout(" ++ unparseStrings(terms) ++ ")"];
 }

@@ -76,7 +76,5 @@ top::SyntaxDcl ::= fontName::String fnt::Font -- TODO: we probably? need to fact
   top.cstNormalize = [top];
   
   top.xmlCopper = "";
-  
-  top.unparses = [];-- TODO builds won't work right unless you provide --clean
 }
 

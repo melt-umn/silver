@@ -10,7 +10,7 @@ imports silver:translation:java:type only transType;
 {--
  - Encapsulates transformations and analysis of Syntax
  -}
-closed nonterminal SyntaxRoot with cstErrors, xmlCopper, {-TODO:debugging-}unparse;
+closed nonterminal SyntaxRoot with cstErrors, xmlCopper;
 
 {--
  - Translation of a CST AST to Copper XML.
@@ -121,8 +121,6 @@ s"""    <Layout>${univLayout}</Layout>
     </Declarations>
   </Grammar>
 </CopperSpec>""";
-
-  top.unparse = implode(",\n ", s.unparses);
 }
 
 

@@ -74,8 +74,6 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
 "  </ExtensionGrammar>\n\n" ++
 
 "</CopperSpec>\n";
-
-  top.unparse = error("No notion of unparsing for mda root...");
 }
 
 

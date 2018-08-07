@@ -13,8 +13,6 @@ top::DclInfo ::= sg::String sl::Location fn::String
   top.fullName = fn;
   
   top.typerep = error("Internal compiler error: font style do not have types");
-
-  top.unparse = "font(" ++ sl.unparse ++ ", '" ++ fn ++ "')";
 }
 
 --------------------------------------------------------------------------------

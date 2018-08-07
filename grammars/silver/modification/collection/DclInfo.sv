@@ -32,9 +32,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
-  top.unparse = "syncol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ", " ++ o.unparse ++ ")";
-  
   top.typerep = ty;
   top.dclBoundVars = bound;
 
@@ -56,9 +53,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
-  top.unparse = "inhcol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ", " ++ o.unparse ++ ")";
-  
   top.typerep = ty;
   top.dclBoundVars = bound;
 
@@ -81,9 +75,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type o::Operation
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't
-  top.unparse = "loccol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ", " ++ o.unparse ++ ")";
-  
   top.typerep = ty;
   
   top.refDispatcher = localReference(_, location=_);

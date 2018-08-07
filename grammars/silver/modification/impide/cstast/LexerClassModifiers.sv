@@ -31,7 +31,6 @@ abstract production lexerClassFont
 top::SyntaxLexerClassModifier ::= fontName::String
 {
   top.cstErrors := [];
-  top.unparses = ["font('" ++ fontName ++ "')"];
 
   top.fontAttr = makeCopperName(fontName);
 }
