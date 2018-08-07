@@ -158,12 +158,16 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 
   -- these values should only ever be in scope when it's valid to use them
   top.errors := e.errors;
+  
+  top.errors <-
+    if val.name != "lexeme" then [] else
+    [err(val.location, "lexeme is not reassignable.")];
 
-  local attribute memberfunc :: String;
-  memberfunc = if val.name == "filename" then "setFileName" else
-               if val.name == "line" then "setLine" else
-               if val.name == "column" then "setColumn" else
-               error("unknown assignment to terminal attribute: " ++ val.name);
+  local memberfunc :: String =
+    if val.name == "filename" then "setFileName" else
+    if val.name == "line" then "setLine" else
+    if val.name == "column" then "setColumn" else
+    error("unknown assignment to terminal attribute: " ++ val.name);
 
   top.translation = "virtualLocation." ++ memberfunc ++ "(" ++ e.translation
                      ++ (if val.name == "filename" then ".toString()" else "") ++ ");\n";
@@ -176,8 +180,8 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 
   errCheck1 = check(e.typerep, val.lookupValue.typerep);
   top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
-       else [];
+    if errCheck1.typeerror
+    then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
+    else [];
 }
 

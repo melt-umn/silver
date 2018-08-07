@@ -16,9 +16,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
   ns.signatureName = fName;
   acode.frame = reduceActionContext(ns.namedSignature);
-  acode.env = newScopeEnv(
-                addTerminalAttrDefs(
-                 acode.defs ++ ns.actionDefs), top.env);
+  acode.env = newScopeEnv(productionActionVars ++ acode.defs ++ ns.actionDefs, top.env);
 
   top.errors <- acode.errors;
 

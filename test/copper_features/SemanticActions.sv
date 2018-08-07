@@ -28,6 +28,13 @@ terminal B 'b' action {
   column = Acount;
 };
 
+wrongCode "lexeme" {
+  terminal C 'c' action {
+    -- cannot assign the value of lexeme
+    lexeme = "hi";
+  };
+}
+
 nonterminal AOrB with semResult;
 synthesized attribute semResult :: String;
 

@@ -4,6 +4,30 @@ terminal Dominates_t 'dominates' lexer classes {KEYWORD};
 terminal Submits_t   'submits'   lexer classes {KEYWORD};
 terminal Classes_kwd 'classes'   lexer classes {KEYWORD};
 
+synthesized attribute lexerClasses :: [String] occurs on TerminalModifier, TerminalModifiers;
+
+aspect production terminalModifiersNone
+top::TerminalModifiers ::=
+{
+  top.lexerClasses = [];
+}
+aspect production terminalModifierSingle
+top::TerminalModifiers ::= tm::TerminalModifier
+{
+  top.lexerClasses = tm.lexerClasses;
+}
+aspect production terminalModifiersCons
+top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
+{
+  top.lexerClasses = h.lexerClasses ++ t.lexerClasses;
+}
+
+aspect default production
+top::TerminalModifier ::=
+{
+  top.lexerClasses = [];
+}
+
 concrete production terminalModifierDominates
 top::TerminalModifier ::= 'dominates' '{' terms::TermPrecList '}'
 {
@@ -40,22 +64,14 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
   top.terminalModifiers = [termAction(acode.actionCode)];
 
   acode.frame = actionContext();
-  acode.env = newScopeEnv(addTerminalAttrDefs(acode.defs), top.env);
+  acode.env = newScopeEnv(terminalActionVars ++ acode.defs, top.env);
   
   top.errors := acode.errors;
-}
-
-aspect default production
-top::TerminalModifier ::=
-{
-  top.lexerClasses = [];
 }
 
 nonterminal TermPrecList with config, grammarName, pp, location, precTermList, errors, env;
 
 synthesized attribute precTermList :: [String];
-
--- The rest of this file is written quite sillily. It'll be automatically fixed when we get a proper ast/cst split
 
 concrete production termPrecListOne
 terms::TermPrecList ::= t::QName
@@ -68,7 +84,6 @@ terms::TermPrecList ::= t::QName ',' terms_tail::TermPrecList
 {
    forwards to termPrecList(t,terms_tail,location=terms.location);
 }
-
 
 abstract production termPrecList
 top::TermPrecList ::= h::QName t::TermPrecList
@@ -99,23 +114,7 @@ top::TermPrecList ::=
   top.errors := [];
 }
 
-
--- TODO this should probably be a global or something now...
-function addTerminalAttrDefs
-[Def] ::= moredefs::[Def]
-{
-  -- TODO: no grammar or location? how to deal with this?
-  return [termAttrValueDef("DBGtav", bogusLocation(), "lexeme", stringType()),
-          termAttrValueDef("DBGtav", bogusLocation(), "filename", stringType()),
-          termAttrValueDef("DBGtav", bogusLocation(), "line", intType()),
-          termAttrValueDef("DBGtav", bogusLocation(), "column", intType())] ++
-           moredefs;
-}
-
-
 nonterminal ClassList with location, config, pp, lexerClasses, errors, env;
-
-synthesized attribute lexerClasses :: [String] occurs on TerminalModifier, TerminalModifiers;
 
 concrete production lexerClassesOne
 top::ClassList ::= n::QName
@@ -148,29 +147,5 @@ cl::ClassList ::=
   cl.pp = "";
   cl.errors := [];
   cl.lexerClasses = [];
-}
-
-aspect production terminalModifiersNone
-top::TerminalModifiers ::=
-{
-  top.lexerClasses = [];
-}
-
-aspect production terminalModifierSingle
-top::TerminalModifiers ::= tm::TerminalModifier
-{
-  top.lexerClasses = tm.lexerClasses;
-}
-
-aspect production terminalModifiersCons
-top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
-{
-  top.lexerClasses = h.lexerClasses ++ t.lexerClasses;
-}
-
-function quote
-String ::= s::String
-{
-  return "\"" ++ s ++ "\"";
 }
 

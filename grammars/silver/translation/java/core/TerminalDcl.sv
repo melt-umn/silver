@@ -8,9 +8,6 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr
 tm::TerminalModifiers
 {
   local className :: String = "T" ++ id.name;
-
---  local fName :: String = top.grammarName ++ ":" ++ id.name;
-
   local lexerClassesStr :: String = implode(", ", map(quote, tm.lexerClasses));
 
   top.genFiles := [pair(className ++ ".java", s"""
@@ -44,5 +41,11 @@ public class ${className} extends common.Terminal {
 
 """)];
 
+}
+
+function quote
+String ::= s::String
+{
+  return "\"" ++ s ++ "\"";
 }
 

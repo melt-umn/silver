@@ -44,12 +44,6 @@ Def ::= sg::String sl::Location fn::String
   return valueDef(defaultEnvItem(pluckTermDcl(sg,sl,fn)));
 }
 
-function disambigLexemeDef
-Def ::= sg::String sl::Location
-{
-  return valueDef(defaultEnvItem(disambigLexemeDcl(sg,sl)));
-}
-
 function lexerClassDef
 Def ::= sg::String sl::Location fn::String
 {
@@ -112,6 +106,8 @@ function getLexerClassDcl
 --------------------------------------------------------------------------------
 -- QName.sv
 
+synthesized attribute lookupLexerClass :: Decorated QNameLookup occurs on QName;
+
 aspect production qNameId
 top::QName ::= id::Name
 {
@@ -124,5 +120,19 @@ top::QName ::= id::Name ':' qn::QName
   top.lookupLexerClass = decorate customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name, top.location) with {};
 }
 
-synthesized attribute lookupLexerClass :: Decorated QNameLookup occurs on QName;
+
+--------------------------------------------------------------------------------
+
+-- Some pre-defined variables in certain contexts
+
+global i_lexemeVariable :: [Def] =
+  [termAttrValueDef("DBGtav", bogusLoc(), "lexeme", stringType())];
+global i_locVariables :: [Def] = [
+  termAttrValueDef("DBGtav", bogusLoc(), "filename", stringType()),
+  termAttrValueDef("DBGtav", bogusLoc(), "line", intType()),
+  termAttrValueDef("DBGtav", bogusLoc(), "column", intType())];
+
+global terminalActionVars :: [Def] = i_lexemeVariable ++ i_locVariables;
+global productionActionVars :: [Def] = i_locVariables;
+global disambiguationActionVars :: [Def] = i_lexemeVariable;
 
