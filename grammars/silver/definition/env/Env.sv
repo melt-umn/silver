@@ -52,6 +52,17 @@ Decorated Env ::= d::[Def]
   return newScopeEnv(d, emptyEnv());
 }
 
+{--
+ - appendEnv exists because we do a weird scope swizzling.
+ - Our scopes go [global, import, grammar] but hierarchically we
+ - should have   [global, grammar, import] because grammar-wide names would
+ - seem to have wider scope than per-file imports.
+ - But this would be horrible semantics: the file in question is even included
+ - in the grammar-wide scope. So imports would hide things in the local file, even.
+ - 
+ - Instead, we build these three scopes as essentially separate environments,
+ - and append them together in the correct order.
+ -}
 function appendEnv
 Decorated Env ::= e1::Decorated Env  e2::Decorated Env
 {
@@ -70,7 +81,9 @@ top::Env ::= e1::Decorated Env  e2::Decorated Env
   top.prodsForNtTree = e1.prodsForNtTree ++ e2.prodsForNtTree;
 }
 
--- Better replacement for appendDefsEnv(x, pushScope(env)) pattern
+{--
+ - The usual means of introducing new defs to an environment, by creating a new nested scope.
+ -}
 function newScopeEnv
 Decorated Env ::= d::[Def]  e::Decorated Env
 {
@@ -96,15 +109,13 @@ top::Env ::= d::Defs  e::Decorated Env
 function searchEnvAll
 [a] ::= search::String e::[EnvScope<a>]
 {
-  return if null(e) then []
-         else searchEnvScope(search, head(e)) ++ searchEnvAll(search, tail(e));
+  return flatMap(searchEnvScope(search, _), e);
 }
 
 function searchEnv
 [a] ::= search::String e::[EnvScope<a>]
 {
-  local attribute found :: [a];
-  found = searchEnvScope(search, head(e));
+  local found :: [a] = searchEnvScope(search, head(e));
   
   return if null(e) then []
          else if null(found) then searchEnv(search, tail(e))

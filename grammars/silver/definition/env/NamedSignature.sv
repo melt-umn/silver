@@ -1,29 +1,26 @@
 grammar silver:definition:env;
 
-nonterminal NamedSignature with inputElements, outputElement, fullName, inputNames, inputTypes, typerep, namedInputElements;
-nonterminal NamedSignatureElement with typerep, elementName, toNamedArgType;
+{--
+ - The fully named and fully type signature of a production (or function).
+ - Includes full name of the production and names for all input and output elements (and annotations).
+ -
+ - TODO: we might want to remove the full name of the production from this, and make it just `Signature`?
+ - It's not clear if this information really belongs here, or not.
+ -}
+nonterminal NamedSignature with fullName, inputElements, outputElement, namedInputElements, typerep, inputNames, inputTypes;
 
 synthesized attribute inputElements :: [NamedSignatureElement];
 synthesized attribute outputElement :: NamedSignatureElement;
 synthesized attribute namedInputElements :: [NamedSignatureElement];
 synthesized attribute inputNames :: [String];
-
-synthesized attribute elementName :: String;
-synthesized attribute toNamedArgType :: NamedArgType;
-
--- inputTypes from the types grammar.
-
-
--- TODO Make named signatures... not named.
--- It seems to be largely redundant information.
--- The name portion can be moved into 'context' instead of 'signature'
+-- inputTypes comes from the types grammar.
 
 {--
- - Represents the signature of a function or production.
+ - Represents the signature of a production (or function).
  - @param fn  The full name
  - @param ie  The input elements
  - @param oe  The output element
- - @param np  Named parameters that are part of the signature.
+ - @param np  Named parameters (or annotations)
  -}
 abstract production namedSignature
 top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
@@ -47,8 +44,13 @@ top::NamedSignature ::=
   forwards to namedSignature("_NULL_", [], bogusNamedSignatureElement(), []);
 }
 
-------------------------
--- NamedSignatureElement
+{--
+ - Represents an elements of a signature, whether input, output, or annotation.
+ -}
+nonterminal NamedSignatureElement with elementName, typerep, toNamedArgType;
+
+synthesized attribute elementName :: String;
+synthesized attribute toNamedArgType :: NamedArgType;
 
 {--
  - Represents an element of the function/production signature.

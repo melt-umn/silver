@@ -18,7 +18,7 @@ top::AGDcl ::= 'derive' 'Eq' 'on' names::QNames ';'
       appendAGDcl(_, _, location=top.location),
       emptyAGDcl(location=top.location),
       map(
-        deriveEqOn(_, top.env, top.flowEnv, top.location),
+        deriveEqOn(_, top.env, top.flowEnv),
         map((.qnwtQN), names.qnames)));
 }
 
@@ -29,9 +29,11 @@ Boolean ::= d::DclInfo  fe::Decorated FlowEnv
 }
 
 function deriveEqOn
-AGDcl ::= id::QName  env::Decorated Env  fenv::Decorated FlowEnv  l::Location
+AGDcl ::= id::QName  env::Decorated Env  fenv::Decorated FlowEnv
 {
   id.env = env;
+  
+  local l :: Location = id.location;
   
   local prods :: [DclInfo] = filter(nonforwardingProd(_, fenv), getProdsForNt(id.lookupType.fullName, env));
 
@@ -68,7 +70,7 @@ AGDcl ::= id::QName  env::Decorated Env  fenv::Decorated FlowEnv  l::Location
 function foldmrl
 MRuleList ::= l::[MatchRule]
 {
-  return if null(l) then error("doh")
+  return if null(l) then error("unexpectedly empty match rules for generated pattern")
   else if null(tail(l)) then mRuleList_one(head(l), location=head(l).location)
   else mRuleList_cons(head(l), '|', foldmrl(tail(l)), location=head(l).location);
 }

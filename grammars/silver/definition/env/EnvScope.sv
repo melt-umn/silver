@@ -18,6 +18,7 @@ top::EnvScope<a> ::= trees::[EnvTree<a>]
   top.envTrees = trees;
 }
 
+
 function emptyEnvScope
 EnvScope<a> ::=
 {
@@ -45,13 +46,6 @@ EnvScope<a> ::= l::EnvTree<a> r::EnvScope<a>
 function searchEnvScope
 [a] ::= search::String e::EnvScope<a>
 {
-  return searchEnvScopeHelp(search, e.envTrees);
-}
-function searchEnvScopeHelp
-[a] ::= search::String e::[EnvTree<a>]
-{
-  return if null(e)
-         then []
-         else searchEnvTree(search, head(e)) ++ searchEnvScopeHelp(search, tail(e));
+  return flatMap(searchEnvTree(search, _), e.envTrees);
 }
 

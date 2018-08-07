@@ -122,8 +122,8 @@ Expr ::= id::DclInfo  l::Location
     if null(id.typerep.namedTypes) then
       emptyAnnoAppExprs(location=l)
     else
-      -- erroneously assume it's location for now. just supply location=bogusLocation, and let's assume the user has that value about
-      oneAnnoAppExprs(annoExpr(qName(l, "location"), '=', presentAppExpr(baseExpr(qName(l, "bogusLocation"), location=l), location=l), location=l),location=l);
+      -- erroneously assume it's location for now. just supply location=bogusLoc()
+      oneAnnoAppExprs(annoExpr(qName(l, "location"), '=', presentAppExpr(mkStrFunctionInvocation(l, "bogusLoc", []), location=l), location=l),location=l);
   return
     application(callid, '(', foldAppExprs(l, reverse(es)), ',', annos, ')', location=l);
 }

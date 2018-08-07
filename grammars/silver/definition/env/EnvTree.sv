@@ -25,7 +25,7 @@ function searchEnvTree
 function buildTree
 EnvTree<DclInfo> ::= eis::[EnvItem]
 {
-  return directBuildTree( explodeEnvItems(eis) );
+  return directBuildTree(flatMap((.envContribs), eis));
 }
 
 {--
@@ -35,17 +35,5 @@ function directBuildTree
 EnvTree<a> ::= eis::[Pair<String a>]
 {
   return rtm:add(eis, rtm:empty(compareString));
-}
-
-----
-
-{--
- - Helper for buildTree.
- -}
-function explodeEnvItems
-[Pair<String DclInfo>] ::= eis::[EnvItem]
-{
-  return if null(eis) then [] else
-            head(eis).envContribs ++ explodeEnvItems(tail(eis));
 }
 
