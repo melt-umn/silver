@@ -13,9 +13,3 @@ top::Location ::= filename::String  line::Integer  column::Integer
     implode(", ", [toString(line), toString(column), toString(endLine), toString(endColumn), toString(index), toString(endIndex)]);
 }
 
-function bogusLocation
-Location ::=
-{
-  return loc("??", -1, -1, -1, -1, -1, -1);
-}
-
