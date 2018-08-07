@@ -3,7 +3,6 @@ grammar silver:definition:env;
 import silver:definition:regex; -- soley for Terminals. TODO : perhaps this shouldn't be here!
 
 nonterminal Defs with typeList, valueList, attrList, prodOccursList, occursList, prodDclList;
-closed nonterminal Def with typeList, valueList, attrList, prodOccursList, occursList, prodDclList, dcl;
 
 -- The standard namespaces
 synthesized attribute typeList :: [EnvItem];
@@ -46,6 +45,8 @@ top::Defs ::= e1::Def e2::Defs
 
 --------------------------------------------------------------------------------
 
+closed nonterminal Def with typeList, valueList, attrList, prodOccursList, occursList, prodDclList, dcl;
+
 aspect default production
 top::Def ::=
 {
@@ -81,9 +82,9 @@ top::Def ::= d::EnvItem
 {
   top.dcl = d.dcl;
   top.valueList = [d];
+  -- unlike normal valueDef, also affect production lookups:
   top.prodDclList = [d.dcl];
 }
-
 abstract production paDef
 top::Def ::= d::DclInfo
 {
@@ -199,8 +200,8 @@ Def ::= sg::String  sl::Location  fnnt::String  fnat::String  ntty::Type  atty::
 ----------------------------------------------------------------------------------------------------
 
 {--
- - Used only to substitute defs from paDcls...
- - And so we screw up a few things:
+ - Used only on what we get from production attributes.
+ - We encode those assumptions:
  - 1. We expect ONLY valueDefs.
  - 2. We expect ONLY 'defaultEnvItems'
  -}
