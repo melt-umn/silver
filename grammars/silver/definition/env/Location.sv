@@ -1,5 +1,7 @@
 grammar silver:definition:env;
 
+synthesized attribute unparse :: String; -- TODO remove?
+
 attribute unparse occurs on Location;
 
 aspect production loc

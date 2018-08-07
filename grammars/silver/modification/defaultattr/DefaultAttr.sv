@@ -53,8 +53,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("INTERNAL ERROR: default-lhs values should never appear in interface files");
-  
   top.typerep = ty;
   
   top.refDispatcher = lhsReference(_, location=_);

@@ -55,12 +55,6 @@ Boolean ::= v::FlowVertex  inhSet::set:Set<String>
   end;
 }
 
-function compareFlowVertex
-Integer ::= a::FlowVertex  b::FlowVertex
-{
-  return if a.unparse < b.unparse then -1 else if a.unparse == b.unparse then 0 else 1;
-}
-
 function createFlowGraph
 g:Graph<FlowVertex> ::= l::[Pair<FlowVertex FlowVertex>]
 {

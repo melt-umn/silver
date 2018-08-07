@@ -8,7 +8,7 @@ import silver:driver:util only computeDependencies; -- TODO this is a bad depend
 nonterminal ParserSpec with 
   sourceGrammar, sourceLocation, fullName,
   compiledGrammars,
-  cstAst, startNT, moduleNames, unparse;
+  cstAst, startNT, moduleNames;
 
 {--
  - Given compiledGrammars, gives back the SyntaxRoot representing this parser.
@@ -45,15 +45,5 @@ top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[S
   
   local decomposedTerminalPrefixes :: Pair<[String] [String]> =
     unzipPairs(terminalPrefixes);
-  
-  top.unparse = "parser(" ++ implode(",", [
-    sl.unparse,
-    quoteString(sg),
-    quoteString(fn),
-    quoteString(snt),
-    unparseStrings(grams),
-    unparseStrings(decomposedTerminalPrefixes.fst),
-    unparseStrings(decomposedTerminalPrefixes.snd),
-    "[" ++ implode(", ", foldr(consSyntax, nilSyntax(), addedDcls).unparses) ++ "]"]) ++ ")";
 }
 

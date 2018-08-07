@@ -21,13 +21,11 @@ autocopy attribute containingGrammar :: String;
 
 autocopy attribute prefixesForTerminals :: EnvTree<String>;
 
-synthesized attribute unparses :: [String];
-
 
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, univLayout, xmlCopper, unparses, containingGrammar, prefixesForTerminals;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, univLayout, xmlCopper, containingGrammar, prefixesForTerminals;
 
 abstract production nilSyntax
 top::Syntax ::=
@@ -39,7 +37,6 @@ top::Syntax ::=
   top.allIgnoreTerminals = [];
   top.allMarkingTerminals = [];
   top.xmlCopper = "";
-  top.unparses = [];
 }
 abstract production consSyntax
 top::Syntax ::= s1::SyntaxDcl s2::Syntax
@@ -51,13 +48,12 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   top.allIgnoreTerminals = s1.allIgnoreTerminals ++ s2.allIgnoreTerminals;
   top.allMarkingTerminals = s1.allMarkingTerminals ++ s2.allMarkingTerminals;
   top.xmlCopper = s1.xmlCopper ++ s2.xmlCopper;
-  top.unparses = s1.unparses ++ s2.unparses;
 }
 
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, univLayout, xmlCopper, classDomContribs, classSubContribs, unparses, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, univLayout, xmlCopper, classDomContribs, classSubContribs, containingGrammar, prefixesForTerminals;
 
 synthesized attribute sortKey :: String;
 
@@ -100,7 +96,6 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifie
     subdcls.xmlCopper;
 
   t.boundVariables = t.freeVariables;
-  top.unparses = ["nt(" ++ unparseTyVars(t.freeVariables,t.boundVariables) ++ ", " ++ t.unparse ++ ")"] ++ subdcls.unparses;
 }
 
 {--
@@ -148,8 +143,6 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     "    <Submits>" ++ modifiers.submitsXML ++ "</Submits>\n" ++
     "    <Dominates>" ++ modifiers.dominatesXML ++ "</Dominates>\n" ++
     "  </Terminal>\n";
-
-  top.unparses = ["term('" ++ n ++ "', /" ++ regex.regString ++ "/, " ++ unparseNonStrings(modifiers.unparses) ++ ")"];
 }
 
 -- New XML Skin START
@@ -214,9 +207,6 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     "    <Operator>" ++ modifiers.productionOperator.fromJust ++ "</Operator>\n"
     else "") ++
     "  </Production>\n";
-
-  ns.boundVariables = ns.typerep.freeVariables;
-  top.unparses = ["prod(" ++ unparseTyVars(ns.boundVariables, ns.boundVariables) ++ ", " ++ ns.unparse ++ ", " ++ unparseNonStrings(modifiers.unparses) ++ ")"];
 }
 
 function fetchChildren
@@ -281,8 +271,6 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 
   top.xmlCopper =
     "  <TerminalClass id=\"" ++ makeCopperName(n) ++ "\" />\n";
-
-  top.unparses = ["lclass('" ++ n ++ "', " ++ unparseNonStrings(modifiers.unparses) ++ ")"];
 }
 
 {--
@@ -308,7 +296,6 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
 
   -- TODO: technically, there should be no free variables in ty.
   ty.boundVariables = [];
-  top.unparses = ["pattr('" ++ n ++ "', " ++ ty.unparse ++ ",\"" ++ escapeString(acode) ++ "\")"];
 }
 
 {--
@@ -340,8 +327,6 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
     acode ++
     "]]></Code>\n" ++
     "  </DisambiguationFunction>\n";
-
-  top.unparses = ["disambig('" ++ n ++ "', " ++ unparseStrings(terms) ++ ", \"" ++ escapeString(acode) ++ "\")"];
 }
 
 function syntaxDclLte

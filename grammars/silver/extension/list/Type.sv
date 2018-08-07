@@ -21,7 +21,6 @@ top::Type ::= el::Type
   top.lengthDispatcher = listLengthBouncer(_, location=_);
   top.appendDispatcher = listPlusPlus(_, _, location=_);
   
-  top.unparse = "[" ++ el.unparse ++ "]";
   --top.transType -- for translation.
   
   forwards to decoratedType(nonterminalType("core:List", [el]));

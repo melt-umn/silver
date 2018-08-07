@@ -49,9 +49,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
-  top.unparse = "type(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ")";
-  
   top.typerep = ty;
   top.dclBoundVars = bound;
 }
