@@ -14,7 +14,7 @@ concrete production aspectDefaultProduction
 top::AGDcl ::= 'aspect' 'default' 'production' 
                lhs::Name '::' te::TypeExpr '::=' body::ProductionBody 
 {
-  top.pp = "aspect default production\n" ++ lhs.pp ++ "::" ++ te.pp ++ " ::=\n" ++ body.pp;
+  top.unparse = "aspect default production\n" ++ lhs.unparse ++ "::" ++ te.unparse ++ " ::=\n" ++ body.unparse;
 
   top.defs = [];
 
@@ -37,7 +37,7 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   body.downSubst = emptySubst();
 
   top.setupInh := body.setupInh; -- Probably should be empty?
-  top.initProd := "\t\t//ASPECT DEFAULT PRODUCTION for " ++ te.pp ++ "\n" ++ body.translation;
+  top.initProd := "\t\t//ASPECT DEFAULT PRODUCTION for " ++ te.unparse ++ "\n" ++ body.translation;
   top.valueWeaving := body.valueWeaving; -- Probably should be empty?
 }
 
@@ -64,7 +64,7 @@ abstract production defaultLhsDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   top.name = q.name;
-  top.pp = q.pp;
+  top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;
   
   local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;

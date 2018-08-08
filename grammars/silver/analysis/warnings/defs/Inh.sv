@@ -531,7 +531,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                         _),
                       set:toList(inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow))))
              in if null(inhs) then []
-                else [wrn(top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.pp ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
+                else [wrn(top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
           else []
       | localReference(lq) ->
@@ -544,7 +544,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                       _),
                     set:toList(inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow)))
              in if null(inhs) then []
-                else [wrn(top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.pp ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
+                else [wrn(top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
           else []
       | _ -> []

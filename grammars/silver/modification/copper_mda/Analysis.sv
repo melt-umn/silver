@@ -14,7 +14,7 @@ terminal CopperMDA 'copper_mda' lexer classes {KEYWORD};
 concrete production copperMdaDcl
 top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ParserComponents '}'
 {
-  top.pp = "";
+  top.unparse = "";
   
   top.errors := orig.lookupValue.errors ++ m.errors;
   

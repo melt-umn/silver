@@ -11,7 +11,7 @@ terminal Arrow_t '->' precedence = 0, lexer classes {SPECOP};
 concrete production lambda_c
 top::Expr ::= '\' params::ProductionRHS '->' e::Expr
 {
-  top.pp = "\\ " ++ params.pp ++ " -> " ++ e.pp;
+  top.unparse = "\\ " ++ params.unparse ++ " -> " ++ e.unparse;
 
   forwards to lambdap(params, e, location=top.location);
 }
@@ -24,7 +24,7 @@ top::Expr ::= '\' params::ProductionRHS '->' e::Expr
 abstract production lambdap
 top::Expr ::= params::ProductionRHS e::Expr
 {
-  top.pp = "\\ " ++ params.pp ++ " -> " ++ e.pp;
+  top.unparse = "\\ " ++ params.unparse ++ " -> " ++ e.unparse;
   
   top.errors := params.errors ++ e.errors;
   
@@ -63,7 +63,7 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 abstract production lambdaParamReference
 top::Expr ::= q::Decorated QName
 {
-  top.pp = q.pp;
+  top.unparse = q.unparse;
   top.errors := []; -- TODO?
   
   top.typerep = q.lookupValue.typerep;

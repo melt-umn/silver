@@ -1,24 +1,24 @@
 grammar silver:definition:core;
 
 nonterminal ProductionBody with
-  config, grammarName, env, location, pp, errors, defs, frame, compiledGrammars,
+  config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
   productionAttributes, uniqueSignificantExpression;
 nonterminal ProductionStmts with 
-  config, grammarName, env, location, pp, errors, defs, frame, compiledGrammars,
+  config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
   productionAttributes, uniqueSignificantExpression;
 nonterminal ProductionStmt with
-  config, grammarName, env, location, pp, errors, defs, frame, compiledGrammars,
+  config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
   productionAttributes, uniqueSignificantExpression;
 
 nonterminal DefLHS with 
-  config, grammarName, env, location, pp, errors, frame, compiledGrammars, name, typerep, defLHSattr, found;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found;
 
 nonterminal ForwardInhs with 
-  config, grammarName, env, location, pp, errors, frame, compiledGrammars;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars;
 nonterminal ForwardInh with 
-  config, grammarName, env, location, pp, errors, frame, compiledGrammars;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars;
 nonterminal ForwardLHSExpr with 
-  config, grammarName, env, location, pp, errors, frame, name, typerep;
+  config, grammarName, env, location, unparse, errors, frame, name, typerep;
 
 {--
  - Context for ProductionStmt blocks. (Indicates function, production, aspect, etc)
@@ -45,7 +45,7 @@ inherited attribute defLHSattr :: Decorated QNameAttrOccur;
 concrete production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
-  top.pp = stmts.pp;
+  top.unparse = stmts.unparse;
 
   top.productionAttributes = stmts.productionAttributes;
   top.uniqueSignificantExpression = stmts.uniqueSignificantExpression;
@@ -57,7 +57,7 @@ top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 concrete production productionStmtsNil
 top::ProductionStmts ::= 
 {
-  top.pp = "";
+  top.unparse = "";
 
   top.productionAttributes = [];
   top.uniqueSignificantExpression = [];
@@ -69,7 +69,7 @@ top::ProductionStmts ::=
 concrete production productionStmtsSnoc
 top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 {
-  top.pp = h.pp ++ "\n" ++ t.pp;
+  top.unparse = h.unparse ++ "\n" ++ t.unparse;
   
   top.productionAttributes = h.productionAttributes ++ t.productionAttributes;
   top.uniqueSignificantExpression = h.uniqueSignificantExpression ++ t.uniqueSignificantExpression;
@@ -83,7 +83,7 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 abstract production productionStmtAppend
 top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 {
-  top.pp = h.pp ++ "\n" ++ t.pp;
+  top.unparse = h.unparse ++ "\n" ++ t.unparse;
 
   top.productionAttributes = h.productionAttributes ++ t.productionAttributes;
   top.uniqueSignificantExpression = h.uniqueSignificantExpression ++ t.uniqueSignificantExpression;
@@ -95,7 +95,7 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 abstract production errorProductionStmt
 top::ProductionStmt ::= e::[Message]
 {
-  top.pp = s"{- Errors:\n${foldMessages(e)} -}";
+  top.unparse = s"{- Errors:\n${foldMessages(e)} -}";
   top.errors := e;
   
   top.productionAttributes = [];
@@ -109,7 +109,7 @@ aspect default production
 top::ProductionStmt ::=
 {
   -- as is usual for defaults ("base classes")
-  -- can't provide pp or location, errors should NOT be defined!
+  -- can't provide unparse or location, errors should NOT be defined!
   top.productionAttributes = [];
   top.uniqueSignificantExpression = [];
   
@@ -119,7 +119,7 @@ top::ProductionStmt ::=
 concrete production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
-  top.pp = "\treturn " ++ e.pp ++ ";";
+  top.unparse = "\treturn " ++ e.unparse ++ ";";
   
   top.uniqueSignificantExpression = [e];
 
@@ -133,7 +133,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 concrete production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 {
-  top.pp = "\tlocal attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";
+  top.unparse = "\tlocal attribute " ++ a.unparse ++ "::" ++ te.unparse ++ ";";
 
   production attribute fName :: String;
   fName = top.frame.fullName ++ ":local:" ++ a.name;
@@ -155,8 +155,8 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 concrete production productionAttributeDcl
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
 {
-  -- TODO: we should pp the production keyword, not local here!!
-  --top.pp = "\tproduction attribute " ++ a.pp ++ "::" ++ te.pp ++ ";";
+  -- TODO: we should unparse the production keyword, not local here!!
+  --top.unparse = "\tproduction attribute " ++ a.unparse ++ "::" ++ te.unparse ++ ";";
 
   top.productionAttributes = forward.defs;
   top.defs = [];
@@ -171,7 +171,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
 concrete production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
-  top.pp = "\tforwards to " ++ e.pp;
+  top.unparse = "\tforwards to " ++ e.unparse;
 
   top.productionAttributes = [forwardDef(top.grammarName, top.location, top.frame.signature.outputElement.typerep)];
   top.uniqueSignificantExpression = [e];
@@ -186,7 +186,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 concrete production forwardsToWith
 top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
 {
-  top.pp = "\tforwards to " ++ e.pp ++ " with {" ++ inh.pp ++ "};";
+  top.unparse = "\tforwards to " ++ e.unparse ++ " with {" ++ inh.unparse ++ "};";
 
   forwards to productionStmtAppend(
     forwardsTo($1, $2, $3, $8, location=top.location),
@@ -197,7 +197,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
 concrete production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {
-  top.pp = "\tforwarding with {" ++ inh.pp ++ "};";
+  top.unparse = "\tforwarding with {" ++ inh.unparse ++ "};";
 
   production attribute fwdDcls :: [DclInfo];
   fwdDcls = getValueDcl("forward", top.env);
@@ -213,7 +213,7 @@ top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 concrete production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
-  top.pp = lhs.pp ++ " = " ++ e.pp ++ ";";
+  top.unparse = lhs.unparse ++ " = " ++ e.unparse ++ ";";
 
   top.errors := lhs.errors ++ e.errors;
 }
@@ -221,14 +221,14 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 concrete production forwardInhsOne
 top::ForwardInhs ::= lhs::ForwardInh
 {
-  top.pp = lhs.pp;
+  top.unparse = lhs.unparse;
   top.errors := lhs.errors;
 }
 
 concrete production forwardInhsCons
 top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 {
-  top.pp = lhs.pp ++ " " ++ rhs.pp;
+  top.unparse = lhs.unparse ++ " " ++ rhs.unparse;
   top.errors := lhs.errors ++ rhs.errors;
 }
 
@@ -236,7 +236,7 @@ concrete production forwardLhsExpr
 top::ForwardLHSExpr ::= q::QNameAttrOccur
 {
   top.name = q.name;
-  top.pp = q.pp;
+  top.unparse = q.unparse;
 
   top.errors := q.errors;
   top.typerep = q.typerep;
@@ -247,7 +247,7 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
 concrete production attributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
-  top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = [];
@@ -276,7 +276,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 abstract production errorAttributeDef
 top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   forwards to errorProductionStmt(msg ++ e.errors, location=top.location);
 }
@@ -284,7 +284,7 @@ top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNa
 abstract production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   top.errors := e.errors;
 }
@@ -292,7 +292,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 abstract production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " = " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   top.errors := e.errors;
 }
@@ -301,7 +301,7 @@ concrete production concreteDefLHS
 top::DefLHS ::= q::QName
 {
   top.name = q.name;
-  top.pp = q.pp;
+  top.unparse = q.unparse;
 
   top.errors := q.lookupValue.errors ++ forward.errors;
   
@@ -314,7 +314,7 @@ abstract production errorDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   top.name = q.name;
-  top.pp = q.pp;
+  top.unparse = q.unparse;
   top.found = false;
   
   top.errors := 
@@ -332,7 +332,7 @@ abstract production childDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   top.name = q.name;
-  top.pp = q.pp;
+  top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
   
   local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;
@@ -348,7 +348,7 @@ abstract production lhsDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   top.name = q.name;
-  top.pp = q.pp;
+  top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;
   
   local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;
@@ -364,7 +364,7 @@ abstract production localDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   top.name = q.name;
-  top.pp = q.pp;
+  top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
   
   local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;
@@ -380,7 +380,7 @@ abstract production forwardDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   top.name = q.name;
-  top.pp = q.pp;
+  top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
   
   local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;
@@ -397,7 +397,7 @@ top::DefLHS ::= q::Decorated QName
 concrete production valueEq
 top::ProductionStmt ::= val::QName '=' e::Expr ';'
 {
-  top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   top.errors <- val.lookupValue.errors;
 
@@ -413,7 +413,7 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
 abstract production errorValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   top.errors := assignError ++ e.errors;
   
@@ -426,7 +426,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 abstract production localValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   -- val is already valid here
   top.errors := e.errors;

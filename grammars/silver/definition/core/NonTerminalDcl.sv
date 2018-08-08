@@ -3,7 +3,7 @@ grammar silver:definition:core;
 concrete production nonterminalDcl
 top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs ';'
 {
-  top.pp = "nonterminal " ++ id.pp ++ tl.pp ++ ";";
+  top.unparse = "nonterminal " ++ id.unparse ++ tl.unparse ++ ";";
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   

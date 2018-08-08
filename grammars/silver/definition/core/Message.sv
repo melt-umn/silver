@@ -13,13 +13,13 @@ synthesized attribute loc :: Location;
  - e.g. errors, warnings, etc.
  - TODO: use silver:langutil instead
  -}
-nonterminal Message with loc, pp, severity, msg;
+nonterminal Message with loc, unparse, severity, msg;
 
 abstract production err
 top::Message ::= l::Location s::String
 {
   top.loc = l;
-  top.pp = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": error: " ++ s;
+  top.unparse = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": error: " ++ s;
   top.severity = 2;
   top.msg = s;
 }
@@ -28,7 +28,7 @@ abstract production wrn
 top::Message ::= l::Location s::String
 {
   top.loc = l;
-  top.pp = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": warning: " ++ s;
+  top.unparse = l.filename ++ ":" ++ toString(l.line) ++ ":" ++ toString(l.column) ++ ": warning: " ++ s;
   top.severity = 1;
   top.msg = s;
 }
@@ -36,7 +36,7 @@ top::Message ::= l::Location s::String
 function foldMessages
 String ::= es::[Message]
 {
-  return implode("\n", map((.pp), es)) ++ "\n";
+  return implode("\n", map((.unparse), es)) ++ "\n";
 }
 
 function containsErrors

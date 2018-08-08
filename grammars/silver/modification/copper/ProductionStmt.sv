@@ -16,7 +16,7 @@ top::Name ::= 'pluck'
 concrete production pluckDef
 top::ProductionStmt ::= 'pluck' e::Expr ';'
 {
-  top.pp = "pluck " ++ e.pp ++ ";";
+  top.unparse = "pluck " ++ e.unparse ++ ";";
 
   -- Cast to integer is required, because that's secretly the real type of the
   -- result, but our type system only calls it an Object at the moment.
@@ -37,7 +37,7 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
 concrete production printStmt
 top::ProductionStmt ::= 'print' e::Expr ';'
 {
-  top.pp = "print " ++ e.pp ++ ";";
+  top.unparse = "print " ++ e.unparse ++ ";";
 
   top.translation = "System.err.println(" ++ e.translation ++ ");\n";
 
@@ -68,7 +68,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 abstract production parserAttributeValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   top.errors := e.errors ++
                (if !top.frame.permitActions
@@ -100,7 +100,7 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
 concrete production pushTokenIfStmt
 top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' 'if' condition::Expr ';'
 {
-  top.pp = "\t" ++ "pushToken(" ++ val.pp ++ ", " ++ lexeme.pp ++ ") if " ++ condition.pp ++ ";";
+  top.unparse = "\t" ++ "pushToken(" ++ val.unparse ++ ", " ++ lexeme.unparse ++ ") if " ++ condition.unparse ++ ";";
 
   top.errors := lexeme.errors ++ condition.errors ++
                (if !top.frame.permitActions
@@ -139,7 +139,7 @@ abstract production parserAttributeDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   top.name = q.name;
-  top.pp = q.pp;
+  top.unparse = q.unparse;
   top.found = false;
   
   -- Note this is always erroring!
@@ -155,7 +155,7 @@ top::DefLHS ::= q::Decorated QName
 abstract production termAttrValueValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   -- these values should only ever be in scope when it's valid to use them
   top.errors := e.errors;

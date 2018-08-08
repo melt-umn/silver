@@ -21,7 +21,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
 
-// ${ns.pp}
+// ${ns.unparse}
 public final class ${className} extends ${fnnt} {
 
 ${makeIndexDcls(0, namedSig.inputElements)}

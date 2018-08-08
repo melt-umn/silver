@@ -9,7 +9,7 @@ import silver:definition:type;
 concrete production autoAstDcl
 top::ProductionStmt ::= 'abstract' v::QName ';'
 {
-  top.pp = "abstract " ++ v.pp ++ ";";
+  top.unparse = "abstract " ++ v.unparse ++ ";";
 
   local vty :: Type =
     freshenCompletely(v.lookupValue.typerep);

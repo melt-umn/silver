@@ -3,13 +3,13 @@ grammar silver:extension:doc:core;
 aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
-  top.docs := [bodilessDclCommentItem("global", id.name, t.pp, id.location.filename)];
+  top.docs := [bodilessDclCommentItem("global", id.name, t.unparse, id.location.filename)];
 }
 
 concrete production docGlobalValueDclConcrete
 top::AGDcl ::= comment::DclComment 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
-  top.docs := [dclCommentItem("global", id.name, t.pp, id.location.filename, comment)];
+  top.docs := [dclCommentItem("global", id.name, t.unparse, id.location.filename, comment)];
 
   forwards to globalValueDclConcrete('global', id, '::', t, '=', e, ';', location=top.location);
 }

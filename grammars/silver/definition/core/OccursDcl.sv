@@ -3,7 +3,7 @@ grammar silver:definition:core;
 concrete production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
-  top.pp = "attribute " ++ at.pp ++ attl.pp ++ " occurs on " ++ nt.pp ++ nttl.pp ++ ";";
+  top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
 
   -- TODO: this location is highly unreliable.
 

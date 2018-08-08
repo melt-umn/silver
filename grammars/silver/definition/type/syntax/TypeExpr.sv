@@ -5,10 +5,10 @@ imports silver:definition:type;
 imports silver:definition:env;
 imports silver:util;
 
-nonterminal TypeExpr with config, location, grammarName, errors, env, pp, typerep, lexicalTypeVariables;
-nonterminal Signature with config, location, grammarName, errors, env, pp, types,   lexicalTypeVariables;
-nonterminal TypeExprs  with config, location, grammarName, errors, env, pp, types,   lexicalTypeVariables, errorsTyVars, freeVariables;
-nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, pp, types, lexicalTypeVariables, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal TypeExpr with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables;
+nonterminal Signature with config, location, grammarName, errors, env, unparse, types,   lexicalTypeVariables;
+nonterminal TypeExprs  with config, location, grammarName, errors, env, unparse, types,   lexicalTypeVariables, errorsTyVars, freeVariables;
+nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, unparse, types, lexicalTypeVariables, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 
 synthesized attribute types :: [Type];
 
@@ -36,7 +36,7 @@ function addNewLexicalTyVars
 abstract production errorTypeExpr
 top::TypeExpr ::= e::[Message]
 {
-  top.pp = s"{- Errors:\n${foldMessages(e)} -}";
+  top.unparse = s"{- Errors:\n${foldMessages(e)} -}";
   
   top.typerep = errorType();
   
@@ -48,7 +48,7 @@ top::TypeExpr ::= e::[Message]
 abstract production typerepTypeExpr
 top::TypeExpr ::= t::Type
 {
-  top.pp = prettyType(t);
+  top.unparse = prettyType(t);
 
   top.typerep = t;
 
@@ -60,7 +60,7 @@ top::TypeExpr ::= t::Type
 concrete production integerTypeExpr
 top::TypeExpr ::= 'Integer'
 {
-  top.pp = "Integer";
+  top.unparse = "Integer";
 
   top.typerep = intType();
 
@@ -72,7 +72,7 @@ top::TypeExpr ::= 'Integer'
 concrete production floatTypeExpr
 top::TypeExpr ::= 'Float'
 {
-  top.pp = "Float";
+  top.unparse = "Float";
 
   top.typerep = floatType();
 
@@ -84,7 +84,7 @@ top::TypeExpr ::= 'Float'
 concrete production stringTypeExpr
 top::TypeExpr ::= 'String'
 {
-  top.pp = "String";
+  top.unparse = "String";
 
   top.typerep = stringType();
 
@@ -96,7 +96,7 @@ top::TypeExpr ::= 'String'
 concrete production booleanTypeExpr
 top::TypeExpr ::= 'Boolean'
 {
-  top.pp = "Boolean";
+  top.unparse = "Boolean";
 
   top.typerep = boolType();
 
@@ -108,7 +108,7 @@ top::TypeExpr ::= 'Boolean'
 concrete production nominalTypeExpr
 top::TypeExpr ::= q::QNameType tl::BracketedOptTypeExprs
 {
-  top.pp = q.pp ++ tl.pp;
+  top.unparse = q.unparse ++ tl.unparse;
 
   top.errors := q.lookupType.errors ++ tl.errors;
   top.lexicalTypeVariables = tl.lexicalTypeVariables;
@@ -125,7 +125,7 @@ top::TypeExpr ::= q::QNameType tl::BracketedOptTypeExprs
 concrete production typeVariableTypeExpr
 top::TypeExpr ::= tv::IdLower_t
 {
-  top.pp = tv.lexeme;
+  top.unparse = tv.lexeme;
   
   local attribute hack::QNameLookup;
   hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme, top.location);
@@ -139,7 +139,7 @@ top::TypeExpr ::= tv::IdLower_t
 concrete production refTypeExpr
 top::TypeExpr ::= 'Decorated' t::TypeExpr
 {
-  top.pp = "Decorated " ++ t.pp;
+  top.unparse = "Decorated " ++ t.unparse;
 
   top.typerep = decoratedType(t.typerep);
 
@@ -147,7 +147,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
   
   top.errors <- case t.typerep of
                   nonterminalType(_,_) -> []
-                | _ -> [err(t.location, t.pp ++ " is not a nonterminal, and cannot be Decorated.")]
+                | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
                 end;
 
   top.lexicalTypeVariables = t.lexicalTypeVariables;
@@ -156,7 +156,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
 concrete production funTypeExpr
 top::TypeExpr ::= '(' sig::Signature ')'
 {
-  top.pp = "(" ++ sig.pp ++ ")";
+  top.unparse = "(" ++ sig.unparse ++ ")";
 
   top.errors := sig.errors;
 
@@ -168,7 +168,7 @@ top::TypeExpr ::= '(' sig::Signature ')'
 concrete production signatureEmptyRhs
 top::Signature ::= t::TypeExpr '::='
 {
-  top.pp = t.pp ++ " ::=";
+  top.unparse = t.unparse ++ " ::=";
 
   top.errors := t.errors;
 
@@ -180,7 +180,7 @@ top::Signature ::= t::TypeExpr '::='
 concrete production psignature
 top::Signature ::= t::TypeExpr '::=' list::TypeExprs 
 {
-  top.pp = t.pp ++ " ::= " ++ list.pp;
+  top.unparse = t.unparse ++ " ::= " ++ list.unparse;
 
   top.errors := t.errors ++ list.errors;
 
@@ -194,14 +194,14 @@ top::Signature ::= t::TypeExpr '::=' list::TypeExprs
 concrete production botlNone
 top::BracketedOptTypeExprs ::=
 {
-  top.pp = "";
+  top.unparse = "";
   forwards to botlSome('<', typeListNone(location=top.location), '>', location=top.location);
 }
 
 concrete production botlSome
 top::BracketedOptTypeExprs ::= '<' tl::TypeExprs '>'
 {
-  top.pp = "<" ++ tl.pp ++ ">";
+  top.unparse = "<" ++ tl.unparse ++ ">";
 
   top.errors := tl.errors;
   top.types = tl.types;
@@ -225,7 +225,7 @@ top::BracketedOptTypeExprs ::= '<' tl::TypeExprs '>'
 abstract production typeListNone
 top::TypeExprs ::=
 {
-  top.pp = "";
+  top.unparse = "";
   top.errors := [];
   top.types = [];
   top.lexicalTypeVariables = [];
@@ -235,7 +235,7 @@ top::TypeExprs ::=
 concrete production typeListSingle
 top::TypeExprs ::= t::TypeExpr
 {
-  top.pp = t.pp;
+  top.unparse = t.unparse;
 
   top.errors := t.errors;
 
@@ -247,7 +247,7 @@ top::TypeExprs ::= t::TypeExpr
 concrete production typeListCons
 top::TypeExprs ::= t::TypeExpr list::TypeExprs
 {
-  top.pp = t.pp ++ " " ++ list.pp;
+  top.unparse = t.unparse ++ " " ++ list.unparse;
 
   top.errors := t.errors ++ list.errors;
 
@@ -274,7 +274,7 @@ top::TypeExprs ::= t::TypeExpr
 {
   top.errorsTyVars := case t of
                         typeVariableTypeExpr(_) -> []
-                      | _ -> [err(t.location, t.pp ++ " is not permitted here, only type variables are")]
+                      | _ -> [err(t.location, t.unparse ++ " is not permitted here, only type variables are")]
                       end;
   top.freeVariables = t.typerep.freeVariables;
 }
@@ -284,7 +284,7 @@ top::TypeExprs ::= t::TypeExpr list::TypeExprs
 {
   top.errorsTyVars := case t of
                         typeVariableTypeExpr(_) -> []
-                      | _ -> [err(t.location, t.pp ++ " is not permitted here, only type variables are")]
+                      | _ -> [err(t.location, t.unparse ++ " is not permitted here, only type variables are")]
                       end ++ list.errorsTyVars;
   top.freeVariables = t.typerep.freeVariables ++ list.freeVariables;
 }

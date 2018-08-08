@@ -9,7 +9,7 @@ terminal RSqr_t ']' ;
 concrete production listTypeExpr
 top::TypeExpr ::= '[' te::TypeExpr ']'
 {
-  top.pp = "[" ++ te.pp ++ "]";
+  top.unparse = "[" ++ te.unparse ++ "]";
 
   top.typerep = listType(te.typerep);
 
@@ -23,7 +23,7 @@ top::TypeExpr ::= '[' te::TypeExpr ']'
 concrete production emptyList
 top::Expr ::= '[' ']'
 {
-  top.pp = "[]";
+  top.unparse = "[]";
 
   forwards to mkStrFunctionInvocation(top.location, "core:nil", []);
 }
@@ -34,9 +34,9 @@ top::Expr ::= '[' ']'
 concrete production consListOp
 top::Expr ::= h::Expr '::' t::Expr
 {
-  top.pp = "(" ++ h.pp ++ " :: " ++ t.pp ++ ")" ;
+  top.unparse = "(" ++ h.unparse ++ " :: " ++ t.unparse ++ ")" ;
   
-  h.downSubst = top.downSubst; t.downSubst = top.downSubst; -- TODO BUG: don't know what this is needed... pp apparently??
+  h.downSubst = top.downSubst; t.downSubst = top.downSubst; -- TODO BUG: don't know what this is needed... unparse apparently??
   
   forwards to mkStrFunctionInvocation(top.location, "core:cons", [h, t]);
 }
@@ -44,7 +44,7 @@ top::Expr ::= h::Expr '::' t::Expr
 concrete production fullList
 top::Expr ::= '[' es::Exprs ']'
 { 
-  top.pp = "[ " ++ es.pp ++ " ]";
+  top.unparse = "[ " ++ es.unparse ++ " ]";
   
   es.downSubst = top.downSubst; -- TODO again, pretty printing garbage.
 

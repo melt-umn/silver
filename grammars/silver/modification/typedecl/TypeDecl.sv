@@ -10,7 +10,7 @@ terminal Type_t 'type' lexer classes {KEYWORD};
 concrete production typeDecl
 top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
 {
-  top.pp = "type " ++ id.pp ++ tl.pp ++ "=" ++ te.pp ++ ";";
+  top.unparse = "type " ++ id.unparse ++ tl.unparse ++ "=" ++ te.unparse ++ ";";
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;

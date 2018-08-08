@@ -1,15 +1,15 @@
 grammar silver:definition:core;
 
-import silver:langutil only unparse;
+import silver:langutil as slu; -- TODO remove
 
 {--
  - Qualified names of the form 'a:b:c:d...'
  -}
-nonterminal QName with config, name, location, grammarName, env, pp;
+nonterminal QName with config, name, location, grammarName, env, unparse;
 {--
  - Qualified names where the LAST name has an upper case first letter.
  -}
-nonterminal QNameType with config, name, location, grammarName, env, pp;
+nonterminal QNameType with config, name, location, grammarName, env, unparse;
 
 {--
  - The list of declarations resulting from looking up this QName
@@ -27,7 +27,7 @@ concrete production qNameId
 top::QName ::= id::Name
 {
   top.name = id.name;
-  top.pp = id.pp;
+  top.unparse = id.unparse;
   
   top.lookupValue = decorate customLookup("value", getValueDcl(top.name, top.env), top.name, top.location) with {};
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
@@ -38,7 +38,7 @@ concrete production qNameCons
 top::QName ::= id::Name ':' qn::QName
 {
   top.name = id.name ++ ":" ++ qn.name;
-  top.pp = id.pp ++ ":" ++ qn.pp;
+  top.unparse = id.unparse ++ ":" ++ qn.unparse;
   
   top.lookupValue = decorate customLookup("value", getValueDcl(top.name, top.env), top.name, top.location) with {};
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
@@ -49,7 +49,7 @@ abstract production qNameError
 top::QName ::= msg::[Message]
 {
   top.name = "err";
-  top.pp = "<err>";
+  top.unparse = "<err>";
   
   top.lookupValue = decorate errorLookup(msg) with {};
   top.lookupType = decorate errorLookup(msg) with {};
@@ -69,7 +69,7 @@ top::QNameLookup ::= kindOfLookup::String dcls::[DclInfo] name::String l::Locati
   top.found = !null(top.dcls); -- currently accurate
   top.dcl =
     if top.found then head(top.dcls)
-    else error("INTERNAL ERROR: Accessing dcl of " ++ kindOfLookup ++ " " ++ name ++ " at " ++ l.unparse);
+    else error("INTERNAL ERROR: Accessing dcl of " ++ kindOfLookup ++ " " ++ name ++ " at " ++ l.slu:unparse);
   
   top.fullName = if top.found then top.dcl.fullName else "undeclared:value:" ++ name;
   
@@ -117,7 +117,7 @@ concrete production qNameTypeId
 top::QNameType ::= id::IdUpper_t
 {
   top.name = id.lexeme;
-  top.pp = id.lexeme;
+  top.unparse = id.lexeme;
   
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
 }
@@ -126,7 +126,7 @@ concrete production qNameTypeCons
 top::QNameType ::= id::Name ':' qn::QNameType
 {
   top.name = id.name ++ ":" ++ qn.name;
-  top.pp = id.pp ++ ":" ++ qn.pp;
+  top.unparse = id.unparse ++ ":" ++ qn.unparse;
   
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
 }
@@ -134,7 +134,7 @@ top::QNameType ::= id::Name ':' qn::QNameType
 {--
  - Qualified name looked up CONTEXTUALLY
  -}
-nonterminal QNameAttrOccur with config, name, location, grammarName, env, pp, attrFor, errors, typerep, dcl, attrDcl, found;
+nonterminal QNameAttrOccur with config, name, location, grammarName, env, unparse, attrFor, errors, typerep, dcl, attrDcl, found;
 
 {--
  - For QNameAttrOccur, the name of the LHS to look up this attribute on.
@@ -152,7 +152,7 @@ concrete production qNameAttrOccur
 top::QNameAttrOccur ::= at::QName
 {
   top.name = at.name;
-  top.pp = at.pp;
+  top.unparse = at.unparse;
   
   -- Start with `at.lookupAttribute.dcls`
   -- Occurrence lookups for each attribute dcl on `top.attrFor`
@@ -199,9 +199,9 @@ top::QNameAttrOccur ::= at::QName
   
   top.typerep = if top.found then determineAttributeType(head(dclsNarrowed), top.attrFor) else errorType();
   top.dcl = if top.found then head(dclsNarrowed) else
-    error("INTERNAL ERROR: Accessing dcl of occurrence " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
+    error("INTERNAL ERROR: Accessing dcl of occurrence " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.slu:unparse);
   top.attrDcl = if top.found then head(attrsNarrowed) else
-    error("INTERNAL ERROR: Accessing dcl of attribute " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
+    error("INTERNAL ERROR: Accessing dcl of attribute " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.slu:unparse);
 }
 
 {--

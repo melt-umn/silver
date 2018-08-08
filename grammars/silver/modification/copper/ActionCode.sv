@@ -5,7 +5,7 @@ terminal Action_kwd 'action' lexer classes {KEYWORD};
 concrete production concreteProductionDclAction
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody 'action' acode::ActionCode_c
 {
-  top.pp = forward.pp ++ "action " ++ acode.pp;
+  top.unparse = forward.unparse ++ "action " ++ acode.unparse;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
 
@@ -27,14 +27,14 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 }
 
 
-nonterminal ActionCode_c with location,config,pp,actionCode,env,defs,grammarName,errors,frame, compiledGrammars, flowEnv;
+nonterminal ActionCode_c with location,config,unparse,actionCode,env,defs,grammarName,errors,frame, compiledGrammars, flowEnv;
 
 synthesized attribute actionCode :: String;
 
 concrete production actionCode_c
 top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 {
-  top.pp = "{\n" ++ stmts.pp ++ "}\n";
+  top.unparse = "{\n" ++ stmts.unparse ++ "}\n";
   top.defs = flatMap(hackTransformLocals, stmts.defs);
 
   top.actionCode = sflatMap(hacklocaldeclarations, stmts.defs) ++ stmts.translation;

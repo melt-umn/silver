@@ -1,12 +1,12 @@
 grammar silver:definition:core;
 
-nonterminal FunctionSignature with config, grammarName, env, location, pp, errors, defs, namedSignature, signatureName;
-nonterminal FunctionLHS with config, grammarName, env, location, pp, errors, defs, outputElement;
+nonterminal FunctionSignature with config, grammarName, env, location, unparse, errors, defs, namedSignature, signatureName;
+nonterminal FunctionLHS with config, grammarName, env, location, unparse, errors, defs, outputElement;
 
 concrete production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 
 {
-  top.pp = "function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp; 
+  top.unparse = "function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse; 
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
@@ -45,7 +45,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 concrete production functionSignature
 top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS 
 {
-  top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
+  top.unparse = lhs.unparse ++ " ::= " ++ rhs.unparse;
 
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
@@ -57,7 +57,7 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
 concrete production functionLHS
 top::FunctionLHS ::= t::TypeExpr
 {
-  top.pp = t.pp;
+  top.unparse = t.unparse;
 
   production attribute fName :: String;
   fName = "__func__lhs";

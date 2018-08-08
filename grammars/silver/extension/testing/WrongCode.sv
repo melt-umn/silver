@@ -9,7 +9,7 @@ terminal WrongFlowCode_kwd 'wrongFlowCode' lexer classes {KEYWORD};
 concrete production wrongDecl
 top::AGDcl ::= 'wrongCode' s::String_t '{' ags::AGDcls '}'
 {
-  top.pp = "wrongCode" ++ s.lexeme ++ "{" ++ ags.pp ++ "}";
+  top.unparse = "wrongCode" ++ s.lexeme ++ "{" ++ ags.unparse ++ "}";
   
   top.errors := 
     if indexOf(substring(1, length(s.lexeme) - 1, s.lexeme), foldMessages(ags.errors)) == -1
@@ -25,7 +25,7 @@ top::AGDcl ::= 'wrongCode' s::String_t '{' ags::AGDcls '}'
 concrete production wrongFlowDecl
 top::AGDcl ::= 'wrongFlowCode' s::String_t '{' ags::AGDcls '}'
 {
-  top.pp = "wrongFlowCode" ++ s.lexeme ++ "{" ++ ags.pp ++ "}";
+  top.unparse = "wrongFlowCode" ++ s.lexeme ++ "{" ++ ags.unparse ++ "}";
   
   top.errors := 
     if indexOf(substring(1, length(s.lexeme) - 1, s.lexeme), foldMessages(ags.errors)) == -1

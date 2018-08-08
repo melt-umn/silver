@@ -16,7 +16,7 @@ terminal MakeTestSuite_t 'makeTestSuite' lexer classes {KEYWORD};
 concrete production makeTestSuite_p
 top::AGDcl ::= 'makeTestSuite' nme::IdLower_t ';'
 {
-  top.pp = "makeTestSuite " ++ nme.lexeme ++ ";\n";
+  top.unparse = "makeTestSuite " ++ nme.lexeme ++ ";\n";
 
   local sig :: ProductionSignature =
     productionSignature(
@@ -51,7 +51,7 @@ top::AGDcl ::= 'makeTestSuite' nme::IdLower_t ';'
 concrete production mainTestSuite_p
 top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
 {
-  top.pp = "mainTestSuite " ++ nme.lexeme ++ ";\n";
+  top.unparse = "mainTestSuite " ++ nme.lexeme ++ ";\n";
 
   forwards to 
   appendAGDcl(

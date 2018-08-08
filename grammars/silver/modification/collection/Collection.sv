@@ -6,7 +6,7 @@ import silver:util;
 
 --import silver:analysis:typechecking:core;
 
-nonterminal NameOrBOperator with config, location, grammarName, errors, env, pp, operation, operatorForType;
+nonterminal NameOrBOperator with config, location, grammarName, errors, env, unparse, operation, operatorForType;
 nonterminal Operation;
 
 synthesized attribute operation :: Operation;
@@ -15,7 +15,7 @@ inherited attribute operatorForType :: Type;
 concrete production nameOperator
 top::NameOrBOperator ::= q::QName
 {
-  top.pp = q.pp;
+  top.unparse = q.unparse;
 
   top.operation = case q.lookupValue.dcl of
                   | funDcl(_,_,_) -> functionOperation(q.lookupValue.fullName)
@@ -47,7 +47,7 @@ top::NameOrBOperator ::= q::QName
 concrete production plusplusOperator
 top::NameOrBOperator ::= '++'
 {
-  top.pp = "++";
+  top.unparse = "++";
 
   top.operation = case top.operatorForType of
                   | stringType() -> plusPlusOperationString()
@@ -64,7 +64,7 @@ top::NameOrBOperator ::= '++'
 concrete production borOperator
 top::NameOrBOperator ::= '||'
 {
-  top.pp = "||";
+  top.unparse = "||";
 
   top.operation = borOperation();
   top.errors := case top.operatorForType of
@@ -75,7 +75,7 @@ top::NameOrBOperator ::= '||'
 concrete production bandOperator
 top::NameOrBOperator ::= '&&'
 {
-  top.pp = "&&";
+  top.unparse = "&&";
 
   top.operation = bandOperation();
   top.errors := case top.operatorForType of
@@ -113,7 +113,7 @@ top::Operation ::=
 concrete production collectionAttributeDclSyn
 top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator ';'
 {
-  top.pp = "synthesized attribute " ++ a.name ++ tl.pp ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
+  top.unparse = "synthesized attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " with " ++ q.unparse ++ " ;" ;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -139,7 +139,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
 concrete production collectionAttributeDclInh
 top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator ';'
 {
-  top.pp = "inherited attribute " ++ a.name ++ tl.pp ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
+  top.unparse = "inherited attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " with " ++ q.unparse ++ " ;" ;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -166,7 +166,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
 concrete production collectionAttributeDclProd
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with' q::NameOrBOperator ';'
 {
-  top.pp = "production attribute " ++ a.name ++ " :: " ++ te.pp ++ " with " ++ q.pp ++ " ;" ;
+  top.unparse = "production attribute " ++ a.name ++ " :: " ++ te.unparse ++ " with " ++ q.unparse ++ " ;" ;
 
   top.productionAttributes = [localColDef(top.grammarName, a.location, fName, te.typerep, q.operation)];
 
@@ -214,7 +214,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 abstract production baseCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  top.pp = "\t" ++ val.pp ++ " := " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ val.unparse ++ " := " ++ e.unparse ++ ";";
 
   e.downSubst = top.downSubst;
   -- the real type checking is done by the forward, but we must ensure things are tied up nicely
@@ -226,7 +226,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 abstract production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  top.pp = "\t" ++ val.pp ++ " <- " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ val.unparse ++ " <- " ++ e.unparse ++ ";";
 
   e.downSubst = top.downSubst;
   -- the real type checking is done by the forward, but we must ensure things are tied up nicely
@@ -241,7 +241,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 abstract production synBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
 
   top.errors := e.errors;
 
@@ -260,7 +260,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 abstract production synAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
 
   top.errors := e.errors;
 
@@ -282,7 +282,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 abstract production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
 
   top.errors := e.errors;
 
@@ -301,7 +301,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 abstract production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
 
   top.errors := e.errors;
 
@@ -326,7 +326,7 @@ terminal BaseContains_t  ':=' lexer classes {SPECOP};
 concrete production attrContainsAppend
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
 {
-  top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = [];
@@ -344,7 +344,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
 concrete production attrContainsBase
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
 {
-  top.pp = "\t" ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = [];
@@ -362,7 +362,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
 concrete production valContainsAppend
 top::ProductionStmt ::= val::QName '<-' e::Expr ';'
 {
-  top.pp = val.pp ++ " <- " ++ e.pp ++ ";";
+  top.unparse = val.unparse ++ " <- " ++ e.unparse ++ ";";
   
   top.errors <- val.lookupValue.errors;
 
@@ -377,7 +377,7 @@ top::ProductionStmt ::= val::QName '<-' e::Expr ';'
 concrete production valContainsBase
 top::ProductionStmt ::= val::QName ':=' e::Expr ';'
 {
-  top.pp = val.pp ++ " := " ++ e.pp ++ ";";
+  top.unparse = val.unparse ++ " := " ++ e.unparse ++ ";";
 
   top.errors <- val.lookupValue.errors;
 

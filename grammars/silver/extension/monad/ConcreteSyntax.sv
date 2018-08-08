@@ -2,7 +2,7 @@
 concrete production do_c
 top::Expr ::= 'do' '(' bindFn::QName ',' returnFn::QName ')' '{' body::DoBodyStmts '}'
 {
-  top.pp = s"do (${bindFn.pp}, ${returnFn.pp}) {${body.pp}}";
+  top.unparse = s"do (${bindFn.unparse}, ${returnFn.unparse}) {${body.unparse}}";
   
   local bindLookup::Decorated QNameLookup = bindFn.lookupValue;
   local returnLookup::Decorated QNameLookup = returnFn.lookupValue;
@@ -28,12 +28,12 @@ autocopy attribute isFinalVal::Boolean;
 
 synthesized attribute transform::Expr;
 
-nonterminal DoBodyStmts with location, pp, transform, bindFn, returnFn, isFinalVal;
+nonterminal DoBodyStmts with location, unparse, transform, bindFn, returnFn, isFinalVal;
 
 concrete production bindExprDoBodyStmts
 top::DoBodyStmts ::= n::MName '::' t::TypeExpr '<-' e::Expr ';' rest::DoBodyStmts
 {
-  top.pp = s"${n.pp}::${t.pp} <- ${e.pp}; ${rest.pp}";
+  top.unparse = s"${n.unparse}::${t.unparse} <- ${e.unparse}; ${rest.unparse}";
   top.transform =
     bindExpr(nameFromMName(n), t, e, rest.transform, top.bindFn, location=top.location);
 }
@@ -41,7 +41,7 @@ top::DoBodyStmts ::= n::MName '::' t::TypeExpr '<-' e::Expr ';' rest::DoBodyStmt
 concrete production letExprDoBodyStmts
 top::DoBodyStmts ::= n::MName '::' t::TypeExpr '=' e::Expr ';' rest::DoBodyStmts
 {
-  top.pp = s"${n.pp}::${t.pp} = ${e.pp}; ${rest.pp}";
+  top.unparse = s"${n.unparse}::${t.unparse} = ${e.unparse}; ${rest.unparse}";
   
   -- TODO: move this to AbstractSyntax for consistancy?
   top.transform =
@@ -54,7 +54,7 @@ top::DoBodyStmts ::= n::MName '::' t::TypeExpr '=' e::Expr ';' rest::DoBodyStmts
 concrete production consDoBodyStmt
 top::DoBodyStmts ::= h::DoBodyStmt t::DoBodyStmts
 {
-  top.pp = s"${h.pp} ${t.pp}";
+  top.unparse = s"${h.unparse} ${t.unparse}";
   forwards to
     bindExprDoBodyStmts(
       mName("_", top.location), '::',
@@ -68,23 +68,23 @@ top::DoBodyStmts ::= h::DoBodyStmt t::DoBodyStmts
 concrete production oneDoBodyStmt
 top::DoBodyStmts ::= h::DoBodyStmt
 {
-  top.pp = s"${h.pp}";
+  top.unparse = s"${h.unparse}";
   top.transform = h.transform;
 }
 
-nonterminal DoBodyStmt with location, pp, transform, bindFn, returnFn, isFinalVal;
+nonterminal DoBodyStmt with location, unparse, transform, bindFn, returnFn, isFinalVal;
 
 concrete production doBodyBlock
 top::DoBodyStmt ::= '{' body::DoBodyStmts '}'
 {
-  top.pp = s"{${body.pp}}";
+  top.unparse = s"{${body.unparse}}";
   top.transform = body.transform;
 }
 
 concrete production exprDoBody
 top::DoBodyStmt ::= e::Expr ';'
 {
-  top.pp = s"${e.pp};";
+  top.unparse = s"${e.unparse};";
   --top.errors := e.errors;
   top.transform = e;
 }
@@ -92,7 +92,7 @@ top::DoBodyStmt ::= e::Expr ';'
 concrete production returnDoBody
 top::DoBodyStmt ::= 'return' e::Expr ';'
 {
-  top.pp = s"return ${e.pp};";
+  top.unparse = s"return ${e.unparse};";
   top.transform = returnExpr(e, top.isFinalVal, top.returnFn, location=top.location);
 }
 
@@ -101,14 +101,14 @@ top::DoBodyStmt ::= 'return' e::Expr ';'
 abstract production returnUnitDoBody
 top::DoBodyStmt ::= 
 {
-  top.pp = s"return unit();";
+  top.unparse = s"return unit();";
   top.transform = returnUnitExpr(top.returnFn, location=top.location);
 }
 
 concrete production condDoBody
 top::DoBodyStmt ::= 'if' cond::Expr 'then' th::DoBodyStmt NoElse_t
 {
-  top.pp = s"if ${cond.pp} then ${th.pp}";
+  top.unparse = s"if ${cond.unparse} then ${th.unparse}";
   forwards to
     condDoBodyElse(
       'if', cond,
@@ -120,7 +120,7 @@ top::DoBodyStmt ::= 'if' cond::Expr 'then' th::DoBodyStmt NoElse_t
 concrete production condDoBodyElse
 top::DoBodyStmt ::= 'if' cond::Expr 'then' th::DoBodyStmt 'else' el::DoBodyStmt
 {
-  top.pp = s"if ${cond.pp} then ${th.pp} else ${el.pp}";
+  top.unparse = s"if ${cond.unparse} then ${th.unparse} else ${el.unparse}";
   top.transform =
     ifThenElse(
       'if', cond,

@@ -3,7 +3,7 @@ grammar silver:definition:core;
 concrete production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
-  top.pp = "global " ++ id.pp ++ " :: " ++ t.pp ++ " = " ++ e.pp ++ "\n"; 
+  top.unparse = "global " ++ id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse ++ "\n"; 
   top.errors := t.errors ++ e.errors;
 
   production attribute fName :: String;

@@ -1,13 +1,13 @@
 grammar silver:definition:core;
 
-nonterminal AspectProductionSignature with config, grammarName, env, location, pp, errors, defs, realSignature, namedSignature, signatureName;
-nonterminal AspectProductionLHS with config, grammarName, env, location, pp, errors, defs, outputElement, realSignature;
+nonterminal AspectProductionSignature with config, grammarName, env, location, unparse, errors, defs, realSignature, namedSignature, signatureName;
+nonterminal AspectProductionLHS with config, grammarName, env, location, unparse, errors, defs, outputElement, realSignature;
 
-nonterminal AspectFunctionSignature with config, grammarName, env, location, pp, errors, defs, realSignature, namedSignature, signatureName;
-nonterminal AspectFunctionLHS with config, grammarName, env, location, pp, errors, defs, realSignature, outputElement;
+nonterminal AspectFunctionSignature with config, grammarName, env, location, unparse, errors, defs, realSignature, namedSignature, signatureName;
+nonterminal AspectFunctionLHS with config, grammarName, env, location, unparse, errors, defs, realSignature, outputElement;
 
-nonterminal AspectRHS with config, grammarName, env, location, pp, errors, defs, inputElements, realSignature;
-nonterminal AspectRHSElem with config, grammarName, env, location, pp, errors, defs, realSignature, inputElements, deterministicCount;
+nonterminal AspectRHS with config, grammarName, env, location, unparse, errors, defs, inputElements, realSignature;
+nonterminal AspectRHSElem with config, grammarName, env, location, unparse, errors, defs, realSignature, inputElements, deterministicCount;
 
 flowtype forward {realSignature, env} on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS;
 flowtype forward {deterministicCount, realSignature, env} on AspectRHSElem;
@@ -21,7 +21,7 @@ autocopy attribute realSignature :: [NamedSignatureElement];
 concrete production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 {
-  top.pp = "aspect production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
+  top.unparse = "aspect production " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 
   top.defs = 
     if null(body.productionAttributes) then []
@@ -57,7 +57,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 concrete production aspectFunctionDcl
 top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody 
 {
-  top.pp = "aspect function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
+  top.unparse = "aspect function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 
   top.defs = 
     if null(body.productionAttributes) then []
@@ -93,7 +93,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 concrete production aspectProductionSignature
 top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS 
 {
-  top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
+  top.unparse = lhs.unparse ++ " ::= " ++ rhs.unparse;
 
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
@@ -107,14 +107,14 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 concrete production aspectProductionLHSNone
 top::AspectProductionLHS ::= '_'
 {
-  top.pp = "_";
+  top.unparse = "_";
   forwards to aspectProductionLHSId(name("p_top", top.location), location=top.location);
 }
 
 concrete production aspectProductionLHSId
 top::AspectProductionLHS ::= id::Name
 {
-  top.pp = id.pp;
+  top.unparse = id.unparse;
 
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
@@ -125,7 +125,7 @@ top::AspectProductionLHS ::= id::Name
 concrete production aspectProductionLHSTyped
 top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 {
-  top.pp = id.pp;
+  top.unparse = id.unparse;
 
   top.errors <- t.errors;
   
@@ -135,7 +135,7 @@ top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 abstract production aspectProductionLHSFull
 top::AspectProductionLHS ::= id::Name t::Type
 {
-  top.pp = id.pp ++ "::" ++ prettyType(t);
+  top.unparse = id.unparse ++ "::" ++ prettyType(t);
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
@@ -154,7 +154,7 @@ top::AspectProductionLHS ::= id::Name t::Type
 concrete production aspectRHSElemNil
 top::AspectRHS ::= 
 {
-  top.pp = "";
+  top.unparse = "";
 
   top.defs = [];
   top.errors := [];
@@ -164,7 +164,7 @@ top::AspectRHS ::=
 concrete production aspectRHSElemCons
 top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 {
-  top.pp = h.pp ++ " " ++ t.pp;
+  top.unparse = h.unparse ++ " " ++ t.unparse;
 
   top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
@@ -179,7 +179,7 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 concrete production aspectRHSElemNone
 top::AspectRHSElem ::= '_'
 {
-  top.pp = "_";
+  top.unparse = "_";
 
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
@@ -193,7 +193,7 @@ top::AspectRHSElem ::= '_'
 concrete production aspectRHSElemId
 top::AspectRHSElem ::= id::Name
 {
-  top.pp = id.pp;
+  top.unparse = id.unparse;
 
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
@@ -206,7 +206,7 @@ top::AspectRHSElem ::= id::Name
 concrete production aspectRHSElemTyped
 top::AspectRHSElem ::= id::Name '::' t::TypeExpr
 {
-  top.pp = id.pp ++ "::" ++ t.pp;
+  top.unparse = id.unparse ++ "::" ++ t.unparse;
   
   top.errors <- t.errors;
 
@@ -216,7 +216,7 @@ top::AspectRHSElem ::= id::Name '::' t::TypeExpr
 abstract production aspectRHSElemFull
 top::AspectRHSElem ::= id::Name t::Type
 {
-  top.pp = id.pp ++ "::" ++ prettyType(t);
+  top.unparse = id.unparse ++ "::" ++ prettyType(t);
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
@@ -235,7 +235,7 @@ top::AspectRHSElem ::= id::Name t::Type
 concrete production aspectFunctionSignature
 top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS 
 {
-  top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
+  top.unparse = lhs.unparse ++ " ::= " ++ rhs.unparse;
 
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
@@ -250,7 +250,7 @@ top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS
 concrete production functionLHSType
 top::AspectFunctionLHS ::= t::TypeExpr
 {
-  top.pp = t.pp;
+  top.unparse = t.unparse;
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then "_NULL_" else head(top.realSignature).elementName;
