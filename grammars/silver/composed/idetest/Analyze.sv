@@ -13,7 +13,7 @@ import ide;
 
 -- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideAnalyze
-IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser ioin::IO
+IOVal<[Message]> ::= args::[String]  svParser::SVParser ioin::IO
 {
   -- Figure out arguments
   local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
@@ -37,14 +37,14 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser ioin::IO
 
   ---- DIFFERENCE: We do *not* run the actions in the functions. Only check for errors.
 
-  local messages :: [IdeMessage] = getAllBindingErrors(unit.allGrammars);
+  local messages :: [Message] = flatMap(rewriteMessages, unit.allGrammars);
 
   return if !null(argErrors) then
-    ioval(ioin, [makeSysIdeMessage(ideMsgLvError, "Parsing failed during build. If source code/resources are changed outside IDE, refresh and rebuild is needed.")])
+    ioval(ioin, [err(system_location, "Parsing failed during build. If source code/resources are changed outside IDE, refresh and rebuild is needed.")])
   else if !null(envErrors) then
     ioval(benvResult.io, getSysMessages(envErrors))
   else if null(unit.grammarList) then
-    ioval(buildrun.io, [makeSysIdeMessage(ideMsgLvError, 
+    ioval(buildrun.io, [err(system_location, 
             (if buildGrammar=="" 
              then "No grammar is specified for compilation. Check configuration for this project." 
              else ("The specified grammar \"" ++ buildGrammar ++ "\" could not be found. Check configuration for this project."))
@@ -54,7 +54,7 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser ioin::IO
 
 -- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideGenerate
-IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  ioin::IO
+IOVal<[Message]> ::= args::[String]  svParser::SVParser  ioin::IO
 {
   -- Figure out arguments
   local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
@@ -84,35 +84,30 @@ IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  ioin::IO
 }
 
 function getSysMessages
-[IdeMessage] ::= es::[String]
+[Message] ::= es::[String]
 {
   return if null(es)
          then []
-         else [makeSysIdeMessage(ideMsgLvError, head(es))] ++ getSysMessages(tail(es));
+         else [err(system_location, head(es))] ++ getSysMessages(tail(es));
 }
 
-function getAllBindingErrors
-[IdeMessage] ::= specs::[Decorated RootSpec]
+function rewriteMessages
+[Message] ::= spec::Decorated RootSpec
 {
-  local spec :: Decorated RootSpec = head(specs);
-  local grmPath :: String = spec.grammarSource;
-
-  return if null(specs) then []
-  else getIdeMessages(grmPath, spec) ++ getAllBindingErrors(tail(specs));
-}
-
-function getIdeMessages
-[IdeMessage] ::= path::String spec::Decorated RootSpec
-{
-  return map(rewriteMessage(path, _), 
+  return map(rewriteMessage(spec.grammarSource, _), 
     if !null(spec.parsingErrors)
     then flatMap(snd, spec.parsingErrors)
     else flatMap(snd, spec.grammarErrors));
 }
 
+-- Message for the IDE require full paths.
 function rewriteMessage
-IdeMessage ::= path::String m::Message
+Message ::= path::String m::Message
 {
-  return makeIdeMessage(path, m.where, m.severity, m.message);
+  return case m of
+  | err(loc(file, a, b, c, d, e, f), g) -> err(loc(path ++ "/" ++ file, a, b, c, d, e, f), g)
+  | wrn(loc(file, a, b, c, d, e, f), g) -> wrn(loc(path ++ "/" ++ file, a, b, c, d, e, f), g)
+  | info(loc(file, a, b, c, d, e, f), g) -> info(loc(path ++ "/" ++ file, a, b, c, d, e, f), g)
+  end;
 }
 

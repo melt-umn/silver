@@ -44,28 +44,30 @@ temp_imp_ide_dcl svParse ".sv" {
 -- Declarations of IDE functions referred in decl block.
 
 function analyze
-IOVal<[IdeMessage]> ::= project::IdeProject  args::[IdeProperty]  i::IO
+IOVal<[Message]> ::= project::IdeProject  args::[IdeProperty]  i::IO
 {
   local argio :: IOVal<[String]> = getArgStrings(args, project, i);
 
-  local ru :: IOVal<[IdeMessage]> = ideAnalyze(argio.iovalue, svParse, argio.io);
+  local ru :: IOVal<[Message]> = ideAnalyze(argio.iovalue, svParse, argio.io);
 
   return ru;
 }
 
 function generate
-IOVal<[IdeMessage]> ::= project::IdeProject  args::[IdeProperty]  i::IO
+IOVal<[Message]> ::= project::IdeProject  args::[IdeProperty]  i::IO
 {
   local argio :: IOVal<[String]> = getArgStrings(args, project, i);
 
-  local ru :: IOVal<[IdeMessage]> = ideGenerate(argio.iovalue, svParse, argio.io);
+  local ru :: IOVal<[Message]> = ideGenerate(argio.iovalue, svParse, argio.io);
 
   return ru;
 
 }
 
+global system_location :: Location = loc("", -1, -1, -1, -1, -1, -1);
+
 function export
-IOVal<[IdeMessage]> ::= project::IdeProject  args::[IdeProperty]  i::IO
+IOVal<[Message]> ::= project::IdeProject  args::[IdeProperty]  i::IO
 {
   local proj_path :: IOVal<String> = getProjectPath(project, i);
   local gen_path :: IOVal<String> = getGeneratedPath(project, proj_path.io);
@@ -80,9 +82,9 @@ IOVal<[IdeMessage]> ::= project::IdeProject  args::[IdeProperty]  i::IO
   local jarExists :: IOVal<Boolean> = isFile(jarFile, ant(buildFile, "", "", fileExists.io));
 
   return if !fileExists.iovalue then
-    ioval(fileExists.io, [makeSysIdeMessage(ideMsgLvError, "build.xml doesn't exist. Has the project been successfully built before?")])
+    ioval(fileExists.io, [err(system_location, "build.xml doesn't exist. Has the project been successfully built before?")])
   else if !jarExists.iovalue then
-    ioval(jarExists.io, [makeSysIdeMessage(ideMsgLvError, "Ant failed to generate the jar.")])
+    ioval(jarExists.io, [err(system_location, "Ant failed to generate the jar.")])
   else
     ioval(refreshProject(project, copyFile(jarFile, targetFile, jarExists.io)), []);
 }

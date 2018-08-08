@@ -2,18 +2,6 @@
 *.jar
 JARS-BAK
 build
-documentation/gen/core/
-documentation/gen/lib/extcore/
-documentation/gen/silver/analysis/
-documentation/gen/silver/composed/
-documentation/gen/silver/definition/
-documentation/gen/silver/driver/
-documentation/gen/silver/extension/
-documentation/gen/silver/host/
-documentation/gen/silver/langutil/
-documentation/gen/silver/modification/
-documentation/gen/silver/translation/
-documentation/gen/silver/util/
 generated/bin
 generated/doc
 generated/ide
@@ -35,6 +23,7 @@ runtime/imp/main/.project
 runtime/imp/main/.settings
 runtime/imp/main/src/core
 runtime/imp/main/src/ide
+runtime/imp/main/src/silver
 runtime/imp/main/target
 runtime/java/bin/
 test/**/*.test.output

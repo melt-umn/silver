@@ -60,7 +60,7 @@ public interface SVInterface {
 	public String fileExtension();
 	
 	/**
-	 * IOVal<[IdeMessage]> ::= IdeProject [IdeProperty] IO
+	 * IOVal<[Message]> ::= IdeProject [IdeProperty] IO
 	 * 
 	 * Run when a build action is requested. e.g. a file is saved, if auto-build is on.
 	 * 
@@ -72,7 +72,7 @@ public interface SVInterface {
 	public NIOVal build(IProject project, ConsCell properties, IOToken iotoken); 
 
 	/**
-	 * IOVal<[IdeMessage]> ::= IdeProject [IdeProperty] IO
+	 * IOVal<[Message]> ::= IdeProject [IdeProperty] IO
 	 * 
 	 * <p>Run when a build action *has succeeded without errors*.
 	 * 
@@ -90,7 +90,7 @@ public interface SVInterface {
 	public NIOVal postbuild(IProject project, ConsCell properties, IOToken iotoken);
 	
 	/**
-	 * IOVal<[IdeMessage]> ::= IdeProject [IdeProperty] IO
+	 * IOVal<[Message]> ::= IdeProject [IdeProperty] IO
 	 * 
 	 * Run when the user requests an export? (TODO: uh, figure some stuff out here)
 	 * 

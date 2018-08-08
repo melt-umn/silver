@@ -169,7 +169,7 @@ top::IdeStmt ::=
 }
 
 -- Helpers for writing expected types
-global t_iomsgs :: Type = nonterminalType("core:IOVal", [listType(nonterminalType("ide:IdeMessage", []))]);
+global t_iomsgs :: Type = nonterminalType("core:IOVal", [listType(nonterminalType("silver:langutil:Message", []))]);
 global t_props :: Type = listType(nonterminalType("ide:IdeProperty", []));
 global t_io :: Type = foreignType("core:IO", []);
 global t_proj :: Type = foreignType("ide:IdeProject", []);
@@ -181,7 +181,7 @@ top::IdeStmt ::= 'builder' builderName::QName ';'
   top.ideFunctions = [builderFunction(builderName.lookupValue.fullName)];
   top.errors := builderName.lookupValue.errors;
   
-  -- IOVal<[IdeMessage]> ::= IdeProject  [IdeProperty]  IO
+  -- IOVal<[Message]> ::= IdeProject  [IdeProperty]  IO
   local expectedType :: Type =
     functionType(t_iomsgs, [t_proj, t_props, t_io], []);
   
@@ -201,7 +201,7 @@ top::IdeStmt ::= 'postbuilder' postbuilderName::QName ';'
   top.ideFunctions = [postbuilderFunction(postbuilderName.lookupValue.fullName)];
   top.errors := postbuilderName.lookupValue.errors;
   
-  -- IOVal<[IdeMessage]> ::= IdeProject  [IdeProperty]  IO
+  -- IOVal<[Message]> ::= IdeProject  [IdeProperty]  IO
   local expectedType :: Type =
     functionType(t_iomsgs, [t_proj, t_props, t_io], []);
   
@@ -221,7 +221,7 @@ top::IdeStmt ::= 'exporter' exporterName::QName ';'
   top.ideFunctions = [exporterFunction(exporterName.lookupValue.fullName)];
   top.errors := exporterName.lookupValue.errors;
   
-  -- IOVal<[IdeMessage]> ::= IdeProject  [IdeProperty]  IO
+  -- IOVal<[Message]> ::= IdeProject  [IdeProperty]  IO
   local expectedType :: Type =
     functionType(t_iomsgs, [t_proj, t_props, t_io], []);
   

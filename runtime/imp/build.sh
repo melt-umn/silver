@@ -14,7 +14,7 @@ cd main
 
 ### clean up generated code that's stale
 if [ -d src/core ]; then
-  rm -r src/core src/ide
+  rm -rf src/core src/ide src/silver
 fi
 
 ### regenerate fresh code:
@@ -33,7 +33,7 @@ mvn clean package
 mkdir temp
 cd temp
 jar xf ../target/edu.umn.cs.melt.ide*.jar
-rm -r ide core
+rm -r ide core silver
 jar cmf META-INF/MANIFEST.MF ../IDEPluginRuntime.jar *
 cd ..
 rm -r temp
