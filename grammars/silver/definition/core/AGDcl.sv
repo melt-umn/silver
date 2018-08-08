@@ -46,7 +46,7 @@ top::AGDcl ::=
 abstract production errorAGDcl
 top::AGDcl ::= e::[Message]
 {
-  top.unparse = s"{- Errors:\n${foldMessages(e)} -}";
+  top.unparse = s"{- Errors:\n${messagesToString(e)} -}";
   top.errors := e;
 }
 

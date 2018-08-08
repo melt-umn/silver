@@ -1,5 +1,7 @@
 grammar silver:definition:core;
 
+exports silver:langutil;
+
 -- The following are grammar-wide imports for 'core'
 
 -- The 'Type' syntax. (I made this separate to try to make s:d:core less of a "dump everything here" grammar.)

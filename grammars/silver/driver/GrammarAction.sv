@@ -108,7 +108,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
 function renderMessages
 String ::= grammarSource::String  msg::Pair<String [Message]>
 {
-  return " [" ++ grammarSource ++ msg.fst ++ "]\n" ++ foldMessages(msg.snd);
+  return " [" ++ grammarSource ++ msg.fst ++ "]\n" ++ messagesToString(msg.snd) ++ "\n";
 }
 
 function grammarContainsErrors

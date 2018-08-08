@@ -95,7 +95,7 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 abstract production errorProductionStmt
 top::ProductionStmt ::= e::[Message]
 {
-  top.unparse = s"{- Errors:\n${foldMessages(e)} -}";
+  top.unparse = s"{- Errors:\n${messagesToString(e)} -}";
   top.errors := e;
   
   top.productionAttributes = [];

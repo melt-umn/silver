@@ -1,7 +1,5 @@
 grammar silver:definition:core;
 
-import silver:langutil as slu; -- TODO remove
-
 {--
  - Qualified names of the form 'a:b:c:d...'
  -}
@@ -69,7 +67,7 @@ top::QNameLookup ::= kindOfLookup::String dcls::[DclInfo] name::String l::Locati
   top.found = !null(top.dcls); -- currently accurate
   top.dcl =
     if top.found then head(top.dcls)
-    else error("INTERNAL ERROR: Accessing dcl of " ++ kindOfLookup ++ " " ++ name ++ " at " ++ l.slu:unparse);
+    else error("INTERNAL ERROR: Accessing dcl of " ++ kindOfLookup ++ " " ++ name ++ " at " ++ l.unparse);
   
   top.fullName = if top.found then top.dcl.fullName else "undeclared:value:" ++ name;
   
@@ -199,9 +197,9 @@ top::QNameAttrOccur ::= at::QName
   
   top.typerep = if top.found then determineAttributeType(head(dclsNarrowed), top.attrFor) else errorType();
   top.dcl = if top.found then head(dclsNarrowed) else
-    error("INTERNAL ERROR: Accessing dcl of occurrence " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.slu:unparse);
+    error("INTERNAL ERROR: Accessing dcl of occurrence " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
   top.attrDcl = if top.found then head(attrsNarrowed) else
-    error("INTERNAL ERROR: Accessing dcl of attribute " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.slu:unparse);
+    error("INTERNAL ERROR: Accessing dcl of attribute " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
 }
 
 {--

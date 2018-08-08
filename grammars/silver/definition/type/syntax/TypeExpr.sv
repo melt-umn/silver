@@ -36,7 +36,7 @@ function addNewLexicalTyVars
 abstract production errorTypeExpr
 top::TypeExpr ::= e::[Message]
 {
-  top.unparse = s"{- Errors:\n${foldMessages(e)} -}";
+  top.unparse = s"{- Errors:\n${messagesToString(e)} -}";
   
   top.typerep = errorType();
   

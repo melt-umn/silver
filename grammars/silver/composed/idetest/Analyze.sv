@@ -113,6 +113,6 @@ function getIdeMessages
 function rewriteMessage
 IdeMessage ::= path::String m::Message
 {
-  return makeIdeMessage(path, m.loc, m.severity, m.msg);
+  return makeIdeMessage(path, m.where, m.severity, m.message);
 }
 

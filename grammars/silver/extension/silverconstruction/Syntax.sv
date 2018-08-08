@@ -1,6 +1,5 @@
 grammar silver:extension:silverconstruction;
 
-imports silver:langutil;
 imports silver:langutil:pp;
 
 imports silver:definition:core;

@@ -12,8 +12,6 @@ import silver:extension:list;
 
 import lib:extcore;
 
-import silver:langutil only unparse;
-
 terminal EqualityTest_t 'equalityTest' lexer classes {KEYWORD};
 
 concrete production equalityTest2_p

@@ -20,7 +20,7 @@ synthesized attribute message :: String;
 synthesized attribute output :: String;
 {--
  - A convention for determining message severity.
- - Lower is more severe.
+ - err=2, wrn=1, info=0
  -}
 synthesized attribute severity :: Integer;
 

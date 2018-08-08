@@ -8,8 +8,6 @@ imports silver:modification:primitivepattern;
 import silver:definition:type:syntax only typerepTypeExpr;
 import silver:modification:let_fix;
 
-import silver:langutil as slu; -- TODO remove
-
 terminal Case_kwd 'case' lexer classes {KEYWORD,RESERVED};
 terminal Of_kwd 'of' lexer classes {KEYWORD,RESERVED};
 terminal Arrow_kwd '->' lexer classes {SPECOP};
@@ -69,7 +67,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
     caseExpr(es.rawExprs, ml.matchRuleList, 
       mkStrFunctionInvocation(top.location, "core:error",
         [stringConst(terminal(String_t, 
-          "\"Error: pattern match failed at " ++ top.grammarName ++ " " ++ top.location.slu:unparse ++ "\\n\""), location=top.location)]),
+          "\"Error: pattern match failed at " ++ top.grammarName ++ " " ++ top.location.unparse ++ "\\n\""), location=top.location)]),
       freshType(), location=top.location);
 }
 

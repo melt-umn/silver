@@ -35,7 +35,7 @@ synthesized attribute rawExprs :: [Expr];
 abstract production errorExpr
 top::Expr ::= e::[Message]
 {
-  top.unparse = s"{- Errors:\n${foldMessages(e)} -}";
+  top.unparse = s"{- Errors:\n${messagesToString(e)} -}";
   top.errors := e;
   top.typerep = errorType();
 }
