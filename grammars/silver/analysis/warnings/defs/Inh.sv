@@ -190,7 +190,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
                           -- their flow types aren't messed up?
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
       if null(lhsInhExceedsFlowType) then []
-      else [wrn(top.location, "Synthesized equation " ++ attr.pp ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
+      else [wrn(top.location, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
 }
 
@@ -228,7 +228,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     && top.frame.prodFlowGraph.isJust
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
       if null(lhsInhExceedsFlowType) then []
-      else [wrn(top.location, "Synthesized equation " ++ attr.pp ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
+      else [wrn(top.location, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
 }
 aspect production synAppendColAttributeDef
@@ -249,7 +249,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     && top.frame.prodFlowGraph.isJust
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
       if null(lhsInhExceedsFlowType) then []
-      else [wrn(top.location, "Synthesized equation " ++ attr.pp ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
+      else [wrn(top.location, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
 }
 aspect production inhBaseColAttributeDef
@@ -376,7 +376,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
     && top.frame.hasFullSignature
     && top.frame.prodFlowGraph.isJust
     then if null(lhsInhExceedsFlowType) then []
-         else [wrn(top.location, "Local contribution (" ++ val.pp ++ " <-) equation exceeds flow dependencies with: " ++ implode(", ", lhsInhExceedsFlowType))]
+         else [wrn(top.location, "Local contribution (" ++ val.name ++ " <-) equation exceeds flow dependencies with: " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
 }
 
@@ -505,7 +505,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       -- without a vertex, we're accessing from a reference, and so...
       | noVertex() ->
           if null(diff) then []
-          else [wrn(top.location, "Access of " ++ q.pp ++ " from reference requires inherited attributes not known to be supplied to references: " ++ implode(", ", diff))]
+          else [wrn(top.location, "Access of " ++ q.name ++ " from reference requires inherited attributes not known to be supplied to references: " ++ implode(", ", diff))]
       end
     else [];
 
@@ -531,7 +531,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                         _),
                       set:toList(inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow))))
              in if null(inhs) then []
-                else [wrn(top.location, "Access of syn attribute " ++ q.pp ++ " on " ++ e.pp ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
+                else [wrn(top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.pp ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
           else []
       | localReference(lq) ->
@@ -544,7 +544,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                       _),
                     set:toList(inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow)))
              in if null(inhs) then []
-                else [wrn(top.location, "Access of syn attribute " ++ q.pp ++ " on " ++ e.pp ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
+                else [wrn(top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.pp ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
           else []
       | _ -> []
@@ -568,7 +568,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       | noVertex() ->
           if contains(q.attrDcl.fullName, inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv))
           then []
-          else [wrn(top.location, "Access of inherited attribute " ++ q.pp ++ " from a reference is not permitted, as references are not known to be decorated with this attribute.")]
+          else [wrn(top.location, "Access of inherited attribute " ++ q.name ++ " from a reference is not permitted, as references are not known to be decorated with this attribute.")]
       end
     else [];      
 }
@@ -602,7 +602,7 @@ top::Expr ::= '(' '.' q::QName ')'
               \ x::String -> !contains(x, acceptable),
               set:toList(inhDepsForSyn(q.lookupAttribute.fullName, inputType.typeName, myFlow)))
        in if null(inhs) then []
-          else [wrn(top.location, s"Attribute section (.${q.pp}) requires attributes not known to be on '${prettyType(inputType)}': ${implode(", ", inhs)}")]
+          else [wrn(top.location, s"Attribute section (.${q.name}) requires attributes not known to be on '${prettyType(inputType)}': ${implode(", ", inhs)}")]
       end
     else [];
 }

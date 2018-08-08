@@ -184,7 +184,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   local chk :: [Message] =
     if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
-    else [err(qn.location, qn.pp ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+    else [err(qn.location, qn.name ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
   top.errors := qn.lookupValue.errors ++ ns.errors ++ chk ++ e.errors;
 
@@ -204,7 +204,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   errCheck1 = check(decoratedType(prod_type.outputType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, qn.pp ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
@@ -231,7 +231,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   local chk :: [Message] =
     if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
-    else [err(qn.location, qn.pp ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+    else [err(qn.location, qn.name ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
   top.errors := qn.lookupValue.errors ++ ns.errors ++ chk ++ e.errors;
 
@@ -248,7 +248,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   errCheck1 = check(decoratedType(prod_type.outputType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, qn.pp ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);

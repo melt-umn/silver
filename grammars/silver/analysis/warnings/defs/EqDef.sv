@@ -37,13 +37,13 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur e::
     if dl.found && attr.found
     && (top.config.warnAll || top.config.warnEqdef)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [wrn(top.location, "Orphaned equation: " ++ attr.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     else [];
   
   -- Duplicate equation check
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1
-    then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " in production " ++ top.frame.fullName)]
+    then [wrn(top.location, "Duplicate equation for " ++ attr.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 
@@ -62,13 +62,13 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     if dl.found && attr.found
     && (top.config.warnAll || top.config.warnEqdef)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " on " ++ dl.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [wrn(top.location, "Orphaned equation: " ++ attr.name ++ " on " ++ dl.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     -- Now, check for duplicate equations!
     else [];
     
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1
-    then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " on " ++ dl.pp ++ " in production " ++ top.frame.fullName)]
+    then [wrn(top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 
@@ -88,13 +88,13 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     if dl.found && attr.found
     && (top.config.warnAll || top.config.warnEqdef)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [wrn(top.location, "Orphaned equation: " ++ attr.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     else [];
   
   -- Duplicate equation check
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1
-    then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " in production " ++ top.frame.fullName)]
+    then [wrn(top.location, "Duplicate equation for " ++ attr.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 aspect production inhBaseColAttributeDef
@@ -112,13 +112,13 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     if dl.found && attr.found
     && (top.config.warnAll || top.config.warnEqdef)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [wrn(top.location, "Orphaned equation: " ++ attr.pp ++ " on " ++ dl.pp ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [wrn(top.location, "Orphaned equation: " ++ attr.name ++ " on " ++ dl.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     -- Now, check for duplicate equations!
     else [];
     
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1
-    then [wrn(top.location, "Duplicate equation for " ++ attr.pp ++ " on " ++ dl.pp ++ " in production " ++ top.frame.fullName)]
+    then [wrn(top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 

@@ -63,6 +63,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 abstract production defaultLhsDefLHS
 top::DefLHS ::= q::Decorated QName
 {
+  top.name = q.name;
   top.pp = q.pp;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;
   
@@ -70,7 +71,7 @@ top::DefLHS ::= q::Decorated QName
   
   top.errors :=
     if existingProblems || top.found then []
-    else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.pp ++ "' on the lhs '" ++ q.pp ++ "'")];
+    else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.name ++ "' on the lhs '" ++ q.name ++ "'")];
   
   top.typerep = q.lookupValue.typerep;
 

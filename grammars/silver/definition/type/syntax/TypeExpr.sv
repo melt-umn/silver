@@ -114,7 +114,7 @@ top::TypeExpr ::= q::QNameType tl::BracketedOptTypeExprs
   top.lexicalTypeVariables = tl.lexicalTypeVariables;
 
   top.errors <- if length(tl.types) != length(q.lookupType.dclBoundVars)
-                then [err(top.location, q.pp ++ " has " ++ toString(length(q.lookupType.dclBoundVars)) ++ " type variables, but there are " ++ toString(length(tl.types)) ++ " supplied here.")]
+                then [err(top.location, q.name ++ " has " ++ toString(length(q.lookupType.dclBoundVars)) ++ " type variables, but there are " ++ toString(length(tl.types)) ++ " supplied here.")]
                 else [];
 
   -- Not necessarily a nonterminalType, so we should take original type and substitution

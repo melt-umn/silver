@@ -45,7 +45,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ')'
 
   top.errors <-
     if null(prod.lookupValue.dcls) || length(ps.patternList) == parms then []
-    else [err(prod.location, prod.pp ++ " has " ++ toString(parms) ++ " parameters but " ++ toString(length(ps.patternList)) ++ " patterns were provided")];
+    else [err(prod.location, prod.name ++ " has " ++ toString(parms) ++ " parameters but " ++ toString(length(ps.patternList)) ++ " patterns were provided")];
 
   top.patternIsVariable = false;
   top.patternVariableName = nothing();

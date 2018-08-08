@@ -12,7 +12,7 @@ nonterminal ExprInhs with
 nonterminal ExprInh with
   config, grammarName, env, location, pp, errors, frame, compiledGrammars, decoratingnt, suppliedInhs;
 nonterminal ExprLHSExpr with
-  config, grammarName, env, location, pp, errors, typerep, decoratingnt, suppliedInhs;
+  config, grammarName, env, location, pp, errors, name, typerep, decoratingnt, suppliedInhs;
 
 {--
  - The nonterminal being decorated. (Used for 'decorate with {}')
@@ -268,7 +268,7 @@ top::Expr ::= '(' '.' q::QName ')'
   top.errors := q.lookupAttribute.errors;
   
   top.errors <- if null(q.lookupAttribute.dclBoundVars) then []
-                else [err(q.location, "Attribute " ++ q.pp ++ " is parameterized, and attribute sections currently do not work with parameterized attributes, yet.")]; -- TODO The type inference system is too weak, currently.
+                else [err(q.location, "Attribute " ++ q.name ++ " is parameterized, and attribute sections currently do not work with parameterized attributes, yet.")]; -- TODO The type inference system is too weak, currently.
   
   top.errors <- if !q.lookupAttribute.found || q.lookupAttribute.dcl.isSynthesized then []
                 else [err(q.location, "Only synthesized attributes are currently supported in attribute sections.")];
@@ -515,6 +515,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 concrete production exprLhsExpr
 top::ExprLHSExpr ::= q::QNameAttrOccur
 {
+  top.name = q.name;
   top.pp = q.pp;
 
   top.errors := q.errors;

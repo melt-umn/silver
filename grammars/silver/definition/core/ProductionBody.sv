@@ -11,14 +11,14 @@ nonterminal ProductionStmt with
   productionAttributes, uniqueSignificantExpression;
 
 nonterminal DefLHS with 
-  config, grammarName, env, location, pp, errors, frame, compiledGrammars, typerep, defLHSattr, found;
+  config, grammarName, env, location, pp, errors, frame, compiledGrammars, name, typerep, defLHSattr, found;
 
 nonterminal ForwardInhs with 
   config, grammarName, env, location, pp, errors, frame, compiledGrammars;
 nonterminal ForwardInh with 
   config, grammarName, env, location, pp, errors, frame, compiledGrammars;
 nonterminal ForwardLHSExpr with 
-  config, grammarName, env, location, pp, errors, frame, typerep;
+  config, grammarName, env, location, pp, errors, frame, name, typerep;
 
 {--
  - Context for ProductionStmt blocks. (Indicates function, production, aspect, etc)
@@ -235,6 +235,7 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 concrete production forwardLhsExpr
 top::ForwardLHSExpr ::= q::QNameAttrOccur
 {
+  top.name = q.name;
   top.pp = q.pp;
 
   top.errors := q.errors;
@@ -257,7 +258,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
   
   local problems :: [Message] =
     if attr.found && attr.attrDcl.isAnnotation
-    then [err(attr.location, attr.pp ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")]
+    then [err(attr.location, attr.name ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")]
     else dl.errors ++ attr.errors;
 
   forwards to
@@ -299,6 +300,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 concrete production concreteDefLHS
 top::DefLHS ::= q::QName
 {
+  top.name = q.name;
   top.pp = q.pp;
 
   top.errors := q.lookupValue.errors ++ forward.errors;
@@ -311,11 +313,12 @@ top::DefLHS ::= q::QName
 abstract production errorDefLHS
 top::DefLHS ::= q::Decorated QName
 {
+  top.name = q.name;
   top.pp = q.pp;
   top.found = false;
   
   top.errors := 
-    if top.typerep.isError then [] else [err(q.location, "Cannot define attributes on " ++ q.pp)];
+    if top.typerep.isError then [] else [err(q.location, "Cannot define attributes on " ++ q.name)];
   top.typerep = q.lookupValue.typerep;
 }
 
@@ -328,6 +331,7 @@ top::DefLHS ::= q::'forward'
 abstract production childDefLHS
 top::DefLHS ::= q::Decorated QName
 {
+  top.name = q.name;
   top.pp = q.pp;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
   
@@ -335,7 +339,7 @@ top::DefLHS ::= q::Decorated QName
   
   top.errors :=
     if existingProblems || top.found then []
-    else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.pp ++ "' on child '" ++ q.pp ++ "'")];
+    else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on child '" ++ q.name ++ "'")];
                 
   top.typerep = q.lookupValue.typerep;
 }
@@ -343,6 +347,7 @@ top::DefLHS ::= q::Decorated QName
 abstract production lhsDefLHS
 top::DefLHS ::= q::Decorated QName
 {
+  top.name = q.name;
   top.pp = q.pp;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;
   
@@ -350,7 +355,7 @@ top::DefLHS ::= q::Decorated QName
   
   top.errors :=
     if existingProblems || top.found then []
-    else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.pp ++ "' on the lhs '" ++ q.pp ++ "'")];
+    else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.name ++ "' on the lhs '" ++ q.name ++ "'")];
 
   top.typerep = q.lookupValue.typerep;
 }
@@ -358,6 +363,7 @@ top::DefLHS ::= q::Decorated QName
 abstract production localDefLHS
 top::DefLHS ::= q::Decorated QName
 {
+  top.name = q.name;
   top.pp = q.pp;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
   
@@ -365,7 +371,7 @@ top::DefLHS ::= q::Decorated QName
   
   top.errors :=
     if existingProblems || top.found then []
-    else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.pp ++ "' on local '" ++ q.pp ++ "'")];
+    else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on local '" ++ q.name ++ "'")];
 
   top.typerep = q.lookupValue.typerep;
 }
@@ -373,6 +379,7 @@ top::DefLHS ::= q::Decorated QName
 abstract production forwardDefLHS
 top::DefLHS ::= q::Decorated QName
 {
+  top.name = q.name;
   top.pp = q.pp;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
   
@@ -380,7 +387,7 @@ top::DefLHS ::= q::Decorated QName
   
   top.errors :=
     if existingProblems || top.found then []
-    else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.pp ++ "' on forward")];
+    else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on forward")];
 
   top.typerep = q.lookupValue.typerep;
 }
@@ -412,7 +419,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   
   local assignError :: [Message] =
     if val.lookupValue.typerep.isError then []
-    else [err(val.location, val.pp ++ " cannot be assigned to.")];
+    else [err(val.location, val.name ++ " cannot be assigned to.")];
      
 }
 

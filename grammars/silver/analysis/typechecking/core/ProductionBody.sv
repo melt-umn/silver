@@ -101,7 +101,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
   errCheck1 = check(lhs.typerep, e.typerep);
   top.errors <- 
        if errCheck1.typeerror
-       then [err(e.location, lhs.pp ++ " has expected type " ++ errCheck1.leftpp
+       then [err(e.location, lhs.name ++ " has expected type " ++ errCheck1.leftpp
                               ++ ", but the expression has type " ++ errCheck1.rightpp)]
        else [];
 }

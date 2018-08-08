@@ -33,14 +33,14 @@ top::NameOrBOperator ::= q::QName
   
   local operationErrors :: [Message] =
     if !checkOperationType.typeerror then []
-    else [err(top.location, q.pp ++ " must be of type " ++ checkOperationType.rightpp ++
+    else [err(top.location, q.name ++ " must be of type " ++ checkOperationType.rightpp ++
             " instead it is of type " ++ checkOperationType.leftpp)];
   
   top.errors <- if !q.lookupValue.found then [] else
     case q.lookupValue.dcl of
     | funDcl(_,_,_) -> operationErrors
     | prodDcl(_,_,_) -> operationErrors
-    | _ -> [err(top.location, q.pp ++ " is not a valid operator for collections.")]
+    | _ -> [err(top.location, q.name ++ " is not a valid operator for collections.")]
     end;
 }
 
@@ -193,7 +193,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
 abstract production errorCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  top.errors <- [err(top.location, "The ':=' and '<-' operators can only be used for collections. " ++ val.pp ++ " is not a collection.")];
+  top.errors <- [err(top.location, "The ':=' and '<-' operators can only be used for collections. " ++ val.name ++ " is not a collection.")];
   
   -- TODO: this production also produces an error message, so we'll produce two errors for one flaw.
   -- We don't want to use := for the errors, because we'd miss any errors in e, and we don't want to repeat
@@ -203,7 +203,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 abstract production errorColNormalValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  top.errors <- [err(top.location, val.pp ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")];
+  top.errors <- [err(top.location, val.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")];
   
   -- TODO: same problem
   forwards to errorValueDef(val, e, location=top.location);

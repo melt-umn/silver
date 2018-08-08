@@ -138,6 +138,7 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' 'if' con
 abstract production parserAttributeDefLHS
 top::DefLHS ::= q::Decorated QName
 {
+  top.name = q.name;
   top.pp = q.pp;
   top.found = false;
   
