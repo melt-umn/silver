@@ -8,8 +8,6 @@ imports silver:util:cmdargs;
 
 exports silver:driver:util;
 
-import silver:langutil only message;
-
 type SVParser = (ParseResult<Root> ::= String String);
 
 {--

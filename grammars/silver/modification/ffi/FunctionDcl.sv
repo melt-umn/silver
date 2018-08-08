@@ -2,13 +2,13 @@ grammar silver:modification:ffi;
 
 terminal FFI_kwd 'foreign' lexer classes {KEYWORD,RESERVED};
 
-nonterminal FFIDefs with config, location, grammarName, errors, env, pp;
-nonterminal FFIDef with config, location, grammarName, errors, env, pp;
+nonterminal FFIDefs with config, location, grammarName, errors, env, unparse;
+nonterminal FFIDef with config, location, grammarName, errors, env, unparse;
 
 concrete production functionDclFFI
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'foreign' '{' ffidefs::FFIDefs '}'
 {
-  top.pp = "function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp ++ " foreign {\n" ++ ffidefs.pp ++ "}"; 
+  top.unparse = "function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse ++ " foreign {\n" ++ ffidefs.unparse ++ "}"; 
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
@@ -33,7 +33,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
 concrete production ffidefsOne
 top::FFIDefs ::= one::FFIDef
 {
-  top.pp = one.pp;
+  top.unparse = one.unparse;
   
   top.errors := one.errors;
 }
@@ -41,7 +41,7 @@ top::FFIDefs ::= one::FFIDef
 concrete production ffidefsMany
 top::FFIDefs ::= one::FFIDef more::FFIDefs
 {
-  top.pp = one.pp ++ more.pp;
+  top.unparse = one.unparse ++ more.unparse;
   
   top.errors := one.errors ++ more.errors;
 }
@@ -49,7 +49,7 @@ top::FFIDefs ::= one::FFIDef more::FFIDefs
 concrete production ffidef
 top::FFIDef ::= name::String_t ':' 'return' code::String_t ';'
 {
-  top.pp = name.lexeme ++ ": return " ++ code.lexeme ++ ";\n";
+  top.unparse = name.lexeme ++ ": return " ++ code.lexeme ++ ";\n";
   
   top.errors := [];
   -- Up to each translation to do something with this.

@@ -3,7 +3,7 @@ grammar silver:definition:core;
 concrete production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
-  top.pp = "attribute " ++ at.pp ++ attl.pp ++ " occurs on " ++ nt.pp ++ nttl.pp ++ ";";
+  top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
 
   -- TODO: this location is highly unreliable.
 
@@ -27,16 +27,18 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   nttl.env = nttl.envBindingTyVars;
   
   -- Make sure we get the number of tyvars correct for the NT
-  top.errors <- if length(nt.lookupType.dclBoundVars) != length(nttl.types)
-                then [err(nt.location, nt.pp ++ " expects " ++ toString(length(nt.lookupType.dclBoundVars)) ++
-                                       " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
-                else [];
+  top.errors <-
+    if length(nt.lookupType.dclBoundVars) != length(nttl.types)
+    then [err(nt.location, nt.name ++ " expects " ++ toString(length(nt.lookupType.dclBoundVars)) ++
+                           " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
+    else [];
 
   -- Make sure we get the number of tyvars correct for the ATTR
-  top.errors <- if length(at.lookupAttribute.dclBoundVars) != length(attl.types)
-                then [err(at.location, at.pp ++ " expects " ++ toString(length(at.lookupAttribute.dclBoundVars)) ++
-                                       " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
-                else [];
+  top.errors <-
+    if length(at.lookupAttribute.dclBoundVars) != length(attl.types)
+    then [err(at.location, at.name ++ " expects " ++ toString(length(at.lookupAttribute.dclBoundVars)) ++
+                           " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
+    else [];
 
   -- We have 4 types.
   -- 1: A type, from env, for the nonterminal

@@ -14,7 +14,7 @@ imports silver:modification:typedecl;
 concrete production ffiTypeDcl
 top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' ';'
 {
-  top.pp = "type " ++ id.pp ++ tl.pp ++ " foreign ;";
+  top.unparse = "type " ++ id.unparse ++ tl.unparse ++ " foreign ;";
   
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;

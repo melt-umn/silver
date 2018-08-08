@@ -6,7 +6,7 @@
 concrete production propagateAttrDcl
 top::ProductionStmt ::= 'propagate' ns::NameList ';'
 {
-  top.pp = s"propagate ${ns.pp};";
+  top.unparse = s"propagate ${ns.unparse};";
   
   -- Forwards to productionStmtAppend of propagating the first element in ns
   -- and propagateAttrDcl containing the remaining names

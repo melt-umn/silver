@@ -33,7 +33,7 @@ terminal ImpIde_Wizard_NewFile 'new file' lexer classes {KEYWORD};
 concrete production ideDcl
 top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmts::IdeStmts
 {
-  top.pp = "temp_imp_ide_dcl " ++ parsername.pp ++ " " ++ fileextension.lexeme ++ "\n"; -- TODO not finished
+  top.unparse = "temp_imp_ide_dcl " ++ parsername.unparse ++ " " ++ fileextension.lexeme ++ "\n"; -- TODO not finished
 
   top.defs = [];
 

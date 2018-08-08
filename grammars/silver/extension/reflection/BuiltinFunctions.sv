@@ -21,7 +21,7 @@ terminal Deserialize_kwd 'deserialize' lexer classes {BUILTIN,RESERVED};
 concrete production deserializeFunction
 top::Expr ::= 'deserialize' '(' fileName::Expr ',' text::Expr ')'
 {
-  top.pp = s"deserialize(${fileName.pp}, ${text.pp})";
+  top.unparse = s"deserialize(${fileName.unparse}, ${text.unparse})";
   
   local errCheck1::TypeCheck = check(fileName.typerep, stringType());
   errCheck1.finalSubst = top.finalSubst;

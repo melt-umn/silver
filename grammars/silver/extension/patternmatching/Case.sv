@@ -8,8 +8,6 @@ imports silver:modification:primitivepattern;
 import silver:definition:type:syntax only typerepTypeExpr;
 import silver:modification:let_fix;
 
-import silver:langutil only unparse;
-
 terminal Case_kwd 'case' lexer classes {KEYWORD,RESERVED};
 terminal Of_kwd 'of' lexer classes {KEYWORD,RESERVED};
 terminal Arrow_kwd '->' lexer classes {SPECOP};
@@ -17,7 +15,7 @@ terminal Vbar_kwd '|' lexer classes {SPECOP};
 terminal Opt_Vbar_t /\|?/ lexer classes {SPECOP}; -- optional Coq-style vbar.
 
 -- MR | ...
-nonterminal MRuleList with location, config, pp, env, errors, matchRuleList, matchRulePatternSize;
+nonterminal MRuleList with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize;
 
 -- Turns MRuleList (of MatchRules) into [AbstractMatchRule]
 synthesized attribute matchRuleList :: [AbstractMatchRule];
@@ -25,7 +23,7 @@ synthesized attribute matchRuleList :: [AbstractMatchRule];
 autocopy attribute matchRulePatternSize :: Integer;
 
 -- P -> E
-nonterminal MatchRule with location, config, pp, env, errors, matchRuleList, matchRulePatternSize;
+nonterminal MatchRule with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize;
 nonterminal AbstractMatchRule with location, headPattern, isVarMatchRule, expandHeadPattern;
 
 -- The head pattern of a match rule
@@ -36,7 +34,7 @@ synthesized attribute isVarMatchRule :: Boolean;
 synthesized attribute expandHeadPattern :: AbstractMatchRule;
 
 -- P , ...
-nonterminal PatternList with location, config, pp, patternList, env, errors;
+nonterminal PatternList with location, config, unparse, patternList, env, errors;
 
 -- Turns PatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
@@ -58,7 +56,7 @@ synthesized attribute patternList :: [Decorated Pattern];
 concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
-  top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";
+  top.unparse = "case " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
 
   ml.matchRulePatternSize = length(es.rawExprs);
   top.errors <- ml.errors;
@@ -76,7 +74,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 abstract production caseExpr
 top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
 {
-  top.pp = error("Internal error: pretty of intermediate data structure");
+  top.unparse = error("Internal error: pretty of intermediate data structure");
 
   -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
   -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
@@ -101,7 +99,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
     end;
        
 --  top.errors <- unsafeTrace([], 
---     print(top.pp ++ "\n\n", unsafeIO()));
+--     print(top.unparse ++ "\n\n", unsafeIO()));
 
   local partMRs :: Pair<[AbstractMatchRule] [AbstractMatchRule]> =
     partition((.isVarMatchRule), ml);
@@ -146,7 +144,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
 concrete production mRuleList_one
 top::MRuleList ::= m::MatchRule
 {
-  top.pp = m.pp;
+  top.unparse = m.unparse;
   top.errors := m.errors;  
 
   top.matchRuleList = m.matchRuleList;
@@ -155,7 +153,7 @@ top::MRuleList ::= m::MatchRule
 concrete production mRuleList_cons
 top::MRuleList ::= h::MatchRule '|' t::MRuleList
 {
-  top.pp = h.pp ++ " | " ++ t.pp;
+  top.unparse = h.unparse ++ " | " ++ t.unparse;
   top.errors := h.errors ++ t.errors;
   
   top.matchRuleList = h.matchRuleList ++ t.matchRuleList;
@@ -164,7 +162,7 @@ top::MRuleList ::= h::MatchRule '|' t::MRuleList
 concrete production matchRule_c
 top::MatchRule ::= pt::PatternList '->' e::Expr
 {
-  top.pp = pt.pp ++ " -> " ++ e.pp;
+  top.unparse = pt.unparse ++ " -> " ++ e.unparse;
   top.errors := pt.errors; -- e.errors is examine later, after transformation.
   
   top.errors <-
@@ -188,7 +186,7 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] e::Expr
 concrete production patternList_one
 top::PatternList ::= p::Pattern
 {
-  top.pp = p.pp;
+  top.unparse = p.unparse;
   top.errors := p.errors;
 
   top.patternList = [p];
@@ -196,7 +194,7 @@ top::PatternList ::= p::Pattern
 concrete production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
-  top.pp = p.pp ++ ", " ++ ps1.pp;
+  top.unparse = p.unparse ++ ", " ++ ps1.unparse;
   top.errors := p.errors ++ ps1.errors;
 
   top.patternList = p :: ps1.patternList;
@@ -206,7 +204,7 @@ top::PatternList ::= p::Pattern ',' ps1::PatternList
 concrete production patternList_nil
 top::PatternList ::=
 {
-  top.pp = "";
+  top.unparse = "";
   top.errors := [];
 
   top.patternList = [];

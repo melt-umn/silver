@@ -10,7 +10,7 @@ terminal Prefix_t 'prefix' lexer classes {KEYWORD, RESERVED};
 concrete production prefixParserComponentModifier
 top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::TerminalPrefix
 {  
-  top.pp = "prefix " ++ ts.pp ++ " with " ++ s.pp;
+  top.unparse = "prefix " ++ ts.unparse ++ " with " ++ s.unparse;
   top.errors := ts.errors ++ s.errors;
   top.terminalPrefixes =
     do (bindList, returnList) {
@@ -27,12 +27,12 @@ top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::Term
 }
 
 synthesized attribute prefixFullName::String;
-nonterminal TerminalPrefix with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, liftedAGDcls, prefixFullName;
+nonterminal TerminalPrefix with config, env, grammarName, componentGrammarName, compiledGrammars, location, unparse, errors, liftedAGDcls, prefixFullName;
 
 concrete production nameTerminalPrefix
 top::TerminalPrefix ::= s::QName
 {
-  top.pp = s.pp;
+  top.unparse = s.unparse;
   top.errors := s.lookupType.errors;
   top.liftedAGDcls = emptyAGDcl(location=top.location);
   top.prefixFullName = s.lookupType.fullName;
@@ -41,7 +41,7 @@ top::TerminalPrefix ::= s::QName
 concrete production newTermModifiersTerminalPrefix
 top::TerminalPrefix ::= r::RegExpr tm::TerminalModifiers
 {
-  top.pp = r.pp ++ " " ++ tm.pp;
+  top.unparse = r.unparse ++ " " ++ tm.unparse;
   -- Prefix terminal name isn't based off the prefix right now since that might not be alphanumeric
   -- TODO make the terminal name based off alphanumeric characters from the regex for easier debugging of parse conflicts
   local terminalName::String = "_Prefix" ++ toString(genInt());
@@ -56,14 +56,14 @@ top::TerminalPrefix ::= r::RegExpr tm::TerminalModifiers
 concrete production newTermTerminalPrefix
 top::TerminalPrefix ::= r::RegExpr
 {
-  top.pp = r.pp;
+  top.unparse = r.unparse;
   forwards to newTermModifiersTerminalPrefix(r, terminalModifiersNone(location=top.location), location=top.location);
 }
 
 concrete production seperatedTerminalPrefix
 top::TerminalPrefix ::= t::String_t
 {
-  top.pp = t.lexeme;
+  top.unparse = t.lexeme;
   local seperatorLookup::[DclInfo] = getValueDcl("_prefix_seperator", top.env);
   local seperator::String = 
     case seperatorLookup of
@@ -82,12 +82,12 @@ top::TerminalPrefix ::= t::String_t
 }
 
 synthesized attribute prefixItemNames::[QName];
-nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, pp, errors, prefixItemNames;
+nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, prefixItemNames;
 
 concrete production consTerminalPrefixItem
 top::TerminalPrefixItems ::= t::TerminalPrefixItem ',' ts::TerminalPrefixItems
 {
-  top.pp = ts.pp ++ ", " ++ t.pp;
+  top.unparse = ts.unparse ++ ", " ++ t.unparse;
   top.errors := ts.errors ++ t.errors;
   top.prefixItemNames = ts.prefixItemNames ++ t.prefixItemNames;
 }
@@ -95,7 +95,7 @@ top::TerminalPrefixItems ::= t::TerminalPrefixItem ',' ts::TerminalPrefixItems
 concrete production oneTerminalPrefixItem
 top::TerminalPrefixItems ::= t::TerminalPrefixItem
 {
-  top.pp = t.pp;
+  top.unparse = t.unparse;
   top.errors := t.errors;
   top.prefixItemNames = t.prefixItemNames;
 }
@@ -113,7 +113,7 @@ top::TerminalPrefixItems ::=
   syntax.prefixesForTerminals = error("This shouldn't be needed...");
   syntax.univLayout = error("This shouldn't be needed...");
 
-  top.pp = "";
+  top.unparse = "";
   top.errors := [];
   top.prefixItemNames =
     do (bindList, returnList) {
@@ -122,12 +122,12 @@ top::TerminalPrefixItems ::=
     };
 }
 
-nonterminal TerminalPrefixItem with config, env, grammarName, componentGrammarName, compiledGrammars, location, pp, errors, prefixItemNames;
+nonterminal TerminalPrefixItem with config, env, grammarName, componentGrammarName, compiledGrammars, location, unparse, errors, prefixItemNames;
 
 concrete production qNameTerminalPrefixItem
 top::TerminalPrefixItem ::= t::QName
 {
-  top.pp = t.pp;
+  top.unparse = t.unparse;
   top.errors := t.lookupType.errors;
   top.prefixItemNames = [t];
 }
@@ -135,7 +135,7 @@ top::TerminalPrefixItem ::= t::QName
 concrete production easyTerminalRefTerminalPrefixItem
 top::TerminalPrefixItem ::= t::EasyTerminalRef
 {
-  top.pp = t.pp;
+  top.unparse = t.unparse;
   top.errors := t.errors;
   top.prefixItemNames = map(qName(top.location, _), map((.fullName), t.dcls));
 }
@@ -147,7 +147,7 @@ terminal Over_t   'over'   lexer classes {KEYWORD}; -- not RESERVED
 concrete production disambiguateParserComponent
 top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
 {
-  top.pp = "prefer " ++ t.pp ++ " over " ++ ts.pp;
+  top.unparse = "prefer " ++ t.unparse ++ " over " ++ ts.unparse;
   top.errors := t.lookupType.errors ++ ts.errors;
   top.moduleNames = [];
   top.terminalPrefixes = [];
@@ -172,7 +172,7 @@ terminal Separator_kwd 'separator' lexer classes {KEYWORD}; -- not RESERVED?
 concrete production prefixSeparatorParserComponent
 top::ParserComponent ::= 'prefix' 'separator' s::String_t ';'
 {
-  top.pp = s"prefix separator ${s.lexeme};";
+  top.unparse = s"prefix separator ${s.lexeme};";
   top.errors := [];
   top.moduleNames = [];
   top.terminalPrefixes = [];
@@ -182,7 +182,7 @@ top::ParserComponent ::= 'prefix' 'separator' s::String_t ';'
 concrete production prefixSeparatorAGDcl
 top::AGDcl ::= 'prefix' 'separator' s::String_t ';'
 {
-  top.pp = s"prefix separator ${s.lexeme};";
+  top.unparse = s"prefix separator ${s.lexeme};";
   top.errors := 
     case getValueDcl("_prefix_seperator", top.env) of
       [_] -> []

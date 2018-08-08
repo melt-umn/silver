@@ -1,9 +1,9 @@
 grammar silver:definition:core;
 
-nonterminal ProductionSignature with config, grammarName, env, location, pp, errors, defs, namedSignature, signatureName;
-nonterminal ProductionLHS with config, grammarName, env, location, pp, errors, defs, outputElement;
-nonterminal ProductionRHS with config, grammarName, env, location, pp, errors, defs, inputElements;
-nonterminal ProductionRHSElem with config, grammarName, env, location, pp, errors, defs, inputElements, deterministicCount;
+nonterminal ProductionSignature with config, grammarName, env, location, unparse, errors, defs, namedSignature, signatureName;
+nonterminal ProductionLHS with config, grammarName, env, location, unparse, errors, defs, outputElement;
+nonterminal ProductionRHS with config, grammarName, env, location, unparse, errors, defs, inputElements;
+nonterminal ProductionRHSElem with config, grammarName, env, location, unparse, errors, defs, inputElements, deterministicCount;
 
 flowtype forward {env} on ProductionSignature, ProductionLHS, ProductionRHS;
 flowtype forward {deterministicCount, env} on ProductionRHSElem;
@@ -21,7 +21,7 @@ inherited attribute signatureName :: String;
 concrete production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
-  top.pp = "abstract production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp; 
+  top.unparse = "abstract production " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse; 
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
@@ -36,7 +36,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
     -- TODO: Narrow this down to just a list of productions of the same nonterminal before deciding to error.
     else if length(getValueDclAll(id.name, top.env)) > 1
-    then [err(top.location, "Production " ++ id.pp ++ " shares a name with another production from an imported grammar. Either this production is meant to be an aspect, or you should use 'import ... with " ++ id.pp ++ " as ...' to change the other production's apparent name.")]
+    then [err(top.location, "Production " ++ id.name ++ " shares a name with another production from an imported grammar. Either this production is meant to be an aspect, or you should use 'import ... with " ++ id.name ++ " as ...' to change the other production's apparent name.")]
     else [];
   
   top.errors <-
@@ -66,7 +66,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 concrete production productionSignature
 top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
-  top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
+  top.unparse = lhs.unparse ++ " ::= " ++ rhs.unparse;
 
   top.defs = lhs.defs ++ rhs.defs;
   top.errors := lhs.errors ++ rhs.errors;
@@ -77,7 +77,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
 concrete production productionLHS
 top::ProductionLHS ::= id::Name '::' t::TypeExpr
 {
-  top.pp = id.pp ++ "::" ++ t.pp;
+  top.unparse = id.unparse ++ "::" ++ t.unparse;
 
   top.outputElement = namedSignatureElement(id.name, t.typerep);
 
@@ -94,7 +94,7 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
 concrete production productionRHSNil
 top::ProductionRHS ::=
 {
-  top.pp = "";
+  top.unparse = "";
 
   top.defs = [];
   top.errors := [];
@@ -105,7 +105,7 @@ top::ProductionRHS ::=
 concrete production productionRHSCons
 top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 {
-  top.pp = h.pp ++ " " ++ t.pp;
+  top.unparse = h.unparse ++ " " ++ t.unparse;
 
   top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
@@ -117,7 +117,7 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 concrete production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
-  top.pp = id.pp ++ "::" ++ t.pp;
+  top.unparse = id.unparse ++ "::" ++ t.unparse;
 
   top.inputElements = [namedSignatureElement(id.name, t.typerep)];
 
@@ -134,7 +134,7 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 concrete production productionRHSElemType
 top::ProductionRHSElem ::= t::TypeExpr
 {
-  top.pp = t.pp;
+  top.unparse = t.unparse;
 
   forwards to productionRHSElem(name("_G_" ++ toString(top.deterministicCount), t.location), '::', t, location=top.location);
 }

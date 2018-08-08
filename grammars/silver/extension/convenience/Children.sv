@@ -5,7 +5,7 @@ terminal Children_kwd '$' lexer classes {LITERAL};
 concrete production childrenRef
 top::Expr ::= '$' e::Int_t
 {
-  top.pp = "$" ++ e.lexeme;
+  top.unparse = "$" ++ e.lexeme;
   
   local ref :: String =
     -- for failure, pretend to be the identifier $x, even though that's not a legal identifier.

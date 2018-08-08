@@ -656,7 +656,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
   errCheck1 = check(lhs.typerep, e1.typerep);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, lhs.pp ++ " has expected type " ++ errCheck1.leftpp
+       then [err(top.location, lhs.name ++ " has expected type " ++ errCheck1.leftpp
                               ++ ", but the expression has type " ++ errCheck1.rightpp)]
        else [];
 }

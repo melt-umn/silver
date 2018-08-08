@@ -3,7 +3,7 @@ grammar silver:definition:core;
 concrete production attributeDclInh
 top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
-  top.pp = "inherited attribute " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
+  top.unparse = "inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -25,7 +25,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
 concrete production attributeDclSyn
 top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
-  top.pp = "synthesized attribute " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
+  top.unparse = "synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;

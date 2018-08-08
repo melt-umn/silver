@@ -5,7 +5,7 @@ grammar silver:definition:core;
 concrete production lengthFunction
 top::Expr ::= 'length' '(' e::Expr ')'
 {
-  top.pp = "length(" ++ e.pp ++ ")";
+  top.unparse = "length(" ++ e.unparse ++ ")";
 
   top.typerep = intType();
   
@@ -17,7 +17,7 @@ top::Expr ::= 'length' '(' e::Expr ')'
 abstract production errorLength
 top::Expr ::= e::Decorated Expr
 {
-  top.pp = "length(" ++ e.pp ++ ")";
+  top.unparse = "length(" ++ e.unparse ++ ")";
 
   top.typerep = intType();
 
@@ -27,7 +27,7 @@ top::Expr ::= e::Decorated Expr
 abstract production stringLength
 top::Expr ::= e::Decorated Expr
 {
-  top.pp = "length(" ++ e.pp ++ ")";
+  top.unparse = "length(" ++ e.unparse ++ ")";
 
   top.typerep = intType();
 
@@ -38,14 +38,14 @@ top::Expr ::= e::Decorated Expr
 concrete production toIntFunction
 top::Expr ::= 'toInt' '(' e::Expr ')'
 {
-  top.pp = "toInt(" ++ e.pp ++ ")";
+  top.unparse = "toInt(" ++ e.unparse ++ ")";
   forwards to toIntegerFunction('toInteger', '(', e, ')', location=top.location);
 }
 
 concrete production toIntegerFunction
 top::Expr ::= 'toInteger' '(' e::Expr ')'
 {
-  top.pp = "toInteger(" ++ e.pp ++ ")";
+  top.unparse = "toInteger(" ++ e.unparse ++ ")";
 
   top.errors := e.errors;
   top.typerep = intType();
@@ -54,7 +54,7 @@ top::Expr ::= 'toInteger' '(' e::Expr ')'
 concrete production toBooleanFunction
 top::Expr ::= 'toBoolean' '(' e::Expr ')'
 {
-  top.pp = "toBoolean(" ++ e.pp ++ ")";
+  top.unparse = "toBoolean(" ++ e.unparse ++ ")";
 
   top.errors := e.errors;
   top.typerep = boolType();
@@ -63,7 +63,7 @@ top::Expr ::= 'toBoolean' '(' e::Expr ')'
 concrete production toFloatFunction
 top::Expr ::= 'toFloat' '(' e::Expr ')'
 {
-  top.pp = "toFloat(" ++ e.pp ++ ")";
+  top.unparse = "toFloat(" ++ e.unparse ++ ")";
 
   top.errors := e.errors;
   top.typerep = floatType();
@@ -72,7 +72,7 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
 concrete production toStringFunction
 top::Expr ::= 'toString' '(' e::Expr ')'
 {
-  top.pp = "toString(" ++ e.pp ++ ")";
+  top.unparse = "toString(" ++ e.unparse ++ ")";
 
   top.errors := e.errors;
   top.typerep = stringType();
@@ -81,7 +81,7 @@ top::Expr ::= 'toString' '(' e::Expr ')'
 concrete production reifyFunctionLiteral
 top::Expr ::= 'reify'
 {
-  top.pp = "reify";
+  top.unparse = "reify";
 
   top.errors := [];
   top.typerep =
@@ -91,7 +91,7 @@ top::Expr ::= 'reify'
 concrete production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {
-  top.pp = "new(" ++ e.pp ++ ")";
+  top.unparse = "new(" ++ e.unparse ++ ")";
 
   top.errors := e.errors;
   top.typerep = performSubstitution(e.typerep, top.upSubst).decoratedType;
@@ -100,7 +100,7 @@ top::Expr ::= 'new' '(' e::Expr ')'
 abstract production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
-  top.pp = "terminal(" ++ t.pp ++ ", " ++ es.pp ++ ", " ++ el.pp ++ ")";
+  top.unparse = "terminal(" ++ t.unparse ++ ", " ++ es.unparse ++ ", " ++ el.unparse ++ ")";
 
   top.errors := t.errors ++ es.errors ++ el.errors;
   top.typerep = t.typerep;
@@ -111,7 +111,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 concrete production terminalConstructorTemporaryDispatcher
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
-  top.pp = "terminal(" ++ t.pp ++ ", " ++ es.pp ++ ", " ++ el.pp ++ ")";
+  top.unparse = "terminal(" ++ t.unparse ++ ", " ++ es.unparse ++ ", " ++ el.unparse ++ ")";
   -- This is a temporary compatibility hack. It's really nasty. Remove as soon as possible. TODO
   
   -- We're being stupidly simple here.

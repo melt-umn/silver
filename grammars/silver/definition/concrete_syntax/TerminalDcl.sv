@@ -15,7 +15,7 @@ terminal Precedence_kwd  'precedence'  lexer classes {KEYWORD,RESERVED};
 abstract production terminalDclDefault
 top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifiers
 {
-  top.pp = t.pp ++ "terminal " ++ id.pp ++ " " ++ r.pp ++ " " ++ tm.pp ++ ";";
+  top.unparse = t.unparse ++ "terminal " ++ id.unparse ++ " " ++ r.unparse ++ " " ++ tm.unparse ++ ";";
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
@@ -61,24 +61,24 @@ top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr tm::Ter
  - This exists as a catch-all for representing regular expressions for terminals.
  - There's only one option here, but it's an extension point.
  -}
-nonterminal RegExpr with config, location, grammarName, pp, terminalRegExprSpec;
+nonterminal RegExpr with config, location, grammarName, unparse, terminalRegExprSpec;
 
 synthesized attribute terminalRegExprSpec :: Regex;
 
 concrete production regExpr
 top::RegExpr ::= '/' r::Regex '/'
 {
-  top.pp = "/" ++ r.regString ++ "/";
+  top.unparse = "/" ++ r.regString ++ "/";
   top.terminalRegExprSpec = r;
 }
 
 
-nonterminal TerminalKeywordModifier with pp, location, terminalModifiers;
+nonterminal TerminalKeywordModifier with unparse, location, terminalModifiers;
 
 concrete production terminalKeywordModifierIgnore
 top::TerminalKeywordModifier ::= 'ignore'
 {
-  top.pp = "ignore ";
+  top.unparse = "ignore ";
 
   top.terminalModifiers = [termIgnore()];
 }
@@ -86,7 +86,7 @@ top::TerminalKeywordModifier ::= 'ignore'
 concrete production terminalKeywordModifierMarking
 top::TerminalKeywordModifier ::= 'marking'
 {
-  top.pp = "marking ";
+  top.unparse = "marking ";
 
   top.terminalModifiers = [termMarking()];
 }
@@ -94,21 +94,21 @@ top::TerminalKeywordModifier ::= 'marking'
 concrete production terminalKeywordModifierNone
 top::TerminalKeywordModifier ::=
 {
-  top.pp = "";
+  top.unparse = "";
 
   top.terminalModifiers = [];
 }
 
 
-nonterminal TerminalModifiers with config, location, pp, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
-nonterminal TerminalModifier with config, location, pp, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+nonterminal TerminalModifiers with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+nonterminal TerminalModifier with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 
 synthesized attribute terminalModifiers :: [SyntaxTerminalModifier];
 
 abstract production terminalModifiersNone
 top::TerminalModifiers ::=
 {
-  top.pp = "";
+  top.unparse = "";
 
   top.terminalModifiers = [];
   top.errors := [];
@@ -116,7 +116,7 @@ top::TerminalModifiers ::=
 concrete production terminalModifierSingle
 top::TerminalModifiers ::= tm::TerminalModifier
 {
-  top.pp = tm.pp;
+  top.unparse = tm.unparse;
 
   top.terminalModifiers = tm.terminalModifiers;
   top.errors := tm.errors;
@@ -124,7 +124,7 @@ top::TerminalModifiers ::= tm::TerminalModifier
 concrete production terminalModifiersCons
 top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
 {
-  top.pp = h.pp ++ ", " ++ t.pp;
+  top.unparse = h.unparse ++ ", " ++ t.unparse;
 
   top.terminalModifiers = h.terminalModifiers ++ t.terminalModifiers;
   top.errors := h.errors ++ t.errors;
@@ -133,7 +133,7 @@ top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
 concrete production terminalModifierLeft
 top::TerminalModifier ::= 'association' '=' 'left'
 {
-  top.pp = "association = left";
+  top.unparse = "association = left";
 
   top.terminalModifiers = [termAssociation("left")];
   top.errors := [];
@@ -141,7 +141,7 @@ top::TerminalModifier ::= 'association' '=' 'left'
 concrete production terminalModifierRight
 top::TerminalModifier ::= 'association' '=' 'right'
 {
-  top.pp = "association = right";
+  top.unparse = "association = right";
 
   top.terminalModifiers = [termAssociation("right")];
   top.errors := [];
@@ -150,7 +150,7 @@ top::TerminalModifier ::= 'association' '=' 'right'
 concrete production terminalModifierPrecedence
 top::TerminalModifier ::= 'precedence' '=' i::Int_t
 {
-  top.pp = "precedence = " ++ i.lexeme;
+  top.unparse = "precedence = " ++ i.lexeme;
 
   top.terminalModifiers = [termPrecedence(toInt(i.lexeme))];
   top.errors := [];
@@ -159,7 +159,7 @@ top::TerminalModifier ::= 'precedence' '=' i::Int_t
 concrete production terminalModifierNamed
 top::TerminalModifier ::= 'named' name::String_t
 {
-  top.pp = "named " ++ name.lexeme;
+  top.unparse = "named " ++ name.lexeme;
 
   top.terminalModifiers = [termPrettyName(substring(1, length(name.lexeme) - 1, name.lexeme))];
   top.errors := [];

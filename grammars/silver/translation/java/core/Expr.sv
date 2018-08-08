@@ -296,7 +296,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     then "getColumn()"
     else if q.name == "filename"
     then "getFilename()"
-    else error("Not possible -- an error should have been raised about " ++ q.pp);
+    else error("Not possible -- an error should have been raised about " ++ q.unparse);
 
   top.translation = s"((${finalType(top).transType})${e.translation}.${accessor})";
 

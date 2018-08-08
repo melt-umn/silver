@@ -7,7 +7,7 @@ aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
   top.setupInh := body.setupInh;
-  top.initProd := s"\t\t//FUNCTION ${id.name} ${ns.pp}\n" ++ body.translation;
+  top.initProd := s"\t\t//FUNCTION ${id.name} ${ns.unparse}\n" ++ body.translation;
 
   local localVar :: String = "count_local__ON__" ++ makeIdName(fName);
 
@@ -19,7 +19,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 
   local funBody :: String =
 s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate();
-			//${head(body.uniqueSignificantExpression).pp}
+			//${head(body.uniqueSignificantExpression).unparse}
 			return (${namedSig.outputElement.typerep.transType})(${head(body.uniqueSignificantExpression).translation});
 """;
 

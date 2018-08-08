@@ -3,15 +3,15 @@ grammar silver:definition:core;
 {--
  - Top-level declarations of a Silver grammar. The "meat" of a file.
  -}
-nonterminal AGDcls with config, grammarName, env, location, pp, errors, defs, moduleNames, compiledGrammars, grammarDependencies;
-nonterminal AGDcl  with config, grammarName, env, location, pp, errors, defs, moduleNames, compiledGrammars, grammarDependencies;
+nonterminal AGDcls with config, grammarName, env, location, unparse, errors, defs, moduleNames, compiledGrammars, grammarDependencies;
+nonterminal AGDcl  with config, grammarName, env, location, unparse, errors, defs, moduleNames, compiledGrammars, grammarDependencies;
 
 flowtype forward {grammarName, env} on AGDcl;
 
 concrete production nilAGDcls
 top::AGDcls ::=
 {
-  top.pp = "";
+  top.unparse = "";
 
   top.defs = [];
   top.errors := [];
@@ -21,7 +21,7 @@ top::AGDcls ::=
 concrete production consAGDcls
 top::AGDcls ::= h::AGDcl t::AGDcls
 {
-  top.pp = h.pp ++ "\n" ++ t.pp;
+  top.unparse = h.unparse ++ "\n" ++ t.unparse;
 
   top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
@@ -38,7 +38,7 @@ top::AGDcls ::= h::AGDcl t::AGDcls
 abstract production emptyAGDcl
 top::AGDcl ::=
 {
-  top.pp = "";
+  top.unparse = "";
 
   top.errors := [];
 }
@@ -46,7 +46,7 @@ top::AGDcl ::=
 abstract production errorAGDcl
 top::AGDcl ::= e::[Message]
 {
-  top.pp = s"{- Errors:\n${foldMessages(e)} -}";
+  top.unparse = s"{- Errors:\n${messagesToString(e)} -}";
   top.errors := e;
 }
 
@@ -56,7 +56,7 @@ top::AGDcl ::= e::[Message]
 abstract production appendAGDcl
 top::AGDcl ::= h::AGDcl t::AGDcl
 {
-  top.pp = h.pp ++ "\n" ++ t.pp;
+  top.unparse = h.unparse ++ "\n" ++ t.unparse;
 
   top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
@@ -66,7 +66,7 @@ top::AGDcl ::= h::AGDcl t::AGDcl
 aspect default production
 top::AGDcl ::=
 {
-  -- can't provide pp or location!
+  -- can't provide unparse or location!
   top.moduleNames = [];
   top.defs = [];
   --top.errors := []; -- should never be omitted, really.

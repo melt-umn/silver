@@ -3,7 +3,7 @@ grammar silver:modification:copper;
 concrete production attributeDclParser
 top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::ActionCode_c ';'
 {
-  top.pp = "parser attribute " ++ a.name ++ " :: " ++ te.pp ++ " action " ++ acode.pp ++ " ;" ;
+  top.unparse = "parser attribute " ++ a.name ++ " :: " ++ te.unparse ++ " action " ++ acode.unparse ++ " ;" ;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;

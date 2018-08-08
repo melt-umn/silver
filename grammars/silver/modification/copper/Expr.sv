@@ -3,7 +3,7 @@ grammar silver:modification:copper;
 abstract production actionChildReference
 top::Expr ::= q::Decorated QName
 {
-  top.pp = q.pp;
+  top.unparse = q.unparse;
 
   top.errors := []; -- Should only ever be in scope when valid
 
@@ -18,7 +18,7 @@ top::Expr ::= q::Decorated QName
 abstract production pluckTerminalReference
 top::Expr ::= q::Decorated QName
 {
-  top.pp = q.pp;
+  top.unparse = q.unparse;
 
   top.errors := []; -- Should only be referenceable from a context where its valid.
 
@@ -34,7 +34,7 @@ top::Expr ::= q::Decorated QName
 abstract production parserAttributeReference
 top::Expr ::= q::Decorated QName
 {
-  top.pp = q.pp;
+  top.unparse = q.unparse;
 
   top.errors := if !top.frame.permitActions
                 then [err(top.location, "References to parser attributes can only be made in action blocks")]
@@ -51,7 +51,7 @@ top::Expr ::= q::Decorated QName
 abstract production termAttrValueReference
 top::Expr ::= q::Decorated QName
 {
-  top.pp = q.pp;
+  top.unparse = q.unparse;
 
   top.errors := []; -- Should only ever be in scope in action blocks
 

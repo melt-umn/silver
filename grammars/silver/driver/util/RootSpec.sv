@@ -1,8 +1,8 @@
 grammar silver:driver:util;
 
 import silver:reflect;
-import silver:langutil only pp, show;
-import silver:langutil:pp only pp, show;
+import silver:langutil only pp;
+import silver:langutil:pp only show;
 
 import silver:definition:core only Grammar, grammarErrors, grammarName, importedDefs, grammarDependencies, globalImports, Message, err;
 import silver:definition:flow:env only flowEnv, flowDefs, fromFlowDefs;
