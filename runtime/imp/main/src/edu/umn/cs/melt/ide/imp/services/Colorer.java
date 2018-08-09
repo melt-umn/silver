@@ -45,7 +45,6 @@ public class Colorer extends TokenColorerBase implements ITokenColorer, IExecuta
 			
 			this.attributes[i] = TextAttributeProvider.getAttribute(display, r, g, b, bold, italic);
 			fontIndexes.put(name, i);
-			System.out.println("Font " + name + " " + i);
 		}
 		
 		classColorings = new HashMap<String, Integer>();
@@ -57,7 +56,6 @@ public class Colorer extends TokenColorerBase implements ITokenColorer, IExecuta
 			int attribute_index = fontIndexes.get(font);
 			
 			classColorings.put(lexerclass, attribute_index);
-			System.out.println("Coloring " + lexerclass + " as " + font + " is " + attribute_index);
 		}
 	}
 
