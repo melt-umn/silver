@@ -12,6 +12,7 @@ top::SyntaxRoot ::=
 {
   top.fontList = error("This should only ever be demanded from cstRoot.");
   top.termFontPairList = error("This should only ever be demanded from cstRoot.");
+  top.classFontList = error("This should only ever be demanded from cstRoot.");
 }
 
 aspect production cstRoot
@@ -20,5 +21,6 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   -- 1) font information
   top.fontList = s2.fontList;
   top.termFontPairList = s2.termFontPairList;
+  top.classFontList = s2.classFontList;
 }
 

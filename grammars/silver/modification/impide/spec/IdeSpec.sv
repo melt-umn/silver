@@ -202,6 +202,7 @@ ${wizs.svIdeInterface}
 
 <extension point="org.eclipse.imp.runtime.tokenColorer">
   <tokenColorer class="edu.umn.cs.melt.ide.imp.services.Colorer" language="${implang}">
+    ${implode("\n    ", map(getFontPluginXmlSpec, ast.fontList) ++ map(getClassPluginXmlSpec, ast.classFontList))}
   </tokenColorer>
 </extension>
 
@@ -481,3 +482,13 @@ String ::= f::Pair<String Font>
   return s"""attributes[TokenType.${f.fst}] = ${f.snd.getTextAttribute};""";
 }
 
+function getFontPluginXmlSpec
+String ::= f::Pair<String Font>
+{
+  return s"""<font name="${f.fst}" ${f.snd.pluginXmlSpec}/>""";
+}
+function getClassPluginXmlSpec
+String ::= f::Pair<String String>
+{
+  return s"""<coloring lexerclass="${f.fst}" font="${f.snd}" />""";
+}

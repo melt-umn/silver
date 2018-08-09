@@ -118,7 +118,7 @@ public class Problem {
 		String filename = ((StringCatter)where.synthesized(core.Init.core_filename__ON__core_Location)).toString();
 		
 		// Treat no file as project-wide
-		boolean isProjMsg = (filename == "");
+		boolean isProjMsg = filename.equals("");
 		
 		if(isProjMsg)
 			return Problem.createProjectProblem(severity, message);
