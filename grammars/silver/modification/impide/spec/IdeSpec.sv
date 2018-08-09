@@ -73,6 +73,7 @@ top::IdeSpec ::=
   funcs.implang = implang;
   funcs.visibleName = ideName;
   funcs.package = package;
+  funcs.markerFullName = s"${bundle}.${extid_problem}";
   
   local wizs :: IdeWizards = foldr(consIdeWizard, nilIdeWizard(), wizards);
   wizs.bundle = bundle;
@@ -169,6 +170,8 @@ ${wizs.svIdeInterface}
 <extension point="org.eclipse.core.resources.builders" id="${extid_builder}" name="${ideName} builder">
   <builder hasNature="true">
     <run class="edu.umn.cs.melt.ide.imp.builders.Builder">
+      <parameter name="markerName" value="${bundle}.${extid_problem}" />
+      ${funcs.pluginXmlBuilders}
     </run>
   </builder>
 </extension>
@@ -258,6 +261,10 @@ ${funcs.pluginXml}
 
 </plugin>
 """),
+-- TODO: we could probably do away with the following Plugin generation by using
+-- context.getBundle().getHeaders().get("Silver-Eclipse-Grammar")
+-- and then using that to call Init and new SVIdeInterface.
+-- (Plus adding that line to the MANIFEST.MF, with the appropriate value...)
   pair(s"${pluginPkgPath}Plugin.java",
     s"""
 package ${package};
