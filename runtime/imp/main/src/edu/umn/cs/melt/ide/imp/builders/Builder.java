@@ -1,7 +1,5 @@
 package edu.umn.cs.melt.ide.imp.builders;
 
-import ide.NIdeMessage;
-
 import java.util.Map;
 
 import org.eclipse.core.resources.IFolder;
@@ -20,6 +18,7 @@ import common.TopNode;
 import common.javainterop.ConsCellCollection;
 
 import core.NIOVal;
+import silver.langutil.NMessage;
 
 import edu.umn.cs.melt.ide.impl.SVInterface;
 import edu.umn.cs.melt.ide.impl.SVRegistry;
@@ -116,7 +115,7 @@ public class Builder extends IncrementalProjectBuilder {
 
 	public static boolean renderMessages(ConsCell errors, IProject project, SVInterface sv) throws CoreException {
 		boolean stopBuild = false;
-		for(NIdeMessage msg : new ConsCellCollection<NIdeMessage>(errors)) {
+		for(NMessage msg : new ConsCellCollection<NMessage>(errors)) {
 			// it seems we do not need to worry about batching changes, as a builder gets called
 			// with AVOID_UPDATE. apparently. I'm guessing. from the fact that markers don't appear
 			// until this function returns.

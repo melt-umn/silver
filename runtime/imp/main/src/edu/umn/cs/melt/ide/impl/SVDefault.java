@@ -13,7 +13,6 @@ import common.StringCatter;
 import core.NIOVal;
 import core.Pioval;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
-import edu.umn.cs.melt.ide.copper.coloring.ITokenClassifier;
 import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
 import edu.umn.cs.melt.ide.imp.services.IdeParseResult;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
@@ -44,8 +43,6 @@ public abstract class SVDefault implements SVInterface {
 	public abstract String getInitialProjectProperties();
 	@Override
 	public abstract IPropertyPageTab[] getPropertyTabs();
-	@Override
-	public abstract ITokenClassifier getTokenClassifier();
 	@Override
 	public abstract IdeParseResult<Node> parse(Reader input, String filename) throws CopperParserException, IOException;
 	

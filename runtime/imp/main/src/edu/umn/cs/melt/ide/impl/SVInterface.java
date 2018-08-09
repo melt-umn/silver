@@ -12,7 +12,6 @@ import common.StringCatter;
 import core.NIOVal;
 
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
-import edu.umn.cs.melt.ide.copper.coloring.ITokenClassifier;
 import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
 import edu.umn.cs.melt.ide.imp.services.IdeParseResult;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
@@ -60,7 +59,7 @@ public interface SVInterface {
 	public String fileExtension();
 	
 	/**
-	 * IOVal<[IdeMessage]> ::= IdeProject [IdeProperty] IO
+	 * IOVal<[Message]> ::= IdeProject [IdeProperty] IO
 	 * 
 	 * Run when a build action is requested. e.g. a file is saved, if auto-build is on.
 	 * 
@@ -72,7 +71,7 @@ public interface SVInterface {
 	public NIOVal build(IProject project, ConsCell properties, IOToken iotoken); 
 
 	/**
-	 * IOVal<[IdeMessage]> ::= IdeProject [IdeProperty] IO
+	 * IOVal<[Message]> ::= IdeProject [IdeProperty] IO
 	 * 
 	 * <p>Run when a build action *has succeeded without errors*.
 	 * 
@@ -90,7 +89,7 @@ public interface SVInterface {
 	public NIOVal postbuild(IProject project, ConsCell properties, IOToken iotoken);
 	
 	/**
-	 * IOVal<[IdeMessage]> ::= IdeProject [IdeProperty] IO
+	 * IOVal<[Message]> ::= IdeProject [IdeProperty] IO
 	 * 
 	 * Run when the user requests an export? (TODO: uh, figure some stuff out here)
 	 * 
@@ -137,6 +136,5 @@ public interface SVInterface {
 	 * Get a set of tabs for the project's properties page.
 	 */
 	public IPropertyPageTab[] getPropertyTabs();
-	public ITokenClassifier getTokenClassifier();
 	public IdeParseResult<Node> parse(Reader input, String filename) throws CopperParserException, IOException;
 }

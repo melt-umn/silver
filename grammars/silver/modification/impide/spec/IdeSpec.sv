@@ -107,7 +107,6 @@ import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
 import edu.umn.cs.melt.ide.impl.SVDefault;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
-import edu.umn.cs.melt.ide.copper.coloring.ITokenClassifier;
 import edu.umn.cs.melt.ide.imp.services.IdeParseResult;
 
 public class SVIdeInterface extends SVDefault {
@@ -136,10 +135,6 @@ public class SVIdeInterface extends SVDefault {
 		return new IPropertyPageTab[] {
 			${implode(", ", map(newTabClass, tabs))}
 		};
-	}
-	@Override
-	public ITokenClassifier getTokenClassifier() {
-		return new ${package}.imp.coloring.${top.pluginParserClass}_TokenClassifier();
 	}
 	private ${sourceGrammarName}.${top.pluginParserClass} parser = new ${sourceGrammarName}.${top.pluginParserClass}();
 	@Override
@@ -202,6 +197,7 @@ ${wizs.svIdeInterface}
 
 <extension point="org.eclipse.imp.runtime.tokenColorer">
   <tokenColorer class="edu.umn.cs.melt.ide.imp.services.Colorer" language="${implang}">
+    ${implode("\n    ", map(getFontPluginXmlSpec, ast.fontList) ++ map(getClassPluginXmlSpec, ast.classFontList))}
   </tokenColorer>
 </extension>
 
@@ -290,9 +286,7 @@ public class Plugin implements BundleActivator {
   pair(s"${pluginPkgPath}eclipse/property/PropertyControlsProvider.java",
     getPropertyProvider(package, idePropDcls, "property")),
   pair(s"${pluginPkgPath}eclipse/wizard/newproject/PropertyGenerator.java",
-    getPropertyGenerator(package, idePropDcls, "newproject")),
-  pair(s"${pluginPkgPath}imp/coloring/${top.pluginParserClass}_TokenClassifier.java",
-    getTokenClassifier(package, ast.fontList, ast.termFontPairList, top.pluginParserClass))
+    getPropertyGenerator(package, idePropDcls, "newproject"))
   ] ++
   wizs.pluginFiles;
 }
@@ -400,84 +394,13 @@ ${sflatMap((.generatorJavaTranslation), propDcls)}
 """;
 }
 
--- class <pkgName>.imp.coloring.ITokenClassifier
-function getTokenClassifier
-String ::= pkgName::String fontList::[Pair<String Font>] termFontPairList::[Pair<String String>] parserName::String
-{
-return s"""
-package ${pkgName}.imp.coloring;
-
-import java.util.HashMap;
-
-import edu.umn.cs.melt.ide.copper.coloring.ITokenClassifier;
-import edu.umn.cs.melt.ide.copper.coloring.TextAttributeProvider;
-import org.eclipse.jface.text.TextAttribute;
-import org.eclipse.swt.widgets.Display;
-
-public class ${parserName}_TokenClassifier implements ITokenClassifier {
-	private static final HashMap<String, Integer> map = new HashMap<String, Integer>();
-
-	public final static class TokenType {
-		public static final int DEFAULT = 0; 
-${getConstantDeclarations(1, fontList)}
-		public static final int TOTAL = ${toString(length(fontList)+1)}; 
-	}
-
-	static {
-		${implode("\n\t\t", map(getPutNameFontPairIntoMap, termFontPairList))}
-	}
-
-	public static int getKind(String symbolName) {
-		if(symbolName == null || "".equals(symbolName)) {
-			return TokenType.DEFAULT;
-		}
-
-		Integer kind = map.get(symbolName);
-
-		if(kind == null) {
-			return TokenType.DEFAULT;
-		}
-
-		return kind;
-	}
-
-	private static final TextAttribute[] attributes = new TextAttribute[TokenType.TOTAL];
-	
-	static {
-		Display display = Display.getDefault();
-		${implode("\n\t\t", map(getTextAttributeInit, fontList))}
-	}
-	
-	@Override
-	public TextAttribute getColoring(common.Terminal token) {
-    // TODO: check kind by getLexerClasses()
-		return attributes[getKind(token.getName())];
-	}
-}
-""";
-}
-
-function getPutNameFontPairIntoMap
-String ::= tokenNameAndFontName::Pair<String String>
-{
-return "map.put(\"" ++ tokenNameAndFontName.fst ++ "\", " ++ "TokenType." ++ 
-       (if tokenNameAndFontName.snd != ""
-        then tokenNameAndFontName.snd
-        else "DEFAULT") ++ ");"; 
-}
-
-function getConstantDeclarations
-String ::= i::Integer fontList::[Pair<String Font>]
-{
-  return if null(fontList)
-         then ""
-         else "\t\tpublic static final int " ++ head(fontList).fst ++ " = " ++ toString(i) ++ ";\n" ++ 
-              getConstantDeclarations(i+1, tail(fontList));
-}
-
-function getTextAttributeInit
+function getFontPluginXmlSpec
 String ::= f::Pair<String Font>
 {
-  return s"""attributes[TokenType.${f.fst}] = ${f.snd.getTextAttribute};""";
+  return s"""<font name="${f.fst}" ${f.snd.pluginXmlSpec}/>""";
 }
-
+function getClassPluginXmlSpec
+String ::= f::Pair<String String>
+{
+  return s"""<coloring lexerclass="${f.fst}" font="${f.snd}" />""";
+}
