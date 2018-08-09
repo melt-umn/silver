@@ -77,18 +77,14 @@ top::IdeFunction ::= fName::String
 abstract production folderFunction
 top::IdeFunction ::= fName::String
 {
-  top.svIdeInterface = s"""
-	@Override
-	public ConsCell getFolds(Node root) {
-		return (ConsCell)${makeClassName(fName)}.invoke(root);
-	}
-""";
+  top.svIdeInterface = "";
 
   top.pluginXml = s"""
 <extension point="org.eclipse.imp.runtime.foldingUpdater">
   <foldingUpdater
       class="edu.umn.cs.melt.ide.imp.services.FoldingProvider"
       language="${top.implang}">
+    <silvercall function="${fName}" />
   </foldingUpdater>
 </extension>
 """;

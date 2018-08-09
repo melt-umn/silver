@@ -101,16 +101,6 @@ public interface SVInterface {
 	public NIOVal export(IProject project, ConsCell properties, IOToken iotoken);
 	
 	/**
-	 * [Location] ::= <<CST root's type>>
-	 * 
-	 * Given a tree from parsing, return a list of locations that can be folded.
-	 * 
-	 * @param root  The CST tree
-	 * @return  A list of extents that should fold.
-	 */
-	public ConsCell getFolds(Node root);
-	
-	/**
 	 * Obtains a list of properties to request in order to create a new file via wizard.
 	 */
 	public IPropertyControlsProvider getNewFileProperties();

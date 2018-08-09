@@ -70,13 +70,6 @@ public abstract class SVDefault implements SVInterface {
 	}
 
 	@Override
-	public ConsCell getFolds(Node root) {
-		// Introducing the bit to plugin.xml that results in the code being run
-		// that eventually calls this is a result of a 'folder' function being given.
-		// It should never be the case that this is unimplemented and then called.
-		throw new UnsupportedOperationException("GetFolds should only be called if supplied by the plugin in the silver ide declaration.");
-	}
-	@Override
 	public IPropertyControlsProvider getNewFileProperties() {
 		// Should be provided if the wizard ends up in plugin.xml
 		throw new UnsupportedOperationException("new file properties requested by not provided by plugin");
