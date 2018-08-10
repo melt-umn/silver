@@ -16,12 +16,26 @@ import common.Node;
 import common.javainterop.ConsCellCollection;
 import core.NLocation;
 
-import edu.umn.cs.melt.ide.impl.SVInterface;
-import edu.umn.cs.melt.ide.impl.SVRegistry;
+import edu.umn.cs.melt.ide.util.ReflectedCall;
 
+/**
+ * Computes a set of foldable regions in the IDE.
+ * Example configuration:
+    <extension point="org.eclipse.imp.runtime.foldingUpdater">
+      <foldingUpdater
+          class="edu.umn.cs.melt.ide.imp.services.FoldingProvider"
+          language="Silver">
+        <silvercall function="silver:composed:idetest:fold" />
+      </foldingUpdater>
+    </extension>
+ *
+ * The function (above `silver:composed:idetest:fold`) should have
+ * Silver type `[Location] ::= ASTRoot`.
+ */
 public class FoldingProvider extends FolderBase implements IExecutableExtension {
 
 	private String language;
+	private ReflectedCall<ConsCell> silvercall;
 	
 	@Override
 	public void setInitializationData(IConfigurationElement config,
@@ -30,6 +44,12 @@ public class FoldingProvider extends FolderBase implements IExecutableExtension 
 		// out of plugin.xml about what language this is.
 		// Right now, SVRegistry doesn't need a language, but perhaps in the future it should.
 		language = config.getAttribute("language");
+		
+		for(IConfigurationElement elem : config.getChildren("silvercall")) {
+			silvercall = new ReflectedCall<ConsCell>(elem.getAttribute("function"), 1);
+			// Do something smarter with error handling later...
+			break;
+		}
 	}
 
 	@Override
@@ -37,12 +57,7 @@ public class FoldingProvider extends FolderBase implements IExecutableExtension 
 			HashMap<Annotation, Position> newAnnotations,
 			List<Annotation> annotations, Object _ast) {
 		
-		SVInterface sv = SVRegistry.get();
-		
-		// Unfortunately...
-		Node ast = (Node) _ast;
-
-		ConsCell folds = sv.getFolds(ast);
+		ConsCell folds = silvercall.invoke(new Object[]{_ast});
 		
 		for(NLocation loc : new ConsCellCollection<NLocation>(folds)) {
 			DecoratedNode dloc = loc.decorate();

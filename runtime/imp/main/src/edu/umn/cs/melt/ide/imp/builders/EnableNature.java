@@ -14,15 +14,47 @@ import org.eclipse.ui.IWorkbenchPart;
 /**
  * Action performed via menu.
  * 
- * Gets its configuration via the info from plugin.xml, through setInitializationData
+ * Example configuration:
+    <extension point="org.eclipse.ui.popupMenus">
+      <objectContribution objectClass="org.eclipse.core.resources.IProject" adaptable="true" nameFilter="*" id="silver.composed.idetest.actions.projectmenu">
+        <action
+            label="Enable Silver Builder"
+            tooltip="Enable the Silver builder for this project"
+            id="silver.composed.idetest.actions.nature">
+          <class class="edu.umn.cs.melt.ide.imp.builders.EnableNature">
+            <parameter name="nature" value="silver.composed.idetest.nature" />
+          </class>
+        </action>
+ *
+ * Here we get `nature` passed as a hastable in `setInitializationData`.
  */
 public class EnableNature implements IObjectActionDelegate, IExecutableExtension {
 
-	public EnableNature() {}
-	
 	private IProject project;
 	private String natureID;
 	
+	@Override
+	public void setInitializationData(IConfigurationElement config, String property,
+			Object data) throws CoreException {
+		if(!(data instanceof java.util.Hashtable))
+			return;
+		
+		java.util.Hashtable<String, String> d = (java.util.Hashtable<String, String>)data;
+		
+		natureID = d.get("nature");
+	}
+
+	public EnableNature() {}
+	
+	/**
+	 * General invocation process:
+	 * 1. Construct
+	 * 2. `setInitializationData`
+	 * 3. unclear! `selectionChanged` must get called?
+	 * 4. `run` gets called.
+	 *
+	 * Then we do this thing.
+	 */
 	@Override
 	public void run(IAction arg0) {
 		if(natureID == null) {
@@ -57,17 +89,6 @@ public class EnableNature implements IObjectActionDelegate, IExecutableExtension
 
 	@Override
 	public void setActivePart(IAction arg0, IWorkbenchPart arg1) {
-	}
-
-	@Override
-	public void setInitializationData(IConfigurationElement config, String property,
-			Object data) throws CoreException {
-		if(!(data instanceof java.util.Hashtable))
-			return;
-		
-        java.util.Hashtable<String, String> d = (java.util.Hashtable<String, String>)data;
-        
-        natureID = d.get("nature");
 	}
 
 

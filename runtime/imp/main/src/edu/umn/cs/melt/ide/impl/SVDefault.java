@@ -47,36 +47,6 @@ public abstract class SVDefault implements SVInterface {
 	public abstract IdeParseResult<Node> parse(Reader input, String filename) throws CopperParserException, IOException;
 	
 	@Override
-	public NIOVal build(IProject project, ConsCell properties, IOToken iotoken) {
-		// Introducing the bit to plugin.xml that results in the code being run
-		// that eventually calls this is a result of a 'builder' function being given.
-		// It should never be the case that this is unimplemented and then called.
-		throw new UnsupportedOperationException("Build should only be called if supplied by the plugin in the silver ide declaration.");
-	}
-
-	@Override
-	public NIOVal postbuild(IProject project, ConsCell properties, IOToken iotoken) {
-		// An entirely valid course of action is to do nothing. Do so by default.
-		// Seamlessly handles a 'builder' given but not a 'postbuilder'.
-		return new Pioval(iotoken, ConsCell.nil);
-	}
-
-	@Override
-	public NIOVal export(IProject project, ConsCell properties, IOToken iotoken) {
-		// Introducing the bit to plugin.xml that results in the code being run
-		// that eventually calls this is a result of a 'exporter' function being given.
-		// It should never be the case that this is unimplemented and then called.
-		throw new UnsupportedOperationException("Export should only be called if supplied by the plugin in the silver ide declaration.");
-	}
-
-	@Override
-	public ConsCell getFolds(Node root) {
-		// Introducing the bit to plugin.xml that results in the code being run
-		// that eventually calls this is a result of a 'folder' function being given.
-		// It should never be the case that this is unimplemented and then called.
-		throw new UnsupportedOperationException("GetFolds should only be called if supplied by the plugin in the silver ide declaration.");
-	}
-	@Override
 	public IPropertyControlsProvider getNewFileProperties() {
 		// Should be provided if the wizard ends up in plugin.xml
 		throw new UnsupportedOperationException("new file properties requested by not provided by plugin");
