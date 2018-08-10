@@ -43,8 +43,6 @@ public abstract class SVDefault implements SVInterface {
 	public abstract String getInitialProjectProperties();
 	@Override
 	public abstract IPropertyPageTab[] getPropertyTabs();
-	@Override
-	public abstract IdeParseResult<Node> parse(Reader input, String filename) throws CopperParserException, IOException;
 	
 	@Override
 	public IPropertyControlsProvider getNewFileProperties() {

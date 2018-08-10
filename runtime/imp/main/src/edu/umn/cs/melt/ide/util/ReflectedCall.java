@@ -25,31 +25,39 @@ import core.Pnothing;
 public final class ReflectedCall<T> {
 	private Method method;
 	
-	public ReflectedCall(String silver_function, int arity) throws CoreException {
+	private static String to_sv_class(String silver_function) {
 		int i = silver_function.lastIndexOf(":");
 		String before = silver_function.substring(0, i);
 		String after = silver_function.substring(i + 1, silver_function.length());
-		
-		// 'a:b:c' to 'a.b.Pc'
-		String class_name = before.replace(":", ".") + ".P" + after;
-		
+		return before.replace(":", ".") + ".P" + after;
+	}
+	private static Class[] sv_args(int arity) {
+		Class[] arg_types = new Class[arity];
+		Arrays.fill(arg_types, Object.class);
+		return arg_types;
+	}
+	
+	// "core:map", 2
+	public ReflectedCall(String silver_function, int arity) throws CoreException {
+		this(to_sv_class(silver_function), "invoke", sv_args(arity));
+	}
+	// "core.Pmap", "invoke", {Object, Object}
+	public ReflectedCall(String class_name, String method_name, Class[] arg_types) throws CoreException {
 		try {
 			Class<Node> cls = (Class<Node>)Class.forName(class_name);
-			Class[] arg_types = new Class[arity];
-			Arrays.fill(arg_types, Object.class);
-		
-			method = cls.getMethod("invoke", arg_types);
+			this.method = cls.getMethod(method_name, arg_types);
 		} catch (ClassNotFoundException e) {
 			// TODO: figure out correct pluginId?
 			throw new CoreException(
-				new Status(Status.ERROR, "edu.umn.cs.melt.eclipse", "Cannot find " + silver_function, e));
+				new Status(Status.ERROR, "edu.umn.cs.melt.eclipse", "Cannot find " + class_name, e));
 		} catch (NoSuchMethodException e) {
 			// TODO: figure out correct pluginId?
 			throw new CoreException(
-				new Status(Status.ERROR, "edu.umn.cs.melt.eclipse", "Cannot find valid invocation for " + silver_function, e));
+				new Status(Status.ERROR, "edu.umn.cs.melt.eclipse", "Cannot find valid invocation for " + method_name, e));
 		}
 	}
 	
+	// call this static method
 	public T invoke(Object[] args) {
 		try {
 			return (T) method.invoke(null, args);
@@ -57,6 +65,35 @@ public final class ReflectedCall<T> {
 			// We don't do CoreException here because we might not be called in a context where
 			// that's acceptable to throw (it's a checked exception).
 			throw new RuntimeException("Reflected call failed", e);
+		}
+	}
+	// call this NONstatic method
+	public T invokeOn(Object obj, Object[] args) {
+		try {
+			return (T) method.invoke(obj, args);
+		} catch (InvocationTargetException | IllegalAccessException e) {
+			// We don't do CoreException here because we might not be called in a context where
+			// that's acceptable to throw (it's a checked exception).
+			throw new RuntimeException("Reflected call failed", e);
+		}
+	}
+	
+	// Instantiate using zero-arg constructor an object of `class_name`
+	public static Object newInstance(String class_name) throws CoreException {
+		try {
+			return Class.forName(class_name).getConstructor().newInstance();
+		} catch (ClassNotFoundException e) {
+			// TODO: figure out correct pluginId?
+			throw new CoreException(
+				new Status(Status.ERROR, "edu.umn.cs.melt.eclipse", "Cannot find " + class_name, e));
+		} catch (NoSuchMethodException e) {
+			// TODO: figure out correct pluginId?
+			throw new CoreException(
+				new Status(Status.ERROR, "edu.umn.cs.melt.eclipse", "Cannot find valid invocation for 0-arg constructor", e));
+		} catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
+			// TODO: figure out correct pluginId?
+			throw new CoreException(
+				new Status(Status.ERROR, "edu.umn.cs.melt.eclipse", "Cannot invoke constructor", e));
 		}
 	}
 }
