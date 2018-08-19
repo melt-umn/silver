@@ -72,18 +72,14 @@ e::Expr ::= id::Name
 {
   e.pp = id.pp;
 
-  e.errors := case id.lookup of
-                just(_)   -> []
-              | nothing() -> [err(id.location, "variable \"" ++ id.name ++ "\" was not declared.")] 
-              end;
+  e.errors :=
+    case id.lookup of
+    | just(_)   -> []
+    | nothing() ->
+        [err(id.location, s"variable \"${id.name}\" was not declared.")] 
+    end;
 }
 
-
-function ppoperator
-Document ::= d1::Document op::String d2::Document
-{
-  return pp"(${d1} ${text(op)} ${d2})";
-}
 
 -- Arithmetic Operations
 ------------------------
@@ -92,25 +88,25 @@ Document ::= d1::Document op::String d2::Document
 abstract production add 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = ppoperator(l.pp, "+", r.pp);
+  e.pp = pp"(${l.pp} + ${r.pp})";
   e.errors := l.errors ++ r.errors;
 }
 abstract production sub 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = ppoperator(l.pp, "-", r.pp);
+  e.pp = pp"(${l.pp} - ${r.pp})";
   e.errors := l.errors ++ r.errors;
 }
 abstract production mul 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = ppoperator(l.pp, "*", r.pp);
+  e.pp = pp"(${l.pp} * ${r.pp})";
   e.errors := l.errors ++ r.errors;
 }
 abstract production div 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = ppoperator(l.pp, "/", r.pp);
+  e.pp = pp"(${l.pp} / ${r.pp})";
   e.errors := l.errors ++ r.errors; 
 }
 
@@ -134,21 +130,21 @@ e::Expr ::= l::Expr r::Expr
 abstract production eq 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = ppoperator(l.pp, "==", r.pp);
+  e.pp = pp"(${l.pp} == ${r.pp})";
   e.errors := l.errors ++ r.errors;
 }
 
 abstract production lt 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = ppoperator(l.pp, "<", r.pp);
+  e.pp = pp"(${l.pp} < ${r.pp})";
   e.errors := l.errors ++ r.errors;
 }
 
 abstract production neq 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = ppoperator(l.pp, "!=", r.pp);
+  e.pp = pp"(${l.pp} != ${r.pp})";
   forwards to not (eq(l,r));
   -- e.errors is copied from the forwarded-to tree
   -- Similarly, type checking attributes defined TypeChecking.sv are
@@ -157,19 +153,19 @@ e::Expr ::= l::Expr r::Expr
 abstract production lte 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = ppoperator(l.pp, "<=", r.pp);
+  e.pp = pp"(${l.pp} <= ${r.pp})";
   forwards to or( lt(l,r), eq(l,r) );
 }
 abstract production gt 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = ppoperator(l.pp, ">", r.pp);
+  e.pp = pp"(${l.pp} > ${r.pp})";
   forwards to not(lte(l,r));
 }
 abstract production gte 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = ppoperator(l.pp, ">=", r.pp);
+  e.pp = pp"(${l.pp} >= ${r.pp})";
   forwards to not(lt(l,r));
 }
 
@@ -179,13 +175,13 @@ e::Expr ::= l::Expr r::Expr
 abstract production and 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = ppoperator(l.pp, "&&", r.pp);
+  e.pp = pp"(${l.pp} && ${r.pp})";
   e.errors := l.errors ++ r.errors;
 }
 abstract production not 
 e::Expr ::= ne::Expr 
 {
-  e.pp = cat(text("!"), parens(ne.pp));
+  e.pp = pp"!(${ne.pp})";
   e.errors := ne.errors;
 }
 
@@ -193,7 +189,7 @@ e::Expr ::= ne::Expr
 abstract production or 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = ppoperator(l.pp, "||", r.pp);
+  e.pp = pp"(${l.pp} || ${r.pp})";
   forwards to not( and(not(l), not(r)) );
 }
 
