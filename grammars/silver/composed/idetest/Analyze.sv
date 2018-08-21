@@ -9,8 +9,6 @@ import silver:util:cmdargs;
 import silver:definition:core;
 import silver:definition:env;
 
-import ide;
-
 -- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideAnalyze
 IOVal<[Message]> ::= args::[String]  svParser::SVParser ioin::IO

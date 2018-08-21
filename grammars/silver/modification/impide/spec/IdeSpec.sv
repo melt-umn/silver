@@ -137,19 +137,8 @@ public class SVIdeInterface extends SVDefault {
 			${implode(", ", map(newTabClass, tabs))}
 		};
 	}
-	private ${sourceGrammarName}.${top.pluginParserClass} parser = new ${sourceGrammarName}.${top.pluginParserClass}();
-	@Override
-	public IdeParseResult<Node> parse(Reader input, String filename) throws CopperParserException, IOException {
-		// In the long run, maybe we should have a getParser() rather than parse() so things could be concurrent... TODO
-		synchronized(parser) {
-			parser.reset();
-			return new IdeParseResult<Node>((Node)parser.parse(input, filename), parser.getTokens());
-		}
-	}
 
 
-
-${funcs.svIdeInterface}
 ${wizs.svIdeInterface}
 }
 """),
@@ -164,6 +153,7 @@ ${wizs.svIdeInterface}
 
 <extension point="org.eclipse.imp.runtime.parser">
   <parserWrapper class="edu.umn.cs.melt.ide.imp.services.ParseController" language="${implang}">
+    <copper class="${sourceGrammarName}.${top.pluginParserClass}" />
   </parserWrapper>
 </extension>
 

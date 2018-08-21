@@ -10,7 +10,6 @@ exports simple:terminals;
 imports silver:langutil;
 imports simple:abstractsyntax as ast;
 
-
 {--
  - The concrete syntax represent a complete Simple program.
  -}
@@ -25,20 +24,9 @@ closed nonterminal Root with unparse, location, ast<ast:Root>;
  - grammar. The colon is Silver's namespace resolution operator.
  -}
 
-
 concrete productions r::Root
- | 'main' '(' ')' '{' s::Stmts '}'  { r.unparse = "main () {\n" ++ s.unparse ++ "}\n";
-                                      -- We're again about to use the 'ast' namespace to refer to rootStmt in
-                                      -- our abstractsyntax:
-                                      r.ast = ast:rootStmt(s.ast); }
-
-{-
-concrete production rootStmt
-r::Root ::= 'main' '(' ')' '{' s::Stmts '}'
-{
-  r.unparse = "main () {\n" ++ s.unparse ++ "}\n";
-  -- We're again about to use the 'ast' namespace to refer to rootStmt in
-  -- our abstractsyntax:
-  r.ast = ast:rootStmt(s.ast);
-}
--}
+ | 'main' '(' ')' '{' s::Stmts '}'
+     { r.unparse = "main () {\n" ++ s.unparse ++ "}\n";
+       -- We're again about to use the 'ast' namespace to refer to rootStmt in
+       -- our abstractsyntax:
+       r.ast = ast:rootStmt(s.ast); }

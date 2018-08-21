@@ -1,6 +1,6 @@
 grammar silver:modification:impide:spec;
 
-nonterminal IdeFunctions with package, visibleName, implang, bundle, svIdeInterface, pluginXml, pluginXmlActions, pluginXmlBuilders, markerFullName;
+nonterminal IdeFunctions with package, visibleName, implang, bundle, pluginXml, pluginXmlActions, pluginXmlBuilders, markerFullName;
 
 synthesized attribute pluginXmlBuilders :: String;
 autocopy attribute markerFullName :: String;
@@ -8,7 +8,6 @@ autocopy attribute markerFullName :: String;
 abstract production consIdeFunction
 top::IdeFunctions ::= h::IdeFunction  t::IdeFunctions
 {
-  top.svIdeInterface = h.svIdeInterface ++ t.svIdeInterface;
   top.pluginXml = h.pluginXml ++ t.pluginXml;
   top.pluginXmlActions = h.pluginXmlActions ++ t.pluginXmlActions;
   top.pluginXmlBuilders = h.pluginXmlBuilders ++ t.pluginXmlBuilders;
@@ -17,18 +16,16 @@ top::IdeFunctions ::= h::IdeFunction  t::IdeFunctions
 abstract production nilIdeFunction
 top::IdeFunctions ::=
 {
-  top.svIdeInterface = "";
   top.pluginXml = "";
   top.pluginXmlActions = "";
   top.pluginXmlBuilders = "";
 }
 
-nonterminal IdeFunction with package, visibleName, implang, bundle, svIdeInterface, pluginXml, pluginXmlActions, pluginXmlBuilders, markerFullName;
+nonterminal IdeFunction with package, visibleName, implang, bundle, pluginXml, pluginXmlActions, pluginXmlBuilders, markerFullName;
 
 aspect default production
 top::IdeFunction ::=
 {
-  top.svIdeInterface = "";
   top.pluginXml = "";
   top.pluginXmlActions = "";
   top.pluginXmlBuilders = "";
@@ -40,7 +37,6 @@ top::IdeFunction ::= fName::String
   top.pluginXmlBuilders =
     s"""
       <parameter name="silver_build" value="${fName}" />""";
-  top.svIdeInterface = "";
 }
 
 abstract production postbuilderFunction
@@ -49,14 +45,11 @@ top::IdeFunction ::= fName::String
   top.pluginXmlBuilders =
     s"""
       <parameter name="silver_postbuild" value="${fName}" />""";
-  top.svIdeInterface = "";
 }
 
 abstract production exporterFunction
 top::IdeFunction ::= fName::String
 {
-  top.svIdeInterface = "";
-  
   top.pluginXmlActions = s"""
     <action
         label="Export as ${top.visibleName} target"
@@ -74,8 +67,6 @@ top::IdeFunction ::= fName::String
 abstract production folderFunction
 top::IdeFunction ::= fName::String
 {
-  top.svIdeInterface = "";
-
   top.pluginXml = s"""
 <extension point="org.eclipse.imp.runtime.foldingUpdater">
   <foldingUpdater
