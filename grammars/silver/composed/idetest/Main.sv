@@ -29,6 +29,7 @@ temp_imp_ide_dcl svParse ".sv" {
   folder fold;
 
   property grammar_to_compile string required display="Grammar";
+  property enable_mwda string default="false" display="Enable MWDA";
 
   wizard new file {
     stub generator getStubForNewFile; --a function whose signature must be "String ::= args::[IdeProperty]"
@@ -36,7 +37,7 @@ temp_imp_ide_dcl svParse ".sv" {
   }
 
   name "Silver";
-  version "0.2.2";
+  version "0.2.3";
   resource grammars "../../../../grammars/"; -- I have "../grammars" to be explicit about what's going on here.
   resource jars     "../../../../jars/";
 }
@@ -119,6 +120,7 @@ IOVal<[String]> ::= args::[IdeProperty] project::IdeProject io::IO
      "-I", proj_path.iovalue,
      --"-I", grammarsio.iovalue, -- This actually get automatically added, by virtue of silver home finding grammars under it
      "--build-xml-location", gen_path.iovalue ++ "/build.xml"] ++
+     (if getEnableMWDA(args) then ["--warn-all"] else []) ++
      getGrammarToCompile(args);
   
   return ioval(gen_path.io, compile_args);
@@ -133,5 +135,16 @@ function getGrammarToCompile
     else if head(args).propName == "grammar_to_compile"
 	    then [head(args).propValue]
 	    else getGrammarToCompile(tail(args));
+}
+
+function getEnableMWDA
+Boolean ::= args::[IdeProperty]
+{
+  return
+    if(null(args))
+    then false
+    else if head(args).propName == "enable_mwda"
+	    then head(args).propValue == "true"
+	    else getEnableMWDA(tail(args));
 }
 
