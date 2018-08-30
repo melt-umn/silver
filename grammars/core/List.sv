@@ -390,6 +390,20 @@ function unionsBy
   return nubBy(eq, concat(ss));
 }
 
+
+-- Boolean list operations
+function all
+Boolean ::= l::[Boolean]
+{
+  return foldr(\ a::Boolean b::Boolean -> a && b, true, l);
+}
+
+function any
+Boolean ::= l::[Boolean]
+{
+  return foldr(\ a::Boolean b::Boolean -> a || b, false, l);
+}
+
 --------------------------------------------------------------------------------
 
 function nil
