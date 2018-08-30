@@ -12,17 +12,22 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   top.postOps <- map(generateMdaSpec(g.compiledGrammars, _, benv.silverGen ++ "src/"),
     flatMap((.mdaSpecs), grammarsToTranslate));
 
-  local targets :: String = 
-    foldr(\ a::Decorated RootSpec b::String ->
-      foldr(\ c::MdaSpec d::String -> 
-        mdaBuildSpecTarget(c) ++ d,
-        "", a.mdaSpecs) ++ b,
-      "", grammarsToTranslate);
+  -- TODO: consider examining all grammars, not just grammarsToTranslate?
+  -- I believe this choice was originally because we weren't serializing MdaSpecs to
+  -- interface files, but I think we could easily start doing that new with the new serialization code?
+  local targets :: [MdaSpec] = flatMap((.mdaSpecs), grammarsToTranslate);
 
-  extraTopLevelDecls <- if length(targets) == 0 then []  
-                        else ["  <target name='copper_mda'>\n" ++ targets ++ "  </target>\n"];
-  extraGrammarsDeps <- if length(targets) == 0 then [] 
-                         else ["copper_mda"];
+  extraTopLevelDecls <-
+    if null(targets) then []
+    else ["  <target name='copper_mda'>\n" ++ sflatMap(mdaBuildSpecTarget, targets) ++ "  </target>\n"];
+  -- By adding the dependency here, the MDA check happens right after parsers are built normally.
+  extraGrammarsDeps <-
+    if null(targets) then [] else ["copper_mda"];
+  -- By *also* adding it here, we do MDA checks even if --dont-translate is active
+  -- (that is, even if the `grammars` target isn't built.)
+  -- (don't worry: ant doesn't re-run the target.)
+  extraDistDeps <-
+    if null(targets) then [] else ["copper_mda"];
 }
 
 abstract production generateMdaSpec

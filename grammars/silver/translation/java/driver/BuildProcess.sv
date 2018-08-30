@@ -77,21 +77,25 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     if null(top.config.buildXmlLocation) then "build.xml"
     else head(top.config.buildXmlLocation);
   
-  top.postOps <- if top.config.noJavaGeneration then [] else 
-    [genJava(top.config, grammarsToTranslate, benv.silverGen), 
-     genBuild(buildXmlLocation, buildXml)]; 
+  top.postOps <-
+    [genBuild(buildXmlLocation, buildXml)] ++
+    (if top.config.noJavaGeneration then [] else [genJava(top.config, grammarsToTranslate, benv.silverGen)]);
 
   -- From here on, it's all build.xml stuff:
 
+  -- Presently, copper, copper_mda, and impide all contribute new targets into build.xml:
   production attribute extraTopLevelDecls :: [String] with ++;
   extraTopLevelDecls := [];
 
+  -- Presently, impide and copper_mda introduce a new top-level goal:
   production attribute extraDistDeps :: [String] with ++;
-  extraDistDeps := ["jars"];
+  extraDistDeps := if top.config.noJavaGeneration then [] else ["jars"];
   
+  -- Presently, unused?
   production attribute extraJarsDeps :: [String] with ++;
   extraJarsDeps := ["grammars"];
 
+  -- Presently, copper and copper_mda
   production attribute extraGrammarsDeps :: [String] with ++;
   extraGrammarsDeps := ["init"];
   
