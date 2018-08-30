@@ -35,9 +35,10 @@ top::DriverAction ::= grams::EnvTree<Decorated RootSpec>  spec::MdaSpec  silverg
 {
   spec.compiledGrammars = grams;
 
-  local ast::SyntaxRoot = spec.cstAst;
-  local parserName::String = makeParserName(spec.fullName);
-  local copperFile::String = silvergen ++ grammarToPath(spec.sourceGrammar) ++ parserName ++ ".copper";
+  local ast :: SyntaxRoot = spec.cstAst;
+  local parserName :: String = makeParserName(spec.fullName);
+  local dir :: String = silvergen ++ grammarToPath(spec.sourceGrammar);
+  local copperFile :: String = dir ++ parserName ++ ".copper";
   
   local err :: IO = 
     print("CST Errors while Testing MDA " ++ spec.fullName ++ ":\n" ++
@@ -46,7 +47,10 @@ top::DriverAction ::= grams::EnvTree<Decorated RootSpec>  spec::MdaSpec  silverg
       "\n", top.ioIn);
 
   local printio::IO = print("MDA test file: " ++ spec.fullName ++ "\n", top.ioIn);
-  local writeio::IO = writeFile(copperFile, ast.xmlCopper, printio);
+  local writeio::IO =
+    writeFile(copperFile, ast.xmlCopper,
+      -- hack for when we're --dont-translate'ing, make sure the dir exists.
+      mkdir(dir, printio).io);
 
   top.io = if null(ast.cstErrors) then writeio else err;
   top.code = if null(ast.cstErrors) then 0 else 1;

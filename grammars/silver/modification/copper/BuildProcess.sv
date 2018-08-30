@@ -77,8 +77,10 @@ String ::= p::ParserSpec  a::Decorated CmdArgs
 abstract production parserSpecUnit
 top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverGen::String
 {
+  local dir :: String =
+    silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar);
   local file :: String =
-    silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar) ++ makeParserName(spec.fullName) ++ ".copper";
+    dir ++ makeParserName(spec.fullName) ++ ".copper";
 
   spec.compiledGrammars = cg;
   local newSpec :: String =
@@ -100,7 +102,9 @@ top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverG
   
   local doWR :: IO =
     writeFile(file, newSpec,
-      print("Generating Parser " ++ spec.fullName ++ ".\n", join));
+      print("Generating Parser " ++ spec.fullName ++ ".\n",
+        -- hack to ensure directory exists (for --dont-translate)
+        mkdir(dir, join).io));
 
   top.io = if null(specCst.cstErrors) then 
              if ex.iovalue && oldSpec.iovalue == newSpec then doUTD 
