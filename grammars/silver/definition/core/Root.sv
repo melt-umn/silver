@@ -11,7 +11,10 @@ nonterminal Root with
   -- File-level inherited attributes
   -- Synthesized attributes
   declaredName, unparse, location, errors, defs, moduleNames, importedDefs,
-  exportedGrammars, optionalGrammars, condBuild;
+  exportedGrammars, optionalGrammars, condBuild, jarName;
+
+-- function from grammar name to maybe user-specified jarName
+synthesized attribute jarName :: (Maybe<String> ::= String);
 
 nonterminal GrammarDcl with 
   declaredName, grammarName, location, unparse, errors;
@@ -35,6 +38,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.exportedGrammars = ms.exportedGrammars;
   top.optionalGrammars = ms.optionalGrammars;
   top.condBuild = ms.condBuild;
+  top.jarName = \grammarName :: String -> nothing();
 
   top.errors := gdcl.errors ++ ms.errors ++ ims.errors ++ ags.errors;
   

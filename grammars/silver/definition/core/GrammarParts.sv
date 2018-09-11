@@ -7,7 +7,7 @@ nonterminal Grammar with
   grammarName, env, globalImports, grammarDependencies,
   -- Synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild,
-  defs, importedDefs, grammarErrors;
+  defs, importedDefs, grammarErrors, jarName;
 
 {--
 - A list of grammars that this grammar depends upon,
@@ -45,6 +45,8 @@ top::Grammar ::=
   top.importedDefs = [];
   top.defs = [];
   top.grammarErrors = [];
+
+  top.jarName = \grammarName :: String -> nothing();
 }
 
 abstract production consGrammar
@@ -62,4 +64,6 @@ top::Grammar ::= h::Root  t::Grammar
     if null(h.errors) then t.grammarErrors
     else pair(h.location.filename, h.errors) :: t.grammarErrors;
 
+  top.jarName = \grammarName :: String ->
+    if h.jarName(grammarName).isJust then h.jarName(grammarName) else t.jarName(grammarName);
 }

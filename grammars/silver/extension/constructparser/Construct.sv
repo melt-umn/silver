@@ -14,6 +14,9 @@ concrete production construct_c
 top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
   'construct' parserName::Name  'as' m::QName  'translator'  'using'  ms::ParserComponents
 {
+  top.jarName = \grammarName :: String ->
+    if grammarName == top.grammarName then just(parserName.name) else nothing();
+
   local agDcls :: AGDcls =
     consAGDcls(prsr, consAGDcls(main,
       nilAGDcls(location=top.location), location=top.location), location=top.location);

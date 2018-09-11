@@ -119,7 +119,9 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     else ["<attribute name='Class-Path' value='${man.classpath}' />"];
   
   local attribute outputFile :: String;
-  outputFile = if !null(top.config.outName) then head(top.config.outName) else makeName(buildGrammar) ++ ".jar";
+  outputFile = if !null(top.config.outName) then head(top.config.outName)
+    else (if g.jarName(buildGrammar).isJust then g.jarName(buildGrammar).fromJust
+    else makeName(buildGrammar)) ++ ".jar";
 
   local attribute buildXml :: String;
   buildXml =    
