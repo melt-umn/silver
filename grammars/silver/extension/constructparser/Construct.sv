@@ -6,9 +6,9 @@ import silver:definition:type:syntax;
 import silver:modification:copper;
 import silver:extension:list;
 
-terminal Construct_t 'construct' lexer classes {KEYWORD, RESERVED};
-terminal Translator_t 'translator' lexer classes {KEYWORD, RESERVED};
-terminal Using_t 'using' lexer classes {KEYWORD, RESERVED};
+terminal Construct_t 'construct' lexer classes {KEYWORD};
+terminal Translator_t 'translator' lexer classes {KEYWORD};
+terminal Using_t 'using' lexer classes {KEYWORD};
 
 concrete production construct_c
 top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
