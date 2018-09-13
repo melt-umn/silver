@@ -61,27 +61,7 @@ top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
       productionBody('{',
         productionStmtsSnoc(productionStmtsNil(location=top.location),
           returnDef('return',
-            applicationExpr(
-              baseExpr(qNameId(name("driver", top.location),
-                location=top.location), location=top.location),
-              '(',
-              snocAppExprs(
-                snocAppExprs(
-                  snocAppExprs(
-                    emptyAppExprs(location=top.location), ',',
-                    presentAppExpr(
-                      baseExpr(qNameId(name("args", top.location),
-                        location=top.location), location=top.location),
-                      location=top.location), location=top.location), ',',
-                  presentAppExpr(
-                    baseExpr(qNameId(name("ioIn", top.location),
-                      location=top.location), location=top.location),
-                    location=top.location), location=top.location), ',',
-                presentAppExpr(
-                  baseExpr(qNameId(name("extendedParser", top.location),
-                    location=top.location), location=top.location),
-                  location=top.location), location=top.location),
-              ')', location=top.location),
+            Silver_Expr { driver(args, ioIn, extendedParser) },
             ';', location=top.location),
           location=top.location),
         '}', location=top.location),
@@ -92,7 +72,6 @@ top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
       importStmt('import', moduleAll(m, location=top.location), ';', location=top.location),
       is, location=top.location);
 
-  forwards to root(gdcl, mStmts,
-                importStmts, agDcls, location=top.location);
+  forwards to root(gdcl, mStmts, importStmts, agDcls, location=top.location);
 }
 
