@@ -92,7 +92,7 @@ function warnIfMultJarName
 [Message] ::= n1::Maybe<String>  n2::Maybe<String>  loc::Location
 {
   return if n1.isJust && n2.isJust
-         then [wrn(loc, "Duplicate specification of jarName: " ++
+         then [wrn(loc, "Duplicate specification of jar name: " ++
                n1.fromJust ++ " and " ++ n2.fromJust)]
          else [];
 }
