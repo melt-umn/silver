@@ -1,13 +1,11 @@
 grammar silver:driver;
 
 {--
- - Beginning with those in 'need', chase down and compile all grammars necessary to build those grammars in 'need'
+ - Eat the stream `need` and produce the output stream of (maybe, if found) `RootSpec`s.
  -
- - @param grammarPath   The search path (i.e. grammar path)
- - @param needStream    The list of needed grammars.
- - @param seen    The list of already compiled grammars. (initially [], most likely.)
- - @param clean   If true, ignore interface files entirely.
- - @param silverGen The generated directory path. (i.e. where src/ and bin/ are)
+ - @param benv   The compiler configuration, including search paths
+ - @param need   A **stream** of grammars to compile.
+ - @param clean  If true, ignore interface files entirely.
  -}
 function compileGrammars
 IOVal<[Maybe<RootSpec>]> ::=
