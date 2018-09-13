@@ -104,7 +104,7 @@ top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer
   top.grammarErrors = []; -- TODO: consider getting grammarName and comparing against declaredName?
   top.parsingErrors = [];
 
-  top.jarName = \grammarName :: String -> nothing();
+  top.jarName = nothing();
 }
 
 {--
@@ -131,7 +131,7 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
   top.grammarErrors = [];
   top.parsingErrors = map(parseErrorToMessage(grammarSource, _), e);
 
-  top.jarName = \grammarName :: String -> nothing();
+  top.jarName = nothing();
 }
 
 function parseErrorToMessage

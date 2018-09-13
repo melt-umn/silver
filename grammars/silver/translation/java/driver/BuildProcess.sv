@@ -120,8 +120,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   
   local attribute outputFile :: String;
   outputFile = if !null(top.config.outName) then head(top.config.outName)
-    else (if g.jarName(buildGrammar).isJust then g.jarName(buildGrammar).fromJust
-    else makeName(buildGrammar)) ++ ".jar";
+    else (if g.jarName.isJust then g.jarName.fromJust else makeName(buildGrammar)) ++ ".jar";
 
   local attribute buildXml :: String;
   buildXml =    

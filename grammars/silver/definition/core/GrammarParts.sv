@@ -46,7 +46,7 @@ top::Grammar ::=
   top.defs = [];
   top.grammarErrors = [];
 
-  top.jarName = \grammarName :: String -> nothing();
+  top.jarName = nothing();
 }
 
 abstract production consGrammar
@@ -61,9 +61,10 @@ top::Grammar ::= h::Root  t::Grammar
   top.importedDefs = h.importedDefs ++ t.importedDefs;
   top.defs = h.defs ++ t.defs;
   top.grammarErrors =
-    if null(h.errors) then t.grammarErrors
-    else pair(h.location.filename, h.errors) :: t.grammarErrors;
+    if null(h.errors ++ jarNameErrors) then t.grammarErrors
+     else pair(h.location.filename, h.errors ++ jarNameErrors) :: t.grammarErrors;
 
-  top.jarName = \grammarName :: String ->
-    if h.jarName(grammarName).isJust then h.jarName(grammarName) else t.jarName(grammarName);
+  local jarNameErrors :: [Message] = warnIfMultJarName(h.jarName, t.jarName, h.location);
+
+  top.jarName = orElse(h.jarName, t.jarName);
 }
