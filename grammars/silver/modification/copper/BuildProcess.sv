@@ -29,16 +29,29 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
   classpathCompiler <- ["${sh}/jars/CopperCompiler.jar"];
   classpathRuntime <- ["${sh}/jars/CopperRuntime.jar"];
+
+  -- Get the parsers
+  production allParsers :: [ParserSpec] =
+    flatMap(obtainParserSpecs(_, benv), grammarsRelevant);
+  
+  -- Have them get compiled by copper
+  extraGrammarsDeps <- ["copper"];
   extraTopLevelDecls <- [
     "  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='compile.classpath'/>",
-    "  <target name='copper'>\n" ++ implode("", map(buildAntParserPart(_, top.config), allParsers)) ++ "  </target>"];
-  extraGrammarsDeps <- ["copper"];
+    "  <target name='copper'>\n" ++ sflatMap(buildAntParserPart(_, top.config), allParsers) ++ "  </target>"];
 
-  production allParsers :: [ParserSpec] =
-    flatMap((.parserSpecs), grammarsRelevant);
-  
+  -- Generate the .copper files
   top.postOps <-
     map(parserSpecUnit(_, g.compiledGrammars, benv.silverGen), allParsers);
+}
+
+-- Skips parser specs from SILVER_HOST_GEN
+-- The way that feature works, they shouldn't need regeneration.
+function obtainParserSpecs
+[ParserSpec] ::= g::Decorated RootSpec  benv::BuildEnv
+{
+  return if g.generateLocation != benv.silverGen then []
+         else g.parserSpecs;
 }
 
 function buildAntParserPart

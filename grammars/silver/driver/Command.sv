@@ -138,7 +138,8 @@ IOVal<Either<BuildEnv [String]>> ::= a::Decorated CmdArgs  ioin::IO
   -- Let's locally set up and verify the environment
   local envSH :: IOVal<String> = envVar("SILVER_HOME", ioin);
   local envGP :: IOVal<String> = envVar("GRAMMAR_PATH", envSH.io);
-  local envSG :: IOVal<String> = envVar("SILVER_GEN", envGP.io);
+  local envSHG :: IOVal<String> = envVar("SILVER_HOST_GEN", envGP.io);
+  local envSG :: IOVal<String> = envVar("SILVER_GEN", envSHG.io);
   
   -- If SILVER_HOME isn't set, determine it from where this jar is
   local derivedSH :: IOVal<String> =
@@ -150,7 +151,8 @@ IOVal<Either<BuildEnv [String]>> ::= a::Decorated CmdArgs  ioin::IO
   local benv :: BuildEnv = 
     fromArgsAndEnv(
       -- TODO: maybe we should use the java platform separator here?
-      derivedSH.iovalue, envSG.iovalue, explode(":", envGP.iovalue),
+      derivedSH.iovalue, envSG.iovalue,
+      explode(":", envGP.iovalue), explode(":", envSHG.iovalue),
       a.silverHomeOption, a.genLocation, a.searchPath);
 
   -- Let's do some checks on the environment
