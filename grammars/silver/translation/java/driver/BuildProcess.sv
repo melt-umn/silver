@@ -133,13 +133,14 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 "  <property name='src' location='${jg}/src'/>\n\n" ++
 
 "  <path id='lib.classpath'>\n" ++
-    implode("", map(pathLocation, classpathRuntime)) ++
+    sflatMap(pathLocation, classpathRuntime) ++
 "  </path>\n\n" ++
 
 "  <path id='compile.classpath'>\n" ++
 "    <pathelement location='${src}' />\n" ++
 "    <path refid='lib.classpath'/>\n" ++
-    implode("", map(pathLocation, classpathCompiler)) ++
+    sflatMap(pathLocation, classpathCompiler) ++
+    sflatMap(pathLocation, map(\s::String -> s ++ "bin/", benv.silverHostGen)) ++
 "  </path>\n\n" ++
 
 implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
