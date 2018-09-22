@@ -6,6 +6,7 @@ melt.setProperties(overrideJars: true)
 
 melt.trynode('silver') {
   def WS = pwd()
+  def SILVER_GEN = "${WS}/generated"
 
   stage("Build") {
 
@@ -93,10 +94,10 @@ melt.trynode('silver') {
 
     def tasks = [:]
     tasks << public_github_projects.collectEntries { t ->
-      [(t): { melt.buildProject("/melt-umn/${t}", [SILVER_BASE: WS]) }]
+      [(t): { melt.buildProject("/melt-umn/${t}", [SILVER_BASE: WS, SILVER_GEN: SILVER_GEN]) }]
     }
     tasks << specific_jobs.collectEntries { t ->
-      [(t): { melt.buildJob(t, [SILVER_BASE: WS]) }]
+      [(t): { melt.buildJob(t, [SILVER_BASE: WS, SILVER_GEN: SILVER_GEN]) }]
     }
 
     // Do downstream integration testing
