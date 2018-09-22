@@ -128,11 +128,61 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' 'if' con
   errCheck2 = check(condition.typerep, boolType());
   top.errors <-
        if errCheck2.typeerror
-       then [err(condition.location, "pushToken condition has type " ++ errCheck1.leftpp ++ " which is not a Boolean")]
+       then [err(condition.location, "pushToken condition has type " ++ errCheck2.leftpp ++ " which is not a Boolean")]
        else [];
 }
 
+concrete production blockStmt
+top::ProductionStmt ::= '{' stmts::ProductionStmts '}'
+{
+  top.unparse = "\t{\n" ++ stmts.unparse ++ "\n\t}";
+  top.errors := stmts.errors ++
+               (if !top.frame.permitActions
+                then [err(top.location, "Block statement is only permitted in action blocks")]
+                else []);
+  top.translation = stmts.translation;
+  
+  stmts.downSubst = top.downSubst;
+  top.upSubst = top.downSubst;
+}
 
+concrete production ifElseStmt
+top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' el::ProductionStmt
+{
+  top.unparse = "\t" ++ "if (" ++ condition.unparse ++ ") " ++ th.unparse ++ "\nelse " ++ el.unparse;
+
+  top.errors := condition.errors ++ th.errors ++ el.errors ++
+               (if !top.frame.permitActions
+                then [err(top.location, "If statement is only permitted in action blocks")]
+                else []);
+
+  top.translation = s"if(${condition.translation}) {${th.translation}} else {${el.translation}}";
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  condition.downSubst = top.downSubst;
+  errCheck1.downSubst = condition.upSubst;
+  top.upSubst = errCheck1.upSubst;
+  
+  th.downSubst = top.finalSubst;
+  th.finalSubst = th.upSubst;
+  
+  el.downSubst = top.finalSubst;
+  el.finalSubst = el.upSubst;
+
+  errCheck1 = check(condition.typerep, boolType());
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(condition.location, "if condition has type " ++ errCheck1.leftpp ++ " which is not a Boolean")]
+       else [];
+}
+
+concrete production ifStmt
+top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt
+{
+  top.unparse = "\t" ++ "if (" ++ condition.unparse ++ ") " ++ th.unparse;
+  forwards to ifElseStmt($1, $2, condition, $4, th, 'else', blockStmt('{', productionStmtsNil(location=top.location), '}', location=top.location), location=top.location);
+}
 
 
 abstract production parserAttributeDefLHS
