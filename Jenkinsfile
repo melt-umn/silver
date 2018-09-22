@@ -60,8 +60,8 @@ melt.trynode('silver') {
     }
     // Build
     sh "./deep-rebuild"
-    // Clean
-    sh "./deep-clean -delete all"
+    // Clean (but leave generated files)
+    sh "./deep-clean -delete"
     // Package
     sh "rm -rf silver-latest* || true" // Robustness to past failures
     sh "./make-dist latest"
