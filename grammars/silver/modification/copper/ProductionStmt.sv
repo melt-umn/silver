@@ -93,42 +93,25 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 concrete production pushTokenStmt
 top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
 {
-   forwards to pushTokenIfStmt($1, $2, val, $4, lexeme, $6, 'if', trueConst('true', location=$7.location), $7, location=top.location );
-}
+  top.unparse = "\t" ++ "pushToken(" ++ val.unparse ++ ", " ++ lexeme.unparse ++ ");";
 
-
-concrete production pushTokenIfStmt
-top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' 'if' condition::Expr ';'
-{
-  top.unparse = "\t" ++ "pushToken(" ++ val.unparse ++ ", " ++ lexeme.unparse ++ ") if " ++ condition.unparse ++ ";";
-
-  top.errors := lexeme.errors ++ condition.errors ++
+  top.errors := lexeme.errors ++
                (if !top.frame.permitActions
                 then [err(top.location, "Tokens may only be pushed in action blocks")]
                 else []);
 
-  top.translation = "if(" ++ condition.translation ++ "){" ++ " pushToken(Terminals." ++ makeCopperName(val.lookupType.fullName) ++ ", (" ++ lexeme.translation ++ ").toString()" ++ ");}";
+  top.translation = "pushToken(Terminals." ++ makeCopperName(val.lookupType.fullName) ++ ", (" ++ lexeme.translation ++ ").toString()" ++ ");";
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
 
   lexeme.downSubst = top.downSubst;
   errCheck1.downSubst = lexeme.upSubst;
-  condition.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = condition.upSubst;
-  top.upSubst = errCheck2.upSubst;
+  top.upSubst = errCheck1.upSubst;
 
   errCheck1 = check(lexeme.typerep, stringType());
   top.errors <-
        if errCheck1.typeerror
        then [err(lexeme.location, "Lexeme parameter has type " ++ errCheck1.leftpp ++ " which is not a String")]
-       else [];
-
-
-  errCheck2 = check(condition.typerep, boolType());
-  top.errors <-
-       if errCheck2.typeerror
-       then [err(condition.location, "pushToken condition has type " ++ errCheck2.leftpp ++ " which is not a Boolean")]
        else [];
 }
 
