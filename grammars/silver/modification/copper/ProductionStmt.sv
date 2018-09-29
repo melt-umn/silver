@@ -126,7 +126,8 @@ top::ProductionStmt ::= '{' stmts::ProductionStmts '}'
   top.translation = stmts.translation;
   
   stmts.downSubst = top.downSubst;
-  top.upSubst = top.downSubst;
+  top.upSubst = error("Shouldn't ever be needed anywhere. (Should only ever be fed back here as top.finalSubst)");
+  -- Of course, this means do not use top.finalSubst here!
 }
 
 concrete production ifElseStmt
@@ -147,10 +148,10 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' e
   errCheck1.downSubst = condition.upSubst;
   top.upSubst = errCheck1.upSubst;
   
-  th.downSubst = top.finalSubst;
+  th.downSubst = top.downSubst;
   th.finalSubst = th.upSubst;
   
-  el.downSubst = top.finalSubst;
+  el.downSubst = top.downSubst;
   el.finalSubst = el.upSubst;
 
   errCheck1 = check(condition.typerep, boolType());
