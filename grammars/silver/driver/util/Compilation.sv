@@ -1,5 +1,7 @@
 grammar silver:driver:util;
 
+import silver:definition:core only jarName;
+
 nonterminal Compilation with config, postOps, grammarList, recheckGrammars, allGrammars;
 
 flowtype postOps {config} on Compilation;
@@ -56,7 +58,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   top.postOps := [];
 }
 
-nonterminal Grammars with config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarList, recheckGrammars, translateGrammars;
+nonterminal Grammars with config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarList, recheckGrammars, translateGrammars, jarName;
 
 abstract production consGrammars
 top::Grammars ::= h::RootSpec  t::Grammars
@@ -64,6 +66,7 @@ top::Grammars ::= h::RootSpec  t::Grammars
   top.grammarList = h :: t.grammarList;
   top.recheckGrammars = h.recheckGrammars ++ t.recheckGrammars;
   top.translateGrammars = h.translateGrammars ++ t.translateGrammars;
+  top.jarName = orElse(h.jarName, t.jarName);
 }
 
 abstract production nilGrammars
@@ -72,6 +75,7 @@ top::Grammars ::=
   top.grammarList = [];
   top.recheckGrammars = [];
   top.translateGrammars = [];
+  top.jarName = nothing();
 }
 
 {--
