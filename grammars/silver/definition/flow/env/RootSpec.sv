@@ -37,19 +37,19 @@ String ::= r::Decorated RootSpec
 }
 
 aspect production errorRootSpec
-top::RootSpec ::= _ _ _ _
+top::RootSpec ::= _ _ _ _ _
 {
   top.flowDefs = [];
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  _ _ _
+top::RootSpec ::= g::Grammar  _ _ _ _
 {
   top.flowDefs = g.flowDefs;
 }
 
 aspect production interfaceRootSpec
-top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer
+top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer _
 {
   top.flowDefs = p.flowDefs;
 }

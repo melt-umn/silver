@@ -48,21 +48,21 @@ String ::= r::Decorated RootSpec
 }
 
 aspect production errorRootSpec
-top::RootSpec ::= _ _ _ _
+top::RootSpec ::= _ _ _ _ _
 {
   top.syntaxAst = [];
   top.parserSpecs = [];
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= c1::Grammar  _ _ _
+top::RootSpec ::= c1::Grammar  _ _ _ _
 {
   top.syntaxAst = c1.syntaxAst;
   top.parserSpecs = c1.parserSpecs;
 }
 
 aspect production interfaceRootSpec
-top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer
+top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer _
 {
   top.syntaxAst = p.syntaxAst;
   top.parserSpecs = p.parserSpecs;

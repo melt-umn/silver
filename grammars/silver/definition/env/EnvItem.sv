@@ -10,7 +10,7 @@ synthesized attribute dcl :: DclInfo;
 synthesized attribute envContribs :: [Pair<String DclInfo>];
 
 {--
- - Rase case: use of `import _ with _ as _` or `import _ as _` to rename.
+ - Rare case: use of `import _ with _ as _` or `import _ as _` to rename.
  - Common case: `grammar:full:name` aka `name`. See `defaultEnvItem`.
  -}
 abstract production renamedEnvItem

@@ -22,8 +22,7 @@ synthesized attribute allGrammars :: [Decorated RootSpec];
  - @param g  A list of grammar initially read in
  - @param r  A list of grammars that we re-compiled, due to dirtiness in 'g'
  - @param buildGrammar  The initial grammar requested built
- - @param silverHome  The home location of Silver
- - @param silverGen  The directory to store generated files
+ - @param benv  The build configuration
  -}
 abstract production compilation
 top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::BuildEnv

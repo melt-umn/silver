@@ -134,13 +134,14 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 "  <property name='src' location='${jg}/src'/>\n\n" ++
 
 "  <path id='lib.classpath'>\n" ++
-    implode("", map(pathLocation, classpathRuntime)) ++
+    sflatMap(pathLocation, classpathRuntime) ++
 "  </path>\n\n" ++
 
 "  <path id='compile.classpath'>\n" ++
 "    <pathelement location='${src}' />\n" ++
 "    <path refid='lib.classpath'/>\n" ++
-    implode("", map(pathLocation, classpathCompiler)) ++
+    sflatMap(pathLocation, classpathCompiler) ++
+    sflatMap(pathLocation, map(\s::String -> s ++ "bin/", benv.silverHostGen)) ++
 "  </path>\n\n" ++
 
 implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
@@ -169,8 +170,8 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "      <filtermapper><replacestring from=' ' to='%20' /></filtermapper>\n"
 ) ++
 "    </pathconvert>\n" ++
-"    <jar destfile='" ++ outputFile ++ "' basedir='${bin}' zip64Mode='as-needed'>\n" ++
-    implode("", map(includeName(_, "*.class"), grammarsDependedUpon)) ++ 
+"    <jar destfile='" ++ outputFile ++ "' zip64Mode='as-needed'>\n" ++
+    sflatMap(includeClassFiles, grammarsRelevant) ++
 "      <manifest>\n" ++
 "        " ++ implode("\n        ", extraManifestAttributes) ++ "\n" ++
 "      </manifest>\n" ++
@@ -183,7 +184,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 
 "  <target name='grammars' depends='" ++ implode(", ", extraGrammarsDeps) ++ "'>\n" ++
 "    <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false'>\n" ++
-    implode("", map(includeName(_, "*.java"), grammarsDependedUpon)) ++ 
+    sflatMap(includeJavaFiles, grammarsDependedUpon) ++
 "    </javac>\n" ++
 "  </target>\n" ++
 "</project>\n";
@@ -257,9 +258,14 @@ String ::= s::String
 {
   return "    <pathelement location='" ++ s ++ "' />\n";
 }
-function includeName
-String ::= gram::String suffix::String
+function includeJavaFiles
+String ::= gram::String
 {
-  return "      <include name='" ++ grammarToPath(gram) ++ suffix ++ "' />\n";
+  return s"      <include name='${grammarToPath(gram)}*.java' />\n";
+}
+function includeClassFiles
+String ::= gram::Decorated RootSpec
+{
+  return s"      <fileset dir='${gram.generateLocation}bin/' includes='${grammarToPath(gram.declaredName)}*.class' />\n";
 }
 

@@ -18,7 +18,9 @@ nonterminal RootSpec with
   config, compiledGrammars, productionFlowGraphs, grammarFlowTypes,
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
-  defs, grammarErrors, grammarSource, grammarTime, interfaceTime, recheckGrammars, translateGrammars, parsingErrors, jarName;
+  defs, grammarErrors, grammarSource, grammarTime, interfaceTime, recheckGrammars, translateGrammars,
+  parsingErrors, jarName, generateLocation;
+
 
 {--
  - Grammars that were read from source.
@@ -30,11 +32,14 @@ synthesized attribute translateGrammars :: [Decorated RootSpec];
  -}
 synthesized attribute parsingErrors :: [Pair<String [Message]>];
 
+{-- Where generated files are or should be created -}
+synthesized attribute generateLocation :: String;
+
 {--
  - Create a RootSpec from a real grammar, a set of .sv files.
  -}
 abstract production grammarRootSpec
-top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  grammarTime::Integer
+top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String
 {
   g.grammarName = grammarName;
   
@@ -62,6 +67,7 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   top.grammarSource = grammarSource;
   top.grammarTime = grammarTime;
   top.interfaceTime = grammarTime;
+  top.generateLocation = generateLocation;
   top.recheckGrammars = [];
   top.translateGrammars = [top];
 
@@ -83,11 +89,12 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
  - Create a RootSpec from an interface file, representing a grammar.
  -}
 abstract production interfaceRootSpec
-top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer
+top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer  generateLocation::String
 {
   top.grammarSource = p.grammarSource;
   top.grammarTime = p.grammarTime;
   top.interfaceTime = interfaceTime;
+  top.generateLocation = generateLocation;
   
   local ood :: Boolean = isOutOfDate(interfaceTime, top.allGrammarDependencies, top.compiledGrammars);
   top.recheckGrammars = if ood then [p.declaredName] else [];
@@ -111,11 +118,12 @@ top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer
  - A RootSpec that represents a failure to parse (part) of a grammar.
  -}
 abstract production errorRootSpec
-top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  grammarTime::Integer
+top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String
 {
   top.grammarSource = grammarSource;
   top.grammarTime = grammarTime;
   top.interfaceTime = grammarTime;
+  top.generateLocation = generateLocation;
   
   top.recheckGrammars = [];
   top.translateGrammars = [];

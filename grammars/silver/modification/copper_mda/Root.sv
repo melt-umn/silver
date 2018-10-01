@@ -33,17 +33,17 @@ top::AGDcl ::= ag1::AGDcl ag2::AGDcl
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  _ _ _
+top::RootSpec ::= g::Grammar  _ _ _ _
 {
   top.mdaSpecs = g.mdaSpecs;
 }
 aspect production interfaceRootSpec
-top::RootSpec ::= _ _
+top::RootSpec ::= _ _ _
 {
   top.mdaSpecs = []; -- TODO
 }
 aspect production errorRootSpec
-top::RootSpec ::= _ _ _ _
+top::RootSpec ::= _ _ _ _ _
 {
   top.mdaSpecs = [];
 }
