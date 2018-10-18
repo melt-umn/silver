@@ -8,7 +8,7 @@ imports silver:definition:core;
 autocopy attribute flowEnv :: Decorated FlowEnv;
 synthesized attribute flowDefs :: [FlowDef];
 
-nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree, nonSuspectTree, extSynTree, specTree, prodGraphTree;
+nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree;
 
 inherited attribute synTree :: EnvTree<FlowDef>;
 inherited attribute inhTree :: EnvTree<FlowDef>;
@@ -20,7 +20,7 @@ inherited attribute refTree :: EnvTree<FlowDef>;
 inherited attribute localInhTree ::EnvTree<FlowDef>;
 inherited attribute localTree :: EnvTree<FlowDef>;
 inherited attribute nonSuspectTree :: EnvTree<[String]>;
-inherited attribute extSynTree :: EnvTree<FlowDef>;
+inherited attribute hostSynTree :: EnvTree<FlowDef>;
 inherited attribute specTree :: EnvTree<Pair<String [String]>>;
 inherited attribute prodGraphTree :: EnvTree<FlowDef>;
 
@@ -44,7 +44,7 @@ Decorated FlowEnv ::= d::FlowDefs
   e.localInhTree = directBuildTree(d.localInhTreeContribs);
   e.localTree = directBuildTree(d.localTreeContribs);
   e.nonSuspectTree = directBuildTree(d.nonSuspectContribs);
-  e.extSynTree = directBuildTree(d.extSynTreeContribs);
+  e.hostSynTree = directBuildTree(d.hostSynTreeContribs);
   e.specTree = directBuildTree(d.specContribs);
   e.prodGraphTree = directBuildTree(d.prodGraphContribs);
   
@@ -101,7 +101,7 @@ function lookupLocalEq
 }
 
 -- all (non-forwarding) productions constructing a nonterminal
-function getProdsOn
+function getNonforwardingProds
 [FlowDef] ::= nt::String  e::Decorated FlowEnv
 {
   return searchEnvTree(nt, e.prodTree);
@@ -122,11 +122,20 @@ function getNonSuspectAttrsForProd
 }
 
 -- Ext Syns subject to ft lower bound
-function getExtSynsFor
-[FlowDef] ::= nt::String  e::Decorated FlowEnv
+function getHostSynsFor
+[String] ::= nt::String  e::Decorated FlowEnv
 {
-  return searchEnvTree(nt, e.extSynTree);
+  return map(extractHostSynName, searchEnvTree(nt, e.hostSynTree));
 }
+-- Helper for above
+function extractHostSynName
+String ::= f::FlowDef
+{
+  return case f of
+  | hostSynFlowDef(_, at) -> at
+  end;
+}
+
 
 -- Get syns (and "forward") that have flow types specified
 function getSpecifiedSynsForNt

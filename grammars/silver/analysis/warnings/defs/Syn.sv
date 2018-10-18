@@ -30,6 +30,12 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     filter(isOccursSynthesized(_, top.env),
       getAttrsOn(namedSig.outputElement.typerep.typeName, top.env));
 
+  -- TODO: Strictly speaking, non-forwarding productions will always be checked by
+  -- the attribute occurrence, we don't need to "double check" here.
+  -- However, because the fix would be here, we *DO* want to raise the error message
+  -- in this location. We should instead suppress the error from the attribute,
+  -- if we know this would raise it instead.
+
   top.errors <-
     if null(body.errors ++ ns.errors)
     && (top.config.warnAll || top.config.warnMissingSyn)
@@ -68,7 +74,9 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   -- Lookup all productions for this nonterminal
   -- ensure an equation exists for each production or the production forwards
   
-  production prods :: [FlowDef] = getProdsOn(nt.lookupType.typerep.typeName, top.flowEnv);
+  -- TODO: FIXME: these are nonforwarding, but raiseMissingProds is trying to filter out forwarding.
+  -- I guess that's not wrong, but it could be improved.
+  production prods :: [FlowDef] = getNonforwardingProds(nt.lookupType.typerep.typeName, top.flowEnv);
 
   top.errors <-
     if nt.lookupType.found && at.lookupAttribute.found

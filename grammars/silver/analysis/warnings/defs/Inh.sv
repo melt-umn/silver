@@ -401,18 +401,22 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
   
   local depsForThisAttr :: set:Set<String> = inhDepsForSyn(at.lookupAttribute.fullName, nt.lookupType.fullName, myFlow);
+  
+  -- TODO: FIXME: we shouldn't need to check ANYTHING here,
+  -- But we do need to fix the check for forwarding productions, below.
+  local knownProds :: [String] = map((.fullName), getKnownProds(nt.lookupType.typerep.typeName, top.env));
 
   top.errors <-
     if nt.lookupType.found && at.lookupAttribute.found
     && (top.config.warnAll || top.config.warnMissingInh)
     && at.lookupAttribute.dcl.isSynthesized
-    then raiseImplicitFwdEqFlowTypesForAttr(top.location, at.lookupAttribute.fullName, prods, top.flowEnv, depsForThisAttr, myGraphs)
+    then raiseImplicitFwdEqFlowTypesForAttr(top.location, at.lookupAttribute.fullName, knownProds, top.flowEnv, depsForThisAttr, myGraphs)
     else [];
 }
 function raiseImplicitFwdEqFlowTypesForAttr
-[Message] ::= l::Location  attr::String  prods::[FlowDef]  e::Decorated FlowEnv  depsForThisAttr::set:Set<String> myGraphs::EnvTree<ProductionGraph>
+[Message] ::= l::Location  attr::String  prods::[String]  e::Decorated FlowEnv  depsForThisAttr::set:Set<String> myGraphs::EnvTree<ProductionGraph>
 {
-  local headProdName :: String = case head(prods) of prodFlowDef(_, p) -> p end;
+  local headProdName :: String = head(prods);
   local transitiveDeps :: [FlowVertex] = expandGraph([forwardEqVertex()], findProductionGraph(headProdName, myGraphs));
   local thisFlowDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
   local diff :: [String] = set:toList(set:difference(thisFlowDeps, depsForThisAttr));
@@ -435,24 +439,33 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local transitiveDeps :: [FlowVertex] = expandGraph([forwardEqVertex()], findProductionGraph(fName, myGraphs));
   local fwdFlowDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
 
+  -- TODO: FIXME: We should be iterating over host-language attributes known to the flow environment
+  -- Only synthesized attributes in the host language can have flow type more restricted than
+  -- forward. So we just need to check those. We must get this from the flow env, because the
+  -- local env might miss options.
+  local lhsNt :: String = namedSig.outputElement.typerep.typeName;
+  local hostSyns :: [String] = getHostSynsFor(lhsNt, top.flowEnv);
+
   top.errors <-
     if null(body.errors ++ ns.errors{-TODO-})
     && (top.config.warnAll || top.config.warnMissingInh)
     && !null(body.uniqueSignificantExpression) -- don't bother checking if this production doesn't forward
-    then raiseImplicitFwdEqFlowTypesForProd(top.location, fName, attrs, top.flowEnv, fwdFlowDeps, myFlow)
+    then raiseImplicitFwdEqFlowTypesForProd(top.location, lhsNt, fName, hostSyns, top.flowEnv, fwdFlowDeps, myFlow)
     else [];
 }
 function raiseImplicitFwdEqFlowTypesForProd
-[Message] ::= l::Location  prod::String  attrs::[DclInfo]  e::Decorated FlowEnv  fwdFlowDeps::set:Set<String>  myFlow::EnvTree<FlowType>
+[Message] ::= l::Location  lhsNt::String  prod::String  attrs::[String]  e::Decorated FlowEnv  fwdFlowDeps::set:Set<String>  myFlow::EnvTree<FlowType>
 {
-  local depsForThisAttr :: set:Set<String> = inhDepsForSyn(head(attrs).attrOccurring, head(attrs).fullName, myFlow);
+  -- The flow type for `attr` on `lhsNt`
+  local depsForThisAttr :: set:Set<String> = inhDepsForSyn(head(attrs), lhsNt, myFlow);
+  -- Actual forwards equation deps not in the flow type for `attr`
   local diff :: [String] = set:toList(set:difference(fwdFlowDeps, depsForThisAttr));
 
   return if null(attrs) then []
-  else case lookupSyn(prod, head(attrs).attrOccurring, e) of
+  else case lookupSyn(prod, head(attrs), e) of
        | eq :: _ -> []
-       | [] -> if null(diff) then [] else [wrn(l, "Implicit forward copy equation for attribute " ++ head(attrs).attrOccurring ++ " in production " ++ prod ++ " exceeds flow type because the forward depends on " ++ implode(", ", diff))]
-       end ++ raiseImplicitFwdEqFlowTypesForProd(l, prod, tail(attrs), e, fwdFlowDeps, myFlow);
+       | [] -> if null(diff) then [] else [wrn(l, "Implicit forward copy equation for attribute " ++ head(attrs) ++ " in production " ++ prod ++ " exceeds flow type because the forward depends on " ++ implode(", ", diff))]
+       end ++ raiseImplicitFwdEqFlowTypesForProd(l, lhsNt, prod, tail(attrs), e, fwdFlowDeps, myFlow);
 }
 
 -- General TODO: we should probably find another way of generating errors,

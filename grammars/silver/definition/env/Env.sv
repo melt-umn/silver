@@ -192,21 +192,32 @@ function getProdAttrs
   return searchEnvScope(fnprod, e.prodOccursTree);
 }
 
--- Do not rely on this just yet, it's wonky.
--- It'll find all productions known locally to construct a nt.
--- This ought to be more limited than that... perhaps only those know to the nt declaration, or only those non-forwarding.
-function getProdsForNt
+{--
+ - Get all productions for a nonterminal known to local environment.
+ - (forwarding and non-forwarding.)
+ - Current known use cases:
+ -  1. Interference testing code generation (randomly generate trees)
+ -       - Because we test each production independently, we may not actually need this?
+ -  2. MWDA checking known forwarding productions on attribute occurrence declaration.
+ -       - We need to be able to look from forwarding to occurs, and from
+ -         occurs to forwarding to cover all cases.
+ - You should probably have a good reason for using this, and document it here if you do.
+ -}
+function getKnownProds
 [DclInfo] ::= fnnt::String e::Decorated Env
 {
   return searchEnvAll(fnnt, e.prodsForNtTree);
 }
 
+-- The list of non-forwarding productions may contain productions from `options` not
+-- imported locally, and so we must consult the "flow environment" for that information:
+--function getNonforwardingProds
 
--- It's never possible to know "all" attributes, so the next function is okay,
--- but it is possible to know all non-forwarding productions, but the normal
--- environment can't do it.  So you should consult the flow env for that info.
---function getProdsOn
-
+{--
+ - Returns all attributes known locally to occur on a nonterminal.
+ - Obviously we can never know all attributes, but we generally don't need to for
+ - any reason.
+ -}
 function getAttrsOn
 [DclInfo] ::= fnnt::String e::Decorated Env
 {
