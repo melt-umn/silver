@@ -100,13 +100,6 @@ function lookupLocalEq
   return searchEnvTree(crossnames(prod, fName), e.localTree);
 }
 
--- all (non-forwarding) productions constructing a nonterminal
-function getNonforwardingProds
-[FlowDef] ::= nt::String  e::Decorated FlowEnv
-{
-  return searchEnvTree(nt, e.prodTree);
-}
-
 -- "blessed set" of inherited attribute required/assumed to exist for references
 function getInhsForNtRef
 [FlowDef] ::= nt::String  e::Decorated FlowEnv
@@ -121,21 +114,25 @@ function getNonSuspectAttrsForProd
   return concat(searchEnvTree(prod, e.nonSuspectTree));
 }
 
+-- all (non-forwarding) productions constructing a nonterminal
+function getNonforwardingProds
+[String] ::= nt::String  e::Decorated FlowEnv
+{
+  local extractProdName :: (String ::= FlowDef) =
+    \p::FlowDef -> case p of prodFlowDef(_, p) -> p end;
+
+  return map(extractProdName, searchEnvTree(nt, e.prodTree));
+}
+
 -- Ext Syns subject to ft lower bound
 function getHostSynsFor
 [String] ::= nt::String  e::Decorated FlowEnv
 {
+  local extractHostSynName :: (String ::= FlowDef) =
+    \f::FlowDef -> case f of hostSynFlowDef(_, at) -> at end;
+
   return map(extractHostSynName, searchEnvTree(nt, e.hostSynTree));
 }
--- Helper for above
-function extractHostSynName
-String ::= f::FlowDef
-{
-  return case f of
-  | hostSynFlowDef(_, at) -> at
-  end;
-}
-
 
 -- Get syns (and "forward") that have flow types specified
 function getSpecifiedSynsForNt
