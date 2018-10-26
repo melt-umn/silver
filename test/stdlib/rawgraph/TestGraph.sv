@@ -93,3 +93,13 @@ equalityTest ( length(g:toList(g6)), (6 * 6), Integer, core_tests ) ;
 equalityTest ( length(g:toList(g7)), 21, Integer, core_tests ) ;
 equalityTest ( length(g:toList(g8)), 27, Integer, core_tests ) ;
 
+-- SCC
+global g9 :: g:Graph<Integer> =
+  g:add([
+    pair(1,2),
+    pair(2,3),
+    pair(3,4),
+    pair(4,5),
+    pair(2,5)], e);
+
+equalityTest ( g:scc(g9), [[1], [2, 3, 4], [5]], [[Integer]], core_tests ) ;

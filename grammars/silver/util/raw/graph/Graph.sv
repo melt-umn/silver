@@ -87,3 +87,14 @@ Graph<a> ::= lst::[Pair<a a>] graph::Graph<a>
   "java" : return "common.rawlib.RawGraph.repairClosure(%lst%, (java.util.TreeMap<Object,java.util.TreeSet<Object>>)%graph%)";
 }
 
+{--
+ - Computes the strongly connected components of a graph.
+ -}
+function scc
+[[a]] ::= graph::Graph<a>
+{
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawGraph.kosarajuSCC((java.util.TreeMap<Object,java.util.TreeSet<Object>>)%graph%)";
+}
+
