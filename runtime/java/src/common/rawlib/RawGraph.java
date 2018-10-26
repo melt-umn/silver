@@ -1,7 +1,9 @@
 package common.rawlib;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -166,5 +168,53 @@ public final class RawGraph {
 		}
 		
 		return ret;
+	}
+
+	// scc :: ([[a]] ::= Graph<a>)
+	public static ConsCell kosarajuSCC(TreeMap<Object, TreeSet<Object>> g) {
+		Set<Object> unvisited = g.keySet();
+		ConsCell L = ConsCell.nil;
+		for(Object u : unvisited)
+			L = kosarajuSCCVisit(u, L, g, unvisited);
+
+		TreeSet<Object> assigned = new TreeSet<Object>();
+		TreeMap<Object, TreeSet<Object>> components =
+			new TreeMap<Object, TreeSet<Object>>();
+		while(!L.nil()) {
+			Object u = L.head();
+			kosarajuSCCAssign(g, components, assigned, u, u);
+			L = L.tail();
+		}
+
+        ArrayList<ConsCell> componentsOut = new ArrayList<ConsCell>();
+        for(TreeSet<Object> set : components.values()) {
+            componentsOut.add(ConsCell.fromList(new ArrayList(set)));
+        }
+        return ConsCell.fromList(componentsOut);
+	}
+
+	private static void kosarajuSCCAssign(TreeMap<Object, TreeSet<Object>> g,
+			TreeMap<Object, TreeSet<Object>> cs, Set<Object> assigned, Object u,
+            Object root) {
+		if(assigned.contains(u))
+			return;
+		if(!cs.containsKey(root))
+			cs.put(root, new TreeSet<Object>());
+		TreeSet<Object> c = cs.get(root);
+		c.add(u);
+		assigned.add(u);
+		for(Object v : g.keySet())
+			if(g.get(v).contains(u))
+				kosarajuSCCAssign(g, cs, assigned, v, root);
+	}
+
+	private static ConsCell kosarajuSCCVisit(Object u, ConsCell L,
+			TreeMap<Object, TreeSet<Object>> g, Set<Object> unvisited) {
+		if(unvisited.remove(u)) {
+			for(Object v : g.get(u))
+				L = kosarajuSCCVisit(v, L, g, unvisited);
+			L = new ConsCell(u, L);
+		}
+		return L;
 	}
 }
