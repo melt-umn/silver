@@ -58,11 +58,19 @@ top::IOMonad<String> ::=
   top.stateVal = res.iovalue;
 }
 
+-- Having a polymorphic return type lets us write code like:
+--
+--   if !null(errs) {
+--     printM(showErrs(errs));
+--     exitM(1);
+--   } else {
+--     return value;
+--   }
 abstract production exitM
-top::IOMonad<Unit> ::= val::Integer
+top::IOMonad<a> ::= val::Integer
 {
   top.stateOut = exit(val, top.stateIn);
-  top.stateVal = unit();
+  top.stateVal = error("stateOut should've been evaluated first?");
 }
 
 abstract production mkdirM
