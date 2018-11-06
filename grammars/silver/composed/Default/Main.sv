@@ -5,6 +5,7 @@ import silver:translation:java;
 import silver:driver;
 
 import silver:extension:doc;
+import silver:extension:treesitter;
 import silver:analysis:warnings:defs;
 import silver:analysis:warnings:exporting;
 

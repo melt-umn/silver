@@ -96,10 +96,8 @@ top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverG
     dir ++ makeParserName(spec.fullName) ++ ".copper";
 
   spec.compiledGrammars = cg;
-  local newSpec :: String =
-    spec.cstAst.xmlCopper;
-
   local specCst :: SyntaxRoot = spec.cstAst;
+  local newSpec :: String = specCst.xmlCopper;
 
   local ex :: IOVal<Boolean> = isFile(file, top.ioIn);
   local oldSpec :: IOVal<String> = readFile(file, ex.io);
