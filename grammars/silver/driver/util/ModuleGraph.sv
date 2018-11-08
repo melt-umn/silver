@@ -176,7 +176,7 @@ function completeDependencyClosure
 {
   local n :: [String] = rem(makeSet(flatMap(skipNulls((.moduleNames), _), map(searchEnvTree(_, e), init))), init);
   
-  return if null(n) then init
+  return if null(n) then computeOptionalDeps(init, e)
   else completeDependencyClosure(computeOptionalDeps(n ++ init, e), e);
 }
 

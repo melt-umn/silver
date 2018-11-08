@@ -50,7 +50,7 @@ AGDcl ::= id::QName  env::Decorated Env
   
   local prods :: [DclInfo] = 
     sortBy(prodDclInfoNumChildLte,
-      getProdsForNt(id.lookupType.fullName, env));
+      getKnownProds(id.lookupType.fullName, env));
   
   local num_lowest_arity :: Integer = length(takeWhile2(prodDclInfoNumChildEq, prods));
   
