@@ -1,4 +1,4 @@
-grammar silver:analysis:warnings:defs;
+grammar silver:analysis:warnings:flow;
 
 imports silver:analysis:warnings;
 imports silver:driver only parseArgs;

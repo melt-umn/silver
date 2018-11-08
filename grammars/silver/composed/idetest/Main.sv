@@ -4,7 +4,7 @@ import silver:host;
 import silver:translation:java;
 import silver:driver;
 
-import silver:analysis:warnings:defs;
+import silver:analysis:warnings:flow;
 import silver:analysis:warnings:exporting;
 
 -- NOTE: this is needed for the correct generation of IDE, 

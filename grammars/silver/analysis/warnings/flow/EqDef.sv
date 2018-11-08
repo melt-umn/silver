@@ -1,4 +1,4 @@
-grammar silver:analysis:warnings:defs;
+grammar silver:analysis:warnings:flow;
 
 import silver:modification:collection;
 import silver:modification:copper;

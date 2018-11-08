@@ -1,4 +1,4 @@
-grammar silver:analysis:warnings:defs;
+grammar silver:analysis:warnings:flow;
 
 import silver:modification:autocopyattr only isAutocopy;
 import silver:modification:collection;
