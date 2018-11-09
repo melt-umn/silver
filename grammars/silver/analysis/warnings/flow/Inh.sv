@@ -1,12 +1,5 @@
 grammar silver:analysis:warnings:flow;
 
-import silver:modification:autocopyattr only isAutocopy;
-import silver:modification:collection;
-import silver:modification:primitivepattern;
-
-import silver:definition:flow:driver only ProductionGraph, FlowType, flowVertexEq, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh;
-import silver:util:raw:treeset as set;
-
 synthesized attribute warnMissingInh :: Boolean occurs on CmdArgs;
 
 aspect production endCmdArgs
@@ -26,6 +19,15 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   flags <- [pair("--warn-missing-inh", flag(warnMissingInhFlag))];
 }
 
+--------------------------------------------------------------------------------
+
+-- We're going to check two things in this file, both related to the transitive
+-- dependencies of an equation:
+
+-- 1. That there's no missing inherited equations (we only require them if used)
+-- 2. That the flow types aren't exceeded by an equation
+
+--------------------------------------------------------------------------------
 
 
 {--
@@ -51,35 +53,6 @@ function ignoreIfAutoCopyOnLhs
 Boolean ::= lhsNt::String  env::Decorated Env  attr::String
 {
   return !(isAutocopy(attr, env) && !null(getOccursDcl(attr, lhsNt, env)));
-}
-
--- TODO: this should probably not be a thing I have to write here
-function isAutocopy
-Boolean ::= attr::String  e::Decorated Env
-{
-  return case getAttrDclAll(attr, e) of
-  | at :: _ -> at.isAutocopy
-  | _ -> false
-  end;
-}
--- TODO: why is this a thing I have to write here. Sheesh. FIX THIS.
--- The real fix is for our vertexes to remember whether they are syn/inh.
-function isInherited
-Boolean ::= a::String  e::Decorated Env
-{
-  return case getAttrDclAll(a, e) of
-  | at :: _ -> at.isInherited
-  | _ -> false
-  end;
-}
-
-function isLhsInh
-Boolean ::= v::FlowVertex
-{
-  return case v of
-  | lhsInhVertex(_) -> true
-  | _ -> false
-  end;
 }
 
 {--
@@ -207,8 +180,6 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     if dl.found && attr.found
     && (top.config.warnAll || top.config.warnMissingInh)
     && top.frame.prodFlowGraph.isJust -- Default synthesized equations have no production graph to use
-                          -- TODO: shit. is anything looking at default synthesized equations to make sure
-                          -- their flow types aren't messed up?
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
       if null(lhsInhExceedsFlowType) then []
       else [wrn(top.location, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
@@ -401,63 +372,6 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
     else [];
 }
 
-
-
---------------------------------------------------------------------------------
-
--- Step 1.5: Implicit equations due to forwards need their flow types checked!
-
--- The flow environment can give us the authoritative list of attributes to check.
--- These may be from `options` and so requires the flowenv.
-
--- Only attributes exported(/optioned) from host can have flow types more restricted
--- than the forward flow type, and those are the only ones that need checking here.
-
-aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
-{
-  -- oh no again!
-  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
-  local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
-  
-  local transitiveDeps :: [FlowVertex] = expandGraph([forwardEqVertex()], findProductionGraph(fName, myGraphs));
-  local fwdFlowDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
-
-  local lhsNt :: String = namedSig.outputElement.typerep.typeName;
-  local hostSyns :: [String] = getHostSynsFor(lhsNt, top.flowEnv);
-
-  top.errors <-
-    if null(body.errors ++ ns.errors)
-    && (top.config.warnAll || top.config.warnMissingInh)
-    -- Must be a forwarding production:
-    && !null(body.uniqueSignificantExpression)
-    then flatMap(raiseImplicitFwdEqFlowTypesForProd(top.location, lhsNt, fName, _, top.flowEnv, fwdFlowDeps, myFlow), hostSyns)
-    else [];
-}
-function raiseImplicitFwdEqFlowTypesForProd
-[Message] ::= l::Location  lhsNt::String  prod::String  attr::String  e::Decorated FlowEnv  fwdFlowDeps::set:Set<String>  myFlow::EnvTree<FlowType>
-{
-  -- The flow type for `attr` on `lhsNt`
-  local depsForThisAttr :: set:Set<String> = inhDepsForSyn(attr, lhsNt, myFlow);
-  -- Actual forwards equation deps not in the flow type for `attr`
-  local diff :: [String] = set:toList(set:difference(fwdFlowDeps, depsForThisAttr));
-
-  return case lookupSyn(prod, attr, e) of
-  | eq :: _ -> []
-  | [] ->
-      if null(diff) then []
-      else 
-      [wrn(l, s"In production ${prod}, the implicit copy equation for ${attr} (due to forwarding) would exceed the attribute's flow type because the production forward equation depends on ${implode(", ", diff)}")]
-  end;
-}
-
--- General TODO: we should probably find another way of generating errors,
--- so that we can eliminate these silly checks...
--- Perhaps put "namespaces" in errors? (Check from [Message] to ErrorSpace with multiple [Message]?)
--- Then we could 1. Issue normal errors; If none, 2. Issue syn-completeness errors; If none, 3. Issue inh-completeness errors
-
-
--- TODO: we check implicit forward equations above, but what about implicit equations from default equations!? TODO
 
 --------------------------------------------------------------------------------
 

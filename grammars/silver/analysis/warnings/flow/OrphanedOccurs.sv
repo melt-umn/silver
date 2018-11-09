@@ -1,18 +1,5 @@
 grammar silver:analysis:warnings:flow;
 
-imports silver:analysis:warnings;
-imports silver:driver only parseArgs;
-imports silver:driver:util only isExportedBy;
-imports silver:util:cmdargs;
-imports silver:util;
-
-imports silver:definition:core;
-imports silver:definition:type;
-imports silver:definition:type:syntax;
-imports silver:definition:env;
-
-imports silver:definition:flow:ast;
-
 synthesized attribute warnOrphaned :: Boolean occurs on CmdArgs;
 
 aspect production endCmdArgs
