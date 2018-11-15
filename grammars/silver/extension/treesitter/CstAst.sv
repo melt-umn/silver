@@ -26,15 +26,25 @@ top::SyntaxRoot ::=
 aspect production cstRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
 {
+-- TODO: Generate the production rules of the context-free grammar
   top.jsTreesitter =
-s"""
-module.exports = grammar({
-  name: '${top.lang}',
-
-  rules: {
-    // TODO: Generate the production rules of the context-free grammar
-    source_file: $$ => 'hello'
-  }
-});
-""";
+s"""module.exports = grammar({                                                      
+    name: 'BinaryTree',                                                           
+                                                                                  
+    rules: {                                                                      
+      LTree: $$ => choice(                                                         
+        seq($$.lfork, $$.LTree, $$.RTree),                                           
+        $$.lleaf                                                                   
+      ),                                                                          
+      RTree: $$ => choice(                                                         
+        seq($$.rfork, $$.LTree, $$.RTree),                                           
+        $$.rleaf                                                                   
+      ),                                                                          
+      lfork: $$ => 'lfork',                                                        
+      rfork: $$ => 'rfork',                                                        
+      lleaf: $$ => 'lleaf',                                                        
+      rleaf: $$ => 'rleaf',                                                        
+                                                                                  
+    }                                                                             
+  });""";
 }
