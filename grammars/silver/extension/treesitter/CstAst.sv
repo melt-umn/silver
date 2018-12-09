@@ -9,15 +9,19 @@ imports silver:definition:regex;
 
 synthesized attribute tree_sitter_lhs :: String;
 synthesized attribute tree_sitter_rhs :: String;
-synthesized attribute tree_sitter_extras :: Boolean;
-
 synthesized attribute tree_sitter :: String;
+
+synthesized attribute tree_sitter_terminal_rules :: String;
+synthesized attribute tree_sitter_nonterminal_rules :: String;
+synthesized attribute tree_sitter_nonterminal_rules_rhs :: String;
 
 attribute tree_sitter_lhs occurs on SyntaxDcl;
 attribute tree_sitter_rhs occurs on SyntaxDcl;
-attribute tree_sitter_extras occurs on SyntaxDcl;
+attribute tree_sitter occurs on SyntaxDcl;
 
-attribute tree_sitter occurs on SyntaxDcl, Syntax;
+attribute tree_sitter_terminal_rules occurs on Syntax;
+attribute tree_sitter_nonterminal_rules occurs on Syntax;
+attribute tree_sitter_nonterminal_rules_rhs occurs on Syntax;
 
 aspect production cstRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
@@ -40,34 +44,49 @@ module.exports = grammar({
   name: '${top.lang}',
 
   rules: {
-    ----
-    ${ implode("\n\n    ", map ((.tree_sitter), ntDcls)) }
+    ${implode(",\n\n    ", map( (.tree_sitter), ntDcls))},
 
-    ----
-
-    ${getTreeSitterString(ntDcls)} 
-
-    ${getTreeSitterString(filter(isTerminal, syntaxDcls))}
+    ${s.tree_sitter_terminal_rules}
   }
 });
 """ ;
 
 }
-
+--  ${ implode("\n\n    ", map ((.tree_sitter), ntDcls)) }
 
 
 aspect production nilSyntax
 top::Syntax ::=
 {
-  top.tree_sitter = "";
+  top.tree_sitter_terminal_rules = "";
+  top.tree_sitter_nonterminal_rules = "";
+  top.tree_sitter_nonterminal_rules_rhs = "";
 }
 
 aspect production consSyntax
 top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {
--- consider an inherited attribute as the string used instead of "\n"
+  -- consider an inherited attribute as the string used instead of "\n"
+  -- six spaces of indentation after newline
+  top.tree_sitter_nonterminal_rules = 
+    if (isNonTerminal(s1)) then
+      s1.tree_sitter ++ ",\n    " ++ s2.tree_sitter_nonterminal_rules
+    else
+      s2.tree_sitter_nonterminal_rules;
 
-  top.tree_sitter = s1.tree_sitter ++ ",\n              " ++ s2.tree_sitter;
+  top.tree_sitter_nonterminal_rules_rhs =
+    if (isNonTerminal(s1)) then
+      s1.tree_sitter_rhs ++ ",\n     " ++ s2.tree_sitter_nonterminal_rules_rhs
+    else if (isProduction(s1)) then 
+      s1.tree_sitter_rhs ++ ",\n     " ++ s2.tree_sitter_nonterminal_rules_rhs
+    else
+      s2.tree_sitter_nonterminal_rules_rhs;
+
+  top.tree_sitter_terminal_rules =
+    if (isRegularTerminal(s1)) then
+      s1.tree_sitter ++ ",\n    " ++ s2.tree_sitter_terminal_rules
+    else
+      s2.tree_sitter_terminal_rules;
 }
 
 
@@ -75,11 +94,9 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 aspect production syntaxNonterminal
 top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifiers
 {
-  top.tree_sitter_lhs = "";
-  top.tree_sitter_rhs = "";
-  top.tree_sitter_extras = false;
-
-  top.tree_sitter = t.typeName ++ " => choice( " ++ subdcls.tree_sitter  ++ ")";
+  top.tree_sitter_lhs = makeIdName(t.typeName);
+  top.tree_sitter_rhs = "choice(" ++ subdcls.tree_sitter_nonterminal_rules_rhs ++ ")";
+  top.tree_sitter = top.tree_sitter_lhs ++ ": $ => " ++ top.tree_sitter_rhs;
 }
 
 
@@ -88,8 +105,8 @@ aspect production syntaxTerminal
 top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 {
   top.tree_sitter_lhs = makeIdName(n);
-  top.tree_sitter_rhs = "'" ++ regex.regString ++ "'";
-  top.tree_sitter_extras = modifiers.ignored;
+  top.tree_sitter_rhs = s"""'${regex.regString}'""";
+  top.tree_sitter = top.tree_sitter_lhs ++ ": $ => " ++ top.tree_sitter_rhs;
 }
 
 
@@ -102,9 +119,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
        "seq($." ++ makeIdName(head(ns.inputElements).typerep.typeName) ++ foldl(commaSepNamedSignatures,"",tail(ns.inputElements)) ++ ")"
     else
        ("$." ++ makeIdName((head(ns.inputElements)).typerep.typeName)));
-  top.tree_sitter_extras = false;
-
-  top.tree_sitter = top.tree_sitter_rhs;
+  top.tree_sitter = top.tree_sitter_lhs ++ ": $ => " ++ top.tree_sitter_rhs;
 }
 
 aspect production syntaxLexerClass
@@ -112,7 +127,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
   top.tree_sitter_lhs = "";
   top.tree_sitter_rhs = "";
-  top.tree_sitter_extras = false;
+  top.tree_sitter = "";
 }
 
 
@@ -133,31 +148,6 @@ top::SyntaxRoot ::=
   top.jsTreesitter = error("Shouldn't happen");
 }
 
-
-function getTreeSitterString
-String ::= declarations::[Decorated SyntaxDcl]
-{
-  return implode(",\n", map(dclTreesitterString, declarations));
-}
-
-
-function dclTreesitterString
-String ::= declaration::Decorated SyntaxDcl
-{
-  -- return  declaration.tree_sitter
-  -- then remove calls to this function
-  return case declaration of
-  | syntaxLexerClass(_, _) -> ""
-  | syntaxTerminal(_, _, _) ->
-      if !declaration.tree_sitter_extras then
-        declaration.tree_sitter_lhs ++ ": $ => " ++ declaration.tree_sitter_rhs
-      else
-        ""
-  | syntaxNonterminal(_, _) -> declaration.tree_sitter 
-  | syntaxProduction(_, _) -> declaration.tree_sitter_lhs ++ ":$ => " ++ declaration.tree_sitter_rhs
-   end;
-}
-
 function commaSepNamedSignatures
 String ::= accum::String inputElement::NamedSignatureElement
 {
@@ -170,12 +160,23 @@ String ::= str::String
   return substitute(":", "_", str);
 }
 
-function isTerminal
+function isRegularTerminal
 Boolean ::= declaration::Decorated SyntaxDcl
 {
   return case declaration of
   | syntaxLexerClass(_, _) -> false
-  | syntaxTerminal(_, _, _) -> true
+  | syntaxTerminal(_, _, modifiers) -> !modifiers.ignored
+  | syntaxNonterminal(_, _) -> false
+  | syntaxProduction(_, _) -> false
+  end;
+}
+
+function isIgnoreTerminal
+Boolean ::= declaration::Decorated SyntaxDcl
+{
+  return case declaration of
+  | syntaxLexerClass(_, _) -> false
+  | syntaxTerminal(_, _, modifiers) -> modifiers.ignored
   | syntaxNonterminal(_, _) -> false
   | syntaxProduction(_, _) -> false
   end;
@@ -200,5 +201,16 @@ Boolean ::= declaration::Decorated SyntaxDcl
   | syntaxTerminal(_, _, _) -> false
   | syntaxNonterminal(_, _) -> false
   | syntaxProduction(_, _) -> true
+  end;
+}
+
+function isLexerClass
+Boolean ::= declaration::Decorated SyntaxDcl
+{
+  return case declaration of
+  | syntaxLexerClass(_, _) -> true
+  | syntaxTerminal(_, _, _) -> false
+  | syntaxNonterminal(_, _) -> false
+  | syntaxProduction(_, _) -> false
   end;
 }
