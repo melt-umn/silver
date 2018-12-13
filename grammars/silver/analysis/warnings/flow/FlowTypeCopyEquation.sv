@@ -6,7 +6,7 @@ grammar silver:analysis:warnings:flow;
 -- This can only occur with *host-language attributes* as extension
 -- attribute are required to have ft(syn) > ft(fwd).
 
--- The flow environment can give us the authoritative list of attributes to check.
+-- The flow environment can give us the authoritative list of those attributes to check.
 -- These may be from `options` and so requires the flowEnv.
 
 aspect production productionDcl

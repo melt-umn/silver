@@ -21,11 +21,23 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 
 --------------------------------------------------------------------------------
 
--- We're going to check two things in this file, both related to the transitive
--- dependencies of an equation:
+-- In this file:
 
--- 1. That there's no missing inherited equations (we only require them if used)
--- 2. That the flow types aren't exceeded by an equation
+-- CHECK 1: Exceeds flowtype
+--   - Examine overall dependencies of an equation, and see if they use LHS inh
+--     that are not permissible, given the equation's flow type.
+--   - Accomplished by explicit calculations in each production.
+
+-- CHECK 1b: Reference set exceeded checks
+--   - Direct accesses from references need to be checked, they don't emit dependencies otherwise
+--   - Attribute sections need special checking, too
+--   - Pattern matching can create dependencies on references, too
+
+-- CHECK 2: Effective Completeness
+--   - Ensure each inherited attribute that's used actually has an equation
+--     in existence.
+--   - Consists of calls to `checkAllEqDeps`
+--   - Pattern variable accesses can induced *remote* inherited equation checks
 
 --------------------------------------------------------------------------------
 
@@ -67,6 +79,9 @@ Boolean ::= sigName::String  e::Decorated Env
   -- TODO BUG: it's actually possible for this to to fail to lookup
   -- due to aspects renaming the sig name!!  We're conservative here and return true if that happens
   -- but this could lead to spurious errors.
+  
+  -- Suggested fix: maybe we can directly look at the signature, instead of looking
+  -- up the name in the environment?
   
   return if null(d) then true else head(d).typerep.isDecorable;
 }
@@ -158,11 +173,6 @@ function checkAllEqDeps
 
 --------------------------------------------------------------------------------
 
-
-{- Step 1: We check two things:
-   1. That all the dependencies of each equation have equations (checkAllEqDeps)
-   2. That flow types are not exceeded, if it's a thing with a flowtype.
- -}
 
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
@@ -343,6 +353,9 @@ top::ProductionStmt ::= 'return' e::Expr ';'
     else [];
 }
 
+-- Skipping `baseCollectionValueDef`: it forwards to `localValueDef`
+-- Partially skipping `appendCollectionValueDef`: it likewise forwards
+-- But we do have a special "exceeds check" to do here:
 aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
@@ -358,10 +371,6 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   
   local lhsInhExceedsFlowType :: [String] = set:toList(set:difference(lhsInhDeps, originalEqLhsInhDeps));
 
-  -- For most collection append operators, the checking is already done by the thing they forward to.
-  -- Local collections are a special case though: typically they're always considered "authoritative"
-  -- and thus flow types don't need checking (unlike syn defs), but for contributions to locals we do
-  -- need to do a check!
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh)
        -- We can ignore functions. We're checking LHS inhs here... functions don't have any!
@@ -406,6 +415,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       inhsForTakingRef(eTypeName, top.flowEnv),  -- blessed inhs for a reference
       inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow))); -- needed inhs
   
+  -- CASE 1: References. This check is necessary and won't be caught elsewhere.
   top.errors <- 
     if null(e.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
@@ -420,9 +430,10 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     else [];
 
 ----------------
--- Okay, so as part 2, we attempt to give better error messages, explaining *where*
--- some needed dependencies came from. 
 
+  -- CASE 2: More specific errors for things already caught by `checkAllEqDeps`.
+  -- Equation has transition dep on `i`, but here we can say where this dependency
+  -- originated: from an syn acces.
   top.errors <- 
     if null(e.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
@@ -486,10 +497,9 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
-  -- Do nothing. Everything gets taken care of with anonResolve and checkEqDeps at the top
+  -- Do nothing. Everything gets taken care of with anonResolve and checkEqDeps at the top-level of the equation
 }
 
--- TODO: pattern variable accesses. WAIT. is this taken care of? this might be a stale TODO
 
 aspect production attributeSection
 top::Expr ::= '(' '.' q::QName ')'
