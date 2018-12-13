@@ -5,7 +5,7 @@ import silver:translation:java;
 import silver:driver;
 
 --import silver:extension:doc;
-import silver:analysis:warnings:defs;
+import silver:analysis:warnings:flow;
 import silver:analysis:warnings:exporting;
 
 parser svParse::Root {

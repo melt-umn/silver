@@ -14,7 +14,7 @@ import lib:xml;
 import silver:analysis;
 import silver:analysis:typechecking:core;
 import silver:analysis:warnings;
-import silver:analysis:warnings:defs;
+import silver:analysis:warnings:flow;
 import silver:analysis:warnings:exporting;
 
 import silver:composed;

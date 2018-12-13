@@ -10,7 +10,7 @@ imports silver:util:raw:treeset as set;
 
 -- unfortunate...
 import silver:analysis:warnings only warnAll;
-import silver:analysis:warnings:defs only warnMissingInh;
+import silver:analysis:warnings:flow only warnMissingInh;
 
 terminal Flowtype 'flowtype' lexer classes {KEYWORD};
 
