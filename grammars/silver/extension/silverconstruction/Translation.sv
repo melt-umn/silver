@@ -26,7 +26,7 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   production givenLocation::Location =
-    fromMaybe(top.givenLocation, orElse(children.foundLocation, annotations.foundLocation));
+    fromMaybe(top.givenLocation, annotations.foundLocation);
   top.translation =
     -- "Direct" escape productions
     if
@@ -170,29 +170,18 @@ top::AST ::= x::a
     end;
 }
 
-attribute givenLocation, translation<[Expr]>, foundLocation occurs on ASTs;
+attribute givenLocation, translation<[Expr]> occurs on ASTs;
 
 aspect production consAST
 top::ASTs ::= h::AST t::ASTs
 {
   top.translation = h.translation :: t.translation;
-  top.foundLocation =
-    -- Try to reify the last child as a location
-    case t of
-    | nilAST() ->
-        case reify(h) of
-        | right(l) -> just(l)
-        | left(_) -> nothing()
-        end
-    | _ -> t.foundLocation
-    end;
 }
 
 aspect production nilAST
 top::ASTs ::=
 {
   top.translation = [];
-  top.foundLocation = nothing();
 }
 
 attribute givenLocation, translation<[AnnoExpr]>, foundLocation occurs on NamedASTs;
