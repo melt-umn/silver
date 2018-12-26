@@ -7,23 +7,31 @@ imports silver:definition:concrete_syntax;
 imports silver:definition:concrete_syntax:ast;
 imports silver:definition:regex;
 
-synthesized attribute tree_sitter_lhs :: String;
-synthesized attribute tree_sitter_rhs :: String;
-synthesized attribute tree_sitter :: String;
+synthesized attribute highlighting_lexer_class :: String;
+attribute highlighting_lexer_class occurs on SyntaxTerminalModifiers, SyntaxTerminalModifier;
 
-synthesized attribute tree_sitter_extras :: String;
-synthesized attribute tree_sitter_terminal_rules :: String;
-synthesized attribute tree_sitter_nonterminal_rules :: String;
-synthesized attribute tree_sitter_nonterminal_rules_rhs :: String;
+synthesized attribute tree_sitter_lhs :: String occurs on SyntaxDcl;
+synthesized attribute tree_sitter_rhs :: String occurs on SyntaxDcl;
+synthesized attribute tree_sitter :: String occurs on SyntaxDcl;
+synthesized attribute atom_scope :: String occurs on SyntaxDcl;
 
-attribute tree_sitter_lhs occurs on SyntaxDcl;
-attribute tree_sitter_rhs occurs on SyntaxDcl;
-attribute tree_sitter occurs on SyntaxDcl;
+synthesized attribute tree_sitter_extras :: String occurs on Syntax;
+synthesized attribute tree_sitter_terminal_rules :: String occurs on Syntax;
+synthesized attribute tree_sitter_nonterminal_rules :: String occurs on Syntax;
+synthesized attribute tree_sitter_nonterminal_rules_rhs :: String occurs on Syntax;
+synthesized attribute atom_scopes :: [String] occurs on Syntax;
 
-attribute tree_sitter_extras occurs on Syntax;
-attribute tree_sitter_terminal_rules occurs on Syntax;
-attribute tree_sitter_nonterminal_rules occurs on Syntax;
-attribute tree_sitter_nonterminal_rules_rhs occurs on Syntax;
+lexer class atom_comment;
+lexer class atom_constant;
+lexer class atom_entity;
+lexer class atom_invalid;
+lexer class atom_keyword;
+lexer class atom_markup;
+lexer class atom_meta;
+lexer class atom_storage;
+lexer class atom_string;
+lexer class atom_support;
+lexer class atom_variable;
 
 aspect production cstRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
@@ -34,10 +42,6 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   local attribute syntaxDcls :: [Decorated SyntaxDcl] 
     = map(snd, s2.cstDcls);
 
-  -- Nonterminal declarations
-  local attribute ntDcls :: [Decorated SyntaxDcl] 
-    = filter(isNonTerminal, syntaxDcls);
-
   -- The tree sitter grammar.
   top.jsTreesitter =
 
@@ -46,16 +50,31 @@ module.exports = grammar({
   name: '${top.lang}',
 
   extras: $$ => [
-    ${s.tree_sitter_extras}
+    ${s2.tree_sitter_extras}
   ],
 
   rules: {
-    ${implode(",\n\n    ", map( (.tree_sitter), ntDcls))},
+    ${s2.tree_sitter_nonterminal_rules}
 
-    ${s.tree_sitter_terminal_rules}
+    ${s2.tree_sitter_terminal_rules}
   }
 });
 """ ;
+
+  -- The atom package file
+  -- comments [ ] used for atom toggle line comments feature
+  top.csonAtomPackage = 
+s"""
+name: '${top.lang}'
+scopeName: 'source.${top.lang}'
+type: 'tree-sitter'
+parser: 'tree-sitter-${top.lang}'
+fileTypes: [
+  '${top.lang}'
+]
+scopes:
+  ${implode("\n  ", s2.atom_scopes)}
+""";
 
 }
 --  ${ implode("\n\n    ", map ((.tree_sitter), ntDcls)) }
@@ -68,6 +87,7 @@ top::Syntax ::=
   top.tree_sitter_nonterminal_rules = "";
   top.tree_sitter_nonterminal_rules_rhs = "";
   top.tree_sitter_extras = "";
+  top.atom_scopes = [];
 }
 
 aspect production consSyntax
@@ -100,6 +120,12 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
       treeSitterDeclarationToIdentifier(s1.tree_sitter_lhs) ++ ",\n    " ++ s2.tree_sitter_extras
     else
       s2.tree_sitter_extras;
+
+  top.atom_scopes =
+    if (isTerminal(s1)) then
+      cons(s1.atom_scope, s2.atom_scopes)
+    else
+      s2.atom_scopes;
 }
 
 
@@ -110,18 +136,25 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifie
   top.tree_sitter_lhs = toTreeSitterDeclaration(t.typeName);
   top.tree_sitter_rhs = "choice(" ++ subdcls.tree_sitter_nonterminal_rules_rhs ++ ")";
   top.tree_sitter = top.tree_sitter_lhs ++ ": $ => " ++ top.tree_sitter_rhs;
+  top.atom_scope = "";
 }
 
 aspect production syntaxTerminal
 top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 {
+  local attribute treesitter_name :: String = toTreeSitterDeclaration(n);
   top.tree_sitter_lhs = 
     if modifiers.ignored then
       toTreeSitterIgnoreDeclaration(n)
     else
-      toTreeSitterDeclaration(n);
+      treesitter_name;
   top.tree_sitter_rhs = s"""/${regex.regString}/""";
   top.tree_sitter = top.tree_sitter_lhs ++ ": $ => " ++ top.tree_sitter_rhs;
+  top.atom_scope = 
+    if modifiers.highlighting_lexer_class == "" then
+      ""
+    else
+      s"""'${treesitter_name}': '${toAtomScope(modifiers.highlighting_lexer_class)}.${treesitter_name}'""";
 }
 
 
@@ -135,6 +168,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     else
        (toTreeSitterIdentifier((head(ns.inputElements)).typerep.typeName)));
   top.tree_sitter = top.tree_sitter_lhs ++ ": $ => " ++ top.tree_sitter_rhs;
+  top.atom_scope = "";
 }
 
 aspect production syntaxLexerClass
@@ -143,6 +177,39 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.tree_sitter_lhs = "";
   top.tree_sitter_rhs = "";
   top.tree_sitter = "";
+  top.atom_scope = "";
+}
+
+aspect production nilTerminalMod
+top::SyntaxTerminalModifiers ::=
+{
+  top.highlighting_lexer_class = "";
+}
+
+aspect production consTerminalMod
+top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalModifiers
+{
+  top.highlighting_lexer_class = h.highlighting_lexer_class ++ t.highlighting_lexer_class;
+}
+
+aspect default production
+top::SyntaxTerminalModifier ::=
+{
+  top.highlighting_lexer_class = "";
+}
+
+aspect production termClasses
+top::SyntaxTerminalModifier ::= cls::[String]
+{
+  local attribute atomClasses :: [String] = 
+    filter(isAtomHighlightingLexerClass, cls);
+
+  -- should we error if there is more than one?
+  top.highlighting_lexer_class =
+  if (length(atomClasses) >= 1) then
+    stripAtomLexerClassPrefix(head(atomClasses))
+  else
+    "";
 }
 
 
@@ -155,12 +222,14 @@ inherited attribute lang :: String occurs on SyntaxRoot;
  - Translation of a CST AST to Tree-sitter Javascript.
  -}
 synthesized attribute jsTreesitter :: String occurs on SyntaxRoot;
+synthesized attribute csonAtomPackage :: String occurs on SyntaxRoot;
 
 -- TODO: Why is SyntaxRoot closed?  Needs a default.
 aspect default production
 top::SyntaxRoot ::=
 {
   top.jsTreesitter = error("Shouldn't happen");
+  top.csonAtomPackage = error("Shouldn't happen");
 }
 
 function commaSepNamedSignatures
@@ -191,6 +260,12 @@ function toTreeSitterIdentifier
 String ::= str::String
 {
   return "$." ++ substitute(":", "_", str);
+}
+
+function toAtomScope
+String ::= str::String
+{
+  return substitute("_", ".", str);
 }
 
 function treeSitterDeclarationToIdentifier
@@ -252,4 +327,16 @@ Boolean ::= declaration::Decorated SyntaxDcl
   | syntaxNonterminal(_, _) -> false
   | syntaxProduction(_, _) -> false
   end;
+}
+
+function isAtomHighlightingLexerClass
+Boolean ::= str::String
+{
+  return startsWith("silver:extension:treesitter:atom_", str);
+}
+
+function stripAtomLexerClassPrefix
+String ::= str::String
+{
+  return substring(33, length(str), str);
 }

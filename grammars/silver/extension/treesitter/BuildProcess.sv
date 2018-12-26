@@ -44,7 +44,8 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 abstract production genTreesitterSpec
 top::DriverAction ::= specs::[ParserSpec]  cg::EnvTree<Decorated RootSpec>  lang::String
 {
-  local file :: String = "grammar.js";
+  local treesitter_file :: String = "grammar.js";
+  local atom_package_file :: String = s"${lang}.cson";
 
   local spec::ParserSpec = head(specs);
   spec.compiledGrammars = cg;
@@ -52,15 +53,20 @@ top::DriverAction ::= specs::[ParserSpec]  cg::EnvTree<Decorated RootSpec>  lang
   local specCst :: SyntaxRoot = spec.cstAst;
   specCst.lang = lang;
   
-  local newSpec :: String = specCst.jsTreesitter;
+  local treesitterSpec :: String = specCst.jsTreesitter;
+  local atomSpec :: String = specCst.csonAtomPackage;
 
   local err :: IO = 
     print("CST Errors while Generating Tree-sitter Grammar for Parser " ++ spec.fullName ++ ":\n" ++
       implode("\n", specCst.cstErrors) ++ "\n", top.ioIn);
   
   local doWR :: IO =
-    writeFile(file, newSpec,
+    writeFile(treesitter_file, treesitterSpec,
       print(s"Generating Tree-sitter Grammar for ${lang} from Parser " ++ spec.fullName ++ ".\n", top.ioIn));
+
+  local doAtomWR :: IO =
+    writeFile(atom_package_file, atomSpec,
+      print(s"Generating Atom Language Package for ${lang} from Parser " ++ spec.fullName ++ ".\n", top.ioIn));
 
   top.io =
     if null(specs)
@@ -68,10 +74,18 @@ top::DriverAction ::= specs::[ParserSpec]  cg::EnvTree<Decorated RootSpec>  lang
     else if length(specs) > 1
     then print(s"Found multiple parser specs for which to generate a Tree-sitter grammar: ${implode(", ", map((.fullName), specs))}.\n", top.ioIn)
     else if null(specCst.cstErrors)
-    then doWR
+    then doWR 
     else err;
   
+  top.io =
+    if null(specs)
+    then print("Did not find a parser spec for which to generate a Tree-sitter grammar.\n", top.ioIn)
+    else if length(specs) > 1
+    then print(s"Found multiple parser specs for which to generate a Tree-sitter grammar: ${implode(", ", map((.fullName), specs))}.\n", top.ioIn)
+    else if null(specCst.cstErrors)
+    then doAtomWR 
+    else err;
+
   top.code = if length(specs) == 1 && null(specCst.cstErrors) then 0 else 1;
   top.order = 7;
 }
-
