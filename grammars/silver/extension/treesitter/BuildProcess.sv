@@ -62,11 +62,8 @@ top::DriverAction ::= specs::[ParserSpec]  cg::EnvTree<Decorated RootSpec>  lang
   
   local doWR :: IO =
     writeFile(treesitter_file, treesitterSpec,
-      print(s"Generating Tree-sitter Grammar for ${lang} from Parser " ++ spec.fullName ++ ".\n", top.ioIn));
-
-  local doAtomWR :: IO =
-    writeFile(atom_package_file, atomSpec,
-      print(s"Generating Atom Language Package for ${lang} from Parser " ++ spec.fullName ++ ".\n", top.ioIn));
+      writeFile(atom_package_file, atomSpec,
+      print(s"Generating Tree-sitter Grammar for ${lang} from Parser " ++ spec.fullName ++ ".\n", top.ioIn)));
 
   top.io =
     if null(specs)
@@ -77,15 +74,6 @@ top::DriverAction ::= specs::[ParserSpec]  cg::EnvTree<Decorated RootSpec>  lang
     then doWR 
     else err;
   
-  top.io =
-    if null(specs)
-    then print("Did not find a parser spec for which to generate a Tree-sitter grammar.\n", top.ioIn)
-    else if length(specs) > 1
-    then print(s"Found multiple parser specs for which to generate a Tree-sitter grammar: ${implode(", ", map((.fullName), specs))}.\n", top.ioIn)
-    else if null(specCst.cstErrors)
-    then doAtomWR 
-    else err;
-
   top.code = if length(specs) == 1 && null(specCst.cstErrors) then 0 else 1;
   top.order = 7;
 }
