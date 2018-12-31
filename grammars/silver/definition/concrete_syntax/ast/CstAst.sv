@@ -24,6 +24,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   s.cstNTProds = directBuildTree(s.cstProds);
   s.containingGrammar = "host";
   s.univLayout = error("TODO: make this environment not be decorated?"); -- TODO
+  s.classTerminals = error("TODO: shouldn't by necessary to normalize"); -- TODO
   s.prefixesForTerminals = error("TODO: shouldn't by necessary to normalize"); -- TODO
   
   -- Move productions under their nonterminal, and sort the declarations
@@ -32,6 +33,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   s2.cstEnv = directBuildTree(s.cstDcls);
   s2.containingGrammar = "host";
   s2.cstNTProds = error("TODO: make this environment not be decorated?"); -- TODO
+  s2.classTerminals = directBuildTree(s.classTerminalContribs);
   s2.prefixesForTerminals = directBuildTree(terminalPrefixes);
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.

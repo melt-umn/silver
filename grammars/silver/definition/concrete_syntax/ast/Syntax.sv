@@ -12,6 +12,10 @@ synthesized attribute cstProds :: [Pair<String SyntaxDcl>];
 autocopy attribute cstNTProds :: EnvTree<SyntaxDcl>;
 synthesized attribute cstNormalize :: [SyntaxDcl];
 
+-- Compute and allow lookup of all terminals in a lexer class
+synthesized attribute classTerminalContribs::[Pair<String String>];
+autocopy attribute classTerminals::EnvTree<String>;
+
 synthesized attribute allIgnoreTerminals :: [Decorated SyntaxDcl];
 synthesized attribute allMarkingTerminals :: [Decorated SyntaxDcl];
 autocopy attribute univLayout :: String;
@@ -25,7 +29,7 @@ autocopy attribute prefixesForTerminals :: EnvTree<String>;
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, univLayout, xmlCopper, containingGrammar, prefixesForTerminals;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, classTerminalContribs, classTerminals, univLayout, xmlCopper, containingGrammar, prefixesForTerminals;
 
 abstract production nilSyntax
 top::Syntax ::=
@@ -36,6 +40,7 @@ top::Syntax ::=
   top.cstNormalize = [];
   top.allIgnoreTerminals = [];
   top.allMarkingTerminals = [];
+  top.classTerminalContribs = [];
   top.xmlCopper = "";
 }
 abstract production consSyntax
@@ -47,13 +52,14 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   top.cstNormalize = s1.cstNormalize ++ s2.cstNormalize;
   top.allIgnoreTerminals = s1.allIgnoreTerminals ++ s2.allIgnoreTerminals;
   top.allMarkingTerminals = s1.allMarkingTerminals ++ s2.allMarkingTerminals;
+  top.classTerminalContribs = s1.classTerminalContribs ++ s2.classTerminalContribs;
   top.xmlCopper = s1.xmlCopper ++ s2.xmlCopper;
 }
 
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, univLayout, xmlCopper, classDomContribs, classSubContribs, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, classTerminalContribs, classTerminals, univLayout, xmlCopper, classDomContribs, classSubContribs, containingGrammar, prefixesForTerminals;
 
 synthesized attribute sortKey :: String;
 
@@ -63,6 +69,7 @@ top::SyntaxDcl ::=
   top.cstProds = [];
   top.allIgnoreTerminals = [];
   top.allMarkingTerminals = [];
+  top.classTerminalContribs = [];
   top.classDomContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.classSubContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
 }
@@ -115,6 +122,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.cstNormalize = [top];
   top.allIgnoreTerminals = if modifiers.ignored then [top] else [];
   top.allMarkingTerminals = if modifiers.marking then [top] else [];
+  top.classTerminalContribs = modifiers.classTerminalContribs;
 
   production pfx :: [String] = searchEnvTree(n, top.prefixesForTerminals);
 
@@ -261,6 +269,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.cstErrors := modifiers.cstErrors ++
     if length(searchEnvTree(n, top.cstEnv)) == 1 then []
     else ["Name conflict with lexer class " ++ n];
+  modifiers.className = n;
 
   -- TODO: these attributes are on all SyntaxDcls, but only have meaning for this production
   -- that's UUUUGLY.

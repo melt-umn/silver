@@ -4,16 +4,18 @@ grammar silver:definition:concrete_syntax:ast;
 --synthesized attribute dominatesXML :: String;
 --synthesized attribute submitsXML :: String;
 
+autocopy attribute className :: String;
 
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, dominatesXML, submitsXML;
+nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, xmlCopper, dominatesXML, submitsXML;
 
 abstract production consLexerClassMod
 top::SyntaxLexerClassModifiers ::= h::SyntaxLexerClassModifier  t::SyntaxLexerClassModifiers
 {
   top.cstErrors := h.cstErrors ++ t.cstErrors;
+  top.xmlCopper = h.xmlCopper ++ t.xmlCopper;
   top.dominatesXML = h.dominatesXML ++ t.dominatesXML;
   top.submitsXML = h.submitsXML ++ t.submitsXML;
 }
@@ -31,13 +33,14 @@ top::SyntaxLexerClassModifiers ::=
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, dominatesXML, submitsXML;
+nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, xmlCopper, dominatesXML, submitsXML;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
 top::SyntaxLexerClassModifier ::=
 {
   --top.cstErrors := [];
+  top.xmlCopper = "";
   top.dominatesXML = "";
   top.submitsXML = "";
 }
@@ -73,3 +76,22 @@ top::SyntaxLexerClassModifier ::= dom::[String]
   top.dominatesXML = implode("", map(xmlCopperRef, map(head, domRefs)));
 }
 
+{--
+ - A disambiguation function that should be created for the members of a lexer class.
+ -}
+abstract production lexerClassDisambiguate
+top::SyntaxLexerClassModifier ::= acode::String
+{
+  production terms :: [String] = searchEnvTree(top.className, top.classTerminals);
+  local trefs::[[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
+
+  top.cstErrors := []; -- TODO: Check for duplicate disambiguation for a lexer class
+  top.xmlCopper = s"""
+  <DisambiguationFunction id="${makeCopperName(top.className)}" appliesToSubsets="true">
+    <Members>${implode("", map(xmlCopperRef, map(head, trefs)))}</Members>
+    <Code><![CDATA[
+${acode}
+    ]]></Code>
+  </DisambiguationFunction>
+""";
+}
