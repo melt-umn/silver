@@ -54,8 +54,12 @@ parser dcparse::DCRoot {
 
 equalityTest ( dcparse("id1 foo abcd", "ASDF").parseSuccess, true, Boolean, copper_tests ) ;
 equalityTest ( dcparse("id2 foo abcd", "ASDF").parseSuccess, true, Boolean, copper_tests ) ;
-equalityTest ( dcparse("id2 bar abcd", "ASDF").parseSuccess, false, Boolean, copper_tests ) ;
+equalityTest ( dcparse("id2 bar abcd", "ASDF").parseSuccess, true, Boolean, copper_tests ) ;
+equalityTest ( dcparse("id3 bar abcd", "ASDF").parseSuccess, false, Boolean, copper_tests ) ;
+equalityTest ( dcparse("id3 baz abcd", "ASDF").parseSuccess, true, Boolean, copper_tests ) ;
 
 equalityTest ( dcparse("id1 foo abcd", "ASDF").parseTree.n, 1, Integer, copper_tests ) ;
 equalityTest ( dcparse("id2 foo abcd", "ASDF").parseTree.n, 2, Integer, copper_tests ) ;
+equalityTest ( dcparse("id2 bar abcd", "ASDF").parseTree.n, 2, Integer, copper_tests ) ;
+equalityTest ( dcparse("id3 baz abcd", "ASDF").parseTree.n, 1, Integer, copper_tests ) ;
 
