@@ -279,7 +279,8 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.cstNormalize = [top];
 
   top.xmlCopper =
-    "  <TerminalClass id=\"" ++ makeCopperName(n) ++ "\" />\n";
+    "  <TerminalClass id=\"" ++ makeCopperName(n) ++ "\" />\n" ++
+    modifiers.xmlCopper;
 }
 
 {--

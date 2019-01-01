@@ -24,6 +24,7 @@ abstract production nilLexerClassMod
 top::SyntaxLexerClassModifiers ::= 
 {
   top.cstErrors := [];
+  top.xmlCopper = "";
   top.dominatesXML = "";
   top.submitsXML = "";
 }
@@ -87,7 +88,7 @@ top::SyntaxLexerClassModifier ::= acode::String
 
   top.cstErrors := []; -- TODO: Check for duplicate disambiguation for a lexer class
   top.xmlCopper = s"""
-  <DisambiguationFunction id="${makeCopperName(top.className)}" appliesToSubsets="true">
+  <DisambiguationFunction id="disambiguate_${makeCopperName(top.className)}" applicableToSubsets="true">
     <Members>${implode("", map(xmlCopperRef, map(head, trefs)))}</Members>
     <Code><![CDATA[
 ${acode}

@@ -78,6 +78,16 @@ top::Type ::=
     end;
 }
 
+aspect production terminalIdType
+top::Type ::=
+{
+  top.unify = 
+    case top.unifyWith of
+    | terminalIdType() -> emptySubst()
+    | _ -> errorSubst("Tried to unify TerminalId with " ++ prettyType(top.unifyWith))
+    end;
+}
+
 aspect production nonterminalType
 top::Type ::= fn::String params::[Type]
 {

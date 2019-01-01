@@ -71,6 +71,13 @@ top::Def ::= d::EnvItem
   top.dcl = d.dcl;
   top.valueList = [d];
 }
+abstract production typeValueDef
+top::Def ::= d::EnvItem
+{
+  top.dcl = d.dcl;
+  top.typeList = [d];
+  top.valueList = [d];
+}
 abstract production attrDef
 top::Def ::= d::EnvItem
 {
@@ -97,7 +104,6 @@ top::Def ::= d::DclInfo
   top.dcl = d;
   top.occursList = [d];
 }
-
 
 
 function childDef
@@ -143,7 +149,8 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 function termDef
 Def ::= sg::String  sl::Location  fn::String  regex::Regex
 {
-  return typeDef(defaultEnvItem(termDcl(sg,sl,fn,regex)));
+  -- Terminals are also in the value namespace as terminal identifiers
+  return typeValueDef(defaultEnvItem(termDcl(sg,sl,fn,regex)));
 }
 function lexTyVarDef
 Def ::= sg::String  sl::Location  fn::String  ty::Type
@@ -217,6 +224,7 @@ Boolean ::= fn::(Boolean ::= EnvItem)  d::Def
   return case d of
   | valueDef(ei) -> fn(ei)
   | typeDef(ei) -> fn(ei)
+  | typeValueDef(ei) -> fn(ei)
   | attrDef(ei) -> fn(ei)
   | prodDclDef(ei) -> fn(ei)
   | _ -> true -- preserve all others for now (legit don't consider occurs, pa)
@@ -228,6 +236,7 @@ Def ::= fn::(EnvItem ::= EnvItem)  d::Def
   return case d of
   | valueDef(ei) -> valueDef(fn(ei))
   | typeDef(ei) -> typeDef(fn(ei))
+  | typeValueDef(ei) -> typeValueDef(fn(ei))
   | attrDef(ei) -> attrDef(fn(ei))
   | prodDclDef(ei) -> prodDclDef(fn(ei))
   | _ -> d -- ditto

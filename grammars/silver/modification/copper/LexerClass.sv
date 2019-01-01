@@ -77,3 +77,15 @@ top::LexerClassModifier ::= 'submits' 'to' terms::TermPrecList
   top.errors := terms.errors;
 }
 
+concrete production lexerClassModifierDisambiguate
+top::LexerClassModifier ::= 'disambiguate' acode::ActionCode_c
+{
+  top.unparse = "disambiguate " ++ acode.unparse;
+
+  top.lexerClassModifiers = [lexerClassDisambiguate(acode.actionCode)];
+  top.errors := acode.errors;
+  
+  acode.env = newScopeEnv(acode.defs, top.env);
+  acode.frame = disambiguationContext();
+}
+

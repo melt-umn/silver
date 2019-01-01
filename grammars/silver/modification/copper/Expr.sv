@@ -31,6 +31,25 @@ top::Expr ::= q::Decorated QName
   top.upSubst = top.downSubst;
 }
 
+-- TODO: Distinct from pluckTerminalReference (since this can occur in any action block and
+-- reference any terminal), but maybe it shouldn't be?  Type classes would be nice here.
+abstract production terminalIdReference
+top::Expr ::= q::Decorated QName
+{
+  top.unparse = q.unparse;
+
+  top.errors := if !top.frame.permitActions
+                then [err(top.location, "References to terminal identifiers can only be made in action blocks")]
+                else [];
+
+  top.typerep = terminalIdType();
+
+  top.translation = s"Terminals.${makeCopperName(q.lookupValue.fullName)}.num()";
+  top.lazyTranslation = top.translation; -- never, but okay!
+
+  top.upSubst = top.downSubst;
+}
+
 abstract production parserAttributeReference
 top::Expr ::= q::Decorated QName
 {
@@ -68,4 +87,3 @@ top::Expr ::= q::Decorated QName
 
   top.upSubst = top.downSubst;
 }
-
