@@ -34,7 +34,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   top.xmlCopper = 
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ++
 
-"<CopperSpec xmlns=\"http://melt.cs.umn.edu/copper/xmlns\">\n" ++
+"<CopperSpec xmlns=\"http://melt.cs.umn.edu/copper/xmlns/skins/xml/0.9\">\n" ++
 
 "  <ExtendedParser id=\"" ++ makeCopperName(parsername) ++ "\">\n" ++
 "    <PP>" ++ parsername ++ "</PP>\n" ++
