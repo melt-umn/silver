@@ -730,9 +730,9 @@ public final class Util {
 	
 	public static ConsCell bitSetToList(BitSet b) {
 		ConsCell result = ConsCell.nil;
-        for (int i = b.nextSetBit(0); i >= 0; i = b.nextSetBit(i+1)) {
-        	result = new ConsCell(i, result);
-        }
-        return result;
+		for (int i = b.nextSetBit(0); i >= 0; i = b.nextSetBit(i+1)) {
+			result = new ConsCell(i, result);
+		}
+		return result;
 	}
 }
