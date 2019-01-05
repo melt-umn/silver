@@ -3,6 +3,7 @@
 	<name>Silver runtime</name>
 	<comment></comment>
 	<projects>
+		<project>Copper run-time</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
