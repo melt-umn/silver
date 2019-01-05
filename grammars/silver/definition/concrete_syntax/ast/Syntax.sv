@@ -203,7 +203,8 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     "    <Precedence>" ++ toString(modifiers.productionPrecedence.fromJust) ++ "</Precedence>\n"
     else "") ++
     "    <Code><![CDATA[\n" ++
-    "RESULT = new " ++ makeClassName(ns.fullName) ++ "(" ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
+    "final " ++ makeClassName(ns.fullName) ++ " RESULTfinal = new " ++ makeClassName(ns.fullName) ++ "(" ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
+    "RESULT = RESULTfinal;\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++
     "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++

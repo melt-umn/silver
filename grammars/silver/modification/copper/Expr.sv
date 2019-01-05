@@ -9,7 +9,7 @@ top::Expr ::= q::Decorated QName
 
   top.typerep = q.lookupValue.typerep;
 
-  top.translation = "((" ++ q.lookupValue.typerep.transType ++ ")((common.Node)RESULT).getChild(" ++ top.frame.className ++ ".i_" ++ q.lookupValue.fullName ++ "))";
+  top.translation = "((" ++ q.lookupValue.typerep.transType ++ ")((common.Node)RESULTfinal).getChild(" ++ top.frame.className ++ ".i_" ++ q.lookupValue.fullName ++ "))";
   top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
