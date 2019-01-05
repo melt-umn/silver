@@ -79,6 +79,7 @@ top::Expr ::= q::Decorated QName
   -- Yeah, it's a big if/then/else block, but these are all very similar and related.
   top.translation =
     if q.name == "lexeme" then "new common.StringCatter(lexeme)" else
+    if q.name == "shiftable" then "shiftableList" else
     if q.name == "line" then "virtualLocation.getLine()" else
     if q.name == "column" then "virtualLocation.getColumn()" else
     if q.name == "filename" then "new common.StringCatter(virtualLocation.getFileName())" else

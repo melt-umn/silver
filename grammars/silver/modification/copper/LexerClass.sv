@@ -85,7 +85,7 @@ top::LexerClassModifier ::= 'disambiguate' acode::ActionCode_c
   top.lexerClassModifiers = [lexerClassDisambiguate(acode.actionCode)];
   top.errors := acode.errors;
   
-  acode.env = newScopeEnv(disambiguationActionVars ++ acode.defs, top.env);
+  acode.env = newScopeEnv(disambiguationClassActionVars ++ acode.defs, top.env);
   acode.frame = disambiguationContext();
 }
 
