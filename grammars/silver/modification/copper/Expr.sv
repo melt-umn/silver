@@ -32,7 +32,9 @@ top::Expr ::= q::Decorated QName
 }
 
 -- TODO: Distinct from pluckTerminalReference (since this can occur in any action block and
--- reference any terminal), but maybe it shouldn't be?  Type classes would be nice here.
+-- reference any terminal), but maybe it shouldn't be?  These productions do almost the same
+-- thing.  Also having type classes would let us use a more specific type than generic TerminalId,
+-- and pluckTerminalReference wouldn't need to cheat with a fresh type.
 abstract production terminalIdReference
 top::Expr ::= q::Decorated QName
 {
