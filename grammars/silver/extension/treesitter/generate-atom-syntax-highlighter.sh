@@ -33,7 +33,7 @@ generate_treesitter_parser()
   # Update version number in package.json if specified
   if [ "$version_num" != "" ]; then
     old_version_num=`node -pe "require('./package.json').version"`
-    npm version $version_num
+    npm version $version_num --allow-same-version
     echo Version Number Updated from $old_version_num to $version_num
   fi
   if [ "$version_update_type" != "" ]; then
@@ -49,14 +49,17 @@ generate_treesitter_parser()
 
 check_if_parser_already_exists()
 {
+  old_dir=$(pwd)
+  cd ~
   if [ ! -d $treesitter_parsers_directory/tree-sitter-$lang_name ]; then
     curl --output /dev/null --silent --head --fail https://www.npmjs.com/package/tree-sitter-$lang_name
     if [ $? -eq 0 -a $force_option = false -a $publish_treesitter = true ]; then
-      echo "${use_red_color}A parser for this language name already exists. Please either use this parser or use a new language name."
+      echo "${use_red_color}A parser for this language name already exists, but you dont have a directory already set up at $treesitter_parsers_directory/tree-sitter-$lang_name. Please either use this parser or use a new language name."
       echo "If this is what you intended redo the command with the -force option with the appropriate version specified with -version versionum.${reset_color}"
       exit 1
     fi
   fi
+  cd $old_dir # restore directory from before check
 }
 
 generate_atom_package()
@@ -105,8 +108,18 @@ validate_version_number()
   echo Version number $version_num is valid
 }
 
+check_if_grammar_is_valid()
+{
+  cd $original_dir
+  $copper_command > /dev/null
+  if [ $? -ne 0 ]; then
+    echo "${use_red_color}Copper cannot generate a parser from this grammar. Treesitter would also fail. Modify the gramamr and try again.${reset_color}"
+    exit 1
+  fi
+  echo "Grammar specified is valid"
+}
+
 original_dir=$(pwd)
-echo $original_dir
 
 # Parse Language Name from treesitter command
 at_lang_name=false
@@ -124,6 +137,8 @@ echo Language Name is $lang_name
 
 # the silver command to run
 silver_command=$1
+# run a copper dump to see if the grammar given is error free
+copper_command=`echo $1 | sed s/--treesitter-spec[[:space:]*][[:alnum:]_-]*/--copperdump/`
 run_atom=true
 run_treesitter=true
 force_option=false
@@ -156,6 +171,7 @@ while [ "$2" != "" ]; do
   shift  # shift the parameters down by one
 done
 
+check_if_grammar_is_valid
 if [ $run_treesitter = true ]; then
   check_if_parser_already_exists
 fi
