@@ -17,7 +17,7 @@ synthesized attribute atom_scope :: String occurs on SyntaxDcl;
 
 synthesized attribute tree_sitter_extras :: String occurs on Syntax;
 synthesized attribute tree_sitter_terminal_rules :: String occurs on Syntax;
-synthesized attribute tree_sitter_nonterminal_rules :: String occurs on Syntax;
+synthesized attribute tree_sitter_nonterminal_rules :: [String] occurs on Syntax;
 synthesized attribute tree_sitter_nonterminal_rules_rhs :: String occurs on Syntax;
 synthesized attribute atom_scopes :: [String] occurs on Syntax;
 
@@ -107,6 +107,12 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   -- the same left hand side together as subdcls on nonterminals.
 
   -- The tree sitter grammar.
+
+  -- partition the grammar rules so that the start nonterminal is the first rule
+  -- listed in the tree-sitter grammar as needed.
+  local attribute nonterminals_split :: Pair<[String] [String]> = partition(isStartNonTerminalRule(toTreeSitterDeclaration(startnt), _), s2.tree_sitter_nonterminal_rules);
+  local attribute start_rule :: [String] = nonterminals_split.fst;
+  local attribute rest_rules :: [String] = nonterminals_split.snd;
   top.jsTreesitter =
 
 s"""
@@ -118,7 +124,9 @@ module.exports = grammar({
   ],
 
   rules: {
-    ${s2.tree_sitter_nonterminal_rules}
+    ${implode(",\n    ", start_rule)},
+
+    ${implode(",\n    ", rest_rules)},
 
     ${s2.tree_sitter_terminal_rules}
   }
@@ -140,14 +148,18 @@ scopes:
 """;
 
 }
---  ${ implode("\n\n    ", map ((.tree_sitter), ntDcls)) }
 
+function isStartNonTerminalRule
+Boolean ::= startnt::String rule::String
+{
+  return startsWith(startnt, rule);
+}
 
 aspect production nilSyntax
 top::Syntax ::=
 {
   top.tree_sitter_terminal_rules = "";
-  top.tree_sitter_nonterminal_rules = "";
+  top.tree_sitter_nonterminal_rules = [];
   top.tree_sitter_nonterminal_rules_rhs = "";
   top.tree_sitter_extras = "";
   top.atom_scopes = [];
@@ -160,20 +172,22 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   -- six spaces of indentation after newline
   top.tree_sitter_nonterminal_rules = 
     if (isNonTerminal(s1)) then
-      s1.tree_sitter ++ ",\n    " ++ s2.tree_sitter_nonterminal_rules
+      s1.tree_sitter :: s2.tree_sitter_nonterminal_rules
     else
       s2.tree_sitter_nonterminal_rules;
 
+  -- this is used mainly for the Syntax nodes that group the productions 
+  -- underneath the nonterminals.
   top.tree_sitter_nonterminal_rules_rhs =
-    if (isNonTerminal(s1)) then
-      s1.tree_sitter_rhs ++ ",\n     " ++ s2.tree_sitter_nonterminal_rules_rhs
-    else if (isProduction(s1)) then 
+    -- if it is a production with input elements
+    if (isProduction(s1) && s1.tree_sitter_rhs != "") then 
       s1.tree_sitter_rhs ++ ",\n     " ++ s2.tree_sitter_nonterminal_rules_rhs
     else
       s2.tree_sitter_nonterminal_rules_rhs;
 
   top.tree_sitter_terminal_rules =
-    if (isTerminal(s1)) then
+     -- don't include empty terminals since those exist in some places
+    if (isTerminal(s1) && s1.tree_sitter_rhs != "//") then
       s1.tree_sitter ++ ",\n    " ++ s2.tree_sitter_terminal_rules
     else
       s2.tree_sitter_terminal_rules;
@@ -207,11 +221,12 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 {
   local attribute treesitter_name :: String = toTreeSitterDeclaration(n);
   top.tree_sitter_lhs = 
-    if modifiers.ignored then
+    -- if we can add a leading _ to not put ignore terminals in the syntax tree that do not need to be there
+    if modifiers.ignored && modifiers.highlighting_lexer_class == "" then
       toTreeSitterIgnoreDeclaration(n)
     else
       treesitter_name;
-  top.tree_sitter_rhs = s"""/${regex.regString}/""";
+  top.tree_sitter_rhs = addPrecedence(s"""/${regex.regString}/""", modifiers);
   top.tree_sitter = top.tree_sitter_lhs ++ ": $ => " ++ top.tree_sitter_rhs;
   top.atom_scope = 
     if modifiers.highlighting_lexer_class == "" then
@@ -220,6 +235,28 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
       s"""'${treesitter_name}': '${toAtomScope(modifiers.highlighting_lexer_class)}.${treesitter_name}'""";
 }
 
+-- this func will actually need to move precedence and associativity from terminals
+-- to productions.
+function addPrecedence
+String ::= term::String modifiers::SyntaxTerminalModifiers
+{
+  return
+  if (term == "//") then term
+  else if (modifiers.opAssociation.isJust && modifiers.opPrecedence.isJust) then
+    (if modifiers.opAssociation.fromJust == "left" then
+      s"""prec.left(${toString(modifiers.opPrecedence.fromJust)}, ${term})"""
+    else -- modifiers.opAssociaton.fromJust == "right"
+      s"""prec.right(${toString(modifiers.opPrecedence.fromJust)}, ${term})""")
+  else if modifiers.opAssociation.isJust then -- no precedence specified
+    (if modifiers.opAssociation.fromJust == "left" then
+      s"""prec.left(${term})"""
+    else -- modifiers.opAssociaton.fromJust == "right"
+      s"""prec.right(${term})""")
+  else if modifiers.opPrecedence.isJust then -- no associativity specified
+    s"""prec(${toString(modifiers.opPrecedence.fromJust)}, ${term})"""
+  else  -- no precedence or associativity specified
+    term;
+}
 
 aspect production syntaxProduction
 top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
@@ -228,8 +265,10 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.tree_sitter_rhs =
     (if listLength(ns.inputElements) > 1 then
        "seq(" ++ toTreeSitterIdentifier(head(ns.inputElements).typerep.typeName) ++ foldl(commaSepNamedSignatures,"",tail(ns.inputElements)) ++ ")"
+    else if listLength(ns.inputElements) == 1 then
+       (toTreeSitterIdentifier((head(ns.inputElements)).typerep.typeName))
     else
-       (toTreeSitterIdentifier((head(ns.inputElements)).typerep.typeName)));
+      "");
   top.tree_sitter = top.tree_sitter_lhs ++ ": $ => " ++ top.tree_sitter_rhs;
   top.atom_scope = "";
 }
@@ -348,6 +387,7 @@ Boolean ::= declaration::Decorated SyntaxDcl
   | syntaxTerminal(_, _, _) -> true
   | syntaxNonterminal(_, _) -> false
   | syntaxProduction(_, _) -> false
+  | _ -> false
   end;
 }
 
@@ -359,6 +399,7 @@ Boolean ::= declaration::Decorated SyntaxDcl
   | syntaxTerminal(_, _, modifiers) -> modifiers.ignored
   | syntaxNonterminal(_, _) -> false
   | syntaxProduction(_, _) -> false
+  | _ -> false
   end;
 }
 
@@ -370,6 +411,7 @@ Boolean ::= declaration::Decorated SyntaxDcl
   | syntaxTerminal(_, _, _) -> false
   | syntaxNonterminal(_, _) -> true
   | syntaxProduction(_, _) -> false
+  | _ -> false
   end;
 }
 
@@ -381,6 +423,7 @@ Boolean ::= declaration::Decorated SyntaxDcl
   | syntaxTerminal(_, _, _) -> false
   | syntaxNonterminal(_, _) -> false
   | syntaxProduction(_, _) -> true
+  | _ -> false
   end;
 }
 
@@ -392,6 +435,7 @@ Boolean ::= declaration::Decorated SyntaxDcl
   | syntaxTerminal(_, _, _) -> false
   | syntaxNonterminal(_, _) -> false
   | syntaxProduction(_, _) -> false
+  | _ -> false
   end;
 }
 
