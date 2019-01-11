@@ -91,7 +91,11 @@ top::SyntaxLexerClassModifier ::= acode::String
   <DisambiguationFunction id="disambiguate_${makeCopperName(top.className)}" applicableToSubsets="true">
     <Members>${implode("", map(xmlCopperRef, map(head, trefs)))}</Members>
     <Code><![CDATA[
-common.ConsCell shiftableList = common.Util.bitSetToList(shiftable);
+common.ConsCell tempShiftableList = common.ConsCell.nil;
+for (int i = nextMember(0, shiftable); i >= 0; i = nextMember(i+1, shiftable)) {
+	tempShiftableList = new common.ConsCell(i, tempShiftableList);
+}
+final common.ConsCell shiftableList = tempShiftableList;
 ${acode}
     ]]></Code>
   </DisambiguationFunction>
