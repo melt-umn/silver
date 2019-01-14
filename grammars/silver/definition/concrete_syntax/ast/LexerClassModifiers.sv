@@ -9,13 +9,13 @@ autocopy attribute className :: String;
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, xmlCopper, dominatesXML, submitsXML;
+nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, disambiguationClasses, dominatesXML, submitsXML;
 
 abstract production consLexerClassMod
 top::SyntaxLexerClassModifiers ::= h::SyntaxLexerClassModifier  t::SyntaxLexerClassModifiers
 {
   top.cstErrors := h.cstErrors ++ t.cstErrors;
-  top.xmlCopper = h.xmlCopper ++ t.xmlCopper;
+  top.disambiguationClasses = h.disambiguationClasses ++ t.disambiguationClasses;
   top.dominatesXML = h.dominatesXML ++ t.dominatesXML;
   top.submitsXML = h.submitsXML ++ t.submitsXML;
 }
@@ -24,7 +24,7 @@ abstract production nilLexerClassMod
 top::SyntaxLexerClassModifiers ::= 
 {
   top.cstErrors := [];
-  top.xmlCopper = "";
+  top.disambiguationClasses = [];
   top.dominatesXML = "";
   top.submitsXML = "";
 }
@@ -34,14 +34,14 @@ top::SyntaxLexerClassModifiers ::=
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, xmlCopper, dominatesXML, submitsXML;
+nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, disambiguationClasses, dominatesXML, submitsXML;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
 top::SyntaxLexerClassModifier ::=
 {
   --top.cstErrors := [];
-  top.xmlCopper = "";
+  top.disambiguationClasses = [];
   top.dominatesXML = "";
   top.submitsXML = "";
 }
@@ -85,10 +85,12 @@ top::SyntaxLexerClassModifier ::= acode::String
 {
   production terms :: [String] = searchEnvTree(top.className, top.classTerminals);
   local trefs::[[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
+  
+  production funName::String = s"disambiguate_${makeCopperName(top.className)}";
 
   top.cstErrors := []; -- TODO: Check for duplicate disambiguation for a lexer class
-  top.xmlCopper = s"""
-  <DisambiguationFunction id="disambiguate_${makeCopperName(top.className)}" applicableToSubsets="true">
+  top.disambiguationClasses = [pair(funName, s"""
+  <DisambiguationFunction id="${funName}" applicableToSubsets="true">
     <Members>${implode("", map(xmlCopperRef, map(head, trefs)))}</Members>
     <Code><![CDATA[
 common.ConsCell tempShiftableList = common.ConsCell.nil;
@@ -99,5 +101,5 @@ final common.ConsCell shiftableList = tempShiftableList;
 ${acode}
     ]]></Code>
   </DisambiguationFunction>
-""";
+""")];
 }

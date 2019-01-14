@@ -72,6 +72,10 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
 "    </BridgeProductions>\n" ++
 "    <Declarations>\n" ++
   ext.xmlCopper ++
+-- All disambiguation classes go in the extension grammar for now,
+-- since they reference extension terminals.
+  implode("\n", map(snd, host.disambiguationClasses)) ++
+  implode("\n", map(snd, ext.disambiguationClasses)) ++
 "    </Declarations>\n" ++
 "  </ExtensionGrammar>\n\n" ++
 

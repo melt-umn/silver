@@ -18,6 +18,7 @@ autocopy attribute classTerminals::EnvTree<String>;
 
 synthesized attribute allIgnoreTerminals :: [Decorated SyntaxDcl];
 synthesized attribute allMarkingTerminals :: [Decorated SyntaxDcl];
+synthesized attribute disambiguationClasses :: [Pair<String String>];
 autocopy attribute univLayout :: String;
 synthesized attribute classDomContribs :: String;
 synthesized attribute classSubContribs :: String;
@@ -29,7 +30,7 @@ autocopy attribute prefixesForTerminals :: EnvTree<String>;
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, classTerminalContribs, classTerminals, univLayout, xmlCopper, containingGrammar, prefixesForTerminals;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, univLayout, xmlCopper, containingGrammar, prefixesForTerminals;
 
 abstract production nilSyntax
 top::Syntax ::=
@@ -40,6 +41,7 @@ top::Syntax ::=
   top.cstNormalize = [];
   top.allIgnoreTerminals = [];
   top.allMarkingTerminals = [];
+  top.disambiguationClasses = [];
   top.classTerminalContribs = [];
   top.xmlCopper = "";
 }
@@ -52,6 +54,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   top.cstNormalize = s1.cstNormalize ++ s2.cstNormalize;
   top.allIgnoreTerminals = s1.allIgnoreTerminals ++ s2.allIgnoreTerminals;
   top.allMarkingTerminals = s1.allMarkingTerminals ++ s2.allMarkingTerminals;
+  top.disambiguationClasses = s1.disambiguationClasses ++ s2.disambiguationClasses;
   top.classTerminalContribs = s1.classTerminalContribs ++ s2.classTerminalContribs;
   top.xmlCopper = s1.xmlCopper ++ s2.xmlCopper;
 }
@@ -59,7 +62,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, classTerminalContribs, classTerminals, univLayout, xmlCopper, classDomContribs, classSubContribs, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, univLayout, xmlCopper, classDomContribs, classSubContribs, containingGrammar, prefixesForTerminals;
 
 synthesized attribute sortKey :: String;
 
@@ -69,6 +72,7 @@ top::SyntaxDcl ::=
   top.cstProds = [];
   top.allIgnoreTerminals = [];
   top.allMarkingTerminals = [];
+  top.disambiguationClasses = [];
   top.classTerminalContribs = [];
   top.classDomContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.classSubContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
@@ -280,10 +284,10 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.classSubContribs = modifiers.submitsXML;
 
   top.cstNormalize = [top];
+  top.disambiguationClasses = modifiers.disambiguationClasses;
 
   top.xmlCopper =
-    "  <TerminalClass id=\"" ++ makeCopperName(n) ++ "\" />\n" ++
-    modifiers.xmlCopper;
+    "  <TerminalClass id=\"" ++ makeCopperName(n) ++ "\" />\n";
 }
 
 {--

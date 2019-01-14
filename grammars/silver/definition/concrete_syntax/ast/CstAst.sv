@@ -119,7 +119,11 @@ s"""    <Layout>${univLayout}</Layout>
         <Type><![CDATA[common.DecoratedNode]]></Type>
         <Code><![CDATA[context = common.TopNode.singleton;]]></Code>
       </ParserAttribute>
-       ${s2.xmlCopper}
+      ${s2.xmlCopper}
+""" ++
+-- Disambiguation classes
+s"""
+      ${implode("\n", map(snd, s2.disambiguationClasses))}
     </Declarations>
   </Grammar>
 </CopperSpec>""";
