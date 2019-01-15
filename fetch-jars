@@ -35,6 +35,8 @@ else
   wget -N -P JARS-BAK/ -nv $URLS
   
   # Always overwrite all the files in jars.
-  cp JARS-BAK/*.jar jars/
+  for file in $FILES; do
+      cp JARS-BAK/$file jars/
+  done
 fi
 
