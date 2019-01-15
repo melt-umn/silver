@@ -122,8 +122,8 @@ s"""    <Layout>${univLayout}</Layout>
       ${s2.xmlCopper}
 """ ++
 -- Disambiguation classes
+implode("\n", map((.xmlCopper), s2.disambiguationClasses)) ++
 s"""
-      ${implode("\n", map(snd, s2.disambiguationClasses))}
     </Declarations>
   </Grammar>
 </CopperSpec>""";

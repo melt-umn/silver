@@ -9,7 +9,7 @@ autocopy attribute className :: String;
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, disambiguationClasses, dominatesXML, submitsXML;
+nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, disambiguationClasses, dominatesXML, submitsXML, containingGrammar;
 
 abstract production consLexerClassMod
 top::SyntaxLexerClassModifiers ::= h::SyntaxLexerClassModifier  t::SyntaxLexerClassModifiers
@@ -34,7 +34,7 @@ top::SyntaxLexerClassModifiers ::=
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, disambiguationClasses, dominatesXML, submitsXML;
+nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, disambiguationClasses, dominatesXML, submitsXML, containingGrammar;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
@@ -84,22 +84,21 @@ abstract production lexerClassDisambiguate
 top::SyntaxLexerClassModifier ::= acode::String
 {
   production terms :: [String] = searchEnvTree(top.className, top.classTerminals);
-  local trefs::[[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
-  
   production funName::String = s"disambiguate_${makeCopperName(top.className)}";
-
-  top.cstErrors := []; -- TODO: Check for duplicate disambiguation for a lexer class
-  top.disambiguationClasses = [pair(funName, s"""
-  <DisambiguationFunction id="${funName}" applicableToSubsets="true">
-    <Members>${implode("", map(xmlCopperRef, map(head, trefs)))}</Members>
-    <Code><![CDATA[
+  
+  production syntaxDcl::SyntaxDcl =
+    syntaxDisambiguationGroup(funName, terms, true, s"""
 common.ConsCell tempShiftableList = common.ConsCell.nil;
 for (int i = nextMember(0, shiftable); i >= 0; i = nextMember(i+1, shiftable)) {
 	tempShiftableList = new common.ConsCell(i, tempShiftableList);
 }
 final common.ConsCell shiftableList = tempShiftableList;
 ${acode}
-    ]]></Code>
-  </DisambiguationFunction>
-""")];
+""");
+  -- TODO: Figure out the actual flowtype here
+  syntaxDcl.cstEnv = top.cstEnv;
+  syntaxDcl.containingGrammar = top.containingGrammar;
+
+  top.cstErrors := []; -- TODO: Check for duplicate disambiguation for a lexer class
+  top.disambiguationClasses = [syntaxDcl];
 }

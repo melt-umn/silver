@@ -18,7 +18,7 @@ autocopy attribute classTerminals::EnvTree<String>;
 
 synthesized attribute allIgnoreTerminals :: [Decorated SyntaxDcl];
 synthesized attribute allMarkingTerminals :: [Decorated SyntaxDcl];
-synthesized attribute disambiguationClasses :: [Pair<String String>];
+synthesized attribute disambiguationClasses :: [Decorated SyntaxDcl];
 autocopy attribute univLayout :: String;
 synthesized attribute classDomContribs :: String;
 synthesized attribute classSubContribs :: String;
@@ -320,7 +320,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
  - The acode distinguished between the listed terminals.
  -}
 abstract production syntaxDisambiguationGroup
-top::SyntaxDcl ::= n::String terms::[String] acode::String
+top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode::String
 {
   top.sortKey = "DDD" ++ n;
   top.cstDcls = [];
@@ -338,7 +338,7 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
   top.cstNormalize = [top];
 
   top.xmlCopper =
-    "  <DisambiguationFunction id=\"" ++ makeCopperName(n) ++ "\">\n" ++
+    "  <DisambiguationFunction id=\"" ++ makeCopperName(n) ++ "\" applicableToSubsets=\"" ++ toString(applicableToSubsets) ++ "\">\n" ++
     "    <Members>" ++ implode("", map(xmlCopperRef, map(head, trefs))) ++ "</Members>\n" ++
     "    <Code><![CDATA[\n" ++
     acode ++
@@ -368,6 +368,7 @@ String ::= d::Decorated SyntaxDcl
   | syntaxTerminal(n, _, _) -> "<TerminalRef id=\"" ++ makeCopperName(n) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   | syntaxNonterminal(n, _) -> "<NonterminalRef id=\"" ++ makeCopperName(n.typeName) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   | syntaxProduction(ns, _) -> "<ProductionRef id=\"" ++ makeCopperName(ns.fullName) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
+  | syntaxDisambiguationGroup(n, _, _, _) -> "<DisambiguationFunctionRef id=\"" ++ makeCopperName(n) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   end;
 }
 

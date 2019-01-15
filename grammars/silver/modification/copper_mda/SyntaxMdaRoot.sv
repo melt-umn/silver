@@ -70,12 +70,22 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
 "    <BridgeProductions>\n" ++
   implode("", map(xmlCopperRef, ext.bridgeProductions)) ++
 "    </BridgeProductions>\n" ++
+"    <GlueDisambiguationFunctions>\n" ++
+  -- TODO: Workaround hack since host disambiguation functions are moved
+  -- to the extension grammar.
+  implode("",
+    map(xmlCopperRef,
+      map(
+        \ d::Decorated SyntaxDcl -> decorate new(d) with {containingGrammar = "ext";},
+        host.disambiguationClasses))) ++
+  implode("", map(xmlCopperRef, ext.disambiguationClasses)) ++
+"    </GlueDisambiguationFunctions>\n" ++
 "    <Declarations>\n" ++
   ext.xmlCopper ++
 -- All disambiguation classes go in the extension grammar for now,
 -- since they reference extension terminals.
-  implode("\n", map(snd, host.disambiguationClasses)) ++
-  implode("\n", map(snd, ext.disambiguationClasses)) ++
+  implode("\n", map((.xmlCopper), host.disambiguationClasses)) ++
+  implode("\n", map((.xmlCopper), ext.disambiguationClasses)) ++
 "    </Declarations>\n" ++
 "  </ExtensionGrammar>\n\n" ++
 
