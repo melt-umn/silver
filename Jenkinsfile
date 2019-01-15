@@ -58,6 +58,12 @@ melt.trynode('silver') {
         }
       }
     }
+    // If requested, go download the latest Copper jars and use them instead of the archived/provided ones
+    if (params.FETCH_COPPER_JARS) {
+      echo "Fetching lastest Copper jars"
+      melt.annotate("Fetched Copper jars.")
+      sh "./fetch-jars --copper"
+    }
     // Build
     sh "./deep-rebuild"
     // Clean (but leave generated files)
