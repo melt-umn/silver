@@ -138,7 +138,6 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     "    <Regex>" ++ regex.xmlCopper ++ "</Regex>\n" ++
     (if modifiers.opPrecedence.isJust || modifiers.opAssociation.isJust then
     "    <Operator>\n" ++
---    "      <Class><OperatorClassRef id=\"main\"/></Class>\n" ++
     "      <Precedence>" ++ toString(fromMaybe(0, modifiers.opPrecedence)) ++ "</Precedence>\n" ++
     "      " ++ convertAssocNXML(modifiers.opAssociation) ++ "\n" ++ -- TODO
     "    </Operator>\n"
