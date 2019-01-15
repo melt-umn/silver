@@ -15,7 +15,9 @@ fi
 mkdir -p jars
 
 if [ -d $LOCAL_STORE ]; then
-  cp $LOCAL_STORE/*.jar jars/
+  for file in $FILES; do
+      cp LOCAL_STORE/$file jars/
+  done
 else
   # There's probably a better way to do this!
   # Using -r causes lots of pointless downloads of variations of the index.html
