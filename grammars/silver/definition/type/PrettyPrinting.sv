@@ -61,6 +61,12 @@ top::Type ::=
   top.typepp = "String";
 }
 
+aspect production terminalIdType
+top::Type ::=
+{
+  top.typepp = "TerminalId";
+}
+
 aspect production nonterminalType
 top::Type ::= fn::String params::[Type]
 {

@@ -1,6 +1,7 @@
 grammar silver:definition:core;
 
 import silver:definition:regex;  -- soley for Terms. TODO : fix?
+import silver:modification:copper only terminalIdReference;
 
 {--
  - The production a variable reference should forward to for this type of value
@@ -129,3 +130,8 @@ top::DclInfo ::= sg::String sl::Location ty::Type
   top.defLHSDispatcher = forwardDefLHS(_, location=_);
 }
 
+aspect production termDcl
+top::DclInfo ::= sg::String sl::Location fn::String regex::Regex
+{
+  top.refDispatcher = terminalIdReference(_, location=_);
+}

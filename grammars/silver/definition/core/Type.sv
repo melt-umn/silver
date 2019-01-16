@@ -66,6 +66,13 @@ top::Type ::=
   top.appendDispatcher = stringPlusPlus(_, _, location=_);
 }
 
+aspect production terminalIdType
+top::Type ::=
+{
+  top.instanceEq = true;
+  top.instanceOrd = true;
+}
+
 aspect production nonterminalType
 top::Type ::= fn::String params::[Type]
 {

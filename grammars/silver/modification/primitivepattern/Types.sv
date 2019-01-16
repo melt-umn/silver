@@ -144,6 +144,16 @@ top::Type ::=
     end;
 }
 
+aspect production terminalIdType
+top::Type ::=
+{
+  top.refine = 
+    case top.refineWith of
+    | terminalIdType() -> emptySubst()
+    | _ -> errorSubst("Tried to refine TerminalId with " ++ prettyType(top.refineWith))
+    end;
+}
+
 aspect production nonterminalType
 top::Type ::= fn::String params::[Type]
 {

@@ -614,6 +614,13 @@ top::Expr ::= q::Decorated QName
   top.flowDefs = [];
 }
 
+aspect production terminalIdReference
+top::Expr ::= q::Decorated QName
+{
+  top.flowDeps = [];
+  top.flowDefs = [];
+}
+
 aspect production parserAttributeReference
 top::Expr ::= q::Decorated QName
 {

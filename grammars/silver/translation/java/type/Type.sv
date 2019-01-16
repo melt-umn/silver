@@ -80,6 +80,15 @@ top::Type ::=
   top.transFreshTypeRep = top.transTypeRep;
 }
 
+aspect production terminalIdType
+top::Type ::=
+{
+  top.transType = "Integer";
+  top.transClassType = "Integer";
+  top.transTypeRep = "new common.BaseTypeRep(\"TerminalId\")";
+  top.transFreshTypeRep = top.transTypeRep;
+}
+
 aspect production nonterminalType
 top::Type ::= fn::String params::[Type]
 {

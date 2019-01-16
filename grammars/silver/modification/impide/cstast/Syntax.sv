@@ -58,7 +58,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
 }
 
 aspect production syntaxDisambiguationGroup
-top::SyntaxDcl ::= n::String terms::[String] acode::String
+top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode::String
 {
 }
 

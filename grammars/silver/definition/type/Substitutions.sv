@@ -170,6 +170,13 @@ top::Type ::=
   top.flatRenamed = top;
 }
 
+aspect production terminalIdType
+top::Type ::=
+{
+  top.substituted = top;
+  top.flatRenamed = top;
+}
+
 aspect production nonterminalType
 top::Type ::= fn::String params::[Type]
 {

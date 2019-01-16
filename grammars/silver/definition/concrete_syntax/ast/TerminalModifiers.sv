@@ -14,7 +14,7 @@ autocopy attribute terminalName :: String;
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, dominatesXML,
+nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, classTerminalContribs, dominatesXML,
   submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation,
   marking, terminalName, prettyName;
 
@@ -22,6 +22,7 @@ abstract production consTerminalMod
 top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalModifiers
 {
   top.cstErrors := h.cstErrors ++ t.cstErrors;
+  top.classTerminalContribs = h.classTerminalContribs ++ t.classTerminalContribs;
   top.dominatesXML = h.dominatesXML ++ t.dominatesXML;
   top.submitsXML = h.submitsXML ++ t.submitsXML;
   top.lexerclassesXML = h.lexerclassesXML ++ t.lexerclassesXML;
@@ -37,6 +38,7 @@ abstract production nilTerminalMod
 top::SyntaxTerminalModifiers ::= 
 {
   top.cstErrors := [];
+  top.classTerminalContribs = [];
   top.dominatesXML = "";
   top.submitsXML = "";
   top.lexerclassesXML = "";
@@ -53,7 +55,7 @@ top::SyntaxTerminalModifiers ::=
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, dominatesXML,
+nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, classTerminalContribs, dominatesXML,
   submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation,
   marking, terminalName, prettyName;
 
@@ -62,6 +64,7 @@ aspect default production
 top::SyntaxTerminalModifier ::=
 {
   top.cstErrors := [];
+  top.classTerminalContribs = [];
   top.dominatesXML = "";
   top.submitsXML = "";
   top.lexerclassesXML = "";
@@ -129,6 +132,7 @@ top::SyntaxTerminalModifier ::= cls::[String]
                      else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from lexer class on terminal " ++ top.terminalName ++")"], 
                    zipWith(pair, cls, clsRefsL)); 
+  top.classTerminalContribs = map(pair(_, top.terminalName), cls);
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
   top.dominatesXML = implode("", map((.classDomContribs), clsRefs));
   top.submitsXML = implode("", map((.classSubContribs), clsRefs));

@@ -1,5 +1,7 @@
 grammar silver:modification:copper;
 
+import silver:extension:list;
+
 --------------------------------------------------------------------------------
 -- Defs.sv
 
@@ -127,6 +129,8 @@ top::QName ::= id::Name ':' qn::QName
 
 global i_lexemeVariable :: [Def] =
   [termAttrValueDef("DBGtav", bogusLoc(), "lexeme", stringType())];
+global i_shiftableVariable :: [Def] =
+  [termAttrValueDef("DBGtav", bogusLoc(), "shiftable", listType(terminalIdType()))];
 global i_locVariables :: [Def] = [
   termAttrValueDef("DBGtav", bogusLoc(), "filename", stringType()),
   termAttrValueDef("DBGtav", bogusLoc(), "line", intType()),
@@ -135,4 +139,5 @@ global i_locVariables :: [Def] = [
 global terminalActionVars :: [Def] = i_lexemeVariable ++ i_locVariables;
 global productionActionVars :: [Def] = i_locVariables;
 global disambiguationActionVars :: [Def] = i_lexemeVariable;
+global disambiguationClassActionVars :: [Def] = i_lexemeVariable ++ i_shiftableVariable;
 
