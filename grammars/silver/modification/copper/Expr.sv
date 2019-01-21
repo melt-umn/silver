@@ -23,6 +23,7 @@ top::Expr ::= q::Decorated QName
   top.errors := []; -- Should only be referenceable from a context where its valid.
 
   -- We... don't actually have a type we can use here TODO. Maybe we could cheat with a skolem type?
+  -- Or maybe these should just be TerminalId, see below.
   top.typerep = freshType();
   
   top.translation = makeCopperName(q.lookupValue.fullName); -- Value right here?
@@ -63,7 +64,8 @@ top::Expr ::= q::Decorated QName
 
   top.typerep = q.lookupValue.typerep;
 
-  top.translation = makeCopperName(q.lookupValue.fullName);
+  top.translation =
+    s"""(${makeCopperName(q.lookupValue.fullName)} == null? common.Util.error("Uninitialized parser attribute ${q.name}") : ${makeCopperName(q.lookupValue.fullName)})""";
   top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
