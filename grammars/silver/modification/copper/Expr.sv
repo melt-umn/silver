@@ -9,7 +9,7 @@ top::Expr ::= q::Decorated QName
 
   top.typerep = q.lookupValue.typerep;
 
-  top.translation = "((" ++ q.lookupValue.typerep.transType ++ ")((common.Node)RESULTfinal).getChild(" ++ top.frame.className ++ ".i_" ++ q.lookupValue.fullName ++ "))";
+  top.translation = "((" ++ top.typerep.transType ++ ")((common.Node)RESULTfinal).getChild(" ++ top.frame.className ++ ".i_" ++ q.lookupValue.fullName ++ "))";
   top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
@@ -65,7 +65,7 @@ top::Expr ::= q::Decorated QName
   top.typerep = q.lookupValue.typerep;
 
   top.translation =
-    s"""(${makeCopperName(q.lookupValue.fullName)} == null? common.Util.error("Uninitialized parser attribute ${q.name}") : ${makeCopperName(q.lookupValue.fullName)})""";
+    s"""(${makeCopperName(q.lookupValue.fullName)} == null? (${top.typerep.transType})common.Util.error("Uninitialized parser attribute ${q.name}") : ${makeCopperName(q.lookupValue.fullName)})""";
   top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
