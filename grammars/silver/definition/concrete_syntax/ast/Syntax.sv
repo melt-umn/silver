@@ -16,6 +16,10 @@ synthesized attribute cstNormalize :: [SyntaxDcl];
 synthesized attribute classTerminalContribs::[Pair<String String>];
 autocopy attribute classTerminals::EnvTree<String>;
 
+-- Parser attribute action code aspects
+synthesized attribute parserAttributeAspectContribs::[Pair<String String>];
+autocopy attribute parserAttributeAspects::EnvTree<String>;
+
 synthesized attribute allIgnoreTerminals :: [Decorated SyntaxDcl];
 synthesized attribute allMarkingTerminals :: [Decorated SyntaxDcl];
 synthesized attribute disambiguationClasses :: [Decorated SyntaxDcl];
@@ -30,7 +34,7 @@ autocopy attribute prefixesForTerminals :: EnvTree<String>;
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, univLayout, xmlCopper, containingGrammar, prefixesForTerminals;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, parserAttributeAspectContribs, parserAttributeAspects, univLayout, xmlCopper, containingGrammar, prefixesForTerminals;
 
 abstract production nilSyntax
 top::Syntax ::=
@@ -43,6 +47,7 @@ top::Syntax ::=
   top.allMarkingTerminals = [];
   top.disambiguationClasses = [];
   top.classTerminalContribs = [];
+  top.parserAttributeAspectContribs = [];
   top.xmlCopper = "";
 }
 abstract production consSyntax
@@ -56,13 +61,14 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   top.allMarkingTerminals = s1.allMarkingTerminals ++ s2.allMarkingTerminals;
   top.disambiguationClasses = s1.disambiguationClasses ++ s2.disambiguationClasses;
   top.classTerminalContribs = s1.classTerminalContribs ++ s2.classTerminalContribs;
+  top.parserAttributeAspectContribs = s1.parserAttributeAspectContribs ++ s2.parserAttributeAspectContribs;
   top.xmlCopper = s1.xmlCopper ++ s2.xmlCopper;
 }
 
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, univLayout, xmlCopper, classDomContribs, classSubContribs, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, parserAttributeAspectContribs, parserAttributeAspects, univLayout, xmlCopper, classDomContribs, classSubContribs, containingGrammar, prefixesForTerminals;
 
 synthesized attribute sortKey :: String;
 
@@ -74,6 +80,7 @@ top::SyntaxDcl ::=
   top.allMarkingTerminals = [];
   top.disambiguationClasses = [];
   top.classTerminalContribs = [];
+  top.parserAttributeAspectContribs = [];
   top.classDomContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.classSubContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
 }
@@ -307,11 +314,31 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
     "    <Type><![CDATA[" ++ ty.transType ++ "]]></Type>\n" ++
     "    <Code><![CDATA[\n" ++
       acode ++
+      implode("\n", searchEnvTree(n, top.parserAttributeAspects)) ++
     "]]></Code>\n" ++
     "  </ParserAttribute>\n";
 
   -- TODO: technically, there should be no free variables in ty.
   ty.boundVariables = [];
+}
+
+{--
+ - Additonal action code that should be added to the initialization of
+ - a parser attribute. 
+ -}
+abstract production syntaxParserAttributeAspect
+top::SyntaxDcl ::= n::String acode::String
+{
+  top.sortKey = "BBB" ++ n;
+  top.cstDcls = [];
+  top.cstErrors :=
+    if !null(searchEnvTree(n, top.cstEnv)) then []
+    else ["Parser attribute " ++ n ++ " was referenced but this grammar was not included in this parser."];
+
+  top.cstNormalize = [top];
+
+  top.parserAttributeAspectContribs = [pair(n, acode)];
+  top.xmlCopper = "";
 }
 
 {--
