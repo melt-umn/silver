@@ -7,17 +7,14 @@ imports silver:definition:concrete_syntax;
 imports silver:definition:concrete_syntax:ast;
 imports silver:definition:regex;
 
+{-- Throughout the code the following abbreviations mean
+  ts : Treesitter
+--}
+
 synthesized attribute highlighting_lexer_class :: String;
 attribute highlighting_lexer_class occurs on SyntaxTerminalModifiers, SyntaxTerminalModifier;
 
 synthesized attribute ts_lhs :: String occurs on SyntaxDcl;
-synthesized attribute ts_prec_assoc_entry :: Pair<String Pair<Integer String>> occurs on SyntaxDcl;
-synthesized attribute ts_terminal_regex :: String occurs on SyntaxDcl;
-synthesized attribute ts_production_inputs :: [String] occurs on SyntaxDcl;
-synthesized attribute ts_nonterminal_rules_rhs :: [[String]];
-attribute ts_nonterminal_rules_rhs occurs on Syntax, SyntaxDcl;
-synthesized attribute atom_scope :: String occurs on SyntaxDcl;
-
 {--
   info for precedence and associativity of terminals for treesitter. This exists
   because we need to transfer precedence of terminals such as '+' to rules that
@@ -30,12 +27,23 @@ synthesized attribute atom_scope :: String occurs on SyntaxDcl;
   'left', 'right', 'none' so the above example would be
     ("Plus_t", (3, "left"))
 --}
+synthesized attribute ts_prec_assoc_entry :: Pair<String Pair<Integer String>> occurs on SyntaxDcl;
+synthesized attribute ts_terminal_regex :: String occurs on SyntaxDcl;
+-- the list of treesitter strings for production inputs
+synthesized attribute ts_production_inputs :: [String] occurs on SyntaxDcl;
+-- the list of productions that can be used to create a nonterminal
+synthesized attribute ts_nonterminal_rules_rhs :: [[String]];
+attribute ts_nonterminal_rules_rhs occurs on Syntax, SyntaxDcl;
+synthesized attribute atom_scope :: String occurs on SyntaxDcl;
+
+-- A list of ts_prec_assoc_entrys
 synthesized attribute ts_prec_assoc_env :: [Pair<String Pair<Integer String>>] occurs on Syntax;
 synthesized attribute ts_extras :: String occurs on Syntax;
 synthesized attribute ts_terminal_rules :: String occurs on Syntax;
 synthesized attribute ts_nonterminal_rules :: [Pair<String [[String]]>] occurs on Syntax;
 synthesized attribute atom_scopes :: [String] occurs on Syntax;
 
+{-- ATOM HIGHLIGHTING LEXER CLASSES --}
 lexer class atom_comment;
 lexer class atom_comment_line;
 lexer class atom_comment_line_doubleSlash;
@@ -114,87 +122,7 @@ lexer class atom_variable_parameter;
 lexer class atom_variable_language;
 lexer class atom_variable_other;
 
-function nonterminal_to_TS_string
-String ::= env::[Pair<String Pair<Integer String>>] nt::Pair<String [[String]]>
-{
-  return nt.fst ++ ": $ => " ++ nonterminal_RHS_to_TS_string(env, nt.snd);
-}
-
-function nonterminal_RHS_to_TS_string
-String ::= env::[Pair<String Pair<Integer String>>] nonterminalRHS::[[String]]
-{
-  return 
-    if length(nonterminalRHS) > 1 then
-      "choice(" ++ productions_to_TS_string(env, nonterminalRHS) ++ ")"
-    else
-      productions_to_TS_string(env, nonterminalRHS);
-}
-
-function productions_to_TS_string
-String ::= env::[Pair<String Pair<Integer String>>] nonterminalProds::[[String]]
-{
-  return implode(", ", map(production_to_TS_string(env, _), nonterminalProds));
-}
-
-function production_to_TS_string
-String ::= env::[Pair<String Pair<Integer String>>] prod_inputs::[String]
-{
-  local attribute prec_assoc_info :: Maybe<Pair<Integer String>> =
-    dictionaryLookupList(stringEq, env, map(treeSitterIdentifierToDeclaration, prod_inputs));
-  return 
-    if prec_assoc_info.isJust then
-      get_prec_assoc_info_as_TS_string(prec_assoc_info.fromJust) ++
-      production_input_list_to_string(prod_inputs) ++ ")"
-    else 
-      production_input_list_to_string(prod_inputs);
-}
-
-function get_prec_assoc_info_as_TS_string
-String ::= info::Pair<Integer String>
-{
-  -- both precedence and associativity specified
-  return 
-  if info.fst != 0 && !stringEq(info.snd, "none") then
-    s"""prec.${info.snd}(${toString(info.fst)}, """
-  -- only precedence specified
-  else if (info.fst != 0) then
-    s"""prec(${toString(info.fst)}, """
-  --only associativity specified
-  else
-    s"""prec.${info.snd}(""";
-}
-
-function production_input_list_to_string
-String ::= prod_inputs::[String]
-{
-  return 
-  if length(prod_inputs) > 1 then
-    "seq(" ++ implode(", ", prod_inputs) ++ ")"
-  else
-    head(prod_inputs);
-}
-
-function dictionaryLookupList
-Maybe<b> ::= eq::(Boolean ::= a a) dict::[Pair<a b>] keyList::[a]
-{
-  return 
-  if null(keyList) then nothing()
-  else
-    orElse(dictionaryLookup(eq, dict, head(keyList)), dictionaryLookupList(eq, dict, tail(keyList)));
-}
-
-
-function dictionaryLookup
-Maybe<b> ::= eq::(Boolean ::= a a) dict::[Pair<a b>] key::a
-{
-  return 
-    if null(dict) then 
-      nothing()
-    else if eq(head(dict).fst, key) then 
-      just(head(dict).snd)
-    else 
-      dictionaryLookup(eq, tail(dict), key);
-}
+{-- ASPECT PRODUCTIONS --}
 
 aspect production cstRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
@@ -212,7 +140,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   -- partition the grammar rules so that the start nonterminal is the first rule
   -- listed in the tree-sitter grammar as needed.
   local attribute nonterminals_split :: Pair<[String] [String]> =
-    partition(isStartNonTerminalRule(toTreeSitterDeclaration(startnt), _), nonterminal_rules);
+    partition(isStartNonTerminalRule(toTsDeclaration(startnt), _), nonterminal_rules);
   local attribute start_rule :: [String] = nonterminals_split.fst;
   local attribute rest_rules :: [String] = nonterminals_split.snd;
 
@@ -259,6 +187,7 @@ Boolean ::= startnt::String rule::String
   return startsWith(startnt, rule);
 }
 
+{-- SYNTAX PRODUCTIONS --}
 aspect production nilSyntax
 top::Syntax ::=
 {
@@ -275,7 +204,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {
   -- consider an inherited attribute as the string used instead of "\n"
   -- six spaces of indentation after newline
-  top.ts_prec_assoc_env = 
+  top.ts_prec_assoc_env =
     if (hasUsefulPrecAssocInfo(s1.ts_prec_assoc_entry.snd)) then
       cons(s1.ts_prec_assoc_entry, s2.ts_prec_assoc_env)
     else
@@ -305,7 +234,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 
   top.ts_extras =
     if (isIgnoreTerminal(s1)) then
-      treeSitterDeclarationToIdentifier(s1.ts_lhs) ++ ",\n    " ++ s2.ts_extras
+      TsDeclarationToIdentifier(s1.ts_lhs) ++ ",\n    " ++ s2.ts_extras
     else
       s2.ts_extras;
 
@@ -316,6 +245,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
       s2.atom_scopes;
 }
 
+{-- SYNTAX DCL PRODUCTIONS --}
 aspect production syntaxNonterminal
 top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifiers
 {
@@ -326,7 +256,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifie
   top.atom_scope = "";
 
   -- relevant attributes
-  top.ts_lhs = toTreeSitterDeclaration(t.typeName);
+  top.ts_lhs = toTsDeclaration(t.typeName);
   top.ts_nonterminal_rules_rhs = subdcls.ts_nonterminal_rules_rhs;
 }
 
@@ -338,11 +268,11 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.ts_nonterminal_rules_rhs = [];
 
   -- relevant attributes
-  local attribute treesitter_name :: String = toTreeSitterDeclaration(n);
+  local attribute treesitter_name :: String = toTsDeclaration(n);
   top.ts_lhs =
     -- if we can add a leading _ to not put ignore terminals in the syntax tree that do not need to be there
     if modifiers.ignored && modifiers.highlighting_lexer_class == "" then
-      toTreeSitterIgnoreDeclaration(n)
+      toTsIgnoreDeclaration(n)
     else
       treesitter_name;
   top.ts_terminal_regex = s"""/${regex.regString}/""";
@@ -352,21 +282,6 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
       ""
     else
       s"""'${treesitter_name}': '${toAtomScope(modifiers.highlighting_lexer_class)}.${treesitter_name}'""";
-}
-
--- creates a pair of the precedence and associativity from the terminal modifiers
-function getPrecAssocInfo
-Pair<Integer String> ::= modifiers::SyntaxTerminalModifiers
-{
-  return
-  if (modifiers.opAssociation.isJust && modifiers.opPrecedence.isJust) then
-    pair(modifiers.opPrecedence.fromJust, modifiers.opAssociation.fromJust)
-  else if modifiers.opAssociation.isJust then -- no precedence specified
-    pair(0, modifiers.opAssociation.fromJust)
-  else if modifiers.opPrecedence.isJust then -- no associativity specified
-    pair(modifiers.opPrecedence.fromJust, "none")
-  else  -- no precedence or associativity specified
-    pair(0, "none");
 }
 
 aspect production syntaxProduction
@@ -379,7 +294,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.ts_prec_assoc_entry = pair("", pair(0, "none"));
 
   -- relevant attributes
-  top.ts_lhs = toTreeSitterDeclaration(ns.outputElement.typerep.typeName);
+  top.ts_lhs = toTsDeclaration(ns.outputElement.typerep.typeName);
   top.ts_production_inputs = map(getProductionName, ns.inputElements);
 }
 
@@ -395,6 +310,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.atom_scope = "";
 }
 
+{-- SYNTAX TERMINAL MODIFIERS PRODUCTIONS --}
 aspect production nilTerminalMod
 top::SyntaxTerminalModifiers ::=
 {
@@ -446,57 +362,112 @@ top::SyntaxRoot ::=
   top.csonAtomPackage = error("Shouldn't happen");
 }
 
-function toTreeSitterDeclaration
-String ::= str::String
+{-- To Treesitter Strings Functions --}
+{--
+  Transforms a nonterminal represented as a pair(LHS, RHS) to a treesitter
+  string representing the nonterminal using the precedence and associativity
+  environment.
+--}
+function nonterminal_to_TS_string
+String ::= env::[Pair<String Pair<Integer String>>] nt::Pair<String [[String]]>
 {
-  return substitute(":", "_", str);
+  return nt.fst ++ ": $ => " ++ nonterminal_RHS_to_TS_string(env, nt.snd);
 }
 
-{-- To cause terminals or nonterminals to not appear in the parse tree
-  generated by tree sitter, they must begin with an _.
-  TODO: switch name and context this function is used in since we may not always want to have ignore terminals not appear in syntax tree
--}
-function toTreeSitterIgnoreDeclaration
-String ::= str::String
+{--
+  Transforms the right hand side of a nonterminal to a treesitter string.
+--}
+function nonterminal_RHS_to_TS_string
+String ::= env::[Pair<String Pair<Integer String>>] nonterminalRHS::[[String]]
 {
-  return "_" ++ toTreeSitterDeclaration(str);
+  return
+    if length(nonterminalRHS) > 1 then
+      "choice(" ++ productions_to_TS_string(env, nonterminalRHS) ++ ")"
+    else
+      productions_to_TS_string(env, nonterminalRHS);
+}
+{--
+  Transforms the productions that make up a nonterminal into a string
+--}
+function productions_to_TS_string
+String ::= env::[Pair<String Pair<Integer String>>] nonterminalProds::[[String]]
+{
+  return implode(",\n ", map(production_to_TS_string(env, _), nonterminalProds));
 }
 
-{-- When identifying a tree sitter terminal or nonterminal it must be begin with
-  $.
--}
-function toTreeSitterIdentifier
-String ::= str::String
+{--
+  Transforms a production into a treesitter string using the precedence and
+  associativity environment
+--}
+function production_to_TS_string
+String ::= env::[Pair<String Pair<Integer String>>] prod_inputs::[String]
 {
-  return "$." ++ substitute(":", "_", str);
+  local attribute prec_assoc_info :: Maybe<Pair<Integer String>> =
+    dictionaryLookupList(stringEq, env, map(TsIdentifierToDeclaration, prod_inputs));
+  return
+    if prec_assoc_info.isJust then
+      prec_assoc_info_as_TS_string(prec_assoc_info.fromJust) ++
+      production_input_list_to_string(prod_inputs) ++
+      ")" -- closing paren from the precedence
+    else
+      production_input_list_to_string(prod_inputs);
 }
 
-function toAtomScope
-String ::= str::String
+{--
+  Transforms the precedence and associativity info into a string that can be
+  used by treesitter.
+--}
+function prec_assoc_info_as_TS_string
+String ::= info::Pair<Integer String>
 {
-  -- replaces all _ with . and all camel camel case words with a dash and lowercase
-  -- i.e. helloWorld_2 becomes hello-world.2
-  return toLowerCase(substituteRegex("[A-Z]","-$0",substitute("_", ".", str)));
+  -- both precedence and associativity specified
+  return
+  if info.fst != 0 && !stringEq(info.snd, "none") then
+    s"""prec.${info.snd}(${toString(info.fst)}, """
+  -- only precedence specified
+  else if (info.fst != 0) then
+    s"""prec(${toString(info.fst)}, """
+  --only associativity specified
+  else
+    s"""prec.${info.snd}(""";
+}
+{--
+  Transforms the production input list into a treesitter string
+--}
+function production_input_list_to_string
+String ::= prod_inputs::[String]
+{
+  return
+  if length(prod_inputs) > 1 then
+    "seq(" ++ implode(", ", prod_inputs) ++ ")"
+  else
+    head(prod_inputs);
 }
 
-function treeSitterDeclarationToIdentifier
-String ::= str::String
+{-- GETTER FUNCTIONS --}
+-- creates a pair of the precedence and associativity from the terminal modifiers
+function getPrecAssocInfo
+Pair<Integer String> ::= modifiers::SyntaxTerminalModifiers
 {
-  return "$." ++ str;
+  return
+  if (modifiers.opAssociation.isJust && modifiers.opPrecedence.isJust) then
+    pair(modifiers.opPrecedence.fromJust, modifiers.opAssociation.fromJust)
+  else if modifiers.opAssociation.isJust then -- no precedence specified
+    pair(0, modifiers.opAssociation.fromJust)
+  else if modifiers.opPrecedence.isJust then -- no associativity specified
+    pair(modifiers.opPrecedence.fromJust, "none")
+  else  -- no precedence or associativity specified
+    pair(0, "none");
 }
 
-function treeSitterIdentifierToDeclaration
-String ::= str::String
+function getProductionName
+String ::= prod::NamedSignatureElement
 {
-  -- remove the $.
-  return substring(2, length(str), str);
+  return toTsIdentifier(prod.typerep.typeName);
 }
 
-function hasUsefulPrecAssocInfo
-Boolean ::= info::Pair<Integer String>
-{
-  return info.fst != 0 || info.snd != "none";
-}
+
+{-- IS/HAS FUNCTIONS --}
 
 function isTerminal
 Boolean ::= declaration::Decorated SyntaxDcl
@@ -558,16 +529,65 @@ Boolean ::= declaration::Decorated SyntaxDcl
   end;
 }
 
-function getProductionName
-String ::= prod::NamedSignatureElement
-{
-  return toTreeSitterIdentifier(prod.typerep.typeName);
-}
-
 function isAtomHighlightingLexerClass
 Boolean ::= str::String
 {
   return startsWith("silver:extension:treesitter:atom_", str);
+}
+
+function hasUsefulPrecAssocInfo
+Boolean ::= info::Pair<Integer String>
+{
+  return info.fst != 0 || info.snd != "none";
+}
+
+{-- TREESITTER SPECIFIC STRING MANIPULATION FUNCTIONS --}
+
+{-- Transform a string in Silver/Copper to a treesitter string --}
+function toTsDeclaration
+String ::= str::String
+{
+  return substitute(":", "_", str);
+}
+
+{-- To cause terminals or nonterminals to not appear in the parse tree
+  generated by tree sitter, they must begin with an _.
+  TODO: switch name and context this function is used in since we may not always want to have ignore terminals not appear in syntax tree
+-}
+function toTsIgnoreDeclaration
+String ::= str::String
+{
+  return "_" ++ toTsDeclaration(str);
+}
+
+{-- When identifying a tree sitter terminal or nonterminal it must be begin with
+  $.
+-}
+function toTsIdentifier
+String ::= str::String
+{
+  return "$." ++ substitute(":", "_", str);
+}
+
+function toAtomScope
+String ::= str::String
+{
+  -- replaces all _ with . and all camel camel case words with a dash and lowercase
+  -- i.e. helloWorld_2 becomes hello-world.2
+  return toLowerCase(substituteRegex("[A-Z]","-$0",substitute("_", ".", str)));
+}
+
+function TsDeclarationToIdentifier
+String ::= str::String
+{
+  return "$." ++ str;
+}
+
+function TsIdentifierToDeclaration
+String ::= str::String
+{
+  -- remove the $.
+  return substring(2, length(str), str);
 }
 
 function stripAtomLexerClassPrefix
@@ -575,6 +595,8 @@ String ::= str::String
 {
   return substring(33, length(str), str);
 }
+
+{-- GENERAL PURPOSE STRING MANIPULATION FUNCTIONS --}
 
 {--
  - Replaces all instances matching the 'regex' with 'replace' in 'str'
@@ -604,4 +626,36 @@ String ::= str::String
   return error("Not Yet Implemented: toLowerCase");
 } foreign {
   "java" : return "new common.StringCatter(%str%.toString().toLowerCase())";
+}
+
+{--
+  Returns the value associated with a key from the key list. It returns the
+  first match found by the earliest key in the key list. If no key matches
+  then nothing is returned.
+--}
+function dictionaryLookupList
+Maybe<b> ::= eq::(Boolean ::= a a) dict::[Pair<a b>] keyList::[a]
+{
+  return
+  if null(keyList) then nothing()
+  else
+    orElse(dictionaryLookup(eq, dict, head(keyList)), dictionaryLookupList(eq, dict, tail(keyList)));
+}
+
+{-- GENERAL PURPOSE LIST FUNCTIONS --}
+
+{--
+  Returns the value associated with the given key if the key exists in the
+  dictionary.
+--}
+function dictionaryLookup
+Maybe<b> ::= eq::(Boolean ::= a a) dict::[Pair<a b>] key::a
+{
+  return
+    if null(dict) then
+      nothing()
+    else if eq(head(dict).fst, key) then
+      just(head(dict).snd)
+    else
+      dictionaryLookup(eq, tail(dict), key);
 }
