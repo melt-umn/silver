@@ -12,11 +12,13 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   host.containingGrammar = "host";
   host.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
   host.classTerminals = directBuildTree(host.classTerminalContribs ++ ext.classTerminalContribs);
+  host.parserAttributeAspects = directBuildTree(host.parserAttributeAspectContribs ++ ext.parserAttributeAspectContribs);
   host.prefixesForTerminals = directBuildTree(terminalPrefixes);
   ext.cstEnv = host.cstEnv;
   ext.containingGrammar = "ext";
   ext.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
   ext.classTerminals = host.classTerminals;
+  ext.parserAttributeAspects = host.parserAttributeAspects;
   ext.prefixesForTerminals = host.prefixesForTerminals;
   
   local startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, host.cstEnv);
