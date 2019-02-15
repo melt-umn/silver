@@ -25,7 +25,7 @@ generate_treesitter_parser()
     cd tree-sitter-$lang_name
     npm init -y
     npm install --save nan
-    npm install --save-dev tree-sitter-cli
+    npm install --save-dev tree-sitter-cli@0.13.15
   fi
   
   treesitter_dir=$(pwd)
@@ -89,7 +89,7 @@ generate_atom_package()
     npm install tree-sitter-$lang_name
   else
     old_version=`npm view tree-sitter-$lang_name version`
-    npm update tree-sitter-$lang_name
+    npm install tree-sitter-$lang_name
     new_version=`npm view tree-sitter-$lang_name version`
     if [ "$old_version" != "$new_version" ]; then
       echo Package tree-sitter-$lang_name updated from version $old_version to $new_version
@@ -106,17 +106,6 @@ validate_version_number()
     exit 1
   fi
   echo Version number $version_num is valid
-}
-
-check_if_grammar_is_valid()
-{
-  cd $original_dir
-  $copper_command > /dev/null
-  if [ $? -ne 0 ]; then
-    echo "${use_red_color}Copper cannot generate a parser from this grammar. Treesitter would also fail. Modify the gramamr and try again.${reset_color}"
-    exit 1
-  fi
-  echo "Grammar specified is valid"
 }
 
 original_dir=$(pwd)
@@ -137,8 +126,6 @@ echo Language Name is $lang_name
 
 # the silver command to run
 silver_command=$1
-# run a copper dump to see if the grammar given is error free
-copper_command=`echo $1 | sed s/--treesitter-spec[[:space:]*][[:alnum:]_-]*/--copperdump/`
 run_atom=true
 run_treesitter=true
 force_option=false
@@ -171,7 +158,6 @@ while [ "$2" != "" ]; do
   shift  # shift the parameters down by one
 done
 
-check_if_grammar_is_valid
 if [ $run_treesitter = true ]; then
   check_if_parser_already_exists
 fi
