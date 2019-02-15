@@ -19,7 +19,7 @@ melt.trynode('silver') {
         source = "${silver.SILVER_WORKSPACE}/jars"
       }
       // Obtain jars from specified location
-      sh "cp ${params.OVERRIDE_JARS}/* jars/"
+      sh "cp ${source}/* jars/"
       melt.annotate("Jars overridden.")
     } else {
       // We start by obtaining normal jars, but we potentially overwrite them:
