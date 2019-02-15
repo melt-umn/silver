@@ -10,8 +10,8 @@ grammar silver:definition:flow:ast;
  -  - extraEq (handling collections '<-')
  - which the thesis does not address.
  -}
-nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, suspectFlowEdges, extSynTreeContribs, nonSuspectContribs, localTreeContribs, specContribs;
-nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, extSynTreeContribs, nonSuspectContribs, localTreeContribs, specContribs;
+nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, suspectFlowEdges, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, specContribs;
+nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, specContribs;
 
 {-- lookup (production, attribute) to find synthesized equations
  - Used to ensure a necessary lhs.syn equation exists.
@@ -65,7 +65,7 @@ synthesized attribute flowEdges :: [Pair<FlowVertex FlowVertex>];
 synthesized attribute suspectFlowEdges :: [Pair<FlowVertex FlowVertex>];
 
 {-- A list of extension syn attr occurrences, subject to ft lower bounds. -}
-synthesized attribute extSynTreeContribs :: [Pair<String FlowDef>];
+synthesized attribute hostSynTreeContribs :: [Pair<String FlowDef>];
 
 {-- A list of attributes for a production that are non-suspect -}
 synthesized attribute nonSuspectContribs :: [Pair<String [String]>];
@@ -86,7 +86,7 @@ top::FlowDefs ::= h::FlowDef  t::FlowDefs
   top.refTreeContribs = h.refTreeContribs ++ t.refTreeContribs;
   top.localInhTreeContribs = h.localInhTreeContribs ++ t.localInhTreeContribs;
   top.localTreeContribs = h.localTreeContribs ++ t.localTreeContribs;
-  top.extSynTreeContribs = h.extSynTreeContribs ++ t.extSynTreeContribs;
+  top.hostSynTreeContribs = h.hostSynTreeContribs ++ t.hostSynTreeContribs;
   top.nonSuspectContribs = h.nonSuspectContribs ++ t.nonSuspectContribs;
   top.specContribs = h.specContribs ++ t.specContribs;
 }
@@ -104,7 +104,7 @@ top::FlowDefs ::=
   top.refTreeContribs = [];
   top.localInhTreeContribs = [];
   top.localTreeContribs = [];
-  top.extSynTreeContribs = [];
+  top.hostSynTreeContribs = [];
   top.nonSuspectContribs = [];
   top.specContribs = [];
 }
@@ -127,7 +127,7 @@ top::FlowDef ::=
   top.refTreeContribs = [];
   top.localInhTreeContribs = [];
   top.localTreeContribs = [];
-  top.extSynTreeContribs = [];
+  top.hostSynTreeContribs = [];
   top.nonSuspectContribs = [];
   top.specContribs = [];
   top.suspectFlowEdges = []; -- flowEdges is required, but suspect is typically not!
@@ -150,16 +150,17 @@ top::FlowDef ::= nt::String  prod::String
 }
 
 {--
- - Declaration that a synthesized attribute *occurrence* is not in the host
- - and therefore subject to the forward flow type's whims. (i.e. must be ft(syn) >= ft(fwd))
+ - Declaration that a synthesized attribute occurrence is in the host language
+ - (exported by the nonterminal) and therefore is *NOT* subject to the restriction
+ - for extensions synthesized attributes (i.e. must be ft(syn) >= ft(fwd)).
  -
  - @param nt  the full name of the nonterminal
  - @param attr  the full name of the synthesized attribute
  -}
-abstract production extSynFlowDef
+abstract production hostSynFlowDef
 top::FlowDef ::= nt::String  attr::String
 {
-  top.extSynTreeContribs = [pair(nt, top)];
+  top.hostSynTreeContribs = [pair(nt, top)];
   top.prodGraphContribs = [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
 }

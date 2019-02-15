@@ -1,9 +1,9 @@
 grammar silver:definition:flow:driver;
 
-import silver:util only contains;
+import silver:util only contains, rem;
 import silver:definition:type only isDecorable;
 
-nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, cullSuspect, flowTypeVertexes, prodGraphs;
+nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, suspectEdgeMap, cullSuspect, flowTypeVertexes, prodGraphs;
 
 inherited attribute flowTypes :: EnvTree<FlowType>;
 inherited attribute prodGraphs :: EnvTree<ProductionGraph>;
@@ -22,6 +22,7 @@ synthesized attribute transitiveClosure :: ProductionGraph;
  - Edge mapper
  -}
 synthesized attribute edgeMap :: (set:Set<FlowVertex> ::= FlowVertex);
+synthesized attribute suspectEdgeMap :: ([FlowVertex] ::= FlowVertex);
 
 synthesized attribute cullSuspect :: ProductionGraph;
 
@@ -77,6 +78,7 @@ top::ProductionGraph ::=
       productionGraph(prod, lhsNt, flowTypeVertexes, transitiveClosure, suspectEdges, stitchPoints) end;
     
   top.edgeMap = g:edgesFrom(_, graph);
+  top.suspectEdgeMap = lookupAllBy(equalFlowVertex, _, suspectEdges);
   
   top.cullSuspect = 
     -- this potentially introduces the same edge twice, but that's a nonissue
@@ -248,12 +250,14 @@ ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated E
   local attrs :: [DclInfo] = getAttrsOn(nt, realEnv);
   -- Just synthesized attributes.
   local syns :: [String] = map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), attrs));
+  -- Those syns that are not part of the host, and so should have edges to fwdeq
+  local extSyns :: [String] = rem(syns, getHostSynsFor(nt, flowEnv));
 
   -- The phantom edges: ext syn -> fwd.eq
   local phantomEdges :: [Pair<FlowVertex FlowVertex>] =
     -- apparently this alias may sometimes be used. we should get rid of this by making good use of vertex types
     pair(lhsSynVertex("forward"), forwardEqVertex()) ::
-    map(getPhantomEdge, getExtSynsFor(nt, flowEnv));
+    map(getPhantomEdge, extSyns);
   
   -- The stitch point: oddball. LHS stitch point. Normally, the LHS is not.
   local stitchPoints :: [StitchPoint] = [nonterminalStitchPoint(nt, lhsVertexType)];
@@ -266,11 +270,9 @@ ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated E
 }
 
 function getPhantomEdge
-Pair<FlowVertex FlowVertex> ::= f::FlowDef
+Pair<FlowVertex FlowVertex> ::= at::String
 {
-  return case f of
-  | extSynFlowDef(_, at) -> pair(lhsSynVertex(at), forwardEqVertex())
-  end;
+  return pair(lhsSynVertex(at), forwardEqVertex());
 }
 
 ---- Begin helpers for fixing up graphs ----------------------------------------

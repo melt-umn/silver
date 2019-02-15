@@ -35,7 +35,7 @@ AGDcl ::= id::QName  env::Decorated Env  fenv::Decorated FlowEnv
   
   local l :: Location = id.location;
   
-  local prods :: [DclInfo] = filter(nonforwardingProd(_, fenv), getProdsForNt(id.lookupType.fullName, env));
+  local prods :: [DclInfo] = filter(nonforwardingProd(_, fenv), getKnownProds(id.lookupType.fullName, env));
 
   local sig :: FunctionSignature =
     functionSignature(
