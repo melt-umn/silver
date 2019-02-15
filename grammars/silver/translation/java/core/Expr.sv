@@ -421,6 +421,7 @@ String ::= e1::Decorated Expr  op::String  e2::Decorated Expr
   | floatType() -> s"(${e1.translation} ${op} (float)${e2.translation})"
   | boolType() -> s"(${e1.translation} ${op} (boolean)${e2.translation})"
   | stringType() -> s"(${e1.translation}.toString().compareTo(${e2.translation}.toString()) ${op} 0)"
+  | terminalIdType() -> s"(${e1.translation} ${op} (int)${e2.translation})"
   | t -> error(s"INTERNAL ERROR: no ${op} trans for type ${prettyType(t)}")
   end;
 }

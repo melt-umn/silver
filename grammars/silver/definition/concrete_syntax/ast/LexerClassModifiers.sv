@@ -4,16 +4,18 @@ grammar silver:definition:concrete_syntax:ast;
 --synthesized attribute dominatesXML :: String;
 --synthesized attribute submitsXML :: String;
 
+autocopy attribute className :: String;
 
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, dominatesXML, submitsXML;
+nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, disambiguationClasses, dominatesXML, submitsXML, containingGrammar;
 
 abstract production consLexerClassMod
 top::SyntaxLexerClassModifiers ::= h::SyntaxLexerClassModifier  t::SyntaxLexerClassModifiers
 {
   top.cstErrors := h.cstErrors ++ t.cstErrors;
+  top.disambiguationClasses = h.disambiguationClasses ++ t.disambiguationClasses;
   top.dominatesXML = h.dominatesXML ++ t.dominatesXML;
   top.submitsXML = h.submitsXML ++ t.submitsXML;
 }
@@ -22,6 +24,7 @@ abstract production nilLexerClassMod
 top::SyntaxLexerClassModifiers ::= 
 {
   top.cstErrors := [];
+  top.disambiguationClasses = [];
   top.dominatesXML = "";
   top.submitsXML = "";
 }
@@ -31,13 +34,14 @@ top::SyntaxLexerClassModifiers ::=
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, dominatesXML, submitsXML;
+nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, disambiguationClasses, dominatesXML, submitsXML, containingGrammar;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
 top::SyntaxLexerClassModifier ::=
 {
   --top.cstErrors := [];
+  top.disambiguationClasses = [];
   top.dominatesXML = "";
   top.submitsXML = "";
 }
@@ -73,3 +77,28 @@ top::SyntaxLexerClassModifier ::= dom::[String]
   top.dominatesXML = implode("", map(xmlCopperRef, map(head, domRefs)));
 }
 
+{--
+ - A disambiguation function that should be created for the members of a lexer class.
+ -}
+abstract production lexerClassDisambiguate
+top::SyntaxLexerClassModifier ::= acode::String
+{
+  production terms :: [String] = searchEnvTree(top.className, top.classTerminals);
+  production funName::String = s"disambiguate_${makeCopperName(top.className)}";
+  
+  production syntaxDcl::SyntaxDcl =
+    syntaxDisambiguationGroup(funName, terms, true, s"""
+common.ConsCell tempShiftableList = common.ConsCell.nil;
+for (int i = nextMember(0, shiftable); i >= 0; i = nextMember(i+1, shiftable)) {
+	tempShiftableList = new common.ConsCell(i, tempShiftableList);
+}
+final common.ConsCell shiftableList = tempShiftableList;
+${acode}
+""");
+  -- TODO: Figure out the actual flowtype here
+  syntaxDcl.cstEnv = top.cstEnv;
+  syntaxDcl.containingGrammar = top.containingGrammar;
+
+  top.cstErrors := []; -- TODO: Check for duplicate disambiguation for a lexer class
+  top.disambiguationClasses = [syntaxDcl];
+}

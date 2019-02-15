@@ -12,8 +12,17 @@ synthesized attribute cstProds :: [Pair<String SyntaxDcl>];
 autocopy attribute cstNTProds :: EnvTree<SyntaxDcl>;
 synthesized attribute cstNormalize :: [SyntaxDcl];
 
+-- Compute and allow lookup of all terminals in a lexer class
+synthesized attribute classTerminalContribs::[Pair<String String>];
+autocopy attribute classTerminals::EnvTree<String>;
+
+-- Parser attribute action code aspects
+synthesized attribute parserAttributeAspectContribs::[Pair<String String>];
+autocopy attribute parserAttributeAspects::EnvTree<String>;
+
 synthesized attribute allIgnoreTerminals :: [Decorated SyntaxDcl];
 synthesized attribute allMarkingTerminals :: [Decorated SyntaxDcl];
+synthesized attribute disambiguationClasses :: [Decorated SyntaxDcl];
 autocopy attribute univLayout :: String;
 synthesized attribute classDomContribs :: String;
 synthesized attribute classSubContribs :: String;
@@ -25,7 +34,7 @@ autocopy attribute prefixesForTerminals :: EnvTree<String>;
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, univLayout, xmlCopper, containingGrammar, prefixesForTerminals;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, parserAttributeAspectContribs, parserAttributeAspects, univLayout, xmlCopper, containingGrammar, prefixesForTerminals;
 
 abstract production nilSyntax
 top::Syntax ::=
@@ -36,6 +45,9 @@ top::Syntax ::=
   top.cstNormalize = [];
   top.allIgnoreTerminals = [];
   top.allMarkingTerminals = [];
+  top.disambiguationClasses = [];
+  top.classTerminalContribs = [];
+  top.parserAttributeAspectContribs = [];
   top.xmlCopper = "";
 }
 abstract production consSyntax
@@ -47,13 +59,16 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   top.cstNormalize = s1.cstNormalize ++ s2.cstNormalize;
   top.allIgnoreTerminals = s1.allIgnoreTerminals ++ s2.allIgnoreTerminals;
   top.allMarkingTerminals = s1.allMarkingTerminals ++ s2.allMarkingTerminals;
+  top.disambiguationClasses = s1.disambiguationClasses ++ s2.disambiguationClasses;
+  top.classTerminalContribs = s1.classTerminalContribs ++ s2.classTerminalContribs;
+  top.parserAttributeAspectContribs = s1.parserAttributeAspectContribs ++ s2.parserAttributeAspectContribs;
   top.xmlCopper = s1.xmlCopper ++ s2.xmlCopper;
 }
 
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, univLayout, xmlCopper, classDomContribs, classSubContribs, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, parserAttributeAspectContribs, parserAttributeAspects, univLayout, xmlCopper, classDomContribs, classSubContribs, containingGrammar, prefixesForTerminals;
 
 synthesized attribute sortKey :: String;
 
@@ -63,6 +78,9 @@ top::SyntaxDcl ::=
   top.cstProds = [];
   top.allIgnoreTerminals = [];
   top.allMarkingTerminals = [];
+  top.disambiguationClasses = [];
+  top.classTerminalContribs = [];
+  top.parserAttributeAspectContribs = [];
   top.classDomContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.classSubContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
 }
@@ -115,6 +133,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.cstNormalize = [top];
   top.allIgnoreTerminals = if modifiers.ignored then [top] else [];
   top.allMarkingTerminals = if modifiers.marking then [top] else [];
+  top.classTerminalContribs = modifiers.classTerminalContribs;
 
   production pfx :: [String] = searchEnvTree(n, top.prefixesForTerminals);
 
@@ -126,7 +145,6 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     "    <Regex>" ++ regex.xmlCopper ++ "</Regex>\n" ++
     (if modifiers.opPrecedence.isJust || modifiers.opAssociation.isJust then
     "    <Operator>\n" ++
-    "      <Class>main</Class>\n" ++
     "      <Precedence>" ++ toString(fromMaybe(0, modifiers.opPrecedence)) ++ "</Precedence>\n" ++
     "      " ++ convertAssocNXML(modifiers.opAssociation) ++ "\n" ++ -- TODO
     "    </Operator>\n"
@@ -191,11 +209,14 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.xmlCopper =
     "  <Production id=\"" ++ makeCopperName(ns.fullName) ++ "\">\n" ++
     (if modifiers.productionPrecedence.isJust then
-    "    <Class>main</Class>\n" ++
+--    "    <Class><OperatorClassRef id=\"main\"/></Class>\n" ++
     "    <Precedence>" ++ toString(modifiers.productionPrecedence.fromJust) ++ "</Precedence>\n"
     else "") ++
     "    <Code><![CDATA[\n" ++
-    "RESULT = new " ++ makeClassName(ns.fullName) ++ "(" ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
+    -- Annoying workaround for if a lambda in an action block needs to capture RESULT when accessing a child.
+    -- Java complains when we capture something that is non-final.
+    "final " ++ makeClassName(ns.fullName) ++ " RESULTfinal = new " ++ makeClassName(ns.fullName) ++ "(" ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
+    "RESULT = RESULTfinal;\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++
     "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++
@@ -261,6 +282,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.cstErrors := modifiers.cstErrors ++
     if length(searchEnvTree(n, top.cstEnv)) == 1 then []
     else ["Name conflict with lexer class " ++ n];
+  modifiers.className = n;
 
   -- TODO: these attributes are on all SyntaxDcls, but only have meaning for this production
   -- that's UUUUGLY.
@@ -268,6 +290,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.classSubContribs = modifiers.submitsXML;
 
   top.cstNormalize = [top];
+  top.disambiguationClasses = modifiers.disambiguationClasses;
 
   top.xmlCopper =
     "  <TerminalClass id=\"" ++ makeCopperName(n) ++ "\" />\n";
@@ -291,6 +314,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
     "    <Type><![CDATA[" ++ ty.transType ++ "]]></Type>\n" ++
     "    <Code><![CDATA[\n" ++
       acode ++
+      implode("\n", searchEnvTree(n, top.parserAttributeAspects)) ++
     "]]></Code>\n" ++
     "  </ParserAttribute>\n";
 
@@ -299,11 +323,30 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
 }
 
 {--
+ - Additonal action code that should be added to the initialization of
+ - a parser attribute. 
+ -}
+abstract production syntaxParserAttributeAspect
+top::SyntaxDcl ::= n::String acode::String
+{
+  top.sortKey = "BBB" ++ n;
+  top.cstDcls = [];
+  top.cstErrors :=
+    if !null(searchEnvTree(n, top.cstEnv)) then []
+    else ["Parser attribute " ++ n ++ " was referenced but this grammar was not included in this parser."];
+
+  top.cstNormalize = [top];
+
+  top.parserAttributeAspectContribs = [pair(n, acode)];
+  top.xmlCopper = "";
+}
+
+{--
  - A disambiguation group.
  - The acode distinguished between the listed terminals.
  -}
 abstract production syntaxDisambiguationGroup
-top::SyntaxDcl ::= n::String terms::[String] acode::String
+top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode::String
 {
   top.sortKey = "DDD" ++ n;
   top.cstDcls = [];
@@ -321,7 +364,7 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
   top.cstNormalize = [top];
 
   top.xmlCopper =
-    "  <DisambiguationFunction id=\"" ++ makeCopperName(n) ++ "\">\n" ++
+    "  <DisambiguationFunction id=\"" ++ makeCopperName(n) ++ "\" applicableToSubsets=\"" ++ toString(applicableToSubsets) ++ "\">\n" ++
     "    <Members>" ++ implode("", map(xmlCopperRef, map(head, trefs))) ++ "</Members>\n" ++
     "    <Code><![CDATA[\n" ++
     acode ++
@@ -351,6 +394,7 @@ String ::= d::Decorated SyntaxDcl
   | syntaxTerminal(n, _, _) -> "<TerminalRef id=\"" ++ makeCopperName(n) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   | syntaxNonterminal(n, _) -> "<NonterminalRef id=\"" ++ makeCopperName(n.typeName) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   | syntaxProduction(ns, _) -> "<ProductionRef id=\"" ++ makeCopperName(ns.fullName) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
+  | syntaxDisambiguationGroup(n, _, _, _) -> "<DisambiguationFunctionRef id=\"" ++ makeCopperName(n) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   end;
 }
 

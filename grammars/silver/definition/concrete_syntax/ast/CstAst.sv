@@ -24,6 +24,8 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   s.cstNTProds = directBuildTree(s.cstProds);
   s.containingGrammar = "host";
   s.univLayout = error("TODO: make this environment not be decorated?"); -- TODO
+  s.classTerminals = error("TODO: shouldn't by necessary to normalize"); -- TODO
+  s.parserAttributeAspects = error("TODO: shouldn't by necessary to normalize"); -- TODO
   s.prefixesForTerminals = error("TODO: shouldn't by necessary to normalize"); -- TODO
   
   -- Move productions under their nonterminal, and sort the declarations
@@ -32,6 +34,8 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   s2.cstEnv = directBuildTree(s.cstDcls);
   s2.containingGrammar = "host";
   s2.cstNTProds = error("TODO: make this environment not be decorated?"); -- TODO
+  s2.classTerminals = directBuildTree(s.classTerminalContribs);
+  s2.parserAttributeAspects = directBuildTree(s.parserAttributeAspectContribs);
   s2.prefixesForTerminals = directBuildTree(terminalPrefixes);
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.
@@ -50,7 +54,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   top.xmlCopper =
 s"""<?xml version="1.0" encoding="UTF-8"?>
 
-<CopperSpec xmlns="http://melt.cs.umn.edu/copper/xmlns">
+<CopperSpec xmlns="http://melt.cs.umn.edu/copper/xmlns/skins/xml/0.9">
   <Parser id="${makeCopperName(parsername)}" isUnitary="true">
     <PP>${parsername}</PP>
     <Grammars><GrammarRef id="${s2.containingGrammar}"/></Grammars>
@@ -117,7 +121,11 @@ s"""    <Layout>${univLayout}</Layout>
         <Type><![CDATA[common.DecoratedNode]]></Type>
         <Code><![CDATA[context = common.TopNode.singleton;]]></Code>
       </ParserAttribute>
-       ${s2.xmlCopper}
+      ${s2.xmlCopper}
+""" ++
+-- Disambiguation classes
+implode("\n", map((.xmlCopper), s2.disambiguationClasses)) ++
+s"""
     </Declarations>
   </Grammar>
 </CopperSpec>""";

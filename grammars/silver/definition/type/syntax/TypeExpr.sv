@@ -105,6 +105,18 @@ top::TypeExpr ::= 'Boolean'
   top.lexicalTypeVariables = [];
 }
 
+concrete production termnalIdTypeExpr
+top::TypeExpr ::= 'TerminalId'
+{
+  top.unparse = "TerminalId";
+
+  top.typerep = terminalIdType();
+
+  top.errors := [];
+
+  top.lexicalTypeVariables = [];
+}
+
 concrete production nominalTypeExpr
 top::TypeExpr ::= q::QNameType tl::BracketedOptTypeExprs
 {

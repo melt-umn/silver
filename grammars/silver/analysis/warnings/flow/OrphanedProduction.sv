@@ -1,4 +1,4 @@
-grammar silver:analysis:warnings:defs;
+grammar silver:analysis:warnings:flow;
 
 synthesized attribute warnFwd :: Boolean occurs on CmdArgs;
 

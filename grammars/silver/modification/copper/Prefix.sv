@@ -110,6 +110,8 @@ top::TerminalPrefixItems ::=
   syntax.containingGrammar = error("This shouldn't be needed...");
   syntax.cstEnv = error("This shouldn't be needed...");
   syntax.cstNTProds = error("This shouldn't be needed...");
+  syntax.classTerminals = error("This shouldn't be needed...");
+  syntax.parserAttributeAspects = error("This shouldn't be needed...");
   syntax.prefixesForTerminals = error("This shouldn't be needed...");
   syntax.univLayout = error("This shouldn't be needed...");
 

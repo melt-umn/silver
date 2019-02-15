@@ -296,7 +296,7 @@ top::Expr ::= e1::Expr '>' e2::Expr
   top.errors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
        then []
-       else [err(top.location, "Operands to > must be concrete types Integer, Float, or String.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to > must be concrete types Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 aspect production lt
@@ -318,7 +318,7 @@ top::Expr ::= e1::Expr '<' e2::Expr
   top.errors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
        then []
-       else [err(top.location, "Operands to < must be concrete types Integer, Float, or String.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to < must be concrete types Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 
@@ -341,7 +341,7 @@ top::Expr ::= e1::Expr '>=' e2::Expr
   top.errors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
        then []
-       else [err(top.location, "Operands to >= must be concrete types Integer, Float, or String.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to >= must be concrete types Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 
@@ -364,7 +364,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
   top.errors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
        then []
-       else [err(top.location, "Operands to <= must be concrete types Integer, Float, or String.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to <= must be concrete types Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 
@@ -387,7 +387,7 @@ top::Expr ::= e1::Expr '==' e2::Expr
   top.errors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceEq
        then []
-       else [err(top.location, "Operands to == must be concrete types Boolean, Integer, Float, or String.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to == must be concrete types Boolean, Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 
@@ -410,7 +410,7 @@ top::Expr ::= e1::Expr '!=' e2::Expr
   top.errors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceEq
        then []
-       else [err(top.location, "Operands to != must be concrete types Boolean, Integer, Float, or String.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to != must be concrete types Boolean, Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 

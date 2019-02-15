@@ -75,6 +75,17 @@ top::Type ::=
 }
 
 {--
+ - Terminal identifier type.
+ - This isn't a foreign type, since we want equality checking.
+ - TODO: Revisit this once we have type classes.
+ -}
+abstract production terminalIdType
+top::Type ::=
+{
+  top.freeVariables = [];
+}
+
+{--
  - An (undecorated) nonterminal type.
  - @param fn  The fully qualified name of the nonterminal.
  - @param params  The type parameters for that nonterminal.

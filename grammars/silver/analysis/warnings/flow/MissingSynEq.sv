@@ -1,4 +1,4 @@
-grammar silver:analysis:warnings:defs;
+grammar silver:analysis:warnings:flow;
 
 synthesized attribute warnMissingSyn :: Boolean occurs on CmdArgs;
 
@@ -17,15 +17,6 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--warn-missing-syn", flag(warnMissingSynFlag))];
-}
-
-function isOccursSynthesized
-Boolean ::= occs::DclInfo  e::Decorated Env
-{
-  return case getAttrDcl(occs.attrOccurring, e) of
-  | at :: _ -> at.isSynthesized
-  | _ -> false
-  end;
 }
 
 {- This is the primary check for missing synthesized equations.
@@ -67,6 +58,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
  - @param attr   Full name of a synthesized attribute
  - @param prod   Full name of non-forwarding production to examine
  - @param e      The local flow environment
+ - @returns      An error message from the attribute occurrence's perspective, if any
  -}
 function raiseMissingProds
 [Message] ::= l::Location  attr::String  prod::String  e::Decorated FlowEnv
@@ -106,7 +98,14 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 }
 
 {--
+ - Examine a non-forwarding production `prod` to see if it is missing an equation
+ - for the synthesized attribute `attr`.
  -
+ - @param l      Location to raise the error message (of the production)
+ - @param attr   Full name of a synthesized attribute
+ - @param prod   DclInfo for the non-forwarding production in question
+ - @param e      The local flow environment
+ - @returns      An error message from the production's perspective, if any
  -}
 function raiseMissingAttrs
 [Message] ::= l::Location  prod::String  attr::DclInfo  e::Decorated FlowEnv

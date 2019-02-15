@@ -1,11 +1,4 @@
-grammar silver:analysis:warnings:defs;
-
-import silver:modification:autocopyattr only isAutocopy;
-import silver:modification:collection;
-import silver:modification:primitivepattern;
-
-import silver:definition:flow:driver only ProductionGraph, FlowType, flowVertexEq, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh;
-import silver:util:raw:treeset as set;
+grammar silver:analysis:warnings:flow;
 
 synthesized attribute warnMissingInh :: Boolean occurs on CmdArgs;
 
@@ -26,6 +19,27 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   flags <- [pair("--warn-missing-inh", flag(warnMissingInhFlag))];
 }
 
+--------------------------------------------------------------------------------
+
+-- In this file:
+
+-- CHECK 1: Exceeds flowtype
+--   - Examine overall dependencies of an equation, and see if they use LHS inh
+--     that are not permissible, given the equation's flow type.
+--   - Accomplished by explicit calculations in each production.
+
+-- CHECK 1b: Reference set exceeded checks
+--   - Direct accesses from references need to be checked, they don't emit dependencies otherwise
+--   - Attribute sections need special checking, too
+--   - Pattern matching can create dependencies on references, too
+
+-- CHECK 2: Effective Completeness
+--   - Ensure each inherited attribute that's used actually has an equation
+--     in existence.
+--   - Consists of calls to `checkAllEqDeps`
+--   - Pattern variable accesses can induced *remote* inherited equation checks
+
+--------------------------------------------------------------------------------
 
 
 {--
@@ -53,35 +67,6 @@ Boolean ::= lhsNt::String  env::Decorated Env  attr::String
   return !(isAutocopy(attr, env) && !null(getOccursDcl(attr, lhsNt, env)));
 }
 
--- TODO: this should probably not be a thing I have to write here
-function isAutocopy
-Boolean ::= attr::String  e::Decorated Env
-{
-  return case getAttrDclAll(attr, e) of
-  | at :: _ -> at.isAutocopy
-  | _ -> false
-  end;
-}
--- TODO: why is this a thing I have to write here. Sheesh. FIX THIS.
--- The real fix is for our vertexes to remember whether they are syn/inh.
-function isInherited
-Boolean ::= a::String  e::Decorated Env
-{
-  return case getAttrDclAll(a, e) of
-  | at :: _ -> at.isInherited
-  | _ -> false
-  end;
-}
-
-function isLhsInh
-Boolean ::= v::FlowVertex
-{
-  return case v of
-  | lhsInhVertex(_) -> true
-  | _ -> false
-  end;
-}
-
 {--
  - Given a name of a child, return whether it has an undecorated
  - nonterminal type. False if nonsensicle.
@@ -94,6 +79,9 @@ Boolean ::= sigName::String  e::Decorated Env
   -- TODO BUG: it's actually possible for this to to fail to lookup
   -- due to aspects renaming the sig name!!  We're conservative here and return true if that happens
   -- but this could lead to spurious errors.
+  
+  -- Suggested fix: maybe we can directly look at the signature, instead of looking
+  -- up the name in the environment?
   
   return if null(d) then true else head(d).typerep.isDecorable;
 }
@@ -186,11 +174,6 @@ function checkAllEqDeps
 --------------------------------------------------------------------------------
 
 
-{- Step 1: We check two things:
-   1. That all the dependencies of each equation have equations (checkAllEqDeps)
-   2. That flow types are not exceeded, if it's a thing with a flowtype.
- -}
-
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
@@ -207,8 +190,6 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     if dl.found && attr.found
     && (top.config.warnAll || top.config.warnMissingInh)
     && top.frame.prodFlowGraph.isJust -- Default synthesized equations have no production graph to use
-                          -- TODO: shit. is anything looking at default synthesized equations to make sure
-                          -- their flow types aren't messed up?
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
       if null(lhsInhExceedsFlowType) then []
       else [wrn(top.location, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
@@ -372,6 +353,9 @@ top::ProductionStmt ::= 'return' e::Expr ';'
     else [];
 }
 
+-- Skipping `baseCollectionValueDef`: it forwards to `localValueDef`
+-- Partially skipping `appendCollectionValueDef`: it likewise forwards
+-- But we do have a special "exceeds check" to do here:
 aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
@@ -387,10 +371,6 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   
   local lhsInhExceedsFlowType :: [String] = set:toList(set:difference(lhsInhDeps, originalEqLhsInhDeps));
 
-  -- For most collection append operators, the checking is already done by the thing they forward to.
-  -- Local collections are a special case though: typically they're always considered "authoritative"
-  -- and thus flow types don't need checking (unlike syn defs), but for contributions to locals we do
-  -- need to do a check!
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh)
        -- We can ignore functions. We're checking LHS inhs here... functions don't have any!
@@ -401,63 +381,6 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
     else [];
 }
 
-
-
---------------------------------------------------------------------------------
-
--- Step 1.5: Implicit equations due to forwards need their flow types checked!
-
--- The flow environment can give us the authoritative list of attributes to check.
--- These may be from `options` and so requires the flowenv.
-
--- Only attributes exported(/optioned) from host can have flow types more restricted
--- than the forward flow type, and those are the only ones that need checking here.
-
-aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
-{
-  -- oh no again!
-  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
-  local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
-  
-  local transitiveDeps :: [FlowVertex] = expandGraph([forwardEqVertex()], findProductionGraph(fName, myGraphs));
-  local fwdFlowDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
-
-  local lhsNt :: String = namedSig.outputElement.typerep.typeName;
-  local hostSyns :: [String] = getHostSynsFor(lhsNt, top.flowEnv);
-
-  top.errors <-
-    if null(body.errors ++ ns.errors)
-    && (top.config.warnAll || top.config.warnMissingInh)
-    -- Must be a forwarding production:
-    && !null(body.uniqueSignificantExpression)
-    then flatMap(raiseImplicitFwdEqFlowTypesForProd(top.location, lhsNt, fName, _, top.flowEnv, fwdFlowDeps, myFlow), hostSyns)
-    else [];
-}
-function raiseImplicitFwdEqFlowTypesForProd
-[Message] ::= l::Location  lhsNt::String  prod::String  attr::String  e::Decorated FlowEnv  fwdFlowDeps::set:Set<String>  myFlow::EnvTree<FlowType>
-{
-  -- The flow type for `attr` on `lhsNt`
-  local depsForThisAttr :: set:Set<String> = inhDepsForSyn(attr, lhsNt, myFlow);
-  -- Actual forwards equation deps not in the flow type for `attr`
-  local diff :: [String] = set:toList(set:difference(fwdFlowDeps, depsForThisAttr));
-
-  return case lookupSyn(prod, attr, e) of
-  | eq :: _ -> []
-  | [] ->
-      if null(diff) then []
-      else 
-      [wrn(l, s"In production ${prod}, the implicit copy equation for ${attr} (due to forwarding) would exceed the attribute's flow type because the production forward equation depends on ${implode(", ", diff)}")]
-  end;
-}
-
--- General TODO: we should probably find another way of generating errors,
--- so that we can eliminate these silly checks...
--- Perhaps put "namespaces" in errors? (Check from [Message] to ErrorSpace with multiple [Message]?)
--- Then we could 1. Issue normal errors; If none, 2. Issue syn-completeness errors; If none, 3. Issue inh-completeness errors
-
-
--- TODO: we check implicit forward equations above, but what about implicit equations from default equations!? TODO
 
 --------------------------------------------------------------------------------
 
@@ -492,6 +415,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       inhsForTakingRef(eTypeName, top.flowEnv),  -- blessed inhs for a reference
       inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow))); -- needed inhs
   
+  -- CASE 1: References. This check is necessary and won't be caught elsewhere.
   top.errors <- 
     if null(e.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
@@ -506,9 +430,10 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     else [];
 
 ----------------
--- Okay, so as part 2, we attempt to give better error messages, explaining *where*
--- some needed dependencies came from. 
 
+  -- CASE 2: More specific errors for things already caught by `checkAllEqDeps`.
+  -- Equation has transition dep on `i`, but here we can say where this dependency
+  -- originated: from an syn acces.
   top.errors <- 
     if null(e.errors)
     && (top.config.warnAll || top.config.warnMissingInh)
@@ -572,10 +497,9 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
-  -- Do nothing. Everything gets taken care of with anonResolve and checkEqDeps at the top
+  -- Do nothing. Everything gets taken care of with anonResolve and checkEqDeps at the top-level of the equation
 }
 
--- TODO: pattern variable accesses. WAIT. is this taken care of? this might be a stale TODO
 
 aspect production attributeSection
 top::Expr ::= '(' '.' q::QName ')'

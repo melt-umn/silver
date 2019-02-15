@@ -1,9 +1,4 @@
-grammar silver:analysis:warnings:defs;
-
-import silver:modification:collection;
-import silver:modification:copper;
-import silver:modification:defaultattr;
-
+grammar silver:analysis:warnings:flow;
 
 synthesized attribute warnEqdef :: Boolean occurs on CmdArgs;
 

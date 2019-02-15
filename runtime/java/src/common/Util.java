@@ -354,17 +354,13 @@ public final class Util {
 	 * <p>Avoids demanding a StringCatter.
 	 *
 	 * @param file The filename
-	 * @param content Either a String or {@link StringCatter} object.
+	 * @param content A {@link StringCatter} object.
 	 * @return singleton IO token.
 	 */
 	public static IOToken writeFile(String file, Object content) {
 		try {
-			Writer fout = new FileWriter(file); // already buffered
-			if(content instanceof StringCatter)
-				((StringCatter)content).write(fout);
-			else
-				fout.write(content.toString());
-			fout.flush();
+			Writer fout = new BufferedWriter(new FileWriter(file));
+			((StringCatter)content).write(fout);
 			fout.close();
 			return IOToken.singleton;
 		} catch (Exception e) {
@@ -378,17 +374,13 @@ public final class Util {
 	 * <p>Avoids demanding a StringCatter.
 	 *
 	 * @param file The filename
-	 * @param content Either a String or {@link StringCatter} object.
+	 * @param content A {@link StringCatter} object.
 	 * @return singleton IO token.
 	 */
 	public static IOToken appendFile(String file, Object content) { // TODO: merge with above!
 		try {
-			Writer fout = new FileWriter(file, true); // already buffered
-			if(content instanceof StringCatter)
-				((StringCatter)content).write(fout);
-			else
-				fout.write(content.toString());
-			fout.flush();
+			Writer fout = new BufferedWriter(new FileWriter(file, true));
+			((StringCatter)content).write(fout);
 			fout.close();
 			return IOToken.singleton;
 		} catch (Exception e) {
@@ -734,5 +726,13 @@ public final class Util {
 		// HOME/jars/file.jar to HOME
 		File home = new File(jarLocation).getParentFile().getParentFile();
 		return new StringCatter(home.getPath());
+	}
+	
+	public static ConsCell bitSetToList(BitSet b) {
+		ConsCell result = ConsCell.nil;
+		for (int i = b.nextSetBit(0); i >= 0; i = b.nextSetBit(i+1)) {
+			result = new ConsCell(i, result);
+		}
+		return result;
 	}
 }
